@@ -24,7 +24,7 @@ module Glib.Graphics {
       this.boundingSphere = params.boundingSphere || [0, 0, 0, 0];
       this.materialId = Number(params.materialId) || 0;
 
-      var buffer = params.indexBuffer || {};
+      var buffer:any = params.indexBuffer || {};
       if (buffer instanceof Buffer) {
         this.indexBuffer = buffer;
       } else {
