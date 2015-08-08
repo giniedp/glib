@@ -70,30 +70,30 @@ module Glib.Graphics {
         return;
       }
 
-      var value = this.meta.default;
+      var value = this.meta['default'];
       switch (this.type) {
         case 'int':
-          this.default = Number(value) || 0;
+          this['default'] = Number(value) || 0;
           this.set = this.setInt;
           break;
         case 'bool':
-          this.default = value === 'true' || value === '1';
+          this['default'] = value === 'true' || value === '1';
           this.set = this.setBool;
           break;
         case 'float':
-          this.default = Number(value) || 0;
+          this['default'] = Number(value) || 0;
           this.set = this.setFloat;
           break;
         case 'vec2':
-          this.default = makeVec2(parseArray(value || ""));
+          this['default'] = makeVec2(parseArray(value || ""));
           this.set = this.setVec2;
           break;
         case 'vec3':
-          this.default = makeVec3(parseArray(value || ""));
+          this['default'] = makeVec3(parseArray(value || ""));
           this.set = this.setVec3;
           break;
         case 'vec4':
-          this.default = makeVec4(parseArray(value || ""));
+          this['default'] = makeVec4(parseArray(value || ""));
           this.set = this.setVec4;
           break;
         case 'mat4':
@@ -113,8 +113,8 @@ module Glib.Graphics {
           this.set = function () {};
           break;
       }
-      if (this.default) {
-        this.set(this.default);
+      if (this['default']) {
+        this.set(this['default']);
       }
     }
 
@@ -165,6 +165,7 @@ module Glib.Graphics {
       if (value.update) {
         value.update();
       }
+
       var device = this.device;
       var sampler = device.sampler[this.register] || device.sampler[0];
       sampler.texture = value;

@@ -17,7 +17,7 @@ block script
         templates: ["Camera", "WASD"]
       }, function(entity){
         entity.getService("Camera").activate();
-        entity.getService("Transform").translateXYZ(0, 0, 100);
+        entity.getService("Transform").translateXYZ(0, 0, 5);
       })
       .buildChild({
         name: "Light",
