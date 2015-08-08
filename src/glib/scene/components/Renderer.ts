@@ -42,7 +42,7 @@ module Glib.Components {
     }
 
     draw() {
-      this.device.clear(Color.CornflowerBlue, 0, 0);
+      this.device.clear(Color.CornflowerBlue, 1, 1);
       for(var screen of this.screens) {
         this.renderScreen(screen);
       }
