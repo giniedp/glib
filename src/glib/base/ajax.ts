@@ -11,7 +11,8 @@ module Glib.utils {
 
   export function ajax(options):IPromise {
     var xhr = options.xhr || new XMLHttpRequest();
-
+    options.async = options.async !== false;
+     
     if (Array.isArray(options.url)) {
       var mapped = options.url.map(function (url) {
         return ajax(extend({}, options, {url: url})).then(function (res) {
