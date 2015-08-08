@@ -40,7 +40,8 @@ module Glib.Components {
       this.transform = this.node.getService('Transform');
     }
 
-    update(time) {
+    update(timeMs) {
+      var timeSec = timeMs / 1000.0;
       var keyboard = this.keyboard;
       var mouse = this.mouse;
       var trans = this.transform;
@@ -91,7 +92,7 @@ module Glib.Components {
       this._currentMoveSpeed += (targetSpeed - this._currentMoveSpeed) * this.moveDamping;
       this._currentMoveSpeed = ((this._currentMoveSpeed * 1000)|0) / 1000;
       if (this._currentMoveSpeed !== 0) {
-        Vec3.multiplyScalar(this._temp, this._currentMoveSpeed * time / 1000, this._translation);
+        Vec3.multiplyScalar(this._temp, this._currentMoveSpeed * timeSec, this._translation);
         trans.translate(this._translation);
       }
 
@@ -100,7 +101,7 @@ module Glib.Components {
         var mouseY = mouse.yDelta;
 
         if (mouseX !== 0 || mouseY !== 0) {
-          speed = this.turnSpeed * time * 1000;
+          speed = this.turnSpeed * timeSec;
           this.targetYaw += mouseX * -speed;
           this.targetPitch += mouseY * -speed;
         }
@@ -111,7 +112,6 @@ module Glib.Components {
       this._rotation.initYawPitchRoll(this.yaw, this.pitch, 0);
       trans.rotation.initFrom(this._rotation);
       trans._dirty = true;
-
     }
   }
 }
