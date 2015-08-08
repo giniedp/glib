@@ -21,8 +21,7 @@ module Glib.Graphics {
     linked:boolean;
     info:string;
 
-    constructor(device:Device, data?:ShaderProgramOptions) {
-      data = data || {};
+    constructor(device:Device, data:ShaderProgramOptions={}) {
       this.device = device;
       this.gl = device.context;
       this.attributes = data.attributes || {};
@@ -47,6 +46,7 @@ module Glib.Graphics {
       }
 
       for (shader of shaders) {
+        
         if (shader instanceof Shader) {
           this.shader.push(shader)
         } else {
