@@ -23,11 +23,12 @@ module Glib.Rendering {
 
       for (var pass of tech.passes) {
         pass.commit();
-        context.setTransform(item.world);
-        context.applyTransform(pass.program);
-        context.applyView(pass.program);
-        context.applyTime(pass.program);
-        context.applyLights(pass.program);
+        context
+          .setTransform(item.world)
+          .commitTransform(pass.program)
+          .commitView(pass.program)
+          .commitTime(pass.program)
+          .commitLights(pass.program);
         mesh.draw(pass.program);
       }
     }

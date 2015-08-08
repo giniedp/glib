@@ -39,6 +39,7 @@ highp vec3 evaluateLights(in vec3 position, in vec3 normal, in vec3 diffuse, in 
 
   for (int i = 0; i < 4; i++)
   {
+
     LightSource light = lights[i];
 
     // stop on first light that is off
@@ -46,12 +47,12 @@ highp vec3 evaluateLights(in vec3 position, in vec3 normal, in vec3 diffuse, in 
       break;
     }
 
-    vec4 term = vec4(0, 0, 0, 0);
     float att = 0.0;
 
     // directional light (no attenuation)
     if (light.type == 1)
     {
+      //return vec3(1.0, 0.0, 0.0);
       att = 1.0;
     }
     // point light (radial linear attenuation)
@@ -72,7 +73,7 @@ highp vec3 evaluateLights(in vec3 position, in vec3 normal, in vec3 diffuse, in 
     }
 
     // calculate diffuse and specular terms
-    term = computeLightTerm(cameraPosition - position, normal, -light.direction, light.color.rgb, power) * att;
+    vec4 term = computeLightTerm(cameraPosition - position, normal, -light.direction, light.color.rgb, power) * att;
     // accumulate diffuse color
     result.rgb += diffuse.rgb * term.rgb;
 

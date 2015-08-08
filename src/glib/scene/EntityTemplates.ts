@@ -78,7 +78,9 @@ module Glib {
   EntityTemplates.register("Light", lightEntity);
   function lightEntity(entity:Entity, options:any = {}) {
     entity.applyTemplate("Transform");
-    entity.addComponent(new Components.Light(options));
+    if (!entity.s.Light) {
+      entity.addComponent(new Components.Light(options));
+    }
   }
 
   EntityTemplates.register("Model", modelEntity);

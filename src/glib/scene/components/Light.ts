@@ -26,27 +26,23 @@ module Glib.Components {
 
   export var LightType = {
     None: 0,
-    Ambient: 1,
+    Directional: 1,
     Point: 2,
-    Directional: 3,
-    Spot: 4,
-    Box: 5
+    Spot: 3
   };
 
   export var LightTypeName = {
     0: 'None',
-    1: 'Ambient',
+    1: 'Directional',
     2: 'Point',
-    3: 'Directional',
-    4: 'Spot',
-    5: 'Box'
+    3: 'Spot'
   };
 
   export class Light implements Component, LightProperties {
     node: Entity;
-    serviceName:string = 'Light';
+    name:string = 'Light';
     enabled:boolean = true;
-    service:boolean = false;
+    service:boolean = true;
 
     range:number = 0;
     intensity:number = 1;

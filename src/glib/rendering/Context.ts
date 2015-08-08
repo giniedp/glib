@@ -16,7 +16,7 @@ module Glib.Rendering {
     ];
   }
 
-  function applyUniforms(program:Graphics.ShaderProgram, srcUniforms:any, values:any){
+  function commitUniforms(program:Graphics.ShaderProgram, srcUniforms:any, values:any){
     var i, src, dst;
     for(i = 0; i < srcUniforms.length; i += 1){
       src = srcUniforms[i];
@@ -55,7 +55,7 @@ module Glib.Rendering {
       { key: 'timeLast', type: 'float' }
     ];
 
-    maxLights: number = 3;
+    maxLights: number = 4;
     lightUniforms = [];
 
     lights = [];
@@ -79,7 +79,7 @@ module Glib.Rendering {
       }
     }
 
-    setCamera(world:Mat4, view:Mat4, proj:Mat4){
+    setCamera(world:Mat4, view:Mat4, proj:Mat4):Context{
       if (world) {
         world.getTranslation(this.cameraPosition);
         world.getForward(this.cameraDirection);
@@ -93,7 +93,7 @@ module Glib.Rendering {
       return this;
     }
 
-    setTransform(world:Mat4) {
+    setTransform(world:Mat4):Context {
       if (world) {
         world.getTranslation(this.position);
         world.getForward(this.direction);
@@ -102,32 +102,37 @@ module Glib.Rendering {
       return this;
     }
 
-    setTime(total:number, elapsed:number=0){
+    setTime(total:number, elapsed:number=0):Context{
       this.timeNow = total;
       this.timeLast = total - elapsed;
+      return this;
     }
 
-    applyTransform(program){
+    commitTransform(program):Context{
       program.use();
-      applyUniforms(program, this.transformUniforms, this);
+      commitUniforms(program, this.transformUniforms, this);
+      return this;
     }
 
-    applyView(program){
+    commitView(program):Context{
       program.use();
-      applyUniforms(program, this.viewUniforms, this);
+      commitUniforms(program, this.viewUniforms, this);
+      return this;
     }
 
-    applyTime(program){
+    commitTime(program):Context{
       program.use();
-      applyUniforms(program, this.timeUniforms, this);
+      commitUniforms(program, this.timeUniforms, this);
+      return this;
     }
 
-    applyLights(program){
+    commitLights(program):Context{
       program.use();
       var i, lights = this.lights;
       for(i = 0; i < lights.length; i += 1){
-        applyUniforms(program, this.lightUniforms[i], this.lights[i]);
+        commitUniforms(program, this.lightUniforms[i], this.lights[i]);
       }
+      return this;
     }
   }
 }

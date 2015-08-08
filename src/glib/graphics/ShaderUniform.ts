@@ -142,16 +142,28 @@ module Glib.Graphics {
       this.gl.uniform4f(this.location, value[0], value[1], value[2], value[4]);
     }
 
-    setVec2(value:Vec2) {
-      this.gl.uniform2f(this.location, value.x, value.y);
+    setVec2(value:Vec2|number[]) {
+      if (value["x"] !== undefined) {
+        this.gl.uniform2f(this.location, value["x"], value["y"]);  
+      } else {
+        this.gl.uniform2f(this.location, value[0], value[1]);
+      }
     }
 
-    setVec3(value:Vec3) {
-      this.gl.uniform3f(this.location, value.x, value.y, value.z);
+    setVec3(value:Vec3|number[]) {
+      if (value["x"] !== undefined) {
+        this.gl.uniform3f(this.location, value["x"], value["y"], value["z"]);  
+      } else {
+        this.gl.uniform3f(this.location, value[0], value[1], value[2]);
+      }
     }
 
-    setVec4(value:Vec4) {
-      this.gl.uniform4f(this.location, value.x, value.y, value.z, value.w);
+    setVec4(value:Vec4|number[]) {
+      if (value["x"] !== undefined) {
+        this.gl.uniform4f(this.location, value["x"], value["y"], value["z"], value["w"]);  
+      } else {
+        this.gl.uniform4f(this.location, value[0], value[1], value[2], value[3]);
+      }
     }
 
     setMat4(value:Mat4, transpose:boolean) {
