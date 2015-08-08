@@ -121,7 +121,8 @@ module Glib.Components {
         `  enabled: ${this.enabled}`,
         `  buttons: ${this.newState.buttons}`,
         `  wheel: ${this.newState.wheel}`,
-        `  x: ${this.newState.x.toPrecision(5)}, y: ${this.newState.y.toPrecision(5)}`
+        `  x: ${this.newState.x.toPrecision(5)}, y: ${this.newState.y.toPrecision(5)}`,
+        `  dx: ${this.xDelta.toPrecision(5)}, dy: ${this.yDelta.toPrecision(5)}`,
       ].join("\n")
     }
   }
