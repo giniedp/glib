@@ -100,8 +100,18 @@
       .pipe(concat('Enums.ts'))
       .pipe(gulp.dest('src/glib/graphics/enums/'));
   });
-
-  gulp.task('precompile', ['precompile:enums']);
+  
+  gulp.task('precompile:tsconfig', function(){
+    var glob = require("simple-glob")
+    var files = glob(tscSource)
+    var config = JSON.parse(fs.readFileSync("tsconfig.json"));
+    config.files = files;
+    var result = JSON.stringify(config, null, 2);
+    fs.writeFileSync("tsconfig.json", result);
+  });
+  
+  
+  gulp.task('precompile', ['precompile:enums', 'precompile:tsconfig']);
 
   //
   // TS COMPILATION TASKS
@@ -153,6 +163,7 @@
   gulp.task('watch', ['compile', 'pages', 'assets'], function(){
     gulp.watch(tscSource, function(){
       gulp.run('compile:es5');
+      gulp.run('precompile:tsconfig');
     });
 
     gulp.watch(PATHS.pages, function(){
