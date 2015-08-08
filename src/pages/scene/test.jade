@@ -1,0 +1,58 @@
+extends ./../_layouts/default.jade
+block content
+  pre
+    code.prettyprint#debug-container
+
+  .thumbnail(style="padding:20px")
+    canvas#canvas(width="800" height="400")
+block script
+  script(type='text/javascript').
+    game = Glib
+      .createGame({
+        canvas: document.getElementById("canvas"),
+        autorun: true
+      })
+      .buildChild({
+        name: "Camera",
+        templates: ["Camera", "WASD"]
+      }, function(entity){
+        entity.getService("Camera").activate();
+        entity.getService("Transform").translateXYZ(0, 0, 100);
+      })
+      .buildChild({
+        name: "Light",
+        templates: ["PointLight"]
+      })
+      .buildChild({
+        name: "Model",
+        templates: ["Model"]
+      }, function (child) {
+        child.addComponent({
+          setup: function () {
+            var assets = this.node.root.getService("Assets");
+            var renderable = this.node.getService("Renderable");
+            assets.downloadPackage({
+              url: '/assets/package.json'
+            }).then(function () {
+              return assets.load("Model", "/assets/models/cube.json")
+            }).then(function (model) {
+              renderable.model = model;
+            })
+          }
+        }).addComponent({
+          setup: function(){
+            this.transform = this.node.getService("Transform");
+          },
+          update: function (time) {
+            this.transform.rotateXYZAngle(1, 0, 0, time * Math.PI / 1000);
+          }
+        }).addComponent({
+          setup: function(){
+            this.debugVisitor = new Glib.EntityDebugVisitor();
+          },
+          update: function(){
+            this.debugVisitor.start(this.node.root);
+            document.getElementById('debug-container').innerHTML = escapeHtml(this.debugVisitor.result);
+          }
+        });
+      });

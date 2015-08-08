@@ -1,0 +1,13 @@
+{
+  "effect": "../shader/default.yml",
+  "parameters": {
+    "ambient": [0.1, 0.1, 0.1],
+    "normalTex": "../textures/proto_gray_n.png",
+    "diffuseTex": "../textures/proto_blue.png",
+    "diffuse": [1, 1, 1],
+    "specular": [1, 1, 1],
+    "alpha": 1,
+    "specularPower": 128
+  },
+  "blendState": "Opaque"
+}

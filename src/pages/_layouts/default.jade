@@ -1,0 +1,48 @@
+//- ignore: true
+doctype html
+html(lang="en")
+  head
+    link(rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css")
+    link(rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css")
+    script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
+    script(type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js')
+    script(type='text/javascript' src='/scripts/glib.js')
+    block head
+body
+  .container
+    .page-header
+      h1 Glib Framework
+    .row
+      .col-sm-3
+        each section, index in sections
+          .panel.panel-default
+            .panel-heading= section.title
+            .list-group
+              each page in section.pages
+                a.list-group-item(href=page.href)
+                  span=page.title
+      .col-sm-9
+        #example-content
+          block content
+            .thumbnail(style="padding:20px")
+              canvas#canvas(width="800" height="400")
+        pre
+          code.prettyprint#example-code
+  #example-scripts
+    block script
+  script(type='text/javascript').
+    var entityMap = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': '&quot;',
+      "'": '&#39;',
+      "/": '&#x2F;'
+    };
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+      });
+    }
+    var text = $('#example-content').html().trim() + "\n" + $('#example-scripts').html().trim();
+    $('#example-code').html(escapeHtml(text));

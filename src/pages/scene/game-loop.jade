@@ -1,0 +1,22 @@
+extends ./../_layouts/default.jade
+block script
+  script(type='text/javascript').
+    new Glib.Entity()
+      .addComponent(new Glib.Components.GameLoop())
+      .addComponent(new Glib.Components.Time())
+      .addComponent(new Glib.Components.Fps())
+      .addComponent({
+        setup: function(){
+          this.fpsCmp = this.node.root.getService("Fps")
+        },
+        update: function(){
+          var canvas = document.getElementById("canvas");
+          var context = canvas.getContext("2d");
+
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.fillStyle = "blue";
+          context.font = "bold 16px Arial";
+          context.fillText(this.fpsCmp.fps.toPrecision(4), 0, 20);
+        }
+      })
+      .getService("GameLoop").run();

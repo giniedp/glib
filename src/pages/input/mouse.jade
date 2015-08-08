@@ -1,0 +1,11 @@
+extends ./../_layouts/default.jade
+block content
+   #mouse-container.well
+block script
+  script(type='text/javascript').
+    var mouse = new Glib.Input.Mouse({
+      el: document // optional
+    });
+    mouse.on('changed', function(){
+      document.getElementById('mouse-container').innerHTML = JSON.stringify(mouse.state);
+    });

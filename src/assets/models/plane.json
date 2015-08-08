@@ -1,0 +1,43 @@
+{
+  "boundingBox": [-1, 0, -1, 1, 0, 1],
+  "boundingSphere": [0, 0, 0, 3],
+  "materials": [
+    "../materials/textured.json"
+  ],
+  "meshes": [{
+    "name": "",
+    "material": 0,
+    "indexCount": 6,
+    "vertexCount": 4,
+    "boundingBox": [-1, 0, -1, 1, 0, 1],
+    "boundingSphere": [0, 0, 0, 3],
+    "indexBuffer": {
+      "dataType": "ushort",
+      "data": [
+        0,  1,  2,      0,  2,  3
+
+      ]
+    },
+    "vertexBuffer": {
+      "layout": {
+        "position": {
+          "type": "float",
+          "offset": 0,
+          "elements": 3
+        },
+        "normal": {
+          "type": "float",
+          "offset": 12,
+          "elements": 3
+        }
+      },
+      "dataType": "float",
+      "data": [
+        -1.0,  0.0, -1.0,     0, 1, 0,
+        -1.0,  0.0,  1.0,     0, 1, 0,
+        1.0,  0.0,  1.0,     0, 1, 0,
+        1.0,  0.0, -1.0,     0, 1, 0
+      ]
+    }
+  }]
+}

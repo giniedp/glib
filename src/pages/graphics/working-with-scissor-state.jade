@@ -1,0 +1,29 @@
+extends ./../_layouts/default.jade
+block script
+  script(type='text/javascript').
+    var device = new Glib.Graphics.Device({canvas: 'canvas'});
+
+    var width = device.canvas.width;
+    var height = device.canvas.height;
+    var halfWidth  = width/2;
+    var halfHeight = height/2;
+
+    var RED   = 0xFF0000FF;
+    var GREEN = 0x00FF00FF;
+    var BLUE  = 0x0000FFFF;
+    var WHITE = 0xFFFFFFFF;
+
+    device.scissorState.commit({ x: 0, y: 0, width: halfWidth, height: halfHeight, enable: true });
+    device.clear(RED);
+
+    device.scissorState.commit({ x: halfWidth });
+    device.clear(GREEN);
+
+    device.scissorState.commit({ y: halfHeight });
+    device.clear(BLUE);
+
+    device.scissorState.commit({ x: 0 });
+    device.clear(WHITE);
+
+    device.scissorState.commit({enable: false});
+

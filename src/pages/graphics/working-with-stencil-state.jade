@@ -1,0 +1,65 @@
+extends ./../_layouts/default.jade
+block script
+  script#vertex-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    attribute vec3 position;
+    void main(void) {
+      gl_Position = vec4(position, 1);
+    }
+  script#fragment-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    void main(void) {
+      gl_FragColor = vec4(1, 0, 0, 1);
+    }
+  script(type='text/javascript').
+    var Graphics = Glib.Graphics;
+    var device = new Graphics.Device({
+      canvas: 'canvas',
+      contextAttributes: { stencil: true }
+    });
+
+    var width = device.canvas.width;
+    var height = device.canvas.height;
+    var pixel = (height/10)|0;
+    var stencil = device.stencilState;
+    var scissor = device.scissorState;
+
+    var BLACK = 0x000000FF;
+    var RED   = 0xFF0000FF;
+
+    device.clear(BLACK);
+
+    scissor.enable = true;
+    scissor.width = pixel;
+    scissor.height = pixel;
+    scissor.commit({ x: 3 * pixel, y: 7 * pixel });
+    device.clear(BLACK, 1, 2);
+    scissor.commit({ x: 7 * pixel });
+    device.clear(BLACK, 1, 2);
+    scissor.commit({ x: 5 * pixel, y: 5 * pixel });
+    device.clear(BLACK, 1, 2);
+    scissor.commit({ x: 3 * pixel, y: 4 * pixel });
+    device.clear(BLACK, 1, 2);
+    scissor.commit({ x: 7 * pixel, y: 4 * pixel });
+    device.clear(BLACK, 1, 2);
+    scissor.commit({ x: 4 * pixel, y: 3 * pixel, width: 3 * pixel });
+    device.clear(BLACK, 1, 2);
+
+    scissor.commit({ enable: false });
+
+    stencil.commit({
+      enable: true,
+      stencilReference: 2,
+      stencilFunction: Graphics.CompareFunction.Equal,
+      stencilBackReference: 2,
+      stencilBackFunction: Graphics.CompareFunction.Equal
+    });
+    device.program = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader').textContent,
+      fragmentShader: document.getElementById('fragment-shader').textContent,
+      attributes: {position: {type: 'vec3'}}
+    });
+    device.drawQuad();
+    window.device = device;

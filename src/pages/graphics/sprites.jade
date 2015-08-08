@@ -1,0 +1,28 @@
+//- title: Sprites
+extends ./../_layouts/default.jade
+block script
+  script(type='text/javascript').
+    var device = new Glib.Graphics.Device({
+      canvas: 'canvas'
+    });
+    window.device = device;
+    var spriteBatch = device.createSpriteBatch();
+    var image = new Image();
+    image.onload = renderFrame;
+    image.src = '/assets/textures/proto_blue.png';
+    function renderFrame() {
+      var texture = device.createTexture({data: image});
+      var options = {
+        texture: texture,
+        dstWidth: 100,
+        dstHeight: 100
+      };
+      device.clear(0x000000FF);
+      spriteBatch.begin();
+      var count = 10;
+      for (var i = 0; i < count; i += 1) {
+        options.dstX = i * options.dstWidth + i * count;
+        spriteBatch.draw(options);
+      }
+      spriteBatch.end();
+    }
