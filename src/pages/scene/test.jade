@@ -23,36 +23,49 @@ block script
         name: "Light",
         templates: ["DirectionalLight"]
       })
-      .buildChild({
-        name: "Model",
-        templates: ["Model"]
-      }, function (child) {
-        child.addComponent({
-          setup: function () {
-            var assets = this.node.root.getService("Assets");
-            var renderable = this.node.getService("Renderable");
-            assets.downloadPackage({
-              url: '/assets/package.json'
-            }).then(function () {
-              return assets.load("Model", "/assets/models/cube.json")
-            }).then(function (model) {
-              renderable.model = model;
-            })
-          }
-        }).addComponent({
-          setup: function(){
-            this.transform = this.node.getService("Transform");
-          },
-          update: function (time) {
-            this.transform.rotateXYZAngle(1, 0, 0, time * Math.PI / 1000);
-          }
-        }).addComponent({
-          setup: function(){
-            this.debugVisitor = new Glib.EntityDebugVisitor();
-          },
-          update: function(){
-            this.debugVisitor.start(this.node.root);
-            document.getElementById('debug-container').innerHTML = escapeHtml(this.debugVisitor.result);
-          }
-        });
+      .addComponent({
+        setup: function(){
+          var assets = this.node.root.getService("Assets");
+          assets.downloadPackage({
+            url: '/assets/package.json'
+          });
+        }
       });
+
+      function DemoComponent(options){
+        options = options || {};
+        this.index = options.index || 0;
+        this.enable = true;
+        this.visible = true;
+      }
+      DemoComponent.prototype.setup = function(){
+        this.time = this.node.root.getService("Time");
+        this.assets = this.node.root.getService("Assets");
+        this.transform = this.node.getService("Transform");
+        this.renderable = this.node.getService("Renderable");
+        this.assets
+          .load("Model", "/assets/models/cube.json")
+          .then(function (model) {
+            this.renderable.model = model;
+          }.bind(this));
+      };
+      DemoComponent.prototype.update = function(time){
+        var t1 = this.time.totalMsInGame;
+        var t2 = time;
+        var t = (this.index / 10 * t1 + t2) * Math.PI / 1000;
+        this.transform.setPositionXYZ(this.index * 2, Math.sin(t) * 2, 0);
+        this.transform.setScaleUniform(1.0 + Math.sin(t) * 0.125);
+        this.transform.setRotationXYZAngle(1, 0, 0, t);
+      };
+
+      function addChildren(){
+        for (var i = 1; i <= 10; i++) {
+          game.buildChild({
+            name: "Model" + i,
+            templates: ["Model"]
+          }, function(entity){
+            entity.addComponent(new DemoComponent({ index: i }));
+          });
+        }
+      }
+      addChildren();
