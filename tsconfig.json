@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "noResolve": true,
-    "out": "glib.js",
+    "out": "dist/scripts/glib.js",
     "outDir": "dist/scripts",
     "sourceMap": true,
     "sourceRoot": "src",
