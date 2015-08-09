@@ -117,10 +117,18 @@ module Glib.Components {
       return this;
     }
 
-    scaleUniform(value:number):Transform {
-      this.scale.x *= value;
-      this.scale.y *= value;
-      this.scale.z *= value;
+    scaleUniform(scale: number): Transform {
+        this.scale.x = scale;
+        this.scale.y = scale;
+        this.scale.z = scale;
+        this._dirty = true;
+        return this;
+    }
+
+    setScaleUniform(value:number):Transform {
+      this.scale.x = value;
+      this.scale.y = value;
+      this.scale.z = value;
       this._dirty = true;
       return this;
     }
