@@ -37,13 +37,17 @@ module Glib.utils {
     }
 
     var complete = function (xhr) {
-      // TODO: check for status code
+      xhr.options = options;
+      if (!xhr.responseURL) {
+        xhr.responseURL = options.url;
+      }
       deferred.resolve(xhr);
     };
 
     if (options.async) {
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
+          xhr.requestURL = options.url;
           complete(xhr);
         }
       };
