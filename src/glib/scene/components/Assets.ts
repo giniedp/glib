@@ -60,11 +60,11 @@ module Glib.Components {
       // hash to cache the asset
       key = type + ':' + asset;
 
-      debug('Assets#load', key, asset);
+      debug('[Assets]', 'load', key, asset);
 
       // see if the asset is already loaded
       if (this.assets.hasOwnProperty(key)) {
-        debug('Assets#load already loaded', key);
+        debug('[Assets]', 'already loaded', key);
         return Promise.resolve(this.assets[key]);
       }
 
@@ -72,14 +72,14 @@ module Glib.Components {
       data = Assets.downloads[utils.normalizeUrl(asset)];
 
       if (!data) {
-        debug('Assets#load begin download', key, asset);
+        debug('[Assets]', 'begin download', key, asset);
         return this.download({ url: asset })
           .then(() => {
-            debug('Assets#load retry', key, asset);
+            debug('[Assets]', 'retry', key, asset);
             return this.load(type, asset);
           });
       } else {
-        debug('Assets#load already downloaded', key, asset);
+        debug('[Assets]', 'already downloaded', key, asset);
       }
 
       // find the reader who will process tha data into an asset
@@ -111,10 +111,10 @@ module Glib.Components {
     }
 
     download(options) {
-      debug('Assets#download', arguments);
+      debug('[Assets]', 'download', arguments);
       return ajax(options)
         .then(function(res){
-          debug('Assets#download done', res);
+          debug('[Assets]', 'download done', res);
           if (Array.isArray(res)){
             return res.map(function(xhr){ return cacheAssetResponse(xhr) });
           } else {
@@ -167,7 +167,7 @@ module Glib.Components {
 
   Assets.registerLoader("Texture2D", loadTexture2d);
   function loadTexture2d(data, assets:Assets) {
-    debug("loadTexture2d", arguments);
+    debug('[Assets]', "loadTexture2d", arguments);
     return assets
       .load('Image', data.content)
       .then(function(video){
@@ -180,7 +180,7 @@ module Glib.Components {
 
   Assets.registerLoader("TextureCube", loadTextureCube);
   function loadTextureCube(data, assets:Assets) {
-    debug("loadTextureCube", arguments);
+    debug('[Assets]', "loadTextureCube", arguments);
     return assets
       .load('Image', data.content)
       .then(function(video){
@@ -193,7 +193,7 @@ module Glib.Components {
 
   Assets.registerLoader("TextureVideo", loadTextureVideo);
   function loadTextureVideo(data, assets:Assets) {
-    debug("loadTextureVideo", arguments);
+    debug('[Assets]', "loadTextureVideo", arguments);
     return assets
       .load('Video', data.content)
       .then(function(video){
@@ -206,7 +206,7 @@ module Glib.Components {
 
   Assets.registerLoader("Image", loadImage);
   function loadImage(data) {
-    debug("loadImage", arguments);
+    debug('[Assets]', "loadImage", arguments);
     if (!data.type.match(/image\//)) {
       return Promise.reject(`Can not load content type of ${data.type} as image`);
     }
@@ -229,7 +229,7 @@ module Glib.Components {
 
   Assets.registerLoader("Video", loadVideo);
   function loadVideo(data) {
-    debug("loadVideo", arguments);
+    debug('[Assets]', "loadVideo", arguments);
     if (!data.type.match(/video\//)) {
       return Promise.reject(`Can not load content type of ${data.type} as video`);
     }
@@ -240,7 +240,7 @@ module Glib.Components {
 
   Assets.registerLoader("YamlShaderSource", loadYamlShaderSource);
   function loadYamlShaderSource(data) {
-    debug("loadYamlShaderSource", arguments);
+    debug('[Assets]', "loadYamlShaderSource", arguments);
     return Promise.resolve(Glib.utils.parseYamlShader(data.content, {
       includes: Assets.downloads
     }));
@@ -248,7 +248,7 @@ module Glib.Components {
 
   Assets.registerLoader("Material", loadMaterial);
   function loadMaterial(data, assets:Assets){
-    debug("loadMaterial", arguments); // IF DEBUG
+    debug('[Assets]', "loadMaterial", arguments); // IF DEBUG
     var baseUrl = data.url.substr(0, data.url.lastIndexOf('/') + 1);
     var materialJson = JSON.parse(data.content);
     var effectUrl = normalizeUrl(materialJson.effect, baseUrl);
@@ -277,7 +277,7 @@ module Glib.Components {
 
   Assets.registerLoader("Model", loadModel);
   function loadModel(data, assets:Assets) {
-    debug("loadModel", arguments); // IF DEBUG
+    debug('[Assets]', "loadModel", arguments); // IF DEBUG
     var baseUrl = data.url.substr(0, data.url.lastIndexOf('/') + 1);
     var jsonModel = JSON.parse(data.content);
     var materials = jsonModel.materials || [];

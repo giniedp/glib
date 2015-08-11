@@ -28,7 +28,7 @@ block script
           var assets = this.node.root.getService("Assets");
           assets.downloadPackage({
             url: '/assets/package.json'
-          });
+          }).then(addChildren);
         }
       });
 
@@ -50,16 +50,15 @@ block script
           }.bind(this));
       };
       DemoComponent.prototype.update = function(time){
-        var t1 = this.time.totalMsInGame;
-        var t2 = time;
-        var t = (this.index / 10 * t1 + t2) * Math.PI / 1000;
-        this.transform.setPositionXYZ(this.index * 2, Math.sin(t) * 2, 0);
-        this.transform.setScaleUniform(1.0 + Math.sin(t) * 0.125);
+        var t = (this.index / totalItems + this.time.totalMsInGame / 1000) * Math.PI;
+        this.transform.setPositionXYZ(this.index * 3 - totalItems / 2 * 3, Math.sin(t) * 2, -totalItems / 2 * 3);
+        this.transform.setScaleUniform(1.0 + Math.sin(t) * 0.5);
         this.transform.setRotationXYZAngle(1, 0, 0, t);
       };
 
+      var totalItems = 20;
       function addChildren(){
-        for (var i = 1; i <= 10; i++) {
+        for (var i = 1; i <= totalItems; i++) {
           game.buildChild({
             name: "Model" + i,
             templates: ["Model"]
@@ -68,4 +67,4 @@ block script
           });
         }
       }
-      addChildren();
+

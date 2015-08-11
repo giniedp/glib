@@ -44,5 +44,22 @@ body
         return entityMap[s];
       });
     }
-    var text = $('#example-content').html().trim() + "\n" + $('#example-scripts').html().trim();
+    function removeIndents(string) {
+      var lines = string.split("\n");
+      var min = 10;
+      for (var i = 0; i<lines.length; i++){
+        var line = lines[i];
+        if (!line) continue;
+        var match = line.match(/^(\s+)/)
+        if (!match) return string;
+        min = Math.min(min, match[1].length);
+      }
+      for (var i = 0; i<lines.length; i++){
+        var line = lines[i];
+        if (!line) continue;
+        lines[i] = line.substring(min);
+      }
+      return lines.join("\n");
+    }
+    var text = removeIndents($('#example-content').html()) + "\n" + removeIndents($('#example-scripts').html());
     $('#example-code').html(escapeHtml(text));

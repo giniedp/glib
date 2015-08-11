@@ -1,0 +1,42 @@
+//- title: Texture - Image
+extends ./../_layouts/default.jade
+block script
+  script#vertex-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    attribute vec3 position;
+    varying vec2 texCoord;
+    void main(void) {
+      texCoord = (position.xy + 1.0) * 0.5;
+      gl_Position = vec4(position, 1.0);
+    }
+  script#fragment-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    uniform sampler2D texture;
+    varying vec2 texCoord;
+    void main(void) {
+      gl_FragColor = vec4(texture2D(texture, texCoord).rgb, 1.0);
+    }
+
+  script(type='text/javascript').
+    var device = new Glib.Graphics.Device({canvas: 'canvas'});
+        
+    var image = new Image();
+    image.src = "/assets/textures/proto_blue.png";
+    var texture = device.createTexture({ data: image });
+    texture.setImageUrl("/assets/textures/proto_blue.png");
+    var program = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader').textContent,
+      fragmentShader: document.getElementById('fragment-shader').textContent,
+      attributes: {
+        position: {type: 'vec3'}
+      }
+    });
+
+    Glib.utils.loop(function(){
+      program.uniforms.texture.set(texture);
+      device.program = program;
+      device.drawQuad();
+    });
+    
