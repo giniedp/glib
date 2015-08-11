@@ -171,11 +171,11 @@ module Glib.Graphics {
     }
 
     setTexture(value:Texture) {
-      if (!value.ready) {
-        return;
-      }
       if (value.update) {
         value.update();
+      }
+      if (!value.ready) {
+        return;
       }
 
       var device = this.device;
