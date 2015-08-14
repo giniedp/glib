@@ -3,8 +3,9 @@ module Glib.MeshTools {
   import Vec3 = Vlib.Vec3;
   import Vec2 = Vlib.Vec2;
   import log = Glib.utils.log;
+  import BufferData = Glib.Graphics.BufferData;
 
-  export function calculateTangents(layout:any, indices:any[], vertices:any[]){
+  export function calculateTangents(layout:any, indices:BufferData, vertices:BufferData){
     if (!layout.normal){
       log('Can not calculate tangents for buffer. Normal definition not found in layout ', layout);
     }
@@ -21,14 +22,14 @@ module Glib.MeshTools {
       log('Can not calculate tangents for buffer. Bitangent definition not found in layout ', layout);
     }
 
-    var stride = VertexLayout.countElements(layout);
-    var offPos = VertexLayout.countElementsBefore(layout, 'position');
-    var offNrm = VertexLayout.countElementsBefore(layout, 'normal');
-    var offTex = VertexLayout.countElementsBefore(layout, 'texture');
-    var offTan = VertexLayout.countElementsBefore(layout, 'tangent');
-    var offBit = VertexLayout.countElementsBefore(layout, 'bitangent');
+    var stride = Glib.Graphics.VertexLayout.countElements(layout);
+    var offPos = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'position');
+    var offNrm = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'normal');
+    var offTex = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'texture');
+    var offTan = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'tangent');
+    var offBit = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'bitangent');
 
-    var count = vertices.length / VertexLayout.countElements(layout);
+    var count = vertices.length / Glib.Graphics.VertexLayout.countElements(layout);
     var index;
 
     var i, i1, i2, i3;
@@ -71,14 +72,14 @@ module Glib.MeshTools {
       Vec2.subtract(t3, t1, uv2);
 
       var r = 1 / (uv1.x * uv2.y - uv1.y * uv2.x);
-      var dir1 = Vec3.subtract(
+      var dir1 = Vec3.subtract<Vec3>(
         Vec3.multiplyScalar(d1, uv2.y),
         Vec3.multiplyScalar(d2, uv1.y)
-      ).multiplyScalar(r);
-      var dir2 = Vec3.subtract(
+      ).selfMultiplyScalar(r);
+      var dir2 = Vec3.subtract<Vec3>(
         Vec3.multiplyScalar(d2, uv1.x),
         Vec3.multiplyScalar(d1, uv2.x)
-      ).multiplyScalar(r);
+      ).selfMultiplyScalar(r);
 
       index = i1 * stride + offTan;
       vertices[index    ] += dir1.x;
@@ -121,9 +122,9 @@ module Glib.MeshTools {
       tangent.initFromBuffer(vertices, index + offTan);
       bitangent.initFromBuffer(vertices, index + offBit);
 
-      var t:Vec3 = Vec3.subtract(tangent, Vec3.multiplyScalar(normal, normal.dot(tangent)));
-      var h = Vec3.cross(normal, tangent).dot(bitangent) < 0 ? -1 : 1;
-      var b:Vec3 = Vec3.cross(normal, t).multiplyScalar(h);
+      var t = Vec3.subtract<Vec3>(tangent, Vec3.multiplyScalar(normal, normal.dot(tangent)));
+      var h = Vec3.cross<Vec3>(normal, tangent).dot(bitangent) < 0 ? -1 : 1;
+      var b = Vec3.cross<Vec3>(normal, t).selfMultiplyScalar(h);
 
       if (!t.lengthSquared() || !b.lengthSquared()){
         t.init(1, 0, 0);

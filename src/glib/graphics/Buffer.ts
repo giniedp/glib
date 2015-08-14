@@ -2,7 +2,8 @@ module Glib.Graphics {
 
   export interface BufferData {
     length:number,
-    [index:number]: number
+    [index:number]: number,
+    push(value:number)
   }
 
   export interface BufferOptions {

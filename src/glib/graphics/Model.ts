@@ -3,8 +3,8 @@ module Glib.Graphics {
   export interface ModelOptions {
     boundingBox?: number[];
     boundingSphere?: number[];
-    materials?: Material[];
-    meshes?: ModelMesh[];
+    materials?: Material[]|MaterialOptions[];
+    meshes?: ModelMesh[]|ModelMeshOptions[];
   }
 
   export class Model {
@@ -38,17 +38,32 @@ module Glib.Graphics {
           this.materials.push(new Material(this.device, material));
         }
       }
+
+      // convert materialIds from string name to numeric index
+      for (var meshItem of this.meshes) {
+        var index = 0;
+        var name = meshItem.materialId;
+        if (typeof name === "string") {
+          for (var materialItem of materials) {
+            if (materialItem.name === name) {
+              meshItem.materialId = index;
+              break;
+            }
+            index += 1;
+          }
+        }
+      }
     }
 
     draw():Model {
-      var i, j, mesh, meshes = this.meshes, material, materials = this.materials, pass;
-      for (i = 0; i < meshes.length; i += 1) {
-        mesh = meshes[i];
-        material = materials[mesh.material || 0];
-        for (j = 0; j < material.passes.length; j += 1) {
-          pass = material.passes[i];
-          pass.commit(material.parameters);
-          mesh.draw(pass);
+      for (var mesh of this.meshes) {
+        var material = this.materials[mesh.materialId];
+        if (!material) continue;
+        var technique = material.technique;
+        if (!technique) continue;
+        for (var pass of technique.passes) {
+          pass.commit();
+          mesh.draw(pass.program);
         }
       }
       return this;

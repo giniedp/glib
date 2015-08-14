@@ -503,7 +503,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static normalize = function(vec:IVec3, out?:IVec3):IVec3|Vec3 {
+    static normalize<T extends IVec3>(vec:IVec3, out?:T|Vec3):T|Vec3 {
       var x = vec.x;
       var y = vec.y;
       var z = vec.z;
@@ -524,7 +524,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` argument or a new vector.
      */
-    static cross(vecA:IVec3, vecB:IVec3, out?:IVec3):IVec3|Vec3 {
+    static cross<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T|Vec3):T|Vec3 {
       var x = vecA.y * vecB.z - vecA.z * vecB.y;
       var y = vecA.z * vecB.x - vecA.x * vecB.z;
       var z = vecA.x * vecB.y - vecA.y * vecB.x;
@@ -543,7 +543,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static invert(vec:IVec3, out?:IVec3):IVec3|Vec3 {
+    static invert<T extends IVec3>(vec:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = 1.0 / vec.x;
       out.y = 1.0 / vec.y;
@@ -559,7 +559,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static negate(vec:IVec3, out?:IVec3):IVec3|Vec3 {
+    static negate<T extends IVec3>(vec:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = -vec.x;
       out.y = -vec.y;
@@ -576,7 +576,7 @@ module Vlib {
      * @param {Vec3} out The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static add(vecA:IVec3, vecB:IVec3, out?:IVec3):IVec3|Vec3 {
+    static add<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vecA.x + vecB.x;
       out.y = vecA.y + vecB.y;
@@ -593,7 +593,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static addScalar(vec:IVec3, scalar:number, out?:IVec3):IVec3|Vec3 {
+    static addScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vec.x + scalar;
       out.y = vec.y + scalar;
@@ -610,7 +610,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static subtract(vecA:IVec3, vecB:IVec3, out?:IVec3):IVec3|Vec3 {
+    static subtract<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vecA.x - vecB.x;
       out.y = vecA.y - vecB.y;
@@ -627,7 +627,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static subtractScalar(vec:IVec3, scalar:number, out?:IVec3):IVec3|Vec3 {
+    static subtractScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vec.x - scalar;
       out.y = vec.y - scalar;
@@ -644,7 +644,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static multiply(vecA:IVec3, vecB:IVec3, out?:IVec3):IVec3|Vec3 {
+    static multiply<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vecA.x * vecB.x;
       out.y = vecA.y * vecB.y;
@@ -661,7 +661,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static multiplyScalar(vec:IVec3, scalar:number, out?:IVec3):IVec3|Vec3 {
+    static multiplyScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vec.x * scalar;
       out.y = vec.y * scalar;
@@ -678,7 +678,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static divide(vecA:IVec3, vecB:IVec3, out?:IVec3):IVec3|Vec3 {
+    static divide<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vecA.x / vecB.x;
       out.y = vecA.y / vecB.y;
@@ -695,7 +695,7 @@ module Vlib {
      * @param {Vec3} out The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static divideScalar(vec:IVec3, scalar:number, out?:IVec3):IVec3|Vec3 {
+    static divideScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T|Vec3):T|Vec3 {
       scalar = 1 / scalar;
       out = out || new Vec3();
       out.x = vec.x * scalar;
@@ -714,7 +714,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static multiplyAdd(vecA:IVec3, vecB:IVec3, add:IVec3, out?:IVec3):IVec3|Vec3 {
+    static multiplyAdd<T extends IVec3>(vecA:IVec3, vecB:IVec3, add:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vecA.x * vecB.x + add.x;
       out.y = vecA.y * vecB.y + add.y;
@@ -732,7 +732,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static multiplyScalarAdd(vecA:IVec3, mul:number, add:IVec3, out?:IVec3):IVec3|Vec3 {
+    static multiplyScalarAdd<T extends IVec3>(vecA:IVec3, mul:number, add:IVec3, out?:T|Vec3):T|Vec3 {
       out = out || new Vec3();
       out.x = vecA.x * mul + add.x;
       out.y = vecA.y * mul + add.y;
@@ -750,7 +750,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static clamp(a:IVec3, min:IVec3, max:IVec3, out?:IVec3):IVec3|Vec3 {
+    static clamp<T extends IVec3>(a:IVec3, min:IVec3, max:IVec3, out?:T|Vec3):T|Vec3 {
       var x = a.x;
       var y = a.y;
       var z = a.z;
@@ -777,7 +777,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static clampScalar(a:IVec3, min:number, max:number, out?:IVec3):IVec3|Vec3 {
+    static clampScalar<T extends IVec3>(a:IVec3, min:number, max:number, out?:T|Vec3):T|Vec3 {
       var x = a.x;
       var y = a.y;
       var z = a.z;
@@ -797,7 +797,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static min(a:IVec3, b:IVec3, out?:IVec3):IVec3|Vec3 {
+    static min<T extends IVec3>(a:IVec3, b:IVec3, out?:T|Vec3):T|Vec3 {
       var aX = a.x;
       var aY = a.y;
       var aZ = a.z;
@@ -820,7 +820,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static minScalar(a:IVec3, scalar:number, out?:IVec3):IVec3|Vec3 {
+    static minScalar<T extends IVec3>(a:IVec3, scalar:number, out?:T|Vec3):T|Vec3 {
       var x = a.x;
       var y = a.y;
       var z = a.z;
@@ -840,7 +840,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static max(a:IVec3, b:IVec3, out?:IVec3):IVec3|Vec3 {
+    static max<T extends IVec3>(a:IVec3, b:IVec3, out?:T|Vec3):T|Vec3 {
       var aX = a.x;
       var aY = a.y;
       var aZ = a.z;
@@ -863,7 +863,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static maxScalar(a:IVec3, scalar:number, out?:IVec3):IVec3|Vec3 {
+    static maxScalar<T extends IVec3>(a:IVec3, scalar:number, out?:T|Vec3):T|Vec3 {
       var x = a.x;
       var y = a.y;
       var z = a.z;
@@ -884,7 +884,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static lerp(a:IVec3, b:IVec3, t:number, out?:IVec3):IVec3|Vec3 {
+    static lerp<T extends IVec3>(a:IVec3, b:IVec3, t:number, out?:T|Vec3):T|Vec3 {
       var x = a.x;
       var y = a.y;
       var z = a.z;
@@ -907,7 +907,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static barycentric(a:IVec3, b:IVec3, c:IVec3, t1:number, t2:number, out?:IVec3):IVec3|Vec3 {
+    static barycentric<T extends IVec3>(a:IVec3, b:IVec3, c:IVec3, t1:number, t2:number, out?:T|Vec3):T|Vec3 {
       var x = a.x;
       var y = a.y;
       var z = a.z;
@@ -928,7 +928,7 @@ module Vlib {
      * @param {Vec3} [out] The vector to write to.
      * @return {Vec3} The given `out` parameter or a new vector.
      */
-    static smooth(a:IVec3, b:IVec3, t:number, out?:IVec3):IVec3|Vec3 {
+    static smooth<T extends IVec3>(a:IVec3, b:IVec3, t:number, out?:T|Vec3):T|Vec3 {
       t = ((t > 1) ? 1 : ((t < 0) ? 0 : t));
       t = t * t * (3 - 2 * t);
       var x = a.x;
@@ -948,7 +948,7 @@ module Vlib {
      * @param {Vec2|Vec3|Vec4|Quat|Array|number} data
      * @return {Vec3}
      */
-    static convert(data:any) {
+    static convert(data:any):Vec3 {
 
       if (Array.isArray(data)) {
         return new Vec3(

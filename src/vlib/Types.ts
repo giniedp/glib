@@ -16,5 +16,9 @@ module Vlib {
     data: Float32Array
   }
 
-  export type NumbersArray = number[]|Float32Array|Float64Array;
+  export interface NumbersArray {
+    length:number,
+    [index:number]: number,
+    push(value:number)
+  }
 }

@@ -6,7 +6,7 @@ module Glib {
 
   export var Promise:any = window["Promise"];
 
-  if (!Promise['defer']) {
+  if (Promise && !Promise['defer']) {
     Promise['defer'] = function(){
       var resolved = false;
       var resolveArg = undefined;

@@ -7,13 +7,17 @@ html(lang="en")
     script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
     script(type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js')
     script(type='text/javascript' src='/scripts/glib.js')
+    style().
+      .container {
+        min-width: 1140px;
+      }
     block head
 body
   .container
     .page-header
       h1 Glib Framework
     .row
-      .col-sm-3
+      .col-xs-3
         each section, index in sections
           .panel.panel-default
             .panel-heading= section.title
@@ -21,7 +25,7 @@ body
               each page in section.pages
                 a.list-group-item(href=page.href)
                   span=page.title
-      .col-sm-9
+      .col-xs-9
         #example-content
           block content
             .thumbnail(style="padding:20px")

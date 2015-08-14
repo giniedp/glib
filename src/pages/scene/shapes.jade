@@ -1,0 +1,88 @@
+extends ./../_layouts/default.jade
+block script
+  script(type='text/javascript').
+    function ShapeComponent() {
+      this.setup = function () {
+        this.node.getServices({
+          time: "root:Time",
+          device: "root:Device",
+          assets: "root:Assets",
+          transform: "Transform",
+          renderable: "Renderable"
+        }, this);
+        this.assets
+          .load("Material", "/assets/materials/default.json")
+          .then(function (material) {
+            var builder = new Glib.MeshTools.Builder();
+            builder.transform = Vlib.Mat4.createTranslation(0, 0, 0);
+            builder.append("Sphere", {
+              diameter: 1,
+              steps: 16
+            });
+            builder.transform = Vlib.Mat4.createTranslation(2, 0, 0);
+            builder.append("Cube", {
+              size: 1
+            });
+            builder.transform = Vlib.Mat4.createTranslation(4, 0, 0);
+            builder.append("Plane", {
+              size: 1
+            });
+            builder.transform = Vlib.Mat4.createTranslation(0, 2, 0);
+            builder.append("Cylinder", {
+              diameter: 1,
+              height: 1,
+              steps: 16
+            });
+            builder.transform = Vlib.Mat4.createTranslation(2, 2, 0);
+            builder.append("Cone", {
+              upperDiameter: 0,
+              lowerDiameter: 1,
+              height: 1,
+              steps: 16
+            });
+            builder.transform = Vlib.Mat4.createTranslation(4, 2, 0);
+            builder.append("Cap", {
+              diameter: 1,
+              steps: 16
+            });
+            var model = builder.finish(this.device, {materials: [material]});
+            this.renderable.model = model;
+          }.bind(this));
+      };
+      this.update = function (time) {
+        this.transform.rotateXYZAngle(0, 1, 0, time / 1000 * Math.PI / 4);
+      };
+    }
+
+    game = Glib
+      .createGame({
+        canvas: document.getElementById("canvas"),
+        autorun: true
+      })
+      .buildChild({
+        name: "Camera",
+        templates: ["Camera", "WASD"]
+      }, function (e) {
+        e.getService("Camera").activate();
+        e.getService("Transform").translateXYZ(0, 0, 10);
+      })
+      .buildChild({
+        name: "Light",
+        templates: ["DirectionalLight"]
+      })
+      .addComponent({
+        setup: function () {
+          var assets = this.node.root.getService("Assets");
+          assets.downloadPackage({
+            url: '/assets/package.json'
+          }).then(function(){
+            game.buildChild({
+              name: "Shapes",
+              templates: ["Model"]
+            }, function(e) {
+              e.getService("Transform").translateXYZ(0, 0, 0);
+              e.addComponent(new ShapeComponent());
+            });
+          }.bind(this))
+        }
+      });

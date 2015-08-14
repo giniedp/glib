@@ -27,6 +27,14 @@ module Glib.Graphics {
     }
   };
 
+  function convert(nameOrLayout:string|{[key:string]:any}):{[key:string]:any} {
+    if (typeof nameOrLayout === 'string') {
+      return create(nameOrLayout);
+    }
+    var result:any = nameOrLayout;
+    return result;
+  }
+
   /**
    * Creates a vertex layout object from given names
    * @example
@@ -42,13 +50,13 @@ module Glib.Graphics {
    * // }
    * ```
    */
-  function create():any {
+  function create(...rest:string[]):{[key:string]:any} {
     var names = arguments;
     if (names.length === 1) {
       names = names[0].match(/[A-Z][a-z]+/g) || names;
     }
 
-    var result = {};
+    var result:{[key:string]:any} = {};
     var i, name, element, offset = 0;
 
     for (i = 0; i < names.length; i += 1) {
@@ -154,6 +162,7 @@ module Glib.Graphics {
   export var VertexLayout = {
     preset: preset,
     create: create,
+    convert: convert,
     countElements: countElements,
     countElementsBefore: countElementsBefore,
     countElementsAfter: countElementsAfter,

@@ -9,6 +9,7 @@ var tsc = require('gulp-typescript');
 var concat = require('gulp-concat');
 var jade = require('gulp-jade');
 var serve = require('gulp-serve');
+var karma = require('karma');
 
 var typedoc = require("gulp-typedoc");
 
@@ -29,8 +30,16 @@ var PATHS = {
   ],
   vlib: ["src/vlib/*.ts"],
   glib: {
+    excludes: [
+      "!src/**/*_test.ts"
+    ],
     base: [
+      "!src/**/*_test.ts",
       "src/glib/base/**/*.ts"
+    ],
+    content: [
+      "src/glib/content/*.ts",
+      "src/glib/content/**/*.ts"
     ],
     rendering: [
       "src/glib/rendering/**/*.ts"
@@ -45,17 +54,23 @@ var PATHS = {
     ],
     components: [
       "src/glib/scene/**/*.ts"
+    ],
+    other: [
+      "src/glib/mesh-tools/**/*ts"
     ]
   }
 };
 
 var tscSource = [].concat.apply([], [
+  //PATHS.excludes,
   PATHS.vlib,
   PATHS.glib.base,
   PATHS.glib.input,
   PATHS.glib.graphics,
+  PATHS.glib.content,
   PATHS.glib.rendering,
-  PATHS.glib.components
+  PATHS.glib.components,
+  PATHS.glib.other
 ]);
 
 var es5Project = tsc.createProject({
@@ -103,12 +118,19 @@ gulp.task('precompile:enums', function(){
 });
 
 gulp.task('precompile:tsconfig', function(){
-  var glob = require("simple-glob")
-  var files = glob(tscSource)
-  var config = JSON.parse(fs.readFileSync("tsconfig.json"));
-  config.files = files;
-  var result = JSON.stringify(config, null, 2);
-  fs.writeFileSync("tsconfig.json", result);
+  var glob = require("globby");
+  //console.log(tscSource);
+  glob(tscSource, function(err, files){
+    var config = JSON.parse(fs.readFileSync("tsconfig.json"));
+    var equals = (config.files || []).every(function(entry, index) {
+      return entry === files[index];
+    });
+    if (!equals) {
+      config.files = files;
+      var result = JSON.stringify(config, null, 2);
+      fs.writeFileSync("tsconfig.json", result);
+    }
+  });
 });
 
 
@@ -180,3 +202,22 @@ gulp.task('serve', serve({
   root: ['dist'],
   port: 3000
 }));
+
+gulp.task('default', ['watch', 'serve']);
+
+
+//
+//
+//
+gulp.task('test', function (done) {
+  new karma.Server({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: true
+  }, done).start();
+});
+
+gulp.task('watch:test', function (done) {
+  new karma.Server({
+    configFile: __dirname + '/karma.conf.js'
+  }, done).start();
+});

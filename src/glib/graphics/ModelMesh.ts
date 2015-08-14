@@ -3,7 +3,7 @@ module Glib.Graphics {
   export interface ModelMeshOptions {
     boundingBox?: number[],
     boundingSphere?: number[],
-    materialId?: number,
+    materialId?: number|string,
     indexBuffer?: Buffer|BufferOptions,
     vertexBuffer?: Buffer|BufferOptions
   }
@@ -13,7 +13,7 @@ module Glib.Graphics {
     gl:any;
     boundingBox:number[];
     boundingSphere:number[];
-    materialId:number = 0;
+    materialId:number|string = 0;
     indexBuffer:Buffer;
     vertexBuffer:Buffer;
 

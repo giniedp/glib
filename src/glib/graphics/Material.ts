@@ -9,8 +9,11 @@ module Glib.Graphics {
     passes: MaterialPass[]
   }
   export interface MaterialOptions {
+    name?:string,
+    effect?:any,
     parameters?: any,
-    techniques?: MaterialTechniqueOptions[]|MaterialTechnique|MaterialTechnique[]
+    techniques?: MaterialTechniqueOptions[]|MaterialTechnique|MaterialTechnique[],
+    blendState?: any
   }
 
   function makeArray(arg:any):any {
@@ -24,6 +27,7 @@ module Glib.Graphics {
   }
 
   export class Material {
+    name:string;
     device:Device;
     gl:any;
     parameters:Object;

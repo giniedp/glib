@@ -24,7 +24,7 @@ technique:
         vec4 pos = worldMat4 * vec4(vertexPosition, 1.0);
 
         Position = pos.xyz;
-        TexCoord = vertexUV;
+        TexCoord = vertexUV * vec2(1.0, -1.0);
         Normal = mat3(worldMat4) * vertexNormal;
 
         gl_Position = projMat4 * viewMat4 * pos;
@@ -33,7 +33,5 @@ technique:
       void main(void) {
         vec3 color = texture2D(diffuseTex, TexCoord).rgb * diffuse;
         vec3 gray = dot(color, vec3(0.3, 0.59, 0.11)) * specular;
-        //vec3 c = color;
-        //gl_FragColor = vec4(c.x, c.y, c.z, 1.0);
         gl_FragColor = vec4(evaluateLights(Position.xyz, normalize(Normal), color, specular,  specularPower) + ambient * color, alpha);
       }

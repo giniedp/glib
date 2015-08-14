@@ -3,74 +3,69 @@ module Glib.MeshTools {
   import Mat4 = Vlib.Mat4;
   import Mat3 = Vlib.Vec3;
   import Mat2 = Vlib.Vec2;
+  import BufferData = Glib.Graphics.BufferData;
+  import ModelMeshOptions = Glib.Graphics.ModelMeshOptions;
 
-  export class MeshBuilder {
+  export interface BuilderOptions {
+    defaultAttributes?:{[key:string]:any};
+    layout?:string|{[key:string]:any};
+  }
 
-    transformConfig:any;
-    layout:any;
-    defaults:any;
-    meshes:Graphics.ModelMesh[] = [];
+  export class Builder {
+    defaultAttributes:{[key:string]:any};
+    layout:{[key:string]:any};
+    meshes:ModelMeshOptions[] = [];
 
     transform:Mat4;
     uvTransform:Mat4;
     indexBuffer:Graphics.BufferOptions;
-    indices:any;
     indexCount:number;
     vertexBuffer:Graphics.BufferOptions;
-    vertices:any;
     vertexCount:number;
 
-    constructor(options:any = {}) {
+    constructor(options:BuilderOptions = {}) {
 
-      this.transformConfig = options.transform || {
-          position: 'position',
-          normal: 'normal'
-        };
-
-      // Get the vertex buffer layout.
-      // Fallback to a position/normal layout
-      var layout = options.layout || 'PositionTextureNormalTangentBitangent';
-      if (typeof layout === 'string') {
-        this.layout = Graphics.VertexLayout.create(layout);
-      } else {
-        this.layout = layout;
-      }
+      this.layout = Graphics.VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent');
 
       // The fallback values that should be used during the build process.
       // If any vertex is pushed into the builder with missing attributes they are resolved from here.
-      this.defaults = options.defaults || {
-          position: [0, 0, 0],
-          normal: [0, 1, 0],
-          tangent: [1, 0, 0],
-          bitangent: [0, 0, 1],
-          color: [Graphics.Color.Black],
-          texture: [0, 0]
-        };
+      this.defaultAttributes = options.defaultAttributes || {
+        position: [0, 0, 0],
+        normal: [0, 1, 0],
+        tangent: [1, 0, 0],
+        bitangent: [0, 0, 1],
+        color: [Graphics.Color.Black],
+        texture: [0, 0]
+      };
 
-      // The final collection of created meshed.
-      this.meshes = [];
       this.reset();
     }
 
-    static create(options) {
-      return new MeshBuilder(options);
+    get indices():BufferData {
+      return this.indexBuffer.data;
     }
 
-    resetTransform() {
+    get vertices():BufferData {
+      return this.vertexBuffer.data;
+    }
+
+    static create(options?:BuilderOptions) {
+      return new Builder(options);
+    }
+
+    _resetTransform() {
       this.transform = Mat4.identity();
       this.uvTransform = Mat4.identity();
       return this;
     }
 
-    resetData() {
+    _resetData() {
       // The new index buffer that is going to be filled with indices
       this.indexBuffer = {
         type: 'IndexBuffer',
         dataType: 'ushort',
         data: []
       };
-      // A shorthand to the indices of the index buffer
-      this.indices = this.indexBuffer.data;
 
       // The new index buffer that is going to be filled with vertices
       this.vertexBuffer = {
@@ -79,31 +74,38 @@ module Glib.MeshTools {
         dataType: 'float',
         data: []
       };
-      // A shorthand to the vertices of the vertex buffer
-      this.vertices = this.vertexBuffer.data;
 
       // counter values
       this.indexCount = 0;
       this.vertexCount = 0;
     }
 
-    resetMeshes() {
+    _resetMeshes() {
       this.meshes = [];
     }
 
     reset() {
-      this.resetTransform();
-      this.resetData();
-      this.resetMeshes();
+      this._resetTransform();
+      this._resetData();
+      this._resetMeshes();
       return this;
     }
 
-    addIndex() {
-      var i;
-      for (i = 0; i < arguments.length; i += 1) {
+    addIndex(...rest:number[]) {
+      for (var i = 0; i < arguments.length; i++) {
         this.indices.push(arguments[i]);
       }
       this.indexCount += arguments.length;
+      return this;
+    }
+
+    addFace(...rest:number[]) {
+      for (var i = 0; i < rest.length - 2; i++) {
+        this.indices.push(arguments[i]);
+        this.indices.push(arguments[i + 1]);
+        this.indices.push(arguments[i + 2]);
+        this.indexCount += 3;
+      }
       return this;
     }
 
@@ -146,14 +148,18 @@ module Glib.MeshTools {
         this.indexBuffer.dataType = 'uint';
       }
       var that = this;
-      var channel, item, i, layout = this.vertexBuffer.layout, defaults = this.defaults;
+      var channel, item, i, layout = this.vertexBuffer.layout, defaults = this.defaultAttributes;
 
       Object.keys(layout).forEach(function (key:string) {
         channel = layout[key];
-        item = opts[key] || that.defaults[key];
+        item = opts[key] || that.defaultAttributes[key];
 
-        if (typeof item.dump === 'function') {
+        if (Array.isArray(item)) {
+          // ok
+        } else if (typeof item.dump === 'function') {
           item = item.dump();
+        } else {
+          throw `vertex element must be of type number[]|Vec2|Vec3|Vec4`;
         }
         item = item || defaults[key];
 
@@ -172,50 +178,54 @@ module Glib.MeshTools {
       return this;
     }
 
-    /**
-     * Finishes the current state by storing it into the `meshes` list. Resets the data so that another mesh can be
-     * created.
-     */
-    closeMesh(opts?:any) {
+    nextMesh(opts:Glib.Graphics.ModelMeshOptions={}) {
       if (this.indexCount === 0 && this.vertexCount === 0) {
-        utils.log("closeMesh called but MeshBuilder was empty. Generating an empty mesh");
+        utils.warn(`[MeshBuilder] nextMesh : called on empty builder.`);
       }
 
-      if (this.layout.normal) {
+      if (this.layout['normal']) {
         MeshTools.calculateNormals(this.layout, this.indices, this.vertices);
       }
-      if (this.layout.tangent && this.layout.bitangent) {
+      if (this.layout['tangent'] && this.layout['bitangent']) {
         MeshTools.calculateTangents(this.layout, this.indices, this.vertices);
       }
 
       var mesh = utils.extend({
-        material: 0,
+        materialId: 0,
         indexBuffer: this.indexBuffer,
         vertexBuffer: this.vertexBuffer
       }, opts);
 
       this.meshes.push(mesh);
-      this.resetData();
-      return mesh;
+      this._resetData();
     }
 
-    /**
-     *
-     */
-    closeModel(gfx, materials) {
-      if (this.indices.length !== 0 || this.vertices !== 0) {
-        this.closeMesh();
+    finish(device, options:{ materials?:any[]}={}):Glib.Graphics.Model {
+      if (this.indices.length !== 0 || this.vertices.length !== 0) {
+        this.nextMesh();
       }
 
+      var materials = options.materials || [];
       if (!utils.isArray(materials)) {
         materials = [materials];
       }
-      var model = new Graphics.Model(gfx, {
+      var model = device.createModel({
         materials: materials,
         meshes: this.meshes
       });
       this.reset();
       return model;
+    }
+
+    append(formulaName:string, options:any={}):Builder {
+      Glib.utils.debug(`[MeshBuilder] append : ${formulaName}`, options);
+      var formula = Glib.MeshTools.Formulas[formulaName];
+      if (formula) {
+        formula(this, options);
+      } else {
+        Glib.utils.error(`[MeshBuilder] append : formula '${formulaName}' not found`);
+      }
+      return this;
     }
   }
 }

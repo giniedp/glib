@@ -3,8 +3,9 @@ module Glib.MeshTools {
   import Vec3 = Vlib.Vec3;
   import Vec2 = Vlib.Vec2;
   import log = Glib.utils.log;
+  import BufferData = Glib.Graphics.BufferData;
 
-  export function calculateNormals(layout, indices, vertices){
+  export function calculateNormals(layout, indices:BufferData, vertices:BufferData){
     if (!layout.normal){
       log('Can not create normals for buffer. Normal definition not found in layout ', layout);
     }

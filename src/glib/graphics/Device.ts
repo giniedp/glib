@@ -452,7 +452,6 @@ module Glib.Graphics {
       return new ShaderProgram(this, options);
     }
 
-
     createTexture(options:TextureOptions):Texture {
       return new Texture(this, options);
     }
@@ -463,6 +462,10 @@ module Glib.Graphics {
 
     createVertexLayout(name):any {
       return VertexLayout.create.apply(this, arguments)
+    }
+
+    createModel(options:ModelOptions): Model {
+      return new Model(this, options);
     }
   }
 }

@@ -1625,6 +1625,7 @@ module Vlib {
       count = count === undefined ? buffer.length / stride : count;
 
       while (count > 0) {
+        count--;
         x = buffer[offset];
         y = buffer[offset + 1];
         buffer[offset] = x * d[0] + y * d[4] + d[8] + d[12];
@@ -1648,6 +1649,7 @@ module Vlib {
       count = count === undefined ? buffer.length / stride : count;
 
       while (count > 0) {
+        count--;
         x = buffer[offset];
         y = buffer[offset + 1];
         z = buffer[offset + 2];
@@ -1673,6 +1675,7 @@ module Vlib {
       count = count === undefined ? buffer.length / stride : count;
 
       while (count > 0) {
+        count--;
         x = buffer[offset];
         y = buffer[offset + 1];
         z = buffer[offset + 2];
@@ -1700,6 +1703,7 @@ module Vlib {
       count = count === undefined ? buffer.length / stride : count;
 
       while (count > 0) {
+        count--;
         x = buffer[offset];
         y = buffer[offset + 1];
         z = buffer[offset + 2];
@@ -2031,14 +2035,17 @@ module Vlib {
       c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13;
       c[2] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14;
       c[3] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15;
+
       c[4] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12;
       c[5] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13;
       c[6] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14;
       c[7] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15;
+
       c[8] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12;
       c[9] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13;
       c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14;
       c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15;
+
       c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12;
       c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13;
       c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14;
@@ -2100,14 +2107,17 @@ module Vlib {
       c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13;
       c[2] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14;
       c[3] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15;
+
       c[4] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12;
       c[5] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13;
       c[6] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14;
       c[7] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15;
+
       c[8] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12;
       c[9] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13;
       c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14;
       c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15;
+
       c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12;
       c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13;
       c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14;
@@ -2121,9 +2131,10 @@ module Vlib {
      * @method concatChain
      * @return {Mat4} The result of the multiplication
      */
-    static concatChain() {
-      var i, result = arguments[0].clone();
-      for (i = 1; i < arguments.length; i += 1) {
+    static concatChain(...rest:Mat4[]) {
+      // (a, (b, (c, (d, e))))
+      var i, result = arguments[arguments.length - 1].clone();
+      for (i = arguments.length - 2; i >= 0; i--) {
         Mat4.concat(arguments[i], result, result);
       }
       return result;
@@ -2135,10 +2146,11 @@ module Vlib {
      * @method multiplyChain
      * @return {Mat4} The result of the multiplication
      */
-    static multiplyChain() {
+    static multiplyChain(...rest:Mat4[]) {
+      // ((((a, b), c), d), e)
       var i, result = arguments[0].clone();
       for (i = 1; i < arguments.length; i += 1) {
-        Mat4.multiply(arguments[i], result, result);
+        Mat4.multiply(result, arguments[i], result);
       }
       return result;
     }

@@ -7,7 +7,7 @@ module Glib {
   /**
    * An object that holds a collection of components a collection of services and a collection of child nodes.
    */
-  export class Entity {
+  export class Entity extends Glib.Events {
 
     /**
      * The name of this node
@@ -56,6 +56,7 @@ module Glib {
     _finder = new EntityFinder();
 
     constructor(params:any = {}) {
+      super();
       this.s = this.services;
       this.c = this.components;
       this.root = this;
@@ -143,6 +144,21 @@ module Glib {
       }
 
       throw new Error(`Service '${name}' is missing`);
+    }
+
+    getServices(map:{[key:string]:string}, target?:any):{[key:string]:any} {
+      for (var key in map) {
+        var lookup = map[key];
+        if (lookup.indexOf("root:") === 0) {
+          map[key] = this.root.getService(lookup.replace("root:", ""));
+        } else {
+          map[key] = this.getService(lookup);
+        }
+      }
+      if (target) {
+        Glib.utils.extend(target, map);
+      }
+      return map;
     }
 
     /**
