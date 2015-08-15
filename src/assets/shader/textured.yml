@@ -31,7 +31,7 @@ technique:
       }
     fragmentShader:
       void main(void) {
-        vec3 color = texture2D(diffuseTex, TexCoord).rgb * diffuse;
+        vec3 color = texture2D(diffuseTex, TexCoord).rgb;
         vec3 gray = dot(color, vec3(0.3, 0.59, 0.11)) * specular;
         gl_FragColor = vec4(evaluateLights(Position.xyz, normalize(Normal), color, specular,  specularPower) + ambient * color, alpha);
       }
