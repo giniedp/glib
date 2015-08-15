@@ -118,19 +118,19 @@ module Glib.Content.Parsers {
       if (this.lastKey === 'f') {
         this.nextGroup();
       }
-      var c = this.currentGroup();
+      var c = this.meta;
       c.v = c.v || [];
       c.v.push(readFloatArray(data));
     }
 
     read_vt_key(data:string) {
-      var c = this.currentGroup();
+      var c = this.meta;
       c.vt = c.vt || [];
       c.vt.push(readFloatArray(data));
     }
 
     read_vn_key(data:string) {
-      var c = this.currentGroup();
+      var c = this.meta;
       c.vn = c.vn || [];
       c.vn.push(readFloatArray(data));
     }
@@ -167,7 +167,7 @@ module Glib.Content.Parsers {
         return vertex;
       }
 
-      function readMesh(group) {
+      function readMesh(group, meta) {
         var builder = new Glib.MeshTools.Builder({
           layout: "PositionNormalTexture"
         });
@@ -175,33 +175,33 @@ module Glib.Content.Parsers {
         for (var face of group.f) {
           var vertex = void 0;
 
-          vertex = readVertex(group, face, 0);
+          vertex = readVertex(meta, face, 0);
           builder.addIndex(index);
           builder.addVertex(vertex);
           index += 1;
 
-          vertex = readVertex(group,face, 1);
+          vertex = readVertex(meta,face, 1);
           builder.addIndex(index);
           builder.addVertex(vertex);
           index += 1;
 
-          vertex = readVertex(group, face, 2);
+          vertex = readVertex(meta, face, 2);
           builder.addIndex(index);
           builder.addVertex(vertex);
           index += 1;
 
           if (face.length == 4) {
-            vertex = readVertex(group, face, 0);
+            vertex = readVertex(meta, face, 0);
             builder.addIndex(index);
             builder.addVertex(vertex);
             index += 1;
 
-            vertex = readVertex(group, face, 2);
+            vertex = readVertex(meta, face, 2);
             builder.addIndex(index);
             builder.addVertex(vertex);
             index += 1;
 
-            vertex = readVertex(group, face, 3);
+            vertex = readVertex(meta, face, 3);
             builder.addIndex(index);
             builder.addVertex(vertex);
             index += 1;
@@ -218,7 +218,7 @@ module Glib.Content.Parsers {
 
       var meshes = [];
       for (var group of this.groups) {
-        var mesh = readMesh(group);
+        var mesh = readMesh(group, this.meta);
         meshes.push(mesh);
       }
 
