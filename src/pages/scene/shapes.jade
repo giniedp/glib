@@ -35,8 +35,8 @@ block script
             });
             builder.transform = Vlib.Mat4.createTranslation(2, 2, 0);
             builder.append("Cone", {
-              upperDiameter: 0,
-              lowerDiameter: 1,
+              topDiameter: 0,
+              bottomDiameter: 1,
               height: 1,
               steps: 16
             });
@@ -70,6 +70,7 @@ block script
           }.bind(this));
       };
       this.update = function (time) {
+        //this.transform.setScaleUniform(10);
         //this.transform.rotateXYZAngle(0, 1, 0, time / 1000 * Math.PI / 4);
       };
     }
@@ -89,6 +90,8 @@ block script
       .buildChild({
         name: "Light",
         templates: ["DirectionalLight"]
+      }, function(e) {
+        e.getService("Transform").setRotationXYZAngle(1, 0, 0, -Math.PI / 4)
       })
       .addComponent({
         setup: function () {
