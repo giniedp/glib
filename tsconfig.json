@@ -95,8 +95,10 @@
     "src/glib/mesh-tools/formulas/Cone.ts",
     "src/glib/mesh-tools/formulas/Cube.ts",
     "src/glib/mesh-tools/formulas/Cylinder.ts",
-    "src/glib/mesh-tools/formulas/Interfaces.ts",
+    "src/glib/mesh-tools/formulas/MobiusStrip.ts",
     "src/glib/mesh-tools/formulas/Plane.ts",
-    "src/glib/mesh-tools/formulas/Sphere.ts"
+    "src/glib/mesh-tools/formulas/Sphere.ts",
+    "src/glib/mesh-tools/formulas/SphericalHarmonics.ts",
+    "src/glib/mesh-tools/formulas/SuperEllipsoid.ts"
   ]
 }

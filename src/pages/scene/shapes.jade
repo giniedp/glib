@@ -45,12 +45,32 @@ block script
               diameter: 1,
               steps: 16
             });
+            builder.transform = Vlib.Mat4.createTranslation(0, 4, 0);
+            builder.append("SuperEllipsoid", {
+              diameter: 1,
+              steps: 32,
+              n1: 0.25,
+              n2: 1.25
+            });
+            builder.transform = Vlib.Mat4.createTranslation(2, 4, 0);
+            builder.append("SphericalHarmonics", {
+              diameter: 1,
+              steps: 64,
+              parameters: [1,1,2,1,4,1,8,1]
+              //parameters: []
+            });
+            builder.transform = Vlib.Mat4.createTranslation(4, 4, 0);
+            builder.append("MobiusStrip", {
+              diameter: 1,
+              steps: 32,
+              band: 0.4
+            });
             var model = builder.finish(this.device, {materials: [material]});
             this.renderable.model = model;
           }.bind(this));
       };
       this.update = function (time) {
-        this.transform.rotateXYZAngle(0, 1, 0, time / 1000 * Math.PI / 4);
+        //this.transform.rotateXYZAngle(0, 1, 0, time / 1000 * Math.PI / 4);
       };
     }
 

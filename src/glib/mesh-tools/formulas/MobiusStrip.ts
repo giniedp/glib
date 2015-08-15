@@ -6,32 +6,40 @@ module Glib.MeshTools.Formulas {
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
 
-  export function Sphere(builder:Builder, options:{
+  /**
+   * http://paulbourke.net/geometry/mobius/
+   * @param builder
+   * @param options
+   * @constructor
+   */
+  export function MobiusStrip(builder:Builder, options:{
     diameter?:number
     radius?:number
     steps?:number
+    band?:number
   } = {}) {
     var radius = valueOrDefault(options.radius, valueOrDefault(options.diameter, 1) * 0.5);
     var steps = valueOrDefault(options.steps, 16);
+    var band = valueOrDefault(options.band, 0.4);
 
     var baseVertex = builder.vertexCount;
     var stepsV = steps;
     var stepsH = steps * 2;
 
     for (var v = 0; v <= stepsV; v += 1) {
-      var dv = v / stepsV;
-      var phi = dv * Math.PI - Math.PI / 2;
-
-      var sinPhi = Math.sin(phi);
-      var cosPhi = Math.cos(phi);
+      var dv = v / stepsV * band;
+      var t = dv - band * 0.5;
 
       for (var u = 0; u <= stepsH; u += 1) {
         var du = u / stepsH;
-        var theta = du * Math.PI * 2;
+        var phi = du * Math.PI * 2;
 
-        var x = Math.cos(theta) * cosPhi;
-        var z = Math.sin(theta) * cosPhi;
-        var y = sinPhi;
+        var sinPhi = Math.sin(phi);
+        var cosPhi = Math.cos(phi);
+
+        var x = cosPhi + t * Math.cos(phi / 2) * cosPhi;
+        var z = sinPhi + t * Math.cos(phi / 2) * sinPhi;
+        var y = t * Math.sin(phi / 2);
 
         var normal = Vec3.create(x, y, z);
         var texCoord = Vec2.create(du, dv);

@@ -6,48 +6,63 @@ module Glib.MeshTools.Formulas {
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
 
-  export function Sphere(builder:Builder, options:{
+  function sign(a) {
+    return a < 0 ? -1 : 1;
+  }
+  /**
+   * implementation is based on http://paulbourke.net/geometry/superellipse/
+   * @param builder
+   * @param options
+   * @constructor
+   */
+  export function SuperEllipsoid(builder:Builder, options:{
     diameter?:number
     radius?:number
     steps?:number
+    n1?:number
+    n2?:number
   } = {}) {
     var radius = valueOrDefault(options.radius, valueOrDefault(options.diameter, 1) * 0.5);
     var steps = valueOrDefault(options.steps, 16);
+    var power1 = valueOrDefault(options.n1, 1);
+    var power2 = valueOrDefault(options.n2, 1);
 
     var baseVertex = builder.vertexCount;
     var stepsV = steps;
-    var stepsH = steps * 2;
+    var stepsU = steps * 2;
 
     for (var v = 0; v <= stepsV; v += 1) {
       var dv = v / stepsV;
       var phi = dv * Math.PI - Math.PI / 2;
-
       var sinPhi = Math.sin(phi);
       var cosPhi = Math.cos(phi);
 
-      for (var u = 0; u <= stepsH; u += 1) {
-        var du = u / stepsH;
-        var theta = du * Math.PI * 2;
+      for (var u = 0; u <= stepsU; u += 1) {
+        var du = u / stepsU;
+        var theta = du * Math.PI * 2 - Math.PI;
+        var sinTheta = Math.sin(theta);
+        var cosTheta = Math.cos(theta);
 
-        var x = Math.cos(theta) * cosPhi;
-        var z = Math.sin(theta) * cosPhi;
-        var y = sinPhi;
+        var tmp     = sign(cosPhi  ) * Math.pow(Math.abs(cosPhi  ), power1);
+        var x = tmp * sign(cosTheta) * Math.pow(Math.abs(cosTheta), power2);
+        var z = tmp * sign(sinTheta) * Math.pow(Math.abs(sinTheta), power2);
+        var y =       sign(sinPhi  ) * Math.pow(Math.abs(sinPhi  ), power1);
 
         var normal = Vec3.create(x, y, z);
         var texCoord = Vec2.create(du, dv);
 
         builder.addVertex({
           position: Vec3.multiplyScalar(normal, radius),
-          normal: normal,
+          normal: normal.selfNormalize(),
           texture: texCoord
         });
       }
     }
     for (var z = 0; z < stepsV; z += 1) {
-      for (var x = 0; x < stepsH; x += 1) {
-        var a = x + z * (stepsH + 1);
+      for (var x = 0; x < stepsU; x += 1) {
+        var a = x + z * (stepsU + 1);
         var b = a + 1;
-        var c = x + (z + 1) * (stepsH + 1);
+        var c = x + (z + 1) * (stepsU + 1);
         var d = c + 1;
 
         builder.addIndex(baseVertex + a);
