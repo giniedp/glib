@@ -75,7 +75,7 @@ module Glib.Components {
     }
 
     update(){
-      var t = this.node.services.transform;
+      var t = this.node.s.Transform;
       if (t){
         t.worldMat.getForward(this.direction);
         t.worldMat.getTranslation(this.position);
