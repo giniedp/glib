@@ -1,24 +1,56 @@
 module Glib.Content.Parsers {
 
-  function readFloat(item:string) {
-    if (item) {
-      return parseFloat(item);
-    }
-    return void 0;
+  export interface MtlData {
+    name?:string
+    Ka?:number[]
+    Kd?:number[]
+    Ks?:number[]
+    Tf?:number[]
+    illum?:string
+    d?:number
+    Ns?:number
+    sharpness?:number
+    Ni?:number
+    map_Ka?:MtlTextureData
+    map_Kd?:MtlTextureData
+    map_Ks?:MtlTextureData
+    map_Ns?:MtlTextureData
+    map_d?:MtlTextureData
+    bump?:MtlTextureData
+    disp?:MtlTextureData
+    refl?:MtlTextureData
+    decal?:MtlTextureData
+  }
+  export interface MtlTextureData {
+    file:string
+    options:MtlTextureOptions
+  }
+  export interface MtlTextureOptions{
+    bm?:number
+    clamp?:boolean
+    cc?:boolean
+    blendu?:boolean
+    blendv?:boolean
+    imfchan?:string
+    boost?:number
+    mm?:{base:number, gain:number}
+    o?:number
+    s?:number
+    t?:number
+    texres?:number
   }
 
-  function readFloatArray(item:string) {
-    return item.split(" ").map(readFloat);
-  }
-
+  /**
+   * The parser implementation is based on the format specification from http://paulbourke.net/dataformats/mtl/
+   */
   export class MTL {
-    result:any;
-    material:any;
+    materials:MtlData[];
+    material:MtlData;
 
-    parse(data) {
+    parse(data):MTL {
       var lines = data.split(/\n/);
-      this.result = [];
-      this.material = void 0;
+      this.materials = [];
+      this.material = {};
 
       var currentLine = "";
       for (var line of lines) {
@@ -48,60 +80,528 @@ module Glib.Content.Parsers {
         if (!match) continue;
         var key = match[1];
         var value = match[2];
-        var reader = this[`read_${key}_key`];
-        if (reader) reader.apply(this, [value]);
+
+        var staticReader = MTL[`read_${key}`];
+        var instanceReader = this[`read_${key}`];
+        if (staticReader) {
+          this.material[key] = staticReader(value);
+        } else if (instanceReader) {
+          instanceReader.apply(this, [value]);
+        }
       }
       return this;
     }
 
-    read_newmtl_key(data:string) {
-      this.material = {
-        name: data
-      };
-      this.result.push(this.material);
+    // newmtl name
+    //
+    // Specifies the start of a material description and assigns a name to the
+    // material.  An .mtl file must have one newmtl statement at the start of
+    // each material description.
+    //
+    // "name" is the name of the material.  Names may be any length but
+    // cannot include blanks.  Underscores may be used in material names.
+    read_newmtl(name:string) {
+      this.material = { name: name };
+      this.materials.push(this.material);
     }
 
-    read_d_key(data:string) {
-      this.material.Tr = readFloat(data);
+    // Ka r g b
+    //
+    // The Ka statement specifies the ambient reflectivity using RGB values.
+    //
+    // "r g b" are the values for the red, green, and blue components of the
+    // color.  The g and b arguments are optional.  If only r is specified,
+    // then g, and b are assumed to be equal to r.  The r g b values are
+    // normally in the range of 0.0 to 1.0.  Values outside this range increase
+    // or decrease the relectivity accordingly.
+    static read_Ka(rgb:string) {
+      return MTL.readRGBArray(rgb);
     }
-    read_Tr_key(data:string) {
-      this.material.Tr = readFloat(data);
+
+    // Kd r g b
+    //
+    // The Kd statement specifies the diffuse reflectivity using RGB values.
+    //
+    // "r g b" are the values for the red, green, and blue components of the
+    // atmosphere.  The g and b arguments are optional.  If only r is
+    // specified, then g, and b are assumed to be equal to r.  The r g b values
+    // are normally in the range of 0.0 to 1.0.  Values outside this range
+    // increase or decrease the relectivity accordingly.
+    static read_Kd(rgb:string) {
+      return MTL.readRGBArray(rgb);
     }
-    read_Ka_key(data:string) {
-      this.material.Ka = readFloatArray(data);
+
+    // Ks r g b
+    //
+    // The Ks statement specifies the specular reflectivity using RGB values.
+    //
+    // "r g b" are the values for the red, green, and blue components of the
+    // atmosphere.  The g and b arguments are optional.  If only r is
+    // specified, then g, and b are assumed to be equal to r.  The r g b values
+    // are normally in the range of 0.0 to 1.0.  Values outside this range
+    // increase or decrease the relectivity accordingly.
+    static read_Ks(rgb:string) {
+      return MTL.readRGBArray(rgb);
     }
-    read_Kd_key(data:string) {
-      this.material.Kd = readFloatArray(data);
+
+    // Tf r g b
+    //
+    // To specify the transmission filter of the current material, you can use
+    // the "Tf" statement, the "Tf spectral" statement, or the "Tf xyz"
+    // statement.
+    //
+    // Any light passing through the object is filtered by the transmission
+    // filter, which only allows the specifiec colors to pass through.  For
+    // example, Tf 0 1 0 allows all the green to pass through and filters out
+    // all the red and blue.
+    //
+    // "r g b" are the values for the red, green, and blue components of the
+    // atmosphere.  The g and b arguments are optional.  If only r is
+    // specified, then g, and b are assumed to be equal to r.  The r g b values
+    // are normally in the range of 0.0 to 1.0.  Values outside this range
+    // increase or decrease the relectivity accordingly.
+    static read_Tf(data:string) {
+      return MTL.readRGBArray(data);
     }
-    read_Ks_key(data:string) {
-      this.material.Ks = readFloatArray(data);
+
+    // illum illum_#
+    //
+    // The "illum" statement specifies the illumination model to use in the
+    // material.  Illumination models are mathematical equations that represent
+    // various material lighting and shading effects.
+    //
+    // "illum_#"can be a number from 0 to 10.  The illumination models are
+    // summarized below; for complete descriptions see "Illumination models" on
+    // page 5-30.
+    //
+    // Illumination    Properties that are turned on in the
+    // model           Property Editor
+    //
+    // 0		Color on and Ambient off
+    // 1		Color on and Ambient on
+    // 2		Highlight on
+    // 3		Reflection on and Ray trace on
+    // 4		Transparency: Glass on
+    //      Reflection: Ray trace on
+    // 5		Reflection: Fresnel on and Ray trace on
+    // 6		Transparency: Refraction on
+    //      Reflection: Fresnel off and Ray trace on
+    // 7		Transparency: Refraction on
+    //      Reflection: Fresnel on and Ray trace on
+    // 8		Reflection on and Ray trace off
+    // 9		Transparency: Glass on
+    //      Reflection: Ray trace off
+    // 10		Casts shadows onto invisible surfaces
+    static read_illum(data:string) {
+      return data;
     }
-    read_Ns_key(data:string) {
-      this.material.Ns = readFloat(data);
+
+    // d factor
+    //
+    // Specifies the dissolve for the current material.
+    //
+    // "factor" is the amount this material dissolves into the background.  A
+    // factor of 1.0 is fully opaque.  This is the default when a new material
+    // is created.  A factor of 0.0 is fully dissolved (completely
+    // transparent).
+    //
+    // Unlike a real transparent material, the dissolve does not depend upon
+    // material thickness nor does it have any spectral character.  Dissolve
+    // works on all illumination models.
+    static read_d(factor:string) {
+      return MTL.readFloat(factor);
     }
-    read_illum_key(data:string) {
-      // 0 This is a constant color illumination model. The color is the specified Kd for the material. The formula is:
-      //   color = Kd
-      // 1 This is a diffuse illumination model using Lambertian shading. The color includes an ambient and diffuse shading terms for each light source. The formula is
-      // color = KaIa + Kd { SUM j=1..ls, (N * Lj)Ij }
-      // 2 This is a diffuse and specular illumination model using Lambertian shading and Blinn's interpretation of Phong's specular illumination model (BLIN77).
-      //   The color includes an ambient constant term, and a diffuse and specular shading term for each light source. The formula is:
-      //   color = KaIa + Kd { SUM j=1..ls, (N*Lj)Ij } + Ks { SUM j=1..ls, ((H*Hj)^Ns)Ij }
-      // Term definitions are: Ia ambient light, Ij light j's intensity, Ka ambient reflectance, Kd diffuse reflectance, Ks specular reflectance, H unit vector bisector between L and V, L unit light vector, N unit surface normal, V unit view vector
-      this.material.illum = data;
+    read_Tr(factor:string) {
+      this.material.d = MTL.readFloat(factor);
     }
-    read_map_Ka_key(data:string) {
-      this.material.map_Ka = data;
+
+    // Ns exponent
+    //
+    // Specifies the specular exponent for the current material.  This defines
+    // the focus of the specular highlight.
+    //
+    // "exponent" is the value for the specular exponent.  A high exponent
+    // results in a tight, concentrated highlight.  Ns values normally range
+    // from 0 to 1000.
+    static read_Ns(exponent:string) {
+      return MTL.readFloat(exponent);
     }
-    read_map_Kd_key(data:string) {
-      this.material.map_Kd = data;
+
+    // sharpness value
+    //
+    // Specifies the sharpness of the reflections from the local reflection
+    // map.  If a material does not have a local reflection map defined in its
+    // material definition, sharpness will apply to the global reflection map
+    // defined in PreView.
+    //
+    // "value" can be a number from 0 to 1000.  The default is 60.  A high
+    // value results in a clear reflection of objects in the reflection map.
+    static read_sharpness(value:string) {
+      return MTL.readFloat(value);
     }
-    read_map_Ks_key(data:string) {
-      this.material.map_Ks = data;
+
+    // Ni optical_density
+    //
+    // Specifies the optical density for the surface.  This is also known as
+    // index of refraction.
+    //
+    // "optical_density" is the value for the optical density.  The values can
+    // range from 0.001 to 10.  A value of 1.0 means that light does not bend
+    // as it passes through an object.  Increasing the optical_density
+    // increases the amount of bending.  Glass has an index of refraction of
+    // about 1.5.  Values of less than 1.0 produce bizarre results and are not
+    // recommended.
+    static read_Ni(optical_density:string) {
+      return MTL.readFloat(optical_density);
+    }
+
+    // map_Ka -options args filename
+    //
+    // Specifies that a color texture file or a color procedural texture file
+    // is applied to the ambient reflectivity of the material.  During
+    // rendering, the "map_Ka" value is multiplied by the "Ka" value.
+    static read_map_Ka(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // map_Kd -options args filename
+    //
+    // Specifies that a color texture file or color procedural texture file is
+    // linked to the diffuse reflectivity of the material.  During rendering,
+    // the map_Kd value is multiplied by the Kd value.
+    static read_map_Kd(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // map_Ks -options args filename
+    //
+    // Specifies that a color texture file or color procedural texture file is
+    // linked to the specular reflectivity of the material.  During rendering,
+    // the map_Ks value is multiplied by the Ks value.
+    static read_map_Ks(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // map_Ns -options args filename
+    //
+    // Specifies that a scalar texture file or scalar procedural texture file
+    // is linked to the specular exponent of the material.  During rendering,
+    // the map_Ns value is multiplied by the Ns value.
+    static read_map_Ns(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // map_d -options args filename
+    // Specifies that a scalar texture file or scalar procedural texture file
+    // is linked to the dissolve of the material.  During rendering, the map_d
+    // value is multiplied by the d value.
+    static read_map_d(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // bump -options args filename
+    //
+    // Specifies that a bump texture file or a bump procedural texture file is
+    // linked to the material.
+    static read_bump(data:string) {
+      return MTL.readTexture(data);
+    }
+    read_map_bump(data:string) {
+      this.material.bump = MTL.readTexture(data);
+    }
+
+    // disp -options args filename
+    //
+    // Specifies that a scalar texture is used to deform the surface of an
+    // object, creating surface roughness.
+    static read_disp(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // TODO:
+    static read_refl(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // decal -options args filename
+    //
+    // Specifies that a scalar texture file or a scalar procedural texture
+    // file is used to selectively replace the material color with the texture
+    // color.
+    static read_decal(data:string) {
+      return MTL.readTexture(data);
+    }
+
+    // map_aat on
+    //
+    // Turns on anti-aliasing of textures in this material without anti-
+    // aliasing all textures in the scene.
+    static read_map_aat(data:string) {
+      return data == 'on';
+    }
+
+    static readFloat(item:string):number {
+      if (item) {
+        return parseFloat(item);
+      }
+      return void 0;
+    }
+
+    // "r g b" are the values for the red, green, and blue components of the
+    // atmosphere.  The g and b arguments are optional.  If only r is
+    // specified, then g, and b are assumed to be equal to r.  The r g b values
+    // are normally in the range of 0.0 to 1.0.  Values outside this range
+    // increase or decrease the relectivity accordingly.
+    static readRGBArray(r_g_b:string):number[] {
+      var result = r_g_b.split(" ").map(MTL.readFloat);
+      if (result.length < 2) {
+        result[1] = result[0];
+      }
+      if (result.length < 3) {
+        result[2] = result[0];
+      }
+      result.length = 3;
+      return result;
+    }
+
+    static readFloatArray(data:string):number[] {
+      return data.split(" ").map(MTL.readFloat);
+    }
+
+    // map_Ka -options args filename
+    //
+    // -blendu on | off
+    // -blendv on | off
+    // -cc on | off
+    // -clamp on | off
+    // -mm base gain
+    // -o u v w
+    // -s u v w
+    // -t u v w
+    // -texres value
+    static readTexture(data:string):any {
+      var result:any = {};
+      data = data.trim();
+      var index = data.lastIndexOf(' ');
+      if (index < 0) {
+        result.options = {};
+        result.file = data;
+      } else {
+        result.options = MTL.readTextureOptions(data.substr(0, index));
+        result.file = data.substr(index);
+      }
+      return result;
+    }
+
+    static readTextureOptions(data:string) {
+      var result = {};
+      var split = data.split('-');
+      for (var item of split) {
+        var match = item.match(/^(\w+)\s+(.*)$/);
+        if (!match) continue;
+        var key = match[1];
+        var value = match[2];
+
+        var reader = MTL[`readOption_${key}`];
+        if (reader) {
+          result[key] = reader(value);
+        }
+      }
+      return result;
+    }
+
+    // -bm mult
+    //
+    // The -bm option specifies a bump multiplier.  You can use it only with
+    // the "bump" statement.  Values stored with the texture or procedural
+    // texture file are multiplied by this value before they are applied to the
+    // surface.
+    //
+    // "mult" is the value for the bump multiplier.  It can be positive or
+    // negative.  Extreme bump multipliers may cause odd visual results because
+    // only the surface normal is perturbed and the surface position does not
+    // change.  For best results, use values between 0 and 1.
+    static readOption_bm(data:string) {
+      return MTL.readFloat(data);
+    }
+
+    // -clamp on | off
+    //
+    // The -clamp option turns clamping on or off.  When clamping is on,
+    // textures are restricted to 0-1 in the uvw range.  The default is off.
+    static readOption_clamp(data:string) {
+      return data === 'on';
+    }
+
+    // -cc on | off
+    //
+    // The -cc option turns on color correction for the texture.  You can use
+    // it only with the color map statements:  map_Ka, map_Kd, and map_Ks.
+    static readOption_cc(data:string) {
+      return data === 'on';
+    }
+
+    // -blenu on | off
+    //
+    // The -blendu option turns texture blending in the horizontal direction
+    // (u direction) on or off.  The default is on.
+    static readOption_blendu(data:string) {
+      return data !== 'off';
+    }
+
+    // -blenv on | off
+    //
+    // The -blendv option turns texture blending in the vertical direction (v
+    // direction) on or off.  The default is on.
+    static readOption_blendv(data:string) {
+      return data === 'off';
+    }
+
+    // -imfchan r | g | b | m | l | z
+    //
+    // The -imfchan option specifies the channel used to create a scalar or
+    // bump texture.  Scalar textures are applied to:
+    //
+    // transparency
+    // specular exponent
+    // decal
+    // displacement
+    //
+    // The channel choices are:
+    //
+    // r specifies the red channel.
+    // g specifies the green channel.
+    // b specifies the blue channel.
+    // m specifies the matte channel.
+    // l specifies the luminance channel.
+    // z specifies the z-depth channel.
+    //
+    // The default for bump and scalar textures is "l" (luminance), unless you
+    // are building a decal.  In that case, the default is "m" (matte).
+    static readOption_imfchan(data:string) {
+      return data;
+    }
+
+    // -boost value
+    //
+    // The -boost option increases the sharpness, or clarity, of mip-mapped
+    // texture files -- that is, color (.mpc), scalar (.mps), and bump (.mpb)
+    // files.  If you render animations with boost, you may experience some
+    // texture crawling.  The effects of boost are seen when you render in
+    // Image or test render in Model or PreView; they aren't as noticeable in
+    // Property Editor.
+    //
+    // "value" is any non-negative floating point value representing the
+    // degree of increased clarity; the greater the value, the greater the
+    // clarity.  You should start with a boost value of no more than 1 or 2 and
+    // increase the value as needed.  Note that larger values have more
+    // potential to introduce texture crawling when animated.
+    static readOption_boost(data:string) {
+      return MTL.readFloat(data);
+    }
+
+    // -mm base gain
+    //
+    // The -mm option modifies the range over which scalar or color texture
+    // values may vary.  This has an effect only during rendering and does not
+    // change the file.
+    //
+    // "base" adds a base value to the texture values.  A positive value makes
+    // everything brighter; a negative value makes everything dimmer.  The
+    // default is 0; the range is unlimited.
+    //
+    // "gain" expands the range of the texture values.  Increasing the number
+    // increases the contrast.  The default is 1; the range is unlimited.
+    static readOption_mm(data:string) {
+      var split = data.split(' ');
+      return {
+        base: MTL.readFloat(split[0]),
+        gain: MTL.readFloat(split[1])
+      }
+    }
+
+    // -o u v w
+    //
+    // The -o option offsets the position of the texture map on the surface by
+    // shifting the position of the map origin.  The default is 0, 0, 0.
+    //
+    // "u" is the value for the horizontal direction of the texture
+    //
+    // "v" is an optional argument.
+    // "v" is the value for the vertical direction of the texture.
+    //
+    // "w" is an optional argument.
+    // "w" is the value used for the depth of a 3D texture.
+    static readOption_o(data:string) {
+      return MTL.readFloatArray(data);
+    }
+
+    // -s u v w
+    //
+    // The -s option scales the size of the texture pattern on the textured
+    // surface by expanding or shrinking the pattern.  The default is 1, 1, 1.
+    //
+    // "u" is the value for the horizontal direction of the texture
+    //
+    // "v" is an optional argument.
+    // "v" is the value for the vertical direction of the texture.
+    //
+    // "w" is an optional argument.
+    // "w" is a value used for the depth of a 3D texture.
+    // "w" is a value used for the amount of tessellation of the displacement map.
+    static readOption_s(data:string) {
+      return MTL.readFloatArray(data);
+    }
+
+    // -t u v w
+    //
+    // The -t option turns on turbulence for textures.  Adding turbulence to a
+    // texture along a specified direction adds variance to the original image
+    // and allows a simple image to be repeated over a larger area without
+    // noticeable tiling effects.
+    //
+    // turbulence also lets you use a 2D image as if it were a solid texture,
+    // similar to 3D procedural textures like marble and granite.
+    //
+    // "u" is the value for the horizontal direction of the texture
+    // turbulence.
+    //
+    // "v" is an optional argument.
+    // "v" is the value for the vertical direction of the texture turbulence.
+    //
+    // "w" is an optional argument.
+    // "w" is a value used for the depth of the texture turbulence.
+    //
+    // By default, the turbulence for every texture map used in a material is
+    // uvw = (0,0,0).  This means that no turbulence will be applied and the 2D
+    // texture will behave normally.
+    //
+    // Only when you raise the turbulence values above zero will you see the
+    // effects of turbulence.
+    static readOption_t(data:string) {
+      return MTL.readFloatArray(data);
+    }
+
+    // -texres resolution
+    //
+    // The -texres option specifies the resolution of texture created when an
+    // image is used.  The default texture size is the largest power of two
+    // that does not exceed the original image size.
+    //
+    // If the source image is an exact power of 2, the texture cannot be built
+    // any larger.  If the source image size is not an exact power of 2, you
+    // can specify that the texture be built at the next power of 2 greater
+    // than the source image size.
+    //
+    // The original image should be square, otherwise, it will be scaled to
+    // fit the closest square size that is not larger than the original.
+    // Scaling reduces sharpness.
+    static readOption_texres(data:string) {
+      return MTL.readFloat(data);
     }
 
     toGlibMaterial() {
-      function convertMatrial(m) {
+      function convertMatrial(m:any) {
         var result:Glib.Graphics.MaterialOptions = {
           parameters: {}
         };
@@ -110,13 +610,19 @@ module Glib.Content.Parsers {
         if (m.Kd) result.parameters.diffuse = m.Kd;
         if (m.Ks) result.parameters.specular = m.Ks;
         if (m.Ns) result.parameters.specularPower = m.Ns;
-        if (m.map_Ka) result.parameters.ambientTex = m.map_Ka;
-        if (m.map_Kd) result.parameters.diffuseTex = m.map_Kd;
-        if (m.map_Ks) result.parameters.specularTex = m.map_Ks;
-        if (m.Tr) result.parameters.alpha = m.Tr;
-        if (m.Tr == 1) {
+        if (m.Ni) result.parameters.refraction = m.Ni;
+        if (m.map_Ka) result.parameters.ambientTex = m.map_Ka.file;
+        if (m.map_Kd) result.parameters.diffuseTex = m.map_Kd.file;
+        if (m.map_Ks) result.parameters.specularTex = m.map_Ks.file;
+        if (m.map_d) result.parameters.alphaTex = m.map_d;
+        if (m.bump) result.parameters.normalTex = m.bump;
+        if (m.disp) result.parameters.displaceTex = m.disp;
+        if (m.refl) result.parameters.reflectionTex = m.refl;
+
+        if (m.d) result.parameters.alpha = m.d;
+        if (m.d == 1) {
           result.blendState = "Opaque";
-        } else if (m.Tr > 0) {
+        } else if (m.d > 0) {
           result.blendState = "AlphaBlend";
         }
         if (m.illum == "0") {
@@ -130,7 +636,7 @@ module Glib.Content.Parsers {
         }
         return result;
       }
-      return this.result.map(function(m){
+      return this.materials.map(function(m){
         return convertMatrial(m);
       });
     }
