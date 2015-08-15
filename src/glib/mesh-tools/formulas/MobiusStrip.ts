@@ -1,11 +1,14 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
 
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
+  
   /**
    * http://paulbourke.net/geometry/mobius/
    * @param builder
@@ -18,9 +21,9 @@ module Glib.MeshTools.Formulas {
     steps?:number
     band?:number
   } = {}) {
-    var radius = valueOrDefault(options.radius, valueOrDefault(options.diameter, 1) * 0.5);
-    var steps = valueOrDefault(options.steps, 16);
-    var band = valueOrDefault(options.band, 0.4);
+    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    var steps = withDefault(options.steps, 16);
+    var band = withDefault(options.band, 0.4);
 
     var baseVertex = builder.vertexCount;
     var stepsV = steps;

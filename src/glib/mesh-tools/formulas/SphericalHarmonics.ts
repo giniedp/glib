@@ -1,10 +1,13 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
+
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
 
   /**
    * implementation is based on http://paulbourke.net/geometry/sphericalh/
@@ -18,9 +21,9 @@ module Glib.MeshTools.Formulas {
     steps?:number
     parameters?:number[]
   } = {}) {
-    var radius = valueOrDefault(options.radius, valueOrDefault(options.diameter, 1) * 0.5);
-    var steps = valueOrDefault(options.steps, 16);
-    var params = valueOrDefault(options.parameters, []);
+    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    var steps = withDefault(options.steps, 16);
+    var params = withDefault(options.parameters, []);
 
     var baseVertex = builder.vertexCount;
     var stepsV = steps;

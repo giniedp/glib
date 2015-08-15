@@ -17,12 +17,12 @@ module Glib.MeshTools.Formulas {
   }
 
   export function Cap(builder:Builder, options:{
-    diameter?:number,
+    diameter?:number
+    radius?:number
     steps?:number
   } = {}) {
-    var diameter = withDefault(options.diameter, 2);
-    var steps = withDefault(options.steps, 8);
-    var radius = diameter * 0.5;
+    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    var steps = withDefault(options.steps, 16);
     var baseVertex = builder.vertexCount;
     var position = Vec3.zero(), texture = Vec2.zero();
 

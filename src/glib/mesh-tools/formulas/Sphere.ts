@@ -1,18 +1,21 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
+
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
 
   export function Sphere(builder:Builder, options:{
     diameter?:number
     radius?:number
     steps?:number
   } = {}) {
-    var radius = valueOrDefault(options.radius, valueOrDefault(options.diameter, 1) * 0.5);
-    var steps = valueOrDefault(options.steps, 16);
+    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    var steps = withDefault(options.steps, 16);
 
     var baseVertex = builder.vertexCount;
     var stepsV = steps;

@@ -1,17 +1,20 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
 
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
+
   export function Plane(builder:Builder, options:{
     size?:number,
     steps?:number
   } = {}) {
-    var size = valueOrDefault(options.size, 2);
-    var vertices = valueOrDefault(options.steps, 1) + 1;
+    var size = withDefault(options.size, 2);
+    var vertices = withDefault(options.steps, 1) + 1;
 
     var baseVertex = builder.vertexCount;
     var x, z, pos = Vec3.zero(), uv = Vec2.zero();

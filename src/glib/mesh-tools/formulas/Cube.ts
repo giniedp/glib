@@ -1,22 +1,28 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
   import Mat4 = Vlib.Mat4;
 
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
+
   export function Cube(builder:Builder, options:{
     size?:number,
     steps?:number
   } = {}) {
-    var size = valueOrDefault(options.size, 1);
-    var steps = valueOrDefault(options.steps, 1);
+    var size = withDefault(options.size, 1);
+    var steps = withDefault(options.steps, 1);
     var transform = builder.transform.clone();
     var halfUp = Mat4.createTranslation(0, size * 0.5, 0);
 
     // top plane
-    builder.transform = halfUp;
+    builder.transform = Mat4.multiplyChain(
+      halfUp,
+      transform
+    );
     builder.append("Plane", {size: size, steps: steps});
 
     // bottom plane

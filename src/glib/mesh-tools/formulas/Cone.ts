@@ -1,6 +1,5 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
@@ -14,21 +13,25 @@ module Glib.MeshTools.Formulas {
     return out.init(dx, 0, dz);
   }
 
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
+
   export function Cone(builder:Builder, options:{
-    height?:number,
-    steps?:number,
-    upperDiameter?:number,
-    lowerDiameter?:number
+    height?:number
+    steps?:number
+    topDiameter?:number
+    topRadius?:number
+    bottomDiameter?:number
+    bottomRadius?:number
   } = {}) {
-    var height = valueOrDefault(options.height, 2);
-    var steps = valueOrDefault(options.steps, 8);
-    var upperDiameter = valueOrDefault(options.upperDiameter, 0);
-    var lowerDiameter = valueOrDefault(options.lowerDiameter, 2);
+    var height = withDefault(options.height, 2);
+    var steps = withDefault(options.steps, 8);
+    var radiusUp = withDefault(options.topRadius, withDefault(options.topDiameter, 1) * 0.5);
+    var radiusLo = withDefault(options.bottomRadius, withDefault(options.bottomDiameter, 1) * 0.5);
 
     var stepsH = 2;
     var stepsV = steps;
-    var radiusUp = upperDiameter * 0.5;
-    var radiusLo = lowerDiameter * 0.5;
     var baseVertex = builder.vertexCount;
     var x, y, t;
     var position = Vec3.zero();
@@ -69,7 +72,7 @@ module Glib.MeshTools.Formulas {
 
     // Create flat triangle fan caps to seal the top and bottom.
     builder.append("Cap", {
-      diameter: lowerDiameter,
+      radius: radiusLo,
       steps: steps
     });
 
@@ -81,7 +84,7 @@ module Glib.MeshTools.Formulas {
     );
 
     builder.append("Cap", {
-      diameter: upperDiameter,
+      radius: radiusUp,
       steps: steps
     });
     builder.transform = transform;

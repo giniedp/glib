@@ -1,6 +1,5 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
   import Vec2 = Vlib.Vec2;
   import Vec3 = Vlib.Vec3;
   import Vec4 = Vlib.Vec4;
@@ -9,6 +8,11 @@ module Glib.MeshTools.Formulas {
   function sign(a) {
     return a < 0 ? -1 : 1;
   }
+
+  function withDefault(opt, value) {
+    return opt == null ? value : opt;
+  }
+
   /**
    * implementation is based on http://paulbourke.net/geometry/superellipse/
    * @param builder
@@ -22,10 +26,10 @@ module Glib.MeshTools.Formulas {
     n1?:number
     n2?:number
   } = {}) {
-    var radius = valueOrDefault(options.radius, valueOrDefault(options.diameter, 1) * 0.5);
-    var steps = valueOrDefault(options.steps, 16);
-    var power1 = valueOrDefault(options.n1, 1);
-    var power2 = valueOrDefault(options.n2, 1);
+    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    var steps = withDefault(options.steps, 16);
+    var power1 = withDefault(options.n1, 1);
+    var power2 = withDefault(options.n2, 1);
 
     var baseVertex = builder.vertexCount;
     var stepsV = steps;
@@ -43,10 +47,10 @@ module Glib.MeshTools.Formulas {
         var sinTheta = Math.sin(theta);
         var cosTheta = Math.cos(theta);
 
-        var tmp     = sign(cosPhi  ) * Math.pow(Math.abs(cosPhi  ), power1);
+        var tmp = sign(cosPhi) * Math.pow(Math.abs(cosPhi), power1);
         var x = tmp * sign(cosTheta) * Math.pow(Math.abs(cosTheta), power2);
         var z = tmp * sign(sinTheta) * Math.pow(Math.abs(sinTheta), power2);
-        var y =       sign(sinPhi  ) * Math.pow(Math.abs(sinPhi  ), power1);
+        var y = sign(sinPhi) * Math.pow(Math.abs(sinPhi), power1);
 
         var normal = Vec3.create(x, y, z);
         var texCoord = Vec2.create(du, dv);
