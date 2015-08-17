@@ -1,5 +1,5 @@
 module Glib.utils {
-  var consoleWrap = function (name:string):(msg:any, ...text:any[])=>string {
+  var consoleDelegate = function (name:string):(msg:any, ...text:any[])=>string {
     if (!window.console || !window.console[name]) {
       return function (msg:any, ...text:any[]):string {
         return "";
@@ -12,31 +12,26 @@ module Glib.utils {
 
   /**
    * Delegates the call to console.log if available
-   * @method log
    */
-  export var log = consoleWrap('log');
+  export var log = consoleDelegate('log');
 
   /**
    * Delegates the call to console.info if available
-   * @method info
    */
-  export var info = consoleWrap('info');
+  export var info = consoleDelegate('info');
 
   /**
    * Delegates the call to console.debug if available
-   * @method debug
    */
-  export var debug = consoleWrap('debug');
+  export var debug = consoleDelegate('debug');
 
   /**
    * Delegates the call to console.warn if available
-   * @method warn
    */
-  export var warn = consoleWrap('warn');
+  export var warn = consoleDelegate('warn');
 
   /**
    * Delegates the call to console.warn if available
-   * @method error
    */
-  export var error = consoleWrap('error');
+  export var error = consoleDelegate('error');
 }

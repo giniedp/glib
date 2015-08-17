@@ -1,12 +1,5 @@
 module Glib.utils {
 
-  export function valueOrDefault(value, fallback) {
-    if (value === void 0) {
-      return fallback;
-    }
-    return value;
-  }
-
   /**
    * Generates a random uuid string
    */

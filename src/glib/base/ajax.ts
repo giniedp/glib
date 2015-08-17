@@ -41,7 +41,11 @@ module Glib.utils {
       if (!xhr.responseURL) {
         xhr.responseURL = options.url;
       }
-      deferred.resolve(xhr);
+      if (200 <= xhr.status && xhr.status < 400) {
+        deferred.resolve(xhr);
+      } else {
+        deferred.reject(xhr);
+      }
     };
 
     if (options.async) {

@@ -440,8 +440,8 @@ module Glib.Graphics {
           options.fragmentShader = fSource;
         }
 
-        var vInspects = utils.inspectShader(vSource);
-        var fInspects = utils.inspectShader(fSource);
+        var vInspects = Shader.inspectShader(vSource);
+        var fInspects = Shader.inspectShader(fSource);
         var attributes = utils.extend({}, vInspects.attributes, fInspects.attributes);
         var uniforms = utils.extend({}, vInspects.uniforms, fInspects.uniforms);
         var varying = utils.extend({}, vInspects.varying, fInspects.varying);
@@ -453,6 +453,16 @@ module Glib.Graphics {
     }
 
     createTexture(options:TextureOptions):Texture {
+      return new Texture(this, options);
+    }
+
+    createTexture2D(options:TextureOptions={}):Texture {
+      options.type = TextureType.Texture2D;
+      return new Texture(this, options);
+    }
+
+    createTextureCube(options:TextureOptions={}):Texture {
+      options.type = TextureType.TextureCube;
       return new Texture(this, options);
     }
 

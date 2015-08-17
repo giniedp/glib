@@ -1,7 +1,5 @@
 module Glib.MeshTools.Formulas {
 
-  import valueOrDefault = Glib.utils.valueOrDefault;
-
   function withDefault(opt, value) {
     return opt == null ? value : opt;
   }

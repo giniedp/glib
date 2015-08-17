@@ -2,9 +2,9 @@ program:
   precision highp float;
   precision highp int;
 
-  #include <lighting.h>
-  #include <common.h>
-  #include <terrain/splatting.h>
+  #include <lib/lighting.h>
+  #include <lib/common.h>
+  #include <lib/terrain/splatting.h>
 
   varying vec3 Position;
   varying vec4 EyePosition;
@@ -16,11 +16,13 @@ technique:
   pass:
     vertexShader:
 
-      // semantic : position
+      // @binding position
       attribute vec3 vertexPosition;
-      // semantic : normal
+
+      // @binding normal
       attribute vec3 vertexNormal;
-      // semantic : texture
+
+      // @binding texture
       attribute vec2 vertexUV;
 
       void main(void) {

@@ -7,9 +7,9 @@ struct LightSource {
 };
 uniform LightSource lights[4];
 
-// semantic : cameraDirection
+// @binding cameraDirection
 uniform vec3 cameraDirection;
-// semantic : cameraPosition
+// @binding cameraPosition
 uniform vec3 cameraPosition;
 
 

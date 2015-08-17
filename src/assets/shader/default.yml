@@ -2,18 +2,22 @@ program:
   precision highp float;
   precision highp int;
 
-  #include <lighting.h>
-  #include <common.h>
+  #include <lib/lighting.h>
+  #include <lib/common.h>
 
-  // semantic : position
+  // @binding position
   attribute vec3 vertexPosition;
-  // semantic : normal
+
+  // @binding normal
   attribute vec3 vertexNormal;
-  // semantic : texture
+
+  // @binding texture
   attribute vec2 vertexUV;
-  // semantic : tangent
+
+  // @binding tangent
   attribute vec3 vertexTangent;
-  // semantic : bitangent
+
+  // @binding bitangent
   attribute vec3 vertexBiTangent;
 
   varying vec3 Position;

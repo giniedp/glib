@@ -3,32 +3,31 @@ module Glib.Content {
   import log = Glib.utils.log;
   import debug = Glib.utils.debug;
   import extend = Glib.utils.extend;
-  import ajax = Glib.utils.ajax;
 
   function normalizeUrl(url, baseUrl?:string) {
     return utils.path.merge(baseUrl || window.location.origin, url);
   }
 
-  function cacheAssetResponse(xhr){
+  function cacheResponse(xhr) {
     var url = normalizeUrl(xhr.responseURL);
     var type = xhr.getResponseHeader('content-type');
     var content = xhr.responseText;
     var cache = content;
     // Don't cache images and videos. Let the browser do that
-    if (type.match(/image\//) || type.match(/video\//)){
+    if (type.match(/image\//) || type.match(/video\//)) {
       cache = url;
     }
-    Manager.downloads[url] = {
+    Manager.cacheDownload(url, {
       url: url,
       type: type,
       content: cache
-    };
+    });
     return content;
   }
 
-  function readPackageResponse(xhr){
+  function parsePackageResponse(xhr) {
     var urls = JSON.parse(xhr.responseText + "");
-    for (var i = 0; i < urls.length; i += 1){
+    for (var i = 0; i < urls.length; i += 1) {
       urls[i] = normalizeUrl(urls[i], xhr.responseURL);
     }
     return urls;
@@ -40,24 +39,96 @@ module Glib.Content {
     content:any
   }
 
+  export interface AssetImporter {
+    (asset:AssetData, manager:Manager): IPromise
+  }
+
   export class Manager {
+
     assets = {};
     device:Glib.Graphics.Device;
-
-    static loader = {};
-    static parser = {};
-    static downloads: { [uri:string]:AssetData } = {};
 
     constructor(device:Glib.Graphics.Device) {
       this.device = device;
     }
 
-    load(type, asset:string):IPromise {
-      var key, reader, data;
+    static _importer = [];
+    static _downloads:{ [uri:string]:AssetData } = {};
+
+    static addImporter(format:string, assetType:string, importer:AssetImporter) {
+      Manager._importer.push({
+        format: format,
+        asset: assetType,
+        importer: importer
+      });
+    }
+
+    static getImporter(format:string, assetType:string):AssetImporter {
+      var global;
+      for (var item of Manager._importer) {
+        if (item.format === format && item.asset === assetType) {
+          return item.importer;
+        }
+        if (item.format === 'all' && item.asset === assetType) {
+          global = item.importer;
+        }
+      }
+      if (global) {
+        return global;
+      }
+      debug(`[Manager] '${format}' to '${assetType}' importer not found.`);
+      return void 0;
+    }
+
+    static getImporterForAsset(asset:AssetData, assetType:string):AssetImporter {
+      var ext = (Glib.utils.path.ext(asset.url) || '').replace(/^\./, '');
+      return Manager.getImporter(ext, assetType);
+    }
+
+    static cacheDownload(url:string, asset:AssetData) {
+      Manager._downloads[normalizeUrl(url)] = asset;
+    }
+
+    static getDownload(url:string):AssetData {
+      return Manager._downloads[normalizeUrl(url)];
+    }
+
+    static download(options) {
+      if (typeof options === 'string') {
+        options = { url: options };
+      }
+      debug('[Manager] download', options);
+      return Glib.utils.ajax(options).then(function (res) {
+        debug('[Manager] download done', options);
+        if (!Array.isArray(res)) {
+          return cacheResponse(res);
+        }
+        return res.map(function (xhr) {
+          return cacheResponse(xhr)
+        });
+      });
+    }
+
+    download(options) {
+      return Manager.download(options);
+    }
+
+    static downloadPackage(options) {
+      return Glib.utils.ajax(options).then((res) => {
+        res = [].concat.apply([], [res]);
+        var urls = [].concat.apply([], res.map(parsePackageResponse));
+        return Manager.download(extend({}, options, {url: urls}));
+      });
+    }
+
+    downloadPackage(options) {
+      return Manager.downloadPackage(options);
+    }
+
+    load(assetType, assetPath:string):IPromise {
 
       // hash to cache the asset
-      key = type + ':' + asset;
-
+      var key = assetType + ':' + assetPath;
       debug(`[Manager] ${key} load`);
 
       // see if the asset is already loaded
@@ -72,29 +143,29 @@ module Glib.Content {
       }
 
       // get the raw data from which to load the asset
-      data = Manager.downloads[normalizeUrl(asset)];
-
+      var data = Manager.getDownload(assetPath);
       if (!data) {
         debug(`[Manager] ${key} begin download`);
-        return this.download({ url: asset })
+        return this.download({url: assetPath})
           .then(() => {
             debug(`[Manager] ${key} retry load`);
-            return this.load(type, asset);
+            return this.load(assetType, assetPath);
           });
       } else {
         debug(`[Manager] ${key} download exists`);
       }
 
       // find the reader who will process tha data into an asset
-      reader = Manager.loader[type];
-      if (!reader) {
-        return Promise.reject(`Reader not found for type: ${String(type)}`);
+      var importer = Manager.getImporterForAsset(data, assetType);
+      if (!importer) {
+        return Promise.reject(`Reader not found for type: ${String(assetType)}`);
       }
-      if (typeof reader !== 'function') {
-        return Promise.reject(`Reader ${String(type)} is not a function`);
+      console.log(importer);
+      if (typeof importer !== 'function') {
+        return Promise.reject(`Reader ${String(assetType)} is not a function`);
       }
       this.assets[key] = Promise
-        .resolve(reader(data, this))
+        .resolve(importer(data, this))
         .then((result) => {
           this.assets[key] = result;
           return result;
@@ -111,55 +182,6 @@ module Glib.Content {
           obj.unload();
         }
       }
-    }
-
-    download(options) {
-      debug('[Manager] download', options);
-      return ajax(options)
-        .then(function(res){
-          debug('[Manager] download done', options);
-          if (Array.isArray(res)){
-            return res.map(function(xhr){ return cacheAssetResponse(xhr) });
-          } else {
-            return cacheAssetResponse(res);
-          }
-        });
-    }
-
-    downloadPackage(options){
-      var deferred = Glib.Promise.defer();
-      ajax(options)
-        .then((res) => {
-          if (!Array.isArray(res)){
-            res = [res];
-          }
-          var urls = res.map(function(item ){
-            return readPackageResponse(item)
-          });
-          urls = [].concat.apply([], urls);
-          return this.download(extend({}, options, { url: urls }));
-        })
-        .then(function(res){
-          return deferred.resolve(res);
-        })
-        .catch(function(arg){
-          return deferred.reject(arg);
-        });
-      return deferred.promise;
-    }
-
-    static registerLoader(name:string, loadFunction:(data:any, assets:Manager)=>IPromise){
-      Manager.loader[name] = loadFunction;
-    }
-
-    static registerParser(extName:string, parser:any){
-      Manager.parser[extName] = parser;
-    }
-
-    parse(data:AssetData) {
-      var extName = Glib.utils.path.ext(data.url);
-      var parser = Manager.parser[extName];
-      return parser(data.content);
     }
   }
 }

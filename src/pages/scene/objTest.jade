@@ -21,14 +21,6 @@ block script
       .buildChild({
         name: "Light",
         templates: ["DirectionalLight"]
-      })
-      .addComponent({
-        setup: function () {
-          var assets = this.node.root.getService("Assets");
-          assets.downloadPackage({
-            url: '/assets/package.json'
-          }).then(addChildren);
-        }
       });
     function DemoComponent(options) {
       options = options || {};
@@ -62,13 +54,11 @@ block script
       this.transform.setRotationXYZAngle(0, 1, 0, t);
     };
     var totalItems = 12;
-    function addChildren() {
-      for (var i = 1; i <= totalItems; i++) {
-        game.buildChild({
-          name: "Model" + i,
-          templates: ["Model"]
-        }, function (entity) {
-          entity.addComponent(new DemoComponent({index: i}));
-        });
-      }
+    for (var i = 1; i <= totalItems; i++) {
+      game.buildChild({
+        name: "Model" + i,
+        templates: ["Model"]
+      }, function (entity) {
+        entity.addComponent(new DemoComponent({index: i}));
+      });
     }

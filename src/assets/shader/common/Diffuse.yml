@@ -9,11 +9,13 @@ program:
   varying vec2 TexCoord;
   varying vec3 Normal;
 
-  // semantic : position
+  // @binding position
   attribute vec3 vertexPosition;
-  // semantic : normal
+
+  // @binding normal
   attribute vec3 vertexNormal;
-  // semantic : texture
+
+  // @binding texture
   attribute vec2 vertexUV;
 
 technique:

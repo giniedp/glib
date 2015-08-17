@@ -1,4 +1,4 @@
-module Glib.Content.Parsers {
+module Glib.Content.Parser {
 
   function readFloat(item:string) {
     if (item) {
@@ -20,15 +20,21 @@ module Glib.Content.Parsers {
   }
 
   export class OBJ {
-    meta:any;
+    result:any;
     groups:any[];
     group:any;
     lastKey:string;
 
+    static parse(content) {
+      return new OBJ().parse(content);
+    }
+
     parse(data) {
       var lines = data.split(/\n/);
-      this.meta = {};
-      this.groups = [];
+      this.result = {
+        groups: []
+      };
+      this.groups = this.result.groups;
       this.lastKey = "";
       this.nextGroup();
 
@@ -64,7 +70,7 @@ module Glib.Content.Parsers {
         if (reader) reader.apply(this, [value]);
         this.lastKey = key;
       }
-      return this;
+      return this.result;
     }
 
     currentGroup(){
@@ -77,7 +83,7 @@ module Glib.Content.Parsers {
     }
 
     read_o_key(data:string) {
-      this.meta.name = data;
+      this.result.name = data;
     }
 
     read_g_key(data:string) {
@@ -107,7 +113,7 @@ module Glib.Content.Parsers {
     }
 
     read_mtllib_key(data:string) {
-      this.meta.materials = data.split(" ");
+      this.result.materials = data.split(" ");
     }
 
     read_usemtl_key(data:string) {
@@ -118,19 +124,19 @@ module Glib.Content.Parsers {
       if (this.lastKey === 'f') {
         this.nextGroup();
       }
-      var c = this.meta;
+      var c = this.result;
       c.v = c.v || [];
       c.v.push(readFloatArray(data));
     }
 
     read_vt_key(data:string) {
-      var c = this.meta;
+      var c = this.result;
       c.vt = c.vt || [];
       c.vt.push(readFloatArray(data));
     }
 
     read_vn_key(data:string) {
-      var c = this.meta;
+      var c = this.result;
       c.vn = c.vn || [];
       c.vn.push(readFloatArray(data));
     }
@@ -152,85 +158,5 @@ module Glib.Content.Parsers {
       c.f = c.f || [];
       c.f.push(readVectorArray(data));
     }
-
-    toGlibModel() {
-      function readVertex(g, f, off=0) {
-        var vertex:any = {};
-        vertex.position = g.v[f[off][0] - 1];
-
-        if (f[off][1] != null && g.vt != null) {
-          vertex.texture = g.vt[f[off][1] - 1];
-        }
-        if (f[off][2] != null && g.vn != null) {
-          vertex.normal = g.vn[f[off][2] - 1];
-        }
-        return vertex;
-      }
-
-      function readMesh(group, meta) {
-        var builder = new Glib.MeshTools.Builder({
-          layout: "PositionNormalTexture"
-        });
-        var index = 0;
-        for (var face of group.f) {
-          var vertex = void 0;
-
-          vertex = readVertex(meta, face, 0);
-          builder.addIndex(index);
-          builder.addVertex(vertex);
-          index += 1;
-
-          vertex = readVertex(meta,face, 1);
-          builder.addIndex(index);
-          builder.addVertex(vertex);
-          index += 1;
-
-          vertex = readVertex(meta, face, 2);
-          builder.addIndex(index);
-          builder.addVertex(vertex);
-          index += 1;
-
-          if (face.length == 4) {
-            vertex = readVertex(meta, face, 0);
-            builder.addIndex(index);
-            builder.addVertex(vertex);
-            index += 1;
-
-            vertex = readVertex(meta, face, 2);
-            builder.addIndex(index);
-            builder.addVertex(vertex);
-            index += 1;
-
-            vertex = readVertex(meta, face, 3);
-            builder.addIndex(index);
-            builder.addVertex(vertex);
-            index += 1;
-          }
-        }
-
-        return {
-          name: group.name,
-          materialId: group.material,
-          indexBuffer: builder.indexBuffer,
-          vertexBuffer: builder.vertexBuffer,
-        };
-      }
-
-      var meshes = [];
-      for (var group of this.groups) {
-        var mesh = readMesh(group, this.meta);
-        meshes.push(mesh);
-      }
-
-      return {
-        materials: this.meta.materials,
-        meshes: meshes
-      };
-    }
-  }
-
-  Manager.registerParser(".obj", parseObj);
-  function parseObj(data){
-    return new OBJ().parse(data).toGlibModel();
   }
 }

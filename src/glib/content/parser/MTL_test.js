@@ -1,10 +1,10 @@
 (function(){
 
-  describe("Glib.Content.Parsers.MTL", function() {
+  describe("Glib.Content.Parser.MTL", function() {
     describe("#parse", function () {
       var parser;
       beforeEach(function() {
-        parser = new Glib.Content.Parsers.MTL();
+        parser = new Glib.Content.Parser.MTL();
       });
 
       it("reads newmtl", function () {

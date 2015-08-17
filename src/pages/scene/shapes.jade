@@ -93,19 +93,10 @@ block script
       }, function(e) {
         e.getService("Transform").setRotationXYZAngle(1, 0, 0, -Math.PI / 4)
       })
-      .addComponent({
-        setup: function () {
-          var assets = this.node.root.getService("Assets");
-          assets.downloadPackage({
-            url: '/assets/package.json'
-          }).then(function(){
-            game.buildChild({
-              name: "Shapes",
-              templates: ["Model"]
-            }, function(e) {
-              e.getService("Transform").translateXYZ(0, 0, 0);
-              e.addComponent(new ShapeComponent());
-            });
-          }.bind(this))
-        }
+      .buildChild({
+        name: "Shapes",
+        templates: ["Model"]
+      }, function(e) {
+        e.getService("Transform").translateXYZ(0, 0, 0);
+        e.addComponent(new ShapeComponent());
       });
