@@ -11,17 +11,19 @@ module Glib.Graphics {
   }
 
   export class ShaderProgram {
+    uid:string;
     device:Device;
     gl:any;
     attached:Shader[] = [];
     shader:Shader[] = [];
     handle:WebGLProgram;
-    attributes = {};
-    uniforms = {};
+    attributes:any = {};
+    uniforms:any = {};
     linked:boolean;
     info:string;
 
     constructor(device:Device, data:ShaderProgramOptions={}) {
+      this.uid = utils.uuid();
       this.device = device;
       this.gl = device.context;
       this.attributes = data.attributes || {};
@@ -29,9 +31,12 @@ module Glib.Graphics {
       this.handle = data.handle;
 
       var shaders = [];
-      var shader = data.vertexShader;
+      var shader:any = data.vertexShader;
       if (typeof shader === 'string') {
-        shader = {source: shader, type: ShaderType.VertexShader};
+        shader = { source: shader };
+      }
+      if (shader && !shader.type) {
+        shader.type = ShaderType.VertexShader;
       }
       if (shader) {
         shaders.push(shader);
@@ -39,14 +44,16 @@ module Glib.Graphics {
 
       shader = data.fragmentShader;
       if (typeof shader === 'string') {
-        shader = {source: shader, type: ShaderType.FragmentShader};
+        shader = { source: shader };
+      }
+      if (shader && !shader.type) {
+        shader.type = ShaderType.FragmentShader;
       }
       if (shader) {
         shaders.push(shader);
       }
 
       for (shader of shaders) {
-        
         if (shader instanceof Shader) {
           this.shader.push(shader)
         } else {
@@ -59,6 +66,7 @@ module Glib.Graphics {
       }
       this.link();
       this._cache();
+      this.device.program = null;
     }
 
     destroy():ShaderProgram {
@@ -70,21 +78,21 @@ module Glib.Graphics {
     }
 
     use():ShaderProgram {
-      this.device.bindProgram(this);
+      this.device.program = this;
       return this;
     }
 
     _attach():ShaderProgram {
-      for (var i = 0; i < this.shader.length; i += 1) {
-        this.gl.attachShader(this.handle, this.shader[i].handle);
-        this.attached.push(this.shader[i]);
+      for (var shader of this.shader) {
+        this.gl.attachShader(this.handle, shader.handle);
+        this.attached.push(shader);
       }
       return this;
     }
 
     _detach():ShaderProgram {
-      for (var i = 0; i < this.attached.length; i += 1) {
-        this.gl.detachShader(this.handle, this.attached[i].handle);
+      for (var shader of this.attached) {
+        this.gl.detachShader(this.handle, shader.handle);
       }
       this.attached.length = 0;
       return this;

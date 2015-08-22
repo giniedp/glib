@@ -39,8 +39,8 @@ module Glib.Content.Importer {
   }
 
   export function importMtlMaterial(asset:AssetData, manager:Manager):IPromise {
-    debug('[Manager] ImportMtlMaterial', asset);
-    var json:any = Glib.Content.Parser.MTL.parse(asset.content).map(convertMaterial);
+    debug('[ImportMtlMaterial]', asset);
+    var json:any = Parser.MTL.parse(asset.content).map(convertMaterial);
     return Importer.loadJsonMaterial(json, asset, manager);
   }
 

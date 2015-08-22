@@ -205,17 +205,21 @@ module Glib.Graphics {
 
       state.magFilter = TextureFilter.Linear;
 
-      if (state.minFilter === TextureFilter.LinearMipLinear || state.minFilter === TextureFilter.LinearMipPoint) {
+      if (state.minFilter === TextureFilter.LinearMipLinear ||
+        state.minFilter === TextureFilter.LinearMipPoint) {
         state.minFilter = TextureFilter.Linear;
       }
-      else if (state.minFilter === TextureFilter.PointMipLinear || state.minFilter === TextureFilter.PointMipLinear) {
+      else if (state.minFilter === TextureFilter.PointMipLinear ||
+        state.minFilter === TextureFilter.PointMipLinear) {
         state.minFilter = TextureFilter.Point;
       }
 
-      if (state.magFilter === TextureFilter.LinearMipLinear || state.magFilter === TextureFilter.LinearMipPoint) {
+      if (state.magFilter === TextureFilter.LinearMipLinear ||
+        state.magFilter === TextureFilter.LinearMipPoint) {
         state.magFilter = TextureFilter.Linear;
       }
-      else if (state.magFilter === TextureFilter.PointMipLinear || state.magFilter === TextureFilter.PointMipLinear) {
+      else if (state.magFilter === TextureFilter.PointMipLinear ||
+        state.magFilter === TextureFilter.PointMipLinear) {
         state.magFilter = TextureFilter.Point;
       }
       return state;

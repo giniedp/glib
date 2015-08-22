@@ -47,7 +47,7 @@ module Glib.Graphics {
     name:string;
     type:string;
     location:WebGLUniformLocation;
-    default:any;
+    'default':any;
     set:(any, ...rest:any[])=>void;
     register:number;
     filter:number;

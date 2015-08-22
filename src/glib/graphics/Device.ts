@@ -98,20 +98,14 @@ module Glib.Graphics {
 
   export class Device {
 
-    _indexBufferHandle:WebGLBuffer;
-    _vertexBufferHandle:WebGLBuffer;
-    _programHandle:any;
-    _viewport:Object;
-
-    indexBuffer:Buffer;
-    vertexBuffer:Buffer;
-    program:ShaderProgram;
-
     canvas:any;
     context:any;
 
-    quadIndexBuffer:Buffer;
-    quadVertexBuffer:Buffer;
+    private _indexBuffer:Buffer;
+    private _vertexBuffer:Buffer;
+    private _program:ShaderProgram;
+    private _quadIndexBuffer:Buffer;
+    private _quadVertexBuffer:Buffer;
 
     extensions:any;
     capabilities:any;
@@ -157,6 +151,13 @@ module Glib.Graphics {
       }
     }
 
+    /**
+     * Clears the color, depth and stencil buffers
+     * @param color
+     * @param depth
+     * @param stencil
+     * @returns {Glib.Graphics.Device}
+     */
     clear(color?:number|number[], depth?:number, stencil?:number):Device {
       var gl = this.context, mask = 0;
 
@@ -184,26 +185,26 @@ module Glib.Graphics {
     }
 
     /**
-     * Renders geometry using the current index buffer.
+     * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
      * @param {number} [primitiveType=TriangleList]
      * @param {number} [offset=0]
      * @param {number} [count=indexBuffer.elementCount]
      * @return {Device}
      */
     drawIndexedPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this.indexBuffer;
+      var iBuffer = this._indexBuffer;
       if (!iBuffer) {
         utils.log("[drawIndexedPrimitives]", "indexBuffer required but nothing is set.");
         return this;
       }
 
-      var vBuffer = this.vertexBuffer;
+      var vBuffer = this._vertexBuffer;
       if (!vBuffer) {
         utils.log("[drawIndexedPrimitives]", "vertexBuffer required but nothing is set.");
         return this;
       }
 
-      var program = this.program;
+      var program = this._program;
       if (!program) {
         utils.log("[drawIndexedPrimitives]", "program required but nothing is set.");
         return this;
@@ -215,17 +216,14 @@ module Glib.Graphics {
       offset = offset || 0;
       count = count || (iBuffer.elementCount - offset);
 
-      this.bindBuffer(iBuffer);
-      this.bindBuffer(vBuffer);
-      this.bindProgram(program);
-      this.bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
+      this._bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
       this.context.drawElements(primitiveType, count, type, offset * iBuffer.elementSize);
 
       return this;
     }
 
     /**
-     * Renders geometry using the current index buffer.
+     * Renders multiple instances of the same geometry defined by current index buffer, indexing vertices in current vertex buffer.
      * @param {number} [instanceCount=1]
      * @param {number} [primitiveType=TriangleList]
      * @param {number} [offset=0]
@@ -233,19 +231,19 @@ module Glib.Graphics {
      * @return {Device}
      */
     drawInstancedPrimitives(instanceCount?:number, primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this.indexBuffer;
+      var iBuffer = this._indexBuffer;
       if (!iBuffer) {
         utils.log("[drawInstancedPrimitives]", "indexBuffer required but nothing is set.");
         return this;
       }
 
-      var vBuffer = this.vertexBuffer;
+      var vBuffer = this._vertexBuffer;
       if (!vBuffer) {
         utils.log("[drawInstancedPrimitives]", "vertexBuffer required but nothing is set.");
         return this;
       }
 
-      var program = this.program;
+      var program = this._program;
       if (!program) {
         utils.log("[drawInstancedPrimitives]", "program required but nothing is set.");
         return this;
@@ -258,30 +256,26 @@ module Glib.Graphics {
       count = count || (iBuffer.elementCount - offset);
       instanceCount = instanceCount || 1;
 
-      this.bindBuffer(iBuffer);
-      this.bindBuffer(vBuffer);
-      this.bindProgram(program);
-      this.bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
+      this._bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
       this.context.drawElementsInstanced(primitiveType, count, type, offset * iBuffer.elementSize, instanceCount);
       return this;
     }
 
     /**
-     * Renders geometry without using the index buffer. This method simply delegates to `gl.drawArrays` and it exists
-     * only for convenience. It is advisable to directly use the `gl.drawArrays` method for best performance.
+     * Renders geometry defined by current vertex buffer and the given primitive type.
      * @param {number} [primitiveType=TriangleList]
      * @param {number} [offset=0]
      * @param {number} [count=indexBuffer.elementCount]
      * @return {Device}
      */
     drawPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var vBuffer = this.vertexBuffer;
+      var vBuffer = this._vertexBuffer;
       if (!vBuffer) {
         utils.log("[drawPrimitives]", "vertexBuffer required but nothing is set.");
         return this;
       }
 
-      var program = this.program;
+      var program = this._program;
       if (!program) {
         utils.log("[drawPrimitives]", "program required but nothing is set.");
         return this;
@@ -291,21 +285,23 @@ module Glib.Graphics {
       offset = offset || 0;
       count = count || (vBuffer.elementCount / vBuffer.elementSize - offset);
 
-      this.bindBuffer(vBuffer);
-      this.bindProgram(program);
-      this.bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
+      this._bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
       this.context.drawArrays(primitiveType, offset, count);
       return this;
     }
 
+    /**
+     * Draws a quad that completely covers the screen.
+     * @returns {Glib.Graphics.Device}
+     */
     drawQuad():Device {
-      var iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
+      var iBuffer = this._quadIndexBuffer || this.createIndexBuffer({
           data: [0, 1, 2, 1, 2, 3],
           dataType: 'ushort'
         });
-      this.quadIndexBuffer = iBuffer;
+      this._quadIndexBuffer = iBuffer;
 
-      var vBuffer = this.quadVertexBuffer || this.createVertexBuffer({
+      var vBuffer = this._quadVertexBuffer || this.createVertexBuffer({
           data: [
             -1, -1, 0,
             1, -1, 0,
@@ -315,11 +311,13 @@ module Glib.Graphics {
           layout: this.createVertexLayout('position'),
           dataType: 'float'
         });
-      this.quadVertexBuffer = vBuffer;
+      this._quadVertexBuffer = vBuffer;
 
       this.indexBuffer = iBuffer;
       this.vertexBuffer = vBuffer;
       this.drawIndexedPrimitives();
+      this.indexBuffer = null;
+      this.vertexBuffer = null;
       return this;
     }
 
@@ -344,56 +342,49 @@ module Glib.Graphics {
       return this;
     }
 
-    setRenderTarget() {
-      return this;
-    }
-
-    setRenderTargets() {
-      return this;
-    }
-
-    bindBuffer(buffer:Buffer):Device {
-      if (buffer.type === BufferType.IndexBuffer) {
-        if (this._indexBufferHandle !== buffer.handle) {
-          this.context.bindBuffer(buffer.type, buffer.handle);
-          this._indexBufferHandle = buffer.handle;
-        }
+    setRenderTarget(target:RenderTarget) {
+      if (target) {
+        this.context.bindFramebuffer(this.context.FRAMEBUFFER, target.handle);
+      } else {
+        this.context.bindFramebuffer(this.context.FRAMEBUFFER, null);
       }
-      if (buffer.type === BufferType.VertexBuffer) {
-        if (this._vertexBufferHandle !== buffer.handle) {
-          this.context.bindBuffer(buffer.type, buffer.handle);
-          this._vertexBufferHandle = buffer.handle;
-        }
+    }
+
+    setRenderTargets(...targets:RenderTarget[]) {
+      return this;
+    }
+
+    get vertexBuffer(): Buffer {
+      return this._vertexBuffer;
+    }
+    set vertexBuffer(buffer: Buffer) {
+      if (this._vertexBuffer !== buffer) {
+        this.context.bindBuffer(BufferType.VertexBuffer, buffer ? buffer.handle : null);
+        this._vertexBuffer = buffer;
       }
-      return this;
     }
 
-    unbindIndexBuffer(buffer:Buffer):Device {
-      this.context.bindBuffer(BufferType.IndexBuffer, null);
-      this._vertexBufferHandle = null;
-
-      if (buffer.type === BufferType.IndexBuffer) {
-        this.context.bindBuffer(buffer.type, null);
-        this._vertexBufferHandle = null;
+    get indexBuffer(): Buffer {
+      return this._indexBuffer;
+    }
+    set indexBuffer(buffer: Buffer) {
+      if (this._indexBuffer !== buffer) {
+        this.context.bindBuffer(BufferType.IndexBuffer, buffer ? buffer.handle : null);
+        this._indexBuffer = buffer;
       }
-      return this;
     }
 
-    bindProgram(program:ShaderProgram):Device {
-      if (this._programHandle !== program.handle) {
-        this.context.useProgram(program.handle);
-        this._programHandle = program.handle;
+    get program(): ShaderProgram {
+      return this._program;
+    }
+    set program(program: ShaderProgram) {
+      if (this._program !== program) {
+        this.context.useProgram(program ? program.handle : null);
+        this._program = program;
       }
-      return this;
     }
 
-    unbindProgram() {
-      this.context.useProgram(null);
-      this._programHandle = null;
-      return this;
-    }
-
-    bindVertexLayout(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any):Device {
+    private _bindVertexLayout(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any):Device {
       layout = layout || vBuffer.layout;
       attributes = attributes || program.attributes;
 
@@ -439,15 +430,8 @@ module Glib.Graphics {
           fSource = document.getElementById(fSource.substr(1)).textContent;
           options.fragmentShader = fSource;
         }
-
-        var vInspects = Shader.inspectShader(vSource);
-        var fInspects = Shader.inspectShader(fSource);
-        var attributes = utils.extend({}, vInspects.attributes, fInspects.attributes);
-        var uniforms = utils.extend({}, vInspects.uniforms, fInspects.uniforms);
-        var varying = utils.extend({}, vInspects.varying, fInspects.varying);
-        options.attributes = utils.extend({}, attributes, options.attributes || {});
-        options.uniforms = utils.extend({}, uniforms, options.uniforms || {});
-        options.varying = utils.extend({}, varying, options.varying || {});
+        var inspects = Shader.inspectProgram(vSource, fSource);
+        utils.extend(options, inspects);
       }
       return new ShaderProgram(this, options);
     }
@@ -456,12 +440,16 @@ module Glib.Graphics {
       return new Texture(this, options);
     }
 
-    createTexture2D(options:TextureOptions={}):Texture {
+    createRenderTarget(options:RenderTargetOptions):RenderTarget {
+      return new RenderTarget(this, options);
+    }
+
+    createTexture2D(options:TextureOptions = {}):Texture {
       options.type = TextureType.Texture2D;
       return new Texture(this, options);
     }
 
-    createTextureCube(options:TextureOptions={}):Texture {
+    createTextureCube(options:TextureOptions = {}):Texture {
       options.type = TextureType.TextureCube;
       return new Texture(this, options);
     }
@@ -474,7 +462,7 @@ module Glib.Graphics {
       return VertexLayout.create.apply(this, arguments)
     }
 
-    createModel(options:ModelOptions): Model {
+    createModel(options:ModelOptions):Model {
       return new Model(this, options);
     }
   }

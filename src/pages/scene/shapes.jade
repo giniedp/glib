@@ -13,7 +13,7 @@ block script
         this.assets
           .load("Material", "/assets/materials/default.json")
           .then(function (material) {
-            var builder = new Glib.MeshTools.Builder();
+            var builder = new Glib.Graphics.Geometry.Builder();
             builder.transform = Vlib.Mat4.createTranslation(0, 0, 0);
             builder.append("Sphere", {
               diameter: 1,
@@ -65,7 +65,7 @@ block script
               steps: 32,
               band: 0.4
             });
-            var model = builder.finish(this.device, {materials: [material]});
+            var model = builder.finishModel(this.device, {materials: [material]});
             this.renderable.model = model;
           }.bind(this));
       };

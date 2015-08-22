@@ -1,4 +1,4 @@
-module Glib.MeshTools.Formulas {
+module Glib.Graphics.Geometry.Formulas {
 
   function withDefault(opt, value) {
     return opt == null ? value : opt;

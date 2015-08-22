@@ -15,7 +15,7 @@ module Glib.Components {
     service:boolean = true;
     enabled:boolean = true;
 
-    near:number = 1;
+    near:number = 0.1;
     far:number = 1000;
     fov:number = Math.PI * 0.25;
     aspect:number = 4 / 3;

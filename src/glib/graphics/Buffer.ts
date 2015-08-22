@@ -95,7 +95,13 @@ module Glib.Graphics {
     }
 
     use():Buffer {
-      this.device.bindBuffer(this);
+      if (this.type === BufferType.VertexBuffer) {
+        this.device.vertexBuffer = this;
+      } else if (this.type === BufferType.IndexBuffer) {
+        this.device.indexBuffer = this;
+      } else {
+        // TODO: log error
+      }
       return this;
     }
 

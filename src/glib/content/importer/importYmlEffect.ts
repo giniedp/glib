@@ -5,9 +5,11 @@ module Glib.Content.Importers {
 
   var regInclude = /#include\s+<(.*)>/;
   var charNewLine = '\n';
-  function isObject(item){
+
+  function isObject(item) {
     return item != null && typeof item === 'object';
   }
+
   function getLines(value:string):string[] {
     return value.replace(/\r\n/g, '\n').split('\n');
   }
@@ -50,7 +52,7 @@ module Glib.Content.Importers {
 
     // for each pass, generate a valid program definition that
     // contains a vertex and a fragment shader code
-    passes = passes.map(function(pass, index){
+    passes = passes.map(function (pass, index) {
       return convertPass(source, pass, index);
     });
 
@@ -60,7 +62,7 @@ module Glib.Content.Importers {
     };
   }
 
-  function convertPass(source: string, pass, index) {
+  function convertPass(source:string, pass, index) {
     var vertexSource = source;
     if (typeof pass.vertexShader === 'string') {
       vertexSource = [source, pass.vertexShader].join(charNewLine);
@@ -79,48 +81,37 @@ module Glib.Content.Importers {
   }
 
   function processPass(pass, includeHandler) {
-    debug("[Manager] ImportYmlEffect processPass", includeHandler);
     // solve all preprocessor directives
     return Promise.all([
-      preProcessShader(pass.vertexShader, { includeHandler: includeHandler }),
-      preProcessShader(pass.fragmentShader, { includeHandler: includeHandler })
-    ]).then(function(res){
+      preProcessShader(pass.vertexShader, {includeHandler: includeHandler}),
+      preProcessShader(pass.fragmentShader, {includeHandler: includeHandler})
+    ]).then(function (res) {
       var vSource = res[0];
       var fSource = res[1];
 
       // attribute declaration is only allowed in vertex shader
       fSource = fSource.replace(/attribute.*;/g, '');
 
-      var vInspects = Glib.Graphics.Shader.inspectShader(vSource);
-      var fInspects = Glib.Graphics.Shader.inspectShader(fSource);
-
+      var inspect = Graphics.Shader.inspectProgram(vSource, fSource);
+      utils.extend(pass, inspect);
       pass.vertexShader = vSource;
       pass.fragmentShader = fSource;
-      pass.attributes = extend({}, vInspects.attributes, fInspects.attributes);
-      pass.uniforms = extend({}, vInspects.uniforms, fInspects.uniforms);
-      pass.varying = extend({}, vInspects.varying, fInspects.varying);
       return pass;
     });
   }
 
-  function preProcessShader(source:string, options:any={}):IPromise {
+  function preProcessShader(source:string, options:any = {}):IPromise {
     var includeHandler = options.includeHandler;
-    var lines = getLines(source);
-    return Promise.all(lines.map(function(line, index){
+    return Promise.all(getLines(source).map(function (line) {
       var includeMatch = line.match(regInclude);
-      if (!includeMatch) {
-        return line
-      }
-      return includeHandler(includeMatch[1]).then(function(line){
-        lines[index] = line;
-      });
-    })).then(function(){
+      return includeMatch ? includeHandler(includeMatch[1]) : line;
+    })).then(function (lines) {
       return lines.join(charNewLine);
     });
   }
 
-  function createIncludeHandler(data:AssetData, manager:Manager):(p:string)=>IPromise{
-    return function(path:string){
+  function createIncludeHandler(data:AssetData, manager:Manager):(p:string)=>IPromise {
+    return function (path:string) {
       return manager.download(utils.path.merge(data.url, path));
     }
   }
@@ -155,7 +146,7 @@ module Glib.Content.Importers {
    * ```
    */
   export function importYmlEffect(data:AssetData, manager:Manager):IPromise {
-    debug("[Manager] ImportYmlEffect begin");
+    debug("[ImportYmlEffect]", data);
 
     var content:any = Parser.YML.parse(data.content);
 
@@ -167,21 +158,20 @@ module Glib.Content.Importers {
     // must be an object or an array of objects
     var techniques:any[] = getTechniques(content);
 
-    techniques = techniques.map(function(technique, index){
+    techniques = techniques.map(function (technique, index) {
       return convertTechnique(source, technique, index);
     });
 
     var includeHandler = createIncludeHandler(data, manager);
 
-    return Promise.all(techniques.map(function(technique:any){
-      return Promise.all(technique.passes.map(function(pass:any, index:number){
-        return processPass(pass, includeHandler).then(function(pass){
+    return Promise.all(techniques.map(function (technique:any) {
+      return Promise.all(technique.passes.map(function (pass:any, index:number) {
+        return processPass(pass, includeHandler).then(function (pass) {
           return technique.passes[index] = pass;
         });
       }));
-    })).then(function(){
-      debug("[Manager] ImportYmlEffect done", techniques);
-      return { techniques: techniques };
+    })).then(function (res) {
+      return {techniques: techniques};
     });
   }
 

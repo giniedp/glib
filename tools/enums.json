@@ -296,6 +296,22 @@
   }
 }, {
   "description": "",
+  "target": "DepthFormat",
+  "targetName": "DepthFormatName",
+  "GLConstant" : true,
+  "properties": {
+    "Depth16": "DEPTH_COMPONENT16"
+  }
+}, {
+  "description": "",
+  "target": "StencilFormat",
+  "targetName": "StencilFormatName",
+  "GLConstant" : true,
+  "properties": {
+    "Stencil8": "STENCIL_INDEX8"
+  }
+}, {
+  "description": "",
   "target": "LightType",
   "properties": {
     "None": 0,

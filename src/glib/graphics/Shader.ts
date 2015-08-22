@@ -7,6 +7,7 @@ module Glib.Graphics {
   }
 
   export class Shader {
+    uid:string;
     device:Device;
     gl:any;
     source:string;
@@ -18,6 +19,7 @@ module Glib.Graphics {
 
     constructor(device:Device, params?:ShaderOptions) {
       params = params || {};
+      this.uid = utils.uuid();
       this.device = device;
       this.gl = device.context;
 
@@ -111,6 +113,16 @@ module Glib.Graphics {
       result.structs = Shader._inspectStructs(source);
       Shader._fixStructUniforms(result.uniforms, result.structs);
       return result;
+    }
+
+    static inspectProgram(vertexShader, fragmentShader) {
+      var vInspects = Shader.inspectShader(vertexShader);
+      var fInspects = Shader.inspectShader(fragmentShader);
+      return {
+        attributes: utils.extend({}, vInspects.attributes, fInspects.attributes),
+        uniforms: utils.extend({}, vInspects.uniforms, fInspects.uniforms),
+        varying: utils.extend({}, vInspects.varying, fInspects.varying)
+      }
     }
 
     static _inspectStructs(source:string):any {

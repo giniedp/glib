@@ -4,7 +4,7 @@ module Glib.Content.Importer {
 
   Manager.addImporter('all', 'Image', loadImage);
   export function loadImage(data):IPromise {
-    debug('[Manager] LoadImage', arguments);
+    debug('[LoadImage]', data);
     if (!data.type.match(/image\//)) {
       return Promise.reject(`Can not load content type of ${data.type} as image`);
     }
@@ -28,7 +28,7 @@ module Glib.Content.Importer {
 
   Manager.addImporter('all', 'Video', loadVideo);
   function loadVideo(data) {
-    debug('[Manager] LoadVideo', arguments);
+    debug('[LoadVideo]', data);
     if (!data.type.match(/video\//)) {
       return Promise.reject(`Can not load content type of ${data.type} as video`);
     }
@@ -39,21 +39,21 @@ module Glib.Content.Importer {
 
   Manager.addImporter('all', 'Texture2D', loadTexture2D);
   export function loadTexture2D(data:AssetData, manager:Manager):IPromise {
-    debug('[Manager] LoadTexture2D', arguments);
+    debug('[LoadTexture2D]', data);
     return manager.load('Image', data.content)
       .then(function (res) { return manager.device.createTexture2D({ data: res }) });
   }
 
   Manager.addImporter('all', 'TextureCube', loadTextureCube);
   export function loadTextureCube(data:AssetData, manager:Manager):IPromise {
-    debug('[Manager] LoadTexture2D', arguments);
+    debug('[LoadTextureCube]', data);
     return manager.load('Image', data.content)
       .then(function (res) { return manager.device.createTextureCube({ data: res }) });
   }
 
   Manager.addImporter('all', 'TextureVideo', loadTextureVideo);
   function loadTextureVideo(data, manager:Glib.Content.Manager):IPromise {
-    debug('[Manager] LoadTextureVideo', arguments);
+    debug('[LoadTextureVideo]', data);
     return manager.load('Video', data.content)
       .then(function (res) { return manager.device.createTexture2D({ data: res }) });
   }

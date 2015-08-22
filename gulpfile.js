@@ -10,14 +10,12 @@ var concat = require('gulp-concat');
 var jade = require('gulp-jade');
 var serve = require('gulp-serve');
 var karma = require('karma');
-
+var plumber = require('gulp-plumber');
 var typedoc = require("gulp-typedoc");
 
 var glibAssets = require('./tools/glib-assets.js');
 var glibEnums = require('./tools/glib-enums.js');
 var glibPages = require('./tools/glib-pages.js');
-
-var distDir = 'dist';
 
 var PATHS = {
   dist: 'dist',
@@ -47,7 +45,9 @@ var PATHS = {
     graphics: [
       "src/glib/graphics/enums/*.ts",
       "src/glib/graphics/states/*.ts",
-      "src/glib/graphics/*.ts"
+      "src/glib/graphics/*.ts",
+      "src/glib/graphics/geometry/*.ts",
+      "src/glib/graphics/geometry/**/*.ts"
     ],
     input: [
       "src/glib/input/**/*.ts"
@@ -56,7 +56,7 @@ var PATHS = {
       "src/glib/scene/**/*.ts"
     ],
     other: [
-      "src/glib/mesh-tools/**/*ts"
+
     ]
   }
 };
@@ -87,22 +87,35 @@ var es6Project = tsc.createProject({
   typescript: require('typescript')
 });
 
+function src(){
+  return gulp.src.apply(gulp, arguments).pipe(plumber())
+}
+
 gulp.task('clean', function(){
   return merge([
-    gulp.src(PATHS.dist).pipe(clean()),
-    gulp.src('src/glib/graphics/enums/*.ts').pipe(clean())
+    src(PATHS.dist).pipe(clean()),
+    src('src/glib/graphics/enums/*.ts').pipe(clean())
   ]);
 });
+
+function dest(){
+  var target = PATHS.dist;
+  if (arguments.length) {
+    var join = path.join;
+    target = join(target, path.join.apply(path, arguments));
+  }
+  return gulp.dest(target);
+}
 
 //
 // ASSETS COMPILATION TASKS
 //
 
 gulp.task('assets', function(){
-  gulp.src(PATHS.assets)
-    .pipe(gulp.dest(distDir + '/assets'))
+  src(PATHS.assets)
+    .pipe(dest('assets'))
     .pipe(glibAssets('package.json'))
-    .pipe(gulp.dest(distDir + '/assets'));
+    .pipe(dest('assets'));
 });
 
 //
@@ -141,18 +154,18 @@ gulp.task('precompile', ['precompile:enums', 'precompile:tsconfig']);
 //
 
 gulp.task('compile:es5', function(){
-  var tscResult = gulp.src(tscSource).pipe(tsc(es5Project));
+  var tscResult = src(tscSource).pipe(tsc(es5Project));
   return merge([
-    tscResult.dts.pipe(gulp.dest("dist/typedefs")),
+    tscResult.dts.pipe(dest("typedefs")),
     tscResult.js
       .pipe(concat('glib.js'))
-      .pipe(gulp.dest("dist/scripts"))
+      .pipe(dest("scripts"))
   ]);
 });
 
 gulp.task('compile:es6', function(){
-  var tscResult = gulp.src(tscSource).pipe(tsc(es6Project));
-  return tscResult.dts.pipe(gulp.dest("dist/typedefs"));
+  var tscResult = src(tscSource).pipe(tsc(es6Project));
+  return tscResult.dts.pipe(dest("typedefs"));
 });
 
 gulp.task('compile', ['compile:es5', 'compile:es6']);
@@ -162,7 +175,7 @@ gulp.task('compile', ['compile:es5', 'compile:es6']);
 //
 
 gulp.task('docs', function(){
-  return gulp.src(tscSource).pipe(typedoc({
+  return src(tscSource).pipe(typedoc({
     target: "ES5",
     out: "dist/docs/",
     name: "Glib"
@@ -170,7 +183,7 @@ gulp.task('docs', function(){
 });
 
 gulp.task('pages', function(){
-  glibPages(PATHS.pages).pipe(gulp.dest('dist'));
+  glibPages(PATHS.pages).pipe(dest());
 });
 
 //

@@ -5,8 +5,8 @@ module Glib.Content.Importer {
 
   function loadEffect(asset:AssetData, data, manager:Manager){
     var effectUrl = path.merge(asset.url, data.effect);
-    return manager
-      .load('Effect', effectUrl)
+    debug('[ImportJsonMaterial] loadEffect', effectUrl);
+    return manager.load('Effect', effectUrl)
       .then(function(effect){
         delete data.effect;
         data.techniques = effect.techniques;
@@ -16,21 +16,21 @@ module Glib.Content.Importer {
   function loadTextures(asset:AssetData, data, manager:Manager){
     var parameters = data.parameters;
     var keys = Object.keys(parameters);
-    var map = keys.map(function (key) {
+    return Promise.all(keys.map(function (key) {
       if (typeof parameters[key] !== 'string') {
         return parameters[key];
       }
       var textureUrl = path.merge(asset.url, parameters[key]);
-      return manager
-        .load('Texture2D', textureUrl)
+      debug('[ImportJsonMaterial] loadTexture', textureUrl);
+      return manager.load('Texture2D', textureUrl)
         .then(function (texture) {
           parameters[key] = texture;
         });
-    });
-    return Promise.all(map);
+    }));
   }
 
   export function loadJsonMaterial(json:any, asset:AssetData, manager:Manager):IPromise {
+    debug('[LoadJsonMaterial]', json);
     var wasArray = Array.isArray(json);
     json = wasArray ? json : [json];
     return Promise.all(json.map(function(data:any){
@@ -46,7 +46,7 @@ module Glib.Content.Importer {
   }
 
   export function importJsonMaterial(asset:AssetData, manager:Manager):IPromise {
-    debug('[Manager] ImportJsonMaterial', asset);
+    debug('[ImportJsonMaterial]', asset);
     var json:any = JSON.parse(asset.content);
     return loadJsonMaterial(json, asset, manager);
   }

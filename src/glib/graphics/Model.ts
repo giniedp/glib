@@ -21,7 +21,7 @@ module Glib.Graphics {
       this.boundingBox = params.boundingBox || [0, 0, 0, 0, 0, 0];
       this.boundingSphere = params.boundingSphere || [0, 0, 0, 0];
 
-      var meshes = params.meshes || [];
+      var meshes = [].concat.apply([], params.meshes || []);
       for (var mesh of meshes) {
         if (mesh instanceof ModelMesh) {
           this.meshes.push(mesh);
@@ -30,7 +30,7 @@ module Glib.Graphics {
         }
       }
 
-      var materials = params.materials || [];
+      var materials = [].concat.apply([], params.materials || []);
       for (var material of materials) {
         if (material instanceof Material) {
           this.materials.push(material);

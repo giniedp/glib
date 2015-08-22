@@ -8,6 +8,8 @@ module Glib.Graphics {
     pixelType?: number,
     type?: number,
     handle?: WebGLTexture,
+    width?:number,
+    height?:number,
     data?: any,
   }
 
@@ -101,13 +103,7 @@ module Glib.Graphics {
       }
 
       this.ready = false;
-
-      this.setData(defaultPixel);
       var source = opts.data;
-
-      if (!source) {
-        return this;
-      }
 
       if (utils.isString(source)) {
         this.generateMipmap = true;
@@ -122,6 +118,13 @@ module Glib.Graphics {
         this.setData(new Uint8Array(source));
       } else if (source) {
         this.setImage(source);
+      } else {
+        this.width = opts.width;
+        this.height = opts.height;
+        this.ready = true;
+        this.gl.bindTexture(this.type, this.handle);
+        this.gl.texImage2D(this.type, 0, this.pixelFormat, this.width, this.height, 0, this.pixelFormat, this.pixelType, null);
+        this.gl.bindTexture(this.type, null);
       }
       return this;
     }

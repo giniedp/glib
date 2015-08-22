@@ -1,0 +1,102 @@
+//- title: RenderTarget
+extends ./../_layouts/default.jade
+block script
+  script#vertex-shader1(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    attribute vec3 position;
+    attribute vec3 color;
+    varying vec3 vertexColor;
+    void main(void) {
+      vertexColor = color;
+      gl_Position = vec4(position, 1.0);
+    }
+  script#fragment-shader1(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    varying vec3 vertexColor;
+    void main(void) {
+      gl_FragColor = vec4(vertexColor.rgb, 1.0);
+    }
+  script#vertex-shader2(type='text/ymlsl').
+    precision highp float;
+    precision highp int;
+    attribute vec3 position;
+    varying vec2 texCoord;
+    void main(void) {
+      texCoord = (position.xy + 1.0) * 0.5;
+      gl_Position = vec4(position, 1.0);
+    }
+  script#fragment-shader2(type='text/ymlsl').
+    precision highp float;
+    precision highp int;
+    // @filter PointClamp
+    uniform sampler2D texture;
+    varying vec2 texCoord;
+    void main(void) {
+      vec3 color = texture2D(texture, texCoord).rgb;
+      vec3 coords = vec3(texCoord.xy, 0);
+      gl_FragColor = vec4(color, 1.0);
+    }
+
+  script(type='text/javascript').
+    var device = new Glib.Graphics.Device({canvas: 'canvas'});
+    var renderTarget = device.createRenderTarget({
+      width: 128,
+      height: 64
+    });
+    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
+    var program2 = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader2').textContent,
+      fragmentShader: document.getElementById('fragment-shader2').textContent
+    });
+    var program1 = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader1').textContent,
+      fragmentShader: document.getElementById('fragment-shader1').textContent
+    });
+    var indices = device.createIndexBuffer({
+      dataType: "ushort",
+      data: [0, 1, 2]
+    });
+    var vertices = device.createVertexBuffer({
+      layout: {
+        position: {
+          type: "float",
+          offset: 0,
+          elements: 3
+        },
+        color: {
+          type: "float",
+          offset: 12,
+          elements: 3
+        }
+      },
+      dataType: "float",
+      data: [
+        -1.0, -1.0, 0.0, 1, 0, 0,
+         1.0, -1.0, 0.0, 0, 1, 0,
+         0.0,  1.0, 0.0, 0, 0, 1
+      ]
+    });
+
+    window.device = device;
+    Glib.utils.loop(function () {
+
+      device.setRenderTarget(renderTarget);
+      device.viewportState.commit({ width: renderTarget.width, height: renderTarget.height });
+      device.clear(Glib.Graphics.Color.CornflowerBlue);
+
+      device.program = program1;
+      device.indexBuffer = indices;
+      device.vertexBuffer = vertices;
+      device.drawIndexedPrimitives();
+
+      device.viewportState.commit({ width: device.canvas.width, height: device.canvas.height });
+      device.setRenderTarget(null);
+      device.clear(Glib.Graphics.Color.CornflowerBlue);
+
+      device.program = program2;
+      device.program.uniforms.texture.set(renderTarget.texture);
+      device.drawQuad();
+
+    });

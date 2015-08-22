@@ -1,4 +1,4 @@
-module Glib.MeshTools {
+module Glib.Graphics.Geometry {
 
   import Vec3 = Vlib.Vec3;
   import Vec2 = Vlib.Vec2;
