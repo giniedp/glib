@@ -15,10 +15,11 @@ module Glib.Graphics {
     _changed:boolean;
     _changes:DepthStateOptions = {};
 
-    constructor(device:Device) {
+    constructor(device:Device, options?:DepthStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(options);
     }
 
     get depthEnable():boolean {
@@ -61,21 +62,20 @@ module Glib.Graphics {
       }
     }
 
-    commit(state?:DepthStateOptions):DepthState {
-      if (state) {
-        utils.extend(this, state);
-      }
+    extend(state:DepthStateOptions={}):DepthState {
+      utils.extend(this, state);
+      return this
+    }
 
+    commit(state?:DepthStateOptions):DepthState {
+      this.extend(state);
+      
       if (!this._changed) {
         return this;
       }
 
       DepthState.commit(this.gl, this._changes);
-
-      this._changed = false;
-      this._changes = {};
-      delete this._changes.depthFunction;
-      delete this._changes.depthWriteEnable;
+      this._clearChanges();
       return this;
     }
 
@@ -89,7 +89,15 @@ module Glib.Graphics {
 
     resolve():DepthState {
       DepthState.resolve(this.gl, this);
+      this._clearChanges();
       return this;
+    }
+
+    private _clearChanges(){
+      this._changed = false;
+      this._changes.depthEnable = undefined;
+      this._changes.depthFunction = undefined;
+      this._changes.depthWriteEnable = undefined;
     }
 
     static convert(state:any):DepthStateOptions {

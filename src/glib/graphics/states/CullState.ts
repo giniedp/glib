@@ -15,12 +15,13 @@ module Glib.Graphics {
     _changed:boolean = false;
     _changes:CullStateOptions = {};
 
-    constructor(device:Device) {
+    constructor(device:Device, state?:CullStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(state);
     }
-
+    
     get culling():boolean {
       return this._culling;
     }
@@ -66,24 +67,26 @@ module Glib.Graphics {
       }
     }
 
+    extend(state:CullStateOptions={}):CullState {
+      utils.extend(this, state);
+      return this
+    }
+
     commit(state?:CullStateOptions):CullState {
-      if (state) {
-        utils.extend(this, state);
-      }
+      this.extend(state);
 
       if (!this._changed) {
         return this;
       }
 
       CullState.commit(this.gl, this._changes);
-
-      this._changed = false;
-      this._changes = {};
+      this._clearChanges();
       return this;
     }
 
     resolve():CullState {
       CullState.resolve(this.gl, this);
+      this._clearChanges();
       return this;
     }
 
@@ -93,6 +96,13 @@ module Glib.Graphics {
       out.cullMode = this.cullMode;
       out.frontFace = this.frontFace;
       return out;
+    }
+
+    private _clearChanges() {
+      this._changes.culling = undefined;
+      this._changes.cullMode = undefined;
+      this._changes.frontFace = undefined;
+      this._changed = false;
     }
 
     static convert(state:any):CullStateOptions {
@@ -116,12 +126,10 @@ module Glib.Graphics {
       var cullMode = state.cullMode;
       var frontFace = state.frontFace;
 
-      if (culling !== undefined) {
-        if (culling) {
-          gl.enable(gl.CULL_FACE);
-        } else {
-          gl.disable(gl.CULL_FACE);
-        }
+      if (culling === true) {
+        gl.enable(gl.CULL_FACE);
+      } else if (culling === false) {
+        gl.disable(gl.CULL_FACE);
       }
       if (cullMode !== undefined) {
         gl.cullFace(cullMode);

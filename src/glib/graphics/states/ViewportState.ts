@@ -21,10 +21,11 @@ module Glib.Graphics {
     _changed:boolean = false;
     _changes:ViewportStateOptions = {};
 
-    constructor(device:Device) {
+    constructor(device:Device, state?:ViewportStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(state);
     }
 
     get x():number {
@@ -99,6 +100,11 @@ module Glib.Graphics {
       }
     }
 
+    extend(state:ViewportStateOptions={}):ViewportState {
+      utils.extend(this, state);
+      return this
+    }
+
     commit(state?:ViewportStateOptions):ViewportState {
       if (state) {
         utils.extend(this, state);
@@ -124,9 +130,7 @@ module Glib.Graphics {
       }
 
       ViewportState.commit(this.gl, changes);
-
-      this._changed = false;
-      this._changes = {};
+      this._clearChanges();
       return this;
     }
 
@@ -143,7 +147,18 @@ module Glib.Graphics {
 
     resolve():ViewportState {
       ViewportState.resolve(this.gl, this);
+      this._clearChanges();
       return this;
+    }
+
+    private _clearChanges(){
+      this._changed = false;
+      this._changes.x = undefined;
+      this._changes.y = undefined;
+      this._changes.width = undefined;
+      this._changes.height = undefined;
+      this._changes.zMin = undefined;
+      this._changes.zMax = undefined;
     }
 
     static commit(gl:any, state:ViewportStateOptions) {

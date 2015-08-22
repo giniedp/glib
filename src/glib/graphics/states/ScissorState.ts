@@ -19,10 +19,11 @@ module Glib.Graphics {
     _changed:boolean = false;
     _changes:ScissorStateOptions = {};
 
-    constructor(device:Device) {
+    constructor(device:Device, state?:ScissorStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(state);
     }
 
     get enable():boolean {
@@ -85,10 +86,13 @@ module Glib.Graphics {
       }
     }
 
+    extend(state:ScissorStateOptions={}):ScissorState {
+      utils.extend(this, state);
+      return this
+    }
+
     commit(state?:ScissorStateOptions):ScissorState {
-      if (state) {
-        utils.extend(this, state);
-      }
+      this.extend(state);
 
       if (!this._changed) {
         return this;
@@ -105,25 +109,33 @@ module Glib.Graphics {
       }
 
       ScissorState.commit(this.gl, this._changes);
-
-      this._changed = false;
-      this._changes = {};
+      this._clearChanges();
       return this;
     }
 
     resolve():ScissorState {
       ScissorState.resolve(this.gl, this);
+      this._clearChanges();
       return this;
     }
 
     dump(out?:any):ScissorStateOptions {
       out = out || {};
-      out.enable = this.enable;
       out.x = this.x;
       out.y = this.y;
       out.width = this.width;
       out.height = this.height;
+      out.enable = this.enable;
       return out;
+    }
+
+    private _clearChanges(){
+      this._changed = false;
+      this._changes.x = undefined;
+      this._changes.y = undefined;
+      this._changes.width = undefined;
+      this._changes.height = undefined;
+      this._changes.enable = undefined;
     }
 
     static commit(gl:any, state:ScissorStateOptions) {

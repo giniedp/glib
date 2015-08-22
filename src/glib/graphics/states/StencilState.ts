@@ -35,10 +35,11 @@ module Glib.Graphics {
     _changes:StencilStateOptions = {};
     _changed:boolean = false;
 
-    constructor(device:Device) {
+    constructor(device:Device, state?:StencilStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(state);
     }
 
     get stencilFunction():number {
@@ -229,10 +230,13 @@ module Glib.Graphics {
       }
     }
 
+    extend(state:StencilStateOptions={}):StencilState {
+      utils.extend(this, state);
+      return this
+    }
+
     commit(state?:StencilStateOptions):StencilState {
-      if (state) {
-        utils.extend(this, state);
-      }
+      this.extend(state);
 
       if (!this._changed) {
         return this;
@@ -272,15 +276,15 @@ module Glib.Graphics {
         changes.stencilBackDepthPass = this.stencilBackDepthPass;
       }
 
-      StencilState.commit(this.gl, changes);
 
-      this._changed = false;
-      this._changes = {};
+      StencilState.commit(this.gl, changes);
+      this._clearChanges();
       return this;
     }
 
     resolve():StencilState {
       StencilState.resolve(this.gl, this);
+      this._clearChanges();
       return this;
     }
 
@@ -300,6 +304,23 @@ module Glib.Graphics {
       out.stencilBackDepthFail = this.stencilBackDepthFail;
       out.stencilBackDepthPass = this.stencilBackDepthPass;
       return out;
+    }
+
+    private _clearChanges(){
+      this._changed = false;
+      this._changes.enable = undefined;
+      this._changes.stencilFunction = undefined;
+      this._changes.stencilReference = undefined;
+      this._changes.stencilMask = undefined;
+      this._changes.stencilFail = undefined;
+      this._changes.stencilDepthFail = undefined;
+      this._changes.stencilDepthPass = undefined;
+      this._changes.stencilBackFunction = undefined;
+      this._changes.stencilBackReference = undefined;
+      this._changes.stencilBackMask = undefined;
+      this._changes.stencilBackFail = undefined;
+      this._changes.stencilBackDepthFail = undefined;
+      this._changes.stencilBackDepthPass = undefined;
     }
 
     static convert(state:any):StencilStateOptions {
@@ -340,47 +361,37 @@ module Glib.Graphics {
 
     static commit(gl:any, state:StencilStateOptions) {
       var enable = state.enable;
-      if (enable !== undefined) {
-        if (enable) {
-          gl.enable(gl.STENCIL_TEST);
-        } else {
-          gl.disable(gl.STENCIL_TEST);
-        }
+      if (enable === true) {
+        gl.enable(gl.STENCIL_TEST);
+      } else if (enable === false) {
+        gl.disable(gl.STENCIL_TEST);
       }
 
       var stencilFunction = state.stencilFunction;
       var stencilReference = state.stencilReference;
       var stencilMask = state.stencilMask;
-      if (stencilFunction !== undefined &&
-        stencilReference !== undefined &&
-        stencilMask !== undefined) {
+      if (stencilFunction !== undefined && stencilReference !== undefined && stencilMask !== undefined) {
         gl.stencilFuncSeparate(CullMode.Front, stencilFunction, stencilReference, stencilMask);
       }
 
       var stencilFail = state.stencilFail;
       var stencilDepthFail = state.stencilDepthFail;
       var stencilDepthPass = state.stencilDepthPass;
-      if (stencilFail !== undefined &&
-        stencilDepthFail !== undefined &&
-        stencilDepthPass !== undefined) {
+      if (stencilFail !== undefined && stencilDepthFail !== undefined && stencilDepthPass !== undefined) {
         gl.stencilOpSeparate(CullMode.Front, stencilFail, stencilDepthFail, stencilDepthPass);
       }
 
       var stencilBackFunction = state.stencilBackFunction;
       var stencilBackReference = state.stencilBackReference;
       var stencilBackMask = state.stencilBackMask;
-      if (stencilBackFunction !== undefined &&
-        stencilBackReference !== undefined &&
-        stencilBackMask !== undefined) {
+      if (stencilBackFunction !== undefined && stencilBackReference !== undefined && stencilBackMask !== undefined) {
         gl.stencilFuncSeparate(CullMode.Back, stencilBackFunction, stencilBackReference, stencilBackMask);
       }
 
       var stencilBackFail = state.stencilBackFail;
       var stencilBackDepthFail = state.stencilBackDepthFail;
       var stencilBackDepthPass = state.stencilBackDepthPass;
-      if (stencilBackFail !== undefined &&
-        stencilBackDepthFail !== undefined &&
-        stencilBackDepthPass !== undefined) {
+      if (stencilBackFail !== undefined && stencilBackDepthFail !== undefined && stencilBackDepthPass !== undefined) {
         gl.stencilOpSeparate(CullMode.Back, stencilBackFail, stencilBackDepthFail, stencilBackDepthPass);
       }
     }
@@ -400,7 +411,7 @@ module Glib.Graphics {
 
       out.stencilBackFunction = gl.getParameter(gl.STENCIL_BACK_FUNC);
       out.stencilBackReference = gl.getParameter(gl.STENCIL_BACK_REF);
-      out.stencilBackReference = gl.getParameter(gl.STENCIL_BACK_VALUE_MASK);
+      out.stencilBackMask = gl.getParameter(gl.STENCIL_BACK_VALUE_MASK);
 
       out.stencilBackFail = gl.getParameter(gl.STENCIL_BACK_FAIL);
       out.stencilBackDepthFail = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_FAIL);

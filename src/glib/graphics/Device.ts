@@ -118,11 +118,11 @@ module Glib.Graphics {
     scissorState:ScissorState;
     viewportState:ViewportState;
 
-    constructor(options?:{
+    constructor(options:{
       canvas?: string|HTMLCanvasElement,
       context?: string|any,
       contextAttributes?: Object
-    }) {
+    } = {}) {
 
       this.canvas = getOrCreateCanvas(options.canvas);
       this.context = getOrCreateContext(this.canvas, options);
@@ -158,10 +158,13 @@ module Glib.Graphics {
      * @param stencil
      * @returns {Glib.Graphics.Device}
      */
-    clear(color?:number|number[], depth?:number, stencil?:number):Device {
+    clear(color?:number|number[]|Color, depth?:number, stencil?:number):Device {
       var gl = this.context, mask = 0;
 
-      if (typeof color === 'number') {
+      if (color instanceof Color) {
+        mask = mask | gl.COLOR_BUFFER_BIT;
+        gl.clearColor(color.x, color.y, color.z, color.w);
+      } else if (typeof color === 'number') {
         mask = mask | gl.COLOR_BUFFER_BIT;
         var c = Color;
         gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color));

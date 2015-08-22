@@ -31,10 +31,11 @@ module Glib.Graphics {
     _changed:boolean = false;
     _changes:BlendStateOptions = {};
 
-    constructor(device:Device) {
+    constructor(device:Device, state?:BlendStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(state);
     }
 
     get colorBlendFunction():number {
@@ -193,32 +194,32 @@ module Glib.Graphics {
       }
     }
 
+    extend(state:BlendStateOptions={}):BlendState {
+      utils.extend(this, state);
+      return this
+    }
+
     commit(state?:BlendStateOptions):BlendState {
-      if (state) {
-        utils.extend(this, state);
-      }
+      this.extend(state);
 
       if (!this._changed) {
         return this;
       }
 
       var changes = this._changes;
-
       if (changes.colorBlendFunction !== undefined || changes.alphaBlendFunction !== undefined) {
         changes.colorBlendFunction = this.colorBlendFunction;
         changes.alphaBlendFunction = this.alphaBlendFunction;
       }
 
-      if (changes.colorSrcBlend !== undefined || changes.colorDstBlend !== undefined ||
-        changes.alphaSrcBlend !== undefined || changes.alphaDstBlend !== undefined) {
+      if (changes.colorSrcBlend !== undefined || changes.colorDstBlend !== undefined || changes.alphaSrcBlend !== undefined || changes.alphaDstBlend !== undefined) {
         changes.colorSrcBlend = this.colorSrcBlend;
         changes.colorDstBlend = this.colorDstBlend;
         changes.alphaSrcBlend = this.alphaSrcBlend;
         changes.alphaDstBlend = this.alphaDstBlend;
       }
 
-      if (changes.constantR !== undefined || changes.constantG !== undefined ||
-        changes.constantB !== undefined || changes.constantA !== undefined) {
+      if (changes.constantR !== undefined || changes.constantG !== undefined || changes.constantB !== undefined || changes.constantA !== undefined) {
         changes.constantR = this.constantR;
         changes.constantG = this.constantG;
         changes.constantB = this.constantB;
@@ -250,6 +251,8 @@ module Glib.Graphics {
 
     resolve():BlendState {
       BlendState.resolve(this.gl, this);
+      this._changed = false;
+      this._changes = {};
       return this;
     }
 

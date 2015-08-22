@@ -15,10 +15,11 @@ module Glib.Graphics {
     _changed:boolean = false;
     _changes:OffsetStateOptions = {};
 
-    constructor(device:Device) {
+    constructor(device:Device, state?:OffsetStateOptions) {
       this.device = device;
       this.gl = device.context;
       this.resolve();
+      this.extend(state);
     }
 
     get offsetEnable():boolean {
@@ -57,10 +58,13 @@ module Glib.Graphics {
       }
     }
 
+    extend(state:OffsetStateOptions={}):OffsetState {
+      utils.extend(this, state);
+      return this
+    }
+
     commit(state?:OffsetStateOptions):OffsetState {
-      if (state) {
-        utils.extend(this, state);
-      }
+      this.extend(state);
 
       if (!this._changed) {
         return this;
@@ -74,9 +78,7 @@ module Glib.Graphics {
       }
 
       OffsetState.commit(this.gl, this._changes);
-
-      this._changed = false;
-      this._changes = {};
+      this._clearChanges();
       return this;
     }
 
@@ -90,7 +92,15 @@ module Glib.Graphics {
 
     resolve():OffsetState {
       OffsetState.resolve(this.gl, this);
+      this._clearChanges();
       return this;
+    }
+
+    private _clearChanges(){
+      this._changed = false;
+      this._changes.offsetEnable = undefined;
+      this._changes.offsetFactor = undefined;
+      this._changes.offsetUnits = undefined;
     }
 
     static convert(state:any):OffsetStateOptions {
