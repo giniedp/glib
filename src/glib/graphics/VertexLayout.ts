@@ -7,7 +7,8 @@ module Glib.Graphics {
     },
     color: {
       type: 'ubyte',
-      elements: 4
+      elements: 4,
+      normalize: true
     },
     normal: {
       type: 'float',

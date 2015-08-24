@@ -1,40 +1,29 @@
 program:
-  precision highp float;
-  precision highp int;
+  #include <postprocess.h>
 
-  uniform sampler2D texture; // 0
-  uniform float vx_offset;
-  uniform float rt_w; // GeeXLab built-in
-  uniform float rt_h; // GeeXLab built-in
-  uniform float pixelSizeX; // 15.0
-  uniform float pixelSizeY; // 10.0
+  uniform float vOffset;
+  uniform float pixelWidth;
+  uniform float pixelHeight;
 
 technique:
   pass:
     name: 'pixelate'
     vertexShader:
-      void main(void)
-      {
-        gl_Position = ftransform();
-        gl_TexCoord[0] = gl_MultiTexCoord0;
+      void main(void) {
+        texCoord = texture;
+        gl_Position = vec4(position, 1.0);
       }
 
     pixelShader:
-      void main()
-      {
-        vec2 uv = gl_TexCoord[0].xy;
+      void main() {
 
-        vec3 tc = vec3(1.0, 0.0, 0.0);
-        if (uv.x < (vx_offset-0.005))
-        {
-          float dx = pixelSizeX*(1.0f/rt_w);
-          float dy = pixelSizeY*(1.0f/rt_h);
-          vec2 coord = vec2(dx*floor(uv.x/dx), dy*floor(uv.y/dy));
-          tc = texture2D(texture, coord).rgb;
+        vec2 uv = texCoord;
+
+        if (uv.x <= vOffset) {
+          float dx = pixelWidth / targetWidth;
+          float dy = pixelHeight / targetHeight;
+          uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
         }
-        else if (uv.x>=(vx_offset+0.005))
-        {
-          tc = texture2D(texture, uv).rgb;
-        }
-          gl_FragColor = vec4(tc, 1.0);
+        gl_FragColor = texture2D(textureSampler, uv).rgb;
+
       }

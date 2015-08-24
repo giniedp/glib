@@ -2,12 +2,13 @@ module Glib.Components {
 
   import Color = Glib.Graphics.Color;
   import Device = Glib.Graphics.Device;
-  import Context = Glib.Rendering.Context;
-  import ForwardRendering = Glib.Rendering.ForwardRendering;
-  import RenderStep = Glib.Rendering.Step;
+
+  import ForwardRendering = Glib.Render.ForwardRendering;
+  import RenderBinder = Glib.Render.Binder;
+  import RenderStep = Glib.Render.Step;
 
   export interface CullVisitor {
-    start(entity:Entity, context:Context)
+    start(entity:Entity, context:RenderBinder)
     add(mesh:Graphics.ModelMesh, material:Graphics.Material, world:Vlib.Mat4, params?:any);
   }
 
@@ -20,9 +21,10 @@ module Glib.Components {
 
     time:Time;
     device:Device;
-    context:Context = new Context();
+    context:RenderBinder;
     cullVisitor:CullVisitor = new SimpleCullVisitor();
     screens:any[] = [];
+    private _rtOptions:any = {};
 
     constructor() {
       this.screens = [{
@@ -35,6 +37,7 @@ module Glib.Components {
     setup() {
       this.time = this.node.root.getService("Time");
       this.device = this.node.root.getService("Device");
+      this.context = new RenderBinder(this.device);
     }
 
     update() {
@@ -42,7 +45,6 @@ module Glib.Components {
     }
 
     draw() {
-      this.device.clear(Color.CornflowerBlue, 1, 1);
       for(var screen of this.screens) {
         this.renderScreen(screen);
       }
@@ -58,6 +60,13 @@ module Glib.Components {
       this.context.setCamera(camera.transform.worldMat, camera.viewMat, camera.projMat);
       this.cullVisitor.start(this.node.root, this.context);
 
+      var rtOpts = this._rtOptions;
+      rtOpts.width = screen.width;
+      rtOpts.height = screen.height;
+      rtOpts.depth = true;
+
+      //var buffer = this.context.acquireRenderTarget(rtOpts);
+
       var step:RenderStep = null, steps = screen.steps;
       for (step of steps) {
         step.setup(this.context);
@@ -72,9 +81,9 @@ module Glib.Components {
   }
 
   export class SimpleCullVisitor implements CullVisitor, EntityVisitor {
-    context:Context;
+    context:RenderBinder;
 
-    start(node:Entity, context:Context) {
+    start(node:Entity, context:RenderBinder) {
       this.context = context;
       node.acceptVisitor(this);
     }

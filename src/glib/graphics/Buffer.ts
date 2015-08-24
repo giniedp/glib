@@ -112,7 +112,7 @@ module Glib.Graphics {
         channel = this.layout[key];
         attribute = program.attributes[key];
         if (channel) {
-          this.gl.vertexAttribPointer(attribute.location, channel.elements, DataType[channel.type], false, this.elementSize, channel.offset);
+          this.gl.vertexAttribPointer(attribute.location, channel.elements, DataType[channel.type], !!channel.normalize, this.elementSize, channel.offset);
         }
       }
       return this;

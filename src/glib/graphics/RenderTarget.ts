@@ -1,7 +1,9 @@
 module Glib.Graphics {
   export interface RenderTargetOptions {
     width:number,
-    height:number
+    height:number,
+    depth?:boolean,
+    stencil?:boolean
   }
 
   export class RenderTarget {
@@ -37,14 +39,15 @@ module Glib.Graphics {
       });
 
       this.handle = this.gl.createFramebuffer();
-      this.depthHandle = gl.createRenderbuffer();
-
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.handle);
-      gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthHandle);
-      gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, options.width, options.height);
-
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture.handle, 0);
-      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthHandle);
+
+      if (options.depth) {
+        this.depthHandle = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthHandle);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, options.width, options.height);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depthHandle);
+      }
 
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.bindRenderbuffer(gl.RENDERBUFFER, null);

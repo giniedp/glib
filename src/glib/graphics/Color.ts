@@ -4,10 +4,10 @@ module Glib.Graphics {
 
     }
     get rgba():number{
-      return (this.r | 0) << 24 | (this.g | 0) << 16 | (this.b | 0) << 8 | (this.a | 0) << 0;
+      return (this.a | 0) << 24 | (this.b | 0) << 16 | (this.g | 0) << 8 | (this.r | 0) << 0;
     }
     get argb():number{
-      return (this.a | 0) << 24 | (this.r | 0) << 16 | (this.g | 0) << 8 | (this.b | 0) << 0;
+      return (this.b | 0) << 24 | (this.g | 0) << 16 | (this.r | 0) << 8 | (this.a | 0) << 0;
     }
 
     get x():number {
@@ -39,23 +39,23 @@ module Glib.Graphics {
     }
 
     static rgba(r:number, g:number, b:number, a:number):number {
-      return (r | 0) << 24 | (g | 0) << 16 | (b | 0) << 8 | (a | 0) << 0;
+      return (a | 0) << 24 | (b | 0) << 16 | (g | 0) << 8 | (r | 0) << 0;
     }
 
     static r(rgba:number):number {
-      return (rgba >> 24) & 255;
+      return rgba & 255;
     }
 
     static g(rgba:number):number {
-      return (rgba >> 16) & 255;
-    }
-
-    static b(rgba:number):number {
       return (rgba >> 8) & 255;
     }
 
+    static b(rgba:number):number {
+      return (rgba >> 16) & 255;
+    }
+
     static a(rgba:number):number {
-      return (rgba >> 0) & 255;
+      return (rgba >> 24) & 255;
     }
 
     static x(rgba:number):number {

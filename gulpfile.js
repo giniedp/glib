@@ -8,6 +8,7 @@ var merge = require('merge');
 var tsc = require('gulp-typescript');
 var concat = require('gulp-concat');
 var jade = require('gulp-jade');
+var sass = require('gulp-sass');
 var serve = require('gulp-serve');
 var karma = require('karma');
 var plumber = require('gulp-plumber');
@@ -22,6 +23,9 @@ var PATHS = {
   pages: [
     '!src/pages/layouts/*.jade',
     'src/**/*.jade'
+  ],
+  styles: [
+    'src/pages/style/**/*.scss'
   ],
   assets: [
     'src/assets/**/*'
@@ -40,7 +44,7 @@ var PATHS = {
       "src/glib/content/**/*.ts"
     ],
     rendering: [
-      "src/glib/rendering/**/*.ts"
+      "src/glib/render/**/*.ts"
     ],
     graphics: [
       "src/glib/graphics/enums/*.ts",
@@ -182,9 +186,18 @@ gulp.task('docs', function(){
   }));
 });
 
-gulp.task('pages', function(){
-  glibPages(PATHS.pages).pipe(dest());
+gulp.task('pages:scss', function(){
+  return src("src/pages/style/bootstrap4/scss/bootstrap-flex.scss")
+    .pipe(sass.sync().on('error', sass.logError))
+    .pipe(concat('index.css'))
+    .pipe(dest());
 });
+
+gulp.task('pages:jade', function(){
+  return glibPages(PATHS.pages).pipe(dest());
+});
+
+gulp.task('pages', ['pages:scss', 'pages:jade']);
 
 //
 // WATCHER TASKS
@@ -203,7 +216,11 @@ gulp.task('watch', ['compile', 'pages', 'assets'], function(){
   });
 
   gulp.watch(PATHS.pages, function(){
-    gulp.run('pages');
+    gulp.run('pages:jade');
+  });
+
+  gulp.watch(PATHS.styles, function(){
+    gulp.run('pages:scss');
   });
 
   gulp.watch(PATHS.assets, function(){

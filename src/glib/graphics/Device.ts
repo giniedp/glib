@@ -216,6 +216,7 @@ module Glib.Graphics {
       var type = iBuffer.dataType;
       var Enum = PrimitiveType;
       primitiveType = Enum[primitiveType || Enum.TriangleList];
+
       offset = offset || 0;
       count = count || (iBuffer.elementCount - offset);
 
@@ -306,12 +307,12 @@ module Glib.Graphics {
 
       var vBuffer = this._quadVertexBuffer || this.createVertexBuffer({
           data: [
-            -1, -1, 0,
-            1, -1, 0,
-            -1, 1, 0,
-            1, 1, 0
+            -1, -1, 0, 0, 1,
+            1, -1, 0, 1, 1,
+            -1, 1, 0, 0, 0,
+            1, 1, 0, 1, 0
           ],
-          layout: this.createVertexLayout('position'),
+          layout: this.createVertexLayout('PositionTexture'),
           dataType: 'float'
         });
       this._quadVertexBuffer = vBuffer;
@@ -458,7 +459,7 @@ module Glib.Graphics {
     }
 
     createSpriteBatch() {
-      //return new SpriteBatch(this);
+      return new SpriteBatch(this);
     }
 
     createVertexLayout(name):any {

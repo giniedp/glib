@@ -1,0 +1,41 @@
+program:
+  //
+  // http://www.geeks3d.com/20091116/shader-library-2d-shockwave-post-processing-filter-glsl/
+  //
+
+  #include <postprocess.h>
+
+  // @default [0.5, 0.5]
+  uniform vec2 center;
+
+  // @binding time
+  uniform float time;
+
+  // @default [10.0, 0.8, 0.1]
+  uniform vec3 shockParams;
+
+technique:
+  pass:
+    name: 'pixelate'
+    vertexShader:
+      void main(void) {
+        texCoord = texture;
+        gl_Position = vec4(position, 1.0);
+      }
+
+    pixelShader:
+      void main() {
+
+        vec2 uv = texCoord;
+        float distance = distance(texCoord, center);
+        if ( (distance <= (time + shockParams.z)) &&
+             (distance >= (time - shockParams.z)) )
+        {
+          float diff = (distance - time);
+          float powDiff = 1.0 - pow(abs(diff * shockParams.x), shockParams.y);
+          float diffTime = diff * powDiff;
+          vec2 diffUV = normalize(texCoord - center);
+          uv = texCoord + (diffUV * diffTime);
+        }
+        gl_FragColor = texture2D(textureSampler, uv);
+      }
