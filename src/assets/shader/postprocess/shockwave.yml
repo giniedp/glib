@@ -23,9 +23,8 @@ technique:
         gl_Position = vec4(position, 1.0);
       }
 
-    pixelShader:
+    fragmentShader:
       void main() {
-
         vec2 uv = texCoord;
         float distance = distance(texCoord, center);
         if ( (distance <= (time + shockParams.z)) &&

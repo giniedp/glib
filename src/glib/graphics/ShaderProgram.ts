@@ -153,6 +153,9 @@ module Glib.Graphics {
       return this;
     }
 
+    /**
+      * @description Sets a value on the uniform specified by the 'name' argument. Does nothing if the uniform name does not exist.
+      */
     setUniform(name:string, value: any):ShaderProgram {
         var uniform = this.uniforms[name];;
         if (!uniform) {

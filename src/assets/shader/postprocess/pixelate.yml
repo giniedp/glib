@@ -1,29 +1,31 @@
 program:
   #include <postprocess.h>
 
+  // @default 0
   uniform float vOffset;
+
+  // @default 10
   uniform float pixelWidth;
+
+  // @default 10
   uniform float pixelHeight;
 
 technique:
   pass:
-    name: 'pixelate'
     vertexShader:
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
       }
 
-    pixelShader:
+    fragmentShader:
       void main() {
-
         vec2 uv = texCoord;
-
-        if (uv.x <= vOffset) {
+        if (uv.x >= vOffset) {
           float dx = pixelWidth / targetWidth;
           float dy = pixelHeight / targetHeight;
           uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
         }
-        gl_FragColor = texture2D(textureSampler, uv).rgb;
 
+        gl_FragColor = vec4(texture2D(textureSampler, uv).rgb, 1);
       }

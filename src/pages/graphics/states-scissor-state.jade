@@ -9,9 +9,9 @@ block script
     var halfWidth  = width/2;
     var halfHeight = height/2;
 
+    var BLUE  = 0xFFFF0000;
+    var GREEN = 0xFF00FF00;
     var RED   = 0xFF0000FF;
-    var GREEN = 0x00FF00FF;
-    var BLUE  = 0x0000FFFF;
     var WHITE = 0xFFFFFFFF;
 
     device.scissorState.commit({ x: 0, y: 0, width: halfWidth, height: halfHeight, enable: true });

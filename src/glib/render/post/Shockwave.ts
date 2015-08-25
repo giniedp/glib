@@ -1,11 +1,11 @@
 module Glib.Render.PostEffect {
 
-  export class Pixelate implements Render.Step {
+  export class ShockWave implements Render.Step {
 
     private _program: Graphics.ShaderProgram;
 
-    paramPixelWidth: number = 5;
-    paramPixelHeight: number = 5;
+    time: number = 0;
+    center: Vlib.Vec2 = new Vlib.Vec2(0.5, 0.5);
 
     constructor(program:Graphics.ShaderProgram) {
       this._program = program;
@@ -29,10 +29,7 @@ module Glib.Render.PostEffect {
       var program = this._program;
 
       program.setUniform('texture', rt.texture);
-      program.setUniform('pixelWidth', this.paramPixelWidth);
-      program.setUniform('pixelHeight', this.paramPixelHeight);
-      program.setUniform('targetWidth', rt.width);
-      program.setUniform('targetHeight', rt.height);
+      program.setUniform('time', this.time);
       
       manager.device.program = program;
       

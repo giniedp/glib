@@ -19,6 +19,10 @@ module Glib.Content.Parser {
     return item.split(" ").map(readVector);
   }
 
+  function getLines(value: string): string[] {
+    return value.replace(/\r/g, '\n').split('\n');
+  }
+
   export class OBJ {
     result:any;
     groups:any[];
@@ -30,7 +34,7 @@ module Glib.Content.Parser {
     }
 
     parse(data) {
-      var lines = data.split(/\n/);
+      var lines = getLines(data);
       this.result = {
         groups: []
       };

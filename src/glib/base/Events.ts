@@ -21,7 +21,7 @@ module Glib {
    * @module Core
    */
   export class Events implements EventsInterface {
-
+    
     _events:any = {};
 
     /**

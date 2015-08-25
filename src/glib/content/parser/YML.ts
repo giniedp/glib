@@ -5,7 +5,7 @@ module Glib.Content.Parser {
   }
 
   function getLines(value:string):string[] {
-    return value.replace(/\r\n/g, '\n').split('\n');
+    return value.replace(/\r/g, '\n').split('\n');
   }
 
   function chompLeft(value:string, prefix:string):string {

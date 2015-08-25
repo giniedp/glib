@@ -20,63 +20,62 @@ module Glib.Components {
     visible:boolean = true;
 
     time:Time;
-    device:Device;
-    context:RenderBinder;
+    device: Device;
+    assets: Assets;
+    manager: Glib.Render.Manager;
     cullVisitor:CullVisitor = new SimpleCullVisitor();
-    screens:any[] = [];
-    private _rtOptions:any = {};
 
     constructor() {
-      this.screens = [{
-        enabled: true,
-        camera: null,
-        steps: [new ForwardRendering()]
-      }];
+
     }
 
     setup() {
       this.time = this.node.root.getService("Time");
       this.device = this.node.root.getService("Device");
-      this.context = new RenderBinder(this.device);
+      this.assets = this.node.root.getService("Assets");
+      this.manager = new Glib.Render.Manager(this.device);
+      this.manager.createView({
+        enabled: true,
+        steps: [new Render.ForwardRendering()]
+      });
+      
+      this.assets.load("Effect", "/assets/shader/postprocess/pixelate.yml").then((effect) => {
+        var program = this.device.createProgram(effect.techniques[0].passes[0]);
+        var postEffect = new Render.PostEffect.Pixelate(program);
+        var view = this.manager.views[0];
+        view.steps.push(postEffect);
+      });
+      
+      this.assets.load("Effect", "/assets/shader/postprocess/shockwave.yml").then((effect) => {
+        var program = this.device.createProgram(effect.techniques[0].passes[0]);
+        var postEffect = new Render.PostEffect.ShockWave(program);
+        var view = this.manager.views[0];
+        view.steps.push(postEffect);
+      });
     }
 
     update() {
-      this.context.setTime(this.time.totalMsInGame, this.time.elapsedMsInGame);
+      this.manager.binder.setTime(this.time.totalMsInGame, this.time.elapsedMsInGame);
     }
 
     draw() {
-      for(var screen of this.screens) {
-        this.renderScreen(screen);
+      for(var view of this.manager.views) {
+        this._renderView(view);
       }
+      this.manager.presentViews();
     }
 
-    renderScreen(screen) {
-      if (!screen || !screen.enabled || !screen.camera) {
+    private _renderView(view: Render.View) {
+      if (!view || !view.camera || view.enabled === false) {
         return;
       }
-      var camera:Camera = screen.camera;
-      this.context.lights.length = 0;
-      this.context.renderables.length = 0;
-      this.context.setCamera(camera.transform.worldMat, camera.viewMat, camera.projMat);
-      this.cullVisitor.start(this.node.root, this.context);
-
-      var rtOpts = this._rtOptions;
-      rtOpts.width = screen.width;
-      rtOpts.height = screen.height;
-      rtOpts.depth = true;
-
-      //var buffer = this.context.acquireRenderTarget(rtOpts);
-
-      var step:RenderStep = null, steps = screen.steps;
-      for (step of steps) {
-        step.setup(this.context);
-      }
-      for (step of steps) {
-        step.render(this.context);
-      }
-      for (step of steps) {
-        step.cleanup(this.context);
-      }
+      var camera = view.camera;
+      var binder = this.manager.binder;
+      binder.lights.length = 0;
+      binder.renderables.length = 0;
+      binder.setCamera(camera.world, camera.view, camera.projection);
+      this.cullVisitor.start(this.node.root, binder);
+      this.manager.renderView(view);
     }
   }
 

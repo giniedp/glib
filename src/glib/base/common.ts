@@ -45,7 +45,7 @@ module Glib.utils {
     }
     return dst;
   }
-
+  
   /**
    * Extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
    * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so

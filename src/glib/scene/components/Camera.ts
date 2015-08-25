@@ -20,10 +20,11 @@ module Glib.Components {
     fov:number = Math.PI * 0.25;
     aspect:number = 4 / 3;
 
-    viewMat:Mat4 = Mat4.identity();
-    projMat:Mat4 = Mat4.identity();
-    viewProjMat:Mat4 = Mat4.identity();
+    view:Mat4 = Mat4.identity();
+    projection:Mat4 = Mat4.identity();
+    viewProjection:Mat4 = Mat4.identity();
     transform:Transform;
+    private _view: Render.View;
 
     constructor(params?:CameraProperties) {
       if (params) {
@@ -35,23 +36,35 @@ module Glib.Components {
       this.transform = this.node.getService('Transform');
     }
 
-    update(){
-      if (!this.viewMat.equals(this.transform.inverseMat)){
-        this.viewMat.initFrom(this.transform.inverseMat);
-        this.projMat.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far);
-        Mat4.multiply(this.viewMat, this.projMat, this.viewProjMat);
+    update() {
+      if (this._view) {
+        this.aspect = this._view.width / this._view.height;
       }
+      this.view.initFrom(this.transform.inverseMat);
+      this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far);
+      Mat4.multiply(this.view, this.projection, this.viewProjection);
     }
 
-    activate() {
-      var renderer = this.node.root.getService("Renderer");
-      var screen = renderer.screens[0];
-      screen.camera = this;
-      if (screen.width && screen.height) {
-        this.aspect = screen.width / screen.height;
-      } else {
-        var canvas = renderer.device.canvas;
-        this.aspect = canvas.width / canvas.height;
+    activate(viewIndex: number = 0) {
+      var renderer: Components.Renderer = this.node.root.getService("Renderer");
+      var view: Render.View = renderer.manager.views[viewIndex];
+      
+      if (!view) {
+        // TODO: log
+        return;
+      }
+
+      var oldCamera:any = view.camera;
+      if (oldCamera instanceof Glib.Components.Camera) {
+        oldCamera.deactivate();
+      }
+      view.camera = this;     
+    }
+
+    deactivate() {
+      if (this._view) {
+        this._view.camera = void 0;
+        this._view = void 0;
       }
     }
 

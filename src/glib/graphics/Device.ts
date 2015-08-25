@@ -300,17 +300,17 @@ module Glib.Graphics {
      */
     drawQuad():Device {
       var iBuffer = this._quadIndexBuffer || this.createIndexBuffer({
-          data: [0, 1, 2, 1, 2, 3],
+          data: [0, 1, 3, 0, 3, 2],
           dataType: 'ushort'
         });
       this._quadIndexBuffer = iBuffer;
 
       var vBuffer = this._quadVertexBuffer || this.createVertexBuffer({
           data: [
+            -1,  1, 0, 0, 0,
+             1,  1, 0, 1, 0,
             -1, -1, 0, 0, 1,
-            1, -1, 0, 1, 1,
-            -1, 1, 0, 0, 0,
-            1, 1, 0, 1, 0
+             1, -1, 0, 1, 1
           ],
           layout: this.createVertexLayout('PositionTexture'),
           dataType: 'float'
@@ -437,6 +437,7 @@ module Glib.Graphics {
         var inspects = Shader.inspectProgram(vSource, fSource);
         utils.extend(options, inspects);
       }
+      
       return new ShaderProgram(this, options);
     }
 

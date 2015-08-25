@@ -18,7 +18,8 @@ module Glib.Graphics {
     void main(void) {
       texCoord = texture;
       texColor = color;
-      gl_Position = vec4((position - vec3(1, 1, 0)) * vec3(1, -1, 1), 1);
+      vec2 pos = position.xy * vec2(2, -2) + vec2(-1, 1);
+      gl_Position = vec4(pos.xy, position.z, 1);
     }`;
 
   var fShader = `
@@ -34,7 +35,7 @@ module Glib.Graphics {
     varying vec4 texColor;
 
     void main(void) {
-      gl_FragColor = texture2D(textureSampler, texCoord) * texColor;
+      gl_FragColor = texture2D(textureSampler, texCoord);// * texColor;
     }`;
 
   var spritePool:Sprite[] = [];
@@ -130,9 +131,9 @@ module Glib.Graphics {
       for (var i = 0; i < data.length; i+=6, index+=4) {
         data[i] = index;
         data[i+1] = index+1;
-        data[i+2] = index+2;
+        data[i+2] = index+3;
 
-        data[i+3] = index+1;
+        data[i+3] = index;
         data[i+4] = index+3;
         data[i+5] = index+2;
       }
@@ -184,6 +185,7 @@ module Glib.Graphics {
     }
 
     drawTexture(texture: Graphics.Texture, color, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight, originX, originY, rotation, depth) {
+
       if (!this._hasBegun) {
         throw "begin() must be called before draw()";
       }
@@ -314,7 +316,10 @@ module Glib.Graphics {
           start = i;
         }
       }
-      this._drawSlice(start, queue.length - start);
+      if (queue.length > 0 && texture) {
+        this.device.program.uniforms.texture.set(texture);
+        this._drawSlice(start, queue.length - start);
+      }
     }
 
     private _drawSlice(start:number, length:number) {

@@ -1,37 +1,37 @@
 module Glib.Render {
 
-  export class ForwardRendering implements Step {
+  export class ForwardRendering implements Render.Step {
 
-    setup(manager:Manager) {
+    setup(manager: Render.Manager) {
 
     }
 
-    render(manager:Manager) {
-      var rt = manager.beginScreenEffect();
-
+    render(manager:Render.Manager) {
+      var rt = manager.beginEffect();
       manager.device.setRenderTarget(rt);
-
+      manager.device.clear(0xFFFFFFFF, 1, 1);
+      manager.device.blendState.commit(Graphics.BlendState.Default);
+      manager.device.depthState.commit(Graphics.DepthState.Default);
+      manager.device.cullState.commit(Graphics.CullState.CullCounterClockWise);
       for (var item of manager.binder.renderables) {
         this.renderItem(item, manager.binder);
       }
-
       manager.device.setRenderTarget(null);
-
-      manager.endScreenEffect(rt);
+      manager.endEffect(rt);
     }
 
-    cleanup(manager:Manager) {
+    cleanup(manager: Render.Manager) {
 
     }
 
-    renderItem(item, context:Binder) {
+    renderItem(item, binder: Render.Binder) {
       var mat:Graphics.Material = item.material;
       var mesh:Graphics.ModelMesh = item.mesh;
       var tech:Graphics.MaterialTechnique = mat.technique;
 
       for (var pass of tech.passes) {
         pass.commit();
-        context
+        binder
           .setTransform(item.world)
           .bindTransform(pass.program)
           .bindView(pass.program)

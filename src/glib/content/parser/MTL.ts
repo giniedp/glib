@@ -40,6 +40,11 @@ module Glib.Content.Parser {
     texres?:number
   }
 
+  function getLines(value: string): string[] {
+    return value.replace(/\r/g, '\n').split('\n');
+  }
+
+
   /**
    * The parser implementation is based on the format specification from http://paulbourke.net/dataformats/mtl/
    */
@@ -51,7 +56,7 @@ module Glib.Content.Parser {
       return new MTL().parse(content);
     }
     parse(data):MtlData[] {
-      var lines = data.split(/\n/);
+      var lines = getLines(data);
       this.materials = [];
       this.material = {};
 

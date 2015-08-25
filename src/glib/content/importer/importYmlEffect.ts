@@ -11,7 +11,7 @@ module Glib.Content.Importers {
   }
 
   function getLines(value:string):string[] {
-    return value.replace(/\r\n/g, '\n').split('\n');
+    return value.replace(/\r/g, '\n').replace(/\n+/g, '\n').split('\n');
   }
 
   function getProgram(content:any):string {

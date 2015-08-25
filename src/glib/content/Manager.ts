@@ -160,7 +160,7 @@ module Glib.Content {
       if (!importer) {
         return Promise.reject(`Reader not found for type: ${String(assetType)}`);
       }
-      console.log(importer);
+      
       if (typeof importer !== 'function') {
         return Promise.reject(`Reader ${String(assetType)} is not a function`);
       }

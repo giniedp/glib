@@ -16,4 +16,4 @@ uniform float targetWidth;
 // @binding targetHeight
 uniform float targetHeight;
 
-varying Vec2 texCoord;
+varying vec2 texCoord;
