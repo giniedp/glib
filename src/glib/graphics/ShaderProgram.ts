@@ -152,5 +152,15 @@ module Glib.Graphics {
       }
       return this;
     }
+
+    setUniform(name:string, value: any):ShaderProgram {
+        var uniform = this.uniforms[name];;
+        if (!uniform) {
+            debug(`Uniform '${name}' does not exist`);
+            return;
+        }
+        this.use();
+        uniform.set(value);
+    }
   }
 }
