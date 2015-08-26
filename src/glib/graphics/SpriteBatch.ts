@@ -72,6 +72,8 @@ module Glib.Graphics {
     rotation?:number
     depth?:number
     color?:number
+    flipX?:boolean
+    flipY?: boolean
   }
 
   export class SpriteBatch {
@@ -181,10 +183,12 @@ module Glib.Graphics {
         options.originX,
         options.originY,
         options.rotation,
-        options.depth);
+        options.depth,
+        options.flipX,
+        options.flipY);
     }
 
-    drawTexture(texture: Graphics.Texture, color, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight, originX, originY, rotation, depth) {
+    drawTexture(texture: Graphics.Texture, color, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight, originX, originY, rotation, depth, flipX, flipY) {
 
       if (!this._hasBegun) {
         throw "begin() must be called before draw()";
@@ -225,6 +229,9 @@ module Glib.Graphics {
       } else {
         sprite.color = 0xFFFFFFFF;
       }
+
+      sprite.flipX = flipX;
+      sprite.flipY = flipY;
 
       this._spriteQueue.push(sprite);
     }

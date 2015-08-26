@@ -106,6 +106,7 @@ module Glib.Graphics {
     private _program:ShaderProgram;
     private _quadIndexBuffer:Buffer;
     private _quadVertexBuffer:Buffer;
+    private _quadVertexBufferFlipped: Buffer;
 
     extensions:any;
     capabilities:any;
@@ -298,14 +299,16 @@ module Glib.Graphics {
      * Draws a quad that completely covers the screen.
      * @returns {Glib.Graphics.Device}
      */
-    drawQuad():Device {
+    drawQuad(flipY?: boolean): Device {
       var iBuffer = this._quadIndexBuffer || this.createIndexBuffer({
           data: [0, 1, 3, 0, 3, 2],
           dataType: 'ushort'
         });
       this._quadIndexBuffer = iBuffer;
 
-      var vBuffer = this._quadVertexBuffer || this.createVertexBuffer({
+      var vBuffer;
+      if (flipY) {
+        vBuffer = this._quadVertexBufferFlipped || this.createVertexBuffer({
           data: [
             -1,  1, 0, 0, 0,
              1,  1, 0, 1, 0,
@@ -315,8 +318,21 @@ module Glib.Graphics {
           layout: this.createVertexLayout('PositionTexture'),
           dataType: 'float'
         });
-      this._quadVertexBuffer = vBuffer;
-
+        this._quadVertexBufferFlipped = vBuffer;
+      } else {
+        vBuffer = this._quadVertexBuffer || this.createVertexBuffer({
+          data: [
+            -1,  1, 0, 0, 1,
+             1,  1, 0, 1, 1,
+            -1, -1, 0, 0, 0,
+             1, -1, 0, 1, 0
+          ],
+          layout: this.createVertexLayout('PositionTexture'),
+          dataType: 'float'
+        });
+        this._quadVertexBuffer = vBuffer;
+      }
+      
       this.indexBuffer = iBuffer;
       this.vertexBuffer = vBuffer;
       this.drawIndexedPrimitives();

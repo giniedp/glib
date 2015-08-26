@@ -22,20 +22,21 @@ block script
     precision highp float;
     precision highp int;
     attribute vec3 position;
+    attribute vec2 texture;
     varying vec2 texCoord;
     void main(void) {
-      texCoord = (position.xy + 1.0) * 0.5;
+      texCoord = texture;
       gl_Position = vec4(position, 1.0);
     }
   script#fragment-shader2(type='text/ymlsl').
     precision highp float;
     precision highp int;
     // @filter PointClamp
-    uniform sampler2D texture;
+    // @binding texture
+    uniform sampler2D textureSampler;
     varying vec2 texCoord;
     void main(void) {
-      vec3 color = texture2D(texture, texCoord).rgb;
-      vec3 coords = vec3(texCoord.xy, 0);
+      vec3 color = texture2D(textureSampler, texCoord).rgb;
       gl_FragColor = vec4(color, 1.0);
     }
 
@@ -79,6 +80,8 @@ block script
       ]
     });
 
+    var spriteBatch = device.createSpriteBatch();
+
     window.device = device;
     Glib.utils.loop(function () {
 
@@ -94,6 +97,15 @@ block script
       device.viewportState.commit({ width: device.canvas.width, height: device.canvas.height });
       device.setRenderTarget(null);
       device.clear(Glib.Graphics.Color.CornflowerBlue);
+
+      /*
+      spriteBatch.begin()
+      spriteBatch.draw({
+        texture: renderTarget.texture,
+        dstX: 0, dstY: 0, dstWidth: device.canvas.width, dstHeight: device.canvas.height
+      })
+      spriteBatch.end()
+      */
 
       device.program = program2;
       device.program.uniforms.texture.set(renderTarget.texture);
