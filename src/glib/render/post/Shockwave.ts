@@ -17,7 +17,8 @@ module Glib.Render.PostEffect {
 
     render(manager: Render.Manager) {
       var rt = manager.beginEffect();
-
+       manager.endEffect(rt);
+      return;
       var rt2 = manager.acquireTarget({
         width: rt.width,
         height: rt.height,
@@ -33,7 +34,7 @@ module Glib.Render.PostEffect {
       
       manager.device.program = program;
       
-      manager.device.drawQuad();
+      manager.device.drawQuad(false);
       manager.device.setRenderTarget(null);
 
       manager.endEffect(rt2);

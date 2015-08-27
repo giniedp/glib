@@ -1,0 +1,51 @@
+extends ./../_layouts/default.jade
+block content
+  pre
+    code.prettyprint#debug-container
+  .thumbnail(style="padding:20px")
+    canvas#canvas(width="800" height="400")
+block script
+  script(type='text/javascript').
+    game = Glib
+      .createGame({
+        canvas: document.getElementById("canvas"),
+        autorun: true
+      })
+      .buildChild({
+        name: "Camera",
+        templates: ["Camera", "WASD"]
+      }, function (entity) {
+        entity.getService("Camera").activate();
+        entity.getService("Transform").translateXYZ(0, 0, 5);
+      })
+      .buildChild({
+        name: "Light",
+        templates: ["DirectionalLight"]
+      }, function(e){
+        e.getService("Transform").rotateYawPitchRoll(Math.PI / 2, -Math.PI/2, 0);
+      });
+    function DemoComponent(options) {
+      options = options || {};
+      this.enable = true;
+      this.visible = true;
+    }
+    DemoComponent.prototype.setup = function () {
+      this.time = this.node.root.getService("Time");
+      this.assets = this.node.root.getService("Assets");
+      this.transform = this.node.getService("Transform");
+      this.renderable = this.node.getService("Renderable");
+      this.assets
+        .load("Model", "/assets/models/KingsTreasure.obj")
+        .then(function (model) {
+          this.renderable.model = model;
+        }.bind(this));
+    };
+    DemoComponent.prototype.update = function (time) {
+      return;
+    };
+    game.buildChild({
+      name: "Treasure",
+      templates: ["Model"]
+    }, function (entity) {
+      entity.addComponent(new DemoComponent());
+    });

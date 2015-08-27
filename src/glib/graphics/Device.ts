@@ -296,7 +296,8 @@ module Glib.Graphics {
     }
 
     /**
-     * Draws a quad that completely covers the screen.
+     * Draws a full screen quad with the [0,0] texture coordinate starting at the bottom left.
+     * @param {boolean} flipY if true, then the [0,0] texture coordinate starts in the top left.
      * @returns {Glib.Graphics.Device}
      */
     drawQuad(flipY?: boolean): Device {

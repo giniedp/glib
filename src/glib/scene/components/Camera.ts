@@ -58,7 +58,8 @@ module Glib.Components {
       if (oldCamera instanceof Glib.Components.Camera) {
         oldCamera.deactivate();
       }
-      view.camera = this;     
+      this._view = view;
+      this._view.camera = this;     
     }
 
     deactivate() {

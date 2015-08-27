@@ -1,19 +1,4 @@
-struct LightSource {
-  vec3 position;
-  vec3 direction;
-  vec4 color; // rgb = diffuse, a = specular amount
-  vec4 misc;  // implementation dependent light attributes
-  int type;   // 0 = off, 1 = directional, 2 = point, 3 = spot
-};
-uniform LightSource lights[4];
-
-// @binding cameraDirection
-uniform vec3 cameraDirection;
-// @binding cameraPosition
-uniform vec3 cameraPosition;
-
-
-vec4 computeLightTerm(
+vec4 CalculateLightTerm(
   in vec3 E,   // Vector To Eye
   in vec3 N,   // Surface Normal
   in vec3 L,   // Vector To Light
@@ -33,53 +18,61 @@ vec4 computeLightTerm(
   return result;
 }
 
-highp vec3 evaluateLights(in vec3 position, in vec3 normal, in vec3 diffuse, in vec3 specular, in float power)
+void CalculateLightTerms(in vec3 position, in vec3 normal, in float power, out vec3 diffuse, out vec3 specular)
 {
-  vec3 result = vec3(0, 0, 0);
+  diffuse = vec3(0);
+  specular = vec3(0);
 
   for (int i = 0; i < 4; i++)
   {
 
-    LightSource light = lights[i];
-
+    LightParams light = Lights[i];
+    int type = int(light.Misc.w);
+    
     // stop on first light that is off
-    if (light.type <= 0){
+    if (type <= 0)
+    {
       break;
     }
 
     float att = 0.0;
 
     // directional light (no attenuation)
-    if (light.type == 1)
+    if (type == 1)
     {
-      //return vec3(1.0, 0.0, 0.0);
       att = 1.0;
     }
     // point light (radial linear attenuation)
-    else if (light.type == 2)
+    else if (type == 2)
     {
       // misc.x => light range
-      att = 1.0 - min(1.0, distance(light.position, position) / max(light.misc.x, 1.0));
+      att = 1.0 - min(1.0, distance(light.Position.xyz, position) / max(light.Misc.x, 1.0));
     }
     // spot light (cone and linear attenuation)
-    else if (light.type == 3)
+    else if (type == 3)
     {
       // misc.x => light range
       // misc.y => cos outer angle
       // misc.z => cos inner angle
-      vec3 toLight = light.position - position;
-      float spot = smoothstep(light.misc.y, light.misc.z, dot(normalize(toLight), -light.direction));
-      att = 1.0 - min(1.0, length(toLight) / max(light.misc.x, 1.0)) * spot;
+      vec3 toLight = light.Position.xyz - position;
+      float spot = smoothstep(light.Misc.y, light.Misc.z, dot(normalize(toLight), -light.Direction.xyz));
+      att = 1.0 - min(1.0, length(toLight) / max(light.Misc.x, 1.0)) * spot;
     }
 
     // calculate diffuse and specular terms
-    vec4 term = computeLightTerm(cameraPosition - position, normal, -light.direction, light.color.rgb, power) * att;
+    vec4 term = CalculateLightTerm(CameraPosition - position, normal, -light.Direction.xyz, light.Color.rgb, power) * att;
     // accumulate diffuse color
-    result.rgb += diffuse.rgb * term.rgb;
-
+    diffuse += term.rgb;
+    
     // accumulate specular color
-    result.rgb += specular.rgb * term.rgb * term.a * light.color.a;
+    specular.rgb += term.rgb * term.a * light.Color.a;
   }
+}
 
-  return result;
+highp vec3 EvaluateLights(in vec3 position, in vec3 normal, in vec3 diffuse, in vec3 specular, in float power)
+{
+  vec3 dTerm = vec3(0);
+  vec3 sTerm = vec3(0);
+  CalculateLightTerms(position, normal, power, dTerm, sTerm);
+  return dTerm * diffuse + sTerm * specular;
 }

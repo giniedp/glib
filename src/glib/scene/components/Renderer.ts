@@ -39,19 +39,23 @@ module Glib.Components {
         steps: [new Render.ForwardRendering()]
       });
       
-      this.assets.load("Effect", "/assets/shader/postprocess/pixelate.yml").then((effect) => {
-        var program = this.device.createProgram(effect.techniques[0].passes[0]);
-        var postEffect = new Render.PostEffect.Pixelate(program);
+      /*
+      this.assets.load("Effect", "/assets/shader/postprocess/bloom.yml").then((effect) => {
+        //debugger;
+        var material = new Glib.Graphics.Material(this.device, effect)
+        var postEffect = new Render.PostEffect.Bloom(material);
         var view = this.manager.views[0];
         view.steps.push(postEffect);
       });
-      
+      */
+      /*
       this.assets.load("Effect", "/assets/shader/postprocess/shockwave.yml").then((effect) => {
         var program = this.device.createProgram(effect.techniques[0].passes[0]);
         var postEffect = new Render.PostEffect.ShockWave(program);
         var view = this.manager.views[0];
         view.steps.push(postEffect);
       });
+      */
     }
 
     update() {

@@ -65,7 +65,6 @@ module Glib.Graphics {
       this.location = program.gl.getUniformLocation(program.handle, this.name);
 
       if (this.location == null) {
-        debug(`Uniform '${this.name}' not found in shader.`, this);
         this.set = function () {};
         return;
       }
@@ -170,17 +169,25 @@ module Glib.Graphics {
       this.gl.uniformMatrix4fv(this.location, !!transpose, value.data);
     }
 
-    setTexture(value:Texture) {
-      if (value.update) {
-        value.update();
+    setTexture(value:Texture|RenderTarget) {
+      var texture;
+      if (value instanceof RenderTarget) {
+        texture = value.texture;
+      } else {
+        texture = value;
       }
-      if (!value.ready) {
+      if (texture.update) {
+        texture.update();
+      }
+      if (!texture.ready) {
+        sampler.texture = texture;
+        sampler.commit();
         return;
       }
 
       var device = this.device;
       var sampler = device.sampler[this.register] || device.sampler[0];
-      sampler.texture = value;
+      sampler.texture = texture;
       utils.extend(sampler, this.filter);
       sampler.commit();
       this.gl.uniform1i(this.location, sampler.register);

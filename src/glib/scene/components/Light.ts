@@ -17,11 +17,10 @@ module Glib.Components {
   }
 
   export interface LightData {
-    position: Vec3;
-    direction: Vec3;
+    position: Vec4;
+    direction: Vec4;
     color: Vec4;
     misc: Vec4;
-    type: number;
   }
 
   export var LightType = {
@@ -64,31 +63,42 @@ module Glib.Components {
       this.position = Vec3.convert(this.position || Vec3.create(0, 0, 0));
       this.direction = Vec3.convert(this.direction || Vec3.create(0, 0, -1));
       this.color = Vec4.convert(this.color || Vec4.create(1, 1, 1, 1));
-      this.type = this.type || LightType.Directional;
+      this.type = this.type;
       this.packedData = {
-        position: Vec3.zero(),
-        direction: Vec3.zero(),
+        position: Vec4.zero(),
+        direction: Vec4.zero(),
         color: Vec4.zero(),
-        misc: Vec4.zero(),
-        type: 0
+        misc: Vec4.zero()
       };
     }
 
     update(){
       var t = this.node.s.Transform;
-      if (t){
-        t.worldMat.getForward(this.direction);
-        t.worldMat.getTranslation(this.position);
+      if (t) {
+        this.direction.x = t.worldMat.backward[0];
+        this.direction.y = t.worldMat.backward[1];
+        this.direction.z = t.worldMat.backward[2];
+        
+        this.position.x = t.worldMat.translation[0];
+        this.position.y = t.worldMat.translation[1];
+        this.position.z = t.worldMat.translation[2];  
+        
       }
+      
       this.updatePackedData();
     }
 
     updatePackedData(){
       var data = this.packedData;
 
-      data.position.initFrom(this.position);
-      data.direction.initFrom(this.direction);
-
+      data.position.x = this.position.x;
+      data.position.y = this.position.y;
+      data.position.z = this.position.z;
+      
+      data.direction.x = this.direction.x;
+      data.direction.y = this.direction.y;
+      data.direction.z = this.direction.z;
+      
       data.color.x = this.color.x * this.intensity;
       data.color.y = this.color.y * this.intensity;
       data.color.z = this.color.z * this.intensity;
@@ -97,7 +107,7 @@ module Glib.Components {
       data.misc.x = this.range;
       data.misc.y = Math.cos(this.spotOuterAngle);
       data.misc.z = Math.cos(this.spotInnerAngle);
-      data.type = this.type;
+      data.misc.w = this.type;
     }
 
   }

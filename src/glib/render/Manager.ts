@@ -143,7 +143,8 @@ module Glib.Render {
           dstX: view.x,
           dstY: view.y,
           dstWidth: view.width,
-          dstHeight: view.height
+          dstHeight: view.height,
+          flipY: true
         });
       }
       this.spriteBatch.end();

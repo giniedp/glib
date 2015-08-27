@@ -7,18 +7,39 @@ module Glib.Content.Importer {
       parameters: {}
     };
 
-    if (m.Ka) result.parameters.ambient = m.Ka;
-    if (m.Kd) result.parameters.diffuse = m.Kd;
-    if (m.Ks) result.parameters.specular = m.Ks;
-    if (m.Ns) result.parameters.specularPower = m.Ns;
-    if (m.Ni) result.parameters.refraction = m.Ni;
-    if (m.map_Ka) result.parameters.ambientTex = m.map_Ka.file;
-    if (m.map_Kd) result.parameters.diffuseTex = m.map_Kd.file;
-    if (m.map_Ks) result.parameters.specularTex = m.map_Ks.file;
-    if (m.map_d) result.parameters.alphaTex = m.map_d;
-    if (m.bump) result.parameters.normalTex = m.bump;
-    if (m.disp) result.parameters.displaceTex = m.disp;
-    if (m.refl) result.parameters.reflectionTex = m.refl;
+    if (m.Ka) result.parameters.AmbientColor = m.Ka;
+    if (m.Kd) result.parameters.DiffuseColor = m.Kd;
+    if (m.Ks) result.parameters.SpecularColor = m.Ks;
+    if (m.Ns) result.parameters.SpecularPower = m.Ns;
+    //if (m.Ni) result.parameters.refraction = m.Ni;
+    if (m.map_Ka) {
+      result.parameters.AmbientMap = m.map_Ka.file;
+      result.parameters.AmbientMapEnabled = true;
+    }
+    if (m.map_Kd) {
+      result.parameters.DiffuseMap = m.map_Kd.file;
+      result.parameters.DiffuseMapEnabled = true;
+    }
+    if (m.bump) {
+      result.parameters.NormalMap = m.bump;
+      result.parameters.NormalMapEnabled = true;
+    }
+    if (m.map_Ks) {
+      result.parameters.SpecularTexture = m.map_Ks.file;
+      result.parameters.SpecularMapEnabled = true;
+    }
+    if (m.map_d) {
+      result.parameters.AlphaMap = m.map_d;
+      result.parameters.AlphaMapEnabled = true;
+    }
+    if (m.disp) {
+      result.parameters.DisplaceMap = m.disp;
+      result.parameters.DisplaceMapEnabled = true;
+    }
+    if (m.refl) {
+      result.parameters.ReflectionMap = m.refl;
+      result.parameters.ReflectionMapEnabled = true;
+    }
 
     if (m.d) result.parameters.alpha = m.d;
     if (m.d == 1) {
@@ -26,14 +47,12 @@ module Glib.Content.Importer {
     } else if (m.d > 0) {
       result.blendState = "AlphaBlend";
     }
+    
+    result.effect = "/assets/shader/basic.yml"
     if (m.illum == "0") {
-      result.effect = "/assets/shader/textured.yml"
-    } else if (m.illum == "1") {
-      result.effect = "/assets/shader/textured.yml"
-    } else if (m.illum == "2") {
-      result.effect = "/assets/shader/textured.yml"
+      result.technique = "basic"
     } else {
-      result.effect = "/assets/shader/textured.yml"
+      result.technique = "pixelLighting"
     }
     return result;
   }

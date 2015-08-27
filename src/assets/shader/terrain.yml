@@ -2,8 +2,8 @@ program:
   precision highp float;
   precision highp int;
 
-  #include <lib/lighting.h>
   #include <lib/common.h>
+  #include <lib/lighting.h>
   #include <lib/terrain/splatting.h>
 
   varying vec3 Position;

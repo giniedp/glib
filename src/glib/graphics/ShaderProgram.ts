@@ -1,6 +1,8 @@
 module Glib.Graphics {
 
   import debug = Glib.utils.debug;
+  import warn = Glib.utils.warn;
+  import error = Glib.utils.error;
 
   export interface ShaderProgramOptions {
     vertexShader?: string|Object|Shader,
@@ -107,18 +109,24 @@ module Glib.Graphics {
         if (attribute.location >= 0) {
           this.gl.enableVertexAttribArray(attribute.location);
         } else {
-          debug(`Vertex attribute '${attribute.name || key}' not found in shader`, this);
+          warn(`Vertex attribute '${attribute.name || key}' not found in shader`, this);
         }
       }
       for (key in this.uniforms) { // jshint ignore:line
-        this.uniforms[key] = new ShaderUniform(this, key, this.uniforms[key]);
+        var uniform = new ShaderUniform(this, key, this.uniforms[key]);
+        if (uniform.location == null) {
+          debug(`Uniform '${key}' not found in shader and has been ignored.`)
+          delete this.uniforms[key];
+        } else {
+          this.uniforms[key] = uniform;  
+        }
       }
       return this;
     }
 
     link():ShaderProgram {
       if (this.shader.length === 0) {
-        debug('ShaderProgram#link ignored because no shaders given.', this);
+        warn('ShaderProgram#link ignored because no shaders given.', this);
         return this;
       }
 
@@ -130,7 +138,7 @@ module Glib.Graphics {
       this.info = this.gl.getProgramInfoLog(this.handle);
 
       if (!this.linked) {
-        debug('ShaderProgram#link failed', this.info);
+        error('ShaderProgram#link failed', this.info);
       }
       return this;
     }
@@ -154,16 +162,14 @@ module Glib.Graphics {
     }
 
     /**
-      * @description Sets a value on the uniform specified by the 'name' argument. Does nothing if the uniform name does not exist.
+      * @description Sets a value on the uniform specified by the 'name' argument. Throws an error if the uniform does not exist.
       */
     setUniform(name:string, value: any):ShaderProgram {
         var uniform = this.uniforms[name];;
-        if (!uniform) {
-            debug(`Uniform '${name}' does not exist`);
-            return;
-        }
+        if (!uniform) throw `Uniform '${name}' does not exist`;
         this.use();
         uniform.set(value);
+        return this;
     }
   }
 }

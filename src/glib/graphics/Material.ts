@@ -11,6 +11,7 @@ module Glib.Graphics {
   export interface MaterialOptions {
     name?:string,
     effect?:any,
+    technique?: string|number,
     parameters?: any,
     techniques?: MaterialTechniqueOptions[]|MaterialTechnique|MaterialTechnique[],
     blendState?: any
@@ -53,31 +54,47 @@ module Glib.Graphics {
         }, this);
       }, this);
 
-      this.useTechnique(0);
+      this.technique = this.findTechnique(params.technique || 0);
     }
 
-    useTechnique(indexOrName:number|string):Material {
-      if (typeof indexOrName === "string") {
-        this.useTechniqueByName(indexOrName);
-      } else {
-        this.useTechniqueByIndex(indexOrName);
-      }
+    useTechnique(nameOrIndex:number|string):Material {
+      this.technique = this.findTechnique(nameOrIndex);
       return this;
     }
-
-    useTechniqueByName(name:string):Material {
-      for (var tech of this.techniques) {
-        if (tech.name == name) {
-          this.technique = tech;
-          return this;
+    
+    findTechnique(nameOrIndex:string|number):MaterialTechnique {
+      if (typeof nameOrIndex === 'number') {
+        return this.techniques[nameOrIndex];
+      } else if (typeof nameOrIndex === 'string') {
+        for (var tech of this.techniques) {
+          if (tech.name == nameOrIndex) {
+            return tech;
+          }
         }
       }
-      return this;
+      throw `Technique '${nameOrIndex}' does not exist on this material`;
     }
-
-    useTechniqueByIndex(index:number):Material {
-      this.technique = this.techniques[index];
-      return this;
+    
+    findPass(techniqueIdentifier:string|number, nameOrIndex:string|number=0):MaterialPass {
+      var tech = this.findTechnique(techniqueIdentifier);
+      var result: MaterialPass;
+      if (typeof nameOrIndex === 'number') {
+        result = tech.passes[nameOrIndex];
+      } else if (typeof nameOrIndex === 'string') {
+        for (var pass of tech.passes) {
+          if (pass.name == nameOrIndex) {
+            result = pass;
+          }
+        }
+      }
+      if (!result) {
+        throw `Pass '${nameOrIndex}' on Technique '${techniqueIdentifier}' does not exist`;
+      }
+      return result;
+    }
+    
+    findProgram(techniqueIdentifier:string|number, nameOrIndex:string|number=0):ShaderProgram {
+      return this.findPass(techniqueIdentifier, nameOrIndex).program;
     }
   }
 }

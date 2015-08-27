@@ -246,11 +246,23 @@ module Glib.Graphics {
     static _fixStructUniforms(uniforms, structs):void {
       var item, struct, match, name, count, i;
       var reg = /(.*)\[(\d+)]/; // i.e. light[0]
+      
 
       Object.keys(uniforms).forEach(function (key) {
         item = uniforms[key];
         struct = structs[item.type];
+        match = item.name.match(reg);
+        
         if (!struct) {
+          if (!match) return;
+          name = match[1];
+          count = Number(match[2]);
+          for (i = 0; i < count; i += 1) {
+            uniforms[name + "[" + i + "]"] = {
+              type: item.type
+            };
+          }
+          delete uniforms[key];
           return;
         }
 

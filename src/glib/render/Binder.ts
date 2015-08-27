@@ -9,11 +9,10 @@ module Glib.Render {
 
   function lightUniforms(i) {
     return [
-      { key: 'lights[' + i + '].position', type: 'vec3', vkey: 'position' },
-      { key: 'lights[' + i + '].direction', type: 'vec3', vkey: 'direction' },
-      { key: 'lights[' + i + '].color', type: 'vec4', vkey: 'color' },
-      { key: 'lights[' + i + '].misc', type: 'vec4', vkey: 'misc' },
-      { key: 'lights[' + i + '].type', type: 'int', vkey: 'type' }
+      { key: 'Lights[' + i + '].Position', type: 'vec4', vkey: 'position' },
+      { key: 'Lights[' + i + '].Direction', type: 'vec4', vkey: 'direction' },
+      { key: 'Lights[' + i + '].Color', type: 'vec4', vkey: 'color' },
+      { key: 'Lights[' + i + '].Misc', type: 'vec4', vkey: 'misc' }
     ];
   }
 
@@ -29,35 +28,35 @@ module Glib.Render {
   }
 
   export class Binder {
-    position:Vec3 = Vec3.zero();
-    direction:Vec3 = Vec3.zero();
-    world:Mat4 = Mat4.identity();
+    Position:Vec3 = Vec3.zero();
+    Direction:Vec3 = Vec3.zero();
+    World:Mat4 = Mat4.identity();
     transformUniforms = [
-      { key: 'position', type: 'vec3' },
-      { key: 'direction', type: 'vec3' },
-      { key: 'world', type: 'mat4' }
+      { key: 'Position', type: 'vec3' },
+      { key: 'Direction', type: 'vec3' },
+      { key: 'World', type: 'mat4' }
     ];
 
-    view:Mat4 = Mat4.identity();
-    projection:Mat4 = Mat4.identity();
-    cameraPosition:Vec3 = Vec3.zero();
-    cameraDirection:Vec3 = Vec3.zero();
+    View:Mat4 = Mat4.identity();
+    Projection:Mat4 = Mat4.identity();
+    CameraPosition:Vec3 = Vec3.zero();
+    CameraDirection:Vec3 = Vec3.zero();
     viewUniforms = [
-      { key: 'view', type: 'mat4' },
-      { key: 'projection', type: 'mat4' },
-      { key: 'cameraPosition', type: 'vec3' },
-      { key: 'cameraDirection', type: 'vec3' },
-      { key: 'viewportSize', type: 'vec2' },
-      { key: 'viewportPixelSize', type: 'vec2' },
-      { key: 'targetSize', type: 'vec2' },
-      { key: 'targetPixelSize', type: 'vec2' }
+      { key: 'View', type: 'mat4' },
+      { key: 'Projection', type: 'mat4' },
+      { key: 'CameraPosition', type: 'vec3' },
+      { key: 'CameraDirection', type: 'vec3' },
+      { key: 'ViewportSize', type: 'vec2' },
+      { key: 'ViewportPixelSize', type: 'vec2' },
+      { key: 'TargetSize', type: 'vec2' },
+      { key: 'TargetPixelSize', type: 'vec2' }
     ];
 
     timeNow:number = 0;
     timeLast:number = 0;
     timeUniforms = [
-      { key: 'timeNow', type: 'float' },
-      { key: 'timeLast', type: 'float' }
+      { key: 'TimeNow', type: 'float' },
+      { key: 'TimeLast', type: 'float' }
     ];
 
     maxLights: number = 4;
@@ -91,14 +90,14 @@ module Glib.Render {
 
     setCamera(world:Mat4, view:Mat4, proj:Mat4):Binder{
       if (world) {
-        world.getTranslation(this.cameraPosition);
-        world.getForward(this.cameraDirection);
+        world.getTranslation(this.CameraPosition);
+        world.getForward(this.CameraDirection);
       }
       if (view) {
-        this.view.initFrom(view);
+        this.View.initFrom(view);
       }
       if (proj) {
-        this.projection.initFrom(proj);
+        this.Projection.initFrom(proj);
       }
       return this;
     }
@@ -119,9 +118,9 @@ module Glib.Render {
 
     setTransform(world:Mat4):Binder {
       if (world) {
-        world.getTranslation(this.position);
-        world.getForward(this.direction);
-        this.world.initFrom(world);
+        world.getTranslation(this.Position);
+        world.getForward(this.Direction);
+        this.World.initFrom(world);
       }
       return this;
     }

@@ -364,7 +364,9 @@ module Glib.Graphics {
           var p1Y = sprite.dstY - cY;
           var p2X = (sprite.dstX + sprite.dstWidth) - cX;
           var p2Y = (sprite.dstY + sprite.dstHeight) - cY;
-
+          var flipX = sprite.flipX ? sprite.srcWidth : 0;
+          var flipY = sprite.flipY ? sprite.srcHeight : 0;
+          
           // VERTEX TOP LEFT
 
           // position
@@ -372,8 +374,8 @@ module Glib.Graphics {
           posTexView[vIndex++] = (cY - sinA * p1X + cosA * p1Y) * texelViewY;
           posTexView[vIndex++] = sprite.depth;
           // texture
-          posTexView[vIndex++] = sprite.srcX * texelX;
-          posTexView[vIndex++] = sprite.srcY * texelY;
+          posTexView[vIndex++] = (sprite.srcX + flipX) * texelX;
+          posTexView[vIndex++] = (sprite.srcY + flipY) * texelY;
           //color
           colorView[vIndex++] = sprite.color;
 
@@ -384,8 +386,8 @@ module Glib.Graphics {
           posTexView[vIndex++] = (cY - sinA * p2X + cosA * p1Y) * texelViewY;
           posTexView[vIndex++] = sprite.depth;
           // texture
-          posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth) * texelX;
-          posTexView[vIndex++] = sprite.srcY * texelY;
+          posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth - flipX) * texelX;
+          posTexView[vIndex++] = (sprite.srcY + flipY) * texelY;
           //color
           colorView[vIndex++] = sprite.color;
 
@@ -396,8 +398,8 @@ module Glib.Graphics {
           posTexView[vIndex++] = (cY - sinA * p1X + cosA * p2Y) * texelViewY;
           posTexView[vIndex++] = sprite.depth;
           // texture
-          posTexView[vIndex++] = sprite.srcX * texelX;
-          posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight) * texelY;
+          posTexView[vIndex++] = (sprite.srcX + flipX) * texelX;
+          posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight - flipY) * texelY;
           //color
           colorView[vIndex++] = sprite.color;
 
@@ -408,8 +410,8 @@ module Glib.Graphics {
           posTexView[vIndex++] = (cY - sinA * p2X + cosA * p2Y) * texelViewY;
           posTexView[vIndex++] = sprite.depth;
           // texture
-          posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth) * texelX;
-          posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight) * texelY;
+          posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth - flipX) * texelX;
+          posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight - flipY) * texelY;
           //color
           colorView[vIndex++] = sprite.color;
         }

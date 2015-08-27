@@ -2,6 +2,7 @@ module Glib.Graphics {
 
   export interface MaterialPassOptions {
     material?: Material,
+    name?:string,
     program?: ShaderProgram|ShaderProgramOptions,
     cullState?: string|CullStateOptions,
     blendState?: string|BlendStateOptions,
@@ -13,6 +14,7 @@ module Glib.Graphics {
   export class MaterialPass {
     device:Device;
     gl:any;
+    name:string;
     program:ShaderProgram;
     material:Material;
     cullState:CullStateOptions;
@@ -24,6 +26,7 @@ module Glib.Graphics {
     constructor(device:Device, data:MaterialPassOptions) {
       this.device = device;
       this.gl = device.context;
+      this.name = data.name;
       this.material = data.material;
       this.cullState = CullState.convert(data.cullState);
       this.blendState = BlendState.convert(data.blendState);

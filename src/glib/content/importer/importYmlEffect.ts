@@ -28,8 +28,8 @@ module Glib.Content.Importers {
   }
 
   function getTechniques(content:any) {
-    var result:any[] = content.technique;
-    if (isObject(result) && result) {
+    var result:any[] = content.technique || content.techniques;
+    if (isObject(result) && result && !Array.isArray(result)) {
       result = [result];
     }
     if (!Array.isArray(result)) {
@@ -47,6 +47,7 @@ module Glib.Content.Importers {
       passes = [passes];
     }
     if (!Array.isArray(passes)) {
+      console.log(technique);
       throw 'Invalid effect file. "pass" is missing.';
     }
 

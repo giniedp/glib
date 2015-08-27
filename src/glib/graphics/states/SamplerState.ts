@@ -162,10 +162,18 @@ module Glib.Graphics {
       var wrapU = state.wrapU;
       var wrapV = state.wrapV;
       var type = (texture || state.texture).type;
-
+      var handle = null;
+      if (texture) {
+        handle = texture.handle;
+      }
+      
       gl.activeTexture(unit);
       gl.bindTexture(type, texture.handle);
 
+      if (!texture) {
+        return;
+      }
+      
       if (minFilter !== undefined) {
         gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, minFilter);
       }
