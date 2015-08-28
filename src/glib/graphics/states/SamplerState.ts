@@ -125,50 +125,38 @@ module Glib.Graphics {
       if (state) {
         utils.extend(this, state);
       }
+      if (!this._changed) {
+        return;
+      }
 
       var texture = this.texture;
 
       if (!texture) {
-        return this;
+        SamplerState.commit(this.gl, this);
+        return;
       }
 
       if (!texture.isPOT && this.autofixNonPOT) {
         SamplerState.fixNonPowerOfTwo(this);
       }
 
-      if (!this._changed) {
-        return this;
-      }
+      SamplerState.commit(this.gl, this);
 
-      var changes = this._changes;
-      if (changes.texture) {
-        changes.minFilter = this.minFilter;
-        changes.magFilter = this.magFilter;
-        changes.wrapU = this.wrapU;
-        changes.wrapV = this.wrapV;
-      }
-
-      SamplerState.commit(this.gl, this, texture);
-
-      this._changed = false;
-      this._changes = {};
       return this;
     }
 
-    static commit(gl:any, state:SamplerStateProperties, texture?:Texture) {
+    static commit(gl:any, state:SamplerStateProperties) {
+      var texture = state.texture;
       var unit = TextureUnitMap[state.register];
       var minFilter = state.minFilter;
       var magFilter = state.magFilter;
       var wrapU = state.wrapU;
       var wrapV = state.wrapV;
-      var type = (texture || state.texture).type;
-      var handle = null;
-      if (texture) {
-        handle = texture.handle;
-      }
+      var type = texture ? texture.type : gl.TEXTURE_2D;
+      var handle = texture ? texture.handle : null;
       
       gl.activeTexture(unit);
-      gl.bindTexture(type, texture.handle);
+      gl.bindTexture(type, handle);
 
       if (!texture) {
         return;

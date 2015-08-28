@@ -4,7 +4,7 @@ module Glib.Content.Importer {
   import debug = Glib.utils.debug;
 
   export function loadJsonModel(json:any, data:AssetData, manager:Manager):IPromise {
-    debug('[LoadJsonModel]', json);
+    //debug('[LoadJsonModel]', json);
     var materials = json.materials || [];
     return Promise.all(materials.map(function(materialUrl){
       materialUrl = Glib.utils.path.merge(data.url, materialUrl);
@@ -16,7 +16,7 @@ module Glib.Content.Importer {
   }
 
   export function importJsonModel(data:AssetData, manager:Manager) {
-    debug('[ImportJsonModel]', data);
+    //debug('[ImportJsonModel]', data);
     var json = JSON.parse(data.content);
     return loadJsonModel(json, data, manager);
   }

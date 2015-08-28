@@ -128,12 +128,12 @@ module Glib.Render {
     presentViews() {
       
       this.device.setRenderTarget(null);
-      this.device.viewportState.commit({
+      this.device.viewportState = {
         x: 0,
         y: 0,
         width: this.device.context.drawingBufferWidth,
         height: this.device.context.drawingBufferHeight
-      });
+      };
 
       this.spriteBatch.begin();
       for (var view of this.views) {

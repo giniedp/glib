@@ -5,11 +5,11 @@ module Glib.Content.Importer {
 
   function loadEffect(asset:AssetData, data, manager:Manager){
     var effectUrl = path.merge(asset.url, data.effect);
-    debug('[ImportJsonMaterial] loadEffect', effectUrl);
+    //debug('[ImportJsonMaterial] loadEffect', effectUrl);
     return manager.load('Effect', effectUrl)
       .then(function(effect){
         delete data.effect;
-        data.techniques = effect.techniques;
+        data.techniques = Glib.utils.copy(true, effect.techniques);
       });
   }
 
@@ -21,7 +21,7 @@ module Glib.Content.Importer {
         return parameters[key];
       }
       var textureUrl = path.merge(asset.url, parameters[key]);
-      debug('[ImportJsonMaterial] loadTexture', textureUrl);
+      //debug('[ImportJsonMaterial] loadTexture', textureUrl);
       return manager.load('Texture2D', textureUrl)
         .then(function (texture) {
           parameters[key] = texture;
@@ -30,7 +30,7 @@ module Glib.Content.Importer {
   }
 
   export function loadJsonMaterial(json:any, asset:AssetData, manager:Manager):IPromise {
-    debug('[LoadJsonMaterial]', json);
+    //debug('[LoadJsonMaterial]', json);
     var wasArray = Array.isArray(json);
     json = wasArray ? json : [json];
     return Promise.all(json.map(function(data:any){
@@ -46,7 +46,7 @@ module Glib.Content.Importer {
   }
 
   export function importJsonMaterial(asset:AssetData, manager:Manager):IPromise {
-    debug('[ImportJsonMaterial]', asset);
+    //debug('[ImportJsonMaterial]', asset);
     var json:any = JSON.parse(asset.content);
     return loadJsonMaterial(json, asset, manager);
   }

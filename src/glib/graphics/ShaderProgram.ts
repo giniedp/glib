@@ -19,12 +19,14 @@ module Glib.Graphics {
     attached:Shader[] = [];
     shader:Shader[] = [];
     handle:WebGLProgram;
+    attributeLocations:number[];
     attributes:any = {};
     uniforms:any = {};
     linked:boolean;
     info:string;
 
     constructor(device:Device, data:ShaderProgramOptions={}) {
+
       this.uid = utils.uuid();
       this.device = device;
       this.gl = device.context;
@@ -102,16 +104,17 @@ module Glib.Graphics {
 
     _cache():ShaderProgram {
       this.use();
-      var key, attribute;
+      var key, attribute, attributeLocations = [];
       for (key in this.attributes) { // jshint ignore:line
         attribute = this.attributes[key];
         attribute.location = this.gl.getAttribLocation(this.handle, attribute.name || key);
         if (attribute.location >= 0) {
-          this.gl.enableVertexAttribArray(attribute.location);
+          attributeLocations.push(attribute.location);
         } else {
           warn(`Vertex attribute '${attribute.name || key}' not found in shader`, this);
         }
       }
+      this.attributeLocations = attributeLocations;
       for (key in this.uniforms) { // jshint ignore:line
         var uniform = new ShaderUniform(this, key, this.uniforms[key]);
         if (uniform.location == null) {
@@ -165,11 +168,11 @@ module Glib.Graphics {
       * @description Sets a value on the uniform specified by the 'name' argument. Throws an error if the uniform does not exist.
       */
     setUniform(name:string, value: any):ShaderProgram {
-        var uniform = this.uniforms[name];;
-        if (!uniform) throw `Uniform '${name}' does not exist`;
-        this.use();
-        uniform.set(value);
-        return this;
+      var uniform = this.uniforms[name];
+      if (!uniform) throw `Uniform '${name}' does not exist`;
+      this.use();
+      uniform.set(value);
+      return this;
     }
   }
 }

@@ -171,22 +171,24 @@ module Glib.Graphics {
 
     setTexture(value:Texture|RenderTarget) {
       var texture;
+      var device = this.device;
+      var sampler = device.sampler[this.register] || device.sampler[0];
+
       if (value instanceof RenderTarget) {
         texture = value.texture;
       } else {
         texture = value;
       }
-      if (texture.update) {
+
+      if (texture) {
         texture.update();
       }
-      if (!texture.ready) {
-        sampler.texture = texture;
+      if (!texture || !texture.ready) {
+        sampler.texture = null;
         sampler.commit();
         return;
       }
 
-      var device = this.device;
-      var sampler = device.sampler[this.register] || device.sampler[0];
       sampler.texture = texture;
       utils.extend(sampler, this.filter);
       sampler.commit();

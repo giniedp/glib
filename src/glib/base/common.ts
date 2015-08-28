@@ -24,25 +24,38 @@ module Glib.utils {
   }
 
   /**
-   * Creates a shallow copy of an object, an array or a primitive.
-   * Assumes that there are no proto properties for objects.
+   * Creates a copy of an object, an array or a primitive.
    * @method copy
-   * @param {*} src Object to copy from.
-   * @param {*} [dst] Object to copy into.
    * @return {*} The copied object
    */
-  export function copy(src:any, dst?:any):any {
-    if (Array.isArray(src)) {
-      dst = dst || [];
-      for (var i = 0; i < src.length; i++) {
-        dst[i] = src[i];
-      }
-    } else if (src != null && typeof src === 'object') {
-      dst = dst || {};
-      for (var key in src) {
-        dst[key] = src[key];
+  export function copy(...deepSrcDst:any[]):any {
+    var deep = false;
+    var src, dst;
+    if (typeof deepSrcDst[0] === "boolean" ) {
+      deep = deepSrcDst[0];
+      src = deepSrcDst[1];
+      dst = deepSrcDst[2];
+    } else {
+      deep = false;
+      src = deepSrcDst[0];
+      dst = deepSrcDst[1];
+    }
+    
+    dst = Array.isArray(src) ? [] : {};
+    
+    var value, isArray, isObject;
+    for (var key in src) {
+      value = src[key];
+      isArray = Array.isArray(value)
+      isObject = value != null && typeof value === 'object'
+      
+      if (deep && value && (isArray || isObject)) {
+        dst[key] = copy(deep, value);
+      } else if (value !== void 0) {
+        dst[key] = value;
       }
     }
+    
     return dst;
   }
   
@@ -188,7 +201,7 @@ module Glib.utils {
   }
 
   export function getLines(value:string):string[] {
-    return value.replace(/\r\n/g, '\n').split('\n');
+    return value.replace(/(\r\n)|\n/g, '\n').split('\n');
   }
 
   export function chompLeft(value:string, prefix:string):string {

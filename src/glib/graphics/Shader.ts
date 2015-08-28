@@ -153,7 +153,6 @@ module Glib.Graphics {
       for (i = 0; i < members.length; i += 1) {
         match = members[i].match(/\s*(\w+)\s+(\w+)\s*$/);
         if (match) {
-          //console.debug(match);
           result[match[2]] = {
             name: match[2],
             type: match[1]

@@ -24,39 +24,34 @@ block script
     var width = device.canvas.width;
     var height = device.canvas.height;
     var pixel = (height/10)|0;
-    var stencil = device.stencilState;
-    var scissor = device.scissorState;
 
     var BLACK = 0xFF000000;
     var RED   = 0xFF0000FF;
 
     device.clear(BLACK);
 
-    scissor.enable = true;
-    scissor.width = pixel;
-    scissor.height = pixel;
-    scissor.commit({ x: 3 * pixel, y: 7 * pixel });
+    device.scissorState = { enable: true, width: pixel, height: pixel };
+    device.scissorState = { x: 3 * pixel, y: 7 * pixel };
     device.clear(BLACK, 1, 2);
-    scissor.commit({ x: 7 * pixel });
+    device.scissorState = { x: 7 * pixel };
     device.clear(BLACK, 1, 2);
-    scissor.commit({ x: 5 * pixel, y: 5 * pixel });
+    device.scissorState = { x: 5 * pixel, y: 5 * pixel };
     device.clear(BLACK, 1, 2);
-    scissor.commit({ x: 3 * pixel, y: 4 * pixel });
+    device.scissorState = { x: 3 * pixel, y: 4 * pixel };
     device.clear(BLACK, 1, 2);
-    scissor.commit({ x: 7 * pixel, y: 4 * pixel });
+    device.scissorState = { x: 7 * pixel, y: 4 * pixel };
     device.clear(BLACK, 1, 2);
-    scissor.commit({ x: 4 * pixel, y: 3 * pixel, width: 3 * pixel });
+    device.scissorState = { x: 4 * pixel, y: 3 * pixel, width: 3 * pixel };
     device.clear(BLACK, 1, 2);
 
-    scissor.commit({ enable: false });
-
-    stencil.commit({
+    device.scissorState = { enable: false };
+    device.stencilState = {
       enable: true,
       stencilReference: 2,
       stencilFunction: Graphics.CompareFunction.Equal,
       stencilBackReference: 2,
       stencilBackFunction: Graphics.CompareFunction.Equal
-    });
+    };
     device.program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
       fragmentShader: document.getElementById('fragment-shader').textContent,

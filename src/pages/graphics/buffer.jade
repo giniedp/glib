@@ -4,12 +4,17 @@ block script
   script#vertex-shader(type='text/glsl').
     precision highp float;
     precision highp int;
-    attribute vec3 position;
-    attribute vec3 color;
+
+    // @binding position
+    attribute vec3 vPosition;
+
+    // @binding color
+    attribute vec3 vColor;
+
     varying vec3 vertexColor;
     void main(void) {
-      vertexColor = color;
-      gl_Position = vec4(position, 1.0);
+      vertexColor = vColor;
+      gl_Position = vec4(vPosition, 1.0);
     }
   script#fragment-shader(type='text/glsl').
     precision highp float;
@@ -24,11 +29,7 @@ block script
     var height = device.canvas.height;
     var program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
-      fragmentShader: document.getElementById('fragment-shader').textContent,
-      attributes: {
-        position: {type: 'vec3'},
-        color: {type: 'vec3'}
-      }
+      fragmentShader: document.getElementById('fragment-shader').textContent
     });
     var indices = device.createIndexBuffer({
       dataType: "ushort",
@@ -54,8 +55,10 @@ block script
         0.0, 1.0, 0.0, 0, 0, 1
       ]
     });
-    device.indexBuffer = indices;
-    device.vertexBuffer = vertices;
-    device.program = program;
-    device.clear(Glib.Graphics.Color.CornflowerBlue);
-    device.drawIndexedPrimitives();
+    Glib.utils.loop(function () {
+      device.indexBuffer = indices;
+      device.vertexBuffer = vertices;
+      device.program = program;
+      device.clear(Glib.Graphics.Color.CornflowerBlue);
+      device.drawIndexedPrimitives();
+    });

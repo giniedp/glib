@@ -14,17 +14,17 @@ block script
     var RED   = 0xFF0000FF;
     var WHITE = 0xFFFFFFFF;
 
-    device.scissorState.commit({ x: 0, y: 0, width: halfWidth, height: halfHeight, enable: true });
+    device.scissorState = { x: 0, y: 0, width: halfWidth, height: halfHeight, enable: true };
     device.clear(RED);
 
-    device.scissorState.commit({ x: halfWidth });
+    device.scissorState = { x: halfWidth };
     device.clear(GREEN);
 
-    device.scissorState.commit({ y: halfHeight });
+    device.scissorState = { y: halfHeight };
     device.clear(BLUE);
 
-    device.scissorState.commit({ x: 0 });
+    device.scissorState = { x: 0 };
     device.clear(WHITE);
 
-    device.scissorState.commit({enable: false});
+    device.scissorState = {enable: false};
 

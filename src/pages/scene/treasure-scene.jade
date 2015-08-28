@@ -22,7 +22,13 @@ block script
         name: "Light",
         templates: ["DirectionalLight"]
       }, function(e){
-        e.getService("Transform").rotateYawPitchRoll(Math.PI / 2, -Math.PI/2, 0);
+        e.getService("Transform").rotateYawPitchRoll(Math.PI / 4, Math.PI/4, 0);
+      })
+      .buildChild({
+        name: "Light",
+        templates: ["DirectionalLight"]
+      }, function(e){
+        e.getService("Transform").rotateYawPitchRoll(-Math.PI / 4 * 3, -Math.PI/4, 0);
       });
     function DemoComponent(options) {
       options = options || {};
@@ -35,7 +41,9 @@ block script
       this.transform = this.node.getService("Transform");
       this.renderable = this.node.getService("Renderable");
       this.assets
-        .load("Model", "/assets/models/KingsTreasure.obj")
+        //.load("Model", "/assets/models/lost_empire/lost_empire.obj")
+        //.load("Model", "/assets/models/KingsTreasure.obj")
+        .load("Model", "/assets/models/sibenik/sibenik.obj")
         .then(function (model) {
           this.renderable.model = model;
         }.bind(this));

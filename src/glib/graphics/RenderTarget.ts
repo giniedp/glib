@@ -10,7 +10,6 @@ module Glib.Graphics {
     device:Device;
     gl:any;
     texture:Texture;
-    depthBuffer:DepthBuffer;
     handle:WebGLFramebuffer;
     depthHandle:WebGLRenderbuffer;
     stencilHandle:WebGLRenderbuffer;

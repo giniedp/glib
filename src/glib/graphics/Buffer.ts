@@ -82,7 +82,6 @@ module Glib.Graphics {
       if (opts.data) {
         this.setData(opts.data);
       }
-
       return this;
     }
 

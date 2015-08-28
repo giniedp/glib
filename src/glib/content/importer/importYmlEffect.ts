@@ -147,7 +147,7 @@ module Glib.Content.Importers {
    * ```
    */
   export function importYmlEffect(data:AssetData, manager:Manager):IPromise {
-    debug("[ImportYmlEffect]", data);
+    //debug("[ImportYmlEffect]", data);
 
     var content:any = Parser.YML.parse(data.content);
 

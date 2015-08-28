@@ -8,7 +8,7 @@ module Glib.Render.PostEffect {
 
     private _material: Graphics.Material;
     
-    glowCut: number = 0.8;
+    glowCut: number = 0.6;
     multiplier: number = 0.83;
     gaussSigma: number = 0.5;
     private _offsetWeights: Array<Array<number>>;
@@ -63,21 +63,21 @@ module Glib.Render.PostEffect {
       var pingTarget = manager.acquireTarget({
         width: baseTarget.width,
         height: baseTarget.height,
-        depth: !!baseTarget.depthBuffer
+        depth: !!baseTarget.depthHandle
       });
       
       var pongTarget = manager.acquireTarget({
         width: baseTarget.width,
         height: baseTarget.height,
-        depth: !!baseTarget.depthBuffer
+        depth: !!baseTarget.depthHandle
       });
       
       this._updateGauss(1.0 / baseTarget.width, 1.0 / baseTarget.height);
-      //debugger;
+
       var device = manager.device;
-      device.depthState.commit(Graphics.DepthState.Default);
-      device.stencilState.commit(Graphics.StencilState.Default);
-      device.blendState.commit(Graphics.BlendState.Default);
+      device.depthState = Graphics.DepthState.Default;
+      device.stencilState = Graphics.StencilState.Default;
+      device.blendState = Graphics.BlendState.Default;
       
       //-------------------------------------------------
       // [1] GLOW CUT -> pingTarget

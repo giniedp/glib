@@ -3,104 +3,77 @@ module Glib.Content.Importer {
   import Graphics = Glib.Graphics;
   import debug = Glib.utils.debug;
 
-  function readVertex(data, element) {
+  import ObjGroup = Glib.Content.Parser.ObjGroup;
+  import ObjData = Glib.Content.Parser.ObjData;
+  
+  var V = 0;
+  var VT = 1;
+  var VN = 2;
+  
+  function readVertex(data:ObjData, element) {
     var vertex:any = {};
-    vertex.position = data.v[element[0] - 1];
+    vertex.position = data.v[element[V] - 1];
 
-    if (element[1] != null && data.vt != null) {
-      vertex.texture = data.vt[element[1] - 1];
+    if (element[VT] != null && data.vt != null) {
+      vertex.texture = data.vt[element[VT] - 1];
     }
-    if (element[2] != null && data.vn != null) {
-      vertex.normal = data.vn[element[2] - 1];
+    if (element[VN] != null && data.vn != null) {
+      vertex.normal = data.vn[element[VN] - 1];
     }
     return vertex;
   }
 
-  function readMesh(group, data) {
-    var builder = Glib.Graphics.Geometry.Builder.create({
-      layout: "PositionNormalTexture",
-      ignoreTransform: true
-    });
+  function buildMesh(builder:Graphics.Geometry.Builder, group:ObjGroup, data:ObjData) {
+
     var index = 0;
+    var vertex = void 0;
     for (var face of group.f) {
-      var vertex = void 0;
-
-      vertex = readVertex(data, face[0]);
-      builder.addIndex(index);
-      builder.addVertex(vertex);
-      index += 1;
-
-      vertex = readVertex(data, face[1]);
-      builder.addIndex(index);
-      builder.addVertex(vertex);
-      index += 1;
-
-      vertex = readVertex(data, face[2]);
-      builder.addIndex(index);
-      builder.addVertex(vertex);
-      index += 1;
-
-      if (face.length == 4) {
+      var count = 0;
+      while (count < face.length - 2) {
         vertex = readVertex(data, face[0]);
         builder.addIndex(index);
         builder.addVertex(vertex);
         index += 1;
-
-        vertex = readVertex(data, face[2]);
+  
+        vertex = readVertex(data, face[count + 2]);
         builder.addIndex(index);
         builder.addVertex(vertex);
         index += 1;
-
-        vertex = readVertex(data, face[3]);
+  
+        vertex = readVertex(data, face[count + 1]);
         builder.addIndex(index);
         builder.addVertex(vertex);
         index += 1;
+        
+        count += 1;  
       }
     }
 
-    return {
+    if (index == 0) return;
+    
+    builder.finishMesh({
       name: group.name,
-      materialId: group.material,
-      indexBuffer: builder.indexBuffer,
-      vertexBuffer: builder.vertexBuffer,
-    };
+      materialId: group.material
+    });
   }
 
-  function hasSameVertexCount(group) {
-    if (!group.v) return true;
-    var length = group.v.length;
-    if (group.vt && group.vt.length !== length) return false;
-    if (group.vn && group.vn.length !== length) return false;
-    if (group.vp && group.vp.length !== length) return false;
-    return true;
-  }
-
-  function hasSimpleLayout(obj){
-    if (!hasSameVertexCount(obj)) {
-      return false;
+  function convert(data:ObjData) {
+    var builder = Glib.Graphics.Geometry.Builder.create({
+      layout: "PositionNormalTexture",
+      ignoreTransform: true
+    });
+    
+    for (var group of data.groups) {
+      buildMesh(builder, group, data);
     }
-    for(var group of obj.groups) {
-      if (!hasSameVertexCount(group)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  function convert(obj) {
-    var meshes = [];
-    for (var group of obj.groups) {
-      var mesh = readMesh(group, obj);
-      meshes.push(mesh);
-    }
-    return {
-      materials: obj.materials,
-      meshes: meshes
-    };
+    return builder.finishModelOptions({
+      name: data.name,
+      materials: data.materials
+    });
   }
 
   export function importObjModel(data:AssetData, manager:Manager) {
-    debug('[ImportObjModel]', data);
+    //debug('[ImportObjModel]', data);
     var obj = Parser.OBJ.parse(data.content);
     var json = convert(obj);
     return loadJsonModel(json, data, manager);

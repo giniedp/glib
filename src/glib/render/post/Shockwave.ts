@@ -22,7 +22,7 @@ module Glib.Render.PostEffect {
       var rt2 = manager.acquireTarget({
         width: rt.width,
         height: rt.height,
-        depth: !!rt.depthBuffer
+        depth: !!rt.depthHandle
       });
       
       manager.device.setRenderTarget(rt2);

@@ -48,7 +48,7 @@ uniform sampler2D DiffuseMap;
 uniform sampler2D NormalMap;
 
 // @binding SpecularTexture
-// @register 1
+// @register 2
 // @filter   LinearWrap
 uniform sampler2D SpecularMap;
 
@@ -76,7 +76,7 @@ uniform LightParams Lights[4];
 
 vec4 GetDiffuseColor(in vec2 uv){
   if (DiffuseMapEnabled) {
-    return texture2D(DiffuseMap, uv) * vec4(DiffuseColor, Alpha);
+    return texture2D(DiffuseMap, uv);// * vec4(DiffuseColor, Alpha);
   } 
   return vec4(DiffuseColor, Alpha);
 }

@@ -46,19 +46,19 @@ module Glib.Graphics {
       this.program.use();
       var device = this.device;
       if (this.stencilState) {
-        device.stencilState.commit(this.stencilState);
+        device.stencilState = this.stencilState;
       }
       if (this.offsetState) {
-        device.offsetState.commit(this.offsetState);
+        device.offsetState = this.offsetState;
       }
       if (this.blendState) {
-        device.blendState.commit(this.blendState);
+        device.blendState = this.blendState;
       }
       if (this.depthState) {
-        device.depthState.commit(this.depthState);
+        device.depthState = this.depthState;
       }
       if (this.cullState) {
-        device.cullState.commit(this.cullState);
+        device.cullState = this.cullState;
       }
       this.program.commit(this.material.parameters);
       return this;

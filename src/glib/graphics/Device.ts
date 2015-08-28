@@ -111,13 +111,15 @@ module Glib.Graphics {
     extensions:any;
     capabilities:any;
     sampler:SamplerState[];
-    cullState:CullState;
-    blendState:BlendState;
-    depthState:DepthState;
-    offsetState:OffsetState;
-    stencilState:StencilState;
-    scissorState:ScissorState;
-    viewportState:ViewportState;
+    
+    private _cullState:CullState;
+    private _blendState:BlendState;
+    private _depthState:DepthState;
+    private _offsetState:OffsetState;
+    private _stencilState:StencilState;
+    private _scissorState:ScissorState;
+    private _viewportState:ViewportState;
+    private _vertexAttribArrayState:VertexAttribArrayState;
 
     constructor(options:{
       canvas?: string|HTMLCanvasElement,
@@ -130,20 +132,20 @@ module Glib.Graphics {
       this.extensions = getGlExtensions(this.context);
       this.capabilities = getGlCapabilities(this.context);
 
-      this.cullState = new CullState(this);
-      this.cullState.commit(CullState.Default);
-      this.blendState = new BlendState(this);
-      this.blendState.commit(BlendState.Default);
-      this.depthState = new DepthState(this);
-      this.depthState.commit(DepthState.Default);
-      this.offsetState = new OffsetState(this);
-      this.offsetState.commit(OffsetState.Default);
-      this.stencilState = new StencilState(this);
-      this.stencilState.commit(StencilState.Default);
-      this.scissorState = new ScissorState(this);
-      this.scissorState.commit(ScissorState.Default);
-      this.viewportState = new ViewportState(this);
-      //this.viewportState.commit(ViewportState.Default);
+      this._cullState = new CullState(this);
+      this.cullState = CullState.Default;
+      this._blendState = new BlendState(this);
+      this.blendState = BlendState.Default;
+      this._depthState = new DepthState(this);
+      this.depthState = DepthState.Default;
+      this._offsetState = new OffsetState(this);
+      this.offsetState = OffsetState.Default;
+      this._stencilState = new StencilState(this);
+      this.stencilState = StencilState.Default;
+      this._scissorState = new ScissorState(this);
+      this.scissorState = ScissorState.Default;
+      this._viewportState = new ViewportState(this);
+      this._vertexAttribArrayState = new VertexAttribArrayState(this);
 
       this.sampler = [];
       var max = Number(this.capabilities.MAX_TEXTURE_IMAGE_UNITS);
@@ -152,6 +154,55 @@ module Glib.Graphics {
       }
     }
 
+    get cullState() {
+      return this._cullState.dump();
+    }
+    set cullState(v:CullStateOptions) {
+      this._cullState.commit(v);
+    }
+    
+    get blendState() {
+      return this._blendState.dump();
+    }
+    set blendState(v:BlendStateOptions) {
+      this._blendState.commit(v);
+    }
+    
+    get depthState() {
+      return this._depthState.dump();
+    }
+    set depthState(v:DepthStateOptions) {
+      this._depthState.commit(v);
+    }
+    
+    get offsetState() {
+      return this._offsetState.dump();
+    }
+    set offsetState(v:OffsetStateOptions) {
+      this._offsetState.commit(v);
+    }
+    
+    get stencilState() {
+      return this._stencilState.dump();
+    }
+    set stencilState(v:StencilStateOptions) {
+      this._stencilState.commit(v);
+    }
+    
+    get scissorState() {
+      return this._scissorState.dump();
+    }
+    set scissorState(v:ScissorStateOptions) {
+      this._scissorState.commit(v);
+    }
+    
+    get viewportState() {
+      return this._viewportState.dump();
+    }
+    set viewportState(v:ViewportStateOptions) {
+      this._viewportState.commit(v);
+    }
+    
     /**
      * Clears the color, depth and stencil buffers
      * @param color
@@ -197,23 +248,18 @@ module Glib.Graphics {
      */
     drawIndexedPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
       var iBuffer = this._indexBuffer;
-      if (!iBuffer) {
-        utils.log("[drawIndexedPrimitives]", "indexBuffer required but nothing is set.");
-        return this;
-      }
-
       var vBuffer = this._vertexBuffer;
-      if (!vBuffer) {
-        utils.log("[drawIndexedPrimitives]", "vertexBuffer required but nothing is set.");
-        return this;
-      }
-
       var program = this._program;
+      if (!iBuffer) {
+        throw `drawIndexedPrimitives() requires an indexBuffer`
+      } 
+      if (!vBuffer) {
+        throw `drawIndexedPrimitives() requires a vertexBuffer`
+      } 
       if (!program) {
-        utils.log("[drawIndexedPrimitives]", "program required but nothing is set.");
-        return this;
+        throw `drawIndexedPrimitives() requires a program`
       }
-
+      
       var type = iBuffer.dataType;
       var Enum = PrimitiveType;
       primitiveType = Enum[primitiveType || Enum.TriangleList];
@@ -221,7 +267,7 @@ module Glib.Graphics {
       offset = offset || 0;
       count = count || (iBuffer.elementCount - offset);
 
-      this._bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
+      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
       this.context.drawElements(primitiveType, count, type, offset * iBuffer.elementSize);
 
       return this;
@@ -237,21 +283,16 @@ module Glib.Graphics {
      */
     drawInstancedPrimitives(instanceCount?:number, primitiveType?:number, offset?:number, count?:number):Device {
       var iBuffer = this._indexBuffer;
-      if (!iBuffer) {
-        utils.log("[drawInstancedPrimitives]", "indexBuffer required but nothing is set.");
-        return this;
-      }
-
       var vBuffer = this._vertexBuffer;
-      if (!vBuffer) {
-        utils.log("[drawInstancedPrimitives]", "vertexBuffer required but nothing is set.");
-        return this;
-      }
-
       var program = this._program;
+      if (!iBuffer) {
+        throw `drawInstancedPrimitives() requires an indexBuffer`
+      } 
+      if (!vBuffer) {
+        throw `drawInstancedPrimitives() requires a vertexBuffer`
+      } 
       if (!program) {
-        utils.log("[drawInstancedPrimitives]", "program required but nothing is set.");
-        return this;
+        throw `drawInstancedPrimitives() requires a program`
       }
 
       var type = iBuffer.dataType;
@@ -261,7 +302,7 @@ module Glib.Graphics {
       count = count || (iBuffer.elementCount - offset);
       instanceCount = instanceCount || 1;
 
-      this._bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
+      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
       this.context.drawElementsInstanced(primitiveType, count, type, offset * iBuffer.elementSize, instanceCount);
       return this;
     }
@@ -275,22 +316,19 @@ module Glib.Graphics {
      */
     drawPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
       var vBuffer = this._vertexBuffer;
-      if (!vBuffer) {
-        utils.log("[drawPrimitives]", "vertexBuffer required but nothing is set.");
-        return this;
-      }
-
       var program = this._program;
+      if (!vBuffer) {
+        throw `drawInstancedPrimitives() requires a vertexBuffer`
+      }
       if (!program) {
-        utils.log("[drawPrimitives]", "program required but nothing is set.");
-        return this;
+        throw `drawInstancedPrimitives() requires a program`
       }
 
       primitiveType = primitiveType || PrimitiveType.TriangleList;
       offset = offset || 0;
       count = count || (vBuffer.elementCount / vBuffer.elementSize - offset);
 
-      this._bindVertexLayout(vBuffer, program, vBuffer.layout, program.attributes);
+      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
       this.context.drawArrays(primitiveType, offset, count);
       return this;
     }
@@ -356,11 +394,11 @@ module Glib.Graphics {
     }
 
     getBackBufferData() {
-      return this;
+      
     }
 
     getRenderTargets() {
-      return this;
+      
     }
 
     setRenderTarget(target:RenderTarget) {
@@ -400,12 +438,13 @@ module Glib.Graphics {
     }
     set program(program: ShaderProgram) {
       if (this._program !== program) {
-        this.context.useProgram(program ? program.handle : null);
+        var handle = program ? program.handle : null;
+        this.context.useProgram(handle);
         this._program = program;
       }
     }
 
-    private _bindVertexLayout(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any):Device {
+    private _bindAttribPointerAndLocation(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any) {
       layout = layout || vBuffer.layout;
       attributes = attributes || program.attributes;
 
@@ -413,7 +452,9 @@ module Glib.Graphics {
       for (key in attributes) { // jshint ignore:line
         channel = layout[key];
         attribute = attributes[key];
-        if (!channel) continue;
+        if (!channel) {
+          throw `Can not use current shader program with current vertex buffer. The program requires '${Object.keys(attributes)}' attributes. '${key}' is missing in vertex buffer.`
+        }
 
         this.context.vertexAttribPointer(
           attribute.location,
@@ -423,7 +464,7 @@ module Glib.Graphics {
           vBuffer.elementSize,
           channel.offset);
       }
-      return this;
+      this._vertexAttribArrayState.commit(program.attributeLocations);
     }
 
     createIndexBuffer(options:any):Buffer {

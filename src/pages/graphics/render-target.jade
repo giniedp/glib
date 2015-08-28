@@ -1,17 +1,22 @@
 //- title: RenderTarget
 extends ./../_layouts/default.jade
 block script
-  script#vertex-shader1(type='text/glsl').
+  script#vertex-shader(type='text/glsl').
     precision highp float;
     precision highp int;
-    attribute vec3 position;
-    attribute vec3 color;
+
+    // @binding position
+    attribute vec3 vPosition;
+
+    // @binding color
+    attribute vec3 vColor;
+
     varying vec3 vertexColor;
     void main(void) {
-      vertexColor = color;
-      gl_Position = vec4(position, 1.0);
+      vertexColor = vColor;
+      gl_Position = vec4(vPosition, 1.0);
     }
-  script#fragment-shader1(type='text/glsl').
+  script#fragment-shader(type='text/glsl').
     precision highp float;
     precision highp int;
     varying vec3 vertexColor;
@@ -21,39 +26,37 @@ block script
   script#vertex-shader2(type='text/ymlsl').
     precision highp float;
     precision highp int;
-    attribute vec3 position;
-    attribute vec2 texture;
+
+    // @binding position
+    attribute vec3 vPosition;
+    // @binding texture
+    attribute vec2 vTexture;
+
     varying vec2 texCoord;
     void main(void) {
-      texCoord = texture;
-      gl_Position = vec4(position, 1.0);
+      texCoord = vTexture;
+      gl_Position = vec4(vPosition, 1.0);
     }
   script#fragment-shader2(type='text/ymlsl').
     precision highp float;
     precision highp int;
-    // @filter PointClamp
+
     // @binding texture
+    // @filter PointClamp
     uniform sampler2D textureSampler;
     varying vec2 texCoord;
     void main(void) {
       vec3 color = texture2D(textureSampler, texCoord).rgb;
       gl_FragColor = vec4(color, 1.0);
     }
-
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({canvas: 'canvas'});
-    var renderTarget = device.createRenderTarget({
-      width: 128,
-      height: 64
-    });
-    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
-    var program2 = device.createProgram({
-      vertexShader: document.getElementById('vertex-shader2').textContent,
-      fragmentShader: document.getElementById('fragment-shader2').textContent
-    });
-    var program1 = device.createProgram({
-      vertexShader: document.getElementById('vertex-shader1').textContent,
-      fragmentShader: document.getElementById('fragment-shader1').textContent
+    var width = device.canvas.width;
+    var height = device.canvas.height;
+    var spriteBatch = device.createSpriteBatch();
+    var program = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader').textContent,
+      fragmentShader: document.getElementById('fragment-shader').textContent
     });
     var indices = device.createIndexBuffer({
       dataType: "ushort",
@@ -75,41 +78,38 @@ block script
       dataType: "float",
       data: [
         -1.0, -1.0, 0.0, 1, 0, 0,
-         1.0, -1.0, 0.0, 0, 1, 0,
-         0.0,  1.0, 0.0, 0, 0, 1
+        1.0, -1.0, 0.0, 0, 1, 0,
+        0.0, 1.0, 0.0, 0, 0, 1
       ]
     });
 
-    var spriteBatch = device.createSpriteBatch();
+    var renderTarget = device.createRenderTarget({
+      width: 128,
+      height: 64,
+      depth: true
+    });
+    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
+    var program2 = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader2').textContent,
+      fragmentShader: document.getElementById('fragment-shader2').textContent
+    });
 
-    window.device = device;
     Glib.utils.loop(function () {
-
       device.setRenderTarget(renderTarget);
-      device.viewportState.commit({ width: renderTarget.width, height: renderTarget.height });
+      device.viewportState = { width: renderTarget.width, height: renderTarget.height };
       device.clear(Glib.Graphics.Color.CornflowerBlue);
 
-      device.program = program1;
+      device.program = program;
       device.indexBuffer = indices;
       device.vertexBuffer = vertices;
       device.drawIndexedPrimitives();
 
-      device.viewportState.commit({ width: device.canvas.width, height: device.canvas.height });
       device.setRenderTarget(null);
-      device.clear(Glib.Graphics.Color.CornflowerBlue);
-
-      /*
-      spriteBatch.begin()
-      spriteBatch.draw({
-        texture: renderTarget.texture,
-        dstX: 0, dstY: 0, dstWidth: device.canvas.width, dstHeight: device.canvas.height
-      })
-      spriteBatch.end()
-      
+      device.viewportState = { width: width, height: height };
 
       device.program = program2;
-      device.program.uniforms.texture.set(renderTarget.texture);
+      device.program.setUniform("texture", renderTarget);
       device.drawQuad();
-      */
-
+      device.program.setUniform("texture", null);
     });
+

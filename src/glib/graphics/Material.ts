@@ -38,6 +38,7 @@ module Glib.Graphics {
     constructor(device:Device, params:MaterialOptions) {
       this.device = device;
       this.gl = device.context;
+      this.name = params.name;
       this.parameters = params.parameters || {};
       this.techniques = makeArray(params.techniques);
 
@@ -53,7 +54,7 @@ module Glib.Graphics {
           });
         }, this);
       }, this);
-
+      
       this.technique = this.findTechnique(params.technique || 0);
     }
 

@@ -202,25 +202,28 @@ module Glib.Graphics.Geometry {
       return this;
     }
 
-    /**
-     * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
-     * @param options
-     * @returns {Glib.Graphics.Geometry.Builder}
-     */
-    pushMesh(options:ModelMeshOptions = {}):Builder {
-      if (this.indexCount === 0 && this.vertexCount === 0) {
-        utils.warn(`[Geometry.Builder] pushMesh : called on empty builder. ignore.`);
-        return this;
-      }
-
-      // TODO: don't calculate normals automatically.
+    calculateNormalsAndTangents(){
       if (this.layout['normal']) {
         calculateNormals(this.layout, this.indices, this.vertices);
       }
       if (this.layout['tangent'] && this.layout['bitangent']) {
         calculateTangents(this.layout, this.indices, this.vertices);
       }
+    }
+    
+    /**
+     * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
+     * @param options
+     * @returns {Glib.Graphics.Geometry.Builder}
+     */
+    finishMesh(options:ModelMeshOptions = {}):Builder {
+      if (this.indexCount === 0 && this.vertexCount === 0) {
+        utils.warn(`[Geometry.Builder] pushMesh : called on empty builder. ignore.`);
+        return this;
+      }
 
+      this.calculateNormalsAndTangents();
+      
       options.materialId = options.materialId || 0;
       options.indexBuffer = this.indexBuffer;
       options.vertexBuffer = this.vertexBuffer;
@@ -237,7 +240,7 @@ module Glib.Graphics.Geometry {
      */
     finishModelOptions(options:Glib.Graphics.ModelOptions = {}):ModelOptions {
       if (this.indices.length !== 0 || this.vertices.length !== 0) {
-        this.pushMesh();
+        this.finishMesh();
       }
 
       var materials = options.materials || [];

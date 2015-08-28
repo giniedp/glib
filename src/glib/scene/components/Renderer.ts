@@ -41,13 +41,13 @@ module Glib.Components {
       
       /*
       this.assets.load("Effect", "/assets/shader/postprocess/bloom.yml").then((effect) => {
-        //debugger;
         var material = new Glib.Graphics.Material(this.device, effect)
         var postEffect = new Render.PostEffect.Bloom(material);
         var view = this.manager.views[0];
         view.steps.push(postEffect);
       });
       */
+
       /*
       this.assets.load("Effect", "/assets/shader/postprocess/shockwave.yml").then((effect) => {
         var program = this.device.createProgram(effect.techniques[0].passes[0]);

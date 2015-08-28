@@ -2,8 +2,9 @@ module Glib.Content.Importer {
 
   import debug = Glib.utils.debug;
 
-  function convertMaterial(m:any) {
+  function convertMaterial(m:Content.Parser.MtlData) {
     var result:Glib.Graphics.MaterialOptions = {
+      name: m.name,
       parameters: {}
     };
 
@@ -49,16 +50,19 @@ module Glib.Content.Importer {
     }
     
     result.effect = "/assets/shader/basic.yml"
+    /*
     if (m.illum == "0") {
       result.technique = "basic"
     } else {
       result.technique = "pixelLighting"
     }
+    */
+    result.technique = "pixelLighting"
     return result;
   }
 
   export function importMtlMaterial(asset:AssetData, manager:Manager):IPromise {
-    debug('[ImportMtlMaterial]', asset);
+    //debug('[ImportMtlMaterial]', asset);
     var json:any = Parser.MTL.parse(asset.content).map(convertMaterial);
     return Importer.loadJsonMaterial(json, asset, manager);
   }

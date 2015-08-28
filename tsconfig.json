@@ -35,6 +35,7 @@
     "src/glib/graphics/states/SamplerState.ts",
     "src/glib/graphics/states/ScissorState.ts",
     "src/glib/graphics/states/StencilState.ts",
+    "src/glib/graphics/states/VertexAttribArrayState.ts",
     "src/glib/graphics/states/ViewportState.ts",
     "src/glib/graphics/Buffer.ts",
     "src/glib/graphics/Color.ts",

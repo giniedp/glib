@@ -1,33 +1,82 @@
 module Glib.Content.Parser {
 
-  function readFloat(item:string) {
+  function readFloat(item:string):number {
     if (item) {
       return parseFloat(item);
     }
     return void 0;
   }
 
-  function readFloatArray(item:string) {
+  function readFloatArray(item:string):number[] {
     return item.split(" ").map(readFloat);
   }
 
-  function readVector(item:string) {
+  function readTriplet(item:string):number[] {
     return item.split("/").map(readFloat);
   }
 
-  function readVectorArray(item:string) {
-    return item.split(" ").map(readVector);
+  function readTripletArray(item:string):Array<Array<number>> {
+    return item.split(" ").map(readTriplet);
   }
 
   function getLines(value: string): string[] {
     return value.replace(/\r/g, '\n').split('\n');
   }
 
+  function makeAbsoluteIndex(index:number, buffer:any[]):number {
+    if (index < 0) {
+      return buffer.length + index + 1;
+    }
+    return index;
+  }
+  
+  function createGroup(name?:string):ObjGroup {
+    return {
+      name: name,
+      f: [],
+      p: [],
+      l: []
+    }
+  }
+   
+  function createData():ObjData {
+    return {
+      name: void 0,
+      v: [],
+      vt: [],
+      vn: [],
+      vp: [],
+      groups: []
+    }
+  }
+  export type ObjVertex = number[];
+  export type ObjIndices = number[];
+  export type ObjPolygon = ObjIndices[];
+  
+  export interface ObjGroup {
+    name:string
+    f: ObjPolygon[]
+    p: ObjPolygon[]
+    l: ObjPolygon[]
+    lod?:number
+    material?:string
+    maplib?:string[]
+  }
+  
+  export interface ObjData {
+    name:string
+    v: ObjVertex[]
+    vt: ObjVertex[]
+    vn: ObjVertex[]
+    vp: ObjVertex[]
+    materials?:string[]
+    groups: ObjGroup[]
+  }
+    
   export class OBJ {
-    result:any;
-    groups:any[];
-    group:any;
-    lastKey:string;
+    result:ObjData;
+    groups:ObjGroup[];
+    group:ObjGroup;
 
     static parse(content) {
       return new OBJ().parse(content);
@@ -35,12 +84,8 @@ module Glib.Content.Parser {
 
     parse(data) {
       var lines = getLines(data);
-      this.result = {
-        groups: []
-      };
+      this.result = createData();
       this.groups = this.result.groups;
-      this.lastKey = "";
-      this.nextGroup();
 
       var currentLine = "";
       for (var line of lines) {
@@ -72,40 +117,55 @@ module Glib.Content.Parser {
         var value = match[2];
         var reader = this[`read_${key}_key`];
         if (reader) reader.apply(this, [value]);
-        this.lastKey = key;
       }
       return this.result;
     }
 
     currentGroup(){
+      if (!this.group) {
+        this.group = createGroup();
+        this.groups.push(this.group);
+      }
       return this.group;
     }
 
-    nextGroup() {
-      this.group = {};
-      this.groups.push(this.group);
-    }
-
+    //
+    // Object name statements let you assign a name to an entire
+    // object in a single file
+    //
     read_o_key(data:string) {
       this.result.name = data;
     }
 
+    // Group name statements are used to organize collections of
+    // elements and simplify data manipulation for operations in
+    // Model.
     read_g_key(data:string) {
-      this.group.name = data;
+      this.group = createGroup();
+      this.groups.push(this.group);
     }
-
+    
+    // Smoothing group statements let you identify elements over
+    // which normals are to be interpolated to give those elements
+    // a smooth, non-faceted appearance. This is a quick way to
+    // specify vertex normals.
     read_s_key(data:string) {
       data = (data == "off" ? "0" : data);
       if (data != "0") {
-        this.currentGroup().smoothGroup = parseInt(data);
+        // this.currentGroup().smoothGroup = parseInt(data);
       }
     }
 
+    // Merging group statements are used to identify free-form
+    // elements that should be inspected for adjacency detection.
+    // You can also use merging groups to exclude surfaces which
+    // are close enough to be considered adjacent but should not be
+    // merged.
     read_mg_key(data:string) {
-      var param = data.split(" ");
-      var c = this.currentGroup();
-      c.mergeGroup = parseInt(param[0]);
-      c.mergeDistance = parseInt(param[1]);
+      //var param = data.split(" ");
+      //var c = this.currentGroup();
+      //c.mergeGroup = parseInt(param[0]);
+      //c.mergeDistance = parseInt(param[1]);
     }
 
     read_lod_key(data:string) {
@@ -121,46 +181,67 @@ module Glib.Content.Parser {
     }
 
     read_usemtl_key(data:string) {
+      var g = this.currentGroup();
+      if (g.material) {
+        this.read_g_key(g.name);
+      }
       this.currentGroup().material = data;
     }
+    
+    //
+    // ELEMENTS
+    //
 
+    // Geometric vertices
+    //
     read_v_key(data:string) {
-      if (this.lastKey === 'f') {
-        this.nextGroup();
-      }
-      var c = this.result;
-      c.v = c.v || [];
-      c.v.push(readFloatArray(data));
+      this.result.v.push(readFloatArray(data));
     }
 
+    // Texture vertices
+    //
     read_vt_key(data:string) {
-      var c = this.result;
-      c.vt = c.vt || [];
-      c.vt.push(readFloatArray(data));
+      this.result.vt.push(readFloatArray(data));
     }
 
+    // Vertex normals
+    //
     read_vn_key(data:string) {
-      var c = this.result;
-      c.vn = c.vn || [];
-      c.vn.push(readFloatArray(data));
+      this.result.vn.push(readFloatArray(data));
     }
 
+    // Parameter space vertices
+    //
     read_vp_key(data:string) {
-      var c = this.currentGroup();
-      c.vp = c.vp || [];
-      c.vp.push(readVectorArray(data));
+      this.result.vp.push(readFloatArray(data));
     }
 
+    //
+    // ELEMENTS
+    //
+    
+    // Point
+    //
     read_p_key(data:string) {
-      var c = this.currentGroup();
-      c.p = c.p || [];
-      c.p.push(readVectorArray(data));
+      this.currentGroup().p.push(readTripletArray(data));
     }
 
+    // Line
+    //
+    read_l_key(data:string) {
+      this.currentGroup().l.push(readTripletArray(data));
+    }
+    
+    // Face
+    //
     read_f_key(data:string) {
-      var c = this.currentGroup();
-      c.f = c.f || [];
-      c.f.push(readVectorArray(data));
+      var buffers = [this.result.v, this.result.vt, this.result.vn];
+      var face = readTripletArray(data).map(function(e){
+        return e.map(function(index, eIndex){
+          return makeAbsoluteIndex(index, buffers[eIndex]);
+        });
+      });
+      this.currentGroup().f.push(face);
     }
   }
 }

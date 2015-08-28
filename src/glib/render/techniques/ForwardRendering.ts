@@ -10,9 +10,12 @@ module Glib.Render {
       var rt = manager.beginEffect();
       manager.device.setRenderTarget(rt);
       manager.device.clear(0xFFFFFFFF, 1, 1);
-      manager.device.blendState.commit(Graphics.BlendState.Default);
-      manager.device.depthState.commit(Graphics.DepthState.Default);
-      manager.device.cullState.commit(Graphics.CullState.CullCounterClockWise);
+      manager.device.blendState = Graphics.BlendState.Default;
+      manager.device.depthState = Graphics.DepthState.Default;
+      manager.device.cullState = Graphics.CullState.CullCounterClockWise;
+      if (manager.binder.renderables.length) {
+        //debugger;
+      }
       for (var item of manager.binder.renderables) {
         this.renderItem(item, manager.binder);
       }

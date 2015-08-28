@@ -5,21 +5,21 @@ module Glib.Graphics {
     precision highp int;
 
     // @binding position
-    attribute vec3 position;
+    attribute vec3 vPosition;
     // @binding texture
-    attribute vec2 texture;
+    attribute vec2 vTexture;
     // @binding color
     // @default [1,0,0,1]
-    attribute vec4 color;
+    attribute vec4 vColor;
 
     varying vec2 texCoord;
     varying vec4 texColor;
 
     void main(void) {
-      texCoord = texture;
-      texColor = color;
-      vec2 pos = position.xy * vec2(2, -2) + vec2(-1, 1);
-      gl_Position = vec4(pos.xy, position.z, 1);
+      texColor = vColor;
+      texCoord = vTexture;
+      vec2 pos = vPosition.xy * vec2(2, -2) + vec2(-1, 1);
+      gl_Position = vec4(pos.xy, vPosition.z, 1);
     }`;
 
   var fShader = `
@@ -35,7 +35,7 @@ module Glib.Graphics {
     varying vec4 texColor;
 
     void main(void) {
-      gl_FragColor = texture2D(textureSampler, texCoord);// * texColor;
+      gl_FragColor = texture2D(textureSampler, texCoord) * texColor;
     }`;
 
   var spritePool:Sprite[] = [];
@@ -90,17 +90,11 @@ module Glib.Graphics {
     private _program:Graphics.ShaderProgram;
 
     private _blendState:BlendStateOptions;
-    private _oldBlendState:BlendStateOptions;
     private _cullState:CullStateOptions;
-    private _oldCullState:CullStateOptions;
     private _depthState:DepthStateOptions;
-    private _oldDepthState:DepthStateOptions;
     private _stencilState:StencilStateOptions;
-    private _oldStencilState:StencilStateOptions;
     private _scissorState:ScissorStateOptions;
-    private _oldScissorState:ScissorStateOptions;
     private _viewportState:ViewportStateOptions;
-    private _oldViewportState:ViewportStateOptions;
     private _sortMode:any;
     private _batchSize:number;
     private _batchPosition:number;
@@ -243,7 +237,6 @@ module Glib.Graphics {
 
       this._commitRenderState();
       this._draw();
-      this._resetRenderState();
 
       for (var sprite of this._spriteQueue) {
         spritePool.push(sprite);
@@ -256,51 +249,22 @@ module Glib.Graphics {
       var device = this.device;
 
       if (this._blendState) {
-        this._oldBlendState = device.blendState.dump(this._oldBlendState);
-        device.blendState.commit(this._blendState);
+        device.blendState = this._blendState;
       }
       if (this._cullState) {
-        this._oldCullState = device.cullState.dump(this._oldCullState);
-        device.cullState.commit(this._cullState);
+        device.cullState = this._cullState;
       }
       if (this._depthState) {
-        this._oldDepthState = device.depthState.dump(this._oldDepthState);
-        device.depthState.commit(this._depthState);
+        device.depthState = this._depthState;
       }
       if (this._stencilState) {
-        this._oldStencilState = device.stencilState.dump(this._oldStencilState);
-        device.stencilState.commit(this._stencilState);
+        device.stencilState = this._stencilState;
       }
       if (this._scissorState) {
-        this._oldScissorState = device.scissorState.dump(this._oldScissorState);
-        device.scissorState.commit(this._scissorState);
+        device.scissorState = this._scissorState;
       }
       if (this._viewportState) {
-        this._oldViewportState = device.viewportState.dump(this._oldViewportState);
-        device.viewportState.commit(this._viewportState);
-      }
-    }
-
-    private _resetRenderState(){
-      var device = this.device;
-
-      if (this._blendState) {
-        device.blendState.commit(this._oldBlendState);
-      }
-      if (this._cullState) {
-        device.cullState.commit(this._oldCullState);
-      }
-      if (this._depthState) {
-        device.depthState.commit(this._oldDepthState);
-      }
-      if (this._stencilState) {
-        device.stencilState.commit(this._oldStencilState);
-      }
-      if (this._scissorState) {
-        device.scissorState.commit(this._oldScissorState);
-      }
-      if (this._viewportState) {
-        device.viewportState.commit(this._oldViewportState);
+        device.viewportState = this._viewportState;
       }
     }
 

@@ -22,7 +22,7 @@ module Glib.Graphics {
       this.gl = device.context;
       this.boundingBox = params.boundingBox || [0, 0, 0, 0, 0, 0];
       this.boundingSphere = params.boundingSphere || [0, 0, 0, 0];
-      this.materialId = Number(params.materialId) || 0;
+      this.materialId = params.materialId || 0;
 
       var buffer:any = params.indexBuffer || {};
       if (buffer instanceof Buffer) {

@@ -26,9 +26,9 @@ technique:
     vertexShader:
       void main(void) {
         vec4 pos = WorldMat4 * vec4(vertexPosition, 1.0);
-        TexCoord = vec2(vertexUV.x, 1.0 - vertexUV.y);
-        
         gl_Position = ProjectionMat4 * ViewMat4 * pos;
+        
+        TexCoord = vertexUV;
       }
 
     fragmentShader:
@@ -44,11 +44,10 @@ technique:
       void main(void) {
         vec4 pos = WorldMat4 * vec4(vertexPosition, 1.0);
         vec3 nrm = mat3(WorldMat4) * vertexNormal;
+        gl_Position = ProjectionMat4 * ViewMat4 * pos;
         
         CalculateLightTerms(pos.xyz, normalize(nrm), SpecularPower, DiffuseTerm, SpecularTerm);
-        TexCoord = vec2(vertexUV.x, 1.0 - vertexUV.y);
-        
-        gl_Position = ProjectionMat4 * ViewMat4 * pos;
+        TexCoord = vertexUV;
       }
 
     fragmentShader:
@@ -66,7 +65,7 @@ technique:
         gl_Position = ProjectionMat4 * ViewMat4 * pos;
         
         Position = pos.xyz;
-        TexCoord = vec2(vertexUV.x, 1.0 - vertexUV.y);
+        TexCoord = vertexUV * vec2(1, -1);
         Normal = mat3(WorldMat4) * vertexNormal;
       }
 
