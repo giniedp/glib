@@ -160,6 +160,7 @@ module Glib.Graphics {
     return count;
   }
 
+
   export var VertexLayout = {
     preset: preset,
     create: create,

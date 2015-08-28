@@ -51,6 +51,9 @@ module Glib.Graphics.Geometry {
     get indices():BufferData {
       return this.indexBuffer.data;
     }
+    set indices(value:BufferData) {
+      this.indexBuffer.data = value;
+    }
 
     /**
      * Gets the data array of the current vertex buffer
@@ -58,6 +61,9 @@ module Glib.Graphics.Geometry {
      */
     get vertices():BufferData {
       return this.vertexBuffer.data;
+    }
+    set vertices(value:BufferData) {
+      this.vertexBuffer.data = value;
     }
 
     static create(options?:BuilderOptions) {
@@ -210,7 +216,45 @@ module Glib.Graphics.Geometry {
         calculateTangents(this.layout, this.indices, this.vertices);
       }
     }
-    
+
+    mergeDublicates() {
+      var eCount = VertexLayout.countElements(this.layout);
+      var hashMap = {};
+
+      var oldIndices:any = this.indices;
+      var newIndices:any = [];
+      var iCounter = 0;
+
+      var oldVertices:any = this.vertices;
+      var newVertices:any = [];
+      var vCounter = 0;
+
+      for (var index of oldIndices) {
+        var vertex = oldVertices.slice(index * eCount, index * eCount + eCount);
+        var hash = vertex.join('|');
+        var position = hashMap[hash];
+        if (position == null) {
+          for (var e of vertex) {
+            newVertices.push(e);
+          }
+          position = vCounter;
+          hashMap[hash] = position;
+          vCounter += 1;
+        }
+
+        newIndices[iCounter] = position;
+        iCounter += 1;
+      }
+      if (this.vertexCount != vCounter) {
+        Glib.utils.debug(`[Geometry.Builder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`);
+        this.vertices = newVertices;
+        this.vertexCount = vCounter;
+
+        this.indices = newIndices;
+        this.indexCount = iCounter;
+      }
+    }
+
     /**
      * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
      * @param options
@@ -222,6 +266,7 @@ module Glib.Graphics.Geometry {
         return this;
       }
 
+      this.mergeDublicates();
       this.calculateNormalsAndTangents();
       
       options.materialId = options.materialId || 0;

@@ -23,29 +23,31 @@ module Glib.Content.Importer {
     return vertex;
   }
 
-  function buildMesh(builder:Graphics.Geometry.Builder, group:ObjGroup, data:ObjData) {
+  function buildMesh(builder:Graphics.Geometry.Builder, data:ObjData, groups:ObjGroup[]) {
 
     var index = 0;
     var vertex = void 0;
-    for (var face of group.f) {
-      var count = 0;
-      while (count < face.length - 2) {
-        vertex = readVertex(data, face[0]);
-        builder.addIndex(index);
-        builder.addVertex(vertex);
-        index += 1;
-  
-        vertex = readVertex(data, face[count + 2]);
-        builder.addIndex(index);
-        builder.addVertex(vertex);
-        index += 1;
-  
-        vertex = readVertex(data, face[count + 1]);
-        builder.addIndex(index);
-        builder.addVertex(vertex);
-        index += 1;
-        
-        count += 1;  
+    for (var group of groups) {
+      for (var face of group.f) {
+        var count = 0;
+        while (count < face.length - 2) {
+          vertex = readVertex(data, face[0]);
+          builder.addIndex(index);
+          builder.addVertex(vertex);
+          index += 1;
+
+          vertex = readVertex(data, face[count + 2]);
+          builder.addIndex(index);
+          builder.addVertex(vertex);
+          index += 1;
+
+          vertex = readVertex(data, face[count + 1]);
+          builder.addIndex(index);
+          builder.addVertex(vertex);
+          index += 1;
+
+          count += 1;
+        }
       }
     }
 
@@ -62,10 +64,16 @@ module Glib.Content.Importer {
       layout: "PositionNormalTexture",
       ignoreTransform: true
     });
-    
+
+    var byMaterial = {};
     for (var group of data.groups) {
-      buildMesh(builder, group, data);
+      byMaterial[group.material] = byMaterial[group.material] || [];
+      byMaterial[group.material].push(group);
     }
+    for (var key in byMaterial) {
+      buildMesh(builder, data, byMaterial[key]);
+    }
+
     return builder.finishModelOptions({
       name: data.name,
       materials: data.materials
