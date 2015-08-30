@@ -97,7 +97,7 @@ module Glib.Terrain {
       var dx = tl + l + bl - tr - r - br;
       var dy = tl + t + tr - bl - b - br;
 
-      return out.init(dx, 1, dy).normalize();
+      return out.init(dx, 1, dy).selfNormalize();
     }
 
     rescale(scale){
