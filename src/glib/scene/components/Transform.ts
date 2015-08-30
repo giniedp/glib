@@ -1,13 +1,13 @@
 module Glib.Components {
 
-  import Vec3 = Vlib.Vec3;
-  import Quat = Vlib.Quat;
-  import Mat4 = Vlib.Mat4;
+  import Vec3 = Glib.Vec3;
+  import Quat = Glib.Quat;
+  import Mat4 = Glib.Mat4;
 
   export interface TransformProperties {
-    position?:Vlib.Vec3;
-    rotation?:Vlib.Quat;
-    scale?:Vlib.Vec3;
+    position?:Glib.Vec3;
+    rotation?:Glib.Quat;
+    scale?:Glib.Vec3;
   }
 
   export class Transform implements Component {
@@ -16,10 +16,10 @@ module Glib.Components {
     enabled:boolean = true;
 
     scale = Vec3.one();
-    position:Vlib.Vec3 = Vec3.zero();
-    rotation:Vlib.Quat = Quat.identity();
-    worldMat:Vlib.Mat4 = Mat4.identity();
-    inverseMat:Vlib.Mat4 = Mat4.identity();
+    position:Glib.Vec3 = Vec3.zero();
+    rotation:Glib.Quat = Quat.identity();
+    worldMat:Glib.Mat4 = Mat4.identity();
+    inverseMat:Glib.Mat4 = Mat4.identity();
 
     _tempQuat = Quat.identity();
     _tempMat = Mat4.identity();
@@ -55,7 +55,7 @@ module Glib.Components {
       return this;
     }
 
-    setRotationAxisAngle(axis:Vlib.IVec3, angle:number):Transform {
+    setRotationAxisAngle(axis:Glib.IVec3, angle:number):Transform {
       this.rotation.initAxisAngle(axis, angle);
       this._dirty = true;
       return this;
@@ -67,7 +67,7 @@ module Glib.Components {
       return this;
     }
 
-    rotateAxisAngle(axis:Vlib.IVec3, angle:number):Transform {
+    rotateAxisAngle(axis:Glib.IVec3, angle:number):Transform {
       this.rotation.selfConcat(this._tempQuat.initAxisAngle(axis, angle));
       this._dirty = true;
       return this;
@@ -85,7 +85,7 @@ module Glib.Components {
       return this;
     }
 
-    setScale(scale:Vlib.IVec3):Transform {
+    setScale(scale:Glib.IVec3):Transform {
       this.scale.x = scale.x;
       this.scale.y = scale.y;
       this.scale.z = scale.z;
@@ -101,7 +101,7 @@ module Glib.Components {
       return this;
     }
 
-    scaleBy(scale:Vlib.IVec3):Transform {
+    scaleBy(scale:Glib.IVec3):Transform {
       this.scale.x *= scale.x;
       this.scale.y *= scale.y;
       this.scale.z *= scale.z;
@@ -149,7 +149,7 @@ module Glib.Components {
       return this;
     }
 
-    translate(vec:Vlib.IVec3):Transform {
+    translate(vec:Glib.IVec3):Transform {
       this.position.x += vec.x;
       this.position.y += vec.y;
       this.position.z += vec.z;
@@ -170,7 +170,7 @@ module Glib.Components {
         `- component: ${this.name}`,
         `  enabled  : ${this.enabled}`,
         `  world    :`,
-        Vlib.Mat4.prettyString(this.worldMat)
+        Glib.Mat4.prettyString(this.worldMat)
       ].join("\n")
     }
   }

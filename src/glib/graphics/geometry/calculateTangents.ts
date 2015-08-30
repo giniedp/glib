@@ -1,7 +1,7 @@
 module Glib.Graphics.Geometry {
 
-  import Vec3 = Vlib.Vec3;
-  import Vec2 = Vlib.Vec2;
+  import Vec3 = Glib.Vec3;
+  import Vec2 = Glib.Vec2;
   import log = Glib.utils.log;
   import BufferData = Glib.Graphics.BufferData;
 

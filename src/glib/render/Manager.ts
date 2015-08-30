@@ -1,10 +1,10 @@
 module Glib.Render {
 
   export interface ICamera {
-    world?: Vlib.Mat4;
-    view: Vlib.Mat4;
-    projection: Vlib.Mat4;
-    viewProjection?: Vlib.Mat4;
+    world?: Glib.Mat4;
+    view: Glib.Mat4;
+    projection: Glib.Mat4;
+    viewProjection?: Glib.Mat4;
   }
 
   export interface View {

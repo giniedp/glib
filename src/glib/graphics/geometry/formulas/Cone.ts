@@ -1,9 +1,9 @@
 module Glib.Graphics.Geometry.Formulas {
 
-  import Vec2 = Vlib.Vec2;
-  import Vec3 = Vlib.Vec3;
-  import Vec4 = Vlib.Vec4;
-  import Mat4 = Vlib.Mat4;
+  import Vec2 = Glib.Vec2;
+  import Vec3 = Glib.Vec3;
+  import Vec4 = Glib.Vec4;
+  import Mat4 = Glib.Mat4;
 
   function circleVector(position, total, out) {
     out = out || new Vec3();

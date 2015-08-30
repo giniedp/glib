@@ -1,4 +1,4 @@
-module Vlib {
+module Glib {
 
   // column major matrix layout
 

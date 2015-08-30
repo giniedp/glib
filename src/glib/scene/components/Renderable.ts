@@ -4,7 +4,7 @@ module Glib.Components {
   import Material = Glib.Graphics.Material;
 
   export interface RenderableCollector {
-    add(mesh: ModelMesh, material:Material, world:Vlib.Mat4, params?:any);
+    add(mesh: ModelMesh, material:Material, world:Glib.Mat4, params?:any);
   }
 
   export interface Renderable {

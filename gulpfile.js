@@ -30,7 +30,6 @@ var PATHS = {
   assets: [
     'src/assets/**/*'
   ],
-  vlib: ["src/vlib/*.ts"],
   glib: {
     excludes: [
       "!src/**/*_test.ts"
@@ -61,13 +60,16 @@ var PATHS = {
     ],
     other: [
 
+    ],
+    math: [
+      "src/glib/math/*.ts"
     ]
   }
 };
 
 var tscSource = [].concat.apply([], [
   //PATHS.excludes,
-  PATHS.vlib,
+  PATHS.glib.math,
   PATHS.glib.base,
   PATHS.glib.input,
   PATHS.glib.graphics,

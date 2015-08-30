@@ -1,6 +1,6 @@
 module Glib.Components {
 
-  import Mat4 = Vlib.Mat4;
+  import Mat4 = Glib.Mat4;
 
   export interface CameraProperties {
     near?:number;

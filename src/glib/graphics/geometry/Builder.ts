@@ -1,8 +1,8 @@
 module Glib.Graphics.Geometry {
 
-  import Mat4 = Vlib.Mat4;
-  import Mat3 = Vlib.Vec3;
-  import Mat2 = Vlib.Vec2;
+  import Mat4 = Glib.Mat4;
+  import Mat3 = Glib.Vec3;
+  import Mat2 = Glib.Vec2;
   import BufferData = Glib.Graphics.BufferData;
   import ModelMeshOptions = Glib.Graphics.ModelMeshOptions;
 
@@ -22,8 +22,10 @@ module Glib.Graphics.Geometry {
     uvTransform:Mat4;
     indexBuffer:BufferOptions;
     indexCount:number;
+    sGroups:number[];
     vertexBuffer:BufferOptions;
     vertexCount:number;
+
 
     constructor(options:BuilderOptions = {}) {
 
@@ -95,6 +97,7 @@ module Glib.Graphics.Geometry {
       // counter values
       this.indexCount = 0;
       this.vertexCount = 0;
+      this.sGroups = [];
     }
 
     _resetMeshes() {
@@ -115,54 +118,10 @@ module Glib.Graphics.Geometry {
     /**
      * Pushes given indices into the state.
      */
-    addIndex(...rest:number[]) {
-      for (var i = 0; i < arguments.length; i++) {
-        this.indices.push(arguments[i]);
-      }
-      this.indexCount += arguments.length;
-      return this;
-    }
-
-    /**
-     * Pushes indices into the state. The indices form a geometry fan.
-     */
-    addFanIndices(...rest:number[]) {
-      for (var i = 0; i < rest.length - 2; i++) {
-        this.indices.push(arguments[0]);
-        this.indices.push(arguments[i + 1]);
-        this.indices.push(arguments[i + 2]);
-        this.indexCount += 3;
-      }
-      return this;
-    }
-
-    /**
-     * Pushes indices into the state. The indices form a geometry patch with `(steps + 1) * (steps + 1)` vertices.
-     */
-    addPatchIndices(steps, reverse) {
-      var i, j, index, stride = steps + 1;
-      var baseVertex = this.vertexCount;
-      var indices;
-
-      for (i = 0; i < steps; i += 1) {
-        for (j = 0; j < steps; j += 1) {
-          index = i * stride + j + baseVertex;
-          indices = [
-            index,
-            index + stride,
-            index + stride + 1,
-
-            index,
-            index + stride + 1,
-            index + 1
-          ];
-
-          if (reverse) {
-            indices = indices.reverse();
-          }
-          this.addIndex.apply(this, indices);
-        }
-      }
+    addIndex(index:number, sGroup?:number) {
+      this.indices.push(index);
+      this.sGroups.push(sGroup);
+      this.indexCount += 1;
       return this;
     }
 

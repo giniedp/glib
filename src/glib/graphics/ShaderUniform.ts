@@ -1,9 +1,9 @@
 module Glib.Graphics {
 
   import debug = Glib.utils.debug;
-  import IVec2 = Vlib.IVec2;
-  import IVec3 = Vlib.IVec3;
-  import IVec4 = Vlib.IVec4;
+  import IVec2 = Glib.IVec2;
+  import IVec3 = Glib.IVec3;
+  import IVec4 = Glib.IVec4;
 
   function parseArray(string) {
     var result = string.replace(/[\[\]]/g, '').split(',');

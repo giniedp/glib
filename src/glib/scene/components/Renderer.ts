@@ -3,13 +3,13 @@ module Glib.Components {
   import Color = Glib.Graphics.Color;
   import Device = Glib.Graphics.Device;
 
-  import ForwardRendering = Glib.Render.ForwardRendering;
+  import ForwardRendering = Glib.Render.Forward;
   import RenderBinder = Glib.Render.Binder;
   import RenderStep = Glib.Render.Step;
 
   export interface CullVisitor {
     start(entity:Entity, context:RenderBinder)
-    add(mesh:Graphics.ModelMesh, material:Graphics.Material, world:Vlib.Mat4, params?:any);
+    add(mesh:Graphics.ModelMesh, material:Graphics.Material, world:Glib.Mat4, params?:any);
   }
 
   export class Renderer implements Component {
@@ -36,7 +36,7 @@ module Glib.Components {
       this.manager = new Glib.Render.Manager(this.device);
       this.manager.createView({
         enabled: true,
-        steps: [new Render.ForwardRendering()]
+        steps: [new Render.Forward()]
       });
       
       /*
@@ -102,7 +102,7 @@ module Glib.Components {
       }
     }
 
-    add(mesh:Graphics.ModelMesh, material:Graphics.Material, world:Vlib.Mat4, params?:any) {
+    add(mesh:Graphics.ModelMesh, material:Graphics.Material, world:Glib.Mat4, params?:any) {
       this.context.renderables.push({
         world: world,
         mesh: mesh,

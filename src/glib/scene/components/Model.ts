@@ -7,7 +7,7 @@ module Glib.Components {
 
     model: Graphics.Model;
     transform:Transform;
-    world:Vlib.Mat4 = Vlib.Mat4.identity();
+    world:Glib.Mat4 = Glib.Mat4.identity();
 
     constructor(params?:any) {
       if (params) {

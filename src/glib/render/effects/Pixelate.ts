@@ -1,4 +1,4 @@
-module Glib.Render.PostEffect {
+module Glib.Render.Effects {
 
   export class Pixelate implements Render.Step {
 

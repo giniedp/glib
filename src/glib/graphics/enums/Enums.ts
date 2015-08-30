@@ -613,6 +613,34 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
+  export var DepthFormat = {
+    Depth16 : 0x81A5,
+  0x81A5 : 0x81A5
+  };
+}
+
+module Glib.Graphics {
+  export var DepthFormatName = {
+    Depth16 : 'DEPTH_COMPONENT16',
+  0x81A5 : 'DEPTH_COMPONENT16'
+  };
+}
+
+module Glib.Graphics {
+  export var StencilFormat = {
+    Stencil8 : 0x8D48,
+  0x8D48 : 0x8D48
+  };
+}
+
+module Glib.Graphics {
+  export var StencilFormatName = {
+    Stencil8 : 'STENCIL_INDEX8',
+  0x8D48 : 'STENCIL_INDEX8'
+  };
+}
+
+module Glib.Graphics {
   export var LightType = {
     None : 0,
   Directional : 1,

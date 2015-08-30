@@ -1,10 +1,10 @@
 module Glib.Components {
 
 
-  import Vec3 = Vlib.Vec3;
-  import Vec4 = Vlib.Vec4;
-  import Quat = Vlib.Quat;
-  import Mat4 = Vlib.Mat4;
+  import Vec3 = Glib.Vec3;
+  import Vec4 = Glib.Vec4;
+  import Quat = Glib.Quat;
+  import Mat4 = Glib.Mat4;
 
   import Keys = Glib.Input.KeyCode;
   import MouseButtons = Glib.Input.MouseButton;

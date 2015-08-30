@@ -1,8 +1,8 @@
 module Glib.Render {
 
-  import Mat4 = Vlib.Mat4;
-  import Vec3 = Vlib.Vec3;
-  import Vec2 = Vlib.Vec2;
+  import Mat4 = Glib.Mat4;
+  import Vec3 = Glib.Vec3;
+  import Vec2 = Glib.Vec2;
   import extend = Glib.utils.extend;
   import Graphics = Glib.Graphics;
   import RenderTarget = Graphics.RenderTarget;
@@ -31,7 +31,7 @@ module Glib.Render {
     Position:Vec3 = Vec3.zero();
     Direction:Vec3 = Vec3.zero();
     World:Mat4 = Mat4.identity();
-    transformUniforms = [
+    private _transformUniforms = [
       { key: 'Position', type: 'vec3' },
       { key: 'Direction', type: 'vec3' },
       { key: 'World', type: 'mat4' }
@@ -41,7 +41,7 @@ module Glib.Render {
     Projection:Mat4 = Mat4.identity();
     CameraPosition:Vec3 = Vec3.zero();
     CameraDirection:Vec3 = Vec3.zero();
-    viewUniforms = [
+    private _viewUniforms = [
       { key: 'View', type: 'mat4' },
       { key: 'Projection', type: 'mat4' },
       { key: 'CameraPosition', type: 'vec3' },
@@ -54,13 +54,13 @@ module Glib.Render {
 
     timeNow:number = 0;
     timeLast:number = 0;
-    timeUniforms = [
+    private _timeUniforms = [
       { key: 'TimeNow', type: 'float' },
       { key: 'TimeLast', type: 'float' }
     ];
 
     maxLights: number = 4;
-    lightUniforms = [];
+    private _lightUniforms = [];
 
     lights = [];
     renderables = [];
@@ -82,9 +82,9 @@ module Glib.Render {
     constructor(public device:Graphics.Device, opts:any={}) {
       extend(this, opts);
 
-      this.lightUniforms = [];
+      this._lightUniforms = [];
       for (var i = 0; i < this.maxLights; i += 1){
-        this.lightUniforms.push(lightUniforms(i));
+        this._lightUniforms.push(lightUniforms(i));
       }
     }
 
@@ -133,19 +133,19 @@ module Glib.Render {
 
     bindTransform(program):Binder{
       program.use();
-      bindUniforms(program, this.transformUniforms, this);
+      bindUniforms(program, this._transformUniforms, this);
       return this;
     }
 
     bindView(program):Binder{
       program.use();
-      bindUniforms(program, this.viewUniforms, this);
+      bindUniforms(program, this._viewUniforms, this);
       return this;
     }
 
     bindTime(program):Binder{
       program.use();
-      bindUniforms(program, this.timeUniforms, this);
+      bindUniforms(program, this._timeUniforms, this);
       return this;
     }
 
@@ -153,7 +153,7 @@ module Glib.Render {
       program.use();
       var i, lights = this.lights;
       for(i = 0; i < lights.length; i += 1){
-        bindUniforms(program, this.lightUniforms[i], this.lights[i]);
+        bindUniforms(program, this._lightUniforms[i], this.lights[i]);
       }
       return this;
     }

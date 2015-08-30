@@ -1,4 +1,4 @@
-module Glib.Render.PostEffect {
+module Glib.Render.Effects {
 
   function gauss(n:number, theta:number) {
     return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)));
@@ -18,7 +18,7 @@ module Glib.Render.PostEffect {
     }
 
     private _updateGauss(texelX, texelY){
-      var samples = 9
+      var samples = 9;
       var samplesOff = Math.floor(samples / 2);
       var offWeights = this._offsetWeights || [];
       offWeights.length = samples;

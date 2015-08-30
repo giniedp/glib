@@ -1,4 +1,4 @@
-module Vlib {
+module Glib {
 
   /**
    * Describes a vector with three components.

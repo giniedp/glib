@@ -1,4 +1,4 @@
-module Vlib {
+module Glib {
   export interface IVec2 {
     x: number
     y: number
@@ -19,6 +19,6 @@ module Vlib {
   export interface NumbersArray {
     length:number,
     [index:number]: number,
-    push(value:number)
+    push?(value:number)
   }
 }

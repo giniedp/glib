@@ -1,11 +1,11 @@
-module Glib.Render.PostEffect {
+module Glib.Render.Effects {
 
   export class ShockWave implements Render.Step {
 
     private _program: Graphics.ShaderProgram;
 
     time: number = 0;
-    center: Vlib.Vec2 = new Vlib.Vec2(0.5, 0.5);
+    center: Glib.Vec2 = new Glib.Vec2(0.5, 0.5);
 
     constructor(program:Graphics.ShaderProgram) {
       this._program = program;
@@ -17,8 +17,6 @@ module Glib.Render.PostEffect {
 
     render(manager: Render.Manager) {
       var rt = manager.beginEffect();
-       manager.endEffect(rt);
-      return;
       var rt2 = manager.acquireTarget({
         width: rt.width,
         height: rt.height,

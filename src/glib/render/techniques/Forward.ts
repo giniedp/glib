@@ -1,6 +1,6 @@
 module Glib.Render {
 
-  export class ForwardRendering implements Render.Step {
+  export class Forward implements Render.Step {
 
     setup(manager: Render.Manager) {
 
