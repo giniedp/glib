@@ -9,7 +9,7 @@
     "AmbientColor": [0.1, 0.1, 0.1],
     "DiffuseColor": [1, 1, 1],
     "SpecularColor": [1, 1, 1],
-    "SpecularPower": 128,
+    "SpecularPower": 16,
     "Alpha": 1
   },
   "blendState": "Opaque"

@@ -19,21 +19,18 @@ module Glib.Terrain {
       this.height = options.height;
 
       var heights:any = options.heights;
-      if (heights instanceof Float32Array) {
-        this.heights = heights;
-      } else if (Array.isArray(heights)) {
+      if (Array.isArray(heights)) {
         this.heights = new Float32Array(heights);
       } else {
         this.heights = new Float32Array(this.width * this.height);
       }
 
       var normals:any = options.normals;
-      if (normals instanceof Float32Array) {
-        this.normals = normals;
-      } else if (Array.isArray(normals)) {
+      if (Array.isArray(normals)) {
         this.normals = new Float32Array(normals);
       } else {
         this.normals = new Float32Array(this.width * this.height * 3);
+        this.calculateNormals();
       }
     }
 
@@ -61,7 +58,7 @@ module Glib.Terrain {
       return out;
     }
 
-    calculateNormals(){
+    calculateNormals():HeightMap{
       var normal = Glib.Vec3.zero();
       var index = 0;
       for(var y = 0; y < this.height; y += 1){
@@ -70,6 +67,7 @@ module Glib.Terrain {
           index += 3;
         }
       }
+      return this;
     }
 
     calculateNormalAt(x, z, out){
@@ -100,7 +98,7 @@ module Glib.Terrain {
       return out.init(dx, 1, dy).selfNormalize();
     }
 
-    rescale(scale){
+    rescale(scale:number):HeightMap{
       var index = 0;
       var nIndex = 0;
       var normal = Glib.Vec3.zero();
@@ -117,12 +115,12 @@ module Glib.Terrain {
       return this;
     }
 
-    //static fromImage(image, width, height){
-    //  return new Heightmap({
-    //    heights: Gin.Util.getImageData(image, width, height),
-    //    width: width || image.naturalWidth,
-    //    height: height || image.naturalHeight
-    //  });
-    //};
+    static fromImage(image, width, height){
+      return new HeightMap({
+        heights: Glib.utils.getImageData(image, width, height),
+        width: width || image.naturalWidth,
+        height: height || image.naturalHeight
+      });
+    }
   }
 }

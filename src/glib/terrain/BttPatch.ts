@@ -22,7 +22,10 @@ module Glib.Terrain {
      */
     currentVersion:number = 0;    
 
-    parent:any;
+    parent:BTTRoot;
+    mesh:Graphics.ModelMesh;
+    startX:number;
+    startY:number;
     patchSize:number;
     center:Glib.IVec3;
 
@@ -30,11 +33,14 @@ module Glib.Terrain {
       this.device = device;
 
       this.parent = options.parent;
-      this.patchSize = parent.patchSize;
+      this.startX = options.startX;
+      this.startY = options.startY;
+
+      this.patchSize = this.parent.patchSize;
       this.center = {
-        x: options.startX + (this.patchSize - 1) / 2,
+        x: this.startX + (this.patchSize - 1) / 2,
         y: 0,
-        z: options.startY + (this.patchSize - 1) / 2)
+        z: this.startY + (this.patchSize - 1) / 2
       };
 
       this.mesh = new Glib.Graphics.ModelMesh(device, {
@@ -42,20 +48,20 @@ module Glib.Terrain {
         vertexBuffer: device.createVertexBuffer({
           layout: Glib.Graphics.VertexLayout.create('PositionNormalTexture'),
           dataType: 'float',
-          data: createVertices(
+          data: BTTPatch.createVertices(
             this.parent.heightMap,
             this.startX,
             this.startY,
-            this.patchSize + 1);
-        });
-      });
+            this.patchSize + 1)
+        })
+      })
     }
 
-    updateLOD(viewPos:IVec3){
-      var maxLOD = this.parent.indexBuffers[0].length;
+    updateLod(viewPos:IVec3){
+      var maxLOD = this.parent.indexBuffers.length - 1;
 
-      var d = Glib.Vec3.distance(viewPos, this.center);
-      var max = this.patchSize * maxLOD * this.parent.LODScale;
+      var d = Vec3.distance(viewPos, this.center);
+      var max = this.patchSize * maxLOD * this.parent.lodScale;
       var t = 1 - Math.min(Math.max(d / max, 0), 1);
 
       this.currentLOD = Math.ceil(t * maxLOD);
@@ -63,22 +69,22 @@ module Glib.Terrain {
     };
 
     static _viewPos = { x:0, y:0, z: 0 };
-    static updateLOD(viewPos, patches:Patch[]){
-      var vPos = Patch._viewPos;
+    static updateLod(viewPos, patches:BTTPatch[]){
+      var vPos = BTTPatch._viewPos;
       vPos.x = viewPos.x;
       vPos.y = 0;
       vPos.z = viewPos.z;
       for (var patch of patches) {
-        patch.updateLOD(vPos);
+        patch.updateLod(vPos);
       }
       for (var patch of patches) {
-        patch.updateVersion(vPos);
+        patch.updateVersion();
       }
     }
 
     getSibling(x, y){
       var parent = this.parent;
-      var pCount = (parent.heightmap.width / this.patchSize)|0;
+      var pCount = (parent.heightMap.width / this.patchSize)|0;
       var index = parent.patches.indexOf(this) + x + y * pCount;
       return parent.patches[index];
     };
@@ -103,9 +109,9 @@ module Glib.Terrain {
       this.mesh.indexBuffer = this.parent.indexBuffers[this.currentLOD][this.currentVersion];
     }
 
-    static createVertices(heightmap:HeightMap, startX:number, startY:number, size:number): Float32Array {
+    static createVertices(heightmap:HeightMap, startX:number, startY:number, size:number): number[] {
       var normal = { x:0, y:0, z:0 };
-      var vertices = new Float32Array();
+      var vertices:any = [];
       for (var y = startY; y < startY + size; y++) {
         for (var x = startX; x < startX + size; x++) {
 

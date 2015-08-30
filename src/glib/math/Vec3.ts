@@ -457,6 +457,70 @@ module Glib {
       return this;
     }
 
+    /**
+     * Calculates the length of this vector
+     * @method length
+     * @param {Vec3} vec
+     * @return {Number} The length.
+     */
+    static length(vec:IVec3):number {
+      var x = vec.x;
+      var y = vec.y;
+      var z = vec.z;
+      return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    /**
+     * Calculates the squared length of this vector
+     * @method lengthSquared
+     * @param {Vec3} vec
+     * @return {Number} The squared length.
+     */
+    static lengthSquared(vec:IVec3):number {
+      var x = vec.x;
+      var y = vec.y;
+      var z = vec.z;
+      return x * x + y * y + z * z;
+    }
+
+    /**
+     * Calculates the distance to the given vector
+     * @method distance
+     * @param {Vec3} a
+     * @param {Vec3} b
+     * @return {Number} The distance between the vectors.
+     */
+    static distance(a:IVec3, b:IVec3):number {
+      var x = a.x - b.x;
+      var y = a.y - b.y;
+      var z = a.z - b.z;
+      return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    /**
+     * Calculates the squared distance to the given vector
+     * @method distanceSquared
+     * @param {Vec3} a
+     * @param {Vec3} b
+     * @return {Number} The squared distance between the vectors.
+     */
+    static distanceSquared(a:IVec3, b:IVec3):number {
+      var x = a.x - b.x;
+      var y = a.y - b.y;
+      var z = a.z - b.z;
+      return x * x + y * y + z * z;
+    }
+
+    /**
+     * Calculates the dot product with the given vector
+     * @method dot
+     * @param {Vec3} a
+     * @param {Vec3} b
+     * @return {Number} The dot product.
+     */
+    static dot(a:IVec3, b:IVec3):number {
+      return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
 
     /**
      * Creates a new vector. The method should be called with three or no arguments. If less than three arguments are given

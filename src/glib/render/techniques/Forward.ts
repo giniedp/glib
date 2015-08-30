@@ -31,7 +31,6 @@ module Glib.Render {
       var mat:Graphics.Material = item.material;
       var mesh:Graphics.ModelMesh = item.mesh;
       var tech:Graphics.MaterialTechnique = mat.technique;
-
       for (var pass of tech.passes) {
         pass.commit();
         binder

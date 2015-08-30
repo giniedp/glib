@@ -28,32 +28,50 @@ block script
         name: "Light",
         templates: ["DirectionalLight"]
       }, function(e){
-        e.getService("Transform").rotateYawPitchRoll(-Math.PI / 4 * 3, -Math.PI/4, 0);
+        e.getService("Transform").rotateYawPitchRoll(Math.PI / 4 * 3, -Math.PI/4, 0);
       });
-    function DemoComponent(options) {
-      options = options || {};
+
+    function TerrainComponent() {
       this.enable = true;
       this.visible = true;
     }
-    DemoComponent.prototype.setup = function () {
+
+    TerrainComponent.prototype.setup = function () {
+      this.device = this.node.root.getService("Device");
       this.time = this.node.root.getService("Time");
       this.assets = this.node.root.getService("Assets");
       this.transform = this.node.getService("Transform");
       this.renderable = this.node.getService("Renderable");
+
+      var material;
       this.assets
-        .load("Model", "/assets/models/lost_empire/lost_empire.obj")
-        //.load("Model", "/assets/models/KingsTreasure.obj")
-        //.load("Model", "/assets/models/sibenik/sibenik.obj")
-        .then(function (model) {
-          this.renderable.model = model;
+        .load("Material", "/assets/materials/default.json")
+        .then(function(m){
+          material = m;
+        })
+        .then(function(){
+          return this.assets.load("Image", "/assets/heightmaps/test2.png");
+        }.bind(this))
+        .then(function (image) {
+          this.bttRoot = new Glib.Terrain.BTTRoot(this.device, {
+            heightMap: Glib.Terrain.HeightMap.fromImage(image, 1024, 1024).rescale(0.25),
+            materials: [material]
+          });
+          this.renderable.model = this.bttRoot.model;
         }.bind(this));
     };
-    DemoComponent.prototype.update = function (time) {
-      return;
+    TerrainComponent.prototype.update = function () {
+      var terrain = this.bttRoot;
+      if (terrain) {
+        var position = game.find("/Camera:Transform").position;
+        this.bttRoot.updateLod(position);
+      }
+      this.transform.setPositionXYZ(-512, -40, -512);
     };
+
     game.buildChild({
-      name: "Treasure",
+      name: "Terrain",
       templates: ["Model"]
     }, function (entity) {
-      entity.addComponent(new DemoComponent());
+      entity.addComponent(new TerrainComponent());
     });

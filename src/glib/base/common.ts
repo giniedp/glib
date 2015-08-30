@@ -226,4 +226,27 @@ module Glib.utils {
     return value !== null && typeof value === 'object';
   }
 
+
+  var canvas = null;
+
+  export function getImageData(image:HTMLImageElement, width?:number, height?:number){
+    if (!image.complete){
+      throw 'image must be completed';
+    }
+    canvas = canvas || document.createElement('canvas');
+    canvas.width = width || image.naturalWidth;
+    canvas.height = height || image.naturalHeight;
+
+    var ctx = canvas.getContext("2d");
+
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var data = imgData.data;
+    var result = [];
+    result.length = data.length / 4;
+    for(var i = 0; i < result.length; i += 1){
+      result[i] = data[i * 4];
+    }
+    return result;
+  }
 }

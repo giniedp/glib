@@ -1,54 +1,54 @@
-// register : 3
-// filter   : LinearWrap
+// @register 3
+// @filter   LinearWrap
 uniform sampler2D textureSplat;
 
-// register : 4
-// filter   : LinearWrap
+// @register 4
+// @filter   LinearWrap
 uniform sampler2D textureDiffuse;
 
-// register : 5
-// filter   : LinearWrap
+// @register 5
+// @filter   LinearWrap
 uniform sampler2D textureDiffuseR;
 
-// register : 6
-// filter   : LinearWrap
+// @register 6
+// @filter   LinearWrap
 uniform sampler2D textureDiffuseG;
 
-// register : 7
-// filter   : LinearWrap
+// @register 7
+// @filter   LinearWrap
 uniform sampler2D textureDiffuseB;
 
-// register : 8
-// filter   : LinearWrap
+// @register 8
+// @filter   LinearWrap
 uniform sampler2D textureDiffuseA;
 
-// register : 9
-// filter   : LinearWrap
+// @register 9
+// @filter   LinearWrap
 uniform sampler2D textureDiffuseSlope;
 
 
-// register : 10
-// filter   : LinearWrap
+// @register 10
+// @filter   LinearWrap
 uniform sampler2D textureNormal;
 
-// register : 11
-// filter   : LinearWrap
+// @register 11
+// @filter   LinearWrap
 uniform sampler2D textureNormalR;
 
-// register : 12
-// filter   : LinearWrap
+// @register 12
+// @filter   LinearWrap
 uniform sampler2D textureNormalG;
 
-// register : 13
-// filter   : LinearWrap
+// @register 13
+// @filter   LinearWrap
 uniform sampler2D textureNormalB;
 
-// register : 14
-// filter   : LinearWrap
+// @register 14
+// @filter   LinearWrap
 uniform sampler2D textureNormalA;
 
-// register : 15
-// filter   : LinearWrap
+// @register 15
+// @filter   LinearWrap
 uniform sampler2D textureNormalSlope;
 
 //-----------------------------------------------------------------------------
