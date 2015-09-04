@@ -2,8 +2,7 @@
 doctype html
 html(lang="en")
   head
-    link(rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css")
-    link(rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css")
+    link(rel="stylesheet" href="/style.css")
     script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
     script(type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js')
     script(type='text/javascript' src='/scripts/glib.js')
@@ -12,26 +11,27 @@ html(lang="en")
         min-width: 1140px;
       }
     block head
-body
-  .container
-    .page-header
-      h1 Glib Framework
-    .row
-      .col-xs-3
+body.grid-frame
+  .grid-block.vertical
+    .grid-block.shrink.dark.title-bar
+      spab Glib Framework
+    .grid-block.horizontal
+      .grid-block.medium-2.vertical
         each section, index in sections
-          .panel.panel-default
-            .panel-heading= section.title
-            .list-group
+          section.grid-content.block-list.small-12
+            header= section.title
+            ul
               each page in section.pages
-                a.list-group-item(href=page.href)
-                  span=page.title
-      .col-xs-9
-        #example-content
-          block content
-            .thumbnail(style="padding:20px")
+                li: a(href=page.href)=page.title
+      .grid-block.medium-10.vertical
+        .grid-block.shrink
+          .grid-container#example-content(style='padding:1em;')
+            block content
               canvas#canvas(width="800" height="400")
-        pre
-          code.prettyprint#example-code
+        .grid-block
+          .grid-content
+            pre(style='overflow:hidden;')
+              code.prettyprint#example-code
   #example-scripts
     block script
   script(type='text/javascript').

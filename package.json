@@ -21,6 +21,7 @@
     "dgeni": "^0.4.1",
     "dgeni-packages": "^0.10.18",
     "esprima": "^2.5.0",
+    "foundation-apps": "^1.1.0",
     "glob": "^5.0.14",
     "globby": "^2.1.0",
     "gulp": "^3.9.0",

@@ -25,7 +25,10 @@ var PATHS = {
     'src/**/*.jade'
   ],
   styles: [
-    'src/pages/style/**/*.scss'
+    'src/pages/style.scss'
+  ],
+  stylesWatch: [
+    'src/pages/**/*.scss'
   ],
   assets: [
     'src/assets/**/*'
@@ -189,9 +192,11 @@ gulp.task('docs', function(){
 });
 
 gulp.task('pages:scss', function(){
-  return src("src/pages/style/bootstrap4/scss/bootstrap-flex.scss")
-    .pipe(sass.sync().on('error', sass.logError))
-    .pipe(concat('index.css'))
+  return src(PATHS.styles)
+    .pipe(sass({
+      includePaths: ["node_modules/foundation-apps/scss"]
+    }).on('error', sass.logError))
+    .pipe(concat('style.css'))
     .pipe(dest());
 });
 
@@ -221,7 +226,7 @@ gulp.task('watch', ['compile', 'pages', 'assets'], function(){
     gulp.run('pages:jade');
   });
 
-  gulp.watch(PATHS.styles, function(){
+  gulp.watch(PATHS.stylesWatch, function(){
     gulp.run('pages:scss');
   });
 
