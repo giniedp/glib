@@ -26,54 +26,6 @@ module Glib.Graphics {
     preserveDrawingBuffer: false
   };
 
-  function getGlExtensions(context, target?:any):any {
-    return utils.extend(target || {}, {
-      OES_texture_float: context.getExtension('OES_texture_float'),
-      OES_texture_half_float: context.getExtension('OES_texture_half_float'),
-      WEBGL_lose_context: context.getExtension('WEBGL_lose_context'),
-      OES_standard_derivatives: context.getExtension('OES_standard_derivatives'),
-      OES_vertex_array_object: context.getExtension('OES_vertex_array_object'),
-      WEBGL_debug_renderer_info: context.getExtension('WEBGL_debug_renderer_info'),
-      WEBGL_debug_shaders: context.getExtension('WEBGL_debug_shaders'),
-      WEBGL_compressed_texture_s3tc: context.getExtension('WEBGL_compressed_texture_s3tc'),
-      WEBGL_depth_texture: context.getExtension('WEBGL_depth_texture'),
-      OES_element_index_uint: context.getExtension('OES_element_index_uint'),
-      EXT_texture_filter_anisotropic: context.getExtension('EXT_texture_filter_anisotropic'),
-      WEBGL_draw_buffers: context.getExtension('WEBGL_draw_buffers'),
-      ANGLE_instanced_arrays: context.getExtension('ANGLE_instanced_arrays'),
-      OES_texture_float_linear: context.getExtension('OES_texture_float_linear'),
-      OES_texture_half_float_linear: context.getExtension('OES_texture_half_float_linear'),
-      WEBGL_compressed_texture_atc: context.getExtension('WEBGL_compressed_texture_atc'),
-      WEBGL_compressed_texture_pvrtc: context.getExtension('WEBGL_compressed_texture_pvrtc'),
-      EXT_color_buffer_half_float: context.getExtension('EXT_color_buffer_half_float'),
-      WEBGL_color_buffer_float: context.getExtension('WEBGL_color_buffer_float'),
-      EXT_frag_depth: context.getExtension('EXT_frag_depth'),
-      EXT_sRGB: context.getExtension('EXT_sRGB'),
-      WEBGL_compressed_texture_etc1: context.getExtension('WEBGL_compressed_texture_etc1'),
-      EXT_blend_minmax: context.getExtension('EXT_blend_minmax'),
-      EXT_shader_texture_lod: context.getExtension('EXT_shader_texture_lod'),
-      EXT_color_buffer_float: context.getExtension('EXT_color_buffer_float'),
-      WEBGL_shared_resources: context.getExtension('WEBGL_shared_resources'),
-      WEBGL_security_sensitive_resources: context.getExtension('WEBGL_security_sensitive_resources'),
-      EXT_disjoint_timer_query: context.getExtension('EXT_disjoint_timer_query')
-    });
-  }
-
-  function getGlCapabilities(context, target?:any):any {
-    return utils.extend(target || {}, {
-      MAX_COMBINED_TEXTURE_IMAGE_UNITS: context.getParameter(context.MAX_COMBINED_TEXTURE_IMAGE_UNITS),
-      MAX_FRAGMENT_UNIFORM_VECTORS: context.getParameter(context.MAX_FRAGMENT_UNIFORM_VECTORS),
-      MAX_RENDERBUFFER_SIZE: context.getParameter(context.MAX_RENDERBUFFER_SIZE),
-      MAX_TEXTURE_IMAGE_UNITS: context.getParameter(context.MAX_TEXTURE_IMAGE_UNITS),
-      MAX_TEXTURE_SIZE: context.getParameter(context.MAX_TEXTURE_SIZE),
-      MAX_VARYING_VECTORS: context.getParameter(context.MAX_VARYING_VECTORS),
-      MAX_VERTEX_ATTRIBS: context.getParameter(context.MAX_VERTEX_ATTRIBS),
-      MAX_VERTEX_TEXTURE_IMAGE_UNITS: context.getParameter(context.MAX_VERTEX_TEXTURE_IMAGE_UNITS),
-      MAX_VERTEX_UNIFORM_VECTORS: context.getParameter(context.MAX_VERTEX_UNIFORM_VECTORS),
-      MAX_VIEWPORT_DIMS: context.getParameter(context.MAX_VIEWPORT_DIMS)
-    });
-  }
-
   function getOrCreateCanvas(canvas) {
     var result = canvas;
     if (typeof result === 'string') {
@@ -108,7 +60,6 @@ module Glib.Graphics {
     private _quadVertexBuffer:Buffer;
     private _quadVertexBufferFlipped: Buffer;
 
-    extensions:any;
     capabilities:any;
     sampler:SamplerState[];
     
@@ -129,8 +80,7 @@ module Glib.Graphics {
 
       this.canvas = getOrCreateCanvas(options.canvas);
       this.context = getOrCreateContext(this.canvas, options);
-      this.extensions = getGlExtensions(this.context);
-      this.capabilities = getGlCapabilities(this.context);
+      this.capabilities = new Capabilities(this);
 
       this._cullState = new CullState(this);
       this.cullState = CullState.Default;
@@ -148,7 +98,7 @@ module Glib.Graphics {
       this._vertexAttribArrayState = new VertexAttribArrayState(this);
 
       this.sampler = [];
-      var max = Number(this.capabilities.MAX_TEXTURE_IMAGE_UNITS);
+      var max = Number(this.capabilities.maxTextureUnits);
       while (this.sampler.length < max) {
         this.sampler.push(new SamplerState(this, this.sampler.length))
       }

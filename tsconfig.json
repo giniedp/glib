@@ -39,6 +39,7 @@
     "src/glib/graphics/states/VertexAttribArrayState.ts",
     "src/glib/graphics/states/ViewportState.ts",
     "src/glib/graphics/Buffer.ts",
+    "src/glib/graphics/Capabilities.ts",
     "src/glib/graphics/Color.ts",
     "src/glib/graphics/DepthBuffer.ts",
     "src/glib/graphics/Device.ts",
@@ -65,6 +66,7 @@
     "src/glib/graphics/geometry/formulas/Sphere.ts",
     "src/glib/graphics/geometry/formulas/SphericalHarmonics.ts",
     "src/glib/graphics/geometry/formulas/SuperEllipsoid.ts",
+    "src/glib/content/BinaryReader.ts",
     "src/glib/content/Manager.ts",
     "src/glib/content/importer/importJsonMaterial.ts",
     "src/glib/content/importer/importJsonModel.ts",
@@ -75,6 +77,7 @@
     "src/glib/content/parser/JSON.ts",
     "src/glib/content/parser/MTL.ts",
     "src/glib/content/parser/OBJ.ts",
+    "src/glib/content/parser/TGA.ts",
     "src/glib/content/parser/YML.ts",
     "src/glib/render/Binder.ts",
     "src/glib/render/effects/Bloom.ts",
@@ -100,6 +103,9 @@
     "src/glib/scene/Entity.ts",
     "src/glib/scene/EntityFinder.ts",
     "src/glib/scene/EntityTemplates.ts",
-    "src/glib/scene/Visitor.ts"
+    "src/glib/scene/Visitor.ts",
+    "src/glib/terrain/BttPatch.ts",
+    "src/glib/terrain/BttRoot.ts",
+    "src/glib/terrain/HeightMap.ts"
   ]
 }
