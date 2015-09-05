@@ -65,7 +65,7 @@ var PATHS = {
       "src/glib/terrain/**/*.ts"
     ],
     math: [
-      "src/glib/math/*.ts"
+      "src/glib/*.ts"
     ]
   }
 };

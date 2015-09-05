@@ -41,8 +41,8 @@ block script
       this.transform = this.node.getService("Transform");
       this.renderable = this.node.getService("Renderable");
       this.assets
-        .load("Model", "/assets/models/lost_empire/lost_empire.obj")
-        //.load("Model", "/assets/models/KingsTreasure.obj")
+        //.load("Model", "/assets/models/lost_empire/lost_empire.obj")
+        .load("Model", "/assets/models/KingsTreasure.obj")
         //.load("Model", "/assets/models/sibenik/sibenik.obj")
         .then(function (model) {
           this.renderable.model = model;

@@ -458,6 +458,20 @@ module Glib {
     }
 
     /**
+     * Copies the source vector to the destination vector
+     * @method copy
+     * @param {Vec3} src
+     * @param {Vec3} dst
+     * @return {Vec3} the destination vector.
+     */
+    static copy(src:IVec3, dst:IVec3):IVec3 {
+      dst.x = src.x;
+      dst.y = src.y;
+      dst.z = src.z;
+      return dst;  
+    } 
+    
+    /**
      * Calculates the length of this vector
      * @method length
      * @param {Vec3} vec
