@@ -159,13 +159,13 @@ module Glib.Collision {
   export function intersectsRayPlane(ray:Ray, plane:IVec4):boolean {
     var VdotN = Vec3.dot(plane, ray.direction);
     var PdotN = Vec3.dot(plane, ray.position);
-    return (plane.w - PdotN / VdotN) >= 0;
+    return ((plane.w - PdotN) / VdotN) >= 0;
   }
   
   export function intersectionRayPlane(ray:Ray, plane:IVec4):number {
     var VdotN = Vec3.dot(plane, ray.direction);
     var PdotN = Vec3.dot(plane, ray.position);
-    return (plane.w - PdotN / VdotN);
+    return ((plane.w - PdotN) / VdotN);
   }
   
   export function intersectsRaySphere(ray:Ray, sphere:BoundingSphere):boolean {
