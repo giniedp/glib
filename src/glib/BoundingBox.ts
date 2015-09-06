@@ -44,6 +44,9 @@ module Glib {
     containsSphere(sphere:BoundingSphere):number {
       return Collision.boxContainsSphere(this, sphere);
     }
+    containsFrustum(frustum:BoundingFrustum):number {
+      return Collision.boxContainsFrustum(this, frustum);
+    }
     
     static createMerged(first:BoundingBox, second:BoundingBox, result:BoundingBox=first.clone()):BoundingBox {
       result.merge(second);

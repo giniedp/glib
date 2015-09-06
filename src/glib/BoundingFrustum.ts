@@ -107,7 +107,66 @@ module Glib {
     }
     
     private _createPoints(){
+      var ray = new Ray();
+      var distance;
+
+      Collision.intersectionPlanePlane(this.planes[NEAR], this.planes[LEFT], ray.position, ray.direction);
+      distance = Collision.intersectsRayPlane(ray, this.planes[TOP]);
+      this.corners[0] = ray.positionAt(distance, { x:0, y:0, z:0 });
       
+      Vec3.negate(ray.direction, ray.direction);
+      distance = Collision.intersectsRayPlane(ray, this.planes[BOTTOM]);
+      this.corners[3] = ray.positionAt(distance, { x:0, y:0, z:0 });
+
+      Collision.intersectionPlanePlane(this.planes[RIGHT], this.planes[NEAR], ray.position, ray.direction);
+      distance = Collision.intersectsRayPlane(ray, this.planes[TOP]);
+      this.corners[1] = ray.positionAt(distance, { x:0, y:0, z:0 });
+      
+      Vec3.negate(ray.direction, ray.direction);
+      Collision.intersectsRayPlane(ray, this.planes[BOTTOM]);
+      this.corners[2] = ray.positionAt(distance, { x:0, y:0, z:0 });
+
+      Collision.intersectionPlanePlane(this.planes[LEFT], this.planes[FAR], ray.position, ray.direction);
+      distance = Collision.intersectsRayPlane(ray, this.planes[TOP]);
+      this.corners[4] = ray.positionAt(distance, { x:0, y:0, z:0 });
+      
+      Vec3.negate(ray.direction, ray.direction);
+      Collision.intersectsRayPlane(ray, this.planes[BOTTOM]);
+      this.corners[7] = ray.positionAt(distance, { x:0, y:0, z:0 });
+
+      Collision.intersectionPlanePlane(this.planes[FAR], this.planes[RIGHT], ray.position, ray.direction);
+      distance = Collision.intersectsRayPlane(ray, this.planes[TOP]);
+      this.corners[5] = ray.positionAt(distance, { x:0, y:0, z:0 });
+      
+      Vec3.negate(ray.direction, ray.direction);
+      Collision.intersectsRayPlane(ray, this.planes[BOTTOM]);
+      this.corners[6] = ray.positionAt(distance, { x:0, y:0, z:0 });
+    }
+    
+    intersectsBox(box:BoundingBox):boolean {
+      return Collision.intersectsFrustumBox(this, box);
+    }
+    intersectsSphere(sphere:BoundingSphere):boolean {
+      return Collision.intersectsFrustumSphere(this, sphere);
+    }
+    intersectsFrustum(other:BoundingFrustum):boolean {
+      throw "not implemented";
+    }
+    intersectsPlane(plane:IVec4):boolean {
+      return Collision.intersectsFrustumPlane(this, plane);
+    }
+    intersectsRay(ray:Ray):boolean {
+      throw "not implemented";
+    }
+    
+    containsBox(box:BoundingBox):number {
+      return Collision.frustumContainsBox(this, box);
+    }
+    containsSphere(sphere:BoundingSphere):number {
+      return Collision.frustumContainsSphere(this, sphere);
+    }
+    containsPoint(point:IVec3):number {
+      return Collision.frustumContainsPoint(this, point);
     }
   }
 }

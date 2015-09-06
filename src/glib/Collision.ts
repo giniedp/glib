@@ -1,6 +1,7 @@
 module Glib.Collision {
 
-  var EPSILON = 0.0000001;
+  var EPSILON = 2.2204460492503130808472633361816e-16;
+  
   var vecPool:IVec4[] = [];
   var vecBin:IVec4[] = [];
   for (var i = 0; i < 20; i++) {
@@ -214,11 +215,10 @@ module Glib.Collision {
     // source
     // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
 
-    var eps = 0.0000001;
     var tMin = Number.MIN_VALUE;
     var tMax = Number.MAX_VALUE;
 
-    if (Math.abs(ray.direction.x) < eps) {
+    if (Math.abs(ray.direction.x) < EPSILON) {
         // ray is parallel to X planes
         if (ray.position.x < box.min.x || ray.position.x > box.max.x) {
             // ray origin is not between the slabs
@@ -241,7 +241,7 @@ module Glib.Collision {
         }
     }
 
-    if (Math.abs(ray.direction.y) < eps)
+    if (Math.abs(ray.direction.y) < EPSILON)
     {
         // ray is parallel to Y planes
         if (ray.position.y < box.min.y || ray.position.y > box.max.y) {
@@ -264,7 +264,7 @@ module Glib.Collision {
         }
     }
 
-    if (Math.abs(ray.direction.z) < eps)
+    if (Math.abs(ray.direction.z) < EPSILON)
     {
         // ray is parallel to Z planes
         if (ray.position.z < box.min.z || ray.position.z > box.max.z) {
@@ -538,6 +538,14 @@ module Glib.Collision {
     return recycleEnd(1);
   }
   
+  export function boxContainsFrustum(box:BoundingBox, frustum:BoundingFrustum):number {
+    var result = 0;
+    for (var i = 0; i < 8; i+=1) {
+      result = result | boxContainsPoint(box, frustum.corners[i]);
+    }
+    return result;
+  }
+  
   //export function boxContainsBoundingFrustum(box:BoundingBox, frustum:BoundingFrustum):number {
   //  throw "not implemented";
   //}
@@ -622,6 +630,14 @@ module Glib.Collision {
     return 2;
   }
   
+  export function sphereContainsFrustum(sphere:BoundingSphere, frustum:BoundingFrustum):number {
+    var result = 0;
+    for (var i = 0; i < 8; i+=1) {
+      result |= sphereContainsPoint(sphere, frustum.corners[i]);
+    }
+    return result;
+  }
+  
   export function frustumContainsPoint(frustum:BoundingFrustum, point:IVec3):number {
     for (var i = 0; i < 6; i++) {
       var plane = frustum.planes[i];
@@ -639,12 +655,12 @@ module Glib.Collision {
     
     for (var i = 0; i < 6; i++) {
       var plane = frustum.planes[i];
-      var distance = Vec3.dot(plane, sphere.center) + plane.w;
-      if (distance < -sphere.radius) {
+      var d = Vec3.dot(plane, sphere.center) + plane.w;
+      if (d > sphere.radius) {
         // outside
         return 0;
       }
-      if (distance < sphere.radius) {
+      if (d < -sphere.radius) {
         // intersects
         result = 1;
       }
@@ -708,6 +724,7 @@ module Glib.Collision {
     }
     return result;
   }
+
   
   export function intersectsFrustumSphere(frustum:BoundingFrustum, sphere:BoundingSphere):boolean {
     for (var i = 0; i < 6; i++) {
@@ -755,5 +772,22 @@ module Glib.Collision {
       }
     }
     return true;
+  }
+  
+  export function intersectsFrustumPlane(frustum:BoundingFrustum, plane:IVec4):boolean {
+    var back, front;
+    
+    for (var i = 0; i < 8; i+=1) {
+      var d = Vec3.dot(frustum.corners[i], plane) + plane.w;
+      if (d > 0) {
+        back = true;
+      } else {
+        front = true;
+      }
+      if (back && front) {
+        return true;
+      }
+    }
+    return false;
   }
 }

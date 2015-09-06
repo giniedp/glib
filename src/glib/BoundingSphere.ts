@@ -46,6 +46,9 @@ module Glib {
     containsPoint(point:IVec3):number {
       return Collision.sphereContainsPoint(this, point);
     }
+    containsFrustum(frustum:BoundingFrustum):number {
+      return Collision.sphereContainsFrustum(this, frustum);
+    }
     
     static createFromPoints(points:NumbersArray, offset:number=0, stride:number=3):BoundingSphere{
       var zero = true;
