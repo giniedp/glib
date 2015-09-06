@@ -1,5 +1,6 @@
 module Glib.Collision {
 
+  var EPSILON = 0.0000001;
   var vecPool:IVec4[] = [];
   var vecBin:IVec4[] = [];
   for (var i = 0; i < 20; i++) {
@@ -442,6 +443,68 @@ module Glib.Collision {
               box1.max.z >= box2.min.z && box1.min.z <= box2.max.z;
   }
   
+  export function intersectionPlanePlane(plane1:IVec4, plane2:IVec4, position:IVec3, direction:IVec3) {
+    recycleBegin();
+    Vec3.cross(plane1, plane2, direction);
+    var denom = Vec3.lengthSquared(direction);
+    if (denom < EPSILON) {
+      position.x = 0;
+      position.y = 0;
+      position.z = 0;
+      return recycleEnd();
+    }
+      
+    var p1 = Vec3.multiplyScalar(plane2, -plane1.w, nextVec());
+    var p2 = Vec3.multiplyScalar(plane1, plane2.w, nextVec());
+    Vec3.add(p1, p2, position);
+    Vec3.cross(position, direction, position);
+    Vec3.divideScalar(position, denom, position);
+    
+    return recycleEnd();
+  }
+  
+  export function intersectionPlanePlanePlane(p1:IVec4, p2:IVec4, p3:IVec4, point:IVec3):boolean {
+    recycleBegin();
+  
+    var m1 = nextVec();
+    m1.x = p1.x;
+    m1.y = p2.x;
+    m1.z = p3.x;
+    
+    var m2 = nextVec();
+    m2.x = p1.y;
+    m2.y = p2.y;
+    m2.z = p3.y;
+    
+    var m3 = nextVec();
+    m3.x = p1.z;
+    m3.y = p2.z;
+    m3.z = p3.z;
+    
+    var u = Vec3.cross(m2, m3, nextVec());
+    var denom = Vec3.dot(m1, u);
+    
+    if (Math.abs(denom) < EPSILON) {
+      point.x = 0;
+      point.y = 0;
+      point.z = 0;
+      return recycleEnd(false);  
+    }
+    
+    var d = nextVec();
+    d.x = p1.w;
+    d.y = p2.w;
+    d.z = p3.w;
+    var v = Vec3.cross(m1, d, nextVec());
+    var ood = 1 / denom;
+    
+    point.x = Vec3.dot(d, u) * ood;
+    point.y = Vec3.dot(m3, v) * ood;
+    point.z = -Vec3.dot(m2, v) * ood;
+    
+    return recycleEnd(true);
+  }
+  
   export function boxContainsBox(box1:BoundingBox, box2:BoundingBox):number {
     if (box1.max.x < box2.max.x || box1.max.x > box2.max.x || box1.max.y < box2.min.y || box1.min.y > box2.max.y || box1.max.z < box2.min.z || box1.min.z > box2.max.z) {
       return 0;
@@ -557,5 +620,140 @@ module Glib.Collision {
       return 1;
     }
     return 2;
+  }
+  
+  export function frustumContainsPoint(frustum:BoundingFrustum, point:IVec3):number {
+    for (var i = 0; i < 6; i++) {
+      var plane = frustum.planes[i];
+      var distance = Vec3.dot(plane, point) + plane.w;
+      if (distance < 0) {
+        return 0;
+      }
+    }
+    return 2;
+  }
+  
+  export function frustumContainsSphere(frustum:BoundingFrustum, sphere:BoundingSphere):number {
+    // assume sphere is inside
+    var result = 2;
+    
+    for (var i = 0; i < 6; i++) {
+      var plane = frustum.planes[i];
+      var distance = Vec3.dot(plane, sphere.center) + plane.w;
+      if (distance < -sphere.radius) {
+        // outside
+        return 0;
+      }
+      if (distance < sphere.radius) {
+        // intersects
+        result = 1;
+      }
+    }
+    return result;
+  }
+  
+  export function frustumContainsBox(frustum:BoundingFrustum, box:BoundingBox):number {
+    // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
+    // section: Geometric Approach - Testing Boxes II 
+
+    var result = 2;
+    var pX, pY, pZ;
+    var plane;
+    var distance;
+
+    // for each plane do ...
+    for (var i = 0; i < 6; i++)
+    {
+        plane = frustum.planes[i];
+
+        // build positive vertex as described in link above
+        pX = box.min.x;
+        pY = box.min.y;
+        pZ = box.min.z;        
+        if (plane.x >= 0) {
+          pX = box.max.x;
+        }
+        if (plane.y >= 0) {
+          pY = box.max.y;
+        }
+        if (plane.z >= 0) {
+          pZ = box.max.z;
+        }
+
+        // is the positive vertex outside?
+        distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w;
+        if (distance < 0) {
+          return 0;
+        }
+
+        // build negative vertex as described in link above
+        pX = box.max.x;
+        pY = box.max.y;
+        pZ = box.max.z;
+        if (plane.x >= 0) {
+          pX = box.min.x;
+        }
+        if (plane.y >= 0) {
+          pY = box.min.y;
+        }
+        if (plane.z >= 0) {
+          pY = box.min.z;
+        }
+
+        // is the negatative vertex outside?
+        distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w;
+        if (distance < 0) {
+          result = 1;
+        }
+    }
+    return result;
+  }
+  
+  export function intersectsFrustumSphere(frustum:BoundingFrustum, sphere:BoundingSphere):boolean {
+    for (var i = 0; i < 6; i++) {
+      var plane = frustum.planes[i];
+      var distance = Vec3.dot(plane, sphere.center) + plane.w;
+      if (distance < -sphere.radius) {
+        // outside
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  export function intersectsFrustumBox(frustum:BoundingFrustum, box:BoundingBox):boolean {
+    // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
+    // section: Geometric Approach - Testing Boxes II 
+
+    var result = 2;
+    var pX, pY, pZ;
+    var plane;
+    var distance;
+
+    // for each plane do ...
+    for (var i = 0; i < 6; i++) {
+      plane = frustum.planes[i];
+
+      // build positive vertex as described in link above
+      pX = box.min.x;
+      pY = box.min.y;
+      pZ = box.min.z;        
+      if (plane.x >= 0) {
+        pX = box.max.x;
+      }
+      if (plane.y >= 0) {
+        pY = box.max.y;
+      }
+      if (plane.z >= 0) {
+        pZ = box.max.z;
+      }
+
+      // is the positive vertex outside?
+      distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w;
+      if (distance < 0) {
+        return false;
+      }
+    }
+    return true;
   }
 }
