@@ -73,7 +73,6 @@
         box.min[prop] += 1;
         box.max[prop] += 1;
         expect(Collision.intersectsRayBox(ray, box)).toBe(true);
-        console.log(box, ray);
         ray.direction[prop] = -1;
         expect(Collision.intersectsRayBox(ray, box)).toBe(false);
       });
@@ -251,6 +250,25 @@
         expect(Collision.boxContainsBox(box1, box2)).toBe(0);
       });
     });
+
+    it("boxContainsPoint", function(){
+      ['x', 'y', 'z'].forEach(function(prop){
+        var box = new Box({ x: -0.5, y: -0.5, z: -0.5}, { x: 0.5, y: 0.5, z: 0.5});
+        var point = { x: 0, y: 0, z: 0};
+
+        point[prop] = -1.0;
+        expect(Collision.boxContainsPoint(box, point)).toBe(0);
+        point[prop] = -0.5;
+        expect(Collision.boxContainsPoint(box, point)).toBe(2);
+        point[prop] = 0.0;
+        expect(Collision.boxContainsPoint(box, point)).toBe(2);
+        point[prop] = 0.5;
+        expect(Collision.boxContainsPoint(box, point)).toBe(2);
+        point[prop] = 1.0;
+        expect(Collision.boxContainsPoint(box, point)).toBe(0);
+      });
+    });
+
     it("boxContainsSphere", function(){
       ['x', 'y', 'z'].forEach(function(prop){
         var sphere = new Sphere({ x: 0, y: 0, z: 0}, 0.25);

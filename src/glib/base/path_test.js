@@ -2,7 +2,7 @@
 
   var path = Glib.utils.path;
 
-  describe("Gulp.utils.path", function() {
+  describe("Glib.utils.path", function() {
     describe("isAbsolute", function() {
       it("is true for absolute path", function() {
         expect(path.isAbsolute("/foo/bar")).toBe(true);

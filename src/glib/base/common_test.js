@@ -2,7 +2,7 @@
 
   var utils = Glib.utils;
 
-  describe("Gulp.utils.copy", function() {
+  describe("Glib.utils.copy", function() {
 
     describe("array", function() {
 

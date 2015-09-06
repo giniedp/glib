@@ -727,7 +727,6 @@ module Glib.Collision {
     // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
     // section: Geometric Approach - Testing Boxes II 
 
-    var result = 2;
     var pX, pY, pZ;
     var plane;
     var distance;
