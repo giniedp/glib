@@ -155,17 +155,13 @@ module Glib.Collision {
     result.z = a.z + ab.z * vb * denom + ac.z * vc * denom;
     return recycleEnd(result);
   }
-  
+
   export function intersectsRayPlane(ray:Ray, plane:IVec4):boolean {
-    var VdotN = Vec3.dot(plane, ray.direction);
-    var PdotN = Vec3.dot(plane, ray.position);
-    return ((plane.w - PdotN) / VdotN) >= 0;
+    return ((plane.w - Vec3.dot(plane, ray.position)) / Vec3.dot(plane, ray.direction)) >= 0;
   }
   
   export function intersectionRayPlane(ray:Ray, plane:IVec4):number {
-    var VdotN = Vec3.dot(plane, ray.direction);
-    var PdotN = Vec3.dot(plane, ray.position);
-    return ((plane.w - PdotN) / VdotN);
+    return (plane.w - Vec3.dot(plane, ray.position)) / Vec3.dot(plane, ray.direction);
   }
   
   export function intersectsRaySphere(ray:Ray, sphere:BoundingSphere):boolean {
@@ -208,7 +204,7 @@ module Glib.Collision {
   
     
   export function intersectsRayBox(ray:Ray, box:BoundingBox):boolean{
-    return intersectionRayBox(ray, box) !== Number.NaN;
+    return intersectionRayBox(ray, box) >= 0;
   }
   
   export function intersectionRayBox(ray:Ray, box:BoundingBox):number {
@@ -394,18 +390,18 @@ module Glib.Collision {
     var d2 = Vec3.distanceSquared(a.center, b.center);
     // Spheres intersect if squared distance is less than squared sum of radii
     var r = a.radius + b.radius;
-    return d2 <= r * r;
+    return d2 <= (r * r);
   }
   
   export function intersectsSphereBox(sphere:BoundingSphere, box:BoundingBox):boolean {
     recycleBegin();
     var center = Vec3.clamp(sphere.center, box.min, box.max, nextVec());
     var d = Vec3.distanceSquared(sphere.center, center);
-    return recycleEnd(d <= sphere.radius * sphere.radius);
+    return recycleEnd(d <= (sphere.radius * sphere.radius));
   }
   
   export function intersectsSphereTriangle(sphere:BoundingSphere, a:IVec3, b:IVec3, c:IVec3):boolean {
-    recycleBegin()
+    recycleBegin();
     var p = closestPointTriangle(sphere.center, a, b, c, nextVec());
     Vec3.subtract(p, sphere.center, p);
     return recycleEnd(Vec3.lengthSquared(p) <= sphere.radius * sphere.radius);
@@ -506,12 +502,13 @@ module Glib.Collision {
   }
   
   export function boxContainsBox(box1:BoundingBox, box2:BoundingBox):number {
-    if (box1.max.x < box2.max.x || box1.max.x > box2.max.x || box1.max.y < box2.min.y || box1.min.y > box2.max.y || box1.max.z < box2.min.z || box1.min.z > box2.max.z) {
+    if ((box1.max.x < box2.min.x) || (box1.min.x > box2.max.x) || (box1.max.y < box2.min.y) || (box1.min.y > box2.max.y) || (box1.max.z < box2.min.z) || (box1.min.z > box2.max.z)) {
       return 0;
-    } if (box1.max.x > box2.max.x || box1.max.x > box2.max.x || box1.min.y > box2.min.y || box1.max.y > box2.max.y || box1.min.z > box2.min.z || box1.max.z > box2.max.z) {
-      return 1;
     }
-    return 2;
+    if ((box1.min.x <= box2.min.x) && (box1.max.x >= box2.max.x) && (box1.min.y <= box2.min.y) && (box1.max.y >= box2.max.y) && (box1.min.z <= box2.min.z) && (box1.max.z >= box2.max.z)) {
+      return 2;
+    }
+    return 1;
   }
   
   export function boxContainsPoint(box:BoundingBox, vec:IVec3):number {
@@ -529,27 +526,19 @@ module Glib.Collision {
     if (distance > radius * radius) {
       return recycleEnd(0);
     }
-    if (box.min.x + radius > sphere.center.x || sphere.center.x > box.max.x - radius || box.max.x - box.min.x <= radius ||
-        box.min.y + radius > sphere.center.y || sphere.center.y > box.max.y - radius || box.max.y - box.min.y <= radius ||
-        box.min.z + radius > sphere.center.z || sphere.center.z > box.max.z - radius || box.max.z - box.min.z <= radius)
+    if (((box.min.x + radius) > sphere.center.x) || (sphere.center.x > (box.max.x - radius)) || ((box.max.x - box.min.x) <= radius) ||
+        ((box.min.y + radius) > sphere.center.y) || (sphere.center.y > (box.max.y - radius)) || ((box.max.y - box.min.y) <= radius) ||
+        ((box.min.z + radius) > sphere.center.z) || (sphere.center.z > (box.max.z - radius)) || ((box.max.z - box.min.z) <= radius))
     {
       return recycleEnd(1);
     }
-    return recycleEnd(1);
+    return recycleEnd(2);
   }
   
   export function boxContainsFrustum(box:BoundingBox, frustum:BoundingFrustum):number {
-    var result = 0;
-    for (var i = 0; i < 8; i+=1) {
-      result = result | boxContainsPoint(box, frustum.corners[i]);
-    }
-    return result;
+    throw "not implemented";
   }
-  
-  //export function boxContainsBoundingFrustum(box:BoundingBox, frustum:BoundingFrustum):number {
-  //  throw "not implemented";
-  //}
-  
+
   export function sphereContainsBox(sphere:BoundingSphere, box:BoundingBox):number {
     if (!intersectsSphereBox(sphere, box)) {
       return 0;
@@ -631,11 +620,7 @@ module Glib.Collision {
   }
   
   export function sphereContainsFrustum(sphere:BoundingSphere, frustum:BoundingFrustum):number {
-    var result = 0;
-    for (var i = 0; i < 8; i+=1) {
-      result |= sphereContainsPoint(sphere, frustum.corners[i]);
-    }
-    return result;
+    throw "not implemented";
   }
   
   export function frustumContainsPoint(frustum:BoundingFrustum, point:IVec3):number {
@@ -716,7 +701,7 @@ module Glib.Collision {
           pY = box.min.z;
         }
 
-        // is the negatative vertex outside?
+        // is the negative vertex outside?
         distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w;
         if (distance < 0) {
           result = 1;
