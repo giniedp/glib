@@ -25,8 +25,8 @@ module Glib.Graphics.Geometry {
     sGroups:number[];
     vertexBuffer:BufferOptions;
     vertexCount:number;
-
-
+    maxVertexCount = 65536;
+    
     constructor(options:BuilderOptions = {}) {
 
       this.layout = Graphics.VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent');
@@ -131,8 +131,8 @@ module Glib.Graphics.Geometry {
      * @returns {Glib.Graphics.Geometry.Builder}
      */
     addVertex(vertex:{[key:string]:any}):Builder {
-      if (this.vertexCount >= 65536) {
-        this.indexBuffer.dataType = 'uint';
+      if (this.vertexCount === this.maxVertexCount) {
+        throw `max vertex count reached`;
       }
       var that = this;
       var channel, item, i, layout = this.vertexBuffer.layout, defaults = this.defaultAttributes;
