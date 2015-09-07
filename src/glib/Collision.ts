@@ -596,12 +596,12 @@ module Glib.Collision {
     {
       return 1;
     }
-    return 1;
+    return 2;
   }
   
   export function sphereContainsPoint(sphere:BoundingSphere, point:IVec3):number {
     var d2 = Vec3.distanceSquared(point, sphere.center);
-    return d2 >= sphere.radius * sphere.radius ? 0 : 2;
+    return d2 <= (sphere.radius * sphere.radius) ? 2 : 0;
   }
   
   export function sphereContainsSphere(sphere1:BoundingSphere, sphere2:BoundingSphere):number {

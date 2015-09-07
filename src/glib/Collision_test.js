@@ -359,7 +359,6 @@
         expect(Collision.sphereContainsBox(sphere, box)).toBe(1);
         box.min[prop] += 0.5;
         box.max[prop] += 0.5;
-        console.log(sphere, box);
         expect(Collision.sphereContainsBox(sphere, box)).toBe(2);
         box.min[prop] += 0.5;
         box.max[prop] += 0.5;
@@ -373,6 +372,49 @@
       });
     });
 
+    it("sphereContainsPoint", function(){
+      ['x', 'y', 'z'].forEach(function(prop){
+        var sphere = new Sphere({ x: 0, y: 0, z: 0 }, 1);
+        var point = { x: 0, y:0, z:0 };
+        
+        point[prop] = -1.5;
+        expect(Collision.sphereContainsPoint(sphere, point)).toBe(0);
+        point[prop] = -1;
+        expect(Collision.sphereContainsPoint(sphere, point)).toBe(2);
+        point[prop] = 0;
+        expect(Collision.sphereContainsPoint(sphere, point)).toBe(2);
+        point[prop] = 1;
+        expect(Collision.sphereContainsPoint(sphere, point)).toBe(2);
+        point[prop] = 1.5;
+        expect(Collision.sphereContainsPoint(sphere, point)).toBe(0);
+      });
+    });
+    
+    it("sphereContainsSphere", function(){
+      ['x', 'y', 'z'].forEach(function(prop){
+        var sphere1 = new Sphere({ x: 0, y: 0, z: 0 }, 1);
+        var sphere2 = new Sphere({ x: 0, y: 0, z: 0 }, 0.5);
+        
+        sphere2.center[prop] = -2;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(0);
+        sphere2.center[prop] = -1.5;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(1);
+        sphere2.center[prop] = -1;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(1);
+        sphere2.center[prop] = -0.5;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(2);
+        sphere2.center[prop] = 0;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(2);
+        sphere2.center[prop] = 0.5;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(2);
+        sphere2.center[prop] = 1;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(1);
+        sphere2.center[prop] = 1.5;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(1);
+        sphere2.center[prop] = 2;
+        expect(Collision.sphereContainsSphere(sphere1, sphere2)).toBe(0);
+      });
+    });
   });
   
 }());

@@ -211,28 +211,14 @@ gulp.task('pages', ['pages:scss', 'pages:jade']);
 //
 
 gulp.task('watch:pages', ['pages'], function(){
-  gulp.watch(PATHS.pages, function(){
-    gulp.run('pages');
-  });
+  gulp.watch(PATHS.pages, ['pages']);
 });
 
 gulp.task('watch', ['compile', 'pages', 'assets'], function(){
-  gulp.watch(tscSource, function(){
-    gulp.run('compile:es5');
-    gulp.run('precompile:tsconfig');
-  });
-
-  gulp.watch(PATHS.pages, function(){
-    gulp.run('pages:jade');
-  });
-
-  gulp.watch(PATHS.stylesWatch, function(){
-    gulp.run('pages:scss');
-  });
-
-  gulp.watch(PATHS.assets, function(){
-    gulp.run('assets');
-  });
+  gulp.watch(tscSource, ['compile:es5', 'precompile:tsconfig']);
+  gulp.watch(PATHS.pages, ['pages:jade']);
+  gulp.watch(PATHS.stylesWatch, ['pages:scss']);
+  gulp.watch(PATHS.assets, ['assets']);
 });
 
 gulp.task('serve', serve({
@@ -240,7 +226,7 @@ gulp.task('serve', serve({
   port: 3000
 }));
 
-gulp.task('default', ['watch', 'serve']);
+gulp.task('default', ['watch', 'serve', 'watch:test']);
 
 
 //
