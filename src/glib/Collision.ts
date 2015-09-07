@@ -215,78 +215,113 @@ module Glib.Collision {
     var tMax = Number.MAX_VALUE;
 
     if (Math.abs(ray.direction.x) < EPSILON) {
-        // ray is parallel to X planes
-        if (ray.position.x < box.min.x || ray.position.x > box.max.x) {
-            // ray origin is not between the slabs
-            return Number.NaN;
-        }
+      // ray is parallel to X planes
+      if (ray.position.x < box.min.x || ray.position.x > box.max.x) {
+        // ray origin is not between the slabs
+        return Number.NaN;
+      }
     } else {
-        var oneOverDirX = 1 / ray.direction.x;
-        var t1 = (box.min.x - ray.position.x) * oneOverDirX;
-        var t2 = (box.max.x - ray.position.x) * oneOverDirX;
-        if (t1 > t2) {
-            // swap since T1 intersection with near plane
-            var temp = t1;
-            t1 = t2;
-            t2 = temp;
-        }
-        tMin = Math.max(t1, tMin);
-        tMax = Math.min(t2, tMax);
-        if (tMin > tMax) {
-            return Number.NaN;
-        }
+      var oneOverDirX = 1 / ray.direction.x;
+      var t1 = (box.min.x - ray.position.x) * oneOverDirX;
+      var t2 = (box.max.x - ray.position.x) * oneOverDirX;
+      if (t1 > t2) {
+        // swap since T1 intersection with near plane
+        var temp = t1;
+        t1 = t2;
+        t2 = temp;
+      }
+      tMin = Math.max(t1, tMin);
+      tMax = Math.min(t2, tMax);
+      if (tMin > tMax) {
+        return Number.NaN;
+      }
     }
 
     if (Math.abs(ray.direction.y) < EPSILON)
     {
-        // ray is parallel to Y planes
-        if (ray.position.y < box.min.y || ray.position.y > box.max.y) {
-            // ray origin is not between the slabs
-            return Number.NaN;
-        }
+      // ray is parallel to Y planes
+      if (ray.position.y < box.min.y || ray.position.y > box.max.y) {
+        // ray origin is not between the slabs
+        return Number.NaN;
+      }
     } else {
-        var oneOverDirY = 1 / ray.direction.y;
-        var t1 = (box.min.y - ray.position.y) * oneOverDirY;
-        var t2 = (box.max.y - ray.position.y) * oneOverDirY;
-        if (t1 > t2) {
-            var temp = t1;
-            t1 = t2;
-            t2 = temp;
-        }
-        tMin = Math.max(t1, tMin);
-        tMax = Math.min(t2, tMax);
-        if (tMin > tMax) {
-            return Number.NaN;
-        }
+      var oneOverDirY = 1 / ray.direction.y;
+      var t1 = (box.min.y - ray.position.y) * oneOverDirY;
+      var t2 = (box.max.y - ray.position.y) * oneOverDirY;
+      if (t1 > t2) {
+        var temp = t1;
+        t1 = t2;
+        t2 = temp;
+      }
+      tMin = Math.max(t1, tMin);
+      tMax = Math.min(t2, tMax);
+      if (tMin > tMax) {
+          return Number.NaN;
+      }
     }
 
     if (Math.abs(ray.direction.z) < EPSILON)
     {
-        // ray is parallel to Z planes
-        if (ray.position.z < box.min.z || ray.position.z > box.max.z) {
-            // ray origin is not between the slabs
-            return Number.NaN;
-        }
+      // ray is parallel to Z planes
+      if (ray.position.z < box.min.z || ray.position.z > box.max.z) {
+        // ray origin is not between the slabs
+        return Number.NaN;
+      }
     } else {
-        var oneOverDirZ = 1 / ray.direction.z;
-        var t1 = (box.min.z - ray.position.z) * oneOverDirZ;
-        var t2 = (box.max.z - ray.position.z) * oneOverDirZ;
-        if (t1 > t2)
-        {
-            var temp = t1;
-            t1 = t2;
-            t2 = temp;
-        }
-        tMin = Math.max(t1, tMin);
-        tMax = Math.min(t2, tMax);
-        if (tMin > tMax) {
-            return Number.NaN;
-        }
+      var oneOverDirZ = 1 / ray.direction.z;
+      var t1 = (box.min.z - ray.position.z) * oneOverDirZ;
+      var t2 = (box.max.z - ray.position.z) * oneOverDirZ;
+      if (t1 > t2)
+      {
+        var temp = t1;
+        t1 = t2;
+        t2 = temp;
+      }
+      tMin = Math.max(t1, tMin);
+      tMax = Math.min(t2, tMax);
+      if (tMin > tMax) {
+        return Number.NaN;
+      }
     }
     return tMin;
   }
 
-  
+
+  export function intersectsRayTriangle(ray:Ray, a:IVec3, b:IVec3, c:IVec3):boolean {
+    recycleBegin();
+
+    var ab = Vec3.subtract(b, a, nextVec());
+    var ac = Vec3.subtract(c, a, nextVec());
+    var qp = ray.direction;
+
+    // Compute triangle normal.
+    var n = Vec3.cross(ab, ac, nextVec());
+
+    // Compute denominator d. If d <= 0, segment is parallel to or points away from triangle
+    var d = Vec3.dot(qp, n);
+    if (d <= 0) {
+      return recycleEnd(false);
+    }
+
+    // Compute intersection t value of pq with plane of triangle. A ray intersects if t >= 0
+    var ap = Vec3.subtract(ray.position, a, nextVec());
+    var result = Vec3.dot(ap, n);
+    if (result < 0) {
+      return recycleEnd(false);
+    }
+
+    // Compute barycentric coordinate components and tes if within bounds
+    var e = Vec3.cross(qp, ap, nextVec());
+    var v = Vec3.dot(ac, e);
+    if (v < 0 || v > d) {
+      return recycleEnd(false);
+    }
+    var w = -Vec3.dot(ab, e);
+    if (w < 0 || v + w > d){
+      return recycleEnd(false);
+    }
+    return recycleEnd(true);
+  }
   export function intersectionRayTriangle(ray:Ray, a:IVec3, b:IVec3, c:IVec3):number {
     recycleBegin();
     
@@ -330,42 +365,7 @@ module Glib.Collision {
     //float u = 1f - v - w;
     return recycleEnd(result);
   }
-  
-  export function intersectsRayTriangle(ray:Ray, a:IVec3, b:IVec3, c:IVec3):boolean {
-    recycleBegin();
-    
-    var ab = Vec3.subtract(b, a, nextVec());
-    var ac = Vec3.subtract(c, a, nextVec());
-    var qp = ray.direction;
-    
-    // Compute triangle normal.
-    var n = Vec3.cross(ab, ac, nextVec());
-    
-    // Compute denominator d. If d <= 0, segment is parallel to or points away from triangle
-    var d = Vec3.dot(qp, n);
-    if (d <= 0) {
-      return recycleEnd(false);
-    }
-    
-    // Compute intersection t value of pq with plane of triangle. A ray intersects if t >= 0
-    var ap = Vec3.subtract(ray.position, a, nextVec());
-    var result = Vec3.dot(ap, n);
-    if (result < 0) {
-      return recycleEnd(false);
-    }
-    
-    // Compute barycentric coordinate components and tes if within bounds
-    var e = Vec3.cross(qp, ap, nextVec());
-    var v = Vec3.dot(ac, e);
-    if (v < 0 || v > d) {
-      return recycleEnd(false);
-    }
-    var w = -Vec3.dot(ab, e);
-    if (w < 0 || v + w > d){
-      return recycleEnd(false);
-    }
-    return recycleEnd(true);
-  }
+
   
   export function intersectsSpherePlane(sphere:BoundingSphere, plane:IVec4):boolean {
     var dist = Vec3.dot(sphere.center, plane) - plane.w;
@@ -426,11 +426,7 @@ module Glib.Collision {
 
     dot = plane.x * pX + plane.y * pY + plane.z * pZ;
 
-    if (dot + plane.w < 0) {
-        return false;
-    }
-
-    return true;
+    return (dot + plane.w) >= 0;
   }
   
   export function intersectsBoxBox(box1:BoundingBox, box2:BoundingBox) {
@@ -447,16 +443,16 @@ module Glib.Collision {
       position.x = 0;
       position.y = 0;
       position.z = 0;
-      return recycleEnd();
+      return recycleEnd(false);
     }
       
-    var p1 = Vec3.multiplyScalar(plane2, -plane1.w, nextVec());
-    var p2 = Vec3.multiplyScalar(plane1, plane2.w, nextVec());
+    var p1 = Vec3.multiplyScalar(plane2, plane1.w, nextVec());
+    var p2 = Vec3.multiplyScalar(plane1, -plane2.w, nextVec());
     Vec3.add(p1, p2, position);
     Vec3.cross(position, direction, position);
     Vec3.divideScalar(position, denom, position);
     
-    return recycleEnd();
+    return recycleEnd(true);
   }
   
   export function intersectionPlanePlanePlane(p1:IVec4, p2:IVec4, p3:IVec4, point:IVec3):boolean {

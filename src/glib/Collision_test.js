@@ -21,7 +21,7 @@
       });
     });
 
-    it("intersectsRayPlane", function(){
+    it("intersectionRayPlane", function(){
       ['x', 'y', 'z'].forEach(function(prop){
         var ray = new Ray({ x: 0, y: 0, z: 0}, { x: 0, y: 0, z: 0});
         var plane = { x:0, y:0, z:0, w:0 };
@@ -216,6 +216,58 @@
       });
     });
 
+    it("intersectionPlanePlane", function(){
+      var plane1;
+      var plane2;
+      var position;
+      var direction;
+      var intersects;
+
+      plane1 = { x:0, y:1, z:0, w:1 };
+      plane2 = { x:0, y:1, z:0, w:0 };
+      position = {  x:0, y:0, z:0 };
+      direction = {  x:0, y:0, z:0 };
+      intersects = Collision.intersectionPlanePlane(plane1, plane2, position, direction);
+      expect(intersects).toBe(false);
+
+      plane1 = { x:1, y:0, z:0, w:1 };
+      plane2 = { x:0, y:1, z:0, w:1 };
+      position = { x:0, y:0, z:0 };
+      direction = { x:0, y:0, z:0 };
+      intersects = Collision.intersectionPlanePlane(plane1, plane2, position, direction);
+      expect(intersects).toBe(true);
+      expect(position).toEqual({ x:1, y:1, z:-0 });
+      expect(direction).toEqual({ x:0, y:0, z:1 });
+    });
+
+
+    it("intersectionPlanePlanePlane", function(){
+      var plane1, plane2, plane3, position, intersects;
+
+      plane1 = { x:1, y:0, z:0, w:1 };
+      plane2 = { x:0, y:1, z:0, w:1 };
+      plane3 = { x:0, y:0, z:1, w:1 };
+      position = { x:0, y:0, z:0 };
+      intersects = Collision.intersectionPlanePlanePlane(plane1, plane2, plane3, position);
+      expect(intersects).toBe(true);
+      expect(position).toEqual({ x:1, y:1, z:1 });
+
+      plane1 = { x:1, y:0, z:0, w:-1 };
+      plane2 = { x:0, y:1, z:0, w:-1 };
+      plane3 = { x:0, y:0, z:1, w:-1 };
+      position = { x:0, y:0, z:0 };
+      intersects = Collision.intersectionPlanePlanePlane(plane1, plane2, plane3, position);
+      expect(intersects).toBe(true);
+      expect(position).toEqual({ x:-1, y:-1, z:-1 });
+
+      plane1 = { x:1, y:0, z:0, w:-1 };
+      plane2 = { x:0, y:1, z:0, w:-1 };
+      plane3 = { x:0, y:1, z:0, w:-1 };
+      position = { x:0, y:0, z:0 };
+      intersects = Collision.intersectionPlanePlanePlane(plane1, plane2, plane3, position);
+      expect(intersects).toBe(false);
+    });
+
     it("boxContainsBox", function(){
       ['x', 'y', 'z'].forEach(function(prop){
         var box1 = new Box({ x: -0.5, y: -0.5, z: -0.5}, { x: 0.5, y: 0.5, z: 0.5});
@@ -290,6 +342,37 @@
         expect(Collision.boxContainsSphere(box, sphere)).toBe(0)
       });
     });
+
+    it("sphereContainsBox", function(){
+      ['x', 'y', 'z'].forEach(function(prop){
+        var sphere = new Sphere({ x: 0, y: 0, z: 0}, 1);
+        var box = new Box({ x: -0.5, y: -0.5, z: -0.5}, { x: 0.5, y: 0.5, z: 0.5 });
+
+        box.min[prop] -= 2;
+        box.max[prop] -= 2;
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(0);
+        box.min[prop] += 0.5;
+        box.max[prop] += 0.5;
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(1);
+        box.min[prop] += 1;
+        box.max[prop] += 1;
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(1);
+        box.min[prop] += 0.5;
+        box.max[prop] += 0.5;
+        console.log(sphere, box);
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(2);
+        box.min[prop] += 0.5;
+        box.max[prop] += 0.5;
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(1);
+        box.min[prop] += 1;
+        box.max[prop] += 1;
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(1);
+        box.min[prop] += 0.5;
+        box.max[prop] += 0.5;
+        expect(Collision.sphereContainsBox(sphere, box)).toBe(0);
+      });
+    });
+
   });
   
 }());
