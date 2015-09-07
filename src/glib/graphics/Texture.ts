@@ -1,7 +1,8 @@
 module Glib.Graphics {
 
   var defaultPixel = new Uint8Array([128, 128, 128, 255]);
-
+  var noop = function(){};
+  
   export interface TextureOptions {
     generateMipmap?: boolean,
     pixelFormat?: number,
@@ -24,10 +25,10 @@ module Glib.Graphics {
     pixelFormat:number = PixelFormat.RGBA;
     pixelType:number = DataType.ubyte;
     type:number = TextureType.Texture2D;
-    update:()=> void = function () {
-    };
+    update:()=> void = noop;
     handle:WebGLTexture = null;
-
+    private _lastVideoTime = -1;
+    
     constructor(device:Device, opts?:TextureOptions) {
       this.device = device;
       this.gl = device.context;
@@ -58,36 +59,37 @@ module Glib.Graphics {
           return;
         }
 
-        texture.use();
+        gl.bindTexture(texture.type, texture.handle);
         gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, image);
         if (texture.generateMipmap) {
           gl.generateMipmap(texture.type);
         }
+        gl.bindTexture(texture.type, null);
 
         texture.width = image.naturalWidth;
         texture.height = image.naturalHeight;
         texture.isPOT = utils.isPowerOfTwo(texture.width) && utils.isPowerOfTwo(texture.height);
-        texture.update = function () {
-        }; // texture has been updated, remove update handler
+        texture.update = noop; // texture has been updated, remove update handler
       };
     }
 
     static createVideoUpdateHandle(texture:Texture, video:HTMLVideoElement) {
       var gl = texture.gl;
       return function () {
-        texture.ready = video.readyState >= 3;
-        if (texture.ready) {
-          texture.use();
-          gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, video);
-        }
         texture.width = video.videoWidth;
         texture.height = video.videoHeight;
         texture.isPOT = utils.isPowerOfTwo(texture.width) && utils.isPowerOfTwo(texture.height);
+        texture.ready = video.readyState >= 3;
+        if (texture.ready && (texture._lastVideoTime !== video.currentTime)) {
+          texture._lastVideoTime = video.currentTime;
+          gl.bindTexture(texture.type, texture.handle);
+          gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, video);
+          gl.bindTexture(texture.type, null);
+        }
       };
     }
 
-    setup(opts?:TextureOptions):Texture {
-      opts = opts || {};
+    setup(opts:TextureOptions={}):Texture {
 
       this.pixelFormat = PixelFormat[opts.pixelFormat] || this.pixelFormat || PixelFormat.RGBA;
       this.pixelType = DataType[opts.pixelType] || this.pixelType || DataType.ubyte;

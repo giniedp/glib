@@ -4,11 +4,14 @@ block script
   script#vertex-shader(type='text/glsl').
     precision highp float;
     precision highp int;
-    attribute vec3 position;
+    // @binding position
+    attribute vec3 vPosition;
+    // @binding texture
+    attribute vec2 vTexture;
     varying vec2 texCoord;
     void main(void) {
-      texCoord = (position.xy + 1.0) * 0.5;
-      gl_Position = vec4(position, 1.0);
+      texCoord = vTexture;
+      gl_Position = vec4(vPosition, 1.0);
     }
   script#fragment-shader(type='text/glsl').
     precision highp float;
@@ -23,23 +26,21 @@ block script
         
     var video = document.createElement('video');
     video.src = "/assets/sintel.mp4";
-    video.autoPlay = true;
+    video.addEventListener("canplaythrough", function() {
+      video.play();
+    }, true);
     
     var texture = device.createTexture({ data: video });
     
     var program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
-      fragmentShader: document.getElementById('fragment-shader').textContent,
-      attributes: {
-        position: {type: 'vec3'}
-      }
+      fragmentShader: document.getElementById('fragment-shader').textContent
     });
 
-    console.log(program);
     Glib.utils.loop(function(){
-      program.uniforms.texture.set(texture);
       device.program = program;
-      device.drawQuad();
+      device.program.setUniform("texture", texture);
+      device.drawQuad(true);
     });
     
     
