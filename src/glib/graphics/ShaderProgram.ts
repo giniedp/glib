@@ -111,14 +111,13 @@ module Glib.Graphics {
         if (attribute.location >= 0) {
           attributeLocations.push(attribute.location);
         } else {
-          warn(`Vertex attribute '${attribute.name || key}' not found in shader`, this);
+          delete this.attributes[key];
         }
       }
       this.attributeLocations = attributeLocations;
       for (key in this.uniforms) { // jshint ignore:line
         var uniform = new ShaderUniform(this, key, this.uniforms[key]);
         if (uniform.location == null) {
-          debug(`Uniform '${key}' not found in shader and has been ignored.`)
           delete this.uniforms[key];
         } else {
           this.uniforms[key] = uniform;  
