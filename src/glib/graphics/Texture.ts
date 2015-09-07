@@ -84,6 +84,9 @@ module Glib.Graphics {
           texture._lastVideoTime = video.currentTime;
           gl.bindTexture(texture.type, texture.handle);
           gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, video);
+          if (texture.generateMipmap) {
+            gl.generateMipmap(texture.type);
+          }
           gl.bindTexture(texture.type, null);
         }
       };
