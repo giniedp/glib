@@ -31,6 +31,15 @@ module Glib.Content.Importer {
       for (var face of group.f) {
         var count = 0;
         while (count < face.length - 2) {
+          
+          if (builder.vertexCount >= (builder.maxVertexCount - 2)) {
+            builder.finishMesh({
+              name: group.name,
+              materialId: group.material
+            });
+            index = 0;
+          }
+          
           vertex = readVertex(data, face[0]);
           builder.addIndex(index);
           builder.addVertex(vertex);
