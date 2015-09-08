@@ -4,32 +4,117 @@ module Glib.Graphics {
   var noop = function(){};
   
   export interface TextureOptions {
+    /**
+     * Whether or not to automatically generate mip maps
+     */
     generateMipmap?: boolean,
+    /**
+     * The pixel format to be used
+     */
     pixelFormat?: number,
+    /**
+     * The pixel element data tupe to be used
+     */
     pixelType?: number,
+    /**
+     * The texture type
+     */
     type?: number,
+    /**
+     *
+     */
     handle?: WebGLTexture,
+    /**
+     * The texture width
+     */
     width?:number,
+    /**
+     * The texture height
+     */
     height?:number,
-    data?: any,
+    /**
+     * The initial texture data to set
+     */
+    data?: any
   }
 
+  /**
+   * Describes a texture object.
+   */
   export class Texture {
+    /**
+     * The Graphics.Device
+     */
     device:Device;
+    /**
+     * The GL context
+     */
     gl:any;
+    /**
+     * The texture width
+     * @type {number}
+     */
     width:number = 0;
+    /**
+     * The texture height
+     * @type {number}
+     */
     height:number = 0;
+    /**
+     * Indicates whether texture data has been set and the texture is ready to be used in a shader.
+     * This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
+     * initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
+     * @type {boolean}
+     */
     ready:boolean = false;
+    /**
+     * Indicates whether the texture width and height is a power of two value.
+     * @type {boolean}
+     */
     isPOT:boolean = false;
+    /**
+     * Indicates whether mipmaps should be automatically created when data is iset.
+     * @type {boolean}
+     */
     generateMipmap:boolean = false;
+    /**
+     * Indicates the used pixel format.
+     * @type {number}
+     */
     pixelFormat:number = PixelFormat.RGBA;
+    /**
+     * Indicates the data type of the pixel elements
+     * @type {number}
+     */
     pixelType:number = DataType.ubyte;
+    /**
+     * Indicates the texture type
+     * @type {number}
+     */
     type:number = TextureType.Texture2D;
+    /**
+     *
+     * @type {function()}
+     */
     update:()=> void = noop;
+    /**
+     *
+     * @type {WebGLTexture}
+     */
     handle:WebGLTexture = null;
+
+    /**
+     * The cached time value of the currently running video.
+     * @type {number}
+     */
     private _lastVideoTime = -1;
-    
-    constructor(device:Device, opts?:TextureOptions) {
+
+    /**
+     * Initializes a new texture
+     * @param device The graphics device
+     * @param opts The texture options
+     */
+    constructor(device:Device, opts:TextureOptions={}) {
       this.device = device;
       this.gl = device.context;
       this.setup(opts);
