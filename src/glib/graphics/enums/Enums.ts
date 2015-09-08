@@ -614,15 +614,39 @@ module Glib.Graphics {
 
 module Glib.Graphics {
   export var DepthFormat = {
-    Depth16 : 0x81A5,
-  0x81A5 : 0x81A5
+    None : 0,
+  0 : 0,
+  DepthStencil : 0x84F9,
+  0x84F9 : 0x84F9,
+  Depth16 : 0x81A5,
+  0x81A5 : 0x81A5,
+  Depth24 : 0x81A6,
+  0x81A6 : 0x81A6,
+  Depth32 : 0x8CAC,
+  0x8CAC : 0x8CAC,
+  Depth24Stencil8 : 0x88F0,
+  0x88F0 : 0x88F0,
+  Depth32Stencil8 : 0x8CAD,
+  0x8CAD : 0x8CAD
   };
 }
 
 module Glib.Graphics {
   export var DepthFormatName = {
-    Depth16 : 'DEPTH_COMPONENT16',
-  0x81A5 : 'DEPTH_COMPONENT16'
+    None : 'ZERO',
+  0 : 'ZERO',
+  DepthStencil : 'DEPTH_STENCIL',
+  0x84F9 : 'DEPTH_STENCIL',
+  Depth16 : 'DEPTH_COMPONENT16',
+  0x81A5 : 'DEPTH_COMPONENT16',
+  Depth24 : 'DEPTH_COMPONENT24',
+  0x81A6 : 'DEPTH_COMPONENT24',
+  Depth32 : 'DEPTH_COMPONENT32F',
+  0x8CAC : 'DEPTH_COMPONENT32F',
+  Depth24Stencil8 : 'DEPTH24_STENCIL8',
+  0x88F0 : 'DEPTH24_STENCIL8',
+  Depth32Stencil8 : 'DEPTH32F_STENCIL8',
+  0x8CAD : 'DEPTH32F_STENCIL8'
   };
 }
 

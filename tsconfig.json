@@ -48,6 +48,7 @@
     "src/glib/graphics/Color.ts",
     "src/glib/graphics/DepthBuffer.ts",
     "src/glib/graphics/Device.ts",
+    "src/glib/graphics/FrameBuffer.ts",
     "src/glib/graphics/Material.ts",
     "src/glib/graphics/MaterialPass.ts",
     "src/glib/graphics/Model.ts",
@@ -87,7 +88,7 @@
     "src/glib/render/Binder.ts",
     "src/glib/render/effects/Bloom.ts",
     "src/glib/render/effects/Pixelate.ts",
-    "src/glib/render/effects/ShockWave.ts",
+    "src/glib/render/effects/Shockwave.ts",
     "src/glib/render/Manager.ts",
     "src/glib/render/Step.ts",
     "src/glib/render/techniques/Forward.ts",
@@ -111,6 +112,6 @@
     "src/glib/scene/Visitor.ts",
     "src/glib/terrain/BttPatch.ts",
     "src/glib/terrain/BttRoot.ts",
-    "src/glib/terrain/HeightMap.ts"
+    "src/glib/terrain/heightmap.ts"
   ]
 }

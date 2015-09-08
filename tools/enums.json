@@ -300,7 +300,13 @@
   "targetName": "DepthFormatName",
   "GLConstant" : true,
   "properties": {
-    "Depth16": "DEPTH_COMPONENT16"
+    "None": "ZERO",
+    "DepthStencil": "DEPTH_STENCIL",
+    "Depth16": "DEPTH_COMPONENT16",
+    "Depth24": "DEPTH_COMPONENT24",
+    "Depth32": "DEPTH_COMPONENT32F",
+    "Depth24Stencil8": "DEPTH24_STENCIL8",
+    "Depth32Stencil8": "DEPTH32F_STENCIL8"
   }
 }, {
   "description": "",
