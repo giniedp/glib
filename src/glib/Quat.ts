@@ -4,24 +4,43 @@ module Glib {
    * Describes a quaternion.
    */
   export class Quat implements IVec2, IVec3, IVec4 {
+    /**
+     * The X component
+     */
+    x:number;
+    /**
+     * The Y component
+     */
+    y:number;
+    /**
+     * The Z component
+     */
+    z:number;
+    /**
+     * The W component
+     */
+    w:number;
 
     /**
-     * @constructor
-     * @param {number} x value for X component
-     * @param {number} y value for Y component
-     * @param {number} z value for Z component
-     * @param {number} w value for W component
+     * Initializes a new quaternion
+     * @param x Value for the X component
+     * @param y Value for the Y component
+     * @param z Value for the Z component
+     * @param w Value for the W component
      */
-    constructor(public x?:number, public y?:number, public z?:number, public w?:number) {
-
+    constructor(x:number=0, y:number=0, z:number=0, w:number=0) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.w = w;
     }
 
     /**
      * Initializes components of the quaternion with given values.
-     * @param {number} x value for X component
-     * @param {number} y value for Y component
-     * @param {number} z value for Z component
-     * @param {number} w value for W component
+     * @param x value for X component
+     * @param y value for Y component
+     * @param z value for Z component
+     * @param w value for W component
      * @return {Quat} Reference to `this` for chaining.
      */
     init(x:number, y:number, z:number, w:number):Quat {
@@ -34,7 +53,6 @@ module Glib {
 
     /**
      * Initializes the quaternion with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
-     * @method initIdentity
      * @return {Quat} Reference to `this` for chaining.
      */
     initIdentity():Quat {
@@ -47,7 +65,6 @@ module Glib {
 
     /**
      * Initializes the quaternion with all components set to `0`.
-     * @method initZero
      * @return {Quat} Reference to `this` for chaining.
      */
     initZero():Quat {
@@ -60,8 +77,7 @@ module Glib {
 
     /**
      * Initializes the components of this quaternion by taking the components from the given quaternion or vector.
-     * @method initFrom
-     * @param {Quat|Vec4} other
+     * @param other
      * @return {Quat} Reference to `this` for chaining.
      */
     initFrom(other:IVec4):Quat {
@@ -74,14 +90,11 @@ module Glib {
 
     /**
      * Initializes the components of this quaternion by taking values from the given array in successive order.
-     * @chainable
-     * @method initFromBuffer
-     * @param {Array} buffer The array to read from
-     * @param {Number} [offset=0] The zero based index at which start reading the values
+     * @param buffer The array to read from
+     * @param [offset=0] The zero based index at which start reading the values
      * @return {Quat} Reference to `this` for chaining.
      */
-    initFromBuffer(buffer:NumbersArray, offset?:number):Quat {
-      offset = offset || 0;
+    initFromBuffer(buffer:NumbersArray, offset:number=0):Quat {
       this.x = buffer[offset];
       this.y = buffer[offset + 1];
       this.z = buffer[offset + 2];
@@ -91,9 +104,8 @@ module Glib {
 
     /**
      * Initializes the quaternion from axis and an angle.
-     * @method initAxisAngle
-     * @param {Vec3} axis The axis as vector
-     * @param {number} angle The angle in degrees
+     * @param axis The axis as vector
+     * @param angle The angle in degrees
      * @return {Quat} Reference to `this` for chaining.
      */
     initAxisAngle(axis:IVec3, angle:number):Quat {
@@ -108,10 +120,9 @@ module Glib {
 
     /**
      * Initializes the quaternion from yaw pitch and roll angles.
-     * @method initYawPitchRoll
-     * @param {number} yaw The yaw angle in radians
-     * @param {number} pitch The pitch angle in radians
-     * @param {number} roll The roll angle in radians
+     * @param yaw The yaw angle in radians
+     * @param pitch The pitch angle in radians
+     * @param roll The roll angle in radians
      * @return {Quat} Reference to `this` for chaining.
      */
     initYawPitchRoll(yaw:number, pitch:number, roll:number):Quat {
@@ -136,7 +147,6 @@ module Glib {
 
     /**
      * Creates a copy of this quaternion
-     * @method clone
      * @return {Quat} The cloned quaternion
      */
     clone():Quat {
@@ -145,11 +155,9 @@ module Glib {
 
     /**
      * Copies the components successively into the given array.
-     * @chainable
-     * @method copy
-     * @param {Array|Float32Array} buffer The array to copy into
-     * @param {Number} [offset=0] Zero based index where to start writing in the array
-     * @return {Array|Float32Array}
+     * @param buffer The array to copy into
+     * @param [offset=0] Zero based index where to start writing in the array
+     * @return {Quat} Reference to `this` for chaining.
      */
     copyTo(buffer:NumbersArray, offset?:number) {
       offset = offset || 0;
@@ -157,12 +165,12 @@ module Glib {
       buffer[offset + 1] = this.y;
       buffer[offset + 2] = this.z;
       buffer[offset + 3] = this.w;
+      return this;
     }
 
     /**
      * Returns an array filled with the values of the components of this quaternion
-     * @method dump
-     * @return {Array}
+     * @returns {number[]}
      */
     dump():number[] {
       return [this.x, this.y, this.z, this.w];
@@ -170,8 +178,7 @@ module Glib {
 
     /**
      * Checks for component wise equality with given quaternion
-     * @method equals
-     * @param {Quat|Vec4} other The quaternion to compare with
+     * @param other The quaternion to compare with
      * @return {Boolean} true if components are equal, false otherwise
      */
     equals(other:IVec4):boolean {
@@ -180,7 +187,6 @@ module Glib {
 
     /**
      * Calculates the length of this quaternion
-     * @method length
      * @return {Number} The length.
      */
     length():number {
@@ -193,7 +199,6 @@ module Glib {
 
     /**
      * Calculates the squared length of this quaternion
-     * @method lengthSquared
      * @return {Number} The squared length.
      */
     lengthSquared():number {
@@ -206,8 +211,6 @@ module Glib {
 
     /**
      * Calculates the dot product with the given quaternion
-     * @method dot
-     * @param {Quat} other
      * @return {Number} The dot product.
      */
     dot(other:IVec4):number {
@@ -216,7 +219,6 @@ module Glib {
 
     /**
      * Negates the components of `this`
-     * @method selfNegate
      * @return {Quat} Reference to `this` for chaining.
      */
     selfNegate():Quat {
@@ -229,7 +231,6 @@ module Glib {
 
     /**
      * Negates the `x`, `y` and `z` components of `this`
-     * @method selfConjugate
      * @return {Quat} Reference to `this` for chaining.
      */
     selfConjugate():Quat {
@@ -241,7 +242,6 @@ module Glib {
 
     /**
      * Normalizes `this` so that `length` should be `1`
-     * @method selfNormalize
      * @return {Quat} Reference to `this` for chaining.
      */
     selfNormalize():Quat {
@@ -259,7 +259,6 @@ module Glib {
 
     /**
      * Inverts `this` so that multiplication with the original would return the identity quaternion.
-     * @method selfInvert
      * @return {Quat} Reference to `this` for chaining.
      */
     selfInvert():Quat {
@@ -277,8 +276,7 @@ module Glib {
 
     /**
      * Performs a component wise addition with `other`
-     * @method selfAdd
-     * @param {Quat|Vec4} other
+     * @param other
      * @return {Quat} Reference to `this` for chaining.
      */
     selfAdd(other:IVec4):Quat {
@@ -291,8 +289,7 @@ module Glib {
 
     /**
      * Performs a component wise subtraction with `other`
-     * @method selfSubtract
-     * @param {Quat|Vec4} other
+     * @param other
      * @return {Quat} Reference to `this` for chaining.
      */
     selfSubtract(other:IVec4):Quat {
@@ -305,8 +302,7 @@ module Glib {
 
     /**
      * Performs a quaternion multiplication with `other`
-     * @method selfMultiply
-     * @param {Quat|Vec4} other
+     * @param other
      * @return {Quat} Reference to `this` for chaining.
      */
     selfMultiply(other:IVec4):Quat {
@@ -329,8 +325,7 @@ module Glib {
 
     /**
      * Performs a quaternion concatenation with `other`
-     * @method selfConcat
-     * @param {Quat} other
+     * @param other
      * @return {Quat} Reference to `this` for chaining.
      */
     selfConcat(other:IVec4):Quat {
@@ -353,8 +348,7 @@ module Glib {
 
     /**
      * Performs a division with `other`
-     * @method selfDivide
-     * @param {Quat} other
+     * @param other
      * @return {Quat} Reference to `this` for chaining.
      */
     selfDivide(other:IVec4):Quat {
@@ -384,7 +378,6 @@ module Glib {
 
     /**
      * Rotates the given point or vector with `this`
-     * @method transform
      * @param vec
      * @return {Vec3|Vec4}
      */
@@ -423,15 +416,13 @@ module Glib {
     /**
      * Creates a new quaternion. The method should be called with four or no arguments. If less than four arguments are given
      * then some components of the resulting quaternion are going to be `undefined`.
-     * @static
-     * @method create
-     * @param {Number} [x] The x component
-     * @param {Number} [y] The y component
-     * @param {Number} [z] The z component
-     * @param {Number} [w] The w component
+     * @param [x] The x component
+     * @param [y] The y component
+     * @param [z] The z component
+     * @param [w] The w component
      * @return {Quat}
      */
-    static create(x:number, y:number, z:number, w:number):Quat {
+    static create(x?:number, y?:number, z?:number, w?:number):Quat {
       if (x !== undefined) {
         return new Quat(x, y, z, w);
       }
@@ -440,8 +431,6 @@ module Glib {
 
     /**
      * Creates a new vector with all components set to 0.
-     * @static
-     * @method zero
      * @return {Quat} A new quaternion
      */
     static zero():Quat {
@@ -450,8 +439,6 @@ module Glib {
 
     /**
      * Creates a new vector with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
-     * @static
-     * @method identity
      * @return {Quat} A new quaternion
      */
     static identity():Quat {
@@ -460,10 +447,8 @@ module Glib {
 
     /**
      * Creates a new quaternion from given axis vector and an angle
-     * @static
-     * @method fromAxisAngle
-     * @param {Vec3} axis The axis vector
-     * @param {number} angle The angle in degree
+     * @param axis The axis vector
+     * @param angle The angle in degree
      * @return {Quat} A new quaternion
      */
     static fromAxisAngle(axis:IVec3, angle:number):Quat {
@@ -472,11 +457,9 @@ module Glib {
 
     /**
      * Creates a new quaternion from given `yaw` `pitch` and `roll` angles
-     * @static
-     * @method fromYawPitchRoll
-     * @param {number} yaw The yaw angle in radians
-     * @param {number} pitch The pitch angle in radians
-     * @param {number} roll The roll angle in radians
+     * @param yaw The yaw angle in radians
+     * @param pitch The pitch angle in radians
+     * @param roll The roll angle in radians
      * @return {Quat}
      */
     static fromYawPitchRoll(yaw:number, pitch:number, roll:number):Quat {
@@ -485,10 +468,8 @@ module Glib {
 
     /**
      * Negates the given quaternion.
-     * @static
-     * @method negate
-     * @param {Quat} quat The quaternion to negate.
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quat The quaternion to negate.
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static negate(quat:IVec4, out?:IVec4):IVec4 {
@@ -502,10 +483,8 @@ module Glib {
 
     /**
      * Conjugates the given quaternion.
-     * @static
-     * @method conjugate
-     * @param {Quat} quat The quaternion to conjugate.
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quat The quaternion to conjugate.
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static conjugate(quat:IVec4, out?:IVec4):IVec4 {
@@ -519,10 +498,8 @@ module Glib {
 
     /**
      * Normalizes the given quaternion
-     * @static
-     * @method normalize
-     * @param {Quat} quat The quaternion to normalize.
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quat The quaternion to normalize.
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static normalize(quat:IVec4, out?:IVec4):IVec4 {
@@ -541,10 +518,8 @@ module Glib {
 
     /**
      * Inverts the given quaternion
-     * @static
-     * @method invert
-     * @param {Quat} quat The quaternion to invert.
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quat The quaternion to invert.
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static invert(quat:IVec4, out?:IVec4):IVec4  {
@@ -563,11 +538,9 @@ module Glib {
 
     /**
      * Adds two quaternions
-     * @static
-     * @method add
-     * @param {Quat} quatA The first quaternion
-     * @param {Quat} quatB The second quaternion
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quatA The first quaternion
+     * @param quatB The second quaternion
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static add(quatA:IVec4, quatB:IVec4, out?:IVec4):IVec4 {
@@ -581,11 +554,9 @@ module Glib {
 
     /**
      * Subtracts the second quaternion from the first.
-     * @static
-     * @method subtract
-     * @param {Quat} quatA The first quaternion
-     * @param {Quat} quatB The second quaternion
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quatA The first quaternion
+     * @param quatB The second quaternion
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static subtract(quatA:IVec4, quatB:IVec4, out?:IVec4):IVec4 {
@@ -599,11 +570,9 @@ module Glib {
 
     /**
      * Multiplies two quaternions
-     * @static
-     * @method multiply
-     * @param {Quat} quatA The first quaternion
-     * @param {Quat} quatB The second quaternion
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quatA The first quaternion
+     * @param quatB The second quaternion
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static multiply(quatA:IVec4, quatB:IVec4, out?:IVec4):IVec4 {
@@ -628,11 +597,9 @@ module Glib {
 
     /**
      * Concatenates two quaternions
-     * @static
-     * @method concat
-     * @param {Quat} quatA The first quaternion
-     * @param {Quat} quatB The second quaternion
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quatA The first quaternion
+     * @param quatB The second quaternion
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static concat(quatA:IVec4, quatB:IVec4, out?:IVec4):IVec4 {
@@ -656,11 +623,9 @@ module Glib {
 
     /**
      * Divides the first quaternion by the second
-     * @static
-     * @method divide
-     * @param {Quat} quatA The first quaternion
-     * @param {Quat} quatB The second quaternion
-     * @param {Quat} [out] The quaternion to write to.
+     * @param quatA The first quaternion
+     * @param quatB The second quaternion
+     * @param [out] The quaternion to write to.
      * @return {Quat} The given `out` parameter or a new quaternion.
      */
     static divide(quatA:IVec4, quatB:IVec4, out?:IVec4):IVec4 {
@@ -692,8 +657,6 @@ module Glib {
 
     /**
      * Tries to convert the given `data` into a quaternion
-     * @static
-     * @method create
      * @param {Array|Quat|Vec4} data
      * @return {Quat} The created quaternion.
      */
@@ -719,12 +682,10 @@ module Glib {
 
     /**
      * Rotates a point or vector with given quaternion
-     * @static
-     * @method transform
-     * @param {Quat} q The rotation quaternion
-     * @param {Vec3|Vec4} v The point or vector to rotate
-     * @param {Vec3|Vec4} [out] The vector to write to
-     * @return {Vec3|Vec4} The given `out` parameter or a new vector.
+     * @param q The rotation quaternion
+     * @param v The point or vector to rotate
+     * @param [out] The vector to write to
+     * @return {IVec3} The given `out` parameter or a new vector.
      */
     static transform(q:IVec4, v:IVec3, out?:IVec3):IVec3 {
       var x = q.x;

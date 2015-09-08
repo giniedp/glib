@@ -184,7 +184,7 @@ gulp.task('compile', ['compile:es5', 'compile:es6']);
 //
 
 gulp.task('docs', function(){
-  return src(tscSource).pipe(typedoc({
+  return gulp.src(tscSource).pipe(typedoc({
     target: "ES5",
     out: "dist/docs/",
     name: "Glib"

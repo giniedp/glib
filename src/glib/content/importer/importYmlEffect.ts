@@ -119,7 +119,8 @@ module Glib.Content.Importers {
 
   /**
    * Loads a shader effect from yaml file. A valid yaml file looks like this
-   * ``` yaml
+   * 
+   * ```yaml
    *
    * program:
    *   // shader code that is shared between vertex and fragment shader

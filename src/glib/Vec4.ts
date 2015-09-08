@@ -2,26 +2,45 @@ module Glib {
 
   /**
    * Describes a vector with four components.
-   *
-   * @class Vec4
-   * @constructor
-   * @param {Number} x
-   * @param {Number} y
-   * @param {Number} z
-   * @param {Number} w
    */
   export class Vec4 implements IVec2, IVec3, IVec4 {
-    constructor(public x?:number, public y?:number, public z?:number, public w?:number) {
+    /**
+     * The X component
+     */
+    x:number;
+    /**
+     * The Y component
+     */
+    y:number;
+    /**
+     * The Z component
+     */
+    z:number;
+    /**
+     * The W component
+     */
+    w:number;
+
+    /**
+     * Initializes a new vector
+     * @param x Value for the X component
+     * @param y Value for the Y component
+     * @param z Value for the Z component
+     * @param w Value for the W component
+     */
+    constructor(x:number=0, y:number=0, z:number=0, w:number=0) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+      this.w = w;
     }
 
     /**
      * Initializes the components of this vector with given values.
-     * @chainable
-     * @method init
-     * @param {Number} x value for X component
-     * @param {Number} y value for Y component
-     * @param {Number} z value for Z component
-     * @param {Number} w value for W component
+     * @param x value for X component
+     * @param y value for Y component
+     * @param z value for Z component
+     * @param w value for W component
      * @return {Vec4} this vector for chaining
      */
     init(x:number, y:number, z:number, w:number):IVec4 {
@@ -34,9 +53,7 @@ module Glib {
 
     /**
      * Initializes the components of this vector by taking the components from the given vector.
-     * @chainable
-     * @method initFrom
-     * @param {Vec4} other The vector to read from
+     * @param other The vector to read from
      * @return {Vec4}
      */
     initFrom(other:IVec4):Vec4 {
@@ -49,14 +66,11 @@ module Glib {
 
     /**
      * Initializes the components of this vector by taking values from the given array in successive order.
-     * @chainable
-     * @method initFromBuffer
-     * @param {Array} buffer The array to read from
-     * @param {Number} [offset=0] The zero based index at which start reading the values
+     * @param buffer The array to read from
+     * @param [offset=0] The zero based index at which start reading the values
      * @return {Vec4}
      */
-    initFromBuffer(buffer:NumbersArray, offset?:number):Vec4 {
-      offset = offset || 0;
+    initFromBuffer(buffer:NumbersArray, offset:number=0):Vec4 {
       this.x = buffer[offset];
       this.y = buffer[offset + 1];
       this.z = buffer[offset + 2];
@@ -66,7 +80,6 @@ module Glib {
 
     /**
      * Creates a copy of this vector
-     * @method clone
      * @return {Vec4} The cloned vector
      */
     clone():Vec4 {
@@ -75,14 +88,11 @@ module Glib {
 
     /**
      * Copies the components successively into the given array.
-     * @chainable
-     * @method copy
-     * @param {Array|Float32Array} buffer The array to copy into
-     * @param {Number} [offset=0] Zero based index where to start writing in the array
+     * @param buffer The array to copy into
+     * @param [offset=0] Zero based index where to start writing in the array
      * @return {Array|Float32Array}
      */
-    copyTo(buffer:NumbersArray, offset?:number):NumbersArray {
-      offset = offset || 0;
+    copyTo(buffer:NumbersArray, offset:number=0):NumbersArray {
       buffer[offset] = this.x;
       buffer[offset + 1] = this.y;
       buffer[offset + 2] = this.z;
@@ -92,7 +102,6 @@ module Glib {
 
     /**
      * Returns an array filled with the values of the components of this vector
-     * @method dump
      * @return {Array}
      */
     dump():number[] {
@@ -101,8 +110,7 @@ module Glib {
 
     /**
      * Checks for component wise equality with given vector
-     * @method equals
-     * @param {Vec4} other The vector to compare with
+     * @param other The vector to compare with
      * @return {Boolean} true if components are equal, false otherwise
      */
     equals(other:IVec4):boolean {
@@ -111,7 +119,6 @@ module Glib {
 
     /**
      * Calculates the length of this vector
-     * @method length
      * @return {Number} The length.
      */
     length():number {
@@ -124,7 +131,6 @@ module Glib {
 
     /**
      * Calculates the squared length of this vector
-     * @method lengthSquared
      * @return {Number} The squared length.
      */
     lengthSquared():number {
@@ -137,8 +143,7 @@ module Glib {
 
     /**
      * Calculates the distance to the given vector
-     * @method distance
-     * @param {Vec4} other The distant vector
+     * @param other The distant vector
      * @return {Number} The distance between the vectors.
      */
     distance(other:IVec4):number {
@@ -151,8 +156,7 @@ module Glib {
 
     /**
      * Calculates the squared distance to the given vector
-     * @method distanceSquared
-     * @param {Vec4} other The distant vector
+     * @param other The distant vector
      * @return {Number} The squared distance between the vectors.
      */
     distanceSquared(other:IVec4):number {
@@ -165,8 +169,7 @@ module Glib {
 
     /**
      * Calculates the dot product with the given vector
-     * @method dot
-     * @param {Vec4} other
+     * @param other
      * @return {Number} The dot product.
      */
     dot(other:IVec4):number {
@@ -175,8 +178,6 @@ module Glib {
 
     /**
      * Normalizes this vector. Applies the result to this vector.
-     * @chainable
-     * @method selfNormalize
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfNormalize():Vec4 {
@@ -194,8 +195,6 @@ module Glib {
 
     /**
      * Inverts this vector.
-     * @chainable
-     * @method selfInvert
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfInvert():Vec4 {
@@ -208,8 +207,6 @@ module Glib {
 
     /**
      * Negates the components of this vector.
-     * @chainable
-     * @method selfNegate
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfNegate():Vec4 {
@@ -222,9 +219,7 @@ module Glib {
 
     /**
      * Adds the given vector to `this`.
-     * @chainable
-     * @method selfAdd
-     * @param {Vec4} other The vector to add
+     * @param other The vector to add
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfAdd(other:IVec4):Vec4 {
@@ -237,9 +232,7 @@ module Glib {
 
     /**
      * Adds the given scalar to `this`
-     * @chainable
-     * @method selfAddScalar
-     * @param {Number} scalar The scalar to add.
+     * @param scalar The scalar to add.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfAddScalar(scalar:number):Vec4 {
@@ -252,9 +245,7 @@ module Glib {
 
     /**
      * Subtracts the given from this vector from `this`.
-     * @chainable
-     * @method selfSubtract
-     * @param {Vec4} other The vector to subtract.
+     * @param other The vector to subtract.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfSubtract(other:IVec4):Vec4 {
@@ -267,9 +258,7 @@ module Glib {
 
     /**
      * Subtracts the given scalar from `this`.
-     * @return {Vec4} Reference to `this` for chaining.
-     * @method selfSubtractScalar
-     * @param {Vec4} scalar The scalar to subtract.
+     * @param scalar The scalar to subtract.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfSubtractScalar(scalar:number):Vec4 {
@@ -282,9 +271,7 @@ module Glib {
 
     /**
      * Multiplies `this` with the given vector.
-     * @chainable
-     * @method selfMultiply
-     * @param {Vec4} other The vector to multiply.
+     * @param other The vector to multiply.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfMultiply(other:IVec4):Vec4 {
@@ -297,9 +284,7 @@ module Glib {
 
     /**
      * Multiplies `this` with the given scalar.
-     * @chainable
-     * @method selfMultiplyScalar
-     * @param {Number} scalar The scalar to multiply.
+     * @param scalar The scalar to multiply.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfMultiplyScalar(scalar:number):Vec4 {
@@ -312,9 +297,7 @@ module Glib {
 
     /**
      * Divides `this` by the given vector.
-     * @chainable
-     * @method selfDivide
-     * @param {Vec4} other The vector to divide with.
+     * @param other The vector to divide with.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfDivide(other:IVec4):Vec4 {
@@ -327,8 +310,7 @@ module Glib {
 
     /**
      * Divides `this` by the given scalar.
-     * @method selfDivideScalar
-     * @param {Number} scalar The scalar to divide with.
+     * @param scalar The scalar to divide with.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfDivideScalar(scalar:number):Vec4 {
@@ -342,10 +324,8 @@ module Glib {
 
     /**
      * Multiplies `this` with the first vector and adds the second after.
-     * @chainable
-     * @method selfMultiplyAdd
-     * @param {Vec4} mul The vector to multiply.
-     * @param {Vec4} add The vector to add on top of the multiplication.
+     * @param mul The vector to multiply.
+     * @param add The vector to add on top of the multiplication.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfMultiplyAdd(mul:IVec4, add:IVec4):Vec4 {
@@ -358,10 +338,8 @@ module Glib {
 
     /**
      * Multiplies `this` with the first vector and adds the second scalar after.
-     * @chainable
-     * @method selfMultiplyScalarAdd
-     * @param {Number} mul The scalar to multiply.
-     * @param {Vec4} add The vector to add on top of the multiplication.
+     * @param mul The scalar to multiply.
+     * @param add The vector to add on top of the multiplication.
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfMultiplyScalarAdd(mul:number, add:IVec4):Vec4 {
@@ -374,9 +352,7 @@ module Glib {
 
     /**
      * Transforms `this` with the given quaternion. The `w` component of `this` keeps untouched.
-     * @chainable
-     * @method selfTransformQuat
-     * @param {Quat} quat
+     * @param quat
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfTransformQuat(quat:IVec4):Vec4 {
@@ -413,9 +389,7 @@ module Glib {
 
     /**
      * Transforms `this` with the given matrix.
-     * @chainable
-     * @method selfTransformMat4
-     * @param {Mat4} mat
+     * @param mat
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfTransformMat4(mat):Vec4 {
@@ -433,9 +407,7 @@ module Glib {
 
     /**
      * Transforms `this` with the given matrix. The `w` component of `this` keeps untouched.
-     * @chainable
-     * @method selfTransformMat3
-     * @param {Mat3} mat
+     * @param mat
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfTransformMat3(mat):Vec4 {
@@ -452,9 +424,7 @@ module Glib {
 
     /**
      * Transforms `this` with the given matrix. The `z` and `w` components of `this` keep untouched.
-     * @chainable
-     * @method selfTransformMat2
-     * @param {Mat3} mat
+     * @param mat
      * @return {Vec4} Reference to `this` for chaining.
      */
     selfTransformMat2(mat):Vec4 {
@@ -470,12 +440,10 @@ module Glib {
     /**
      * Creates a new vector. The method should be called with four or no arguments. If less than four arguments are given
      * then some components of the resulting vector are going to be `undefined`.
-     * @static
-     * @method create
-     * @param {Number} [x] The x component
-     * @param {Number} [y] The y component
-     * @param {Number} [z] The z component
-     * @param {Number} [w] The w component
+     * @param [x] The x component
+     * @param [y] The y component
+     * @param [z] The z component
+     * @param [w] The w component
      * @return {Vec4} A new vector.
      */
     static create(x:number, y:number, z:number, w:number):Vec4 {
@@ -487,8 +455,6 @@ module Glib {
 
     /**
      * Creates a new vector with all components set to 0.
-     * @static
-     * @method zero
      * @return {Vec4} A new vector.
      */
     static zero():Vec4 {
@@ -497,8 +463,6 @@ module Glib {
 
     /**
      * Creates a new vector with all components set to 1.
-     * @static
-     * @method one
      * @return {Vec4} A new vector.
      */
     static one():Vec4 {
@@ -507,10 +471,8 @@ module Glib {
 
     /**
      * Normalizes the given vector.
-     * @static
-     * @method normalize
-     * @param {Vec4} vec The vector to normalize.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vec The vector to normalize.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static normalize(vec:IVec4, out?:IVec4):IVec4 {
@@ -529,10 +491,8 @@ module Glib {
 
     /**
      * Inverts the given vector.
-     * @static
-     * @method invert
-     * @param {Vec4} vec The vector to invert.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vec The vector to invert.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static invert(vec:IVec4, out?:IVec4):IVec4 {
@@ -546,10 +506,8 @@ module Glib {
 
     /**
      * Negates this vector.
-     * @static
-     * @method negate
-     * @param {Vec4} vec The vector to negate.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vec The vector to negate.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static negate(vec:IVec4, out?:IVec4):IVec4 {
@@ -563,11 +521,9 @@ module Glib {
 
     /**
      * Adds two vectors.
-     * @static
-     * @method add
-     * @param {Vec4} vecA The first vector.
-     * @param {Vec4} vecB The second vector.
-     * @param {Vec4} out The vector to write to.
+     * @param vecA The first vector.
+     * @param vecB The second vector.
+     * @param out The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static add(vecA:IVec4, vecB:IVec4, out?:IVec4):IVec4 {
@@ -581,11 +537,9 @@ module Glib {
 
     /**
      * Adds a scalar to each component of a vector.
-     * @static
-     * @method addScalar
-     * @param {Vec4} vec The first vector.
-     * @param {Vec4} scalar The scalar to add.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vec The first vector.
+     * @param scalar The scalar to add.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static addScalar(vec:IVec4, scalar:number, out?:IVec4):IVec4 {
@@ -599,11 +553,9 @@ module Glib {
 
     /**
      * Subtracts the second vector from the first.
-     * @static
-     * @method subtract
-     * @param {Vec4} vecA The first vector.
-     * @param {Vec4} vecB The second vector.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vecA The first vector.
+     * @param vecB The second vector.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static subtract(vecA:IVec4, vecB:IVec4, out?:IVec4):IVec4 {
@@ -617,11 +569,9 @@ module Glib {
 
     /**
      * Subtracts a scalar from each component of a vector.
-     * @static
-     * @method subtractScalar
-     * @param {Vec4} vec The first vector.
-     * @param {Vec4} scalar The scalar to add.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vec The first vector.
+     * @param scalar The scalar to add.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static subtractScalar(vec:IVec4, scalar:number, out?:IVec4):IVec4 {
@@ -635,11 +585,9 @@ module Glib {
 
     /**
      * Multiplies two vectors.
-     * @static
-     * @method multiply
-     * @param {Vec4} vecA The first vector.
-     * @param {Vec4} vecB The second vector.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vecA The first vector.
+     * @param vecB The second vector.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static multiply(vecA:IVec4, vecB:IVec4, out?:IVec4):IVec4 {
@@ -653,11 +601,9 @@ module Glib {
 
     /**
      * Multiplies a scalar to each component of a vector.
-     * @static
-     * @method multiplyScalar
-     * @param {Vec4} vec The first vector.
-     * @param {Vec4} scalar The scalar to add.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vec The first vector.
+     * @param scalar The scalar to add.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static multiplyScalar(vec:IVec4, scalar:number, out?:IVec4):IVec4 {
@@ -671,11 +617,9 @@ module Glib {
 
     /**
      * Divides the components of the first vector by the components of the second vector.
-     * @static
-     * @method divide
-     * @param {Vec4} vecA The first vector.
-     * @param {Vec4} vecB The second vector.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vecA The first vector.
+     * @param vecB The second vector.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static divide(vecA:IVec4, vecB:IVec4, out?:IVec4):IVec4 {
@@ -689,11 +633,9 @@ module Glib {
 
     /**
      * Divides the components of the first vector by the scalar.
-     * @static
-     * @method divideScalar
-     * @param {Vec4} vec The first vector.
-     * @param {Number} scalar The scalar to use for division.
-     * @param {Vec4} out The vector to write to.
+     * @param vec The first vector.
+     * @param scalar The scalar to use for division.
+     * @param out The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static divideScalar(vec:IVec4, scalar:number, out?:IVec4):IVec4 {
@@ -708,12 +650,10 @@ module Glib {
 
     /**
      * Multiplies two vectors and adds the third vector.
-     * @static
-     * @method multiplyAdd
-     * @param {Vec4} vecA The vector to multiply.
-     * @param {Vec4} vecB The vector to multiply.
-     * @param {Vec4} add The vector to add on top of the multiplication.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vecA The vector to multiply.
+     * @param vecB The vector to multiply.
+     * @param add The vector to add on top of the multiplication.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static multiplyAdd(vecA:IVec4, vecB:IVec4, add:IVec4, out?:IVec4):IVec4 {
@@ -727,12 +667,10 @@ module Glib {
 
     /**
      * Multiplies a vector with a scalar and adds another vector.
-     * @static
-     * @method multiplyAdd
-     * @param {Vec4} vecA The vector to multiply.
-     * @param {Number} mul The scalar to multiply.
-     * @param {Vec4} add The vector to add on top of the multiplication.
-     * @param {Vec4} [out] The vector to write to.
+     * @param vecA The vector to multiply.
+     * @param mul The scalar to multiply.
+     * @param add The vector to add on top of the multiplication.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static multiplyScalarAdd(vecA:IVec4, mul:number, add:IVec4, out?:IVec4):IVec4 {
@@ -746,12 +684,10 @@ module Glib {
 
     /**
      * Performs a component wise clamp operation on the the given vector by using the given min and max vectors.
-     * @static
-     * @method clamp
-     * @param {Vec4} a The vector to clamp.
-     * @param {Vec4} min Vector with the minimum component values.
-     * @param {Vec4} max Vector with the maximum component values.
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The vector to clamp.
+     * @param min Vector with the minimum component values.
+     * @param max Vector with the maximum component values.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static clamp(a:IVec4, min:IVec4, max:IVec4, out?:IVec4):IVec4 {
@@ -777,12 +713,10 @@ module Glib {
 
     /**
      * Performs a component wise clamp operation on the the given vector by using the given min and max scalars.
-     * @static
-     * @method clampScalar
-     * @param {Vec4} a The vector to clamp.
-     * @param {Number} min The minimum scalar value.
-     * @param {Number} max The maximum scalar value.
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The vector to clamp.
+     * @param min The minimum scalar value.
+     * @param max The maximum scalar value.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static clampScalar(a:IVec4, min:number, max:number, out?:IVec4):IVec4 {
@@ -800,11 +734,9 @@ module Glib {
 
     /**
      * Performs a component wise min operation on the the given vectors.
-     * @static
-     * @method min
-     * @param {Vec4} a The first vector.
-     * @param {Vec4} b The second vector.
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The first vector.
+     * @param b The second vector.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static min(a:IVec4, b:IVec4, out?:IVec4):IVec4 {
@@ -826,11 +758,9 @@ module Glib {
 
     /**
      * Performs a component wise min operation on the the given vector and a scalar value.
-     * @static
-     * @method minScalar
-     * @param {Vec4} a The vector.
-     * @param {Number} scalar The scalar.
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The vector.
+     * @param scalar The scalar.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static minScalar(a:IVec4, scalar:number, out?:IVec4):IVec4 {
@@ -848,11 +778,9 @@ module Glib {
 
     /**
      * Performs a component wise max operation on the the given vectors.
-     * @static
-     * @method max
-     * @param {Vec4} a The first vector.
-     * @param {Vec4} b The second vector.
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The first vector.
+     * @param b The second vector.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static max(a:IVec4, b:IVec4, out?:IVec4):IVec4 {
@@ -874,11 +802,9 @@ module Glib {
 
     /**
      * Performs a component wise max operation on the the given vector and a scalar value.
-     * @static
-     * @method maxScalar
-     * @param {Vec4} a The vector.
-     * @param {Number} scalar The scalar.
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The vector.
+     * @param scalar The scalar.
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static maxScalar(a:IVec4, scalar:number, out?:IVec4):IVec4 {
@@ -896,12 +822,10 @@ module Glib {
 
     /**
      * Performs a component wise linear interpolation between the given two vectors.
-     * @static
-     * @method lerp
-     * @param {Vec4} a The first vector.
-     * @param {Vec4} b The second vector.
-     * @param {Number} t The interpolation value. Assumed to be in range [0:1].
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The first vector.
+     * @param b The second vector.
+     * @param t The interpolation value. Assumed to be in range [0:1].
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static lerp(a:IVec4, b:IVec4, t:number, out?:IVec4):IVec4 {
@@ -919,14 +843,12 @@ module Glib {
 
     /**
      * Performs a component wise barycentric interpolation of the given vectors.
-     * @static
-     * @method barycentric
-     * @param {Vec4} a The first vector.
-     * @param {Vec4} b The second vector.
-     * @param {Vec4} c The third vector.
-     * @param {Number} t1 The first interpolation value. Assumed to be in range [0:1].
-     * @param {Number} t2 The second interpolation value. Assumed to be in range [0:1].
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The first vector.
+     * @param b The second vector.
+     * @param c The third vector.
+     * @param t1 The first interpolation value. Assumed to be in range [0:1].
+     * @param t2 The second interpolation value. Assumed to be in range [0:1].
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static barycentric(a:IVec4, b:IVec4, c:IVec4, t1:number, t2:number, out?:IVec4):IVec4 {
@@ -944,12 +866,10 @@ module Glib {
 
     /**
      * Performs a component wise smooth interpolation between the given two vectors.
-     * @static
-     * @method smooth
-     * @param {Vec4} a The first vector.
-     * @param {Vec4} b The second vector.
-     * @param {Number} t The interpolation value. Assumed to be in range [0:1].
-     * @param {Vec4} [out] The vector to write to.
+     * @param a The first vector.
+     * @param b The second vector.
+     * @param t The interpolation value. Assumed to be in range [0:1].
+     * @param [out] The vector to write to.
      * @return {Vec4} The given `out` parameter or a new vector.
      */
     static smooth(a:IVec4, b:IVec4, t:number, out?:IVec4):IVec4 {
@@ -969,8 +889,6 @@ module Glib {
 
     /**
      * Tries to converts the given data to a vector
-     * @static
-     * @method convert
      * @param {Vec2|Vec3|Vec4|Quat|Array|number} data
      * @return {Vec4}
      */
