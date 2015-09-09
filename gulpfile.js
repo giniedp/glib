@@ -187,6 +187,7 @@ gulp.task('docs', function(){
   return gulp.src(tscSource).pipe(typedoc({
     target: "ES5",
     out: "dist/docs/",
+    mode: "file",
     name: "Glib"
   }));
 });
@@ -226,7 +227,7 @@ gulp.task('serve', serve({
   port: 3000
 }));
 
-gulp.task('default', ['watch', 'serve', 'watch:test']);
+gulp.task('default', ['watch', 'serve']);
 
 
 //
@@ -239,7 +240,7 @@ gulp.task('test', function (done) {
   }, done).start();
 });
 
-gulp.task('watch:test', function (done) {
+gulp.task('watch:test', ['watch', 'serve'], function (done) {
   new karma.Server({
     configFile: __dirname + '/karma.conf.js'
   }, done).start();
