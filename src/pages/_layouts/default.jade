@@ -16,22 +16,20 @@ body.grid-frame
     .grid-block.shrink.dark.title-bar
       spab Glib Framework
     .grid-block.horizontal
-      .grid-block.medium-2.vertical
+      .grid-block.vertical.shrink(style='width:250px;')
         each section, index in sections
           section.grid-content.block-list.small-12
             header= section.title
             ul
               each page in section.pages
                 li: a(href=page.href)=page.title
-      .grid-block.medium-10.vertical
-        .grid-block.shrink
-          .grid-container#example-content(style='padding:1em;')
-            block content
-              canvas#canvas(width="800" height="400")
-        .grid-block
-          .grid-content
-            pre(style='overflow:hidden;')
-              code.prettyprint#example-code
+      .grid-block.vertical.shrink#example-content(style='width:600px;')
+        block content
+          canvas#canvas(width="600" height="600")
+      .grid-block.vertical
+        .grid-content
+          pre(style='overflow-y:hidden; min-width:600px;')
+            code.prettyprint#example-code
   #example-scripts
     block script
   script(type='text/javascript').

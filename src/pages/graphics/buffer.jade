@@ -25,8 +25,6 @@ block script
     }
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({canvas: 'canvas'});
-    var width = device.canvas.width;
-    var height = device.canvas.height;
     var program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
       fragmentShader: document.getElementById('fragment-shader').textContent
@@ -37,22 +35,14 @@ block script
     });
     var vertices = device.createVertexBuffer({
       layout: {
-        position: {
-          type: "float",
-          offset: 0,
-          elements: 3
-        },
-        color: {
-          type: "float",
-          offset: 12,
-          elements: 3
-        }
+        position: { type: "float", offset:  0, elements: 3 },
+        color   : { type: "float", offset: 12, elements: 3 }
       },
       dataType: "float",
       data: [
         -1.0, -1.0, 0.0, 1, 0, 0,
-        1.0, -1.0, 0.0, 0, 1, 0,
-        0.0, 1.0, 0.0, 0, 0, 1
+         1.0, -1.0, 0.0, 0, 1, 0,
+         0.0,  1.0, 0.0, 0, 0, 1
       ]
     });
     Glib.utils.loop(function () {
