@@ -169,16 +169,10 @@ module Glib.Graphics {
       this.gl.uniformMatrix4fv(this.location, !!transpose, value.data);
     }
 
-    setTexture(value:Texture|RenderTarget) {
-      var texture;
+    setTexture(value:Texture) {
+      var texture = value;
       var device = this.device;
       var sampler = device.sampler[this.register] || device.sampler[0];
-
-      if (value instanceof RenderTarget) {
-        texture = value.texture;
-      } else {
-        texture = value;
-      }
 
       if (texture) {
         texture.update();

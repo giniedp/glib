@@ -14,7 +14,7 @@ module Glib.Render {
     width?: number;
     height?: number;
     camera?: Render.ICamera;
-    target?: Graphics.RenderTarget;
+    target?: Graphics.Texture;
     steps: Render.Step[];
   }
 
@@ -24,8 +24,8 @@ module Glib.Render {
     views: Render.View[];
     spriteBatch: Glib.Graphics.SpriteBatch;
 
-    private _freeTargets: {target:Graphics.RenderTarget, options:Graphics.RenderTargetOptions} [] = [];
-    private _usedTargets: {target:Graphics.RenderTarget, options:Graphics.RenderTargetOptions} [] = [];
+    private _freeTargets: {target:Graphics.Texture, options:Graphics.RenderTargetOptions} [] = [];
+    private _usedTargets: {target:Graphics.Texture, options:Graphics.RenderTargetOptions} [] = [];
 
     constructor(device:Graphics.Device) {
       this.device = device;
@@ -53,7 +53,7 @@ module Glib.Render {
       }
     }
 
-    acquireTarget(opts: Graphics.RenderTargetOptions): Graphics.RenderTarget {
+    acquireTarget(opts: Graphics.RenderTargetOptions): Graphics.Texture {
       var found;
       for (var item of this._freeTargets) {
         if (Manager._compareTargetOptions(item.options, opts)) {
@@ -70,7 +70,7 @@ module Glib.Render {
         // return
         return found.target;
       }
-      var target = new Graphics.RenderTarget(this.device, opts);
+      var target = this.device.createTexture2D(opts);
       this._usedTargets.push({
         target: target,
         options: opts
@@ -78,7 +78,7 @@ module Glib.Render {
       return target;
     }
 
-    releaseTarget(target: Graphics.RenderTarget) {
+    releaseTarget(target: Graphics.Texture) {
       var found;
       for (var item of this._usedTargets) {
         if (item.target === target) {
@@ -100,13 +100,13 @@ module Glib.Render {
         options: {
           width: target.width,
           height: target.height,
-          depth: !!target.depthHandle
+          depthFormat: target.depthFormat
         }
       });
     }
 
     private static _compareTargetOptions(a:Graphics.RenderTargetOptions, b:Graphics.RenderTargetOptions):boolean {
-      return (a.width === b.width) && (a.height === b.height) && (!!a.depth === !!b.depth);
+      return (a.width === b.width) && (a.height === b.height) && (!!a.depthFormat === !!b.depthFormat);
     }
 
     private _currentView: View;
@@ -139,7 +139,7 @@ module Glib.Render {
       for (var view of this.views) {
         if (!view.enabled || !view.target) continue;
         this.spriteBatch.draw({
-          texture: view.target.texture,
+          texture: view.target,
           dstX: view.x,
           dstY: view.y,
           dstWidth: view.width,
@@ -168,7 +168,7 @@ module Glib.Render {
       return view.target;
     }
 
-    endEffect(renderTarget?:Graphics.RenderTarget){
+    endEffect(renderTarget?:Graphics.Texture){
       if (!this._hasBegunEffect) {
         throw "beginEffect() must be called first"
       }

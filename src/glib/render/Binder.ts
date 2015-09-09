@@ -5,7 +5,6 @@ module Glib.Render {
   import Vec2 = Glib.Vec2;
   import extend = Glib.utils.extend;
   import Graphics = Glib.Graphics;
-  import RenderTarget = Graphics.RenderTarget;
 
   function lightUniforms(i) {
     return [

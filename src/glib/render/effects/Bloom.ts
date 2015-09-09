@@ -60,17 +60,8 @@ module Glib.Render.Effects {
       //manager.endEffect(baseTarget);
       //return;
       
-      var pingTarget = manager.acquireTarget({
-        width: baseTarget.width,
-        height: baseTarget.height,
-        depth: !!baseTarget.depthHandle
-      });
-      
-      var pongTarget = manager.acquireTarget({
-        width: baseTarget.width,
-        height: baseTarget.height,
-        depth: !!baseTarget.depthHandle
-      });
+      var pingTarget = manager.acquireTarget(baseTarget);
+      var pongTarget = manager.acquireTarget(baseTarget);
       
       this._updateGauss(1.0 / baseTarget.width, 1.0 / baseTarget.height);
 

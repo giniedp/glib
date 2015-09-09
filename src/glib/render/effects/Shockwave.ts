@@ -17,17 +17,13 @@ module Glib.Render.Effects {
 
     render(manager: Render.Manager) {
       var rt = manager.beginEffect();
-      var rt2 = manager.acquireTarget({
-        width: rt.width,
-        height: rt.height,
-        depth: !!rt.depthHandle
-      });
+      var rt2 = manager.acquireTarget(rt);
       
       manager.device.setRenderTarget(rt2);
       
       var program = this._program;
 
-      program.setUniform('texture', rt.texture);
+      program.setUniform('texture', rt);
       program.setUniform('time', this.time);
       
       manager.device.program = program;

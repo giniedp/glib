@@ -71,7 +71,13 @@ module Glib.Graphics {
     private _scissorState:ScissorState;
     private _viewportState:ViewportState;
     private _vertexAttribArrayState:VertexAttribArrayState;
-
+    private _registeredRenderTargets:Texture[] = [];
+    private _registeredDepthBuffers:DepthBuffer[] = [];
+    
+    private _frameBuffer:FrameBuffer;
+    private _customFrameBuffer:FrameBuffer;
+    private _customFrameBufferOptions:FrameBufferOptions = { textures:[], depthBuffer:null };
+    
     constructor(options:{
       canvas?: string|HTMLCanvasElement,
       context?: string|any,
@@ -351,18 +357,53 @@ module Glib.Graphics {
       
     }
 
-    setRenderTarget(target:RenderTarget) {
-      if (target) {
-        this.context.bindFramebuffer(this.context.FRAMEBUFFER, target.handle);
-      } else {
-        this.context.bindFramebuffer(this.context.FRAMEBUFFER, null);
-      }
+    setRenderTarget(texture:Texture) {
+      this.setRenderTargets(texture);
     }
 
-    setRenderTargets(...targets:RenderTarget[]) {
+    setRenderTargets(
+      rt01?: Texture, rt02?: Texture, rt03?: Texture, rt04?: Texture, 
+      rt05?: Texture, rt06?: Texture, rt07?: Texture, rt08?: Texture, 
+      rt09?: Texture, rt10?: Texture, rt11?: Texture, rt12?: Texture, 
+      rt13?: Texture, rt14?: Texture, rt15?: Texture, rt16?: Texture) {
+        var opts = this._customFrameBufferOptions;
+        opts.textures.length = arguments.length;
+        var firstTexture:Texture = null;
+        for (var i = 0; i < arguments.length; i++) {
+          opts.textures[i] = arguments[i];
+          if (arguments[i] instanceof Texture) {
+            firstTexture = firstTexture || arguments[i];
+          }
+        }
+        if (firstTexture && firstTexture.depthFormat) {
+          opts.depthBuffer = this.getSharedDepthBuffer(firstTexture);
+        } else {
+          opts.depthBuffer = null;
+        }
+        if (firstTexture) {
+          if (!this._customFrameBuffer) {
+            this._customFrameBuffer = new FrameBuffer(this, opts);
+          } else {
+            this._customFrameBuffer.setup(opts);  
+          }
+          this.frameBuffer = this._customFrameBuffer;
+        } else {
+          this.frameBuffer = null;
+        }
       return this;
     }
-
+    
+    get frameBuffer(): FrameBuffer {
+      return this._frameBuffer;
+    }
+    set frameBuffer(buffer:FrameBuffer) {
+      if (this._frameBuffer !== buffer) {
+        var handle = buffer ? buffer.handle : null;
+        this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle);
+        this._frameBuffer = buffer;
+      }
+    }
+    
     get vertexBuffer(): Buffer {
       return this._vertexBuffer;
     }
@@ -393,7 +434,7 @@ module Glib.Graphics {
         this._program = program;
       }
     }
-
+    
     private _bindAttribPointerAndLocation(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any) {
       layout = layout || vBuffer.layout;
       attributes = attributes || program.attributes;
@@ -415,6 +456,52 @@ module Glib.Graphics {
           channel.offset);
       }
       this._vertexAttribArrayState.commit(program.attributeLocations);
+    }
+
+    _registerRenderTarget(texture:Texture) {
+      var list = this._registeredRenderTargets;
+      var index = list.indexOf(texture);
+      if (index >= 0) return;
+      for (var i in list) {
+        if (list[i] == null) {
+          list[i] = texture;
+          return;
+        }
+      }
+      list.push(texture);
+    }
+
+    _unregisterRenderTarget(texture:Texture) {
+      var list = this._registeredRenderTargets;
+      var index = list.indexOf(texture);
+      if (index < 0) return;
+      list[index] = null;
+      if (list.length === (index + 1)) {
+        list.length = index;
+      }
+    }
+
+    _registerDepthBuffer(buffer: DepthBuffer) {
+      var list = this._registeredDepthBuffers;
+      var index = list.indexOf(buffer);
+      if (index >= 0) return;
+      for (var i in list) {
+        if (list[i] == null) {
+          list[i] = buffer;
+          return;
+        }
+      }
+      list.push(buffer);
+    }
+
+    _unregisterDepthBuffer(buffer: DepthBuffer) {
+      var list = this._registeredDepthBuffers;
+      var index = list.indexOf(buffer);
+      if (index < 0) return;
+      list[index] = null;
+      if (list.length === (index + 1)) {
+        list.length = index;
+      }
     }
 
     createIndexBuffer(options:any):Buffer {
@@ -452,11 +539,11 @@ module Glib.Graphics {
     createTexture(options:TextureOptions):Texture {
       return new Texture(this, options);
     }
-
-    createRenderTarget(options:RenderTargetOptions):RenderTarget {
-      return new RenderTarget(this, options);
+    
+    createRenderTarget(options:TextureOptions):Texture {
+      return new Texture(this, options);
     }
-
+    
     createTexture2D(options:TextureOptions = {}):Texture {
       options.type = TextureType.Texture2D;
       return new Texture(this, options);
@@ -477,6 +564,25 @@ module Glib.Graphics {
 
     createModel(options:ModelOptions):Model {
       return new Model(this, options);
+    }
+    
+    getSharedDepthBuffer(options:DepthBufferOptions) {
+      if (!options.depthFormat) {
+        return null;
+      }
+      
+      for(var buffer of this._registeredDepthBuffers) {
+        if (buffer.width === options.width && buffer.height === options.height && buffer.depthFormat === options.depthFormat) {
+          return buffer;
+        }
+      }
+      var buffer = new Graphics.DepthBuffer(this, {
+        width: options.width,
+        height: options.height,
+        depthFormat: options.depthFormat
+      })
+      this._registerDepthBuffer(buffer);
+      return buffer;
     }
   }
 }

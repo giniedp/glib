@@ -106,11 +106,6 @@ module Glib.Graphics {
      * @type {WebGLTexture}
      */
     handle:WebGLTexture = null;
-
-    /**
-     * The depth format of the depth stencil buffer to be used when the texture is used as a render target 
-     */
-    depthFormat:number = DepthFormat.None;
     
     /**
      * The cached time value of the currently running video.
@@ -127,6 +122,28 @@ module Glib.Graphics {
       this.device = device;
       this.gl = device.context;
       this.setup(options);
+    }
+
+    private _depthFormat: number;
+    /**
+     * The depth format of the depth stencil buffer to be used when the texture is used as a render target 
+     */
+    get depthFormat():number {
+      return this._depthFormat;
+    }
+    set depthFormat(value:number) {
+      this.device._unregisterRenderTarget(this);
+      this._depthFormat = value;
+      if (value != null) {
+        this.device._registerRenderTarget(this);  
+      }
+    }
+
+    /**
+     * Indicates whether this texture is intendet to be used as a renter target
+     */
+    get isRenderTarget():boolean {
+      return this._depthFormat != null;
     }
 
     /**
@@ -207,6 +224,7 @@ module Glib.Graphics {
       var pixelFormat = PixelFormat[options.pixelFormat] || this.pixelFormat;
       var handle = options.handle == null ? this.handle : options.handle;
       var genMipMaps = options.generateMipmap == null ? !!this.generateMipmap : !!options.generateMipmap;
+      var depthFormat = options.depthFormat != void 0 ? options.depthFormat : this.depthFormat;
       
       if ((handle && handle !== this.handle) || width !== this.width || height !== this.height || pixelFormat !== this.pixelFormat || pixelType !== this.pixelType || type !== this.type) {
         this.destroy();
@@ -223,6 +241,7 @@ module Glib.Graphics {
       this.pixelFormat = pixelFormat;
       this.generateMipmap = genMipMaps;
       this.ready = false;
+      this.depthFormat = depthFormat;
       
       var source = options.data;
 
@@ -246,6 +265,7 @@ module Glib.Graphics {
     }
 
     destroy():Texture {
+      this.device._unregisterRenderTarget(this);
       if (this.gl.isTexture(this.handle)) {
         this.gl.deleteTexture(this.handle);
         this.handle = null;

@@ -86,7 +86,7 @@ block script
     var renderTarget = device.createRenderTarget({
       width: 128,
       height: 64,
-      depth: true
+      depthFormat: Glib.Graphics.DepthFormat.DepthStencil
     });
     var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
     var program2 = device.createProgram({

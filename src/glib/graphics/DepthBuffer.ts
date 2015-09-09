@@ -63,6 +63,13 @@ module Glib.Graphics {
     }
 
     /**
+     * Returns the WebGl constant name of the currently used depth format
+     */
+    get depthFormatName():string {
+      return Glib.Graphics.DepthFormatName[this.depthFormat];
+    }
+    
+    /**
      * Re-initializes the instance
      * @param options The setup options to initialize the instance
      */
@@ -78,14 +85,15 @@ module Glib.Graphics {
       if (width == null) throw "missing width option";
       if (height == null) throw "missing height option";
       if (format == null) format = DepthFormat.DepthStencil;
-      
+
       var handle = options.handle;
       
       if ((handle && (handle !== this.handle)) || this.width !== width || this.height !== height || this.depthFormat !== format){
         this.destroy();
         this.handle = handle;
       }
-      
+      this.device._registerDepthBuffer(this);
+
       if (!this.handle || !this.gl.isRenderbuffer(this.handle)) {
         this.handle = this.gl.createRenderbuffer(this.gl.RENDERBUFFER);
         this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, this.handle);
@@ -104,6 +112,7 @@ module Glib.Graphics {
      * Deletes the wrapped WebGLRenderbuffer
      */
     destroy(){
+      this.device._unregisterDepthBuffer(this);
       if (this.gl.isRenderbuffer(this.handle)){
         this.gl.deleteRenderbuffer(this.handle);
         this.handle = null;
