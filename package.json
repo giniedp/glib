@@ -32,7 +32,7 @@
     "gulp-sass": "^2.0.4",
     "gulp-serve": "^1.0.0",
     "gulp-server": "^0.1.0",
-    "gulp-typedoc": "^1.2.0",
+    "gulp-typedoc": "^1.2.1",
     "gulp-typescript": "^2.7.8",
     "gulp-util": "^3.0.6",
     "inflection": "^1.7.1",
