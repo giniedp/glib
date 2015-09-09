@@ -28,17 +28,17 @@ module Glib.utils {
    * @method copy
    * @return {*} The copied object
    */
-  export function copy(...deepSrcDst:any[]):any {
+  export function copy(srcOrDeep:any, srcOrDest?:any, dest?:any):any {
     var deep = false;
     var src, dst;
-    if (typeof deepSrcDst[0] === "boolean" ) {
-      deep = deepSrcDst[0];
-      src = deepSrcDst[1];
-      dst = deepSrcDst[2];
+    if (typeof srcOrDeep === "boolean") {
+      deep = srcOrDeep;
+      src = srcOrDest;
+      dst = dest;
     } else {
       deep = false;
-      src = deepSrcDst[0];
-      dst = deepSrcDst[1];
+      src = srcOrDeep;
+      dst = srcOrDest;
     }
     
     dst = Array.isArray(src) ? [] : {};
@@ -69,7 +69,7 @@ module Glib.utils {
    * @param {...Object} src Source object(s).
    * @return {Object} Reference to `dst`.
    */
-  export function extend<T>(dst:T, ...srcRest:any[]):T {
+  export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?: any): T {
     var length = arguments.length;
     if (length < 2 || dst == null) {
       return dst;
