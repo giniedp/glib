@@ -12,11 +12,14 @@ module Glib.Graphics {
     private _colorAttachments: Texture[] = [];
     private _depthAttachment: DepthBuffer;
     private _colorAttachmentCount:number = 0;
+    private _colorAttachmentPoints:number[] = [];
     private _maxColorAttachments:number = 1;
-
+    private _drawBuffersExtension:any;
+    
     constructor(device: Device, options?:FrameBufferOptions) {
       this.device = device;
       this.gl = device.context;
+      this._drawBuffersExtension = device.capabilities.extension("WEBGL_draw_buffers");
       this._maxColorAttachments = device.capabilities.maxColorAttachments;
       this.setup(options);
     }
@@ -32,14 +35,14 @@ module Glib.Graphics {
         throw "All attachments must have same width and height"
       }
       var textures = options.textures || []
-      var max = Math.max(this._colorAttachments.length, textures.length);
-      if (max > this._maxColorAttachments) {
-        throw `Requested to attach ${max} color attachments but only ${this._maxColorAttachments} are supported.`
+      var targetCount = Math.max(this._colorAttachments.length, textures.length);
+      if (targetCount > this._maxColorAttachments) {
+        throw `Requested to attach ${targetCount} color attachments but only ${this._maxColorAttachments} are supported.`
       }
       
       var needsRebind = false;
       // ensure framebuffer is created
-      if (!this.gl.isFramebuffer(this.handle)) {
+      if (this.handle == null || !this.gl.isFramebuffer(this.handle)) {
         this.handle = this.gl.createFramebuffer();
         needsRebind = true;
       }
@@ -51,7 +54,7 @@ module Glib.Graphics {
       
       // replace color attachments
       var count = 0;
-      for (var i = 0; i < max; i++) {
+      for (var i = 0; i < targetCount; i++) {
         var oldTexture = this._colorAttachments[i];
         var newTexture = textures[i];
         // skip binding if the new texture is already bound
@@ -63,17 +66,23 @@ module Glib.Graphics {
         if (newTexture) {
           gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, newTexture.handle, 0);
           this._colorAttachments[i] = newTexture;
+          this._colorAttachmentPoints[i] = gl.COLOR_ATTACHMENT0 + i;
           count+=1;
         }
         // unbind the old texture 
         else {
           gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, null, 0);
           this._colorAttachments[i] = null; 
+          this._colorAttachmentPoints[i] = 0;
         }
       }
       // ensure attachment array length
       this._colorAttachments.length = textures.length;
+      this._colorAttachmentPoints.length = textures.length;
       this._colorAttachmentCount = count;
+      if (this._drawBuffersExtension) {
+        this._drawBuffersExtension.drawBuffersWEBGL(this._colorAttachmentPoints);  
+      }
       
       var oldBuffer = this._depthAttachment;
       var newBuffer = options.depthBuffer;
@@ -95,7 +104,7 @@ module Glib.Graphics {
     }
 
     destroy() {
-      if (this.gl.isFramebuffer(this.handle)) {
+      if (this.handle != null && this.gl.isFramebuffer(this.handle)) {
         this.gl.deleteFramebuffer(this.handle);
         this.handle = null;
       }

@@ -266,7 +266,7 @@ module Glib.Graphics {
 
     destroy():Texture {
       this.device._unregisterRenderTarget(this);
-      if (this.gl.isTexture(this.handle)) {
+      if (this.handle != null && this.gl.isTexture(this.handle)) {
         this.gl.deleteTexture(this.handle);
         this.handle = null;
       }
