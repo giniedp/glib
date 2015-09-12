@@ -37,10 +37,17 @@ block script
       fragmentShader: document.getElementById('fragment-shader').textContent
     });
 
+    var vars = {
+      flipY: true
+    };
+
     Glib.utils.loop(function(){
       device.program = program;
       device.program.setUniform("texture", texture);
-      device.drawQuad(true);
+      device.drawQuad(vars.flipY);
     });
-    
+
+    demoGui(function(gui){
+      gui.add(vars, 'flipY');
+    });
     

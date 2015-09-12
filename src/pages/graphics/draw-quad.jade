@@ -2,17 +2,19 @@
 extends ./../_layouts/default.jade
 block script
 
-  script#vertex-shader(type='text/ymlsl').
+  script#vertex-shader(type='text/glsl').
     precision highp float;
     precision highp int;
-    attribute vec3 position;
-    attribute vec2 texture;
+    // @binding position
+    attribute vec3 vPosition;
+    // @binding texture
+    attribute vec2 vTexture;
     varying vec2 texCoord;
     void main(void) {
-      texCoord = texture;
-      gl_Position = vec4(position, 1.0);
+      texCoord = vTexture;
+      gl_Position = vec4(vPosition, 1.0);
     }
-  script#fragment-shader(type='text/ymlsl').
+  script#fragment-shader(type='text/glsl').
     precision highp float;
     precision highp int;
     // @filter LinearWrap

@@ -13,18 +13,46 @@ block script
     var GREEN = 0xFF00FF00;
     var RED   = 0xFF0000FF;
     var WHITE = 0xFFFFFFFF;
+    var BLACK = 0xFF000000;
 
-    device.scissorState = { x: 0, y: 0, width: halfWidth, height: halfHeight, enable: true };
-    device.clear(RED);
+    var vars = [{
+      color: RED,
+      state: { enable: true, x: 0, y: 0, width: halfWidth, height: halfHeight }
+    }, {
+      color: GREEN,
+      state: { enable: true, x: halfWidth, y: 0, width: halfWidth, height: halfHeight }
+    }, {
+      color: BLUE,
+      state: { enable: true, x: 0, y: halfHeight, width: halfWidth, height: halfHeight }
+    }, {
+      color: WHITE,
+      state: { enable: true, x: halfWidth, y: halfHeight, width: halfWidth, height: halfHeight }
+    }];
 
-    device.scissorState = { x: halfWidth };
-    device.clear(GREEN);
+    Glib.utils.loop(function(){
+      device.clear(BLACK);
+      for (var i = 0; i < 4; i++) {
+        device.scissorState = vars[i].state;
+        device.clear(vars[i].color);
+      }
+    });
 
-    device.scissorState = { y: halfHeight };
-    device.clear(BLUE);
 
-    device.scissorState = { x: 0 };
-    device.clear(WHITE);
+    demoGui(function(gui){
+      var folders = [];
+      folders.push(gui.addFolder("State 1 (RED)"));
+      folders.push(gui.addFolder("State 2 (GREEN)"));
+      folders.push(gui.addFolder("State 3 (BLUE)"));
+      folders.push(gui.addFolder("State 4 (WHITE)"));
 
-    device.scissorState = {enable: false};
-
+      for (var i = 0; i < 4; i++) {
+        var f = folders[i];
+        var v = vars[i];
+        f.add(v.state, 'enable');
+        f.add(v.state, 'x').min(0).max(halfWidth);
+        f.add(v.state, 'y').min(0).max(halfHeight);
+        f.add(v.state, 'width').min(0).max(halfWidth);
+        f.add(v.state, 'height').min(0).max(halfHeight);
+        f.open();
+      }
+    });
