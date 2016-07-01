@@ -27,9 +27,9 @@ block script
 
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({canvas: 'canvas'});
-    window.device = device;
+    self.device = device;
     
-    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
+    var texture = device.createTexture({ data: assetPath("/assets/textures/proto_blue.png") });
     var program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
       fragmentShader: document.getElementById('fragment-shader').textContent

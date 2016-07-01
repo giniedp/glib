@@ -28,6 +28,7 @@
     "src/glib/base/common.ts",
     "src/glib/base/logging.ts",
     "src/glib/base/path.ts",
+    "src/glib/base/worker.ts",
     "src/glib/input/Device.ts",
     "src/glib/input/GamePads.ts",
     "src/glib/input/Keyboard.ts",

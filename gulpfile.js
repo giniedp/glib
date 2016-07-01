@@ -24,6 +24,9 @@ var PATHS = {
     '!src/pages/layouts/*.jade',
     'src/**/*.jade'
   ],
+  indexPage: [
+    'src/index.jade'
+  ],
   styles: [
     'src/pages/style.scss'
   ],
@@ -202,7 +205,18 @@ gulp.task('pages:scss', function(){
 });
 
 gulp.task('pages:jade', function(){
-  return glibPages(PATHS.pages).pipe(dest());
+  glibPages({
+    src: PATHS.indexPage,
+    pages: PATHS.pages, 
+    cdn: '/' + PATHS.dist
+  }).pipe(gulp.dest('./'));
+  
+  return glibPages({
+    src: PATHS.pages,
+    pages: PATHS.pages,
+    //cdn: '',
+    cdn: '/' + PATHS.dist
+  }).pipe(dest());
 });
 
 gulp.task('pages', ['pages:scss', 'pages:jade']);
@@ -223,7 +237,7 @@ gulp.task('watch', ['compile', 'pages', 'assets'], function(){
 });
 
 gulp.task('serve', serve({
-  root: ['dist'],
+  root: ['./'],
   port: 3000
 }));
 

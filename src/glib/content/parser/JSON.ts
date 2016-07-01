@@ -1,5 +1,5 @@
 module Glib.Content.Parser {
 
-  export var JSON = window['JSON'];
+  export var JSON = self['JSON'];
 
 }

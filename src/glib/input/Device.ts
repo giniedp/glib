@@ -29,7 +29,7 @@ module Glib.Input {
   }
 
   export class Device {
-    el:any = window;
+    el:any = self;
     state:any = {};
     _onDeviceOrientation:(e) => void;
     _onDeviceMotion:(e) => void;

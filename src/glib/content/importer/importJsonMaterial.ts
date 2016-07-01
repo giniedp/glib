@@ -4,7 +4,7 @@ module Glib.Content.Importer {
   import debug = Glib.utils.debug;
 
   function loadEffect(asset:AssetData, data, manager:Manager){
-    var effectUrl = path.merge(asset.url, data.effect);
+    var effectUrl = path.merge(asset.url, manager.urlMap[data.effect] || data.effect);
     //debug('[ImportJsonMaterial] loadEffect', effectUrl);
     return manager.load('Effect', effectUrl)
       .then(function(effect){

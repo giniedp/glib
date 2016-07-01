@@ -1,12 +1,12 @@
 module Glib.utils {
   var consoleDelegate = function (name:string):(msg:any, ...text:any[])=>string {
-    if (!window.console || !window.console[name]) {
+    if (!self.console || !self.console[name]) {
       return function (msg:any, ...text:any[]):string {
         return "";
       };
     }
     return function (msg:any, ...text:any[]):string {
-      return window.console[name].apply(window.console, arguments);
+      return self.console[name].apply(self.console, arguments);
     };
   };
 

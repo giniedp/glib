@@ -57,7 +57,7 @@ module Glib.Components {
       }
 
       if (this.preferTimeout) {
-        window.setTimeout(this._tickFunction, 1);
+        self.setTimeout(this._tickFunction, 1);
       } else {
         requestFrame(this._tickFunction);
       }

@@ -34,7 +34,7 @@ block script
     var shaderCollection = Glib.utils.parseYamlShader(shaderCode);
     var shader = shaderCollection.techniques[0].passes[0];
     var program = device.createProgram(shader);
-    window.device = device;
+    self.device = device;
     function loop() {
       program.uniforms.time.set(Glib.utils.getTime() * 0.001);
       device.program = program;

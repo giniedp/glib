@@ -40,12 +40,12 @@ block script
 
       var material;
       this.assets
-        .load("Material", "/assets/materials/default.json")
+        .load("Material", assetPath("/assets/materials/default.json"))
         .then(function(m){
           material = m;
         })
         .then(function(){
-          return this.assets.load("Image", "/assets/heightmaps/test2.png");
+          return this.assets.load("Image", assetPath("/assets/heightmaps/test2.png"));
         }.bind(this))
         .then(function (image) {
           this.bttRoot = new Glib.Terrain.BTTRoot(this.device, {

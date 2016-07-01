@@ -25,8 +25,8 @@
     return inflect.humanize(path.basename(file, path.extname(file)).replace('-', '_'));
   }
 
-  function makeFileHref(file) {
-    return file.replace(/^src/, '').replace(/.jade$/, '.html');
+  function makeFileHref(file, cdn) {
+    return file.replace(/^src/, cdn).replace(/.jade$/, '.html');
   }
 
   function makeFileSection(file) {
@@ -48,8 +48,13 @@
     return section.pages;
   }
 
-  module.exports = function(src){
-    var files = glob(src);
+  module.exports = function(options){
+    options = options || {} 
+    var cdn = options.cdn || ''
+    var src = options.src || 'src'
+    var pages = options.pages || src
+
+    var files = glob(pages);
     var sections = {};
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
@@ -58,17 +63,17 @@
       var meta = parseMetaComment(content);
       if (meta.ignore) continue;
       meta.title = meta.title || makeFileTitle(file);
-      meta.href = meta.href || makeFileHref(file);
+      meta.href = meta.href || makeFileHref(file, cdn);
 
       var section = makeFileSection(file) || 'glib';
-      var pages = getSectionPages(sections, section);
-      pages.push(meta);
+      getSectionPages(sections, section).push(meta);
     }
 
     return gulp.src(src).pipe(jade({
       pretty: true,
       locals: {
-        sections: sections
+        sections: sections,
+        cdn: cdn
       }
     }));
   };

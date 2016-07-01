@@ -4,7 +4,7 @@ module Glib {
     catch:(arg:any, ...argRest:any[])=>any|IPromise
   }
 
-  export var Promise:any = window["Promise"];
+  export var Promise:any = self["Promise"];
 
   if (Promise && !Promise['defer']) {
     Promise['defer'] = function(){

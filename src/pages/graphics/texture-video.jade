@@ -25,7 +25,7 @@ block script
     var device = new Glib.Graphics.Device({canvas: 'canvas'});
         
     var video = document.createElement('video');
-    video.src = "/assets/sintel.mp4";
+    video.src = assetPath("/assets/sintel.mp4");
     video.addEventListener("canplaythrough", function() {
       video.play();
     }, true);

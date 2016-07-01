@@ -4,8 +4,9 @@ module Glib.Content {
   import debug = Glib.utils.debug;
   import extend = Glib.utils.extend;
 
+  export var CDN = '';
   function normalizeUrl(url, baseUrl?:string) {
-    return utils.path.merge(baseUrl || window.location.origin, url);
+    return utils.path.merge(baseUrl || self.location.origin, url);
   }
 
   function cacheResponse(xhr) {
@@ -44,9 +45,11 @@ module Glib.Content {
   }
 
   export class Manager {
-
     assets = {};
     device:Glib.Graphics.Device;
+    urlMap: any = {
+      basicEffect: '/assets/shader/basic.yml'
+    }
 
     constructor(device:Glib.Graphics.Device) {
       this.device = device;

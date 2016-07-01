@@ -2,11 +2,11 @@
 doctype html
 html(lang="en")
   head
-    link(rel="stylesheet" href="/style.css")
+    link(rel="stylesheet")&attributes({'href': cdn + '/style.css'})
     script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
     script(type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js')
     script(type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js')
-    script(type='text/javascript' src='/scripts/glib.js')
+    script(type='text/javascript')&attributes({'src': cdn + '/scripts/glib.js'})
 
     style().
       #canvas {
@@ -40,8 +40,40 @@ html(lang="en")
         }
         callback(demoGuiInstance);
       };
-
-
+    script(type='text/javascript').
+      var entityMap = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': '&quot;',
+        "'": '&#39;',
+        "/": '&#x2F;'
+      };
+      function escapeHtml(string) {
+        return String(string).replace(/[&<>"'\/]/g, function (s) {
+          return entityMap[s];
+        });
+      }
+      function removeIndents(string) {
+        var lines = string.split("\n");
+        var min = 10;
+        for (var i = 0; i<lines.length; i++){
+          var line = lines[i];
+          if (!line) continue;
+          var match = line.match(/^(\s+)/)
+          if (!match) return string;
+          min = Math.min(min, match[1].length);
+        }
+        for (var i = 0; i<lines.length; i++){
+          var line = lines[i];
+          if (!line) continue;
+          lines[i] = line.substring(min);
+        }
+        return lines.join("\n");
+      }
+      function assetPath(path) {
+        return '#{cdn}' + path
+      }
 
 block head
 body.grid-frame
@@ -51,7 +83,7 @@ body.grid-frame
     .grid-block.horizontal
       .grid-block.vertical.shrink(style='width:250px;')
         each section, index in sections
-          section.grid-content.block-list.small-12
+          section.grid-content.block-list.small-12.shrink
             header= section.title
             ul
               each page in section.pages
@@ -65,39 +97,9 @@ body.grid-frame
           canvas#canvas.thumbnail(width=800 height=450)
         #dat-gui
 
+
   #example-scripts
     block script
   script(type='text/javascript').
-    var entityMap = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': '&quot;',
-      "'": '&#39;',
-      "/": '&#x2F;'
-    };
-    function escapeHtml(string) {
-      return String(string).replace(/[&<>"'\/]/g, function (s) {
-        return entityMap[s];
-      });
-    }
-    function removeIndents(string) {
-      var lines = string.split("\n");
-      var min = 10;
-      for (var i = 0; i<lines.length; i++){
-        var line = lines[i];
-        if (!line) continue;
-        var match = line.match(/^(\s+)/)
-        if (!match) return string;
-        min = Math.min(min, match[1].length);
-      }
-      for (var i = 0; i<lines.length; i++){
-        var line = lines[i];
-        if (!line) continue;
-        lines[i] = line.substring(min);
-      }
-      return lines.join("\n");
-    }
     var text = removeIndents($('#example-content').html()) + "\n" + removeIndents($('#example-scripts').html());
     $('#example-code').html(escapeHtml(text));
-

@@ -90,13 +90,13 @@ module Glib.utils {
    * @return {number}
    */
   export var getTime = (function(){
-    if (window.performance && window.performance.now) {
+    if (self.performance && self.performance.now) {
       return function(){
-        return window.performance.now();
+        return self.performance.now();
       }
-    } else if (window['mozAnimationStartTime']){
+    } else if (self['mozAnimationStartTime']){
       return function(){
-        return window['mozAnimationStartTime'];
+        return self['mozAnimationStartTime'];
       }
     } else {
       return function(){
@@ -106,10 +106,10 @@ module Glib.utils {
   }());
 
   var raf:any =
-    window['requestAnimationFrame'] ||
-    window['mozRequestAnimationFrame'] ||
-    window['webkitRequestAnimationFrame'] ||
-    window['msRequestAnimationFrame'];
+    self['requestAnimationFrame'] ||
+    self['mozRequestAnimationFrame'] ||
+    self['webkitRequestAnimationFrame'] ||
+    self['msRequestAnimationFrame'];
 
   /**
    *
@@ -122,7 +122,7 @@ module Glib.utils {
       }
     } else {
       return function(callback) {
-        window.setTimeout(callback, 1);
+        self.setTimeout(callback, 1);
       };
     }
   }());

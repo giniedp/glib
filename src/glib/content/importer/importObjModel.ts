@@ -89,11 +89,26 @@ module Glib.Content.Importer {
     });
   }
 
+  export function objToJson(data:AssetData) {
+    var obj = Parser.OBJ.parse(data.content);
+    var json = convert(obj);
+    return json
+  }
+  Glib.WebWorker.register("objToJson", objToJson)
+  export function objToJsonAsync(data:AssetData): IPromise {
+    return Glib.WebWorker.execute("objToJson", data)
+  }
+
   export function importObjModel(data:AssetData, manager:Manager) {
+    return objToJsonAsync(data).then(function(json) {
+      return loadJsonModel(json, data, manager)
+    })
+    /*
     //debug('[ImportObjModel]', data);
     var obj = Parser.OBJ.parse(data.content);
     var json = convert(obj);
     return loadJsonModel(json, data, manager);
+    */
   }
 
   Manager.addImporter('obj', 'Model', importObjModel);

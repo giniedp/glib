@@ -1,6 +1,7 @@
 module Glib.Graphics {
 
   export interface ModelMeshOptions {
+    name?:string,
     boundingBox?: number[],
     boundingSphere?: number[],
     materialId?: number|string,

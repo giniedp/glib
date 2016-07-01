@@ -11,7 +11,7 @@ block script
           renderable: "Renderable"
         }, this);
         this.assets
-          .load("Material", "/assets/materials/default.json")
+          .load("Material", assetPath("/assets/materials/default.json"))
           .then(function (material) {
             var builder = new Glib.Graphics.Geometry.Builder();
             builder.transform = Glib.Mat4.createTranslation(0, 0, 0);

@@ -88,7 +88,7 @@ block script
       height: 64,
       depthFormat: Glib.Graphics.DepthFormat.DepthStencil
     });
-    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
+    var texture = device.createTexture({ data: assetPath("/assets/textures/proto_blue.png") });
     var program2 = device.createProgram({
       vertexShader: document.getElementById('vertex-shader2').textContent,
       fragmentShader: document.getElementById('fragment-shader2').textContent

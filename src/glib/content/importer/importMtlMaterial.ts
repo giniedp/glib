@@ -2,7 +2,7 @@ module Glib.Content.Importer {
 
   import debug = Glib.utils.debug;
 
-  function convertMaterial(m:Content.Parser.MtlData) {
+  function convertMaterial(m:Content.Parser.MtlData, manager:Manager) {
     var result:Glib.Graphics.MaterialOptions = {
       name: m.name,
       parameters: {}
@@ -49,7 +49,8 @@ module Glib.Content.Importer {
       result.blendState = "AlphaBlend";
     }
     
-    result.effect = "/assets/shader/basic.yml"
+    result.effect = "basicEffect"
+    //result.effect = "/assets/shader/basic.yml"
     /*
     if (m.illum == "0") {
       result.technique = "basic"
@@ -63,7 +64,9 @@ module Glib.Content.Importer {
 
   export function importMtlMaterial(asset:AssetData, manager:Manager):IPromise {
     //debug('[ImportMtlMaterial]', asset);
-    var json:any = Parser.MTL.parse(asset.content).map(convertMaterial);
+    var json:any = Parser.MTL.parse(asset.content).map(function(material) {
+      return convertMaterial(material, manager)
+    });
     return Importer.loadJsonMaterial(json, asset, manager);
   }
 
