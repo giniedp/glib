@@ -17,6 +17,10 @@ module Glib.Components {
       return this.manager.load(type, asset);
     }
 
+    loadAssets(config: any):IPromise {
+      return this.manager.loadAssets(config);
+    }
+
     unload() {
       return this.manager.unload();
     }

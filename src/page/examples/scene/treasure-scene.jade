@@ -1,13 +1,8 @@
-extends ./../_layouts/default.jade
-block content
-  pre
-    code.prettyprint#debug-container
-  .thumbnail(style="padding:20px")
-    canvas#canvas(width="800" height="400")
+extends ./../../_layouts/example.jade
 block script
   script(type='text/javascript').
-    Glib.WebWorker.activate("http://localhost:3000/dist/scripts/glib.js")
-    //Glib.WebWorker.activate(assetPath("/scripts/glib.js'"))
+    //Glib.WebWorker.activate("http://localhost:3000/scripts/glib.js")
+    //Glib.WebWorker.activate("/scripts/glib.js'")
     game = Glib
       .createGame({
         canvas: document.getElementById("canvas"),
@@ -44,14 +39,14 @@ block script
       this.renderable = this.node.getService("Renderable");
       this.assets
         //.load("Model", "/assets/models/lost_empire/lost_empire.obj")
-        //.load("Model", assetPath("/assets/models/KingsTreasure.obj"))
-        .load("Model", assetPath("/assets/models/minecraft_world/ghv.obj"))
+        //.load("Model", "/assets/models/KingsTreasure.obj")
+        .load("Model", "/assets/models/minecraft_world/ghv.obj")
         //.load("Model", "/assets/models/sibenik/sibenik.obj")
         .then(function (model) {
           this.renderable.model = model;
         }.bind(this))
         .catch(function() {
-          
+
         }.bind(this));
     };
     DemoComponent.prototype.update = function (time) {

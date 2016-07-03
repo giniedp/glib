@@ -75,14 +75,13 @@ module Glib.Components {
     update(){
       var t = this.node.s.Transform;
       if (t) {
-        this.direction.x = t.worldMat.backward[0];
-        this.direction.y = t.worldMat.backward[1];
-        this.direction.z = t.worldMat.backward[2];
+        this.direction.x = -t.worldMat.backward[0];
+        this.direction.y = -t.worldMat.backward[1];
+        this.direction.z = -t.worldMat.backward[2];
         
         this.position.x = t.worldMat.translation[0];
         this.position.y = t.worldMat.translation[1];
         this.position.z = t.worldMat.translation[2];  
-        
       }
       
       this.updatePackedData();
@@ -90,7 +89,7 @@ module Glib.Components {
 
     updatePackedData(){
       var data = this.packedData;
-
+      
       data.position.x = this.position.x;
       data.position.y = this.position.y;
       data.position.z = this.position.z;

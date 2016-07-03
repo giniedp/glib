@@ -128,6 +128,41 @@ module Glib.Content {
       return Manager.downloadPackage(options);
     }
 
+    loadAssets(config: any): IPromise {
+      let manager = this
+      let result = {};
+      
+      let promises = [];
+      Object.keys(config).forEach(function(key) {
+        let type = key
+        let value = config[type]
+        if (Glib.utils.isString(value)) {
+          promises.push(manager.load(type, value).then(function(res) {
+            result[key] = res
+          }))
+        } else if (Glib.utils.isArray(value)) {
+          let arr = result[key] = []
+          value.forEach(function(path) {
+            promises.push(manager.load(type, path).then(function(res) {
+              arr.push(res)
+            }))
+          })
+        } else if (Glib.utils.isObject(value)) {
+          let obj = result[key] = {}
+          Object.keys(value).forEach(function(key) {
+            promises.push(manager.load(type, value[key]).then(function(res) {
+              obj[key] = res
+            }))
+          })
+        } else {
+          throw "invalid configuration"
+        }
+      })
+
+      return Glib.Promise.all(promises).then(function() {
+        return result
+      })
+    }
     load(assetType, assetPath:string):IPromise {
 
       // hash to cache the asset
@@ -145,35 +180,35 @@ module Glib.Content {
         return Promise.resolve(result);
       }
 
-      // get the raw data from which to load the asset
-      var data = Manager.getDownload(assetPath);
-      if (!data) {
-        debug(`[Manager] ${key} begin download`);
-        return this.download({url: assetPath})
-          .then(() => {
-            debug(`[Manager] ${key} retry load`);
-            return this.load(assetType, assetPath);
-          });
-      } else {
-        debug(`[Manager] ${key} download exists`);
-      }
-
-      // find the reader who will process tha data into an asset
-      var importer = Manager.getImporterForAsset(data, assetType);
-      if (!importer) {
-        return Promise.reject(`Reader not found for type: ${String(assetType)}`);
-      }
-      
-      if (typeof importer !== 'function') {
-        return Promise.reject(`Reader ${String(assetType)} is not a function`);
-      }
-      this.assets[key] = Promise
-        .resolve(importer(data, this))
-        .then((result) => {
+      return this.assets[key] = Promise.resolve(function() {
+        var data = Manager.getDownload(assetPath);
+        if (!data) {
+          debug(`[Manager] ${key} begin download`);
+          return this.download({url: assetPath}).then(function() {
+            debug(`[Manager] ${key} download done`);
+            return Manager.getDownload(assetPath)
+          })
+        } else {
+          debug(`[Manager] ${key} download exists`);
+          return data
+        }
+      }.bind(this)()).then(function(data) {
+        if (!data) {
+          return Promise.reject(`no data found for asset: ${assetPath}`);
+        }
+        console.log(data)
+        var importer = Manager.getImporterForAsset(data, assetType);
+        if (!importer) {
+          return Promise.reject(`no importer found for type: ${String(assetType)}`);
+        }
+        if (typeof importer !== 'function') {
+          return Promise.reject(`importer '${String(assetType)}' is not a function`);
+        }
+        return Promise.resolve(importer(data, this)).then((result) => {
           this.assets[key] = result;
           return result;
         });
-      return this.assets[key];
+      }.bind(this))
     }
 
     unload() {

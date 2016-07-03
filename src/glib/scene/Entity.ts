@@ -183,19 +183,29 @@ module Glib {
      * @param {string|function} templates
      * @returns {Glib.Entity}
      */
-    buildChild(...templates:any[]):Entity {
+    buildChild(...config:any[]):Entity {
       var child = new Entity();
       this.addChild(child);
 
-      for (var item of templates) {
+      for (var item of config) {
         if (typeof item === 'string') {
           child.applyTemplate(item);
         } else if (typeof item === 'function') {
           child.applyTemplate(item);
         } else {
           child.name = item.name || child.name;
-          for (var subItem of item.templates || []) {
-            child.applyTemplate(subItem);
+          var templates = item.templates || []
+          var name: any;
+          if (Glib.utils.isArray(templates)) {
+            for (name of templates) {
+              child.applyTemplate(name);
+            }
+          } else if (Glib.utils.isObject(templates)) {
+            for (name in templates) {
+              child.applyTemplate(name, templates[name]);
+            }
+          } else if (Glib.utils.isString(templates)) {
+            child.applyTemplate(templates);
           }
         }
       }

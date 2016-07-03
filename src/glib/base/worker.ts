@@ -17,7 +17,7 @@ module Glib.WebWorker {
 
   export function deactivate() {
     active = false
-    workers.forEach(element => { element.terminate() });
+    workers.forEach(element => { element["terminate"]() });
     workers.length = 0
   }
 
@@ -89,7 +89,8 @@ module Glib.WebWorker {
   }
  
   if (isWorker) {
-    self.addEventListener("message", function(e) {
+    let worker: any = self
+    worker.addEventListener("message", function(e) {
       let data = e.data
       let work = registry[data.workId]
       if (!work) return // not for us
@@ -97,11 +98,11 @@ module Glib.WebWorker {
       work.perform(data.params).then(function(res) {
         data.success = true
         data.result = res
-        self.postMessage(data)
+        worker.postMessage(data)
       }).catch(function(err) {
         data.success = false
         data.error = err
-        self.postMessage(data)
+        worker.postMessage(data)
       })
     })
   }

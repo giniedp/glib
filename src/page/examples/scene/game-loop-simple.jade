@@ -1,0 +1,22 @@
+//- title: Game Loop: simple
+extends ./../../_layouts/example.jade
+block script
+  script(type='text/javascript').
+    var total = 0
+    var loop = Glib.utils.loop(function(dt) {
+      total += dt
+
+      var canvas = document.getElementById("canvas");
+      var context = canvas.getContext("2d");
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "blue";
+      context.font = "bold 16px Arial";
+      context.fillText(total.toPrecision(4), 0, 20);
+
+      if (total > 1000) {
+        loop.kill()
+      }
+    })
+ 
+    

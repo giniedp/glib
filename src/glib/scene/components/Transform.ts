@@ -24,7 +24,7 @@ module Glib.Components {
     _tempQuat = Quat.identity();
     _tempMat = Mat4.identity();
     _tempVec = Vec3.zero();
-    _dirty = false;
+    _dirty = true;
 
     constructor(params?:TransformProperties) {
       if (params) {

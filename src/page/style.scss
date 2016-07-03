@@ -1,0 +1,67 @@
+@import "settings";
+@import "foundation";
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-button {
+  width: 0px;
+  height: 0px;
+}
+::-webkit-scrollbar-thumb {
+  background: #8d8d8d;
+  border: 0px solid #ffffff;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #adadad;
+}
+::-webkit-scrollbar-thumb:active {
+  background: #000000;
+}
+::-webkit-scrollbar-track {
+  background: rg #202020;
+  border: 0px solid #ffffff;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-track:hover {
+  background: #333333;
+}
+::-webkit-scrollbar-track:active {
+  background: #333333;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+iframe {
+  border: none;
+}
+
+#canvas {
+  padding:0;
+  border-bottom: 1px solid #ccc;
+}
+#example-content {
+  width:800px;
+}
+.thumbnail {
+  padding: 0;
+}
+.content-padding {
+  padding: 1rem;
+}
+#dat-gui {
+  position: absolute;
+  right: 0px;
+  opacity: 0.5;
+}
+.dg.main {
+  font-size: inherit;
+}
+.dg.main .close-button {
+  top: initial;
+  right: initial;
+  font-size: inherit;
+}

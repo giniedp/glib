@@ -1,4 +1,4 @@
-module Glib.Content.Importers {
+module Glib.Content.Importer {
 
   import debug = Glib.utils.debug;
   import extend = Glib.utils.extend;

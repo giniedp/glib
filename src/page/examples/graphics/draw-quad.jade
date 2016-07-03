@@ -1,6 +1,7 @@
-//- title: Texture - Image
-extends ./../_layouts/default.jade
+//- title: Draw Quad
+extends ./../../_layouts/example.jade
 block script
+
   script#vertex-shader(type='text/glsl').
     precision highp float;
     precision highp int;
@@ -10,41 +11,32 @@ block script
     attribute vec2 vTexture;
     varying vec2 texCoord;
     void main(void) {
-      texCoord = vTexture;// (position.xy + 1.0) * 0.5;
+      texCoord = vTexture;
       gl_Position = vec4(vPosition, 1.0);
     }
   script#fragment-shader(type='text/glsl').
     precision highp float;
     precision highp int;
+    // @filter LinearWrap
     // @binding texture
-    uniform sampler2D texture;
+    uniform sampler2D textureSampler;
     varying vec2 texCoord;
     void main(void) {
-      gl_FragColor = vec4(texture2D(texture, texCoord).rgb, 1.0);
+      gl_FragColor = vec4(texture2D(textureSampler, texCoord).rgb, 1.0);
     }
 
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({canvas: 'canvas'});
-        
-    var image = new Image();
-    image.src = assetPath("/assets/textures/proto_blue.png");
-    var texture = device.createTexture({ data: image });
-    texture.setImageUrl(assetPath("/assets/textures/proto_blue.png"));
+    self.device = device;
+    
+    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
     var program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
       fragmentShader: document.getElementById('fragment-shader').textContent
     });
-
-    var vars = {
-      flipY: false
-    };
-
-    Glib.utils.loop(function(){
-      program.uniforms.texture.set(texture);
+    
+    Glib.utils.loop(function () {
       device.program = program;
-      device.drawQuad(vars.flipY);
-    });
-
-    demoGui(function(gui){
-      gui.add(vars, 'flipY');
+      device.program.uniforms.texture.set(texture);
+      device.drawQuad(true);
     });

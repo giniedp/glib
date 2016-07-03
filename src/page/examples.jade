@@ -1,0 +1,33 @@
+//- ignore: true
+doctype html
+html(lang="en")
+  head
+    link(rel="stylesheet" href="/style.css")
+    script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
+
+body.grid-frame
+  .grid-block.vertical
+    .grid-block.shrink.menu-group.dark
+      include ./_includes/menu-bar.jade
+    .grid-block.horizontal
+      .grid-block.vertical.shrink(style='width:250px;')
+        each value, key in examples
+          if value.$files
+            section.grid-content.block-list.small-12.shrink
+              header= value.$title
+              ul
+                each meta in value.$files
+                  li: a()&attributes({ href: '#' + meta.$href })=meta.$title
+
+      .grid-block.horizontal.small-12
+        iframe.small-12#iframe(src)
+
+  script(type='text/javascript').
+    function onHashChanged() {
+      var hash = location.hash;
+      if (hash && /^#\/examples\/.*\.html/.test(hash)) {
+        $("#iframe").attr('src', hash.replace('#', ''));
+      }
+    }
+    window.addEventListener("hashchange", onHashChanged, false);
+    onHashChanged();

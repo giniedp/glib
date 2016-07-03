@@ -1,5 +1,5 @@
 //- title: RenderTarget MRT
-extends ./../_layouts/default.jade
+extends ./../../_layouts/example.jade
 block script
   script#vertex-shader(type='text/glsl').
     precision highp float;
@@ -112,7 +112,7 @@ block script
       height: 64
     });
     
-    var texture = device.createTexture({ data: assetPath("/assets/textures/proto_blue.png") });
+    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
     var program2 = device.createProgram({
       vertexShader: document.getElementById('vertex-shader2').textContent,
       fragmentShader: document.getElementById('fragment-shader2').textContent

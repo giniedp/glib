@@ -8,18 +8,14 @@
 
   module.exports = function (file) {
     if (!file) {
-      throw new util.PluginError('asset-manifest', 'Missing file option for asset-manifest');
+      throw new util.PluginError('glib-assets', 'Missing file option');
     }
 
     var firstFile, files = [];
 
     function bufferContents(file) {
-      if (file.isNull()) {
-        return; // ignore
-      }
-      if (!firstFile) {
-        firstFile = file;
-      }
+      if (file.isNull()) return; // ignore
+      if (!firstFile) firstFile = file;
       files.push(file.path);
     }
 

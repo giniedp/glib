@@ -1,0 +1,75 @@
+//- ignore: true
+doctype html
+html(lang="en")
+  head
+    link(rel="stylesheet" href="/style.css")
+    script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
+    script(type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js')
+    script(type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js')
+
+    script.
+      var demoGuiInstance = null;
+      demoGui = function(callback){
+        if (!demoGuiInstance) {
+          demoGuiInstance = new dat.GUI({autoPlace: false});
+          var guiContainer = document.getElementById('dat-gui');
+          guiContainer.appendChild(demoGuiInstance.domElement);
+        }
+        callback(demoGuiInstance);
+      };
+
+block head
+body.grid-frame
+  .grid-block.vertical
+    .grid-block.horizontal
+      .grid-block.shrink.content-padding
+        .grid-block.vertical.thumbnail
+          #example-content
+            #dat-gui
+            canvas#canvas(width=800 height=450)
+            block content
+            
+      .grid-block.content-padding
+        .grid-block.thumbnail
+          pre.small-12
+            code.prettyprint#example-code
+
+  #example-scripts
+    script(type='text/javascript' src='/glib.js')
+    script(type='text/javascript').
+      Glib.WebWorker.activate('/glib.js');
+    block script
+  script(type='text/javascript').
+    var entityMap = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': '&quot;',
+      "'": '&#39;',
+      "/": '&#x2F;'
+    };
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"'\/]/g, function (s) {
+        return entityMap[s];
+      });
+    }
+    function removeIndents(string) {
+      var lines = string.split("\n");
+      var min = 10;
+      for (var i = 0; i<lines.length; i++){
+        var line = lines[i];
+        if (!line) continue;
+        var match = line.match(/^(\s+)/)
+        if (!match) return string;
+        min = Math.min(min, match[1].length);
+      }
+      for (var i = 0; i<lines.length; i++){
+        var line = lines[i];
+        if (!line) continue;
+        lines[i] = line.substring(min);
+      }
+      return lines.join("\n");
+    }
+    var text = removeIndents($('#example-content').html()) + "\n" + removeIndents($('#example-scripts').html());
+    $('#example-code').html(escapeHtml(text));
+

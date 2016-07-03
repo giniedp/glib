@@ -21,17 +21,15 @@ var glibPages = require('./tools/glib-pages.js');
 var PATHS = {
   dist: 'dist',
   pages: [
-    '!src/pages/layouts/*.jade',
-    'src/**/*.jade'
-  ],
-  indexPage: [
-    'src/index.jade'
+    '!src/page/layouts/*.jade',
+    '!src/page/includes/*.jade',
+    'src/page/**/*.jade'
   ],
   styles: [
-    'src/pages/style.scss'
+    'src/page/style.scss'
   ],
   stylesWatch: [
-    'src/pages/**/*.scss'
+    'src/page/**/*.scss'
   ],
   assets: [
     'src/assets/**/*'
@@ -171,7 +169,7 @@ gulp.task('compile:es5', function(){
     tscResult.dts.pipe(dest("typedefs")),
     tscResult.js
       .pipe(concat('glib.js'))
-      .pipe(dest("scripts"))
+      .pipe(dest())
   ]);
 });
 
@@ -195,7 +193,7 @@ gulp.task('docs', function(){
   }));
 });
 
-gulp.task('pages:scss', function(){
+gulp.task('page:scss', function(){
   return src(PATHS.styles)
     .pipe(sass({
       includePaths: ["node_modules/foundation-apps/scss"]
@@ -204,40 +202,30 @@ gulp.task('pages:scss', function(){
     .pipe(dest());
 });
 
-gulp.task('pages:jade', function(){
-  glibPages({
-    src: PATHS.indexPage,
-    pages: PATHS.pages, 
-    cdn: '/' + PATHS.dist
-  }).pipe(gulp.dest('./'));
-  
-  return glibPages({
-    src: PATHS.pages,
-    pages: PATHS.pages,
-    //cdn: '',
-    cdn: '/' + PATHS.dist
-  }).pipe(dest());
+gulp.task('page:jade', function(){
+  return glibPages(PATHS.pages).pipe(dest());
 });
 
-gulp.task('pages', ['pages:scss', 'pages:jade']);
+gulp.task('page', ['page:scss', 'page:jade']);
 
 //
 // WATCHER TASKS
 //
 
-gulp.task('watch:pages', ['pages'], function(){
-  gulp.watch(PATHS.pages, ['pages']);
+gulp.task('watch:pages', ['page'], function(){
+  gulp.watch(PATHS.pages, ['page']);
+  gulp.watch(PATHS.stylesWatch, ['page:scss']);
 });
 
-gulp.task('watch', ['compile', 'pages', 'assets'], function(){
+gulp.task('watch', ['compile', 'page', 'assets'], function(){
   gulp.watch(tscSource, ['compile:es5', 'precompile:tsconfig']);
-  gulp.watch(PATHS.pages, ['pages:jade']);
-  gulp.watch(PATHS.stylesWatch, ['pages:scss']);
+  gulp.watch(PATHS.pages, ['page:jade']);
+  gulp.watch(PATHS.stylesWatch, ['page:scss']);
   gulp.watch(PATHS.assets, ['assets']);
 });
 
 gulp.task('serve', serve({
-  root: ['./'],
+  root: ['dist'],
   port: 3000
 }));
 

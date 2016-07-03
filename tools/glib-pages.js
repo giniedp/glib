@@ -10,70 +10,62 @@
 
   function parseMetaComment(content) {
     var result = {};
-    content = content.split("\n");
+    content = content.trim().split("\n");
+    var regex = /\/\/-\s*(\w+)\s*:\s*(.+)/
     for (var i = 0; i < content.length; i++) {
-      var line = content[i];
-      if (line.indexOf("//-") != 0) return result;
-      if (line.indexOf(":") < 0) continue;
-      line = line.replace("//-", '').split(":");
-      result[line[0].trim()] = line[1].trim();
+      var line = content[i].trim();
+      if (line.substr(0, 2) != "//") break;
+      var match = line.match(regex);
+      if (!match) continue;
+      result['$' + match[1]] = match[2]
     }
     return result;
   }
 
+  function makeTitle(token) {
+    return inflect.humanize(token.replace('-', '_'));
+  }
+
   function makeFileTitle(file) {
-    return inflect.humanize(path.basename(file, path.extname(file)).replace('-', '_'));
+    return makeTitle(path.basename(file, path.extname(file)))
   }
 
-  function makeFileHref(file, cdn) {
-    return file.replace(/^src/, cdn).replace(/.jade$/, '.html');
+  function makeFileHref(file) {
+    return file.replace(/^src\/page/, '').replace(/.jade$/, '.html');
   }
 
-  function makeFileSection(file) {
-    var tokens = file.split("/");
-    while (tokens[0] == "src" || tokens[0] == "pages") {
-      tokens.shift()
-    }
-    var result = tokens.shift();
-    if (path.extname(result)) {
-      result = "";
-    }
-
-    return result
-  }
-
-  function getSectionPages(sections, name) {
-    var section = sections[name] || { title: inflect.humanize(name), pages: [] };
-    sections[name] = section;
-    return section.pages;
-  }
-
-  module.exports = function(options){
-    options = options || {} 
-    var cdn = options.cdn || ''
-    var src = options.src || 'src'
-    var pages = options.pages || src
-
-    var files = glob(pages);
-    var sections = {};
-    for (var i = 0; i < files.length; i++) {
-      var file = files[i];
-
+  module.exports = function(src){
+    var files = glob(src);
+    var examples = {};
+    files.forEach(function(file) {
+      if (!/^src\/page\/examples/.test(file)) return;
       var content = fs.readFileSync(file, 'UTF-8').toString();
       var meta = parseMetaComment(content);
-      if (meta.ignore) continue;
-      meta.title = meta.title || makeFileTitle(file);
-      meta.href = meta.href || makeFileHref(file, cdn);
+      if (meta.ignore) return; 
+      meta.$title = meta.$title || makeFileTitle(file);
+      meta.$href = meta.$href || makeFileHref(file);
+      
+      var tokens =  file.replace(/^src\/page\/examples/, '').split("/");
+      var fileName = tokens.pop()
 
-      var section = makeFileSection(file) || 'glib';
-      getSectionPages(sections, section).push(meta);
-    }
-
+      var group = examples
+      tokens.forEach(function(name) {
+        if (!name) return;
+        group[name] = group[name] || {};
+        group = group[name];
+        group.$title = group.$title || makeTitle(name);
+      });
+      group.$files = group.$files || [];
+      group.$files.push(meta);
+      group.$files.sort(function(a, b) {
+        return a.$title > b.$title ? 1 : 0; 
+      })
+    })
+    
     return gulp.src(src).pipe(jade({
       pretty: true,
       locals: {
-        sections: sections,
-        cdn: cdn
+        examples: examples
       }
     }));
   };

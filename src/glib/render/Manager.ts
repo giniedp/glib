@@ -162,7 +162,7 @@ module Glib.Render {
         view.target = this.acquireTarget({
           width: view.width,
           height: view.height,
-          depth: true
+          depthFormat: Glib.Graphics.DepthFormat.DepthStencil
         })
       }
       return view.target;

@@ -1,6 +1,7 @@
 module Glib.Graphics {
 
   export interface ModelOptions {
+    name?:string;
     boundingBox?: number[];
     boundingSphere?: number[];
     materials?: Material[]|MaterialOptions[];

@@ -1,5 +1,5 @@
 //- title: Sprite Batch
-extends ./../_layouts/default.jade
+extends ./../../_layouts/example.jade
 block script
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({
@@ -7,9 +7,9 @@ block script
     });
     self.device = device;
     var spriteBatch = device.createSpriteBatch();
-    var texture2 = device.createTexture({ data: assetPath("/assets/textures/proto_green.png") });
-    var texture1 = device.createTexture({ data: assetPath("/assets/textures/proto_red.png") });
-    var texture3 = device.createTexture({ data: assetPath("/assets/textures/proto_blue.png") });
+    var texture2 = device.createTexture({ data: "/assets/textures/proto_green.png" });
+    var texture1 = device.createTexture({ data: "/assets/textures/proto_red.png" });
+    var texture3 = device.createTexture({ data: "/assets/textures/proto_blue.png" });
     
     Glib.utils.loop(function(){
       var t = Glib.utils.getTime();

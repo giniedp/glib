@@ -1,4 +1,4 @@
-extends ./../_layouts/default.jade
+extends ./../../_layouts/example.jade
 block script
   script(type='text/javascript').
     function ShapeComponent() {
@@ -11,7 +11,7 @@ block script
           renderable: "Renderable"
         }, this);
         this.assets
-          .load("Material", assetPath("/assets/materials/default.json"))
+          .load("Material", "/assets/materials/default.json")
           .then(function (material) {
             var builder = new Glib.Graphics.Geometry.Builder();
             builder.transform = Glib.Mat4.createTranslation(0, 0, 0);
@@ -85,13 +85,11 @@ block script
         templates: ["Camera", "WASD"]
       }, function (e) {
         e.getService("Camera").activate();
-        e.getService("Transform").translateXYZ(0, 0, 10);
+        e.getService("Transform").translateXYZ(2, 2, 10);
       })
       .buildChild({
         name: "Light",
-        templates: ["DirectionalLight"]
-      }, function(e) {
-        e.getService("Transform").setRotationXYZAngle(1, 0, 0, -Math.PI / 4)
+        templates: "DirectionalLight"
       })
       .buildChild({
         name: "Shapes",

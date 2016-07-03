@@ -1,7 +1,6 @@
-//- title: Draw Quad
-extends ./../_layouts/default.jade
+//- title: Texture - Video
+extends ./../../_layouts/example.jade
 block script
-
   script#vertex-shader(type='text/glsl').
     precision highp float;
     precision highp int;
@@ -17,26 +16,38 @@ block script
   script#fragment-shader(type='text/glsl').
     precision highp float;
     precision highp int;
-    // @filter LinearWrap
-    // @binding texture
-    uniform sampler2D textureSampler;
+    uniform sampler2D texture;
     varying vec2 texCoord;
     void main(void) {
-      gl_FragColor = vec4(texture2D(textureSampler, texCoord).rgb, 1.0);
+      gl_FragColor = vec4(texture2D(texture, texCoord).rgb, 1.0);
     }
-
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({canvas: 'canvas'});
-    self.device = device;
+        
+    var video = document.createElement('video');
+    video.src = "/assets/sintel.mp4";
+    video.addEventListener("canplaythrough", function() {
+      video.play();
+    }, true);
     
-    var texture = device.createTexture({ data: assetPath("/assets/textures/proto_blue.png") });
+    var texture = device.createTexture({ data: video });
+    
     var program = device.createProgram({
       vertexShader: document.getElementById('vertex-shader').textContent,
       fragmentShader: document.getElementById('fragment-shader').textContent
     });
-    
-    Glib.utils.loop(function () {
+
+    var vars = {
+      flipY: true
+    };
+
+    Glib.utils.loop(function(){
       device.program = program;
-      device.program.uniforms.texture.set(texture);
-      device.drawQuad(true);
+      device.program.setUniform("texture", texture);
+      device.drawQuad(vars.flipY);
     });
+
+    demoGui(function(gui){
+      gui.add(vars, 'flipY');
+    });
+    

@@ -127,12 +127,20 @@ module Glib.utils {
     }
   }());
 
-  export var loop = function(loopLogic){
-    var tick = function(){
-      loopLogic();
+  export var loop = function(loopFunc) {
+    var time = getTime()
+    var tick:any = function(){
+      if (!tick) return 
+      var now = getTime()
+      var dt = now - time
+      time = now;
+      loopFunc(dt);
+      if (!tick) return
       requestFrame(tick);
+      return tick;
     };
-    tick();
+    tick.kill = function() { tick = null; }
+    return tick();
   };
 
   /**
