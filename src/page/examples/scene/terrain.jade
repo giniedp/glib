@@ -1,3 +1,4 @@
+//- title: Terrain
 extends ./../../_layouts/example.jade
 block script
   script(type='text/javascript').
@@ -15,12 +16,12 @@ block script
       this.renderable = this.node.getService("Renderable");
 
       var self = this;
-      Glib.Promise.all([
-        this.assets.load("Material", "/assets/materials/default.json"),
-        this.assets.load("Image", "/assets/heightmaps/test2.png")  
-      ]).then(function(res) {
-        var material = res[0];
-        var image = res[1];
+      this.assets.loadAssets({
+        Material: { default: "/assets/materials/default.json" },
+        Image: { heightmap: "/assets/heightmaps/test.png" }
+      }).then(function(res){
+        var material = res.Material.default;
+        var image = res.Image.heightmap;
         self.bttRoot = new Glib.Terrain.BTTRoot(self.device, {
           heightMap: Glib.Terrain.HeightMap.fromImage(image, 512, 512).rescale(0.25),
           materials: [material]
@@ -34,7 +35,6 @@ block script
         var position = game.find("/Camera:Transform").position;
         this.bttRoot.updateLod(position);
       }
-      //this.transform.setPositionXYZ(-512, -40, -512);
     };
 
     var game = Glib
@@ -45,25 +45,25 @@ block script
       .buildChild({
         name: "Camera",
         templates: ["Camera", "WASD"]
-      }, function (entity) {
-        entity.getService("Camera").activate();
-        entity.getService("Transform").translateXYZ(256, 128, 512);
+      }, function (e) {
+        e.s.Camera.activate();
+        e.s.Transform.translateXYZ(256, 128, 512);
       })
       .buildChild({
         name: "Light",
         templates: ["DirectionalLight"]
       }, function(e){
-        e.getService("Transform").rotateYawPitchRoll(Math.PI / 4, Math.PI/4, 0);
+        e.s.Transform.rotateYawPitchRoll(Math.PI / 4, Math.PI/4, 0);
       })
       .buildChild({
         name: "Light",
         templates: ["DirectionalLight"]
       }, function(e){
-        e.getService("Transform").rotateYawPitchRoll(Math.PI / 4 * 3, -Math.PI/4, 0);
+        e.s.Transform.rotateYawPitchRoll(Math.PI / 4 * 3, -Math.PI/4, 0);
       })
       .buildChild({
         name: "Terrain",
         templates: ["Model"]
-      }, function (entity) {
-        entity.addComponent(new TerrainComponent());
+      }, function (e) {
+        e.addComponent(new TerrainComponent());
       });
