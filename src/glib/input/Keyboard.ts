@@ -10,7 +10,7 @@ module Glib.Input {
   function setKeyPressed(e:KeyboardEvent) {
     var index = this.state.pressedKeys.indexOf(e.keyCode);
     if (index < 0) {
-      debug(`Key pressed '${e.keyCode}' '${KeyCodeName[e.keyCode]}'`);
+      // debug(`Key pressed '${e.keyCode}' '${KeyCodeName[e.keyCode]}'`);
       this.state.pressedKeys.push(e.keyCode);
     }
     this.trigger('changed', e, this)
@@ -19,7 +19,7 @@ module Glib.Input {
   function setKeyReleased(e:KeyboardEvent) {
     var index = this.state.pressedKeys.indexOf(e.keyCode);
     if (index >= 0) {
-      debug(`Key released '${e.keyCode}' '${KeyCodeName[e.keyCode]}'`);
+      // debug(`Key released '${e.keyCode}' '${KeyCodeName[e.keyCode]}'`);
       this.state.pressedKeys.splice(index);
     }
     this.trigger('changed', e, this)
@@ -87,6 +87,7 @@ module Glib.Input {
     Pause : 19,
     CapsLock : 20,
     Escape : 27,
+    Space : 32,
     PageUp : 33,
     PageDown : 34,
     End : 35,

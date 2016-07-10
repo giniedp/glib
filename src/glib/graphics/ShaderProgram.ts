@@ -13,17 +13,18 @@ module Glib.Graphics {
   }
 
   export class ShaderProgram {
-    uid:string;
-    device:Device;
-    gl:any;
-    attached:Shader[] = [];
-    shader:Shader[] = [];
-    handle:WebGLProgram;
-    attributeLocations:number[];
-    attributes:any = {};
-    uniforms:any = {};
-    linked:boolean;
-    info:string;
+    uid:string
+    device:Device
+    gl:any
+    attached:Shader[] = []
+    shader:Shader[] = []
+    handle:WebGLProgram
+    attributeLocations:number[]
+    attributes:any = {}
+    uniforms:any = {}
+    linked:boolean
+    info:string
+    private _errLogs = {}
 
     constructor(device:Device, data:ShaderProgramOptions={}) {
 
@@ -168,7 +169,13 @@ module Glib.Graphics {
       */
     setUniform(name:string, value: any):ShaderProgram {
       var uniform = this.uniforms[name];
-      if (!uniform) throw `Uniform '${name}' does not exist`;
+      if (!uniform) {
+        if (!this._errLogs[name]) {
+          Glib.utils.warn(`Uniform '${name}' does not exist`)
+          this._errLogs[name] = true
+        }
+        return
+      } 
       this.use();
       uniform.set(value);
       return this;

@@ -5,16 +5,12 @@ module Glib.Render.Effects {
   }
       
   export class Bloom implements Render.Step {
-
-    private _material: Graphics.Material;
-    
     glowCut: number = 0.6;
     multiplier: number = 0.83;
     gaussSigma: number = 0.5;
     private _offsetWeights: Array<Array<number>>;
     
-    constructor(material:Graphics.Material) {
-      this._material = material;
+    constructor(private _material:Graphics.Material) {
     }
 
     private _updateGauss(texelX, texelY){

@@ -102,7 +102,7 @@ module Glib.Content {
       }
       debug('[Manager] download', options);
       return Glib.utils.ajax(options).then(function (res) {
-        debug('[Manager] download done', options);
+        // debug('[Manager] download done', options);
         if (!Array.isArray(res)) {
           return cacheResponse(res);
         }
@@ -176,27 +176,26 @@ module Glib.Content {
           debug(`[Manager] ${key} awaiting`);
           return result;
         }
-        debug(`[Manager] ${key} asset exists`);
+        debug(`[Manager] ${key} exists`);
         return Promise.resolve(result);
       }
 
       return this.assets[key] = Promise.resolve(function() {
         var data = Manager.getDownload(assetPath);
         if (!data) {
-          debug(`[Manager] ${key} begin download`);
+          // debug(`[Manager] ${key} download begin`);
           return this.download({url: assetPath}).then(function() {
-            debug(`[Manager] ${key} download done`);
+            // debug(`[Manager] ${key} download complete`);
             return Manager.getDownload(assetPath)
           })
         } else {
-          debug(`[Manager] ${key} download exists`);
+          // debug(`[Manager] ${key} download exists`);
           return data
         }
       }.bind(this)()).then(function(data) {
         if (!data) {
           return Promise.reject(`no data found for asset: ${assetPath}`);
         }
-        console.log(data)
         var importer = Manager.getImporterForAsset(data, assetType);
         if (!importer) {
           return Promise.reject(`no importer found for type: ${String(assetType)}`);

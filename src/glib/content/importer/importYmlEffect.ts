@@ -111,9 +111,11 @@ module Glib.Content.Importer {
     });
   }
 
-  function createIncludeHandler(data:AssetData, manager:Manager):(p:string)=>IPromise {
+  function createIncludeHandler(data:AssetData, manager:Manager, lookup:any):(p:string)=>IPromise {
     return function (path:string) {
-      return manager.download(utils.path.merge(data.url, path));
+      let url = utils.path.merge(data.url, path)
+      if (!lookup[url]) lookup[url] = manager.download(url)
+      return lookup[url]
     }
   }
 
@@ -164,7 +166,8 @@ module Glib.Content.Importer {
       return convertTechnique(source, technique, index);
     });
 
-    var includeHandler = createIncludeHandler(data, manager);
+    var includeLookup = {}
+    var includeHandler = createIncludeHandler(data, manager, includeLookup);
 
     return Promise.all(techniques.map(function (technique:any) {
       return Promise.all(technique.passes.map(function (pass:any, index:number) {

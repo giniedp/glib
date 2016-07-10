@@ -67,6 +67,12 @@ module Glib.Components {
       return this;
     }
 
+    setRotationYawPitchRoll(yaw:number, pitch:number, roll:number):Transform {
+      this.rotation.initYawPitchRoll(yaw, pitch, roll);
+      this._dirty = true;
+      return this;
+    }
+
     rotateAxisAngle(axis:Glib.IVec3, angle:number):Transform {
       this.rotation.selfConcat(this._tempQuat.initAxisAngle(axis, angle));
       this._dirty = true;

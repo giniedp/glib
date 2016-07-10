@@ -94,7 +94,7 @@ module Glib.Graphics {
       return result;
     }
     
-    findProgram(techniqueIdentifier:string|number, nameOrIndex:string|number=0):ShaderProgram {
+    findProgram(techniqueIdentifier:string|number=0, nameOrIndex:string|number=0):ShaderProgram {
       return this.findPass(techniqueIdentifier, nameOrIndex).program;
     }
   }

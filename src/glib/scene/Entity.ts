@@ -74,6 +74,32 @@ module Glib {
       }
     }
 
+    applyTemplates(config) {
+      for (var item of config) {
+        if (typeof item === 'string') {
+          this.applyTemplate(item);
+        } else if (typeof item === 'function') {
+          this.applyTemplate(item);
+        } else {
+          this.name = item.name || this.name;
+          var templates = item.templates || []
+          var name: any;
+          if (Glib.utils.isArray(templates)) {
+            for (name of templates) {
+              this.applyTemplate(name);
+            }
+          } else if (Glib.utils.isObject(templates)) {
+            for (name in templates) {
+              this.applyTemplate(name, templates[name]);
+            }
+          } else if (Glib.utils.isString(templates)) {
+            this.applyTemplate(templates);
+          }
+        }
+      }
+      return this;
+    }
+
     applyTemplate(nameOrTemplate:string|EntityTemplate, options?:any):Entity {
       if (typeof nameOrTemplate === 'string') {
         EntityTemplates.get(nameOrTemplate)(this, options)
@@ -186,29 +212,7 @@ module Glib {
     buildChild(...config:any[]):Entity {
       var child = new Entity();
       this.addChild(child);
-
-      for (var item of config) {
-        if (typeof item === 'string') {
-          child.applyTemplate(item);
-        } else if (typeof item === 'function') {
-          child.applyTemplate(item);
-        } else {
-          child.name = item.name || child.name;
-          var templates = item.templates || []
-          var name: any;
-          if (Glib.utils.isArray(templates)) {
-            for (name of templates) {
-              child.applyTemplate(name);
-            }
-          } else if (Glib.utils.isObject(templates)) {
-            for (name in templates) {
-              child.applyTemplate(name, templates[name]);
-            }
-          } else if (Glib.utils.isString(templates)) {
-            child.applyTemplate(templates);
-          }
-        }
-      }
+      child.applyTemplates(config)
       return this;
     }
 

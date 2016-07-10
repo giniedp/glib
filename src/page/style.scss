@@ -1,4 +1,4 @@
-@import "settings";
+@import "./settings";
 @import "foundation";
 
 ::-webkit-scrollbar {
@@ -35,16 +35,25 @@
   background: transparent;
 }
 
-iframe {
-  border: none;
+
+
+#example-menu {
+  max-width:220px;
+  z-index:1;
+}
+#example-frame {
+  iframe {
+    border: none;
+  }
 }
 
 #canvas {
   padding:0;
   border-bottom: 1px solid #ccc;
+  width:100%;
 }
-#example-content {
-  width:800px;
+.no-scroll {
+  overflow-y: hidden; 
 }
 .thumbnail {
   padding: 0;
@@ -52,6 +61,10 @@ iframe {
 .content-padding {
   padding: 1rem;
 }
+.grid-padding {
+  padding: 0.5rem;
+}
+
 #dat-gui {
   position: absolute;
   right: 0px;
@@ -64,4 +77,13 @@ iframe {
   top: initial;
   right: initial;
   font-size: inherit;
+}
+.dg .c input[type=text] {
+  height: initial;
+}
+.shim-background {
+  background: #efefef;
+}
+#dat-gui .dg {
+  font: $body-font-family !important;
 }

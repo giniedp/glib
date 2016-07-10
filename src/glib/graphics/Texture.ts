@@ -167,6 +167,10 @@ module Glib.Graphics {
       return TextureTypeName[this.type];
     }
 
+    get texel(): IVec2 {
+      return { x: 1.0 / this.width, y: 1.0 / this.height }
+    }
+
     /**
      * Collection of file extensions that are recognized as video files. Contains the values ['mp4', 'ogv', 'ogg']
      */

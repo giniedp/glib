@@ -470,8 +470,13 @@ module Glib.Graphics {
             this._customFrameBuffer.setup(opts);
           }
           this.frameBuffer = this._customFrameBuffer;
+          this.viewportState = { x: 0, y: 0, width: firstTexture.width, height: firstTexture.height }
         } else {
           this.frameBuffer = null;
+          this.viewportState = {
+            x: 0, y: 0, width: this.context.drawingBufferWidth,
+            height: this.context.drawingBufferHeight
+          }
         }
       return this;
     }

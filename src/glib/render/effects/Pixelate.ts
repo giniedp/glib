@@ -2,13 +2,11 @@ module Glib.Render.Effects {
 
   export class Pixelate implements Render.Step {
 
-    private _program: Graphics.ShaderProgram;
+    pixelWidth: number = 10;
+    pixelHeight: number = 10;
+    offset: number = 0;
 
-    paramPixelWidth: number = 10;
-    paramPixelHeight: number = 10;
-
-    constructor(program:Graphics.ShaderProgram) {
-      this._program = program;
+    constructor(private _material:Graphics.Material) {
     }
 
     setup(manager: Render.Manager) {
@@ -17,21 +15,18 @@ module Glib.Render.Effects {
 
     render(manager: Render.Manager) {
       var rt = manager.beginEffect();
-      
       var rt2 = manager.acquireTarget(rt);
       
-      manager.device.setRenderTarget(rt2);
-      
-      var program = this._program;
-
+      let program = this._material.findProgram(); // first defined technique/pass in shader
       program.setUniform('texture', rt);
-      program.setUniform('pixelWidth', this.paramPixelWidth);
-      program.setUniform('pixelHeight', this.paramPixelHeight);
+      program.setUniform('vOffset', this.offset);
+      program.setUniform('pixelWidth', this.pixelWidth);
+      program.setUniform('pixelHeight', this.pixelHeight);
       program.setUniform('targetWidth', rt.width);
       program.setUniform('targetHeight', rt.height);
       
+      manager.device.setRenderTarget(rt2);
       manager.device.program = program;
-      
       manager.device.drawQuad(false);
       manager.device.setRenderTarget(null);
 

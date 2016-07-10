@@ -132,7 +132,7 @@ module Glib.Graphics.Geometry {
      */
     addVertex(vertex:{[key:string]:any}):Builder {
       if (this.vertexCount === this.maxVertexCount) {
-        throw `max vertex count reached`;
+        // throw `max vertex count reached`;
       }
       var that = this;
       var channel, item, i, layout = this.vertexBuffer.layout, defaults = this.defaultAttributes;

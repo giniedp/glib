@@ -24,7 +24,7 @@ module Glib.Content.Parser {
   // e.g.
   //     key: some value
   //     example: another value
-  var regex = /^(\s*)(\w+)\s*:(.*)/;
+  var regex = /^(\s*)(\w+)\s*:\s*\|?(.*)/;
 
   class Node {
     indent:string = '';

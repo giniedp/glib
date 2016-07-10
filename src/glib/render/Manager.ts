@@ -70,6 +70,14 @@ module Glib.Render {
         // return
         return found.target;
       }
+      if (opts instanceof Graphics.Texture) {
+        opts = {
+          width: opts.width,
+          height: opts.height,
+          depthFormat: opts.depthFormat
+        }
+      }
+      Glib.utils.debug("[Render.Manager]", "acquireTarget", "createTexture2D", opts)
       var target = this.device.createTexture2D(opts);
       this._usedTargets.push({
         target: target,
@@ -87,7 +95,7 @@ module Glib.Render {
         }
       }
       if (found) {
-        // remove fro used list
+        // remove from used list
         var index = this._usedTargets.indexOf(found);
         this._usedTargets.splice(index, 1);
         // mark as free
@@ -128,12 +136,14 @@ module Glib.Render {
     presentViews() {
       
       this.device.setRenderTarget(null);
+      /*
       this.device.viewportState = {
         x: 0,
         y: 0,
         width: this.device.context.drawingBufferWidth,
         height: this.device.context.drawingBufferHeight
       };
+      */
 
       this.spriteBatch.begin();
       for (var view of this.views) {

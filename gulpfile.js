@@ -10,9 +10,11 @@ var concat = require('gulp-concat');
 var jade = require('gulp-jade');
 var sass = require('gulp-sass');
 var serve = require('gulp-serve');
+var webserver = require('gulp-webserver');
 var karma = require('karma');
 var plumber = require('gulp-plumber');
 var typedoc = require("gulp-typedoc");
+var livereload = require('gulp-livereload')
 
 var glibAssets = require('./tools/glib-assets.js');
 var glibEnums = require('./tools/glib-enums.js');
@@ -20,20 +22,25 @@ var glibPages = require('./tools/glib-pages.js');
 
 var PATHS = {
   dist: 'dist',
-  pages: [
-    '!src/page/layouts/*.jade',
-    '!src/page/includes/*.jade',
-    'src/page/**/*.jade'
-  ],
-  styles: [
-    'src/page/style.scss'
-  ],
-  stylesWatch: [
-    'src/page/**/*.scss'
-  ],
   assets: [
     'src/assets/**/*'
   ],
+  page: {
+    pages: [
+      '!src/page/layouts/*.jade',
+      '!src/page/includes/*.jade',
+      'src/page/**/*.jade'
+    ],
+    scripts: [
+      'src/page/**/*.js'
+    ],
+    styles: [
+      'src/page/style.scss'
+    ],
+    stylesWatch: [
+      'src/page/**/*.scss'
+    ],
+  },
   glib: {
     excludes: [
       "!src/**/*_test.ts"
@@ -122,7 +129,7 @@ function dest(){
 //
 
 gulp.task('assets', function(){
-  src(PATHS.assets)
+  return src(PATHS.assets)
     .pipe(dest('assets'))
     .pipe(glibAssets('package.json'))
     .pipe(dest('assets'));
@@ -170,12 +177,13 @@ gulp.task('compile:es5', function(){
     tscResult.js
       .pipe(concat('glib.js'))
       .pipe(dest())
+      .pipe(livereload())
   ]);
 });
 
 gulp.task('compile:es6', function(){
   var tscResult = src(tscSource).pipe(tsc(es6Project));
-  return tscResult.dts.pipe(dest("typedefs"));
+  return tscResult.dts.pipe(dest("typedefs")).pipe(livereload());;
 });
 
 gulp.task('compile', ['compile:es5', 'compile:es6']);
@@ -194,16 +202,25 @@ gulp.task('docs', function(){
 });
 
 gulp.task('page:scss', function(){
-  return src(PATHS.styles)
+  return src(PATHS.page.styles)
     .pipe(sass({
       includePaths: ["node_modules/foundation-apps/scss"]
     }).on('error', sass.logError))
     .pipe(concat('style.css'))
-    .pipe(dest());
+    .pipe(dest())
+    .pipe(livereload());
 });
 
 gulp.task('page:jade', function(){
-  return glibPages(PATHS.pages).pipe(dest());
+  return glibPages(PATHS.page.pages)
+    .pipe(dest())
+    .pipe(livereload());
+});
+
+gulp.task('page:scripts', function(){
+  return src(PATHS.page.scripts)
+    .pipe(dest())
+    .pipe(livereload());
 });
 
 gulp.task('page', ['page:scss', 'page:jade']);
@@ -212,25 +229,38 @@ gulp.task('page', ['page:scss', 'page:jade']);
 // WATCHER TASKS
 //
 
-gulp.task('watch:pages', ['page'], function(){
-  gulp.watch(PATHS.pages, ['page']);
-  gulp.watch(PATHS.stylesWatch, ['page:scss']);
+gulp.task('watch:pages', ['page'], function() {
+  gulp.watch(PATHS.page.pages, ['page']);
+  gulp.watch(PATHS.page.stylesWatch, ['page:scss']);
 });
 
-gulp.task('watch', ['compile', 'page', 'assets'], function(){
-  gulp.watch(tscSource, ['compile:es5', 'precompile:tsconfig']);
-  gulp.watch(PATHS.pages, ['page:jade']);
-  gulp.watch(PATHS.stylesWatch, ['page:scss']);
+gulp.task('watch', ['compile', 'page', 'assets'], function() {
+  livereload.listen();
+  gulp.watch(tscSource, ['precompile:tsconfig', 'compile:es5']);
+  gulp.watch(PATHS.page.pages, ['page:jade']);
+  gulp.watch(PATHS.page.stylesWatch, ['page:scss']);
   gulp.watch(PATHS.assets, ['assets']);
 });
 
+/*
 gulp.task('serve', serve({
   root: ['dist'],
   port: 3000
 }));
+*/
+gulp.task('serve', function() {
+  gulp.src('dist')
+    .pipe(webserver({
+      host: "0.0.0.0",
+      //path: "dist",
+      port: 3000,
+      livereload: true,
+      directoryListing: false,
+      open: true
+    }));
+});
 
 gulp.task('default', ['watch', 'serve']);
-
 
 //
 //

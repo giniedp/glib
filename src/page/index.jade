@@ -1,12 +1,39 @@
 doctype html
 html(lang="en")
   head
+    meta(name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
     link(rel="stylesheet" href="/style.css")
     script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
+    script#dsq-count-scr(src="//ginie.disqus.com/count.js" async)
 body.grid-frame
   .grid-block.vertical
     .grid-block.shrink.menu-group.dark
       include ./_includes/menu-bar.jade
     .grid-block
-      .grid-content
-        h1 Glib Framework
+      .grid-container(style="width: 56rem;")
+        h1.text-center(style="margin: 2rem;") Glib Framework
+        p.text-center a WebGL wrapper and framework.
+        p.text-center The framework is under construction and so is this description.
+        p.text-center
+          span The source code can be found on 
+          a(href="https://github.com/giniedp/glib" target="_blank") github
+        #disqus_thread
+  script(type='text/javascript').
+      /**
+      *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+      *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+      */
+      /*
+      var disqus_config = function () {
+          this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+          this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+      };
+      */
+      (function() {  // DON'T EDIT BELOW THIS LINE
+          var d = document, s = d.createElement('script');
+          
+          s.src = '//glib.disqus.com/embed.js';
+          
+          s.setAttribute('data-timestamp', +new Date());
+          (d.head || d.body).appendChild(s);
+      })();

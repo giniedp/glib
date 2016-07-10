@@ -3,6 +3,12 @@ module Glib.Input {
   import extend = Glib.utils.extend;
 
   export interface MouseState {
+    pageX:number;
+    pageY:number;
+    screenX:number;
+    screenY:number;
+    clientX:number;
+    clientY:number;
     x:number;
     y:number;
     wheel:number;
@@ -10,8 +16,20 @@ module Glib.Input {
   }
 
   function updatePosition(e:MouseEvent) {
-    this.state.x = e.clientX;
-    this.state.y = e.clientY;
+    let s = this.state
+    s.pageX = e.pageX;
+    s.pageY = e.pageY;
+    s.screenX = e.screenX;
+    s.screenY = e.screenY;
+    s.clientX = e.clientX;
+    s.clientY = e.clientY;
+    s.x = e.clientX;
+    s.y = e.clientY;
+    if (this.el.getBoundingClientRect) {
+      let rect = this.el.getBoundingClientRect()
+      s.x = e.clientX - rect.left;
+      s.y = e.clientY - rect.top;
+    }
     this.trigger('changed', this, e);
   }
 
@@ -38,7 +56,18 @@ module Glib.Input {
 
   export class Mouse extends Glib.Events {
     el:any = document;
-    state:MouseState = {x: 0, y: 0, wheel: 0, buttons: [false, false, false]};
+    state:MouseState = {
+      pageX: 0, 
+      pageY: 0,
+      screenX: 0, 
+      screenY: 0,
+      clientX: 0, 
+      clientY: 0,
+      x: 0, 
+      y: 0, 
+      wheel: 0,
+      buttons: [false, false, false]
+    };
 
     _onMouseWheel:(e:MouseEvent) => void;
     _onMouseMove:(e:MouseEvent) => void;

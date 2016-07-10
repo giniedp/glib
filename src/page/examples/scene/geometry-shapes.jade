@@ -16,9 +16,9 @@ block script
           .then(function (material) {
             var builder = new Glib.Graphics.Geometry.Builder();
             builder.transform = Glib.Mat4.createTranslation(0, 0, 0);
-            builder.append("Sphere", {
+            builder.append("Octahedron", {
               diameter: 1,
-              steps: 16
+              steps: 3
             });
             builder.transform = Glib.Mat4.createTranslation(2, 0, 0);
             builder.append("Cube", {

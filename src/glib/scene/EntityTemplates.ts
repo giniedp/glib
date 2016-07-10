@@ -29,14 +29,15 @@ module Glib {
       .addComponent(new Glib.Components.Time())
       .addComponent(new Glib.Components.Fps())
       .addComponent(new Glib.Components.Assets())
-      .addComponent(new Glib.Components.Renderer());
+      .addComponent(new Glib.Components.Renderer())
+      .applyTemplates(options.templates || {})
     if (options.autorun !== false) {
       entity.getService("GameLoop").run();
     }
   }
 
-  export function createGame(options:any){
-    return new Entity().applyTemplate("Game", options);
+  export function createGame(options:any, ...templates){
+    return new Entity().applyTemplate("Game", options).applyTemplates(templates);
   }
 
   EntityTemplates.register("Transform", transformEntity);
@@ -86,7 +87,7 @@ module Glib {
   EntityTemplates.register("Model", modelEntity);
   function modelEntity(entity:Entity, options:any = {}) {
     entity.applyTemplate("Transform");
-    if (!entity.s.Models) {
+    if (!entity.s.Renderable) {
       entity.addComponent(new Components.Model(options));
     }
   }

@@ -1,24 +1,24 @@
-program:
-  #include <postprocess.h>
+program: |
+  #include <./_postprocess.h>
 
   // @default 0
   uniform float vOffset;
 
-  // @default 10
+  // @default 4
   uniform float pixelWidth;
 
-  // @default 10
+  // @default 4
   uniform float pixelHeight;
 
 technique:
   pass:
-    vertexShader:
+    vertexShader: |
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
       }
 
-    fragmentShader:
+    fragmentShader: |
       void main() {
         vec2 uv = texCoord;
         if (uv.x >= vOffset) {
@@ -26,6 +26,5 @@ technique:
           float dy = pixelHeight / targetHeight;
           uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
         }
-
         gl_FragColor = vec4(texture2D(textureSampler, uv).rgb, 1);
       }
