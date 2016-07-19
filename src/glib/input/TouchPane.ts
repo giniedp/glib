@@ -74,10 +74,10 @@ module Glib.Input {
     el:any = document
     state = {}
     preventDefault = false
-    _onTouchCancel:(e:TouchEvent) => void;
-    _onTouchStart:(e:TouchEvent) => void;
-    _onTouchMove:(e:TouchEvent) => void;
-    _onTouchEnd:(e:TouchEvent) => void;
+    private _onTouchCancel:(e:TouchEvent) => void;
+    private _onTouchStart:(e:TouchEvent) => void;
+    private _onTouchMove:(e:TouchEvent) => void;
+    private _onTouchEnd:(e:TouchEvent) => void;
 
     constructor(options:any = {}) {
       super()

@@ -22,7 +22,7 @@ module Glib {
    */
   export class Events implements EventsInterface {
     
-    _events:any = {};
+    private _events:any = {};
 
     /**
      * Bind an event to a `callback` function. Passing `"all"` will bind the callback to all events fired.
