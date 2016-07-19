@@ -78,7 +78,7 @@
     var data = [];
     data.push( "module Glib.Graphics {" );
     data.push( "  export var " + meta.target + " = {" );
-    data.push( "  " + properties.join(",\n"));
+    data.push( "  " + properties.join(",\n  "));
     data.push( "  };" );
     data.push( "}" );
     data.push( "" );
@@ -104,6 +104,13 @@
         prop.property = meta.aliases[key];
         writeProperty(properties, prop, meta.targetName);
       }
+      if (meta.glaliases && meta.glaliases[key]){
+        prop.property = meta.glaliases[key];
+        writeProperty(properties, prop, meta.target);
+        prop.property = constants[meta.glaliases[key]];
+        prop.brackets = true;
+        writeProperty(properties, prop, meta.target);
+      }
       if ( meta.GLConstant){
         prop.property = value;
         prop.brackets = true;
@@ -114,7 +121,7 @@
     var data = [];
     data.push( "module Glib.Graphics {" );
     data.push( "  export var " + meta.targetName + " = {" );
-    data.push( "  " + properties.join(",\n"));
+    data.push( "  " + properties.join(",\n  "));
     data.push( "  };" );
     data.push( "}" );
     data.push( "" );
