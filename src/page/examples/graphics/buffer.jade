@@ -36,15 +36,15 @@ block script
     var vertices = device.createVertexBuffer({
       layout: {
         position: { type: "float", offset:  0, elements: 3 },
-        color   : { type: "float", offset: 12, elements: 3 }
+        color   : { type: "ubyte", offset: 12, elements: 4, packed: true, normalize: true }
       },
-      dataType: "float",
       data: [
-        -1.0, -1.0, 0.0, 1, 0, 0,
-         1.0, -1.0, 0.0, 0, 1, 0,
-         0.0,  1.0, 0.0, 0, 0, 1
+        -1.0, -1.0, 0.0, 0xFF0000FF,// 1, 0, 0,
+         1.0, -1.0, 0.0, 0xFF00FF00,//0, 1, 0,
+         0.0,  1.0, 0.0, 0xFFFF0000,//0, 0, 1
       ]
     });
+    
     Glib.utils.loop(function () {
       device.indexBuffer = indices;
       device.vertexBuffer = vertices;
