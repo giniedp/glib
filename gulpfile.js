@@ -1,24 +1,25 @@
 
 'use strict';
 
-var fs = require("fs");
-var gulp = require('gulp');
+var fs = require('fs');
+var del = require('del');
 var path = require('path');
 var merge = require('merge');
+var karma = require('karma');
+var gulp = require('gulp');
 var tsc = require('gulp-typescript');
 var concat = require('gulp-concat');
 var jade = require('gulp-jade');
 var sass = require('gulp-sass');
-var serve = require('gulp-serve');
-var webserver = require('gulp-webserver');
-var karma = require('karma');
+var sourcemaps = require('gulp-sourcemaps');
 var plumber = require('gulp-plumber');
-var typedoc = require("gulp-typedoc");
-var livereload = require('gulp-livereload')
-
+var typedoc = require('gulp-typedoc');
+var webserver = require('gulp-webserver');
+var livereload = require('gulp-livereload');
 var glibAssets = require('./tools/glib-assets.js');
 var glibEnums = require('./tools/glib-enums.js');
 var glibPages = require('./tools/glib-pages.js');
+var tsconfig = require("./tools/tsconfig");
 
 var PATHS = {
   dist: 'dist',
@@ -90,28 +91,42 @@ var tscSource = [].concat.apply([], [
   PATHS.glib.other
 ]);
 
+var tsconfigJson = {
+  target: "es5",
+  noResolve: true,
+  out: PATHS.dist + "/scripts/glib.js",
+  outDir: PATHS.dist + "/scripts",
+  sourceMap: true,
+  sourceRoot: "src",
+  newLine: "LF",
+  experimentalDecorators: false
+}
+
 var es5Project = tsc.createProject({
   target: "es5",
-  declaration: true,
-  noExternalResolve: true,
+  declaration: true,        // Generates corresponding .d.ts files
+  noExternalResolve: true,  // Do not resolve files that are not in the input
   typescript: require('typescript')
 });
 
 var es6Project = tsc.createProject({
   target: "es6",
-  declaration: true,
-  noExternalResolve: true,
+  declaration: true,        // Generates corresponding .d.ts files
+  noExternalResolve: true,  // Do not resolve files that are not in the input
   typescript: require('typescript')
 });
 
 function src(){
-  return gulp.src.apply(gulp, arguments).pipe(plumber())
+  return gulp.src.apply(gulp, arguments)
+  .pipe(plumber(function (err) {
+    console.error(err.message || err);
+  }))
 }
 
 gulp.task('clean', function(){
-  return merge([
-    src(PATHS.dist).pipe(clean()),
-    src('src/glib/graphics/enums/*.ts').pipe(clean())
+  return del([
+    PATHS.dist,
+    'src/glib/graphics/enums/*.ts'
   ]);
 });
 
@@ -148,21 +163,8 @@ gulp.task('precompile:enums', function(){
 });
 
 gulp.task('precompile:tsconfig', function(){
-  var glob = require("globby");
-  //console.log(tscSource);
-  glob(tscSource, function(err, files){
-    var config = JSON.parse(fs.readFileSync("tsconfig.json"));
-    var equals = (config.files || []).every(function(entry, index) {
-      return entry === files[index];
-    });
-    if (!equals) {
-      config.files = files;
-      var result = JSON.stringify(config, null, 2);
-      fs.writeFileSync("tsconfig.json", result);
-    }
-  });
+  return src(tscSource).pipe(tsconfig("tsconfig.json", tsconfigJson));
 });
-
 
 gulp.task('precompile', ['precompile:enums', 'precompile:tsconfig']);
 
@@ -171,19 +173,33 @@ gulp.task('precompile', ['precompile:enums', 'precompile:tsconfig']);
 //
 
 gulp.task('compile:es5', function(){
-  var tscResult = src(tscSource).pipe(tsc(es5Project));
+  var tscResult = src(tscSource)
+    .pipe(sourcemaps.init())
+    .pipe(tsc(es5Project));
+
   return merge([
-    tscResult.dts.pipe(dest("typedefs")),
+    tscResult.dts.pipe(dest("es5/typedefs")),
     tscResult.js
-      .pipe(concat('glib.js'))
+      .pipe(concat('es5/glib.js'))
+      .pipe(sourcemaps.write('.',{includeContent:false, sourceRoot:'../src/glib'}))
       .pipe(dest())
       .pipe(livereload())
   ]);
 });
 
 gulp.task('compile:es6', function(){
-  var tscResult = src(tscSource).pipe(tsc(es6Project));
-  return tscResult.dts.pipe(dest("typedefs")).pipe(livereload());;
+  var tscResult = src(tscSource)
+    .pipe(sourcemaps.init())
+    .pipe(tsc(es6Project));
+
+  return merge([
+    tscResult.dts.pipe(dest("es6/typedefs")),
+    tscResult.js
+      .pipe(concat('es6/glib.js'))
+      .pipe(sourcemaps.write('.',{includeContent:false, sourceRoot:'../src/glib'}))
+      .pipe(dest())
+      .pipe(livereload())
+  ]);
 });
 
 gulp.task('compile', ['compile:es5', 'compile:es6']);
@@ -197,7 +213,9 @@ gulp.task('docs', function(){
     target: "ES5",
     out: "dist/docs/",
     mode: "file",
-    name: "Glib"
+    name: "Glib",
+    entryPoint: "Glib",
+    excludeExternals: true
   }));
 });
 
@@ -214,6 +232,7 @@ gulp.task('page:scss', function(){
 gulp.task('page:jade', function(){
   return glibPages(PATHS.page.pages)
     .pipe(dest())
+    .pipe(concat('views.html'))
     .pipe(livereload());
 });
 
@@ -236,35 +255,24 @@ gulp.task('watch:pages', ['page'], function() {
 
 gulp.task('watch', ['compile', 'page', 'assets'], function() {
   livereload.listen();
+  gulp.watch(['gulpfile.js'], ['compile', 'page', 'assets']);
   gulp.watch(tscSource, ['precompile:tsconfig', 'compile:es5']);
   gulp.watch(PATHS.page.pages, ['page:jade']);
   gulp.watch(PATHS.page.stylesWatch, ['page:scss']);
   gulp.watch(PATHS.assets, ['assets']);
 });
 
-/*
-gulp.task('serve', serve({
-  root: ['dist'],
-  port: 3000
-}));
-*/
 gulp.task('serve', function() {
   gulp.src('dist')
     .pipe(webserver({
-      host: "0.0.0.0",
-      //path: "dist",
+      //host: "0.0.0.0",
       port: 3000,
       livereload: true,
       directoryListing: false,
-      open: true
+      open: false
     }));
 });
 
-gulp.task('default', ['watch', 'serve']);
-
-//
-//
-//
 gulp.task('test', function (done) {
   new karma.Server({
     configFile: __dirname + '/karma.conf.js',
@@ -272,8 +280,16 @@ gulp.task('test', function (done) {
   }, done).start();
 });
 
-gulp.task('watch:test', ['watch', 'serve'], function (done) {
+gulp.task('watch:test', ['watch'], function (done) {
   new karma.Server({
     configFile: __dirname + '/karma.conf.js'
   }, done).start();
 });
+
+gulp.task('build', ['precompile', 'compile', 'assets', 'page', 'docs']);
+gulp.task('dev', ['watch', 'serve'], function(done) {
+  new karma.Server({
+    configFile: __dirname + '/karma.conf.js'
+  }, done).start();
+});
+gulp.task('default', ['build']);
