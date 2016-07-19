@@ -1,5 +1,5 @@
 {
-  "effect": "../shader/terrain.yml",
+  "effect": "../shader/terrain.glfx",
   "parameters": {
     "ambient": [0.1, 0.1, 0.1],
     "textureSplat":        "../textures/splat.png",

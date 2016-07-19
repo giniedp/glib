@@ -18,7 +18,7 @@ technique:
 
       // @binding position
       attribute vec3 vertexPosition;
-
+        
       // @binding normal
       attribute vec3 vertexNormal;
 

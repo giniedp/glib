@@ -50,7 +50,7 @@ module Glib.Content.Importer {
     }
     
     result.effect = "basicEffect"
-    //result.effect = "/assets/shader/basic.yml"
+    //result.effect = "/assets/shader/basic.glfx"
     /*
     if (m.illum == "0") {
       result.technique = "basic"

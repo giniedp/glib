@@ -1,4 +1,4 @@
-program: |
+program:
   precision highp float;
   precision highp int;
 
@@ -23,7 +23,7 @@ program: |
   uniform vec2 texture2Texel;
 
   const vec3 dotLum = vec3(0.2126, 0.7152, 0.0722); 
-
+  
   vec4 extractLuminance(sampler2D texture, vec2 uv, vec2 texel) {
     float average = 0.0;
     float minimum = 1.0;
@@ -153,13 +153,13 @@ program: |
 technique:
   name: Luminance
   pass:
-    vertexShader: |
+    vertexShader:
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
       }
 
-    fragmentShader: |
+    fragmentShader:
       void main() {
         gl_FragColor = extractLuminance(texture1Sampler, texCoord, texture1Texel);
       }
@@ -167,13 +167,13 @@ technique:
 technique:
   name: Downsample
   pass:
-    vertexShader: |
+    vertexShader:
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
       }
 
-    fragmentShader: |
+    fragmentShader:
       void main() {
         gl_FragColor = downsample(texture1Sampler, texCoord, texture1Texel);
       }
@@ -181,7 +181,7 @@ technique:
 technique:
   name: Combine
   pass:
-    vertexShader: |
+    vertexShader:
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
@@ -192,13 +192,13 @@ technique:
       uniform float adaptSpeed;
       
       void main() {
-        gl_FragColor = adaptLuminance(texture1Sampler, texture2Sampler, texCoord, texture1Texel, adaptSpeed);
+        gl_FragColor = adaptLuminance(texture1Sampler, texture2Sampler, texCoord, texture1Texel, adaptSpeed * 0.16);
       }
 
 technique:
   name: Tonemap
   pass:
-    vertexShader: |
+    vertexShader:
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
@@ -232,13 +232,13 @@ technique:
 technique:
   name: Copy
   pass:
-    vertexShader: |
+    vertexShader:
       void main(void) {
         texCoord = texture;
         gl_Position = vec4(position, 1.0);
       }
 
-    fragmentShader: |
+    fragmentShader:
       void main() {
         vec2 uv = texCoord;
         vec4 color = texture2D(texture1Sampler, uv);

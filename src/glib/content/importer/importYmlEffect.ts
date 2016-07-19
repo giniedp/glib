@@ -181,4 +181,5 @@ module Glib.Content.Importer {
   }
 
   Manager.addImporter('yml', 'Effect', importYmlEffect);
+  Manager.addImporter('glfx', 'Effect', importYmlEffect);
 }

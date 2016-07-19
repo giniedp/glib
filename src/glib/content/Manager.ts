@@ -48,7 +48,7 @@ module Glib.Content {
     assets = {};
     device:Glib.Graphics.Device;
     urlMap: any = {
-      basicEffect: '/assets/shader/basic.yml'
+      basicEffect: '/assets/shader/basic.glfx'
     }
 
     constructor(device:Glib.Graphics.Device) {

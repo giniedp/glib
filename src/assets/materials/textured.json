@@ -1,5 +1,5 @@
 {
-  "effect": "../shader/Textured.yml",
+  "effect": "../shader/Textured.glfx",
   "parameters": {
     "DiffuseTexture": "../textures/proto_blue.png",
     "TextureEnabled":true,

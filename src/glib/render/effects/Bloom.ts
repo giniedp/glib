@@ -49,75 +49,75 @@ module Glib.Render.Effects {
     }
 
     render(manager: Render.Manager) {
-      var baseTarget = manager.beginEffect();
+      let baseTarget = manager.beginEffect();
       
       // DEBUG
-      //manager.releaseTarget(pongTarget);
+      //manager.releaseTarget(rt2);
       //manager.endEffect(baseTarget);
       //return;
       
-      var pingTarget = manager.acquireTarget(baseTarget);
-      var pongTarget = manager.acquireTarget(baseTarget);
+      let rt1 = manager.acquireTarget(baseTarget);
+      let rt2 = manager.acquireTarget(baseTarget);
       
       this._updateGauss(1.0 / baseTarget.width, 1.0 / baseTarget.height);
 
-      var device = manager.device;
+      let device = manager.device;
       device.depthState = Graphics.DepthState.Default;
       device.stencilState = Graphics.StencilState.Default;
       device.blendState = Graphics.BlendState.Default;
       
       //-------------------------------------------------
-      // [1] GLOW CUT -> pingTarget
+      // [1] GLOW CUT -> rt1
       //
       device.program = this._material.findProgram("glowCut");
       device.program.setUniform("texture", baseTarget);
       device.program.setUniform("threshold", this.glowCut);
-      device.setRenderTarget(pingTarget);
+      device.setRenderTarget(rt1);
       device.clear(0xFF000000, 1, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
 
       // DEBUG
-      //manager.releaseTarget(pongTarget);
-      //manager.endEffect(pingTarget);
+      //manager.releaseTarget(rt2);
+      //manager.endEffect(rt1);
       //return;
       
       //-------------------------------------------------
-      // [2] HORIZONTAL BLUR -> pongTarget
+      // [2] HORIZONTAL BLUR -> rt2
       //
       // calculate filter offsets and weights
       device.program = this._material.findProgram("hBlur");
-      device.program.setUniform("texture", pingTarget);
+      device.program.setUniform("texture", rt1);
       for (var i = 0; i < this._offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights[${i}]`, this._offsetWeights[i]);
       }
-      device.setRenderTarget(pongTarget);
+      device.setRenderTarget(rt2);
       device.clear(Graphics.Color.TransparentBlack, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
       
       // DEBUG
-      //manager.releaseTarget(pingTarget);
-      //manager.endEffect(pongTarget);
+      //manager.releaseTarget(rt1);
+      //manager.endEffect(rt2);
       //return;
       
       //-------------------------------------------------
-      // [2] VERTICAL BLUR -> pingTarget
+      // [2] VERTICAL BLUR -> rt1
       //
       // calculate filter offsets and weights
       device.program = this._material.findProgram("vBlur");
-      device.program.setUniform("texture", pongTarget);
+      device.program.setUniform("texture", rt2);
       for (var i = 0; i < this._offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights[${i}]`, this._offsetWeights[i]);
       }
-      device.setRenderTarget(pingTarget);
+      device.setRenderTarget(rt1);
       device.clear(Graphics.Color.TransparentBlack, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
       
       // DEBUG
-      //manager.releaseTarget(pongTarget);
-      //manager.endEffect(pingTarget);
+      //manager.releaseTarget(rt2);
+      //manager.endEffect(rt1);
       //return;
       
       //-------------------------------------------------
@@ -125,15 +125,15 @@ module Glib.Render.Effects {
       //
       device.program = this._material.findProgram("combine");
       device.program.setUniform("texture", baseTarget);
-      device.program.setUniform("bloomTexture", pingTarget);
+      device.program.setUniform("bloomTexture", rt1);
       
-      device.setRenderTarget(pongTarget);
+      device.setRenderTarget(rt2);
       device.clear(Graphics.Color.TransparentBlack, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
       
-      manager.releaseTarget(pingTarget);
-      manager.endEffect(pongTarget);
+      manager.releaseTarget(rt1);
+      manager.endEffect(rt2);
     }
 
     cleanup(manager: Render.Manager) {

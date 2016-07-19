@@ -1,5 +1,5 @@
 {
-  "effect": "../shader/basic.yml",
+  "effect": "../shader/basic.glfx",
   "technique": "pixelLighting",
   "parameters": {
     "DiffuseMap": "../textures/proto_blue.png",

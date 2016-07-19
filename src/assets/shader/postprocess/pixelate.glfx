@@ -1,5 +1,5 @@
-program: |
-  #include <./_postprocess.h>
+program:
+  #include <./_postprocess.glsl>
 
   // @default 0
   uniform float vOffset;

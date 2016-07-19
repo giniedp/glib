@@ -44,7 +44,7 @@ block script
       }, function(entity) {
         var renderer = entity.getService("Renderer")
         var assets = entity.getService("Assets")
-        assets.load("Effect", "/assets/shader/postprocess/bloom.yml").then(function (effect) {
+        assets.load("Effect", "/assets/shader/postprocess/bloom.glfx").then(function (effect) {
           var material = new Glib.Graphics.Material(renderer.device, effect);
           var postEffect = new Glib.Render.Effects.Bloom(material);
           var view = renderer.manager.views[0];
