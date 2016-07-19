@@ -1,6 +1,6 @@
-module Glib.Graphics {
+module Glib.Graphics.VertexLayout {
 
-  var preset = {
+  export var preset = {
     position: {
       type: 'float',
       elements: 3
@@ -28,7 +28,7 @@ module Glib.Graphics {
     }
   };
 
-  function convert(nameOrLayout:string|{[key:string]:any}):{[key:string]:any} {
+  export function convert(nameOrLayout:string|{[key:string]:any}):{[key:string]:any} {
     if (typeof nameOrLayout === 'string') {
       return create(nameOrLayout);
     }
@@ -51,7 +51,7 @@ module Glib.Graphics {
    * // }
    * ```
    */
-  function create(...rest:string[]):{[key:string]:any} {
+  export function create(...rest:string[]):{[key:string]:any} {
     var names = arguments;
     if (names.length === 1) {
       names = names[0].match(/[A-Z][a-z]+/g) || names;
@@ -62,7 +62,7 @@ module Glib.Graphics {
 
     for (i = 0; i < names.length; i += 1) {
       name = String(names[i]).toLowerCase();
-      element = VertexLayout.preset[name];
+      element = preset[name];
 
       if (!element) {
         utils.log('unknown element name ', name);
@@ -83,10 +83,16 @@ module Glib.Graphics {
    * For example if a layout has a `position` and a `normal` defined
    * (both with three elements) this will return 6.
    */
-  function countElements(layout:any):number {
-    var count = 0;
+  export function countElements(layout:any, countPackedAsOne: boolean = false):number {
+    let item, count = 0;
     Object.keys(layout).forEach(function (key) {
-      count += layout[key].elements;
+      item = layout[key]
+      if (item.packed && countPackedAsOne) {
+        count += 1;
+      } else {
+        count += item.elements;
+      }
+      
     });
     return count;
   }
@@ -94,7 +100,7 @@ module Glib.Graphics {
   /**
    * Counts the number of elements in a single vertex until the given attribute.
    */
-  function countElementsBefore(layout:any, name:string):number {
+  export function countElementsBefore(layout:any, name:string):number {
     var count = 0, target = layout[name], element;
     Object.keys(layout).forEach(function (key) {
       element = layout[key];
@@ -108,7 +114,7 @@ module Glib.Graphics {
   /**
    * Counts the number of elements in a single vertex after the given attribute.
    */
-  function countElementsAfter(layout:any, name:string):number {
+  export function countElementsAfter(layout:any, name:string):number {
     var count = 0, target = layout[name], element;
     Object.keys(layout).forEach(function (key) {
       element = layout[key];
@@ -123,7 +129,7 @@ module Glib.Graphics {
    * Counts the number of bytes in a single vertex. For example if a layout has a `position` and a `normal` defined
    * both with three elements and each element is a float, this will return 24.
    */
-  function countBytes(layout:any):number {
+  export function countBytes(layout:any):number {
     var count = 0, element;
     Object.keys(layout).forEach(function (key) {
       element = layout[key];
@@ -135,7 +141,7 @@ module Glib.Graphics {
   /**
    * Counts the number of bytes in a single vertex until the given attribute.
    */
-  function countBytesBefore(layout:any, name:string):number {
+  export function countBytesBefore(layout:any, name:string):number {
     var count = 0, target = layout[name], element;
     Object.keys(layout).forEach(function (key) {
       element = layout[key];
@@ -149,7 +155,7 @@ module Glib.Graphics {
   /**
    * Counts the number of bytes in a single vertex after the given attribute.
    */
-  function countBytesAfter(layout:any, name:string):number {
+  export function countBytesAfter(layout:any, name:string):number {
     var count = 0, target = layout[name], element;
     Object.keys(layout).forEach(function (key) {
       element = layout[key];
@@ -160,16 +166,78 @@ module Glib.Graphics {
     return count;
   }
 
+  export function uniqueTypes(layout: any):string[] {
+    let types = []
+    Object.keys(layout).forEach(function (key) {
+      let element = layout[key];
+      if (element.type && types.indexOf(element.type) < 0) {
+        types.push(element.type)
+      }
+    })
+    return types
+  }
+  
+  export function convertArrayArrayBuffer(data:number[], layout: any): ArrayBuffer {
+    if (DataType[layout]) {
+      layout = { element: { offset: 0, type: DataType[layout], elements: 1 } } 
+    }
+    const countPackedAsOne = true
+    const elementCount = data.length / VertexLayout.countElements(layout, countPackedAsOne)
+    if (elementCount != (elementCount|0)) {
+      throw "given data does not match the layout";
+    }
+    const littleEndian = true
+    let elementSize = VertexLayout.countBytes(layout)
+    let dataSize = elementCount * elementSize
+    let result = new ArrayBuffer(dataSize)
+    let view = new DataView(result)
+    let viewSetter = {}
+    viewSetter[DataType.BYTE] = 'setInt8'
+    viewSetter[DataType.UNSIGNED_BYTE] = 'setUint8'
+    viewSetter[DataType.SHORT] = 'setInt16'
+    viewSetter[DataType.UNSIGNED_SHORT] = 'setUint16'
+    viewSetter[DataType.INT] = 'setInt32'
+    viewSetter[DataType.UNSIGNED_INT] = 'setUint32'
+    viewSetter[DataType.FLOAT] = 'setFloat32'
 
-  export var VertexLayout = {
-    preset: preset,
-    create: create,
-    convert: convert,
-    countElements: countElements,
-    countElementsBefore: countElementsBefore,
-    countElementsAfter: countElementsAfter,
-    countBytes: countBytes,
-    countBytesBefore: countBytesBefore,
-    countBytesAfter: countBytesAfter
-  };
+    let channels = []
+    for (let key in layout) {
+      let spec = layout[key]
+      let channel = {
+        offset: spec.offset,
+        size: DataSize[spec.type] * spec.elements,
+        elements: spec.elements,
+        elementType: DataType[spec.type],
+        elementSize: DataSize[spec.type],
+        packed: !!spec.packed,
+        setter: viewSetter[DataType[spec.type]]
+      } 
+      channels.push(channel)
+      if (channel.packed) {
+        if (channel.size == 1) channel.setter = viewSetter[DataType.UNSIGNED_BYTE]
+        if (channel.size == 2) channel.setter = viewSetter[DataType.UNSIGNED_SHORT]
+        if (channel.size == 4) channel.setter = viewSetter[DataType.UNSIGNED_INT]
+      }
+    }
+    channels = channels.sort((a, b) => a.offset < b.offset ? -1 : 1)
+
+    let dataIndex = 0
+    for (let pos = 0; pos < dataSize; pos += elementSize) {
+      for (let channel of channels) {
+        let offset = pos + channel.offset
+        if (channel.packed) {
+          view[channel.setter](offset, data[dataIndex++], littleEndian) 
+        } else {
+          let counter = channel.elements;
+          for (let i = 0; i < channel.elements; i++) {
+            view[channel.setter](offset, data[dataIndex++], littleEndian)
+            offset += channel.elementSize
+          }
+        }
+      }
+    }
+
+    return result
+  }
+  
 }
