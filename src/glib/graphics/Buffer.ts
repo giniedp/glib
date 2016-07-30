@@ -157,9 +157,7 @@ module Glib.Graphics {
     setData(data:any):Buffer {
       if (this.isIndexBuffer) {
         let buffer: ArrayBuffer
-        
         if (data instanceof Array) {
-          //buffer = VertexLayout.convertArrayArrayBuffer(data, this.dataType)
           buffer = new ArrayType[this.dataType](data).buffer;
         } else if (data instanceof ArrayBuffer) {
           buffer = data as any

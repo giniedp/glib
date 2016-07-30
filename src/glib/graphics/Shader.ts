@@ -109,15 +109,16 @@ module Glib.Graphics {
      * @param {string} source
      */
     static inspectShader(source) {
-      var result = Shader._inspectQualifiers(source);
-      result.structs = Shader._inspectStructs(source);
-      Shader._fixStructUniforms(result.uniforms, result.structs);
+      var result = Shader.inspectQualifiers(source);
+      result.structs = Shader.inspectStructs(source);
+      Shader.fixStructUniforms(result.uniforms, result.structs);
       return result;
     }
 
     static inspectProgram(vertexShader, fragmentShader) {
       var vInspects = Shader.inspectShader(vertexShader);
       var fInspects = Shader.inspectShader(fragmentShader);
+      // TODO: fix missing or invalid texture register annotations
       return {
         attributes: utils.extend({}, vInspects.attributes, fInspects.attributes),
         uniforms: utils.extend({}, vInspects.uniforms, fInspects.uniforms),
@@ -125,7 +126,7 @@ module Glib.Graphics {
       }
     }
 
-    static _inspectStructs(source:string):any {
+    private static inspectStructs(source:string):any {
       var index = 0, left, right, name, block, result = {};
       while (true) {
         index = source.indexOf('struct', index);
@@ -138,12 +139,12 @@ module Glib.Graphics {
 
         name = source.substr(index, left - index).match(/struct\s+(.+)\s*/)[1];
         block = source.substr(left + 1, right - left - 1);
-        result[utils.trim(name)] = Shader._inspectMembers(block);
+        result[utils.trim(name)] = Shader.inspectMembers(block);
         index = right;
       }
     }
 
-    static _inspectMembers(block:string):any {
+    private static inspectMembers(block:string):any {
       block = block
         .split(/\s*\/\/.*\n/).join('') // remove comments
         .split(charNewLine).join('')   // remove remove new lines
@@ -163,7 +164,7 @@ module Glib.Graphics {
       return result;
     }
 
-    static _inspectQualifiers(source:string):any {
+    private static inspectQualifiers(source:string):any {
       var comments = [], match, annotations, i, line;
       var lines = utils.getLines(source);
       var result = {
@@ -188,7 +189,7 @@ module Glib.Graphics {
 
         match = line.match(regUniform);
         if (match) {
-          annotations = Shader._parseAnnotations(comments);
+          annotations = Shader.parseAnnotations(comments);
           annotations.type = match[1];
           annotations.name = match[2];
           result.uniforms[annotations.binding || annotations.name] = annotations;
@@ -198,7 +199,7 @@ module Glib.Graphics {
 
         match = line.match(regAttribute);
         if (match) {
-          annotations = Shader._parseAnnotations(comments);
+          annotations = Shader.parseAnnotations(comments);
           annotations.type = match[1];
           annotations.name = match[2];
           result.attributes[annotations.binding || annotations.name] = annotations;
@@ -208,7 +209,7 @@ module Glib.Graphics {
 
         match = line.match(regVarying);
         if (match) {
-          annotations = Shader._parseAnnotations(comments);
+          annotations = Shader.parseAnnotations(comments);
           annotations.type = match[1];
           annotations.name = match[2];
           result.varying[annotations.binding || annotations.name] = annotations;
@@ -229,7 +230,7 @@ module Glib.Graphics {
       return result;
     }
 
-    static _parseAnnotations(lines:string[]):any{
+    private static parseAnnotations(lines:string[]):any{
       var result = {};
       if (!lines) return result;
       for (var line of lines) {
@@ -242,7 +243,7 @@ module Glib.Graphics {
       return result;
     }
 
-    static _fixStructUniforms(uniforms, structs):void {
+    private static fixStructUniforms(uniforms, structs):void {
       var item, struct, match, name, count, i;
       var reg = /(.*)\[(\d+)]/; // i.e. light[0]
       
@@ -290,13 +291,13 @@ module Glib.Graphics {
     }
   }
 
-  var charNewLine = '\n';
-  var regComment = /\s*\/\/(.*)\n?\s*$/;
-  var regUniform = /^\s*uniform\s+(.+)\s+(.+)\s*;/;
-  var regAttribute = /^\s*attribute\s+(.+)\s+(.+)\s*;/;
-  var regVarying = /^\s*varying\s+(.+)\s+(.+)\s*;/;
-  var regConst = /^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/;
-  var regTrim = /^\s*|\s*$/;
-  var redAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/;
+  const charNewLine = '\n';
+  const regComment = /\s*\/\/(.*)\n?\s*$/;
+  const regUniform = /^\s*uniform\s+(.+)\s+(.+)\s*;/;
+  const regAttribute = /^\s*attribute\s+(.+)\s+(.+)\s*;/;
+  const regVarying = /^\s*varying\s+(.+)\s+(.+)\s*;/;
+  const regConst = /^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/;
+  const regTrim = /^\s*|\s*$/;
+  const redAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/;
 
 }

@@ -28,6 +28,12 @@ module Glib.Graphics {
       return result;
     }
 
+    get maxViewportWidth() {
+      return this.capability("MAX_VIEWPORT_DIMS")[0]
+    }
+    get maxViewportHeight() {
+      return this.capability("MAX_VIEWPORT_DIMS")[1]
+    }
     get maxRenderBufferSize() {
       return this.capability("MAX_RENDERBUFFER_SIZE")
     }

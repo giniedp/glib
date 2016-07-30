@@ -4,120 +4,66 @@ module Glib.Graphics {
   var noop = function(){};
   
   export interface TextureOptions {
-    /**
-     * Whether or not to automatically generate mip maps
-     */
+    // Whether or not to automatically generate mip maps
     generateMipmap?: boolean,
-    /**
-     * The pixel format to be used
-     */
+    // The pixel format to be used
     pixelFormat?: number,
-    /**
-     * The pixel element data tupe to be used
-     */
+    // The pixel element data tupe to be used
     pixelType?: number,
-    /**
-     * The texture type
-     */
+    // The texture type
     type?: number,
-    /**
-     * The wrapped WebGLTexture object
-     */
+    // The wrapped WebGLTexture object
     handle?: WebGLTexture,
-    /**
-     * The texture width
-     */
+    // The texture width
     width?:number,
-    /**
-     * The texture height
-     */
+    // The texture height
     height?:number,
-    /**
-     * The initial texture data to set
-     */
+    // The initial texture data to set
     data?: any,
-    /**
-     * The depth format of the depth stencil buffer to use when the texture is used as a render target 
-     */
+    // The depth format of the depth stencil buffer to use when the texture is used as a render target
     depthFormat?:number
   }
 
-  /**
-   * Describes a texture object.
-   */
+  // Describes a texture object.
   export class Texture {
-    /**
-     * The Graphics.Device
-     */
+    // The Graphics.Device
     device:Device;
-    /**
-     * The GL context
-     */
+    // The GL context
     gl:any;
-    /**
-     * The texture width
-     * @type {number}
-     */
+    // The texture width
     width:number = 0;
-    /**
-     * The texture height
-     * @type {number}
-     */
+    // The texture height
     height:number = 0;
-    /**
-     * Indicates whether texture data has been set and the texture is ready to be used in a shader.
-     * This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
-     * initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
-     * @type {boolean}
-     */
+    // Indicates whether texture data has been set and the texture is ready to be used in a shader.
+    // This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
+    // initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
     ready:boolean = false;
-    /**
-     * Indicates whether the texture width and height is a power of two value.
-     * @type {boolean}
-     */
+    // Indicates whether the texture width and height is a power of two value.
     isPOT:boolean = false;
-    /**
-     * Indicates whether mipmaps should be automatically created when data is iset.
-     * @type {boolean}
-     */
+    // Indicates whether mipmaps should be automatically created when data is iset.
     generateMipmap:boolean = true;
-    /**
-     * Indicates the used pixel format.
-     * @type {number}
-     */
+    // Indicates the used pixel format.
     pixelFormat:number = PixelFormat.RGBA;
-    /**
-     * Indicates the data type of the pixel elements
-     * @type {number}
-     */
+    // Indicates the data type of the pixel elements
     pixelType:number = DataType.ubyte;
-    /**
-     * Indicates the texture type
-     * @type {number}
-     */
+    // Indicates the texture type
     type:number = TextureType.Texture2D;
-    /**
-     *
-     * @type {function()}
-     */
+    
+    // If Texture is created as video texture this holds the HTMLVideoElement.
+    // Setting this property wont have any effect.
+    video:HTMLVideoElement = null
+
+    // If Texture is created as image texture this holds the HTMLImageElement.
+    // Setting this property wont have any effect.
+    image:HTMLImageElement = null
+
     update:()=> void = noop;
-    /**
-     *
-     * @type {WebGLTexture}
-     */
     handle:WebGLTexture = null;
     
-    /**
-     * The cached time value of the currently running video.
-     * @type {number}
-     */
+    // The cached time value of the currently running video.
     private _lastVideoTime = -1;
 
-    /**
-     * Initializes a new texture
-     * @param device The graphics device
-     * @param options The texture options
-     */
+    // Initializes a new texture
     constructor(device:Device, options:TextureOptions={}) {
       this.device = device;
       this.gl = device.context;
@@ -125,55 +71,44 @@ module Glib.Graphics {
     }
 
     private _depthFormat: number;
-    /**
-     * The depth format of the depth stencil buffer to be used when the texture is used as a render target 
-     */
+
+    // The depth format of the depth stencil buffer to be used when the texture is used as a render target
     get depthFormat():number {
       return this._depthFormat;
     }
     set depthFormat(value:number) {
-      this.device._unregisterRenderTarget(this);
+      this.device.unregisterRenderTarget(this);
       this._depthFormat = value;
       if (value != null) {
-        this.device._registerRenderTarget(this);  
+        this.device.registerRenderTarget(this);  
       }
     }
 
-    /**
-     * Indicates whether this texture is intendet to be used as a renter target
-     */
+    // Indicates whether this texture is intendet to be used as a renter target
     get isRenderTarget():boolean {
       return this._depthFormat != null;
     }
 
-    /**
-     * Gets the name string of the used pixel format
-     */
+    // Gets the name string of the used pixel format
     get pixelFormatName():number {
       return PixelFormatName[this.pixelFormat];
     }
 
-    /**
-     * Gets the string name of the used pixel type
-     */
+    // Gets the string name of the used pixel type
     get pixelTypeName():number {
       return DataTypeName[this.pixelType];
     }
-
-    /**
-     * Gets the string name of the used texture type
-     */
+    
+    // Gets the string name of the used texture type
     get typeName():number {
       return TextureTypeName[this.type];
     }
 
-    get texel(): IVec2 {
-      return { x: 1.0 / this.width, y: 1.0 / this.height }
+    get texel():IVec2 { 
+      return { x: 1.0 / this.width, y: 1.0 / this.height } 
     }
 
-    /**
-     * Collection of file extensions that are recognized as video files. Contains the values ['mp4', 'ogv', 'ogg']
-     */
+    // Collection of file extensions that are recognized as video files. Contains the values ['mp4', 'ogv', 'ogg']
     static videoTypes = ['mp4', 'ogv', 'ogg'];
 
     static createImageUpdateHandle(texture:Texture, image:HTMLImageElement) {
@@ -211,7 +146,7 @@ module Glib.Graphics {
           texture._lastVideoTime = video.currentTime;
           gl.bindTexture(texture.type, texture.handle);
           gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, video);
-          if (texture.generateMipmap) {
+          if (texture.generateMipmap && texture.isPOT) {
             gl.generateMipmap(texture.type);
           }
           gl.bindTexture(texture.type, null);
@@ -256,7 +191,11 @@ module Glib.Graphics {
       } else if (source instanceof HTMLVideoElement) {
         this.setVideo(source);
       } else if (utils.isArray(source)) {
-        this.setData(new Uint8Array(source));
+        if (utils.isObject(source[0])) {
+          this.setVideoUrls(source);
+        } else {
+          this.setData(new Uint8Array(source));
+        }
       } else if (source) {
         this.setImage(source);
       } else {
@@ -269,91 +208,123 @@ module Glib.Graphics {
     }
 
     destroy():Texture {
-      this.device._unregisterRenderTarget(this);
+      this.image = null
+      this.video = null
+      this.device.unregisterRenderTarget(this)
       if (this.handle != null && this.gl.isTexture(this.handle)) {
-        this.gl.deleteTexture(this.handle);
-        this.handle = null;
+        this.gl.deleteTexture(this.handle)
+        this.handle = null
       }
-      return this;
+      return this
     }
 
     use():Texture {
-      this.gl.bindTexture(this.type, this.handle);
-      return this;
+      this.gl.bindTexture(this.type, this.handle)
+      return this
     }
 
     setUrl(url:string):Texture {
-      var ext = url.substr(url.lastIndexOf('.'));
-      var isVideo = Texture.videoTypes.indexOf(ext) >= 0;
+      var ext = url.substr(url.lastIndexOf('.'))
+      var isVideo = Texture.videoTypes.indexOf(ext) >= 0
       if (isVideo) {
-        this.setVideoUrl(url);
+        this.setVideoUrl(url)
       } else {
-        this.setImageUrl(url);
+        this.setImageUrl(url)
       }
-      return this;
+      return this
     }
 
     setImageUrl(url:string):Texture {
-      this.update = function () {
-      };
-      this.ready = false;
-
-      var that = this;
-      var image = new Image();
+      this.update = noop
+      this.ready = false
+      var that = this
+      var image = new Image()
       image.onload = function () {
-        that.setImage(image);
-      };
-      image.src = url;
-      return this;
+        that.setImage(image)
+      }
+      image.src = url
+      this.image = image
+      this.video = null
+      return this
     }
 
     setVideoUrl(url:string):Texture {
-      this.update = function () {
+      this.update = noop
+      this.ready = false
+      var that = this
+      var video = document.createElement('video')
+      video.oncanplay = function () {
+        that.setVideo(video)
       };
-      this.ready = false;
+      video.src = url
+      this.video = video
+      this.image = null
+      return this
+    }
 
-      var that = this;
-      var element = document.createElement('video');
-      element.oncanplay = function () {
-        that.setVideo(element);
-      };
-      element.src = url;
-      return this;
+    setVideoUrls(options:any[]):Texture {
+      this.update = noop
+      this.ready = false
+      var that = this
+      var video = document.createElement('video')
+      video.oncanplay = function () {
+        that.setVideo(video)
+      }
+      let valid = false
+      for (let option of options) {
+        if (video.canPlayType(option.type)) {
+          Glib.utils.debug("[Texture] canPlayType", option)
+          video.src = option.src
+          valid = true
+          break
+        }
+      }
+      if (!valid) {
+        Glib.utils.debug("[Texture] no supported format found. Video won't play.", options)
+      }
+      this.video = video
+      this.image = null
+      return this
     }
 
     setImage(image:HTMLImageElement):Texture {
-      this.update = Texture.createImageUpdateHandle(this, image);
-      this.update();
-      return this;
+      this.image = image
+      this.video = null
+      this.update = Texture.createImageUpdateHandle(this, image)
+      this.update()
+      return this
     }
-
+    
     setVideo(video:HTMLVideoElement):Texture {
-      this.update = Texture.createVideoUpdateHandle(this, video);
-      this.update();
-      return this;
+      this.video = video
+      this.image = null
+      this.update = Texture.createVideoUpdateHandle(this, video)
+      this.update()
+      return this
     }
 
     setData(data, width?:number, height?:number):Texture {
-      this.update = function () {
-      };
-      var pixelCount = data.length / PixelFormatElementCount[this.pixelFormat];
+      this.video = null
+      this.image = null
+      this.update = noop
+      var pixelCount = data.length / PixelFormatElementCount[this.pixelFormat]
       if (!width || !height) {
-        width = height = Math.sqrt(pixelCount) | 0;
+        width = height = Math.sqrt(pixelCount) | 0
       }
       if (width * height !== pixelCount) {
-        throw "width and height does not match the data length";
+        throw "width and height does not match the data length"
       }
-      var gl = this.gl;
-      this.use();
-      gl.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, data);
+      var gl = this.gl
+      this.use()
+      gl.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, data)
       if (this.generateMipmap) {
-        gl.generateMipmap(this.type);
+        gl.generateMipmap(this.type)
       }
-      this.width = width;
-      this.height = height;
-      this.ready = true;
-      this.isPOT = utils.isPowerOfTwo(width) && utils.isPowerOfTwo(height);
-      return this;
+      this.width = width
+      this.height = height
+      this.ready = true
+      this.isPOT = utils.isPowerOfTwo(width) && utils.isPowerOfTwo(height)
+      return this
     }
   }
 }

@@ -87,7 +87,7 @@ module Glib.Graphics {
       return this;
     }
 
-    _attach():ShaderProgram {
+    private _attach():ShaderProgram {
       for (var shader of this.shader) {
         this.gl.attachShader(this.handle, shader.handle);
         this.attached.push(shader);
@@ -95,7 +95,7 @@ module Glib.Graphics {
       return this;
     }
 
-    _detach():ShaderProgram {
+    private _detach():ShaderProgram {
       for (var shader of this.attached) {
         this.gl.detachShader(this.handle, shader.handle);
       }
@@ -103,7 +103,7 @@ module Glib.Graphics {
       return this;
     }
 
-    _cache():ShaderProgram {
+    private _cache():ShaderProgram {
       this.use();
       var key, attribute, attributeLocations = [];
       for (key in this.attributes) { // jshint ignore:line
@@ -164,9 +164,6 @@ module Glib.Graphics {
       return this;
     }
 
-    /**
-      * @description Sets a value on the uniform specified by the 'name' argument. Throws an error if the uniform does not exist.
-      */
     setUniform(name:string, value: any):ShaderProgram {
       var uniform = this.uniforms[name];
       if (!uniform) {

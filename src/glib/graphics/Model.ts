@@ -22,8 +22,8 @@ module Glib.Graphics {
       this.boundingBox = params.boundingBox || [0, 0, 0, 0, 0, 0];
       this.boundingSphere = params.boundingSphere || [0, 0, 0, 0];
 
-      var meshes = [].concat.apply([], params.meshes || []);
-      for (var mesh of meshes) {
+      let meshes = [].concat.apply([], params.meshes || []);
+      for (let mesh of meshes) {
         if (mesh instanceof ModelMesh) {
           this.meshes.push(mesh);
         } else {
@@ -31,8 +31,8 @@ module Glib.Graphics {
         }
       }
 
-      var materials = [].concat.apply([], params.materials || []);
-      for (var material of materials) {
+      let materials = [].concat.apply([], params.materials || []);
+      for (let material of materials) {
         if (material instanceof Material) {
           this.materials.push(material);
         } else {
@@ -41,11 +41,11 @@ module Glib.Graphics {
       }
 
       // convert materialIds from string name to numeric index
-      for (var meshItem of this.meshes) {
-        var index = 0;
-        var name = meshItem.materialId;
+      for (let meshItem of this.meshes) {
+        let index = 0;
+        let name = meshItem.materialId;
         if (typeof name === "string") {
-          for (var materialItem of materials) {
+          for (let materialItem of materials) {
             if (materialItem.name === name) {
               meshItem.materialId = index;
               break;
@@ -57,12 +57,12 @@ module Glib.Graphics {
     }
 
     draw():Model {
-      for (var mesh of this.meshes) {
-        var material = this.materials[mesh.materialId];
+      for (let mesh of this.meshes) {
+        let material = this.materials[mesh.materialId];
         if (!material) continue;
-        var technique = material.technique;
+        let technique = material.technique;
         if (!technique) continue;
-        for (var pass of technique.passes) {
+        for (let pass of technique.passes) {
           pass.commit();
           mesh.draw(pass.program);
         }

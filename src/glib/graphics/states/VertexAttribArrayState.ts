@@ -3,17 +3,17 @@ module Glib.Graphics {
   export class VertexAttribArrayState {
     device:Device;
     gl:any;
-    _enabledArrays:number[];
+    private enabledArrays:number[];
 
     constructor(device:Device) {
       this.device = device;
       this.gl = device.context;
-      this._enabledArrays = [];
+      this.enabledArrays = [];
     }
 
     commit(attributeLocations:number[]=[]):VertexAttribArrayState {
 
-      var isEnabled = this._enabledArrays;
+      var isEnabled = this.enabledArrays;
 
       for (var location of isEnabled) {
         if (attributeLocations.indexOf(location) < 0) {

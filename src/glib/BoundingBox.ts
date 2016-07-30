@@ -83,7 +83,17 @@ module Glib {
       result.max.z = sphere.center.z + sphere.radius;
       return result;
     }
-    
+
+    static convert(item:any): BoundingBox {
+      if (item instanceof BoundingBox) {
+        return item
+      } else if (Array.isArray(item)) {
+        return new BoundingBox({ x:item[0], y:item[1], z:item[2] }, { x:item[3], y:item[4], z:item[5] })
+      } else {
+        return new BoundingBox()
+      }
+    }
+
     static getCorner(index:number, min:Glib.IVec3, max:Glib.IVec3, out:Glib.IVec3):Glib.IVec3 {
       out = out || new Glib.Vec3();
       if (index === 0) {

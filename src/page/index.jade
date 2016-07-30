@@ -2,12 +2,12 @@ doctype html
 html(lang="en")
   head
     meta(name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no")
-    link(rel="stylesheet" href="/style.css")
-    script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
+    link(href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet")
+    link(rel="stylesheet" href="/page.css")
     script#dsq-count-scr(src="//ginie.disqus.com/count.js" async)
 body.grid-frame
   .grid-block.vertical
-    .grid-block.shrink.menu-group.dark
+    .grid-block.shrink
       include ./_includes/menu-bar.jade
     .grid-block
       .grid-container(style="width: 56rem;")

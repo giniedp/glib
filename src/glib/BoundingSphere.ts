@@ -77,5 +77,15 @@ module Glib {
       var center =Vec3.lerp(box.min, box.max, 0.5)
       return new BoundingSphere(center, radius);
     }
+
+    static convert(item:any):BoundingSphere {
+      if (item instanceof BoundingSphere) {
+        return item
+      } else if (Array.isArray(item)) {
+        return new BoundingSphere({ x:item[0], y:item[1], z:item[2] }, item[3])
+      } else {
+        return new BoundingSphere()
+      }
+    }
   }
 }

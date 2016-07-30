@@ -1,4 +1,6 @@
 .idea
 .vscode
 dist
+page
 node_modules
+bower_components

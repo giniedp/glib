@@ -92,7 +92,7 @@ module Glib.Graphics {
         this.destroy();
         this.handle = handle;
       }
-      this.device._registerDepthBuffer(this);
+      this.device.registerDepthBuffer(this);
 
       if (!this.handle || !this.gl.isRenderbuffer(this.handle)) {
         this.handle = this.gl.createRenderbuffer(this.gl.RENDERBUFFER);
@@ -112,7 +112,7 @@ module Glib.Graphics {
      * Deletes the wrapped WebGLRenderbuffer
      */
     destroy(){
-      this.device._unregisterDepthBuffer(this);
+      this.device.unregisterDepthBuffer(this);
       if (this.gl.isRenderbuffer(this.handle)){
         this.gl.deleteRenderbuffer(this.handle);
         this.handle = null;

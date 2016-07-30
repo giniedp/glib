@@ -1,294 +1,359 @@
+/**
+ *  
+ * @preferred
+ */
 module Glib.Graphics {
 
-  export var DefaultContextAttributes = {
-    // If true, requests a drawing buffer with an alpha channel for the
-    // purposes of performing OpenGL destination alpha operations
-    // and compositing with the page.
+  export interface IContextAttributes {
+    /**
+     * If true, requests a drawing buffer with an alpha channel for the
+     * purposes of performing OpenGL destination alpha operations
+     * and compositing with the page.
+     */
+    alpha?: boolean,
+    /**
+     * If true, requests drawing buffer with a depth buffer of at least 16 bits.
+     */
+    depth?: boolean,
+    /**
+     * If true, requests a stencil buffer of at least 8 bits.
+     */
+    stencil?: boolean,
+    /**
+     * If true, requests drawing buffer with antialiasing using its choice
+     * of technique (multisample/supersample) and quality.
+     */
+    antialias?: boolean,
+    /**
+     * If true, requests drawing buffer which contains colors with
+     * premultiplied alpha. (Ignored if Alpha is false.)
+     */
+    premultipliedAlpha?: boolean,
+    /**
+     * If true, requests that contents of the drawing buffer remain in
+     * between frames, at potential performance cost.
+     */
+    preserveDrawingBuffer?: boolean
+  }
+
+  export var DefaultContextAttributes:IContextAttributes = {
     alpha: true,
-
-    // If true, requests drawing buffer with a depth buffer of at least
-    // 16 bits.
     depth: true,
-
-    // If true, requests a stencil buffer of at least 8 bits.
     stencil: false,
-
-    // If true, requests drawing buffer with antialiasing using its choice
-    // of technique (multisample/supersample) and quality.
     antialias: true,
-
-    // If true, requests drawing buffer which contains colors with
-    // premultiplied alpha. (Ignored if Alpha is false.)
     premultipliedAlpha: true,
-
-    // If true, requests that contents of the drawing buffer remain in
-    // between frames, at potential performance cost.
-    preserveDrawingBuffer: false
-  };
-
-  function getOrCreateCanvas(canvas) {
-    var result = canvas;
-    if (typeof result === 'string') {
-      result = document.getElementById(result);
-    }
-    if (!result) {
-      result = document.createElement('canvas');
-    }
-    return result;
+    preserveDrawingBuffer: true
   }
 
-  function getOrCreateContext(canvas, options) {
-    var context = options.context;
-    if (typeof context === 'string') {
-      context = canvas.getContext(context, options.contextAttributes || DefaultContextAttributes);
+  function getOrCreateCanvas(canvas?:string|HTMLCanvasElement):HTMLCanvasElement {
+    if (canvas instanceof HTMLCanvasElement) {
+      return canvas
     }
-    if (!context) {
-      context = canvas.getContext('experimental-webgl', options.contextAttributes || DefaultContextAttributes);
+    if (utils.isString(canvas)) {
+      let element = document.getElementById(canvas as string)
+      if (element instanceof HTMLCanvasElement) {
+        return element
+      } else {
+        throw `expected '${canvas}' to be a HTMLCanvasElement but found '${element}'`
+      }
     }
-    return context;
+    return document.createElement('canvas') as HTMLCanvasElement
   }
 
+  function getOrCreateContext(canvas:HTMLCanvasElement, options:any):WebGLRenderingContext {
+    let context = options.context
+    let attributes = utils.extend({}, DefaultContextAttributes, options.contextAttributes || {})
+    if (context instanceof CanvasRenderingContext2D) {
+      return context
+    }
+    if (utils.isString(context)) {
+      return canvas.getContext(context as string, attributes) as WebGLRenderingContext
+    }
+    return canvas.getContext('experimental-webgl', attributes) as WebGLRenderingContext
+  }
+
+  /**
+   * The Glib.Graphics.Device class ties all concepts of the Graphics package together.
+   * It's a central component for rendering geometries. It holds system state variables and 
+   * is able to create resources such as buffers, shaders, textures and render targets.  
+   */
   export class Device {
 
-    canvas:any;
-    context:any;
+    /**
+     * The html canvas element
+     * @link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement 
+     */
+    canvas:HTMLCanvasElement
 
-    /** The currently active index buffer */
-    private _indexBuffer:Buffer;
-    /** The currently active vertex buffer */
-    private _vertexBuffer:Buffer;
-    /** The currently active program */
-    private _program:ShaderProgram;
-    /** The index buffer that is used to draw a full screen quad */
-    private _quadIndexBuffer:Buffer;
-    /** The vertex buffer that is used to draw a full screen quad */
-    private _quadVertexBuffer:Buffer;
-    /** The vertex buffer that is used to draw a full screen quad with flipped texture coordinates */
-    private _quadVertexBufferFlipped: Buffer;
+    /**
+     * The webgl rendering context.
+     * @link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext
+     * @link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext
+     */
+    context:WebGLRenderingContext
 
-    capabilities:any;
-    sampler:SamplerState[];
+    /**
+     * A collection of capabilites of the currently running graphics unit.
+     */
+    capabilities:Capabilities
 
-    private _cullState:CullState;
-    private _blendState:BlendState;
-    private _depthState:DepthState;
-    private _offsetState:OffsetState;
-    private _stencilState:StencilState;
-    private _scissorState:ScissorState;
-    private _viewportState:ViewportState;
-    private _vertexAttribArrayState:VertexAttribArrayState;
-    private _registeredRenderTargets:Texture[] = [];
-    private _registeredDepthBuffers:DepthBuffer[] = [];
-    private _registeredFrameBuffers: FrameBuffer[] = [];
+    /**
+     * Register of render states. The size of the collection and thus the number of 
+     * sampler units is determined by `capabilities.maxTextureUnits`
+     */ 
+    samplerStates:SamplerState[]
 
-    private _frameBuffer:FrameBuffer;
-    private _customFrameBuffer:FrameBuffer;
-    private _customFrameBufferOptions:FrameBufferOptions = { textures:[], depthBuffer:null };
+    /**
+     * The indexBuffer propery value. Do not set this value directly. Use the property accessors instead
+     */
+    private currentIndexBuffer:Buffer
+    /**
+     * The vertexBuffer propery value. Do not set this value directly. Use the property accessors instead
+    */ 
+    private currentVertexBuffer:Buffer
+    /** 
+     * The program propery value. Do not set this value directly. Use the property accessors instead
+     */ 
+    private currentProgram:ShaderProgram
+    /** 
+     * The cached index buffer that is used to draw a full screen quad.
+     */ 
+    private quadIndexBuffer:Buffer
+    /**
+     * The cached vertex buffer that is used to draw a full screen quad.
+     */ 
+    private quadVertexBuffer:Buffer
+    /**
+     * The cached vertex buffer that is used to draw a full screen quad with flipped texture coordinates.
+     */ 
+    private quadVertexBufferFlipped: Buffer
+
+    private cullStateObject:CullState
+    private blendStateObject:BlendState
+    private depthStateObject:DepthState
+    private offsetStateObject:OffsetState
+    private stencilStateObject:StencilState
+    private scissorStateObject:ScissorState
+    private viewportStateObject:ViewportState
+    private vertexAttribArrayState:VertexAttribArrayState
+    private registeredRenderTargets:Texture[] = []
+    private registeredDepthBuffers:DepthBuffer[] = []
+    private registeredFrameBuffers: FrameBuffer[] = []
+
+    private currentFrameBuffer:FrameBuffer
+    private customFrameBuffer:FrameBuffer
+    private customFrameBufferOptions:FrameBufferOptions = { textures:[], depthBuffer:null }
+
+    private defaultTextureInstance:Texture
 
     constructor(options:{
       canvas?: string|HTMLCanvasElement,
-      context?: string|any,
-      contextAttributes?: Object
+      context?: string|WebGLRenderingContext,
+      contextAttributes?: IContextAttributes
     } = {}) {
 
-      this.canvas = getOrCreateCanvas(options.canvas);
-      this.context = getOrCreateContext(this.canvas, options);
-      this.capabilities = new Capabilities(this);
+      this.canvas = getOrCreateCanvas(options.canvas)
+      this.context = getOrCreateContext(this.canvas, options)
+      this.capabilities = new Capabilities(this)
 
-      this._cullState = new CullState(this);
-      this.cullState = CullState.Default;
-      this._blendState = new BlendState(this);
-      this.blendState = BlendState.Default;
-      this._depthState = new DepthState(this);
-      this.depthState = DepthState.Default;
-      this._offsetState = new OffsetState(this);
-      this.offsetState = OffsetState.Default;
-      this._stencilState = new StencilState(this);
-      this.stencilState = StencilState.Default;
-      this._scissorState = new ScissorState(this);
-      this.scissorState = ScissorState.Default;
-      this._viewportState = new ViewportState(this);
-      this._vertexAttribArrayState = new VertexAttribArrayState(this);
+      this.cullStateObject = new CullState(this)
+      this.cullState = CullState.Default
+      this.blendStateObject = new BlendState(this)
+      this.blendState = BlendState.Default
+      this.depthStateObject = new DepthState(this)
+      this.depthState = DepthState.Default
+      this.offsetStateObject = new OffsetState(this)
+      this.offsetState = OffsetState.Default
+      this.stencilStateObject = new StencilState(this)
+      this.stencilState = StencilState.Default
+      this.scissorStateObject = new ScissorState(this)
+      this.scissorState = ScissorState.Default
+      this.viewportStateObject = new ViewportState(this)
+      this.vertexAttribArrayState = new VertexAttribArrayState(this)
 
-      this.sampler = [];
-      var max = Number(this.capabilities.maxTextureUnits);
-      while (this.sampler.length < max) {
-        this.sampler.push(new SamplerState(this, this.sampler.length))
+      this.samplerStates = []
+      var max = Number(this.capabilities.maxTextureUnits)
+      while (this.samplerStates.length < max) {
+        this.samplerStates.push(new SamplerState(this, this.samplerStates.length))
       }
     }
 
     /** Gets a copy of the cull state parameters */
     get cullState() {
-      return this._cullState.dump();
+      return this.cullStateObject.dump()
     }
     /** Updates the cull state parameters and direclty commits the state to the GPU */
     set cullState(v:CullStateOptions) {
-      this._cullState.commit(v);
+      this.cullStateObject.commit(v)
     }
     /** Gets a copy of the blend state parameters */
     get blendState() {
-      return this._blendState.dump();
+      return this.blendStateObject.dump()
     }
     /** Updates the blend state parameters and direclty commits the state to the GPU */
     set blendState(v:BlendStateOptions) {
-      this._blendState.commit(v);
+      this.blendStateObject.commit(v)
     }
     /** Gets a copy of the depth state parameters */
     get depthState() {
-      return this._depthState.dump();
+      return this.depthStateObject.dump()
     }
     /** Updates the depth state parameters and direclty commits the state to the GPU */
     set depthState(v:DepthStateOptions) {
-      this._depthState.commit(v);
+      this.depthStateObject.commit(v)
     }
     /** Gets a copy of the offset state parameters */
     get offsetState() {
-      return this._offsetState.dump();
+      return this.offsetStateObject.dump()
     }
     /** Updates the offset state parameters and direclty commits the state to the GPU */
     set offsetState(v:OffsetStateOptions) {
-      this._offsetState.commit(v);
+      this.offsetStateObject.commit(v)
     }
     /** Gets a copy of the stencil state parameters */
     get stencilState() {
-      return this._stencilState.dump();
+      return this.stencilStateObject.dump()
     }
     /** Updates the stencil state parameters and direclty commits the state to the GPU */
     set stencilState(v:StencilStateOptions) {
-      this._stencilState.commit(v);
+      this.stencilStateObject.commit(v)
     }
     /** Gets a copy of the scissor state parameters */
     get scissorState() {
-      return this._scissorState.dump();
+      return this.scissorStateObject.dump()
     }
     /** Updates the scissor state parameters and direclty commits the state to the GPU */
     set scissorState(v:ScissorStateOptions) {
-      this._scissorState.commit(v);
+      this.scissorStateObject.commit(v)
     }
     /** Gets a copy of the viewport state parameters */
     get viewportState() {
-      return this._viewportState.dump();
+      return this.viewportStateObject.dump()
     }
     /** Updates the viewport state parameters and direclty commits the state to the GPU */
     set viewportState(v:ViewportStateOptions) {
-      this._viewportState.commit(v);
+      this.viewportStateObject.commit(v)
     }
 
+    get defaultTexture():Texture {
+      if (!this.defaultTextureInstance) {
+        this.defaultTextureInstance = this.createTexture2D({
+          data: [0, 0, 0, 0]
+        })
+      }
+      return this.defaultTextureInstance
+    }
     /**
      * Clears the color, depth and stencil buffers
-     * @param color
-     * @param depth
-     * @param stencil
-     * @returns {Glib.Graphics.Device}
      */
     clear(color?:number|number[]|Color, depth?:number, stencil?:number):Device {
-      var gl = this.context, mask = 0;
+      var gl = this.context, mask = 0
 
       if (color instanceof Color) {
-        mask = mask | gl.COLOR_BUFFER_BIT;
-        gl.clearColor(color.x, color.y, color.z, color.w);
+        mask = mask | gl.COLOR_BUFFER_BIT
+        gl.clearColor(color.x, color.y, color.z, color.w)
       } else if (typeof color === 'number') {
-        mask = mask | gl.COLOR_BUFFER_BIT;
-        var c = Color;
-        gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color));
+        mask = mask | gl.COLOR_BUFFER_BIT
+        var c = Color
+        gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color))
       } else if (color !== undefined) {
-        mask = mask | gl.COLOR_BUFFER_BIT;
-        gl.clearColor(color[0], color[1], color[2], color[3]);
+        mask = mask | gl.COLOR_BUFFER_BIT
+        gl.clearColor(color[0], color[1], color[2], color[3])
       }
       if (depth != null) {
-        mask = mask | gl.DEPTH_BUFFER_BIT;
-        gl.clearDepth(depth);
+        mask = mask | gl.DEPTH_BUFFER_BIT
+        gl.clearDepth(depth)
       }
       if (stencil != null) {
-        mask = mask | gl.STENCIL_BUFFER_BIT;
-        gl.clearStencil(stencil);
+        mask = mask | gl.STENCIL_BUFFER_BIT
+        gl.clearStencil(stencil)
       }
 
       if (mask) {
-        gl.clear(mask);
+        gl.clear(mask)
       }
-      return this;
+      return this
     }
     /**
      * Clears the color buffer
-     * @param color
-     * @returns {Glib.Graphics.Device}
      */
-    clearColor(color: number|number[]|Color): Device {
-      var gl = this.context, mask = gl.COLOR_BUFFER_BIT;
+    clearColor(color: number|number[]|Color=0xFFFFFFFF): Device {
+      var gl = this.context, mask = gl.COLOR_BUFFER_BIT
       if (color instanceof Color) {
-        gl.clearColor(color.x, color.y, color.z, color.w);
+        gl.clearColor(color.x, color.y, color.z, color.w)
       } else if (typeof color === 'number') {
-        gl.clearColor(Color.x(color), Color.y(color), Color.z(color), Color.w(color));
+        gl.clearColor(Color.x(color), Color.y(color), Color.z(color), Color.w(color))
       } else {
-        gl.clearColor(color[0], color[1], color[2], color[3]);
+        gl.clearColor(color[0], color[1], color[2], color[3])
       }
-      gl.clear(mask);
-      return this;
+      gl.clear(mask)
+      return this
     }
     /**
      * Clears the color and depth buffers
-     * @param color
-     * @returns {Glib.Graphics.Device}
      */
-    clearColorDepth(color?: number|number[]|Color, depth: number = 1): Device {
-      var gl = this.context, mask = gl.COLOR_BUFFER_BIT;
+    clearColorDepth(color: number|number[]|Color=0xFFFFFFFF, depth: number = 1): Device {
+      var gl = this.context, mask = 0
+
       if (color instanceof Color) {
-        gl.clearColor(color.x, color.y, color.z, color.w);
+        mask = mask | gl.COLOR_BUFFER_BIT
+        gl.clearColor(color.x, color.y, color.z, color.w)
       } else if (typeof color === 'number') {
-        gl.clearColor(Color.x(color), Color.y(color), Color.z(color), Color.w(color));
-      } else {
-        gl.clearColor(color[0], color[1], color[2], color[3]);
+        mask = mask | gl.COLOR_BUFFER_BIT
+        var c = Color
+        gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color))
+      } else if (color !== undefined) {
+        mask = mask | gl.COLOR_BUFFER_BIT
+        gl.clearColor(color[0], color[1], color[2], color[3])
       }
-      gl.clear(mask);
-      return this;
+      if (depth != null) {
+        mask = mask | gl.DEPTH_BUFFER_BIT
+        gl.clearDepth(depth)
+      }
+      if (mask) {
+        gl.clear(mask)
+      }
+      return this
     }
     /**
      * Clears the depth buffer
-     * @param color
-     * @returns {Glib.Graphics.Device}
      */
     clearDepth(depth: number = 1): Device {
-      var gl = this.context;
-      gl.clearDepth(depth);
-      gl.clear(gl.DEPTH_BUFFER_BIT);
-      return this;
+      var gl = this.context
+      gl.clearDepth(depth)
+      gl.clear(gl.DEPTH_BUFFER_BIT)
+      return this
     }
     /**
      * Clears the stencil buffer
-     * @param color
-     * @returns {Glib.Graphics.Device}
      */
     clearStencil(stencil: number = 0): Device {
-      var gl = this.context;
-      gl.clearDepth(stencil);
-      gl.clear(gl.STENCIL_BUFFER_BIT);
-      return this;
+      var gl = this.context
+      gl.clearDepth(stencil)
+      gl.clear(gl.STENCIL_BUFFER_BIT)
+      return this
     }
     /**
      * Clears the depth and stencil buffer
-     * @param color
-     * @returns {Glib.Graphics.Device}
      */
     clearDepthStencil(depth: number = 1, stencil: number = 0): Device {
-      var gl = this.context;
-      gl.clearDepth(depth);
-      gl.clearDepth(stencil);
-      gl.clear(gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
-      return this;
+      var gl = this.context
+      gl.clearDepth(depth)
+      gl.clearDepth(stencil)
+      gl.clear(gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+      return this
     }
 
     /**
      * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
-     * @param {number} [primitiveType=TriangleList]
-     * @param {number} [offset=0]
-     * @param {number} [count=indexBuffer.elementCount]
-     * @return {Device}
+     * @param [primitiveType=TriangleList]
+     * @param [offset=0]
+     * @param [count=indexBuffer.elementCount]
      */
     drawIndexedPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this._indexBuffer;
-      var vBuffer = this._vertexBuffer;
-      var program = this._program;
+      var iBuffer = this.currentIndexBuffer
+      var vBuffer = this.currentVertexBuffer
+      var program = this.currentProgram
       if (!iBuffer) {
         throw `drawIndexedPrimitives() requires an indexBuffer`
       }
@@ -299,17 +364,17 @@ module Glib.Graphics {
         throw `drawIndexedPrimitives() requires a program`
       }
 
-      var type = iBuffer.dataType;
-      var Enum = PrimitiveType;
-      primitiveType = Enum[primitiveType || Enum.TriangleList];
+      var type = iBuffer.dataType
+      var Enum = PrimitiveType
+      primitiveType = Enum[primitiveType || Enum.TriangleList]
 
-      offset = offset || 0;
-      count = count || (iBuffer.elementCount - offset);
+      offset = offset || 0
+      count = count || (iBuffer.elementCount - offset)
 
-      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
-      this.context.drawElements(primitiveType, count, type, offset * iBuffer.elementSize);
+      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
+      this.context.drawElements(primitiveType, count, type, offset * iBuffer.elementSize)
 
-      return this;
+      return this
     }
 
     /**
@@ -321,9 +386,9 @@ module Glib.Graphics {
      * @return {Device}
      */
     drawInstancedPrimitives(instanceCount?:number, primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this._indexBuffer;
-      var vBuffer = this._vertexBuffer;
-      var program = this._program;
+      var iBuffer = this.currentIndexBuffer
+      var vBuffer = this.currentVertexBuffer
+      var program = this.currentProgram
       if (!iBuffer) {
         throw `drawInstancedPrimitives() requires an indexBuffer`
       }
@@ -334,16 +399,16 @@ module Glib.Graphics {
         throw `drawInstancedPrimitives() requires a program`
       }
 
-      var type = iBuffer.dataType;
-      var Enum = PrimitiveType;
-      primitiveType = Enum[primitiveType || Enum.TriangleList];
-      offset = offset || 0;
-      count = count || (iBuffer.elementCount - offset);
-      instanceCount = instanceCount || 1;
+      var type = iBuffer.dataType
+      var Enum = PrimitiveType
+      primitiveType = Enum[primitiveType || Enum.TriangleList]
+      offset = offset || 0
+      count = count || (iBuffer.elementCount - offset)
+      instanceCount = instanceCount || 1
 
       this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
-      this.context.drawElementsInstanced(primitiveType, count, type, offset * iBuffer.elementSize, instanceCount);
-      return this;
+      (this.context as any).drawElementsInstanced(primitiveType, count, type, offset * iBuffer.elementSize, instanceCount)
+      return this
     }
 
     /**
@@ -354,8 +419,8 @@ module Glib.Graphics {
      * @return {Device}
      */
     drawPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var vBuffer = this._vertexBuffer;
-      var program = this._program;
+      var vBuffer = this.currentVertexBuffer
+      var program = this.currentProgram
       if (!vBuffer) {
         throw `drawInstancedPrimitives() requires a vertexBuffer`
       }
@@ -363,30 +428,30 @@ module Glib.Graphics {
         throw `drawInstancedPrimitives() requires a program`
       }
 
-      primitiveType = primitiveType || PrimitiveType.TriangleList;
-      offset = offset || 0;
-      count = count || (vBuffer.elementCount / vBuffer.elementSize - offset);
+      primitiveType = primitiveType || PrimitiveType.TriangleList
+      offset = offset || 0
+      count = count || (vBuffer.elementCount / vBuffer.elementSize - offset)
 
-      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
-      this.context.drawArrays(primitiveType, offset, count);
-      return this;
+      this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
+      this.context.drawArrays(primitiveType, offset, count)
+      return this
     }
 
     /**
      * Draws a full screen quad with the [0,0] texture coordinate starting at the bottom left.
-     * @param {boolean} flipY if true, then the [0,0] texture coordinate starts in the top left.
+     * @param flipY if true, then the [0,0] texture coordinate starts in the top left.
      * @returns {Glib.Graphics.Device}
      */
     drawQuad(flipY?: boolean): Device {
-      var iBuffer = this._quadIndexBuffer || this.createIndexBuffer({
+      var iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
           data: [0, 1, 3, 0, 3, 2],
           dataType: 'ushort'
-        });
-      this._quadIndexBuffer = iBuffer;
+        })
+      this.quadIndexBuffer = iBuffer
 
-      var vBuffer;
+      var vBuffer
       if (flipY) {
-        vBuffer = this._quadVertexBufferFlipped || this.createVertexBuffer({
+        vBuffer = this.quadVertexBufferFlipped || this.createVertexBuffer({
           data: [
             -1,  1, 0, 0, 0,
              1,  1, 0, 1, 0,
@@ -395,10 +460,10 @@ module Glib.Graphics {
           ],
           layout: this.createVertexLayout('PositionTexture'),
           dataType: 'float'
-        });
-        this._quadVertexBufferFlipped = vBuffer;
+        })
+        this.quadVertexBufferFlipped = vBuffer
       } else {
-        vBuffer = this._quadVertexBuffer || this.createVertexBuffer({
+        vBuffer = this.quadVertexBuffer || this.createVertexBuffer({
           data: [
             -1,  1, 0, 0, 1,
              1,  1, 0, 1, 1,
@@ -407,130 +472,210 @@ module Glib.Graphics {
           ],
           layout: this.createVertexLayout('PositionTexture'),
           dataType: 'float'
-        });
-        this._quadVertexBuffer = vBuffer;
+        })
+        this.quadVertexBuffer = vBuffer
       }
 
-      this.indexBuffer = iBuffer;
-      this.vertexBuffer = vBuffer;
-      this.drawIndexedPrimitives();
-      this.indexBuffer = null;
-      this.vertexBuffer = null;
-      return this;
+      this.indexBuffer = iBuffer
+      this.vertexBuffer = vBuffer
+      this.drawIndexedPrimitives()
+      this.indexBuffer = null
+      this.vertexBuffer = null
+      return this
+    }
+
+    /**
+     * If the display size of the canvas is controlled with CSS this will resize the 
+     * canvas to match the CSS dimensions in order to avoid stretched and blurry image.
+     * 
+     * @param [ratio] The pixel ratio for retina displays
+     */
+    resize(pixelRatio:number=window.devicePixelRatio || 1):Device {
+      if (this.frameBuffer) {
+        throw "can not perform a resize while a render target is still active. Unset the rendertarget before calling resize()"
+      }
+      var displayWidth  = Math.floor(this.canvas.clientWidth  * pixelRatio)
+      var displayHeight = Math.floor(this.canvas.clientHeight * pixelRatio)
+      
+      // Check if the canvas is not the same size.
+      if (this.canvas.width  != displayWidth ||
+          this.canvas.height != displayHeight) {
+
+        // Make the canvas the same size
+        this.canvas.width  = displayWidth
+        this.canvas.height = displayHeight
+
+        let state = this.viewportStateObject 
+        state.x = 0
+        state.y = 0
+        state.width = this.context.drawingBufferWidth
+        state.height = this.context.drawingBufferHeight
+        state.commit()
+      }
+
+      return this
     }
 
     reset():Device {
-      var ext = this.context.getExtension('WEBGL_lose_context');
+      var ext = this.context.getExtension('WEBGL_lose_context')
       if (ext) {
-        ext.loseContext(); // trigger a context loss
-        ext.restoreContext(); // restores the context
+        ext.loseContext() // trigger a context loss
+        ext.restoreContext() // restores the context
       } else {
-        utils.log('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context');
+        utils.log('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context')
         // TODO:
-        //this.trigger('reset');
+        //this.trigger('reset')
       }
-      return this;
+      return this
     }
 
     getBackBufferData() {
-
+      throw "not supported"
     }
 
     getRenderTargets() {
-
+      throw "not supported" 
     }
 
+    /**
+     * Sets or unsets a single render target
+     */
     setRenderTarget(texture:Texture) {
-      this.setRenderTargets(texture);
+      this.setRenderTargets(texture)
     }
 
+    /**
+     * Sets or unsets multiple render targets
+     */
     setRenderTargets(
       rt01?: Texture, rt02?: Texture, rt03?: Texture, rt04?: Texture,
       rt05?: Texture, rt06?: Texture, rt07?: Texture, rt08?: Texture,
       rt09?: Texture, rt10?: Texture, rt11?: Texture, rt12?: Texture,
-      rt13?: Texture, rt14?: Texture, rt15?: Texture, rt16?: Texture) {
-        var opts = this._customFrameBufferOptions;
-        opts.textures.length = arguments.length;
-        var firstTexture:Texture = null;
-        for (var i = 0; i < arguments.length; i++) {
-          opts.textures[i] = arguments[i];
-          if (arguments[i] instanceof Texture) {
-            firstTexture = firstTexture || arguments[i];
-          }
+      rt13?: Texture, rt14?: Texture, rt15?: Texture, rt16?: Texture): Device 
+    {
+      var opts = this.customFrameBufferOptions
+      opts.textures.length = arguments.length
+      var firstTexture:Texture = null
+      for (var i = 0; i < arguments.length; i++) {
+        let argument = arguments[i] 
+        opts.textures[i] = argument
+        if (argument instanceof Texture) {
+          firstTexture = firstTexture || argument
         }
-        if (firstTexture && firstTexture.depthFormat) {
-          opts.depthBuffer = this.getSharedDepthBuffer(firstTexture);
-        } else {
-          opts.depthBuffer = null;
+      }
+
+      // render targets are set to null
+      // unset the framebuffer
+      if (!firstTexture) {
+        this.frameBuffer = null
+        this.viewportState = {
+          x: 0, 
+          y: 0, 
+          width: this.context.drawingBufferWidth,
+          height: this.context.drawingBufferHeight
         }
-        if (firstTexture) {
-          if (!this._customFrameBuffer) {
-            this._customFrameBuffer = new FrameBuffer(this, opts);
-          } else {
-            this._customFrameBuffer.setup(opts);
-          }
-          this.frameBuffer = this._customFrameBuffer;
-          this.viewportState = { x: 0, y: 0, width: firstTexture.width, height: firstTexture.height }
-        } else {
-          this.frameBuffer = null;
-          this.viewportState = {
-            x: 0, y: 0, width: this.context.drawingBufferWidth,
-            height: this.context.drawingBufferHeight
-          }
-        }
-      return this;
+        return this 
+      }
+
+      // There is at leas one render target set.
+      // The first defines the depth buffer and the size of the frame buffer.
+
+      if (firstTexture.depthFormat) {
+        opts.depthBuffer = this.getSharedDepthBuffer(firstTexture)
+      } else {
+        opts.depthBuffer = null
+      }
+      
+      // Reuse cached framebuffer
+      if (this.customFrameBuffer) {
+        this.customFrameBuffer.setup(opts)
+      } else {
+        this.customFrameBuffer = new FrameBuffer(this, opts)
+      }
+      this.frameBuffer = this.customFrameBuffer
+      this.viewportState = { 
+        x: 0, 
+        y: 0, 
+        width: firstTexture.width, 
+        height: firstTexture.height 
+      }
+      return this
     }
 
+    /** 
+     * Gets the currently active frame buffer 
+     */
     get frameBuffer(): FrameBuffer {
-      return this._frameBuffer;
+      return this.currentFrameBuffer
     }
+    /** 
+     * Sets and activates a frame buffer as the currently active frane buffer 
+     */
     set frameBuffer(buffer:FrameBuffer) {
-      if (this._frameBuffer !== buffer) {
-        var handle = buffer ? buffer.handle : null;
-        this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle);
-        this._frameBuffer = buffer;
+      if (this.currentFrameBuffer !== buffer) {
+        var handle = buffer ? buffer.handle : null
+        this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle)
+        this.currentFrameBuffer = buffer
       }
     }
 
+    /** 
+     * Gets the currently active vertex buffer 
+     */
     get vertexBuffer(): Buffer {
-      return this._vertexBuffer;
+      return this.currentVertexBuffer
     }
+    /** 
+     * Sets and activates a buffer as the currently active vertex buffer 
+     */
     set vertexBuffer(buffer: Buffer) {
-      if (this._vertexBuffer !== buffer) {
-        this.context.bindBuffer(BufferType.VertexBuffer, buffer ? buffer.handle : null);
-        this._vertexBuffer = buffer;
+      if (this.currentVertexBuffer !== buffer) {
+        this.context.bindBuffer(BufferType.VertexBuffer, buffer ? buffer.handle : null)
+        this.currentVertexBuffer = buffer
       }
     }
 
+    /** 
+     * Gets the currently active index buffer 
+     */
     get indexBuffer(): Buffer {
-      return this._indexBuffer;
+      return this.currentIndexBuffer
     }
+    /** 
+     * Sets and activates a buffer as the currently active index buffer 
+     */
     set indexBuffer(buffer: Buffer) {
-      if (this._indexBuffer !== buffer) {
-        this.context.bindBuffer(BufferType.IndexBuffer, buffer ? buffer.handle : null);
-        this._indexBuffer = buffer;
+      if (this.currentIndexBuffer !== buffer) {
+        this.context.bindBuffer(BufferType.IndexBuffer, buffer ? buffer.handle : null)
+        this.currentIndexBuffer = buffer
       }
     }
 
+    /** 
+     * Gets the currently active shader program 
+     */
     get program(): ShaderProgram {
-      return this._program;
+      return this.currentProgram
     }
+    /** 
+     * Sets and activates a program as the currently active program 
+     */
     set program(program: ShaderProgram) {
-      if (this._program !== program) {
-        var handle = program ? program.handle : null;
-        this.context.useProgram(handle);
-        this._program = program;
+      if (this.currentProgram !== program) {
+        var handle = program ? program.handle : null
+        this.context.useProgram(handle)
+        this.currentProgram = program
       }
     }
 
     private _bindAttribPointerAndLocation(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any) {
-      layout = layout || vBuffer.layout;
-      attributes = attributes || program.attributes;
+      layout = layout || vBuffer.layout
+      attributes = attributes || program.attributes
 
-      var key, channel, attribute;
+      var key, channel, attribute
       for (key in attributes) {
-        channel = layout[key];
-        attribute = attributes[key];
+        channel = layout[key]
+        attribute = attributes[key]
         if (!channel) {
           throw `Can not use current shader program with current vertex buffer. The program requires '${Object.keys(attributes)}' attributes. '${key}' is missing in vertex buffer.`
         }
@@ -541,128 +686,177 @@ module Glib.Graphics {
           DataType[channel.type],
           !!attribute.normalize || !!channel.normalize,
           vBuffer.elementSize,
-          channel.offset);
+          channel.offset)
       }
-      this._vertexAttribArrayState.commit(program.attributeLocations);
+      this.vertexAttribArrayState.commit(program.attributeLocations)
     }
 
-    _registerRenderTarget(texture:Texture) {
-      var list = this._registeredRenderTargets;
-      var index = list.indexOf(texture);
-      if (index >= 0) return;
+    /**
+     * used internally when a render target is created
+     */
+    registerRenderTarget(texture:Texture) {
+      var list = this.registeredRenderTargets
+      var index = list.indexOf(texture)
+      if (index >= 0) return
       for (var i in list) {
         if (list[i] == null) {
-          list[i] = texture;
-          return;
+          list[i] = texture
+          return
         }
       }
-      list.push(texture);
+      list.push(texture)
     }
 
-    _unregisterRenderTarget(texture:Texture) {
-      var list = this._registeredRenderTargets;
-      var index = list.indexOf(texture);
-      if (index < 0) return;
-      list[index] = null;
+    /**
+     * used internally when a render target is destroyed
+     */
+    unregisterRenderTarget(texture:Texture) {
+      var list = this.registeredRenderTargets
+      var index = list.indexOf(texture)
+      if (index < 0) return
+      list[index] = null
       if (list.length === (index + 1)) {
-        list.length = index;
+        list.length = index
       }
     }
 
-    _registerDepthBuffer(buffer: DepthBuffer) {
-      var list = this._registeredDepthBuffers;
-      var index = list.indexOf(buffer);
-      if (index >= 0) return;
+    /**
+     * used internally when a depth buffer is created
+     */
+    registerDepthBuffer(buffer: DepthBuffer) {
+      var list = this.registeredDepthBuffers
+      var index = list.indexOf(buffer)
+      if (index >= 0) return
       for (var i in list) {
         if (list[i] == null) {
-          list[i] = buffer;
-          return;
+          list[i] = buffer
+          return
         }
       }
-      list.push(buffer);
+      list.push(buffer)
     }
 
-    _unregisterDepthBuffer(buffer: DepthBuffer) {
-      var list = this._registeredDepthBuffers;
-      var index = list.indexOf(buffer);
-      if (index < 0) return;
-      list[index] = null;
+    /**
+     * used internally when a depth buffer is destroyed
+     */
+    unregisterDepthBuffer(buffer: DepthBuffer) {
+      var list = this.registeredDepthBuffers
+      var index = list.indexOf(buffer)
+      if (index < 0) return
+      list[index] = null
       if (list.length === (index + 1)) {
-        list.length = index;
+        list.length = index
       }
     }
 
+    /**
+     * Creates a new Buffer of type IndexBuffer. Overrides the type option 
+     * before it calls the Buffer constructor with given options.
+     */
     createIndexBuffer(options:any):Buffer {
-      options.type = 'IndexBuffer';
-      options.dataType = options.dataType || 'ushort';
-      return new Buffer(this, options);
+      options.type = 'IndexBuffer'
+      options.dataType = options.dataType || 'ushort'
+      return new Buffer(this, options)
     }
 
+    /**
+     * Creates a new Buffer of type VertexBuffer. Overrides the type option 
+     * before it calls the Buffer constructor with given options.
+     */
     createVertexBuffer(options:any):Buffer {
-      options.type = 'VertexBuffer';
-      return new Buffer(this, options);
+      options.type = 'VertexBuffer'
+      return new Buffer(this, options)
     }
 
+    /**
+     * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
+     */
     createProgram(options:any):ShaderProgram {
-      var vSource = options.vertexShader;
-      var fSource = options.fragmentShader;
+      var vSource = options.vertexShader
+      var fSource = options.fragmentShader
 
       if (utils.isString(vSource) && utils.isString(fSource)) {
 
         if (vSource.startsWith('#') && vSource.indexOf("\n") < 0) {
-          vSource = document.getElementById(vSource.substr(1)).textContent;
-          options.vertexShader = vSource;
+          vSource = document.getElementById(vSource.substr(1)).textContent
+          options.vertexShader = vSource
         }
         if (fSource.startsWith('#') && fSource.indexOf("\n") < 0) {
-          fSource = document.getElementById(fSource.substr(1)).textContent;
-          options.fragmentShader = fSource;
+          fSource = document.getElementById(fSource.substr(1)).textContent
+          options.fragmentShader = fSource
         }
-        var inspects = Shader.inspectProgram(vSource, fSource);
-        utils.extend(options, inspects);
+        var inspects = Shader.inspectProgram(vSource, fSource)
+        utils.extend(options, inspects)
       }
 
-      return new ShaderProgram(this, options);
+      return new ShaderProgram(this, options)
     }
 
+    /**
+     * Creates a new Texture. Calls the Texture constructor with given options.
+     */
     createTexture(options:TextureOptions):Texture {
-      return new Texture(this, options);
+      return new Texture(this, options)
     }
 
+    /**
+     * Creates a new Texture that can be used as a render target. Ensures that
+     * the depthFormat option is set and calls the Texture constructor.
+     */
     createRenderTarget(options:TextureOptions):Texture {
-      return new Texture(this, options);
+      options.depthFormat = (options.depthFormat || DepthFormat.None)
+      return new Texture(this, options)
     }
 
+    /**
+     * Creates a new Texture of type Texture2D. Overrides the type option 
+     * before it calls the Texture constructor with given options.
+     */
     createTexture2D(options:TextureOptions = {}):Texture {
-      options.type = TextureType.Texture2D;
-      return new Texture(this, options);
+      options.type = TextureType.Texture2D
+      return new Texture(this, options)
     }
 
+    /**
+     * Creates a new Texture of type TextureCube. Overrides the type option 
+     * before it calls the Texture constructor with given options.
+     */
     createTextureCube(options:TextureOptions = {}):Texture {
-      options.type = TextureType.TextureCube;
-      return new Texture(this, options);
+      options.type = TextureType.TextureCube
+      return new Texture(this, options)
     }
 
+    /**
+     * Creates a new sprite batch.
+     */
     createSpriteBatch() {
-      return new SpriteBatch(this);
+      return new SpriteBatch(this)
     }
 
-    createVertexLayout(name):any {
+    /**
+     * Creates a vertex layout obect from name
+     * @see VertexLayout.create
+     */
+    createVertexLayout(name:string):any {
       return VertexLayout.create.apply(this, arguments)
     }
 
+    /**
+     * Creates a new model. Calls the model constructor with given options.
+     */
     createModel(options:ModelOptions):Model {
-      return new Model(this, options);
+      return new Model(this, options)
     }
 
     getSharedDepthBuffer(options:DepthBufferOptions) {
       // no depthFormat no buffer
       if (!options.depthFormat) {
-        return null;
+        return null
       }
       // search by matching width, height and depthFormat
-      for(var item of this._registeredDepthBuffers) {
+      for(var item of this.registeredDepthBuffers) {
         if (item.width === options.width && item.height === options.height && item.depthFormat === options.depthFormat) {
-          return item;
+          return item
         }
       }
       // create and register a new depth buffer
@@ -671,8 +865,8 @@ module Glib.Graphics {
         height: options.height,
         depthFormat: options.depthFormat
       })
-      this._registerDepthBuffer(buffer);
-      return buffer;
+      this.registerDepthBuffer(buffer)
+      return buffer
     }
   }
 }

@@ -2,104 +2,30 @@
 doctype html
 html(lang="en")
   head
-    link(rel="stylesheet" href="/style.css")
-    script(type='text/javascript' src='https://code.jquery.com/jquery-2.1.4.min.js')
-    script(type='text/javascript' src='https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js')
-    script(type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js')
-
-    script.
-      var demoGuiInstance = null;
-      demoGui = function(callback){
-        if (!demoGuiInstance) {
-          demoGuiInstance = new dat.GUI({autoPlace: false});
-          var guiContainer = document.getElementById('dat-gui');
-          guiContainer.appendChild(demoGuiInstance.domElement);
+    link(rel="stylesheet" href="/page.css")
+    script(type='text/javascript' src='/page.js')
+    script(type='text/javascript').
+      var uiInstance = null;
+      var ui = function(callback){
+        if (!uiInstance) {
+          uiInstance = new dat.GUI({autoPlace: false});
+          document.getElementById('dat-gui').appendChild(uiInstance.domElement);
         }
-        callback(demoGuiInstance);
+        callback(uiInstance);
       };
 
-block head
-body.grid-frame.grid-padding.shim-background
-  .grid-block
-    .grid-block.vertical.large-horizontal
-      .grid-block.small-12.large-6.vertical.grid-padding
-        .grid-block.card
-          #example-content.no-scroll(style="width: 100%")
-            #dat-gui
-            canvas#canvas(width=800 height=450 oncontextmenu="return false;")
-            block content
-
-      .grid-block.small-12.large-6.grid-padding
-        .grid-block.card
-          pre.small-12.content-padding
-            code.prettyprint#example-code
-
-  #example-scripts
-    script.reference(type='text/javascript' src='/es5/glib.js')
-    script(type='text/javascript').
-      Glib.WebWorker.activate('/es5/glib.js');
+body.sample-container.dark-theme
+  .sample-view
+    block content
+      canvas#canvas(oncontextmenu="return false;")
+      .dat-gui
+      script(type='text/javascript' src='/glib.js')
+  .sample-code
+  .sample-source
     block script
-
   script(type='text/javascript').
-    var entityMap = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': '&quot;',
-      "'": '&#39;',
-      "/": '&#x2F;'
-    };
-    function escapeHtml(string) {
-      return String(string).replace(/[&<>"'\/]/g, function (s) {
-        return entityMap[s];
-      });
-    }
-    function removeIndents(string) {
-      var lines = string.split("\n");
-      var min = 10;
-      for (var i = 0; i<lines.length; i++){
-        var line = lines[i];
-        if (!line) continue;
-        var match = line.match(/^(\s+)/)
-        if (!match) return string;
-        min = Math.min(min, match[1].length);
-      }
-      for (var i = 0; i<lines.length; i++){
-        var line = lines[i];
-        if (!line) continue;
-        lines[i] = line.substring(min);
-      }
-      return lines.join("\n");
-    }
-    
-    var q = []
-    $('#example-scripts *').each(function() {
-      var it = $(this)
-      var src = it.attr('src'); 
-      if(!it.is('script') || it.is('.reference') || !src) {
-        q.push(Promise.resolve({
-          el: it,
-          content: it[0].outerHTML
-        }))
-      } else {
-        q.push(new Promise(function(resolve, reject) {
-          $.get(src)
-          .success(function(data) {
-            resolve({
-              el: it,
-              content: data
-            })
-          })
-          .error(function() {
-            reject()
-          })
-        }))
-      }
+    GlibSamples.bootSample({
+      view: '.sample-view',
+      code: '.sample-code',
+      source: '.sample-source'
     });
-    Promise.all(q).then(function(nodes) {
-      var text = nodes.map(function(it) {
-        return removeIndents(it.content)
-      }).join("\n")
-      $('#example-code').html(escapeHtml(text));
-    }) 
-

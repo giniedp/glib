@@ -13,7 +13,7 @@ module Glib.Graphics {
     constantA?: number;
     enabled?: boolean;
   }
-
+  
   export class BlendState implements BlendStateOptions {
     device:Device;
     gl:any;

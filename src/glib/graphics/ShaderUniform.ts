@@ -25,20 +25,6 @@ module Glib.Graphics {
     return {x: data[0] || 0, y: data[1] || 0, z: data[2] || 0, w: data[3] || 0}
   }
 
-  export interface Vec2 {
-    x: number
-    y: number
-  }
-  export interface Vec3 extends Vec2 {
-    z: number
-  }
-  export interface Vec4 extends Vec3 {
-    w: number
-  }
-  export interface Mat4 {
-    data: number[]
-  }
-
   export class ShaderUniform {
     device:Device;
     gl:any;
@@ -141,7 +127,7 @@ module Glib.Graphics {
       this.gl.uniform4f(this.location, value[0], value[1], value[2], value[4]);
     }
 
-    setVec2(value:Vec2|number[]) {
+    setVec2(value:IVec2|number[]) {
       if (value["x"] !== undefined) {
         this.gl.uniform2f(this.location, value["x"], value["y"]);  
       } else {
@@ -149,7 +135,7 @@ module Glib.Graphics {
       }
     }
 
-    setVec3(value:Vec3|number[]) {
+    setVec3(value:IVec3|number[]) {
       if (value["x"] !== undefined) {
         this.gl.uniform3f(this.location, value["x"], value["y"], value["z"]);  
       } else {
@@ -157,7 +143,7 @@ module Glib.Graphics {
       }
     }
 
-    setVec4(value:Vec4|number[]) {
+    setVec4(value:IVec4|number[]) {
       if (value["x"] !== undefined) {
         this.gl.uniform4f(this.location, value["x"], value["y"], value["z"], value["w"]);  
       } else {
@@ -165,28 +151,26 @@ module Glib.Graphics {
       }
     }
 
-    setMat4(value:Mat4, transpose:boolean) {
+    setMat4(value:IMat, transpose:boolean) {
       this.gl.uniformMatrix4fv(this.location, !!transpose, value.data);
     }
 
     setTexture(value:Texture) {
       var texture = value;
       var device = this.device;
-      var sampler = device.sampler[this.register] || device.sampler[0];
+      var sampler = device.samplerStates[this.register] || device.samplerStates[0];
 
       if (texture) {
         texture.update();
       }
       if (!texture || !texture.ready) {
-        sampler.texture = null;
-        sampler.commit();
-        return;
+        sampler.texture = this.device.defaultTexture
+      } else {
+        sampler.texture = texture
       }
-
-      sampler.texture = texture;
-      utils.extend(sampler, this.filter);
-      sampler.commit();
-      this.gl.uniform1i(this.location, sampler.register);
+      utils.extend(sampler, this.filter)
+      sampler.commit()
+      this.gl.uniform1i(this.location, sampler.register)
     }
   }
 }
