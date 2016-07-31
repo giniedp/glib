@@ -2,6 +2,20 @@ var GlibSamples = GlibSamples || {};
 (function(module) {
   'use strict';
   
+    if (Prism.plugins.NormalizeWhitespace) {
+      Prism.plugins.NormalizeWhitespace.setDefaults({
+        'remove-trailing': true,
+        'remove-indent': true,
+        'left-trim': true,
+        'right-trim': true,
+        //'break-lines': 80,
+        //'indent': 2,
+        //'remove-initial-line-feed': true,
+        //'tabs-to-spaces': 4,
+        //'spaces-to-tabs': 4
+      });
+    }
+
     var entityMap = {
       "&": "&amp;",
       "<": "&lt;",
@@ -15,34 +29,19 @@ var GlibSamples = GlibSamples || {};
         return entityMap[s];
       });
     }
-    function removeIndents(string) {
+    function fixIndents(string) {
       var lines = string.split("\n");
-      var min = null;
-      for (var i = 0; i<lines.length; i++){
-        var line = lines[i];
-        if (i == 0) {
-          // hack
-          line = '    ' + line;
-          lines[i] = line;
-        }
-
-        if (!line) continue;
-        var match = line.match(/^(\s+)/)
-        if (!match) return string;
-        if (min == null) min = match[1].length; 
-        min = Math.min(min, match[1].length);
+      if (!lines.length) return string;
+      if (lines[0].trim().startsWith('<script')) {
+        lines[0] = '    ' + lines[0];
+        return lines.join('\n');
       }
-      for (var i = 0; i<lines.length; i++){
-        var line = lines[i];
-        if (!line) continue;
-        lines[i] = line.substring(min);
-      }
-      return lines.join("\n").trim();
+      return string;
     }
 
     function makeSnippet(html, language) {
-      var preEl = $('<pre>');
-      var codeEl = $('<code>').appendTo(preEl).text(removeIndents(html)).addClass('language-' + language);
+      var preEl = $('<pre>').addClass('language-' + language).addClass('line-numbers');
+      var codeEl = $('<code>').appendTo(preEl).text(fixIndents(html));
       Prism.highlightElement(codeEl[0]);
       return preEl;
     }
@@ -52,31 +51,38 @@ var GlibSamples = GlibSamples || {};
       var code = $(options.code);
       var source = $(options.source);
 
-      var tabs = [{
-        name: 'HTML',
-        content: $('<div>').addClass('tab-content').append(makeSnippet(view[0].outerHTML, 'html'))
-      }];
-      var tab = tabs[0];
-
+      var tabs = [];
+      function currentTab() {
+        var tab = tabs[tabs.length-1] || { 
+          name: 'Example', 
+          content: $('<div>').addClass('tab-content') 
+        };
+        tabs[tabs.length-1] = tab;
+        return tab;
+      }
       source.children().each(function() {
         var $this = $(this);
         if ($this.is('a[name]')) {
           tabs.push({
             name: $this.attr('name'),
+            index: Number($this.attr('index'))|0,
             content: $('<div>').addClass('tab-content')
           });
-          tab = tabs[tabs.length-1];
+        } else if ($this.is('viewcode')) {
+          makeSnippet(view[0].innerHTML, 'html').appendTo(currentTab().content);
         } else if ($this.is('script')) {
-          makeSnippet($this[0].outerHTML, 'html').appendTo(tab.content);
+          makeSnippet($this[0].outerHTML, 'html').appendTo(currentTab().content);
         } else {
-          $this.detach().appendTo(tab.content);
-        } 
+          $this.detach().appendTo(currentTab().content);
+        }
       });
 
       var tabsEl = $('<div>').addClass('sample-tabs').appendTo(code);
       var contentsEl = $('<div>').addClass('sample-contents').appendTo(code);
 
-      tabs.forEach(function(tab) {
+      tabs.sort(function(a, b) {
+        return a.index - b.index;
+      }).forEach(function(tab) {
         var tabEl = $('<a>').text(tab.name).appendTo(tabsEl);
         var contentEl = tab.content.appendTo(contentsEl);
         tabEl.click(function() {
@@ -121,7 +127,7 @@ var GlibSamples = GlibSamples || {};
         });
     };
     module.openFirstSample = function() {
-      location.hash = links.first().attr('href')
+      location.hash = module.sampleLinks.first().attr('href')
     };
     module.openNextSample = function() {
       var links = module.sampleLinks;

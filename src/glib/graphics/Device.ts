@@ -369,7 +369,7 @@ module Glib.Graphics {
       primitiveType = Enum[primitiveType || Enum.TriangleList]
 
       offset = offset || 0
-      count = count || (iBuffer.elementCount - offset)
+      count = count || iBuffer.elementCount
 
       this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
       this.context.drawElements(primitiveType, count, type, offset * iBuffer.elementSize)
@@ -403,7 +403,7 @@ module Glib.Graphics {
       var Enum = PrimitiveType
       primitiveType = Enum[primitiveType || Enum.TriangleList]
       offset = offset || 0
-      count = count || (iBuffer.elementCount - offset)
+      count = count || iBuffer.elementCount
       instanceCount = instanceCount || 1
 
       this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
@@ -428,10 +428,10 @@ module Glib.Graphics {
         throw `drawInstancedPrimitives() requires a program`
       }
 
-      primitiveType = primitiveType || PrimitiveType.TriangleList
+      primitiveType = (PrimitiveType[primitiveType] || PrimitiveType.TriangleList)
+      count = count || vBuffer.elementCount
       offset = offset || 0
-      count = count || (vBuffer.elementCount / vBuffer.elementSize - offset)
-
+      
       this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
       this.context.drawArrays(primitiveType, offset, count)
       return this

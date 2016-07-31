@@ -6,6 +6,7 @@
   var util = require('gulp-util');
   var through = require('through');
   var inflect = require('inflection');
+  var _ = require('underscore');
 
   function extractMeta(content) {
     var result = {};
@@ -16,15 +17,18 @@
       if (line.substr(0, 2) != "//") break;
       var match = line.match(regex);
       if (!match) continue;
-      result['$' + match[1]] = match[2]
+      result[match[1]] = match[2]
     }
     return result;
   }
 
+  function makeTitle(token) {
+    return inflect.humanize(token.replace('-', '_'));
+  }
   function makeFileTitle(file) {
     var extName = path.extname(file);
     var baseName = path.basename(file, extName);
-    return inflect.humanize(baseName.replace('-', '_'));
+    return makeTitle(baseName);
   }
 
   function makeFileHref(file, dir) {
@@ -34,28 +38,41 @@
     var dirName = path.dirname(file);
     return path.join(dirName, baseName + '.html');
   }
-
+  
   function processFiles(files, dir, result) {
+    if (!result) throw "invalid argument 'result'";
+
     files.forEach(function(file) {
       if (!file.startsWith(dir)) return;
 
       var content = fs.readFileSync(file, 'UTF-8').toString();
       var meta = extractMeta(content);
-      if (meta.ignore) return; 
-      meta.$title = meta.$title || makeFileTitle(file);
-      meta.$href = meta.$href || makeFileHref(file, dir);
+      if (meta.ignore) return;
+      meta.name = path.basename(file); 
+      meta.title = meta.title || makeFileTitle(file);
+      meta.href = meta.href || makeFileHref(file, dir);
       
       var tokens =  file.substring(dir.length, file.length).split("/");
       var fileName = tokens.pop()
-      var group = result;
-      tokens.forEach(function(name) {
-        if (!name) return;
-        group[name] = group[name] || {};
-        group = group[name];
-        group.$title = group.$title || makeFileTitle(name);
-      });
-      group.$files = group.$files || [];
-      group.$files.push(meta);
+      var node = result;
+      while (tokens.length) {
+        var name = tokens.shift()
+        if (!name) continue;
+        var found = _.findWhere(node.folders, { name: name });
+        if (!found) {
+          found = {
+            name: name,
+            title: makeTitle(name),
+            files: [],
+            folders: []
+          }
+          node.folders.push(found);
+        }
+        node = found
+      }
+      
+      node.files = node.files || [];
+      node.files.push(meta);
     });
     return result;
   }
@@ -67,6 +84,10 @@
     Object.keys(this.samples).forEach(function(key) {
       delete this.samples[key];
     }, this);
+    _.extend(this.samples, {
+      files: [],
+      folders: []
+    });
   } 
   Mod.prototype.sampler = function(samplesDir) {
     this.clear();

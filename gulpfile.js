@@ -43,8 +43,9 @@ var PATHS = {
       'bower_components/prism/components/prism-css.js',
       'bower_components/prism/components/prism-markup.js',
       'bower_components/prism/components/prism-javascript.js',
-      'bower_components/prism/plugins/autolinker.js',
-      'bower_components/prism/plugins/line-numbers.js',
+      'bower_components/prism/plugins/autolinker/prism-autolinker.js',
+      'bower_components/prism/plugins/line-numbers/prism-line-numbers.js',
+      'bower_components/prism/plugins/normalize-whitespace/prism-normalize-whitespace.js',
       'src/page/**/*.js'
     ],
     styleIncludes: [

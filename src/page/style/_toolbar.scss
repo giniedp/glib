@@ -1,0 +1,42 @@
+.toolbar {
+  box-sizing: border-box;
+  font-weight: 400;
+
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+
+  -webkit-flex-direction: row;
+  -ms-flex-direction: row;
+  flex-direction: row;
+
+  width: 100%;
+  min-height: 3rem;
+  padding: 0;
+  margin: 0;
+
+  a {
+    padding: 1rem;
+    line-height: 1;
+  }
+  .flex {
+    flex: 1;
+  }
+  .title {
+    padding-left: 1rem;
+  }
+  .title.text-center {
+    padding-left: 0;
+  }
+}
+
+.dark-theme .toolbar{
+  background: $dark-color;
+  a:hover {
+    background: #2d2d2d;
+  }
+}

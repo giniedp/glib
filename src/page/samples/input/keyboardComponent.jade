@@ -1,0 +1,102 @@
+//- title: Keyboard Component
+extends ./../../_layouts/example.jade
+block content
+  #keyboard-container
+block script
+  script(type='text/javascript').
+    function DemoComponent(options) {
+      this.enable = true;
+      this.visible = true;
+    }
+    DemoComponent.prototype.setup = function () {
+      this.assets = this.node.root.getService("Assets");
+      this.keyboard = this.node.root.getService('Keyboard');
+
+      this.transform = this.node.getService("Transform");
+      this.renderable = this.node.getService("Renderable");
+
+      this.scale = 1;
+      this.targetScale = 1;
+      this.position = { x: 0, y: 0, z: 0}
+      this.targetPosition = { x: 0, y: 0, z: 0}
+      this.rotation = { x: 0, y: 0, z: 0}
+      this.targetRotation = { x: 0, y: 0, z: 0}
+      this.assets
+        .loadAssets({ Model: { cube: "/assets/models/roundcube.obj" } })
+        .then(function (res) {
+          this.renderable.model = res.Model.cube;
+        }.bind(this));
+    };
+    DemoComponent.prototype.update = function (dt) {
+      let kb = this.keyboard;
+      let keys = Glib.Input.KeyCode;
+      let step = 2;
+      let rotationStep = Math.PI / 2;
+      if (kb.justPressed(keys.Space)){
+        this.targetScale = 2;
+      }
+      if (kb.justReleased(keys.Space)){
+        this.targetScale = 1;
+      }
+
+      if (kb.isPressed(keys.Shift)){
+        if (kb.justPressed(keys.LeftArrow)) {
+          this.targetRotation.y -= rotationStep;
+        }
+        if (kb.justPressed(keys.RightArrow)) {
+          this.targetRotation.y += rotationStep;
+        }
+        if (kb.justPressed(keys.UpArrow)) {
+          this.targetRotation.x -= rotationStep;
+        }
+        if (kb.justPressed(keys.DownArrow)) {
+          this.targetRotation.x += rotationStep;
+        }
+      } else {
+        if (kb.justPressed(keys.LeftArrow)) {
+          this.targetPosition.x -= step;
+        }
+        if (kb.justPressed(keys.RightArrow)) {
+          this.targetPosition.x += step;
+        }
+        if (kb.justPressed(keys.UpArrow)) {
+          this.targetPosition.y += step;
+        }
+        if (kb.justPressed(keys.DownArrow)) {
+          this.targetPosition.y -= step;
+        }
+      }
+
+      this.scale += (this.targetScale - this.scale) * dt * 0.01;
+      ['x', 'y', 'z'].forEach(function(prop) {
+        this.position[prop] += (this.targetPosition[prop] - this.position[prop]) * dt * 0.01;
+        this.rotation[prop] += (this.targetRotation[prop] - this.rotation[prop]) * dt * 0.01;
+      }.bind(this))
+      this.transform.setScaleUniform(this.scale);
+      this.transform.setPositionXYZ(this.position.x, this.position.y, this.position.z);
+      this.transform.setRotationYawPitchRoll(this.rotation.y, this.rotation.x, this.rotation.z);   
+    };
+
+    Glib
+      .createGame({
+        canvas: document.getElementById("canvas"),
+        autorun: true,
+        templates: ['Keyboard']
+      })
+      .buildChild({
+        name: "Light",
+        templates: ["DirectionalLight"]
+      })
+      .buildChild({
+        name: "Camera",
+        templates: ["Camera"]
+      }, function (entity) {
+        entity.s.Camera.activate();
+        entity.s.Transform.translateXYZ(0, 0, 10);
+      })
+      .buildChild({
+        name: 'Cube',
+        templates: ['Model']
+      }, function(entity) {
+        entity.addComponent(new DemoComponent());
+      })
