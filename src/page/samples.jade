@@ -47,6 +47,8 @@ body.grid-frame.dark-theme.sidebar-off
     $('.js-toggle-menu').click(function(e) {
       e.preventDefault();
       $('body').toggleClass('sidebar-off');
+    }).mouseenter(function() {
+      $('body').removeClass('sidebar-off');
     });
     $('.sidebar').mouseleave(function() {
       $('body').addClass('sidebar-off');

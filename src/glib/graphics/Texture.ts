@@ -1,115 +1,133 @@
 module Glib.Graphics {
 
-  var defaultPixel = new Uint8Array([128, 128, 128, 255]);
   var noop = function(){};
   
   export interface TextureOptions {
-    // Whether or not to automatically generate mip maps
+    /** Whether or not to automatically generate mip maps */
     generateMipmap?: boolean,
-    // The pixel format to be used
+    /** The pixel format to be used */
     pixelFormat?: number,
-    // The pixel element data tupe to be used
+    /** The pixel element data tupe to be used */
     pixelType?: number,
-    // The texture type
+    /** The texture type */
     type?: number,
-    // The wrapped WebGLTexture object
+    /** The wrapped WebGLTexture object */
     handle?: WebGLTexture,
-    // The texture width
+    /** The texture width */
     width?:number,
-    // The texture height
+    /** The texture height */
     height?:number,
-    // The initial texture data to set
+    /** The initial texture data to set */
     data?: any,
-    // The depth format of the depth stencil buffer to use when the texture is used as a render target
+    /** The depth format of the depth stencil buffer to use when the texture is used as a render target */
     depthFormat?:number
   }
 
   // Describes a texture object.
   export class Texture {
-    // The Graphics.Device
+    /** The Graphics.Device */
     device:Device;
-    // The GL context
+    /** The GL context */
     gl:any;
-    // The texture width
+    /** The texture width */
     width:number = 0;
-    // The texture height
+    /** The texture height */
     height:number = 0;
-    // Indicates whether texture data has been set and the texture is ready to be used in a shader.
-    // This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
-    // initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
+    /**
+     * Indicates whether texture data has been set and the texture is ready to be used in a shader.
+     * This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
+     * initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
+     */
     ready:boolean = false;
-    // Indicates whether the texture width and height is a power of two value.
+    /** Indicates whether the texture width and height is a power of two value. */
     isPOT:boolean = false;
-    // Indicates whether mipmaps should be automatically created when data is iset.
+    /** Indicates whether mipmaps should be automatically created when data is iset. */
     generateMipmap:boolean = true;
-    // Indicates the used pixel format.
+    /** Indicates the used pixel format. */
     pixelFormat:number = PixelFormat.RGBA;
-    // Indicates the data type of the pixel elements
+    /** Indicates the data type of the pixel elements */
     pixelType:number = DataType.ubyte;
-    // Indicates the texture type
+    /** Indicates the texture type */
     type:number = TextureType.Texture2D;
     
-    // If Texture is created as video texture this holds the HTMLVideoElement.
-    // Setting this property wont have any effect.
+    /**
+     * If Texture is created as video texture this holds the HTMLVideoElement.
+     * Setting this property wont have any effect.
+     */
     video:HTMLVideoElement = null
 
-    // If Texture is created as image texture this holds the HTMLImageElement.
-    // Setting this property wont have any effect.
+    /**
+     * If Texture is created as image texture this holds the HTMLImageElement.
+     * Setting this property wont have any effect.
+     */
     image:HTMLImageElement = null
 
     update:()=> void = noop;
     handle:WebGLTexture = null;
     
-    // The cached time value of the currently running video.
-    private _lastVideoTime = -1;
+    /**
+     * The cached time value of the currently running video.
+     */
+    private videoTime = -1;
 
-    // Initializes a new texture
+    /** 
+     * Creates a texture for given device and with given options. 
+     * The options are passed to the stup method without any modification. 
+     */
     constructor(device:Device, options:TextureOptions={}) {
       this.device = device;
       this.gl = device.context;
       this.setup(options);
     }
 
-    private _depthFormat: number;
+    private depthFormatField: number;
 
-    // The depth format of the depth stencil buffer to be used when the texture is used as a render target
+    /**
+     * The depth format of the depth stencil buffer to be used when the texture is used as a render target
+     */
     get depthFormat():number {
-      return this._depthFormat;
+      return this.depthFormatField;
     }
     set depthFormat(value:number) {
       this.device.unregisterRenderTarget(this);
-      this._depthFormat = value;
+      this.depthFormatField = value;
       if (value != null) {
         this.device.registerRenderTarget(this);  
       }
     }
 
-    // Indicates whether this texture is intendet to be used as a renter target
+    /** 
+     * Indicates whether this texture is intendet to be used as a renter target 
+     */
     get isRenderTarget():boolean {
-      return this._depthFormat != null;
+      return this.depthFormatField != null;
     }
 
-    // Gets the name string of the used pixel format
+    /** 
+     * Gets the name string of the used pixel format 
+     */
     get pixelFormatName():number {
       return PixelFormatName[this.pixelFormat];
     }
 
-    // Gets the string name of the used pixel type
+    /**
+     * Gets the string name of the used pixel type
+     */
     get pixelTypeName():number {
       return DataTypeName[this.pixelType];
     }
     
-    // Gets the string name of the used texture type
+    /**
+     * Gets the string name of the used texture type
+     */
     get typeName():number {
       return TextureTypeName[this.type];
     }
 
-    get texel():IVec2 { 
-      return { x: 1.0 / this.width, y: 1.0 / this.height } 
-    }
-
-    // Collection of file extensions that are recognized as video files. Contains the values ['mp4', 'ogv', 'ogg']
-    static videoTypes = ['mp4', 'ogv', 'ogg'];
+    /**
+     * Collection of file extensions that are recognized as video files. Contains the values ['mp4', 'ogv', 'ogg']
+     */
+    static videoTypes = ['.mp4', '.ogv', '.ogg'];
 
     static createImageUpdateHandle(texture:Texture, image:HTMLImageElement) {
       var gl = texture.gl;
@@ -142,8 +160,9 @@ module Glib.Graphics {
         texture.height = video.videoHeight;
         texture.isPOT = utils.isPowerOfTwo(texture.width) && utils.isPowerOfTwo(texture.height);
         texture.ready = video.readyState >= 3;
-        if (texture.ready && (texture._lastVideoTime !== video.currentTime)) {
-          texture._lastVideoTime = video.currentTime;
+        if (texture.ready && (texture.videoTime !== video.currentTime)) {
+          
+          texture.videoTime = video.currentTime;
           gl.bindTexture(texture.type, texture.handle);
           gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, video);
           if (texture.generateMipmap && texture.isPOT) {
@@ -207,6 +226,9 @@ module Glib.Graphics {
       return this;
     }
 
+    /**
+     * Releases all resources and notifies the device that the texture is being destroyed.
+     */
     destroy():Texture {
       this.image = null
       this.video = null
@@ -218,11 +240,19 @@ module Glib.Graphics {
       return this
     }
 
+    /**
+     * Bind the texture to the gl context.
+     */
     use():Texture {
       this.gl.bindTexture(this.type, this.handle)
       return this
     }
 
+    /**
+     * Sets the texture source from an url.
+     * The url is checked against the `Texture.videoTypes` array to detect
+     * whether the url points to an image or video. 
+     */
     setUrl(url:string):Texture {
       var ext = url.substr(url.lastIndexOf('.'))
       var isVideo = Texture.videoTypes.indexOf(ext) >= 0
@@ -234,42 +264,38 @@ module Glib.Graphics {
       return this
     }
 
+    /**
+     * Sets the texture source from an image url
+     */
     setImageUrl(url:string):Texture {
       this.update = noop
       this.ready = false
-      var that = this
       var image = new Image()
-      image.onload = function () {
-        that.setImage(image)
-      }
       image.src = url
-      this.image = image
-      this.video = null
+      this.setImage(image)
       return this
     }
 
+    /**
+     * Sets the texture source from a video url
+     */
     setVideoUrl(url:string):Texture {
       this.update = noop
       this.ready = false
-      var that = this
       var video = document.createElement('video')
-      video.oncanplay = function () {
-        that.setVideo(video)
-      };
       video.src = url
-      this.video = video
-      this.image = null
+      video.load()
+      this.setVideo(video)
       return this
     }
 
+    /**
+     * Sets the texture source from video urls.
+     */
     setVideoUrls(options:any[]):Texture {
       this.update = noop
       this.ready = false
-      var that = this
       var video = document.createElement('video')
-      video.oncanplay = function () {
-        that.setVideo(video)
-      }
       let valid = false
       for (let option of options) {
         if (video.canPlayType(option.type)) {
@@ -282,11 +308,13 @@ module Glib.Graphics {
       if (!valid) {
         Glib.utils.debug("[Texture] no supported format found. Video won't play.", options)
       }
-      this.video = video
-      this.image = null
+      this.setVideo(video)
       return this
     }
 
+    /**
+     * Sets the texture source from HtmlImageElement
+     */
     setImage(image:HTMLImageElement):Texture {
       this.image = image
       this.video = null
@@ -295,6 +323,9 @@ module Glib.Graphics {
       return this
     }
     
+    /**
+     * Sets the texture source from HTMLVideoElement
+     */
     setVideo(video:HTMLVideoElement):Texture {
       this.video = video
       this.image = null
@@ -303,6 +334,9 @@ module Glib.Graphics {
       return this
     }
 
+    /**
+     * Sets the texture source from data array or buffer
+     */
     setData(data, width?:number, height?:number):Texture {
       this.video = null
       this.image = null
@@ -325,6 +359,10 @@ module Glib.Graphics {
       this.ready = true
       this.isPOT = utils.isPowerOfTwo(width) && utils.isPowerOfTwo(height)
       return this
+    }
+
+    get texel():IVec2 { 
+      return { x: 1.0 / this.width, y: 1.0 / this.height } 
     }
   }
 }
