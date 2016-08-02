@@ -46,6 +46,16 @@ var GlibSamples = GlibSamples || {};
       return preEl;
     }
 
+    function getItem(key) {
+      if (window.localStorage) {
+        return window.localStorage.getItem(key)
+      }
+    }
+    function setItem(key, value) {
+      if (window.localStorage) {
+        window.localStorage.setItem(key, value)
+      }
+    }
     module.bootSample = function(options) {
       var view = $(options.view);
       var code = $(options.code);
@@ -86,16 +96,24 @@ var GlibSamples = GlibSamples || {};
       tabs.sort(function(a, b) {
         return a.index - b.index;
       }).forEach(function(tab) {
-        var tabEl = $('<a>').text(tab.name).appendTo(tabsEl);
+        var tabEl = $('<a>').text(tab.name).attr('tab', tab.name).appendTo(tabsEl);
         var contentEl = tab.content.appendTo(contentsEl);
         tabEl.click(function() {
+          setItem('recentTab', tab.name);
           contentsEl.children().hide();
           contentEl.show();
           tabsEl.children().removeClass('active');
           tabEl.addClass('active');
         });
       });
-      tabsEl.children().first().click();
+
+      var recent = getItem('recentTab');
+      var found = tabsEl.find('[tab="' + recent + '"]');
+      if (recent && found.length) {
+        found.click();
+      } else {
+        tabsEl.find('[tab]').first().click();
+      }
     };
 
     //

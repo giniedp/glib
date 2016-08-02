@@ -16,10 +16,10 @@ html(lang="en")
 
 body.sample-container.dark-theme
   .sample-view
-    .canvas-container
-      canvas#canvas(oncontextmenu="return false;")
-    .dat-gui
-    script(type='text/javascript' src='/glib.js')
+    block view
+      .canvas-container
+        canvas#canvas(oncontextmenu="return false;")
+      script(type='text/javascript' src='/glib.js')
   .sample-code
   .sample-source
     block script
