@@ -668,6 +668,13 @@ module Glib.Graphics {
       }
     }
 
+    /**
+     * Gets the aspect ratio of the drawing buffer 
+     */
+    get drawingBufferAspectRatio(): number {
+      return this.context.drawingBufferWidth / this.context.drawingBufferHeight;
+    }
+
     private _bindAttribPointerAndLocation(vBuffer:Buffer, program:ShaderProgram, layout?:any, attributes?:any) {
       layout = layout || vBuffer.layout
       attributes = attributes || program.attributes
