@@ -64,10 +64,10 @@ module Glib.Graphics {
     get maxColorAttachments() {
       return this.capability("MAX_COLOR_ATTACHMENTS_WEBGL", "WEBGL_draw_buffers")
     }
-    get supportTextureFormatFloat() {
+    get textureFormatFloat() {
         return !!this.extension("OES_texture_float")
     }
-    get supportTextureFormatHalfFloat() {
+    get textureFormatHalfFloat() {
         return !!this.extension("OES_texture_half_float")
     }
   }
