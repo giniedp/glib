@@ -56,7 +56,8 @@ module Glib.Graphics {
 
   export interface Sprite {
     texture?:Texture
-    //color:number
+    color?:number|Color
+
     srcX?:number
     srcY?:number
     srcWidth?:number
@@ -67,62 +68,154 @@ module Glib.Graphics {
     dstWidth?:number
     dstHeight?:number
 
+    rotation?:number
     originX?:number
     originY?:number
-    rotation?:number
+    
     depth?:number
-    color?:number
     flipX?:boolean
     flipY?: boolean
   }
 
+  export class SpriteBuilder {
+    private sprite: Sprite
+
+    setup(sprite) {
+      this.sprite = sprite
+      sprite.color = 0xFFFFFFFF
+
+      sprite.srcX = 0
+      sprite.srcY = 0
+      sprite.srcWidth = 0
+      sprite.srcHeight = 0
+
+      sprite.dstX = 0
+      sprite.dstY = 0
+      sprite.dstWidth = 0
+      sprite.dstHeight = 0
+
+      sprite.originX = 0
+      sprite.originY = 0
+      sprite.rotation = 0
+      sprite.depth = 0
+      sprite.flipX = false
+      sprite.flipY = false
+    }
+    color(color:number|Color):SpriteBuilder {
+      this.sprite.color = color
+      return this
+    }
+    alpha(alpha:number):SpriteBuilder {
+      var color = this.sprite.color as number
+      if (color == void 0) color = 0xFFFFFFFF
+      this.sprite.color = (color & 0x00FFFFFF) | (((alpha * 255) & 0xFF) << 24)
+      return this
+    }
+    source(x:number, y:number, width?:number, height?:number): SpriteBuilder {
+      let s = this.sprite
+      s.srcX = x
+      s.srcY = y
+      s.srcWidth = width
+      s.srcHeight = height
+      return this
+    }
+    sourceVec(vec:IVec2) {
+      let s = this.sprite
+      s.srcX = vec.x
+      s.srcY = vec.y
+      return this
+    }
+    sourceRect(rect:IRect) {
+      return this.source(rect.x, rect.y, rect.width, rect.height)
+    }
+    destination(x:number, y:number, width?:number, height?:number): SpriteBuilder {
+      let s = this.sprite
+      s.dstX = x
+      s.dstY = y
+      s.dstWidth = width
+      s.dstHeight = height
+      return this
+    }
+    destinationVec(vec:IVec2) {
+      let s = this.sprite
+      s.dstX = vec.x
+      s.dstY = vec.y
+      return this
+    }
+    destinationRect(rect:IRect) {
+      return this.destination(rect.x, rect.y, rect.width, rect.height)
+    }
+    origin(x:number, y:number): SpriteBuilder {
+      let s = this.sprite
+      s.originX = x
+      s.originY = y
+      return this
+    }
+    rotation(rotation:number):SpriteBuilder {
+      this.sprite.rotation = rotation
+      return this
+    }
+    depth(depth:number):SpriteBuilder {
+      this.sprite.depth = depth
+      return this
+    }
+
+    flip(x:boolean, y:boolean):SpriteBuilder {
+      let s = this.sprite
+      s.flipX = x
+      s.flipY = y
+      return this  
+    }
+  }
+
   export class SpriteBatch {
-    device:Graphics.Device;
-    gl:any;
-    private _hasBegun:boolean;
-    private _spriteQueue:Sprite[];
+    device:Graphics.Device
+    gl:any
+    private hasBegun:boolean
+    private spriteQueue:Sprite[]
 
-    private _arrayBuffer:ArrayBuffer;
-    private _positionTextureView:Float32Array;
-    private _colorBufferView:Uint32Array;
-    private _vertexBuffer:Graphics.Buffer;
-    private _indexBuffer:Graphics.Buffer;
-    private _program:Graphics.ShaderProgram;
+    private arrayBuffer:ArrayBuffer
+    private positionTextureView:Float32Array
+    private colorBufferView:Uint32Array
+    private vertexBuffer:Graphics.Buffer
+    private indexBuffer:Graphics.Buffer
+    private program:Graphics.ShaderProgram
 
-    private _blendState:BlendStateOptions;
-    private _cullState:CullStateOptions;
-    private _depthState:DepthStateOptions;
-    private _stencilState:StencilStateOptions;
-    private _scissorState:ScissorStateOptions;
-    private _viewportState:ViewportStateOptions;
-    private _sortMode:any;
-    private _batchSize:number;
-    private _batchPosition:number;
+    private blendState:BlendStateOptions
+    private cullState:CullStateOptions
+    private depthState:DepthStateOptions
+    private stencilState:StencilStateOptions
+    private scissorState:ScissorStateOptions
+    private viewportState:ViewportStateOptions
+    private sortMode:any
+    private batchSize:number
+    private batchPosition:number
+    private builder:SpriteBuilder = new SpriteBuilder()
 
     constructor(device:Graphics.Device, options:SpriteBatchOptions={}) {
       this.device = device;
       this.gl = device.context;
-      this._hasBegun = false;
-      this._spriteQueue = [];
-      this._batchSize = options.batchSize || 512;
-      this._batchPosition = 0;
+      this.hasBegun = false;
+      this.spriteQueue = [];
+      this.batchSize = options.batchSize || 512;
+      this.batchPosition = 0;
 
       var vertexLayout = Graphics.VertexLayout.create('PositionTextureColor');
       var sizeInBytes = Graphics.VertexLayout.countBytes(vertexLayout);
 
-      this._arrayBuffer = new ArrayBuffer(this._batchSize * 4 * sizeInBytes);
-      this._positionTextureView = new Float32Array(this._arrayBuffer);
-      this._colorBufferView = new Uint32Array(this._arrayBuffer);
-      this._vertexBuffer = device.createVertexBuffer({
+      this.arrayBuffer = new ArrayBuffer(this.batchSize * 4 * sizeInBytes);
+      this.positionTextureView = new Float32Array(this.arrayBuffer);
+      this.colorBufferView = new Uint32Array(this.arrayBuffer);
+      this.vertexBuffer = device.createVertexBuffer({
         layout: vertexLayout,
-        data: this._positionTextureView,
+        data: this.positionTextureView,
         usage: Graphics.BufferUsage.Dynamic
       });
-      this._program = device.createProgram({
+      this.program = device.createProgram({
         vertexShader: vShader,
         fragmentShader: fShader
       });
-      var data = new Uint16Array(this._batchSize * 6);
+      var data = new Uint16Array(this.batchSize * 6);
       var index = 0;
       for (var i = 0; i < data.length; i+=6, index+=4) {
         data[i] = index;
@@ -134,173 +227,166 @@ module Glib.Graphics {
         data[i+5] = index+2;
       }
 
-      this._indexBuffer = device.createIndexBuffer({
+      this.indexBuffer = device.createIndexBuffer({
         data: data
       });
     }
 
     begin(options?:SpriteBatchBeginOptions) {
-      if (this._hasBegun) {
+      if (this.hasBegun) {
         throw "end() must be called before a new batch can be started with begin()";
       }
-      this._sortMode = void 0;
-      this._blendState = void 0;
-      this._cullState = void 0;
-      this._depthState = void 0;
-      this._stencilState = void 0;
-      this._scissorState = void 0;
-      this._viewportState = void 0;
+      this.sortMode = void 0;
+      this.blendState = void 0;
+      this.cullState = void 0;
+      this.depthState = void 0;
+      this.stencilState = void 0;
+      this.scissorState = void 0;
+      this.viewportState = void 0;
       if (options) {
-        this._sortMode = options.sortMode;
-        this._blendState = options.blendState;
-        this._cullState = options.cullState;
-        this._depthState = options.depthState;
-        this._stencilState = options.stencilState;
-        this._scissorState = options.scissorState;
-        this._viewportState = options.viewportState;
+        this.sortMode = options.sortMode;
+        this.blendState = options.blendState;
+        this.cullState = options.cullState;
+        this.depthState = options.depthState;
+        this.stencilState = options.stencilState;
+        this.scissorState = options.scissorState;
+        this.viewportState = options.viewportState;
       }
-      this._hasBegun = true;
+      this.hasBegun = true;
     };
 
-    draw(options:Sprite) {
-      this.drawTexture(
-        options.texture,
-        options.color,
-        options.srcX,
-        options.srcY,
-        options.srcWidth,
-        options.srcHeight,
-        options.dstX,
-        options.dstY,
-        options.dstWidth,
-        options.dstHeight,
-        options.originX,
-        options.originY,
-        options.rotation,
-        options.depth,
-        options.flipX,
-        options.flipY);
-    }
+    /**
+     * @param texture The texture to draw
+     */
+    draw(texture: Graphics.Texture):SpriteBuilder {
 
-    drawTexture(texture: Graphics.Texture, color, srcX, srcY, srcWidth, srcHeight, dstX, dstY, dstWidth, dstHeight, originX, originY, rotation, depth, flipX, flipY) {
-
-      if (!this._hasBegun) {
+      if (!this.hasBegun) {
         throw "begin() must be called before draw()";
       }
       if (!texture) {
         throw "no texture given";
       }
 
-      var sprite:Sprite = spritePool.pop() || {};
-
-      var tW = texture.width;
-      var tH = texture.height;
-      var sX = srcX || 0;
-      var sY = srcY || 0;
-      var sW = srcWidth || (tW - sX);
-      var sH = srcHeight || (tH - sY);
-
-      sprite.srcX = sX;
-      sprite.srcY = sY;
-      sprite.srcWidth = sW;
-      sprite.srcHeight = sH;
-
-      sprite.dstX = dstX || 0;
-      sprite.dstY = dstY || 0;
-      sprite.dstWidth = dstWidth || sW;
-      sprite.dstHeight = dstHeight || sH;
-
-      sprite.texture = texture;
-      sprite.depth = depth || 0;
-      sprite.originX = originX || 0;
-      sprite.originY = originY || 0;
-      sprite.rotation = rotation || 0;
-      sprite.texture = texture;
-      if (color instanceof Graphics.Color) {
-        sprite.color = color.rgba
-      } else if (typeof color === 'number') {
-        sprite.color = color
-      } else {
-        sprite.color = 0xFFFFFFFF;
-      }
-
-      sprite.flipX = flipX;
-      sprite.flipY = flipY;
-
-      this._spriteQueue.push(sprite);
+      let sprite = spritePool.pop() || {}
+      sprite.texture = texture
+      let builder = this.builder
+      builder.setup(sprite)
+      this.spriteQueue.push(sprite)
+      return builder  
     }
 
     end() {
-      if (!this._hasBegun) {
+      if (!this.hasBegun) {
         throw "begin() must be called before end()";
       }
 
-      this._commitRenderState();
-      this._draw();
+      this.commitRenderState();
+      this.drawBatch();
 
-      for (var sprite of this._spriteQueue) {
+      for (var sprite of this.spriteQueue) {
         spritePool.push(sprite);
       }
-      this._spriteQueue.length = 0;
-      this._hasBegun = false;
+      this.spriteQueue.length = 0;
+      this.hasBegun = false;
     };
 
-    private _commitRenderState() {
+    private commitRenderState() {
       var device = this.device;
 
-      if (this._blendState) {
-        device.blendState = this._blendState;
+      if (this.blendState) {
+        device.blendState = this.blendState;
       }
-      if (this._cullState) {
-        device.cullState = this._cullState;
+      if (this.cullState) {
+        device.cullState = this.cullState;
       }
-      if (this._depthState) {
-        device.depthState = this._depthState;
+      if (this.depthState) {
+        device.depthState = this.depthState;
       }
-      if (this._stencilState) {
-        device.stencilState = this._stencilState;
+      if (this.stencilState) {
+        device.stencilState = this.stencilState;
       }
-      if (this._scissorState) {
-        device.scissorState = this._scissorState;
+      if (this.scissorState) {
+        device.scissorState = this.scissorState;
       }
-      if (this._viewportState) {
-        device.viewportState = this._viewportState;
+      if (this.viewportState) {
+        device.viewportState = this.viewportState;
       }
     }
 
-    private _draw() {
+    private buildSprites() {
+      var queue = this.spriteQueue
+      for (var i = 0; i < queue.length; i++) {
+        var sprite = queue[i]
+
+        var tW = sprite.texture.width
+        var tH = sprite.texture.height
+        var sX = sprite.srcX || 0
+        var sY = sprite.srcY || 0
+        var sW = sprite.srcWidth || (tW - sX)
+        var sH = sprite.srcHeight || (tH - sY)
+
+        sprite.srcX = sX
+        sprite.srcY = sY
+        sprite.srcWidth = sW
+        sprite.srcHeight = sH
+
+        sprite.dstX = sprite.dstX || 0
+        sprite.dstY = sprite.dstY || 0
+        sprite.dstWidth = sprite.dstWidth || sW
+        sprite.dstHeight = sprite.dstHeight || sH
+
+        sprite.rotation = sprite.rotation || 0
+        sprite.originX = sprite.originX || 0
+        sprite.originY = sprite.originY || 0
+        
+        sprite.depth = sprite.depth || 0
+        sprite.flipX = !!sprite.flipX
+        sprite.flipY = !!sprite.flipY
+        
+        let color = sprite.color as any
+        if (color instanceof Graphics.Color) {
+          sprite.color = color.rgba
+        } else if (typeof color === 'number') {
+          sprite.color = color
+        } else {
+          sprite.color = 0xFFFFFFFF;
+        }
+      }
+    }
+
+    private drawBatch() {
       var start = 0;
       var texture = void 0;
-      var queue = this._spriteQueue;
-
-      this.device.indexBuffer = this._indexBuffer;
-      this.device.vertexBuffer = this._vertexBuffer;
-      this.device.program = this._program;
+      var queue = this.spriteQueue;
+      this.buildSprites()
+      this.device.indexBuffer = this.indexBuffer;
+      this.device.vertexBuffer = this.vertexBuffer;
+      this.device.program = this.program;
 
       for (var i = 0; i < queue.length; i++) {
         if (texture !== queue[i].texture) {
           if (i > start) {
-            this.device.program.uniforms.texture.set(texture);
-            this._drawSlice(start, i - start);
+            this.device.program.setUniform('texture', texture);
+            this.drawSlice(start, i - start);
           }
           texture = queue[i].texture;
           start = i;
         }
       }
       if (queue.length > 0 && texture) {
-        this.device.program.uniforms.texture.set(texture);
-        this._drawSlice(start, queue.length - start);
+        this.device.program.setUniform('texture', texture);
+        this.drawSlice(start, queue.length - start);
       }
     }
 
-    private _drawSlice(start:number, length:number) {
+    private drawSlice(start:number, length:number) {
       if (length == 0) {
         return;
       }
 
-      var queue = this._spriteQueue;
-      var posTexView = this._positionTextureView;
-      var colorView = this._colorBufferView;
+      var queue = this.spriteQueue;
+      var posTexView = this.positionTextureView;
+      var colorView = this.colorBufferView;
 
       var texture = queue[start].texture;
       var texelX = 1.0 / texture.width;
@@ -311,7 +397,7 @@ module Glib.Graphics {
       var end = start + length;
       while (start < end) {
         var slice = end - start;
-        slice = slice > this._batchSize ? this._batchSize : slice;
+        slice = slice > this.batchSize ? this.batchSize : slice;
 
         var vIndex = 0;
         for (var i = 0; i < slice; i ++) {
@@ -341,7 +427,7 @@ module Glib.Graphics {
           posTexView[vIndex++] = (sprite.srcX + flipX) * texelX;
           posTexView[vIndex++] = (sprite.srcY + flipY) * texelY;
           //color
-          colorView[vIndex++] = sprite.color;
+          colorView[vIndex++] = sprite.color as number;
 
           // VERTEX TOP RIGHT
 
@@ -353,7 +439,7 @@ module Glib.Graphics {
           posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth - flipX) * texelX;
           posTexView[vIndex++] = (sprite.srcY + flipY) * texelY;
           //color
-          colorView[vIndex++] = sprite.color;
+          colorView[vIndex++] = sprite.color as number;
 
           // VERTEX BOTTOM LEFT
 
@@ -365,7 +451,7 @@ module Glib.Graphics {
           posTexView[vIndex++] = (sprite.srcX + flipX) * texelX;
           posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight - flipY) * texelY;
           //color
-          colorView[vIndex++] = sprite.color;
+          colorView[vIndex++] = sprite.color as number;
 
           // VERTEX BOTTOM RIGHT
 
@@ -377,13 +463,13 @@ module Glib.Graphics {
           posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth - flipX) * texelX;
           posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight - flipY) * texelY;
           //color
-          colorView[vIndex++] = sprite.color;
+          colorView[vIndex++] = sprite.color as number;
         }
 
         start += slice;
 
-        var dat:any = this._positionTextureView;
-        this._vertexBuffer.setSubData(dat, 0);
+        var dat:any = this.positionTextureView;
+        this.vertexBuffer.setSubData(dat, 0);
         this.device.drawIndexedPrimitives(Graphics.PrimitiveType.TriangleList, 0, slice * 6);
       }
     }
