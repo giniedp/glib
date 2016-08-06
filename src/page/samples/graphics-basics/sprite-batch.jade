@@ -23,7 +23,7 @@ block script
       var pulse = (Math.sin(2 * Math.PI * time / 2000) + 1) / 2;
 
       device.resize();
-      device.clear(Glib.Graphics.Color.CornflowerBlue, 1.0);
+      device.clear(Glib.Color.CornflowerBlue, 1.0);
       device.blendState = Glib.Graphics.BlendState.AlphaBlend;
 
       spriteBatch.begin();

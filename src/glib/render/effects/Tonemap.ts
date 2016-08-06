@@ -28,7 +28,7 @@ module Glib.Render.Effects {
       width: 2, height: 2, depthFormat: Glib.Graphics.DepthFormat.None
     }
     
-    constructor(private _material:Graphics.Material) {
+    constructor(private _material:Graphics.ShaderMaterial) {
     }
     
     setup(manager: Render.Manager) {

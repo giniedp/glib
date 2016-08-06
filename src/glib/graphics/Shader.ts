@@ -7,64 +7,63 @@ module Glib.Graphics {
   }
 
   export class Shader {
-    uid:string;
-    device:Device;
-    gl:any;
-    source:string;
-    info:string;
-    type:number;
-    typeName:string;
-    handle:WebGLShader;
-    compiled:boolean;
+    uid:string
+    device:Device
+    gl:any
+    source:string
+    info:string
+    type:number
+    typeName:string
+    handle:WebGLShader
+    compiled:boolean
 
-    constructor(device:Device, params?:ShaderOptions) {
-      params = params || {};
-      this.uid = utils.uuid();
-      this.device = device;
-      this.gl = device.context;
+    constructor(device:Device, params:ShaderOptions={}) {
+      this.uid = utils.uuid()
+      this.device = device
+      this.gl = device.context
 
-      this.source = params.source;
-      this.type = ShaderType[params.type];
-      this.typeName = ShaderTypeName[this.type];
+      this.source = params.source
+      this.type = ShaderType[params.type]
+      this.typeName = ShaderTypeName[this.type]
 
       if (!this.typeName) {
-        utils.log(this, 'unknown shader type given', params.type);
+        utils.log(this, 'unknown shader type given', params.type)
       }
 
-      this.handle = params.handle;
+      this.handle = params.handle
       if (!this.handle || !this.gl.isShader(this.handle)) {
-        this.handle = this.gl.createShader(this.type);
+        this.handle = this.gl.createShader(this.type)
       }
 
       if (this.source) {
-        this.compile();
+        this.compile()
       }
     }
 
     destroy():Shader {
       if (this.gl.isShader(this.handle)) {
-        this.gl.deleteShader(this.handle);
-        this.handle = null;
+        this.gl.deleteShader(this.handle)
+        this.handle = null
       }
-      return this;
+      return this
     }
 
     compile():Shader {
       if (!this.source) {
-        utils.log(this, 'Unable to compile shader, source is missing');
-        return this;
+        utils.log(this, 'Unable to compile shader, source is missing')
+        return this
       }
 
-      this.gl.shaderSource(this.handle, this.source);
-      this.gl.compileShader(this.handle);
-      this.compiled = this.gl.getShaderParameter(this.handle, this.gl.COMPILE_STATUS);
-      this.info = this.gl.getShaderInfoLog(this.handle);
+      this.gl.shaderSource(this.handle, this.source)
+      this.gl.compileShader(this.handle)
+      this.compiled = this.gl.getShaderParameter(this.handle, this.gl.COMPILE_STATUS)
+      this.info = this.gl.getShaderInfoLog(this.handle)
 
       if (!this.compiled) {
-        utils.log(this, 'Shader compilation failed');
-        utils.log(this.info);
+        utils.log(this, 'Shader compilation failed')
+        utils.log(this.info)
       }
-      return this;
+      return this
     }
 
 
@@ -109,15 +108,15 @@ module Glib.Graphics {
      * @param {string} source
      */
     static inspectShader(source) {
-      var result = Shader.inspectQualifiers(source);
-      result.structs = Shader.inspectStructs(source);
-      Shader.fixStructUniforms(result.uniforms, result.structs);
-      return result;
+      var result = Shader.inspectQualifiers(source)
+      result.structs = Shader.inspectStructs(source)
+      Shader.fixStructUniforms(result.uniforms, result.structs)
+      return result
     }
 
     static inspectProgram(vertexShader, fragmentShader) {
-      var vInspects = Shader.inspectShader(vertexShader);
-      var fInspects = Shader.inspectShader(fragmentShader);
+      var vInspects = Shader.inspectShader(vertexShader)
+      var fInspects = Shader.inspectShader(fragmentShader)
       // TODO: fix missing or invalid texture register annotations
       return {
         attributes: utils.extend({}, vInspects.attributes, fInspects.attributes),
@@ -127,20 +126,20 @@ module Glib.Graphics {
     }
 
     private static inspectStructs(source:string):any {
-      var index = 0, left, right, name, block, result = {};
+      var index = 0, left, right, name, block, result = {}
       while (true) {
-        index = source.indexOf('struct', index);
-        left = source.indexOf('{', index);
-        right = source.indexOf('};', index);
+        index = source.indexOf('struct', index)
+        left = source.indexOf('{', index)
+        right = source.indexOf('};', index)
 
         if (index < 0 || left < 0 || right < 0) {
-          return result;
+          return result
         }
 
-        name = source.substr(index, left - index).match(/struct\s+(.+)\s*/)[1];
-        block = source.substr(left + 1, right - left - 1);
-        result[utils.trim(name)] = Shader.inspectMembers(block);
-        index = right;
+        name = source.substr(index, left - index).match(/struct\s+(.+)\s*/)[1]
+        block = source.substr(left + 1, right - left - 1)
+        result[utils.trim(name)] = Shader.inspectMembers(block)
+        index = right
       }
     }
 
@@ -148,156 +147,156 @@ module Glib.Graphics {
       block = block
         .split(/\s*\/\/.*\n/).join('') // remove comments
         .split(charNewLine).join('')   // remove remove new lines
-        .split(regTrim).join('');      // trim
+        .split(regTrim).join('')       // trim
 
-      var i, match, result = {}, members = block.split(';');
+      var i, match, result = {}, members = block.split(';')
       for (i = 0; i < members.length; i += 1) {
-        match = members[i].match(/\s*(\w+)\s+(\w+)\s*$/);
+        match = members[i].match(/\s*(\w+)\s+(\w+)\s*$/)
         if (match) {
           result[match[2]] = {
             name: match[2],
             type: match[1]
-          };
+          }
         }
       }
 
-      return result;
+      return result
     }
 
     private static inspectQualifiers(source:string):any {
-      var comments = [], match, annotations, i, line;
-      var lines = utils.getLines(source);
+      var comments = [], match, annotations, i, line
+      var lines = utils.getLines(source)
       var result = {
         uniforms: {},
         varying: {},
         attributes: {},
         constants: {}
-      };
+      }
 
       for (i = 0; i < lines.length; i += 1) {
-        line = utils.trim(lines[i]);
+        line = utils.trim(lines[i])
         if (line.length === 0) {
-          comments.length = 0;
-          continue;
+          comments.length = 0
+          continue
         }
 
         match = line.match(regComment);
         if (match) {
-          comments.push(match[1]);
-          continue;
+          comments.push(match[1])
+          continue
         }
 
-        match = line.match(regUniform);
+        match = line.match(regUniform)
         if (match) {
-          annotations = Shader.parseAnnotations(comments);
-          annotations.type = match[1];
-          annotations.name = match[2];
-          result.uniforms[annotations.binding || annotations.name] = annotations;
-          comments = [];
-          continue;
+          annotations = Shader.parseAnnotations(comments)
+          annotations.type = match[1]
+          annotations.name = match[2]
+          result.uniforms[annotations.binding || annotations.name] = annotations
+          comments = []
+          continue
         }
 
-        match = line.match(regAttribute);
+        match = line.match(regAttribute)
         if (match) {
-          annotations = Shader.parseAnnotations(comments);
-          annotations.type = match[1];
-          annotations.name = match[2];
-          result.attributes[annotations.binding || annotations.name] = annotations;
-          comments = [];
-          continue;
+          annotations = Shader.parseAnnotations(comments)
+          annotations.type = match[1]
+          annotations.name = match[2]
+          result.attributes[annotations.binding || annotations.name] = annotations
+          comments = []
+          continue
         }
 
-        match = line.match(regVarying);
+        match = line.match(regVarying)
         if (match) {
-          annotations = Shader.parseAnnotations(comments);
-          annotations.type = match[1];
-          annotations.name = match[2];
-          result.varying[annotations.binding || annotations.name] = annotations;
-          comments = [];
-          continue;
+          annotations = Shader.parseAnnotations(comments)
+          annotations.type = match[1]
+          annotations.name = match[2]
+          result.varying[annotations.binding || annotations.name] = annotations
+          comments = []
+          continue
         }
 
-        match = line.match(regConst);
+        match = line.match(regConst)
         if (match) {
-          annotations = {};
-          annotations.type = match[1];
-          annotations.name = match[2];
-          annotations.value = match[3];
-          result.constants[annotations.name] = annotations;
-          comments = [];
+          annotations = {}
+          annotations.type = match[1]
+          annotations.name = match[2]
+          annotations.value = match[3]
+          result.constants[annotations.name] = annotations
+          comments = []
         }
       }
-      return result;
+      return result
     }
 
     private static parseAnnotations(lines:string[]):any{
-      var result = {};
-      if (!lines) return result;
+      var result = {}
+      if (!lines) return result
       for (var line of lines) {
-        var match = line.match(redAnnotation);
+        var match = line.match(redAnnotation)
         if (match) {
-          var key = match[2];
-          result[key] = match[3];
+          var key = match[2]
+          result[key] = match[3]
         }
       }
-      return result;
+      return result
     }
 
     private static fixStructUniforms(uniforms, structs):void {
-      var item, struct, match, name, count, i;
-      var reg = /(.*)\[(\d+)]/; // i.e. light[0]
+      var item, struct, match, name, count, i
+      var reg = /(.*)\[(\d+)]/
       
 
       Object.keys(uniforms).forEach(function (key) {
-        item = uniforms[key];
-        struct = structs[item.type];
-        match = item.name.match(reg);
+        item = uniforms[key]
+        struct = structs[item.type]
+        match = item.name.match(reg)
         
         if (!struct) {
-          if (!match) return;
-          name = match[1];
-          count = Number(match[2]);
+          if (!match) return
+          name = match[1]
+          count = Number(match[2])
           for (i = 0; i < count; i += 1) {
             uniforms[name + "[" + i + "]"] = {
               type: item.type
-            };
+            }
           }
-          delete uniforms[key];
-          return;
+          delete uniforms[key]
+          return
         }
 
-        delete uniforms[key];
-        match = item.name.match(reg);
+        delete uniforms[key]
+        match = item.name.match(reg)
 
         if (match) {
-          name = match[1];
-          count = Number(match[2]);
+          name = match[1]
+          count = Number(match[2])
 
           Object.keys(struct).forEach(function (prop) {
             for (i = 0; i < count; i += 1) {
               uniforms[name + "[" + i + "]." + prop] = {
                 type: struct[prop].type
-              };
+              }
             }
-          });
+          })
         } else {
           Object.keys(struct).forEach(function (prop) {
             uniforms[item.name + "." + prop] = {
               type: struct[prop].type
-            };
-          });
+            }
+          })
         }
-      });
+      })
     }
   }
 
-  const charNewLine = '\n';
-  const regComment = /\s*\/\/(.*)\n?\s*$/;
-  const regUniform = /^\s*uniform\s+(.+)\s+(.+)\s*;/;
-  const regAttribute = /^\s*attribute\s+(.+)\s+(.+)\s*;/;
-  const regVarying = /^\s*varying\s+(.+)\s+(.+)\s*;/;
-  const regConst = /^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/;
-  const regTrim = /^\s*|\s*$/;
-  const redAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/;
+  const charNewLine = '\n'
+  const regComment = /\s*\/\/(.*)\n?\s*$/
+  const regUniform = /^\s*uniform\s+(.+)\s+(.+)\s*;/
+  const regAttribute = /^\s*attribute\s+(.+)\s+(.+)\s*;/
+  const regVarying = /^\s*varying\s+(.+)\s+(.+)\s*;/
+  const regConst = /^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/
+  const regTrim = /^\s*|\s*$/
+  const redAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/
 
 }

@@ -1,28 +1,30 @@
 module Glib.Graphics {
 
   export interface ModelOptions {
-    name?:string;
-    boundingBox?: number[];
-    boundingSphere?: number[];
-    materials?: Material[]|MaterialOptions[];
-    meshes?: ModelMesh[]|ModelMeshOptions[];
+    name?:string
+    boundingBox?: number[]
+    boundingSphere?: number[]
+    materials?: ShaderMaterial[]|ShaderMaterialOptions[]
+    meshes?: ModelMesh[]|ModelMeshOptions[]
   }
 
   export class Model {
-    device:Device;
-    gl:any;
-    boundingBox:number[];
-    boundingSphere:number[];
-    materials:Material[] = [];
-    meshes:ModelMesh[] = [];
+    uid:string
+    device:Device
+    gl:any
+    boundingBox:number[]
+    boundingSphere:number[]
+    materials:ShaderMaterial[] = []
+    meshes:ModelMesh[] = []
 
     constructor(device:Device, params:ModelOptions) {
-      this.device = device;
-      this.gl = device.context;
-      this.boundingBox = params.boundingBox || [0, 0, 0, 0, 0, 0];
-      this.boundingSphere = params.boundingSphere || [0, 0, 0, 0];
+      this.uid = utils.uuid()
+      this.device = device
+      this.gl = device.context
+      this.boundingBox = params.boundingBox || [0, 0, 0, 0, 0, 0]
+      this.boundingSphere = params.boundingSphere || [0, 0, 0, 0]
 
-      let meshes = [].concat.apply([], params.meshes || []);
+      let meshes = [].concat.apply([], params.meshes || [])
       for (let mesh of meshes) {
         if (mesh instanceof ModelMesh) {
           this.meshes.push(mesh);
@@ -31,12 +33,12 @@ module Glib.Graphics {
         }
       }
 
-      let materials = [].concat.apply([], params.materials || []);
+      let materials = [].concat.apply([], params.materials || [])
       for (let material of materials) {
-        if (material instanceof Material) {
+        if (material instanceof ShaderMaterial) {
           this.materials.push(material);
         } else {
-          this.materials.push(new Material(this.device, material));
+          this.materials.push(new ShaderMaterial(this.device, material));
         }
       }
 
@@ -58,13 +60,13 @@ module Glib.Graphics {
 
     draw():Model {
       for (let mesh of this.meshes) {
-        let material = this.materials[mesh.materialId];
-        if (!material) continue;
-        let technique = material.technique;
-        if (!technique) continue;
+        let material = this.materials[mesh.materialId]
+        if (!material) continue
+        let technique = material.technique
+        if (!technique) continue
         for (let pass of technique.passes) {
-          pass.commit();
-          mesh.draw(pass.program);
+          pass.commit()
+          mesh.draw(pass.program)
         }
       }
       return this;

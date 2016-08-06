@@ -855,6 +855,10 @@ module Glib.Graphics {
       return new Model(this, options)
     }
 
+    createMaterial(options:ShaderMaterialOptions):ShaderMaterial {
+      return new ShaderMaterial(this, options)
+    }
+
     getSharedDepthBuffer(options:DepthBufferOptions) {
       // no depthFormat no buffer
       if (!options.depthFormat) {

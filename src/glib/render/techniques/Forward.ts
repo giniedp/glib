@@ -28,9 +28,9 @@ module Glib.Render {
     }
 
     renderItem(item, binder: Render.Binder) {
-      var mat:Graphics.Material = item.material;
+      var mat:Graphics.ShaderMaterial = item.material;
       var mesh:Graphics.ModelMesh = item.mesh;
-      var tech:Graphics.MaterialTechnique = mat.technique;
+      var tech:Graphics.ShaderTechnique = mat.technique;
       for (var pass of tech.passes) {
         pass.commit();
         binder

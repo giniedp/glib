@@ -38,7 +38,7 @@ module Glib.Graphics.Geometry {
           normal: [0, 1, 0],
           tangent: [1, 0, 0],
           bitangent: [0, 0, 1],
-          color: [Graphics.Color.Black],
+          color: [Color.Black],
           texture: [0, 0]
         };
 
@@ -68,17 +68,17 @@ module Glib.Graphics.Geometry {
       this.vertexBuffer.data = value;
     }
 
-    static create(options?:BuilderOptions) {
+    static begin(options?:BuilderOptions) {
       return new Builder(options);
     }
 
-    _resetTransform() {
+    private resetTransform() {
       this.transform = Mat4.identity();
       this.uvTransform = Mat4.identity();
       return this;
     }
 
-    _resetData() {
+    private resetData() {
       // The new index buffer that is going to be filled with indices
       this.indexBuffer = {
         type: 'IndexBuffer',
@@ -100,7 +100,7 @@ module Glib.Graphics.Geometry {
       this.sGroups = [];
     }
 
-    _resetMeshes() {
+    private resetMeshes() {
       this.meshes = [];
     }
 
@@ -109,9 +109,9 @@ module Glib.Graphics.Geometry {
      * @returns {Glib.Graphics.Geometry.Builder}
      */
     reset() {
-      this._resetTransform();
-      this._resetData();
-      this._resetMeshes();
+      this.resetTransform();
+      this.resetData();
+      this.resetMeshes();
       return this;
     }
 
@@ -219,7 +219,7 @@ module Glib.Graphics.Geometry {
      * @param options
      * @returns {Glib.Graphics.Geometry.Builder}
      */
-    finishMesh(options:ModelMeshOptions = {}):Builder {
+    endMeshOptions(options:ModelMeshOptions = {}, optimize:boolean = false):Builder {
       if (this.indexCount === 0 && this.vertexCount === 0) {
         utils.warn(`[Geometry.Builder] pushMesh : called on empty builder. ignore.`);
         return this;
@@ -233,8 +233,14 @@ module Glib.Graphics.Geometry {
       options.vertexBuffer = this.vertexBuffer;
 
       this.meshes.push(options);
-      this._resetData();
+      this.resetData();
       return this;
+    }
+
+    endMesh(device: Graphics.Device, optimize:boolean = false): ModelMesh {
+      this.endMeshOptions()
+      let opts = this.meshes[this.meshes.length-1]
+      return new ModelMesh(device, opts)
     }
 
     /**
@@ -244,7 +250,7 @@ module Glib.Graphics.Geometry {
      */
     finishModelOptions(options:Glib.Graphics.ModelOptions = {}):ModelOptions {
       if (this.indices.length !== 0 || this.vertices.length !== 0) {
-        this.finishMesh();
+        this.endMeshOptions();
       }
 
       var materials = options.materials || [];

@@ -1,31 +1,31 @@
 module Glib.Graphics {
 
   export class Capabilities {
-    device: Graphics.Device;
-    gl:any;
-    _capabilities:any;
-    _extensions:any;
+    device: Graphics.Device
+    gl:any
+    _capabilities:any
+    _extensions:any
     constructor(device:Graphics.Device) {
-      this.device = device;
-      this.gl = device.context;
-      this._capabilities = {};
-      this._extensions = {};
+      this.device = device
+      this.gl = device.context
+      this._capabilities = {}
+      this._extensions = {}
     }
     capability(name:string, extension?:string) {
-      var result = this._capabilities[name];
-      if (result !== void 0) return result;
-      var lookup = extension ? this.extension(extension) : this.gl;
+      var result = this._capabilities[name]
+      if (result !== void 0) return result
+      var lookup = extension ? this.extension(extension) : this.gl
       if (lookup) {
-        return this._capabilities[name] = this.gl.getParameter(lookup[name]);
+        return this._capabilities[name] = this.gl.getParameter(lookup[name])
       }
-      return this._capabilities[name] = null;
+      return this._capabilities[name] = null
     }
     extension(name:string) {
-      var result = this._extensions[name];
+      var result = this._extensions[name]
       if (result === void 0) {
-        return this._extensions[name] = this.gl.getExtension(name);
+        return this._extensions[name] = this.gl.getExtension(name)
       }
-      return result;
+      return result
     }
 
     get maxViewportWidth() {

@@ -33,7 +33,7 @@ module Glib.Content.Importer {
         while (count < face.length - 2) {
           
           if (builder.vertexCount >= (builder.maxVertexCount - 2)) {
-            builder.finishMesh({
+            builder.endMeshOptions({
               name: group.name,
               materialId: group.material
             });
@@ -62,14 +62,14 @@ module Glib.Content.Importer {
 
     if (index == 0) return;
     
-    builder.finishMesh({
+    builder.endMeshOptions({
       name: group.name,
       materialId: group.material
     });
   }
 
   function convert(data:ObjData) {
-    var builder = Glib.Graphics.Geometry.Builder.create({
+    var builder = Glib.Graphics.Geometry.Builder.begin({
       layout: "PositionNormalTexture",
       ignoreTransform: true
     });

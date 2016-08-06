@@ -3,7 +3,7 @@ module Glib.Content.Importer {
   import debug = Glib.utils.debug;
 
   function convertMaterial(m:Content.Parser.MtlData, manager:Manager) {
-    var result:Glib.Graphics.MaterialOptions = {
+    var result:Glib.Graphics.ShaderMaterialOptions = {
       name: m.name,
       parameters: {}
     };
@@ -49,7 +49,7 @@ module Glib.Content.Importer {
       result.blendState = "AlphaBlend";
     }
     
-    result.effect = "basicEffect"
+    result['effect'] = "basicEffect"
     //result.effect = "/assets/shader/basic.glfx"
     /*
     if (m.illum == "0") {

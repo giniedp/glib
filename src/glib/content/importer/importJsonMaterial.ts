@@ -38,7 +38,7 @@ module Glib.Content.Importer {
         loadEffect(asset, data, manager),
         loadTextures(asset, data, manager)
       ]).then(function(){
-        return new Glib.Graphics.Material(manager.device, data);
+        return new Glib.Graphics.ShaderMaterial(manager.device, data);
       });
     })).then(function(res) {
       return wasArray ? res : res[0];

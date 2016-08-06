@@ -6,7 +6,7 @@ module Glib.Render.Effects {
     pixelHeight: number = 10;
     offset: number = 0;
 
-    constructor(private _material:Graphics.Material) {
+    constructor(private _material:Graphics.ShaderMaterial) {
     }
 
     setup(manager: Render.Manager) {

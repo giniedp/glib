@@ -73,7 +73,7 @@ block script
 
     Glib.utils.loop(function() {
       device.resize();
-      device.clear(Glib.Graphics.Color.CornflowerBlue);
+      device.clear(Glib.Color.CornflowerBlue);
       
       // Set the 'uTexture' uniform
       program.setUniform('uTexture', texture);

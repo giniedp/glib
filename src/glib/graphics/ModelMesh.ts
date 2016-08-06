@@ -10,6 +10,7 @@ module Glib.Graphics {
   }
 
   export class ModelMesh {
+    uid:string
     device:Device
     gl:any
     boundingBox:BoundingBox
@@ -19,6 +20,7 @@ module Glib.Graphics {
     vertexBuffer:Buffer
 
     constructor(device:Device, params:ModelMeshOptions) {
+      this.uid = utils.uuid()
       this.device = device
       this.gl = device.context
 
@@ -37,7 +39,7 @@ module Glib.Graphics {
       if (buffer instanceof Buffer) {
         this.vertexBuffer = buffer
       } else {
-        this.indexBuffer = device.createVertexBuffer(buffer)
+        this.vertexBuffer = device.createVertexBuffer(buffer)
       }
     }
 

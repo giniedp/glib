@@ -27,7 +27,6 @@ module Glib.Graphics {
     private _errLogs = {}
 
     constructor(device:Device, data:ShaderProgramOptions={}) {
-
       this.uid = utils.uuid();
       this.device = device;
       this.gl = device.context;

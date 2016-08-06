@@ -344,7 +344,7 @@ module Glib.Graphics {
         sprite.flipY = !!sprite.flipY
         
         let color = sprite.color as any
-        if (color instanceof Graphics.Color) {
+        if (color instanceof Color) {
           sprite.color = color.rgba
         } else if (typeof color === 'number') {
           sprite.color = color

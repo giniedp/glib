@@ -10,7 +10,7 @@ module Glib.Render.Effects {
     gaussSigma: number = 0.5;
     private _offsetWeights: Array<Array<number>>;
     
-    constructor(private _material:Graphics.Material) {
+    constructor(private _material:Graphics.ShaderMaterial) {
     }
 
     private _updateGauss(texelX, texelY){
@@ -92,7 +92,7 @@ module Glib.Render.Effects {
         device.program.setUniform(`offsetWeights[${i}]`, this._offsetWeights[i]);
       }
       device.setRenderTarget(rt2);
-      device.clear(Graphics.Color.TransparentBlack, 1);
+      device.clear(Color.TransparentBlack, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
       
@@ -111,7 +111,7 @@ module Glib.Render.Effects {
         device.program.setUniform(`offsetWeights[${i}]`, this._offsetWeights[i]);
       }
       device.setRenderTarget(rt1);
-      device.clear(Graphics.Color.TransparentBlack, 1);
+      device.clear(Color.TransparentBlack, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
       
@@ -128,7 +128,7 @@ module Glib.Render.Effects {
       device.program.setUniform("bloomTexture", rt1);
       
       device.setRenderTarget(rt2);
-      device.clear(Graphics.Color.TransparentBlack, 1);
+      device.clear(Color.TransparentBlack, 1);
       device.drawQuad(false);
       device.setRenderTarget(null);
       

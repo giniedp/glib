@@ -1,5 +1,5 @@
-//- title: Rectangle shaded
-//- weight: 6
+//- title: Materials
+//- weight: 2
 extends ./../../_layouts/example.jade
 block script
   a(name="HTML" index=3)
@@ -41,6 +41,9 @@ block script
     precision highp float;
     // @binding texture
     uniform sampler2D uTexture;
+    // @binding ambientColor
+    // @default [0.2, 0.2, 0.2]
+    uniform vec3 uAmbientColor;
     // @binding lightColor
     // @default [1, 1, 1]
     uniform vec3 uLightColor;
@@ -84,7 +87,7 @@ block script
     void main(void) {
       vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularPower);
       vec4 color = texture2D(uTexture, texCoord);
-      color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb;
+      color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb + uAmbientColor;
       color.a = 1.0;  
       gl_FragColor = color;
     }
@@ -98,51 +101,55 @@ block script
       vertexShader: document.getElementById('vertex-shader').textContent,
       fragmentShader: document.getElementById('fragment-shader').textContent
     });
-    
-    var vertices = device.createVertexBuffer({
-      layout: Glib.Graphics.VertexLayout.create('PositionNormalTexture'),
-      data: [
-      //    POSITION      NORMAL  TEXTURE
-      //  X     Y    Z    X|Y|Z    U  V   
-        -0.5, -0.5, 0.0,  0,0,1,   0, 1,
-         0.5, -0.5, 0.0,  0,0,1,   1, 1,
-        -0.5,  0.5, 0.0,  0,0,1,   0, 0,
-         0.5,  0.5, 0.0,  0,0,1,   1, 0
-      ]
-    });
-    var indices = device.createIndexBuffer({
-      type: 'ushort',
-      data: [0, 1, 2, 1, 2, 3]
-    });
-
-    // Create a texture object
-    var texture = device.createTexture({
-      // data is simply an URL to the image
+    var textureRed = device.createTexture({
       data: '/assets/textures/proto_red.png'
     });
+    var textureGreen = device.createTexture({
+      data: '/assets/textures/proto_green.png'
+    });
+    var mesh = Glib.Graphics.Geometry.Builder.begin().append('Cube').endMesh(device);
 
-    var world = Glib.Mat4.identity();
-    var view = Glib.Mat4.identity();
-    var proj = Glib.Mat4.identity();
+    var material1 = device.createMaterial({
+      program: program,
+      parameters: {
+        world: Glib.Mat4.identity(),
+        view: Glib.Mat4.identity(),
+        projection: Glib.Mat4.identity(),
+        texture: textureRed,
+        specularPower: 10
+      }
+    });
+
+    var material2 = device.createMaterial({
+      program: program,
+      parameters: {
+        world: Glib.Mat4.identity(),
+        view: Glib.Mat4.identity(),
+        projection: Glib.Mat4.identity(),
+        texture: textureGreen,
+        specularPower: 512
+      }
+    });
+
     var time = 0;
     Glib.utils.loop(function(dt) {
       time += dt;
 
       device.resize();
+      device.cullState = Glib.Graphics.CullState.CullCounterClockWise;
       device.clear(Glib.Color.CornflowerBlue, 1.0);
       
-      world.initRotationY(time / 1000);
-      view.initTranslation(0, 0, -1);
-      var aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight;  
-      proj.initPerspectiveFieldOfView(Math.PI/2, aspect, 0, 100);
+      var aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight;
 
-      program.setUniform('texture', texture);
-      program.setUniform('world', world);
-      program.setUniform('view', view);
-      program.setUniform('projection', proj);
+      material1.parameters.world.initRotationY(time / 1000);
+      material1.parameters.world.translation[0] = -1;
+      material1.parameters.view.initTranslation(0, 0, -2);
+      material1.parameters.projection.initPerspectiveFieldOfView(Math.PI/2, aspect, 0, 100);
+      material1.drawMesh(mesh);
 
-      device.program = program;
-      device.indexBuffer = indices;
-      device.vertexBuffer = vertices;
-      device.drawIndexedPrimitives('TriangleList', 0, 6);
+      material2.parameters.world.initRotationY(-time / 1000);
+      material2.parameters.world.translation[0] = 1;
+      material2.parameters.view.initTranslation(0, 0, -2);
+      material2.parameters.projection.initPerspectiveFieldOfView(Math.PI/2, aspect, 0, 100);
+      material2.drawMesh(mesh);
     });
