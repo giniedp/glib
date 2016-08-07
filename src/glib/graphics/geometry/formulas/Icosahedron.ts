@@ -72,7 +72,7 @@ module Glib.Graphics.Geometry.Formulas {
       builder.addVertex({
         position: Vec3.multiplyScalar(v, radius),
         normal: v,
-        texture: Vec2.create(v.x, v.z)
+        texture: Vec2.new(v.x, v.z)
       })
     }
     for (let i = 0; i < faces.length; i += 1) {
@@ -114,7 +114,7 @@ module Glib.Graphics.Geometry.Formulas {
       builder.addVertex({
         position: Vec3.multiplyScalar(v, radius),
         normal: v,
-        texture: Vec2.create(v.x, v.z)
+        texture: Vec2.new(v.x, v.z)
       })
     }
     for (let i = 0; i < faces.length; i += 1) {
@@ -158,7 +158,7 @@ module Glib.Graphics.Geometry.Formulas {
       builder.addVertex({
         position: Vec3.multiplyScalar(v, radius),
         normal: v,
-        texture: Vec2.create(v.x, v.z)
+        texture: Vec2.new(v.x, v.z)
       })
     }
     for (let i = 0; i < faces.length; i += 1) {

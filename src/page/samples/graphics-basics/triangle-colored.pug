@@ -1,0 +1,107 @@
+//- title: Triangle colred
+//- weight: 2
+extends ./../../_layouts/example
+block script
+  a(name="HTML" index=3)
+  viewcode
+  
+  a(name="GLSL" index=2)
+  .grid-content
+    dl.mt.no-mb
+      dt Vertex shader
+      dd.no-mb 
+        | The vertex shader again uses the vertex position without any transformation.
+        | Additionally passes the vertex color to the fragment stage
+
+  script#vertex-shader(type='text/glsl').
+    precision highp float;
+    attribute vec3 vPosition;
+    attribute vec3 vColor;
+    varying vec3 vertexColor;
+    void main(void) {
+      vertexColor = vColor;
+      gl_Position = vec4(vPosition, 1.0);
+    }
+
+  .grid-content
+    dl.mt.no-mb
+      dt Fragment shader
+      dd.no-mb 
+        | Takes the vertex color from the fragment stage and renders the pixel with that color.
+
+  script#fragment-shader(type='text/glsl').
+    precision highp float;
+    varying vec3 vertexColor;
+    void main(void) {
+      gl_FragColor = vec4(vertexColor.rgb, 1.0);
+    }
+    
+  a(name="JS" index=1)
+  script(type='text/javascript').
+    // Create the graphics device
+    var device = new Glib.Graphics.Device({
+      // Give it a context element to work with.
+      // If the 'canvas' option is missing, the device will 
+      // automatically create a canvas element. 
+      canvas: document.getElementById('canvas')
+    });
+
+    // Create a shader program with vertex and fragment shaders.
+    // Here the source code is grabbed from the shader script tags.
+    var program = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader').textContent,
+      fragmentShader: document.getElementById('fragment-shader').textContent
+    });
+    
+    // Define the triangle vertices. In this example each triangle vertex 
+    // is attributed with a position and a color value. A vertex buffer must be fed
+    // with a data array and a layout that defines how that data is bound to the 
+    // shader programs.
+    var vertices = device.createVertexBuffer({
+      layout: {
+        // The vertex shader expects two vertex attributes
+        // the 'vPosition' and the 'vColor'
+
+        vPosition: {
+          // In the shader the vPosition attribute is declared as a vec3 type.
+          // A vec3 is composed of 3 floats.
+          type: "float", offset: 0, elements: 3 
+        },
+        vColor: { 
+          // The 'vColor' is also declared as a vec3 type.
+          // The color data follows right after the position data for each vertex 
+          // The offset of 12 bytes (3 * 4 bytes) reflects that 
+          type: "float", offset: 12, elements: 3 
+        }
+      },
+      // Here data is simply a sequence of floats. 
+      // Each 3 floats define a vertex position
+      data: [
+      //  X  |  Y  | Z     R | G | B
+        -0.5, -0.5, 0.0,   1,  0,  0, // The red vertex
+         0.5, -0.5, 0.0,   0,  1,  0, // The green vertex
+         0.0,  0.5, 0.0,   0,  0,  1  // The blue vertex
+      ]
+    });
+
+    // This will frequently call the passed function. 
+    Glib.utils.loop(function() {
+      // If the size of the canvas is controlled by css (as it is on this page)
+      // this will resize the drawing buffer to match that size.
+      device.resize();
+
+      // Clear the screen color and depth. 
+      // Here color is set to a built in color value of CornflowerBlue
+      device.clear(Glib.Color.CornflowerBlue);
+
+      // Set the vertex buffer that needs to be rendered
+      device.vertexBuffer = vertices;
+      // Now the shader program
+      device.program = program;
+      // And finally call drawPrimitives.
+      // This call instructs to 
+      // - draw the vertex buffer as a TriangleList
+      // - starting at the beginning of the buffer (0 offset)
+      // - draw 3 vertices
+      device.drawPrimitives('TriangleList', 0, 3);
+    });

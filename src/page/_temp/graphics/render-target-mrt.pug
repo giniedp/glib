@@ -1,0 +1,150 @@
+//- title: RenderTarget MRT
+extends ./../../_layouts/example
+block script
+  script#vertex-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+
+    // @binding position
+    attribute vec3 vPosition;
+
+    // @binding color
+    attribute vec3 vColor;
+
+    varying vec3 vertexColor;
+    void main(void) {
+      vertexColor = vColor;
+      gl_Position = vec4(vPosition, 1.0);
+    }
+  script#fragment-shader(type='text/glsl').
+    #extension GL_EXT_draw_buffers : require
+    precision highp float;
+    precision highp int;
+    varying vec3 vertexColor;
+    void main(void) {
+      gl_FragData[0] = vec4(vertexColor.r, 0.0, 0.0, 1.0);
+      gl_FragData[1] = vec4(0.0, vertexColor.g, 0.0, 1.0);
+      gl_FragData[2] = vec4(0.0, 0.0, vertexColor.b, 1.0);
+      gl_FragData[3] = vec4(vertexColor.rgb, 1.0);
+    }
+  script#vertex-shader2(type='text/ymlsl').
+    precision highp float;
+    precision highp int;
+
+    // @binding position
+    attribute vec3 vPosition;
+    // @binding texture
+    attribute vec2 vTexture;
+
+    varying vec2 texCoord;
+    void main(void) {
+      texCoord = vTexture;
+      gl_Position = vec4(vPosition, 1.0);
+    }
+  script#fragment-shader2(type='text/ymlsl').
+    precision highp float;
+    precision highp int;
+
+    // @binding texture
+    // @filter PointClamp
+    uniform sampler2D textureSampler;
+    varying vec2 texCoord;
+    void main(void) {
+      vec3 color = texture2D(textureSampler, texCoord).rgb;
+      gl_FragColor = vec4(color, 1.0);
+    }
+  script(type='text/javascript').
+    var device = new Glib.Graphics.Device({canvas: 'canvas'});
+    device.depthState = Glib.Graphics.DepthState.None;
+    
+    if (device.capabilities.extension("WEBGL_draw_buffers")) {
+      console.log("successively enabled WEBGL_draw_buffers");
+    } else {
+      console.log("the browser is missing the WEBGL_draw_buffers extension");
+    }
+    
+    var width = device.canvas.width;
+    var height = device.canvas.height;
+    var spriteBatch = device.createSpriteBatch();
+    var program = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader').textContent,
+      fragmentShader: document.getElementById('fragment-shader').textContent
+    });
+    var indices = device.createIndexBuffer({
+      dataType: "ushort",
+      data: [0, 1, 2]
+    });
+    var vertices = device.createVertexBuffer({
+      layout: {
+        position: {
+          type: "float",
+          offset: 0,
+          elements: 3
+        },
+        color: {
+          type: "float",
+          offset: 12,
+          elements: 3
+        }
+      },
+      dataType: "float",
+      data: [
+        -1.0, -1.0, 0.0, 1, 0, 0,
+        1.0, -1.0, 0.0, 0, 1, 0,
+        0.0, 1.0, 0.0, 0, 0, 1
+      ]
+    });
+
+    var renderTarget1 = device.createRenderTarget({
+      width: 128,
+      height: 64
+    });
+    var renderTarget2 = device.createRenderTarget({
+      width: 128,
+      height: 64
+    });
+    var renderTarget3 = device.createRenderTarget({
+      width: 128,
+      height: 64
+    });
+    var renderTarget4 = device.createRenderTarget({
+      width: 128,
+      height: 64
+    });
+    
+    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
+    var program2 = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader2').textContent,
+      fragmentShader: document.getElementById('fragment-shader2').textContent
+    });
+
+    Glib.utils.loop(function () {
+      device.resize();
+      
+      device.setRenderTargets(renderTarget1, renderTarget2, renderTarget3, renderTarget4);
+      device.viewportState = { x:0, y:0, width: renderTarget1.width, height: renderTarget1.height };
+      device.clear(Glib.Graphics.Color.CornflowerBlue);
+
+      device.program = program;
+      device.indexBuffer = indices;
+      device.vertexBuffer = vertices;
+      device.drawIndexedPrimitives();
+
+      device.setRenderTargets(null);
+      
+      device.program = program2;
+      device.viewportState = { x:0, y:0, width: width/2, height: height/2 };
+      device.program.setUniform("texture", renderTarget1);
+      device.drawQuad();
+      device.viewportState = { x:width/2, y:0, width: width/2, height: height/2 };
+      device.program.setUniform("texture", renderTarget2);
+      device.drawQuad();
+      device.viewportState = { x:0, y:height/2, width: width/2, height: height/2 };
+      device.program.setUniform("texture", renderTarget3);
+      device.drawQuad();
+      device.viewportState = { x:width/2, y:height/2, width: width/2, height: height/2 };
+      device.program.setUniform("texture", renderTarget4);
+      device.drawQuad();
+      device.program.setUniform("texture", null);
+    });
+

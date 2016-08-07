@@ -9,6 +9,8 @@ var karma = require('karma');
 var gulp = require('gulp');
 var tsc = require('gulp-typescript');
 var concat = require('gulp-concat');
+var uglify = require('gulp-uglify');
+var minify = require('gulp-minify');
 var jade = require('gulp-jade');
 var sass = require('gulp-sass');
 var sourcemaps = require('gulp-sourcemaps');
@@ -28,10 +30,10 @@ var PATHS = {
   ],
   page: {
     pages: [
-      '!src/page/_layouts/*.jade',
-      '!src/page/_includes/*.jade',
-      '!src/page/**/_*.jade',
-      'src/page/**/*.jade'
+      '!src/page/_layouts/*.pug',
+      '!src/page/_includes/*.pug',
+      '!src/page/**/_*.pug',
+      'src/page/**/*.pug'
     ],
     fonts: [
       'bower_components/mdi/fonts/*',
@@ -60,34 +62,44 @@ var PATHS = {
   },
   glib: {
     base: [
-      "!src/**/*_test.ts",
-      "src/glib/base/**/*.ts"
+      "src/**/*_test.ts",
+      "src/glib/utils/**/*.ts",
+      "src/glib/*.ts"
     ],
-    content: [
-      "src/glib/content/*.ts",
-      "src/glib/content/**/*.ts"
-    ],
-    rendering: [
-      "src/glib/render/**/*.ts"
+    math: [
+      "src/**/*_test.ts",
+      "src/glib-math/**/*.ts"
     ],
     graphics: [
+      "src/**/*_test.ts",
       "src/glib/graphics/enums/*.ts",
       "src/glib/graphics/states/*.ts",
       "src/glib/graphics/*.ts",
       "src/glib/graphics/geometry/*.ts",
       "src/glib/graphics/geometry/**/*.ts"
     ],
+    content: [
+      "src/**/*_test.ts",
+      "src/glib/content/*.ts",
+      "src/glib/content/**/*.ts"
+    ],
     input: [
+      "src/**/*_test.ts",
+      "src/glib/input/*.ts",
       "src/glib/input/**/*.ts"
     ],
-    components: [
-      "src/glib/scene/**/*.ts"
+    render: [
+      "src/**/*_test.ts",
+      "src/glib/render/*.ts",
+      "src/glib/render/**/*.ts"
     ],
-    other: [
+    ecs: [
+      "src/**/*_test.ts",
+      "src/glib-ecs/**/*.ts"
+    ],
+    terrain: [
+      "src/**/*_test.ts",
       "src/glib/terrain/**/*.ts"
-    ],
-    math: [
-      "src/glib/*.ts"
     ]
   }
 };
@@ -95,12 +107,12 @@ var PATHS = {
 var tscSource = [].concat.apply([], [
   PATHS.glib.math,
   PATHS.glib.base,
-  PATHS.glib.input,
   PATHS.glib.graphics,
+  PATHS.glib.input,
   PATHS.glib.content,
-  PATHS.glib.rendering,
-  PATHS.glib.components,
-  PATHS.glib.other
+  PATHS.glib.render,
+  PATHS.glib.ecs,
+  PATHS.glib.terrain
 ]);
 
 var es5Project = tsc.createProject({
@@ -120,7 +132,11 @@ var es6Project = tsc.createProject({
 function src(){
   return gulp.src.apply(gulp, arguments)
   .pipe(plumber(function (err) {
+
     console.error(err.message || err);
+    if (err.backtrace) {
+      console.log(err.backtrace)
+    }
   }))
 }
 
@@ -172,11 +188,21 @@ gulp.task('compile:es5', function(){
     .pipe(tsc(es5Project));
 
   return merge([
+    // types
     tscResult.dts.pipe(dest("typedefs")),
+
     tscResult.js
       .pipe(concat('glib.js'))
+      //.pipe(minify({
+      //  ext: {
+      //    src: '.js',
+      //    min: '.min.js'
+      //  }
+      //}))
       .pipe(dest())
-      .pipe(sourcemaps.write('.',{includeContent:false, sourceRoot:'src/glib'}))
+      //.pipe(sourcemaps.write('.',{
+      //  includeContent:false, sourceRoot:'src'
+      //}))
       .pipe(dest(PATHS.distPage))
       .pipe(livereload())
   ]);
@@ -187,7 +213,7 @@ gulp.task('compile:es6', function(){
     .pipe(tsc(es6Project));
   return tscResult.js
     .pipe(concat('glib.es6.js'))
-    .pipe(dest());
+    .pipe(dest())
 });
 
 gulp.task('compile', ['compile:es5', 'compile:es6']);
@@ -203,7 +229,6 @@ gulp.task('docs', function(){
     mode: "file",
     name: "Glib",
     readme: 'none',
-    //entryPoint: "Glib",
     excludeExternals: true
   }));
 });
@@ -227,6 +252,7 @@ gulp.task('page:jade', function(){
   return src(PATHS.page.pages)
     .pipe(glibPages.sampler('src/page/samples'))
     .pipe(jade({
+      jade: require('pug'),
       pretty: true,
       locals: {
         samples: glibPages.samples

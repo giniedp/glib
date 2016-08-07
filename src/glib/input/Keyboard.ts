@@ -1,79 +1,142 @@
 module Glib.Input {
 
-  import extend = Glib.utils.extend;
-  import debug = Glib.utils.debug;
-
-  export interface KeyboardState {
+  /**
+   * 
+   */
+  export interface IKeyboardOptions {
+    element?: Element,
+    events?: string[]
+  }
+  /**
+   * 
+   */
+  export interface IKeyboardState {
     pressedKeys:number[];
   }
 
-  function setKeyPressed(e:KeyboardEvent) {
-    var index = this.state.pressedKeys.indexOf(e.keyCode);
-    if (index < 0) {
-      // debug(`Key pressed '${e.keyCode}' '${KeyCodeName[e.keyCode]}'`);
-      this.state.pressedKeys.push(e.keyCode);
-    }
-    this.trigger('changed', e, this)
-  }
-
-  function setKeyReleased(e:KeyboardEvent) {
-    var index = this.state.pressedKeys.indexOf(e.keyCode);
-    if (index >= 0) {
-      // debug(`Key released '${e.keyCode}' '${KeyCodeName[e.keyCode]}'`);
-      this.state.pressedKeys.splice(index);
-    }
-    this.trigger('changed', e, this)
-  }
-
+  /**
+   * 
+   */
   export class Keyboard extends Glib.Events {
-    el:any = document;
-    state:KeyboardState = {pressedKeys: []};
+    element:EventTarget = document
+    state:IKeyboardState = {pressedKeys: []}
 
-    _onKeyPress:(e:KeyboardEvent) => void;
-    _onKeyDown:(e:KeyboardEvent) => void;
-    _onKeyUp:(e:KeyboardEvent) => void;
+    /**
+     * Collection of event to listen for on element and fire on this instance
+     */
+    delegatedEvents = [
+      'keypress', 
+      'keydown', 
+      'keyup'
+    ]
 
-    constructor(options:any = {}) {
+    /**
+     * Is called on the elements 'keypress' event and marks a 'keyCode' as pressed 
+     */
+    protected onKeyPress = (e:KeyboardEvent) => this.setKeyPressed(e.keyCode)
+    /**
+     * Is called on the elements 'keypress' event and marks a 'keyCode' as pressed 
+     */
+    protected onKeyDown = (e:KeyboardEvent) => this.setKeyPressed(e.keyCode)
+    /**
+     * Is called on the elements 'keyup' event and marks a 'keyCode' as released 
+     */
+    protected onKeyUp = (e:KeyboardEvent) => this.setKeyReleased(e.keyCode)
+    /**
+     * Is called when document/window lost focus e.g. user switches to another tab or application 
+     */
+    protected onNeedsClear = () => this.clearState()
+    /**
+     * Triggers the Event that occurred on the element
+     */
+    protected onEvent:EventListener = (e:Event) => this.trigger(e.type, this, e)
+
+    /**
+     * 
+     */
+    constructor(options?:IKeyboardOptions) {
       super();
-      extend(this, options);
-      this._onKeyPress = setKeyPressed.bind(this);
-      this._onKeyDown = setKeyPressed.bind(this);
-      this._onKeyUp = setKeyReleased.bind(this);
-      this.activate();
+      if (options) {
+        this.element = (options.element || this.element)
+        this.delegatedEvents = (options.events || this.delegatedEvents)
+      }
+      this.activate()
     }
 
     /**
      * Activates the update listeners
      */
     activate() {
-      this.el.addEventListener('keypress', this._onKeyPress);
-      this.el.addEventListener('keydown', this._onKeyDown);
-      this.el.addEventListener('keyup', this._onKeyUp);
+      this.deactivate()
+      // update state events
+      this.element.addEventListener('keypress', this.onKeyPress)
+      this.element.addEventListener('keydown', this.onKeyDown)
+      this.element.addEventListener('keyup', this.onKeyUp)
+      // visibility events
+      utils.onDocumentVisibilityChange(this.onNeedsClear)
+      document.addEventListener('blur', this.onNeedsClear)
+      window.addEventListener('blur', this.onNeedsClear)
+      // delegated events
+      for (let name of this.delegatedEvents) {
+        this.element.addEventListener(name, this.onEvent)
+      }
     }
 
     /**
      * Deactivates the update listeners
      */
     deactivate() {
-      this.el.removeEventListener('keypress', this._onKeyPress);
-      this.el.removeEventListener('keydown', this._onKeyDown);
-      this.el.removeEventListener('keyup', this._onKeyUp);
+      // update state events
+      this.element.removeEventListener('keypress', this.onKeyPress)
+      this.element.removeEventListener('keydown', this.onKeyDown)
+      this.element.removeEventListener('keyup', this.onKeyUp)
+      // visibility events
+      utils.offDocumentVisibilityChange(this.onNeedsClear)
+      document.removeEventListener('blur', this.onNeedsClear)
+      window.removeEventListener('blur', this.onNeedsClear)
+      // delegated events
+      for (let name of this.delegatedEvents) {
+        this.element.removeEventListener(name, this.onEvent)
+      }
     }
 
     /**
      * Gets a copy of the current keyboard state.
      */
-    getState(out:any = {}):KeyboardState {
-      var inKeys = this.state.pressedKeys;
-      var outKeys = out.keys || [];
+    getState(out:any = {}):IKeyboardState {
+      var inKeys = this.state.pressedKeys
+      var outKeys = out.keys || []
 
-      outKeys.length = inKeys.length;
+      outKeys.length = inKeys.length
       for (var i = 0; i < inKeys.length; i++) {
-        outKeys[i] = inKeys[i];
+        outKeys[i] = inKeys[i]
       }
 
-      out.pressedKeys = outKeys;
-      return out;
+      out.pressedKeys = outKeys
+      return out
+    }
+    /**
+     * Marks the keyCode state of given event as pressed and triggers the 'changed' event
+     */
+    setKeyPressed(keycode:number) {
+      var index = this.state.pressedKeys.indexOf(keycode)
+      if (index < 0) this.state.pressedKeys.push(keycode)
+      this.trigger('changed', this)
+    }
+    /**
+     * Marks the keyCode state of given event as released and triggers the 'changed' event
+     */
+    setKeyReleased(keyCode:number) {
+      var index = this.state.pressedKeys.indexOf(keyCode)
+      if (index >= 0) this.state.pressedKeys.splice(index)
+      this.trigger('changed', this)
+    }
+    /**
+     * Clears the state of given Keyboard instance and trigger 'changed' event 
+     */
+    clearState() {
+      this.state.pressedKeys.length = 0
+      this.trigger('changed', this)
     }
   }
 

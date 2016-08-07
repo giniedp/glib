@@ -1,0 +1,23 @@
+//- title: Keyboard
+//- weight: 1
+extends ./../../_layouts/example
+block view
+  .canvas-container
+    pre: code.language-json
+  script(type='text/javascript' src='/glib.js')
+block script
+  a(name="HTML" index=3)
+  viewcode
+  a(name="JAVASCRIPT" index=1)
+  script(type='text/javascript').
+    new Glib.Input.Keyboard().on('changed', function(keyboard, e){
+      var dump = {
+        state: keyboard.state,
+        keyNames: keyboard.state.pressedKeys.map(function(key) {
+          return Glib.Input.KeyCodeName[key];
+        })
+      };
+
+      var el = $('.canvas-container pre code');
+      el.text(JSON.stringify(dump, null, 2));
+    });

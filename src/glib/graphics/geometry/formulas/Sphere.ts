@@ -37,7 +37,7 @@ module Glib.Graphics.Geometry.Formulas {
         var y = sinPhi;
 
         var normal = Vec3.create(x, y, z);
-        var texCoord = Vec2.create(du, dv);
+        var texCoord = Vec2.new(du, dv);
 
         builder.addVertex({
           position: Vec3.multiplyScalar(normal, radius),

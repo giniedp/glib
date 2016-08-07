@@ -1,7 +1,7 @@
 module Glib.Input {
   import extend = Glib.utils.extend;
 
-  function _touchStartHandler(e:TouchEvent) {
+  function touchStartHandler(e:TouchEvent) {
     let list = e.changedTouches
     for (let i = 0; i < list.length; i++) {
       let touch = list[i] 
@@ -11,7 +11,7 @@ module Glib.Input {
     if (this.preventDefault) e.preventDefault()
     this.trigger('changed', this, e);
   }
-  function _touchCancelHandler(e:TouchEvent) {
+  function touchCancelHandler(e:TouchEvent) {
     let list = e.changedTouches
     for (let i = 0; i < list.length; i++) {
       let touch = list[i] 
@@ -20,17 +20,17 @@ module Glib.Input {
     if (this.preventDefault) e.preventDefault()
     this.trigger('changed', this, e);
   }
-  function _touchMoveHandler(e:TouchEvent) {
+  function touchMoveHandler(e:TouchEvent) {
     let list = e.changedTouches
     for (let i = 0; i < list.length; i++) {
       let touch = list[i] 
       if (touch.target != this.el) continue
-      this.state[touch.identifier] = copyState(touch, this.el, this.state[touch.identifier] || {})  
+      this.state[touch.identifier] = copyState(touch, this.element, this.state[touch.identifier] || {})  
     }
     if (this.preventDefault) e.preventDefault()
     this.trigger('changed', this, e);
   }
-  function _touchEndHandler(e:TouchEvent) {
+  function touchEndHandler(e:TouchEvent) {
     let list = e.changedTouches
     for (let i = 0; i < list.length; i++) {
       let touch = list[i] 
@@ -71,36 +71,37 @@ module Glib.Input {
   }
 
   export class TouchPane extends Glib.Events  {
-    el:any = document
+    element:EventTarget = document
     state = {}
     preventDefault = false
-    private _onTouchCancel:(e:TouchEvent) => void;
-    private _onTouchStart:(e:TouchEvent) => void;
-    private _onTouchMove:(e:TouchEvent) => void;
-    private _onTouchEnd:(e:TouchEvent) => void;
+    protected onTouchCancel:(e:TouchEvent) => void
+    protected onTouchStart:(e:TouchEvent) => void
+    protected onTouchMove:(e:TouchEvent) => void
+    protected onTouchEnd:(e:TouchEvent) => void
 
     constructor(options:any = {}) {
       super()
-      extend(this, options);
-      this._onTouchCancel = _touchCancelHandler.bind(this);
-      this._onTouchStart = _touchStartHandler.bind(this);
-      this._onTouchMove = _touchMoveHandler.bind(this);
-      this._onTouchEnd = _touchEndHandler.bind(this);
-      this.activate();
+      extend(this, options)
+      this.onTouchCancel = touchCancelHandler.bind(this)
+      this.onTouchStart = touchStartHandler.bind(this)
+      this.onTouchMove = touchMoveHandler.bind(this)
+      this.onTouchEnd = touchEndHandler.bind(this)
+      this.activate()
     }
 
     activate() {
-      this.el.addEventListener('touchcancel', this._onTouchCancel);
-      this.el.addEventListener('touchstart', this._onTouchStart);
-      this.el.addEventListener('touchmove', this._onTouchMove);
-      this.el.addEventListener('touchend', this._onTouchEnd);
+      this.deactivate()
+      this.element.addEventListener('touchcancel', this.onTouchCancel)
+      this.element.addEventListener('touchstart', this.onTouchStart)
+      this.element.addEventListener('touchmove', this.onTouchMove)
+      this.element.addEventListener('touchend', this.onTouchEnd)
     }
 
     deactivate() {
-      this.el.removeEventListener('touchcancel', this._onTouchCancel);
-      this.el.removeEventListener('touchstart', this._onTouchStart);
-      this.el.removeEventListener('touchmove', this._onTouchMove);
-      this.el.removeEventListener('touchend', this._onTouchEnd);
+      this.element.removeEventListener('touchcancel', this.onTouchCancel)
+      this.element.removeEventListener('touchstart', this.onTouchStart)
+      this.element.removeEventListener('touchmove', this.onTouchMove)
+      this.element.removeEventListener('touchend', this.onTouchEnd)
     }
 
     getState(id:number, out:any={}):TouchState {

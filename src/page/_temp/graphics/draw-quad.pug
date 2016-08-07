@@ -1,0 +1,42 @@
+//- title: Draw Quad
+extends ./../../_layouts/example
+block script
+  script#vertex-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    // @binding position
+    attribute vec3 vPosition;
+    // @binding texture
+    attribute vec2 vTexture;
+    varying vec2 texCoord;
+    void main(void) {
+      texCoord = vTexture;
+      gl_Position = vec4(vPosition, 1.0);
+    }
+  script#fragment-shader(type='text/glsl').
+    precision highp float;
+    precision highp int;
+    // @filter LinearWrap
+    // @binding texture
+    uniform sampler2D textureSampler;
+    varying vec2 texCoord;
+    void main(void) {
+      gl_FragColor = vec4(texture2D(textureSampler, texCoord).rgb, 1.0);
+    }
+
+  script(type='text/javascript').
+    var device = new Glib.Graphics.Device({canvas: 'canvas'});
+    self.device = device;
+    
+    var texture = device.createTexture({ data: "/assets/textures/proto_blue.png" });
+    var program = device.createProgram({
+      vertexShader: document.getElementById('vertex-shader').textContent,
+      fragmentShader: document.getElementById('fragment-shader').textContent
+    });
+    
+    Glib.utils.loop(function () {
+      device.resize();
+      device.program = program;
+      device.program.uniforms.texture.set(texture);
+      device.drawQuad(true);
+    });

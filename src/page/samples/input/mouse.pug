@@ -1,0 +1,27 @@
+//- title: Mouse
+//- weight: 2
+extends ./../../_layouts/example
+block view
+  .canvas-container
+    pre.mouse-pane(oncontextmenu="return false") 
+      code.language-json
+  style().
+    .mouse-pane {
+      margin: 1rem !important;
+    }
+  script(type='text/javascript' src='/glib.js')
+block script
+  a(name="HTML" index=3)
+  viewcode
+  a(name="JAVASCRIPT" index=1)
+  script(type='text/javascript').
+    new Glib.Input.Mouse({
+      element: $('.mouse-pane')[0]
+    }).on('changed', function(mouse, e){
+      var el = $('.canvas-container pre code');
+      el.text(JSON.stringify(mouse.state, null, 2));
+    }).on('click', function(mouse, e) {
+      mouse.lock();
+    }).on('dblclick', function(mouse, e) {
+      mouse.unlock();
+    });
