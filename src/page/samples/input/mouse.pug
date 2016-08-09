@@ -3,11 +3,11 @@
 extends ./../../_layouts/example
 block view
   .canvas-container
-    pre.mouse-pane(oncontextmenu="return false") 
+    pre.capture-pane(oncontextmenu="return false") 
       code.language-json
   style().
-    .mouse-pane {
-      margin: 1rem !important;
+    .capture-pane {
+      border: 1px dashed white !important;
     }
   script(type='text/javascript' src='/glib.js')
 block script
@@ -16,7 +16,7 @@ block script
   a(name="JAVASCRIPT" index=1)
   script(type='text/javascript').
     new Glib.Input.Mouse({
-      element: $('.mouse-pane')[0]
+      element: $('.capture-pane')[0]
     }).on('changed', function(mouse, e){
       var el = $('.canvas-container pre code');
       el.text(JSON.stringify(mouse.state, null, 2));

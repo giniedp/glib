@@ -127,7 +127,11 @@ module Glib.utils {
     }
   }());
 
-  export var loop = function(loopFunc) {
+  export interface ILoop {
+    kill():void
+    (): void 
+  }
+  export var loop = function(loopFunc): ILoop {
     var time = getTime()
     var tick:any = function(){
       if (!tick) return 

@@ -13,7 +13,7 @@ module Glib.Components {
     newStates: any
 
     constructor(options:any={}){
-      this.touch = new Input.TouchPane({ el: options.el || document })
+      this.touch = new Input.TouchPane({ element: options.element || document })
       this.touchIds = []
       Glib.utils.extend(this, options)
       this.newStates = {}
@@ -30,7 +30,7 @@ module Glib.Components {
         let tmp = this.oldStates[id] || {}
         this.oldStates = this.newStates[id] || {}
         this.newStates = tmp
-        this.touch.getState(Number(id), tmp)
+        this.touch.copyState(Number(id), tmp)
       }
     }
 

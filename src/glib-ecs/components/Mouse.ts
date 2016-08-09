@@ -13,15 +13,15 @@ module Glib.Components {
     constructor(options:any={}){
       this.mouse = new Input.Mouse({ element: options.el || document });
       Glib.utils.extend(this, options);
-      this.newState = this.mouse.getState({});
-      this.oldState = this.mouse.getState({});
+      this.newState = this.mouse.copyState({});
+      this.oldState = this.mouse.copyState({});
     }
 
     update(){
       var toUpdate = this.oldState;
       this.oldState = this.newState;
       this.newState = toUpdate;
-      this.mouse.getState(toUpdate);
+      this.mouse.copyState(toUpdate);
     }
 
     get x() {

@@ -13,15 +13,15 @@ module Glib.Components {
     constructor(options:any={}){
       this.keyboard = new Input.Keyboard();
       Glib.utils.extend(this, options);
-      this.newState = this.keyboard.getState({});
-      this.oldState = this.keyboard.getState({});
+      this.newState = this.keyboard.copyState({});
+      this.oldState = this.keyboard.copyState({});
     }
 
     update(){
       var toUpdate = this.oldState;
       this.oldState = this.newState;
       this.newState = toUpdate;
-      this.keyboard.getState(toUpdate);
+      this.keyboard.copyState(toUpdate);
     }
 
     isPressed(key:number):boolean {

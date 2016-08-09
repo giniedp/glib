@@ -3,7 +3,12 @@
 extends ./../../_layouts/example
 block view
   .canvas-container
-    pre: code.language-json
+    pre.capture-pane(oncontextmenu="return false") 
+      code.language-json
+  style().
+    .capture-pane {
+      border: 1px dashed white !important;
+    }
   script(type='text/javascript' src='/glib.js')
 block script
   a(name="HTML" index=3)
@@ -11,7 +16,7 @@ block script
   a(name="JAVASCRIPT" index=1)
   script(type='text/javascript').
     new Glib.Input.TouchPane({
-      el: $('.canvas-container')[0],
+      element: $('.capture-pane')[0],
       preventDefault: false
     }).on('changed', function(pane, e){
       var el = $('.canvas-container pre code');

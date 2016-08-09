@@ -25,14 +25,15 @@ module Glib.Input {
   let hasPointerlockApi = !!cross.requestPointerLock
 
   /**
-   * 
+   * Mouse constructor options
    */
   export interface IMouseOptions {
-    element?: Element,
+    element?: EventTarget,
     events?: string[]
   }
+  
   /**
-   * 
+   * The captured Mouse state
    */
   export interface IMouseState {
     pageX:number
@@ -50,10 +51,18 @@ module Glib.Input {
   }
 
   /**
-   * 
+   * The Mouse class allows to capture the mouse state. It does so by listening to various mouse events 
+   * and tracks the position and pressed buttons. On each recoginzed  state change the ```changed``` event is triggered. 
    */
   export class Mouse extends Glib.Events {
-    element:Element|Document = document
+    /**
+     * The target element on which to listen for mouse events. 
+     */
+    protected element:EventTarget = document
+    
+    /**
+     * The tracked Mouse state
+     */
     state:IMouseState = {
       pageX: 0, 
       pageY: 0,
@@ -70,10 +79,9 @@ module Glib.Input {
     };
 
     /**
-     * Collection of event names that are captured on the mouse element
-     * and retriggered on the Mouse instance
+     * Collection of html events that are delegated (triggered) on this instance. 
      */
-    delegatedEvents = [
+    protected delegatedEvents = [
       'click', 
       'contextmenu', 
       'dblclick', 
@@ -89,32 +97,33 @@ module Glib.Input {
     ]
 
     /**
-     * Updates the mouse wheel state with given MouseEvent
+     * Is called on the ```mousewheel``` event and captures the mouse wheel state
      */
-    protected onMouseWheel:EventListener = (e:MouseEvent) => Mouse.updateWheel(this, e)
+    protected onMouseWheel:EventListener = this.handleWheel.bind(this)
     /**
-     * Updates the mouse movement states with given MouseEvent
+     * Is called on the ```mousemove``` event and captures the movement state
      */
-    protected onMouseMove:EventListener = (e:MouseEvent) => Mouse.updateMovement(this, e)
+    protected onMouseMove:EventListener = this.handleMouseMove.bind(this)
     /**
-     * Updates the mouse button states with given MouseEvent
+     * Is called on the ```mousedown``` event and captures the button state
      */
-    protected onMouseDown:EventListener = (e:MouseEvent) => Mouse.updateButton(this, e)
+    protected onMouseDown:EventListener = this.handleButton.bind(this)
     /**
-     * Updates the mouse button states with given MouseEvent
+     * Is called on the ```mouseup``` event and captures the button state
      */
-    protected onMouseUp:EventListener = (e:MouseEvent) => Mouse.updateButton(this, e)
+    protected onMouseUp:EventListener = this.handleButton.bind(this)
     /**
-     * Triggers the MouseEvent that occurred on the element
+     * Triggers the ```e.type``` event on this instance
      */
-    protected onEvent:EventListener = (e) => Mouse.delegate(this, e)
+    protected onEvent:EventListener = (e) => this.trigger(e.type, this, e)
     /**
-     * Clears the wheel and button states
+     * Is called when ```document``` or ```window``` loose focus (e.g. user switches to another tab or application)
+     * and clears the button and wheel states.
      */
-    protected onClearButtons:EventListener = () => Mouse.clearButtons(this)
+    protected onClearButtons:EventListener = this.clearButtons.bind(this)
 
     /**
-     * Creates a new Mouse instance that captures the mouse state
+     * Initializes the Mouse with given options and activates the captrue listeners 
      */
     constructor(options?:IMouseOptions) {
       super();
@@ -126,7 +135,7 @@ module Glib.Input {
     }
 
     /**
-     * Activates the capturing of the IMouseState
+     * Activates the captrue listeners
      */
     activate() {
       this.deactivate()
@@ -151,7 +160,7 @@ module Glib.Input {
     }
 
     /**
-     * Deactivates the capturing of the IMouseState
+     * Deactivates the captrue listeners
      */
     deactivate() {
       // update logic events
@@ -175,10 +184,10 @@ module Glib.Input {
     }
 
     /**
-     * Gets a copy of the captured IMouseState
+     * Gets a copy of the captured state
      * @param [out={}] Where the state is written to
      */
-    getState(out:any = {}):IMouseState {
+    copyState(out:any = {}):IMouseState {
       out.x = this.state.x
       out.y = this.state.y
       out.wheelValue = this.state.wheel
@@ -192,7 +201,7 @@ module Glib.Input {
 
     /**
      * Locks the mouse to the current element. The mouse cursor is then not visible
-     * and only the movementX/movementY state properties are updated
+     * and only the ```movementX``` and ```movementY``` state properties are updated.
      */
     lock() {
       if (!hasPointerlockApi) {
@@ -237,8 +246,11 @@ module Glib.Input {
       }
     }
 
-    static updateMovement(mouse: Mouse, e:MouseEvent) {
-      let s = mouse.state
+    /**
+     * Updates the movement state from given event
+     */
+    protected handleMouseMove(e:MouseEvent) {
+      let s = this.state
       s.pageX = e.pageX
       s.pageY = e.pageY
       s.screenX = e.screenX
@@ -249,46 +261,53 @@ module Glib.Input {
       s.movementY = e[cross.movementY]
       s.x = e.clientX
       s.y = e.clientY
-      if (mouse.element['getBoundingClientRect']) {
-        let rect = mouse.element['getBoundingClientRect']()
+      if (this.element['getBoundingClientRect']) {
+        let rect = this.element['getBoundingClientRect']()
         s.x = e.clientX - rect.left;
         s.y = e.clientY - rect.top;
       }
-      mouse.trigger('changed', mouse, e);
+      this.trigger('changed', this, e);
     }
 
-    protected static updateButton(mouse: Mouse, e:MouseEvent) {
+    /**
+     * Updates the button states from given event
+     */
+    protected handleButton(e:MouseEvent) {
       var isDown = e.type === 'mousedown';
       if (e.which !== undefined) {
-        mouse.state.buttons[e.which - 1] = isDown;
+        this.state.buttons[e.which - 1] = isDown;
       } else if (e.button !== undefined) {
-        mouse.state.buttons[e.button] = isDown;
+        this.state.buttons[e.button] = isDown;
       }
-      mouse.trigger('changed', mouse, e);
+      this.trigger('changed', this, e);
     }
 
-    protected static updateWheel(mouse: Mouse, e:any) {
+    /**
+     * Updates the wheel state from given event
+     */
+    protected handleWheel(e:MouseEvent) {
+      let state = this.state
+      state.wheel = state.wheel || 0
       if (e.detail) {
-        mouse.state.wheel = -1 * e.detail;
-      } else if (e.wheelDelta) {
-        mouse.state.wheel = e.wheelDelta / 120;
+        state.wheel += -1 * e.detail;
+      } else if (e['wheelDelta']) {
+        state.wheel += e['wheelDelta'] / 120;
       } else {
-        mouse.state.wheel = 0;
+        state.wheel += 0;
       }
-      mouse.trigger('changed', mouse, e);
+      this.trigger('changed', this, e);
     }
 
-    protected static clearButtons(mouse: Mouse) {
-      mouse.state.wheel = 0
-      mouse.state.buttons.length = 3
-      mouse.state.buttons[0] = false
-      mouse.state.buttons[1] = false
-      mouse.state.buttons[2] = false
-      mouse.trigger('changed', mouse, null)
-    }
-
-    protected static delegate(mouse: Mouse, e:Event){
-      mouse.trigger(e.type, mouse, e);
+    /**
+     * clears the button and wheel states
+     */
+    protected clearButtons() {
+      this.state.wheel = 0
+      this.state.buttons.length = 3
+      this.state.buttons[0] = false
+      this.state.buttons[1] = false
+      this.state.buttons[2] = false
+      this.trigger('changed', this, null)
     }
   }
 

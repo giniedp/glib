@@ -1,49 +1,59 @@
 module Glib.Input {
 
   /**
-   * 
+   * Keybord constructor options
    */
   export interface IKeyboardOptions {
     element?: Element,
     events?: string[]
   }
+
   /**
-   * 
+   * The captured Keyboard state
    */
   export interface IKeyboardState {
     pressedKeys:number[];
   }
 
   /**
-   * 
+   * The Keyboard class allows to capture the keyboards state. It does so by listening to
+   * the ```keypress```, ```keydown``` and ```keyup``` events and tracks the pressed buttons. On each recoginzed
+   * state change the ```changed``` event is triggered. 
    */
   export class Keyboard extends Glib.Events {
-    element:EventTarget = document
+    /**
+     * The target element on which to listen for keyboard events. 
+     */
+    protected element:EventTarget = document
+
+    /**
+     * The tracked keyboard state
+     */
     state:IKeyboardState = {pressedKeys: []}
 
     /**
-     * Collection of event to listen for on element and fire on this instance
+     * Collection of html events that are delegated (triggered) on this instance. 
      */
-    delegatedEvents = [
+    protected delegatedEvents = [
       'keypress', 
       'keydown', 
       'keyup'
     ]
 
     /**
-     * Is called on the elements 'keypress' event and marks a 'keyCode' as pressed 
+     * Is called on the ```keypress``` event and marks the ```event.keyCode``` as pressed 
      */
     protected onKeyPress = (e:KeyboardEvent) => this.setKeyPressed(e.keyCode)
     /**
-     * Is called on the elements 'keypress' event and marks a 'keyCode' as pressed 
+     * Is called on the ```keypress``` event and marks the ```event.keyCode``` as pressed
      */
     protected onKeyDown = (e:KeyboardEvent) => this.setKeyPressed(e.keyCode)
     /**
-     * Is called on the elements 'keyup' event and marks a 'keyCode' as released 
+     * Is called on the ```keyup``` event and marks the ```event.keyCode``` as released
      */
     protected onKeyUp = (e:KeyboardEvent) => this.setKeyReleased(e.keyCode)
     /**
-     * Is called when document/window lost focus e.g. user switches to another tab or application 
+     * Is called when ```document``` or ```window``` loose focus e.g. user switches to another tab or application 
      */
     protected onNeedsClear = () => this.clearState()
     /**
@@ -52,7 +62,7 @@ module Glib.Input {
     protected onEvent:EventListener = (e:Event) => this.trigger(e.type, this, e)
 
     /**
-     * 
+     * Initializes the Keyboard with given options and activates the captrue listeners 
      */
     constructor(options?:IKeyboardOptions) {
       super();
@@ -64,7 +74,7 @@ module Glib.Input {
     }
 
     /**
-     * Activates the update listeners
+     * Activates the captrue listeners
      */
     activate() {
       this.deactivate()
@@ -83,7 +93,7 @@ module Glib.Input {
     }
 
     /**
-     * Deactivates the update listeners
+     * Deactivates the capture listeners
      */
     deactivate() {
       // update state events
@@ -103,7 +113,7 @@ module Glib.Input {
     /**
      * Gets a copy of the current keyboard state.
      */
-    getState(out:any = {}):IKeyboardState {
+    copyState(out:any = {}):IKeyboardState {
       var inKeys = this.state.pressedKeys
       var outKeys = out.keys || []
 
@@ -116,7 +126,7 @@ module Glib.Input {
       return out
     }
     /**
-     * Marks the keyCode state of given event as pressed and triggers the 'changed' event
+     * Marks the given ```keyCode``` as being pressed and triggers the ```changed``` event
      */
     setKeyPressed(keycode:number) {
       var index = this.state.pressedKeys.indexOf(keycode)
@@ -124,7 +134,7 @@ module Glib.Input {
       this.trigger('changed', this)
     }
     /**
-     * Marks the keyCode state of given event as released and triggers the 'changed' event
+     * Marks the given ```keyCode``` as not being pressed and triggers the ```changed``` event
      */
     setKeyReleased(keyCode:number) {
       var index = this.state.pressedKeys.indexOf(keyCode)
@@ -132,7 +142,7 @@ module Glib.Input {
       this.trigger('changed', this)
     }
     /**
-     * Clears the state of given Keyboard instance and trigger 'changed' event 
+     * Clears the state and triggers the ```changed``` event 
      */
     clearState() {
       this.state.pressedKeys.length = 0
