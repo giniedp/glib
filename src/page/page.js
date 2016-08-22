@@ -82,6 +82,8 @@ var GlibSamples = GlibSamples || {};
           makeSnippet(view[0].innerHTML, 'html').appendTo(currentTab().content);
         } else if ($this.is('script')) {
           makeSnippet($this[0].outerHTML, 'html').appendTo(currentTab().content);
+        } else if ($this.is('style')) {
+          makeSnippet($this[0].outerHTML, 'html').appendTo(currentTab().content);  
         } else if ($this.is('[example]')) {
           $this.detach().appendTo(currentTab().content);
           makeSnippet($this.html(), 'html').appendTo(currentTab().content);

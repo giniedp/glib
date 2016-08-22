@@ -10,7 +10,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'dist/es5/glib.js',
+      'dist/glib.js',
       //'src/**/*_test.ts',
       'src/**/*_test.js'
     ],

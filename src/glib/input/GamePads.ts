@@ -221,6 +221,10 @@ module Glib.Input {
     Extra8: 23,
     Extra9: 24
   };
+  export var GamepadButtonNames = {};
+  for (var name in GamepadButton) {
+    GamepadButtonNames[GamepadButton[name]] = name;
+  }
 
   export var GamepadAxes = {
     LeftHorizontal: 0,
@@ -228,4 +232,8 @@ module Glib.Input {
     RightHorizontal: 2,
     RightVertical: 3
   };
+  export var GamepadAxesNames = {};
+  for (var name in GamepadAxes) {
+    GamepadAxesNames[GamepadAxes[name]] = name;
+  }
 }

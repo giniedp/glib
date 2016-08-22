@@ -1,10 +1,11 @@
 module Glib.Components {
 
   export class Mouse implements Component {
-    node:Entity;
-    name:string = 'Mouse';
-    service:boolean = true;
-    enabled:boolean = true;
+    //static name = 'Mouse'
+    node:Entity
+    name:string = 'Mouse'
+    service:boolean = true
+    enabled:boolean = true
 
     mouse:Input.Mouse;
     newState: Input.IMouseState;

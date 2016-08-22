@@ -6,7 +6,6 @@ module Glib.Components {
   import Quat = Glib.Quat;
   import Mat4 = Glib.Mat4;
 
-  import Keys = Glib.Input.KeyCode;
   import MouseButtons = Glib.Input.MouseButton;
 
   export class WASD implements Component {
@@ -49,37 +48,37 @@ module Glib.Components {
       var targetSpeed = 0;
       this._translation.init(0, 0, 0);
 
-      if (keyboard.isPressed(Keys.W)) {
+      if (keyboard.isPressed(Input.Keys.KeyW)) {
         trans.worldMat.getForward(this._direction);
         this._translation.selfAdd(this._direction);
         targetSpeed = speed;
       }
-      if (keyboard.isPressed(Keys.S)) {
+      if (keyboard.isPressed(Input.Keys.KeyS)) {
         trans.worldMat.getBackward(this._direction);
         this._translation.selfAdd(this._direction);
         targetSpeed = speed;
       }
-      if (keyboard.isPressed(Keys.A)) {
+      if (keyboard.isPressed(Input.Keys.KeyA)) {
         trans.worldMat.getLeft(this._direction);
         this._translation.selfAdd(this._direction);
         targetSpeed = speed;
       }
-      if (keyboard.isPressed(Keys.D)) {
+      if (keyboard.isPressed(Input.Keys.KeyD)) {
         trans.worldMat.getRight(this._direction);
         this._translation.selfAdd(this._direction);
         targetSpeed = speed;
       }
-      if (keyboard.isPressed(Keys.Q)) {
+      if (keyboard.isPressed(Input.Keys.KeyQ)) {
         trans.worldMat.getDown(this._direction);
         this._translation.selfAdd(this._direction);
         targetSpeed = speed;
       }
-      if (keyboard.isPressed(Keys.E)) {
+      if (keyboard.isPressed(Input.Keys.KeyE)) {
         trans.worldMat.getUp(this._direction);
         this._translation.selfAdd(this._direction);
         targetSpeed = speed;
       }
-      if (keyboard.isPressed(Keys.Shift)) {
+      if (keyboard.isPressed(Input.Keys.ShiftLeft)) {
         targetSpeed = this.runSpeed;
       }
       if (this._translation.lengthSquared() > 0) {
