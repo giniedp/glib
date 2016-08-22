@@ -39,7 +39,7 @@ module Glib.Graphics {
   export var DefaultContextAttributes:IContextAttributes = {
     alpha: true,
     depth: true,
-    stencil: false,
+    stencil: true,
     antialias: true,
     premultipliedAlpha: true,
     preserveDrawingBuffer: true
@@ -66,7 +66,7 @@ module Glib.Graphics {
     if (context instanceof CanvasRenderingContext2D) {
       return context
     }
-    if (utils.isString(context)) {
+    if (typeof context === 'string') {
       return canvas.getContext(context as string, attributes) as WebGLRenderingContext
     }
     return canvas.getContext('experimental-webgl', attributes) as WebGLRenderingContext
@@ -106,15 +106,15 @@ module Glib.Graphics {
     /**
      * The indexBuffer propery value. Do not set this value directly. Use the property accessors instead
      */
-    private currentIndexBuffer:Buffer
+    private $indexBuffer:Buffer
     /**
      * The vertexBuffer propery value. Do not set this value directly. Use the property accessors instead
     */ 
-    private currentVertexBuffer:Buffer
+    private $vertexBuffer:Buffer
     /** 
      * The program propery value. Do not set this value directly. Use the property accessors instead
      */ 
-    private currentProgram:ShaderProgram
+    private $program:ShaderProgram
     /** 
      * The cached index buffer that is used to draw a full screen quad.
      */ 
@@ -128,14 +128,14 @@ module Glib.Graphics {
      */ 
     private quadVertexBufferFlipped: Buffer
 
-    private cullStateObject:CullState
-    private blendStateObject:BlendState
-    private depthStateObject:DepthState
-    private offsetStateObject:OffsetState
-    private stencilStateObject:StencilState
-    private scissorStateObject:ScissorState
-    private viewportStateObject:ViewportState
-    private vertexAttribArrayState:VertexAttribArrayState
+    private $cullState:CullState
+    private $blendState:BlendState
+    private $depthState:DepthState
+    private $offsetState:OffsetState
+    private $stencilState:StencilState
+    private $scissorState:ScissorState
+    private $viewportState:ViewportState
+    private $vertexAttribArrayState:VertexAttribArrayState
     private registeredRenderTargets:Texture[] = []
     private registeredDepthBuffers:DepthBuffer[] = []
     private registeredFrameBuffers: FrameBuffer[] = []
@@ -156,20 +156,14 @@ module Glib.Graphics {
       this.context = getOrCreateContext(this.canvas, options)
       this.capabilities = new Capabilities(this)
 
-      this.cullStateObject = new CullState(this)
-      this.cullState = CullState.Default
-      this.blendStateObject = new BlendState(this)
-      this.blendState = BlendState.Default
-      this.depthStateObject = new DepthState(this)
-      this.depthState = DepthState.Default
-      this.offsetStateObject = new OffsetState(this)
-      this.offsetState = OffsetState.Default
-      this.stencilStateObject = new StencilState(this)
-      this.stencilState = StencilState.Default
-      this.scissorStateObject = new ScissorState(this)
-      this.scissorState = ScissorState.Default
-      this.viewportStateObject = new ViewportState(this)
-      this.vertexAttribArrayState = new VertexAttribArrayState(this)
+      this.$cullState = new CullState(this).commit(CullState.Default).resolve()
+      this.$blendState = new BlendState(this).commit(BlendState.Default).resolve()
+      this.$depthState = new DepthState(this).commit(DepthState.Default).resolve()
+      this.$offsetState = new OffsetState(this).commit(OffsetState.Default).resolve()
+      this.$stencilState = new StencilState(this).commit(StencilState.Default).resolve()
+      this.$scissorState = new ScissorState(this).commit(ScissorState.Default).resolve()
+      this.$viewportState = new ViewportState(this)
+      this.$vertexAttribArrayState = new VertexAttribArrayState(this)
 
       this.samplerStates = []
       var max = Number(this.capabilities.maxTextureUnits)
@@ -180,59 +174,59 @@ module Glib.Graphics {
 
     /** Gets a copy of the cull state parameters */
     get cullState() {
-      return this.cullStateObject.dump()
+      return this.$cullState.copy()
     }
     /** Updates the cull state parameters and direclty commits the state to the GPU */
     set cullState(v:CullStateOptions) {
-      this.cullStateObject.commit(v)
+      this.$cullState.commit(v)
     }
     /** Gets a copy of the blend state parameters */
     get blendState() {
-      return this.blendStateObject.dump()
+      return this.$blendState.copy()
     }
     /** Updates the blend state parameters and direclty commits the state to the GPU */
     set blendState(v:BlendStateOptions) {
-      this.blendStateObject.commit(v)
+      this.$blendState.commit(v)
     }
     /** Gets a copy of the depth state parameters */
     get depthState() {
-      return this.depthStateObject.dump()
+      return this.$depthState.copy()
     }
     /** Updates the depth state parameters and direclty commits the state to the GPU */
     set depthState(v:DepthStateOptions) {
-      this.depthStateObject.commit(v)
+      this.$depthState.commit(v)
     }
     /** Gets a copy of the offset state parameters */
     get offsetState() {
-      return this.offsetStateObject.dump()
+      return this.$offsetState.copy()
     }
     /** Updates the offset state parameters and direclty commits the state to the GPU */
     set offsetState(v:OffsetStateOptions) {
-      this.offsetStateObject.commit(v)
+      this.$offsetState.commit(v)
     }
     /** Gets a copy of the stencil state parameters */
     get stencilState() {
-      return this.stencilStateObject.dump()
+      return this.$stencilState.copy()
     }
     /** Updates the stencil state parameters and direclty commits the state to the GPU */
     set stencilState(v:StencilStateOptions) {
-      this.stencilStateObject.commit(v)
+      this.$stencilState.commit(v)
     }
     /** Gets a copy of the scissor state parameters */
     get scissorState() {
-      return this.scissorStateObject.dump()
+      return this.$scissorState.copy()
     }
     /** Updates the scissor state parameters and direclty commits the state to the GPU */
     set scissorState(v:ScissorStateOptions) {
-      this.scissorStateObject.commit(v)
+      this.$scissorState.commit(v)
     }
     /** Gets a copy of the viewport state parameters */
     get viewportState() {
-      return this.viewportStateObject.dump()
+      return this.$viewportState.copy()
     }
     /** Updates the viewport state parameters and direclty commits the state to the GPU */
     set viewportState(v:ViewportStateOptions) {
-      this.viewportStateObject.commit(v)
+      this.$viewportState.commit(v)
     }
 
     get defaultTexture():Texture {
@@ -351,9 +345,9 @@ module Glib.Graphics {
      * @param [count=indexBuffer.elementCount]
      */
     drawIndexedPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this.currentIndexBuffer
-      var vBuffer = this.currentVertexBuffer
-      var program = this.currentProgram
+      var iBuffer = this.$indexBuffer
+      var vBuffer = this.$vertexBuffer
+      var program = this.$program
       if (!iBuffer) {
         throw `drawIndexedPrimitives() requires an indexBuffer`
       }
@@ -386,9 +380,9 @@ module Glib.Graphics {
      * @return {Device}
      */
     drawInstancedPrimitives(instanceCount?:number, primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this.currentIndexBuffer
-      var vBuffer = this.currentVertexBuffer
-      var program = this.currentProgram
+      var iBuffer = this.$indexBuffer
+      var vBuffer = this.$vertexBuffer
+      var program = this.$program
       if (!iBuffer) {
         throw `drawInstancedPrimitives() requires an indexBuffer`
       }
@@ -419,8 +413,8 @@ module Glib.Graphics {
      * @return {Device}
      */
     drawPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var vBuffer = this.currentVertexBuffer
-      var program = this.currentProgram
+      var vBuffer = this.$vertexBuffer
+      var program = this.$program
       if (!vBuffer) {
         throw `drawInstancedPrimitives() requires a vertexBuffer`
       }
@@ -505,7 +499,7 @@ module Glib.Graphics {
         this.canvas.width  = displayWidth
         this.canvas.height = displayHeight
 
-        let state = this.viewportStateObject 
+        let state = this.$viewportState 
         state.x = 0
         state.y = 0
         state.width = this.context.drawingBufferWidth
@@ -623,15 +617,15 @@ module Glib.Graphics {
      * Gets the currently active vertex buffer 
      */
     get vertexBuffer(): Buffer {
-      return this.currentVertexBuffer
+      return this.$vertexBuffer
     }
     /** 
      * Sets and activates a buffer as the currently active vertex buffer 
      */
     set vertexBuffer(buffer: Buffer) {
-      if (this.currentVertexBuffer !== buffer) {
+      if (this.$vertexBuffer !== buffer) {
         this.context.bindBuffer(BufferType.VertexBuffer, buffer ? buffer.handle : null)
-        this.currentVertexBuffer = buffer
+        this.$vertexBuffer = buffer
       }
     }
 
@@ -639,15 +633,15 @@ module Glib.Graphics {
      * Gets the currently active index buffer 
      */
     get indexBuffer(): Buffer {
-      return this.currentIndexBuffer
+      return this.$indexBuffer
     }
     /** 
      * Sets and activates a buffer as the currently active index buffer 
      */
     set indexBuffer(buffer: Buffer) {
-      if (this.currentIndexBuffer !== buffer) {
+      if (this.$indexBuffer !== buffer) {
         this.context.bindBuffer(BufferType.IndexBuffer, buffer ? buffer.handle : null)
-        this.currentIndexBuffer = buffer
+        this.$indexBuffer = buffer
       }
     }
 
@@ -655,16 +649,16 @@ module Glib.Graphics {
      * Gets the currently active shader program 
      */
     get program(): ShaderProgram {
-      return this.currentProgram
+      return this.$program
     }
     /** 
      * Sets and activates a program as the currently active program 
      */
     set program(program: ShaderProgram) {
-      if (this.currentProgram !== program) {
+      if (this.$program !== program) {
         var handle = program ? program.handle : null
         this.context.useProgram(handle)
-        this.currentProgram = program
+        this.$program = program
       }
     }
 
@@ -695,7 +689,7 @@ module Glib.Graphics {
           vBuffer.elementSize,
           channel.offset)
       }
-      this.vertexAttribArrayState.commit(program.attributeLocations)
+      this.$vertexAttribArrayState.commit(program.attributeLocations)
     }
 
     /**
@@ -855,8 +849,8 @@ module Glib.Graphics {
       return new Model(this, options)
     }
 
-    createMaterial(options:ShaderMaterialOptions):ShaderMaterial {
-      return new ShaderMaterial(this, options)
+    createMaterial(options:ShaderEffectOptions):ShaderEffect {
+      return new ShaderEffect(this, options)
     }
 
     getSharedDepthBuffer(options:DepthBufferOptions) {

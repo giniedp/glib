@@ -4,7 +4,7 @@ module Glib.Graphics {
   // GL.TEXTURE0
   // GL.TEXTURE...
   // GL.TEXTURE31
-  var TextureUnitMap = [
+  let TextureUnitMap = [
     0x84C0, 0x84C1, 0x84C2, 0x84C3,
     0x84C4, 0x84C5, 0x84C6, 0x84C7,
     0x84C8, 0x84C9, 0x84CA, 0x84CB,
@@ -15,250 +15,264 @@ module Glib.Graphics {
     0x84DC, 0x84DD, 0x84DE, 0x84DF
   ];
 
+  let propertyKeys = [
+    'texture',
+    'minFilter',
+    'magFilter',
+    'wrapU',
+    'wrapV',
+    'register'    
+  ]
+
+  /**
+   * The sampler state properties
+   */
   export interface SamplerStateProperties {
-    texture?: any;
-    minFilter?: number;
-    magFilter?: number;
-    wrapU?: number;
-    wrapV?: number;
-    register?: number;
+    texture?: Texture
+    minFilter?: number
+    magFilter?: number
+    wrapU?: number
+    wrapV?: number
+    register?: number
   }
 
+  /**
+   * 
+   */
   export class SamplerState implements SamplerStateProperties {
-    device:Device;
-    gl:any;
-    register:number;
-    autofixNonPOT:boolean = true;
-    _texture:any;
-    _minFilter:number = TextureFilter.PointMipLinear;
-    _magFilter:number = TextureFilter.Point;
-    _wrapU:number = TextureWrapMode.Clamp;
-    _wrapV:number = TextureWrapMode.Clamp;
-    _changed:boolean;
-    _changes:SamplerStateProperties = {};
+    /**
+     * The graphics device
+     */
+    device:Device
+    /**
+     * The rendering context
+     */
+    gl:WebGLRenderingContext
+    
+    private registerField:number
+    /**
+     * If true this will fix invalid state for a non power of two texture
+     */
+    autofixNonPOT:boolean = true
+    private textureField:any
+    private minFilterField:number = TextureFilter.PointMipLinear
+    private magFilterField:number = TextureFilter.Point
+    private wrapUField:number = TextureWrapMode.Clamp
+    private wrapVField:number = TextureWrapMode.Clamp
+    private hasChanged:boolean
+    private changes:SamplerStateProperties = {}
 
     constructor(device:Device, register:number) {
       this.device = device;
       this.gl = device.context;
-      this.register = register;
+      this.registerField = register;
     }
 
-    get texture():any {
-      return this._texture;
+    get register():number {
+      return this.registerField
+    }
+    set register(value:number) { throw "'register' property is read only" }
+
+    get unit():number {
+      return TextureUnitMap[this.registerField]
+    }
+    set unit(value:number) { throw "'unit' property is read only" }
+
+    get texture():Texture {
+      return this.textureField
     }
 
-    set texture(value:any) {
-      var texture = this._texture;
+    set texture(value:Texture) {
+      var texture = this.textureField
       if (texture !== value || (value && (texture.handle !== value.handle || texture.type !== value.type))) {
-        this._texture = value;
-        this._changes.texture = value;
-        this._changed = true;
+        this.textureField = value
+        this.changes.texture = value
+        this.hasChanged = true
+        if (!value.ready) {
+
+        }
       }
     }
 
     get minFilter():number {
-      return this._minFilter;
+      return this.minFilterField
     }
 
     get minFilterName():string {
-      return TextureFilterName[this._minFilter];
+      return TextureFilterName[this.minFilterField]
     }
 
     set minFilter(value:number) {
-      if (this._minFilter !== value) {
-        this._minFilter = value;
-        this._changes.minFilter = value;
-        this._changed = true;
+      if (this.minFilterField !== value) {
+        this.minFilterField = value
+        this.changes.minFilter = value
+        this.hasChanged = true
       }
     }
 
-
     get magFilter():number {
-      return this._magFilter;
+      return this.magFilterField
     }
 
     get magFilterName():string {
-      return TextureFilterName[this._magFilter];
+      return TextureFilterName[this.magFilterField]
     }
 
     set magFilter(value:number) {
-      if (this._magFilter !== value) {
-        this._magFilter = value;
-        this._changes.magFilter = value;
-        this._changed = true;
+      if (this.magFilterField !== value) {
+        this.magFilterField = value
+        this.changes.magFilter = value
+        this.hasChanged = true
       }
     }
 
     get wrapU():number {
-      return this._wrapU;
+      return this.wrapUField
     }
 
     get wrapUName():string {
-      return TextureWrapModeName[this._wrapU];
+      return TextureWrapModeName[this.wrapUField]
     }
 
     set wrapU(value:number) {
-      if (this._wrapU !== value) {
-        this._wrapU = value;
-        this._changes.wrapU = value;
-        this._changed = true;
+      if (this.wrapUField !== value) {
+        this.wrapUField = value
+        this.changes.wrapU = value
+        this.hasChanged = true
       }
     }
 
     get wrapV():number {
-      return this._wrapV;
+      return this.wrapVField
     }
 
     get wrapVName():string {
-      return TextureWrapModeName[this._wrapV];
+      return TextureWrapModeName[this.wrapVField]
     }
 
     set wrapV(value:number) {
-      if (this._wrapV !== value) {
-        this._wrapV = value;
-        this._changes.wrapV = value;
-        this._changed = true;
+      if (this.wrapVField !== value) {
+        this.wrapVField = value
+        this.changes.wrapV = value
+        this.hasChanged = true
       }
     }
 
+    assign(state:SamplerStateProperties):SamplerState {
+      for (let key of propertyKeys) {
+        if (state.hasOwnProperty(key) && key !== 'register') {
+          this[key] = state[key]
+        }
+      } 
+      return this
+    }
+    
     commit(state?:SamplerStateProperties):SamplerState {
-      if (state) {
-        utils.extend(this, state);
-      }
-      if (!this._changed) {
-        return;
-      }
-
-      var texture = this.texture;
-
-      if (!texture) {
-        SamplerState.commit(this.gl, this);
-        return;
+      
+      if (state) this.assign(state)
+      let texture = this.texture
+      if (texture && !texture.isPOT && this.autofixNonPOT) {
+        SamplerState.fixNonPowerOfTwo(this)
       }
 
-      if (!texture.isPOT && this.autofixNonPOT) {
-        SamplerState.fixNonPowerOfTwo(this);
-      }
+      if (!this.hasChanged) return this
 
-      SamplerState.commit(this.gl, this);
+      let gl = this.gl
+      let changes = this.changes
+      let type = texture ? texture.type : gl.TEXTURE_2D
+      let handle = texture ? texture.handle : null
 
+      gl.activeTexture(this.unit)
+      gl.bindTexture(type, handle)
+      if (changes.minFilter !== null) gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, this.minFilter)
+      if (changes.magFilter !== null) gl.texParameteri(type, gl.TEXTURE_MAG_FILTER, this.magFilter)
+      if (changes.wrapU !== null) gl.texParameteri(type, gl.TEXTURE_WRAP_S, this.wrapU)
+      if (changes.wrapV !== null) gl.texParameteri(type, gl.TEXTURE_WRAP_T, this.wrapV)
+
+      this.clearChanges()
       return this;
     }
 
-    static commit(gl:any, state:SamplerStateProperties) {
-      var texture = state.texture;
-      var unit = TextureUnitMap[state.register];
-      var minFilter = state.minFilter;
-      var magFilter = state.magFilter;
-      var wrapU = state.wrapU;
-      var wrapV = state.wrapV;
-      var type = texture ? texture.type : gl.TEXTURE_2D;
-      var handle = texture ? texture.handle : null;
-      
-      gl.activeTexture(unit);
-      gl.bindTexture(type, handle);
-
-      if (!texture) {
-        return;
-      }
-      
-      if (minFilter !== undefined) {
-        gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, minFilter);
-      }
-
-      if (magFilter !== undefined) {
-        gl.texParameteri(type, gl.TEXTURE_MAG_FILTER, magFilter);
-      }
-
-      if (wrapU !== undefined) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_S, wrapU);
-      }
-
-      if (wrapV !== undefined) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_T, wrapV);
-      }
+    private clearChanges(){
+      this.hasChanged = false
+      for (let key of propertyKeys) this.changes[key] = undefined
     }
 
     static convert(state:any):SamplerStateProperties {
       if (state.minFilter) {
-        state.minFilter = TextureFilter[state.minFilter];
+        state.minFilter = TextureFilter[state.minFilter]
       }
       if (state.magFilter) {
-        state.magFilter = TextureFilter[state.magFilter];
+        state.magFilter = TextureFilter[state.magFilter]
       }
       if (state.wrapU) {
-        state.wrapU = TextureWrapMode[state.wrapU];
+        state.wrapU = TextureWrapMode[state.wrapU]
       }
       if (state.wrapV) {
-        state.wrapV = TextureWrapMode[state.wrapV];
+        state.wrapV = TextureWrapMode[state.wrapV]
       }
-      return state;
+      return state
     }
 
     static fixNonPowerOfTwo(state:SamplerStateProperties):SamplerStateProperties {
-      state.wrapU = TextureWrapMode.Clamp;
-      state.wrapV = TextureWrapMode.Clamp;
+      state.wrapU = TextureWrapMode.Clamp
+      state.wrapV = TextureWrapMode.Clamp
 
-      state.magFilter = TextureFilter.Linear;
+      state.magFilter = TextureFilter.Linear
 
       if (state.minFilter === TextureFilter.LinearMipLinear ||
         state.minFilter === TextureFilter.LinearMipPoint) {
-        state.minFilter = TextureFilter.Linear;
+        state.minFilter = TextureFilter.Linear
       }
       else if (state.minFilter === TextureFilter.PointMipLinear ||
         state.minFilter === TextureFilter.PointMipLinear) {
-        state.minFilter = TextureFilter.Point;
+        state.minFilter = TextureFilter.Point
       }
 
       if (state.magFilter === TextureFilter.LinearMipLinear ||
         state.magFilter === TextureFilter.LinearMipPoint) {
-        state.magFilter = TextureFilter.Linear;
+        state.magFilter = TextureFilter.Linear
       }
       else if (state.magFilter === TextureFilter.PointMipLinear ||
         state.magFilter === TextureFilter.PointMipLinear) {
-        state.magFilter = TextureFilter.Point;
+        state.magFilter = TextureFilter.Point
       }
-      return state;
+      return state
     }
 
-    static Default = {
+    static Default = Object.freeze({
       minFilter: TextureFilter.PointMipLinear,
       magFilter: TextureFilter.Point,
       wrapU: TextureWrapMode.Clamp,
       wrapV: TextureWrapMode.Clamp
-    };
+    })
 
-    static LinearClamp = {
+    static LinearClamp = Object.freeze({
       minFilter: TextureFilter.LinearMipLinear,
       magFilter: TextureFilter.Linear,
       wrapU: TextureWrapMode.Clamp,
       wrapV: TextureWrapMode.Clamp
-    };
+    })
 
-    static LinearWrap = {
+    static LinearWrap = Object.freeze({
       minFilter: TextureFilter.LinearMipLinear,
       magFilter: TextureFilter.Linear,
       wrapU: TextureWrapMode.Repeat,
       wrapV: TextureWrapMode.Repeat
-    };
+    })
 
-    static PointClamp = {
+    static PointClamp = Object.freeze({
       minFilter: TextureFilter.PointMipLinear,
       magFilter: TextureFilter.Point,
       wrapU: TextureWrapMode.Clamp,
       wrapV: TextureWrapMode.Clamp
-    };
+    })
 
-    static PointWrap = {
+    static PointWrap = Object.freeze({
       minFilter: TextureFilter.PointMipLinear,
       magFilter: TextureFilter.Point,
       wrapU: TextureWrapMode.Repeat,
       wrapV: TextureWrapMode.Repeat
-    };
+    })
   }
-  Object.freeze(SamplerState.Default);
-  Object.freeze(SamplerState.LinearClamp);
-  Object.freeze(SamplerState.LinearWrap);
-  Object.freeze(SamplerState.PointClamp);
-  Object.freeze(SamplerState.PointWrap);
 }

@@ -1,326 +1,306 @@
 module Glib.Graphics {
 
+  let propertyKeys = [
+    'enable',
+    'stencilFunction',
+    'stencilReference',
+    'stencilMask',
+    'stencilFail',
+    'stencilDepthFail',
+    'stencilDepthPass',
+    'stencilBackFunction',
+    'stencilBackReference',
+    'stencilBackMask',
+    'stencilBackFail',
+    'stencilBackDepthFail',
+    'stencilBackDepthPass'
+  ]
+
   export interface StencilStateOptions {
-    enable?: boolean;
-    stencilFunction?: number;
-    stencilReference?: number;
-    stencilMask?: number;
-    stencilFail?: number;
-    stencilDepthFail?: number;
-    stencilDepthPass?: number;
-    stencilBackFunction?: number;
-    stencilBackReference?: number;
-    stencilBackMask?: number;
-    stencilBackFail?: number;
-    stencilBackDepthFail?: number;
-    stencilBackDepthPass?: number;
+    enable?: boolean
+    stencilFunction?: number
+    stencilReference?: number
+    stencilMask?: number
+    stencilFail?: number
+    stencilDepthFail?: number
+    stencilDepthPass?: number
+    stencilBackFunction?: number
+    stencilBackReference?: number
+    stencilBackMask?: number
+    stencilBackFail?: number
+    stencilBackDepthFail?: number
+    stencilBackDepthPass?: number
   }
 
   export class StencilState implements StencilStateOptions {
-    device:Device;
-    gl:any;
-    _enable:boolean = false;
-    _stencilFunction:number = CompareFunction.Always;
-    _stencilReference:number = 0;
-    _stencilMask:number = 0xffffffff;
-    _stencilFail:number = StencilOperation.Keep;
-    _stencilDepthFail:number = StencilOperation.Keep;
-    _stencilDepthPass:number = StencilOperation.Keep;
-    _stencilBackFunction:number = CompareFunction.Always;
-    _stencilBackReference:number = 0;
-    _stencilBackMask:number = 0xffffffff;
-    _stencilBackFail:number = StencilOperation.Keep;
-    _stencilBackDepthFail:number = StencilOperation.Keep;
-    _stencilBackDepthPass:number = StencilOperation.Keep;
-    _changes:StencilStateOptions = {};
-    _changed:boolean = false;
+    device:Device
+    gl:WebGLRenderingContext
+    private enableField:boolean = false
+    private stencilFunctionField:number = CompareFunction.Always
+    private stencilReferenceField:number = 0
+    private stencilMaskField:number = 0xffffffff
+    private stencilFailField:number = StencilOperation.Keep
+    private stencilDepthFailField:number = StencilOperation.Keep
+    private stencilDepthPassField:number = StencilOperation.Keep
+    private stencilBackFunctionField:number = CompareFunction.Always
+    private stencilBackReferenceField:number = 0
+    private stencilBackMaskField:number = 0xffffffff
+    private stencilBackFailField:number = StencilOperation.Keep
+    private stencilBackDepthFailField:number = StencilOperation.Keep
+    private stencilBackDepthPassField:number = StencilOperation.Keep
+    private changes:StencilStateOptions = {}
+    private hasChanged:boolean = false
 
     constructor(device:Device, state?:StencilStateOptions) {
-      this.device = device;
-      this.gl = device.context;
-      this.resolve();
-      this.extend(state);
+      this.device = device
+      this.gl = device.context
+      this.resolve()
+      if (state) this.assign(state)
     }
 
     get stencilFunction():number {
-      return this._stencilFunction;
+      return this.stencilFunctionField
     }
 
     get stencilFunctionName():string {
-      return CompareFunctionName[this._stencilFunction];
+      return CompareFunctionName[this.stencilFunctionField]
     }
 
     set stencilFunction(value:number) {
-      if (this._stencilFunction !== value) {
-        this._stencilFunction = value;
-        this._changes.stencilFunction = value;
-        this._changed = true;
+      if (this.stencilFunctionField !== value) {
+        this.stencilFunctionField = value
+        this.changes.stencilFunction = value
+        this.hasChanged = true
       }
     }
 
     get stencilBackFunction():number {
-      return this._stencilBackFunction;
+      return this.stencilBackFunctionField
     }
 
     get stencilBackFunctionName():string {
-      return CompareFunctionName[this._stencilBackFunction];
+      return CompareFunctionName[this.stencilBackFunctionField]
     }
 
     set stencilBackFunction(value:number) {
-      if (this._stencilBackFunction !== value) {
-        this._stencilBackFunction = value;
-        this._changes.stencilBackFunction = value;
-        this._changed = true;
+      if (this.stencilBackFunctionField !== value) {
+        this.stencilBackFunctionField = value
+        this.changes.stencilBackFunction = value
+        this.hasChanged = true
       }
     }
 
     get stencilFail():number {
-      return this._stencilFail;
+      return this.stencilFailField
     }
 
     get stencilFailName():string {
-      return CompareFunctionName[this._stencilFail];
+      return CompareFunctionName[this.stencilFailField]
     }
 
     set stencilFail(value:number) {
-      if (this._stencilFail !== value) {
-        this._stencilFail = value;
-        this._changes.stencilFail = value;
-        this._changed = true;
+      if (this.stencilFailField !== value) {
+        this.stencilFailField = value
+        this.changes.stencilFail = value
+        this.hasChanged = true
       }
     }
 
     get stencilDepthFail():number {
-      return this._stencilDepthFail;
+      return this.stencilDepthFailField
     }
 
     get stencilDepthFailName():string {
-      return CompareFunctionName[this._stencilDepthFail];
+      return CompareFunctionName[this.stencilDepthFailField]
     }
 
     set stencilDepthFail(value:number) {
-      if (this._stencilDepthFail !== value) {
-        this._stencilDepthFail = value;
-        this._changes.stencilDepthFail = value;
-        this._changed = true;
+      if (this.stencilDepthFailField !== value) {
+        this.stencilDepthFailField = value
+        this.changes.stencilDepthFail = value
+        this.hasChanged = true
       }
     }
 
     get stencilDepthPass():number {
-      return this._stencilDepthPass;
+      return this.stencilDepthPassField
     }
 
     get stencilDepthPassName():string {
-      return CompareFunctionName[this._stencilDepthPass];
+      return CompareFunctionName[this.stencilDepthPassField]
     }
 
     set stencilDepthPass(value:number) {
-      if (this._stencilDepthPass !== value) {
-        this._stencilDepthPass = value;
-        this._changes.stencilDepthPass = value;
-        this._changed = true;
+      if (this.stencilDepthPassField !== value) {
+        this.stencilDepthPassField = value
+        this.changes.stencilDepthPass = value
+        this.hasChanged = true
       }
     }
 
     get stencilBackFail():number {
-      return this._stencilBackFail;
+      return this.stencilBackFailField
     }
 
     get stencilBackFailName():string {
-      return CompareFunctionName[this._stencilBackFail];
+      return CompareFunctionName[this.stencilBackFailField]
     }
 
     set stencilBackFail(value:number) {
-      if (this._stencilBackFail !== value) {
-        this._stencilBackFail = value;
-        this._changes.stencilBackFail = value;
-        this._changed = true;
+      if (this.stencilBackFailField !== value) {
+        this.stencilBackFailField = value
+        this.changes.stencilBackFail = value
+        this.hasChanged = true
       }
     }
 
     get stencilBackDepthFail():number {
-      return this._stencilBackDepthFail;
+      return this.stencilBackDepthFailField
     }
 
     get stencilBackDepthFailName():string {
-      return CompareFunctionName[this._stencilBackDepthFail];
+      return CompareFunctionName[this.stencilBackDepthFailField]
     }
 
     set stencilBackDepthFail(value:number) {
-      if (this._stencilBackDepthFail !== value) {
-        this._stencilBackDepthFail = value;
-        this._changes.stencilBackDepthFail = value;
-        this._changed = true;
+      if (this.stencilBackDepthFailField !== value) {
+        this.stencilBackDepthFailField = value
+        this.changes.stencilBackDepthFail = value
+        this.hasChanged = true
       }
     }
 
     get stencilBackDepthPass():number {
-      return this._stencilBackDepthPass;
+      return this.stencilBackDepthPassField
     }
 
     get stencilBackDepthPassName():string {
-      return CompareFunctionName[this._stencilBackDepthPass];
+      return CompareFunctionName[this.stencilBackDepthPassField]
     }
 
     set stencilBackDepthPass(value:number) {
-      if (this._stencilBackDepthPass !== value) {
-        this._stencilBackDepthPass = value;
-        this._changes.stencilBackDepthPass = value;
-        this._changed = true;
+      if (this.stencilBackDepthPassField !== value) {
+        this.stencilBackDepthPassField = value
+        this.changes.stencilBackDepthPass = value
+        this.hasChanged = true
       }
     }
 
     get stencilReference():number {
-      return this._stencilReference;
+      return this.stencilReferenceField
     }
 
     set stencilReference(value:number) {
-      if (this._stencilReference !== value) {
-        this._stencilReference = value;
-        this._changes.stencilReference = value;
-        this._changed = true;
+      if (this.stencilReferenceField !== value) {
+        this.stencilReferenceField = value
+        this.changes.stencilReference = value
+        this.hasChanged = true
       }
     }
 
     get stencilMask():number {
-      return this._stencilMask;
+      return this.stencilMaskField
     }
 
     set stencilMask(value:number) {
-      if (this._stencilMask !== value) {
-        this._stencilMask = value;
-        this._changes.stencilMask = value;
-        this._changed = true;
+      if (this.stencilMaskField !== value) {
+        this.stencilMaskField = value
+        this.changes.stencilMask = value
+        this.hasChanged = true
       }
     }
 
     get stencilBackReference():number {
-      return this._stencilBackReference;
+      return this.stencilBackReferenceField
     }
 
     set stencilBackReference(value:number) {
-      if (this._stencilBackReference !== value) {
-        this._stencilBackReference = value;
-        this._changes.stencilBackReference = value;
-        this._changed = true;
+      if (this.stencilBackReferenceField !== value) {
+        this.stencilBackReferenceField = value
+        this.changes.stencilBackReference = value
+        this.hasChanged = true
       }
     }
 
     get stencilBackMask():number {
-      return this._stencilBackMask;
+      return this.stencilBackMaskField
     }
 
     set stencilBackMask(value:number) {
-      if (this._stencilBackMask !== value) {
-        this._stencilBackMask = value;
-        this._changes.stencilBackMask = value;
-        this._changed = true;
+      if (this.stencilBackMaskField !== value) {
+        this.stencilBackMaskField = value
+        this.changes.stencilBackMask = value
+        this.hasChanged = true
       }
     }
 
     get enable():boolean {
-      return this._enable;
+      return this.enableField
     }
 
     set enable(value:boolean) {
-      if (this._enable !== value) {
-        this._enable = value;
-        this._changes.enable = value;
-        this._changed = true;
+      if (this.enableField !== value) {
+        this.enableField = value
+        this.changes.enable = value
+        this.hasChanged = true
       }
     }
 
-    extend(state:StencilStateOptions={}):StencilState {
-      utils.extend(this, state);
+    assign(state:StencilStateOptions={}):StencilState {
+      for (let key of propertyKeys) {
+        if (state.hasOwnProperty(key)) this[key] = state[key]
+      } 
       return this
     }
 
     commit(state?:StencilStateOptions):StencilState {
-      this.extend(state);
+      if (state) this.assign(state)
+      if (!this.hasChanged) return this
 
-      if (!this._changed) {
-        return this;
+      let gl = this.gl
+      let changes = this.changes;
+
+      var enable = changes.enable
+      if (enable === true) {
+        gl.enable(gl.STENCIL_TEST)
+      } else if (enable === false) {
+        gl.disable(gl.STENCIL_TEST)
       }
 
-      var changes = this._changes;
-
-      if (changes.stencilFunction !== undefined ||
-        changes.stencilReference !== undefined ||
-        changes.stencilMask !== undefined) {
-        changes.stencilFunction = this.stencilFunction;
-        changes.stencilReference = this.stencilReference;
-        changes.stencilMask = this.stencilMask;
+      if (changes.stencilFunction !== null || changes.stencilReference !== null || changes.stencilMask !== null) {
+        gl.stencilFuncSeparate(CullMode.Front, this.stencilFunction, this.stencilReference, this.stencilMask)
       }
 
-      if (changes.stencilFail !== undefined ||
-        changes.stencilDepthFail !== undefined ||
-        changes.stencilDepthPass !== undefined) {
-        changes.stencilFail = this.stencilFail;
-        changes.stencilDepthFail = this.stencilDepthFail;
-        changes.stencilDepthPass = this.stencilDepthPass;
+      if (changes.stencilFail !== null || changes.stencilDepthFail !== null || changes.stencilDepthPass !== null) {
+        gl.stencilOpSeparate(CullMode.Front, this.stencilFail, this.stencilDepthFail, this.stencilDepthPass)
       }
 
-      if (changes.stencilBackFunction !== undefined ||
-        changes.stencilBackReference !== undefined ||
-        changes.stencilBackMask !== undefined) {
-        changes.stencilBackFunction = this.stencilBackFunction;
-        changes.stencilBackReference = this.stencilBackReference;
-        changes.stencilBackMask = this.stencilBackMask;
+      if (changes.stencilBackFunction !== null || changes.stencilBackReference !== null || changes.stencilBackMask !== null) {
+        gl.stencilFuncSeparate(CullMode.Back, this.stencilBackFunction, this.stencilBackReference, this.stencilBackMask)
       }
 
-      if (changes.stencilBackFail !== undefined ||
-        changes.stencilBackDepthFail !== undefined ||
-        changes.stencilBackDepthPass !== undefined) {
-        changes.stencilBackFail = this.stencilBackFail;
-        changes.stencilBackDepthFail = this.stencilBackDepthFail;
-        changes.stencilBackDepthPass = this.stencilBackDepthPass;
+      if (changes.stencilBackFail !== null || changes.stencilBackDepthFail !== null || changes.stencilBackDepthPass !== null) {
+        gl.stencilOpSeparate(CullMode.Back, this.stencilBackFail, this.stencilBackDepthFail, this.stencilBackDepthPass)
       }
 
-
-      StencilState.commit(this.gl, changes);
-      this._clearChanges();
-      return this;
+      this.clearChanges()
+      return this
     }
 
     resolve():StencilState {
-      StencilState.resolve(this.gl, this);
-      this._clearChanges();
-      return this;
+      StencilState.resolve(this.gl, this)
+      this.clearChanges()
+      return this
     }
 
-    dump(out?:any):StencilStateOptions {
-      out = out || {};
-      out.enable = this.enable;
-      out.stencilFunction = this.stencilFunction;
-      out.stencilReference = this.stencilReference;
-      out.stencilMask = this.stencilMask;
-      out.stencilFail = this.stencilFail;
-      out.stencilDepthFail = this.stencilDepthFail;
-      out.stencilDepthPass = this.stencilDepthPass;
-      out.stencilBackFunction = this.stencilBackFunction;
-      out.stencilBackReference = this.stencilBackReference;
-      out.stencilBackMask = this.stencilBackMask;
-      out.stencilBackFail = this.stencilBackFail;
-      out.stencilBackDepthFail = this.stencilBackDepthFail;
-      out.stencilBackDepthPass = this.stencilBackDepthPass;
-      return out;
+    copy(out:any={}):StencilStateOptions {
+      for (let key of propertyKeys) out[key] = this[key]
+      return out
     }
 
-    private _clearChanges(){
-      this._changed = false;
-      this._changes.enable = undefined;
-      this._changes.stencilFunction = undefined;
-      this._changes.stencilReference = undefined;
-      this._changes.stencilMask = undefined;
-      this._changes.stencilFail = undefined;
-      this._changes.stencilDepthFail = undefined;
-      this._changes.stencilDepthPass = undefined;
-      this._changes.stencilBackFunction = undefined;
-      this._changes.stencilBackReference = undefined;
-      this._changes.stencilBackMask = undefined;
-      this._changes.stencilBackFail = undefined;
-      this._changes.stencilBackDepthFail = undefined;
-      this._changes.stencilBackDepthPass = undefined;
+    private clearChanges(){
+      this.hasChanged = false
+      for (let key of propertyKeys) this.changes[key] = undefined
     }
 
     static convert(state:any):StencilStateOptions {
@@ -328,98 +308,59 @@ module Glib.Graphics {
         state = StencilState[state];
       }
       if (!state) {
-        return state;
+        return state
       }
       if (state.stencilFunction) {
-        state.stencilFunction = CompareFunction[state.stencilFunction];
+        state.stencilFunction = CompareFunction[state.stencilFunction]
       }
       if (state.stencilBackFunction) {
-        state.stencilBackFunction = CompareFunction[state.stencilBackFunction];
+        state.stencilBackFunction = CompareFunction[state.stencilBackFunction]
       }
 
       if (state.stencilFail) {
-        state.stencilFail = StencilOperation[state.stencilFail];
+        state.stencilFail = StencilOperation[state.stencilFail]
       }
       if (state.stencilDepthFail) {
-        state.stencilDepthFail = StencilOperation[state.stencilDepthFail];
+        state.stencilDepthFail = StencilOperation[state.stencilDepthFail]
       }
       if (state.stencilDepthPass) {
-        state.stencilDepthPass = StencilOperation[state.stencilDepthPass];
+        state.stencilDepthPass = StencilOperation[state.stencilDepthPass]
       }
 
       if (state.stencilBackFail) {
-        state.stencilBackFail = StencilOperation[state.stencilBackFail];
+        state.stencilBackFail = StencilOperation[state.stencilBackFail]
       }
       if (state.stencilBackDepthFail) {
-        state.stencilBackDepthFail = StencilOperation[state.stencilBackDepthFail];
+        state.stencilBackDepthFail = StencilOperation[state.stencilBackDepthFail]
       }
       if (state.stencilBackDepthPass) {
-        state.stencilBackDepthPass = StencilOperation[state.stencilBackDepthPass];
+        state.stencilBackDepthPass = StencilOperation[state.stencilBackDepthPass]
       }
       return state;
     }
 
-    static commit(gl:any, state:StencilStateOptions) {
-      var enable = state.enable;
-      if (enable === true) {
-        gl.enable(gl.STENCIL_TEST);
-      } else if (enable === false) {
-        gl.disable(gl.STENCIL_TEST);
-      }
+    static resolve(gl, out:any={}):StencilStateOptions {
+      out.enable = gl.getParameter(gl.STENCIL_TEST)
 
-      var stencilFunction = state.stencilFunction;
-      var stencilReference = state.stencilReference;
-      var stencilMask = state.stencilMask;
-      if (stencilFunction !== undefined && stencilReference !== undefined && stencilMask !== undefined) {
-        gl.stencilFuncSeparate(CullMode.Front, stencilFunction, stencilReference, stencilMask);
-      }
+      out.stencilFunction = gl.getParameter(gl.STENCIL_FUNC)
+      out.stencilReference = gl.getParameter(gl.STENCIL_REF)
+      out.stencilMask = gl.getParameter(gl.STENCIL_VALUE_MASK)
 
-      var stencilFail = state.stencilFail;
-      var stencilDepthFail = state.stencilDepthFail;
-      var stencilDepthPass = state.stencilDepthPass;
-      if (stencilFail !== undefined && stencilDepthFail !== undefined && stencilDepthPass !== undefined) {
-        gl.stencilOpSeparate(CullMode.Front, stencilFail, stencilDepthFail, stencilDepthPass);
-      }
+      out.stencilFail = gl.getParameter(gl.STENCIL_FAIL)
+      out.stencilDepthFail = gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL)
+      out.stencilDepthPass = gl.getParameter(gl.STENCIL_PASS_DEPTH_PASS)
 
-      var stencilBackFunction = state.stencilBackFunction;
-      var stencilBackReference = state.stencilBackReference;
-      var stencilBackMask = state.stencilBackMask;
-      if (stencilBackFunction !== undefined && stencilBackReference !== undefined && stencilBackMask !== undefined) {
-        gl.stencilFuncSeparate(CullMode.Back, stencilBackFunction, stencilBackReference, stencilBackMask);
-      }
+      out.stencilBackFunction = gl.getParameter(gl.STENCIL_BACK_FUNC)
+      out.stencilBackReference = gl.getParameter(gl.STENCIL_BACK_REF)
+      out.stencilBackMask = gl.getParameter(gl.STENCIL_BACK_VALUE_MASK)
 
-      var stencilBackFail = state.stencilBackFail;
-      var stencilBackDepthFail = state.stencilBackDepthFail;
-      var stencilBackDepthPass = state.stencilBackDepthPass;
-      if (stencilBackFail !== undefined && stencilBackDepthFail !== undefined && stencilBackDepthPass !== undefined) {
-        gl.stencilOpSeparate(CullMode.Back, stencilBackFail, stencilBackDepthFail, stencilBackDepthPass);
-      }
+      out.stencilBackFail = gl.getParameter(gl.STENCIL_BACK_FAIL)
+      out.stencilBackDepthFail = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_FAIL)
+      out.stencilBackDepthPass = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_PASS)
+      return out
     }
 
-    static resolve(gl, out?:any):StencilStateOptions {
-      out = out || {};
-
-      out.enable = gl.getParameter(gl.STENCIL_TEST);
-
-      out.stencilFunction = gl.getParameter(gl.STENCIL_FUNC);
-      out.stencilReference = gl.getParameter(gl.STENCIL_REF);
-      out.stencilMask = gl.getParameter(gl.STENCIL_VALUE_MASK);
-
-      out.stencilFail = gl.getParameter(gl.STENCIL_FAIL);
-      out.stencilDepthFail = gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL);
-      out.stencilDepthPass = gl.getParameter(gl.STENCIL_PASS_DEPTH_PASS);
-
-      out.stencilBackFunction = gl.getParameter(gl.STENCIL_BACK_FUNC);
-      out.stencilBackReference = gl.getParameter(gl.STENCIL_BACK_REF);
-      out.stencilBackMask = gl.getParameter(gl.STENCIL_BACK_VALUE_MASK);
-
-      out.stencilBackFail = gl.getParameter(gl.STENCIL_BACK_FAIL);
-      out.stencilBackDepthFail = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_FAIL);
-      out.stencilBackDepthPass = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_PASS);
-      return out;
-    }
-
-    static Default = {
+    static Default = Object.freeze({
       enable: false,
 
       // front face stencil
@@ -439,7 +380,6 @@ module Glib.Graphics {
       stencilBackFail: StencilOperation.Keep,
       stencilBackDepthFail: StencilOperation.Keep,
       stencilBackDepthPass: StencilOperation.Keep
-    }
+    })
   }
-  Object.freeze(StencilState.Default);
 }

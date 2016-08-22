@@ -1,5 +1,7 @@
 module Glib.Graphics {
 
+  let propertyKeys = ['frontFace','cullMode','culling']
+
   export interface CullStateOptions {
     frontFace?: number
     cullMode?: number
@@ -7,172 +9,155 @@ module Glib.Graphics {
   }
 
   export class CullState implements CullStateOptions {
-    device:Device;
-    gl:any;
-    _frontFace:number = FrontFace.CounterClockWise;
-    _cullMode:number = CullMode.Back;
-    _culling:boolean = false;
-    _changed:boolean = false;
-    _changes:CullStateOptions = {};
+    device:Device
+    gl:WebGLRenderingContext
+    private frontFaceField:number = FrontFace.CounterClockWise
+    private cullModeField:number = CullMode.Back
+    private cullingField:boolean = false
+    private hasChanged:boolean = false
+    private changes:CullStateOptions = {}
 
     constructor(device:Device, state?:CullStateOptions) {
-      this.device = device;
-      this.gl = device.context;
-      this.resolve();
-      this.extend(state);
+      this.device = device
+      this.gl = device.context
+      this.resolve()
+      if (state) this.assign(state)
     }
     
     get culling():boolean {
-      return this._culling;
+      return this.cullingField
     }
 
     set culling(value:boolean) {
-      if (this._culling !== value) {
-        this._culling = value;
-        this._changes.culling = value;
-        this._changed = true;
+      if (this.cullingField !== value) {
+        this.cullingField = value
+        this.changes.culling = value
+        this.hasChanged = true
       }
     }
 
     get frontFace():number {
-      return this._frontFace;
+      return this.frontFaceField
     }
 
     get frontFaceName():string {
-      return FrontFaceName[this.frontFace];
+      return FrontFaceName[this.frontFace]
     }
 
     set frontFace(value:number) {
-      if (this._frontFace !== value) {
-        this._frontFace = value;
-        this._changes.frontFace = value;
-        this._changed = true;
+      if (this.frontFaceField !== value) {
+        this.frontFaceField = value
+        this.changes.frontFace = value
+        this.hasChanged = true
       }
     }
 
 
     get cullMode():number {
-      return this._cullMode;
+      return this.cullModeField
     }
 
     get cullModeName():string {
-      return CullModeName[this.cullMode];
+      return CullModeName[this.cullMode]
     }
 
     set cullMode(value:number) {
-      if (this._cullMode !== value) {
-        this._cullMode = value;
-        this._changes.cullMode = value;
-        this._changed = true;
+      if (this.cullModeField !== value) {
+        this.cullModeField = value
+        this.changes.cullMode = value
+        this.hasChanged = true
       }
     }
 
-    extend(state:CullStateOptions={}):CullState {
-      utils.extend(this, state);
+    assign(state:CullStateOptions):CullState {
+      for (let key of propertyKeys) {
+        if (state.hasOwnProperty(key)) this[key] = state[key]
+      } 
       return this
     }
 
     commit(state?:CullStateOptions):CullState {
-      this.extend(state);
-
-      if (!this._changed) {
-        return this;
+      if (state) this.assign(state)
+      if (!this.hasChanged) return this
+      let gl = this.gl
+      let changes = this.changes
+      if (changes.culling === true) {
+        gl.enable(gl.CULL_FACE)
+      } 
+      if (changes.culling === false) {
+        gl.disable(gl.CULL_FACE)
       }
-
-      CullState.commit(this.gl, this._changes);
-      this._clearChanges();
-      return this;
+      if (changes.cullMode !== null) {
+        gl.cullFace(this.cullMode)
+      }
+      if (changes.frontFace !== null) {
+        gl.frontFace(this.frontFace)
+      }
+      this.clearChanges()
+      return this
     }
 
     resolve():CullState {
-      CullState.resolve(this.gl, this);
-      this._clearChanges();
-      return this;
+      CullState.resolve(this.gl, this)
+      this.clearChanges()
+      return this
     }
 
-    dump(out?:any):CullStateOptions {
-      out = out || {};
-      out.culling = this.culling;
-      out.cullMode = this.cullMode;
-      out.frontFace = this.frontFace;
-      return out;
+    copy(out:any={}):CullStateOptions {
+      for (let key of propertyKeys) out[key] = this[key]
+      return out
     }
 
-    private _clearChanges() {
-      this._changes.culling = undefined;
-      this._changes.cullMode = undefined;
-      this._changes.frontFace = undefined;
-      this._changed = false;
+    private clearChanges() {
+      this.hasChanged = false
+      for (let key of propertyKeys) this.changes[key] = undefined
     }
 
     static convert(state:any):CullStateOptions {
       if (typeof state === 'string') {
-        state = CullState[state];
+        state = CullState[state]
       }
       if (!state) {
-        return state;
+        return state
       }
       if (state.cullMode) {
-        state.cullMode = CullMode[state.cullMode];
+        state.cullMode = CullMode[state.cullMode]
       }
       if (state.frontFace) {
-        state.frontFace = FrontFace[state.frontFace];
+        state.frontFace = FrontFace[state.frontFace]
       }
-      return state;
+      return state
     }
 
-    static commit(gl:any, state:CullStateOptions) {
-      var culling = state.culling;
-      var cullMode = state.cullMode;
-      var frontFace = state.frontFace;
-
-      if (culling === true) {
-        gl.enable(gl.CULL_FACE);
-      } else if (culling === false) {
-        gl.disable(gl.CULL_FACE);
-      }
-      if (cullMode !== undefined) {
-        gl.cullFace(cullMode);
-      }
-      if (frontFace !== undefined) {
-        gl.frontFace(frontFace);
-      }
+    static resolve(gl:any, out:any={}):CullStateOptions {
+      out.frontFace = gl.getParameter(gl.FRONT_FACE)
+      out.culling = gl.getParameter(gl.CULL_FACE)
+      out.cullMode = gl.getParameter(gl.CULL_FACE_MODE)
+      return out
     }
 
-    static resolve(gl:any, out?:any):CullStateOptions {
-      out = out || {};
-      out.frontFace = gl.getParameter(gl.FRONT_FACE);
-      out.culling = gl.getParameter(gl.CULL_FACE);
-      out.cullMode = gl.getParameter(gl.CULL_FACE_MODE);
-      return out;
-    }
-
-    static Default = {
+    static Default = Object.freeze({
       culling: false,
       cullMode: CullMode.Back,
       frontFace: FrontFace.CounterClockWise
-    };
+    })
 
-    static CullNone = {
+    static CullNone = Object.freeze({
       culling: false,
       cullMode: CullMode.Back,
       frontFace: FrontFace.CounterClockWise
-    };
+    })
 
-    static CullClockWise = {
+    static CullClockWise = Object.freeze({
       culling: true,
       cullMode: CullMode.Back,
       frontFace: FrontFace.CounterClockWise
-    };
+    })
 
-    static CullCounterClockWise = {
+    static CullCounterClockWise = Object.freeze({
       culling: true,
       cullMode: CullMode.Back,
       frontFace: FrontFace.ClockWise
-    };
+    })
   }
-  Object.freeze(CullState.Default);
-  Object.freeze(CullState.CullNone);
-  Object.freeze(CullState.CullClockWise);
-  Object.freeze(CullState.CullCounterClockWise);
 }

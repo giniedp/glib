@@ -21,7 +21,10 @@ module Glib {
       Glib.Vec3.min(this.min, other.min, this.min);
       Glib.Vec3.max(this.max, other.max, this.max);
     }
-
+    mergePoint(point:IVec3){
+      Glib.Vec3.min(this.min, point, this.min);
+      Glib.Vec3.max(this.max, point, this.max);
+    }
     intersectsRay(ray:Ray):boolean {
       return Collision.intersectsRayBox(ray, this);
     }

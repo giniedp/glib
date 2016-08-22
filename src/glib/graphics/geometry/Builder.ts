@@ -26,7 +26,9 @@ module Glib.Graphics.Geometry {
     vertexBuffer:BufferOptions;
     vertexCount:number;
     maxVertexCount = 65536;
-    
+    boundingBox:BoundingBox
+    boundingSphere:BoundingSphere
+
     constructor(options:BuilderOptions = {}) {
 
       this.layout = Graphics.VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent');
@@ -98,6 +100,9 @@ module Glib.Graphics.Geometry {
       this.indexCount = 0;
       this.vertexCount = 0;
       this.sGroups = [];
+
+      this.boundingBox = new BoundingBox()
+      this.boundingSphere = new BoundingSphere()
     }
 
     private resetMeshes() {
@@ -137,7 +142,7 @@ module Glib.Graphics.Geometry {
       var that = this;
       var channel, item, i, layout = this.vertexBuffer.layout, defaults = this.defaultAttributes;
 
-      Object.keys(layout).forEach(function (key:string) {
+      Object.keys(layout).forEach((key:string) => {
         channel = layout[key];
         item = vertex[key] || that.defaultAttributes[key];
 
@@ -151,9 +156,12 @@ module Glib.Graphics.Geometry {
         item = item || defaults[key];
 
         if (this.ignoreTransform) {
-          // do nothing
+          if (key == 'position') {
+            this.mergeBounding(item)
+          }
         } else if (key == 'position') {
           that.transform.transformV3Buffer(item);
+          this.mergeBounding(item)
         } else if (key.match('normal|tangent')) {
           that.transform.transformNormalBuffer(item);
         } else if (key.match('texture|uv')) {
@@ -165,6 +173,25 @@ module Glib.Graphics.Geometry {
       });
       this.vertexCount += 1;
       return this;
+    }
+
+    private mergeBounding(item) {
+      if (this.vertexCount == 0) {
+        this.boundingSphere.center.x = item[0]
+        this.boundingSphere.center.y = item[1]
+        this.boundingSphere.center.z = item[2]
+
+        this.boundingBox.min.x = item[0]
+        this.boundingBox.min.y = item[1]
+        this.boundingBox.min.z = item[2] 
+
+        this.boundingBox.max.x = item[0]
+        this.boundingBox.max.y = item[1]
+        this.boundingBox.max.z = item[2]
+      } else {
+        this.boundingSphere.mergePoint({ x: item[0], y: item[1], z: item[2] })
+        this.boundingBox.mergePoint({ x: item[0], y: item[1], z: item[2] })
+      }
     }
 
     calculateNormalsAndTangents(){
@@ -231,6 +258,8 @@ module Glib.Graphics.Geometry {
       options.materialId = options.materialId || 0;
       options.indexBuffer = this.indexBuffer;
       options.vertexBuffer = this.vertexBuffer;
+      options.boundingBox = this.boundingBox
+      options.boundingSphere = this.boundingSphere
 
       this.meshes.push(options);
       this.resetData();

@@ -12,15 +12,16 @@ module Glib.utils {
   }
 
   /**
-   * Picks entries from the given source object.
+   * Picks properties from the given source object if they are not undefined
    */
-  export function pick<T>(src:T):any {
-    var i, key, result = {};
+  export function pick(src:any, k1?:string, k2?:string, k3?:string, k4?:string, k5?:string, k6?:string, k7?:string, k8?:string, k9?:string, k10?:string):any {
+    var i, key, value, result = {};
     for (i = 1; i < arguments.length; i += 1) {
-      key = arguments[i];
-      result[key] = src[key];
+      key = arguments[i]
+      value = src[key]
+      if (value !== void 0) result[key] = value
     }
-    return result;
+    return result
   }
 
   /**

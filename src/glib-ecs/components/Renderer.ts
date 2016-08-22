@@ -2,7 +2,7 @@ module Glib.Components {
 
   export interface CullVisitor {
     start(entity:Entity, context:Render.Binder)
-    add(mesh:Graphics.ModelMesh, material:Graphics.ShaderMaterial, world:Glib.Mat4, params?:any)
+    add(mesh:Graphics.ModelMesh, material:Graphics.ShaderEffect, world:Glib.Mat4, params?:any)
   }
 
   export class Renderer implements Component {
@@ -95,7 +95,7 @@ module Glib.Components {
       }
     }
 
-    add(mesh:Graphics.ModelMesh, material:Graphics.ShaderMaterial, world:Glib.Mat4, params?:any) {
+    add(mesh:Graphics.ModelMesh, material:Graphics.ShaderEffect, world:Glib.Mat4, params?:any) {
       this.context.renderables.push({
         world: world,
         mesh: mesh,

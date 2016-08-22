@@ -1,12 +1,14 @@
 module Glib.Content {
 
   export class BinaryReader {
-    data:Uint8Array;
-    position:number;
+    data:Uint8Array
+    view:DataView
+    position:number
 
     constructor(data:Uint8Array) {
       this.data = data;
-      this.position = 0;
+      this.view = new DataView(this.data.buffer)
+      this.position = 0
     }
 
     get canRead() {
@@ -29,16 +31,33 @@ module Glib.Content {
       }
     }
 
+    readUByte():number {
+      return this.view.getUint8(this.position++)
+    }
     readByte():number {
-      return this.data[this.position++];
+      return this.view.getInt8(this.position++)
     }
 
+    readUShort():number {
+      let result = this.view.getUint16(this.position, true)
+      this.position += 2 
+      return result
+    }
     readShort():number {
-      return this.data[this.position++] | (this.data[this.position++] << 8);
+      let result = this.view.getInt16(this.position, true)
+      this.position += 2 
+      return result
     }
 
+    readUInt():number {
+      let result = this.view.getUint32(this.position, true)
+      this.position += 4
+      return result
+    }
     readInt():number {
-      return this.data[this.position++] | (this.data[this.position++] << 8) | (this.data[this.position++] << 16) | (this.data[this.position++] << 24);
+      let result = this.view.getInt32(this.position, true)
+      this.position += 4
+      return result
     }
 
     seekAbsolute(position:number) {

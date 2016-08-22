@@ -4,7 +4,7 @@ module Glib.Graphics {
     name?:string
     boundingBox?: number[]
     boundingSphere?: number[]
-    materials?: ShaderMaterial[]|ShaderMaterialOptions[]
+    materials?: ShaderEffect[]|ShaderEffectOptions[]
     meshes?: ModelMesh[]|ModelMeshOptions[]
   }
 
@@ -14,7 +14,7 @@ module Glib.Graphics {
     gl:any
     boundingBox:number[]
     boundingSphere:number[]
-    materials:ShaderMaterial[] = []
+    materials:ShaderEffect[] = []
     meshes:ModelMesh[] = []
 
     constructor(device:Device, params:ModelOptions) {
@@ -35,10 +35,10 @@ module Glib.Graphics {
 
       let materials = [].concat.apply([], params.materials || [])
       for (let material of materials) {
-        if (material instanceof ShaderMaterial) {
+        if (material instanceof ShaderEffect) {
           this.materials.push(material);
         } else {
-          this.materials.push(new ShaderMaterial(this.device, material));
+          this.materials.push(new ShaderEffect(this.device, material));
         }
       }
 
@@ -60,12 +60,12 @@ module Glib.Graphics {
 
     draw():Model {
       for (let mesh of this.meshes) {
-        let material = this.materials[mesh.materialId]
+        let material:ShaderEffect = this.materials[mesh.materialId] || this.materials[0]
         if (!material) continue
         let technique = material.technique
         if (!technique) continue
         for (let pass of technique.passes) {
-          pass.commit()
+          pass.commit(material.parameters) // TODO:
           mesh.draw(pass.program)
         }
       }

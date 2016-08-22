@@ -1,149 +1,128 @@
 module Glib.Graphics {
 
+  let propertyKeys = [
+    'offsetEnable',
+    'offsetFactor',
+    'offsetUnits'
+  ]
+
   export interface OffsetStateOptions {
-    offsetEnable?: boolean;
-    offsetFactor?: number;
-    offsetUnits?: number;
+    offsetEnable?: boolean
+    offsetFactor?: number
+    offsetUnits?: number
   }
 
   export class OffsetState implements OffsetStateOptions {
-    device:Device;
-    gl:any;
-    _offsetEnable:boolean = false;
-    _offsetFactor:number = 0;
-    _offsetUnits:number = 0;
-    _changed:boolean = false;
-    _changes:OffsetStateOptions = {};
+    device:Device
+    gl:WebGLRenderingContext
+    private offsetEnableField:boolean = false
+    private offsetFactorField:number = 0
+    private offsetUnitsField:number = 0
+    private hasChanged:boolean = false
+    private changes:OffsetStateOptions = {}
 
     constructor(device:Device, state?:OffsetStateOptions) {
-      this.device = device;
-      this.gl = device.context;
-      this.resolve();
-      this.extend(state);
+      this.device = device
+      this.gl = device.context
+      this.resolve()
+      if (state) this.assign(state)
     }
 
     get offsetEnable():boolean {
-      return this._offsetEnable;
+      return this.offsetEnableField
     }
 
     set offsetEnable(value:boolean) {
-      if (this._offsetEnable !== value) {
-        this._offsetEnable = value;
-        this._changes.offsetEnable = value;
-        this._changed = true;
+      if (this.offsetEnableField !== value) {
+        this.offsetEnableField = value
+        this.changes.offsetEnable = value
+        this.hasChanged = true
       }
     }
 
     get offsetFactor():number {
-      return this._offsetFactor;
+      return this.offsetFactorField
     }
 
     set offsetFactor(value:number) {
-      if (this._offsetFactor !== value) {
-        this._offsetFactor = value;
-        this._changes.offsetFactor = value;
-        this._changed = true;
+      if (this.offsetFactorField !== value) {
+        this.offsetFactorField = value
+        this.changes.offsetFactor = value
+        this.hasChanged = true
       }
     }
 
     get offsetUnits():number {
-      return this._offsetUnits;
+      return this.offsetUnitsField
     }
 
     set offsetUnits(value:number) {
-      if (this._offsetUnits !== value) {
-        this._offsetUnits = value;
-        this._changes.offsetUnits = value;
-        this._changed = true;
+      if (this.offsetUnitsField !== value) {
+        this.offsetUnitsField = value
+        this.changes.offsetUnits = value
+        this.hasChanged = true
       }
     }
 
-    extend(state:OffsetStateOptions={}):OffsetState {
-      utils.extend(this, state);
+    assign(state:OffsetStateOptions):OffsetState {
+      for (let key of propertyKeys) {
+        if (state.hasOwnProperty(key)) this[key] = state[key]
+      } 
       return this
     }
 
     commit(state?:OffsetStateOptions):OffsetState {
-      this.extend(state);
-
-      if (!this._changed) {
-        return this;
+      if (state) this.assign(state)
+      if (!this.hasChanged) return this
+      let changes = this.changes
+      let gl = this.gl
+      if (this.changes.offsetEnable === true) {
+        gl.enable(gl.POLYGON_OFFSET_FILL)
       }
-
-      var changes = this._changes;
-
-      if (changes.offsetFactor != null || changes.offsetUnits != null) {
-        changes.offsetFactor = this.offsetFactor;
-        changes.offsetUnits = this.offsetUnits;
+      if (this.changes.offsetEnable === false) {
+        gl.disable(gl.POLYGON_OFFSET_FILL)
       }
-
-      OffsetState.commit(this.gl, this._changes);
-      this._clearChanges();
-      return this;
+      if (this.changes.offsetFactor !== null || this.changes.offsetUnits !== null) {
+        gl.polygonOffset(this.offsetFactor, this.offsetUnits)
+      }
+      this.clearChanges()
+      return this
     }
 
-    dump(out?:any):OffsetStateOptions {
-      out = out || {};
-      out.offsetEnable = this.offsetEnable;
-      out.offsetFactor = this.offsetFactor;
-      out.offsetUnits = this.offsetUnits;
-      return out;
+    copy(out:any={}):OffsetStateOptions {
+      for (let key of propertyKeys) out[key] = this[key]
+      return out
     }
 
     resolve():OffsetState {
-      OffsetState.resolve(this.gl, this);
-      this._clearChanges();
-      return this;
+      OffsetState.resolve(this.gl, this)
+      this.clearChanges()
+      return this
     }
 
-    private _clearChanges(){
-      this._changed = false;
-      this._changes.offsetEnable = undefined;
-      this._changes.offsetFactor = undefined;
-      this._changes.offsetUnits = undefined;
+    private clearChanges(){
+      this.hasChanged = false
+      for (let key of propertyKeys) this.changes[key] = undefined
     }
 
     static convert(state:any):OffsetStateOptions {
       if (typeof state === 'string') {
-        state = OffsetState[state];
+        state = OffsetState[state]
       }
-      if (!state) {
-        return state;
-      }
-      return state;
+      return state
     }
 
-    static commit(gl:any, state:OffsetStateOptions) {
-      var enable = state.offsetEnable;
-      var factor = state.offsetFactor;
-      var units = state.offsetUnits;
-
-      if (enable !== undefined) {
-        if (enable) {
-          gl.enable(gl.POLYGON_OFFSET_FILL);
-        } else {
-          gl.disable(gl.POLYGON_OFFSET_FILL);
-        }
-      }
-      if (factor !== undefined && units !== undefined) {
-        gl.polygonOffset(factor, units);
-      }
+    static resolve(gl:any, out:any={}):OffsetStateOptions {
+      out.offsetEnable = gl.getParameter(gl.POLYGON_OFFSET_FILL)
+      out.offsetFactor = gl.getParameter(gl.POLYGON_OFFSET_FACTOR)
+      out.offsetUnits = gl.getParameter(gl.POLYGON_OFFSET_UNITS)
+      return out
     }
 
-    static resolve(gl:any, out?:any):OffsetStateOptions {
-      out = out || {};
-
-      out.offsetEnable = gl.getParameter(gl.POLYGON_OFFSET_FILL);
-      out.offsetFactor = gl.getParameter(gl.POLYGON_OFFSET_FACTOR);
-      out.offsetUnits = gl.getParameter(gl.POLYGON_OFFSET_UNITS);
-      return out;
-    }
-
-    static Default = {
+    static Default = Object.freeze({
       offsetEnable: false,
       offsetFactor: 0,
       offsetUnits: 0
-    }
+    })
   }
-  Object.freeze(OffsetState.Default);
 }

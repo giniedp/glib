@@ -45,7 +45,9 @@ module Glib.utils.path {
   }
 
   export function collapsePath(path) {
-    return normalizeArray(path.split(/\//)).join("/")
+    var result = normalizeArray(path.split(/\//)).join("/")
+    if (isAbsolute(path)) result = `/${result}`
+    return result
   }
 
   export function isAbsolute(path) {
@@ -69,18 +71,17 @@ module Glib.utils.path {
   }
 
   export function merge(a:string, b:string){
-    if (hasProtocol(b)) {
-      return b;
-    }
+    if (hasProtocol(b)) return b
 
-    var aUri = parseUri(a);
-    var bUri = parseUri(b);
-    var path = isAbsolute(b) ? b : aUri.directory + bUri.path;
-    path = collapsePath(path);
+    var aUri = parseUri(a)
+    var bUri = parseUri(b)
+    var path = isAbsolute(b) ? b : aUri.directory + bUri.path
+    path = collapsePath(path)
 
     var result = "";
-    if (aUri.protocol) result = aUri.protocol + "://";
-    if (aUri.authority) result += aUri.authority + "/";
+    if (aUri.protocol) result = aUri.protocol + "://"
+    if (aUri.authority) result += aUri.authority
+    if (!isAbsolute(path)) result += "/"
     return result + path;
   }
 }

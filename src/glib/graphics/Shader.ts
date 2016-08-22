@@ -1,22 +1,67 @@
 module Glib.Graphics {
 
+  /**
+   * The shader constructor options
+   */
   export interface ShaderOptions {
+    /**
+     * The shader source code
+     */
     source?: string,
+    /**
+     * The shader type e.g. VertexShader or Fragment shader
+     */
     type?: string|number,
+    /**
+     * A WebGLShader object to be reused
+     */
     handle?: WebGLShader
   }
 
+  /**
+   * 
+   */
   export class Shader {
+    /**
+     * A unique id
+     */
     uid:string
+    /**
+     * The graphics device
+     */
     device:Device
-    gl:any
+    /**
+     * The rendering context
+     */
+    gl:WebGLRenderingContext
+    /**
+     * The shader source code
+     */
     source:string
-    info:string
+    /**
+     * The shader type (as a  WebGL constant)
+     */
     type:number
+    /**
+     * The shader type (as readable name)
+     */
     typeName:string
+    /**
+     * The web gl shader instance
+     */
     handle:WebGLShader
+    /**
+     * Whether compilation was successfull
+     */
     compiled:boolean
+    /**
+     * The info log that is created after compilation holding error information
+     */
+    info:string
 
+    /**
+     * 
+     */
     constructor(device:Device, params:ShaderOptions={}) {
       this.uid = utils.uuid()
       this.device = device
@@ -40,6 +85,9 @@ module Glib.Graphics {
       }
     }
 
+    /**
+     * Releases the shader handle
+     */
     destroy():Shader {
       if (this.gl.isShader(this.handle)) {
         this.gl.deleteShader(this.handle)
@@ -48,9 +96,12 @@ module Glib.Graphics {
       return this
     }
 
+    /**
+     * Compiles the current shader source code 
+     */
     compile():Shader {
       if (!this.source) {
-        utils.log(this, 'Unable to compile shader, source is missing')
+        utils.error('[Shader] Unable to compile shader, source is missing', this)
         return this
       }
 
@@ -60,12 +111,17 @@ module Glib.Graphics {
       this.info = this.gl.getShaderInfoLog(this.handle)
 
       if (!this.compiled) {
-        utils.log(this, 'Shader compilation failed')
-        utils.log(this.info)
+        utils.error('[Shader] compilation failed', this.info, this)
       }
       return this
     }
 
+    /**
+     * Creates a clone of this shader
+     */
+    clone():Shader {
+      return new Shader(this.device, { type: this.type, source: this.source })
+    }
 
     /**
      * Inspects the given shader source code and generates a meta object. The
@@ -107,22 +163,33 @@ module Glib.Graphics {
      * @method inspectShader
      * @param {string} source
      */
-    static inspectShader(source) {
-      var result = Shader.inspectQualifiers(source)
+    static inspectShader(source:string):any {
+      let result = Shader.inspectQualifiers(source)
       result.structs = Shader.inspectStructs(source)
       Shader.fixStructUniforms(result.uniforms, result.structs)
       return result
     }
 
-    static inspectProgram(vertexShader, fragmentShader) {
-      var vInspects = Shader.inspectShader(vertexShader)
-      var fInspects = Shader.inspectShader(fragmentShader)
-      // TODO: fix missing or invalid texture register annotations
-      return {
-        attributes: utils.extend({}, vInspects.attributes, fInspects.attributes),
-        uniforms: utils.extend({}, vInspects.uniforms, fInspects.uniforms),
-        varying: utils.extend({}, vInspects.varying, fInspects.varying)
+    static inspectProgram(vertexShader:string, fragmentShader:string):any {
+      let result = {
+        attributes: {},
+        uniforms: {},
+        varying: {}
       }
+      if (vertexShader) {
+        let inspection = Shader.inspectShader(vertexShader)
+        utils.extend(result.attributes, inspection.attributes)
+        utils.extend(result.uniforms, inspection.uniforms)  
+        utils.extend(result.varying, inspection.varying)  
+      }
+      if (fragmentShader) {
+        let inspection = Shader.inspectShader(fragmentShader)
+        utils.extend(result.attributes, inspection.attributes)
+        utils.extend(result.uniforms, inspection.uniforms)  
+        utils.extend(result.varying, inspection.varying)  
+      }
+      // TODO: fix missing or invalid texture register annotations
+      return result
     }
 
     private static inspectStructs(source:string):any {

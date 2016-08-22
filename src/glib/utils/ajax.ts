@@ -10,56 +10,55 @@ module Glib.utils {
   }
 
   export function ajax(options):IPromise {
-    var xhr = options.xhr || new XMLHttpRequest();
-    options.async = options.async !== false;
-     
+    var xhr = options.xhr || new XMLHttpRequest()
+
     if (Array.isArray(options.url)) {
       var mapped = options.url.map(function (url) {
         return ajax(extend({}, options, {url: url})).then(function (res) {
-          return res;
+          return res
         });
       });
-      return Glib.Promise.all(mapped);
+      return Glib.Promise.all(mapped)
     }
 
-    var deferred = Promise.defer();
-
+    var deferred = Promise.defer()
+    let async = options.async === false ? false : true
     xhr.open(
       options.type || 'GET',
       options.url,
-      options.async,
+      async,
       options.username,
       options.password);
 
-    var headers = options.headers || {};
-    for (var key in headers) {
-      xhr.setRequestHeader(key, headers[key]);
+    let headers = options.headers || {}
+    for (let key in headers) {
+      xhr.setRequestHeader(key, headers[key])
     }
 
-    var complete = function (xhr) {
-      xhr.options = options;
+    let complete = function (xhr) {
+      xhr.options = options
       if (!xhr.responseURL) {
-        xhr.responseURL = options.url;
+        xhr.responseURL = options.url
       }
       if (200 <= xhr.status && xhr.status < 400) {
-        deferred.resolve(xhr);
+        deferred.resolve(xhr)
       } else {
-        deferred.reject(xhr);
+        deferred.reject(xhr)
       }
     };
 
-    if (options.async) {
+    if (async) {
       xhr.onreadystatechange = function () {
         if (xhr.readyState === 4) {
-          xhr.requestURL = options.url;
-          complete(xhr);
+          xhr.requestURL = options.url
+          complete(xhr)
         }
       };
-      xhr.send(null);
+      xhr.send(null)
     } else {
-      xhr.send(null);
-      complete(xhr);
+      xhr.send(null)
+      complete(xhr)
     }
-    return deferred.promise;
+    return deferred.promise
   }
 }

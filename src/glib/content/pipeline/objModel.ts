@@ -1,8 +1,44 @@
-module Glib.Content.Importer {
+module Glib.Content.Pipeline {
 
-  import Graphics = Glib.Graphics;
-  import debug = Glib.utils.debug;
+  importer('.obj', 'Model', function (context:Context) {
+    return objToJsonAsync(context.raw).then(function(json) {
+      context.intermediate = json
+      return context.manager.process(context)
+    })
+  })
 
+  function objToJson(data:RawAsset) {
+    var obj = Parser.OBJ.parse(data.content);
+    var json = convert(obj);
+    return json
+  }
+  
+  Glib.WebWorker.register("objToJson", objToJson)
+  function objToJsonAsync(data:RawAsset): IPromise {
+    return Glib.WebWorker.execute("objToJson", data)
+  }
+
+  function convert(data:ObjData) {
+    var builder = Glib.Graphics.Geometry.Builder.begin({
+      layout: "PositionNormalTexture",
+      ignoreTransform: true
+    });
+
+    var byMaterial = {};
+    for (var group of data.groups) {
+      byMaterial[group.material] = byMaterial[group.material] || [];
+      byMaterial[group.material].push(group);
+    }
+    for (var key in byMaterial) {
+      buildMesh(builder, data, byMaterial[key]);
+    }
+
+    return builder.finishModelOptions({
+      name: data.name,
+      materials: data.materials
+    });
+  }
+  
   import ObjGroup = Glib.Content.Parser.ObjGroup;
   import ObjData = Glib.Content.Parser.ObjData;
   
@@ -39,7 +75,6 @@ module Glib.Content.Importer {
             });
             index = 0;
           }
-          
           vertex = readVertex(data, face[0]);
           builder.addIndex(index);
           builder.addVertex(vertex);
@@ -67,49 +102,4 @@ module Glib.Content.Importer {
       materialId: group.material
     });
   }
-
-  function convert(data:ObjData) {
-    var builder = Glib.Graphics.Geometry.Builder.begin({
-      layout: "PositionNormalTexture",
-      ignoreTransform: true
-    });
-
-    var byMaterial = {};
-    for (var group of data.groups) {
-      byMaterial[group.material] = byMaterial[group.material] || [];
-      byMaterial[group.material].push(group);
-    }
-    for (var key in byMaterial) {
-      buildMesh(builder, data, byMaterial[key]);
-    }
-
-    return builder.finishModelOptions({
-      name: data.name,
-      materials: data.materials
-    });
-  }
-
-  export function objToJson(data:AssetData) {
-    var obj = Parser.OBJ.parse(data.content);
-    var json = convert(obj);
-    return json
-  }
-  Glib.WebWorker.register("objToJson", objToJson)
-  export function objToJsonAsync(data:AssetData): IPromise {
-    return Glib.WebWorker.execute("objToJson", data)
-  }
-
-  export function importObjModel(data:AssetData, manager:Manager) {
-    return objToJsonAsync(data).then(function(json) {
-      return loadJsonModel(json, data, manager)
-    })
-    /*
-    //debug('[ImportObjModel]', data);
-    var obj = Parser.OBJ.parse(data.content);
-    var json = convert(obj);
-    return loadJsonModel(json, data, manager);
-    */
-  }
-
-  Manager.addImporter('obj', 'Model', importObjModel);
 }

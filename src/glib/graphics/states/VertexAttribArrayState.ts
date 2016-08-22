@@ -1,37 +1,37 @@
 module Glib.Graphics {
 
   export class VertexAttribArrayState {
-    device:Device;
-    gl:any;
-    private enabledArrays:number[];
+    device:Device
+    gl:WebGLRenderingContext
+    private enabledArrays:number[]
 
     constructor(device:Device) {
-      this.device = device;
-      this.gl = device.context;
-      this.enabledArrays = [];
+      this.device = device
+      this.gl = device.context
+      this.enabledArrays = []
     }
 
     commit(attributeLocations:number[]=[]):VertexAttribArrayState {
 
-      var isEnabled = this.enabledArrays;
+      var enabled = this.enabledArrays
 
-      for (var location of isEnabled) {
+      for (let location of enabled) {
         if (attributeLocations.indexOf(location) < 0) {
-          this.gl.disableVertexAttribArray(location);
+          this.gl.disableVertexAttribArray(location)
         }
       }
-      for (var location of attributeLocations) {
-        if (isEnabled.indexOf(location) < 0) {
-          this.gl.enableVertexAttribArray(location);
+      for (let location of attributeLocations) {
+        if (enabled.indexOf(location) < 0) {
+          this.gl.enableVertexAttribArray(location)
         }
       }
 
-      isEnabled.length = attributeLocations.length;
-      for (var i = 0; i < attributeLocations.length; i++) {
-        isEnabled[i] = attributeLocations[i];
+      enabled.length = attributeLocations.length;
+      for (let i = 0; i < attributeLocations.length; i++) {
+        enabled[i] = attributeLocations[i]
       }
 
-      return this;
+      return this
     }
   }
 }

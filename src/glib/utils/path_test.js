@@ -96,6 +96,15 @@
       it("merges two pathes", function() {
         expect(path.merge("http://example.com:3000", "http://foo.com:3000/file.ext")).toBe("http://foo.com:3000/file.ext");
       });
+      it("merges two pathes", function() {
+        expect(path.merge("/foo", "/bar")).toBe("/bar");
+      });
+      it("merges two pathes", function() {
+        expect(path.merge("/foo", "bar")).toBe("/bar");
+      });
+      it("merges two pathes", function() {
+        expect(path.merge("/foo/", "bar")).toBe("/foo/bar");
+      });
     });
   });
 

@@ -1,180 +1,167 @@
 module Glib.Graphics {
 
+  let propertyKeys = ['enable','x','y','width','height']
+
   export interface ScissorStateOptions {
-    enable?: boolean;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
+    enable?: boolean
+    x?: number
+    y?: number
+    width?: number
+    height?: number
   }
 
   export class ScissorState implements ScissorStateOptions {
-    device:Device;
-    gl:any;
-    _enable:boolean = false;
-    _x:number = 0;
-    _y:number = 0;
-    _width:number = 0;
-    _height:number = 0;
-    _changed:boolean = false;
-    _changes:ScissorStateOptions = {};
+    device:Device
+    gl:WebGLRenderingContext
+    private enableField:boolean = false
+    private xField:number = 0
+    private yField:number = 0
+    private widthField:number = 0
+    private heightField:number = 0
+    private hasChanged:boolean = false
+    private changes:ScissorStateOptions = {}
 
     constructor(device:Device, state?:ScissorStateOptions) {
-      this.device = device;
-      this.gl = device.context;
-      this.resolve();
-      this.extend(state);
+      this.device = device
+      this.gl = device.context
+      this.resolve()
+      if (state) this.assign(state)
     }
 
     get enable():boolean {
-      return this._enable;
+      return this.enableField
     }
 
     set enable(value:boolean) {
-      if (this._enable !== value) {
-        this._enable = value;
-        this._changes.enable = value;
-        this._changed = true;
+      if (this.enableField !== value) {
+        this.enableField = value
+        this.changes.enable = value
+        this.hasChanged = true
       }
     }
 
     get x():number {
-      return this._x;
+      return this.xField
     }
 
     set x(value:number) {
-      if (this._x !== value) {
-        this._x = value;
-        this._changes.x = value;
-        this._changed = true;
+      if (this.xField !== value) {
+        this.xField = value
+        this.changes.x = value
+        this.hasChanged = true
       }
     }
 
     get y():number {
-      return this._y;
+      return this.yField
     }
 
     set y(value:number) {
-      if (this._y !== value) {
-        this._y = value;
-        this._changes.y = value;
-        this._changed = true;
+      if (this.yField !== value) {
+        this.yField = value
+        this.changes.y = value
+        this.hasChanged = true
       }
     }
 
     get width():number {
-      return this._width;
+      return this.widthField
     }
 
     set width(value:number) {
-      if (this._width !== value) {
-        this._width = value;
-        this._changes.width = value;
-        this._changed = true;
+      if (this.widthField !== value) {
+        this.widthField = value
+        this.changes.width = value
+        this.hasChanged = true
       }
     }
 
     get height():number {
-      return this._height;
+      return this.heightField
     }
 
     set height(value:number) {
-      if (this._height !== value) {
-        this._height = value;
-        this._changes.height = value;
-        this._changed = true;
+      if (this.heightField !== value) {
+        this.heightField = value
+        this.changes.height = value
+        this.hasChanged = true
       }
     }
 
-    extend(state:ScissorStateOptions={}):ScissorState {
-      utils.extend(this, state);
+    assign(state:ScissorStateOptions={}):ScissorState {
+      for (let key of propertyKeys) {
+        if (state.hasOwnProperty(key)) this[key] = state[key]
+      } 
       return this
     }
 
     commit(state?:ScissorStateOptions):ScissorState {
-      this.extend(state);
-
-      if (!this._changed) {
-        return this;
+      if (state) this.assign(state)
+      if (!this.hasChanged) return this
+      let changes = this.changes
+      let gl = this.gl
+      if (changes.enable === true) {
+        gl.enable(gl.SCISSOR_TEST)
       }
-
-      var changes = this._changes;
-
-      if (changes.x !== undefined || changes.y !== undefined ||
-        changes.width !== undefined || changes.height !== undefined) {
-        changes.x = this.x;
-        changes.y = this.y;
-        changes.width = this.width;
-        changes.height = this.height;
+      if (changes.enable === false) {
+        gl.disable(gl.SCISSOR_TEST)
       }
-
-      ScissorState.commit(this.gl, this._changes);
-      this._clearChanges();
-      return this;
+      if (changes.x != null || changes.y != null || changes.width != null || changes.height != null) {
+        gl.scissor(this.x, this.y, this.width, this.height)
+      }
+      this.clearChanges()
+      return this
     }
 
     resolve():ScissorState {
-      ScissorState.resolve(this.gl, this);
-      this._clearChanges();
-      return this;
+      ScissorState.resolve(this.gl, this)
+      this.clearChanges()
+      return this
     }
 
-    dump(out?:any):ScissorStateOptions {
-      out = out || {};
-      out.x = this.x;
-      out.y = this.y;
-      out.width = this.width;
-      out.height = this.height;
-      out.enable = this.enable;
-      return out;
+    copy(out:any={}):ScissorStateOptions {
+      for (let key of propertyKeys) out[key] = this[key]
+      return out
     }
 
-    private _clearChanges(){
-      this._changed = false;
-      this._changes.x = undefined;
-      this._changes.y = undefined;
-      this._changes.width = undefined;
-      this._changes.height = undefined;
-      this._changes.enable = undefined;
+    private clearChanges(){
+      this.hasChanged = false
+      for (let key of propertyKeys) this.changes[key] = undefined
     }
 
     static commit(gl:any, state:ScissorStateOptions) {
-      var x = state.x;
-      var y = state.y;
-      var width = state.width;
-      var height = state.height;
-      var enable = state.enable;
-
-      if (enable !== undefined) {
-        if (enable) {
-          gl.enable(gl.SCISSOR_TEST);
-        } else {
-          gl.disable(gl.SCISSOR_TEST);
-        }
+      var x = state.x
+      var y = state.y
+      var width = state.width
+      var height = state.height
+      var enable = state.enable
+      if (enable === true) {
+        gl.enable(gl.SCISSOR_TEST)
+      }
+      if (enable === false) {
+        gl.disable(gl.SCISSOR_TEST)
       }
       if (x != null && y != null && width != null && height != null) {
-        gl.scissor(x, y, width, height);
+        gl.scissor(x, y, width, height)
       }
     }
 
-    static resolve(gl:any, out?:any):ScissorStateOptions {
-      out = out || {};
-      out.enable = gl.getParameter(gl.SCISSOR_TEST);
-      var scissor = gl.getParameter(gl.SCISSOR_BOX);
-      out.x = scissor[0];
-      out.y = scissor[1];
-      out.width = scissor[2];
-      out.height = scissor[3];
-      return out;
+    static resolve(gl:any, out:any={}):ScissorStateOptions {
+      out.enable = gl.getParameter(gl.SCISSOR_TEST)
+      var scissor = gl.getParameter(gl.SCISSOR_BOX)
+      out.x = scissor[0]
+      out.y = scissor[1]
+      out.width = scissor[2]
+      out.height = scissor[3]
+      return out
     }
 
-    static Default = {
+    static Default = Object.freeze({
       enable: false,
       x: 0,
       y: 0,
       width: 0,
       height: 0
-    }
+    })
   }
-  Object.freeze(ScissorState.Default);
 }

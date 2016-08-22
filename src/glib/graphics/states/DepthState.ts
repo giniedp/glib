@@ -1,5 +1,11 @@
 module Glib.Graphics {
 
+  let propertyKeys = [
+    'depthEnable',
+    'depthFunction',
+    'depthWriteEnable'
+  ]
+
   export interface DepthStateOptions {
     depthEnable? : boolean
     depthFunction? : number
@@ -7,162 +13,141 @@ module Glib.Graphics {
   }
 
   export class DepthState implements DepthStateOptions {
-    device:Device;
-    gl:any;
-    _depthEnable:boolean = true;
-    _depthFunction:number = CompareFunction.LessEqual;
-    _depthWriteEnable:boolean = true;
-    _changed:boolean;
-    _changes:DepthStateOptions = {};
+    device:Device
+    gl:WebGLRenderingContext
+    private depthEnableField:boolean = true
+    private depthFunctionField:number = CompareFunction.LessEqual
+    private depthWriteEnableField:boolean = true
+    private hasChanged:boolean
+    private changes:DepthStateOptions = {}
 
     constructor(device:Device, options?:DepthStateOptions) {
-      this.device = device;
-      this.gl = device.context;
-      this.resolve();
-      this.extend(options);
+      this.device = device
+      this.gl = device.context
+      this.resolve()
+      if (options) this.assign(options)
     }
 
     get depthEnable():boolean {
-      return this._depthEnable;
+      return this.depthEnableField
     }
 
     set depthEnable(value:boolean) {
-      if (this._depthEnable !== value) {
-        this._depthEnable = value;
-        this._changes.depthEnable = value;
-        this._changed = true;
+      if (this.depthEnableField !== value) {
+        this.depthEnableField = value
+        this.changes.depthEnable = value
+        this.hasChanged = true
       }
     }
 
     get depthWriteEnable():boolean {
-      return this._depthWriteEnable;
+      return this.depthWriteEnableField
     }
 
     set depthWriteEnable(value:boolean) {
-      if (this._depthWriteEnable !== value) {
-        this._depthWriteEnable = value;
-        this._changes.depthWriteEnable = value;
-        this._changed = true;
+      if (this.depthWriteEnableField !== value) {
+        this.depthWriteEnableField = value
+        this.changes.depthWriteEnable = value
+        this.hasChanged = true
       }
     }
 
     get depthFunction():number {
-      return this._depthFunction;
+      return this.depthFunctionField
     }
 
     get depthFunctionName():string {
-      return CompareFunctionName[this.depthFunction];
+      return CompareFunctionName[this.depthFunction]
     }
 
     set depthFunction(value:number) {
-      if (this._depthFunction !== value) {
-        this._depthFunction = value;
-        this._changes.depthFunction = value;
-        this._changed = true;
+      if (this.depthFunctionField !== value) {
+        this.depthFunctionField = value
+        this.changes.depthFunction = value
+        this.hasChanged = true
       }
     }
 
-    extend(state:DepthStateOptions={}):DepthState {
-      utils.extend(this, state);
+    assign(state:DepthStateOptions):DepthState {
+      for (let key of propertyKeys) {
+        if (state.hasOwnProperty(key)) this[key] = state[key]
+      } 
       return this
     }
 
     commit(state?:DepthStateOptions):DepthState {
-      this.extend(state);
-      
-      if (!this._changed) {
-        return this;
+      if (state) this.assign(state)
+      if (!this.hasChanged) return this
+      let gl = this.gl
+      let changes = this.changes
+      if (changes.depthFunction !== null) {
+        gl.depthFunc(changes.depthFunction)
       }
-
-      DepthState.commit(this.gl, this._changes);
-      this._clearChanges();
-      return this;
+      if (changes.depthWriteEnable !== null) {
+        gl.depthMask(changes.depthWriteEnable)
+      }
+      if (changes.depthEnable === true) {
+        gl.enable(gl.DEPTH_TEST)
+      }
+      if (changes.depthEnable === false) {
+        gl.disable(gl.DEPTH_TEST)
+      }
+      this.clearChanges()
+      return this
     }
 
-    dump(out?:any):DepthStateOptions {
-      out = out || {};
-      out.depthEnable = this.depthEnable;
-      out.depthFunction = this.depthFunction;
-      out.depthWriteEnable = this.depthWriteEnable;
-      return out;
+    copy(out:any={}):DepthStateOptions {
+      for (let key of propertyKeys) out[key] = this[key]
+      return out
     }
 
     resolve():DepthState {
-      DepthState.resolve(this.gl, this);
-      this._clearChanges();
-      return this;
+      DepthState.resolve(this.gl, this)
+      this.clearChanges()
+      return this
     }
 
-    private _clearChanges(){
-      this._changed = false;
-      this._changes.depthEnable = undefined;
-      this._changes.depthFunction = undefined;
-      this._changes.depthWriteEnable = undefined;
+    private clearChanges(){
+      this.hasChanged = false
+      for (let key of propertyKeys) this.changes[key] = undefined
     }
 
     static convert(state:any):DepthStateOptions {
       if (typeof state === 'string') {
-        state = DepthState[state];
+        state = DepthState[state]
       }
       if (!state) {
-        return state;
+        return state
       }
       if (state.depthFunction) {
-        state.depthFunction = CompareFunction[state.depthFunction];
+        state.depthFunction = CompareFunction[state.depthFunction]
       }
-      return state;
+      return state
     }
 
-    static commit(gl:any, state:DepthStateOptions) {
-      var depthFunction = state.depthFunction;
-      var depthEnable = state.depthEnable;
-      var depthWriteEnable = state.depthWriteEnable;
-
-      if (depthFunction !== undefined) {
-        gl.depthFunc(depthFunction);
-      }
-      if (depthWriteEnable !== undefined) {
-        gl.depthMask(depthWriteEnable);
-      }
-
-      if (depthEnable !== undefined) {
-        if (depthEnable) {
-          gl.enable(gl.DEPTH_TEST);
-        } else {
-          gl.disable(gl.DEPTH_TEST);
-        }
-      }
+    static resolve(gl:any, out:any={}):DepthStateOptions {
+      out.depthEnable = gl.getParameter(gl.DEPTH_TEST)
+      out.depthFunction = gl.getParameter(gl.DEPTH_FUNC)
+      out.depthWriteEnable = gl.getParameter(gl.DEPTH_WRITEMASK)
+      return out
     }
 
-    static resolve(gl:any, out?:any):DepthStateOptions {
-      out = out || {};
-
-      out.depthEnable = gl.getParameter(gl.DEPTH_TEST);
-      out.depthFunction = gl.getParameter(gl.DEPTH_FUNC);
-      out.depthWriteEnable = gl.getParameter(gl.DEPTH_WRITEMASK);
-
-      return out;
-    }
-
-    static Default = {
+    static Default = Object.freeze({
       depthEnable: true,
       depthFunction: CompareFunction.LessEqual,
       depthWriteEnable: true
-    };
+    })
 
-    static None = {
+    static None = Object.freeze({
       depthEnable: false,
-      depthFunction: CompareFunction.LessEqual,
-      depthWriteEnable: true
-    };
+      depthFunction: CompareFunction.Always,
+      depthWriteEnable: false
+    })
 
-    static DepthRead = {
+    static DepthRead = Object.freeze({
       depthEnable: true,
       depthFunction: CompareFunction.LessEqual,
       depthWriteEnable: false
-    };
+    })
   }
-  Object.freeze(DepthState.Default);
-  Object.freeze(DepthState.None);
-  Object.freeze(DepthState.DepthRead);
 }

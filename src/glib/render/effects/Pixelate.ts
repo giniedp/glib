@@ -6,7 +6,7 @@ module Glib.Render.Effects {
     pixelHeight: number = 10;
     offset: number = 0;
 
-    constructor(private _material:Graphics.ShaderMaterial) {
+    constructor(private material:Graphics.ShaderEffect) {
     }
 
     setup(manager: Render.Manager) {
@@ -17,7 +17,7 @@ module Glib.Render.Effects {
       var rt = manager.beginEffect();
       var rt2 = manager.acquireTarget(rt);
       
-      let program = this._material.findProgram(); // first defined technique/pass in shader
+      let program = this.material.getTechnique(0).pass(0).program
       program.setUniform('texture', rt);
       program.setUniform('vOffset', this.offset);
       program.setUniform('pixelWidth', this.pixelWidth);

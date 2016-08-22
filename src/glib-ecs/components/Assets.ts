@@ -29,14 +29,10 @@ module Glib.Components {
       return this.manager.download(options);
     }
 
-    downloadPackage(options){
-      return this.manager.downloadPackage(options);
-    }
-
     debug():string {
       return [
         `- component: ${this.name}`,
-        `  loaded assets: ${Object.keys(this.manager.assets).length}`
+        `  loaded assets: ${Object.keys(this.manager.loaded).length}`
       ].join("\n")
     }
   }

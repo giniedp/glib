@@ -8,18 +8,18 @@ module Glib.Render.Effects {
     glowCut: number = 0.6;
     multiplier: number = 0.83;
     gaussSigma: number = 0.5;
-    private _offsetWeights: Array<Array<number>>;
+    private offsetWeights: Array<Array<number>>;
     
-    constructor(private _material:Graphics.ShaderMaterial) {
+    constructor(private material:Graphics.ShaderEffect) {
     }
 
-    private _updateGauss(texelX, texelY){
+    private updateGauss(texelX, texelY){
       var samples = 9;
       var samplesOff = Math.floor(samples / 2);
-      var offWeights = this._offsetWeights || [];
+      var offWeights = this.offsetWeights || [];
       offWeights.length = samples;
       offWeights.length = samples;
-      this._offsetWeights = offWeights;
+      this.offsetWeights = offWeights;
       for (var i = 0; i < samples; i++) {
           var data = offWeights[i];
           if (!data) {
@@ -59,7 +59,7 @@ module Glib.Render.Effects {
       let rt1 = manager.acquireTarget(baseTarget);
       let rt2 = manager.acquireTarget(baseTarget);
       
-      this._updateGauss(1.0 / baseTarget.width, 1.0 / baseTarget.height);
+      this.updateGauss(1.0 / baseTarget.width, 1.0 / baseTarget.height);
 
       let device = manager.device;
       device.depthState = Graphics.DepthState.Default;
@@ -69,7 +69,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // [1] GLOW CUT -> rt1
       //
-      device.program = this._material.findProgram("glowCut");
+      device.program = this.material.getTechnique("glowCut").pass(0).program;
       device.program.setUniform("texture", baseTarget);
       device.program.setUniform("threshold", this.glowCut);
       device.setRenderTarget(rt1);
@@ -86,10 +86,10 @@ module Glib.Render.Effects {
       // [2] HORIZONTAL BLUR -> rt2
       //
       // calculate filter offsets and weights
-      device.program = this._material.findProgram("hBlur");
+      device.program = this.material.getTechnique("hBlur").pass(0).program;
       device.program.setUniform("texture", rt1);
-      for (var i = 0; i < this._offsetWeights.length; i++) {
-        device.program.setUniform(`offsetWeights[${i}]`, this._offsetWeights[i]);
+      for (var i = 0; i < this.offsetWeights.length; i++) {
+        device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i]);
       }
       device.setRenderTarget(rt2);
       device.clear(Color.TransparentBlack, 1);
@@ -105,10 +105,10 @@ module Glib.Render.Effects {
       // [2] VERTICAL BLUR -> rt1
       //
       // calculate filter offsets and weights
-      device.program = this._material.findProgram("vBlur");
+      device.program = this.material.getTechnique("vBlur").pass(0).program;
       device.program.setUniform("texture", rt2);
-      for (var i = 0; i < this._offsetWeights.length; i++) {
-        device.program.setUniform(`offsetWeights[${i}]`, this._offsetWeights[i]);
+      for (var i = 0; i < this.offsetWeights.length; i++) {
+        device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i]);
       }
       device.setRenderTarget(rt1);
       device.clear(Color.TransparentBlack, 1);
@@ -123,7 +123,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // [4] COMBINE BOOM -> pongTrarget
       //
-      device.program = this._material.findProgram("combine");
+      device.program = this.material.getTechnique("combine").pass(0).program;
       device.program.setUniform("texture", baseTarget);
       device.program.setUniform("bloomTexture", rt1);
       

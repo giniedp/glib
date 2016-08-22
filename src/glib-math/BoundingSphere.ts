@@ -23,7 +23,13 @@ module Glib {
       this.radius = distance + other.radius;
       return this;
     }
-    
+    mergePoint(point:IVec3):BoundingSphere {
+      var distance = Vec3.distance(this.center, point);
+      if (this.radius >= distance) return this;
+      this.radius = distance;
+      return this;
+    }
+
     intersectsRay(ray:Ray):boolean {
       return Collision.intersectsRaySphere(ray, this);
     }

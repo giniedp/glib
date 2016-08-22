@@ -22,30 +22,30 @@ module Glib.Render.Effects {
       width: 2, height: 2, depthFormat: Glib.Graphics.DepthFormat.None
     }]
 
-    private _lum1:Graphics.Texture;
-    private _lum2:Graphics.Texture;
-    private _lumOptions = {
+    private lum1:Graphics.Texture;
+    private lum2:Graphics.Texture;
+    private lumOptions = {
       width: 2, height: 2, depthFormat: Glib.Graphics.DepthFormat.None
     }
     
-    constructor(private _material:Graphics.ShaderMaterial) {
+    constructor(private material:Graphics.ShaderEffect) {
     }
     
     setup(manager: Render.Manager) {
       // get luminance history buffers
-      this._lum1 = manager.acquireTarget(this._lumOptions)
-      this._lum2 = manager.acquireTarget(this._lumOptions)
+      this.lum1 = manager.acquireTarget(this.lumOptions)
+      this.lum2 = manager.acquireTarget(this.lumOptions)
     }
 
     render(manager: Render.Manager) {
       if (!this.enabled) return
       // TODO: implement with HdrBlendable format 
 
-      let programLuminance = this._material.findProgram("Luminance")
-      let programDownsample = this._material.findProgram("Downsample")
-      let programCombine = this._material.findProgram("Combine")
-      let programTonemap = this._material.findProgram("Tonemap")
-      let programCopy = this._material.findProgram("Copy")
+      let programLuminance = this.material.getTechnique("Luminance").pass(0).program
+      let programDownsample = this.material.getTechnique("Downsample").pass(0).program
+      let programCombine = this.material.getTechnique("Combine").pass(0).program
+      let programTonemap = this.material.getTechnique("Tonemap").pass(0).program
+      let programCopy = this.material.getTechnique("Copy").pass(0).program
       
       // the current backbuffer holding the rendered image
       var frontBuffer = manager.beginEffect();
@@ -73,9 +73,9 @@ module Glib.Render.Effects {
           device.setRenderTarget(this._targets[i])
           device.clearColor(0)
         }
-        device.setRenderTarget(this._lum1)
+        device.setRenderTarget(this.lum1)
         device.clearColor(0)
-        device.setRenderTarget(this._lum2)
+        device.setRenderTarget(this.lum2)
         device.clearColor(0)
       }
 
@@ -100,13 +100,13 @@ module Glib.Render.Effects {
 
       // combine luminance
       let thisFrameLuminance = this._targets[this._targets.length-1]
-      let lastFrameLuminance = this._lum1 
+      let lastFrameLuminance = this.lum1 
       programCombine.setUniform("texture1", thisFrameLuminance)
       programCombine.setUniform("texture1Texel", thisFrameLuminance.texel)
       programCombine.setUniform("texture2", lastFrameLuminance)
       programCombine.setUniform("adaptSpeed", this.adaptSpeed)
       device.program = programCombine
-      device.setRenderTarget(this._lum2)
+      device.setRenderTarget(this.lum2)
       device.drawQuad(false)
       device.setRenderTarget(null)
 
@@ -120,7 +120,7 @@ module Glib.Render.Effects {
       programTonemap.setUniform("whitePoint", this.whitePoint)
       programTonemap.setUniform("blackPoint", this.blackPoint)
       programTonemap.setUniform("texture1", frontBuffer)
-      programTonemap.setUniform("texture2", this._lum2)
+      programTonemap.setUniform("texture2", this.lum2)
       device.program = programTonemap
       device.setRenderTarget(targetBuffer)
       device.drawQuad(false)
@@ -145,9 +145,9 @@ module Glib.Render.Effects {
       }
 
       // swap history frames
-      let temp = this._lum2
-      this._lum2 = this._lum1
-      this._lum1 = temp
+      let temp = this.lum2
+      this.lum2 = this.lum1
+      this.lum1 = temp
 
       // end effect with the 'targetBuffer'
       // causes the manager to release the 'frontBuffer' 
@@ -156,8 +156,8 @@ module Glib.Render.Effects {
     }
 
     cleanup(manager: Render.Manager) {
-      manager.releaseTarget(this._lum1)
-      manager.releaseTarget(this._lum2)
+      manager.releaseTarget(this.lum1)
+      manager.releaseTarget(this.lum2)
     }
   }
 }

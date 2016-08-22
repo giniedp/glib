@@ -1,222 +1,262 @@
 module Glib.Content {
 
-  import log = Glib.utils.log;
-  import debug = Glib.utils.debug;
-  import extend = Glib.utils.extend;
-
-  export var CDN = '';
-  function normalizeUrl(url, baseUrl?:string) {
-    return utils.path.merge(baseUrl || self.location.origin, url);
-  }
-
-  function cacheResponse(xhr) {
-    var url = normalizeUrl(xhr.responseURL);
-    var type = xhr.getResponseHeader('content-type');
-    var content = xhr.responseText;
-    var cache = content;
-    // Don't cache images and videos. Let the browser do that
-    if (type.match(/image\//) || type.match(/video\//)) {
-      cache = url;
-    }
-    Manager.cacheDownload(url, {
-      url: url,
-      type: type,
-      content: cache
-    });
-    return content;
-  }
-
-  function parsePackageResponse(xhr) {
-    var urls = JSON.parse(xhr.responseText + "");
-    for (var i = 0; i < urls.length; i += 1) {
-      urls[i] = normalizeUrl(urls[i], xhr.responseURL);
-    }
-    return urls;
-  }
-
-  export interface AssetData {
-    url:string
-    type:string
+  export interface RawAsset {
+    /**
+     * The source path
+     */
+    path:string
+    /**
+     * The content
+     */
     content:any
+    /**
+     * The content type (e.g. application/json)
+     */
+    contentType?:string
+    /**
+     * The original http request
+     */
+    xhr?:XMLHttpRequest
   }
 
-  export interface AssetImporter {
-    (asset:AssetData, manager:Manager): IPromise
+  /**
+   * 
+   */
+  export interface IManagerOptions {
+    cacheEnabled?: boolean
+    staticEnabled?: boolean
+    defaultAjaxOptions?: any
   }
 
+  import debug = Glib.utils.debug
+
+  /**
+   * 
+   */
   export class Manager {
-    assets = {};
-    device:Glib.Graphics.Device;
-    urlMap: any = {
-      basicEffect: '/assets/shader/basic.glfx'
+    /**
+     * 
+     */
+    device:Glib.Graphics.Device
+    /**
+     * 
+     */
+    loaded = {}
+    /**
+     * 
+     */
+    cached = {}
+    /**
+     * 
+     */
+    cacheEnabled = true
+    /**
+     * 
+     */
+    defaultAjaxOptions = {}
+    /**
+     * 
+     */
+    transformAjaxOptions = function(o) { return o }
+
+    /**
+     * 
+     */
+    constructor(device:Glib.Graphics.Device, options:IManagerOptions={}) {
+      this.device = device
+      utils.extend(this, utils.pick(options, "cacheEnabled", "defaultAjaxOptions", "transformAjaxOptions"))
     }
 
-    constructor(device:Glib.Graphics.Device) {
-      this.device = device;
-    }
-
-    static _importer = [];
-    static _downloads:{ [uri:string]:AssetData } = {};
-
-    static addImporter(format:string, assetType:string, importer:AssetImporter) {
-      Manager._importer.push({
-        format: format,
-        asset: assetType,
-        importer: importer
-      });
-    }
-
-    static getImporter(format:string, assetType:string):AssetImporter {
-      var global;
-      for (var item of Manager._importer) {
-        if (item.format === format && item.asset === assetType) {
-          return item.importer;
-        }
-        if (item.format === 'all' && item.asset === assetType) {
-          global = item.importer;
-        }
+    /**
+     * 
+     */
+    lookup(path:string):RawAsset {
+      if (this.cacheEnabled) {
+        let found = this.cached[path]
+        if (found) return found
       }
-      if (global) {
-        return global;
+      return null
+    }
+
+    /**
+     * 
+     */
+    lookupInDOM(path:string):RawAsset {
+      let element = document.getElementById(path)
+      if (!element && path[0] === '/') element = document.getElementById(path.substr(1))
+      if (!element) return
+      return {
+        path: path,
+        contentType: element.getAttribute('type'),
+        content: element.textContent
       }
-      debug(`[Manager] '${format}' to '${assetType}' importer not found.`);
-      return void 0;
     }
 
-    static getImporterForAsset(asset:AssetData, assetType:string):AssetImporter {
-      var ext = (Glib.utils.path.ext(asset.url) || '').replace(/^\./, '');
-      return Manager.getImporter(ext, assetType);
+    /**
+     * 
+     */
+    cache(data: RawAsset):RawAsset {
+      if (this.cacheEnabled) this.cache[data.path] = data
+      return data
     }
 
-    static cacheDownload(url:string, asset:AssetData) {
-      Manager._downloads[normalizeUrl(url)] = asset;
-    }
-
-    static getDownload(url:string):AssetData {
-      return Manager._downloads[normalizeUrl(url)];
-    }
-
-    static download(options) {
-      if (typeof options === 'string') {
-        options = { url: options };
+    /**
+     * 
+     */
+    makeAjaxOptions(optionsOrUrl:utils.AjaxOptions|string):utils.AjaxOptions {
+      let options = optionsOrUrl as utils.AjaxOptions
+      if (typeof optionsOrUrl === "string") {
+        options = { url: optionsOrUrl }
       }
-      debug('[Manager] download', options);
-      return Glib.utils.ajax(options).then(function (res) {
-        // debug('[Manager] download done', options);
-        if (!Array.isArray(res)) {
-          return cacheResponse(res);
-        }
-        return res.map(function (xhr) {
-          return cacheResponse(xhr)
-        });
-      });
+      options = utils.extend({}, this.defaultAjaxOptions, options) as utils.AjaxOptions
+      if (this.transformAjaxOptions) this.transformAjaxOptions(options)
+      return options
     }
 
-    download(options) {
-      return Manager.download(options);
+    /**
+     * 
+     */
+    xhrToAssetData(requestOptions:utils.AjaxOptions, xhr:XMLHttpRequest):RawAsset {
+      return {
+        path: requestOptions.url,
+        contentType: xhr.getResponseHeader('content-type'),
+        content: xhr.responseText,
+        xhr: xhr
+      }      
     }
 
-    static downloadPackage(options) {
-      return Glib.utils.ajax(options).then((res) => {
-        res = [].concat.apply([], [res]);
-        var urls = [].concat.apply([], res.map(parsePackageResponse));
-        return Manager.download(extend({}, options, {url: urls}));
-      });
+    /**
+     * 
+     */
+    download(optionsOrUrl:utils.AjaxOptions|string):IPromise {
+      let options = this.makeAjaxOptions(optionsOrUrl)
+
+      // lookup for cached or statuc content
+      let result = this.lookup(options.url) 
+      if (result) return Promise.resolve(result)
+
+      result = this.lookupInDOM(options.url)
+      if (result) return Promise.resolve(result).then(this.cache.bind(this))
+
+      // debug('[Manager] download', options)
+      // fetch
+      return utils.ajax(options)
+      .then((xhr) => {
+        return this.xhrToAssetData(options, xhr)
+      })
+      // cache
+      .then(this.cache.bind(this))
     }
 
-    downloadPackage(options) {
-      return Manager.downloadPackage(options);
-    }
-
+    /**
+     * Loads and instantiates multiple assets
+     */
     loadAssets(config: any): IPromise {
       let manager = this
       let result = {};
       
       let promises = [];
-      Object.keys(config).forEach(function(key) {
+      for (let key in config){
         let type = key
         let value = config[type]
-        if (Glib.utils.isString(value)) {
-          promises.push(manager.load(type, value).then(function(res) {
-            result[key] = res
-          }))
-        } else if (Glib.utils.isArray(value)) {
+        if (typeof value === 'string') {
+          promises.push(manager.load(type, value).then(function(res) { result[key] = res }))
+        } else if (Array.isArray(value)) {
           let arr = result[key] = []
-          value.forEach(function(path) {
-            promises.push(manager.load(type, path).then(function(res) {
-              arr.push(res)
-            }))
-          })
+          for (let path of value) {
+            promises.push(manager.load(type, path).then(function(res) { arr.push(res) }))
+          }
         } else if (Glib.utils.isObject(value)) {
           let obj = result[key] = {}
-          Object.keys(value).forEach(function(key) {
-            promises.push(manager.load(type, value[key]).then(function(res) {
-              obj[key] = res
-            }))
-          })
+          for (let k in value) {
+            promises.push(manager.load(type, value[k]).then(function(res) { obj[k] = res }))
+          }
         } else {
           throw "invalid configuration"
         }
-      })
+      }
 
       return Glib.Promise.all(promises).then(function() {
         return result
       })
     }
-    load(assetType, assetPath:string):IPromise {
 
-      // hash to cache the asset
-      var key = assetType + ':' + assetPath;
-      debug(`[Manager] ${key} load`);
+    /**
+     * Loads and instantiates an assets
+     */
+    load(targetType:string, path:string, sourceType:string=utils.path.ext(path)):IPromise {
+      debug(`[Content.Manager] load ${targetType}, ${path}, ${sourceType}`)
 
       // see if the asset is already loaded
-      if (this.assets.hasOwnProperty(key)) {
-        var result = this.assets[key];
-        if (result.then) {
-          debug(`[Manager] ${key} awaiting`);
-          return result;
-        }
-        debug(`[Manager] ${key} exists`);
-        return Promise.resolve(result);
+      let key = targetType + ':' + path
+      let loaded = this.loaded[key]
+      if (loaded) return loaded
+
+      let context:Pipeline.Context = {
+        path: path,
+        stage: 'load',
+        manager: this,
+        sourceType: sourceType,
+        targetType: targetType,
+        options: {}
       }
 
-      return this.assets[key] = Promise.resolve(function() {
-        var data = Manager.getDownload(assetPath);
-        if (!data) {
-          // debug(`[Manager] ${key} download begin`);
-          return this.download({url: assetPath}).then(function() {
-            // debug(`[Manager] ${key} download complete`);
-            return Manager.getDownload(assetPath)
-          })
-        } else {
-          // debug(`[Manager] ${key} download exists`);
-          return data
-        }
-      }.bind(this)()).then(function(data) {
-        if (!data) {
-          return Promise.reject(`no data found for asset: ${assetPath}`);
-        }
-        var importer = Manager.getImporterForAsset(data, assetType);
-        if (!importer) {
-          return Promise.reject(`no importer found for type: ${String(assetType)}`);
-        }
-        if (typeof importer !== 'function') {
-          return Promise.reject(`importer '${String(assetType)}' is not a function`);
-        }
-        return Promise.resolve(importer(data, this)).then((result) => {
-          this.assets[key] = result;
-          return result;
-        });
-      }.bind(this))
+      return this.loaded[key] = this
+      .runHandlers('preload', context)
+      .then(function() {
+        let loader = Pipeline.getLoader(context.sourceType, context.targetType)
+        if (!loader) return Promise.reject(`[Content.Manager] loader not found for sourceType:'${sourceType}' targetType:'${targetType}'`)
+        return loader(context)
+      })
+      .then(function() {
+        return context.result
+      })
+    }
+    /**
+     * 
+     */
+    import(context:Pipeline.Context):IPromise {
+      context.stage = 'import'
+      let importer = Pipeline.getImporter(context.sourceType, context.targetType)
+      if (!importer) return Promise.reject(`[Content.Manager] importer not found for sourceType:'${context.sourceType}' targetType:'${context.targetType}'`)
+      return Promise.resolve(importer(context))
+    }
+    /**
+     * 
+     */
+    process(context:Pipeline.Context):IPromise {
+      return this
+      .runHandlers('preprocess', context)
+      .then(() => {
+        context.stage = 'process'
+        let processor = Pipeline.getProcessor(context.targetType)
+        if (!processor) return Promise.reject(`[Content.Manager] processor not found for targetType:'${context.targetType}'`)
+        return Promise.resolve(processor(context))
+      })
+      .then(() => {
+        this.runHandlers('postprocess', context)
+      })
+    }
+    private runHandlers(name:string, context:Pipeline.Context):IPromise {
+      context.stage = name as any
+      let handlers = Pipeline.getHandlers(context.stage, null, context.targetType)
+      return Promise.all(handlers.map(function(it) {
+        return it(context)
+      }))
     }
 
+    /**
+     * Unloads all currently loaded assets
+     */
     unload() {
-      var i, obj, keys = Object.keys(this.assets);
-      for (i = 0; i < keys.length; i += 1) {
-        obj = this.assets[keys[i]];
-        delete this.assets[keys[i]];
-        if (typeof obj.unload === 'function') {
-          obj.unload();
+      let keys = Object.keys(this.loaded)
+      for (let key of keys) {
+        let obj = this.loaded[key]
+        delete this.loaded[key]
+        try {
+          if (typeof obj.unload === 'function') obj.unload()
+        } catch (e) {
+          utils.warn(`[Content.Manager] failed to unload asset at '${key}'`, e)
         }
       }
     }

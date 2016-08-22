@@ -4,11 +4,11 @@ module Glib.Render.Effects {
     glowCut: number = 0.6;
     iterations: number = 5;
     halfSize: boolean = true;
-    private _targetOptions = {
+    private targetOptions = {
       width: 2, height: 2, depthFormat: Glib.Graphics.DepthFormat.None
     }
 
-    constructor(private _material:Graphics.ShaderMaterial) {
+    constructor(private material:Graphics.ShaderEffect) {
     }
 
     setup(manager: Render.Manager) {
@@ -19,29 +19,26 @@ module Glib.Render.Effects {
       var baseTarget = manager.beginEffect();
       
       if (this.halfSize) {
-        this._targetOptions.width = (baseTarget.width / 2)|0
-        this._targetOptions.height = (baseTarget.height / 2)|0
+        this.targetOptions.width = (baseTarget.width / 2)|0
+        this.targetOptions.height = (baseTarget.height / 2)|0
       } else {
-        this._targetOptions.width = baseTarget.width
-        this._targetOptions.height = baseTarget.height
+        this.targetOptions.width = baseTarget.width
+        this.targetOptions.height = baseTarget.height
       }
 
       let resultTarget = manager.acquireTarget(baseTarget)
-      let renderTarget1 = manager.acquireTarget(this._targetOptions)
-      let renderTarget2 = manager.acquireTarget(this._targetOptions)
+      let renderTarget1 = manager.acquireTarget(this.targetOptions)
+      let renderTarget2 = manager.acquireTarget(this.targetOptions)
       let texel = renderTarget1.texel
 
-      let device = manager.device;
-      let glowCutProgram = this._material.findProgram("glowCut")
-      let kawaseProgram = this._material.findProgram("kawaseIteration")
-      let combineProgram = this._material.findProgram("combine")
-      let program = glowCutProgram
+      let device = manager.device
+      let program:Graphics.ShaderProgram
       
       //-------------------------------------------------
       // GLOW CUT
       //
       
-      program = glowCutProgram
+      program = this.material.getTechnique('glowCut').pass(0).program
       program.setUniform("threshold", this.glowCut)
       program.setUniform("texture1", baseTarget)
       device.program = program
@@ -59,7 +56,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // KAWASE ITERATIONS
       //
-      program = kawaseProgram
+      program = this.material.getTechnique('kawaseIteration').pass(0).program
       device.blendState = Glib.Graphics.BlendState.Default
       for (let i = 0; i < this.iterations; i++) {
         program.setUniform("iteration", i + 1)
@@ -84,7 +81,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // COMBINE 
       //
-      program = combineProgram
+      program = this.material.getTechnique('combine').pass(0).program
       program.setUniform("texture1", baseTarget);
       program.setUniform("texture2", renderTarget1);
       device.program = program
