@@ -7,7 +7,7 @@ module Glib.Render {
     }
 
     render(manager:Render.Manager) {
-      var rt = manager.beginEffect();
+      var rt = manager.beginStep();
       manager.device.setRenderTarget(rt);
       manager.device.clear(0xFFFFFFFF, 1, 1);
       manager.device.blendState = Graphics.BlendState.Default;
@@ -20,7 +20,7 @@ module Glib.Render {
         this.renderItem(item, manager.binder);
       }
       manager.device.setRenderTarget(null);
-      manager.endEffect(rt);
+      manager.endStep(rt);
     }
 
     cleanup(manager: Render.Manager) {
@@ -34,7 +34,7 @@ module Glib.Render {
       for (var pass of tech.passes) {
         pass.commit();
         binder
-          .setTransform(item.world)
+          .updateTransform(item.world)
           .bindTransform(pass.program)
           .bindView(pass.program)
           .bindTime(pass.program)

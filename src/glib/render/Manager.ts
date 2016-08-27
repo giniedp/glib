@@ -8,14 +8,14 @@ module Glib.Render {
   }
 
   export interface View {
-    enabled?: boolean;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-    camera?: Render.ICamera;
-    target?: Graphics.Texture;
-    steps: Render.Step[];
+    enabled?: boolean
+    x?: number
+    y?: number
+    width?: number
+    height?: number
+    camera?: Render.ICamera
+    target?: Graphics.Texture
+    steps: Render.Step[]
   }
 
   export class Manager {
@@ -24,17 +24,23 @@ module Glib.Render {
     views: Render.View[];
     spriteBatch: Glib.Graphics.SpriteBatch;
 
-    private freeTargets: {target:Graphics.Texture, options:Graphics.RenderTargetOptions} [] = [];
-    private usedTargets: {target:Graphics.Texture, options:Graphics.RenderTargetOptions} [] = [];
+    private freeTargets: {
+      target:Graphics.Texture, 
+      options:Graphics.RenderTargetOptions
+    }[] = []
+    private usedTargets: {
+      target:Graphics.Texture, 
+      options:Graphics.RenderTargetOptions
+    }[] = []
 
     constructor(device:Graphics.Device) {
-      this.device = device;
-      this.binder = new Render.Binder(device);
-      this.views = [];
-      this.spriteBatch = device.createSpriteBatch();  
+      this.device = device
+      this.binder = new Binder(device)
+      this.views = []
+      this.spriteBatch = device.createSpriteBatch()  
     }
 
-    createView(view: Render.View) {
+    addView(view: View) {
       if (view.enabled == null) view.enabled = true;
       if (view.x == null) view.x = 0;
       if (view.y == null) view.y = 0;
@@ -44,31 +50,31 @@ module Glib.Render {
       this.views.push(view);
     }
 
-    deleteView(indexOrView){
-      var view = this.views[indexOrView] || indexOrView;
-      var index = this.views.indexOf(view);
-      this.views.splice(index, 1);
-      if (view.renderTarget) {
-        this.releaseTarget(view.renderTarget);
+    removeView(indexOrView:number|View){
+      let view = indexOrView as View
+      if (typeof indexOrView === 'number') {
+        view = this.views[indexOrView]
       }
+      let index = this.views.indexOf(view)
+      this.views.splice(index, 1)
     }
 
     acquireTarget(opts: Graphics.RenderTargetOptions): Graphics.Texture {
-      var found;
-      for (var item of this.freeTargets) {
-        if (Manager._compareTargetOptions(item.options, opts)) {
-          found = item;
-          break;
+      let found
+      for (let item of this.freeTargets) {
+        if (Manager.compareTargetOptions(item.options, opts)) {
+          found = item
+          break
         }
       }
       if (found) {
         // remove from free list
-        var index = this.freeTargets.indexOf(found);
-        this.freeTargets.splice(index, 1);
+        let index = this.freeTargets.indexOf(found)
+        this.freeTargets.splice(index, 1)
         // mark as owned and used
-        this.usedTargets.push(found);
+        this.usedTargets.push(found)
         // return
-        return found.target;
+        return found.target
       }
       if (opts instanceof Graphics.Texture) {
         opts = {
@@ -78,30 +84,30 @@ module Glib.Render {
         }
       }
       Glib.utils.debug("[Render.Manager]", "acquireTarget", "createTexture2D", opts)
-      var target = this.device.createTexture2D(opts);
+      let target = this.device.createTexture2D(opts)
       this.usedTargets.push({
         target: target,
         options: opts
       });
-      return target;
+      return target
     }
 
     releaseTarget(target: Graphics.Texture) {
-      var found;
-      for (var item of this.usedTargets) {
+      let found;
+      for (let item of this.usedTargets) {
         if (item.target === target) {
-          found = item;
-          break;
+          found = item
+          break
         }
       }
       if (found) {
         // remove from used list
-        var index = this.usedTargets.indexOf(found);
-        this.usedTargets.splice(index, 1);
+        let index = this.usedTargets.indexOf(found)
+        this.usedTargets.splice(index, 1)
         // mark as free
-        found.owner = void 0;
-        this.freeTargets.push(found);
-        return;
+        found.owner = void 0
+        this.freeTargets.push(found)
+        return
       }
       this.freeTargets.push({
         target: target,
@@ -110,26 +116,26 @@ module Glib.Render {
           height: target.height,
           depthFormat: target.depthFormat
         }
-      });
+      })
     }
 
-    private static _compareTargetOptions(a:Graphics.RenderTargetOptions, b:Graphics.RenderTargetOptions):boolean {
+    private static compareTargetOptions(a:Graphics.RenderTargetOptions, b:Graphics.RenderTargetOptions):boolean {
       return (a.width === b.width) && (a.height === b.height) && (!!a.depthFormat === !!b.depthFormat);
     }
 
     private currentView: View;
     renderView(view: Render.View) {
       for (var step of view.steps) {
-        this.currentView = view;
-        step.setup(this);
+        this.currentView = view
+        step.setup(this)
       }
       for (var step of view.steps) {
-        this.currentView = view;
-        step.render(this);
+        this.currentView = view
+        step.render(this)
       }
       for (var step of view.steps) {
-        this.currentView = view;
-        step.cleanup(this);
+        this.currentView = view
+        step.cleanup(this)
       }
     }
 
@@ -146,12 +152,12 @@ module Glib.Render {
       this.spriteBatch.end();
     }
 
-    private effectHasBegun:boolean;
-    beginEffect(){
-      if (this.effectHasBegun) {
-        throw "endEffect() must be called first"
+    private stepHasBegun:boolean;
+    beginStep(){
+      if (this.stepHasBegun) {
+        throw "each beginStep() call must be paired with an endStep() call."
       }
-      this.effectHasBegun = true;
+      this.stepHasBegun = true;
       var view = this.currentView;
 
       if (view.steps.length > 1 && !view.target) {
@@ -164,11 +170,11 @@ module Glib.Render {
       return view.target;
     }
 
-    endEffect(renderTarget?:Graphics.Texture){
-      if (!this.effectHasBegun) {
-        throw "beginEffect() must be called first"
+    endStep(renderTarget?:Graphics.Texture){
+      if (!this.stepHasBegun) {
+        throw "each beginStep() call must be paired with an endStep() call."
       }
-      this.effectHasBegun = false;
+      this.stepHasBegun = false;
       if (!renderTarget || renderTarget === this.currentView.target) {
         return;
       }

@@ -68,7 +68,7 @@
 
         expect(stateC.enabled).toBe(paramsA.enabled);
 
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
       });
 
       it("given state", function() {
@@ -90,7 +90,7 @@
 
         expect(stateC.enabled).toBe(paramsB.enabled);
 
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
       });
     });
 
@@ -104,9 +104,9 @@
           expect(stateA[key]).toBe(paramsB[key]);
         });
         it ("marks as changed", function(){
-          expect(stateC._changed).toBe(false);
+          expect(stateC.hasChanged).toBe(false);
           stateC[key] = paramsB[key];
-          expect(stateC._changed).toBe(true);
+          expect(stateC.hasChanged).toBe(true);
         });
       });
     });

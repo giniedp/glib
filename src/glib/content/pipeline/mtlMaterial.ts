@@ -32,11 +32,11 @@ module Glib.Content.Pipeline {
       result.parameters.DiffuseMapEnabled = true;
     }
     if (mtl.bump) {
-      result.parameters.NormalMap = mtl.bump;
+      result.parameters.NormalMap = mtl.bump.file;
       result.parameters.NormalMapEnabled = true;
     }
     if (mtl.map_Ks) {
-      result.parameters.SpecularTexture = mtl.map_Ks.file;
+      result.parameters.SpecularMap = mtl.map_Ks.file;
       result.parameters.SpecularMapEnabled = true;
     }
     if (mtl.map_d) {

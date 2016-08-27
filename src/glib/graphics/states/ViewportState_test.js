@@ -46,7 +46,7 @@
         expect(stateC.height).toBe(paramsA.height);
         expect(stateC.zMin).toBeCloseTo(paramsA.zMin);
         expect(stateC.zMax).toBeCloseTo(paramsA.zMax);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
       });
 
       it("given state", function() {
@@ -60,7 +60,7 @@
         expect(stateC.height).toBe(paramsB.height);
         expect(stateC.zMin).toBeCloseTo(paramsB.zMin);
         expect(stateC.zMax).toBeCloseTo(paramsB.zMax);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
 
       });
     });
@@ -75,9 +75,9 @@
           expect(stateA[key]).toBe(paramsB[key]);
         });
         it ("marks as changed", function(){
-          expect(stateC._changed).toBe(false);
+          expect(stateC.hasChanged).toBe(false);
           stateC[key] = paramsB[key];
-          expect(stateC._changed).toBe(true);
+          expect(stateC.hasChanged).toBe(true);
         });
       });
     });

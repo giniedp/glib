@@ -23,7 +23,7 @@ module Glib.Content.Parser {
     terminator:number;
   }
 
-  function readHeader(reader:BinaryReader){
+  function readHeader(reader:BinaryReader): TgaHeader{
     reader.seekAbsolute(0);
     return {
       idLength: reader.readByte(),
@@ -41,7 +41,7 @@ module Glib.Content.Parser {
     }
   }
 
-  function readFooter(reader:BinaryReader) {
+  function readFooter(reader:BinaryReader): TgaFooter {
     reader.seekAbsolute(reader.data.length - 26);
     var footer = {
       extensionOffset: reader.readInt(),
@@ -56,37 +56,54 @@ module Glib.Content.Parser {
     return footer;
   }
 
-  function decodeRunLengthData(reader:BinaryReader, pixelSize, dataSize):Uint8Array {
-    var imageData = new Uint8Array(dataSize);
-    var imagePos = 0;
-    var end = reader.position + dataSize;
+  function decodeRunLengthData(reader:BinaryReader, pixelSize:number, dataSize:number):Uint8Array {
+    var imageData = new Uint8Array(dataSize)
+    var imagePos = 0
+    var end = reader.position + dataSize
     while(reader.position < end) {
-      var meta = reader.readByte();
-      var count = (meta & 0x7f) + 1;
+      var meta = reader.readByte()
+      var count = (meta & 0x7f) + 1
 
       if (meta & 0x8) {
         // Run length encoded pixel
-        var pixelPos = reader.position;
+        var pixelPos = reader.position
         for (var i = 0; i < count; i++) {
-          reader.seekAbsolute(pixelPos);
-          reader.readBuffer(imageData, imagePos, pixelSize);
-          imagePos += pixelSize;
+          reader.seekAbsolute(pixelPos)
+          reader.readBuffer(imageData, imagePos, pixelSize)
+          imagePos += pixelSize
         }
       } else {
         // Raw pixel
-        reader.readBuffer(imageData, imagePos, count * pixelSize);
-        imagePos += count * pixelSize;
+        reader.readBuffer(imageData, imagePos, count * pixelSize)
+        imagePos += count * pixelSize
       }
     }
     return imageData;
   }
+
+	function getImageData8bits(imageData, indexes, colormap, width, y_start, y_step, y_end, x_start, x_step, x_end)
+	{
+		var color, i, x, y;
+
+		for (i = 0, y = y_start; y !== y_end; y += y_step) {
+			for (x = x_start; x !== x_end; x += x_step, i++) {
+				color = indexes[i];
+				imageData[(x + width * y) * 4 + 3] = 255;
+				imageData[(x + width * y) * 4 + 2] = colormap[(color * 3) + 0];
+				imageData[(x + width * y) * 4 + 1] = colormap[(color * 3) + 1];
+				imageData[(x + width * y) * 4 + 0] = colormap[(color * 3) + 2];
+			}
+		}
+
+		return imageData;
+	}
 
   export class TGA {
 
     header: TgaHeader;
     footer: TgaFooter;
 
-    colorMapData:Uint8Array;
+    colorData:Uint8Array;
     imageData:Uint8Array;
 
     get hasColorMap() {
@@ -106,31 +123,32 @@ module Glib.Content.Parser {
     }
 
     parse(data) {
-      var reader = new Content.BinaryReader(new Uint8Array(data));
-      this.header = readHeader(reader);
-      this.footer = readFooter(reader);
+
+      let reader = new Content.BinaryReader(new Uint8Array(data))
+      this.header = readHeader(reader)
+      this.footer = readFooter(reader)
 
       reader.seekAbsolute(18 + this.header.idLength);
 
       if (this.hasColorMap) {
-        var colorMapEntrySize = this.header.colorMapEntryDepth / 8;
-        var colorMapSize = this.header.colorMapLength * colorMapEntrySize;
-        var colorMapEnd = reader.position + colorMapSize;
-        this.colorMapData = reader.data.subarray(reader.position, colorMapEnd);
-        reader.seekAbsolute(colorMapEnd);
+        let colorMapEntrySize = this.header.colorMapEntryDepth / 8
+        let colorMapSize = this.header.colorMapLength * colorMapEntrySize
+        let colorMapEnd = reader.position + colorMapSize
+        this.colorData = reader.data.subarray(reader.position, colorMapEnd)
+        reader.seekAbsolute(colorMapEnd)
       }
 
-      var pixelSize = this.header.pixelDepth / 8;
-      var imageSize = (this.hasColorMap ? 1 : pixelSize) * this.header.imageWidth * this.header.imageHeight;
+      let pixelSize = this.header.pixelDepth / 8
+      let imageSize = (this.hasColorMap ? 1 : pixelSize) * this.header.imageWidth * this.header.imageHeight
       if (this.isCompressed) {
-        this.imageData = decodeRunLengthData(reader, pixelSize, imageSize);
+        this.imageData = decodeRunLengthData(reader, pixelSize, imageSize)
       } else {
-        this.imageData = data.subarray(reader.position, reader.position * imageSize);
+        this.imageData = data.subarray(reader.position, reader.position * imageSize)
       }
     }
 
     getImageData() {
-      var spec = {
+      let spec = {
         startX: this.header.imageStartX,
         startY: this.header.imageStartY,
         endX: this.header.imageStartX + this.header.imageWidth,
@@ -149,5 +167,6 @@ module Glib.Content.Parser {
         spec.stepY = -1;
       }
     }
+
   }
 }

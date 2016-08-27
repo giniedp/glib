@@ -33,6 +33,10 @@ var PATHS = {
       '!src/page/_layouts/*.pug',
       '!src/page/_includes/*.pug',
       '!src/page/**/_*.pug',
+      //'src/page/samples/graphics-*/*.pug',
+      //'src/page/samples/input/**/*.pug',
+      //'src/page/samples/content/**/*.pug',
+      //'src/page/samples/**/*.pug',
       'src/page/**/*.pug'
     ],
     fonts: [
@@ -280,6 +284,9 @@ gulp.task('watch:pages', ['page'], function() {
   gulp.watch(PATHS.page.pages, ['page']);
   gulp.watch(PATHS.page.stylesWatch, ['page:scss']);
 });
+gulp.task('watch:script', ['compile'], function() {
+  gulp.watch(tscSource, ['compile:es5']);
+});
 gulp.task('watch:docs', ['docs'], function (done) {
   gulp.watch(tscSource, ['docs']);
 });
@@ -291,6 +298,8 @@ gulp.task('watch', ['compile', 'page', 'assets'], function() {
   gulp.watch(PATHS.page.scripts, ['page:scripts']);
   gulp.watch(PATHS.page.stylesWatch, ['page:scss']);
 });
+
+
 
 gulp.task('serve', function() {
   gulp.src('page')
@@ -310,7 +319,7 @@ gulp.task('test', function (done) {
   }, done).start();
 });
 
-gulp.task('watch:test', ['watch'], function (done) {
+gulp.task('watch:test', ['watch:script'], function (done) {
   new karma.Server({
     configFile: __dirname + '/karma.conf.js'
   }, done).start();

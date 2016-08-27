@@ -1,15 +1,12 @@
 {
-  "effect": "../shader/Textured.glfx",
+  "effect": "../shader/basicTextured.glfx",
   "parameters": {
     "DiffuseTexture": "../textures/proto_blue.png",
-    "TextureEnabled":true,
     "NormalTexture": "../textures/proto_gray_n.png",
-    "NormalEnabled":true,
     "AmbientColor": [0.1, 0.1, 0.1],
     "DiffuseColor": [1, 1, 1],
     "SpecularColor": [1, 1, 1],
     "SpecularPower": 128,
     "Alpha": 1
-  },
-  "blendState": "Opaque"
+  }
 }

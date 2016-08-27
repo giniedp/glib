@@ -110,7 +110,7 @@ module Glib.Graphics {
       }
       this.link()
 
-      let inspect = Shader.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
+      let inspect = ShaderInspector.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
       this.makeAttributes(inspect.attributes)
       this.makeUniforms(inspect.uniforms)
     }
@@ -194,9 +194,12 @@ module Glib.Graphics {
       this.uniforms = {}
       if (!uniforms) return this
       for (let key in uniforms) {
-        let uniform = new ShaderUniform(this, key, uniforms[key])
+        let options = uniforms[key]
+        if (!options.name && !options.binding) continue
+        let uniform = new ShaderUniform(this, options)
         if (uniform.location != null) {
           this.uniforms[key] = uniform
+          utils.info(`ShadderProgram ${this.uid}`, `found uniform ${uniform.meta.name} (binding:${uniform.name})`)
         }
       }
       return this

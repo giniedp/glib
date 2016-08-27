@@ -42,7 +42,7 @@
         expect(stateC.y).toBe(paramsA.y);
         expect(stateC.width).toBe(paramsA.width);
         expect(stateC.height).toBe(paramsA.height);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
       });
 
       it("given state", function() {
@@ -54,7 +54,7 @@
         expect(stateC.y).toBe(paramsB.y);
         expect(stateC.width).toBe(paramsB.width);
         expect(stateC.height).toBe(paramsB.height);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
 
       });
     });
@@ -69,9 +69,9 @@
           expect(stateA[key]).toBe(paramsB[key]);
         });
         it ("marks as changed", function(){
-          expect(stateC._changed).toBe(false);
+          expect(stateC.hasChanged).toBe(false);
           stateC[key] = paramsB[key];
-          expect(stateC._changed).toBe(true);
+          expect(stateC.hasChanged).toBe(true);
         });
       });
     });

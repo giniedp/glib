@@ -48,7 +48,7 @@ module Glib.Render.Effects {
       let programCopy = this.material.getTechnique("Copy").pass(0).program
       
       // the current backbuffer holding the rendered image
-      var frontBuffer = manager.beginEffect();
+      var frontBuffer = manager.beginStep();
 
       // the resulting buffer
       var targetBuffer = manager.acquireTarget({
@@ -152,7 +152,7 @@ module Glib.Render.Effects {
       // end effect with the 'targetBuffer'
       // causes the manager to release the 'frontBuffer' 
       // and replace it with the given one
-      manager.endEffect(targetBuffer)
+      manager.endStep(targetBuffer)
     }
 
     cleanup(manager: Render.Manager) {

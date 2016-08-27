@@ -137,7 +137,8 @@ module Glib.Graphics {
       return function () {
         texture.ready = (!!image.naturalWidth && !!image.naturalHeight)
 
-        if (!texture.ready) {
+        if (!texture.ready || !texture['wasReady']) {
+          texture['wasReady'] = texture.ready
           // image has not been downloaded yet
           return
         }

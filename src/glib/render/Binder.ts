@@ -1,161 +1,194 @@
 module Glib.Render {
 
-  import Mat4 = Glib.Mat4;
-  import Vec3 = Glib.Vec3;
-  import Vec2 = Glib.Vec2;
-  import extend = Glib.utils.extend;
-  import Graphics = Glib.Graphics;
-
-  function lightUniforms(i) {
-    return [
-      { key: 'Lights[' + i + '].Position', type: 'vec4', vkey: 'position' },
-      { key: 'Lights[' + i + '].Direction', type: 'vec4', vkey: 'direction' },
-      { key: 'Lights[' + i + '].Color', type: 'vec4', vkey: 'color' },
-      { key: 'Lights[' + i + '].Misc', type: 'vec4', vkey: 'misc' }
-    ];
-  }
-
-  function bindUniforms(program:Graphics.ShaderProgram, srcUniforms:any, values:any){
-    var i, src, dst;
-    for(i = 0; i < srcUniforms.length; i += 1){
-      src = srcUniforms[i];
-      dst = program.uniforms[src.key];
-      if (dst && (dst.type === src.type)){
-        dst.set(values[src.vkey || src.key]);
-      }
-    }
+  export interface Binding<T> {
+    // The uniform binding name
+    name:string
+    // The uniform type
+    type:string
+    // The value
+    value:T
   }
 
   export class Binder {
-    Position:Vec3 = Vec3.zero();
-    Direction:Vec3 = Vec3.zero();
-    World:Mat4 = Mat4.identity();
-    private _transformUniforms = [
-      { key: 'Position', type: 'vec3' },
-      { key: 'Direction', type: 'vec3' },
-      { key: 'World', type: 'mat4' }
+    Position:Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.zero() }
+    Direction:Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.zero() }
+    World:Binding<Mat4> = { name: 'World', type: 'mat4', value: Mat4.identity() }
+
+    private transformBindings = [ 
+      this.Position, 
+      this.Direction, 
+      this.World
     ];
 
-    View:Mat4 = Mat4.identity();
-    Projection:Mat4 = Mat4.identity();
-    CameraPosition:Vec3 = Vec3.zero();
-    CameraDirection:Vec3 = Vec3.zero();
-    private _viewUniforms = [
-      { key: 'View', type: 'mat4' },
-      { key: 'Projection', type: 'mat4' },
-      { key: 'CameraPosition', type: 'vec3' },
-      { key: 'CameraDirection', type: 'vec3' },
-      { key: 'ViewportSize', type: 'vec2' },
-      { key: 'ViewportPixelSize', type: 'vec2' },
-      { key: 'TargetSize', type: 'vec2' },
-      { key: 'TargetPixelSize', type: 'vec2' }
+    View:Binding<Mat4> = { 
+      name: 'View', type: 'mat4', value: Mat4.identity() 
+    }
+    Projection:Binding<Mat4> = {
+      name: 'Projection', type: 'mat4', value: Mat4.identity() 
+    }
+    ViewProjection:Binding<Mat4> = {
+      name: 'ViewProjection', type: 'mat4', value: Mat4.identity() 
+    }
+    CameraPosition:Binding<IVec3> = { 
+      name: 'CameraPosition', type: 'vec3', value: Vec3.zero() 
+    }
+    CameraDirection:Binding<IVec3> = { 
+      name: 'CameraDirection', type: 'vec3', value: Vec3.zero() 
+    }
+
+    TargetSize:Binding<IVec2> = { 
+      name: 'TargetSize', type: 'vec2', value: Vec2.zero() 
+    }
+    TargetPixelSize:Binding<IVec2> = { 
+      name: 'TargetPixelSize', type: 'vec2', value: Vec2.zero() 
+    }
+    
+    ViewportSize:Binding<IVec2> = { 
+      name: 'ViewportSize', type: 'vec2', value: Vec2.zero() 
+    }
+    ViewportPixelSize:Binding<IVec2> = { 
+      name: 'ViewportPixelSize', type: 'vec2', value: Vec2.zero() 
+    }
+
+    private viewBindings = [
+      this.View,
+      this.Projection,
+      this.ViewProjection,
+      this.CameraPosition,
+      this.CameraDirection,
+      this.TargetSize,
+      this.TargetPixelSize,
+      this.ViewportSize,
+      this.ViewportPixelSize
     ];
 
-    timeNow:number = 0;
-    timeLast:number = 0;
-    private _timeUniforms = [
-      { key: 'TimeNow', type: 'float' },
-      { key: 'TimeLast', type: 'float' }
-    ];
+    TimeNow:Binding<number> = { 
+      name: 'TimeNow', type: 'float', value: 0 
+    }
+    TimeLast:Binding<number> = { 
+      name: 'TimeLast', type: 'float', value: 0 
+    }
+    private timeBindings = [
+      this.TimeNow,
+      this.TimeLast
+    ]
+ 
+    Lights = [
+      this.buildLightBinding(0),
+      this.buildLightBinding(1),
+      this.buildLightBinding(2),
+      this.buildLightBinding(3),
+      this.buildLightBinding(4),
+      this.buildLightBinding(5),
+      this.buildLightBinding(6),
+      this.buildLightBinding(7)
+    ]
+    private lightBindings = this.Lights.map(function(it) {
+      return [it.Position, it.Direction, it.Color, it.Misc]
+    })
 
-    maxLights: number = 4;
-    private _lightUniforms = [];
-
-    lights = [];
     renderables = [];
 
     cameraFrustumVS = null;
     cameraFrustumWS = null;
-
-    targetSize = [0, 0];
-    targetPixelSize = [0, 0];
-    
-    viewportSize = [0, 0];
-    viewportPixelSize = [0, 0];
 
     viewportBuffer0 = null;
     viewportBuffer1 = null;
     viewportBuffer2 = null;
     viewportBuffer3 = null;
 
-    constructor(public device:Graphics.Device, opts:any={}) {
-      extend(this, opts);
-
-      this._lightUniforms = [];
-      for (var i = 0; i < this.maxLights; i += 1){
-        this._lightUniforms.push(lightUniforms(i));
-      }
+    constructor(public device:Graphics.Device) {
     }
 
-    setCamera(world:Mat4, view:Mat4, proj:Mat4):Binder{
+    buildLightBinding(i) {
+      return {
+        Position: { name: `Lights${i}Position`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
+        Direction: { name: `Lights${i}Direction`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
+        Color: { name: `Lights${i}Color`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
+        Misc: { name: `Lights${i}Misc`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>
+      }
+    }
+    updateCamera(world:Mat4, view:Mat4, proj:Mat4):Binder{
       if (world) {
-        world.getTranslation(this.CameraPosition);
-        world.getForward(this.CameraDirection);
+        world.getTranslation(this.CameraPosition)
+        world.getForward(this.CameraDirection)
       }
       if (view) {
-        this.View.initFrom(view);
+        this.View.value.initFrom(view)
       }
       if (proj) {
-        this.Projection.initFrom(proj);
+        this.Projection.value.initFrom(proj)
+      }
+      if (view && proj) {
+        Mat4.multiply(this.View.value, this.Projection.value, this.ViewProjection.value)
       }
       return this;
     }
 
-    setView(view: {width:number, height:number}) {
-      this.viewportSize[0] = view.width;
-      this.viewportSize[1] = view.height;
-      this.viewportPixelSize[0] = 1.0 / view.width;
-      this.viewportPixelSize[1] = 1.0 / view.height;
+    updateView(view: {width:number, height:number}):Binder {
+      this.ViewportSize.value.x = view.width
+      this.ViewportSize.value.y = view.height
+      this.ViewportPixelSize.value.x = 1.0 / view.width
+      this.ViewportPixelSize.value.y = 1.0 / view.height
+      return this
     }
 
-    setTarget(target: {width:number, height:number}) {
-      this.viewportSize[0] = target.width;
-      this.viewportSize[1] = target.height;
-      this.viewportPixelSize[0] = 1.0 / target.width;
-      this.viewportPixelSize[1] = 1.0 / target.height;
+    updateTarget(target: {width:number, height:number}):Binder {
+      this.TargetSize.value.x = target.width
+      this.TargetSize.value.y = target.height
+      this.TargetPixelSize.value.x = 1.0 / target.width
+      this.TargetPixelSize.value.y = 1.0 / target.height
+      return this
     }
 
-    setTransform(world:Mat4):Binder {
+    updateTransform(world:Mat4):Binder {
       if (world) {
-        world.getTranslation(this.Position);
-        world.getForward(this.Direction);
-        this.World.initFrom(world);
+        world.getTranslation(this.Position.value)
+        world.getForward(this.Direction.value)
+        this.World.value.initFrom(world)
       }
       return this;
     }
 
-    setTime(total:number, elapsed:number=0):Binder{
-      this.timeNow = total;
-      this.timeLast = total - elapsed;
+    updateTime(total:number, elapsed:number=0):Binder{
+      this.TimeNow.value = total
+      this.TimeLast.value = total - elapsed
       return this;
     }
 
-    bindTransform(program):Binder{
-      program.use();
-      bindUniforms(program, this._transformUniforms, this);
-      return this;
+    bindTransform(program:Graphics.ShaderProgram):Binder{
+      program.use()
+      this.bindUniforms(program, this.transformBindings)
+      return this
     }
 
-    bindView(program):Binder{
-      program.use();
-      bindUniforms(program, this._viewUniforms, this);
-      return this;
+    bindView(program:Graphics.ShaderProgram):Binder{
+      program.use()
+      this.bindUniforms(program, this.viewBindings)
+      return this
     }
 
-    bindTime(program):Binder{
-      program.use();
-      bindUniforms(program, this._timeUniforms, this);
-      return this;
+    bindTime(program:Graphics.ShaderProgram):Binder{
+      program.use()
+      this.bindUniforms(program, this.timeBindings)
+      return this
     }
 
-    bindLights(program):Binder{
+    bindLights(program:Graphics.ShaderProgram):Binder{
       program.use();
-      var i, lights = this.lights;
-      for(i = 0; i < lights.length; i += 1){
-        bindUniforms(program, this._lightUniforms[i], this.lights[i]);
+      for (let lightBinding of this.lightBindings) {
+        this.bindUniforms(program, lightBinding)
       }
-      return this;
+      return this
     }
 
+    bindUniforms(program:Graphics.ShaderProgram, bindings:Binding<any>[]){
+      let binding:Binding<any>, uniform:Graphics.ShaderUniform
+      for (binding of bindings) {
+        uniform = program.uniforms[binding.name]
+        if (!uniform || binding.type !== uniform.type) continue
+        uniform.set(binding.value)
+      }
+    }
   }
 }

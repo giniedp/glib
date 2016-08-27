@@ -1,16 +1,12 @@
 {
   "effect": "../shader/basic.glfx",
-  "technique": "pixelLighting",
   "parameters": {
     "DiffuseMap": "../textures/proto_blue.png",
-    "DiffuseMapEnabled":true,
     "NormalMap": "../textures/proto_gray_n.png",
-    "NormalMapEnabled":true,
     "AmbientColor": [0.1, 0.1, 0.1],
     "DiffuseColor": [1, 1, 1],
     "SpecularColor": [1, 1, 1],
     "SpecularPower": 16,
     "Alpha": 1
-  },
-  "blendState": "Opaque"
+  }
 }

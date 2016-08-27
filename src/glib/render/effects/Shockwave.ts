@@ -16,7 +16,7 @@ module Glib.Render.Effects {
     }
 
     render(manager: Render.Manager) {
-      var rt = manager.beginEffect();
+      var rt = manager.beginStep();
       var rt2 = manager.acquireTarget(rt);
       
       manager.device.setRenderTarget(rt2);
@@ -31,7 +31,7 @@ module Glib.Render.Effects {
       manager.device.drawQuad(false);
       manager.device.setRenderTarget(null);
 
-      manager.endEffect(rt2);
+      manager.endStep(rt2);
     }
 
     cleanup(manager: Render.Manager) {

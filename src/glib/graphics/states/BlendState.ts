@@ -221,7 +221,7 @@ module Glib.Graphics {
 
       let gl = this.gl
       let changes = this.changes
-      let enabled = state.enabled
+      let enabled = this.enabled
       if (enabled === true) {
         gl.enable(gl.BLEND)
       } 

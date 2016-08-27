@@ -201,10 +201,7 @@ module Glib.Content.Parser {
     // Texture vertices
     //
     read_vt_key(data:string) {
-      let t = readFloatArray(data)
-      //t[0] = -t[0] 
-      t[1] = 1 - t[1] 
-      this.result.vt.push(t);
+      this.result.vt.push(readFloatArray(data));
     }
 
     // Vertex normals

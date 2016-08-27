@@ -680,7 +680,7 @@ module Glib.Graphics {
         if (!channel) {
           throw `Can not use current shader program with current vertex buffer. The program requires '${Object.keys(attributes)}' attributes. '${key}' is missing in vertex buffer.`
         }
-
+        
         this.context.vertexAttribPointer(
           attribute.location,
           channel.elements,
@@ -786,8 +786,6 @@ module Glib.Graphics {
           fSource = document.getElementById(fSource.substr(1)).textContent
           options.fragmentShader = fSource
         }
-        var inspects = Shader.inspectProgram(vSource, fSource)
-        utils.extend(options, inspects)
       }
 
       return new ShaderProgram(this, options)

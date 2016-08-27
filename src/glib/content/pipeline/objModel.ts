@@ -20,7 +20,7 @@ module Glib.Content.Pipeline {
 
   function convert(data:ObjData) {
     var builder = Glib.Graphics.Geometry.Builder.begin({
-      layout: "PositionNormalTexture",
+      layout: "PositionTextureNormalTangentBitangent",
       ignoreTransform: true
     });
 

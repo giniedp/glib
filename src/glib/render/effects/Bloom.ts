@@ -49,7 +49,7 @@ module Glib.Render.Effects {
     }
 
     render(manager: Render.Manager) {
-      let baseTarget = manager.beginEffect();
+      let baseTarget = manager.beginStep();
       
       // DEBUG
       //manager.releaseTarget(rt2);
@@ -133,7 +133,7 @@ module Glib.Render.Effects {
       device.setRenderTarget(null);
       
       manager.releaseTarget(rt1);
-      manager.endEffect(rt2);
+      manager.endStep(rt2);
     }
 
     cleanup(manager: Render.Manager) {

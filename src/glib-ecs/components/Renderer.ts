@@ -27,7 +27,7 @@ module Glib.Components {
       this.device = this.node.root.getService("Device")
       this.assets = this.node.root.getService("Assets")
       this.manager = new Render.Manager(this.device)
-      this.manager.createView({
+      this.manager.addView({
         enabled: true,
         steps: [new Render.Forward()]
       })
@@ -52,25 +52,25 @@ module Glib.Components {
     }
 
     update() {
-      this.manager.binder.setTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
+      this.manager.binder.updateTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
     }
 
     draw() {
       for(var view of this.manager.views) {
-        this._renderView(view)
+        this.renderView(view)
       }
       this.manager.presentViews()
     }
 
-    private _renderView(view: Render.View) {
+    private renderView(view: Render.View) {
       if (!view || !view.camera || view.enabled === false) {
         return
       }
       var camera = view.camera
       var binder = this.manager.binder
-      binder.lights.length = 0
+      //binder.lights.length = 0
       binder.renderables.length = 0
-      binder.setCamera(camera.world, camera.view, camera.projection)
+      binder.updateCamera(camera.world, camera.view, camera.projection)
       this.cullVisitor.start(this.node.root, binder)
       this.manager.renderView(view)
     }
@@ -105,7 +105,7 @@ module Glib.Components {
     }
 
     addLight(light) {
-      this.context.lights.push(light.packedData)
+      //this.context.lights.push(light.packedData)
     }
   }
 }

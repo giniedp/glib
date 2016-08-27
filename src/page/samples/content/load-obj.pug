@@ -5,95 +5,14 @@ block script
   a(name="HTML" index=3)
   viewcode
   
-  a(name="EFFECT" index=2)
-  script(type='text/glfx'  id="demo-effect.glfx").
-    program:
-      precision highp float;
-
-      // @binding position
-      attribute vec3 vPosition;
-      // @binding normal
-      attribute vec3 vNormal;
-      // @binding texture
-      attribute vec2 vTexture;
-
-      // @binding World
-      uniform mat4 uWorld;
-      // @binding View
-      uniform mat4 uView;
-      // @binding Projection
-      uniform mat4 uProjection;
-
-      // @binding DiffuseMap
-      uniform sampler2D uTexture;
-      // @binding AmbientColor
-      // @default [0.2, 0.2, 0.2]
-      uniform vec3 uAmbientColor;
-      // @binding LightColor
-      // @default [1, 1, 1]
-      uniform vec3 uLightColor;
-      // @binding LightDirection
-      // @default [0, 0, -1]
-      uniform vec3 uLightDirection;
-      // @binding EyePosition
-      // @default [0, 0, 1]
-      uniform vec3 uEyePosition;
-      // @binding SpecularPower
-      // @default 16
-      uniform float uSpecularPower;
-
-      // data for fragment stage
-      varying vec3 normal;
-      varying vec3 position;
-      varying vec2 texCoord;
-
-      vec4 CalculateLightTerm(
-        in vec3 E,   // Vector To Eye
-        in vec3 N,   // Surface Normal
-        in vec3 L,   // Vector To Light
-        in vec3 LC,  // Light Color
-        in float SP) // Specular Power
-      {
-        // diffuse term
-
-        // float NdotL = max(0.0, dot(N, L));
-        float NdotL = max(0.0, abs(dot(N, L))); // abs for backface
-        vec4 result = vec4(NdotL * LC, 0.0);
-
-        // specular term
-        if (NdotL > 0.0)
-        {
-          vec3 H = normalize(E + L);
-          result.a = pow(abs(dot(N, H)), SP);
-        }
-        return result;
-      }
-      
-    technique:
-      pass:
-        vertexShader:
-          void main(void) {
-            vec4 pos = uWorld * vec4(vPosition, 1.0);
-            normal = mat3(uWorld) * vNormal;
-            position = pos.xyz;
-            texCoord = vTexture;
-            gl_Position = uProjection * uView * pos;
-          }
-        fragmentShader:
-          void main(void) {
-            vec4 color = texture2D(uTexture, texCoord);
-            if (color.a < 0.9) discard; 
-            vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularPower);
-            color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb + uAmbientColor;
-            gl_FragColor = color;
-          }
-
   a(name="JS" index=1)
   script(type='text/javascript').
+
     Glib.Content.Pipeline.preloader('Effect', function(context) {
+      // redirect the download path for basicEffect
       if (context.path === 'basicEffect') {
         context.sourceType = '.glfx'
-        context.path = 'demo-effect.glfx'
+        context.path = '/assets/shader/basicTextured.glfx'
       }
     });
 
@@ -104,15 +23,20 @@ block script
     var content = new Glib.Content.Manager(device);
     var model = null;
     content.load("Model", "/assets/models/ghoul.obj").then(function(result) {
+    //content.load("Model", "/assets/models/roundcube.obj").then(function(result) {
       model = result;
+      console.log(model);
     })
     
     var world = Glib.Mat4.identity();
     var view = Glib.Mat4.identity();
     var proj = Glib.Mat4.identity();
+    var cam = Glib.Mat4.identity();
+
     var time = 0;
     Glib.utils.loop(function(dt) {
       time += dt;
+      let pulse = 2*Math.PI*time;
 
       device.resize();
       device.cullState = Glib.Graphics.CullState.CullCounterClockWise;
@@ -120,19 +44,36 @@ block script
       device.blendState = Glib.Graphics.BlendState.Opaque;
       device.clear(Glib.Color.CornflowerBlue, 1.0);
       
-      world.initRotationY(time / 1000);
-      world.translation[1] = -60
-      view.initTranslation(0, 0, -150);
-      var aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight;  
-      proj.initPerspectiveFieldOfView(Math.PI/2, aspect, 1, 1000);
+      world.initRotationY(time / 4000);
+      world.translation[1] = -50;
+      cam.initTranslation(0, 0, 150);
+      Glib.Mat4.invert(cam, view);
+      proj.initPerspectiveFieldOfView(Math.PI/2, device.drawingBufferAspectRatio, 1, 1000);
 
       if (model) {
-        var material = model.materials[0]
-        var params = material.parameters
-        params.World = world
-        params.View = view
-        params.Projection = proj
-        params.EyePosition = { x: 0, y: 0, z: 150 }
+        model.materials.forEach(function(material) {
+          var params = material.parameters
+          
+          params.World = world;
+          params.View = view;
+          params.Projection = proj;
+          params.EyePosition = cam.getTranslation();
+          
+          params.AlphaClip = 0.9;
+          params.SpecularPower = 54;
+          params.AmbientColor = [0.1, 0.1, 0.1];
+
+          params.Lights0Color = [1, 1, 1, 1.5];
+          params.Lights0Position = [Math.cos(pulse / 10000) * 50, 0, Math.sin(pulse / 10000) * 50];
+          params.Lights0Direction = [0, 0, -1, 1];
+          params.Lights0Misc = [
+            1000, // point light range 
+            0, 
+            0, 
+            1     // 1:dir light 2:point light
+          ];
+        })
+
         model.draw();
       }
     });

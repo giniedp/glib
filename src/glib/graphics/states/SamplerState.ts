@@ -175,7 +175,7 @@ module Glib.Graphics {
         SamplerState.fixNonPowerOfTwo(this)
       }
 
-      if (!this.hasChanged) return this
+      //if (!this.hasChanged) return this
 
       let gl = this.gl
       let changes = this.changes

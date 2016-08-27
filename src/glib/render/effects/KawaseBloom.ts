@@ -16,7 +16,7 @@ module Glib.Render.Effects {
     }
 
     render(manager: Render.Manager) {
-      var baseTarget = manager.beginEffect();
+      var baseTarget = manager.beginStep();
       
       if (this.halfSize) {
         this.targetOptions.width = (baseTarget.width / 2)|0
@@ -93,7 +93,7 @@ module Glib.Render.Effects {
       // FINISH      
       manager.releaseTarget(renderTarget1);
       manager.releaseTarget(renderTarget2);
-      manager.endEffect(resultTarget);
+      manager.endStep(resultTarget);
     }
 
     cleanup(manager: Render.Manager) {

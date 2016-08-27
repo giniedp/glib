@@ -1,0 +1,28 @@
+# Wavefront MTL file
+# Creator: Ultimate Unwrap3D Pro v3.18
+# Time: Wed Oct 21 23:39:09 2009
+# num_materials: 2
+
+newmtl Tank6wp
+Ka 0.300000 0.300000 0.300000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+d 1.000000
+illum 2
+Ns 56
+map_Kd Tank6wpDF.jpg
+map_Ks Tank6wp_S.jpg
+map_bump Tank6wp_N.png
+
+newmtl Tank6
+Ka 0.300000 0.300000 0.300000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+d 1.000000
+illum 2
+Ns 56
+map_Kd Tank6DF.jpg
+map_Ks Tank6_S.jpg
+map_bump Tank6_N.png
+
+# num_materials: 2

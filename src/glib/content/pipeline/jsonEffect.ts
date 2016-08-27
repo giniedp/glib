@@ -104,10 +104,10 @@ module Glib.Content.Pipeline {
     let vertexSource = pass.vertexShader || ''
     let fragmentSource = pass.fragmentShader || ''
     if (source && typeof vertexSource === 'string') {
-      vertexSource = [source, vertexSource].join(charNewLine)
+      vertexSource = ['#define VERTEX_SHADER', source, vertexSource].join(charNewLine)
     }
     if (source && typeof fragmentSource === 'string') {
-      fragmentSource = [source, fragmentSource].join(charNewLine)
+      fragmentSource = ['#define FRAGMENT_SHADER',source, fragmentSource].join(charNewLine)
     }
     pass.name = pass.name || "PASS" + index
     pass.program = {
@@ -120,6 +120,7 @@ module Glib.Content.Pipeline {
   }
 
   function processPass(pass, context:Context) {
+    
     // solve all preprocessor directives
     return Promise.all([
       processShader(pass.program.vertexShader, context),
@@ -151,7 +152,9 @@ module Glib.Content.Pipeline {
       let url = utils.path.merge(context.path, path)
       let cache = context.options.includeCache || {}
       context.options.includeCache = cache
-      return cache[url] = cache[url] ? cache[url] : context.manager.download(url)
+      return cache[url] = cache[url] ? cache[url] : context.manager.download(url).then(function(res){
+        return res.content;
+      })
     }
   }
 

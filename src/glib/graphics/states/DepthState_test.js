@@ -36,7 +36,7 @@
         expect(stateC.depthEnable).toBe(paramsA.depthEnable);
         expect(stateC.depthFunction).toBe(paramsA.depthFunction);
         expect(stateC.depthWriteEnable).toBe(paramsA.depthWriteEnable);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
       });
 
       it("given state", function() {
@@ -46,7 +46,7 @@
         expect(stateC.depthEnable).toBe(paramsB.depthEnable);
         expect(stateC.depthFunction).toBe(paramsB.depthFunction);
         expect(stateC.depthWriteEnable).toBe(paramsB.depthWriteEnable);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
 
       });
     });
@@ -61,9 +61,9 @@
           expect(stateA[key]).toBe(paramsB[key]);
         });
         it ("marks as changed", function(){
-          expect(stateC._changed).toBe(false);
+          expect(stateC.hasChanged).toBe(false);
           stateC[key] = paramsB[key];
-          expect(stateC._changed).toBe(true);
+          expect(stateC.hasChanged).toBe(true);
         });
       });
     });

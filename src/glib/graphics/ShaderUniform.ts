@@ -25,6 +25,15 @@ module Glib.Graphics {
     return {x: data[0] || 0, y: data[1] || 0, z: data[2] || 0, w: data[3] || 0}
   }
 
+  export interface ShaderUniformOptions {
+    name:string
+    type:string
+    binding?:string
+    default?:any
+    filter?:string
+    register?:number
+  }
+
   /**
    * 
    */
@@ -75,23 +84,22 @@ module Glib.Graphics {
     /**
      * 
      */
-    constructor(program:ShaderProgram, name:string, meta:any={}) {
+    constructor(program:ShaderProgram, options:ShaderUniformOptions) {
 
       this.device = program.device
       this.gl = program.gl
 
       this.program = program
-      this.meta = meta
-      this.name = meta.name || name
-      this.type = meta.type
-      this.location = program.gl.getUniformLocation(program.handle, this.name)
-
+      this.meta = options
+      this.name = options.binding || options.name
+      this.type = options.type
+      this.location = program.gl.getUniformLocation(program.handle, options.name)
       if (this.location == null) {
         this.set = function () {}
         return
       }
 
-      var value = this.meta['default'];
+      var value = options['default'];
       switch (this.type) {
         case 'int':
           this.defaultValue = Number(value) || 0
@@ -127,7 +135,7 @@ module Glib.Graphics {
         case 'sampler2D':
         case 'samplerCube':
           this.register = Number(this.meta.register)|0
-          this.filter = utils.copy(SamplerState[meta.filter] || SamplerState.Default)
+          this.filter = utils.copy(SamplerState[this.meta.filter] || SamplerState.Default)
           this.set = this.setTexture
           break
         default:
@@ -401,7 +409,9 @@ module Glib.Graphics {
       var device = this.device
       var sampler = device.samplerStates[this.register] || device.samplerStates[0]
 
-      if (value) value.update()
+      if (value) {
+        value.update()
+      } 
       // TODO: find petter place/solution for this logic
       if (!value || !value.ready) {
         sampler.texture = this.device.defaultTexture

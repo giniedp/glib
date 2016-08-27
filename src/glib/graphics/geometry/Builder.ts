@@ -30,9 +30,7 @@ module Glib.Graphics.Geometry {
     boundingSphere:BoundingSphere
 
     constructor(options:BuilderOptions = {}) {
-
       this.layout = Graphics.VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent');
-
       // The fallback values that should be used during the build process.
       // If any vertex is pushed into the builder with missing attributes they are resolved from here.
       this.defaultAttributes = options.defaultAttributes || {

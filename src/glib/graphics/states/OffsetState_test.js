@@ -36,7 +36,7 @@
         expect(stateC.offsetEnable).toBe(paramsA.offsetEnable);
         expect(stateC.offsetFactor).toBe(paramsA.offsetFactor);
         expect(stateC.offsetUnits).toBe(paramsA.offsetUnits);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
       });
 
       it("given state", function() {
@@ -46,7 +46,7 @@
         expect(stateC.offsetEnable).toBe(paramsB.offsetEnable);
         expect(stateC.offsetFactor).toBe(paramsB.offsetFactor);
         expect(stateC.offsetUnits).toBe(paramsB.offsetUnits);
-        expect(stateC._changed).toBe(false);
+        expect(stateC.hasChanged).toBe(false);
 
       });
     });
@@ -61,9 +61,9 @@
           expect(stateA[key]).toBe(paramsB[key]);
         });
         it ("marks as changed", function(){
-          expect(stateC._changed).toBe(false);
+          expect(stateC.hasChanged).toBe(false);
           stateC[key] = paramsB[key];
-          expect(stateC._changed).toBe(true);
+          expect(stateC.hasChanged).toBe(true);
         });
       });
     });
