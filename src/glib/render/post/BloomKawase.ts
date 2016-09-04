@@ -1,6 +1,6 @@
-module Glib.Render.Effects {
+module Glib.Render.Post {
 
-  export class KawaseBloom implements Render.Step {
+  export class BloomKawase implements Render.Step {
     glowCut: number = 0.6;
     iterations: number = 5;
     halfSize: boolean = true;
@@ -8,11 +8,7 @@ module Glib.Render.Effects {
       width: 2, height: 2, depthFormat: Glib.Graphics.DepthFormat.None
     }
 
-    constructor(private material:Graphics.ShaderEffect) {
-    }
-
-    setup(manager: Render.Manager) {
-
+    constructor(private effect:Graphics.ShaderEffect) {
     }
 
     render(manager: Render.Manager) {
@@ -38,7 +34,7 @@ module Glib.Render.Effects {
       // GLOW CUT
       //
       
-      program = this.material.getTechnique('glowCut').pass(0).program
+      program = this.effect.getTechnique('glowCut').pass(0).program
       program.setUniform("threshold", this.glowCut)
       program.setUniform("texture1", baseTarget)
       device.program = program
@@ -56,7 +52,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // KAWASE ITERATIONS
       //
-      program = this.material.getTechnique('kawaseIteration').pass(0).program
+      program = this.effect.getTechnique('kawaseIteration').pass(0).program
       device.blendState = Glib.Graphics.BlendState.Default
       for (let i = 0; i < this.iterations; i++) {
         program.setUniform("iteration", i + 1)
@@ -81,7 +77,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // COMBINE 
       //
-      program = this.material.getTechnique('combine').pass(0).program
+      program = this.effect.getTechnique('combine').pass(0).program
       program.setUniform("texture1", baseTarget);
       program.setUniform("texture2", renderTarget1);
       device.program = program
@@ -96,8 +92,5 @@ module Glib.Render.Effects {
       manager.endStep(resultTarget);
     }
 
-    cleanup(manager: Render.Manager) {
-
-    }
   }
 }

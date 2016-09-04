@@ -44,6 +44,7 @@ var PATHS = {
     ],
     scripts: [
       'bower_components/jquery/dist/jquery.js',
+      'bower_components/dat-gui/build/dat.gui.js',
       'bower_components/prism/prism.js',
       'bower_components/prism/components/prism-glsl.js',
       'bower_components/prism/components/prism-css.js',

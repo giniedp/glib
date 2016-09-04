@@ -1,0 +1,86 @@
+//- title: Basic Effects
+//- weight: 4
+extends ./../../_layouts/example
+block script
+  a(name="HTML")
+  viewcode
+  
+  a(name="JS")
+  script(type='text/javascript').
+
+    var device = new Glib.Graphics.Device({
+      canvas: document.getElementById('canvas')
+    });
+    var content = new Glib.Content.Manager(device);
+
+    var sphere = Glib.Graphics.Geometry.Builder.begin({
+      layout: 'PositionTextureNormalTangentBitangent'
+    }).append('Sphere').endMesh(device);
+    
+    var effect;
+    content.load("Effect", "/assets/shader/basic.glfx").then(function(result) {
+      effect = result;
+    });
+    
+    var texture;
+    content.load("Texture", "/assets/textures/proto_blue.png").then(function(result) {
+      texture = result;
+    });
+
+    var world = Glib.Mat4.identity();
+    var view = Glib.Mat4.identity();
+    var proj = Glib.Mat4.identity();
+    var cam = Glib.Mat4.identity();
+
+    var time = 0;
+    Glib.utils.loop(function(dt) {
+      time += dt;
+      let pulse = 2*Math.PI*time;
+
+      device.resize();
+      device.cullState = Glib.Graphics.CullState.CullCounterClockWise;
+      device.depthState = Glib.Graphics.DepthState.Default;
+      device.blendState = Glib.Graphics.BlendState.Opaque;
+      device.clear(Glib.Color.CornflowerBlue, 1.0);
+      
+      cam.initTranslation(5, 0, 1);
+      Glib.Mat4.invert(cam, view);
+      proj.initOrthographic(5, 5, 0.1, 1000);
+      //proj.initPerspectiveFieldOfView(Math.PI/2, device.drawingBufferAspectRatio, 1, 1000);
+
+      if (!effect) return;
+      var params = effect.parameters;
+
+      params.View = view;
+      params.Projection = proj;
+      params.EyePosition = cam.getTranslation();
+      params.DiffuseMap = texture;
+
+      params.Lights0Color = [1, 1, 1, 2];
+      params.Lights0Direction = [Math.cos(pulse / 10000) * 50, 0, Math.sin(pulse / 10000) * 50, 1];
+      //params.Lights0Position = [0, 0, -1, 1];
+      params.Lights0Misc = [
+        1000, // point light range 
+        0, 
+        0, 
+        1     // 1:dir light 2:point light
+      ];
+
+      params.AmbientColor = [0.0, 0.0, 0.0];
+
+      var max = 10;
+      var space = 0.1;
+      var i = 0, j = 0, k = 0;
+      for (i = 0; i < max; i++) {
+        //for (j = 0; j < max; j++) {
+          //for (k = 0; k < max; k++) {
+            world.setTranslationXYZ((1+space) * i, (1+space) * j, (1+space) * k);
+            
+            params.World = world;
+            params.SpecularPower = 2 / Math.pow(((i+1) / max) * 10, 4) - 2;
+
+            effect.drawMesh(sphere);
+          //} 
+        //} 
+      }
+    });

@@ -1,4 +1,4 @@
-module Glib.Render.Effects {
+module Glib.Render.Post {
 
   export class Pixelate implements Render.Step {
 
@@ -6,18 +6,14 @@ module Glib.Render.Effects {
     pixelHeight: number = 10;
     offset: number = 0;
 
-    constructor(private material:Graphics.ShaderEffect) {
-    }
-
-    setup(manager: Render.Manager) {
-
+    constructor(private effect:Graphics.ShaderEffect) {
     }
 
     render(manager: Render.Manager) {
       var rt = manager.beginStep();
       var rt2 = manager.acquireTarget(rt);
       
-      let program = this.material.getTechnique(0).pass(0).program
+      let program = this.effect.getTechnique(0).pass(0).program
       program.setUniform('texture', rt);
       program.setUniform('vOffset', this.offset);
       program.setUniform('pixelWidth', this.pixelWidth);
@@ -33,8 +29,5 @@ module Glib.Render.Effects {
       manager.endStep(rt2);
     }
 
-    cleanup(manager: Render.Manager) {
-
-    }
   }
 }

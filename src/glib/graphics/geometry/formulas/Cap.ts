@@ -1,9 +1,5 @@
 module Glib.Graphics.Geometry.Formulas {
 
-  import Vec2 = Glib.Vec2;
-  import Vec3 = Glib.Vec3;
-  import Vec4 = Glib.Vec4;
-
   function circleVector(t, out) {
     out = out || new Vec3();
     var angle = t * Math.PI * 2;
@@ -27,9 +23,9 @@ module Glib.Graphics.Geometry.Formulas {
     var position = Vec3.zero(), texture = Vec2.zero();
 
     for (var step = 0; step <= steps; step += 1) {
-      circleVector(step / steps, position);
-      texture.init(position.x, position.z);
-      position.selfMultiplyScalar(radius);
+      circleVector(step / steps, position)
+      texture.init(position.x, position.z)
+      position.selfMultiplyScalar(radius)
 
       builder.addVertex({
         position: position,

@@ -136,12 +136,7 @@ module Glib.Graphics {
       var gl = texture.gl
       return function () {
         texture.ready = (!!image.naturalWidth && !!image.naturalHeight)
-
-        if (!texture.ready || !texture['wasReady']) {
-          texture['wasReady'] = texture.ready
-          // image has not been downloaded yet
-          return
-        }
+        if (!texture.ready) return // image has not been downloaded yet
 
         gl.bindTexture(texture.type, texture.handle)
         gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, image)

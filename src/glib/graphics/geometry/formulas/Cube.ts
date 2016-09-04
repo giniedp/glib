@@ -1,10 +1,5 @@
 module Glib.Graphics.Geometry.Formulas {
 
-  import Vec2 = Glib.Vec2;
-  import Vec3 = Glib.Vec3;
-  import Vec4 = Glib.Vec4;
-  import Mat4 = Glib.Mat4;
-
   function withDefault(opt, value) {
     return opt == null ? value : opt;
   }
@@ -13,61 +8,48 @@ module Glib.Graphics.Geometry.Formulas {
     size?:number,
     steps?:number
   } = {}) {
-    var size = withDefault(options.size, 1);
-    var steps = withDefault(options.steps, 1);
-    var transform = builder.transform.clone();
-    var halfUp = Mat4.createTranslation(0, size * 0.5, 0);
-
+    var size = withDefault(options.size, 1)
+    var halfSize = size * 0.5
+    var halfPi = Math.PI * 0.5
+    var steps = withDefault(options.steps, 1)
+    var halfUp = Mat4.createTranslation(0, size * 0.5, 0)
+    let transform = Mat4.identity()
+    let tId:number
+    
     // top plane
-    builder.transform = Mat4.multiplyChain(
-      halfUp,
-      transform
-    );
+    transform.initTranslation(0, halfSize, 0)
+    tId = builder.beginTransform(transform)
     builder.append("Plane", {size: size, steps: steps});
+    builder.endTransform(tId)
 
     // bottom plane
-    builder.transform = Mat4.multiplyChain(
-      halfUp,
-      Mat4.createRotationZ(Math.PI),
-      transform
-    );
-    builder.append("Plane", {size: size, steps: steps});
-
-    // back plane
-    builder.transform = Mat4.multiplyChain(
-      halfUp,
-      Mat4.createRotationX(Math.PI * 0.5),
-      transform
-    );
-    builder.append("Plane", {size: size, steps: steps});
-
-    // right plane
-    builder.transform = Mat4.multiplyChain(
-      halfUp,
-      Mat4.createRotationX(Math.PI * 0.5),
-      Mat4.createRotationY(Math.PI * 0.5),
-      transform
-    );
-    builder.append("Plane", {size: size, steps: steps});
+    transform.initYawPitchRoll(0, 0, Math.PI).setTranslationY(-halfSize)
+    tId = builder.beginTransform(transform)
+    builder.append("Plane", {size: size, steps: steps})
+    builder.endTransform(tId)
 
     // front plane
-    builder.transform = Mat4.multiplyChain(
-      halfUp,
-      Mat4.createRotationX(Math.PI * 0.5),
-      Mat4.createRotationY(Math.PI),
-      transform
-    );
-    builder.append("Plane", {size: size, steps: steps});
+    transform.initYawPitchRoll(0, halfPi, 0).setTranslationZ(halfSize)
+    tId = builder.beginTransform(transform)
+    builder.append("Plane", {size: size, steps: steps})
+    builder.endTransform(tId)
+
+    // right plane
+    transform.initYawPitchRoll(halfPi, halfPi, 0).setTranslationX(halfSize)
+    tId = builder.beginTransform(transform)
+    builder.append("Plane", {size: size, steps: steps})
+    builder.endTransform(tId)
+
+    // back plane
+    transform.initYawPitchRoll(Math.PI, halfPi, 0).setTranslationZ(-halfSize)
+    tId = builder.beginTransform(transform)
+    builder.append("Plane", {size: size, steps: steps})
+    builder.endTransform(tId)
 
     // left plane
-    builder.transform = Mat4.multiplyChain(
-      halfUp,
-      Mat4.createRotationX(Math.PI * 0.5),
-      Mat4.createRotationY(Math.PI * 1.5),
-      transform
-    );
-    builder.append("Plane", {size: size, steps: steps});
-
-    builder.transform = transform;
+    transform.initYawPitchRoll(3 * halfPi, halfPi, 0).setTranslationX(-halfSize)
+    tId = builder.beginTransform(transform)
+    builder.append("Plane", {size: size, steps: steps})
+    builder.endTransform(tId)
   }
 }

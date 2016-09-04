@@ -1032,6 +1032,25 @@ module Glib {
       return this;
     }
 
+    setTranslationX(v:number) {
+      this.translation[0] = v;
+      return this;
+    }
+    setTranslationY(v:number) {
+      this.translation[1] = v;
+      return this;
+    }
+    setTranslationZ(v:number) {
+      this.translation[2] = v;
+      return this;
+    }
+    setTranslationXYZ(x:number, y:number, z:number) {
+      this.translation[0] = x;
+      this.translation[1] = y;
+      this.translation[2] = z;
+      return this;
+    }
+
     /**
      * Sets the scale part
      * @method setScale
@@ -1043,6 +1062,24 @@ module Glib {
       this.data[0] = vec.x;
       this.data[5] = vec.y;
       this.data[10] = vec.z;
+      return this;
+    }
+    setScaleX(v:number) {
+      this.data[0] = v;
+      return this;
+    }
+    setScaleY(v:number) {
+      this.data[5] = v;
+      return this;
+    }
+    setScaleZ(v:number) {
+      this.data[10] = v;
+      return this;
+    }
+    setScaleXYZ(x:number, y:number, z:number) {
+      this.data[0] = x;
+      this.data[5] = y;
+      this.data[10] = z;
       return this;
     }
 
@@ -1991,7 +2028,7 @@ module Glib {
      * @param {Mat4} [out] The matrix to write to
      * @return {Mat4} The given `out` parameter or a new matrix
      */
-    static multiply(matA, matB, out) {
+    static multiply(matA:Mat4, matB:Mat4, out?:Mat4) {
       out = out || new Mat4();
       var a = matB.data;
       var b = matA.data;

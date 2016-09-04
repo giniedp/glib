@@ -1,10 +1,5 @@
 module Glib.Graphics.Geometry.Formulas {
 
-  import Vec2 = Glib.Vec2;
-  import Vec3 = Glib.Vec3;
-  import Vec4 = Glib.Vec4;
-  import Mat4 = Glib.Mat4;
-
   function withDefault(opt, value) {
     return opt == null ? value : opt;
   }
@@ -13,27 +8,28 @@ module Glib.Graphics.Geometry.Formulas {
     size?:number,
     steps?:number
   } = {}) {
-    var size = withDefault(options.size, 2);
-    var vertices = withDefault(options.steps, 1) + 1;
+    let size = withDefault(options.size, 2);
+    let vertices = withDefault(options.steps, 1) + 1;
+    let vInv = 1.0 / vertices;
 
-    var baseVertex = builder.vertexCount;
-    var x, z, pos = Vec3.zero(), uv = Vec2.zero();
+    let baseVertex = builder.vertexCount;
+    let x, z, pos = Vec3.zero(), uv = Vec2.zero();
 
     for (z = 0; z <= vertices; z += 1) {
       for (x = 0; x <= vertices; x += 1) {
         builder.addVertex({
-          position: pos.init(x / vertices - 0.5, 0, z / vertices - 0.5).selfMultiplyScalar(size),
-          texture: uv.init(x / vertices, z / vertices)
+          position: pos.init(x * vInv - 0.5, 0, z * vInv - 0.5).selfMultiplyScalar(size),
+          texture: uv.init(x * vInv, z * vInv)
         });
       }
     }
 
     for (z = 0; z < vertices; z += 1) {
       for (x = 0; x < vertices; x += 1) {
-        var a = x + z * (vertices + 1);
-        var b = a + 1;
-        var c = x + (z + 1) * (vertices + 1);
-        var d = c + 1;
+        let a = x + z * (vertices + 1);
+        let b = a + 1;
+        let c = x + (z + 1) * (vertices + 1);
+        let d = c + 1;
 
         builder.addIndex(baseVertex + a);
         builder.addIndex(baseVertex + b);

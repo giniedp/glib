@@ -6,6 +6,8 @@ module Glib.Graphics.Geometry {
   import BufferData = Glib.Graphics.BufferData;
   import ModelMeshOptions = Glib.Graphics.ModelMeshOptions;
 
+  let tmpBuffer = []
+
   export interface BuilderOptions {
     defaultAttributes?:{[key:string]:any};
     layout?:string|{[key:string]:any};
@@ -13,24 +15,24 @@ module Glib.Graphics.Geometry {
   }
 
   export class Builder {
-    defaultAttributes:{[key:string]:any};
-    layout:{[key:string]:any};
-    meshes:ModelMeshOptions[] = [];
+    defaultAttributes:{[key:string]:any}
+    layout:{[key:string]:any}
+    meshes:ModelMeshOptions[] = []
 
-    ignoreTransform:boolean = false;
-    transform:Mat4;
-    uvTransform:Mat4;
-    indexBuffer:BufferOptions;
-    indexCount:number;
-    sGroups:number[];
-    vertexBuffer:BufferOptions;
-    vertexCount:number;
-    maxVertexCount = 65536;
+    indexBuffer:BufferOptions
+    indexCount:number
+    sGroups:number[]
+    vertexBuffer:BufferOptions
+    vertexCount:number
+    maxVertexCount = 65536
     boundingBox:BoundingBox
     boundingSphere:BoundingSphere
 
+    private transformStack:Mat4[] = []
+    
     constructor(options:BuilderOptions = {}) {
       this.layout = Graphics.VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent');
+      
       // The fallback values that should be used during the build process.
       // If any vertex is pushed into the builder with missing attributes they are resolved from here.
       this.defaultAttributes = options.defaultAttributes || {
@@ -42,7 +44,6 @@ module Glib.Graphics.Geometry {
           texture: [0, 0]
         };
 
-      this.ignoreTransform = options.ignoreTransform === true;
       this.reset();
     }
 
@@ -68,13 +69,28 @@ module Glib.Graphics.Geometry {
       this.vertexBuffer.data = value;
     }
 
+    beginTransform(transform:Mat4):number {
+      let id = this.transformStack.length
+      let last = this.transformStack[id - 1]
+      if (last) {
+        this.transformStack[id] = Mat4.multiply(transform, last)
+      } else {
+        this.transformStack[id] = transform.clone()
+      }
+      return id
+    }
+    endTransform(id:number) {
+      this.transformStack.length = id
+    }
+
     static begin(options?:BuilderOptions) {
       return new Builder(options);
     }
 
     private resetTransform() {
-      this.transform = Mat4.identity();
-      this.uvTransform = Mat4.identity();
+      this.transformStack.length = 0
+      //this.transform = Mat4.identity();
+      //this.uvTransform = Mat4.identity();
       return this;
     }
 
@@ -84,7 +100,7 @@ module Glib.Graphics.Geometry {
         type: 'IndexBuffer',
         dataType: 'ushort',
         data: []
-      };
+      }
 
       // The new index buffer that is going to be filled with vertices
       this.vertexBuffer = {
@@ -92,12 +108,12 @@ module Glib.Graphics.Geometry {
         type: 'VertexBuffer',
         dataType: 'float',
         data: []
-      };
+      }
 
       // counter values
-      this.indexCount = 0;
-      this.vertexCount = 0;
-      this.sGroups = [];
+      this.indexCount = 0
+      this.vertexCount = 0
+      this.sGroups = []
 
       this.boundingBox = new BoundingBox()
       this.boundingSphere = new BoundingSphere()
@@ -122,10 +138,10 @@ module Glib.Graphics.Geometry {
      * Pushes given indices into the state.
      */
     addIndex(index:number, sGroup?:number) {
-      this.indices.push(index);
-      this.sGroups.push(sGroup);
-      this.indexCount += 1;
-      return this;
+      this.indices.push(index)
+      this.sGroups.push(sGroup)
+      this.indexCount += 1
+      return this
     }
 
     /**
@@ -135,42 +151,52 @@ module Glib.Graphics.Geometry {
      */
     addVertex(vertex:{[key:string]:any}):Builder {
       if (this.vertexCount === this.maxVertexCount) {
-        // throw `max vertex count reached`;
+        //throw `max vertex count reached`;
       }
-      var that = this;
-      var channel, item, i, layout = this.vertexBuffer.layout, defaults = this.defaultAttributes;
+      let transform = this.transformStack[this.transformStack.length - 1]
+      let layout = this.vertexBuffer.layout
+      let defaults = this.defaultAttributes
 
-      Object.keys(layout).forEach((key:string) => {
-        channel = layout[key];
-        item = vertex[key] || that.defaultAttributes[key];
+      for (let key in layout) {
+        let channel = layout[key]
+        let item = vertex[key] || defaults[key]
 
         if (Array.isArray(item)) {
           // ok
-        } else if (typeof item.dump === 'function') {
-          item = item.dump();
+        } else if (typeof item.copyTo === 'function') {
+          tmpBuffer.length = channel.packed ? 1 : channel.elements
+          item.copyTo(tmpBuffer)
+          item = tmpBuffer
+        } else if (typeof item === 'number') {
+          tmpBuffer.length = 1
+          tmpBuffer[0] = item
+          item = tmpBuffer
         } else {
-          throw `vertex element must be of type number[]|Vec2|Vec3|Vec4`;
+          throw `vertex element type must be one of number|number[]|Vec2|Vec3|Vec4`
         }
-        item = item || defaults[key];
 
-        if (this.ignoreTransform) {
+        if (!transform) {
           if (key == 'position') {
             this.mergeBounding(item)
           }
         } else if (key == 'position') {
-          that.transform.transformV3Buffer(item);
+          transform.transformV3Buffer(item);
           this.mergeBounding(item)
         } else if (key.match('normal|tangent')) {
-          that.transform.transformNormalBuffer(item);
+          transform.transformNormalBuffer(item);
         } else if (key.match('texture|uv')) {
-          that.uvTransform.transformV2Buffer(item);
+          // TODO:
+          //this.uvTransform.transformV2Buffer(item);
         }
-        for (i = 0; i < channel.elements; i += 1) {
-          that.vertices.push(item[i] || 0);
+
+        let count = channel.packed ? 1 : channel.elements;
+        for (let i = 0; i < count; i += 1) {
+          this.vertices.push(item[i] || 0)
         }
-      });
-      this.vertexCount += 1;
-      return this;
+      };
+      
+      this.vertexCount += 1
+      return this
     }
 
     private mergeBounding(item) {
@@ -202,40 +228,41 @@ module Glib.Graphics.Geometry {
     }
 
     mergeDublicates() {
-      var eCount = VertexLayout.countElements(this.layout);
-      var hashMap = {};
+      let eCount = VertexLayout.countElements(this.layout);
+      let hashMap = {};
 
-      var oldIndices:any = this.indices;
-      var newIndices:any = [];
-      var iCounter = 0;
+      let oldIndices:any = this.indices
+      let newIndices:any = []
+      let iCounter = 0
 
-      var oldVertices:any = this.vertices;
-      var newVertices:any = [];
-      var vCounter = 0;
+      let oldVertices:any = this.vertices
+      let newVertices:any = []
+      let vCounter = 0
 
-      for (var index of oldIndices) {
-        var vertex = oldVertices.slice(index * eCount, index * eCount + eCount);
-        var hash = vertex.join('|');
-        var position = hashMap[hash];
+      for (let index of oldIndices) {
+        let vertex = oldVertices.slice(index * eCount, index * eCount + eCount)
+        let hash = vertex.join('|')
+        let position = hashMap[hash]
         if (position == null) {
-          for (var e of vertex) {
-            newVertices.push(e);
+          for (let e of vertex) {
+            newVertices.push(e)
           }
-          position = vCounter;
-          hashMap[hash] = position;
-          vCounter += 1;
+          position = vCounter
+          hashMap[hash] = position
+          vCounter += 1
         }
 
-        newIndices[iCounter] = position;
-        iCounter += 1;
+        newIndices[iCounter] = position
+        iCounter += 1
       }
+      
       if (this.vertexCount != vCounter) {
-        Glib.utils.debug(`[Geometry.Builder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`);
-        this.vertices = newVertices;
-        this.vertexCount = vCounter;
+        Glib.utils.debug(`[Geometry.Builder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`)
+        this.vertices = newVertices
+        this.vertexCount = vCounter
 
-        this.indices = newIndices;
-        this.indexCount = iCounter;
+        this.indices = newIndices
+        this.indexCount = iCounter
       }
     }
 
@@ -244,12 +271,12 @@ module Glib.Graphics.Geometry {
      * @param options
      * @returns {Glib.Graphics.Geometry.Builder}
      */
-    endMeshOptions(options:ModelMeshOptions = {}, optimize:boolean = false):Builder {
+    endMeshOptions(options:ModelMeshOptions = {}, optimize:boolean = false):ModelMeshOptions {
       if (this.indexCount === 0 && this.vertexCount === 0) {
         utils.warn(`[Geometry.Builder] pushMesh : called on empty builder. ignore.`);
         return this;
       }
-
+      //debugger
       this.mergeDublicates();
       this.calculateNormalsAndTangents();
       
@@ -261,7 +288,7 @@ module Glib.Graphics.Geometry {
 
       this.meshes.push(options);
       this.resetData();
-      return this;
+      return options;
     }
 
     endMesh(device: Graphics.Device, optimize:boolean = false): ModelMesh {
@@ -308,7 +335,6 @@ module Glib.Graphics.Geometry {
      * @returns {Glib.Graphics.Geometry.Builder}
      */
     append(formulaName:string, options:any = {}):Builder {
-      Glib.utils.debug(`[Geometry.Builder] append : ${formulaName}`, options);
       var formula = Formulas[formulaName];
       if (formula) {
         formula(this, options);

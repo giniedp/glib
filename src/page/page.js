@@ -80,7 +80,7 @@ var GlibSamples = GlibSamples || {};
           });
         } else if ($this.is('viewcode')) {
           makeSnippet(view[0].innerHTML, 'html').appendTo(currentTab().content);
-        } else if ($this.is('script')) {
+        } else if ($this.is('script') && !$this.is('[no-example]')) {
           makeSnippet($this[0].outerHTML, 'html').appendTo(currentTab().content);
         } else if ($this.is('style')) {
           makeSnippet($this[0].outerHTML, 'html').appendTo(currentTab().content);  

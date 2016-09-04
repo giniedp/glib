@@ -1,4 +1,4 @@
-module Glib.Render.Effects {
+module Glib.Render.Post {
 
   function gauss(n:number, theta:number) {
     return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)));
@@ -10,7 +10,7 @@ module Glib.Render.Effects {
     gaussSigma: number = 0.5;
     private offsetWeights: Array<Array<number>>;
     
-    constructor(private material:Graphics.ShaderEffect) {
+    constructor(private effect:Graphics.ShaderEffect) {
     }
 
     private updateGauss(texelX, texelY){
@@ -43,10 +43,6 @@ module Glib.Render.Effects {
           data[3] = this.multiplier * gauss(norm, this.gaussSigma);
       }
     } 
-    
-    setup(manager: Render.Manager) {
-
-    }
 
     render(manager: Render.Manager) {
       let baseTarget = manager.beginStep();
@@ -69,7 +65,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // [1] GLOW CUT -> rt1
       //
-      device.program = this.material.getTechnique("glowCut").pass(0).program;
+      device.program = this.effect.getTechnique("glowCut").pass(0).program;
       device.program.setUniform("texture", baseTarget);
       device.program.setUniform("threshold", this.glowCut);
       device.setRenderTarget(rt1);
@@ -86,10 +82,10 @@ module Glib.Render.Effects {
       // [2] HORIZONTAL BLUR -> rt2
       //
       // calculate filter offsets and weights
-      device.program = this.material.getTechnique("hBlur").pass(0).program;
+      device.program = this.effect.getTechnique("hBlur").pass(0).program;
       device.program.setUniform("texture", rt1);
       for (var i = 0; i < this.offsetWeights.length; i++) {
-        device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i]);
+        device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i]);
       }
       device.setRenderTarget(rt2);
       device.clear(Color.TransparentBlack, 1);
@@ -105,10 +101,10 @@ module Glib.Render.Effects {
       // [2] VERTICAL BLUR -> rt1
       //
       // calculate filter offsets and weights
-      device.program = this.material.getTechnique("vBlur").pass(0).program;
+      device.program = this.effect.getTechnique("vBlur").pass(0).program;
       device.program.setUniform("texture", rt2);
       for (var i = 0; i < this.offsetWeights.length; i++) {
-        device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i]);
+        device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i]);
       }
       device.setRenderTarget(rt1);
       device.clear(Color.TransparentBlack, 1);
@@ -123,7 +119,7 @@ module Glib.Render.Effects {
       //-------------------------------------------------
       // [4] COMBINE BOOM -> pongTrarget
       //
-      device.program = this.material.getTechnique("combine").pass(0).program;
+      device.program = this.effect.getTechnique("combine").pass(0).program;
       device.program.setUniform("texture", baseTarget);
       device.program.setUniform("bloomTexture", rt1);
       
@@ -136,8 +132,5 @@ module Glib.Render.Effects {
       manager.endStep(rt2);
     }
 
-    cleanup(manager: Render.Manager) {
-
-    }
   }
 }

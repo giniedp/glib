@@ -211,6 +211,9 @@ void getDiffuseColor(out vec4 color) {
   color.a = color.a * uAlpha;
   #else
   color = vec4(uDiffuseColor, uAlpha);
+  #ifdef COLORED
+  color.rgb *= vColor.rgb;
+  #endif
   #endif
 }
 
@@ -224,11 +227,17 @@ void writeNormal() {
   #endif
 }
 
-#ifdef TEXTURED
 void writeTexture() {
+  #ifdef TEXTURED
   vTexture.xy = vec2(aTexture.x, 1.0-aTexture.y);
+  #endif
 }
-#endif
+
+void writeColor() {
+  #ifdef COLORED
+  vColor.rgb = aColor.rgb;
+  #endif
+}
 #endif
 
 void getNormal(out vec3 bump){
@@ -368,7 +377,7 @@ highp vec3 shadeSzirmay(
   vec3  F = fastFresnel(surface.Specular.rgb, dotLH); 
   // specular distribution 
   vec3 BRDF = D * F / (4.0 * dotLH * dotLH);
-
+  //return vec3(D);
   return (BRDF * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
 }
 
@@ -391,7 +400,7 @@ highp vec3 shadeOptimized(
   float D = pow(dotNH, surface.Specular.a); 
   // specular distribution 
   float BRDF = D / (4.0 * pow(dotLH, 3.0));
-
+  //return vec3(BRDF);
   return (BRDF * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
 }
 
@@ -405,6 +414,7 @@ void glibVertexShader() {
   gl_Position = uProjection * uView * vWorldPosition;
   writeTexture();
   writeNormal();
+  writeColor();
 }
 #endif
 
@@ -437,8 +447,8 @@ void glibFragmentShader() {
     ShadeParams shade;
     shade.V = normalize(uCameraPosition.xyz - vWorldPosition.xyz);
     getLight(light, type, vWorldPosition.xyz, shade);
-    color.rgb += shadeSzirmay(shade, surface).rgb;
-    //color.rgb += shadeOptimized(shade, surface).rgb;
+    //color.rgb += shadeSzirmay(shade, surface).rgb;
+    color.rgb += shadeOptimized(shade, surface).rgb;
     //color.rgb += shadeCookTorrance(shade, surface).rgb;
   }
   vec3 ambient;

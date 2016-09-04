@@ -1,10 +1,5 @@
 module Glib.Graphics.Geometry.Formulas {
 
-  import Vec2 = Glib.Vec2;
-  import Vec3 = Glib.Vec3;
-  import Vec4 = Glib.Vec4;
-  import Mat4 = Glib.Mat4;
-
   function circleVector(position, total, out) {
     out = out || new Vec3();
     var angle = position * Math.PI * 2 / total;
@@ -25,34 +20,36 @@ module Glib.Graphics.Geometry.Formulas {
     bottomDiameter?:number
     bottomRadius?:number
   } = {}) {
-    var height = withDefault(options.height, 2);
-    var steps = withDefault(options.steps, 8);
-    var radiusUp = withDefault(options.topRadius, withDefault(options.topDiameter, 1) * 0.5);
-    var radiusLo = withDefault(options.bottomRadius, withDefault(options.bottomDiameter, 1) * 0.5);
+    let height = withDefault(options.height, 2)
+    let steps = withDefault(options.steps, 8)
+    let radiusUp = withDefault(options.topRadius, withDefault(options.topDiameter, 1) * 0.5)
+    let radiusLo = withDefault(options.bottomRadius, withDefault(options.bottomDiameter, 1) * 0.5)
 
-    var stepsH = 2;
-    var stepsV = steps;
-    var baseVertex = builder.vertexCount;
-    var x, y, t;
-    var position = Vec3.zero();
-    var texture = Vec2.zero();
+    let stepsH = 2
+    let stepsV = steps
+    let invStepsH = 1 / stepsH
+    let invStepsV = 1 / steps
+    let baseVertex = builder.vertexCount
+    let x, y, t
+    let position = Vec3.zero()
+    let texture = Vec2.zero()
 
     for (y = 0; y <= stepsH; y += 1) {
       for (x = 0; x <= stepsV; x += 1) {
-        t = y / stepsH;
+        t = y * invStepsH;
 
-        circleVector(x, stepsV, position);
-        position.selfMultiplyScalar(radiusUp * t + radiusLo * (1 - t));
-        position.y = t * height;
+        circleVector(x, stepsV, position)
+        position.selfMultiplyScalar(radiusUp * t + radiusLo * (1 - t))
+        position.y = t * height
 
         builder.addVertex({
           position: position,
-          texture: texture.init(x / stepsV, y / stepsH)
-        });
+          texture: texture.init(x * invStepsV, y * invStepsH)
+        })
       }
     }
 
-    var a, b, c, d;
+    let a, b, c, d;
     for (y = 0; y < stepsH; y += 1) {
       for (x = 0; x < stepsV; x += 1) {
         a = x + y * (stepsV + 1);
@@ -76,17 +73,15 @@ module Glib.Graphics.Geometry.Formulas {
       steps: steps
     });
 
-    var transform = builder.transform;
-    builder.transform = Mat4.multiplyChain(
+    let transform = Mat4.multiplyChain(
       Mat4.createRotationX(Math.PI),
-      Mat4.createTranslation(0, height, 0),
-      transform
+      Mat4.createTranslation(0, height, 0)
     );
-
+    let tId = builder.beginTransform(transform)
     builder.append("Cap", {
       radius: radiusUp,
       steps: steps
     });
-    builder.transform = transform;
+    builder.endTransform(tId)
   }
 }

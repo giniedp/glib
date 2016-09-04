@@ -1,4 +1,4 @@
-module Glib.Render.Effects {
+module Glib.Render.Post {
 
   export class Tonemap implements Render.Step {
 
@@ -9,8 +9,8 @@ module Glib.Render.Effects {
     enabled: boolean = true;
     clearNext: boolean = false;
 
-    private _targets: Graphics.Texture[] = [];
-    private _targetOptions = [{
+    private targets: Graphics.Texture[] = [];
+    private targetOptions = [{
       width: 512, height: 512, depthFormat: Glib.Graphics.DepthFormat.None
     },{
       width: 128, height: 128, depthFormat: Glib.Graphics.DepthFormat.None
@@ -28,7 +28,7 @@ module Glib.Render.Effects {
       width: 2, height: 2, depthFormat: Glib.Graphics.DepthFormat.None
     }
     
-    constructor(private material:Graphics.ShaderEffect) {
+    constructor(private effect:Graphics.ShaderEffect) {
     }
     
     setup(manager: Render.Manager) {
@@ -41,11 +41,11 @@ module Glib.Render.Effects {
       if (!this.enabled) return
       // TODO: implement with HdrBlendable format 
 
-      let programLuminance = this.material.getTechnique("Luminance").pass(0).program
-      let programDownsample = this.material.getTechnique("Downsample").pass(0).program
-      let programCombine = this.material.getTechnique("Combine").pass(0).program
-      let programTonemap = this.material.getTechnique("Tonemap").pass(0).program
-      let programCopy = this.material.getTechnique("Copy").pass(0).program
+      let programLuminance = this.effect.getTechnique("Luminance").pass(0).program
+      let programDownsample = this.effect.getTechnique("Downsample").pass(0).program
+      let programCombine = this.effect.getTechnique("Combine").pass(0).program
+      let programTonemap = this.effect.getTechnique("Tonemap").pass(0).program
+      let programCopy = this.effect.getTechnique("Copy").pass(0).program
       
       // the current backbuffer holding the rendered image
       var frontBuffer = manager.beginStep();
@@ -58,8 +58,8 @@ module Glib.Render.Effects {
       })
 
       // get all intermediate downsample buffers
-      for (let i = 0; i < this._targetOptions.length; i++) {
-        this._targets[i] = manager.acquireTarget(this._targetOptions[i])
+      for (let i = 0; i < this.targetOptions.length; i++) {
+        this.targets[i] = manager.acquireTarget(this.targetOptions[i])
       }
 
       var device = manager.device;
@@ -69,8 +69,8 @@ module Glib.Render.Effects {
       //
       if (this.clearNext) {
         this.clearNext = false
-        for (let i = 0; i < this._targets.length; i++) {
-          device.setRenderTarget(this._targets[i])
+        for (let i = 0; i < this.targets.length; i++) {
+          device.setRenderTarget(this.targets[i])
           device.clearColor(0)
         }
         device.setRenderTarget(this.lum1)
@@ -88,18 +88,18 @@ module Glib.Render.Effects {
         let source = frontBuffer
         if (i > 0) {
           program = programDownsample
-          source = this._targets[i-1] 
+          source = this.targets[i-1] 
         }        
         program.setUniform("texture1", source);
         program.setUniform("texture1Texel", source.texel);
         device.program = program
-        device.setRenderTarget(this._targets[i])
+        device.setRenderTarget(this.targets[i])
         device.drawQuad(false)
         device.setRenderTarget(null)
       }
 
       // combine luminance
-      let thisFrameLuminance = this._targets[this._targets.length-1]
+      let thisFrameLuminance = this.targets[this.targets.length-1]
       let lastFrameLuminance = this.lum1 
       programCombine.setUniform("texture1", thisFrameLuminance)
       programCombine.setUniform("texture1Texel", thisFrameLuminance.texel)
@@ -139,9 +139,9 @@ module Glib.Render.Effects {
       */
       
       // cleanup
-      for (let i = 0; i < this._targetOptions.length; i++) {
-        manager.releaseTarget(this._targets[i])
-        this._targets[i] = null
+      for (let i = 0; i < this.targetOptions.length; i++) {
+        manager.releaseTarget(this.targets[i])
+        this.targets[i] = null
       }
 
       // swap history frames

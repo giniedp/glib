@@ -1,0 +1,136 @@
+//- title: Post
+//- weight: 1
+extends ./../../_layouts/example
+block script
+  a(name="HTML" index=3)
+  viewcode
+  
+  a(name="JS" index=1)
+  script(type='text/javascript').
+
+    Glib.Content.Pipeline.preloader('Effect', function(context) {
+      // redirect the download path for basicEffect
+      if (context.path === 'basicEffect') {
+        context.sourceType = '.glfx'
+        context.path = '/assets/shader/basicTextured.glfx'
+      }
+    });
+
+    var device = new Glib.Graphics.Device({ canvas: document.getElementById('canvas') });
+    var content = new Glib.Content.Manager(device);
+    var renderer = new Glib.Render.Manager(device);
+    // the only light in this scene
+    // the object fullfills the LightData interface
+    var light = {
+      color: new Glib.Vec4(1, 1, 1, 1),
+      position: new Glib.Vec4(0, 0, 1000, 0),
+      direction: new Glib.Vec4(0, 0, -1, 1),
+      misc: new Glib.Vec4(1000, 0, 0, 1)
+    }
+    var camera = {
+      world: Glib.Mat4.identity(),
+      view: Glib.Mat4.identity(),
+      projection: Glib.Mat4.identity()
+    }
+    var view = {
+      camera: camera,
+      items: [],
+      lights: [light],
+      steps: [new Glib.Render.StepForward()]
+    }
+    renderer.addView(view)
+
+    var objects = [];
+
+    var time = 0;
+    Glib.utils.loop(function(dt) {
+      time += dt;
+      updateCamera(time, dt);
+      updateLight(time, dt);
+      updateObjects(time, dt);
+      renderer.update();
+      renderer.render();
+    });
+
+
+    var objCount = 10;
+    var boxSize = 500;    
+    content.load("Model", "/assets/models/ghoul.obj").then(function(model) {
+      for (var i = 0; i < objCount; i++) {
+        objects.push(createObject(model));
+      }
+    });
+    content.load("Effect", "/assets/shader/post/bloom-kawase.glfx").then(function(effect) {
+      var bloomStep = new Glib.Render.Post.BloomKawase(effect);
+      ui(function(gui) {
+        gui.add(bloomStep, "glowCut", 0, 1);
+        gui.add(bloomStep, "iterations", 0, 10).step(1);
+      });
+      view.steps.push(bloomStep);
+    });
+
+    function createObject(model) {
+      var position = Glib.Vec3.randomNormal().selfMultiplyScalar(boxSize);
+      var direction = Glib.Vec3.randomNormal();
+      var up = new Glib.Vec3(0, 1, 0);
+
+      var object = {
+        position: position,
+        direction: direction,
+        up: up,
+        world: Glib.Mat4.createWorld(position, direction, up),
+        model: model,
+        renderItems: []
+      };
+
+      model.meshes.forEach(function(mesh) {
+        object.renderItems.push({
+          world: object.world,
+          mesh: mesh,
+          effect: (model.materials[mesh.materialId] || model.materials[0]),
+          data: null
+        });
+      });
+
+      return object
+    }
+
+    function updateCamera(time) {
+      camera.world.initTranslation(0, 0, boxSize * 1.5);
+      Glib.Mat4.invert(camera.world, camera.view);
+      camera.projection.initPerspectiveFieldOfView(Math.PI/2.4, device.drawingBufferAspectRatio, 0.1, boxSize * 3);
+    }
+
+    function updateLight(time) {
+      //light.position.x = Math.cos(2*Math.PI*time / 10000) * 50;
+      //light.position.y = 0;
+      //light.position.z = Math.sin(2*Math.PI*time / 10000) * 50;
+    }
+
+    function updateObjects(time, dt) {
+      view.items.length = 0
+      for (var i = 0; i < objects.length; i++) {        
+        var object = objects[i];
+        updateObject(object, time, dt);
+        // could do culling here
+        for (var j = 0; j < object.renderItems.length; j++) {
+          view.items.push(object.renderItems[j])
+        }        
+      }
+    }
+
+    function updateObject(object, time, dt) {
+      Glib.Vec3.multiplyScalarAdd(object.direction, dt / 10, object.position, object.position);
+      if (Math.abs(object.position.x) > boxSize) object.direction.x = -object.direction.x;
+      if (Math.abs(object.position.y) > boxSize) object.direction.y = -object.direction.y;
+      if (Math.abs(object.position.z) > boxSize) object.direction.z = -object.direction.z;
+      Glib.Vec3.clampScalar(object.position, -(boxSize - 0.1), boxSize - 0.1, object.position);
+      
+      object.forward = object.world.getForward(object.forward)
+      object.forward.x += (-object.direction.x - object.forward.x) * dt * 0.01;
+      object.forward.y += (-object.direction.y - object.forward.y) * dt * 0.01;
+      object.forward.z += (-object.direction.z - object.forward.z) * dt * 0.01;
+
+      object.world.initWorld(object.position, object.forward, object.up);
+    }
+

@@ -1,8 +1,8 @@
 module Glib.Components {
 
   export interface CullVisitor {
-    start(entity:Entity, context:Render.Binder)
-    add(mesh:Graphics.ModelMesh, material:Graphics.ShaderEffect, world:Glib.Mat4, params?:any)
+    start(entity:Entity, view:Render.View)
+    add(item:Render.ItemData)
   }
 
   export class Renderer implements Component {
@@ -29,33 +29,18 @@ module Glib.Components {
       this.manager = new Render.Manager(this.device)
       this.manager.addView({
         enabled: true,
-        steps: [new Render.Forward()]
+        steps: [new Render.StepForward()],
+        items: [],
+        lights: []
       })
-      
-      /*
-      this.assets.load("Effect", "/assets/shader/postprocess/bloom.yml").then((effect) => {
-        var material = new Glib.Graphics.Material(this.device, effect)
-        var postEffect = new Render.PostEffect.Bloom(material)
-        var view = this.manager.views[0]
-        view.steps.push(postEffect)
-      })
-      */
-
-      /*
-      this.assets.load("Effect", "/assets/shader/postprocess/shockwave.yml").then((effect) => {
-        var program = this.device.createProgram(effect.techniques[0].passes[0])
-        var postEffect = new Render.PostEffect.ShockWave(program)
-        var view = this.manager.views[0]
-        view.steps.push(postEffect)
-      })
-      */
     }
 
     update() {
       this.manager.binder.updateTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
     }
-
+    
     draw() {
+      this.manager.device.resize()
       for(var view of this.manager.views) {
         this.renderView(view)
       }
@@ -68,19 +53,19 @@ module Glib.Components {
       }
       var camera = view.camera
       var binder = this.manager.binder
-      //binder.lights.length = 0
-      binder.renderables.length = 0
+      view.items.length = 0
+      view.lights.length = 0
       binder.updateCamera(camera.world, camera.view, camera.projection)
-      this.cullVisitor.start(this.node.root, binder)
+      this.cullVisitor.start(this.node.root, view)
       this.manager.renderView(view)
     }
   }
 
   export class SimpleCullVisitor implements CullVisitor, EntityVisitor {
-    context:Render.Binder
+    view:Render.View
 
-    start(node:Entity, context:Render.Binder) {
-      this.context = context
+    start(node:Entity, view:Render.View) {
+      
       node.acceptVisitor(this)
     }
 
@@ -89,23 +74,18 @@ module Glib.Components {
       if (comp) {
         comp.collect(this)
       }
-      comp = entity.s['Light']
-      if (comp) {
-        this.addLight(comp)
+      var light:Light = entity.s['Light']
+      if (light) {
+        this.addLight(light.packedData)
       }
     }
 
-    add(mesh:Graphics.ModelMesh, material:Graphics.ShaderEffect, world:Glib.Mat4, params?:any) {
-      this.context.renderables.push({
-        world: world,
-        mesh: mesh,
-        material: material,
-        params: params
-      })
+    add(item:Render.ItemData) {
+      this.view.items.push(item)
     }
 
-    addLight(light) {
-      //this.context.lights.push(light.packedData)
+    addLight(light:Render.LightData) {
+      this.view.lights.push(light)
     }
   }
 }

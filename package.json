@@ -53,5 +53,8 @@
   },
   "keywords": [],
   "author": "Alexander Graefenstein",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jstransformer-markdown-it": "^1.0.0"
+  }
 }

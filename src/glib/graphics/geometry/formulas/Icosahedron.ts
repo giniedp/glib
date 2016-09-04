@@ -1,10 +1,5 @@
 module Glib.Graphics.Geometry.Formulas {
 
-  import Vec2 = Glib.Vec2;
-  import Vec3 = Glib.Vec3;
-  import Vec4 = Glib.Vec4;
-  import Mat4 = Glib.Mat4;
-
   function sign(a) {
     return a < 0 ? -1 : 1;
   }

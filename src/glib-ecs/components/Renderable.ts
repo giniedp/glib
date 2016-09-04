@@ -4,7 +4,7 @@ module Glib.Components {
   import Material = Glib.Graphics.ShaderEffect;
 
   export interface RenderableCollector {
-    add(mesh: ModelMesh, material:Material, world:Glib.Mat4, params?:any);
+    add(item:Render.ItemData);
   }
 
   export interface Renderable {

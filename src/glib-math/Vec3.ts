@@ -90,14 +90,6 @@ module Glib {
     }
 
     /**
-     * Returns an array filled with the values of the components of this vector
-     * @method dump
-     */
-    dump():number[] {
-      return [this.x, this.y, this.z];
-    }
-
-    /**
      * Checks for component wise equality with given vector
      * @param other The vector to compare with
      * @return {Boolean} true if components are equal, false otherwise
@@ -421,6 +413,39 @@ module Glib {
     }
 
     /**
+     * Readonly vector with all components set to zero
+     */
+    static Zero = Object.freeze(new Vec3(0, 0, 0))
+    /**
+     * Readonly vector with all components set to one
+     */
+    static One = Object.freeze(new Vec3(1, 1, 1))
+    /**
+     * Readonly vector x component set to one
+     */
+    static Right = Object.freeze(new Vec3(1, 0, 0))
+    /**
+     * Readonly vector x component set to minus one
+     */
+    static Left = Object.freeze(new Vec3(-1, 0, 0))
+    /**
+     * Readonly vector y component set to one
+     */
+    static Up = Object.freeze(new Vec3(0, 1, 0))
+    /**
+     * Readonly vector y component set to minus one
+     */
+    static Down = Object.freeze(new Vec3(0, -1, 0))
+    /**
+     * Readonly vector z component set to one
+     */
+    static Backward = Object.freeze(new Vec3(0, 0, 1))
+    /**
+     * Readonly vector z component set to minus one
+     */
+    static Forward = Object.freeze(new Vec3(0, 0, -1))
+
+    /**
      * Copies the source vector to the destination vector
      * @param src
      * @param dst
@@ -501,11 +526,8 @@ module Glib {
      * @param [z] The z component
      * @return {Vec3} A new vector.
      */
-    static create = function (x:number, y:number, z:number):Vec3 {
-      if (x != null) {
-        return new Vec3(x, y, z);
-      }
-      return new Vec3(0, 0, 0);
+    static create = function (x?:number, y?:number, z?:number):Vec3 {
+      return new Vec3(x || 0, y || 0, z || 0);
     };
 
     /**
@@ -523,6 +545,7 @@ module Glib {
     static one = function ():Vec3 {
       return new Vec3(1, 1, 1);
     };
+
 
     /**
      * Normalizes the given vector.
@@ -950,6 +973,16 @@ module Glib {
 
     static prettyString(vec) {
       return [vec.x.toFixed(5), vec.y.toFixed(5), vec.z.toFixed(5)].join(', ');
+    }
+
+    static randomNormal(vec:IVec3=new Vec3(), random:{random():number}=Math):IVec3 {
+      vec.x = random.random() - 0.5
+      vec.y = random.random() - 0.5
+      vec.z = random.random() - 0.5
+      if (Vec3.lengthSquared(vec) > 0) {
+        Vec3.normalize(vec, vec)
+      }
+      return vec
     }
   }
 }

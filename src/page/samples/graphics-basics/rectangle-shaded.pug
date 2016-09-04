@@ -2,10 +2,10 @@
 //- weight: 6
 extends ./../../_layouts/example
 block script
-  a(name="HTML" index=3)
+  a(name="HTML")
   viewcode
   
-  a(name="VS" index=2)
+  a(name="VS")
   script#vertex-shader(type='text/glsl').
     precision highp float;
 
@@ -36,7 +36,7 @@ block script
       gl_Position = uProjection * uView * pos;
     }
 
-  a(name="FS" index=2)
+  a(name="FS")
   script#fragment-shader(type='text/glsl').
     precision highp float;
     // @binding texture
@@ -89,7 +89,7 @@ block script
       gl_FragColor = color;
     }
     
-  a(name="JS" index=1)
+  a(name="JS")
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({
       canvas: document.getElementById('canvas')

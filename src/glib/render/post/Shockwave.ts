@@ -1,4 +1,4 @@
-module Glib.Render.Effects {
+module Glib.Render.Post {
 
   export class ShockWave implements Render.Step {
 
@@ -9,10 +9,6 @@ module Glib.Render.Effects {
 
     constructor(program:Graphics.ShaderProgram) {
       this._program = program;
-    }
-
-    setup(manager: Render.Manager) {
-
     }
 
     render(manager: Render.Manager) {
@@ -34,8 +30,5 @@ module Glib.Render.Effects {
       manager.endStep(rt2);
     }
 
-    cleanup(manager: Render.Manager) {
-
-    }
   }
 }

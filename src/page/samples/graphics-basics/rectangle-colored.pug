@@ -2,10 +2,18 @@
 //- weight: 3
 extends ./../../_layouts/example
 block script
-  a(name="HTML" index=3)
+  a(name="PREFACE")
+  .padding
+    :markdown-it
+      The example is similar to the Colored triangle example.
+      The difference is that an index buffer is used to define
+      the drawing order of the vertices. The distinct parts of the code are
+      commented. 
+
+  a(name="HTML")
   viewcode
   
-  a(name="GLSL" index=2)
+  a(name="GLSL")
   .grid-content
     dl.mt.no-mb
       dt Vertex shader
@@ -36,15 +44,7 @@ block script
       gl_FragColor = vec4(vertexColor.rgb, 1.0);
     }
     
-  a(name="JS" index=1)
-  .grid-content
-    dl.mt.no-mb
-      dt Remarks
-      dd.no-mb 
-        | The example is similar to the Colored triangle example.
-        | The difference is that now an index buffer is used to define
-        | the drawing order of the vertices. The distinct parts of the code are
-        | commented.
+  a(name="JS")
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({
       canvas: document.getElementById('canvas')

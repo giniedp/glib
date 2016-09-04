@@ -24,7 +24,7 @@ module Glib.Components {
     projection:Mat4 = Mat4.identity();
     viewProjection:Mat4 = Mat4.identity();
     transform:Transform;
-    private _view: Render.View;
+    private targetView: Render.View;
 
     constructor(params?:CameraProperties) {
       if (params) {
@@ -37,8 +37,8 @@ module Glib.Components {
     }
 
     update() {
-      if (this._view) {
-        this.aspect = this._view.width / this._view.height;
+      if (this.targetView) {
+        this.aspect = this.targetView.width / this.targetView.height;
       }
       this.view.initFrom(this.transform.inverseMat);
       this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far);
@@ -58,14 +58,14 @@ module Glib.Components {
       if (oldCamera instanceof Glib.Components.Camera) {
         oldCamera.deactivate();
       }
-      this._view = view;
-      this._view.camera = this;     
+      this.targetView = view;
+      this.targetView.camera = this;     
     }
 
     deactivate() {
-      if (this._view) {
-        this._view.camera = void 0;
-        this._view = void 0;
+      if (this.targetView) {
+        this.targetView.camera = void 0;
+        this.targetView = void 0;
       }
     }
 

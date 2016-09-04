@@ -146,7 +146,7 @@ module Glib.Graphics {
       }
     }
 
-    static resolve(gl:any, out:any={}):ScissorStateOptions {
+    static resolve(gl:WebGLRenderingContext, out:any={}):ScissorStateOptions {
       out.enable = gl.getParameter(gl.SCISSOR_TEST)
       var scissor = gl.getParameter(gl.SCISSOR_BOX)
       out.x = scissor[0]

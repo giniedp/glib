@@ -110,8 +110,8 @@ module Glib.Render {
     }
     updateCamera(world:Mat4, view:Mat4, proj:Mat4):Binder{
       if (world) {
-        world.getTranslation(this.CameraPosition)
-        world.getForward(this.CameraDirection)
+        world.getTranslation(this.CameraPosition.value)
+        world.getForward(this.CameraDirection.value)
       }
       if (view) {
         this.View.value.initFrom(view)
@@ -154,6 +154,21 @@ module Glib.Render {
       this.TimeNow.value = total
       this.TimeLast.value = total - elapsed
       return this;
+    }
+
+    updateLights(lights: LightData[]) {
+      for (let i = 0; i < lights.length; i++) {
+        this.updateLight(lights[i], i)
+      }
+    }
+
+    updateLight(light: LightData, index: number) {
+      var l = this.Lights[index]
+      if (!l) return
+      l.Color.value = light.color  
+      l.Position.value = light.position
+      l.Direction.value = light.direction
+      l.Misc.value = light.misc
     }
 
     bindTransform(program:Graphics.ShaderProgram):Binder{

@@ -2,10 +2,16 @@
 //- weight: 2
 extends ./../../_layouts/example
 block script
-  a(name="HTML" index=3)
+  a(name="PREFACE")
+  .padding
+    :markdown-it
+      This is exactly the same example as the previous triangle example but shows how to setup the vertex buffer 
+      with multiple attributes per vertex. In this case a color attribute is added to each point of the triangle. 
+
+  a(name="HTML")
   viewcode
   
-  a(name="GLSL" index=2)
+  a(name="GLSL")
   .grid-content
     dl.mt.no-mb
       dt Vertex shader
@@ -22,12 +28,11 @@ block script
       vertexColor = vColor;
       gl_Position = vec4(vPosition, 1.0);
     }
-
   .grid-content
     dl.mt.no-mb
       dt Fragment shader
       dd.no-mb 
-        | Takes the vertex color from the fragment stage and renders the pixel with that color.
+        | Takes the vertex color from the vertex stage and renders the pixel with that color.
 
   script#fragment-shader(type='text/glsl').
     precision highp float;
@@ -35,8 +40,7 @@ block script
     void main(void) {
       gl_FragColor = vec4(vertexColor.rgb, 1.0);
     }
-    
-  a(name="JS" index=1)
+  a(name="JS")
   script(type='text/javascript').
     // Create the graphics device
     var device = new Glib.Graphics.Device({

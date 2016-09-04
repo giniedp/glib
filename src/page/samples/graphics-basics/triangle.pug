@@ -2,14 +2,24 @@
 //- weight: 1
 extends ./../../_layouts/example
 block script
-  a(name="HTML" index=3)
+  a(name="PREFACE")
+  .padding
+    :markdown-it
+      This example shows how to render primitive geometry with the glibs graphics api.
+      The steps can be summarized as follows:
+      * Create an instance of `Glib.Graphics.Device`. That is the rendering api that wraps the webgl api.
+      * Create a program with a vertex and a fragment shader. This example uses some very unfancy shaders.
+      * Create a vertex buffer. A vertex buffer holds data that describes a geometry. It simply is a set of points in 3d space and optionally some attributes per point like color or texture coordinate etc. 
+      * Use the graphics device to draw the vertex buffer with the program
+
+  a(name="HTML")
   viewcode
 
-  a(name="GLSL" index=2)
+  a(name="GLSL")
   .grid-content
     dl.mt.no-mb
       dt Vertex shader
-      dd.no-mb A minimal vertex shader. Uses the vertex position without any transformation.
+      dd.no-mb A minimal vertex shader. It passes the vertex position without any transformation to the fragment stage.
 
   script#vertex-shader(type='text/glsl').
     attribute vec3 vPosition;
@@ -19,13 +29,12 @@ block script
   .grid-content
     dl.mt.no-mb
       dt Fragment shader
-      dd.no-mb A minimal fragment shader. Simply renders a white pixel.
+      dd.no-mb A minimal fragment shader. It simply returns a white pixel.
 
   script#fragment-shader(type='text/glsl').
     void main(void) {
       gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
     }
-
   a(name="JS" index=1)
   script(type='text/javascript').
     // Create the graphics device

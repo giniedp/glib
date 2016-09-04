@@ -2,10 +2,16 @@
 //- weight: 4
 extends ./../../_layouts/example
 block script
-  a(name="HTML" index=3)
+  a(name="PREFACE")
+  .padding
+    :markdown-it
+      The example is almost completely identical to the colored rectangle example. 
+      The improvement is that the color attribute of the vertex buffer is packed into a single value.
+
+  a(name="HTML")
   viewcode
   
-  a(name="GLSL" index=2)
+  a(name="GLSL")
   .grid-content
     dl.mt.no-mb
       dt Vertex shader
@@ -36,14 +42,7 @@ block script
       gl_FragColor = vec4(vertexColor.rgb, 1.0);
     }
     
-  a(name="JS" index=1)
-  .grid-content
-    dl.mt.no-mb
-      dt Remarks
-      dd.no-mb 
-        | The example is almost completely identical to the colored rectangle example.
-        | The improvement is that the color attribute of the vertex buffer is packed
-        | into a single value. 
+  a(name="JS")
   script(type='text/javascript').
     var device = new Glib.Graphics.Device({
       canvas: document.getElementById('canvas')

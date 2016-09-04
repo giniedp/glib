@@ -10,7 +10,7 @@ module Glib.Graphics {
     handle?: WebGLBuffer,
     type?: string|number,
     usage?: string|number,
-    layout?: any,
+    layout?: IVertexLayout,
     data?: BufferData,
     dataType?: string|number,
     elementSize?: number
@@ -27,7 +27,7 @@ module Glib.Graphics {
     //dataLength:number
     elementSize:number
     elementCount:number
-    layout:Object
+    layout:IVertexLayout
 
     constructor(device:Device, opts?:BufferOptions) {
       this.device = device
@@ -176,7 +176,7 @@ module Glib.Graphics {
       } else {
         let buffer: ArrayBuffer
         if (data instanceof Array) {
-          buffer = VertexLayout.convertArrayArrayBuffer(data, this.layout)
+          buffer = VertexLayout.convertArrayToArrayBuffer(data, this.layout)
         } else if (data instanceof ArrayBuffer) {
           buffer = data as any
         } else if (data.buffer instanceof ArrayBuffer) {

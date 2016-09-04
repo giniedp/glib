@@ -141,15 +141,15 @@ module Glib.Graphics {
       for (let key of propertyKeys) this.changes[key] = undefined
     }
 
-    static resolve(gl:any, out:any={}):ViewportStateOptions {
+    static resolve(gl:WebGLRenderingContext, out:any={}):ViewportStateOptions {
       var range = gl.getParameter(gl.DEPTH_RANGE)
       out.zMin = range[0]
       out.zMax = range[1]
       var viewport = gl.getParameter(gl.VIEWPORT)
-      out.x = viewport[0]
-      out.y = viewport[1]
       out.width = viewport[2]
       out.height = viewport[3]
+      out.x = viewport[0]
+      out.y = viewport[1]
       return out
     }
   }
