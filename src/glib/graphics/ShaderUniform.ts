@@ -292,7 +292,7 @@ module Glib.Graphics {
         }
       } else {
         let v = value as IVec3
-        if (this.cacheValue(v.x, v.y, v.y)) {
+        if (this.cacheValue(v.x, v.y, v.z)) {
           this.gl.uniform3f(this.location, v.x, v.y, v.z)
         }
       }
@@ -308,7 +308,7 @@ module Glib.Graphics {
         }
       } else {
         let v = value as IVec4
-        if (this.cacheValue(v.x, v.y, v.y, v.w)) {
+        if (this.cacheValue(v.x, v.y, v.z, v.w)) {
           this.gl.uniform4f(this.location, v.x, v.y, v.z, v.w)
         }
       }

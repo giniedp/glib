@@ -29,9 +29,4 @@ module Glib {
     data: Float32Array
   }
 
-  export interface NumbersArray {
-    length:number,
-    [index:number]: number,
-    push?(value:number)
-  }
 }

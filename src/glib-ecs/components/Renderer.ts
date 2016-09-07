@@ -36,6 +36,7 @@ module Glib.Components {
     }
 
     update() {
+      this.manager.update()
       this.manager.binder.updateTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
     }
     
@@ -65,7 +66,7 @@ module Glib.Components {
     view:Render.View
 
     start(node:Entity, view:Render.View) {
-      
+      this.view = view;    
       node.acceptVisitor(this)
     }
 

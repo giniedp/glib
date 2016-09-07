@@ -1,12 +1,12 @@
 {
-  "effect": "../shader/basic.glfx",
+  "effect": "/assets/shader/basic.glfx",
   "parameters": {
     "DiffuseMap": "../textures/proto_blue.png",
     "NormalMap": "../textures/proto_gray_n.png",
     "AmbientColor": [0.1, 0.1, 0.1],
     "DiffuseColor": [1, 1, 1],
     "SpecularColor": [1, 1, 1],
-    "SpecularPower": 16,
+    "SpecularPower": 0.4,
     "Alpha": 1
   }
 }

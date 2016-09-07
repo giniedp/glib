@@ -21,7 +21,12 @@ module Glib.Content.Pipeline {
     if (mtl.Ka) result.parameters.AmbientColor = mtl.Ka;
     if (mtl.Kd) result.parameters.DiffuseColor = mtl.Kd;
     if (mtl.Ks) result.parameters.SpecularColor = mtl.Ks;
-    if (mtl.Ns) result.parameters.SpecularPower = mtl.Ns;
+    if (mtl.Ns) {
+      result.parameters.SpecularPower = mtl.Ns;
+      if (result.parameters.SpecularPower > 1) {
+        result.parameters.SpecularPower = Math.log(result.parameters.SpecularPower) / Math.log(2) /10.5
+      }
+    } 
     //if (m.Ni) result.parameters.refraction = m.Ni;
     if (mtl.map_Ka) {
       result.parameters.AmbientMap = mtl.map_Ka.file;

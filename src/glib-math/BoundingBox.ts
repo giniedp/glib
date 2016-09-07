@@ -56,7 +56,7 @@ module Glib {
       return result;
     }
 
-    static createFromPoints(points:NumbersArray, offset:number=0, stride:number=3):BoundingBox{
+    static createFromPoints(points:ArrayLike<number>, offset:number=0, stride:number=3):BoundingBox{
       var zero = true;
       var result = new BoundingBox();
       var min = result.min;

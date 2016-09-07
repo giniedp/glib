@@ -145,10 +145,10 @@ block script
 
       context.intermediate = builder.finishModelOptions({
         materials: [{
-          effect: '/assets/shader/basicColor.glfx',
+          effect: '/assets/shader/basicVColored.glfx',
           parameters: {
             AmbientColor: [0.2, 0.2, 0.2],
-            SpecularPower: 16
+            SpecularPower: 0.3
           }
         }]
       });

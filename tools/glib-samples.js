@@ -55,6 +55,7 @@
       var tokens =  file.substring(dir.length, file.length).split("/");
       var fileName = tokens.pop()
       var node = result;
+      
       while (tokens.length) {
         var name = tokens.shift()
         if (!name) continue;

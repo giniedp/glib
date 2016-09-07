@@ -56,7 +56,7 @@ module Glib {
       return Collision.sphereContainsFrustum(this, frustum);
     }
     
-    static createFromPoints(points:NumbersArray, offset:number=0, stride:number=3):BoundingSphere{
+    static createFromPoints(points:ArrayLike<number>, offset:number=0, stride:number=3):BoundingSphere{
       var zero = true;
       var min = { x:0, y:0, z:0 };
       var max = { x:0, y:0, z:0 };

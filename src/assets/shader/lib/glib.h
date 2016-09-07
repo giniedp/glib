@@ -1,3 +1,5 @@
+#define M_PI 3.1415926535897932384626433832795
+
 #if defined(DIFFUSE_MAP) || defined(NORMAL_MAP) || defined(SPECULAR_MAP)
   #define TEXTURED
 #endif
@@ -252,9 +254,9 @@ void getNormal(out vec3 bump){
 void getSpecularColor(out vec4 color) {
   #ifdef SPECULAR_MAP
     color = texture2D(uSpecularMap, vTexture.xy);
-    color.a = uSpecularPower;
+    color.a = exp2(uSpecularPower * 10.5);
   #else
-    color = vec4(uSpecularColor, uSpecularPower);
+    color = vec4(uSpecularColor, exp2(uSpecularPower * 10.5));
   #endif
 }
 
@@ -266,7 +268,7 @@ void getAmbientColor(in vec3 normal, out vec3 color) {
   #endif
 }
 
-void getLight(in LightParams light, int type, in vec3 position, out ShadeParams result) {
+void getLight(in LightParams light, int type, in vec3 position, inout ShadeParams result) {
   #if DIRECTIONAL_LIGHT
   // directional light (constant attenuation)
   if (type == DIRECTIONAL_LIGHT) 
@@ -313,9 +315,23 @@ void getLight(in LightParams light, int type, in vec3 position, out ShadeParams 
 // SHADING
 //
 
-highp vec3 fastFresnel(vec3 R, float dotLH) {
-  //return R + (1.0 - R) * pow(1.0 - dotLH, 4.0);
-  return mix(R, min(60.0 * R, 1.0), pow(1.0 - dotLH, 4.0));
+highp vec3 fresnelSchlick(vec3 R, float dotLH) {
+  return R + (1.0 - R) * pow(1.0 - dotLH, 5.0);
+  //return mix(R, min(60.0 * R, 1.0), pow(1.0 - dotLH, 4.0));
+}
+
+highp vec3 fresnelSchlickf90(in vec3 f0, float f90, float u) {
+  return f0 + (f90 - f0) * pow(1.0 - u, 5.0);
+}
+
+highp float disneyDiffuse(in float dotNV, in float dotNL, in float dotLH, float linearRoughness) {
+  float energyBias = mix(0.0, 0.5, linearRoughness);
+  float energyFactor = mix(1.0, 1.0 / 1.51, linearRoughness);
+  float fd90 = energyBias + 2.0 * dotLH * dotLH * linearRoughness;
+  vec3 f0 = vec3(1.0, 1.0, 1.0);
+  float lightScatter = fresnelSchlickf90(f0, fd90, dotNL).r;
+  float viewScatter = fresnelSchlickf90(f0, fd90, dotNV).r;
+  return lightScatter * viewScatter * energyFactor;
 }
 
 highp vec3 shadeLambert(
@@ -329,6 +345,7 @@ highp vec3 shadeLambert(
   return surface.Diffuse.rgb * dotNL * I;
 }
 
+
 highp vec3 shadeCookTorrance(
   inout ShadeParams shade,
   inout SurfaceParams surface)
@@ -336,7 +353,7 @@ highp vec3 shadeCookTorrance(
   vec3 V = shade.V;
   vec3 N = surface.Normal.xyz;
   vec3 L = shade.L;
-  vec3 H = normalize(V + L);
+  vec3 H = normalize(L + V);
   vec3 I = shade.I;
 
   float dotNL = max(dot(N, L), 0.0);
@@ -344,16 +361,16 @@ highp vec3 shadeCookTorrance(
   float dotNV = max(dot(N, V), 0.0);
   float dotLH = max(dot(L, H), 0.0);
 
-  // blinn phong distribution
+  // specular BRDF (Fr)
   float D = pow(dotNH, surface.Specular.a);
-  // schlicks fresnel approcimation
-  vec3  F = fastFresnel(surface.Specular.rgb, dotLH); 
-  // geometric term
-  float G = clamp(2.0 * dotNH * min(dotNV, dotNL) / dotLH, 0.0, 1.0);
-  // specular distribution 
-  vec3 BRDF = D * F * G / (4.0 * dotNV * dotNL);         
-  //return vec3(G);
-  return (BRDF * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
+  vec3  F = fresnelSchlick(surface.Specular.rgb, dotLH); 
+  float G = min(1.0, 2.0 * dotNH * min(dotNV, dotNL) / dotLH);
+  vec3  Fr = D * F * G / (4.0 * dotNV * dotNL);
+
+  // diffuse BRDF (Fd)
+  float Fd = dotNL;
+  
+  return (Fr * surface.Specular.rgb + Fd * surface.Diffuse.rgb) * I;
 }
 
 highp vec3 shadeSzirmay(
@@ -371,14 +388,12 @@ highp vec3 shadeSzirmay(
   //float dotNV = max(dot(N, V), 0.0);
   float dotLH = max(dot(L, H), 0.0);
 
-  // blinn phong distribution
+  // specular BRDF (Fr)
   float D = pow(dotNH, surface.Specular.a);
-  // schlicks fresnel approcimation
-  vec3  F = fastFresnel(surface.Specular.rgb, dotLH); 
-  // specular distribution 
-  vec3 BRDF = D * F / (4.0 * dotLH * dotLH);
-  //return vec3(D);
-  return (BRDF * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
+  vec3  F = fresnelSchlick(surface.Specular.rgb, dotLH); 
+  vec3  Fr = D * F / (4.0 * dotLH * dotLH);
+
+  return (Fr * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
 }
 
 highp vec3 shadeOptimized(
@@ -396,12 +411,11 @@ highp vec3 shadeOptimized(
   //float dotNV = max(dot(N, V), 0.0);
   float dotLH = max(dot(L, H), 0.0);
 
-  // blinn phong distribution
-  float D = pow(dotNH, surface.Specular.a); 
-  // specular distribution 
-  float BRDF = D / (4.0 * pow(dotLH, 3.0));
-  //return vec3(BRDF);
-  return (BRDF * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
+  // specular BRDF (Fr)
+  float D = pow(dotNH, surface.Specular.a);  
+  float Fr = D / (4.0 * pow(dotLH, 3.0));
+  
+  return (Fr * surface.Specular.rgb + surface.Diffuse.rgb) * dotNL * I;
 }
 
 
@@ -447,9 +461,9 @@ void glibFragmentShader() {
     ShadeParams shade;
     shade.V = normalize(uCameraPosition.xyz - vWorldPosition.xyz);
     getLight(light, type, vWorldPosition.xyz, shade);
+    //color.rgb += shadeCookTorrance(shade, surface).rgb;
     //color.rgb += shadeSzirmay(shade, surface).rgb;
     color.rgb += shadeOptimized(shade, surface).rgb;
-    //color.rgb += shadeCookTorrance(shade, surface).rgb;
   }
   vec3 ambient;
   getAmbientColor(surface.Normal.xyz, ambient);

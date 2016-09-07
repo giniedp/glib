@@ -33,10 +33,11 @@ var PATHS = {
       '!src/page/_layouts/*.pug',
       '!src/page/_includes/*.pug',
       '!src/page/**/_*.pug',
-      //'src/page/samples/graphics-*/*.pug',
-      //'src/page/samples/input/**/*.pug',
-      //'src/page/samples/content/**/*.pug',
-      //'src/page/samples/**/*.pug',
+      'src/page/*/introduction/*.pug',
+      'src/page/*/graphics-*/*.pug',
+      'src/page/*/input/**/*.pug',
+      'src/page/*/content/**/*.pug',
+      'src/page/*/**/*.pug',
       'src/page/**/*.pug'
     ],
     fonts: [
@@ -66,17 +67,17 @@ var PATHS = {
     ],
   },
   glib: {
+    math: [
+      "src/glib-math/**/*_test.ts",
+      "src/glib-math/**/*.ts"
+    ],
     base: [
-      "src/**/*_test.ts",
+      "src/glib/**/*_test.ts",
       "src/glib/utils/**/*.ts",
       "src/glib/*.ts"
     ],
-    math: [
-      "src/**/*_test.ts",
-      "src/glib-math/**/*.ts"
-    ],
     graphics: [
-      "src/**/*_test.ts",
+      "src/glib/**/*_test.ts",
       "src/glib/graphics/enums/*.ts",
       "src/glib/graphics/states/*.ts",
       "src/glib/graphics/*.ts",
@@ -84,22 +85,22 @@ var PATHS = {
       "src/glib/graphics/geometry/**/*.ts"
     ],
     content: [
-      "src/**/*_test.ts",
+      "src/glib/content/**/*_test.ts",
       "src/glib/content/*.ts",
       "src/glib/content/**/*.ts"
     ],
     input: [
-      "src/**/*_test.ts",
+      "src/glib/input/**/*_test.ts",
       "src/glib/input/*.ts",
       "src/glib/input/**/*.ts"
     ],
     render: [
-      "src/**/*_test.ts",
+      "src/glib/render/**/*_test.ts",
       "src/glib/render/*.ts",
       "src/glib/render/**/*.ts"
     ],
     ecs: [
-      "src/**/*_test.ts",
+      "src/glib-ecs/**/*_test.ts",
       "src/glib-ecs/**/*.ts"
     ],
     terrain: [

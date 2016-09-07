@@ -12,6 +12,7 @@
     "test": "test"
   },
   "devDependencies": {
+    "benchmark": "^2.1.1",
     "bower": "^1.7.9",
     "concat": "^1.0.0",
     "del": "^2.2.1",
@@ -37,7 +38,7 @@
     "karma-firefox-launcher": "^0.1.6",
     "karma-jasmine": "^0.3.6",
     "karma-phantomjs-launcher": "^0.2.1",
-    "karma-typescript-preprocessor": "0.0.19",
+    "karma-typescript-preprocessor2": "^1.2.1",
     "merge": "^1.2.0",
     "pug": "^2.0.0-beta4",
     "simple-glob": "^0.1.0",

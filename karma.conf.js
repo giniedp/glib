@@ -10,9 +10,7 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'dist/glib.js',
-      //'src/**/*_test.ts',
-      'src/**/*_test.js'
+      '**/*.ts'   // Preprocessor will convert Typescript to Javascript 
     ],
 
     // list of files to exclude
@@ -29,10 +27,28 @@ module.exports = function (config) {
       // do not include tests or libraries
       // (these files will be instrumented by Istanbul)
       // 'src/*.js': ['coverage'],
-      'src/**/*_test.ts': ['typescript']
+      //'src/glib-math/*.ts': ['typescript']
+      //'src/**/*_test.ts': ['typescript']
+      '**/*.ts': ['typescript', 'sourcemap']   // Use karma-sourcemap-lo
     },
 
     typescriptPreprocessor: {
+      // options passed to typescript compiler
+      tsconfigPath: './tsconfig.json',
+      compilerOptions: { // *optional 
+        removeComments: false
+      },
+
+      // Options passed to gulp-sourcemaps to create sourcemaps 
+      //sourcemapOptions: {
+      //  includeContent: true, sourceRoot: '/src'
+      //},
+      
+      // ignore all files that ends with .d.ts (this files will not be served) 
+      ignorePath: function(path){ 
+       return /\.d\.ts$/.test(path);
+      },
+
       // options passed to the typescript compiler
       options: {
         sourceMap: false, // (optional) Generates corresponding .map file.
@@ -40,7 +56,8 @@ module.exports = function (config) {
         //module: 'amd', // (optional) Specify module code generation: 'commonjs' or 'amd'
         noImplicitAny: true, // (optional) Warn on expressions and declarations with an implied 'any' type.
         noResolve: true, // (optional) Skip resolution and preprocessing.
-        removeComments: true // (optional) Do not emit comments to output.
+        removeComments: true, // (optional) Do not emit comments to output.
+        outDir: "test"
       },
       // extra typing definitions to pass to the compiler (globs allowed)
       typings: [

@@ -1,5 +1,8 @@
 module Glib {
 
+  let keys = ['x', 'y']
+  let keyLookup = { 0: 'x', 1: 'y' }
+
   /**
    * Describes a vector with two components.
    */
@@ -26,21 +29,42 @@ module Glib {
     }
 
     /**
+     * Sets the X component
+     */
+    setX(v:number):Vec2 {
+      this.x = v
+      return this
+    }
+    /**
+     * Sets the Y component
+     */
+    setY(v:number):Vec2 {
+      this.y = v
+      return this
+    }
+    /**
+     * Sets the component by using an index (or name)
+     */
+    set(key: number|string, v:number):Vec2 {
+      this[keyLookup[key]] = v
+      return this
+    }
+    /**
+     * Gets the component by using an index (or name)
+     */
+    get(key: number|string):number {
+      return this[keyLookup[key]]
+    }
+    /**
      * Initializes the components of this vector with given values.
-     * @param x value for X component
-     * @param y value for Y component
-     * @return {Vec2} this vector for chaining
      */
     init(x:number, y:number):Vec2 {
       this.x = x;
       this.y = y;
       return this;
     }
-
     /**
      * Initializes the components of this vector by taking the components from the given vector.
-     * @param other The vector to read from
-     * @return {Vec2}
      */
     initFrom(other:IVec2):Vec2 {
       this.x = other.x;
@@ -54,7 +78,7 @@ module Glib {
      * @param [offset=0] The zero based index at which start reading the values
      * @return {Vec2}
      */
-    initFromBuffer(buffer:NumbersArray, offset:number=0):Vec2 {
+    initFromBuffer(buffer:ArrayLike<number>, offset:number=0):Vec2 {
       this.x = buffer[offset];
       this.y = buffer[offset + 1];
       return this;
@@ -74,18 +98,10 @@ module Glib {
      * @param [offset=0] Zero based index where to start writing in the array
      * @returns {NumbersArray}
      */
-    copyTo(buffer:NumbersArray, offset:number=0):NumbersArray {
+    copyTo<T extends ArrayLike<number>>(buffer:T, offset:number=0):T {
       buffer[offset] = this.x;
       buffer[offset + 1] = this.y;
       return buffer;
-    }
-
-    /**
-     * Returns an array filled with the values of the components of this vector
-     * @return {Array}
-     */
-    dump():number[] {
-      return [this.x, this.y];
     }
 
     /**
@@ -152,44 +168,143 @@ module Glib {
      * Normalizes this vector. Applies the result to this vector.
      * @return {Vec2} Reference to `this` for chaining.
      */
-    selfNormalize():Vec2 {
-      var x = this.x;
-      var y = this.y;
-      var d = 1.0 / Math.sqrt(x * x + y * y);
-      this.x *= d;
-      this.y *= d;
-      return this;
+    normalize():Vec2 {
+      var x = this.x
+      var y = this.y
+      var d = 1.0 / Math.sqrt(x * x + y * y)
+      this.x *= d
+      this.y *= d
+      return this
+    }
+
+    /**
+     * Normalizes this vector. Applies the result to the given parameter.
+     * @return The given parameter
+     */
+    normalizeOut<T extends IVec2>(out?:T):T {
+      var x = this.x
+      var y = this.y
+      var d = 1.0 / Math.sqrt(x * x + y * y)
+      out = (out || new Vec2()) as any
+      out.x = this.x = d
+      out.y = this.y = d
+      return out
+    }
+
+    /**
+     * Normalizes the given vector.
+     * @param vec The vector to normalize.
+     * @param [out] The vector to write to.
+     * @return {Vec2} The given `out` parameter or a new vector.
+     */
+    static normalize<T extends IVec2>(vec:IVec2, out?:T):T {
+      var x = vec.x
+      var y = vec.y
+      var d = 1.0 / Math.sqrt(x * x + y * y)
+      out = (out || new Vec2()) as any
+      out.x = x * d
+      out.y = y * d
+      return out
     }
 
     /**
      * Inverts this vector.
      * @return {Vec2} Reference to `this` for chaining.
      */
-    selfInvert():Vec2 {
-      this.x = 1.0 / this.x;
-      this.y = 1.0 / this.y;
-      return this;
+    invert():Vec2 {
+      this.x = 1.0 / this.x
+      this.y = 1.0 / this.y
+      return this
+    }
+    /**
+     * Inverts this vector. Applies the result to the given parameter.
+     * @return The given parameter
+     */
+    invertOut<T extends IVec2>(out?:T):T {
+      out = (out || new Vec2()) as any
+      out.x = 1.0 / this.x
+      out.y = 1.0 / this.y
+      return out
+    }
+    /**
+     * Inverts the given vector.
+     * @param vec The vector to invert.
+     * @param [out] The vector to write to.
+     * @return {Vec2} The given `out` parameter or a new vector.
+     */
+    static invert<T extends IVec2>(vec:IVec2, out?:T):T {
+      out = (out || new Vec2()) as any
+      out.x = 1.0 / vec.x
+      out.y = 1.0 / vec.y
+      return out
     }
 
     /**
      * Negates the components of this vector.
-     * @return {Vec2} Reference to `this` for chaining.
+     * @return Reference to `this` for chaining.
      */
-    selfNegate():Vec2 {
-      this.x = -this.x;
-      this.y = -this.y;
-      return this;
+    negate():Vec2 {
+      this.x = -this.x
+      this.y = -this.y
+      return this
+    }
+    /**
+     * Negates the components of this vector. Applies the result to the given parameter.
+     * @return The given parameter
+     */
+    negateOut<T extends IVec2>(out?:T):T {
+      out = (out || new Vec2()) as any
+      out.x = -this.x
+      out.y = -this.y
+      return out
+    }
+    /**
+     * Negates a vector. Applies the result to the second parameter or creates a new vector.
+     * @param vec The vector to negate.
+     * @param [out] The vector to write to.
+     * @return The given `out` parameter or a new vector.
+     */
+    static negate<T extends IVec2>(vec:IVec2, out?:T):T {
+      out = (out || new Vec2()) as any
+      out.x = -vec.x
+      out.y = -vec.y
+      return out
     }
 
     /**
-     * Adds the given vector to `this`.
-     * @param {Vec2} other The vector to add
-     * @return {Vec2} Reference to `this` for chaining.
+     * Performs the operation `this += other`
+     * @param other The vector to add
+     * @return Reference to `this` for chaining.
      */
-    selfAdd(other:IVec2):Vec2 {
-      this.x += other.x;
-      this.y += other.y;
-      return this;
+    add(other:IVec2):Vec2 {
+      this.x += other.x
+      this.y += other.y
+      return this
+    }
+    /**
+     * Performs the operation `out = this + other`
+     * @param other The vector to add
+     * @param [out] The out vector
+     * @return The given `out` parameter or a new vector.
+     */
+    addOut<T extends IVec2>(other:IVec2, out?:T):Vec2 {
+      out = (out || new Vec2()) as any
+      out.x = this.x + other.x
+      out.y = this.y + other.y
+      return this
+    }
+    /**
+     * Performs the operation `out = vecA + vecB`
+     * @param vecA The first vector.
+     * @param vecB The second vector.
+     * @param [out] The vector to write to.
+     * @return The given `out` parameter or a new vector.
+     */
+    static add<T extends IVec2>(vecA:IVec2, vecB:IVec2, out?:T):T {
+      out = (out || new Vec2()) as any
+      out.x = vecA.x + vecB.x;
+      out.y = vecA.y + vecB.y;
+      return out;
     }
 
     /**
@@ -197,7 +312,7 @@ module Glib {
      * @param {Number} scalar The scalar to add.
      * @return {Vec2} Reference to `this` for chaining.
      */
-    selfAddScalar(scalar:number):IVec2 {
+    addScalar(scalar:number):IVec2 {
       this.x += scalar;
       this.y += scalar;
       return this;
@@ -361,62 +476,6 @@ module Glib {
      */
     static one():Vec2 {
       return new Vec2(1, 1);
-    }
-
-    /**
-     * Normalizes the given vector.
-     * @param vec The vector to normalize.
-     * @param [out] The vector to write to.
-     * @return {Vec2} The given `out` parameter or a new vector.
-     */
-    static normalize(vec:IVec2, out?:IVec2):IVec2 {
-      var x = vec.x;
-      var y = vec.y;
-      var d = 1.0 / Math.sqrt(x * x + y * y);
-      out = out || new Vec2();
-      out.x = x * d;
-      out.y = y * d;
-      return out;
-    }
-
-    /**
-     * Inverts the given vector.
-     * @param vec The vector to invert.
-     * @param [out] The vector to write to.
-     * @return {Vec2} The given `out` parameter or a new vector.
-     */
-    static invert(vec:IVec2, out?:IVec2):IVec2 {
-      out = out || new Vec2();
-      out.x = 1.0 / vec.x;
-      out.y = 1.0 / vec.y;
-      return out;
-    }
-
-    /**
-     * Negates this vector.
-     * @param vec The vector to negate.
-     * @param [out] The vector to write to.
-     * @return {Vec2} The given `out` parameter or a new vector.
-     */
-    static negate(vec:IVec2, out?:IVec2):IVec2 {
-      out = out || new Vec2();
-      out.x = -vec.x;
-      out.y = -vec.y;
-      return out;
-    }
-
-    /**
-     * Adds two vectors.
-     * @param vecA The first vector.
-     * @param vecB The second vector.
-     * @param [out] The vector to write to.
-     * @return {Vec2} The given `out` parameter or a new vector.
-     */
-    static add(vecA:IVec2, vecB:IVec2, out?:IVec2):IVec2 {
-      out = out || new Vec2();
-      out.x = vecA.x + vecB.x;
-      out.y = vecA.y + vecB.y;
-      return out;
     }
 
     /**
