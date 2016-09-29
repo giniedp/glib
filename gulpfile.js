@@ -13,6 +13,7 @@ var uglify = require('gulp-uglify');
 var minify = require('gulp-minify');
 var jade = require('gulp-jade');
 var sass = require('gulp-sass');
+var symlink = require('gulp-sym')
 var sourcemaps = require('gulp-sourcemaps');
 var plumber = require('gulp-plumber');
 var typedoc = require('gulp-typedoc');
@@ -21,6 +22,8 @@ var livereload = require('gulp-livereload');
 var glibAssets = require('./tools/glib-assets.js');
 var glibEnums = require('./tools/glib-enums.js');
 var glibPages = require('./tools/glib-samples.js');
+var remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
+var relativeSourcemapsSource = require('gulp-relative-sourcemaps-source');
 
 var PATHS = {
   dist: 'dist',
@@ -68,16 +71,16 @@ var PATHS = {
   },
   glib: {
     math: [
-      "src/glib-math/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib-math/**/*.ts"
     ],
     base: [
-      "src/glib/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib/utils/**/*.ts",
       "src/glib/*.ts"
     ],
     graphics: [
-      "src/glib/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib/graphics/enums/*.ts",
       "src/glib/graphics/states/*.ts",
       "src/glib/graphics/*.ts",
@@ -85,26 +88,26 @@ var PATHS = {
       "src/glib/graphics/geometry/**/*.ts"
     ],
     content: [
-      "src/glib/content/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib/content/*.ts",
       "src/glib/content/**/*.ts"
     ],
     input: [
-      "src/glib/input/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib/input/*.ts",
       "src/glib/input/**/*.ts"
     ],
     render: [
-      "src/glib/render/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib/render/*.ts",
       "src/glib/render/**/*.ts"
     ],
     ecs: [
-      "src/glib-ecs/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib-ecs/**/*.ts"
     ],
     terrain: [
-      "src/**/*_test.ts",
+      "!src/**/*.test.ts",
       "src/glib/terrain/**/*.ts"
     ]
   }
@@ -122,17 +125,17 @@ var tscSource = [].concat.apply([], [
 ]);
 
 var es5Project = tsc.createProject({
+  rootDir: path.join(__dirname, "src"),
   target: "es5",
-  declaration: true,        // Generates corresponding .d.ts files
-  noExternalResolve: true,  // Do not resolve files that are not in the input
-  typescript: require('typescript')
+  declaration: true,
+  noResolve: true
 });
 
 var es6Project = tsc.createProject({
+  rootDir: path.join(__dirname, "src"),
   target: "es6",
-  declaration: true,        // Generates corresponding .d.ts files
-  noExternalResolve: true,  // Do not resolve files that are not in the input
-  typescript: require('typescript')
+  declaration: true,
+  noResolve: true
 });
 
 function src(){
@@ -189,9 +192,15 @@ gulp.task('precompile', ['precompile:enums']);
 //
 
 gulp.task('compile:es5', function(){
+    //src('src')
+    //.pipe(symlink('dist/src', { force: true }))
+    //.pipe(symlink('page/src', { force: true }))
+
   var tscResult = src(tscSource)
     .pipe(sourcemaps.init())
-    .pipe(tsc(es5Project));
+    .pipe(es5Project());
+
+  tscResult.dts.pipe(dest("typedefs"))
 
   return merge([
     // types
@@ -199,16 +208,10 @@ gulp.task('compile:es5', function(){
 
     tscResult.js
       .pipe(concat('glib.js'))
-      //.pipe(minify({
-      //  ext: {
-      //    src: '.js',
-      //    min: '.min.js'
-      //  }
-      //}))
+      .pipe(minify({ ext: { src: '.js', min: '.min.js' } }))
+      //.pipe(relativeSourcemapsSource({ dest: PATHS.dist }))
+      .pipe(sourcemaps.write('.'))
       .pipe(dest())
-      //.pipe(sourcemaps.write('.',{
-      //  includeContent:false, sourceRoot:'src'
-      //}))
       .pipe(dest(PATHS.distPage))
       .pipe(livereload())
   ]);
@@ -216,7 +219,7 @@ gulp.task('compile:es5', function(){
 
 gulp.task('compile:es6', function(){
   var tscResult = src(tscSource)
-    .pipe(tsc(es6Project));
+    .pipe(es6Project());
   return tscResult.js
     .pipe(concat('glib.es6.js'))
     .pipe(dest())
@@ -286,7 +289,7 @@ gulp.task('watch:pages', ['page'], function() {
   gulp.watch(PATHS.page.pages, ['page']);
   gulp.watch(PATHS.page.stylesWatch, ['page:scss']);
 });
-gulp.task('watch:script', ['compile'], function() {
+gulp.task('watch:script', ['compile:es5'], function() {
   gulp.watch(tscSource, ['compile:es5']);
 });
 gulp.task('watch:docs', ['docs'], function (done) {
@@ -327,6 +330,7 @@ gulp.task('watch:test', ['watch:script'], function (done) {
   }, done).start();
 });
 
+
 gulp.task('build', ['precompile', 'compile', 'assets', 'page', 'docs']);
 gulp.task('dev', ['watch', 'serve'], function(done) {
   new karma.Server({
@@ -334,3 +338,15 @@ gulp.task('dev', ['watch', 'serve'], function(done) {
   }, done).start();
 });
 gulp.task('default', ['build']);
+
+gulp.task('remap', function(done) {
+  return gulp
+    .src('coverage/**/coverage-final.json')
+    .pipe(remapIstanbul({
+      reports: {
+        //'json': 'coverage/coverage.json',
+        //'lcovonly': 'lcov.info',
+        text: undefined
+      }
+    }));
+});

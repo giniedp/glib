@@ -1,16 +1,27 @@
 module.exports = function (config) {
 
   config.set({
+    plugins: [
+      'karma-jasmine',
+      'karma-chrome-launcher',
+      'karma-typescript-preprocessor2',
+      //'karma-sourcemap-loader',
+      //'karma-remap-istanbul',
+      //'karma-coverage'
+    ],
 
     // base path, that will be used to resolve files and exclude
-    basePath: '',
+    basePath: '.',
 
     // frameworks to use
     frameworks: ['jasmine'],
 
     // list of files / patterns to load in the browser
     files: [
-      '**/*.ts'   // Preprocessor will convert Typescript to Javascript 
+      { pattern: 'dist/glib.js', included: true, watched: true}, 
+      { pattern: 'src/**/*.test.ts', included: true, watched: true },
+      { pattern: 'src/**/*.spec.ts', included: true, watched: true },
+      { pattern: 'src/**/*.d.ts', included: false, watched: false } 
     ],
 
     // list of files to exclude
@@ -20,61 +31,50 @@ module.exports = function (config) {
 
     // test results reporter to use
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
-    reporters: ['dots'],
-
+    reporters: [
+      'dots',
+      //'coverage',
+      //'karma-remap-istanbul'
+    ],
+    // Do not include tests or libraries (these files will be instrumented by Istanbul)
     preprocessors: {
-      // source files, that you wanna generate coverage for
-      // do not include tests or libraries
-      // (these files will be instrumented by Istanbul)
-      // 'src/*.js': ['coverage'],
-      //'src/glib-math/*.ts': ['typescript']
-      //'src/**/*_test.ts': ['typescript']
-      '**/*.ts': ['typescript', 'sourcemap']   // Use karma-sourcemap-lo
+      'dist/glib.js': [
+        //'sourcemap', 
+        //'coverage'
+      ]
     },
 
     typescriptPreprocessor: {
-      // options passed to typescript compiler
-      tsconfigPath: './tsconfig.json',
-      compilerOptions: { // *optional 
-        removeComments: false
+      compilerOptions: { 
+        target: "es5",
+        noResolve: true,
+        outFile: "dist/glib.test.js",
+        outDir: "dist",
+        sourceMap: true,
+        rootDir: "src",
       },
-
-      // Options passed to gulp-sourcemaps to create sourcemaps 
-      //sourcemapOptions: {
-      //  includeContent: true, sourceRoot: '/src'
-      //},
-      
       // ignore all files that ends with .d.ts (this files will not be served) 
       ignorePath: function(path){ 
        return /\.d\.ts$/.test(path);
       },
-
-      // options passed to the typescript compiler
-      options: {
-        sourceMap: false, // (optional) Generates corresponding .map file.
-        target: 'ES5', // (optional) Specify ECMAScript target version: 'ES3' (default), or 'ES5'
-        //module: 'amd', // (optional) Specify module code generation: 'commonjs' or 'amd'
-        noImplicitAny: true, // (optional) Warn on expressions and declarations with an implied 'any' type.
-        noResolve: true, // (optional) Skip resolution and preprocessing.
-        removeComments: true, // (optional) Do not emit comments to output.
-        outDir: "test"
-      },
-      // extra typing definitions to pass to the compiler (globs allowed)
-      typings: [
-        'typings/tsd.d.ts'
-      ],
-      // transforming the filenames
-      transformPath: function(path) {
+      // transforming the filenames   
+      transformPath: [function(path) { 
         return path.replace(/\.ts$/, '.js');
-      }
+      }]
     },
-
-    // optionally, configure the reporter
-    coverageReporter: {
-      type: 'html',
-      dir: 'coverage/',
-      file: 'coverage.html'
-    },
+    
+    //coverageReporter: {
+    //  type : 'json',
+    //  dir : 'coverage/',
+    //  file : 'coverage-final.json'
+    //},
+    //remapIstanbulReporter: {
+    //    reports: {
+    //      //lcovonly: 'coverage/lcov.info'
+    //      //html: 'coverage/html'
+    //      text: undefined
+    //    }
+    //},
 
     // web server port
     port: 9876,
@@ -97,7 +97,11 @@ module.exports = function (config) {
     // - Safari (only Mac; has to be installed with `npm install karma-safari-launcher`)
     // - PhantomJS
     // - IE (only Windows; has to be installed with `npm install karma-ie-launcher`)
-    browsers: ['Chrome'],
+    browsers: [
+      //'PhantomJS',
+      //'Firefox',
+      'Chrome'
+    ],
 
     // If browser does not capture in given timeout [ms], kill it
     captureTimeout: 60000,

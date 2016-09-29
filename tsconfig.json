@@ -3,14 +3,20 @@
   "compilerOptions": {
     "target": "es5",
     "noResolve": true,
-    "outFile": "dist/scripts/glib.js",
-    "outDir": "dist/scripts",
+    "outFile": "dist/glib.js",
+    "outDir": "dist",
     "sourceMap": true,
     "rootDir": "src",
     "newLine": "LF",
     "experimentalDecorators": false
   },
+  "include": [
+    "**/*.ts"
+  ],
   "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "coverage",
     "node_modules",
     "bower_components",
     "tools",
