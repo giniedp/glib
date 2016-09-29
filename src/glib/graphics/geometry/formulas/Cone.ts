@@ -39,7 +39,7 @@ module Glib.Graphics.Geometry.Formulas {
         t = y * invStepsH;
 
         circleVector(x, stepsV, position)
-        position.selfMultiplyScalar(radiusUp * t + radiusLo * (1 - t))
+        position.multiplyScalar(radiusUp * t + radiusLo * (1 - t))
         position.y = t * height
 
         builder.addVertex({

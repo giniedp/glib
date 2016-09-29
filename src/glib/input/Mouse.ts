@@ -3,7 +3,9 @@ module Glib.Input {
   function prefix(browser:string, name:string, upper:boolean):string {
     if (browser == null) return null
     if (browser == '') return name
-    if (upper) name[0] = name[0].toUpperCase()
+    if (upper) {
+      name = name[0] + name.substr(1)
+    }
     return browser + name
   }
   let browser = function() {

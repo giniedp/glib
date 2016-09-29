@@ -40,11 +40,11 @@ module Glib.Components {
         this.worldMat
           .initIdentity()
           .setScale(this.scale)
-          .selfMultiply(this._tempMat.initFromQuaternion(this.rotation))
+          .multiply(this._tempMat.initFromQuaternion(this.rotation))
           .setTranslation(this.position);
         this.inverseMat
           .initFrom(this.worldMat)
-          .selfInvert();
+          .invert();
         this._dirty = false;
       }
     }
@@ -62,7 +62,7 @@ module Glib.Components {
     }
 
     setRotationXYZAngle(x:number, y:number, z:number, angle:number):Transform {
-      this.rotation.initAxisAngle(this._tempVec.init(x, y, z).selfNormalize(), angle);
+      this.rotation.initAxisAngle(this._tempVec.init(x, y, z).normalize(), angle);
       this._dirty = true;
       return this;
     }
@@ -74,19 +74,19 @@ module Glib.Components {
     }
 
     rotateAxisAngle(axis:Glib.IVec3, angle:number):Transform {
-      this.rotation.selfConcat(this._tempQuat.initAxisAngle(axis, angle));
+      this.rotation.concat(this._tempQuat.initAxisAngle(axis, angle));
       this._dirty = true;
       return this;
     }
 
     rotateXYZAngle(x:number, y:number, z:number, angle:number):Transform {
-      this.rotation.selfMultiply(this._tempQuat.initAxisAngle(this._tempVec.init(x, y, z), angle));
+      this.rotation.multiply(this._tempQuat.initAxisAngle(this._tempVec.init(x, y, z), angle));
       this._dirty = true;
       return this;
     }
 
     rotateYawPitchRoll(yaw:number, pitch:number, roll:number):Transform {
-      this.rotation.selfConcat(this._tempQuat.initYawPitchRoll(yaw, pitch, roll));
+      this.rotation.concat(this._tempQuat.initYawPitchRoll(yaw, pitch, roll));
       this._dirty = true;
       return this;
     }

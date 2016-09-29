@@ -64,7 +64,7 @@ module Glib.Graphics {
     let context = options.context
     let attributes = utils.extend({}, DefaultContextAttributes, options.contextAttributes || {})
     if (context instanceof CanvasRenderingContext2D) {
-      return context
+      return context as any
     }
     if (typeof context === 'string') {
       return canvas.getContext(context as string, attributes) as WebGLRenderingContext

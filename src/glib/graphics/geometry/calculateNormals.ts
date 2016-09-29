@@ -64,7 +64,7 @@ module Glib.Graphics.Geometry {
       index = indices[i] * stride + offNrm;
       normal.initFromBuffer(vertices, index);
       if (normal.lengthSquared() > epsilon){
-        normal.selfNormalize();
+        normal.normalize();
       } else {
         normal.init(0, 0, 0);
       }

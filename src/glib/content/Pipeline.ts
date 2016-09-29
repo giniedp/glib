@@ -70,7 +70,7 @@ module Glib.Content.Pipeline {
   export function loader(sourceType:string|string[], targetType:string, handler:StageHandler) {
     let type:any = sourceType
     if (!Array.isArray(type)) type = [type]
-    for (name of type) {
+    for (let name of type) {
       handlers.push({
         stage: 'load',
         sourceType: name,
@@ -86,7 +86,7 @@ module Glib.Content.Pipeline {
   export function importer(sourceType:string|string[], targetType:string, handler:StageHandler) {
     let type:any = sourceType
     if (!Array.isArray(type)) type = [type]
-    for (name of type) {
+    for (let name of type) {
       handlers.push({
         stage: 'import',
         sourceType: name,

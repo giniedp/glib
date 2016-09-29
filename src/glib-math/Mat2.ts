@@ -113,7 +113,7 @@ module Glib {
      * @param angle The angle in radians.
      * @return Reference to `this` for chaining.
      */
-    initAxisAngle(axis:IVec2|IVec2, angle:number):Mat2 {
+    initAxisAngle(axis:IVec2, angle:number):Mat2 {
       // create quaternion
       var halfAngle = angle * 0.5
       var scale = Math.sin(halfAngle)

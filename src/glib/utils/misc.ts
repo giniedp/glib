@@ -158,7 +158,7 @@ module Glib.utils {
     docHidden = "mozHidden"
     docVisibilityState = "mozVisibilityState"
     docVisibilityChange = "mozvisibilitychange"
-  } else if (typeof document.msHidden !== "undefined") {
+  } else if (typeof document["msHidden"] !== "undefined") {
     docHidden = "msHidden"
     docVisibilityState = "msVisibilityState"
     docVisibilityChange = "msvisibilitychange"
@@ -169,7 +169,6 @@ module Glib.utils {
   }
   
   export function documentIsHidden(): boolean {
-    document.msVisibilityState
     return document[docHidden]
   }
   export function documentVisibilityState(fallback?:string): string {

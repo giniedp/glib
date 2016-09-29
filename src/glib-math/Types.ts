@@ -28,5 +28,8 @@ module Glib {
   export interface IMat {
     data: Float32Array
   }
-
+  export interface ArrayLike<T> {
+      length: number;
+      [n: number]: T;
+  }
 }

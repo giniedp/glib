@@ -50,39 +50,39 @@ module Glib.Components {
 
       if (keyboard.isPressed(Input.Keys.KeyW)) {
         trans.worldMat.getForward(this._direction);
-        this._translation.selfAdd(this._direction);
+        this._translation.add(this._direction);
         targetSpeed = speed;
       }
       if (keyboard.isPressed(Input.Keys.KeyS)) {
         trans.worldMat.getBackward(this._direction);
-        this._translation.selfAdd(this._direction);
+        this._translation.add(this._direction);
         targetSpeed = speed;
       }
       if (keyboard.isPressed(Input.Keys.KeyA)) {
         trans.worldMat.getLeft(this._direction);
-        this._translation.selfAdd(this._direction);
+        this._translation.add(this._direction);
         targetSpeed = speed;
       }
       if (keyboard.isPressed(Input.Keys.KeyD)) {
         trans.worldMat.getRight(this._direction);
-        this._translation.selfAdd(this._direction);
+        this._translation.add(this._direction);
         targetSpeed = speed;
       }
       if (keyboard.isPressed(Input.Keys.KeyQ)) {
         trans.worldMat.getDown(this._direction);
-        this._translation.selfAdd(this._direction);
+        this._translation.add(this._direction);
         targetSpeed = speed;
       }
       if (keyboard.isPressed(Input.Keys.KeyE)) {
         trans.worldMat.getUp(this._direction);
-        this._translation.selfAdd(this._direction);
+        this._translation.add(this._direction);
         targetSpeed = speed;
       }
       if (keyboard.isPressed(Input.Keys.ShiftLeft)) {
         targetSpeed = this.runSpeed;
       }
       if (this._translation.lengthSquared() > 0) {
-        this._translation.selfNormalize();
+        this._translation.normalize();
       }
       if (targetSpeed !== 0) {
         this._temp.initFrom(this._translation);

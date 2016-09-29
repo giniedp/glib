@@ -8,12 +8,22 @@ module Glib.Input {
   export interface IGamepadsOptions {
     autopoll?: boolean
   }
-
+  export interface GamepadButton {
+      pressed: boolean
+      value: number
+  }
   /**
    * The captured state of a gamepad
    */
-  export interface IGamepadState extends Gamepad {
+  export interface IGamepadState {
     buttonValues: number[]
+    axes: number[]
+    buttons: GamepadButton[]
+    connected: boolean
+    id: string
+    index: number
+    mapping: string
+    timestamp: number
   }
 
   export class Gamepads extends Glib.Events {

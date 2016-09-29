@@ -91,7 +91,7 @@ module Glib {
      * @param w value for W component
      * @return this vector for chaining
      */
-    init(x:number, y:number, z:number, w:number):IVec4 {
+    init(x:number, y:number, z:number, w:number):Vec4 {
       this.x = x
       this.y = y
       this.z = z
@@ -130,10 +130,7 @@ module Glib {
      * Creates a copy of this vector
      * @return The cloned vector
      */
-    clone():Vec4 {
-      return new Vec4(this.x, this.y, this.z, this.w)
-    }
-    cloneTo<T extends IVec4>(out?:T):T {
+    clone<T extends IVec4>(out?:T):T {
       out = (out || new Vec4()) as any
       out.x = this.x
       out.y = this.y
@@ -141,6 +138,7 @@ module Glib {
       out.w = this.w
       return out
     }
+    
     /**
      * Copies the components successively into the given array.
      * @param buffer The array to copy into

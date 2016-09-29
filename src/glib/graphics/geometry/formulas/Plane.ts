@@ -18,7 +18,7 @@ module Glib.Graphics.Geometry.Formulas {
     for (z = 0; z <= vertices; z += 1) {
       for (x = 0; x <= vertices; x += 1) {
         builder.addVertex({
-          position: pos.init(x * vInv - 0.5, 0, z * vInv - 0.5).selfMultiplyScalar(size),
+          position: pos.init(x * vInv - 0.5, 0, z * vInv - 0.5).multiplyScalar(size),
           texture: uv.init(x * vInv, z * vInv)
         });
       }

@@ -25,7 +25,7 @@ module Glib.Graphics.Geometry.Formulas {
     for (var step = 0; step <= steps; step += 1) {
       circleVector(step / steps, position)
       texture.init(position.x, position.z)
-      position.selfMultiplyScalar(radius)
+      position.multiplyScalar(radius)
 
       builder.addVertex({
         position: position,

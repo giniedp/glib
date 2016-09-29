@@ -61,7 +61,7 @@ block script
     });
 
     function createObject(model) {
-      var position = Glib.Vec3.randomNormal().selfMultiplyScalar(boxSize);
+      var position = Glib.Vec3.randomNormal().multiplyScalar(boxSize);
       var direction = Glib.Vec3.randomNormal();
       var up = new Glib.Vec3(0, 1, 0);
 

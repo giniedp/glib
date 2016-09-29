@@ -75,11 +75,11 @@ module Glib.Graphics.Geometry {
       var dir1 = Vec3.subtract<Vec3>(
         Vec3.multiplyScalar(d1, uv2.y),
         Vec3.multiplyScalar(d2, uv1.y)
-      ).selfMultiplyScalar(r);
+      ).multiplyScalar(r);
       var dir2 = Vec3.subtract<Vec3>(
         Vec3.multiplyScalar(d2, uv1.x),
         Vec3.multiplyScalar(d1, uv2.x)
-      ).selfMultiplyScalar(r);
+      ).multiplyScalar(r);
 
       index = i1 * stride + offTan;
       vertices[index    ] += dir1.x;
@@ -124,14 +124,14 @@ module Glib.Graphics.Geometry {
 
       var t = Vec3.subtract<Vec3>(tangent, Vec3.multiplyScalar(normal, normal.dot(tangent)));
       var h = Vec3.cross<Vec3>(normal, tangent).dot(bitangent) < 0 ? -1 : 1;
-      var b = Vec3.cross<Vec3>(normal, t).selfMultiplyScalar(h);
+      var b = Vec3.cross<Vec3>(normal, t).multiplyScalar(h);
 
       if (!t.lengthSquared() || !b.lengthSquared()){
         t.init(1, 0, 0);
         b.init(0, 0, 1);
       } else {
-        t.selfNormalize();
-        b.selfNormalize();
+        t.normalize();
+        b.normalize();
       }
 
       t.copyTo(vertices, index + offTan);

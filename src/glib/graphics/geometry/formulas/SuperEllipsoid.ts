@@ -52,7 +52,7 @@ module Glib.Graphics.Geometry.Formulas {
 
         builder.addVertex({
           position: Vec3.multiplyScalar(normal, radius),
-          normal: normal.selfNormalize(),
+          normal: normal.normalize(),
           texture: texCoord
         });
       }
