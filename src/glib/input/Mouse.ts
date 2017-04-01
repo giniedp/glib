@@ -1,6 +1,6 @@
 module Glib.Input {
 
-  function prefix(browser:string, name:string, upper:boolean):string {
+  function prefix(browser:string, name:string, upper: boolean):string {
     if (browser == null) return null
     if (browser == '') return name
     if (upper) {
@@ -38,18 +38,18 @@ module Glib.Input {
    * The captured Mouse state
    */
   export interface IMouseState {
-    pageX:number
-    pageY:number
-    screenX:number
-    screenY:number
-    clientX:number
-    clientY:number
-    x:number
-    y:number
+    pageX: number
+    pageY: number
+    screenX: number
+    screenY: number
+    clientX: number
+    clientY: number
+    x: number
+    y: number
     movementX: number
     movementY: number
-    wheel:number
-    buttons:boolean[]
+    wheel: number
+    buttons: boolean[]
   }
 
   /**
@@ -222,7 +222,7 @@ module Glib.Input {
     /** 
      * Checks whether the mouse is already locked to any element 
      */
-    isLocked():boolean {
+    isLocked(): boolean {
       return Mouse.isLocked()
     }
     /**
@@ -234,7 +234,7 @@ module Glib.Input {
     /** 
      * Checks whether the mouse is already locked to any element 
      */
-    static isLocked():boolean {
+    static isLocked(): boolean {
       return !!document[cross.pointerLockElement]
     }
     /**
@@ -275,7 +275,7 @@ module Glib.Input {
      * Updates the button states from given event
      */
     protected handleButton(e:MouseEvent) {
-      var isDown = e.type === 'mousedown';
+      let isDown = e.type === 'mousedown';
       if (e.which !== undefined) {
         this.state.buttons[e.which - 1] = isDown;
       } else if (e.button !== undefined) {
@@ -313,14 +313,14 @@ module Glib.Input {
     }
   }
 
-  export var MouseButton = {
+  export let MouseButton = {
     Left: 0,
     Middle: 1,
     Right: 2
   };
 
-  export var MouseButtonName = {}
-  for (var name in MouseButton) {
+  export let MouseButtonName = {}
+  for (let name in MouseButton) {
     MouseButtonName[MouseButton[name]] = name
   }
 }

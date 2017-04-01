@@ -1,7 +1,7 @@
 module Glib.Render {
 
   export interface RenderTargetRegistry {
-    frames:number,
+    frames: number,
     target:Graphics.Texture, 
     options:Graphics.RenderTargetOptions
   }
@@ -57,7 +57,7 @@ module Glib.Render {
       this.views.push(view)
     }
 
-    removeView(indexOrView:number|View){
+    removeView(indexOrView: number|View){
       let view = indexOrView as View
       if (typeof indexOrView === 'number') {
         view = this.views[indexOrView]
@@ -135,7 +135,7 @@ module Glib.Render {
       })
     }
 
-    private static compareTargetOptions(a:Graphics.RenderTargetOptions, b:Graphics.RenderTargetOptions):boolean {
+    private static compareTargetOptions(a:Graphics.RenderTargetOptions, b:Graphics.RenderTargetOptions): boolean {
       return (a.width === b.width) && (a.height === b.height) && (!!a.depthFormat === !!b.depthFormat);
     }
 
@@ -157,7 +157,7 @@ module Glib.Render {
 
     render() {
       this.device.resize()
-      for(var view of this.views) {
+      for(let view of this.views) {
         this.renderView(view)
       }
       this.presentViews()
@@ -165,19 +165,19 @@ module Glib.Render {
 
     renderView(view: Render.View) {
       this.updateView(view)
-      for (var step of view.steps) {
+      for (let step of view.steps) {
         if (step.setup) {
           this.view = view
           step.setup(this)
         }
       }
-      for (var step of view.steps) {
+      for (let step of view.steps) {
         if (step.render) {
           this.view = view
           step.render(this)
         }
       }
-      for (var step of view.steps) {
+      for (let step of view.steps) {
         if (step.cleanup) {
           this.view = view
           step.cleanup(this)
@@ -208,7 +208,7 @@ module Glib.Render {
       this.spriteBatch.end()
     }
 
-    private stepHasBegun:boolean;
+    private stepHasBegun: boolean;
     beginStep():Graphics.Texture {
       if (this.stepHasBegun) {
         throw "each beginStep() call must be paired with an endStep() call."

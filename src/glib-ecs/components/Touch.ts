@@ -3,8 +3,8 @@ module Glib.Components {
   export class Touch implements Component {
     node:Entity
     name:string = 'Touch'
-    service:boolean = true
-    enabled:boolean = true
+    service: boolean = true
+    enabled: boolean = true
 
     touch: Input.TouchPane
     touchIds: number[]

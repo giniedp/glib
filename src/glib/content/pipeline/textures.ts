@@ -54,7 +54,7 @@ module Glib.Content.Pipeline {
 
   let canvas: HTMLCanvasElement
   let canvasContext2d: CanvasRenderingContext2D
-  function getImageData(image:HTMLImageElement, width?:number, height?:number): ImageData{
+  function getImageData(image:HTMLImageElement, width?: number, height?: number): ImageData{
     if (!image.complete){
       throw new Error('image must be completed') 
     }

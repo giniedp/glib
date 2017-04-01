@@ -15,10 +15,10 @@ module Glib.Graphics {
   export class OffsetState implements OffsetStateOptions {
     device:Device
     gl:WebGLRenderingContext
-    private offsetEnableField:boolean = false
-    private offsetFactorField:number = 0
-    private offsetUnitsField:number = 0
-    private hasChanged:boolean = false
+    private offsetEnableField: boolean = false
+    private offsetFactorField: number = 0
+    private offsetUnitsField: number = 0
+    private hasChanged: boolean = false
     private changes:OffsetStateOptions = {}
 
     constructor(device:Device, state?:OffsetStateOptions) {
@@ -28,11 +28,11 @@ module Glib.Graphics {
       if (state) this.assign(state)
     }
 
-    get offsetEnable():boolean {
+    get offsetEnable(): boolean {
       return this.offsetEnableField
     }
 
-    set offsetEnable(value:boolean) {
+    set offsetEnable(value: boolean) {
       if (this.offsetEnableField !== value) {
         this.offsetEnableField = value
         this.changes.offsetEnable = value
@@ -40,11 +40,11 @@ module Glib.Graphics {
       }
     }
 
-    get offsetFactor():number {
+    get offsetFactor(): number {
       return this.offsetFactorField
     }
 
-    set offsetFactor(value:number) {
+    set offsetFactor(value: number) {
       if (this.offsetFactorField !== value) {
         this.offsetFactorField = value
         this.changes.offsetFactor = value
@@ -52,11 +52,11 @@ module Glib.Graphics {
       }
     }
 
-    get offsetUnits():number {
+    get offsetUnits(): number {
       return this.offsetUnitsField
     }
 
-    set offsetUnits(value:number) {
+    set offsetUnits(value: number) {
       if (this.offsetUnitsField !== value) {
         this.offsetUnitsField = value
         this.changes.offsetUnits = value

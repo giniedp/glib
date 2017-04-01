@@ -27,7 +27,7 @@ module Glib.Content.Pipeline {
   /**
    * 
    */
-  export var handlers: StageHandlerEntry[] = []
+  export let handlers: StageHandlerEntry[] = []
 
   export function defaultLoader(context: Context):IPromise {
     return context.manager.download(context.path).then(function(result) {
@@ -133,7 +133,7 @@ module Glib.Content.Pipeline {
   }
 
   export function getHandlers(stage:string, sourceType:string, targetType:string, out:StageHandler[]=[]): StageHandler[] {
-    for (var item of handlers) {
+    for (let item of handlers) {
       if (item.stage !== stage) continue
       if (item.targetType !== targetType) continue
       if (item.sourceType === sourceType || item.sourceType === '*') {

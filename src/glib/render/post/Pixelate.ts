@@ -10,8 +10,8 @@ module Glib.Render.Post {
     }
 
     render(manager: Render.Manager) {
-      var rt = manager.beginStep();
-      var rt2 = manager.acquireTarget(rt);
+      let rt = manager.beginStep();
+      let rt2 = manager.acquireTarget(rt);
       
       let program = this.effect.getTechnique(0).pass(0).program
       program.setUniform('texture', rt);

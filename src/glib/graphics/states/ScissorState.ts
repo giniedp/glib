@@ -13,12 +13,12 @@ module Glib.Graphics {
   export class ScissorState implements ScissorStateOptions {
     device:Device
     gl:WebGLRenderingContext
-    private enableField:boolean = false
-    private xField:number = 0
-    private yField:number = 0
-    private widthField:number = 0
-    private heightField:number = 0
-    private hasChanged:boolean = false
+    private enableField: boolean = false
+    private xField: number = 0
+    private yField: number = 0
+    private widthField: number = 0
+    private heightField: number = 0
+    private hasChanged: boolean = false
     private changes:ScissorStateOptions = {}
 
     constructor(device:Device, state?:ScissorStateOptions) {
@@ -28,11 +28,11 @@ module Glib.Graphics {
       if (state) this.assign(state)
     }
 
-    get enable():boolean {
+    get enable(): boolean {
       return this.enableField
     }
 
-    set enable(value:boolean) {
+    set enable(value: boolean) {
       if (this.enableField !== value) {
         this.enableField = value
         this.changes.enable = value
@@ -40,11 +40,11 @@ module Glib.Graphics {
       }
     }
 
-    get x():number {
+    get x(): number {
       return this.xField
     }
 
-    set x(value:number) {
+    set x(value: number) {
       if (this.xField !== value) {
         this.xField = value
         this.changes.x = value
@@ -52,11 +52,11 @@ module Glib.Graphics {
       }
     }
 
-    get y():number {
+    get y(): number {
       return this.yField
     }
 
-    set y(value:number) {
+    set y(value: number) {
       if (this.yField !== value) {
         this.yField = value
         this.changes.y = value
@@ -64,11 +64,11 @@ module Glib.Graphics {
       }
     }
 
-    get width():number {
+    get width(): number {
       return this.widthField
     }
 
-    set width(value:number) {
+    set width(value: number) {
       if (this.widthField !== value) {
         this.widthField = value
         this.changes.width = value
@@ -76,11 +76,11 @@ module Glib.Graphics {
       }
     }
 
-    get height():number {
+    get height(): number {
       return this.heightField
     }
 
-    set height(value:number) {
+    set height(value: number) {
       if (this.heightField !== value) {
         this.heightField = value
         this.changes.height = value
@@ -130,11 +130,11 @@ module Glib.Graphics {
     }
 
     static commit(gl:any, state:ScissorStateOptions) {
-      var x = state.x
-      var y = state.y
-      var width = state.width
-      var height = state.height
-      var enable = state.enable
+      let x = state.x
+      let y = state.y
+      let width = state.width
+      let height = state.height
+      let enable = state.enable
       if (enable === true) {
         gl.enable(gl.SCISSOR_TEST)
       }
@@ -148,7 +148,7 @@ module Glib.Graphics {
 
     static resolve(gl:WebGLRenderingContext, out:any={}):ScissorStateOptions {
       out.enable = gl.getParameter(gl.SCISSOR_TEST)
-      var scissor = gl.getParameter(gl.SCISSOR_BOX)
+      let scissor = gl.getParameter(gl.SCISSOR_BOX)
       out.x = scissor[0]
       out.y = scissor[1]
       out.width = scissor[2]

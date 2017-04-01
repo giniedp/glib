@@ -12,16 +12,16 @@ module Glib.Graphics {
       this._extensions = {}
     }
     capability(name:string, extension?:string) {
-      var result = this._capabilities[name]
+      let result = this._capabilities[name]
       if (result !== void 0) return result
-      var lookup = extension ? this.extension(extension) : this.gl
+      let lookup = extension ? this.extension(extension) : this.gl
       if (lookup) {
         return this._capabilities[name] = this.gl.getParameter(lookup[name])
       }
       return this._capabilities[name] = null
     }
     extension(name:string) {
-      var result = this._extensions[name]
+      let result = this._extensions[name]
       if (result === void 0) {
         return this._extensions[name] = this.gl.getExtension(name)
       }

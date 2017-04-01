@@ -49,41 +49,41 @@ module Glib.Graphics {
      */
     gl:WebGLRenderingContext
     
-    private registerField:number
+    private registerField: number
     /**
      * If true this will fix invalid state for a non power of two texture
      */
-    autofixNonPOT:boolean = true
+    autofixNonPOT: boolean = true
     private textureField:any
-    private minFilterField:number = TextureFilter.PointMipLinear
-    private magFilterField:number = TextureFilter.Point
-    private wrapUField:number = TextureWrapMode.Clamp
-    private wrapVField:number = TextureWrapMode.Clamp
-    private hasChanged:boolean
+    private minFilterField: number = TextureFilter.PointMipLinear
+    private magFilterField: number = TextureFilter.Point
+    private wrapUField: number = TextureWrapMode.Clamp
+    private wrapVField: number = TextureWrapMode.Clamp
+    private hasChanged: boolean
     private changes:SamplerStateProperties = {}
 
-    constructor(device:Device, register:number) {
+    constructor(device:Device, register: number) {
       this.device = device;
       this.gl = device.context;
       this.registerField = register;
     }
 
-    get register():number {
+    get register(): number {
       return this.registerField
     }
-    set register(value:number) { throw "'register' property is read only" }
+    set register(value: number) { throw "'register' property is read only" }
 
-    get unit():number {
+    get unit(): number {
       return TextureUnitMap[this.registerField]
     }
-    set unit(value:number) { throw "'unit' property is read only" }
+    set unit(value: number) { throw "'unit' property is read only" }
 
-    get texture():Texture {
+    get texture(): Texture {
       return this.textureField
     }
 
-    set texture(value:Texture) {
-      var texture = this.textureField
+    set texture(value: Texture) {
+      let texture = this.textureField
       if (texture !== value || (value && (texture.handle !== value.handle || texture.type !== value.type))) {
         this.textureField = value
         this.changes.texture = value
@@ -94,7 +94,7 @@ module Glib.Graphics {
       }
     }
 
-    get minFilter():number {
+    get minFilter(): number {
       return this.minFilterField
     }
 
@@ -102,7 +102,7 @@ module Glib.Graphics {
       return TextureFilterName[this.minFilterField]
     }
 
-    set minFilter(value:number) {
+    set minFilter(value: number) {
       if (this.minFilterField !== value) {
         this.minFilterField = value
         this.changes.minFilter = value
@@ -110,7 +110,7 @@ module Glib.Graphics {
       }
     }
 
-    get magFilter():number {
+    get magFilter(): number {
       return this.magFilterField
     }
 
@@ -118,7 +118,7 @@ module Glib.Graphics {
       return TextureFilterName[this.magFilterField]
     }
 
-    set magFilter(value:number) {
+    set magFilter(value: number) {
       if (this.magFilterField !== value) {
         this.magFilterField = value
         this.changes.magFilter = value
@@ -126,7 +126,7 @@ module Glib.Graphics {
       }
     }
 
-    get wrapU():number {
+    get wrapU(): number {
       return this.wrapUField
     }
 
@@ -134,7 +134,7 @@ module Glib.Graphics {
       return TextureWrapModeName[this.wrapUField]
     }
 
-    set wrapU(value:number) {
+    set wrapU(value: number) {
       if (this.wrapUField !== value) {
         this.wrapUField = value
         this.changes.wrapU = value
@@ -142,7 +142,7 @@ module Glib.Graphics {
       }
     }
 
-    get wrapV():number {
+    get wrapV(): number {
       return this.wrapVField
     }
 
@@ -150,7 +150,7 @@ module Glib.Graphics {
       return TextureWrapModeName[this.wrapVField]
     }
 
-    set wrapV(value:number) {
+    set wrapV(value: number) {
       if (this.wrapVField !== value) {
         this.wrapVField = value
         this.changes.wrapV = value

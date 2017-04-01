@@ -50,7 +50,7 @@ declare function waits(timeout?: number): void;
 
 declare namespace jasmine {
 
-    var clock: () => Clock;
+    let clock: () => Clock;
 
     function any(aclass: any): Any;
     function anything(): Any;
@@ -502,7 +502,7 @@ declare namespace jasmine {
         util: Util;
     }
 
-    export var HtmlReporter: HtmlReporter;
-    export var HtmlSpecFilter: HtmlSpecFilter;
-    export var DEFAULT_TIMEOUT_INTERVAL: number;
+    export let HtmlReporter: HtmlReporter;
+    export let HtmlSpecFilter: HtmlSpecFilter;
+    export let DEFAULT_TIMEOUT_INTERVAL: number;
 }

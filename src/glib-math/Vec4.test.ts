@@ -182,7 +182,7 @@ describe("Glib.Vec4", () => {
     describe(".add", () => {
       it ("adds components", () => expectEquality(Glib.Vec4.add(a, b), c))
       it ("returns new instance", () => {
-        var res = Glib.Vec4.add(a, b) 
+        let res = Glib.Vec4.add(a, b) 
         expect(res).not.toBe(a)
         expect(res).not.toBe(b)
       })
@@ -208,7 +208,7 @@ describe("Glib.Vec4", () => {
     describe(".subtract", () => {
       it ("subtracts components", () => expectEquality(Glib.Vec4.subtract(a, b), c))
       it ("returns new instance", () => {
-        var res = Glib.Vec4.subtract(a, b) 
+        let res = Glib.Vec4.subtract(a, b) 
         expect(res).not.toBe(a)
         expect(res).not.toBe(b)
       })
@@ -234,7 +234,7 @@ describe("Glib.Vec4", () => {
     describe(".multiply", () => {
       it ("multiplys components", () => expectEquality(Glib.Vec4.multiply(a, b), c))
       it ("returns new instance", () => {
-        var res = Glib.Vec4.multiply(a, b) 
+        let res = Glib.Vec4.multiply(a, b) 
         expect(res).not.toBe(a)
         expect(res).not.toBe(b)
       })
@@ -260,7 +260,7 @@ describe("Glib.Vec4", () => {
     describe(".divide", () => {
       it ("divides components", () => expectEquality(Glib.Vec4.divide(a, b), c))
       it ("returns new instance", () => {
-        var res = Glib.Vec4.divide(a, b) 
+        let res = Glib.Vec4.divide(a, b) 
         expect(res).not.toBe(a)
         expect(res).not.toBe(b)
       })

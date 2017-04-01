@@ -1,17 +1,17 @@
 module Glib.Render {
 
   export interface ItemData {
-    world:Mat4
+    world: Mat4
     mesh:Graphics.ModelMesh
     effect:Graphics.ShaderEffect
     data:any
   }
 
   export interface LightData {
-    color:IVec4
-    position:IVec4
-    direction:IVec4
-    misc:IVec4
+    color: IVec4
+    position: IVec4
+    direction: IVec4
+    misc: IVec4
   }
 
   export interface CameraData {

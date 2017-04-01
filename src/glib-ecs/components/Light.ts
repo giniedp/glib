@@ -4,12 +4,12 @@ module Glib.Components {
   import Vec3 = Glib.Vec3;
 
   export interface LightProperties {
-    range?:number;
-    intensity?:number;
-    specularIntensity?:number;
-    spotOuterAngle?:number;
-    spotInnerAngle?:number;
-    castShadow?:boolean;
+    range?: number;
+    intensity?: number;
+    specularIntensity?: number;
+    spotOuterAngle?: number;
+    spotInnerAngle?: number;
+    castShadow?: boolean;
     position?: Vec3;
     direction?: Vec3;
     color?: Vec4;
@@ -23,14 +23,14 @@ module Glib.Components {
     misc: Vec4;
   }
 
-  export var LightType = {
+  export let LightType = {
     None: 0,
     Directional: 1,
     Point: 2,
     Spot: 3
   };
 
-  export var LightTypeName = {
+  export let LightTypeName = {
     0: 'None',
     1: 'Directional',
     2: 'Point',
@@ -40,15 +40,15 @@ module Glib.Components {
   export class Light implements Component, LightProperties {
     node: Entity;
     name:string = 'Light';
-    enabled:boolean = true;
-    service:boolean = true;
+    enabled: boolean = true;
+    service: boolean = true;
 
-    range:number = 0;
-    intensity:number = 1;
-    specularIntensity:number = 1;
-    spotOuterAngle:number = 0;
-    spotInnerAngle:number = 0;
-    castShadow:boolean = false;
+    range: number = 0;
+    intensity: number = 1;
+    specularIntensity: number = 1;
+    spotOuterAngle: number = 0;
+    spotInnerAngle: number = 0;
+    castShadow: boolean = false;
     position: Vec3;
     direction: Vec3;
     color: Vec4;
@@ -73,7 +73,7 @@ module Glib.Components {
     }
 
     update(){
-      var t = this.node.s.Transform;
+      let t = this.node.s.Transform;
       if (t) {
         this.direction.x = -t.worldMat.backward[0];
         this.direction.y = -t.worldMat.backward[1];
@@ -88,7 +88,7 @@ module Glib.Components {
     }
 
     updatePackedData(){
-      var data = this.packedData;
+      let data = this.packedData;
       
       data.position.x = this.position.x;
       data.position.y = this.position.y;

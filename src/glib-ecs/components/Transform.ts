@@ -12,8 +12,8 @@ module Glib.Components {
 
   export class Transform implements Component {
     name:string = 'Transform';
-    service:boolean = true;
-    enabled:boolean = true;
+    service: boolean = true;
+    enabled: boolean = true;
 
     scale = Vec3.one();
     position:Glib.Vec3 = Vec3.zero();
@@ -26,7 +26,7 @@ module Glib.Components {
     _tempVec = Vec3.zero();
     _dirty = true;
 
-    constructor(params?:TransformProperties) {
+    constructor(params?: TransformProperties) {
       if (params) {
         Glib.utils.extend(this, params);
       }
@@ -49,49 +49,49 @@ module Glib.Components {
       }
     }
 
-    setRotation(quaternion:Quat):Transform {
+    setRotation(quaternion:Quat): Transform {
       this.rotation.initFrom(quaternion);
       this._dirty = true;
       return this;
     }
 
-    setRotationAxisAngle(axis:Glib.IVec3, angle:number):Transform {
+    setRotationAxisAngle(axis:Glib.IVec3, angle: number): Transform {
       this.rotation.initAxisAngle(axis, angle);
       this._dirty = true;
       return this;
     }
 
-    setRotationXYZAngle(x:number, y:number, z:number, angle:number):Transform {
+    setRotationXYZAngle(x: number, y: number, z: number, angle: number): Transform {
       this.rotation.initAxisAngle(this._tempVec.init(x, y, z).normalize(), angle);
       this._dirty = true;
       return this;
     }
 
-    setRotationYawPitchRoll(yaw:number, pitch:number, roll:number):Transform {
+    setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): Transform {
       this.rotation.initYawPitchRoll(yaw, pitch, roll);
       this._dirty = true;
       return this;
     }
 
-    rotateAxisAngle(axis:Glib.IVec3, angle:number):Transform {
+    rotateAxisAngle(axis:Glib.IVec3, angle: number): Transform {
       this.rotation.concat(this._tempQuat.initAxisAngle(axis, angle));
       this._dirty = true;
       return this;
     }
 
-    rotateXYZAngle(x:number, y:number, z:number, angle:number):Transform {
+    rotateXYZAngle(x: number, y: number, z: number, angle: number): Transform {
       this.rotation.multiply(this._tempQuat.initAxisAngle(this._tempVec.init(x, y, z), angle));
       this._dirty = true;
       return this;
     }
 
-    rotateYawPitchRoll(yaw:number, pitch:number, roll:number):Transform {
+    rotateYawPitchRoll(yaw: number, pitch: number, roll: number): Transform {
       this.rotation.concat(this._tempQuat.initYawPitchRoll(yaw, pitch, roll));
       this._dirty = true;
       return this;
     }
 
-    setScale(scale:Glib.IVec3):Transform {
+    setScale(scale:Glib.IVec3): Transform {
       this.scale.x = scale.x;
       this.scale.y = scale.y;
       this.scale.z = scale.z;
@@ -99,7 +99,7 @@ module Glib.Components {
       return this;
     }
 
-    setScaleXYZ(scaleX:number, scaleY:number, scaleZ:number):Transform {
+    setScaleXYZ(scaleX: number, scaleY: number, scaleZ: number): Transform {
       this.scale.x = scaleX;
       this.scale.y = scaleY;
       this.scale.z = scaleZ;
@@ -107,7 +107,7 @@ module Glib.Components {
       return this;
     }
 
-    scaleBy(scale:Glib.IVec3):Transform {
+    scaleBy(scale:Glib.IVec3): Transform {
       this.scale.x *= scale.x;
       this.scale.y *= scale.y;
       this.scale.z *= scale.z;
@@ -115,7 +115,7 @@ module Glib.Components {
       return this;
     }
 
-    scaleXYZ(scaleX:number, scaleY:number, scaleZ:number):Transform {
+    scaleXYZ(scaleX: number, scaleY: number, scaleZ: number): Transform {
       this.scale.x *= scaleX;
       this.scale.y *= scaleY;
       this.scale.z *= scaleZ;
@@ -131,7 +131,7 @@ module Glib.Components {
         return this;
     }
 
-    setScaleUniform(value:number):Transform {
+    setScaleUniform(value: number): Transform {
       this.scale.x = value;
       this.scale.y = value;
       this.scale.z = value;
@@ -139,7 +139,7 @@ module Glib.Components {
       return this;
     }
 
-    setPosition(position):Transform {
+    setPosition(position): Transform {
       this.position.x = position.x;
       this.position.y = position.y;
       this.position.z = position.z;
@@ -147,7 +147,7 @@ module Glib.Components {
       return this;
     }
 
-    setPositionXYZ(x:number, y:number, z:number):Transform {
+    setPositionXYZ(x: number, y: number, z: number): Transform {
       this.position.x = x;
       this.position.y = y;
       this.position.z = z;
@@ -155,7 +155,7 @@ module Glib.Components {
       return this;
     }
 
-    translate(vec:Glib.IVec3):Transform {
+    translate(vec:Glib.IVec3): Transform {
       this.position.x += vec.x;
       this.position.y += vec.y;
       this.position.z += vec.z;
@@ -163,7 +163,7 @@ module Glib.Components {
       return this;
     }
 
-    translateXYZ(x:number, y:number, z:number):Transform {
+    translateXYZ(x: number, y: number, z: number): Transform {
       this.position.x += x;
       this.position.y += y;
       this.position.z += z;

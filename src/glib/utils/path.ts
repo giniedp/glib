@@ -1,8 +1,8 @@
 module Glib.utils.path {
   // source: https://github.com/nodejs/node/blob/master/lib/path.js
-  var pathSplit = /^(\/?|[\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+  let pathSplit = /^(\/?|[\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
   // source: http://blog.stevenlevithan.com/archives/parseuri
-  var options = {
+  let options = {
     key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
     q:   {
       name:   "queryKey",
@@ -16,9 +16,9 @@ module Glib.utils.path {
 
   export function parseUri(str, strict=true):any {
     var	o = options;
-    var m = o.parser[strict ? "strict" : "loose"].exec(str);
-    var uri = {};
-    var i = 14;
+    let m = o.parser[strict ? "strict" : "loose"].exec(str);
+    let uri = {};
+    let i = 14;
 
     while (i--) uri[o.key[i]] = m[i] || "";
 
@@ -31,9 +31,9 @@ module Glib.utils.path {
   }
 
   function normalizeArray(tokens) {
-    var result = [];
-    for (var i = 0; i < tokens.length; i++) {
-      var token = tokens[i];
+    let result = [];
+    for (let i = 0; i < tokens.length; i++) {
+      let token = tokens[i];
       if (!token || token === ".") continue;
       if (token === "..") {
         result.pop();
@@ -45,7 +45,7 @@ module Glib.utils.path {
   }
 
   export function collapsePath(path) {
-    var result = normalizeArray(path.split(/\//)).join("/")
+    let result = normalizeArray(path.split(/\//)).join("/")
     if (isAbsolute(path)) result = `/${result}`
     return result
   }
@@ -73,12 +73,12 @@ module Glib.utils.path {
   export function merge(a:string, b:string){
     if (hasProtocol(b)) return b
 
-    var aUri = parseUri(a)
-    var bUri = parseUri(b)
-    var path = isAbsolute(b) ? b : aUri.directory + bUri.path
+    let aUri = parseUri(a)
+    let bUri = parseUri(b)
+    let path = isAbsolute(b) ? b : aUri.directory + bUri.path
     path = collapsePath(path)
 
-    var result = "";
+    let result = "";
     if (aUri.protocol) result = aUri.protocol + "://"
     if (aUri.authority) result += aUri.authority
     if (!isAbsolute(path)) result += "/"

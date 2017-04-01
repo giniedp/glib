@@ -12,7 +12,7 @@ module Glib.Render.Post {
     }
 
     render(manager: Render.Manager) {
-      var baseTarget = manager.beginStep();
+      let baseTarget = manager.beginStep();
       
       if (this.halfSize) {
         this.targetOptions.width = (baseTarget.width / 2)|0

@@ -1,7 +1,7 @@
 module Glib {
 
-  var triggerEvents = function (events, args) {
-    var e, i;
+  let triggerEvents = function (events, args) {
+    let e, i;
     for (i = 0; i < events.length; i += 1) {
       (e = events[i]).callback.apply(e.ctx, args);
     }
@@ -34,7 +34,7 @@ module Glib {
       if (!this._events) {
         this._events = {};
       }
-      var events = this._events[name];
+      let events = this._events[name];
       if (!events) {
         events = this._events[name] = [];
       }
@@ -49,8 +49,8 @@ module Glib {
      * @param context The value of 'this' inside the callback
      */
     once(name:string, callback:(...args:any[])=>void, context?:any) {
-      var self = this;
-      var once:any = function () {
+      let self = this;
+      let once:any = function () {
         if (!this.called) {
           self.off(name, once);
           callback.apply(this, arguments);
@@ -71,7 +71,7 @@ module Glib {
      * @param [context]
      */
     off(name:string, callback:(...args:any[])=>void, context?:any) {
-      var retain, ev, events, names, i, l, j, k;
+      let retain, ev, events, names, i, l, j, k;
       if (!this._events) {
         return this;
       }
@@ -116,9 +116,9 @@ module Glib {
       if (!this._events) {
         return this;
       }
-      var args = Array.prototype.slice.call(arguments, 1);
-      var events = this._events[name];
-      var allEvents = this._events.all;
+      let args = Array.prototype.slice.call(arguments, 1);
+      let events = this._events[name];
+      let allEvents = this._events.all;
       if (events) {
         triggerEvents(events, args);
       }

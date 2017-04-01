@@ -1,5 +1,5 @@
 module Glib.Graphics {
-  export var DataType = {
+  export let DataType = {
     byte : 0x1400,
     int8 : 0x1400,
     BYTE : 0x1400,
@@ -41,7 +41,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var DataTypeName = {
+  export let DataTypeName = {
     byte : 'BYTE',
     int8 : 'BYTE',
     BYTE : 'BYTE',
@@ -83,7 +83,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var DataSize = {
+  export let DataSize = {
     byte : 1,
     int8 : 1,
     BYTE : 1,
@@ -125,7 +125,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var ArrayType = {
+  export let ArrayType = {
     byte : Int8Array,
     int8 : Int8Array,
     BYTE : Int8Array,
@@ -167,7 +167,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var ArrayTypeName = {
+  export let ArrayTypeName = {
     byte : 'Int8Array',
     int8 : 'Int8Array',
     BYTE : 'Int8Array',
@@ -209,7 +209,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BufferUsage = {
+  export let BufferUsage = {
     Static : 0x88E4,
     0x88E4 : 0x88E4,
     Dynamic : 0x88E8,
@@ -220,7 +220,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BufferUsageName = {
+  export let BufferUsageName = {
     Static : 'STATIC_DRAW',
     0x88E4 : 'STATIC_DRAW',
     Dynamic : 'DYNAMIC_DRAW',
@@ -231,7 +231,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BufferType = {
+  export let BufferType = {
     VertexBuffer : 0x8892,
     0x8892 : 0x8892,
     IndexBuffer : 0x8893,
@@ -240,7 +240,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BufferTypeName = {
+  export let BufferTypeName = {
     VertexBuffer : 'ARRAY_BUFFER',
     0x8892 : 'ARRAY_BUFFER',
     IndexBuffer : 'ELEMENT_ARRAY_BUFFER',
@@ -249,7 +249,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var Blend = {
+  export let Blend = {
     Zero : 0,
     0 : 0,
     One : 1,
@@ -284,7 +284,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BlendName = {
+  export let BlendName = {
     Zero : 'ZERO',
     0 : 'ZERO',
     One : 'ONE',
@@ -319,7 +319,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BlendFunction = {
+  export let BlendFunction = {
     Add : 0x8006,
     0x8006 : 0x8006,
     Subtract : 0x800A,
@@ -330,7 +330,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var BlendFunctionName = {
+  export let BlendFunctionName = {
     Add : 'FUNC_ADD',
     0x8006 : 'FUNC_ADD',
     Subtract : 'FUNC_SUBTRACT',
@@ -341,7 +341,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var CompareFunction = {
+  export let CompareFunction = {
     Never : 0x0200,
     0x0200 : 0x0200,
     Less : 0x0201,
@@ -362,7 +362,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var CompareFunctionName = {
+  export let CompareFunctionName = {
     Never : 'NEVER',
     0x0200 : 'NEVER',
     Less : 'LESS',
@@ -383,7 +383,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var CullMode = {
+  export let CullMode = {
     Front : 0x0404,
     0x0404 : 0x0404,
     Back : 0x0405,
@@ -394,7 +394,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var CullModeName = {
+  export let CullModeName = {
     Front : 'FRONT',
     0x0404 : 'FRONT',
     Back : 'BACK',
@@ -405,7 +405,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var FrontFace = {
+  export let FrontFace = {
     ClockWise : 0x0900,
     0x0900 : 0x0900,
     CounterClockWise : 0x0901,
@@ -414,7 +414,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var FrontFaceName = {
+  export let FrontFaceName = {
     ClockWise : 'CW',
     0x0900 : 'CW',
     CounterClockWise : 'CCW',
@@ -423,7 +423,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var StencilOperation = {
+  export let StencilOperation = {
     Zero : 0,
     0 : 0,
     Keep : 0x1E00,
@@ -444,7 +444,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var StencilOperationName = {
+  export let StencilOperationName = {
     Zero : 'ZERO',
     0 : 'ZERO',
     Keep : 'KEEP',
@@ -465,7 +465,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var PixelFormat = {
+  export let PixelFormat = {
     Alpha : 0x1906,
     0x1906 : 0x1906,
     Luminance : 0x1909,
@@ -480,7 +480,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var PixelFormatName = {
+  export let PixelFormatName = {
     Alpha : 'ALPHA',
     0x1906 : 'ALPHA',
     Luminance : 'LUMINANCE',
@@ -495,7 +495,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var PixelFormatElementCount = {
+  export let PixelFormatElementCount = {
     Alpha : 1,
     ALPHA : 1,
     0x1906 : 1,
@@ -513,7 +513,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var PrimitiveType = {
+  export let PrimitiveType = {
     PointList : 0x0000,
     0x0000 : 0x0000,
     LineList : 0x0001,
@@ -530,7 +530,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var PrimitiveTypeName = {
+  export let PrimitiveTypeName = {
     PointList : 'POINTS',
     0x0000 : 'POINTS',
     LineList : 'LINES',
@@ -547,7 +547,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var TextureType = {
+  export let TextureType = {
     Texture : 0x1702,
     0x1702 : 0x1702,
     Texture2D : 0x0DE1,
@@ -558,7 +558,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var TextureTypeName = {
+  export let TextureTypeName = {
     Texture : 'TEXTURE',
     0x1702 : 'TEXTURE',
     Texture2D : 'TEXTURE_2D',
@@ -569,7 +569,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var TextureWrapMode = {
+  export let TextureWrapMode = {
     Repeat : 0x2901,
     0x2901 : 0x2901,
     Clamp : 0x812F,
@@ -580,7 +580,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var TextureWrapModeName = {
+  export let TextureWrapModeName = {
     Repeat : 'REPEAT',
     0x2901 : 'REPEAT',
     Clamp : 'CLAMP_TO_EDGE',
@@ -591,7 +591,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var TextureFilter = {
+  export let TextureFilter = {
     Point : 0x2600,
     0x2600 : 0x2600,
     Linear : 0x2601,
@@ -608,7 +608,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var TextureFilterName = {
+  export let TextureFilterName = {
     Point : 'NEAREST',
     0x2600 : 'NEAREST',
     Linear : 'LINEAR',
@@ -625,7 +625,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var ShaderType = {
+  export let ShaderType = {
     VertexShader : 0x8B31,
     0x8B31 : 0x8B31,
     FragmentShader : 0x8B30,
@@ -634,7 +634,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var ShaderTypeName = {
+  export let ShaderTypeName = {
     VertexShader : 'VERTEX_SHADER',
     0x8B31 : 'VERTEX_SHADER',
     FragmentShader : 'FRAGMENT_SHADER',
@@ -643,7 +643,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var DepthFormat = {
+  export let DepthFormat = {
     None : 0,
     0 : 0,
     DepthStencil : 0x84F9,
@@ -662,7 +662,7 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var DepthFormatName = {
+  export let DepthFormatName = {
     None : 'ZERO',
     0 : 'ZERO',
     DepthStencil : 'DEPTH_STENCIL',
@@ -681,21 +681,21 @@ module Glib.Graphics {
 }
 
 module Glib.Graphics {
-  export var StencilFormat = {
+  export let StencilFormat = {
     Stencil8 : 0x8D48,
     0x8D48 : 0x8D48
   };
 }
 
 module Glib.Graphics {
-  export var StencilFormatName = {
+  export let StencilFormatName = {
     Stencil8 : 'STENCIL_INDEX8',
     0x8D48 : 'STENCIL_INDEX8'
   };
 }
 
 module Glib.Graphics {
-  export var LightType = {
+  export let LightType = {
     None : 0,
     Directional : 1,
     Point : 2,

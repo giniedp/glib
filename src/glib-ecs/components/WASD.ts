@@ -10,20 +10,20 @@ module Glib.Components {
 
   export class WASD implements Component {
     node: Entity;
-    enabled:boolean = true;
+    enabled: boolean = true;
 
-    yaw:number = 0;
-    pitch:number = 0;
-    targetYaw:number = 0;
-    targetPitch:number = 0;
-    turnSpeed:number = 0.5;
-    moveSpeed:number = 10;
-    runSpeed:number = 50;
-    turnDamping:number = 0.25;
-    moveDamping:number = 0.25;
+    yaw: number = 0;
+    pitch: number = 0;
+    targetYaw: number = 0;
+    targetPitch: number = 0;
+    turnSpeed: number = 0.5;
+    moveSpeed: number = 10;
+    runSpeed: number = 50;
+    turnDamping: number = 0.25;
+    moveDamping: number = 0.25;
 
-    _currentMoveSpeed:number = 0;
-    _currentTurnSpeed:number = 0;
+    _currentMoveSpeed: number = 0;
+    _currentTurnSpeed: number = 0;
     _temp:Vec3 = Vec3.zero();
     _direction:Vec3 = Vec3.zero();
     _translation:Vec3 = Vec3.zero();
@@ -40,12 +40,12 @@ module Glib.Components {
     }
 
     update(timeMs) {
-      var timeSec = timeMs / 1000.0;
-      var keyboard = this.keyboard;
-      var mouse = this.mouse;
-      var trans = this.transform;
-      var speed = this.moveSpeed;
-      var targetSpeed = 0;
+      let timeSec = timeMs / 1000.0;
+      let keyboard = this.keyboard;
+      let mouse = this.mouse;
+      let trans = this.transform;
+      let speed = this.moveSpeed;
+      let targetSpeed = 0;
       this._translation.init(0, 0, 0);
 
       if (keyboard.isPressed(Input.Keys.KeyW)) {
@@ -96,8 +96,8 @@ module Glib.Components {
       }
 
       if (mouse.leftButtonIsPressed) {
-        var mouseX = mouse.xDelta;
-        var mouseY = mouse.yDelta;
+        let mouseX = mouse.xDelta;
+        let mouseY = mouse.yDelta;
 
         if (mouseX !== 0 || mouseY !== 0) {
           speed = this.turnSpeed * timeSec;

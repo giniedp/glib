@@ -1,9 +1,9 @@
 module Glib.Graphics {
 
   export interface BufferData {
-    length:number,
-    [index:number]: number,
-    push(value:number)
+    length: number,
+    [index: number]: number,
+    push(value: number)
   }
 
   export interface BufferOptions {
@@ -20,13 +20,13 @@ module Glib.Graphics {
     device:Device
     gl:any
     handle:WebGLBuffer
-    type:number
-    dataType:number
-    usage:number
-    dataSize:number
-    //dataLength:number
-    elementSize:number
-    elementCount:number
+    type: number
+    dataType: number
+    usage: number
+    dataSize: number
+    //dataLength: number
+    elementSize: number
+    elementCount: number
     layout:IVertexLayout
 
     constructor(device:Device, opts?:BufferOptions) {
@@ -56,11 +56,11 @@ module Glib.Graphics {
     }
 
     // Indicates whether this buffer is setup as an IndexBuffer
-    get isIndexBuffer():Boolean {
+    get isIndexBuffer(): boolean {
       return this.type === BufferType.IndexBuffer
     }
     // Indicates whether this buffer is setup as an VertexBuffer
-    get isVertexBuffer():Boolean {
+    get isVertexBuffer(): boolean {
       return this.type === BufferType.VertexBuffer
     }
 
@@ -143,7 +143,7 @@ module Glib.Graphics {
 
     useProgram(program:ShaderProgram):Buffer {
       this.use()
-      var key, channel, attribute
+      let key, channel, attribute
       for (key in program.attributes) {
         channel = this.layout[key]
         attribute = program.attributes[key]
@@ -195,7 +195,7 @@ module Glib.Graphics {
       return this
     }
 
-    setSubData(data:BufferData, elementOffset?:number):Buffer {
+    setSubData(data:BufferData, elementOffset?: number):Buffer {
       if (data instanceof Array) {
         data = new ArrayType[this.dataType](data)
       }

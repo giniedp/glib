@@ -31,18 +31,18 @@ module Glib.Graphics {
   export class BlendState implements BlendStateOptions {
     device:Device
     gl:WebGLRenderingContext
-    private $colorBlendFunction:number = BlendFunction.Add
-    private $alphaBlendFunction:number = BlendFunction.Add
-    private $colorSrcBlend:number = Blend.One
-    private $alphaSrcBlend:number = Blend.One
-    private $colorDstBlend:number = Blend.Zero
-    private $alphaDstBlend:number = Blend.Zero
-    private $constantR:number = 0
-    private $constantG:number = 0
-    private $constantB:number = 0
-    private $constantA:number = 0
-    private $enabled:boolean = false
-    private hasChanged:boolean = false
+    private $colorBlendFunction: number = BlendFunction.Add
+    private $alphaBlendFunction: number = BlendFunction.Add
+    private $colorSrcBlend: number = Blend.One
+    private $alphaSrcBlend: number = Blend.One
+    private $colorDstBlend: number = Blend.Zero
+    private $alphaDstBlend: number = Blend.Zero
+    private $constantR: number = 0
+    private $constantG: number = 0
+    private $constantB: number = 0
+    private $constantA: number = 0
+    private $enabled: boolean = false
+    private hasChanged: boolean = false
     private changes:BlendStateOptions = {}
 
     constructor(device:Device, state?:BlendStateOptions) {
@@ -52,7 +52,7 @@ module Glib.Graphics {
       if (state) this.assign(state)
     }
 
-    get colorBlendFunction():number {
+    get colorBlendFunction(): number {
       return this.$colorBlendFunction
     }
 
@@ -60,7 +60,7 @@ module Glib.Graphics {
       return BlendFunctionName[this.$colorBlendFunction]
     }
 
-    set colorBlendFunction(value:number) {
+    set colorBlendFunction(value: number) {
       if (this.$colorBlendFunction !== value) {
         this.$colorBlendFunction = value
         this.changes.colorBlendFunction = value
@@ -68,7 +68,7 @@ module Glib.Graphics {
       }
     }
 
-    get alphaBlendFunction():number {
+    get alphaBlendFunction(): number {
       return this.$alphaBlendFunction
     }
 
@@ -76,7 +76,7 @@ module Glib.Graphics {
       return BlendFunctionName[this.$alphaBlendFunction]
     }
 
-    set alphaBlendFunction(value:number) {
+    set alphaBlendFunction(value: number) {
       if (this.$alphaBlendFunction !== value) {
         this.$alphaBlendFunction = value
         this.changes.alphaBlendFunction = value
@@ -84,7 +84,7 @@ module Glib.Graphics {
       }
     }
 
-    get colorSrcBlend():number {
+    get colorSrcBlend(): number {
       return this.$colorSrcBlend
     }
 
@@ -92,7 +92,7 @@ module Glib.Graphics {
       return BlendName[this.$colorSrcBlend]
     }
 
-    set colorSrcBlend(value:number) {
+    set colorSrcBlend(value: number) {
       if (this.$colorSrcBlend !== value) {
         this.$colorSrcBlend = value
         this.changes.colorSrcBlend = value
@@ -100,7 +100,7 @@ module Glib.Graphics {
       }
     }
 
-    get alphaSrcBlend():number {
+    get alphaSrcBlend(): number {
       return this.$alphaSrcBlend
     }
 
@@ -108,7 +108,7 @@ module Glib.Graphics {
       return BlendName[this.$alphaSrcBlend]
     }
 
-    set alphaSrcBlend(value:number) {
+    set alphaSrcBlend(value: number) {
       if (this.$alphaSrcBlend !== value) {
         this.$alphaSrcBlend = value
         this.changes.alphaSrcBlend = value
@@ -116,7 +116,7 @@ module Glib.Graphics {
       }
     }
 
-    get colorDstBlend():number {
+    get colorDstBlend(): number {
       return this.$colorDstBlend
     }
 
@@ -124,7 +124,7 @@ module Glib.Graphics {
       return BlendName[this.$colorDstBlend]
     }
 
-    set colorDstBlend(value:number) {
+    set colorDstBlend(value: number) {
       if (this.$colorDstBlend !== value) {
         this.$colorDstBlend = value
         this.changes.colorDstBlend = value
@@ -132,7 +132,7 @@ module Glib.Graphics {
       }
     }
 
-    get alphaDstBlend():number {
+    get alphaDstBlend(): number {
       return this.$alphaDstBlend
     }
 
@@ -140,7 +140,7 @@ module Glib.Graphics {
       return BlendName[this.$alphaDstBlend]
     }
 
-    set alphaDstBlend(value:number) {
+    set alphaDstBlend(value: number) {
       if (this.$alphaDstBlend !== value) {
         this.$alphaDstBlend = value
         this.changes.alphaDstBlend = value
@@ -148,11 +148,11 @@ module Glib.Graphics {
       }
     }
 
-    get constantR():number {
+    get constantR(): number {
       return this.$constantR
     }
 
-    set constantR(value:number) {
+    set constantR(value: number) {
       if (this.$constantR !== value) {
         this.$constantR = value
         this.changes.constantR = value
@@ -160,11 +160,11 @@ module Glib.Graphics {
       }
     }
 
-    get constantG():number {
+    get constantG(): number {
       return this.$constantG
     }
 
-    set constantG(value:number) {
+    set constantG(value: number) {
       if (this.$constantG !== value) {
         this.$constantG = value
         this.changes.constantG = value
@@ -172,11 +172,11 @@ module Glib.Graphics {
       }
     }
 
-    get constantB():number {
+    get constantB(): number {
       return this.$constantB
     }
 
-    set constantB(value:number) {
+    set constantB(value: number) {
       if (this.$constantB !== value) {
         this.$constantB = value
         this.changes.constantB = value
@@ -184,11 +184,11 @@ module Glib.Graphics {
       }
     }
 
-    get constantA():number {
+    get constantA(): number {
       return this.$constantA
     }
 
-    set constantA(value:number) {
+    set constantA(value: number) {
       if (this.$constantA !== value) {
         this.$constantA = value
         this.changes.constantA = value
@@ -196,11 +196,11 @@ module Glib.Graphics {
       }
     }
 
-    get enabled():boolean {
+    get enabled(): boolean {
       return this.$enabled
     }
 
-    set enabled(value:boolean) {
+    set enabled(value: boolean) {
       if (this.$enabled !== value) {
         this.$enabled = value
         this.changes.enabled = value
@@ -265,7 +265,7 @@ module Glib.Graphics {
       out.alphaSrcBlend = gl.getParameter(gl.BLEND_SRC_ALPHA)
       out.colorDstBlend = gl.getParameter(gl.BLEND_DST_RGB)
       out.alphaDstBlend = gl.getParameter(gl.BLEND_DST_ALPHA)
-      var color = gl.getParameter(gl.BLEND_COLOR)
+      let color = gl.getParameter(gl.BLEND_COLOR)
       out.constantR = color[0]
       out.constantG = color[1]
       out.constantB = color[2]

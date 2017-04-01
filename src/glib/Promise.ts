@@ -4,15 +4,15 @@ module Glib {
     catch:(arg:any, ...argRest:any[])=>any|IPromise
   }
 
-  export var Promise:any = self["Promise"];
+  export let Promise:any = self["Promise"];
 
   if (Promise && !Promise['defer']) {
     Promise['defer'] = function(){
-      var resolved = false;
-      var resolveArg = undefined;
-      var rejected = false;
-      var rejectArg = undefined;
-      var executor = {
+      let resolved = false;
+      let resolveArg = undefined;
+      let rejected = false;
+      let rejectArg = undefined;
+      let executor = {
         promise: null,
         resolve: function(){ resolved = true; resolveArg = arguments; },
         reject: function(){ rejected = true; rejectArg = arguments; }

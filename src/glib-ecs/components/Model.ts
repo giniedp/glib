@@ -1,33 +1,35 @@
 module Glib.Components {
   export class Model implements Component {
-    node:Entity
-    name:string = 'Renderable'
-    service:boolean = true
-    enabled:boolean = true
+    public node: Entity
+    public name: string = 'Renderable'
+    public service: boolean = true
+    public enabled: boolean = true
 
-    model: Graphics.Model
-    transform:Transform
-    world:Glib.Mat4 = Glib.Mat4.identity()
+    public model: Graphics.Model
+    public transform: Transform
+    public world: Glib.Mat4 = Glib.Mat4.identity()
 
-    constructor(params?:any) {
+    constructor(params?: any) {
       if (params) {
         Glib.utils.extend(this, params)
       }
     }
-    setup(){
-      this.transform = this.node.s["Transform"]
+    public setup() {
+      this.transform = this.node.s.Transform
     }
-    update(){
+    public update() {
       if (this.transform) {
         this.world.initFrom(this.transform.worldMat)
       }
     }
-    collect(result:CullVisitor){
-      if (!this.model) return
-      for (var mesh of this.model.meshes) {
+    public collect(result: CullVisitor) {
+      if (!this.model) {
+        return
+      }
+      for (const mesh of this.model.meshes) {
         result.add({
-          mesh: mesh, 
-          effect: this.model.materials[mesh.materialId], 
+          mesh: mesh,
+          effect: this.model.materials[mesh.materialId],
           world: this.world,
           data: null
         })

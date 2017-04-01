@@ -1,3 +1,6 @@
+// tslint:disable:interface-name
+// tslint:disable:no-empty-interface
+
 module Glib {
   export interface IVec2 {
     x: number
@@ -29,7 +32,7 @@ module Glib {
     data: Float32Array
   }
   export interface ArrayLike<T> {
-      length: number;
-      [n: number]: T;
+    length: number
+    [n: number]: T
   }
 }

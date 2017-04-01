@@ -12,12 +12,12 @@ module Glib.Render.Post {
     }
 
     render(manager: Render.Manager) {
-      var rt = manager.beginStep();
-      var rt2 = manager.acquireTarget(rt);
+      let rt = manager.beginStep();
+      let rt2 = manager.acquireTarget(rt);
       
       manager.device.setRenderTarget(rt2);
       
-      var program = this._program;
+      let program = this._program;
 
       program.setUniform('texture', rt);
       program.setUniform('time', this.time);

@@ -1,52 +1,52 @@
 module Glib.Components {
 
   export class Fps implements Component {
-    node:Entity;
-    name:string = 'Fps';
-    enabled:boolean = true;
-    service:boolean = true;
+    public node: Entity
+    public name: string = 'Fps'
+    public enabled: boolean = true
+    public service: boolean = true
 
-    frames:number;
-    fps:number;
-    fpsTimer:number;
-    fpsCounter:number;
+    public frames: number
+    public fps: number
+    public fpsTimer: number
+    public fpsCounter: number
 
-    time:Time;
+    public time: Time
 
     constructor() {
-      this.reset();
+      this.reset()
     }
 
-    setup() {
-      this.time = this.node.root.getService('Time');
+    public setup() {
+      this.time = this.node.root.getService('Time')
     }
 
-    reset() {
-      this.frames = 0;
-      this.fps = 0;
-      this.fpsTimer = 0;
-      this.fpsCounter = 0;
+    public reset() {
+      this.frames = 0
+      this.fps = 0
+      this.fpsTimer = 0
+      this.fpsCounter = 0
     }
 
-    update() {
-      this.frames += 1;
-      this.fpsTimer += this.time.elapsedMsInReal;
-      this.fpsCounter += 1;
+    public update() {
+      this.frames += 1
+      this.fpsTimer += this.time.elapsedMsInReal
+      this.fpsCounter += 1
       if (this.fpsTimer >= 1000) {
-        this.fps = this.fpsCounter * this.fpsTimer * 0.001;
-        this.fpsCounter = 0;
+        this.fps = this.fpsCounter * this.fpsTimer * 0.001
+        this.fpsCounter = 0
         while (this.fpsTimer >= 1000) {
-          this.fpsTimer -= 1000;
+          this.fpsTimer -= 1000
         }
       }
     }
 
-    debug():string {
+    public debug(): string {
       return [
         `- component: ${this.name}`,
         `  enabled: ${this.enabled}`,
         `  fps: ${this.fps.toPrecision(5)}`
-      ].join("\n")
+      ].join('\n')
     }
   }
 }

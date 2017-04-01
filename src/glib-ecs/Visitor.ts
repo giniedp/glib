@@ -1,26 +1,26 @@
 module Glib {
 
   export interface EntityVisitor {
-    visit(entity:Entity);
+    visit(entity: Entity)
   }
 
   export class EntityDebugVisitor {
-    data = [];
-    result = "";
+    public data = []
+    public result = ''
 
-    constructor(){
-
+    constructor() {
+      //
     }
 
-    start(node:Entity) {
-      this.data = [];
-      node.acceptVisitor(this);
-      this.result = this.data.join("\n");
+    public start(node: Entity) {
+      this.data = []
+      node.acceptVisitor(this)
+      this.result = this.data.join('\n')
     }
 
-    visit(entity:Entity) {
-      this.data.push(entity.debug());
-      this.data.push("");
+    public visit(entity: Entity) {
+      this.data.push(entity.debug())
+      this.data.push('')
     }
   }
 }

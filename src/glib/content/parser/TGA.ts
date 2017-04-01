@@ -2,25 +2,25 @@ module Glib.Content.Parser {
 
   export interface TgaHeader {
     idLength: number;
-    colorMapType:number;
-    imageType:number;
-    colorMapFirstIndex:number;
-    colorMapLength:number;
-    colorMapEntryDepth:number;
-    imageStartX:number;
-    imageStartY:number;
-    imageWidth:number;
-    imageHeight:number;
-    pixelDepth:number;
-    imageDescriptor:number;
+    colorMapType: number;
+    imageType: number;
+    colorMapFirstIndex: number;
+    colorMapLength: number;
+    colorMapEntryDepth: number;
+    imageStartX: number;
+    imageStartY: number;
+    imageWidth: number;
+    imageHeight: number;
+    pixelDepth: number;
+    imageDescriptor: number;
   }
 
   export interface TgaFooter {
-    extensionOffset:number;
-    developerOffset:number;
+    extensionOffset: number;
+    developerOffset: number;
     signature:string;
     reserved:string;
-    terminator:number;
+    terminator: number;
   }
 
   function readHeader(reader:BinaryReader): TgaHeader{
@@ -43,7 +43,7 @@ module Glib.Content.Parser {
 
   function readFooter(reader:BinaryReader): TgaFooter {
     reader.seekAbsolute(reader.data.length - 26);
-    var footer = {
+    let footer = {
       extensionOffset: reader.readInt(),
       developerOffset: reader.readInt(),
       signature: reader.readString(16),
@@ -56,18 +56,18 @@ module Glib.Content.Parser {
     return footer;
   }
 
-  function decodeRunLengthData(reader:BinaryReader, pixelSize:number, dataSize:number):Uint8Array {
-    var imageData = new Uint8Array(dataSize)
-    var imagePos = 0
-    var end = reader.position + dataSize
+  function decodeRunLengthData(reader:BinaryReader, pixelSize: number, dataSize: number):Uint8Array {
+    let imageData = new Uint8Array(dataSize)
+    let imagePos = 0
+    let end = reader.position + dataSize
     while(reader.position < end) {
-      var meta = reader.readByte()
-      var count = (meta & 0x7f) + 1
+      let meta = reader.readByte()
+      let count = (meta & 0x7f) + 1
 
       if (meta & 0x8) {
         // Run length encoded pixel
-        var pixelPos = reader.position
-        for (var i = 0; i < count; i++) {
+        let pixelPos = reader.position
+        for (let i = 0; i < count; i++) {
           reader.seekAbsolute(pixelPos)
           reader.readBuffer(imageData, imagePos, pixelSize)
           imagePos += pixelSize
@@ -83,7 +83,7 @@ module Glib.Content.Parser {
 
 	function getImageData8bits(imageData, indexes, colormap, width, y_start, y_step, y_end, x_start, x_step, x_end)
 	{
-		var color, i, x, y;
+		let color, i, x, y;
 
 		for (i = 0, y = y_start; y !== y_end; y += y_step) {
 			for (x = x_start; x !== x_end; x += x_step, i++) {
@@ -114,11 +114,11 @@ module Glib.Content.Parser {
       return (this.header.imageType & 0x8) === 0x8;
     }
 
-    get isRightToLeft():boolean {
+    get isRightToLeft(): boolean {
       return false// (this.header.imageDescriptor & 0x30 >> 0x4) & 0x1 === 0x1;
     }
 
-    get isBottomToTop():boolean {
+    get isBottomToTop(): boolean {
       return false//(this.header.imageDescriptor & 0x30 >> 0x4) & 0x2 === 0x2;
     }
 

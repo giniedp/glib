@@ -22,21 +22,21 @@ module Glib.Graphics.Geometry {
       log('Can not calculate tangents for buffer. Bitangent definition not found in layout ', layout);
     }
 
-    var stride = Glib.Graphics.VertexLayout.countElements(layout);
-    var offPos = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'position');
-    var offNrm = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'normal');
-    var offTex = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'texture');
-    var offTan = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'tangent');
-    var offBit = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'bitangent');
+    let stride = Glib.Graphics.VertexLayout.countElements(layout);
+    let offPos = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'position');
+    let offNrm = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'normal');
+    let offTex = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'texture');
+    let offTan = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'tangent');
+    let offBit = Glib.Graphics.VertexLayout.countElementsBefore(layout, 'bitangent');
 
-    var count = vertices.length / Glib.Graphics.VertexLayout.countElements(layout);
-    var index;
+    let count = vertices.length / Glib.Graphics.VertexLayout.countElements(layout);
+    let index;
 
-    var i, i1, i2, i3;
-    var p1 = Vec3.zero(), p2 = Vec3.zero(), p3 = Vec3.zero();
-    var t1 = Vec2.zero(), t2 = Vec2.zero(), t3 = Vec2.zero();
-    var d1 = Vec3.zero(), d2 = Vec3.zero();
-    var uv1 = Vec2.zero(), uv2 = Vec2.zero();
+    let i, i1, i2, i3;
+    let p1 = Vec3.zero(), p2 = Vec3.zero(), p3 = Vec3.zero();
+    let t1 = Vec2.zero(), t2 = Vec2.zero(), t3 = Vec2.zero();
+    let d1 = Vec3.zero(), d2 = Vec3.zero();
+    let uv1 = Vec2.zero(), uv2 = Vec2.zero();
 
     // zero out tangents
     for (i = 0; i < count; i += 1) {
@@ -71,12 +71,12 @@ module Glib.Graphics.Geometry {
       Vec2.subtract(t2, t1, uv1);
       Vec2.subtract(t3, t1, uv2);
 
-      var r = 1 / (uv1.x * uv2.y - uv1.y * uv2.x);
-      var dir1 = Vec3.subtract<Vec3>(
+      let r = 1 / (uv1.x * uv2.y - uv1.y * uv2.x);
+      let dir1 = Vec3.subtract<Vec3>(
         Vec3.multiplyScalar(d1, uv2.y),
         Vec3.multiplyScalar(d2, uv1.y)
       ).multiplyScalar(r);
-      var dir2 = Vec3.subtract<Vec3>(
+      let dir2 = Vec3.subtract<Vec3>(
         Vec3.multiplyScalar(d2, uv1.x),
         Vec3.multiplyScalar(d1, uv2.x)
       ).multiplyScalar(r);
@@ -112,9 +112,9 @@ module Glib.Graphics.Geometry {
       vertices[index + 2] += dir2.z;
     }
 
-    var normal = Vec3.zero();
-    var tangent = Vec3.zero();
-    var bitangent = Vec3.zero();
+    let normal = Vec3.zero();
+    let tangent = Vec3.zero();
+    let bitangent = Vec3.zero();
     // orthogonalize
     for(i = 0; i < count; i += 1){
       index = i * stride;
@@ -122,9 +122,9 @@ module Glib.Graphics.Geometry {
       tangent.initFromBuffer(vertices, index + offTan);
       bitangent.initFromBuffer(vertices, index + offBit);
 
-      var t = Vec3.subtract<Vec3>(tangent, Vec3.multiplyScalar(normal, normal.dot(tangent)));
-      var h = Vec3.cross<Vec3>(normal, tangent).dot(bitangent) < 0 ? -1 : 1;
-      var b = Vec3.cross<Vec3>(normal, t).multiplyScalar(h);
+      let t = Vec3.subtract<Vec3>(tangent, Vec3.multiplyScalar(normal, normal.dot(tangent)));
+      let h = Vec3.cross<Vec3>(normal, tangent).dot(bitangent) < 0 ? -1 : 1;
+      let b = Vec3.cross<Vec3>(normal, t).multiplyScalar(h);
 
       if (!t.lengthSquared() || !b.lengthSquared()){
         t.init(1, 0, 0);

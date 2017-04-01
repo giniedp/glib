@@ -2,9 +2,9 @@ module Glib.Graphics.Geometry.Formulas {
 
   function circleVector(t, out) {
     out = out || new Vec3();
-    var angle = t * Math.PI * 2;
-    var dx = Math.cos(angle);
-    var dz = Math.sin(angle);
+    let angle = t * Math.PI * 2;
+    let dx = Math.cos(angle);
+    let dz = Math.sin(angle);
     return out.init(dx, 0, dz);
   }
 
@@ -13,16 +13,16 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   export function Cap(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
+    diameter?: number
+    radius?: number
+    steps?: number
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 16);
-    var baseVertex = builder.vertexCount;
-    var position = Vec3.zero(), texture = Vec2.zero();
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 16);
+    let baseVertex = builder.vertexCount;
+    let position = Vec3.zero(), texture = Vec2.zero();
 
-    for (var step = 0; step <= steps; step += 1) {
+    for (let step = 0; step <= steps; step += 1) {
       circleVector(step / steps, position)
       texture.init(position.x, position.z)
       position.multiplyScalar(radius)

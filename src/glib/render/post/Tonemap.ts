@@ -48,10 +48,10 @@ module Glib.Render.Post {
       let programCopy = this.effect.getTechnique("Copy").pass(0).program
       
       // the current backbuffer holding the rendered image
-      var frontBuffer = manager.beginStep();
+      let frontBuffer = manager.beginStep();
 
       // the resulting buffer
-      var targetBuffer = manager.acquireTarget({
+      let targetBuffer = manager.acquireTarget({
         width: frontBuffer.width,
         height: frontBuffer.height,
         depthFormat: frontBuffer.depthFormat,
@@ -62,7 +62,7 @@ module Glib.Render.Post {
         this.targets[i] = manager.acquireTarget(this.targetOptions[i])
       }
 
-      var device = manager.device;
+      let device = manager.device;
 
       //
       // clear intermediate and history buffers

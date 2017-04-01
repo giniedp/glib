@@ -3,12 +3,12 @@ module Glib.WebWorker {
   export const isWeb = typeof window === 'object'
   export const isWorker = typeof importScripts === 'function'
 
-  var workers: PromiseWorker[] = [];
-  var active = false
+  let workers: PromiseWorker[] = [];
+  let active = false
 
-  export function activate(script: string, count:number = 1):boolean {
+  export function activate(script: string, count: number = 1): boolean {
     if (!supported || active) return false
-    for (var i = 0; i < count; i++) {
+    for (let i = 0; i < count; i++) {
       workers[i] = new PromiseWorker(script)
       workers.length = i + 1 
     }

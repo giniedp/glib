@@ -44,23 +44,20 @@ var PATHS = {
       'src/page/**/*.pug'
     ],
     fonts: [
-      'bower_components/mdi/fonts/*',
+      'node_modules/mdi/fonts/*',
     ],
     scripts: [
-      'bower_components/jquery/dist/jquery.js',
-      'bower_components/dat-gui/build/dat.gui.js',
-      'bower_components/prism/prism.js',
-      'bower_components/prism/components/prism-glsl.js',
-      'bower_components/prism/components/prism-css.js',
-      'bower_components/prism/components/prism-markup.js',
-      'bower_components/prism/components/prism-javascript.js',
-      'bower_components/prism/plugins/autolinker/prism-autolinker.js',
-      'bower_components/prism/plugins/line-numbers/prism-line-numbers.js',
-      'bower_components/prism/plugins/normalize-whitespace/prism-normalize-whitespace.js',
+      'node_modules/jquery/dist/jquery.js',
+      // 'node_modules/dat-gui/vendor/dat.gui.js',
+      'node_modules/prismjs/prism.js',
+      'node_modules/prismjs/components/prism-glsl.js',
+      'node_modules/prismjs/components/prism-css.js',
+      'node_modules/prismjs/components/prism-markup.js',
+      'node_modules/prismjs/components/prism-javascript.js',
+      'node_modules/prismjs/plugins/autolinker/prism-autolinker.js',
+      'node_modules/prismjs/plugins/line-numbers/prism-line-numbers.js',
+      'node_modules/prismjs/plugins/normalize-whitespace/prism-normalize-whitespace.js',
       'src/page/**/*.js'
-    ],
-    styleIncludes: [
-      'bower_components'
     ],
     styles: [
       'src/page/page.scss'
@@ -250,7 +247,7 @@ gulp.task('page:fonts', function(){
 gulp.task('page:scss', function(){
   return src(PATHS.page.styles)
     .pipe(sass({
-      includePaths: PATHS.page.styleIncludes
+      includePaths: "node_modules"
     }).on('error', sass.logError))
     .pipe(concat('page.css'))
     .pipe(dest(PATHS.distPage))

@@ -11,7 +11,7 @@ module Glib.Graphics.Geometry {
   export interface BuilderOptions {
     defaultAttributes?:{[key:string]:any};
     layout?:string|{[key:string]:any};
-    ignoreTransform?:boolean;
+    ignoreTransform?: boolean;
   }
 
   export class Builder {
@@ -20,15 +20,15 @@ module Glib.Graphics.Geometry {
     meshes:ModelMeshOptions[] = []
 
     indexBuffer:BufferOptions
-    indexCount:number
-    sGroups:number[]
+    indexCount: number
+    sGroups: number[]
     vertexBuffer:BufferOptions
-    vertexCount:number
+    vertexCount: number
     maxVertexCount = 65536
     boundingBox:BoundingBox
     boundingSphere:BoundingSphere
 
-    private transformStack:Mat4[] = []
+    private transformStack: Mat4[] = []
     
     constructor(options:BuilderOptions = {}) {
       this.layout = Graphics.VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent');
@@ -69,7 +69,7 @@ module Glib.Graphics.Geometry {
       this.vertexBuffer.data = value;
     }
 
-    beginTransform(transform:Mat4):number {
+    beginTransform(transform: Mat4): number {
       let id = this.transformStack.length
       let last = this.transformStack[id - 1]
       if (last) {
@@ -79,7 +79,7 @@ module Glib.Graphics.Geometry {
       }
       return id
     }
-    endTransform(id:number) {
+    endTransform(id: number) {
       this.transformStack.length = id
     }
 
@@ -137,7 +137,7 @@ module Glib.Graphics.Geometry {
     /**
      * Pushes given indices into the state.
      */
-    addIndex(index:number, sGroup?:number) {
+    addIndex(index: number, sGroup?: number) {
       this.indices.push(index)
       this.sGroups.push(sGroup)
       this.indexCount += 1
@@ -271,7 +271,7 @@ module Glib.Graphics.Geometry {
      * @param options
      * @returns {Glib.Graphics.Geometry.Builder}
      */
-    endMeshOptions(options:ModelMeshOptions = {}, optimize:boolean = false):ModelMeshOptions {
+    endMeshOptions(options:ModelMeshOptions = {}, optimize: boolean = false):ModelMeshOptions {
       if (this.indexCount === 0 && this.vertexCount === 0) {
         utils.warn(`[Geometry.Builder] pushMesh : called on empty builder. ignore.`);
         return this;
@@ -291,7 +291,7 @@ module Glib.Graphics.Geometry {
       return options;
     }
 
-    endMesh(device: Graphics.Device, optimize:boolean = false): ModelMesh {
+    endMesh(device: Graphics.Device, optimize: boolean = false): ModelMesh {
       this.endMeshOptions()
       let opts = this.meshes[this.meshes.length-1]
       return new ModelMesh(device, opts)
@@ -307,7 +307,7 @@ module Glib.Graphics.Geometry {
         this.endMeshOptions();
       }
 
-      var materials = options.materials || [];
+      let materials = options.materials || [];
       if (!Array.isArray(materials)) {
         materials = [materials];
       }
@@ -335,7 +335,7 @@ module Glib.Graphics.Geometry {
      * @returns {Glib.Graphics.Geometry.Builder}
      */
     append(formulaName:string, options:any = {}):Builder {
-      var formula = Formulas[formulaName];
+      let formula = Formulas[formulaName];
       if (formula) {
         formula(this, options);
       } else {

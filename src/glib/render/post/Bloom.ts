@@ -1,6 +1,6 @@
 module Glib.Render.Post {
 
-  function gauss(n:number, theta:number) {
+  function gauss(n: number, theta: number) {
     return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)));
   }
       
@@ -14,19 +14,19 @@ module Glib.Render.Post {
     }
 
     private updateGauss(texelX, texelY){
-      var samples = 9;
-      var samplesOff = Math.floor(samples / 2);
-      var offWeights = this.offsetWeights || [];
+      let samples = 9;
+      let samplesOff = Math.floor(samples / 2);
+      let offWeights = this.offsetWeights || [];
       offWeights.length = samples;
       offWeights.length = samples;
       this.offsetWeights = offWeights;
-      for (var i = 0; i < samples; i++) {
-          var data = offWeights[i];
+      for (let i = 0; i < samples; i++) {
+          let data = offWeights[i];
           if (!data) {
             data = [0, 0, 0, 0];
             offWeights[i] = data
           }
-          var off = (i - samplesOff);
+          let off = (i - samplesOff);
           // Compute the offsets. We take 9 samples - 4 either side and one in the middle:
           //     i =  0,  1,  2,  3, 4,  5,  6,  7,  8
           //Offset = -4, -3, -2, -1, 0, +1, +2, +3, +4
@@ -38,7 +38,7 @@ module Glib.Render.Post {
             data[1] += (off > 0 ? 0.5 : -0.5) * texelY;
           }
           // map to [-1:+1]
-          var norm = off / samplesOff;
+          let norm = off / samplesOff;
           data[2] = this.multiplier * gauss(norm, this.gaussSigma);
           data[3] = this.multiplier * gauss(norm, this.gaussSigma);
       }
@@ -84,7 +84,7 @@ module Glib.Render.Post {
       // calculate filter offsets and weights
       device.program = this.effect.getTechnique("hBlur").pass(0).program;
       device.program.setUniform("texture", rt1);
-      for (var i = 0; i < this.offsetWeights.length; i++) {
+      for (let i = 0; i < this.offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i]);
       }
       device.setRenderTarget(rt2);
@@ -103,7 +103,7 @@ module Glib.Render.Post {
       // calculate filter offsets and weights
       device.program = this.effect.getTechnique("vBlur").pass(0).program;
       device.program.setUniform("texture", rt2);
-      for (var i = 0; i < this.offsetWeights.length; i++) {
+      for (let i = 0; i < this.offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i]);
       }
       device.setRenderTarget(rt1);

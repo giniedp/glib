@@ -15,14 +15,14 @@ module Glib.Input {
    */
   export interface ITouchState {
     identifier: number
-    pageX:number
-    pageY:number
-    screenX:number
-    screenY:number
-    clientX:number
-    clientY:number
-    x:number
-    y:number
+    pageX: number
+    pageY: number
+    screenX: number
+    screenY: number
+    clientX: number
+    clientY: number
+    x: number
+    y: number
   }
 
   /**
@@ -129,7 +129,7 @@ module Glib.Input {
     /**
      * Gets a copy of the current state for given identifier.
      */
-    copyState(id:number, out:any={}):ITouchState {
+    copyState(id: number, out:any={}):ITouchState {
       let state = this.state[id]
       if (!state){
         for (let key of stateKeys) out[key] = void 0
@@ -145,7 +145,7 @@ module Glib.Input {
     /**
      * Clears all captured states (or a spcific if an ```id``` is given)
      */
-    clearState(id?:number) {
+    clearState(id?: number) {
       if (id !== undefined) {
         delete this.state[id]
         return
@@ -157,7 +157,7 @@ module Glib.Input {
     /**
      * Updates the state from given ```touchstart``` event
      */
-    private handleTouchStart(e:TouchEvent) {
+    private handleTouchStart(e: TouchEvent) {
       let list = e.changedTouches
       for (let i = 0; i < list.length; i++) {
         let touch = list[i] 
@@ -169,7 +169,7 @@ module Glib.Input {
     /**
      * Updates the state from given ```touchcancel``` event
      */
-    private handleTouchCancel(e:TouchEvent) {
+    private handleTouchCancel(e: TouchEvent) {
       let list = e.changedTouches
       for (let i = 0; i < list.length; i++) {
         let touch = list[i] 
@@ -181,7 +181,7 @@ module Glib.Input {
     /**
      * Updates the state from given ```touchmove``` event
      */
-    private handleTouchMove(e:TouchEvent) {
+    private handleTouchMove(e: TouchEvent) {
       let list = e.changedTouches
       for (let i = 0; i < list.length; i++) {
         let touch = list[i] 
@@ -193,7 +193,7 @@ module Glib.Input {
     /**
      * Updates the state from given ```touchend``` event
      */
-    private handleTouchEnd(e:TouchEvent) {
+    private handleTouchEnd(e: TouchEvent) {
       let list = e.changedTouches
       for (let i = 0; i < list.length; i++) {
         let touch = list[i] 

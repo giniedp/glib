@@ -8,11 +8,11 @@ module Glib.Components {
   export class Renderer implements Component {
     node:Entity
     name:string = "Renderer"
-    service:boolean = true
-    enabled:boolean = true
-    visible:boolean = true
+    service: boolean = true
+    enabled: boolean = true
+    visible: boolean = true
 
-    time:Time
+    time: Time
     device: Graphics.Device
     assets: Assets
     manager: Glib.Render.Manager
@@ -42,7 +42,7 @@ module Glib.Components {
     
     draw() {
       this.manager.device.resize()
-      for(var view of this.manager.views) {
+      for(let view of this.manager.views) {
         this.renderView(view)
       }
       this.manager.presentViews()
@@ -52,8 +52,8 @@ module Glib.Components {
       if (!view || !view.camera || view.enabled === false) {
         return
       }
-      var camera = view.camera
-      var binder = this.manager.binder
+      let camera = view.camera
+      let binder = this.manager.binder
       view.items.length = 0
       view.lights.length = 0
       binder.updateCamera(camera.world, camera.view, camera.projection)
@@ -71,11 +71,11 @@ module Glib.Components {
     }
 
     visit(entity:Entity) {
-      var comp:Renderable = entity.s['Renderable']
+      let comp:Renderable = entity.s['Renderable']
       if (comp) {
         comp.collect(this)
       }
-      var light:Light = entity.s['Light']
+      let light:Light = entity.s['Light']
       if (light) {
         this.addLight(light.packedData)
       }

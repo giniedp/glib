@@ -91,7 +91,7 @@ module Glib.Graphics.ShaderInspector {
     result.varying = result.varying || {}
     
     let lines = Array.isArray(source) ? source : utils.getLines(source)
-    var comments = []
+    let comments = []
     for (let line of lines) {
       line = utils.trim(line)
       if (line.length === 0) {
@@ -149,7 +149,7 @@ module Glib.Graphics.ShaderInspector {
   }
   
   export function inspectStructs(source:string, result:any={}):any {
-    var index = 0, left, right, name, block
+    let index = 0, left, right, name, block
     while (true) {
       index = source.indexOf('struct', index)
       left = source.indexOf('{', index)
@@ -259,7 +259,7 @@ module Glib.Graphics.ShaderInspector {
   }
 
 
-  export function evaluateIfExpression(expression:string, defines:any):boolean {
+  export function evaluateIfExpression(expression:string, defines:any): boolean {
     if (!expression) return false
     // evaluates and replaces 'defined(NAME)' macros
     expression = expression.replace(/defined\s*\(?(.\w+)\)?/gi, function(a:string, b:string) {
@@ -314,8 +314,8 @@ module Glib.Graphics.ShaderInspector {
 
 
   export function fixStructUniforms(uniforms:any, structs:any, defines:any):void {
-    var item, struct, match, name, count, i
-    var reg = /\s*(.*)\s*\[(.+)].*/
+    let item, struct, match, name, count, i
+    let reg = /\s*(.*)\s*\[(.+)].*/
 
     Object.keys(uniforms).forEach(function (key) {
       item = uniforms[key]

@@ -13,17 +13,17 @@ module Glib.Graphics.Geometry {
       log('Can not create normals for buffer. Position definition not found in layout ', layout);
     }
 
-    var i, index, epsilon = 0;
-    var stride = Graphics.VertexLayout.countElements(layout);
-    var offPos = Graphics.VertexLayout.countElementsBefore(layout, 'position');
-    var offNrm = Graphics.VertexLayout.countElementsBefore(layout, 'normal');
+    let i, index, epsilon = 0;
+    let stride = Graphics.VertexLayout.countElements(layout);
+    let offPos = Graphics.VertexLayout.countElementsBefore(layout, 'position');
+    let offNrm = Graphics.VertexLayout.countElementsBefore(layout, 'normal');
 
-    var v0 = Vec3.zero();
-    var v1 = Vec3.zero();
-    var v2 = Vec3.zero();
-    var t0 = Vec3.zero();
-    var t1 = Vec3.zero();
-    var normal = Vec3.zero();
+    let v0 = Vec3.zero();
+    let v1 = Vec3.zero();
+    let v2 = Vec3.zero();
+    let t0 = Vec3.zero();
+    let t1 = Vec3.zero();
+    let normal = Vec3.zero();
 
     // clear previous normals
     for (i = 0; i < indices.length; i += 1) {

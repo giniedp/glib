@@ -1,6 +1,6 @@
 module Glib.Graphics {
 
-  var vShader = `
+  let vShader = `
     precision highp float;
     precision highp int;
 
@@ -22,7 +22,7 @@ module Glib.Graphics {
       gl_Position = vec4(pos.xy, vPosition.z, 1);
     }`;
 
-  var fShader = `
+  let fShader = `
     precision highp float;
     precision highp int;
 
@@ -38,10 +38,10 @@ module Glib.Graphics {
       gl_FragColor = texture2D(textureSampler, texCoord) * texColor;
     }`;
 
-  var spritePool:Sprite[] = [];
+  let spritePool:Sprite[] = [];
 
   export interface SpriteBatchOptions {
-    batchSize?:number
+    batchSize?: number
   }
 
   export interface SpriteBatchBeginOptions {
@@ -55,25 +55,25 @@ module Glib.Graphics {
   }
 
   export interface Sprite {
-    texture?:Texture
-    color?:number|Color
+    texture?: Texture
+    color?: number|Color
 
-    srcX?:number
-    srcY?:number
-    srcWidth?:number
-    srcHeight?:number
+    srcX?: number
+    srcY?: number
+    srcWidth?: number
+    srcHeight?: number
 
-    dstX?:number
-    dstY?:number
-    dstWidth?:number
-    dstHeight?:number
+    dstX?: number
+    dstY?: number
+    dstWidth?: number
+    dstHeight?: number
 
-    rotation?:number
-    originX?:number
-    originY?:number
+    rotation?: number
+    originX?: number
+    originY?: number
     
-    depth?:number
-    flipX?:boolean
+    depth?: number
+    flipX?: boolean
     flipY?: boolean
   }
 
@@ -101,17 +101,17 @@ module Glib.Graphics {
       sprite.flipX = false
       sprite.flipY = false
     }
-    color(color:number|Color):SpriteBuilder {
+    color(color: number|Color):SpriteBuilder {
       this.sprite.color = color
       return this
     }
-    alpha(alpha:number):SpriteBuilder {
-      var color = this.sprite.color as number
+    alpha(alpha: number):SpriteBuilder {
+      let color = this.sprite.color as number
       if (color == void 0) color = 0xFFFFFFFF
       this.sprite.color = (color & 0x00FFFFFF) | (((alpha * 255) & 0xFF) << 24)
       return this
     }
-    source(x:number, y:number, width?:number, height?:number): SpriteBuilder {
+    source(x: number, y: number, width?: number, height?: number): SpriteBuilder {
       let s = this.sprite
       s.srcX = x
       s.srcY = y
@@ -119,7 +119,7 @@ module Glib.Graphics {
       s.srcHeight = height
       return this
     }
-    sourceVec(vec:IVec2) {
+    sourceVec(vec: IVec2) {
       let s = this.sprite
       s.srcX = vec.x
       s.srcY = vec.y
@@ -128,7 +128,7 @@ module Glib.Graphics {
     sourceRect(rect:IRect) {
       return this.source(rect.x, rect.y, rect.width, rect.height)
     }
-    destination(x:number, y:number, width?:number, height?:number): SpriteBuilder {
+    destination(x: number, y: number, width?: number, height?: number): SpriteBuilder {
       let s = this.sprite
       s.dstX = x
       s.dstY = y
@@ -136,7 +136,7 @@ module Glib.Graphics {
       s.dstHeight = height
       return this
     }
-    destinationVec(vec:IVec2) {
+    destinationVec(vec: IVec2) {
       let s = this.sprite
       s.dstX = vec.x
       s.dstY = vec.y
@@ -145,22 +145,22 @@ module Glib.Graphics {
     destinationRect(rect:IRect) {
       return this.destination(rect.x, rect.y, rect.width, rect.height)
     }
-    origin(x:number, y:number): SpriteBuilder {
+    origin(x: number, y: number): SpriteBuilder {
       let s = this.sprite
       s.originX = x
       s.originY = y
       return this
     }
-    rotation(rotation:number):SpriteBuilder {
+    rotation(rotation: number):SpriteBuilder {
       this.sprite.rotation = rotation
       return this
     }
-    depth(depth:number):SpriteBuilder {
+    depth(depth: number):SpriteBuilder {
       this.sprite.depth = depth
       return this
     }
 
-    flip(x:boolean, y:boolean):SpriteBuilder {
+    flip(x: boolean, y: boolean):SpriteBuilder {
       let s = this.sprite
       s.flipX = x
       s.flipY = y
@@ -171,11 +171,11 @@ module Glib.Graphics {
   export class SpriteBatch {
     device:Graphics.Device
     gl:any
-    private hasBegun:boolean
+    private hasBegun: boolean
     private spriteQueue:Sprite[]
 
-    private arrayBuffer:ArrayBuffer
-    private positionTextureView:Float32Array
+    private arrayBuffer: ArrayBuffer
+    private positionTextureView: Float32Array
     private colorBufferView:Uint32Array
     private vertexBuffer:Graphics.Buffer
     private indexBuffer:Graphics.Buffer
@@ -188,8 +188,8 @@ module Glib.Graphics {
     private scissorState:ScissorStateOptions
     private viewportState:ViewportStateOptions
     private sortMode:any
-    private batchSize:number
-    private batchPosition:number
+    private batchSize: number
+    private batchPosition: number
     private builder:SpriteBuilder = new SpriteBuilder()
 
     constructor(device:Graphics.Device, options:SpriteBatchOptions={}) {
@@ -200,8 +200,8 @@ module Glib.Graphics {
       this.batchSize = options.batchSize || 512;
       this.batchPosition = 0;
 
-      var vertexLayout = Graphics.VertexLayout.create('PositionTextureColor');
-      var sizeInBytes = Graphics.VertexLayout.countBytes(vertexLayout);
+      let vertexLayout = Graphics.VertexLayout.create('PositionTextureColor');
+      let sizeInBytes = Graphics.VertexLayout.countBytes(vertexLayout);
 
       this.arrayBuffer = new ArrayBuffer(this.batchSize * 4 * sizeInBytes);
       this.positionTextureView = new Float32Array(this.arrayBuffer);
@@ -215,9 +215,9 @@ module Glib.Graphics {
         vertexShader: vShader,
         fragmentShader: fShader
       });
-      var data = new Uint16Array(this.batchSize * 6);
-      var index = 0;
-      for (var i = 0; i < data.length; i+=6, index+=4) {
+      let data = new Uint16Array(this.batchSize * 6);
+      let index = 0;
+      for (let i = 0; i < data.length; i+=6, index+=4) {
         data[i] = index;
         data[i+1] = index+1;
         data[i+2] = index+3;
@@ -283,7 +283,7 @@ module Glib.Graphics {
       this.commitRenderState();
       this.drawBatch();
 
-      for (var sprite of this.spriteQueue) {
+      for (let sprite of this.spriteQueue) {
         spritePool.push(sprite);
       }
       this.spriteQueue.length = 0;
@@ -291,7 +291,7 @@ module Glib.Graphics {
     };
 
     private commitRenderState() {
-      var device = this.device;
+      let device = this.device;
 
       if (this.blendState) {
         device.blendState = this.blendState;
@@ -314,16 +314,16 @@ module Glib.Graphics {
     }
 
     private buildSprites() {
-      var queue = this.spriteQueue
-      for (var i = 0; i < queue.length; i++) {
-        var sprite = queue[i]
+      let queue = this.spriteQueue
+      for (let i = 0; i < queue.length; i++) {
+        let sprite = queue[i]
 
-        var tW = sprite.texture.width
-        var tH = sprite.texture.height
-        var sX = sprite.srcX || 0
-        var sY = sprite.srcY || 0
-        var sW = sprite.srcWidth || (tW - sX)
-        var sH = sprite.srcHeight || (tH - sY)
+        let tW = sprite.texture.width
+        let tH = sprite.texture.height
+        let sX = sprite.srcX || 0
+        let sY = sprite.srcY || 0
+        let sW = sprite.srcWidth || (tW - sX)
+        let sH = sprite.srcHeight || (tH - sY)
 
         sprite.srcX = sX
         sprite.srcY = sY
@@ -355,15 +355,15 @@ module Glib.Graphics {
     }
 
     private drawBatch() {
-      var start = 0;
-      var texture = void 0;
-      var queue = this.spriteQueue;
+      let start = 0;
+      let texture = void 0;
+      let queue = this.spriteQueue;
       this.buildSprites()
       this.device.indexBuffer = this.indexBuffer;
       this.device.vertexBuffer = this.vertexBuffer;
       this.device.program = this.program;
 
-      for (var i = 0; i < queue.length; i++) {
+      for (let i = 0; i < queue.length; i++) {
         if (texture !== queue[i].texture) {
           if (i > start) {
             this.device.program.setUniform('texture', texture);
@@ -379,43 +379,43 @@ module Glib.Graphics {
       }
     }
 
-    private drawSlice(start:number, length:number) {
+    private drawSlice(start: number, length: number) {
       if (length == 0) {
         return;
       }
 
-      var queue = this.spriteQueue;
-      var posTexView = this.positionTextureView;
-      var colorView = this.colorBufferView;
+      let queue = this.spriteQueue;
+      let posTexView = this.positionTextureView;
+      let colorView = this.colorBufferView;
 
-      var texture = queue[start].texture;
-      var texelX = 1.0 / texture.width;
-      var texelY = 1.0 / texture.height;
-      var texelViewX = 1.0 / this.device.viewportState.width;
-      var texelViewY = 1.0 / this.device.viewportState.height;
+      let texture = queue[start].texture;
+      let texelX = 1.0 / texture.width;
+      let texelY = 1.0 / texture.height;
+      let texelViewX = 1.0 / this.device.viewportState.width;
+      let texelViewY = 1.0 / this.device.viewportState.height;
 
-      var end = start + length;
+      let end = start + length;
       while (start < end) {
-        var slice = end - start;
+        let slice = end - start;
         slice = slice > this.batchSize ? this.batchSize : slice;
 
-        var vIndex = 0;
-        for (var i = 0; i < slice; i ++) {
-          var sprite = queue[start + i];
-          var cosA = 1;
-          var sinA = 0;
+        let vIndex = 0;
+        for (let i = 0; i < slice; i ++) {
+          let sprite = queue[start + i];
+          let cosA = 1;
+          let sinA = 0;
           if (sprite.rotation !== 0) {
             cosA = Math.cos(sprite.rotation);
             sinA = Math.sin(sprite.rotation);
           }
-          var cX = sprite.dstX + sprite.originX * sprite.dstWidth;
-          var cY = sprite.dstY + sprite.originY * sprite.dstHeight;
-          var p1X = sprite.dstX - cX;
-          var p1Y = sprite.dstY - cY;
-          var p2X = (sprite.dstX + sprite.dstWidth) - cX;
-          var p2Y = (sprite.dstY + sprite.dstHeight) - cY;
-          var flipX = sprite.flipX ? sprite.srcWidth : 0;
-          var flipY = sprite.flipY ? sprite.srcHeight : 0;
+          let cX = sprite.dstX + sprite.originX * sprite.dstWidth;
+          let cY = sprite.dstY + sprite.originY * sprite.dstHeight;
+          let p1X = sprite.dstX - cX;
+          let p1Y = sprite.dstY - cY;
+          let p2X = (sprite.dstX + sprite.dstWidth) - cX;
+          let p2Y = (sprite.dstY + sprite.dstHeight) - cY;
+          let flipX = sprite.flipX ? sprite.srcWidth : 0;
+          let flipY = sprite.flipY ? sprite.srcHeight : 0;
           
           // VERTEX TOP LEFT
 
@@ -468,7 +468,7 @@ module Glib.Graphics {
 
         start += slice;
 
-        var dat:any = this.positionTextureView;
+        let dat:any = this.positionTextureView;
         this.vertexBuffer.setSubData(dat, 0);
         this.device.drawIndexedPrimitives(Graphics.PrimitiveType.TriangleList, 0, slice * 6);
       }

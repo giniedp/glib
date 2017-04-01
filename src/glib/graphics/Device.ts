@@ -36,7 +36,7 @@ module Glib.Graphics {
     preserveDrawingBuffer?: boolean
   }
 
-  export var DefaultContextAttributes:IContextAttributes = {
+  export let DefaultContextAttributes:IContextAttributes = {
     alpha: true,
     depth: true,
     stencil: true,
@@ -136,7 +136,7 @@ module Glib.Graphics {
     private $scissorState:ScissorState
     private $viewportState:ViewportState
     private $vertexAttribArrayState:VertexAttribArrayState
-    private registeredRenderTargets:Texture[] = []
+    private registeredRenderTargets: Texture[] = []
     private registeredDepthBuffers:DepthBuffer[] = []
     private registeredFrameBuffers: FrameBuffer[] = []
 
@@ -144,7 +144,7 @@ module Glib.Graphics {
     private customFrameBuffer:FrameBuffer
     private customFrameBufferOptions:FrameBufferOptions = { textures:[], depthBuffer:null }
 
-    private defaultTextureInstance:Texture
+    private defaultTextureInstance: Texture
 
     constructor(options:{
       canvas?: string|HTMLCanvasElement,
@@ -166,7 +166,7 @@ module Glib.Graphics {
       this.$vertexAttribArrayState = new VertexAttribArrayState(this)
 
       this.samplerStates = []
-      var max = Number(this.capabilities.maxTextureUnits)
+      let max = Number(this.capabilities.maxTextureUnits)
       while (this.samplerStates.length < max) {
         this.samplerStates.push(new SamplerState(this, this.samplerStates.length))
       }
@@ -229,7 +229,7 @@ module Glib.Graphics {
       this.$viewportState.commit(v)
     }
 
-    get defaultTexture():Texture {
+    get defaultTexture(): Texture {
       if (!this.defaultTextureInstance) {
         this.defaultTextureInstance = this.createTexture2D({
           data: [0, 0, 0, 0]
@@ -240,15 +240,15 @@ module Glib.Graphics {
     /**
      * Clears the color, depth and stencil buffers
      */
-    clear(color?:number|number[]|Color, depth?:number, stencil?:number):Device {
-      var gl = this.context, mask = 0
+    clear(color?: number|number[]|Color, depth?: number, stencil?: number):Device {
+      let gl = this.context, mask = 0
 
       if (color instanceof Color) {
         mask = mask | gl.COLOR_BUFFER_BIT
         gl.clearColor(color.x, color.y, color.z, color.w)
       } else if (typeof color === 'number') {
         mask = mask | gl.COLOR_BUFFER_BIT
-        var c = Color
+        let c = Color
         gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color))
       } else if (color !== undefined) {
         mask = mask | gl.COLOR_BUFFER_BIT
@@ -272,7 +272,7 @@ module Glib.Graphics {
      * Clears the color buffer
      */
     clearColor(color: number|number[]|Color=0xFFFFFFFF): Device {
-      var gl = this.context, mask = gl.COLOR_BUFFER_BIT
+      let gl = this.context, mask = gl.COLOR_BUFFER_BIT
       if (color instanceof Color) {
         gl.clearColor(color.x, color.y, color.z, color.w)
       } else if (typeof color === 'number') {
@@ -287,14 +287,14 @@ module Glib.Graphics {
      * Clears the color and depth buffers
      */
     clearColorDepth(color: number|number[]|Color=0xFFFFFFFF, depth: number = 1): Device {
-      var gl = this.context, mask = 0
+      let gl = this.context, mask = 0
 
       if (color instanceof Color) {
         mask = mask | gl.COLOR_BUFFER_BIT
         gl.clearColor(color.x, color.y, color.z, color.w)
       } else if (typeof color === 'number') {
         mask = mask | gl.COLOR_BUFFER_BIT
-        var c = Color
+        let c = Color
         gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color))
       } else if (color !== undefined) {
         mask = mask | gl.COLOR_BUFFER_BIT
@@ -313,7 +313,7 @@ module Glib.Graphics {
      * Clears the depth buffer
      */
     clearDepth(depth: number = 1): Device {
-      var gl = this.context
+      let gl = this.context
       gl.clearDepth(depth)
       gl.clear(gl.DEPTH_BUFFER_BIT)
       return this
@@ -322,7 +322,7 @@ module Glib.Graphics {
      * Clears the stencil buffer
      */
     clearStencil(stencil: number = 0): Device {
-      var gl = this.context
+      let gl = this.context
       gl.clearDepth(stencil)
       gl.clear(gl.STENCIL_BUFFER_BIT)
       return this
@@ -331,7 +331,7 @@ module Glib.Graphics {
      * Clears the depth and stencil buffer
      */
     clearDepthStencil(depth: number = 1, stencil: number = 0): Device {
-      var gl = this.context
+      let gl = this.context
       gl.clearDepth(depth)
       gl.clearDepth(stencil)
       gl.clear(gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
@@ -344,10 +344,10 @@ module Glib.Graphics {
      * @param [offset=0]
      * @param [count=indexBuffer.elementCount]
      */
-    drawIndexedPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this.$indexBuffer
-      var vBuffer = this.$vertexBuffer
-      var program = this.$program
+    drawIndexedPrimitives(primitiveType?: number, offset?: number, count?: number):Device {
+      let iBuffer = this.$indexBuffer
+      let vBuffer = this.$vertexBuffer
+      let program = this.$program
       if (!iBuffer) {
         throw `drawIndexedPrimitives() requires an indexBuffer`
       }
@@ -358,8 +358,8 @@ module Glib.Graphics {
         throw `drawIndexedPrimitives() requires a program`
       }
 
-      var type = iBuffer.dataType
-      var Enum = PrimitiveType
+      let type = iBuffer.dataType
+      let Enum = PrimitiveType
       primitiveType = Enum[primitiveType || Enum.TriangleList]
 
       offset = offset || 0
@@ -379,10 +379,10 @@ module Glib.Graphics {
      * @param {number} [count=indexBuffer.elementCount]
      * @return {Device}
      */
-    drawInstancedPrimitives(instanceCount?:number, primitiveType?:number, offset?:number, count?:number):Device {
-      var iBuffer = this.$indexBuffer
-      var vBuffer = this.$vertexBuffer
-      var program = this.$program
+    drawInstancedPrimitives(instanceCount?: number, primitiveType?: number, offset?: number, count?: number):Device {
+      let iBuffer = this.$indexBuffer
+      let vBuffer = this.$vertexBuffer
+      let program = this.$program
       if (!iBuffer) {
         throw `drawInstancedPrimitives() requires an indexBuffer`
       }
@@ -393,8 +393,8 @@ module Glib.Graphics {
         throw `drawInstancedPrimitives() requires a program`
       }
 
-      var type = iBuffer.dataType
-      var Enum = PrimitiveType
+      let type = iBuffer.dataType
+      let Enum = PrimitiveType
       primitiveType = Enum[primitiveType || Enum.TriangleList]
       offset = offset || 0
       count = count || iBuffer.elementCount
@@ -412,9 +412,9 @@ module Glib.Graphics {
      * @param {number} [count=indexBuffer.elementCount]
      * @return {Device}
      */
-    drawPrimitives(primitiveType?:number, offset?:number, count?:number):Device {
-      var vBuffer = this.$vertexBuffer
-      var program = this.$program
+    drawPrimitives(primitiveType?: number, offset?: number, count?: number):Device {
+      let vBuffer = this.$vertexBuffer
+      let program = this.$program
       if (!vBuffer) {
         throw `drawInstancedPrimitives() requires a vertexBuffer`
       }
@@ -437,13 +437,13 @@ module Glib.Graphics {
      * @returns {Glib.Graphics.Device}
      */
     drawQuad(flipY?: boolean): Device {
-      var iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
+      let iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
           data: [0, 1, 3, 0, 3, 2],
           dataType: 'ushort'
         })
       this.quadIndexBuffer = iBuffer
 
-      var vBuffer
+      let vBuffer
       if (flipY) {
         vBuffer = this.quadVertexBufferFlipped || this.createVertexBuffer({
           data: [
@@ -484,12 +484,12 @@ module Glib.Graphics {
      * 
      * @param [ratio] The pixel ratio for retina displays
      */
-    resize(pixelRatio:number=window.devicePixelRatio || 1):Device {
+    resize(pixelRatio: number=window.devicePixelRatio || 1):Device {
       if (this.frameBuffer) {
         throw "can not perform a resize while a render target is still active. Unset the rendertarget before calling resize()"
       }
-      var displayWidth  = Math.floor(this.canvas.clientWidth  * pixelRatio)
-      var displayHeight = Math.floor(this.canvas.clientHeight * pixelRatio)
+      let displayWidth  = Math.floor(this.canvas.clientWidth  * pixelRatio)
+      let displayHeight = Math.floor(this.canvas.clientHeight * pixelRatio)
       
       // Check if the canvas is not the same size.
       if (this.canvas.width  != displayWidth ||
@@ -511,7 +511,7 @@ module Glib.Graphics {
     }
 
     reset():Device {
-      var ext = this.context.getExtension('WEBGL_lose_context')
+      let ext = this.context.getExtension('WEBGL_lose_context')
       if (ext) {
         ext.loseContext() // trigger a context loss
         ext.restoreContext() // restores the context
@@ -534,7 +534,7 @@ module Glib.Graphics {
     /**
      * Sets or unsets a single render target
      */
-    setRenderTarget(texture:Texture) {
+    setRenderTarget(texture: Texture) {
       this.setRenderTargets(texture)
     }
 
@@ -547,10 +547,10 @@ module Glib.Graphics {
       rt09?: Texture, rt10?: Texture, rt11?: Texture, rt12?: Texture,
       rt13?: Texture, rt14?: Texture, rt15?: Texture, rt16?: Texture): Device 
     {
-      var opts = this.customFrameBufferOptions
+      let opts = this.customFrameBufferOptions
       opts.textures.length = arguments.length
-      var firstTexture:Texture = null
-      for (var i = 0; i < arguments.length; i++) {
+      let firstTexture: Texture = null
+      for (let i = 0; i < arguments.length; i++) {
         let argument = arguments[i] 
         opts.textures[i] = argument
         if (argument instanceof Texture) {
@@ -607,7 +607,7 @@ module Glib.Graphics {
      */
     set frameBuffer(buffer:FrameBuffer) {
       if (this.currentFrameBuffer !== buffer) {
-        var handle = buffer ? buffer.handle : null
+        let handle = buffer ? buffer.handle : null
         this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle)
         this.currentFrameBuffer = buffer
       }
@@ -656,7 +656,7 @@ module Glib.Graphics {
      */
     set program(program: ShaderProgram) {
       if (this.$program !== program) {
-        var handle = program ? program.handle : null
+        let handle = program ? program.handle : null
         this.context.useProgram(handle)
         this.$program = program
       }
@@ -673,7 +673,7 @@ module Glib.Graphics {
       layout = layout || vBuffer.layout
       attributes = attributes || program.attributes
 
-      var key, channel, attribute
+      let key, channel, attribute
       for (key in attributes) {
         channel = layout[key]
         attribute = attributes[key]
@@ -695,11 +695,11 @@ module Glib.Graphics {
     /**
      * used internally when a render target is created
      */
-    registerRenderTarget(texture:Texture) {
-      var list = this.registeredRenderTargets
-      var index = list.indexOf(texture)
+    registerRenderTarget(texture: Texture) {
+      let list = this.registeredRenderTargets
+      let index = list.indexOf(texture)
       if (index >= 0) return
-      for (var i in list) {
+      for (let i in list) {
         if (list[i] == null) {
           list[i] = texture
           return
@@ -711,9 +711,9 @@ module Glib.Graphics {
     /**
      * used internally when a render target is destroyed
      */
-    unregisterRenderTarget(texture:Texture) {
-      var list = this.registeredRenderTargets
-      var index = list.indexOf(texture)
+    unregisterRenderTarget(texture: Texture) {
+      let list = this.registeredRenderTargets
+      let index = list.indexOf(texture)
       if (index < 0) return
       list[index] = null
       if (list.length === (index + 1)) {
@@ -725,10 +725,10 @@ module Glib.Graphics {
      * used internally when a depth buffer is created
      */
     registerDepthBuffer(buffer: DepthBuffer) {
-      var list = this.registeredDepthBuffers
-      var index = list.indexOf(buffer)
+      let list = this.registeredDepthBuffers
+      let index = list.indexOf(buffer)
       if (index >= 0) return
-      for (var i in list) {
+      for (let i in list) {
         if (list[i] == null) {
           list[i] = buffer
           return
@@ -741,8 +741,8 @@ module Glib.Graphics {
      * used internally when a depth buffer is destroyed
      */
     unregisterDepthBuffer(buffer: DepthBuffer) {
-      var list = this.registeredDepthBuffers
-      var index = list.indexOf(buffer)
+      let list = this.registeredDepthBuffers
+      let index = list.indexOf(buffer)
       if (index < 0) return
       list[index] = null
       if (list.length === (index + 1)) {
@@ -773,8 +773,8 @@ module Glib.Graphics {
      * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
      */
     createProgram(options:any):ShaderProgram {
-      var vSource = options.vertexShader
-      var fSource = options.fragmentShader
+      let vSource = options.vertexShader
+      let fSource = options.fragmentShader
 
       if (utils.isString(vSource) && utils.isString(fSource)) {
 
@@ -794,7 +794,7 @@ module Glib.Graphics {
     /**
      * Creates a new Texture. Calls the Texture constructor with given options.
      */
-    createTexture(options:TextureOptions):Texture {
+    createTexture(options: TextureOptions): Texture {
       return new Texture(this, options)
     }
 
@@ -802,7 +802,7 @@ module Glib.Graphics {
      * Creates a new Texture that can be used as a render target. Ensures that
      * the depthFormat option is set and calls the Texture constructor.
      */
-    createRenderTarget(options:TextureOptions):Texture {
+    createRenderTarget(options: TextureOptions): Texture {
       options.depthFormat = (options.depthFormat || DepthFormat.None)
       return new Texture(this, options)
     }
@@ -811,7 +811,7 @@ module Glib.Graphics {
      * Creates a new Texture of type Texture2D. Overrides the type option 
      * before it calls the Texture constructor with given options.
      */
-    createTexture2D(options:TextureOptions = {}):Texture {
+    createTexture2D(options: TextureOptions = {}): Texture {
       options.type = TextureType.Texture2D
       return new Texture(this, options)
     }
@@ -820,7 +820,7 @@ module Glib.Graphics {
      * Creates a new Texture of type TextureCube. Overrides the type option 
      * before it calls the Texture constructor with given options.
      */
-    createTextureCube(options:TextureOptions = {}):Texture {
+    createTextureCube(options: TextureOptions = {}): Texture {
       options.type = TextureType.TextureCube
       return new Texture(this, options)
     }
@@ -857,13 +857,13 @@ module Glib.Graphics {
         return null
       }
       // search by matching width, height and depthFormat
-      for(var item of this.registeredDepthBuffers) {
+      for(let item of this.registeredDepthBuffers) {
         if (item.width === options.width && item.height === options.height && item.depthFormat === options.depthFormat) {
           return item
         }
       }
       // create and register a new depth buffer
-      var buffer = new Graphics.DepthBuffer(this, {
+      let buffer = new Graphics.DepthBuffer(this, {
         width: options.width,
         height: options.height,
         depthFormat: options.depthFormat

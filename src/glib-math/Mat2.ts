@@ -5,17 +5,19 @@ module Glib {
    */
   export class Mat2 {
 
-    constructor(public data:Float32Array = new Float32Array(9)) {}
+    constructor(public data: Float32Array = new Float32Array(9)) {}
 
     /**
      * Initializes the matrix with the given values in given order. The values are applied in column major order
      * @return Reference to `this` for chaining.
      */
-    init(m0:number, m1:number, 
-         m2:number, m3:number):Mat2 {
-      var d = this.data
-      d[0] = m0; d[1] = m1; 
-      d[2] = m2; d[3] = m3;
+    public init(
+      m0: number, m1: number,
+      m2: number, m3: number
+    ): Mat2 {
+      const d = this.data
+      d[0] = m0; d[1] = m1; // tslint:disable-line
+      d[2] = m2; d[3] = m3; // tslint:disable-line
       return this
     }
 
@@ -23,11 +25,13 @@ module Glib {
      * Initializes the matrix with the given values. The values are read in row major order.
      * @return Reference to `this` for chaining.
      */
-    initRowMajor(m0:number, m2:number, 
-                 m1:number, m3:number):Mat2 {
-      var d = this.data
-      d[0] = m0; d[1] = m1; 
-      d[2] = m2; d[3] = m3;
+    public initRowMajor(
+      m0: number, m2: number,
+      m1: number, m3: number
+    ): Mat2 {
+      const d = this.data
+      d[0] = m0; d[1] = m1; // tslint:disable-line
+      d[2] = m2; d[3] = m3; // tslint:disable-line
       return this
     }
 
@@ -36,10 +40,10 @@ module Glib {
      * @param number The number to set all matrix components to.
      * @return Reference to `this` for chaining.
      */
-    initWith(number:number):Mat2 {
-      var d = this.data
-      d[0] = number; d[1] = number; 
-      d[2] = number; d[3] = number;
+    public initWith(value: number): Mat2 {
+      const d = this.data
+      d[0] = value; d[1] = value; // tslint:disable-line
+      d[2] = value; d[3] = value; // tslint:disable-line
       return this
     }
 
@@ -47,10 +51,10 @@ module Glib {
      * Initializes the components of this matrix to the identity.
      * @return Reference to `this` for chaining.
      */
-    initIdentity():Mat2 {
-      var d = this.data
-      d[0] = 1; d[1] = 0; 
-      d[2] = 0; d[3] = 1;
+    public initIdentity(): Mat2 {
+      const d = this.data
+      d[0] = 1; d[1] = 0; // tslint:disable-line
+      d[2] = 0; d[3] = 1; // tslint:disable-line
       return this
     }
 
@@ -59,11 +63,11 @@ module Glib {
      * @param other
      * @return Reference to `this` for chaining.
      */
-    initFrom(other:Mat2):Mat2 {
-      var a = this.data
-      var b = other.data
-      a[0] = b[0]; a[1] = b[1]; 
-      a[2] = b[2]; a[3] = b[3];
+    public initFrom(other: Mat2): Mat2 {
+      const a = this.data
+      const b = other.data
+      a[0] = b[0]; a[1] = b[1]; // tslint:disable-line
+      a[2] = b[2]; a[3] = b[3]; // tslint:disable-line
       return this
     }
 
@@ -76,9 +80,9 @@ module Glib {
      * @param [offset=0]
      * @return Reference to `this` for chaining.
      */
-    initFromBuffer(buffer:ArrayLike<number>, offset?:number):Mat2 {
+    public initFromBuffer(buffer: ArrayLike<number>, offset?: number): Mat2 {
       offset = offset || 0
-      var a = this.data
+      const a = this.data
       a[0] = buffer[offset]
       a[1] = buffer[offset + 1]
       a[2] = buffer[offset + 2]
@@ -91,16 +95,16 @@ module Glib {
      * @param q The quaternion
      * @return Reference to `this` for chaining.
      */
-    initFromQuaternion(q:IVec4):Mat2 {
-      var x = q.x
-      var y = q.y
-      var z = q.z
-      var w = q.w
-      var xx = x * x
-      var yy = y * y
-      var zz = z * z
-      var xy = x * y
-      var zw = z * w
+    public initFromQuaternion(q: IVec4): Mat2 {
+      const x = q.x
+      const y = q.y
+      const z = q.z
+      const w = q.w
+      const xx = x * x
+      const yy = y * y
+      const zz = z * z
+      const xy = x * y
+      const zw = z * w
       return this.initRowMajor(
         1 - 2 * (yy + zz), 2 * (xy - zw),
         2 * (xy + zw), 1 - 2 * (zz + xx)
@@ -113,21 +117,21 @@ module Glib {
      * @param angle The angle in radians.
      * @return Reference to `this` for chaining.
      */
-    initAxisAngle(axis:IVec2, angle:number):Mat2 {
+    public initAxisAngle(axis: IVec2|IVec3, angle: number): Mat2 {
       // create quaternion
-      var halfAngle = angle * 0.5
-      var scale = Math.sin(halfAngle)
-      var x = axis.x * scale
-      var y = axis.y * scale
-      var z = (axis['z'] || 0) * scale
-      var w = Math.cos(halfAngle)
+      const halfAngle = angle * 0.5
+      const scale = Math.sin(halfAngle)
+      const x = axis.x * scale
+      const y = axis.y * scale
+      const z = ((axis as IVec3).z || 0) * scale
+      const w = Math.cos(halfAngle)
 
       // matrix from quaternion
-      var xx = x * x
-      var yy = y * y
-      var zz = z * z
-      var xy = x * y
-      var zw = z * w
+      const xx = x * x
+      const yy = y * y
+      const zz = z * z
+      const xy = x * y
+      const zw = z * w
 
       return this.initRowMajor(
         1 - 2 * (yy + zz), 2 * (xy - zw),
@@ -142,30 +146,30 @@ module Glib {
      * @param roll Angle in radians around the Z axis
      * @return Reference to `this` for chaining.
      */
-    initYawPitchRoll(yaw:number, pitch:number, roll:number):Mat2 {
+    public initYawPitchRoll(yaw: number, pitch: number, roll: number): Mat2 {
       // create quaternion
-      var zHalf = roll * 0.5
-      var zSin = Math.sin(zHalf)
-      var zCos = Math.cos(zHalf)
+      const zHalf = roll * 0.5
+      const zSin = Math.sin(zHalf)
+      const zCos = Math.cos(zHalf)
 
-      var xHalf = pitch * 0.5
-      var xSin = Math.sin(xHalf)
-      var xCos = Math.cos(xHalf)
+      const xHalf = pitch * 0.5
+      const xSin = Math.sin(xHalf)
+      const xCos = Math.cos(xHalf)
 
-      var yHalf = yaw * 0.5
-      var ySin = Math.sin(yHalf)
-      var yCos = Math.cos(yHalf)
+      const yHalf = yaw * 0.5
+      const ySin = Math.sin(yHalf)
+      const yCos = Math.cos(yHalf)
 
-      var x = yCos * xSin * zCos + ySin * xCos * zSin
-      var y = ySin * xCos * zCos - yCos * xSin * zSin
-      var z = yCos * xCos * zSin - ySin * xSin * zCos
-      var w = yCos * xCos * zCos + ySin * xSin * zSin
+      const x = yCos * xSin * zCos + ySin * xCos * zSin
+      const y = ySin * xCos * zCos - yCos * xSin * zSin
+      const z = yCos * xCos * zSin - ySin * xSin * zCos
+      const w = yCos * xCos * zCos + ySin * xSin * zSin
       // matrix from quaternion
-      var xx = x * x
-      var yy = y * y
-      var zz = z * z
-      var xy = x * y
-      var zw = z * w
+      const xx = x * x
+      const yy = y * y
+      const zz = z * z
+      const xy = x * y
+      const zw = z * w
 
       return this.initRowMajor(
         1 - 2 * (yy + zz), 2 * (xy - zw),
@@ -178,7 +182,7 @@ module Glib {
      * @param rad The angle in radians.
      * @return Reference to `this` for chaining.
      */
-    initRotationX(rad:number):Mat2 {
+    public initRotationX(rad: number): Mat2 {
       return this.initRowMajor(
         1, 0,
         0, Math.cos(rad)
@@ -190,7 +194,7 @@ module Glib {
      * @param rad The angle in radians.
      * @return Reference to `this` for chaining.
      */
-    initRotationY(rad:number):Mat2 {
+    public initRotationY(rad: number): Mat2 {
       return this.initRowMajor(
         Math.cos(rad), 0,
         0, 1
@@ -202,17 +206,17 @@ module Glib {
      * @param rad The angle in radians.
      * @return Reference to `this` for chaining.
      */
-    initRotationZ(rad:number):Mat2 {
-      var cos = Math.cos(rad)
-      var sin = Math.sin(rad)
+    public initRotationZ(rad: number): Mat2 {
+      const cos = Math.cos(rad)
+      const sin = Math.sin(rad)
       return this.initRowMajor(
         cos, -sin,
         sin, cos
       )
     }
-    initRotation(rad:number):Mat2 {
-      var cos = Math.cos(rad)
-      var sin = Math.sin(rad)
+    public initRotation(rad: number): Mat2 {
+      const cos = Math.cos(rad)
+      const sin = Math.sin(rad)
       return this.initRowMajor(
         cos, -sin,
         sin, cos
@@ -225,7 +229,7 @@ module Glib {
      * @param y Scale along y-axis
      * @return Reference to `this` for chaining.
      */
-    initScale(x:number, y:number):Mat2 {
+    public initScale(x: number, y: number): Mat2 {
       return this.initRowMajor(
         x, 0,
         0, y
@@ -236,8 +240,8 @@ module Glib {
      * Creates a copy of this matrix
      * @return The cloned matrix.
      */
-    clone():Mat2 {
-      var d = this.data
+    public clone(): Mat2 {
+      const d = this.data
       return new Mat2().init(d[0], d[1], d[2], d[3])
     }
 
@@ -247,9 +251,9 @@ module Glib {
      * @param [offset=0] Zero based index where to start writing in the array
      * @return the given buffer
      */
-    copyTo<T extends ArrayLike<number>>(buffer:T, offset?:number):T {
+    public copyTo<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
       offset = offset || 0
-      var d = this.data
+      const d = this.data
       buffer[offset] = d[0]
       buffer[offset + 1] = d[1]
       buffer[offset + 2] = d[2]
@@ -263,9 +267,9 @@ module Glib {
      * @param other The matrix to compare with
      * @return {Boolean} true if components are equal, false otherwise
      */
-    equals(other:Mat2):boolean {
-      var a = this.data
-      var b = other.data
+    public equals(other: Mat2): boolean {
+      const a = this.data
+      const b = other.data
       return a[0] === b[0] &&
         a[1] === b[1] &&
         a[2] === b[2] &&
@@ -277,20 +281,20 @@ module Glib {
      * @param vec The vector to take values from
      * @return Reference to `this` for chaining.
      */
-    setScale(vec:IVec2):Mat2 {
+    public setScale(vec: IVec2): Mat2 {
       this.data[0] = vec.x
       this.data[3] = vec.y
       return this
     }
-    setScaleX(v:number):Mat2 {
+    public setScaleX(v: number): Mat2 {
       this.data[0] = v
       return this
     }
-    setScaleY(v:number):Mat2 {
+    public setScaleY(v: number): Mat2 {
       this.data[3] = v
       return this
     }
-    setScaleXY(x:number, y:number):Mat2 {
+    public setScaleXY(x: number, y: number): Mat2 {
       this.data[0] = x
       this.data[3] = y
       return this
@@ -299,14 +303,14 @@ module Glib {
     /**
      * Calculates the determinant of this matrix
      */
-    determinant():number {
-      var a = this.data
+    public determinant(): number {
+      const a = this.data
 
-      var a11 = a[0]
-      var a12 = a[2]
+      const a11 = a[0]
+      const a12 = a[2]
 
-      var a21 = a[1]
-      var a22 = a[2]
+      const a21 = a[1]
+      const a22 = a[2]
 
       return a11 * a22 - a12 * a21
     }
@@ -315,15 +319,15 @@ module Glib {
      * Transposes this matrix
      * @return Reference to `this` for chaining.
      */
-    transpose():Mat2 {
-      var d = this.data;
+    public transpose(): Mat2 {
+      const d = this.data
       return this.init(
         d[0], d[2],
         d[1], d[3]
       )
     }
-    transposeOut(out?:Mat2):Mat2 {
-      var d = this.data;
+    public transposeOut(out?: Mat2): Mat2 {
+      const d = this.data
       return (out || new Mat2()).init(
         d[0], d[2],
         d[1], d[3]
@@ -334,45 +338,44 @@ module Glib {
      * Inverts this matrix
      * @return Reference to `this` for chaining.
      */
-    invert():Mat2 {
-      var a = this.data
-      var b = this.data
+    public invert(): Mat2 {
+      const a = this.data
+      const b = this.data
 
-      var a11 = a[0]
-      var a12 = a[2]
+      const a11 = a[0]
+      const a12 = a[2]
 
-      var a21 = a[1]
-      var a22 = a[2]
+      const a21 = a[1]
+      const a22 = a[2]
 
-      var detInv = 1 / (a11 * a22 - a12 * a21)
+      const detInv = 1 / (a11 * a22 - a12 * a21)
 
-      b[0] = detInv * a22;
-      b[1] = -detInv * a21;
-      b[2] = detInv * a12;
-      b[3] = -detInv * a22;
+      b[0] = detInv * a22
+      b[1] = -detInv * a21
+      b[2] = detInv * a12
+      b[3] = -detInv * a22
 
       return this
     }
-    invertOut(out?:Mat2):Mat2 {
+    public invertOut(out?: Mat2): Mat2 {
       out = out || new Mat2()
 
-      var a = this.data
-      var b = out.data
+      const a = this.data
+      const b = out.data
 
-      var a11 = a[0]
-      var a12 = a[2]
+      const a11 = a[0]
+      const a12 = a[2]
 
-      var a21 = a[1]
-      var a22 = a[2]
+      const a21 = a[1]
+      const a22 = a[2]
 
-      var detInv = 1 / (a11 * a22 - a12 * a21)
+      const detInv = 1 / (a11 * a22 - a12 * a21)
 
-      b[0] = detInv * a22;
-      b[1] = -detInv * a21;
-      b[2] = detInv * a12;
-      b[3] = -detInv * a22;
+      b[0] = detInv * a22
+      b[1] = -detInv * a21
+      b[2] = detInv * a12
+      b[3] = -detInv * a22
 
-      
       return out
     }
 
@@ -380,19 +383,19 @@ module Glib {
      * Negates all components of this matrix
      * @return Reference to `this` for chaining.
      */
-    negate():Mat2 {
-      var a = this.data;
-      var b = this.data;
-      a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; 
-      a[ 2] = -b[ 2]; a[ 3] = -b[ 3];
-      return this;
+    public negate(): Mat2 {
+      const a = this.data
+      const b = this.data
+      a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; // tslint:disable-line
+      a[ 2] = -b[ 2]; a[ 3] = -b[ 3]; // tslint:disable-line
+      return this
     }
-    negateOut(out?:Mat2):Mat2 {
+    public negateOut(out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = out.data
-      var b = this.data
-      a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; 
-      a[ 2] = -b[ 2]; a[ 3] = -b[ 3];
+      const a = out.data
+      const b = this.data
+      a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; // tslint:disable-line
+      a[ 2] = -b[ 2]; a[ 3] = -b[ 3]; // tslint:disable-line
       return out
     }
 
@@ -401,21 +404,21 @@ module Glib {
      * @param other The matrix to add
      * @return Reference to `this` for chaining.
      */
-    add(other):Mat2 {
-      var a = this.data;
-      var b = other.data;
-      a[ 0] += b[ 0]; a[ 1] += b[ 1]; 
-      a[ 2] += b[ 2]; a[ 3] += b[ 3];
-      return this;
+    public add(other): Mat2 {
+      const a = this.data
+      const b = other.data
+      a[ 0] += b[ 0]; a[ 1] += b[ 1]; // tslint:disable-line
+      a[ 2] += b[ 2]; a[ 3] += b[ 3]; // tslint:disable-line
+      return this
     }
-    addOut(other:Mat2, out?:Mat2):Mat2 {
+    public addOut(other: Mat2, out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = this.data;
-      var b = other.data;
-      var c = out.data;
-      c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; 
-      c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3];
-      return out;
+      const a = this.data
+      const b = other.data
+      const c = out.data
+      c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; // tslint:disable-line
+      c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3]; // tslint:disable-line
+      return out
     }
 
     /**
@@ -423,20 +426,20 @@ module Glib {
      * @param scalar The scalar to add
      * @return Reference to `this` for chaining.
      */
-    addScalar(s:number):Mat2 {
-      var a = this.data;
-      a[ 0] += s; a[ 1] += s; 
-      a[ 2] += s; a[ 3] += s;
-      return this;
+    public addScalar(s: number): Mat2 {
+      const a = this.data
+      a[ 0] += s; a[ 1] += s; // tslint:disable-line
+      a[ 2] += s; a[ 3] += s; // tslint:disable-line
+      return this
     }
-    addScalarOut(s:number, out?:Mat2):Mat2 {
+    public addScalarOut(s: number, out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = out.data;
-      var b = s;
-      var c = out.data;
-      c[ 0] = a[ 0] + b; c[ 1] = a[ 1] + b; 
-      c[ 2] = a[ 2] + b; c[ 3] = a[ 3] + b;
-      return out;
+      const a = out.data
+      const b = s
+      const c = out.data
+      c[ 0] = a[ 0] + b; c[ 1] = a[ 1] + b; // tslint:disable-line
+      c[ 2] = a[ 2] + b; c[ 3] = a[ 3] + b; // tslint:disable-line
+      return out
     }
 
     /**
@@ -444,21 +447,21 @@ module Glib {
      * @param other The matrix to subtract
      * @return Reference to `this` for chaining.
      */
-    subtract(other):Mat2 {
-      var a = this.data;
-      var b = other.data;
-      a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; 
-      a[ 2] -= b[ 2]; a[ 3] -= b[ 3];
-      return this;
+    public subtract(other): Mat2 {
+      const a = this.data
+      const b = other.data
+      a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; // tslint:disable-line
+      a[ 2] -= b[ 2]; a[ 3] -= b[ 3]; // tslint:disable-line
+      return this
     }
-    subtractOut(other:Mat2, out?:Mat2):Mat2 {
+    public subtractOut(other: Mat2, out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = this.data;
-      var b = other.data;
-      var c = out.data;
-      c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; 
-      c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3];
-      return out;
+      const a = this.data
+      const b = other.data
+      const c = out.data
+      c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; // tslint:disable-line
+      c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3]; // tslint:disable-line
+      return out
     }
 
     /**
@@ -466,20 +469,20 @@ module Glib {
      * @param scalar The scalar to subtract
      * @return Reference to `this` for chaining.
      */
-    subtractScalar(s:number):Mat2 {
-      var a = this.data;
-      a[ 0] -= s; a[ 1] -= s; 
-      a[ 2] -= s; a[ 3] -= s;
-      return this;
+    public subtractScalar(s: number): Mat2 {
+      const a = this.data
+      a[ 0] -= s; a[ 1] -= s; // tslint:disable-line
+      a[ 2] -= s; a[ 3] -= s; // tslint:disable-line
+      return this
     }
-    subtractScalarOut(s:number, out?:Mat2):Mat2 {
+    public subtractScalarOut(s: number, out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = out.data;
-      var b = s;
-      var c = out.data;
-      c[ 0] = a[ 0] - b; c[ 1] = a[ 1] - b; 
-      c[ 2] = a[ 2] - b; c[ 3] = a[ 3] - b;
-      return out;
+      const a = out.data
+      const b = s
+      const c = out.data
+      c[ 0] = a[ 0] - b; c[ 1] = a[ 1] - b; // tslint:disable-line
+      c[ 2] = a[ 2] - b; c[ 3] = a[ 3] - b; // tslint:disable-line
+      return out
     }
 
     /**
@@ -487,48 +490,52 @@ module Glib {
      * @param other The matrix to multiply
      * @return Reference to `this` for chaining.
      */
-    multiply(other:Mat2):Mat2 {
-      let a = other.data;
-      let b = this.data;
-      let c = this.data;
-      let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], 
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5], 
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-      let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], 
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5], 
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6;
-      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7;
-      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8;
-      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6;
-      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7;
-      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8;
-      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6;
-      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7;
-      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8;
-      return this;
+    public multiply(other: Mat2): Mat2 {
+      const a = other.data
+      const b = this.data
+      const c = this.data
+      // tslint:disable
+      const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8]
+      const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8]
+      // tslint:enable
+      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
+      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
+      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
+      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
+      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
+      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
+      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
+      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
+      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
+      return this
     }
-    multiplyOut(other:Mat2, out?:Mat2):Mat2 {
+    public multiplyOut(other: Mat2, out?: Mat2): Mat2 {
       out = out || new Mat2() as any
-      let a = other.data;
-      let b = out.data;
-      let c = out.data;
-      let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], 
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5], 
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-      let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], 
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5], 
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6;
-      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7;
-      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8;
-      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6;
-      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7;
-      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8;
-      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6;
-      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7;
-      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8;
-      return out;
+      const a = other.data
+      const b = out.data
+      const c = out.data
+      // tslint:disable
+      const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8]
+      const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8]
+      // tslint:enable
+      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
+      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
+      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
+      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
+      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
+      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
+      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
+      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
+      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
+      return out
     }
 
     /**
@@ -536,48 +543,52 @@ module Glib {
      * @param other The matrix to concatenate
      * @return Reference to `this` for chaining.
      */
-    concat(other:Mat2):Mat2 {
-      var a = this.data;
-      var b = other.data;
-      var c = this.data;
-      let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], 
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5], 
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-      let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], 
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5], 
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6;
-      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7;
-      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8;
-      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6;
-      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7;
-      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8;
-      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6;
-      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7;
-      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8;
-      return this;
+    public concat(other: Mat2): Mat2 {
+      const a = this.data
+      const b = other.data
+      const c = this.data
+      // tslint:disable
+      const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8]
+      const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8]
+      // tslint:enable
+      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
+      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
+      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
+      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
+      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
+      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
+      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
+      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
+      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
+      return this
     }
-    concatOut(other:Mat2, out?:Mat2):Mat2 {
+    public concatOut(other: Mat2, out?: Mat2): Mat2 {
       out = out || new Mat2() as any
-      var a = out.data;
-      var b = other.data;
-      var c = out.data;
-      let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], 
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5], 
+      const a = out.data
+      const b = other.data
+      const c = out.data
+      // tslint:disable
+      const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
           a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-      let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], 
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5], 
+      const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
           b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6;
-      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7;
-      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8;
-      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6;
-      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7;
-      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8;
-      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6;
-      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7;
-      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8;
-      return out;
+      // tslint:enable
+      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
+      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
+      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
+      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
+      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
+      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
+      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
+      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
+      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
+      return out
     }
 
     /**
@@ -585,20 +596,20 @@ module Glib {
      * @param scalar The scalar to multiply
      * @return Reference to `this` for chaining.
      */
-    multiplyScalar(s:number):Mat2 {
-      var a = this.data;
-      a[ 0] *= s; a[ 1] *= s; 
-      a[ 2] *= s; a[ 3] *= s;
-      return this;
+    public multiplyScalar(s: number): Mat2 {
+      const a = this.data
+      a[ 0] *= s; a[ 1] *= s; // tslint:disable-line
+      a[ 2] *= s; a[ 3] *= s; // tslint:disable-line
+      return this
     }
-    multiplyScalarOut(s:number, out?:Mat2):Mat2 {
+    public multiplyScalarOut(s: number, out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = out.data;
-      var b = s;
-      var c = out.data;
-      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; 
-      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-      return out;
+      const a = out.data
+      const b = s
+      const c = out.data
+      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; // tslint:disable-line
+      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b; // tslint:disable-line
+      return out
     }
 
     /**
@@ -606,12 +617,12 @@ module Glib {
      * @param other The matrix by which to divide
      * @return Reference to `this` for chaining.
      */
-    divide(other:Mat2):Mat2 {
-      var a = this.data;
-      var b = other.data;
-      a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; 
-      a[ 2] /= b[ 2]; a[ 3] /= b[ 3];
-      return this;
+    public divide(other: Mat2): Mat2 {
+      const a = this.data
+      const b = other.data
+      a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; // tslint:disable-line
+      a[ 2] /= b[ 2]; a[ 3] /= b[ 3]; // tslint:disable-line
+      return this
     }
 
     /**
@@ -619,34 +630,34 @@ module Glib {
      * @param scalar The scalar by which to divide
      * @return Reference to `this` for chaining.
      */
-    divideScalar(s:number):Mat2 {
-      var a = this.data;
-      var b = 1.0 / s;
-      a[ 0] *= b; a[ 1] *= b; 
-      a[ 2] *= b; a[ 3] *= b;
-      return this;
+    public divideScalar(s: number): Mat2 {
+      const a = this.data
+      const b = 1.0 / s
+      a[ 0] *= b; a[ 1] *= b; // tslint:disable-line
+      a[ 2] *= b; a[ 3] *= b; // tslint:disable-line
+      return this
     }
-    divideScalarOut(s:number, out?:Mat2):Mat2 {
+    public divideScalarOut(s: number, out?: Mat2): Mat2 {
       out = out || new Mat2()
-      var a = out.data;
-      var b = 1.0 / s;
-      var c = out.data;
-      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; 
-      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-      return out;
+      const a = out.data
+      const b = 1.0 / s
+      const c = out.data
+      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; // tslint:disable-line
+      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b; // tslint:disable-line
+      return out
     }
     /**
      * Transform the given vector with this matrix.
      * @param vec
      * @return the given vector
      */
-    transform<T extends IVec2>(vec:T):T {
-      var x = vec.x || 0;
-      var y = vec.y || 0;
-      var d = this.data;
-      vec.x = x * d[0] + y * d[2];
-      vec.y = x * d[1] + y * d[3];
-      return vec;
+    public transform<T extends IVec2>(vec: T): T {
+      const x = vec.x || 0
+      const y = vec.y || 0
+      const d = this.data
+      vec.x = x * d[0] + y * d[2]; // tslint:disable-line
+      vec.y = x * d[1] + y * d[3]; // tslint:disable-line
+      return vec
     }
 
     /**
@@ -656,19 +667,20 @@ module Glib {
      * @param [stride=2]
      * @param [count=buffer.length]
      */
-    transformV2Buffer(buffer:ArrayLike<number>, offset?:number, stride?:number, count?:number) {
-      var x, y, d = this.data;
-      offset = offset || 0;
-      stride = stride === undefined ? 2 : stride;
-      count = count === undefined ? buffer.length / stride : count;
+    public transformV2Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+      let x, y
+      const d = this.data
+      offset = offset || 0
+      stride = stride === undefined ? 2 : stride
+      count = count === undefined ? buffer.length / stride : count
 
       while (count > 0) {
-        count--;
-        x = buffer[offset];
-        y = buffer[offset + 1];
-        buffer[offset] = x * d[0] + y * d[2];
-        buffer[offset + 1] = x * d[1] + y * d[3];
-        offset += stride;
+        count--
+        x = buffer[offset]
+        y = buffer[offset + 1]
+        buffer[offset] = x * d[0] + y * d[2]
+        buffer[offset + 1] = x * d[1] + y * d[3]
+        offset += stride
       }
     }
 
@@ -679,19 +691,20 @@ module Glib {
      * @param [stride=3]
      * @param [count=buffer.length]
      */
-    transformV3Buffer(buffer:ArrayLike<number>, offset?:number, stride?:number, count?:number) {
-      var x, y, z, d = this.data;
-      offset = offset || 0;
-      stride = stride === undefined ? 3 : stride;
-      count = count === undefined ? buffer.length / stride : count;
+    public transformV3Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+      let x, y
+      const d = this.data
+      offset = offset || 0
+      stride = stride === undefined ? 3 : stride
+      count = count === undefined ? buffer.length / stride : count
 
       while (count > 0) {
-        count--;
-        x = buffer[offset];
-        y = buffer[offset + 1];
-        buffer[offset] = x * d[0] + y * d[2];
-        buffer[offset + 1] = x * d[1] + y * d[3];
-        offset += stride;
+        count--
+        x = buffer[offset]
+        y = buffer[offset + 1]
+        buffer[offset] = x * d[0] + y * d[2]
+        buffer[offset + 1] = x * d[1] + y * d[3]
+        offset += stride
       }
     }
 
@@ -703,19 +716,20 @@ module Glib {
      * @param [stride=4]
      * @param [count=buffer.length]
      */
-    transformV4Buffer(buffer:ArrayLike<number>, offset?:number, stride?:number, count?:number) {
-      var x, y, z, w, d = this.data;
-      offset = offset || 0;
-      stride = stride === undefined ? 4 : stride;
-      count = count === undefined ? buffer.length / stride : count;
+    public transformV4Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+      let x, y
+      const d = this.data
+      offset = offset || 0
+      stride = stride === undefined ? 4 : stride
+      count = count === undefined ? buffer.length / stride : count
 
       while (count > 0) {
-        count--;
-        x = buffer[offset];
-        y = buffer[offset + 1];
-        buffer[offset    ] = x * d[0] + y * d[2];
-        buffer[offset + 1] = x * d[1] + y * d[3];
-        offset += stride;
+        count--
+        x = buffer[offset]
+        y = buffer[offset + 1]
+        buffer[offset    ] = x * d[0] + y * d[2]
+        buffer[offset + 1] = x * d[1] + y * d[3]
+        offset += stride
       }
     }
 
@@ -725,12 +739,12 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static transpose(mat:Mat2, out?:Mat2):Mat2 {
-      var d = mat.data;
+    public static transpose(mat: Mat2, out?: Mat2): Mat2 {
+      const d = mat.data
       return (out || new Mat2()).init(
         d[0], d[2],
         d[1], d[3]
-      );
+      )
     }
 
     /**
@@ -739,27 +753,26 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static invert(mat:Mat2, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = mat.data;
-      var b = out.data;
+    public static invert(mat: Mat2, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = mat.data
+      const b = out.data
 
-      var a11 = a[0]
-      var a12 = a[2]
+      const a11 = a[0]
+      const a12 = a[2]
 
-      var a21 = a[1]
-      var a22 = a[2]
+      const a21 = a[1]
+      const a22 = a[2]
 
-      var detInv = 1 / (a11 * a22 - a12 * a21)
+      const detInv = 1 / (a11 * a22 - a12 * a21)
 
-      b[0] = detInv * a22;
-      b[1] = -detInv * a21;
-      b[2] = detInv * a12;
-      b[3] = -detInv * a22;
+      b[0] = detInv * a22
+      b[1] = -detInv * a21
+      b[2] = detInv * a12
+      b[3] = -detInv * a22
 
-      return out;
+      return out
     }
-
 
     /**
      * Negate the components of the given matrix
@@ -767,15 +780,14 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static negate(mat:Mat2, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var d = mat.data;
-      var o = out.data;
-      o[ 0] = -d[ 0]; o[ 1] = -d[ 1]; 
-      o[ 2] = -d[ 2]; o[ 3] = -d[ 3];
-      return out;
+    public static negate(mat: Mat2, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const d = mat.data
+      const o = out.data
+      o[ 0] = -d[ 0]; o[ 1] = -d[ 1] // tslint:disable-line
+      o[ 2] = -d[ 2]; o[ 3] = -d[ 3] // tslint:disable-line
+      return out
     }
-
 
     /**
      * Adds a matrix to another
@@ -784,16 +796,15 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static add(matA:Mat2, matB:Mat2, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = matB.data;
-      var c = out.data;
-      c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; 
-      c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3];
-      return out;
+    public static add(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = matB.data
+      const c = out.data
+      c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1] // tslint:disable-line
+      c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3] // tslint:disable-line
+      return out
     }
-
 
     /**
      * Adds a scalar to each component of a matrix
@@ -802,15 +813,14 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static addScalar(mat:Mat2, scalar:number, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = mat.data;
-      var c = out.data;
-      c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar; 
-      c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar;
-      return out;
+    public static addScalar(mat: Mat2, scalar: number, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = mat.data
+      const c = out.data
+      c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar // tslint:disable-line
+      c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar // tslint:disable-line
+      return out
     }
-
 
     /**
      * Subtracts the second matrix from the first
@@ -819,16 +829,15 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static subtract(matA:Mat2, matB:Mat2, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = matB.data;
-      var c = out.data;
-      c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; 
-      c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3];
-      return out;
+    public static subtract(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = matB.data
+      const c = out.data
+      c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1] // tslint:disable-line
+      c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3] // tslint:disable-line
+      return out
     }
-
 
     /**
      * Subtracts a scalar from each somponent of a matrix
@@ -837,15 +846,14 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static subtractScalar(mat:Mat2, scalar:number, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = mat.data;
-      var c = out.data;
-      c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar; 
-      c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar;
-      return out;
+    public static subtractScalar(mat: Mat2, scalar: number, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = mat.data
+      const c = out.data
+      c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar // tslint:disable-line
+      c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar // tslint:disable-line
+      return out
     }
-
 
     /**
      * Multiplies a matrix by another matrix
@@ -854,29 +862,30 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static multiply(matA:Mat2, matB:Mat2, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matB.data;
-      var b = matA.data;
-      var c = out.data;
-      let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], 
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5], 
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-      let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], 
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5], 
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6;
-      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7;
-      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8;
-      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6;
-      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7;
-      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8;
-      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6;
-      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7;
-      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8;
-      return out;
+    public static multiply(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matB.data
+      const b = matA.data
+      const c = out.data
+       // tslint:disable
+      const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2]
+      const a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5]
+      const a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8]
+      const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2]
+      const b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5]
+      const b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8]
+      // tslint:enable
+      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
+      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
+      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
+      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
+      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
+      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
+      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
+      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
+      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
+      return out
     }
-
 
     /**
      * Multiplies a matrix by another matrix
@@ -885,27 +894,29 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static concat(matA, matB, out) {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = matB.data;
-      var c = out.data;
-      let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], 
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5], 
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-      let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], 
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5], 
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6;
-      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7;
-      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8;
-      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6;
-      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7;
-      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8;
-      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6;
-      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7;
-      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8;
-      return this;
+    public static concat(matA, matB, out) {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = matB.data
+      const c = out.data
+      // tslint:disable
+      const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2]
+      const a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5]
+      const a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8]
+      const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2]
+      const b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5]
+      const b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8]
+      // tslint:enable
+      c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
+      c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
+      c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
+      c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
+      c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
+      c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
+      c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
+      c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
+      c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
+      return this
     }
 
     /**
@@ -913,13 +924,13 @@ module Glib {
      * @method concatChain
      * @return The result of the multiplication
      */
-    static concatChain(...rest:Mat2[]) {
+    public static concatChain(...rest: Mat2[]) {
       // (a, (b, (c, (d, e))))
-      var i, result = arguments[arguments.length - 1].clone();
-      for (i = arguments.length - 2; i >= 0; i--) {
-        Mat2.concat(arguments[i], result, result);
+      const result = arguments[arguments.length - 1].clone()
+      for (let i = arguments.length - 2; i >= 0; i--) {
+        Mat2.concat(arguments[i], result, result)
       }
-      return result;
+      return result
     }
 
     /**
@@ -927,13 +938,13 @@ module Glib {
      * @method multiplyChain
      * @return The result of the multiplication
      */
-    static multiplyChain(...rest:Mat2[]) {
+    public static multiplyChain(...rest: Mat2[]) {
       // ((((a, b), c), d), e)
-      var i, result = arguments[0].clone();
-      for (i = 1; i < arguments.length; i += 1) {
-        Mat2.multiply(result, arguments[i], result);
+      const result = arguments[0].clone()
+      for (let i = 1; i < arguments.length; i += 1) {
+        Mat2.multiply(result, arguments[i], result)
       }
-      return result;
+      return result
     }
 
     /**
@@ -944,16 +955,15 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static multiplyScalar(matA:Mat2, scalar:number, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = scalar;
-      var c = out.data;
-      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; 
-      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-      return out;
+    public static multiplyScalar(matA: Mat2, scalar: number, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = scalar
+      const c = out.data
+      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b // tslint:disable-line
+      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b // tslint:disable-line
+      return out
     }
-
 
     /**
      * Divides the components of the first matrix by the components of the second matrix
@@ -962,14 +972,14 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static divide(matA:Mat2, matB:Mat2, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = matB.data;
-      var c = out.data;
-      c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1]; 
-      c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3];
-      return out;
+    public static divide(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = matB.data
+      const c = out.data
+      c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1] // tslint:disable-line
+      c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3] // tslint:disable-line
+      return out
     }
 
     /**
@@ -979,14 +989,14 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static divideScalar(matA:Mat2, scalar:number, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = 1 / scalar;
-      var c = out.data;
-      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; 
-      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-      return out;
+    public static divideScalar(matA: Mat2, scalar: number, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = 1 / scalar
+      const c = out.data
+      c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b // tslint:disable-line
+      c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b // tslint:disable-line
+      return out
     }
 
     /**
@@ -997,32 +1007,32 @@ module Glib {
      * @param [out] The matrix to write to
      * @return The given `out` parameter or a new matrix
      */
-    static lerp(matA:Mat2, matB:Mat2, t:number, out?:Mat2):Mat2 {
-      out = out || new Mat2();
-      var a = matA.data;
-      var b = matB.data;
-      var c = out.data;
-      c[0] = a[0] + (b[0] - a[0]) * t;
-      c[1] = a[1] + (b[1] - a[1]) * t;
-      c[2] = a[2] + (b[2] - a[2]) * t;
-      c[3] = a[3] + (b[3] - a[3]) * t;
-      return out;
+    public static lerp(matA: Mat2, matB: Mat2, t: number, out?: Mat2): Mat2 {
+      out = out || new Mat2()
+      const a = matA.data
+      const b = matB.data
+      const c = out.data
+      c[0] = a[0] + (b[0] - a[0]) * t
+      c[1] = a[1] + (b[1] - a[1]) * t
+      c[2] = a[2] + (b[2] - a[2]) * t
+      c[3] = a[3] + (b[3] - a[3]) * t
+      return out
     }
 
     /**
      * Creates a new matrix with all components set to 0
      * @return a new matrix
      */
-    static zero():Mat2 {
-      return new Mat2();
+    public static zero(): Mat2 {
+      return new Mat2()
     }
 
     /**
      * Creates a new matrix that is initialized to identity
      * @return a new matrix
      */
-    static identity():Mat2 {
-      return new Mat2().initIdentity();
+    public static identity(): Mat2 {
+      return new Mat2().initIdentity()
     }
 
     /**
@@ -1030,89 +1040,92 @@ module Glib {
      * are given some components are going to be undefined. The arguments are expected to be in column major order.
      * @return a new matrix
      */
-    static create(m0, m1, m2, 
-                  m3, m4, m5, 
-                  m6, m7, m8):Mat2 {
-      var out = new Mat2();
-      var d = out.data;
-      d[ 0] = m0;  d[ 1] = m1;  
-      d[ 2] = m2;  d[ 3] = m3;
-      return out;
+    public static create(
+      m0, m1, m2,
+      m3, m4, m5,
+      m6, m7, m8
+    ): Mat2 {
+      const out = new Mat2()
+      const d = out.data
+      d[ 0] = m0; d[ 1] = m1 // tslint:disable-line
+      d[ 2] = m2; d[ 3] = m3 // tslint:disable-line
+      return out
     }
 
     /**
      * Creates a new matrix. The arguments are expected to be in row major order.
      * @return a new matrix
      */
-    static createRowMajor(m0, m3, m6, 
-                          m1, m4, m7, 
-                          m2, m5, m8):Mat2 {
-      var out = new Mat2();
-      var d = out.data;
-      d[ 0] = m0;  d[ 1] = m1;  
-      d[ 2] = m2;  d[ 3] = m3;
-      return out;
+    public static createRowMajor(
+      m0, m3, m6,
+      m1, m4, m7,
+      m2, m5, m8
+    ): Mat2 {
+      const out = new Mat2()
+      const d = out.data
+      d[ 0] = m0; d[ 1] = m1 // tslint:disable-line
+      d[ 2] = m2; d[ 3] = m3 // tslint:disable-line
+      return out
     }
 
     /**
      * @return a new matrix
      */
-    static createScale(x:number, y:number):Mat2 {
-      return new Mat2().initScale(x, y);
+    public static createScale(x: number, y: number): Mat2 {
+      return new Mat2().initScale(x, y)
     }
 
     /**
      * @return a new matrix
      */
-    static createRotationX(rad:number):Mat2 {
-      return new Mat2().initRotationX(rad);
+    public static createRotationX(rad: number): Mat2 {
+      return new Mat2().initRotationX(rad)
     }
 
     /**
      * @return a new matrix
      */
-    static createRotationY(rad:number):Mat2 {
-      return new Mat2().initRotationY(rad);
+    public static createRotationY(rad: number): Mat2 {
+      return new Mat2().initRotationY(rad)
     }
 
     /**
      * @return a new matrix
      */
-    static createRotationZ(rad:number):Mat2 {
-      return new Mat2().initRotationZ(rad);
+    public static createRotationZ(rad: number): Mat2 {
+      return new Mat2().initRotationZ(rad)
     }
     /**
      * @return a new matrix
      */
-    static createRotation(rad:number):Mat2 {
-      return new Mat2().initRotation(rad);
-    }
-
-    /**
-     * @return a new matrix
-     */
-    static createAxisAngle(axis:IVec3, angle:number):Mat2 {
-      return new Mat2().initAxisAngle(axis, angle);
+    public static createRotation(rad: number): Mat2 {
+      return new Mat2().initRotation(rad)
     }
 
     /**
      * @return a new matrix
      */
-    static createYawPitchRoll(yaw:number, pitch:number, roll:number):Mat2 {
-      return new Mat2().initYawPitchRoll(yaw, pitch, roll);
+    public static createAxisAngle(axis: IVec3, angle: number): Mat2 {
+      return new Mat2().initAxisAngle(axis, angle)
+    }
+
+    /**
+     * @return a new matrix
+     */
+    public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat2 {
+      return new Mat2().initYawPitchRoll(yaw, pitch, roll)
     }
 
     /**
      * @returns {string}
      */
-    static prettyString(mat) {
-      var m = mat.data;
-      var fixed = 5;
+    public static prettyString(mat) {
+      const m = mat.data
+      const fixed = 5
       return [
         [m[0].toFixed(fixed), m[2].toFixed(fixed)].join(', '),
         [m[1].toFixed(fixed), m[3].toFixed(fixed)].join(', ')
-      ].join('\n');
+      ].join('\n')
     }
-
   }
 }

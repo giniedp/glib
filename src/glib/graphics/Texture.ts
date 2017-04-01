@@ -1,6 +1,6 @@
 module Glib.Graphics {
 
-  var noop = function(){}
+  let noop = function(){}
   
   export interface TextureOptions {
     /** Whether or not to automatically generate mip maps */
@@ -14,13 +14,13 @@ module Glib.Graphics {
     /** The wrapped WebGLTexture object */
     handle?: WebGLTexture,
     /** The texture width */
-    width?:number,
+    width?: number,
     /** The texture height */
-    height?:number,
+    height?: number,
     /** The initial texture data to set */
     data?: any,
     /** The depth format of the depth stencil buffer to use when the texture is used as a render target */
-    depthFormat?:number
+    depthFormat?: number
   }
 
   // Describes a texture object.
@@ -32,25 +32,25 @@ module Glib.Graphics {
     /** The GL context */
     gl:any
     /** The texture width */
-    width:number = 0
+    width: number = 0
     /** The texture height */
-    height:number = 0
+    height: number = 0
     /**
      * Indicates whether texture data has been set and the texture is ready to be used in a shader.
      * This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
      * initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
      */
-    ready:boolean = false
+    ready: boolean = false
     /** Indicates whether the texture width and height is a power of two value. */
-    isPOT:boolean = false
+    isPOT: boolean = false
     /** Indicates whether mipmaps should be automatically created when data is iset. */
-    generateMipmap:boolean = true
+    generateMipmap: boolean = true
     /** Indicates the used pixel format. */
-    pixelFormat:number = PixelFormat.RGBA
+    pixelFormat: number = PixelFormat.RGBA
     /** Indicates the data type of the pixel elements */
-    pixelType:number = DataType.ubyte
+    pixelType: number = DataType.ubyte
     /** Indicates the texture type */
-    type:number = TextureType.Texture2D
+    type: number = TextureType.Texture2D
     
     /**
      * If Texture is created as video texture this holds the HTMLVideoElement.
@@ -76,7 +76,7 @@ module Glib.Graphics {
      * Creates a texture for given device and with given options. 
      * The options are passed to the stup method without any modification. 
      */
-    constructor(device:Device, options:TextureOptions={}) {
+    constructor(device:Device, options: TextureOptions={}) {
       this.uid = utils.uuid()
       this.device = device
       this.gl = device.context
@@ -88,10 +88,10 @@ module Glib.Graphics {
     /**
      * The depth format of the depth stencil buffer to be used when the texture is used as a render target
      */
-    get depthFormat():number {
+    get depthFormat(): number {
       return this.depthFormatField
     }
-    set depthFormat(value:number) {
+    set depthFormat(value: number) {
       this.device.unregisterRenderTarget(this)
       this.depthFormatField = value
       if (value != null) {
@@ -102,28 +102,28 @@ module Glib.Graphics {
     /** 
      * Indicates whether this texture is intendet to be used as a renter target 
      */
-    get isRenderTarget():boolean {
+    get isRenderTarget(): boolean {
       return this.depthFormatField != null
     }
 
     /** 
      * Gets the name string of the used pixel format 
      */
-    get pixelFormatName():number {
+    get pixelFormatName(): number {
       return PixelFormatName[this.pixelFormat]
     }
 
     /**
      * Gets the string name of the used pixel type
      */
-    get pixelTypeName():number {
+    get pixelTypeName(): number {
       return DataTypeName[this.pixelType]
     }
     
     /**
      * Gets the string name of the used texture type
      */
-    get typeName():number {
+    get typeName(): number {
       return TextureTypeName[this.type]
     }
 
@@ -132,8 +132,8 @@ module Glib.Graphics {
      */
     static videoTypes = ['.mp4', '.ogv', '.ogg']
 
-    static createImageUpdateHandle(texture:Texture, image:HTMLImageElement) {
-      var gl = texture.gl
+    static createImageUpdateHandle(texture: Texture, image:HTMLImageElement) {
+      let gl = texture.gl
       return function () {
         texture.ready = (!!image.naturalWidth && !!image.naturalHeight)
         if (!texture.ready) return // image has not been downloaded yet
@@ -152,8 +152,8 @@ module Glib.Graphics {
       };
     }
 
-    static createVideoUpdateHandle(texture:Texture, video:HTMLVideoElement) {
-      var gl = texture.gl
+    static createVideoUpdateHandle(texture: Texture, video:HTMLVideoElement) {
+      let gl = texture.gl
       return function () {
         texture.width = video.videoWidth
         texture.height = video.videoHeight
@@ -172,16 +172,16 @@ module Glib.Graphics {
       };
     }
 
-    setup(options:TextureOptions={}):Texture {
+    setup(options: TextureOptions={}): Texture {
 
-      var width = options.width || this.width
-      var height = options.height || this.height
-      var type = TextureType[options.type] || this.type
-      var pixelType = DataType[options.pixelType] || this.pixelType
-      var pixelFormat = PixelFormat[options.pixelFormat] || this.pixelFormat
-      var handle = options.handle == null ? this.handle : options.handle
-      var genMipMaps = options.generateMipmap == null ? !!this.generateMipmap : !!options.generateMipmap
-      var depthFormat = options.depthFormat != void 0 ? options.depthFormat : this.depthFormat
+      let width = options.width || this.width
+      let height = options.height || this.height
+      let type = TextureType[options.type] || this.type
+      let pixelType = DataType[options.pixelType] || this.pixelType
+      let pixelFormat = PixelFormat[options.pixelFormat] || this.pixelFormat
+      let handle = options.handle == null ? this.handle : options.handle
+      let genMipMaps = options.generateMipmap == null ? !!this.generateMipmap : !!options.generateMipmap
+      let depthFormat = options.depthFormat != void 0 ? options.depthFormat : this.depthFormat
       
       if ((handle && handle !== this.handle) || width !== this.width || height !== this.height || pixelFormat !== this.pixelFormat || pixelType !== this.pixelType || type !== this.type) {
         this.destroy()
@@ -200,7 +200,7 @@ module Glib.Graphics {
       this.ready = false
       this.depthFormat = depthFormat
       
-      var source = options.data
+      let source = options.data
 
       if (utils.isString(source)) {
         this.setUrl(source)
@@ -228,7 +228,7 @@ module Glib.Graphics {
     /**
      * Releases all resources and notifies the device that the texture is being destroyed.
      */
-    destroy():Texture {
+    destroy(): Texture {
       this.image = null
       this.video = null
       this.device.unregisterRenderTarget(this)
@@ -242,7 +242,7 @@ module Glib.Graphics {
     /**
      * Bind the texture to the gl context.
      */
-    use():Texture {
+    use(): Texture {
       this.gl.bindTexture(this.type, this.handle)
       return this
     }
@@ -252,9 +252,9 @@ module Glib.Graphics {
      * The url is checked against the `Texture.videoTypes` array to detect
      * whether the url points to an image or video. 
      */
-    setUrl(url:string):Texture {
-      var ext = url.substr(url.lastIndexOf('.'))
-      var isVideo = Texture.videoTypes.indexOf(ext) >= 0
+    setUrl(url:string): Texture {
+      let ext = url.substr(url.lastIndexOf('.'))
+      let isVideo = Texture.videoTypes.indexOf(ext) >= 0
       if (isVideo) {
         this.setVideoUrl(url)
       } else {
@@ -266,10 +266,10 @@ module Glib.Graphics {
     /**
      * Sets the texture source from an image url
      */
-    setImageUrl(url:string):Texture {
+    setImageUrl(url:string): Texture {
       this.update = noop
       this.ready = false
-      var image = new Image()
+      let image = new Image()
       image.src = url
       this.setImage(image)
       return this
@@ -278,10 +278,10 @@ module Glib.Graphics {
     /**
      * Sets the texture source from a video url
      */
-    setVideoUrl(url:string):Texture {
+    setVideoUrl(url:string): Texture {
       this.update = noop
       this.ready = false
-      var video = document.createElement('video')
+      let video = document.createElement('video')
       video.src = url
       video.load()
       this.setVideo(video)
@@ -291,10 +291,10 @@ module Glib.Graphics {
     /**
      * Sets the texture source from video urls.
      */
-    setVideoUrls(options:any[]):Texture {
+    setVideoUrls(options:any[]): Texture {
       this.update = noop
       this.ready = false
-      var video = document.createElement('video')
+      let video = document.createElement('video')
       let valid = false
       for (let option of options) {
         if (video.canPlayType(option.type)) {
@@ -314,7 +314,7 @@ module Glib.Graphics {
     /**
      * Sets the texture source from HtmlImageElement
      */
-    setImage(image:HTMLImageElement):Texture {
+    setImage(image:HTMLImageElement): Texture {
       this.image = image
       this.video = null
       this.update = Texture.createImageUpdateHandle(this, image)
@@ -325,7 +325,7 @@ module Glib.Graphics {
     /**
      * Sets the texture source from HTMLVideoElement
      */
-    setVideo(video:HTMLVideoElement):Texture {
+    setVideo(video:HTMLVideoElement): Texture {
       this.video = video
       this.image = null
       this.update = Texture.createVideoUpdateHandle(this, video)
@@ -336,18 +336,18 @@ module Glib.Graphics {
     /**
      * Sets the texture source from data array or buffer
      */
-    setData(data, width?:number, height?:number):Texture {
+    setData(data, width?: number, height?: number): Texture {
       this.video = null
       this.image = null
       this.update = noop
-      var pixelCount = data.length / PixelFormatElementCount[this.pixelFormat]
+      let pixelCount = data.length / PixelFormatElementCount[this.pixelFormat]
       if (!width || !height) {
         width = height = Math.sqrt(pixelCount) | 0
       }
       if (width * height !== pixelCount) {
         throw "width and height does not match the data length"
       }
-      var gl = this.gl
+      let gl = this.gl
       this.use()
       gl.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, data)
       if (this.generateMipmap) {
@@ -360,7 +360,7 @@ module Glib.Graphics {
       return this
     }
 
-    get texel():IVec2 { 
+    get texel(): IVec2 { 
       return { x: 1.0 / this.width, y: 1.0 / this.height } 
     }
   }

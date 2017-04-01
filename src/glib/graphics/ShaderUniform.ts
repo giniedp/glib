@@ -6,22 +6,22 @@ module Glib.Graphics {
   import IVec4 = Glib.IVec4;
 
   function parseArray(string) {
-    var result = string.replace(/[\[\]]/g, '').split(',');
-    for (var i = 0; i < result.length; i += 1) {
+    let result = string.replace(/[\[\]]/g, '').split(',');
+    for (let i = 0; i < result.length; i += 1) {
       result[i] = Number(result[i]) || 0;
     }
     return result;
   }
 
-  function makeVec2(data:number[]):IVec2 {
+  function makeVec2(data: number[]): IVec2 {
     return {x: data[0] || 0, y: data[1] || 0}
   }
 
-  function makeVec3(data:number[]):IVec3 {
+  function makeVec3(data: number[]): IVec3 {
     return {x: data[0] || 0, y: data[1] || 0, z: data[2] || 0}
   }
 
-  function makeVec4(data:number[]):IVec4 {
+  function makeVec4(data: number[]): IVec4 {
     return {x: data[0] || 0, y: data[1] || 0, z: data[2] || 0, w: data[3] || 0}
   }
 
@@ -31,7 +31,7 @@ module Glib.Graphics {
     binding?:string
     default?:any
     filter?:string
-    register?:number
+    register?: number
   }
 
   /**
@@ -74,12 +74,12 @@ module Glib.Graphics {
      * The currently cached value
      */
     cachedValue:any[] = []
-    dirty:boolean = true
+    dirty: boolean = true
 
     set:(any, ...rest:any[])=>void
     put:(any, ...rest:any[])=>void
-    register:number
-    filter:number
+    register: number
+    filter: number
 
     /**
      * 
@@ -99,7 +99,7 @@ module Glib.Graphics {
         return
       }
 
-      var value = options['default'];
+      let value = options['default'];
       switch (this.type) {
         case 'int':
           this.defaultValue = Number(value) || 0
@@ -161,7 +161,7 @@ module Glib.Graphics {
     /**
      * Sets an int value. Commits it to the uniform variable of the program if it has changed.
      */
-    setInt(value:number) {
+    setInt(value: number) {
       if (this.cacheValue(value|0)) {
         this.gl.uniform1i(this.location, value|0)
       }
@@ -170,7 +170,7 @@ module Glib.Graphics {
     /**
      * Sets an int value. Commits it to the uniform variable of the program if it has changed.
      */
-    setInt2(v1:number, v2:number) {
+    setInt2(v1: number, v2: number) {
       if (this.cacheValue(v1|0, v2|0)) {
         this.gl.uniform2i(this.location, v1|0, v2|0)
       }
@@ -179,7 +179,7 @@ module Glib.Graphics {
     /**
      * Sets an int value. Commits it to the uniform variable of the program if it has changed.
      */
-    setInt3(v1:number, v2:number, v3:number) {
+    setInt3(v1: number, v2: number, v3: number) {
       if (this.cacheValue(v1|0, v2|0, v3|0)) {
         this.gl.uniform3i(this.location, v1|0, v2|0, v3|0)
       }
@@ -188,7 +188,7 @@ module Glib.Graphics {
     /**
      * Sets an int value. Commits it to the uniform variable of the program if it has changed.
      */
-    setInt4(v1:number, v2:number, v3:number, v4:number) {
+    setInt4(v1: number, v2: number, v3: number, v4: number) {
       if (this.cacheValue(v1|0, v2|0, v3|0, v4|0)) {
         this.gl.uniform4i(this.location, v1|0, v2|0, v3|0, v4|0)
       }
@@ -197,7 +197,7 @@ module Glib.Graphics {
     /**
      * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
      */
-    setBool(value:boolean) {
+    setBool(value: boolean) {
       if (this.cacheValue(value)) {
         this.gl.uniform1i(this.location, value ? 1 : 0)
       }
@@ -206,7 +206,7 @@ module Glib.Graphics {
     /**
      * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
      */
-    setBool2(v1:boolean, v2:boolean) {
+    setBool2(v1: boolean, v2: boolean) {
       if (this.cacheValue(v1, v2)) {
         this.gl.uniform2i(this.location, v1 ? 1 : 0, v2 ? 1 : 0)
       }
@@ -215,7 +215,7 @@ module Glib.Graphics {
     /**
      * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
      */
-    setBool3(v1:boolean, v2:boolean, v3:boolean) {
+    setBool3(v1: boolean, v2: boolean, v3: boolean) {
       if (this.cacheValue(v1, v2, v3)) {
         this.gl.uniform3i(this.location, v1 ? 1 : 0, v2 ? 1 : 0, v3 ? 1 : 0)
       }
@@ -224,7 +224,7 @@ module Glib.Graphics {
     /**
      * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
      */
-    setBool4(v1:boolean, v2:boolean, v3:boolean, v4:boolean) {
+    setBool4(v1: boolean, v2: boolean, v3: boolean, v4: boolean) {
       if (this.cacheValue(v1, v2, v3, v4)) {
         this.gl.uniform4i(this.location, v1 ? 1 : 0, v2 ? 1 : 0, v3 ? 1 : 0, v4 ? 1 : 0)
       }
@@ -233,7 +233,7 @@ module Glib.Graphics {
     /**
      * Sets a float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setFloat(value:number) {
+    setFloat(value: number) {
       if (this.cacheValue(value)) {
         this.gl.uniform1f(this.location, value)
       }
@@ -242,7 +242,7 @@ module Glib.Graphics {
     /**
      * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setFloat2(v1:number, v2:number) {
+    setFloat2(v1: number, v2: number) {
       if (this.cacheValue(v1, v2)) {
         this.gl.uniform2f(this.location, v1, v2)
       }
@@ -251,7 +251,7 @@ module Glib.Graphics {
     /**
      * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setFloat3(v1:number, v2:number, v3:number) {
+    setFloat3(v1: number, v2: number, v3: number) {
       if (this.cacheValue(v1, v2, v3)) {
         this.gl.uniform3f(this.location, v1, v2, v3)
       }
@@ -260,7 +260,7 @@ module Glib.Graphics {
     /**
      * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setFloat4(v1:number, v2:number, v3:number, v4:number) {
+    setFloat4(v1: number, v2: number, v3: number, v4: number) {
       if (this.cacheValue(v1, v2, v3, v4)) {
         this.gl.uniform4f(this.location, v1, v2, v3, v4)
       }
@@ -269,7 +269,7 @@ module Glib.Graphics {
     /**
      * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setVec2(value:IVec2|number[]) {
+    setVec2(value: IVec2|number[]) {
       if (Array.isArray(value)) {
         if (this.cacheValue(value[0], value[1])) {
           this.gl.uniform2f(this.location, value[0], value[1])
@@ -285,7 +285,7 @@ module Glib.Graphics {
     /**
      * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setVec3(value:IVec3|number[]) {
+    setVec3(value: IVec3|number[]) {
       if (Array.isArray(value)) {
         if (this.cacheValue(value[0], value[1], value[2])) {
           this.gl.uniform3f(this.location, value[0], value[1], value[2])
@@ -301,7 +301,7 @@ module Glib.Graphics {
     /**
      * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
      */
-    setVec4(value:IVec4|number[]) {
+    setVec4(value: IVec4|number[]) {
       if (Array.isArray(value)) {
         if (this.cacheValue(value[0], value[1], value[2], value[3])) {
           this.gl.uniform4f(this.location, value[0], value[1], value[2], value[3])
@@ -317,7 +317,7 @@ module Glib.Graphics {
     /**
      * Sets a float array value. Commits it to the uniform. Does not perform or test caching 
      */
-    setFloatArray(value:Float32Array) {
+    setFloatArray(value: Float32Array) {
       this.cachedValue.length = 0
       this.gl.uniform1fv(this.location, value)
     }
@@ -325,7 +325,7 @@ module Glib.Graphics {
     /**
      * Sets a float array value. Commits it to the uniform. Does not perform or test caching 
      */
-    setFloat2Array(value:Float32Array) {
+    setFloat2Array(value: Float32Array) {
       this.cachedValue.length = 0
       this.gl.uniform2fv(this.location, value)
     }
@@ -333,7 +333,7 @@ module Glib.Graphics {
     /**
      * Sets a float array value. Commits it to the uniform. Does not perform or test caching 
      */
-    setFloat3Array(value:Float32Array) {
+    setFloat3Array(value: Float32Array) {
       this.cachedValue.length = 0
       this.gl.uniform3fv(this.location, value)
     }
@@ -341,7 +341,7 @@ module Glib.Graphics {
     /**
      * Sets a float array value. Commits it to the uniform. Does not perform or test caching 
      */
-    setFloat4Array(value:Float32Array) {
+    setFloat4Array(value: Float32Array) {
       this.cachedValue.length = 0
       this.gl.uniform4fv(this.location, value)
     }
@@ -381,7 +381,7 @@ module Glib.Graphics {
     /**
      * Sets a 2x2 matrix value on the uniform. Does not perform or test caching
      */
-    setMat2(value:IMat, transpose:boolean) {
+    setMat2(value:IMat, transpose: boolean) {
       this.cachedValue.length = 0
       this.gl.uniformMatrix2fv(this.location, !!transpose, value.data)
     }
@@ -389,7 +389,7 @@ module Glib.Graphics {
     /**
      * Sets a 3x3 matrix value on the uniform. Does not perform or test caching
      */
-    setMat3(value:IMat, transpose:boolean) {
+    setMat3(value:IMat, transpose: boolean) {
       this.cachedValue.length = 0
       this.gl.uniformMatrix3fv(this.location, !!transpose, value.data)
     }
@@ -397,7 +397,7 @@ module Glib.Graphics {
     /**
      * Sets a 4x4 matrix value on the uniform. Does not perform or test caching
      */
-    setMat4(value:IMat, transpose:boolean) {
+    setMat4(value:IMat, transpose: boolean) {
       this.cachedValue.length = 0
       this.gl.uniformMatrix4fv(this.location, !!transpose, value.data)
     }
@@ -405,9 +405,9 @@ module Glib.Graphics {
     /**
      * Binds a texture to this uniform
      */
-    setTexture(value:Texture) {
-      var device = this.device
-      var sampler = device.samplerStates[this.register] || device.samplerStates[0]
+    setTexture(value: Texture) {
+      let device = this.device
+      let sampler = device.samplerStates[this.register] || device.samplerStates[0]
 
       if (value) {
         value.update()

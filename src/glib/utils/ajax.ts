@@ -3,17 +3,17 @@ module Glib.utils {
   export interface AjaxOptions {
     url:string
     type?:string
-    async?:boolean
+    async?: boolean
     username?:string
     password?:string
     headers?: { [key:string]:string }
   }
 
   export function ajax(options):IPromise {
-    var xhr = options.xhr || new XMLHttpRequest()
+    let xhr = options.xhr || new XMLHttpRequest()
 
     if (Array.isArray(options.url)) {
-      var mapped = options.url.map(function (url) {
+      let mapped = options.url.map(function (url) {
         return ajax(extend({}, options, {url: url})).then(function (res) {
           return res
         });
@@ -21,7 +21,7 @@ module Glib.utils {
       return Glib.Promise.all(mapped)
     }
 
-    var deferred = Promise.defer()
+    let deferred = Promise.defer()
     let async = options.async === false ? false : true
     xhr.open(
       options.type || 'GET',

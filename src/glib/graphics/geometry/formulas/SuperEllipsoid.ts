@@ -15,40 +15,40 @@ module Glib.Graphics.Geometry.Formulas {
    * @constructor
    */
   export function SuperEllipsoid(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
-    n1?:number
-    n2?:number
+    diameter?: number
+    radius?: number
+    steps?: number
+    n1?: number
+    n2?: number
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 16);
-    var power1 = withDefault(options.n1, 1);
-    var power2 = withDefault(options.n2, 1);
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 16);
+    let power1 = withDefault(options.n1, 1);
+    let power2 = withDefault(options.n2, 1);
 
-    var baseVertex = builder.vertexCount;
-    var stepsV = steps;
-    var stepsU = steps * 2;
+    let baseVertex = builder.vertexCount;
+    let stepsV = steps;
+    let stepsU = steps * 2;
 
-    for (var v = 0; v <= stepsV; v += 1) {
-      var dv = v / stepsV;
-      var phi = dv * Math.PI - Math.PI / 2;
-      var sinPhi = Math.sin(phi);
-      var cosPhi = Math.cos(phi);
+    for (let v = 0; v <= stepsV; v += 1) {
+      let dv = v / stepsV;
+      let phi = dv * Math.PI - Math.PI / 2;
+      let sinPhi = Math.sin(phi);
+      let cosPhi = Math.cos(phi);
 
-      for (var u = 0; u <= stepsU; u += 1) {
-        var du = u / stepsU;
-        var theta = du * Math.PI * 2 - Math.PI;
-        var sinTheta = Math.sin(theta);
-        var cosTheta = Math.cos(theta);
+      for (let u = 0; u <= stepsU; u += 1) {
+        let du = u / stepsU;
+        let theta = du * Math.PI * 2 - Math.PI;
+        let sinTheta = Math.sin(theta);
+        let cosTheta = Math.cos(theta);
 
-        var tmp = sign(cosPhi) * Math.pow(Math.abs(cosPhi), power1);
-        var x = tmp * sign(cosTheta) * Math.pow(Math.abs(cosTheta), power2);
-        var z = tmp * sign(sinTheta) * Math.pow(Math.abs(sinTheta), power2);
-        var y = sign(sinPhi) * Math.pow(Math.abs(sinPhi), power1);
+        let tmp = sign(cosPhi) * Math.pow(Math.abs(cosPhi), power1);
+        let x = tmp * sign(cosTheta) * Math.pow(Math.abs(cosTheta), power2);
+        let z = tmp * sign(sinTheta) * Math.pow(Math.abs(sinTheta), power2);
+        let y = sign(sinPhi) * Math.pow(Math.abs(sinPhi), power1);
 
-        var normal = Vec3.create(x, y, z);
-        var texCoord = Vec2.new(du, dv);
+        let normal = Vec3.create(x, y, z);
+        let texCoord = Vec2.new(du, dv);
 
         builder.addVertex({
           position: Vec3.multiplyScalar(normal, radius),
@@ -57,12 +57,12 @@ module Glib.Graphics.Geometry.Formulas {
         });
       }
     }
-    for (var z = 0; z < stepsV; z += 1) {
-      for (var x = 0; x < stepsU; x += 1) {
-        var a = x + z * (stepsU + 1);
-        var b = a + 1;
-        var c = x + (z + 1) * (stepsU + 1);
-        var d = c + 1;
+    for (let z = 0; z < stepsV; z += 1) {
+      for (let x = 0; x < stepsU; x += 1) {
+        let a = x + z * (stepsU + 1);
+        let b = a + 1;
+        let c = x + (z + 1) * (stepsU + 1);
+        let d = c + 1;
 
         builder.addIndex(baseVertex + a);
         builder.addIndex(baseVertex + b);

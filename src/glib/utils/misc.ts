@@ -5,8 +5,8 @@ module Glib.utils {
    */
   export function uuid():string{
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16|0;
-      var v = c == 'x' ? r : (r&0x3|0x8);
+      let r = Math.random() * 16|0;
+      let v = c == 'x' ? r : (r&0x3|0x8);
       return v.toString(16);
     });
   }
@@ -15,7 +15,7 @@ module Glib.utils {
    * Picks properties from the given source object if they are not undefined
    */
   export function pick(src:any, k1?:string, k2?:string, k3?:string, k4?:string, k5?:string, k6?:string, k7?:string, k8?:string, k9?:string, k10?:string):any {
-    var i, key, value, result = {};
+    let i, key, value, result = {};
     for (i = 1; i < arguments.length; i += 1) {
       key = arguments[i]
       value = src[key]
@@ -30,8 +30,8 @@ module Glib.utils {
    * @return {*} The copied object
    */
   export function copy(srcOrDeep:any, srcOrDest?:any, dest?:any):any {
-    var deep = false;
-    var src, dst;
+    let deep = false;
+    let src, dst;
     if (typeof srcOrDeep === "boolean") {
       deep = srcOrDeep;
       src = srcOrDest;
@@ -44,8 +44,8 @@ module Glib.utils {
     
     dst = Array.isArray(src) ? [] : {};
     
-    var value, isArray, isObject;
-    for (var key in src) {
+    let value, isArray, isObject;
+    for (let key in src) {
       value = src[key];
       isArray = Array.isArray(value)
       isObject = value != null && typeof value === 'object'
@@ -63,7 +63,7 @@ module Glib.utils {
   /**
    * Extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
    * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
-   * by passing an empty object as the target: `var object = Gin.extend({}, object1, object2)`.
+   * by passing an empty object as the target: `let object = Gin.extend({}, object1, object2)`.
    * Note: Keep in mind that `Gin.extend` does not support recursive merge (deep copy).
    * @method extend
    * @param {Object} dst Destination object.
@@ -71,14 +71,14 @@ module Glib.utils {
    * @return {Object} Reference to `dst`.
    */
   export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?: any): T {
-    var length = arguments.length;
+    let length = arguments.length;
     if (length < 2 || dst == null) {
       return dst;
     }
-    var i, src;
+    let i, src;
     for (i = 1; i < length; i += 1) {
       src = arguments[i];
-      for (var key in src) {
+      for (let key in src) {
         dst[key] = src[key];
       }
     }
@@ -90,7 +90,7 @@ module Glib.utils {
    * @method getTime
    * @return {number}
    */
-  export var getTime = (function(){
+  export let getTime = (function(){
     if (self.performance && self.performance.now) {
       return function(){
         return self.performance.now();
@@ -106,7 +106,7 @@ module Glib.utils {
     }
   }());
 
-  var raf:any =
+  let raf:any =
     self['requestAnimationFrame'] ||
     self['mozRequestAnimationFrame'] ||
     self['webkitRequestAnimationFrame'] ||
@@ -116,7 +116,7 @@ module Glib.utils {
    *
    * @method requestFrame
    */
-  export var requestFrame = (function(){
+  export let requestFrame = (function(){
     if (typeof raf === "function") {
       return function(callback) {
         raf(callback);
@@ -132,12 +132,12 @@ module Glib.utils {
     kill():void
     (): void 
   }
-  export var loop = function(loopFunc): ILoop {
-    var time = getTime()
-    var tick:any = function(){
+  export let loop = function(loopFunc): ILoop {
+    let time = getTime()
+    let tick:any = function(){
       if (!tick) return 
-      var now = getTime()
-      var dt = now - time
+      let now = getTime()
+      let dt = now - time
       time = now;
       loopFunc(dt);
       if (!tick) return
@@ -149,7 +149,7 @@ module Glib.utils {
   };
 
 
-  var docHidden, docVisibilityChange, docVisibilityState; 
+  let docHidden, docVisibilityChange, docVisibilityState; 
   if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
     docHidden = "hidden"
     docVisibilityState = "visibilityState"
@@ -187,7 +187,7 @@ module Glib.utils {
    * @param {number} value The number to test
    * @return {boolean}
    */
-  export function isPowerOfTwo(value:number):boolean {
+  export function isPowerOfTwo(value: number): boolean {
     return ((value > 0) && !(value & (value - 1)));
   }
 
@@ -196,11 +196,11 @@ module Glib.utils {
    * @param value
    * @returns {number}
    */
-  export function lowerPowerOfTwo(value:number):number {
+  export function lowerPowerOfTwo(value: number): number {
     if (value <= 2) {
       throw "value must not be smaller than 2";
     }
-    var i = 1;
+    let i = 1;
     while (i < value) {
       i *= 2;
     }
@@ -212,11 +212,11 @@ module Glib.utils {
    * @param value
    * @returns {number}
    */
-  export function higherPowerOfTwo(value:number):number {
+  export function higherPowerOfTwo(value: number): number {
     if (value <= 2) {
       return 2;
     }
-    var i = 1;
+    let i = 1;
     while (i <= value) {
       i *= 2;
     }
@@ -228,13 +228,13 @@ module Glib.utils {
    * @param value
    * @returns {number}
    */
-  export function highestBit(value:number):number {
+  export function highestBit(value: number): number {
     if (value <= 0) {
       return -1;
     }
 
-    var index = 0;
-    var pow = 1;
+    let index = 0;
+    let pow = 1;
     while (pow <= value) {
       pow *= 2;
       index += 1;
@@ -258,24 +258,24 @@ module Glib.utils {
     }
   }
 
-  export function endsWith(value:string, suffix:string):boolean {
+  export function endsWith(value:string, suffix:string): boolean {
     return value.indexOf(suffix, value.length - suffix.length) !== -1;
   }
 
-  export function isString(value:any):boolean {
+  export function isString(value:any): boolean {
     return typeof value === 'string';
   }
 
-  export var isArray = Array.isArray;
+  export let isArray = Array.isArray;
 
-  export function isObject(value:any):boolean {
+  export function isObject(value:any): boolean {
     return value !== null && typeof value === 'object';
   }
 
 
-  var canvas = null;
+  let canvas = null;
 
-  export function getImageData(image:HTMLImageElement, width?:number, height?:number){
+  export function getImageData(image:HTMLImageElement, width?: number, height?: number){
     if (!image.complete){
       throw 'image must be completed';
     }
@@ -283,14 +283,14 @@ module Glib.utils {
     canvas.width = width || image.naturalWidth;
     canvas.height = height || image.naturalHeight;
 
-    var ctx = canvas.getContext("2d");
+    let ctx = canvas.getContext("2d");
 
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var data = imgData.data;
-    var result = [];
+    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let data = imgData.data;
+    let result = [];
     result.length = data.length / 4;
-    for(var i = 0; i < result.length; i += 1){
+    for(let i = 0; i < result.length; i += 1){
       result[i] = data[i * 4];
     }
     return result;

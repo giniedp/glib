@@ -41,7 +41,7 @@ module Glib.Graphics {
     /**
      * The shader type (as a  WebGL constant)
      */
-    type:number
+    type: number
     /**
      * The shader type (as readable name)
      */
@@ -53,7 +53,7 @@ module Glib.Graphics {
     /**
      * Whether compilation was successfull
      */
-    compiled:boolean
+    compiled: boolean
     /**
      * The info log that is created after compilation holding error information
      */
@@ -196,7 +196,7 @@ module Glib.Graphics {
 //
 //
 //    private static inspectStructs(source:string):any {
-//      var index = 0, left, right, name, block, result = {}
+//      let index = 0, left, right, name, block, result = {}
 //      while (true) {
 //        index = source.indexOf('struct', index)
 //        left = source.indexOf('{', index)
@@ -219,7 +219,7 @@ module Glib.Graphics {
 //        .split(charNewLine).join('')   // remove remove new lines
 //        .split(regTrim).join('')       // trim
 //
-//      var i, match, result = {}, members = block.split(';')
+//      let i, match, result = {}, members = block.split(';')
 //      for (i = 0; i < members.length; i += 1) {
 //        match = members[i].match(/\s*(\w+)\s+(\w+)\s*$/)
 //        if (match) {
@@ -234,9 +234,9 @@ module Glib.Graphics {
 //    }
 //
 //    private static inspectQualifiers(source:string):any {
-//      var comments = [], match, annotations, i, line
-//      var lines = utils.getLines(source)
-//      var result = {
+//      let comments = [], match, annotations, i, line
+//      let lines = utils.getLines(source)
+//      let result = {
 //        uniforms: {},
 //        varying: {},
 //        attributes: {},
@@ -301,12 +301,12 @@ module Glib.Graphics {
 //
 //
 //    private static parseAnnotations(lines:string[]):any{
-//      var result = {}
+//      let result = {}
 //      if (!lines) return result
-//      for (var line of lines) {
-//        var match = line.match(redAnnotation)
+//      for (let line of lines) {
+//        let match = line.match(redAnnotation)
 //        if (match) {
-//          var key = match[2]
+//          let key = match[2]
 //          result[key] = match[3]
 //        }
 //      }
@@ -314,8 +314,8 @@ module Glib.Graphics {
 //    }
 //
 //    private static fixStructUniforms(uniforms, structs):void {
-//      var item, struct, match, name, count, i
-//      var reg = /(.*)\[(\d+)]/
+//      let item, struct, match, name, count, i
+//      let reg = /(.*)\[(\d+)]/
 //      
 //
 //      Object.keys(uniforms).forEach(function (key) {

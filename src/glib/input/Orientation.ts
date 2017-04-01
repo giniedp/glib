@@ -87,7 +87,7 @@ module Glib.Input {
     }
 
     copyState(out:any = {}):any{
-      var state = this.state
+      let state = this.state
       out.orientation = utils.extend(out.orientation || {}, state.orientation)
       out.acceleration = utils.extend(out.acceleration || {}, state.acceleration)
       out.accelerationIncludingGravity = utils.extend(out.accelerationIncludingGravity || {}, state.accelerationIncludingGravity)
@@ -96,7 +96,7 @@ module Glib.Input {
     }
 
     protected handleOrientationEvent(e:DeviceOrientationEvent) {
-      var orientation = this.state.orientation || {} as IDeviceOrientation
+      let orientation = this.state.orientation || {} as IDeviceOrientation
       orientation.absolute = e.absolute
       orientation.alpha    = e.alpha
       orientation.beta     = e.beta
@@ -107,7 +107,7 @@ module Glib.Input {
 
     protected handleMotionEvent(e:DeviceMotionEvent) {
       
-      var acceleration = this.state.acceleration || {} as IVec3
+      let acceleration = this.state.acceleration || {} as IVec3
       acceleration.x = e.acceleration.x
       acceleration.y = e.acceleration.y
       acceleration.z = e.acceleration.z

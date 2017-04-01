@@ -5,16 +5,16 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   export function Cube(builder:Builder, options:{
-    size?:number,
-    steps?:number
+    size?: number,
+    steps?: number
   } = {}) {
-    var size = withDefault(options.size, 1)
-    var halfSize = size * 0.5
-    var halfPi = Math.PI * 0.5
-    var steps = withDefault(options.steps, 1)
-    var halfUp = Mat4.createTranslation(0, size * 0.5, 0)
+    let size = withDefault(options.size, 1)
+    let halfSize = size * 0.5
+    let halfPi = Math.PI * 0.5
+    let steps = withDefault(options.steps, 1)
+    let halfUp = Mat4.createTranslation(0, size * 0.5, 0)
     let transform = Mat4.identity()
-    let tId:number
+    let tId: number
     
     // top plane
     transform.initTranslation(0, halfSize, 0)

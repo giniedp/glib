@@ -11,40 +11,40 @@ module Glib.Graphics.Geometry.Formulas {
    * @constructor
    */
   export function SphericalHarmonics(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
-    parameters?:number[]
+    diameter?: number
+    radius?: number
+    steps?: number
+    parameters?: number[]
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 16);
-    var params = withDefault(options.parameters, []);
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 16);
+    let params = withDefault(options.parameters, []);
 
-    var baseVertex = builder.vertexCount;
-    var stepsV = steps;
-    var stepsU = steps * 2;
+    let baseVertex = builder.vertexCount;
+    let stepsV = steps;
+    let stepsU = steps * 2;
 
-    for (var v = 0; v <= stepsV; v += 1) {
-      var dv = v / stepsV;
-      var phi = dv * Math.PI;// - Math.PI / 2;
+    for (let v = 0; v <= stepsV; v += 1) {
+      let dv = v / stepsV;
+      let phi = dv * Math.PI;// - Math.PI / 2;
 
-      for (var u = 0; u <= stepsU; u += 1) {
-        var du = u / stepsU;
-        var theta = du * Math.PI * 2;// - Math.PI;
+      for (let u = 0; u <= stepsU; u += 1) {
+        let du = u / stepsU;
+        let theta = du * Math.PI * 2;// - Math.PI;
 
-        var scale = 0;
+        let scale = 0;
         scale += Math.pow(Math.sin((params[0]|0) * phi), params[1]|0);
         scale += Math.pow(Math.cos((params[2]|0) * phi), params[3]|0);
         scale += Math.pow(Math.sin((params[4]|0) * theta), params[5]|0);
         scale += Math.pow(Math.cos((params[6]|0) * theta), params[7]|0);
         scale *= 0.25;
 
-        var x = scale * Math.sin(phi) * Math.cos(theta);
-        var y = scale * Math.sin(phi) * Math.sin(theta);
-        var z = scale * Math.cos(phi);
+        let x = scale * Math.sin(phi) * Math.cos(theta);
+        let y = scale * Math.sin(phi) * Math.sin(theta);
+        let z = scale * Math.cos(phi);
 
-        var normal = Vec3.create(x, y, z);
-        var texCoord = Vec2.new(du, dv);
+        let normal = Vec3.create(x, y, z);
+        let texCoord = Vec2.new(du, dv);
 
         builder.addVertex({
           position: Vec3.multiplyScalar(normal, radius),
@@ -53,12 +53,12 @@ module Glib.Graphics.Geometry.Formulas {
         });
       }
     }
-    for (var z = 0; z < stepsV; z += 1) {
-      for (var x = 0; x < stepsU; x += 1) {
-        var a = x + z * (stepsU + 1);
-        var b = a + 1;
-        var c = x + (z + 1) * (stepsU + 1);
-        var d = c + 1;
+    for (let z = 0; z < stepsV; z += 1) {
+      for (let x = 0; x < stepsU; x += 1) {
+        let a = x + z * (stepsU + 1);
+        let b = a + 1;
+        let c = x + (z + 1) * (stepsU + 1);
+        let d = c + 1;
 
         builder.addIndex(baseVertex + a);
         builder.addIndex(baseVertex + b);

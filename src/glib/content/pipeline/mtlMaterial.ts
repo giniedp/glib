@@ -13,7 +13,7 @@ module Glib.Content.Pipeline {
   })
 
   function convertMaterial(mtl:Content.Parser.MtlData) {
-    var result:Glib.Graphics.ShaderEffectOptions = {
+    let result:Glib.Graphics.ShaderEffectOptions = {
       name: mtl.name,
       parameters: {}
     };

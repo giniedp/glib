@@ -8,8 +8,8 @@ module Glib.Content.Pipeline {
   })
 
   function objToJson(data:RawAsset) {
-    var obj = Parser.OBJ.parse(data.content);
-    var json = convert(obj);
+    let obj = Parser.OBJ.parse(data.content);
+    let json = convert(obj);
     return json
   }
   
@@ -19,17 +19,17 @@ module Glib.Content.Pipeline {
   }
 
   function convert(data:ObjData) {
-    var builder = Glib.Graphics.Geometry.Builder.begin({
+    let builder = Glib.Graphics.Geometry.Builder.begin({
       layout: "PositionTextureNormalTangentBitangent",
       ignoreTransform: true
     });
 
-    var byMaterial = {};
-    for (var group of data.groups) {
+    let byMaterial = {};
+    for (let group of data.groups) {
       byMaterial[group.material] = byMaterial[group.material] || [];
       byMaterial[group.material].push(group);
     }
-    for (var key in byMaterial) {
+    for (let key in byMaterial) {
       buildMesh(builder, data, byMaterial[key]);
     }
 
@@ -42,12 +42,12 @@ module Glib.Content.Pipeline {
   import ObjGroup = Glib.Content.Parser.ObjGroup;
   import ObjData = Glib.Content.Parser.ObjData;
   
-  var V = 0;
-  var VT = 1;
-  var VN = 2;
+  let V = 0;
+  let VT = 1;
+  let VN = 2;
   
   function readVertex(data:ObjData, element) {
-    var vertex:any = {};
+    let vertex:any = {};
     vertex.position = data.v[element[V] - 1];
 
     if (element[VT] != null && data.vt != null) {
@@ -61,11 +61,11 @@ module Glib.Content.Pipeline {
 
   function buildMesh(builder:Graphics.Geometry.Builder, data:ObjData, groups:ObjGroup[]) {
 
-    var index = 0;
-    var vertex = void 0;
-    for (var group of groups) {
-      for (var face of group.f) {
-        var count = 0;
+    let index = 0;
+    let vertex = void 0;
+    for (let group of groups) {
+      for (let face of group.f) {
+        let count = 0;
         while (count < face.length - 2) {
           
           if (builder.vertexCount >= (builder.maxVertexCount - 2)) {

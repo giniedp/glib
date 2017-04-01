@@ -7,19 +7,19 @@ module Glib {
     /**
      * The X component
      */
-    x:number
+    public x: number
     /**
      * The Y component
      */
-    y:number
+    public y: number
     /**
      * The Z component
      */
-    z:number
+    public z: number
     /**
      * The W component
      */
-    w:number
+    public w: number
 
     /**
      * Initializes a new quaternion
@@ -28,7 +28,7 @@ module Glib {
      * @param z Value for the Z component
      * @param w Value for the W component
      */
-    constructor(x?:number, y?:number, z?:number, w?:number) {
+    constructor(x?: number, y?: number, z?: number, w?: number) {
       this.x = x || 0
       this.y = y || 0
       this.z = z || 0
@@ -43,7 +43,7 @@ module Glib {
      * @param w value for W component
      * @return Reference to `this` for chaining.
      */
-    init(x:number, y:number, z:number, w:number):Quat {
+    public init(x: number, y: number, z: number, w: number): Quat {
       this.x = x
       this.y = y
       this.z = z
@@ -55,7 +55,7 @@ module Glib {
      * Initializes the quaternion with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
      * @return Reference to `this` for chaining.
      */
-    initIdentity():Quat {
+    public initIdentity(): Quat {
       this.y = 0
       this.x = 0
       this.z = 0
@@ -67,7 +67,7 @@ module Glib {
      * Initializes the quaternion with all components set to `0`.
      * @return Reference to `this` for chaining.
      */
-    initZero():Quat {
+    public initZero(): Quat {
       this.x = 0
       this.y = 0
       this.z = 0
@@ -80,7 +80,7 @@ module Glib {
      * @param other
      * @return Reference to `this` for chaining.
      */
-    initFrom(other:IVec4):Quat {
+    public initFrom(other: IVec4): Quat {
       this.x = other.x
       this.y = other.y
       this.z = other.z
@@ -94,7 +94,7 @@ module Glib {
      * @param [offset=0] The zero based index at which start reading the values
      * @return Reference to `this` for chaining.
      */
-    initFromBuffer(buffer:ArrayLike<number>, offset:number=0):Quat {
+    public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Quat {
       this.x = buffer[offset]
       this.y = buffer[offset + 1]
       this.z = buffer[offset + 2]
@@ -108,9 +108,9 @@ module Glib {
      * @param angle The angle in degrees
      * @return Reference to `this` for chaining.
      */
-    initAxisAngle(axis:IVec3, angle:number):Quat {
-      var halfAngle = angle * 0.5
-      var scale = Math.sin(halfAngle)
+    public initAxisAngle(axis: IVec3, angle: number): Quat {
+      const halfAngle = angle * 0.5
+      const scale = Math.sin(halfAngle)
       this.x = axis.x * scale
       this.y = axis.y * scale
       this.z = axis.z * scale
@@ -125,18 +125,18 @@ module Glib {
      * @param roll The roll angle in radians
      * @return Reference to `this` for chaining.
      */
-    initYawPitchRoll(yaw:number, pitch:number, roll:number):Quat {
-      var xHalf = pitch * 0.5
-      var xSin = Math.sin(xHalf)
-      var xCos = Math.cos(xHalf)
+    public initYawPitchRoll(yaw: number, pitch: number, roll: number): Quat {
+      const xHalf = pitch * 0.5
+      const xSin = Math.sin(xHalf)
+      const xCos = Math.cos(xHalf)
 
-      var yHalf = yaw * 0.5
-      var ySin = Math.sin(yHalf)
-      var yCos = Math.cos(yHalf)
+      const yHalf = yaw * 0.5
+      const ySin = Math.sin(yHalf)
+      const yCos = Math.cos(yHalf)
 
-      var zHalf = roll * 0.5
-      var zSin = Math.sin(zHalf)
-      var zCos = Math.cos(zHalf)
+      const zHalf = roll * 0.5
+      const zSin = Math.sin(zHalf)
+      const zCos = Math.cos(zHalf)
 
       this.x = yCos * xSin * zCos + ySin * xCos * zSin
       this.y = ySin * xCos * zCos - yCos * xSin * zSin
@@ -149,7 +149,7 @@ module Glib {
      * Creates a copy of this quaternion
      * @return The cloned quaternion
      */
-    clone():Quat {
+    public clone(): Quat {
       return new Quat(this.x, this.y, this.z, this.w)
     }
 
@@ -159,7 +159,7 @@ module Glib {
      * @param [offset=0] Zero based index where to start writing in the array
      * @return Reference to `this` for chaining.
      */
-    copyTo(buffer:ArrayLike<number>, offset?:number) {
+    public copyTo(buffer: ArrayLike<number>, offset?: number) {
       offset = offset || 0
       buffer[offset] = this.x
       buffer[offset + 1] = this.y
@@ -173,7 +173,7 @@ module Glib {
      * @param other The quaternion to compare with
      * @return {Boolean} true if components are equal, false otherwise
      */
-    equals(other:IVec4):boolean {
+    public equals(other: IVec4): boolean {
       return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
     }
 
@@ -181,11 +181,11 @@ module Glib {
      * Calculates the length of this quaternion
      * @return {Number} The length.
      */
-    length():number {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
+    public length(): number {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
       return Math.sqrt(x * x + y * y + z * z + w * w)
     }
 
@@ -193,11 +193,11 @@ module Glib {
      * Calculates the squared length of this quaternion
      * @return {Number} The squared length.
      */
-    lengthSquared():number {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
+    public lengthSquared(): number {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
       return x * x + y * y + z * z + w * w
     }
 
@@ -205,7 +205,7 @@ module Glib {
      * Calculates the dot product with the given quaternion
      * @return {Number} The dot product.
      */
-    dot(other:IVec4):number {
+    public dot(other: IVec4): number {
       return this.x * other.x + this.y * other.y + this.z * other.z + this.w * other.w
     }
 
@@ -213,7 +213,7 @@ module Glib {
      * Negates the components of `this`
      * @return Reference to `this` for chaining.
      */
-    negate():Quat {
+    public negate(): Quat {
       this.x = -this.x
       this.y = -this.y
       this.z = -this.z
@@ -221,7 +221,7 @@ module Glib {
       return this
     }
 
-    negateOut<T extends IVec4>(out?:T):T {
+    public negateOut<T extends IVec4>(out?: T): T {
       out = out || new Quat() as any
       out.x = -this.x
       out.y = -this.y
@@ -234,14 +234,14 @@ module Glib {
      * Negates the `x`, `y` and `z` components of `this`
      * @return Reference to `this` for chaining.
      */
-    conjugate():Quat {
+    public conjugate(): Quat {
       this.x = -this.x
       this.y = -this.y
       this.z = -this.z
       return this
     }
 
-    conjugateOut<T extends IVec4>(out?:T):T {
+    public conjugateOut<T extends IVec4>(out?: T): T {
       out = out || new Quat() as any
       out.x = -this.x
       out.y = -this.y
@@ -253,12 +253,12 @@ module Glib {
      * Normalizes `this` so that `length` should be `1`
      * @return Reference to `this` for chaining.
      */
-    normalize():Quat {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+    public normalize(): Quat {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
       this.x = x * d
       this.y = y * d
       this.z = z * d
@@ -266,13 +266,13 @@ module Glib {
       return this
     }
 
-    normalizeOut<T extends IVec4>(out?:T):T {
+    public normalizeOut<T extends IVec4>(out?: T): T {
       out = out || new Quat() as any
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
       out.x = x * d
       out.y = y * d
       out.z = z * d
@@ -284,12 +284,12 @@ module Glib {
      * Inverts `this` so that multiplication with the original would return the identity quaternion.
      * @return Reference to `this` for chaining.
      */
-    invert():Quat {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+    public invert(): Quat {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
       this.x = -x * d
       this.y = -y * d
       this.z = -z * d
@@ -297,13 +297,13 @@ module Glib {
       return this
     }
 
-    invertOut<T extends IVec4>(out?:T):T {
+    public invertOut<T extends IVec4>(out?: T): T {
       out = out || new Quat() as any
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
       out.x = -x * d
       out.y = -y * d
       out.z = -z * d
@@ -316,14 +316,14 @@ module Glib {
      * @param other
      * @return Reference to `this` for chaining.
      */
-    add(other:IVec4):Quat {
+    public add(other: IVec4): Quat {
       this.x += other.x
       this.y += other.y
       this.z += other.z
       this.w += other.w
       return this
     }
-    addOut<T extends IVec4>(other:IVec4, out?:T):T {
+    public addOut<T extends IVec4>(other: IVec4, out?: T): T {
       out = out || new Quat() as any
       out.x = this.x + other.x
       out.y = this.y + other.y
@@ -337,14 +337,14 @@ module Glib {
      * @param other
      * @return Reference to `this` for chaining.
      */
-    subtract(other:IVec4):Quat {
+    public subtract(other: IVec4): Quat {
       this.x -= other.x
       this.y -= other.y
       this.z -= other.z
       this.w -= other.w
       return this
     }
-    subtractOut<T extends IVec4>(other:IVec4, out?:T):T {
+    public subtractOut<T extends IVec4>(other: IVec4, out?: T): T {
       out = out || new Quat() as any
       out.x = this.x - other.x
       out.y = this.y - other.y
@@ -358,40 +358,40 @@ module Glib {
      * @param other
      * @return Reference to `this` for chaining.
      */
-    multiply(other:IVec4):Quat {
-      var x1 = this.x
-      var y1 = this.y
-      var z1 = this.z
-      var w1 = this.w
+    public multiply(other: IVec4): Quat {
+      const x1 = this.x
+      const y1 = this.y
+      const z1 = this.z
+      const w1 = this.w
 
-      var x2 = other.x
-      var y2 = other.y
-      var z2 = other.z
-      var w2 = other.w
+      const x2 = other.x
+      const y2 = other.y
+      const z2 = other.z
+      const w2 = other.w
 
       this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
       this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
       this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
       this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-      return this;
+      return this
     }
-    multiplyOut<T extends IVec4>(other:IVec4, out?:T):T {
+   public  multiplyOut<T extends IVec4>(other: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x1 = this.x
-      var y1 = this.y
-      var z1 = this.z
-      var w1 = this.w
+      const x1 = this.x
+      const y1 = this.y
+      const z1 = this.z
+      const w1 = this.w
 
-      var x2 = other.x
-      var y2 = other.y
-      var z2 = other.z
-      var w2 = other.w
+      const x2 = other.x
+      const y2 = other.y
+      const z2 = other.z
+      const w2 = other.w
 
       out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
       out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
       out.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
       out.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-      return out;
+      return out
     }
 
     /**
@@ -399,59 +399,59 @@ module Glib {
      * @param other
      * @return Reference to `this` for chaining.
      */
-    concat(other:IVec4):Quat {
-      var x1 = other.x
-      var y1 = other.y
-      var z1 = other.z
-      var w1 = other.w
+    public concat(other: IVec4): Quat {
+      const x1 = other.x
+      const y1 = other.y
+      const z1 = other.z
+      const w1 = other.w
 
-      var x2 = this.x
-      var y2 = this.y
-      var z2 = this.z
-      var w2 = this.w
+      const x2 = this.x
+      const y2 = this.y
+      const z2 = this.z
+      const w2 = this.w
 
       this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
       this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
       this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
       this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-      return this;
+      return this
     }
-    concatOut<T extends IVec4>(other:IVec4, out?:T):T {
+   public concatOut<T extends IVec4>(other: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x1 = other.x
-      var y1 = other.y
-      var z1 = other.z
-      var w1 = other.w
+      const x1 = other.x
+      const y1 = other.y
+      const z1 = other.z
+      const w1 = other.w
 
-      var x2 = this.x
-      var y2 = this.y
-      var z2 = this.z
-      var w2 = this.w
+      const x2 = this.x
+      const y2 = this.y
+      const z2 = this.z
+      const w2 = this.w
 
       out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
       out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
       out.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
       out.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-      return out;
+      return out
     }
     /**
      * Performs a division with `other`
      * @param other
      * @return Reference to `this` for chaining.
      */
-    divide(other:IVec4):Quat {
-      var x1 = this.x
-      var y1 = this.y
-      var z1 = this.z
-      var w1 = this.w
+    public divide(other: IVec4): Quat {
+      const x1 = this.x
+      const y1 = this.y
+      const z1 = this.z
+      const w1 = this.w
 
-      var x2 = other.x
-      var y2 = other.y
-      var z2 = other.z
-      var w2 = other.w
+      let x2 = other.x
+      let y2 = other.y
+      let z2 = other.z
+      let w2 = other.w
 
       // invert
-      var s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
+      const s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
       x2 = -x2 * s
       y2 = -y2 * s
       z2 = -z2 * s
@@ -463,20 +463,20 @@ module Glib {
       this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
       return this
     }
-    divideOut<T extends IVec4>(other:IVec4, out?:T):T {
+    public divideOut<T extends IVec4>(other: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x1 = this.x
-      var y1 = this.y
-      var z1 = this.z
-      var w1 = this.w
+      const x1 = this.x
+      const y1 = this.y
+      const z1 = this.z
+      const w1 = this.w
 
-      var x2 = other.x
-      var y2 = other.y
-      var z2 = other.z
-      var w2 = other.w
+      let x2 = other.x
+      let y2 = other.y
+      let z2 = other.z
+      let w2 = other.w
 
       // invert
-      var s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
+      const s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
       x2 = -x2 * s
       y2 = -y2 * s
       z2 = -z2 * s
@@ -493,31 +493,31 @@ module Glib {
      * @param vec
      * @return {Vec3|Vec4}
      */
-    transform<T extends IVec3>(vec:T):T {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = this.w
+    public transform<T extends IVec3>(vec: T): T {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = this.w
 
-      var x2 = x + x
-      var y2 = y + y
-      var z2 = z + z
+      const x2 = x + x
+      const y2 = y + y
+      const z2 = z + z
 
-      var wx2 = w * x2
-      var wy2 = w * y2
-      var wz2 = w * z2
+      const wx2 = w * x2
+      const wy2 = w * y2
+      const wz2 = w * z2
 
-      var xx2 = x * x2
-      var xy2 = x * y2
-      var xz2 = x * z2
+      const xx2 = x * x2
+      const xy2 = x * y2
+      const xz2 = x * z2
 
-      var yy2 = y * y2
-      var yz2 = y * z2
-      var zz2 = y * z2
+      const yy2 = y * y2
+      const yz2 = y * z2
+      const zz2 = y * z2
 
-      var vx = vec.x
-      var vy = vec.y
-      var vz = vec.z
+      const vx = vec.x
+      const vy = vec.y
+      const vz = vec.z
 
       vec.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)
       vec.y = vx * (xy2 + wz2) + vy * (1 - xx2 - zz2) + vz * (yz2 - wx2)
@@ -534,24 +534,24 @@ module Glib {
      * @param [w] The w component
      * @return
      */
-    static create(x?:number, y?:number, z?:number, w?:number):Quat {
-      return new Quat(x, y, z, w);
+    public static create(x?: number, y?: number, z?: number, w?: number): Quat {
+      return new Quat(x, y, z, w)
     }
 
     /**
      * Creates a new vector with all components set to 0.
      * @return A new quaternion
      */
-    static zero():Quat {
-      return new Quat(0, 0, 0, 0);
+    public static zero(): Quat {
+      return new Quat(0, 0, 0, 0)
     }
 
     /**
      * Creates a new vector with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
      * @return A new quaternion
      */
-    static identity():Quat {
-      return new Quat(0, 0, 0, 1);
+    public static identity(): Quat {
+      return new Quat(0, 0, 0, 1)
     }
 
     /**
@@ -560,7 +560,7 @@ module Glib {
      * @param angle The angle in degree
      * @return A new quaternion
      */
-    static fromAxisAngle(axis:IVec3, angle:number):Quat {
+    public static fromAxisAngle(axis: IVec3, angle: number): Quat {
       return Quat.identity().initAxisAngle(axis, angle)
     }
 
@@ -571,7 +571,7 @@ module Glib {
      * @param roll The roll angle in radians
      * @return
      */
-    static fromYawPitchRoll(yaw:number, pitch:number, roll:number):Quat {
+    public static fromYawPitchRoll(yaw: number, pitch: number, roll: number): Quat {
       return Quat.identity().initYawPitchRoll(yaw, pitch, roll)
     }
 
@@ -581,7 +581,7 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static negate<T extends IVec4>(quat:IVec4, out?:T):T {
+    public static negate<T extends IVec4>(quat: IVec4, out?: T): T {
       out = out || new Quat() as any
       out.x = -quat.x
       out.y = -quat.y
@@ -596,7 +596,7 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static conjugate<T extends IVec4>(quat:IVec4, out?:T):T {
+    public static conjugate<T extends IVec4>(quat: IVec4, out?: T): T {
       out = out || new Quat() as any
       out.x = -quat.x
       out.y = -quat.y
@@ -611,13 +611,13 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static normalize<T extends IVec4>(quat:IVec4, out?:T):T {
+    public static normalize<T extends IVec4>(quat: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x = quat.x
-      var y = quat.y
-      var z = quat.z
-      var w = quat.w
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+      const x = quat.x
+      const y = quat.y
+      const z = quat.z
+      const w = quat.w
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
       out.x = x * d
       out.y = y * d
       out.z = z * d
@@ -631,13 +631,13 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static invert<T extends IVec4>(quat:IVec4, out?:T):T {
+    public static invert<T extends IVec4>(quat: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x = quat.x
-      var y = quat.y
-      var z = quat.z
-      var w = quat.w
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+      const x = quat.x
+      const y = quat.y
+      const z = quat.z
+      const w = quat.w
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
       out.x = -x * d
       out.y = -y * d
       out.z = -z * d
@@ -652,7 +652,7 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static add<T extends IVec4>(quatA:IVec4, quatB:IVec4, out?:T):T {
+    public static add<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
       out = out || new Quat() as any
       out.x = quatA.x + quatB.x
       out.y = quatA.y + quatB.y
@@ -668,7 +668,7 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static subtract<T extends IVec4>(quatA:IVec4, quatB:IVec4, out?:T):T {
+    public static subtract<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
       out = out || new Quat() as any
       out.x = quatA.x - quatB.x
       out.y = quatA.y - quatB.y
@@ -684,17 +684,17 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static multiply<T extends IVec4>(quatA:IVec4, quatB:IVec4, out?:T):T {
+    public static multiply<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x1 = quatA.x
-      var y1 = quatA.y
-      var z1 = quatA.z
-      var w1 = quatA.w
+      const x1 = quatA.x
+      const y1 = quatA.y
+      const z1 = quatA.z
+      const w1 = quatA.w
 
-      var x2 = quatB.x
-      var y2 = quatB.y
-      var z2 = quatB.z
-      var w2 = quatB.w
+      const x2 = quatB.x
+      const y2 = quatB.y
+      const z2 = quatB.z
+      const w2 = quatB.w
 
       out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
       out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
@@ -703,7 +703,6 @@ module Glib {
       return out
     }
 
-
     /**
      * Concatenates two quaternions
      * @param quatA The first quaternion
@@ -711,17 +710,17 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static concat<T extends IVec4>(quatA:IVec4, quatB:IVec4, out?:T):T {
+    public static concat<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x1 = quatB.x
-      var y1 = quatB.y
-      var z1 = quatB.z
-      var w1 = quatB.w
+      const x1 = quatB.x
+      const y1 = quatB.y
+      const z1 = quatB.z
+      const w1 = quatB.w
 
-      var x2 = quatA.x
-      var y2 = quatA.y
-      var z2 = quatA.z
-      var w2 = quatA.w
+      const x2 = quatA.x
+      const y2 = quatA.y
+      const z2 = quatA.z
+      const w2 = quatA.w
 
       out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
       out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
@@ -737,20 +736,20 @@ module Glib {
      * @param [out] The quaternion to write to.
      * @return The given `out` parameter or a new quaternion.
      */
-    static divide<T extends IVec4>(quatA:IVec4, quatB:IVec4, out?:T):T {
+    public static divide<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
       out = out || new Quat() as any
-      var x1 = quatA.x
-      var y1 = quatA.y
-      var z1 = quatA.z
-      var w1 = quatA.w
+      const x1 = quatA.x
+      const y1 = quatA.y
+      const z1 = quatA.z
+      const w1 = quatA.w
 
-      var x2 = quatB.x
-      var y2 = quatB.y
-      var z2 = quatB.z
-      var w2 = quatB.w
+      let x2 = quatB.x
+      let y2 = quatB.y
+      let z2 = quatB.z
+      let w2 = quatB.w
 
       // invert
-      var s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
+      const s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
       x2 = -x2 * s
       y2 = -y2 * s
       z2 = -z2 * s
@@ -769,14 +768,14 @@ module Glib {
      * @param {Array|Quat|Vec4} data
      * @return The created quaternion.
      */
-    static convert(data:any):Quat {
+    public static convert(data: any): Quat {
       if (Array.isArray(data)) {
-        return new Quat(data[0],data[1],data[2],data[3]);
+        return new Quat(data[0], data[1], data[2], data[3])
       }
       if (typeof data === 'number') {
-        return new Quat(data, data, data, data);
+        return new Quat(data, data, data, data)
       }
-      return new Quat(data.x,data.y,data.z,data.w)
+      return new Quat(data.x, data.y, data.z, data.w)
     }
 
     /**
@@ -786,31 +785,31 @@ module Glib {
      * @param [out] The vector to write to
      * @return The given `out` parameter or a new vector.
      */
-    static transform<T extends IVec3>(q:IVec4, v:IVec3, out?:T):T {
-      var x = q.x
-      var y = q.y
-      var z = q.z
-      var w = q.w
+    public static transform<T extends IVec3>(q: IVec4, v: IVec3, out?: T): T {
+      const x = q.x
+      const y = q.y
+      const z = q.z
+      const w = q.w
 
-      var x2 = x + x
-      var y2 = y + y
-      var z2 = z + z
+      const x2 = x + x
+      const y2 = y + y
+      const z2 = z + z
 
-      var wx2 = w * x2
-      var wy2 = w * y2
-      var wz2 = w * z2
+      const wx2 = w * x2
+      const wy2 = w * y2
+      const wz2 = w * z2
 
-      var xx2 = x * x2
-      var xy2 = x * y2
-      var xz2 = x * z2
+      const xx2 = x * x2
+      const xy2 = x * y2
+      const xz2 = x * z2
 
-      var yy2 = y * y2
-      var yz2 = y * z2
-      var zz2 = y * z2
+      const yy2 = y * y2
+      const yz2 = y * z2
+      const zz2 = y * z2
 
-      var vx = v.x
-      var vy = v.y
-      var vz = v.z
+      const vx = v.x
+      const vy = v.y
+      const vz = v.z
 
       out = out || new Vec3() as any
       out.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)

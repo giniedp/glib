@@ -7,15 +7,15 @@ module Glib.Graphics {
     /**
      * The width of the depth buffer surface
      */
-    width:number,
+    width: number,
     /**
      * The height of the depth buffer surface
      */
-    height:number,
+    height: number,
     /**
      * The depth and stencil format
      */
-    depthFormat?:number,
+    depthFormat?: number,
     /**
      * The existing
      */
@@ -41,15 +41,15 @@ module Glib.Graphics {
     /**
      * The width of the surface in pixels
      */
-    width:number;
+    width: number;
     /**
      * The height of the surface in pixels
      */
-    height:number;
+    height: number;
     /**
      * The used surface format
      */
-    depthFormat:number;
+    depthFormat: number;
 
     /**
     * Initializes a new instance
@@ -74,9 +74,9 @@ module Glib.Graphics {
      * @param options The setup options to initialize the instance
      */
     setup(options):DepthBuffer {
-      var width = options.width;
-      var height = options.height;
-      var format = options.depthFormat;
+      let width = options.width;
+      let height = options.height;
+      let format = options.depthFormat;
       
       if (width == null) width = this.width;
       if (height == null) height = this.height;
@@ -86,7 +86,7 @@ module Glib.Graphics {
       if (height == null) throw "missing height option";
       if (format == null) format = DepthFormat.DepthStencil;
 
-      var handle = options.handle;
+      let handle = options.handle;
       
       if ((handle && (handle !== this.handle)) || this.width !== width || this.height !== height || this.depthFormat !== format){
         this.destroy();

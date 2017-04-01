@@ -1,81 +1,85 @@
 module Glib.Components {
 
-  import extend = Glib.utils.extend;
-  import requestFrame = Glib.utils.requestFrame;
-  import debug = Glib.utils.debug;
+  import extend = Glib.utils.extend
+  import requestFrame = Glib.utils.requestFrame
+  import debug = Glib.utils.debug
 
   export class GameLoop implements Component {
-    node:Entity;
-    name:string = 'GameLoop';
-    service:boolean = true;
-    enabled:boolean = true;
+    public node: Entity
+    public name: string = 'GameLoop'
+    public service: boolean = true
+    public enabled: boolean = true
 
-    preferTimeout:boolean = true;
-    fixedTimeStep:number = 20;
-    isFixedTimeStep:boolean = true;
+    public preferTimeout: boolean = true
+    public fixedTimeStep: number = 20
+    public isFixedTimeStep: boolean = true
 
-    recursiveSetup:boolean = true;
-    recursiveUpdate:boolean = true;
-    recursiveDraw:boolean = true;
+    public recursiveSetup: boolean = true
+    public recursiveUpdate: boolean = true
+    public recursiveDraw: boolean = true
 
-    _tickFunction:() => void;
-    _time:number = 0;
-    _timeRest:number = 0;
+    private tickFunction: () => void
+    private time: number = 0
+    private timeRest: number = 0
 
-    constructor(params:any={}){
-      extend(this, params);
+    constructor(params: any= {}) {
+      extend(this, params)
     }
 
-    run(){
-      this._tickFunction = () => { this._tick(); };
-      this._tick();
+    public run() {
+      this.tickFunction = () => { this.tick() }
+      this.tick()
     }
-    pause(){
-      this._tickFunction = () => { };
+    public pause() {
+      this.tickFunction = () => {
+        //
+      }
     }
-    stop(){
-      this._tickFunction = () => { };
+    public stop() {
+      this.tickFunction = () => {
+        //
+      }
     }
 
-    _tick(){
-      var time = Glib.utils.getTime();
-      var dt = time - this._time;
-      this._time = time;
+    public tick() {
+      const time = Glib.utils.getTime()
+      let dt = time - this.time
+      this.time = time
 
       if (this.isFixedTimeStep) {
 
-        if (dt >= (this.fixedTimeStep - this._timeRest)) {
-          this._onFrame(this.fixedTimeStep);
-          this._timeRest = 0;
+        if (dt >= (this.fixedTimeStep - this.timeRest)) {
+          this.onFrame(this.fixedTimeStep)
+          this.timeRest = 0
         }
         while (dt > this.fixedTimeStep) {
-          dt -= this.fixedTimeStep;
+          dt -= this.fixedTimeStep
         }
-        this._timeRest += dt;
+        this.timeRest += dt
       } else {
-        this._onFrame(dt);
+        this.onFrame(dt)
       }
 
       if (this.preferTimeout) {
-        self.setTimeout(this._tickFunction, 1);
+        self.setTimeout(this.tickFunction, 1)
       } else {
-        requestFrame(this._tickFunction);
+        requestFrame(this.tickFunction)
       }
     }
 
-    _onFrame(dt:number) {
-      var node = this.node;
-      node._initializeComponents(this.recursiveSetup);
-      node._updateComponents(dt, this.recursiveUpdate);
-      node._drawComponents(dt, this.recursiveDraw);
-      return this;
+    private onFrame(dt: number) {
+      const node = this.node
+      node.initializeComponents(this.recursiveSetup)
+      node.updateComponents(dt, this.recursiveUpdate)
+      node.drawComponents(dt, this.recursiveDraw)
+      return this
     }
 
-    debug():string {
+    public debug(): string {
       return [
         `- component: ${this.name}`,
         `  enabled: ${this.enabled}`
-      ].join("\n")
+      ].join('\n')
     }
   }
 }

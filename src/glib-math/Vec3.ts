@@ -1,11 +1,10 @@
 module Glib {
 
-  let keys = ['x', 'y', 'z']
-  let keyLookup = { 
+  const keys = ['x', 'y', 'z']
+  const keyLookup = {
     0: 'x', 1: 'y', 2: 'z',
-    'x': 'x', 'y': 'y', 'z': 'z' 
+    x: 'x', y: 'y', z: 'z'
   }
-
 
   /**
    * Describes a vector with three components.
@@ -14,15 +13,15 @@ module Glib {
     /**
      * The X component
      */
-    x:number
+    public x: number
     /**
      * The Y component
      */
-    y:number
+    public y: number
     /**
      * The Z component
      */
-    z:number
+    public z: number
 
     /**
      * Initializes a new vector
@@ -30,7 +29,7 @@ module Glib {
      * @param y Value for the Y component
      * @param z Value for the Z component
      */
-    constructor(x?:number, y?:number, z?:number) {
+    constructor(x?: number, y?: number, z?: number) {
       this.x = x == null ? 0 : x
       this.y = y == null ? 0 : y
       this.z = z == null ? 0 : z
@@ -39,35 +38,35 @@ module Glib {
     /**
      * Sets the X component
      */
-    setX(value:number):Vec3 {
+    public setX(value: number): Vec3 {
       this.x = value
       return this
     }
     /**
      * Sets the Y component
      */
-    setY(value:number):Vec3 {
+    public setY(value: number): Vec3 {
       this.y = value
       return this
     }
     /**
      * Sets the Z component
      */
-    setZ(value:number):Vec3 {
+    public setZ(value: number): Vec3 {
       this.z = value
       return this
     }
     /**
      * Sets the component by using an index (or name)
      */
-    set(key: number|string, value:number):Vec3 {
+    public set(key: number|string, value: number): Vec3 {
       this[keyLookup[key]] = value
       return this
     }
     /**
      * Gets the component by using an index (or name)
      */
-    get(key: number|string):number {
+    public get(key: number|string): number {
       return this[keyLookup[key]]
     }
 
@@ -78,7 +77,7 @@ module Glib {
      * @param z value for Z component
      * @return this vector for chaining
      */
-    init(x:number, y:number, z:number):Vec3 {
+    public init(x: number, y: number, z: number): Vec3 {
       this.x = x
       this.y = y
       this.z = z
@@ -90,7 +89,7 @@ module Glib {
      * @param other The vector to read from
      * @return
      */
-    initFrom(other:IVec3):Vec3 {
+    public initFrom(other: IVec3): Vec3 {
       this.x = other.x
       this.y = other.y
       this.z = other.z
@@ -103,7 +102,7 @@ module Glib {
      * @param [offset=0] The zero based index at which start reading the values
      * @return
      */
-    initFromBuffer(buffer:ArrayLike<number>, offset:number=0):Vec3 {
+    public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec3 {
       this.x = buffer[offset]
       this.y = buffer[offset + 1]
       this.z = buffer[offset + 2]
@@ -114,10 +113,10 @@ module Glib {
      * Creates a copy of this vector
      * @return The cloned vector
      */
-    clone():Vec3 {
+    public clone(): Vec3 {
       return new Vec3(this.x, this.y, this.z)
     }
-    cloneTo<T extends IVec3>(out?:T):T {
+    public cloneTo<T extends IVec3>(out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x
       out.y = this.y
@@ -130,7 +129,7 @@ module Glib {
      * @param offset Zero based index where to start writing in the array
      * @return {Array|Float32Array}
      */
-    copyTo<T extends ArrayLike<number>>(buffer:T, offset:number=0):T {
+    public copyTo<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
       buffer[offset] = this.x
       buffer[offset + 1] = this.y
       buffer[offset + 2] = this.z
@@ -142,7 +141,7 @@ module Glib {
      * @param other The vector to compare with
      * @return true if components are equal, false otherwise
      */
-    equals(other:IVec3):boolean {
+    public equals(other: IVec3): boolean {
       return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z))
     }
 
@@ -150,10 +149,10 @@ module Glib {
      * Calculates the length of this vector
      * @return The length.
      */
-    length():number {
-      var x = this.x
-      var y = this.y
-      var z = this.z
+    public length(): number {
+      const x = this.x
+      const y = this.y
+      const z = this.z
       return Math.sqrt(x * x + y * y + z * z)
     }
 
@@ -161,10 +160,10 @@ module Glib {
      * Calculates the squared length of this vector
      * @return The squared length.
      */
-    lengthSquared():number {
-      var x = this.x
-      var y = this.y
-      var z = this.z
+    public lengthSquared(): number {
+      const x = this.x
+      const y = this.y
+      const z = this.z
       return x * x + y * y + z * z
     }
 
@@ -173,10 +172,10 @@ module Glib {
      * @param other The distant vector
      * @return The distance between the vectors.
      */
-    distance(other:IVec3):number {
-      var x = this.x - other.x
-      var y = this.y - other.y
-      var z = this.z - other.z
+    public distance(other: IVec3): number {
+      const x = this.x - other.x
+      const y = this.y - other.y
+      const z = this.z - other.z
       return Math.sqrt(x * x + y * y + z * z)
     }
 
@@ -185,10 +184,10 @@ module Glib {
      * @param other The distant vector
      * @return The squared distance between the vectors.
      */
-    distanceSquared(other:IVec3):number {
-      var x = this.x - other.x
-      var y = this.y - other.y
-      var z = this.z - other.z
+    public distanceSquared(other: IVec3): number {
+      const x = this.x - other.x
+      const y = this.y - other.y
+      const z = this.z - other.z
       return x * x + y * y + z * z
     }
 
@@ -197,7 +196,7 @@ module Glib {
      * @param other
      * @return The dot product.
      */
-    dot(other:IVec3):number {
+    public dot(other: IVec3): number {
       return this.x * other.x + this.y * other.y + this.z * other.z
     }
 
@@ -206,10 +205,10 @@ module Glib {
      * @param other The second vector.
      * @return A new vector.
      */
-    cross(other:IVec3):Vec3 {
-      var x = this.x
-      var y = this.y
-      var z = this.z
+    public cross(other: IVec3): Vec3 {
+      const x = this.x
+      const y = this.y
+      const z = this.z
       this.x = y * other.z - z * other.y
       this.y = z * other.x - x * other.z
       this.z = x * other.y - y * other.x
@@ -220,11 +219,11 @@ module Glib {
      * @param other The second vector.
      * @return A new vector.
      */
-    crossOut<T extends IVec3>(other:IVec3, out:T):T {
+    public crossOut<T extends IVec3>(other: IVec3, out: T): T {
       out = (out || new Vec3()) as any
-      var x = this.x
-      var y = this.y
-      var z = this.z
+      const x = this.x
+      const y = this.y
+      const z = this.z
       out.x = y * other.z - z * other.y
       out.y = z * other.x - x * other.z
       out.z = x * other.y - y * other.x
@@ -235,11 +234,11 @@ module Glib {
      * Normalizes `this` vector. Applies the result to `this` vector.
      * @return this vector for chaining
      */
-    normalize():Vec3 {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+    public normalize(): Vec3 {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
       this.x *= d
       this.y *= d
       this.z *= d
@@ -249,12 +248,12 @@ module Glib {
      * Normalizes this vector. Applies the result to `out` vector.
      * @return the `out` parameter or new vector
      */
-    normalizeOut<T extends IVec3>(out?:T):T {
+    public normalizeOut<T extends IVec3>(out?: T): T {
       out = (out || new Vec3()) as any
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
       out.x = this.x * d
       out.y = this.y * d
       out.z = this.z * d
@@ -265,7 +264,7 @@ module Glib {
      * Inverts this vector.
      * @return this vector for chaining
      */
-    invert():Vec3 {
+    public invert(): Vec3 {
       this.x = 1.0 / this.x
       this.y = 1.0 / this.y
       this.z = 1.0 / this.z
@@ -275,7 +274,7 @@ module Glib {
      * Inverts this vector. Applies the result to `out` vector.
      * @return the `out` parameter or new vector
      */
-    invertOut<T extends IVec3>(out?:T):T {
+    public invertOut<T extends IVec3>(out?: T): T {
       out = (out || new Vec3()) as any
       out.x = 1.0 / this.x
       out.y = 1.0 / this.y
@@ -287,7 +286,7 @@ module Glib {
      * Negates the components of `this` vector. Applies the result to `this`
      * @return this vector for chaining
      */
-    negate():Vec3 {
+    public negate(): Vec3 {
       this.x = -this.x
       this.y = -this.y
       this.z = -this.z
@@ -297,7 +296,7 @@ module Glib {
      * Negates the components of `this` vector. Applies the result to `out`
      * @return the `out` parameter or new vector
      */
-    negateOut<T extends IVec3>(out?:T):T {
+    public negateOut<T extends IVec3>(out?: T): T {
       out = (out || new Vec3()) as any
       out.x = -this.x
       out.y = -this.y
@@ -310,7 +309,7 @@ module Glib {
      * @param other The vector to add
      * @return this vector for chaining
      */
-    addScaled(other:IVec3, scale:number):Vec3 {
+    public addScaled(other: IVec3, scale: number): Vec3 {
       this.x += other.x * scale
       this.y += other.y * scale
       this.z += other.z * scale
@@ -322,7 +321,7 @@ module Glib {
      * @param other The vector to add
      * @return this vector for chaining
      */
-    add(other:IVec3):Vec3 {
+    public add(other: IVec3): Vec3 {
       this.x += other.x
       this.y += other.y
       this.z += other.z
@@ -333,7 +332,7 @@ module Glib {
      * @param other The vector to add
      * @return the `out` parameter or new vector
      */
-    addOut<T extends IVec3>(other:IVec3, out?:T):T {
+    public addOut<T extends IVec3>(other: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x + other.x
       out.y = this.y + other.y
@@ -346,7 +345,7 @@ module Glib {
      * @param scalar The value to add
      * @return this vector for chaining
      */
-    addScalar(scalar:number):Vec3 {
+    public addScalar(scalar: number): Vec3 {
       this.x += scalar
       this.y += scalar
       this.z += scalar
@@ -357,7 +356,7 @@ module Glib {
      * @param scalar The value to add
      * @return the `out` parameter or new vector
      */
-    addScalarOut<T extends IVec3>(scalar:number, out?:T):T {
+    public addScalarOut<T extends IVec3>(scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x + scalar
       out.y = this.y + scalar
@@ -371,7 +370,7 @@ module Glib {
      * @param scale The value to multoply to `other`
      * @return this vector for chaining
      */
-    subtractScaled(other:IVec3, scale:number):Vec3 {
+    public subtractScaled(other: IVec3, scale: number): Vec3 {
       this.x -= other.x * scale
       this.y -= other.y * scale
       this.z -= other.z * scale
@@ -382,7 +381,7 @@ module Glib {
      * @param other The vector to subtract
      * @return this vector for chaining
      */
-    subtract(other:IVec3):Vec3 {
+    public subtract(other: IVec3): Vec3 {
       this.x -= other.x
       this.y -= other.y
       this.z -= other.z
@@ -393,7 +392,7 @@ module Glib {
      * @param other The vector to subtract
      * @return the `out` parameter or new vector
      */
-    subtractOut<T extends IVec3>(other:IVec3, out?:T):T {
+    public subtractOut<T extends IVec3>(other: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x - other.x
       out.y = this.y - other.y
@@ -406,18 +405,19 @@ module Glib {
      * @param scalar The value to subtract
      * @return this vector for chaining
      */
-    subtractScalar(scalar:number):Vec3 {
+    public subtractScalar(scalar: number): Vec3 {
       this.x -= scalar
       this.y -= scalar
       this.z -= scalar
       return this
     }
+
     /**
      * Performs the calculation `out = this - scalar`
      * @param scalar The value to subtract
      * @return the `out` parameter or new vector
      */
-    subtractScalarOut<T extends IVec3>(scalar:number, out?:T):T {
+    public subtractScalarOut<T extends IVec3>(scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x - scalar
       out.y = this.y - scalar
@@ -430,7 +430,7 @@ module Glib {
      * @param other The vector to multiply
      * @return this vector for chaining
      */
-    multiply(other:IVec3):Vec3 {
+    public multiply(other: IVec3): Vec3 {
       this.x *= other.x
       this.y *= other.y
       this.z *= other.z
@@ -441,7 +441,7 @@ module Glib {
      * @param other The vector to multiply
      * @return the `out` parameter or new vector
      */
-    multiplyOut<T extends IVec3>(other:IVec3, out?:T):T {
+    public multiplyOut<T extends IVec3>(other: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x * other.x
       out.y = this.y * other.y
@@ -454,7 +454,7 @@ module Glib {
      * @param scalar The value to multiply
      * @return this vector for chaining
      */
-    multiplyScalar(scalar:number):Vec3 {
+    public multiplyScalar(scalar: number): Vec3 {
       this.x *= scalar
       this.y *= scalar
       this.z *= scalar
@@ -465,7 +465,7 @@ module Glib {
      * @param scalar The value to multiply
      * @return the `out` parameter or new vector
      */
-    multiplyScalarOut<T extends IVec3>(scalar:number, out?:T):T {
+    public multiplyScalarOut<T extends IVec3>(scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x * scalar
       out.y = this.y * scalar
@@ -478,7 +478,7 @@ module Glib {
      * @param other The vector to divide
      * @return this vector for chaining
      */
-    divide(other:IVec3):Vec3 {
+    public divide(other: IVec3): Vec3 {
       this.x /= other.x
       this.y /= other.y
       this.z /= other.z
@@ -489,7 +489,7 @@ module Glib {
      * @param other The vector to divide
      * @return the `out` parameter or new vector
      */
-    divideOut<T extends IVec3>(other:IVec3, out?:T):T {
+    public divideOut<T extends IVec3>(other: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = this.x / other.x
       out.y = this.y / other.y
@@ -502,7 +502,7 @@ module Glib {
      * @param scalar The value to divide
      * @return this vector for chaining
      */
-    divideScalar(scalar:number):Vec3 {
+    public divideScalar(scalar: number): Vec3 {
       scalar = 1.0 / scalar
       this.x *= scalar
       this.y *= scalar
@@ -514,7 +514,7 @@ module Glib {
      * @param scalar The value to divide
      * @return the `out` parameter or new vector
      */
-    divideScalarOut<T extends IVec3>(scalar:number, out?:T):T {
+    public divideScalarOut<T extends IVec3>(scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       scalar = 1.0 / scalar
       out.x = this.x * scalar
@@ -529,7 +529,7 @@ module Glib {
      * @param b The vector to add on top of the multiplication.
      * @return this vector for chaining
      */
-    multiplyAdd(a:IVec3, b:IVec3):Vec3 {
+    public multiplyAdd(a: IVec3, b: IVec3): Vec3 {
       this.x = this.x * a.x + b.x
       this.y = this.y * a.y + b.y
       this.z = this.z * a.z + b.z
@@ -541,31 +541,31 @@ module Glib {
      * @param quat
      * @return this vector for chaining
      */
-    selfTransformQuat(quat:IVec4):Vec3 {
-      var x = quat.x
-      var y = quat.y
-      var z = quat.z
-      var w = quat.w
+    public selfTransformQuat(quat: IVec4): Vec3 {
+      const x = quat.x
+      const y = quat.y
+      const z = quat.z
+      const w = quat.w
 
-      var x2 = x + x
-      var y2 = y + y
-      var z2 = z + z
+      const x2 = x + x
+      const y2 = y + y
+      const z2 = z + z
 
-      var wx2 = w * x2
-      var wy2 = w * y2
-      var wz2 = w * z2
+      const wx2 = w * x2
+      const wy2 = w * y2
+      const wz2 = w * z2
 
-      var xx2 = x * x2
-      var xy2 = x * y2
-      var xz2 = x * z2
+      const xx2 = x * x2
+      const xy2 = x * y2
+      const xz2 = x * z2
 
-      var yy2 = y * y2
-      var yz2 = y * z2
-      var zz2 = y * z2
+      const yy2 = y * y2
+      const yz2 = y * z2
+      const zz2 = y * z2
 
-      var vx = this.x
-      var vy = this.y
-      var vz = this.z
+      const vx = this.x
+      const vy = this.y
+      const vz = this.z
 
       this.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)
       this.y = vx * (xy2 + wz2) + vy * (1 - xx2 - zz2) + vz * (yz2 - wx2)
@@ -578,12 +578,12 @@ module Glib {
      * @param mat
      * @return this vector for chaining
      */
-    selfTransformMat4(mat):Vec3 {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var w = 1
-      var d = mat.data
+    public selfTransformMat4(mat): Vec3 {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const w = 1
+      const d = mat.data
       this.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
       this.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
       this.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
@@ -595,11 +595,11 @@ module Glib {
      * @param mat
      * @return this vector for chaining
      */
-    selfTransformMat3(mat):Vec3 {
-      var x = this.x
-      var y = this.y
-      var z = this.z
-      var d = mat.data
+    public selfTransformMat3(mat): Vec3 {
+      const x = this.x
+      const y = this.y
+      const z = this.z
+      const d = mat.data
       this.x = x * d[0] + y * d[3] + z * d[6]
       this.y = x * d[1] + y * d[4] + z * d[7]
       this.z = x * d[2] + y * d[5] + z * d[8]
@@ -611,10 +611,10 @@ module Glib {
      * @param mat
      * @return this vector for chaining
      */
-    selfTransformMat2(mat):Vec3 {
-      var x = this.x
-      var y = this.y
-      var d = mat.data
+    public selfTransformMat2(mat): Vec3 {
+      const x = this.x
+      const y = this.y
+      const d = mat.data
       this.x = x * d[0] + y * d[2]
       this.y = x * d[1] + y * d[3]
       return this
@@ -623,57 +623,58 @@ module Glib {
     /**
      * Readonly vector with all components set to zero
      */
-    static Zero = Object.freeze(new Vec3(0, 0, 0))
+    public static Zero = Object.freeze(new Vec3(0, 0, 0))
     /**
      * Readonly vector with all components set to one
      */
-    static One = Object.freeze(new Vec3(1, 1, 1))
+    public static One = Object.freeze(new Vec3(1, 1, 1))
     /**
      * Readonly vector x component set to one
      */
-    static Right = Object.freeze(new Vec3(1, 0, 0))
+    public static Right = Object.freeze(new Vec3(1, 0, 0))
     /**
      * Readonly vector x component set to minus one
      */
-    static Left = Object.freeze(new Vec3(-1, 0, 0))
+    public static Left = Object.freeze(new Vec3(-1, 0, 0))
     /**
      * Readonly vector y component set to one
      */
-    static Up = Object.freeze(new Vec3(0, 1, 0))
+    public static Up = Object.freeze(new Vec3(0, 1, 0))
     /**
      * Readonly vector y component set to minus one
      */
-    static Down = Object.freeze(new Vec3(0, -1, 0))
+    public static Down = Object.freeze(new Vec3(0, -1, 0))
     /**
      * Readonly vector z component set to one
      */
-    static Backward = Object.freeze(new Vec3(0, 0, 1))
+    public static Backward = Object.freeze(new Vec3(0, 0, 1))
     /**
      * Readonly vector z component set to minus one
      */
-    static Forward = Object.freeze(new Vec3(0, 0, -1))
+    public static Forward = Object.freeze(new Vec3(0, 0, -1))
     /**
      * Readonly vector x component set to one
      */
-    static UnitX = Object.freeze(new Vec3(1, 0, 0))
+    public static UnitX = Object.freeze(new Vec3(1, 0, 0))
     /**
      * Readonly vector y component set to one
      */
-    static UnitY = Object.freeze(new Vec3(0, 1, 0))
+    public static UnitY = Object.freeze(new Vec3(0, 1, 0))
     /**
      * Readonly vector z component set to one
      */
-    static UnitZ = Object.freeze(new Vec3(0, 0, 1))
+    public static UnitZ = Object.freeze(new Vec3(0, 0, 1))
 
     /**
-     * Creates a new vector. The method should be called with three or no arguments. If less than three arguments are given
+     * Creates a new vector. The method should be called with three or no arguments.
+     * If less than three arguments are given
      * then some components of the resulting vector are going to be `undefined`.
      * @param [x] The x component
      * @param [y] The y component
      * @param [z] The z component
      * @return A new vector.
      */
-    static create(x?:number, y?:number, z?:number):Vec3 {
+    public static create(x?: number, y?: number, z?: number): Vec3 {
       return new Vec3(x || 0, y || 0, z || 0)
     }
 
@@ -681,7 +682,7 @@ module Glib {
      * Creates a new vector with all components set to 0.
      * @return A new vector.
      */
-    static zero():Vec3 {
+    public static zero(): Vec3 {
       return new Vec3(0, 0, 0)
     }
 
@@ -689,32 +690,32 @@ module Glib {
      * Creates a new vector with all components set to 1.
      * @return A new vector.
      */
-    static one():Vec3 {
+    public static one(): Vec3 {
       return new Vec3(1, 1, 1)
     }
-    
+
     /**
      * Copies the source vector to the destination vector
      * @param src
      * @param dst
      * @return the destination vector.
      */
-    static copy(src:IVec3, dst:IVec3):IVec3 {
+    public static copy(src: IVec3, dst: IVec3): IVec3 {
       dst.x = src.x
       dst.y = src.y
       dst.z = src.z
-      return dst  
-    } 
-    
+      return dst
+    }
+
     /**
      * Calculates the length of this vector
      * @param vec
      * @return The length.
      */
-    static length(vec:IVec3):number {
-      var x = vec.x
-      var y = vec.y
-      var z = vec.z
+    public static length(vec: IVec3): number {
+      const x = vec.x
+      const y = vec.y
+      const z = vec.z
       return Math.sqrt(x * x + y * y + z * z)
     }
 
@@ -723,10 +724,10 @@ module Glib {
      * @param vec
      * @return The squared length.
      */
-    static lengthSquared(vec:IVec3):number {
-      var x = vec.x
-      var y = vec.y
-      var z = vec.z
+    public static lengthSquared(vec: IVec3): number {
+      const x = vec.x
+      const y = vec.y
+      const z = vec.z
       return x * x + y * y + z * z
     }
 
@@ -736,10 +737,10 @@ module Glib {
      * @param b
      * @return The distance between the vectors.
      */
-    static distance(a:IVec3, b:IVec3):number {
-      var x = a.x - b.x
-      var y = a.y - b.y
-      var z = a.z - b.z
+    public static distance(a: IVec3, b: IVec3): number {
+      const x = a.x - b.x
+      const y = a.y - b.y
+      const z = a.z - b.z
       return Math.sqrt(x * x + y * y + z * z)
     }
 
@@ -749,10 +750,10 @@ module Glib {
      * @param b
      * @return The squared distance between the vectors.
      */
-    static distanceSquared(a:IVec3, b:IVec3):number {
-      var x = a.x - b.x
-      var y = a.y - b.y
-      var z = a.z - b.z
+    public static distanceSquared(a: IVec3, b: IVec3): number {
+      const x = a.x - b.x
+      const y = a.y - b.y
+      const z = a.z - b.z
       return x * x + y * y + z * z
     }
 
@@ -762,7 +763,7 @@ module Glib {
      * @param b
      * @return The dot product.
      */
-    static dot(a:IVec3, b:IVec3):number {
+    public static dot(a: IVec3, b: IVec3): number {
       return a.x * b.x + a.y * b.y + a.z * b.z
     }
 
@@ -772,12 +773,12 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static normalize<T extends IVec3>(vec:IVec3, out?:T):T {
+    public static normalize<T extends IVec3>(vec: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
-      var x = vec.x
-      var y = vec.y
-      var z = vec.z
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+      const x = vec.x
+      const y = vec.y
+      const z = vec.z
+      const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
       out.x = x * d
       out.y = y * d
       out.z = z * d
@@ -791,11 +792,11 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` argument or a new vector.
      */
-    static cross<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T):T {
+    public static cross<T extends IVec3>(vecA: IVec3, vecB: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
-      var x = vecA.y * vecB.z - vecA.z * vecB.y
-      var y = vecA.z * vecB.x - vecA.x * vecB.z
-      var z = vecA.x * vecB.y - vecA.y * vecB.x
+      const x = vecA.y * vecB.z - vecA.z * vecB.y
+      const y = vecA.z * vecB.x - vecA.x * vecB.z
+      const z = vecA.x * vecB.y - vecA.y * vecB.x
       out.x = x
       out.y = y
       out.z = z
@@ -808,7 +809,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static invert<T extends IVec3>(vec:IVec3, out?:T):T {
+    public static invert<T extends IVec3>(vec: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = 1.0 / vec.x
       out.y = 1.0 / vec.y
@@ -822,7 +823,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static negate<T extends IVec3>(vec:IVec3, out?:T):T {
+    public static negate<T extends IVec3>(vec: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = -vec.x
       out.y = -vec.y
@@ -837,7 +838,7 @@ module Glib {
      * @param out The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static add<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T):T {
+    public static add<T extends IVec3>(vecA: IVec3, vecB: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vecA.x + vecB.x
       out.y = vecA.y + vecB.y
@@ -852,7 +853,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static addScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T):T {
+    public static addScalar<T extends IVec3>(vec: IVec3, scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vec.x + scalar
       out.y = vec.y + scalar
@@ -867,7 +868,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static subtract<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T):T {
+    public static subtract<T extends IVec3>(vecA: IVec3, vecB: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vecA.x - vecB.x
       out.y = vecA.y - vecB.y
@@ -882,7 +883,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static subtractScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T):T {
+    public static subtractScalar<T extends IVec3>(vec: IVec3, scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vec.x - scalar
       out.y = vec.y - scalar
@@ -897,7 +898,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static multiply<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T):T {
+    public static multiply<T extends IVec3>(vecA: IVec3, vecB: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vecA.x * vecB.x
       out.y = vecA.y * vecB.y
@@ -912,7 +913,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static multiplyScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T):T {
+    public static multiplyScalar<T extends IVec3>(vec: IVec3, scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vec.x * scalar
       out.y = vec.y * scalar
@@ -927,7 +928,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static divide<T extends IVec3>(vecA:IVec3, vecB:IVec3, out?:T):T {
+    public static divide<T extends IVec3>(vecA: IVec3, vecB: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vecA.x / vecB.x
       out.y = vecA.y / vecB.y
@@ -942,7 +943,7 @@ module Glib {
      * @param out The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static divideScalar<T extends IVec3>(vec:IVec3, scalar:number, out?:T):T {
+    public static divideScalar<T extends IVec3>(vec: IVec3, scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
       scalar = 1.0 / scalar
       out.x = vec.x * scalar
@@ -959,7 +960,7 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static multiplyAdd<T extends IVec3>(vecA:IVec3, vecB:IVec3, add:IVec3, out?:T):T {
+    public static multiplyAdd<T extends IVec3>(vecA: IVec3, vecB: IVec3, add: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vecA.x * vecB.x + add.x
       out.y = vecA.y * vecB.y + add.y
@@ -975,14 +976,13 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static multiplyScalarAdd<T extends IVec3>(vecA:IVec3, mul:number, add:IVec3, out?:T):T {
+    public static multiplyScalarAdd<T extends IVec3>(vecA: IVec3, mul: number, add: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
       out.x = vecA.x * mul + add.x
       out.y = vecA.y * mul + add.y
       out.z = vecA.z * mul + add.z
       return out
     }
-
 
     /**
      * Performs a component wise clamp operation on the the given vector by using the given min and max vectors.
@@ -992,17 +992,17 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static clamp<T extends IVec3>(a:IVec3, min:IVec3, max:IVec3, out?:T):T {
+    public static clamp<T extends IVec3>(a: IVec3, min: IVec3, max: IVec3, out?: T): T {
       out = (out || new Vec3()) as any
-      var x = a.x
-      var y = a.y
-      var z = a.z
-      var minX = min.x
-      var minY = min.y
-      var minZ = min.z
-      var maxX = max.x
-      var maxY = max.y
-      var maxZ = max.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
+      const minX = min.x
+      const minY = min.y
+      const minZ = min.z
+      const maxX = max.x
+      const maxY = max.y
+      const maxZ = max.z
       out.x = x < minX ? minX : (x > maxX ? maxX : x)
       out.y = y < minY ? minY : (y > maxY ? maxY : y)
       out.z = z < minZ ? minZ : (z > maxZ ? maxZ : z)
@@ -1017,11 +1017,11 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static clampScalar<T extends IVec3>(a:IVec3, min:number, max:number, out?:T):T {
+    public static clampScalar<T extends IVec3>(a: IVec3, min: number, max: number, out?: T): T {
       out = (out || new Vec3()) as any
-      var x = a.x
-      var y = a.y
-      var z = a.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
       out.x = x < min ? min : (x > max ? max : x)
       out.y = y < min ? min : (y > max ? max : y)
       out.z = z < min ? min : (z > max ? max : z)
@@ -1035,14 +1035,14 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static min<T extends IVec3>(a:IVec3, b:IVec3, out?:T):T {
+    public static min<T extends IVec3>(a: IVec3, b: IVec3, out?: T): T {
       out = (out || new Vec4()) as any
-      var aX = a.x
-      var aY = a.y
-      var aZ = a.z
-      var bX = b.x
-      var bY = b.y
-      var bZ = b.z
+      const aX = a.x
+      const aY = a.y
+      const aZ = a.z
+      const bX = b.x
+      const bY = b.y
+      const bZ = b.z
       out.x = aX < bX ? aX : bX
       out.y = aY < bY ? aY : bY
       out.z = aZ < bZ ? aZ : bZ
@@ -1056,11 +1056,11 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static minScalar<T extends IVec3>(a:IVec3, scalar:number, out?:T):T {
+    public static minScalar<T extends IVec3>(a: IVec3, scalar: number, out?: T): T {
       out = (out || new Vec3()) as any
-      var x = a.x
-      var y = a.y
-      var z = a.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
       out.x = x < scalar ? x : scalar
       out.y = y < scalar ? y : scalar
       out.z = z < scalar ? z : scalar
@@ -1074,14 +1074,14 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static max<T extends IVec3>(a:IVec3, b:IVec3, out?:T):T {
+    public static max<T extends IVec3>(a: IVec3, b: IVec3, out?: T): T {
       out = (out || new Vec4()) as any
-      var aX = a.x
-      var aY = a.y
-      var aZ = a.z
-      var bX = b.x
-      var bY = b.y
-      var bZ = b.z
+      const aX = a.x
+      const aY = a.y
+      const aZ = a.z
+      const bX = b.x
+      const bY = b.y
+      const bZ = b.z
       out.x = aX > bX ? aX : bX
       out.y = aY > bY ? aY : bY
       out.z = aZ > bZ ? aZ : bZ
@@ -1095,11 +1095,11 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static maxScalar<T extends IVec3>(a:IVec3, scalar:number, out?:T):T {
+    public static maxScalar<T extends IVec3>(a: IVec3, scalar: number, out?: T): T {
       out = (out || new Vec4()) as any
-      var x = a.x
-      var y = a.y
-      var z = a.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
       out.x = x > scalar ? x : scalar
       out.y = y > scalar ? y : scalar
       out.z = z > scalar ? z : scalar
@@ -1114,11 +1114,11 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static lerp<T extends IVec3>(a:IVec3, b:IVec3, t:number, out?:T):T {
+    public static lerp<T extends IVec3>(a: IVec3, b: IVec3, t: number, out?: T): T {
       out = (out || new Vec4()) as any
-      var x = a.x
-      var y = a.y
-      var z = a.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
       out.x = x + (b.x - x) * t
       out.y = y + (b.y - y) * t
       out.z = z + (b.z - z) * t
@@ -1135,11 +1135,11 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static barycentric<T extends IVec3>(a:IVec3, b:IVec3, c:IVec3, t1:number, t2:number, out?:T):T {
+    public static barycentric<T extends IVec3>(a: IVec3, b: IVec3, c: IVec3, t1: number, t2: number, out?: T): T {
       out = (out || new Vec4()) as any
-      var x = a.x
-      var y = a.y
-      var z = a.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
       out.x = x + t1 * (b.x - x) + t2 * (c.x - x)
       out.y = y + t1 * (b.y - y) + t2 * (c.y - y)
       out.z = z + t1 * (b.z - z) + t2 * (c.z - z)
@@ -1154,13 +1154,13 @@ module Glib {
      * @param [out] The vector to write to.
      * @return The given `out` parameter or a new vector.
      */
-    static smooth<T extends IVec3>(a:IVec3, b:IVec3, t:number, out?:T):T {
+    public static smooth<T extends IVec3>(a: IVec3, b: IVec3, t: number, out?: T): T {
       out = (out || new Vec4()) as any
       t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
       t = t * t * (3 - 2 * t)
-      var x = a.x
-      var y = a.y
-      var z = a.z
+      const x = a.x
+      const y = a.y
+      const z = a.z
       out.x = x + (b.x - x) * t
       out.y = y + (b.y - y) * t
       out.z = z + (b.z - z) * t
@@ -1172,7 +1172,7 @@ module Glib {
      * @param {Vec2|Vec3|Vec4|Quat|Array|number} data
      * @return
      */
-    static convert(data:any):Vec3 {
+    public static convert(data: any): Vec3 {
       if (typeof data === 'number') {
         return new Vec3(data, data, data)
       }
@@ -1190,11 +1190,11 @@ module Glib {
       )
     }
 
-    static prettyString(vec) {
+    public static prettyString(vec) {
       return [vec.x.toFixed(5), vec.y.toFixed(5), vec.z.toFixed(5)].join(', ')
     }
 
-    static randomNormal(vec:IVec3=new Vec3(), random:{random():number}=Math):IVec3 {
+    public static randomNormal(vec: IVec3= new Vec3(), random: { random(): number }= Math): IVec3 {
       vec.x = random.random() - 0.5
       vec.y = random.random() - 0.5
       vec.z = random.random() - 0.5

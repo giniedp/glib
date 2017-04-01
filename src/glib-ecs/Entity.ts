@@ -1,112 +1,114 @@
 module Glib {
 
-  import log = Glib.utils.log;
-  import debug = Glib.utils.debug;
-  import extend = Glib.utils.extend;
+  import log = Glib.utils.log
+  import debug = Glib.utils.debug
+  import extend = Glib.utils.extend
+  import Events = Glib.Events
 
   /**
    * An object that holds a collection of components a collection of services and a collection of child nodes.
    */
-  export class Entity extends Glib.Events {
+  export class Entity extends Events {
 
     /**
      * The name of this node
      */
-    name:string = 'Entity';
+    public name: string = 'Entity'
 
     /**
      * The parent entity
      */
-    parent:Entity = null;
+    public parent: Entity = null
 
     /**
      *
      */
-    root:Entity = null;
+    public root: Entity = null
 
     /**
      * Collection of service components.
      */
-    services:any = {};
+    public services: any = {}
 
     /**
      * Shorthand for the `services` property
      */
-    s:any;
+    public s: any
 
     /**
      * Collection of all components of this node. Components are updated each frame.
      */
-    components:any[] = [];
+    public components: Component[] = []
 
     /**
      * Shorthand for the `components` property
      */
-    c:any[];
+    public c: Component[]
 
     /**
      * Collection of child entities. This property should only be used to iterate over child nodes. Do not add or
      * remove items to or from this collection.
      */
-    children:any[] = [];
+    public children: Entity[] = []
 
-    _toDraw = [];
-    _toUpdate = [];
-    _toInitialize = [];
-    _finder = new EntityFinder();
+    private toDraw = []
+    private toUpdate = []
+    private toInitialize = []
+    private finder = new EntityFinder()
 
-    constructor(params:any = {}) {
-      super();
-      this.s = this.services;
-      this.c = this.components;
-      this.root = this;
-      extend(this, params);
+    constructor(params: any = {}) {
+      super()
+      this.s = this.services
+      this.c = this.components
+      this.root = this
+      extend(this, params)
     }
 
     /**
      * Allows to iterate through the entity tree using the visitor pattern.
      * @param visitor
      */
-    acceptVisitor(visitor:EntityVisitor){
-      visitor.visit(this);
-      for (var node of this.children) {
-        node.acceptVisitor(visitor);
+    public acceptVisitor(visitor: EntityVisitor) {
+      visitor.visit(this)
+      for (const node of this.children) {
+        node.acceptVisitor(visitor)
       }
     }
 
-    applyTemplates(config) {
-      for (var item of config) {
+    public applyTemplates(config) {
+      for (const item of config) {
         if (typeof item === 'string') {
-          this.applyTemplate(item);
+          this.applyTemplate(item)
         } else if (typeof item === 'function') {
-          this.applyTemplate(item);
+          this.applyTemplate(item)
         } else {
-          this.name = item.name || this.name;
-          var templates = item.templates || []
-          var name: any;
+          this.name = item.name || this.name
+          const templates = item.templates || []
           if (Glib.utils.isArray(templates)) {
-            for (name of templates) {
-              this.applyTemplate(name);
+            for (const name of templates) {
+              this.applyTemplate(name)
             }
           } else if (Glib.utils.isObject(templates)) {
-            for (name in templates) {
-              this.applyTemplate(name, templates[name]);
+            for (const name in templates) {
+              if (templates.hasOwnProperty(name)) {
+                this.applyTemplate(name, templates[name])
+              }
             }
           } else if (Glib.utils.isString(templates)) {
-            this.applyTemplate(templates);
+            this.applyTemplate(templates)
           }
         }
       }
-      return this;
+      return this
     }
 
-    applyTemplate(nameOrTemplate:string|EntityTemplate, options?:any):Entity {
+    public applyTemplate(nameOrTemplate: string|EntityTemplate, options?: any): Entity {
       if (typeof nameOrTemplate === 'string') {
         EntityTemplates.get(nameOrTemplate)(this, options)
       } else {
-        nameOrTemplate(this, options);
+        nameOrTemplate(this, options)
       }
-      return this;
+      return this
     }
 
     /**
@@ -121,17 +123,17 @@ module Glib {
      * @example
      *   node.addService('myService', { foo: 'bar' })
      */
-    addService(name:string, service:any, override?:boolean):Entity {
-      var oldService = this.services[name];
+    public addService(name: string, service: any, override?: boolean): Entity {
+      const oldService = this.services[name]
       if (oldService) {
         if (override) {
-          this.removeService(name);
+          this.removeService(name)
         } else {
-          throw new Error(`Service '${name}' is already registered`);
+          throw new Error(`Service '${name}' is already registered`)
         }
       }
-      this.services[name] = service;
-      return this;
+      this.services[name] = service
+      return this
     }
 
     /**
@@ -139,9 +141,9 @@ module Glib {
      * @param name The name of the service to remove
      * @returns {Glib.Entity}
      */
-    removeService(name:string):Entity {
-      delete this.services[name];
-      return this;
+    public removeService(name: string): Entity {
+      delete this.services[name]
+      return this
     }
 
     /**
@@ -151,40 +153,42 @@ module Glib {
      * @param {String} name The name of the service
      * @return {Object}
      */
-    //getService(name:"Assets"):Components.Assets;
-    //getService(name:"Camera"):Components.Camera;
-    //getService(name:"Fps"):Components.Fps;
-    //getService(name:"GameLoop"):Components.GameLoop;
-    //getService(name:"Keyboard"):Components.Keyboard;
-    //getService(name:"Light"):Components.Light;
-    //getService(name:"Mouse"):Components.Mouse;
-    //getService(name:"Renderable"):Components.Renderable;
-    //getService(name:"Renderer"):Components.Renderer;
-    //getService(name:"Time"):Components.Time;
-    //getService(name:"Transform"):Components.Transform;
-    getService(name:string):any {
-      var result = this.services[name];
+    // getService(name:"Assets"):Components.Assets;
+    // getService(name:"Camera"):Components.Camera;
+    // getService(name:"Fps"):Components.Fps;
+    // getService(name:"GameLoop"):Components.GameLoop;
+    // getService(name:"Keyboard"):Components.Keyboard;
+    // getService(name:"Light"):Components.Light;
+    // getService(name:"Mouse"):Components.Mouse;
+    // getService(name:"Renderable"):Components.Renderable;
+    // getService(name:"Renderer"):Components.Renderer;
+    // getService(name:"Time"):Components.Time;
+    // getService(name:"Transform"):Components.Transform;
+    public getService(name: string): any {
+      const result = this.services[name]
 
       if (result) {
-        return result;
+        return result
       }
 
-      throw new Error(`Service '${name}' is missing`);
+      throw new Error(`Service '${name}' is missing`)
     }
 
-    getServices(map:{[key:string]:string}, target?:any):{[key:string]:any} {
-      for (var key in map) {
-        var lookup = map[key];
-        if (lookup.indexOf("root:") === 0) {
-          map[key] = this.root.getService(lookup.replace("root:", ""));
-        } else {
-          map[key] = this.getService(lookup);
+    public getServices(map: { [key: string]: string }, target?: any): { [key: string]: any } {
+      for (const key in map) {
+        if (map.hasOwnProperty(key)) {
+          const lookup = map[key]
+          if (lookup.indexOf('root:') === 0) {
+            map[key] = this.root.getService(lookup.replace('root:', ''))
+          } else {
+            map[key] = this.getService(lookup)
+          }
         }
       }
       if (target) {
-        Glib.utils.extend(target, map);
+        Glib.utils.extend(target, map)
       }
-      return map;
+      return map
     }
 
     /**
@@ -194,14 +198,14 @@ module Glib {
      * @param {Node} child The child node to add
      * @return {Node} A reference to `this`
      */
-    addChild(child:Entity):Entity {
+    public addChild(child: Entity): Entity {
       if (child.parent) {
-        child.parent.removeChild(child);
+        child.parent.removeChild(child)
       }
-      this.children.push(child);
-      child.parent = this;
-      child.root = this.root;
-      return this;
+      this.children.push(child)
+      child.parent = this
+      child.root = this.root
+      return this
     }
 
     /**
@@ -209,11 +213,11 @@ module Glib {
      * @param {string|function} templates
      * @returns {Glib.Entity}
      */
-    buildChild(...config:any[]):Entity {
-      var child = new Entity();
-      this.addChild(child);
+    public buildChild(...config: any[]): Entity {
+      const child = new Entity()
+      this.addChild(child)
       child.applyTemplates(config)
-      return this;
+      return this
     }
 
     /**
@@ -223,9 +227,9 @@ module Glib {
      * @param {Node} parent The parent node
      * @return {Node} A reference to `this`
      */
-    addTo(parent:Entity):Entity {
-      parent.addChild(this);
-      return this;
+    private addTo(parent: Entity): Entity {
+      parent.addChild(this)
+      return this
     }
 
     /**
@@ -235,13 +239,13 @@ module Glib {
      * @param node The child to remove
      * @return {Node} A reference to `this`
      */
-    removeChild(node:Entity):Entity {
-      var index = this.children.indexOf(node);
+    public removeChild(node: Entity): Entity {
+      const index = this.children.indexOf(node)
       if (index >= 0) {
-        this.children.splice(index, 1);
-        node.parent = null;
+        this.children.splice(index, 1)
+        node.parent = null
       }
-      return this;
+      return this
     }
 
     /**
@@ -251,23 +255,23 @@ module Glib {
      * @param comp The component to add
      * @return {Node} A reference to `this`
      */
-    addComponent(comp:Glib.Component):Entity {
+    public addComponent(comp: Glib.Component): Entity {
       if (comp.node) {
-        comp.node.removeComponent(comp);
+        comp.node.removeComponent(comp)
       }
-      comp.node = this;
+      comp.node = this
       if (comp.service && comp.name) {
-        this.addService(comp.name, comp);
+        this.addService(comp.name, comp)
       }
 
       if (this.components.indexOf(comp) < 0) {
-        this.components.push(comp);
+        this.components.push(comp)
       }
-      if (this._toInitialize.indexOf(comp) < 0) {
-        this._toInitialize.push(comp);
+      if (this.toInitialize.indexOf(comp) < 0) {
+        this.toInitialize.push(comp)
       }
 
-      return this;
+      return this
     }
 
     /**
@@ -277,24 +281,24 @@ module Glib {
      * @param comp The component to remove
      * @return {Node} A reference to `this`
      */
-    removeComponent(comp:Glib.Component):Entity {
+    public removeComponent(comp: Glib.Component): Entity {
       if (comp.service && comp.name) {
-        delete this.services[comp.name];
+        delete this.services[comp.name]
       }
-      var index = this.components.indexOf(comp);
+      let index = this.components.indexOf(comp)
       if (index >= 0) {
-        this.components.splice(index, 1);
-        comp.node = null;
+        this.components.splice(index, 1)
+        comp.node = null
       }
-      index = this._toUpdate.indexOf(comp);
+      index = this.toUpdate.indexOf(comp)
       if (index >= 0) {
-        this._toUpdate.splice(index, 1);
+        this.toUpdate.splice(index, 1)
       }
-      index = this._toDraw.indexOf(comp);
+      index = this.toDraw.indexOf(comp)
       if (index >= 0) {
-        this._toDraw.splice(index, 1);
+        this.toDraw.splice(index, 1)
       }
-      return this;
+      return this
     }
 
     /**
@@ -310,34 +314,33 @@ module Glib {
      *   .commitComponents() // the camera component will be bound to the transform component right here
      * @return {Node}
      */
-    commitComponents():Entity {
-      this._initializeComponents(false);
-      return this;
+    public commitComponents(): Entity {
+      this.initializeComponents(false)
+      return this
     }
 
     /**
      * @method _initializeComponents
      * @param {boolean} [recursive=true]
-     * @private
      */
-    _initializeComponents(recursive:boolean = true):void {
-      var cmp;
-      while (this._toInitialize.length > 0) {
-        cmp = this._toInitialize.shift();
+    public initializeComponents(recursive: boolean = true): void {
+      let cmp
+      while (this.toInitialize.length > 0) {
+        cmp = this.toInitialize.shift()
         if (typeof cmp.setup === 'function') {
-          cmp.setup(this);
-          cmp.initialized = true;
+          cmp.setup(this)
+          cmp.initialized = true
         }
-        if (typeof cmp.update === 'function' && this._toUpdate.indexOf(cmp) < 0) {
-          this._toUpdate.push(cmp);
+        if (typeof cmp.update === 'function' && this.toUpdate.indexOf(cmp) < 0) {
+          this.toUpdate.push(cmp)
         }
-        if (typeof cmp.draw === 'function' && this._toDraw.indexOf(cmp) < 0) {
-          this._toDraw.push(cmp);
+        if (typeof cmp.draw === 'function' && this.toDraw.indexOf(cmp) < 0) {
+          this.toDraw.push(cmp)
         }
       }
       if (recursive !== false) {
-        for (var node of this.children) {
-          node._initializeComponents(recursive);
+        for (const node of this.children) {
+          node.initializeComponents(recursive)
         }
       }
     }
@@ -346,39 +349,36 @@ module Glib {
      * @method _updateComponents
      * @param {number} time
      * @param {boolean} [recursive=true]
-     * @private
      */
-    _updateComponents(time:number, recursive:boolean = true):void {
-      var list = this._toUpdate;
-      for (var cmp of list) {
+    public updateComponents(time: number, recursive: boolean = true): void {
+      const list = this.toUpdate
+      for (const cmp of list) {
         if (cmp.enabled !== false) {
-          cmp.update(time);
+          cmp.update(time)
         }
       }
       if (recursive !== false) {
-        for (var node of this.children) {
-          node._updateComponents(time, recursive);
+        for (const node of this.children) {
+          node.updateComponents(time, recursive)
         }
       }
     }
-
 
     /**
      * @method _drawComponents
      * @param {number} time
      * @param {boolean} [recursive=true]
-     * @private
      */
-    _drawComponents(time:number, recursive:boolean = true):void {
-      var list = this._toDraw;
-      for (var cmp of list) {
+    public drawComponents(time: number, recursive: boolean = true): void {
+      const list = this.toDraw
+      for (const cmp of list) {
         if (cmp.visible !== false) {
-          cmp.draw(time);
+          cmp.draw(time)
         }
       }
       if (recursive !== false) {
-        for (var node of this.children) {
-          node._drawComponents(time, recursive);
+        for (const node of this.children) {
+          node.drawComponents(time, recursive)
         }
       }
     }
@@ -389,8 +389,8 @@ module Glib {
      * @param path The expression to evaluate
      * @return {*|Array} The result of the expression, which may be a Entity, Service or a Component
      */
-    findAll(path:string) {
-      return this._finder.find(path, this);
+    public findAll(path: string) {
+      return this.finder.find(path, this)
     }
 
     /**
@@ -399,8 +399,8 @@ module Glib {
      * @param path The expression to evaluate
      * @return {*} The result of the expression, which may be a Entity, Service or a Component
      */
-    find(path:string) {
-      return this.findAll(path)[0];
+    public find(path: string) {
+      return this.findAll(path)[0]
     }
 
     /**
@@ -410,14 +410,14 @@ module Glib {
      * @param [result] {Array} the resulting collection. If nothing is given a new array is created.
      * @return {Array} the resulting collection
      */
-    descendants(andSelf:boolean = false, result:Entity[] = []) {
+    public descendants(andSelf: boolean = false, result: Entity[] = []) {
       if (andSelf) {
-        result.push(this);
+        result.push(this)
       }
-      for (var node of this.children) {
-        node.descendants(true, result);
+      for (const node of this.children) {
+        node.descendants(true, result)
       }
-      return result;
+      return result
     }
 
     /**
@@ -427,33 +427,33 @@ module Glib {
      * @param [result] {Array} the resulting collection. If nothing is given a new array is created.
      * @return {Array} the resulting collection
      */
-    siblings(andSelf:boolean, result:Entity[] = []) {
+    public siblings(andSelf: boolean, result: Entity[] = []) {
       if (!this.parent) {
         if (andSelf) {
-          result.push(this);
+          result.push(this)
         }
-        return result;
+        return result
       }
-      var nodes = this.parent.children;
-      for (var node of nodes) {
+      const nodes = this.parent.children
+      for (const node of nodes) {
         if (node !== this || andSelf) {
-          result.push(node);
+          result.push(node)
         }
       }
-      return result;
+      return result
     }
 
-    debug():string {
+    public debug(): string {
       return [
         `= Entity: ${this.name}`,
-        this.components.map(function(component){
-          if (component.debug) {
-            return component.debug()
+        this.components.map((component) => {
+          if (component['debug']) {
+            return component['debug']()
           } else {
             return `- component: ${component.name || '(unnamed)'}`
           }
-        }).join("\n")
-      ].join("\n");
+        }).join('\n')
+      ].join('\n')
     }
   }
 }

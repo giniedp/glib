@@ -2,9 +2,9 @@ module Glib.Graphics.Geometry.Formulas {
 
   function circleVector(position, total, out) {
     out = out || new Vec3();
-    var angle = position * Math.PI * 2 / total;
-    var dx = Math.cos(angle);
-    var dz = Math.sin(angle);
+    let angle = position * Math.PI * 2 / total;
+    let dx = Math.cos(angle);
+    let dz = Math.sin(angle);
     return out.init(dx, 0, dz);
   }
 
@@ -13,12 +13,12 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   export function Cone(builder:Builder, options:{
-    height?:number
-    steps?:number
-    topDiameter?:number
-    topRadius?:number
-    bottomDiameter?:number
-    bottomRadius?:number
+    height?: number
+    steps?: number
+    topDiameter?: number
+    topRadius?: number
+    bottomDiameter?: number
+    bottomRadius?: number
   } = {}) {
     let height = withDefault(options.height, 2)
     let steps = withDefault(options.steps, 8)

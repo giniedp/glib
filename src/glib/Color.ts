@@ -1,28 +1,28 @@
 module Glib {
   export class Color {
-    constructor(public r:number=0, public g:number=0, public b:number=0, public a:number=0){
+    constructor(public r: number=0, public g: number=0, public b: number=0, public a: number=0){
 
     }
-    get rgba():number{
+    get rgba(): number{
       return (this.a | 0) << 24 | (this.b | 0) << 16 | (this.g | 0) << 8 | (this.r | 0) << 0
     }
-    get argb():number{
+    get argb(): number{
       return (this.b | 0) << 24 | (this.g | 0) << 16 | (this.r | 0) << 8 | (this.a | 0) << 0
     }
 
-    get x():number {
+    get x(): number {
       return this.r / 255
     }
 
-    get y():number {
+    get y(): number {
       return this.g / 255
     }
 
-    get z():number {
+    get z(): number {
       return this.b / 255
     }
 
-    get w():number {
+    get w(): number {
       return this.a / 255
     }
 
@@ -30,47 +30,47 @@ module Glib {
       return new Color(this.r, this.g, this.b, this.a)
     }
 
-    static create(r:number, g:number, b:number, a:number):Color {
+    static create(r: number, g: number, b: number, a: number):Color {
       return new Color(r, g, b, a)
     }
 
-    static fromRgba(rgba:number):Color {
+    static fromRgba(rgba: number):Color {
       return new Color(this.r(rgba), this.g(rgba), this.b(rgba), this.a(rgba))
     }
 
-    static rgba(r:number, g:number, b:number, a:number):number {
+    static rgba(r: number, g: number, b: number, a: number): number {
       return (a | 0) << 24 | (b | 0) << 16 | (g | 0) << 8 | (r | 0) << 0
     }
 
-    static r(rgba:number):number {
+    static r(rgba: number): number {
       return rgba & 255
     }
 
-    static g(rgba:number):number {
+    static g(rgba: number): number {
       return (rgba >> 8) & 255
     }
 
-    static b(rgba:number):number {
+    static b(rgba: number): number {
       return (rgba >> 16) & 255
     }
 
-    static a(rgba:number):number {
+    static a(rgba: number): number {
       return (rgba >> 24) & 255
     }
 
-    static x(rgba:number):number {
+    static x(rgba: number): number {
       return this.r(rgba) / 255
     }
 
-    static y(rgba:number):number {
+    static y(rgba: number): number {
       return this.g(rgba) / 255
     }
 
-    static z(rgba:number):number {
+    static z(rgba: number): number {
       return this.b(rgba) / 255
     }
 
-    static w(rgba:number):number {
+    static w(rgba: number): number {
       return this.a(rgba) / 255
     }
 

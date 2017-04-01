@@ -106,7 +106,7 @@ module Glib.Graphics {
      */
     commit(parameters?:any):ShaderPass {
       this.program.use()
-      var device = this.device
+      let device = this.device
       if (this.stencilState) device.stencilState = this.stencilState
       if (this.offsetState) device.offsetState = this.offsetState
       if (this.blendState) device.blendState = this.blendState

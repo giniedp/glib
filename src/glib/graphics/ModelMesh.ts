@@ -15,7 +15,7 @@ module Glib.Graphics {
     gl:any
     boundingBox:BoundingBox
     boundingSphere:BoundingSphere
-    materialId:number|string = 0
+    materialId: number|string = 0
     indexBuffer:Buffer
     vertexBuffer:Buffer
 
@@ -28,7 +28,7 @@ module Glib.Graphics {
       this.boundingBox = BoundingBox.convert(params.boundingBox)
       this.boundingSphere = BoundingSphere.convert(params.boundingSphere)
       
-      var buffer:any = params.indexBuffer || {}
+      let buffer:any = params.indexBuffer || {}
       if (buffer instanceof Buffer) {
         this.indexBuffer = buffer
       } else {
@@ -44,7 +44,7 @@ module Glib.Graphics {
     }
 
     draw(program:ShaderProgram):ModelMesh {
-      var device = this.device
+      let device = this.device
       device.vertexBuffer = this.vertexBuffer
       device.indexBuffer = this.indexBuffer
       device.program = program

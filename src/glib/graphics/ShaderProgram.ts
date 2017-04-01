@@ -55,13 +55,13 @@ module Glib.Graphics {
     handle:WebGLProgram
 
     attributes:Object = {}
-    attributeLocations:number[] = []
+    attributeLocations: number[] = []
     uniforms:{ [name:string]: ShaderUniform } = {}
 
     /**
      * Whether the program is successfully linked
      */
-    linked:boolean
+    linked: boolean
     /**
      * The info log that is generated after linking the program 
      */

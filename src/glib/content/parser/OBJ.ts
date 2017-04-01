@@ -1,21 +1,21 @@
 module Glib.Content.Parser {
 
-  function readFloat(item:string):number {
+  function readFloat(item:string): number {
     if (item) {
       return parseFloat(item);
     }
     return void 0;
   }
 
-  function readFloatArray(item:string):number[] {
+  function readFloatArray(item:string): number[] {
     return item.split(" ").map(readFloat);
   }
 
-  function readTriplet(item:string):number[] {
+  function readTriplet(item:string): number[] {
     return item.split("/").map(readFloat);
   }
 
-  function readTripletArray(item:string):Array<Array<number>> {
+  function readTripletArray(item:string): Array<Array<number>> {
     return item.split(" ").map(readTriplet);
   }
 
@@ -23,7 +23,7 @@ module Glib.Content.Parser {
     return value.replace(/\r/g, '\n').split('\n');
   }
 
-  function makeAbsoluteIndex(index:number, buffer:any[]):number {
+  function makeAbsoluteIndex(index: number, buffer:any[]): number {
     if (index < 0) {
       return buffer.length + index + 1;
     }
@@ -58,7 +58,7 @@ module Glib.Content.Parser {
     f: ObjPolygon[]
     p: ObjPolygon[]
     l: ObjPolygon[]
-    lod?:number
+    lod?: number
     material?:string
     maplib?:string[]
   }
@@ -83,14 +83,14 @@ module Glib.Content.Parser {
     }
 
     parse(data) {
-      var lines = getLines(data);
+      let lines = getLines(data);
       this.result = createData();
       this.groups = this.result.groups;
 
-      var currentLine = "";
-      for (var line of lines) {
+      let currentLine = "";
+      for (let line of lines) {
         // remove comments
-        var cIndex = line.indexOf("#");
+        let cIndex = line.indexOf("#");
         if (cIndex >= 0){
           line = line.substr(0, cIndex);
         }
@@ -111,11 +111,11 @@ module Glib.Content.Parser {
         }
 
         // parse line
-        var match = line.match(/^(\w+)\s(.*)$/);
+        let match = line.match(/^(\w+)\s(.*)$/);
         if (!match) continue;
-        var key = match[1];
-        var value = match[2];
-        var reader = this[`read_${key}_key`];
+        let key = match[1];
+        let value = match[2];
+        let reader = this[`read_${key}_key`];
         if (reader) reader.apply(this, [value]);
       }
       return this.result;
@@ -162,8 +162,8 @@ module Glib.Content.Parser {
     // are close enough to be considered adjacent but should not be
     // merged.
     read_mg_key(data:string) {
-      //var param = data.split(" ");
-      //var c = this.currentGroup();
+      //let param = data.split(" ");
+      //let c = this.currentGroup();
       //c.mergeGroup = parseInt(param[0]);
       //c.mergeDistance = parseInt(param[1]);
     }
@@ -181,7 +181,7 @@ module Glib.Content.Parser {
     }
 
     read_usemtl_key(data:string) {
-      var g = this.currentGroup();
+      let g = this.currentGroup();
       if (g.material) {
         this.read_g_key(g.name);
       }
@@ -235,8 +235,8 @@ module Glib.Content.Parser {
     // Face
     //
     read_f_key(data:string) {
-      var buffers = [this.result.v, this.result.vt, this.result.vn];
-      var face = readTripletArray(data).map(function(e){
+      let buffers = [this.result.v, this.result.vt, this.result.vn];
+      let face = readTripletArray(data).map(function(e){
         return e.map(function(index, eIndex){
           return makeAbsoluteIndex(index, buffers[eIndex]);
         });

@@ -11,10 +11,10 @@ module Glib.Graphics {
   export class CullState implements CullStateOptions {
     device:Device
     gl:WebGLRenderingContext
-    private frontFaceField:number = FrontFace.CounterClockWise
-    private cullModeField:number = CullMode.Back
-    private cullingField:boolean = false
-    private hasChanged:boolean = false
+    private frontFaceField: number = FrontFace.CounterClockWise
+    private cullModeField: number = CullMode.Back
+    private cullingField: boolean = false
+    private hasChanged: boolean = false
     private changes:CullStateOptions = {}
 
     constructor(device:Device, state?:CullStateOptions) {
@@ -24,11 +24,11 @@ module Glib.Graphics {
       if (state) this.assign(state)
     }
     
-    get culling():boolean {
+    get culling(): boolean {
       return this.cullingField
     }
 
-    set culling(value:boolean) {
+    set culling(value: boolean) {
       if (this.cullingField !== value) {
         this.cullingField = value
         this.changes.culling = value
@@ -36,7 +36,7 @@ module Glib.Graphics {
       }
     }
 
-    get frontFace():number {
+    get frontFace(): number {
       return this.frontFaceField
     }
 
@@ -44,7 +44,7 @@ module Glib.Graphics {
       return FrontFaceName[this.frontFace]
     }
 
-    set frontFace(value:number) {
+    set frontFace(value: number) {
       if (this.frontFaceField !== value) {
         this.frontFaceField = value
         this.changes.frontFace = value
@@ -53,7 +53,7 @@ module Glib.Graphics {
     }
 
 
-    get cullMode():number {
+    get cullMode(): number {
       return this.cullModeField
     }
 
@@ -61,7 +61,7 @@ module Glib.Graphics {
       return CullModeName[this.cullMode]
     }
 
-    set cullMode(value:number) {
+    set cullMode(value: number) {
       if (this.cullModeField !== value) {
         this.cullModeField = value
         this.changes.cullMode = value

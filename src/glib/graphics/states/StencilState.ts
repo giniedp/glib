@@ -35,21 +35,21 @@ module Glib.Graphics {
   export class StencilState implements StencilStateOptions {
     device:Device
     gl:WebGLRenderingContext
-    private enableField:boolean = false
-    private stencilFunctionField:number = CompareFunction.Always
-    private stencilReferenceField:number = 0
-    private stencilMaskField:number = 0xffffffff
-    private stencilFailField:number = StencilOperation.Keep
-    private stencilDepthFailField:number = StencilOperation.Keep
-    private stencilDepthPassField:number = StencilOperation.Keep
-    private stencilBackFunctionField:number = CompareFunction.Always
-    private stencilBackReferenceField:number = 0
-    private stencilBackMaskField:number = 0xffffffff
-    private stencilBackFailField:number = StencilOperation.Keep
-    private stencilBackDepthFailField:number = StencilOperation.Keep
-    private stencilBackDepthPassField:number = StencilOperation.Keep
+    private enableField: boolean = false
+    private stencilFunctionField: number = CompareFunction.Always
+    private stencilReferenceField: number = 0
+    private stencilMaskField: number = 0xffffffff
+    private stencilFailField: number = StencilOperation.Keep
+    private stencilDepthFailField: number = StencilOperation.Keep
+    private stencilDepthPassField: number = StencilOperation.Keep
+    private stencilBackFunctionField: number = CompareFunction.Always
+    private stencilBackReferenceField: number = 0
+    private stencilBackMaskField: number = 0xffffffff
+    private stencilBackFailField: number = StencilOperation.Keep
+    private stencilBackDepthFailField: number = StencilOperation.Keep
+    private stencilBackDepthPassField: number = StencilOperation.Keep
     private changes:StencilStateOptions = {}
-    private hasChanged:boolean = false
+    private hasChanged: boolean = false
 
     constructor(device:Device, state?:StencilStateOptions) {
       this.device = device
@@ -58,7 +58,7 @@ module Glib.Graphics {
       if (state) this.assign(state)
     }
 
-    get stencilFunction():number {
+    get stencilFunction(): number {
       return this.stencilFunctionField
     }
 
@@ -66,7 +66,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilFunctionField]
     }
 
-    set stencilFunction(value:number) {
+    set stencilFunction(value: number) {
       if (this.stencilFunctionField !== value) {
         this.stencilFunctionField = value
         this.changes.stencilFunction = value
@@ -74,7 +74,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilBackFunction():number {
+    get stencilBackFunction(): number {
       return this.stencilBackFunctionField
     }
 
@@ -82,7 +82,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilBackFunctionField]
     }
 
-    set stencilBackFunction(value:number) {
+    set stencilBackFunction(value: number) {
       if (this.stencilBackFunctionField !== value) {
         this.stencilBackFunctionField = value
         this.changes.stencilBackFunction = value
@@ -90,7 +90,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilFail():number {
+    get stencilFail(): number {
       return this.stencilFailField
     }
 
@@ -98,7 +98,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilFailField]
     }
 
-    set stencilFail(value:number) {
+    set stencilFail(value: number) {
       if (this.stencilFailField !== value) {
         this.stencilFailField = value
         this.changes.stencilFail = value
@@ -106,7 +106,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilDepthFail():number {
+    get stencilDepthFail(): number {
       return this.stencilDepthFailField
     }
 
@@ -114,7 +114,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilDepthFailField]
     }
 
-    set stencilDepthFail(value:number) {
+    set stencilDepthFail(value: number) {
       if (this.stencilDepthFailField !== value) {
         this.stencilDepthFailField = value
         this.changes.stencilDepthFail = value
@@ -122,7 +122,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilDepthPass():number {
+    get stencilDepthPass(): number {
       return this.stencilDepthPassField
     }
 
@@ -130,7 +130,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilDepthPassField]
     }
 
-    set stencilDepthPass(value:number) {
+    set stencilDepthPass(value: number) {
       if (this.stencilDepthPassField !== value) {
         this.stencilDepthPassField = value
         this.changes.stencilDepthPass = value
@@ -138,7 +138,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilBackFail():number {
+    get stencilBackFail(): number {
       return this.stencilBackFailField
     }
 
@@ -146,7 +146,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilBackFailField]
     }
 
-    set stencilBackFail(value:number) {
+    set stencilBackFail(value: number) {
       if (this.stencilBackFailField !== value) {
         this.stencilBackFailField = value
         this.changes.stencilBackFail = value
@@ -154,7 +154,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilBackDepthFail():number {
+    get stencilBackDepthFail(): number {
       return this.stencilBackDepthFailField
     }
 
@@ -162,7 +162,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilBackDepthFailField]
     }
 
-    set stencilBackDepthFail(value:number) {
+    set stencilBackDepthFail(value: number) {
       if (this.stencilBackDepthFailField !== value) {
         this.stencilBackDepthFailField = value
         this.changes.stencilBackDepthFail = value
@@ -170,7 +170,7 @@ module Glib.Graphics {
       }
     }
 
-    get stencilBackDepthPass():number {
+    get stencilBackDepthPass(): number {
       return this.stencilBackDepthPassField
     }
 
@@ -178,7 +178,7 @@ module Glib.Graphics {
       return CompareFunctionName[this.stencilBackDepthPassField]
     }
 
-    set stencilBackDepthPass(value:number) {
+    set stencilBackDepthPass(value: number) {
       if (this.stencilBackDepthPassField !== value) {
         this.stencilBackDepthPassField = value
         this.changes.stencilBackDepthPass = value
@@ -186,11 +186,11 @@ module Glib.Graphics {
       }
     }
 
-    get stencilReference():number {
+    get stencilReference(): number {
       return this.stencilReferenceField
     }
 
-    set stencilReference(value:number) {
+    set stencilReference(value: number) {
       if (this.stencilReferenceField !== value) {
         this.stencilReferenceField = value
         this.changes.stencilReference = value
@@ -198,11 +198,11 @@ module Glib.Graphics {
       }
     }
 
-    get stencilMask():number {
+    get stencilMask(): number {
       return this.stencilMaskField
     }
 
-    set stencilMask(value:number) {
+    set stencilMask(value: number) {
       if (this.stencilMaskField !== value) {
         this.stencilMaskField = value
         this.changes.stencilMask = value
@@ -210,11 +210,11 @@ module Glib.Graphics {
       }
     }
 
-    get stencilBackReference():number {
+    get stencilBackReference(): number {
       return this.stencilBackReferenceField
     }
 
-    set stencilBackReference(value:number) {
+    set stencilBackReference(value: number) {
       if (this.stencilBackReferenceField !== value) {
         this.stencilBackReferenceField = value
         this.changes.stencilBackReference = value
@@ -222,11 +222,11 @@ module Glib.Graphics {
       }
     }
 
-    get stencilBackMask():number {
+    get stencilBackMask(): number {
       return this.stencilBackMaskField
     }
 
-    set stencilBackMask(value:number) {
+    set stencilBackMask(value: number) {
       if (this.stencilBackMaskField !== value) {
         this.stencilBackMaskField = value
         this.changes.stencilBackMask = value
@@ -234,11 +234,11 @@ module Glib.Graphics {
       }
     }
 
-    get enable():boolean {
+    get enable(): boolean {
       return this.enableField
     }
 
-    set enable(value:boolean) {
+    set enable(value: boolean) {
       if (this.enableField !== value) {
         this.enableField = value
         this.changes.enable = value
@@ -260,7 +260,7 @@ module Glib.Graphics {
       let gl = this.gl
       let changes = this.changes;
 
-      var enable = changes.enable
+      let enable = changes.enable
       if (enable === true) {
         gl.enable(gl.STENCIL_TEST)
       } else if (enable === false) {

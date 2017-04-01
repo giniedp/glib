@@ -9,17 +9,17 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   function normalize(v) {
-      var x = v[0]
-      var y = v[1]
-      var z = v[2]
-      var d = 1.0 / Math.sqrt(x * x + y * y + z * z);
+      let x = v[0]
+      let y = v[1]
+      let z = v[2]
+      let d = 1.0 / Math.sqrt(x * x + y * y + z * z);
       v[0] *= d;
       v[1] *= d;
       v[2] *= d;
       return v;
   }
 
-  function subdivide(a:number[], b:number[], c:number[], depth:number, block) {
+  function subdivide(a: number[], b: number[], c: number[], depth: number, block) {
     if (depth <= 0) {
       block(Vec3.convert(a))
       block(Vec3.convert(b))
@@ -44,12 +44,12 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   export function Tetrahedron(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
+    diameter?: number
+    radius?: number
+    steps?: number
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 0);
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 0);
     let vertices = [
       [+1, +1, +1],
       [+1, -1, -1],
@@ -80,13 +80,13 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   export function Octahedron(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
+    diameter?: number
+    radius?: number
+    steps?: number
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 0);
-    var vertices = [
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 0);
+    let vertices = [
       [+1, 0, 0],
       [-1, 0, 0], // left
       [0, +1, 0], // up
@@ -128,12 +128,12 @@ module Glib.Graphics.Geometry.Formulas {
    * @constructor
    */
   export function Icosahedron(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
+    diameter?: number
+    radius?: number
+    steps?: number
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 0);
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 0);
 
     let X = .525731112119133606 
     let Z = .850650808352039932

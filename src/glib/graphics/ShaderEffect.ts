@@ -85,7 +85,7 @@ module Glib.Graphics {
     /**
      * 
      */
-    useTechnique(techniqueIdentifier:number|string):ShaderEffect {
+    useTechnique(techniqueIdentifier: number|string):ShaderEffect {
       this.technique = this.getTechnique(techniqueIdentifier)
       return this
     }

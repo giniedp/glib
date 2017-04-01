@@ -5,8 +5,8 @@ module Glib.Graphics.Geometry.Formulas {
   }
 
   export function Plane(builder:Builder, options:{
-    size?:number,
-    steps?:number
+    size?: number,
+    steps?: number
   } = {}) {
     let size = withDefault(options.size, 2);
     let vertices = withDefault(options.steps, 1) + 1;

@@ -12,7 +12,7 @@ module Glib.Input {
    * The captured Keyboard state
    */
   export interface IKeyboardState {
-    pressedKeys:number[];
+    pressedKeys: number[];
   }
 
   /**
@@ -114,11 +114,11 @@ module Glib.Input {
      * Gets a copy of the current keyboard state.
      */
     copyState(out:any = {}):IKeyboardState {
-      var inKeys = this.state.pressedKeys
-      var outKeys = out.keys || []
+      let inKeys = this.state.pressedKeys
+      let outKeys = out.keys || []
 
       outKeys.length = inKeys.length
-      for (var i = 0; i < inKeys.length; i++) {
+      for (let i = 0; i < inKeys.length; i++) {
         outKeys[i] = inKeys[i]
       }
 
@@ -128,8 +128,8 @@ module Glib.Input {
     /**
      * Marks the given ```code``` as being pressed and triggers the ```changed``` event
      */
-    setKeyPressed(code:number) {
-      var index = this.state.pressedKeys.indexOf(code)
+    setKeyPressed(code: number) {
+      let index = this.state.pressedKeys.indexOf(code)
       if (index < 0) {
         this.state.pressedKeys.push(code)
         this.trigger('changed', this)
@@ -138,8 +138,8 @@ module Glib.Input {
     /**
      * Marks the given ```keyCode``` as not being pressed and triggers the ```changed``` event
      */
-    setKeyReleased(code:number) {
-      var index = this.state.pressedKeys.indexOf(code)
+    setKeyReleased(code: number) {
+      let index = this.state.pressedKeys.indexOf(code)
       if (index >= 0) {
         this.state.pressedKeys.splice(index)
         this.trigger('changed', this)
@@ -338,7 +338,7 @@ module Glib.Input {
     WakeUp,
   }
 
-  export var KeyCodeToKey = {
+  export let KeyCodeToKey = {
     8 : Keys.Backspace,
     9 : Keys.Tab,
     13 : Keys.Enter,

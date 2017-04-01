@@ -6,7 +6,7 @@ module Glib.Render {
     // The uniform type
     type:string
     // The value
-    value:T
+    value: T
   }
 
   export class Binder {
@@ -108,7 +108,7 @@ module Glib.Render {
         Misc: { name: `Lights${i}Misc`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>
       }
     }
-    updateCamera(world:Mat4, view:Mat4, proj:Mat4):Binder{
+    updateCamera(world: Mat4, view: Mat4, proj: Mat4):Binder{
       if (world) {
         world.getTranslation(this.CameraPosition.value)
         world.getForward(this.CameraDirection.value)
@@ -125,7 +125,7 @@ module Glib.Render {
       return this;
     }
 
-    updateView(view: {width:number, height:number}):Binder {
+    updateView(view: {width: number, height: number}):Binder {
       this.ViewportSize.value.x = view.width
       this.ViewportSize.value.y = view.height
       this.ViewportPixelSize.value.x = 1.0 / view.width
@@ -133,7 +133,7 @@ module Glib.Render {
       return this
     }
 
-    updateTarget(target: {width:number, height:number}):Binder {
+    updateTarget(target: {width: number, height: number}):Binder {
       this.TargetSize.value.x = target.width
       this.TargetSize.value.y = target.height
       this.TargetPixelSize.value.x = 1.0 / target.width
@@ -141,7 +141,7 @@ module Glib.Render {
       return this
     }
 
-    updateTransform(world:Mat4):Binder {
+    updateTransform(world: Mat4):Binder {
       if (world) {
         world.getTranslation(this.Position.value)
         world.getForward(this.Direction.value)
@@ -150,7 +150,7 @@ module Glib.Render {
       return this;
     }
 
-    updateTime(total:number, elapsed:number=0):Binder{
+    updateTime(total: number, elapsed: number=0):Binder{
       this.TimeNow.value = total
       this.TimeLast.value = total - elapsed
       return this;
@@ -163,7 +163,7 @@ module Glib.Render {
     }
 
     updateLight(light: LightData, index: number) {
-      var l = this.Lights[index]
+      let l = this.Lights[index]
       if (!l) return
       l.Color.value = light.color  
       l.Position.value = light.position

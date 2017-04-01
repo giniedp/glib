@@ -12,7 +12,7 @@ module Glib.Graphics {
 
   export module VertexLayout {
 
-    export var preset = {
+    export let preset = {
       position: {
         type: 'float',
         elements: 3
@@ -75,7 +75,7 @@ module Glib.Graphics {
       if (typeof nameOrLayout === 'string') {
         return create(nameOrLayout);
       }
-      var result:any = nameOrLayout;
+      let result:any = nameOrLayout;
       return result;
     }
 
@@ -127,7 +127,7 @@ module Glib.Graphics {
      * (both with three elements) this will return 6.
      * packed elements will count as one.
      */
-    export function countElements(layout:IVertexLayout):number {
+    export function countElements(layout:IVertexLayout): number {
       let key, item, count = 0;
       for (key in layout) {
         item = layout[key]
@@ -139,7 +139,7 @@ module Glib.Graphics {
     /**
      * Counts the number of elements in a single vertex until the given attribute.
      */
-    export function countElementsBefore(layout:IVertexLayout, name:string):number {
+    export function countElementsBefore(layout:IVertexLayout, name:string): number {
       let key, item, count = 0, target = layout[name]
       for (key in layout) {
         item = layout[key]
@@ -152,7 +152,7 @@ module Glib.Graphics {
     /**
      * Counts the number of elements in a single vertex after the given attribute.
      */
-    export function countElementsAfter(layout:IVertexLayout, name:string):number {
+    export function countElementsAfter(layout:IVertexLayout, name:string): number {
       let key, item, count = 0, target = layout[name]
       for (key in layout) {
         item = layout[key]
@@ -166,7 +166,7 @@ module Glib.Graphics {
      * Counts the number of bytes in a single vertex. For example if a layout has a `position` and a `normal` defined
      * both with three elements and each element is a float, this will return 24.
      */
-    export function countBytes(layout:IVertexLayout):number {
+    export function countBytes(layout:IVertexLayout): number {
       let key, item, count = 0
       for (key in layout) {
         item = layout[key]
@@ -178,7 +178,7 @@ module Glib.Graphics {
     /**
      * Counts the number of bytes in a single vertex until the given attribute.
      */
-    export function countBytesBefore(layout:IVertexLayout, name:string):number {
+    export function countBytesBefore(layout:IVertexLayout, name:string): number {
       let key, item, count = 0, target = layout[name]
       for (key in layout) {
         item = layout[key]
@@ -191,7 +191,7 @@ module Glib.Graphics {
     /**
      * Counts the number of bytes in a single vertex after the given attribute.
      */
-    export function countBytesAfter(layout:IVertexLayout, name:string):number {
+    export function countBytesAfter(layout:IVertexLayout, name:string): number {
       let key, item, count = 0, target = layout[name]
       for (key in layout) {
         item = layout[key]
@@ -212,7 +212,7 @@ module Glib.Graphics {
       return types
     }
     
-    export function convertArrayToArrayBuffer(data:number[], layoutOrType: string|IVertexLayout): ArrayBuffer {
+    export function convertArrayToArrayBuffer(data: number[], layoutOrType: string|IVertexLayout): ArrayBuffer {
       let layout:IVertexLayout
       if (DataType[layoutOrType as string]) {
         layout = { 

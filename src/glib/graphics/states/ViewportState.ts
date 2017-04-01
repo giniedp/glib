@@ -14,13 +14,13 @@ module Glib.Graphics {
   export class ViewportState implements ViewportStateOptions {
     device:Device
     gl:WebGLRenderingContext
-    private xField:number = 0
-    private yField:number = 0
-    private widthField:number = 0
-    private heightField:number = 0
-    private zMinField:number = 0
-    private zMaxField:number = 1
-    private hasChanged:boolean = false
+    private xField: number = 0
+    private yField: number = 0
+    private widthField: number = 0
+    private heightField: number = 0
+    private zMinField: number = 0
+    private zMaxField: number = 1
+    private hasChanged: boolean = false
     private changes:ViewportStateOptions = {}
 
     constructor(device:Device, state?:ViewportStateOptions) {
@@ -30,11 +30,11 @@ module Glib.Graphics {
       if (state) this.apply(state)
     }
 
-    get x():number {
+    get x(): number {
       return this.xField
     }
 
-    set x(value:number) {
+    set x(value: number) {
       if (this.xField !== value) {
         this.xField = value
         this.changes.x = value
@@ -42,11 +42,11 @@ module Glib.Graphics {
       }
     }
 
-    get y():number {
+    get y(): number {
       return this.yField
     }
 
-    set y(value:number) {
+    set y(value: number) {
       if (this.yField !== value) {
         this.yField = value
         this.changes.y = value
@@ -54,11 +54,11 @@ module Glib.Graphics {
       }
     }
 
-    get width():number {
+    get width(): number {
       return this.widthField
     }
 
-    set width(value:number) {
+    set width(value: number) {
       if (this.widthField !== value) {
         this.widthField = value
         this.changes.width = value
@@ -66,11 +66,11 @@ module Glib.Graphics {
       }
     }
 
-    get height():number {
+    get height(): number {
       return this.heightField
     }
 
-    set height(value:number) {
+    set height(value: number) {
       if (this.heightField !== value) {
         this.heightField = value
         this.changes.height = value
@@ -78,11 +78,11 @@ module Glib.Graphics {
       }
     }
 
-    get zMin():number {
+    get zMin(): number {
       return this.zMinField
     }
 
-    set zMin(value:number) {
+    set zMin(value: number) {
       if (this.zMinField !== value) {
         this.zMinField = value
         this.changes.zMin = value
@@ -90,11 +90,11 @@ module Glib.Graphics {
       }
     }
 
-    get zMax():number {
+    get zMax(): number {
       return this.zMaxField
     }
 
-    set zMax(value:number) {
+    set zMax(value: number) {
       if (this.zMaxField !== value) {
         this.zMaxField = value
         this.changes.zMax = value
@@ -142,10 +142,10 @@ module Glib.Graphics {
     }
 
     static resolve(gl:WebGLRenderingContext, out:any={}):ViewportStateOptions {
-      var range = gl.getParameter(gl.DEPTH_RANGE)
+      let range = gl.getParameter(gl.DEPTH_RANGE)
       out.zMin = range[0]
       out.zMax = range[1]
-      var viewport = gl.getParameter(gl.VIEWPORT)
+      let viewport = gl.getParameter(gl.VIEWPORT)
       out.width = viewport[2]
       out.height = viewport[3]
       out.x = viewport[0]

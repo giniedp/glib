@@ -1,7 +1,7 @@
 module Glib.Graphics {
   
   export interface FrameBufferOptions {
-    textures?:Texture[],
+    textures?: Texture[],
     depthBuffer?:DepthBuffer  
   }
   
@@ -11,9 +11,9 @@ module Glib.Graphics {
     handle: WebGLFramebuffer;
     private _colorAttachments: Texture[] = [];
     private _depthAttachment: DepthBuffer;
-    private _colorAttachmentCount:number = 0;
-    private _colorAttachmentPoints:number[] = [];
-    private _maxColorAttachments:number = 1;
+    private _colorAttachmentCount: number = 0;
+    private _colorAttachmentPoints: number[] = [];
+    private _maxColorAttachments: number = 1;
     private _drawBuffersExtension:any;
     
     constructor(device: Device, options?:FrameBufferOptions) {
@@ -24,23 +24,23 @@ module Glib.Graphics {
       this.setup(options);
     }
 
-    get colorAttachmentCount():number {
+    get colorAttachmentCount(): number {
       return this._colorAttachmentCount;
     }
     
     setup(options:FrameBufferOptions={}) {
-      var gl = this.gl;
+      let gl = this.gl;
       
       if (!FrameBuffer.validateAttachments(options.textures, options.depthBuffer)) {
         throw "All attachments must have same width and height"
       }
-      var textures = options.textures || []
-      var targetCount = Math.max(this._colorAttachments.length, textures.length);
+      let textures = options.textures || []
+      let targetCount = Math.max(this._colorAttachments.length, textures.length);
       if (targetCount > this._maxColorAttachments) {
         throw `Requested to attach ${targetCount} color attachments but only ${this._maxColorAttachments} are supported.`
       }
       
-      var needsRebind = false;
+      let needsRebind = false;
       // ensure framebuffer is created
       if (this.handle == null || !this.gl.isFramebuffer(this.handle)) {
         this.handle = this.gl.createFramebuffer();
@@ -53,10 +53,10 @@ module Glib.Graphics {
       this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.handle);
       
       // replace color attachments
-      var count = 0;
-      for (var i = 0; i < targetCount; i++) {
-        var oldTexture = this._colorAttachments[i];
-        var newTexture = textures[i];
+      let count = 0;
+      for (let i = 0; i < targetCount; i++) {
+        let oldTexture = this._colorAttachments[i];
+        let newTexture = textures[i];
         // skip binding if the new texture is already bound
         if (!needsRebind && newTexture && oldTexture && newTexture.handle === oldTexture.handle) {
           count+=1;
@@ -84,8 +84,8 @@ module Glib.Graphics {
         this._drawBuffersExtension.drawBuffersWEBGL(this._colorAttachmentPoints);  
       }
       
-      var oldBuffer = this._depthAttachment;
-      var newBuffer = options.depthBuffer;
+      let oldBuffer = this._depthAttachment;
+      let newBuffer = options.depthBuffer;
       if (oldBuffer && newBuffer && oldBuffer.handle === newBuffer.handle) {
         // skip binding if the new buffer is already bound
       } else if (newBuffer) {
@@ -110,17 +110,17 @@ module Glib.Graphics {
       }
     }
     
-    static validateAttachments(textures?:Texture[], depth?:DepthBuffer) {
+    static validateAttachments(textures?: Texture[], depth?:DepthBuffer) {
       // treat empty attachment list as valid
       if (!textures || textures.length === 0) {
         return true;
       }
       
-      var firstTexture = null
-      var width = 0;
-      var height = 0;
-      var depthFormat = 0;
-      for(var texture of textures) {
+      let firstTexture = null
+      let width = 0;
+      let height = 0;
+      let depthFormat = 0;
+      for(let texture of textures) {
         firstTexture = texture;
         if (texture) {
           width = texture.width;
@@ -135,7 +135,7 @@ module Glib.Graphics {
         return true;
       }
       
-      for(var texture of textures) {
+      for(let texture of textures) {
         if (width !== texture.width || height !== texture.height) {
           return false;
         }

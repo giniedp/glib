@@ -11,36 +11,36 @@ module Glib.Graphics.Geometry.Formulas {
    * @constructor
    */
   export function MobiusStrip(builder:Builder, options:{
-    diameter?:number
-    radius?:number
-    steps?:number
-    band?:number
+    diameter?: number
+    radius?: number
+    steps?: number
+    band?: number
   } = {}) {
-    var radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
-    var steps = withDefault(options.steps, 16);
-    var band = withDefault(options.band, 0.4);
+    let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5);
+    let steps = withDefault(options.steps, 16);
+    let band = withDefault(options.band, 0.4);
 
-    var baseVertex = builder.vertexCount;
-    var stepsV = steps;
-    var stepsH = steps * 2;
+    let baseVertex = builder.vertexCount;
+    let stepsV = steps;
+    let stepsH = steps * 2;
 
-    for (var v = 0; v <= stepsV; v += 1) {
-      var dv = v / stepsV * band;
-      var t = dv - band * 0.5;
+    for (let v = 0; v <= stepsV; v += 1) {
+      let dv = v / stepsV * band;
+      let t = dv - band * 0.5;
 
-      for (var u = 0; u <= stepsH; u += 1) {
-        var du = u / stepsH;
-        var phi = du * Math.PI * 2;
+      for (let u = 0; u <= stepsH; u += 1) {
+        let du = u / stepsH;
+        let phi = du * Math.PI * 2;
 
-        var sinPhi = Math.sin(phi);
-        var cosPhi = Math.cos(phi);
+        let sinPhi = Math.sin(phi);
+        let cosPhi = Math.cos(phi);
 
-        var x = cosPhi + t * Math.cos(phi / 2) * cosPhi;
-        var z = sinPhi + t * Math.cos(phi / 2) * sinPhi;
-        var y = t * Math.sin(phi / 2);
+        let x = cosPhi + t * Math.cos(phi / 2) * cosPhi;
+        let z = sinPhi + t * Math.cos(phi / 2) * sinPhi;
+        let y = t * Math.sin(phi / 2);
 
-        var normal = Vec3.create(x, y, z);
-        var texCoord = Vec2.new(du, dv);
+        let normal = Vec3.create(x, y, z);
+        let texCoord = Vec2.new(du, dv);
 
         builder.addVertex({
           position: Vec3.multiplyScalar(normal, radius),
@@ -49,12 +49,12 @@ module Glib.Graphics.Geometry.Formulas {
         });
       }
     }
-    for (var z = 0; z < stepsV; z += 1) {
-      for (var x = 0; x < stepsH; x += 1) {
-        var a = x + z * (stepsH + 1);
-        var b = a + 1;
-        var c = x + (z + 1) * (stepsH + 1);
-        var d = c + 1;
+    for (let z = 0; z < stepsV; z += 1) {
+      for (let x = 0; x < stepsH; x += 1) {
+        let a = x + z * (stepsH + 1);
+        let b = a + 1;
+        let c = x + (z + 1) * (stepsH + 1);
+        let d = c + 1;
 
         builder.addIndex(baseVertex + a);
         builder.addIndex(baseVertex + b);

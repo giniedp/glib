@@ -30,7 +30,7 @@ module Glib.Content.Pipeline {
     }
 
     return Promise.all(techniques.map(function (technique:any) {
-      return Promise.all(technique.passes.map(function (pass:any, index:number) {
+      return Promise.all(technique.passes.map(function (pass:any, index: number) {
         return processPass(pass, context)
       }))
     })).then(function () {
@@ -46,8 +46,8 @@ module Glib.Content.Pipeline {
   import debug = Glib.utils.debug;
   import extend = Glib.utils.extend;
 
-  var regInclude = /#include\s+<(.*)>/;
-  var charNewLine = '\n';
+  let regInclude = /#include\s+<(.*)>/;
+  let charNewLine = '\n';
 
   function isObject(item) {
     return item != null && typeof item === 'object';
@@ -60,7 +60,7 @@ module Glib.Content.Pipeline {
   function getProgram(content:any):string {
     if (!content.program) return ''
 
-    var result = content.program
+    let result = content.program
     if (Array.isArray(result)) {
       result = result.join(charNewLine)
     }
@@ -71,7 +71,7 @@ module Glib.Content.Pipeline {
   }
 
   function getTechniques(content:any) {
-    var result:any[] = content.technique || content.techniques
+    let result:any[] = content.technique || content.techniques
     if (!result) {
       throw 'Invalid effect file. "techniques" property is missing.'
     }
@@ -82,7 +82,7 @@ module Glib.Content.Pipeline {
   }
 
   function convertTechnique(source:string, technique, index) {
-    var passes = technique.pass || technique.passes
+    let passes = technique.pass || technique.passes
     if (isObject(passes) && passes) {
       passes = [passes]
     }
@@ -126,8 +126,8 @@ module Glib.Content.Pipeline {
       processShader(pass.program.vertexShader, context),
       processShader(pass.program.fragmentShader, context)
     ]).then(function (res) {
-      var vSource = res[0];
-      var fSource = res[1];
+      let vSource = res[0];
+      let fSource = res[1];
 
       // attribute declaration is only allowed in vertex shader
       fSource = fSource.replace(/attribute.*;/g, '')

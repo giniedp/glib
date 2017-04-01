@@ -84,7 +84,7 @@ module Glib.Input {
      * Polls all gamepad states and captures the data. If any gamepad state has changed
      * this triggers the ```changed``` event.
      */
-    pollState(trigger:boolean=true) {
+    pollState(trigger: boolean=true) {
       //debugger
       let pads = navigator.getGamepads()
       let changed = false
@@ -118,7 +118,7 @@ module Glib.Input {
     /**
      * Gets a copy of the current state for given identifier.
      */
-    copyState(index:number, out:any={}):IGamepadState {
+    copyState(index: number, out:any={}):IGamepadState {
       let state = this.state[index]
       let result = out as IGamepadState
       // make sure arrays exist
@@ -195,7 +195,7 @@ module Glib.Input {
     }
   }
 
-  export var GamepadButton = {
+  export let GamepadButton = {
     // Face (main) buttons
     A: 0, 
     B: 1,
@@ -231,19 +231,19 @@ module Glib.Input {
     Extra8: 23,
     Extra9: 24
   };
-  export var GamepadButtonNames = {};
-  for (var name in GamepadButton) {
+  export let GamepadButtonNames = {};
+  for (let name in GamepadButton) {
     GamepadButtonNames[GamepadButton[name]] = name;
   }
 
-  export var GamepadAxes = {
+  export let GamepadAxes = {
     LeftHorizontal: 0,
     LeftVertical: 1,
     RightHorizontal: 2,
     RightVertical: 3
   };
-  export var GamepadAxesNames = {};
-  for (var name in GamepadAxes) {
+  export let GamepadAxesNames = {};
+  for (let name in GamepadAxes) {
     GamepadAxesNames[GamepadAxes[name]] = name;
   }
 }

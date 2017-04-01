@@ -12,8 +12,8 @@ module Glib.Graphics {
     uid:string
     device:Device
     gl:any
-    boundingBox:number[]
-    boundingSphere:number[]
+    boundingBox: number[]
+    boundingSphere: number[]
     materials:ShaderEffect[] = []
     meshes:ModelMesh[] = []
 

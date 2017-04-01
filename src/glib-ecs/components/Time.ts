@@ -3,40 +3,40 @@ module Glib.Components {
   import getTime = Glib.utils.getTime;
 
   export class Time {
-    node:Entity;
-    name:string = 'Time';
-    service: boolean = true;
-    enabled: boolean = true;
+    public node: Entity
+    public name: string = 'Time'
+    public service: boolean = true
+    public enabled: boolean = true
 
-    current: number;
-    elapsedMsInGame:number;
-    totalMsInGame:number;
-    elapsedMsInReal:number;
-    totalMsInReal:number;
+    public current: number
+    public elapsedMsInGame: number
+    public totalMsInGame: number
+    public elapsedMsInReal: number
+    public totalMsInReal: number
 
-    constructor(params:any = {}) {
-      Glib.utils.extend(this, params);
-      this.reset();
+    constructor(params: any = {}) {
+      Glib.utils.extend(this, params)
+      this.reset()
     }
 
-    reset() {
-      this.current = getTime();
-      this.elapsedMsInGame = 0;
-      this.totalMsInGame = 0;
-      this.elapsedMsInReal = 0;
-      this.totalMsInReal = 0;
+    public reset() {
+      this.current = getTime()
+      this.elapsedMsInGame = 0
+      this.totalMsInGame = 0
+      this.elapsedMsInReal = 0
+      this.totalMsInReal = 0
     }
 
-    update(ms) {
-      var time = getTime();
-      this.elapsedMsInGame = ms;
-      this.totalMsInGame += this.elapsedMsInGame;
-      this.elapsedMsInReal = time - this.current;
-      this.totalMsInReal += this.elapsedMsInReal;
-      this.current = time;
+    public update(ms) {
+      const time = getTime()
+      this.elapsedMsInGame = ms
+      this.totalMsInGame += this.elapsedMsInGame
+      this.elapsedMsInReal = time - this.current
+      this.totalMsInReal += this.elapsedMsInReal
+      this.current = time
     }
 
-    debug():string {
+    public debug(): string {
       return [
         `- component: ${this.name}`,
         `  enabled: ${this.enabled}`,
@@ -44,7 +44,7 @@ module Glib.Components {
         `  total gameTime: ${this.totalMsInGame}`,
         `  elapsed realTime: ${this.elapsedMsInReal.toPrecision(5)}`,
         `  total realTime: ${this.totalMsInReal}`
-      ].join("\n")
+      ].join('\n')
     }
   }
 }

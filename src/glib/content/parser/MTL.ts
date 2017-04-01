@@ -2,15 +2,15 @@ module Glib.Content.Parser {
 
   export interface MtlData {
     name?:string
-    Ka?:number[]
-    Kd?:number[]
-    Ks?:number[]
-    Tf?:number[]
+    Ka?: number[]
+    Kd?: number[]
+    Ks?: number[]
+    Tf?: number[]
     illum?:string
-    d?:number
-    Ns?:number
-    sharpness?:number
-    Ni?:number
+    d?: number
+    Ns?: number
+    sharpness?: number
+    Ni?: number
     map_Ka?:MtlTextureData
     map_Kd?:MtlTextureData
     map_Ks?:MtlTextureData
@@ -26,18 +26,18 @@ module Glib.Content.Parser {
     options:MtlTextureOptions
   }
   export interface MtlTextureOptions{
-    bm?:number
-    clamp?:boolean
-    cc?:boolean
-    blendu?:boolean
-    blendv?:boolean
+    bm?: number
+    clamp?: boolean
+    cc?: boolean
+    blendu?: boolean
+    blendv?: boolean
     imfchan?:string
-    boost?:number
-    mm?:{base:number, gain:number}
-    o?:number
-    s?:number
-    t?:number
-    texres?:number
+    boost?: number
+    mm?:{base: number, gain: number}
+    o?: number
+    s?: number
+    t?: number
+    texres?: number
   }
 
   function getLines(value: string): string[] {
@@ -56,14 +56,14 @@ module Glib.Content.Parser {
       return new MTL().parse(content);
     }
     parse(data):MtlData[] {
-      var lines = getLines(data);
+      let lines = getLines(data);
       this.materials = [];
       this.material = {};
 
-      var currentLine = "";
-      for (var line of lines) {
+      let currentLine = "";
+      for (let line of lines) {
         // remove comments
-        var cIndex = line.indexOf("#");
+        let cIndex = line.indexOf("#");
         if (cIndex >= 0){
           line = line.substr(0, cIndex);
         }
@@ -84,13 +84,13 @@ module Glib.Content.Parser {
         }
 
         // parse line
-        var match = line.match(/^(\w+)\s+(.*)$/);
+        let match = line.match(/^(\w+)\s+(.*)$/);
         if (!match) continue;
-        var key = match[1];
-        var value = match[2];
+        let key = match[1];
+        let value = match[2];
 
-        var staticReader = MTL[`read_${key}`];
-        var instanceReader = this[`read_${key}`];
+        let staticReader = MTL[`read_${key}`];
+        let instanceReader = this[`read_${key}`];
         if (staticReader) {
           this.material[key] = staticReader(value);
         } else if (instanceReader) {
@@ -348,7 +348,7 @@ module Glib.Content.Parser {
       return data == 'on';
     }
 
-    static readFloat(item:string):number {
+    static readFloat(item:string): number {
       if (item) {
         return parseFloat(item);
       }
@@ -360,8 +360,8 @@ module Glib.Content.Parser {
     // specified, then g, and b are assumed to be equal to r.  The r g b values
     // are normally in the range of 0.0 to 1.0.  Values outside this range
     // increase or decrease the relectivity accordingly.
-    static readRGBArray(r_g_b:string):number[] {
-      var result = r_g_b.split(" ").map(MTL.readFloat);
+    static readRGBArray(r_g_b:string): number[] {
+      let result = r_g_b.split(" ").map(MTL.readFloat);
       if (result.length < 2) {
         result[1] = result[0];
       }
@@ -372,7 +372,7 @@ module Glib.Content.Parser {
       return result;
     }
 
-    static readFloatArray(data:string):number[] {
+    static readFloatArray(data:string): number[] {
       return data.split(" ").map(MTL.readFloat);
     }
 
@@ -388,9 +388,9 @@ module Glib.Content.Parser {
     // -t u v w
     // -texres value
     static readTexture(data:string):any {
-      var result:any = {};
+      let result:any = {};
       data = data.trim();
-      var index = data.lastIndexOf(' ');
+      let index = data.lastIndexOf(' ');
       if (index < 0) {
         result.options = {};
         result.file = data;
@@ -402,15 +402,15 @@ module Glib.Content.Parser {
     }
 
     static readTextureOptions(data:string) {
-      var result = {};
-      var split = data.split('-');
-      for (var item of split) {
-        var match = item.match(/^(\w+)\s+(.*)$/);
+      let result = {};
+      let split = data.split('-');
+      for (let item of split) {
+        let match = item.match(/^(\w+)\s+(.*)$/);
         if (!match) continue;
-        var key = match[1];
-        var value = match[2];
+        let key = match[1];
+        let value = match[2];
 
-        var reader = MTL[`readOption_${key}`];
+        let reader = MTL[`readOption_${key}`];
         if (reader) {
           result[key] = reader(value);
         }
@@ -521,7 +521,7 @@ module Glib.Content.Parser {
     // "gain" expands the range of the texture values.  Increasing the number
     // increases the contrast.  The default is 1; the range is unlimited.
     static readOption_mm(data:string) {
-      var split = data.split(' ');
+      let split = data.split(' ');
       return {
         base: MTL.readFloat(split[0]),
         gain: MTL.readFloat(split[1])

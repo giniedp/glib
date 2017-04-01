@@ -16,7 +16,7 @@ module Glib.Content.Parser {
     }
   }
 
-  function isObject(value:any):boolean {
+  function isObject(value:any): boolean {
     return value !== null && typeof value === 'object';
   }
 
@@ -24,7 +24,7 @@ module Glib.Content.Parser {
   // e.g.
   //     key: some value
   //     example: another value
-  var regex = /^(\s*)(\w+)\s*:\s*\|?(.*)/;
+  let regex = /^(\s*)(\w+)\s*:\s*\|?(.*)/;
 
   class Node {
     indent:string = '';
@@ -50,10 +50,10 @@ module Glib.Content.Parser {
     }
   }
 
-  export var YML = {
+  export let YML = {
     _peel: function (tree) {
       Object.keys(tree).forEach(function (key) {
-        var item = tree[key];
+        let item = tree[key];
         if (item instanceof Node) {
           tree[key] = item.result;
         } else if (isObject(item)) {
@@ -64,7 +64,7 @@ module Glib.Content.Parser {
     },
 
     _parse: function (state, indent) {
-      var line, match, result = {}, key, value, lineIndent, block:Node = null;
+      let line, match, result = {}, key, value, lineIndent, block:Node = null;
 
       while (state.index < state.lines.length) {
         // grab next line and update state
@@ -139,10 +139,10 @@ module Glib.Content.Parser {
     parse(content:string):any {
       // replace tabs with space
       content = content.replace(/\t/i, ' ');
-      var lines = getLines(content);
+      let lines = getLines(content);
 
       // skip blank lines
-      var index = 0;
+      let index = 0;
       while (index < lines.length && !lines[index].trim()) {
         index += 1;
       }
@@ -153,10 +153,10 @@ module Glib.Content.Parser {
       }
 
       // detect starting indentation depth
-      var indent = lines[index].match(/^(\s*)/)[1];
+      let indent = lines[index].match(/^(\s*)/)[1];
 
       // build initial state holding all lines and current line index
-      var state = {lines: lines, index: index};
+      let state = {lines: lines, index: index};
 
       return YML._parse(state, indent);
     }

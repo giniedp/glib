@@ -4,8 +4,8 @@ module Glib.Components {
     //static name = 'Mouse'
     node:Entity
     name:string = 'Mouse'
-    service:boolean = true
-    enabled:boolean = true
+    service: boolean = true
+    enabled: boolean = true
 
     mouse:Input.Mouse;
     newState: Input.IMouseState;
@@ -19,7 +19,7 @@ module Glib.Components {
     }
 
     update(){
-      var toUpdate = this.oldState;
+      let toUpdate = this.oldState;
       this.oldState = this.newState;
       this.newState = toUpdate;
       this.mouse.copyState(toUpdate);
@@ -49,70 +49,70 @@ module Glib.Components {
       return this.newState.wheel - this.oldState.wheel;
     }
 
-    get leftButtonIsPressed():boolean {
+    get leftButtonIsPressed(): boolean {
       return this.newState.buttons[0];
     }
 
-    get leftButtonJustPressed():boolean {
+    get leftButtonJustPressed(): boolean {
       return !this.oldState.buttons[0] && this.newState.buttons[0];
     }
 
-    get leftButtonIsReleased():boolean {
+    get leftButtonIsReleased(): boolean {
       return this.newState.buttons[0];
     }
 
-    get leftButtonJustReleased():boolean {
+    get leftButtonJustReleased(): boolean {
       return this.oldState.buttons[0] && !this.newState.buttons[0];
     }
 
 
-    get middleButtonIsPressed():boolean {
+    get middleButtonIsPressed(): boolean {
       return this.newState.buttons[1];
     }
 
-    get middleButtonJustPressed():boolean {
+    get middleButtonJustPressed(): boolean {
       return !this.oldState.buttons[1] && this.newState.buttons[1];
     }
 
-    get middleButtonIsReleased():boolean {
+    get middleButtonIsReleased(): boolean {
       return this.newState.buttons[1];
     }
 
-    get middleButtonJustReleased():boolean {
+    get middleButtonJustReleased(): boolean {
       return this.oldState.buttons[1] && !this.newState.buttons[1];
     }
 
 
-    get rightButtonIsPressed():boolean {
+    get rightButtonIsPressed(): boolean {
       return this.newState.buttons[2];
     }
 
-    get rightButtonJustPressed():boolean {
+    get rightButtonJustPressed(): boolean {
       return !this.oldState.buttons[2] && this.newState.buttons[2];
     }
 
-    get rightButtonIsReleased():boolean {
+    get rightButtonIsReleased(): boolean {
       return this.newState.buttons[2];
     }
 
-    get rightButtonJustReleased():boolean {
+    get rightButtonJustReleased(): boolean {
       return this.oldState.buttons[2] && !this.newState.buttons[2];
     }
 
 
-    buttonIsPressed(button:number):boolean {
+    buttonIsPressed(button: number): boolean {
       return this.newState.buttons[button];
     }
 
-    buttonJustPressed(button):boolean {
+    buttonJustPressed(button): boolean {
       return !this.oldState.buttons[button] && this.newState.buttons[button];
     }
 
-    buttonIsReleased(button):boolean {
+    buttonIsReleased(button): boolean {
       return this.newState.buttons[button];
     }
 
-    buttonJustReleased(button):boolean {
+    buttonJustReleased(button): boolean {
       return this.oldState.buttons[button] && !this.newState.buttons[button];
     }
 
