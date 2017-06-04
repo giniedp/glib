@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = function (config) {
 
   config.set({
@@ -18,10 +20,10 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
-      { pattern: 'dist/glib.js', included: true, watched: true}, 
+      { pattern: 'dist/glib.js', included: true, watched: true},
       { pattern: 'src/**/*.test.ts', included: true, watched: true },
       { pattern: 'src/**/*.spec.ts', included: true, watched: true },
-      { pattern: 'src/**/*.d.ts', included: false, watched: false } 
+      { pattern: 'src/**/*.d.ts', included: false, watched: false }
     ],
 
     // list of files to exclude
@@ -39,13 +41,13 @@ module.exports = function (config) {
     // Do not include tests or libraries (these files will be instrumented by Istanbul)
     preprocessors: {
       'dist/glib.js': [
-        //'sourcemap', 
+        //'sourcemap',
         //'coverage'
       ]
     },
 
     typescriptPreprocessor: {
-      compilerOptions: { 
+      compilerOptions: {
         target: "es5",
         noResolve: true,
         outFile: "dist/glib.test.js",
@@ -53,16 +55,16 @@ module.exports = function (config) {
         sourceMap: true,
         rootDir: "src",
       },
-      // ignore all files that ends with .d.ts (this files will not be served) 
-      ignorePath: function(path){ 
+      // ignore all files that ends with .d.ts (this files will not be served)
+      ignorePath: function(path){
        return /\.d\.ts$/.test(path);
       },
-      // transforming the filenames   
-      transformPath: [function(path) { 
+      // transforming the filenames
+      transformPath: [function(path) {
         return path.replace(/\.ts$/, '.js');
       }]
     },
-    
+
     //coverageReporter: {
     //  type : 'json',
     //  dir : 'coverage/',

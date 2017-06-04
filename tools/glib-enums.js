@@ -76,11 +76,15 @@
     }
 
     var data = [];
-    data.push( "module Glib.Graphics {" );
-    data.push( "  export var " + meta.target + " = {" );
-    data.push( "  " + properties.join(",\n  "));
-    data.push( "  };" );
-    data.push( "}" );
+    // data.push( "module Glib.Graphics {" );
+    data.push( "export const " + meta.target + " = Object.freeze({" );
+    data.push( "" + properties.join(",\n") + ",");
+    data.push("  enumOf: (name: string|number): number => (" + meta.target + " as any)[name],");
+    if (meta.targetName) {
+      data.push("  nameOf: (name: string|number): string => (" + meta.targetName + " as any)[name],");
+    }
+    data.push( "})" );
+    // data.push( "}" );
     data.push( "" );
     return data.join('\n');
   }
@@ -119,11 +123,11 @@
     }
 
     var data = [];
-    data.push( "module Glib.Graphics {" );
-    data.push( "  export var " + meta.targetName + " = {" );
-    data.push( "  " + properties.join(",\n  "));
-    data.push( "  };" );
-    data.push( "}" );
+    //data.push( "module Glib.Graphics {" );
+    data.push( "export const " + meta.targetName + " = Object.freeze({" );
+    data.push( "" + properties.join(",\n") + ",");
+    data.push( "})" );
+    //data.push( "}" );
     data.push( "" );
     return data.join('\n');
   }
