@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc -p framework/tsconfig.json",
-    "webpack": "webpack"
+    "webpack": "webpack",
+    "lint": "tslint -p framework/tsconfig.json -c tslint.json"
   },
   "repository": {
     "type": "git",
