@@ -1,16 +1,16 @@
 import { extend, path } from '@glib/core'
 import { ShaderEffectOptions } from '@glib/graphics'
 import { MTL, MtlData } from '../parser'
-import { Context, importer, preprocessor, processor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
 
-importer('.mtl', 'Material', (context: Context) => {
+pipelineImporter('.mtl', 'Material', (context: PipelineContext) => {
   context.intermediate = MTL.parse(context.raw.content).map(convertMaterial)[0]
-  return context.manager.process(context)
+  return context.pipeline.process(context)
 })
 
-importer('.mtl', 'Material[]', (context: Context) => {
+pipelineImporter('.mtl', 'Material[]', (context: PipelineContext) => {
   context.intermediate = MTL.parse(context.raw.content).map(convertMaterial)
-  return context.manager.process(context)
+  return context.pipeline.process(context)
 })
 
 function convertMaterial(mtl: MtlData) {

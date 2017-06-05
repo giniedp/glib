@@ -1,17 +1,17 @@
 import { extend, path } from '@glib/core'
 import { Model } from '@glib/graphics'
-import { Context, importer, preprocessor, processor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
 
-importer('.json', 'Model', (context: Context) => {
+pipelineImporter('.json', 'Model', (context: PipelineContext) => {
   context.intermediate = JSON.parse(context.raw.content)
-  return context.manager.process(context)
+  return context.pipeline.process(context)
 })
 
-processor('Model', (context: Context) => {
+pipelineProcessor('Model', (context: PipelineContext) => {
   context.result = new Model(context.manager.device, context.intermediate)
 })
 
-preprocessor('Model', (context: Context) => {
+pipelinePreProcessor('Model', (context: PipelineContext) => {
   let json = context.intermediate || {}
   let materials = json.material || json.materials
   if (!Array.isArray(materials)) {
@@ -19,20 +19,20 @@ preprocessor('Model', (context: Context) => {
   }
   return Promise.all(materials.map((mtl: any) => {
     if (typeof mtl === 'string') {
-      return context.manager.load('Material[]', path.merge(context.path, mtl)).then((mtl) => mtl)
+      return context.manager.load('Material[]', path.merge(context.path, mtl)).then((loadedMaterial) => loadedMaterial)
     } else {
       // prepare the new context
       let subContext = extend({}, context, {
         intermediate: mtl,
         targetType: 'Material',
-      }) as Context
+      }) as PipelineContext
       // send to the "Material" processor
-      return context.manager.process(subContext).then(() => {
+      return context.pipeline.process(subContext).then(() => {
         return subContext.result
       })
     }
-  })).then((materials) => {
-    json.materials = [].concat.apply([], materials)
+  })).then((loadedMaterials) => {
+    json.materials = [].concat.apply([], loadedMaterials)
     delete json.material
   })
 })

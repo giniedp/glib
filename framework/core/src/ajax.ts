@@ -22,7 +22,9 @@ function sendXhr(xhr: XMLHttpRequest, options: AjaxOptions, async: boolean) {
 
   return new Promise((resolve: any, reject: any) => {
     const complete = () => {
-      (xhr as any)['responseURL'] = xhr.responseURL || options.url
+      if (!xhr.responseURL) {
+        (xhr as any)['responseURL'] = xhr.responseURL || options.url
+      }
       if (200 <= xhr.status && xhr.status < 400) {
         resolve(xhr)
       } else {
@@ -37,7 +39,9 @@ function sendXhr(xhr: XMLHttpRequest, options: AjaxOptions, async: boolean) {
 
     xhr.onreadystatechange = () => {
       if (xhr.readyState === 4) {
-        (xhr as any)['requestURL'] = options.url
+        if (!xhr.responseURL) {
+          (xhr as any)['requestURL'] = options.url
+        }
         complete()
       }
     }
@@ -48,7 +52,7 @@ function sendXhr(xhr: XMLHttpRequest, options: AjaxOptions, async: boolean) {
 export function ajax(options: AjaxOptions): Promise<any> {
   if (Array.isArray(options.url)) {
     return Promise.all(options.url.map((url) => {
-      return ajax(extend({} as AjaxOptions, options, {url: url}))
+      return ajax(extend({ url: null }, options, {url: url}))
     }))
   }
 

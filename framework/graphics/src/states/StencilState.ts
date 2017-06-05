@@ -53,7 +53,7 @@ export class StencilState implements StencilStateOptions {
   private changes: StencilStateOptions = {}
   private hasChanged: boolean = false
 
-  public isDirty() {
+  public get isDirty() {
     return this.hasChanged
   }
 
@@ -64,12 +64,12 @@ export class StencilState implements StencilStateOptions {
     if (state) { this.assign(state) }
   }
 
-  get stencilFunction(): number {
-    return this.stencilFunctionField
-  }
-
   get stencilFunctionName(): string {
     return CompareFunction.nameOf(this.stencilFunctionField)
+  }
+
+  get stencilFunction(): number {
+    return this.stencilFunctionField
   }
 
   set stencilFunction(value: number) {
@@ -80,12 +80,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilBackFunction(): number {
-    return this.stencilBackFunctionField
-  }
-
   get stencilBackFunctionName(): string {
     return CompareFunction.nameOf(this.stencilBackFunctionField)
+  }
+
+  get stencilBackFunction(): number {
+    return this.stencilBackFunctionField
   }
 
   set stencilBackFunction(value: number) {
@@ -96,12 +96,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilFail(): number {
-    return this.stencilFailField
-  }
-
   get stencilFailName(): string {
     return CompareFunction.nameOf(this.stencilFailField)
+  }
+
+  get stencilFail(): number {
+    return this.stencilFailField
   }
 
   set stencilFail(value: number) {
@@ -112,12 +112,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilDepthFail(): number {
-    return this.stencilDepthFailField
-  }
-
   get stencilDepthFailName(): string {
     return CompareFunction.nameOf(this.stencilDepthFailField)
+  }
+
+  get stencilDepthFail(): number {
+    return this.stencilDepthFailField
   }
 
   set stencilDepthFail(value: number) {
@@ -128,12 +128,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilDepthPass(): number {
-    return this.stencilDepthPassField
-  }
-
   get stencilDepthPassName(): string {
     return CompareFunction.nameOf(this.stencilDepthPassField)
+  }
+
+  get stencilDepthPass(): number {
+    return this.stencilDepthPassField
   }
 
   set stencilDepthPass(value: number) {
@@ -144,12 +144,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilBackFail(): number {
-    return this.stencilBackFailField
-  }
-
   get stencilBackFailName(): string {
     return CompareFunction.nameOf(this.stencilBackFailField)
+  }
+
+  get stencilBackFail(): number {
+    return this.stencilBackFailField
   }
 
   set stencilBackFail(value: number) {
@@ -160,12 +160,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilBackDepthFail(): number {
-    return this.stencilBackDepthFailField
-  }
-
   get stencilBackDepthFailName(): string {
     return CompareFunction.nameOf(this.stencilBackDepthFailField)
+  }
+
+  get stencilBackDepthFail(): number {
+    return this.stencilBackDepthFailField
   }
 
   set stencilBackDepthFail(value: number) {
@@ -176,12 +176,12 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  get stencilBackDepthPass(): number {
-    return this.stencilBackDepthPassField
-  }
-
   get stencilBackDepthPassName(): string {
     return CompareFunction.nameOf(this.stencilBackDepthPassField)
+  }
+
+  get stencilBackDepthPass(): number {
+    return this.stencilBackDepthPassField
   }
 
   set stencilBackDepthPass(value: number) {

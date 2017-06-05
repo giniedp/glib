@@ -38,7 +38,7 @@ export class Model implements Component {
         mesh: mesh,
         effect: this.model.materials[mesh.materialId],
         world: this.world,
-        data: null
+        data: null,
       })
     }
   }

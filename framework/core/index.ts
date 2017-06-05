@@ -8,4 +8,3 @@ export const WebWorker = WebWorkerImport
 export * from './src/utils'
 export * from './src/ajax'
 export * from './src/Events'
-

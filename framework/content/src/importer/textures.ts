@@ -1,57 +1,57 @@
-import { Context, importer, loader, preprocessor, processor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelineLoader, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
 
-loader('*', 'Texture', (context: Context) => {
+pipelineLoader('*', 'Texture', (context: PipelineContext) => {
   context.intermediate = { data: context.path }
-  return context.manager.process(context) // skips the importer stage
+  return context.pipeline.process(context) // skips the importer stage
 })
 
-processor('Texture', (context: Context) => {
+pipelineProcessor('Texture', (context: PipelineContext) => {
   context.result = context.manager.device.createTexture(context.intermediate)
 })
 
-loader('*', 'Texture2D', (context: Context) => {
+pipelineLoader('*', 'Texture2D', (context: PipelineContext) => {
   context.intermediate = { data: context.path }
-  return context.manager.process(context) // skips the importer stage
+  return context.pipeline.process(context) // skips the importer stage
 })
-processor('Texture2D', (context: Context) => {
+pipelineProcessor('Texture2D', (context: PipelineContext) => {
   context.result = context.manager.device.createTexture2D(context.intermediate)
 })
 
-loader('*', 'TextureCube', (context: Context) => {
+pipelineLoader('*', 'TextureCube', (context: PipelineContext) => {
   context.intermediate = { data: context.path }
-  return context.manager.process(context) // skips the importer stage
+  return context.pipeline.process(context) // skips the importer stage
 })
 
-processor('TextureCube', (context: Context) => {
+pipelineProcessor('TextureCube', (context: PipelineContext) => {
   context.result = context.manager.device.createTextureCube(context.intermediate)
 })
 
-loader('*', 'Image', (context: Context) => {
+pipelineLoader('*', 'Image', (context: PipelineContext) => {
   let image = new Image()
   image.src = context.path
   context.result = image
   // skips the importer and processor stages
 })
-loader('*', 'Video', (context: Context) => {
+pipelineLoader('*', 'Video', (context: PipelineContext) => {
   let video = document.createElement('video')
   video.src = context.path
   context.result = video
   // skips the importer and processor stages
 })
 
-loader('*', 'ImageData', (context: Context) => {
+pipelineLoader('*', 'ImageData', (context: PipelineContext) => {
   return new Promise((resolve, reject) => {
     let image = new Image()
     image.onload = () => {
       context.intermediate = image
-      resolve(context.manager.process(context))
+      resolve(context.pipeline.process(context))
     }
     image.onabort = (e) => { reject(e) }
     image.src = context.path
   }).then(() => undefined)
 })
 
-processor('ImageData', (context: Context) => {
+pipelineProcessor('ImageData', (context: PipelineContext) => {
   context.result = getImageData(context.intermediate)
 })
 

@@ -1,13 +1,13 @@
 import { extend, path, WebWorker } from '@glib/core'
-import { Geometry, ShaderEffectOptions } from '@glib/graphics'
+import * as Graphics from '@glib/graphics'
 import { OBJ } from '../parser'
-import { Context, importer, preprocessor, processor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
 import { RawAsset } from './../Manager'
 
-importer('.obj', 'Model', (context: Context) => {
+pipelineImporter('.obj', 'Model', (context: PipelineContext) => {
   return objToJsonAsync(context.raw).then((json: any) => {
     context.intermediate = json
-    return context.manager.process(context)
+    return context.pipeline.process(context)
   })
 })
 
@@ -19,7 +19,7 @@ function objToJson(data: RawAsset) {
 const objToJsonAsync = WebWorker.register('objToJson', objToJson)
 
 function convert(data: ObjData) {
-  let builder = Geometry.Builder.begin({
+  let builder = Graphics.Builder.begin({
     layout: 'PositionTextureNormalTangentBitangent',
     ignoreTransform: true,
   })
@@ -60,7 +60,7 @@ function readVertex(data: ObjData, element: number[]) {
   return vertex
 }
 
-function buildMesh(builder: Geometry.Builder, data: ObjData, groups: ObjGroup[]) {
+function buildMesh(builder: Graphics.Builder, data: ObjData, groups: ObjGroup[]) {
 
   let index = 0
   let vertex = null
@@ -94,14 +94,12 @@ function buildMesh(builder: Geometry.Builder, data: ObjData, groups: ObjGroup[])
         count += 1
       }
     }
+    if (index > 0) {
+      builder.endMeshOptions({
+        name: group.name,
+        materialId: group.material,
+      })
+      index = 0
+    }
   }
-
-  if (index === 0) {
-    return
-  }
-
-  builder.endMeshOptions({
-    name: group.name,
-    materialId: group.material,
-  })
 }

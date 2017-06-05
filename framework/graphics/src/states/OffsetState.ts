@@ -21,7 +21,7 @@ export class OffsetState implements OffsetStateOptions {
   private hasChanged: boolean = false
   private changes: OffsetStateOptions = {}
 
-  public isDirty() {
+  public get isDirty() {
     return this.hasChanged
   }
 

@@ -26,6 +26,19 @@ export interface IGamepadState {
   timestamp: number
 }
 
+function emptyGamepadState(): IGamepadState {
+  return {
+    buttonValues: null,
+    axes: null,
+    buttons: null,
+    connected: null,
+    id: null,
+    index: null,
+    mapping: null,
+    timestamp: null,
+  }
+}
+
 export class Gamepads extends Events {
   /**
    * The current captured state
@@ -143,7 +156,7 @@ export class Gamepads extends Events {
     }
     // copy button data
     for (let i = 0; i < state.buttons.length; i++) {
-      result.buttons[i] = result.buttons[i] || {} as GamepadButton
+      result.buttons[i] = result.buttons[i] || {} as GamepadButton // tslint:disable-line
       result.buttons[i].pressed = state.buttons[i].pressed
       result.buttons[i].value = state.buttons[i].value
       result.buttonValues[i] = state.buttonValues[i]
@@ -157,7 +170,7 @@ export class Gamepads extends Events {
 
   protected captureState(pad: Gamepad): boolean {
     let changed = false
-    let state: IGamepadState = this.state[pad.index] || {} as IGamepadState
+    let state: IGamepadState = this.state[pad.index] || emptyGamepadState()
 
     // if timestamp did not change, there was no change in state
     if ((state.timestamp === pad.timestamp) && (pad.timestamp !== void 0)) {
@@ -175,7 +188,7 @@ export class Gamepads extends Events {
     // copy button data
     changed = (changed || (state.buttons.length !== pad.buttons.length))
     for (let i = 0; i < pad.buttons.length; i++) {
-      let a = state.buttons[i] || {} as GamepadButton
+      let a = state.buttons[i] || {} as GamepadButton // tslint:disable-line
       let b = pad.buttons[i]
       changed = (changed || (a.value !== b.value))
       changed = (changed || (a.pressed !== b.pressed))

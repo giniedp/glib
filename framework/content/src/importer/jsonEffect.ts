@@ -1,6 +1,6 @@
 import { ShaderEffect, ShaderPassOptions, ShaderTechniqueOptions } from '@glib/graphics'
 import { JSON } from '../parser'
-import { Context, importer, preprocessor, processor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
 
 interface ShaderProgramInput {
   vertexShader?: string
@@ -14,17 +14,17 @@ interface ShaderPassInput {
   program?: ShaderProgramInput
 }
 
-importer('.json', 'Effect', (context: Context): Promise<void> => {
+pipelineImporter('.json', 'Effect', (context: PipelineContext): Promise<void> => {
   context.intermediate = JSON.parse(context.raw.content)
-  return context.manager.process(context)
+  return context.pipeline.process(context)
 })
 
-processor('Effect', (context: Context): Promise<void> => {
+pipelineProcessor('Effect', (context: PipelineContext): Promise<void> => {
   context.result = new ShaderEffect(context.manager.device, context.intermediate)
   return Promise.resolve()
 })
 
-preprocessor('Effect', (context: Context): Promise<void> => {
+pipelinePreProcessor('Effect', (context: PipelineContext): Promise<void> => {
 
   let json: any = context.intermediate
 
@@ -136,7 +136,7 @@ function convertPass(source: string, pass: ShaderPassInput, index: number) {
   return pass
 }
 
-function processPass(pass: ShaderPassInput, context: Context) {
+function processPass(pass: ShaderPassInput, context: PipelineContext) {
 
   // solve all preprocessor directives
   return Promise.all([
@@ -155,7 +155,7 @@ function processPass(pass: ShaderPassInput, context: Context) {
   })
 }
 
-function processShader(source: string, context: Context): Promise<string> {
+function processShader(source: string, context: PipelineContext): Promise<string> {
   return Promise.all(getLines(source).map((line) => {
     let includeMatch = line.match(regInclude)
     return includeMatch ? context.options.includeHandler(includeMatch[1]) : line
@@ -164,7 +164,7 @@ function processShader(source: string, context: Context): Promise<string> {
   })
 }
 
-function createIncludeHandler(context: Context): (p: string) => Promise<void> {
+function createIncludeHandler(context: PipelineContext): (p: string) => Promise<void> {
   return (thePath: string) => {
     let url = path.merge(context.path, thePath)
     let cache = context.options.includeCache || {}

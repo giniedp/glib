@@ -1,7 +1,7 @@
 import { extend, logger, path } from '@glib/core'
-import { Context, importer, preprocessor, processor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
 
-importer('.json', 'Material[]', (context: Context): Promise<void> => {
+pipelineImporter('.json', 'Material[]', (context: PipelineContext): Promise<void> => {
   // parse text content into json
   context.intermediate = JSON.parse(context.raw.content)
   // materials can be defined as an array (a material collection) or as single material object
@@ -11,10 +11,10 @@ importer('.json', 'Material[]', (context: Context): Promise<void> => {
     context.intermediate = [context.intermediate]
   }
   // send to the "Material[]" processor
-  return context.manager.process(context)
+  return context.pipeline.process(context)
 })
 
-processor('Material[]', (context: Context): Promise<void> => {
+pipelineProcessor('Material[]', (context: PipelineContext): Promise<void> => {
   context.result = []
   // send each entry to the process stage individaully
   return Promise.all(context.intermediate.map((mtl: any, index: number) => {
@@ -22,9 +22,9 @@ processor('Material[]', (context: Context): Promise<void> => {
     let subContext = extend({}, context, {
       intermediate: mtl,
       targetType: 'Material',
-    }) as Context
+    }) as PipelineContext
     // send to the "Material" processor
-    return context.manager.process(subContext).then(() => {
+    return context.pipeline.process(subContext).then(() => {
       context.result[index] = subContext.result
     })
   })).then(() => {
@@ -32,7 +32,7 @@ processor('Material[]', (context: Context): Promise<void> => {
   })
 })
 
-importer('.json', 'Material', (context: Context): Promise<void> => {
+pipelineImporter('.json', 'Material', (context: PipelineContext): Promise<void> => {
   // parse text content into json
   context.intermediate = JSON.parse(context.raw.content)
   // materials can be defined as an array (a material collection) or as single material object
@@ -42,10 +42,10 @@ importer('.json', 'Material', (context: Context): Promise<void> => {
     context.intermediate = context.intermediate[0]
   }
   // send to the "Material" processor
-  return context.manager.process(context)
+  return context.pipeline.process(context)
 })
 
-processor('Material', (context: Context) => {
+pipelineProcessor('Material', (context: PipelineContext) => {
   let json = context.intermediate
   // the material name
   let name = json.name
@@ -55,16 +55,16 @@ processor('Material', (context: Context) => {
   let params = json.parameters || {}
 
   // load the effect from effect path
-  return context.manager.load('Effect', effect).then((effect) => {
+  return context.manager.load('Effect', effect).then((loadedEffect) => {
     // TODO: allow the user of the pipeline to tell wheter to clone the effect or use the loaded reference
-    context.result = effect.clone()
+    context.result = loadedEffect.clone()
     // take the previous name an material parameters
     context.result.name = name
     context.result.parameters = extend(context.result.parameters || {}, params)
   })
 })
 
-preprocessor('Material', (context: Context) => {
+pipelinePreProcessor('Material', (context: PipelineContext) => {
 
   const data = context.intermediate
   const parameters = data.parameters

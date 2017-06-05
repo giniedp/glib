@@ -281,7 +281,7 @@ export class SpriteBatch {
       this.viewportState = options.viewportState
     }
     this.hasBegun = true
-  };
+  }
 
   /**
    * @param texture The texture to draw
@@ -316,7 +316,7 @@ export class SpriteBatch {
     }
     this.spriteQueue.length = 0
     this.hasBegun = false
-  };
+  }
 
   private commitRenderState() {
     let device = this.device

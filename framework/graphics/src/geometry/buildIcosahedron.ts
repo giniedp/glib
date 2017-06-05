@@ -20,7 +20,7 @@ function normalize(v: number[]) {
     return v
 }
 
-function subdivide(a: number[], b: number[], c: number[], depth: number, block: Function) {
+function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: Vec3) => void) {
   if (depth <= 0) {
     block(Vec3.convert(a))
     block(Vec3.convert(b))

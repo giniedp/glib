@@ -97,7 +97,7 @@ export class Orientation extends Events {
   }
 
   protected handleOrientationEvent(e: DeviceOrientationEvent) {
-    let orientation = this.state.orientation || {} as IDeviceOrientation
+    let orientation = this.state.orientation || {} as IDeviceOrientation // tslint:disable-line
     orientation.absolute = e.absolute
     orientation.alpha    = e.alpha
     orientation.beta     = e.beta
@@ -108,20 +108,19 @@ export class Orientation extends Events {
 
   protected handleMotionEvent(e: DeviceMotionEvent) {
 
-    let acceleration = this.state.acceleration || {} as IVec3
+    let acceleration = this.state.acceleration || {} as IVec3 // tslint:disable-line
     acceleration.x = e.acceleration.x
     acceleration.y = e.acceleration.y
     acceleration.z = e.acceleration.z
     this.state.acceleration = acceleration
 
-    acceleration = this.state.accelerationIncludingGravity || {} as IVec3
+    acceleration = this.state.accelerationIncludingGravity || {} as IVec3 // tslint:disable-line
     acceleration.x = e.accelerationIncludingGravity.x
     acceleration.y = e.accelerationIncludingGravity.y
     acceleration.z = e.accelerationIncludingGravity.z
     this.state.accelerationIncludingGravity = acceleration
 
-    let rotation = this.state.rotation || {} as IDeviceRotation
-    rotation.alpha = e.rotationRate.alpha
+    let rotation = this.state.rotation || {} as IDeviceRotation // tslint:disable-line
     rotation.beta = e.rotationRate.beta
     rotation.gamma = e.rotationRate.gamma
     this.state.rotation = rotation

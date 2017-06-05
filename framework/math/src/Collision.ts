@@ -506,10 +506,22 @@ export function intersectionPlanePlanePlane(p1: IVec4, p2: IVec4, p3: IVec4, poi
 }
 
 export function boxContainsBox(box1: BoundingBox, box2: BoundingBox): number {
-  if ((box1.max.x < box2.min.x) || (box1.min.x > box2.max.x) || (box1.max.y < box2.min.y) || (box1.min.y > box2.max.y) || (box1.max.z < box2.min.z) || (box1.min.z > box2.max.z)) {
+  if (
+    (box1.max.x < box2.min.x) ||
+    (box1.min.x > box2.max.x) ||
+    (box1.max.y < box2.min.y) ||
+    (box1.min.y > box2.max.y) ||
+    (box1.max.z < box2.min.z) ||
+    (box1.min.z > box2.max.z)) {
     return 0
   }
-  if ((box1.min.x <= box2.min.x) && (box1.max.x >= box2.max.x) && (box1.min.y <= box2.min.y) && (box1.max.y >= box2.max.y) && (box1.min.z <= box2.min.z) && (box1.max.z >= box2.max.z)) {
+  if (
+    (box1.min.x <= box2.min.x) &&
+    (box1.max.x >= box2.max.x) &&
+    (box1.min.y <= box2.min.y) &&
+    (box1.max.y >= box2.max.y) &&
+    (box1.min.z <= box2.min.z) &&
+    (box1.max.z >= box2.max.z)) {
     return 2
   }
   return 1

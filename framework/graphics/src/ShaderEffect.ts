@@ -52,7 +52,7 @@ export class ShaderEffect {
   /**
    * The effect parameters
    */
-  public parameters: Object
+  public parameters: { [key: string]: any }
   /**
    * The technique collection
    */

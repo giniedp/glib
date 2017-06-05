@@ -15,7 +15,7 @@ export class Touch implements Component {
   public oldStates: any
   public newStates: any
 
-  constructor(options: any={}) {
+  constructor(options: any = {}) {
     this.touch = new Input.TouchPane({ element: options.element || document })
     this.touchIds = []
     extend(this, options)
@@ -23,11 +23,13 @@ export class Touch implements Component {
     this.oldStates = {}
   }
 
-  public update(){
+  public update() {
     let ids = this.touchIds
     ids.length = 0
     for (let id in this.touch.state) {
-      ids.push(Number(id))
+      if (this.touch.state.hasOwnProperty(id)) {
+        ids.push(Number(id))
+      }
     }
     for (let id of ids) {
       let tmp = this.oldStates[id] || {}

@@ -77,7 +77,6 @@
     "no-switch-case-fall-through": false,
     "no-trailing-whitespace": true,
     "no-unused-expression": true,
-    "no-unused-new": true,
 
     // "no-unused-variable": true,
     // This is checked by the TypeScript v2 compiler using the flags --noUnusedParameters and --noUnusedLocals
@@ -96,6 +95,7 @@
       "check-whitespace"
     ],
     "prefer-const": false,
+    "prefer-conditional-expression": false,
     "one-variable-per-declaration": [
       true,
       "ignore-for-loop"
@@ -158,39 +158,6 @@
       "check-separator",
       "check-type",
       "check-typecast"
-    ],
-    "object-literal-shorthand": false,
-    "directive-selector": [
-      true,
-      "attribute",
-      "gbc",
-      "camelCase"
-    ],
-    "component-selector": [
-      true,
-      "element",
-      "gbc",
-      "kebab-case"
-    ],
-    "use-input-property-decorator": true,
-    "use-output-property-decorator": true,
-    "use-host-property-decorator": false,
-    "no-attribute-parameter-decorator": true,
-    "no-input-rename": false,
-    "no-output-rename": false,
-    "no-forward-ref": false,
-    "use-life-cycle-interface": true,
-    "use-pipe-transform-interface": true,
-    "pipe-naming": [
-      true,
-      "camelCase",
-      "gbc"
-    ],
-    "component-class-suffix": true,
-    "directive-class-suffix": true,
-    "import-destructuring-spacing": true,
-    "templates-use-public": true,
-    "no-access-missing-member": true,
-    "invoke-injectable": true
+    ]
   }
 }

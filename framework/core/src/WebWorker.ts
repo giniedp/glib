@@ -23,7 +23,7 @@ export function disable() {
   workers.length = 0
 }
 
-export function register(method: string, func: Function, workerId: number = 0): Function {
+export function register(method: string, func: (...args: any[]) => any, workerId: number = 0): (...args: any[]) => any {
   methods[method] = new Work(method, func, workerId)
   return (...params: any[]) => methods[method].run(params)
 }
@@ -33,7 +33,7 @@ export function execute(method: string, ...params: any[]) {
 }
 
 class Work {
-  constructor(private method: string, private action: Function, private workerId: number) {
+  constructor(private method: string, private action: (...args: any[]) => any, private workerId: number) {
 
   }
 
@@ -56,7 +56,7 @@ class Work {
 class PromiseWorker {
   public worker: Worker
   public idCounter = 0
-  public handlers: Function[] = []
+  public handlers: Array<(...args: any[]) => any> = []
 
   constructor(stringUrl: string) {
     this.worker = new Worker(stringUrl)

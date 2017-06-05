@@ -7,4 +7,3 @@ export * from './ScissorState'
 export * from './StencilState'
 export * from './VertexAttribArrayState'
 export * from './ViewportState'
-

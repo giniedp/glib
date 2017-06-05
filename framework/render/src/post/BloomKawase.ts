@@ -1,3 +1,4 @@
+// tslint:disable no-bitwise
 import { BlendState, Color, DepthFormat, DepthState, ShaderEffect, ShaderProgram, StencilState } from '@glib/graphics'
 import { Manager } from '../Manager'
 import { Step } from '../Types'
@@ -17,8 +18,8 @@ export class BloomKawase implements Step {
     let baseTarget = manager.beginStep()
 
     if (this.halfSize) {
-      this.targetOptions.width = (baseTarget.width / 2)|0
-      this.targetOptions.height = (baseTarget.height / 2)|0
+      this.targetOptions.width = (baseTarget.width / 2) | 0
+      this.targetOptions.height = (baseTarget.height / 2) | 0
     } else {
       this.targetOptions.width = baseTarget.width
       this.targetOptions.height = baseTarget.height

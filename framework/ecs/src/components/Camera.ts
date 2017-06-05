@@ -76,7 +76,11 @@ export class Camera implements Component {
     return [
       `- component: ${this.name}`,
       `  enabled: ${this.enabled}`,
-      `  near: ${this.near.toPrecision(5)}, far: ${this.far.toPrecision(5)}, fov: ${this.fov.toPrecision(5)}, aspect: ${this.aspect.toPrecision(5)}`
+      ['  ',
+       `near: ${this.near.toPrecision(5)}`,
+       `far: ${this.far.toPrecision(5)}`,
+       `fov: ${this.fov.toPrecision(5)}`,
+       `aspect: ${this.aspect.toPrecision(5)}`].join(', '),
     ].join('\n')
   }
 }

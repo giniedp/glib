@@ -173,7 +173,7 @@ export class OBJ {
   }
 
   private read_lod_key(data: string) {
-    this.currentGroup().lod = parseInt(data)
+    this.currentGroup().lod = parseInt(data, 10)
   }
 
   private read_maplib_key(data: string) {

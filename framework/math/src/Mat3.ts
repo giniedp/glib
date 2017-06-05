@@ -1572,7 +1572,7 @@ export class Mat3 {
     return [
       [m[0].toFixed(fixed), m[3].toFixed(fixed), m[6].toFixed(fixed)].join(', '),
       [m[1].toFixed(fixed), m[4].toFixed(fixed), m[7].toFixed(fixed)].join(', '),
-      [m[2].toFixed(fixed), m[5].toFixed(fixed), m[8].toFixed(fixed)].join(', ')
+      [m[2].toFixed(fixed), m[5].toFixed(fixed), m[8].toFixed(fixed)].join(', '),
     ].join('\n')
   }
 }

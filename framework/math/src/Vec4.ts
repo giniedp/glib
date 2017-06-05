@@ -1202,14 +1202,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
         data[0] || 0,
         data[1] || 0,
         data[2] || 0,
-        data[3] || 0
+        data[3] || 0,
       )
     }
     return new Vec4(
       data.x || 0,
       data.y || 0,
       data.z || 0,
-      data.w || 0
+      data.w || 0,
     )
   }
 

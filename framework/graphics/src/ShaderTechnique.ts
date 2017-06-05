@@ -13,7 +13,7 @@ export interface ShaderTechniqueOptions {
   /**
    * Arbitrary meta data or info about the shader technique
    */
-  meta?: Object
+  meta?: { [key: string]: any }
   /**
    * Collection of passes of this technique
    */
@@ -36,7 +36,7 @@ export class ShaderTechnique {
   /**
    * Arbitrary meta data or info about the shader technique
    */
-  public meta: Object
+  public meta: { [key: string]: any }
   /**
    *
    */

@@ -27,7 +27,7 @@ export class Builder {
   private sGroups: number[]
   private vertexBuffer: BufferOptions
   public vertexCount: number
-  private maxVertexCount = 65536
+  public maxVertexCount = 65536
   private boundingBox: BoundingBox
   private boundingSphere: BoundingSphere
 

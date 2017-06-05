@@ -63,12 +63,12 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get colorBlendFunction(): number {
-    return this.$colorBlendFunction
-  }
-
   get colorBlendFunctionName(): string {
     return BlendFunction.nameOf(this.$colorBlendFunction)
+  }
+
+  get colorBlendFunction(): number {
+    return this.$colorBlendFunction
   }
 
   set colorBlendFunction(value: number) {
@@ -79,12 +79,12 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get alphaBlendFunction(): number {
-    return this.$alphaBlendFunction
-  }
-
   get alphaBlendFunctionName(): string {
     return BlendFunction.nameOf(this.$alphaBlendFunction)
+  }
+
+  get alphaBlendFunction(): number {
+    return this.$alphaBlendFunction
   }
 
   set alphaBlendFunction(value: number) {
@@ -95,12 +95,12 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get colorSrcBlend(): number {
-    return this.$colorSrcBlend
-  }
-
   get colorSrcBlendName(): string {
     return Blend.nameOf(this.$colorSrcBlend)
+  }
+
+  get colorSrcBlend(): number {
+    return this.$colorSrcBlend
   }
 
   set colorSrcBlend(value: number) {
@@ -111,12 +111,12 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get alphaSrcBlend(): number {
-    return this.$alphaSrcBlend
-  }
-
   get alphaSrcBlendName(): string {
     return Blend.nameOf(this.$alphaSrcBlend)
+  }
+
+  get alphaSrcBlend(): number {
+    return this.$alphaSrcBlend
   }
 
   set alphaSrcBlend(value: number) {
@@ -127,12 +127,12 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get colorDstBlend(): number {
-    return this.$colorDstBlend
-  }
-
   get colorDstBlendName(): string {
     return Blend.nameOf(this.$colorDstBlend)
+  }
+
+  get colorDstBlend(): number {
+    return this.$colorDstBlend
   }
 
   set colorDstBlend(value: number) {
@@ -143,12 +143,12 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get alphaDstBlend(): number {
-    return this.$alphaDstBlend
-  }
-
   get alphaDstBlendName(): string {
     return Blend.nameOf(this.$alphaDstBlend)
+  }
+
+  get alphaDstBlend(): number {
+    return this.$alphaDstBlend
   }
 
   set alphaDstBlend(value: number) {

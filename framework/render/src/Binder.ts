@@ -11,6 +11,13 @@ export interface Binding<T> {
   value: T
 }
 
+export interface LightBinding {
+  Position: Binding<IVec4>
+  Direction: Binding<IVec4>
+  Color: Binding<IVec4>
+  Misc: Binding<IVec4>
+}
+
 export class Binder {
   public Position: Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.zero() }
   public Direction: Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.zero() }
@@ -102,12 +109,12 @@ export class Binder {
   constructor(public device: Device) {
   }
 
-  private buildLightBinding(i: number) {
+  private buildLightBinding(i: number): LightBinding {
     return {
-      Position: { name: `Lights${i}Position`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
-      Direction: { name: `Lights${i}Direction`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
-      Color: { name: `Lights${i}Color`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
-      Misc: { name: `Lights${i}Misc`, type: 'vec4', value: Vec4.zero() } as Binding<IVec4>,
+      Position: { name: `Lights${i}Position`, type: 'vec4', value: Vec4.zero() },
+      Direction: { name: `Lights${i}Direction`, type: 'vec4', value: Vec4.zero() },
+      Color: { name: `Lights${i}Color`, type: 'vec4', value: Vec4.zero() },
+      Misc: { name: `Lights${i}Misc`, type: 'vec4', value: Vec4.zero() },
     }
   }
 

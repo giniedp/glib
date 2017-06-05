@@ -42,12 +42,12 @@ export class CullState implements CullStateOptions {
     }
   }
 
-  get frontFace(): number {
-    return this.frontFaceField
-  }
-
   get frontFaceName(): string {
     return FrontFace.nameOf(this.frontFace)
+  }
+
+  get frontFace(): number {
+    return this.frontFaceField
   }
 
   set frontFace(value: number) {
@@ -58,12 +58,12 @@ export class CullState implements CullStateOptions {
     }
   }
 
-  get cullMode(): number {
-    return this.cullModeField
-  }
-
   get cullModeName(): string {
     return CullMode.nameOf(this.cullMode)
+  }
+
+  get cullMode(): number {
+    return this.cullModeField
   }
 
   set cullMode(value: number) {

@@ -1984,8 +1984,7 @@ export class Mat4 {
       [m[0].toFixed(fixed), m[4].toFixed(fixed), m[8].toFixed(fixed), m[12].toFixed(fixed)].join(', '),
       [m[1].toFixed(fixed), m[5].toFixed(fixed), m[9].toFixed(fixed), m[13].toFixed(fixed)].join(', '),
       [m[2].toFixed(fixed), m[6].toFixed(fixed), m[10].toFixed(fixed), m[14].toFixed(fixed)].join(', '),
-      [m[3].toFixed(fixed), m[7].toFixed(fixed), m[11].toFixed(fixed), m[15].toFixed(fixed)].join(', ')
+      [m[3].toFixed(fixed), m[7].toFixed(fixed), m[11].toFixed(fixed), m[15].toFixed(fixed)].join(', '),
     ].join('\n')
   }
-
 }

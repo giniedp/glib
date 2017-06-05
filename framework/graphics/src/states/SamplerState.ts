@@ -97,12 +97,12 @@ export class SamplerState implements SamplerStateProperties {
     }
   }
 
-  get minFilter(): number {
-    return this.minFilterField
-  }
-
   get minFilterName(): string {
     return TextureFilter.nameOf(this.minFilterField)
+  }
+
+  get minFilter(): number {
+    return this.minFilterField
   }
 
   set minFilter(value: number) {
@@ -113,12 +113,12 @@ export class SamplerState implements SamplerStateProperties {
     }
   }
 
-  get magFilter(): number {
-    return this.magFilterField
-  }
-
   get magFilterName(): string {
     return TextureFilter.nameOf(this.magFilterField)
+  }
+
+  get magFilter(): number {
+    return this.magFilterField
   }
 
   set magFilter(value: number) {
@@ -129,12 +129,12 @@ export class SamplerState implements SamplerStateProperties {
     }
   }
 
-  get wrapU(): number {
-    return this.wrapUField
-  }
-
   get wrapUName(): string {
     return TextureWrapMode.nameOf(this.wrapUField)
+  }
+
+  get wrapU(): number {
+    return this.wrapUField
   }
 
   set wrapU(value: number) {
@@ -145,12 +145,12 @@ export class SamplerState implements SamplerStateProperties {
     }
   }
 
-  get wrapV(): number {
-    return this.wrapVField
-  }
-
   get wrapVName(): string {
     return TextureWrapMode.nameOf(this.wrapVField)
+  }
+
+  get wrapV(): number {
+    return this.wrapVField
   }
 
   set wrapV(value: number) {

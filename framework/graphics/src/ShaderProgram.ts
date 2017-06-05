@@ -55,7 +55,7 @@ export class ShaderProgram {
    */
   public handle: WebGLProgram
 
-  public attributes: Object = {}
+  public attributes: { [key: string]: any } = {}
   public attributeLocations: number[] = []
   public uniforms: { [name: string]: ShaderUniform } = {}
 

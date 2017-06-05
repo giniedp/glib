@@ -1,6 +1,6 @@
 import { ajax, AjaxOptions, extend, isArray, isObject, isString, logger, path, pick } from '@glib/core'
 import { Device } from '@glib/graphics'
-import { Context, getHandlers, getImporter, getLoader, getProcessor } from './Pipeline'
+import { Pipeline, PipelineContext, PipelineHandler } from './Pipeline'
 
 export interface RawAsset {
   /**
@@ -28,6 +28,7 @@ export interface IManagerOptions {
   cacheEnabled?: boolean
   staticEnabled?: boolean
   defaultAjaxOptions?: any
+  pipeline?: Pipeline
 }
 
 /**
@@ -58,13 +59,16 @@ export class Manager {
    *
    */
   public transformAjaxOptions = (it: any) => it
-
+  /**
+   *
+   */
+  public pipeline: Pipeline = new Pipeline()
   /**
    *
    */
   constructor(device: Device, options: IManagerOptions= {}) {
     this.device = device
-    extend(this, pick(options, 'cacheEnabled', 'defaultAjaxOptions', 'transformAjaxOptions'))
+    extend(this, pick(options, 'cacheEnabled', 'defaultAjaxOptions', 'transformAjaxOptions', 'pipeline'))
   }
 
   /**
@@ -192,61 +196,17 @@ export class Manager {
       return loaded
     }
 
-    let context: Context = {
+    let context: PipelineContext = {
       path: assetPath,
       stage: 'load',
       manager: this,
+      pipeline: this.pipeline,
       sourceType: sourceType,
       targetType: targetType,
       options: {},
     }
 
-    return this.loaded[key] = this
-    .runHandlers('preload', context)
-    .then(() => {
-      let loader = getLoader(context.sourceType, context.targetType)
-      return loader
-        ? Promise.resolve(loader(context))
-        : Promise.reject(`[Content.Manager] loader not found for sourceType:'${sourceType}' targetType:'${targetType}'`)
-    })
-    .then(() => {
-      return context.result
-    })
-  }
-
-  /**
-   *
-   */
-  public import(context: Context): PromiseLike<void> {
-    context.stage = 'import'
-    let importer = getImporter(context.sourceType, context.targetType)
-    return importer
-      ? Promise.resolve(importer(context))
-      : Promise.reject(`[Content.Manager] importer not found for sourceType:'${context.sourceType}' targetType:'${context.targetType}'`)
-  }
-
-  /**
-   *
-   */
-  public process(context: Context): Promise<void> {
-    return this
-    .runHandlers('preprocess', context)
-    .then(() => {
-      context.stage = 'process'
-      let processor = getProcessor(context.targetType)
-      return processor
-        ? Promise.resolve(processor(context))
-        : Promise.reject(`[Content.Manager] processor not found for targetType:'${context.targetType}'`)
-    })
-    .then(() => {
-      return this.runHandlers('postprocess', context)
-    })
-  }
-
-  private runHandlers<T = any>(name: string, context: Context): Promise<T> {
-    context.stage = name as any
-    let handlers = getHandlers(context.stage, null, context.targetType)
-    return Promise.all(handlers.map((it: any)  => it(context))) as any
+    return this.loaded[key] = this.pipeline.load(context).then(() => context.result)
   }
 
   /**

@@ -1,8 +1,6 @@
 export * from './src/enums'
 export * from './src/states'
-
-import * as GeometryImport from './src/geometry'
-export const Geometry = GeometryImport
+export * from './src/geometry'
 
 export * from './src/Buffer'
 export * from './src/Capabilities'

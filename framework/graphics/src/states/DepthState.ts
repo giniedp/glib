@@ -1,5 +1,5 @@
-import { CompareFunction } from './../enums/Enums'
 import { Device } from './../Device'
+import { CompareFunction } from './../enums/Enums'
 
 const propertyKeys: Array<keyof DepthStateOptions> = [
   'depthEnable',
@@ -102,16 +102,16 @@ export class DepthState implements DepthStateOptions {
     return this.depthFunctionField
   }
 
-  get depthFunctionName(): string {
-    return CompareFunction.nameOf(this.depthFunction)
-  }
-
   set depthFunction(value: number) {
     if (this.depthFunctionField !== value) {
       this.depthFunctionField = value
       this.changes.depthFunction = value
       this.hasChanged = true
     }
+  }
+
+  get depthFunctionName(): string {
+    return CompareFunction.nameOf(this.depthFunction)
   }
 
   public assign(state: DepthStateOptions): DepthState {

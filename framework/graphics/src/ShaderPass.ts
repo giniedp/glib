@@ -25,7 +25,7 @@ export interface ShaderPassOptions {
   /**
    * Arbitrary meta data or info about the shader pass
    */
-  meta?: Object
+  meta?: { [key: string]: any }
   /**
    * The shader program or constructor options
    */
@@ -71,7 +71,7 @@ export class ShaderPass {
   /**
    * Arbitrary meta data or info about the shader pass
    */
-  public meta: Object
+  public meta: { [key: string]: any }
   /**
    * The shader program
    */

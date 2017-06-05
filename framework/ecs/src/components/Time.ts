@@ -43,7 +43,7 @@ export class Time implements Component {
       `  elapsed gameTime: ${this.elapsedMsInGame.toPrecision(5)}`,
       `  total gameTime: ${this.totalMsInGame}`,
       `  elapsed realTime: ${this.elapsedMsInReal.toPrecision(5)}`,
-      `  total realTime: ${this.totalMsInReal}`
+      `  total realTime: ${this.totalMsInReal}`,
     ].join('\n')
   }
 }

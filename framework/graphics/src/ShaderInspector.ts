@@ -262,18 +262,22 @@ export class ShaderInspector {
 
   public static evaluateIfExpression(expression: string, defines: any): boolean {
     if (!expression) { return false }
-    // evaluates and replaces 'defined(NAME)' macros
+    // evaluates all 'defined(NAME)' macros
     expression = expression.replace(/defined\s*\(?(.\w+)\)?/gi, (a: string, b: string) => {
       if (b === 'false' || b === 'true') { return b }
       return String(b in defines)
     })
+    // evaluates all 'CONSTANT' macros
     expression = expression.replace(/(\w+)/gi, (a: string, b: string) => {
       if (b === 'false' || b === 'true') { return b }
       return defines[b]
     })
+    // limit character set befor going into eval
+    if (!/^[a-zA-Z0-9 \(\)\|\&\!\^]*$/gi.test(expression)) {
+      return false
+    }
     try {
-      // TODO: validate expression before using eval
-      return eval(expression)
+      return !!eval(expression) // tslint:disable-line
     } catch (e) {
       return false
     }
@@ -316,7 +320,6 @@ export class ShaderInspector {
   public static fixStructUniforms(uniforms: any, structs: any, defines: any): void {
     // let item, struct, match, name, count: number, i
     let reg = /\s*(.*)\s*\[(.+)].*/
-
     Object
       .keys(uniforms)
       .map((key) => {
@@ -354,7 +357,9 @@ export class ShaderInspector {
         data.match = item.name.match(reg)
 
         return data
-      }).forEach((data) => {
+      })
+      .filter((it) => !!it)
+      .forEach((data) => {
         const key = data.key
         const item = data.item
         const struct = data.struct

@@ -88,7 +88,7 @@ export class WASD implements Component {
     }
 
     this.currentMoveSpeed += (targetSpeed - this.currentMoveSpeed) * this.moveDamping
-    this.currentMoveSpeed = ((this.currentMoveSpeed * 1000) | 0) / 1000
+    this.currentMoveSpeed = ((this.currentMoveSpeed * 1000) || 0) / 1000
     if (this.currentMoveSpeed !== 0) {
       Vec3.multiplyScalar(this.temp, this.currentMoveSpeed * timeSec, this.translation)
       trans.translate(this.translation)

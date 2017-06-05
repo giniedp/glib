@@ -1,8 +1,9 @@
-import { Transform } from './Transform';
 import { extend } from '@glib/core'
 import { Vec3, Vec4 } from '@glib/math'
+
 import { Component } from './../Component'
 import { Entity } from './../Entity'
+import { Transform } from './Transform'
 
 export interface LightProperties {
   range?: number

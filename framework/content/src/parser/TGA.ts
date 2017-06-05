@@ -152,11 +152,9 @@ export class TGA {
 
     let pixelSize = this.header.pixelDepth / 8
     let imageSize = (this.hasColorMap ? 1 : pixelSize) * this.header.imageWidth * this.header.imageHeight
-    if (this.isCompressed) {
-      this.imageData = decodeRunLengthData(reader, pixelSize, imageSize)
-    } else {
-      this.imageData = data.subarray(reader.position, reader.position * imageSize)
-    }
+    this.imageData = this.isCompressed
+      ? decodeRunLengthData(reader, pixelSize, imageSize)
+      : data.subarray(reader.position, reader.position * imageSize)
   }
 
   private getImageData() {
