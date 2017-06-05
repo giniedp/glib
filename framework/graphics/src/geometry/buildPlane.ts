@@ -43,3 +43,5 @@ export function buildPlane(builder: Builder, options: {
     }
   }
 }
+
+Builder.formulas['Plane'] = buildPlane

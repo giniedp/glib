@@ -86,3 +86,5 @@ export function buildCone(builder: Builder, options: {
   })
   builder.endTransform(tId)
 }
+
+Builder.formulas['Cone'] = buildCone

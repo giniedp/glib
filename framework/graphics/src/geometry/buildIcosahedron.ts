@@ -165,3 +165,6 @@ export function buildIcosahedron(builder: Builder, options: {
       steps, onVetex)
   }
 }
+
+Builder.formulas['Icosahedron'] = buildIcosahedron
+Builder.formulas['Octahedron'] = buildOctahedron

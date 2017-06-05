@@ -18,6 +18,7 @@ export interface BuilderOptions {
 }
 
 export class Builder {
+  public static formulas: { [key: string]: (builder: Builder, options: any) => void } = {}
   private defaultAttributes: {[key: string]: any}
   private layout: {[key: string]: any}
   private meshes: ModelMeshOptions[] = []
@@ -328,5 +329,17 @@ export class Builder {
   public finishModel(device: Device, options: ModelOptions = {}): Model {
     options = this.finishModelOptions(options)
     return device.createModel(options)
+  }
+
+  public append(name: string, options: any): Builder {
+    let f = Builder.formulas[name]
+    if (!f) {
+      throw new Error(`[Graphics.Builder] formula not found '${name}'`)
+    }
+    if (typeof f !== 'function') {
+      throw new Error(`[Graphics.Builder] formula '${name}' is not a function`)
+    }
+    f(this, options)
+    return this
   }
 }

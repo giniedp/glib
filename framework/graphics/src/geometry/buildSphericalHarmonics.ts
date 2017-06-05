@@ -71,3 +71,5 @@ export function buildSphericalHarmonics(builder: Builder, options: {
     }
   }
 }
+
+Builder.formulas['SphericalHarmonics'] = buildSphericalHarmonics

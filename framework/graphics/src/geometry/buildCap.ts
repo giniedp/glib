@@ -41,3 +41,5 @@ export function buildCap(builder: Builder, options: {
     builder.addIndex(baseVertex + step + 1)
   }
 }
+
+Builder.formulas['Cap'] = buildCap

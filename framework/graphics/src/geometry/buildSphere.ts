@@ -59,3 +59,5 @@ export function buildSphere(builder: Builder, options: {
     }
   }
 }
+
+Builder.formulas['Sphere'] = buildSphere

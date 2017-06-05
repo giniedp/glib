@@ -75,3 +75,5 @@ export function buildSuperEllipsoid(builder: Builder, options: {
     }
   }
 }
+
+Builder.formulas['SuperEllipsoid'] = buildSuperEllipsoid

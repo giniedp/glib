@@ -20,3 +20,5 @@ export function buildCylinder(builder: Builder, options: {
     bottomRadius: radius,
   })
 }
+
+Builder.formulas['Cylinder'] = buildCylinder

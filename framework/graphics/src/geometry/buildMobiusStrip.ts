@@ -67,3 +67,5 @@ export function buildMobiusStrip(builder: Builder, options: {
     }
   }
 }
+
+Builder.formulas['MobiusStrip'] = buildMobiusStrip

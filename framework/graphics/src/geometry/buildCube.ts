@@ -53,3 +53,5 @@ export function buildCube(builder: Builder, options: {
   buildPlane(builder, {size: size, steps: steps})
   builder.endTransform(tId)
 }
+
+Builder.formulas['Cube'] = buildCube
