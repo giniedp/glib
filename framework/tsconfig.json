@@ -24,7 +24,8 @@
       "../npde_modules/@types"
     ],
     "types": [
-      "jasmine"
+      "jasmine",
+      "webgl2"
     ]
   },
   "exclude": [

@@ -41,6 +41,10 @@ import { Model, ModelOptions } from './Model'
 import { ShaderProgram } from './ShaderProgram'
 import { SpriteBatch } from './SpriteBatch'
 
+declare var HeadlessGL: any
+const supportsWebGL = typeof WebGLRenderingContext === 'function'
+const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
+
 export interface ContextAttributes {
   /**
    * If true, requests a drawing buffer with an alpha channel for the
@@ -97,16 +101,27 @@ function getOrCreateCanvas(canvas?: string|HTMLCanvasElement): HTMLCanvasElement
   return document.createElement('canvas') as HTMLCanvasElement
 }
 
-function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRenderingContext {
-  let context = options.context
-  let attributes = extend({}, DEFAULT_CONTEXT_ATTRIBUTES, options.contextAttributes || {})
-  if (context instanceof CanvasRenderingContext2D) {
+function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRenderingContext | WebGL2RenderingContext {
+  const context = options.context
+  const attributes = extend({}, DEFAULT_CONTEXT_ATTRIBUTES, options.contextAttributes || {})
+
+  if (context && typeof context !== 'string') {
+    // assume a valid context is already given
     return context as any
   }
-  if (typeof context === 'string') {
-    return canvas.getContext(context as string, attributes) as WebGLRenderingContext
+
+  const result: any = canvas.getContext(context || 'experimental-webgl', attributes) as any
+  if (result) {
+    return result
   }
-  return canvas.getContext('experimental-webgl', attributes) as WebGLRenderingContext
+
+  // This is a special case for unit tests
+  if (HeadlessGL) {
+    return HeadlessGL(800, 600, attributes)
+  }
+
+  // webgl is not supported
+  return null
 }
 
 /**
@@ -127,7 +142,7 @@ export class Device {
    * @link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext
    * @link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext
    */
-  public context: WebGLRenderingContext
+  public context: WebGLRenderingContext | WebGL2RenderingContext
 
   /**
    * A collection of capabilites of the currently running graphics unit.

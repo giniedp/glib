@@ -1,7 +1,6 @@
 import { extend, logger } from '@glib/core'
-import { DataTypeOption } from './Enums'
 
-import { DataSize, DataType } from './enums'
+import { DataSize, DataType, DataTypeOption } from './enums'
 
 export interface VertexAttribute {
   type: DataTypeOption
