@@ -2,6 +2,7 @@
 
 const webpackConfig = require('./webpack.config');
 const IS_COVERAGE = !!process.env.IS_COVERAGE;
+const IS_TRAVIS = !!process.env.TRAVIS;
 
 module.exports = function (config) {
 
@@ -17,8 +18,14 @@ module.exports = function (config) {
       'karma-coverage',
       'karma-remap-coverage',
     ],
+    customLaunchers: {
+      ChromeNoSandbox: {
+        base: 'Chrome',
+        flags: ['--no-sandbox']
+      }
+    },
     browsers: [
-      'Chrome'
+      IS_TRAVIS ? 'ChromeNoSandbox' : 'Chrome'
     ],
     frameworks: [
       'jasmine'
