@@ -1,32 +1,36 @@
 import { copy, logger } from '@glib/core'
 import { BoundingBox, BoundingSphere, Mat2, Mat3, Mat4 } from '@glib/math'
-import { BufferData, BufferOptions } from '../Buffer'
-import { Color } from '../Color'
-import { Device } from '../Device'
-import { Model, ModelOptions } from '../Model'
-import { ModelMesh, ModelMeshOptions } from '../ModelMesh'
-import { VertexLayout } from '../VertexLayout'
-import { calculateNormals } from './calculateNormals'
-import { calculateTangents } from './calculateTangents'
+import { BufferDataOption, BufferOptions } from './Buffer'
+import { Color } from './Color'
+import { Device } from './Device'
+import { Model, ModelOptions } from './Model'
+import { ModelMesh, ModelMeshOptions } from './ModelMesh'
+import { VertexLayout } from './VertexLayout'
+
+import './formulas'
+import { calculateNormals } from './formulas/calculateNormals'
+import { calculateTangents } from './formulas/calculateTangents'
 
 let tmpBuffer: any[] = []
 
-export interface BuilderOptions {
-  defaultAttributes?: { [key: string]: any }
-  layout?: string|{ [key: string]: any }
+export interface ModelBuilderOptions {
+  defaultAttributes?: { [key: string]: number[] }
+  layout?: string | VertexLayout
   ignoreTransform?: boolean
 }
 
-export class Builder {
-  public static formulas: { [key: string]: (builder: Builder, options: any) => void } = {}
+export type ModelBuildFormula = (builder: ModelBuilder, options: any) => void
+
+export class ModelBuilder {
+  public static formulas: { [key: string]: ModelBuildFormula } = {}
   private defaultAttributes: {[key: string]: any}
   private layout: {[key: string]: any}
   private meshes: ModelMeshOptions[] = []
 
-  private indexBuffer: BufferOptions
+  private indexBuffer: BufferOptions<number[]>
   private indexCount: number
   private sGroups: number[]
-  private vertexBuffer: BufferOptions
+  private vertexBuffer: BufferOptions<number[]>
   public vertexCount: number
   public maxVertexCount = 65536
   private boundingBox: BoundingBox
@@ -34,7 +38,7 @@ export class Builder {
 
   private transformStack: Mat4[] = []
 
-  constructor(options: BuilderOptions = {}) {
+  constructor(options: ModelBuilderOptions = {}) {
     this.layout = VertexLayout.convert(options.layout || 'PositionTextureNormalTangentBitangent')
 
     // The fallback values that should be used during the build process.
@@ -53,23 +57,21 @@ export class Builder {
 
   /**
    * Gets the data array of the current index buffer
-   * @returns {BufferData}
    */
-  get indices(): BufferData {
+  get indices(): number[] {
     return this.indexBuffer.data
   }
-  set indices(value: BufferData) {
+  set indices(value: number[]) {
     this.indexBuffer.data = value
   }
 
   /**
    * Gets the data array of the current vertex buffer
-   * @returns {BufferData}
    */
-  get vertices(): BufferData {
+  get vertices(): number[] {
     return this.vertexBuffer.data
   }
-  set vertices(value: BufferData) {
+  set vertices(value: number[]) {
     this.vertexBuffer.data = value
   }
 
@@ -87,8 +89,8 @@ export class Builder {
     this.transformStack.length = id
   }
 
-  public static begin(options?: BuilderOptions) {
-    return new Builder(options)
+  public static begin(options?: ModelBuilderOptions) {
+    return new ModelBuilder(options)
   }
 
   private resetTransform() {
@@ -129,7 +131,6 @@ export class Builder {
 
   /**
    * Resets the builder state
-   * @returns {Glib.Graphics.Geometry.Builder}
    */
   public reset() {
     this.resetTransform()
@@ -151,9 +152,8 @@ export class Builder {
   /**
    * Pushes a single vertex definition into the state
    * @param vertex
-   * @returns {Glib.Graphics.Geometry.Builder}
    */
-  public addVertex(vertex: {[key: string]: any}): Builder {
+  public addVertex(vertex: {[key: string]: any}): ModelBuilder {
     if (this.vertexCount === this.maxVertexCount) {
       // throw `max vertex count reached`;
     }
@@ -261,7 +261,7 @@ export class Builder {
     }
 
     if (this.vertexCount !== vCounter) {
-      logger.debug(`[Geometry.Builder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`)
+      logger.debug(`[ModelBuilder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`)
       this.vertices = newVertices
       this.vertexCount = vCounter
 
@@ -273,11 +273,10 @@ export class Builder {
   /**
    * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
    * @param options
-   * @returns {Glib.Graphics.Geometry.Builder}
    */
   public endMeshOptions(options: ModelMeshOptions = {}, optimize: boolean = false): ModelMeshOptions {
     if (this.indexCount === 0 && this.vertexCount === 0) {
-      logger.warn(`[Geometry.Builder] pushMesh : called on empty builder. ignore.`)
+      logger.warn(`[ModelBuilder] pushMesh : called on empty builder. ignore.`)
       return options
     }
     this.mergeDublicates()
@@ -331,8 +330,8 @@ export class Builder {
     return device.createModel(options)
   }
 
-  public append(name: string, options: any): Builder {
-    let f = Builder.formulas[name]
+  public append(name: string, options: any): ModelBuilder {
+    let f = ModelBuilder.formulas[name]
     if (!f) {
       throw new Error(`[Graphics.Builder] formula not found '${name}'`)
     }

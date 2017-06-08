@@ -1,8 +1,7 @@
 [{
-  "description": "",
-  "target": "DataType",
-  "targetName": "DataTypeName",
-  "GLConstant" : true,
+  "enum": "DataType",
+  "enumName": "DataTypeName",
+  "isGlConstant" : true,
   "properties": {
     "byte"    : "BYTE",
     "short"   : "SHORT",
@@ -14,15 +13,6 @@
     "ushort565": "UNSIGNED_SHORT_5_6_5",
     "ushort4444": "UNSIGNED_SHORT_4_4_4_4",
     "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
-  },
-  "aliases" : {
-    "byte" : "int8",
-    "short" : "int16",
-    "int" : "int32",
-    "ubyte" : "uint8",
-    "ushort" : "uint16",
-    "uint" : "uint32",
-    "float" : "float32"
   },
   "glaliases" : {
     "byte"    : "BYTE",
@@ -37,8 +27,7 @@
     "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
   }
 },{
-  "description": "",
-  "target": "DataSize",
+  "enum": "DataSize",
   "properties": {
     "byte"    : 1,
     "short"   : 2,
@@ -51,15 +40,6 @@
     "ushort4444": 2,
     "ushort5551": 2
   },
-  "aliases" : {
-    "byte" : "int8",
-    "short" : "int16",
-    "int" : "int32",
-    "ubyte" : "uint8",
-    "ushort" : "uint16",
-    "uint" : "uint32",
-    "float" : "float32"
-  },
   "glaliases" : {
     "byte"    : "BYTE",
     "short"   : "SHORT",
@@ -73,9 +53,9 @@
     "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
   }
 },{
-  "description": "",
-  "target": "ArrayType",
-  "targetName": "ArrayTypeName",
+  "enum": "ArrayType",
+  "enumName": "ArrayTypeName",
+  "type": "any",
   "properties": {
     "byte"    : "Int8Array",
     "short"   : "Int16Array",
@@ -88,15 +68,6 @@
     "ushort4444": "Uint16Array",
     "ushort5551": "Uint16Array"
   },
-  "aliases" : {
-    "byte" : "int8",
-    "short" : "int16",
-    "int" : "int32",
-    "ubyte" : "uint8",
-    "ushort" : "uint16",
-    "uint" : "uint32",
-    "float" : "float32"
-  },
   "glaliases" : {
     "byte"    : "BYTE",
     "short"   : "SHORT",
@@ -110,29 +81,26 @@
     "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
   }
 },{
-  "description": "",
-  "target": "BufferUsage",
-  "targetName": "BufferUsageName",
-  "GLConstant" : true,
+  "enum": "BufferUsage",
+  "enumName": "BufferUsageName",
+  "isGlConstant" : true,
   "properties": {
     "Static": "STATIC_DRAW",
     "Dynamic": "DYNAMIC_DRAW",
     "Stream": "STREAM_DRAW"
   }
 },{
-  "description": "",
-  "target": "BufferType",
-  "targetName": "BufferTypeName",
-  "GLConstant" : true,
+  "enum": "BufferType",
+  "enumName": "BufferTypeName",
+  "isGlConstant" : true,
   "properties": {
     "VertexBuffer": "ARRAY_BUFFER",
     "IndexBuffer": "ELEMENT_ARRAY_BUFFER"
   }
 },{
-  "description": "",
-  "target": "Blend",
-  "targetName": "BlendName",
-  "GLConstant" : true,
+  "enum": "Blend",
+  "enumName": "BlendName",
+  "isGlConstant" : true,
   "properties": {
     "Zero": "ZERO",
     "One": "ONE",
@@ -151,20 +119,18 @@
     "ConstantAlphaInv": "ONE_MINUS_CONSTANT_ALPHA"
   }
 },{
-  "description": "",
-  "target": "BlendFunction",
-  "targetName": "BlendFunctionName",
-  "GLConstant" : true,
+  "enum": "BlendFunction",
+  "enumName": "BlendFunctionName",
+  "isGlConstant" : true,
   "properties": {
     "Add": "FUNC_ADD",
     "Subtract": "FUNC_SUBTRACT",
     "ReverseSubtract": "FUNC_REVERSE_SUBTRACT"
   }
 }, {
-  "description": "",
-  "target": "CompareFunction",
-  "targetName": "CompareFunctionName",
-  "GLConstant" : true,
+  "enum": "CompareFunction",
+  "enumName": "CompareFunctionName",
+  "isGlConstant" : true,
   "properties": {
     "Never": "NEVER",
     "Less": "LESS",
@@ -176,10 +142,9 @@
     "Always": "ALWAYS"
   }
 }, {
-  "description": "",
-  "target": "CullMode",
-  "targetName": "CullModeName",
-  "GLConstant" : true,
+  "enum": "CullMode",
+  "enumName": "CullModeName",
+  "isGlConstant" : true,
   "properties": {
     "Front": "FRONT",
     "Back": "BACK",
@@ -187,19 +152,17 @@
   }
 }, {
   "file": "FrontFace.js",
-  "description": "",
-  "target": "FrontFace",
-  "targetName": "FrontFaceName",
-  "GLConstant" : true,
+  "enum": "FrontFace",
+  "enumName": "FrontFaceName",
+  "isGlConstant" : true,
   "properties": {
     "ClockWise": "CW",
     "CounterClockWise": "CCW"
   }
 }, {
-  "description": "",
-  "target": "StencilOperation",
-  "targetName": "StencilOperationName",
-  "GLConstant" : true,
+  "enum": "StencilOperation",
+  "enumName": "StencilOperationName",
+  "isGlConstant" : true,
   "properties": {
     "Zero": "ZERO",
     "Keep": "KEEP",
@@ -211,10 +174,9 @@
     "DecrementWrap": "DECR_WRAP"
   }
 }, {
-  "description": "",
-  "target": "PixelFormat",
-  "targetName": "PixelFormatName",
-  "GLConstant" : true,
+  "enum": "PixelFormat",
+  "enumName": "PixelFormatName",
+  "isGlConstant" : true,
   "properties": {
     "Alpha": "ALPHA",
     "Luminance": "LUMINANCE",
@@ -223,8 +185,7 @@
     "RGBA": "RGBA"
   }
 }, {
-  "description": "",
-  "target": "PixelFormatElementCount",
+  "enum": "PixelFormatElementCount",
   "properties": {
     "Alpha": 1,
     "Luminance": 1,
@@ -240,10 +201,9 @@
     "RGBA": "RGBA"
   }
 }, {
-  "description": "",
-  "target": "PrimitiveType",
-  "targetName": "PrimitiveTypeName",
-  "GLConstant" : true,
+  "enum": "PrimitiveType",
+  "enumName": "PrimitiveTypeName",
+  "isGlConstant" : true,
   "properties": {
     "PointList": "POINTS",
     "LineList": "LINES",
@@ -253,30 +213,27 @@
     "TriangleFan": "TRIANGLE_FAN"
   }
 }, {
-  "description": "",
-  "target": "TextureType",
-  "targetName": "TextureTypeName",
-  "GLConstant" : true,
+  "enum": "TextureType",
+  "enumName": "TextureTypeName",
+  "isGlConstant" : true,
   "properties": {
     "Texture": "TEXTURE",
     "Texture2D": "TEXTURE_2D",
     "TextureCube": "TEXTURE_CUBE_MAP"
   }
 }, {
-  "description": "",
-  "target": "TextureWrapMode",
-  "targetName": "TextureWrapModeName",
-  "GLConstant" : true,
+  "enum": "TextureWrapMode",
+  "enumName": "TextureWrapModeName",
+  "isGlConstant" : true,
   "properties": {
     "Repeat": "REPEAT",
     "Clamp": "CLAMP_TO_EDGE",
     "Mirror": "MIRRORED_REPEAT"
   }
 }, {
-  "description": "",
-  "target": "TextureFilter",
-  "targetName": "TextureFilterName",
-  "GLConstant" : true,
+  "enum": "TextureFilter",
+  "enumName": "TextureFilterName",
+  "isGlConstant" : true,
   "properties": {
     "Point": "NEAREST",
     "Linear": "LINEAR",
@@ -286,19 +243,17 @@
     "LinearMipLinear": "LINEAR_MIPMAP_LINEAR"
   }
 }, {
-  "description": "",
-  "target": "ShaderType",
-  "targetName": "ShaderTypeName",
-  "GLConstant" : true,
+  "enum": "ShaderType",
+  "enumName": "ShaderTypeName",
+  "isGlConstant" : true,
   "properties": {
     "VertexShader": "VERTEX_SHADER",
     "FragmentShader": "FRAGMENT_SHADER"
   }
 }, {
-  "description": "",
-  "target": "DepthFormat",
-  "targetName": "DepthFormatName",
-  "GLConstant" : true,
+  "enum": "DepthFormat",
+  "enumName": "DepthFormatName",
+  "isGlConstant" : true,
   "properties": {
     "None": "ZERO",
     "DepthStencil": "DEPTH_STENCIL",
@@ -309,16 +264,14 @@
     "Depth32Stencil8": "DEPTH32F_STENCIL8"
   }
 }, {
-  "description": "",
-  "target": "StencilFormat",
-  "targetName": "StencilFormatName",
-  "GLConstant" : true,
+  "enum": "StencilFormat",
+  "enumName": "StencilFormatName",
+  "isGlConstant" : true,
   "properties": {
     "Stencil8": "STENCIL_INDEX8"
   }
 }, {
-  "description": "",
-  "target": "LightType",
+  "enum": "LightType",
   "properties": {
     "None": 0,
     "Directional": 1,

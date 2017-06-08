@@ -1,11 +1,11 @@
 import { Vec2, Vec3 } from '@glib/math'
-import { Builder } from './Builder'
+import { ModelBuilder } from '../ModelBuilder'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
-export function buildPlane(builder: Builder, options: {
+export function buildPlane(builder: ModelBuilder, options: {
   size?: number,
   steps?: number,
 } = {}) {
@@ -44,4 +44,4 @@ export function buildPlane(builder: Builder, options: {
   }
 }
 
-Builder.formulas['Plane'] = buildPlane
+ModelBuilder.formulas['Plane'] = buildPlane

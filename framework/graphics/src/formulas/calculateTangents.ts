@@ -1,9 +1,9 @@
 import { logger } from '@glib/core'
 import { Vec2, Vec3 } from '@glib/math'
-import { BufferData } from './../Buffer'
-import { IVertexLayout, VertexLayout } from './../VertexLayout'
+import { BufferDataOption } from './../Buffer'
+import { VertexLayout } from './../VertexLayout'
 
-export function calculateTangents(layout: IVertexLayout, indices: BufferData, vertices: BufferData) {
+export function calculateTangents(layout: VertexLayout, indices: number[], vertices: number[]) {
   if (!layout.normal) {
     logger.log('Can not calculate tangents for buffer. Normal definition not found in layout ', layout)
   }

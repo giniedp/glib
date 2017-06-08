@@ -1,5 +1,5 @@
 import { Vec2, Vec3 } from '@glib/math'
-import { Builder } from './Builder'
+import { ModelBuilder } from '../ModelBuilder'
 
 function sign(a: number) {
   return a < 0 ? -1 : 1
@@ -15,7 +15,7 @@ function withDefault(opt: any, value: any) {
  * @param options
  * @constructor
  */
-export function buildSuperEllipsoid(builder: Builder, options: {
+export function buildSuperEllipsoid(builder: ModelBuilder, options: {
   diameter?: number
   radius?: number
   steps?: number
@@ -76,4 +76,4 @@ export function buildSuperEllipsoid(builder: Builder, options: {
   }
 }
 
-Builder.formulas['SuperEllipsoid'] = buildSuperEllipsoid
+ModelBuilder.formulas['SuperEllipsoid'] = buildSuperEllipsoid

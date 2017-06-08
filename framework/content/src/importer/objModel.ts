@@ -19,7 +19,7 @@ function objToJson(data: RawAsset) {
 const objToJsonAsync = WebWorker.register('objToJson', objToJson)
 
 function convert(data: ObjData) {
-  let builder = Graphics.Builder.begin({
+  let builder = Graphics.ModelBuilder.begin({
     layout: 'PositionTextureNormalTangentBitangent',
     ignoreTransform: true,
   })
@@ -60,7 +60,7 @@ function readVertex(data: ObjData, element: number[]) {
   return vertex
 }
 
-function buildMesh(builder: Graphics.Builder, data: ObjData, groups: ObjGroup[]) {
+function buildMesh(builder: Graphics.ModelBuilder, data: ObjData, groups: ObjGroup[]) {
 
   let index = 0
   let vertex = null

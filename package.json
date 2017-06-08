@@ -4,8 +4,9 @@
   "description": "A Web GL Framework",
   "main": "dist/glib.js",
   "scripts": {
-    "test": "karma start --single-run --fail-on-empty-test-suite",
-    "test:watch": "karma start  --no-single-run --fail-on-empty-test-suite --auto-watch",
+    "test": "IS_TEST=yes karma start --single-run --fail-on-empty-test-suite",
+    "test:watch": "IS_TEST=yes karma start  --no-single-run --fail-on-empty-test-suite --auto-watch",
+    "test:coverage": "IS_COVERAGE=yes karma start --single-run --fail-on-empty-test-suite",
     "webpack": "webpack --progress",
     "webpack:watch": "webpack -w --progress",
     "tsc": "tsc -p framework/tsconfig.json",
@@ -23,7 +24,7 @@
   ],
   "devDependencies": {
     "@types/jasmine": "^2.5.47",
-    "@types/node": "^7.0.21",
+    "@types/node": "^7.0.29",
     "awesome-typescript-loader": "^3.1.3",
     "benchmark": "^2.1.4",
     "inflection": "^1.10.0",
@@ -45,7 +46,7 @@
     "karma-webpack": "^2.0.3",
     "phantomjs-prebuilt": "^2.1.14",
     "remap-istanbul": "^0.9.5",
-    "tslint": "^5.4.2",
+    "tslint": "^5.4.3",
     "typedoc": "^0.7.1",
     "typescript": "^2.3.2",
     "webpack": "^2.5.1"

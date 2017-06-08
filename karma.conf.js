@@ -1,21 +1,7 @@
 'use strict';
 
-const webpack = require('webpack');
 const webpackConfig = require('./webpack.config');
-let isCoverage = false;
-
-webpackConfig.devtool = undefined;
-webpackConfig.entry = null;
-webpackConfig.plugins = [
-  // fixes sourcemaps / line number matching in tests
-  // https://github.com/webpack-contrib/karma-webpack/issues/109#issuecomment-224961264
-  // when using awesome-typescript-loader, do not enable inlineSourcemaps there nor in tsconfig
-  new webpack.SourceMapDevToolPlugin({
-    filename: null,          // if no value is provided the sourcemap is inlined
-    test: /\.(ts|js)($|\?)/i // process .js and .ts files only
-  })
-];
-webpackConfig.output = {};
+const IS_COVERAGE = !!process.env.IS_COVERAGE;
 
 module.exports = function (config) {
 
@@ -32,25 +18,26 @@ module.exports = function (config) {
       'karma-remap-coverage',
     ],
     browsers: [
-      // 'PhantomJS',
       'Chrome'
     ],
-    frameworks: ['jasmine'],
+    frameworks: [
+      'jasmine'
+    ],
     files: [
-      './framework/tests.js'
+      'framework/tests.js'
     ],
     exclude: [],
     preprocessors: {
-      'framework/tests.js': [
-        isCoverage ? 'coverage' : null,
+      ['framework/tests.js']: [
+        IS_COVERAGE ? 'coverage' : null,
         'webpack',
         'sourcemap'
       ].filter((it) => it),
     },
     reporters: [
       'mocha',
-      isCoverage ? 'coverage' : null,
-      isCoverage ? 'remap-coverage' : null,
+      IS_COVERAGE ? 'coverage' : null,
+      IS_COVERAGE ? 'remap-coverage' : null,
     ].filter((it) => it),
 
     webpack: webpackConfig,
@@ -70,13 +57,11 @@ module.exports = function (config) {
     },
 
     mochaReporter: {
-      output: 'full'
+      output: 'minimal' // 'full'
     },
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    autoWatch: true,
-    singleRun: false,
     concurrency: 1
   });
 };

@@ -1,6 +1,6 @@
 import { Mat4, Vec2, Vec3 } from '@glib/math'
+import { ModelBuilder } from '../ModelBuilder'
 import { buildCap } from './buildCap'
-import { Builder } from './Builder'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -14,7 +14,7 @@ function circleVector(position: number, total: number, out: Vec3) {
   return out.init(dx, 0, dz)
 }
 
-export function buildCone(builder: Builder, options: {
+export function buildCone(builder: ModelBuilder, options: {
   height?: number
   steps?: number
   topDiameter?: number
@@ -87,4 +87,4 @@ export function buildCone(builder: Builder, options: {
   builder.endTransform(tId)
 }
 
-Builder.formulas['Cone'] = buildCone
+ModelBuilder.formulas['Cone'] = buildCone

@@ -1,5 +1,15 @@
 import { isArray, isObject, isPowerOfTwo, isString, logger, uuid } from '@glib/core'
-import { DataType, PixelFormat, PixelFormatElementCount, TextureType } from './enums/Enums'
+import {
+  DataType,
+  DataTypeOption,
+  DepthFormat,
+  DepthFormatOption,
+  PixelFormat,
+  PixelFormatElementCount,
+  PixelFormatOption,
+  TextureType,
+  TextureTypeOption,
+} from './enums'
 
 import { Device } from './Device'
 
@@ -11,11 +21,11 @@ export interface TextureOptions {
   /** Whether or not to automatically generate mip maps */
   generateMipmap?: boolean
   /** The pixel format to be used */
-  pixelFormat?: number
+  pixelFormat?: PixelFormatOption
   /** The pixel element data tupe to be used */
-  pixelType?: number
+  pixelType?: DataTypeOption
   /** The texture type */
-  type?: number
+  type?: TextureTypeOption
   /** The wrapped WebGLTexture object */
   handle?: WebGLTexture
   /** The texture width */
@@ -25,20 +35,30 @@ export interface TextureOptions {
   /** The initial texture data to set */
   data?: any
   /** The depth format of the depth stencil buffer to use when the texture is used as a render target */
-  depthFormat?: number
+  depthFormat?: DepthFormatOption
 }
 
 // Describes a texture object.
 export class Texture {
-  /** The unique id */
+  /**
+   * The unique id
+   */
   public uid: string
-  /** The Graphics.Device */
+  /**
+   * The Graphics.Device
+   */
   public device: Device
-  /** The GL context */
-  public gl: any
-  /** The texture width */
+  /**
+   * The GL context
+   */
+  public gl: WebGLRenderingContext
+  /**
+   * The texture width
+   */
   public width: number = 0
-  /** The texture height */
+  /**
+   * The texture height
+   */
   public height: number = 0
   /**
    * Indicates whether texture data has been set and the texture is ready to be used in a shader.
@@ -46,15 +66,25 @@ export class Texture {
    * initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
    */
   public ready: boolean = false
-  /** Indicates whether the texture width and height is a power of two value. */
+  /**
+   * Indicates whether the texture width and height is a power of two value.
+   */
   public isPOT: boolean = false
-  /** Indicates whether mipmaps should be automatically created when data is iset. */
+  /**
+   * Indicates whether mipmaps should be automatically created when data is iset.
+   */
   public generateMipmap: boolean = true
-  /** Indicates the used pixel format. */
+  /**
+   * Indicates the used pixel format.
+   */
   public pixelFormat: number = PixelFormat.RGBA
-  /** Indicates the data type of the pixel elements */
+  /**
+   * Indicates the data type of the pixel elements
+   */
   public pixelType: number = DataType.ubyte
-  /** Indicates the texture type */
+  /**
+   * Indicates the texture type
+   */
   public type: number = TextureType.Texture2D
 
   /**
@@ -181,12 +211,14 @@ export class Texture {
 
     let width = options.width || this.width
     let height = options.height || this.height
+
     let type = TextureType[options.type] || this.type
     let pixelType = DataType[options.pixelType] || this.pixelType
     let pixelFormat = PixelFormat[options.pixelFormat] || this.pixelFormat
+    let depthFormat = DepthFormat[options.depthFormat] || this.depthFormat
+
     let handle = options.handle == null ? this.handle : options.handle
     let genMipMaps = options.generateMipmap == null ? !!this.generateMipmap : !!options.generateMipmap
-    let depthFormat = options.depthFormat !== void 0 ? options.depthFormat : this.depthFormat
 
     if (
       (handle && handle !== this.handle) ||
@@ -208,9 +240,9 @@ export class Texture {
     this.type = type
     this.pixelType = pixelType
     this.pixelFormat = pixelFormat
+    this.depthFormat = depthFormat
     this.generateMipmap = genMipMaps
     this.ready = false
-    this.depthFormat = depthFormat
 
     let source = options.data
 

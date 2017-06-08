@@ -1,12 +1,12 @@
 import { Vec2, Vec3 } from '@glib/math'
+import { ModelBuilder } from '../ModelBuilder'
 import { buildCone } from './buildCone'
-import { Builder } from './Builder'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
-export function buildCylinder(builder: Builder, options: {
+export function buildCylinder(builder: ModelBuilder, options: {
   height?: number
   diameter?: number
   radius?: number
@@ -21,4 +21,4 @@ export function buildCylinder(builder: Builder, options: {
   })
 }
 
-Builder.formulas['Cylinder'] = buildCylinder
+ModelBuilder.formulas['Cylinder'] = buildCylinder

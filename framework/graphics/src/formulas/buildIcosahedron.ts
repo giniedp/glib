@@ -1,5 +1,5 @@
 import { Vec2, Vec3 } from '@glib/math'
-import { Builder } from './Builder'
+import { ModelBuilder } from '../ModelBuilder'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -44,7 +44,7 @@ function subdivide(a: number[], b: number[], c: number[], depth: number, block: 
   subdivide(a1, b1, c1, depth - 1, block)
 }
 
-export function buildTetrahedron(builder: Builder, options: {
+export function buildTetrahedron(builder: ModelBuilder, options: {
   diameter?: number
   radius?: number
   steps?: number,
@@ -80,7 +80,7 @@ export function buildTetrahedron(builder: Builder, options: {
   }
 }
 
-export function buildOctahedron(builder: Builder, options: {
+export function buildOctahedron(builder: ModelBuilder, options: {
   diameter?: number
   radius?: number
   steps?: number,
@@ -128,7 +128,7 @@ export function buildOctahedron(builder: Builder, options: {
  * @param options
  * @constructor
  */
-export function buildIcosahedron(builder: Builder, options: {
+export function buildIcosahedron(builder: ModelBuilder, options: {
   diameter?: number
   radius?: number
   steps?: number,
@@ -166,5 +166,5 @@ export function buildIcosahedron(builder: Builder, options: {
   }
 }
 
-Builder.formulas['Icosahedron'] = buildIcosahedron
-Builder.formulas['Octahedron'] = buildOctahedron
+ModelBuilder.formulas['Icosahedron'] = buildIcosahedron
+ModelBuilder.formulas['Octahedron'] = buildOctahedron

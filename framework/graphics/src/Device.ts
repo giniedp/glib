@@ -847,7 +847,7 @@ export class Device {
    * the depthFormat option is set and calls the Texture constructor.
    */
   public createRenderTarget(options: TextureOptions): Texture {
-    options.depthFormat = (options.depthFormat || DepthFormat.None)
+    options.depthFormat = (options.depthFormat || 'None')
     return new Texture(this, options)
   }
 
@@ -856,7 +856,7 @@ export class Device {
    * before it calls the Texture constructor with given options.
    */
   public createTexture2D(options: TextureOptions = {}): Texture {
-    options.type = TextureType.Texture2D
+    options.type = 'Texture2D'
     return new Texture(this, options)
   }
 
@@ -865,14 +865,14 @@ export class Device {
    * before it calls the Texture constructor with given options.
    */
   public createTextureCube(options: TextureOptions = {}): Texture {
-    options.type = TextureType.TextureCube
+    options.type = 'TextureCube'
     return new Texture(this, options)
   }
 
   /**
    * Creates a new sprite batch.
    */
-  public createSpriteBatch() {
+  public createSpriteBatch(): SpriteBatch {
     return new SpriteBatch(this)
   }
 

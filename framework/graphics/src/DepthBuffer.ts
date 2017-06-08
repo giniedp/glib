@@ -1,4 +1,4 @@
-import { DepthFormat, DepthFormatName } from './enums/Enums'
+import { DepthFormat, DepthFormatOption } from './enums/Enums'
 
 import { Device } from './Device'
 
@@ -17,7 +17,7 @@ export interface DepthBufferOptions {
   /**
    * The depth and stencil format
    */
-  depthFormat?: number
+  depthFormat?: DepthFormatOption
   /**
    * The existing
    */
@@ -78,15 +78,13 @@ export class DepthBuffer {
   public setup(options: DepthBufferOptions): DepthBuffer {
     let width = options.width
     let height = options.height
-    let format = options.depthFormat
+    let format = DepthFormat[options.depthFormat] || this.depthFormat || DepthFormat.DepthStencil
 
     if (width == null) { width = this.width }
     if (height == null) { height = this.height }
-    if (format == null) { format = this.depthFormat }
 
     if (width == null) { throw new Error('missing width option') }
     if (height == null) { throw new Error('missing height option') }
-    if (format == null) { format = DepthFormat.DepthStencil }
 
     let handle = options.handle
 

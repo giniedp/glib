@@ -1,171 +1,115 @@
-(function () {
 
-  'use strict';
+'use strict';
 
-  var fs = require('fs');
-  var through = require('through');
-  var path = require('path');
+var StringWriter = require('./string-writer.js');
 
-  function loadConstants(){
-    var result = {};
+var fs = require('fs');
+var path = require('path');
 
-    var parse = function(lines, result){
-      lines.forEach(function(line){
-        var match = line.match(/^\s*const\s+GLenum\s+(.+)\s+\s*=\s*(.+)\s*;/);
-        if (match){
-          var name = match[1].replace(/(^\s*|\s*$)/g, '');
-          var value = match[2];
-          result[name] = value;
-        }
-      });
-    };
+function loadConstants(){
+  var result = {};
 
-    var data = fs.readFileSync(path.resolve(__dirname, 'webgl.v1.idl'), 'UTF-8').toString();
-    var lines = data.replace(/\r\n/g, '\n').split('\n');
-    parse(lines, result);
+  var parse = function(lines, result){
+    lines.forEach(function(line){
+      var match = line.match(/^\s*const\s+GLenum\s+(.+)\s+\s*=\s*(.+)\s*;/);
+      if (match){
+        var name = match[1].replace(/(^\s*|\s*$)/g, '');
+        var value = match[2];
+        result[name] = value;
+      }
+    });
+  };
 
-    data = fs.readFileSync(path.resolve(__dirname, 'webgl.v2.idl'), 'UTF-8').toString();
-    lines = data.replace(/\r\n/g, '\n').split('\n');
-    parse(lines, result);
+  var data = fs.readFileSync(path.resolve(__dirname, 'webgl.v1.idl'), 'UTF-8').toString();
+  var lines = data.replace(/\r\n/g, '\n').split('\n');
+  parse(lines, result);
 
-    return result;
+  data = fs.readFileSync(path.resolve(__dirname, 'webgl.v2.idl'), 'UTF-8').toString();
+  lines = data.replace(/\r\n/g, '\n').split('\n');
+  parse(lines, result);
+
+  return result;
+}
+
+function writeProperty(w, key, value, cache) {
+  if (!cache.hasOwnProperty(key)) {
+    w.writeLine(`  ${key}: ${value},`);
+    cache[key] = true;
+  }
+}
+
+function generateEnum(data, constants) {
+  var w = StringWriter.begin();
+
+  // export FooOption = 'foo' | 'bar' | 'yeah'
+  w.writeLine(`export type ${data.enum}Option =`);
+  w.write('    ');
+  w.writeLine(Object.keys(data.properties).map((it) => `'${it}'`).join('\n  | '));
+  if (data.isGlConstant) {
+    w.write('  | ');
+    w.writeLine(Object.values(data.properties).map((it) => `'${it}'`).join('\n  | '));
+  }
+  if (data.glaliases && ! data.isGlConstant) {
+    w.write('  | ');
+    w.writeLine(Object.values(data.glaliases).map((it) => `'${it}'`).join('\n  | '));
+  }
+  w.writeLine(`  | ${data.type || 'number'}`);
+
+  // export FooValue = 'foo' | 'bar' | 'yeah'
+  // w.writeLine(`export type ${data.enum}Value =`);
+  // w.write('    ');
+  // w.writeLine(Object.keys(data.properties).map((key) => {
+  //   return data.isGlConstant ? constants[data.properties[key]] : data.properties[key];
+  // }).join('\n  | '));
+
+  w.writeLine();
+  w.writeLine( `export const ${data.enum} = Object.freeze({`);
+  var cache = {};
+  for (const key of Object.keys(data.properties)) {
+    const constant = data.properties[key];
+    const value = data.isGlConstant ? constants[constant] : constant;
+    writeProperty(w, key, value, cache);
+    writeProperty(w, constant, value, cache);
+    writeProperty(w, value, value, cache);
+    if (data.glaliases && data.glaliases[key]){
+      writeProperty(w, data.glaliases[key], value, cache);
+      writeProperty(w, constants[data.glaliases[key]], value, cache);
+    }
   }
 
-  function writeProperty(data, options, ename){
-    data.properties = data.properties || [];
-    if (data.properties.indexOf(options.property) < 0) {
-      data.properties.push(options.property );
-      data.push("  " + options.property + " : " + options.value);
-    }
+  if (data.enumName) {
+    w.writeLine(`  nameOf: (name: string|number): string => map${data.enumName}[name],`);
+  }
+  w.writeLine( '})' );
+
+  if (!data.enumName) {
+    return w.toString();
   }
 
-  function generateEnumFile(meta, constants) {
-    var key, constant, value, prop;
-    var properties = [];
-
-    for (key in meta.properties){
-      constant = meta.properties[key];
-      value = meta.GLConstant ? constants[constant] : constant;
-      prop = {
-        property: key,
-        type: 'number',
-        default: value,
-        value: value
-      };
-      if (meta.GLConstant){
-        prop.default = value + " (const GLenum " + constant + ")";
-      }
-
-      writeProperty(properties, prop, meta.target);
-      if (meta.aliases && meta.aliases[key]){
-        prop.property = meta.aliases[key];
-        writeProperty(properties, prop, meta.target);
-      }
-      if (meta.glaliases && meta.glaliases[key]){
-        prop.property = meta.glaliases[key];
-        writeProperty(properties, prop, meta.target);
-        prop.property = constants[meta.glaliases[key]];
-        prop.brackets = true;
-        writeProperty(properties, prop, meta.target);
-      }
-      if (meta.GLConstant){
-        prop.property = value;
-        prop.brackets = true;
-        writeProperty(properties, prop, meta.target);
-      }
+  w.writeLine( `const map${data.enumName} = Object.freeze({`);
+  cache = {};
+  for (const key of Object.keys(data.properties)) {
+    const constant = data.properties[key];
+    const value = data.isGlConstant ? constants[constant] : constant;
+    writeProperty(w, key, `'${constant}'`, cache);
+    writeProperty(w, constant, `'${constant}'`, cache);
+    writeProperty(w, value, `'${constant}'`, cache);
+    if (data.glaliases && data.glaliases[key]){
+      writeProperty(w, data.glaliases[key], `'${constant}'`, cache);
+      writeProperty(w, constants[data.glaliases[key]], `'${constant}'`, cache);
     }
-
-    var data = [];
-    // data.push( "module Glib.Graphics {" );
-    data.push( "export const " + meta.target + " = Object.freeze({" );
-    data.push( "" + properties.join(",\n") + ",");
-    data.push("  enumOf: (name: string|number): number => (" + meta.target + " as any)[name],");
-    if (meta.targetName) {
-      data.push("  nameOf: (name: string|number): string => (" + meta.targetName + " as any)[name],");
-    }
-    data.push( "})" );
-    // data.push( "}" );
-    data.push( "" );
-    return data.join('\n');
   }
+  w.writeLine( '})' );
 
-  function generateEnumNameFile(meta, constants){
-    var key, constant, value, prop;
-    var properties = [];
+  return w.toString();
+}
 
-    for (key in meta.properties) {
-      constant = meta.properties[key];
-      value = meta.GLConstant ? constants[constant] : constant;
-      prop = {
-        property: key,
-        type: 'String',
-        default: "'" + constant + "'",
-        value: "'" + constant + "'"
-      };
-      writeProperty(properties, prop, meta.targetName);
+var constants = loadConstants();
+var data = '\n' + require('./enums.json').map((meta) => generateEnum(meta, constants)).join('');
 
-      if (meta.aliases && meta.aliases[key]){
-        prop.property = meta.aliases[key];
-        writeProperty(properties, prop, meta.targetName);
-      }
-      if (meta.glaliases && meta.glaliases[key]){
-        prop.property = meta.glaliases[key];
-        writeProperty(properties, prop, meta.target);
-        prop.property = constants[meta.glaliases[key]];
-        prop.brackets = true;
-        writeProperty(properties, prop, meta.target);
-      }
-      if ( meta.GLConstant){
-        prop.property = value;
-        prop.brackets = true;
-        writeProperty(properties, prop, meta.targetName);
-      }
-    }
-
-    var data = [];
-    //data.push( "module Glib.Graphics {" );
-    data.push( "export const " + meta.targetName + " = Object.freeze({" );
-    data.push( "" + properties.join(",\n") + ",");
-    data.push( "})" );
-    //data.push( "}" );
-    data.push( "" );
-    return data.join('\n');
+fs.writeFile(path.join(process.cwd(), 'framework/graphics/src/enums/Enums.ts'), data, function(err) {
+  if(err) {
+    console.log(err);
+    process.exit(1);
   }
-
-  module.exports = function() {
-    var constants = loadConstants();
-
-    var files = [];
-    function bufferContents(file) {
-      files.push({
-        file: file,
-        data: JSON.parse(fs.readFileSync(file.path, 'UTF-8').toString())
-      });
-    }
-
-    function endStream() {
-      files.forEach(function(node){
-        var file = node.file;
-        var data = node.data;
-        data.forEach(function(meta){
-          var target = file.clone({ contents: false });
-          target.path = path.join(file.base, meta.target + ".ts");
-          target.contents = new Buffer(generateEnumFile(meta, constants));
-          this.emit('data', target);
-
-          if (!meta.targetName) return;
-
-          target = file.clone({ contents: false });
-          target.path = path.join(file.base, meta.targetName + ".ts");
-          target.contents = new Buffer(generateEnumNameFile(meta, constants));
-          this.emit('data', target);
-
-        }, this);
-      }, this);
-
-      this.emit('end');
-    }
-    return through(bufferContents, endStream);
-  }
-
-}());
+});

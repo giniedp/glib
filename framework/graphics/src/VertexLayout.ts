@@ -1,21 +1,27 @@
-import { copy, logger } from '@glib/core'
+import { extend, logger } from '@glib/core'
+import { DataTypeOption } from './Enums'
 
 import { DataSize, DataType } from './enums'
 
-export interface IVertexAttribute {
-  type: string|number
+export interface VertexAttribute {
+  type: DataTypeOption
   offset: number
   elements: number
   normalize?: boolean
   packed?: boolean
 }
-export interface IVertexLayout {
-  [key: string]: IVertexAttribute
+
+export interface VertexPreset {
+  type: DataTypeOption
+  elements: number
+  normalize?: boolean
+  packed?: boolean
 }
 
 export class VertexLayout {
+  [key: string]: VertexAttribute
 
-  public static preset = {
+  public static preset: { [key: string]: VertexPreset } = {
     position: {
       type: 'float',
       elements: 3,
@@ -73,7 +79,8 @@ export class VertexLayout {
       elements: 2,
     },
   }
-  public static convert(nameOrLayout: string|IVertexLayout): IVertexLayout {
+
+  public static convert(nameOrLayout: string|VertexLayout): VertexLayout {
     if (typeof nameOrLayout === 'string') {
       return this.create(nameOrLayout)
     }
@@ -96,25 +103,23 @@ export class VertexLayout {
    * // }
    * ```
    */
-  public static create(...names: string[]): IVertexLayout {
+  public static create(...names: string[]): VertexLayout {
     if (names.length === 1) {
       names = names[0].match(/[A-Z][a-z]+/g) || names
     }
 
-    let result: IVertexLayout = {}
+    let result: VertexLayout = {}
     let offset = 0
 
     for (let name of names) {
       name = String(name).toLowerCase()
-      let element = VertexLayout.preset[name]
-
-      if (!element) {
+      if (!VertexLayout.preset.hasOwnProperty(name)) {
         logger.log('unknown element name ', name)
         continue
       }
 
-      element = copy(element)
-      element.offset = offset
+      let element = extend<VertexAttribute>({} as any, VertexLayout.preset[name], { offset: offset })
+
       result[name] = element
       offset += DataSize[element.type] * element.elements
     }
@@ -128,7 +133,7 @@ export class VertexLayout {
    * (both with three elements) this will return 6.
    * packed elements will count as one.
    */
-  public static countElements(layout: IVertexLayout): number {
+  public static countElements(layout: VertexLayout): number {
     let count = 0
     for (const key in layout) {
       if (layout.hasOwnProperty(key)) {
@@ -142,7 +147,7 @@ export class VertexLayout {
   /**
    * Counts the number of elements in a single vertex until the given attribute.
    */
-  public static countElementsBefore(layout: IVertexLayout, name: string): number {
+  public static countElementsBefore(layout: VertexLayout, name: string): number {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
@@ -159,7 +164,7 @@ export class VertexLayout {
   /**
    * Counts the number of elements in a single vertex after the given attribute.
    */
-  public static countElementsAfter(layout: IVertexLayout, name: string): number {
+  public static countElementsAfter(layout: VertexLayout, name: string): number {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
@@ -177,7 +182,7 @@ export class VertexLayout {
    * Counts the number of bytes in a single vertex. For example if a layout has a `position` and a `normal` defined
    * both with three elements and each element is a float, this will return 24.
    */
-  public static countBytes(layout: IVertexLayout): number {
+  public static countBytes(layout: VertexLayout): number {
     let count = 0
     for (const key in layout) {
       if (layout.hasOwnProperty(key)) {
@@ -191,7 +196,7 @@ export class VertexLayout {
   /**
    * Counts the number of bytes in a single vertex until the given attribute.
    */
-  public static countBytesBefore(layout: IVertexLayout, name: string): number {
+  public static countBytesBefore(layout: VertexLayout, name: string): number {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
@@ -208,7 +213,7 @@ export class VertexLayout {
   /**
    * Counts the number of bytes in a single vertex after the given attribute.
    */
-  public static countBytesAfter(layout: IVertexLayout, name: string): number {
+  public static countBytesAfter(layout: VertexLayout, name: string): number {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
@@ -222,7 +227,7 @@ export class VertexLayout {
     return count
   }
 
-  public static uniqueTypes(layout: IVertexLayout): Array<string|number> {
+  public static uniqueTypes(layout: VertexLayout): Array<string|number> {
     const types: Array<string|number> = []
     for (const key in layout) {
       if (layout.hasOwnProperty(key)) {
@@ -235,8 +240,8 @@ export class VertexLayout {
     return types
   }
 
-  public static convertArrayToArrayBuffer(data: number[], layoutOrType: string|IVertexLayout): ArrayBuffer {
-    let layout: IVertexLayout
+  public static convertArrayToArrayBuffer(data: number[], layoutOrType: string|VertexLayout): ArrayBuffer {
+    let layout: VertexLayout
     if (DataType[layoutOrType as string]) {
       layout = {
         element: {
@@ -246,7 +251,7 @@ export class VertexLayout {
         },
       }
     } else {
-      layout = layoutOrType as IVertexLayout
+      layout = layoutOrType as VertexLayout
     }
 
     let elementCount = VertexLayout.countElements(layout)
