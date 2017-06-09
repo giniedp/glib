@@ -287,10 +287,11 @@ export class BlendState implements BlendStateOptions {
     out.colorDstBlend = gl.getParameter(gl.BLEND_DST_RGB)
     out.alphaDstBlend = gl.getParameter(gl.BLEND_DST_ALPHA)
     let color = gl.getParameter(gl.BLEND_COLOR)
-    out.constantR = color[0]
-    out.constantG = color[1]
-    out.constantB = color[2]
-    out.constantA = color[3]
+    // Linux Firefox returns null instead of an array, of blend is disabled
+    out.constantR = color ? color[0] : 0
+    out.constantG = color ? color[1] : 0
+    out.constantB = color ? color[2] : 0
+    out.constantA = color ? color[3] : 0
     out.enabled = gl.getParameter(gl.BLEND)
     return out
   }
