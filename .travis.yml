@@ -10,6 +10,7 @@ addons:
     - libgl1-mesa-dri
     - libglapi-mesa
     - libosmesa6
+  firefox: "53.0"
 node_js:
   - "6"
 before_install:

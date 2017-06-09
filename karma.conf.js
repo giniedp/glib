@@ -11,6 +11,7 @@ module.exports = function (config) {
     plugins: [
       'karma-phantomjs-launcher',
       'karma-chrome-launcher',
+      'karma-firefox-launcher',
       'karma-jasmine',
       'karma-webpack',
       'karma-mocha-reporter',
@@ -18,14 +19,8 @@ module.exports = function (config) {
       'karma-coverage',
       'karma-remap-coverage',
     ],
-    customLaunchers: {
-      ChromeNoSandbox: {
-        base: 'Chrome',
-        flags: ['--no-sandbox']
-      }
-    },
     browsers: [
-      IS_TRAVIS ? 'ChromeNoSandbox' : 'Chrome'
+      IS_TRAVIS ? 'Firefox' : 'Chrome'
     ],
     frameworks: [
       'jasmine'

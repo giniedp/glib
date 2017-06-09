@@ -41,7 +41,6 @@ import { Model, ModelOptions } from './Model'
 import { ShaderProgram } from './ShaderProgram'
 import { SpriteBatch } from './SpriteBatch'
 
-declare var HeadlessGL: any
 const supportsWebGL = typeof WebGLRenderingContext === 'function'
 const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
 
@@ -102,7 +101,7 @@ function getOrCreateCanvas(canvas?: string|HTMLCanvasElement): HTMLCanvasElement
 }
 
 function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRenderingContext | WebGL2RenderingContext {
-  const context = options.context
+  let context = options.context
   const attributes = extend({}, DEFAULT_CONTEXT_ATTRIBUTES, options.contextAttributes || {})
 
   if (context && typeof context !== 'string') {
@@ -110,18 +109,29 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRende
     return context as any
   }
 
-  const result: any = canvas.getContext(context || 'experimental-webgl', attributes) as any
-  if (result) {
-    return result
+  if (context) {
+    // specific context is requested
+    try {
+      context = canvas.getContext(context, attributes) as any
+    } catch (e) {
+      context = null
+    }
   }
 
-  // This is a special case for unit tests
-  if (HeadlessGL) {
-    return HeadlessGL(800, 600, attributes)
+  // apply fallback strategy
+  for (const name of ['webgl2', 'webgl', 'experimental-webgl']) {
+    try {
+      context = context || canvas.getContext(name, attributes)
+    } catch (e) {
+      logger.info('[Device]', `${name} is not supported`)
+    }
   }
 
-  // webgl is not supported
-  return null
+  if (!context) {
+    throw Error('WebGL is not supported')
+  }
+
+  return context
 }
 
 /**
