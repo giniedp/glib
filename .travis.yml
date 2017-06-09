@@ -1,15 +1,9 @@
 language: node_js
-os: linux
-sudo: required
-dist: trusty
+matrix:
+  include:
+    - os: linux
+    - os: osx
 addons:
-  apt:
-    packages:
-    - mesa-utils
-    - xvfb
-    - libgl1-mesa-dri
-    - libglapi-mesa
-    - libosmesa6
   firefox: "53.0"
 node_js:
   - "6"
