@@ -1,7 +1,8 @@
 'use strict';
 
 const webpackConfig = require('./webpack.config');
-const IS_COVERAGE = !!process.env.IS_COVERAGE;
+const IS_COVERALLS = !!process.env.IS_COVERALLS;
+const IS_COVERAGE = IS_COVERALLS || !!process.env.IS_COVERAGE;
 const IS_TRAVIS = !!process.env.TRAVIS;
 
 module.exports = function (config) {
@@ -9,13 +10,17 @@ module.exports = function (config) {
   config.set({
     basePath: '.',
     plugins: [
+      'karma-webpack',
+
+      'karma-jasmine',
       'karma-phantomjs-launcher',
       'karma-chrome-launcher',
       'karma-firefox-launcher',
-      'karma-jasmine',
-      'karma-webpack',
-      'karma-mocha-reporter',
+
       'karma-sourcemap-loader',
+      'karma-mocha-reporter',
+
+      'karma-coveralls',
       'karma-coverage',
       'karma-remap-coverage',
     ],
@@ -39,6 +44,7 @@ module.exports = function (config) {
     reporters: [
       'mocha',
       IS_COVERAGE ? 'coverage' : null,
+      IS_COVERALLS ? 'coveralls' : null,
       IS_COVERAGE ? 'remap-coverage' : null,
     ].filter((it) => it),
 
@@ -51,11 +57,16 @@ module.exports = function (config) {
     },
 
     coverageReporter: {
-      type: 'in-memory'
+      dir: 'coverage',
+      reporters: [{
+        type: 'lcov'
+      }, {
+        type: 'in-memory'
+      }]
     },
     remapCoverageReporter: {
       'text-summary': null,
-      html: 'coverage',
+      html: './coverage/report-html',
     },
 
     mochaReporter: {
