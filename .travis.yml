@@ -1,7 +1,7 @@
 language: node_js
 matrix:
   include:
-    - os: linux
+    # - os: linux
     - os: osx
 addons:
   firefox: "53.0"
