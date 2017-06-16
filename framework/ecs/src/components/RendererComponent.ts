@@ -5,26 +5,33 @@ import * as Render from '@glib/render'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { Visitor } from './../Visitor'
-import { Assets } from './Assets'
-import { Light } from './Light'
-import { Renderable } from './Renderable'
-import { Time } from './Time'
+import { AssetsComponent } from './AssetsComponent'
+import { LightComponent } from './LightComponent'
+import { TimeComponent } from './TimeComponent'
 
 export interface CullVisitor {
   start(entity: Entity, view: Render.View): void
   add(item: Render.ItemData): void
 }
 
-export class Renderer implements Component {
+export interface RenderableCollector {
+  add(item: Render.ItemData): void
+}
+
+export interface Renderable {
+  collect(collector: RenderableCollector): void
+}
+
+export class RendererComponent implements Component {
   public node: Entity
   public name: string = 'Renderer'
   public service: boolean = true
   public enabled: boolean = true
   public visible: boolean = true
 
-  public time: Time
+  public time: TimeComponent
   public device: Device
-  public assets: Assets
+  public assets: AssetsComponent
   public manager: Render.Manager
   public cullVisitor: CullVisitor = new SimpleCullVisitor()
 
@@ -81,7 +88,7 @@ export class SimpleCullVisitor implements CullVisitor, Visitor<Entity> {
     if (comp) {
       comp.collect(this)
     }
-    let light = entity.s['Light'] as Light
+    let light = entity.s['Light'] as LightComponent
     if (light) {
       this.addLight(light.packedData)
     }

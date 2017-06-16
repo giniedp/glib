@@ -16,8 +16,6 @@ export type Callback = (...args: any[]) => void
 /**
  * Implements logic for binding and unbinding methods to and from events.
  * The code is taken from https://github.com/jashkenas/backbone
- * @class Gin.Events
- * @module Core
  */
 export class Events {
 

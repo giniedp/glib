@@ -2,7 +2,7 @@ import { extend, getTime } from '@glib/core'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
-export class Time implements Component {
+export class TimeComponent implements Component {
   public node: Entity
   public name: string = 'Time'
   public service: boolean = true

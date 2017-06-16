@@ -25,18 +25,13 @@ function isObject(value: any): boolean {
 let regex = /^(\s*)(\w+)\s*:\s*\|?(.*)/
 
 class Node {
-  public indent: string = ''
+  public indent: string = null
   public lines: string[] = []
   public object: any = null
 
-  constructor(val?: string) {
+  constructor() {
     this.lines = []
     this.object = null
-    if (typeof val === 'string') {
-      this.lines.push(trim(val))
-    } else {
-      this.object = val
-    }
   }
 
   get result() {

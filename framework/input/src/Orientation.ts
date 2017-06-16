@@ -1,4 +1,4 @@
-import { Events, extend, logger, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
+import { Events, extend, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
 import { IVec3 } from '@glib/math'
 
 let hasOrientationApi = 'DeviceOrientationEvent' in window
@@ -71,8 +71,8 @@ export class Orientation extends Events {
    */
   constructor() {
     super()
-    if (!hasOrientationApi) { logger.warn('[Device] orientation api is not supported by the device') }
-    if (!hasMotionApi) { logger.warn('[Device] motion api is not supported by the device') }
+    if (!hasOrientationApi) { Log.w('[Device] orientation api is not supported by the device') }
+    if (!hasMotionApi) { Log.w('[Device] motion api is not supported by the device') }
     this.activate()
   }
 

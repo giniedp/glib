@@ -3,8 +3,8 @@ import { Mat4 } from '@glib/math'
 import { View as RenderView } from '@glib/render'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
-import { Renderer } from './Renderer'
-import { Transform } from './Transform'
+import { RendererComponent } from './RendererComponent'
+import { TransformComponent } from './TransformComponent'
 export interface CameraProperties {
   near?: number
   far?: number
@@ -12,7 +12,7 @@ export interface CameraProperties {
   aspect?: number
 }
 
-export class Camera implements Component {
+export class CameraComponent implements Component {
   public name = 'Camera'
   public node: Entity
   public service: boolean = true
@@ -26,7 +26,7 @@ export class Camera implements Component {
   public view: Mat4 = Mat4.identity()
   public projection: Mat4 = Mat4.identity()
   public viewProjection: Mat4 = Mat4.identity()
-  public transform: Transform
+  public transform: TransformComponent
   private targetView: RenderView
 
   constructor(params?: CameraProperties) {
@@ -49,7 +49,7 @@ export class Camera implements Component {
   }
 
   public activate(viewIndex: number = 0) {
-    const renderer: Renderer = this.node.root.getService('Renderer')
+    const renderer: RendererComponent = this.node.root.getService('Renderer')
     const view: RenderView = renderer.manager.views[viewIndex]
 
     if (!view) {
@@ -58,7 +58,7 @@ export class Camera implements Component {
     }
 
     const oldCamera: any = view.camera
-    if (oldCamera instanceof Camera) {
+    if (oldCamera instanceof CameraComponent) {
       oldCamera.deactivate()
     }
     this.targetView = view

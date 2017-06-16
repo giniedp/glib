@@ -2,7 +2,7 @@ function readFloat(item: string): number {
   if (item) {
     return parseFloat(item)
   }
-  return void 0
+  return null
 }
 
 function readFloatArray(item: string): number[] {
@@ -39,7 +39,7 @@ function createGroup(name?: string): ObjGroup {
 
 function createData(): ObjData {
   return {
-    name: void 0,
+    name: null,
     v: [],
     vt: [],
     vn: [],
@@ -73,10 +73,10 @@ export interface ObjData {
 
 export class OBJ {
   public result: ObjData
-  public groups: ObjGroup[]
-  public group: ObjGroup
+  private groups: ObjGroup[]
+  private group: ObjGroup
 
-  public static parse(content: string) {
+  public static parse(content: string): ObjData {
     return new OBJ().parse(content)
   }
 
@@ -125,7 +125,7 @@ export class OBJ {
     return this.result
   }
 
-  private currentGroup() {
+  private get currentGroup() {
     if (!this.group) {
       this.group = createGroup()
       this.groups.push(this.group)
@@ -146,6 +146,7 @@ export class OBJ {
   // Model.
   private read_g_key(data: string) {
     this.group = createGroup()
+    this.group.name = data
     this.groups.push(this.group)
   }
 
@@ -173,11 +174,11 @@ export class OBJ {
   }
 
   private read_lod_key(data: string) {
-    this.currentGroup().lod = parseInt(data, 10)
+    this.currentGroup.lod = parseInt(data, 10)
   }
 
   private read_maplib_key(data: string) {
-    this.currentGroup().maplib = data.split(' ')
+    this.currentGroup.maplib = data.split(' ')
   }
 
   private read_mtllib_key(data: string) {
@@ -185,11 +186,11 @@ export class OBJ {
   }
 
   private read_usemtl_key(data: string) {
-    let g = this.currentGroup()
+    let g = this.currentGroup
     if (g.material) {
       this.read_g_key(g.name)
     }
-    this.currentGroup().material = data
+    this.currentGroup.material = data
   }
 
   //
@@ -227,13 +228,13 @@ export class OBJ {
   // Point
   //
   private read_p_key(data: string) {
-    this.currentGroup().p.push(readTripletArray(data))
+    this.currentGroup.p.push(readTripletArray(data))
   }
 
   // Line
   //
   private read_l_key(data: string) {
-    this.currentGroup().l.push(readTripletArray(data))
+    this.currentGroup.l.push(readTripletArray(data))
   }
 
   // Face
@@ -245,6 +246,6 @@ export class OBJ {
         return makeAbsoluteIndex(index, buffers[eIndex])
       })
     })
-    this.currentGroup().f.push(face)
+    this.currentGroup.f.push(face)
   }
 }

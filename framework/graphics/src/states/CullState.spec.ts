@@ -7,7 +7,7 @@ import {
 
 describe('glib/graphics/CullState', () => {
 
-  let device = new Device()
+  let device: Device
   let stateA: CullState
   let stateB: CullState
   let stateC: CullState
@@ -25,6 +25,7 @@ describe('glib/graphics/CullState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device()
     stateA = new CullState(device, paramsA)
     stateB = new CullState(device, stateB)
     stateC = new CullState(device)

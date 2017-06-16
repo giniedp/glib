@@ -5,7 +5,7 @@ import {
 
 describe('glib/graphics/ScissorState', () => {
 
-  let device = new Device()
+  let device: Device
   let stateA: ScissorState
   let stateB: ScissorState
   let stateC: ScissorState
@@ -27,6 +27,7 @@ describe('glib/graphics/ScissorState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device()
     stateA = new ScissorState(device, paramsA)
     stateB = new ScissorState(device, stateB)
     stateC = new ScissorState(device)

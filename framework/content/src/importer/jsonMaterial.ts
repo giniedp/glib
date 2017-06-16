@@ -1,14 +1,15 @@
-import { extend, logger, path } from '@glib/core'
-import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
+import { extend, Log, Uri } from '@glib/core'
+import { ShaderEffect } from '@glib/graphics'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 
-pipelineImporter('.json', 'Material[]', (context: PipelineContext): Promise<void> => {
+pipelineImporter(['.json', 'application/json'], 'Material[]', (context: PipelineContext): Promise<void> => {
   // parse text content into json
-  context.intermediate = JSON.parse(context.raw.content)
+  context.imported = JSON.parse(context.downloaded.content)
   // materials can be defined as an array (a material collection) or as single material object
   // this importer explicitely imports a material collection: 'Material[]'
   // thus ensure that the intermediate object is an array
-  if (!Array.isArray(context.intermediate)) {
-    context.intermediate = [context.intermediate]
+  if (!Array.isArray(context.imported)) {
+    context.imported = [context.imported]
   }
   // send to the "Material[]" processor
   return context.pipeline.process(context)
@@ -17,7 +18,7 @@ pipelineImporter('.json', 'Material[]', (context: PipelineContext): Promise<void
 pipelineProcessor('Material[]', (context: PipelineContext): Promise<void> => {
   context.result = []
   // send each entry to the process stage individaully
-  return Promise.all(context.intermediate.map((mtl: any, index: number) => {
+  return Promise.all(context.imported.map((mtl: any, index: number) => {
     // prepare the new context
     let subContext = extend({}, context, {
       intermediate: mtl,
@@ -32,21 +33,21 @@ pipelineProcessor('Material[]', (context: PipelineContext): Promise<void> => {
   })
 })
 
-pipelineImporter('.json', 'Material', (context: PipelineContext): Promise<void> => {
+pipelineImporter(['.json', 'application/json'], 'Material', (context: PipelineContext): Promise<void> => {
   // parse text content into json
-  context.intermediate = JSON.parse(context.raw.content)
+  context.imported = JSON.parse(context.downloaded.content)
   // materials can be defined as an array (a material collection) or as single material object
   // this importer explicitely imports a 'Material' object
   // thus only the first material is taken into the process stage
-  if (Array.isArray(context.intermediate)) {
-    context.intermediate = context.intermediate[0]
+  if (Array.isArray(context.imported)) {
+    context.imported = context.imported[0]
   }
   // send to the "Material" processor
   return context.pipeline.process(context)
 })
 
 pipelineProcessor('Material', (context: PipelineContext) => {
-  let json = context.intermediate
+  let json = context.imported
   // the material name
   let name = json.name
   // the effect url to load
@@ -55,7 +56,7 @@ pipelineProcessor('Material', (context: PipelineContext) => {
   let params = json.parameters || {}
 
   // load the effect from effect path
-  return context.manager.load('Effect', effect).then((loadedEffect) => {
+  return context.manager.load(ShaderEffect, effect).then((loadedEffect) => {
     // TODO: allow the user of the pipeline to tell wheter to clone the effect or use the loaded reference
     context.result = loadedEffect.clone()
     // take the previous name an material parameters
@@ -64,9 +65,11 @@ pipelineProcessor('Material', (context: PipelineContext) => {
   })
 })
 
-pipelinePreProcessor('Material', (context: PipelineContext) => {
-
-  const data = context.intermediate
+pipelinePreprocessor('Material', (context: PipelineContext) => {
+  if (!context.imported) {
+    return Promise.reject('imported data is missing')
+  }
+  const data = context.imported
   const parameters = data.parameters
   if (!parameters) {
     return Promise.resolve()
@@ -84,14 +87,14 @@ pipelinePreProcessor('Material', (context: PipelineContext) => {
       if (typeof value !== 'string') {
         continue
       }
-      let url = path.merge(context.path, value)
+      let url = Uri.merge(context.source, value)
       let promise = context.manager.load('Texture2D', url)
       .then((texture) => {
         parameters[key] = texture
       })
       .catch(() => {
         delete parameters[key]
-        logger.warn(`failed to load effect parameter texture (${key}:${value})`)
+        Log.w(`failed to load effect parameter texture (${key}:${value})`)
       })
       promises.push(promise)
     }

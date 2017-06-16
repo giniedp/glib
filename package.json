@@ -4,15 +4,16 @@
   "description": "A Web GL Framework",
   "main": "dist/glib.js",
   "scripts": {
-    "test": "IS_TEST=yes karma start --single-run --fail-on-empty-test-suite",
-    "test:watch": "IS_TEST=yes karma start  --no-single-run --fail-on-empty-test-suite --auto-watch",
-    "test:coverage": "IS_COVERAGE=yes karma start --single-run --fail-on-empty-test-suite",
+    "test": "IS_TEST=yes karma start --single-run",
+    "test:watch": "IS_TEST=yes karma start --no-single-run --auto-watch",
+    "test:coverage": "IS_COVERAGE=yes karma start --single-run",
+    "test:watch:coverage": "IS_COVERAGE=yes karma start  --no-single-run --auto-watch",
     "webpack": "webpack --progress",
     "webpack:watch": "webpack -w --progress",
     "tsc": "tsc -p framework/tsconfig.json",
     "tsc:watch": "tsc -p framework/tsconfig.json -w",
     "lint": "tslint -p framework/tsconfig.json -c tslint.json",
-    "docs": "typedoc --out dist/docs --tsconfig framework/tsconfig.json --ignoreCompilerErrors --mode file"
+    "docs": "typedoc --out dist/docs --tsconfig framework/tsconfig.json --ignoreCompilerErrors --hideGenerator --mode modules"
   },
   "repository": {
     "type": "git",

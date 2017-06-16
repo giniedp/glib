@@ -11,7 +11,10 @@ describe('graphics/Buffer', () => {
   describe('constructor', () => {
 
     it ('sets usage', () => {
-
+      if (!device.isWebGL2) {
+        pending('webgl2 is not supported, skip webgl2 test')
+        return
+      }
       // default value
       expect(new Buffer(device).usage).toBe(BufferUsage.Static);
 
@@ -36,7 +39,10 @@ describe('graphics/Buffer', () => {
     })
 
     it ('sets type', () => {
-
+      if (!device.isWebGL2) {
+        pending('webgl2 is not supported, skip webgl2 test')
+        return
+      }
       // default value
       expect(new Buffer(device).type).toBe(BufferType.IndexBuffer);
 
@@ -57,6 +63,10 @@ describe('graphics/Buffer', () => {
   describe('setData', () => {
     describe('ushort', () => {
       it ('sets the data', () => {
+        if (!device.isWebGL2) {
+          pending('webgl2 is not supported, skip webgl2 test')
+          return
+        }
         [
           [1, 2, 3, 4, 5, 6, 7, 8, 9],
           Uint16Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9]),

@@ -1,23 +1,23 @@
-import { logger } from '@glib/core'
+import { Log } from '@glib/core'
 import { Vec2, Vec3 } from '@glib/math'
 import { BufferDataOption } from './../Buffer'
 import { VertexLayout } from './../VertexLayout'
 
 export function calculateTangents(layout: VertexLayout, indices: number[], vertices: number[]) {
   if (!layout.normal) {
-    logger.log('Can not calculate tangents for buffer. Normal definition not found in layout ', layout)
+    Log.l('Can not calculate tangents for buffer. Normal definition not found in layout ', layout)
   }
   if (!layout.normal) {
-    logger.log('Can not calculate tangents for buffer. Normal definition not found in layout ', layout)
+    Log.l('Can not calculate tangents for buffer. Normal definition not found in layout ', layout)
   }
   if (!layout.texture) {
-    logger.log('Can not calculate tangents for buffer. Texture definition not found in layout ', layout)
+    Log.l('Can not calculate tangents for buffer. Texture definition not found in layout ', layout)
   }
   if (!layout.tangent) {
-    logger.log('Can not calculate tangents for buffer. Tangent definition not found in layout ', layout)
+    Log.l('Can not calculate tangents for buffer. Tangent definition not found in layout ', layout)
   }
   if (!layout.bitangent) {
-    logger.log('Can not calculate tangents for buffer. Bitangent definition not found in layout ', layout)
+    Log.l('Can not calculate tangents for buffer. Bitangent definition not found in layout ', layout)
   }
 
   let stride = VertexLayout.countElements(layout)

@@ -9,7 +9,7 @@ export interface TransformProperties {
   scale?: Vec3
 }
 
-export class Transform implements Component {
+export class TransformComponent implements Component {
   public name: string = 'Transform'
   public service: boolean = true
   public enabled: boolean = true
@@ -48,49 +48,49 @@ export class Transform implements Component {
     }
   }
 
-  public setRotation(quaternion: Quat): Transform {
+  public setRotation(quaternion: Quat): TransformComponent {
     this.rotation.initFrom(quaternion)
     this.dirty = true
     return this
   }
 
-  public setRotationAxisAngle(axis: IVec3, angle: number): Transform {
+  public setRotationAxisAngle(axis: IVec3, angle: number): TransformComponent {
     this.rotation.initAxisAngle(axis, angle)
     this.dirty = true
     return this
   }
 
-  public setRotationXYZAngle(x: number, y: number, z: number, angle: number): Transform {
+  public setRotationXYZAngle(x: number, y: number, z: number, angle: number): TransformComponent {
     this.rotation.initAxisAngle(this.tempVec.init(x, y, z).normalize(), angle)
     this.dirty = true
     return this
   }
 
-  public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): Transform {
+  public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): TransformComponent {
     this.rotation.initYawPitchRoll(yaw, pitch, roll)
     this.dirty = true
     return this
   }
 
-  public rotateAxisAngle(axis: IVec3, angle: number): Transform {
+  public rotateAxisAngle(axis: IVec3, angle: number): TransformComponent {
     this.rotation.concat(this.tempQuat.initAxisAngle(axis, angle))
     this.dirty = true
     return this
   }
 
-  public rotateXYZAngle(x: number, y: number, z: number, angle: number): Transform {
+  public rotateXYZAngle(x: number, y: number, z: number, angle: number): TransformComponent {
     this.rotation.multiply(this.tempQuat.initAxisAngle(this.tempVec.init(x, y, z), angle))
     this.dirty = true
     return this
   }
 
-  public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): Transform {
+  public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): TransformComponent {
     this.rotation.concat(this.tempQuat.initYawPitchRoll(yaw, pitch, roll))
     this.dirty = true
     return this
   }
 
-  public setScale(scale: IVec3): Transform {
+  public setScale(scale: IVec3): TransformComponent {
     this.scale.x = scale.x
     this.scale.y = scale.y
     this.scale.z = scale.z
@@ -98,7 +98,7 @@ export class Transform implements Component {
     return this
   }
 
-  public setScaleXYZ(scaleX: number, scaleY: number, scaleZ: number): Transform {
+  public setScaleXYZ(scaleX: number, scaleY: number, scaleZ: number): TransformComponent {
     this.scale.x = scaleX
     this.scale.y = scaleY
     this.scale.z = scaleZ
@@ -106,7 +106,7 @@ export class Transform implements Component {
     return this
   }
 
-  public scaleBy(scale: IVec3): Transform {
+  public scaleBy(scale: IVec3): TransformComponent {
     this.scale.x *= scale.x
     this.scale.y *= scale.y
     this.scale.z *= scale.z
@@ -114,7 +114,7 @@ export class Transform implements Component {
     return this
   }
 
-  public scaleXYZ(scaleX: number, scaleY: number, scaleZ: number): Transform {
+  public scaleXYZ(scaleX: number, scaleY: number, scaleZ: number): TransformComponent {
     this.scale.x *= scaleX
     this.scale.y *= scaleY
     this.scale.z *= scaleZ
@@ -122,7 +122,7 @@ export class Transform implements Component {
     return this
   }
 
-  public scaleUniform(scale: number): Transform {
+  public scaleUniform(scale: number): TransformComponent {
       this.scale.x = scale
       this.scale.y = scale
       this.scale.z = scale
@@ -130,7 +130,7 @@ export class Transform implements Component {
       return this
   }
 
-  public setScaleUniform(value: number): Transform {
+  public setScaleUniform(value: number): TransformComponent {
     this.scale.x = value
     this.scale.y = value
     this.scale.z = value
@@ -138,7 +138,7 @@ export class Transform implements Component {
     return this
   }
 
-  public setPosition(position: IVec3): Transform {
+  public setPosition(position: IVec3): TransformComponent {
     this.position.x = position.x
     this.position.y = position.y
     this.position.z = position.z
@@ -146,7 +146,7 @@ export class Transform implements Component {
     return this
   }
 
-  public setPositionXYZ(x: number, y: number, z: number): Transform {
+  public setPositionXYZ(x: number, y: number, z: number): TransformComponent {
     this.position.x = x
     this.position.y = y
     this.position.z = z
@@ -154,7 +154,7 @@ export class Transform implements Component {
     return this
   }
 
-  public translate(vec: IVec3): Transform {
+  public translate(vec: IVec3): TransformComponent {
     this.position.x += vec.x
     this.position.y += vec.y
     this.position.z += vec.z
@@ -162,7 +162,7 @@ export class Transform implements Component {
     return this
   }
 
-  public translateXYZ(x: number, y: number, z: number): Transform {
+  public translateXYZ(x: number, y: number, z: number): TransformComponent {
     this.position.x += x
     this.position.y += y
     this.position.z += z

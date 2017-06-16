@@ -1,24 +1,62 @@
-import { ajax, AjaxOptions, extend, isArray, isObject, isString, logger, path, pick } from '@glib/core'
+// tslint:disable ban-types
+// tslint:disable max-classes-per-file
+
+import { ajax, AjaxOptions, DataUri, extend, isArray, isObject, isString, Log, pick, Uri } from '@glib/core'
 import { Device } from '@glib/graphics'
+import { ContentType } from './ContentType'
 import { Pipeline, PipelineContext, PipelineHandler } from './Pipeline'
 
 export interface RawAsset {
   /**
-   * The source path
+   * The source url
    */
-  path: string
+  source: string
   /**
    * The content
    */
-  content: any
+  content: string
   /**
    * The content type (e.g. application/json)
    */
-  contentType?: string
-  /**
-   * The original http request
-   */
-  xhr?: XMLHttpRequest
+  contentType?: ContentType
+}
+
+export class XhrAsset implements RawAsset  {
+
+  public get source(): string {
+    return this.xhr.responseURL
+  }
+
+  public get content(): string {
+    return this.xhr.responseText
+  }
+
+  public get contentTYpe(): string {
+    return this.xhr.getResponseHeader('content-typ')
+  }
+
+  constructor(private xhr: XMLHttpRequest) {
+
+  }
+}
+
+export class DataUriAsset implements RawAsset {
+
+  public get source(): string {
+    return this.uri.uri
+  }
+
+  public get content(): string {
+    return this.uri.data
+  }
+
+  public get contentTYpe(): string {
+    return this.uri.contentType
+  }
+
+  constructor(private uri: DataUri) {
+
+  }
 }
 
 /**
@@ -77,9 +115,14 @@ export class Manager {
   public lookup(path: string): RawAsset {
     if (this.cacheEnabled) {
       let found = this.cached[path]
-      if (found) { return found }
+      if (found) {
+        return found
+      }
     }
-    return null
+    if (DataUri.isDataUri(path)) {
+      return new DataUriAsset(DataUri.parse(path))
+    }
+    return this.lookupInDOM(path)
   }
 
   /**
@@ -87,13 +130,14 @@ export class Manager {
    */
   public lookupInDOM(path: string): RawAsset {
     let element = document.getElementById(path)
-    if (!element && path[0] === '/') { element = document.getElementById(path.substr(1)) }
-    if (!element) { return }
-    return {
-      path: path,
-      contentType: element.getAttribute('type'),
-      content: element.textContent,
+    if (!element && path[0] === '/') {
+      element = document.getElementById(path.substr(1))
     }
+    return element ? {
+      source: path,
+      contentType: ContentType.parse(element.getAttribute('type')),
+      content: element.textContent,
+    } : null
   }
 
   /**
@@ -101,7 +145,7 @@ export class Manager {
    */
   public cache(data: RawAsset): RawAsset {
     if (this.cacheEnabled) {
-      this.cache[data.path] = data
+      this.cache[data.source] = data
     }
     return data
   }
@@ -119,35 +163,26 @@ export class Manager {
     return options
   }
 
-  /**
-   *
-   */
-  public xhrToAssetData(requestOptions: AjaxOptions, xhr: XMLHttpRequest): RawAsset {
+  public dataUriToAsset(uri: string): RawAsset {
+    const parsed = DataUri.parse(uri)
     return {
-      path: requestOptions.url,
-      contentType: xhr.getResponseHeader('content-type'),
-      content: xhr.responseText,
-      xhr: xhr,
+      source: parsed.uri,
+      contentType: ContentType.parse(parsed.contentType),
+      content: parsed.data,
     }
   }
 
   /**
    *
    */
-  public download(optionsOrUrl: AjaxOptions|string): Promise<any> {
-    let options = this.makeAjaxOptions(optionsOrUrl)
-
-    // lookup for cached or statuc content
-    let result = this.lookup(options.url)
-    if (result) { return Promise.resolve(result) }
-
-    result = this.lookupInDOM(options.url)
-    if (result) { return Promise.resolve(result).then(this.cache.bind(this)) }
-
-    // debug('[Manager] download', options)
-    return ajax(options).then((xhr) => {
-      return this.xhrToAssetData(options, xhr)
-    }).then(this.cache.bind(this))
+  public download(optionsOrUrl: AjaxOptions|string): Promise<RawAsset> {
+    const options = this.makeAjaxOptions(optionsOrUrl)
+    return Promise.resolve(this.lookup(options.url)).then((result) => {
+      return result || ajax(options)
+    }).then((result) => {
+      this.cache(result)
+      return result
+    })
   }
 
   /**
@@ -186,24 +221,33 @@ export class Manager {
   /**
    * Loads and instantiates an assets
    */
-  public load<T = any>(targetType: string, assetPath: string, sourceType: string= path.ext(assetPath)): Promise<T> {
-    logger.debug(`[Content.Manager] load ${targetType}, ${assetPath}, ${sourceType}`)
+  public load<T = any>(
+    targetType: string|{ new (...arg: any[]): T },
+    assetPath: string,
+    options: { [key: string]: any } = {},
+  ): Promise<T> {
+
+    const sourceType = DataUri.isDataUri(assetPath)
+      ? ContentType.parse(DataUri.parse(assetPath).contentType).mimeType
+      : Uri.ext(assetPath)
+
+    Log.d(`[Content.Manager] load ${targetType['name'] || targetType}, ${assetPath}, ${sourceType}`)
 
     // see if the asset is already loaded
-    let key = targetType + ':' + assetPath
+    let key = (targetType['name'] || targetType) + ':' + assetPath
     let loaded = this.loaded[key]
     if (loaded) {
       return loaded
     }
 
     let context: PipelineContext = {
-      path: assetPath,
+      source: assetPath,
       stage: 'load',
       manager: this,
       pipeline: this.pipeline,
       sourceType: sourceType,
       targetType: targetType,
-      options: {},
+      options: options,
     }
 
     return this.loaded[key] = this.pipeline.load(context).then(() => context.result)
@@ -220,7 +264,7 @@ export class Manager {
       try {
         if (typeof obj.unload === 'function') { obj.unload() }
       } catch (e) {
-        logger.warn(`[Content.Manager] failed to unload asset at '${key}'`, e)
+        Log.w(`[Content.Manager] failed to unload asset at '${key}'`, e)
       }
     }
   }

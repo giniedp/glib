@@ -1,8 +1,8 @@
 import { Component } from './../Component'
 import { Entity } from './../Entity'
-import { Time } from './Time'
+import { TimeComponent } from './TimeComponent'
 
-export class Fps implements Component {
+export class FpsComponent implements Component {
   public node: Entity
   public name: string = 'Fps'
   public enabled: boolean = true
@@ -13,7 +13,7 @@ export class Fps implements Component {
   public fpsTimer: number
   public fpsCounter: number
 
-  public time: Time
+  public time: TimeComponent
 
   constructor() {
     this.reset()

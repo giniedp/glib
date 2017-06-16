@@ -3,7 +3,7 @@ import { Vec3, Vec4 } from '@glib/math'
 
 import { Component } from './../Component'
 import { Entity } from './../Entity'
-import { Transform } from './Transform'
+import { TransformComponent } from './TransformComponent'
 
 export interface LightProperties {
   range?: number
@@ -39,7 +39,7 @@ export let LightTypeName = {
   3: 'Spot',
 }
 
-export class Light implements Component, LightProperties {
+export class LightComponent implements Component, LightProperties {
   public node: Entity
   public name: string = 'Light'
   public enabled: boolean = true
@@ -75,7 +75,7 @@ export class Light implements Component, LightProperties {
   }
 
   public update() {
-    let t = this.node.s.Transform as Transform
+    let t = this.node.s.Transform as TransformComponent
     if (t) {
       this.direction.x = -t.worldMat.backward[0]
       this.direction.y = -t.worldMat.backward[1]

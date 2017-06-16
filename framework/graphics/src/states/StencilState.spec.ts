@@ -7,7 +7,7 @@ import {
 
 describe('glib/graphics/StencilState', () => {
 
-  let device = new Device({ contextAttributes: { depth: true, stencil: true} })
+  let device: Device
   let stateA: StencilState
   let stateB: StencilState
   let stateC: StencilState
@@ -57,6 +57,7 @@ describe('glib/graphics/StencilState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device({ contextAttributes: { depth: true, stencil: true} })
     stateA = new StencilState(device, paramsA)
     stateB = new StencilState(device, stateB)
     stateC = new StencilState(device)

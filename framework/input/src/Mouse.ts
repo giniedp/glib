@@ -1,4 +1,4 @@
-import { Events, logger, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
+import { Events, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
 
 function prefix(browser: string, name: string, upper: boolean): string {
   if (browser == null) { return null }
@@ -208,7 +208,7 @@ export class Mouse extends Events {
    */
   public lock() {
     if (!hasPointerlockApi) {
-      logger.warn('[Mouse] pointerlock api is not available')
+      Log.w('[Mouse] pointerlock api is not available')
       return
     }
     if (this.element === document[cross.pointerLockElement]) {
@@ -217,7 +217,7 @@ export class Mouse extends Events {
     if (this.element instanceof Element) {
       this.element[cross.requestPointerLock]()
     } else {
-      logger.warn('[Mouse] lock() is only available for elements of type "Element"')
+      Log.w('[Mouse] lock() is only available for elements of type "Element"')
     }
   }
   /**
@@ -245,7 +245,7 @@ export class Mouse extends Events {
     if (hasPointerlockApi) {
       document[cross.exitPointerLock]()
     } else {
-      logger.warn('[Mouse] pointerlock api is not available')
+      Log.w('[Mouse] pointerlock api is not available')
     }
   }
 

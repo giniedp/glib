@@ -3,7 +3,7 @@ import * as Input from '@glib/input'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
-export class Touch implements Component {
+export class TouchComponent implements Component {
   public node: Entity
   public name: string = 'Touch'
   public service: boolean = true

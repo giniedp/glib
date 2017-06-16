@@ -6,7 +6,7 @@ import {
 
 describe('glib/graphics/DepthState', () => {
 
-  let device = new Device()
+  let device: Device
   let stateA: DepthState
   let stateB: DepthState
   let stateC: DepthState
@@ -24,6 +24,7 @@ describe('glib/graphics/DepthState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device()
     stateA = new DepthState(device, paramsA)
     stateB = new DepthState(device, stateB)
     stateC = new DepthState(device)

@@ -1,6 +1,6 @@
 import { ShaderEffect, ShaderPassOptions, ShaderTechniqueOptions } from '@glib/graphics'
 import { JSON } from '../parser'
-import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 
 interface ShaderProgramInput {
   vertexShader?: string
@@ -14,19 +14,19 @@ interface ShaderPassInput {
   program?: ShaderProgramInput
 }
 
-pipelineImporter('.json', 'Effect', (context: PipelineContext): Promise<void> => {
-  context.intermediate = JSON.parse(context.raw.content)
+pipelineImporter(['.json', 'application/json'], ShaderEffect, (context: PipelineContext): Promise<void> => {
+  context.imported = JSON.parse(context.downloaded.content)
   return context.pipeline.process(context)
 })
 
-pipelineProcessor('Effect', (context: PipelineContext): Promise<void> => {
-  context.result = new ShaderEffect(context.manager.device, context.intermediate)
+pipelineProcessor(ShaderEffect, (context: PipelineContext): Promise<void> => {
+  context.result = new ShaderEffect(context.manager.device, context.imported)
   return Promise.resolve()
 })
 
-pipelinePreProcessor('Effect', (context: PipelineContext): Promise<void> => {
+pipelinePreprocessor(ShaderEffect, (context: PipelineContext): Promise<void> => {
 
-  let json: any = context.intermediate
+  let json: any = context.imported
 
   // get the shared source code (if any)
   let sharedCode: string = getProgram(json)
@@ -57,7 +57,7 @@ pipelinePreProcessor('Effect', (context: PipelineContext): Promise<void> => {
   })
 })
 
-import { extend, logger, path } from '@glib/core'
+import { extend, Uri } from '@glib/core'
 
 let regInclude = /#include\s+<(.*)>/
 let charNewLine = '\n'
@@ -166,7 +166,7 @@ function processShader(source: string, context: PipelineContext): Promise<string
 
 function createIncludeHandler(context: PipelineContext): (p: string) => Promise<void> {
   return (thePath: string) => {
-    let url = path.merge(context.path, thePath)
+    let url = Uri.merge(context.source, thePath)
     let cache = context.options.includeCache || {}
     context.options.includeCache = cache
     return cache[url] = cache[url] || context.manager.download(url).then((res) => res.content)

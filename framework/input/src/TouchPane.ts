@@ -1,4 +1,4 @@
-import { Events, extend, logger, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
+import { Events, extend, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
 import { IVec3 } from '@glib/math'
 
 const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'screenX', 'screenY', 'clientX', 'clientY', 'x', 'y']

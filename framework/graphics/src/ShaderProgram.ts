@@ -1,4 +1,4 @@
-import { logger, uuid } from '@glib/core'
+import { Log, uuid } from '@glib/core'
 import { Device } from './Device'
 import { ShaderType } from './enums'
 import { Shader, ShaderOptions } from './Shader'
@@ -203,7 +203,7 @@ export class ShaderProgram {
         let uniform = new ShaderUniform(this, options)
         if (uniform.location != null) {
           this.uniforms[key] = uniform
-          logger.info(`ShadderProgram ${this.uid}`, `found uniform ${uniform.meta.name} (binding:${uniform.name})`)
+          Log.i(`ShadderProgram ${this.uid}`, `found uniform ${uniform.meta.name} (binding:${uniform.name})`)
         }
       }
     }
@@ -222,7 +222,7 @@ export class ShaderProgram {
     this.info = this.gl.getProgramInfoLog(this.handle)
 
     if (!this.linked) {
-      logger.error('ShaderProgram#link failed', this.info)
+      Log.e('ShaderProgram#link failed', this.info)
     }
     return this
   }
@@ -257,7 +257,7 @@ export class ShaderProgram {
 
   private logMissingUniform(name: string) {
     if (!this.errLogs[name]) {
-      logger.warn(`Uniform '${name}' not found`)
+      Log.w(`Uniform '${name}' not found`)
       this.errLogs[name] = true
     }
   }

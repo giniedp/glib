@@ -1,4 +1,4 @@
-import { extend, logger } from '@glib/core'
+import { extend, Log } from '@glib/core'
 
 import { DataSize, DataType, DataTypeOption } from './enums'
 
@@ -80,11 +80,7 @@ export class VertexLayout {
   }
 
   public static convert(nameOrLayout: string|VertexLayout): VertexLayout {
-    if (typeof nameOrLayout === 'string') {
-      return this.create(nameOrLayout)
-    }
-    let result: any = nameOrLayout
-    return result
+    return typeof nameOrLayout === 'string' ? this.create(nameOrLayout) : nameOrLayout
   }
 
   /**
@@ -113,7 +109,7 @@ export class VertexLayout {
     for (let name of names) {
       name = String(name).toLowerCase()
       if (!VertexLayout.preset.hasOwnProperty(name)) {
-        logger.log('unknown element name ', name)
+        Log.l('unknown element name ', name)
         continue
       }
 

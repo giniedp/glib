@@ -1,10 +1,6 @@
-import * as loggerImport from './src/logger'
-import * as pathImport from './src/path'
-import * as WebWorkerImport from './src/WebWorker'
-
-export const path = pathImport
-export const logger = loggerImport
-export const WebWorker = WebWorkerImport
-export * from './src/utils'
-export * from './src/ajax'
+export * from './src/DataUri'
 export * from './src/Events'
+export * from './src/Log'
+export * from './src/Uri'
+export * from './src/utils'
+export * from './src/WebWorker'

@@ -1,14 +1,14 @@
-import { logger } from '@glib/core'
+import { Log } from '@glib/core'
 import { Vec2, Vec3 } from '@glib/math'
 import { BufferDataOption } from './../Buffer'
 import { VertexLayout } from './../VertexLayout'
 
 export function calculateNormals(layout: VertexLayout, indices: number[], vertices: number[]) {
   if (!layout.normal) {
-    logger.log('Can not create normals for buffer. Normal definition not found in layout ', layout)
+    Log.l('Can not create normals for buffer. Normal definition not found in layout ', layout)
   }
   if (!layout.position) {
-    logger.log('Can not create normals for buffer. Position definition not found in layout ', layout)
+    Log.l('Can not create normals for buffer. Position definition not found in layout ', layout)
   }
 
   let epsilon = 0

@@ -3,11 +3,11 @@ import * as Input from '@glib/input'
 import { IVec3, Mat4, Quat, Vec3 } from '@glib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
-import { Keyboard } from './Keyboard'
-import { Mouse } from './Mouse'
-import { Transform } from './Transform'
+import { KeyboardComponent } from './KeyboardComponent'
+import { MouseComponent } from './MouseComponent'
+import { TransformComponent } from './TransformComponent'
 
-export class WASD implements Component {
+export class WASDComponent implements Component {
   public node: Entity
   public enabled: boolean = true
 
@@ -28,9 +28,9 @@ export class WASD implements Component {
   private translation: Vec3 = Vec3.zero()
   private rotation: Quat = Quat.identity()
 
-  public mouse: Mouse
-  public keyboard: Keyboard
-  public transform: Transform
+  public mouse: MouseComponent
+  public keyboard: KeyboardComponent
+  public transform: TransformComponent
 
   public setup() {
     this.mouse = this.node.root.getService('Mouse')

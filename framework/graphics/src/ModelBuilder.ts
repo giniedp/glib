@@ -1,4 +1,4 @@
-import { copy, logger } from '@glib/core'
+import { copy, Log } from '@glib/core'
 import { BoundingBox, BoundingSphere, Mat2, Mat3, Mat4 } from '@glib/math'
 import { BufferDataOption, BufferOptions } from './Buffer'
 import { Color } from './Color'
@@ -261,7 +261,7 @@ export class ModelBuilder {
     }
 
     if (this.vertexCount !== vCounter) {
-      logger.debug(`[ModelBuilder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`)
+      Log.d(`[ModelBuilder] Mesh size reduced from ${this.vertexCount} to ${vCounter} vertices.`)
       this.vertices = newVertices
       this.vertexCount = vCounter
 
@@ -276,7 +276,7 @@ export class ModelBuilder {
    */
   public endMeshOptions(options: ModelMeshOptions = {}, optimize: boolean = false): ModelMeshOptions {
     if (this.indexCount === 0 && this.vertexCount === 0) {
-      logger.warn(`[ModelBuilder] pushMesh : called on empty builder. ignore.`)
+      Log.w(`[ModelBuilder] pushMesh : called on empty builder. ignore.`)
       return options
     }
     this.mergeDublicates()

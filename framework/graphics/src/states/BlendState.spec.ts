@@ -7,7 +7,7 @@ import {
 
 describe('glib/graphics/BlendState', () => {
 
-  let device = new Device()
+  let device: Device
   let stateA: BlendState
   let stateB: BlendState
   let stateC: BlendState
@@ -45,6 +45,7 @@ describe('glib/graphics/BlendState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device({ context: 'webgl' })
     stateA = new BlendState(device, paramsA)
     stateB = new BlendState(device, stateB)
     stateC = new BlendState(device)
@@ -58,44 +59,44 @@ describe('glib/graphics/BlendState', () => {
       stateA.commit()
       stateC.resolve()
 
-      expect(stateC.colorBlendFunction).toBe(paramsA.colorBlendFunction)
-      expect(stateC.alphaBlendFunction).toBe(paramsA.alphaBlendFunction)
+      expect(stateC.colorBlendFunction).toBe(paramsA.colorBlendFunction, 'colorBlendFunction')
+      expect(stateC.alphaBlendFunction).toBe(paramsA.alphaBlendFunction, 'alphaBlendFunction')
 
-      expect(stateC.colorSrcBlend).toBe(paramsA.colorSrcBlend)
-      expect(stateC.alphaSrcBlend).toBe(paramsA.alphaSrcBlend)
-      expect(stateC.colorDstBlend).toBe(paramsA.colorDstBlend)
-      expect(stateC.alphaDstBlend).toBe(paramsA.alphaDstBlend)
+      expect(stateC.colorSrcBlend).toBe(paramsA.colorSrcBlend, 'colorSrcBlend')
+      expect(stateC.alphaSrcBlend).toBe(paramsA.alphaSrcBlend, 'alphaSrcBlend')
+      expect(stateC.colorDstBlend).toBe(paramsA.colorDstBlend, 'colorDstBlend')
+      expect(stateC.alphaDstBlend).toBe(paramsA.alphaDstBlend, 'alphaDstBlend')
 
-      expect(stateC.constantR).toBe(paramsA.constantR)
-      expect(stateC.constantG).toBe(paramsA.constantG)
-      expect(stateC.constantB).toBe(paramsA.constantB)
-      expect(stateC.constantA).toBe(paramsA.constantA)
+      expect(stateC.constantR).toBe(paramsA.constantR, 'constantR')
+      expect(stateC.constantG).toBe(paramsA.constantG, 'constantG')
+      expect(stateC.constantB).toBe(paramsA.constantB, 'constantB')
+      expect(stateC.constantA).toBe(paramsA.constantA, 'constantA')
 
-      expect(stateC.enabled).toBe(paramsA.enabled)
+      expect(stateC.enabled).toBe(paramsA.enabled, 'enabled')
 
-      expect(stateC.isDirty).toBe(false)
+      expect(stateC.isDirty).toBe(false, 'isDirty')
     })
 
     it('given state', () => {
       stateA.commit(paramsB)
       stateC.resolve()
 
-      expect(stateC.colorBlendFunction).toBe(paramsB.colorBlendFunction)
-      expect(stateC.alphaBlendFunction).toBe(paramsB.alphaBlendFunction)
+      expect(stateC.colorBlendFunction).toBe(paramsB.colorBlendFunction, 'colorBlendFunction')
+      expect(stateC.alphaBlendFunction).toBe(paramsB.alphaBlendFunction, 'alphaBlendFunction')
 
-      expect(stateC.colorSrcBlend).toBe(paramsB.colorSrcBlend)
-      expect(stateC.alphaSrcBlend).toBe(paramsB.alphaSrcBlend)
-      expect(stateC.colorDstBlend).toBe(paramsB.colorDstBlend)
-      expect(stateC.alphaDstBlend).toBe(paramsB.alphaDstBlend)
+      expect(stateC.colorSrcBlend).toBe(paramsB.colorSrcBlend, 'colorSrcBlend')
+      expect(stateC.alphaSrcBlend).toBe(paramsB.alphaSrcBlend, 'alphaSrcBlend')
+      expect(stateC.colorDstBlend).toBe(paramsB.colorDstBlend, 'colorDstBlend')
+      expect(stateC.alphaDstBlend).toBe(paramsB.alphaDstBlend, 'alphaDstBlend')
 
-      expect(stateC.constantR).toBe(paramsB.constantR)
-      expect(stateC.constantG).toBe(paramsB.constantG)
-      expect(stateC.constantB).toBe(paramsB.constantB)
-      expect(stateC.constantA).toBe(paramsB.constantA)
+      expect(stateC.constantR).toBe(paramsB.constantR, 'constantR')
+      expect(stateC.constantG).toBe(paramsB.constantG, 'constantG')
+      expect(stateC.constantB).toBe(paramsB.constantB, 'constantB')
+      expect(stateC.constantA).toBe(paramsB.constantA, 'constantA')
 
-      expect(stateC.enabled).toBe(paramsB.enabled)
+      expect(stateC.enabled).toBe(paramsB.enabled, 'enabled')
 
-      expect(stateC.isDirty).toBe(false)
+      expect(stateC.isDirty).toBe(false, 'isDirty')
     })
   })
 

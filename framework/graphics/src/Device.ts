@@ -1,6 +1,6 @@
 // tslint:disable no-bitwise
 
-import { extend, isString, logger } from '@glib/core'
+import { extend, isString, Log } from '@glib/core'
 
 import {
   BufferType,
@@ -123,7 +123,7 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRende
     try {
       context = context || canvas.getContext(name, attributes)
     } catch (e) {
-      logger.info('[Device]', `${name} is not supported`)
+      Log.i('[Device]', `${name} is not supported`)
     }
   }
 
@@ -211,7 +211,7 @@ export class Device {
 
   constructor(options: {
     canvas?: string|HTMLCanvasElement,
-    context?: string|WebGLRenderingContext,
+    context?: string|WebGLRenderingContext|WebGL2RenderingContext,
     contextAttributes?: ContextAttributes,
   } = {}) {
 
@@ -300,6 +300,11 @@ export class Device {
     }
     return this.defaultTextureInstance
   }
+
+  get isWebGL2(): boolean {
+    return supportsWebGL2 && this.context instanceof WebGL2RenderingContext
+  }
+
   /**
    * Clears the color, depth and stencil buffers
    */
@@ -582,7 +587,7 @@ export class Device {
       ext.loseContext() // trigger a context loss
       ext.restoreContext() // restores the context
     } else {
-      logger.log('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context')
+      Log.l('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context')
       // TODO:
       // this.trigger('reset')
     }

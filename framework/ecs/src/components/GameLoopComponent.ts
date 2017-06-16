@@ -1,15 +1,15 @@
-import { extend, getTime, logger, requestFrame } from '@glib/core'
+import { extend, getTime, Log, requestFrame } from '@glib/core'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
-export class GameLoop implements Component {
+export class GameLoopComponent implements Component {
   public node: Entity
   public name: string = 'GameLoop'
   public service: boolean = true
   public enabled: boolean = true
 
-  public preferTimeout: boolean = true
-  public fixedTimeStep: number = 20
+  public preferTimeout: boolean = false
+  public fixedTimeStep: number = 1000 / 60
   public isFixedTimeStep: boolean = true
 
   public recursiveSetup: boolean = true

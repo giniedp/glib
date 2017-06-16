@@ -231,7 +231,6 @@ export class BlendState implements BlendStateOptions {
   public commit(state?: BlendStateOptions): BlendState {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
-
     let gl = this.gl
     let changes = this.changes
     let enabled = this.enabled

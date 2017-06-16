@@ -1,4 +1,4 @@
-import { Events, extend, logger } from '@glib/core'
+import { Events, extend, Log } from '@glib/core'
 import { DepthFormat, Device, RenderTargetOptions, SpriteBatch, Texture } from '@glib/graphics'
 import { Binder } from './Binder'
 import { View } from './Types'
@@ -104,7 +104,7 @@ export class Manager extends Events {
         depthFormat: opts.depthFormat,
       }
     }
-    logger.info('[Render.Manager]', 'create render target', opts)
+    Log.i('[Render.Manager]', 'create render target', opts)
     let target = this.device.createTexture2D(opts)
     this.usedTargets.push({
       frames: 0,
@@ -160,7 +160,7 @@ export class Manager extends Events {
     for (let item of toKill) {
       let index = this.freeTargets.indexOf(item)
       this.freeTargets.splice(index, 1)
-      logger.info('[Render.Manager]', 'destroy render target')
+      Log.i('[Render.Manager]', 'destroy render target')
       item.target.destroy()
     }
   }

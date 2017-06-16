@@ -1,4 +1,4 @@
-import { logger } from '@glib/core'
+import { Log } from '@glib/core'
 import { Device } from './Device'
 import { ArrayType, BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DataSize, DataType, DataTypeOption } from './enums'
 import * as Enums from './enums/Enums'
@@ -19,7 +19,9 @@ export interface BufferOptions<T = BufferDataOption> {
 
 export class Buffer {
   public device: Device
-  public gl: WebGLRenderingContext
+  public get gl() {
+    return this.device.context
+  }
   public handle: WebGLBuffer
   public type: number
   public dataType: number
@@ -31,7 +33,6 @@ export class Buffer {
 
   constructor(device: Device, opts?: BufferOptions) {
     this.device = device
-    this.gl = device.context
     this.setup(opts || {})
   }
 
@@ -210,11 +211,11 @@ export class Buffer {
       const off = srcByteOffset || 0
       const len = srcByteLength || (buffer.byteLength - off);
       // WebGL2 call
-      (this.gl as any).bufferData(this.type, buffer, this.usage, off, len)
+      (this.gl as WebGL2RenderingContext).bufferData(this.type, buffer as any, this.usage, off, len)
       this.dataSize = Math.min(buffer.byteLength - off, len)
     } else {
       // WebGL1 call
-      this.gl.bufferData(this.type, buffer, this.usage)
+      (this.gl as WebGLRenderingContext).bufferData(this.type, buffer, this.usage)
       this.dataSize = buffer.byteLength
     }
     this.elementCount = this.dataSize / this.elementSize
@@ -266,6 +267,6 @@ export class Buffer {
   public getBufferSubData(srcByteOffset: number, dst: ArrayBufferView, dstOffset: number, dstLength: number): void {
     // WebGL2 call
     this.use();
-    (this.gl as any).getBufferSubData(this.type, srcByteOffset, dst, dstOffset, dstLength)
+    (this.gl as WebGL2RenderingContext).getBufferSubData(this.type, srcByteOffset, dst, dstOffset, dstLength)
   }
 }

@@ -4,7 +4,7 @@ import { Vec3, Vec4 } from '@glib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
-export class Mouse implements Component {
+export class MouseComponent implements Component {
 
   public node: Entity
   public name: string = 'Mouse'

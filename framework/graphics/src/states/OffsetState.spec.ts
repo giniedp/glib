@@ -5,7 +5,7 @@ import {
 
 describe('glib/graphics/OffsetState', () => {
 
-  let device = new Device()
+  let device: Device
   let stateA: OffsetState
   let stateB: OffsetState
   let stateC: OffsetState
@@ -23,6 +23,7 @@ describe('glib/graphics/OffsetState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device()
     stateA = new OffsetState(device, paramsA)
     stateB = new OffsetState(device, stateB)
     stateC = new OffsetState(device)

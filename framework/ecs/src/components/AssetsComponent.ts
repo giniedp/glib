@@ -3,7 +3,7 @@ import { AjaxOptions } from '@glib/core'
 import * as Graphics from '@glib/graphics'
 import { Entity } from './../Entity'
 
-export class Assets {
+export class AssetsComponent {
   public node: Entity
   public name: string = 'Assets'
   public service: boolean = true

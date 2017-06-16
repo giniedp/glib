@@ -1,12 +1,12 @@
-import { extend, path, WebWorker } from '@glib/core'
-import * as Graphics from '@glib/graphics'
+import { extend, WebWorker } from '@glib/core'
+import { Model, ModelBuilder } from '@glib/graphics'
 import { OBJ } from '../parser'
-import { Pipeline, PipelineContext, pipelineImporter, pipelinePreProcessor, pipelineProcessor } from '../Pipeline'
+import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 import { RawAsset } from './../Manager'
 
-pipelineImporter('.obj', 'Model', (context: PipelineContext) => {
-  return objToJsonAsync(context.raw).then((json: any) => {
-    context.intermediate = json
+pipelineImporter(['.obj', 'application/x-obj'], Model, (context: PipelineContext) => {
+  return objToJsonAsync(context.downloaded).then((json: any) => {
+    context.imported = json
     return context.pipeline.process(context)
   })
 })
@@ -19,7 +19,7 @@ function objToJson(data: RawAsset) {
 const objToJsonAsync = WebWorker.register('objToJson', objToJson)
 
 function convert(data: ObjData) {
-  let builder = Graphics.ModelBuilder.begin({
+  let builder = ModelBuilder.begin({
     layout: 'PositionTextureNormalTangentBitangent',
     ignoreTransform: true,
   })
@@ -60,7 +60,7 @@ function readVertex(data: ObjData, element: number[]) {
   return vertex
 }
 
-function buildMesh(builder: Graphics.ModelBuilder, data: ObjData, groups: ObjGroup[]) {
+function buildMesh(builder: ModelBuilder, data: ObjData, groups: ObjGroup[]) {
 
   let index = 0
   let vertex = null

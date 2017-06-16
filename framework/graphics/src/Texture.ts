@@ -1,4 +1,4 @@
-import { isArray, isObject, isPowerOfTwo, isString, logger, uuid } from '@glib/core'
+import { isArray, isObject, isPowerOfTwo, isString, Log, uuid } from '@glib/core'
 import {
   DataType,
   DataTypeOption,
@@ -342,14 +342,14 @@ export class Texture {
     let valid = false
     for (let option of options) {
       if (video.canPlayType(option.type)) {
-        logger.debug('[Texture] canPlayType', option)
+        Log.d('[Texture] canPlayType', option)
         video.src = option.src
         valid = true
         break
       }
     }
     if (!valid) {
-      logger.debug("[Texture] no supported format found. Video won't play.", options)
+      Log.d("[Texture] no supported format found. Video won't play.", options)
     }
     this.setVideo(video)
     return this

@@ -1,5 +1,5 @@
 // tslint:disable max-classes-per-file
-import { logger } from '@glib/core'
+import { Log } from '@glib/core'
 
 export const isWeb = typeof window === 'object'
 export const isWorker = typeof self['importScripts'] === 'function'
@@ -8,7 +8,7 @@ export const isSupported = typeof Worker !== 'undefined'
 const workers: PromiseWorker[] = []
 const methods: any = {}
 
-export function enable(script: string, count: number = 1): boolean {
+function enable(script: string, count: number = 1): boolean {
   if (!isSupported || workers.length) {
     return false
   }
@@ -18,17 +18,17 @@ export function enable(script: string, count: number = 1): boolean {
   workers.length = count
 }
 
-export function disable() {
+function disable() {
   workers.forEach((element) => element.worker.terminate())
   workers.length = 0
 }
 
-export function register(method: string, func: (...args: any[]) => any, workerId: number = 0): (...args: any[]) => any {
+function register(method: string, func: (...args: any[]) => any, workerId: number = 0): (...args: any[]) => any {
   methods[method] = new Work(method, func, workerId)
   return (...params: any[]) => methods[method].run(params)
 }
 
-export function execute(method: string, ...params: any[]) {
+function execute(method: string, ...params: any[]) {
   return methods[method].run(params)
 }
 
@@ -61,7 +61,7 @@ class PromiseWorker {
   constructor(stringUrl: string) {
     this.worker = new Worker(stringUrl)
     this.worker.onmessage = (e) => this.onMessage(e)
-    this.worker.onerror = (e) => logger.log(e)
+    this.worker.onerror = (e) => Log.l(e)
   }
 
   public onMessage(e: any) {
@@ -110,4 +110,8 @@ if (isWorker) {
       worker.postMessage(data)
     })
   })
+}
+
+export const WebWorker = {
+  enable, disable, register, execute,
 }

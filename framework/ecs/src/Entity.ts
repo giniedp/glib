@@ -1,4 +1,4 @@
-import { Events, extend, isArray, isObject, isString, logger } from '@glib/core'
+import { Events, extend, isArray, isObject, isString, Log } from '@glib/core'
 import { Component } from './Component'
 import { Finder } from './Finder'
 import { getTemplate, Template } from './Template'

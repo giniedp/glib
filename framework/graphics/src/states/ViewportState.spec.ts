@@ -5,7 +5,7 @@ import {
 
 describe('glib/graphics/ViewportState', () => {
 
-  let device = new Device()
+  let device: Device
   let stateA: ViewportState
   let stateB: ViewportState
   let stateC: ViewportState
@@ -29,6 +29,7 @@ describe('glib/graphics/ViewportState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
+    device = new Device()
     stateA = new ViewportState(device, paramsA)
     stateB = new ViewportState(device, stateB)
     stateC = new ViewportState(device)

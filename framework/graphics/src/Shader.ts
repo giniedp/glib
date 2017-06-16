@@ -1,4 +1,4 @@
-import { logger, uuid } from '@glib/core'
+import { Log, uuid } from '@glib/core'
 
 import { Device } from './Device'
 import { ShaderType } from './enums'
@@ -75,7 +75,7 @@ export class Shader {
     this.typeName = ShaderType.nameOf(this.type)
 
     if (!this.typeName) {
-      logger.log(this, 'unknown shader type given', params.type)
+      Log.l(this, 'unknown shader type given', params.type)
     }
 
     this.handle = params.handle
@@ -104,7 +104,7 @@ export class Shader {
    */
   public compile(): Shader {
     if (!this.source) {
-      logger.error('[Shader] Unable to compile shader, source is missing', this)
+      Log.e('[Shader] Unable to compile shader, source is missing', this)
       return this
     }
 
@@ -114,7 +114,7 @@ export class Shader {
     this.info = this.gl.getShaderInfoLog(this.handle)
 
     if (!this.compiled) {
-      logger.error('[Shader] compilation failed', this.info, this)
+      Log.e('[Shader] compilation failed', this.info, this)
     }
     return this
   }

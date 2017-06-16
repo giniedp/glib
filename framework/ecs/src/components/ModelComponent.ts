@@ -3,17 +3,17 @@ import { Model as GraphicsModel } from '@glib/graphics'
 import { Mat4 } from '@glib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
-import { CullVisitor } from './Renderer'
-import { Transform } from './Transform'
+import { CullVisitor } from './RendererComponent'
+import { TransformComponent } from './TransformComponent'
 
-export class Model implements Component {
+export class ModelComponent implements Component {
   public node: Entity
   public name: string = 'Renderable'
   public service: boolean = true
   public enabled: boolean = true
 
   public model: GraphicsModel
-  public transform: Transform
+  public transform: TransformComponent
   public world: Mat4 = Mat4.identity()
 
   constructor(params?: any) {
@@ -22,7 +22,7 @@ export class Model implements Component {
     }
   }
   public setup() {
-    this.transform = this.node.s.Transform as Transform
+    this.transform = this.node.s.Transform as TransformComponent
   }
   public update() {
     if (this.transform) {

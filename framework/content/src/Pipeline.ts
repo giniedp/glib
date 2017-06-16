@@ -1,163 +1,244 @@
-import { path } from '@glib/core'
+// tslint:disable ban-types
+import { DataUri, Log, Uri } from '@glib/core'
+import { ContentType } from './ContentType'
 import { Manager, RawAsset } from './Manager'
-import * as Parser from './parser'
+import { Parser } from './parser'
 
 export type PipelineStage = 'preload'|'load'|'import'|'preprocess'|'process'|'postprocess'
 
 export interface PipelineContext {
+  /**
+   * The current processing content manager
+   */
   manager: Manager
+  /**
+   * The current processing content pipeline
+   */
   pipeline: Pipeline
+  /**
+   * The name of the current processing stage
+   */
   stage: PipelineStage
+  /**
+   * The extension name or the mime type of the source file that is being loaded
+   */
   sourceType: string
-  targetType: string
+  /**
+   * The type name of the asset that is being loaded
+   */
+  targetType: PipelineTargetType
+  /**
+   * Any user defined options that might be used during the pipeline
+   */
   options: any
 
-  path?: string
-  raw?: RawAsset
-  intermediate?: any
+  /**
+   * The full path or url that is being loaded
+   */
+  source?: string
+  /**
+   * The raw asset that has been downloaded during the load stage
+   */
+  downloaded?: RawAsset
+  /**
+   * Intermadiate result of the import stage
+   */
+  imported?: any
+  /**
+   * The final result of the process stage
+   */
   result?: any
 }
 
 export type PipelineHandler = (context: PipelineContext) => Promise<void>|void
 
+export type PipelineTargetType = string|Function
+
 export interface PipelineEntry {
   stage: PipelineStage
   sourceType: string
-  targetType: string
+  targetType: PipelineTargetType
   handler: PipelineHandler
 }
 
-function describeContext(context: PipelineContext): string {
+export function describeSourceType(sourcetype: string) {
+  return String(sourcetype)
+}
+
+export function describeTargetType(targetType: PipelineTargetType) {
+  return typeof targetType === 'string' ? targetType : targetType.name
+}
+
+export function describeContext(context: PipelineContext): string {
   return [
     `stage: '${context.stage}'`,
-    `sourceType: '${context.sourceType}'`,
-    `targetType: '${context.targetType}'`,
+    `sourceType: '${describeSourceType(context.sourceType)}'`,
+    `targetType: '${describeTargetType(context.targetType)}'`,
   ].join(', ')
 }
 
 const handlers: PipelineEntry[] = []
 
-function defaultLoader(context: PipelineContext): Promise<void> {
-  return context.manager.download(context.path).then((result) => {
-    context.raw = result
-    return context.pipeline.import(context)
-  })
-}
-
-function defaultImporter(context: PipelineContext): Promise<void> {
-  let ext = path.ext(context.path)
-  if (context.sourceType === '.json') {
-    context.intermediate = Parser.JSON.parse(context.raw.content)
-  } else if (context.sourceType === '.yml') {
-    context.intermediate = Parser.YML.parse(context.raw.content)
-  } else if (context.sourceType === '.mtl') {
-    context.intermediate = Parser.MTL.parse(context.raw.content)
-  } else if (context.sourceType === '.obj') {
-    context.intermediate = Parser.OBJ.parse(context.raw.content)
-  } else {
-    return Promise.reject(`[Content.Manager] parser not found: { ${describeContext(context)} }`)
+function addHandler(
+  stage: PipelineStage,
+  sourceType: string|string[],
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  if (!Array.isArray(sourceType)) { sourceType = [sourceType] }
+  if (!Array.isArray(targetType)) { targetType = [targetType] }
+  for (let st of sourceType) {
+    for (let tt of targetType) {
+      handlers.unshift({
+        stage: stage,
+        sourceType: st,
+        targetType: tt,
+        handler: handler,
+      })
+    }
   }
-  return context.pipeline.process(context)
 }
 
-/**
- * Registeres a content preloader function
- */
-export function pipelinePreloader(targetType: string, handler: PipelineHandler) {
-  handlers.push({
-    stage: 'preload',
-    sourceType: null,
-    targetType: targetType,
-    handler: handler,
-  })
+function addTransformHandler(
+  stage: PipelineStage,
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  if (!Array.isArray(targetType)) { targetType = [targetType] }
+  for (let tt of targetType) {
+    handlers.unshift({
+      stage: stage,
+      sourceType: '*', // explicitely match all source types
+      targetType: tt,
+      handler: handler,
+    })
+  }
 }
 
 /**
  * Registeres a content loader function
  */
-export function pipelineLoader(sourceType: string|string[], targetType: string, handler: PipelineHandler) {
-  let type: any = sourceType
-  if (!Array.isArray(type)) { type = [type] }
-  for (let name of type) {
-    handlers.push({
-      stage: 'load',
-      sourceType: name,
-      targetType: targetType,
-      handler: handler,
-    })
-  }
+export function pipelineLoader(
+  sourceType: string|string[],
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  addHandler('load', sourceType, targetType, handler)
 }
 
 /**
  * Registeres a content importer function
  */
-export function pipelineImporter(sourceType: string|string[], targetType: string, handler: PipelineHandler) {
-  let type: any = sourceType
-  if (!Array.isArray(type)) { type = [type] }
-  for (let name of type) {
-    handlers.push({
-      stage: 'import',
-      sourceType: name,
-      targetType: targetType,
-      handler: handler,
-    })
-  }
+export function pipelineImporter(
+  sourceType: string|string[],
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  addHandler('import', sourceType, targetType, handler)
+}
+
+/**
+ * Registeres a content preloader function
+ */
+export function pipelinePreloader(
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  addTransformHandler('preload', targetType, handler)
 }
 
 /**
  * Registeres a content processor function
  */
-export function pipelineProcessor(targetType: string, handler: PipelineHandler) {
-  handlers.push({
-    stage: 'process',
-    sourceType: null,
-    targetType: targetType,
-    handler: handler,
-  })
+export function pipelineProcessor(
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  addTransformHandler('process', targetType, handler)
 }
 
 /**
  * Registeres a content preprocessor function
  */
-export function pipelinePreProcessor(targetType: string, handler: PipelineHandler) {
-  handlers.push({
-    stage: 'preprocess',
-    sourceType: null,
-    targetType: targetType,
-    handler: handler,
-  })
+export function pipelinePreprocessor(
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  addTransformHandler('preprocess', targetType, handler)
 }
 
 /**
  * Registeres a content postprocessor function
  */
-export function pipelinePostProcessor(targetType: string, handler: PipelineHandler) {
-  handlers.push({
-    stage: 'postprocess',
-    sourceType: null,
-    targetType: targetType,
-    handler: handler,
-  })
+export function pipelinePostprocessor(
+  targetType: PipelineTargetType|PipelineTargetType[],
+  handler: PipelineHandler,
+) {
+  addTransformHandler('postprocess', targetType, handler)
 }
 
 export class Pipeline {
 
-  public findHandler(stage: PipelineStage, sourceType: string, targetType: string): PipelineHandler {
+  public matchSourceType(wanted: string, entry: PipelineEntry): boolean {
+    if (entry.sourceType === '*') {
+      // global match
+      return true
+    }
+    if (entry.sourceType === wanted) {
+      // matches extension or mime type
+      return true
+    }
+
+    const ect = ContentType.parse(entry.sourceType)
+    const wct = ContentType.parse(wanted)
+
+    if (!ect && !wct) {
+      return false
+    }
+    if (ect.mediaType !== wct.mediaType) {
+      return false
+    }
+    if (ect.subType === '*') {
+      return true
+    }
+    return false
+  }
+
+  public matchTargetType(wanted: PipelineTargetType, item: PipelineEntry): boolean {
+    const current = item.targetType
+    if (current === '*' || current === wanted) {
+      return true
+    }
+    if (typeof current === 'string' && typeof wanted === 'function') {
+      return wanted.name === current
+    }
+    if (typeof wanted === 'string' && typeof current === 'function') {
+      return current['name'] === wanted // TODO: check
+    }
+    return false
+  }
+
+  public findHandler(stage: PipelineStage, sourceType: string, targetType: PipelineTargetType): PipelineHandler {
     for (let item of handlers) {
       if (item.stage !== stage) { continue }
-      if (item.targetType !== targetType) { continue }
-      if (item.sourceType === sourceType || item.sourceType === '*') {
+      if (!this.matchTargetType(targetType, item)) { continue }
+      if (this.matchSourceType(sourceType, item)) {
         return item.handler
       }
     }
     return null
   }
 
-  public findAllHandler(stage: PipelineStage, sourceType: string, targetType: string, out: PipelineHandler[] = []): PipelineHandler[] {
+  public findAllHandler(
+    stage: PipelineStage,
+    sourceType: string,
+    targetType: PipelineTargetType,
+    out: PipelineHandler[] = [],
+  ): PipelineHandler[] {
     for (let item of handlers) {
       if (item.stage !== stage) { continue }
-      if (item.targetType !== targetType) { continue }
-      if (item.sourceType === sourceType || item.sourceType === '*') {
+      if (!this.matchTargetType(targetType, item)) { continue }
+      if (this.matchSourceType(sourceType, item)) {
         out.push(item.handler)
       }
     }
@@ -167,23 +248,27 @@ export class Pipeline {
   public runHandlers(stage: PipelineStage, context: PipelineContext): Promise<void> {
     context.stage = stage
     const h = this.findAllHandler(context.stage, null, context.targetType)
-    return Promise.all(h.map((it: any)  => it(context))).then(() => null)
+    return Promise.all(h.map((it: any)  => it(context))).then(() => undefined)
   }
 
   public load(context: PipelineContext): Promise<void> {
     return this.runHandlers('preload', context)
       .then(() => {
         context.stage = 'load'
-        const handler = this.findHandler(context.stage, context.sourceType, context.targetType) || defaultLoader
-        return Promise.resolve(handler(context))
+        const handler = this.findHandler(context.stage, context.sourceType, context.targetType)
+        return handler
+          ? Promise.resolve(handler(context))
+          : Promise.reject(`[Content.Manager] loader not found: ${describeContext(context)}`)
       })
       .then(() => context.result)
   }
 
   public import(context: PipelineContext): Promise<void> {
     context.stage = 'import'
-    const handler = this.findHandler(context.stage, context.sourceType, context.targetType) || defaultImporter
-    return Promise.resolve(handler(context))
+    const handler = this.findHandler(context.stage, context.sourceType, context.targetType)
+    return handler
+      ? Promise.resolve(handler(context))
+      : Promise.reject(`[Content.Manager] importer not found: ${describeContext(context)}`)
   }
 
   public process(context: PipelineContext): Promise<void> {
@@ -198,3 +283,31 @@ export class Pipeline {
     .then(() => this.runHandlers('postprocess', context))
   }
 }
+
+pipelineLoader('*', '*', (context: PipelineContext) => {
+  return context.manager.download(context.source).then((result) => {
+    context.downloaded = result
+    context.sourceType = context.sourceType || result.contentType.mimeType
+    return context.pipeline.import(context)
+  })
+})
+
+pipelineImporter(['.json', 'application/json'], '*', (context: PipelineContext) => {
+  context.imported = Parser.JSON.parse(context.downloaded.content)
+  return context.pipeline.process(context)
+})
+
+pipelineImporter(['.yml', 'application/x-yaml'], '*', (context: PipelineContext) => {
+  context.imported = Parser.YML.parse(context.downloaded.content)
+  return context.pipeline.process(context)
+})
+
+pipelineImporter(['.mtl', 'application/x-mtl'], '*', (context: PipelineContext) => {
+  context.imported = Parser.MTL.parse(context.downloaded.content)
+  return context.pipeline.process(context)
+})
+
+pipelineImporter(['.obj', 'application/x-obj'], '*', (context: PipelineContext) => {
+  context.imported = Parser.OBJ.parse(context.downloaded.content)
+  return context.pipeline.process(context)
+})

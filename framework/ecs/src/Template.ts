@@ -1,4 +1,4 @@
-import { Device } from '@glib/graphics'
+import { ContextAttributes, Device } from '@glib/graphics'
 import * as Components from './components'
 import { Entity } from './Entity'
 
@@ -17,15 +17,30 @@ export function getTemplate(name: string) {
   return registry[name]
 }
 
-registerTemplate('Game', (entity: Entity, options: any= {}) => {
+registerTemplate('Game', (
+  entity: Entity,
+  options: {
+    canvas?: HTMLCanvasElement,
+    context?: string | WebGLRenderingContext | WebGL2RenderingContext,
+    contextAttributes?: ContextAttributes,
+    templates?: Array<string|Template>,
+    autorun?: boolean,
+  } = {},
+) => {
   entity
-    .addService('Device', new Device({ canvas: options.canvas }))
-    .addComponent(new Components.GameLoop())
-    .addComponent(new Components.Time())
-    .addComponent(new Components.Fps())
-    .addComponent(new Components.Assets())
-    .addComponent(new Components.Renderer())
-    .applyTemplates(options.templates || {})
+    .addService('Device', new Device({
+      canvas: options.canvas,
+      context: options.context,
+      contextAttributes: options.contextAttributes,
+    }))
+    .addComponent(new Components.GameLoopComponent())
+    .addComponent(new Components.TimeComponent())
+    .addComponent(new Components.FpsComponent())
+    .addComponent(new Components.AssetsComponent())
+    .addComponent(new Components.RendererComponent())
+  if (options.templates) {
+    entity.applyTemplates(options.templates)
+  }
   if (options.autorun !== false) {
     entity.getService('GameLoop').run()
   }
@@ -37,14 +52,14 @@ export function createGame(options: any, ...templates: string[]) {
 
 registerTemplate('Transform', (entity: Entity) => {
   if (!entity.s.Transform) {
-    entity.addComponent(new Components.Transform())
+    entity.addComponent(new Components.TransformComponent())
   }
 })
 
 registerTemplate('Camera', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
   if (!entity.s.Camera) {
-    entity.addComponent(new Components.Camera(options))
+    entity.addComponent(new Components.CameraComponent(options))
   }
 })
 
@@ -52,7 +67,7 @@ registerTemplate('DirectionalLight', (entity: Entity, options: any = {}) => {
   if (!entity.s.Light) {
     options = options || {}
     options.type = Components.LightType.Directional
-    entity.addComponent(new Components.Light(options))
+    entity.addComponent(new Components.LightComponent(options))
   }
 })
 
@@ -60,7 +75,7 @@ registerTemplate('PointLight', (entity: Entity, options: any = {}) => {
   if (!entity.s.Light) {
     options = options || {}
     options.type = Components.LightType.Point
-    entity.addComponent(new Components.Light(options))
+    entity.addComponent(new Components.LightComponent(options))
   }
 })
 
@@ -68,38 +83,38 @@ registerTemplate('SpotLight', (entity: Entity, options: any = {}) => {
   if (!entity.s.Light) {
     options = options || {}
     options.type = Components.LightType.Spot
-    entity.addComponent(new Components.Light(options))
+    entity.addComponent(new Components.LightComponent(options))
   }
 })
 
 registerTemplate('Light', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
   if (!entity.s.Light) {
-    entity.addComponent(new Components.Light(options))
+    entity.addComponent(new Components.LightComponent(options))
   }
 })
 
 registerTemplate('Model', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
   if (!entity.s.Renderable) {
-    entity.addComponent(new Components.Model(options))
+    entity.addComponent(new Components.ModelComponent(options))
   }
 })
 
 registerTemplate('Mouse', (entity: Entity, options: any = {}) => {
   if (!entity.s.Mouse) {
-    entity.addComponent(new Components.Mouse(options))
+    entity.addComponent(new Components.MouseComponent(options))
   }
 })
 
 registerTemplate('Keyboard', (entity: Entity, options: any = {}) => {
   if (!entity.s.Keyboard) {
-    entity.addComponent(new Components.Keyboard(options))
+    entity.addComponent(new Components.KeyboardComponent(options))
   }
 })
 
 registerTemplate('WASD', (entity: Entity, options: any = {}) => {
   entity.root.applyTemplate('Mouse')
   entity.root.applyTemplate('Keyboard')
-  entity.addComponent(new Components.WASD())
+  entity.addComponent(new Components.WASDComponent())
 })
