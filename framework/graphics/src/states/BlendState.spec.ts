@@ -20,10 +20,10 @@ describe('glib/graphics/BlendState', () => {
     colorDstBlend: Blend.DstColor,
     alphaDstBlend: Blend.DstAlpha,
 
-    constantR: 1,
-    constantG: 2,
-    constantB: 3,
-    constantA: 4,
+    constantR: 0.1,
+    constantG: 0.2,
+    constantB: 0.3,
+    constantA: 0.4,
     enabled: true,
   }
   let paramsB = {
@@ -35,10 +35,10 @@ describe('glib/graphics/BlendState', () => {
     colorDstBlend: Blend.SrcColor,
     alphaDstBlend: Blend.SrcAlpha,
 
-    constantR: 4,
-    constantG: 3,
-    constantB: 2,
-    constantA: 1,
+    constantR: 0.4,
+    constantG: 0.3,
+    constantB: 0.2,
+    constantA: 0.1,
     enabled: false,
   }
 
@@ -58,11 +58,15 @@ describe('glib/graphics/BlendState', () => {
     })
     keys.forEach((key) => {
       it (`${key} is a getter`, () => {
-        expect(stateA[key]).toBe(paramsA[key])
+        if (key === 'enabled') {
+          expect(stateA[key]).toBe(paramsA[key])
+        } else {
+          expect(stateA[key]).toBeCloseTo(paramsA[key])
+        }
       })
       it (`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
-        expect(stateA[key]).toBe(paramsB[key])
+        expect(stateA[key]).toBeCloseTo(paramsB[key])
       })
       it (`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
@@ -76,7 +80,11 @@ describe('glib/graphics/BlendState', () => {
       it(`resolves ${key}`, () => {
         stateA.commit()
         stateC.resolve()
-        expect(stateC[key]).toBe(paramsA[key])
+        if (key === 'enabled') {
+          expect(stateC[key]).toBe(paramsA[key])
+        } else {
+          expect(stateC[key]).toBeCloseTo(paramsA[key])
+        }
       })
     })
   })
@@ -85,7 +93,11 @@ describe('glib/graphics/BlendState', () => {
       it(`resolves ${key}`, () => {
         stateA.commit(paramsB)
         stateC.resolve()
-        expect(stateC[key]).toBe(paramsB[key])
+        if (key === 'enabled') {
+          expect(stateC[key]).toBe(paramsB[key])
+        } else {
+          expect(stateC[key]).toBeCloseTo(paramsB[key])
+        }
       })
     })
   })
