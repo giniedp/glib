@@ -16,7 +16,7 @@ describe('glib/content/manager/importer', () => {
 
   describe('Image', () => {
     it('loads from data:image/png', (done) => {
-      manager.load(Image, RED10x20).then((result) => {
+      manager.load(Image, RED10x20, { await: true }).then((result) => {
         expect(result).toBeDefined()
         expect(result.src).toBe(RED10x20)
         expect(result.width).toBe(10)

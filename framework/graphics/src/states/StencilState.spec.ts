@@ -61,75 +61,43 @@ describe('glib/graphics/StencilState', () => {
     stateA = new StencilState(device, paramsA)
     stateB = new StencilState(device, stateB)
     stateC = new StencilState(device)
-
-    stateA.commit()
-    stateC.resolve()
   })
 
-  describe('commit/resolve', () => {
-    it('own state', () => {
+  describe(`get/set/change`, () => {
+    beforeEach(() => {
       stateA.commit()
       stateC.resolve()
-
-      expect(stateC.enable).toBe(paramsA.enable)
-      expect(stateC.stencilFunction).toBe(paramsA.stencilFunction)
-      expect(stateC.stencilReference).toBe(paramsA.stencilReference)
-      expect(stateC.stencilMask).toBe(paramsA.stencilMask)
-
-      expect(stateC.stencilFail).toBe(paramsA.stencilFail)
-      expect(stateC.stencilDepthFail).toBe(paramsA.stencilDepthFail)
-      expect(stateC.stencilDepthPass).toBe(paramsA.stencilDepthPass)
-
-      expect(stateC.stencilBackFunction).toBe(paramsA.stencilBackFunction)
-      expect(stateC.stencilBackReference).toBe(paramsA.stencilBackReference)
-      expect(stateC.stencilBackMask).toBe(paramsA.stencilBackMask)
-
-      expect(stateC.stencilBackFail).toBe(paramsA.stencilBackFail)
-      expect(stateC.stencilBackDepthFail).toBe(paramsA.stencilBackDepthFail)
-      expect(stateC.stencilBackDepthPass).toBe(paramsA.stencilBackDepthPass)
-
-      expect(stateC.isDirty).toBe(false)
     })
-
-    it('given state', () => {
-      stateA.commit(paramsB)
-      stateC.resolve()
-
-      expect(stateC.enable).toBe(paramsB.enable)
-      expect(stateC.stencilFunction).toBe(paramsB.stencilFunction)
-      expect(stateC.stencilReference).toBe(paramsB.stencilReference)
-      expect(stateC.stencilMask).toBe(paramsB.stencilMask)
-
-      expect(stateC.stencilFail).toBe(paramsB.stencilFail)
-      expect(stateC.stencilDepthFail).toBe(paramsB.stencilDepthFail)
-      expect(stateC.stencilDepthPass).toBe(paramsB.stencilDepthPass)
-
-      expect(stateC.stencilBackFunction).toBe(paramsB.stencilBackFunction)
-      expect(stateC.stencilBackReference).toBe(paramsB.stencilBackReference)
-      expect(stateC.stencilBackMask).toBe(paramsB.stencilBackMask)
-
-      expect(stateC.stencilBackFail).toBe(paramsB.stencilBackFail)
-      expect(stateC.stencilBackDepthFail).toBe(paramsB.stencilBackDepthFail)
-      expect(stateC.stencilBackDepthPass).toBe(paramsB.stencilBackDepthPass)
-
-      expect(stateC.isDirty).toBe(false)
-
-    })
-  })
-
-  keys.forEach((key) => {
-    describe(key, () => {
-      it ('is a getter', () => {
+    keys.forEach((key) => {
+      it (`${key} is a getter`, () => {
         expect(stateA[key]).toBe(paramsA[key])
       })
-      it ('is a setter', () => {
+      it (`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBe(paramsB[key])
       })
-      it ('marks as changed', () => {
+      it (`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)
+      })
+    })
+  })
+  describe(`commit stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit()
+        stateC.resolve()
+        expect(stateC[key]).toBe(paramsA[key])
+      })
+    })
+  })
+  describe(`commit paramsB int stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit(paramsB)
+        stateC.resolve()
+        expect(stateC[key]).toBe(paramsB[key])
       })
     })
   })

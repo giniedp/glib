@@ -31,51 +31,43 @@ describe('glib/graphics/ScissorState', () => {
     stateA = new ScissorState(device, paramsA)
     stateB = new ScissorState(device, stateB)
     stateC = new ScissorState(device)
-
-    stateA.commit()
-    stateC.resolve()
   })
 
-  describe('commit/resolve', () => {
-    it('own state', () => {
+  describe(`get/set/change`, () => {
+    beforeEach(() => {
       stateA.commit()
       stateC.resolve()
-
-      expect(stateC.enable).toBe(paramsA.enable)
-      expect(stateC.x).toBe(paramsA.x)
-      expect(stateC.y).toBe(paramsA.y)
-      expect(stateC.width).toBe(paramsA.width)
-      expect(stateC.height).toBe(paramsA.height)
-      expect(stateC.isDirty).toBe(false)
     })
-
-    it('given state', () => {
-      stateA.commit(paramsB)
-      stateC.resolve()
-
-      expect(stateC.enable).toBe(paramsB.enable)
-      expect(stateC.x).toBe(paramsB.x)
-      expect(stateC.y).toBe(paramsB.y)
-      expect(stateC.width).toBe(paramsB.width)
-      expect(stateC.height).toBe(paramsB.height)
-      expect(stateC.isDirty).toBe(false)
-
-    })
-  })
-
-  keys.forEach((key) => {
-    describe(key, () => {
-      it ('is a getter', () => {
+    keys.forEach((key) => {
+      it (`${key} is a getter`, () => {
         expect(stateA[key]).toBe(paramsA[key])
       })
-      it ('is a setter', () => {
+      it (`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBe(paramsB[key])
       })
-      it ('marks as changed', () => {
+      it (`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)
+      })
+    })
+  })
+  describe(`commit stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit()
+        stateC.resolve()
+        expect(stateC[key]).toBe(paramsA[key])
+      })
+    })
+  })
+  describe(`commit paramsB int stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit(paramsB)
+        stateC.resolve()
+        expect(stateC[key]).toBe(paramsB[key])
       })
     })
   })

@@ -33,53 +33,42 @@ describe('glib/graphics/ViewportState', () => {
     stateA = new ViewportState(device, paramsA)
     stateB = new ViewportState(device, stateB)
     stateC = new ViewportState(device)
-
-    stateA.commit()
-    stateC.resolve()
   })
-
-  describe('commit/resolve', () => {
-    it('own state', () => {
+  describe(`get/set/change`, () => {
+    beforeEach(() => {
       stateA.commit()
       stateC.resolve()
-
-      expect(stateC.x).toBe(paramsA.x)
-      expect(stateC.y).toBe(paramsA.y)
-      expect(stateC.width).toBe(paramsA.width)
-      expect(stateC.height).toBe(paramsA.height)
-      expect(stateC.zMin).toBeCloseTo(paramsA.zMin)
-      expect(stateC.zMax).toBeCloseTo(paramsA.zMax)
-      expect(stateC.isDirty).toBe(false)
     })
-
-    it('given state', () => {
-      stateA.commit(paramsB)
-      stateC.resolve()
-
-      expect(stateC.x).toBe(paramsB.x)
-      expect(stateC.y).toBe(paramsB.y)
-      expect(stateC.width).toBe(paramsB.width)
-      expect(stateC.height).toBe(paramsB.height)
-      expect(stateC.zMin).toBeCloseTo(paramsB.zMin)
-      expect(stateC.zMax).toBeCloseTo(paramsB.zMax)
-      expect(stateC.isDirty).toBe(false)
-
-    })
-  })
-
-  keys.forEach((key) => {
-    describe(key, () => {
-      it ('is a getter', () => {
-        expect(stateA[key]).toBe(paramsA[key])
+    keys.forEach((key) => {
+      it (`${key} is a getter`, () => {
+        expect(stateA[key]).toBeCloseTo(paramsA[key])
       })
-      it ('is a setter', () => {
+      it (`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
-        expect(stateA[key]).toBe(paramsB[key])
+        expect(stateA[key]).toBeCloseTo(paramsB[key])
       })
-      it ('marks as changed', () => {
+      it (`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)
+      })
+    })
+  })
+  describe(`commit stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit()
+        stateC.resolve()
+        expect(stateC[key]).toBeCloseTo(paramsA[key])
+      })
+    })
+  })
+  describe(`commit paramsB int stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit(paramsB)
+        stateC.resolve()
+        expect(stateC[key]).toBeCloseTo(paramsB[key])
       })
     })
   })

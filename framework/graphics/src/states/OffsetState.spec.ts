@@ -27,47 +27,43 @@ describe('glib/graphics/OffsetState', () => {
     stateA = new OffsetState(device, paramsA)
     stateB = new OffsetState(device, stateB)
     stateC = new OffsetState(device)
-
-    stateA.commit()
-    stateC.resolve()
   })
 
-  describe('commit/resolve', () => {
-    it('own state', () => {
+  describe(`get/set/change`, () => {
+    beforeEach(() => {
       stateA.commit()
       stateC.resolve()
-
-      expect(stateC.offsetEnable).toBe(paramsA.offsetEnable)
-      expect(stateC.offsetFactor).toBe(paramsA.offsetFactor)
-      expect(stateC.offsetUnits).toBe(paramsA.offsetUnits)
-      expect(stateC.isDirty).toBe(false)
     })
-
-    it('given state', () => {
-      stateA.commit(paramsB)
-      stateC.resolve()
-
-      expect(stateC.offsetEnable).toBe(paramsB.offsetEnable)
-      expect(stateC.offsetFactor).toBe(paramsB.offsetFactor)
-      expect(stateC.offsetUnits).toBe(paramsB.offsetUnits)
-      expect(stateC.isDirty).toBe(false)
-
-    })
-  })
-
-  keys.forEach((key) => {
-    describe(key, () => {
-      it ('is a getter', () => {
+    keys.forEach((key) => {
+      it (`${key} is a getter`, () => {
         expect(stateA[key]).toBe(paramsA[key])
       })
-      it ('is a setter', () => {
+      it (`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBe(paramsB[key])
       })
-      it ('marks as changed', () => {
+      it (`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)
+      })
+    })
+  })
+  describe(`commit stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit()
+        stateC.resolve()
+        expect(stateC[key]).toBe(paramsA[key])
+      })
+    })
+  })
+  describe(`commit paramsB int stateA resolve into stateC`, () => {
+    keys.forEach((key) => {
+      it(`resolves ${key}`, () => {
+        stateA.commit(paramsB)
+        stateC.resolve()
+        expect(stateC[key]).toBe(paramsB[key])
       })
     })
   })
