@@ -68,7 +68,7 @@ export class Events {
    * @param callback The function to unbind
    * @param [context]
    */
-  public off(name: string, callback: Callback, context?: any) {
+  public off(name?: string, callback?: Callback, context?: any) {
     if (!this.events) {
       return this
     }

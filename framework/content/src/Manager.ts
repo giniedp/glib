@@ -1,7 +1,7 @@
 // tslint:disable ban-types
 // tslint:disable max-classes-per-file
 
-import { ajax, AjaxOptions, DataUri, extend, isArray, isObject, isString, Log, pick, Uri } from '@glib/core'
+import { DataUri, extend, Http, HttpOptions, isArray, isObject, isString, Log, pick, Uri } from '@glib/core'
 import { Device } from '@glib/graphics'
 import { ContentType } from './ContentType'
 import { Pipeline, PipelineContext, PipelineHandler } from './Pipeline'
@@ -153,12 +153,12 @@ export class Manager {
   /**
    *
    */
-  public makeAjaxOptions(optionsOrUrl: AjaxOptions|string): AjaxOptions {
-    let options = optionsOrUrl as AjaxOptions
+  public makeAjaxOptions(optionsOrUrl: HttpOptions|string): HttpOptions {
+    let options = optionsOrUrl as HttpOptions
     if (typeof optionsOrUrl === 'string') {
       options = { url: optionsOrUrl }
     }
-    options = extend({}, this.defaultAjaxOptions, options) as AjaxOptions
+    options = extend({}, this.defaultAjaxOptions, options) as HttpOptions
     if (this.transformAjaxOptions) { this.transformAjaxOptions(options) }
     return options
   }
@@ -175,10 +175,10 @@ export class Manager {
   /**
    *
    */
-  public download(optionsOrUrl: AjaxOptions|string): Promise<RawAsset> {
+  public download(optionsOrUrl: HttpOptions|string): Promise<RawAsset> {
     const options = this.makeAjaxOptions(optionsOrUrl)
     return Promise.resolve(this.lookup(options.url)).then((result) => {
-      return result || ajax(options)
+      return result || Http.request(options)
     }).then((result) => {
       this.cache(result)
       return result

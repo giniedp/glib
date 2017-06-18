@@ -2,7 +2,7 @@ import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
 import { BoundingSphere } from './BoundingSphere'
 import { Ray } from './Ray'
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 import { Vec3 } from './Vec3'
 

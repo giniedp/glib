@@ -1,5 +1,5 @@
 import * as Content from '@glib/content'
-import { AjaxOptions } from '@glib/core'
+import { HttpOptions } from '@glib/core'
 import * as Graphics from '@glib/graphics'
 import { Entity } from './../Entity'
 
@@ -28,7 +28,7 @@ export class AssetsComponent {
     return this.manager.unload()
   }
 
-  public download(options: string | AjaxOptions) {
+  public download(options: string | HttpOptions): Promise<Content.RawAsset> {
     return this.manager.download(options)
   }
 

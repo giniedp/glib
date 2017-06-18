@@ -1,4 +1,4 @@
-import { isArray, isObject, isPowerOfTwo, isString, Log, uuid } from '@glib/core'
+import { isArray, isObject, isString, Log, uuid } from '@glib/core'
 import {
   DataType,
   DataTypeOption,
@@ -12,6 +12,10 @@ import {
 } from './enums'
 
 import { Device } from './Device'
+
+function isPowerOfTwo(value: number): boolean {
+  return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
+}
 
 function noop() {
   //

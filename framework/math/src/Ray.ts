@@ -5,15 +5,13 @@ import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 export class Ray {
-  public position: IVec3
-  public direction: IVec3
+  public position: IVec3 = new Vec3()
+  public direction: IVec3 = new Vec3()
 
   constructor(position?: IVec3, direction?: IVec3) {
-    this.position = new Vec3()
     if (position) {
       Vec3.copy(position, this.position)
     }
-    this.direction = new Vec3()
     if (direction) {
       Vec3.copy(direction, this.direction)
     }
@@ -28,7 +26,7 @@ export class Ray {
     return other
   }
 
-  public positionAt<T extends IVec3>(distance: number, result: T): T {
+  public positionAt<T extends IVec3>(distance: number, result?: T): T {
     result = result || new Vec3() as any
     result.x = this.direction.x * distance + this.position.x
     result.y = this.direction.y * distance + this.position.y

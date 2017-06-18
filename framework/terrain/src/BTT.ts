@@ -1,9 +1,22 @@
 // tslint:disable no-bitwise
 // tslint:disable max-classes-per-file
-import { highestBit } from '@glib/core'
 import * as Graphics from '@glib/graphics'
 import { IVec3, Vec3 } from '@glib/math'
 import { HeightMap } from './HeightMap'
+
+function highestBit(value: number): number {
+  if (value <= 0) {
+    return -1
+  }
+
+  let index = 0
+  let pow = 1
+  while (pow <= value) {
+    pow *= 2
+    index += 1
+  }
+  return index - 1
+}
 
 /// http://www.gamedevelopment.com/view/feature/130171/binary_triangle_trees_for_terrain_.php?page=2
 

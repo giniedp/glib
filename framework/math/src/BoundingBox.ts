@@ -112,8 +112,8 @@ export class BoundingBox {
     }
   }
 
-  public static getCorner(index: number, min: IVec3, max: IVec3, out: IVec3): IVec3 {
-    out = out || new Vec3()
+  public static getCorner<T extends IVec3 = IVec3>(index: number, min: IVec3, max: IVec3, out?: T): T {
+    out = out || new Vec3() as any
     if (index === 0) {
       out.x = min.x
       out.y = max.y

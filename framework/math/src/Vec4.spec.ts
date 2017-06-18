@@ -173,16 +173,16 @@ describe('Vec4', () => {
       c = new Vec4(6, 8, 10, 12)
     })
     describe('#add', () => {
-      it ('adds components', () => expectEquality(a.add(b), c))
+      it ('adds', () => expectEquality(a.add(b), c))
       it ('returns instance', () => expect(a.add(b)).toBe(a))
     })
     describe('#addOut', () => {
-      it ('adds components', () => expectEquality(a.addOut(b), c))
+      it ('adds', () => expectEquality(a.addOut(b), c))
       it ('returns new instance', () => expect(a.addOut(b)).not.toBe(a))
       it ('returns given instance', () => expect(a.addOut(b, d)).toBe(d))
     })
     describe('.add', () => {
-      it ('adds components', () => expectEquality(Vec4.add(a, b), c))
+      it ('adds', () => expectEquality(Vec4.add(a, b), c))
       it ('returns new instance', () => {
         let res = Vec4.add(a, b)
         expect(res).not.toBe(a)
@@ -192,23 +192,23 @@ describe('Vec4', () => {
     })
   })
 
-  describe('operation', () => {
+  describe('subtract operation', () => {
     beforeEach(() => {
       a = new Vec4(5, 6, 7, 8)
       b = new Vec4(4, 3, 2, 1)
       c = new Vec4(1, 3, 5, 7)
     })
     describe('#subtract', () => {
-      it ('subtracts components', () => expectEquality(a.subtract(b), c))
+      it ('subtracts', () => expectEquality(a.subtract(b), c))
       it ('returns instance', () => expect(a.subtract(b)).toBe(a))
     })
     describe('#subtractOut', () => {
-      it ('subtracts components', () => expectEquality(a.subtractOut(b), c))
+      it ('subtracts', () => expectEquality(a.subtractOut(b), c))
       it ('returns new instance', () => expect(a.subtractOut(b)).not.toBe(a))
       it ('returns given instance', () => expect(a.subtractOut(b, d)).toBe(d))
     })
     describe('.subtract', () => {
-      it ('subtracts components', () => expectEquality(Vec4.subtract(a, b), c))
+      it ('subtracts', () => expectEquality(Vec4.subtract(a, b), c))
       it ('returns new instance', () => {
         let res = Vec4.subtract(a, b)
         expect(res).not.toBe(a)
@@ -218,23 +218,23 @@ describe('Vec4', () => {
     })
   })
 
-  describe('operation', () => {
+  describe('multiply operation', () => {
     beforeEach(() => {
       a = new Vec4(1, 2, 3, 4)
       b = new Vec4(5, 6, 7, 8)
       c = new Vec4(5, 12, 21, 32)
     })
     describe('#multiply', () => {
-      it ('multiplys components', () => expectEquality(a.multiply(b), c))
+      it ('multiplys', () => expectEquality(a.multiply(b), c))
       it ('returns instance', () => expect(a.multiply(b)).toBe(a))
     })
     describe('#multiplyOut', () => {
-      it ('multiplys components', () => expectEquality(a.multiplyOut(b), c))
+      it ('multiplys', () => expectEquality(a.multiplyOut(b), c))
       it ('returns new instance', () => expect(a.multiplyOut(b)).not.toBe(a))
       it ('returns given instance', () => expect(a.multiplyOut(b, d)).toBe(d))
     })
     describe('.multiply', () => {
-      it ('multiplys components', () => expectEquality(Vec4.multiply(a, b), c))
+      it ('multiplys', () => expectEquality(Vec4.multiply(a, b), c))
       it ('returns new instance', () => {
         let res = Vec4.multiply(a, b)
         expect(res).not.toBe(a)
@@ -244,23 +244,23 @@ describe('Vec4', () => {
     })
   })
 
-  describe('operation', () => {
+  describe('divide operation', () => {
     beforeEach(() => {
       a = new Vec4(4, 16, 64, 256)
       b = new Vec4(2, 4, 8, 16)
       c = new Vec4(2, 4, 8, 16)
     })
     describe('#divide', () => {
-      it ('divides components', () => expectEquality(a.divide(b), c))
+      it ('divides', () => expectEquality(a.divide(b), c))
       it ('returns instance', () => expect(a.divide(b)).toBe(a))
     })
     describe('#divideOut', () => {
-      it ('divides components', () => expectEquality(a.divideOut(b), c))
+      it ('divides', () => expectEquality(a.divideOut(b), c))
       it ('returns new instance', () => expect(a.divideOut(b)).not.toBe(a))
       it ('returns given instance', () => expect(a.divideOut(b, d)).toBe(d))
     })
     describe('.divide', () => {
-      it ('divides components', () => expectEquality(Vec4.divide(a, b), c))
+      it ('divides', () => expectEquality(Vec4.divide(a, b), c))
       it ('returns new instance', () => {
         let res = Vec4.divide(a, b)
         expect(res).not.toBe(a)

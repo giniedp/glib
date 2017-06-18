@@ -86,7 +86,7 @@ export class Uri {
     return Uri.parse(path).directory
   }
 
-  public static basename(path: string) {
+  public static file(path: string) {
     return pathSplit.exec(path)[2]
   }
 

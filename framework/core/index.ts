@@ -1,5 +1,6 @@
 export * from './src/DataUri'
 export * from './src/Events'
+export * from './src/Http'
 export * from './src/Log'
 export * from './src/Uri'
 export * from './src/utils'

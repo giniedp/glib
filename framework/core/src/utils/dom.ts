@@ -2,36 +2,50 @@ function documentProperty(name: string) {
   return (document as any)[name]
 }
 
-let docHidden: string
-let docVisibilityChange: string
-let docVisibilityState: string
-if (typeof documentProperty('hidden') !== 'undefined') { // Opera 12.10 and Firefox 18 and later support
-  docHidden = 'hidden'
-  docVisibilityState = 'visibilityState'
-  docVisibilityChange = 'visibilitychange'
-} else if (typeof documentProperty('mozHidden') !== 'undefined') {
-  docHidden = 'mozHidden'
-  docVisibilityState = 'mozVisibilityState'
-  docVisibilityChange = 'mozvisibilitychange'
-} else if (typeof documentProperty('msHidden') !== 'undefined') {
-  docHidden = 'msHidden'
-  docVisibilityState = 'msVisibilityState'
-  docVisibilityChange = 'msvisibilitychange'
-} else if (typeof documentProperty('webkitHidden') !== 'undefined') {
-  docHidden = 'webkitHidden'
-  docVisibilityState = 'webkitVisibilityState'
-  docVisibilityChange = 'webkitvisibilitychange'
+const map = {
+  def: {
+    docHidden: 'hidden',
+    docVisibilityState: 'visibilityState',
+    docVisibilityChange: 'visibilitychange',
+  },
+  moz: {
+    docHidden: 'mozHidden',
+    docVisibilityState: 'mozVisibilityState',
+    docVisibilityChange: 'mozvisibilitychange',
+  },
+  ms: {
+    docHidden: 'msHidden',
+    docVisibilityState: 'msVisibilityState',
+    docVisibilityChange: 'msvisibilitychange',
+  },
+  webkit: {
+    docHidden: 'webkitHidden',
+    docVisibilityState: 'webkitVisibilityState',
+    docVisibilityChange: 'webkitvisibilitychange',
+  },
 }
 
+const props = (() => {
+  if (typeof documentProperty('hidden') !== 'undefined') {
+    return map.def
+  } else if (typeof documentProperty('mozHidden') !== 'undefined') {
+    return map.moz
+  } else if (typeof documentProperty('msHidden') !== 'undefined') {
+    return map.ms
+  } else if (typeof documentProperty('webkitHidden') !== 'undefined') {
+    return map.webkit
+  }
+})()
+
 export function documentIsHidden(): boolean {
-  return documentProperty(docHidden)
+  return documentProperty(props.docHidden)
 }
 export function documentVisibilityState(fallback?: string): string {
-  return documentProperty(docVisibilityState) || fallback
+  return documentProperty(props.docVisibilityState) || fallback
 }
 export function onDocumentVisibilityChange(callback: EventListenerOrEventListenerObject) {
-  document.addEventListener(docVisibilityChange, callback)
+  document.addEventListener(props.docVisibilityChange, callback)
 }
 export function offDocumentVisibilityChange(callback: EventListenerOrEventListenerObject) {
-  document.removeEventListener(docVisibilityChange, callback)
+  document.removeEventListener(props.docVisibilityChange, callback)
 }

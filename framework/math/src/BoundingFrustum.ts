@@ -3,7 +3,7 @@ import { BoundingSphere } from './BoundingSphere'
 import * as Collision from './Collision'
 import { Mat4 } from './Mat4'
 import { Ray } from './Ray'
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 const NEAR = 0

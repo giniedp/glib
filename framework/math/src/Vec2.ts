@@ -1,4 +1,4 @@
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { IVec2, IVec3, IVec4 } from './Types'
 
 const keys = ['x', 'y']
 const keyLookup = {
@@ -82,7 +82,7 @@ export class Vec2 implements IVec2 {
    * @param [offset=0] The zero based index at which start reading the values
    * @return {Vec2}
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec2 {
+  public initFromBuffer(buffer: {[key: number]: number}, offset: number= 0): Vec2 {
     this.x = buffer[offset]
     this.y = buffer[offset + 1]
     return this
@@ -102,7 +102,7 @@ export class Vec2 implements IVec2 {
    * @param [offset=0] Zero based index where to start writing in the array
    * @returns {NumbersArray}
    */
-  public copyTo<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
+  public copyTo<T extends {[key: number]: number}>(buffer: T, offset: number= 0): T {
     buffer[offset] = this.x
     buffer[offset + 1] = this.y
     return buffer
