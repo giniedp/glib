@@ -16,14 +16,26 @@ pipelineImporter(['.json', 'application/json'], 'Material[]', (context: Pipeline
 })
 
 pipelineProcessor('Material[]', (context: PipelineContext): Promise<void> => {
+  if (!Array.isArray(context.imported)) {
+    const err = new Error(`'context.imported' expected to be an array but was '${context.imported}'.`)
+    return Promise.reject(err)
+  }
   context.result = []
   // send each entry to the process stage individaully
   return Promise.all(context.imported.map((mtl: any, index: number) => {
     // prepare the new context
-    let subContext = extend({}, context, {
-      intermediate: mtl,
+    let subContext: PipelineContext = {
+      // derived options
+      manager: context.manager,
+      pipeline: context.pipeline,
+      stage: context.stage,
+      source: context.source,
+      sourceType: context.sourceType,
+      // override options
       targetType: 'Material',
-    }) as PipelineContext
+      imported: mtl,
+      options: {},
+    }
     // send to the "Material" processor
     return context.pipeline.process(subContext).then(() => {
       context.result[index] = subContext.result
@@ -47,6 +59,11 @@ pipelineImporter(['.json', 'application/json'], 'Material', (context: PipelineCo
 })
 
 pipelineProcessor('Material', (context: PipelineContext) => {
+  if (Array.isArray(context.imported)) {
+    const err = new Error(`'context.imported' expected to be an object but was an array.`)
+    return Promise.reject(err)
+  }
+
   let json = context.imported
   // the material name
   let name = json.name

@@ -44,7 +44,7 @@ pipelinePreprocessor(ShaderEffect, (context: PipelineContext): Promise<void> => 
   }
 
   return Promise.all(techniques.map((technique: any) => {
-    return Promise.all(technique.passes.map((pass: any, index: number) => {
+    return Promise.all(getPasses(technique).map((pass: any, index: number) => {
       return processPass(pass, context)
     }))
   })).then(() => {
@@ -52,6 +52,7 @@ pipelinePreprocessor(ShaderEffect, (context: PipelineContext): Promise<void> => 
     delete json.program
     delete json.programs
     delete json.technique
+    delete json.techniques
     // attach processed data
     json.techniques = techniques
   })
@@ -75,10 +76,9 @@ function getProgram(content: any): string {
     return ''
   }
 
-  let result = content.program
-  if (Array.isArray(result)) {
-    result = result.join(charNewLine)
-  }
+  let result = Array.isArray(content.program)
+    ? content.program.join(charNewLine)
+    : content.program
   if (typeof result !== 'string') {
     throw new Error('Invalid effect file. "program" property is not a string.')
   }
@@ -90,10 +90,19 @@ function getTechniques(content: any) {
   if (!result) {
     throw new Error('Invalid effect file. "techniques" property is missing.')
   }
-  if (!Array.isArray(result)) {
-    result = [result]
+  return Array.isArray(result)
+    ? result
+    : [result]
+}
+
+function getPasses(content: any) {
+  let result: any[] = content.pass || content.passes
+  if (!result) {
+    throw new Error('Invalid effect file. "passes" property is missing.')
   }
-  return result
+  return Array.isArray(result)
+    ? result
+    : [result]
 }
 
 function convertTechnique(source: string, technique: ShaderTechniqueOptions, tIndex: number) {
@@ -114,16 +123,15 @@ function convertTechnique(source: string, technique: ShaderTechniqueOptions, tIn
 }
 
 function convertPass(source: string, pass: ShaderPassInput, index: number) {
-  if (pass.program) {
-    return pass
+  let vertexSource = pass.vertexShader
+  let fragmentSource = pass.fragmentShader
+  if (!vertexSource && !fragmentSource) {
+    throw new Error('Invalid effect file. Pass has no vertex and no fragment shader')
   }
-
-  let vertexSource = pass.vertexShader || ''
-  let fragmentSource = pass.fragmentShader || ''
-  if (source && typeof vertexSource === 'string') {
+  if (typeof vertexSource === 'string') {
     vertexSource = ['#define VERTEX_SHADER', source, vertexSource].join(charNewLine)
   }
-  if (source && typeof fragmentSource === 'string') {
+  if (typeof fragmentSource === 'string') {
     fragmentSource = ['#define FRAGMENT_SHADER', source, fragmentSource].join(charNewLine)
   }
   pass.name = pass.name || 'PASS' + index

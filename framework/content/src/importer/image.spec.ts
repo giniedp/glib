@@ -15,10 +15,20 @@ describe('glib/content/manager/importer', () => {
   })
 
   describe('Image', () => {
-    it('loads from data:image/png', (done) => {
-      manager.load(Image, RED10x20, { await: true }).then((result) => {
-        expect(result).toBeDefined()
+    it ('loads image element', (done) => {
+      manager.load(Image, RED10x20).then((result) => {
+        expect(result instanceof Image).toBe(true)
         expect(result.src).toBe(RED10x20)
+        done()
+      }).catch((res) => {
+        fail(res)
+        done()
+      })
+    })
+
+    it('awaits until image is loaded with await option', (done) => {
+      manager.load(Image, RED10x20, { await: true }).then((result) => {
+        expect(result.complete).toBe(true)
         expect(result.width).toBe(10)
         expect(result.height).toBe(20)
         done()

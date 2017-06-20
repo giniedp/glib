@@ -31,12 +31,10 @@ export class XhrAsset implements RawAsset  {
     return this.xhr.responseText
   }
 
-  public get contentTYpe(): string {
-    return this.xhr.getResponseHeader('content-typ')
-  }
+  public contentType: ContentType
 
   constructor(private xhr: XMLHttpRequest) {
-
+    this.contentType = ContentType.parse(this.xhr.getResponseHeader('content-type'))
   }
 }
 
@@ -113,6 +111,9 @@ export class Manager {
    *
    */
   public lookup(path: string): RawAsset {
+    if (!path) {
+      return null
+    }
     if (this.cacheEnabled) {
       let found = this.cached[path]
       if (found) {
@@ -129,6 +130,9 @@ export class Manager {
    *
    */
   public lookupInDOM(path: string): RawAsset {
+    if (!path) {
+      return null
+    }
     let element = document.getElementById(path)
     if (!element && path[0] === '/') {
       element = document.getElementById(path.substr(1))
@@ -178,8 +182,8 @@ export class Manager {
   public download(optionsOrUrl: HttpOptions|string): Promise<RawAsset> {
     const options = this.makeAjaxOptions(optionsOrUrl)
     return Promise.resolve(this.lookup(options.url)).then((result) => {
-      return result || Http.request(options)
-    }).then((result) => {
+      return result ? Promise.resolve(result) : Http.request(options).then((xhr) => new XhrAsset(xhr))
+    }).then((result: RawAsset) => {
       this.cache(result)
       return result
     })

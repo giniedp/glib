@@ -10,7 +10,6 @@ pipelineImporter(['.mtl', 'application/x-mtl'], 'Material', (context: PipelineCo
 
 pipelineImporter(['.mtl', 'application/x-mtl'], 'Material[]', (context: PipelineContext) => {
   context.imported = MTL.parse(context.downloaded.content).map(convertMaterial)
-
   return context.pipeline.process(context)
 })
 

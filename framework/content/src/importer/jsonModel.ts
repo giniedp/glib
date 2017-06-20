@@ -17,15 +17,23 @@ pipelinePreprocessor(Model, (context: PipelineContext) => {
   if (!Array.isArray(materials)) {
     materials = [materials]
   }
-  return Promise.all(materials.map((mtl: any) => {
+  return Promise.all(materials.filter((it: any) => !!it).map((mtl: any) => {
     if (typeof mtl === 'string') {
-      return context.manager.load('Material[]', Uri.merge(context.source, mtl)).then((loadedMaterial) => loadedMaterial)
+      return context.manager.load('Material[]', Uri.merge(context.source, mtl))
     } else {
       // prepare the new context
-      let subContext = extend({}, context, {
-        intermediate: mtl,
+      let subContext: PipelineContext = {
+        // derived options
+        manager: context.manager,
+        pipeline: context.pipeline,
+        stage: context.stage,
+        source: context.source,
+        sourceType: context.sourceType,
+        // override options
         targetType: 'Material',
-      }) as PipelineContext
+        imported: mtl,
+        options: {},
+      }
       // send to the "Material" processor
       return context.pipeline.process(subContext).then(() => {
         return subContext.result

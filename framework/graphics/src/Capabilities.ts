@@ -2,9 +2,14 @@ import { Device } from './Device'
 
 export class Capabilities {
   public device: Device
-  public gl: any
+  public gl: WebGLRenderingContext|WebGL2RenderingContext
+
   private capabilities: any
   private extensions: any
+
+  private get gl2(): WebGL2RenderingContext {
+    return this.gl as WebGL2RenderingContext
+  }
 
   get maxViewportWidth() {
     return this.capability('MAX_VIEWPORT_DIMS')[0]
@@ -36,12 +41,27 @@ export class Capabilities {
   get maxFragmentUniformVectors() {
     return this.capability('MAX_FRAGMENT_UNIFORM_VECTORS')
   }
+
+  private $maxDrawBuffers: number
   get maxDrawBuffers() {
-    return this.capability('MAX_DRAW_BUFFERS_WEBGL', 'WEBGL_draw_buffers')
+    if (this.$maxDrawBuffers == null) {
+      this.$maxDrawBuffers = this.device.isWebGL2
+      ? this.gl2.getParameter(this.gl2.MAX_DRAW_BUFFERS)
+      : this.capability('MAX_DRAW_BUFFERS_WEBGL', 'WEBGL_draw_buffers')
+    }
+    return this.$maxDrawBuffers
   }
+
+  private $maxColorAttachments: number
   get maxColorAttachments() {
-    return this.capability('MAX_COLOR_ATTACHMENTS_WEBGL', 'WEBGL_draw_buffers')
+    if (this.$maxColorAttachments == null) {
+      this.$maxColorAttachments = this.device.isWebGL2
+      ? this.gl2.getParameter(this.gl2.MAX_COLOR_ATTACHMENTS)
+      : this.capability('MAX_COLOR_ATTACHMENTS_WEBGL', 'WEBGL_draw_buffers')
+    }
+    return this.$maxColorAttachments
   }
+
   get textureFormatFloat() {
       return !!this.extension('OES_texture_float')
   }

@@ -5,10 +5,6 @@ function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
-function sign(a: number) {
-  return a < 0 ? -1 : 1
-}
-
 function normalize(v: number[]) {
     let x = v[0]
     let y = v[1]
