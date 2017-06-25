@@ -12,7 +12,7 @@ export class BoundingSphere {
   constructor(center?: IVec3, radius?: number) {
     this.center = new Vec3()
     if (center) {
-      Vec3.copy(center, this.center)
+      Vec3.clone(center, this.center)
     }
     this.radius = radius === void 0 ? 0 : radius
   }
@@ -21,7 +21,7 @@ export class BoundingSphere {
     return new BoundingSphere(this.center, this.radius)
   }
   public copy(other: BoundingSphere): BoundingSphere {
-    Vec3.copy(this.center, other.center)
+    Vec3.clone(this.center, other.center)
     other.radius = this.radius
     return other
   }

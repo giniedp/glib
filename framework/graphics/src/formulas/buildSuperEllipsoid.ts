@@ -49,7 +49,7 @@ export function buildSuperEllipsoid(builder: ModelBuilder, options: {
       let y = sign(sinPhi) * Math.pow(Math.abs(sinPhi), power1)
 
       let normal = Vec3.create(x, y, z)
-      let texCoord = Vec2.new(du, dv)
+      let texCoord = Vec2.create(du, dv)
 
       builder.addVertex({
         position: Vec3.multiplyScalar(normal, radius),

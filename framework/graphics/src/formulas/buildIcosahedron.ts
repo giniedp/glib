@@ -64,7 +64,7 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
     builder.addVertex({
       position: Vec3.multiplyScalar(v, radius),
       normal: v,
-      texture: Vec2.new(v.x, v.z),
+      texture: Vec2.create(v.x, v.z),
     })
   }
   for (let face of faces) {
@@ -106,7 +106,7 @@ export function buildOctahedron(builder: ModelBuilder, options: {
     builder.addVertex({
       position: Vec3.multiplyScalar(v, radius),
       normal: v,
-      texture: Vec2.new(v.x, v.z),
+      texture: Vec2.create(v.x, v.z),
     })
   }
   for (let face of faces) {
@@ -150,7 +150,7 @@ export function buildIcosahedron(builder: ModelBuilder, options: {
     builder.addVertex({
       position: Vec3.multiplyScalar(v, radius),
       normal: v,
-      texture: Vec2.new(v.x, v.z),
+      texture: Vec2.create(v.x, v.z),
     })
   }
   for (let face of faces) {

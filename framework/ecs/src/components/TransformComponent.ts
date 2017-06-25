@@ -175,7 +175,7 @@ export class TransformComponent implements Component {
       `- component: ${this.name}`,
       `  enabled  : ${this.enabled}`,
       `  world    :`,
-      Mat4.prettyString(this.worldMat),
+      Mat4.format(this.worldMat),
     ].join('\n')
   }
 }

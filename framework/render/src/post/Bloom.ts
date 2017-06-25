@@ -133,5 +133,4 @@ export class Bloom implements Step {
     manager.releaseTarget(rt1)
     manager.endStep(rt2)
   }
-
 }

@@ -1,6 +1,12 @@
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
+const keys = ['x', 'y', 'z', 'w']
+const keyLookup = {
+  0: 'x', 1: 'y', 2: 'z', 3: 'w',
+  x: 'x', y: 'y', z: 'z', w: 'w',
+}
+
 /**
  * Describes a quaternion.
  */
@@ -34,6 +40,48 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.y = y || 0
     this.z = z || 0
     this.w = w || 0
+  }
+
+  /**
+   * Sets the X component
+   */
+  public setX(value: number): Quat {
+    this.x = value
+    return this
+  }
+  /**
+   * Sets the Y component
+   */
+  public setY(value: number): Quat {
+    this.y = value
+    return this
+  }
+  /**
+   * Sets the Z component
+   */
+  public setZ(value: number): Quat {
+    this.z = value
+    return this
+  }
+  /**
+   * Sets the W component
+   */
+  public setW(value: number): Quat {
+    this.w = value
+    return this
+  }
+  /**
+   * Sets the component by using an index (or name)
+   */
+  public set(key: number|string, value: number): Quat {
+    this[keyLookup[key]] = value
+    return this
+  }
+  /**
+   * Gets the component by using an index (or name)
+   */
+  public get(key: number|string): number {
+    return this[keyLookup[key]]
   }
 
   /**
@@ -150,8 +198,13 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * Creates a copy of this quaternion
    * @return The cloned quaternion
    */
-  public clone(): Quat {
-    return new Quat(this.x, this.y, this.z, this.w)
+  public clone<T extends IVec4 = Quat>(out?: T|Quat): T|Quat {
+    out = out || new Quat()
+    out.x = this.x
+    out.y = this.y
+    out.z = this.z
+    out.w = this.w
+    return out
   }
 
   /**
@@ -160,13 +213,12 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [offset=0] Zero based index where to start writing in the array
    * @return Reference to `this` for chaining.
    */
-  public copyTo(buffer: ArrayLike<number>, offset?: number) {
-    offset = offset || 0
+  public copyTo<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
     buffer[offset] = this.x
     buffer[offset + 1] = this.y
     buffer[offset + 2] = this.z
     buffer[offset + 3] = this.w
-    return this
+    return buffer
   }
 
   /**
@@ -222,15 +274,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     return this
   }
 
-  public negateOut<T extends IVec4>(out?: T): T {
-    out = out || new Quat() as any
-    out.x = -this.x
-    out.y = -this.y
-    out.z = -this.z
-    out.w = -this.w
-    return out
-  }
-
   /**
    * Negates the `x`, `y` and `z` components of `this`
    * @return Reference to `this` for chaining.
@@ -240,14 +283,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.y = -this.y
     this.z = -this.z
     return this
-  }
-
-  public conjugateOut<T extends IVec4>(out?: T): T {
-    out = out || new Quat() as any
-    out.x = -this.x
-    out.y = -this.y
-    out.z = -this.z
-    return out
   }
 
   /**
@@ -267,20 +302,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     return this
   }
 
-  public normalizeOut<T extends IVec4>(out?: T): T {
-    out = out || new Quat() as any
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
-    out.x = x * d
-    out.y = y * d
-    out.z = z * d
-    out.w = w * d
-    return out
-  }
-
   /**
    * Inverts `this` so that multiplication with the original would return the identity quaternion.
    * @return Reference to `this` for chaining.
@@ -298,20 +319,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     return this
   }
 
-  public invertOut<T extends IVec4>(out?: T): T {
-    out = out || new Quat() as any
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
-    out.x = -x * d
-    out.y = -y * d
-    out.z = -z * d
-    out.w = w * d
-    return out
-  }
-
   /**
    * Performs a component wise addition with `other`
    * @param other
@@ -323,14 +330,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z += other.z
     this.w += other.w
     return this
-  }
-  public addOut<T extends IVec4>(other: IVec4, out?: T): T {
-    out = out || new Quat() as any
-    out.x = this.x + other.x
-    out.y = this.y + other.y
-    out.z = this.z + other.z
-    out.w = this.w + other.w
-    return out
   }
 
   /**
@@ -344,14 +343,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z -= other.z
     this.w -= other.w
     return this
-  }
-  public subtractOut<T extends IVec4>(other: IVec4, out?: T): T {
-    out = out || new Quat() as any
-    out.x = this.x - other.x
-    out.y = this.y - other.y
-    out.z = this.z - other.z
-    out.w = this.w - other.w
-    return out
   }
 
   /**
@@ -376,24 +367,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
     return this
   }
-  public  multiplyOut<T extends IVec4>(other: IVec4, out?: T): T {
-    out = out || new Quat() as any
-    const x1 = this.x
-    const y1 = this.y
-    const z1 = this.z
-    const w1 = this.w
-
-    const x2 = other.x
-    const y2 = other.y
-    const z2 = other.z
-    const w2 = other.w
-
-    out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
-    out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
-    out.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
-    out.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    return out
-  }
 
   /**
    * Performs a quaternion concatenation with `other`
@@ -417,24 +390,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
     return this
   }
-  public concatOut<T extends IVec4>(other: IVec4, out?: T): T {
-    out = out || new Quat() as any
-    const x1 = other.x
-    const y1 = other.y
-    const z1 = other.z
-    const w1 = other.w
 
-    const x2 = this.x
-    const y2 = this.y
-    const z2 = this.z
-    const w2 = this.w
-
-    out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
-    out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
-    out.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
-    out.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    return out
-  }
   /**
    * Performs a division with `other`
    * @param other
@@ -464,31 +420,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
     return this
   }
-  public divideOut<T extends IVec4>(other: IVec4, out?: T): T {
-    out = out || new Quat() as any
-    const x1 = this.x
-    const y1 = this.y
-    const z1 = this.z
-    const w1 = this.w
 
-    let x2 = other.x
-    let y2 = other.y
-    let z2 = other.z
-    let w2 = other.w
-
-    // invert
-    const s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
-    x2 = -x2 * s
-    y2 = -y2 * s
-    z2 = -z2 * s
-    w2 = w2 * s
-    // multiply
-    out.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
-    out.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
-    out.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
-    out.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    return out
-  }
   /**
    * Rotates the given point or vector with `this`
    * @param vec
@@ -582,8 +514,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static negate<T extends IVec4>(quat: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static negate<T extends IVec4 = Quat>(quat: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     out.x = -quat.x
     out.y = -quat.y
     out.z = -quat.z
@@ -597,8 +529,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static conjugate<T extends IVec4>(quat: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static conjugate<T extends IVec4 = Quat>(quat: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     out.x = -quat.x
     out.y = -quat.y
     out.z = -quat.z
@@ -612,8 +544,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static normalize<T extends IVec4>(quat: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static normalize<T extends IVec4 = Quat>(quat: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     const x = quat.x
     const y = quat.y
     const z = quat.z
@@ -632,8 +564,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static invert<T extends IVec4>(quat: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static invert<T extends IVec4 = Quat>(quat: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     const x = quat.x
     const y = quat.y
     const z = quat.z
@@ -653,8 +585,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static add<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static add<T extends IVec4 = Quat>(quatA: IVec4, quatB: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     out.x = quatA.x + quatB.x
     out.y = quatA.y + quatB.y
     out.z = quatA.z + quatB.z
@@ -669,8 +601,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static subtract<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static subtract<T extends IVec4 = Quat>(quatA: IVec4, quatB: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     out.x = quatA.x - quatB.x
     out.y = quatA.y - quatB.y
     out.z = quatA.z - quatB.z
@@ -685,8 +617,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static multiply<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static multiply<T extends IVec4 = Quat>(quatA: IVec4, quatB: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     const x1 = quatA.x
     const y1 = quatA.y
     const z1 = quatA.z
@@ -711,8 +643,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static concat<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static concat<T extends IVec4 = Quat>(quatA: IVec4, quatB: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     const x1 = quatB.x
     const y1 = quatB.y
     const z1 = quatB.z
@@ -737,8 +669,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The quaternion to write to.
    * @return The given `out` parameter or a new quaternion.
    */
-  public static divide<T extends IVec4>(quatA: IVec4, quatB: IVec4, out?: T): T {
-    out = out || new Quat() as any
+  public static divide<T extends IVec4 = Quat>(quatA: IVec4, quatB: IVec4, out?: T|Quat): T|Quat {
+    out = out || new Quat()
     const x1 = quatA.x
     const y1 = quatA.y
     const z1 = quatA.z
@@ -769,7 +701,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param {Array|Quat|Vec4} data
    * @return The created quaternion.
    */
-  public static convert(data: any): Quat {
+  public static convert(data: number|number[]|IVec4): Quat {
     if (Array.isArray(data)) {
       return new Quat(data[0], data[1], data[2], data[3])
     }
@@ -818,5 +750,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
     out.z = vx * (xz2 - wy2) + vy * (yz2 + wx2) + vz * (1 - xx2 - yy2)
 
     return out
+  }
+
+  public static format(vec: IVec4, fractionDigits: number = 5): string {
+    return [
+      vec.x.toFixed(fractionDigits),
+      vec.y.toFixed(fractionDigits),
+      vec.z.toFixed(fractionDigits),
+      vec.w.toFixed(fractionDigits),
+    ].join(', ')
   }
 }

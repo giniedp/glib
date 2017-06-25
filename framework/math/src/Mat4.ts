@@ -27,12 +27,13 @@ import { Vec3 } from './Vec3'
  * Describes a 4x4 matrix.
  */
 export class Mat4 {
-  public right: Float32Array = this.data.subarray(0, 3)
-  public up: Float32Array = this.data.subarray(4, 7)
-  public backward: Float32Array = this.data.subarray(8, 11)
-  public translation: Float32Array = this.data.subarray(12, 15)
 
-  constructor(public data: Float32Array = new Float32Array(16)) {}
+  public readonly right: Float32Array = this.data.subarray(0, 3)
+  public readonly up: Float32Array = this.data.subarray(4, 7)
+  public readonly backward: Float32Array = this.data.subarray(8, 11)
+  public readonly translation: Float32Array = this.data.subarray(12, 15)
+
+  constructor(public readonly data: Float32Array = new Float32Array(16)) {}
 
   /**
    * Initializes the matrix with the given values in given order. The values are applied in column major order
@@ -71,6 +72,28 @@ export class Mat4 {
   }
 
   /**
+   * Creates a new matrix. This method should be called with 16 or 0 arguments. If less than 16 but more than 0 arguments
+   * are given some components are going to be undefined. The arguments are expected to be in column major order.
+   * @return a new matrix
+   */
+  public static create(
+    m0: number, m1: number, m2: number, m3: number,
+    m4: number, m5: number, m6: number, m7: number,
+    m8: number, m9: number, m10: number, m11: number,
+    m12: number, m13: number, m14: number, m15: number,
+  ): Mat4 {
+    const out = new Mat4()
+    const d = out.data
+    // tslint:disable
+    d[ 0] = m0;  d[ 1] = m1;  d[ 2] = m2;  d[ 3] = m3;
+    d[ 4] = m4;  d[ 5] = m5;  d[ 6] = m6;  d[ 7] = m7;
+    d[ 8] = m8;  d[ 9] = m9;  d[10] = m10; d[11] = m11;
+    d[12] = m12; d[13] = m13; d[14] = m14; d[15] = m15;
+    // tslint:enable
+    return out
+  }
+
+  /**
    * Initializes the matrix with the given values. The values are read in row major order.
    * @return Reference to `this` for chaining.
    */
@@ -101,6 +124,27 @@ export class Mat4 {
   }
 
   /**
+   * Creates a new matrix. The arguments are expected to be in row major order.
+   * @return a new matrix
+   */
+  public static createRowMajor(
+    m0: number, m4: number, m8: number, m12: number,
+    m1: number, m5: number, m9: number, m13: number,
+    m2: number, m6: number, m10: number, m14: number,
+    m3: number, m7: number, m11: number, m15: number,
+  ): Mat4 {
+    const out = new Mat4()
+    const d = out.data
+    // tslint:disable
+    d[ 0] = m0;  d[ 1] = m1;  d[ 2] = m2;  d[ 3] = m3;
+    d[ 4] = m4;  d[ 5] = m5;  d[ 6] = m6;  d[ 7] = m7;
+    d[ 8] = m8;  d[ 9] = m9;  d[10] = m10; d[11] = m11;
+    d[12] = m12; d[13] = m13; d[14] = m14; d[15] = m15;
+    // tslint:enable
+    return out
+  }
+
+  /**
    * Initializes all components of this matrix with the given number.
    * @param number The number to set all matrix components to.
    * @return Reference to `this` for chaining.
@@ -120,6 +164,33 @@ export class Mat4 {
     d[0] = d[5] = d[10] = d[15] = 1
     d[1] = d[2] = d[3] = d[4] = d[6] = d[7] = d[8] = d[9] = d[11] = d[12] = d[13] = d[14] = 0
     return this
+  }
+
+  /**
+   * Creates a new matrix that is initialized to identity
+   * @return a new matrix
+   */
+  public static identity(): Mat4 {
+    return new Mat4().initIdentity()
+  }
+
+  /**
+   * Initializes the components of this matrix to 0.
+   * @return Reference to `this` for chaining.
+   */
+  public initZero(): Mat4 {
+    const d = this.data
+    d[0] = d[5] = d[10] = d[15] = 0
+    d[1] = d[2] = d[3] = d[4] = d[6] = d[7] = d[8] = d[9] = d[11] = d[12] = d[13] = d[14] = 0
+    return this
+  }
+
+  /**
+   * Creates a new matrix with all components set to 0
+   * @return a new matrix
+   */
+  public static zero(): Mat4 {
+    return new Mat4()
   }
 
   /**
@@ -147,6 +218,15 @@ export class Mat4 {
     a[14] = b[14]
     a[15] = b[15]
     return this
+  }
+
+  /**
+   * Initializes this matrix from another matrix.
+   * @param other
+   * @return new Matrix
+   */
+  public static createFrom(other: Mat4): Mat4 {
+    return new Mat4().initFrom(other)
   }
 
   /**
@@ -181,6 +261,19 @@ export class Mat4 {
   }
 
   /**
+   * Reads a buffer starting at given offset and initializes the elements of this matrix.
+   * The given buffer must have at least 16 elements starting at given offset.
+   * The elements are expected to be in column major layout.
+   * @chainable
+   * @param buffer
+   * @param [offset=0]
+   * @return new Matrix
+   */
+  public static createFromBuffer(buffer: ArrayLike<number>, offset?: number): Mat4 {
+    return new Mat4().initFromBuffer(buffer, offset)
+  }
+
+  /**
    * Initializes this matrix from given quaternion.
    * @param q The quaternion
    * @return Reference to `this` for chaining.
@@ -205,6 +298,15 @@ export class Mat4 {
       2 * (zx - yw), 2 * (yz + xw), 1 - 2 * (yy + xx), 0,
       0, 0, 0, 1,
     )
+  }
+
+  /**
+   * Creates a matrix from given quaternion.
+   * @param q The quaternion
+   * @return Reference to `this` for chaining.
+   */
+  public static createFromQuaternion(q: IVec4): Mat4 {
+    return new Mat4().initFromQuaternion(q)
   }
 
   /**
@@ -239,6 +341,16 @@ export class Mat4 {
       2 * (zx - yw), 2 * (yz + xw), 1 - 2 * (yy + xx), 0,
       0, 0, 0, 1,
     )
+  }
+
+  /**
+   * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
+   * @param axis The axis vector. This is expected to be normalized.
+   * @param angle The angle in radians.
+   * @return Reference to `this` for chaining.
+   */
+  public static createAxisAngle(axis: IVec3, angle: number): Mat4 {
+    return new Mat4().initAxisAngle(axis, angle)
   }
 
   /**
@@ -286,6 +398,13 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
+    return new Mat4().initYawPitchRoll(yaw, pitch, roll)
+  }
+
+  /**
    * Initializes this matrix with a rotation around the X axis.
    * @param rad The angle in radians.
    * @return Reference to `this` for chaining.
@@ -299,6 +418,13 @@ export class Mat4 {
       0, sin, cos, 0,
       0, 0, 0, 1,
     )
+  }
+
+  /**
+   * @return a new matrix
+   */
+  public static createRotationX(rad: number): Mat4 {
+    return new Mat4().initRotationX(rad)
   }
 
   /**
@@ -319,6 +445,13 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createRotationY(rad: number): Mat4 {
+    return new Mat4().initRotationY(rad)
+  }
+
+  /**
    * Initializes this matrix with a rotation around the Z axis.
    * @param rad The angle in radians.
    * @return Reference to `this` for chaining.
@@ -332,6 +465,13 @@ export class Mat4 {
       0, 0, 1, 0,
       0, 0, 0, 1,
     )
+  }
+
+  /**
+   * @return a new matrix
+   */
+  public static createRotationZ(rad: number): Mat4 {
+    return new Mat4().initRotationZ(rad)
   }
 
   /**
@@ -351,6 +491,13 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createTranslation(x: number, y: number, z: number): Mat4 {
+    return new Mat4().initTranslation(x, y, z)
+  }
+
+  /**
    * Initializes a scale matrix.
    * @param x Scale along x-axis
    * @param y Scale along y-axis
@@ -364,6 +511,13 @@ export class Mat4 {
       0, 0, z, 0,
       0, 0, 0, 1,
     )
+  }
+
+  /**
+   * @return a new matrix
+   */
+  public static createScale(x: number, y: number, z: number): Mat4 {
+    return new Mat4().initScale(x, y, z)
   }
 
   /**
@@ -410,6 +564,13 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): Mat4 {
+    return new Mat4().initLookAt(pos, lookAt, up)
+  }
+
+  /**
    * Initializes a matrix from a position point and a forward and up vectors
    * @method initWorld
    * @chainable
@@ -453,6 +614,37 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createWorld(position: IVec3, forward: IVec3, up: IVec3) {
+    return new Mat4().initWorld(position, forward, up)
+  }
+
+  /**
+   * Initializes a perspective matrix
+   * @param width
+   * @param height
+   * @param near The near plane distance
+   * @param far The far plane distance
+   * @return Reference to `this` for chaining.
+   */
+  public initPerspective(width: number, height: number, near: number, far: number): Mat4 {
+    return this.initRowMajor(
+      near / width, 0, 0, 0,
+      0, near / height, 0, 0,
+      0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near),
+      0, 0, -1, 0,
+    )
+  }
+
+  /**
+   * @return a new matrix
+   */
+  public static createPerspective(width: number, height: number, near: number, far: number): Mat4 {
+    return new Mat4().initPerspective(width, height, near, far)
+  }
+
+  /**
    * Initializes a perspective matrix with given field of view angle
    * @param fov The field of view angle in radians
    * @param aspect The aspect ratio
@@ -471,20 +663,10 @@ export class Mat4 {
   }
 
   /**
-   * Initializes a perspective matrix
-   * @param width
-   * @param height
-   * @param near The near plane distance
-   * @param far The far plane distance
-   * @return Reference to `this` for chaining.
+   * @return a new matrix
    */
-  public initPerspective(width: number, height: number, near: number, far: number): Mat4 {
-    return this.initRowMajor(
-      near / width, 0, 0, 0,
-      0, near / height, 0, 0,
-      0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near),
-      0, 0, -1, 0,
-    )
+  public static createPerspectiveFieldOfView(fov: number, aspec: number, near: number, far: number): Mat4 {
+    return new Mat4().initPerspectiveFieldOfView(fov, aspec, near, far)
   }
 
   /**
@@ -507,6 +689,13 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
+    return new Mat4().initPerspectiveOffCenter(left, right, bottom, top, near, far)
+  }
+
+  /**
    * Initializes an orthographic matrix
    * @param width
    * @param height
@@ -521,6 +710,13 @@ export class Mat4 {
       0, 0, -2 / (far - near), -(far + near) / (far - near),
       0, 0, 0, 1,
     )
+  }
+
+  /**
+   * @return a new matrix
+   */
+  public static createOrthographic(width: number, height: number, near: number, far: number): Mat4 {
+    return new Mat4().initOrthographic(width, height, near, far)
   }
 
   /**
@@ -543,12 +739,28 @@ export class Mat4 {
   }
 
   /**
+   * @return a new matrix
+   */
+  public static createOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
+    return new Mat4().initOrthographicOffCenter(left, right, bottom, top, near, far)
+  }
+
+  /**
    * Creates a copy of this matrix
    * @return The cloned matrix.
    */
-  public clone(): Mat4 {
+  public clone(out: Mat4 = new Mat4()): Mat4 {
     const d = this.data
-    return new Mat4().init(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15])
+    return out.init(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15])
+  }
+
+  /**
+   * Creates a copy of this matrix
+   * @return The cloned matrix.
+   */
+  public static clone(mat: Mat4, out: Mat4 = new Mat4()): Mat4 {
+    const d = mat.data
+    return out.init(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15])
   }
 
   /**
@@ -557,9 +769,19 @@ export class Mat4 {
    * @param [offset=0] Zero based index where to start writing in the array
    * @return the given buffer
    */
-  public copyTo<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
+  public copy<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
+    return Mat4.copy(this, buffer, offset)
+  }
+
+  /**
+   * Copies the components successively into the given array.
+   * @param buffer The array to copy into
+   * @param [offset=0] Zero based index where to start writing in the array
+   * @return the given buffer
+   */
+  public static copy<T extends ArrayLike<number>>(mat: Mat4, buffer: T, offset?: number): T {
     offset = offset || 0
-    const d = this.data
+    const d = mat.data
     buffer[offset] = d[0]
     buffer[offset + 1] = d[1]
     buffer[offset + 2] = d[2]
@@ -586,8 +808,18 @@ export class Mat4 {
    * @return {Boolean} true if components are equal, false otherwise
    */
   public equals(other: Mat4): boolean {
-    const a = this.data
-    const b = other.data
+    return Mat4.equals(this, other)
+  }
+
+  /**
+   * Checks for component wise equality with given matrix
+   * @method equals
+   * @param other The matrix to compare with
+   * @return {Boolean} true if components are equal, false otherwise
+   */
+  public static equals(m1: Mat4, m2: Mat4): boolean {
+    const a = m1.data
+    const b = m2.data
     return a[0] === b[0] &&
       a[1] === b[1] &&
       a[2] === b[2] &&
@@ -611,7 +843,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getForward<T extends IVec3>(out: T): T {
+  public getForward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = -this.backward[0]
     out.y = -this.backward[1]
@@ -624,7 +856,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getBackward<T extends IVec3>(out: T): T {
+  public getBackward<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = this.backward[0]
     out.y = this.backward[1]
@@ -637,7 +869,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getRight<T extends IVec3>(out: T): T {
+  public getRight<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = this.right[0]
     out.y = this.right[1]
@@ -650,7 +882,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getLeft<T extends IVec3>(out: T): T {
+  public getLeft<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = -this.right[0]
     out.y = -this.right[1]
@@ -663,7 +895,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getUp<T extends IVec3>(out: T): T {
+  public getUp<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = this.up[0]
     out.y = this.up[1]
@@ -676,7 +908,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getDown<T extends IVec3>(out: T): T {
+  public getDown<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = -this.up[0]
     out.y = -this.up[1]
@@ -689,7 +921,7 @@ export class Mat4 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getTranslation<T extends IVec3>(out: T): T {
+  public getTranslation<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
     out.x = this.translation[0]
     out.y = this.translation[1]
@@ -698,15 +930,28 @@ export class Mat4 {
   }
 
   /**
+   * Gets the projection part as vector
+   * @param [out] The vector to write to
+   * @return the given `out` parameter or a new vector
+   */
+  public getProjection<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = this.data[3]
+    out.y = this.data[7]
+    out.z = this.data[11]
+    return out
+  }
+
+  /**
    * Gets the scale part as vector
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getScale<T extends IVec3>(out: T): T {
+  public getScale<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
     out = (out || new Vec3()) as any
-    out.x = this.translation[0]
-    out.y = this.translation[5]
-    out.z = this.translation[10]
+    out.x = this.data[0]
+    out.y = this.data[5]
+    out.z = this.data[10]
     return out
   }
 
@@ -814,6 +1059,37 @@ export class Mat4 {
   }
 
   /**
+   * Sets the projection part
+   * @param vec The vector to take values from
+   * @return Reference to `this` for chaining.
+   */
+  public setProjection(vec: IVec3): Mat4 {
+    this.data[3] = vec.x
+    this.data[7] = vec.y
+    this.data[11] = vec.z
+    return this
+  }
+
+  public setProjectionX(v: number): Mat4 {
+    this.data[3] = v
+    return this
+  }
+  public setProjectionY(v: number): Mat4 {
+    this.data[7] = v
+    return this
+  }
+  public setProjectionZ(v: number): Mat4 {
+    this.data[11] = v
+    return this
+  }
+  public setProjectionXYZ(x: number, y: number, z: number) {
+    this.data[3] = x
+    this.data[7] = y
+    this.data[11] = z
+    return this
+  }
+
+  /**
    * Sets the scale part
    * @param vec The vector to take values from
    * @return Reference to `this` for chaining.
@@ -893,9 +1169,6 @@ export class Mat4 {
   public transpose(): Mat4 {
     return Mat4.transpose(this, this)
   }
-  public transposeOut(out?: Mat4): Mat4 {
-    return Mat4.transpose(this, out || new Mat4())
-  }
 
   /**
    * Inverts this matrix
@@ -904,9 +1177,6 @@ export class Mat4 {
   public invert(): Mat4 {
     return Mat4.invert(this, this)
   }
-  public invertOut(out?: Mat4): Mat4 {
-    return Mat4.invert(this, out || new Mat4())
-  }
 
   /**
    * Negates all components of this matrix
@@ -914,9 +1184,6 @@ export class Mat4 {
    */
   public negate(): Mat4 {
     return Mat4.negate(this, this)
-  }
-  public negateOut(out?: Mat4): Mat4 {
-    return Mat4.negate(this, out || new Mat4())
   }
 
   /**
@@ -935,19 +1202,6 @@ export class Mat4 {
     // tslint:enable
     return this
   }
-  public addOut(other: Mat4, out?: Mat4): Mat4 {
-    out = out || new Mat4()
-    const a = this.data
-    const b = other.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3];
-    c[ 4] = a[ 4] + b[ 4]; c[ 5] = a[ 5] + b[ 5]; c[ 6] = a[ 6] + b[ 6]; c[ 7] = a[ 7] + b[ 7];
-    c[ 8] = a[ 8] + b[ 8]; c[ 9] = a[ 9] + b[ 9]; c[10] = a[10] + b[10]; c[11] = a[11] + b[11];
-    c[12] = a[12] + b[12]; c[13] = a[13] + b[13]; c[14] = a[14] + b[14]; c[15] = a[15] + b[15];
-    // tslint:enable
-    return out
-  }
 
   /**
    * Adds the given scalar to each component of `this`
@@ -963,19 +1217,6 @@ export class Mat4 {
     a[12] += s; a[13] += s; a[14] += s; a[15] += s;
     // tslint:enable
     return this
-  }
-  public addScalarOut(s: number, out?: Mat4): Mat4 {
-    out = out || new Mat4()
-    const a = out.data
-    const b = s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] + b; c[ 1] = a[ 1] + b; c[ 2] = a[ 2] + b; c[ 3] = a[ 3] + b;
-    c[ 4] = a[ 4] + b; c[ 5] = a[ 5] + b; c[ 6] = a[ 6] + b; c[ 7] = a[ 7] + b;
-    c[ 8] = a[ 8] + b; c[ 9] = a[ 9] + b; c[10] = a[10] + b; c[11] = a[11] + b;
-    c[12] = a[12] + b; c[13] = a[13] + b; c[14] = a[14] + b; c[15] = a[15] + b;
-    // tslint:enable
-    return out
   }
 
   /**
@@ -994,19 +1235,6 @@ export class Mat4 {
     // tslint:enable
     return this
   }
-  public subtractOut(other: Mat4, out?: Mat4): Mat4 {
-    out = out || new Mat4()
-    const a = this.data
-    const b = other.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3];
-    c[ 4] = a[ 4] - b[ 4]; c[ 5] = a[ 5] - b[ 5]; c[ 6] = a[ 6] - b[ 6]; c[ 7] = a[ 7] - b[ 7];
-    c[ 8] = a[ 8] - b[ 8]; c[ 9] = a[ 9] - b[ 9]; c[10] = a[10] - b[10]; c[11] = a[11] - b[11];
-    c[12] = a[12] - b[12]; c[13] = a[13] - b[13]; c[14] = a[14] - b[14]; c[15] = a[15] - b[15];
-    // tslint:enable
-    return out
-  }
 
   /**
    * Subtracts the given scalar from each component of `this`
@@ -1022,19 +1250,6 @@ export class Mat4 {
     a[12] -= s; a[13] -= s; a[14] -= s; a[15] -= s;
     // tslint:enable
     return this
-  }
-  public subtractScalarOut(s: number, out?: Mat4): Mat4 {
-    out = out || new Mat4()
-    const a = out.data
-    const b = s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] - b; c[ 1] = a[ 1] - b; c[ 2] = a[ 2] - b; c[ 3] = a[ 3] - b;
-    c[ 4] = a[ 4] - b; c[ 5] = a[ 5] - b; c[ 6] = a[ 6] - b; c[ 7] = a[ 7] - b;
-    c[ 8] = a[ 8] - b; c[ 9] = a[ 9] - b; c[10] = a[10] - b; c[11] = a[11] - b;
-    c[12] = a[12] - b; c[13] = a[13] - b; c[14] = a[14] - b; c[15] = a[15] - b;
-    // tslint:enable
-    return out
   }
 
   /**
@@ -1052,10 +1267,10 @@ export class Mat4 {
         a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
         a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
         a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = a[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = a[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = a[13], b14 = b[14], b15 = b[15];
+    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
+        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
+        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
+        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
     // tslint:enable
 
     c[0] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
@@ -1075,41 +1290,6 @@ export class Mat4 {
     c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
     c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
     return this
-  }
-  public multiplyOut(other: Mat4, out?: Mat4): Mat4 {
-    out = out || new Mat4() as any
-    const a = other.data
-    const b = out.data
-    const c = out.data
-
-    // tslint:disable
-    let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], a_3 = a[ 3],
-        a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
-        a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
-        a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15]
-    let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = a[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = a[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = a[13], b14 = b[14], b15 = b[15]
-    // tslint:enable
-
-    c[0] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
-    c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
-    c[2] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14
-    c[3] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15
-    c[4] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12
-    c[5] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13
-    c[6] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14
-    c[7] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15
-    c[8] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12
-    c[9] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13
-    c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14
-    c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15
-    c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12
-    c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
-    c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
-    c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
-    return out
   }
 
   /**
@@ -1126,10 +1306,10 @@ export class Mat4 {
         a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
         a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
         a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = a[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = a[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = a[13], b14 = b[14], b15 = b[15]
+    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
+        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
+        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
+        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15]
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
     c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
@@ -1148,39 +1328,6 @@ export class Mat4 {
     c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
     c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
     return this
-  }
-  public concatOut(other: Mat4, out?: Mat4): Mat4 {
-    out = out || new Mat4() as any
-    const a = out.data
-    const b = other.data
-    const c = out.data
-    // tslint:disable
-    let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], a_3 = a[ 3],
-        a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
-        a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
-        a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15]
-    let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = a[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = a[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = a[13], b14 = b[14], b15 = b[15]
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
-    c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
-    c[2] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14
-    c[3] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15
-    c[4] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12
-    c[5] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13
-    c[6] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14
-    c[7] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15
-    c[8] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12
-    c[9] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13
-    c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14
-    c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15
-    c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12
-    c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
-    c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
-    c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
-    return out
   }
 
   /**
@@ -1197,19 +1344,6 @@ export class Mat4 {
     a[12] *= s; a[13] *= s; a[14] *= s; a[15] *= s;
     // tslint:enable
     return this
-  }
-  public multiplyScalarOut(s: number, out?: Mat4): Mat4 {
-    out = out || new Mat4()
-    const a = out.data
-    const b = s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b;
-    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b;
-    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b;
-    // tslint:enable
-    return out
   }
 
   /**
@@ -1244,20 +1378,6 @@ export class Mat4 {
     a[12] *= b; a[13] *= b; a[14] *= b; a[15] *= b;
     // tslint:enable
     return this
-  }
-
-  public divideScalarOut(s: number, out?: Mat4): Mat4 {
-    out = out || new Mat4()
-    const a = out.data
-    const b = 1.0 / s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b;
-    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b;
-    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b;
-    // tslint:enable
-    return out
   }
 
   /**
@@ -1628,10 +1748,10 @@ export class Mat4 {
         a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
         a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
         a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = a[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = a[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = a[13], b14 = b[14], b15 = b[15];
+    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
+        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
+        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
+        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
     // tslint:enable
     c[0 ] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
     c[1 ] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
@@ -1659,7 +1779,7 @@ export class Mat4 {
    * @param [out] The matrix to write to
    * @return The given `out` parameter or a new matrix
    */
-  public static concat(matA: Mat4, matB: Mat4, out: Mat4) {
+  public static concat(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
     const a = matA.data
     const b = matB.data
@@ -1669,10 +1789,10 @@ export class Mat4 {
         a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
         a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
         a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = a[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = a[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = a[13], b14 = b[14], b15 = b[15];
+    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
+        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
+        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
+        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
     // tslint:enable
     c[0 ] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
     c[1 ] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
@@ -1690,7 +1810,7 @@ export class Mat4 {
     c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
     c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
     c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
-    return this
+    return out
   }
 
   /**
@@ -1817,174 +1937,20 @@ export class Mat4 {
     return out
   }
 
-  /**
-   * Creates a new matrix with all components set to 0
-   * @return a new matrix
-   */
-  public static zero(): Mat4 {
-    return new Mat4()
-  }
-
-  /**
-   * Creates a new matrix that is initialized to identity
-   * @return a new matrix
-   */
-  public static identity(): Mat4 {
-    return new Mat4().initIdentity()
-  }
-
-  /**
-   * Creates a new matrix. This method should be called with 16 or 0 arguments. If less than 16 but more than 0 arguments
-   * are given some components are going to be undefined. The arguments are expected to be in column major order.
-   * @return a new matrix
-   */
-  public static create(
-    m0: number, m1: number, m2: number, m3: number,
-    m4: number, m5: number, m6: number, m7: number,
-    m8: number, m9: number, m10: number, m11: number,
-    m12: number, m13: number, m14: number, m15: number,
-  ): Mat4 {
-    const out = new Mat4()
-    const d = out.data
-    // tslint:disable
-    d[ 0] = m0;  d[ 1] = m1;  d[ 2] = m2;  d[ 3] = m3;
-    d[ 4] = m4;  d[ 5] = m5;  d[ 6] = m6;  d[ 7] = m7;
-    d[ 8] = m8;  d[ 9] = m9;  d[10] = m10; d[11] = m11;
-    d[12] = m12; d[13] = m13; d[14] = m14; d[15] = m15;
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * Creates a new matrix. The arguments are expected to be in row major order.
-   * @return a new matrix
-   */
-  public static createRowMajor(
-    m0: number, m4: number, m8: number, m12: number,
-    m1: number, m5: number, m9: number, m13: number,
-    m2: number, m6: number, m10: number, m14: number,
-    m3: number, m7: number, m11: number, m15: number,
-  ): Mat4 {
-    const out = new Mat4()
-    const d = out.data
-    // tslint:disable
-    d[ 0] = m0;  d[ 1] = m1;  d[ 2] = m2;  d[ 3] = m3;
-    d[ 4] = m4;  d[ 5] = m5;  d[ 6] = m6;  d[ 7] = m7;
-    d[ 8] = m8;  d[ 9] = m9;  d[10] = m10; d[11] = m11;
-    d[12] = m12; d[13] = m13; d[14] = m14; d[15] = m15;
-    // tslint:enable
-    return out
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createScale(x: number, y: number, z: number): Mat4 {
-    return new Mat4().initScale(x, y, z)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createTranslation(x: number, y: number, z: number): Mat4 {
-    return new Mat4().initTranslation(x, y, z)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): Mat4 {
-    return new Mat4().initLookAt(pos, lookAt, up)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createWorld(position: IVec3, forward: IVec3, up: IVec3) {
-    return new Mat4().initWorld(position, forward, up)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createPerspectiveFieldOfView(fov: number, aspec: number, near: number, far: number): Mat4 {
-    return new Mat4().initPerspectiveFieldOfView(fov, aspec, near, far)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createPerspective(width: number, height: number, near: number, far: number): Mat4 {
-    return new Mat4().initPerspective(width, height, near, far)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
-    return new Mat4().initPerspectiveOffCenter(left, right, bottom, top, near, far)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createOrthographic(width: number, height: number, near: number, far: number): Mat4 {
-    return new Mat4().initOrthographic(width, height, near, far)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
-    return new Mat4().initOrthographicOffCenter(left, right, bottom, top, near, far)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createRotationX(rad: number): Mat4 {
-    return new Mat4().initRotationX(rad)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createRotationY(rad: number): Mat4 {
-    return new Mat4().initRotationY(rad)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createRotationZ(rad: number): Mat4 {
-    return new Mat4().initRotationZ(rad)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createAxisAngle(axis: IVec3, angle: number): Mat4 {
-    return new Mat4().initAxisAngle(axis, angle)
-  }
-
-  /**
-   * @return a new matrix
-   */
-  public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
-    return new Mat4().initYawPitchRoll(yaw, pitch, roll)
+  public format(fractionDigits: number = 5) {
+    return Mat4.format(this, fractionDigits)
   }
 
   /**
    * @returns {string}
    */
-  public static prettyString(mat: Mat4) {
+  public static format(mat: Mat4, fractionDigits: number = 5) {
     const m = mat.data
-    const fixed = 5
     return [
-      [m[0].toFixed(fixed), m[4].toFixed(fixed), m[8].toFixed(fixed), m[12].toFixed(fixed)].join(', '),
-      [m[1].toFixed(fixed), m[5].toFixed(fixed), m[9].toFixed(fixed), m[13].toFixed(fixed)].join(', '),
-      [m[2].toFixed(fixed), m[6].toFixed(fixed), m[10].toFixed(fixed), m[14].toFixed(fixed)].join(', '),
-      [m[3].toFixed(fixed), m[7].toFixed(fixed), m[11].toFixed(fixed), m[15].toFixed(fixed)].join(', '),
+      [m[0].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[8].toFixed(fractionDigits), m[12].toFixed(fractionDigits)].join(', '),
+      [m[1].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[9].toFixed(fractionDigits), m[13].toFixed(fractionDigits)].join(', '),
+      [m[2].toFixed(fractionDigits), m[6].toFixed(fractionDigits), m[10].toFixed(fractionDigits), m[14].toFixed(fractionDigits)].join(', '),
+      [m[3].toFixed(fractionDigits), m[7].toFixed(fractionDigits), m[11].toFixed(fractionDigits), m[15].toFixed(fractionDigits)].join(', '),
     ].join('\n')
   }
 }

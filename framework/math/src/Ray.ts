@@ -10,10 +10,10 @@ export class Ray {
 
   constructor(position?: IVec3, direction?: IVec3) {
     if (position) {
-      Vec3.copy(position, this.position)
+      Vec3.clone(position, this.position)
     }
     if (direction) {
-      Vec3.copy(direction, this.direction)
+      Vec3.clone(direction, this.direction)
     }
   }
 
@@ -21,8 +21,8 @@ export class Ray {
     return new Ray(this.position, this.direction)
   }
   public copy(other: Ray): Ray {
-    Vec3.copy(this.position, other.position)
-    Vec3.copy(this.direction, other.direction)
+    Vec3.clone(this.position, other.position)
+    Vec3.clone(this.direction, other.direction)
     return other
   }
 

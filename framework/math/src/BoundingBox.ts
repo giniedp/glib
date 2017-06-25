@@ -12,11 +12,11 @@ export class BoundingBox {
   constructor(min?: IVec3, max?: IVec3) {
     this.min = { x: 0, y: 0, z: 0 }
     if (min) {
-      Vec3.copy(min, this.min)
+      Vec3.clone(min, this.min)
     }
     this.max = { x: 0, y: 0, z: 0 }
     if (max) {
-      Vec3.copy(max, this.max)
+      Vec3.clone(max, this.max)
     }
   }
 
@@ -24,8 +24,8 @@ export class BoundingBox {
     return new BoundingBox(this.min, this.max)
   }
   public copy(other: BoundingBox): BoundingBox {
-    Vec3.copy(this.min, other.min)
-    Vec3.copy(this.max, other.max)
+    Vec3.clone(this.min, other.min)
+    Vec3.clone(this.max, other.max)
     return other
   }
   public merge(other: BoundingBox) {

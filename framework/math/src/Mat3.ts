@@ -376,8 +376,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getForward<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getForward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = -this.backward[0]
     out.y = -this.backward[1]
     out.z = -this.backward[2]
@@ -389,8 +389,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getBackward<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getBackward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = this.backward[0]
     out.y = this.backward[1]
     out.z = this.backward[2]
@@ -402,8 +402,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getRight<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getRight<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = this.right[0]
     out.y = this.right[1]
     out.z = this.right[2]
@@ -415,8 +415,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getLeft<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getLeft<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = -this.right[0]
     out.y = -this.right[1]
     out.z = -this.right[2]
@@ -428,8 +428,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getUp<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getUp<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = this.up[0]
     out.y = this.up[1]
     out.z = this.up[2]
@@ -441,8 +441,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getDown<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getDown<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = -this.up[0]
     out.y = -this.up[1]
     out.z = -this.up[2]
@@ -454,8 +454,8 @@ export class Mat3 {
    * @param [out] The vector to write to
    * @return the given `out` parameter or a new vector
    */
-  public getScale<T extends IVec3>(out: T): T {
-    out = (out || new Vec3()) as any
+  public getScale<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = this.data[0]
     out.y = this.data[4]
     out.z = this.data[8]
@@ -601,14 +601,6 @@ export class Mat3 {
       d[2], d[5], d[8],
     )
   }
-  public transposeOut(out?: Mat3): Mat3 {
-    const d = this.data
-    return (out || new Mat3()).init(
-      d[0], d[3], d[6],
-      d[1], d[4], d[7],
-      d[2], d[5], d[8],
-    )
-  }
 
   /**
    * Inverts this matrix
@@ -648,42 +640,6 @@ export class Mat3 {
 
     return this
   }
-  public invertOut(out?: Mat3): Mat3 {
-    out = out || new Mat3()
-
-    const a = this.data
-    const b = out.data
-
-    const a11 = a[0]
-    const a12 = a[3]
-    const a13 = a[6]
-
-    const a21 = a[1]
-    const a22 = a[4]
-    const a23 = a[7]
-
-    const a31 = a[2]
-    const a32 = a[5]
-    const a33 = a[8]
-
-    const d1 = a22 * a33 - a32 * a23
-    const d2 = a21 * a33 - a31 * a23
-    const d3 = a21 * a32 - a31 * a22
-
-    const detInv = 1 / (a11 * d1 - a12 * d2 + a13 * d3)
-
-    b[0] = detInv * d1
-    b[1] = -detInv * d2
-    b[2] = detInv * d3
-    b[3] = detInv * (a13 * a32 - a12 * a33)
-    b[4] = detInv * (a11 * a33 - a13 * a31)
-    b[5] = detInv * (a12 * a31 - a11 * a32)
-    b[6] = detInv * (a12 * a23 - a13 * a22)
-    b[7] = detInv * (a13 * a21 - a11 * a23)
-    b[8] = detInv * (a11 * a22 - a12 * a21)
-
-    return out
-  }
 
   /**
    * Negates all components of this matrix
@@ -698,17 +654,6 @@ export class Mat3 {
     a[ 6] = -b[ 6]; a[ 7] = -b[ 7]; a[ 8] = -b[ 8];
     // tslint:enable
     return this
-  }
-  public negateOut(out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = out.data
-    const b = this.data
-    // tslint:disable
-    a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; a[ 2] = -b[ 2];
-    a[ 3] = -b[ 3]; a[ 4] = -b[ 4]; a[ 5] = -b[ 5];
-    a[ 6] = -b[ 6]; a[ 7] = -b[ 7]; a[ 8] = -b[ 8];
-    // tslint:enable
-    return out
   }
 
   /**
@@ -726,18 +671,6 @@ export class Mat3 {
     // tslint:enable
     return this
   }
-  public addOut(other: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = this.data
-    const b = other.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; c[ 2] = a[ 2] + b[ 2];
-    c[ 3] = a[ 3] + b[ 3]; c[ 4] = a[ 4] + b[ 4]; c[ 5] = a[ 5] + b[ 5];
-    c[ 6] = a[ 6] + b[ 6]; c[ 7] = a[ 7] + b[ 7]; c[ 8] = a[ 8] + b[ 8];
-    // tslint:enable
-    return out
-  }
 
   /**
    * Adds the given scalar to each component of `this`
@@ -752,18 +685,6 @@ export class Mat3 {
     a[ 6] += s; a[ 7] += s; a[ 8] += s;
     // tslint:enable
     return this
-  }
-  public addScalarOut(s: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = out.data
-    const b = s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] + b; c[ 1] = a[ 1] + b; c[ 2] = a[ 2] + b;
-    c[ 3] = a[ 3] + b; c[ 4] = a[ 4] + b; c[ 5] = a[ 5] + b;
-    c[ 6] = a[ 6] + b; c[ 7] = a[ 7] + b; c[ 8] = a[ 8] + b;
-    // tslint:enable
-    return out
   }
 
   /**
@@ -781,18 +702,6 @@ export class Mat3 {
     // tslint:enable
     return this
   }
-  public subtractOut(other: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = this.data
-    const b = other.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; c[ 2] = a[ 2] - b[ 2];
-    c[ 3] = a[ 3] - b[ 3]; c[ 4] = a[ 4] - b[ 4]; c[ 5] = a[ 5] - b[ 5];
-    c[ 6] = a[ 6] - b[ 6]; c[ 7] = a[ 7] - b[ 7]; c[ 8] = a[ 8] - b[ 8];
-    // tslint:enable
-    return out
-  }
 
   /**
    * Subtracts the given scalar from each component of `this`
@@ -808,18 +717,6 @@ export class Mat3 {
     // tslint:enable
     return this
   }
-  public subtractScalarOut(s: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = out.data
-    const b = s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] - b; c[ 1] = a[ 1] - b; c[ 2] = a[ 2] - b;
-    c[ 3] = a[ 3] - b; c[ 4] = a[ 4] - b; c[ 5] = a[ 5] - b;
-    c[ 6] = a[ 6] - b; c[ 7] = a[ 7] - b; c[ 8] = a[ 8] - b;
-    // tslint:enable
-    return out
-  }
 
   /**
    * Multiplies the given matrix with this
@@ -832,11 +729,11 @@ export class Mat3 {
     const c = this.data
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-        a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-        a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
-        b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
-        b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
+    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -848,30 +745,6 @@ export class Mat3 {
     c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
     c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
     return this
-  }
-  public multiplyOut(other: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3() as any
-    const a = other.data
-    const b = out.data
-    const c = out.data
-    // tslint:disable
-    const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-        a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-        a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
-        b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
-        b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
-    c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
-    c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
-    c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
-    c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
-    c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
-    c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
-    c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
-    c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return out
   }
 
   /**
@@ -885,11 +758,11 @@ export class Mat3 {
     const c = this.data
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-        a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-        a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
-        b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
-        b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
+    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -901,30 +774,6 @@ export class Mat3 {
     c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
     c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
     return this
-  }
-  public concatOut(other: Mat3, out?: Mat3): Mat3 {
-    out = out || new Mat3() as any
-    const a = out.data
-    const b = other.data
-    const c = out.data
-    // tslint:disable
-    const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-        a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-        a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
-        b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
-        b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
-    c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
-    c[2] = b_0 * a_2 + b_1 * a_5 + b_2 * a_8
-    c[3] = b_3 * a_0 + b_4 * a_3 + b_5 * a_6
-    c[4] = b_3 * a_1 + b_4 * a_4 + b_5 * a_7
-    c[5] = b_3 * a_2 + b_4 * a_5 + b_5 * a_8
-    c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
-    c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
-    c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return out
   }
 
   /**
@@ -940,18 +789,6 @@ export class Mat3 {
     a[ 6] *= s; a[ 7] *= s; a[ 8] *= s;
     // tslint:enable
     return this
-  }
-  public multiplyScalarOut(s: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = out.data
-    const b = s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b;
-    c[ 3] = a[ 3] * b; c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b;
-    c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b; c[ 8] = a[ 8] * b;
-    // tslint:enable
-    return out
   }
 
   /**
@@ -985,18 +822,7 @@ export class Mat3 {
     // tslint:enable
     return this
   }
-  public divideScalarOut(s: number, out?: Mat3): Mat3 {
-    out = out || new Mat3()
-    const a = out.data
-    const b = 1.0 / s
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b;
-    c[ 3] = a[ 3] * b; c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b;
-    c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b; c[ 8] = a[ 8] * b;
-    // tslint:enable
-    return out
-  }
+
   /**
    * Transform the given vector with this matrix.
    * @param vec
@@ -1027,14 +853,14 @@ export class Mat3 {
     let y
     const d = this.data
     offset = offset || 0
-    stride = stride === undefined ? 2 : stride
-    count = count === undefined ? buffer.length / stride : count
+    stride = stride == null ? 2 : stride
+    count = count == null ? buffer.length / stride : count
 
     while (count > 0) {
       count--
       x = buffer[offset]
       y = buffer[offset + 1]
-      buffer[offset] = x * d[0] + y * d[3] + d[6]
+      buffer[offset    ] = x * d[0] + y * d[3] + d[6]
       buffer[offset + 1] = x * d[1] + y * d[4] + d[7]
       offset += stride
     }
@@ -1053,17 +879,17 @@ export class Mat3 {
     let z
     const d = this.data
     offset = offset || 0
-    stride = stride === undefined ? 3 : stride
-    count = count === undefined ? buffer.length / stride : count
+    stride = stride == null ? 3 : stride
+    count = count == null ? buffer.length / stride : count
 
     while (count > 0) {
       count--
       x = buffer[offset]
       y = buffer[offset + 1]
       z = buffer[offset + 2]
-      buffer[offset] = x * d[0] + y * d[4] + z * d[8] + d[12]
-      buffer[offset + 1] = x * d[1] + y * d[5] + z * d[9] + d[13]
-      buffer[offset + 2] = x * d[2] + y * d[6] + z * d[10] + d[14]
+      buffer[offset    ] = x * d[0] + y * d[3] + z * d[6]
+      buffer[offset + 1] = x * d[1] + y * d[4] + z * d[7]
+      buffer[offset + 2] = x * d[2] + y * d[5] + z * d[8]
       offset += stride
     }
   }
@@ -1080,50 +906,19 @@ export class Mat3 {
     let x
     let y
     let z
-    let w
     const d = this.data
     offset = offset || 0
-    stride = stride === undefined ? 4 : stride
-    count = count === undefined ? buffer.length / stride : count
+    stride = stride == null ? 4 : stride
+    count = count == null ? buffer.length / stride : count
 
     while (count > 0) {
       count--
       x = buffer[offset]
       y = buffer[offset + 1]
       z = buffer[offset + 2]
-      w = buffer[offset + 3]
-      buffer[offset] = x * d[0] + y * d[4] + z * d[8] + w * d[12]
-      buffer[offset + 1] = x * d[1] + y * d[5] + z * d[9] + w * d[13]
-      buffer[offset + 2] = x * d[2] + y * d[6] + z * d[10] + w * d[14]
-      buffer[offset + 3] = x * d[3] + y * d[7] + z * d[11] + w * d[15]
-      offset += stride
-    }
-  }
-
-  /**
-   * Transforms the given buffer with the rotation and scale part of `this` matrix.
-   * @param buffer
-   * @param [offset=0]
-   * @param [stride=3]
-   * @param [count=buffer.length]
-   */
-  public transformNormalBuffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    let z
-    const d = this.data
-    offset = offset || 0
-    stride = stride === undefined ? 3 : stride
-    count = count === undefined ? buffer.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      z = buffer[offset + 2]
-      buffer[offset] = x * d[0] + y * d[4] + z * d[8]
-      buffer[offset + 1] = x * d[1] + y * d[5] + z * d[9]
-      buffer[offset + 2] = x * d[2] + y * d[6] + z * d[10]
+      buffer[offset    ] = x * d[0] + y * d[3] + z * d[6]
+      buffer[offset + 1] = x * d[1] + y * d[4] + z * d[7]
+      buffer[offset + 2] = x * d[2] + y * d[5] + z * d[8]
       offset += stride
     }
   }
@@ -1295,11 +1090,11 @@ export class Mat3 {
     const c = out.data
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-        a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-        a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
-        b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
-        b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
+    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -1320,18 +1115,18 @@ export class Mat3 {
    * @param [out] The matrix to write to
    * @return The given `out` parameter or a new matrix
    */
-  public static concat(matA: Mat3, matB: Mat3, out: Mat3) {
+  public static concat(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
     const a = matA.data
     const b = matB.data
     const c = out.data
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-        a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-        a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = a[ 1], b_2 = b[ 2],
-        b_3 = b[ 3], b_4 = b[ 4], b_5 = a[ 5],
-        b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
+          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
+    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
+          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
+          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -1342,7 +1137,7 @@ export class Mat3 {
     c[6] = b_6 * a_0 + b_7 * a_3 + b_8 * a_6
     c[7] = b_6 * a_1 + b_7 * a_4 + b_8 * a_7
     c[8] = b_6 * a_2 + b_7 * a_5 + b_8 * a_8
-    return this
+    return out
   }
 
   /**
@@ -1350,7 +1145,7 @@ export class Mat3 {
    * @method concatChain
    * @return The result of the multiplication
    */
-  public static concatChain(...rest: Mat3[]) {
+  public static concatChain(...rest: Mat3[]): Mat3 {
     // (a, (b, (c, (d, e))))
     const result = arguments[arguments.length - 1].clone()
     for (let i = arguments.length - 2; i >= 0; i--) {
@@ -1364,7 +1159,7 @@ export class Mat3 {
    * @method multiplyChain
    * @return The result of the multiplication
    */
-  public static multiplyChain(...rest: Mat3[]) {
+  public static multiplyChain(...rest: Mat3[]): Mat3 {
     // ((((a, b), c), d), e)
     const result = arguments[0].clone()
     for (let i = 1; i < arguments.length; i += 1) {
@@ -1524,7 +1319,7 @@ export class Mat3 {
   /**
    * @return a new matrix
    */
-  public static createOrientation(forward: IVec3, up: IVec3) {
+  public static createOrientation(forward: IVec3, up: IVec3): Mat3 {
     return new Mat3().initOrientation(forward, up)
   }
 
@@ -1566,13 +1361,20 @@ export class Mat3 {
   /**
    * @returns {string}
    */
-  public static prettyString(mat: Mat3) {
+  public format(): string {
+    return Mat3.format(this)
+  }
+
+  /**
+   * @returns {string}
+   */
+  public static format(mat: Mat3): string {
     const m = mat.data
     const fixed = 5
     return [
-      [m[0].toFixed(fixed), m[3].toFixed(fixed), m[6].toFixed(fixed)].join(', '),
-      [m[1].toFixed(fixed), m[4].toFixed(fixed), m[7].toFixed(fixed)].join(', '),
-      [m[2].toFixed(fixed), m[5].toFixed(fixed), m[8].toFixed(fixed)].join(', '),
+      [m[0].toFixed(fixed), m[3].toFixed(fixed), m[6].toFixed(fixed)].join(','),
+      [m[1].toFixed(fixed), m[4].toFixed(fixed), m[7].toFixed(fixed)].join(','),
+      [m[2].toFixed(fixed), m[5].toFixed(fixed), m[8].toFixed(fixed)].join(','),
     ].join('\n')
   }
 }

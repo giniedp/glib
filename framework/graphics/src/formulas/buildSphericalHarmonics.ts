@@ -45,7 +45,7 @@ export function buildSphericalHarmonics(builder: ModelBuilder, options: {
       let z = scale * Math.cos(phi)
 
       let normal = Vec3.create(x, y, z)
-      let texCoord = Vec2.new(du, dv)
+      let texCoord = Vec2.create(du, dv)
 
       builder.addVertex({
         position: Vec3.multiplyScalar(normal, radius),

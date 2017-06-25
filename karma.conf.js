@@ -25,8 +25,15 @@ module.exports = function (config) {
       'karma-remap-coverage',
     ],
     browsers: [
-      IS_TRAVIS ? 'Firefox' : 'Chrome'
+      IS_TRAVIS ? 'Firefox' : 'ChromeDebugging'
     ],
+    // browserDisconnectTimeout: 60 * 60 * 1000,
+    customLaunchers: {
+      ChromeDebugging: {
+        base: 'Chrome',
+        flags: [ '--remote-debugging-port=9333' ]
+      }
+    },
     frameworks: [
       'jasmine'
     ],

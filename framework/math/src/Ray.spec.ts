@@ -8,8 +8,8 @@ describe('Ray', () => {
       expect(ray1).not.toBe(ray2)
       expect(ray1.direction).not.toBe(ray2.direction)
       expect(ray1.position).not.toBe(ray2.position)
-      expect(Vec3.prettyString(ray1.direction)).toEqual(Vec3.prettyString(ray2.direction))
-      expect(Vec3.prettyString(ray1.position)).toEqual(Vec3.prettyString(ray2.position))
+      expect(Vec3.format(ray1.direction)).toEqual(Vec3.format(ray2.direction))
+      expect(Vec3.format(ray1.position)).toEqual(Vec3.format(ray2.position))
     })
   })
 
@@ -21,8 +21,8 @@ describe('Ray', () => {
       expect(ray1).not.toBe(ray2)
       expect(ray1.direction).not.toBe(ray2.direction)
       expect(ray1.position).not.toBe(ray2.position)
-      expect(Vec3.prettyString(ray1.direction)).toEqual(Vec3.prettyString(ray2.direction))
-      expect(Vec3.prettyString(ray1.position)).toEqual(Vec3.prettyString(ray2.position))
+      expect(Vec3.format(ray1.direction)).toEqual(Vec3.format(ray2.direction))
+      expect(Vec3.format(ray1.position)).toEqual(Vec3.format(ray2.position))
     })
   })
 
