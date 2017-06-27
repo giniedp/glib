@@ -33,8 +33,8 @@ export function buildCone(builder: ModelBuilder, options: {
   let invStepsV = 1 / steps
   let baseVertex = builder.vertexCount
   let x, y, t // tslint:disable-line
-  let position = Vec3.zero()
-  let texture = Vec2.zero()
+  let position = Vec3.createZero()
+  let texture = Vec2.createZero()
 
   for (y = 0; y <= stepsH; y += 1) {
     for (x = 0; x <= stepsV; x += 1) {

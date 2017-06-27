@@ -14,24 +14,24 @@ export class TransformComponent implements Component {
   public service: boolean = true
   public enabled: boolean = true
 
-  public scale = Vec3.one()
-  public position: Vec3 = Vec3.zero()
-  public rotation: Quat = Quat.identity()
+  public scale = Vec3.createOne()
+  public position: Vec3 = Vec3.createZero()
+  public rotation: Quat = Quat.createIdentity()
   public worldMat: Mat4 = Mat4.identity()
   public inverseMat: Mat4 = Mat4.identity()
 
-  public tempQuat = Quat.identity()
+  public tempQuat = Quat.createIdentity()
   public tempMat = Mat4.identity()
-  public tempVec = Vec3.zero()
+  public tempVec = Vec3.createZero()
   public dirty = true
 
   constructor(params?: TransformProperties) {
     if (params) {
       extend(this, params)
     }
-    this.scale = Vec3.convert(this.scale || Vec3.one())
-    this.position = Vec3.convert(this.position || Vec3.zero())
-    this.rotation = Quat.convert(this.rotation || Quat.identity())
+    this.scale = Vec3.convert(this.scale || Vec3.createOne())
+    this.position = Vec3.convert(this.position || Vec3.createZero())
+    this.rotation = Quat.convert(this.rotation || Quat.createIdentity())
   }
 
   public update() {

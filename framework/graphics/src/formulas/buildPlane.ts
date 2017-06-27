@@ -14,8 +14,8 @@ export function buildPlane(builder: ModelBuilder, options: {
   let vInv = 1.0 / vertices
 
   let baseVertex = builder.vertexCount
-  let pos = Vec3.zero()
-  let uv = Vec2.zero()
+  let pos = Vec3.createZero()
+  let uv = Vec2.createZero()
 
   for (let z = 0; z <= vertices; z += 1) {
     for (let x = 0; x <= vertices; x += 1) {

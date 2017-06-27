@@ -103,8 +103,8 @@ describe('Vec3', () => {
     beforeEach(() => {
       a = new Vec3(1, 2, 3)
     })
-    it ('copies components', () => expect(a.copyTo([])).toEqual([1, 2, 3]))
-    it ('copies components at offset', () => expect(a.copyTo([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
+    it ('copies components', () => expect(a.copy([])).toEqual([1, 2, 3]))
+    it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
   })
   describe('#equals', () => {
     beforeEach(() => {
@@ -393,13 +393,13 @@ describe('Vec3', () => {
 
   describe('.zero', () => {
     it ('creates a new Vec3', () => {
-      expectComponents(Vec3.zero(), 0, 0, 0)
+      expectComponents(Vec3.createZero(), 0, 0, 0)
     })
   })
 
   describe('.one', () => {
     it ('creates a new Vec3', () => {
-      expectComponents(Vec3.one(), 1, 1, 1)
+      expectComponents(Vec3.createOne(), 1, 1, 1)
     })
   })
 
@@ -484,7 +484,7 @@ describe('Vec3', () => {
     })
   })
 
-  describe('.convert', () => {
+  describe('.from', () => {
     it ('converts number', () => {
       expectComponents(Vec3.convert(1), 1, 1, 1)
     })

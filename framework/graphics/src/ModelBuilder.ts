@@ -1,5 +1,5 @@
 import { copy, Log } from '@glib/core'
-import { BoundingBox, BoundingSphere, Mat2, Mat3, Mat4 } from '@glib/math'
+import { BoundingBox, BoundingSphere, Mat2, Mat3, Mat4, Vec2, Vec3, Vec4 } from '@glib/math'
 import { BufferDataOption, BufferOptions } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
@@ -153,7 +153,7 @@ export class ModelBuilder {
    * Pushes a single vertex definition into the state
    * @param vertex
    */
-  public addVertex(vertex: {[key: string]: any}): ModelBuilder {
+  public addVertex(vertex: {[key: string]: number[] | number | { copy: (buf: number[]) => any }}): ModelBuilder {
     if (this.vertexCount === this.maxVertexCount) {
       // throw `max vertex count reached`;
     }
@@ -167,9 +167,9 @@ export class ModelBuilder {
 
       if (Array.isArray(item)) {
         // ok
-      } else if (typeof item.copyTo === 'function') {
+      } else if (typeof item.copy === 'function') {
         tmpBuffer.length = channel.packed ? 1 : channel.elements
-        item.copyTo(tmpBuffer)
+        item.copy(tmpBuffer)
         item = tmpBuffer
       } else if (typeof item === 'number') {
         tmpBuffer.length = 1

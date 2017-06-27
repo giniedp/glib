@@ -157,7 +157,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Creates a new vector with all components set to 0.
    * @return A new vector.
    */
-  public static zero(): Vec4 {
+  public static createZero(): Vec4 {
     return new Vec4(0, 0, 0, 0)
   }
 
@@ -177,7 +177,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Creates a new vector with all components set to 1.
    * @return A new vector.
    */
-  public static one(): Vec4 {
+  public static createOne(): Vec4 {
     return new Vec4(1, 1, 1, 1)
   }
 
@@ -195,6 +195,20 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Initializes the components of this vector by taking the components from the given vector.
+   * @param other The vector to read from
+   * @return this vector for chaining
+   */
+  public static createFrom(other: IVec4): Vec4 {
+    return new Vec4(
+      other.x,
+      other.y,
+      other.z,
+      other.w,
+    )
+  }
+
+  /**
    * Initializes the components of this vector by taking values from the given array in successive order.
    * @param buffer The array to read from
    * @param [offset=0] The zero based index at which start reading the values
@@ -206,6 +220,21 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     this.z = buffer[offset + 2]
     this.w = buffer[offset + 3]
     return this
+  }
+
+  /**
+   * Initializes the components of this vector by taking values from the given array in successive order.
+   * @param buffer The array to read from
+   * @param [offset=0] The zero based index at which start reading the values
+   * @return this vector for chaining
+   */
+  public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec4 {
+    return new Vec4(
+      buffer[offset],
+      buffer[offset + 1],
+      buffer[offset + 2],
+      buffer[offset + 3],
+    )
   }
 
   /**
@@ -524,19 +553,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this += other * scale`
-   * @param other The vector to add
-   * @return this vector for chaining
-   */
-  public addScaled(other: IVec4, scale: number): Vec4 {
-    this.x += other.x * scale
-    this.y += other.y * scale
-    this.z += other.z * scale
-    this.w += other.w * scale
-    return this
-  }
-
-  /**
    * Performs the calculation `this += scalar`
    * @param scalar The value to add
    * @return this vector for chaining
@@ -563,6 +579,19 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     out.z = vec.z + scalar
     out.w = vec.w + scalar
     return out
+  }
+
+  /**
+   * Performs the calculation `this += other * scale`
+   * @param other The vector to add
+   * @return this vector for chaining
+   */
+  public addScaled(other: IVec4, scale: number): Vec4 {
+    this.x += other.x * scale
+    this.y += other.y * scale
+    this.z += other.z * scale
+    this.w += other.w * scale
+    return this
   }
 
   /**
@@ -595,20 +624,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this -= other * scale`
-   * @param other The vector to subtract
-   * @param scale The value to multoply to `other`
-   * @return this vector for chaining
-   */
-  public subtractScaled(other: IVec4, scale: number): Vec4 {
-    this.x -= other.x * scale
-    this.y -= other.y * scale
-    this.z -= other.z * scale
-    this.w -= other.w * scale
-    return this
-  }
-
-  /**
    * Performs the calculation `this -= scalar`
    * @param scalar The value to subtract
    * @return this vector for chaining
@@ -635,6 +650,20 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     out.z = vec.z - scalar
     out.w = vec.w - scalar
     return out
+  }
+
+  /**
+   * Performs the calculation `this -= other * scale`
+   * @param other The vector to subtract
+   * @param scale The value to multoply to `other`
+   * @return this vector for chaining
+   */
+  public subtractScaled(other: IVec4, scale: number): Vec4 {
+    this.x -= other.x * scale
+    this.y -= other.y * scale
+    this.z -= other.z * scale
+    this.w -= other.w * scale
+    return this
   }
 
   /**
@@ -793,13 +822,12 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param [out] The vector to write to.
    * @return The given `out` parameter or a new vector.
    */
-  public multiplyScalarAdd<T extends IVec4 = Vec4>(mul: number, add: IVec4, out?: T|Vec4): T|Vec4 {
-    out = out || new Vec4()
-    out.x = this.x * mul + add.x
-    out.y = this.y * mul + add.y
-    out.z = this.z * mul + add.z
-    out.w = this.w * mul + add.w
-    return out
+  public multiplyScalarAdd<T extends IVec4 = Vec4>(mul: number, add: IVec4): T|Vec4 {
+    this.x = this.x * mul + add.x
+    this.y = this.y * mul + add.y
+    this.z = this.z * mul + add.z
+    this.w = this.w * mul + add.w
+    return this
   }
 
   /**
@@ -824,7 +852,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param quat
    * @return this vector for chaining
    */
-  public transformQuat(quat: IVec4): Vec4 {
+  public transformByQuat(quat: IVec4): Vec4 {
     const x = quat.x
     const y = quat.y
     const z = quat.z
@@ -844,7 +872,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
     const yy2 = y * y2
     const yz2 = y * z2
-    const zz2 = y * z2
+    const zz2 = z * z2
 
     const vx = this.x
     const vy = this.y
@@ -861,7 +889,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param mat
    * @return this vector for chaining
    */
-  public transformMat4(mat: { data: number[]|Float64Array }): Vec4 {
+  public transformByMat4(mat: { data: number[]|Float64Array|Float32Array }): Vec4 {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -879,7 +907,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param mat
    * @return this vector for chaining
    */
-  public transformMat3(mat: { data: number[]|Float64Array }): Vec4 {
+  public transformByMat3(mat: { data: number[]|Float64Array|Float32Array }): Vec4 {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -896,7 +924,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param mat
    * @return this vector for chaining
    */
-  public transformMat2(mat: { data: number[]|Float64Array }): Vec4 {
+  public transformByMat2(mat: { data: number[]|Float64Array|Float32Array }): Vec4 {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -1115,7 +1143,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param {Vec2|Vec3|Vec4|Quat|Array|number} data
    * @return
    */
-  public static from(data: number | number[] | IVec4): Vec4 {
+  public static convert(data: number | number[] | IVec4): Vec4 {
     if (typeof data === 'number') {
       return new Vec4(data, data, data, data)
     }

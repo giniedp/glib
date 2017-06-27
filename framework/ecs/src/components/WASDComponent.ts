@@ -23,10 +23,10 @@ export class WASDComponent implements Component {
 
   private currentMoveSpeed: number = 0
   private currentTurnSpeed: number = 0
-  private temp: Vec3 = Vec3.zero()
-  private direction: Vec3 = Vec3.zero()
-  private translation: Vec3 = Vec3.zero()
-  private rotation: Quat = Quat.identity()
+  private temp: Vec3 = Vec3.createZero()
+  private direction: Vec3 = Vec3.createZero()
+  private translation: Vec3 = Vec3.createZero()
+  private rotation: Quat = Quat.createIdentity()
 
   public mouse: MouseComponent
   public keyboard: KeyboardComponent

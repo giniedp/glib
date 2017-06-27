@@ -93,8 +93,8 @@ describe('Vec2', () => {
     beforeEach(() => {
       a = new Vec2(1, 2)
     })
-    it ('copies components', () => expect(a.copyTo([])).toEqual([1, 2]))
-    it ('copies components at offset', () => expect(a.copyTo([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 0, 0]))
+    it ('copies components', () => expect(a.copy([])).toEqual([1, 2]))
+    it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 0, 0]))
   })
   describe('#equals', () => {
     beforeEach(() => {
@@ -373,13 +373,13 @@ describe('Vec2', () => {
 
   describe('.zero', () => {
     it ('creates a new Vec2', () => {
-      expectComponents(Vec2.zero(), 0, 0)
+      expectComponents(Vec2.createZero(), 0, 0)
     })
   })
 
   describe('.one', () => {
     it ('creates a new Vec2', () => {
-      expectComponents(Vec2.one(), 1, 1)
+      expectComponents(Vec2.createOne(), 1, 1)
     })
   })
 

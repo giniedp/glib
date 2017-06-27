@@ -21,8 +21,8 @@ export function buildCap(builder: ModelBuilder, options: {
   let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
   let steps = withDefault(options.steps, 16)
   let baseVertex = builder.vertexCount
-  let position = Vec3.zero()
-  let texture = Vec2.zero()
+  let position = Vec3.createZero()
+  let texture = Vec2.createZero()
 
   for (let step = 0; step <= steps; step += 1) {
     circleVector(step / steps, position)

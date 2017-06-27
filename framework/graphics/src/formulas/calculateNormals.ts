@@ -16,12 +16,12 @@ export function calculateNormals(layout: VertexLayout, indices: number[], vertic
   let offPos = VertexLayout.countElementsBefore(layout, 'position')
   let offNrm = VertexLayout.countElementsBefore(layout, 'normal')
 
-  let v0 = Vec3.zero()
-  let v1 = Vec3.zero()
-  let v2 = Vec3.zero()
-  let t0 = Vec3.zero()
-  let t1 = Vec3.zero()
-  let normal = Vec3.zero()
+  let v0 = Vec3.createZero()
+  let v1 = Vec3.createZero()
+  let v2 = Vec3.createZero()
+  let t0 = Vec3.createZero()
+  let t1 = Vec3.createZero()
+  let normal = Vec3.createZero()
 
   // clear previous normals
   for (let i = 0; i < indices.length; i += 1) { // tslint:disable-line
@@ -66,6 +66,6 @@ export function calculateNormals(layout: VertexLayout, indices: number[], vertic
     } else {
       normal.init(0, 0, 0)
     }
-    normal.copyTo(vertices, index)
+    normal.copy(vertices, index)
   }
 }

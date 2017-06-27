@@ -30,16 +30,16 @@ export function calculateTangents(layout: VertexLayout, indices: number[], verti
   let count = vertices.length / VertexLayout.countElements(layout)
   let index
 
-  let p1 = Vec3.zero()
-  let p2 = Vec3.zero()
-  let p3 = Vec3.zero()
-  let t1 = Vec2.zero()
-  let t2 = Vec2.zero()
-  let t3 = Vec2.zero()
-  let d1 = Vec3.zero()
-  let d2 = Vec3.zero()
-  let uv1 = Vec2.zero()
-  let uv2 = Vec2.zero()
+  let p1 = Vec3.createZero()
+  let p2 = Vec3.createZero()
+  let p3 = Vec3.createZero()
+  let t1 = Vec2.createZero()
+  let t2 = Vec2.createZero()
+  let t3 = Vec2.createZero()
+  let d1 = Vec3.createZero()
+  let d2 = Vec3.createZero()
+  let uv1 = Vec2.createZero()
+  let uv2 = Vec2.createZero()
 
   // zero out tangents
   for (let i = 0; i < count; i += 1) {
@@ -115,9 +115,9 @@ export function calculateTangents(layout: VertexLayout, indices: number[], verti
     vertices[index + 2] += dir2.z
   }
 
-  let normal = Vec3.zero()
-  let tangent = Vec3.zero()
-  let bitangent = Vec3.zero()
+  let normal = Vec3.createZero()
+  let tangent = Vec3.createZero()
+  let bitangent = Vec3.createZero()
   // orthogonalize
   for (let i = 0; i < count; i += 1) {
     index = i * stride
@@ -137,7 +137,7 @@ export function calculateTangents(layout: VertexLayout, indices: number[], verti
       b.normalize()
     }
 
-    t.copyTo(vertices, index + offTan)
-    b.copyTo(vertices, index + offBit)
+    t.copy(vertices, index + offTan)
+    b.copy(vertices, index + offBit)
   }
 }

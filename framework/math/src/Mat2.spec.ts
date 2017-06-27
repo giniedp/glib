@@ -189,7 +189,7 @@ describe('Mat2', () => {
 
     describe('#initFromQuaternion', () => {
       it('creates rotation matrix', () => {
-        const quat = Quat.fromAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
+        const quat = Quat.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
         const mat = new Mat2().initFromQuaternion(quat)
         const vec = Vec2.create(1, 1)
         const vec2 = mat.transform(vec)

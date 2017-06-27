@@ -49,6 +49,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.x = value
     return this
   }
+
   /**
    * Sets the Y component
    */
@@ -56,6 +57,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.y = value
     return this
   }
+
   /**
    * Sets the Z component
    */
@@ -63,6 +65,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z = value
     return this
   }
+
   /**
    * Sets the W component
    */
@@ -70,6 +73,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.w = value
     return this
   }
+
   /**
    * Sets the component by using an index (or name)
    */
@@ -101,6 +105,19 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Creates a new quaternion. The method should be called with four or no arguments. If less than four arguments are given
+   * then some components of the resulting quaternion are going to be `undefined`.
+   * @param [x] The x component
+   * @param [y] The y component
+   * @param [z] The z component
+   * @param [w] The w component
+   * @return
+   */
+  public static create(x?: number, y?: number, z?: number, w?: number): Quat {
+    return new Quat(x, y, z, w)
+  }
+
+  /**
    * Initializes the quaternion with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
    * @return Reference to `this` for chaining.
    */
@@ -110,6 +127,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z = 0
     this.w = 1
     return this
+  }
+
+  /**
+   * Creates a new vector with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
+   * @return A new quaternion
+   */
+  public static createIdentity(): Quat {
+    return new Quat(0, 0, 0, 1)
   }
 
   /**
@@ -125,6 +150,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Creates a new vector with all components set to 0.
+   * @return A new quaternion
+   */
+  public static createZero(): Quat {
+    return new Quat(0, 0, 0, 0)
+  }
+
+  /**
    * Initializes the components of this quaternion by taking the components from the given quaternion or vector.
    * @param other
    * @return Reference to `this` for chaining.
@@ -135,6 +168,20 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z = other.z
     this.w = other.w
     return this
+  }
+
+  /**
+   * Creates a new quaternion by taking the components from the given quaternion or vector.
+   * @param other
+   * @return a new quaternion
+   */
+  public static createFrom(other: IVec4): Quat {
+    return new Quat(
+      other.x,
+      other.y,
+      other.z,
+      other.w,
+    )
   }
 
   /**
@@ -152,6 +199,21 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Creates a new quaternion by taking values from the given array in successive order.
+   * @param buffer The array to read from
+   * @param [offset=0] The zero based index at which start reading the values
+   * @return Reference to `this` for chaining.
+   */
+  public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Quat {
+    return new Quat(
+      buffer[offset],
+      buffer[offset + 1],
+      buffer[offset + 2],
+      buffer[offset + 3],
+    )
+  }
+
+  /**
    * Initializes the quaternion from axis and an angle.
    * @param axis The axis as vector
    * @param angle The angle in degrees
@@ -165,6 +227,16 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z = axis.z * scale
     this.w = Math.cos(halfAngle)
     return this
+  }
+
+  /**
+   * Creates a new quaternion from given axis vector and an angle
+   * @param axis The axis vector
+   * @param angle The angle in degree
+   * @return A new quaternion
+   */
+  public static createAxisAngle(axis: IVec3, angle: number): Quat {
+    return Quat.createIdentity().initAxisAngle(axis, angle)
   }
 
   /**
@@ -195,6 +267,17 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Creates a new quaternion from given `yaw` `pitch` and `roll` angles
+   * @param yaw The yaw angle in radians
+   * @param pitch The pitch angle in radians
+   * @param roll The roll angle in radians
+   * @return
+   */
+  public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Quat {
+    return Quat.createIdentity().initYawPitchRoll(yaw, pitch, roll)
+  }
+
+  /**
    * Creates a copy of this quaternion
    * @return The cloned quaternion
    */
@@ -208,16 +291,46 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Copies the source vector to the destination vector
+   * @param src
+   * @param dst
+   * @return the destination vector.
+   */
+  public static clone<T extends IVec4 = Quat>(src: IVec4, dst?: T|IVec4): T {
+    dst = dst || new Quat()
+    dst.x = src.x
+    dst.y = src.y
+    dst.z = src.z
+    dst.w = src.w
+    return dst as T
+  }
+
+  /**
    * Copies the components successively into the given array.
    * @param buffer The array to copy into
    * @param [offset=0] Zero based index where to start writing in the array
    * @return Reference to `this` for chaining.
    */
-  public copyTo<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
+  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
     buffer[offset] = this.x
     buffer[offset + 1] = this.y
     buffer[offset + 2] = this.z
     buffer[offset + 3] = this.w
+    return buffer
+  }
+
+  /**
+   * Copies the components successively into the given array.
+   * @param q The quaternion to copy from
+   * @param buffer The array to copy into
+   * @param [offset=0] Zero based index where to start writing in the array
+   * @return Reference to `this` for chaining.
+   */
+  public static copy<T extends ArrayLike<number>>(q: IVec4, buffer: T, offset: number= 0): T {
+    buffer[offset] = q.x
+    buffer[offset + 1] = q.y
+    buffer[offset + 2] = q.z
+    buffer[offset + 3] = q.w
     return buffer
   }
 
@@ -231,6 +344,16 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Checks for component wise equality with given quaternion
+   * @param q1 First value to compare with
+   * @param q2 Second value to compare with
+   * @return {Boolean} true if components are equal, false otherwise
+   */
+  public static equals(q1: IVec4, q2: IVec4): boolean {
+    return ((q1.x === q2.x) && (q1.y === q2.y) && (q1.z === q2.z) && (q1.w === q2.w))
+  }
+
+  /**
    * Calculates the length of this quaternion
    * @return {Number} The length.
    */
@@ -239,6 +362,18 @@ export class Quat implements IVec2, IVec3, IVec4 {
     const y = this.y
     const z = this.z
     const w = this.w
+    return Math.sqrt(x * x + y * y + z * z + w * w)
+  }
+
+  /**
+   * Calculates the length of a quaternion
+   * @return {Number} The length.
+   */
+  public static len(q: IVec4): number {
+    const x = q.x
+    const y = q.y
+    const z = q.z
+    const w = q.w
     return Math.sqrt(x * x + y * y + z * z + w * w)
   }
 
@@ -255,11 +390,31 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Calculates the squared length of a quaternion
+   * @return {Number} The squared length.
+   */
+  public static lengthSquared(q: IVec4): number {
+    const x = q.x
+    const y = q.y
+    const z = q.z
+    const w = q.w
+    return x * x + y * y + z * z + w * w
+  }
+
+  /**
    * Calculates the dot product with the given quaternion
    * @return {Number} The dot product.
    */
   public dot(other: IVec4): number {
     return this.x * other.x + this.y * other.y + this.z * other.z + this.w * other.w
+  }
+
+  /**
+   * Calculates the dot product with the given quaternion
+   * @return {Number} The dot product.
+   */
+  public static dot(a: IVec4, b: IVec4): number {
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
   }
 
   /**
@@ -272,240 +427,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.z = -this.z
     this.w = -this.w
     return this
-  }
-
-  /**
-   * Negates the `x`, `y` and `z` components of `this`
-   * @return Reference to `this` for chaining.
-   */
-  public conjugate(): Quat {
-    this.x = -this.x
-    this.y = -this.y
-    this.z = -this.z
-    return this
-  }
-
-  /**
-   * Normalizes `this` so that `length` should be `1`
-   * @return Reference to `this` for chaining.
-   */
-  public normalize(): Quat {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
-    this.x = x * d
-    this.y = y * d
-    this.z = z * d
-    this.w = w * d
-    return this
-  }
-
-  /**
-   * Inverts `this` so that multiplication with the original would return the identity quaternion.
-   * @return Reference to `this` for chaining.
-   */
-  public invert(): Quat {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
-    this.x = -x * d
-    this.y = -y * d
-    this.z = -z * d
-    this.w = w * d
-    return this
-  }
-
-  /**
-   * Performs a component wise addition with `other`
-   * @param other
-   * @return Reference to `this` for chaining.
-   */
-  public add(other: IVec4): Quat {
-    this.x += other.x
-    this.y += other.y
-    this.z += other.z
-    this.w += other.w
-    return this
-  }
-
-  /**
-   * Performs a component wise subtraction with `other`
-   * @param other
-   * @return Reference to `this` for chaining.
-   */
-  public subtract(other: IVec4): Quat {
-    this.x -= other.x
-    this.y -= other.y
-    this.z -= other.z
-    this.w -= other.w
-    return this
-  }
-
-  /**
-   * Performs a quaternion multiplication with `other`
-   * @param other
-   * @return Reference to `this` for chaining.
-   */
-  public multiply(other: IVec4): Quat {
-    const x1 = this.x
-    const y1 = this.y
-    const z1 = this.z
-    const w1 = this.w
-
-    const x2 = other.x
-    const y2 = other.y
-    const z2 = other.z
-    const w2 = other.w
-
-    this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
-    this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
-    this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
-    this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    return this
-  }
-
-  /**
-   * Performs a quaternion concatenation with `other`
-   * @param other
-   * @return Reference to `this` for chaining.
-   */
-  public concat(other: IVec4): Quat {
-    const x1 = other.x
-    const y1 = other.y
-    const z1 = other.z
-    const w1 = other.w
-
-    const x2 = this.x
-    const y2 = this.y
-    const z2 = this.z
-    const w2 = this.w
-
-    this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
-    this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
-    this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
-    this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    return this
-  }
-
-  /**
-   * Performs a division with `other`
-   * @param other
-   * @return Reference to `this` for chaining.
-   */
-  public divide(other: IVec4): Quat {
-    const x1 = this.x
-    const y1 = this.y
-    const z1 = this.z
-    const w1 = this.w
-
-    let x2 = other.x
-    let y2 = other.y
-    let z2 = other.z
-    let w2 = other.w
-
-    // invert
-    const s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
-    x2 = -x2 * s
-    y2 = -y2 * s
-    z2 = -z2 * s
-    w2 = w2 * s
-    // multiply
-    this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
-    this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
-    this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
-    this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
-    return this
-  }
-
-  /**
-   * Rotates the given point or vector with `this`
-   * @param vec
-   * @return {Vec3|Vec4}
-   */
-  public transform<T extends IVec3>(vec: T): T {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-
-    const x2 = x + x
-    const y2 = y + y
-    const z2 = z + z
-
-    const wx2 = w * x2
-    const wy2 = w * y2
-    const wz2 = w * z2
-
-    const xx2 = x * x2
-    const xy2 = x * y2
-    const xz2 = x * z2
-
-    const yy2 = y * y2
-    const yz2 = y * z2
-    const zz2 = y * z2
-
-    const vx = vec.x
-    const vy = vec.y
-    const vz = vec.z
-
-    vec.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)
-    vec.y = vx * (xy2 + wz2) + vy * (1 - xx2 - zz2) + vz * (yz2 - wx2)
-    vec.z = vx * (xz2 - wy2) + vy * (yz2 + wx2) + vz * (1 - xx2 - yy2)
-    return vec
-  }
-
-  /**
-   * Creates a new quaternion. The method should be called with four or no arguments. If less than four arguments are given
-   * then some components of the resulting quaternion are going to be `undefined`.
-   * @param [x] The x component
-   * @param [y] The y component
-   * @param [z] The z component
-   * @param [w] The w component
-   * @return
-   */
-  public static create(x?: number, y?: number, z?: number, w?: number): Quat {
-    return new Quat(x, y, z, w)
-  }
-
-  /**
-   * Creates a new vector with all components set to 0.
-   * @return A new quaternion
-   */
-  public static zero(): Quat {
-    return new Quat(0, 0, 0, 0)
-  }
-
-  /**
-   * Creates a new vector with `x`, `y` and `z` components set to `0` and `w` component set to `1`.
-   * @return A new quaternion
-   */
-  public static identity(): Quat {
-    return new Quat(0, 0, 0, 1)
-  }
-
-  /**
-   * Creates a new quaternion from given axis vector and an angle
-   * @param axis The axis vector
-   * @param angle The angle in degree
-   * @return A new quaternion
-   */
-  public static fromAxisAngle(axis: IVec3, angle: number): Quat {
-    return Quat.identity().initAxisAngle(axis, angle)
-  }
-
-  /**
-   * Creates a new quaternion from given `yaw` `pitch` and `roll` angles
-   * @param yaw The yaw angle in radians
-   * @param pitch The pitch angle in radians
-   * @param roll The roll angle in radians
-   * @return
-   */
-  public static fromYawPitchRoll(yaw: number, pitch: number, roll: number): Quat {
-    return Quat.identity().initYawPitchRoll(yaw, pitch, roll)
   }
 
   /**
@@ -524,6 +445,17 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Negates the `x`, `y` and `z` components of `this`
+   * @return Reference to `this` for chaining.
+   */
+  public conjugate(): Quat {
+    this.x = -this.x
+    this.y = -this.y
+    this.z = -this.z
+    return this
+  }
+
+  /**
    * Conjugates the given quaternion.
    * @param quat The quaternion to conjugate.
    * @param [out] The quaternion to write to.
@@ -536,6 +468,23 @@ export class Quat implements IVec2, IVec3, IVec4 {
     out.z = -quat.z
     out.w = quat.w
     return out
+  }
+
+  /**
+   * Normalizes `this` so that `length` should be `1`
+   * @return Reference to `this` for chaining.
+   */
+  public normalize(): Quat {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    const w = this.w
+    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+    this.x = x * d
+    this.y = y * d
+    this.z = z * d
+    this.w = w * d
+    return this
   }
 
   /**
@@ -559,6 +508,23 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Inverts `this` so that multiplication with the original would return the identity quaternion.
+   * @return Reference to `this` for chaining.
+   */
+  public invert(): Quat {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    const w = this.w
+    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+    this.x = -x * d
+    this.y = -y * d
+    this.z = -z * d
+    this.w = w * d
+    return this
+  }
+
+  /**
    * Inverts the given quaternion
    * @param quat The quaternion to invert.
    * @param [out] The quaternion to write to.
@@ -579,6 +545,19 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Performs a component wise addition with `other`
+   * @param other
+   * @return Reference to `this` for chaining.
+   */
+  public add(other: IVec4): Quat {
+    this.x += other.x
+    this.y += other.y
+    this.z += other.z
+    this.w += other.w
+    return this
+  }
+
+  /**
    * Adds two quaternions
    * @param quatA The first quaternion
    * @param quatB The second quaternion
@@ -595,6 +574,19 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Performs a component wise subtraction with `other`
+   * @param other
+   * @return Reference to `this` for chaining.
+   */
+  public subtract(other: IVec4): Quat {
+    this.x -= other.x
+    this.y -= other.y
+    this.z -= other.z
+    this.w -= other.w
+    return this
+  }
+
+  /**
    * Subtracts the second quaternion from the first.
    * @param quatA The first quaternion
    * @param quatB The second quaternion
@@ -608,6 +600,29 @@ export class Quat implements IVec2, IVec3, IVec4 {
     out.z = quatA.z - quatB.z
     out.w = quatA.w - quatB.w
     return out
+  }
+
+  /**
+   * Performs a quaternion multiplication with `other`
+   * @param other
+   * @return Reference to `this` for chaining.
+   */
+  public multiply(other: IVec4): Quat {
+    const x1 = this.x
+    const y1 = this.y
+    const z1 = this.z
+    const w1 = this.w
+
+    const x2 = other.x
+    const y2 = other.y
+    const z2 = other.z
+    const w2 = other.w
+
+    this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
+    this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
+    this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
+    this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+    return this
   }
 
   /**
@@ -637,6 +652,29 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Performs a quaternion concatenation with `other`
+   * @param other
+   * @return Reference to `this` for chaining.
+   */
+  public concat(other: IVec4): Quat {
+    const x1 = other.x
+    const y1 = other.y
+    const z1 = other.z
+    const w1 = other.w
+
+    const x2 = this.x
+    const y2 = this.y
+    const z2 = this.z
+    const w2 = this.w
+
+    this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
+    this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
+    this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
+    this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+    return this
+  }
+
+  /**
    * Concatenates two quaternions
    * @param quatA The first quaternion
    * @param quatB The second quaternion
@@ -663,6 +701,36 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Performs a division with `other`
+   * @param other
+   * @return Reference to `this` for chaining.
+   */
+  public divide(other: IVec4): Quat {
+    const x1 = this.x
+    const y1 = this.y
+    const z1 = this.z
+    const w1 = this.w
+
+    let x2 = other.x
+    let y2 = other.y
+    let z2 = other.z
+    let w2 = other.w
+
+    // invert
+    const s = 1.0 / Math.sqrt(x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
+    x2 = -x2 * s
+    y2 = -y2 * s
+    z2 = -z2 * s
+    w2 = w2 * s
+    // multiply
+    this.x = x1 * w2 + x2 * w1 + y1 * z2 - z1 * y2
+    this.y = y1 * w2 + y2 * w1 + z1 * x2 - x1 * z2
+    this.z = z1 * w2 + z2 * w1 + x1 * y2 - y1 * x2
+    this.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2
+    return this
+  }
+
+  /**
    * Divides the first quaternion by the second
    * @param quatA The first quaternion
    * @param quatB The second quaternion
@@ -682,7 +750,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     let w2 = quatB.w
 
     // invert
-    const s = 1.0 / (x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
+    const s = 1.0 / Math.sqrt(x2 * x2 + y2 * y2 + z2 * z2 + w2 * w2)
     x2 = -x2 * s
     y2 = -y2 * s
     z2 = -z2 * s
@@ -697,18 +765,40 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Tries to convert the given `data` into a quaternion
-   * @param {Array|Quat|Vec4} data
-   * @return The created quaternion.
+   * Rotates the given point or vector with `this`
+   * @param vec
+   * @return {Vec3|Vec4}
    */
-  public static convert(data: number|number[]|IVec4): Quat {
-    if (Array.isArray(data)) {
-      return new Quat(data[0], data[1], data[2], data[3])
-    }
-    if (typeof data === 'number') {
-      return new Quat(data, data, data, data)
-    }
-    return new Quat(data.x, data.y, data.z, data.w)
+  public transform<T extends IVec3>(vec: T): T {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    const w = this.w
+
+    const x2 = x + x
+    const y2 = y + y
+    const z2 = z + z
+
+    const wx2 = w * x2
+    const wy2 = w * y2
+    const wz2 = w * z2
+
+    const xx2 = x * x2
+    const xy2 = x * y2
+    const xz2 = x * z2
+
+    const yy2 = y * y2
+    const yz2 = y * z2
+    const zz2 = z * z2
+
+    const vx = vec.x
+    const vy = vec.y
+    const vz = vec.z
+
+    vec.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)
+    vec.y = vx * (xy2 + wz2) + vy * (1 - xx2 - zz2) + vz * (yz2 - wx2)
+    vec.z = vx * (xz2 - wy2) + vy * (yz2 + wx2) + vz * (1 - xx2 - yy2)
+    return vec
   }
 
   /**
@@ -718,7 +808,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param [out] The vector to write to
    * @return The given `out` parameter or a new vector.
    */
-  public static transform<T extends IVec3>(q: IVec4, v: IVec3, out?: T): T {
+  public static transform<T extends IVec3 = Vec3>(q: IVec4, v: IVec3, out?: T): T {
     const x = q.x
     const y = q.y
     const z = q.z
@@ -738,7 +828,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
     const yy2 = y * y2
     const yz2 = y * z2
-    const zz2 = y * z2
+    const zz2 = z * z2
 
     const vx = v.x
     const vy = v.y
@@ -752,12 +842,31 @@ export class Quat implements IVec2, IVec3, IVec4 {
     return out
   }
 
+  /**
+   * Tries to convert the given `data` into a quaternion
+   * @param {Array|Quat|Vec4} data
+   * @return The created quaternion.
+   */
+  public static convert(data: number|number[]|IVec4): Quat {
+    if (Array.isArray(data)) {
+      return new Quat(data[0], data[1], data[2], data[3])
+    }
+    if (typeof data === 'number') {
+      return new Quat(data, data, data, data)
+    }
+    return new Quat(data.x, data.y, data.z, data.w)
+  }
+
+  public format(fractionDigits: number = 5): string {
+    return Quat.format(this, fractionDigits)
+  }
+
   public static format(vec: IVec4, fractionDigits: number = 5): string {
     return [
       vec.x.toFixed(fractionDigits),
       vec.y.toFixed(fractionDigits),
       vec.z.toFixed(fractionDigits),
       vec.w.toFixed(fractionDigits),
-    ].join(', ')
+    ].join(',')
   }
 }

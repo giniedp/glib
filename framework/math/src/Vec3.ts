@@ -10,6 +10,52 @@ const keyLookup = {
  * Describes a vector with three components.
  */
 export class Vec3 implements IVec2, IVec3 {
+
+  /**
+   * Readonly vector with all components set to zero
+   */
+  public static Zero: IVec3 = Object.freeze({ x: 0, y: 0, z: 0 })
+  /**
+   * Readonly vector with all components set to one
+   */
+  public static One: IVec3 = Object.freeze({ x: 1, y: 1, z: 1 })
+  /**
+   * Readonly vector x component set to one
+   */
+  public static Right: IVec3 = Object.freeze({ x: 1, y: 0, z: 0 })
+  /**
+   * Readonly vector x component set to minus one
+   */
+  public static Left: IVec3 = Object.freeze({ x: -1, y: 0, z: 0 })
+  /**
+   * Readonly vector y component set to one
+   */
+  public static Up: IVec3 = Object.freeze({ x: 0, y: 1, z: 0 })
+  /**
+   * Readonly vector y component set to minus one
+   */
+  public static Down: IVec3 = Object.freeze({ x: 0, y: -1, z: 0 })
+  /**
+   * Readonly vector z component set to one
+   */
+  public static Backward: IVec3 = Object.freeze({ x: 0, y: 0, z: 1 })
+  /**
+   * Readonly vector z component set to minus one
+   */
+  public static Forward: IVec3 = Object.freeze({ x: 0, y: 0, z: -1 })
+  /**
+   * Readonly vector x component set to one
+   */
+  public static UnitX: IVec3 = Object.freeze({ x: 1, y: 0, z: 0 })
+  /**
+   * Readonly vector y component set to one
+   */
+  public static UnitY: IVec3 = Object.freeze({ x: 0, y: 1, z: 0 })
+  /**
+   * Readonly vector z component set to one
+   */
+  public static UnitZ: IVec3 = Object.freeze({ x: 0, y: 0, z: 1 })
+
   /**
    * The X component
    */
@@ -85,6 +131,55 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Creates a new vector.
+   * @param [x] The x component
+   * @param [y] The y component
+   * @param [z] The z component
+   * @return A new vector.
+   */
+  public static create(x?: number, y?: number, z?: number): Vec3 {
+    return new Vec3(x || 0, y || 0, z || 0)
+  }
+
+  /**
+   * Initializes the vector with all components set to 0.
+   * @return this vector for chaining
+   */
+  public initZero(): Vec3 {
+    this.x = 0
+    this.y = 0
+    this.z = 0
+    return this
+  }
+
+  /**
+   * Creates a new vector with all components set to 0.
+   * @return A new vector.
+   */
+  public static createZero(): Vec3 {
+    return new Vec3(0, 0, 0)
+  }
+
+  /**
+   * Initializes the vector with all components set to 1.
+   * @return this vector for chaining
+   */
+  public initOne(): Vec3 {
+    this.x = 1
+    this.y = 1
+    this.z = 1
+    return this
+  }
+
+  /**
+   * Creates a new vector with all components set to 1.
+   * @return A new vector.
+   */
+  public static createOne(): Vec3 {
+    return new Vec3(1, 1, 1)
+  }
+
+  /**
    * Initializes the components of this vector by taking the components from the given vector.
    * @param other The vector to read from
    * @return
@@ -94,6 +189,19 @@ export class Vec3 implements IVec2, IVec3 {
     this.y = other.y
     this.z = other.z
     return this
+  }
+
+  /**
+   * Initializes the components of this vector by taking the components from the given vector.
+   * @param other The vector to read from
+   * @return
+   */
+  public static createFrom(other: IVec3): Vec3 {
+    return new Vec3(
+      other.x,
+      other.y,
+      other.z,
+    )
   }
 
   /**
@@ -110,29 +218,68 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Initializes the components of this vector by taking values from the given array in successive order.
+   * @param buffer The array to read from
+   * @param [offset=0] The zero based index at which start reading the values
+   * @return
+   */
+  public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec3 {
+    return new Vec3(
+      buffer[offset],
+      buffer[offset + 1],
+      buffer[offset + 2],
+    )
+  }
+
+  /**
    * Creates a copy of this vector
    * @return The cloned vector
    */
-  public clone(): Vec3 {
-    return new Vec3(this.x, this.y, this.z)
-  }
-  public cloneTo<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+  public clone<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
     out.x = this.x
     out.y = this.y
     out.z = this.z
     return out
   }
+
+  /**
+   * Copies the source vector to the destination vector
+   * @param src
+   * @param dst
+   * @return the destination vector.
+   */
+  public static clone<T extends IVec3 = Vec3>(src: IVec3, dst?: T|Vec3): T|IVec3 {
+    dst = dst || new Vec3()
+    dst.x = src.x
+    dst.y = src.y
+    dst.z = src.z
+    return dst
+  }
+
   /**
    * Copies the components successively into the given array.
    * @param buffer The array to copy into
    * @param offset Zero based index where to start writing in the array
    * @return {Array|Float32Array}
    */
-  public copyTo<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
+  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
     buffer[offset] = this.x
     buffer[offset + 1] = this.y
     buffer[offset + 2] = this.z
+    return buffer
+  }
+
+  /**
+   * Copies the components successively into the given array.
+   * @param buffer The array to copy into
+   * @param offset Zero based index where to start writing in the array
+   * @return {Array|Float32Array}
+   */
+  public static copy<T extends ArrayLike<number>>(vec: IVec3, buffer: T, offset: number= 0): T {
+    buffer[offset] = vec.x
+    buffer[offset + 1] = vec.y
+    buffer[offset + 2] = vec.z
     return buffer
   }
 
@@ -143,6 +290,15 @@ export class Vec3 implements IVec2, IVec3 {
    */
   public equals(other: IVec3): boolean {
     return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z))
+  }
+
+  /**
+   * Checks for component wise equality with given vector
+   * @param other The vector to compare with
+   * @return true if components are equal, false otherwise
+   */
+  public static equals(v1: IVec3, v2: IVec3): boolean {
+    return ((v2.x === v2.x) && (v2.y === v2.y) && (v2.z === v2.z))
   }
 
   /**
@@ -157,6 +313,18 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Calculates the length of this vector
+   * @param vec
+   * @return The length.
+   */
+  public static len(vec: IVec3): number {
+    const x = vec.x
+    const y = vec.y
+    const z = vec.z
+    return Math.sqrt(x * x + y * y + z * z)
+  }
+
+  /**
    * Calculates the squared length of this vector
    * @return The squared length.
    */
@@ -164,6 +332,18 @@ export class Vec3 implements IVec2, IVec3 {
     const x = this.x
     const y = this.y
     const z = this.z
+    return x * x + y * y + z * z
+  }
+
+  /**
+   * Calculates the squared length of this vector
+   * @param vec
+   * @return The squared length.
+   */
+  public static lengthSquared(vec: IVec3): number {
+    const x = vec.x
+    const y = vec.y
+    const z = vec.z
     return x * x + y * y + z * z
   }
 
@@ -180,6 +360,19 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Calculates the distance to the given vector
+   * @param a
+   * @param b
+   * @return The distance between the vectors.
+   */
+  public static distance(a: IVec3, b: IVec3): number {
+    const x = a.x - b.x
+    const y = a.y - b.y
+    const z = a.z - b.z
+    return Math.sqrt(x * x + y * y + z * z)
+  }
+
+  /**
    * Calculates the squared distance to the given vector
    * @param other The distant vector
    * @return The squared distance between the vectors.
@@ -192,12 +385,35 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Calculates the squared distance to the given vector
+   * @param a
+   * @param b
+   * @return The squared distance between the vectors.
+   */
+  public static distanceSquared(a: IVec3, b: IVec3): number {
+    const x = a.x - b.x
+    const y = a.y - b.y
+    const z = a.z - b.z
+    return x * x + y * y + z * z
+  }
+
+  /**
    * Calculates the dot product with the given vector
    * @param other
    * @return The dot product.
    */
   public dot(other: IVec3): number {
     return this.x * other.x + this.y * other.y + this.z * other.z
+  }
+
+  /**
+   * Calculates the dot product with the given vector
+   * @param a
+   * @param b
+   * @return The dot product.
+   */
+  public static dot(a: IVec3, b: IVec3): number {
+    return a.x * b.x + a.y * b.y + a.z * b.z
   }
 
   /**
@@ -216,6 +432,24 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Calculates the cross product between two vectors.
+   * @param vecA The first vector.
+   * @param vecB The second vector.
+   * @param [out] The vector to write to.
+   * @return The given `out` argument or a new vector.
+   */
+  public static cross<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    const x = vecA.y * vecB.z - vecA.z * vecB.y
+    const y = vecA.z * vecB.x - vecA.x * vecB.z
+    const z = vecA.x * vecB.y - vecA.y * vecB.x
+    out.x = x
+    out.y = y
+    out.z = z
+    return out
+  }
+
+  /**
    * Normalizes `this` vector. Applies the result to `this` vector.
    * @return this vector for chaining
    */
@@ -231,6 +465,24 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Normalizes the given vector.
+   * @param vec The vector to normalize.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static normalize<T extends IVec3 = Vec3>(vec: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    const x = vec.x
+    const y = vec.y
+    const z = vec.z
+    const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+    out.x = x * d
+    out.y = y * d
+    out.z = z * d
+    return out
+  }
+
+  /**
    * Inverts this vector.
    * @return this vector for chaining
    */
@@ -239,6 +491,20 @@ export class Vec3 implements IVec2, IVec3 {
     this.y = 1.0 / this.y
     this.z = 1.0 / this.z
     return this
+  }
+
+  /**
+   * Inverts the given vector.
+   * @param vec The vector to invert.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static invert<T extends IVec3 = Vec3>(vec: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = 1.0 / vec.x
+    out.y = 1.0 / vec.y
+    out.z = 1.0 / vec.z
+    return out
   }
 
   /**
@@ -253,15 +519,17 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this += other * scale`
-   * @param other The vector to add
-   * @return this vector for chaining
+   * Negates this vector.
+   * @param vec The vector to negate.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
    */
-  public addScaled(other: IVec3, scale: number): Vec3 {
-    this.x += other.x * scale
-    this.y += other.y * scale
-    this.z += other.z * scale
-    return this
+  public static negate<T extends IVec3 = Vec3>(vec: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = -vec.x
+    out.y = -vec.y
+    out.z = -vec.z
+    return out
   }
 
   /**
@@ -277,6 +545,21 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Adds two vectors.
+   * @param vecA The first vector.
+   * @param vecB The second vector.
+   * @param out The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static add<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vecA.x + vecB.x
+    out.y = vecA.y + vecB.y
+    out.z = vecA.z + vecB.z
+    return out
+  }
+
+  /**
    * Performs the calculation `this += scalar`
    * @param scalar The value to add
    * @return this vector for chaining
@@ -289,17 +572,32 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this -= other * scale`
-   * @param other The vector to subtract
-   * @param scale The value to multoply to `other`
+   * Adds a scalar to each component of a vector.
+   * @param vec The first vector.
+   * @param scalar The scalar to add.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static addScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vec.x + scalar
+    out.y = vec.y + scalar
+    out.z = vec.z + scalar
+    return out
+  }
+
+  /**
+   * Performs the calculation `this += other * scale`
+   * @param other The vector to add
    * @return this vector for chaining
    */
-  public subtractScaled(other: IVec3, scale: number): Vec3 {
-    this.x -= other.x * scale
-    this.y -= other.y * scale
-    this.z -= other.z * scale
+  public addScaled(other: IVec3, scale: number): Vec3 {
+    this.x += other.x * scale
+    this.y += other.y * scale
+    this.z += other.z * scale
     return this
   }
+
   /**
    * Performs the calculation `this -= other`
    * @param other The vector to subtract
@@ -313,6 +611,21 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Subtracts the second vector from the first.
+   * @param vecA The first vector.
+   * @param vecB The second vector.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static subtract<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vecA.x - vecB.x
+    out.y = vecA.y - vecB.y
+    out.z = vecA.z - vecB.z
+    return out
+  }
+
+  /**
    * Performs the calculation `this -= scalar`
    * @param scalar The value to subtract
    * @return this vector for chaining
@@ -321,6 +634,34 @@ export class Vec3 implements IVec2, IVec3 {
     this.x -= scalar
     this.y -= scalar
     this.z -= scalar
+    return this
+  }
+
+  /**
+   * Subtracts a scalar from each component of a vector.
+   * @param vec The first vector.
+   * @param scalar The scalar to add.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static subtractScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vec.x - scalar
+    out.y = vec.y - scalar
+    out.z = vec.z - scalar
+    return out
+  }
+
+  /**
+   * Performs the calculation `this -= other * scale`
+   * @param other The vector to subtract
+   * @param scale The value to multoply to `other`
+   * @return this vector for chaining
+   */
+  public subtractScaled(other: IVec3, scale: number): Vec3 {
+    this.x -= other.x * scale
+    this.y -= other.y * scale
+    this.z -= other.z * scale
     return this
   }
 
@@ -337,6 +678,21 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Multiplies two vectors.
+   * @param vecA The first vector.
+   * @param vecB The second vector.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static multiply<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vecA.x * vecB.x
+    out.y = vecA.y * vecB.y
+    out.z = vecA.z * vecB.z
+    return out
+  }
+
+  /**
    * Performs the calculation `this *= scalar`
    * @param scalar The value to multiply
    * @return this vector for chaining
@@ -349,6 +705,21 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Multiplies a scalar to each component of a vector.
+   * @param vec The first vector.
+   * @param scalar The scalar to add.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static multiplyScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vec.x * scalar
+    out.y = vec.y * scalar
+    out.z = vec.z * scalar
+    return out
+  }
+
+  /**
    * Performs the calculation `this /= other`
    * @param other The vector to divide
    * @return this vector for chaining
@@ -358,6 +729,21 @@ export class Vec3 implements IVec2, IVec3 {
     this.y /= other.y
     this.z /= other.z
     return this
+  }
+
+  /**
+   * Divides the components of the first vector by the components of the second vector.
+   * @param vecA The first vector.
+   * @param vecB The second vector.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static divide<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vecA.x / vecB.x
+    out.y = vecA.y / vecB.y
+    out.z = vecA.z / vecB.z
+    return out
   }
 
   /**
@@ -374,6 +760,22 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Divides the components of the first vector by the scalar.
+   * @param vec The first vector.
+   * @param scalar The scalar to use for division.
+   * @param out The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static divideScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    scalar = 1.0 / scalar
+    out.x = vec.x * scalar
+    out.y = vec.y * scalar
+    out.z = vec.z * scalar
+    return out
+  }
+
+  /**
    * Performs the calculation `this = this * a + b`
    * @param a The vector to multiply.
    * @param b The vector to add on top of the multiplication.
@@ -387,11 +789,43 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Multiplies two vectors and adds the third vector.
+   * @param vecA The vector to multiply.
+   * @param vecB The vector to multiply.
+   * @param add The vector to add on top of the multiplication.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static multiplyAdd<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, add: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vecA.x * vecB.x + add.x
+    out.y = vecA.y * vecB.y + add.y
+    out.z = vecA.z * vecB.z + add.z
+    return out
+  }
+
+  /**
+   * Multiplies a vector with a scalar and adds another vector.
+   * @param vecA The vector to multiply.
+   * @param mul The scalar to multiply.
+   * @param add The vector to add on top of the multiplication.
+   * @param [out] The vector to write to.
+   * @return The given `out` parameter or a new vector.
+   */
+  public static multiplyScalarAdd<T extends IVec3 = Vec3>(vecA: IVec3, mul: number, add: IVec3, out?: T|Vec3): T|Vec3 {
+    out = (out || new Vec3()) as any
+    out.x = vecA.x * mul + add.x
+    out.y = vecA.y * mul + add.y
+    out.z = vecA.z * mul + add.z
+    return out
+  }
+
+  /**
    * Transforms `this` with the given quaternion.
    * @param quat
    * @return this vector for chaining
    */
-  public selfTransformQuat(quat: IVec4): Vec3 {
+  public transformByQuat(quat: IVec4): Vec3 {
     const x = quat.x
     const y = quat.y
     const z = quat.z
@@ -428,7 +862,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @param mat
    * @return this vector for chaining
    */
-  public selfTransformMat4(mat: { data: number[]|Float64Array }): Vec3 {
+  public transformByMat4(mat: { data: number[]|Float64Array }): Vec3 {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -445,7 +879,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @param mat
    * @return this vector for chaining
    */
-  public selfTransformMat3(mat: { data: number[]|Float64Array }): Vec3 {
+  public transformByMat3(mat: { data: number[]|Float64Array }): Vec3 {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -461,376 +895,13 @@ export class Vec3 implements IVec2, IVec3 {
    * @param mat
    * @return this vector for chaining
    */
-  public selfTransformMat2(mat: { data: number[]|Float64Array }): Vec3 {
+  public transformByMat2(mat: { data: number[]|Float64Array }): Vec3 {
     const x = this.x
     const y = this.y
     const d = mat.data
     this.x = x * d[0] + y * d[2]
     this.y = x * d[1] + y * d[3]
     return this
-  }
-
-  /**
-   * Readonly vector with all components set to zero
-   */
-  public static Zero = Object.freeze(new Vec3(0, 0, 0))
-  /**
-   * Readonly vector with all components set to one
-   */
-  public static One = Object.freeze(new Vec3(1, 1, 1))
-  /**
-   * Readonly vector x component set to one
-   */
-  public static Right = Object.freeze(new Vec3(1, 0, 0))
-  /**
-   * Readonly vector x component set to minus one
-   */
-  public static Left = Object.freeze(new Vec3(-1, 0, 0))
-  /**
-   * Readonly vector y component set to one
-   */
-  public static Up = Object.freeze(new Vec3(0, 1, 0))
-  /**
-   * Readonly vector y component set to minus one
-   */
-  public static Down = Object.freeze(new Vec3(0, -1, 0))
-  /**
-   * Readonly vector z component set to one
-   */
-  public static Backward = Object.freeze(new Vec3(0, 0, 1))
-  /**
-   * Readonly vector z component set to minus one
-   */
-  public static Forward = Object.freeze(new Vec3(0, 0, -1))
-  /**
-   * Readonly vector x component set to one
-   */
-  public static UnitX = Object.freeze(new Vec3(1, 0, 0))
-  /**
-   * Readonly vector y component set to one
-   */
-  public static UnitY = Object.freeze(new Vec3(0, 1, 0))
-  /**
-   * Readonly vector z component set to one
-   */
-  public static UnitZ = Object.freeze(new Vec3(0, 0, 1))
-
-  /**
-   * Creates a new vector.
-   * @param [x] The x component
-   * @param [y] The y component
-   * @param [z] The z component
-   * @return A new vector.
-   */
-  public static create(x?: number, y?: number, z?: number): Vec3 {
-    return new Vec3(x || 0, y || 0, z || 0)
-  }
-
-  /**
-   * Creates a new vector with all components set to 0.
-   * @return A new vector.
-   */
-  public static zero(): Vec3 {
-    return new Vec3(0, 0, 0)
-  }
-
-  /**
-   * Creates a new vector with all components set to 1.
-   * @return A new vector.
-   */
-  public static one(): Vec3 {
-    return new Vec3(1, 1, 1)
-  }
-
-  /**
-   * Copies the source vector to the destination vector
-   * @param src
-   * @param dst
-   * @return the destination vector.
-   */
-  public static clone<T extends IVec3 = Vec3>(src: IVec3, dst?: T|Vec3): T|IVec3 {
-    dst = dst || new Vec3()
-    dst.x = src.x
-    dst.y = src.y
-    dst.z = src.z
-    return dst
-  }
-
-  /**
-   * Calculates the length of this vector
-   * @param vec
-   * @return The length.
-   */
-  public static len(vec: IVec3): number {
-    const x = vec.x
-    const y = vec.y
-    const z = vec.z
-    return Math.sqrt(x * x + y * y + z * z)
-  }
-
-  /**
-   * Calculates the squared length of this vector
-   * @param vec
-   * @return The squared length.
-   */
-  public static lengthSquared(vec: IVec3): number {
-    const x = vec.x
-    const y = vec.y
-    const z = vec.z
-    return x * x + y * y + z * z
-  }
-
-  /**
-   * Calculates the distance to the given vector
-   * @param a
-   * @param b
-   * @return The distance between the vectors.
-   */
-  public static distance(a: IVec3, b: IVec3): number {
-    const x = a.x - b.x
-    const y = a.y - b.y
-    const z = a.z - b.z
-    return Math.sqrt(x * x + y * y + z * z)
-  }
-
-  /**
-   * Calculates the squared distance to the given vector
-   * @param a
-   * @param b
-   * @return The squared distance between the vectors.
-   */
-  public static distanceSquared(a: IVec3, b: IVec3): number {
-    const x = a.x - b.x
-    const y = a.y - b.y
-    const z = a.z - b.z
-    return x * x + y * y + z * z
-  }
-
-  /**
-   * Calculates the dot product with the given vector
-   * @param a
-   * @param b
-   * @return The dot product.
-   */
-  public static dot(a: IVec3, b: IVec3): number {
-    return a.x * b.x + a.y * b.y + a.z * b.z
-  }
-
-  /**
-   * Normalizes the given vector.
-   * @param vec The vector to normalize.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static normalize<T extends IVec3 = Vec3>(vec: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    const x = vec.x
-    const y = vec.y
-    const z = vec.z
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
-    out.x = x * d
-    out.y = y * d
-    out.z = z * d
-    return out
-  }
-
-  /**
-   * Calculates the cross product between two vectors.
-   * @param vecA The first vector.
-   * @param vecB The second vector.
-   * @param [out] The vector to write to.
-   * @return The given `out` argument or a new vector.
-   */
-  public static cross<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    const x = vecA.y * vecB.z - vecA.z * vecB.y
-    const y = vecA.z * vecB.x - vecA.x * vecB.z
-    const z = vecA.x * vecB.y - vecA.y * vecB.x
-    out.x = x
-    out.y = y
-    out.z = z
-    return out
-  }
-
-  /**
-   * Inverts the given vector.
-   * @param vec The vector to invert.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static invert<T extends IVec3 = Vec3>(vec: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = 1.0 / vec.x
-    out.y = 1.0 / vec.y
-    out.z = 1.0 / vec.z
-    return out
-  }
-
-  /**
-   * Negates this vector.
-   * @param vec The vector to negate.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static negate<T extends IVec3 = Vec3>(vec: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = -vec.x
-    out.y = -vec.y
-    out.z = -vec.z
-    return out
-  }
-
-  /**
-   * Adds two vectors.
-   * @param vecA The first vector.
-   * @param vecB The second vector.
-   * @param out The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static add<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vecA.x + vecB.x
-    out.y = vecA.y + vecB.y
-    out.z = vecA.z + vecB.z
-    return out
-  }
-
-  /**
-   * Adds a scalar to each component of a vector.
-   * @param vec The first vector.
-   * @param scalar The scalar to add.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static addScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vec.x + scalar
-    out.y = vec.y + scalar
-    out.z = vec.z + scalar
-    return out
-  }
-
-  /**
-   * Subtracts the second vector from the first.
-   * @param vecA The first vector.
-   * @param vecB The second vector.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static subtract<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vecA.x - vecB.x
-    out.y = vecA.y - vecB.y
-    out.z = vecA.z - vecB.z
-    return out
-  }
-
-  /**
-   * Subtracts a scalar from each component of a vector.
-   * @param vec The first vector.
-   * @param scalar The scalar to add.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static subtractScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vec.x - scalar
-    out.y = vec.y - scalar
-    out.z = vec.z - scalar
-    return out
-  }
-
-  /**
-   * Multiplies two vectors.
-   * @param vecA The first vector.
-   * @param vecB The second vector.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static multiply<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vecA.x * vecB.x
-    out.y = vecA.y * vecB.y
-    out.z = vecA.z * vecB.z
-    return out
-  }
-
-  /**
-   * Multiplies a scalar to each component of a vector.
-   * @param vec The first vector.
-   * @param scalar The scalar to add.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static multiplyScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vec.x * scalar
-    out.y = vec.y * scalar
-    out.z = vec.z * scalar
-    return out
-  }
-
-  /**
-   * Divides the components of the first vector by the components of the second vector.
-   * @param vecA The first vector.
-   * @param vecB The second vector.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static divide<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vecA.x / vecB.x
-    out.y = vecA.y / vecB.y
-    out.z = vecA.z / vecB.z
-    return out
-  }
-
-  /**
-   * Divides the components of the first vector by the scalar.
-   * @param vec The first vector.
-   * @param scalar The scalar to use for division.
-   * @param out The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static divideScalar<T extends IVec3 = Vec3>(vec: IVec3, scalar: number, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    scalar = 1.0 / scalar
-    out.x = vec.x * scalar
-    out.y = vec.y * scalar
-    out.z = vec.z * scalar
-    return out
-  }
-
-  /**
-   * Multiplies two vectors and adds the third vector.
-   * @param vecA The vector to multiply.
-   * @param vecB The vector to multiply.
-   * @param add The vector to add on top of the multiplication.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static multiplyAdd<T extends IVec3 = Vec3>(vecA: IVec3, vecB: IVec3, add: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vecA.x * vecB.x + add.x
-    out.y = vecA.y * vecB.y + add.y
-    out.z = vecA.z * vecB.z + add.z
-    return out
-  }
-
-  /**
-   * Multiplies a vector with a scalar and adds another vector.
-   * @param vecA The vector to multiply.
-   * @param mul The scalar to multiply.
-   * @param add The vector to add on top of the multiplication.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new vector.
-   */
-  public static multiplyScalarAdd<T extends IVec3 = Vec3>(vecA: IVec3, mul: number, add: IVec3, out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
-    out.x = vecA.x * mul + add.x
-    out.y = vecA.y * mul + add.y
-    out.z = vecA.z * mul + add.z
-    return out
   }
 
   /**
@@ -1021,7 +1092,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @param {Vec2|Vec3|Vec4|Quat|Array|number} data
    * @return
    */
-  public static convert(data: any): Vec3 {
+  public static convert(data: number | IVec3 | number[]): Vec3 {
     if (typeof data === 'number') {
       return new Vec3(data, data, data)
     }

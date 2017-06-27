@@ -64,13 +64,13 @@ export class LightComponent implements Component, LightProperties {
 
     this.position = Vec3.convert(this.position || Vec3.create(0, 0, 0))
     this.direction = Vec3.convert(this.direction || Vec3.create(0, 0, -1))
-    this.color = Vec4.from(this.color || Vec4.create(1, 1, 1, 1))
+    this.color = Vec4.convert(this.color || Vec4.create(1, 1, 1, 1))
     this.type = this.type
     this.packedData = {
-      position: Vec4.zero(),
-      direction: Vec4.zero(),
-      color: Vec4.zero(),
-      misc: Vec4.zero(),
+      position: Vec4.createZero(),
+      direction: Vec4.createZero(),
+      color: Vec4.createZero(),
+      misc: Vec4.createZero(),
     }
   }
 

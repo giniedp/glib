@@ -19,8 +19,8 @@ export interface LightBinding {
 }
 
 export class Binder {
-  public Position: Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.zero() }
-  public Direction: Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.zero() }
+  public Position: Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.createZero() }
+  public Direction: Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.createZero() }
   public World: Binding<Mat4> = { name: 'World', type: 'mat4', value: Mat4.identity() }
 
   private transformBindings = [
@@ -39,24 +39,24 @@ export class Binder {
     name: 'ViewProjection', type: 'mat4', value: Mat4.identity(),
   }
   public CameraPosition: Binding<IVec3> = {
-    name: 'CameraPosition', type: 'vec3', value: Vec3.zero(),
+    name: 'CameraPosition', type: 'vec3', value: Vec3.createZero(),
   }
   public CameraDirection: Binding<IVec3> = {
-    name: 'CameraDirection', type: 'vec3', value: Vec3.zero(),
+    name: 'CameraDirection', type: 'vec3', value: Vec3.createZero(),
   }
 
   public TargetSize: Binding<IVec2> = {
-    name: 'TargetSize', type: 'vec2', value: Vec2.zero(),
+    name: 'TargetSize', type: 'vec2', value: Vec2.createZero(),
   }
   public TargetPixelSize: Binding<IVec2> = {
-    name: 'TargetPixelSize', type: 'vec2', value: Vec2.zero(),
+    name: 'TargetPixelSize', type: 'vec2', value: Vec2.createZero(),
   }
 
   public ViewportSize: Binding<IVec2> = {
-    name: 'ViewportSize', type: 'vec2', value: Vec2.zero(),
+    name: 'ViewportSize', type: 'vec2', value: Vec2.createZero(),
   }
   public ViewportPixelSize: Binding<IVec2> = {
-    name: 'ViewportPixelSize', type: 'vec2', value: Vec2.zero(),
+    name: 'ViewportPixelSize', type: 'vec2', value: Vec2.createZero(),
   }
 
   private viewBindings = [
@@ -111,10 +111,10 @@ export class Binder {
 
   private buildLightBinding(i: number): LightBinding {
     return {
-      Position: { name: `Lights${i}Position`, type: 'vec4', value: Vec4.zero() },
-      Direction: { name: `Lights${i}Direction`, type: 'vec4', value: Vec4.zero() },
-      Color: { name: `Lights${i}Color`, type: 'vec4', value: Vec4.zero() },
-      Misc: { name: `Lights${i}Misc`, type: 'vec4', value: Vec4.zero() },
+      Position: { name: `Lights${i}Position`, type: 'vec4', value: Vec4.createZero() },
+      Direction: { name: `Lights${i}Direction`, type: 'vec4', value: Vec4.createZero() },
+      Color: { name: `Lights${i}Color`, type: 'vec4', value: Vec4.createZero() },
+      Misc: { name: `Lights${i}Misc`, type: 'vec4', value: Vec4.createZero() },
     }
   }
 

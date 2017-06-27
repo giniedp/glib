@@ -68,11 +68,11 @@ export class HeightMap {
   }
 
   public calculateNormals(): HeightMap {
-    const normal = Vec3.zero()
+    const normal = Vec3.createZero()
     let index = 0
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
-        this.calculateNormalAt(x, y, normal).copyTo(this.normals, index)
+        this.calculateNormalAt(x, y, normal).copy(this.normals, index)
         index += 3
       }
     }
@@ -85,7 +85,7 @@ export class HeightMap {
     const width = this.width
     let sIndex = x + z * width
     const field = this.heights
-    out = out || Vec3.zero()
+    out = out || Vec3.createZero()
 
     sIndex -= width
     const tl = (field[sIndex - 1] || 0) * w1
@@ -110,13 +110,13 @@ export class HeightMap {
   public rescale(scale: number): HeightMap {
     let index = 0
     let nIndex = 0
-    const normal = Vec3.zero()
+    const normal = Vec3.createZero()
 
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
         this.heights[index] *= scale
         this.normals[nIndex + 1] /= scale
-        normal.initFromBuffer(this.normals, nIndex).normalize().copyTo(this.normals, nIndex)
+        normal.initFromBuffer(this.normals, nIndex).normalize().copy(this.normals, nIndex)
         index += 1
         nIndex += 3
       }
