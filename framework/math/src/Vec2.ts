@@ -688,7 +688,7 @@ export class Vec2 implements IVec2 {
    * @param mat
    * @return {Vec2} Reference to `this` for chaining.
    */
-  public transformByMat4(mat: { data: number[]|Float32Array }): IVec2 {
+  public transformByMat4(mat: { data: ArrayLike<number> }): IVec2 {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -702,7 +702,7 @@ export class Vec2 implements IVec2 {
    * @param mat
    * @return {Vec2} Reference to `this` for chaining.
    */
-  public transformByMat3(mat: { data: number[]|Float32Array }): IVec2 {
+  public transformByMat3(mat: { data: ArrayLike<number> }): IVec2 {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -716,7 +716,7 @@ export class Vec2 implements IVec2 {
    * @param mat
    * @return {Vec2} Reference to `this` for chaining.
    */
-  public transformByMat2(mat: { data: number[]|Float32Array }): IVec2 {
+  public transformByMat2(mat: { data: ArrayLike<number> }): IVec2 {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -912,6 +912,6 @@ export class Vec2 implements IVec2 {
   }
 
   public static format(vec: IVec2, fractionDigits: number = 5) {
-    return [vec.x.toFixed(fractionDigits), vec.y.toFixed(5)].join(', ')
+    return [vec.x.toFixed(fractionDigits), vec.y.toFixed(5)].join(',')
   }
 }

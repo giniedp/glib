@@ -14,7 +14,7 @@ export class ModelComponent implements Component {
 
   public model: GraphicsModel
   public transform: TransformComponent
-  public world: Mat4 = Mat4.identity()
+  public world: Mat4 = Mat4.createIdentity()
 
   constructor(params?: any) {
     if (params) {

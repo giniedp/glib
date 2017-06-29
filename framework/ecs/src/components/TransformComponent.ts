@@ -17,11 +17,11 @@ export class TransformComponent implements Component {
   public scale = Vec3.createOne()
   public position: Vec3 = Vec3.createZero()
   public rotation: Quat = Quat.createIdentity()
-  public worldMat: Mat4 = Mat4.identity()
-  public inverseMat: Mat4 = Mat4.identity()
+  public worldMat: Mat4 = Mat4.createIdentity()
+  public inverseMat: Mat4 = Mat4.createIdentity()
 
   public tempQuat = Quat.createIdentity()
-  public tempMat = Mat4.identity()
+  public tempMat = Mat4.createIdentity()
   public tempVec = Vec3.createZero()
   public dirty = true
 

@@ -1,4 +1,4 @@
-import { IVec3, Vec3 } from '@glib/math'
+import { IVec3, Mat2, Mat3, Mat4, Quat, Vec3 } from '@glib/math'
 
 describe('Vec3', () => {
 
@@ -74,6 +74,26 @@ describe('Vec3', () => {
     it ('inits all components', () => expectComponents(a.init(1, 2, 3), 1, 2, 3) )
     it ('returns same instance', () => expect(a.init(1, 2, 3)).toBe(a))
   })
+  describe('#initZero', () => {
+    it ('creates a new Vec3', () => {
+      expectComponents(new Vec3(1, 2, 3).initZero(), 0, 0, 0)
+    })
+  })
+  describe('.createZero', () => {
+    it ('creates a new Vec3', () => {
+      expectComponents(Vec3.createZero(), 0, 0, 0)
+    })
+  })
+  describe('#initOne', () => {
+    it ('creates a new Vec3', () => {
+      expectComponents(new Vec3(1, 2, 3).initOne(), 1, 1, 1)
+    })
+  })
+  describe('.createOne', () => {
+    it ('creates a new Vec3', () => {
+      expectComponents(Vec3.createOne(), 1, 1, 1)
+    })
+  })
   describe('#initFrom', () => {
     beforeEach(() => {
       b = new Vec3(1, 2, 3)
@@ -81,9 +101,18 @@ describe('Vec3', () => {
     it ('inits all components', () => expectComponents(a.initFrom(b), 1, 2, 3) )
     it ('returns same instance', () => expect(a.initFrom(b)).toBe(a))
   })
+  describe('.createFrom', () => {
+    beforeEach(() => {
+      b = new Vec3(1, 2, 3)
+    })
+    it ('inits all components', () => expectComponents(Vec3.createFrom(b), 1, 2, 3) )
+  })
   describe('#initFromBuffer', () => {
     it ('inits all components', () => expectComponents(a.initFromBuffer([1, 2, 3, 4], 1), 2, 3, 4) )
     it ('returns same instance', () => expect(a.initFromBuffer([1, 2, 3, 4, 5], 1)).toBe(a))
+  })
+  describe('.createFromBuffer', () => {
+    it ('inits all components', () => expectComponents(Vec3.createFromBuffer([1, 2, 3, 4], 1), 2, 3, 4) )
   })
   describe('#clone', () => {
     beforeEach(() => {
@@ -99,34 +128,54 @@ describe('Vec3', () => {
     it ('clones all components', () => expectComponents(Vec3.clone(a), 1, 2, 3) )
     it ('returns new instance', () => expect(Vec3.clone(a)).not.toBe(a))
   })
-  describe('#copyTo', () => {
+  describe('#copy', () => {
     beforeEach(() => {
       a = new Vec3(1, 2, 3)
     })
     it ('copies components', () => expect(a.copy([])).toEqual([1, 2, 3]))
     it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
   })
-  describe('#equals', () => {
+  describe('.copy', () => {
     beforeEach(() => {
       a = new Vec3(1, 2, 3)
-      b = new Vec3(1, 2, 3)
-      c = new Vec3(4, 3, 2)
     })
-    it ('returns true when components are equal', () => expect(a.equals(b)).toBe(true))
-    it ('returns fase when components are not equal', () => expect(a.equals(c)).toBe(false))
+    it ('copies components', () => expect(Vec3.copy(a, [])).toEqual([1, 2, 3]))
+    it ('copies components at offset', () => expect(Vec3.copy(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
+  })
+  describe('#equals', () => {
+    it ('compares components', () => {
+      expect(Vec3.create(0, 0, 0).equals(Vec3.create(0, 0, 0))).toBe(true)
+      expect(Vec3.create(1, 0, 0).equals(Vec3.create(1, 0, 0))).toBe(true)
+      expect(Vec3.create(0, 1, 0).equals(Vec3.create(0, 1, 0))).toBe(true)
+      expect(Vec3.create(0, 0, 1).equals(Vec3.create(0, 0, 1))).toBe(true)
+      expect(Vec3.create(0, 0, 0).equals(Vec3.create(1, 0, 0))).toBe(false)
+      expect(Vec3.create(0, 0, 0).equals(Vec3.create(0, 1, 0))).toBe(false)
+      expect(Vec3.create(0, 0, 0).equals(Vec3.create(0, 0, 1))).toBe(false)
+    })
+  })
+  describe('.equals', () => {
+    it ('compares components', () => {
+      expect(Vec3.equals(Vec3.create(0, 0, 0), Vec3.create(0, 0, 0))).toBe(true)
+      expect(Vec3.equals(Vec3.create(1, 0, 0), Vec3.create(1, 0, 0))).toBe(true)
+      expect(Vec3.equals(Vec3.create(0, 1, 0), Vec3.create(0, 1, 0))).toBe(true)
+      expect(Vec3.equals(Vec3.create(0, 0, 1), Vec3.create(0, 0, 1))).toBe(true)
+      expect(Vec3.equals(Vec3.create(0, 0, 0), Vec3.create(1, 0, 0))).toBe(false)
+      expect(Vec3.equals(Vec3.create(0, 0, 0), Vec3.create(0, 1, 0))).toBe(false)
+      expect(Vec3.equals(Vec3.create(0, 0, 0), Vec3.create(0, 0, 1))).toBe(false)
+    })
   })
   describe('#length', () => {
     it ('calculates length', () => {
-      expect(new Vec3(2, 0, 0).length()).toBe(2)
-      expect(new Vec3(0, 3, 0).length()).toBe(3)
-      expect(new Vec3(0, 0, 4).length()).toBe(4)
+      expect(Vec3.create(2, 0, 0).length()).toBe(2)
+      expect(Vec3.create(0, 3, 0).length()).toBe(3)
+      expect(Vec3.create(0, 0, 4).length()).toBe(4)
     })
   })
   describe('.len', () => {
     it ('calculates length', () => {
-      expect(Vec3.len(new Vec3(2, 0, 0))).toBe(2)
-      expect(Vec3.len(new Vec3(0, 3, 0))).toBe(3)
-      expect(Vec3.len(new Vec3(0, 0, 4))).toBe(4)
+      expect(Vec3.len(Vec3.create(2, 0, 0))).toBe(2)
+      expect(Vec3.len(Vec3.create(0, 3, 0))).toBe(3)
+      expect(Vec3.len(Vec3.create(0, 0, 4))).toBe(4)
     })
   })
   describe('#lengthSquared', () => {
@@ -173,16 +222,30 @@ describe('Vec3', () => {
   })
   describe('#dot', () => {
     it ('calculates dot', () => {
-      expect(new Vec3(2, 0, 0).dot(new Vec3(4, 0, 0))).toBe(8)
-      expect(new Vec3(0, 3, 0).dot(new Vec3(0, 6, 0))).toBe(18)
-      expect(new Vec3(0, 0, 4).dot(new Vec3(0, 0, 8))).toBe(32)
+      expect(Vec3.create(2, 0, 0).dot(Vec3.create(4, 0, 0))).toBe(8)
+      expect(Vec3.create(0, 3, 0).dot(Vec3.create(0, 6, 0))).toBe(18)
+      expect(Vec3.create(0, 0, 4).dot(Vec3.create(0, 0, 8))).toBe(32)
     })
   })
   describe('.dot', () => {
     it ('calculates dot', () => {
-      expect(Vec3.dot(new Vec3(2, 0, 0), new Vec3(4, 0, 0))).toBe(8)
-      expect(Vec3.dot(new Vec3(0, 3, 0), new Vec3(0, 6, 0))).toBe(18)
-      expect(Vec3.dot(new Vec3(0, 0, 4), new Vec3(0, 0, 8))).toBe(32)
+      expect(Vec3.dot(Vec3.create(2, 0, 0), Vec3.create(4, 0, 0))).toBe(8)
+      expect(Vec3.dot(Vec3.create(0, 3, 0), Vec3.create(0, 6, 0))).toBe(18)
+      expect(Vec3.dot(Vec3.create(0, 0, 4), Vec3.create(0, 0, 8))).toBe(32)
+    })
+  })
+  describe('#cross', () => {
+    it ('calculates cross product', () => {
+      expectComponents(Vec3.create(1, 0, 0).cross(Vec3.create(0, 1, 0)), 0, 0, 1)
+      expectComponents(Vec3.create(0, 1, 0).cross(Vec3.create(0, 0, 1)), 1, 0, 0)
+      expectComponents(Vec3.create(0, 0, 1).cross(Vec3.create(1, 0, 0)), 0, 1, 0)
+    })
+  })
+  describe('.cross', () => {
+    it ('calculates cross product', () => {
+      expectComponents(Vec3.cross(Vec3.create(1, 0, 0), Vec3.create(0, 1, 0)), 0, 0, 1)
+      expectComponents(Vec3.cross(Vec3.create(0, 1, 0), Vec3.create(0, 0, 1)), 1, 0, 0)
+      expectComponents(Vec3.cross(Vec3.create(0, 0, 1), Vec3.create(1, 0, 0)), 0, 1, 0)
     })
   })
   describe('#normalize', () => {
@@ -325,11 +388,32 @@ describe('Vec3', () => {
       })
     })
     describe('.multiplyScalar', () => {
-      it ('multiplys', () => {
-        a = new Vec3(1, 2, 3)
-        Vec3.multiplyScalar(a, 0.5, c)
-        expectComponents(c, 0.5, 1, 1.5)
-        expect(a).not.toBe(c)
+      it ('calculates C = A * s', () => {
+        const A = Vec3.create(1, 2, 3)
+        const s = 0.5
+        let C = Vec3.create()
+        Vec3.multiplyScalar(A, s, C)
+        expectComponents(C, 0.5, 1, 1.5)
+        expect(A).not.toBe(C)
+
+        C = Vec3.multiplyScalar(A, s)
+        expectComponents(C, 0.5, 1, 1.5)
+        expect(A).not.toBe(C)
+      })
+    })
+    describe('.multiplyScalarAdd', () => {
+      it ('calculates C = A * s + B', () => {
+        const A = Vec3.create(1, 2, 3)
+        const s = 0.5
+        const B = Vec3.create(4, 5, 6)
+        let C = Vec3.create()
+        Vec3.multiplyScalarAdd(A, s, B, C)
+        expectComponents(C, 4.5, 6, 7.5)
+        expect(A).not.toBe(C)
+
+        C = Vec3.multiplyScalarAdd(A, s, B)
+        expectComponents(C, 4.5, 6, 7.5)
+        expect(A).not.toBe(C)
       })
     })
     describe('#multiplyAdd', () => {
@@ -484,7 +568,7 @@ describe('Vec3', () => {
     })
   })
 
-  describe('.from', () => {
+  describe('.convert', () => {
     it ('converts number', () => {
       expectComponents(Vec3.convert(1), 1, 1, 1)
     })
@@ -497,6 +581,44 @@ describe('Vec3', () => {
     it ('converts IVec3', () => {
       expectComponents(Vec3.convert({ x: 1, y: 2, z: 3 }), 1, 2, 3)
       expectComponents(Vec3.convert({} as any), 0, 0, 0)
+    })
+  })
+
+  describe('#transformByQuat', () => {
+    it ('transforms by quaternion', () => {
+      expectComponents(Vec3.create(1, 1, 1).transformByQuat(Quat.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByQuat(Quat.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
+      expectComponents(Vec3.create(1, 1, 1).transformByQuat(Quat.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
+    })
+  })
+
+  describe('#transformByMat4', () => {
+    it ('transforms by Mat4', () => {
+      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
+    })
+  })
+
+  describe('#transformByMat3', () => {
+    it ('transforms by Mat3', () => {
+      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
+    })
+  })
+
+  describe('#transformByMat2', () => {
+    it ('transforms by Mat2', () => {
+      expectComponents(Vec3.create(1, 1, 1).transformByMat2(Mat2.createRotationX(Math.PI * 0.5)),  1,  0,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat2(Mat2.createRotationY(Math.PI * 0.5)),  0,  1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat2(Mat2.createRotationZ(Math.PI * 0.5)), -1,  1,  1)
+    })
+  })
+
+  describe('#format', () => {
+    it ('formats components', () => {
+      expect(Vec3.create(1, 2, 3).format()).toBe('1.00000,2.00000,3.00000')
     })
   })
 })

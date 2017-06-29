@@ -64,6 +64,26 @@ describe('Vec2', () => {
     it ('inits all components', () => expectComponents(a.init(1, 2), 1, 2) )
     it ('returns same instance', () => expect(a.init(1, 2)).toBe(a))
   })
+  describe('#initZero', () => {
+    it ('initializess a new Vec2', () => {
+      expectComponents(Vec2.create(1, 2).initZero(), 0, 0)
+    })
+  })
+  describe('.createZero', () => {
+    it ('creates a new Vec2', () => {
+      expectComponents(Vec2.createZero(), 0, 0)
+    })
+  })
+  describe('.initOne', () => {
+    it ('initializes with 1', () => {
+      expectComponents(Vec2.create().initOne(), 1, 1)
+    })
+  })
+  describe('.createOne', () => {
+    it ('creates a new Vec2', () => {
+      expectComponents(Vec2.createOne(), 1, 1)
+    })
+  })
   describe('#initFrom', () => {
     beforeEach(() => {
       b = new Vec2(1, 2)
@@ -71,9 +91,17 @@ describe('Vec2', () => {
     it ('inits all components', () => expectComponents(a.initFrom(b), 1, 2) )
     it ('returns same instance', () => expect(a.initFrom(b)).toBe(a))
   })
+  describe('.createFrom', () => {
+    it ('inits all components', () => {
+      expectComponents(Vec2.createFrom(Vec2.create(1, 2)), 1, 2)
+    })
+  })
   describe('#initFromBuffer', () => {
     it ('inits all components', () => expectComponents(a.initFromBuffer([1, 2, 3, 4], 1), 2, 3) )
     it ('returns same instance', () => expect(a.initFromBuffer([1, 2, 3, 4, 5], 1)).toBe(a))
+  })
+  describe('.createFromBuffer', () => {
+    it ('inits all components', () => expectComponents(Vec2.createFromBuffer([1, 2, 3, 4], 1), 2, 3) )
   })
   describe('#clone', () => {
     beforeEach(() => {
@@ -89,21 +117,37 @@ describe('Vec2', () => {
     it ('clones all components', () => expectComponents(Vec2.clone(a), 1, 2) )
     it ('returns new instance', () => expect(Vec2.clone(a)).not.toBe(a))
   })
-  describe('#copyTo', () => {
+  describe('#copy', () => {
     beforeEach(() => {
       a = new Vec2(1, 2)
     })
     it ('copies components', () => expect(a.copy([])).toEqual([1, 2]))
     it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 0, 0]))
   })
-  describe('#equals', () => {
+  describe('.copy', () => {
     beforeEach(() => {
       a = new Vec2(1, 2)
-      b = new Vec2(1, 2)
-      c = new Vec2(4, 3)
     })
-    it ('returns true when components are equal', () => expect(a.equals(b)).toBe(true))
-    it ('returns fase when components are not equal', () => expect(a.equals(c)).toBe(false))
+    it ('copies components', () => expect(Vec2.copy(a, [])).toEqual([1, 2]))
+    it ('copies components at offset', () => expect(Vec2.copy(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 0, 0]))
+  })
+  describe('#equals', () => {
+    it ('compares components', () => {
+      expect(Vec2.create(0, 0).equals(Vec2.create(0, 0))).toBe(true)
+      expect(Vec2.create(1, 0).equals(Vec2.create(1, 0))).toBe(true)
+      expect(Vec2.create(0, 1).equals(Vec2.create(0, 1))).toBe(true)
+      expect(Vec2.create(0, 0).equals(Vec2.create(1, 0))).toBe(false)
+      expect(Vec2.create(0, 0).equals(Vec2.create(0, 1))).toBe(false)
+    })
+  })
+  describe('.equals', () => {
+    it ('compares components', () => {
+      expect(Vec2.equals(Vec2.create(0, 0), Vec2.create(0, 0))).toBe(true)
+      expect(Vec2.equals(Vec2.create(1, 0), Vec2.create(1, 0))).toBe(true)
+      expect(Vec2.equals(Vec2.create(0, 1), Vec2.create(0, 1))).toBe(true)
+      expect(Vec2.equals(Vec2.create(0, 0), Vec2.create(1, 0))).toBe(false)
+      expect(Vec2.equals(Vec2.create(0, 0), Vec2.create(0, 1))).toBe(false)
+    })
   })
   describe('#length', () => {
     it ('calculates length', () => {
@@ -312,6 +356,32 @@ describe('Vec2', () => {
         expect(a).not.toBe(c)
       })
     })
+    describe('#multiplyScalarAdd', () => {
+      it ('calculates C = A * s + B', () => {
+        const A = Vec2.create(1, 2)
+        const s = 0.5
+        const B = Vec2.create(4, 5)
+        let C = Vec2.create()
+        C = A.multiplyScalarAdd(s, B)
+        expectComponents(A, 4.5, 6)
+        expect(A).toBe(C)
+      })
+    })
+    describe('.multiplyScalarAdd', () => {
+      it ('calculates C = A * s + B', () => {
+        const A = Vec2.create(1, 2)
+        const s = 0.5
+        const B = Vec2.create(4, 5)
+        let C = Vec2.create()
+        Vec2.multiplyScalarAdd(A, s, B, C)
+        expectComponents(C, 4.5, 6)
+        expect(A).not.toBe(C)
+
+        C = Vec2.multiplyScalarAdd(A, s, B)
+        expectComponents(C, 4.5, 6)
+        expect(A).not.toBe(C)
+      })
+    })
     describe('#multiplyAdd', () => {
       it ('multiplys', () => {
         a = new Vec2(1, 2)
@@ -368,18 +438,6 @@ describe('Vec2', () => {
         expectComponents(c, 0.5, 1)
         expect(a).not.toBe(c)
       })
-    })
-  })
-
-  describe('.zero', () => {
-    it ('creates a new Vec2', () => {
-      expectComponents(Vec2.createZero(), 0, 0)
-    })
-  })
-
-  describe('.one', () => {
-    it ('creates a new Vec2', () => {
-      expectComponents(Vec2.createOne(), 1, 1)
     })
   })
 
@@ -477,6 +535,12 @@ describe('Vec2', () => {
     it ('converts IVec2', () => {
       expectComponents(Vec2.convert({ x: 1, y: 2 }), 1, 2)
       expectComponents(Vec2.convert({} as any), 0, 0)
+    })
+  })
+
+  describe('#format', () => {
+    it ('formats components', () => {
+      expect(Vec2.create(1, 2).format()).toBe('1.00000,2.00000')
     })
   })
 })

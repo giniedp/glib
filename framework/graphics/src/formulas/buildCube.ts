@@ -14,7 +14,7 @@ export function buildCube(builder: ModelBuilder, options: {
   let halfPi = Math.PI * 0.5
   let steps = withDefault(options.steps, 1)
   let halfUp = Mat4.createTranslation(0, size * 0.5, 0)
-  let transform = Mat4.identity()
+  let transform = Mat4.createIdentity()
   let tId: number
 
   // top plane

@@ -97,6 +97,12 @@ describe('Quat', () => {
     it ('inits all components', () => expectComponents(a.initFrom(b), 1, 2, 3, 4) )
     it ('returns same instance', () => expect(a.initFrom(b)).toBe(a))
   })
+  describe('.createFrom', () => {
+    beforeEach(() => {
+      b = new Quat(1, 2, 3, 4)
+    })
+    it ('inits all components', () => expectComponents(Quat.createFrom(b), 1, 2, 3, 4) )
+  })
   describe('#initFromBuffer', () => {
     it ('inits all components', () => expectComponents(a.initFromBuffer([1, 2, 3, 4, 5], 1), 2, 3, 4, 5) )
     it ('returns same instance', () => expect(a.initFromBuffer([1, 2, 3, 4, 5], 1)).toBe(a))
@@ -118,21 +124,45 @@ describe('Quat', () => {
     it ('clones all components', () => expectComponents(Quat.clone(a), 1, 2, 3, 4) )
     it ('returns new instance', () => expect(Quat.clone(a)).not.toBe(a))
   })
-  describe('#copyTo', () => {
+  describe('#copy', () => {
     beforeEach(() => {
       a = new Quat(1, 2, 3, 4)
     })
     it ('copies components', () => expect(a.copy([])).toEqual([1, 2, 3, 4]))
     it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
   })
-  describe('#equals', () => {
+  describe('.copy', () => {
     beforeEach(() => {
       a = new Quat(1, 2, 3, 4)
-      b = new Quat(1, 2, 3, 4)
-      c = new Quat(4, 3, 2, 1)
     })
-    it ('returns true when components are equal', () => expect(a.equals(b)).toBe(true))
-    it ('returns fase when components are not equal', () => expect(a.equals(c)).toBe(false))
+    it ('copies components', () => expect(Quat.copy(a, [])).toEqual([1, 2, 3, 4]))
+    it ('copies components at offset', () => expect(Quat.copy(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
+  })
+  describe('#equals', () => {
+    it ('compares components', () => {
+      expect(Quat.create(0, 0, 0, 0).equals(Quat.create(0, 0, 0, 0))).toBe(true)
+      expect(Quat.create(1, 0, 0, 0).equals(Quat.create(1, 0, 0, 0))).toBe(true)
+      expect(Quat.create(0, 1, 0, 0).equals(Quat.create(0, 1, 0, 0))).toBe(true)
+      expect(Quat.create(0, 0, 1, 0).equals(Quat.create(0, 0, 1, 0))).toBe(true)
+      expect(Quat.create(0, 0, 0, 1).equals(Quat.create(0, 0, 0, 1))).toBe(true)
+      expect(Quat.create(0, 0, 0, 0).equals(Quat.create(1, 0, 0, 0))).toBe(false)
+      expect(Quat.create(0, 0, 0, 0).equals(Quat.create(0, 1, 0, 0))).toBe(false)
+      expect(Quat.create(0, 0, 0, 0).equals(Quat.create(0, 0, 1, 0))).toBe(false)
+      expect(Quat.create(0, 0, 0, 0).equals(Quat.create(0, 0, 0, 1))).toBe(false)
+    })
+  })
+  describe('.equals', () => {
+    it ('compares components', () => {
+      expect(Quat.equals(Quat.create(0, 0, 0, 0), Quat.create(0, 0, 0, 0))).toBe(true)
+      expect(Quat.equals(Quat.create(1, 0, 0, 0), Quat.create(1, 0, 0, 0))).toBe(true)
+      expect(Quat.equals(Quat.create(0, 1, 0, 0), Quat.create(0, 1, 0, 0))).toBe(true)
+      expect(Quat.equals(Quat.create(0, 0, 1, 0), Quat.create(0, 0, 1, 0))).toBe(true)
+      expect(Quat.equals(Quat.create(0, 0, 0, 1), Quat.create(0, 0, 0, 1))).toBe(true)
+      expect(Quat.equals(Quat.create(0, 0, 0, 0), Quat.create(1, 0, 0, 0))).toBe(false)
+      expect(Quat.equals(Quat.create(0, 0, 0, 0), Quat.create(0, 1, 0, 0))).toBe(false)
+      expect(Quat.equals(Quat.create(0, 0, 0, 0), Quat.create(0, 0, 1, 0))).toBe(false)
+      expect(Quat.equals(Quat.create(0, 0, 0, 0), Quat.create(0, 0, 0, 1))).toBe(false)
+    })
   })
   describe('#length', () => {
     it ('calculates length', () => {

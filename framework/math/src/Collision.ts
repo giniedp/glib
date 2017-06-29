@@ -6,7 +6,7 @@ import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 import { Vec3 } from './Vec3'
 
-const EPSILON = 2.2204460492503130808472633361816e-16
+const EPSILON = Number.EPSILON
 
 const vecPool: IVec4[] = []
 const vecBin: IVec4[] = []

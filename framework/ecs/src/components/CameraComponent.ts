@@ -23,9 +23,9 @@ export class CameraComponent implements Component {
   public fov: number = Math.PI * 0.25
   public aspect: number = 4 / 3
 
-  public view: Mat4 = Mat4.identity()
-  public projection: Mat4 = Mat4.identity()
-  public viewProjection: Mat4 = Mat4.identity()
+  public view: Mat4 = Mat4.createIdentity()
+  public projection: Mat4 = Mat4.createIdentity()
+  public viewProjection: Mat4 = Mat4.createIdentity()
   public transform: TransformComponent
   private targetView: RenderView
 

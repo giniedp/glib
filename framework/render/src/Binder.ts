@@ -21,7 +21,7 @@ export interface LightBinding {
 export class Binder {
   public Position: Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.createZero() }
   public Direction: Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.createZero() }
-  public World: Binding<Mat4> = { name: 'World', type: 'mat4', value: Mat4.identity() }
+  public World: Binding<Mat4> = { name: 'World', type: 'mat4', value: Mat4.createIdentity() }
 
   private transformBindings = [
     this.Position,
@@ -30,13 +30,13 @@ export class Binder {
   ]
 
   public View: Binding<Mat4> = {
-    name: 'View', type: 'mat4', value: Mat4.identity(),
+    name: 'View', type: 'mat4', value: Mat4.createIdentity(),
   }
   public Projection: Binding<Mat4> = {
-    name: 'Projection', type: 'mat4', value: Mat4.identity(),
+    name: 'Projection', type: 'mat4', value: Mat4.createIdentity(),
   }
   public ViewProjection: Binding<Mat4> = {
-    name: 'ViewProjection', type: 'mat4', value: Mat4.identity(),
+    name: 'ViewProjection', type: 'mat4', value: Mat4.createIdentity(),
   }
   public CameraPosition: Binding<IVec3> = {
     name: 'CameraPosition', type: 'vec3', value: Vec3.createZero(),

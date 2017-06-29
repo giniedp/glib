@@ -15,8 +15,8 @@ const BOTTOM = 5
 
 export class BoundingFrustum {
 
-  public planes: IVec4[]
-  public corners: IVec3[]
+  public readonly planes: IVec4[]
+  public readonly corners: IVec3[]
   private matrixField: Mat4
 
   constructor(matrix?: Mat4) {
@@ -28,7 +28,7 @@ export class BoundingFrustum {
     for (let i = 0; i < 8; i++) {
       this.corners[i] = { x: 0, y: 0, z: 0 }
     }
-    this.matrix = matrix || Mat4.identity()
+    this.matrix = matrix || Mat4.createIdentity()
   }
 
   get matrix(){

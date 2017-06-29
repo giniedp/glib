@@ -1,4 +1,4 @@
-import { IVec4, Mat3, Quat, Vec3, Vec4 } from '@glib/math'
+import { IVec3, IVec4, Mat3, Quat, Vec3, Vec4 } from '@glib/math'
 
 describe('Mat3', () => {
 
@@ -20,7 +20,7 @@ describe('Mat3', () => {
     expectVec3Equality(v1.getBackward(), v2.getBackward(), precision)
   }
 
-  function expectVec3Equality(v1: Vec3, v2: Vec3, precision: number = 10) {
+  function expectVec3Equality(v1: IVec3, v2: IVec3, precision: number = 10) {
     expect(v1.x).toBeCloseTo(v2.x, precision, 'x component')
     expect(v1.y).toBeCloseTo(v2.y, precision, 'y component')
     expect(v1.z).toBeCloseTo(v2.z, precision, 'z component')
@@ -228,6 +228,24 @@ describe('Mat3', () => {
         const vec = Vec3.create(1, 1, 0)
         const vec2 = mat.transform(vec)
         expectVec3Components(vec2, [0, 1, -1])
+      })
+    })
+
+    describe('#initOrientation', () => {
+      it('creates rotation matrix', () => {
+        const mat = new Mat3().initOrientation(Vec3.Forward, Vec3.Up)
+        expectVec3Equality(mat.getForward(), Vec3.Forward)
+        expectVec3Equality(mat.getUp(), Vec3.Up)
+        expectVec3Equality(mat.getBackward(), Vec3.Backward)
+      })
+    })
+
+    describe('.createOrientation', () => {
+      it('creates rotation matrix', () => {
+        const mat = Mat3.createOrientation(Vec3.Forward, Vec3.Up)
+        expectVec3Equality(mat.getForward(), Vec3.Forward)
+        expectVec3Equality(mat.getUp(), Vec3.Up)
+        expectVec3Equality(mat.getBackward(), Vec3.Backward)
       })
     })
 

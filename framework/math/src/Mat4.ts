@@ -156,6 +156,15 @@ export class Mat4 {
   }
 
   /**
+   * Initializes all components of this matrix with the given number.
+   * @param number The number to set all matrix components to.
+   * @return Reference to `this` for chaining.
+   */
+  public static createWith(value: number): Mat4 {
+    return new Mat4().initWith(value)
+  }
+
+  /**
    * Initializes the components of this matrix to the identity.
    * @return Reference to `this` for chaining.
    */
@@ -170,7 +179,7 @@ export class Mat4 {
    * Creates a new matrix that is initialized to identity
    * @return a new matrix
    */
-  public static identity(): Mat4 {
+  public static createIdentity(): Mat4 {
     return new Mat4().initIdentity()
   }
 
@@ -189,7 +198,7 @@ export class Mat4 {
    * Creates a new matrix with all components set to 0
    * @return a new matrix
    */
-  public static zero(): Mat4 {
+  public static createZero(): Mat4 {
     return new Mat4()
   }
 
@@ -844,7 +853,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getForward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = -this.backward[0]
     out.y = -this.backward[1]
     out.z = -this.backward[2]
@@ -857,7 +866,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getBackward<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = this.backward[0]
     out.y = this.backward[1]
     out.z = this.backward[2]
@@ -870,7 +879,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getRight<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = this.right[0]
     out.y = this.right[1]
     out.z = this.right[2]
@@ -883,7 +892,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getLeft<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = -this.right[0]
     out.y = -this.right[1]
     out.z = -this.right[2]
@@ -896,7 +905,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getUp<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = this.up[0]
     out.y = this.up[1]
     out.z = this.up[2]
@@ -909,7 +918,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getDown<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = -this.up[0]
     out.y = -this.up[1]
     out.z = -this.up[2]
@@ -922,7 +931,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getTranslation<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = this.translation[0]
     out.y = this.translation[1]
     out.z = this.translation[2]
@@ -935,7 +944,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getProjection<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = this.data[3]
     out.y = this.data[7]
     out.z = this.data[11]
@@ -948,7 +957,7 @@ export class Mat4 {
    * @return the given `out` parameter or a new vector
    */
   public getScale<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = (out || new Vec3()) as any
+    out = out || new Vec3()
     out.x = this.data[0]
     out.y = this.data[5]
     out.z = this.data[10]
@@ -1393,9 +1402,9 @@ export class Mat4 {
     const d = this.data
     vec.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
     vec.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
-    if ((vec as IVec3).z != null) {
+    if (vec.hasOwnProperty('z')) {
       (vec as IVec3).z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
-      if ((vec as IVec4).w != null) {
+      if (vec.hasOwnProperty('w')) {
         (vec as IVec4).w = x * d[3] + y * d[7] + z * d[11] + w * d[15]
       }
     }
@@ -1414,7 +1423,7 @@ export class Mat4 {
     const d = this.data
     vec.x = x * d[0] + y * d[4] + z * d[8]
     vec.y = x * d[1] + y * d[5] + z * d[9]
-    if ((vec as IVec3).z != null) {
+    if (vec.hasOwnProperty('z')) {
       (vec as IVec3).z = x * d[2] + y * d[6] + z * d[10]
     }
     return vec
@@ -1937,6 +1946,40 @@ export class Mat4 {
     return out
   }
 
+  /**
+   * Performs a component wise smooth interpolation between the given two elements.
+   * @param a The first matrix.
+   * @param b The second matrix.
+   * @param t The interpolation value. Assumed to be in range [0:1].
+   * @param [out] The matrix to write to.
+   * @return The given `out` parameter or a new matrix.
+   */
+  public static smooth(matA: Mat4, matB: Mat4, t: number, out?: Mat4): Mat4 {
+    t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
+    t = t * t * (3 - 2 * t)
+    out = out || new Mat4()
+    const a = matA.data
+    const b = matB.data
+    const c = out.data
+    c[0] = a[0] + (b[0] - a[0]) * t
+    c[1] = a[1] + (b[1] - a[1]) * t
+    c[2] = a[2] + (b[2] - a[2]) * t
+    c[3] = a[3] + (b[3] - a[3]) * t
+    c[4] = a[4] + (b[4] - a[4]) * t
+    c[5] = a[5] + (b[5] - a[5]) * t
+    c[6] = a[6] + (b[6] - a[6]) * t
+    c[7] = a[7] + (b[7] - a[7]) * t
+    c[8] = a[8] + (b[8] - a[8]) * t
+    c[9] = a[9] + (b[9] - a[9]) * t
+    c[10] = a[10] + (b[10] - a[10]) * t
+    c[11] = a[11] + (b[11] - a[11]) * t
+    c[12] = a[12] + (b[12] - a[12]) * t
+    c[13] = a[13] + (b[13] - a[13]) * t
+    c[14] = a[14] + (b[14] - a[14]) * t
+    c[15] = a[15] + (b[15] - a[15]) * t
+    return out
+  }
+
   public format(fractionDigits: number = 5) {
     return Mat4.format(this, fractionDigits)
   }
@@ -1947,10 +1990,10 @@ export class Mat4 {
   public static format(mat: Mat4, fractionDigits: number = 5) {
     const m = mat.data
     return [
-      [m[0].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[8].toFixed(fractionDigits), m[12].toFixed(fractionDigits)].join(', '),
-      [m[1].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[9].toFixed(fractionDigits), m[13].toFixed(fractionDigits)].join(', '),
-      [m[2].toFixed(fractionDigits), m[6].toFixed(fractionDigits), m[10].toFixed(fractionDigits), m[14].toFixed(fractionDigits)].join(', '),
-      [m[3].toFixed(fractionDigits), m[7].toFixed(fractionDigits), m[11].toFixed(fractionDigits), m[15].toFixed(fractionDigits)].join(', '),
-    ].join('\n')
+      [m[0].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[8].toFixed(fractionDigits), m[12].toFixed(fractionDigits)].join(','),
+      [m[1].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[9].toFixed(fractionDigits), m[13].toFixed(fractionDigits)].join(','),
+      [m[2].toFixed(fractionDigits), m[6].toFixed(fractionDigits), m[10].toFixed(fractionDigits), m[14].toFixed(fractionDigits)].join(','),
+      [m[3].toFixed(fractionDigits), m[7].toFixed(fractionDigits), m[11].toFixed(fractionDigits), m[15].toFixed(fractionDigits)].join(','),
+    ].join(',\n')
   }
 }
