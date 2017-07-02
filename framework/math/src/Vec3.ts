@@ -599,6 +599,19 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Performs the calculation `this += other * scale`
+   * @param other The vector to add
+   * @return this vector for chaining
+   */
+  public static addScaled<T extends IVec3 = Vec3>(v1: IVec3, v2: IVec3, scale: number, out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
+    out.x = v1.x + v2.x * scale
+    out.y = v1.y + v2.y * scale
+    out.z = v1.z + v2.z * scale
+    return out
+  }
+
+  /**
    * Performs the calculation `this -= other`
    * @param other The vector to subtract
    * @return this vector for chaining
@@ -663,6 +676,19 @@ export class Vec3 implements IVec2, IVec3 {
     this.y -= other.y * scale
     this.z -= other.z * scale
     return this
+  }
+
+  /**
+   * Performs the calculation `this += other * scale`
+   * @param other The vector to add
+   * @return this vector for chaining
+   */
+  public static subtractScaled<T extends IVec3 = Vec3>(v1: IVec3, v2: IVec3, scale: number, out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
+    out.x = v1.x - v2.x * scale
+    out.y = v1.y - v2.y * scale
+    out.z = v1.z - v2.z * scale
+    return out
   }
 
   /**

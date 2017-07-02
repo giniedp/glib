@@ -1,4 +1,4 @@
-import { BoundingBox, BoundingSphere, IVec3, Vec3 } from '@glib/math'
+import { BoundingBox, BoundingFrustum, BoundingSphere, IVec3, Mat4, Plane, Ray, Vec3 } from '@glib/math'
 
 describe('BoundingSphere', () => {
 
@@ -178,4 +178,215 @@ describe('BoundingSphere', () => {
     })
   })
 
+  describe('#intersectsRay', () => {
+    it ('tests for intersection', () => {
+      const sphere = BoundingSphere.create(1, 1, 1, 1)
+      expect(sphere.intersectsRay(Ray.create(-1,  1,  1,  1,  0,  0))).toBe(true, 'from left')
+      expect(sphere.intersectsRay(Ray.create( 3,  1,  1, -1,  0,  0))).toBe(true, 'from right')
+      expect(sphere.intersectsRay(Ray.create( 1, -1,  1,  0,  1,  0))).toBe(true, 'from below')
+      expect(sphere.intersectsRay(Ray.create( 1,  3,  1,  0, -1,  0))).toBe(true, 'from above')
+      expect(sphere.intersectsRay(Ray.create( 1,  1, -1,  0,  0,  1))).toBe(true, 'from behind')
+      expect(sphere.intersectsRay(Ray.create( 1,  1,  3,  0,  0, -1))).toBe(true, 'from infront')
+
+      expect(sphere.intersectsRay(Ray.create(-1,  1,  1, -1,  0,  0))).toBe(false, 'away, left')
+      expect(sphere.intersectsRay(Ray.create( 3,  1,  1,  1,  0,  0))).toBe(false, 'away, right')
+      expect(sphere.intersectsRay(Ray.create( 1, -1,  1,  0, -1,  0))).toBe(false, 'away, below')
+      expect(sphere.intersectsRay(Ray.create( 1,  3,  1,  0,  1,  0))).toBe(false, 'away, above')
+      expect(sphere.intersectsRay(Ray.create( 1,  1, -1,  0,  0, -1))).toBe(false, 'away, behind')
+      expect(sphere.intersectsRay(Ray.create( 1,  1,  3,  0,  0,  1))).toBe(false, 'away, infront')
+    })
+  })
+
+  describe('#intersectsPlane', () => {
+    it ('tests for intersection', () => {
+      const sphere = BoundingSphere.create(1, 2, 3, 1)
+
+      expect(sphere.intersectsPlane(Plane.create(1, 0, 0,  2.001))).toBe(false)
+      expect(sphere.intersectsPlane(Plane.create(1, 0, 0,  2.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(1, 0, 0,  0.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(1, 0, 0, -0.001))).toBe(false)
+
+      expect(sphere.intersectsPlane(Plane.create(0, 1, 0,  3.001))).toBe(false)
+      expect(sphere.intersectsPlane(Plane.create(0, 1, 0,  3.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, 1, 0,  1.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, 1, 0, -1.001))).toBe(false)
+
+      expect(sphere.intersectsPlane(Plane.create(0, 0, 1,  4.001))).toBe(false)
+      expect(sphere.intersectsPlane(Plane.create(0, 0, 1,  4.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, 0, 1,  2.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, 0, 1, -2.001))).toBe(false)
+
+      expect(sphere.intersectsPlane(Plane.create(-1, 0, 0, -2.001))).toBe(false)
+      expect(sphere.intersectsPlane(Plane.create(-1, 0, 0, -2.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(-1, 0, 0,  0.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(-1, 0, 0,  0.001))).toBe(false)
+
+      expect(sphere.intersectsPlane(Plane.create(0, -1, 0, -3.001))).toBe(false)
+      expect(sphere.intersectsPlane(Plane.create(0, -1, 0, -3.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, -1, 0, -1.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, -1, 0, -0.999))).toBe(false)
+
+      expect(sphere.intersectsPlane(Plane.create(0, 0, -1, -4.001))).toBe(false)
+      expect(sphere.intersectsPlane(Plane.create(0, 0, -1, -4.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, 0, -1, -2.000))).toBe(true)
+      expect(sphere.intersectsPlane(Plane.create(0, 0, -1, -1.999))).toBe(false)
+    })
+  })
+
+  describe('#intersectsBox', () => {
+    it ('tests for intersection', () => {
+      const sphere = BoundingSphere.create(0.5, 0.5, 0.5, 0.5)
+
+      expect(sphere.intersectsBox(BoundingBox.create(0, 0, 0, 1, 1, 1))).toBe(true)
+
+      expect(sphere.intersectsBox(BoundingBox.create( 1.001, 0, 0,  2.000, 1, 1))).toBe(false)
+      expect(sphere.intersectsBox(BoundingBox.create( 1.000, 0, 0,  2.000, 1, 1))).toBe(true)
+      expect(sphere.intersectsBox(BoundingBox.create(-1.000, 0, 0,  0.000, 1, 1))).toBe(true)
+      expect(sphere.intersectsBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1))).toBe(false)
+
+      expect(sphere.intersectsBox(BoundingBox.create(0, 0,  1.001, 1, 1,  2.000))).toBe(false)
+      expect(sphere.intersectsBox(BoundingBox.create(0, 0,  1.000, 1, 1,  2.000))).toBe(true)
+      expect(sphere.intersectsBox(BoundingBox.create(0, 0, -1.000, 1, 1,  0.000))).toBe(true)
+      expect(sphere.intersectsBox(BoundingBox.create(0, 0, -1.000, 1, 1, -0.001))).toBe(false)
+
+      expect(sphere.intersectsBox(BoundingBox.create(0,  1.001, 0, 1,  2.000, 1))).toBe(false)
+      expect(sphere.intersectsBox(BoundingBox.create(0,  1.000, 0, 1,  2.000, 1))).toBe(true)
+      expect(sphere.intersectsBox(BoundingBox.create(0, -1.000, 0, 1,  0.000, 1))).toBe(true)
+      expect(sphere.intersectsBox(BoundingBox.create(0, -1.000, 0, 1, -0.001, 1))).toBe(false)
+
+    })
+  })
+
+  describe('#intersectsSphere', () => {
+    it ('tests for intersection', () => {
+      const sphere = BoundingSphere.create(1, 1, 1, 1)
+
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, 1, 1, 1))).toBe(true)
+
+      expect(sphere.intersectsSphere(BoundingSphere.create( 3.001, 1, 1, 1))).toBe(false)
+      expect(sphere.intersectsSphere(BoundingSphere.create( 3.000, 1, 1, 1))).toBe(true)
+      expect(sphere.intersectsSphere(BoundingSphere.create(-1.000, 1, 1, 1))).toBe(true)
+      expect(sphere.intersectsSphere(BoundingSphere.create(-1.001, 1, 1, 1))).toBe(false)
+
+      expect(sphere.intersectsSphere(BoundingSphere.create(1,  3.001, 1, 1))).toBe(false)
+      expect(sphere.intersectsSphere(BoundingSphere.create(1,  3.000, 1, 1))).toBe(true)
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, -1.000, 1, 1))).toBe(true)
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, -1.001, 1, 1))).toBe(false)
+
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, 1,  3.001, 1))).toBe(false)
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, 1,  3.000, 1))).toBe(true)
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, 1, -1.000, 1))).toBe(true)
+      expect(sphere.intersectsSphere(BoundingSphere.create(1, 1, -1.001, 1))).toBe(false)
+    })
+  })
+
+  describe('#containsPoint', () => {
+    it ('tests for containment', () => {
+      const sphere = BoundingSphere.create(0.5, 0.5, 0.5, 0.5)
+
+      expect(sphere.containsPoint(Vec3.create(-0.001, 0.5, 0.5))).toBe(false)
+      expect(sphere.containsPoint(Vec3.create( 0.000, 0.5, 0.5))).toBe(true)
+      expect(sphere.containsPoint(Vec3.create( 0.001, 0.5, 0.5))).toBe(true)
+
+      expect(sphere.containsPoint(Vec3.create(0.5, -0.001, 0.5))).toBe(false)
+      expect(sphere.containsPoint(Vec3.create(0.5,  0.000, 0.5))).toBe(true)
+      expect(sphere.containsPoint(Vec3.create(0.5,  0.001, 0.5))).toBe(true)
+
+      expect(sphere.containsPoint(Vec3.create(0.5, 0.5, -0.001))).toBe(false)
+      expect(sphere.containsPoint(Vec3.create(0.5, 0.5,  0.000))).toBe(true)
+      expect(sphere.containsPoint(Vec3.create(0.5, 0.5,  0.001))).toBe(true)
+
+      expect(sphere.containsPoint(Vec3.create(1 + 0.001, 0.5, 0.5))).toBe(false)
+      expect(sphere.containsPoint(Vec3.create(1 + 0.000, 0.5, 0.5))).toBe(true)
+      expect(sphere.containsPoint(Vec3.create(1 - 0.001, 0.5, 0.5))).toBe(true)
+
+      expect(sphere.containsPoint(Vec3.create(0.5, 1 + 0.001, 0.5))).toBe(false)
+      expect(sphere.containsPoint(Vec3.create(0.5, 1 + 0.000, 0.5))).toBe(true)
+      expect(sphere.containsPoint(Vec3.create(0.5, 1 - 0.001, 0.5))).toBe(true)
+
+      expect(sphere.containsPoint(Vec3.create(0.5, 0.5, 1 + 0.001))).toBe(false)
+      expect(sphere.containsPoint(Vec3.create(0.5, 0.5, 1 + 0.000))).toBe(true)
+      expect(sphere.containsPoint(Vec3.create(0.5, 0.5, 1 - 0.001))).toBe(true)
+    })
+  })
+
+  describe('#intersectionWithBox', () => {
+    it ('tests for containment', () => {
+      const sphere = BoundingSphere.create(0.5, 0.5, 0.5, 0.5)
+
+      // containment
+      expect(sphere.intersectionWithBox(BoundingBox.create(0.25, 0.25, 0.25, 0.75, 0.75, 0.75))).toBe(2)
+
+      // intersection
+      expect(sphere.intersectionWithBox(BoundingBox.create(-1,  0,  0,  0,  1,  1))).toBe(1, 'left')
+      expect(sphere.intersectionWithBox(BoundingBox.create( 1,  0,  0,  2,  1,  1))).toBe(1, 'right')
+      expect(sphere.intersectionWithBox(BoundingBox.create( 0, -1,  0,  1, -0,  1))).toBe(1, 'below')
+      expect(sphere.intersectionWithBox(BoundingBox.create( 0,  1,  0,  1,  2,  1))).toBe(1, 'above')
+      expect(sphere.intersectionWithBox(BoundingBox.create( 0,  0, -1,  1,  1, -0))).toBe(1, 'behind')
+      expect(sphere.intersectionWithBox(BoundingBox.create( 0,  0,  1,  1,  1,  2))).toBe(1, 'infront')
+
+      // outside
+      expect(sphere.intersectionWithBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1))).toBe(0, 'left')
+      expect(sphere.intersectionWithBox(BoundingBox.create( 1.001, 0, 0,  2.000, 1, 1))).toBe(0, 'right')
+      expect(sphere.intersectionWithBox(BoundingBox.create(0, -1.000, 0,  1, -0.001, 1))).toBe(0, 'below')
+      expect(sphere.intersectionWithBox(BoundingBox.create(0,  1.001, 0,  1,  2.000, 1))).toBe(0, 'above')
+      expect(sphere.intersectionWithBox(BoundingBox.create(0, 0, -1.000,  1, 1, -0.001))).toBe(0, 'behind')
+      expect(sphere.intersectionWithBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000))).toBe(0, 'infront')
+    })
+  })
+
+  describe('#intersectionWithSphere', () => {
+    it ('tests for containment', () => {
+      const sphere = BoundingSphere.create(0.5, 0.5, 0.5, 0.5)
+
+      // containment
+      expect(sphere.intersectionWithSphere(BoundingSphere.create(0.5, 0.5, 0.5, 0.5))).toBe(2)
+
+      // intersection
+      expect(sphere.intersectionWithSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  1))).toBe(1, 'left')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  1))).toBe(1, 'right')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  1))).toBe(1, 'below')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  1))).toBe(1, 'above')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  1))).toBe(1, 'behind')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  1))).toBe(1, 'infront')
+
+      // outside
+      expect(sphere.intersectionWithSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  0.999))).toBe(0, 'left')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  0.999))).toBe(0, 'right')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  0.999))).toBe(0, 'below')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  0.999))).toBe(0, 'above')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  0.999))).toBe(0, 'behind')
+      expect(sphere.intersectionWithSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  0.999))).toBe(0, 'infront')
+    })
+  })
+
+  describe('#intersectionWithFrustum', () => {
+    it ('tests for containment', () => {
+      const frustum = new BoundingFrustum(Mat4.createIdentity())
+      const r = Math.sqrt(3) + Number.EPSILON
+      // containment
+      expect(BoundingSphere.create(0, 0, 0, r).intersectionWithFrustum(frustum)).toBe(2)
+
+      // intersection
+      expect(BoundingSphere.create( 2,  2,  2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create( 2,  2, -2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create( 2, -2,  2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create( 2, -2, -2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create(-2,  2,  2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create(-2,  2, -2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create(-2, -2,  2, r).intersectionWithFrustum(frustum)).toBe(1)
+      expect(BoundingSphere.create(-2, -2, -2, r).intersectionWithFrustum(frustum)).toBe(1)
+
+      // outside
+      expect(BoundingSphere.create( 2,  2,  2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create( 2,  2, -2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create( 2, -2,  2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create( 2, -2, -2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create(-2,  2,  2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create(-2,  2, -2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create(-2, -2,  2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+      expect(BoundingSphere.create(-2, -2, -2, r - Number.EPSILON).intersectionWithFrustum(frustum)).toBe(0)
+
+    })
+  })
 })

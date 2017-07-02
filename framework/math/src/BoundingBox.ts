@@ -202,29 +202,39 @@ export class BoundingBox {
   }
 
   public intersectsRay(ray: Ray): boolean {
-    return Collision.intersectsRayBox(ray, this)
+    return Collision.rayIntersectsBox(ray.position, ray.direction, this.min, this.max)
   }
   public intersectsPlane(plane: IVec4): boolean {
-    return Collision.intersectsBoxPlane(this, plane)
+    return Collision.boxIntersectsPlane(this.min, this.max, plane)
   }
   public intersectsBox(box: BoundingBox): boolean {
-    return Collision.intersectsBoxBox(this, box)
+    return Collision.boxIntersectBox(this.min, this.max, box.min, box.max)
   }
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return Collision.intersectsSphereBox(sphere, this)
+    return Collision.boxIntersectSphere(sphere.center, sphere.radius, this.min, this.max)
   }
 
-  public containsPoint(point: IVec3): number {
-    return Collision.boxContainsPoint(this, point)
+  public containsPoint(point: IVec3): boolean {
+    return Collision.boxIntersectsPoint(this.min, this.max, point)
   }
-  public containsBox(box: BoundingBox): number {
-    return Collision.boxContainsBox(this, box)
+  public containsBox(box: BoundingBox): boolean {
+    return Collision.boxBoxIntersection(this.min, this.max, box.min, box.max) === 2
   }
-  public containsSphere(sphere: BoundingSphere): number {
-    return Collision.boxContainsSphere(this, sphere)
+  public containsSphere(sphere: BoundingSphere): boolean {
+    return Collision.boxSphereIntersection(this.min, this.max, sphere.center, sphere.radius) === 2
   }
-  public containsFrustum(frustum: BoundingFrustum): number {
-    return Collision.boxContainsFrustum(this, frustum)
+  public containsFrustum(frustum: BoundingFrustum): boolean {
+    return Collision.boxFrustumIntersection(this.min, this.max, frustum) === 2
+  }
+
+  public intersectionWithBox(box: BoundingBox): number {
+    return Collision.boxBoxIntersection(this.min, this.max, box.min, box.max)
+  }
+  public intersectionWithSphere(sphere: BoundingSphere): number {
+    return Collision.boxSphereIntersection(this.min, this.max, sphere.center, sphere.radius)
+  }
+  public intersectionWithFrustum(frustum: BoundingFrustum): number {
+    return Collision.boxFrustumIntersection(this.min, this.max, frustum)
   }
 
   public static convert(item: BoundingBox|number[]): BoundingBox {

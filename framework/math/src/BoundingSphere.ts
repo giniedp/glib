@@ -159,15 +159,6 @@ export class BoundingSphere {
     return Vec3.equals(a.center, b.center) && a.radius === b.radius
   }
 
-  public merge(other: BoundingSphere): BoundingSphere {
-    const distance = Vec3.distance(this.center, other.center)
-    if (this.radius >= distance + other.radius) {
-      return this
-    }
-    this.radius = distance + other.radius
-    return this
-  }
-
   public mergePoint(point: IVec3): BoundingSphere {
     const distance = Vec3.distance(this.center, point)
     if (this.radius >= distance) {
@@ -177,39 +168,40 @@ export class BoundingSphere {
     return this
   }
 
-  public static mergePoint(sphere: BoundingSphere, point: IVec3): BoundingSphere {
-    const distance = Vec3.distance(sphere.center, point)
-    if (sphere.radius >= distance) {
-      return sphere
-    }
-    sphere.radius = distance
-    return sphere
-  }
-
   public intersectsRay(ray: Ray): boolean {
-    return Collision.intersectsRaySphere(ray, this)
+    return Collision.rayIntersectsSphere(ray.position, ray.direction, this.center, this.radius)
   }
   public intersectsBox(box: BoundingBox): boolean {
-    return Collision.intersectsSphereBox(this, box)
+    return Collision.boxIntersectSphere(this.center, this.radius, box.min, box.max)
   }
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return Collision.intersectsSphereSphere(sphere, this)
+    return Collision.sphereIntersectsSphere(this.center, this.radius, sphere.center, sphere.radius)
   }
   public intersectsPlane(plane: IVec4): boolean {
-    return Collision.intersectsSpherePlane(this, plane)
+    return Collision.sphereIntersectsPlane(this.center, this.radius, plane)
   }
 
-  public containsSphere(sphere: BoundingSphere): number {
-    return Collision.sphereContainsSphere(this, sphere)
+  public containsPoint(point: IVec3): boolean {
+    return Collision.sphereIntersectsPoint(this.center, this.radius, point)
   }
-  public containsBox(box: BoundingBox): number {
-    return Collision.sphereContainsBox(this, box)
+  public containsBox(box: BoundingBox): boolean {
+    return Collision.sphereBoxIntersection(this.center, this.radius, box.min, box.max) === 2
   }
-  public containsPoint(point: IVec3): number {
-    return Collision.sphereContainsPoint(this, point)
+  public containsSphere(sphere: BoundingSphere): boolean {
+    return Collision.sphereSphereIntersection(this.center, this.radius, sphere.center, sphere.radius) === 2
   }
-  public containsFrustum(frustum: BoundingFrustum): number {
-    return Collision.sphereContainsFrustum(this, frustum)
+  public containsFrustum(frustum: BoundingFrustum): boolean {
+    return Collision.sphereFrustumIntersection(this.center, this.radius, frustum) === 2
+  }
+
+  public intersectionWithBox(box: BoundingBox): number {
+    return Collision.sphereBoxIntersection(this.center, this.radius, box.min, box.max)
+  }
+  public intersectionWithSphere(sphere: BoundingSphere): number {
+    return Collision.sphereSphereIntersection(this.center, this.radius, sphere.center, sphere.radius)
+  }
+  public intersectionWithFrustum(frustum: BoundingFrustum): number {
+    return Collision.sphereFrustumIntersection(this.center, this.radius, frustum)
   }
 
   public static convert(item: any): BoundingSphere {

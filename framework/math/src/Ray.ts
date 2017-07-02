@@ -99,28 +99,29 @@ export class Ray {
   }
 
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return Collision.intersectsRaySphere(this, sphere)
+    return Collision.rayIntersectsSphere(this.position, this.direction, sphere.center, sphere.radius)
   }
   public intersectsBox(box: BoundingBox): boolean {
-    return Collision.intersectsRayBox(this, box)
+    return Collision.rayIntersectsBox(this.position, this.direction, box.min, box.max)
   }
   public intersectsPlane(plane: IVec4): boolean {
-    return Collision.intersectsRayPlane(this, plane)
+    return Collision.rayIntersectsPlane(this.position, this.direction, plane)
   }
   public intersectsTriangle(a: IVec3, b: IVec3, c: IVec3): boolean {
-    return Collision.intersectsRayTriangle(this, a, b, c)
+    return Collision.rayIntersectsTriangle(this.position, this.direction, a, b, c)
   }
 
   public intersectsSphereAt(sphere: BoundingSphere): number {
-    return Collision.intersectionRaySphere(this, sphere)
+    return Collision.rayIntersectsSphereAt(this.position, this.direction, sphere.center, sphere.radius)
   }
   public intersectsBoxAt(box: BoundingBox): number {
-    return Collision.intersectionRayBox(this, box)
+    return Collision.rayIntersectsBoxAt(this.position, this.direction, box.min, box.max)
   }
   public intersectsPlaneAt(plane: IVec4): number {
-    return Collision.intersectionRayPlane(this, plane)
+    return Collision.rayIntersectsPlaneAt(this.position, this.direction, plane)
   }
   public intersectsTriangleAt(a: IVec3, b: IVec3, c: IVec3): number {
-    return Collision.intersectionRayTriangle(this, a, b, c)
+    return Collision.rayIntersectsTriangleAt(this.position, this.direction, a, b, c)
   }
 }
+
