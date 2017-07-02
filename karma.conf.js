@@ -75,11 +75,14 @@ module.exports = function (config) {
     },
 
     mochaReporter: {
-      output: 'minimal' // 'full'
+      output: 'autowatch' // 'minimal', 'full'
     },
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    concurrency: 1
+    concurrency: 1,
+    // client: {
+    //   captureConsole: false
+    // }
   });
 };
