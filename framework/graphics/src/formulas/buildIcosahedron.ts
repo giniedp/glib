@@ -62,7 +62,7 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
     builder.addVertex({
-      position: Vec3.multiplyScalar(v, radius),
+      position: Vec3.multiplyScalar<Vec3>(v, radius),
       normal: v,
       texture: Vec2.create(v.x, v.z),
     })
@@ -104,7 +104,7 @@ export function buildOctahedron(builder: ModelBuilder, options: {
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
     builder.addVertex({
-      position: Vec3.multiplyScalar(v, radius),
+      position: Vec3.multiplyScalar<Vec3>(v, radius),
       normal: v,
       texture: Vec2.create(v.x, v.z),
     })
@@ -148,7 +148,7 @@ export function buildIcosahedron(builder: ModelBuilder, options: {
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
     builder.addVertex({
-      position: Vec3.multiplyScalar(v, radius),
+      position: Vec3.multiplyScalar<Vec3>(v, radius),
       normal: v,
       texture: Vec2.create(v.x, v.z),
     })

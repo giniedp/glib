@@ -19,7 +19,7 @@ function setXhrHeaders(xhr: XMLHttpRequest, headers: { [key: string]: string }) 
 
 function sendXhr(xhr: XMLHttpRequest, options: HttpOptions, async: boolean) {
 
-  return new Promise((resolve: any, reject: any) => {
+  return new Promise<XMLHttpRequest>((resolve: any, reject: any) => {
     const complete = () => {
       if (200 <= xhr.status && xhr.status < 400) {
         resolve(xhr)
@@ -44,7 +44,7 @@ function sendXhr(xhr: XMLHttpRequest, options: HttpOptions, async: boolean) {
 
 export const Http = {
   createXMLHttpRequest: () => new XMLHttpRequest(),
-  request: <T = any>(options: HttpOptions): Promise<T> => {
+  request: (options: HttpOptions): Promise<XMLHttpRequest> => {
     const async = options.async === false ? false : true
     const xhr = Http.createXMLHttpRequest()
     xhr.open(

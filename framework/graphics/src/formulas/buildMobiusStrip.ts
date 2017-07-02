@@ -44,7 +44,7 @@ export function buildMobiusStrip(builder: ModelBuilder, options: {
       let texCoord = Vec2.create(du, dv)
 
       builder.addVertex({
-        position: Vec3.multiplyScalar(normal, radius),
+        position: Vec3.multiplyScalar<Vec3>(normal, radius),
         normal: normal,
         texture: texCoord,
       })

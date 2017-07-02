@@ -3,7 +3,7 @@
 import { copy } from '@glib/core'
 import { Device } from './Device'
 import { ShaderProgram } from './ShaderProgram'
-import { SamplerState } from './states'
+import { SamplerState, SamplerStateProperties } from './states'
 import { Texture } from './Texture'
 
 function parseArray(value: string) {
@@ -80,7 +80,7 @@ export class ShaderUniform {
   public set: (v: any, ...rest: any[]) => void
   public put: (v: any, ...rest: any[]) => void
   public register: number
-  public filter: number
+  public filter: SamplerStateProperties
 
   /**
    *

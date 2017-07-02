@@ -37,7 +37,7 @@ function convert(data: ObjData) {
 
   return builder.finishModelOptions({
     name: data.name,
-    materials: data.materials,
+    materials: data.materials as any,
   })
 }
 
