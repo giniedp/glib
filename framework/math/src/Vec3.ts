@@ -1143,4 +1143,12 @@ export class Vec3 implements IVec2, IVec3 {
   public static format(vec: IVec3, fractionDigits: number = 5): string {
     return [vec.x.toFixed(fractionDigits), vec.y.toFixed(fractionDigits), vec.z.toFixed(fractionDigits)].join(',')
   }
+
+  public static createRandom<T extends IVec3 = Vec3>(rand: { random: () => number } = Math, out?: T|Vec3): T|Vec3 {
+    out = out || new Vec3()
+    out.x = rand.random() - 0.5
+    out.y = rand.random() - 0.5
+    out.z = rand.random() - 0.5
+    return out
+  }
 }
