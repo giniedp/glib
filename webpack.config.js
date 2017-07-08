@@ -2,11 +2,12 @@ const webpack = require('webpack');
 const path = require('path');
 const IS_COVERAGE = !!process.env.IS_COVERAGE;
 const IS_TEST = !!process.env.IS_TEST || IS_COVERAGE;
+const IS_PRODUCTION = !!process.env.IS_PRODUCTION;
 
 module.exports = {
   devtool: IS_TEST ? undefined : 'source-map',
   entry: IS_TEST ? null : path.join(__dirname, 'framework/index.ts'),
-  plugins: IS_TEST ? [
+  plugins: [].concat(IS_TEST ? [
     // fixes sourcemaps / line number matching in tests
     // https://github.com/webpack-contrib/karma-webpack/issues/109#issuecomment-224961264
     // when using awesome-typescript-loader, do not enable inlineSourcemaps there nor in tsconfig
@@ -14,7 +15,9 @@ module.exports = {
       filename: null,          // if no value is provided the sourcemap is inlined
       test: /\.(ts|js)($|\?)/i // process .js and .ts files only
     })
-  ] : [],
+  ] : []).concat(IS_PRODUCTION ? [
+    new webpack.optimize.UglifyJsPlugin(),
+  ] : []),
   module: {
     rules: [{
       test: /\.ts$/,
@@ -44,8 +47,8 @@ module.exports = {
     path: path.join(__dirname, 'dist'),
     publicPath: '/',
     library: 'Glib',
-    filename: 'glib.js',
-    sourceMapFilename: 'glib.map'
+    filename: IS_PRODUCTION ? 'glib.min.js' : 'glib.js',
+    sourceMapFilename: IS_PRODUCTION ? 'glib.min.map' :  'glib.map'
   },
   resolve: {
     extensions: ['.ts', '.js'],
