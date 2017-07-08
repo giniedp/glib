@@ -75,6 +75,11 @@ export class ModelBuilder {
     this.vertexBuffer.data = value
   }
 
+  public set transform(t: Mat4) {
+    let id = this.transformStack.length
+    this.transformStack[id] = t
+  }
+
   public beginTransform(transform: Mat4): number {
     let id = this.transformStack.length
     let last = this.transformStack[id - 1]
@@ -87,6 +92,13 @@ export class ModelBuilder {
   }
   public endTransform(id: number) {
     this.transformStack.length = id
+  }
+
+  public withTransform(transform: Mat4, callback: (builder: ModelBuilder) => void): ModelBuilder {
+    const id = this.beginTransform(transform)
+    callback(this)
+    this.endTransform(id)
+    return this
   }
 
   public static begin(options?: ModelBuilderOptions) {
