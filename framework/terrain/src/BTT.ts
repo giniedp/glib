@@ -113,7 +113,6 @@ export class BTTPatch {
   }
 
   public static createIndices(level: number, version: number, size: number) {
-
     const list = []
     if (level === 0) {
       list.push(0)
@@ -229,7 +228,7 @@ export class BTTPatch {
           }
 
           for (const k of order) {
-            list.push(order[k])
+            list.push(k)
           }
         }
       }
