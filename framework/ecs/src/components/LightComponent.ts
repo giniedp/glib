@@ -40,7 +40,7 @@ export let LightTypeName = {
 }
 
 export class LightComponent implements Component, LightProperties {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Light'
   public enabled: boolean = true
   public service: boolean = true
@@ -75,7 +75,7 @@ export class LightComponent implements Component, LightProperties {
   }
 
   public update() {
-    let t = this.node.s.Transform as TransformComponent
+    let t = this.entity.s.Transform as TransformComponent
     if (t) {
       this.direction.x = -t.worldMat.backward[0]
       this.direction.y = -t.worldMat.backward[1]

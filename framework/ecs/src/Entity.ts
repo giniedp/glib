@@ -1,15 +1,17 @@
 import { Events, extend, isArray, isObject, isString, Log } from '@glib/core'
 import { Component } from './Component'
+import * as Components from './components'
 import { Finder } from './Finder'
 import { getTemplate, Template } from './Template'
 import { Visitor } from './Visitor'
+
 /**
  * An object that holds a collection of components a collection of services and a collection of child nodes.
  */
 export class Entity extends Events {
 
   /**
-   * The name of this node
+   * The name of this entity
    */
   public name: string = 'Entity'
 
@@ -19,14 +21,14 @@ export class Entity extends Events {
   public parent: Entity = null
 
   /**
-   *
+   * The root entity
    */
   public root: Entity = null
 
   /**
    * Collection of service components.
    */
-  public services: { [key: string]: Component } = {}
+  public readonly services: { [key: string]: Component } = {}
 
   /**
    * Shorthand for the `services` property
@@ -38,7 +40,7 @@ export class Entity extends Events {
   /**
    * Collection of all components of this node. Components are updated each frame.
    */
-  public components: Component[] = []
+  public readonly components: Component[] = []
 
   /**
    * Shorthand for the `components` property
@@ -51,7 +53,7 @@ export class Entity extends Events {
    * Collection of child entities. This property should only be used to iterate over child nodes. Do not add or
    * remove items to or from this collection.
    */
-  public children: Entity[] = []
+  public readonly children: Entity[] = []
 
   private toDraw: Component[] = []
   private toUpdate: Component[] = []
@@ -66,7 +68,6 @@ export class Entity extends Events {
 
   /**
    * Allows to iterate through the entity tree using the visitor pattern.
-   * @param visitor
    */
   public acceptVisitor(visitor: Visitor<Entity>) {
     visitor.visit(this)
@@ -116,10 +117,6 @@ export class Entity extends Events {
    * object, array, function or primitive data. However the name must be unique for all services within a single node.
    * Although any node is allowed to have a collection of services it is often simpler and more effective to let
    * the app node (the window node) to hold the services.
-   * @method addService
-   * @param {String} name The name of the service
-   * @param {*} service The service object
-   * @param {Boolean} [override] Silently overrides an existing service.
    * @example
    *   node.addService('myService', { foo: 'bar' })
    */
@@ -138,8 +135,6 @@ export class Entity extends Events {
 
   /**
    * Removes a service by given service name.
-   * @param name The name of the service to remove
-   * @returns {Glib.Entity}
    */
   public removeService(name: string): Entity {
     delete this.services[name]
@@ -149,117 +144,103 @@ export class Entity extends Events {
   /**
    * Gets a service object by name starting the search at this node. Without the recursive parameter the search will
    * end at this node and throw an exception if the no service was found.
-   * @method getService
-   * @param {String} name The name of the service
-   * @return {Object}
    */
-  // getService(name:"Assets"):Components.Assets;
-  // getService(name:"Camera"):Components.Camera;
-  // getService(name:"Fps"):Components.Fps;
-  // getService(name:"GameLoop"):Components.GameLoop;
-  // getService(name:"Keyboard"):Components.Keyboard;
-  // getService(name:"Light"):Components.Light;
-  // getService(name:"Mouse"):Components.Mouse;
-  // getService(name:"Renderable"):Components.Renderable;
-  // getService(name:"Renderer"):Components.Renderer;
-  // getService(name:"Time"):Components.Time;
-  // getService(name:"Transform"):Components.Transform;
-  public getService(name: string): any {
-    const result = this.services[name]
-
+  public getService(name: 'Assets'     |'root:Assets'): Components.AssetsComponent
+  public getService(name: 'Camera'     |'root:Camera'): Components.CameraComponent
+  public getService(name: 'Fps'        |'root:Fps'): Components.FpsComponent
+  public getService(name: 'GameLoop'   |'root:GameLoop'): Components.GameLoopComponent
+  public getService(name: 'Keyboard'   |'root:Keyboard'): Components.KeyboardComponent
+  public getService(name: 'Light'      |'root:Light'): Components.LightComponent
+  public getService(name: 'Mouse'      |'root:Mouse'): Components.MouseComponent
+  public getService(name: 'Renderable' |'root:Renderable'): Components.Renderable
+  public getService(name: 'Renderer'   |'root:Renderer'): Components.RendererComponent
+  public getService(name: 'Time'       |'root:Time'): Components.TimeComponent
+  public getService(name: 'Transform'  |'root:Transform'): Components.TransformComponent
+  public getService(name: string): any
+  public getService(name: any): any {
+    let result
+    if (name.indexOf('root:') === 0) {
+      result = this.root.services[name.replace('root:', '')]
+    } else {
+      result = this.services[name]
+    }
     if (result) {
       return result
     }
-
     throw new Error(`Service '${name}' is missing`)
   }
 
   public getServices(map: { [key: string]: string }, target?: any): { [key: string]: any } {
-    for (const key in map) {
-      if (map.hasOwnProperty(key)) {
-        const lookup = map[key]
-        if (lookup.indexOf('root:') === 0) {
-          map[key] = this.root.getService(lookup.replace('root:', ''))
-        } else {
-          map[key] = this.getService(lookup)
-        }
-      }
+    const result = map as { [key: string]: any }
+    for (const key of Object.keys(result)) {
+      result[key] = this.getService(map[key])
     }
     if (target) {
-      extend(target, map)
+      extend(target, result)
     }
-    return map
+    return result
   }
 
   /**
    * Adds a child node and creates a parent child relationship
-   * @chainable
-   * @method addChild
-   * @param {Node} child The child node to add
-   * @return {Node} A reference to `this`
    */
-  public addChild(child: Entity): Entity {
-    if (child.parent) {
-      child.parent.removeChild(child)
+  public addEntity(entity: Entity): Entity {
+    if (entity.parent) {
+      entity.parent.removeEntity(entity)
     }
-    this.children.push(child)
-    child.parent = this
-    child.root = this.root
+    this.children.push(entity)
+    entity.parent = this
+    entity.root = this.root
     return this
   }
 
   /**
    * Creates and adds a new child entity and passes it to each of the given template functions.
-   * @param {string|function} templates
-   * @returns {Glib.Entity}
    */
-  public buildChild(...config: any[]): Entity {
+  public buildEntity(...config: any[]): Entity {
     const child = new Entity()
-    this.addChild(child)
+    this.addEntity(child)
     child.applyTemplates(config)
     return this
   }
 
   /**
    * calls addChild on `parent`
-   * @chainable
-   * @method addTo
-   * @param {Node} parent The parent node
-   * @return {Node} A reference to `this`
    */
   private addTo(parent: Entity): Entity {
-    parent.addChild(this)
+    parent.addEntity(this)
     return this
   }
 
   /**
    * Removes the given node from the child collection and breaks the parent child relation ship
-   * @chainable
-   * @method removeChild
-   * @param node The child to remove
-   * @return {Node} A reference to `this`
    */
-  public removeChild(node: Entity): Entity {
-    const index = this.children.indexOf(node)
+  public removeEntity(entity: Entity): Entity {
+    const index = this.children.indexOf(entity)
     if (index >= 0) {
       this.children.splice(index, 1)
-      node.parent = null
+      entity.parent = null
     }
     return this
   }
 
   /**
+   * Removes this entity from its parent
+   */
+  public remove() {
+    if (this.parent) {
+      this.parent.removeEntity(this)
+    }
+  }
+
+  /**
    * Adds a component to this node. If the component has a `serviceName` property it is also registered as a service.
-   * @chainable
-   * @method addComponent
-   * @param comp The component to add
-   * @return {Node} A reference to `this`
    */
   public addComponent(comp: Component): Entity {
-    if (comp.node) {
-      comp.node.removeComponent(comp)
+    if (comp.entity) {
+      comp.entity.removeComponent(comp)
     }
-    comp.node = this
+    comp.entity = this
     if (comp.service && comp.name) {
       this.addService(comp.name, comp)
     }
@@ -276,10 +257,6 @@ export class Entity extends Events {
 
   /**
    * Removes the component from this node.
-   * @chainable
-   * @method removeComponent
-   * @param comp The component to remove
-   * @return {Node} A reference to `this`
    */
   public removeComponent(comp: Component): Entity {
     if (comp.service && comp.name) {
@@ -288,7 +265,7 @@ export class Entity extends Events {
     let index = this.components.indexOf(comp)
     if (index >= 0) {
       this.components.splice(index, 1)
-      comp.node = null
+      comp.entity = null
     }
     index = this.toUpdate.indexOf(comp)
     if (index >= 0) {
@@ -305,14 +282,11 @@ export class Entity extends Events {
    * Instantly initializes the components and brings the node into a fully functional state. This method does not
    * need to be called because the components are initialized the first time the node is updated. This is usually
    * in the next frame after the frame the components have been added to the node.
-   * @chainable
-   * @method commitComponents
    * @example
    * node.createNode()
    *   .addComponent(new Gin.Components.Transform())
    *   .addComponent(new Gin.Components.Camera())
    *   .commitComponents() // the camera component will be bound to the transform component right here
-   * @return {Node}
    */
   public commitComponents(): Entity {
     this.initializeComponents(false)
@@ -320,8 +294,7 @@ export class Entity extends Events {
   }
 
   /**
-   * @method _initializeComponents
-   * @param {boolean} [recursive=true]
+   *
    */
   public initializeComponents(recursive: boolean = true): void {
     let cmp
@@ -346,9 +319,7 @@ export class Entity extends Events {
   }
 
   /**
-   * @method _updateComponents
-   * @param {number} time
-   * @param {boolean} [recursive=true]
+   *
    */
   public updateComponents(time: number, recursive: boolean = true): void {
     const list = this.toUpdate
@@ -365,9 +336,7 @@ export class Entity extends Events {
   }
 
   /**
-   * @method _drawComponents
-   * @param {number} time
-   * @param {boolean} [recursive=true]
+   *
    */
   public drawComponents(time: number, recursive: boolean = true): void {
     const list = this.toDraw
@@ -385,30 +354,20 @@ export class Entity extends Events {
 
   /**
    * Finds the objects that match the given expression.
-   * @method findAll
-   * @param path The expression to evaluate
-   * @return {*|Array} The result of the expression, which may be a Entity, Service or a Component
    */
-  public findAll(path: string) {
-    return this.finder.find(path, this)
+  public findAll(query: string) {
+    return this.finder.find(query, this)
   }
 
   /**
    * Finds the first object that matches the given expression.
-   * @method find
-   * @param path The expression to evaluate
-   * @return {*} The result of the expression, which may be a Entity, Service or a Component
    */
-  public find(path: string) {
-    return this.findAll(path)[0]
+  public find(query: string) {
+    return this.findAll(query)[0]
   }
 
   /**
    * Gets all descendant of this node
-   * @method descendants
-   * @param [andSelf] {Boolean} if `true`, this node is also added to the resulting collection
-   * @param [result] {Array} the resulting collection. If nothing is given a new array is created.
-   * @return {Array} the resulting collection
    */
   public descendants(andSelf: boolean = false, result: Entity[] = []) {
     if (andSelf) {
@@ -422,10 +381,6 @@ export class Entity extends Events {
 
   /**
    * Gets all siblings of this node
-   * @method siblings
-   * @param [andSelf] {Boolean} if `true`, this node is also added to the resulting collection
-   * @param [result] {Array} the resulting collection. If nothing is given a new array is created.
-   * @return {Array} the resulting collection
    */
   public siblings(andSelf: boolean, result: Entity[] = []) {
     if (!this.parent) {
@@ -441,18 +396,5 @@ export class Entity extends Events {
       }
     }
     return result
-  }
-
-  public debug(): string {
-    return [
-      `= Entity: ${this.name}`,
-      this.components.map((component) => {
-        if (component['debug']) {
-          return component['debug']()
-        } else {
-          return `- component: ${component.name || '(unnamed)'}`
-        }
-      }).join('\n'),
-    ].join('\n')
   }
 }

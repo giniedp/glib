@@ -9,20 +9,21 @@ export interface TransformProperties {
   scale?: Vec3
 }
 
+const tempQuat = Quat.createIdentity()
+const tempMat = Mat4.createIdentity()
+const tempVec = Vec3.createZero()
+
 export class TransformComponent implements Component {
   public name: string = 'Transform'
   public service: boolean = true
   public enabled: boolean = true
 
-  public scale = Vec3.createOne()
-  public position: Vec3 = Vec3.createZero()
-  public rotation: Quat = Quat.createIdentity()
-  public worldMat: Mat4 = Mat4.createIdentity()
-  public inverseMat: Mat4 = Mat4.createIdentity()
+  public readonly scale = Vec3.createOne()
+  public readonly position: Vec3 = Vec3.createZero()
+  public readonly rotation: Quat = Quat.createIdentity()
+  public readonly worldMat: Mat4 = Mat4.createIdentity()
+  public readonly inverseMat: Mat4 = Mat4.createIdentity()
 
-  public tempQuat = Quat.createIdentity()
-  public tempMat = Mat4.createIdentity()
-  public tempVec = Vec3.createZero()
   public dirty = true
 
   constructor(params?: TransformProperties) {
@@ -39,7 +40,7 @@ export class TransformComponent implements Component {
       this.worldMat
         .initIdentity()
         .setScale(this.scale)
-        .multiply(this.tempMat.initFromQuaternion(this.rotation))
+        .multiply(tempMat.initFromQuaternion(this.rotation))
         .setTranslation(this.position)
       this.inverseMat
         .initFrom(this.worldMat)
@@ -61,7 +62,7 @@ export class TransformComponent implements Component {
   }
 
   public setRotationXYZAngle(x: number, y: number, z: number, angle: number): TransformComponent {
-    this.rotation.initAxisAngle(this.tempVec.init(x, y, z).normalize(), angle)
+    this.rotation.initAxisAngle(tempVec.init(x, y, z).normalize(), angle)
     this.dirty = true
     return this
   }
@@ -73,19 +74,19 @@ export class TransformComponent implements Component {
   }
 
   public rotateAxisAngle(axis: IVec3, angle: number): TransformComponent {
-    this.rotation.concat(this.tempQuat.initAxisAngle(axis, angle))
+    this.rotation.concat(tempQuat.initAxisAngle(axis, angle))
     this.dirty = true
     return this
   }
 
   public rotateXYZAngle(x: number, y: number, z: number, angle: number): TransformComponent {
-    this.rotation.multiply(this.tempQuat.initAxisAngle(this.tempVec.init(x, y, z), angle))
+    this.rotation.multiply(tempQuat.initAxisAngle(tempVec.init(x, y, z), angle))
     this.dirty = true
     return this
   }
 
   public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): TransformComponent {
-    this.rotation.concat(this.tempQuat.initYawPitchRoll(yaw, pitch, roll))
+    this.rotation.concat(tempQuat.initYawPitchRoll(yaw, pitch, roll))
     this.dirty = true
     return this
   }
@@ -123,9 +124,9 @@ export class TransformComponent implements Component {
   }
 
   public scaleUniform(scale: number): TransformComponent {
-      this.scale.x = scale
-      this.scale.y = scale
-      this.scale.z = scale
+      this.scale.x *= scale
+      this.scale.y *= scale
+      this.scale.z *= scale
       this.dirty = true
       return this
   }
@@ -168,14 +169,5 @@ export class TransformComponent implements Component {
     this.position.z += z
     this.dirty = true
     return this
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled  : ${this.enabled}`,
-      `  world    :`,
-      Mat4.format(this.worldMat),
-    ].join('\n')
   }
 }

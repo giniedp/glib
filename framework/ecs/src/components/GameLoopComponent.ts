@@ -3,7 +3,7 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 
 export class GameLoopComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'GameLoop'
   public service: boolean = true
   public enabled: boolean = true
@@ -66,17 +66,10 @@ export class GameLoopComponent implements Component {
   }
 
   private onFrame(dt: number) {
-    const node = this.node
+    const node = this.entity
     node.initializeComponents(this.recursiveSetup)
     node.updateComponents(dt, this.recursiveUpdate)
     node.drawComponents(dt, this.recursiveDraw)
     return this
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-    ].join('\n')
   }
 }

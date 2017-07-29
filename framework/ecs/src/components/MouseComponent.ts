@@ -6,7 +6,7 @@ import { Entity } from './../Entity'
 
 export class MouseComponent implements Component {
 
-  public node: Entity
+  public entity: Entity
   public name: string = 'Mouse'
   public service: boolean = true
   public enabled: boolean = true
@@ -115,16 +115,5 @@ export class MouseComponent implements Component {
 
   public buttonJustReleased(button: number): boolean {
     return this.oldState.buttons[button] && !this.newState.buttons[button]
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-      `  buttons: ${this.newState.buttons}`,
-      `  wheel: ${this.newState.wheel}`,
-      `  x: ${this.newState.x.toPrecision(5)}, y: ${this.newState.y.toPrecision(5)}`,
-      `  dx: ${this.xDelta.toPrecision(5)}, dy: ${this.yDelta.toPrecision(5)}`,
-    ].join('\n')
   }
 }

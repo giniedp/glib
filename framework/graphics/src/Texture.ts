@@ -1,5 +1,6 @@
 import { isArray, isObject, isString, Log, uuid } from '@glib/core'
 import {
+  ArrayType,
   DataType,
   DataTypeOption,
   DepthFormat,
@@ -12,6 +13,8 @@ import {
 } from './enums'
 
 import { Device } from './Device'
+
+export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
 
 function isPowerOfTwo(value: number): boolean {
   return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
@@ -174,7 +177,7 @@ export class Texture {
   public static createImageUpdateHandle(texture: Texture, image: HTMLImageElement) {
     let gl = texture.gl
     return () => {
-      texture.ready = (!!image.naturalWidth && !!image.naturalHeight)
+      texture.ready = image.complete
       if (!texture.ready) { return } // image has not been downloaded yet
 
       gl.bindTexture(texture.type, texture.handle)
@@ -256,14 +259,10 @@ export class Texture {
       this.setImage(source)
     } else if (source instanceof HTMLVideoElement) {
       this.setVideo(source)
-    } else if (isArray(source)) {
-      if (isObject(source[0])) {
-        this.setVideoUrls(source)
-      } else {
-        this.setData(new Uint8Array(source))
-      }
-    } else if (source) {
-      this.setImage(source)
+    } else if (isArray(source) && isObject(source[0])) {
+      this.setVideoUrls(source)
+    } else if (source && (source instanceof Array || source instanceof ArrayBuffer || source.buffer)) {
+      this.setData(source, options.width, options.height)
     } else {
       this.ready = true
       this.gl.bindTexture(this.type, this.handle)
@@ -384,11 +383,25 @@ export class Texture {
   /**
    * Sets the texture source from data array or buffer
    */
-  public setData(data: any, width?: number, height?: number): Texture {
+  public setData(data: TextureDataOption, width?: number, height?: number): Texture {
     this.video = null
     this.image = null
     this.update = noop
-    let pixelCount = data.length / PixelFormatElementCount[this.pixelFormat]
+    let buffer: ArrayBufferView
+    if (data instanceof Array || data instanceof ArrayBuffer) {
+      buffer = new ArrayType[this.pixelType](data)
+    } else if (data && (data as ArrayBufferView).buffer instanceof ArrayBuffer) {
+      if (data instanceof Uint8ClampedArray) {
+        buffer = new Uint8Array(data.buffer)
+      } else {
+        buffer = (data as ArrayBufferView)
+      }
+    }
+    if (!buffer) {
+      throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
+    }
+
+    let pixelCount = buffer.byteLength / PixelFormatElementCount[this.pixelFormat]
     if (!width || !height) {
       width = height = Math.floor(Math.sqrt(pixelCount))
     }
@@ -397,7 +410,7 @@ export class Texture {
     }
     let gl = this.gl
     this.use()
-    gl.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, data)
+    gl.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, buffer)
     if (this.generateMipmap) {
       gl.generateMipmap(this.type)
     }

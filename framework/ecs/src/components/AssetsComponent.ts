@@ -1,10 +1,11 @@
 import * as Content from '@glib/content'
 import { HttpOptions } from '@glib/core'
 import * as Graphics from '@glib/graphics'
+import { Component } from './../Component'
 import { Entity } from './../Entity'
 
-export class AssetsComponent {
-  public node: Entity
+export class AssetsComponent implements Component {
+  public entity: Entity
   public name: string = 'Assets'
   public service: boolean = true
 
@@ -12,7 +13,7 @@ export class AssetsComponent {
   public device: Graphics.Device
 
   public setup() {
-    this.device = this.node.root.getService('Device')
+    this.device = this.entity.root.getService('Device')
     this.manager = new Content.Manager(this.device)
   }
 
@@ -30,12 +31,5 @@ export class AssetsComponent {
 
   public download(options: string | HttpOptions): Promise<Content.RawAsset> {
     return this.manager.download(options)
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  loaded assets: ${Object.keys(this.manager.loaded).length}`,
-    ].join('\n')
   }
 }

@@ -23,7 +23,7 @@ export interface Renderable {
 }
 
 export class RendererComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Renderer'
   public service: boolean = true
   public enabled: boolean = true
@@ -36,9 +36,9 @@ export class RendererComponent implements Component {
   public cullVisitor: CullVisitor = new SimpleCullVisitor()
 
   public setup() {
-    this.time = this.node.root.getService('Time')
-    this.device = this.node.root.getService('Device')
-    this.assets = this.node.root.getService('Assets')
+    this.time = this.entity.root.getService('Time')
+    this.device = this.entity.root.getService('Device')
+    this.assets = this.entity.root.getService('Assets')
     this.manager = new Render.Manager(this.device)
     this.manager.addView({
       enabled: true,
@@ -70,7 +70,7 @@ export class RendererComponent implements Component {
     view.items.length = 0
     view.lights.length = 0
     binder.updateCamera(camera.world, camera.view, camera.projection)
-    this.cullVisitor.start(this.node.root, view)
+    this.cullVisitor.start(this.entity.root, view)
     this.manager.renderView(view)
   }
 }

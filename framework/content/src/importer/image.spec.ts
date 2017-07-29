@@ -26,8 +26,8 @@ describe('glib/content/manager/importer', () => {
       })
     })
 
-    it('awaits until image is loaded with await option', (done) => {
-      manager.load(Image, RED10x20, { await: true }).then((result) => {
+    it('waits until image is loaded', (done) => {
+      manager.load(Image, RED10x20).then((result) => {
         expect(result.complete).toBe(true)
         expect(result.width).toBe(10)
         expect(result.height).toBe(20)

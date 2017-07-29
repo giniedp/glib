@@ -343,8 +343,8 @@ export class BlendState implements BlendStateOptions {
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
-    colorSrcBlend: Blend.One,
-    alphaSrcBlend: Blend.One,
+    colorSrcBlend: Blend.SrcAlpha,
+    alphaSrcBlend: Blend.SrcAlpha,
     colorDstBlend: Blend.One,
     alphaDstBlend: Blend.One,
 
@@ -359,8 +359,8 @@ export class BlendState implements BlendStateOptions {
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
-    colorSrcBlend: Blend.SrcAlpha,
-    alphaSrcBlend: Blend.SrcAlpha,
+    colorSrcBlend: Blend.One,
+    alphaSrcBlend: Blend.One,
 
     colorDstBlend: Blend.SrcAlphaInv,
     alphaDstBlend: Blend.SrcAlphaInv,

@@ -4,7 +4,7 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 
 export class TouchComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Touch'
   public service: boolean = true
   public enabled: boolean = true
@@ -71,12 +71,5 @@ export class TouchComponent implements Component {
     let n = this.newStates[id]
     let o = this.oldStates[id]
     return n && o && n.active && o.active
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-    ].join('\n')
   }
 }

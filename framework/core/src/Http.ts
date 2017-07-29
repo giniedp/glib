@@ -1,4 +1,5 @@
 export interface HttpOptions {
+  xhr?: XMLHttpRequest
   url: string
   type?: string
   async?: boolean
@@ -46,7 +47,7 @@ export const Http = {
   createXMLHttpRequest: () => new XMLHttpRequest(),
   request: (options: HttpOptions): Promise<XMLHttpRequest> => {
     const async = options.async === false ? false : true
-    const xhr = Http.createXMLHttpRequest()
+    const xhr = options.xhr || Http.createXMLHttpRequest()
     xhr.open(
       options.type || 'GET',
       options.url,

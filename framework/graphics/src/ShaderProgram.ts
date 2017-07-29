@@ -203,7 +203,7 @@ export class ShaderProgram {
         let uniform = new ShaderUniform(this, options)
         if (uniform.location != null) {
           this.uniforms[key] = uniform
-          Log.i(`ShadderProgram ${this.uid}`, `found uniform ${uniform.meta.name} (binding:${uniform.name})`)
+          Log.i(`ShadderProgram ${this.uid.substr(0, 8)}... has binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
         }
       }
     }

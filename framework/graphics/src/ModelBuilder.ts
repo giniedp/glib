@@ -200,7 +200,7 @@ export class ModelBuilder {
         this.mergeBounding(item)
       } else if (key.match('normal|tangent')) {
         transform.transformNormalBuffer(item)
-      } else if (key.match('texture|uv')) {
+      } else if (key.match('texture|uv|texcoord')) {
         // TODO:
         // this.uvTransform.transformV2Buffer(item);
       }
@@ -286,7 +286,7 @@ export class ModelBuilder {
    * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
    * @param options
    */
-  public endMeshOptions(options: ModelMeshOptions = {}, optimize: boolean = false): ModelMeshOptions {
+  public endMeshOptions(options: ModelMeshOptions = {}): ModelMeshOptions {
     if (this.indexCount === 0 && this.vertexCount === 0) {
       Log.w(`[ModelBuilder] pushMesh : called on empty builder. ignore.`)
       return options
@@ -305,8 +305,8 @@ export class ModelBuilder {
     return options
   }
 
-  public endMesh(device: Device, optimize: boolean = false): ModelMesh {
-    this.endMeshOptions()
+  public endMesh(device: Device, options: ModelMeshOptions = {}): ModelMesh {
+    this.endMeshOptions(options)
     let opts = this.meshes[this.meshes.length - 1]
     return new ModelMesh(device, opts)
   }
@@ -316,7 +316,7 @@ export class ModelBuilder {
    * @param options The custom model options to be used. The 'meshes' option is ignored.
    * @returns {{materials: (Material[]|MaterialOptions[]|Array)}}
    */
-  public finishModelOptions(options: ModelOptions = {}): ModelOptions {
+  public endModelOptions(options: ModelOptions = {}): ModelOptions {
     if (this.indices.length !== 0 || this.vertices.length !== 0) {
       this.endMeshOptions()
     }
@@ -337,12 +337,12 @@ export class ModelBuilder {
    * @param {Glib.Graphics.ModelOptions} options The model options.
    * @returns {Model}
    */
-  public finishModel(device: Device, options: ModelOptions = {}): Model {
-    options = this.finishModelOptions(options)
+  public endModel(device: Device, options: ModelOptions = {}): Model {
+    options = this.endModelOptions(options)
     return device.createModel(options)
   }
 
-  public append(name: string, options: any): ModelBuilder {
+  public append(name: string, options?: any): ModelBuilder {
     let f = ModelBuilder.formulas[name]
     if (!f) {
       throw new Error(`[Graphics.Builder] formula not found '${name}'`)
@@ -352,5 +352,13 @@ export class ModelBuilder {
     }
     f(this, options)
     return this
+  }
+
+  public static createMesh(device: Device, formula: string, formulaOptions?: any, meshOptions?: ModelMeshOptions): ModelMesh {
+    return ModelBuilder.begin().append(formula, formulaOptions).endMesh(device, meshOptions)
+  }
+
+  public static createModel(device: Device, formula: string, formulaOptions?: any, modelOptions?: ModelOptions): Model {
+    return ModelBuilder.begin().append(formula, formulaOptions).endModel(device, modelOptions)
   }
 }

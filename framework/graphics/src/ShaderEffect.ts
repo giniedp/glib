@@ -123,12 +123,12 @@ export class ShaderEffect {
   }
 
   /**
-   * Draws a mesh with the current technique
+   * Draws an object with the current technique
    */
-  public drawMesh(mesh: ModelMesh) {
-    for (let pass of this.technique.passes) {
-      pass.commit(this.parameters) // TODO:
-      mesh.draw(pass.program)
+  public draw(item: { draw: (p: ShaderProgram) => void|any }) {
+    for (const pass of this.technique.passes) {
+      pass.commit(this.parameters)
+      item.draw(pass.program)
     }
   }
 

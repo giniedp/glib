@@ -14,7 +14,7 @@ export interface CameraProperties {
 
 export class CameraComponent implements Component {
   public name = 'Camera'
-  public node: Entity
+  public entity: Entity
   public service: boolean = true
   public enabled: boolean = true
 
@@ -29,6 +29,10 @@ export class CameraComponent implements Component {
   public transform: TransformComponent
   private targetView: RenderView
 
+  public get world() {
+    return this.transform.worldMat
+  }
+
   constructor(params?: CameraProperties) {
     if (params) {
       extend(this, params)
@@ -36,7 +40,7 @@ export class CameraComponent implements Component {
   }
 
   public setup() {
-    this.transform = this.node.getService('Transform')
+    this.transform = this.entity.getService('Transform')
   }
 
   public update() {
@@ -49,7 +53,7 @@ export class CameraComponent implements Component {
   }
 
   public activate(viewIndex: number = 0) {
-    const renderer: RendererComponent = this.node.root.getService('Renderer')
+    const renderer: RendererComponent = this.entity.root.getService('Renderer')
     const view: RenderView = renderer.manager.views[viewIndex]
 
     if (!view) {
@@ -70,17 +74,5 @@ export class CameraComponent implements Component {
       this.targetView.camera = void 0
       this.targetView = void 0
     }
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-      ['  ',
-       `near: ${this.near.toPrecision(5)}`,
-       `far: ${this.far.toPrecision(5)}`,
-       `fov: ${this.fov.toPrecision(5)}`,
-       `aspect: ${this.aspect.toPrecision(5)}`].join(', '),
-    ].join('\n')
   }
 }

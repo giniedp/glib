@@ -3,9 +3,10 @@ import { Entity } from './../Entity'
 import { TimeComponent } from './TimeComponent'
 
 export class FpsComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Fps'
   public enabled: boolean = true
+  public visible: boolean = false
   public service: boolean = true
 
   public frames: number
@@ -20,7 +21,7 @@ export class FpsComponent implements Component {
   }
 
   public setup() {
-    this.time = this.node.root.getService('Time')
+    this.time = this.entity.root.getService('Time')
   }
 
   public reset() {
@@ -41,13 +42,5 @@ export class FpsComponent implements Component {
         this.fpsTimer -= 1000
       }
     }
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-      `  fps: ${this.fps.toPrecision(5)}`,
-    ].join('\n')
   }
 }

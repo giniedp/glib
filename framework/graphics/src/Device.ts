@@ -38,7 +38,7 @@ import { Buffer } from './Buffer'
 import { Capabilities } from './Capabilities'
 import { Color } from './Color'
 import { Model, ModelOptions } from './Model'
-import { ShaderProgram } from './ShaderProgram'
+import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { SpriteBatch } from './SpriteBatch'
 
 const supportsWebGL = typeof WebGLRenderingContext === 'function'
@@ -412,10 +412,10 @@ export class Device {
   /**
    * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
    * @param [primitiveType=TriangleList]
-   * @param [offset=0]
-   * @param [count=indexBuffer.elementCount]
+   * @param [elementOffset=0]
+   * @param [elementCount=indexBuffer.elementCount]
    */
-  public drawIndexedPrimitives(primitiveType?: number, offset?: number, count?: number): Device {
+  public drawIndexedPrimitives(primitiveType?: number, elementOffset?: number, elementCount?: number): Device {
     let iBuffer = this.$indexBuffer
     let vBuffer = this.$vertexBuffer
     let program = this.$program
@@ -433,11 +433,11 @@ export class Device {
     let Enum = PrimitiveType
     primitiveType = Enum[primitiveType || Enum.TriangleList]
 
-    offset = offset || 0
-    count = count || iBuffer.elementCount
+    elementOffset = (elementOffset || 0) * iBuffer.elementSize
+    elementCount = elementCount || iBuffer.elementCount
 
-    this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
-    this.context.drawElements(primitiveType, count, type, offset * iBuffer.elementSize)
+    this.bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
+    this.context.drawElements(primitiveType, elementCount, type, elementOffset)
 
     return this
   }
@@ -471,7 +471,7 @@ export class Device {
     count = count || iBuffer.elementCount
     instanceCount = instanceCount || 1
 
-    this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
+    this.bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
     (this.context as any).drawElementsInstanced(primitiveType, count, type, offset * iBuffer.elementSize, instanceCount)
     return this
   }
@@ -497,7 +497,7 @@ export class Device {
     count = count || vBuffer.elementCount
     offset = offset || 0
 
-    this._bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
+    this.bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
     this.context.drawArrays(primitiveType, offset, count)
     return this
   }
@@ -740,7 +740,7 @@ export class Device {
     return this.context.drawingBufferWidth / this.context.drawingBufferHeight
   }
 
-  private _bindAttribPointerAndLocation(vBuffer: Buffer, program: ShaderProgram, layout?: any, attributes?: any) {
+  private bindAttribPointerAndLocation(vBuffer: Buffer, program: ShaderProgram, layout?: any, attributes?: any) {
     layout = layout || vBuffer.layout
     attributes = attributes || program.attributes
 
@@ -846,12 +846,11 @@ export class Device {
   /**
    * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
    */
-  public createProgram(options: any): ShaderProgram {
+  public createProgram(options: ShaderProgramOptions): ShaderProgram {
     let vSource = options.vertexShader
     let fSource = options.fragmentShader
 
-    if (isString(vSource) && isString(fSource)) {
-
+    if (typeof vSource === 'string' && typeof fSource === 'string') {
       if (vSource.startsWith('#') && vSource.indexOf('\n') < 0) {
         vSource = document.getElementById(vSource.substr(1)).textContent
         options.vertexShader = vSource
@@ -921,7 +920,7 @@ export class Device {
     return new Model(this, options)
   }
 
-  public createMaterial(options: ShaderEffectOptions): ShaderEffect {
+  public createEffect(options: ShaderEffectOptions): ShaderEffect {
     return new ShaderEffect(this, options)
   }
 

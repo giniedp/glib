@@ -3,7 +3,7 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 
 export class TimeComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Time'
   public service: boolean = true
   public enabled: boolean = true
@@ -34,16 +34,5 @@ export class TimeComponent implements Component {
     this.elapsedMsInReal = time - this.current
     this.totalMsInReal += this.elapsedMsInReal
     this.current = time
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-      `  elapsed gameTime: ${this.elapsedMsInGame.toPrecision(5)}`,
-      `  total gameTime: ${this.totalMsInGame}`,
-      `  elapsed realTime: ${this.elapsedMsInReal.toPrecision(5)}`,
-      `  total realTime: ${this.totalMsInReal}`,
-    ].join('\n')
   }
 }

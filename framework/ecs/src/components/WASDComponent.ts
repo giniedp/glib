@@ -8,7 +8,7 @@ import { MouseComponent } from './MouseComponent'
 import { TransformComponent } from './TransformComponent'
 
 export class WASDComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public enabled: boolean = true
 
   public yaw: number = 0
@@ -33,9 +33,9 @@ export class WASDComponent implements Component {
   public transform: TransformComponent
 
   public setup() {
-    this.mouse = this.node.root.getService('Mouse')
-    this.keyboard = this.node.root.getService('Keyboard')
-    this.transform = this.node.getService('Transform')
+    this.mouse = this.entity.getService('root:Mouse')
+    this.keyboard = this.entity.getService('root:Keyboard')
+    this.transform = this.entity.getService('Transform')
   }
 
   public update(timeMs: number) {

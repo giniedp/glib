@@ -4,20 +4,20 @@ import { Entity } from './Entity'
 
 export type Template = (entity: Entity, options?: any) => void
 
-const registry: { [key: string]: Template } = {}
+const templates: { [key: string]: Template } = {}
 
-export function registerTemplate(name: string, builder: Template) {
-  if (registry[name]) {
+export function addTemplate(name: string, builder: Template) {
+  if (templates[name]) {
     throw new Error(`Template '${name}' is already registered`)
   }
-  registry[name] = builder
+  templates[name] = builder
 }
 
 export function getTemplate(name: string) {
-  return registry[name]
+  return templates[name]
 }
 
-registerTemplate('Game', (
+addTemplate('Game', (
   entity: Entity,
   options: {
     canvas?: HTMLCanvasElement,
@@ -46,24 +46,24 @@ registerTemplate('Game', (
   }
 })
 
-export function createGame(options: any, ...templates: string[]) {
-  return new Entity().applyTemplate('Game', options).applyTemplates(templates)
+export function createGame(options: any, ...tpl: string[]) {
+  return new Entity().applyTemplate('Game', options).applyTemplates(tpl)
 }
 
-registerTemplate('Transform', (entity: Entity) => {
+addTemplate('Transform', (entity: Entity) => {
   if (!entity.s.Transform) {
     entity.addComponent(new Components.TransformComponent())
   }
 })
 
-registerTemplate('Camera', (entity: Entity, options: any = {}) => {
+addTemplate('Camera', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
   if (!entity.s.Camera) {
     entity.addComponent(new Components.CameraComponent(options))
   }
 })
 
-registerTemplate('DirectionalLight', (entity: Entity, options: any = {}) => {
+addTemplate('DirectionalLight', (entity: Entity, options: any = {}) => {
   if (!entity.s.Light) {
     options = options || {}
     options.type = Components.LightType.Directional
@@ -71,7 +71,7 @@ registerTemplate('DirectionalLight', (entity: Entity, options: any = {}) => {
   }
 })
 
-registerTemplate('PointLight', (entity: Entity, options: any = {}) => {
+addTemplate('PointLight', (entity: Entity, options: any = {}) => {
   if (!entity.s.Light) {
     options = options || {}
     options.type = Components.LightType.Point
@@ -79,7 +79,7 @@ registerTemplate('PointLight', (entity: Entity, options: any = {}) => {
   }
 })
 
-registerTemplate('SpotLight', (entity: Entity, options: any = {}) => {
+addTemplate('SpotLight', (entity: Entity, options: any = {}) => {
   if (!entity.s.Light) {
     options = options || {}
     options.type = Components.LightType.Spot
@@ -87,34 +87,35 @@ registerTemplate('SpotLight', (entity: Entity, options: any = {}) => {
   }
 })
 
-registerTemplate('Light', (entity: Entity, options: any = {}) => {
+addTemplate('Light', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
   if (!entity.s.Light) {
     entity.addComponent(new Components.LightComponent(options))
   }
 })
 
-registerTemplate('Model', (entity: Entity, options: any = {}) => {
+addTemplate('Model', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
   if (!entity.s.Renderable) {
     entity.addComponent(new Components.ModelComponent(options))
   }
 })
 
-registerTemplate('Mouse', (entity: Entity, options: any = {}) => {
+addTemplate('Mouse', (entity: Entity, options: any = {}) => {
   if (!entity.s.Mouse) {
     entity.addComponent(new Components.MouseComponent(options))
   }
 })
 
-registerTemplate('Keyboard', (entity: Entity, options: any = {}) => {
+addTemplate('Keyboard', (entity: Entity, options: any = {}) => {
   if (!entity.s.Keyboard) {
     entity.addComponent(new Components.KeyboardComponent(options))
   }
 })
 
-registerTemplate('WASD', (entity: Entity, options: any = {}) => {
+addTemplate('WASD', (entity: Entity, options: any = {}) => {
   entity.root.applyTemplate('Mouse')
   entity.root.applyTemplate('Keyboard')
+  entity.applyTemplate('Transform')
   entity.addComponent(new Components.WASDComponent())
 })

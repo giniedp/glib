@@ -13,6 +13,10 @@ export class Color {
     return (a | 0) << 24 | (b | 0) << 16 | (g | 0) << 8 | (r | 0) << 0
   }
 
+  public static xyzw(x: number, y: number, z: number, w: number) {
+    return Color.rgba(x * 255, y * 255, z * 255, w * 255)
+  }
+
   public static r(rgba: number): number {
     return rgba & 255
   }

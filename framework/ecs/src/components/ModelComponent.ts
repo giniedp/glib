@@ -7,7 +7,7 @@ import { CullVisitor } from './RendererComponent'
 import { TransformComponent } from './TransformComponent'
 
 export class ModelComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Renderable'
   public service: boolean = true
   public enabled: boolean = true
@@ -22,7 +22,7 @@ export class ModelComponent implements Component {
     }
   }
   public setup() {
-    this.transform = this.node.s.Transform as TransformComponent
+    this.transform = this.entity.s.Transform as TransformComponent
   }
   public update() {
     if (this.transform) {

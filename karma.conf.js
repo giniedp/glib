@@ -27,11 +27,11 @@ module.exports = function (config) {
     browsers: [
       IS_TRAVIS ? 'Firefox' : 'ChromeDebugging'
     ],
-    // browserDisconnectTimeout: 60 * 60 * 1000,
+    browserDisconnectTimeout: 60 * 60 * 1000,
     customLaunchers: {
       ChromeDebugging: {
         base: 'Chrome',
-        flags: [ '--remote-debugging-port=9333' ]
+        flags: [ '--remote-debugging-port=9222' ]
       }
     },
     frameworks: [

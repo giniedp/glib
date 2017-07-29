@@ -6,6 +6,7 @@ export interface HeightMapOptions {
   height: number
   heights?: Float32Array|number[]
   normals?: Float32Array|number[]
+  smooth?: number
 }
 
 export class HeightMap {
@@ -32,6 +33,10 @@ export class HeightMap {
       this.heights = new Float32Array(heights)
     } else {
       this.heights = new Float32Array(this.width * this.height)
+    }
+
+    if (options.smooth) {
+      this.smooth(options.smooth)
     }
 
     const normals: any = options.normals
@@ -121,6 +126,46 @@ export class HeightMap {
         nIndex += 3
       }
     }
+    return this
+  }
+
+  public smooth(steps: number = 1): HeightMap {
+    if (steps <= 0) {
+      return
+    }
+    const w = this.width
+    const h = this.height
+    const data = this.heights
+    const data1 = new Float32Array(data.length)
+
+    function withFallback(value: number, fallback: number) {
+      return value == null ? fallback : value
+    }
+    while (steps > 0) {
+      steps--
+      for (let x = 0; x < w; x++) {
+        for (let y = 0; y < h; y++) {
+          const i = x + y * w
+
+          data1[i] = 0
+          data1[i] += data[i] * 4
+          data1[i] += withFallback(data[i + w], data[i]) * 2
+          data1[i] += withFallback(data[i - w], data[i]) * 2
+          data1[i] += withFallback(data[i + 1], data[i]) * 2
+          data1[i] += withFallback(data[i - 1], data[i]) * 2
+          data1[i] += withFallback(data[i + w + 1], data[i]) * 1
+          data1[i] += withFallback(data[i + w - 1], data[i]) * 1
+          data1[i] += withFallback(data[i - w + 1], data[i]) * 1
+          data1[i] += withFallback(data[i - w - 1], data[i]) * 1
+
+          data1[i] = data1[i] / 16
+        }
+      }
+      for (let i = 0; i < data.length; i++) {
+        data[i] = data1[i]
+      }
+    }
+
     return this
   }
 }

@@ -4,7 +4,7 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 
 export class KeyboardComponent implements Component {
-  public node: Entity
+  public entity: Entity
   public name: string = 'Keyboard'
   public service: boolean = true
   public enabled: boolean = true
@@ -41,13 +41,5 @@ export class KeyboardComponent implements Component {
 
   public justReleased(key: number): boolean {
     return (this.oldState.pressedKeys.indexOf(key) >= 0) && (this.newState.pressedKeys.indexOf(key) < 0)
-  }
-
-  public debug(): string {
-    return [
-      `- component: ${this.name}`,
-      `  enabled: ${this.enabled}`,
-      `  keys: ${this.newState.pressedKeys}`,
-    ].join('\n')
   }
 }

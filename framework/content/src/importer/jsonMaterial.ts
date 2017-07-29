@@ -109,9 +109,10 @@ pipelinePreprocessor('Material', (context: PipelineContext) => {
       .then((texture) => {
         parameters[key] = texture
       })
-      .catch(() => {
+      .catch((e) => {
         delete parameters[key]
         Log.w(`failed to load effect parameter texture (${key}:${value})`)
+        Log.e(e)
       })
       promises.push(promise)
     }

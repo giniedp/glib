@@ -1,13 +1,27 @@
+import { Http, HttpOptions, Log } from '@glib/core'
 import { PipelineContext, pipelineLoader, pipelineProcessor } from '../Pipeline'
+import { TGA } from './../parser/TGA'
 
-pipelineLoader(['*'], [ImageData], (context: PipelineContext) => {
-  return context.manager.load(Image, context.source, { await: true }).then((image) => {
+pipelineLoader(['.jpg', '.jpeg', '.png', '.bmp', 'image/jpg', 'image/png'], [ImageData, 'ImageData'], (context: PipelineContext) => {
+  return context.manager.load(Image, context.source).then((image) => {
     context.imported = image
-    return Promise.resolve(context.pipeline.process(context))
+    return context.pipeline.process(context)
   })
 })
 
-pipelineProcessor([ImageData], (context: PipelineContext) => {
+pipelineLoader(['.tga', 'image/x-tga'], [ImageData, 'ImageData'], (context: PipelineContext) => {
+  const ajax: HttpOptions = {
+    xhr: Http.createXMLHttpRequest(),
+    url: context.source,
+  }
+  ajax.xhr.responseType = 'arraybuffer'
+
+  return context.manager.download(ajax).then((res) => {
+    context.result = TGA.parse(res.content)
+  })
+})
+
+pipelineProcessor([ImageData, 'ImageData'], (context: PipelineContext) => {
   context.result = getImageData(context.imported)
 })
 

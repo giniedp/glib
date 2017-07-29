@@ -71,19 +71,28 @@ export interface ObjData {
   groups: ObjGroup[]
 }
 
+export interface ObjImportOptions {
+  /**
+   * Indicates whether the y texture coordinate should be flipped
+   */
+  flipY?: boolean
+}
+
 export class OBJ {
   public result: ObjData
   private groups: ObjGroup[]
   private group: ObjGroup
+  private options: ObjImportOptions
 
-  public static parse(content: string): ObjData {
+  public static parse(content: string, options: ObjImportOptions = {}): ObjData {
     return new OBJ().parse(content)
   }
 
-  public parse(data: string) {
+  public parse(data: string, options: ObjImportOptions = {}) {
     let lines = getLines(data)
     this.result = createData()
     this.groups = this.result.groups
+    this.options = options
 
     let currentLine = ''
     for (let line of lines) {

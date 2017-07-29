@@ -323,7 +323,7 @@ export class BTTPatch {
 
   public getSibling(x: number, y: number) {
     const parent = this.parent
-    const pCount = Math.floor(parent.heightMap.width / this.patchSize)
+    const pCount = Math.ceil(parent.heightMap.width / this.patchSize)
     const index = parent.patches.indexOf(this) + x + y * pCount
     return parent.patches[index]
   }

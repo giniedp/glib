@@ -14,7 +14,7 @@ export interface RawAsset {
   /**
    * The content
    */
-  content: string
+  content: any
   /**
    * The content type (e.g. application/json)
    */
@@ -28,12 +28,12 @@ export class XhrAsset implements RawAsset  {
   }
 
   public get content(): string {
-    return this.xhr.responseText
+    return this.xhr.response || this.xhr.responseText
   }
 
   public contentType: ContentType
 
-  constructor(private xhr: XMLHttpRequest) {
+  constructor(public readonly xhr: XMLHttpRequest) {
     this.contentType = ContentType.parse(this.xhr.getResponseHeader('content-type'))
   }
 }
@@ -72,31 +72,39 @@ export interface IManagerOptions {
  */
 export class Manager {
   /**
-   *
+   * The instance of the graphics device
    */
   public device: Device
   /**
-   *
+   * Collection of all loaded assets
    */
   public loaded = {}
   /**
-   *
+   * Collection of all ongoing loading promises
+   */
+  public loading = {}
+  /**
+   * Collection of all downloaded resources
    */
   public cached = {}
   /**
-   *
+   * Collection of urls which should use a different url when requested.
+   */
+  public remapUrl: { [k: string]: string} = {}
+  /**
+   * Indicates whether caching is enabled for downloaded resources
    */
   public cacheEnabled = true
   /**
-   *
+   * Default HTTP options to use when requesting assets from the web
    */
   public defaultAjaxOptions = {}
   /**
-   *
+   * Allows to dynamically transform HTTP request options
    */
   public transformAjaxOptions = (it: any) => it
   /**
-   *
+   * The instance of the pipeline to use
    */
   public pipeline: Pipeline = new Pipeline()
   /**
@@ -193,7 +201,6 @@ export class Manager {
    * Loads and instantiates multiple assets
    */
   public loadAssets(config: any): Promise<any> {
-    let manager = this
     let result = {}
 
     let promises = []
@@ -202,17 +209,17 @@ export class Manager {
       const type = key
       const value = config[type]
       if (isString(value)) {
-        promises.push(manager.load(type, value).then((res: any) => { result[key] = res }))
+        promises.push(this.load(type, value).then((res: any) => { result[key] = res }))
       } else if (isArray(value)) {
         let arr: any[] = result[key] = []
         for (let path of value) {
-          promises.push(manager.load(type, path).then((res: any) => { arr.push(res) }))
+          promises.push(this.load(type, path).then((res: any) => { arr.push(res) }))
         }
       } else if (isObject(value)) {
         let obj = result[key] = {}
         for (let k in value) {
           if (!value.hasOwnProperty(k)) { continue }
-          promises.push(manager.load(type, value[k]).then((res: any) => { obj[k] = res }))
+          promises.push(this.load(type, value[k]).then((res: any) => { obj[k] = res }))
         }
       } else {
         throw new Error('invalid configuration')
@@ -230,6 +237,9 @@ export class Manager {
     assetPath: string,
     options: { [key: string]: any } = {},
   ): Promise<T> {
+    if (this.remapUrl[assetPath]) {
+      assetPath = this.remapUrl[assetPath]
+    }
 
     const sourceType = DataUri.isDataUri(assetPath)
       ? ContentType.parse(DataUri.parse(assetPath).contentType).mimeType
@@ -238,13 +248,15 @@ export class Manager {
     Log.d(`[Content.Manager] load ${targetType['name'] || targetType}, ${assetPath}, ${sourceType}`)
 
     // see if the asset is already loaded
-    let key = (targetType['name'] || targetType) + ':' + assetPath
-    let loaded = this.loaded[key]
-    if (loaded) {
-      return loaded
+    const key = (targetType['name'] || targetType) + ':' + assetPath
+    if (this.loading[key]) {
+      return this.loading[key]
+    }
+    if (this.loaded[key]) {
+      return Promise.resolve(this.loaded[key])
     }
 
-    let context: PipelineContext = {
+    const context: PipelineContext = {
       source: assetPath,
       stage: 'load',
       manager: this,
@@ -254,15 +266,18 @@ export class Manager {
       options: options,
     }
 
-    return this.loaded[key] = this.pipeline.load(context).then(() => context.result)
+    return this.loading[key] = this.pipeline.load(context).then(() => context.result).then((res) => {
+      this.loaded[key] = res
+      delete this.loading[key]
+      return res
+    })
   }
 
   /**
    * Unloads all currently loaded assets
    */
   public unload() {
-    let keys = Object.keys(this.loaded)
-    for (let key of keys) {
+    for (let key of Object.keys(this.loaded)) {
       let obj = this.loaded[key]
       delete this.loaded[key]
       try {
@@ -270,6 +285,9 @@ export class Manager {
       } catch (e) {
         Log.w(`[Content.Manager] failed to unload asset at '${key}'`, e)
       }
+    }
+    for (let key of Object.keys(this.loading)) {
+      delete this.loading[key]
     }
   }
 }

@@ -5,14 +5,9 @@ pipelineLoader(['.jpg', '.jpeg', '.png', '.bmp', 'image/jpg', 'image/png'], [Ima
   context.result = image
 
   return new Promise((resolve, reject) => {
-    if (context.options.await) {
-      image.onload = resolve
-      image.onabort = reject
-      image.src = context.source
-    } else {
-      image.src = context.source
-      resolve()
-    }
+    image.onload = resolve
+    image.onabort = reject
+    image.src = context.source
   }).then(() => undefined)
   // skips the 'importer' and 'processor' stages
 })
