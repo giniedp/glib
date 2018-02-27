@@ -64,14 +64,14 @@ module.exports = function (config) {
     },
 
     coverageReporter: {
-      dir: 'coverage',
       reporters: [{
-        type: 'in-memory'
+        type: 'in-memory',
       }]
     },
     remapCoverageReporter: {
       'text-summary': null,
       html: './coverage/report-html',
+      lcovonly: './coverage/lcov.info'
     },
 
     mochaReporter: {
