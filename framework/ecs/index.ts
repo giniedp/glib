@@ -1,6 +1,0 @@
-export * from './src/Component'
-export * from './src/Entity'
-export * from './src/Finder'
-export * from './src/Template'
-export * from './src/Visitor'
-export * from './src/components'

@@ -159,6 +159,8 @@
       "check-separator",
       "check-type",
       "check-typecast"
-    ]
+    ],
+    "no-implicit-dependencies": false,
+    "space-within-parens": false
   }
 }

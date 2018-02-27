@@ -6,7 +6,7 @@ const IS_PRODUCTION = !!process.env.IS_PRODUCTION;
 
 module.exports = {
   devtool: IS_TEST ? undefined : 'source-map',
-  entry: IS_TEST ? null : path.join(__dirname, 'framework/index.ts'),
+  entry: IS_TEST ? null : path.join(__dirname, 'packages/index.ts'),
   plugins: [].concat(IS_TEST ? [
     // fixes sourcemaps / line number matching in tests
     // https://github.com/webpack-contrib/karma-webpack/issues/109#issuecomment-224961264
@@ -28,13 +28,13 @@ module.exports = {
         transpileOnly: false,
         useTranspileModule: true,
         silent: true,
-        configFileName: 'framework/tsconfig.json'
+        configFileName: 'packages/tsconfig.json'
       }
     }].concat(IS_COVERAGE ? [{
       test: /\.(js|ts)$/,
       enforce: 'post',
       loader: 'istanbul-instrumenter-loader',
-      include: path.join(__dirname, 'framework'),
+      include: path.join(__dirname, 'packages'),
       exclude: [
         /tests.js/,
         /\.(e2e|test|spec)\.ts$/,
@@ -53,7 +53,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
-      '@glib': path.join(__dirname, 'framework')
+      '@glib': path.join(__dirname, 'packages')
     }
   }
 };

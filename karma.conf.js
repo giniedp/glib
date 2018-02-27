@@ -38,11 +38,11 @@ module.exports = function (config) {
       'jasmine'
     ],
     files: [
-      'framework/tests.js'
+      'packages/tests.js'
     ],
     exclude: [],
     preprocessors: {
-      ['framework/tests.js']: [
+      ['packages/tests.js']: [
         IS_COVERAGE ? 'coverage' : null,
         'webpack',
         'sourcemap'

@@ -2,10 +2,10 @@
   "name": "glib",
   "version": "1.0.0",
   "description": "A Web GL Framework",
-  "main": "dist/framework/index.js",
-  "module": "dist/framework/index.js",
-  "es2015": "dist/framework/index.js",
-  "typings": "dist/framework/index.d.ts",
+  "main": "dist/packages/index.js",
+  "module": "dist/packages/index.js",
+  "es2015": "dist/packages/index.js",
+  "typings": "dist/packages/index.d.ts",
   "scripts": {
     "test": "IS_TEST=yes karma start --single-run",
     "test:watch": "IS_TEST=yes karma start --no-single-run --auto-watch",
@@ -14,10 +14,10 @@
     "tdd": "IS_COVERAGE=yes karma start  --no-single-run --auto-watch",
     "build": "webpack --progress && IS_PRODUCTION=yes webpack --progress",
     "watch": "webpack -w --progress",
-    "tsc": "tsc -p framework/tsconfig.json",
-    "tsc:watch": "tsc -p framework/tsconfig.json -w",
-    "lint": "tslint -p framework/tsconfig.json -c tslint.json",
-    "docs": "typedoc --out dist/docs --tsconfig framework/tsconfig.json --ignoreCompilerErrors --hideGenerator --mode modules"
+    "tsc": "tsc -p packages/tsconfig.json",
+    "tsc:watch": "tsc -p packages/tsconfig.json -w",
+    "lint": "tslint -p packages/tsconfig.json -c tslint.json",
+    "docs": "typedoc --out dist/docs --tsconfig packages/tsconfig.json --ignoreCompilerErrors --hideGenerator --mode file"
   },
   "repository": {
     "type": "git",
@@ -51,6 +51,7 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-typescript-preprocessor2": "^1.2.1",
     "karma-webpack": "^2.0.4",
+    "lerna": "^2.1.2",
     "phantomjs-prebuilt": "^2.1.14",
     "remap-istanbul": "^0.9.5",
     "tslint": "^5.5.0",
