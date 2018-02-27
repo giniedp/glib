@@ -6,5 +6,5 @@ matrix:
 addons:
   firefox: "53.0"
 node_js:
-  - "6"
+  - "8"
 
