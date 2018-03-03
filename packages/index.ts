@@ -1,11 +1,11 @@
-import * as ContentImport from './content'
-import * as CoreImport from './core'
-import * as EcsImport from './ecs'
-import * as GraphicsImport from './graphics'
-import * as InputImport from './input'
-import * as MathImport from './math'
-import * as RenderImport from './render'
-import * as TerrainImport from './terrain'
+import * as ContentImport from '@glib/content'
+import * as CoreImport from '@glib/core'
+import * as EcsImport from '@glib/ecs'
+import * as GraphicsImport from '@glib/graphics'
+import * as InputImport from '@glib/input'
+import * as MathImport from '@glib/math'
+import * as RenderImport from '@glib/render'
+import * as TerrainImport from '@glib/terrain'
 
 export const Content = ContentImport
 export const utils = CoreImport
