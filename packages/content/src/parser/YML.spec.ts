@@ -1,4 +1,4 @@
-import { YML } from './yml'
+import { YML } from './YML'
 
 describe('content/parser/YML', () => {
 

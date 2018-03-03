@@ -1,4 +1,4 @@
-import { OBJ } from './obj'
+import { OBJ } from './OBJ'
 
 describe('glib/content/parser/OBJ', () => {
   it('parses obj file', () => {

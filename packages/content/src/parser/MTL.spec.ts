@@ -1,4 +1,4 @@
-import { MTL } from './mtl'
+import { MTL } from './MTL'
 
 describe('glib/content/parser/MTL', () => {
   describe('#parse', () => {

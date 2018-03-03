@@ -1,4 +1,4 @@
-import { MD5 } from './md5'
+import { MD5 } from './MD5'
 
 describe('glib/content/parser/MD5', () => {
   let parsed: MD5
