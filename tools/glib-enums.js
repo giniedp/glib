@@ -107,7 +107,7 @@ function generateEnum(data, constants) {
 var constants = loadConstants();
 var data = '\n' + require('./enums.json').map((meta) => generateEnum(meta, constants)).join('');
 
-fs.writeFile(path.join(process.cwd(), 'framework/graphics/src/enums/Enums.ts'), data, function(err) {
+fs.writeFile(path.join(process.cwd(), 'packages/graphics/src/enums/Enums.ts'), data, function(err) {
   if(err) {
     console.log(err);
     process.exit(1);
