@@ -1,5 +1,5 @@
-import { Model, ModelMesh, ShaderEffect, ShaderProgram, Texture } from '@glib/graphics'
-import { IVec4, Mat4 } from '@glib/math'
+import { Model, ModelMesh, ShaderEffect, ShaderProgram, Texture } from '@gglib/graphics'
+import { IVec4, Mat4 } from '@gglib/math'
 import { Manager } from './Manager'
 
 export interface Drawable {

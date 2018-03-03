@@ -1,4 +1,4 @@
-import { IVec3, IVec4, Mat3, Quat, Vec3, Vec4 } from '@glib/math'
+import { IVec3, IVec4, Mat3, Quat, Vec3, Vec4 } from '@gglib/math'
 
 describe('Mat3', () => {
 

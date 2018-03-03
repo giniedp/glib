@@ -1,4 +1,4 @@
-import { BlendState, Color, DepthState, ShaderEffect, StencilState } from '@glib/graphics'
+import { BlendState, Color, DepthState, ShaderEffect, StencilState } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Step } from '../Types'
 

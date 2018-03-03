@@ -1,6 +1,6 @@
-import { Events } from '@glib/core'
+import { Events } from '@gglib/core'
 
-describe('@glib/core/Events', () => {
+describe('@gglib/core/Events', () => {
   let ev: Events
   let counter1 = 0
   let counter2 = 0

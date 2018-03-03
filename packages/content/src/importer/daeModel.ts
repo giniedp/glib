@@ -1,4 +1,4 @@
-import { extend, Uri } from '@glib/core'
+import { extend, Uri } from '@gglib/core'
 import {
   DataSize,
   DataType,
@@ -6,8 +6,8 @@ import {
   ModelBuilder,
   ModelMeshOptions,
   PrimitiveType,
-  VertexLayout } from '@glib/graphics'
-import { IVec3, Mat4, Quat, Vec3 } from '@glib/math'
+  VertexLayout } from '@gglib/graphics'
+import { IVec3, Mat4, Quat, Vec3 } from '@gglib/math'
 
 import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 import * as DAE from './../parser/dae'

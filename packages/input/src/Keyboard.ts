@@ -1,4 +1,4 @@
-import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
+import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
 
 /**
  * Keybord constructor options

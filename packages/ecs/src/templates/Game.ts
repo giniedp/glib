@@ -1,4 +1,4 @@
-import { ContextAttributes, Device } from '@glib/graphics'
+import { ContextAttributes, Device } from '@gglib/graphics'
 
 import * as Components from '../components'
 import { Entity } from '../Entity'

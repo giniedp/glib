@@ -1,6 +1,6 @@
-import { Http } from '@glib/core'
+import { Http } from '@gglib/core'
 
-describe('@glib/core/http', () => {
+describe('@gglib/core/http', () => {
   describe('.request', () => {
     beforeEach(() => {
        spyOn(XMLHttpRequest.prototype, 'open').and.callThrough()

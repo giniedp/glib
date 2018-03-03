@@ -1,7 +1,7 @@
-import { Manager } from '@glib/content'
-import { buildSuperEllipsoid, Device, ModelBuilder } from '@glib/graphics'
+import { Manager } from '@gglib/content'
+import { buildSuperEllipsoid, Device, ModelBuilder } from '@gglib/graphics'
 
-describe('@glib/graphics/formulas', () => {
+describe('@gglib/graphics/formulas', () => {
   describe('buildSuperEllipsoid', () => {
     let device: Device
     let manager: Manager

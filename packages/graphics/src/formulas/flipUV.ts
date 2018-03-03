@@ -1,4 +1,4 @@
-import { Log } from '@glib/core'
+import { Log } from '@gglib/core'
 import { VertexLayout } from './../VertexLayout'
 
 export function flipUV(layout: VertexLayout, indices: number[], vertices: number[]) {

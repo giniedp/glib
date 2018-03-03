@@ -1,4 +1,4 @@
-import { BlendState, CullState, DepthState, ModelMesh, ShaderEffect, ShaderTechnique } from '@glib/graphics'
+import { BlendState, CullState, DepthState, ModelMesh, ShaderEffect, ShaderTechnique } from '@gglib/graphics'
 import { Binder } from './Binder'
 import { Manager } from './Manager'
 import { DrawableData, Step } from './Types'

@@ -5,13 +5,13 @@ const del = require('del')
 const path = require('path')
 const glob = require('glob')
 const gulp = require('gulp')
-const gutil = require('gulp-util')
 const shell = require('shelljs')
 const rollup = require('rollup')
 
 const dstDir = path.join(__dirname, 'dist')
 const srcDir = path.join(__dirname, 'packages')
 
+const projectName = 'gglib'
 const modules = ['bundles', 'esm5', 'esm2015']
 const packages = (() => {
   return glob
@@ -19,18 +19,20 @@ const packages = (() => {
     .filter((it) => it.indexOf('.') === -1)
     .map((it) => path.basename(it))
 })()
+const allPackages = [...packages, projectName]
 
-function compileReadme(pkg) {
+function compileReadme(pkg, pj) {
   return `
-Glib - ${pkg}
-=======
-
 [![Coverage Status](https://coveralls.io/repos/github/giniedp/glib/badge.svg?branch=master)](https://coveralls.io/github/giniedp/glib?branch=master)
 [![Build Status](https://travis-ci.org/giniedp/glib.svg?branch=master)](https://travis-ci.org/giniedp/glib)
 
+[G]glib - ${pkg}
+=======
+${pj.description}
+
 To find out more about this project visit [the repository](https://github.com/giniedp/glib) or the [project page](https://glib.ginie.eu)
 
-Licence: MIT
+Licence: ${pj.license}
 `.trim()
 }
 
@@ -38,10 +40,10 @@ function findPeers(pkg) {
   const src = path.join(srcDir, pkg)
   const result = []
   glob.sync(`${src}/**/*.ts`).forEach((file) => {
-    const match = fs.readFileSync(file).toString().match(/from '@glib\/(\w+)'/g);
+    const match = fs.readFileSync(file).toString().match(/from '@gglib\/(\w+)'/g);
 
     (match || []).forEach((value) => {
-      const m = value.match(/from '@glib\/(\w+)'/)
+      const m = value.match(/from '@gglib\/(\w+)'/)
       if (!m || !m[1]) {
         return
       }
@@ -51,7 +53,7 @@ function findPeers(pkg) {
       }
     })
   })
-  return result.map((it) => `@glib/${it}`)
+  return result.map((it) => `@gglib/${it}`)
 }
 
 
@@ -76,7 +78,7 @@ gulp.task('build:tsc:esm2015', ['clean'], (cb) => {
 })
 
 const rollupTasks = []
-for (const p of [...packages, 'glib']) {
+for (const p of allPackages) {
   const pkgName = p
   const taskName = `build:rollup:${pkgName}`
   rollupTasks.push(taskName)
@@ -87,11 +89,11 @@ for (const p of [...packages, 'glib']) {
     const globals = {}
     const aliase = {}
     for (const name of packages) {
-      globals[`@glib/${name}`] = `glib.${name}`
-      aliase[`@glib/${name}`] = path.join(dstDir, 'esm5', name, 'index.js')
+      globals[`@gglib/${name}`] = `gg.${name}`
+      aliase[`@gglib/${name}`] = path.join(dstDir, 'esm5', name, 'index.js')
     }
-    return rollup.rollup(pkgName === 'glib'? {
-      amd: {id: `@glib/${pkgName}`},
+    return rollup.rollup(pkgName === projectName ? {
+      amd: {id: `@gglib/${pkgName}`},
       input: path.join(dstDir, 'esm5', 'index.js'),
       plugins: [resolve(), alias(aliase), sourcemaps()],
       external: [],
@@ -100,7 +102,7 @@ for (const p of [...packages, 'glib']) {
         warn(warning);
       }
     } : {
-      amd: {id: `@glib/${pkgName}`},
+      amd: {id: `@gglib/${pkgName}`},
       input: path.join(dstDir, 'esm5', pkgName, 'index.js'),
       plugins: [resolve(), sourcemaps()],
       external: Object.keys(globals),
@@ -114,7 +116,7 @@ for (const p of [...packages, 'glib']) {
         format: 'umd',
         sourcemap: true,
         file: path.join(dstDir, 'bundles', pkgName, pkgName + '.umd.js'),
-        name: `glib.${pkgName}`,
+        name: `gg.${pkgName}`,
         globals: globals,
         exports: 'named',
       })
@@ -126,7 +128,7 @@ gulp.task('build:rollup', rollupTasks)
 
 const mergeTasks = []
 for (const m of modules) {
-  for (const p of [...packages, 'glib']) {
+  for (const p of allPackages) {
     const pkgName = p
     const moduleName = m
     const taskName = `build:${moduleName}:${pkgName}`
@@ -140,20 +142,20 @@ for (const m of modules) {
 }
 
 gulp.task('build', mergeTasks, () => {
-  [...packages, 'glib'].forEach((pkg) => {
+  allPackages.forEach((pkg) => {
     const pkgDir = path.join(dstDir, 'packages', pkg);
     const pkgPath = path.join(pkgDir, 'package.json')
     const pkgJson = require(path.join(__dirname, 'package.json'))
+    const readmePath =  path.join(pkgDir, 'README.md')
 
     // create missing files
     fs.writeFileSync(pkgPath, '')
-    fs.writeFileSync(path.join(pkgDir, 'README.md'), compileReadme(pkg))
+    fs.writeFileSync(readmePath, '')
 
     // generate pkgJson defintion
-
     const pkgDef = {
-      name: `@glib/${pkg}`,
-      description: 'Part of the glib Project',
+      name: `@gglib/${pkg}`,
+      description: 'Part of the [G]glib project',
       version: pkgJson.version,
       repository: pkgJson.repository,
       keywords: pkgJson.keywords,
@@ -163,10 +165,10 @@ gulp.task('build', mergeTasks, () => {
       module: './esm5/index.js',
       es2015: './esm2015/index.js',
       typings: './esm2015/index.d.ts',
-      scripts: {},
       files: glob
         .sync(path.join(pkgDir, '*'))
         .map((it) => it.replace(pkgDir + '/', '')),
+      scripts: {},
       peerDependencies: {},
       dependencies: {},
       devDependencies: {},
@@ -174,16 +176,23 @@ gulp.task('build', mergeTasks, () => {
     findPeers(pkg).forEach((it) => {
       pkgDef.peerDependencies[it] = pkgDef.version
     })
-
-    if (pkg === 'glib') {
+    if (pkg === projectName) {
       pkgDef.module = pkgDef.main
       delete pkgDef.es2015
       delete pkgDef.typings
-      pkgDef.description = 'Standalone version of the glib Project'
+      pkgDef.description = 'Standalone version of the [G]glib project'
     }
 
+    // write files
     fs.writeFileSync(pkgPath, JSON.stringify(pkgDef, null, 2))
+    fs.writeFileSync(readmePath, compileReadme(pkg, pkgDef))
   })
 
   modules.forEach((name) => del(path.join(dstDir, name)))
+})
+
+gulp.task('publish', ['build'], () => {
+  allPackages.forEach((name) => {
+    shell.exec(`npm publish ./dist/packages/${name} --access=public`, { async: true })
+  })
 })

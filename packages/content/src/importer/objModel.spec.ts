@@ -1,5 +1,5 @@
-import { Manager } from '@glib/content'
-import { Device, Model } from '@glib/graphics'
+import { Manager } from '@gglib/content'
+import { Device, Model } from '@gglib/graphics'
 
 describe('glib/content/manager/importer', () => {
 

@@ -1,4 +1,4 @@
-import { Events, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
+import { Events, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
 
 function prefix(vendor: string, name: string, upper: boolean): string {
   if (vendor == null) { return null }

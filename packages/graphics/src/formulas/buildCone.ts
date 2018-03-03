@@ -1,4 +1,4 @@
-import { Mat4, Vec2, Vec3 } from '@glib/math'
+import { Mat4, Vec2, Vec3 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
 import { buildCap } from './buildCap'
 import { formulas } from './formulas'

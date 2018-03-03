@@ -1,6 +1,6 @@
 // tslint:disable no-bitwise
 
-import { BinaryReader } from '@glib/content'
+import { BinaryReader } from '@gglib/content'
 describe('Glib.Content.BinaryReader', () => {
   let data
   let reader: BinaryReader

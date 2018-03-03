@@ -1,5 +1,5 @@
-import { Log } from '@glib/core'
-import { Vec2, Vec3 } from '@glib/math'
+import { Log } from '@gglib/core'
+import { Vec2, Vec3 } from '@gglib/math'
 import { BufferDataOption } from './../Buffer'
 import { VertexLayout } from './../VertexLayout'
 

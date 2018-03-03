@@ -1,5 +1,5 @@
-import { Events, extend, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@glib/core'
-import { IVec3 } from '@glib/math'
+import { Events, extend, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
+import { IVec3 } from '@gglib/math'
 
 let hasOrientationApi = 'DeviceOrientationEvent' in window
 let hasMotionApi = 'DeviceMotionEvent' in window

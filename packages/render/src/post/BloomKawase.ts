@@ -1,5 +1,5 @@
 // tslint:disable no-bitwise
-import { BlendState, Color, DepthFormat, DepthState, ShaderEffect, ShaderProgram, StencilState } from '@glib/graphics'
+import { BlendState, Color, DepthFormat, DepthState, ShaderEffect, ShaderProgram, StencilState } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Step } from '../Types'
 

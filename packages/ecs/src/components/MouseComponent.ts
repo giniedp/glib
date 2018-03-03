@@ -1,6 +1,6 @@
-import { extend } from '@glib/core'
-import * as Input from '@glib/input'
-import { Vec3, Vec4 } from '@glib/math'
+import { extend } from '@gglib/core'
+import * as Input from '@gglib/input'
+import { Vec3, Vec4 } from '@gglib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 

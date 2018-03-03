@@ -1,7 +1,7 @@
 import {
   Device,
   OffsetState,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('glib/graphics/OffsetState', () => {
 

@@ -1,4 +1,4 @@
-import { extend, getTime, Log, requestFrame } from '@glib/core'
+import { extend, getTime, Log, requestFrame } from '@gglib/core'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 

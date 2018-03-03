@@ -1,4 +1,4 @@
-import { Http, HttpOptions, Log } from '@glib/core'
+import { Http, HttpOptions, Log } from '@gglib/core'
 import { PipelineContext, pipelineLoader, pipelineProcessor } from '../Pipeline'
 import { TGA } from './../parser/TGA'
 

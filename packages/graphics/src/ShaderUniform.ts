@@ -1,6 +1,6 @@
 // tslint:disable:no-bitwise
 
-import { copy } from '@glib/core'
+import { copy } from '@gglib/core'
 import { Device } from './Device'
 import { ShaderProgram } from './ShaderProgram'
 import { SamplerState, SamplerStateProperties } from './states'

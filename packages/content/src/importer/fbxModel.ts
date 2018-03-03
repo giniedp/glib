@@ -1,5 +1,5 @@
-import { extend, Http, HttpOptions, Log, WebWorker } from '@glib/core'
-import { Model, ModelBuilder } from '@glib/graphics'
+import { extend, Http, HttpOptions, Log, WebWorker } from '@gglib/core'
+import { Model, ModelBuilder } from '@gglib/graphics'
 import { FBX } from '../parser'
 import { Pipeline, PipelineContext, pipelineImporter, pipelineLoader, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 import { RawAsset } from './../Manager'

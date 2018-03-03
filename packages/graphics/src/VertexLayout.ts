@@ -1,4 +1,4 @@
-import { extend, Log } from '@glib/core'
+import { extend, Log } from '@gglib/core'
 
 import { DataSize, DataType, DataTypeOption } from './enums'
 

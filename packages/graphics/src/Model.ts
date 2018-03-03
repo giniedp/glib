@@ -1,5 +1,5 @@
-import { flattenArray, isString, uuid } from '@glib/core'
-import { Mat4 } from '@glib/math'
+import { flattenArray, isString, uuid } from '@gglib/core'
+import { Mat4 } from '@gglib/math'
 import { AnimationTake } from './AnimationPlayer'
 import { Device } from './Device'
 import { ModelMesh, ModelMeshOptions } from './ModelMesh'

@@ -1,5 +1,5 @@
-import { Device, ShaderProgram, ShaderUniform } from '@glib/graphics'
-import { IVec2, IVec3, IVec4, Mat4, Vec2, Vec3, Vec4 } from '@glib/math'
+import { Device, ShaderProgram, ShaderUniform } from '@gglib/graphics'
+import { IVec2, IVec3, IVec4, Mat4, Vec2, Vec3, Vec4 } from '@gglib/math'
 import { LightData } from './Types'
 
 export interface Binding<T> {

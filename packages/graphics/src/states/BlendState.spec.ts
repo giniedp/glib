@@ -3,7 +3,7 @@ import {
   BlendFunction,
   BlendState,
   Device,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('glib/graphics/BlendState', () => {
 

@@ -1,4 +1,4 @@
-import { DepthFormat, ShaderEffect, Texture } from '@glib/graphics'
+import { DepthFormat, ShaderEffect, Texture } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Step } from '../Types'
 

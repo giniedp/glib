@@ -1,4 +1,4 @@
-import { ShaderEffect } from '@glib/graphics'
+import { ShaderEffect } from '@gglib/graphics'
 
 import { YML } from '../parser'
 import { Pipeline, PipelineContext, pipelineImporter, pipelineLoader } from '../Pipeline'

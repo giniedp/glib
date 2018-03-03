@@ -1,5 +1,5 @@
-import { extend } from '@glib/core'
-import * as Input from '@glib/input'
+import { extend } from '@gglib/core'
+import * as Input from '@gglib/input'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 

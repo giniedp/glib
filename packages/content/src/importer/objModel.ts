@@ -1,5 +1,5 @@
-import { extend, WebWorker } from '@glib/core'
-import { Model, ModelBuilder, ModelOptions } from '@glib/graphics'
+import { extend, WebWorker } from '@gglib/core'
+import { Model, ModelBuilder, ModelOptions } from '@gglib/graphics'
 import { OBJ, ObjData, ObjGroup } from '../parser'
 import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 import { RawAsset } from './../Manager'

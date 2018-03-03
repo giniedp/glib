@@ -1,5 +1,5 @@
-import { extend } from '@glib/core'
-import { IVec3, Mat4, Quat, Vec3 } from '@glib/math'
+import { extend } from '@gglib/core'
+import { IVec3, Mat4, Quat, Vec3 } from '@gglib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 

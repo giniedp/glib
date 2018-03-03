@@ -1,7 +1,7 @@
 import {
   Device,
   ScissorState,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('glib/graphics/ScissorState', () => {
 

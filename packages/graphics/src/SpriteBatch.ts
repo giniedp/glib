@@ -1,6 +1,6 @@
 // tslint:disable max-classes-per-file
 
-import { IRect, IVec2 } from '@glib/math'
+import { IRect, IVec2 } from '@gglib/math'
 import { Buffer } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'

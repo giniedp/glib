@@ -1,5 +1,5 @@
-import { Log } from '@glib/core'
-import { IVec3, IVec4, Mat4 } from '@glib/math'
+import { Log } from '@gglib/core'
+import { IVec3, IVec4, Mat4 } from '@gglib/math'
 
 export interface PlayerOptions {
   skeleton: number[]

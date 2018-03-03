@@ -3,7 +3,7 @@ import {
   CullState,
   Device,
   FrontFace,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('glib/graphics/CullState', () => {
 

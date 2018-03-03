@@ -1,7 +1,7 @@
-import { Manager } from '@glib/content'
-import { buildSphere, Device, ModelBuilder } from '@glib/graphics'
+import { Manager } from '@gglib/content'
+import { buildSphere, Device, ModelBuilder } from '@gglib/graphics'
 
-describe('@glib/graphics/formulas', () => {
+describe('@gglib/graphics/formulas', () => {
   describe('buildSphere', () => {
     let device: Device
     let manager: Manager

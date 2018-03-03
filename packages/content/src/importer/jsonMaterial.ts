@@ -1,5 +1,5 @@
-import { extend, Log, Uri } from '@glib/core'
-import { ShaderEffect } from '@glib/graphics'
+import { extend, Log, Uri } from '@gglib/core'
+import { ShaderEffect } from '@gglib/graphics'
 import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 
 pipelineImporter(['.json', 'application/json'], 'Material[]', (context: PipelineContext): Promise<void> => {

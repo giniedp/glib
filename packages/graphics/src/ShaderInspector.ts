@@ -1,4 +1,4 @@
-import { extend, getLines, trim } from '@glib/core'
+import { extend, getLines, trim } from '@gglib/core'
 
 const charNewLine = '\n'
 const regComment = /\s*\/\/(.*)\n?\s*$/

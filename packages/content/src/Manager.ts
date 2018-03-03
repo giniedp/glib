@@ -1,8 +1,8 @@
 // tslint:disable ban-types
 // tslint:disable max-classes-per-file
 
-import { DataUri, extend, Http, HttpOptions, isArray, isObject, isString, Log, pick, Uri } from '@glib/core'
-import { Device } from '@glib/graphics'
+import { DataUri, extend, Http, HttpOptions, isArray, isObject, isString, Log, pick, Uri } from '@gglib/core'
+import { Device } from '@gglib/graphics'
 import { ContentType } from './ContentType'
 import { Pipeline, PipelineContext, PipelineHandler } from './Pipeline'
 

@@ -1,5 +1,5 @@
-import { extend } from '@glib/core'
-import { ShaderEffectOptions } from '@glib/graphics'
+import { extend } from '@gglib/core'
+import { ShaderEffectOptions } from '@gglib/graphics'
 import { MTL, MtlData } from '../parser'
 import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 

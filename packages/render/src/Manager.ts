@@ -1,5 +1,5 @@
-import { Events, extend, Log } from '@glib/core'
-import { DepthFormat, Device, RenderTargetOptions, SpriteBatch, Texture } from '@glib/graphics'
+import { Events, extend, Log } from '@gglib/core'
+import { DepthFormat, Device, RenderTargetOptions, SpriteBatch, Texture } from '@gglib/graphics'
 import { Binder } from './Binder'
 import { View } from './Types'
 

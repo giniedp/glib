@@ -1,5 +1,5 @@
-import { extend, Uri } from '@glib/core'
-import { Model } from '@glib/graphics'
+import { extend, Uri } from '@gglib/core'
+import { Model } from '@gglib/graphics'
 import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 
 pipelineImporter(['.json', 'application/json'], Model, (context: PipelineContext) => {

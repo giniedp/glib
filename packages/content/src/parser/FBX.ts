@@ -1,6 +1,6 @@
 // https://code.blender.org/2013/08/fbx-binary-file-format-specification/
 
-import { Log } from '@glib/core'
+import { Log } from '@gglib/core'
 import { BinaryReader } from './../BinaryReader'
 
 export interface FBXNode {

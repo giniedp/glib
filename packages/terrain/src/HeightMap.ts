@@ -1,5 +1,5 @@
-import { getImageData } from '@glib/core'
-import { IVec3, Vec3 } from '@glib/math'
+import { getImageData } from '@gglib/core'
+import { IVec3, Vec3 } from '@gglib/math'
 
 export interface HeightMapOptions {
   width: number

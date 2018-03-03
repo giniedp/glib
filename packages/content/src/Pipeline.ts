@@ -1,5 +1,5 @@
 // tslint:disable ban-types
-import { DataUri, Log, Uri } from '@glib/core'
+import { DataUri, Log, Uri } from '@gglib/core'
 import { ContentType } from './ContentType'
 import { Manager, RawAsset } from './Manager'
 import { Parser } from './parser'

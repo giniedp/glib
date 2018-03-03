@@ -1,4 +1,4 @@
-import { ShaderEffect } from '@glib/graphics'
+import { ShaderEffect } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Step } from '../Types'
 

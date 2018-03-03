@@ -1,6 +1,6 @@
-import * as Content from '@glib/content'
-import { HttpOptions } from '@glib/core'
-import * as Graphics from '@glib/graphics'
+import * as Content from '@gglib/content'
+import { HttpOptions } from '@gglib/core'
+import * as Graphics from '@gglib/graphics'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 

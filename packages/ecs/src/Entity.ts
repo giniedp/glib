@@ -1,4 +1,4 @@
-import { Events, extend, isArray, isObject, isString, Log } from '@glib/core'
+import { Events, extend, isArray, isObject, isString, Log } from '@gglib/core'
 import { Component } from './Component'
 import * as Components from './components'
 import { find, findAll } from './finder'

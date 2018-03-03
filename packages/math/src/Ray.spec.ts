@@ -1,4 +1,4 @@
-import { BoundingBox, BoundingSphere, IVec3, Ray, Vec3, Vec4 } from '@glib/math'
+import { BoundingBox, BoundingSphere, IVec3, Ray, Vec3, Vec4 } from '@gglib/math'
 
 describe('Ray', () => {
 

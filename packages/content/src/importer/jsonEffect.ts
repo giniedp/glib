@@ -1,4 +1,4 @@
-import { ShaderEffect, ShaderPassOptions, ShaderTechniqueOptions } from '@glib/graphics'
+import { ShaderEffect, ShaderPassOptions, ShaderTechniqueOptions } from '@gglib/graphics'
 import { JSON } from '../parser'
 import { Pipeline, PipelineContext, pipelineImporter, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 
@@ -58,7 +58,7 @@ pipelinePreprocessor(ShaderEffect, (context: PipelineContext): Promise<void> => 
   })
 })
 
-import { extend, Uri } from '@glib/core'
+import { extend, Uri } from '@gglib/core'
 
 let regInclude = /#include\s+<(.*)>/
 let charNewLine = '\n'

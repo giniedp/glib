@@ -11,7 +11,7 @@
     "suppressImplicitAnyIndexErrors": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@glib/*": ["./*"]
+      "@gglib/*": ["./*"]
     },
     "rootDir": ".",
     "sourceMap": true,

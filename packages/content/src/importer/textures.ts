@@ -1,5 +1,5 @@
-import { Http, HttpOptions, Log } from '@glib/core'
-import { Texture } from '@glib/graphics'
+import { Http, HttpOptions, Log } from '@gglib/core'
+import { Texture } from '@gglib/graphics'
 import { Pipeline, PipelineContext, pipelineImporter, pipelineLoader, pipelinePreprocessor, pipelineProcessor } from '../Pipeline'
 import { XhrAsset } from './../Manager'
 import { TGA } from './../parser/TGA'

@@ -1,7 +1,7 @@
-import { Manager } from '@glib/content'
-import { buildSphericalHarmonics, Device, ModelBuilder } from '@glib/graphics'
+import { Manager } from '@gglib/content'
+import { buildSphericalHarmonics, Device, ModelBuilder } from '@gglib/graphics'
 
-describe('@glib/graphics/formulas', () => {
+describe('@gglib/graphics/formulas', () => {
   describe('buildSphericalHarmonics', () => {
     let device: Device
     let manager: Manager

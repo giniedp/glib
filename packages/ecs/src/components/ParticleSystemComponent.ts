@@ -1,9 +1,9 @@
 // tslint:disable max-classes-per-file
 
-import * as Content from '@glib/content'
-import { HttpOptions } from '@glib/core'
-import * as Graphics from '@glib/graphics'
-import { IVec3, Vec3 } from '@glib/math'
+import * as Content from '@gglib/content'
+import { HttpOptions } from '@gglib/core'
+import * as Graphics from '@gglib/graphics'
+import { IVec3, Vec3 } from '@gglib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { TransformComponent } from './TransformComponent'

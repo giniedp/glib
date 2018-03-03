@@ -1,6 +1,6 @@
-import { loop } from '@glib/core'
+import { loop } from '@gglib/core'
 
-describe('@glib/core/utils/time', () => {
+describe('@gglib/core/utils/time', () => {
   describe('loop', () => {
     it ('calls a callback', (done) => {
       let time = 0

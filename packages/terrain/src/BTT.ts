@@ -1,7 +1,7 @@
 // tslint:disable no-bitwise
 // tslint:disable max-classes-per-file
-import * as Graphics from '@glib/graphics'
-import { IVec3, Vec3 } from '@glib/math'
+import * as Graphics from '@gglib/graphics'
+import { IVec3, Vec3 } from '@gglib/math'
 import { HeightMap } from './HeightMap'
 
 function highestBit(value: number): number {

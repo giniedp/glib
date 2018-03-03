@@ -1,4 +1,4 @@
-import { Log } from '@glib/core'
+import { Log } from '@gglib/core'
 import { Device } from './Device'
 import { ArrayType, BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DataSize, DataType, DataTypeOption } from './enums'
 import * as Enums from './enums/Enums'

@@ -1,7 +1,7 @@
 // tslint:disable:max-classes-per-file
 
-import { Device } from '@glib/graphics'
-import * as Render from '@glib/render'
+import { Device } from '@gglib/graphics'
+import * as Render from '@gglib/render'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { Visitor } from './../Visitor'

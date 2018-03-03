@@ -1,4 +1,4 @@
-import { isArray, isObject, isString, Log, uuid } from '@glib/core'
+import { isArray, isObject, isString, Log, uuid } from '@gglib/core'
 import {
   ArrayType,
   DataType,

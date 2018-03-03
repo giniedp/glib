@@ -3,7 +3,7 @@ import {
   Device,
   StencilOperation,
   StencilState,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('glib/graphics/StencilState', () => {
 

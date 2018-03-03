@@ -2,7 +2,7 @@ import {
   CompareFunction,
   DepthState,
   Device,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('glib/graphics/DepthState', () => {
 

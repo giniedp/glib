@@ -3,7 +3,7 @@ import {
   ParticleChannel,
   ParticleChannelOptions,
   Texture,
-} from '@glib/graphics'
+} from '@gglib/graphics'
 
 describe('graphics/ParticleChannel', () => {
 

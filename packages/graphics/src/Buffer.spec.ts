@@ -1,4 +1,4 @@
-import { Buffer, BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, Device  } from '@glib/graphics'
+import { Buffer, BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, Device  } from '@gglib/graphics'
 
 describe('graphics/Buffer', () => {
 
