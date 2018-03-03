@@ -1,5 +1,6 @@
 import { Vec2, Vec3 } from '@glib/math'
 import { ModelBuilder } from '../ModelBuilder'
+import { formulas } from './formulas'
 
 function circleVector(t: number, out: Vec3) {
   out = out || new Vec3()
@@ -42,4 +43,4 @@ export function buildCap(builder: ModelBuilder, options: {
   }
 }
 
-ModelBuilder.formulas['Cap'] = buildCap
+formulas['Cap'] = buildCap

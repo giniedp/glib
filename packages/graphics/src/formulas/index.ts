@@ -1,3 +1,4 @@
+export * from './formulas'
 export * from './buildCap'
 export * from './buildCone'
 export * from './buildCube'

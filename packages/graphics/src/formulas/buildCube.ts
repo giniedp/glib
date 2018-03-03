@@ -1,6 +1,8 @@
 import { Mat4, Vec2, Vec3 } from '@glib/math'
 import { ModelBuilder } from '../ModelBuilder'
 import { buildPlane } from './buildPlane'
+import { formulas } from './formulas'
+
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
@@ -54,4 +56,4 @@ export function buildCube(builder: ModelBuilder, options: {
   builder.endTransform(tId)
 }
 
-ModelBuilder.formulas['Cube'] = buildCube
+formulas['Cube'] = buildCube

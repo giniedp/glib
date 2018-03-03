@@ -1,5 +1,6 @@
 import { Vec2, Vec3 } from '@glib/math'
 import { ModelBuilder } from '../ModelBuilder'
+import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -72,4 +73,4 @@ export function buildSphericalHarmonics(builder: ModelBuilder, options: {
   }
 }
 
-ModelBuilder.formulas['SphericalHarmonics'] = buildSphericalHarmonics
+formulas['SphericalHarmonics'] = buildSphericalHarmonics

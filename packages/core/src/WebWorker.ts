@@ -1,5 +1,5 @@
 // tslint:disable max-classes-per-file
-import { Log } from '@glib/core'
+import { Log } from './Log'
 
 export const isWorker = typeof self['importScripts'] === 'function'
 export const isWindowContext = typeof self['importScripts'] !== 'function'

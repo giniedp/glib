@@ -1,6 +1,7 @@
 import { Mat4, Vec2, Vec3 } from '@glib/math'
 import { ModelBuilder } from '../ModelBuilder'
 import { buildCap } from './buildCap'
+import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -87,4 +88,4 @@ export function buildCone(builder: ModelBuilder, options: {
   builder.endTransform(tId)
 }
 
-ModelBuilder.formulas['Cone'] = buildCone
+formulas['Cone'] = buildCone

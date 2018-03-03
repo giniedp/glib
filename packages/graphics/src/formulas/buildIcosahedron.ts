@@ -1,5 +1,6 @@
 import { Vec2, Vec3 } from '@glib/math'
 import { ModelBuilder } from '../ModelBuilder'
+import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -162,5 +163,5 @@ export function buildIcosahedron(builder: ModelBuilder, options: {
   }
 }
 
-ModelBuilder.formulas['Icosahedron'] = buildIcosahedron
-ModelBuilder.formulas['Octahedron'] = buildOctahedron
+formulas['Icosahedron'] = buildIcosahedron
+formulas['Octahedron'] = buildOctahedron

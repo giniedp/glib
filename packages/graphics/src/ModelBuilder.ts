@@ -7,7 +7,7 @@ import { Model, ModelOptions } from './Model'
 import { ModelMesh, ModelMeshOptions } from './ModelMesh'
 import { VertexLayout } from './VertexLayout'
 
-import './formulas'
+import { formulas } from './formulas'
 import { calculateNormals } from './formulas/calculateNormals'
 import { calculateTangents } from './formulas/calculateTangents'
 
@@ -22,7 +22,7 @@ export interface ModelBuilderOptions {
 export type ModelBuildFormula = (builder: ModelBuilder, options: any) => void
 
 export class ModelBuilder {
-  public static formulas: { [key: string]: ModelBuildFormula } = {}
+  public static formulas: { [key: string]: ModelBuildFormula } = formulas
   private defaultAttributes: {[key: string]: any}
   private layout: {[key: string]: any}
   private meshes: ModelMeshOptions[] = []

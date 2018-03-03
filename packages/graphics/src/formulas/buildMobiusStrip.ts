@@ -1,5 +1,6 @@
 import { Vec2, Vec3 } from '@glib/math'
 import { ModelBuilder } from '../ModelBuilder'
+import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -68,4 +69,4 @@ export function buildMobiusStrip(builder: ModelBuilder, options: {
   }
 }
 
-ModelBuilder.formulas['MobiusStrip'] = buildMobiusStrip
+formulas['MobiusStrip'] = buildMobiusStrip
