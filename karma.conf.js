@@ -1,28 +1,23 @@
 'use strict';
 
-const webpackConfig = require('./webpack.config');
-const IS_COVERALLS = !!process.env.IS_COVERALLS;
-const IS_COVERAGE = IS_COVERALLS || !!process.env.IS_COVERAGE;
+const IS_COVERAGE = !!process.env.IS_COVERAGE;
 const IS_TRAVIS = !!process.env.TRAVIS;
 
 module.exports = function (config) {
 
   config.set({
-    basePath: '.',
+    basePath: './packages',
     plugins: [
-      'karma-webpack',
-
       'karma-jasmine',
-      'karma-phantomjs-launcher',
       'karma-chrome-launcher',
       'karma-firefox-launcher',
-
-      'karma-sourcemap-loader',
       'karma-mocha-reporter',
-
-      'karma-coveralls',
-      'karma-coverage',
-      'karma-remap-coverage',
+      'karma-typescript',
+    ],
+    logLevel: 'info',
+    frameworks: [
+      'jasmine',
+      'karma-typescript',
     ],
     browsers: [
       IS_TRAVIS ? 'Firefox' : 'ChromeDebugging'
@@ -34,55 +29,49 @@ module.exports = function (config) {
         flags: [ '--remote-debugging-port=9222' ]
       }
     },
-    frameworks: [
-      'jasmine'
-    ],
     files: [
-      'packages/tests.js'
+      '**/*.ts'
     ],
     exclude: [],
     preprocessors: {
-      ['packages/tests.js']: [
-        IS_COVERAGE ? 'coverage' : null,
-        'webpack',
-        'sourcemap'
-      ].filter((it) => it),
+      '**/*.ts': ['karma-typescript'],
     },
     reporters: [
       'mocha',
-      IS_COVERAGE ? 'coverage' : null,
-      IS_COVERALLS ? 'coveralls' : null,
-      IS_COVERAGE ? 'remap-coverage' : null,
-    ].filter((it) => it),
+      'karma-typescript',
+    ],
 
-    webpack: webpackConfig,
-    webpackServer: {
-      noInfo: true, // prevent console spamming when running in Karma!
+    karmaTypescriptConfig: {
+      bundlerOptions: {
+        entrypoints: /(\.spec\.ts)$/,
+        sourceMap: true,
+        validateSyntax: false,
+      },
+      exclude: ['node_modules', 'release'],
+      // compilerOptions: tsconfig.compilerOptions,
+      tsconfig: 'tsconfig.json',
+      // Pass options to remap-istanbul.
+      remapOptions: {
+        // a regex for excluding files from remapping
+        // exclude: '',
+        // a function for handling error messages
+        warn: (msg) => console.log(msg)
+      },
+      converageOptions: {
+        instrumentation: IS_COVERAGE,
+        exclude: /\.(d|spec|test)\.ts/i,
+      },
+      reports: {
+        'text-summary': '',
+        html: {
+          directory: 'coverage',
+          subdirectory: 'html',
+        },
+        lcovonly: {
+          directory: 'coverage',
+          subdirectory: 'lcov',
+        },
+      },
     },
-    webpackMiddleware: {
-      stats: 'errors-only',
-    },
-
-    coverageReporter: {
-      reporters: [{
-        type: 'in-memory',
-      }]
-    },
-    remapCoverageReporter: {
-      'text-summary': null,
-      html: './coverage/report-html',
-      lcovonly: './coverage/lcov.info'
-    },
-
-    mochaReporter: {
-      output: 'autowatch' // 'minimal', 'full'
-    },
-    port: 9876,
-    colors: true,
-    logLevel: config.LOG_INFO,
-    concurrency: 1,
-    // client: {
-    //   captureConsole: false
-    // }
   });
 };
