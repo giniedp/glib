@@ -1,6 +1,7 @@
 {
   "name": "glib",
   "version": "0.1.0",
+  "private": true,
   "description": "A Web GL Framework",
   "main": "dist/packages/index.js",
   "module": "dist/packages/index.js",
@@ -19,10 +20,6 @@
     "type": "git",
     "url": "github.com/giniedp/glib.git"
   },
-  "files": [
-    "dist/",
-    "LICENCE"
-  ],
   "devDependencies": {
     "@types/jasmine": "^2.5.53",
     "@types/node": "^8.0.17",
@@ -51,7 +48,12 @@
     "typedoc": "^0.8.0",
     "typescript": "^2.4.2"
   },
-  "keywords": [],
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
   "dependencies": {}
