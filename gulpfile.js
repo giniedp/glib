@@ -83,15 +83,22 @@ for (const p of allPackages) {
   const taskName = `build:rollup:${pkgName}`
   rollupTasks.push(taskName)
   gulp.task(taskName, ['build:tsc:esm5'], () => {
-    const resolve = require('rollup-plugin-node-resolve')
     const alias = require('rollup-plugin-alias')
+    const resolve = require('rollup-plugin-node-resolve')
     const sourcemaps = require('rollup-plugin-sourcemaps')
     const globals = {}
     const aliase = {}
+    function moduleName(name) {
+      if (name === projectName) {
+        return 'Gglib'
+      }
+      return 'Gglib.' + name[0].toUpperCase() + name.substr(1)
+    }
     for (const name of packages) {
-      globals[`@gglib/${name}`] = `gg.${name}`
+      globals[`@gglib/${name}`] = moduleName(name)
       aliase[`@gglib/${name}`] = path.join(dstDir, 'esm5', name, 'index.js')
     }
+
     return rollup.rollup(pkgName === projectName ? {
       amd: {id: `@gglib/${pkgName}`},
       input: path.join(dstDir, 'esm5', 'index.js'),
@@ -116,7 +123,7 @@ for (const p of allPackages) {
         format: 'umd',
         sourcemap: true,
         file: path.join(dstDir, 'bundles', pkgName, pkgName + '.umd.js'),
-        name: `gg.${pkgName}`,
+        name: moduleName(pkgName),
         globals: globals,
         exports: 'named',
       })
