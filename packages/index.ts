@@ -8,7 +8,7 @@ import * as RenderImport from '@gglib/render'
 import * as TerrainImport from '@gglib/terrain'
 
 export const Content = ContentImport
-export const utils = CoreImport
+export const Core = CoreImport
 export const Ecs = EcsImport
 export const Graphics = GraphicsImport
 export const Input = InputImport
