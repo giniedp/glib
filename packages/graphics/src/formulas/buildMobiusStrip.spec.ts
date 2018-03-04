@@ -1,15 +1,12 @@
-import { Manager } from '@gglib/content'
 import { buildMobiusStrip, Device, ModelBuilder } from '@gglib/graphics'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildMobiusStrip', () => {
     let device: Device
-    let manager: Manager
     let builder: ModelBuilder
 
     beforeEach(() => {
       device = new Device()
-      manager = new Manager(device)
       builder = new ModelBuilder()
     })
 

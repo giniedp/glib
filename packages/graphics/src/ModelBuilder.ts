@@ -1,5 +1,5 @@
 import { copy, Log } from '@gglib/core'
-import { BoundingBox, BoundingSphere, Mat2, Mat3, Mat4, Vec2, Vec3, Vec4 } from '@gglib/math'
+import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { BufferDataOption, BufferOptions } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
