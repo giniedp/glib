@@ -1,6 +1,6 @@
 {
   "name": "glib",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "A Web GL Framework",
   "main": "dist/packages/index.js",
