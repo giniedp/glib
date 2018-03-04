@@ -19,7 +19,6 @@ const packages = (() => {
     .filter((it) => it.indexOf('.') === -1)
     .map((it) => path.basename(it))
 })()
-const allPackages = [...packages, projectName]
 
 function compileReadme(pkg, pj) {
   return `
@@ -78,7 +77,7 @@ gulp.task('build:tsc:esm2015', ['clean'], (cb) => {
 })
 
 const rollupTasks = []
-for (const p of allPackages) {
+for (const p of packages) {
   const pkgName = p
   const taskName = `build:rollup:${pkgName}`
   rollupTasks.push(taskName)
@@ -95,28 +94,21 @@ for (const p of allPackages) {
       return 'Gglib.' + name[0].toUpperCase() + name.substr(1)
     }
     for (const name of packages) {
-      globals[`@gglib/${name}`] = moduleName(name)
+      if (pkgName !== projectName) {
+        globals[`@gglib/${name}`] = moduleName(name)
+      }
       aliase[`@gglib/${name}`] = path.join(dstDir, 'esm5', name, 'index.js')
     }
 
-    return rollup.rollup(pkgName === projectName ? {
-      amd: {id: `@gglib/${pkgName}`},
-      input: path.join(dstDir, 'esm5', 'index.js'),
-      plugins: [resolve(), alias(aliase), sourcemaps()],
-      external: [],
-      onwarn: (warning, warn) => {
-        if (warning.code === 'THIS_IS_UNDEFINED') {return}
-        warn(warning);
-      }
-    } : {
+    return rollup.rollup({
       amd: {id: `@gglib/${pkgName}`},
       input: path.join(dstDir, 'esm5', pkgName, 'index.js'),
-      plugins: [resolve(), sourcemaps()],
-      external: Object.keys(globals),
       onwarn: (warning, warn) => {
         if (warning.code === 'THIS_IS_UNDEFINED') {return}
         warn(warning);
-      }
+      },
+      plugins: [resolve(), alias(aliase), sourcemaps()],
+      external: Object.keys(globals),
     })
     .then((bundle) => {
       return bundle.write({
@@ -135,7 +127,11 @@ gulp.task('build:rollup', rollupTasks)
 
 const mergeTasks = []
 for (const m of modules) {
-  for (const p of allPackages) {
+  for (const p of packages) {
+    if (p === projectName && m !== 'bundles') {
+      // do not compile esm5 and esm2015 versions for glib package
+      continue
+    }
     const pkgName = p
     const moduleName = m
     const taskName = `build:${moduleName}:${pkgName}`
@@ -149,7 +145,7 @@ for (const m of modules) {
 }
 
 gulp.task('build', mergeTasks, () => {
-  allPackages.forEach((pkg) => {
+  packages.forEach((pkg) => {
     const pkgDir = path.join(dstDir, 'packages', pkg);
     const pkgPath = path.join(pkgDir, 'package.json')
     const pkgJson = require(path.join(__dirname, 'package.json'))
@@ -180,14 +176,15 @@ gulp.task('build', mergeTasks, () => {
       dependencies: {},
       devDependencies: {},
     }
-    findPeers(pkg).forEach((it) => {
-      pkgDef.peerDependencies[it] = pkgDef.version
-    })
     if (pkg === projectName) {
       pkgDef.module = pkgDef.main
       delete pkgDef.es2015
       delete pkgDef.typings
-      pkgDef.description = 'Standalone version of the [G]glib project'
+      pkgDef.description = 'Standalone bundle of the [G]glib project'
+    } else {
+      findPeers(pkg).forEach((it) => {
+        pkgDef.peerDependencies[it] = pkgDef.version
+      })
     }
 
     // write files
@@ -199,7 +196,7 @@ gulp.task('build', mergeTasks, () => {
 })
 
 gulp.task('publish', ['build'], () => {
-  allPackages.forEach((name) => {
+  packages.forEach((name) => {
     shell.exec(`npm publish ./dist/packages/${name} --access=public`, { async: true })
   })
 })
