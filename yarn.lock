@@ -4127,6 +4127,12 @@ tar@^2.2.1:
     fstream "^1.0.2"
     inherits "2"
 
+through-gulp@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/through-gulp/-/through-gulp-0.5.0.tgz#55857ab20235a2fb55d9e8855a9ac15bb6299f25"
+  dependencies:
+    underscore "^1.8.3"
+
 through2@2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/through2/-/through2-2.0.1.tgz#384e75314d49f32de12eebb8136b8eb6b5d59da9"
@@ -4348,6 +4354,10 @@ ultron@1.0.x:
 unc-path-regex@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/unc-path-regex/-/unc-path-regex-0.1.2.tgz#e73dd3d7b0d7c5ed86fbac6b0ae7d8c6a69d50fa"
+
+underscore@^1.8.3:
+  version "1.8.3"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.8.3.tgz#4f3fb53b106e6097fcf9cb4109f2a5e9bdfa5022"
 
 union-value@^1.0.0:
   version "1.0.0"

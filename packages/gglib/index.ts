@@ -1,17 +1,21 @@
-import * as ContentImport from '@gglib/content'
-import * as CoreImport from '@gglib/core'
-import * as EcsImport from '@gglib/ecs'
-import * as GraphicsImport from '@gglib/graphics'
-import * as InputImport from '@gglib/input'
-import * as MathImport from '@gglib/math'
-import * as RenderImport from '@gglib/render'
-import * as TerrainImport from '@gglib/terrain'
+import * as Content from '@gglib/content'
+import * as Core from '@gglib/core'
+import * as Ecs from '@gglib/ecs'
+import * as Graphics from '@gglib/graphics'
+import * as Input from '@gglib/input'
+import * as Math from '@gglib/math'
+import * as Render from '@gglib/render'
+import * as Terrain from '@gglib/terrain'
 
-export const Content = ContentImport
-export const Core = CoreImport
-export const Ecs = EcsImport
-export const Graphics = GraphicsImport
-export const Input = InputImport
-export const Math = MathImport
-export const Render = RenderImport
-export const Terrain = TerrainImport
+export const Gglib = {
+  Content: Content,
+  Core: Core,
+  Ecs: Ecs,
+  Graphics: Graphics,
+  Input: Input,
+  Math: Math,
+  Render: Render,
+  Terrain: Terrain,
+}
+
+export default Gglib

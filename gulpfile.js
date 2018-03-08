@@ -7,12 +7,13 @@ const glob = require('glob')
 const gulp = require('gulp')
 const shell = require('shelljs')
 const rollup = require('rollup')
+const through = require('through-gulp')
 
 const dstDir = path.join(__dirname, 'dist')
 const srcDir = path.join(__dirname, 'packages')
 
 const projectName = 'gglib'
-const modules = ['bundles', 'esm5', 'esm2015']
+const modules = ['bundles', 'esm5', 'esm2015', 'typings']
 const packages = (() => {
   return glob
     .sync(path.join(srcDir, '*'))
@@ -64,24 +65,23 @@ gulp.task('build:tsc', ['clean'], (cb) => {
     .on('exit', (code) => cb(code === 0 ? null : code))
 })
 
-gulp.task('build:tsc:esm5', ['clean'], (cb) => {
+gulp.task('build:esm5', ['clean'], (cb) => {
   shell
     .exec('tsc -p packages/tsconfig.esm5.json', { async: true })
     .on('exit', (code) => cb(code === 0 ? null : code))
 })
 
-gulp.task('build:tsc:esm2015', ['clean'], (cb) => {
+gulp.task('build:esm2015', ['clean'], (cb) => {
   shell
     .exec('tsc -p packages/tsconfig.esm2015.json', { async: true })
     .on('exit', (code) => cb(code === 0 ? null : code))
 })
 
 const rollupTasks = []
-for (const p of packages) {
-  const pkgName = p
+function createRollupTask(pkgName) {
   const taskName = `build:rollup:${pkgName}`
   rollupTasks.push(taskName)
-  gulp.task(taskName, ['build:tsc:esm5'], () => {
+  gulp.task(taskName, ['build:esm5'], () => {
     const alias = require('rollup-plugin-alias')
     const resolve = require('rollup-plugin-node-resolve')
     const sourcemaps = require('rollup-plugin-sourcemaps')
@@ -122,25 +122,47 @@ for (const p of packages) {
     })
   })
 }
+packages.forEach(createRollupTask)
 
 gulp.task('build:rollup', rollupTasks)
 
+gulp.task('build:typings:copy', ['build:esm2015'], () => {
+  return gulp
+    .src(path.join(dstDir, 'esm2015', '**', '*.d.ts'))
+    .pipe(gulp.dest(path.join(dstDir, 'typings', projectName)))
+})
+gulp.task('build:typings', ['build:typings:copy'], () => {
+  const root = path.join(dstDir, 'typings', projectName)
+  return gulp
+    .src(path.join(root, '**', '*.d.ts'))
+    .pipe(through(function(file, enc, cb) {
+      const content = file.contents.toString().replace(/^import (.*) from '(@gglib)\/(.*)'/gm, (match, what, _, pkg) => {
+        pkg = path.relative(path.dirname(file.path), path.join(root, pkg))
+        return `import ${what} from '${pkg}'`
+      })
+      file.contents = new Buffer(content)
+      cb(null, file)
+    }))
+    .pipe(gulp.dest(root))
+})
+
 const mergeTasks = []
+function createMergeTask(pName, mName) {
+  const taskName = `build:${mName}:${pName}`
+  mergeTasks.push(taskName)
+  gulp.task(taskName, ['build:esm5', 'build:esm2015', 'build:rollup', 'build:typings'], () => {
+    return gulp
+      .src(path.join(dstDir, mName, pName, '**', '*'))
+      .pipe(gulp.dest(path.join(dstDir, 'packages', pName, mName)))
+  })
+}
 for (const m of modules) {
   for (const p of packages) {
-    if (p === projectName && m !== 'bundles') {
-      // do not compile esm5 and esm2015 versions for glib package
+    if (p === projectName && m !== 'bundles' && m !== 'typings') {
+      // dont compile esm5 and esm2015 for gglib package
       continue
     }
-    const pkgName = p
-    const moduleName = m
-    const taskName = `build:${moduleName}:${pkgName}`
-    mergeTasks.push(taskName)
-    gulp.task(taskName, ['build:tsc:esm5', 'build:tsc:esm2015', 'build:rollup'], () => {
-      return gulp
-        .src(path.join(dstDir, moduleName, pkgName, '**', '*'))
-        .pipe(gulp.dest(path.join(dstDir, 'packages', pkgName, moduleName)))
-    })
+    createMergeTask(p, m)
   }
 }
 
@@ -177,9 +199,9 @@ gulp.task('build', mergeTasks, () => {
       devDependencies: {},
     }
     if (pkg === projectName) {
-      pkgDef.module = pkgDef.main
       delete pkgDef.es2015
-      delete pkgDef.typings
+      pkgDef.module = pkgDef.main
+      pkgDef.typings = './typings/gglib/index.d.ts'
       pkgDef.description = 'Standalone bundle of the [G]glib project'
     } else {
       findPeers(pkg).forEach((it) => {
