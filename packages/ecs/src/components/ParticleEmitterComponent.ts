@@ -7,6 +7,9 @@ import { Entity } from './../Entity'
 import { ParticleSystemComponent } from './ParticleSystemComponent'
 import { TransformComponent } from './TransformComponent'
 
+/**
+ * @public
+ */
 export class ParticleEmitterComponent implements Component {
   /**
    * The entity

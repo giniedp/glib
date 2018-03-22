@@ -7,12 +7,18 @@ const propertyKeys: Array<keyof DepthStateOptions> = [
   'depthWriteEnable',
 ]
 
+/**
+ * @public
+ */
 export interface DepthStateOptions {
   depthEnable?: boolean
   depthFunction?: number
   depthWriteEnable?: boolean
 }
 
+/**
+ * @public
+ */
 export class DepthState implements DepthStateOptions {
 
   public static Default = Object.freeze({

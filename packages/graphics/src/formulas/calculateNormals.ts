@@ -3,6 +3,9 @@ import { Vec2, Vec3 } from '@gglib/math'
 import { BufferDataOption } from './../Buffer'
 import { VertexLayout } from './../VertexLayout'
 
+/**
+ * @public
+ */
 export function calculateNormals(layout: VertexLayout, indices: number[], vertices: number[]) {
   if (!layout.normal) {
     Log.l('Can not create normals for buffer. Normal definition not found in layout ', layout)

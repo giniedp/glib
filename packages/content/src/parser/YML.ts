@@ -125,9 +125,8 @@ export let YML = {
    * conversion to numbers or booleans or any other data type. Multi line string values are supported.
    * If multiple keys with same name occur, all the values are collected in an array for that key.
    *
-   * @method parse
-   * @param {String} content
-   * @return {Object}
+   *
+   *
    */
   parse(content: string): any {
     // replace tabs with space

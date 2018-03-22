@@ -1,5 +1,8 @@
 let canvas: HTMLCanvasElement = null
 
+/**
+ * @public
+ */
 export function getImageData(image: HTMLImageElement, width?: number, height?: number) {
   if (!image.complete) {
     throw new Error('image must be completed')

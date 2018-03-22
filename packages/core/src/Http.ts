@@ -1,3 +1,6 @@
+/**
+ * @public
+ */
 export interface HttpOptions {
   xhr?: XMLHttpRequest
   url: string

@@ -1,18 +1,27 @@
 import { Log } from '@gglib/core'
 import { IVec3, IVec4, Mat4 } from '@gglib/math'
 
+/**
+ * @public
+ */
 export interface PlayerOptions {
   skeleton: number[]
   pose: Mat4[]
   takes: AnimationTake[]
 }
 
+/**
+ * @public
+ */
 export interface AnimationTake {
   name: string
   duration: number
   keyframes: AnimationFrame[]
 }
 
+/**
+ * @public
+ */
 export interface AnimationFrame {
   time: number
   bone: number
@@ -23,6 +32,9 @@ export interface AnimationFrame {
 
 const tempMat = Mat4.createIdentity()
 
+/**
+ * @public
+ */
 export class AnimationPlayer {
   /**
    * The skeleton bone hierarchy

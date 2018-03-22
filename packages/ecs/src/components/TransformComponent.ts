@@ -3,6 +3,9 @@ import { IVec3, Mat4, Quat, Vec3 } from '@gglib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * @public
+ */
 export interface TransformProperties {
   position?: Vec3
   rotation?: Quat
@@ -13,6 +16,9 @@ const tempQuat = Quat.createIdentity()
 const tempMat = Mat4.createIdentity()
 const tempVec = Vec3.createZero()
 
+/**
+ * @public
+ */
 export class TransformComponent implements Component {
   public name: string = 'Transform'
   public service: boolean = true

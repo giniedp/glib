@@ -55,10 +55,16 @@ const fShader = `
 
 let spritePool: Sprite[] = []
 
+/**
+ * @public
+ */
 export interface SpriteBatchOptions {
   batchSize?: number
 }
 
+/**
+ * @public
+ */
 export interface SpriteBatchBeginOptions {
   sortMode?: any
   blendState?: BlendState
@@ -69,6 +75,9 @@ export interface SpriteBatchBeginOptions {
   viewportState?: ViewportState
 }
 
+/**
+ * @public
+ */
 export interface Sprite {
   texture?: Texture
   color?: number|Color
@@ -92,6 +101,9 @@ export interface Sprite {
   flipY?: boolean
 }
 
+/**
+ * @public
+ */
 export class SpriteBuilder {
   private sprite: Sprite
 
@@ -196,6 +208,9 @@ export class SpriteBuilder {
   }
 }
 
+/**
+ * @public
+ */
 export class SpriteBatch {
   private device: Device
   private gl: any
@@ -284,7 +299,7 @@ export class SpriteBatch {
   }
 
   /**
-   * @param texture The texture to draw
+   * @param texture - The texture to draw
    */
   public draw(texture: Texture): SpriteBuilder {
 

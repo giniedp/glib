@@ -44,6 +44,9 @@ import { SpriteBatch } from './SpriteBatch'
 const supportsWebGL = typeof WebGLRenderingContext === 'function'
 const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
 
+/**
+ * @public
+ */
 export interface ContextAttributes {
   /**
    * If true, requests a drawing buffer with an alpha channel for the
@@ -138,19 +141,21 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRende
  * The Glib.Graphics.Device class ties all concepts of the Graphics package together.
  * It's a central component for rendering geometries. It holds system state variables and
  * is able to create resources such as buffers, shaders, textures and render targets.
+ *
+ * @public
  */
 export class Device {
 
   /**
    * The html canvas element
-   * @link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement
+   * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement}
    */
   public canvas: HTMLCanvasElement
 
   /**
    * The webgl rendering context.
-   * @link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext
-   * @link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext}
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext}
    */
   public context: WebGLRenderingContext | WebGL2RenderingContext
 
@@ -411,9 +416,9 @@ export class Device {
 
   /**
    * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
-   * @param [primitiveType=TriangleList]
-   * @param [elementOffset=0]
-   * @param [elementCount=indexBuffer.elementCount]
+   *
+   *
+   *
    */
   public drawIndexedPrimitives(primitiveType?: number, elementOffset?: number, elementCount?: number): Device {
     let iBuffer = this.$indexBuffer
@@ -444,11 +449,6 @@ export class Device {
 
   /**
    * Renders multiple instances of the same geometry defined by current index buffer, indexing vertices in current vertex buffer.
-   * @param {number} [instanceCount=1]
-   * @param {number} [primitiveType=TriangleList]
-   * @param {number} [offset=0]
-   * @param {number} [count=indexBuffer.elementCount]
-   * @return {Device}
    */
   public drawInstancedPrimitives(instanceCount?: number, primitiveType?: number, offset?: number, count?: number): Device {
     let iBuffer = this.$indexBuffer
@@ -478,10 +478,6 @@ export class Device {
 
   /**
    * Renders geometry defined by current vertex buffer and the given primitive type.
-   * @param {number} [primitiveType=TriangleList]
-   * @param {number} [offset=0]
-   * @param {number} [count=indexBuffer.elementCount]
-   * @return {Device}
    */
   public drawPrimitives(primitiveType?: number, offset?: number, count?: number): Device {
     let vBuffer = this.$vertexBuffer
@@ -504,8 +500,8 @@ export class Device {
 
   /**
    * Draws a full screen quad with the [0,0] texture coordinate starting at the bottom left.
-   * @param flipY if true, then the [0,0] texture coordinate starts in the top left.
-   * @returns {Glib.Graphics.Device}
+   * @param flipY - if true, then the [0,0] texture coordinate starts in the top left.
+   *
    */
   public drawQuad(flipY?: boolean): Device {
     let iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
@@ -553,7 +549,7 @@ export class Device {
    * If the display size of the canvas is controlled with CSS this will resize the
    * canvas to match the CSS dimensions in order to avoid stretched and blurry image.
    *
-   * @param [ratio] The pixel ratio for retina displays
+   * @param ratio - The pixel ratio for retina displays
    */
   public resize(pixelRatio: number= window.devicePixelRatio || 1): Device {
     if (this.frameBuffer) {
@@ -907,7 +903,6 @@ export class Device {
 
   /**
    * Creates a vertex layout obect from name
-   * @see VertexLayout.create
    */
   public createVertexLayout(name: string): any {
     return VertexLayout.create.apply(this, arguments)

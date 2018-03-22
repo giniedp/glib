@@ -2,6 +2,9 @@
 // https://www.debuggex.com/
 const regex = /^data:(([a-z0-9-]+\/[a-z0-9+-]+)?((;\s*([a-z0-9-]+=)?(([a-z0-9]+)|("[^"]*")))+)?)?\s*,(.*)$/
 
+/**
+ * @public
+ */
 export class DataUri {
   public uri: string
   public contentType: string

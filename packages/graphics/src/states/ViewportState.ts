@@ -2,6 +2,9 @@ import { Device } from './../Device'
 
 const propertyKeys: Array<keyof ViewportStateOptions> = ['x', 'y', 'width', 'height', 'zMin', 'zMax']
 
+/**
+ * @public
+ */
 export interface ViewportStateOptions {
   x?: number
   y?: number
@@ -11,6 +14,9 @@ export interface ViewportStateOptions {
   zMax?: number
 }
 
+/**
+ * @public
+ */
 export class ViewportState implements ViewportStateOptions {
   public device: Device
   public gl: WebGLRenderingContext

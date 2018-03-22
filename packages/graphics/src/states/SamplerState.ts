@@ -29,6 +29,8 @@ let propertyKeys = [
 
 /**
  * The sampler state properties
+ *
+ * @public
  */
 export interface SamplerStateProperties {
   texture?: Texture
@@ -40,7 +42,7 @@ export interface SamplerStateProperties {
 }
 
 /**
- *
+ * @public
  */
 export class SamplerState implements SamplerStateProperties {
   /**

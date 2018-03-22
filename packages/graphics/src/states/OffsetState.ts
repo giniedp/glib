@@ -6,12 +6,18 @@ let optionKeys: Array<keyof OffsetStateOptions> = [
   'offsetUnits',
 ]
 
+/**
+ * @public
+ */
 export interface OffsetStateOptions {
   offsetEnable?: boolean
   offsetFactor?: number
   offsetUnits?: number
 }
 
+/**
+ * @public
+ */
 export class OffsetState implements OffsetStateOptions {
   public device: Device
   public gl: WebGLRenderingContext

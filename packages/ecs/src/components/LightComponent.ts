@@ -5,6 +5,9 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { TransformComponent } from './TransformComponent'
 
+/**
+ * @public
+ */
 export interface LightProperties {
   range?: number
   intensity?: number
@@ -18,6 +21,9 @@ export interface LightProperties {
   type?: number
 }
 
+/**
+ * @public
+ */
 export interface LightData {
   position: Vec4
   direction: Vec4
@@ -39,6 +45,9 @@ export let LightTypeName = {
   3: 'Spot',
 }
 
+/**
+ * @public
+ */
 export class LightComponent implements Component, LightProperties {
   public entity: Entity
   public name: string = 'Light'

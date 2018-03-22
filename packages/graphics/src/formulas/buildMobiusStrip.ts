@@ -7,10 +7,9 @@ function withDefault(opt: any, value: any) {
 }
 
 /**
- * http://paulbourke.net/geometry/mobius/
- * @param builder
- * @param options
- * @constructor
+ * {@link http://paulbourke.net/geometry/mobius/}
+ *
+ * @public
  */
 export function buildMobiusStrip(builder: ModelBuilder, options: {
   diameter?: number

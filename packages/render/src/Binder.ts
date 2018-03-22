@@ -2,6 +2,9 @@ import { Device, ShaderProgram, ShaderUniform } from '@gglib/graphics'
 import { IVec2, IVec3, IVec4, Mat4, Vec2, Vec3, Vec4 } from '@gglib/math'
 import { LightData } from './Types'
 
+/**
+ * @public
+ */
 export interface Binding<T> {
   // The uniform binding name
   name: string
@@ -11,6 +14,9 @@ export interface Binding<T> {
   value: T
 }
 
+/**
+ * @public
+ */
 export interface LightBinding {
   Position: Binding<IVec4>
   Direction: Binding<IVec4>
@@ -18,6 +24,9 @@ export interface LightBinding {
   Misc: Binding<IVec4>
 }
 
+/**
+ * @public
+ */
 export class Binder {
   public Position: Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.createZero() }
   public Direction: Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.createZero() }

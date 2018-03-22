@@ -9,19 +9,31 @@ import { AssetsComponent } from './AssetsComponent'
 import { LightComponent } from './LightComponent'
 import { TimeComponent } from './TimeComponent'
 
+/**
+ * @public
+ */
 export interface CullVisitor {
   start(entity: Entity, view: Render.View): void
   add(item: Render.DrawableData): void
 }
 
+/**
+ * @public
+ */
 export interface RenderableCollector {
   add(item: Render.DrawableData): void
 }
 
+/**
+ * @public
+ */
 export interface Renderable {
   collect(collector: RenderableCollector): void
 }
 
+/**
+ * @public
+ */
 export class RendererComponent implements Component {
   public entity: Entity
   public name: string = 'Renderer'
@@ -75,6 +87,9 @@ export class RendererComponent implements Component {
   }
 }
 
+/**
+ * @public
+ */
 export class SimpleCullVisitor implements CullVisitor, Visitor<Entity> {
   public view: Render.View
 

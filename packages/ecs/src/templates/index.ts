@@ -12,6 +12,9 @@ import './WASD'
 
 import { Entity } from '../Entity'
 
+/**
+ * @public
+ */
 export function createGame(options: any, ...tpl: string[]) {
   return new Entity().applyTemplate('Game', options).applyTemplates(tpl)
 }

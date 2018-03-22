@@ -2,6 +2,9 @@ import { extend, getTime } from '@gglib/core'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * @public
+ */
 export class TimeComponent implements Component {
   public entity: Entity
   public name: string = 'Time'

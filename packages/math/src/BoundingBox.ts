@@ -5,6 +5,9 @@ import { Ray } from './Ray'
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
+/**
+ * @public
+ */
 export class BoundingBox {
   public min: IVec3 = { x: 0, y: 0, z: 0}
   public max: IVec3 = { x: 0, y: 0, z: 0}

@@ -4,21 +4,29 @@ const statekeys = ['id', 'index', 'connected', 'mapping', 'timestamp']
 
 /**
  * Gamepads constructor options
+ *
+ * @public
  */
 export interface IGamepadsOptions {
   autopoll?: boolean
 }
-export interface GamepadButton {
-    pressed: boolean
-    value: number
+
+/**
+ * @public
+ */
+export interface GamepadButtonState {
+    pressed?: boolean
+    value?: number
 }
 /**
  * The captured state of a gamepad
+ *
+ * @public
  */
 export interface IGamepadState {
   buttonValues: number[]
   axes: number[]
-  buttons: GamepadButton[]
+  buttons: GamepadButtonState[]
   connected: boolean
   id: string
   index: number
@@ -39,6 +47,9 @@ function emptyGamepadState(): IGamepadState {
   }
 }
 
+/**
+ * @public
+ */
 export class Gamepads extends Events {
   /**
    * The current captured state
@@ -156,7 +167,7 @@ export class Gamepads extends Events {
     }
     // copy button data
     for (let i = 0; i < state.buttons.length; i++) {
-      result.buttons[i] = result.buttons[i] || {} as GamepadButton // tslint:disable-line
+      result.buttons[i] = result.buttons[i] || {}
       result.buttons[i].pressed = state.buttons[i].pressed
       result.buttons[i].value = state.buttons[i].value
       result.buttonValues[i] = state.buttonValues[i]
@@ -208,6 +219,9 @@ export class Gamepads extends Events {
   }
 }
 
+/**
+ * @public
+ */
 export const GamepadButton = Object.freeze({
   // Face (main) buttons
   A: 0,
@@ -244,6 +258,7 @@ export const GamepadButton = Object.freeze({
   Extra8: 23,
   Extra9: 24,
 })
+
 export const GamepadButtonNames = {}
 for (const name in GamepadButton) {
   if (GamepadButton.hasOwnProperty(name)) {

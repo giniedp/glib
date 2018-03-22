@@ -4,6 +4,8 @@ import { Device } from './Device'
 
 /**
  * Options to be used to create a new DepthBuffer
+ *
+ * @public
  */
 export interface DepthBufferOptions {
   /**
@@ -26,6 +28,8 @@ export interface DepthBufferOptions {
 
 /**
  * Describes a depth buffer object
+ *
+ * @public
  */
 export class DepthBuffer {
   /**
@@ -55,8 +59,8 @@ export class DepthBuffer {
 
   /**
    * Initializes a new instance
-   * @param device The graphics device
-   * @param options The setup options to initialize the instance
+   * @param device - The graphics device
+   * @param options - The setup options to initialize the instance
    */
   constructor(device: Device, options: DepthBufferOptions) {
     this.device = device
@@ -73,7 +77,7 @@ export class DepthBuffer {
 
   /**
    * Re-initializes the instance
-   * @param options The setup options to initialize the instance
+   * @param options - The setup options to initialize the instance
    */
   public setup(options: DepthBufferOptions): DepthBuffer {
     let width = options.width

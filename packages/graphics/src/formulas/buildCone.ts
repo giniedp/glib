@@ -15,6 +15,9 @@ function circleVector(position: number, total: number, out: Vec3) {
   return out.init(dx, 0, dz)
 }
 
+/**
+ * @public
+ */
 export function buildCone(builder: ModelBuilder, options: {
   height?: number
   steps?: number

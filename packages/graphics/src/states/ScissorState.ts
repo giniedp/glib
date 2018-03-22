@@ -2,6 +2,9 @@ import { Device } from './../Device'
 
 let optionKeys: Array<keyof ScissorStateOptions> = ['enable', 'x', 'y', 'width', 'height']
 
+/**
+ * @public
+ */
 export interface ScissorStateOptions {
   enable?: boolean
   x?: number
@@ -10,6 +13,9 @@ export interface ScissorStateOptions {
   height?: number
 }
 
+/**
+ * @public
+ */
 export class ScissorState implements ScissorStateOptions {
   public device: Device
   public gl: WebGLRenderingContext

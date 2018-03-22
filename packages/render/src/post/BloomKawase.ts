@@ -3,6 +3,9 @@ import { BlendState, Color, DepthFormat, DepthState, ShaderEffect, ShaderProgram
 import { Manager } from '../Manager'
 import { Step } from '../Types'
 
+/**
+ * @public
+ */
 export class BloomKawase implements Step {
   public glowCut: number = 0.6
   public iterations: number = 5

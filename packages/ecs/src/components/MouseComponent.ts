@@ -4,6 +4,9 @@ import { Vec3, Vec4 } from '@gglib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * @public
+ */
 export class MouseComponent implements Component {
 
   public entity: Entity

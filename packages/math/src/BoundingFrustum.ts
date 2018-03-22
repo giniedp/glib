@@ -13,6 +13,9 @@ const RIGHT = 3
 const TOP = 4
 const BOTTOM = 5
 
+/**
+ * @public
+ */
 export class BoundingFrustum {
 
   public readonly planes: IVec4[]

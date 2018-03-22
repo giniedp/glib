@@ -1,4 +1,8 @@
 // tslint:disable no-bitwise
+
+/**
+ * @public
+ */
 export class Color {
 
   public static create(r: number, g: number, b: number, a: number): Color {

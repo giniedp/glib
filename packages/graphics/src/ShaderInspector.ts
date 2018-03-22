@@ -11,6 +11,9 @@ const regTrim = /^\s*|\s*$/
 const  isSamplerType = /sampler2D|sampler3D|samplerCube/
 const regAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/
 
+/**
+ * @public
+ */
 export class ShaderInspector {
 
   public static inspectProgram(vertexShader: string, fragmentShader: string): any {

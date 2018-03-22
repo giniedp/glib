@@ -15,6 +15,8 @@ export type Callback = (...args: any[]) => void
 /**
  * Implements logic for binding and unbinding methods to and from events.
  * The code is taken from https://github.com/jashkenas/backbone
+ *
+ * @public
  */
 export class Events {
 
@@ -22,9 +24,9 @@ export class Events {
 
   /**
    * Bind an event to a `callback` function. Passing `"all"` will bind the callback to all events fired.
-   * @param name The name of the event
-   * @param callback The function to call when the even fires
-   * @param context The value of 'this' inside the callback
+   * @param name - The name of the event
+   * @param callback - The function to call when the even fires
+   * @param context - The value of 'this' inside the callback
    */
   public on(name: string, callback: Callback, context?: any) {
     this.events = this.events || {}
@@ -41,9 +43,9 @@ export class Events {
 
   /**
    * Bind an event to only be triggered a single time. After the first time the callback is invoked, it will be removed.
-   * @param name The name of the event
-   * @param callback The function to call when the even fires
-   * @param context The value of 'this' inside the callback
+   * @param name - The name of the event
+   * @param callback - The function to call when the even fires
+   * @param context - The value of 'this' inside the callback
    */
   public once(name: string, callback: Callback, context?: any) {
     // tslint:disable-next-line
@@ -63,9 +65,10 @@ export class Events {
    * callbacks with that function. If `callback` is null, removes all
    * callbacks for the event. If `name` is null, removes all bound
    * callbacks for all events.
-   * @param name The name of the event to unbind from
-   * @param callback The function to unbind
-   * @param [context]
+   *
+   * @param name - The name of the event to unbind from
+   * @param callback - The function to unbind
+   * @param context - The value of 'this' inside the callback
    */
   public off(name?: string, callback?: Callback, context?: any) {
     if (!this.events) {
@@ -94,9 +97,8 @@ export class Events {
    * passed the same arguments as `trigger` is, apart from the event name
    * (unless you're listening on `"all"`, which will cause your callback to
    * receive the true name of the event as the first argument).
-   * @method trigger
-   * @param name The name of the event to trigger
-   * @return {*}
+   *
+   * @param name - The name of the event to trigger
    */
   public trigger(name: string, ...args: any[]) {
     if (!this.events) {

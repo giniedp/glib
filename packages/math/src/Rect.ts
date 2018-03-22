@@ -1,6 +1,9 @@
 import { IVec2 } from './Types'
 import { Vec2 } from './Vec2'
 
+/**
+ * @public
+ */
 export class Rect {
   public x: number
   public y: number

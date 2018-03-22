@@ -6,25 +6,37 @@ let hasMotionApi = 'DeviceMotionEvent' in window
 
 /**
  * Orientation constructor options
+ *
+ * @public
  */
 export interface IOrientationOptions {
   element?: EventTarget,
   events?: string[]
 }
 
+/**
+ * @public
+ */
 export interface IDeviceOrientation {
   absolute: boolean
   alpha: number
   beta: number
   gamma: number
 }
+
+/**
+ * @public
+ */
 export interface IDeviceRotation {
   alpha: number
   beta: number
   gamma: number
 }
+
 /**
  * Captured orientation state
+ *
+ * @public
  */
 export interface IOrientationState {
   orientation: IDeviceOrientation
@@ -34,6 +46,9 @@ export interface IOrientationState {
   interval?: number
 }
 
+/**
+ * @public
+ */
 export class Orientation extends Events {
   public state: IOrientationState = {
     orientation: {

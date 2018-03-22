@@ -1,5 +1,8 @@
 import { Device } from './../Device'
 
+/**
+ * @public
+ */
 export class VertexAttribArrayState {
   public device: Device
   public gl: WebGLRenderingContext

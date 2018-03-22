@@ -3,6 +3,8 @@ import { Vec3 } from './Vec3'
 
 /**
  * Describes a 3x3 matrix.
+ *
+ * @public
  */
 export class Mat3 {
   public right: Float32Array = this.data.subarray(0, 3)
@@ -13,7 +15,7 @@ export class Mat3 {
 
   /**
    * Initializes the matrix with the given values in given order. The values are applied in column major order
-   * @return Reference to `this` for chaining.
+   * @returns Reference to `this` for chaining.
    */
   public init(
     m0: number, m1: number, m2: number,
@@ -31,7 +33,7 @@ export class Mat3 {
 
   /**
    * Initializes the matrix with the given values. The values are read in row major order.
-   * @return Reference to `this` for chaining.
+   * @returns Reference to `this` for chaining.
    */
   public initRowMajor(
     m0: number, m3: number, m6: number,
@@ -49,8 +51,8 @@ export class Mat3 {
 
   /**
    * Initializes all components of this matrix with the given number.
-   * @param number The number to set all matrix components to.
-   * @return Reference to `this` for chaining.
+   * @param number - The number to set all matrix components to.
+   * @returns Reference to `this` for chaining.
    */
   public initWith(value: number): Mat3 {
     const d = this.data
@@ -64,7 +66,7 @@ export class Mat3 {
 
   /**
    * Initializes the components of this matrix to the identity.
-   * @return Reference to `this` for chaining.
+   * @returns Reference to `this` for chaining.
    */
   public initIdentity(): Mat3 {
     const d = this.data
@@ -78,8 +80,8 @@ export class Mat3 {
 
   /**
    * Initializes this matrix from another matrix.
-   * @param other
-   * @return Reference to `this` for chaining.
+   *
+   * @returns Reference to `this` for chaining.
    */
   public initFrom(other: Mat3): Mat3 {
     const a = this.data
@@ -96,10 +98,9 @@ export class Mat3 {
    * Reads a buffer starting at given offset and initializes the elements of this matrix.
    * The given buffer must have at least 16 elements starting at given offset.
    * The elements are expected to be in column major layout.
-   * @chainable
-   * @param buffer
-   * @param [offset=0]
-   * @return Reference to `this` for chaining.
+   *
+   *
+   * @returns Reference to `this` for chaining.
    */
   public initFromBuffer(buffer: ArrayLike<number>, offset?: number): Mat3 {
     offset = offset || 0
@@ -118,8 +119,8 @@ export class Mat3 {
 
   /**
    * Initializes this matrix from given quaternion.
-   * @param q The quaternion
-   * @return Reference to `this` for chaining.
+   * @param q - The quaternion
+   * @returns Reference to `this` for chaining.
    */
   public initFromQuaternion(q: IVec4): Mat3 {
     const x = q.x
@@ -144,9 +145,9 @@ export class Mat3 {
 
   /**
    * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
-   * @param axis The axis vector. This is expected to be normalized.
-   * @param angle The angle in radians.
-   * @return Reference to `this` for chaining.
+   * @param axis - The axis vector. This is expected to be normalized.
+   * @param angle - The angle in radians.
+   * @returns Reference to `this` for chaining.
    */
   public initAxisAngle(axis: IVec3, angle: number): Mat3 {
     // create quaternion
@@ -177,10 +178,10 @@ export class Mat3 {
 
   /**
    * Initializes this matrix to a rotation matrix defined by given yaw pitch and roll values.
-   * @param yaw Angle in radians around the Y axis
-   * @param pitch Angle in radians around the X axis
-   * @param roll Angle in radians around the Z axis
-   * @return Reference to `this` for chaining.
+   * @param yaw - Angle in radians around the Y axis
+   * @param pitch - Angle in radians around the X axis
+   * @param roll - Angle in radians around the Z axis
+   * @returns Reference to `this` for chaining.
    */
   public initYawPitchRoll(yaw: number, pitch: number, roll: number): Mat3 {
     // create quaternion
@@ -220,8 +221,8 @@ export class Mat3 {
 
   /**
    * Initializes this matrix with a rotation around the X axis.
-   * @param rad The angle in radians.
-   * @return Reference to `this` for chaining.
+   * @param rad - The angle in radians.
+   * @returns Reference to `this` for chaining.
    */
   public initRotationX(rad: number): Mat3 {
     const cos = Math.cos(rad)
@@ -235,8 +236,8 @@ export class Mat3 {
 
   /**
    * Initializes this matrix with a rotation around the Y axis.
-   * @param rad The angle in radians.
-   * @return Reference to `this` for chaining.
+   * @param rad - The angle in radians.
+   * @returns Reference to `this` for chaining.
    */
   public initRotationY(rad: number): Mat3 {
     const cos = Math.cos(rad)
@@ -251,8 +252,8 @@ export class Mat3 {
 
   /**
    * Initializes this matrix with a rotation around the Z axis.
-   * @param rad The angle in radians.
-   * @return Reference to `this` for chaining.
+   * @param rad - The angle in radians.
+   * @returns Reference to `this` for chaining.
    */
   public initRotationZ(rad: number): Mat3 {
     const cos = Math.cos(rad)
@@ -266,10 +267,10 @@ export class Mat3 {
 
   /**
    * Initializes a scale matrix.
-   * @param x Scale along x-axis
-   * @param y Scale along y-axis
-   * @param z Scale along z-axis
-   * @return Reference to `this` for chaining.
+   * @param x - Scale along x-axis
+   * @param y - Scale along y-axis
+   * @param z - Scale along z-axis
+   * @returns Reference to `this` for chaining.
    */
   public initScale(x: number, y: number, z: number): Mat3 {
     return this.initRowMajor(
@@ -281,12 +282,10 @@ export class Mat3 {
 
   /**
    * Initializes a matrix from a position point and a forward and up vectors
-   * @method initWorld
-   * @chainable
-   * @param position The translation part
-   * @param forward The facing direction
-   * @param up The up vector
-   * @return Reference to `this` for chaining.
+   * @param position - The translation part
+   * @param forward - The facing direction
+   * @param up - The up vector
+   * @returns Reference to `this` for chaining.
    */
   public initOrientation(forward: IVec3, up: IVec3): Mat3 {
     // backward = negate(normalize(forward))
@@ -323,7 +322,7 @@ export class Mat3 {
 
   /**
    * Creates a copy of this matrix
-   * @return The cloned matrix.
+   * @returns The cloned matrix.
    */
   public clone(): Mat3 {
     const d = this.data
@@ -332,9 +331,9 @@ export class Mat3 {
 
   /**
    * Copies the components successively into the given array.
-   * @param buffer The array to copy into
-   * @param [offset=0] Zero based index where to start writing in the array
-   * @return the given buffer
+   * @param buffer - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   * @returns the given buffer
    */
   public copyTo<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
     offset = offset || 0
@@ -353,9 +352,8 @@ export class Mat3 {
 
   /**
    * Checks for component wise equality with given matrix
-   * @method equals
-   * @param other The matrix to compare with
-   * @return {Boolean} true if components are equal, false otherwise
+   * @param other - The matrix to compare with
+   * @returns true if components are equal, false otherwise
    */
   public equals(other: Mat3): boolean {
     const a = this.data
@@ -373,8 +371,8 @@ export class Mat3 {
 
   /**
    * Gets the forward vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getForward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -386,8 +384,8 @@ export class Mat3 {
 
   /**
    * Gets the backward vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getBackward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -399,8 +397,8 @@ export class Mat3 {
 
   /**
    * Gets the right vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getRight<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -412,8 +410,8 @@ export class Mat3 {
 
   /**
    * Gets the left vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getLeft<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -425,8 +423,8 @@ export class Mat3 {
 
   /**
    * Gets the up vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getUp<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -438,8 +436,8 @@ export class Mat3 {
 
   /**
    * Gets the down vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getDown<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -451,8 +449,8 @@ export class Mat3 {
 
   /**
    * Gets the scale part as vector
-   * @param [out] The vector to write to
-   * @return the given `out` parameter or a new vector
+   * @param out - The vector to write to
+   * @returns the given `out` parameter or a new vector
    */
   public getScale<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -464,8 +462,8 @@ export class Mat3 {
 
   /**
    * Sets the forward vector
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setForward(vec: IVec3): Mat3 {
     this.backward[0] = -vec.x
@@ -476,8 +474,8 @@ export class Mat3 {
 
   /**
    * Sets the backward vector
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setBackward(vec: IVec3): Mat3 {
     this.backward[0] = vec.x
@@ -488,8 +486,8 @@ export class Mat3 {
 
   /**
    * Sets the right vector
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setRight(vec: IVec3): Mat3 {
     this.right[0] = vec.x
@@ -500,8 +498,8 @@ export class Mat3 {
 
   /**
    * Sets the left vector
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setLeft(vec: IVec3): Mat3 {
     this.right[0] = -vec.x
@@ -512,8 +510,8 @@ export class Mat3 {
 
   /**
    * Sets the up vector
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setUp(vec: IVec3): Mat3 {
     this.up[0] = vec.x
@@ -524,8 +522,8 @@ export class Mat3 {
 
   /**
    * Sets the down vector
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setDown(vec: IVec3): Mat3 {
     this.up[0] = -vec.x
@@ -536,8 +534,8 @@ export class Mat3 {
 
   /**
    * Sets the scale part
-   * @param vec The vector to take values from
-   * @return Reference to `this` for chaining.
+   * @param vec - The vector to take values from
+   * @returns Reference to `this` for chaining.
    */
   public setScale(vec: IVec3): Mat3 {
     this.data[0] = vec.x
@@ -591,7 +589,7 @@ export class Mat3 {
 
   /**
    * Transposes this matrix
-   * @return Reference to `this` for chaining.
+   * @returns Reference to `this` for chaining.
    */
   public transpose(): Mat3 {
     const d = this.data
@@ -604,7 +602,7 @@ export class Mat3 {
 
   /**
    * Inverts this matrix
-   * @return Reference to `this` for chaining.
+   * @returns Reference to `this` for chaining.
    */
   public invert(): Mat3 {
     const a = this.data
@@ -643,7 +641,7 @@ export class Mat3 {
 
   /**
    * Negates all components of this matrix
-   * @return Reference to `this` for chaining.
+   * @returns Reference to `this` for chaining.
    */
   public negate(): Mat3 {
     const a = this.data
@@ -658,8 +656,8 @@ export class Mat3 {
 
   /**
    * Adds the given matrix to `this`
-   * @param other The matrix to add
-   * @return Reference to `this` for chaining.
+   * @param other - The matrix to add
+   * @returns Reference to `this` for chaining.
    */
   public add(other: Mat3): Mat3 {
     const a = this.data
@@ -674,8 +672,8 @@ export class Mat3 {
 
   /**
    * Adds the given scalar to each component of `this`
-   * @param scalar The scalar to add
-   * @return Reference to `this` for chaining.
+   * @param scalar - The scalar to add
+   * @returns Reference to `this` for chaining.
    */
   public addScalar(s: number): Mat3 {
     const a = this.data
@@ -689,8 +687,8 @@ export class Mat3 {
 
   /**
    * Subtracts the given matrix from `this`
-   * @param other The matrix to subtract
-   * @return Reference to `this` for chaining.
+   * @param other - The matrix to subtract
+   * @returns Reference to `this` for chaining.
    */
   public subtract(other: Mat3): Mat3 {
     const a = this.data
@@ -705,8 +703,8 @@ export class Mat3 {
 
   /**
    * Subtracts the given scalar from each component of `this`
-   * @param scalar The scalar to subtract
-   * @return Reference to `this` for chaining.
+   * @param scalar - The scalar to subtract
+   * @returns Reference to `this` for chaining.
    */
   public subtractScalar(s: number): Mat3 {
     const a = this.data
@@ -720,8 +718,8 @@ export class Mat3 {
 
   /**
    * Multiplies the given matrix with this
-   * @param other The matrix to multiply
-   * @return Reference to `this` for chaining.
+   * @param other - The matrix to multiply
+   * @returns Reference to `this` for chaining.
    */
   public multiply(other: Mat3): Mat3 {
     const a = other.data
@@ -749,8 +747,8 @@ export class Mat3 {
 
   /**
    * Concatenates the given matrix to this
-   * @param other The matrix to concatenate
-   * @return Reference to `this` for chaining.
+   * @param other - The matrix to concatenate
+   * @returns Reference to `this` for chaining.
    */
   public concat(other: Mat3): Mat3 {
     const a = this.data
@@ -778,8 +776,8 @@ export class Mat3 {
 
   /**
    * Multiplies each component of `this` with given scalar
-   * @param scalar The scalar to multiply
-   * @return Reference to `this` for chaining.
+   * @param scalar - The scalar to multiply
+   * @returns Reference to `this` for chaining.
    */
   public multiplyScalar(s: number): Mat3 {
     const a = this.data
@@ -793,8 +791,8 @@ export class Mat3 {
 
   /**
    * Divides each matching component pair
-   * @param other The matrix by which to divide
-   * @return Reference to `this` for chaining.
+   * @param other - The matrix by which to divide
+   * @returns Reference to `this` for chaining.
    */
   public divide(other: Mat3): Mat3 {
     const a = this.data
@@ -809,8 +807,8 @@ export class Mat3 {
 
   /**
    * Divides each component of `this` by given scalar
-   * @param scalar The scalar by which to divide
-   * @return Reference to `this` for chaining.
+   * @param scalar - The scalar by which to divide
+   * @returns Reference to `this` for chaining.
    */
   public divideScalar(s: number): Mat3 {
     const a = this.data
@@ -825,8 +823,8 @@ export class Mat3 {
 
   /**
    * Transform the given vector with this matrix.
-   * @param vec
-   * @return the given vector
+   *
+   * @returns the given vector
    */
   public transform<T extends IVec2|IVec3>(vec: T): T {
     const x = vec.x || 0
@@ -843,10 +841,10 @@ export class Mat3 {
 
   /**
    * Transforms the given buffer with `this` matrix.
-   * @param buffer
-   * @param [offset=0]
-   * @param [stride=2]
-   * @param [count=buffer.length]
+   *
+   *
+   *
+   *
    */
   public transformV2Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
@@ -868,10 +866,10 @@ export class Mat3 {
 
   /**
    * Transforms the given buffer with `this` matrix.
-   * @param buffer
-   * @param [offset=0]
-   * @param [stride=3]
-   * @param [count=buffer.length]
+   *
+   *
+   *
+   *
    */
   public transformV3Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
@@ -896,11 +894,10 @@ export class Mat3 {
 
   /**
    * Transforms the given buffer with `this` matrix.
-   * @method transformV4Buffer
-   * @param buffer
-   * @param [offset=0]
-   * @param [stride=4]
-   * @param [count=buffer.length]
+   *
+   *
+   *
+   *
    */
   public transformV4Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
@@ -925,9 +922,9 @@ export class Mat3 {
 
   /**
    * Transpose the given matrix
-   * @param mat The matrix to transpose
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param mat - The matrix to transpose
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static transpose(mat: Mat3, out?: Mat3): Mat3 {
     const d = mat.data
@@ -940,9 +937,9 @@ export class Mat3 {
 
   /**
    * Invert the given matrix
-   * @param mat The matrix to transpose
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param mat - The matrix to transpose
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static invert(mat: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -982,9 +979,9 @@ export class Mat3 {
 
   /**
    * Negate the components of the given matrix
-   * @param mat The matrix to transpose
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param mat - The matrix to transpose
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static negate(mat: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1000,10 +997,10 @@ export class Mat3 {
 
   /**
    * Adds a matrix to another
-   * @param matA The first matrix
-   * @param matB The second matrix
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The first matrix
+   * @param matB - The second matrix
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static add(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1020,10 +1017,10 @@ export class Mat3 {
 
   /**
    * Adds a scalar to each component of a matrix
-   * @param mat The matrix
-   * @param scalar The scalar to add
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param mat - The matrix
+   * @param scalar - The scalar to add
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static addScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1039,10 +1036,10 @@ export class Mat3 {
 
   /**
    * Subtracts the second matrix from the first
-   * @param matA The first matrix
-   * @param matB The second matrix
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The first matrix
+   * @param matB - The second matrix
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static subtract(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1059,10 +1056,10 @@ export class Mat3 {
 
   /**
    * Subtracts a scalar from each somponent of a matrix
-   * @param mat The matrix to subtract from
-   * @param scalar The scalar to subtract
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param mat - The matrix to subtract from
+   * @param scalar - The scalar to subtract
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static subtractScalar(mat: Mat3, scalar: number, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1078,10 +1075,10 @@ export class Mat3 {
 
   /**
    * Multiplies a matrix by another matrix
-   * @param matA The first matrix
-   * @param matB The second matrix
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The first matrix
+   * @param matB - The second matrix
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static multiply(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1110,10 +1107,10 @@ export class Mat3 {
 
   /**
    * Multiplies a matrix by another matrix
-   * @param matA The first matrix
-   * @param matB The second matrix
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The first matrix
+   * @param matB - The second matrix
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static concat(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1142,8 +1139,7 @@ export class Mat3 {
 
   /**
    * Multiplies a chain of matrices
-   * @method concatChain
-   * @return The result of the multiplication
+   * @returns The result of the multiplication
    */
   public static concatChain(...rest: Mat3[]): Mat3 {
     // (a, (b, (c, (d, e))))
@@ -1156,8 +1152,7 @@ export class Mat3 {
 
   /**
    * Multiplies a chain of matrices
-   * @method multiplyChain
-   * @return The result of the multiplication
+   * @returns The result of the multiplication
    */
   public static multiplyChain(...rest: Mat3[]): Mat3 {
     // ((((a, b), c), d), e)
@@ -1170,11 +1165,10 @@ export class Mat3 {
 
   /**
    * Multiplies a matrix with a scalar value
-   * @method multiplyScalar
-   * @param matA The matrix
-   * @param scalar The scalar to multiply
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The matrix
+   * @param scalar - The scalar to multiply
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static multiplyScalar(matA: Mat3, scalar: number, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1191,10 +1185,10 @@ export class Mat3 {
 
   /**
    * Divides the components of the first matrix by the components of the second matrix
-   * @param matA The first matrix
-   * @param matB The second matrix
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The first matrix
+   * @param matB - The second matrix
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static divide(matA: Mat3, matB: Mat3, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1211,10 +1205,10 @@ export class Mat3 {
 
   /**
    * Divides the components of a matrix by a scalar
-   * @param matA The matrix
-   * @param scalar The scalar by which to divide
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The matrix
+   * @param scalar - The scalar by which to divide
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static divideScalar(matA: Mat3, scalar: number, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1231,11 +1225,11 @@ export class Mat3 {
 
   /**
    * Performs a linear interpolation between two matrices
-   * @param matA The first matrix
-   * @param matB The second matrix
-   * @param t The interpolation value. This is assumed to be in [0:1] range
-   * @param [out] The matrix to write to
-   * @return The given `out` parameter or a new matrix
+   * @param matA - The first matrix
+   * @param matB - The second matrix
+   * @param t - The interpolation value. This is assumed to be in [0:1] range
+   * @param out - The matrix to write to
+   * @returns The given `out` parameter or a new matrix
    */
   public static lerp(matA: Mat3, matB: Mat3, t: number, out?: Mat3): Mat3 {
     out = out || new Mat3()
@@ -1256,7 +1250,7 @@ export class Mat3 {
 
   /**
    * Creates a new matrix with all components set to 0
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static zero(): Mat3 {
     return new Mat3()
@@ -1264,7 +1258,7 @@ export class Mat3 {
 
   /**
    * Creates a new matrix that is initialized to identity
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static identity(): Mat3 {
     return new Mat3().initIdentity()
@@ -1273,7 +1267,7 @@ export class Mat3 {
   /**
    * Creates a new matrix. This method should be called with 16 or 0 arguments. If less than 16 but more than 0 arguments
    * are given some components are going to be undefined. The arguments are expected to be in column major order.
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static create(
     m0: number, m1: number, m2: number,
@@ -1292,7 +1286,7 @@ export class Mat3 {
 
   /**
    * Creates a new matrix. The arguments are expected to be in row major order.
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createRowMajor(
     m0: number, m3: number, m6: number,
@@ -1310,63 +1304,63 @@ export class Mat3 {
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createScale(x: number, y: number, z: number): Mat3 {
     return new Mat3().initScale(x, y, z)
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createOrientation(forward: IVec3, up: IVec3): Mat3 {
     return new Mat3().initOrientation(forward, up)
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createRotationX(rad: number): Mat3 {
     return new Mat3().initRotationX(rad)
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createRotationY(rad: number): Mat3 {
     return new Mat3().initRotationY(rad)
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createRotationZ(rad: number): Mat3 {
     return new Mat3().initRotationZ(rad)
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createAxisAngle(axis: IVec3, angle: number): Mat3 {
     return new Mat3().initAxisAngle(axis, angle)
   }
 
   /**
-   * @return a new matrix
+   * @returns a new matrix
    */
   public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat3 {
     return new Mat3().initYawPitchRoll(yaw, pitch, roll)
   }
 
   /**
-   * @returns {string}
+   *
    */
   public format(): string {
     return Mat3.format(this)
   }
 
   /**
-   * @returns {string}
+   *
    */
   public static format(mat: Mat3): string {
     const m = mat.data

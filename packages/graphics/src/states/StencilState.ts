@@ -18,6 +18,9 @@ let propertyKeys: Array<keyof StencilStateOptions> = [
   'stencilBackDepthPass',
 ]
 
+/**
+ * @public
+ */
 export interface StencilStateOptions {
   enable?: boolean
   stencilFunction?: number
@@ -34,6 +37,9 @@ export interface StencilStateOptions {
   stencilBackDepthPass?: number
 }
 
+/**
+ * @public
+ */
 export class StencilState implements StencilStateOptions {
   public device: Device
   public gl: WebGLRenderingContext

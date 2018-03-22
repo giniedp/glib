@@ -8,6 +8,9 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { TransformComponent } from './TransformComponent'
 
+/**
+ * @public
+ */
 export interface ParticleSystemSettings {
   texture: Graphics.Texture
   maxParticles: number

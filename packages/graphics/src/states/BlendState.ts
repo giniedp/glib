@@ -19,6 +19,9 @@ let propertyKeys = [
   'enabled',
 ]
 
+/**
+ * @public
+ */
 export interface BlendStateOptions {
   colorBlendFunction?: number
   alphaBlendFunction?: number
@@ -33,6 +36,9 @@ export interface BlendStateOptions {
   enabled?: boolean
 }
 
+/**
+ * @public
+ */
 export class BlendState implements BlendStateOptions {
   public device: Device
   public gl: WebGLRenderingContext

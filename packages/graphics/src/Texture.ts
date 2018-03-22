@@ -24,6 +24,9 @@ function noop() {
   //
 }
 
+/**
+ * @public
+ */
 export interface TextureOptions {
   /** Whether or not to automatically generate mip maps */
   generateMipmap?: boolean
@@ -45,7 +48,10 @@ export interface TextureOptions {
   depthFormat?: DepthFormatOption
 }
 
-// Describes a texture object.
+/**
+ * Describes a texture object.
+ * @public
+ */
 export class Texture {
   /**
    * The unique id

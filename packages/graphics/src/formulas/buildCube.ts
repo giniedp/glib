@@ -7,6 +7,9 @@ function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
+/**
+ * @public
+ */
 export function buildCube(builder: ModelBuilder, options: {
   size?: number,
   steps?: number,

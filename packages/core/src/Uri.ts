@@ -58,6 +58,9 @@ function collapse(path: string) {
   return result
 }
 
+/**
+ * @public
+ */
 export class Uri {
   /**
    * Parses a string and extracts all uri components

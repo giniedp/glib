@@ -2,11 +2,17 @@ import { DepthBuffer } from './DepthBuffer'
 import { Device } from './Device'
 import { Texture } from './Texture'
 
+/**
+ * @public
+ */
 export interface FrameBufferOptions {
   textures?: Texture[],
   depthBuffer?: DepthBuffer,
 }
 
+/**
+ * @public
+ */
 export class FrameBuffer {
   public device: Device
   public gl: any

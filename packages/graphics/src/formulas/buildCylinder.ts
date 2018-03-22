@@ -7,6 +7,9 @@ function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
+/**
+ * @public
+ */
 export function buildCylinder(builder: ModelBuilder, options: {
   height?: number
   diameter?: number

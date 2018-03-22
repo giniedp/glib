@@ -1,6 +1,9 @@
 import { Log } from '@gglib/core'
 import { VertexLayout } from './../VertexLayout'
 
+/**
+ * @public
+ */
 export function flipUV(layout: VertexLayout, indices: number[], vertices: number[]) {
 
   Object.keys(layout).forEach((key) => {

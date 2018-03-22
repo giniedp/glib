@@ -9,6 +9,8 @@ const keyLookup = {
 
 /**
  * Describes a plane with four components.
+ *
+ * @public
  */
 export class Plane implements IVec2, IVec3, IVec4 {
   /**
@@ -30,10 +32,10 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes a new vector
-   * @param x Value for the X component
-   * @param y Value for the Y component
-   * @param z Value for the Z component
-   * @param w Value for the W component
+   * @param x - Value for the X component
+   * @param y - Value for the Y component
+   * @param z - Value for the Z component
+   * @param w - Value for the W component
    */
   constructor(x?: number, y?: number, z?: number, w?: number) {
     this.x = x == null ? 0 : x
@@ -90,7 +92,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Gets the xyz components
-   * @param out The value to write to
+   * @param out - The value to write to
    */
   public getNormal<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
     out = out || new Vec3()
@@ -102,11 +104,11 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the components of this vector with given values.
-   * @param x value for X component
-   * @param y value for Y component
-   * @param z value for Z component
-   * @param w value for W component
-   * @return this vector for chaining
+   * @param x - value for X component
+   * @param y - value for Y component
+   * @param z - value for Z component
+   * @param w - value for W component
+   * @returns this vector for chaining
    */
   public init(x: number, y: number, z: number, w: number): Plane {
     this.x = x
@@ -118,11 +120,11 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a new vector.
-   * @param [x] The x component
-   * @param [y] The y component
-   * @param [z] The z component
-   * @param [w] The w component
-   * @return A new vector.
+   * @param x - The x component
+   * @param y - The y component
+   * @param z - The z component
+   * @param w - The w component
+   * @returns A new vector.
    */
   public static create(x?: number, y?: number, z?: number, w?: number): Plane {
     return new Plane(x, y, z, w)
@@ -130,7 +132,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Resets all components to zero
-   * @return this vector for chaining
+   * @returns this vector for chaining
    */
   public initZero(): Plane {
     this.x = 0
@@ -142,7 +144,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a new vector with all components set to 0.
-   * @return A new vector.
+   * @returns A new vector.
    */
   public static createZero(): Plane {
     return new Plane(0, 0, 0, 0)
@@ -150,8 +152,8 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the components of this vector by taking the components from the given vector.
-   * @param other The vector to read from
-   * @return this vector for chaining
+   * @param other - The vector to read from
+   * @returns this vector for chaining
    */
   public initFrom(other: IVec4): Plane {
     this.x = other.x
@@ -163,8 +165,8 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the components of this vector by taking the components from the given vector.
-   * @param other The vector to read from
-   * @return this vector for chaining
+   * @param other - The vector to read from
+   * @returns this vector for chaining
    */
   public static createFrom(other: IVec4): Plane {
     return new Plane(
@@ -177,9 +179,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer The array to read from
-   * @param [offset=0] The zero based index at which start reading the values
-   * @return this vector for chaining
+   * @param buffer - The array to read from
+   * @param offset - The zero based index at which start reading the values
+   * @returns this vector for chaining
    */
   public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Plane {
     this.x = buffer[offset]
@@ -191,9 +193,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer The array to read from
-   * @param [offset=0] The zero based index at which start reading the values
-   * @return this vector for chaining
+   * @param buffer - The array to read from
+   * @param offset - The zero based index at which start reading the values
+   * @returns this vector for chaining
    */
   public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Plane {
     return new Plane(
@@ -206,7 +208,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a copy of this vector
-   * @return The cloned vector
+   * @returns The cloned vector
    */
   public clone<T extends IVec4 = Plane>(out?: T|Plane): T|Plane {
     out = out || new Plane()
@@ -219,9 +221,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the source vector to the destination vector
-   * @param src
-   * @param dst
-   * @return the destination vector.
+   *
+   *
+   * @returns the destination vector.
    */
   public static clone<T extends IVec4 = Plane>(src: IVec4, dst?: T|Plane): T|Plane {
     dst = dst || new Plane()
@@ -234,9 +236,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the components successively into the given array.
-   * @param buffer The array to copy into
-   * @param [offset=0] Zero based index where to start writing in the array
-   * @return the given buffer parameter
+   * @param buffer - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   * @returns the given buffer parameter
    */
   public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
     buffer[offset] = this.x
@@ -248,9 +250,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the components successively into the given array.
-   * @param buffer The array to copy into
-   * @param [offset=0] Zero based index where to start writing in the array
-   * @return the given buffer parameter
+   * @param buffer - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   * @returns the given buffer parameter
    */
   public static copy<T extends ArrayLike<number>>(src: IVec4, buffer: T, offset: number= 0): T {
     buffer[offset] = src.x
@@ -262,7 +264,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Checks for component wise equality with given vector
-   * @return true if components are equal, false otherwise
+   * @returns true if components are equal, false otherwise
    */
   public equals(other: IVec4): boolean {
     return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
@@ -270,7 +272,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Checks for component wise equality
-   * @return true if components are equal, false otherwise
+   * @returns true if components are equal, false otherwise
    */
   public static equals(a: IVec4, b: IVec4): boolean {
     return ((a.x === b.x) && (a.y === b.y) && (a.z === b.z) && (a.w === b.w))
@@ -278,8 +280,8 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the dot product with the `other` vector
-   * @param other
-   * @return The dot product.
+   *
+   * @returns The dot product.
    */
   public dot(other: IVec4): number {
     return this.x * other.x + this.y * other.y + this.z * other.z + this.w * other.w
@@ -287,9 +289,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the dot product with the given vector
-   * @param a
-   * @param b
-   * @return The dot product.
+   *
+   *
+   * @returns The dot product.
    */
   public static dot(a: IVec4, b: IVec4): number {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
@@ -297,8 +299,8 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the dot product with the `other` vector
-   * @param other
-   * @return The dot product.
+   *
+   * @returns The dot product.
    */
   public dotCoordinate(other: IVec4): number {
     return this.x * other.x + this.y * other.y + this.z * other.z + this.w
@@ -306,9 +308,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the dot product with the given vector
-   * @param a
-   * @param b
-   * @return The dot product.
+   *
+   *
+   * @returns The dot product.
    */
   public static dotCoordinate(plane: IVec4, b: IVec3): number {
     return plane.x * b.x + plane.y * b.y + plane.z * b.z + plane.w
@@ -316,8 +318,8 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the dot product with the `other` vector
-   * @param other
-   * @return The dot product.
+   *
+   * @returns The dot product.
    */
   public dotNormal(other: IVec3): number {
     return this.x * other.x + this.y * other.y + this.z * other.z
@@ -325,9 +327,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the dot product with the given vector
-   * @param a
-   * @param b
-   * @return The dot product.
+   *
+   *
+   * @returns The dot product.
    */
   public static dotNormal(plane: IVec4, b: IVec3): number {
     return plane.x * b.x + plane.y * b.y + plane.z * b.z
@@ -335,7 +337,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Normalizes `this` vector. Applies the result to `this` vector.
-   * @return this vector for chaining
+   * @returns this vector for chaining
    */
   public normalize(): Plane {
     const x = this.x
@@ -356,9 +358,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Normalizes the given vector.
-   * @param vec The vector to normalize.
-   * @param [out] The vector to write to.
-   * @return The given `out` parameter or a new instance.
+   * @param vec - The vector to normalize.
+   * @param out - The vector to write to.
+   * @returns The given `out` parameter or a new instance.
    */
   public static normalize<T extends IVec4 = Plane>(vec: IVec4, out?: T|Plane): T|Plane {
     out = out || new Plane()

@@ -13,6 +13,9 @@ import { VertexLayout } from './VertexLayout'
 import fs from './Particle.fs'
 import vs from './Particle.vs'
 
+/**
+ * @public
+ */
 export interface ParticleChannelOptions {
   /**
    * Maximum number of particles
@@ -92,6 +95,9 @@ export interface ParticleChannelOptions {
   blendState?: BlendStateOptions // = BlendState.NonPremultiplied;
 }
 
+/**
+ * @public
+ */
 export class ParticleVertices {
   public readonly stride: number
   public readonly data: DataView
@@ -168,6 +174,9 @@ const defaultOptions: ParticleChannelOptions = Object.freeze({
   blendState: BlendState.NonPremultiplied,
 })
 
+/**
+ * @public
+ */
 export class ParticleChannel {
 
   /**

@@ -1,4 +1,7 @@
 
+/**
+ * @internal
+ */
 export class Recycler<T> {
   private readonly pool: T[] = []
   private pointer = 0

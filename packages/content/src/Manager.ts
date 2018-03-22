@@ -6,6 +6,9 @@ import { Device } from '@gglib/graphics'
 import { ContentType } from './ContentType'
 import { Pipeline, PipelineContext, PipelineHandler } from './Pipeline'
 
+ /**
+  * @public
+  */
 export interface RawAsset {
   /**
    * The source url
@@ -21,6 +24,9 @@ export interface RawAsset {
   contentType?: ContentType
 }
 
+/**
+ * @public
+ */
 export class XhrAsset implements RawAsset  {
 
   public get source(): string {
@@ -38,6 +44,9 @@ export class XhrAsset implements RawAsset  {
   }
 }
 
+/**
+ * @public
+ */
 export class DataUriAsset implements RawAsset {
 
   public get source(): string {
@@ -58,7 +67,7 @@ export class DataUriAsset implements RawAsset {
 }
 
 /**
- *
+ * @public
  */
 export interface IManagerOptions {
   cacheEnabled?: boolean
@@ -68,7 +77,7 @@ export interface IManagerOptions {
 }
 
 /**
- *
+ * @public
  */
 export class Manager {
   /**

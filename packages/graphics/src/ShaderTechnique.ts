@@ -4,6 +4,8 @@ import { ShaderPass, ShaderPassOptions } from './ShaderPass'
 
 /**
  * ShaderTechnique constructor options
+ *
+ * @public
  */
 export interface ShaderTechniqueOptions {
   /**
@@ -20,6 +22,9 @@ export interface ShaderTechniqueOptions {
   passes?: Array<ShaderPassOptions|ShaderPass>
 }
 
+/**
+ * @public
+ */
 export class ShaderTechnique {
   /**
    *

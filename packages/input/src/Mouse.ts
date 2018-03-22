@@ -29,6 +29,8 @@ const hasPointerlockApi = !!cross.requestPointerLock
 
 /**
  * Mouse constructor options
+ *
+ * @public
  */
 export interface IMouseOptions {
   element?: EventTarget,
@@ -37,6 +39,8 @@ export interface IMouseOptions {
 
 /**
  * The captured Mouse state
+ *
+ * @public
  */
 export interface IMouseState {
   pageX: number
@@ -56,6 +60,8 @@ export interface IMouseState {
 /**
  * The Mouse class allows to capture the mouse state. It does so by listening to various mouse events
  * and tracks the position and pressed buttons. On each recoginzed  state change the ```changed``` event is triggered.
+ *
+ * @public
  */
 export class Mouse extends Events {
   /**
@@ -188,7 +194,7 @@ export class Mouse extends Events {
 
   /**
    * Gets a copy of the captured state
-   * @param [out={}] Where the state is written to
+   * @param out - Where the state is written to
    */
   public copyState(out: any = {}): IMouseState {
     out.x = this.state.x

@@ -2,6 +2,9 @@ import { extend, getTime, Log, requestFrame } from '@gglib/core'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * @public
+ */
 export class GameLoopComponent implements Component {
   public entity: Entity
   public name: string = 'GameLoop'

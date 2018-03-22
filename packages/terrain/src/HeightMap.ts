@@ -1,6 +1,9 @@
 import { getImageData } from '@gglib/core'
 import { IVec3, Vec3 } from '@gglib/math'
 
+/**
+ * @public
+ */
 export interface HeightMapOptions {
   width: number
   height: number
@@ -9,6 +12,9 @@ export interface HeightMapOptions {
   smooth?: number
 }
 
+/**
+ * @public
+ */
 export class HeightMap {
 
   public static fromImage(image: HTMLImageElement, width?: number, height?: number) {

@@ -2,6 +2,8 @@ import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from 
 
 /**
  * Keybord constructor options
+ *
+ * @public
  */
 export interface IKeyboardOptions {
   element?: Element,
@@ -10,6 +12,8 @@ export interface IKeyboardOptions {
 
 /**
  * The captured Keyboard state
+ *
+ * @public
  */
 export interface IKeyboardState {
   pressedKeys: number[]
@@ -19,6 +23,8 @@ export interface IKeyboardState {
  * The Keyboard class allows to capture the keyboards state. It does so by listening to
  * the ```keypress```, ```keydown``` and ```keyup``` events and tracks the pressed buttons. On each recoginzed
  * state change the ```changed``` event is triggered.
+ *
+ * @public
  */
 export class Keyboard extends Events {
   /**
@@ -161,6 +167,9 @@ export class Keyboard extends Events {
   }
 }
 
+/**
+ * @public
+ */
 export enum Keys {
   // Alphanumeric Section
 
@@ -337,6 +346,9 @@ export enum Keys {
   WakeUp,
 }
 
+/**
+ * @public
+ */
 export const KeyCodeToKey = Object.freeze({
   8 : Keys.Backspace,
   9 : Keys.Tab,

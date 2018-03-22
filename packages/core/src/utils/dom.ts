@@ -37,15 +37,30 @@ const props = (() => {
   }
 })()
 
+/**
+ * @public
+ */
 export function documentIsHidden(): boolean {
   return documentProperty(props.docHidden)
 }
+
+/**
+ * @public
+ */
 export function documentVisibilityState(fallback?: string): string {
   return documentProperty(props.docVisibilityState) || fallback
 }
+
+/**
+ * @public
+ */
 export function onDocumentVisibilityChange(callback: EventListenerOrEventListenerObject) {
   document.addEventListener(props.docVisibilityChange, callback)
 }
+
+/**
+ * @public
+ */
 export function offDocumentVisibilityChange(callback: EventListenerOrEventListenerObject) {
   document.removeEventListener(props.docVisibilityChange, callback)
 }

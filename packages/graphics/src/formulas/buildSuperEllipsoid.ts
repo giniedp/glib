@@ -11,10 +11,11 @@ function withDefault(opt: any, value: any) {
 }
 
 /**
- * implementation is based on http://paulbourke.net/geometry/superellipse/
- * @param builder
- * @param options
- * @constructor
+ * implementation is based on {@link http://paulbourke.net/geometry/superellipse/}
+ *
+ * @public
+ *
+ *
  */
 export function buildSuperEllipsoid(builder: ModelBuilder, options: {
   diameter?: number

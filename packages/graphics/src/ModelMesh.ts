@@ -5,6 +5,9 @@ import { Device } from './Device'
 import { PrimitiveType, PrimitiveTypeOption } from './enums'
 import { ShaderProgram } from './ShaderProgram'
 
+/**
+ * @public
+ */
 export interface ModelMeshOptions {
   name?: string
   boundingBox?: number[]|BoundingBox
@@ -15,6 +18,9 @@ export interface ModelMeshOptions {
   primitiveType?: PrimitiveTypeOption,
 }
 
+/**
+ * @public
+ */
 export class ModelMesh {
   public uid: string
   public device: Device

@@ -7,10 +7,11 @@ function withDefault(opt: any, value: any) {
 }
 
 /**
- * implementation is based on http://paulbourke.net/geometry/sphericalh/
- * @param builder
- * @param options
- * @constructor
+ * implementation is based on {@link http://paulbourke.net/geometry/sphericalh/}
+ *
+ * @public
+ *
+ *
  */
 export function buildSphericalHarmonics(builder: ModelBuilder, options: {
   diameter?: number

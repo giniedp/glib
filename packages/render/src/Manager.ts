@@ -3,6 +3,9 @@ import { DepthFormat, Device, RenderTargetOptions, SpriteBatch, Texture } from '
 import { Binder } from './Binder'
 import { View } from './Types'
 
+/**
+ * @public
+ */
 export interface RenderTargetRegistry {
   frames: number
   target: Texture
@@ -11,6 +14,9 @@ export interface RenderTargetRegistry {
 
 let toKill: RenderTargetRegistry[] = []
 
+/**
+ * @public
+ */
 export class Manager extends Events {
 
   /**

@@ -6,6 +6,9 @@ import { Parser } from './parser'
 
 export type PipelineStage = 'preload'|'load'|'import'|'preprocess'|'process'|'postprocess'
 
+/**
+ * @public
+ */
 export interface PipelineContext {
   /**
    * The current processing content manager
@@ -54,6 +57,9 @@ export type PipelineHandler = (context: PipelineContext) => Promise<void>|void
 
 export type PipelineTargetType = string|Function
 
+/**
+ * @public
+ */
 export interface PipelineEntry {
   stage: PipelineStage
   sourceType: string
@@ -61,14 +67,23 @@ export interface PipelineEntry {
   handler: PipelineHandler
 }
 
+/**
+ * @internal
+ */
 export function describeSourceType(sourcetype: string) {
   return String(sourcetype)
 }
 
+/**
+ * @internal
+ */
 export function describeTargetType(targetType: PipelineTargetType) {
   return typeof targetType === 'string' ? targetType : targetType.name
 }
 
+/**
+ * @internal
+ */
 export function describeContext(context: PipelineContext): string {
   return [
     `stage: '${context.stage}'`,
@@ -117,6 +132,8 @@ function addTransformHandler(
 
 /**
  * Registeres a content loader function
+ *
+ * @public
  */
 export function pipelineLoader(
   sourceType: string|string[],
@@ -128,6 +145,8 @@ export function pipelineLoader(
 
 /**
  * Registeres a content importer function
+ *
+ * @public
  */
 export function pipelineImporter(
   sourceType: string|string[],
@@ -139,6 +158,8 @@ export function pipelineImporter(
 
 /**
  * Registeres a content preloader function
+ *
+ * @public
  */
 export function pipelinePreloader(
   targetType: PipelineTargetType|PipelineTargetType[],
@@ -149,6 +170,8 @@ export function pipelinePreloader(
 
 /**
  * Registeres a content processor function
+ *
+ * @public
  */
 export function pipelineProcessor(
   targetType: PipelineTargetType|PipelineTargetType[],
@@ -159,6 +182,8 @@ export function pipelineProcessor(
 
 /**
  * Registeres a content preprocessor function
+ *
+ * @public
  */
 export function pipelinePreprocessor(
   targetType: PipelineTargetType|PipelineTargetType[],
@@ -169,6 +194,8 @@ export function pipelinePreprocessor(
 
 /**
  * Registeres a content postprocessor function
+ *
+ * @public
  */
 export function pipelinePostprocessor(
   targetType: PipelineTargetType|PipelineTargetType[],
@@ -177,6 +204,9 @@ export function pipelinePostprocessor(
   addTransformHandler('postprocess', targetType, handler)
 }
 
+/**
+ * @public
+ */
 export class Pipeline {
 
   public matchSourceType(wanted: string, entry: PipelineEntry): boolean {

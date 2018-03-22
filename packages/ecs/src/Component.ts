@@ -1,5 +1,8 @@
 import { Entity } from './Entity'
 
+/**
+ * @public
+ */
 export interface Component {
   /**
    * The entity that is holding this component

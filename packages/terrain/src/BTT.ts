@@ -18,8 +18,11 @@ function highestBit(value: number): number {
   return index - 1
 }
 
-/// http://www.gamedevelopment.com/view/feature/130171/binary_triangle_trees_for_terrain_.php?page=2
-
+/**
+ * http://www.gamedevelopment.com/view/feature/130171/binary_triangle_trees_for_terrain_.php?page=2
+ *
+ * @public
+ */
 export class BTTRoot {
   public device: Graphics.Device
   public heightMap: HeightMap
@@ -85,6 +88,9 @@ export class BTTRoot {
   }
 }
 
+/**
+ * @public
+ */
 export class BTTPatch {
 
   public static createVertices(heightmap: HeightMap, startX: number, startY: number, size: number): number[] {
@@ -257,8 +263,6 @@ export class BTTPatch {
   /**
    * The current level of detail. Higher values means higher details.
    * The lowest detail is 0 and shows the patch with only 2 triangles.
-   * @property currentLOD
-   * @type {number}
    */
   public currentLOD: number = 0
 
@@ -266,8 +270,6 @@ export class BTTPatch {
    * The neighbor LOD code. The value should be in range [0,14].
    * This has the influence of how the patch is aligned to the neighbors, so gaps
    * between patches are closed.
-   * @property currentVersion
-   * @type {number}
    */
   public currentVersion: number = 0
 

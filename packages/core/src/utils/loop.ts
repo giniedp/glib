@@ -1,7 +1,7 @@
 /**
  * Gets the current timestamp. Uses performance.now() if available.
- * @method getTime
- * @return {number}
+ *
+ * @public
  */
 export const getTime: () => number = (() => {
   let result = () => new Date().getTime()
@@ -20,19 +20,21 @@ const raf: (cb: any) => void =
   window['webkitRequestAnimationFrame'] ||
   window['msRequestAnimationFrame']
 
-/**
- *
- * @method requestFrame
- */
 export const requestFrame = typeof raf === 'function'
   ? (callback: any) => raf(callback)
   : (callback: any) => self.setTimeout(callback, 1)
 
+/**
+ * @public
+ */
 export interface Loop {
   kill(): void
   (): void
 }
 
+/**
+ * @public
+ */
 export function loop(loopFunc: (...arg: any[]) => any): Loop {
   let time = getTime()
   let tick: any = () => {

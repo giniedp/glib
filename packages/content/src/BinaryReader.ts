@@ -1,3 +1,6 @@
+/**
+ * @public
+ */
 export class BinaryReader {
   public data: Uint8Array
   public view: DataView

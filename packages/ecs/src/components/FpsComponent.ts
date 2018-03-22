@@ -2,6 +2,9 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { TimeComponent } from './TimeComponent'
 
+/**
+ * @public
+ */
 export class FpsComponent implements Component {
   public entity: Entity
   public name: string = 'Fps'

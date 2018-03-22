@@ -6,6 +6,9 @@ function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
+/**
+ * @public
+ */
 export function buildPlane(builder: ModelBuilder, options: {
   size?: number,
   steps?: number,

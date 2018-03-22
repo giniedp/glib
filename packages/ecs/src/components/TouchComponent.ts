@@ -3,6 +3,9 @@ import * as Input from '@gglib/input'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * @public
+ */
 export class TouchComponent implements Component {
   public entity: Entity
   public name: string = 'Touch'

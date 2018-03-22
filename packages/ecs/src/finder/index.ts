@@ -217,6 +217,9 @@ function swapContext(state: FinderState) {
   state.collection.length = 0
 }
 
+/**
+ * @internal
+ */
 export function findAll(query: string, node: Entity): Array<Component|Entity> {
   const state = finderState
   resetState(state, query, node)
@@ -241,6 +244,9 @@ export function findAll(query: string, node: Entity): Array<Component|Entity> {
   return state.context
 }
 
+/**
+ * @internal
+ */
 export function find(query: string, node: Entity): Component|Entity {
   return findAll(query, node)[0]
 }

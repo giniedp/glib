@@ -1,9 +1,14 @@
+/**
+ * @public
+ */
 export function isObject(value: any): boolean {
   return value !== null && typeof value === 'object'
 }
 
 /**
  * Picks properties from the given source object if they are not undefined
+ *
+ * @public
  */
 export function pick(
   src: any,
@@ -31,8 +36,9 @@ export function pick(
 
 /**
  * Creates a copy of an object, an array or a primitive.
- * @method copy
- * @return {*} The copied object
+ *
+ * @public
+ * @returns The copied object
  */
 export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
   let deep = false
@@ -75,10 +81,11 @@ export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
  * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
  * by passing an empty object as the target: `let object = Gin.extend({}, object1, object2)`.
  * Note: Keep in mind that `Gin.extend` does not support recursive merge (deep copy).
- * @method extend
- * @param {Object} dst Destination object.
- * @param {...Object} src Source object(s).
- * @return {Object} Reference to `dst`.
+ *
+ * @public
+ * @param dst - Destination object.
+ * @param src - Source object(s).
+ * @returns Reference to `dst`.
  */
 export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?: any): T {
   let length = arguments.length

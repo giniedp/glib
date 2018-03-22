@@ -2,6 +2,9 @@ import { extend, Log } from '@gglib/core'
 
 import { DataSize, DataType, DataTypeOption } from './enums'
 
+/**
+ * @public
+ */
 export interface VertexAttribute {
   type: DataTypeOption
   offset: number
@@ -10,6 +13,9 @@ export interface VertexAttribute {
   packed?: boolean
 }
 
+/**
+ * @public
+ */
 export interface VertexPreset {
   type: DataTypeOption
   elements: number
@@ -17,6 +23,9 @@ export interface VertexPreset {
   packed?: boolean
 }
 
+/**
+ * @public
+ */
 export class VertexLayout {
   [key: string]: VertexAttribute
 
@@ -85,7 +94,7 @@ export class VertexLayout {
 
   /**
    * Creates a vertex layout object from given names
-   * @example
+   *
    * ```
    *
    * VertexLayout.create('position', 'normal', 'texture');

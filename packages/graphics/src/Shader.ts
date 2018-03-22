@@ -5,6 +5,8 @@ import { ShaderType } from './enums'
 
 /**
  * The shader constructor options
+ *
+ * @public
  */
 export interface ShaderOptions {
   /**
@@ -22,7 +24,7 @@ export interface ShaderOptions {
 }
 
 /**
- *
+ * @public
  */
 export class Shader {
   /**

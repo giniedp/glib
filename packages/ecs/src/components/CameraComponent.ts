@@ -5,6 +5,10 @@ import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { RendererComponent } from './RendererComponent'
 import { TransformComponent } from './TransformComponent'
+
+/**
+ * @public
+ */
 export interface CameraProperties {
   near?: number
   far?: number
@@ -12,6 +16,9 @@ export interface CameraProperties {
   aspect?: number
 }
 
+/**
+ * @public
+ */
 export class CameraComponent implements Component {
   public name = 'Camera'
   public entity: Entity

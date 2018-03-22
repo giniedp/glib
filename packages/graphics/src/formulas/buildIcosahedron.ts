@@ -41,6 +41,9 @@ function subdivide(a: number[], b: number[], c: number[], depth: number, block: 
   subdivide(a1, b1, c1, depth - 1, block)
 }
 
+/**
+ * @public
+ */
 export function buildTetrahedron(builder: ModelBuilder, options: {
   diameter?: number
   radius?: number
@@ -77,6 +80,9 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
   }
 }
 
+/**
+ * @public
+ */
 export function buildOctahedron(builder: ModelBuilder, options: {
   diameter?: number
   radius?: number
@@ -121,9 +127,8 @@ export function buildOctahedron(builder: ModelBuilder, options: {
 
 /**
  * implementation is based on http://www.opengl.org.ru/docs/pg/0208.html
- * @param builder
- * @param options
- * @constructor
+ *
+ * @public
  */
 export function buildIcosahedron(builder: ModelBuilder, options: {
   diameter?: number

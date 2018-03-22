@@ -1,5 +1,8 @@
 import { Device } from './Device'
 
+/**
+ * @public
+ */
 export class Capabilities {
   public device: Device
   public gl: WebGLRenderingContext|WebGL2RenderingContext

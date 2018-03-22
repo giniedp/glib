@@ -26,6 +26,9 @@ function makeVec4(data: number[]) {
   return {x: data[0] || 0, y: data[1] || 0, z: data[2] || 0, w: data[3] || 0}
 }
 
+/**
+ * @public
+ */
 export interface ShaderUniformOptions {
   name: string
   type: string
@@ -36,7 +39,7 @@ export interface ShaderUniformOptions {
 }
 
 /**
- *
+ * @public
  */
 export class ShaderUniform {
   /**

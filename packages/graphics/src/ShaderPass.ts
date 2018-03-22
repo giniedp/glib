@@ -16,6 +16,8 @@ import {
 
 /**
  * The shader pass constructor options
+ *
+ * @public
  */
 export interface ShaderPassOptions {
   /**
@@ -53,7 +55,7 @@ export interface ShaderPassOptions {
 }
 
 /**
- *
+ * @public
  */
 export class ShaderPass {
   /**

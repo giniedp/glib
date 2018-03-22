@@ -7,6 +7,8 @@ import { Visitor } from './Visitor'
 
 /**
  * An object that holds a collection of components a collection of services and a collection of child nodes.
+ *
+ * @public
  */
 export class Entity extends Events {
 
@@ -116,8 +118,6 @@ export class Entity extends Events {
    * object, array, function or primitive data. However the name must be unique for all services within a single node.
    * Although any node is allowed to have a collection of services it is often simpler and more effective to let
    * the app node (the window node) to hold the services.
-   * @example
-   *   node.addService('myService', { foo: 'bar' })
    */
   public addService(name: string, service: any, override?: boolean): Entity {
     const oldService = this.services[name]
@@ -281,11 +281,6 @@ export class Entity extends Events {
    * Instantly initializes the components and brings the node into a fully functional state. This method does not
    * need to be called because the components are initialized the first time the node is updated. This is usually
    * in the next frame after the frame the components have been added to the node.
-   * @example
-   * node.createNode()
-   *   .addComponent(new Gin.Components.Transform())
-   *   .addComponent(new Gin.Components.Camera())
-   *   .commitComponents() // the camera component will be bound to the transform component right here
    */
   public commitComponents(): Entity {
     this.initializeComponents(false)

@@ -2,9 +2,16 @@ import { Model, ModelMesh, ShaderEffect, ShaderProgram, Texture } from '@gglib/g
 import { IVec4, Mat4 } from '@gglib/math'
 import { Manager } from './Manager'
 
+/**
+ * @public
+ */
 export interface Drawable {
   draw: (program: ShaderProgram) => void
 }
+
+/**
+ * @public
+ */
 export interface DrawableData<T = any> {
   world: Mat4
   drawable: Drawable
@@ -12,6 +19,9 @@ export interface DrawableData<T = any> {
   data?: T
 }
 
+/**
+ * @public
+ */
 export interface LightData {
   color: IVec4
   position: IVec4
@@ -19,6 +29,9 @@ export interface LightData {
   misc: IVec4
 }
 
+/**
+ * @public
+ */
 export interface CameraData {
   world?: Mat4
   view: Mat4
@@ -26,12 +39,18 @@ export interface CameraData {
   viewProjection?: Mat4
 }
 
+/**
+ * @public
+ */
 export interface Step {
   setup?: (manager: Manager) => void
   render?: (manager: Manager) => void
   cleanup?: (manager: Manager) => void
 }
 
+/**
+ * @public
+ */
 export interface View {
   /**
    * Whether this view is enabled for rendering or not

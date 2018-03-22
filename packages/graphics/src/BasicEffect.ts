@@ -1,4 +1,7 @@
 
+/**
+ * @internal
+ */
 export class BasicEffect {
 
 }

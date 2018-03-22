@@ -7,6 +7,9 @@ import { Device } from './Device'
 import { ModelMesh } from './ModelMesh'
 import { ShaderPass } from './ShaderPass'
 
+/**
+ * @public
+ */
 export interface ShaderEffectOptions {
   /**
    * The name of an effect
@@ -40,6 +43,9 @@ function makeArray(arg: any): any {
   }
 }
 
+/**
+ * @public
+ */
 export class ShaderEffect {
   /**
    * The name of the effect

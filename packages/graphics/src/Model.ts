@@ -5,6 +5,9 @@ import { Device } from './Device'
 import { ModelMesh, ModelMeshOptions } from './ModelMesh'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 
+/**
+ * @public
+ */
 export interface ModelOptions {
   name?: string
   boundingBox?: number[]
@@ -16,6 +19,9 @@ export interface ModelOptions {
   takes?: AnimationTake[]
 }
 
+/**
+ * @public
+ */
 export class Model {
   /**
    * Autmatically generated unique identifier

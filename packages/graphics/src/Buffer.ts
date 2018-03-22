@@ -7,6 +7,9 @@ import { VertexLayout } from './VertexLayout'
 
 export type BufferDataOption = number[] | ArrayBuffer | ArrayBufferView
 
+/**
+ * @public
+ */
 export interface BufferOptions<T = BufferDataOption> {
   handle?: WebGLBuffer,
   type?: BufferTypeOption,
@@ -17,6 +20,9 @@ export interface BufferOptions<T = BufferDataOption> {
   elementSize?: number
 }
 
+/**
+ * @public
+ */
 export class Buffer {
   public device: Device
   public get gl() {

@@ -6,6 +6,9 @@ import { Entity } from './../Entity'
 import { CullVisitor } from './RendererComponent'
 import { TransformComponent } from './TransformComponent'
 
+/**
+ * @public
+ */
 export class ModelComponent implements Component {
   public entity: Entity
   public name: string = 'Renderable'

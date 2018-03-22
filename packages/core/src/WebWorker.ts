@@ -5,12 +5,18 @@ export const isWorker = typeof self['importScripts'] === 'function'
 export const isWindowContext = typeof self['importScripts'] !== 'function'
 export const isSupported = typeof Worker !== 'undefined'
 
+/**
+ * @public
+ */
 export interface WorkRequest {
   method: string
   params: any[]
   handleId?: number
 }
 
+/**
+ * @public
+ */
 export interface WorkResponse<T = any> extends WorkRequest {
   success: boolean
   error: Error
@@ -19,6 +25,9 @@ export interface WorkResponse<T = any> extends WorkRequest {
 
 export type TaskFunction<T> = (...args: any[]) => T|Promise<T>
 
+/**
+ * @public
+ */
 export interface BackgroundTask {
   name: string
   action: (...args: any[]) => any
@@ -83,6 +92,9 @@ function execute<T>(method: string, ...params: any[]): Promise<T> {
   })
 }
 
+/**
+ * @public
+ */
 export class PromiseWorker {
   public worker: Worker
   public idCounter = 0
@@ -125,6 +137,9 @@ export class PromiseWorker {
   }
 }
 
+/**
+ * @public
+ */
 export function workRequestListener(channel: { postMessage: (message: WorkResponse) => void }) {
   return (e: { data: WorkRequest }) => {
     const data = e.data

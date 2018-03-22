@@ -4,6 +4,9 @@ import * as Graphics from '@gglib/graphics'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * @public
+ */
 export class AssetsComponent implements Component {
   public entity: Entity
   public name: string = 'Assets'

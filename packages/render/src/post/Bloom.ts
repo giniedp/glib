@@ -6,6 +6,9 @@ function gauss(n: number, theta: number) {
   return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)))
 }
 
+/**
+ * @public
+ */
 export class Bloom implements Step {
   public glowCut: number = 0.6
   public multiplier: number = 0.83

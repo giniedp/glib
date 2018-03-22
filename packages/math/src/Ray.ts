@@ -4,6 +4,9 @@ import * as Collision from './Collision'
 import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
+/**
+ * @public
+ */
 export class Ray {
   public position: IVec3
   public direction: IVec3

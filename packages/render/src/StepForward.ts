@@ -3,6 +3,9 @@ import { Binder } from './Binder'
 import { Manager } from './Manager'
 import { DrawableData, Step } from './Types'
 
+/**
+ * @public
+ */
 export class StepForward implements Step {
 
   public render(manager: Manager) {

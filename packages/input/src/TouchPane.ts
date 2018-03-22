@@ -5,6 +5,8 @@ const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'sc
 
 /**
  * TouchPane constructor options
+ *
+ * @public
  */
 export interface ITouchPaneOptions {
   element?: Element,
@@ -13,6 +15,8 @@ export interface ITouchPaneOptions {
 
 /**
  * The captured touch state
+ *
+ * @public
  */
 export interface ITouchState {
   identifier: number
@@ -30,6 +34,8 @@ export interface ITouchState {
  * The TouchPane class allows to capture the touch states. It does so by listening to
  * the ```touchstart```, ```touchmove```, ```touchend``` and ```touchcancel``` events and tracks the touch posisiton and movement.
  * On each recoginzed state change the ```changed``` event is triggered.
+ *
+ * @public
  */
 export class TouchPane extends Events  {
   /**

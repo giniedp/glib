@@ -2,6 +2,9 @@ import { CullMode, FrontFace } from './../enums/Enums'
 
 import { Device } from './../Device'
 
+/**
+ * @public
+ */
 export interface CullStateOptions {
   frontFace?: number
   cullMode?: number
@@ -10,6 +13,9 @@ export interface CullStateOptions {
 
 const optionKeys: Array<keyof CullStateOptions> = ['frontFace', 'cullMode', 'culling']
 
+/**
+ * @public
+ */
 export class CullState implements CullStateOptions {
   public device: Device
   public gl: WebGLRenderingContext

@@ -5,6 +5,9 @@ import { Shader, ShaderOptions } from './Shader'
 import { ShaderInspector } from './ShaderInspector'
 import { ShaderUniform } from './ShaderUniform'
 
+/**
+ * @public
+ */
 export interface ShaderProgramOptions {
   /**
    * The vertex shader to be used in a program.
@@ -22,7 +25,7 @@ export interface ShaderProgramOptions {
 }
 
 /**
- *
+ * @public
  */
 export class ShaderProgram {
   /**

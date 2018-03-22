@@ -13,6 +13,9 @@ import { calculateTangents } from './formulas/calculateTangents'
 
 let tmpBuffer: any[] = []
 
+/**
+ * @public
+ */
 export interface ModelBuilderOptions {
   defaultAttributes?: { [key: string]: number[] }
   layout?: string | VertexLayout
@@ -21,6 +24,9 @@ export interface ModelBuilderOptions {
 
 export type ModelBuildFormula = (builder: ModelBuilder, options: any) => void
 
+/**
+ * @public
+ */
 export class ModelBuilder {
   public static formulas: { [key: string]: ModelBuildFormula } = formulas
   private defaultAttributes: {[key: string]: any}
@@ -163,7 +169,7 @@ export class ModelBuilder {
 
   /**
    * Pushes a single vertex definition into the state
-   * @param vertex
+   *
    */
   public addVertex(vertex: {[key: string]: number[] | number | { copy: (buf: number[]) => any }}): ModelBuilder {
     if (this.vertexCount === this.maxVertexCount) {
@@ -284,7 +290,7 @@ export class ModelBuilder {
 
   /**
    * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
-   * @param options
+   *
    */
   public endMeshOptions(options: ModelMeshOptions = {}): ModelMeshOptions {
     if (this.indexCount === 0 && this.vertexCount === 0) {
@@ -313,8 +319,8 @@ export class ModelBuilder {
 
   /**
    * Creates model options from the current builder state an resets the builder.
-   * @param options The custom model options to be used. The 'meshes' option is ignored.
-   * @returns {{materials: (Material[]|MaterialOptions[]|Array)}}
+   * @param options - The custom model options to be used. The 'meshes' option is ignored.
+   *
    */
   public endModelOptions(options: ModelOptions = {}): ModelOptions {
     if (this.indices.length !== 0 || this.vertices.length !== 0) {
@@ -333,9 +339,9 @@ export class ModelBuilder {
 
   /**
    * Creates a model from the current builder state and resets the builder.
-   * @param {Glib.Graphics.Device} device The graphics device
-   * @param {Glib.Graphics.ModelOptions} options The model options.
-   * @returns {Model}
+   * @param device - The graphics device
+   * @param options - The model options.
+   *
    */
   public endModel(device: Device, options: ModelOptions = {}): Model {
     options = this.endModelOptions(options)

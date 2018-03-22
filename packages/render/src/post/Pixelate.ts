@@ -2,6 +2,9 @@ import { ShaderEffect } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Step } from '../Types'
 
+/**
+ * @public
+ */
 export class Pixelate implements Step {
 
   public pixelWidth: number = 10

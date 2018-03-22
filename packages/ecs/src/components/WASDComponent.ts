@@ -7,6 +7,9 @@ import { KeyboardComponent } from './KeyboardComponent'
 import { MouseComponent } from './MouseComponent'
 import { TransformComponent } from './TransformComponent'
 
+/**
+ * @public
+ */
 export class WASDComponent implements Component {
   public entity: Entity
   public enabled: boolean = true
