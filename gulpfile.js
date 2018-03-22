@@ -150,7 +150,7 @@ const mergeTasks = []
 function createMergeTask(pName, mName) {
   const taskName = `build:${mName}:${pName}`
   mergeTasks.push(taskName)
-  gulp.task(taskName, ['build:esm5', 'build:esm2015', 'build:rollup', 'build:typings'], () => {
+  gulp.task(taskName, ['build:tsc', 'build:esm5', 'build:esm2015', 'build:rollup', 'build:typings'], () => {
     return gulp
       .src(path.join(dstDir, mName, pName, '**', '*'))
       .pipe(gulp.dest(path.join(dstDir, 'packages', pName, mName)))
@@ -222,3 +222,34 @@ gulp.task('publish', ['build'], () => {
     shell.exec(`npm publish ./dist/packages/${name} --access=public`, { async: true })
   })
 })
+
+const apiTasks = []
+packages.forEach((pkg) => {
+  const taskName = `api:${pkg}`
+  apiTasks.push(taskName)
+  gulp.task(taskName, ['build'], () => {
+    const ae = require('@microsoft/api-extractor')
+
+    const config = {
+      compiler: {
+        configType: 'tsconfig',
+        rootFolder: path.join(process.cwd(), 'packages')
+      },
+      project: {
+        entryPointSourceFile: `../dist/packages/${pkg}/index.d.ts`
+      },
+      apiReviewFile: {
+        enabled: false
+      },
+      apiJsonFile: {
+        enabled: true,
+        outputFolder: `../dist/doc/${pkg}`
+      }
+    };
+    new ae.Extractor(config, {
+      localBuild: true,
+    }).analyzeProject();
+  })
+})
+
+gulp.task('api', apiTasks)

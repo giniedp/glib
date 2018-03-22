@@ -14,13 +14,13 @@
     "test:coveralls": "IS_COVERAGE=yes karma start --single-run && cat ./coverage/lcov/lcovonly | ./node_modules/.bin/coveralls",
     "build": "gulp build",
     "lint": "tslint -p packages/tsconfig.json -c tslint.json",
-    "docs": "typedoc --out dist/docs --tsconfig packages/tsconfig.json --ignoreCompilerErrors --hideGenerator --mode file"
   },
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "^5.5.1",
     "@types/jasmine": "^2.5.53",
     "@types/node": "^8.0.17",
     "@types/webgl2": "^0.0.1",
