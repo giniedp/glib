@@ -22,7 +22,7 @@
     "skipLibCheck": true,
     "target": "es5",
     "typeRoots": [
-      "../npde_modules/@types"
+      "../node_modules/@types"
     ],
     "types": [
       "jasmine",
