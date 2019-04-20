@@ -2,65 +2,90 @@ import { Log, uuid } from '@gglib/core'
 import { Device } from './Device'
 import { ShaderType } from './enums'
 import { Shader, ShaderOptions } from './Shader'
-import { ShaderInspector } from './ShaderInspector'
-import { ShaderUniform } from './ShaderUniform'
+import { ShaderInspector, ShaderObjectMeta } from './ShaderInspector'
+import { ShaderUniform, ShaderUniformParameter } from './ShaderUniform'
 
 /**
  * @public
  */
 export interface ShaderProgramOptions {
   /**
-   * The vertex shader to be used in a program.
+   * The vertex shader to be used within the program
    *
+   * @remarks
+   * If it is a string it is assumed to be the source code for the vertex shader.
+   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructir.
    */
   vertexShader?: string|ShaderOptions|Shader,
   /**
+   * The fragment shader to be used within the program
    *
+   * @remarks
+   * If it is a string it is assumed to be the source code for the fragment shader.
+   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructir.
    */
   fragmentShader?: string|ShaderOptions|Shader,
   /**
-   *
+   * An already existing WebGLProgram handle
    */
   handle?: WebGLProgram
 }
 
 /**
+ * Combines a vertex shader and a fragment shader
+ *
  * @public
+ * @remarks
+ * On creation this will inspect the source code of all shaders to detect all attributes, uniforms and annotations
  */
 export class ShaderProgram {
   /**
+   * A symbol identifying the `ShaderProgramOptions` type.
+   */
+  public static readonly OptionsSymbol = Symbol('ShaderProgramOptions')
+
+  /**
    * A unique id
    */
-  public uid: string
+  public readonly uid: string
   /**
    * The graphics device
    */
-  public device: Device
+  public readonly device: Device
   /**
    * The rendering context
    */
-  public gl: WebGLRenderingContext
+  public readonly gl: WebGLRenderingContext
   /**
    * Collection of all attached shaders. Usually contains a single vertex and a single fragment shader
    */
-  private attached: Shader[] = []
+  private readonly attached: Shader[] = []
   /**
    * The vertex shader
    */
-  private vertexShader: Shader
+  private readonly vertexShader: Shader
   /**
    * The fragment shader
    */
-  private fragmentShader: Shader
+  private readonly fragmentShader: Shader
 
   /**
    * The web gl program handle
    */
   public handle: WebGLProgram
 
-  public attributes: { [key: string]: any } = {}
-  public attributeLocations: number[] = []
-  public uniforms: { [name: string]: ShaderUniform } = {}
+  /**
+   * A map of shader attributes
+   */
+  public readonly attributes = new Map<string, ShaderObjectMeta & { location: number }>()
+  /**
+   * Collection of all detected attribute locations
+   */
+  public readonly attributeLocations: number[] = []
+  /**
+   * A map of all shader uniforms
+   */
+  public readonly uniforms = new Map<string, ShaderUniform>()
 
   /**
    * Whether the program is successfully linked
@@ -114,9 +139,9 @@ export class ShaderProgram {
     }
     this.link()
 
-    let inspect = ShaderInspector.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
-    this.makeAttributes(inspect.attributes)
-    this.makeUniforms(inspect.uniforms)
+    const inspection = ShaderInspector.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
+    this.assignAttributes(inspection.attributes)
+    this.assignUniforms(inspection.uniforms)
   }
 
   /**
@@ -174,42 +199,40 @@ export class ShaderProgram {
   /**
    *
    */
-  private makeAttributes(attributes: any): ShaderProgram {
+  private assignAttributes(attributes: { [key: string]: ShaderObjectMeta }): ShaderProgram {
     this.use()
-    this.attributes = {}
+    this.attributes.clear()
     this.attributeLocations.length = 0
-    if (!attributes) { return this }
-    for (let key in attributes) {
-      if (attributes.hasOwnProperty(key)) {
-        let attribute = attributes[key]
-        attribute.location = this.gl.getAttribLocation(this.handle, attribute.name || key)
-        if (attribute.location >= 0) {
-          this.attributes[key] = attribute
-          this.attributeLocations.push(attribute.location)
-        }
+    Object.keys(attributes).forEach((key) => {
+      const location = this.gl.getAttribLocation(this.handle, attributes[key].name || key)
+      if (location >= 0) {
+        this.attributes.set(key, {
+          ...attributes[key],
+          location: location,
+        })
+        this.attributeLocations.push(location)
       }
-    }
+    })
     return this
   }
 
   /**
    *
    */
-  private makeUniforms(uniforms: any): ShaderProgram {
+  private assignUniforms(uniforms: { [key: string]: ShaderObjectMeta }): ShaderProgram {
     this.use()
-    this.uniforms = {}
-    if (!uniforms) { return this }
-    for (let key in uniforms) {
-      if (uniforms.hasOwnProperty(key)) {
-        let options = uniforms[key]
-        if (!options.name && !options.binding) { continue }
-        let uniform = new ShaderUniform(this, options)
-        if (uniform.location != null) {
-          this.uniforms[key] = uniform
-          Log.i(`ShadderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
-        }
+    this.uniforms.clear()
+    Object.keys(uniforms).forEach((key) => {
+      const options = uniforms[key]
+      if (!options.name && !options.binding) {
+        return
       }
-    }
+      let uniform = new ShaderUniform(this, options)
+      if (uniform.location != null) {
+        this.uniforms.set(key, uniform)
+        Log.i(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
+      }
+    })
     return this
   }
 
@@ -233,22 +256,22 @@ export class ShaderProgram {
   /**
    * Sets multiple uniform values
    */
-  public commit(uniforms?: any): ShaderProgram {
+  public commit(uniforms?: { [key: string]: ShaderUniformParameter }): ShaderProgram {
     if (!uniforms) { return this }
-    for (let key in this.uniforms) {
-      if (uniforms.hasOwnProperty(key)) {
+    this.uniforms.forEach((_, key) => {
+      if (key in uniforms) {
         this.setUniform(key, uniforms[key])
       }
-    }
+    })
     return this
   }
 
   /**
    * Sets a value on the named uniform
    */
-  public setUniform(name: string, value: any): ShaderProgram {
+  public setUniform(name: string, value: ShaderUniformParameter): ShaderProgram {
     if (value == null) {return }
-    let uniform = this.uniforms[name]
+    let uniform = this.uniforms.get(name)
     if (!uniform) {
       this.logMissingUniform(name)
     } else {
@@ -260,7 +283,7 @@ export class ShaderProgram {
 
   private logMissingUniform(name: string) {
     if (!this.errLogs[name]) {
-      Log.w(`Uniform '${name}' not found`)
+      Log.w(`Uniform '${name}' not found`, this)
       this.errLogs[name] = true
     }
   }

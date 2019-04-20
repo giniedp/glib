@@ -1,8 +1,5 @@
-[{
-  "enum": "DataType",
-  "enumName": "DataTypeName",
-  "isGlConstant" : true,
-  "properties": {
+{
+  "aliases": {
     "byte"    : "BYTE",
     "short"   : "SHORT",
     "int"     : "INT",
@@ -12,271 +9,274 @@
     "float"   : "FLOAT",
     "ushort565": "UNSIGNED_SHORT_5_6_5",
     "ushort4444": "UNSIGNED_SHORT_4_4_4_4",
-    "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
-  },
-  "glaliases" : {
-    "byte"    : "BYTE",
-    "short"   : "SHORT",
-    "int"     : "INT",
-    "ubyte"   : "UNSIGNED_BYTE",
-    "ushort"  : "UNSIGNED_SHORT",
-    "uint"    : "UNSIGNED_INT",
-    "float"   : "FLOAT",
-    "ushort565": "UNSIGNED_SHORT_5_6_5",
-    "ushort4444": "UNSIGNED_SHORT_4_4_4_4",
-    "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
-  }
-},{
-  "enum": "DataSize",
-  "properties": {
-    "byte"    : 1,
-    "short"   : 2,
-    "int"     : 4,
-    "ubyte"   : 1,
-    "ushort"  : 2,
-    "uint"    : 4,
-    "float"   : 4,
-    "ushort565": 2,
-    "ushort4444": 2,
-    "ushort5551": 2
-  },
-  "glaliases" : {
-    "byte"    : "BYTE",
-    "short"   : "SHORT",
-    "int"     : "INT",
-    "ubyte"   : "UNSIGNED_BYTE",
-    "ushort"  : "UNSIGNED_SHORT",
-    "uint"    : "UNSIGNED_INT",
-    "float"   : "FLOAT",
-    "ushort565": "UNSIGNED_SHORT_5_6_5",
-    "ushort4444": "UNSIGNED_SHORT_4_4_4_4",
-    "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
-  }
-},{
-  "enum": "ArrayType",
-  "enumName": "ArrayTypeName",
-  "type": "any",
-  "properties": {
-    "byte"    : "Int8Array",
-    "short"   : "Int16Array",
-    "int"     : "Int32Array",
-    "ubyte"   : "Uint8Array",
-    "ushort"  : "Uint16Array",
-    "uint"    : "Uint32Array",
-    "float"   : "Float32Array",
-    "ushort565": "Uint16Array",
-    "ushort4444": "Uint16Array",
-    "ushort5551": "Uint16Array"
-  },
-  "glaliases" : {
-    "byte"    : "BYTE",
-    "short"   : "SHORT",
-    "int"     : "INT",
-    "ubyte"   : "UNSIGNED_BYTE",
-    "ushort"  : "UNSIGNED_SHORT",
-    "uint"    : "UNSIGNED_INT",
-    "float"   : "FLOAT",
-    "ushort565": "UNSIGNED_SHORT_5_6_5",
-    "ushort4444": "UNSIGNED_SHORT_4_4_4_4",
-    "ushort5551": "UNSIGNED_SHORT_5_5_5_1"
-  }
-},{
-  "enum": "BufferUsage",
-  "enumName": "BufferUsageName",
-  "isGlConstant" : true,
-  "properties": {
-    "Static": "STATIC_DRAW",
-    "Dynamic": "DYNAMIC_DRAW",
-    "Stream": "STREAM_DRAW"
-  }
-},{
-  "enum": "BufferType",
-  "enumName": "BufferTypeName",
-  "isGlConstant" : true,
-  "properties": {
-    "VertexBuffer": "ARRAY_BUFFER",
-    "IndexBuffer": "ELEMENT_ARRAY_BUFFER"
-  }
-},{
-  "enum": "Blend",
-  "enumName": "BlendName",
-  "isGlConstant" : true,
-  "properties": {
-    "Zero": "ZERO",
-    "One": "ONE",
-    "SrcColor": "SRC_COLOR",
-    "SrcColorInv": "ONE_MINUS_SRC_COLOR",
-    "SrcAlpha": "SRC_ALPHA",
-    "SrcAlphaInv": "ONE_MINUS_SRC_ALPHA",
-    "SrcAlphaSat": "SRC_ALPHA_SATURATE",
-    "DstColor": "DST_COLOR",
-    "DstColorInv": "ONE_MINUS_DST_COLOR",
-    "DstAlpha": "DST_ALPHA",
-    "DstAlphaInv": "ONE_MINUS_DST_ALPHA",
-    "ConstantColor": "CONSTANT_COLOR",
-    "ConstantColorInv": "ONE_MINUS_CONSTANT_COLOR",
-    "ConstantAlpha": "CONSTANT_ALPHA",
-    "ConstantAlphaInv": "ONE_MINUS_CONSTANT_ALPHA"
-  }
-},{
-  "enum": "BlendFunction",
-  "enumName": "BlendFunctionName",
-  "isGlConstant" : true,
-  "properties": {
-    "Add": "FUNC_ADD",
-    "Subtract": "FUNC_SUBTRACT",
-    "ReverseSubtract": "FUNC_REVERSE_SUBTRACT"
-  }
-}, {
-  "enum": "CompareFunction",
-  "enumName": "CompareFunctionName",
-  "isGlConstant" : true,
-  "properties": {
-    "Never": "NEVER",
-    "Less": "LESS",
-    "Equal": "EQUAL",
-    "LessEqual": "LEQUAL",
-    "Greater": "GREATER",
-    "NotEqual": "NOTEQUAL",
-    "GreaterEqual": "GEQUAL",
-    "Always": "ALWAYS"
-  }
-}, {
-  "enum": "CullMode",
-  "enumName": "CullModeName",
-  "isGlConstant" : true,
-  "properties": {
-    "Front": "FRONT",
-    "Back": "BACK",
-    "FrontAndBack": "FRONT_AND_BACK"
-  }
-}, {
-  "file": "FrontFace.js",
-  "enum": "FrontFace",
-  "enumName": "FrontFaceName",
-  "isGlConstant" : true,
-  "properties": {
-    "ClockWise": "CW",
-    "CounterClockWise": "CCW"
-  }
-}, {
-  "enum": "StencilOperation",
-  "enumName": "StencilOperationName",
-  "isGlConstant" : true,
-  "properties": {
-    "Zero": "ZERO",
-    "Keep": "KEEP",
-    "Replace": "REPLACE",
-    "Increment": "INCR",
-    "Decrement": "DECR",
-    "Invert": "INVERT",
-    "IncrementWrap": "INCR_WRAP",
-    "DecrementWrap": "DECR_WRAP"
-  }
-}, {
-  "enum": "PixelFormat",
-  "enumName": "PixelFormatName",
-  "isGlConstant" : true,
-  "properties": {
+    "ushort5551": "UNSIGNED_SHORT_5_5_5_1",
+
     "Alpha": "ALPHA",
     "Luminance": "LUMINANCE",
     "LuminanceAlpha": "LUMINANCE_ALPHA",
     "RGB": "RGB",
     "RGBA": "RGBA"
-  }
-}, {
-  "enum": "PixelFormatElementCount",
-  "properties": {
-    "Alpha": 1,
-    "Luminance": 1,
-    "LuminanceAlpha": 2,
-    "RGB": 3,
-    "RGBA": 4
   },
-  "glaliases": {
-    "Alpha": "ALPHA",
-    "Luminance": "LUMINANCE",
-    "LuminanceAlpha": "LUMINANCE_ALPHA",
-    "RGB": "RGB",
-    "RGBA": "RGBA"
+  "DataType": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "byte"      : "gl:BYTE",
+      "short"     : "gl:SHORT",
+      "int"       : "gl:INT",
+      "ubyte"     : "gl:UNSIGNED_BYTE",
+      "ushort"    : "gl:UNSIGNED_SHORT",
+      "uint"      : "gl:UNSIGNED_INT",
+      "float"     : "gl:FLOAT",
+      "ushort565" : "gl:UNSIGNED_SHORT_5_6_5",
+      "ushort4444": "gl:UNSIGNED_SHORT_4_4_4_4",
+      "ushort5551": "gl:UNSIGNED_SHORT_5_5_5_1"
+    }
+  },
+  "dataTypeSize": {
+    "kind": "size",
+    "ref": "DataTypeOption",
+    "aliases": true,
+    "values": {
+      "byte"    : 1,
+      "short"   : 2,
+      "int"     : 4,
+      "ubyte"   : 1,
+      "ushort"  : 2,
+      "uint"    : 4,
+      "float"   : 4,
+      "ushort565": 2,
+      "ushort4444": 2,
+      "ushort5551": 2
+    }
+  },
+  "ArrayType": {
+    "kind": "typemap",
+    "aliases": true,
+    "values": {
+      "byte"    : "Int8Array",
+      "short"   : "Int16Array",
+      "int"     : "Int32Array",
+      "ubyte"   : "Uint8Array",
+      "ushort"  : "Uint16Array",
+      "uint"    : "Uint32Array",
+      "float"   : "Float32Array",
+      "ushort565": "Uint16Array",
+      "ushort4444": "Uint16Array",
+      "ushort5551": "Uint16Array"
+    }
+  },
+  "BufferUsage": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Static": "gl:STATIC_DRAW",
+      "Dynamic": "gl:DYNAMIC_DRAW",
+      "Stream": "gl:STREAM_DRAW"
+    }
+  },
+  "BufferType": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "VertexBuffer": "gl:ARRAY_BUFFER",
+      "IndexBuffer": "gl:ELEMENT_ARRAY_BUFFER"
+    }
+  },
+  "Blend": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Zero": "gl:ZERO",
+      "One": "gl:ONE",
+      "SrcColor": "gl:SRC_COLOR",
+      "SrcColorInv": "gl:ONE_MINUS_SRC_COLOR",
+      "SrcAlpha": "gl:SRC_ALPHA",
+      "SrcAlphaInv": "gl:ONE_MINUS_SRC_ALPHA",
+      "SrcAlphaSat": "gl:SRC_ALPHA_SATURATE",
+      "DstColor": "gl:DST_COLOR",
+      "DstColorInv": "gl:ONE_MINUS_DST_COLOR",
+      "DstAlpha": "gl:DST_ALPHA",
+      "DstAlphaInv": "gl:ONE_MINUS_DST_ALPHA",
+      "ConstantColor": "gl:CONSTANT_COLOR",
+      "ConstantColorInv": "gl:ONE_MINUS_CONSTANT_COLOR",
+      "ConstantAlpha": "gl:CONSTANT_ALPHA",
+      "ConstantAlphaInv": "gl:ONE_MINUS_CONSTANT_ALPHA"
+    }
+  },
+  "BlendFunction": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Add": "gl:FUNC_ADD",
+      "Subtract": "gl:FUNC_SUBTRACT",
+      "ReverseSubtract": "gl:FUNC_REVERSE_SUBTRACT"
+    }
+  },
+  "CompareFunction": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Never": "gl:NEVER",
+      "Less": "gl:LESS",
+      "Equal": "gl:EQUAL",
+      "LessEqual": "gl:LEQUAL",
+      "Greater": "gl:GREATER",
+      "NotEqual": "gl:NOTEQUAL",
+      "GreaterEqual": "gl:GEQUAL",
+      "Always": "gl:ALWAYS"
+    }
+  },
+  "CullMode": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Front": "gl:FRONT",
+      "Back": "gl:BACK",
+      "FrontAndBack": "gl:FRONT_AND_BACK"
+    }
+  },
+  "FrontFace": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "ClockWise": "gl:CW",
+      "CounterClockWise": "gl:CCW"
+    }
+  },
+  "StencilOperation": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Zero": "gl:ZERO",
+      "Keep": "gl:KEEP",
+      "Replace": "gl:REPLACE",
+      "Increment": "gl:INCR",
+      "Decrement": "gl:DECR",
+      "Invert": "gl:INVERT",
+      "IncrementWrap": "gl:INCR_WRAP",
+      "DecrementWrap": "gl:DECR_WRAP"
+    }
+  },
+  "PixelFormat": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Alpha": "gl:ALPHA",
+      "Luminance": "gl:LUMINANCE",
+      "LuminanceAlpha": "gl:LUMINANCE_ALPHA",
+      "RGB": "gl:RGB",
+      "RGBA": "gl:RGBA"
+    }
+  },
+  "pixelFormatElementCount": {
+    "kind": "size",
+    "ref": "PixelFormatOption",
+    "aliases": true,
+    "values": {
+      "Alpha": 1,
+      "Luminance": 1,
+      "LuminanceAlpha": 2,
+      "RGB": 3,
+      "RGBA": 4
+    }
+  },
+  "PrimitiveType": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "PointList": "gl:POINTS",
+      "LineList": "gl:LINES",
+      "LineStrip": "gl:LINE_STRIP",
+      "TriangleList": "gl:TRIANGLES",
+      "TriangleStrip": "gl:TRIANGLE_STRIP",
+      "TriangleFan": "gl:TRIANGLE_FAN"
+    }
+  },
+  "TextureType": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Texture": "gl:TEXTURE",
+      "Texture2D": "gl:TEXTURE_2D",
+      "TextureCube": "gl:TEXTURE_CUBE_MAP"
+    }
+  },
+  "TextureWrapMode": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Repeat": "gl:REPEAT",
+      "Clamp": "gl:CLAMP_TO_EDGE",
+      "Mirror": "gl:MIRRORED_REPEAT"
+    }
+  },
+  "TextureFilter": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Point": "gl:NEAREST",
+      "Linear": "gl:LINEAR",
+      "PointMipPoint": "gl:NEAREST_MIPMAP_NEAREST",
+      "LinearMipPoint": "gl:LINEAR_MIPMAP_NEAREST",
+      "PointMipLinear": "gl:NEAREST_MIPMAP_LINEAR",
+      "LinearMipLinear": "gl:LINEAR_MIPMAP_LINEAR"
+    }
+  },
+  "ShaderType": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "VertexShader": "gl:VERTEX_SHADER",
+      "FragmentShader": "gl:FRAGMENT_SHADER"
+    }
+  },
+  "DepthFormat": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "None": "gl:ZERO",
+      "DepthStencil": "gl:DEPTH_STENCIL",
+      "Depth16": "gl:DEPTH_COMPONENT16",
+      "Depth24": "gl:DEPTH_COMPONENT24",
+      "Depth32": "gl:DEPTH_COMPONENT32F",
+      "Depth24Stencil8": "gl:DEPTH24_STENCIL8",
+      "Depth32Stencil8": "gl:DEPTH32F_STENCIL8"
+    }
+  },
+  "StencilFormat": {
+    "kind": "enum",
+    "aliases": true,
+    "nameOf": true,
+    "values": {
+      "Stencil8": "gl:STENCIL_INDEX8"
+    }
+  },
+  "LightType": {
+    "kind": "enum",
+    "nameOf": true,
+    "values": {
+      "None": 0,
+      "Directional": 1,
+      "Point": 2,
+      "Spot": 3,
+      "Box": 4
+    }
   }
-}, {
-  "enum": "PrimitiveType",
-  "enumName": "PrimitiveTypeName",
-  "isGlConstant" : true,
-  "properties": {
-    "PointList": "POINTS",
-    "LineList": "LINES",
-    "LineStrip": "LINE_STRIP",
-    "TriangleList": "TRIANGLES",
-    "TriangleStrip": "TRIANGLE_STRIP",
-    "TriangleFan": "TRIANGLE_FAN"
-  }
-}, {
-  "enum": "TextureType",
-  "enumName": "TextureTypeName",
-  "isGlConstant" : true,
-  "properties": {
-    "Texture": "TEXTURE",
-    "Texture2D": "TEXTURE_2D",
-    "TextureCube": "TEXTURE_CUBE_MAP"
-  }
-}, {
-  "enum": "TextureWrapMode",
-  "enumName": "TextureWrapModeName",
-  "isGlConstant" : true,
-  "properties": {
-    "Repeat": "REPEAT",
-    "Clamp": "CLAMP_TO_EDGE",
-    "Mirror": "MIRRORED_REPEAT"
-  }
-}, {
-  "enum": "TextureFilter",
-  "enumName": "TextureFilterName",
-  "isGlConstant" : true,
-  "properties": {
-    "Point": "NEAREST",
-    "Linear": "LINEAR",
-    "PointMipPoint": "NEAREST_MIPMAP_NEAREST",
-    "LinearMipPoint": "LINEAR_MIPMAP_NEAREST",
-    "PointMipLinear": "NEAREST_MIPMAP_LINEAR",
-    "LinearMipLinear": "LINEAR_MIPMAP_LINEAR"
-  }
-}, {
-  "enum": "ShaderType",
-  "enumName": "ShaderTypeName",
-  "isGlConstant" : true,
-  "properties": {
-    "VertexShader": "VERTEX_SHADER",
-    "FragmentShader": "FRAGMENT_SHADER"
-  }
-}, {
-  "enum": "DepthFormat",
-  "enumName": "DepthFormatName",
-  "isGlConstant" : true,
-  "properties": {
-    "None": "ZERO",
-    "DepthStencil": "DEPTH_STENCIL",
-    "Depth16": "DEPTH_COMPONENT16",
-    "Depth24": "DEPTH_COMPONENT24",
-    "Depth32": "DEPTH_COMPONENT32F",
-    "Depth24Stencil8": "DEPTH24_STENCIL8",
-    "Depth32Stencil8": "DEPTH32F_STENCIL8"
-  }
-}, {
-  "enum": "StencilFormat",
-  "enumName": "StencilFormatName",
-  "isGlConstant" : true,
-  "properties": {
-    "Stencil8": "STENCIL_INDEX8"
-  }
-}, {
-  "enum": "LightType",
-  "properties": {
-    "None": 0,
-    "Directional": 1,
-    "Point": 2,
-    "Spot": 3,
-    "Box": 4
-  }
-}]
+}

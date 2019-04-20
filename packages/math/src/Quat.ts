@@ -8,7 +8,7 @@ const keyLookup = {
 }
 
 /**
- * Describes a quaternion.
+ * Defines a quaternion.
  *
  * @public
  */
@@ -31,7 +31,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
   public w: number
 
   /**
-   * Initializes a new quaternion
+   * Constructs a new instance of {@link Quat}
+   *
    * @param x - Value for the X component
    * @param y - Value for the Y component
    * @param z - Value for the Z component
@@ -309,31 +310,36 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
+   * @param array - The array to copy into
    * @param offset - Zero based index where to start writing in the array
    * @returns Reference to `this` for chaining.
    */
-  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
-    buffer[offset] = this.x
-    buffer[offset + 1] = this.y
-    buffer[offset + 2] = this.z
-    buffer[offset + 3] = this.w
-    return buffer
+  public toArray(): number[]
+  public toArray<T>(array: T, offset?: number): T
+  public toArray(array: number[] = [], offset: number= 0): number[] {
+    array[offset] = this.x
+    array[offset + 1] = this.y
+    array[offset + 2] = this.z
+    array[offset + 3] = this.w
+    return array
   }
 
   /**
    * Copies the components successively into the given array.
+   *
    * @param q - The quaternion to copy from
    * @param buffer - The array to copy into
    * @param offset - Zero based index where to start writing in the array
    * @returns Reference to `this` for chaining.
    */
-  public static copy<T extends ArrayLike<number>>(q: IVec4, buffer: T, offset: number= 0): T {
-    buffer[offset] = q.x
-    buffer[offset + 1] = q.y
-    buffer[offset + 2] = q.z
-    buffer[offset + 3] = q.w
-    return buffer
+  public static toArray(vec: IVec4): number[]
+  public static toArray<T>(vec: IVec4, array: T, offset?: number): T
+  public static toArray(q: IVec4, array: number[] = [], offset: number = 0): number[] {
+    array[offset] = q.x
+    array[offset + 1] = q.y
+    array[offset + 2] = q.z
+    array[offset + 3] = q.w
+    return array
   }
 
   /**
@@ -840,6 +846,61 @@ export class Quat implements IVec2, IVec3, IVec4 {
     out.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)
     out.y = vx * (xy2 + wz2) + vy * (1 - xx2 - zz2) + vz * (yz2 - wx2)
     out.z = vx * (xz2 - wy2) + vy * (yz2 + wx2) + vz * (1 - xx2 - yy2)
+
+    return out
+  }
+
+  /**
+   * Performs a component wise linear interpolation between the given two vectors.
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @param t - The interpolation value. Assumed to be in range [0:1].
+   * @param out - The value to write to.
+   * @returns The given `out` parameter or a new instance.
+   */
+  public static slerp(a: IVec4, b: IVec4, t: number): Quat
+  public static slerp<T>(a: IVec4, b: IVec4, t: number, out?: T): T & IVec4
+  public static slerp(a: IVec4, b: IVec4, t: number, out?: IVec4): IVec4 {
+
+    out = out || new Quat()
+
+    let bx = b.x
+    let by = b.y
+    let bz = b.z
+    let bw = b.w
+    let dot = Quat.dot(a, b)
+    if (dot < 0) {
+      dot = -dot
+      bx = -bx
+      by = -by
+      bz = -bz
+      bw = -bw
+    }
+
+    if (dot > 0.9995) {
+      // If the inputs are too close for comfort, linearly interpolate
+      // and normalize the result.
+      out.x = a.x + (bx - a.x) * t
+      out.y = a.y + (by - a.y) * t
+      out.z = a.z + (bz - a.z) * t
+      out.w = a.w + (bw - a.w) * t
+      Quat.normalize(out, out)
+      return out
+    }
+
+    // Since dot is in range [0, DOT_THRESHOLD], acos is safe
+    let theta0 = Math.acos(dot)        // theta_0 = angle between input vectors
+    let theta = theta0 * t             // theta = angle between v0 and result
+    let sinTheta0 = Math.sin(theta0)
+    let sinTheta = Math.sin(theta)
+
+    let s0 = Math.cos(theta) - dot * sinTheta / sinTheta0  // == sin(theta_0 - theta) / sin(theta_0)
+    let s1 = sinTheta / sinTheta0
+
+    out.x = a.x * s0 + bx * s1
+    out.y = a.y * s0 + by * s1
+    out.z = a.z * s0 + bz * s1
+    out.w = a.w * s0 + bw * s1
 
     return out
   }

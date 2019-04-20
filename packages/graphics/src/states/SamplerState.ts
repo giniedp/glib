@@ -1,4 +1,11 @@
-import { TextureFilter, TextureWrapMode } from './../enums/Enums'
+import {
+  nameOfTextureFilter,
+  nameOfTextureWrapMode,
+  TextureFilter,
+  TextureWrapMode,
+  valueOfTextureFilter,
+  valueOfTextureWrapMode,
+} from './../enums/Enums'
 
 import { Device } from './../Device'
 import { Texture } from './../Texture'
@@ -7,7 +14,7 @@ import { Texture } from './../Texture'
 // GL.TEXTURE0
 // GL.TEXTURE...
 // GL.TEXTURE31
-let TextureUnitMap = [
+const TextureUnitMap = [
   0x84C0, 0x84C1, 0x84C2, 0x84C3,
   0x84C4, 0x84C5, 0x84C6, 0x84C7,
   0x84C8, 0x84C9, 0x84CA, 0x84CB,
@@ -18,7 +25,7 @@ let TextureUnitMap = [
   0x84DC, 0x84DD, 0x84DE, 0x84DF,
 ]
 
-let propertyKeys = [
+const propertyKeys = [
   'texture',
   'minFilter',
   'magFilter',
@@ -28,11 +35,11 @@ let propertyKeys = [
 ]
 
 /**
- * The sampler state properties
+ * Properties that describe a sampler state
  *
  * @public
  */
-export interface SamplerStateProperties {
+export interface SamplerStateParams {
   texture?: Texture
   minFilter?: number
   magFilter?: number
@@ -44,7 +51,7 @@ export interface SamplerStateProperties {
 /**
  * @public
  */
-export class SamplerState implements SamplerStateProperties {
+export class SamplerState implements SamplerStateParams {
   /**
    * The graphics device
    */
@@ -65,7 +72,7 @@ export class SamplerState implements SamplerStateProperties {
   private wrapUField: number = TextureWrapMode.Clamp
   private wrapVField: number = TextureWrapMode.Clamp
   private hasChanged: boolean
-  private changes: SamplerStateProperties = {}
+  private changes: SamplerStateParams = {}
 
   constructor(device: Device, register: number) {
     this.device = device
@@ -73,22 +80,20 @@ export class SamplerState implements SamplerStateProperties {
     this.registerField = register
   }
 
-  get register(): number {
+  public get register(): number {
     return this.registerField
   }
-  set register(value: number) { throw new Error("'register' property is read only") }
 
-  get unit(): number {
+  public get unit(): number {
     return TextureUnitMap[this.registerField]
   }
-  set unit(value: number) { throw new Error("'unit' property is read only") }
 
-  get texture(): Texture {
+  public get texture(): Texture {
     return this.textureField
   }
 
-  set texture(value: Texture) {
-    let texture = this.textureField
+  public set texture(value: Texture) {
+    const texture = this.textureField
     if (texture !== value || (value && (texture.handle !== value.handle || texture.type !== value.type))) {
       this.textureField = value
       this.changes.texture = value
@@ -99,15 +104,24 @@ export class SamplerState implements SamplerStateProperties {
     }
   }
 
-  get minFilterName(): string {
-    return TextureFilter.nameOf(this.minFilterField)
+  /**
+   * @internal
+   */
+  public get minFilterName(): string {
+    return nameOfTextureFilter(this.minFilterField)
   }
 
-  get minFilter(): number {
+  /**
+   *
+   */
+  public get minFilter(): number {
     return this.minFilterField
   }
 
-  set minFilter(value: number) {
+  /**
+   *
+   */
+  public set minFilter(value: number) {
     if (this.minFilterField !== value) {
       this.minFilterField = value
       this.changes.minFilter = value
@@ -116,7 +130,7 @@ export class SamplerState implements SamplerStateProperties {
   }
 
   get magFilterName(): string {
-    return TextureFilter.nameOf(this.magFilterField)
+    return nameOfTextureFilter(this.magFilterField)
   }
 
   get magFilter(): number {
@@ -132,7 +146,7 @@ export class SamplerState implements SamplerStateProperties {
   }
 
   get wrapUName(): string {
-    return TextureWrapMode.nameOf(this.wrapUField)
+    return nameOfTextureWrapMode(this.wrapUField)
   }
 
   get wrapU(): number {
@@ -148,7 +162,7 @@ export class SamplerState implements SamplerStateProperties {
   }
 
   get wrapVName(): string {
-    return TextureWrapMode.nameOf(this.wrapVField)
+    return nameOfTextureWrapMode(this.wrapVField)
   }
 
   get wrapV(): number {
@@ -163,7 +177,7 @@ export class SamplerState implements SamplerStateProperties {
     }
   }
 
-  public assign(state: SamplerStateProperties): SamplerState {
+  public assign(state: SamplerStateParams): SamplerState {
     for (let key of propertyKeys) {
       if (state.hasOwnProperty(key) && key !== 'register') {
         this[key] = state[key]
@@ -172,7 +186,7 @@ export class SamplerState implements SamplerStateProperties {
     return this
   }
 
-  public commit(state?: SamplerStateProperties): SamplerState {
+  public commit(state?: SamplerStateParams): SamplerState {
 
     if (state) { this.assign(state) }
     let texture = this.texture
@@ -203,23 +217,23 @@ export class SamplerState implements SamplerStateProperties {
     for (let key of propertyKeys) { this.changes[key] = undefined }
   }
 
-  public static convert(state: any): SamplerStateProperties {
+  public static convert(state: SamplerStateParams): SamplerStateParams {
     if (state.minFilter) {
-      state.minFilter = TextureFilter[state.minFilter]
+      state.minFilter = valueOfTextureFilter(state.minFilter)
     }
     if (state.magFilter) {
-      state.magFilter = TextureFilter[state.magFilter]
+      state.magFilter = valueOfTextureFilter(state.magFilter)
     }
     if (state.wrapU) {
-      state.wrapU = TextureWrapMode[state.wrapU]
+      state.wrapU = valueOfTextureWrapMode(state.wrapU)
     }
     if (state.wrapV) {
-      state.wrapV = TextureWrapMode[state.wrapV]
+      state.wrapV = valueOfTextureWrapMode(state.wrapV)
     }
     return state
   }
 
-  public static fixNonPowerOfTwo(state: SamplerStateProperties): SamplerStateProperties {
+  public static fixNonPowerOfTwo(state: SamplerStateParams): SamplerStateParams {
     state.wrapU = TextureWrapMode.Clamp
     state.wrapV = TextureWrapMode.Clamp
 
@@ -243,35 +257,35 @@ export class SamplerState implements SamplerStateProperties {
     return state
   }
 
-  public static Default = Object.freeze({
+  public static Default = Object.freeze<SamplerStateParams>({
     minFilter: TextureFilter.PointMipLinear,
     magFilter: TextureFilter.Point,
     wrapU: TextureWrapMode.Clamp,
     wrapV: TextureWrapMode.Clamp,
   })
 
-  public static LinearClamp = Object.freeze({
+  public static LinearClamp = Object.freeze<SamplerStateParams>({
     minFilter: TextureFilter.LinearMipLinear,
     magFilter: TextureFilter.Linear,
     wrapU: TextureWrapMode.Clamp,
     wrapV: TextureWrapMode.Clamp,
   })
 
-  public static LinearWrap = Object.freeze({
+  public static LinearWrap = Object.freeze<SamplerStateParams>({
     minFilter: TextureFilter.LinearMipLinear,
     magFilter: TextureFilter.Linear,
     wrapU: TextureWrapMode.Repeat,
     wrapV: TextureWrapMode.Repeat,
   })
 
-  public static PointClamp = Object.freeze({
+  public static PointClamp = Object.freeze<SamplerStateParams>({
     minFilter: TextureFilter.PointMipLinear,
     magFilter: TextureFilter.Point,
     wrapU: TextureWrapMode.Clamp,
     wrapV: TextureWrapMode.Clamp,
   })
 
-  public static PointWrap = Object.freeze({
+  public static PointWrap = Object.freeze<SamplerStateParams>({
     minFilter: TextureFilter.PointMipLinear,
     magFilter: TextureFilter.Point,
     wrapU: TextureWrapMode.Repeat,

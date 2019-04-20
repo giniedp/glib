@@ -1,71 +1,42 @@
-import { Vec2, Vec3 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
+import { addParametricSurface } from './addParametricSurface'
 import { formulas } from './formulas'
 
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
+const option = (opt: any, value: any) => opt == null ? value : opt
+const sin = Math.sin
+const cos = Math.cos
 
+export interface BuildMobiusStripOptions {
+  band?: number,
+  radius?: number
+  tesselation?: number
+}
 /**
  * {@link http://paulbourke.net/geometry/mobius/}
  *
  * @public
  */
-export function buildMobiusStrip(builder: ModelBuilder, options: {
-  diameter?: number
-  radius?: number
-  steps?: number
-  band?: number,
-} = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  let steps = withDefault(options.steps, 16)
-  let band = withDefault(options.band, 0.4)
+export function buildMobiusStrip(builder: ModelBuilder, options: BuildMobiusStripOptions = {}) {
+  const r = option(options.radius, 0.5)
+  const band = option(options.band, 0.4)
 
-  let baseVertex = builder.vertexCount
-  let stepsV = steps
-  let stepsH = steps * 2
+  addParametricSurface(builder, {
+    f: (phi: number, v: number) => {
+      const cosPhi = cos(phi)
+      const sinPhi = cos(phi)
+      const t = band * (1 - v)
 
-  for (let v = 0; v <= stepsV; v += 1) {
-    let dv = v / stepsV * band
-    let t = dv - band * 0.5
-
-    for (let u = 0; u <= stepsH; u += 1) {
-      let du = u / stepsH
-      let phi = du * Math.PI * 2
-
-      let sinPhi = Math.sin(phi)
-      let cosPhi = Math.cos(phi)
-
-      let x = cosPhi + t * Math.cos(phi / 2) * cosPhi
-      let z = sinPhi + t * Math.cos(phi / 2) * sinPhi
-      let y = t * Math.sin(phi / 2)
-
-      let normal = Vec3.create(x, y, z)
-      let texCoord = Vec2.create(du, dv)
-
-      builder.addVertex({
-        position: Vec3.multiplyScalar<Vec3>(normal, radius),
-        normal: normal,
-        texture: texCoord,
-      })
-    }
-  }
-  for (let z = 0; z < stepsV; z += 1) {
-    for (let x = 0; x < stepsH; x += 1) {
-      let a = x + z * (stepsH + 1)
-      let b = a + 1
-      let c = x + (z + 1) * (stepsH + 1)
-      let d = c + 1
-
-      builder.addIndex(baseVertex + a)
-      builder.addIndex(baseVertex + b)
-      builder.addIndex(baseVertex + c)
-
-      builder.addIndex(baseVertex + c)
-      builder.addIndex(baseVertex + b)
-      builder.addIndex(baseVertex + d)
-    }
-  }
+      return {
+        x: (cosPhi + t * cos(phi / 2) * cosPhi) * r,
+        z: (sinPhi + t * cos(phi / 2) * sinPhi) * r,
+        y: (t * sin(phi / 2)) * r,
+      }
+    },
+    u0: 0,
+    u1: Math.PI * 2,
+    tu: option(options.tesselation, 16),
+    tv: option(options.tesselation, 16),
+  })
 }
 
 formulas['MobiusStrip'] = buildMobiusStrip

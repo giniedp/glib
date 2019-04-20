@@ -1,94 +1,60 @@
-import { Mat4, Vec2, Vec3 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
-import { buildCap } from './buildCap'
+import { addParametricSurface } from './addParametricSurface'
 import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
-function circleVector(position: number, total: number, out: Vec3) {
-  out = out || new Vec3()
-  let angle = position * Math.PI * 2 / total
-  let dx = Math.cos(angle)
-  let dz = Math.sin(angle)
-  return out.init(dx, 0, dz)
+export interface BuildConeOptions {
+  /**
+   * The height of the cone
+   * @remarks
+   * defaults to `1.0`
+   */
+  height?: number,
+  /**
+   * The bottom radius of the cone
+   * @remarks
+   * defaults to `0.5`
+   */
+  lowerRadius?: number,
+  /**
+   * The top radius of the cone
+   * @remarks
+   * defaults to `0.0`
+   */
+  upperRadius?: number,
+  /**
+   * The tesselation factor
+   */
+  tesselation?: number,
 }
 
 /**
  * @public
  */
-export function buildCone(builder: ModelBuilder, options: {
-  height?: number
-  steps?: number
-  topDiameter?: number
-  topRadius?: number
-  bottomDiameter?: number
-  bottomRadius?: number,
-} = {}) {
-  let height = withDefault(options.height, 2)
-  let steps = withDefault(options.steps, 8)
-  let radiusUp = withDefault(options.topRadius, withDefault(options.topDiameter, 1) * 0.5)
-  let radiusLo = withDefault(options.bottomRadius, withDefault(options.bottomDiameter, 1) * 0.5)
+export function buildCone(builder: ModelBuilder, options: BuildConeOptions = {}) {
 
-  let stepsH = 2
-  let stepsV = steps
-  let invStepsH = 1 / stepsH
-  let invStepsV = 1 / steps
-  let baseVertex = builder.vertexCount
-  let x, y, t // tslint:disable-line
-  let position = Vec3.createZero()
-  let texture = Vec2.createZero()
+  const r1 = withDefault(options.lowerRadius, 0.5)
+  const r2 = withDefault(options.upperRadius, 0)
+  const h = withDefault(options.height, 1.0)
 
-  for (y = 0; y <= stepsH; y += 1) {
-    for (x = 0; x <= stepsV; x += 1) {
-      t = y * invStepsH
-
-      circleVector(x, stepsV, position)
-      position.multiplyScalar(radiusUp * t + radiusLo * (1 - t))
-      position.y = t * height
-
-      builder.addVertex({
-        position: position,
-        texture: texture.init(x * invStepsV, y * invStepsH),
-      })
-    }
-  }
-
-  let a, b, c, d // tslint:disable-line
-  for (y = 0; y < stepsH; y += 1) {
-    for (x = 0; x < stepsV; x += 1) {
-      a = x + y * (stepsV + 1)
-      b = a + 1
-      c = x + (y + 1) * (stepsV + 1)
-      d = c + 1
-
-      builder.addIndex(baseVertex + a)
-      builder.addIndex(baseVertex + b)
-      builder.addIndex(baseVertex + c)
-
-      builder.addIndex(baseVertex + c)
-      builder.addIndex(baseVertex + b)
-      builder.addIndex(baseVertex + d)
-    }
-  }
-
-  // Create flat triangle fan caps to seal the top and bottom.
-  buildCap(builder, {
-    radius: radiusLo,
-    steps: steps,
+  addParametricSurface(builder, {
+    f: (u: number, v: number) => {
+      u = 1 - u
+      v = 1 - v
+      const s = (h - v * h) / h
+      const r = r1 * s + r2 * ( 1 - s)
+      return {
+        x: r * Math.cos(Math.PI * 2 * u),
+        y: v * h,
+        z: r * Math.sin(Math.PI * 2 * u),
+      }
+    },
+    tu: withDefault(options.tesselation, 32),
+    tv: withDefault(options.tesselation, 32),
   })
-
-  let transform = Mat4.multiplyChain(
-    Mat4.createRotationX(Math.PI),
-    Mat4.createTranslation(0, height, 0),
-  )
-  let tId = builder.beginTransform(transform)
-  buildCap(builder, {
-    radius: radiusUp,
-    steps: steps,
-  })
-  builder.endTransform(tId)
 }
 
 formulas['Cone'] = buildCone

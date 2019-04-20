@@ -1,4 +1,4 @@
-import { DepthFormat, DepthFormatOption } from './enums/Enums'
+import { DepthFormat, DepthFormatOption, nameOfDepthFormat, valueOfDepthFormat } from './enums/Enums'
 
 import { Device } from './Device'
 
@@ -72,7 +72,7 @@ export class DepthBuffer {
    * Returns the WebGl constant name of the currently used depth format
    */
   get depthFormatName(): string {
-    return DepthFormat.nameOf(this.depthFormat)
+    return nameOfDepthFormat(this.depthFormat)
   }
 
   /**
@@ -82,7 +82,7 @@ export class DepthBuffer {
   public setup(options: DepthBufferOptions): DepthBuffer {
     let width = options.width
     let height = options.height
-    let format = DepthFormat[options.depthFormat] || this.depthFormat || DepthFormat.DepthStencil
+    let format = valueOfDepthFormat(options.depthFormat) || this.depthFormat || DepthFormat.DepthStencil
 
     if (width == null) { width = this.width }
     if (height == null) { height = this.height }

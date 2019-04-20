@@ -1,7 +1,8 @@
 import { Log, uuid } from '@gglib/core'
 
 import { Device } from './Device'
-import { ShaderType } from './enums'
+import { nameOfShaderType, ShaderType, ShaderTypeOption, valueOfShaderType } from './enums'
+import { ShaderInspector } from './ShaderInspector'
 
 /**
  * The shader constructor options
@@ -16,7 +17,7 @@ export interface ShaderOptions {
   /**
    * The shader type e.g. VertexShader or Fragment shader
    */
-  type?: string|number,
+  type?: ShaderTypeOption,
   /**
    * A WebGLShader object to be reused
    */
@@ -24,21 +25,26 @@ export interface ShaderOptions {
 }
 
 /**
+ * Represents the source code of a `VertexShader` or a `FragmentShader`
+ *
  * @public
  */
 export class Shader {
+
+  public static readonly OptionsSymbol = Symbol('ShaderOptions')
+
   /**
    * A unique id
    */
-  public uid: string
+  public readonly uid: string = uuid()
   /**
    * The graphics device
    */
-  public device: Device
+  public readonly device: Device
   /**
    * The rendering context
    */
-  public gl: WebGLRenderingContext
+  public readonly gl: WebGLRenderingContext
   /**
    * The shader source code
    */
@@ -46,9 +52,9 @@ export class Shader {
   /**
    * The shader type (as a  WebGL constant)
    */
-  public type: number
+  public type: ShaderType
   /**
-   * The shader type (as readable name)
+   * The shader type (as readable name e.g. VertexShader or FragmentShader)
    */
   public typeName: string
   /**
@@ -67,20 +73,19 @@ export class Shader {
   /**
    *
    */
-  constructor(device: Device, params: ShaderOptions= {}) {
-    this.uid = uuid()
+  constructor(device: Device, options: ShaderOptions= {}) {
     this.device = device
     this.gl = device.context
 
-    this.source = params.source
-    this.type = ShaderType[params.type]
-    this.typeName = ShaderType.nameOf(this.type)
+    this.source = options.source
+    this.type = valueOfShaderType(options.type)
+    this.typeName = nameOfShaderType(this.type)
 
     if (!this.typeName) {
-      Log.l(this, 'unknown shader type given', params.type)
+      Log.w('[Shader] unknown "type" option', options.type, this)
     }
 
-    this.handle = params.handle
+    this.handle = options.handle
     if (!this.handle || !this.gl.isShader(this.handle)) {
       this.handle = this.gl.createShader(this.type)
     }
@@ -102,11 +107,11 @@ export class Shader {
   }
 
   /**
-   * Compiles the current shader source code
+   * Compiles the shader source code
    */
   public compile(): Shader {
     if (!this.source) {
-      Log.e('[Shader] Unable to compile shader, source is missing', this)
+      Log.e('[Shader] can not compile shader, source is missing', this)
       return this
     }
 
@@ -116,7 +121,7 @@ export class Shader {
     this.info = this.gl.getShaderInfoLog(this.handle)
 
     if (!this.compiled) {
-      Log.e('[Shader] compilation failed', this.info, this)
+      Log.e('[Shader] compilation failed', ShaderInspector.formatInfoLog(this.info, this.source))
     }
     return this
   }

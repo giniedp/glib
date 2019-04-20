@@ -14,6 +14,8 @@ const TOP = 4
 const BOTTOM = 5
 
 /**
+ * Defines a frustum volume.
+ *
  * @public
  */
 export class BoundingFrustum {
@@ -22,6 +24,11 @@ export class BoundingFrustum {
   public readonly corners: IVec3[]
   private $matrix: Mat4
 
+  /**
+   * Constructs a new instance of {@link BoundingFrustum}
+   *
+   * @param matrix - The matrix to initialise with.
+   */
   constructor(matrix?: Mat4) {
     this.planes = []
     for (let i = 0; i < 6; i++) {

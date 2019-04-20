@@ -138,13 +138,13 @@ describe('BoundingSphere', () => {
 
   describe('#copy', () => {
     it ('copies components into array', () => {
-      expect(new BoundingSphere(1, 2, 3, 4).copy([])).toEqual([1, 2, 3, 4])
+      expect(new BoundingSphere(1, 2, 3, 4).toArray([])).toEqual([1, 2, 3, 4])
     })
   })
 
   describe('.copy', () => {
     it ('copies components into array', () => {
-      expect(BoundingSphere.copy(new BoundingSphere(1, 2, 3, 4), [])).toEqual([1, 2, 3, 4])
+      expect(BoundingSphere.toArray(new BoundingSphere(1, 2, 3, 4), [])).toEqual([1, 2, 3, 4])
     })
   })
 

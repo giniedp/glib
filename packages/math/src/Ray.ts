@@ -5,12 +5,18 @@ import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
+ * Defines a Ray that has a starting position and a pointing direction.
+ *
  * @public
  */
 export class Ray {
   public position: IVec3
   public direction: IVec3
 
+  /**
+   * Constructs a new instance of {@link Ray}
+   *
+   */
   constructor(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number) {
     this.position = {
       x: pX || 0,

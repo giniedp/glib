@@ -1,7 +1,0 @@
-
-/**
- * @internal
- */
-export class BasicEffect {
-
-}

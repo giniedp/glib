@@ -36,7 +36,7 @@ export class BTTRoot {
     heightMap: HeightMap,
     patchSize?: number,
     lodScale?: number,
-    materials?: Graphics.ShaderEffect[]|Graphics.ShaderEffectOptions[],
+    materials?: Graphics.Material[]|Graphics.MaterialOptions[],
   }) {
     this.device = device
 

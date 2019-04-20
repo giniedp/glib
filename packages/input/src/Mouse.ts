@@ -58,21 +58,24 @@ export interface IMouseState {
 }
 
 /**
- * The Mouse class allows to capture the mouse state. It does so by listening to various mouse events
- * and tracks the position and pressed buttons. On each recoginzed  state change the ```changed``` event is triggered.
+ * Captures the mouse state.
+ *
+ * @remarks
+ * The mouse events are captured at the given {@link IMouseOptions.element}. Using these events a mouse state
+ * is recorded. On each recoginzed  state change the `changed` event is triggered.
  *
  * @public
  */
 export class Mouse extends Events {
   /**
-   * The target element on which to listen for mouse events.
+   * The target element at which to listen for mouse events.
    */
-  protected element: EventTarget = document
+  protected readonly element: EventTarget = document
 
   /**
-   * The tracked Mouse state
+   * The current Mouse state
    */
-  public state: IMouseState = {
+  public readonly state: IMouseState = {
     pageX: 0,
     pageY: 0,
     screenX: 0,
@@ -88,9 +91,9 @@ export class Mouse extends Events {
   }
 
   /**
-   * Collection of html events that are delegated (triggered) on this instance.
+   * {@link https://developer.mozilla.org/de/docs/Web/Events | Event} names that are delegated to this instance.
    */
-  protected delegatedEvents = [
+  protected readonly delegatedEvents = [
     'click',
     'contextmenu',
     'dblclick',
@@ -106,30 +109,30 @@ export class Mouse extends Events {
   ]
 
   /**
-   * Is called on the ```mousewheel``` event and captures the mouse wheel state
+   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/wheel | wheel} events
    */
-  protected onMouseWheel: EventListener = this.handleWheel.bind(this)
+  protected readonly onMouseWheelListener: EventListener = this.onMouseWheel.bind(this)
   /**
-   * Is called on the ```mousemove``` event and captures the movement state
+   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/mousemove | mousemove} events
    */
-  protected onMouseMove: EventListener = this.handleMouseMove.bind(this)
+  protected readonly onMouseMoveListener: EventListener = this.onMouseMove.bind(this)
   /**
-   * Is called on the ```mousedown``` event and captures the button state
+   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/mousedown | mousedown} events
    */
-  protected onMouseDown: EventListener = this.handleButton.bind(this)
+  protected readonly onMouseDownListener: EventListener = this.onMouseButton.bind(this)
   /**
-   * Is called on the ```mouseup``` event and captures the button state
+   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/mouseup | mouseup} events
    */
-  protected onMouseUp: EventListener = this.handleButton.bind(this)
+  protected readonly onMouseUpListener: EventListener = this.onMouseButton.bind(this)
   /**
-   * Triggers the ```e.type``` event on this instance
+   * Listener for any {@link https://developer.mozilla.org/de/docs/Web/Events | Event}
+   * see {@link delegatedEvents}.
    */
-  protected onEvent: EventListener = (e) => this.trigger(e.type, this, e)
+  protected readonly onEvent: EventListener = (e) => this.trigger(e.type, this, e)
   /**
-   * Is called when ```document``` or ```window``` loose focus (e.g. user switches to another tab or application)
-   * and clears the button and wheel states.
+   * Listener that issues a clear state operation on this instance
    */
-  protected onClearButtons: EventListener = this.clearButtons.bind(this)
+  protected readonly onClearStateListener: EventListener = this.onClearState.bind(this)
 
   /**
    * Initializes the Mouse with given options and activates the captrue listeners
@@ -149,14 +152,14 @@ export class Mouse extends Events {
   public activate() {
     this.deactivate()
     // update state events
-    this.element.addEventListener('mousewheel', this.onMouseWheel)
-    this.element.addEventListener('mousemove', this.onMouseMove)
-    this.element.addEventListener('mousedown', this.onMouseDown)
-    this.element.addEventListener('mouseup', this.onMouseUp)
+    this.element.addEventListener('mousewheel', this.onMouseWheelListener)
+    this.element.addEventListener('mousemove', this.onMouseMoveListener)
+    this.element.addEventListener('mousedown', this.onMouseDownListener)
+    this.element.addEventListener('mouseup', this.onMouseUpListener)
     // visibility events
-    onDocumentVisibilityChange(this.onClearButtons)
-    document.addEventListener('blur', this.onClearButtons)
-    window.addEventListener('blur', this.onClearButtons)
+    onDocumentVisibilityChange(this.onClearStateListener)
+    document.addEventListener('blur', this.onClearStateListener)
+    window.addEventListener('blur', this.onClearStateListener)
     // delegated events
     for (let name of this.delegatedEvents) {
       this.element.addEventListener(name, this.onEvent)
@@ -173,14 +176,14 @@ export class Mouse extends Events {
    */
   public deactivate() {
     // update logic events
-    this.element.removeEventListener('mousewheel', this.onMouseWheel)
-    this.element.removeEventListener('mousemove', this.onMouseMove)
-    this.element.removeEventListener('mousedown', this.onMouseDown)
-    this.element.removeEventListener('mouseup', this.onMouseUp)
+    this.element.removeEventListener('mousewheel', this.onMouseWheelListener)
+    this.element.removeEventListener('mousemove', this.onMouseMoveListener)
+    this.element.removeEventListener('mousedown', this.onMouseDownListener)
+    this.element.removeEventListener('mouseup', this.onMouseUpListener)
     // visibility events
-    offDocumentVisibilityChange(this.onClearButtons)
-    document.removeEventListener('blur', this.onClearButtons)
-    window.removeEventListener('blur', this.onClearButtons)
+    offDocumentVisibilityChange(this.onClearStateListener)
+    document.removeEventListener('blur', this.onClearStateListener)
+    window.removeEventListener('blur', this.onClearStateListener)
     // delegated events
     for (let name of this.delegatedEvents) {
       this.element.removeEventListener(name, this.onEvent)
@@ -209,8 +212,10 @@ export class Mouse extends Events {
   }
 
   /**
-   * Locks the mouse to the current element. The mouse cursor is then not visible
-   * and only the ```movementX``` and ```movementY``` state properties are updated.
+   * Locks the mouse to the current element.
+   *
+   * @remarks
+   * Mouse cursor will be invisible and only the `movementX` and `movementY` state properties are updated.
    */
   public lock() {
     if (!hasPointerlockApi) {
@@ -227,25 +232,27 @@ export class Mouse extends Events {
     }
   }
   /**
-   * Checks whether the mouse is already locked to any element
+   * Checks for an active mouse lock in the document
+   *
+   * @returns true if any document element has a mouse lock
    */
   public isLocked(): boolean {
     return Mouse.isLocked()
   }
   /**
-   * Releases any locked Mouse
+   * Releases the active mouse lock in the document
    */
   public unlock() {
     return Mouse.unlock()
   }
   /**
-   * Checks whether the mouse is already locked to any element
+   * Checks for an active mouse lock
    */
   public static isLocked(): boolean {
     return !!document[cross.pointerLockElement]
   }
   /**
-   * Releases any locked Mouse
+   * Releases the mouse lock
    */
   public static unlock() {
     if (hasPointerlockApi) {
@@ -258,7 +265,7 @@ export class Mouse extends Events {
   /**
    * Updates the movement state from given event
    */
-  protected handleMouseMove(e: MouseEvent) {
+  protected onMouseMove(e: MouseEvent) {
     let s = this.state
     s.pageX = e.pageX
     s.pageY = e.pageY
@@ -281,7 +288,7 @@ export class Mouse extends Events {
   /**
    * Updates the button states from given event
    */
-  protected handleButton(e: MouseEvent) {
+  protected onMouseButton(e: MouseEvent) {
     let isDown = e.type === 'mousedown'
     if (e.which !== undefined) {
       this.state.buttons[e.which - 1] = isDown
@@ -294,7 +301,7 @@ export class Mouse extends Events {
   /**
    * Updates the wheel state from given event
    */
-  protected handleWheel(e: MouseEvent) {
+  protected onMouseWheel(e: MouseEvent) {
     let state = this.state
     state.wheel = state.wheel || 0
     if (e.detail) {
@@ -308,9 +315,9 @@ export class Mouse extends Events {
   }
 
   /**
-   * clears the button and wheel states
+   * Clears the tracked state
    */
-  protected clearButtons() {
+  protected onClearState() {
     this.state.wheel = 0
     this.state.buttons.length = 3
     this.state.buttons[0] = false

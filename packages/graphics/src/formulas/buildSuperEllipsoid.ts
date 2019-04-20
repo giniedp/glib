@@ -54,7 +54,7 @@ export function buildSuperEllipsoid(builder: ModelBuilder, options: {
       let texCoord = Vec2.create(du, dv)
 
       builder.addVertex({
-        position: Vec3.multiplyScalar<Vec3>(normal, radius),
+        position: Vec3.multiplyScalar(normal, radius),
         normal: normal.normalize(),
         texture: texCoord,
       })
@@ -68,11 +68,11 @@ export function buildSuperEllipsoid(builder: ModelBuilder, options: {
       let d = c + 1
 
       builder.addIndex(baseVertex + a)
-      builder.addIndex(baseVertex + b)
       builder.addIndex(baseVertex + c)
+      builder.addIndex(baseVertex + b)
 
-      builder.addIndex(baseVertex + c)
       builder.addIndex(baseVertex + b)
+      builder.addIndex(baseVertex + c)
       builder.addIndex(baseVertex + d)
     }
   }

@@ -7,7 +7,7 @@ const keyLookup = {
 }
 
 /**
- * Describes a vector with four components.
+ * Defines a vector with four components.
  *
  * @public
  */
@@ -16,27 +16,27 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Readonly vector with all components set to one
    */
-  public static One = Object.freeze({ x: 1, y: 1, z: 1, w: 1})
+  public static One = Object.freeze<IVec4>({ x: 1, y: 1, z: 1, w: 1})
   /**
    * Readonly vector with all components set to zero
    */
-  public static Zero = Object.freeze({ x: 0, y: 0, z: 0, w: 0})
+  public static Zero = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 0})
   /**
    * Readonly vector x component set to one
    */
-  public static UnitX = Object.freeze({ x: 1, y: 0, z: 0, w: 0})
+  public static UnitX = Object.freeze<IVec4>({ x: 1, y: 0, z: 0, w: 0})
   /**
    * Readonly vector y component set to one
    */
-  public static UnitY = Object.freeze({ x: 0, y: 1, z: 0, w: 0})
+  public static UnitY = Object.freeze<IVec4>({ x: 0, y: 1, z: 0, w: 0})
   /**
    * Readonly vector z component set to one
    */
-  public static UnitZ = Object.freeze({ x: 0, y: 0, z: 1, w: 0})
+  public static UnitZ = Object.freeze<IVec4>({ x: 0, y: 0, z: 1, w: 0})
   /**
    * Readonly vector w component set to one
    */
-  public static UnitW = Object.freeze({ x: 0, y: 0, z: 0, w: 1})
+  public static UnitW = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 1})
 
   /**
    * The X component
@@ -56,7 +56,8 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   public w: number
 
   /**
-   * Initializes a new instance
+   * Constructs a new instance of {@link Vec4}
+   *
    * @param x - Value for the X component
    * @param y - Value for the Y component
    * @param z - Value for the Z component
@@ -72,7 +73,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Sets the X component
    */
-  public setX(value: number): Vec4 {
+  public setX(value: number): this {
     this.x = value
     return this
   }
@@ -80,7 +81,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Sets the Y component
    */
-  public setY(value: number): Vec4 {
+  public setY(value: number): this {
     this.y = value
     return this
   }
@@ -88,7 +89,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Sets the Z component
    */
-  public setZ(value: number): Vec4 {
+  public setZ(value: number): this {
     this.z = value
     return this
   }
@@ -96,7 +97,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Sets the W component
    */
-  public setW(value: number): Vec4 {
+  public setW(value: number): this {
     this.w = value
     return this
   }
@@ -104,7 +105,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, value: number): Vec4 {
+  public set(key: number|string, value: number): this {
     this[keyLookup[key]] = value
     return this
   }
@@ -123,7 +124,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param w - value for W component
    * @returns `this` instance for chaining
    */
-  public init(x: number, y: number, z: number, w: number): Vec4 {
+  public init(x: number, y: number, z: number, w: number): this {
     this.x = x
     this.y = y
     this.z = z
@@ -147,7 +148,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Resets all components to zero
    * @returns `this` instance for chaining
    */
-  public initZero(): Vec4 {
+  public initZero(): this {
     this.x = 0
     this.y = 0
     this.z = 0
@@ -167,7 +168,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Resets all components to 1
    * @returns `this` instance for chaining
    */
-  public initOne(): Vec4 {
+  public initOne(): this {
     this.x = 1
     this.y = 1
     this.z = 1
@@ -188,7 +189,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param other - The value to read from
    * @returns `this` instance for chaining
    */
-  public initFrom(other: IVec4): Vec4 {
+  public initFrom(other: IVec4): this {
     this.x = other.x
     this.y = other.y
     this.z = other.z
@@ -214,13 +215,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Initializes the components of this value by taking values from the given array in successive order.
    * @param buffer - The array to read from
    * @param offset - The zero based index at which start reading the values
+   * @param stride - The offset between each component in buffer
    * @returns `this` instance for chaining
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec4 {
+  public initFromBuffer(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): this {
     this.x = buffer[offset]
-    this.y = buffer[offset + 1]
-    this.z = buffer[offset + 2]
-    this.w = buffer[offset + 3]
+    this.y = buffer[offset + 1 * stride]
+    this.z = buffer[offset + 2 * stride]
+    this.w = buffer[offset + 3 * stride]
     return this
   }
 
@@ -228,14 +230,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Creates a new instance by taking values from the given array in successive order.
    * @param buffer - The array to read from
    * @param offset - The zero based index at which start reading the values
+   * @param stride - The offset between each component in buffer
    * @returns `this` instance for chaining
    */
-  public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec4 {
+  public static createFromBuffer(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): Vec4 {
     return new Vec4(
       buffer[offset],
-      buffer[offset + 1],
-      buffer[offset + 2],
-      buffer[offset + 3],
+      buffer[offset + 1 * stride],
+      buffer[offset + 2 * stride],
+      buffer[offset + 3 * stride],
     )
   }
 
@@ -243,7 +246,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Creates a copy of this value
    * @returns The cloned vector
    */
-  public clone<T extends IVec4 = Vec4>(out?: T|Vec4): T|Vec4 {
+  public clone(): Vec4
+  public clone<T>(out: T): T & IVec4
+  public clone(out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = this.x
     out.y = this.y
@@ -258,7 +263,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns the `dst` value.
    */
-  public static clone<T extends IVec4 = IVec4>(src: IVec4, dst?: T|IVec4): T|IVec4 {
+  public static clone(src: IVec4): Vec4
+  public static clone<T>(src: IVec4, dst: T): T & IVec4
+  public static clone(src: IVec4, dst?: IVec4): IVec4 {
     dst = dst || new Vec4()
     dst.x = src.x
     dst.y = src.y
@@ -269,30 +276,36 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
+   * @param array - The array to copy into
    * @param offset - Zero based index where to start writing in the array
-   * @returns the given buffer parameter
+   * @returns the given array parameter
    */
-  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
-    buffer[offset] = this.x
-    buffer[offset + 1] = this.y
-    buffer[offset + 2] = this.z
-    buffer[offset + 3] = this.w
-    return buffer
+  public toArray(): number[]
+  public toArray<T>(array: T, offset?: number): T
+  public toArray(array: number[] = [], offset: number= 0): number[] {
+    array[offset] = this.x
+    array[offset + 1] = this.y
+    array[offset + 2] = this.z
+    array[offset + 3] = this.w
+    return array
   }
 
   /**
    * Copies the components of `src` successively into the given array.
-   * @param buffer - The array to copy into
+   *
+   * @param vec - The vector to copy
+   * @param array - The array to copy into
    * @param offset - Zero based index where to start writing in the array
-   * @returns the given buffer parameter
+   * @returns the given array parameter
    */
-  public static copy<T extends ArrayLike<number>>(src: IVec4, buffer: T, offset: number= 0): T {
-    buffer[offset] = src.x
-    buffer[offset + 1] = src.y
-    buffer[offset + 2] = src.z
-    buffer[offset + 3] = src.w
-    return buffer
+  public static toArray(vec: IVec4): number[]
+  public static toArray<T>(vec: IVec4, array: T, offset?: number): T
+  public static toArray(vec: IVec4, array: number[] = [], offset: number = 0): number[] {
+    array[offset] = vec.x
+    array[offset + 1] = vec.y
+    array[offset + 2] = vec.z
+    array[offset + 3] = vec.w
+    return array
   }
 
   /**
@@ -438,7 +451,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Normalizes `this` value.
    * @returns `this` instance for chaining
    */
-  public normalize(): Vec4 {
+  public normalize(): this {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -457,7 +470,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static normalize<T extends IVec4 = Vec4>(vec: IVec4, out?: T|Vec4): T|Vec4 {
+  public static normalize(vec: IVec4): Vec4
+  public static normalize<T>(vec: IVec4, out: T): T & IVec4
+  public static normalize(vec: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = vec.x
     const y = vec.y
@@ -475,7 +490,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Inverts this value.
    * @returns `this` instance for chaining
    */
-  public invert(): Vec4 {
+  public invert(): this {
     this.x = 1.0 / this.x
     this.y = 1.0 / this.y
     this.z = 1.0 / this.z
@@ -489,7 +504,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static invert<T extends IVec4 = Vec4>(vec: IVec4, out?: T|Vec4): T|Vec4 {
+  public static invert(vec: IVec4): Vec4
+  public static invert<T>(vec: IVec4, out: T): T & IVec4
+  public static invert(vec: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = 1.0 / vec.x
     out.y = 1.0 / vec.y
@@ -502,7 +519,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Negates the components of `this` vector. Applies the result to `this`
    * @returns `this` instance for chaining
    */
-  public negate(): Vec4 {
+  public negate(): this {
     this.x = -this.x
     this.y = -this.y
     this.z = -this.z
@@ -516,7 +533,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static negate<T extends IVec4 = Vec4>(vec: IVec4, out?: T|Vec4): T|Vec4 {
+  public static negate(vec: IVec4): Vec4
+  public static negate<T>(vec: IVec4, out: T): T & IVec4
+  public static negate(vec: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = -vec.x
     out.y = -vec.y
@@ -530,7 +549,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param other - The value to add
    * @returns `this` instance for chaining
    */
-  public add(other: IVec4): Vec4 {
+  public add(other: IVec4): this {
     this.x += other.x
     this.y += other.y
     this.z += other.z
@@ -545,7 +564,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static add<T extends IVec4 = Vec4>(vecA: IVec4, vecB: IVec4, out?: T|Vec4): T|Vec4 {
+  public static add(vecA: IVec4, vecB: IVec4): Vec4
+  public static add<T>(vecA: IVec4, vecB: IVec4, out: T): T & IVec4
+  public static add(vecA: IVec4, vecB: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vecA.x + vecB.x
     out.y = vecA.y + vecB.y
@@ -559,7 +580,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param scalar - The value to add
    * @returns `this` instance for chaining
    */
-  public addScalar(scalar: number): Vec4 {
+  public addScalar(scalar: number): this {
     this.x += scalar
     this.y += scalar
     this.z += scalar
@@ -574,7 +595,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static addScalar<T extends IVec4 = Vec4>(vec: IVec4, scalar: number, out?: T|Vec4): T|Vec4 {
+  public static addScalar(vec: IVec4, scalar: number): Vec4
+  public static addScalar<T>(vec: IVec4, scalar: number, out: T): T & IVec4
+  public static addScalar(vec: IVec4, scalar: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vec.x + scalar
     out.y = vec.y + scalar
@@ -588,7 +611,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param other - The value to add
    * @returns `this` instance for chaining
    */
-  public addScaled(other: IVec4, scale: number): Vec4 {
+  public addScaled(other: IVec4, scale: number): this {
     this.x += other.x * scale
     this.y += other.y * scale
     this.z += other.z * scale
@@ -597,11 +620,25 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Performs the calculation `v1 + v2 * scale`
+   * @returns The given `out` parameter or a new instance.
+   */
+  public static addScaled(v1: IVec4, v2: IVec4, scale: number): Vec4
+  public static addScaled<T>(v1: IVec4, v2: IVec4, scale: number, out: T): T & IVec4
+  public static addScaled(v1: IVec4, v2: IVec4, scale: number, out?: IVec4): IVec4 {
+    out = out || new Vec4()
+    out.x = v1.x + v2.x * scale
+    out.y = v1.y + v2.y * scale
+    out.z = v1.z + v2.z * scale
+    out.w = v1.w + v2.w * scale
+    return out
+  }
+  /**
    * Performs the calculation `this -= other`
    * @param other - The value to subtract
    * @returns `this` instance for chaining
    */
-  public subtract(other: IVec4): Vec4 {
+  public subtract(other: IVec4): this {
     this.x -= other.x
     this.y -= other.y
     this.z -= other.z
@@ -616,7 +653,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static subtract<T extends IVec4 = Vec4>(vecA: IVec4, vecB: IVec4, out?: T|Vec4): T|Vec4 {
+  public static subtract(vecA: IVec4, vecB: IVec4): Vec4
+  public static subtract<T>(vecA: IVec4, vecB: IVec4, out: T): T & IVec4
+  public static subtract(vecA: IVec4, vecB: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vecA.x - vecB.x
     out.y = vecA.y - vecB.y
@@ -630,7 +669,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param scalar - The value to subtract
    * @returns `this` instance for chaining
    */
-  public subtractScalar(scalar: number): Vec4 {
+  public subtractScalar(scalar: number): this {
     this.x -= scalar
     this.y -= scalar
     this.z -= scalar
@@ -645,7 +684,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static subtractScalar<T extends IVec4 = Vec4>(vec: IVec4, scalar: number, out?: T|Vec4): T|Vec4 {
+  public static subtractScalar(vec: IVec4, scalar: number): Vec4
+  public static subtractScalar<T>(vec: IVec4, scalar: number, out: T): T & IVec4
+  public static subtractScalar(vec: IVec4, scalar: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vec.x - scalar
     out.y = vec.y - scalar
@@ -660,7 +701,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param scale - The value to multoply to `other`
    * @returns `this` instance for chaining
    */
-  public subtractScaled(other: IVec4, scale: number): Vec4 {
+  public subtractScaled(other: IVec4, scale: number): this {
     this.x -= other.x * scale
     this.y -= other.y * scale
     this.z -= other.z * scale
@@ -673,7 +714,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param other - The value to multiply
    * @returns `this` instance for chaining
    */
-  public multiply(other: IVec4): Vec4 {
+  public multiply(other: IVec4): this {
     this.x *= other.x
     this.y *= other.y
     this.z *= other.z
@@ -688,7 +729,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static multiply<T extends IVec4 = Vec4>(vecA: IVec4, vecB: IVec4, out?: T|Vec4): T|Vec4 {
+  public static multiply(vecA: IVec4, vecB: IVec4): Vec4
+  public static multiply<T>(vecA: IVec4, vecB: IVec4, out: T): T & IVec4
+  public static multiply(vecA: IVec4, vecB: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vecA.x * vecB.x
     out.y = vecA.y * vecB.y
@@ -702,7 +745,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param scalar - The value to multiply
    * @returns `this` instance for chaining
    */
-  public multiplyScalar(scalar: number): Vec4 {
+  public multiplyScalar(scalar: number): this {
     this.x *= scalar
     this.y *= scalar
     this.z *= scalar
@@ -717,7 +760,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static multiplyScalar<T extends IVec4 = Vec4>(vec: IVec4, scalar: number, out?: T|Vec4): T|Vec4 {
+  public static multiplyScalar(vec: IVec4, scalar: number): Vec4
+  public static multiplyScalar<T>(vec: IVec4, scalar: number, out: T): T & IVec4
+  public static multiplyScalar(vec: IVec4, scalar: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vec.x * scalar
     out.y = vec.y * scalar
@@ -731,7 +776,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param other - The value to divide
    * @returns `this` instance for chaining
    */
-  public divide(other: IVec4): Vec4 {
+  public divide(other: IVec4): this {
     this.x /= other.x
     this.y /= other.y
     this.z /= other.z
@@ -746,7 +791,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static divide<T extends IVec4 = Vec4>(vecA: IVec4, vecB: IVec4, out?: T|Vec4): T|Vec4 {
+  public static divide(vecA: IVec4, vecB: IVec4): Vec4
+  public static divide<T>(vecA: IVec4, vecB: IVec4, out: T): T & IVec4
+  public static divide(vecA: IVec4, vecB: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vecA.x / vecB.x
     out.y = vecA.y / vecB.y
@@ -760,7 +807,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param scalar - The value to divide
    * @returns `this` instance for chaining
    */
-  public divideScalar(scalar: number): Vec4 {
+  public divideScalar(scalar: number): this {
     scalar = 1.0 / scalar
     this.x *= scalar
     this.y *= scalar
@@ -776,7 +823,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static divideScalar<T extends IVec4 = Vec4>(vec: IVec4, scalar: number, out?: T|Vec4): T|Vec4 {
+  public static divideScalar(vec: IVec4, scalar: number): Vec4
+  public static divideScalar<T>(vec: IVec4, scalar: number, out: T): T & IVec4
+  public static divideScalar(vec: IVec4, scalar: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     scalar = 1.0 / scalar
     out.x = vec.x * scalar
@@ -792,7 +841,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param b - The value to add on top of the multiplication.
    * @returns `this` instance for chaining
    */
-  public multiplyAdd(a: IVec4, b: IVec4): Vec4 {
+  public multiplyAdd(a: IVec4, b: IVec4): this {
     this.x = this.x * a.x + b.x
     this.y = this.y * a.y + b.y
     this.z = this.z * a.z + b.z
@@ -808,7 +857,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static multiplyAdd<T extends IVec4 = Vec4>(vecA: IVec4, vecB: IVec4, add: IVec4, out?: T|Vec4): T|Vec4 {
+  public static multiplyAdd(vecA: IVec4, vecB: IVec4, add: IVec4): Vec4
+  public static multiplyAdd<T>(vecA: IVec4, vecB: IVec4, add: IVec4, out: T): T & IVec4
+  public static multiplyAdd(vecA: IVec4, vecB: IVec4, add: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vecA.x * vecB.x + add.x
     out.y = vecA.y * vecB.y + add.y
@@ -824,7 +875,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public multiplyScalarAdd<T extends IVec4 = Vec4>(mul: number, add: IVec4): T|Vec4 {
+  public multiplyScalarAdd(mul: number, add: IVec4): this {
     this.x = this.x * mul + add.x
     this.y = this.y * mul + add.y
     this.z = this.z * mul + add.z
@@ -840,7 +891,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static multiplyScalarAdd<T extends IVec4 = Vec4>(vecA: IVec4, mul: number, add: IVec4, out?: T|Vec4): T|Vec4 {
+  public static multiplyScalarAdd(vecA: IVec4, mul: number, add: IVec4): Vec4
+  public static multiplyScalarAdd<T>(vecA: IVec4, mul: number, add: IVec4, out: T): T & IVec4
+  public static multiplyScalarAdd(vecA: IVec4, mul: number, add: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = vecA.x * mul + add.x
     out.y = vecA.y * mul + add.y
@@ -854,7 +907,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns `this` instance for chaining
    */
-  public transformByQuat(quat: IVec4): Vec4 {
+  public transformByQuat(quat: IVec4): this {
     const x = quat.x
     const y = quat.y
     const z = quat.z
@@ -891,7 +944,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns `this` instance for chaining
    */
-  public transformByMat4(mat: { data: number[]|Float64Array|Float32Array }): Vec4 {
+  public transformByMat4(mat: { data: number[]|Float64Array|Float32Array }): this {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -909,7 +962,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns `this` instance for chaining
    */
-  public transformByMat3(mat: { data: number[]|Float64Array|Float32Array }): Vec4 {
+  public transformByMat3(mat: { data: number[]|Float64Array|Float32Array }): this {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -926,7 +979,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns `this` instance for chaining
    */
-  public transformByMat2(mat: { data: number[]|Float64Array|Float32Array }): Vec4 {
+  public transformByMat2(mat: { data: number[]|Float64Array|Float32Array }): this {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -943,7 +996,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static clamp<T extends IVec4 = Vec4>(a: IVec4, min: IVec4, max: IVec4, out?: T|Vec4): T|Vec4 {
+  public static clamp(a: IVec4, min: IVec4, max: IVec4): Vec4
+  public static clamp<T>(a: IVec4, min: IVec4, max: IVec4, out: T): T & IVec4
+  public static clamp(a: IVec4, min: IVec4, max: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = a.x
     const y = a.y
@@ -972,7 +1027,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static clampScalar<T extends IVec4 = Vec4>(a: IVec4, min: number, max: number, out?: T|Vec4): T|Vec4 {
+  public static clampScalar(a: IVec4, min: number, max: number): Vec4
+  public static clampScalar<T>(a: IVec4, min: number, max: number, out?: T): T & IVec4
+  public static clampScalar(a: IVec4, min: number, max: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = a.x
     const y = a.y
@@ -992,7 +1049,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static min<T extends IVec4 = Vec4>(a: IVec4, b: IVec4, out?: T|Vec4): T|Vec4 {
+  public static min(a: IVec4, b: IVec4): Vec4
+  public static min<T>(a: IVec4, b: IVec4, out?: T): T & IVec4
+  public static min(a: IVec4, b: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const aX = a.x
     const aY = a.y
@@ -1016,7 +1075,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static minScalar<T extends IVec4 = Vec4>(a: IVec4, scalar: number, out?: T|Vec4): T|Vec4 {
+  public static minScalar(a: IVec4, scalar: number): Vec4
+  public static minScalar<T>(a: IVec4, scalar: number, out?: T): T & IVec4
+  public static minScalar(a: IVec4, scalar: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = a.x
     const y = a.y
@@ -1036,7 +1097,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static max<T extends IVec4 = Vec4>(a: IVec4, b: IVec4, out?: T|Vec4): T|Vec4 {
+  public static max(a: IVec4, b: IVec4): Vec4
+  public static max<T>(a: IVec4, b: IVec4, out?: T): T & IVec4
+  public static max(a: IVec4, b: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const aX = a.x
     const aY = a.y
@@ -1060,7 +1123,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static maxScalar<T extends IVec4 = Vec4>(a: IVec4, scalar: number, out?: T|Vec4): T|Vec4 {
+  public static maxScalar(a: IVec4, scalar: number): Vec4
+  public static maxScalar<T>(a: IVec4, scalar: number, out?: T): T & IVec4
+  public static maxScalar(a: IVec4, scalar: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = a.x
     const y = a.y
@@ -1081,7 +1146,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static lerp<T extends IVec4 = Vec4>(a: IVec4, b: IVec4, t: number, out?: T|Vec4): T|Vec4 {
+  public static lerp(a: IVec4, b: IVec4, t: number): Vec4
+  public static lerp<T>(a: IVec4, b: IVec4, t: number, out?: T): T & IVec4
+  public static lerp(a: IVec4, b: IVec4, t: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = a.x
     const y = a.y
@@ -1104,7 +1171,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static barycentric<T extends IVec4 = Vec4>(a: IVec4, b: IVec4, c: IVec4, t1: number, t2: number, out?: T|Vec4): T|Vec4 {
+  public static barycentric(a: IVec4, b: IVec4, c: IVec4, t1: number, t2: number): Vec4
+  public static barycentric<T>(a: IVec4, b: IVec4, c: IVec4, t1: number, t2: number, out?: T): T & IVec4
+  public static barycentric(a: IVec4, b: IVec4, c: IVec4, t1: number, t2: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     const x = a.x
     const y = a.y
@@ -1125,7 +1194,9 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param out - The value to write to.
    * @returns The given `out` parameter or a new instance.
    */
-  public static smooth<T extends IVec4 = Vec4>(a: IVec4, b: IVec4, t: number, out?: T|Vec4): T|Vec4 {
+  public static smooth(a: IVec4, b: IVec4, t: number): Vec4
+  public static smooth<T>(a: IVec4, b: IVec4, t: number, out?: T): T & IVec4
+  public static smooth(a: IVec4, b: IVec4, t: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
     t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
     t = t * t * (3 - 2 * t)
@@ -1145,7 +1216,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    *
    */
-  public static convert(data: number | number[] | IVec4): Vec4 {
+  public static convert(data: number | number[] | IVec2 | IVec3 | IVec4): Vec4 {
     if (typeof data === 'number') {
       return new Vec4(data, data, data, data)
     }
@@ -1160,8 +1231,8 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     return new Vec4(
       data.x || 0,
       data.y || 0,
-      data.z || 0,
-      data.w || 0,
+      data['z'] || 0,
+      data['w'] || 0,
     )
   }
 

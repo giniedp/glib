@@ -1,17 +1,18 @@
 import { copy } from '@gglib/core'
 import { Device } from './Device'
 import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
+import { ShaderUniformParameter } from './ShaderUniform'
 import {
   BlendState,
-  BlendStateOptions,
+  BlendStateParams,
   CullState,
-  CullStateOptions,
+  CullStateParams,
   DepthState,
-  DepthStateOptions,
+  DepthStateParams,
   OffsetState,
-  OffsetStateOptions,
+  OffsetStateParams,
   StencilState,
-  StencilStateOptions,
+  StencilStateParams,
 } from './states'
 
 /**
@@ -35,80 +36,87 @@ export interface ShaderPassOptions {
   /**
    * The cull state or a name reference
    */
-  cullState?: string|CullStateOptions,
+  cullState?: string|CullStateParams,
   /**
    * The blend state or a name reference
    */
-  blendState?: string|BlendStateOptions,
+  blendState?: string|BlendStateParams,
   /**
    * The depth state or a name reference
    */
-  depthState?: string|DepthStateOptions,
+  depthState?: string|DepthStateParams,
   /**
    * The offset state or a name reference
    */
-  offsetState?: string|OffsetStateOptions,
+  offsetState?: string|OffsetStateParams,
   /**
    * The stencil state or a name reference
    */
-  stencilState?: string|StencilStateOptions
+  stencilState?: string|StencilStateParams
 }
 
 /**
+ * Ties a `ShaderProgram` together with GPU States.
+ *
  * @public
  */
 export class ShaderPass {
   /**
+   * A symbol identifying the `ShaderPassOptions` type.
+   */
+  public static OptionsSymbol = Symbol('ShaderPassOptions')
+
+  /**
    * The graphics device
    */
-  public device: Device
+  public readonly device: Device
   /**
    * The rendering context
    */
-  public gl: WebGLRenderingContext
+  public readonly gl: WebGLRenderingContext
   /**
    * The name of the shader pass
    */
-  public name: string
+  public readonly name: string
   /**
    * Arbitrary meta data or info about the shader pass
    */
-  public meta: { [key: string]: any }
+  public readonly meta: { [key: string]: any }
   /**
-   * The shader program
+   * The shader program to be activated on `commit`
    */
-  public program: ShaderProgram
+  public readonly program: ShaderProgram
   /**
-   * The cull state required for this pass
+   * The cull state to be enabled on `commit`
    */
-  public cullState: CullStateOptions
+  public cullState: CullStateParams
   /**
-   * The blend state required for this pass
+   * The blend state to be enabled on `commit`
    */
-  public blendState: BlendStateOptions
+  public blendState: BlendStateParams
   /**
-   * The depth state required for this pass
+   * The depth state to be enabled on `commit`
    */
-  public depthState: DepthStateOptions
+  public depthState: DepthStateParams
   /**
-   * The offset state required for this pass
+   * The offset state to be enabled on `commit`
    */
-  public offsetState: OffsetStateOptions
+  public offsetState: OffsetStateParams
   /**
-   * The stencil state required for this pass
+   * The stencil state to be enabled on `commit`
    */
-  public stencilState: StencilStateOptions
+  public stencilState: StencilStateParams
 
   constructor(device: Device, options: ShaderPassOptions) {
     this.device = device
     this.gl = device.context
     this.name = options.name
     this.meta = options.meta || {}
-    this.cullState = CullState.convert(options.cullState)
-    this.blendState = BlendState.convert(options.blendState)
-    this.depthState = DepthState.convert(options.depthState)
-    this.offsetState = OffsetState.convert(options.offsetState)
-    this.stencilState = StencilState.convert(options.stencilState)
+    if (options.cullState) { this.cullState = CullState.convert(options.cullState) }
+    if (options.blendState) { this.blendState = BlendState.convert(options.blendState) }
+    if (options.depthState) { this.depthState = DepthState.convert(options.depthState) }
+    if (options.offsetState) { this.offsetState = OffsetState.convert(options.offsetState) }
+    if (options.stencilState) { this.stencilState = StencilState.convert(options.stencilState) }
     let program = options.program
     if (program instanceof ShaderProgram) {
       this.program = program
@@ -120,7 +128,7 @@ export class ShaderPass {
   /**
    * Activates any state that is enabled on this pass and commits given parameters to the programs
    */
-  public commit(parameters?: any): ShaderPass {
+  public commit(parameters?: { [key: string]: ShaderUniformParameter }): ShaderPass {
     this.program.use()
     let device = this.device
     if (this.stencilState) { device.stencilState = this.stencilState }

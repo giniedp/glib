@@ -1,35 +1,52 @@
-import { CullMode, FrontFace } from './../enums/Enums'
+import {
+  CullMode,
+  CullModeOption,
+  FrontFace,
+  FrontFaceOption,
+  nameOfFrontFace,
+  valueOfCullMode,
+  valueOfFrontFace,
+} from './../enums/Enums'
 
 import { Device } from './../Device'
+
+const optionKeys: Array<keyof CullStateParams> = ['frontFace', 'cullMode', 'culling']
+
+/**
+ * @public
+ */
+export interface CullStateParams {
+  frontFace?: FrontFace
+  cullMode?: CullMode
+  culling?: boolean
+}
 
 /**
  * @public
  */
 export interface CullStateOptions {
-  frontFace?: number
-  cullMode?: number
+  frontFace?: FrontFaceOption
+  cullMode?: CullModeOption
   culling?: boolean
 }
-
-const optionKeys: Array<keyof CullStateOptions> = ['frontFace', 'cullMode', 'culling']
 
 /**
  * @public
  */
-export class CullState implements CullStateOptions {
+export class CullState implements CullStateParams {
   public device: Device
   public gl: WebGLRenderingContext
   private frontFaceField: number = FrontFace.CounterClockWise
   private cullModeField: number = CullMode.Back
   private cullingField: boolean = false
   private hasChanged: boolean = false
-  private changes: CullStateOptions = {}
+  private changes: CullStateParams = {}
 
   public get isDirty() {
     return this.hasChanged
   }
 
-  constructor(device: Device, state?: CullStateOptions) {
+  constructor(device: Device, state?: CullStateParams) {
     this.device = device
     this.gl = device.context
     this.resolve()
@@ -49,7 +66,7 @@ export class CullState implements CullStateOptions {
   }
 
   get frontFaceName(): string {
-    return FrontFace.nameOf(this.frontFace)
+    return nameOfFrontFace(this.frontFace)
   }
 
   get frontFace(): number {
@@ -65,7 +82,7 @@ export class CullState implements CullStateOptions {
   }
 
   get cullModeName(): string {
-    return CullMode.nameOf(this.cullMode)
+    return nameOfFrontFace(this.cullMode)
   }
 
   get cullMode(): number {
@@ -80,14 +97,14 @@ export class CullState implements CullStateOptions {
     }
   }
 
-  public assign(state: CullStateOptions): CullState {
+  public assign(state: CullStateParams): CullState {
     for (let key of optionKeys) {
       if (state.hasOwnProperty(key)) { this[key] = state[key] }
     }
     return this
   }
 
-  public commit(state?: CullStateOptions): CullState {
+  public commit(state?: CullStateParams): CullState {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
     let gl = this.gl
@@ -114,7 +131,7 @@ export class CullState implements CullStateOptions {
     return this
   }
 
-  public copy(out: any= {}): CullStateOptions {
+  public copy(out: any= {}): CullStateParams {
     for (let key of optionKeys) { out[key] = this[key] }
     return out
   }
@@ -124,48 +141,49 @@ export class CullState implements CullStateOptions {
     for (let key of optionKeys) { this.changes[key] = undefined }
   }
 
-  public static convert(state: any): CullStateOptions {
+  public static convert(state: string | CullStateOptions): CullStateParams {
     if (typeof state === 'string') {
-      state = CullState[state]
+      return CullState[state] ? {...CullState[state]} : null
     }
     if (!state) {
-      return state
+      return null
     }
+
     if (state.cullMode) {
-      state.cullMode = CullMode[state.cullMode]
+      state.cullMode = valueOfCullMode(state.cullMode)
     }
     if (state.frontFace) {
-      state.frontFace = FrontFace[state.frontFace]
+      state.frontFace = valueOfFrontFace(state.frontFace)
     }
-    return state
+    return state as CullStateParams
   }
 
-  public static resolve(gl: any, out: any= {}): CullStateOptions {
+  public static resolve(gl: any, out: any= {}): CullStateParams {
     out.frontFace = gl.getParameter(gl.FRONT_FACE)
     out.culling = gl.getParameter(gl.CULL_FACE)
     out.cullMode = gl.getParameter(gl.CULL_FACE_MODE)
     return out
   }
 
-  public static Default = Object.freeze({
+  public static Default = Object.freeze<CullStateParams>({
     culling: false,
     cullMode: CullMode.Back,
-    frontFace: FrontFace.CounterClockWise,
+    frontFace: FrontFace.ClockWise,
   })
 
-  public static CullNone = Object.freeze({
+  public static CullNone = Object.freeze<CullStateParams>({
     culling: false,
     cullMode: CullMode.Back,
-    frontFace: FrontFace.CounterClockWise,
+    frontFace: FrontFace.ClockWise,
   })
 
-  public static CullClockWise = Object.freeze({
+  public static CullClockWise = Object.freeze<CullStateParams>({
     culling: true,
     cullMode: CullMode.Back,
     frontFace: FrontFace.CounterClockWise,
   })
 
-  public static CullCounterClockWise = Object.freeze({
+  public static CullCounterClockWise = Object.freeze<CullStateParams>({
     culling: true,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,

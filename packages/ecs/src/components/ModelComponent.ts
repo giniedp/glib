@@ -39,7 +39,7 @@ export class ModelComponent implements Component {
     for (const mesh of this.model.meshes) {
       result.add({
         drawable: mesh,
-        effect: this.model.materials[mesh.materialId],
+        material: this.model.materials[mesh.materialId],
         world: this.world,
         data: null,
       })

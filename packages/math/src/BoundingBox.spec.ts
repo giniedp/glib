@@ -161,13 +161,13 @@ describe('BoundingBox', () => {
 
   describe('#copy', () => {
     it ('copies components into array', () => {
-      expect(new BoundingBox(1, 2, 3, 4, 5, 6).copy([])).toEqual([1, 2, 3, 4, 5, 6])
+      expect(new BoundingBox(1, 2, 3, 4, 5, 6).toArray([])).toEqual([1, 2, 3, 4, 5, 6])
     })
   })
 
   describe('.copy', () => {
     it ('copies components into array', () => {
-      expect(BoundingBox.copy(new BoundingBox(1, 2, 3, 4, 5, 6), [])).toEqual([1, 2, 3, 4, 5, 6])
+      expect(BoundingBox.toArray(new BoundingBox(1, 2, 3, 4, 5, 6), [])).toEqual([1, 2, 3, 4, 5, 6])
     })
   })
 
@@ -211,7 +211,7 @@ describe('BoundingBox', () => {
 
   describe('.copy', () => {
     it ('copies components into array', () => {
-      expect(BoundingBox.copy(new BoundingBox(1, 2, 3, 4, 5, 6), [])).toEqual([1, 2, 3, 4, 5, 6])
+      expect(BoundingBox.toArray(new BoundingBox(1, 2, 3, 4, 5, 6), [])).toEqual([1, 2, 3, 4, 5, 6])
     })
   })
 

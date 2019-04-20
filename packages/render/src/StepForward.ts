@@ -1,4 +1,4 @@
-import { BlendState, CullState, DepthState, ModelMesh, ShaderEffect, ShaderTechnique } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, ShaderTechnique } from '@gglib/graphics'
 import { Binder } from './Binder'
 import { Manager } from './Manager'
 import { DrawableData, Step } from './Types'
@@ -39,7 +39,7 @@ export class StepForward implements Step {
   }
 
   public renderItem(item: DrawableData, binder: Binder) {
-    const effect = item.effect
+    const effect = item.material.effect
     const drawable = item.drawable
     const technique: ShaderTechnique = effect.technique
     for (const pass of technique.passes) {

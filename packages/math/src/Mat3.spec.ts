@@ -342,13 +342,13 @@ describe('Mat3', () => {
     })
   })
 
-  describe('copyTo', () => {
-    it('copies to array', () => {
+  describe('toArray', () => {
+    it('creates an array', () => {
       const result = new Mat3().init(
         1, 2, 3,
         4, 5, 6,
         7, 8, 9,
-      ).copyTo([])
+      ).toArray()
       expect(result).toEqual([
         1, 2, 3,
         4, 5, 6,
@@ -360,7 +360,7 @@ describe('Mat3', () => {
         1, 2, 3,
         4, 5, 6,
         7, 8, 9,
-      ).copyTo([], 4)
+      ).toArray([], 4)
       expect(result).toEqual([
         undefined, undefined, undefined, undefined,
         1, 2, 3,

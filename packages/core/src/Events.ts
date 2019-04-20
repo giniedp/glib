@@ -13,8 +13,11 @@ interface EventRegistry {
 export type Callback = (...args: any[]) => void
 
 /**
+ * Base class with an event system
+ *
+ * @remarks
  * Implements logic for binding and unbinding methods to and from events.
- * The code is taken from https://github.com/jashkenas/backbone
+ * The code is taken from the {@link https://github.com/jashkenas/backbone | Backbone} project
  *
  * @public
  */
@@ -23,12 +26,15 @@ export class Events {
   private events: { [key: string]: EventRegistry[] } = {}
 
   /**
-   * Bind an event to a `callback` function. Passing `"all"` will bind the callback to all events fired.
+   * Bind an event to a `callback` function.
+   *
+   * @remarks
+   * Passing `"all"` will bind the callback to all events fired.
    * @param name - The name of the event
    * @param callback - The function to call when the even fires
    * @param context - The value of 'this' inside the callback
    */
-  public on(name: string, callback: Callback, context?: any) {
+  public on(name: 'all'|string, callback: Callback, context?: any) {
     this.events = this.events || {}
     const events = this.events[name] || []
     this.events[name] = events
@@ -42,7 +48,8 @@ export class Events {
   }
 
   /**
-   * Bind an event to only be triggered a single time. After the first time the callback is invoked, it will be removed.
+   * Bind an event to only be triggered a single time.
+   *
    * @param name - The name of the event
    * @param callback - The function to call when the even fires
    * @param context - The value of 'this' inside the callback
@@ -61,10 +68,12 @@ export class Events {
   }
 
   /**
-   * Remove one or many callbacks. If `context` is null, removes all
-   * callbacks with that function. If `callback` is null, removes all
-   * callbacks for the event. If `name` is null, removes all bound
-   * callbacks for all events.
+   * Remove one or many callbacks.
+   *
+   * @remarks
+   * - If `context` is null, removes all callbacks with that function.
+   * - If `callback` is null, removes all callbacks for the event.
+   * - If `name` is null, removes all bound callbacks for all events.
    *
    * @param name - The name of the event to unbind from
    * @param callback - The function to unbind
@@ -93,8 +102,10 @@ export class Events {
   }
 
   /**
-   * Trigger one or many events, firing all bound callbacks. Callbacks are
-   * passed the same arguments as `trigger` is, apart from the event name
+   * Trigger one or many events, firing all bound callbacks.
+   *
+   * @remarks
+   * Callbacks are passed the same arguments as `trigger` is, apart from the event name
    * (unless you're listening on `"all"`, which will cause your callback to
    * receive the true name of the event as the first argument).
    *

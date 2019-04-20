@@ -1,11 +1,17 @@
 import {
   Blend,
   BlendFunction,
+  BlendFunctionName,
+  BlendName,
+  nameOfBlend,
+  nameOfBlendFunction,
+  valueOfBlend,
+  valueOfBlendFunction,
 } from './../enums'
 
 import { Device } from './../Device'
 
-let propertyKeys = [
+const propertyKeys: Array<keyof BlendStateParams> = [
   'colorBlendFunction',
   'alphaBlendFunction',
   'colorSrcBlend',
@@ -20,15 +26,17 @@ let propertyKeys = [
 ]
 
 /**
+ * Options for {@link BlendState.convert}
+ *
  * @public
  */
 export interface BlendStateOptions {
-  colorBlendFunction?: number
-  alphaBlendFunction?: number
-  colorSrcBlend?: number
-  alphaSrcBlend?: number
-  colorDstBlend?: number
-  alphaDstBlend?: number
+  colorBlendFunction?: BlendFunction | BlendFunctionName
+  alphaBlendFunction?: BlendFunction | BlendFunctionName
+  colorSrcBlend?: Blend | BlendName
+  alphaSrcBlend?: Blend | BlendName
+  colorDstBlend?: Blend | BlendName
+  alphaDstBlend?: Blend | BlendName
   constantR?: number
   constantG?: number
   constantB?: number
@@ -37,47 +45,78 @@ export interface BlendStateOptions {
 }
 
 /**
+ * BlendState parameters that will be sent to the GPU
+ *
  * @public
  */
-export class BlendState implements BlendStateOptions {
+export interface BlendStateParams {
+  colorBlendFunction?: BlendFunction
+  alphaBlendFunction?: BlendFunction
+  colorSrcBlend?: Blend
+  alphaSrcBlend?: Blend
+  colorDstBlend?: Blend
+  alphaDstBlend?: Blend
+  constantR?: number
+  constantG?: number
+  constantB?: number
+  constantA?: number
+  enabled?: boolean
+}
+
+/**
+ *
+ * @public
+ */
+export class BlendState implements BlendStateParams {
   public device: Device
-  public gl: WebGLRenderingContext
-  private $colorBlendFunction: number = BlendFunction.Add
-  private $alphaBlendFunction: number = BlendFunction.Add
-  private $colorSrcBlend: number = Blend.One
-  private $alphaSrcBlend: number = Blend.One
-  private $colorDstBlend: number = Blend.Zero
-  private $alphaDstBlend: number = Blend.Zero
+  private $colorBlendFunction = BlendFunction.Add
+  private $alphaBlendFunction = BlendFunction.Add
+  private $colorSrcBlend = Blend.One
+  private $alphaSrcBlend = Blend.One
+  private $colorDstBlend = Blend.Zero
+  private $alphaDstBlend = Blend.Zero
   private $constantR: number = 0
   private $constantG: number = 0
   private $constantB: number = 0
   private $constantA: number = 0
   private $enabled: boolean = false
   private hasChanged: boolean = false
-  private changes: BlendStateOptions = {}
+  private changes: BlendStateParams = {}
 
-  public get isDirty() {
-    return this.hasChanged
-  }
-
-  constructor(device: Device, state?: BlendStateOptions) {
+  constructor(device: Device, state?: BlendStateParams) {
     this.device = device
-    this.gl = device.context
     this.resolve()
     if (state) {
       this.assign(state)
     }
   }
 
-  get colorBlendFunctionName(): string {
-    return BlendFunction.nameOf(this.$colorBlendFunction)
+  /**
+   * Indicates whether the state has been changed but not committed to the GPU
+   */
+  public get isDirty() {
+    return this.hasChanged
   }
 
-  get colorBlendFunction(): number {
+  private get gl() {
+    return this.device.context
+  }
+
+  /**
+   * @internal
+   */
+  public get colorBlendFunctionName(): string {
+    return nameOfBlendFunction(this.$colorBlendFunction)
+  }
+
+  /**
+   *
+   */
+  public get colorBlendFunction(): BlendFunction {
     return this.$colorBlendFunction
   }
 
-  set colorBlendFunction(value: number) {
+  public set colorBlendFunction(value: BlendFunction) {
     if (this.$colorBlendFunction !== value) {
       this.$colorBlendFunction = value
       this.changes.colorBlendFunction = value
@@ -85,15 +124,18 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get alphaBlendFunctionName(): string {
-    return BlendFunction.nameOf(this.$alphaBlendFunction)
+  /**
+   * @internal
+   */
+  public get alphaBlendFunctionName(): string {
+    return nameOfBlendFunction(this.$alphaBlendFunction)
   }
 
-  get alphaBlendFunction(): number {
+  public get alphaBlendFunction(): BlendFunction {
     return this.$alphaBlendFunction
   }
 
-  set alphaBlendFunction(value: number) {
+  public set alphaBlendFunction(value: BlendFunction) {
     if (this.$alphaBlendFunction !== value) {
       this.$alphaBlendFunction = value
       this.changes.alphaBlendFunction = value
@@ -101,15 +143,18 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get colorSrcBlendName(): string {
-    return Blend.nameOf(this.$colorSrcBlend)
+  /**
+   * @internal
+   */
+  public get colorSrcBlendName(): string {
+    return nameOfBlend(this.$colorSrcBlend)
   }
 
-  get colorSrcBlend(): number {
+  public get colorSrcBlend(): Blend {
     return this.$colorSrcBlend
   }
 
-  set colorSrcBlend(value: number) {
+  public set colorSrcBlend(value: Blend) {
     if (this.$colorSrcBlend !== value) {
       this.$colorSrcBlend = value
       this.changes.colorSrcBlend = value
@@ -117,15 +162,18 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get alphaSrcBlendName(): string {
-    return Blend.nameOf(this.$alphaSrcBlend)
+  /**
+   * @internal
+   */
+  public get alphaSrcBlendName(): string {
+    return nameOfBlend(this.$alphaSrcBlend)
   }
 
-  get alphaSrcBlend(): number {
+  public get alphaSrcBlend(): Blend {
     return this.$alphaSrcBlend
   }
 
-  set alphaSrcBlend(value: number) {
+  public set alphaSrcBlend(value: Blend) {
     if (this.$alphaSrcBlend !== value) {
       this.$alphaSrcBlend = value
       this.changes.alphaSrcBlend = value
@@ -133,15 +181,18 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get colorDstBlendName(): string {
-    return Blend.nameOf(this.$colorDstBlend)
+  /**
+   * @internal
+   */
+  public get colorDstBlendName(): string {
+    return nameOfBlend(this.$colorDstBlend)
   }
 
-  get colorDstBlend(): number {
+  public get colorDstBlend(): Blend {
     return this.$colorDstBlend
   }
 
-  set colorDstBlend(value: number) {
+  public set colorDstBlend(value: Blend) {
     if (this.$colorDstBlend !== value) {
       this.$colorDstBlend = value
       this.changes.colorDstBlend = value
@@ -149,15 +200,18 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  get alphaDstBlendName(): string {
-    return Blend.nameOf(this.$alphaDstBlend)
+  /**
+   * @internal
+   */
+  public get alphaDstBlendName(): string {
+    return nameOfBlend(this.$alphaDstBlend)
   }
 
-  get alphaDstBlend(): number {
+  public get alphaDstBlend(): Blend {
     return this.$alphaDstBlend
   }
 
-  set alphaDstBlend(value: number) {
+  public set alphaDstBlend(value: Blend) {
     if (this.$alphaDstBlend !== value) {
       this.$alphaDstBlend = value
       this.changes.alphaDstBlend = value
@@ -225,7 +279,7 @@ export class BlendState implements BlendStateOptions {
     }
   }
 
-  public assign(state: BlendStateOptions= {}): BlendState {
+  public assign(state: BlendStateParams= {}): BlendState {
     for (let key of propertyKeys) {
       if (state.hasOwnProperty(key)) {
         this[key] = state[key]
@@ -234,7 +288,7 @@ export class BlendState implements BlendStateOptions {
     return this
   }
 
-  public commit(state?: BlendStateOptions): BlendState {
+  public commit(state?: BlendStateParams): BlendState {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
     let gl = this.gl
@@ -267,7 +321,7 @@ export class BlendState implements BlendStateOptions {
     return this
   }
 
-  public copy(out: any= {}): BlendStateOptions {
+  public copy(out: any= {}): BlendStateParams {
     for (let key of propertyKeys) { out[key] = this[key] }
     return out
   }
@@ -284,7 +338,7 @@ export class BlendState implements BlendStateOptions {
     for (let key of propertyKeys) { this.changes[key] = undefined }
   }
 
-  public static resolve(gl: any, out: any= {}): BlendStateOptions {
+  public static resolve(gl: any, out: BlendStateParams= {}): BlendStateParams {
     out.colorBlendFunction = gl.getParameter(gl.BLEND_EQUATION_RGB)
     out.alphaBlendFunction = gl.getParameter(gl.BLEND_EQUATION_ALPHA)
     out.colorSrcBlend = gl.getParameter(gl.BLEND_SRC_RGB)
@@ -301,35 +355,36 @@ export class BlendState implements BlendStateOptions {
     return out
   }
 
-  public static convert(state: any): BlendStateOptions {
+  public static convert(state: string | BlendStateOptions): BlendStateParams {
     if (typeof state === 'string') {
-      state = BlendState[state]
+      return BlendState[state] ? {...BlendState[state]} : null
     }
     if (!state) {
-      return state
+      return null
     }
+
     if (state.colorBlendFunction) {
-      state.colorBlendFunction = BlendFunction[state.colorBlendFunction]
+      state.colorBlendFunction = valueOfBlendFunction(state.colorBlendFunction)
     }
     if (state.alphaBlendFunction) {
-      state.alphaBlendFunction = BlendFunction[state.alphaBlendFunction]
+      state.alphaBlendFunction = valueOfBlendFunction(state.alphaBlendFunction)
     }
     if (state.colorSrcBlend) {
-      state.colorSrcBlend = Blend[state.colorSrcBlend]
+      state.colorSrcBlend = valueOfBlend(state.colorSrcBlend)
     }
     if (state.alphaSrcBlend) {
-      state.alphaSrcBlend = Blend[state.alphaSrcBlend]
+      state.alphaSrcBlend = valueOfBlend(state.alphaSrcBlend)
     }
     if (state.colorDstBlend) {
-      state.colorDstBlend = Blend[state.colorDstBlend]
+      state.colorDstBlend = valueOfBlend(state.colorDstBlend)
     }
     if (state.alphaDstBlend) {
-      state.alphaDstBlend = Blend[state.alphaDstBlend]
+      state.alphaDstBlend = valueOfBlend(state.alphaDstBlend)
     }
-    return state
+    return state as BlendStateParams
   }
 
-  public static Default = Object.freeze({
+  public static Default = Object.freeze<BlendStateParams>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -345,7 +400,7 @@ export class BlendState implements BlendStateOptions {
     enabled: false,
   })
 
-  public static Additive = Object.freeze({
+  public static Additive = Object.freeze<BlendStateParams>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -361,7 +416,7 @@ export class BlendState implements BlendStateOptions {
     enabled: true,
   })
 
-  public static AlphaBlend = Object.freeze({
+  public static AlphaBlend = Object.freeze<BlendStateParams>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -378,7 +433,7 @@ export class BlendState implements BlendStateOptions {
     enabled: true,
   })
 
-  public static NonPremultiplied = Object.freeze({
+  public static NonPremultiplied = Object.freeze<BlendStateParams>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 

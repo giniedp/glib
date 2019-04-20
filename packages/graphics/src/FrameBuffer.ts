@@ -6,7 +6,13 @@ import { Texture } from './Texture'
  * @public
  */
 export interface FrameBufferOptions {
+  /**
+   *
+   */
   textures?: Texture[],
+  /**
+   *
+   */
   depthBuffer?: DepthBuffer,
 }
 

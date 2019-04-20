@@ -1,4 +1,6 @@
 /**
+ * Removes leading and trailing spaces of a string
+ *
  * @public
  */
 export function trim(value: string): string {
@@ -6,6 +8,8 @@ export function trim(value: string): string {
 }
 
 /**
+ * Splits a string into lines
+ *
  * @public
  */
 export function getLines(value: string): string[] {
@@ -13,6 +17,8 @@ export function getLines(value: string): string[] {
 }
 
 /**
+ * Checks whether a value is a string
+ *
  * @public
  */
 export function isString(value: any): boolean {

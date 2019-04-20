@@ -5,15 +5,16 @@ const del = require('del')
 const path = require('path')
 const glob = require('glob')
 const gulp = require('gulp')
+const notify = require('gulp-notify')
 const shell = require('shelljs')
 const rollup = require('rollup')
 const through = require('through-gulp')
 
 const dstDir = path.join(__dirname, 'dist')
 const srcDir = path.join(__dirname, 'packages')
+const docDir = path.join(dstDir, 'doc')
 
 const projectName = 'gglib'
-const modules = ['bundles', 'esm5', 'esm2015', 'typings']
 const packages = (() => {
   return glob
     .sync(path.join(srcDir, '*'))
@@ -62,26 +63,24 @@ gulp.task('clean', () => del(dstDir))
 gulp.task('build:tsc', ['clean'], (cb) => {
   shell
     .exec('tsc -p packages/tsconfig.json', { async: true })
-    .on('exit', (code) => cb(code === 0 ? null : code))
-})
-
-gulp.task('build:esm5', ['clean'], (cb) => {
-  shell
-    .exec('tsc -p packages/tsconfig.esm5.json', { async: true })
-    .on('exit', (code) => cb(code === 0 ? null : code))
-})
-
-gulp.task('build:esm2015', ['clean'], (cb) => {
-  shell
-    .exec('tsc -p packages/tsconfig.esm2015.json', { async: true })
-    .on('exit', (code) => cb(code === 0 ? null : code))
+    .on('exit', (code) => {
+      if (code === 0) {
+        cb()
+      } else {
+        notify.onError({
+          title: 'build:tsc',
+          message: `Error Code: ${code}`
+        })(new Error(`Error Code: ${code}`));
+        cb(code)
+      }
+    })
 })
 
 const rollupTasks = []
 function createRollupTask(pkgName) {
   const taskName = `build:rollup:${pkgName}`
   rollupTasks.push(taskName)
-  gulp.task(taskName, ['build:esm5'], () => {
+  gulp.task(taskName, ['build:tsc'], () => {
     const alias = require('rollup-plugin-alias')
     const resolve = require('rollup-plugin-node-resolve')
     const sourcemaps = require('rollup-plugin-sourcemaps')
@@ -97,12 +96,12 @@ function createRollupTask(pkgName) {
       if (pkgName !== projectName) {
         globals[`@gglib/${name}`] = moduleName(name)
       }
-      aliase[`@gglib/${name}`] = path.join(dstDir, 'esm5', name, 'index.js')
+      aliase[`@gglib/${name}`] = path.join(dstDir, 'packages', name, 'index.js')
     }
 
     return rollup.rollup({
       amd: {id: `@gglib/${pkgName}`},
-      input: path.join(dstDir, 'esm5', pkgName, 'index.js'),
+      input: path.join(dstDir, 'packages', pkgName, 'index.js'),
       onwarn: (warning, warn) => {
         if (warning.code === 'THIS_IS_UNDEFINED') {return}
         warn(warning);
@@ -114,7 +113,7 @@ function createRollupTask(pkgName) {
       return bundle.write({
         format: 'umd',
         sourcemap: true,
-        file: path.join(dstDir, 'bundles', pkgName, pkgName + '.umd.js'),
+        file: path.join(dstDir, 'packages', pkgName, 'bundles', pkgName + '.umd.js'),
         name: moduleName(pkgName),
         globals: globals,
         exports: 'named',
@@ -126,47 +125,24 @@ packages.forEach(createRollupTask)
 
 gulp.task('build:rollup', rollupTasks)
 
-gulp.task('build:typings:copy', ['build:esm2015'], () => {
+gulp.task('build:typings', ['build:tsc'], (done) => {
+  const parent = path.join(dstDir, 'packages')
   return gulp
-    .src(path.join(dstDir, 'esm2015', '**', '*.d.ts'))
-    .pipe(gulp.dest(path.join(dstDir, 'typings', projectName)))
-})
-gulp.task('build:typings', ['build:typings:copy'], () => {
-  const root = path.join(dstDir, 'typings', projectName)
-  return gulp
-    .src(path.join(root, '**', '*.d.ts'))
+    .src(path.join(parent, '**', '*.d.ts'))
     .pipe(through(function(file, enc, cb) {
       const content = file.contents.toString().replace(/^import (.*) from '(@gglib)\/(.*)'/gm, (match, what, _, pkg) => {
-        pkg = path.relative(path.dirname(file.path), path.join(root, pkg))
+        pkg = path.relative(path.dirname(file.path), path.join(parent, pkg))
         return `import ${what} from '${pkg}'`
       })
       file.contents = new Buffer(content)
       cb(null, file)
     }))
-    .pipe(gulp.dest(root))
+    .on('error', (error) => done(error))
+    .pipe(gulp.dest(path.join(parent, projectName, 'src')))
+    .on('end’', () => done())
 })
 
-const mergeTasks = []
-function createMergeTask(pName, mName) {
-  const taskName = `build:${mName}:${pName}`
-  mergeTasks.push(taskName)
-  gulp.task(taskName, ['build:tsc', 'build:esm5', 'build:esm2015', 'build:rollup', 'build:typings'], () => {
-    return gulp
-      .src(path.join(dstDir, mName, pName, '**', '*'))
-      .pipe(gulp.dest(path.join(dstDir, 'packages', pName, mName)))
-  })
-}
-for (const m of modules) {
-  for (const p of packages) {
-    if (p === projectName && m !== 'bundles' && m !== 'typings') {
-      // dont compile esm5 and esm2015 for gglib package
-      continue
-    }
-    createMergeTask(p, m)
-  }
-}
-
-gulp.task('build', mergeTasks, () => {
+gulp.task('build', ['build:tsc', 'build:rollup', 'build:typings'], () => {
   packages.forEach((pkg) => {
     const pkgDir = path.join(dstDir, 'packages', pkg);
     const pkgPath = path.join(pkgDir, 'package.json')
@@ -174,8 +150,9 @@ gulp.task('build', mergeTasks, () => {
     const readmePath =  path.join(pkgDir, 'README.md')
 
     // create missing files
-    fs.writeFileSync(pkgPath, '')
-    fs.writeFileSync(readmePath, '')
+    fs.writeFileSync(pkgPath, '')           // package.json
+    fs.writeFileSync(readmePath, '')        // README.md
+    fs.mkdirSync(path.join(pkgDir, 'doc'))  // doc
 
     // generate pkgJson defintion
     const pkgDef = {
@@ -187,9 +164,8 @@ gulp.task('build', mergeTasks, () => {
       author: pkgJson.author,
       license: pkgJson.license,
       main: `./bundles/${pkg}.umd.js`,
-      module: './esm5/index.js',
-      es2015: './esm2015/index.js',
-      typings: './esm2015/index.d.ts',
+      module: './index.js',
+      typings: './index.d.ts',
       files: glob
         .sync(path.join(pkgDir, '*'))
         .map((it) => it.replace(pkgDir + '/', '')),
@@ -201,7 +177,7 @@ gulp.task('build', mergeTasks, () => {
     if (pkg === projectName) {
       delete pkgDef.es2015
       pkgDef.module = pkgDef.main
-      pkgDef.typings = './typings/gglib/index.d.ts'
+      pkgDef.typings = './src/gglib/index.d.ts'
       pkgDef.description = 'Standalone bundle of the [G]glib project'
     } else {
       findPeers(pkg).forEach((it) => {
@@ -213,11 +189,9 @@ gulp.task('build', mergeTasks, () => {
     fs.writeFileSync(pkgPath, JSON.stringify(pkgDef, null, 2))
     fs.writeFileSync(readmePath, compileReadme(pkg, pkgDef))
   })
-
-  modules.forEach((name) => del(path.join(dstDir, name)))
 })
 
-gulp.task('publish', ['build'], () => {
+gulp.task('publish', ['build', 'api:json'], () => {
   packages.forEach((name) => {
     shell.exec(`npm publish ./dist/packages/${name} --access=public`, { async: true })
   })
@@ -229,27 +203,72 @@ packages.forEach((pkg) => {
   apiTasks.push(taskName)
   gulp.task(taskName, ['build'], () => {
     const ae = require('@microsoft/api-extractor')
-
-    const config = {
+    new ae.Extractor({
       compiler: {
         configType: 'tsconfig',
-        rootFolder: path.join(process.cwd(), 'packages')
+        rootFolder: srcDir
       },
       project: {
-        entryPointSourceFile: `../dist/packages/${pkg}/index.d.ts`
+        entryPointSourceFile: path.join(dstDir, 'packages', pkg, 'index.d.ts')
       },
       apiReviewFile: {
         enabled: false
       },
       apiJsonFile: {
         enabled: true,
-        outputFolder: `../dist/doc/${pkg}`
+        outputFolder: path.join(dstDir, 'packages', pkg, 'doc')
       }
-    };
-    new ae.Extractor(config, {
+    }, {
       localBuild: true,
-    }).analyzeProject();
+    }).processProject();
   })
 })
 
-gulp.task('api', apiTasks)
+gulp.task('api:json', apiTasks, (done) => {
+  return gulp
+    .src(packages.map((name) => path.join(dstDir, 'packages', name, 'doc', '*.api.json')))
+    .pipe(gulp.dest(path.join(docDir, 'input')))
+    .on('error', (error) => done(error))
+    .on('end’', () => done())
+})
+
+gulp.task('api:markdown', ['api:json'], (cb) => {
+  shell
+    .exec('cd dist/doc && mkdir -p markdown && api-documenter markdown', { async: true })
+    .on('exit', (code) => cb(code === 0 ? null : code))
+})
+
+gulp.task('watch:docs', [], () => {
+  gulp.watch(path.join(srcDir, '**', '*.ts'), ['api:json'])
+  gulp.start('api:json')
+})
+
+gulp.task('watch', [], () => {
+  gulp.watch(path.join(srcDir, '**', '*.ts'), ['build'])
+  gulp.start('build')
+})
+
+gulp.task('generate:enums', (done) => {
+  return gulp
+    .src('tools/enums.json')
+    .pipe(require('./tools/gulp/plugins/gglib-enums.js')({
+      idl: ['tools/doc/*.idl']
+    }))
+    .on('error', (error) => done(error))
+    .pipe(gulp.dest('dist'))
+    .on('end’', () => done())
+})
+
+gulp.task('link', () => {
+  packages.forEach((name) => {
+    console.log(`linking ${name}`)
+    shell.exec(`cd ${dstDir}/packages/${name} && npm link`)
+  })
+})
+
+gulp.task('unlink', () => {
+  packages.forEach((name) => {
+    console.log(`unlinking ${name}`)
+    shell.exec(`cd ${dstDir}/packages/${name} && npm unlink`)
+  })
+})

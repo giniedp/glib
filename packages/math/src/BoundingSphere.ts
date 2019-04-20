@@ -2,16 +2,26 @@ import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
 import * as Collision from './Collision'
 import { Ray } from './Ray'
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { ArrayLike, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
+ * Defines sphere volume.
+ *
  * @public
  */
 export class BoundingSphere {
   public center: IVec3 = { x: 0, y: 0, z: 0}
   public radius: number
 
+  /**
+   * Constructs a new instance of {@link BoundingSphere}
+   *
+   * @param x - component of the center point
+   * @param y - component of the center point
+   * @param z - component of the center point
+   * @param r - the radius
+   */
   constructor(x?: number, y?: number, z?: number, r?: number) {
     this.center.x = x || 0
     this.center.y = y || 0
@@ -142,14 +152,14 @@ export class BoundingSphere {
     return out
   }
 
-  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
-    Vec3.copy(this.center, buffer, offset)
+  public toArray<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
+    Vec3.toArray(this.center, buffer, offset)
     buffer[offset + 3] = this.radius
     return buffer
   }
 
-  public static copy<T extends ArrayLike<number>>(src: BoundingSphere, buffer: T, offset: number= 0): T {
-    Vec3.copy(src.center, buffer, offset)
+  public static toArray<T extends ArrayLike<number>>(src: BoundingSphere, buffer: T, offset: number= 0): T {
+    Vec3.toArray(src.center, buffer, offset)
     buffer[offset + 3] = src.radius
     return buffer
   }
@@ -215,5 +225,9 @@ export class BoundingSphere {
     } else {
       return new BoundingSphere()
     }
+  }
+
+  public dump(): number[] {
+    return [this.center.x, this.center.y, this.center.z, this.radius]
   }
 }

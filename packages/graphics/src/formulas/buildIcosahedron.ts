@@ -20,8 +20,8 @@ function normalize(v: number[]) {
 function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: Vec3) => void) {
   if (depth <= 0) {
     block(Vec3.convert(a))
-    block(Vec3.convert(b))
     block(Vec3.convert(c))
+    block(Vec3.convert(b))
     return
   }
   let a1 = []
@@ -45,12 +45,11 @@ function subdivide(a: number[], b: number[], c: number[], depth: number, block: 
  * @public
  */
 export function buildTetrahedron(builder: ModelBuilder, options: {
-  diameter?: number
   radius?: number
-  steps?: number,
+  tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  let steps = withDefault(options.steps, 0)
+  let radius = withDefault(options.radius, 0.5)
+  let steps = withDefault(options.tesselation, 0)
   let vertices = [
     [+1, +1, +1],
     [+1, -1, -1],
@@ -66,7 +65,7 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
     builder.addVertex({
-      position: Vec3.multiplyScalar<Vec3>(v, radius),
+      position: Vec3.multiplyScalar(v, radius),
       normal: v,
       texture: Vec2.create(v.x, v.z),
     })
@@ -84,12 +83,11 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
  * @public
  */
 export function buildOctahedron(builder: ModelBuilder, options: {
-  diameter?: number
   radius?: number
-  steps?: number,
+  tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  let steps = withDefault(options.steps, 0)
+  let radius = withDefault(options.radius, 0.5)
+  let steps = withDefault(options.tesselation, 0)
   let vertices = [
     [+1, 0, 0],
     [-1, 0, 0], // left
@@ -111,7 +109,7 @@ export function buildOctahedron(builder: ModelBuilder, options: {
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
     builder.addVertex({
-      position: Vec3.multiplyScalar<Vec3>(v, radius),
+      position: Vec3.multiplyScalar(v, radius),
       normal: v,
       texture: Vec2.create(v.x, v.z),
     })
@@ -131,12 +129,11 @@ export function buildOctahedron(builder: ModelBuilder, options: {
  * @public
  */
 export function buildIcosahedron(builder: ModelBuilder, options: {
-  diameter?: number
   radius?: number
-  steps?: number,
+  tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  let steps = withDefault(options.steps, 0)
+  let radius = withDefault(options.radius, 0.5)
+  let steps = withDefault(options.tesselation, 0)
 
   let X = .525731112119133606
   let Z = .850650808352039932
@@ -154,7 +151,7 @@ export function buildIcosahedron(builder: ModelBuilder, options: {
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
     builder.addVertex({
-      position: Vec3.multiplyScalar<Vec3>(v, radius),
+      position: Vec3.multiplyScalar(v, radius),
       normal: v,
       texture: Vec2.create(v.x, v.z),
     })

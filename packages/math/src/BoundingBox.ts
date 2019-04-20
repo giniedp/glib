@@ -6,12 +6,37 @@ import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
+ * Defines an axis aligned box volume.
+ *
  * @public
  */
 export class BoundingBox {
+  /**
+   * The minimum contained point
+   */
   public min: IVec3 = { x: 0, y: 0, z: 0}
+  /**
+   * The maximum contained point
+   */
   public max: IVec3 = { x: 0, y: 0, z: 0}
 
+  /**
+   * Checks if every component is zero
+   */
+  public get isZero() {
+    return this.min.x === 0 && this.min.y === 0 && this.min.z === 0 && this.max.x === 0 && this.max.y === 0 && this.max.z
+  }
+
+  /**
+   * Constructs a new instance of {@link BoundingBox}
+   *
+   * @param minX - x component of the minimum point
+   * @param minY - y component of the minimum point
+   * @param minZ - z component of the minimum point
+   * @param maxX - x component of the maximum point
+   * @param maxY - y component of the maximum point
+   * @param maxZ - z component of the maximum point
+   */
   constructor(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number) {
     this.min.x = minX || 0
     this.min.y = minY || 0
@@ -21,6 +46,16 @@ export class BoundingBox {
     this.max.z = maxZ || 0
   }
 
+  /**
+   * Initialises the instance {@link BoundingBox}
+   *
+   * @param minX - x component of the minimum point
+   * @param minY - y component of the minimum point
+   * @param minZ - z component of the minimum point
+   * @param maxX - x component of the maximum point
+   * @param maxY - y component of the maximum point
+   * @param maxZ - z component of the maximum point
+   */
   public init(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number): BoundingBox {
     this.min.x = minX || 0
     this.min.y = minY || 0
@@ -31,6 +66,16 @@ export class BoundingBox {
     return this
   }
 
+  /**
+   * Constructs a new instance of {@link BoundingBox}
+   *
+   * @param minX - x component of the minimum point
+   * @param minY - y component of the minimum point
+   * @param minZ - z component of the minimum point
+   * @param maxX - x component of the maximum point
+   * @param maxY - y component of the maximum point
+   * @param maxZ - z component of the maximum point
+   */
   public static create(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number): BoundingBox {
     return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ)
   }
@@ -158,15 +203,15 @@ export class BoundingBox {
     return out
   }
 
-  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
-    Vec3.copy(this.min, buffer, offset)
-    Vec3.copy(this.max, buffer, offset + 3)
+  public toArray<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
+    Vec3.toArray(this.min, buffer, offset)
+    Vec3.toArray(this.max, buffer, offset + 3)
     return buffer
   }
 
-  public static copy<T extends ArrayLike<number>>(src: BoundingBox, buffer: T, offset: number= 0): T {
-    Vec3.copy(src.min, buffer, offset)
-    Vec3.copy(src.max, buffer, offset + 3)
+  public static toArray<T extends ArrayLike<number>>(src: BoundingBox, buffer: T, offset: number= 0): T {
+    Vec3.toArray(src.min, buffer, offset)
+    Vec3.toArray(src.max, buffer, offset + 3)
     return buffer
   }
 
@@ -248,6 +293,10 @@ export class BoundingBox {
     } else {
       return new BoundingBox()
     }
+  }
+
+  public dump(): number[] {
+    return [this.min.x, this.min.y, this.min.z, this.max.x, this.max.y, this.max.z]
   }
 
   public getCorner<T extends IVec3 = Vec3>(index: 0|1|2|3|4|5|6|7, out?: T|Vec3): T {

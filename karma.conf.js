@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require("path")
 const IS_COVERAGE = !!process.env.IS_COVERAGE;
 const IS_TRAVIS = !!process.env.TRAVIS;
 
@@ -29,17 +30,32 @@ module.exports = function (config) {
         flags: [ '--remote-debugging-port=9222' ]
       }
     },
-    files: [
-      '**/*.ts'
-    ],
+    proxies: {
+      '/assets': path.join(__dirname, 'assets'),
+    },
+    files: [{
+      pattern: '**/*.ts',
+      watched: true,
+      served: true,
+      included: true,
+    }, {
+      pattern: '../assets/**/*',
+      watched: true,
+      served: true,
+      included: false,
+    }],
     exclude: [],
     preprocessors: {
       '**/*.ts': ['karma-typescript'],
     },
     reporters: [
+      // 'progress',
       'mocha',
       'karma-typescript',
     ],
+    mochaReporter: {
+      output: 'minimal'
+    },
 
     karmaTypescriptConfig: {
       bundlerOptions: {
@@ -49,7 +65,7 @@ module.exports = function (config) {
       },
       exclude: ['node_modules', 'release'],
       // compilerOptions: tsconfig.compilerOptions,
-      tsconfig: 'tsconfig.json',
+      tsconfig: 'tsconfig.cjs.json',
       // Pass options to remap-istanbul.
       remapOptions: {
         // a regex for excluding files from remapping
@@ -70,7 +86,9 @@ module.exports = function (config) {
         lcovonly: {
           directory: 'coverage',
           subdirectory: 'lcov',
+          filename: 'lcov.info',
         },
+
       },
     },
   });

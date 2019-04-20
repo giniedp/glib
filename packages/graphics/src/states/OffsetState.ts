@@ -1,6 +1,6 @@
 import { Device } from './../Device'
 
-let optionKeys: Array<keyof OffsetStateOptions> = [
+let optionKeys: Array<keyof OffsetStateParams> = [
   'offsetEnable',
   'offsetFactor',
   'offsetUnits',
@@ -9,7 +9,7 @@ let optionKeys: Array<keyof OffsetStateOptions> = [
 /**
  * @public
  */
-export interface OffsetStateOptions {
+export interface OffsetStateParams {
   offsetEnable?: boolean
   offsetFactor?: number
   offsetUnits?: number
@@ -18,20 +18,20 @@ export interface OffsetStateOptions {
 /**
  * @public
  */
-export class OffsetState implements OffsetStateOptions {
+export class OffsetState implements OffsetStateParams {
   public device: Device
   public gl: WebGLRenderingContext
   private offsetEnableField: boolean = false
   private offsetFactorField: number = 0
   private offsetUnitsField: number = 0
   private hasChanged: boolean = false
-  private changes: OffsetStateOptions = {}
+  private changes: OffsetStateParams = {}
 
   public get isDirty() {
     return this.hasChanged
   }
 
-  constructor(device: Device, state?: OffsetStateOptions) {
+  constructor(device: Device, state?: OffsetStateParams) {
     this.device = device
     this.gl = device.context
     this.resolve()
@@ -74,14 +74,14 @@ export class OffsetState implements OffsetStateOptions {
     }
   }
 
-  public assign(state: OffsetStateOptions): OffsetState {
+  public assign(state: OffsetStateParams): OffsetState {
     for (let key of optionKeys) {
       if (state.hasOwnProperty(key)) { this[key] = state[key] }
     }
     return this
   }
 
-  public commit(state?: OffsetStateOptions): OffsetState {
+  public commit(state?: OffsetStateParams): OffsetState {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
     let changes = this.changes
@@ -99,7 +99,7 @@ export class OffsetState implements OffsetStateOptions {
     return this
   }
 
-  public copy(out: any= {}): OffsetStateOptions {
+  public copy(out: any= {}): OffsetStateParams {
     for (let key of optionKeys) { out[key] = this[key] }
     return out
   }
@@ -115,21 +115,21 @@ export class OffsetState implements OffsetStateOptions {
     for (let key of optionKeys) { this.changes[key] = undefined }
   }
 
-  public static convert(state: any): OffsetStateOptions {
+  public static convert(state: string | OffsetStateParams): OffsetStateParams {
     if (typeof state === 'string') {
-      state = OffsetState[state]
+      return OffsetState[state] ? {...OffsetState[state]} : null
     }
     return state
   }
 
-  public static resolve(gl: any, out: any= {}): OffsetStateOptions {
+  public static resolve(gl: any, out: any= {}): OffsetStateParams {
     out.offsetEnable = gl.getParameter(gl.POLYGON_OFFSET_FILL)
     out.offsetFactor = gl.getParameter(gl.POLYGON_OFFSET_FACTOR)
     out.offsetUnits = gl.getParameter(gl.POLYGON_OFFSET_UNITS)
     return out
   }
 
-  public static Default = Object.freeze({
+  public static Default = Object.freeze<OffsetStateParams>({
     offsetEnable: false,
     offsetFactor: 0,
     offsetUnits: 0,

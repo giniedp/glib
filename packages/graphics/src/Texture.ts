@@ -3,16 +3,23 @@ import {
   ArrayType,
   DataType,
   DataTypeOption,
-  DepthFormat,
   DepthFormatOption,
+  nameOfDataType,
+  nameOfPixelFormat,
+  nameOfTextureType,
   PixelFormat,
-  PixelFormatElementCount,
+  pixelFormatElementCount,
   PixelFormatOption,
   TextureType,
   TextureTypeOption,
+  valueOfDataType,
+  valueOfDepthFormat,
+  valueOfPixelFormat,
+  valueOfTextureType,
 } from './enums'
 
 import { Device } from './Device'
+import { SamplerState, SamplerStateParams } from './states'
 
 export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
 
@@ -20,121 +27,218 @@ function isPowerOfTwo(value: number): boolean {
   return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
 }
 
-function noop() {
-  //
-}
-
 /**
+ * Texture constructor options
+ *
  * @public
  */
 export interface TextureOptions {
-  /** Whether or not to automatically generate mip maps */
+  /**
+   * Whether or not to automatically generate mip maps
+   */
   generateMipmap?: boolean
-  /** The pixel format to be used */
+  /**
+   * The pixel format to be used
+   */
   pixelFormat?: PixelFormatOption
-  /** The pixel element data tupe to be used */
+  /**
+   * The pixel element data tupe to be used
+   */
   pixelType?: DataTypeOption
-  /** The texture type */
+  /**
+   * The texture type
+   */
   type?: TextureTypeOption
-  /** The wrapped WebGLTexture object */
+  /**
+   * The wrapped WebGLTexture object
+   */
   handle?: WebGLTexture
-  /** The texture width */
+  /**
+   * The texture width
+   */
   width?: number
-  /** The texture height */
+  /**
+   * The texture height
+   */
   height?: number
-  /** The initial texture data to set */
+  /**
+   * The initial texture data to set
+   */
   data?: any
-  /** The depth format of the depth stencil buffer to use when the texture is used as a render target */
+  /**
+   * The depth format of the depth stencil buffer to use when the texture is used as a render target
+   */
   depthFormat?: DepthFormatOption
+  /**
+   * The sampler state to be used together with this texture
+   */
+  sampler?: SamplerStateParams
 }
 
 /**
  * Describes a texture object.
+ *
  * @public
  */
 export class Texture {
+
   /**
-   * The unique id
+   * A symbol identifying the TextureOptions
    */
-  public uid: string
+  public static readonly Options = Symbol('TextureOptions')
+
+  /**
+   * A symbol identifying the Texture2D class
+   */
+  public static readonly Texture2D = Symbol('Texture2D')
+
+  /**
+   * A symbol identifying the TextureCube class
+   */
+  public static readonly TextureCube = Symbol('TextureCube')
+
+  private $uid: string = uuid()
+  /**
+   * Unique resource id
+   */
+  public get uuid() {
+    return this.$uid
+  }
+
+  private $device: Device
   /**
    * The Graphics.Device
    */
-  public device: Device
+  public get device(): Device {
+    return this.$device
+  }
+
+  private $gl: WebGLRenderingContext
   /**
    * The GL context
    */
-  public gl: WebGLRenderingContext
+  public get gl(): WebGLRenderingContext {
+    return this.$gl
+  }
+
+  private $width: number = 0
   /**
    * The texture width
    */
-  public width: number = 0
+  public get width() {
+    return this.$width
+  }
+
+  private $height: number = 0
   /**
    * The texture height
    */
-  public height: number = 0
+  public get height() {
+    return this.$height
+  }
+
+  private $ready: boolean = false
   /**
-   * Indicates whether texture data has been set and the texture is ready to be used in a shader.
-   * This property is useful when the texture is loaded from an image or video URL. In this case ```ready``` is
-   * initially ```false``` and flips to ```true``` as soon the image or video source has been loaded.
+   * Indicates whether texture data has been set
+   *
+   * @remarks
+   * If the texture data must be loaded asynchronously (e.g. image or video URL) this property will be false as long
+   * as the data has not arrived. A shader should not attempt to bind this texture until the property is switched to true.
    */
-  public ready: boolean = false
+  public get ready() {
+    return this.$ready
+  }
+
+  private $isPOT: boolean = false
   /**
-   * Indicates whether the texture width and height is a power of two value.
+   * Indicates whether the texture size is a power of two value.
    */
-  public isPOT: boolean = false
+  public get isPOT() {
+    return this.$isPOT
+  }
+
+  private $generateMipmap: boolean = true
   /**
-   * Indicates whether mipmaps should be automatically created when data is iset.
+   * Indicates whether mipmaps should be generated.
    */
-  public generateMipmap: boolean = true
+  public get generateMipmap() {
+    return this.$generateMipmap
+  }
+
+  private $pixelFormat: PixelFormat = PixelFormat.RGBA
   /**
    * Indicates the used pixel format.
    */
-  public pixelFormat: number = PixelFormat.RGBA
+  public get pixelFormat() {
+    return this.$pixelFormat
+  }
+
+  private $pixelType: DataType = DataType.ubyte
   /**
    * Indicates the data type of the pixel elements
    */
-  public pixelType: number = DataType.ubyte
+  public get pixelType() {
+    return this.$pixelType
+  }
+
+  private $type: TextureType = TextureType.Texture2D
   /**
    * Indicates the texture type
    */
-  public type: number = TextureType.Texture2D
+  public get type() {
+    return this.$type
+  }
 
+  private $video: HTMLVideoElement = null
   /**
-   * If Texture is created as video texture this holds the HTMLVideoElement.
-   * Setting this property wont have any effect.
+   * The HTMLVideoElement that was passed as data.
    */
-  public video: HTMLVideoElement = null
+  public get video() {
+    return this.$video
+  }
 
+  private $image: HTMLImageElement = null
   /**
-   * If Texture is created as image texture this holds the HTMLImageElement.
-   * Setting this property wont have any effect.
+   * The HTMLImageElement that was passed as data.
    */
-  public image: HTMLImageElement = null
+  public get image() {
+    return this.$image
+  }
 
-  public update: () => void = noop
-  public handle: WebGLTexture = null
+  private $handle: WebGLTexture = null
+  /**
+   * The webgl resource handle
+   */
+  public get handle() {
+    return this.$handle
+  }
 
   /**
-   * The cached time value of the currently running video.
+   * The sampler state to be used together with this texture
+   */
+  public sampler: SamplerStateParams = {}
+
+  /**
+   * The recent video playback timestamp.
    */
   private videoTime = -1
 
   /**
-   * Creates a texture for given device and with given options.
-   * The options are passed to the stup method without any modification.
+   * Constructs an instance of a Texture.
+   *
+   * @remarks
+   * The options are passed down to {@link Texture.setup}
    */
   constructor(device: Device, options: TextureOptions= {}) {
-    this.uid = uuid()
-    this.device = device
-    this.gl = device.context
+    this.$device = device
+    this.$gl = device.context
     this.setup(options)
   }
 
   private depthFormatField: number
 
   /**
-   * The depth format of the depth stencil buffer to be used when the texture is used as a render target
+   * Depth stencil format if this is a render target
    */
   get depthFormat(): number {
     return this.depthFormatField
@@ -158,77 +262,37 @@ export class Texture {
    * Gets the name string of the used pixel format
    */
   get pixelFormatName(): string {
-    return PixelFormat.nameOf(this.pixelFormat)
+    return nameOfPixelFormat(this.pixelFormat)
   }
 
   /**
    * Gets the string name of the used pixel type
    */
   get pixelTypeName(): string {
-    return DataType.nameOf(this.pixelType)
+    return nameOfDataType(this.pixelType)
   }
 
   /**
    * Gets the string name of the used texture type
    */
   get typeName(): string {
-    return TextureType.nameOf(this.type)
+    return nameOfTextureType(this.type)
   }
 
   /**
-   * Collection of file extensions that are recognized as video files. Contains the values ['mp4', 'ogv', 'ogg']
+   * Collection of file extensions that are recognized as video files.
    */
-  public static videoTypes = ['.mp4', '.ogv', '.ogg']
-
-  public static createImageUpdateHandle(texture: Texture, image: HTMLImageElement) {
-    let gl = texture.gl
-    return () => {
-      texture.ready = image.complete
-      if (!texture.ready) { return } // image has not been downloaded yet
-
-      gl.bindTexture(texture.type, texture.handle)
-      gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, image)
-      if (texture.generateMipmap) {
-        gl.generateMipmap(texture.type)
-      }
-      gl.bindTexture(texture.type, null)
-
-      texture.width = image.naturalWidth
-      texture.height = image.naturalHeight
-      texture.isPOT = isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height)
-      texture.update = noop // texture has been updated, remove update handler
-    }
-  }
-
-  public static createVideoUpdateHandle(texture: Texture, video: HTMLVideoElement) {
-    let gl = texture.gl
-    return () => {
-      texture.width = video.videoWidth
-      texture.height = video.videoHeight
-      texture.isPOT = isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height)
-      texture.ready = video.readyState >= 3
-      if (texture.ready && (texture.videoTime !== video.currentTime)) {
-
-        texture.videoTime = video.currentTime
-        gl.bindTexture(texture.type, texture.handle)
-        gl.texImage2D(texture.type, 0, texture.pixelFormat, texture.pixelFormat, texture.pixelType, video)
-        if (texture.generateMipmap && texture.isPOT) {
-          gl.generateMipmap(texture.type)
-        }
-        gl.bindTexture(texture.type, null)
-      }
-    }
-  }
+  public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
 
   public setup(options: TextureOptions= {}): Texture {
 
     let width = options.width || this.width
     let height = options.height || this.height
 
-    let type = TextureType[options.type] || this.type
-    let pixelType = DataType[options.pixelType] || this.pixelType
-    let pixelFormat = PixelFormat[options.pixelFormat] || this.pixelFormat
-    let depthFormat = DepthFormat[options.depthFormat] || this.depthFormat
+    let type = valueOfTextureType(options.type) || this.type
+    let pixelType = valueOfDataType(options.pixelType) || this.pixelType
+    let pixelFormat = valueOfPixelFormat(options.pixelFormat) || this.pixelFormat
+    let depthFormat = valueOfDepthFormat(options.depthFormat) || this.depthFormat
 
     let handle = options.handle == null ? this.handle : options.handle
     let genMipMaps = options.generateMipmap == null ? !!this.generateMipmap : !!options.generateMipmap
@@ -242,20 +306,21 @@ export class Texture {
       type !== this.type
     ) {
       this.destroy()
-      this.handle = options.handle
+      this.$handle = options.handle
     }
     if (!this.handle || !this.gl.isTexture(this.handle)) {
-      this.handle = this.gl.createTexture()
+      this.$handle = this.gl.createTexture()
     }
 
-    this.width = width
-    this.height = height
-    this.type = type
-    this.pixelType = pixelType
-    this.pixelFormat = pixelFormat
+    this.$width = width
+    this.$height = height
+    this.$type = type
+    this.$pixelType = pixelType
+    this.$pixelFormat = pixelFormat
     this.depthFormat = depthFormat
-    this.generateMipmap = genMipMaps
-    this.ready = false
+    this.sampler = options.sampler || {...SamplerState.Default}
+    this.$generateMipmap = genMipMaps
+    this.$ready = false
 
     let source = options.data
 
@@ -270,7 +335,10 @@ export class Texture {
     } else if (source && (source instanceof Array || source instanceof ArrayBuffer || source.buffer)) {
       this.setData(source, options.width, options.height)
     } else {
-      this.ready = true
+      if (source) {
+        Log.w(`[Texture] 'data' option has an unrecognized type.`)
+      }
+      this.$ready = true
       this.gl.bindTexture(this.type, this.handle)
       this.gl.texImage2D(this.type, 0, this.pixelFormat, this.width, this.height, 0, this.pixelFormat, this.pixelType, null)
       this.gl.bindTexture(this.type, null)
@@ -282,12 +350,12 @@ export class Texture {
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
   public destroy(): Texture {
-    this.image = null
-    this.video = null
+    this.$image = null
+    this.$video = null
     this.device.unregisterRenderTarget(this)
     if (this.handle != null && this.gl.isTexture(this.handle)) {
       this.gl.deleteTexture(this.handle)
-      this.handle = null
+      this.$handle = null
     }
     return this
   }
@@ -302,6 +370,8 @@ export class Texture {
 
   /**
    * Sets the texture source from an url.
+   *
+   * @remarks
    * The url is checked against the `Texture.videoTypes` array to detect
    * whether the url points to an image or video.
    */
@@ -320,9 +390,11 @@ export class Texture {
    * Sets the texture source from an image url
    */
   public setImageUrl(url: string): Texture {
-    this.update = noop
-    this.ready = false
+    this.$ready = false
     let image = new Image()
+    // if ((new URL(url)).origin !== window.location.origin) {
+    image.crossOrigin = ''
+    // }
     image.src = url
     this.setImage(image)
     return this
@@ -332,10 +404,12 @@ export class Texture {
    * Sets the texture source from a video url
    */
   public setVideoUrl(url: string): Texture {
-    this.update = noop
-    this.ready = false
+    this.$ready = false
     let video = document.createElement('video')
     video.src = url
+    // if ((new URL(url)).origin !== window.location.origin) {
+    video.crossOrigin = ''
+    // }
     video.load()
     this.setVideo(video)
     return this
@@ -345,20 +419,18 @@ export class Texture {
    * Sets the texture source from video urls.
    */
   public setVideoUrls(options: any[]): Texture {
-    this.update = noop
-    this.ready = false
+    this.$ready = false
     let video = document.createElement('video')
     let valid = false
     for (let option of options) {
       if (video.canPlayType(option.type)) {
-        Log.d('[Texture] canPlayType', option)
         video.src = option.src
         valid = true
         break
       }
     }
     if (!valid) {
-      Log.d("[Texture] no supported format found. Video won't play.", options)
+      Log.w("[Texture] no supported format found. Video won't play.", options)
     }
     this.setVideo(video)
     return this
@@ -368,9 +440,8 @@ export class Texture {
    * Sets the texture source from HtmlImageElement
    */
   public setImage(image: HTMLImageElement): Texture {
-    this.image = image
-    this.video = null
-    this.update = Texture.createImageUpdateHandle(this, image)
+    this.$image = image
+    this.$video = null
     this.update()
     return this
   }
@@ -379,9 +450,8 @@ export class Texture {
    * Sets the texture source from HTMLVideoElement
    */
   public setVideo(video: HTMLVideoElement): Texture {
-    this.video = video
-    this.image = null
-    this.update = Texture.createVideoUpdateHandle(this, video)
+    this.$video = video
+    this.$image = null
     this.update()
     return this
   }
@@ -390,9 +460,8 @@ export class Texture {
    * Sets the texture source from data array or buffer
    */
   public setData(data: TextureDataOption, width?: number, height?: number): Texture {
-    this.video = null
-    this.image = null
-    this.update = noop
+    this.$video = null
+    this.$image = null
     let buffer: ArrayBufferView
     if (data instanceof Array || data instanceof ArrayBuffer) {
       buffer = new ArrayType[this.pixelType](data)
@@ -407,7 +476,7 @@ export class Texture {
       throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
     }
 
-    let pixelCount = buffer.byteLength / PixelFormatElementCount[this.pixelFormat]
+    let pixelCount = buffer.byteLength / pixelFormatElementCount(this.pixelFormat)
     if (!width || !height) {
       width = height = Math.floor(Math.sqrt(pixelCount))
     }
@@ -420,14 +489,66 @@ export class Texture {
     if (this.generateMipmap) {
       gl.generateMipmap(this.type)
     }
-    this.width = width
-    this.height = height
-    this.ready = true
-    this.isPOT = isPowerOfTwo(width) && isPowerOfTwo(height)
+    this.$width = width
+    this.$height = height
+    this.$ready = true
+    this.$isPOT = isPowerOfTwo(width) && isPowerOfTwo(height)
     return this
   }
 
   public get texel() {
     return { x: 1.0 / this.width, y: 1.0 / this.height }
+  }
+
+  /**
+   * Updates the texture from current image or video element.
+   */
+  public update() {
+    if (this.$image) {
+      Texture.updateFromImage(this, this.$image)
+    }
+    if (this.$video) {
+      Texture.updateFromVideo(this, this.$video)
+    }
+  }
+
+  private static updateFromImage(texture: Texture, image: HTMLImageElement) {
+    if (texture.ready || !image || !image.complete) {
+      return
+    }
+    texture.$ready = true
+
+    const gl = texture.gl
+    gl.bindTexture(texture.$type, texture.$handle)
+    gl.texImage2D(texture.$type, 0, texture.$pixelFormat, texture.$pixelFormat, texture.$pixelType, image)
+    if (texture.$generateMipmap) {
+      gl.generateMipmap(texture.$type)
+    }
+    gl.bindTexture(texture.$type, null)
+
+    texture.$width = image.naturalWidth
+    texture.$height = image.naturalHeight
+    texture.$isPOT = isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height)
+  }
+
+  private static updateFromVideo(texture: Texture, video: HTMLVideoElement) {
+    if (!video || video.readyState < 3 || video.currentTime === texture.videoTime) {
+      return
+    }
+    texture.$ready = true
+
+    let gl = texture.gl
+    gl.bindTexture(texture.$type, texture.$handle)
+    gl.texImage2D(texture.$type, 0, texture.$pixelFormat, texture.$pixelFormat, texture.$pixelType, video)
+    if (texture.generateMipmap && texture.isPOT) {
+      gl.generateMipmap(texture.$type)
+    }
+    gl.bindTexture(texture.$type, null)
+
+    texture.$width = video.videoWidth
+    texture.$height = video.videoHeight
+    texture.$isPOT = isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height)
+    texture.$ready = video.readyState >= 3
+    texture.videoTime = video.currentTime
   }
 }

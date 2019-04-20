@@ -6,12 +6,12 @@ import { Color } from './Color'
 import { Device } from './Device'
 import { BufferUsage, PrimitiveType } from './enums'
 import { ShaderProgram } from './ShaderProgram'
-import { BlendState, BlendStateOptions } from './states/BlendState'
-import { CullState, CullStateOptions } from './states/CullState'
-import { DepthState, DepthStateOptions } from './states/DepthState'
-import { ScissorState, ScissorStateOptions } from './states/ScissorState'
-import { StencilState, StencilStateOptions } from './states/StencilState'
-import { ViewportState, ViewportStateOptions } from './states/ViewportState'
+import { BlendState, BlendStateParams } from './states/BlendState'
+import { CullState, CullStateParams } from './states/CullState'
+import { DepthState, DepthStateParams } from './states/DepthState'
+import { ScissorState, ScissorStateParams } from './states/ScissorState'
+import { StencilState, StencilStateParams } from './states/StencilState'
+import { ViewportState, ViewportStateParams } from './states/ViewportState'
 import { Texture } from './Texture'
 import { VertexLayout } from './VertexLayout'
 
@@ -56,6 +56,8 @@ const fShader = `
 let spritePool: Sprite[] = []
 
 /**
+ * SpriteBatch constructor options
+ *
  * @public
  */
 export interface SpriteBatchOptions {
@@ -63,6 +65,7 @@ export interface SpriteBatchOptions {
 }
 
 /**
+ *
  * @public
  */
 export interface SpriteBatchBeginOptions {
@@ -76,28 +79,78 @@ export interface SpriteBatchBeginOptions {
 }
 
 /**
+ * Describes a single sprite
+ *
  * @public
  */
 export interface Sprite {
+  /**
+   * The texture being used with the sprite
+   */
   texture?: Texture
+  /**
+   * The tint color of the sprite
+   */
   color?: number|Color
 
+  /**
+   * X coordinate of the source rectangle of the texture
+   */
   srcX?: number
+  /**
+   * Y coordinate of the source rectangle of the texture
+   */
   srcY?: number
+  /**
+   * Width of the source rectangle of the texture
+   */
   srcWidth?: number
+  /**
+   * Height of the source rectangle of the texture
+   */
   srcHeight?: number
 
+  /**
+   * X destination on screen
+   */
   dstX?: number
+  /**
+   * Y destination on screen
+   */
   dstY?: number
+  /**
+   * Resulting width on screen
+   */
   dstWidth?: number
+  /**
+   * Resulting height on screen
+   */
   dstHeight?: number
 
+  /**
+   * Rotation of the sprate
+   */
   rotation?: number
+  /**
+   * The rotation origin
+   */
   originX?: number
+  /**
+   * The rotation origin
+   */
   originY?: number
 
+  /**
+   * The depth at which the sprite is rendered
+   */
   depth?: number
+  /**
+   * Whether the texture should be flipped on X axis
+   */
   flipX?: boolean
+  /**
+   * Whether the texture should be flipped on Y axis
+   */
   flipY?: boolean
 }
 
@@ -224,12 +277,12 @@ export class SpriteBatch {
   private indexBuffer: Buffer
   private program: ShaderProgram
 
-  private blendState: BlendStateOptions
-  private cullState: CullStateOptions
-  private depthState: DepthStateOptions
-  private stencilState: StencilStateOptions
-  private scissorState: ScissorStateOptions
-  private viewportState: ViewportStateOptions
+  private blendState: BlendStateParams
+  private cullState: CullStateParams
+  private depthState: DepthStateParams
+  private stencilState: StencilStateParams
+  private scissorState: ScissorStateParams
+  private viewportState: ViewportStateParams
   private sortMode: any
   private batchSize: number
   private batchPosition: number

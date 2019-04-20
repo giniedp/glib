@@ -1,27 +1,58 @@
-import { Vec2, Vec3 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
-import { buildCone } from './buildCone'
+import { addParametricSurface } from './addParametricSurface'
 import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
+export interface BuildCylinderOptions {
+  /**
+   * The height of the cylinder
+   */
+  height?: number,
+  /**
+   * The offset along the y axis
+   */
+  offset?: number,
+  /**
+   * Radius of the cylinder
+   */
+  radius?: number,
+  /**
+   * The tesselation
+   */
+  tesselation?: number,
+}
+
 /**
  * @public
  */
 export function buildCylinder(builder: ModelBuilder, options: {
-  height?: number
-  diameter?: number
-  radius?: number
-  steps?: number,
+  height?: number,
+  offset?: number,
+  radius?: number,
+  tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  buildCone(builder, {
-    height: options.height,
-    steps: options.steps,
-    topRadius: radius,
-    bottomRadius: radius,
+
+  const r = withDefault(options.radius, 0.5)
+  const h = withDefault(options.height, 1.0)
+  const o = withDefault(options.offset, -0.5)
+
+  addParametricSurface(builder, {
+    f: (u: number, v: number) => {
+      return {
+        x: r * Math.sin(u),
+        y: v,
+        z: r * Math.cos(u),
+      }
+    },
+    tu: withDefault(options.tesselation, 32),
+    tv: withDefault(options.tesselation, 32),
+    u0: 0,
+    u1: Math.PI * 2,
+    v0: o + h,
+    v1: o,
   })
 }
 

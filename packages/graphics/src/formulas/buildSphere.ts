@@ -1,67 +1,46 @@
-import { Vec2, Vec3 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
+import { addParametricSurface } from './addParametricSurface'
 import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
+const sin = Math.sin
+const cos = Math.cos
+
+export interface BuildSphereOptions {
+  /**
+   * The sphere radius
+   */
+  radius?: number,
+  /**
+   * The tesselation
+   */
+  tesselation?: number,
+}
+
 /**
  * @public
  */
-export function buildSphere(builder: ModelBuilder, options: {
-  diameter?: number
-  radius?: number
-  steps?: number,
-} = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  let steps = withDefault(options.steps, 16)
+export function buildSphere(builder: ModelBuilder, options: BuildSphereOptions = {}) {
+  const r = withDefault(options.radius, 0.5)
 
-  let baseVertex = builder.vertexCount
-  let stepsV = steps
-  let stepsH = steps * 2
-
-  for (let v = 0; v <= stepsV; v += 1) {
-    let dv = v / stepsV
-    let phi = dv * Math.PI - Math.PI / 2
-
-    let sinPhi = Math.sin(phi)
-    let cosPhi = Math.cos(phi)
-
-    for (let u = 0; u <= stepsH; u += 1) {
-      let du = u / stepsH
-      let theta = du * Math.PI * 2
-
-      let x = Math.cos(theta) * cosPhi
-      let z = Math.sin(theta) * cosPhi
-      let y = sinPhi
-
-      let normal = Vec3.create(x, y, z)
-      let texCoord = Vec2.create(du, dv)
-
-      builder.addVertex({
-        position: Vec3.multiplyScalar<Vec3>(normal, radius),
-        normal: normal,
-        texture: texCoord,
-      })
-    }
-  }
-  for (let z = 0; z < stepsV; z += 1) {
-    for (let x = 0; x < stepsH; x += 1) {
-      let a = x + z * (stepsH + 1)
-      let b = a + 1
-      let c = x + (z + 1) * (stepsH + 1)
-      let d = c + 1
-
-      builder.addIndex(baseVertex + a)
-      builder.addIndex(baseVertex + b)
-      builder.addIndex(baseVertex + c)
-
-      builder.addIndex(baseVertex + c)
-      builder.addIndex(baseVertex + b)
-      builder.addIndex(baseVertex + d)
-    }
-  }
+  addParametricSurface(builder, {
+    f: (phi: number, theta: number) => {
+      return {
+        x: r * sin(theta) * sin(phi),
+        y: r * cos(theta),
+        z: r * sin(theta) * cos(phi),
+      }
+    },
+    tu: withDefault(options.tesselation, 32),
+    tv: withDefault(options.tesselation, 32),
+    u0: 0,
+    u1: Math.PI * 2,
+    v0: 0,
+    v1: Math.PI,
+  })
 }
 
 formulas['Sphere'] = buildSphere

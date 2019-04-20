@@ -1,22 +1,43 @@
 import { flattenArray, isString, uuid } from '@gglib/core'
-import { Mat4 } from '@gglib/math'
-import { AnimationTake } from './AnimationPlayer'
+import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Device } from './Device'
+import { Material, MaterialOptions } from './Material'
+import { ModelAnimationClip } from './ModelAnimation'
 import { ModelMesh, ModelMeshOptions } from './ModelMesh'
-import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
+import { ModelSkin } from './ModelSkin'
 
 /**
  * @public
  */
 export interface ModelOptions {
+  /**
+   * The user defined name of the model
+   */
   name?: string
-  boundingBox?: number[]
-  boundingSphere?: number[]
-  materials?: ShaderEffect[]|ShaderEffectOptions[]
-  meshes?: ModelMesh[]|ModelMeshOptions[]
-  skeleton?: number[]
-  pose?: Array<Mat4|number[]>
-  takes?: AnimationTake[]
+  /**
+   * The axis aligned bounding box containing all meshes
+   */
+  boundingBox?: number[] | BoundingBox
+  /**
+   * The bounding sphere containing all meshes
+   */
+  boundingSphere?: number[] | BoundingSphere
+  /**
+   * Collection of materials that are used by the model meshes
+   */
+  materials?: Array<Material | MaterialOptions | string>
+  /**
+   * Collection of meshes
+   */
+  meshes?: Array<ModelMesh | ModelMeshOptions>
+  /**
+   * The skin data with skeleton hierarchy, bind pose and inverse matrices
+   */
+  skin?: ModelSkin
+  /**
+   * Collection of all animation clips for this model
+   */
+  clips?: ModelAnimationClip[]
 }
 
 /**
@@ -24,64 +45,62 @@ export interface ModelOptions {
  */
 export class Model {
   /**
+   * A symbol identifying the `Model[]` type.
+   */
+  public static readonly Array = Symbol('Model[]')
+  /**
+   * A symbol identifying the `ModelOptions` type.
+   */
+  public static readonly Options = Symbol('ModelOptions')
+  /**
+   * A symbol identifying the `ModelOptions[]` type.
+   */
+  public static readonly OptionsArray = Symbol('ModelOptions[]')
+  /**
    * Autmatically generated unique identifier
    */
-  public uid: string
+  public readonly uid: string
   /**
    * The graphics device
    */
-  public device: Device
+  public readonly device: Device
   /**
    * The GL handler
    */
-  public gl: any
+  public readonly gl: any
   /**
    * The models local bounding box
    */
-  public boundingBox: number[]
+  public boundingBox: BoundingBox
   /**
    * The models local bounign sphere
    */
-  public boundingSphere: number[]
+  public boundingSphere: BoundingSphere
   /**
    * Collection of materials that are used by the model meshes
    */
-  public materials: ShaderEffect[] = []
+  public materials: Material[] = []
   /**
    * Collection of meshes
    */
   public meshes: ModelMesh[] = []
   /**
-   * The skeleton bone hierarchy
+   * The skin data with skeleton hierarchy, bind pose and inverse matrices
    */
-  public skeleton: number[]
+  public skin?: ModelSkin
   /**
-   * The binding pose
+   * Collection of all animation clips for this model
    */
-  public pose: Mat4[]
-  /**
-   * Collection of all animation takes for this model
-   */
-  public takes: AnimationTake[]
+  public clips?: ModelAnimationClip[]
 
   constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
     this.device = device
     this.gl = device.context
-    this.boundingBox = options.boundingBox || [0, 0, 0, 0, 0, 0]
-    this.boundingSphere = options.boundingSphere || [0, 0, 0, 0]
-    this.takes = options.takes
-    this.skeleton = options.skeleton
-
-    const pose = options.pose
-    if (pose != null) {
-      this.pose = pose.map((it) => {
-        if (it instanceof Mat4) {
-          return it
-        }
-        return new Mat4(new Float32Array(it))
-      })
-    }
+    this.boundingBox = BoundingBox.convert(options.boundingBox)
+    this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
+    this.skin = options.skin
+    this.clips = options.clips
 
     const meshes = [].concat.apply([], options.meshes || [])
     for (let mesh of meshes) {
@@ -92,12 +111,14 @@ export class Model {
       }
     }
 
-    const materials = flattenArray(options.materials)
-    for (const material of materials) {
-      if (material instanceof ShaderEffect) {
+    const materials: Material[] = []
+    for (const material of flattenArray(options.materials)) {
+      if (material instanceof Material) {
         this.materials.push(material)
+      } else if (typeof material === 'string') {
+        throw new Error(`[Model] can not use string as material: ${material}`)
       } else {
-        this.materials.push(new ShaderEffect(this.device, material))
+        this.materials.push(new Material(this.device, material))
       }
     }
 
@@ -116,16 +137,22 @@ export class Model {
     }
   }
 
+  /**
+   * Simply iterates over all meshes and renderes each with its assigned material
+   *
+   * @remarks
+   * If a mesh points to a missing material it is silently ignored.
+   */
   public draw(): Model {
     for (const mesh of this.meshes) {
-      const material: ShaderEffect = this.materials[mesh.materialId] || this.materials[0]
-      if (!material) { continue }
-      const technique = material.technique
-      if (!technique) { continue }
-      for (const pass of technique.passes) {
-        pass.commit(material.parameters) // TODO:
-        mesh.draw(pass.program)
+      const material: Material = this.materials[mesh.materialId]
+        || this.materials.find((it) => it.name === mesh.materialId)
+        || this.materials[0]
+      if (!material) {
+        // mesh has no material so it can not be rendered
+        continue
       }
+      material.draw(mesh)
     }
     return this
   }

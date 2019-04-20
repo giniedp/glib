@@ -1,12 +1,8 @@
 // tslint:disable max-classes-per-file
-
-import * as Content from '@gglib/content'
-import { HttpOptions } from '@gglib/core'
-import * as Graphics from '@gglib/graphics'
-import { IVec3, Vec3 } from '@gglib/math'
-import { Component } from './../Component'
-import { Entity } from './../Entity'
-import { TransformComponent } from './TransformComponent'
+import * as Graphics from 'graphics'
+import { IVec3 } from 'math'
+import { Component } from '../Component'
+import { Entity } from '../Entity'
 
 /**
  * @public
@@ -76,7 +72,7 @@ export interface ParticleSystemSettings {
   maxEndSize: number // = 100;
 
   // Alpha blending settings.
-  blendState: Graphics.BlendStateOptions // = BlendState.NonPremultiplied;
+  blendState: Graphics.BlendStateParams // = BlendState.NonPremultiplied;
 }
 
 export class ParticlesWriter {

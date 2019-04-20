@@ -6,11 +6,17 @@ import { LightData } from './Types'
  * @public
  */
 export interface Binding<T> {
-  // The uniform binding name
+  /**
+   * The shader uniform name
+   */
   name: string
-  // The uniform type
+  /**
+   * The shader uniform type
+   */
   type: string
-  // The value
+  /**
+   * The value to be set to bound uniform
+   */
   value: T
 }
 
@@ -28,9 +34,15 @@ export interface LightBinding {
  * @public
  */
 export class Binder {
-  public Position: Binding<IVec3> = { name: 'Position', type: 'vec3', value: Vec3.createZero() }
-  public Direction: Binding<IVec3> = { name: 'Direction', type: 'vec3', value: Vec3.createZero() }
-  public World: Binding<Mat4> = { name: 'World', type: 'mat4', value: Mat4.createIdentity() }
+  public Position: Binding<IVec3> = {
+    name: 'Position', type: 'vec3', value: Vec3.createZero(),
+  }
+  public Direction: Binding<IVec3> = {
+    name: 'Direction', type: 'vec3', value: Vec3.createZero(),
+  }
+  public World: Binding<Mat4> = {
+    name: 'World', type: 'mat4', value: Mat4.createIdentity(),
+  }
 
   private transformBindings = [
     this.Position,
@@ -222,7 +234,7 @@ export class Binder {
     let binding: Binding<any>
     let uniform: ShaderUniform
     for (binding of bindings) {
-      uniform = program.uniforms[binding.name]
+      uniform = program.uniforms.get(binding.name)
       if (!uniform || binding.type !== uniform.type) {
         continue
       }

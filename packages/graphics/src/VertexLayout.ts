@@ -1,15 +1,34 @@
 import { extend, Log } from '@gglib/core'
 
-import { DataSize, DataType, DataTypeOption } from './enums'
+import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
 
 /**
  * @public
  */
 export interface VertexAttribute {
-  type: DataTypeOption
+  /**
+   * Offset in bytes from beginning of vertex to this attribute
+   */
   offset: number
+  /**
+   * The data type of a single element in the vertex attribute
+   */
+  type: DataTypeOption
+  /**
+   * The number of `type` elements in this attribute
+   */
   elements: number
+  /**
+   * Indicates that integer elements should be normalized
+   *
+   * @remarks
+   * Signed values are normalized to [0, 1] range.
+   * Unsigned values are normalized to [-1, 1] range.
+   */
   normalize?: boolean
+  /**
+   *
+   */
   packed?: boolean
 }
 
@@ -89,7 +108,7 @@ export class VertexLayout {
   }
 
   public static convert(nameOrLayout: string|VertexLayout): VertexLayout {
-    return typeof nameOrLayout === 'string' ? this.create(nameOrLayout) : nameOrLayout
+    return typeof nameOrLayout === 'string' ? VertexLayout.create(nameOrLayout) : nameOrLayout
   }
 
   /**
@@ -118,14 +137,14 @@ export class VertexLayout {
     for (let name of names) {
       name = String(name).toLowerCase()
       if (!VertexLayout.preset.hasOwnProperty(name)) {
-        Log.l('unknown element name ', name)
+        Log.l('[VertexLayout] unknown element name ', name)
         continue
       }
 
       let element = extend<VertexAttribute>({} as any, VertexLayout.preset[name], { offset: offset })
 
       result[name] = element
-      offset += DataSize[element.type] * element.elements
+      offset += dataTypeSize(element.type) * element.elements
     }
 
     return result
@@ -191,7 +210,7 @@ export class VertexLayout {
     for (const key in layout) {
       if (layout.hasOwnProperty(key)) {
         const item = layout[key]
-        count += DataSize[item.type] * item.elements
+        count += dataTypeSize(item.type) * item.elements
       }
     }
     return count
@@ -207,7 +226,7 @@ export class VertexLayout {
       if (layout.hasOwnProperty(key)) {
         const item = layout[key]
         if (item.offset < target.offset) {
-          count += DataSize[item.type] * item.elements
+          count += dataTypeSize(item.type) * item.elements
         }
       }
     }
@@ -224,7 +243,7 @@ export class VertexLayout {
       if (layout.hasOwnProperty(key)) {
         const item = layout[key]
         if (item.offset > target.offset) {
-          count += DataSize[item.type] * item.elements
+          count += dataTypeSize(item.type) * item.elements
         }
       }
     }
@@ -244,13 +263,19 @@ export class VertexLayout {
     return types
   }
 
+  /**
+   * Converts a number array to an ArrayBuffer by using the given layout information
+   *
+   * @param data - The data array
+   * @param layoutOrType - The data layout information
+   */
   public static convertArrayToArrayBuffer(data: number[], layoutOrType: string|VertexLayout): ArrayBuffer {
     let layout: VertexLayout
-    if (DataType[layoutOrType as string]) {
+    if (typeof layoutOrType === 'string') {
       layout = {
         element: {
           offset: 0,
-          type: DataType[layoutOrType as string],
+          type: valueOfDataType(layoutOrType as DataTypeName),
           elements: 1,
         },
       }
@@ -258,58 +283,57 @@ export class VertexLayout {
       layout = layoutOrType as VertexLayout
     }
 
-    let elementCount = VertexLayout.countElements(layout)
-    let vertexCount = data.length / VertexLayout.countElements(layout)
+    const elementCount = VertexLayout.countElements(layout)
+    const vertexCount = data.length / VertexLayout.countElements(layout)
     if (vertexCount !== Math.floor(vertexCount)) {
       throw new Error('given data does not match the layout')
     }
     const littleEndian = true
-    let vertexSize = VertexLayout.countBytes(layout)
-    let dataSize = vertexCount * vertexSize
-    let result = new ArrayBuffer(dataSize)
-    let view = new DataView(result)
-    let viewSetter = {}
-    viewSetter[DataType.BYTE] = 'setInt8'
-    viewSetter[DataType.UNSIGNED_BYTE] = 'setUint8'
-    viewSetter[DataType.SHORT] = 'setInt16'
-    viewSetter[DataType.UNSIGNED_SHORT] = 'setUint16'
-    viewSetter[DataType.INT] = 'setInt32'
-    viewSetter[DataType.UNSIGNED_INT] = 'setUint32'
-    viewSetter[DataType.FLOAT] = 'setFloat32'
+    const vertexSize = VertexLayout.countBytes(layout)
+    const dataSize = vertexCount * vertexSize
+    const result = new ArrayBuffer(dataSize)
+    const view = new DataView(result)
 
-    let channels = []
-    for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
-        const spec = layout[key]
-        const channel = {
-          offset: spec.offset,
-          size: DataSize[spec.type] * spec.elements,
-          elements: spec.elements,
-          elementType: DataType[spec.type],
-          elementSize: DataSize[spec.type],
-          packed: !!spec.packed,
-          setter: viewSetter[DataType[spec.type]],
-        }
-        channels.push(channel)
-        if (channel.packed) {
-          if (channel.size === 1) { channel.setter = viewSetter[DataType.UNSIGNED_BYTE] }
-          if (channel.size === 2) { channel.setter = viewSetter[DataType.UNSIGNED_SHORT] }
-          if (channel.size === 4) { channel.setter = viewSetter[DataType.UNSIGNED_INT] }
-        }
-      }
+    const viewSetter: {[k: number]: (o: number, v: number) => void} = {
+      [DataType.byte]: (o, v) => view.setInt8(o, v),
+      [DataType.ubyte]: (o, v) => view.setUint8(o, v),
+      [DataType.short]: (o, v) => view.setInt16(o, v, littleEndian),
+      [DataType.ushort]: (o, v) => view.setUint16(o, v, littleEndian),
+      [DataType.int]: (o, v) => view.setInt32(o, v, littleEndian),
+      [DataType.uint]: (o, v) => view.setUint32(o, v, littleEndian),
+      [DataType.float]: (o, v) => view.setFloat32(o, v, littleEndian),
     }
-    channels = channels.sort((a, b) => a.offset < b.offset ? -1 : 1)
+
+    const channels = Object.keys(layout)
+    .map((key) => layout[key])
+    .sort((a, b) => a.offset < b.offset ? -1 : 1)
+    .map((spec) => {
+      const channel = {
+        offset: spec.offset,
+        size: dataTypeSize(spec.type) * spec.elements,
+        elements: spec.elements,
+        elementType: valueOfDataType(spec.type),
+        elementSize: dataTypeSize(spec.type),
+        packed: !!spec.packed,
+        setter: viewSetter[valueOfDataType(spec.type)],
+      }
+      if (channel.packed) {
+        if (channel.size === 1) { channel.setter = viewSetter[DataType.ubyte] }
+        if (channel.size === 2) { channel.setter = viewSetter[DataType.ushort] }
+        if (channel.size === 4) { channel.setter = viewSetter[DataType.uint] }
+      }
+      return channel
+    })
 
     let dataIndex = 0
     for (let pos = 0; pos < dataSize; pos += vertexSize) {
       for (let channel of channels) {
         let offset = pos + channel.offset
         if (channel.packed) {
-          view[channel.setter](offset, data[dataIndex++], littleEndian)
+          channel.setter(offset, data[dataIndex++])
         } else {
-          let counter = channel.elements
           for (let i = 0; i < channel.elements; i++) {
-            view[channel.setter](offset, data[dataIndex++], littleEndian)
+            channel.setter(offset, data[dataIndex++])
             offset += channel.elementSize
           }
         }

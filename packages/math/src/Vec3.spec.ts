@@ -128,19 +128,19 @@ describe('Vec3', () => {
     it ('clones all components', () => expectComponents(Vec3.clone(a), 1, 2, 3))
     it ('returns new instance', () => expect(Vec3.clone(a)).not.toBe(a))
   })
-  describe('#copy', () => {
+  describe('#toArray', () => {
     beforeEach(() => {
       a = new Vec3(1, 2, 3)
     })
-    it ('copies components', () => expect(a.copy([])).toEqual([1, 2, 3]))
-    it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
+    it ('copies components', () => expect(a.toArray()).toEqual([1, 2, 3]))
+    it ('copies components at offset', () => expect(a.toArray([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
   })
-  describe('.copy', () => {
+  describe('.toArray', () => {
     beforeEach(() => {
       a = new Vec3(1, 2, 3)
     })
-    it ('copies components', () => expect(Vec3.copy(a, [])).toEqual([1, 2, 3]))
-    it ('copies components at offset', () => expect(Vec3.copy(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
+    it ('copies components', () => expect(Vec3.toArray(a, [])).toEqual([1, 2, 3]))
+    it ('copies components at offset', () => expect(Vec3.toArray(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 0]))
   })
   describe('#equals', () => {
     it ('compares components', () => {

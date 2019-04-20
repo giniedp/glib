@@ -23,15 +23,22 @@ export interface ShaderTechniqueOptions {
 }
 
 /**
+ * Combines multiple `ShaderPass`es into a single technqiue
+ *
  * @public
  */
 export class ShaderTechnique {
   /**
-   *
+   * A symbol identifying the `ShaderTechniqueOptions` type.
    */
-  public device: Device
+  public static OptionsSymbol = Symbol('ShaderTechniqueOptions')
+
   /**
-   * The identifying name of this technique
+   * The graphics device
+   */
+  public readonly device: Device
+  /**
+   * The user defined name of this technique
    */
   public name: string
   /**

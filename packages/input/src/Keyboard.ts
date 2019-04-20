@@ -1,12 +1,18 @@
 import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
 
 /**
- * Keybord constructor options
+ * Options for {@link Keyboard.constructor}
  *
  * @public
  */
 export interface IKeyboardOptions {
+  /**
+   * The element at which to listen for input events
+   */
   element?: Element,
+  /**
+   * The event names to listen to
+   */
   events?: string[]
 }
 
@@ -20,9 +26,12 @@ export interface IKeyboardState {
 }
 
 /**
- * The Keyboard class allows to capture the keyboards state. It does so by listening to
- * the ```keypress```, ```keydown``` and ```keyup``` events and tracks the pressed buttons. On each recoginzed
- * state change the ```changed``` event is triggered.
+ * Captures key events and tracks keyboard state.
+ *
+ * @remarks
+ * It does so by listening to
+ * the `keypress`, `keydown` and `keyup` events and tracks the pressed buttons. On each recoginzed
+ * state change the `changed` event is triggered.
  *
  * @public
  */

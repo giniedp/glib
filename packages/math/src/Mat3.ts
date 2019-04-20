@@ -2,7 +2,7 @@ import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
- * Describes a 3x3 matrix.
+ * Defines a 3x3 matrix.
  *
  * @public
  */
@@ -11,6 +11,11 @@ export class Mat3 {
   public up: Float32Array = this.data.subarray(3, 6)
   public backward: Float32Array = this.data.subarray(6, 9)
 
+  /**
+   * Constructs a new instance of {@link Mat3}
+   *
+   * @param data - the data to initialise with
+   */
   constructor(public data: Float32Array = new Float32Array(9)) {}
 
   /**
@@ -335,7 +340,10 @@ export class Mat3 {
    * @param offset - Zero based index where to start writing in the array
    * @returns the given buffer
    */
-  public copyTo<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
+  public toArray(): number[]
+  public toArray<T>(buffer?: T, offset?: number): T
+  public toArray(buffer?: number[], offset?: number): number[] {
+    buffer = buffer || []
     offset = offset || 0
     const d = this.data
     buffer[offset] = d[0]

@@ -1,4 +1,4 @@
-import { Model, ModelMesh, ShaderEffect, ShaderProgram, Texture } from '@gglib/graphics'
+import { Material, ShaderProgram, Texture } from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
 import { Manager } from './Manager'
 
@@ -15,7 +15,7 @@ export interface Drawable {
 export interface DrawableData<T = any> {
   world: Mat4
   drawable: Drawable
-  effect: ShaderEffect
+  material: Material
   data?: T
 }
 

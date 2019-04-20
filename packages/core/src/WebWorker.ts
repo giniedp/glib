@@ -25,10 +25,7 @@ export interface WorkResponse<T = any> extends WorkRequest {
 
 export type TaskFunction<T> = (...args: any[]) => T|Promise<T>
 
-/**
- * @public
- */
-export interface BackgroundTask {
+interface BackgroundTask {
   name: string
   action: (...args: any[]) => any
   workerId: number

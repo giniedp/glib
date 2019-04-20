@@ -1,4 +1,5 @@
 import { Buffer, BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, Device  } from '@gglib/graphics'
+import { DataType } from './enums'
 
 describe('graphics/Buffer', () => {
 
@@ -22,19 +23,19 @@ describe('graphics/Buffer', () => {
       ['Dynamic', 'DYNAMIC_DRAW', BufferUsage.Dynamic].forEach((usage: BufferUsageOption) => {
         let buffer = new Buffer(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Dynamic)
-        expect(buffer.usageName).toBe('DYNAMIC_DRAW')
+        expect(buffer.usageName).toBe('Dynamic')
       });
 
       ['Static', 'STATIC_DRAW', BufferUsage.Static].forEach((usage: BufferUsageOption) => {
         let buffer = new Buffer(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Static)
-        expect(buffer.usageName).toBe('STATIC_DRAW')
+        expect(buffer.usageName).toBe('Static')
       });
 
       ['Stream', 'STREAM_DRAW', BufferUsage.Stream].forEach((usage: BufferUsageOption) => {
         let buffer = new Buffer(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Stream)
-        expect(buffer.usageName).toBe('STREAM_DRAW')
+        expect(buffer.usageName).toBe('Stream')
       })
     })
 
@@ -49,13 +50,26 @@ describe('graphics/Buffer', () => {
       ['IndexBuffer', 'ELEMENT_ARRAY_BUFFER', BufferType.IndexBuffer].forEach((it: BufferTypeOption) => {
         let buffer = new Buffer(device, { type: it })
         expect(buffer.type).toBe(BufferType.IndexBuffer)
-        expect(buffer.typeName).toBe('ELEMENT_ARRAY_BUFFER')
+        expect(buffer.isIndexBuffer).toBe(true)
+        expect(buffer.isVertexBuffer).toBe(false)
+        expect(buffer.typeName).toBe('IndexBuffer')
       });
 
       ['VertexBuffer', 'ARRAY_BUFFER', BufferType.VertexBuffer].forEach((it: BufferTypeOption) => {
-        let buffer = new Buffer(device, { type: it })
+        let buffer = new Buffer(device, {
+          type: it,
+          layout: {
+            position: {
+              elements: 3,
+              offset: 0,
+              type: DataType.float,
+            },
+          },
+        })
         expect(buffer.type).toBe(BufferType.VertexBuffer)
-        expect(buffer.typeName).toBe('ARRAY_BUFFER')
+        expect(buffer.isIndexBuffer).toBe(false)
+        expect(buffer.isVertexBuffer).toBe(true)
+        expect(buffer.typeName).toBe('VertexBuffer')
       })
     })
   })
@@ -76,11 +90,10 @@ describe('graphics/Buffer', () => {
             type: 'IndexBuffer',
             dataType: 'ushort',
           })
-          expect(buffer.elementSize).toBe(2)
-          expect(buffer.dataSize).toBe(0)
+          expect(buffer.stride).toBe(2)
 
           buffer.setData(data)
-          expect(buffer.dataSize).toBe(data.length * buffer.elementSize)
+          expect(buffer.sizeInBytes).toBe(data.length * buffer.stride)
 
           let dst = new Uint16Array(10)
           buffer.getBufferSubData(0, dst, 0, 3)
@@ -91,7 +104,7 @@ describe('graphics/Buffer', () => {
           expect(Array.from(dst)).toEqual([0, 0, 0, 1, 2, 3, 0, 0, 0, 0])
 
           dst = new Uint16Array(10)
-          buffer.getBufferSubData(3 * buffer.elementSize, dst, 3, 3)
+          buffer.getBufferSubData(3 * buffer.stride, dst, 3, 3)
           expect(Array.from(dst)).toEqual([0, 0, 0, 4, 5, 6, 0, 0, 0, 0])
         })
       })

@@ -1,343 +1,143 @@
-// tslint:disable ban-types
-import { DataUri, Log, Uri } from '@gglib/core'
+import { DataUri, Log, Type, Uri } from '@gglib/core'
+
 import { ContentType } from './ContentType'
-import { Manager, RawAsset } from './Manager'
-import { Parser } from './parser'
+import { LoaderEntry, LoaderSpec } from './Loader'
+import { PipelineContext } from './PipelineContext'
 
-export type PipelineStage = 'preload'|'load'|'import'|'preprocess'|'process'|'postprocess'
-
-/**
- * @public
- */
-export interface PipelineContext {
-  /**
-   * The current processing content manager
-   */
-  manager: Manager
-  /**
-   * The current processing content pipeline
-   */
-  pipeline: Pipeline
-  /**
-   * The name of the current processing stage
-   */
-  stage: PipelineStage
-  /**
-   * The extension name or the mime type of the source file that is being loaded
-   */
-  sourceType: string
-  /**
-   * The type name of the asset that is being loaded
-   */
-  targetType: PipelineTargetType
-  /**
-   * Any user defined options that might be used during the pipeline
-   */
-  options: any
-
-  /**
-   * The full path or url that is being loaded
-   */
-  source?: string
-  /**
-   * The raw asset that has been downloaded during the load stage
-   */
-  downloaded?: RawAsset
-  /**
-   * Intermadiate result of the import stage
-   */
-  imported?: any
-  /**
-   * The final result of the process stage
-   */
-  result?: any
+interface Node {
+  entry: LoaderEntry
+  next: Node[]
 }
 
-export type PipelineHandler = (context: PipelineContext) => Promise<void>|void
-
-export type PipelineTargetType = string|Function
-
-/**
- * @public
- */
-export interface PipelineEntry {
-  stage: PipelineStage
-  sourceType: string
-  targetType: PipelineTargetType
-  handler: PipelineHandler
-}
-
-/**
- * @internal
- */
-export function describeSourceType(sourcetype: string) {
-  return String(sourcetype)
-}
-
-/**
- * @internal
- */
-export function describeTargetType(targetType: PipelineTargetType) {
-  return typeof targetType === 'string' ? targetType : targetType.name
-}
-
-/**
- * @internal
- */
-export function describeContext(context: PipelineContext): string {
-  return [
-    `stage: '${context.stage}'`,
-    `sourceType: '${describeSourceType(context.sourceType)}'`,
-    `targetType: '${describeTargetType(context.targetType)}'`,
-  ].join(', ')
-}
-
-const handlers: PipelineEntry[] = []
-
-function addHandler(
-  stage: PipelineStage,
-  sourceType: string|string[],
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  if (!Array.isArray(sourceType)) { sourceType = [sourceType] }
-  if (!Array.isArray(targetType)) { targetType = [targetType] }
-  for (let st of sourceType) {
-    for (let tt of targetType) {
-      handlers.unshift({
-        stage: stage,
-        sourceType: st,
-        targetType: tt,
-        handler: handler,
-      })
-    }
+function describeSym(sym: any) {
+  if (!sym) {
+    return `${sym}`
   }
+  if (sym['name']) {
+    return sym['name']
+  }
+  return sym.toString()
 }
 
-function addTransformHandler(
-  stage: PipelineStage,
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  if (!Array.isArray(targetType)) { targetType = [targetType] }
-  for (let tt of targetType) {
-    handlers.unshift({
-      stage: stage,
-      sourceType: '*', // explicitely match all source types
-      targetType: tt,
-      handler: handler,
+function info(msg: string) {
+  Log.i('[Content.Loader] ' + msg)
+}
+
+function warn(msg: string) {
+  Log.w('[Content.Loader] ' + msg)
+}
+
+let defaultPipeline: Pipeline
+
+export class Pipeline {
+  /**
+   * Returns the default pipeline instance
+   */
+  public static get default() {
+    if (defaultPipeline == null) {
+      defaultPipeline = new Pipeline()
+    }
+    return defaultPipeline
+  }
+
+  private loaders: LoaderEntry[] = []
+
+  public static async run(context: PipelineContext) {
+    return context.pipeline.run(context.source, context.target, null, context)
+  }
+
+  /**
+   * Registeres a loader function
+   *
+   * @param loader The loader specification
+   */
+  public register<I, O, D>(loader: LoaderSpec<I, O, D>) {
+    const inputs = Array.isArray(loader.input) ? loader.input : [loader.input]
+    inputs.forEach((input) => {
+      for (const entry of this.loaders) {
+        if (entry.handle === loader.handle && entry.input === input && entry.output === loader.output) {
+          warn(`same loader was registered twice... loader is skipped. ${entry.toString()}`)
+          return
+        }
+      }
+      this.loaders.push(new LoaderEntry(input, loader.output, loader.handle))
     })
   }
-}
 
-/**
- * Registeres a content loader function
- *
- * @public
- */
-export function pipelineLoader(
-  sourceType: string|string[],
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  addHandler('load', sourceType, targetType, handler)
-}
+  /**
+   *
+   * @param source The source type or symbol identifying the input type
+   * @param target The target type or symbol identifying the target type
+   * @param input The input value to import. Its type is identified by `source`
+   * @param context The context use during the import
+   */
+  public async run(source: string | symbol | Type<any>, target: symbol | Type<any>, input: any, context: PipelineContext) {
 
-/**
- * Registeres a content importer function
- *
- * @public
- */
-export function pipelineImporter(
-  sourceType: string|string[],
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  addHandler('import', sourceType, targetType, handler)
-}
-
-/**
- * Registeres a content preloader function
- *
- * @public
- */
-export function pipelinePreloader(
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  addTransformHandler('preload', targetType, handler)
-}
-
-/**
- * Registeres a content processor function
- *
- * @public
- */
-export function pipelineProcessor(
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  addTransformHandler('process', targetType, handler)
-}
-
-/**
- * Registeres a content preprocessor function
- *
- * @public
- */
-export function pipelinePreprocessor(
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  addTransformHandler('preprocess', targetType, handler)
-}
-
-/**
- * Registeres a content postprocessor function
- *
- * @public
- */
-export function pipelinePostprocessor(
-  targetType: PipelineTargetType|PipelineTargetType[],
-  handler: PipelineHandler,
-) {
-  addTransformHandler('postprocess', targetType, handler)
-}
-
-/**
- * @public
- */
-export class Pipeline {
-
-  public matchSourceType(wanted: string, entry: PipelineEntry): boolean {
-    if (entry.sourceType === '*') {
-      // global match
-      return true
-    }
-    if (entry.sourceType === wanted) {
-      // matches extension or mime type
-      return true
+    if (typeof source === 'string') {
+      if (DataUri.isDataUri(source)) {
+        source = ContentType.parse(DataUri.parse(source).contentType).mimeType
+      } else {
+        source = Uri.ext(source)
+      }
     }
 
-    const ect = ContentType.parse(entry.sourceType)
-    const wct = ContentType.parse(wanted)
+    const pipeline = this.resolve(source, target)
+    if (pipeline.length === 0) {
+      throw new Error(`Loader is missing: ${describeSym(source)} => ${describeSym(target)}`)
+    }
 
-    if (!ect && !wct) {
-      return false
-    }
-    if (ect.mediaType !== wct.mediaType) {
-      return false
-    }
-    if (ect.subType === '*') {
-      return true
-    }
-    return false
+    return this.walk(pipeline, input, context)
   }
 
-  public matchTargetType(wanted: PipelineTargetType, item: PipelineEntry): boolean {
-    const current = item.targetType
-    if (current === '*' || current === wanted) {
-      return true
-    }
-    if (typeof current === 'string' && typeof wanted === 'function') {
-      return wanted.name === current
-    }
-    if (typeof wanted === 'string' && typeof current === 'function') {
-      return current['name'] === wanted // TODO: check
-    }
-    return false
+  /**
+   * Detects whether there is a loding path from `source` type to the `target` type
+   *
+   * @param source The source type or symbol identifying the input type
+   * @param target The target type or symbol identifying the target type
+   */
+  public canLoad(source: string | symbol | Type<any>, target: symbol | Type<any>): boolean {
+    return this.resolve(source, target).length > 0
   }
 
-  public findHandler(stage: PipelineStage, sourceType: string, targetType: PipelineTargetType): PipelineHandler {
-    for (let item of handlers) {
-      if (item.stage !== stage) { continue }
-      if (!this.matchTargetType(targetType, item)) { continue }
-      if (this.matchSourceType(sourceType, item)) {
-        return item.handler
+  private resolve(
+    source: symbol | string | Type<any>,
+    target: symbol | string | Type<any>,
+    exclude: LoaderEntry[] = [],
+  ): Node[] {
+    const candidates = this.loaders.filter((it) => exclude.indexOf(it) === -1 && it.input === source)
+    exclude.push(...candidates)
+    return candidates.map((it) => {
+      if (it.output === target) {
+        return {
+          entry: it,
+          next: [],
+        }
+      }
+      const next = this.resolve(it.output, target, exclude)
+      return next && next.length ? {
+        entry: it,
+        next: next,
+      } : null
+    })
+    .filter((it) => it != null)
+    .sort((a, b) => a.next.length <= b.next.length ? -1 : 1)
+  }
+
+  private async walk<T>(nodes: Node[], input: any, context: PipelineContext<T>, stage: number = 1) {
+    if (nodes.length === 0) {
+      // finish recursion
+      return input
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i]
+      context.pipeline = this
+      info(`load stage:${stage} attempt:${i + 1}: ${describeSym(node.entry.input)} => ${describeSym(node.entry.output)}`)
+      const loaded = await node.entry.handle(input, context)
+      const result: T = await this.walk(node.next, loaded, context, stage + 1)
+      if (result) {
+        return result
       }
     }
     return null
   }
-
-  public findAllHandler(
-    stage: PipelineStage,
-    sourceType: string,
-    targetType: PipelineTargetType,
-    out: PipelineHandler[] = [],
-  ): PipelineHandler[] {
-    for (let item of handlers) {
-      if (item.stage !== stage) { continue }
-      if (!this.matchTargetType(targetType, item)) { continue }
-      if (this.matchSourceType(sourceType, item)) {
-        out.push(item.handler)
-      }
-    }
-    return out
-  }
-
-  public runHandlers(stage: PipelineStage, context: PipelineContext): Promise<void> {
-    context.stage = stage
-    const h = this.findAllHandler(context.stage, null, context.targetType)
-    return Promise.all(h.map((it: any)  => it(context))).then(() => undefined)
-  }
-
-  public load(context: PipelineContext): Promise<void> {
-    return this.runHandlers('preload', context)
-      .then(() => {
-        context.stage = 'load'
-        const handler = this.findHandler(context.stage, context.sourceType, context.targetType)
-        return handler
-          ? Promise.resolve(handler(context))
-          : Promise.reject(`[Content.Manager] loader not found: ${describeContext(context)}`)
-      })
-      .then(() => context.result)
-  }
-
-  public import(context: PipelineContext): Promise<void> {
-    context.stage = 'import'
-    const handler = this.findHandler(context.stage, context.sourceType, context.targetType)
-    return handler
-      ? Promise.resolve(handler(context))
-      : Promise.reject(`[Content.Manager] importer not found: ${describeContext(context)}`)
-  }
-
-  public process(context: PipelineContext): Promise<void> {
-    return this.runHandlers('preprocess', context)
-    .then(() => {
-      context.stage = 'process'
-      const handler = this.findHandler(context.stage, null, context.targetType)
-      return handler
-        ? Promise.resolve(handler(context))
-        : Promise.reject(`[Content.Manager] processor not found: { ${describeContext(context)} }`)
-    })
-    .then(() => this.runHandlers('postprocess', context))
-  }
 }
-
-pipelineLoader('*', '*', (context: PipelineContext) => {
-  return context.manager.download(context.source).then((result) => {
-    context.downloaded = result
-    context.sourceType = context.sourceType || result.contentType.mimeType
-    return context.pipeline.import(context)
-  })
-})
-
-pipelineImporter(['.json', 'application/json'], '*', (context: PipelineContext) => {
-  context.imported = Parser.JSON.parse(context.downloaded.content)
-  return context.pipeline.process(context)
-})
-
-pipelineImporter(['.yml', 'application/x-yaml'], '*', (context: PipelineContext) => {
-  context.imported = Parser.YML.parse(context.downloaded.content)
-  return context.pipeline.process(context)
-})
-
-pipelineImporter(['.mtl', 'application/x-mtl'], '*', (context: PipelineContext) => {
-  context.imported = Parser.MTL.parse(context.downloaded.content)
-  return context.pipeline.process(context)
-})
-
-pipelineImporter(['.obj', 'application/x-obj'], '*', (context: PipelineContext) => {
-  context.imported = Parser.OBJ.parse(context.downloaded.content)
-  return context.pipeline.process(context)
-})

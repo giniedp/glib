@@ -4,7 +4,7 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "module": "commonjs",
+    "module": "es2015",
     "moduleResolution": "node",
     "outDir": "../dist/packages",
     "noImplicitAny": true,
@@ -22,7 +22,8 @@
     "skipLibCheck": true,
     "target": "es5",
     "typeRoots": [
-      "../node_modules/@types"
+      "../node_modules/@types",
+      "../node_modules/reflect-metadata"
     ],
     "types": [
       "jasmine",

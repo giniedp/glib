@@ -106,6 +106,12 @@ export class Uri {
     let bUri = Uri.parse(b)
     let path = isAbsolute(b) ? b : aUri.directory + bUri.path
     path = collapse(path)
+    if (bUri.query) {
+      path += `?${bUri.query}`
+    }
+    if (bUri.anchor) {
+      path += `#${bUri.anchor}`
+    }
 
     let result = ''
     if (aUri.protocol) {
@@ -118,6 +124,13 @@ export class Uri {
       result += '/'
     }
     return result + path
+  }
+
+  public static escape(fragment: string) {
+    if (fragment.length > 1) {
+      return fragment[0] + fragment.substring(1).replace(/[!"#$%&'()*+,-.\/\\:;<=>?@\[\]^`{|}~]/gi, (token) => `\\${token}`)
+    }
+    return fragment
   }
 
   public source: string

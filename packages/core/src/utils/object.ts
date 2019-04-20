@@ -1,8 +1,10 @@
 /**
+ * Checks whether a value is of type 'object' and is not an array or null
+ *
  * @public
  */
 export function isObject(value: any): boolean {
-  return value !== null && typeof value === 'object'
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
 /**
@@ -10,20 +12,8 @@ export function isObject(value: any): boolean {
  *
  * @public
  */
-export function pick(
-  src: any,
-  k1?: string,
-  k2?: string,
-  k3?: string,
-  k4?: string,
-  k5?: string,
-  k6?: string,
-  k7?: string,
-  k8?: string,
-  k9?: string,
-  k10?: string,
-): any {
-  let result: any = {}
+export function pick<T>(src: T, ...rest: string[]): Partial<T> {
+  let result: Partial<T> = {}
   for (let i = 1; i < arguments.length; i += 1) {
     const key = arguments[i]
     const value = src[key]
@@ -38,7 +28,7 @@ export function pick(
  * Creates a copy of an object, an array or a primitive.
  *
  * @public
- * @returns The copied object
+ * @deprecated
  */
 export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
   let deep = false
@@ -77,15 +67,8 @@ export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
 }
 
 /**
- * Extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
- * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
- * by passing an empty object as the target: `let object = Gin.extend({}, object1, object2)`.
- * Note: Keep in mind that `Gin.extend` does not support recursive merge (deep copy).
- *
  * @public
- * @param dst - Destination object.
- * @param src - Source object(s).
- * @returns Reference to `dst`.
+ * @deprecated
  */
 export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?: any): T {
   let length = arguments.length

@@ -8,45 +8,104 @@ const regVarying = /^\s*varying\s+(.+)\s+(.+)\s*;/
 const regConst = /^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/
 const regTrim = /^\s*|\s*$/
 
-const  isSamplerType = /sampler2D|sampler3D|samplerCube/
+const isSamplerType = /sampler(2D|2DArray|2DArrayShadow|3D|Cube|CubeShadow)|[iu]?sampler(2D|3D|Cube|2DArray)/
 const regAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/
+
+export interface ShaderObjectMeta {
+  [key: string]: any
+
+  binding?: string
+  name: string
+  type: string
+}
+
+export interface ProgramInspection {
+  attributes: { [key: string]: ShaderObjectMeta }
+  uniforms: { [key: string]: ShaderObjectMeta }
+  varying: { [key: string]: ShaderObjectMeta }
+  vertexShader: string
+  fragmentShader: string
+}
+
+export interface ShaderInspection {
+  defines: { [key: string]: any }
+  constants: { [key: string]: ShaderObjectMeta }
+  attributes: { [key: string]: ShaderObjectMeta }
+  uniforms: { [key: string]: ShaderObjectMeta }
+  varying: { [key: string]: ShaderObjectMeta }
+  structs: {}
+  lines: string[]
+}
 
 /**
  * @public
  */
 export class ShaderInspector {
 
-  public static inspectProgram(vertexShader: string, fragmentShader: string): any {
-    let result = {
-      defines: {},
+  public static formatInfoLog(log: string, source: string): string {
+    if (!log) {
+      return ''
+    }
+    const sourceLines = source.split(/\n/)
+    // ERROR: 0:335: '}' : syntax error
+    const matcher = /^\s*(\w+)\s*:\s*(\d+)\s*:\s*(\d+)\s*:/
+    const result: string[] = []
+    for (const line of log.split('\n')) {
+      result.push(line)
+      const match = line.match(matcher)
+      if (match) {
+        const lineNum = Number(match[3]) - 1
+        for (let i = lineNum - 10; i < lineNum + 10; i++) {
+          if (i >= 0 && i < sourceLines.length) {
+            let ln = String(i)
+            ln = '     '.substring(0, 5 - ln.length) + ln
+            if (i === lineNum) {
+              ln = '>' + ln.substr(1)
+            }
+            result.push(`${ln}:  ${sourceLines[i]}`)
+          }
+        }
+        continue
+      }
+    }
+    return result.join('\n')
+  }
+
+  public static inspectProgram(vertexShader: string, fragmentShader: string): ProgramInspection {
+    const result: ProgramInspection = {
       attributes: {},
       uniforms: {},
       varying: {},
+      vertexShader: '',
+      fragmentShader: '',
     }
     if (vertexShader) {
-      let inspection = this.inspectShader(vertexShader)
+      const inspection = this.inspectShader(vertexShader)
       extend(result.attributes, inspection.attributes)
       extend(result.uniforms, inspection.uniforms)
       extend(result.varying, inspection.varying)
+      result.vertexShader = inspection.lines.join('\n')
     }
     if (fragmentShader) {
-      let inspection = this.inspectShader(fragmentShader)
+      const inspection = this.inspectShader(fragmentShader)
       extend(result.attributes, inspection.attributes)
       extend(result.uniforms, inspection.uniforms)
       extend(result.varying, inspection.varying)
+      result.fragmentShader = inspection.lines.join('\n')
     }
 
     return result
   }
 
-  public static inspectShader(source: string): any {
-    let result = {
+  public static inspectShader(source: string): ShaderInspection {
+    const result: ShaderInspection = {
       defines: {},
+      constants: {},
       attributes: {},
       uniforms: {},
       varying: {},
       structs: {},
-      lines: [] as any[],
+      lines: [],
     }
 
     this.preprocess(source, result)
@@ -57,7 +116,7 @@ export class ShaderInspector {
     return result
   }
 
-  public static fixTextureRegisters(uniforms: any) {
+  public static fixTextureRegisters(uniforms: { [key: string]: ShaderObjectMeta }) {
     // map of used registers
     let used = []
     // uniforms without a valid register annotation
@@ -75,6 +134,8 @@ export class ShaderInspector {
         } else {
           // valid register, mark as used
           used[register] = true
+          // take the number type
+          uniform.register = register
         }
       }
     }
@@ -93,7 +154,7 @@ export class ShaderInspector {
     }
   }
 
-  public static inspectQualifiers(source: string|string[], result: any= {}): any {
+  public static inspectQualifiers(source: string|string[], result: ShaderInspection): any {
     result.constants = result.constants || {}
     result.attributes = result.attributes || {}
     result.uniforms = result.uniforms || {}
@@ -157,7 +218,7 @@ export class ShaderInspector {
     return result
   }
 
-  public static inspectStructs(source: string, result: any= {}): any {
+  public static inspectStructs(source: string, result: any): any {
     let index = 0
     let left
     let right
@@ -182,77 +243,71 @@ export class ShaderInspector {
   /**
    *
    */
-  public static preprocess(source: string|string[], out: any= {}): any {
+  public static preprocess(source: string|string[], out: ShaderInspection): any {
     out.defines = out.defines || {}
     out.lines = out.lines || []
 
-    let defines = out.defines
+    const defines = out.defines
 
     // lines to process
-    let lines = Array.isArray(source) ? source : getLines(source)
+    const lines = Array.isArray(source) ? source : getLines(source)
     // matches preprocessor directives e.g.: #define something
-    let matcher = /\s*#\s*(\w+)\s*(.+)?\s*/
+    const matcher = /\s*#\s*(\w+)\s*(.+)?\s*/
     // matches key and value after the #define directive: #define KEY VALUE
-    let defMatcher = /\s*(\w+)\s*(.+)?\s*/
+    const defMatcher = /\s*(\w+)\s*(.+)?\s*/
     // if/else stack
-    let stack = [{ hot: true, skip: false }]
+    const stack = [{ hot: true, ok: true }]
     let context = stack[0]
 
-    let pushLine = (line: string) => {
-      if (context.hot && !context.skip) {
+    const pushLine = (line: string) => {
+      if (context.hot) {
         out.lines.push(line)
       }
     }
 
-    for (let line of lines) {
+    for (const line of lines) {
       if (!line) {
         pushLine(line)
         continue
       }
-      let match = line.match(matcher)
+      const match = line.match(matcher)
       if (!match) {
         pushLine(line)
         continue
       }
-      let directive = match[1]
-      let value = match[2]
+      const directive = match[1]
+      const value = match[2]
 
       if (directive === 'define') {
         pushLine(line)
-        if (context.hot && !context.skip) {
-          let subMatch = value.match(defMatcher)
+        if (context.hot) {
+          const subMatch = value.match(defMatcher)
           defines[subMatch[1]] = subMatch[2]
         }
       } else if (directive === 'undef') {
         pushLine(line)
-        if (context.hot && !context.skip) {
-          let m = value.match(defMatcher)
+        if (context.hot) {
+          const m = value.match(defMatcher)
           delete defines[m[1]]
         }
       } else if (directive === 'ifdef') {
-        stack.push({
-          hot: (value in defines),
-          skip: context.skip,
-        })
-        context = stack[stack.length - 1]
+        const ok = value in defines
+        context = { hot: context.hot && ok, ok: ok }
+        stack.push(context)
       } else if (directive === 'ifndef') {
-        stack.push({
-          hot: !(value in defines),
-          skip: context.skip,
-        })
-        context = stack[stack.length - 1]
+        const ok = !(value in defines)
+        context = { hot: context.hot && ok, ok: ok }
+        stack.push(context)
       } else if (directive === 'if') {
-        stack.push({
-          hot:  this.evaluateIfExpression(value, defines),
-          skip: context.skip,
-        })
-        context = stack[stack.length - 1]
+        const ok = this.evaluateIfExpression(value, defines)
+        context = { hot: context.hot && ok, ok: ok }
+        stack.push(context)
       } else if (directive === 'else') {
-        context.skip = context.skip || context.hot
-        context.hot = !context.hot
+        context.ok = !context.ok
+        context.hot = stack[stack.length - 2].hot && context.ok
       } else if (directive === 'elif') {
-        context.skip = context.skip || context.hot
-        context.hot = this.evaluateIfExpression(value, defines)
+        context.ok = !context.ok && this.evaluateIfExpression(value, defines)
+        context.hot = stack[stack.length - 2].hot && context.ok
       } else if (directive === 'endif') {
         stack.pop()
         context = stack[stack.length - 1]
@@ -311,17 +366,16 @@ export class ShaderInspector {
    */
   public static parseAnnotations(source: string|string[], out: any= {}): any {
     // lines to process
-    let lines = Array.isArray(source) ? source : getLines(source)
-    for (let line of lines) {
-      let match = line.match(regAnnotation)
+    const lines = Array.isArray(source) ? source : getLines(source)
+    for (const line of lines) {
+      const match = line.match(regAnnotation)
       if (!match) { continue }
       out[match[2]] = match[3]
     }
     return out
   }
 
-  public static fixStructUniforms(uniforms: any, structs: any, defines: any): void {
-    // let item, struct, match, name, count: number, i
+  public static fixStructUniforms(uniforms: any, structs: any, defines: { [key: string]: ShaderObjectMeta }): void {
     let reg = /\s*(.*)\s*\[(.+)].*/
     Object
       .keys(uniforms)
@@ -405,5 +459,4 @@ export class ShaderInspector {
         }
       })
   }
-
 }

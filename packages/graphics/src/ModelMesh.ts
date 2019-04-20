@@ -2,72 +2,153 @@ import { uuid } from '@gglib/core'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { Buffer, BufferOptions } from './Buffer'
 import { Device } from './Device'
-import { PrimitiveType, PrimitiveTypeOption } from './enums'
+import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from './enums'
 import { ShaderProgram } from './ShaderProgram'
 
 /**
  * @public
  */
 export interface ModelMeshOptions {
+  /**
+   * A user defined name of the mesh object
+   */
   name?: string
-  boundingBox?: number[]|BoundingBox
-  boundingSphere?: number[]|BoundingSphere
-  materialId?: number|string
-  indexBuffer?: Buffer|BufferOptions
-  vertexBuffer?: Buffer|BufferOptions
-  primitiveType?: PrimitiveTypeOption,
+  /**
+   * An axis aligned bounding box containing the mesh in local space
+   */
+  boundingBox?: number[] | BoundingBox
+  /**
+   * A bounding sphere containing the mesh in local space
+   */
+  boundingSphere?: number[] | BoundingSphere
+  /**
+   * The material identifier. Defaults to 0
+   */
+  materialId?: number | string
+  /**
+   * The index buffer
+   */
+  indexBuffer?: Buffer | BufferOptions
+  /**
+   * A single vertex buffer or an array ob vertex buffers
+   */
+  vertexBuffer?: Buffer | BufferOptions | Array<Buffer | BufferOptions>
+  /**
+   * Offset in vertex buffer
+   */
+  vertexOffset?: number
+  /**
+   * The mode of the mesh. e.g. TrinagleList, LineList etc.
+   */
+  primitiveType?: PrimitiveTypeOption
+  /**
+   * Number of primitives to render
+   */
+  primitiveCount?: number
 }
 
 /**
  * @public
  */
 export class ModelMesh {
-  public uid: string
-  public device: Device
-  public gl: any
+  public static readonly Options = Symbol('ModelMeshOptions')
+
+  /**
+   * A unique id
+   */
+  public uid: string = uuid()
+  /**
+   * The graphics device
+   */
+  public readonly device: Device
+  /**
+   * The rendering context
+   */
+  public readonly gl: WebGLRenderingContext | WebGL2RenderingContext
+  /**
+   * The axis aligned bounding box containing the mesh in local space
+   */
   public boundingBox: BoundingBox
+  /**
+   * The bounding sphere containing the mesh in local space
+   */
   public boundingSphere: BoundingSphere
-  public materialId: number|string = 0
+  /**
+   * The material id or name referencing the material in the models material collection
+   */
+  public materialId: number | string = 0
+  /**
+   * The inex buffer
+   */
   public indexBuffer: Buffer
-  public vertexBuffer: Buffer
+  /**
+   * Offset in index buffer
+   */
+  public indexOffset: number | null
+  /**
+   * The vertex buffers
+   */
+  public vertexBuffer: Buffer[]
+  /**
+   * The vertex buffer primitive type
+   */
   public primitiveType: number
 
   constructor(device: Device, params: ModelMeshOptions) {
-    this.uid = uuid()
     this.device = device
     this.gl = device.context
 
     this.materialId = params.materialId || 0
     this.boundingBox = BoundingBox.convert(params.boundingBox)
     this.boundingSphere = BoundingSphere.convert(params.boundingSphere)
-    this.primitiveType = PrimitiveType[params.primitiveType] || PrimitiveType.TriangleList
+    this.primitiveType = valueOfPrimitiveType(params.primitiveType) || PrimitiveType.TriangleList
 
-    let buffer: any = params.indexBuffer || {}
-    if (buffer instanceof Buffer) {
-      this.indexBuffer = buffer
+    if (params.indexBuffer instanceof Buffer) {
+      this.indexBuffer = params.indexBuffer
+    } else if (params.indexBuffer) {
+      this.indexBuffer = device.createIndexBuffer(params.indexBuffer)
     } else {
-      this.indexBuffer = device.createIndexBuffer(buffer)
+      // no index buffer given
+      // the geometry will be rendered using the gl.drawArrays() method
     }
 
-    buffer = params.vertexBuffer || {}
-    if (buffer instanceof Buffer) {
-      this.vertexBuffer = buffer
-    } else {
-      this.vertexBuffer = device.createVertexBuffer(buffer)
+    if (!params.vertexBuffer) {
+      throw new Error(`'vertexBuffer' option is missing`)
     }
+    const vBuffers = Array.isArray(params.vertexBuffer)
+      ? params.vertexBuffer
+      : [params.vertexBuffer]
+
+    this.vertexBuffer = vBuffers.map((buffer) => {
+      return buffer instanceof Buffer ? buffer : device.createVertexBuffer(buffer)
+    })
   }
 
+  /**
+   * Draws the mesh with the given program
+   *
+   * @param program the program to draw with
+   */
   public draw(program: ShaderProgram): ModelMesh {
-    let device = this.device
-    device.vertexBuffer = this.vertexBuffer
+    const device = this.device
+    device.vertexBuffers = this.vertexBuffer
     device.indexBuffer = this.indexBuffer
     device.program = program
-    if (device.indexBuffer) {
-      device.drawIndexedPrimitives(this.primitiveType)
-    } else {
-      device.drawPrimitives(this.primitiveType)
+    try {
+      if (device.indexBuffer) {
+        device.drawIndexedPrimitives(this.primitiveType)
+      } else {
+        device.drawPrimitives(this.primitiveType)
+      }
+    } finally {
+      device.vertexBuffers = null
     }
 
     return this
+  }
+
+  public destroy() {
+    this.indexBuffer.destroy()
+    this.vertexBuffer.forEach((it) => it.destroy())
   }
 }

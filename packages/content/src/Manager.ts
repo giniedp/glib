@@ -1,79 +1,22 @@
-// tslint:disable ban-types
-// tslint:disable max-classes-per-file
-
-import { DataUri, extend, Http, HttpOptions, isArray, isObject, isString, Log, pick, Uri } from '@gglib/core'
+import { DataUri, Http, HttpOptions, isArray, isObject, isString, Log, Type, Uri } from '@gglib/core'
 import { Device } from '@gglib/graphics'
 import { ContentType } from './ContentType'
-import { Pipeline, PipelineContext, PipelineHandler } from './Pipeline'
-
- /**
-  * @public
-  */
-export interface RawAsset {
-  /**
-   * The source url
-   */
-  source: string
-  /**
-   * The content
-   */
-  content: any
-  /**
-   * The content type (e.g. application/json)
-   */
-  contentType?: ContentType
-}
-
-/**
- * @public
- */
-export class XhrAsset implements RawAsset  {
-
-  public get source(): string {
-    return this.xhr.responseURL
-  }
-
-  public get content(): string {
-    return this.xhr.response || this.xhr.responseText
-  }
-
-  public contentType: ContentType
-
-  constructor(public readonly xhr: XMLHttpRequest) {
-    this.contentType = ContentType.parse(this.xhr.getResponseHeader('content-type'))
-  }
-}
-
-/**
- * @public
- */
-export class DataUriAsset implements RawAsset {
-
-  public get source(): string {
-    return this.uri.uri
-  }
-
-  public get content(): string {
-    return this.uri.data
-  }
-
-  public get contentTYpe(): string {
-    return this.uri.contentType
-  }
-
-  constructor(private uri: DataUri) {
-
-  }
-}
+import { Data, dataFromElement, dataFromXhr } from './Data'
+import { Pipeline } from './Pipeline'
 
 /**
  * @public
  */
 export interface IManagerOptions {
-  cacheEnabled?: boolean
-  staticEnabled?: boolean
-  defaultAjaxOptions?: any
-  pipeline?: Pipeline
+  enableDomAssets?: boolean
+  loader?: Pipeline
+}
+
+function getOption<T>(options: IManagerOptions, key: keyof IManagerOptions, fallback: T): T {
+  if (key in options) {
+    return options[key] as any
+  }
+  return fallback
 }
 
 /**
@@ -84,201 +27,313 @@ export class Manager {
    * The instance of the graphics device
    */
   public device: Device
+
+  /**
+   * Allows to rewrite a url
+   *
+   * @remarks
+   * Use this to remap a resource uri to another location.
+   */
+  public rewriteUrl: (url: string) => string = (it) => it
+
+  /**
+   * Allows to rewrite an http request
+   *
+   * @remarks
+   * Use this to add authentication or header fields to the request.
+   * Avoid changing the `url` string.
+   */
+  public rewriteRequest: (options: HttpOptions) => HttpOptions = (it: HttpOptions) => it
+
+  /**
+   * Encodes a string to an array buffer
+   */
+  public encode: (str: string) => ArrayBuffer = (str) => {
+    const buf = new ArrayBuffer(str.length * 2)
+    const bufView = new Uint8Array(buf)
+    for (let i = 0; i < str.length; i++) {
+      bufView[i] = str.charCodeAt(i)
+    }
+    return buf
+  }
+
+  /**
+   * Indicates whether assets embedded in DOM elements are anabled
+   */
+  public enableDomAssets = true
+
+  /**
+   * The instance of the loader to use
+   */
+  public loader: Pipeline = Pipeline.default
+
   /**
    * Collection of all loaded assets
    */
-  public loaded = {}
+  private loaded = new Map<string, any>()
   /**
    * Collection of all ongoing loading promises
    */
-  public loading = {}
+  private loading = new Map<string, Promise<any>>()
+
   /**
-   * Collection of all downloaded resources
+   * Collection of existing download requests
    */
-  public cached = {}
-  /**
-   * Collection of urls which should use a different url when requested.
-   */
-  public remapUrl: { [k: string]: string} = {}
-  /**
-   * Indicates whether caching is enabled for downloaded resources
-   */
-  public cacheEnabled = true
-  /**
-   * Default HTTP options to use when requesting assets from the web
-   */
-  public defaultAjaxOptions = {}
-  /**
-   * Allows to dynamically transform HTTP request options
-   */
-  public transformAjaxOptions = (it: any) => it
-  /**
-   * The instance of the pipeline to use
-   */
-  public pipeline: Pipeline = new Pipeline()
+  private downloads = new Map<string, Map<string, Promise<Data<any>>>>()
+
   /**
    *
    */
   constructor(device: Device, options: IManagerOptions= {}) {
     this.device = device
-    extend(this, pick(options, 'cacheEnabled', 'defaultAjaxOptions', 'transformAjaxOptions', 'pipeline'))
+    this.enableDomAssets = getOption(options, 'enableDomAssets', this.enableDomAssets)
+    this.loader = getOption(options, 'loader', this.loader)
   }
 
   /**
-   *
+   * Downloads a resource as json
    */
-  public lookup(path: string): RawAsset {
-    if (!path) {
-      return null
+  public async downloadJSON(optionsOrUrl: HttpOptions|string): Promise<Data<{}>> {
+    const options = this.createHttpOptions(optionsOrUrl)
+    options.xhr = Http.createXMLHttpRequest('json')
+    return this.download<{}>(options)
+  }
+
+  /**
+   * Downloads a resource as xml document
+   */
+  public async downloadDocument(optionsOrUrl: HttpOptions|string): Promise<Data<Document>> {
+    const options = this.createHttpOptions(optionsOrUrl)
+    options.xhr = Http.createXMLHttpRequest('document')
+    return this.download<Document>(options)
+  }
+
+  /**
+   * Downloads a resource as text
+   */
+  public async downloadText(optionsOrUrl: HttpOptions|string): Promise<Data<string>> {
+    const options = this.createHttpOptions(optionsOrUrl)
+    options.xhr = Http.createXMLHttpRequest('text')
+    return this.download<string>(options)
+  }
+
+  /**
+   * Downloads a resource as `Blob`
+   */
+  public async downloadBlob(optionsOrUrl: HttpOptions|string): Promise<Data<Blob>> {
+    const options = this.createHttpOptions(optionsOrUrl)
+    options.xhr = Http.createXMLHttpRequest('blob')
+    return this.download<Blob>(options)
+  }
+
+  /**
+   * Downloads a resource as `ArrayBuffer`
+   */
+  public async downloadArrayBuffer(optionsOrUrl: HttpOptions|string): Promise<Data<ArrayBuffer>> {
+    const options = this.createHttpOptions(optionsOrUrl)
+    options.xhr = Http.createXMLHttpRequest('arraybuffer')
+    return this.download<ArrayBuffer>(options)
+  }
+
+  /**
+   * Downloads data from a remote location.
+   *
+   * @remarks
+   * If dom assets are enabled then an attempt will be made to find a DOM Element matching the following criteria
+   *  - element has a `type` attribute
+   *  - element has an `id` attribute with the value of the given url
+   *
+   * If such DOM Element exists then its textContent is taken as a result
+   */
+  public async download<T = any>(optionsOrUrl: HttpOptions|string): Promise<Data<T>> {
+    let options = this.createHttpOptions(optionsOrUrl)
+    if (this.rewriteRequest) {
+      options = this.rewriteRequest(options) || options
     }
-    if (this.cacheEnabled) {
-      let found = this.cached[path]
-      if (found) {
-        return found
+    const path = options.url
+    const type = options.xhr ? options.xhr.responseType || 'text' : 'text'
+
+    if (this.downloads.has(type)) {
+      if (this.downloads.get(type).has(path)) {
+        return this.downloads.get(type).get(path)
       }
+    } else {
+      this.downloads.set(type, new Map())
     }
-    if (DataUri.isDataUri(path)) {
-      return new DataUriAsset(DataUri.parse(path))
-    }
-    return this.lookupInDOM(path)
-  }
 
-  /**
-   *
-   */
-  public lookupInDOM(path: string): RawAsset {
-    if (!path) {
-      return null
-    }
-    let element = document.getElementById(path)
-    if (!element && path[0] === '/') {
-      element = document.getElementById(path.substr(1))
-    }
-    return element ? {
-      source: path,
-      contentType: ContentType.parse(element.getAttribute('type')),
-      content: element.textContent,
-    } : null
-  }
-
-  /**
-   *
-   */
-  public cache(data: RawAsset): RawAsset {
-    if (this.cacheEnabled) {
-      this.cache[data.source] = data
-    }
-    return data
-  }
-
-  /**
-   *
-   */
-  public makeAjaxOptions(optionsOrUrl: HttpOptions|string): HttpOptions {
-    let options = optionsOrUrl as HttpOptions
-    if (typeof optionsOrUrl === 'string') {
-      options = { url: optionsOrUrl }
-    }
-    options = extend({}, this.defaultAjaxOptions, options) as HttpOptions
-    if (this.transformAjaxOptions) { this.transformAjaxOptions(options) }
-    return options
-  }
-
-  public dataUriToAsset(uri: string): RawAsset {
-    const parsed = DataUri.parse(uri)
-    return {
-      source: parsed.uri,
-      contentType: ContentType.parse(parsed.contentType),
-      content: parsed.data,
-    }
-  }
-
-  /**
-   *
-   */
-  public download(optionsOrUrl: HttpOptions|string): Promise<RawAsset> {
-    const options = this.makeAjaxOptions(optionsOrUrl)
-    return Promise.resolve(this.lookup(options.url)).then((result) => {
-      return result ? Promise.resolve(result) : Http.request(options).then((xhr) => new XhrAsset(xhr))
-    }).then((result: RawAsset) => {
-      this.cache(result)
-      return result
-    })
+    return this.downloads
+      .get(type)
+      .set(path, (async () => {
+        if (this.enableDomAssets) {
+          const element = document.getElementById(path) || document.getElementById(path.replace(/^[\/|#]/, ''))
+          if (!element || !element.hasAttribute('type')) {
+            //
+          } else if (type === 'text') {
+            return Promise.resolve(dataFromElement(path, element))
+          } else if (type === 'json') {
+            return Promise.resolve(dataFromElement(path, element, (text) => JSON.parse(text)))
+          } else if (type === 'arraybuffer') {
+            return Promise.resolve(dataFromElement(path, element, this.encode))
+          } else {
+            //
+          }
+        }
+        if (this.enableDomAssets && type === 'text') {
+          const element = document.getElementById(path) || document.getElementById(path.replace(/^[\/|#]/, ''))
+          if (element && element.hasAttribute('type')) {
+            return Promise.resolve(dataFromElement(path, element))
+          }
+        }
+        return Http.request(options).then(dataFromXhr)
+      })())
+      .get(path)
   }
 
   /**
    * Loads and instantiates multiple assets
+   *
+   * @remarks
+   * The given batch must be an object where each key identifies the target type e.g. `Model` or `Effect` etc.
+   * The result has always the same structure as the given batch but all asset paths are replaced with an asset instance.
+   *
+   * If the batch value is a string, then that is used as an asset path where the asset is downloaded from.
+   *
+   *    ```
+   *    load({ Model: 'path/to/model.obj' })
+   *    // => { Model: INSTANCE }
+   *    ```
+   *
+   * If the batch value is an array, then each entry is used as an asset path.
+   *
+   *    ```
+   *    load({ Model: ['path/1.obj', 'path/2.obj'] })
+   *    // => { Model: [INSTANCE1, INSTANCE2] }
+   *    ```
+   *
+   * If the batch value is an object, then each entry is used as an asset path.
+   *
+   *    ```
+   *    load({ Model: { foo: 'path/foo.obj' })
+   *    // => { Model: { foo: INSTANCE } }
+   *    ```
+   *
    */
-  public loadAssets(config: any): Promise<any> {
+  public loadBatch(batch: { [key: string]: any }): Promise<{ [key: string]: any }> {
     let result = {}
 
-    let promises = []
-    for (let key in config) {
-      if (!config.hasOwnProperty(key)) { continue }
-      const type = key
-      const value = config[type]
-      if (isString(value)) {
-        promises.push(this.load(type, value).then((res: any) => { result[key] = res }))
-      } else if (isArray(value)) {
-        let arr: any[] = result[key] = []
-        for (let path of value) {
-          promises.push(this.load(type, path).then((res: any) => { arr.push(res) }))
-        }
-      } else if (isObject(value)) {
-        let obj = result[key] = {}
-        for (let k in value) {
-          if (!value.hasOwnProperty(k)) { continue }
-          promises.push(this.load(type, value[k]).then((res: any) => { obj[k] = res }))
-        }
-      } else {
-        throw new Error('invalid configuration')
-      }
+    const promises: Array<Promise<any>> = []
+    let counter = 0
+
+    function enqueue(job: Promise<void>) {
+      promises.push(job.then(() => {
+        counter++
+        // TODO: notify
+      }))
     }
+
+    Object.keys(batch).forEach((key) => {
+      const targetType = key
+      const source = batch[targetType]
+
+      if (isString(source)) {
+        enqueue(this.load(targetType, source).then((res) => {
+          result[targetType] = res
+        }))
+        return
+      }
+
+      if (isArray(source)) {
+        const list: any[] = result[targetType] = []
+        source.forEach((src, index) => {
+          enqueue(this.load(targetType, src).then((res) => {
+            list[index] = res
+          }))
+        })
+        return
+      }
+
+      if (isObject(source)) {
+        const namedBatch = result[key] = {}
+        Object.keys(source).forEach((name) => {
+          enqueue(this.load(targetType, source[name]).then((res) => {
+            namedBatch[name] = res
+          }))
+        })
+        return
+      }
+
+      throw new Error('invalid configuration')
+    })
 
     return Promise.all(promises).then(() => result)
   }
 
   /**
-   * Loads and instantiates an assets
+   * Checks whether loading from given source is supported.
+   *
+   * @param src The source url to load from. This will be passed to `rewriteUrl`.
+   * @param targetType The target asset type or a symbol identifying the target type.
    */
-  public load<T = any>(
-    targetType: string|{ new (...arg: any[]): T },
-    assetPath: string,
-    options: { [key: string]: any } = {},
-  ): Promise<T> {
-    if (this.remapUrl[assetPath]) {
-      assetPath = this.remapUrl[assetPath]
+  public canLoad<T = any>(src: string, targetType: symbol | Type<T>) {
+    const remapped = this.rewriteUrl(src)
+    if (remapped) {
+      src = remapped
     }
 
-    const sourceType = DataUri.isDataUri(assetPath)
-      ? ContentType.parse(DataUri.parse(assetPath).contentType).mimeType
-      : Uri.ext(assetPath)
-
-    Log.d(`[Content.Manager] load ${targetType['name'] || targetType}, ${assetPath}, ${sourceType}`)
-
-    // see if the asset is already loaded
-    const key = (targetType['name'] || targetType) + ':' + assetPath
-    if (this.loading[key]) {
-      return this.loading[key]
+    if (DataUri.isDataUri(src)) {
+      return this.loader.canLoad(ContentType.parse(DataUri.parse(src).contentType).mimeType, targetType)
+    } else {
+      return this.loader.canLoad(Uri.ext(src), targetType)
     }
-    if (this.loaded[key]) {
-      return Promise.resolve(this.loaded[key])
+  }
+
+  /**
+   * Loads and instantiates a single asset
+   *
+   * @param src The source url to load from. This will be passed to `rewriteUrl`.
+   * @param targetType The target asset type or a symbol identifying the target type.
+   * @param options Options which will be available in the loading context.
+   */
+  public async load<T = any>(src: string, targetType: symbol | Type<T>, options: { [key: string]: any } = {}): Promise<T> {
+
+    const remapped = this.rewriteUrl(src)
+    if (remapped) {
+      Log.i(`[Content.Manager] remap Url ${src} => ${remapped}`)
+      src = remapped
     }
 
-    const context: PipelineContext = {
-      source: assetPath,
-      stage: 'load',
+    let key: string
+    if (DataUri.isDataUri(src)) {
+      const uri = DataUri.parse(src)
+      const source = ContentType.parse(uri.contentType).mimeType
+      const target = targetType['name'] || targetType.toString()
+      key = `${source} => ${target}`
+      Log.i(`[Content.Manager] load ${key} (from DataUri '${uri.contentType}')`)
+    } else {
+      const source = src
+      const target = targetType['name'] || targetType.toString()
+      key = `${source} => ${target}`
+      Log.i(`[Content.Manager] load ${key}`)
+    }
+
+    if (this.loading.has(key)) {
+      return this.loading.get(key)
+    }
+
+    if (this.loaded.has(key)) {
+      return Promise.resolve(this.loaded.get(key))
+    }
+
+    return this.loading.set(key, Pipeline.run({
       manager: this,
-      pipeline: this.pipeline,
-      sourceType: sourceType,
-      targetType: targetType,
+      source: src,
+      target: targetType,
       options: options,
-    }
-
-    return this.loading[key] = this.pipeline.load(context).then(() => context.result).then((res) => {
-      this.loaded[key] = res
-      delete this.loading[key]
-      return res
+      pipeline: this.loader,
+    })).get(key).then((result) => {
+      this.loading.delete(key)
+      this.loaded.set(key, result)
+      return result
     })
   }
 
@@ -286,17 +341,25 @@ export class Manager {
    * Unloads all currently loaded assets
    */
   public unload() {
-    for (let key of Object.keys(this.loaded)) {
-      let obj = this.loaded[key]
-      delete this.loaded[key]
+    this.loaded.forEach((value, key) => {
       try {
-        if (typeof obj.unload === 'function') { obj.unload() }
+        if (typeof value.unload === 'function') { value.unload() }
       } catch (e) {
         Log.w(`[Content.Manager] failed to unload asset at '${key}'`, e)
       }
+    })
+    this.loaded.clear()
+    this.loading.clear()
+    // TODO: abort ongoing xhr requests
+    this.downloads.forEach((v) => v.clear())
+    this.downloads.clear()
+  }
+
+  private createHttpOptions(optionsOrUrl: HttpOptions|string): HttpOptions {
+    let options = optionsOrUrl as HttpOptions
+    if (typeof optionsOrUrl === 'string') {
+      options = { url: optionsOrUrl }
     }
-    for (let key of Object.keys(this.loading)) {
-      delete this.loading[key]
-    }
+    return options
   }
 }

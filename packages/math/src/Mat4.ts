@@ -1,4 +1,4 @@
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 // column major matrix layout
@@ -23,19 +23,51 @@ import { Vec3 } from './Vec3'
   CreateConstrainedBillboard
   */
 
+let helper: Mat4
+
+function tempMat() {
+  helper = helper || new Mat4()
+  return helper
+}
+
+export type Mat4Data = [
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number
+] | Float32Array
+
 /**
- * Describes a 4x4 matrix.
+ * Defines a 4x4 matrix.
  *
  * @public
  */
 export class Mat4 {
 
-  public readonly right: Float32Array = this.data.subarray(0, 3)
-  public readonly up: Float32Array = this.data.subarray(4, 7)
-  public readonly backward: Float32Array = this.data.subarray(8, 11)
-  public readonly translation: Float32Array = this.data.subarray(12, 15)
+  public readonly data: Float32Array
+  public readonly right: Float32Array
+  public readonly up: Float32Array
+  public readonly backward: Float32Array
+  public readonly translation: Float32Array
 
-  constructor(public readonly data: Float32Array = new Float32Array(16)) {}
+  /**
+   * Constructs a new instance of {@link Mat4}
+   *
+   * @param data - the data to initialise with
+   */
+  constructor(data?: Float32Array | Mat4Data) {
+    if (data instanceof Float32Array) {
+      this.data = data
+    } else if (data) {
+      this.data = new Float32Array(data)
+    } else {
+      this.data = new Float32Array(16)
+    }
+    this.right = this.data.subarray(0, 3)
+    this.up = this.data.subarray(4, 7)
+    this.backward = this.data.subarray(8, 11)
+    this.translation = this.data.subarray(12, 15)
+  }
 
   /**
    * Initializes the matrix with the given values in given order. The values are applied in column major order
@@ -771,8 +803,10 @@ export class Mat4 {
    * @param offset - Zero based index where to start writing in the array
    * @returns the given buffer
    */
-  public copy<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
-    return Mat4.copy(this, buffer, offset)
+  public toArray(): number[]
+  public toArray<T>(buffer?: T, offset?: number): T
+  public toArray(buffer?: number[], offset?: number): number[] {
+    return Mat4.toArray(this, buffer, offset)
   }
 
   /**
@@ -781,7 +815,10 @@ export class Mat4 {
    * @param offset - Zero based index where to start writing in the array
    * @returns the given buffer
    */
-  public static copy<T extends ArrayLike<number>>(mat: Mat4, buffer: T, offset?: number): T {
+  public static toArray(mat: Mat4): number[]
+  public static toArray<T>(mat: Mat4, buffer: T, offset?: number): T
+  public static toArray(mat: Mat4, buffer?: number[], offset?: number): number[] {
+    buffer = buffer || []
     offset = offset || 0
     const d = mat.data
     buffer[offset] = d[0]
@@ -1330,6 +1367,34 @@ export class Mat4 {
     return this
   }
 
+  public rotateX(rad: number): Mat4 {
+    return this.multiply(tempMat().initRotationX(rad))
+  }
+
+  public rotateY(rad: number): Mat4 {
+    return this.multiply(tempMat().initRotationY(rad))
+  }
+
+  public rotateZ(rad: number): Mat4 {
+    return this.multiply(tempMat().initRotationZ(rad))
+  }
+
+  public rotate(yaw: number, pitch: number, roll: number): Mat4 {
+    return this.multiply(tempMat().initYawPitchRoll(yaw, pitch, roll))
+  }
+
+  public translate(x: number, y: number = 0, z: number = 0): Mat4 {
+    return this.multiply(tempMat().initTranslation(x, y, z))
+  }
+
+  public scale(x: number, y: number, z: number): Mat4 {
+    return this.multiply(tempMat().initScale(x, y, z))
+  }
+
+  public scaleUniform(scale: number): Mat4 {
+    return this.multiply(tempMat().initScale(scale, scale, scale))
+  }
+
   /**
    * Multiplies each component of `this` with given scalar
    * @param scalar - The scalar to multiply
@@ -1538,7 +1603,7 @@ export class Mat4 {
    * @param out - The matrix to write to
    * @returns The given `out` parameter or a new matrix
    */
-  public static transpose(mat: Mat4, out?: Mat4): Mat4 {
+  public static transpose(mat: IMat, out?: Mat4): Mat4 {
     const d = mat.data
     return (out || new Mat4()).init(
       d[0], d[4], d[8], d[12],
@@ -1554,7 +1619,7 @@ export class Mat4 {
    * @param out - The matrix to write to
    * @returns The given `out` parameter or a new matrix
    */
-  public static invert(mat: Mat4, out?: Mat4): Mat4 {
+  public static invert(mat: IMat, out?: Mat4): Mat4 {
     out = out || new Mat4()
     const a = mat.data
     const b = out.data

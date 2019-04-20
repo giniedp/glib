@@ -1,18 +1,17 @@
-import { ContextAttributes, Device } from '@gglib/graphics'
+import { Device, DeviceOptions } from '@gglib/graphics'
 
 import * as Components from '../components'
 import { Entity } from '../Entity'
 import { addTemplate, Template } from '../Template'
 
+interface GameOptions extends DeviceOptions {
+  templates?: Array<string|Template>,
+  autorun?: boolean,
+}
+
 addTemplate('Game', (
   entity: Entity,
-  options: {
-    canvas?: HTMLCanvasElement,
-    context?: string | WebGLRenderingContext | WebGL2RenderingContext,
-    contextAttributes?: ContextAttributes,
-    templates?: Array<string|Template>,
-    autorun?: boolean,
-  } = {},
+  options: GameOptions = {},
 ) => {
   entity
     .addService('Device', new Device({

@@ -4,28 +4,29 @@ import { extend, isString, Log } from '@gglib/core'
 
 import {
   BufferType,
-  DataType,
-  DepthFormat,
   PrimitiveType,
-  TextureType,
+  PrimitiveTypeName,
+  valueOfDataType,
+  valueOfPrimitiveType,
 } from './enums'
+
 import {
   BlendState,
-  BlendStateOptions,
+  BlendStateParams,
   CullState,
-  CullStateOptions,
+  CullStateParams,
   DepthState,
-  DepthStateOptions,
+  DepthStateParams,
   OffsetState,
-  OffsetStateOptions,
+  OffsetStateParams,
   SamplerState,
   ScissorState,
-  ScissorStateOptions,
+  ScissorStateParams,
   StencilState,
-  StencilStateOptions,
+  StencilStateParams,
   VertexAttribArrayState,
   ViewportState,
-  ViewportStateOptions,
+  ViewportStateParams,
 } from './states'
 
 import { DepthBuffer, DepthBufferOptions } from './DepthBuffer'
@@ -34,9 +35,9 @@ import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { Texture, TextureOptions } from './Texture'
 import { VertexLayout } from './VertexLayout'
 
-import { Buffer } from './Buffer'
+import { Buffer, BufferOptions } from './Buffer'
 import { Capabilities } from './Capabilities'
-import { Color } from './Color'
+import { Color, RGBA_FORMAT } from './Color'
 import { Model, ModelOptions } from './Model'
 import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { SpriteBatch } from './SpriteBatch'
@@ -45,41 +46,59 @@ const supportsWebGL = typeof WebGLRenderingContext === 'function'
 const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
 
 /**
+ * Options that will be passed to
+ * {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext | HTMLCanvasElement.getContext() }
+ *
  * @public
  */
 export interface ContextAttributes {
   /**
-   * If true, requests a drawing buffer with an alpha channel for the
-   * purposes of performing OpenGL destination alpha operations
-   * and compositing with the page.
+   * Indicates if the canvas contains an alpha buffer.
    */
   alpha?: boolean,
   /**
-   * If true, requests drawing buffer with a depth buffer of at least 16 bits.
+   * Indicates that the drawing buffer has a depth buffer of at least 16 bits.
    */
   depth?: boolean,
   /**
-   * If true, requests a stencil buffer of at least 8 bits.
+   * Indicates that the drawing buffer has a stencil buffer of at least 8 bits.
    */
   stencil?: boolean,
   /**
-   * If true, requests drawing buffer with antialiasing using its choice
-   * of technique (multisample/supersample) and quality.
+   * Indicates whether or not to perform anti-aliasing.
    */
   antialias?: boolean,
   /**
-   * If true, requests drawing buffer which contains colors with
-   * premultiplied alpha. (Ignored if Alpha is false.)
+   * Indicates that the page compositor will assume the drawing buffer contains colors with pre-multiplied alpha.
    */
   premultipliedAlpha?: boolean,
   /**
-   * If true, requests that contents of the drawing buffer remain in
-   * between frames, at potential performance cost.
+   * If true the buffers will not be cleared and will preserve their values until cleared or overwritten by the author.
    */
   preserveDrawingBuffer?: boolean
 }
 
-export const DEFAULT_CONTEXT_ATTRIBUTES: ContextAttributes = Object.freeze({
+/**
+ * Options for the {@link Device.constructor}
+ *
+ * @public
+ */
+export interface DeviceOptions {
+  /**
+   * Canvas element or selector
+   */
+  canvas?: string|HTMLCanvasElement,
+  /**
+   * Rendering context or a context type
+   */
+  context?: 'webgl'|'webgl2'|'experimental-webgl'|WebGLRenderingContext|WebGL2RenderingContext,
+  /**
+   * Context attributes
+   */
+  contextAttributes?: ContextAttributes,
+}
+
+export const DEFAULT_CONTEXT_ATTRIBUTES = Object.freeze<ContextAttributes>({
   alpha: true,
   antialias: true,
   depth: true,
@@ -93,11 +112,11 @@ function getOrCreateCanvas(canvas?: string|HTMLCanvasElement): HTMLCanvasElement
     return canvas
   }
   if (isString(canvas)) {
-    let element = document.getElementById(canvas as string)
+    const element = document.getElementById(canvas as string)
     if (element instanceof HTMLCanvasElement) {
       return element
     } else {
-      throw new Error(`expected '${canvas}' to be a HTMLCanvasElement but found '${element}'`)
+      throw new Error(`expected '${canvas}' to select a HTMLCanvasElement but got '${element}'`)
     }
   }
   return document.createElement('canvas') as HTMLCanvasElement
@@ -138,7 +157,10 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRende
 }
 
 /**
- * The Glib.Graphics.Device class ties all concepts of the Graphics package together.
+ * Describes the Graphics Device
+ *
+ * @remarks
+ * The {@link Device} class ties all concepts of the Graphics package together.
  * It's a central component for rendering geometries. It holds system state variables and
  * is able to create resources such as buffers, shaders, textures and render targets.
  *
@@ -148,14 +170,18 @@ export class Device {
 
   /**
    * The html canvas element
-   * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement}
+   * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement | HTMLCanvasElement}
    */
   public canvas: HTMLCanvasElement
 
   /**
    * The webgl rendering context.
-   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext}
-   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext}
+   *
+   * @remarks
+   * see
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext | WebGLRenderingContext}
+   * and
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext | WebGL2RenderingContext}
    */
   public context: WebGLRenderingContext | WebGL2RenderingContext
 
@@ -165,35 +191,20 @@ export class Device {
   public capabilities: Capabilities
 
   /**
-   * Register of render states. The size of the collection and thus the number of
+   * Collection of {@link SamplerState}.
+   *
+   * @remarks
+   * The size of the collection and thus the number of
    * sampler units is determined by `capabilities.maxTextureUnits`
    */
   public samplerStates: SamplerState[]
 
-  /**
-   * The indexBuffer propery value. Do not set this value directly. Use the property accessors instead
-   */
   private $indexBuffer: Buffer
-
-  /**
-   * The vertexBuffer propery value. Do not set this value directly. Use the property accessors instead
-   */
   private $vertexBuffer: Buffer
-  /**
-   * The program propery value. Do not set this value directly. Use the property accessors instead
-   */
+  private $vertexBuffers: Buffer[]
   private $program: ShaderProgram
-  /**
-   * The cached index buffer that is used to draw a full screen quad.
-   */
   private quadIndexBuffer: Buffer
-  /**
-   * The cached vertex buffer that is used to draw a full screen quad.
-   */
   private quadVertexBuffer: Buffer
-  /**
-   * The cached vertex buffer that is used to draw a full screen quad with flipped texture coordinates.
-   */
   private quadVertexBufferFlipped: Buffer
 
   private $cullState: CullState
@@ -214,11 +225,12 @@ export class Device {
 
   private defaultTextureInstance: Texture
 
-  constructor(options: {
-    canvas?: string|HTMLCanvasElement,
-    context?: string|WebGLRenderingContext|WebGL2RenderingContext,
-    contextAttributes?: ContextAttributes,
-  } = {}) {
+  /**
+   * Constructs a {@link Device}
+   *
+   * @param options
+   */
+  constructor(options: DeviceOptions = {}) {
 
     this.canvas = getOrCreateCanvas(options.canvas)
     this.context = getOrCreateContext(this.canvas, options)
@@ -240,73 +252,78 @@ export class Device {
     }
   }
 
-  /** Gets a copy of the cull state parameters */
-  get cullState() {
+  /**
+   * Gets a copy of the cull state parameters
+   *
+   * @remarks
+   * On set it updates the cull state parameters and direclty commits the state to the GPU
+   */
+  public get cullState() {
     return this.$cullState.copy()
   }
-  /** Updates the cull state parameters and direclty commits the state to the GPU */
-  set cullState(v: CullStateOptions) {
+  public set cullState(v: CullStateParams) {
     this.$cullState.commit(v)
   }
   /** Gets a copy of the blend state parameters */
-  get blendState() {
+  public get blendState() {
     return this.$blendState.copy()
   }
   /** Updates the blend state parameters and direclty commits the state to the GPU */
-  set blendState(v: BlendStateOptions) {
+  public set blendState(v: BlendStateParams) {
     this.$blendState.commit(v)
   }
   /** Gets a copy of the depth state parameters */
-  get depthState() {
+  public get depthState() {
     return this.$depthState.copy()
   }
   /** Updates the depth state parameters and direclty commits the state to the GPU */
-  set depthState(v: DepthStateOptions) {
+  public set depthState(v: DepthStateParams) {
     this.$depthState.commit(v)
   }
   /** Gets a copy of the offset state parameters */
-  get offsetState() {
+  public get offsetState() {
     return this.$offsetState.copy()
   }
   /** Updates the offset state parameters and direclty commits the state to the GPU */
-  set offsetState(v: OffsetStateOptions) {
+  public set offsetState(v: OffsetStateParams) {
     this.$offsetState.commit(v)
   }
   /** Gets a copy of the stencil state parameters */
-  get stencilState() {
+  public get stencilState() {
     return this.$stencilState.copy()
   }
   /** Updates the stencil state parameters and direclty commits the state to the GPU */
-  set stencilState(v: StencilStateOptions) {
+  public set stencilState(v: StencilStateParams) {
     this.$stencilState.commit(v)
   }
   /** Gets a copy of the scissor state parameters */
-  get scissorState() {
+  public get scissorState() {
     return this.$scissorState.copy()
   }
   /** Updates the scissor state parameters and direclty commits the state to the GPU */
-  set scissorState(v: ScissorStateOptions) {
+  public set scissorState(v: ScissorStateParams) {
     this.$scissorState.commit(v)
   }
   /** Gets a copy of the viewport state parameters */
-  get viewportState() {
+  public get viewportState() {
     return this.$viewportState.copy()
   }
   /** Updates the viewport state parameters and direclty commits the state to the GPU */
-  set viewportState(v: ViewportStateOptions) {
+  public set viewportState(v: ViewportStateParams) {
     this.$viewportState.commit(v)
   }
 
-  get defaultTexture(): Texture {
+  public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
       this.defaultTextureInstance = this.createTexture2D({
-        data: [0, 0, 0, 0],
+        data: [0x0F, 0x0F, 0x0F, 0xFF],
+        sampler: SamplerState.PointWrap,
       })
     }
     return this.defaultTextureInstance
   }
 
-  get isWebGL2(): boolean {
+  public get isWebGL2(): boolean {
     return supportsWebGL2 && this.context instanceof WebGL2RenderingContext
   }
 
@@ -322,8 +339,7 @@ export class Device {
       gl.clearColor(color.x, color.y, color.z, color.w)
     } else if (typeof color === 'number') {
       mask = mask | gl.COLOR_BUFFER_BIT
-      let c = Color
-      gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color))
+      gl.clearColor(RGBA_FORMAT.x(color), RGBA_FORMAT.y(color), RGBA_FORMAT.z(color), RGBA_FORMAT.w(color))
     } else if (color !== undefined) {
       mask = mask | gl.COLOR_BUFFER_BIT
       gl.clearColor(color[0], color[1], color[2], color[3])
@@ -351,7 +367,7 @@ export class Device {
     if (color instanceof Color) {
       gl.clearColor(color.x, color.y, color.z, color.w)
     } else if (typeof color === 'number') {
-      gl.clearColor(Color.x(color), Color.y(color), Color.z(color), Color.w(color))
+      gl.clearColor(RGBA_FORMAT.x(color), RGBA_FORMAT.y(color), RGBA_FORMAT.z(color), RGBA_FORMAT.w(color))
     } else {
       gl.clearColor(color[0], color[1], color[2], color[3])
     }
@@ -370,8 +386,8 @@ export class Device {
       gl.clearColor(color.x, color.y, color.z, color.w)
     } else if (typeof color === 'number') {
       mask = mask | gl.COLOR_BUFFER_BIT
-      let c = Color
-      gl.clearColor(c.x(color), c.y(color), c.z(color), c.w(color))
+
+      gl.clearColor(RGBA_FORMAT.x(color), RGBA_FORMAT.y(color), RGBA_FORMAT.z(color), RGBA_FORMAT.w(color))
     } else if (color !== undefined) {
       mask = mask | gl.COLOR_BUFFER_BIT
       gl.clearColor(color[0], color[1], color[2], color[3])
@@ -420,29 +436,29 @@ export class Device {
    *
    *
    */
-  public drawIndexedPrimitives(primitiveType?: number, elementOffset?: number, elementCount?: number): Device {
-    let iBuffer = this.$indexBuffer
-    let vBuffer = this.$vertexBuffer
-    let program = this.$program
+  public drawIndexedPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, elementOffset?: number, elementCount?: number): Device {
+    const iBuffer = this.$indexBuffer
+    const vBuffer = this.$vertexBuffer
+    const vBuffers = this.$vertexBuffers
+    const program = this.$program
     if (!iBuffer) {
-      throw new Error(`drawIndexedPrimitives() requires an indexBuffer`)
+      throw new Error(`device.indexBuffer must be set before calling drawIndexedPrimitives()`)
     }
-    if (!vBuffer) {
-      throw new Error(`drawIndexedPrimitives() requires a vertexBuffer`)
+    if (!vBuffer && !vBuffers && !vBuffers.length) {
+      throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawIndexedPrimitives()`)
     }
     if (!program) {
-      throw new Error(`drawIndexedPrimitives() requires a program`)
+      throw new Error(`device.program must be set before calling drawIndexedPrimitives()`)
     }
 
-    let type = iBuffer.dataType
-    let Enum = PrimitiveType
-    primitiveType = Enum[primitiveType || Enum.TriangleList]
+    const dataType = iBuffer.dataType
+    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
 
-    elementOffset = (elementOffset || 0) * iBuffer.elementSize
+    elementOffset = (elementOffset || 0) * iBuffer.stride
     elementCount = elementCount || iBuffer.elementCount
 
-    this.bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
-    this.context.drawElements(primitiveType, elementCount, type, elementOffset)
+    this.bindAttribPointerAndLocation(vBuffer || vBuffers, program)
+    this.context.drawElements(type, elementCount, dataType, elementOffset)
 
     return this
   }
@@ -450,51 +466,55 @@ export class Device {
   /**
    * Renders multiple instances of the same geometry defined by current index buffer, indexing vertices in current vertex buffer.
    */
-  public drawInstancedPrimitives(instanceCount?: number, primitiveType?: number, offset?: number, count?: number): Device {
-    let iBuffer = this.$indexBuffer
-    let vBuffer = this.$vertexBuffer
-    let program = this.$program
+  public drawInstancedPrimitives(
+    instanceCount?: number, primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number,
+  ): Device {
+    const iBuffer = this.$indexBuffer
+    const vBuffer = this.$vertexBuffer
+    const vBuffers = this.$vertexBuffers
+    const program = this.$program
     if (!iBuffer) {
-      throw new Error(`drawInstancedPrimitives() requires an indexBuffer`)
+      throw new Error(`device.indexBuffer must be set before calling drawInstancedPrimitives()`)
     }
-    if (!vBuffer) {
-      throw new Error(`drawInstancedPrimitives() requires a vertexBuffer`)
+    if (!vBuffer && !vBuffers && !vBuffers.length) {
+      throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawInstancedPrimitives()`)
     }
     if (!program) {
-      throw new Error(`drawInstancedPrimitives() requires a program`)
+      throw new Error(`device.program must be set before calling drawInstancedPrimitives()`)
     }
 
-    let type = iBuffer.dataType
-    let Enum = PrimitiveType
-    primitiveType = Enum[primitiveType || Enum.TriangleList]
+    const dataType = iBuffer.dataType
+    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
+
     offset = offset || 0
     count = count || iBuffer.elementCount
     instanceCount = instanceCount || 1
 
-    this.bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes);
-    (this.context as any).drawElementsInstanced(primitiveType, count, type, offset * iBuffer.elementSize, instanceCount)
+    this.bindAttribPointerAndLocation(vBuffer || vBuffers, program);
+    (this.context as any).drawElementsInstanced(type, count, dataType, offset * iBuffer.stride, instanceCount)
     return this
   }
 
   /**
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
-  public drawPrimitives(primitiveType?: number, offset?: number, count?: number): Device {
-    let vBuffer = this.$vertexBuffer
-    let program = this.$program
-    if (!vBuffer) {
-      throw new Error(`drawInstancedPrimitives() requires a vertexBuffer`)
+  public drawPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number): Device {
+    const vBuffer = this.$vertexBuffer
+    const vBuffers = this.$vertexBuffers
+    const program = this.$program
+    if (!vBuffer && !vBuffers && !vBuffers.length) {
+      throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawPrimitives()`)
     }
     if (!program) {
-      throw new Error(`drawInstancedPrimitives() requires a program`)
+      throw new Error(`device.program must be set before calling drawPrimitives()`)
     }
 
-    primitiveType = (PrimitiveType[primitiveType] || PrimitiveType.TriangleList)
-    count = count || vBuffer.elementCount
+    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
+    count = count || (vBuffer || vBuffers[0]).elementCount
     offset = offset || 0
 
-    this.bindAttribPointerAndLocation(vBuffer, program, vBuffer.layout, program.attributes)
-    this.context.drawArrays(primitiveType, offset, count)
+    this.bindAttribPointerAndLocation(vBuffer || vBuffers, program)
+    this.context.drawArrays(type, offset, count)
     return this
   }
 
@@ -638,7 +658,7 @@ export class Device {
       return this
     }
 
-    // There is at leas one render target set.
+    // There is at least one render target set.
     // The first defines the depth buffer and the size of the frame buffer.
 
     if (firstTexture.depthFormat) {
@@ -681,6 +701,17 @@ export class Device {
   }
 
   /**
+   * Sets multiple vertex buffers
+   *
+   * @remarks
+   * Restricts the `vertexBuffer` property to only this set of buffers.
+   */
+  set vertexBuffers(buffer: Buffer[]) {
+    this.$vertexBuffers = buffer
+    this.vertexBuffer = null
+  }
+
+  /**
    * Gets the currently active vertex buffer
    */
   get vertexBuffer(): Buffer {
@@ -691,6 +722,9 @@ export class Device {
    */
   set vertexBuffer(buffer: Buffer) {
     if (this.$vertexBuffer !== buffer) {
+      if (buffer && this.$vertexBuffers && this.$vertexBuffers.indexOf(buffer) === -1) {
+        throw new Error('vertexBuffer is not part of the vertexBuffers list')
+      }
       this.context.bindBuffer(BufferType.VertexBuffer, buffer ? buffer.handle : null)
       this.$vertexBuffer = buffer
     }
@@ -736,34 +770,57 @@ export class Device {
     return this.context.drawingBufferWidth / this.context.drawingBufferHeight
   }
 
-  private bindAttribPointerAndLocation(vBuffer: Buffer, program: ShaderProgram, layout?: any, attributes?: any) {
-    layout = layout || vBuffer.layout
-    attributes = attributes || program.attributes
-
-    for (const key in attributes) {
-      if (attributes.hasOwnProperty(key)) {
-
-        const channel = layout[key]
-        const attribute = attributes[key]
-        if (!channel) {
-          // tslint:disable-next-line
-          throw new Error(`Can not use current shader program with current vertex buffer. The program requires '${Object.keys(attributes)}' attributes. '${key}' is missing in vertex buffer.`)
+  private bindAttribPointerAndLocation(vBuffer: Buffer | Buffer[], program: ShaderProgram) {
+    if (Array.isArray(vBuffer)) {
+      program.attributes.forEach((attribute, name) => {
+        for (const buffer of vBuffer) {
+          const channel = buffer.layout[name]
+          if (channel) {
+            buffer.use()
+            this.context.vertexAttribPointer(
+              attribute.location,
+              channel.elements,
+              valueOfDataType(channel.type),
+              !!attribute.normalize || !!channel.normalize,
+              buffer.stride,
+              channel.offset,
+            )
+            this.context.enableVertexAttribArray(attribute.location)
+            return
+          }
+        }
+        // tslint:disable-next-line
+        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.attributes.keys())}' but '${name}' is missing in vertex buffer.`)
+      })
+    } else {
+      program.attributes.forEach((attribute, name) => {
+        const channel = vBuffer.layout[name]
+        if (channel) {
+          vBuffer.use()
+          this.context.vertexAttribPointer(
+            attribute.location,
+            channel.elements,
+            valueOfDataType(channel.type),
+            !!attribute.normalize || !!channel.normalize,
+            vBuffer.stride,
+            channel.offset,
+          )
+          this.context.enableVertexAttribArray(attribute.location)
+          return
         }
 
-        this.context.vertexAttribPointer(
-          attribute.location,
-          channel.elements,
-          DataType[channel.type],
-          !!attribute.normalize || !!channel.normalize,
-          vBuffer.elementSize,
-          channel.offset)
-      }
+        // tslint:disable-next-line
+        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.attributes.keys())}' but '${name}' is missing in vertex buffer.`)
+      })
     }
-    this.$vertexAttribArrayState.commit(program.attributeLocations)
+    // enable attributes so that the vertex shader is actually able to use them
+    // this.$vertexAttribArrayState.commit(program.attributeLocations)
   }
 
   /**
    * used internally when a render target is created
+   *
+   * @internal
    */
   public registerRenderTarget(texture: Texture) {
     let list = this.registeredRenderTargets
@@ -780,6 +837,8 @@ export class Device {
 
   /**
    * used internally when a render target is destroyed
+   *
+   * @internal
    */
   public unregisterRenderTarget(texture: Texture) {
     let list = this.registeredRenderTargets
@@ -793,6 +852,8 @@ export class Device {
 
   /**
    * used internally when a depth buffer is created
+   *
+   * @internal
    */
   public registerDepthBuffer(buffer: DepthBuffer) {
     let list = this.registeredDepthBuffers
@@ -809,6 +870,8 @@ export class Device {
 
   /**
    * used internally when a depth buffer is destroyed
+   *
+   * @internal
    */
   public unregisterDepthBuffer(buffer: DepthBuffer) {
     let list = this.registeredDepthBuffers
@@ -824,7 +887,7 @@ export class Device {
    * Creates a new Buffer of type IndexBuffer. Overrides the type option
    * before it calls the Buffer constructor with given options.
    */
-  public createIndexBuffer(options: any): Buffer {
+  public createIndexBuffer(options: BufferOptions): Buffer {
     options.type = 'IndexBuffer'
     options.dataType = options.dataType || 'ushort'
     return new Buffer(this, options)
@@ -834,7 +897,7 @@ export class Device {
    * Creates a new Buffer of type VertexBuffer. Overrides the type option
    * before it calls the Buffer constructor with given options.
    */
-  public createVertexBuffer(options: any): Buffer {
+  public createVertexBuffer(options: BufferOptions): Buffer {
     options.type = 'VertexBuffer'
     return new Buffer(this, options)
   }

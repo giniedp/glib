@@ -38,6 +38,9 @@ const props = (() => {
 })()
 
 /**
+ * Checks whether the current document is hidden.
+ * See {@link https://developer.mozilla.org/en-US/docs/Web/API/Document/hidden | Document.hidden}
+ *
  * @public
  */
 export function documentIsHidden(): boolean {
@@ -45,6 +48,9 @@ export function documentIsHidden(): boolean {
 }
 
 /**
+ * Gets the visibility state of current document.
+ * See {@link https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilityState | Document.visibilityState}
+ *
  * @public
  */
 export function documentVisibilityState(fallback?: string): string {
@@ -52,6 +58,10 @@ export function documentVisibilityState(fallback?: string): string {
 }
 
 /**
+ * Adds a listener to the
+ * {@link https://developer.mozilla.org/en-US/docs/Web/API/Document/onvisibilitychange | Document.onvisibilitychange}
+ * event
+ *
  * @public
  */
 export function onDocumentVisibilityChange(callback: EventListenerOrEventListenerObject) {
@@ -59,6 +69,10 @@ export function onDocumentVisibilityChange(callback: EventListenerOrEventListene
 }
 
 /**
+ * Removes a listener from the
+ * {@link https://developer.mozilla.org/en-US/docs/Web/API/Document/onvisibilitychange | Document.onvisibilitychange}
+ * event
+ *
  * @public
  */
 export function offDocumentVisibilityChange(callback: EventListenerOrEventListenerObject) {

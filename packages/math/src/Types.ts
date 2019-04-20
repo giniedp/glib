@@ -1,4 +1,6 @@
 /**
+ * A 2 dimensional vector.
+ *
  * @public
  */
 export interface IVec2 {
@@ -7,6 +9,8 @@ export interface IVec2 {
 }
 
 /**
+ * A 3 dimensional vector.
+ *
  * @public
  */
 export interface IVec3 extends  IVec2 {
@@ -14,6 +18,8 @@ export interface IVec3 extends  IVec2 {
 }
 
 /**
+ * A 4 dimensional vector.
+ *
  * @public
  */
 export interface IVec4 extends  IVec3 {
@@ -21,6 +27,8 @@ export interface IVec4 extends  IVec3 {
 }
 
 /**
+ * A 2 dimensional point.
+ *
  * @public
  */
 export interface IPoint {
@@ -29,6 +37,8 @@ export interface IPoint {
 }
 
 /**
+ * An object havin a width and a height.
+ *
  * @public
  */
 export interface ISize {
@@ -37,12 +47,16 @@ export interface ISize {
 }
 
 /**
+ * A rectangle that is composed of a {@IPoint} and a {@ISize}.
+ *
  * @public
  */
 export interface IRect extends IPoint, ISize {
 }
 
 /**
+ * An object holding an array of numbers, intended to be used as a matrix
+ *
  * @public
  */
 export interface IMat {
@@ -50,6 +64,8 @@ export interface IMat {
 }
 
 /**
+ * Something that looks like an array
+ *
  * @public
  */
 export interface ArrayLike<T> {

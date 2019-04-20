@@ -2,7 +2,7 @@ import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 
 /**
- * Describes a 4x4 matrix.
+ * Defines a 2x2 matrix.
  *
  * @public
  */
@@ -26,6 +26,9 @@ export class Mat2 {
   }
 
   /**
+   * Constructs a new instance of {@link Mat2}
+   *
+   * @remarks
    * Creates a new matrix. This method should be called with 16 or 0 arguments. If less than 16 but more than 0 arguments
    * are given some components are going to be undefined. The arguments are expected to be in column major order.
    *
@@ -320,7 +323,10 @@ export class Mat2 {
    * @param offset - Zero based index where to start writing in the array
    * @returns the given buffer
    */
-  public copyTo<T extends ArrayLike<number>>(buffer: T, offset?: number): T {
+  public toArray(): number[]
+  public toArray<T>(buffer?: T, offset?: number): T
+  public toArray(buffer?: number[], offset?: number): number[] {
+    buffer = buffer || []
     offset = offset || 0
     const d = this.data
     buffer[offset] = d[0]

@@ -83,7 +83,7 @@ export class HeightMap {
     let index = 0
     for (let y = 0; y < this.height; y += 1) {
       for (let x = 0; x < this.width; x += 1) {
-        this.calculateNormalAt(x, y, normal).copy(this.normals, index)
+        this.calculateNormalAt(x, y, normal).toArray(this.normals, index)
         index += 3
       }
     }
@@ -127,7 +127,7 @@ export class HeightMap {
       for (let x = 0; x < this.width; x += 1) {
         this.heights[index] *= scale
         this.normals[nIndex + 1] /= scale
-        normal.initFromBuffer(this.normals, nIndex).normalize().copy(this.normals, nIndex)
+        normal.initFromBuffer(this.normals, nIndex).normalize().toArray(this.normals, nIndex)
         index += 1
         nIndex += 3
       }

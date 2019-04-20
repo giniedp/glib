@@ -1,6 +1,7 @@
 import * as Content from '@gglib/content'
-import { HttpOptions } from '@gglib/core'
+import { HttpOptions, Type } from '@gglib/core'
 import * as Graphics from '@gglib/graphics'
+
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 
@@ -20,19 +21,19 @@ export class AssetsComponent implements Component {
     this.manager = new Content.Manager(this.device)
   }
 
-  public load(type: string, asset: string): Promise<any> {
-    return this.manager.load(type, asset)
+  public load<T = any>(asset: string, type: symbol | Type<T>): Promise<T> {
+    return this.manager.load(asset, type)
   }
 
-  public loadAssets(config: any): Promise<any> {
-    return this.manager.loadAssets(config)
+  public loadBatch(config: any): Promise<any> {
+    return this.manager.loadBatch(config)
   }
 
   public unload() {
     return this.manager.unload()
   }
 
-  public download(options: string | HttpOptions): Promise<Content.RawAsset> {
+  public download(options: string | HttpOptions): Promise<Content.Data> {
     return this.manager.download(options)
   }
 }

@@ -1,6 +1,17 @@
-
-export type DataTypeOption =
-    'byte'
+export enum DataType {
+  byte = 0x1400,
+  short = 0x1402,
+  int = 0x1404,
+  ubyte = 0x1401,
+  ushort = 0x1403,
+  uint = 0x1405,
+  float = 0x1406,
+  ushort565 = 0x8363,
+  ushort4444 = 0x8033,
+  ushort5551 = 0x8034,
+}
+export type DataTypeName
+  = 'byte'
   | 'short'
   | 'int'
   | 'ubyte'
@@ -10,19 +21,7 @@ export type DataTypeOption =
   | 'ushort565'
   | 'ushort4444'
   | 'ushort5551'
-  | 'BYTE'
-  | 'SHORT'
-  | 'INT'
-  | 'UNSIGNED_BYTE'
-  | 'UNSIGNED_SHORT'
-  | 'UNSIGNED_INT'
-  | 'FLOAT'
-  | 'UNSIGNED_SHORT_5_6_5'
-  | 'UNSIGNED_SHORT_4_4_4_4'
-  | 'UNSIGNED_SHORT_5_5_5_1'
-  | number
-
-export const DataType = Object.freeze({
+const DataTypeValueMap = Object.freeze<any>({
   byte: 0x1400,
   BYTE: 0x1400,
   0x1400: 0x1400,
@@ -53,74 +52,54 @@ export const DataType = Object.freeze({
   ushort5551: 0x8034,
   UNSIGNED_SHORT_5_5_5_1: 0x8034,
   0x8034: 0x8034,
-  nameOf: (name: string|number): string => mapDataTypeName[name],
 })
-const mapDataTypeName = Object.freeze({
-  byte: 'BYTE',
-  BYTE: 'BYTE',
-  0x1400: 'BYTE',
-  short: 'SHORT',
-  SHORT: 'SHORT',
-  0x1402: 'SHORT',
-  int: 'INT',
-  INT: 'INT',
-  0x1404: 'INT',
-  ubyte: 'UNSIGNED_BYTE',
-  UNSIGNED_BYTE: 'UNSIGNED_BYTE',
-  0x1401: 'UNSIGNED_BYTE',
-  ushort: 'UNSIGNED_SHORT',
-  UNSIGNED_SHORT: 'UNSIGNED_SHORT',
-  0x1403: 'UNSIGNED_SHORT',
-  uint: 'UNSIGNED_INT',
-  UNSIGNED_INT: 'UNSIGNED_INT',
-  0x1405: 'UNSIGNED_INT',
-  float: 'FLOAT',
-  FLOAT: 'FLOAT',
-  0x1406: 'FLOAT',
-  ushort565: 'UNSIGNED_SHORT_5_6_5',
-  UNSIGNED_SHORT_5_6_5: 'UNSIGNED_SHORT_5_6_5',
-  0x8363: 'UNSIGNED_SHORT_5_6_5',
-  ushort4444: 'UNSIGNED_SHORT_4_4_4_4',
-  UNSIGNED_SHORT_4_4_4_4: 'UNSIGNED_SHORT_4_4_4_4',
-  0x8033: 'UNSIGNED_SHORT_4_4_4_4',
-  ushort5551: 'UNSIGNED_SHORT_5_5_5_1',
-  UNSIGNED_SHORT_5_5_5_1: 'UNSIGNED_SHORT_5_5_5_1',
-  0x8034: 'UNSIGNED_SHORT_5_5_5_1',
+export function valueOfDataType(keyOrValue: DataType | DataTypeName): DataType {
+  return DataTypeValueMap[keyOrValue]
+}
+const DataTypeNameMap = Object.freeze<any>({
+  0x1400: 'byte',
+  BYTE: 'byte',
+  byte: 'byte',
+  0x1402: 'short',
+  SHORT: 'short',
+  short: 'short',
+  0x1404: 'int',
+  INT: 'int',
+  int: 'int',
+  0x1401: 'ubyte',
+  UNSIGNED_BYTE: 'ubyte',
+  ubyte: 'ubyte',
+  0x1403: 'ushort',
+  UNSIGNED_SHORT: 'ushort',
+  ushort: 'ushort',
+  0x1405: 'uint',
+  UNSIGNED_INT: 'uint',
+  uint: 'uint',
+  0x1406: 'float',
+  FLOAT: 'float',
+  float: 'float',
+  0x8363: 'ushort565',
+  UNSIGNED_SHORT_5_6_5: 'ushort565',
+  ushort565: 'ushort565',
+  0x8033: 'ushort4444',
+  UNSIGNED_SHORT_4_4_4_4: 'ushort4444',
+  ushort4444: 'ushort4444',
+  0x8034: 'ushort5551',
+  UNSIGNED_SHORT_5_5_5_1: 'ushort5551',
+  ushort5551: 'ushort5551',
 })
-export type DataSizeOption =
-    'byte'
-  | 'short'
-  | 'int'
-  | 'ubyte'
-  | 'ushort'
-  | 'uint'
-  | 'float'
-  | 'ushort565'
-  | 'ushort4444'
-  | 'ushort5551'
-  | 'BYTE'
-  | 'SHORT'
-  | 'INT'
-  | 'UNSIGNED_BYTE'
-  | 'UNSIGNED_SHORT'
-  | 'UNSIGNED_INT'
-  | 'FLOAT'
-  | 'UNSIGNED_SHORT_5_6_5'
-  | 'UNSIGNED_SHORT_4_4_4_4'
-  | 'UNSIGNED_SHORT_5_5_5_1'
-  | number
-
-export const DataSize = Object.freeze({
+export function nameOfDataType(keyOrValue: DataType | DataTypeName): DataTypeName {
+  return DataTypeNameMap[keyOrValue]
+}
+export type DataTypeOption = DataType | DataTypeName
+const dataTypeSizeMap = Object.freeze({
   byte: 1,
-  1: 1,
   BYTE: 1,
   0x1400: 1,
   short: 2,
-  2: 2,
   SHORT: 2,
   0x1402: 2,
   int: 4,
-  4: 4,
   INT: 4,
   0x1404: 4,
   ubyte: 1,
@@ -145,56 +124,29 @@ export const DataSize = Object.freeze({
   UNSIGNED_SHORT_5_5_5_1: 2,
   0x8034: 2,
 })
-export type ArrayTypeOption =
-    'byte'
-  | 'short'
-  | 'int'
-  | 'ubyte'
-  | 'ushort'
-  | 'uint'
-  | 'float'
-  | 'ushort565'
-  | 'ushort4444'
-  | 'ushort5551'
-  | 'BYTE'
-  | 'SHORT'
-  | 'INT'
-  | 'UNSIGNED_BYTE'
-  | 'UNSIGNED_SHORT'
-  | 'UNSIGNED_INT'
-  | 'FLOAT'
-  | 'UNSIGNED_SHORT_5_6_5'
-  | 'UNSIGNED_SHORT_4_4_4_4'
-  | 'UNSIGNED_SHORT_5_5_5_1'
-  | any
-
+export function dataTypeSize(value: DataTypeOption) {
+  return dataTypeSizeMap[value]
+}
 export const ArrayType = Object.freeze({
   byte: Int8Array,
-  Int8Array: Int8Array,
   BYTE: Int8Array,
   0x1400: Int8Array,
   short: Int16Array,
-  Int16Array: Int16Array,
   SHORT: Int16Array,
   0x1402: Int16Array,
   int: Int32Array,
-  Int32Array: Int32Array,
   INT: Int32Array,
   0x1404: Int32Array,
   ubyte: Uint8Array,
-  Uint8Array: Uint8Array,
   UNSIGNED_BYTE: Uint8Array,
   0x1401: Uint8Array,
   ushort: Uint16Array,
-  Uint16Array: Uint16Array,
   UNSIGNED_SHORT: Uint16Array,
   0x1403: Uint16Array,
   uint: Uint32Array,
-  Uint32Array: Uint32Array,
   UNSIGNED_INT: Uint32Array,
   0x1405: Uint32Array,
   float: Float32Array,
-  Float32Array: Float32Array,
   FLOAT: Float32Array,
   0x1406: Float32Array,
   ushort565: Uint16Array,
@@ -206,57 +158,17 @@ export const ArrayType = Object.freeze({
   ushort5551: Uint16Array,
   UNSIGNED_SHORT_5_5_5_1: Uint16Array,
   0x8034: Uint16Array,
-  nameOf: (name: string|number): string => mapArrayTypeName[name],
 })
-const mapArrayTypeName = Object.freeze({
-  byte: 'Int8Array',
-  Int8Array: 'Int8Array',
-  BYTE: 'Int8Array',
-  0x1400: 'Int8Array',
-  short: 'Int16Array',
-  Int16Array: 'Int16Array',
-  SHORT: 'Int16Array',
-  0x1402: 'Int16Array',
-  int: 'Int32Array',
-  Int32Array: 'Int32Array',
-  INT: 'Int32Array',
-  0x1404: 'Int32Array',
-  ubyte: 'Uint8Array',
-  Uint8Array: 'Uint8Array',
-  UNSIGNED_BYTE: 'Uint8Array',
-  0x1401: 'Uint8Array',
-  ushort: 'Uint16Array',
-  Uint16Array: 'Uint16Array',
-  UNSIGNED_SHORT: 'Uint16Array',
-  0x1403: 'Uint16Array',
-  uint: 'Uint32Array',
-  Uint32Array: 'Uint32Array',
-  UNSIGNED_INT: 'Uint32Array',
-  0x1405: 'Uint32Array',
-  float: 'Float32Array',
-  Float32Array: 'Float32Array',
-  FLOAT: 'Float32Array',
-  0x1406: 'Float32Array',
-  ushort565: 'Uint16Array',
-  UNSIGNED_SHORT_5_6_5: 'Uint16Array',
-  0x8363: 'Uint16Array',
-  ushort4444: 'Uint16Array',
-  UNSIGNED_SHORT_4_4_4_4: 'Uint16Array',
-  0x8033: 'Uint16Array',
-  ushort5551: 'Uint16Array',
-  UNSIGNED_SHORT_5_5_5_1: 'Uint16Array',
-  0x8034: 'Uint16Array',
-})
-export type BufferUsageOption =
-    'Static'
+export enum BufferUsage {
+  Static = 0x88E4,
+  Dynamic = 0x88E8,
+  Stream = 0x88E0,
+}
+export type BufferUsageName
+  = 'Static'
   | 'Dynamic'
   | 'Stream'
-  | 'STATIC_DRAW'
-  | 'DYNAMIC_DRAW'
-  | 'STREAM_DRAW'
-  | number
-
-export const BufferUsage = Object.freeze({
+const BufferUsageValueMap = Object.freeze<any>({
   Static: 0x88E4,
   STATIC_DRAW: 0x88E4,
   0x88E4: 0x88E4,
@@ -266,45 +178,74 @@ export const BufferUsage = Object.freeze({
   Stream: 0x88E0,
   STREAM_DRAW: 0x88E0,
   0x88E0: 0x88E0,
-  nameOf: (name: string|number): string => mapBufferUsageName[name],
 })
-const mapBufferUsageName = Object.freeze({
-  Static: 'STATIC_DRAW',
-  STATIC_DRAW: 'STATIC_DRAW',
-  0x88E4: 'STATIC_DRAW',
-  Dynamic: 'DYNAMIC_DRAW',
-  DYNAMIC_DRAW: 'DYNAMIC_DRAW',
-  0x88E8: 'DYNAMIC_DRAW',
-  Stream: 'STREAM_DRAW',
-  STREAM_DRAW: 'STREAM_DRAW',
-  0x88E0: 'STREAM_DRAW',
+export function valueOfBufferUsage(keyOrValue: BufferUsage | BufferUsageName): BufferUsage {
+  return BufferUsageValueMap[keyOrValue]
+}
+const BufferUsageNameMap = Object.freeze<any>({
+  0x88E4: 'Static',
+  STATIC_DRAW: 'Static',
+  Static: 'Static',
+  0x88E8: 'Dynamic',
+  DYNAMIC_DRAW: 'Dynamic',
+  Dynamic: 'Dynamic',
+  0x88E0: 'Stream',
+  STREAM_DRAW: 'Stream',
+  Stream: 'Stream',
 })
-export type BufferTypeOption =
-    'VertexBuffer'
+export function nameOfBufferUsage(keyOrValue: BufferUsage | BufferUsageName): BufferUsageName {
+  return BufferUsageNameMap[keyOrValue]
+}
+export type BufferUsageOption = BufferUsage | BufferUsageName
+export enum BufferType {
+  VertexBuffer = 0x8892,
+  IndexBuffer = 0x8893,
+}
+export type BufferTypeName
+  = 'VertexBuffer'
   | 'IndexBuffer'
-  | 'ARRAY_BUFFER'
-  | 'ELEMENT_ARRAY_BUFFER'
-  | number
-
-export const BufferType = Object.freeze({
+const BufferTypeValueMap = Object.freeze<any>({
   VertexBuffer: 0x8892,
   ARRAY_BUFFER: 0x8892,
   0x8892: 0x8892,
   IndexBuffer: 0x8893,
   ELEMENT_ARRAY_BUFFER: 0x8893,
   0x8893: 0x8893,
-  nameOf: (name: string|number): string => mapBufferTypeName[name],
 })
-const mapBufferTypeName = Object.freeze({
-  VertexBuffer: 'ARRAY_BUFFER',
-  ARRAY_BUFFER: 'ARRAY_BUFFER',
-  0x8892: 'ARRAY_BUFFER',
-  IndexBuffer: 'ELEMENT_ARRAY_BUFFER',
-  ELEMENT_ARRAY_BUFFER: 'ELEMENT_ARRAY_BUFFER',
-  0x8893: 'ELEMENT_ARRAY_BUFFER',
+export function valueOfBufferType(keyOrValue: BufferType | BufferTypeName): BufferType {
+  return BufferTypeValueMap[keyOrValue]
+}
+const BufferTypeNameMap = Object.freeze<any>({
+  0x8892: 'VertexBuffer',
+  ARRAY_BUFFER: 'VertexBuffer',
+  VertexBuffer: 'VertexBuffer',
+  0x8893: 'IndexBuffer',
+  ELEMENT_ARRAY_BUFFER: 'IndexBuffer',
+  IndexBuffer: 'IndexBuffer',
 })
-export type BlendOption =
-    'Zero'
+export function nameOfBufferType(keyOrValue: BufferType | BufferTypeName): BufferTypeName {
+  return BufferTypeNameMap[keyOrValue]
+}
+export type BufferTypeOption = BufferType | BufferTypeName
+export enum Blend {
+  Zero = 0,
+  One = 1,
+  SrcColor = 0x0300,
+  SrcColorInv = 0x0301,
+  SrcAlpha = 0x0302,
+  SrcAlphaInv = 0x0303,
+  SrcAlphaSat = 0x0308,
+  DstColor = 0x0306,
+  DstColorInv = 0x0307,
+  DstAlpha = 0x0304,
+  DstAlphaInv = 0x0305,
+  ConstantColor = 0x8001,
+  ConstantColorInv = 0x8002,
+  ConstantAlpha = 0x8003,
+  ConstantAlphaInv = 0x8004,
+}
+export type BlendName
+  = 'Zero'
   | 'One'
   | 'SrcColor'
   | 'SrcColorInv'
@@ -319,24 +260,7 @@ export type BlendOption =
   | 'ConstantColorInv'
   | 'ConstantAlpha'
   | 'ConstantAlphaInv'
-  | 'ZERO'
-  | 'ONE'
-  | 'SRC_COLOR'
-  | 'ONE_MINUS_SRC_COLOR'
-  | 'SRC_ALPHA'
-  | 'ONE_MINUS_SRC_ALPHA'
-  | 'SRC_ALPHA_SATURATE'
-  | 'DST_COLOR'
-  | 'ONE_MINUS_DST_COLOR'
-  | 'DST_ALPHA'
-  | 'ONE_MINUS_DST_ALPHA'
-  | 'CONSTANT_COLOR'
-  | 'ONE_MINUS_CONSTANT_COLOR'
-  | 'CONSTANT_ALPHA'
-  | 'ONE_MINUS_CONSTANT_ALPHA'
-  | number
-
-export const Blend = Object.freeze({
+const BlendValueMap = Object.freeze<any>({
   Zero: 0,
   ZERO: 0,
   0: 0,
@@ -382,65 +306,71 @@ export const Blend = Object.freeze({
   ConstantAlphaInv: 0x8004,
   ONE_MINUS_CONSTANT_ALPHA: 0x8004,
   0x8004: 0x8004,
-  nameOf: (name: string|number): string => mapBlendName[name],
 })
-const mapBlendName = Object.freeze({
-  Zero: 'ZERO',
-  ZERO: 'ZERO',
-  0: 'ZERO',
-  One: 'ONE',
-  ONE: 'ONE',
-  1: 'ONE',
-  SrcColor: 'SRC_COLOR',
-  SRC_COLOR: 'SRC_COLOR',
-  0x0300: 'SRC_COLOR',
-  SrcColorInv: 'ONE_MINUS_SRC_COLOR',
-  ONE_MINUS_SRC_COLOR: 'ONE_MINUS_SRC_COLOR',
-  0x0301: 'ONE_MINUS_SRC_COLOR',
-  SrcAlpha: 'SRC_ALPHA',
-  SRC_ALPHA: 'SRC_ALPHA',
-  0x0302: 'SRC_ALPHA',
-  SrcAlphaInv: 'ONE_MINUS_SRC_ALPHA',
-  ONE_MINUS_SRC_ALPHA: 'ONE_MINUS_SRC_ALPHA',
-  0x0303: 'ONE_MINUS_SRC_ALPHA',
-  SrcAlphaSat: 'SRC_ALPHA_SATURATE',
-  SRC_ALPHA_SATURATE: 'SRC_ALPHA_SATURATE',
-  0x0308: 'SRC_ALPHA_SATURATE',
-  DstColor: 'DST_COLOR',
-  DST_COLOR: 'DST_COLOR',
-  0x0306: 'DST_COLOR',
-  DstColorInv: 'ONE_MINUS_DST_COLOR',
-  ONE_MINUS_DST_COLOR: 'ONE_MINUS_DST_COLOR',
-  0x0307: 'ONE_MINUS_DST_COLOR',
-  DstAlpha: 'DST_ALPHA',
-  DST_ALPHA: 'DST_ALPHA',
-  0x0304: 'DST_ALPHA',
-  DstAlphaInv: 'ONE_MINUS_DST_ALPHA',
-  ONE_MINUS_DST_ALPHA: 'ONE_MINUS_DST_ALPHA',
-  0x0305: 'ONE_MINUS_DST_ALPHA',
-  ConstantColor: 'CONSTANT_COLOR',
-  CONSTANT_COLOR: 'CONSTANT_COLOR',
-  0x8001: 'CONSTANT_COLOR',
-  ConstantColorInv: 'ONE_MINUS_CONSTANT_COLOR',
-  ONE_MINUS_CONSTANT_COLOR: 'ONE_MINUS_CONSTANT_COLOR',
-  0x8002: 'ONE_MINUS_CONSTANT_COLOR',
-  ConstantAlpha: 'CONSTANT_ALPHA',
-  CONSTANT_ALPHA: 'CONSTANT_ALPHA',
-  0x8003: 'CONSTANT_ALPHA',
-  ConstantAlphaInv: 'ONE_MINUS_CONSTANT_ALPHA',
-  ONE_MINUS_CONSTANT_ALPHA: 'ONE_MINUS_CONSTANT_ALPHA',
-  0x8004: 'ONE_MINUS_CONSTANT_ALPHA',
+export function valueOfBlend(keyOrValue: Blend | BlendName): Blend {
+  return BlendValueMap[keyOrValue]
+}
+const BlendNameMap = Object.freeze<any>({
+  0: 'Zero',
+  ZERO: 'Zero',
+  Zero: 'Zero',
+  1: 'One',
+  ONE: 'One',
+  One: 'One',
+  0x0300: 'SrcColor',
+  SRC_COLOR: 'SrcColor',
+  SrcColor: 'SrcColor',
+  0x0301: 'SrcColorInv',
+  ONE_MINUS_SRC_COLOR: 'SrcColorInv',
+  SrcColorInv: 'SrcColorInv',
+  0x0302: 'SrcAlpha',
+  SRC_ALPHA: 'SrcAlpha',
+  SrcAlpha: 'SrcAlpha',
+  0x0303: 'SrcAlphaInv',
+  ONE_MINUS_SRC_ALPHA: 'SrcAlphaInv',
+  SrcAlphaInv: 'SrcAlphaInv',
+  0x0308: 'SrcAlphaSat',
+  SRC_ALPHA_SATURATE: 'SrcAlphaSat',
+  SrcAlphaSat: 'SrcAlphaSat',
+  0x0306: 'DstColor',
+  DST_COLOR: 'DstColor',
+  DstColor: 'DstColor',
+  0x0307: 'DstColorInv',
+  ONE_MINUS_DST_COLOR: 'DstColorInv',
+  DstColorInv: 'DstColorInv',
+  0x0304: 'DstAlpha',
+  DST_ALPHA: 'DstAlpha',
+  DstAlpha: 'DstAlpha',
+  0x0305: 'DstAlphaInv',
+  ONE_MINUS_DST_ALPHA: 'DstAlphaInv',
+  DstAlphaInv: 'DstAlphaInv',
+  0x8001: 'ConstantColor',
+  CONSTANT_COLOR: 'ConstantColor',
+  ConstantColor: 'ConstantColor',
+  0x8002: 'ConstantColorInv',
+  ONE_MINUS_CONSTANT_COLOR: 'ConstantColorInv',
+  ConstantColorInv: 'ConstantColorInv',
+  0x8003: 'ConstantAlpha',
+  CONSTANT_ALPHA: 'ConstantAlpha',
+  ConstantAlpha: 'ConstantAlpha',
+  0x8004: 'ConstantAlphaInv',
+  ONE_MINUS_CONSTANT_ALPHA: 'ConstantAlphaInv',
+  ConstantAlphaInv: 'ConstantAlphaInv',
 })
-export type BlendFunctionOption =
-    'Add'
+export function nameOfBlend(keyOrValue: Blend | BlendName): BlendName {
+  return BlendNameMap[keyOrValue]
+}
+export type BlendOption = Blend | BlendName
+export enum BlendFunction {
+  Add = 0x8006,
+  Subtract = 0x800A,
+  ReverseSubtract = 0x800B,
+}
+export type BlendFunctionName
+  = 'Add'
   | 'Subtract'
   | 'ReverseSubtract'
-  | 'FUNC_ADD'
-  | 'FUNC_SUBTRACT'
-  | 'FUNC_REVERSE_SUBTRACT'
-  | number
-
-export const BlendFunction = Object.freeze({
+const BlendFunctionValueMap = Object.freeze<any>({
   Add: 0x8006,
   FUNC_ADD: 0x8006,
   0x8006: 0x8006,
@@ -450,21 +380,37 @@ export const BlendFunction = Object.freeze({
   ReverseSubtract: 0x800B,
   FUNC_REVERSE_SUBTRACT: 0x800B,
   0x800B: 0x800B,
-  nameOf: (name: string|number): string => mapBlendFunctionName[name],
 })
-const mapBlendFunctionName = Object.freeze({
-  Add: 'FUNC_ADD',
-  FUNC_ADD: 'FUNC_ADD',
-  0x8006: 'FUNC_ADD',
-  Subtract: 'FUNC_SUBTRACT',
-  FUNC_SUBTRACT: 'FUNC_SUBTRACT',
-  0x800A: 'FUNC_SUBTRACT',
-  ReverseSubtract: 'FUNC_REVERSE_SUBTRACT',
-  FUNC_REVERSE_SUBTRACT: 'FUNC_REVERSE_SUBTRACT',
-  0x800B: 'FUNC_REVERSE_SUBTRACT',
+export function valueOfBlendFunction(keyOrValue: BlendFunction | BlendFunctionName): BlendFunction {
+  return BlendFunctionValueMap[keyOrValue]
+}
+const BlendFunctionNameMap = Object.freeze<any>({
+  0x8006: 'Add',
+  FUNC_ADD: 'Add',
+  Add: 'Add',
+  0x800A: 'Subtract',
+  FUNC_SUBTRACT: 'Subtract',
+  Subtract: 'Subtract',
+  0x800B: 'ReverseSubtract',
+  FUNC_REVERSE_SUBTRACT: 'ReverseSubtract',
+  ReverseSubtract: 'ReverseSubtract',
 })
-export type CompareFunctionOption =
-    'Never'
+export function nameOfBlendFunction(keyOrValue: BlendFunction | BlendFunctionName): BlendFunctionName {
+  return BlendFunctionNameMap[keyOrValue]
+}
+export type BlendFunctionOption = BlendFunction | BlendFunctionName
+export enum CompareFunction {
+  Never = 0x0200,
+  Less = 0x0201,
+  Equal = 0x0202,
+  LessEqual = 0x0203,
+  Greater = 0x0204,
+  NotEqual = 0x0205,
+  GreaterEqual = 0x0206,
+  Always = 0x0207,
+}
+export type CompareFunctionName
+  = 'Never'
   | 'Less'
   | 'Equal'
   | 'LessEqual'
@@ -472,17 +418,7 @@ export type CompareFunctionOption =
   | 'NotEqual'
   | 'GreaterEqual'
   | 'Always'
-  | 'NEVER'
-  | 'LESS'
-  | 'EQUAL'
-  | 'LEQUAL'
-  | 'GREATER'
-  | 'NOTEQUAL'
-  | 'GEQUAL'
-  | 'ALWAYS'
-  | number
-
-export const CompareFunction = Object.freeze({
+const CompareFunctionValueMap = Object.freeze<any>({
   Never: 0x0200,
   NEVER: 0x0200,
   0x0200: 0x0200,
@@ -507,44 +443,50 @@ export const CompareFunction = Object.freeze({
   Always: 0x0207,
   ALWAYS: 0x0207,
   0x0207: 0x0207,
-  nameOf: (name: string|number): string => mapCompareFunctionName[name],
 })
-const mapCompareFunctionName = Object.freeze({
-  Never: 'NEVER',
-  NEVER: 'NEVER',
-  0x0200: 'NEVER',
-  Less: 'LESS',
-  LESS: 'LESS',
-  0x0201: 'LESS',
-  Equal: 'EQUAL',
-  EQUAL: 'EQUAL',
-  0x0202: 'EQUAL',
-  LessEqual: 'LEQUAL',
-  LEQUAL: 'LEQUAL',
-  0x0203: 'LEQUAL',
-  Greater: 'GREATER',
-  GREATER: 'GREATER',
-  0x0204: 'GREATER',
-  NotEqual: 'NOTEQUAL',
-  NOTEQUAL: 'NOTEQUAL',
-  0x0205: 'NOTEQUAL',
-  GreaterEqual: 'GEQUAL',
-  GEQUAL: 'GEQUAL',
-  0x0206: 'GEQUAL',
-  Always: 'ALWAYS',
-  ALWAYS: 'ALWAYS',
-  0x0207: 'ALWAYS',
+export function valueOfCompareFunction(keyOrValue: CompareFunction | CompareFunctionName): CompareFunction {
+  return CompareFunctionValueMap[keyOrValue]
+}
+const CompareFunctionNameMap = Object.freeze<any>({
+  0x0200: 'Never',
+  NEVER: 'Never',
+  Never: 'Never',
+  0x0201: 'Less',
+  LESS: 'Less',
+  Less: 'Less',
+  0x0202: 'Equal',
+  EQUAL: 'Equal',
+  Equal: 'Equal',
+  0x0203: 'LessEqual',
+  LEQUAL: 'LessEqual',
+  LessEqual: 'LessEqual',
+  0x0204: 'Greater',
+  GREATER: 'Greater',
+  Greater: 'Greater',
+  0x0205: 'NotEqual',
+  NOTEQUAL: 'NotEqual',
+  NotEqual: 'NotEqual',
+  0x0206: 'GreaterEqual',
+  GEQUAL: 'GreaterEqual',
+  GreaterEqual: 'GreaterEqual',
+  0x0207: 'Always',
+  ALWAYS: 'Always',
+  Always: 'Always',
 })
-export type CullModeOption =
-    'Front'
+export function nameOfCompareFunction(keyOrValue: CompareFunction | CompareFunctionName): CompareFunctionName {
+  return CompareFunctionNameMap[keyOrValue]
+}
+export type CompareFunctionOption = CompareFunction | CompareFunctionName
+export enum CullMode {
+  Front = 0x0404,
+  Back = 0x0405,
+  FrontAndBack = 0x0408,
+}
+export type CullModeName
+  = 'Front'
   | 'Back'
   | 'FrontAndBack'
-  | 'FRONT'
-  | 'BACK'
-  | 'FRONT_AND_BACK'
-  | number
-
-export const CullMode = Object.freeze({
+const CullModeValueMap = Object.freeze<any>({
   Front: 0x0404,
   FRONT: 0x0404,
   0x0404: 0x0404,
@@ -554,45 +496,67 @@ export const CullMode = Object.freeze({
   FrontAndBack: 0x0408,
   FRONT_AND_BACK: 0x0408,
   0x0408: 0x0408,
-  nameOf: (name: string|number): string => mapCullModeName[name],
 })
-const mapCullModeName = Object.freeze({
-  Front: 'FRONT',
-  FRONT: 'FRONT',
-  0x0404: 'FRONT',
-  Back: 'BACK',
-  BACK: 'BACK',
-  0x0405: 'BACK',
-  FrontAndBack: 'FRONT_AND_BACK',
-  FRONT_AND_BACK: 'FRONT_AND_BACK',
-  0x0408: 'FRONT_AND_BACK',
+export function valueOfCullMode(keyOrValue: CullMode | CullModeName): CullMode {
+  return CullModeValueMap[keyOrValue]
+}
+const CullModeNameMap = Object.freeze<any>({
+  0x0404: 'Front',
+  FRONT: 'Front',
+  Front: 'Front',
+  0x0405: 'Back',
+  BACK: 'Back',
+  Back: 'Back',
+  0x0408: 'FrontAndBack',
+  FRONT_AND_BACK: 'FrontAndBack',
+  FrontAndBack: 'FrontAndBack',
 })
-export type FrontFaceOption =
-    'ClockWise'
+export function nameOfCullMode(keyOrValue: CullMode | CullModeName): CullModeName {
+  return CullModeNameMap[keyOrValue]
+}
+export type CullModeOption = CullMode | CullModeName
+export enum FrontFace {
+  ClockWise = 0x0900,
+  CounterClockWise = 0x0901,
+}
+export type FrontFaceName
+  = 'ClockWise'
   | 'CounterClockWise'
-  | 'CW'
-  | 'CCW'
-  | number
-
-export const FrontFace = Object.freeze({
+const FrontFaceValueMap = Object.freeze<any>({
   ClockWise: 0x0900,
   CW: 0x0900,
   0x0900: 0x0900,
   CounterClockWise: 0x0901,
   CCW: 0x0901,
   0x0901: 0x0901,
-  nameOf: (name: string|number): string => mapFrontFaceName[name],
 })
-const mapFrontFaceName = Object.freeze({
-  ClockWise: 'CW',
-  CW: 'CW',
-  0x0900: 'CW',
-  CounterClockWise: 'CCW',
-  CCW: 'CCW',
-  0x0901: 'CCW',
+export function valueOfFrontFace(keyOrValue: FrontFace | FrontFaceName): FrontFace {
+  return FrontFaceValueMap[keyOrValue]
+}
+const FrontFaceNameMap = Object.freeze<any>({
+  0x0900: 'ClockWise',
+  CW: 'ClockWise',
+  ClockWise: 'ClockWise',
+  0x0901: 'CounterClockWise',
+  CCW: 'CounterClockWise',
+  CounterClockWise: 'CounterClockWise',
 })
-export type StencilOperationOption =
-    'Zero'
+export function nameOfFrontFace(keyOrValue: FrontFace | FrontFaceName): FrontFaceName {
+  return FrontFaceNameMap[keyOrValue]
+}
+export type FrontFaceOption = FrontFace | FrontFaceName
+export enum StencilOperation {
+  Zero = 0,
+  Keep = 0x1E00,
+  Replace = 0x1E01,
+  Increment = 0x1E02,
+  Decrement = 0x1E03,
+  Invert = 0x150A,
+  IncrementWrap = 0x8507,
+  DecrementWrap = 0x8508,
+}
+export type StencilOperationName
+  = 'Zero'
   | 'Keep'
   | 'Replace'
   | 'Increment'
@@ -600,17 +564,7 @@ export type StencilOperationOption =
   | 'Invert'
   | 'IncrementWrap'
   | 'DecrementWrap'
-  | 'ZERO'
-  | 'KEEP'
-  | 'REPLACE'
-  | 'INCR'
-  | 'DECR'
-  | 'INVERT'
-  | 'INCR_WRAP'
-  | 'DECR_WRAP'
-  | number
-
-export const StencilOperation = Object.freeze({
+const StencilOperationValueMap = Object.freeze<any>({
   Zero: 0,
   ZERO: 0,
   0: 0,
@@ -635,48 +589,54 @@ export const StencilOperation = Object.freeze({
   DecrementWrap: 0x8508,
   DECR_WRAP: 0x8508,
   0x8508: 0x8508,
-  nameOf: (name: string|number): string => mapStencilOperationName[name],
 })
-const mapStencilOperationName = Object.freeze({
-  Zero: 'ZERO',
-  ZERO: 'ZERO',
-  0: 'ZERO',
-  Keep: 'KEEP',
-  KEEP: 'KEEP',
-  0x1E00: 'KEEP',
-  Replace: 'REPLACE',
-  REPLACE: 'REPLACE',
-  0x1E01: 'REPLACE',
-  Increment: 'INCR',
-  INCR: 'INCR',
-  0x1E02: 'INCR',
-  Decrement: 'DECR',
-  DECR: 'DECR',
-  0x1E03: 'DECR',
-  Invert: 'INVERT',
-  INVERT: 'INVERT',
-  0x150A: 'INVERT',
-  IncrementWrap: 'INCR_WRAP',
-  INCR_WRAP: 'INCR_WRAP',
-  0x8507: 'INCR_WRAP',
-  DecrementWrap: 'DECR_WRAP',
-  DECR_WRAP: 'DECR_WRAP',
-  0x8508: 'DECR_WRAP',
+export function valueOfStencilOperation(keyOrValue: StencilOperation | StencilOperationName): StencilOperation {
+  return StencilOperationValueMap[keyOrValue]
+}
+const StencilOperationNameMap = Object.freeze<any>({
+  0: 'Zero',
+  ZERO: 'Zero',
+  Zero: 'Zero',
+  0x1E00: 'Keep',
+  KEEP: 'Keep',
+  Keep: 'Keep',
+  0x1E01: 'Replace',
+  REPLACE: 'Replace',
+  Replace: 'Replace',
+  0x1E02: 'Increment',
+  INCR: 'Increment',
+  Increment: 'Increment',
+  0x1E03: 'Decrement',
+  DECR: 'Decrement',
+  Decrement: 'Decrement',
+  0x150A: 'Invert',
+  INVERT: 'Invert',
+  Invert: 'Invert',
+  0x8507: 'IncrementWrap',
+  INCR_WRAP: 'IncrementWrap',
+  IncrementWrap: 'IncrementWrap',
+  0x8508: 'DecrementWrap',
+  DECR_WRAP: 'DecrementWrap',
+  DecrementWrap: 'DecrementWrap',
 })
-export type PixelFormatOption =
-    'Alpha'
+export function nameOfStencilOperation(keyOrValue: StencilOperation | StencilOperationName): StencilOperationName {
+  return StencilOperationNameMap[keyOrValue]
+}
+export type StencilOperationOption = StencilOperation | StencilOperationName
+export enum PixelFormat {
+  Alpha = 0x1906,
+  Luminance = 0x1909,
+  LuminanceAlpha = 0x190A,
+  RGB = 0x1907,
+  RGBA = 0x1908,
+}
+export type PixelFormatName
+  = 'Alpha'
   | 'Luminance'
   | 'LuminanceAlpha'
   | 'RGB'
   | 'RGBA'
-  | 'ALPHA'
-  | 'LUMINANCE'
-  | 'LUMINANCE_ALPHA'
-  | 'RGB'
-  | 'RGBA'
-  | number
-
-export const PixelFormat = Object.freeze({
+const PixelFormatValueMap = Object.freeze<any>({
   Alpha: 0x1906,
   ALPHA: 0x1906,
   0x1906: 0x1906,
@@ -690,71 +650,63 @@ export const PixelFormat = Object.freeze({
   0x1907: 0x1907,
   RGBA: 0x1908,
   0x1908: 0x1908,
-  nameOf: (name: string|number): string => mapPixelFormatName[name],
 })
-const mapPixelFormatName = Object.freeze({
-  Alpha: 'ALPHA',
-  ALPHA: 'ALPHA',
-  0x1906: 'ALPHA',
-  Luminance: 'LUMINANCE',
-  LUMINANCE: 'LUMINANCE',
-  0x1909: 'LUMINANCE',
-  LuminanceAlpha: 'LUMINANCE_ALPHA',
-  LUMINANCE_ALPHA: 'LUMINANCE_ALPHA',
-  0x190A: 'LUMINANCE_ALPHA',
-  RGB: 'RGB',
+export function valueOfPixelFormat(keyOrValue: PixelFormat | PixelFormatName): PixelFormat {
+  return PixelFormatValueMap[keyOrValue]
+}
+const PixelFormatNameMap = Object.freeze<any>({
+  0x1906: 'Alpha',
+  ALPHA: 'Alpha',
+  Alpha: 'Alpha',
+  0x1909: 'Luminance',
+  LUMINANCE: 'Luminance',
+  Luminance: 'Luminance',
+  0x190A: 'LuminanceAlpha',
+  LUMINANCE_ALPHA: 'LuminanceAlpha',
+  LuminanceAlpha: 'LuminanceAlpha',
   0x1907: 'RGB',
-  RGBA: 'RGBA',
+  RGB: 'RGB',
   0x1908: 'RGBA',
+  RGBA: 'RGBA',
 })
-export type PixelFormatElementCountOption =
-    'Alpha'
-  | 'Luminance'
-  | 'LuminanceAlpha'
-  | 'RGB'
-  | 'RGBA'
-  | 'ALPHA'
-  | 'LUMINANCE'
-  | 'LUMINANCE_ALPHA'
-  | 'RGB'
-  | 'RGBA'
-  | number
-
-export const PixelFormatElementCount = Object.freeze({
+export function nameOfPixelFormat(keyOrValue: PixelFormat | PixelFormatName): PixelFormatName {
+  return PixelFormatNameMap[keyOrValue]
+}
+export type PixelFormatOption = PixelFormat | PixelFormatName
+const pixelFormatElementCountMap = Object.freeze({
   Alpha: 1,
-  1: 1,
   ALPHA: 1,
   0x1906: 1,
   Luminance: 1,
   LUMINANCE: 1,
   0x1909: 1,
   LuminanceAlpha: 2,
-  2: 2,
   LUMINANCE_ALPHA: 2,
   0x190A: 2,
   RGB: 3,
-  3: 3,
   0x1907: 3,
   RGBA: 4,
-  4: 4,
   0x1908: 4,
 })
-export type PrimitiveTypeOption =
-    'PointList'
+export function pixelFormatElementCount(value: PixelFormatOption) {
+  return pixelFormatElementCountMap[value]
+}
+export enum PrimitiveType {
+  PointList = 0x0000,
+  LineList = 0x0001,
+  LineStrip = 0x0003,
+  TriangleList = 0x0004,
+  TriangleStrip = 0x0005,
+  TriangleFan = 0x0006,
+}
+export type PrimitiveTypeName
+  = 'PointList'
   | 'LineList'
   | 'LineStrip'
   | 'TriangleList'
   | 'TriangleStrip'
   | 'TriangleFan'
-  | 'POINTS'
-  | 'LINES'
-  | 'LINE_STRIP'
-  | 'TRIANGLES'
-  | 'TRIANGLE_STRIP'
-  | 'TRIANGLE_FAN'
-  | number
-
-export const PrimitiveType = Object.freeze({
+const PrimitiveTypeValueMap = Object.freeze<any>({
   PointList: 0x0000,
   POINTS: 0x0000,
   0x0000: 0x0000,
@@ -773,38 +725,44 @@ export const PrimitiveType = Object.freeze({
   TriangleFan: 0x0006,
   TRIANGLE_FAN: 0x0006,
   0x0006: 0x0006,
-  nameOf: (name: string|number): string => mapPrimitiveTypeName[name],
 })
-const mapPrimitiveTypeName = Object.freeze({
-  PointList: 'POINTS',
-  POINTS: 'POINTS',
-  0x0000: 'POINTS',
-  LineList: 'LINES',
-  LINES: 'LINES',
-  0x0001: 'LINES',
-  LineStrip: 'LINE_STRIP',
-  LINE_STRIP: 'LINE_STRIP',
-  0x0003: 'LINE_STRIP',
-  TriangleList: 'TRIANGLES',
-  TRIANGLES: 'TRIANGLES',
-  0x0004: 'TRIANGLES',
-  TriangleStrip: 'TRIANGLE_STRIP',
-  TRIANGLE_STRIP: 'TRIANGLE_STRIP',
-  0x0005: 'TRIANGLE_STRIP',
-  TriangleFan: 'TRIANGLE_FAN',
-  TRIANGLE_FAN: 'TRIANGLE_FAN',
-  0x0006: 'TRIANGLE_FAN',
+export function valueOfPrimitiveType(keyOrValue: PrimitiveType | PrimitiveTypeName): PrimitiveType {
+  return PrimitiveTypeValueMap[keyOrValue]
+}
+const PrimitiveTypeNameMap = Object.freeze<any>({
+  0x0000: 'PointList',
+  POINTS: 'PointList',
+  PointList: 'PointList',
+  0x0001: 'LineList',
+  LINES: 'LineList',
+  LineList: 'LineList',
+  0x0003: 'LineStrip',
+  LINE_STRIP: 'LineStrip',
+  LineStrip: 'LineStrip',
+  0x0004: 'TriangleList',
+  TRIANGLES: 'TriangleList',
+  TriangleList: 'TriangleList',
+  0x0005: 'TriangleStrip',
+  TRIANGLE_STRIP: 'TriangleStrip',
+  TriangleStrip: 'TriangleStrip',
+  0x0006: 'TriangleFan',
+  TRIANGLE_FAN: 'TriangleFan',
+  TriangleFan: 'TriangleFan',
 })
-export type TextureTypeOption =
-    'Texture'
+export function nameOfPrimitiveType(keyOrValue: PrimitiveType | PrimitiveTypeName): PrimitiveTypeName {
+  return PrimitiveTypeNameMap[keyOrValue]
+}
+export type PrimitiveTypeOption = PrimitiveType | PrimitiveTypeName
+export enum TextureType {
+  Texture = 0x1702,
+  Texture2D = 0x0DE1,
+  TextureCube = 0x8513,
+}
+export type TextureTypeName
+  = 'Texture'
   | 'Texture2D'
   | 'TextureCube'
-  | 'TEXTURE'
-  | 'TEXTURE_2D'
-  | 'TEXTURE_CUBE_MAP'
-  | number
-
-export const TextureType = Object.freeze({
+const TextureTypeValueMap = Object.freeze<any>({
   Texture: 0x1702,
   TEXTURE: 0x1702,
   0x1702: 0x1702,
@@ -814,29 +772,35 @@ export const TextureType = Object.freeze({
   TextureCube: 0x8513,
   TEXTURE_CUBE_MAP: 0x8513,
   0x8513: 0x8513,
-  nameOf: (name: string|number): string => mapTextureTypeName[name],
 })
-const mapTextureTypeName = Object.freeze({
-  Texture: 'TEXTURE',
-  TEXTURE: 'TEXTURE',
-  0x1702: 'TEXTURE',
-  Texture2D: 'TEXTURE_2D',
-  TEXTURE_2D: 'TEXTURE_2D',
-  0x0DE1: 'TEXTURE_2D',
-  TextureCube: 'TEXTURE_CUBE_MAP',
-  TEXTURE_CUBE_MAP: 'TEXTURE_CUBE_MAP',
-  0x8513: 'TEXTURE_CUBE_MAP',
+export function valueOfTextureType(keyOrValue: TextureType | TextureTypeName): TextureType {
+  return TextureTypeValueMap[keyOrValue]
+}
+const TextureTypeNameMap = Object.freeze<any>({
+  0x1702: 'Texture',
+  TEXTURE: 'Texture',
+  Texture: 'Texture',
+  0x0DE1: 'Texture2D',
+  TEXTURE_2D: 'Texture2D',
+  Texture2D: 'Texture2D',
+  0x8513: 'TextureCube',
+  TEXTURE_CUBE_MAP: 'TextureCube',
+  TextureCube: 'TextureCube',
 })
-export type TextureWrapModeOption =
-    'Repeat'
+export function nameOfTextureType(keyOrValue: TextureType | TextureTypeName): TextureTypeName {
+  return TextureTypeNameMap[keyOrValue]
+}
+export type TextureTypeOption = TextureType | TextureTypeName
+export enum TextureWrapMode {
+  Repeat = 0x2901,
+  Clamp = 0x812F,
+  Mirror = 0x8370,
+}
+export type TextureWrapModeName
+  = 'Repeat'
   | 'Clamp'
   | 'Mirror'
-  | 'REPEAT'
-  | 'CLAMP_TO_EDGE'
-  | 'MIRRORED_REPEAT'
-  | number
-
-export const TextureWrapMode = Object.freeze({
+const TextureWrapModeValueMap = Object.freeze<any>({
   Repeat: 0x2901,
   REPEAT: 0x2901,
   0x2901: 0x2901,
@@ -846,35 +810,41 @@ export const TextureWrapMode = Object.freeze({
   Mirror: 0x8370,
   MIRRORED_REPEAT: 0x8370,
   0x8370: 0x8370,
-  nameOf: (name: string|number): string => mapTextureWrapModeName[name],
 })
-const mapTextureWrapModeName = Object.freeze({
-  Repeat: 'REPEAT',
-  REPEAT: 'REPEAT',
-  0x2901: 'REPEAT',
-  Clamp: 'CLAMP_TO_EDGE',
-  CLAMP_TO_EDGE: 'CLAMP_TO_EDGE',
-  0x812F: 'CLAMP_TO_EDGE',
-  Mirror: 'MIRRORED_REPEAT',
-  MIRRORED_REPEAT: 'MIRRORED_REPEAT',
-  0x8370: 'MIRRORED_REPEAT',
+export function valueOfTextureWrapMode(keyOrValue: TextureWrapMode | TextureWrapModeName): TextureWrapMode {
+  return TextureWrapModeValueMap[keyOrValue]
+}
+const TextureWrapModeNameMap = Object.freeze<any>({
+  0x2901: 'Repeat',
+  REPEAT: 'Repeat',
+  Repeat: 'Repeat',
+  0x812F: 'Clamp',
+  CLAMP_TO_EDGE: 'Clamp',
+  Clamp: 'Clamp',
+  0x8370: 'Mirror',
+  MIRRORED_REPEAT: 'Mirror',
+  Mirror: 'Mirror',
 })
-export type TextureFilterOption =
-    'Point'
+export function nameOfTextureWrapMode(keyOrValue: TextureWrapMode | TextureWrapModeName): TextureWrapModeName {
+  return TextureWrapModeNameMap[keyOrValue]
+}
+export type TextureWrapModeOption = TextureWrapMode | TextureWrapModeName
+export enum TextureFilter {
+  Point = 0x2600,
+  Linear = 0x2601,
+  PointMipPoint = 0x2700,
+  LinearMipPoint = 0x2701,
+  PointMipLinear = 0x2702,
+  LinearMipLinear = 0x2703,
+}
+export type TextureFilterName
+  = 'Point'
   | 'Linear'
   | 'PointMipPoint'
   | 'LinearMipPoint'
   | 'PointMipLinear'
   | 'LinearMipLinear'
-  | 'NEAREST'
-  | 'LINEAR'
-  | 'NEAREST_MIPMAP_NEAREST'
-  | 'LINEAR_MIPMAP_NEAREST'
-  | 'NEAREST_MIPMAP_LINEAR'
-  | 'LINEAR_MIPMAP_LINEAR'
-  | number
-
-export const TextureFilter = Object.freeze({
+const TextureFilterValueMap = Object.freeze<any>({
   Point: 0x2600,
   NEAREST: 0x2600,
   0x2600: 0x2600,
@@ -893,70 +863,82 @@ export const TextureFilter = Object.freeze({
   LinearMipLinear: 0x2703,
   LINEAR_MIPMAP_LINEAR: 0x2703,
   0x2703: 0x2703,
-  nameOf: (name: string|number): string => mapTextureFilterName[name],
 })
-const mapTextureFilterName = Object.freeze({
-  Point: 'NEAREST',
-  NEAREST: 'NEAREST',
-  0x2600: 'NEAREST',
-  Linear: 'LINEAR',
-  LINEAR: 'LINEAR',
-  0x2601: 'LINEAR',
-  PointMipPoint: 'NEAREST_MIPMAP_NEAREST',
-  NEAREST_MIPMAP_NEAREST: 'NEAREST_MIPMAP_NEAREST',
-  0x2700: 'NEAREST_MIPMAP_NEAREST',
-  LinearMipPoint: 'LINEAR_MIPMAP_NEAREST',
-  LINEAR_MIPMAP_NEAREST: 'LINEAR_MIPMAP_NEAREST',
-  0x2701: 'LINEAR_MIPMAP_NEAREST',
-  PointMipLinear: 'NEAREST_MIPMAP_LINEAR',
-  NEAREST_MIPMAP_LINEAR: 'NEAREST_MIPMAP_LINEAR',
-  0x2702: 'NEAREST_MIPMAP_LINEAR',
-  LinearMipLinear: 'LINEAR_MIPMAP_LINEAR',
-  LINEAR_MIPMAP_LINEAR: 'LINEAR_MIPMAP_LINEAR',
-  0x2703: 'LINEAR_MIPMAP_LINEAR',
+export function valueOfTextureFilter(keyOrValue: TextureFilter | TextureFilterName): TextureFilter {
+  return TextureFilterValueMap[keyOrValue]
+}
+const TextureFilterNameMap = Object.freeze<any>({
+  0x2600: 'Point',
+  NEAREST: 'Point',
+  Point: 'Point',
+  0x2601: 'Linear',
+  LINEAR: 'Linear',
+  Linear: 'Linear',
+  0x2700: 'PointMipPoint',
+  NEAREST_MIPMAP_NEAREST: 'PointMipPoint',
+  PointMipPoint: 'PointMipPoint',
+  0x2701: 'LinearMipPoint',
+  LINEAR_MIPMAP_NEAREST: 'LinearMipPoint',
+  LinearMipPoint: 'LinearMipPoint',
+  0x2702: 'PointMipLinear',
+  NEAREST_MIPMAP_LINEAR: 'PointMipLinear',
+  PointMipLinear: 'PointMipLinear',
+  0x2703: 'LinearMipLinear',
+  LINEAR_MIPMAP_LINEAR: 'LinearMipLinear',
+  LinearMipLinear: 'LinearMipLinear',
 })
-export type ShaderTypeOption =
-    'VertexShader'
+export function nameOfTextureFilter(keyOrValue: TextureFilter | TextureFilterName): TextureFilterName {
+  return TextureFilterNameMap[keyOrValue]
+}
+export type TextureFilterOption = TextureFilter | TextureFilterName
+export enum ShaderType {
+  VertexShader = 0x8B31,
+  FragmentShader = 0x8B30,
+}
+export type ShaderTypeName
+  = 'VertexShader'
   | 'FragmentShader'
-  | 'VERTEX_SHADER'
-  | 'FRAGMENT_SHADER'
-  | number
-
-export const ShaderType = Object.freeze({
+const ShaderTypeValueMap = Object.freeze<any>({
   VertexShader: 0x8B31,
   VERTEX_SHADER: 0x8B31,
   0x8B31: 0x8B31,
   FragmentShader: 0x8B30,
   FRAGMENT_SHADER: 0x8B30,
   0x8B30: 0x8B30,
-  nameOf: (name: string|number): string => mapShaderTypeName[name],
 })
-const mapShaderTypeName = Object.freeze({
-  VertexShader: 'VERTEX_SHADER',
-  VERTEX_SHADER: 'VERTEX_SHADER',
-  0x8B31: 'VERTEX_SHADER',
-  FragmentShader: 'FRAGMENT_SHADER',
-  FRAGMENT_SHADER: 'FRAGMENT_SHADER',
-  0x8B30: 'FRAGMENT_SHADER',
+export function valueOfShaderType(keyOrValue: ShaderType | ShaderTypeName): ShaderType {
+  return ShaderTypeValueMap[keyOrValue]
+}
+const ShaderTypeNameMap = Object.freeze<any>({
+  0x8B31: 'VertexShader',
+  VERTEX_SHADER: 'VertexShader',
+  VertexShader: 'VertexShader',
+  0x8B30: 'FragmentShader',
+  FRAGMENT_SHADER: 'FragmentShader',
+  FragmentShader: 'FragmentShader',
 })
-export type DepthFormatOption =
-    'None'
+export function nameOfShaderType(keyOrValue: ShaderType | ShaderTypeName): ShaderTypeName {
+  return ShaderTypeNameMap[keyOrValue]
+}
+export type ShaderTypeOption = ShaderType | ShaderTypeName
+export enum DepthFormat {
+  None = 0,
+  DepthStencil = 0x84F9,
+  Depth16 = 0x81A5,
+  Depth24 = 0x81A6,
+  Depth32 = 0x8CAC,
+  Depth24Stencil8 = 0x88F0,
+  Depth32Stencil8 = 0x8CAD,
+}
+export type DepthFormatName
+  = 'None'
   | 'DepthStencil'
   | 'Depth16'
   | 'Depth24'
   | 'Depth32'
   | 'Depth24Stencil8'
   | 'Depth32Stencil8'
-  | 'ZERO'
-  | 'DEPTH_STENCIL'
-  | 'DEPTH_COMPONENT16'
-  | 'DEPTH_COMPONENT24'
-  | 'DEPTH_COMPONENT32F'
-  | 'DEPTH24_STENCIL8'
-  | 'DEPTH32F_STENCIL8'
-  | number
-
-export const DepthFormat = Object.freeze({
+const DepthFormatValueMap = Object.freeze<any>({
   None: 0,
   ZERO: 0,
   0: 0,
@@ -978,56 +960,73 @@ export const DepthFormat = Object.freeze({
   Depth32Stencil8: 0x8CAD,
   DEPTH32F_STENCIL8: 0x8CAD,
   0x8CAD: 0x8CAD,
-  nameOf: (name: string|number): string => mapDepthFormatName[name],
 })
-const mapDepthFormatName = Object.freeze({
-  None: 'ZERO',
-  ZERO: 'ZERO',
-  0: 'ZERO',
-  DepthStencil: 'DEPTH_STENCIL',
-  DEPTH_STENCIL: 'DEPTH_STENCIL',
-  0x84F9: 'DEPTH_STENCIL',
-  Depth16: 'DEPTH_COMPONENT16',
-  DEPTH_COMPONENT16: 'DEPTH_COMPONENT16',
-  0x81A5: 'DEPTH_COMPONENT16',
-  Depth24: 'DEPTH_COMPONENT24',
-  DEPTH_COMPONENT24: 'DEPTH_COMPONENT24',
-  0x81A6: 'DEPTH_COMPONENT24',
-  Depth32: 'DEPTH_COMPONENT32F',
-  DEPTH_COMPONENT32F: 'DEPTH_COMPONENT32F',
-  0x8CAC: 'DEPTH_COMPONENT32F',
-  Depth24Stencil8: 'DEPTH24_STENCIL8',
-  DEPTH24_STENCIL8: 'DEPTH24_STENCIL8',
-  0x88F0: 'DEPTH24_STENCIL8',
-  Depth32Stencil8: 'DEPTH32F_STENCIL8',
-  DEPTH32F_STENCIL8: 'DEPTH32F_STENCIL8',
-  0x8CAD: 'DEPTH32F_STENCIL8',
+export function valueOfDepthFormat(keyOrValue: DepthFormat | DepthFormatName): DepthFormat {
+  return DepthFormatValueMap[keyOrValue]
+}
+const DepthFormatNameMap = Object.freeze<any>({
+  0: 'None',
+  ZERO: 'None',
+  None: 'None',
+  0x84F9: 'DepthStencil',
+  DEPTH_STENCIL: 'DepthStencil',
+  DepthStencil: 'DepthStencil',
+  0x81A5: 'Depth16',
+  DEPTH_COMPONENT16: 'Depth16',
+  Depth16: 'Depth16',
+  0x81A6: 'Depth24',
+  DEPTH_COMPONENT24: 'Depth24',
+  Depth24: 'Depth24',
+  0x8CAC: 'Depth32',
+  DEPTH_COMPONENT32F: 'Depth32',
+  Depth32: 'Depth32',
+  0x88F0: 'Depth24Stencil8',
+  DEPTH24_STENCIL8: 'Depth24Stencil8',
+  Depth24Stencil8: 'Depth24Stencil8',
+  0x8CAD: 'Depth32Stencil8',
+  DEPTH32F_STENCIL8: 'Depth32Stencil8',
+  Depth32Stencil8: 'Depth32Stencil8',
 })
-export type StencilFormatOption =
-    'Stencil8'
-  | 'STENCIL_INDEX8'
-  | number
-
-export const StencilFormat = Object.freeze({
+export function nameOfDepthFormat(keyOrValue: DepthFormat | DepthFormatName): DepthFormatName {
+  return DepthFormatNameMap[keyOrValue]
+}
+export type DepthFormatOption = DepthFormat | DepthFormatName
+export enum StencilFormat {
+  Stencil8 = 0x8D48,
+}
+export type StencilFormatName
+  = 'Stencil8'
+const StencilFormatValueMap = Object.freeze<any>({
   Stencil8: 0x8D48,
   STENCIL_INDEX8: 0x8D48,
   0x8D48: 0x8D48,
-  nameOf: (name: string|number): string => mapStencilFormatName[name],
 })
-const mapStencilFormatName = Object.freeze({
-  Stencil8: 'STENCIL_INDEX8',
-  STENCIL_INDEX8: 'STENCIL_INDEX8',
-  0x8D48: 'STENCIL_INDEX8',
+export function valueOfStencilFormat(keyOrValue: StencilFormat | StencilFormatName): StencilFormat {
+  return StencilFormatValueMap[keyOrValue]
+}
+const StencilFormatNameMap = Object.freeze<any>({
+  0x8D48: 'Stencil8',
+  STENCIL_INDEX8: 'Stencil8',
+  Stencil8: 'Stencil8',
 })
-export type LightTypeOption =
-    'None'
+export function nameOfStencilFormat(keyOrValue: StencilFormat | StencilFormatName): StencilFormatName {
+  return StencilFormatNameMap[keyOrValue]
+}
+export type StencilFormatOption = StencilFormat | StencilFormatName
+export enum LightType {
+  None = 0,
+  Directional = 1,
+  Point = 2,
+  Spot = 3,
+  Box = 4,
+}
+export type LightTypeName
+  = 'None'
   | 'Directional'
   | 'Point'
   | 'Spot'
   | 'Box'
-  | number
-
-export const LightType = Object.freeze({
+const LightTypeValueMap = Object.freeze<any>({
   None: 0,
   0: 0,
   Directional: 1,
@@ -1039,3 +1038,22 @@ export const LightType = Object.freeze({
   Box: 4,
   4: 4,
 })
+export function valueOfLightType(keyOrValue: LightType | LightTypeName): LightType {
+  return LightTypeValueMap[keyOrValue]
+}
+const LightTypeNameMap = Object.freeze<any>({
+  0: 'None',
+  None: 'None',
+  1: 'Directional',
+  Directional: 'Directional',
+  2: 'Point',
+  Point: 'Point',
+  3: 'Spot',
+  Spot: 'Spot',
+  4: 'Box',
+  Box: 'Box',
+})
+export function nameOfLightType(keyOrValue: LightType | LightTypeName): LightTypeName {
+  return LightTypeNameMap[keyOrValue]
+}
+export type LightTypeOption = LightType | LightTypeName

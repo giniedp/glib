@@ -8,7 +8,7 @@ const keyLookup = {
 }
 
 /**
- * Describes a plane with four components.
+ * Defines a plane shape.
  *
  * @public
  */
@@ -240,7 +240,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @param offset - Zero based index where to start writing in the array
    * @returns the given buffer parameter
    */
-  public copy<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
+  public toArray(): number[]
+  public toArray<T>(buffer: T, offset: number): T
+  public toArray(buffer: number[] = [], offset: number= 0): number[] {
     buffer[offset] = this.x
     buffer[offset + 1] = this.y
     buffer[offset + 2] = this.z
@@ -254,7 +256,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @param offset - Zero based index where to start writing in the array
    * @returns the given buffer parameter
    */
-  public static copy<T extends ArrayLike<number>>(src: IVec4, buffer: T, offset: number= 0): T {
+  public static toArray(src: IVec4): number[]
+  public static toArray<T>(src: IVec4, buffer: T, offset: number): T
+  public static toArray(src: IVec4, buffer: number[] = [], offset: number= 0): number[] {
     buffer[offset] = src.x
     buffer[offset + 1] = src.y
     buffer[offset + 2] = src.z

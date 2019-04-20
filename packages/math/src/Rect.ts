@@ -1,7 +1,9 @@
-import { IVec2 } from './Types'
+import { IRect, IVec2 } from './Types'
 import { Vec2 } from './Vec2'
 
 /**
+ * Defines a rectangle area.
+ *
  * @public
  */
 export class Rect {
@@ -10,6 +12,9 @@ export class Rect {
   public width: number
   public height: number
 
+  /**
+   * Constructs a new instance of {@link Rect}
+   */
   constructor(x?: number, y?: number, width?: number, height?: number) {
     this.x = x || 0
     this.y = y || 0
@@ -61,7 +66,7 @@ export class Rect {
     this.height = v - this.y
   }
 
-  public floor(): Rect {
+  public floor(): this {
     this.x = Math.floor(this.x)
     this.y = Math.floor(this.y)
     this.width = Math.floor(this.width)
@@ -69,7 +74,7 @@ export class Rect {
     return this
   }
 
-  public ceil(): Rect {
+  public ceil(): this {
     this.x = Math.ceil(this.x)
     this.y = Math.ceil(this.y)
     this.width = Math.ceil(this.width)
@@ -77,7 +82,7 @@ export class Rect {
     return this
   }
 
-  public round(): Rect {
+  public round(): this {
     this.x = Math.round(this.x)
     this.y = Math.round(this.y)
     this.width = Math.round(this.width)
@@ -85,37 +90,52 @@ export class Rect {
     return this
   }
 
-  public getTopLeft<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+  public getTopLeft(): Vec2
+  public getTopLeft<T>(out?: T): T & IVec2
+  public getTopLeft(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x
     out.y = this.y
     return out
   }
-  public getTopRight<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+
+  public getTopRight(): Vec2
+  public getTopRight<T>(out?: T): T & IVec2
+  public getTopRight(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x + this.width
     out.y = this.y
     return out
   }
-  public getBottomLeft<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+
+  public getBottomLeft(): Vec2
+  public getBottomLeft<T>(out?: T): T & IVec2
+  public getBottomLeft(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x
     out.y = this.y + this.height
     return out
   }
-  public getBottomRight<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+
+  public getBottomRight(): Vec2
+  public getBottomRight<T>(out?: T): T & IVec2
+  public getBottomRight(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x + this.width
     out.y = this.y + this.height
     return out
   }
-  public getCenter<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+
+  public getCenter(): Vec2
+  public getCenter<T>(out?: T): T & IVec2
+  public getCenter(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x + this.width * 0.5
     out.y = this.y + this.height * 0.5
     return out
   }
-  public setCenter(point: IVec2): Rect {
+
+  public setCenter(point: IVec2): this {
     this.x = point.x - this.width * 0.5
     this.y = point.y - this.height * 0.5
     return this
@@ -159,7 +179,7 @@ export class Rect {
   /**
    * Inflates the rectangle by the double of the given amount
    */
-  public inflate(horizontal: number, vertical: number): Rect {
+  public inflate(horizontal: number, vertical: number): this {
     this.x -= horizontal
     this.width += horizontal * 2
     this.y -= vertical
@@ -170,7 +190,7 @@ export class Rect {
   /**
    * Adds an offset to this rectangle
    */
-  public moveXY(offsetX: number, offsetY: number): Rect {
+  public moveXY(offsetX: number, offsetY: number): this {
     this.x += offsetX
     this.y += offsetY
     return this
@@ -179,7 +199,7 @@ export class Rect {
   /**
    * Adds an offset to this rectangle
    */
-  public move(offset: IVec2): Rect {
+  public move(offset: IVec2): this {
     this.x += offset.x
     this.y += offset.y
     return this
@@ -195,8 +215,10 @@ export class Rect {
   /**
    * Calculates the intersection between two rectangles. If there is no intersection, an empty rectangle is returned.
    */
-  public static intersection(rect1: Rect, rect2: Rect, out?: Rect): Rect {
-    out = out || new Rect()
+  public static intersection(rect1: IRect, rect2: IRect): Rect
+  public static intersection<T>(rect1: IRect, rect2: IRect, out?: T): T & IRect
+  public static intersection(rect1: IRect, rect2: IRect, out?: IRect): IRect {
+    out = out || new Rect() as any
 
     let t1 = rect1.x + rect1.width
     let t2 = rect2.x + rect2.width
@@ -226,8 +248,9 @@ export class Rect {
   /**
    * Calculates the union of two rectangles
    */
-  public static union(rect1: Rect, rect2: Rect, out?: Rect): Rect {
-    out = out || new Rect()
+  public static union<T extends IRect = IRect>(rect1: IRect, rect2: IRect, out?: T): T {
+    out = out || new Rect() as any
+
     let t1 = rect1.x + rect1.width
     let t2 = rect2.x + rect2.width
     const rightMax = t1 > t2 ? t1 : t2

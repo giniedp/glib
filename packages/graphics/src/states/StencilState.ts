@@ -1,8 +1,17 @@
-import { CompareFunction, CullMode, StencilOperation } from './../enums/Enums'
+import {
+  CompareFunction,
+  CompareFunctionOption,
+  CullMode,
+  nameOfCompareFunction,
+  StencilOperation,
+  StencilOperationOption,
+  valueOfCompareFunction,
+  valueOfStencilOperation,
+} from './../enums/Enums'
 
 import { Device } from './../Device'
 
-let propertyKeys: Array<keyof StencilStateOptions> = [
+const propertyKeys: Array<keyof StencilStateParams> = [
   'enable',
   'stencilFunction',
   'stencilReference',
@@ -21,26 +30,45 @@ let propertyKeys: Array<keyof StencilStateOptions> = [
 /**
  * @public
  */
-export interface StencilStateOptions {
+export interface StencilStateParams {
   enable?: boolean
-  stencilFunction?: number
+  stencilFunction?: CompareFunction
   stencilReference?: number
   stencilMask?: number
-  stencilFail?: number
-  stencilDepthFail?: number
-  stencilDepthPass?: number
-  stencilBackFunction?: number
+  stencilFail?: StencilOperation
+  stencilDepthFail?: StencilOperation
+  stencilDepthPass?: StencilOperation
+  stencilBackFunction?: CompareFunction
   stencilBackReference?: number
   stencilBackMask?: number
-  stencilBackFail?: number
-  stencilBackDepthFail?: number
-  stencilBackDepthPass?: number
+  stencilBackFail?: StencilOperation
+  stencilBackDepthFail?: StencilOperation
+  stencilBackDepthPass?: StencilOperation
 }
 
 /**
  * @public
  */
-export class StencilState implements StencilStateOptions {
+export interface StencilStateOptions {
+  enable?: boolean
+  stencilFunction?: CompareFunctionOption
+  stencilReference?: number
+  stencilMask?: number
+  stencilFail?: StencilOperationOption
+  stencilDepthFail?: StencilOperationOption
+  stencilDepthPass?: StencilOperationOption
+  stencilBackFunction?: CompareFunctionOption
+  stencilBackReference?: number
+  stencilBackMask?: number
+  stencilBackFail?: StencilOperationOption
+  stencilBackDepthFail?: StencilOperationOption
+  stencilBackDepthPass?: StencilOperationOption
+}
+
+/**
+ * @public
+ */
+export class StencilState implements StencilStateParams {
   public device: Device
   public gl: WebGLRenderingContext
   private enableField: boolean = false
@@ -56,14 +84,14 @@ export class StencilState implements StencilStateOptions {
   private stencilBackFailField: number = StencilOperation.Keep
   private stencilBackDepthFailField: number = StencilOperation.Keep
   private stencilBackDepthPassField: number = StencilOperation.Keep
-  private changes: StencilStateOptions = {}
+  private changes: StencilStateParams = {}
   private hasChanged: boolean = false
 
   public get isDirty() {
     return this.hasChanged
   }
 
-  constructor(device: Device, state?: StencilStateOptions) {
+  constructor(device: Device, state?: StencilStateParams) {
     this.device = device
     this.gl = device.context
     this.resolve()
@@ -71,7 +99,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilFunctionName(): string {
-    return CompareFunction.nameOf(this.stencilFunctionField)
+    return nameOfCompareFunction(this.stencilFunctionField)
   }
 
   get stencilFunction(): number {
@@ -87,7 +115,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilBackFunctionName(): string {
-    return CompareFunction.nameOf(this.stencilBackFunctionField)
+    return nameOfCompareFunction(this.stencilBackFunctionField)
   }
 
   get stencilBackFunction(): number {
@@ -103,7 +131,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilFailName(): string {
-    return CompareFunction.nameOf(this.stencilFailField)
+    return nameOfCompareFunction(this.stencilFailField)
   }
 
   get stencilFail(): number {
@@ -119,7 +147,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilDepthFailName(): string {
-    return CompareFunction.nameOf(this.stencilDepthFailField)
+    return nameOfCompareFunction(this.stencilDepthFailField)
   }
 
   get stencilDepthFail(): number {
@@ -135,7 +163,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilDepthPassName(): string {
-    return CompareFunction.nameOf(this.stencilDepthPassField)
+    return nameOfCompareFunction(this.stencilDepthPassField)
   }
 
   get stencilDepthPass(): number {
@@ -151,7 +179,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilBackFailName(): string {
-    return CompareFunction.nameOf(this.stencilBackFailField)
+    return nameOfCompareFunction(this.stencilBackFailField)
   }
 
   get stencilBackFail(): number {
@@ -167,7 +195,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilBackDepthFailName(): string {
-    return CompareFunction.nameOf(this.stencilBackDepthFailField)
+    return nameOfCompareFunction(this.stencilBackDepthFailField)
   }
 
   get stencilBackDepthFail(): number {
@@ -183,7 +211,7 @@ export class StencilState implements StencilStateOptions {
   }
 
   get stencilBackDepthPassName(): string {
-    return CompareFunction.nameOf(this.stencilBackDepthPassField)
+    return nameOfCompareFunction(this.stencilBackDepthPassField)
   }
 
   get stencilBackDepthPass(): number {
@@ -258,14 +286,14 @@ export class StencilState implements StencilStateOptions {
     }
   }
 
-  public assign(state: StencilStateOptions= {}): StencilState {
+  public assign(state: StencilStateParams= {}): StencilState {
     for (let key of propertyKeys) {
       if (state.hasOwnProperty(key)) { this[key] = state[key] }
     }
     return this
   }
 
-  public commit(state?: StencilStateOptions): StencilState {
+  public commit(state?: StencilStateParams): StencilState {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
 
@@ -305,7 +333,7 @@ export class StencilState implements StencilStateOptions {
     return this
   }
 
-  public copy(out: any= {}): StencilStateOptions {
+  public copy(out: any= {}): StencilStateParams {
     for (let key of propertyKeys) { out[key] = this[key] }
     return out
   }
@@ -315,43 +343,45 @@ export class StencilState implements StencilStateOptions {
     for (let key of propertyKeys) { this.changes[key] = undefined }
   }
 
-  public static convert(state: any): StencilStateOptions {
+  public static convert(state: string | StencilStateOptions): StencilStateParams {
     if (typeof state === 'string') {
-      state = StencilState[state]
+      return StencilState[state] ? {...StencilState[state]} : null
     }
+
     if (!state) {
-      return state
+      return null
     }
+
     if (state.stencilFunction) {
-      state.stencilFunction = CompareFunction[state.stencilFunction]
+      state.stencilFunction = valueOfCompareFunction(state.stencilFunction)
     }
     if (state.stencilBackFunction) {
-      state.stencilBackFunction = CompareFunction[state.stencilBackFunction]
+      state.stencilBackFunction = valueOfCompareFunction(state.stencilBackFunction)
     }
 
     if (state.stencilFail) {
-      state.stencilFail = StencilOperation[state.stencilFail]
+      state.stencilFail = valueOfStencilOperation(state.stencilFail)
     }
     if (state.stencilDepthFail) {
-      state.stencilDepthFail = StencilOperation[state.stencilDepthFail]
+      state.stencilDepthFail = valueOfStencilOperation(state.stencilDepthFail)
     }
     if (state.stencilDepthPass) {
-      state.stencilDepthPass = StencilOperation[state.stencilDepthPass]
+      state.stencilDepthPass = valueOfStencilOperation(state.stencilDepthPass)
     }
 
     if (state.stencilBackFail) {
-      state.stencilBackFail = StencilOperation[state.stencilBackFail]
+      state.stencilBackFail = valueOfStencilOperation(state.stencilBackFail)
     }
     if (state.stencilBackDepthFail) {
-      state.stencilBackDepthFail = StencilOperation[state.stencilBackDepthFail]
+      state.stencilBackDepthFail = valueOfStencilOperation(state.stencilBackDepthFail)
     }
     if (state.stencilBackDepthPass) {
-      state.stencilBackDepthPass = StencilOperation[state.stencilBackDepthPass]
+      state.stencilBackDepthPass = valueOfStencilOperation(state.stencilBackDepthPass)
     }
-    return state
+    return state as StencilStateParams
   }
 
-  public static resolve(gl: WebGLRenderingContext, out: any= {}): StencilStateOptions {
+  public static resolve(gl: WebGLRenderingContext, out: any= {}): StencilStateParams {
     out.enable = gl.getParameter(gl.STENCIL_TEST)
 
     out.stencilFunction = gl.getParameter(gl.STENCIL_FUNC)
@@ -372,7 +402,7 @@ export class StencilState implements StencilStateOptions {
     return out
   }
 
-  public static Default = Object.freeze({
+  public static Default = Object.freeze<StencilStateParams>({
     enable: false,
 
     // front face stencil

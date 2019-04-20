@@ -1,4 +1,3 @@
-import { Log } from '@gglib/core'
 import { VertexLayout } from './../VertexLayout'
 
 /**

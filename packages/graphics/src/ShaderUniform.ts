@@ -1,10 +1,13 @@
 // tslint:disable:no-bitwise
 
 import { copy } from '@gglib/core'
+import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
 import { Device } from './Device'
 import { ShaderProgram } from './ShaderProgram'
-import { SamplerState, SamplerStateProperties } from './states'
+import { SamplerState, SamplerStateParams } from './states'
 import { Texture } from './Texture'
+
+export type ShaderUniformParameter = string | boolean | number | number[] | Int32Array | Texture | IVec2 | IVec3 | IVec4 | IMat
 
 function parseArray(value: string) {
   let result: any = value.replace(/[\[\]]/g, '').split(',')
@@ -30,11 +33,38 @@ function makeVec4(data: number[]) {
  * @public
  */
 export interface ShaderUniformOptions {
+  /**
+   * The original name of the uniform as it appears in the shader source code
+   *
+   * @remarks
+   * This is used to get the uniform location in the compiled program
+   */
   name: string
+  /**
+   * The type of the uniform e.g. `float`, `vec2`, `vec3`, `mat4`
+   */
   type: string
+  /**
+   * The binding name of the uniform by which the uniform will be accessible in the javascript world
+   */
   binding?: string
+  /**
+   * The default value of the uniform that will be set initally
+   */
   default?: any
+  /**
+   * The sampler state preset name e.g. 'LinearClamp', 'LinearWrap', 'PointClamp' or 'PointWrap'
+   *
+   * @remarks
+   * For textures only
+   */
   filter?: string
+  /**
+   * This is the sampler register index
+   *
+   * @remarks
+   * For textures only
+   */
   register?: number
 }
 
@@ -83,7 +113,7 @@ export class ShaderUniform {
   public set: (v: any, ...rest: any[]) => void
   public put: (v: any, ...rest: any[]) => void
   public register: number
-  public filter: SamplerStateProperties
+  public filter: SamplerStateParams
 
   /**
    *
@@ -110,7 +140,7 @@ export class ShaderUniform {
         this.set = this.setInt
         break
       case 'bool':
-        this.defaultValue = value === 'true' || value === '1'
+        this.defaultValue = value === 'true' || value === '1' || value === 1
         this.set = this.setBool
         break
       case 'float':
@@ -274,7 +304,7 @@ export class ShaderUniform {
   /**
    * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public setVec2(value: {x: number, y: number}|number[]) {
+  public setVec2(value: {x: number, y: number} | number[]) {
     if (Array.isArray(value)) {
       if (this.cacheValue(value[0], value[1])) {
         this.gl.uniform2f(this.location, value[0], value[1])
@@ -289,7 +319,7 @@ export class ShaderUniform {
   /**
    * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public setVec3(value: {x: number, y: number, z: number}|number[]) {
+  public setVec3(value: {x: number, y: number, z: number} | number[]) {
     if (Array.isArray(value)) {
       if (this.cacheValue(value[0], value[1], value[2])) {
         this.gl.uniform3f(this.location, value[0], value[1], value[2])
@@ -304,7 +334,7 @@ export class ShaderUniform {
   /**
    * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public setVec4(value: {x: number, y: number, z: number, w: number}|number[]) {
+  public setVec4(value: {x: number, y: number, z: number, w: number} | number[]) {
     if (Array.isArray(value)) {
       if (this.cacheValue(value[0], value[1], value[2], value[3])) {
         this.gl.uniform4f(this.location, value[0], value[1], value[2], value[3])
@@ -411,16 +441,21 @@ export class ShaderUniform {
     let device = this.device
     let sampler = device.samplerStates[this.register] || device.samplerStates[0]
 
+    // perform the update
+    // - for video textures this will update the playback state
+    // - for image textures this will update the ready state
     if (value) {
       value.update()
     }
-    // TODO: find petter place/solution for this logic
+    // as long as a texture is not ready to render use a fallback texture instead
     if (!value || !value.ready) {
-      sampler.texture = this.device.defaultTexture
-    } else {
-      sampler.texture = value
+      value = this.device.defaultTexture
     }
-    sampler.commit(this.filter)
+    sampler.texture = value
+    // prefer the filter defined in the shader
+    // otherwise just use whatever has been assigned to the texture
+    sampler.commit(this.filter || value.sampler)
+
     this.setInt(sampler.register)
   }
 }

@@ -1,0 +1,6 @@
+export * from './easeCosine'
+export * from './easeCubic'
+export * from './easeLinear'
+export * from './easeNearest'
+export * from './easePoint'
+export * from './easeQuintic'

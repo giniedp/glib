@@ -1,4 +1,30 @@
+import { IVec4, Vec4 } from '@gglib/math'
+
 // tslint:disable no-bitwise
+
+export const RGBA_FORMAT = Object.freeze({
+  r: (rgba: number): number => (rgba >> 0) & 255,
+  g: (rgba: number): number => (rgba >> 8) & 255,
+  b: (rgba: number): number => (rgba >> 16) & 255,
+  a: (rgba: number): number => (rgba >> 24) & 255,
+
+  x: (rgba: number): number => RGBA_FORMAT.r(rgba) / 255,
+  y: (rgba: number): number => RGBA_FORMAT.g(rgba) / 255,
+  z: (rgba: number): number => RGBA_FORMAT.b(rgba) / 255,
+  w: (rgba: number): number => RGBA_FORMAT.a(rgba) / 255,
+})
+
+export const ABGR_FORMAT = Object.freeze({
+  a: (argb: number): number => (argb >> 0) & 255,
+  b: (argb: number): number => (argb >> 8) & 255,
+  g: (argb: number): number => (argb >> 16) & 255,
+  r: (argb: number): number => (argb >> 24) & 255,
+
+  x: (argb: number): number => ABGR_FORMAT.r(argb) / 255,
+  y: (argb: number): number => ABGR_FORMAT.g(argb) / 255,
+  z: (argb: number): number => ABGR_FORMAT.b(argb) / 255,
+  w: (argb: number): number => ABGR_FORMAT.a(argb) / 255,
+})
 
 /**
  * @public
@@ -10,7 +36,23 @@ export class Color {
   }
 
   public static fromRgba(rgba: number): Color {
-    return new Color(this.r(rgba), this.g(rgba), this.b(rgba), this.a(rgba))
+    return new Color(
+      RGBA_FORMAT.r(rgba),
+      RGBA_FORMAT.g(rgba),
+      RGBA_FORMAT.b(rgba),
+      RGBA_FORMAT.a(rgba),
+    )
+  }
+
+  public static fromRgbaHex(rgba: string): Color {
+    const abgr = parseInt(rgba.match(/[0-9a-f]+/i)[0], 16)
+    // rgba hex string has abgr byte order when it is parsed
+    return new Color(
+      ABGR_FORMAT.r(abgr),
+      ABGR_FORMAT.g(abgr),
+      ABGR_FORMAT.b(abgr),
+      ABGR_FORMAT.a(abgr),
+    )
   }
 
   public static rgba(r: number, g: number, b: number, a: number): number {
@@ -21,37 +63,37 @@ export class Color {
     return Color.rgba(x * 255, y * 255, z * 255, w * 255)
   }
 
-  public static r(rgba: number): number {
-    return rgba & 255
-  }
+  // public static r(rgba: number): number {
+  //   return rgba & 255
+  // }
 
-  public static g(rgba: number): number {
-    return (rgba >> 8) & 255
-  }
+  // public static g(rgba: number): number {
+  //   return (rgba >> 8) & 255
+  // }
 
-  public static b(rgba: number): number {
-    return (rgba >> 16) & 255
-  }
+  // public static b(rgba: number): number {
+  //   return (rgba >> 16) & 255
+  // }
 
-  public static a(rgba: number): number {
-    return (rgba >> 24) & 255
-  }
+  // public static a(rgba: number): number {
+  //   return (rgba >> 24) & 255
+  // }
 
-  public static x(rgba: number): number {
-    return this.r(rgba) / 255
-  }
+  // public static x(rgba: number): number {
+  //   return this.r(rgba) / 255
+  // }
 
-  public static y(rgba: number): number {
-    return this.g(rgba) / 255
-  }
+  // public static y(rgba: number): number {
+  //   return this.g(rgba) / 255
+  // }
 
-  public static z(rgba: number): number {
-    return this.b(rgba) / 255
-  }
+  // public static z(rgba: number): number {
+  //   return this.b(rgba) / 255
+  // }
 
-  public static w(rgba: number): number {
-    return this.a(rgba) / 255
-  }
+  // public static w(rgba: number): number {
+  //   return this.a(rgba) / 255
+  // }
 
   public static AliceBlue = Color.create(240, 248, 255, 255)
   public static AntiqueWhite = Color.create(250, 235, 215, 255)
@@ -208,6 +250,9 @@ export class Color {
   }
   get argb(): number {
     return (this.b | 0) << 24 | (this.g | 0) << 16 | (this.r | 0) << 8 | (this.a | 0) << 0
+  }
+  get xyzw(): number[] {
+    return Vec4.toArray(this)
   }
 
   get x(): number {

@@ -141,26 +141,26 @@ describe('Vec4', () => {
     it ('clones all components', () => expectComponents(Vec4.clone(a), 1, 2, 3, 4))
     it ('returns new instance', () => expect(Vec4.clone(a)).not.toBe(a))
   })
-  describe('#copy', () => {
+  describe('#toArray', () => {
     beforeEach(() => {
       a = Vec4.create(1, 2, 3, 4)
     })
-    it ('copies components', () => expect(a.copy([])).toEqual([1, 2, 3, 4]))
-    it ('copies components at offset', () => expect(a.copy([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
+    it ('copies components', () => expect(a.toArray()).toEqual([1, 2, 3, 4]))
+    it ('copies components at offset', () => expect(a.toArray([0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
   })
-  describe('.copy', () => {
+  describe('.toArray', () => {
     beforeEach(() => {
       a = Vec4.create(1, 2, 3, 4)
     })
-    it ('copies components', () => expect(Vec4.copy(a, [])).toEqual([1, 2, 3, 4]))
-    it ('copies components at offset', () => expect(Vec4.copy(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
+    it ('copies components', () => expect(Vec4.toArray(a, [])).toEqual([1, 2, 3, 4]))
+    it ('copies components at offset', () => expect(Vec4.toArray(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
   })
-  describe('.copy', () => {
+  describe('.toArray', () => {
     beforeEach(() => {
       a = Vec4.create(1, 2, 3, 4)
     })
-    it ('copies components', () => expect(Vec4.copy(a, [])).toEqual([1, 2, 3, 4]))
-    it ('copies components at offset', () => expect(Vec4.copy(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
+    it ('copies components', () => expect(Vec4.toArray(a, [])).toEqual([1, 2, 3, 4]))
+    it ('copies components at offset', () => expect(Vec4.toArray(a, [0, 0, 0, 0, 0], 1)).toEqual([0, 1, 2, 3, 4]))
   })
   describe('#equals', () => {
     it ('compares components', () => {

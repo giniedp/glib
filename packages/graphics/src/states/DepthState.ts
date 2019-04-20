@@ -1,7 +1,7 @@
 import { Device } from './../Device'
-import { CompareFunction } from './../enums/Enums'
+import { CompareFunction, CompareFunctionOption, nameOfCompareFunction, valueOfCompareFunction } from './../enums/Enums'
 
-const propertyKeys: Array<keyof DepthStateOptions> = [
+const propertyKeys: Array<keyof DepthStateParams> = [
   'depthEnable',
   'depthFunction',
   'depthWriteEnable',
@@ -10,7 +10,7 @@ const propertyKeys: Array<keyof DepthStateOptions> = [
 /**
  * @public
  */
-export interface DepthStateOptions {
+export interface DepthStateParams {
   depthEnable?: boolean
   depthFunction?: number
   depthWriteEnable?: boolean
@@ -19,40 +19,49 @@ export interface DepthStateOptions {
 /**
  * @public
  */
-export class DepthState implements DepthStateOptions {
+export interface DepthStateOptions {
+  depthEnable?: boolean
+  depthFunction?: CompareFunctionOption
+  depthWriteEnable?: boolean
+}
 
-  public static Default = Object.freeze({
+/**
+ * @public
+ */
+export class DepthState implements DepthStateParams {
+
+  public static Default = Object.freeze<DepthStateParams>({
     depthEnable: true,
     depthFunction: CompareFunction.LessEqual,
     depthWriteEnable: true,
   })
 
-  public static None = Object.freeze({
+  public static None = Object.freeze<DepthStateParams>({
     depthEnable: false,
     depthFunction: CompareFunction.Always,
     depthWriteEnable: false,
   })
 
-  public static DepthRead = Object.freeze({
+  public static DepthRead = Object.freeze<DepthStateParams>({
     depthEnable: true,
     depthFunction: CompareFunction.LessEqual,
     depthWriteEnable: false,
   })
 
-  public static convert(state: any): DepthStateOptions {
+  public static convert(state: string | DepthStateOptions): DepthStateParams {
     if (typeof state === 'string') {
-      state = DepthState[state]
+      return DepthState[state] ? {...DepthState[state]} : null
     }
     if (!state) {
-      return state
+      return null
     }
     if (state.depthFunction) {
-      state.depthFunction = CompareFunction[state.depthFunction]
+      state.depthFunction =  valueOfCompareFunction(state.depthFunction)
     }
-    return state
+    return state as DepthStateParams
   }
 
-  public static resolve(gl: any, out: any = {}): DepthStateOptions {
+  public static resolve(gl: any, out: any = {}): DepthStateParams {
     out.depthEnable = gl.getParameter(gl.DEPTH_TEST)
     out.depthFunction = gl.getParameter(gl.DEPTH_FUNC)
     out.depthWriteEnable = gl.getParameter(gl.DEPTH_WRITEMASK)
@@ -65,13 +74,13 @@ export class DepthState implements DepthStateOptions {
   private depthFunctionField: number = CompareFunction.LessEqual
   private depthWriteEnableField: boolean = true
   private hasChanged: boolean
-  private changes: DepthStateOptions = {}
+  private changes: DepthStateParams = {}
 
   public get isDirty() {
     return this.hasChanged
   }
 
-  constructor(device: Device, options?: DepthStateOptions) {
+  constructor(device: Device, options?: DepthStateParams) {
     this.device = device
     this.gl = device.context
     this.resolve()
@@ -117,10 +126,10 @@ export class DepthState implements DepthStateOptions {
   }
 
   get depthFunctionName(): string {
-    return CompareFunction.nameOf(this.depthFunction)
+    return nameOfCompareFunction(this.depthFunction)
   }
 
-  public assign(state: DepthStateOptions): DepthState {
+  public assign(state: DepthStateParams): DepthState {
     for (const key of propertyKeys) {
       if (state.hasOwnProperty(key)) {
         this[key] = state[key]
@@ -129,7 +138,7 @@ export class DepthState implements DepthStateOptions {
     return this
   }
 
-  public commit(state?: DepthStateOptions): DepthState {
+  public commit(state?: DepthStateParams): DepthState {
     if (state) {
       this.assign(state)
     }
@@ -154,7 +163,7 @@ export class DepthState implements DepthStateOptions {
     return this
   }
 
-  public copy(out: any = {}): DepthStateOptions {
+  public copy(out: any = {}): DepthStateParams {
     for (const key of propertyKeys) {
       out[key] = this[key]
     }

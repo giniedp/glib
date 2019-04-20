@@ -7,7 +7,7 @@ const keyLookup = {
 }
 
 /**
- * Describes a vector with two components.
+ * Defines a vector with two components.
  *
  * @public
  */
@@ -24,9 +24,10 @@ export class Vec2 implements IVec2 {
   public y: number
 
   /**
-   * initializes a new vector
+   * Constructs a new instance of {@link Vec2}
+   *
    * @param x - value for the X component
-   * @param x - value for the Y component
+   * @param y - value for the Y component
    */
   constructor(x: number= 0, y: number= 0) {
     this.x = x
@@ -36,34 +37,34 @@ export class Vec2 implements IVec2 {
   /**
    * Sets the X component
    */
-  public setX(v: number): Vec2 {
+  public setX(v: number): this {
     this.x = v
     return this
   }
   /**
    * Sets the Y component
    */
-  public setY(v: number): Vec2 {
+  public setY(v: number): this {
     this.y = v
     return this
   }
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, v: number): Vec2 {
+  public set(key: number | string, v: number): this {
     this[keyLookup[key]] = v
     return this
   }
   /**
    * Gets the component by using an index (or name)
    */
-  public get(key: number|string): number {
+  public get(key: number | string): number {
     return this[keyLookup[key]]
   }
   /**
    * Initializes the components of this vector with given values.
    */
-  public init(x: number, y: number): Vec2 {
+  public init(x: number, y: number): this {
     this.x = x
     this.y = y
     return this
@@ -83,7 +84,7 @@ export class Vec2 implements IVec2 {
    * Creates a new vector with all components set to 0.
    * @returns A new vector.
    */
-  public initZero(): Vec2 {
+  public initZero(): this {
     this.x = 0
     this.y = 0
     return this
@@ -101,7 +102,7 @@ export class Vec2 implements IVec2 {
    * Creates a new vector with all components set to 1.
    * @returns A new vector.
    */
-  public initOne(): Vec2 {
+  public initOne(): this {
     this.x = 1
     this.y = 1
     return this
@@ -118,7 +119,7 @@ export class Vec2 implements IVec2 {
   /**
    * Initializes the components of this vector by taking the components from the given vector.
    */
-  public initFrom(other: IVec2): Vec2 {
+  public initFrom(other: IVec2): this {
     this.x = other.x
     this.y = other.y
     return this
@@ -140,7 +141,7 @@ export class Vec2 implements IVec2 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public initFromBuffer(buffer: {[key: number]: number}, offset: number= 0): Vec2 {
+  public initFromBuffer(buffer: { [key: number]: number }, offset: number= 0): this {
     this.x = buffer[offset]
     this.y = buffer[offset + 1]
     return this
@@ -152,7 +153,7 @@ export class Vec2 implements IVec2 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public static createFromBuffer(buffer: {[key: number]: number}, offset: number= 0): Vec2 {
+  public static createFromBuffer(buffer: { [key: number]: number }, offset: number= 0): Vec2 {
     return new Vec2(
       buffer[offset],
       buffer[offset + 1],
@@ -163,7 +164,9 @@ export class Vec2 implements IVec2 {
    * Creates a copy of this vector
    * @returns The cloned vector
    */
-  public clone<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+  public clone(): Vec2
+  public clone<T>(out: T): T & IVec2
+  public clone(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x
     out.y = this.y
@@ -176,35 +179,43 @@ export class Vec2 implements IVec2 {
    *
    * @returns the destination vector.
    */
-  public static clone<T extends IVec2 = IVec2>(src: IVec2, dst?: T|IVec2): T {
+  public static clone(src: IVec2): Vec2
+  public static clone<T>(src: IVec2, dst: T): T & IVec2
+  public static clone(src: IVec2, dst?: IVec2): IVec2 {
     dst = dst || new Vec2()
     dst.x = src.x
     dst.y = src.y
-    return dst as T
+    return dst
   }
 
   /**
    * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
+   * @param array - The array to copy into
    * @param offset - Zero based index where to start writing in the array
+   * @returns the given array parameter
+   */
+  public toArray(): number[]
+  public toArray<T>(array: T, offset?: number): T
+  public toArray(array: number[] = [], offset: number= 0): number[] {
+    array[offset] = this.x
+    array[offset + 1] = this.y
+    return array
+  }
+
+  /**
+   * Copies the components of `src` successively into the given array.
    *
-   */
-  public copy<T extends {[key: number]: number}>(buffer: T, offset: number= 0): T {
-    buffer[offset] = this.x
-    buffer[offset + 1] = this.y
-    return buffer
-  }
-
-  /**
-   * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
+   * @param vec - The vector to copy
+   * @param array - The array to copy into
    * @param offset - Zero based index where to start writing in the array
-   * @returns the given buffer parameter
+   * @returns the given array parameter
    */
-  public static copy<T extends {[key: number]: number}>(src: IVec2, buffer: T, offset: number= 0): T {
-    buffer[offset] = src.x
-    buffer[offset + 1] = src.y
-    return buffer
+  public static toArray(vec: IVec2): number[]
+  public static toArray<T>(vec: IVec2, array: T, offset?: number): T
+  public static toArray(vec: IVec2, array: number[] = [], offset: number = 0): number[] {
+    array[offset] = vec.x
+    array[offset + 1] = vec.y
+    return array
   }
 
   /**
@@ -350,11 +361,13 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static normalize<T extends IVec2 = Vec2>(vec: IVec2, out?: T|Vec2): T|Vec2 {
+  public static normalize(vec: IVec2): Vec2
+  public static normalize<T>(vec: IVec2, out: T): T & IVec2
+  public static normalize(vec: IVec2, out?: IVec2): IVec2 {
     const x = vec.x
     const y = vec.y
     const d = 1.0 / Math.sqrt(x * x + y * y)
-    out = (out || new Vec2()) as any
+    out = (out || new Vec2())
     out.x = x * d
     out.y = y * d
     return out
@@ -364,7 +377,7 @@ export class Vec2 implements IVec2 {
    * Inverts this vector.
    * @returns Reference to `this` for chaining.
    */
-  public invert(): Vec2 {
+  public invert(): this {
     this.x = 1.0 / this.x
     this.y = 1.0 / this.y
     return this
@@ -376,8 +389,10 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static invert<T extends IVec2 = Vec2>(vec: IVec2, out?: T|Vec2): T|Vec2 {
-    out = (out || new Vec2()) as any
+  public static invert(vec: IVec2): Vec2
+  public static invert<T>(vec: IVec2, out: T): T & IVec2
+  public static invert(vec: IVec2, out?: IVec2): IVec2 {
+    out = (out || new Vec2())
     out.x = 1.0 / vec.x
     out.y = 1.0 / vec.y
     return out
@@ -387,7 +402,7 @@ export class Vec2 implements IVec2 {
    * Negates the components of this vector.
    * @returns Reference to `this` for chaining.
    */
-  public negate(): Vec2 {
+  public negate(): this {
     this.x = -this.x
     this.y = -this.y
     return this
@@ -399,8 +414,10 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static negate<T extends IVec2 = Vec2>(vec: IVec2, out?: T|Vec2): T|Vec2 {
-    out = (out || new Vec2()) as any
+  public static negate(vec: IVec2): Vec2
+  public static negate<T>(vec: IVec2, out: T): T & IVec2
+  public static negate(vec: IVec2, out?: IVec2): IVec2 {
+    out = out || new Vec2()
     out.x = -vec.x
     out.y = -vec.y
     return out
@@ -411,7 +428,7 @@ export class Vec2 implements IVec2 {
    * @param other - The vector to add
    * @returns Reference to `this` for chaining.
    */
-  public add(other: IVec2): Vec2 {
+  public add(other: IVec2): this {
     this.x += other.x
     this.y += other.y
     return this
@@ -424,8 +441,10 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static add<T extends IVec2 = Vec2>(vecA: IVec2, vecB: IVec2, out?: T|Vec2): T|Vec2 {
-    out = (out || new Vec2()) as any
+  public static add(vecA: IVec2, vecB: IVec2): Vec2
+  public static add<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
+  public static add(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
+    out = out || new Vec2()
     out.x = vecA.x + vecB.x
     out.y = vecA.y + vecB.y
     return out
@@ -436,7 +455,7 @@ export class Vec2 implements IVec2 {
    * @param scalar - The scalar to add.
    * @returns Reference to `this` for chaining.
    */
-  public addScalar(scalar: number): Vec2 {
+  public addScalar(scalar: number): this {
     this.x += scalar
     this.y += scalar
     return this
@@ -449,7 +468,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static addScalar<T extends IVec2 = Vec2>(vec: IVec2, scalar: number, out?: T|Vec2): T|Vec2 {
+  public static addScalar(vec: IVec2, scalar: number): Vec2
+  public static addScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
+  public static addScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vec.x + scalar
     out.y = vec.y + scalar
@@ -461,7 +482,7 @@ export class Vec2 implements IVec2 {
    * @param other - The vector to add
    * @returns this vector for chaining
    */
-  public addScaled(other: IVec2, scale: number): Vec2 {
+  public addScaled(other: IVec2, scale: number): this {
     this.x += other.x * scale
     this.y += other.y * scale
     return this
@@ -472,7 +493,7 @@ export class Vec2 implements IVec2 {
    * @param other - The vector to subtract.
    * @returns Reference to `this` for chaining.
    */
-  public subtract(other: IVec2): Vec2 {
+  public subtract(other: IVec2): this {
     this.x -= other.x
     this.y -= other.y
     return this
@@ -485,7 +506,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static subtract<T extends IVec2 = Vec2>(vecA: IVec2, vecB: IVec2, out?: T|Vec2): T|Vec2 {
+  public static subtract(vecA: IVec2, vecB: IVec2): Vec2
+  public static subtract<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
+  public static subtract(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vecA.x - vecB.x
     out.y = vecA.y - vecB.y
@@ -497,7 +520,7 @@ export class Vec2 implements IVec2 {
    * @param scalar - The scalar to subtract.
    * @returns Reference to `this` for chaining.
    */
-  public subtractScalar(scalar: number): Vec2 {
+  public subtractScalar(scalar: number): this {
     this.x -= scalar
     this.y -= scalar
     return this
@@ -510,7 +533,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static subtractScalar<T extends IVec2 = Vec2>(vec: IVec2, scalar: number, out?: T|Vec2): T|Vec2 {
+  public static subtractScalar(vec: IVec2, scalar: number): Vec2
+  public static subtractScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
+  public static subtractScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vec.x - scalar
     out.y = vec.y - scalar
@@ -523,7 +548,7 @@ export class Vec2 implements IVec2 {
    * @param scale - The value to multoply to `other`
    * @returns this vector for chaining
    */
-  public subtractScaled(other: IVec2, scale: number): Vec2 {
+  public subtractScaled(other: IVec2, scale: number): this {
     this.x -= other.x * scale
     this.y -= other.y * scale
     return this
@@ -534,7 +559,7 @@ export class Vec2 implements IVec2 {
    * @param other - The vector to multiply.
    * @returns Reference to `this` for chaining.
    */
-  public multiply(other: IVec2): Vec2 {
+  public multiply(other: IVec2): this {
     this.x *= other.x
     this.y *= other.y
     return this
@@ -547,7 +572,9 @@ export class Vec2 implements IVec2 {
    * @param [out] The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static multiply<T extends IVec2 = Vec2>(vecA: IVec2, vecB: IVec2, out?: T|Vec2): T|Vec2 {
+  public static multiply(vecA: IVec2, vecB: IVec2): Vec2
+  public static multiply<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
+  public static multiply(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vecA.x * vecB.x
     out.y = vecA.y * vecB.y
@@ -559,7 +586,7 @@ export class Vec2 implements IVec2 {
    * @param scalar - The scalar to multiply.
    * @returns Reference to `this` for chaining.
    */
-  public multiplyScalar(scalar: number): Vec2 {
+  public multiplyScalar(scalar: number): this {
     this.x *= scalar
     this.y *= scalar
     return this
@@ -572,7 +599,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static multiplyScalar<T extends IVec2 = Vec2>(vec: IVec2, scalar: number, out?: T|Vec2): T|Vec2 {
+  public static multiplyScalar(vec: IVec2, scalar: number): Vec2
+  public static multiplyScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
+  public static multiplyScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vec.x * scalar
     out.y = vec.y * scalar
@@ -585,7 +614,7 @@ export class Vec2 implements IVec2 {
    * @param add - The vector to add on top of the multiplication.
    * @returns Reference to `this` for chaining.
    */
-  public multiplyAdd(mul: IVec2, add: IVec2): Vec2 {
+  public multiplyAdd(mul: IVec2, add: IVec2): this {
     this.x = this.x * mul.x + add.x
     this.y = this.y * mul.y + add.y
     return this
@@ -599,7 +628,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static multiplyAdd<T extends IVec2 = Vec2>(vecA: IVec2, vecB: IVec2, add: IVec2, out?: T|Vec2): T|Vec2 {
+  public static multiplyAdd(vecA: IVec2, vecB: IVec2, add: IVec2): Vec2
+  public static multiplyAdd<T>(vecA: IVec2, vecB: IVec2, add: IVec2, out: T): T & IVec2
+  public static multiplyAdd(vecA: IVec2, vecB: IVec2, add: IVec2, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vecA.x * vecB.x + add.x
     out.y = vecA.y * vecB.y + add.y
@@ -612,7 +643,7 @@ export class Vec2 implements IVec2 {
    * @param add - The vector to add on top of the multiplication.
    * @returns Reference to `this` for chaining.
    */
-  public multiplyScalarAdd(mul: number, add: IVec2): Vec2 {
+  public multiplyScalarAdd(mul: number, add: IVec2): this {
     this.x = this.x * mul + add.x
     this.y = this.y * mul + add.y
     return this
@@ -626,7 +657,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static multiplyScalarAdd<T extends IVec2 = Vec2>(vecA: IVec2, mul: number, add: IVec2, out?: T|Vec2): T|Vec2 {
+  public static multiplyScalarAdd(vecA: IVec2, mul: number, add: IVec2): Vec2
+  public static multiplyScalarAdd<T>(vecA: IVec2, mul: number, add: IVec2, out: T): T & IVec2
+  public static multiplyScalarAdd(vecA: IVec2, mul: number, add: IVec2, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vecA.x * mul + add.x
     out.y = vecA.y * mul + add.y
@@ -638,7 +671,7 @@ export class Vec2 implements IVec2 {
    * @param other - The vector to divide with.
    * @returns Reference to `this` for chaining.
    */
-  public divide(other: IVec2): Vec2 {
+  public divide(other: IVec2): this {
     this.x /= other.x
     this.y /= other.y
     return this
@@ -651,7 +684,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static divide<T extends IVec2 = Vec2>(vecA: IVec2, vecB: IVec2, out?: T|Vec2): T|Vec2 {
+  public static divide(vecA: IVec2, vecB: IVec2): Vec2
+  public static divide<T>(vecA: IVec2, vecB: IVec2, out: T): T & IVec2
+  public static divide(vecA: IVec2, vecB: IVec2, out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = vecA.x / vecB.x
     out.y = vecA.y / vecB.y
@@ -663,7 +698,7 @@ export class Vec2 implements IVec2 {
    * @param scalar - The scalar to divide with.
    * @returns Reference to `this` for chaining.
    */
-  public divideScalar(scalar: number): Vec2 {
+  public divideScalar(scalar: number): this {
     scalar = 1 / scalar
     this.x *= scalar
     this.y *= scalar
@@ -677,7 +712,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static divideScalar<T extends IVec2 = Vec2>(vec: IVec2, scalar: number, out?: T|Vec2): T|Vec2 {
+  public static divideScalar(vec: IVec2, scalar: number): Vec2
+  public static divideScalar<T>(vec: IVec2, scalar: number, out: T): T & IVec2
+  public static divideScalar(vec: IVec2, scalar: number, out?: IVec2): IVec2 {
     scalar = 1 / scalar
     out = out || new Vec2()
     out.x = vec.x * scalar
@@ -690,7 +727,7 @@ export class Vec2 implements IVec2 {
    *
    * @returns Reference to `this` for chaining.
    */
-  public transformByMat4(mat: { data: ArrayLike<number> }): IVec2 {
+  public transformByMat4(mat: { data: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -704,7 +741,7 @@ export class Vec2 implements IVec2 {
    *
    * @returns Reference to `this` for chaining.
    */
-  public transformByMat3(mat: { data: ArrayLike<number> }): IVec2 {
+  public transformByMat3(mat: { data: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -718,7 +755,7 @@ export class Vec2 implements IVec2 {
    *
    * @returns Reference to `this` for chaining.
    */
-  public transformByMat2(mat: { data: ArrayLike<number> }): IVec2 {
+  public transformByMat2(mat: { data: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const d = mat.data
@@ -735,7 +772,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static clamp<T extends IVec2 = Vec2>(a: IVec2, min: IVec2, max: IVec2, out?: T|Vec2): T|Vec2 {
+  public static clamp(a: IVec2, min: IVec2, max: IVec2): Vec2
+  public static clamp<T>(a: IVec2, min: IVec2, max: IVec2, out: T): T & IVec2
+  public static clamp(a: IVec2, min: IVec2, max: IVec2, out?: IVec2): IVec2 {
     const x = a.x
     const y = a.y
     const minX = min.x
@@ -756,7 +795,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static clampScalar<T extends IVec2 = Vec2>(a: IVec2, min: number, max: number, out?: T|Vec2): T|Vec2 {
+  public static clampScalar(a: IVec2, min: number, max: number): Vec2
+  public static clampScalar<T>(a: IVec2, min: number, max: number, out?: T): T & IVec2
+  public static clampScalar(a: IVec2, min: number, max: number, out?: IVec2): IVec2 {
     const x = a.x
     const y = a.y
     out = out || new Vec2()
@@ -772,7 +813,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static min<T extends IVec2 = Vec2>(a: IVec2, b: IVec2, out?: T|Vec2): T|Vec2 {
+  public static min(a: IVec2, b: IVec2): Vec2
+  public static min<T>(a: IVec2, b: IVec2, out?: T): T & IVec2
+  public static min(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
     const aX = a.x
     const aY = a.y
     const bX = b.x
@@ -790,7 +833,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static minScalar<T extends IVec2 = Vec2>(a: IVec2, scalar: number, out?: T|Vec2): T|Vec2 {
+  public static minScalar(a: IVec2, scalar: number): Vec2
+  public static minScalar<T>(a: IVec2, scalar: number, out?: T): T & IVec2
+  public static minScalar(a: IVec2, scalar: number, out?: IVec2): IVec2 {
     const x = a.x
     const y = a.y
     out = out || new Vec2()
@@ -806,7 +851,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static max<T extends IVec2 = Vec2>(a: IVec2, b: IVec2, out?: T|Vec2): T|Vec2 {
+  public static max(a: IVec2, b: IVec2): Vec2
+  public static max<T>(a: IVec2, b: IVec2, out?: T): T & IVec2
+  public static max(a: IVec2, b: IVec2, out?: IVec2): IVec2 {
     const aX = a.x
     const aY = a.y
     const bX = b.x
@@ -824,7 +871,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static maxScalar<T extends IVec2 = Vec2>(a: IVec2, scalar: number, out?: T|Vec2): T|Vec2 {
+  public static maxScalar(a: IVec2, scalar: number): Vec2
+  public static maxScalar<T>(a: IVec2, scalar: number, out?: T): T & IVec2
+  public static maxScalar(a: IVec2, scalar: number, out?: IVec2): IVec2 {
     const x = a.x
     const y = a.y
     out = out || new Vec2()
@@ -841,7 +890,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static lerp<T extends IVec2 = Vec2>(a: IVec2, b: IVec2, t: number, out?: T|Vec2): T|Vec2 {
+  public static lerp(a: IVec2, b: IVec2, t: number): Vec2
+  public static lerp<T>(a: IVec2, b: IVec2, t: number, out?: T): T & IVec2
+  public static lerp(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
     const x = a.x
     const y = a.y
     out = out || new Vec2()
@@ -860,7 +911,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static barycentric<T extends IVec2 = Vec2>(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: T|Vec2): T|Vec2 {
+  public static barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number): Vec2
+  public static barycentric<T>(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: T): T & IVec2
+  public static barycentric(a: IVec2, b: IVec2, c: IVec2, t1: number, t2: number, out?: IVec2): IVec2 {
     const x = a.x
     const y = a.y
     out = out || new Vec2()
@@ -877,7 +930,9 @@ export class Vec2 implements IVec2 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static smooth<T extends IVec2 = Vec2>(a: IVec2, b: IVec2, t: number, out?: T|Vec2): T|Vec2 {
+  public static smooth(a: IVec2, b: IVec2, t: number): Vec2
+  public static smooth<T>(a: IVec2, b: IVec2, t: number, out?: T): T & IVec2
+  public static smooth(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
     t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
     t = t * t * (3 - 2 * t)
     const x = a.x

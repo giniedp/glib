@@ -41,8 +41,8 @@ export function buildCap(builder: ModelBuilder, options: {
 
   for (let step = 0; step < steps - 1; step += 1) {
     builder.addIndex(baseVertex)
-    builder.addIndex(baseVertex + step + 2)
     builder.addIndex(baseVertex + step + 1)
+    builder.addIndex(baseVertex + step + 2)
   }
 }
 

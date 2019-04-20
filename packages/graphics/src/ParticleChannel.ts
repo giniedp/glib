@@ -4,9 +4,9 @@ import { IVec3, Vec3 } from '@gglib/math'
 import { Buffer } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
-import { BufferUsage, DataType, PrimitiveType } from './enums'
+import { BufferUsage, PrimitiveType } from './enums'
 import { ShaderProgram } from './ShaderProgram'
-import { BlendState, BlendStateOptions } from './states'
+import { BlendState, BlendStateParams } from './states'
 import { Texture } from './Texture'
 import { VertexLayout } from './VertexLayout'
 
@@ -92,7 +92,7 @@ export interface ParticleChannelOptions {
   maxEndSize?: number
 
   // Alpha blending settings.
-  blendState?: BlendStateOptions // = BlendState.NonPremultiplied;
+  blendState?: BlendStateParams // = BlendState.NonPremultiplied;
 }
 
 /**
@@ -154,7 +154,7 @@ export class ParticleVertices {
   }
 }
 
-const defaultOptions: ParticleChannelOptions = Object.freeze({
+const defaultOptions = Object.freeze<ParticleChannelOptions>({
   maxParticles: 1000,
   duration: 1000,
   emitterVelocitySensitivity: 1,
@@ -232,7 +232,7 @@ export class ParticleChannel {
       indices[i * 6 + 5] = i * 4 + 3
     }
     this.indexBuffer = this.device.createIndexBuffer({
-      type: 'ushort',
+      dataType: 'ushort',
       data: indices,
     })
     this.program = this.device.createProgram({

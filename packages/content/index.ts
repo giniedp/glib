@@ -1,5 +1,3 @@
-import './src/importer'
-export * from './src/Pipeline'
-export * from './src/Manager'
-export * from './src/BinaryReader'
-export { Parser } from './src/parser'
+export * from './src'
+import * as _loaders from './src/loaders'
+export const loaders = _loaders

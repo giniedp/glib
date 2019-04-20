@@ -1,11 +1,11 @@
 import { Device } from './../Device'
 
-const propertyKeys: Array<keyof ViewportStateOptions> = ['x', 'y', 'width', 'height', 'zMin', 'zMax']
+const propertyKeys: Array<keyof ViewportStateParams> = ['x', 'y', 'width', 'height', 'zMin', 'zMax']
 
 /**
  * @public
  */
-export interface ViewportStateOptions {
+export interface ViewportStateParams {
   x?: number
   y?: number
   width?: number
@@ -17,7 +17,7 @@ export interface ViewportStateOptions {
 /**
  * @public
  */
-export class ViewportState implements ViewportStateOptions {
+export class ViewportState implements ViewportStateParams {
   public device: Device
   public gl: WebGLRenderingContext
   private xField: number = 0
@@ -27,13 +27,13 @@ export class ViewportState implements ViewportStateOptions {
   private zMinField: number = 0
   private zMaxField: number = 1
   private hasChanged: boolean = false
-  private changes: ViewportStateOptions = {}
+  private changes: ViewportStateParams = {}
 
   public get isDirty() {
     return this.hasChanged
   }
 
-  constructor(device: Device, state?: ViewportStateOptions) {
+  constructor(device: Device, state?: ViewportStateParams) {
     this.device = device
     this.gl = device.context
     this.resolve()
@@ -112,14 +112,14 @@ export class ViewportState implements ViewportStateOptions {
     }
   }
 
-  public apply(state: ViewportStateOptions= {}): ViewportState {
+  public apply(state: ViewportStateParams= {}): ViewportState {
     for (let key of propertyKeys) {
       if (state.hasOwnProperty(key)) { this[key] = state[key] }
     }
     return this
   }
 
-  public commit(state?: ViewportStateOptions): ViewportState {
+  public commit(state?: ViewportStateParams): ViewportState {
     if (state) { this.apply(state) }
     if (!this.hasChanged) { return this }
     let gl = this.gl
@@ -135,7 +135,7 @@ export class ViewportState implements ViewportStateOptions {
     return this
   }
 
-  public copy(out: any= {}): ViewportStateOptions {
+  public copy(out: any= {}): ViewportStateParams {
     for (let key of propertyKeys) { out[key] = this[key] }
     return out
   }
@@ -151,7 +151,7 @@ export class ViewportState implements ViewportStateOptions {
     for (let key of propertyKeys) { this.changes[key] = undefined }
   }
 
-  public static resolve(gl: WebGLRenderingContext, out: any= {}): ViewportStateOptions {
+  public static resolve(gl: WebGLRenderingContext, out: any= {}): ViewportStateParams {
     let range = gl.getParameter(gl.DEPTH_RANGE)
     out.zMin = range[0]
     out.zMax = range[1]
