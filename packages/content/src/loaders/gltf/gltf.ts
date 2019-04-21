@@ -104,7 +104,7 @@ async function loadModel(
     name: node.name,
     materials: await Promise.all(materials.map(([, promise]) => promise)),
     meshes: meshes,
-    skin: !node.skin ? null : await loadSkin(context, doc, node.skin),
+    skin: node.skin == null ? null : await loadSkin(context, doc, node.skin),
   }
 }
 
