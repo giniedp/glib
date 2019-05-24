@@ -2,10 +2,10 @@ import { Device, DeviceOptions } from '@gglib/graphics'
 
 import * as Components from '../components'
 import { Entity } from '../Entity'
-import { addTemplate, Template } from '../Template'
+import { addTemplate, TemplateFunction, TemplateMap } from '../Template'
 
 interface GameOptions extends DeviceOptions {
-  templates?: Array<string|Template>,
+  templates?: Array<string|TemplateFunction|TemplateMap>,
   autorun?: boolean,
 }
 

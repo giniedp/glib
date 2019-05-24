@@ -6,9 +6,10 @@ import { Entity } from './../Entity'
  * @public
  */
 export class TimeComponent implements Component {
+  public readonly name: string = 'Time'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Time'
-  public service: boolean = true
   public enabled: boolean = true
 
   public current: number

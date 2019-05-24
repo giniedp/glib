@@ -35,9 +35,10 @@ export interface Renderable {
  * @public
  */
 export class RendererComponent implements Component {
+  public readonly name: string = 'Renderer'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Renderer'
-  public service: boolean = true
   public enabled: boolean = true
   public visible: boolean = true
 
@@ -99,11 +100,11 @@ export class SimpleCullVisitor implements CullVisitor, Visitor<Entity> {
   }
 
   public visit(entity: Entity) {
-    let comp = entity.s['Renderable'] as Renderable
+    let comp = entity.services['Renderable'] as Renderable
     if (comp) {
       comp.collect(this)
     }
-    let light = entity.s['Light'] as LightComponent
+    let light = entity.services['Light'] as LightComponent
     if (light) {
       this.addLight(light.packedData)
     }

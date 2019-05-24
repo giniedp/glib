@@ -4,7 +4,7 @@ import { addTemplate } from '../Template'
 
 addTemplate('Model', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
-  if (!entity.s.Renderable) {
+  if (!entity.services.Renderable) {
     entity.addComponent(new Components.ModelComponent(options))
   }
 })

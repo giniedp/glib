@@ -7,9 +7,10 @@ import { Entity } from './../Entity'
  * @public
  */
 export class KeyboardComponent implements Component {
+  public readonly name: string = 'Keyboard'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Keyboard'
-  public service: boolean = true
   public enabled: boolean = true
 
   public keyboard: Input.Keyboard

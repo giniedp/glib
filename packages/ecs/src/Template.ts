@@ -1,17 +1,25 @@
 import { Entity } from './Entity'
 
-export type Template = (entity: Entity, options?: any) => void
+export interface TemplateOptions {
+  [k: string]: any,
+}
 
-const templates: { [key: string]: Template } = {}
+export type TemplateFunction = (entity: Entity, options?: TemplateOptions) => void
+
+export interface TemplateMap {
+  [k: string]: any
+}
+
+const templates: { [key: string]: TemplateFunction } = {}
 
 /**
  * @public
  */
-export function addTemplate(name: string, builder: Template) {
+export function addTemplate(name: string, template: TemplateFunction) {
   if (templates[name]) {
     throw new Error(`Template '${name}' is already registered`)
   }
-  templates[name] = builder
+  templates[name] = template
 }
 
 /**

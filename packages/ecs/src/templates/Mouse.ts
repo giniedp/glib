@@ -3,7 +3,7 @@ import { Entity } from '../Entity'
 import { addTemplate } from '../Template'
 
 addTemplate('Mouse', (entity: Entity, options: any = {}) => {
-  if (!entity.s.Mouse) {
+  if (!entity.services.Mouse) {
     entity.addComponent(new Components.MouseComponent(options))
   }
 })

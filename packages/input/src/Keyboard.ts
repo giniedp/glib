@@ -128,9 +128,11 @@ export class Keyboard extends Events {
   /**
    * Gets a copy of the current keyboard state.
    */
-  public copyState(out: any = {}): IKeyboardState {
+  public copyState(): IKeyboardState
+  public copyState<T = any>(out: T): T & IKeyboardState
+  public copyState(out: any = {}) {
     let inKeys = this.state.pressedKeys
-    let outKeys = out.keys || []
+    let outKeys = out.pressedKeys || []
 
     outKeys.length = inKeys.length
     for (let i = 0; i < inKeys.length; i++) {

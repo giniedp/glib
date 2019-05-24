@@ -12,13 +12,15 @@ import { TransformComponent } from './TransformComponent'
  */
 export class ParticleEmitterComponent implements Component {
   /**
+   * Name of the component
+   */
+  public readonly name: string = 'ParticleEmitter'
+  public readonly service = false
+
+  /**
    * The entity
    */
   public entity: Entity
-  /**
-   * Name of the component
-   */
-  public name: string = 'ParticleEmitter'
   /**
    * The transform component
    */

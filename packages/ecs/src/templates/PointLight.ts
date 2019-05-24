@@ -3,7 +3,7 @@ import { Entity } from '../Entity'
 import { addTemplate } from '../Template'
 
 addTemplate('PointLight', (entity: Entity, options: any = {}) => {
-  if (!entity.s.Light) {
+  if (!entity.services.Light) {
     options = options || {}
     options.type = Components.LightType.Point
     entity.addComponent(new Components.LightComponent(options))

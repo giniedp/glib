@@ -49,10 +49,11 @@ export let LightTypeName = {
  * @public
  */
 export class LightComponent implements Component, LightProperties {
+  public readonly name: string = 'Light'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Light'
   public enabled: boolean = true
-  public service: boolean = true
 
   public range: number = 0
   public intensity: number = 1
@@ -84,7 +85,7 @@ export class LightComponent implements Component, LightProperties {
   }
 
   public update() {
-    let t = this.entity.s.Transform as TransformComponent
+    let t = this.entity.services.Transform as TransformComponent
     if (t) {
       this.direction.x = -t.worldMat.backward[0]
       this.direction.y = -t.worldMat.backward[1]

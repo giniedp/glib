@@ -10,9 +10,10 @@ import { TransformComponent } from './TransformComponent'
  * @public
  */
 export class ModelComponent implements Component {
+  public readonly name: string = 'Renderable'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Renderable'
-  public service: boolean = true
   public enabled: boolean = true
 
   public model: GraphicsModel
@@ -25,7 +26,7 @@ export class ModelComponent implements Component {
     }
   }
   public setup() {
-    this.transform = this.entity.s.Transform as TransformComponent
+    this.transform = this.entity.services.Transform as TransformComponent
   }
   public update() {
     if (this.transform) {

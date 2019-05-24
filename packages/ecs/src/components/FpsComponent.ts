@@ -6,11 +6,12 @@ import { TimeComponent } from './TimeComponent'
  * @public
  */
 export class FpsComponent implements Component {
+  public readonly name: string = 'Fps'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Fps'
   public enabled: boolean = true
   public visible: boolean = false
-  public service: boolean = true
 
   public frames: number
   public fps: number

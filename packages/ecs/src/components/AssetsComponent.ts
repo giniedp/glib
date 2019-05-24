@@ -1,6 +1,6 @@
-import * as Content from '@gglib/content'
+import { Data as ContentData, Manager as ContentManager } from '@gglib/content'
 import { HttpOptions, Type } from '@gglib/core'
-import * as Graphics from '@gglib/graphics'
+import { Device as GraphicsDevice } from '@gglib/graphics'
 
 import { Component } from './../Component'
 import { Entity } from './../Entity'
@@ -9,16 +9,16 @@ import { Entity } from './../Entity'
  * @public
  */
 export class AssetsComponent implements Component {
-  public entity: Entity
-  public name: string = 'Assets'
-  public service: boolean = true
+  public readonly name: string = 'Assets'
+  public readonly service: boolean = true
 
-  public manager: Content.Manager
-  public device: Graphics.Device
+  public entity: Entity
+  public manager: ContentManager
+  public device: GraphicsDevice
 
   public setup() {
     this.device = this.entity.root.getService('Device')
-    this.manager = new Content.Manager(this.device)
+    this.manager = new ContentManager(this.device)
   }
 
   public load<T = any>(asset: string, type: symbol | Type<T>): Promise<T> {
@@ -33,7 +33,7 @@ export class AssetsComponent implements Component {
     return this.manager.unload()
   }
 
-  public download(options: string | HttpOptions): Promise<Content.Data> {
+  public download(options: string | HttpOptions): Promise<ContentData> {
     return this.manager.download(options)
   }
 }

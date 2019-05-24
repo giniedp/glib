@@ -3,7 +3,7 @@ import { Entity } from '../Entity'
 import { addTemplate } from '../Template'
 
 addTemplate('DirectionalLight', (entity: Entity, options: any = {}) => {
-  if (!entity.s.Light) {
+  if (!entity.services.Light) {
     options = options || {}
     options.type = Components.LightType.Directional
     entity.addComponent(new Components.LightComponent(options))

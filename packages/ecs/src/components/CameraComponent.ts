@@ -20,9 +20,10 @@ export interface CameraProperties {
  * @public
  */
 export class CameraComponent implements Component {
-  public name = 'Camera'
+  public readonly name = 'Camera'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public service: boolean = true
   public enabled: boolean = true
 
   public near: number = 0.1

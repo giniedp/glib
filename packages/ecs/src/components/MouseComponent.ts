@@ -9,9 +9,10 @@ import { Entity } from './../Entity'
  */
 export class MouseComponent implements Component {
 
+  public readonly name: string = 'Mouse'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Mouse'
-  public service: boolean = true
   public enabled: boolean = true
 
   public mouse: Input.Mouse

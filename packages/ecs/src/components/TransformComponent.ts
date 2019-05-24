@@ -20,8 +20,8 @@ const tempVec = Vec3.createZero()
  * @public
  */
 export class TransformComponent implements Component {
-  public name: string = 'Transform'
-  public service: boolean = true
+  public readonly name: string = 'Transform'
+  public readonly service: boolean = true
   public enabled: boolean = true
 
   public readonly scale = Vec3.createOne()

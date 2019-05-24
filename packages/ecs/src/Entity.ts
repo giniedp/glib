@@ -2,7 +2,7 @@ import { Events, extend, isArray, isObject, isString, Log } from '@gglib/core'
 import { Component } from './Component'
 import * as Components from './components'
 import { find, findAll } from './finder'
-import { getTemplate, Template } from './Template'
+import { getTemplate, TemplateFunction, TemplateMap, TemplateOptions } from './Template'
 import { Visitor } from './Visitor'
 
 /**
@@ -33,23 +33,9 @@ export class Entity extends Events {
   public readonly services: { [key: string]: Component } = {}
 
   /**
-   * Shorthand for the `services` property
-   */
-  public get s(): { [key: string]: Component } {
-    return this.services
-  }
-
-  /**
    * Collection of all components of this node. Components are updated each frame.
    */
   public readonly components: Component[] = []
-
-  /**
-   * Shorthand for the `components` property
-   */
-  public get c(): Component[] {
-    return this.components
-  }
 
   /**
    * Collection of child entities. This property should only be used to iterate over child nodes. Do not add or
@@ -77,34 +63,22 @@ export class Entity extends Events {
     }
   }
 
-  public applyTemplates(config: Array<string|Template|{name?: string, templates: any}>) {
+  public applyTemplates(...config: Array<string|TemplateFunction|TemplateMap>) {
     for (const item of config) {
-      if (typeof item === 'string') {
+      if (Array.isArray(item)) {
+        this.applyTemplates(item)
+      } else if (typeof item === 'object') {
+        Object.keys(item).forEach((name) => {
+          this.applyTemplate(name, item[name])
+        })
+      } else if (typeof item === 'string' || typeof item === 'function') {
         this.applyTemplate(item)
-      } else if (typeof item === 'function') {
-        this.applyTemplate(item)
-      } else {
-        this.name = item.name || this.name
-        const templates = item.templates || []
-        if (isArray(templates)) {
-          for (const name of templates) {
-            this.applyTemplate(name)
-          }
-        } else if (isObject(templates)) {
-          for (const name in templates) {
-            if (templates.hasOwnProperty(name)) {
-              this.applyTemplate(name, templates[name])
-            }
-          }
-        } else if (isString(templates)) {
-          this.applyTemplate(templates)
-        }
       }
     }
     return this
   }
 
-  public applyTemplate(nameOrTemplate: string|Template, options?: any): Entity {
+  public applyTemplate(nameOrTemplate: string|TemplateFunction, options?: TemplateOptions): this {
     if (typeof nameOrTemplate === 'string') {
       getTemplate(nameOrTemplate)(this, options)
     } else {
@@ -114,12 +88,15 @@ export class Entity extends Events {
   }
 
   /**
-   * Binds a service object to this node that is accessible by the given name. A service may be anything i.e.
-   * object, array, function or primitive data. However the name must be unique for all services within a single node.
-   * Although any node is allowed to have a collection of services it is often simpler and more effective to let
-   * the app node (the window node) to hold the services.
+   * Binds a service object to this node that is accessible by the given name.
+   *
+   * @remarks A service may be anything i.e. object, array, function or primitive data.
+   * However the name must be unique for all services within a single node.
+   *
+   * Although any node is allowed to own services it is often simpler to let
+   * the root node to hold the services.
    */
-  public addService(name: string, service: any, override?: boolean): Entity {
+  public addService(name: string, service: any, override?: boolean): this {
     const oldService = this.services[name]
     if (oldService) {
       if (override) {
@@ -141,49 +118,42 @@ export class Entity extends Events {
   }
 
   /**
-   * Gets a service object by name starting the search at this node. Without the recursive parameter the search will
-   * end at this node and throw an exception if the no service was found.
+   * Gets a service by name. Throws an error if service is missing
    */
-  public getService(name: 'Assets'     |'root:Assets'): Components.AssetsComponent
-  public getService(name: 'Camera'     |'root:Camera'): Components.CameraComponent
-  public getService(name: 'Fps'        |'root:Fps'): Components.FpsComponent
-  public getService(name: 'GameLoop'   |'root:GameLoop'): Components.GameLoopComponent
-  public getService(name: 'Keyboard'   |'root:Keyboard'): Components.KeyboardComponent
-  public getService(name: 'Light'      |'root:Light'): Components.LightComponent
-  public getService(name: 'Mouse'      |'root:Mouse'): Components.MouseComponent
-  public getService(name: 'Renderable' |'root:Renderable'): Components.Renderable
-  public getService(name: 'Renderer'   |'root:Renderer'): Components.RendererComponent
-  public getService(name: 'Time'       |'root:Time'): Components.TimeComponent
-  public getService(name: 'Transform'  |'root:Transform'): Components.TransformComponent
+  public getService(name: 'Assets'): Components.AssetsComponent
+  public getService(name: 'Camera'): Components.CameraComponent
+  public getService(name: 'Fps'): Components.FpsComponent
+  public getService(name: 'GameLoop'): Components.GameLoopComponent
+  public getService(name: 'Keyboard'): Components.KeyboardComponent
+  public getService(name: 'Light'): Components.LightComponent
+  public getService(name: 'Mouse'): Components.MouseComponent
+  public getService(name: 'Renderable'): Components.Renderable
+  public getService(name: 'Renderer'): Components.RendererComponent
+  public getService(name: 'Time'): Components.TimeComponent
+  public getService(name: 'Transform'): Components.TransformComponent
   public getService(name: string): any
   public getService(name: any): any {
-    let result
-    if (name.indexOf('root:') === 0) {
-      result = this.root.services[name.replace('root:', '')]
-    } else {
-      result = this.services[name]
-    }
-    if (result) {
-      return result
-    }
-    throw new Error(`Service '${name}' is missing`)
-  }
-
-  public getServices(map: { [key: string]: string }, target?: any): { [key: string]: any } {
-    const result = map as { [key: string]: any }
-    for (const key of Object.keys(result)) {
-      result[key] = this.getService(map[key])
-    }
-    if (target) {
-      extend(target, result)
+    const result = this.services[name]
+    if (!result) {
+      throw new Error(`Service '${name}' is missing`)
     }
     return result
+  }
+
+  public getServices<T>(map: { [k in keyof T]: string }, target?: T): T {
+    if (!target) {
+      target = {} as any
+    }
+    for (const key of Object.keys(map)) {
+      target[key] = this.getService(map[key])
+    }
+    return target
   }
 
   /**
    * Adds a child node and creates a parent child relationship
    */
-  public addEntity(entity: Entity): Entity {
+  public addEntity(entity: Entity): this {
     if (entity.parent) {
       entity.parent.removeEntity(entity)
     }
@@ -196,7 +166,7 @@ export class Entity extends Events {
   /**
    * Creates and adds a new child entity and passes it to each of the given template functions.
    */
-  public buildEntity(...config: any[]): Entity {
+  public buildEntity(...config: Array<string|TemplateFunction|TemplateMap>): this {
     const child = new Entity()
     this.addEntity(child)
     child.applyTemplates(config)
@@ -206,7 +176,7 @@ export class Entity extends Events {
   /**
    * calls addChild on `parent`
    */
-  private addTo(parent: Entity): Entity {
+  private addTo(parent: Entity): this {
     parent.addEntity(this)
     return this
   }
@@ -214,7 +184,7 @@ export class Entity extends Events {
   /**
    * Removes the given node from the child collection and breaks the parent child relation ship
    */
-  public removeEntity(entity: Entity): Entity {
+  public removeEntity(entity: Entity): this {
     const index = this.children.indexOf(entity)
     if (index >= 0) {
       this.children.splice(index, 1)

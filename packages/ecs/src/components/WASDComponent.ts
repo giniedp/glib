@@ -1,6 +1,5 @@
-import { extend } from '@gglib/core'
 import * as Input from '@gglib/input'
-import { IVec3, Mat4, Quat, Vec3 } from '@gglib/math'
+import { Quat, Vec3 } from '@gglib/math'
 import { Component } from './../Component'
 import { Entity } from './../Entity'
 import { KeyboardComponent } from './KeyboardComponent'
@@ -36,9 +35,9 @@ export class WASDComponent implements Component {
   public transform: TransformComponent
 
   public setup() {
-    this.mouse = this.entity.getService('root:Mouse')
-    this.keyboard = this.entity.getService('root:Keyboard')
-    this.transform = this.entity.getService('Transform')
+    this.mouse = this.entity.root.getService('Mouse')
+    this.keyboard = this.entity.root.getService('Keyboard')
+    this.transform = this.entity.root.getService('Transform')
   }
 
   public update(timeMs: number) {

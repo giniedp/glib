@@ -3,7 +3,7 @@ import { Entity } from '../Entity'
 import { addTemplate } from '../Template'
 
 addTemplate('Keyboard', (entity: Entity, options: any = {}) => {
-  if (!entity.s.Keyboard) {
+  if (!entity.services.Keyboard) {
     entity.addComponent(new Components.KeyboardComponent(options))
   }
 })

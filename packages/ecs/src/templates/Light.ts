@@ -4,7 +4,7 @@ import { addTemplate } from '../Template'
 
 addTemplate('Light', (entity: Entity, options: any = {}) => {
   entity.applyTemplate('Transform')
-  if (!entity.s.Light) {
+  if (!entity.services.Light) {
     entity.addComponent(new Components.LightComponent(options))
   }
 })

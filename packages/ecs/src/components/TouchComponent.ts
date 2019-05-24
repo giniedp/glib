@@ -7,9 +7,10 @@ import { Entity } from './../Entity'
  * @public
  */
 export class TouchComponent implements Component {
+  public readonly name: string = 'Touch'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'Touch'
-  public service: boolean = true
   public enabled: boolean = true
 
   public touch: Input.TouchPane

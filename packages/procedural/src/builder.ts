@@ -37,12 +37,12 @@ export class Noise {
   // input modifiert
   //
 
-  public scale(...scalar: number[]): Noise {
+  public scale(...scalar: number[]): this {
     this.sampler = scale(this.sampler, ...scalar)
     return this
   }
 
-  public shift(...scalar: number[]): Noise {
+  public shift(...scalar: number[]): this {
     this.sampler = shift(this.sampler, ...scalar)
     return this
   }
@@ -51,22 +51,22 @@ export class Noise {
   // fractal
   //
 
-  public fractal(options: FractalOptions = {}): Noise {
+  public fractal(options: FractalOptions = {}): this {
     this.sampler = fractal(this.sampler, options)
     return this
   }
 
-  public hybridMultifractal(options: FractalOptions = {}): Noise {
+  public hybridMultifractal(options: FractalOptions = {}): this {
     this.sampler = hybridMultifractal(this.sampler, options)
     return this
   }
 
-  public multifractal(options: FractalOptions = {}): Noise {
+  public multifractal(options: FractalOptions = {}): this {
     this.sampler = multifractal(this.sampler, options)
     return this
   }
 
-  public rigedMultifractal(options: FractalOptions = {}): Noise {
+  public rigedMultifractal(options: FractalOptions = {}): this {
     this.sampler = rigedMultifractal(this.sampler, options)
     return this
   }
@@ -75,47 +75,47 @@ export class Noise {
   // operators
   //
 
-  public abs(): Noise {
+  public abs(): this {
     this.sampler = abs(this.sampler)
     return this
   }
 
-  public negate(): Noise {
+  public negate(): this {
     this.sampler = negate(this.sampler)
     return this
   }
 
-  public add(...other: Array<Sampler | number>): Noise {
+  public add(...other: Array<Sampler | number>): this {
     this.sampler = add(this.sampler, ...other)
     return this
   }
 
-  public sinus(offset: Sampler | number = 0): Noise {
+  public sinus(offset: Sampler | number = 0): this {
     this.sampler = sinus(this.sampler, offset)
     return this
   }
 
-  public subtract(...other: Array<Sampler | number>): Noise {
+  public subtract(...other: Array<Sampler | number>): this {
     this.sampler = subtract(this.sampler, ...other)
     return this
   }
 
-  public clamp(minVal: Sampler | number, maxVal: Sampler | number): Noise {
+  public clamp(minVal: Sampler | number, maxVal: Sampler | number): this {
     this.sampler = clamp(this.sampler, minVal, maxVal)
     return this
   }
 
-  public max(...other: Array<Sampler | number>): Noise {
+  public max(...other: Array<Sampler | number>): this {
     this.sampler = max(this.sampler, ...other)
     return this
   }
 
-  public min(...other: Array<Sampler | number>): Noise {
+  public min(...other: Array<Sampler | number>): this {
     this.sampler = min(this.sampler, ...other)
     return this
   }
 
-  public multiply(...other: Array<Sampler | number>): Noise {
+  public multiply(...other: Array<Sampler | number>): this {
     this.sampler = multiply(this.sampler, ...other)
     return this
   }

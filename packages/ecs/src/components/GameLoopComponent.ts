@@ -6,9 +6,10 @@ import { Entity } from './../Entity'
  * @public
  */
 export class GameLoopComponent implements Component {
+  public readonly name: string = 'GameLoop'
+  public readonly service: boolean = true
+
   public entity: Entity
-  public name: string = 'GameLoop'
-  public service: boolean = true
   public enabled: boolean = true
 
   public preferTimeout: boolean = false
