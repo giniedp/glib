@@ -1,0 +1,29 @@
+program:
+  precision highp float;
+
+  // @binding position
+  attribute vec3 vPosition;
+  // @binding texture
+  attribute vec2 vTexture;
+
+  // @binding world
+  uniform mat4 uWorld;
+  // @binding view
+  uniform mat4 uView;
+  // @binding projection
+  uniform mat4 uProjection;
+
+  // data for fragment stage
+  varying vec2 texCoord;
+
+technique:
+  pass:
+    vertexShader:
+      void main(void) {
+        texCoord = vTexture;
+        gl_Position = uProjection * uView * uWorld * vec4(vPosition, 1.0);
+      }
+    fragmentShader:
+      void main(void) {
+        gl_FragColor = vec4(texCoord.x, texCoord.y, 0.0, 1.0);
+      }

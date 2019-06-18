@@ -1,0 +1,33 @@
+---
+title: Touch
+weight: 3
+group: input
+---
+extends /_layouts/_example
+//- block view
+//-   .canvas-container
+//-     pre.capture-pane(oncontextmenu="return false")
+//-       code.language-json
+//-   style().
+//-     .capture-pane {
+//-       border: 1px dashed white !important;
+//-     }
+//-   script(type='text/javascript' src='https://unpkg.com/@gglib/gglib@0.1.3/bundles/gglib.umd.js')
+//- block script
+//-   a(name="HTML" index=3)
+//-   viewcode
+//-   a(name="JAVASCRIPT" index=1)
+//-   script(type='text/javascript').
+//-     new Gglib.Input.TouchPane({
+//-       element: $('.capture-pane')[0],
+//-       preventDefault: false
+//-     }).on('changed', function(pane, e){
+//-       var el = $('.canvas-container pre code');
+//-       el.text(Object.keys(pane.state).map(function(id) {
+//-         return JSON.stringify({
+//-           id: pane.state[id].identifier,
+//-           x: pane.state[id].x,
+//-           y: pane.state[id].y
+//-         }, null, 2)
+//-       }).join("\n"), null, 2);
+//-     });

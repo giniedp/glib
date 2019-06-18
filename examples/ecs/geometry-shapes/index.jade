@@ -1,0 +1,106 @@
+---
+title: Geometry Shapes
+group: ecs
+---
+extends /_layouts/_example
+block append script
+  script(type='text/javascript' src='./index.js')
+block prepend script
+  script(type='text/javascript').
+    class ShapeComponent {
+      setup() {
+        this.entity.getServices({
+          time: "root:Time",
+          device: "root:Device",
+          assets: "root:Assets",
+          transform: "Transform",
+          renderable: "Renderable"
+        }, this);
+        this.assets
+          .load("Material", "/assets/materials/default.json")
+          .then(function (material) {
+            var builder = new Gglib.Graphics.ModelBuilder();
+            builder.transform = Gglib.Math.Mat4.createTranslation(0, 0, 0);
+            builder.append('Octahedron', {
+              diameter: 1,
+              steps: 3
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(2, 0, 0);
+            builder.append("Cube", {
+              size: 1
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(4, 0, 0);
+            builder.append("Plane", {
+              size: 1
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(0, 2, 0);
+            builder.append("Cylinder", {
+              diameter: 1,
+              height: 1,
+              steps: 16
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(2, 2, 0);
+            builder.append("Cone", {
+              topDiameter: 0,
+              bottomDiameter: 1,
+              height: 1,
+              steps: 16
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(4, 2, 0);
+            builder.append("Cap", {
+              diameter: 1,
+              steps: 16
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(0, 4, 0);
+            builder.append("SuperEllipsoid", {
+              diameter: 1,
+              steps: 32,
+              n1: 0.25,
+              n2: 1.25
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(2, 4, 0);
+            builder.append("SphericalHarmonics", {
+              diameter: 1,
+              steps: 64,
+              parameters: [1,1,2,1,4,1,8,1]
+            });
+            builder.transform = Gglib.Math.Mat4.createTranslation(4, 4, 0);
+            builder.append("MobiusStrip", {
+              diameter: 1,
+              steps: 32,
+              band: 0.4
+            });
+            var model = builder.endModel(this.device, {materials: [material]});
+            this.renderable.model = model;
+          }.bind(this));
+      }
+
+      update(time) {
+        //this.transform.setScaleUniform(10);
+        //this.transform.rotateXYZAngle(0, 1, 0, time / 1000 * Math.PI / 4);
+      }
+    }
+
+    game = Gglib.Ecs
+      .createGame({
+        canvas: document.getElementById("canvas"),
+        autorun: true
+      })
+      .buildEntity({
+        name: "Camera",
+        templates: ["Camera", "WASD"]
+      }, function (e) {
+        e.getService("Camera").activate();
+        e.getService("Transform").translateXYZ(2, 2, 10);
+      })
+      .buildEntity({
+        name: "Light",
+        templates: "DirectionalLight"
+      })
+      .buildEntity({
+        name: "Shapes",
+        templates: ["Model"]
+      }, function(e) {
+        e.getService("Transform").translateXYZ(0, 0, 0);
+        e.addComponent(new ShapeComponent());
+      });

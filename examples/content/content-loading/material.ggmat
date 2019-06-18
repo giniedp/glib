@@ -1,0 +1,7 @@
+{
+  "effect": "effect.ggfx",
+  "parameters": {
+    "texture": "/assets/models/obj/ghoul/ghoul.png",
+    "specularPower": 16
+  }
+}
