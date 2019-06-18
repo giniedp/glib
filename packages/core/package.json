@@ -1,0 +1,21 @@
+{
+  "name": "@gglib/core",
+  "description": "Part of the [G]glib project",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "github.com/giniedp/glib.git"
+  },
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
+  "author": "Alexander Graefenstein",
+  "license": "MIT",
+  "main": "./bundles/core.umd.js",
+  "module": "./index.js",
+  "typings": "./index.d.ts",
+  "peerDependencies": {}
+}

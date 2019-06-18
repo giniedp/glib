@@ -7,3 +7,5 @@
 /node_modules
 /page
 npm-debug.log
+/temp
+/docs

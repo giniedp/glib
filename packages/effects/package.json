@@ -1,0 +1,25 @@
+{
+  "name": "@gglib/effects",
+  "description": "Part of the [G]glib project",
+  "version": "0.2.0",
+  "repository": {
+    "type": "git",
+    "url": "github.com/giniedp/glib.git"
+  },
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
+  "author": "Alexander Graefenstein",
+  "license": "MIT",
+  "main": "./bundles/effects.umd.js",
+  "module": "./index.js",
+  "typings": "./index.d.ts",
+  "peerDependencies": {
+    "@gglib/graphics": "0.2.0",
+    "@gglib/content": "0.2.0",
+    "@gglib/math": "0.2.0"
+  }
+}
