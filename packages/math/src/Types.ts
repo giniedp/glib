@@ -47,7 +47,7 @@ export interface ISize {
 }
 
 /**
- * A rectangle that is composed of a {@IPoint} and a {@ISize}.
+ * A rectangle that is composed of a IPoint and a ISize.
  *
  * @public
  */

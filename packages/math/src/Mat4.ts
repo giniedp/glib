@@ -30,6 +30,9 @@ function tempMat() {
   return helper
 }
 
+/**
+ * @public
+ */
 export type Mat4Data = [
   number, number, number, number,
   number, number, number, number,

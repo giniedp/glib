@@ -1,33 +1,40 @@
 import { extend } from '@gglib/core'
-import * as Input from '@gglib/input'
-import { Component } from './../Component'
+import { TouchPane } from '@gglib/input'
+import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
+
+export interface TouchComponentOptions {
+  eventTarget?: EventTarget
+}
 
 /**
  * @public
  */
-export class TouchComponent implements Component {
-  public readonly name: string = 'Touch'
-  public readonly service: boolean = true
+export class TouchComponent implements OnAdded, OnRemoved, OnUpdate {
 
-  public entity: Entity
-  public enabled: boolean = true
-
-  public touch: Input.TouchPane
+  public touch: TouchPane
   public touchIds: number[]
 
   public oldStates: any
   public newStates: any
 
-  constructor(options: any = {}) {
-    this.touch = new Input.TouchPane({ element: options.element || document })
+  constructor(options: TouchComponentOptions = {}) {
+    this.touch = new TouchPane({ eventTarget: options.eventTarget || document })
     this.touchIds = []
     extend(this, options)
     this.newStates = {}
     this.oldStates = {}
   }
 
-  public update() {
+  public onAdded(entity: Entity) {
+    entity.addService(TouchComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(TouchComponent)
+  }
+
+  public onUpdate() {
     let ids = this.touchIds
     ids.length = 0
     for (let id in this.touch.state) {

@@ -569,7 +569,7 @@ export class Vec2 implements IVec2 {
    * Multiplies two vectors.
    * @param vecA - The first vector.
    * @param vecB - The second vector.
-   * @param [out] The vector to write to.
+   * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
   public static multiply(vecA: IVec2, vecB: IVec2): Vec2

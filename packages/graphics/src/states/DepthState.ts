@@ -132,7 +132,7 @@ export class DepthState implements DepthStateParams {
   public assign(state: DepthStateParams): DepthState {
     for (const key of propertyKeys) {
       if (state.hasOwnProperty(key)) {
-        this[key] = state[key]
+        this[key as any] = state[key]
       }
     }
     return this
@@ -179,7 +179,7 @@ export class DepthState implements DepthStateParams {
   private clearChanges() {
     this.hasChanged = false
     for (const key of propertyKeys) {
-      this.changes[key] = undefined
+      this.changes[key as any] = undefined
     }
   }
 }

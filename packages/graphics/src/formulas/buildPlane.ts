@@ -1,6 +1,5 @@
 import { ModelBuilder } from '../ModelBuilder'
 import { addParametricSurface } from './addParametricSurface'
-import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -38,5 +37,3 @@ export function buildPlane(builder: ModelBuilder, options: BuildPlaneOptions = {
     tv: withDefault(options.tesselation, 1),
   })
 }
-
-formulas['Plane'] = buildPlane

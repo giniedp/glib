@@ -1,4 +1,3 @@
-export * from './AssetsComponent'
 export * from './CameraComponent'
 export * from './FpsComponent'
 export * from './GameLoopComponent'

@@ -1,7 +1,7 @@
 import { extend } from '@gglib/core'
 import { Vec3, Vec4 } from '@gglib/math'
 
-import { Component } from './../Component'
+import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { TransformComponent } from './TransformComponent'
 
@@ -48,12 +48,9 @@ export let LightTypeName = {
 /**
  * @public
  */
-export class LightComponent implements Component, LightProperties {
-  public readonly name: string = 'Light'
-  public readonly service: boolean = true
+export class LightComponent implements LightProperties, OnAdded, OnRemoved, OnUpdate {
 
   public entity: Entity
-  public enabled: boolean = true
 
   public range: number = 0
   public intensity: number = 1
@@ -84,8 +81,18 @@ export class LightComponent implements Component, LightProperties {
     }
   }
 
-  public update() {
-    let t = this.entity.services.Transform as TransformComponent
+  public onAdded(entity: Entity) {
+    this.entity = entity
+    entity.addService(LightComponent, this)
+  }
+
+  public onRemoved() {
+    this.entity.removeService(LightComponent)
+    this.entity = null
+  }
+
+  public onUpdate() {
+    let t = this.entity.getService(TransformComponent, null)
     if (t) {
       this.direction.x = -t.worldMat.backward[0]
       this.direction.y = -t.worldMat.backward[1]

@@ -1,7 +1,7 @@
 import { extend } from '@gglib/core'
 import { Mat4 } from '@gglib/math'
-import { View as RenderView } from '@gglib/render'
-import { Component } from './../Component'
+import { Scene } from '@gglib/render'
+import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { RendererComponent } from './RendererComponent'
 import { TransformComponent } from './TransformComponent'
@@ -19,12 +19,8 @@ export interface CameraProperties {
 /**
  * @public
  */
-export class CameraComponent implements Component {
-  public readonly name = 'Camera'
-  public readonly service: boolean = true
-
+export class CameraComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
   public entity: Entity
-  public enabled: boolean = true
 
   public near: number = 0.1
   public far: number = 1000
@@ -35,7 +31,7 @@ export class CameraComponent implements Component {
   public projection: Mat4 = Mat4.createIdentity()
   public viewProjection: Mat4 = Mat4.createIdentity()
   public transform: TransformComponent
-  private targetView: RenderView
+  private scene: Scene
 
   public get world() {
     return this.transform.worldMat
@@ -47,22 +43,32 @@ export class CameraComponent implements Component {
     }
   }
 
-  public setup() {
-    this.transform = this.entity.getService('Transform')
+  public onAdded(entity: Entity) {
+    this.entity = entity
+    entity.addService(CameraComponent, this)
   }
 
-  public update() {
-    if (this.targetView) {
-      this.aspect = this.targetView.width / this.targetView.height
-    }
+  public onRemoved(entity: Entity) {
+    entity.removeService(CameraComponent)
+    this.entity = null
+  }
+
+  public onInit(entity: Entity) {
+    this.transform = entity.getService(TransformComponent)
+  }
+
+  public onUpdate() {
+    // if (this.scene && this.scene.viewport) {
+    //   this.aspect = this.scene.viewport.width / this.scene.viewport.height
+    // }
     this.view.initFrom(this.transform.inverseMat)
     this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far)
     Mat4.multiply(this.view, this.projection, this.viewProjection)
   }
 
-  public activate(viewIndex: number = 0) {
-    const renderer: RendererComponent = this.entity.root.getService('Renderer')
-    const view: RenderView = renderer.manager.views[viewIndex]
+  public activate(viewId: number = 0) {
+    const renderer: RendererComponent = this.entity.root.getService(RendererComponent)
+    const view: Scene = renderer.manager.scenes.get(viewId)
 
     if (!view) {
       // TODO: log
@@ -73,14 +79,14 @@ export class CameraComponent implements Component {
     if (oldCamera instanceof CameraComponent) {
       oldCamera.deactivate()
     }
-    this.targetView = view
-    this.targetView.camera = this
+    this.scene = view
+    this.scene.camera = this
   }
 
   public deactivate() {
-    if (this.targetView) {
-      this.targetView.camera = void 0
-      this.targetView = void 0
+    if (this.scene) {
+      this.scene.camera = void 0
+      this.scene = void 0
     }
   }
 }

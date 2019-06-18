@@ -70,12 +70,12 @@ export interface SpriteBatchOptions {
  */
 export interface SpriteBatchBeginOptions {
   sortMode?: any
-  blendState?: BlendState
-  cullState?: CullState
-  depthState?: DepthState
-  stencilState?: StencilState
-  scissorState?: ScissorState
-  viewportState?: ViewportState
+  blendState?: BlendStateParams
+  cullState?: CullStateParams
+  depthState?: DepthStateParams
+  stencilState?: StencilStateParams
+  scissorState?: ScissorStateParams
+  viewportState?: ViewportStateParams
 }
 
 /**

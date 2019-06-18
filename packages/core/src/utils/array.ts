@@ -1,3 +1,6 @@
+/**
+ * @public
+ */
 export const isArray = Array.isArray
 
 const concatArray = [].concat

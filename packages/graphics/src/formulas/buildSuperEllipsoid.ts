@@ -1,6 +1,5 @@
 import { Vec2, Vec3 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
-import { formulas } from './formulas'
 
 function sign(a: number) {
   return a < 0 ? -1 : 1
@@ -77,5 +76,3 @@ export function buildSuperEllipsoid(builder: ModelBuilder, options: {
     }
   }
 }
-
-formulas['SuperEllipsoid'] = buildSuperEllipsoid

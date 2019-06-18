@@ -111,9 +111,10 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
   for (const f of faces) {
     let count = 0
     while (count < f.data.length - 2) {
-      addVertex(f.data[count++], f.state.usemtl)
-      addVertex(f.data[count++], f.state.usemtl)
-      addVertex(f.data[count++], f.state.usemtl)
+      count++
+      addVertex(f.data[0], f.state.usemtl)
+      addVertex(f.data[count], f.state.usemtl)
+      addVertex(f.data[count + 1], f.state.usemtl)
     }
   }
 
@@ -152,7 +153,7 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
       mesh.indexMap.clear()
       result.push(mesh.builder
       .calculateBoundings()
-      .endMeshOptions({
+      .endMesh({
         materialId: mtl,
       }))
     }
@@ -176,7 +177,7 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
     if (entry.builder.vertexCount > 0) {
       result.push(entry.builder
       .calculateBoundings()
-      .endMeshOptions({
+      .endMesh({
         materialId: mtl,
       }))
     }

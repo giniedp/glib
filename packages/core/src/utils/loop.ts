@@ -20,6 +20,9 @@ const raf: (cb: any) => void =
   window['webkitRequestAnimationFrame'] ||
   window['msRequestAnimationFrame']
 
+/**
+ * @public
+ */
 export const requestFrame = typeof raf === 'function'
   ? (callback: any) => raf(callback)
   : (callback: any) => self.setTimeout(callback, 1)

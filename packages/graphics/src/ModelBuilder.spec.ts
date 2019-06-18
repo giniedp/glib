@@ -23,7 +23,7 @@ describe('Graphics.ModelBuilder', () => {
   //   builder.addVertex({ position: [0, 1, 0] })
   //   builder.addVertex({ position: [0, 0, 0] })
 
-  //   const mesh = builder.mergeDublicates().endMeshOptions()
+  //   const mesh = builder.mergeDublicates().endMesh()
   //   expect(mesh.indexBuffer.data).toEqual([0, 1, 2, 1, 2, 0])
   // })
 

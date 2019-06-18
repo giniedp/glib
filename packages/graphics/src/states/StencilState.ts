@@ -288,7 +288,7 @@ export class StencilState implements StencilStateParams {
 
   public assign(state: StencilStateParams= {}): StencilState {
     for (let key of propertyKeys) {
-      if (state.hasOwnProperty(key)) { this[key] = state[key] }
+      if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
   }
@@ -340,7 +340,7 @@ export class StencilState implements StencilStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key] = undefined }
+    for (let key of propertyKeys) { this.changes[key as any] = undefined }
   }
 
   public static convert(state: string | StencilStateOptions): StencilStateParams {

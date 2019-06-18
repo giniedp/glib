@@ -1,7 +1,16 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingSphere } from './BoundingSphere'
-import * as Collision from './Collision'
-import { IVec2, IVec3, IVec4 } from './Types'
+import {
+  rayIntersectsBox,
+  rayIntersectsBoxAt,
+  rayIntersectsPlane,
+  rayIntersectsPlaneAt,
+  rayIntersectsSphere,
+  rayIntersectsSphereAt,
+  rayIntersectsTriangle,
+  rayIntersectsTriangleAt,
+} from './Collision'
+import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
@@ -108,28 +117,28 @@ export class Ray {
   }
 
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return Collision.rayIntersectsSphere(this.position, this.direction, sphere.center, sphere.radius)
+    return rayIntersectsSphere(this.position, this.direction, sphere.center, sphere.radius)
   }
   public intersectsBox(box: BoundingBox): boolean {
-    return Collision.rayIntersectsBox(this.position, this.direction, box.min, box.max)
+    return rayIntersectsBox(this.position, this.direction, box.min, box.max)
   }
   public intersectsPlane(plane: IVec4): boolean {
-    return Collision.rayIntersectsPlane(this.position, this.direction, plane)
+    return rayIntersectsPlane(this.position, this.direction, plane)
   }
   public intersectsTriangle(a: IVec3, b: IVec3, c: IVec3): boolean {
-    return Collision.rayIntersectsTriangle(this.position, this.direction, a, b, c)
+    return rayIntersectsTriangle(this.position, this.direction, a, b, c)
   }
 
   public intersectsSphereAt(sphere: BoundingSphere): number {
-    return Collision.rayIntersectsSphereAt(this.position, this.direction, sphere.center, sphere.radius)
+    return rayIntersectsSphereAt(this.position, this.direction, sphere.center, sphere.radius)
   }
   public intersectsBoxAt(box: BoundingBox): number {
-    return Collision.rayIntersectsBoxAt(this.position, this.direction, box.min, box.max)
+    return rayIntersectsBoxAt(this.position, this.direction, box.min, box.max)
   }
   public intersectsPlaneAt(plane: IVec4): number {
-    return Collision.rayIntersectsPlaneAt(this.position, this.direction, plane)
+    return rayIntersectsPlaneAt(this.position, this.direction, plane)
   }
   public intersectsTriangleAt(a: IVec3, b: IVec3, c: IVec3): number {
-    return Collision.rayIntersectsTriangleAt(this.position, this.direction, a, b, c)
+    return rayIntersectsTriangleAt(this.position, this.direction, a, b, c)
   }
 }

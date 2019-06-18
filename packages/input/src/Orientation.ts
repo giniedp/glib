@@ -1,8 +1,8 @@
-import { Events, extend, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
+import { Events, extend, Log } from '@gglib/core'
 import { IVec3 } from '@gglib/math'
 
-let hasOrientationApi = 'DeviceOrientationEvent' in window
-let hasMotionApi = 'DeviceMotionEvent' in window
+const hasOrientationApi = 'DeviceOrientationEvent' in window
+const hasMotionApi = 'DeviceMotionEvent' in window
 
 /**
  * Orientation constructor options
@@ -10,7 +10,7 @@ let hasMotionApi = 'DeviceMotionEvent' in window
  * @public
  */
 export interface IOrientationOptions {
-  element?: EventTarget,
+  eventTarget?: EventTarget,
   events?: string[]
 }
 

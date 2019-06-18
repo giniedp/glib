@@ -1,5 +1,4 @@
-import { Events, extend, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
-import { IVec3 } from '@gglib/math'
+import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
 
 const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'screenX', 'screenY', 'clientX', 'clientY', 'x', 'y']
 
@@ -9,7 +8,7 @@ const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'sc
  * @public
  */
 export interface ITouchPaneOptions {
-  element?: Element,
+  eventTarget?: EventTarget,
   events?: string[]
 }
 
@@ -31,9 +30,12 @@ export interface ITouchState {
 }
 
 /**
- * The TouchPane class allows to capture the touch states. It does so by listening to
- * the ```touchstart```, ```touchmove```, ```touchend``` and ```touchcancel``` events and tracks the touch posisiton and movement.
- * On each recoginzed state change the ```changed``` event is triggered.
+ * The TouchPane class captures the current touch input state
+ *
+ * @remarks
+ * Listens to the `touchstart`, `touchmove`, `touchend` and `touchcancel`
+ * events and tracks the touch position and movement.
+ * On each recognized state change the `changed` event is triggered.
  *
  * @public
  */
@@ -43,31 +45,31 @@ export class TouchPane extends Events  {
    */
   public state: { [identifier: string]: ITouchState } = {}
   /**
-   *
+   * If `true` calls `preventDefault` on each received event
    */
   public preventDefault = false
   /**
    * The target element on which to listen for touch events.
    */
-  protected element: EventTarget = document
+  protected eventTarget: EventTarget = document
   /**
-   * Is called on the ```touchcancel``` event
+   * Is called on the `touchcancel` event
    */
   protected onTouchCancel = this.handleTouchCancel.bind(this)
   /**
-   * Is called on the ```touchstart``` event
+   * Is called on the `touchstart` event
    */
   protected onTouchStart = this.handleTouchStart.bind(this)
   /**
-   * Is called on the ```touchmove``` event
+   * Is called on the `touchmove` event
    */
   protected onTouchMove = this.handleTouchMove.bind(this)
   /**
-   * Is called on the ```touchend``` event
+   * Is called on the `touchend` event
    */
   protected onTouchEnd = this.handleTouchEnd.bind(this)
   /**
-   * Is called when ```document``` or ```window``` loose focus e.g. user switches to another tab or application
+   * Is called when `document` or `window` loose focus e.g. user switches to another tab or application
    */
   protected onNeedsClear = () => this.clearState()
   /**
@@ -85,33 +87,33 @@ export class TouchPane extends Events  {
   ]
 
   /**
-   * Initializes the TouchPane with given options and activates the captrue listeners
+   * Initializes the TouchPane with given options and activates the capture listeners
    */
   constructor(options?: ITouchPaneOptions) {
     super()
     if (options) {
-      this.element = (options.element || this.element)
+      this.eventTarget = (options.eventTarget || this.eventTarget)
     }
     this.activate()
   }
 
   /**
-   * Activates the captrue listeners
+   * Activates the capture listeners
    */
   public activate() {
     this.deactivate()
     // update events
-    this.element.addEventListener('touchcancel', this.onTouchCancel)
-    this.element.addEventListener('touchstart', this.onTouchStart)
-    this.element.addEventListener('touchmove', this.onTouchMove)
-    this.element.addEventListener('touchend', this.onTouchEnd)
+    this.eventTarget.addEventListener('touchcancel', this.onTouchCancel)
+    this.eventTarget.addEventListener('touchstart', this.onTouchStart)
+    this.eventTarget.addEventListener('touchmove', this.onTouchMove)
+    this.eventTarget.addEventListener('touchend', this.onTouchEnd)
     // visibility events
     onDocumentVisibilityChange(this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
     window.addEventListener('blur', this.onNeedsClear)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.element.addEventListener(name, this.onEvent)
+      this.eventTarget.addEventListener(name, this.onEvent)
     }
   }
 
@@ -119,17 +121,17 @@ export class TouchPane extends Events  {
    * Deactivates the capture listeners
    */
   public deactivate() {
-    this.element.removeEventListener('touchcancel', this.onTouchCancel)
-    this.element.removeEventListener('touchstart', this.onTouchStart)
-    this.element.removeEventListener('touchmove', this.onTouchMove)
-    this.element.removeEventListener('touchend', this.onTouchEnd)
+    this.eventTarget.removeEventListener('touchcancel', this.onTouchCancel)
+    this.eventTarget.removeEventListener('touchstart', this.onTouchStart)
+    this.eventTarget.removeEventListener('touchmove', this.onTouchMove)
+    this.eventTarget.removeEventListener('touchend', this.onTouchEnd)
     // visibility events
     offDocumentVisibilityChange(this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
     window.removeEventListener('blur', this.onNeedsClear)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.element.removeEventListener(name, this.onEvent)
+      this.eventTarget.removeEventListener(name, this.onEvent)
     }
   }
 
@@ -150,7 +152,7 @@ export class TouchPane extends Events  {
     return out
   }
   /**
-   * Clears all captured states (or a spcific if an ```id``` is given)
+   * Clears all captured states (or a specific if an `id` is given)
    */
   public clearState(id?: number) {
     if (id !== undefined) {
@@ -162,20 +164,20 @@ export class TouchPane extends Events  {
     }
   }
   /**
-   * Updates the state from given ```touchstart``` event
+   * Updates the state from given `touchstart` event
    */
   private handleTouchStart(e: TouchEvent) {
     let list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
       let touch = list[i]
-      this.state[touch.identifier] = TouchPane.copyState(touch, this.element, this.state[touch.identifier] || {})
+      this.state[touch.identifier] = TouchPane.copyState(touch, this.eventTarget, this.state[touch.identifier] || {})
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
   }
   /**
-   * Updates the state from given ```touchcancel``` event
+   * Updates the state from given `touchcancel` event
    */
   private handleTouchCancel(e: TouchEvent) {
     let list = e.changedTouches
@@ -188,20 +190,20 @@ export class TouchPane extends Events  {
     this.trigger('changed', this, e)
   }
   /**
-   * Updates the state from given ```touchmove``` event
+   * Updates the state from given `touchmove` event
    */
   private handleTouchMove(e: TouchEvent) {
     let list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
       let touch = list[i]
-      this.state[touch.identifier] = TouchPane.copyState(touch, this.element, this.state[touch.identifier] || {})
+      this.state[touch.identifier] = TouchPane.copyState(touch, this.eventTarget, this.state[touch.identifier] || {})
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
   }
   /**
-   * Updates the state from given ```touchend``` event
+   * Updates the state from given `touchend` event
    */
   private handleTouchEnd(e: TouchEvent) {
     let list = e.changedTouches

@@ -160,4 +160,14 @@ export class FrameBuffer {
     }
     return true
   }
+
+  public unsetSamplersUsedAsAttachments() {
+    for (const texture of this.colorAttachments) {
+      for (const sampler of this.device.samplerStates) {
+        if (texture === sampler.texture) {
+          sampler.commit({ texture: null })
+        }
+      }
+    }
+  }
 }

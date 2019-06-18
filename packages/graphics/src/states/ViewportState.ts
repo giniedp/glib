@@ -148,7 +148,7 @@ export class ViewportState implements ViewportStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key] = undefined }
+    for (let key of propertyKeys) { this.changes[key as any] = undefined }
   }
 
   public static resolve(gl: WebGLRenderingContext, out: any= {}): ViewportStateParams {

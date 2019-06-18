@@ -4,8 +4,19 @@ import { IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 import { Vec3 } from './Vec3'
 
+/**
+ * @public
+ */
 export const DISJOINT = 0
+
+/**
+ * @public
+ */
 export const INTERSECTS = 1
+
+/**
+ * @public
+ */
 export const CONTAINS = 2
 
 const EPSILON = Number.EPSILON
@@ -14,21 +25,30 @@ const recycle = new Recycler<IVec4>(20, () => {
   return { x: 0, y: 0, z: 0, w: 0 }
 })
 
-// Real Time Collision Detection Chapter 5.1.1 page 127
+/**
+ * @public
+ */
 export function closestPointToPlane(point: IVec3, plane: IVec4, result: IVec3): void {
+  // Real Time Collision Detection Chapter 5.1.1 page 127
   const t = Vec3.dot(plane, point) - plane.w
   result.x = point.x - plane.x * t
   result.y = point.y - plane.y * t
   result.z = point.z - plane.z * t
 }
 
-// Real Time Collision Detection Chapter 5.1.1 page 127
+/**
+ * @public
+ */
 export function distancePointToPlane(point: IVec3, plane: IVec4): number {
+  // Real Time Collision Detection Chapter 5.1.1 page 127
   return Vec3.dot(plane, point) - plane.w
 }
 
-// Real Time Collision Detection Chapter 5.1.2 page 128
+/**
+ * @public
+ */
 export function closestPointSegment(point: IVec3, a: IVec3, b: IVec3, out: IVec3): void {
+  // Real Time Collision Detection Chapter 5.1.2 page 128
   recycle.begin()
 
   const ab = Vec3.subtract(b, a, recycle.next())
@@ -45,8 +65,11 @@ export function closestPointSegment(point: IVec3, a: IVec3, b: IVec3, out: IVec3
   recycle.end()
 }
 
-// Real Time Collision Detection Chapter 5.1.3 page 130
+/**
+ * @public
+ */
 export function squaredDistancePointSegment(a: IVec3, b: IVec3, c: IVec3): number {
+  // Real Time Collision Detection Chapter 5.1.3 page 130
   recycle.begin()
 
   const ab = Vec3.subtract(b, a, recycle.next())
@@ -72,6 +95,9 @@ export function squaredDistancePointSegment(a: IVec3, b: IVec3, c: IVec3): numbe
   return recycle.end(result)
 }
 
+/**
+ * @public
+ */
 export function closestPointTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec3, result: IVec3): IVec3 {
   recycle.begin()
 
@@ -148,14 +174,23 @@ export function closestPointTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec3,
 // rayIntersects[TYPE](At)
 //
 
+/**
+ * @public
+ */
 export function rayIntersectsPlane(orig: IVec3, dir: IVec3, plane: IVec4): boolean {
   return ((plane.w - Vec3.dot(plane, orig)) / Vec3.dot(plane, dir)) >= 0
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsPlaneAt(orig: IVec3, dir: IVec3, plane: IVec4): number {
   return (plane.w - Vec3.dot(plane, orig)) / Vec3.dot(plane, dir)
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsSphere(orig: IVec3, dir: IVec3, center: IVec3, radius: number): boolean {
   recycle.begin()
 
@@ -176,6 +211,9 @@ export function rayIntersectsSphere(orig: IVec3, dir: IVec3, center: IVec3, radi
   return recycle.end((b * b - c) >= 0)
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsSphereAt(orig: IVec3, dir: IVec3, center: IVec3, radius: number): number {
   recycle.begin()
 
@@ -198,10 +236,16 @@ export function rayIntersectsSphereAt(orig: IVec3, dir: IVec3, center: IVec3, ra
   return recycle.end(result < 0 ? 0 : result)
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsBox(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, boxMax: IVec3): boolean {
   return rayIntersectsBoxAt(rayPos, rayDir, boxMin, boxMax) >= 0
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsBoxAt(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, boxMax: IVec3): number {
   // source
   // http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
@@ -278,6 +322,9 @@ export function rayIntersectsBoxAt(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, 
   return tMin
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsTriangle(orig: IVec3, dir: IVec3, v0: IVec3, v1: IVec3, v2: IVec3): boolean {
   recycle.begin()
   const edge1 = Vec3.subtract(v1, v0, recycle.next())
@@ -312,6 +359,9 @@ export function rayIntersectsTriangle(orig: IVec3, dir: IVec3, v0: IVec3, v1: IV
   return recycle.end(true)
 }
 
+/**
+ * @public
+ */
 export function rayIntersectsTriangleAt(orig: IVec3, dir: IVec3, v0: IVec3, v1: IVec3, v2: IVec3): number {
   recycle.begin()
 
@@ -359,6 +409,9 @@ export function rayIntersectsTriangleAt(orig: IVec3, dir: IVec3, v0: IVec3, v1: 
 // plane[TYPE]Intersection
 //
 
+/**
+ * @public
+ */
 export function planeSphereIntersection(center: IVec3, radius: number, plane: IVec4): number {
   const dist = Vec3.dot(center, plane) - plane.w
   if (dist > radius) {
@@ -373,6 +426,9 @@ export function planeSphereIntersection(center: IVec3, radius: number, plane: IV
   return 0
 }
 
+/**
+ * @public
+ */
 export function planePlaneIntersection(plane1: IVec4, plane2: IVec4, position: IVec3, direction: IVec3) {
   recycle.begin()
   Vec3.cross(plane1, plane2, direction)
@@ -393,6 +449,9 @@ export function planePlaneIntersection(plane1: IVec4, plane2: IVec4, position: I
   return recycle.end(true)
 }
 
+/**
+ * @public
+ */
 export function planePlanePlaneIntersection(p1: IVec4, p2: IVec4, p3: IVec4, outPoint?: IVec3): boolean {
   recycle.begin()
 
@@ -441,6 +500,9 @@ export function planePlanePlaneIntersection(p1: IVec4, p2: IVec4, p3: IVec4, out
 // [TYPE]Intersects[TYPE]
 //
 
+/**
+ * @public
+ */
 export function boxIntersectsPoint(boxMin: IVec3, boxMax: IVec3, point: IVec3): boolean {
   return !(
     boxMin.x > point.x ||
@@ -451,6 +513,9 @@ export function boxIntersectsPoint(boxMin: IVec3, boxMax: IVec3, point: IVec3): 
     point.z > boxMax.z)
 }
 
+/**
+ * @public
+ */
 export function boxIntersectsPlane(boxMin: IVec3, boxMax: IVec3, plane: IVec4): boolean {
   let pX = plane.x >= 0 ? boxMin.x : boxMax.x
   let pY = plane.y >= 0 ? boxMin.y : boxMax.y
@@ -470,6 +535,9 @@ export function boxIntersectsPlane(boxMin: IVec3, boxMax: IVec3, plane: IVec4): 
   return (dot + plane.w) >= 0
 }
 
+/**
+ * @public
+ */
 export function boxIntersectSphere(center: IVec3, radius: number, boxMin: IVec3, boxMax: IVec3): boolean {
   recycle.begin()
   const c = Vec3.clamp(center, boxMin, boxMax, recycle.next())
@@ -477,21 +545,33 @@ export function boxIntersectSphere(center: IVec3, radius: number, boxMin: IVec3,
   return recycle.end(d <= (radius * radius))
 }
 
+/**
+ * @public
+ */
 export function boxIntersectBox(box1Min: IVec3, box1Max: IVec3, box2Min: IVec3, box2Max: IVec3): boolean {
     return (box1Max.x >= box2Min.x && box1Min.x <= box2Max.x &&
             box1Max.y >= box2Min.y && box1Min.y <= box2Max.y &&
             box1Max.z >= box2Min.z && box1Min.z <= box2Max.z)
 }
 
+/**
+ * @public
+ */
 export function sphereIntersectsPoint(center: IVec3, radius: number, point: IVec3): boolean {
   return Vec3.distanceSquared(point, center) <= (radius * radius)
 }
 
+/**
+ * @public
+ */
 export function sphereIntersectsPlane(center: IVec3, radius: number, plane: IVec4): boolean {
   const dist = Vec3.dot(center, plane) - plane.w
   return Math.abs(dist) <= radius
 }
 
+/**
+ * @public
+ */
 export function sphereIntersectsSphere(c1: IVec3, r1: number, c2: IVec3, r2: number): boolean {
   // Calculate squared distance between centers
   const d2 = Vec3.distanceSquared(c1, c2)
@@ -500,6 +580,9 @@ export function sphereIntersectsSphere(c1: IVec3, r1: number, c2: IVec3, r2: num
   return d2 <= (r * r)
 }
 
+/**
+ * @public
+ */
 export function sphereIntersectsTriangle(center: IVec3, radius: number, v0: IVec3, v1: IVec3, v2: IVec3): boolean {
   recycle.begin()
   const p = closestPointTriangle(center, v0, v1, v2, recycle.next())
@@ -507,6 +590,9 @@ export function sphereIntersectsTriangle(center: IVec3, radius: number, v0: IVec
   return recycle.end(Vec3.lengthSquared(p) <= radius * radius)
 }
 
+/**
+ * @public
+ */
 export function frustumIntersectsPoint(frustum: BoundingFrustum, point: IVec3): boolean {
   for (let i = 0; i < 6; i++) {
     const plane = frustum.planes[i]
@@ -522,6 +608,9 @@ export function frustumIntersectsPoint(frustum: BoundingFrustum, point: IVec3): 
 // - box[TYPE]Intersection
 //
 
+/**
+ * @public
+ */
 export function boxBoxIntersection(b1Min: IVec3, b1Max: IVec3, b2Min: IVec3, b2Max: IVec3): number {
   if (
     (b1Max.x < b2Min.x) ||
@@ -544,6 +633,9 @@ export function boxBoxIntersection(b1Min: IVec3, b1Max: IVec3, b2Min: IVec3, b2M
   return INTERSECTS
 }
 
+/**
+ * @public
+ */
 export function boxSphereIntersection(boxMin: IVec3, boxMax: IVec3, center: IVec3, radius: number): number {
   recycle.begin()
   const vector = Vec3.clamp(center, boxMin, boxMax, recycle.next())
@@ -559,6 +651,9 @@ export function boxSphereIntersection(boxMin: IVec3, boxMax: IVec3, center: IVec
   return recycle.end(CONTAINS)
 }
 
+/**
+ * @public
+ */
 export function boxFrustumIntersection(boxMin: IVec3, boxMax: IVec3, frustum: BoundingFrustum): number {
   let inside = 0
   let outside = 0
@@ -584,6 +679,9 @@ export function boxFrustumIntersection(boxMin: IVec3, boxMax: IVec3, frustum: Bo
 // - sphere[TYPE]Intersection
 //
 
+/**
+ * @public
+ */
 export function sphereBoxIntersection(center: IVec3, radius: number, boxMin: IVec3, boxMax: IVec3): number {
   if (!boxIntersectSphere(center, radius, boxMin, boxMax)) {
     return DISJOINT
@@ -640,6 +738,9 @@ export function sphereBoxIntersection(center: IVec3, radius: number, boxMin: IVe
   return CONTAINS
 }
 
+/**
+ * @public
+ */
 export function sphereSphereIntersection(c1: IVec3, r1: number, c2: IVec3, r2: number): number {
   const distance = Vec3.distance(c1, c2)
   if (r1 + r2 < distance) {
@@ -651,6 +752,9 @@ export function sphereSphereIntersection(c1: IVec3, r1: number, c2: IVec3, r2: n
   return 2
 }
 
+/**
+ * @public
+ */
 export function sphereFrustumIntersection(center: IVec3, radius: number, frustum: BoundingFrustum): number {
   const r2 = radius * radius
   let inside = 0
@@ -676,6 +780,9 @@ export function sphereFrustumIntersection(center: IVec3, radius: number, frustum
 // - frustum[TYPE]Intersection
 //
 
+/**
+ * @public
+ */
 export function frustumSphereIntersection(frustum: BoundingFrustum, center: IVec3, radius: number): number {
   // assume sphere is inside
   let result = 2
@@ -694,6 +801,9 @@ export function frustumSphereIntersection(frustum: BoundingFrustum, center: IVec
   return result
 }
 
+/**
+ * @public
+ */
 export function frustumBoxIntersection(frustum: BoundingFrustum, boxMin: IVec3, boxMax: IVec3): number {
   // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
   // section: Geometric Approach - Testing Boxes II
@@ -728,6 +838,9 @@ export function frustumBoxIntersection(frustum: BoundingFrustum, boxMin: IVec3, 
 // - frustumIntersection[TYPE]
 //
 
+/**
+ * @public
+ */
 export function frustumIntersectsSphere(frustum: BoundingFrustum, center: IVec3, radius: number): boolean {
   for (let i = 0; i < 6; i++) {
     const plane = frustum.planes[i]
@@ -740,6 +853,9 @@ export function frustumIntersectsSphere(frustum: BoundingFrustum, center: IVec3,
   return true
 }
 
+/**
+ * @public
+ */
 export function frustumIntersectsBox(frustum: BoundingFrustum, boxMin: IVec3, boxMax: IVec3): boolean {
   // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
   // section: Geometric Approach - Testing Boxes II
@@ -774,6 +890,9 @@ export function frustumIntersectsBox(frustum: BoundingFrustum, boxMin: IVec3, bo
   return true
 }
 
+/**
+ * @public
+ */
 export function frustumIntersectsPlane(frustum: BoundingFrustum, plane: IVec4): boolean {
   let back
   let front

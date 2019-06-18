@@ -316,7 +316,12 @@ export class Device {
   public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
       this.defaultTextureInstance = this.createTexture2D({
-        data: [0x0F, 0x0F, 0x0F, 0xFF],
+        data: [
+          0x0F, 0x0F, 0x0F, 0xFF,
+          0x00, 0x00, 0x00, 0xFF,
+          0x0F, 0x0F, 0x0F, 0xFF,
+          0x00, 0x00, 0x00, 0xFF,
+        ],
         sampler: SamplerState.PointWrap,
       })
     }
@@ -525,7 +530,7 @@ export class Device {
    */
   public drawQuad(flipY?: boolean): Device {
     let iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
-        data: [0, 1, 3, 0, 3, 2],
+        data: [0, 3, 1, 0, 2, 3],
         dataType: 'ushort',
       })
     this.quadIndexBuffer = iBuffer
@@ -1001,5 +1006,11 @@ export class Device {
     })
     this.registerDepthBuffer(buffer)
     return buffer
+  }
+
+  public unsetSamplersUsedAsAttachments() {
+    if (this.frameBuffer) {
+      this.frameBuffer.unsetSamplersUsedAsAttachments()
+    }
   }
 }

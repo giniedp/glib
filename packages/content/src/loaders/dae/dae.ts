@@ -15,19 +15,30 @@ import { PipelineContext } from '../../PipelineContext'
 import { loader } from '../../utils'
 
 import { Mat4, Vec3 } from '@gglib/math'
-import * as DAE from '../../formats/dae'
+import {
+  BindMaterial as DaeBindMaterial,
+  COLLADA,
+  CommonTechnique as DaeCommonTechnique,
+  Geometry as DaeGeometry,
+  Input as DaeInput,
+  InstanceMaterial,
+  MeshBuilderDef as DaeMeshBuilderDef,
+  Node as DaeNode,
+  NodeTranform as DaeNodeTranform,
+  Param as DaeParam,
+} from '../../formats/dae'
 
-export const daeToColladaDocument = loader<null, DAE.COLLADA>({
+export const daeToColladaDocument = loader<null, COLLADA>({
   input: ['.dae', 'application/xml'],
-  output: DAE.COLLADA,
+  output: COLLADA,
   handle: async (_, context) => {
     const data = await context.manager.downloadDocument(context.source)
-    return DAE.COLLADA.parse(data.content)
+    return COLLADA.parse(data.content)
   },
 })
 
-export const colladaDocumentToModelOptions = loader<DAE.COLLADA, ModelOptions>({
-  input: DAE.COLLADA,
+export const colladaDocumentToModelOptions = loader<COLLADA, ModelOptions>({
+  input: COLLADA,
   output: Model.Options,
   handle: async (dae, context) => {
 
@@ -37,7 +48,7 @@ export const colladaDocumentToModelOptions = loader<DAE.COLLADA, ModelOptions>({
 
     const scene = await dae.scene.instanceVisualScene.getScene()
     const meshes: ModelMeshOptions[] = []
-    const materials = new Map<string, DAE.InstanceMaterial>()
+    const materials = new Map<string, InstanceMaterial>()
 
     await walkNodes(scene.nodes, Mat4.createIdentity(), async (geometry, transform, material) => {
       if (geometry.mesh.polygons.length) {
@@ -72,9 +83,9 @@ export const colladaDocumentToModelOptions = loader<DAE.COLLADA, ModelOptions>({
 })
 
 async function walkNodes(
-  nodes: DAE.Node[],
+  nodes: DaeNode[],
   transform: Mat4,
-  cb: (geometry: DAE.Geometry, transform: Mat4, material: DAE.BindMaterial,
+  cb: (geometry: DaeGeometry, transform: Mat4, material: DaeBindMaterial,
 ) => Promise<void>) {
   for (const node of nodes) {
 
@@ -91,7 +102,7 @@ async function walkNodes(
   }
 }
 
-function convertSemantic(input: DAE.Input) {
+function convertSemantic(input: DaeInput) {
   let name = input.semantic.toLowerCase()
   if (input.semantic.match(/VERTEX/gi)) {
     name = 'position'
@@ -105,7 +116,7 @@ function convertSemantic(input: DAE.Input) {
   return name
 }
 
-function convertLayout(dae: DAE.COLLADA, inputs: DAE.Input[]): VertexLayout {
+function convertLayout(dae: COLLADA, inputs: DaeInput[]): VertexLayout {
   const result: VertexLayout = {}
   let offset = 0
   inputs.forEach((input) => {
@@ -122,8 +133,8 @@ function convertLayout(dae: DAE.COLLADA, inputs: DAE.Input[]): VertexLayout {
 }
 
 function convertMesh(
-  dae: DAE.COLLADA,
-  source: DAE.MeshBuilderDef[],
+  dae: COLLADA,
+  source: DaeMeshBuilderDef[],
   type: PrimitiveType,
 ): ModelMeshOptions[] {
   const meshOptions: ModelMeshOptions[] = []
@@ -139,7 +150,7 @@ function convertMesh(
     const indexMap = new Map<string, number>()
     let vertex = {}
     it.build({
-      param: (input: DAE.Input, param: DAE.Param, value: any) => {
+      param: (input: DaeInput, param: DaeParam, value: any) => {
         const name = convertSemantic(input)
         vertex[name] = vertex[name] || []
         vertex[name].push(value)
@@ -161,7 +172,7 @@ function convertMesh(
       endPrimitive: () => {
         meshOptions.push(builder
         .calculateBoundings()
-        .endMeshOptions({
+        .endMesh({
           primitiveType: type,
           materialId: it.material,
         }))
@@ -172,7 +183,7 @@ function convertMesh(
   return meshOptions
 }
 
-function createTransform(transforms: DAE.NodeTranform[]) {
+function createTransform(transforms: DaeNodeTranform[]) {
   return transforms.map((it) => {
     switch (it.type) {
       case 'lookat':
@@ -200,7 +211,7 @@ function createTransform(transforms: DAE.NodeTranform[]) {
   }, null) || Mat4.createIdentity()
 }
 
-async function loadMaterial(instance: DAE.InstanceMaterial, context: PipelineContext) {
+async function loadMaterial(instance: InstanceMaterial, context: PipelineContext) {
 
   const result: MaterialOptions = {
     name: instance.symbol + instance.target,
@@ -213,7 +224,7 @@ async function loadMaterial(instance: DAE.InstanceMaterial, context: PipelineCon
 
   if (fx.profileCommon) {
     const common = fx.profileCommon
-    let tech: DAE.CommonTechnique
+    let tech: DaeCommonTechnique
     if (common.techniqueBlinn) {
       tech = common.techniqueBlinn
       result.effect = 'blinn'

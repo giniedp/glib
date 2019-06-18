@@ -1,194 +1,154 @@
-import { Events, extend, isArray, isObject, isString, Log } from '@gglib/core'
+import { Events, Type } from '@gglib/core'
 import { Component } from './Component'
-import * as Components from './components'
 import { find, findAll } from './finder'
-import { getTemplate, TemplateFunction, TemplateMap, TemplateOptions } from './Template'
-import { Visitor } from './Visitor'
 
 /**
- * An object that holds a collection of components a collection of services and a collection of child nodes.
+ * An object that holds a collection of components a collection of services and a collection of child entities.
  *
  * @public
  */
 export class Entity extends Events {
 
   /**
-   * The name of this entity
+   * A user defined name
+   *
+   * @remarks
+   * This serves no purpose for this library and can be changed at any time
    */
   public name: string = 'Entity'
 
   /**
-   * The parent entity
+   * A user defined object
+   *
+   * @remarks
+   * This serves no purpose for this library and can be changed at any time
    */
-  public parent: Entity = null
+  public tag: any = null
 
   /**
    * The root entity
    */
-  public root: Entity = null
+  public readonly root: Entity
 
   /**
-   * Collection of service components.
+   * The parent entity
    */
-  public readonly services: { [key: string]: Component } = {}
+  public readonly parent: Entity = null
 
   /**
-   * Collection of all components of this node. Components are updated each frame.
+   * A collection of services
    */
-  public readonly components: Component[] = []
+  public readonly services: ReadonlyMap<any, any> = new Map()
 
   /**
-   * Collection of child entities. This property should only be used to iterate over child nodes. Do not add or
-   * remove items to or from this collection.
+   * A collection of all attached components
+   *
+   * @remarks
+   * To register and remove components from an entity use `addComponent` and `removeComponent` methods
    */
-  public readonly children: Entity[] = []
+  public readonly components: ReadonlyArray<Component> = []
+
+  /**
+   * A collection of child entities
+   *
+   * @remarks
+   * To add or remove entities use `addEntity` and `removeEntity` methods
+   */
+  public readonly children: ReadonlyArray<Entity> = []
 
   private toDraw: Component[] = []
   private toUpdate: Component[] = []
   private toInitialize: Component[] = []
 
-  constructor(params: any = {}) {
+  constructor() {
     super()
     this.root = this
-    extend(this, params)
   }
 
   /**
-   * Allows to iterate through the entity tree using the visitor pattern.
+   * Adds a service object to this entity
    */
-  public acceptVisitor(visitor: Visitor<Entity>) {
-    visitor.visit(this)
-    for (const node of this.children) {
-      node.acceptVisitor(visitor)
-    }
-  }
-
-  public applyTemplates(...config: Array<string|TemplateFunction|TemplateMap>) {
-    for (const item of config) {
-      if (Array.isArray(item)) {
-        this.applyTemplates(item)
-      } else if (typeof item === 'object') {
-        Object.keys(item).forEach((name) => {
-          this.applyTemplate(name, item[name])
-        })
-      } else if (typeof item === 'string' || typeof item === 'function') {
-        this.applyTemplate(item)
-      }
-    }
-    return this
-  }
-
-  public applyTemplate(nameOrTemplate: string|TemplateFunction, options?: TemplateOptions): this {
-    if (typeof nameOrTemplate === 'string') {
-      getTemplate(nameOrTemplate)(this, options)
-    } else {
-      nameOrTemplate(this, options)
-    }
-    return this
-  }
-
-  /**
-   * Binds a service object to this node that is accessible by the given name.
-   *
-   * @remarks A service may be anything i.e. object, array, function or primitive data.
-   * However the name must be unique for all services within a single node.
-   *
-   * Although any node is allowed to own services it is often simpler to let
-   * the root node to hold the services.
-   */
-  public addService(name: string, service: any, override?: boolean): this {
-    const oldService = this.services[name]
-    if (oldService) {
+  public addService<T>(key: Type<T>, service: T, override?: boolean): this
+  public addService<T>(key: string, service: any, override?: boolean): this
+  public addService(key: any, service: any, override?: boolean): this {
+    if (this.services.has(key)) {
       if (override) {
-        this.removeService(name)
+        this.removeService(key)
       } else {
-        throw new Error(`Service '${name}' is already registered`)
+        throw new Error(`Service '${key}' is already registered`)
       }
     }
-    this.services[name] = service
+    (this.services as Map<any, any>).set(key, service)
     return this
   }
 
   /**
-   * Removes a service by given service name.
+   * Removes a service by given key.
    */
-  public removeService(name: string): Entity {
-    delete this.services[name]
-    return this
+  public removeService(key: any): boolean {
+    return (this.services as Map<any, any>).delete(key)
   }
 
   /**
-   * Gets a service by name. Throws an error if service is missing
+   * Gets a service for given key
    */
-  public getService(name: 'Assets'): Components.AssetsComponent
-  public getService(name: 'Camera'): Components.CameraComponent
-  public getService(name: 'Fps'): Components.FpsComponent
-  public getService(name: 'GameLoop'): Components.GameLoopComponent
-  public getService(name: 'Keyboard'): Components.KeyboardComponent
-  public getService(name: 'Light'): Components.LightComponent
-  public getService(name: 'Mouse'): Components.MouseComponent
-  public getService(name: 'Renderable'): Components.Renderable
-  public getService(name: 'Renderer'): Components.RendererComponent
-  public getService(name: 'Time'): Components.TimeComponent
-  public getService(name: 'Transform'): Components.TransformComponent
-  public getService(name: string): any
-  public getService(name: any): any {
-    const result = this.services[name]
-    if (!result) {
-      throw new Error(`Service '${name}' is missing`)
+  public getService<T>(key: Type<T>, fallback?: T): T
+  /**
+   * Gets a service for given key
+   */
+  public getService<T>(key: any, fallback?: T): T
+  public getService(key: any, fallback?: any) {
+    const result = this.services.get(key)
+    if (result == null && fallback !== undefined) {
+      return fallback
+    }
+    if (result == null) {
+      throw new Error(`Service '${key}' is missing`)
     }
     return result
   }
 
-  public getServices<T>(map: { [k in keyof T]: string }, target?: T): T {
-    if (!target) {
-      target = {} as any
-    }
-    for (const key of Object.keys(map)) {
-      target[key] = this.getService(map[key])
-    }
-    return target
-  }
-
   /**
-   * Adds a child node and creates a parent child relationship
+   * Adds a child entity and creates a parent child relationship
    */
-  public addEntity(entity: Entity): this {
+  public addChild(entity: Entity): this {
     if (entity.parent) {
-      entity.parent.removeEntity(entity)
+      entity.parent.removeChild(entity)
     }
-    this.children.push(entity)
-    entity.parent = this
-    entity.root = this.root
+    (this.children as Entity[]).push(entity);
+    (entity as { parent: Entity }).parent = this;
+    (entity as { root: Entity }).root = this.root
     return this
   }
 
   /**
-   * Creates and adds a new child entity and passes it to each of the given template functions.
+   * Creates and adds a new child entity and passes it to the given callback
    */
-  public buildEntity(...config: Array<string|TemplateFunction|TemplateMap>): this {
+  public createChild(...callbacks: Array<(entity: Entity) => void>): this {
     const child = new Entity()
-    this.addEntity(child)
-    child.applyTemplates(config)
+    this.addChild(child)
+    for (const cb of callbacks) {
+      cb(child)
+    }
     return this
   }
 
   /**
-   * calls addChild on `parent`
+   * Adds this to the given parent
    */
   private addTo(parent: Entity): this {
-    parent.addEntity(this)
+    parent.addChild(this)
     return this
   }
 
   /**
-   * Removes the given node from the child collection and breaks the parent child relation ship
+   * Removes the given entity from the child collection and breaks the parent child relation ship
    */
-  public removeEntity(entity: Entity): this {
+  public removeChild(entity: Entity): this {
     const index = this.children.indexOf(entity)
     if (index >= 0) {
-      this.children.splice(index, 1)
-      entity.parent = null
+      (this.children as Entity[]).splice(index, 1);
+      (entity as { parent: Entity }).parent = null
     }
     return this
   }
@@ -198,43 +158,51 @@ export class Entity extends Events {
    */
   public remove() {
     if (this.parent) {
-      this.parent.removeEntity(this)
+      this.parent.removeChild(this)
     }
   }
 
   /**
-   * Adds a component to this node. If the component has a `serviceName` property it is also registered as a service.
+   * Adds a component to this entity
+   *
+   * @remarks
+   * The added component will be marked for initialization which will happen
+   * on next update turn.
+   *
+   * If the component implements the {@link @gglib/ecs:OnAdded} life cycle this
+   * will be called at the end of this function.
    */
   public addComponent(comp: Component): Entity {
-    if (comp.entity) {
-      comp.entity.removeComponent(comp)
+    // TODO: find a way to store a component->entity relation without
+    // writing to the component object
+    if (comp['$$boundEntity']) {
+      (comp['$$boundEntity'] as Entity).removeComponent(comp)
     }
-    comp.entity = this
-    if (comp.service && comp.name) {
-      this.addService(comp.name, comp)
-    }
+    comp['$$boundEntity'] = this
 
     if (this.components.indexOf(comp) < 0) {
-      this.components.push(comp)
+      (this.components as Component[]).push(comp)
     }
     if (this.toInitialize.indexOf(comp) < 0) {
       this.toInitialize.push(comp)
     }
 
+    if (typeof comp.onAdded === 'function') {
+      comp.onAdded(this)
+    }
     return this
   }
 
   /**
-   * Removes the component from this node.
+   * Removes the component from this entity.
    */
   public removeComponent(comp: Component): Entity {
-    if (comp.service && comp.name) {
-      delete this.services[comp.name]
-    }
+    let isRemoved = false
     let index = this.components.indexOf(comp)
     if (index >= 0) {
-      this.components.splice(index, 1)
-      comp.entity = null
+      (this.components as Component[]).splice(index, 1)
+      comp['$$boundEntity'] = null
+      isRemoved = true
     }
     index = this.toUpdate.indexOf(comp)
     if (index >= 0) {
@@ -244,74 +212,69 @@ export class Entity extends Events {
     if (index >= 0) {
       this.toDraw.splice(index, 1)
     }
+    if (isRemoved && typeof comp.onRemoved === 'function') {
+      comp.onRemoved(this)
+    }
     return this
   }
 
   /**
-   * Instantly initializes the components and brings the node into a fully functional state. This method does not
-   * need to be called because the components are initialized the first time the node is updated. This is usually
-   * in the next frame after the frame the components have been added to the node.
-   */
-  public commitComponents(): Entity {
-    this.initializeComponents(false)
-    return this
-  }
-
-  /**
+   * Calls `onInit` on each attached component
    *
+   * @param recursive - Whether to continue the initialization recursively on every child
    */
-  public initializeComponents(recursive: boolean = true): void {
+  public initializeComponents(recursive: boolean = true): this {
     let cmp
     while (this.toInitialize.length > 0) {
       cmp = this.toInitialize.shift()
-      if (typeof cmp.setup === 'function') {
-        cmp.setup(this)
-        cmp.initialized = true
+      if (typeof cmp.onInit === 'function') {
+        cmp.onInit(this)
       }
-      if (typeof cmp.update === 'function' && this.toUpdate.indexOf(cmp) < 0) {
+      if (typeof cmp.onUpdate === 'function' && this.toUpdate.indexOf(cmp) < 0) {
         this.toUpdate.push(cmp)
       }
-      if (typeof cmp.draw === 'function' && this.toDraw.indexOf(cmp) < 0) {
+      if (typeof cmp.onDraw === 'function' && this.toDraw.indexOf(cmp) < 0) {
         this.toDraw.push(cmp)
       }
     }
-    if (recursive !== false) {
-      for (const node of this.children) {
-        node.initializeComponents(recursive)
+    if (recursive) {
+      for (const it of this.children) {
+        it.initializeComponents(recursive)
       }
     }
+    return this
   }
 
   /**
+   * Calls `onUpdate` on each attached component
    *
+   * @param time - The current game time
+   * @param recursive - Whether to continue the update call recursively on every child
    */
   public updateComponents(time: number, recursive: boolean = true): void {
-    const list = this.toUpdate
-    for (const cmp of list) {
-      if (cmp.enabled !== false) {
-        cmp.update(time)
-      }
+    for (const cmp of this.toUpdate) {
+      cmp.onUpdate(time)
     }
-    if (recursive !== false) {
-      for (const node of this.children) {
-        node.updateComponents(time, recursive)
+    if (recursive) {
+      for (const it of this.children) {
+        it.updateComponents(time, recursive)
       }
     }
   }
 
   /**
+   * Calls `onDraw` on each attached component
    *
+   * @param time - The current game time
+   * @param recursive - Whether to continue the draw call recursively on every child
    */
   public drawComponents(time: number, recursive: boolean = true): void {
-    const list = this.toDraw
-    for (const cmp of list) {
-      if (cmp.visible !== false) {
-        cmp.draw(time)
-      }
+    for (const cmp of this.toDraw) {
+      cmp.onDraw(time)
     }
-    if (recursive !== false) {
-      for (const node of this.children) {
-        node.drawComponents(time, recursive)
+    if (recursive) {
+      for (const it of this.children) {
+        it.drawComponents(time, recursive)
       }
     }
   }
@@ -331,34 +294,53 @@ export class Entity extends Events {
   }
 
   /**
-   * Gets all descendant of this node
+   * Gets all descendant of this entity
+   *
+   * @param includeSelf - pass `true` to include this entity in the result set
+   * @param result - a collection where the results should be added to
    */
-  public descendants(andSelf: boolean = false, result: Entity[] = []) {
-    if (andSelf) {
+  public descendants(includeSelf: boolean = false, result: Entity[] = []) {
+    if (includeSelf) {
       result.push(this)
     }
-    for (const node of this.children) {
-      node.descendants(true, result)
+    for (const it of this.children) {
+      it.descendants(true, result)
     }
     return result
   }
 
   /**
-   * Gets all siblings of this node
+   * Gets all siblings of this entity
+   *
+   * @param includeSelf - pass `true` to include this entity in the result set
+   * @param result - a collection where the results should be added to
    */
-  public siblings(andSelf: boolean, result: Entity[] = []) {
+  public siblings(includeSelf: boolean = false, result: Entity[] = []) {
     if (!this.parent) {
-      if (andSelf) {
+      if (includeSelf) {
         result.push(this)
       }
       return result
     }
-    const nodes = this.parent.children
-    for (const node of nodes) {
-      if (node !== this || andSelf) {
-        result.push(node)
+    for (const it of this.parent.children) {
+      if (it !== this || includeSelf) {
+        result.push(it)
       }
     }
     return result
+  }
+
+  /**
+   * Taps this entity by calling the given function
+   *
+   * @example
+   * return new Entity().tap((entity) => {
+   *   // modify entity
+   * })
+   * @param cb - The callback to call
+   */
+  public tap(cb: (entity: this) => void): this {
+    cb(this)
+    return this
   }
 }

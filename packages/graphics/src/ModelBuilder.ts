@@ -1,5 +1,5 @@
 import { copy, Log } from '@gglib/core'
-import { BoundingBox, BoundingSphere, Mat4, Vec3 } from '@gglib/math'
+import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { BufferOptions } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
@@ -8,10 +8,9 @@ import { ModelMesh, ModelMeshOptions } from './ModelMesh'
 import { VertexLayout, VertexPreset } from './VertexLayout'
 
 import { BufferType, DataType, FrontFace } from './enums'
-import { formulas } from './formulas'
 import { calculateNormals } from './formulas/calculateNormals'
 import { calculateTangents } from './formulas/calculateTangents'
-import { ModelBuilderChannelMap, ModelBuilderChannel } from './ModelBuilderChannel';
+import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChannel'
 
 let tmpBuffer: any[] = []
 
@@ -39,41 +38,15 @@ export type ModelBuildFormula<T = any> = (builder: ModelBuilder, options: T) => 
  */
 export class ModelBuilder {
 
-  public static formulas: { [key: string]: ModelBuildFormula } = formulas
-
   /**
    * Creates a new model builder
    *
-   * @remarks simply calls the constructore with given options
+   * @remarks simply calls the constructor with given options
    *
    * @param options the constructor options
    */
   public static begin(options?: ModelBuilderOptions): ModelBuilder {
     return new ModelBuilder(options)
-  }
-
-  /**
-   * Creates a mesh by using the given formula name
-   *
-   * @param device the graphics device
-   * @param formula the builder formula
-   * @param formulaOptions the formula options
-   * @param meshOptions additional mesh options
-   */
-  public static createMesh(device: Device, formula: string, formulaOptions?: any, meshOptions?: ModelMeshOptions): ModelMesh {
-    return ModelBuilder.begin().append(formula, formulaOptions).endMesh(device, meshOptions)
-  }
-
-  /**
-   * Creates a model by using the given formula name
-   *
-   * @param device the graphics device
-   * @param formula the builder formula
-   * @param formulaOptions the formula options
-   * @param modelOptions additional model options
-   */
-  public static createModel(device: Device, formula: string, formulaOptions?: any, modelOptions?: ModelOptions): Model {
-    return ModelBuilder.begin().append(formula, formulaOptions).endModel(device, modelOptions)
   }
 
   public get indices(): number[] {
@@ -439,12 +412,35 @@ export class ModelBuilder {
   /**
    * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
    *
+   * @param options - options to start with
    */
-  public endMeshOptions(options: ModelMeshOptions = {}): ModelMeshOptions {
-    if (this.indexCount === 0 && this.vCount === 0) {
-      Log.w(`[ModelBuilder] endMeshOptions called on empty builder. ignore.`)
-      return options
+  public endMesh(options?: ModelMeshOptions): ModelMeshOptions
+  /**
+   * Creates new mesh with current index and vertex buffer and saves them in the meshes array.
+   *
+   * @param device - the graphics device
+   * @param options - options to start with
+   */
+  public endMesh(device: Device, options?: ModelMeshOptions): ModelMesh
+  public endMesh(): ModelMesh | ModelMeshOptions {
+    let device: Device
+    let options: ModelMeshOptions
+    let result: ModelMeshOptions | ModelMesh
+    if (arguments[0] instanceof Device) {
+      device = arguments[0]
+      options = arguments[1] || {}
+      result = null
+    } else {
+      device = null
+      options = arguments[0] || {}
+      result = options
     }
+
+    if (this.indexCount === 0 && this.vCount === 0) {
+      Log.w(`[ModelBuilder] endMesh called on empty builder. ignore.`)
+      return result
+    }
+
     options.materialId = options.materialId || 0
     options.indexBuffer = this.iBuffer
     options.vertexBuffer = this.vBuffer
@@ -453,23 +449,43 @@ export class ModelBuilder {
 
     this.meshes.push(options)
     this.resetData()
-    return options
-  }
 
-  public endMesh(device: Device, options: ModelMeshOptions = {}): ModelMesh {
-    this.endMeshOptions(options)
-    let opts = this.meshes[this.meshes.length - 1]
-    return new ModelMesh(device, opts)
+    if (device) {
+      result = new ModelMesh(device, options)
+    }
+
+    return result
   }
 
   /**
    * Creates model options from the current builder state an resets the builder.
-   * @param options - The custom model options to be used. The 'meshes' option is ignored.
    *
+   * @param options - The custom model options to be used. The 'meshes' option is ignored.
    */
-  public endModelOptions(options: ModelOptions = {}): ModelOptions {
+  public endModel(options?: ModelOptions): ModelOptions
+  /**
+   * Creates a model from the current builder state and resets the builder.
+   *
+   * @param device - The graphics device
+   * @param options - The model options.
+   */
+  public endModel(device: Device, options?: ModelOptions): Model
+  public endModel(): Model | ModelOptions {
     if (this.indexCount !== 0 || this.vertexCount !== 0) {
-      this.endMeshOptions()
+      this.endMesh()
+    }
+
+    let device: Device
+    let options: ModelOptions
+    let result: ModelOptions | Model
+    if (arguments[0] instanceof Device) {
+      device = arguments[0]
+      options = arguments[1] || {}
+      result = null
+    } else {
+      device = null
+      options = arguments[0] || {}
+      result = options
     }
 
     let materials = options.materials || []
@@ -479,29 +495,26 @@ export class ModelBuilder {
     options.materials = materials
     options.meshes = this.meshes
     this.reset()
-    return options
+
+    if (device) {
+      result = device.createModel(options)
+    }
+
+    return result
   }
 
   /**
-   * Creates a model from the current builder state and resets the builder.
-   * @param device - The graphics device
-   * @param options - The model options.
+   * Calls the given function with `this` as argument for manipulation
    *
+   * @example
+   * return ModelBuilder.begin().tap((b) => {
+   *   buildMyFancyMesh(b)
+   * }).endModel(...)
+   *
+   * @param fn - The function to call with this model builder
    */
-  public endModel(device: Device, options: ModelOptions = {}): Model {
-    options = this.endModelOptions(options)
-    return device.createModel(options)
-  }
-
-  public append(name: string, options?: any): ModelBuilder {
-    let f = ModelBuilder.formulas[name]
-    if (!f) {
-      throw new Error(`[Graphics.Builder] formula not found '${name}'`)
-    }
-    if (typeof f !== 'function') {
-      throw new Error(`[Graphics.Builder] formula '${name}' is not a function`)
-    }
-    f(this, options)
+  public tap(fn: (builder: this) => void): this {
+    fn(this)
     return this
   }
 }

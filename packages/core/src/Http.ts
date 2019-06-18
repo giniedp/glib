@@ -91,6 +91,9 @@ export function httpRequest(options: HttpOptions): Promise<XMLHttpRequest> {
   return sendXhr(xhr, options, async)
 }
 
+/**
+ * @public
+ */
 export const Http = {
   createXMLHttpRequest: (responseType: XMLHttpRequestResponseType = 'text') => {
     const result = new XMLHttpRequest()

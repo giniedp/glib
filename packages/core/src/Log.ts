@@ -1,3 +1,6 @@
+/**
+ * @public
+ */
 export const Log = {
   l: console ? console.log.bind(console) : (message?: any, ...optionalParams: any[]): void => null,
   i: console ? console.info.bind(console) : (message?: any, ...optionalParams: any[]): void => null,

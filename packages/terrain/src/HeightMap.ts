@@ -25,10 +25,10 @@ export class HeightMap {
     })
   }
 
-  public width: number
-  public height: number
-  public heights: Float32Array
-  public normals: Float32Array
+  public readonly width: number
+  public readonly height: number
+  public readonly heights: Float32Array
+  public readonly normals: Float32Array
 
   constructor(options: HeightMapOptions) {
     this.width = options.width

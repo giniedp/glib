@@ -6,6 +6,7 @@
     "emitDecoratorMetadata": true,
     "module": "es2015",
     "moduleResolution": "node",
+    "incremental": true,
     "outDir": "../dist/packages",
     "noImplicitAny": true,
     "suppressImplicitAnyIndexErrors": true,

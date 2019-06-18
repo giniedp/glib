@@ -282,7 +282,7 @@ export class BlendState implements BlendStateParams {
   public assign(state: BlendStateParams= {}): BlendState {
     for (let key of propertyKeys) {
       if (state.hasOwnProperty(key)) {
-        this[key] = state[key]
+        this[key as any] = state[key]
       }
     }
     return this
@@ -335,7 +335,7 @@ export class BlendState implements BlendStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key] = undefined }
+    for (let key of propertyKeys) { this.changes[key as any] = undefined }
   }
 
   public static resolve(gl: any, out: BlendStateParams= {}): BlendStateParams {

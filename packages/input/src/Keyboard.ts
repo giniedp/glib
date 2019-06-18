@@ -9,7 +9,7 @@ export interface IKeyboardOptions {
   /**
    * The element at which to listen for input events
    */
-  element?: Element,
+  eventTarget?: EventTarget,
   /**
    * The event names to listen to
    */
@@ -30,7 +30,7 @@ export interface IKeyboardState {
  *
  * @remarks
  * It does so by listening to
- * the `keypress`, `keydown` and `keyup` events and tracks the pressed buttons. On each recoginzed
+ * the `keypress`, `keydown` and `keyup` events and tracks the pressed buttons. On each recognized
  * state change the `changed` event is triggered.
  *
  * @public
@@ -39,7 +39,7 @@ export class Keyboard extends Events {
   /**
    * The target element on which to listen for keyboard events.
    */
-  protected element: EventTarget = document
+  protected eventTarget: EventTarget = document
 
   /**
    * The tracked keyboard state
@@ -56,19 +56,19 @@ export class Keyboard extends Events {
   ]
 
   /**
-   * Is called on the ```keypress``` event and marks the ```event.keyCode``` as pressed
+   * Is called on the `keypress` event and marks the `event.keyCode` as pressed
    */
   protected onKeyPress = (e: KeyboardEvent) => { /* */ }
   /**
-   * Is called on the ```keypress``` event and marks the ```event.keyCode``` as pressed
+   * Is called on the `keypress` event and marks the `event.keyCode` as pressed
    */
   protected onKeyDown = (e: KeyboardEvent) => this.setKeyPressed(Keyboard.getCode(e))
   /**
-   * Is called on the ```keyup``` event and marks the ```event.keyCode``` as released
+   * Is called on the `keyup` event and marks the `event.keyCode` as released
    */
   protected onKeyUp = (e: KeyboardEvent) => this.setKeyReleased(Keyboard.getCode(e))
   /**
-   * Is called when ```document``` or ```window``` loose focus e.g. user switches to another tab or application
+   * Is called when `document` or `window` loose focus e.g. user switches to another tab or application
    */
   protected onNeedsClear = () => this.clearState()
   /**
@@ -77,33 +77,33 @@ export class Keyboard extends Events {
   protected onEvent: EventListener = (e: Event) => this.trigger(e.type, this, e)
 
   /**
-   * Initializes the Keyboard with given options and activates the captrue listeners
+   * Initializes the Keyboard with given options and activates the capture listeners
    */
   constructor(options?: IKeyboardOptions) {
     super()
     if (options) {
-      this.element = (options.element || this.element)
+      this.eventTarget = (options.eventTarget || this.eventTarget)
       this.delegatedEvents = (options.events || this.delegatedEvents)
     }
     this.activate()
   }
 
   /**
-   * Activates the captrue listeners
+   * Activates the capture listeners
    */
   public activate() {
     this.deactivate()
     // update state events
-    this.element.addEventListener('keypress', this.onKeyPress)
-    this.element.addEventListener('keydown', this.onKeyDown)
-    this.element.addEventListener('keyup', this.onKeyUp)
+    this.eventTarget.addEventListener('keypress', this.onKeyPress)
+    this.eventTarget.addEventListener('keydown', this.onKeyDown)
+    this.eventTarget.addEventListener('keyup', this.onKeyUp)
     // visibility events
     onDocumentVisibilityChange(this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
     window.addEventListener('blur', this.onNeedsClear)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.element.addEventListener(name, this.onEvent)
+      this.eventTarget.addEventListener(name, this.onEvent)
     }
   }
 
@@ -112,16 +112,16 @@ export class Keyboard extends Events {
    */
   public deactivate() {
     // update state events
-    this.element.removeEventListener('keypress', this.onKeyPress)
-    this.element.removeEventListener('keydown', this.onKeyDown)
-    this.element.removeEventListener('keyup', this.onKeyUp)
+    this.eventTarget.removeEventListener('keypress', this.onKeyPress)
+    this.eventTarget.removeEventListener('keydown', this.onKeyDown)
+    this.eventTarget.removeEventListener('keyup', this.onKeyUp)
     // visibility events
     offDocumentVisibilityChange(this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
     window.removeEventListener('blur', this.onNeedsClear)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.element.removeEventListener(name, this.onEvent)
+      this.eventTarget.removeEventListener(name, this.onEvent)
     }
   }
 
@@ -143,7 +143,7 @@ export class Keyboard extends Events {
     return out
   }
   /**
-   * Marks the given ```code``` as being pressed and triggers the ```changed``` event
+   * Marks the given `code` as being pressed and triggers the `changed` event
    */
   public setKeyPressed(code: number) {
     let index = this.state.pressedKeys.indexOf(code)
@@ -153,7 +153,7 @@ export class Keyboard extends Events {
     }
   }
   /**
-   * Marks the given ```keyCode``` as not being pressed and triggers the ```changed``` event
+   * Marks the given `keyCode` as not being pressed and triggers the `changed` event
    */
   public setKeyReleased(code: number) {
     let index = this.state.pressedKeys.indexOf(code)
@@ -163,7 +163,7 @@ export class Keyboard extends Events {
     }
   }
   /**
-   * Clears the state and triggers the ```changed``` event
+   * Clears the state and triggers the `changed` event
    */
   public clearState() {
     if (!this.state.pressedKeys.length) { return }

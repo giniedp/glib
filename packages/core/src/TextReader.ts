@@ -1,3 +1,6 @@
+/**
+ * @public
+ */
 export class TextReader {
   private index: number = 0
 
@@ -60,7 +63,7 @@ export class TextReader {
   /**
    * Reads until next occurance of a new line character
    *
-   * @param cb on optional callback that will receive a new reader for the new line
+   * @param cb - on optional callback that will receive a new reader for the new line
    * @returns the string that was being read
    */
   public nextLine(cb?: (r: TextReader) => void) {
@@ -80,9 +83,9 @@ export class TextReader {
   /**
    * Reads until next occurance of `start` and then until `end`
    *
-   * @param start character identifying the begin of a block
-   * @param end character identifying the begin of a block
-   * @param cb a callback to call with a new text reader
+   * @param start - character identifying the begin of a block
+   * @param end - character identifying the begin of a block
+   * @param cb - a callback to call with a new text reader
    */
   public nextBlock(start: string, end: string, cb?: (r: TextReader) => void) {
     if (!this.canRead) {
@@ -159,7 +162,7 @@ export class TextReader {
   /**
    * Skips all characters in given string
    *
-   * @param char the characters to skip
+   * @param char - the characters to skip
    */
   public skipWhile(char: string) {
     while (this.canRead && char.indexOf(this.char) >= 0) {
@@ -170,7 +173,7 @@ export class TextReader {
   /**
    * Skips characters until occurance of one in the given string
    *
-   * @param char the characters to stop at
+   * @param char - the characters to stop at
    */
   public skipUntil(char: string, andBeyond = false) {
     while (this.canRead && char.indexOf(this.char) === -1) {

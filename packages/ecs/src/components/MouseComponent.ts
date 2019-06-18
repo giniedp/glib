@@ -1,32 +1,33 @@
 import { extend } from '@gglib/core'
-import * as Input from '@gglib/input'
-import { Vec3, Vec4 } from '@gglib/math'
-import { Component } from './../Component'
+import { IMouseState, Mouse} from '@gglib/input'
+import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 
 /**
  * @public
  */
-export class MouseComponent implements Component {
+export class MouseComponent implements OnAdded, OnRemoved, OnUpdate {
 
-  public readonly name: string = 'Mouse'
-  public readonly service: boolean = true
-
-  public entity: Entity
-  public enabled: boolean = true
-
-  public mouse: Input.Mouse
-  public newState: Input.IMouseState
-  public oldState: Input.IMouseState
+  public readonly mouse: Mouse
+  public newState: IMouseState
+  public oldState: IMouseState
 
   constructor(options: any= {}) {
-    this.mouse = new Input.Mouse({ element: options.el || document })
+    this.mouse = new Mouse({ eventTarget: options.el || document })
     extend(this, options)
     this.newState = this.mouse.copyState({})
     this.oldState = this.mouse.copyState({})
   }
 
-  public update() {
+  public onAdded(entity: Entity) {
+    entity.addService(MouseComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(MouseComponent)
+  }
+
+  public onUpdate() {
     let toUpdate = this.oldState
     this.oldState = this.newState
     this.newState = toUpdate

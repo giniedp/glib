@@ -1,6 +1,5 @@
 import { ModelBuilder } from '../ModelBuilder'
 import { addParametricSurface } from './addParametricSurface'
-import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -50,5 +49,3 @@ export function buildDisc(builder: ModelBuilder, options: BuildDiscOptions = {})
     v1: r1,
   })
 }
-
-formulas['Disc'] = buildDisc

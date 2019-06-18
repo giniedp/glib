@@ -1,6 +1,6 @@
 // tslint:disable no-bitwise
 // tslint:disable max-classes-per-file
-import * as Graphics from '@gglib/graphics'
+import { Buffer, Device, Material, MaterialOptions, Model, ModelMesh, VertexLayout } from '@gglib/graphics'
 import { IVec3, Vec3 } from '@gglib/math'
 import { HeightMap } from './HeightMap'
 
@@ -24,19 +24,23 @@ function highestBit(value: number): number {
  * @public
  */
 export class BTTRoot {
-  public device: Graphics.Device
+  /**
+   * The graphics device
+   */
+  public readonly device: Device
+
   public heightMap: HeightMap
   public patchSize: number
   public lodScale: number
-  public indexBuffers: Graphics.Buffer[][]
+  public indexBuffers: Buffer[][]
   public patches: BTTPatch[]
-  public model: Graphics.Model
+  public model: Model
 
-  constructor(device: Graphics.Device, options: {
+  constructor(device: Device, options: {
     heightMap: HeightMap,
     patchSize?: number,
     lodScale?: number,
-    materials?: Graphics.Material[]|Graphics.MaterialOptions[],
+    materials?: Material[]|MaterialOptions[],
   }) {
     this.device = device
 
@@ -45,18 +49,16 @@ export class BTTRoot {
     this.lodScale = Number(options.lodScale) | 0 || 2
 
     const maxLod = highestBit(this.patchSize) * 2
-    const iBuffers: Graphics.Buffer[][] = this.indexBuffers = []
+    const iBuffers: Buffer[][] = this.indexBuffers = []
     for (let i = 0; i <= maxLod; i++) {
       iBuffers[i] = []
       for (let j = 0; j < 15; j++) {
         if ((i % 2 === 0) && j > 0) {
           iBuffers[i][j] = iBuffers[i][0]
         } else {
-          const data = BTTPatch.createIndices(i, j, this.patchSize + 1)
-          iBuffers[i][j] = new Graphics.Buffer(device, {
-            data: data,
+          iBuffers[i][j] = device.createIndexBuffer({
+            data: BTTPatch.createIndices(i, j, this.patchSize + 1),
             dataType: 'ushort',
-            type: 'IndexBuffer',
           })
         }
       }
@@ -122,12 +124,12 @@ export class BTTPatch {
     const list = []
     if (level === 0) {
       list.push(0)
-      list.push(size - 1)
       list.push(size * size - 1)
+      list.push(size - 1)
 
       list.push(0)
-      list.push(size * size - 1)
       list.push(size * size - size)
+      list.push(size * size - 1)
       return list
     }
 
@@ -153,12 +155,12 @@ export class BTTPatch {
             // ---*--*
 
             list.push(vIndex)
-            list.push(vIndex + step)
             list.push(vIndex + size * step + step)
+            list.push(vIndex + step)
 
             list.push(vIndex)
-            list.push(vIndex + size * step + step)
             list.push(vIndex + size * step)
+            list.push(vIndex + size * step + step)
 
           } else {
             // ---a--b
@@ -170,12 +172,12 @@ export class BTTPatch {
             // *--*---
 
             list.push(vIndex)
-            list.push((vIndex + step))
             list.push((vIndex + size * step))
+            list.push((vIndex + step))
 
             list.push((vIndex + step))
-            list.push((vIndex + size * step + step))
             list.push((vIndex + size * step))
+            list.push((vIndex + size * step + step))
           }
         } else {
           // a--d--g
@@ -210,27 +212,27 @@ export class BTTPatch {
           mask &= version
 
           if (mask & 1) {
-            order = order.concat([ e, a, d, e, d, g ])
+            order = order.concat([ a, e, d, d, e, g ])
           } else {
-            order = order.concat([ e, a, g ])
+            order = order.concat([ a, e, g ])
           }
 
           if (mask & 2) {
-            order = order.concat([ e, g, h, e, h, i ])
+            order = order.concat([ g, e, h, h, e, i ])
           } else {
-            order = order.concat([ e, g, i ])
+            order = order.concat([ g, e, i ])
           }
 
           if (mask & 4) {
-            order = order.concat([ e, i, f, e, f, c ])
+            order = order.concat([ i, e, f, f, e, c ])
           } else {
-            order = order.concat([ e, i, c ])
+            order = order.concat([ i, e, c ])
           }
 
           if (mask & 8) {
-            order = order.concat([ e, c, b, e, b, a ])
+            order = order.concat([ c, e, b, b, e, a ])
           } else {
-            order = order.concat([ e, c, a ])
+            order = order.concat([ c, e, a ])
           }
 
           for (const k of order) {
@@ -258,7 +260,7 @@ export class BTTPatch {
 
   private static tmpV3 = { x: 0, y: 0, z: 0 }
 
-  public device: Graphics.Device
+  public device: Device
 
   /**
    * The current level of detail. Higher values means higher details.
@@ -274,13 +276,13 @@ export class BTTPatch {
   public currentVersion: number = 0
 
   public parent: BTTRoot
-  public mesh: Graphics.ModelMesh
+  public mesh: ModelMesh
   public startX: number
   public startY: number
   public patchSize: number
   public center: IVec3
 
-  constructor(device: Graphics.Device, options: {
+  constructor(device: Device, options: {
     parent: BTTRoot,
     startX: number,
     startY: number,
@@ -298,7 +300,7 @@ export class BTTPatch {
       z: this.startY + (this.patchSize - 1) / 2,
     }
 
-    this.mesh = new Graphics.ModelMesh(device, {
+    this.mesh = new ModelMesh(device, {
       indexBuffer: this.parent.indexBuffers[0][0],
       vertexBuffer: device.createVertexBuffer({
         data: BTTPatch.createVertices(
@@ -307,7 +309,7 @@ export class BTTPatch {
           this.startY,
           this.patchSize + 1),
         dataType: 'float',
-        layout: Graphics.VertexLayout.create('PositionNormalTexture'),
+        layout: VertexLayout.create('PositionNormalTexture'),
       }),
     })
   }

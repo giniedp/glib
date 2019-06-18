@@ -1,37 +1,63 @@
-import { extend, getTime, Log, requestFrame } from '@gglib/core'
-import { Component } from './../Component'
+import { extend, getTime, requestFrame } from '@gglib/core'
+import { OnAdded, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
+
+export interface GameLoopOptions {
+  preferTimeout?: boolean
+  fixedTimeStep?: number
+  isFixedTimeStep?: boolean
+
+  recursiveSetup?: boolean
+  recursiveUpdate?: boolean
+  recursiveDraw?: boolean
+}
+
+function getOption<T>(options: GameLoopOptions, key: keyof GameLoopOptions, fallback: T): T {
+  return key in options ? options[key] as any : fallback
+}
 
 /**
  * @public
  */
-export class GameLoopComponent implements Component {
-  public readonly name: string = 'GameLoop'
-  public readonly service: boolean = true
+export class GameLoopComponent implements OnAdded, OnRemoved {
 
-  public entity: Entity
-  public enabled: boolean = true
+  public readonly preferTimeout: boolean = false
+  public readonly fixedTimeStep: number = 1000 / 60
+  public readonly isFixedTimeStep: boolean = true
 
-  public preferTimeout: boolean = false
-  public fixedTimeStep: number = 1000 / 60
-  public isFixedTimeStep: boolean = true
-
-  public recursiveSetup: boolean = true
-  public recursiveUpdate: boolean = true
-  public recursiveDraw: boolean = true
+  public readonly recursiveSetup: boolean = true
+  public readonly recursiveUpdate: boolean = true
+  public readonly recursiveDraw: boolean = true
 
   private tickFunction: () => void
   private time: number = 0
   private timeRest: number = 0
+  private entity: Entity
 
-  constructor(params: any= {}) {
-    extend(this, params)
+  constructor(params: GameLoopOptions = {}) {
+    this.preferTimeout = getOption(params, 'preferTimeout', this.preferTimeout)
+    this.fixedTimeStep = getOption(params, 'fixedTimeStep', this.fixedTimeStep)
+    this.isFixedTimeStep = getOption(params, 'isFixedTimeStep', this.isFixedTimeStep)
+    this.recursiveSetup = getOption(params, 'recursiveSetup', this.recursiveSetup)
+    this.recursiveUpdate = getOption(params, 'recursiveUpdate', this.recursiveUpdate)
+    this.recursiveDraw = getOption(params, 'recursiveDraw', this.recursiveDraw)
+  }
+
+  public onAdded(entity: Entity) {
+    this.entity = entity
+    entity.addService(GameLoopComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(GameLoopComponent)
+    this.entity = null
   }
 
   public run() {
     this.tickFunction = () => { this.tick() }
     this.tick()
   }
+
   public pause() {
     this.tickFunction = () => {
       //

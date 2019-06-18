@@ -99,7 +99,7 @@ export class CullState implements CullStateParams {
 
   public assign(state: CullStateParams): CullState {
     for (let key of optionKeys) {
-      if (state.hasOwnProperty(key)) { this[key] = state[key] }
+      if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
   }
@@ -138,7 +138,7 @@ export class CullState implements CullStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of optionKeys) { this.changes[key] = undefined }
+    for (let key of optionKeys) { this.changes[key as any] = undefined }
   }
 
   public static convert(state: string | CullStateOptions): CullStateParams {

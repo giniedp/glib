@@ -56,23 +56,23 @@ export class Gamepads extends Events {
    */
   public state: IGamepadState[] = []
   /**
-   * Whetgher automatic state polling should be activated or not
+   * Whether automatic state polling should be activated or not
    */
   protected autopoll: boolean = true
   /**
-   * Is called on the ```gamepadconnected``` event
+   * Is called on the `gamepadconnected` event
    */
   protected onConnected = this.handleConnectionEvent.bind(this)
   /**
-   * Is called on the ```gamepaddisconnected``` event
+   * Is called on the `gamepaddisconnected` event
    */
   protected onDisconnected = this.handleDisconnectionEvent.bind(this)
   /**
-   * If ```autopoll``` is true then this holds the poll loop to capture a new state frequently
+   * If `autopoll` is true then this holds the poll loop to capture a new state frequently
    */
   protected poll: Loop = null
   /**
-   * Initialises the Gamepads with given options
+   * Initializes the Gamepads with given options
    */
   constructor(options?: IGamepadsOptions) {
     super()
@@ -83,7 +83,7 @@ export class Gamepads extends Events {
   }
 
   /**
-   * Activates all event listeners. If ```autopoll``` is true then
+   * Activates all event listeners. If `autopoll` is true then
    * the poll loop is started
    */
   public activate() {
@@ -106,7 +106,7 @@ export class Gamepads extends Events {
 
   /**
    * Polls all gamepad states and captures the data. If any gamepad state has changed
-   * this triggers the ```changed``` event.
+   * this triggers the `changed` event.
    */
   public pollState(trigger: boolean= true) {
 
@@ -150,7 +150,7 @@ export class Gamepads extends Events {
     result.buttons = result.buttons || []
     result.buttonValues = result.buttonValues || []
     if (!state) {
-      // make sure the interface is fullfilled
+      // make sure the interface is fulfilled
       for (let key of statekeys) { result[key] = void 0 }
       // empty state arrays
       result.axes.length = 0

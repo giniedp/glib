@@ -10,6 +10,9 @@ interface EventRegistry {
   ctx: any
 }
 
+/**
+ * @public
+ */
 export type Callback = (...args: any[]) => void
 
 /**

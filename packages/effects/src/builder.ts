@@ -1,56 +1,72 @@
 import { ShaderProgramOptions } from '@gglib/graphics'
 import { glsl } from './glsl'
 
-export interface ShaderPart {
-  [key: string]: string
+/**
+ * A simple string, a part of shader source code
+ */
+export type ShaderChunk = string
+
+/**
+ * Maps slot names to a ShaderChunk
+ */
+export interface ShaderChunkSet {
+  [key: string]: ShaderChunk
 }
 
-export interface ShaderBlocks {
-  [key: string]: string[]
+/**
+ * ShaderDefines maps a defined KEY to its defined VALUE
+ *
+ * @remarks
+ * - Defines with `true` values are defined as `#define KEY`
+ * - Defines with falsy values (`false`, `null`, `undefined`) are ignored.
+ * - Everything else is defined as `#define KEY VALUE`
+ *
+ * ```
+ * const defines = { foo: true, bar: null, baz: 1234 }
+ * ```
+ *
+ * will resolve in
+ * ```
+ * #define foo
+ * #define baz 1234
+ * ```
+ */
+export interface ShaderDefines {
+  [key: string]: any
 }
 
-export function buildVertexShader(base: string, blocks: ShaderPart[], defines?: { [key: string]: any }): string {
-  return buildShader(base, [{ defines: glsl`#define VERTEX_SHADER` }, ...blocks], defines)
-}
-
-export function buildFragmentShader(base: string, blocks: ShaderPart[], defines?: { [key: string]: any }): string {
-  return buildShader(base, [{ defines: glsl`#define FRAGMENT_SHADER` }, ...blocks], defines)
-}
-
-export function buildProgram(base: string, blocks: ShaderPart[], defines?: { [key: string]: any }): ShaderProgramOptions {
+export function buildProgram(base: string, chunks: ShaderChunkSet[], defines?: ShaderDefines): ShaderProgramOptions {
   return {
-    vertexShader: buildVertexShader(base, blocks, defines),
-    fragmentShader: buildFragmentShader(base, blocks, defines),
+    vertexShader: buildShader(base, [{ defines: glsl`#define VERTEX_SHADER` }, ...chunks], defines),
+    fragmentShader: buildShader(base, [{ defines: glsl`#define FRAGMENT_SHADER` }, ...chunks], defines),
   }
 }
 
-export function buildShader(base: string, blocks: ShaderPart[], defines: { [key: string]: any } = {}): string {
+/**
+ *
+ * @param base
+ * @param chunks
+ * @param defines
+ */
+export function buildShader(base: string, chunks: ShaderChunkSet[], defines: ShaderDefines = {}): string {
   const defs = Object.keys(defines).sort().map((k) => {
-    const def = defines[k]
-    if (def === true) {
+    const value = defines[k]
+    if (value === true) {
       return `#define ${k}`
     }
-    if (def) {
-      return `#define ${k} ${def}`
+    if (value != null && value !== false) {
+      return `#define ${k} ${value}`
     }
-  }).filter((it) => it)
+  }).filter((it) => it).join('\n')
 
-  const blk = blocks.map((it) => {
-    const r: ShaderBlocks = {}
-    Object.keys(it).sort().forEach((k) => {
-      r[k] = it[k].split('\n')
-    })
-    return r
-  })
-
-  return build(base.split('\n'), [{ defines: defs }, ...blk])
+  return build(base, [{ defines: defs }, ...chunks])
 }
 
-export function build(base: string[], blocks: ShaderBlocks[], prefix: string = ''): string {
+function build(base: string, blocks: ShaderChunkSet[], prefix: string = ''): string {
   const result: string[] = []
 
   const blockRegx = /^(\s*)#pragma block:(\w+)(\s*)$/
-  for (const line of base) {
+  for (const line of base.split('\n')) {
     const match = line.match(blockRegx)
     if (match) {
       const indent = match[1]

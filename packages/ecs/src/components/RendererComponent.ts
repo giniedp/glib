@@ -1,120 +1,116 @@
 // tslint:disable:max-classes-per-file
 
 import { Device } from '@gglib/graphics'
-import * as Render from '@gglib/render'
-import { Component } from './../Component'
+import { BasicStage, DrawableData, LightData, Manager as RenderManager, Scene } from '@gglib/render'
+import { OnAdded, OnDraw, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
-import { Visitor } from './../Visitor'
-import { AssetsComponent } from './AssetsComponent'
 import { LightComponent } from './LightComponent'
+import { DrawablesProvider } from './Renderable'
 import { TimeComponent } from './TimeComponent'
 
 /**
  * @public
  */
 export interface CullVisitor {
-  start(entity: Entity, view: Render.View): void
-  add(item: Render.DrawableData): void
+  run(entity: Entity, view: Scene): void
+  addDrawable(item: DrawableData): void
+  addLight(item: LightData): void
 }
 
 /**
  * @public
  */
-export interface RenderableCollector {
-  add(item: Render.DrawableData): void
-}
-
-/**
- * @public
- */
-export interface Renderable {
-  collect(collector: RenderableCollector): void
-}
-
-/**
- * @public
- */
-export class RendererComponent implements Component {
-  public readonly name: string = 'Renderer'
-  public readonly service: boolean = true
-
+export class RendererComponent implements OnAdded, OnRemoved, OnInit, OnUpdate, OnDraw {
   public entity: Entity
-  public enabled: boolean = true
-  public visible: boolean = true
 
   public time: TimeComponent
   public device: Device
-  public assets: AssetsComponent
-  public manager: Render.Manager
+  public manager: RenderManager
   public cullVisitor: CullVisitor = new SimpleCullVisitor()
 
-  public setup() {
-    this.time = this.entity.root.getService('Time')
-    this.device = this.entity.root.getService('Device')
-    this.assets = this.entity.root.getService('Assets')
-    this.manager = new Render.Manager(this.device)
-    this.manager.addView({
+  private toRender: Scene[] = []
+
+  public onAdded(entity: Entity) {
+    this.entity = entity
+    entity.addService(RendererComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(RendererComponent)
+    this.entity = null
+  }
+
+  public onInit() {
+    this.time = this.entity.root.getService(TimeComponent)
+    this.device = this.entity.root.getService(Device)
+    this.manager = new RenderManager(this.device)
+    this.manager.addScene({
+      id: 0,
       enabled: true,
-      steps: [new Render.StepForward()],
+      steps: [new BasicStage()],
       items: [],
       lights: [],
     })
   }
 
-  public update() {
+  public onUpdate() {
     this.manager.update()
     this.manager.binder.updateTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
   }
 
-  public draw() {
+  public onDraw() {
+    this.toRender.length = 0
     this.manager.device.resize()
-    for (let view of this.manager.views) {
-      this.renderView(view)
-    }
-    this.manager.presentViews()
-  }
-
-  private renderView(view: Render.View) {
-    if (!view || !view.camera || view.enabled === false) {
-      return
-    }
-    let camera = view.camera
-    let binder = this.manager.binder
-    view.items.length = 0
-    view.lights.length = 0
-    binder.updateCamera(camera.world, camera.view, camera.projection)
-    this.cullVisitor.start(this.entity.root, view)
-    this.manager.renderView(view)
+    this.manager.scenes.forEach((scene) => {
+      if (!scene || !scene.camera || scene.enabled === false) {
+        return
+      }
+      const camera = scene.camera
+      this.manager.binder.updateCamera(camera.world, camera.view, camera.projection)
+      this.cullVisitor.run(this.entity.root, scene)
+      this.manager.renderScene(scene)
+      this.toRender.push(scene)
+    })
+    this.manager.presentScenes(this.toRender)
   }
 }
 
 /**
  * @public
  */
-export class SimpleCullVisitor implements CullVisitor, Visitor<Entity> {
-  public view: Render.View
+export class SimpleCullVisitor implements CullVisitor {
+  public scene: Scene
 
-  public start(node: Entity, view: Render.View) {
-    this.view = view
-    node.acceptVisitor(this)
+  public run(node: Entity, scene: Scene) {
+    this.scene = scene
+    scene.items.length = 0
+    scene.lights.length = 0
+    this.acceptVisitor(node)
   }
 
-  public visit(entity: Entity) {
-    let comp = entity.services['Renderable'] as Renderable
-    if (comp) {
-      comp.collect(this)
+  public addDrawable(item: DrawableData) {
+    this.scene.items.push(item)
+  }
+
+  public addLight(light: LightData) {
+    this.scene.lights.push(light)
+  }
+
+  private acceptVisitor(node: Entity) {
+    this.visit(node)
+    for (const child of node.children) {
+      this.acceptVisitor(child)
     }
-    let light = entity.services['Light'] as LightComponent
+  }
+
+  private visit(entity: Entity) {
+    const comp: DrawablesProvider = entity.getService(DrawablesProvider, null)
+    if (comp) {
+      comp.collectDrawables(this)
+    }
+    const light = entity.getService(LightComponent, null)
     if (light) {
       this.addLight(light.packedData)
     }
-  }
-
-  public add(item: Render.DrawableData) {
-    this.view.items.push(item)
-  }
-
-  public addLight(light: Render.LightData) {
-    this.view.lights.push(light)
   }
 }

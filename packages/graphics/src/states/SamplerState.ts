@@ -98,8 +98,8 @@ export class SamplerState implements SamplerStateParams {
       this.textureField = value
       this.changes.texture = value
       this.hasChanged = true
-      if (!value.ready) {
-        // TODO:
+      if (value && !value.ready) {
+        // TODO: should we fall back to a default texture?
       }
     }
   }
@@ -214,7 +214,7 @@ export class SamplerState implements SamplerStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key] = undefined }
+    for (let key of propertyKeys) { this.changes[key as any] = undefined }
   }
 
   public static convert(state: SamplerStateParams): SamplerStateParams {

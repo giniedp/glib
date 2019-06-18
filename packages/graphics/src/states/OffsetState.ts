@@ -76,7 +76,7 @@ export class OffsetState implements OffsetStateParams {
 
   public assign(state: OffsetStateParams): OffsetState {
     for (let key of optionKeys) {
-      if (state.hasOwnProperty(key)) { this[key] = state[key] }
+      if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
   }
@@ -112,7 +112,7 @@ export class OffsetState implements OffsetStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of optionKeys) { this.changes[key] = undefined }
+    for (let key of optionKeys) { this.changes[key as any] = undefined }
   }
 
   public static convert(state: string | OffsetStateParams): OffsetStateParams {

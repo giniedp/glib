@@ -1,49 +1,76 @@
-import { extend } from '@gglib/core'
-import { Model as GraphicsModel } from '@gglib/graphics'
+import { Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
-import { Component } from './../Component'
+import { DrawableData } from '@gglib/render'
+import { OnAdded, OnInit, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
-import { CullVisitor } from './RendererComponent'
+import { DrawablesCollector, DrawablesProvider } from './Renderable'
 import { TransformComponent } from './TransformComponent'
 
 /**
  * @public
  */
-export class ModelComponent implements Component {
-  public readonly name: string = 'Renderable'
-  public readonly service: boolean = true
+export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemoved, OnInit {
 
-  public entity: Entity
-  public enabled: boolean = true
+  public get model() {
+    return this.$model
+  }
+  public set model(value: Model) {
+    this.$model = value
+    this.$drawables.length = 0
+    if (value) {
+      this.$drawables = value.meshes.map((it) => {
+        return {
+          drawable: it,
+          material: value.materials[it.materialId],
+          world: this.world,
+          data: null,
+        }
+      })
+    }
+  }
 
-  public model: GraphicsModel
   public transform: TransformComponent
   public world: Mat4 = Mat4.createIdentity()
 
-  constructor(params?: any) {
-    if (params) {
-      extend(this, params)
-    }
+  private $model: Model
+  private $drawables: DrawableData[] = []
+
+  constructor() {
+    super()
   }
-  public setup() {
-    this.transform = this.entity.services.Transform as TransformComponent
+
+  public onAdded(entity: Entity) {
+    entity.addService(ModelComponent, this)
+    entity.addService(DrawablesProvider as any, this as DrawablesProvider)
   }
-  public update() {
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(ModelComponent)
+    entity.removeService(DrawablesProvider)
+  }
+
+  public onInit(entity: Entity) {
+    this.transform = entity.getService(TransformComponent, null)
+  }
+
+  public onUpdate() {
     if (this.transform) {
       this.world.initFrom(this.transform.worldMat)
     }
   }
-  public collect(result: CullVisitor) {
-    if (!this.model) {
-      return
-    }
-    for (const mesh of this.model.meshes) {
-      result.add({
-        drawable: mesh,
-        material: this.model.materials[mesh.materialId],
-        world: this.world,
-        data: null,
-      })
+
+  public collectDrawables(result: DrawablesCollector) {
+    // if (this.model) {
+    //   for (const mesh of this.model.meshes) {
+    //     result.addDrawable({
+    //       drawable: mesh,
+    //       material: this.model.materials[0],
+    //       world: this.world,
+    //     })
+    //   }
+    // }
+    for (const it of this.$drawables) {
+      result.addDrawable(it)
     }
   }
 }

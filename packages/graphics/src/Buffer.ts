@@ -1,5 +1,4 @@
 import { Device } from './Device'
-import { ShaderProgram } from './ShaderProgram'
 import { VertexLayout } from './VertexLayout'
 
 import {

@@ -1,6 +1,7 @@
 import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
-import { IMat, IVec3, Mat4 } from '@gglib/math'
-import { defaultProgram, DefaultProgramDefs } from '../fx'
+import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
+import { defaultProgram, DefaultProgramDefs } from '../programs'
+import { SHADE_NON_FUNCTION, SHADE_PBR_FUNCTION, SHADE_BLINN_FUNCTION, SHADE_COOK_TORRANCE_FUNCTION, SHADE_PHONG_FUNCTION, SHADE_OPTIMIZED_FUNCTION, SHADE_LAMBERT_FUNCTION, SHADE_SZIRMAY_FUNCTION } from '../chunks';
 
 export interface AutoMaterialLight {
   Position: number[]
@@ -13,38 +14,47 @@ const defineMap = {
   Alpha: 'ALPHA',
   AlphaClip: 'ALPHA_CLIP',
   FogColor: 'FOG',
-  SpecularPower: 'SPECULAR_POWER',
+
   DiffuseColor: 'DIFFUSE_COLOR',
-  SpecularColor: 'SPECULAR_COLOR',
-  EmissionColor: 'EMISSION_COLOR',
   DiffuseMap: 'DIFFUSE_MAP',
+  DiffuseMapOffsetScale: 'DIFFUSE_MAP_OFFSET_SCALE',
+
+  SpecularPower: 'SPECULAR_POWER',
+  SpecularColor: 'SPECULAR_COLOR',
   SpecularMap: 'SPECULAR_MAP',
+  SpecularMapOffsetScale: 'SPECULAR_MAP_OFFSET_SCALE',
+
+  EmissionColor: 'EMISSION_COLOR',
   EmissionMap: 'EMISSION_MAP',
+  EmissionMapOffsetScale: 'EMISSION_MAP_OFFSET_SCALE',
+
   NormalMap: 'NORMAL_MAP',
+  NormalMapOffsetScale: 'NORMAL_MAP_OFFSET_SCALE',
+
   OcclusionMap: 'OCCLUSION_MAP',
-  MetallicRoughnessMap: 'METALLIC_ROUGHNESS_MAP',
+  OcclusionMapOffsetScale: 'OCCLUSION_MAP_OFFSET_SCALE',
+
   MetallicRoughness: 'METALLIC_ROUGHNESS',
+  MetallicRoughnessMap: 'METALLIC_ROUGHNESS_MAP',
 }
 
-const shadeMap = {
-  none: 'shadeNone',
-  lambert: 'shadeLambert',
-  blinn: 'shadeBlinn',
-  phong: 'shadePhong',
-  cookTorrance: 'shadeCookTorrance',
-  cookOptimized: 'shadeOptimized',
-  pbr: 'shadePbr',
-}
+export type ShadeFunction = SHADE_NON_FUNCTION
+  | SHADE_PBR_FUNCTION
+  | SHADE_BLINN_FUNCTION
+  | SHADE_COOK_TORRANCE_FUNCTION
+  | SHADE_PHONG_FUNCTION
+  | SHADE_OPTIMIZED_FUNCTION
+  | SHADE_LAMBERT_FUNCTION
+  | SHADE_SZIRMAY_FUNCTION
 
 const tempMat4 = Mat4.createIdentity()
 
 export class AutoMaterial extends Material {
 
-  public get ShadeFunction() {
+  public get ShadeFunction(): ShadeFunction {
     return this.defines.SHADE_FUNCTION
   }
-  public set ShadeFunction(name: string) {
-    name = shadeMap[name] || name
+  public set ShadeFunction(name: ShadeFunction) {
     if (this.ShadeFunction !== name) {
       this.defines.SHADE_FUNCTION = name
       this.hasChanged = true
@@ -291,6 +301,13 @@ export class AutoMaterial extends Material {
     this.parameters.DiffuseMap = v
   }
 
+  public get DiffuseMapOffsetScale(): number[] | IVec4 {
+    return this.parameters.DiffuseMapOffsetScale
+  }
+  public set DiffuseMapOffsetScale(v: number[] | IVec4) {
+    this.parameters.DiffuseMapOffsetScale = v
+  }
+
   /**
    * Gets and sets the specular texture.
    *
@@ -304,6 +321,13 @@ export class AutoMaterial extends Material {
   }
   public set SpecularMap(v: Texture) {
     this.parameters.SpecularMap = v
+  }
+
+  public get SpecularMapOffsetScale(): number[] | IVec4 {
+    return this.parameters.SpecularMapOffsetScale
+  }
+  public set SpecularMapOffsetScale(v: number[] | IVec4) {
+    this.parameters.SpecularMapOffsetScale = v
   }
 
   /**
@@ -321,6 +345,13 @@ export class AutoMaterial extends Material {
     this.parameters.EmissionMap = v
   }
 
+  public get EmissionMapOffsetScale(): number[] | IVec4 {
+    return this.parameters.EmissionMapOffsetScale
+  }
+  public set EmissionMapOffsetScale(v: number[] | IVec4) {
+    this.parameters.EmissionMapOffsetScale = v
+  }
+
   /**
    * Gets and sets the normal texture.
    *
@@ -334,6 +365,13 @@ export class AutoMaterial extends Material {
     this.parameters.NormalMap = v
   }
 
+  public get NormalMapOffsetScale(): number[] | IVec4 {
+    return this.parameters.NormalMapOffsetScale
+  }
+  public set NormalMapOffsetScale(v: number[] | IVec4) {
+    this.parameters.NormalMapOffsetScale = v
+  }
+
   /**
    * Gets and sets the occlusion texture.
    *
@@ -345,6 +383,13 @@ export class AutoMaterial extends Material {
   }
   public set OcclusionMap(v: Texture) {
     this.parameters.OcclusionMap = v
+  }
+
+  public get OcclusionMapOffsetScale(): number[] | IVec4 {
+    return this.parameters.OcclusionMapOffsetScale
+  }
+  public set OcclusionMapOffsetScale(v: number[] | IVec4) {
+    this.parameters.OcclusionMapOffsetScale = v
   }
 
   /**
@@ -375,14 +420,22 @@ export class AutoMaterial extends Material {
     this.parameters.MetallicRoughness = v
   }
 
+  private useTangentPlane = false
+  public get UseTangentPlane() {
+    return this.useTangentPlane
+  }
+  public set UseTangentPlane(v: boolean) {
+    if (this.useTangentPlane !== v) {
+      this.useTangentPlane = v
+      this.hasChanged = true
+    }
+  }
+
   public get effect() {
     if (this.hasChanged || this.$effect == null) {
       this.updateEffect()
     }
     return this.$effect
-  }
-  public set effect(effect: ShaderEffect) {
-    this.$effect = effect
   }
 
   private defines: DefaultProgramDefs = {}
@@ -431,18 +484,27 @@ export class AutoMaterial extends Material {
   }
 
   private updateEffect() {
-    if (this.NormalMap) {
+    if (this.useTangentPlane) {
+      delete this.defines.V_TANGENT
+      this.defines.V_TANGENT_PLANE = true
+    } else if (this.NormalMap) {
       this.defines.V_TANGENT = true
+      delete this.defines.V_TANGENT_PLANE
     } else {
       delete this.defines.V_TANGENT
     }
 
+    if (this.$effect) {
+      this.$effect.techniques.forEach((t) => {
+        t.passes.forEach((p) => {
+          p.program.destroy()
+        })
+      })
+      this.$effect = null
+    }
+
     this.$effect = this.device.createEffect({
-      techniques: [{
-        passes: [{
-          program: defaultProgram(this.defines),
-        }],
-      }],
+      program: defaultProgram(this.defines),
     })
     this.hasChanged = false
   }

@@ -61,7 +61,7 @@ export const md5meshToModelOptions = loader<null, ModelOptions>({
       if (mtlIds.indexOf(mesh.shader) === -1) {
         mtlIds.push(mesh.shader)
       }
-      return builder.endMeshOptions({
+      return builder.endMesh({
         name: mesh.name,
         materialId: mtlIds.indexOf(mesh.shader),
       })

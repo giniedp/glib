@@ -15,7 +15,7 @@ function prepareSnippet(snippet: string): string {
     lines[i] = lines[i].substr(minIndent)
   }
 
-  // remobe leading blank lines
+  // remove leading blank lines
   while (lines.length && !lines[0].trim()) {
     lines.shift()
   }

@@ -1,6 +1,5 @@
 import { ModelBuilder } from '../ModelBuilder'
 import { addParametricSurface } from './addParametricSurface'
-import { formulas } from './formulas'
 
 const option = (opt: any, value: any) => opt == null ? value : opt
 const sin = Math.sin
@@ -38,5 +37,3 @@ export function buildMobiusStrip(builder: ModelBuilder, options: BuildMobiusStri
     tv: option(options.tesselation, 16),
   })
 }
-
-formulas['MobiusStrip'] = buildMobiusStrip

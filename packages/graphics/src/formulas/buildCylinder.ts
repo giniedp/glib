@@ -1,6 +1,5 @@
 import { ModelBuilder } from '../ModelBuilder'
 import { addParametricSurface } from './addParametricSurface'
-import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -55,5 +54,3 @@ export function buildCylinder(builder: ModelBuilder, options: {
     v1: o,
   })
 }
-
-formulas['Cylinder'] = buildCylinder

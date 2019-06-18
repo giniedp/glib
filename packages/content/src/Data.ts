@@ -1,10 +1,10 @@
-import { DataUri } from 'core'
+import { DataUri } from '@gglib/core'
 import { ContentType } from './ContentType'
 
  /**
   * @public
   */
-export interface Data<T = string | ArrayBuffer | Blob | Document | {}> {
+export interface Data<T = string | ArrayBuffer | Blob | Document | any> {
   /**
    * The source url
    */

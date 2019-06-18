@@ -218,7 +218,7 @@ export class Manager {
    *    ```
    *
    */
-  public loadBatch(batch: { [key: string]: any }): Promise<{ [key: string]: any }> {
+  public loadBatch(batch: { [key: string]: [string, any] }): Promise<{ [key: string]: any }> {
     let result = {}
 
     const promises: Array<Promise<any>> = []
@@ -232,37 +232,11 @@ export class Manager {
     }
 
     Object.keys(batch).forEach((key) => {
-      const targetType = key
-      const source = batch[targetType]
+      const [source, targetType] = batch[key]
 
-      if (isString(source)) {
-        enqueue(this.load(targetType, source).then((res) => {
-          result[targetType] = res
-        }))
-        return
-      }
-
-      if (isArray(source)) {
-        const list: any[] = result[targetType] = []
-        source.forEach((src, index) => {
-          enqueue(this.load(targetType, src).then((res) => {
-            list[index] = res
-          }))
-        })
-        return
-      }
-
-      if (isObject(source)) {
-        const namedBatch = result[key] = {}
-        Object.keys(source).forEach((name) => {
-          enqueue(this.load(targetType, source[name]).then((res) => {
-            namedBatch[name] = res
-          }))
-        })
-        return
-      }
-
-      throw new Error('invalid configuration')
+      enqueue(this.load(source, targetType).then((res) => {
+        result[key] = res
+      }))
     })
 
     return Promise.all(promises).then(() => result)
@@ -295,11 +269,13 @@ export class Manager {
    * @param options Options which will be available in the loading context.
    */
   public async load<T = any>(src: string, targetType: symbol | Type<T>, options: { [key: string]: any } = {}): Promise<T> {
-
-    const remapped = this.rewriteUrl(src)
-    if (remapped) {
+    const requested = Uri.merge(location.href, src)
+    const remapped = this.rewriteUrl(requested)
+    if (requested !== remapped) {
       Log.i(`[Content.Manager] remap Url ${src} => ${remapped}`)
       src = remapped
+    } else {
+      src = requested
     }
 
     let key: string

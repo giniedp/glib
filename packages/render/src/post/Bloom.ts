@@ -1,21 +1,62 @@
-import { BlendState, Color, DepthState, ShaderEffect, StencilState } from '@gglib/graphics'
+import { glsl } from '@gglib/effects'
+import {
+  BlendState,
+  Color,
+  createShaderEffect,
+  CullState,
+  DepthState,
+  Device,
+  ShaderEffect,
+  ShaderFxDocument,
+  StencilState,
+} from '@gglib/graphics'
+
 import { Manager } from '../Manager'
-import { Step } from '../Types'
+import { Stage } from '../Types'
 
 function gauss(n: number, theta: number) {
   return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)))
 }
 
+export interface BloomOptions {
+  enabled?: boolean
+  glowCut?: number
+  multiplier?: number
+  gaussSigma?: number
+}
+
+function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
+  if (option in options) {
+    return options[option] as any
+  }
+  return fallback
+}
+
 /**
  * @public
  */
-export class Bloom implements Step {
+export class Bloom implements Stage {
+  public get ready() {
+    return this.effect != null
+  }
+
+  public enabled: boolean = true
   public glowCut: number = 0.6
   public multiplier: number = 0.83
   public gaussSigma: number = 0.5
   private offsetWeights: number[][]
+  private effect: ShaderEffect
 
-  constructor(private effect: ShaderEffect) {
+  constructor(private device: Device, options: BloomOptions = {}) {
+    this.enabled = getOption(options, 'enabled', this.enabled)
+    this.glowCut = getOption(options, 'glowCut', this.glowCut)
+    this.multiplier = getOption(options, 'multiplier', this.multiplier)
+    this.gaussSigma = getOption(options, 'gaussSigma', this.gaussSigma)
+    this.createEffect()
+  }
+
+  private async createEffect() {
+    this.effect = await createShaderEffect(this.device, SHADER)
   }
 
   private updateGauss(texelX: number, texelY: number) {
@@ -50,6 +91,10 @@ export class Bloom implements Step {
   }
 
   public render(manager: Manager) {
+    if (!this.ready || !this.enabled) {
+      return
+    }
+
     let baseTarget = manager.beginStep()
 
     // DEBUG
@@ -66,6 +111,7 @@ export class Bloom implements Step {
     device.depthState = DepthState.Default
     device.stencilState = StencilState.Default
     device.blendState = BlendState.Default
+    device.cullState = CullState.CullNone
 
     // ------------------------------------------------
     // [1] GLOW CUT -> rt1
@@ -79,9 +125,9 @@ export class Bloom implements Step {
     device.setRenderTarget(null)
 
     // DEBUG
-    // manager.releaseTarget(rt2);
-    // manager.endEffect(rt1);
-    // return;
+    // manager.releaseTarget(rt2)
+    // manager.endStep(rt1)
+    // return
 
     // ------------------------------------------------
     // [2] HORIZONTAL BLUR -> rt2
@@ -98,9 +144,9 @@ export class Bloom implements Step {
     device.setRenderTarget(null)
 
     // DEBUG
-    // manager.releaseTarget(rt1);
-    // manager.endEffect(rt2);
-    // return;
+    // manager.releaseTarget(rt2)
+    // manager.endStep(rt1)
+    // return
 
     // ------------------------------------------------
     // [2] VERTICAL BLUR -> rt1
@@ -117,9 +163,9 @@ export class Bloom implements Step {
     device.setRenderTarget(null)
 
     // DEBUG
-    // manager.releaseTarget(rt2);
-    // manager.endEffect(rt1);
-    // return;
+    // manager.releaseTarget(rt2)
+    // manager.endStep(rt1)
+    // return
 
     // ------------------------------------------------
     // [4] COMBINE BOOM -> pongTrarget
@@ -136,4 +182,133 @@ export class Bloom implements Step {
     manager.releaseTarget(rt1)
     manager.endStep(rt2)
   }
+}
+
+const SHADER: ShaderFxDocument = {
+  name: 'bloom',
+  program: glsl`
+    precision highp float;
+    precision highp int;
+
+    // @binding position
+    attribute vec3 position;
+
+    // @binding texture
+    attribute vec2 texture;
+
+    varying vec2 texCoord;
+
+    // @default 0.75
+    uniform float threshold;
+
+    // x -> offset horizontal
+    // y -> offset vertical
+    // z -> weight horizontal
+    // w -> weight vertical
+    uniform vec4 offsetWeights[9];
+
+    // @binding texture
+    // @register 0
+    uniform sampler2D textureSampler;
+    // @binding bloomTexture
+    // @register 1
+    uniform sampler2D bloomSampler;
+
+    vec4 glowCut(vec2 uv) {
+      vec3 color = texture2D(textureSampler, uv).rgb;
+      float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+      if (luminance > threshold) {
+        return vec4(color.rgb, 1.0);
+      }
+      return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
+    vec4 hBlur(vec2 uv) {
+      vec4 color = vec4(0);
+      for( int i = 0; i < 9; i++ ) {
+          color += texture2D(textureSampler, uv + vec2(offsetWeights[i].x, 0.0)) * offsetWeights[i].z;
+      }
+      return vec4(color.rgb, 1.0);
+    }
+
+    vec4 vBlur(vec2 uv) {
+      vec4 color = vec4(0);
+      for( int i = 0; i < 9; i++ ) {
+          color += texture2D(textureSampler, uv + vec2(0.0, offsetWeights[i].y)) * offsetWeights[i].w;
+      }
+      return vec4(color.rgb, 1.0);
+    }
+
+
+    vec4 combine(vec2 uv) {
+      vec3 base = texture2D(textureSampler, uv).rgb;
+      vec3 bloom = texture2D(bloomSampler, uv).rgb * 0.5;
+
+      base *= (1.0 - clamp(bloom, vec3(0), vec3(1)));
+
+      return vec4((base + bloom).rgb, 1.0);
+    }
+  `,
+
+  technique: [{
+    name: 'glowCut',
+    pass: {
+      vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: glsl`
+        void main() {
+          gl_FragColor = glowCut(texCoord);
+        }
+      `,
+    },
+  }, {
+    name: 'hBlur',
+    pass: {
+      vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: glsl`
+        void main() {
+          gl_FragColor = hBlur(texCoord);
+        }
+      `,
+    },
+  }, {
+    name: 'vBlur',
+    pass: {
+      vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: glsl`
+        void main() {
+          gl_FragColor = vBlur(texCoord);
+        }
+      `,
+    },
+  }, {
+    name: 'combine',
+    pass: {
+      vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: glsl`
+        void main() {
+          gl_FragColor = combine(texCoord);
+        }
+      `,
+    },
+  }],
 }

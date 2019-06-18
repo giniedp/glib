@@ -1,6 +1,6 @@
-import { copy, Log } from '@gglib/core'
+import { copy } from '@gglib/core'
 
-import { ShaderProgram } from './ShaderProgram'
+import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { ShaderTechnique, ShaderTechniqueOptions } from './ShaderTechnique'
 
 import { Device } from './Device'
@@ -39,7 +39,7 @@ export interface ShaderEffectOptions {
    * If this is given, then `tehniques` and `technique` options are ignored and
    * instead created from this single program
    */
-  program?: ShaderProgram
+  program?: ShaderProgram | ShaderProgramOptions
 }
 
 /**
@@ -121,10 +121,16 @@ export class ShaderEffect {
     this.parameters = options.parameters || {}
     this.techniques = []
 
-    if (options.program) {
+    let program: ShaderProgram
+    if (options.program instanceof ShaderProgram) {
+      program = options.program
+    } else if (options.program) {
+      program = new ShaderProgram(this.device, options.program)
+    }
+    if (program) {
       this.techniques.push(new ShaderTechnique(this.device, {
         passes: [{
-          program: options.program,
+          program: program,
         }],
       }))
       this.technique = this.getTechnique(0)

@@ -1,6 +1,18 @@
 export * from './Binder'
 export * from './Manager'
-export * from './StepForward'
+export * from './BasicStage'
 export * from './Types'
-import * as PostImport from './post'
-export const Post = PostImport
+
+import {
+  Bloom,
+  BloomKawase,
+  Pixelate,
+  Tonemap,
+} from './post'
+
+export const Post = {
+  Bloom,
+  BloomKawase,
+  Pixelate,
+  Tonemap,
+}

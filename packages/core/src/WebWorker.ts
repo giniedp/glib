@@ -1,8 +1,19 @@
 // tslint:disable max-classes-per-file
 import { Log } from './Log'
 
+/**
+ * @public
+ */
 export const isWorker = typeof self['importScripts'] === 'function'
+
+/**
+ * @public
+ */
 export const isWindowContext = typeof self['importScripts'] !== 'function'
+
+/**
+ * @public
+ */
 export const isSupported = typeof Worker !== 'undefined'
 
 /**
@@ -23,6 +34,9 @@ export interface WorkResponse<T = any> extends WorkRequest {
   result: T
 }
 
+/**
+ * @public
+ */
 export type TaskFunction<T> = (...args: any[]) => T|Promise<T>
 
 interface BackgroundTask {
@@ -34,6 +48,9 @@ interface BackgroundTask {
 const workers: PromiseWorker[] = []
 const methods: { [key: string]: BackgroundTask } = {}
 
+/**
+ * @public
+ */
 function enable(script: string, num: number = 1): boolean {
   if (!isSupported || isWorker) {
     return false
@@ -52,15 +69,24 @@ function enable(script: string, num: number = 1): boolean {
   return true
 }
 
+/**
+ * @public
+ */
 function count() {
   return workers.length
 }
 
+/**
+ * @public
+ */
 function disable() {
   workers.forEach((element) => element.terminate())
   workers.length = 0
 }
 
+/**
+ * @public
+ */
 function register<T>(method: string, func: TaskFunction<T>, workerId: number = 0): (...args: any[]) => Promise<T> {
   methods[method] = {
     name: method,
@@ -70,10 +96,16 @@ function register<T>(method: string, func: TaskFunction<T>, workerId: number = 0
   return (...params: any[]) => execute(method, ...params)
 }
 
+/**
+ * @public
+ */
 function unregister(method: string) {
   delete methods[method]
 }
 
+/**
+ * @public
+ */
 function execute<T>(method: string, ...params: any[]): Promise<T> {
   const task = methods[method]
   if (!task) {
@@ -152,6 +184,9 @@ export function workRequestListener(channel: { postMessage: (message: WorkRespon
   }
 }
 
+/**
+ * @public
+ */
 export const WebWorker = {
   count, enable, disable, register, unregister, execute,
 }

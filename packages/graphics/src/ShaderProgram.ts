@@ -14,7 +14,7 @@ export interface ShaderProgramOptions {
    *
    * @remarks
    * If it is a string it is assumed to be the source code for the vertex shader.
-   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructir.
+   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
   vertexShader?: string|ShaderOptions|Shader,
   /**
@@ -22,7 +22,7 @@ export interface ShaderProgramOptions {
    *
    * @remarks
    * If it is a string it is assumed to be the source code for the fragment shader.
-   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructir.
+   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
   fragmentShader?: string|ShaderOptions|Shader,
   /**

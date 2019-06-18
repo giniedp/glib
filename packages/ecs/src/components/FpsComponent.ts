@@ -1,17 +1,11 @@
-import { Component } from './../Component'
+import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { TimeComponent } from './TimeComponent'
 
 /**
  * @public
  */
-export class FpsComponent implements Component {
-  public readonly name: string = 'Fps'
-  public readonly service: boolean = true
-
-  public entity: Entity
-  public enabled: boolean = true
-  public visible: boolean = false
+export class FpsComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
   public frames: number
   public fps: number
@@ -24,8 +18,16 @@ export class FpsComponent implements Component {
     this.reset()
   }
 
-  public setup() {
-    this.time = this.entity.root.getService('Time')
+  public onAdded(entity: Entity) {
+    entity.addService(FpsComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(FpsComponent)
+  }
+
+  public onInit(entity: Entity) {
+    this.time = entity.root.getService(TimeComponent)
   }
 
   public reset() {
@@ -35,7 +37,7 @@ export class FpsComponent implements Component {
     this.fpsCounter = 0
   }
 
-  public update() {
+  public onUpdate() {
     this.frames += 1
     this.fpsTimer += this.time.elapsedMsInReal
     this.fpsCounter += 1

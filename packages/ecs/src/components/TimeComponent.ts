@@ -1,16 +1,11 @@
 import { extend, getTime } from '@gglib/core'
-import { Component } from './../Component'
+import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 
 /**
  * @public
  */
-export class TimeComponent implements Component {
-  public readonly name: string = 'Time'
-  public readonly service: boolean = true
-
-  public entity: Entity
-  public enabled: boolean = true
+export class TimeComponent implements OnAdded, OnRemoved, OnUpdate {
 
   public current: number
   public elapsedMsInGame: number
@@ -31,7 +26,15 @@ export class TimeComponent implements Component {
     this.totalMsInReal = 0
   }
 
-  public update(ms: number) {
+  public onAdded(entity: Entity) {
+    entity.addService(TimeComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(TimeComponent)
+  }
+
+  public onUpdate(ms: number) {
     const time = getTime()
     this.elapsedMsInGame = ms
     this.totalMsInGame += this.elapsedMsInGame

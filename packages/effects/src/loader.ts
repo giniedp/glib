@@ -1,39 +1,6 @@
 import { loader } from '@gglib/content'
 import { Material, MaterialOptions, ShaderEffect, ShaderEffectOptions, ShaderProgramOptions } from '@gglib/graphics'
-import { defaultProgram, DefaultProgramDefs } from './fx'
-
-const paramDefineMap = {
-  Alpha: 'ALPHA',
-  AlphaClip: 'ALPHA_CLIP',
-
-  AmbientColor: 'AMBIENT_COLOR',
-  AmbientMap: 'AMBIENT_MAP',
-  AmbientMapOffsetScale: 'AMBIENT_MAP_OFFSET_SCALE',
-
-  DiffuseColor: 'DIFFUSE_COLOR',
-  DiffuseMap: 'DIFFUSE_MAP',
-  DiffuseMapOffsetScale: 'DIFFUSE_MAP_OFFSET_SCALE',
-
-  SpecularColor: 'SPECULAR_COLOR',
-  SpecularMap: 'SPECULAR_MAP',
-  SpecularMapOffsetScale: 'SPECULAR_MAP_OFFSET_SCALE',
-
-  EmissionColor: 'EMISSION_COLOR',
-  EmissionMap: 'EMISSION_MAP',
-  EmissionMapOffsetScale: 'EMISSION_MAP_OFFSET_SCALE',
-
-  MetallicRoughnessMap: 'METALLIC_ROUGHNESS_MAP',
-  MetallicRoughnessMapOffsetScale: 'METALLIC_ROUGHNESS_MAP_OFFSET_SCALE',
-
-  OcclusionMap: 'OCCLUSION_MAP',
-  OcclusionMapOffsetScale: 'OCCLUSION_MAP_OFFSET_SCALE',
-
-  NormalMap: 'NORMAL_MAP',
-  NormalMapOffsetScale: 'NORMAL_MAP_OFFSET_SCALE',
-
-  TextureOffsetScale: 'TEXTURE1_OFFSET_SCALE',
-  Texture2OffsetScale: 'TEXTURE2_OFFSET_SCALE',
-}
+import { defaultProgram, DefaultProgramDefs } from './programs'
 
 export const materialOptionsToShaderEffectOptions = loader<MaterialOptions, ShaderEffectOptions>({
   input: Material.Options,
@@ -51,9 +18,21 @@ export const materialOptionsToShaderEffectOptions = loader<MaterialOptions, Shad
     const params = input.parameters || {}
 
     const defines: DefaultProgramDefs = {}
+
     if (params.AlphaClip != null) {
       defines.ALPHA_CLIP = true
     }
+
+    if (params.AmbientColor != null) {
+      defines.AMBIENT_COLOR = true
+    }
+    if (params.AmbientMap) {
+      defines.AMBIENT_MAP = true
+    }
+    if (params.AmbientMapOffsetScale) {
+      defines.AMBIENT_MAP_OFFSET_SCALE = params.AmbientMapOffsetScale
+    }
+
     if (params.DiffuseColor) {
       defines.DIFFUSE_COLOR = true
     }
@@ -61,36 +40,48 @@ export const materialOptionsToShaderEffectOptions = loader<MaterialOptions, Shad
       defines.DIFFUSE_MAP = true
     }
     if (params.DiffuseMapOffsetScale) {
-      defines.DIFFUSE_MAP_OFFSET_SCALE = true
+      defines.DIFFUSE_MAP_OFFSET_SCALE = params.DiffuseMapOffsetScale
     }
 
-    if (params.SpecularMap) {
-      defines.SPECULAR_MAP = true
-    }
     if (params.SpecularColor) {
       defines.SPECULAR_COLOR = true
     }
+    if (params.SpecularMap) {
+      defines.SPECULAR_MAP = true
+    }
+    if (params.SpecularMapOffsetScale) {
+      defines.SPECULAR_MAP_OFFSET_SCALE = params.SpecularMapOffsetScale
+    }
 
+    if (params.EmissionColor) {
+      defines.EMISSION_COLOR = true
+    }
     if (params.EmissionMap) {
       defines.EMISSION_MAP = true
     }
-    if (params.EmissionColor) {
-      defines.EMISSION_COLOR = true
+    if (params.EmissionMapOffsetScale) {
+      defines.EMISSION_MAP_OFFSET_SCALE = params.EmissionMapOffsetScale
     }
 
     if (params.OcclusionMap) {
       defines.OCCLUSION_MAP = true
     }
+    if (params.OcclusionMapOffsetScale) {
+      defines.OCCLUSION_MAP_OFFSET_SCALE = params.OcclusionMapOffsetScale
+    }
 
     if (params.NormalMap) {
       defines.NORMAL_MAP = true
     }
+    if (params.NormalMapOffsetScale) {
+      defines.NORMAL_MAP_OFFSET_SCALE = params.NormalMapOffsetScale
+    }
 
     if (params.TextureOffsetScale) {
-      defines.V_TEXTURE1_OFFSET_SCALE = true
+      defines.V_TEXTURE1_OFFSET_SCALE = params.TextureOffsetScale
     }
     if (params.Texture2OffsetScale) {
-      defines.V_TEXTURE2_OFFSET_SCALE = true
+      defines.V_TEXTURE2_OFFSET_SCALE = params.Texture2OffsetScale
     }
 
     let options: ShaderProgramOptions

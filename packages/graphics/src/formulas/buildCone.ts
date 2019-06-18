@@ -1,6 +1,5 @@
 import { ModelBuilder } from '../ModelBuilder'
 import { addParametricSurface } from './addParametricSurface'
-import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -56,5 +55,3 @@ export function buildCone(builder: ModelBuilder, options: BuildConeOptions = {})
     tv: withDefault(options.tesselation, 32),
   })
 }
-
-formulas['Cone'] = buildCone

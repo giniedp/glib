@@ -33,7 +33,7 @@ const hasPointerlockApi = !!cross.requestPointerLock
  * @public
  */
 export interface IMouseOptions {
-  element?: EventTarget,
+  eventTarget?: EventTarget,
   events?: string[]
 }
 
@@ -61,16 +61,16 @@ export interface IMouseState {
  * Captures the mouse state.
  *
  * @remarks
- * The mouse events are captured at the given {@link IMouseOptions.element}. Using these events a mouse state
- * is recorded. On each recoginzed  state change the `changed` event is triggered.
+ * The mouse events are captured at the given {@link IMouseOptions.eventTarget}. Using these events a mouse state
+ * is recorded. On each recognized  state change the `changed` event is triggered.
  *
  * @public
  */
 export class Mouse extends Events {
   /**
-   * The target element at which to listen for mouse events.
+   * The target eventTarget at which to listen for mouse events.
    */
-  protected readonly element: EventTarget = document
+  protected readonly eventTarget: EventTarget = document
 
   /**
    * The current Mouse state
@@ -135,34 +135,34 @@ export class Mouse extends Events {
   protected readonly onClearStateListener: EventListener = this.onClearState.bind(this)
 
   /**
-   * Initializes the Mouse with given options and activates the captrue listeners
+   * Initializes the Mouse with given options and activates the capture listeners
    */
   constructor(options?: IMouseOptions) {
     super()
     if (options) {
-      this.element = (options.element || this.element)
+      this.eventTarget = (options.eventTarget || this.eventTarget)
       this.delegatedEvents = (options.events || this.delegatedEvents)
     }
     this.activate()
   }
 
   /**
-   * Activates the captrue listeners
+   * Activates the capture listeners
    */
   public activate() {
     this.deactivate()
     // update state events
-    this.element.addEventListener('mousewheel', this.onMouseWheelListener)
-    this.element.addEventListener('mousemove', this.onMouseMoveListener)
-    this.element.addEventListener('mousedown', this.onMouseDownListener)
-    this.element.addEventListener('mouseup', this.onMouseUpListener)
+    this.eventTarget.addEventListener('mousewheel', this.onMouseWheelListener)
+    this.eventTarget.addEventListener('mousemove', this.onMouseMoveListener)
+    this.eventTarget.addEventListener('mousedown', this.onMouseDownListener)
+    this.eventTarget.addEventListener('mouseup', this.onMouseUpListener)
     // visibility events
     onDocumentVisibilityChange(this.onClearStateListener)
     document.addEventListener('blur', this.onClearStateListener)
     window.addEventListener('blur', this.onClearStateListener)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.element.addEventListener(name, this.onEvent)
+      this.eventTarget.addEventListener(name, this.onEvent)
     }
     // pointerlock events
     if (hasPointerlockApi) {
@@ -172,21 +172,21 @@ export class Mouse extends Events {
   }
 
   /**
-   * Deactivates the captrue listeners
+   * Deactivates the capture listeners
    */
   public deactivate() {
     // update logic events
-    this.element.removeEventListener('mousewheel', this.onMouseWheelListener)
-    this.element.removeEventListener('mousemove', this.onMouseMoveListener)
-    this.element.removeEventListener('mousedown', this.onMouseDownListener)
-    this.element.removeEventListener('mouseup', this.onMouseUpListener)
+    this.eventTarget.removeEventListener('mousewheel', this.onMouseWheelListener)
+    this.eventTarget.removeEventListener('mousemove', this.onMouseMoveListener)
+    this.eventTarget.removeEventListener('mousedown', this.onMouseDownListener)
+    this.eventTarget.removeEventListener('mouseup', this.onMouseUpListener)
     // visibility events
     offDocumentVisibilityChange(this.onClearStateListener)
     document.removeEventListener('blur', this.onClearStateListener)
     window.removeEventListener('blur', this.onClearStateListener)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.element.removeEventListener(name, this.onEvent)
+      this.eventTarget.removeEventListener(name, this.onEvent)
     }
     // pointerlock events
     if (hasPointerlockApi) {
@@ -222,11 +222,11 @@ export class Mouse extends Events {
       Log.w('[Mouse] pointerlock api is not available')
       return
     }
-    if (this.element === document[cross.pointerLockElement]) {
+    if (this.eventTarget === document[cross.pointerLockElement]) {
       return
     }
-    if (this.element instanceof Element) {
-      this.element[cross.requestPointerLock]()
+    if (this.eventTarget instanceof Element) {
+      this.eventTarget[cross.requestPointerLock]()
     } else {
       Log.w('[Mouse] lock() is only available for elements of type "Element"')
     }
@@ -277,8 +277,8 @@ export class Mouse extends Events {
     s.movementY = e[cross.movementY]
     s.x = e.clientX
     s.y = e.clientY
-    if (this.element['getBoundingClientRect']) {
-      let rect = this.element['getBoundingClientRect']()
+    if (this.eventTarget['getBoundingClientRect']) {
+      let rect = this.eventTarget['getBoundingClientRect']()
       s.x = e.clientX - rect.left
       s.y = e.clientY - rect.top
     }

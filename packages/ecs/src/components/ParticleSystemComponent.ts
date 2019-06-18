@@ -1,14 +1,14 @@
 // tslint:disable max-classes-per-file
-import * as Graphics from 'graphics'
-import { IVec3 } from 'math'
-import { Component } from '../Component'
+import { BlendStateParams, Buffer, Color, Device, Texture } from '@gglib/graphics'
+import { IVec3 } from '@gglib/math'
+import { OnAdded, OnInit, OnRemoved, OnUpdate } from '../Component'
 import { Entity } from '../Entity'
 
 /**
  * @public
  */
 export interface ParticleSystemSettings {
-  texture: Graphics.Texture
+  texture: Texture
   maxParticles: number
   duration: number
   // If greater than zero, some particles will last a shorter time than others.
@@ -72,7 +72,7 @@ export interface ParticleSystemSettings {
   maxEndSize: number // = 100;
 
   // Alpha blending settings.
-  blendState: Graphics.BlendStateParams // = BlendState.NonPremultiplied;
+  blendState: BlendStateParams // = BlendState.NonPremultiplied;
 }
 
 export class ParticlesWriter {
@@ -130,30 +130,18 @@ export class ParticlesWriter {
   }
 }
 
-export class ParticleSystemComponent implements Component {
-  /**
-   * The entity
-   */
-  public entity: Entity
-  /**
-   * Name of the component
-   */
-  public readonly name: string = 'ParticleSystem'
-  /**
-   * Whether this is a service
-   */
-  public readonly service: boolean = true
+export class ParticleSystemComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
-  public device: Graphics.Device
+  public device: Device
 
   /**
    * The vertex buffer
    */
-  private vertexBuffer: Graphics.Buffer
+  private vertexBuffer: Buffer
   /**
    * The index buffer
    */
-  private indexBuffer: Graphics.Buffer
+  private indexBuffer: Buffer
   /**
    * The particle data
    */
@@ -168,11 +156,19 @@ export class ParticleSystemComponent implements Component {
 
   private settings: ParticleSystemSettings
 
-  public setup() {
-    this.device = this.entity.getService('Device')
+  public onAdded(entity: Entity) {
+    entity.addService(ParticleSystemComponent, this)
   }
 
-  public update(dt: number) {
+  public onRemoved(entity: Entity) {
+    entity.removeService(ParticleSystemComponent)
+  }
+
+  public onInit(entity: Entity) {
+    this.device = entity.getService(Device)
+  }
+
+  public onUpdate(dt: number) {
     this.time += dt
     this.retireParticles()
     this.freeParticles()
@@ -205,7 +201,7 @@ export class ParticleSystemComponent implements Component {
     velocity.z += hVelocity * Math.sin(hAngle)
     velocity.y += this.lerp(this.settings.minVerticalVelocity, this.settings.maxVerticalVelocity, Math.random())
 
-    const random = Graphics.Color.xyzw(Math.random(), Math.random(), Math.random(), Math.random())
+    const random = Color.xyzw(Math.random(), Math.random(), Math.random(), Math.random())
     for (let i = 0; i < 4; i++) {
       this.particles.seek(this.startFree * 4 + i)
       this.particles.setPosition(position.x, position.y, position.z)

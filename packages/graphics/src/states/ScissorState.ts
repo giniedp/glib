@@ -108,7 +108,7 @@ export class ScissorState implements ScissorStateParams {
   public assign(state: ScissorStateParams= {}): ScissorState {
     for (const key of paramNames) {
       if (state.hasOwnProperty(key)) {
-        this[key] = state[key]
+        this[key as any] = state[key]
       }
     }
     return this
@@ -156,7 +156,7 @@ export class ScissorState implements ScissorStateParams {
   private clearChanges() {
     this.hasChanged = false
     for (const key of paramNames) {
-      this.changes[key] = undefined
+      this.changes[key as any] = undefined
     }
   }
 

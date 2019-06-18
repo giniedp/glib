@@ -1,5 +1,6 @@
 import { loaders, Manager, Pipeline } from '@gglib/content'
 import {
+  buildCube,
   Device,
   Material,
   MaterialOptions,
@@ -93,8 +94,8 @@ describe('content/loader/native', () => {
     manager.loader.register(loaders.shaderEffectOptionsToShaderEffectArray)
 
     const modelOptions = ModelBuilder.begin()
-      .append('Cube')
-      .endModelOptions({
+      .tap((b) => buildCube(b))
+      .endModel({
         materials: [new Material(device, {
           name: 'material instance',
           effect: {

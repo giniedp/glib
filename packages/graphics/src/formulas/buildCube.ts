@@ -1,7 +1,6 @@
 import { Mat4 } from '@gglib/math'
 import { ModelBuilder } from '../ModelBuilder'
 import { buildPlane } from './buildPlane'
-import { formulas } from './formulas'
 
 function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
@@ -68,5 +67,3 @@ export function buildCube(builder: ModelBuilder, options: BuildCubeOptions = {})
   buildPlane(builder, {size: size, tesselation: steps})
   builder.endTransform(tId)
 }
-
-formulas['Cube'] = buildCube

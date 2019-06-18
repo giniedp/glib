@@ -1,5 +1,6 @@
 export * from './builder'
+export * from './chunks'
 export * from './glsl'
 export * from './loader'
-export * from './fx'
 export * from './materials'
+export * from './programs'

@@ -1,6 +1,15 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingSphere } from './BoundingSphere'
-import * as Collision from './Collision'
+import {
+  frustumBoxIntersection,
+  frustumIntersectsBox,
+  frustumIntersectsPlane,
+  frustumIntersectsPoint,
+  frustumIntersectsSphere,
+  frustumSphereIntersection,
+  planePlaneIntersection,
+  rayIntersectsPlaneAt,
+} from './Collision'
 import { Mat4 } from './Mat4'
 import { Ray } from './Ray'
 import { IVec2, IVec3, IVec4 } from './Types'
@@ -130,36 +139,36 @@ export class BoundingFrustum {
     const ray = new Ray()
     let distance: number
 
-    Collision.planePlaneIntersection(this.planes[NEAR], this.planes[LEFT], ray.position, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
+    planePlaneIntersection(this.planes[NEAR], this.planes[LEFT], ray.position, ray.direction)
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
     this.corners[0] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
     Vec3.negate(ray.direction, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
     this.corners[3] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
-    Collision.planePlaneIntersection(this.planes[RIGHT], this.planes[NEAR], ray.position, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
+    planePlaneIntersection(this.planes[RIGHT], this.planes[NEAR], ray.position, ray.direction)
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
     this.corners[1] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
     Vec3.negate(ray.direction, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
     this.corners[2] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
-    Collision.planePlaneIntersection(this.planes[LEFT], this.planes[FAR], ray.position, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
+    planePlaneIntersection(this.planes[LEFT], this.planes[FAR], ray.position, ray.direction)
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
     this.corners[4] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
     Vec3.negate(ray.direction, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
     this.corners[7] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
-    Collision.planePlaneIntersection(this.planes[FAR], this.planes[RIGHT], ray.position, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
+    planePlaneIntersection(this.planes[FAR], this.planes[RIGHT], ray.position, ray.direction)
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
     this.corners[5] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
 
     Vec3.negate(ray.direction, ray.direction)
-    distance = Collision.rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
+    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
     this.corners[6] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
   }
 
@@ -167,32 +176,32 @@ export class BoundingFrustum {
     throw new Error('not implemented')
   }
   public intersectsPlane(plane: IVec4): boolean {
-    return Collision.frustumIntersectsPlane(this, plane)
+    return frustumIntersectsPlane(this, plane)
   }
   public intersectsBox(box: BoundingBox): boolean {
-    return Collision.frustumIntersectsBox(this, box.min, box.max)
+    return frustumIntersectsBox(this, box.min, box.max)
   }
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return Collision.frustumIntersectsSphere(this, sphere.center, sphere.radius)
+    return frustumIntersectsSphere(this, sphere.center, sphere.radius)
   }
   public intersectsFrustum(other: BoundingFrustum): boolean {
     throw new Error('not implemented')
   }
 
   public containsBox(box: BoundingBox): boolean {
-    return Collision.frustumBoxIntersection(this, box.min, box.max) === 2
+    return frustumBoxIntersection(this, box.min, box.max) === 2
   }
   public containsSphere(sphere: BoundingSphere): boolean {
-    return Collision.frustumSphereIntersection(this, sphere.center, sphere.radius) === 2
+    return frustumSphereIntersection(this, sphere.center, sphere.radius) === 2
   }
   public containsPoint(point: IVec3): boolean {
-    return Collision.frustumIntersectsPoint(this, point)
+    return frustumIntersectsPoint(this, point)
   }
 
   public intersectionWithBox(box: BoundingBox): number {
-    return Collision.frustumBoxIntersection(this, box.min, box.max)
+    return frustumBoxIntersection(this, box.min, box.max)
   }
   public intersectionWithSphere(sphere: BoundingSphere): number {
-    return Collision.frustumSphereIntersection(this, sphere.center, sphere.radius)
+    return frustumSphereIntersection(this, sphere.center, sphere.radius)
   }
 }

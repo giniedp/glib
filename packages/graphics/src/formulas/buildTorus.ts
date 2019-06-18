@@ -1,6 +1,5 @@
 import { ModelBuilder } from '../ModelBuilder'
 import { addParametricSurface } from './addParametricSurface'
-import { formulas } from './formulas'
 
 const option = (opt: any, fallback: any) => opt == null ? fallback : opt
 const cos = Math.cos
@@ -53,5 +52,3 @@ export function buildTorus(builder: ModelBuilder, options: BuildTorusOptions = {
     v1: Math.PI * 2,
   })
 }
-
-formulas['Torus'] = buildTorus

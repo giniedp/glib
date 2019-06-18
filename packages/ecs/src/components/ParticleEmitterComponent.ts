@@ -1,8 +1,5 @@
-import * as Content from '@gglib/content'
-import { HttpOptions } from '@gglib/core'
-import * as Graphics from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
-import { Component } from './../Component'
+import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { ParticleSystemComponent } from './ParticleSystemComponent'
 import { TransformComponent } from './TransformComponent'
@@ -10,21 +7,8 @@ import { TransformComponent } from './TransformComponent'
 /**
  * @public
  */
-export class ParticleEmitterComponent implements Component {
-  /**
-   * Name of the component
-   */
-  public readonly name: string = 'ParticleEmitter'
-  public readonly service = false
+export class ParticleEmitterComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
-  /**
-   * The entity
-   */
-  public entity: Entity
-  /**
-   * The transform component
-   */
-  public transform: TransformComponent
   /**
    * Number of particles per second
    */
@@ -43,12 +27,23 @@ export class ParticleEmitterComponent implements Component {
   private timeFraction: number = 0
 
   private particleSystem: ParticleSystemComponent
-  public setup() {
-    this.transform = this.entity.getService('Transform')
+  private transform: TransformComponent
+
+  public onAdded(entity: Entity) {
+    entity.addService(ParticleEmitterComponent, this)
+  }
+
+  public onRemoved(entity: Entity) {
+    entity.removeService(ParticleEmitterComponent)
+  }
+
+  public onInit(entity: Entity) {
+    this.particleSystem = entity.getService(ParticleSystemComponent)
+    this.transform = entity.getService(TransformComponent)
     this.lastPosition.initFrom(this.transform.position)
   }
 
-  public update(dt: number) {
+  public onUpdate(dt: number) {
     const newPosition = this.transform.position
     const velocity = Vec3.subtract(newPosition, this.lastPosition).multiplyScalar(1.0 / dt)
     const timeStep = 1.0 / this.frequency

@@ -1,6 +1,6 @@
-import * as Input from '@gglib/input'
+import { Keys } from '@gglib/input'
 import { Quat, Vec3 } from '@gglib/math'
-import { Component } from './../Component'
+import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { KeyboardComponent } from './KeyboardComponent'
 import { MouseComponent } from './MouseComponent'
@@ -9,9 +9,7 @@ import { TransformComponent } from './TransformComponent'
 /**
  * @public
  */
-export class WASDComponent implements Component {
-  public entity: Entity
-  public enabled: boolean = true
+export class WASDComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
   public yaw: number = 0
   public pitch: number = 0
@@ -30,17 +28,25 @@ export class WASDComponent implements Component {
   private translation: Vec3 = Vec3.createZero()
   private rotation: Quat = Quat.createIdentity()
 
-  public mouse: MouseComponent
-  public keyboard: KeyboardComponent
-  public transform: TransformComponent
+  private mouse: MouseComponent
+  private keyboard: KeyboardComponent
+  private transform: TransformComponent
 
-  public setup() {
-    this.mouse = this.entity.root.getService('Mouse')
-    this.keyboard = this.entity.root.getService('Keyboard')
-    this.transform = this.entity.root.getService('Transform')
+  public onAdded(entity: Entity) {
+    entity.addService(WASDComponent, this)
   }
 
-  public update(timeMs: number) {
+  public onRemoved(entity: Entity) {
+    entity.removeService(WASDComponent)
+  }
+
+  public onInit(entity: Entity) {
+    this.mouse = entity.getService(MouseComponent)
+    this.keyboard = entity.getService(KeyboardComponent)
+    this.transform = entity.getService(TransformComponent)
+  }
+
+  public onUpdate(timeMs: number) {
     const timeSec = timeMs / 1000.0
     const keyboard = this.keyboard
     const mouse = this.mouse
@@ -49,37 +55,37 @@ export class WASDComponent implements Component {
     let targetSpeed = 0
     this.translation.init(0, 0, 0)
 
-    if (keyboard.isPressed(Input.Keys.KeyW)) {
+    if (keyboard.isPressed(Keys.KeyW)) {
       trans.worldMat.getForward(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Input.Keys.KeyS)) {
+    if (keyboard.isPressed(Keys.KeyS)) {
       trans.worldMat.getBackward(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Input.Keys.KeyA)) {
+    if (keyboard.isPressed(Keys.KeyA)) {
       trans.worldMat.getLeft(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Input.Keys.KeyD)) {
+    if (keyboard.isPressed(Keys.KeyD)) {
       trans.worldMat.getRight(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Input.Keys.KeyQ)) {
+    if (keyboard.isPressed(Keys.KeyQ)) {
       trans.worldMat.getDown(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Input.Keys.KeyE)) {
+    if (keyboard.isPressed(Keys.KeyE)) {
       trans.worldMat.getUp(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Input.Keys.ShiftLeft)) {
+    if (keyboard.isPressed(Keys.ShiftLeft)) {
       targetSpeed = this.runSpeed
     }
     if (this.translation.lengthSquared() > 0) {
