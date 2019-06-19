@@ -1,4 +1,4 @@
-import { DataUri, Uri } from '@gglib/core'
+import { DataUri, Uri } from '@gglib/utils'
 import { LoaderSpec } from './Loader'
 import { Pipeline } from './Pipeline'
 import { PipelineContext } from './PipelineContext'

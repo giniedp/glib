@@ -1,4 +1,4 @@
-import { uuid } from '@gglib/core'
+import { uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { ShaderProgram } from './ShaderProgram'

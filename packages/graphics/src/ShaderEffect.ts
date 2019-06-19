@@ -1,4 +1,4 @@
-import { copy } from '@gglib/core'
+import { copy } from '@gglib/utils'
 
 import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { ShaderTechnique, ShaderTechniqueOptions } from './ShaderTechnique'

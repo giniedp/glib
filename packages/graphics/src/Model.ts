@@ -1,5 +1,5 @@
-import { flattenArray, isString, uuid } from '@gglib/core'
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
+import { flattenArray, isString, uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { Material, MaterialOptions } from './Material'
 import { ModelAnimationClip } from './ModelAnimation'

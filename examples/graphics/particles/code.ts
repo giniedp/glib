@@ -1,4 +1,4 @@
-import { loop } from '@gglib/core'
+import { loop } from '@gglib/utils'
 import { CullState, Device, ParticleChannel } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import * as TweakUi from 'tweak-ui'

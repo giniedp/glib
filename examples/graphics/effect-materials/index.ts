@@ -1,7 +1,7 @@
 import Gglib from '@gglib/gglib'
-import { Device, ModelBuilder, ShaderEffect, CullState } from '@gglib/graphics';
-import { Mat4 } from '@gglib/math';
-import { loop } from '@gglib/core';
+import { Device, ModelBuilder, ShaderEffect, CullState } from '@gglib/graphics'
+import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // # Effect (Materials)
 //

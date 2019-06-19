@@ -1,6 +1,6 @@
 // tslint:disable max-classes-per-file
-import { extend } from '@gglib/core'
 import { IVec3, Vec3 } from '@gglib/math'
+import { extend } from '@gglib/utils'
 import { Buffer } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'

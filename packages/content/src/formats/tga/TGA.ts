@@ -1,5 +1,5 @@
 // tslint:disable no-bitwise
-import { BinaryReader } from '@gglib/core'
+import { BinaryReader } from '@gglib/utils'
 
 export interface TgaHeader {
   idLength: number

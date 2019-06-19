@@ -1,5 +1,5 @@
-import { DataUri, Http, HttpOptions, isArray, isObject, isString, Log, Type, Uri } from '@gglib/core'
 import { Device } from '@gglib/graphics'
+import { DataUri, Http, HttpOptions, Log, Type, Uri } from '@gglib/utils'
 import { ContentType } from './ContentType'
 import { Data, dataFromElement, dataFromXhr } from './Data'
 import { Pipeline } from './Pipeline'

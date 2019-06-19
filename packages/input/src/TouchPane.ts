@@ -1,4 +1,4 @@
-import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
+import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/utils'
 
 const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'screenX', 'screenY', 'clientX', 'clientY', 'x', 'y']
 

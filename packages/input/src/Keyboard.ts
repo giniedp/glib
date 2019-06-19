@@ -1,4 +1,4 @@
-import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
+import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/utils'
 
 /**
  * Options for {@link Keyboard}

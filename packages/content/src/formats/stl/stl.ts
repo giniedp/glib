@@ -1,4 +1,4 @@
-import { BinaryReader, TextReader } from '@gglib/core'
+import { BinaryReader, TextReader } from '@gglib/utils'
 
 export interface Solid {
   name: string

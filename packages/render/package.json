@@ -20,7 +20,7 @@
   "peerDependencies": {
     "@gglib/graphics": "0.2.0",
     "@gglib/math": "0.2.0",
-    "@gglib/core": "0.2.0",
+    "@gglib/utils": "0.2.0",
     "@gglib/effects": "0.2.0"
   }
 }

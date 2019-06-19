@@ -9,7 +9,7 @@
 // In this example we want to load a file with the extension `.pixels` and transform it
 // into a 3d `Model`.
 
-import { loop } from '@gglib/core'
+import { loop } from '@gglib/utils'
 import { Mat4 } from '@gglib/math'
 import * as TweakUi from 'tweak-ui'
 

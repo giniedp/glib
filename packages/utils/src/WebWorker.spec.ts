@@ -1,6 +1,6 @@
-import { WebWorker } from '@gglib/core'
+import { WebWorker } from '@gglib/utils'
 
-describe('@gglib/core/WebWorker', () => {
+describe('@gglib/utils/WebWorker', () => {
   describe('.enable', () => {
     afterAll(() => {
       WebWorker.disable()

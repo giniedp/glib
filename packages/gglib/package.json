@@ -19,7 +19,7 @@
   "typings": "./index.d.ts",
   "peerDependencies": {
     "@gglib/content": "0.2.0",
-    "@gglib/core": "0.2.0",
+    "@gglib/utils": "0.2.0",
     "@gglib/ecs": "0.2.0",
     "@gglib/effects": "0.2.0",
     "@gglib/graphics": "0.2.0",

@@ -1,6 +1,6 @@
-import { loop } from '@gglib/core'
 import { CullState, Device, ModelBuilder, ModelMesh } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 // # Model Builder

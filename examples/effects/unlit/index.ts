@@ -1,7 +1,7 @@
-import { loop } from '@gglib/core'
 import { defaultProgram } from '@gglib/effects'
 import { Device, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 let device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,

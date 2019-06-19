@@ -1,10 +1,10 @@
 import * as TweakUi from 'tweak-ui'
 
 import { Manager as ContentManager } from '@gglib/content'
-import { loop } from '@gglib/core'
 import { Device, Model } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
 import { BasicStage, Manager as RenderManager, Post } from '@gglib/render'
+import { loop } from '@gglib/utils'
 
 // Create the device as usual
 let device = new Device({

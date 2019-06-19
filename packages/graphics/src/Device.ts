@@ -1,6 +1,6 @@
 // tslint:disable no-bitwise
 
-import { extend, isString, Log } from '@gglib/core'
+import { extend, isString, Log } from '@gglib/utils'
 
 import {
   BufferType,

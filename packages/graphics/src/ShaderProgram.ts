@@ -1,4 +1,4 @@
-import { Log, uuid } from '@gglib/core'
+import { Log, uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderType } from './enums'
 import { Shader, ShaderOptions } from './Shader'

@@ -1,4 +1,4 @@
-import { DataUri, Log, Type, Uri } from '@gglib/core'
+import { DataUri, Log, Type, Uri } from '@gglib/utils'
 
 import { ContentType } from './ContentType'
 import { LoaderEntry, LoaderSpec } from './Loader'

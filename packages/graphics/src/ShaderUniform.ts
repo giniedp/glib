@@ -1,7 +1,7 @@
 // tslint:disable:no-bitwise
 
-import { copy } from '@gglib/core'
 import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
+import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderProgram } from './ShaderProgram'
 import { SamplerState, SamplerStateParams } from './states'

@@ -2,7 +2,7 @@
 //
 // ---
 
-import { loop } from '@gglib/core'
+import { loop } from '@gglib/utils'
 import { CullState, Device, ModelBuilder, Texture } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 

@@ -1,4 +1,4 @@
-import { Events, Loop, loop } from '@gglib/core'
+import { Events, Loop, loop } from '@gglib/utils'
 
 const statekeys = ['id', 'index', 'connected', 'mapping', 'timestamp']
 

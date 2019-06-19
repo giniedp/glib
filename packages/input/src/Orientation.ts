@@ -1,4 +1,4 @@
-import { Events, extend, Log } from '@gglib/core'
+import { Events, extend, Log } from '@gglib/utils'
 import { IVec3 } from '@gglib/math'
 
 const hasOrientationApi = 'DeviceOrientationEvent' in window

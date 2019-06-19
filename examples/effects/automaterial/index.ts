@@ -1,9 +1,9 @@
 import * as TweakUi from 'tweak-ui'
 
-import { loop } from '@gglib/core'
 import { AutoMaterial } from '@gglib/effects'
 import { Color, Device, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,

@@ -1,4 +1,4 @@
-import { copy } from '@gglib/core'
+import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderPass, ShaderPassOptions } from './ShaderPass'
 

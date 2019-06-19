@@ -19,6 +19,6 @@
   "typings": "./index.d.ts",
   "peerDependencies": {
     "@gglib/math": "0.2.0",
-    "@gglib/core": "0.2.0"
+    "@gglib/utils": "0.2.0"
   }
 }

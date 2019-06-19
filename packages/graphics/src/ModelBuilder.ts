@@ -1,5 +1,5 @@
-import { copy, Log } from '@gglib/core'
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
+import { copy, Log } from '@gglib/utils'
 import { BufferOptions } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'

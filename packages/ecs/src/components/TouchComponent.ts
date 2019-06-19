@@ -1,5 +1,5 @@
-import { extend } from '@gglib/core'
 import { TouchPane } from '@gglib/input'
+import { extend } from '@gglib/utils'
 import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 

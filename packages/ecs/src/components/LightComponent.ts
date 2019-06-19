@@ -1,5 +1,5 @@
-import { extend } from '@gglib/core'
 import { Vec3, Vec4 } from '@gglib/math'
+import { extend } from '@gglib/utils'
 
 import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'

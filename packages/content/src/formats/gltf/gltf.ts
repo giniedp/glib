@@ -1,4 +1,4 @@
-import { BinaryReader } from '@gglib/core'
+import { BinaryReader } from '@gglib/utils'
 import { Document } from './Document'
 
 export class GLTF {

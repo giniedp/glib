@@ -5,8 +5,8 @@
 //
 // ---
 
-import { loop } from '@gglib/core'
 import { Device } from '@gglib/graphics'
+import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
 let device = new Device({

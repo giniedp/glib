@@ -1,6 +1,6 @@
-import { loop } from '@gglib/core'
 import { Device } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // # Shaded Rectangle
 // This example adds a more complex shader to the already textured rectangle.

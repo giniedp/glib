@@ -1,6 +1,6 @@
-import { Log } from '@gglib/core'
-import { ArrayType, MaterialOptions, Model, ModelMeshOptions, ModelOptions, ModelSkin, ModelJointPose, ModelJoint } from '@gglib/graphics'
+import { ArrayType, MaterialOptions, Model, ModelJoint, ModelJointPose, ModelMeshOptions, ModelOptions, ModelSkin } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere, Mat4, Quat } from '@gglib/math'
+import { Log } from '@gglib/utils'
 
 import {
   Accessor,

@@ -1,4 +1,4 @@
-import { getImageData } from '@gglib/core'
+import { getImageData } from '@gglib/utils'
 import { IVec3, Vec3 } from '@gglib/math'
 
 /**

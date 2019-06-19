@@ -3,8 +3,8 @@
 // ---
 
 import { Manager as ContentManager } from '@gglib/content'
-import { loop } from '@gglib/core'
 import { CullState, Device, Model, ModelBuilder, ShaderEffect } from '@gglib/graphics'
+import { loop } from '@gglib/utils'
 import { Mat4 } from '@gglib/math'
 
 // Create the graphics device and pass the existing canvas element from the DOM.

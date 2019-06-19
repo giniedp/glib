@@ -1,5 +1,5 @@
 {
-  "name": "@gglib/core",
+  "name": "@gglib/utils",
   "description": "Part of the [G]glib project",
   "version": "0.2.0",
   "repository": {
@@ -14,7 +14,7 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/core.umd.js",
+  "main": "./bundles/utils.umd.js",
   "module": "./index.js",
   "typings": "./index.d.ts",
   "peerDependencies": {}

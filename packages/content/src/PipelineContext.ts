@@ -1,4 +1,4 @@
-import { Type } from '@gglib/core'
+import { Type } from '@gglib/utils'
 import { Manager } from './Manager'
 import { Pipeline } from './Pipeline'
 

@@ -1,4 +1,4 @@
-import { loop } from '@gglib/core'
+import { loop } from '@gglib/utils'
 import { BlendState, Device } from '@gglib/graphics'
 
 // # Sprite Batch

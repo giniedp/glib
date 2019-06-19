@@ -1,4 +1,4 @@
-import { DataUri } from '@gglib/core'
+import { DataUri } from '@gglib/utils'
 
 describe('DataUri', () => {
   describe('parse data:text/plain,Hello World', () => {

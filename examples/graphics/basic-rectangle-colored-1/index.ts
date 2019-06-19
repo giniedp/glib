@@ -1,5 +1,5 @@
-import { loop } from '@gglib/core'
 import { Device } from '@gglib/graphics'
+import { loop } from '@gglib/utils'
 
 // # Colored Rectangle
 // The example is similar to the Colored triangle example.

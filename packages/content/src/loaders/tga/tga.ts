@@ -1,4 +1,3 @@
-import { Http, HttpOptions } from '@gglib/core'
 
 import { TGA } from '../../formats/tga'
 import { loader } from '../../utils'

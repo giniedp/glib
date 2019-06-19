@@ -1,7 +1,7 @@
 import * as TweakUi from 'tweak-ui'
 
 import { Manager as ContentManager } from '@gglib/content'
-import { loop } from '@gglib/core'
+import { loop } from '@gglib/utils'
 import { Device, Model } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
 import { BasicStage, Manager as RenderManager } from '@gglib/render'

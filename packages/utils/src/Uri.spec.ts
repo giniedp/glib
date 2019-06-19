@@ -1,6 +1,6 @@
-import { Uri } from '@gglib/core'
+import { Uri } from '@gglib/utils'
 
-describe('@gglib/core/Uri', () => {
+describe('@gglib/utils/Uri', () => {
   describe('.parse', () => {
     it('parses the uri', () => {
       const parsed = Uri.parse('http://www.example.com:80/foo/bar?lorem=ipsum#dolor')

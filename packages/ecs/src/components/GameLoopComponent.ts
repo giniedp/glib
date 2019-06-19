@@ -1,4 +1,4 @@
-import { extend, getTime, requestFrame } from '@gglib/core'
+import { extend, getTime, requestFrame } from '@gglib/utils'
 import { OnAdded, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
 

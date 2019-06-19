@@ -1,4 +1,4 @@
-import { TextReader } from '@gglib/core'
+import { TextReader } from '@gglib/utils'
 import { Joint } from './Joint'
 import { Mesh } from './Mesh'
 

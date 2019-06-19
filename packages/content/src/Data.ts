@@ -1,4 +1,4 @@
-import { DataUri } from '@gglib/core'
+import { DataUri } from '@gglib/utils'
 import { ContentType } from './ContentType'
 
  /**

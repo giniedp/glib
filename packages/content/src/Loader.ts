@@ -1,4 +1,4 @@
-import { Type } from '@gglib/core'
+import { Type } from '@gglib/utils'
 import { PipelineContext } from './PipelineContext'
 
 /**

@@ -1,6 +1,6 @@
-import { extend } from '@gglib/core'
 import { Mat4 } from '@gglib/math'
 import { Scene } from '@gglib/render'
+import { extend } from '@gglib/utils'
 import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { RendererComponent } from './RendererComponent'

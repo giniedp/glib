@@ -1,4 +1,4 @@
-import { Http } from '@gglib/core'
+import { Http } from '@gglib/utils'
 import { STL } from './stl'
 
 describe('content/formats/stl', () => {

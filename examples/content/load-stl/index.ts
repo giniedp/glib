@@ -6,9 +6,9 @@
 // ---
 
 import { Manager } from '@gglib/content'
-import { loop } from '@gglib/core'
 import { BlendState, CullState, DepthState, Device, Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 const baseUrl = '/assets/models/stl/'

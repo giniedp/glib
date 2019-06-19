@@ -1,4 +1,4 @@
-import { Events, Type } from '@gglib/core'
+import { Events, Type } from '@gglib/utils'
 import { Component } from './Component'
 import { find, findAll } from './finder'
 

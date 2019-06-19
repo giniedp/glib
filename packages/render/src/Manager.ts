@@ -1,4 +1,4 @@
-import { Log } from '@gglib/core'
+import { Log } from '@gglib/utils'
 import {
   BlendState,
   CullState,

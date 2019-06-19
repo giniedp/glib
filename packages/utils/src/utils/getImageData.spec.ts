@@ -1,6 +1,6 @@
-import { getImageData } from '@gglib/core'
+import { getImageData } from '@gglib/utils'
 
-describe('@gglib/core/utils', () => {
+describe('@gglib/utils/utils', () => {
   // tslint:disable-next-line
   const RED10x20 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAUCAYAAAC07qxWAAAAGElEQVR42mP8z8AARIQB46jCUYWjCkEAAMXUJ+1sUc+CAAAAAElFTkSuQmCC'
 

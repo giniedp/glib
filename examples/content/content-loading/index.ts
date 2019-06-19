@@ -2,9 +2,9 @@
 //
 
 import { Manager } from '@gglib/content'
-import { loop } from '@gglib/core'
 import { CullState, Device, Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // This example demonstrates how assets can be loaded by using the `Content.Manager`.
 // For the demonstration three assets are embedded in the DOM as `script` tags.

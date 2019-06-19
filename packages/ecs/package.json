@@ -18,11 +18,11 @@
   "module": "./index.js",
   "typings": "./index.d.ts",
   "peerDependencies": {
-    "@gglib/content": "0.2.0",
-    "@gglib/core": "0.2.0",
-    "@gglib/graphics": "0.2.0",
+    "@gglib/utils": "0.2.0",
     "@gglib/math": "0.2.0",
     "@gglib/render": "0.2.0",
-    "@gglib/input": "0.2.0"
+    "@gglib/input": "0.2.0",
+    "@gglib/graphics": "0.2.0",
+    "@gglib/content": "0.2.0"
   }
 }

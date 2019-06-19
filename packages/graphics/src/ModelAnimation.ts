@@ -1,5 +1,5 @@
-import { Log } from '@gglib/core'
 import { Mat4, Quat, Vec3, Vec4 } from '@gglib/math'
+import { Log } from '@gglib/utils'
 import { ModelJoint, ModelJointPose, ModelSkin } from './ModelSkin'
 
 /**

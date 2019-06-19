@@ -1,5 +1,5 @@
-import { uuid } from '@gglib/core'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
+import { uuid } from '@gglib/utils'
 import { Buffer, BufferOptions } from './Buffer'
 import { Device } from './Device'
 import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from './enums'
