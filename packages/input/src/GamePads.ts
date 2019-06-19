@@ -259,24 +259,53 @@ export const GamepadButton = Object.freeze({
   Extra9: 24,
 })
 
-export const GamepadButtonNames = {}
-for (const name in GamepadButton) {
-  if (GamepadButton.hasOwnProperty(name)) {
-    GamepadButtonNames[GamepadButton[name]] = name
-  }
-}
-Object.freeze(GamepadButtonNames)
+/**
+ * @public
+ */
+export const GamepadButtonNames = Object.freeze({
+  0: 'A',
+  1: 'B',
+  2: 'X',
+  3: 'Y',
+  4: 'LeftShoulder',
+  5: 'RightShoulder',
+  6: 'LeftTrigger',
+  7: 'RightTrigger',
+  8: 'Back',
+  9: 'Start',
+  10: 'LeftStick',
+  11: 'RightStick',
+  12: 'DPadUp',
+  13: 'DPadDown',
+  14: 'DPadLeft',
+  15: 'DPadRight',
+  16: 'Extra1',
+  17: 'Extra2',
+  18: 'Extra3',
+  19: 'Extra4',
+  20: 'Extra5',
+  21: 'Extra6',
+  22: 'Extra7',
+  23: 'Extra8',
+  24: 'Extra9',
+})
 
+/**
+ * @public
+ */
 export const GamepadAxes = Object.freeze({
   LeftHorizontal: 0,
   LeftVertical: 1,
   RightHorizontal: 2,
   RightVertical: 3,
 })
-export const GamepadAxesNames = {}
-for (const name in GamepadAxes) {
-  if (GamepadAxes.hasOwnProperty(name)) {
-    GamepadAxesNames[GamepadAxes[name]] = name
-  }
-}
-Object.freeze(GamepadAxesNames)
+
+/**
+ * @public
+ */
+export const GamepadAxesNames = Object.freeze({
+  0: 'LeftHorizontal',
+  1: 'LeftVertical',
+  2: 'RightHorizontal',
+  3: 'RightVertical',
+})

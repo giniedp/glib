@@ -3,6 +3,11 @@ import { TouchPane } from '@gglib/input'
 import { OnAdded, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * Constructor options for the {@link TouchComponent}
+ *
+ * @public
+ */
 export interface TouchComponentOptions {
   eventTarget?: EventTarget
 }

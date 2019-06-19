@@ -1,7 +1,7 @@
 import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/core'
 
 /**
- * Options for {@link Keyboard.constructor}
+ * Options for {@link Keyboard}
  *
  * @public
  */

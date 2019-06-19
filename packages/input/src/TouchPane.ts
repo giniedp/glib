@@ -35,7 +35,7 @@ export interface ITouchState {
  * @remarks
  * Listens to the `touchstart`, `touchmove`, `touchend` and `touchcancel`
  * events and tracks the touch position and movement.
- * On each recognized state change the `changed` event is triggered.
+ * On each recognized change of state the `changed` event is triggered.
  *
  * @public
  */

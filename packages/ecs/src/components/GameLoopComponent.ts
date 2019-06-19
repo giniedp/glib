@@ -2,6 +2,11 @@ import { extend, getTime, requestFrame } from '@gglib/core'
 import { OnAdded, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
 
+/**
+ * Constructor options for the {@link GameLoopComponent}
+ *
+ * @public
+ */
 export interface GameLoopOptions {
   preferTimeout?: boolean
   fixedTimeStep?: number

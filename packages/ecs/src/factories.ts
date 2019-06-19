@@ -19,6 +19,11 @@ import {
 } from './components'
 import { Entity } from './Entity'
 
+/**
+ * Options for the {@link createGame} function
+ *
+ * @public
+ */
 export interface CreateGameOptions {
   /**
    * The graphics device or options for the device constructor
@@ -44,14 +49,13 @@ export interface CreateGameOptions {
 /**
  * Creates a root entity and adds common components
  *
+ * @public
  * @remarks
  * The following components are added
  * - Device
  * - ContentManager
  * - GameLoopComponent
  * - FpsComponent
- *
- * @public
  */
 export function createGame(options: CreateGameOptions, ...tap: Array<(entity: Entity) => void> ) {
   const device = options.device instanceof Device
@@ -83,6 +87,7 @@ export function createGame(options: CreateGameOptions, ...tap: Array<(entity: En
 /**
  * Adds a basic renderer component
  *
+ * @public
  * @remarks
  * This is sufficient to simple scenes but has no culling mechanism
  *
@@ -95,9 +100,11 @@ export function addBasicRenderer(entity: Entity) {
 }
 
 /**
- * Adds a CameraComponent to the entity if it does not exist
+ * Adds a {@link CameraComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
+ * @param options - Constructor options for the {@link CameraComponent}
  */
 export function addCamera(entity: Entity, options?: CameraProperties) {
   addTransform(entity)
@@ -107,9 +114,11 @@ export function addCamera(entity: Entity, options?: CameraProperties) {
 }
 
 /**
- * Adds a LightComponent to the entity if it does not exist
+ * Adds a {@link LightComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
+ * @param options - Constructor options for the {@link LightComponent}
  */
 export function addPointLight(entity: Entity, options: LightProperties = {}) {
   if (!entity.services.has(LightComponent)) {
@@ -119,9 +128,11 @@ export function addPointLight(entity: Entity, options: LightProperties = {}) {
 }
 
 /**
- * Adds a LightComponent to the entity if it does not exist
+ * Adds a {@link LightComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
+ * @param options - Constructor options for the {@link LightComponent}
  */
 export function addSpotLight(entity: Entity, options: LightProperties = {}) {
   if (!entity.services.has(LightComponent)) {
@@ -131,9 +142,11 @@ export function addSpotLight(entity: Entity, options: LightProperties = {}) {
 }
 
 /**
- * Adds a LightComponent to the entity if it does not exist
+ * Adds a {@link LightComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
+ * @param options - Constructor options for the {@link LightComponent}
  */
 export function addDirectionalLight(entity: Entity, options: LightProperties = {}) {
   if (!entity.services.has(LightComponent)) {
@@ -143,9 +156,11 @@ export function addDirectionalLight(entity: Entity, options: LightProperties = {
 }
 
 /**
- * Adds a LightComponent to the entity if it does not exist
+ * Adds a {@link LightComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
+ * @param options - Constructor options for the {@link LightComponent}
  */
 export function addLight(entity: Entity, options: LightProperties = {}) {
   if (!entity.services.has(LightComponent)) {
@@ -153,6 +168,12 @@ export function addLight(entity: Entity, options: LightProperties = {}) {
   }
 }
 
+/**
+ * Adds a {@link ModelComponent} to the entity if it does not exist
+ *
+ * @public
+ * @param entity - The entity
+ */
 export function addModel(entity: Entity) {
   addTransform(entity)
   if (!entity.getService(ModelComponent, null)) {
@@ -161,8 +182,9 @@ export function addModel(entity: Entity) {
 }
 
 /**
- * Adds a TransformComponent to the entity if it does not exist
+ * Adds a {@link TransformComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
  */
 export function addTransform(entity: Entity) {
@@ -172,8 +194,9 @@ export function addTransform(entity: Entity) {
 }
 
 /**
- * Adds a MouseComponent to the entity if it does not exist
+ * Adds a {@link MouseComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
  */
 export function addMouse(entity: Entity) {
@@ -183,8 +206,9 @@ export function addMouse(entity: Entity) {
 }
 
 /**
- * Adds a KeyboardComponent to the entity if it does not exist
+ * Adds a {@link KeyboardComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
  */
 export function addKeyboard(entity: Entity) {
@@ -194,8 +218,9 @@ export function addKeyboard(entity: Entity) {
 }
 
 /**
- * Adds a WASDComponent to the entity if it does not exist
+ * Adds a {@link WASDComponent} to the entity if it does not exist
  *
+ * @public
  * @param entity - The entity
  */
 export function addWASD(entity: Entity) {

@@ -126,7 +126,7 @@ export class Mouse extends Events {
   protected readonly onMouseUpListener: EventListener = this.onMouseButton.bind(this)
   /**
    * Listener for any {@link https://developer.mozilla.org/de/docs/Web/Events | Event}
-   * see {@link delegatedEvents}.
+   * see {@link Mouse.delegatedEvents}.
    */
   protected readonly onEvent: EventListener = (e) => this.trigger(e.type, this, e)
   /**
@@ -327,16 +327,20 @@ export class Mouse extends Events {
   }
 }
 
+/**
+ * @public
+ */
 export const MouseButton = Object.freeze({
   Left: 0,
   Middle: 1,
   Right: 2,
 })
 
-export const MouseButtonName = {}
-for (const name in MouseButton) {
-  if (MouseButton.hasOwnProperty(name)) {
-    MouseButtonName[MouseButton[name]] = name
-  }
-}
-Object.freeze(MouseButtonName)
+/**
+ * @public
+ */
+export const MouseButtonName = Object.freeze({
+  0: 'Left',
+  1: 'Middle',
+  2: 'Right',
+})

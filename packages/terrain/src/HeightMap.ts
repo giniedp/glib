@@ -2,6 +2,8 @@ import { getImageData } from '@gglib/core'
 import { IVec3, Vec3 } from '@gglib/math'
 
 /**
+ * Constructor options for the {@link HeightMap}
+ *
  * @public
  */
 export interface HeightMapOptions {
@@ -13,6 +15,8 @@ export interface HeightMapOptions {
 }
 
 /**
+ * Provides image based hight map utilities
+ *
  * @public
  */
 export class HeightMap {
@@ -54,6 +58,12 @@ export class HeightMap {
     }
   }
 
+  /**
+   * Gets the value at given pixel coordinate
+   *
+   * @param x - The x coordinate
+   * @param y - The y coordinate
+   */
   public heightAt(x: number, y: number): number {
     if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
       return this.heights[(x + y * this.width) || 0]
@@ -61,6 +71,21 @@ export class HeightMap {
     return 0
   }
 
+  /**
+   * Gets the pre calculated normal at given pixel coordinate
+   *
+   * @param x - The x coordinate
+   * @param y - The y coordinate
+   */
+  public normalAt(x: number, y: number): Vec3
+  /**
+   * Gets the pre calculated normal at given pixel coordinate
+   *
+   * @param x - The x coordinate
+   * @param y - The y coordinate
+   * @param out - Where the result should be written to
+   */
+  public normalAt<T>(x: number, y: number, out: T): T & IVec3
   public normalAt(x: number, y: number, out?: IVec3): IVec3 {
     out = out || new Vec3()
     x = Math.min(x, this.width - 1)
@@ -78,7 +103,10 @@ export class HeightMap {
     return out
   }
 
-  public calculateNormals(): HeightMap {
+  /**
+   * Pre calculates all normals based on available height map data
+   */
+  public calculateNormals(): this {
     const normal = Vec3.createZero()
     let index = 0
     for (let y = 0; y < this.height; y += 1) {
@@ -90,11 +118,18 @@ export class HeightMap {
     return this
   }
 
-  public calculateNormalAt(x: number, z: number, out: Vec3) {
+  /**
+   * Calculates the normal at given pixel coordinate
+   *
+   * @param x - The x coordinate
+   * @param y - The y coordinate
+   * @param out - Where the result should be written to
+   */
+  public calculateNormalAt(x: number, y: number, out: Vec3) {
     const w1 = 0.5
     const w2 = 1.0
     const width = this.width
-    let sIndex = x + z * width
+    let sIndex = x + y * width
     const field = this.heights
     out = out || Vec3.createZero()
 

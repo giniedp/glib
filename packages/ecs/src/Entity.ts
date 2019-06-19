@@ -44,7 +44,7 @@ export class Entity extends Events {
    * A collection of all attached components
    *
    * @remarks
-   * To register and remove components from an entity use `addComponent` and `removeComponent` methods
+   * To register and remove components from an entity use {@link Entity.addComponent} and {@link Entity.removeComponent} methods
    */
   public readonly components: ReadonlyArray<Component> = []
 
@@ -52,7 +52,7 @@ export class Entity extends Events {
    * A collection of child entities
    *
    * @remarks
-   * To add or remove entities use `addEntity` and `removeEntity` methods
+   * To add or remove entities use {@link Entity.addChild} and {@link Entity.addChild} methods
    */
   public readonly children: ReadonlyArray<Entity> = []
 
@@ -69,6 +69,9 @@ export class Entity extends Events {
    * Adds a service object to this entity
    */
   public addService<T>(key: Type<T>, service: T, override?: boolean): this
+  /**
+   * Adds a service object to this entity
+   */
   public addService<T>(key: string, service: any, override?: boolean): this
   public addService(key: any, service: any, override?: boolean): this {
     if (this.services.has(key)) {
@@ -169,7 +172,7 @@ export class Entity extends Events {
    * The added component will be marked for initialization which will happen
    * on next update turn.
    *
-   * If the component implements the {@link @gglib/ecs:OnAdded} life cycle this
+   * If the component implements the {@link @gglib/ecs#OnAdded} life cycle this
    * will be called at the end of this function.
    */
   public addComponent(comp: Component): Entity {
@@ -334,9 +337,11 @@ export class Entity extends Events {
    * Taps this entity by calling the given function
    *
    * @example
+   * ```
    * return new Entity().tap((entity) => {
    *   // modify entity
    * })
+   * ```
    * @param cb - The callback to call
    */
   public tap(cb: (entity: this) => void): this {

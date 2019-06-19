@@ -2,6 +2,8 @@ import { Entity } from './Entity'
 
 /**
  * A life cycle hook that is called when the component has been added to the entity
+ *
+ * @public
  */
 export interface OnAdded {
   /**
@@ -15,6 +17,8 @@ export interface OnAdded {
 
 /**
  * A life cycle hook that is called when the component has been removed from an entity
+ *
+ * @public
  */
 export interface OnRemoved {
   /**
@@ -27,6 +31,8 @@ export interface OnRemoved {
 
 /**
  * A life cycle hook that is called when the component must be initialized
+ *
+ * @public
  */
 export interface OnInit {
   /**
@@ -37,6 +43,8 @@ export interface OnInit {
 
 /**
  * A life cycle hook that is called once every update cycle
+ *
+ * @public
  */
 export interface OnUpdate {
   /**
@@ -47,6 +55,8 @@ export interface OnUpdate {
 
 /**
  * A life cycle hook that is called once every draw cycle
+ *
+ * @public
  */
 export interface OnDraw {
   /**
