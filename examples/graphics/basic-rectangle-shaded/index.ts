@@ -1,4 +1,4 @@
-import { Device } from '@gglib/graphics'
+import { Device, DepthState, CullState } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -48,7 +48,7 @@ let indices = device.createIndexBuffer({
 // Create a texture object.
 // Simply pass an URL to the image that should be used as a texture.
 let texture = device.createTexture({
-  data: '/assets/textures/proto_red.png',
+  data: '/assets/textures/prototype/proto_red.png',
 })
 
 // Define some variables that will be passed to the shader.
@@ -66,14 +66,15 @@ loop((dt) => {
 
   // resize (if needed) and clear the screen
   device.resize()
-  device.clear(0xff2e2620)
+  device.cullState = CullState.CullNone
+  device.depthState = DepthState.Default
+  device.clear(0xff2e2620, 1)
 
   // rotate the rectangle, place the camera
   // and update projection with the aspect ration of the canvas
   world.initRotationY(time / 1000)
   view.initIdentity().setTranslation(camPosition).invert()
-  let aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight
-  proj.initPerspectiveFieldOfView(Math.PI / 2, aspect, 0, 100)
+  proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
 
   // pass variables to the shader
   program.setUniform('uTexture', texture)

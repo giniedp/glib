@@ -45,7 +45,7 @@ let indices = device.createIndexBuffer({
 // Create a texture object.
 // Simply pass an URL to the image that should be used as a texture.
 let texture = device.createTexture({
-  data: '/assets/textures/proto_red.png',
+  data: '/assets/textures/prototype/proto_red.png',
 })
 
 // Begin render loop

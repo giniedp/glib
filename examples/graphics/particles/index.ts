@@ -1,6 +1,6 @@
-import { loop } from '@gglib/utils'
-import { CullState, Device, ParticleChannel } from '@gglib/graphics'
+import { CullState, Device, ParticleChannel, DepthState, BlendState } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 // # Particles
@@ -8,11 +8,12 @@ import * as TweakUi from 'tweak-ui'
 // ---
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-let device = new Device({
+const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
-let settings = {
-  texture: device.createTexture({ data: '/assets/textures/smoke.png' }),
+
+const settings = {
+  texture: device.createTexture({ data: '/assets/textures/particles/star_2.png' }),
   duration: 2000,
   maxParticles: 100,
   minHorizontalVelocity: 0,
@@ -29,7 +30,8 @@ let settings = {
   gravity: { x: 0, y: -0.1, z: 0 },
 }
 
-let channel = new ParticleChannel(device, settings)
+const channel = new ParticleChannel(device, settings)
+
 TweakUi.build('#tweak-ui', (q) => {
   let onChange = () => {
     channel.setup(settings)
@@ -40,8 +42,8 @@ TweakUi.build('#tweak-ui', (q) => {
   q.slider(settings, 'minVerticalVelocity', { min: 0, max: 1, step: 0.01, onInput: onChange })
   q.slider(settings, 'maxVerticalVelocity', { min: 0, max: 1, step: 0.01, onInput: onChange })
   q.slider(settings, 'endVelocity', { min: 0, max: 1, step: 0.01, onInput: onChange })
-  q.slider(settings, 'minRotateSpeed', { min: 0, max: -Math.PI / 1000, step: 0.01, onInput: onChange })
-  q.slider(settings, 'maxRotateSpeed', { min: 0, max: Math.PI / 1000, step: 0.01, onInput: onChange })
+  q.slider(settings, 'minRotateSpeed', { min: 0, max: -Math.PI, step: 0.01, onInput: onChange })
+  q.slider(settings, 'maxRotateSpeed', { min: 0, max: Math.PI, step: 0.01, onInput: onChange })
   q.slider(settings, 'minStartSize', { min: 0.25, max: 100, step: 0.25, onInput: onChange })
   q.slider(settings, 'maxStartSize', { min: 0.25, max: 100, step: 0.25, onInput: onChange })
   q.slider(settings, 'minEndSize', { min: 0.25, max: 100, step: 0.25, onInput: onChange })
@@ -63,6 +65,8 @@ loop((dt) => {
   device.resize()
   device.clear(0xff2e2620, 1, 1)
   device.cullState = CullState.CullNone
+  device.depthState = DepthState.Default
+  device.blendState = BlendState.Additive
 
   let aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight
   view.initTranslation(0, 0, -100)

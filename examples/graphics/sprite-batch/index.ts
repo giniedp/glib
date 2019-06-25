@@ -12,9 +12,9 @@ let device = new Device({
 
 // Create a sprite batch and several textures that we want to render
 let spriteBatch = device.createSpriteBatch()
-let texture1 = device.createTexture({ data: '/assets/textures/proto_red.png' })
-let texture2 = device.createTexture({ data: '/assets/textures/proto_green.png' })
-let texture3 = device.createTexture({ data: '/assets/textures/proto_blue.png' })
+let texture1 = device.createTexture({ data: '/assets/textures/prototype/proto_red.png' })
+let texture2 = device.createTexture({ data: '/assets/textures/prototype/proto_green.png' })
+let texture3 = device.createTexture({ data: '/assets/textures/prototype/proto_blue.png' })
 let texture4 = device.createTexture({ data: '/assets/videos/big-buck-bunny.mp4' })
 // start the playback of the video texture
 texture4.video.play()

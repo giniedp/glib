@@ -1,7 +1,10 @@
 ---
-title: Effect (Materials)
-weight: 12
+title: 3D Shapes
+weight: 6
 group: graphics
+files:
+  - index.ts
+  - index.html
 ---
 extends /_layouts/_example
 block append script
@@ -39,10 +42,12 @@ block prepend script
 
   script#fragment-shader(type='text/glsl').
     precision highp float;
-
-    // @binding diffuseColor
-    // @default [1, 0, 0]
-    uniform vec3 uDiffuseColor;
+    // @binding texture
+    // @filter   LinearWrap
+    uniform sampler2D uTexture;
+    // @binding ambientColor
+    // @default [0.2, 0.2, 0.2]
+    uniform vec3 uAmbientColor;
     // @binding lightColor
     // @default [1, 1, 1]
     uniform vec3 uLightColor;
@@ -53,7 +58,7 @@ block prepend script
     // @default [0, 0, 1]
     uniform vec3 uEyePosition;
     // @binding specularPower
-    // @default 0.1
+    // @default 16
     uniform float uSpecularPower;
 
     // data from vertex stage
@@ -65,27 +70,28 @@ block prepend script
       in vec3 E,   // Vector To Eye
       in vec3 N,   // Surface Normal
       in vec3 L,   // Vector To Light
+      in vec3 LC,  // Light Color
       in float SP) // Specular Power
     {
       // diffuse term
 
       // float NdotL = max(0.0, dot(N, L));
       float NdotL = max(0.0, abs(dot(N, L))); // abs for backface
-      vec4 result = vec4(NdotL, NdotL, NdotL, 0.0);
+      vec4 result = vec4(NdotL * LC, 0.0);
 
       // specular term
       if (NdotL > 0.0)
       {
         vec3 H = normalize(E + L);
-        result.a = pow(abs(dot(N, H)), exp2(SP * 10.5) );
+        result.a = pow(abs(dot(N, H)), SP);
       }
       return result;
     }
 
     void main(void) {
-      vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uSpecularPower);
-      vec4 color = vec4(0.0);
-      color.rgb = uLightColor * (term.rgb * uDiffuseColor.rgb.rgb + term.a);
+      vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularPower);
+      vec4 color = texture2D(uTexture, texCoord);
+      color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb + uAmbientColor;
       color.a = 1.0;
       gl_FragColor = color;
     }

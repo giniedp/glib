@@ -2,6 +2,9 @@
 title: Rectangle shaded
 weight: 6
 group: graphics
+files:
+  - index.ts
+  - index.html
 ---
 extends /_layouts/_example
 block append script
@@ -69,7 +72,7 @@ block prepend script
     void main(void) {
       vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularPower);
       vec4 color = texture2D(uTexture, texCoord);
-      color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb;
+      color.rgb = uEyePosition;// uLightColor * term.rgb * color.rgb + term.a * color.rgb;
       color.a = 1.0;
       gl_FragColor = color;
     }

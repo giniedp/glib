@@ -109,23 +109,25 @@ class TerrainComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
       const heightmap = HeightMap.fromImage(res.heightmap).smooth().calculateNormals()
       const material = new TerrainMaterial(device)
-      material.SplatMap = device.defaultTexture
-      material.DiffuseMap = device.createTexture({ data: '/assets/textures/proto_green.png' })
-      material.DiffuseMapA = material.DiffuseMap
-      material.DiffuseMapR = material.DiffuseMap
-      material.DiffuseMapG = material.DiffuseMap
-      material.DiffuseMapB = material.DiffuseMap
-      material.DiffuseMapSlope = material.DiffuseMap
+      material.SplatMap = device.createTexture({ data: '/assets/heightmaps/heightmap1-splat.png' })
+      material.DiffuseMap = device.createTexture({ data: '/assets/textures/terrain/grass.jpg' })
+      material.DiffuseMapR = device.createTexture({ data: '/assets/textures/terrain/mud.jpg' })
+      material.DiffuseMapG = device.createTexture({ data: '/assets/textures/terrain/earth.jpg' })
+      material.DiffuseMapB = device.createTexture({ data: '/assets/textures/terrain/dirt.jpg' })
+      material.DiffuseMapSlope = device.createTexture({ data: '/assets/textures/terrain/rock2.jpg' })
 
-      material.NormalMap = device.createTexture({ data: '/assets/textures/proto_gray_n.png' })
-      material.NormalMapA = material.NormalMap
-      material.NormalMapR = material.NormalMap
-      material.NormalMapG = material.NormalMap
-      material.NormalMapB = material.NormalMap
-      material.NormalMapSlope = material.NormalMap
+      material.FogStart = 0
+      material.FogEnd = 100
+      material.FogColor = [1, 1, 1]
+      // material.NormalMap = device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' })
+      // material.NormalMapA = material.NormalMap
+      // material.NormalMapR = material.NormalMap
+      // material.NormalMapG = material.NormalMap
+      // material.NormalMapB = material.NormalMap
+      // material.NormalMapSlope = material.NormalMap
 
       material.ShadeFunction = 'shadeOptimized'
-      material.LightCount = 1
+      material.LightCount = 0
 
       this.bttRoot = new BTTRoot(device, {
         heightMap: heightmap,
@@ -137,13 +139,14 @@ class TerrainComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
       material.parameters.Brightness = 1
       material.parameters.Saturation = 1
       material.parameters.Pertubation = 0.25
+      material.parameters.SlopeStrength = 1
 
       TweakUi.build('#tweak-ui', (q) => {
-        // gui.add(material.parameters, "Tiling", 1, 128).step(1);
-        // gui.add(material.parameters, "Brightness", 0, 2).step(0.1);
-        // gui.add(material.parameters, "Saturation", 0, 2).step(0.1);
-        // gui.add(material.parameters, "Pertubation", 0, 1);
-        // gui.add(material.parameters, "specularPower", 0, 1);
+        q.slider(material.parameters, 'Tiling', { min: 1, max: 128, step: 1 })
+        q.slider(material.parameters, 'Brightness', { min: 0.1, max: 2, step: 0.01 })
+        q.slider(material.parameters, 'Saturation', { min: 0.1, max: 2, step: 0.01 })
+        q.slider(material.parameters, 'Pertubation', { min: 0.1, max: 2, step: 0.01 })
+        q.slider(material.parameters, 'SlopeStrength', { min: 0.1, max: 1, step: 0.01 })
       })
 
       // notify that the terrain is loaded and the heightmap is available

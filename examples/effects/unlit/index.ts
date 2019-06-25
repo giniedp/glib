@@ -1,5 +1,5 @@
 import { defaultProgram } from '@gglib/effects'
-import { Device, ModelBuilder } from '@gglib/graphics'
+import { buildCube, buildPlane, Device, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -16,28 +16,28 @@ const unlitTexturedProgram = device.createProgram(defaultProgram({
 
 const model = ModelBuilder.begin()
   .withTransform(Mat4.createTranslation(0, -1, 0), (b) => {
-    b.append('Plane', { size: 20, tesselation: 4 })
+    buildPlane(b, { size: 20, tesselation: 4 })
     b.endMesh({
       materialId: 'water',
       name: 'Water Surface',
     })
   })
   .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
-    b.append('Cube', { size: 2 })
+    buildCube(b, { size: 2 })
     b.endMesh({
       materialId: 'red',
       name: 'Red Cube',
     })
   })
   .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
-    b.append('Cube', { size: 2 })
+    buildCube(b, { size: 2 })
     b.endMesh({
       materialId: 'green',
       name: 'Green Cube',
     })
   })
   .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
-    b.append('Cube', { size: 2 })
+    buildCube(b, { size: 2 })
     b.endMesh({
       materialId: 'blue',
       name: 'Blue Cube',
@@ -66,7 +66,7 @@ const model = ModelBuilder.begin()
       name: 'water',
       effect: { program: unlitTexturedProgram },
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/proto_water.png' }),
+        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_water.png' }),
       },
     }],
   })

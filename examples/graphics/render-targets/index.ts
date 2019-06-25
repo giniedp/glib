@@ -1,6 +1,6 @@
-import { loop } from '@gglib/utils'
-import { CullState, DepthFormat, Device, ModelBuilder } from '@gglib/graphics'
+import { buildCube, buildPlane, CullState, DepthFormat, Device, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // # Render Targets
 //
@@ -19,12 +19,12 @@ let program = device.createProgram({
 })
 
 // Create meshes which are going to be rendered
-let planeMesh = ModelBuilder.begin().append('Plane', { size: 1 }).endMesh(device)
-let cubeMesh = ModelBuilder.begin().append('Cube', { size: 1 }).endMesh(device)
+let planeMesh = ModelBuilder.begin().tap(buildPlane).endMesh(device)
+let cubeMesh = ModelBuilder.begin().tap(buildCube).endMesh(device)
 
 // Create a texture and a render target
 let texture = device.createTexture({
-  data: '/assets/textures/proto_red.png',
+  data: '/assets/textures/prototype/proto_red.png',
 })
 let renderTarget = device.createRenderTarget({
   width: 512,
@@ -43,7 +43,7 @@ loop((dt) => {
 
   // Begin rendering to the render target by setting it to the device and clear it
   device.setRenderTarget(renderTarget)
-  device.clear(0xFF222222, 1.0)
+  device.clear(0xFF888888, 1.0)
 
   // update state variables
   // and pass them to the shader

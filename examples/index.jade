@@ -1,6 +1,6 @@
 extends /_layouts/_page
 block content
-  .d-flex.flex-row.flex-fill
+  .d-flex.flex-row.flex-fill.overflow-hidden
     .overflow-auto(style="width: 320px;")
       each child in meta.children
         .list-group.list-group-flush(role="tablist")
@@ -8,7 +8,6 @@ block content
             h5.mb-1()= child.linkTitle
           each grandChild in childrenOf(child)
             a.list-group-item.pl-5()&attributes({ href: '#' + grandChild.path.replace(meta.path, ''), "data-data": grandChild })= grandChild.linkTitle
-    .d-flex.flex-column.flex-fill
-      iframe.m-0.p-0.border-0.flex-fill(src)
+    .d-flex.flex-column.flex-fill.example-container.overflow-auto
 block append script
   script(type='text/javascript' src='./index.js')

@@ -3,7 +3,7 @@ import * as TweakUi from 'tweak-ui'
 import { Manager as ContentManager } from '@gglib/content'
 import { Device, Model } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
-import { BasicStage, Manager as RenderManager, Post } from '@gglib/render'
+import { BasicStage, Manager as RenderManager, PostBloom, PostBloomKawase, PostPixelate, PostTonemap } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // Create the device as usual
@@ -29,10 +29,10 @@ const scene = {
   items: [] as any[],
   steps: [
     new BasicStage(),
-    new Post.Bloom(device, { enabled: true }),
-    new Post.BloomKawase(device, { enabled: false }),
-    new Post.Pixelate(device, { enabled: false }),
-    new Post.Tonemap(device, { enabled: false }),
+    new PostBloom(device, { enabled: true }),
+    new PostBloomKawase(device, { enabled: false }),
+    new PostPixelate(device, { enabled: false }),
+    new PostTonemap(device, { enabled: false }),
   ],
 }
 
@@ -132,7 +132,7 @@ function updateObject(object, time, dt) {
 
 TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
   scene.steps.forEach((it) => {
-    if (it instanceof Post.Bloom) {
+    if (it instanceof PostBloom) {
       q.group('Bloom', {}, (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'glowCut', { min: 0, max: 1, step: 0.001 })
@@ -140,7 +140,7 @@ TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
         c.slider(it, 'gaussSigma', { min: 0, max: 1, step: 0.01 })
       })
     }
-    if (it instanceof Post.BloomKawase) {
+    if (it instanceof PostBloomKawase) {
       q.group('Bloom Kawase', {}, (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'glowCut', { min: 0, max: 1, step: 0.001 })
@@ -148,7 +148,7 @@ TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
         c.checkbox(it, 'halfSize')
       })
     }
-    if (it instanceof Post.Pixelate) {
+    if (it instanceof PostPixelate) {
       q.group('Pixelate', {}, (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'pixelWidth', { min: 1, max: 32, step: 1 })
@@ -156,7 +156,7 @@ TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
         c.slider(it, 'offset', { min: 0, max: 1, step: 0.001 })
       })
     }
-    if (it instanceof Post.Tonemap) {
+    if (it instanceof PostTonemap) {
       q.group('Tonemapping', {}, (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'adaptSpeed', { min: 0, max: 1, step: 0.001 })

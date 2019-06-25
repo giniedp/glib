@@ -8,13 +8,13 @@ import { loop } from '@gglib/utils'
 // ---
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-let device = new Device({
+const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 
 // Create a shader program with vertex and fragment shaders.
 // Here the shader source code is grabbed from the script tags.
-let program = device.createProgram({
+const program = device.createProgram({
   vertexShader: document.getElementById('vertex-shader').textContent,
   fragmentShader: document.getElementById('fragment-shader').textContent,
 })
@@ -23,21 +23,21 @@ let program = device.createProgram({
 // is defined by a position and a color attribute.
 // The layout is the same as in previous example.
 // The data gets an additional vertex.
-let vertices = device.createVertexBuffer({
+const vertices = device.createVertexBuffer({
   layout: {
     vPosition: { type: 'float', offset: 0, elements: 3  },
     vColor: { type: 'float', offset: 12, elements: 3 },
   },
   data: [
     -0.5, -0.5, 0.0,   1,  0,  0, // The red vertex
-      0.5, -0.5, 0.0,   0,  1,  0, // The green vertex
+     0.5, -0.5, 0.0,   0,  1,  0, // The green vertex
     -0.5,  0.5, 0.0,   0,  0,  1, // The blue vertex
-      0.5,  0.5, 0.0,   1,  1,  1, // The white vertex
+     0.5,  0.5, 0.0,   1,  1,  1, // The white vertex
   ],
 })
 
 // Create the index buffer.
-let indices = device.createIndexBuffer({
+const indices = device.createIndexBuffer({
   dataType: 'ushort',
   data: [
     0, 2, 1,

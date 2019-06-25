@@ -1,14 +1,11 @@
-import { loop } from '@gglib/utils'
-import { CullState, Device, ModelBuilder } from '@gglib/graphics'
-import { Mat4 } from '@gglib/math'
-
 // # Shader Annotations
 // The GLSL shader attributes may contain annotation comments.
 // The attributes may be given a different binding name (`@binding`)
 // and they may be given a default value (`@default`). The annotations are optional and
 // they are automatically processed when a shader program is created.
-//
-// ---
+import { buildCube, CullState, Device, ModelBuilder } from '@gglib/graphics'
+import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
 let device = new Device({
@@ -25,11 +22,11 @@ let program = device.createProgram({
 // Create a texture object.
 // Simply pass an URL to the image that should be used as a texture.
 let texture = device.createTexture({
-  data: '/assets/textures/proto_red.png',
+  data: '/assets/textures/prototype/proto_red.png',
 })
 
 // Create Cube mesh which is going to be rendered
-let mesh = ModelBuilder.begin().append('Cube').endMesh(device)
+let mesh = ModelBuilder.begin().tap(buildCube).endMesh(device)
 
 // Allocate state variables
 let world = Mat4.createIdentity()

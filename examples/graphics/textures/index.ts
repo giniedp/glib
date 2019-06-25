@@ -2,9 +2,9 @@
 //
 // ---
 
-import { loop } from '@gglib/utils'
-import { CullState, Device, ModelBuilder, Texture } from '@gglib/graphics'
+import { CullState, Device, ModelBuilder, Texture, buildPlane } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
 let device = new Device({
@@ -19,13 +19,13 @@ let program = device.createProgram({
 })
 
 // Create a mesh which is going to be rendered
-let mesh = ModelBuilder.begin().append('Plane', { size: 1 }).endMesh(device)
+let mesh = ModelBuilder.begin().tap(buildPlane).endMesh(device)
 
 // The easiest way to create a texture is to pass the Image URL as an option to the constructor.
 let texturesFromUrls = [
-  device.createTexture({ data: '/assets/textures/proto_red.png' }),
-  device.createTexture({ data: '/assets/textures/proto_green.png' }),
-  device.createTexture({ data: '/assets/textures/proto_blue.png' }),
+  device.createTexture({ data: '/assets/textures/prototype/proto_red.png' }),
+  device.createTexture({ data: '/assets/textures/prototype/proto_green.png' }),
+  device.createTexture({ data: '/assets/textures/prototype/proto_blue.png' }),
   device.createTexture({ data: '/assets/videos/big-buck-bunny.mp4' }),
 ]
 // Video URLs work the same way. The video element is then available on the texture instance

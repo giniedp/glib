@@ -1,7 +1,7 @@
 import * as TweakUi from 'tweak-ui'
 
 import { AutoMaterial } from '@gglib/effects'
-import { Color, Device, ModelBuilder } from '@gglib/graphics'
+import { Color, Device, ModelBuilder, buildCube, buildSphere, buildCylinder, buildCone } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -10,30 +10,30 @@ const device = new Device({
 })
 
 const meshes = {
-  Cube: ModelBuilder.begin().append('Cube').calculateNormalsAndTangents(true).endMesh(device),
-  Sphere: ModelBuilder.begin().append('Sphere').calculateNormalsAndTangents(true).endMesh(device),
-  Cylinder: ModelBuilder.begin().append('Cylinder').calculateNormalsAndTangents(true).endMesh(device),
-  Cone: ModelBuilder.begin().append('Cone').calculateNormalsAndTangents(true).endMesh(device),
+  Cube: ModelBuilder.begin().tap(buildCube).calculateNormalsAndTangents(true).endMesh(device),
+  Sphere: ModelBuilder.begin().tap(buildSphere).calculateNormalsAndTangents(true).endMesh(device),
+  Cylinder: ModelBuilder.begin().tap(buildCylinder).calculateNormalsAndTangents(true).endMesh(device),
+  Cone: ModelBuilder.begin().tap(buildCone).calculateNormalsAndTangents(true).endMesh(device),
 }
 let mesh = meshes.Cube
 
 const diffuseMaps = {
   null: null as null,
-  Red: device.createTexture({ data: '/assets/textures/proto_red.png' }),
-  Water: device.createTexture({ data: '/assets/textures/proto_water.png' }),
-  Pipe: device.createTexture({ data: '/assets/textures/proto_pipe.png' }),
+  Red: device.createTexture({ data: '/assets/textures/prototype/proto_red.png' }),
+  Water: device.createTexture({ data: '/assets/textures/prototype/proto_water.png' }),
+  Pipe: device.createTexture({ data: '/assets/textures/prototype/proto_pipe.png' }),
 }
 const normalMaps = {
   null: null as null,
-  Red: device.createTexture({ data: '/assets/textures/proto_gray_n.png' }),
-  Water: device.createTexture({ data: '/assets/textures/proto_water_N.png' }),
-  Pipe: device.createTexture({ data: '/assets/textures/proto_pipe_N.png' }),
+  Red: device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' }),
+  Water: device.createTexture({ data: '/assets/textures/prototype/proto_water_N.png' }),
+  Pipe: device.createTexture({ data: '/assets/textures/prototype/proto_pipe_N.png' }),
 }
 const specularMaps = {
   null: null as null,
-  Red: device.createTexture({ data: '/assets/textures/proto_gray_s.png' }),
-  Water: device.createTexture({ data: '/assets/textures/proto_water_S.png' }),
-  Pipe: device.createTexture({ data: '/assets/textures/proto_pipe_S.png' }),
+  Red: device.createTexture({ data: '/assets/textures/prototype/proto_gray_s.png' }),
+  Water: device.createTexture({ data: '/assets/textures/prototype/proto_water_S.png' }),
+  Pipe: device.createTexture({ data: '/assets/textures/prototype/proto_pipe_S.png' }),
 }
 
 const material = new AutoMaterial(device)

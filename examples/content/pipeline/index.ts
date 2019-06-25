@@ -9,12 +9,13 @@
 // In this example we want to load a file with the extension `.pixels` and transform it
 // into a 3d `Model`.
 
-import { loop } from '@gglib/utils'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 import {
   BlendState,
+  buildCube,
   Color,
   CullState,
   DepthState,
@@ -27,6 +28,7 @@ import {
   loader,
   Manager,
 } from '@gglib/content'
+import { AutoMaterial } from '@gglib/effects';
 
 // For this we want to have an intermediate format called `PixelsData` which we want to
 // identify by this symbol
@@ -85,22 +87,18 @@ loader({
           0)
         builder.withTransform(transform, () => {
           builder.defaultAttributes.color = colorMap[col]
-          builder.append('Cube', { size: 1 })
+          buildCube(builder, { size: 1 })
         })
       })
     })
+    const material = new AutoMaterial(device)
+    material.VertexColor = true
 
     const result = builder
       .calculateNormals()
       .calculateBoundings()
       .endModel({
-        materials: [{
-          effect: '/assets/shader/basicVColored.ggfx',
-          parameters: {
-            AmbientColor: [0.2, 0.2, 0.2],
-            SpecularPower: 0.1,
-          },
-        }],
+        materials: [material],
       })
     return Promise.resolve(result)
   },
@@ -170,7 +168,7 @@ loop((dt) => {
 // If multiple pathes are available, the pipeline will decide for the
 // shortest path
 
-let assets = ['megaman.pixels', 'sonic.pixels', 'mario.pixels']
+let assets = ['/megaman.pixels', '/sonic.pixels', '/mario.pixels']
 function loadModel(path: string) {
   content.load(path, Model).then((result) => {
     model = result
