@@ -48,6 +48,9 @@ function processTypemap(name, data, constants) {
 
   const buffer = []
 
+  buffer.push(`/**\n`)
+  buffer.push(` * @public\n`)
+  buffer.push(` */\n`)
   buffer.push(`export const ${name} = Object.freeze({\n`)
   values.forEach((it) => {
     buffer.push(`  ${it.name}: ${it.value},\n`)
@@ -76,6 +79,10 @@ function processSize(name, data, constants) {
     buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
   })
   buffer.push(`})\n`)
+
+  buffer.push(`/**\n`)
+  buffer.push(` * @public\n`)
+  buffer.push(` */\n`)
   buffer.push(`export function ${name}(value: ${node.ref}) {\n`)
   buffer.push(`  return ${name}Map[value]\n`)
   buffer.push(`}\n`)
@@ -88,9 +95,15 @@ function processEnum(name, data, constants) {
 
   const buffer = []
 
+  buffer.push(`/**\n`)
+  buffer.push(` * @public\n`)
+  buffer.push(` */\n`)
   buffer.push(`export enum ${name} {\n`)
   values.forEach((it) => buffer.push(`  ${it.name} = ${it.value},\n`))
   buffer.push(`}\n`)
+    buffer.push(`/**\n`)
+    buffer.push(` * @public\n`)
+    buffer.push(` */\n`)
   buffer.push(`export type ${name}Name\n  = ${values.map((it) => `'${it.name}'`).join('\n  | ')}\n`)
 
   if (node.nameOf) {
@@ -104,6 +117,9 @@ function processEnum(name, data, constants) {
     })
     buffer.push(`})\n`)
 
+    buffer.push(`/**\n`)
+    buffer.push(` * @public\n`)
+    buffer.push(` */\n`)
     buffer.push(`export function valueOf${name}(keyOrValue: ${name} | ${name}Name): ${name} {\n`)
     buffer.push(`  return ${name}ValueMap[keyOrValue]\n`)
     buffer.push(`}\n`)
@@ -118,10 +134,16 @@ function processEnum(name, data, constants) {
     })
     buffer.push(`})\n`)
 
+    buffer.push(`/**\n`)
+    buffer.push(` * @public\n`)
+    buffer.push(` */\n`)
     buffer.push(`export function nameOf${name}(keyOrValue: ${name} | ${name}Name): ${name}Name {\n`)
     buffer.push(`  return ${name}NameMap[keyOrValue]\n`)
     buffer.push(`}\n`)
 
+    buffer.push(`/**\n`)
+    buffer.push(` * @public\n`)
+    buffer.push(` */\n`)
     buffer.push(`export type ${name}Option = ${name} | ${name}Name\n`)
   }
 
