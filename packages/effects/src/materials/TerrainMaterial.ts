@@ -17,6 +17,9 @@ const defineMap = {
 
 const tempMat4 = Mat4.createIdentity()
 
+/**
+ * @public
+ */
 export class TerrainMaterial extends Material {
 
   public get ShadeFunction(): ShadeFunction {

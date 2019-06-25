@@ -3,11 +3,15 @@ import { PipelineContext } from './PipelineContext'
 
 /**
  * A function that transforms an input of type `I` to output of type `O` using context with data type `D`
+ *
+ * @public
  */
 export type Loader<I = any, O = any, D = any> = (input: I, context: PipelineContext<D>) => Promise<O>
 
 /**
  * A specification of a loader function declaring its input and output types
+ *
+ * @public
  */
 export interface LoaderSpec<I = any, O = any, D = any> {
   /**
@@ -49,6 +53,9 @@ export interface LoaderSpec<I = any, O = any, D = any> {
   readonly handle: Loader<I, O, D>
 }
 
+/**
+ * @public
+ */
 export class LoaderEntry<I = any, O = any, D = any> {
   public constructor(
     public input: symbol | string | Type<I>,

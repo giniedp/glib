@@ -27,6 +27,9 @@ function prepareSnippet(snippet: string): string {
   return lines.join('\n')
 }
 
+/**
+ * @public
+ */
 export function glsl(str: TemplateStringsArray): string {
   return prepareSnippet(str.join('\n'))
 }

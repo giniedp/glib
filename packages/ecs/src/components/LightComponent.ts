@@ -31,6 +31,9 @@ export interface LightData {
   misc: Vec4
 }
 
+/**
+ * @public
+ */
 export let LightType = {
   None: 0,
   Directional: 1,
@@ -38,6 +41,9 @@ export let LightType = {
   Spot: 3,
 }
 
+/**
+ * @public
+ */
 export let LightTypeName = {
   0: 'None',
   1: 'Directional',

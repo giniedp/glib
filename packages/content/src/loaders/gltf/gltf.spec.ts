@@ -1,4 +1,16 @@
-import { loaders, ContentManager, Pipeline } from '@gglib/content'
+import {
+  ContentManager,
+  loadGgfxToShaderEffectOptions,
+  loadGlbToGLTFDocument,
+  loadGltfDocumentToModleOptions,
+  loadGltfToGLTFDocument,
+  loadMaterialOptionsToMaterial,
+  loadMaterialOptionsToMaterialArray,
+  loadModelOptionsToModel,
+  loadShaderEffectOptionsToShaderEffect,
+  loadShaderEffectOptionsToShaderEffectArray,
+  Pipeline,
+} from '@gglib/content'
 import { Device, Model } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test/utils.spec'
 
@@ -35,15 +47,15 @@ technique:
       loader: new Pipeline(),
     })
 
-    manager.loader.register(loaders.glbToGLTFDocument)
-    manager.loader.register(loaders.gltfToGLTFDocument)
-    manager.loader.register(loaders.gltfDocumentToModleOptions)
-    manager.loader.register(loaders.modelOptionsToModel)
-    manager.loader.register(loaders.materialOptionsToMaterial)
-    manager.loader.register(loaders.materialOptionsToMaterialArray)
-    manager.loader.register(loaders.ggfxToShaderEffectOptions)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffect)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffectArray)
+    manager.loader.register(loadGlbToGLTFDocument)
+    manager.loader.register(loadGltfToGLTFDocument)
+    manager.loader.register(loadGltfDocumentToModleOptions)
+    manager.loader.register(loadModelOptionsToModel)
+    manager.loader.register(loadMaterialOptionsToMaterial)
+    manager.loader.register(loadMaterialOptionsToMaterialArray)
+    manager.loader.register(loadGgfxToShaderEffectOptions)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     manager.rewriteUrl = (url) => {
       if (url.match(/assets\/gltf\/pbr/)) {

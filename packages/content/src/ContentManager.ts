@@ -58,7 +58,7 @@ export class ContentManager {
   }
 
   /**
-   * Indicates whether assets embedded in DOM elements are anabled
+   * Indicates whether assets embedded in DOM elements are enabled
    */
   public enableDomAssets = true
 
@@ -198,24 +198,24 @@ export class ContentManager {
    *
    * If the batch value is a string, then that is used as an asset path where the asset is downloaded from.
    *
-   *    ```ts
-   *    load({ Model: 'path/to/model.obj' })
-   *    // => { Model: INSTANCE }
-   *    ```
+   * ```ts
+   * load({ Model: 'path/to/model.obj' })
+   * // => { Model: INSTANCE }
+   * ```
    *
    * If the batch value is an array, then each entry is used as an asset path.
    *
-   *    ```ts
-   *    load({ Model: ['path/1.obj', 'path/2.obj'] })
-   *    // => { Model: [INSTANCE1, INSTANCE2] }
-   *    ```
+   * ```ts
+   * load({ Model: ['path/1.obj', 'path/2.obj'] })
+   * // => { Model: [INSTANCE1, INSTANCE2] }
+   * ```
    *
    * If the batch value is an object, then each entry is used as an asset path.
    *
-   *    ```ts
-   *    load({ Model: { foo: 'path/foo.obj' })
-   *    // => { Model: { foo: INSTANCE } }
-   *    ```
+   * ```ts
+   * load({ Model: { foo: 'path/foo.obj' })
+   * // => { Model: { foo: INSTANCE } }
+   * ```
    *
    */
   public loadBatch(batch: { [key: string]: [string, any] }): Promise<{ [key: string]: any }> {

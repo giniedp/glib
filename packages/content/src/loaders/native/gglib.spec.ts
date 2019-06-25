@@ -1,4 +1,20 @@
-import { loaders, ContentManager, Pipeline } from '@gglib/content'
+import {
+  ContentManager,
+  loadImageDataToTextureOptions,
+  loadJpegToHTMLImageElement,
+  loadJpegToImageData,
+  loadJpegToTextureOptions,
+  loadMaterialOptionsToMaterial,
+  loadMaterialOptionsToMaterialArray,
+  loadModelOptionsToModel,
+  loadPngToTextureOptions,
+  loadShaderEffectOptionsToShaderEffect,
+  loadShaderEffectOptionsToShaderEffectArray,
+  loadTextureOptionsToTexture,
+  loadTextureToMaterialOptions,
+  Pipeline,
+} from '@gglib/content'
+
 import {
   buildCube,
   Device,
@@ -26,7 +42,7 @@ describe('content/loader/native', () => {
   })
 
   it('loads jpeg to Texture.Options', (done) => {
-    manager.loader.register(loaders.jpegToTextureOptions)
+    manager.loader.register(loadJpegToTextureOptions)
     manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Options).then((result: TextureOptions) => {
       expect(result).toEqual({ data: '/assets/textures/prototype/proto_gray.jpg' })
     })
@@ -35,7 +51,7 @@ describe('content/loader/native', () => {
   })
 
   it('loads png to Texture.Options', (done) => {
-    manager.loader.register(loaders.pngToTextureOptions)
+    manager.loader.register(loadPngToTextureOptions)
     manager.load('/assets/textures/prototype/proto_gray.png', Texture.Options).then((result: TextureOptions) => {
       expect(result).toEqual({ data: '/assets/textures/prototype/proto_gray.png' })
     })
@@ -44,8 +60,8 @@ describe('content/loader/native', () => {
   })
 
   it('loads jpeg to Texture', (done) => {
-    manager.loader.register(loaders.jpegToTextureOptions)
-    manager.loader.register(loaders.textureOptionsToTexture)
+    manager.loader.register(loadJpegToTextureOptions)
+    manager.loader.register(loadTextureOptionsToTexture)
     manager.load('/assets/textures/prototype/proto_gray.jpg', Texture).then((result) => {
       expect(result instanceof Texture).toBe(true)
       expect(result.image instanceof Image).toBe(true)
@@ -57,10 +73,10 @@ describe('content/loader/native', () => {
   })
 
   it('loads ImageData to Texture', (done) => {
-    manager.loader.register(loaders.jpegToImageData)
-    manager.loader.register(loaders.jpegToHTMLImageElement)
-    manager.loader.register(loaders.imageDataToTextureOptions)
-    manager.loader.register(loaders.textureOptionsToTexture)
+    manager.loader.register(loadJpegToImageData)
+    manager.loader.register(loadJpegToHTMLImageElement)
+    manager.loader.register(loadImageDataToTextureOptions)
+    manager.loader.register(loadTextureOptionsToTexture)
     manager.load('/assets/textures/prototype/proto_gray.jpg', Texture).then((result) => {
       expect(result instanceof Texture).toBe(true)
       expect(result.ready).toBe(true)
@@ -74,9 +90,9 @@ describe('content/loader/native', () => {
   })
 
   it('loads Texture to MaterialOptions', (done) => {
-    manager.loader.register(loaders.jpegToTextureOptions)
-    manager.loader.register(loaders.textureOptionsToTexture)
-    manager.loader.register(loaders.textureToMaterialOptions)
+    manager.loader.register(loadJpegToTextureOptions)
+    manager.loader.register(loadTextureOptionsToTexture)
+    manager.loader.register(loadTextureToMaterialOptions)
     manager.load('/assets/textures/prototype/proto_gray.jpg', Material.Options).then((result: MaterialOptions) => {
       expect(result.effect).toBe('default')
       expect(result.parameters.DiffuseMap).toBeDefined()
@@ -87,11 +103,11 @@ describe('content/loader/native', () => {
   })
 
   it('loads ModelOptions to Model', (done) => {
-    manager.loader.register(loaders.modelOptionsToModel)
-    manager.loader.register(loaders.materialOptionsToMaterial)
-    manager.loader.register(loaders.materialOptionsToMaterialArray)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffect)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffectArray)
+    manager.loader.register(loadModelOptionsToModel)
+    manager.loader.register(loadMaterialOptionsToMaterial)
+    manager.loader.register(loadMaterialOptionsToMaterialArray)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const modelOptions = ModelBuilder.begin()
       .tap((b) => buildCube(b))
@@ -131,10 +147,10 @@ describe('content/loader/native', () => {
   })
 
   it('loads MaterialOptions[] to Material[]', (done) => {
-    manager.loader.register(loaders.materialOptionsToMaterial)
-    manager.loader.register(loaders.materialOptionsToMaterialArray)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffect)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffectArray)
+    manager.loader.register(loadMaterialOptionsToMaterial)
+    manager.loader.register(loadMaterialOptionsToMaterialArray)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const materialOptions: MaterialOptions[] = [{
       name: 'material options',
@@ -161,11 +177,11 @@ describe('content/loader/native', () => {
   })
 
   it('loads ShaderEffectOptions[] to ShaderEffect[]', (done) => {
-    manager.loader.register(loaders.jpegToTextureOptions)
-    manager.loader.register(loaders.textureOptionsToTexture)
+    manager.loader.register(loadJpegToTextureOptions)
+    manager.loader.register(loadTextureOptionsToTexture)
 
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffect)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffectArray)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const options: ShaderEffectOptions[] = [{
       name: 'the name',

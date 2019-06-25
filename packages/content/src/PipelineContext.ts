@@ -1,7 +1,10 @@
 import { Type } from '@gglib/utils'
-import { ContentManager } from './Manager'
+import { ContentManager } from './ContentManager'
 import { Pipeline } from './Pipeline'
 
+/**
+ * @public
+ */
 export interface PipelineContext<T = any> {
   /**
    * The current processing content manager
@@ -26,7 +29,7 @@ export interface PipelineContext<T = any> {
    * Any user defined options that might be used during the pipeline
    *
    * @remarks
-   * Not used or insepcted byt the loader or manager
+   * Not used or inspected by the pipeline or manager
    */
   options?: any
 }

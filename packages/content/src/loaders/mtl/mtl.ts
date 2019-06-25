@@ -4,7 +4,10 @@ import { MTL, MtlData, MtlTextureData } from '../../formats/mtl'
 import { PipelineContext } from '../../PipelineContext'
 import { loader, resolveUri } from '../../utils'
 
-export const mtlToMaterialOptions = loader<null, MaterialOptions>({
+/**
+ * @public
+ */
+export const loadMtlToMaterialOptions = loader<null, MaterialOptions>({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.Options,
   handle: async (_, context) => {
@@ -12,7 +15,10 @@ export const mtlToMaterialOptions = loader<null, MaterialOptions>({
   },
 })
 
-export const mtlToMaterialOptionsArray = loader<null, MaterialOptions[]>({
+/**
+ * @public
+ */
+export const loadMtlToMaterialOptionsArray = loader<null, MaterialOptions[]>({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.OptionsArray,
   handle: async (_, context) => {

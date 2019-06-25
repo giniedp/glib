@@ -19,6 +19,9 @@ export interface Data<T = string | ArrayBuffer | Blob | Document | any> {
   type?: ContentType
 }
 
+/**
+ * @public
+ */
 export function dataFromXhr(xhr: XMLHttpRequest) {
   return {
     xhr: xhr,
@@ -28,6 +31,9 @@ export function dataFromXhr(xhr: XMLHttpRequest) {
   }
 }
 
+/**
+ * @public
+ */
 export function dataFromUri(uri: DataUri): Data<string> {
   return {
     source: uri.uri,
@@ -36,6 +42,9 @@ export function dataFromUri(uri: DataUri): Data<string> {
   }
 }
 
+/**
+ * @public
+ */
 export function dataFromElement<T = string>(path: string, el: Element, convert = (it: string): T => it as any): Data<T> {
   return {
     source: path,

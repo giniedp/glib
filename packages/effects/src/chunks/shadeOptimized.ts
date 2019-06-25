@@ -1,7 +1,14 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export type SHADE_OPTIMIZED_FUNCTION = 'shadeOptimized'
+
+/**
+ * @public
+ */
 export const SHADE_OPTIMIZED: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeOptimized(

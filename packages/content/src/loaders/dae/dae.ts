@@ -28,7 +28,10 @@ import {
   Param as DaeParam,
 } from '../../formats/dae'
 
-export const daeToColladaDocument = loader<null, COLLADA>({
+/**
+ * @public
+ */
+export const loadDaeToColladaDocument = loader<null, COLLADA>({
   input: ['.dae', 'application/xml'],
   output: COLLADA,
   handle: async (_, context) => {
@@ -37,7 +40,10 @@ export const daeToColladaDocument = loader<null, COLLADA>({
   },
 })
 
-export const colladaDocumentToModelOptions = loader<COLLADA, ModelOptions>({
+/**
+ * @public
+ */
+export const loadColladaDocumentToModelOptions = loader<COLLADA, ModelOptions>({
   input: COLLADA,
   output: Model.Options,
   handle: async (dae, context) => {

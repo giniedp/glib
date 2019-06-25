@@ -1,4 +1,13 @@
-import { loaders, ContentManager, Pipeline } from '@gglib/content'
+import {
+  ContentManager,
+  loadJpegToHTMLImageElement,
+  loadJpegToImage,
+  loadJpegToImageData,
+  loadPngToHTMLImageElement,
+  loadPngToImage,
+  loadPngToImageData,
+  Pipeline,
+} from '@gglib/content'
 import { Device } from '@gglib/graphics'
 
 describe('content/loaders/native', () => {
@@ -15,9 +24,9 @@ describe('content/loaders/native', () => {
 
   describe('jpegToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loaders.jpegToHTMLImageElement)
-      manager.loader.register(loaders.jpegToImage)
-      manager.loader.register(loaders.jpegToImageData)
+      manager.loader.register(loadJpegToHTMLImageElement)
+      manager.loader.register(loadJpegToImage)
+      manager.loader.register(loadJpegToImageData)
     })
 
     it ('loads ImageData', (done) => {
@@ -33,9 +42,9 @@ describe('content/loaders/native', () => {
 
   describe('pngToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loaders.pngToHTMLImageElement)
-      manager.loader.register(loaders.pngToImage)
-      manager.loader.register(loaders.pngToImageData)
+      manager.loader.register(loadPngToHTMLImageElement)
+      manager.loader.register(loadPngToImage)
+      manager.loader.register(loadPngToImageData)
     })
 
     it ('loads ImageData', (done) => {

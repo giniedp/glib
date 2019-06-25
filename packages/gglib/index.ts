@@ -9,16 +9,49 @@ import * as GglibRender from '@gglib/render'
 import * as GglibTerrain from '@gglib/terrain'
 import * as GglibUtils from '@gglib/utils'
 
+/**
+ * @public
+ */
 export const Content = GglibContent
+/**
+ * @public
+ */
 export const Utils = GglibUtils
+/**
+ * @public
+ */
 export const Ecs = GglibEcs
+/**
+ * @public
+ */
 export const Effects = GglibEffects
+/**
+ * @public
+ */
 export const Graphics = GglibGraphics
+/**
+ * @public
+ */
 export const Input = GglibInput
+/**
+ * @public
+ */
 export const Math = GglibMath
+/**
+ * @public
+ */
 export const Procedural = GglibProcedural
+/**
+ * @public
+ */
 export const Render = GglibRender
+/**
+ * @public
+ */
 export const Terrain = GglibTerrain
+/**
+ * @public
+ */
 export const Gglib = {
   Content,
   Utils,

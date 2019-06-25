@@ -29,6 +29,9 @@ function warn(msg: string) {
 
 let defaultPipeline: Pipeline
 
+/**
+ * @public
+ */
 export class Pipeline {
   /**
    * Returns the default pipeline instance

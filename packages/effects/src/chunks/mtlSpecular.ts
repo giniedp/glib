@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlSpecularDefs {
   /**
    * Adds `uSpecularPower` float uniform with a binding to `SpecularPower` parameter
@@ -33,6 +36,7 @@ export interface MtlSpecularDefs {
 /**
  * Adds Specular color contribution to the shader
  *
+ * @public
  * @remarks
  * Defines used in this chunk
  *

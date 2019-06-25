@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface VSkinningDefs {
   /**
    * Enables vertex indices and vertex weights attributes for skinning animation
@@ -22,6 +25,9 @@ export interface VSkinningDefs {
   SKINNING_WEIGHT_COUNT?: any
 }
 
+/**
+ * @public
+ */
 export const V_SKINNING: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #if defined(SKINNING_BONE_COUNT) || defined(SKINNING_WEIGHT_COUNT)

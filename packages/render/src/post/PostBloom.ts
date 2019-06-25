@@ -18,6 +18,11 @@ function gauss(n: number, theta: number) {
   return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)))
 }
 
+/**
+ * Constructor options for {@link PostBloom}
+ *
+ * @public
+ */
 export interface BloomOptions {
   enabled?: boolean
   glowCut?: number

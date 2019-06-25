@@ -1,4 +1,9 @@
-import { loaders, ContentManager, Pipeline } from '@gglib/content'
+import {
+  ContentManager,
+  loadMp4ToHTMLVideoElement,
+  loadWebmToHTMLVideoElement,
+  Pipeline,
+} from '@gglib/content'
 import { Device } from '@gglib/graphics'
 
 describe('content/loaders/native', () => {
@@ -15,7 +20,7 @@ describe('content/loaders/native', () => {
 
   describe('mp4ToHTMLVideoElement', () => {
     beforeEach(() => {
-      manager.loader.register(loaders.mp4ToHTMLVideoElement)
+      manager.loader.register(loadMp4ToHTMLVideoElement)
     })
 
     it ('loads HTMLVideoElement', (done) => {
@@ -30,7 +35,7 @@ describe('content/loaders/native', () => {
 
   describe('pngToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loaders.webmToHTMLVideoElement)
+      manager.loader.register(loadWebmToHTMLVideoElement)
     })
 
     it ('loads HTMLVideoElement', (done) => {

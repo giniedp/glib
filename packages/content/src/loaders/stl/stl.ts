@@ -3,7 +3,10 @@ import { Model, ModelBuilder, ModelOptions } from '@gglib/graphics'
 import { STL } from '../../formats/stl'
 import { loader } from '../../utils'
 
-export const stlToModelOptions = loader<null, ModelOptions>({
+/**
+ * @public
+ */
+export const loadStlToModelOptions = loader<null, ModelOptions>({
   input: '.stl',
   output: Model.Options,
   handle: async (_, context) => {

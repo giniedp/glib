@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlAmbientDefs {
   /**
    * Enables constant AmbientColor
@@ -26,6 +29,7 @@ export interface MtlAmbientDefs {
 /**
  * Adds Diffuse or Albedo texture / color to the shader
  *
+ * @public
  * @remarks
  * Uses defines
  *

@@ -3,6 +3,11 @@ import { Binder } from './Binder'
 import { Manager } from './Manager'
 import { DrawableData, Stage } from './Types'
 
+/**
+ * Constructor options for {@link BasicStage}
+ *
+ * @public
+ */
 export interface BasicStageOptions {
   clearColor?: number
 }

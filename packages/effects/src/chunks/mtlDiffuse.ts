@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlDiffuseDefs {
   /**
    * Enables the DiffuseColor
@@ -26,6 +29,7 @@ export interface MtlDiffuseDefs {
 /**
  * Adds Diffuse or Albedo texture / color to the shader
  *
+ * @public
  * @remarks
  * Uses defines
  *

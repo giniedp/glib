@@ -1,7 +1,10 @@
 import { Model, ModelOptions } from '@gglib/graphics'
 import { loader } from '../../utils'
 
-export const ggmodToModelOptions = loader<null, ModelOptions>({
+/**
+ * @public
+ */
+export const loadGgmodToModelOptions = loader<null, ModelOptions>({
   input: '.ggmod',
   output: Model.Options,
   handle: async (_, context) => {

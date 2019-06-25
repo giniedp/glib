@@ -1,7 +1,14 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export type SHADE_SZIRMAY_FUNCTION = 'shadeSzirmay'
+
+/**
+ * @public
+ */
 export const SHADE_SZIRMAY: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeSzirmay(

@@ -1,4 +1,4 @@
-import { loaders, ContentManager, Pipeline } from '@gglib/content'
+import { ContentManager, loadTgaToImageData, Pipeline } from '@gglib/content'
 import { Device } from '@gglib/graphics'
 
 describe('content/loaders/tga', () => {
@@ -15,7 +15,7 @@ describe('content/loaders/tga', () => {
 
   describe('tgaToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loaders.tgaToImageData)
+      manager.loader.register(loadTgaToImageData)
     })
 
     it ('loads ImageData', (done) => {

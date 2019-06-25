@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface FogDefs {
   /**
    * Enables a fog effect
@@ -44,6 +47,7 @@ export interface FogDefs {
 /**
  * Adds fog functionality to a shader
  *
+ * @public
  * @remarks
  * Uses the following defines
  *

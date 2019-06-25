@@ -1,12 +1,18 @@
 import { loader } from '../../utils'
 
-export const webmToHTMLVideoElement = loader<null, HTMLVideoElement>({
+/**
+ * @public
+ */
+export const loadWebmToHTMLVideoElement = loader<null, HTMLVideoElement>({
   input: '.webm',
   output: HTMLVideoElement,
   handle: async (_, context) => loadVideo(context.source),
 })
 
-export const mp4ToHTMLVideoElement = loader<null, HTMLVideoElement>({
+/**
+ * @public
+ */
+export const loadMp4ToHTMLVideoElement = loader<null, HTMLVideoElement>({
   input: '.mp4',
   output: HTMLVideoElement,
   handle: async (_, context) => loadVideo(context.source),

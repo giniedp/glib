@@ -3,6 +3,11 @@ import { createShaderEffect, Device, ShaderEffect } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Stage } from '../Types'
 
+/**
+ * Constructor options for {@link PostPixelate}
+ *
+ * @public
+ */
 export interface PixelateOptions {
   enabled?: boolean
   pixelWidth?: number

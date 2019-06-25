@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface VNormalDefs {
   /**
    * Enables vertex normal attribute
@@ -19,6 +22,9 @@ export interface VNormalDefs {
   V_TANGENT_PLANE?: any
 }
 
+/**
+ * @public
+ */
 export const V_NORMAL: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #if defined(V_TANGENT) || defined(V_TANGENT_PLANE)

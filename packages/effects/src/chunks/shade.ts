@@ -1,11 +1,21 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface ShadeDefs {
   SHADE_FUNCTION?: any
 }
 
+/**
+ * @public
+ */
 export type SHADE_NON_FUNCTION = 'shadeNone'
+
+/**
+ * @public
+ */
 export const SHADE: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifndef SHADE_FUNCTION

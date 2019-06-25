@@ -2,6 +2,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlOcclusionDefs {
   /**
    * Enables the occlusion texture
@@ -30,6 +33,7 @@ export interface MtlOcclusionDefs {
 /**
  * Adds Occlusion texture to the shader
  *
+ * @public
  * @remarks
  * Uses defines
  *

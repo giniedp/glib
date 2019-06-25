@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export const MAIN: ShaderChunkSet = Object.freeze({
   vs: glsl`
     void main() {

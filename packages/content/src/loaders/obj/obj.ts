@@ -3,7 +3,10 @@ import { Material, Model, ModelBuilder, ModelMeshOptions, ModelOptions, VertexLa
 import { Data, FaceElement, OBJ, VertexTextureNormalRef } from '../../formats/obj'
 import { loader, resolveUri } from '../../utils'
 
-export const objToModelOptions = loader<null, ModelOptions>({
+/**
+ * @public
+ */
+export const loadObjToModelOptions = loader<null, ModelOptions>({
   input: ['.obj', 'application/x-obj'],
   output: Model.Options,
   handle: async (_, context) => {

@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface VTextureDefs {
   /**
    * Enables the first vertex texture attribute
@@ -22,6 +25,9 @@ export interface VTextureDefs {
   V_TEXTURE2_OFFSET_SCALE?: any
 }
 
+/**
+ * @public
+ */
 export const V_TEXTURE: ShaderChunkSet = Object.freeze({
   attributes: glsl`
     #ifdef V_TEXTURE1

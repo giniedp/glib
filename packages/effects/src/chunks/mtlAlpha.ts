@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlAlphaDefs {
   /**
    * Enables the alpha uniform
@@ -15,6 +18,7 @@ export interface MtlAlphaDefs {
 /**
  * Adds alpha clip functionality to a shader
  *
+ * @public
  * @remarks
  * Uses the following defines
  *

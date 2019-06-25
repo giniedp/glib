@@ -18,7 +18,10 @@ import {
 import { PipelineContext } from '../../PipelineContext'
 import { loader, resolveUri } from '../../utils'
 
-export const glbToGLTFDocument = loader<null, Document>({
+/**
+ * @public
+ */
+export const loadGlbToGLTFDocument = loader<null, Document>({
   input: ['.glb', 'model/gltf-binary'],
   output: GLTF.Document,
   handle: async (_, context) => {
@@ -27,7 +30,10 @@ export const glbToGLTFDocument = loader<null, Document>({
   },
 })
 
-export const gltfToGLTFDocument = loader<null, Document>({
+/**
+ * @public
+ */
+export const loadGltfToGLTFDocument = loader<null, Document>({
   input: ['.gltf', 'model/gltf+json'],
   output: GLTF.Document,
   handle: async (_, context) => {
@@ -36,7 +42,10 @@ export const gltfToGLTFDocument = loader<null, Document>({
   },
 })
 
-export const gltfDocumentToModleOptions = loader<Document, ModelOptions>({
+/**
+ * @public
+ */
+export const loadGltfDocumentToModleOptions = loader<Document, ModelOptions>({
   input: GLTF.Document,
   output: Model.Options,
   handle: async (input, context) => {
@@ -53,7 +62,10 @@ export const gltfDocumentToModleOptions = loader<Document, ModelOptions>({
   },
 })
 
-export const gltfDocumentToModleOptionsArray = loader<Document, ModelOptions[]>({
+/**
+ * @public
+ */
+export const loadGltfDocumentToModleOptionsArray = loader<Document, ModelOptions[]>({
   input: GLTF.Document,
   output: Model.OptionsArray,
   handle: async (input, context) => {

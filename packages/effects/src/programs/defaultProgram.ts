@@ -86,6 +86,9 @@ const chunks = [
   V_TEXTURE,
 ]
 
+/**
+ * @public
+ */
 export interface DefaultProgramDefs extends
   FogDefs,
   GammaDefs,
@@ -108,6 +111,9 @@ export interface DefaultProgramDefs extends
 
 }
 
+/**
+ * @public
+ */
 export function defaultProgram(defs: DefaultProgramDefs): ShaderProgramOptions {
   return buildProgram(BASE, chunks, defs)
 }

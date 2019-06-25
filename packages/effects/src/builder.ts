@@ -3,11 +3,15 @@ import { glsl } from './glsl'
 
 /**
  * A simple string, a part of shader source code
+ *
+ * @public
  */
 export type ShaderChunk = string
 
 /**
  * Maps slot names to a ShaderChunk
+ *
+ * @public
  */
 export interface ShaderChunkSet {
   [key: string]: ShaderChunk
@@ -16,6 +20,7 @@ export interface ShaderChunkSet {
 /**
  * ShaderDefines maps a defined KEY to its defined VALUE
  *
+ * @public
  * @remarks
  * - Defines with `true` values are defined as `#define KEY`
  * - Defines with falsy values (`false`, `null`, `undefined`) are ignored.
@@ -44,6 +49,7 @@ export function buildProgram(base: string, chunks: ShaderChunkSet[], defines?: S
 
 /**
  *
+ * @public
  * @param base
  * @param chunks
  * @param defines

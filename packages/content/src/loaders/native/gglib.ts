@@ -6,6 +6,7 @@ import { loader, resolveUri } from '../../utils'
 /**
  * Loads and instantiates a Model from ModelOptions
  *
+ * @public
  * @remarks
  * Materials are resolved as follows
  * - instance of `Material` is kept as is
@@ -16,7 +17,7 @@ import { loader, resolveUri } from '../../utils'
  * If the models bounding box is missing or is of zero size then the box is created by
  * merging all bounding boxes of all meshes
  */
-export const modelOptionsToModel = loader<ModelOptions, Model>({
+export const loadModelOptionsToModel = loader<ModelOptions, Model>({
   input: Model.Options,
   output: Model,
   handle: async (input, context) => {
@@ -61,7 +62,10 @@ export const modelOptionsToModel = loader<ModelOptions, Model>({
   },
 })
 
-export const materialOptionsToMaterial = loader<MaterialOptions, Material>({
+/**
+ * @public
+ */
+export const loadMaterialOptionsToMaterial = loader<MaterialOptions, Material>({
   input: Material.Options,
   output: Material,
   handle: async (input, context) => {
@@ -94,7 +98,10 @@ export const materialOptionsToMaterial = loader<MaterialOptions, Material>({
   },
 })
 
-export const materialOptionsToMaterialArray = loader<MaterialOptions[], Material[]>({
+/**
+ * @public
+ */
+export const loadMaterialOptionsToMaterialArray = loader<MaterialOptions[], Material[]>({
   input: Material.OptionsArray,
   output: Material.Array,
   handle: async (input, context) => {
@@ -102,7 +109,10 @@ export const materialOptionsToMaterialArray = loader<MaterialOptions[], Material
   },
 })
 
-export const shaderEffectOptionsToShaderEffect = loader<ShaderEffectOptions, ShaderEffect>({
+/**
+ * @public
+ */
+export const loadShaderEffectOptionsToShaderEffect = loader<ShaderEffectOptions, ShaderEffect>({
   input: ShaderEffect.Options,
   output: ShaderEffect,
   handle: async (input, context) => {
@@ -129,7 +139,10 @@ async function loadStringKeysAsTexture(input: any, context: PipelineContext) {
   return input
 }
 
-export const shaderEffectOptionsToShaderEffectArray = loader<ShaderEffectOptions[], ShaderEffect[]>({
+/**
+ * @public
+ */
+export const loadShaderEffectOptionsToShaderEffectArray = loader<ShaderEffectOptions[], ShaderEffect[]>({
   input: ShaderEffect.OptionsArray,
   output: ShaderEffect.Array,
   handle: (input, context) => {
@@ -137,7 +150,10 @@ export const shaderEffectOptionsToShaderEffectArray = loader<ShaderEffectOptions
   },
 })
 
-export const jpegToTextureOptions = loader<null, TextureOptions>({
+/**
+ * @public
+ */
+export const loadJpegToTextureOptions = loader<null, TextureOptions>({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Texture.Options,
   handle: async (_, context) => {
@@ -145,7 +161,10 @@ export const jpegToTextureOptions = loader<null, TextureOptions>({
   },
 })
 
-export const pngToTextureOptions = loader<null, TextureOptions>({
+/**
+ * @public
+ */
+export const loadPngToTextureOptions = loader<null, TextureOptions>({
   input: ['.png', 'image/png'],
   output: Texture.Options,
   handle: async (_, context) => {
@@ -153,7 +172,10 @@ export const pngToTextureOptions = loader<null, TextureOptions>({
   },
 })
 
-export const imageDataToTextureOptions = loader<ImageData, TextureOptions>({
+/**
+ * @public
+ */
+export const loadImageDataToTextureOptions = loader<ImageData, TextureOptions>({
   input: ImageData,
   output: Texture.Options,
   handle: async (input, _) => {
@@ -165,7 +187,10 @@ export const imageDataToTextureOptions = loader<ImageData, TextureOptions>({
   },
 })
 
-export const textureOptionsToTexture = loader<TextureOptions, Texture>({
+/**
+ * @public
+ */
+export const loadTextureOptionsToTexture = loader<TextureOptions, Texture>({
   input: Texture.Options,
   output: Texture,
   handle: async (input, context) => {
@@ -173,7 +198,10 @@ export const textureOptionsToTexture = loader<TextureOptions, Texture>({
   },
 })
 
-export const textureToMaterialOptions = loader<Texture, MaterialOptions>({
+/**
+ * @public
+ */
+export const loadTextureToMaterialOptions = loader<Texture, MaterialOptions>({
   input: Texture,
   output: Material.Options,
   handle: (input, _) => {

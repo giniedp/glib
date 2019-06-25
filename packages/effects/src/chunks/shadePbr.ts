@@ -3,7 +3,14 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export type SHADE_PBR_FUNCTION = 'shadePbr'
+
+/**
+ * @public
+ */
 export const SHADE_PBR: ShaderChunkSet = Object.freeze({
   functions: glsl`
     // This calculates the specular geometric attenuation (aka G()),

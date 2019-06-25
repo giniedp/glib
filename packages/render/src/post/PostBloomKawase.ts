@@ -4,6 +4,11 @@ import { BlendState, createShaderEffect, DepthFormat, Device, ShaderEffect, Shad
 import { Manager } from '../Manager'
 import { Stage } from '../Types'
 
+/**
+ * Constructor options for {@link PostBloomKawase}
+ *
+ * @public
+ */
 export interface BloomKawaseOptions {
   enabled?: boolean
   glowCut?: number

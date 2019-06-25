@@ -2,6 +2,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlNormalDefs {
   /**
    * Adds NormalMap texture
@@ -23,6 +26,7 @@ export interface MtlNormalDefs {
 /**
  * Adds Diffuse or Albedo texture / color to the shader
  *
+ * @public
  * @remarks
  * Uses defines
  *

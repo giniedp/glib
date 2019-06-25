@@ -2,7 +2,10 @@ import { Material, MaterialOptions } from '@gglib/graphics'
 
 import { loader } from '../../utils'
 
-export const ggmatToMaterialOptions = loader<null, MaterialOptions>({
+/**
+ * @public
+ */
+export const loadGgmatToMaterialOptions = loader<null, MaterialOptions>({
   input: '.ggmat',
   output: Material.Options,
   handle: async (_, context) => {
@@ -10,7 +13,10 @@ export const ggmatToMaterialOptions = loader<null, MaterialOptions>({
   },
 })
 
-export const ggmatToMaterialOptionsArray = loader<null, MaterialOptions[]>({
+/**
+ * @public
+ */
+export const loadGgmatToMaterialOptionsArray = loader<null, MaterialOptions[]>({
   input: '.ggmat',
   output: Material.OptionsArray,
   handle: async (_, context) => {

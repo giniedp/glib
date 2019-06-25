@@ -1,4 +1,4 @@
-import { ContentManager } from './Manager'
+import { ContentManager } from './ContentManager'
 import { Pipeline } from './Pipeline'
 import { PipelineContext } from './PipelineContext'
 

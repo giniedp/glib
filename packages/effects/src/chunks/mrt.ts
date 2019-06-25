@@ -1,5 +1,8 @@
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface GbufferDefs {
   GBUFFER?: any
   GBUFFER1?: any

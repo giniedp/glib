@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface VColorDefs {
   /**
    * Enables the first vertex color attribute
@@ -11,6 +14,9 @@ export interface VColorDefs {
    */
   V_COLOR2?: any
 }
+/**
+ * @public
+ */
 
 export const V_COLOR: ShaderChunkSet = Object.freeze({
   attributes: glsl`

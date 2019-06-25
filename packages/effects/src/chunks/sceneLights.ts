@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface LightDefs {
   /**
    * Enables lighting
@@ -43,6 +46,9 @@ export interface LightDefs {
   LIGHT_TYPE_SPOT?: any
 }
 
+/**
+ * @public
+ */
 export const LIGHTS: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifndef LIGHT_COUNT

@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface VBillboardDefs {
   /**
    * Enables billboard rotation of the vertices
@@ -11,6 +14,7 @@ export interface VBillboardDefs {
 /**
  * Adds billboard functionality to a shader
  *
+ * @public
  * @remarks
  * Uses the following defines
  *

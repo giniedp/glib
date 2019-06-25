@@ -3,6 +3,8 @@ import { glsl } from '../glsl'
 
 /**
  * The base template
+ *
+ * @public
  */
 export const BASE: ShaderChunk = glsl`
 #pragma block:version

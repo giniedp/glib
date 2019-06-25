@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlMetallicRoughness {
   /**
    * Enables the metallic roughness parameters
@@ -22,6 +25,7 @@ export interface MtlMetallicRoughness {
 /**
  * Adds Diffuse or Albedo texture / color to the shader
  *
+ * @public
  * @remarks
  * Uses defines
  * - `METALLIC_ROUGHNESS` enables metallic and groughness uniforms

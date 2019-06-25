@@ -4,6 +4,8 @@ const regex = /(([a-z0-9-]+)\/([a-z0-9+-]+))?((;\s*([a-z0-9-]+=)?(([a-z0-9]+)|("
 
 /**
  * Describes components of a mime type
+ *
+ * @public
  */
 export class ContentType {
   /**

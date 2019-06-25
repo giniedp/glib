@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlEmissionDefs {
   /**
    * Adds EmissionColor
@@ -26,6 +29,7 @@ export interface MtlEmissionDefs {
 /**
  * Adds Emission texture / color to the shader
  *
+ * @public
  * @remarks
  * Uses defines
  *

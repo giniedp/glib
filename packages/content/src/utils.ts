@@ -7,6 +7,7 @@ import { PipelineContext } from './PipelineContext'
  * Registeres a loader specification at the default pipeline (`Pipeline.default`) and returns
  * without any modification
  *
+ * @public
  * @param spec - The loader specification to register
  */
 export function loader<I = any, O = any, D = any>(spec: LoaderSpec<I, O, D>): LoaderSpec<I, O, D> {
@@ -17,6 +18,7 @@ export function loader<I = any, O = any, D = any>(spec: LoaderSpec<I, O, D>): Lo
 /**
  * Resolves a uri reference relative to the source of given context.
  *
+ * @public
  * @remarks
  * If `refUri` is absolute or is in data uri format then it is returned as is. Otherwise
  * it is merged with `context.source`

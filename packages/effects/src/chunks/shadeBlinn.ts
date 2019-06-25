@@ -1,7 +1,14 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export type SHADE_BLINN_FUNCTION = 'shadeBlinn'
+
+/**
+ * @public
+ */
 export const SHADE_BLINN: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeBlinn(

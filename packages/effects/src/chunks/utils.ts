@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export const UTILS: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #define M_PI 3.1415926535897932384626433832795

@@ -148,6 +148,9 @@ export interface Scene {
   steps: Stage[]
 }
 
+/**
+ * @public
+ */
 export interface SceneOutput {
   /**
    * The render target

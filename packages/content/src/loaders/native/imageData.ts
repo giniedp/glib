@@ -1,6 +1,9 @@
 import { loader } from '../../utils'
 
-export const jpegToImageData = loader<null, ImageData>({
+/**
+ * @public
+ */
+export const loadJpegToImageData = loader<null, ImageData>({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: ImageData,
   handle: async (_, context) => {
@@ -8,7 +11,10 @@ export const jpegToImageData = loader<null, ImageData>({
   },
 })
 
-export const pngToImageData = loader<null, ImageData>({
+/**
+ * @public
+ */
+export const loadPngToImageData = loader<null, ImageData>({
   input: ['.png', 'image/png'],
   output: ImageData,
   handle: async (_, context) => {

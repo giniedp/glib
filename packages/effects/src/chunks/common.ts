@@ -3,6 +3,8 @@ import { glsl } from '../glsl'
 
 /**
  * Adds common attributes uniforms varying and structs
+ *
+ * @public
  */
 export const COMMON: ShaderChunkSet = Object.freeze({
   attributes: glsl`

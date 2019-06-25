@@ -4,7 +4,10 @@ import { YML } from '../../formats/yml'
 import { PipelineContext  } from '../../PipelineContext'
 import { loader, resolveUri } from '../../utils'
 
-export const ggfxToShaderEffectOptions = loader<null, ShaderEffectOptions>({
+/**
+ * @public
+ */
+export const loadGgfxToShaderEffectOptions = loader<null, ShaderEffectOptions>({
   input: ['.ggfx', 'application/x-yaml'],
   output: ShaderEffect.Options,
   handle: async (_, context) => {

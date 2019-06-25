@@ -12,6 +12,9 @@ import {
 } from '../chunks'
 import { defaultProgram, DefaultProgramDefs } from '../programs'
 
+/**
+ * @public
+ */
 export interface AutoMaterialLight {
   Position: number[]
   Direction: number[]
@@ -48,6 +51,9 @@ const defineMap = {
   MetallicRoughnessMap: 'METALLIC_ROUGHNESS_MAP',
 }
 
+/**
+ * @public
+ */
 export type ShadeFunction = SHADE_NON_FUNCTION
   | SHADE_PBR_FUNCTION
   | SHADE_BLINN_FUNCTION
@@ -59,6 +65,9 @@ export type ShadeFunction = SHADE_NON_FUNCTION
 
 const tempMat4 = Mat4.createIdentity()
 
+/**
+ * @public
+ */
 export class AutoMaterial extends Material {
 
   public get ShadeFunction(): ShadeFunction {

@@ -4,7 +4,10 @@ import { Quat, Vec4 } from '@gglib/math'
 import { MD5Mesh } from '../../formats/md5'
 import { loader, resolveUri } from '../../utils'
 
-export const md5meshToModelOptions = loader<null, ModelOptions>({
+/**
+ * @public
+ */
+export const loadMd5meshToModelOptions = loader<null, ModelOptions>({
   input: ['.md5mesh'],
   output: Model.Options,
   handle: async (_, context) => {

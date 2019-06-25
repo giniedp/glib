@@ -1,24 +1,36 @@
 import { loader } from '../../utils'
 
-export const jpegToHTMLImageElement = loader<null, HTMLImageElement>({
+/**
+ * @public
+ */
+export const loadJpegToHTMLImageElement = loader<null, HTMLImageElement>({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: HTMLImageElement,
   handle: (_, context) => loadImage(context.source),
 })
 
-export const jpegToImage = loader<null, HTMLImageElement>({
+/**
+ * @public
+ */
+export const loadJpegToImage = loader<null, HTMLImageElement>({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Image,
   handle: (_, context) => loadImage(context.source),
 })
 
-export const pngToHTMLImageElement = loader<null, HTMLImageElement>({
+/**
+ * @public
+ */
+export const loadPngToHTMLImageElement = loader<null, HTMLImageElement>({
   input: ['.png', 'image/png'],
   output: HTMLImageElement,
   handle: (_, context) => loadImage(context.source),
 })
 
-export const pngToImage = loader<null, HTMLImageElement>({
+/**
+ * @public
+ */
+export const loadPngToImage = loader<null, HTMLImageElement>({
   input: ['.png', 'image/png'],
   output: Image,
   handle: (_, context) => loadImage(context.source),

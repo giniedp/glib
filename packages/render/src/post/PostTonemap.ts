@@ -15,6 +15,11 @@ import {
 import { Manager } from '../Manager'
 import { Stage } from '../Types'
 
+/**
+ * Constructor options for {@link PostTonemap}
+ *
+ * @public
+ */
 export interface TonemapOptions {
   enabled?: boolean
   adaptSpeed?: number

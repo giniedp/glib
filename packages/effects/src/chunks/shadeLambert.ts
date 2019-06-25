@@ -1,7 +1,14 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export type SHADE_LAMBERT_FUNCTION = 'shadeLambert'
+
+/**
+ * @public
+ */
 export const SHADE_LAMBERT: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeLambert(

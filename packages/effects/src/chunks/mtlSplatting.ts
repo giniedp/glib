@@ -1,6 +1,9 @@
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
+/**
+ * @public
+ */
 export interface MtlSplattingDefs {
   /**
    * Enables texture splatting
@@ -30,6 +33,9 @@ export interface MtlSplattingDefs {
   SPLATTING_NORMAL?: any
 }
 
+/**
+ * @public
+ */
 export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
   uniforms: glsl`
     #ifdef SPLATTING

@@ -1,4 +1,15 @@
-import { loaders, ContentManager, Pipeline } from '@gglib/content'
+import {
+  ContentManager,
+  loadColladaDocumentToModelOptions,
+  loadDaeToColladaDocument,
+  loadGgfxToShaderEffectOptions,
+  loadMaterialOptionsToMaterial,
+  loadMaterialOptionsToMaterialArray,
+  loadModelOptionsToModel,
+  loadShaderEffectOptionsToShaderEffect,
+  loadShaderEffectOptionsToShaderEffectArray,
+  Pipeline,
+} from '@gglib/content'
 import { Device, Model } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test/utils.spec'
 
@@ -35,14 +46,14 @@ technique:
       loader: new Pipeline(),
     })
 
-    manager.loader.register(loaders.daeToColladaDocument)
-    manager.loader.register(loaders.colladaDocumentToModelOptions)
-    manager.loader.register(loaders.modelOptionsToModel)
-    manager.loader.register(loaders.materialOptionsToMaterial)
-    manager.loader.register(loaders.materialOptionsToMaterialArray)
-    manager.loader.register(loaders.ggfxToShaderEffectOptions)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffect)
-    manager.loader.register(loaders.shaderEffectOptionsToShaderEffectArray)
+    manager.loader.register(loadDaeToColladaDocument)
+    manager.loader.register(loadColladaDocumentToModelOptions)
+    manager.loader.register(loadModelOptionsToModel)
+    manager.loader.register(loadMaterialOptionsToMaterial)
+    manager.loader.register(loadMaterialOptionsToMaterialArray)
+    manager.loader.register(loadGgfxToShaderEffectOptions)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
+    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     manager.rewriteUrl = (url) => {
       switch (url) {
