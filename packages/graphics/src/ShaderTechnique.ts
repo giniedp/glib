@@ -3,7 +3,7 @@ import { Device } from './Device'
 import { ShaderPass, ShaderPassOptions } from './ShaderPass'
 
 /**
- * ShaderTechnique constructor options
+ * Constructor options for {@link ShaderTechnique}
  *
  * @public
  */
@@ -19,11 +19,11 @@ export interface ShaderTechniqueOptions {
   /**
    * Collection of passes of this technique
    */
-  passes?: Array<ShaderPassOptions|ShaderPass>
+  passes: Array<ShaderPassOptions|ShaderPass>
 }
 
 /**
- * Combines multiple `ShaderPass`es into a single technqiue
+ * Defines a sequence of {@link ShaderPass}es
  *
  * @public
  */
@@ -44,39 +44,56 @@ export class ShaderTechnique {
   /**
    * Collection of passes of this technique
    */
-  public passes: ShaderPass[]
+  public readonly passes: ReadonlyArray<ShaderPass> = []
   /**
    * Arbitrary meta data or info about the shader technique
    */
-  public meta: { [key: string]: any }
-  /**
-   *
-   */
-  constructor(device: Device, options: ShaderTechniqueOptions= {}) {
+  public readonly meta: { [key: string]: any }
+
+  private passesByName = new Map<string, ShaderPass>()
+
+  constructor(device: Device, options: ShaderTechniqueOptions) {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.passes = []
+    const passes = this.passes as ShaderPass[]
     for (let pass of options.passes) {
       if (pass instanceof ShaderPass) {
-        this.passes.push(pass)
+        passes.push(pass)
       } else {
-        this.passes.push(new ShaderPass(device, pass))
+        passes.push(new ShaderPass(device, pass))
+      }
+    }
+    for (const pass of passes) {
+      if (pass.name) {
+        this.passesByName.set(pass.name, pass)
       }
     }
   }
 
+  /**
+   * Gets a {@link ShaderPass} by name or index
+   * @param passIdentifier
+   */
   public pass(passIdentifier: string|number): ShaderPass {
+    let result: ShaderPass
     if (typeof passIdentifier === 'number') {
-      let result = this.passes[passIdentifier]
-      if (result) { return result }
+      result = this.passes[passIdentifier]
+    } else {
+      result = this.passesByName.get(passIdentifier)
     }
-    for (let pass of this.passes) {
-      if (pass.name === passIdentifier) { return pass }
+    if (!result) {
+      throw new Error(`Pass '${passIdentifier}' not found`)
     }
-    throw new Error(`Pass '${passIdentifier}' not found`)
+    return result
   }
 
+  /**
+   * Creates a clone of this technique
+   *
+   * @remarks
+   * Clones each underlying shader pass and creates a new shader technique
+   */
   public clone(): ShaderTechnique {
     return new ShaderTechnique(this.device, {
       name: this.name,

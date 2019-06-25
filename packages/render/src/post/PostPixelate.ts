@@ -20,7 +20,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class Pixelate implements Stage {
+export class PostPixelate implements Stage {
   public get ready() {
     return this.effect != null
   }

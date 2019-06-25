@@ -19,7 +19,7 @@ describe('content/loaders/tga', () => {
     })
 
     it ('loads ImageData', (done) => {
-      manager.load('/assets/textures/proto_gray.tga', ImageData).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.tga', ImageData).then((result) => {
         expect(result instanceof ImageData).toBe(true)
         expect(result.width).toBe(512)
         expect(result.height).toBe(512)

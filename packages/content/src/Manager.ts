@@ -269,7 +269,7 @@ export class Manager {
    * @param options Options which will be available in the loading context.
    */
   public async load<T = any>(src: string, targetType: symbol | Type<T>, options: { [key: string]: any } = {}): Promise<T> {
-    const requested = Uri.merge(location.href, src)
+    const requested = Uri.merge(location.pathname, src)
     const remapped = this.rewriteUrl(requested)
     if (requested !== remapped) {
       Log.i(`[Content.Manager] remap Url ${src} => ${remapped}`)

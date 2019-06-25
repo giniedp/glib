@@ -14,7 +14,7 @@ import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
- * Defines a Ray that has a starting position and a pointing direction.
+ * A ray with a starting position and a pointing direction.
  *
  * @public
  */

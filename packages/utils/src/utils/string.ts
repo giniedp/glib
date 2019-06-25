@@ -21,6 +21,6 @@ export function getLines(value: string): string[] {
  *
  * @public
  */
-export function isString(value: any): boolean {
+export function isString(value: any): value is string {
   return typeof value === 'string'
 }

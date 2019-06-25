@@ -35,7 +35,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class Bloom implements Stage {
+export class PostBloom implements Stage {
   public get ready() {
     return this.effect != null
   }

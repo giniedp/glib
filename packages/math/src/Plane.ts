@@ -8,7 +8,7 @@ const keyLookup = {
 }
 
 /**
- * Defines a plane shape.
+ * An infinite plane
  *
  * @public
  */

@@ -16,7 +16,7 @@ import { ArrayLike, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
- * Defines an axis aligned box volume.
+ * An axis aligned box volume.
  *
  * @public
  */

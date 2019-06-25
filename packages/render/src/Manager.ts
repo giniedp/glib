@@ -1,4 +1,3 @@
-import { Log } from '@gglib/utils'
 import {
   BlendState,
   CullState,
@@ -11,6 +10,7 @@ import {
   StencilState,
   Texture,
 } from '@gglib/graphics'
+import { Log } from '@gglib/utils'
 import { Binder } from './Binder'
 import { Scene, SceneOutput } from './Types'
 

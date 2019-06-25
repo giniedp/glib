@@ -16,7 +16,7 @@ import {
 } from './states'
 
 /**
- * The shader pass constructor options
+ * Constructor options for {@link ShaderPass}
  *
  * @public
  */
@@ -32,33 +32,34 @@ export interface ShaderPassOptions {
   /**
    * The shader program or constructor options
    */
-  program?: ShaderProgram|ShaderProgramOptions
+  program: ShaderProgram|ShaderProgramOptions
   /**
-   * The cull state or a name reference
+   * The cull state to be used for this shader pass
    */
   cullState?: string|CullStateParams,
   /**
-   * The blend state or a name reference
+   * The blend state to be used for this shader pass
    */
   blendState?: string|BlendStateParams,
   /**
-   * The depth state or a name reference
+   * The depth state to be used for this shader pass
    */
   depthState?: string|DepthStateParams,
   /**
-   * The offset state or a name reference
+   * The offset state to be used for this shader pass
    */
   offsetState?: string|OffsetStateParams,
   /**
-   * The stencil state or a name reference
+   * The stencil state to be used for this shader pass
    */
   stencilState?: string|StencilStateParams
 }
 
 /**
- * Ties a `ShaderProgram` together with GPU States.
+ * Defines {@link Device} states which should be used with a specific {@link ShaderProgram}
  *
  * @public
+ *
  */
 export class ShaderPass {
   /**
@@ -70,10 +71,6 @@ export class ShaderPass {
    * The graphics device
    */
   public readonly device: Device
-  /**
-   * The rendering context
-   */
-  public readonly gl: WebGLRenderingContext
   /**
    * The name of the shader pass
    */
@@ -89,27 +86,26 @@ export class ShaderPass {
   /**
    * The cull state to be enabled on `commit`
    */
-  public cullState: CullStateParams
+  public readonly cullState: CullStateParams
   /**
    * The blend state to be enabled on `commit`
    */
-  public blendState: BlendStateParams
+  public readonly blendState: BlendStateParams
   /**
    * The depth state to be enabled on `commit`
    */
-  public depthState: DepthStateParams
+  public readonly depthState: DepthStateParams
   /**
    * The offset state to be enabled on `commit`
    */
-  public offsetState: OffsetStateParams
+  public readonly offsetState: OffsetStateParams
   /**
    * The stencil state to be enabled on `commit`
    */
-  public stencilState: StencilStateParams
+  public readonly stencilState: StencilStateParams
 
   constructor(device: Device, options: ShaderPassOptions) {
     this.device = device
-    this.gl = device.context
     this.name = options.name
     this.meta = options.meta || {}
     if (options.cullState) { this.cullState = CullState.convert(options.cullState) }
@@ -117,7 +113,7 @@ export class ShaderPass {
     if (options.depthState) { this.depthState = DepthState.convert(options.depthState) }
     if (options.offsetState) { this.offsetState = OffsetState.convert(options.offsetState) }
     if (options.stencilState) { this.stencilState = StencilState.convert(options.stencilState) }
-    let program = options.program
+    const program = options.program
     if (program instanceof ShaderProgram) {
       this.program = program
     } else {
@@ -126,22 +122,28 @@ export class ShaderPass {
   }
 
   /**
-   * Activates any state that is enabled on this pass and commits given parameters to the programs
+   * Prepares the graphics device state for this shader pass and sets the given uniform parameters
    */
-  public commit(parameters?: { [key: string]: ShaderUniformParameter }): ShaderPass {
+  public commit(parameters?: { [key: string]: ShaderUniformParameter }): this {
     this.program.use()
-    let device = this.device
+    const device = this.device
     if (this.stencilState) { device.stencilState = this.stencilState }
     if (this.offsetState) { device.offsetState = this.offsetState }
     if (this.blendState) { device.blendState = this.blendState }
     if (this.depthState) { device.depthState = this.depthState }
     if (this.cullState) { device.cullState = this.cullState }
-    if (parameters) { this.program.commit(parameters) }
+    if (parameters) { this.program.setUniforms(parameters) }
     return this
   }
 
+  /**
+   * Creates a clone of this shader pass
+   *
+   * @remarks
+   * This will also clone the underlying program
+   */
   public clone(): ShaderPass {
-    let opts: ShaderPassOptions = {
+    const opts: ShaderPassOptions = {
       name: this.name,
       meta: copy(true, this.meta),
       program: this.program.clone(),

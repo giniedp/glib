@@ -4,7 +4,12 @@ import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { ShaderProgram } from './ShaderProgram'
 import { ShaderUniformParameter } from './ShaderUniform'
 
-export interface MaterialOptions<EffectOptions = ShaderEffectOptions | ShaderEffect | string> {
+/**
+ * Constructor options for {@link Material}
+ *
+ * @public
+ */
+export interface MaterialOptions<T = ShaderEffectOptions | ShaderEffect | string> {
   /**
    * A user defined name of the material
    */
@@ -12,31 +17,40 @@ export interface MaterialOptions<EffectOptions = ShaderEffectOptions | ShaderEff
   /**
    * The effect to be used or options to create an effect instance
    */
-  effect: EffectOptions
+  effect: T
   /**
    * Effect parameters to be applied before rendering
    */
   parameters: { [key: string]: ShaderUniformParameter }
 }
 
+/**
+ * Defines a parameter set for a specific {@link ShaderEffect}
+ *
+ * @remarks
+ * A material holds a reference to a {@link ShaderEffect} and a
+ * set of parameters that should be used together when rendering.
+ * This allows a {@link ShaderEffect} instance to be reused across
+ * multiple materials each with a different set of parameters.
+ */
 export class Material {
   /**
-   * A symbol identifying the `Material[]` type.
+   * A symbol identifying the Array<{@link Material}> type.
    */
   public static readonly Array = Symbol('Material[]')
 
   /**
-   * A symbol identifying the `MaterialOptions` type.
+   * A symbol identifying the {@link MaterialOptions} type.
    */
   public static readonly Options = Symbol('MaterialOptions')
 
   /**
-   * A symbol identifying the `MaterialOptions[]` type.
+   * A symbol identifying the Array<{@link MaterialOptions}> type.
    */
   public static readonly OptionsArray = Symbol('MaterialOptions[]')
 
   /**
-   *
+   * A unique id
    */
   public uid: string = uuid()
 
@@ -51,7 +65,7 @@ export class Material {
   /**
    * The effect to be used
    */
-  public effect: ShaderEffect
+  public readonly effect: ShaderEffect
   /**
    * Effect parameters to be applied before rendering
    */

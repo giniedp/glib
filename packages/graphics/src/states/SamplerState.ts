@@ -99,7 +99,10 @@ export class SamplerState implements SamplerStateParams {
       this.changes.texture = value
       this.hasChanged = true
       if (value && !value.ready) {
-        // TODO: should we fall back to a default texture?
+        // TODO: should we fall back to something valid or rely on ShaderUniform.ts for doing this?
+      }
+      if (value && value.sampler) {
+        // TODO: should we assign the sample state now or rely on ShaderUniform.ts for doing this?
       }
     }
   }

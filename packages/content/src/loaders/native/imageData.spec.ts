@@ -21,7 +21,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads ImageData', (done) => {
-      manager.load('/assets/textures/proto_gray.jpg', ImageData).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.jpg', ImageData).then((result) => {
         expect(result instanceof ImageData).toBe(true)
         expect(result.width).toBe(512)
         expect(result.height).toBe(512)
@@ -39,7 +39,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads ImageData', (done) => {
-      manager.load('/assets/textures/proto_gray.png', ImageData).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.png', ImageData).then((result) => {
         expect(result instanceof ImageData).toBe(true)
         expect(result.width).toBe(512)
         expect(result.height).toBe(512)

@@ -1,7 +1,16 @@
 import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
 import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
+import {
+  SHADE_BLINN_FUNCTION,
+  SHADE_COOK_TORRANCE_FUNCTION,
+  SHADE_LAMBERT_FUNCTION,
+  SHADE_NON_FUNCTION,
+  SHADE_OPTIMIZED_FUNCTION,
+  SHADE_PBR_FUNCTION,
+  SHADE_PHONG_FUNCTION,
+  SHADE_SZIRMAY_FUNCTION,
+} from '../chunks'
 import { defaultProgram, DefaultProgramDefs } from '../programs'
-import { SHADE_NON_FUNCTION, SHADE_PBR_FUNCTION, SHADE_BLINN_FUNCTION, SHADE_COOK_TORRANCE_FUNCTION, SHADE_PHONG_FUNCTION, SHADE_OPTIMIZED_FUNCTION, SHADE_LAMBERT_FUNCTION, SHADE_SZIRMAY_FUNCTION } from '../chunks';
 
 export interface AutoMaterialLight {
   Position: number[]
@@ -14,6 +23,7 @@ const defineMap = {
   Alpha: 'ALPHA',
   AlphaClip: 'ALPHA_CLIP',
   FogColor: 'FOG',
+  VertexColor: 'V_COLOR1',
 
   DiffuseColor: 'DIFFUSE_COLOR',
   DiffuseMap: 'DIFFUSE_MAP',
@@ -126,6 +136,20 @@ export class AutoMaterial extends Material {
         }) as any
       }
     }
+  }
+
+  /**
+   * Enables and disables the vertex color
+   *
+   * @remarks
+   * Changing this value forces the shader to recompile.
+   * Setting to `null` or `false` disables the vertex color.
+   */
+  public get VertexColor(): boolean {
+    return this.parameters.VertexColor
+  }
+  public set VertexColor(v: boolean) {
+    this.parameters.VertexColor = v
   }
 
   /**

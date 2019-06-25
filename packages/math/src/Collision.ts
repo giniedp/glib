@@ -1,7 +1,6 @@
 import { BoundingFrustum } from './BoundingFrustum'
 import { Recycler } from './Recycler'
-import { IVec2, IVec3, IVec4 } from './Types'
-import { Vec2 } from './Vec2'
+import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**

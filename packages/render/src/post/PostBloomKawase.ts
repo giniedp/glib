@@ -21,7 +21,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class BloomKawase implements Stage {
+export class PostBloomKawase implements Stage {
   public get ready() {
     return this.effect != null
   }

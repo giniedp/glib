@@ -8,10 +8,10 @@ export const RGBA_FORMAT = Object.freeze({
   b: (rgba: number): number => (rgba >> 16) & 255,
   a: (rgba: number): number => (rgba >> 24) & 255,
 
-  x: (rgba: number): number => RGBA_FORMAT.r(rgba) / 255,
-  y: (rgba: number): number => RGBA_FORMAT.g(rgba) / 255,
-  z: (rgba: number): number => RGBA_FORMAT.b(rgba) / 255,
-  w: (rgba: number): number => RGBA_FORMAT.a(rgba) / 255,
+  x: (rgba: number): number => ((rgba >> 0) & 255) / 255,
+  y: (rgba: number): number => ((rgba >> 8) & 255) / 255,
+  z: (rgba: number): number => ((rgba >> 16) & 255) / 255,
+  w: (rgba: number): number => ((rgba >> 24) & 255) / 255,
 })
 
 export const ABGR_FORMAT = Object.freeze({
@@ -20,10 +20,10 @@ export const ABGR_FORMAT = Object.freeze({
   g: (argb: number): number => (argb >> 16) & 255,
   r: (argb: number): number => (argb >> 24) & 255,
 
-  x: (argb: number): number => ABGR_FORMAT.r(argb) / 255,
-  y: (argb: number): number => ABGR_FORMAT.g(argb) / 255,
-  z: (argb: number): number => ABGR_FORMAT.b(argb) / 255,
-  w: (argb: number): number => ABGR_FORMAT.a(argb) / 255,
+  x: (argb: number): number => ((argb >> 0) & 255) / 255,
+  y: (argb: number): number => ((argb >> 8) & 255) / 255,
+  z: (argb: number): number => ((argb >> 16) & 255) / 255,
+  w: (argb: number): number => ((argb >> 24) & 255) / 255,
 })
 
 /**

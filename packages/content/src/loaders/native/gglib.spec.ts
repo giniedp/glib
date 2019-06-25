@@ -27,8 +27,8 @@ describe('content/loader/native', () => {
 
   it('loads jpeg to Texture.Options', (done) => {
     manager.loader.register(loaders.jpegToTextureOptions)
-    manager.load('/assets/textures/proto_gray.jpg', Texture.Options).then((result: TextureOptions) => {
-      expect(result).toEqual({ data: '/assets/textures/proto_gray.jpg' })
+    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Options).then((result: TextureOptions) => {
+      expect(result).toEqual({ data: '/assets/textures/prototype/proto_gray.jpg' })
     })
     .catch(fail)
     .then(done)
@@ -36,8 +36,8 @@ describe('content/loader/native', () => {
 
   it('loads png to Texture.Options', (done) => {
     manager.loader.register(loaders.pngToTextureOptions)
-    manager.load('/assets/textures/proto_gray.png', Texture.Options).then((result: TextureOptions) => {
-      expect(result).toEqual({ data: '/assets/textures/proto_gray.png' })
+    manager.load('/assets/textures/prototype/proto_gray.png', Texture.Options).then((result: TextureOptions) => {
+      expect(result).toEqual({ data: '/assets/textures/prototype/proto_gray.png' })
     })
     .catch(fail)
     .then(done)
@@ -46,7 +46,7 @@ describe('content/loader/native', () => {
   it('loads jpeg to Texture', (done) => {
     manager.loader.register(loaders.jpegToTextureOptions)
     manager.loader.register(loaders.textureOptionsToTexture)
-    manager.load('/assets/textures/proto_gray.jpg', Texture).then((result) => {
+    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture).then((result) => {
       expect(result instanceof Texture).toBe(true)
       expect(result.image instanceof Image).toBe(true)
       expect(result.ready).toBe(false)
@@ -61,7 +61,7 @@ describe('content/loader/native', () => {
     manager.loader.register(loaders.jpegToHTMLImageElement)
     manager.loader.register(loaders.imageDataToTextureOptions)
     manager.loader.register(loaders.textureOptionsToTexture)
-    manager.load('/assets/textures/proto_gray.jpg', Texture).then((result) => {
+    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture).then((result) => {
       expect(result instanceof Texture).toBe(true)
       expect(result.ready).toBe(true)
       expect(result.image).toBeFalsy()
@@ -77,7 +77,7 @@ describe('content/loader/native', () => {
     manager.loader.register(loaders.jpegToTextureOptions)
     manager.loader.register(loaders.textureOptionsToTexture)
     manager.loader.register(loaders.textureToMaterialOptions)
-    manager.load('/assets/textures/proto_gray.jpg', Material.Options).then((result: MaterialOptions) => {
+    manager.load('/assets/textures/prototype/proto_gray.jpg', Material.Options).then((result: MaterialOptions) => {
       expect(result.effect).toBe('default')
       expect(result.parameters.DiffuseMap).toBeDefined()
       expect(result.parameters.DiffuseMap instanceof Texture).toBe(true)
@@ -174,7 +174,7 @@ describe('content/loader/native', () => {
         vertexShader: 'void main() {}',
       }),
       parameters: {
-        DiffuseMap: '/assets/textures/proto_gray.jpg',
+        DiffuseMap: '/assets/textures/prototype/proto_gray.jpg',
       },
     }]
 

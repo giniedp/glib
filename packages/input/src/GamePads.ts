@@ -1,23 +1,35 @@
 import { Events, Loop, loop } from '@gglib/utils'
 
-const statekeys = ['id', 'index', 'connected', 'mapping', 'timestamp']
+const statekeys: Array<keyof Gamepad> = ['id', 'index', 'connected', 'mapping', 'timestamp']
 
 /**
- * Gamepads constructor options
+ * Options for {@link Gamepads.constructor}
  *
  * @public
  */
 export interface IGamepadsOptions {
+  /**
+   * If true, the polling of new gamepad state is done automatically
+   */
   autopoll?: boolean
 }
 
 /**
+ * The state of a game pad button
+ *
  * @public
  */
 export interface GamepadButtonState {
-    pressed?: boolean
-    value?: number
+  /**
+   * Determines whether the button is pressed
+   */
+  pressed?: boolean
+  /**
+   * The button value
+   */
+  value?: number
 }
+
 /**
  * The captured state of a gamepad
  *
@@ -27,10 +39,25 @@ export interface IGamepadState {
   buttonValues: number[]
   axes: number[]
   buttons: GamepadButtonState[]
+  /**
+   * Determines whether the game pad is connected
+   */
   connected: boolean
+  /**
+   * The game pad id
+   */
   id: string
+  /**
+   * The game pad index
+   */
   index: number
+  /**
+   * The button mapping being used
+   */
   mapping: string
+  /**
+   * Time when the state was resolved
+   */
   timestamp: number
 }
 
@@ -54,7 +81,7 @@ export class Gamepads extends Events {
   /**
    * The current captured state
    */
-  public state: IGamepadState[] = []
+  public readonly state: IGamepadState[] = []
   /**
    * Whether automatic state polling should be activated or not
    */
@@ -62,13 +89,13 @@ export class Gamepads extends Events {
   /**
    * Is called on the `gamepadconnected` event
    */
-  protected onConnected = this.handleConnectionEvent.bind(this)
+  protected readonly onConnected = this.handleConnectionEvent.bind(this)
   /**
    * Is called on the `gamepaddisconnected` event
    */
-  protected onDisconnected = this.handleDisconnectionEvent.bind(this)
+  protected readonly onDisconnected = this.handleDisconnectionEvent.bind(this)
   /**
-   * If `autopoll` is true then this holds the poll loop to capture a new state frequently
+   * If {@see autopoll} is `true` then this holds the polling loop which captures the state automatically
    */
   protected poll: Loop = null
   /**
@@ -88,8 +115,8 @@ export class Gamepads extends Events {
    */
   public activate() {
     this.deactivate()
-    window.addEventListener('mozgamepadconnected', this.onConnected)
-    window.addEventListener('mozgamepaddisconnected', this.onDisconnected)
+    window.addEventListener('gamepadconnected', this.onConnected)
+    window.addEventListener('gamepaddisconnected', this.onDisconnected)
     if (this.autopoll) {
       this.poll = loop(this.pollState.bind(this))
     }
@@ -99,8 +126,8 @@ export class Gamepads extends Events {
    * Deactivates all event listeners and stops the poll loop if it is active
    */
   public deactivate() {
-    window.removeEventListener('mozgamepadconnected', this.onConnected)
-    window.removeEventListener('mozgamepaddisconnected', this.onDisconnected)
+    window.removeEventListener('gamepadconnected', this.onConnected)
+    window.removeEventListener('gamepaddisconnected', this.onDisconnected)
     if (this.poll) { this.poll.kill() }
   }
 

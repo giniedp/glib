@@ -34,7 +34,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class Tonemap implements Stage {
+export class PostTonemap implements Stage {
   public get ready() {
     return this.effect != null
   }

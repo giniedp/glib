@@ -6,6 +6,8 @@ import { ShaderInspector, ShaderObjectMeta } from './ShaderInspector'
 import { ShaderUniform, ShaderUniformParameter } from './ShaderUniform'
 
 /**
+ * Constructor options for {@link ShaderProgram}
+ *
  * @public
  */
 export interface ShaderProgramOptions {
@@ -26,17 +28,19 @@ export interface ShaderProgramOptions {
    */
   fragmentShader?: string|ShaderOptions|Shader,
   /**
-   * An already existing WebGLProgram handle
+   * A {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLProgram | WebGLProgram} object to be reused
    */
   handle?: WebGLProgram
 }
 
 /**
- * Combines a vertex shader and a fragment shader
+ * A wrapper class around {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLProgram | WebGLProgram}
  *
  * @public
  * @remarks
- * On creation this will inspect the source code of all shaders to detect all attributes, uniforms and annotations
+ * Combines a vertex shader and a fragment shader into a shader program.
+ *
+ * On creation the shader source code is inspected for
  */
 export class ShaderProgram {
   /**
@@ -47,19 +51,15 @@ export class ShaderProgram {
   /**
    * A unique id
    */
-  public readonly uid: string
+  public readonly uid: string = uuid()
   /**
    * The graphics device
    */
   public readonly device: Device
   /**
-   * The rendering context
-   */
-  public readonly gl: WebGLRenderingContext
-  /**
    * Collection of all attached shaders. Usually contains a single vertex and a single fragment shader
    */
-  private readonly attached: Shader[] = []
+  private readonly attached: ReadonlyArray<Shader> = []
   /**
    * The vertex shader
    */
@@ -85,7 +85,7 @@ export class ShaderProgram {
   /**
    * A map of all shader uniforms
    */
-  public readonly uniforms = new Map<string, ShaderUniform>()
+  public readonly uniforms: ReadonlyMap<string, ShaderUniform> = new Map<string, ShaderUniform>()
 
   /**
    * Whether the program is successfully linked
@@ -97,11 +97,11 @@ export class ShaderProgram {
   public info: string
 
   private errLogs = {}
+  private uniformKeys: string[] = []
+  private attributeKeys: string[] = []
 
   constructor(device: Device, options: ShaderProgramOptions= {}) {
-    this.uid = uuid()
     this.device = device
-    this.gl = device.context
     this.handle = options.handle
 
     let shader: any = options.vertexShader
@@ -134,8 +134,8 @@ export class ShaderProgram {
       }
     }
 
-    if (!this.handle || !this.gl.isProgram(this.handle)) {
-      this.handle = this.gl.createProgram()
+    if (!this.handle || !this.device.context.isProgram(this.handle)) {
+      this.handle = this.device.context.createProgram()
     }
     this.link()
 
@@ -147,9 +147,9 @@ export class ShaderProgram {
   /**
    * Releases the program handle
    */
-  public destroy(): ShaderProgram {
-    if (this.gl.isProgram(this.handle)) {
-      this.gl.deleteProgram(this.handle)
+  public destroy(): this {
+    if (this.device.context.isProgram(this.handle)) {
+      this.device.context.deleteProgram(this.handle)
       this.handle = null
     }
     return this
@@ -158,7 +158,7 @@ export class ShaderProgram {
   /**
    * Sets this program as the current program on the graphics device
    */
-  public use(): ShaderProgram {
+  public use(): this {
     return this.device.program = this
   }
 
@@ -172,15 +172,16 @@ export class ShaderProgram {
   /**
    * Attaches all shaders
    */
-  private attach(): ShaderProgram {
-    this.attached.length = 0
+  private attach(): this {
+    const attached = this.attached as Shader[]
+    attached.length = 0
     if (this.vertexShader) {
-      this.gl.attachShader(this.handle, this.vertexShader.handle)
-      this.attached.push(this.vertexShader)
+      this.device.context.attachShader(this.handle, this.vertexShader.handle)
+      attached.push(this.vertexShader)
     }
     if (this.fragmentShader) {
-      this.gl.attachShader(this.handle, this.fragmentShader.handle)
-      this.attached.push(this.fragmentShader)
+      this.device.context.attachShader(this.handle, this.fragmentShader.handle)
+      attached.push(this.fragmentShader)
     }
     return this
   }
@@ -188,23 +189,24 @@ export class ShaderProgram {
   /**
    * Detaches all shaders
    */
-  private detach(): ShaderProgram {
+  private detach(): this {
     for (let shader of this.attached) {
-      this.gl.detachShader(this.handle, shader.handle)
+      this.device.context.detachShader(this.handle, shader.handle)
     }
-    this.attached.length = 0
+    const attached = this.attached as Shader[]
+    attached.length = 0
     return this
   }
 
   /**
    *
    */
-  private assignAttributes(attributes: { [key: string]: ShaderObjectMeta }): ShaderProgram {
+  private assignAttributes(attributes: { [key: string]: ShaderObjectMeta }): this {
     this.use()
     this.attributes.clear()
     this.attributeLocations.length = 0
     Object.keys(attributes).forEach((key) => {
-      const location = this.gl.getAttribLocation(this.handle, attributes[key].name || key)
+      const location = this.device.context.getAttribLocation(this.handle, attributes[key].name || key)
       if (location >= 0) {
         this.attributes.set(key, {
           ...attributes[key],
@@ -213,39 +215,42 @@ export class ShaderProgram {
         this.attributeLocations.push(location)
       }
     })
+    this.attributeKeys = Array.from(this.attributes.keys())
     return this
   }
 
   /**
    *
    */
-  private assignUniforms(uniforms: { [key: string]: ShaderObjectMeta }): ShaderProgram {
+  private assignUniforms(uniforms: { [key: string]: ShaderObjectMeta }): this {
     this.use()
-    this.uniforms.clear()
+    const u = this.uniforms as Map<string, ShaderUniform>
+    u.clear()
     Object.keys(uniforms).forEach((key) => {
       const options = uniforms[key]
       if (!options.name && !options.binding) {
         return
       }
-      let uniform = new ShaderUniform(this, options)
+      const uniform = new ShaderUniform(this, options)
       if (uniform.location != null) {
-        this.uniforms.set(key, uniform)
+        u.set(key, uniform)
         Log.i(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
       }
     })
+    this.uniformKeys = Array.from(u.keys())
     return this
   }
 
   /**
    *
    */
-  public link(): ShaderProgram {
+  public link(): this {
     this.detach()
     this.attach()
 
-    this.gl.linkProgram(this.handle)
-    this.linked = this.gl.getProgramParameter(this.handle, this.gl.LINK_STATUS)
-    this.info = this.gl.getProgramInfoLog(this.handle)
+    this.device.context.linkProgram(this.handle)
+    this.linked = this.device.context.getProgramParameter(this.handle, this.device.context.LINK_STATUS)
+    this.info = this.device.context.getProgramInfoLog(this.handle)
 
     if (!this.linked) {
       Log.e('ShaderProgram#link failed', this.info)
@@ -254,24 +259,31 @@ export class ShaderProgram {
   }
 
   /**
-   * Sets multiple uniform values
+   * Sets multiple uniform values.
+   *
+   * @remarks
+   * Takes only known uniform names into account and ignores `null` values
    */
-  public commit(uniforms?: { [key: string]: ShaderUniformParameter }): ShaderProgram {
+  public setUniforms(uniforms?: { [key: string]: ShaderUniformParameter }): this {
     if (!uniforms) { return this }
-    this.uniforms.forEach((_, key) => {
-      if (key in uniforms) {
-        this.setUniform(key, uniforms[key])
+    this.use()
+    for (const key of this.uniformKeys) {
+      if (key in uniforms && uniforms[key] != null) {
+        this.uniforms.get(key).set(uniforms[key])
       }
-    })
+    }
     return this
   }
 
   /**
    * Sets a value on the named uniform
+   *
+   * @remarks
+   * `null` values are ignored
    */
-  public setUniform(name: string, value: ShaderUniformParameter): ShaderProgram {
-    if (value == null) {return }
-    let uniform = this.uniforms.get(name)
+  public setUniform(name: string, value: ShaderUniformParameter): this {
+    if (value == null) { return }
+    const uniform = this.uniforms.get(name)
     if (!uniform) {
       this.logMissingUniform(name)
     } else {

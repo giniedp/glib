@@ -33,73 +33,74 @@ export interface MtlSplattingDefs {
 export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
   uniforms: glsl`
     #ifdef SPLATTING
-    // @binding  splatMap
+    // @binding  SplatMap
     // @filter   LinearWrap
     uniform sampler2D uSplatMap;
 
     #ifdef SPLATTING_BASE
-    // @binding  diffuseMap
+    // @binding  DiffuseMap
     // @filter   LinearWrap
     uniform sampler2D uDiffuseMap;
     #endif
 
-    // @binding  diffuseMapR
+    // @binding  DiffuseMapR
     // @filter   LinearWrap
     uniform sampler2D uDiffuseMapR;
 
-    // @binding  diffuseMapG
+    // @binding  DiffuseMapG
     // @filter   LinearWrap
     uniform sampler2D uDiffuseMapG;
 
-    // @binding  diffuseMapB
+    // @binding  DiffuseMapB
     // @filter   LinearWrap
     uniform sampler2D uDiffuseMapB;
 
     #ifdef SPLATTING_ALPHA
-    // @binding  diffuseMapA
+    // @binding  DiffuseMapA
     // @filter   LinearWrap
     uniform sampler2D uDiffuseMapA;
     #endif
 
     #ifdef SPLATTING_SLOPE
+    // @binding  DiffuseMapSlope
     // @filter   LinearWrap
     uniform sampler2D uDiffuseMapSlope;
     #endif
 
     #ifdef SPLATTING_NORMAL
     #ifdef SPLATTING_BASE
-    // @binding  normalMap
+    // @binding  NormalMap
     // @filter   LinearWrap
     uniform sampler2D uNormalMap;
     #endif
 
-    // @binding  normalMapR
+    // @binding  NormalMapR
     // @filter   LinearWrap
     uniform sampler2D uNormalMapR;
 
-    // @binding  normalMapG
+    // @binding  NormalMapG
     // @filter   LinearWrap
     uniform sampler2D uNormalMapG;
 
-    // @binding  normalMapB
+    // @binding  NormalMapB
     // @filter   LinearWrap
     uniform sampler2D uNormalMapB;
 
     #ifdef SPLATTING_ALPHA
-    // @binding  normalMapA
+    // @binding  NormalMapA
     // @filter   LinearWrap
     uniform sampler2D uNormalMapA;
     #endif
 
     #ifdef SPLATTING_SLOPE
-    // @binding  normalMapSlope
+    // @binding  NormalMapSlope
     // @filter   LinearWrap
     uniform sampler2D uNormalMapSlope;
     #endif
     #endif
 
     #ifdef SPLATTING_TINT
-    // @binding  tintMap
+    // @binding  TintMap
     // @filter   LinearWrap
     uniform sampler2D uTintMap;
     #endif
@@ -119,6 +120,10 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
     // @binding Tiling
     // @default 64.0
     uniform float uTiling;
+
+    // @binding SlopeStrength
+    // @default 1.0
+    uniform float uSlopeStrength;
     #endif
   `,
   functions: glsl`
@@ -194,6 +199,7 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
 
     vec3 splatNormal(in vec2 uv, in vec4 splat, in float slope){
       vec4 normal = vec4(0.0, 0.0, 0.0, 0.0);
+      #ifdef SPLATTING_NORMAL
       #ifdef SPLATTING_BASE
       normal = texture2D(uNormalMap, uv.xy);
       #endif
@@ -206,6 +212,7 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
       #ifdef SPLATTING_SLOPE
       normal = mix(normal, texture2D(uNormalMapSlope, uv.xy), slope);
       #endif
+      #endif
       return normalize(normal.xzy * 2.0 - 1.0);
     }
 
@@ -215,16 +222,19 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
     #ifdef SPLATTING
     vec2 splatUV = vTexture.xy * uTiling;
     vec4 splatWeight = texture2D(uSplatMap, vTexture.xy).rgba;
-    float splatSlope = splatBlendSlope(1.0 - vWorldNormal.y, splatUV);
+    float splatSlope = splatBlendSlope((1.0 - vWorldNormal.y) * uSlopeStrength, splatUV);
     surface.Diffuse.rgb = splatColor(splatUV, splatWeight, splatSlope).rgb;
     #ifdef SPLATTING_TINT
     surface.Diffuse.rgb *= texture2D(uTintMap, vTexture.xy).rgb;
     #endif
-    #ifdef SPLATTING_NORMAL
-    #ifdef V_TBN
-    surface.Normal.xyz = normalize(vTBN * splatNormal(splatUV, splatWeight, splatSlope).rgb);
+
+    #if defined(SPLATTING_NORMAL) && defined(V_TBN)
+    surface.Normal.xyz = normalize(vTBN * splatNormal(splatUV, splatWeight, splatSlope).rbg);
+    #elif defined(V_NORMAL)
+    surface.Normal.xyz = normalize(vWorldNormal.xyz);
     #endif
-    #endif
+
+    surface.Diffuse.a = 1.0;
     #endif
   `,
 })

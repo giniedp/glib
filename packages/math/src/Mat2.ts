@@ -2,7 +2,7 @@ import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 
 /**
- * Defines a 2x2 matrix.
+ * A 2x2 matrix.
  *
  * @public
  */

@@ -21,11 +21,13 @@ import {
 export type BufferDataOption = number[] | ArrayBuffer | ArrayBufferView
 
 /**
+ * Constructor options for {@link Buffer}
+ *
  * @public
  */
 export interface BufferOptions<T = BufferDataOption> {
   /**
-   * An existing `WebGLBuffer` instance to use
+   * The {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLBuffer} object to be reused
    */
   handle?: WebGLBuffer,
   /**
@@ -70,13 +72,6 @@ export class Buffer {
    * The graphics device
    */
   public readonly device: Device
-
-  /**
-   * The WebGL rendering context
-   */
-  public get gl() {
-    return this.device.context
-  }
 
   private $handle: WebGLBuffer
   /**
@@ -132,7 +127,7 @@ export class Buffer {
    *
    * @remarks
    * - For VertexBuffer this is the size in bytes of a whole vertex.
-   * - For IndexBuffer this is the size in butes of a single index value.
+   * - For IndexBuffer this is the size in bytes of a single index value.
    */
   public get stride(): number {
     return this.$stride
@@ -221,8 +216,8 @@ export class Buffer {
       this.destroy()
       this.$handle = opts.handle
     }
-    if (!this.handle || !this.gl.isBuffer(this.handle)) {
-      this.$handle = this.gl.createBuffer()
+    if (!this.handle || !this.device.context.isBuffer(this.handle)) {
+      this.$handle = this.device.context.createBuffer()
     }
 
     // must be one of [Static|Dynamic|Stream]
@@ -289,8 +284,8 @@ export class Buffer {
    * Releases any graphics resouces.
    */
   public destroy(): Buffer {
-    if (this.gl.isBuffer(this.handle)) {
-      this.gl.deleteBuffer(this.handle)
+    if (this.device.context.isBuffer(this.handle)) {
+      this.device.context.deleteBuffer(this.handle)
       this.$handle = null
     }
     return this
@@ -336,11 +331,11 @@ export class Buffer {
       const off = srcByteOffset || 0
       const len = srcByteLength || (buffer.byteLength - off);
       // WebGL2 call
-      (this.gl as WebGL2RenderingContext).bufferData(this.type, buffer as any, this.usage, off, len)
+      (this.device.context as WebGL2RenderingContext).bufferData(this.type, buffer as any, this.usage, off, len)
       this.$sizeInBytes = Math.min(buffer.byteLength - off, len)
     } else {
       // WebGL1 call
-      (this.gl as WebGLRenderingContext).bufferData(this.type, buffer as any, this.usage)
+      (this.device.context as WebGLRenderingContext).bufferData(this.type, buffer as any, this.usage)
       this.$sizeInBytes = buffer.byteLength
     }
     this.$elementCount = this.sizeInBytes / this.stride
@@ -372,7 +367,7 @@ export class Buffer {
     }
     byteOffset = byteOffset || 0
     this.use();
-    (this.gl as WebGLRenderingContext).bufferSubData(this.type, byteOffset, buffer)
+    (this.device.context as WebGLRenderingContext).bufferSubData(this.type, byteOffset, buffer)
 
     this.$sizeInBytes = Math.max(this.sizeInBytes, byteOffset + buffer.byteLength)
     this.$elementCount = this.sizeInBytes / this.stride
@@ -392,6 +387,6 @@ export class Buffer {
   public getBufferSubData(srcByteOffset: number, dst: ArrayBufferView, dstOffset: number, dstLength: number): void {
     // WebGL2 call
     this.use();
-    (this.gl as WebGL2RenderingContext).getBufferSubData(this.type, srcByteOffset, dst, dstOffset, dstLength)
+    (this.device.context as WebGL2RenderingContext).getBufferSubData(this.type, srcByteOffset, dst, dstOffset, dstLength)
   }
 }

@@ -30,6 +30,7 @@ function makeVec4(data: number[]) {
 }
 
 /**
+ * Constructor options for {@link ShaderUniform}
  * @public
  */
 export interface ShaderUniformOptions {
@@ -46,24 +47,50 @@ export interface ShaderUniformOptions {
   type: string
   /**
    * The binding name of the uniform by which the uniform will be accessible in the javascript world
+   *
+   * @remarks
+   * Bindings are defined in the shader source code by adding a comment above a uniform e.g.
+   *
+   * ```glsl
+   * // @binding lightDirection
+   * uniform vec3 uLightDirection;
+   * ```
    */
   binding?: string
   /**
-   * The default value of the uniform that will be set initally
+   * The default value of the uniform that will be set initially
+   *
+   * @remarks
+   * Default values are defined in the shader source code by adding a comment above a uniform e.g.
+   *
+   * ```glsl
+   * // @default [1, 1, 1]
+   * uniform vec3 uLightDirection;
+   * ```
    */
   default?: any
   /**
    * The sampler state preset name e.g. 'LinearClamp', 'LinearWrap', 'PointClamp' or 'PointWrap'
    *
    * @remarks
-   * For textures only
+   * Filters are defined in the shader source code by adding a comment above a uniform e.g.
+   *
+   * ```glsl
+   * // @filter LinearWrap
+   * uniform sampler2d uTexture
+   * ```
    */
   filter?: string
   /**
    * This is the sampler register index
    *
    * @remarks
-   * For textures only
+   * Register index is defined in the shader source code by adding a comment above a uniform e.g.
+   *
+   * ```glsl
+   * // @register 2
+   * uniform sampler2d uTexture;
+   * ```
    */
   register?: number
 }
@@ -121,13 +148,13 @@ export class ShaderUniform {
   constructor(program: ShaderProgram, options: ShaderUniformOptions) {
 
     this.device = program.device
-    this.gl = program.gl
+    this.gl = this.device.context
 
     this.program = program
     this.meta = options
     this.name = options.binding || options.name
     this.type = options.type
-    this.location = program.gl.getUniformLocation(program.handle, options.name)
+    this.location = this.device.context.getUniformLocation(program.handle, options.name)
     if (this.location == null) {
       this.set = () => { /* */ }
       return
@@ -182,14 +209,71 @@ export class ShaderUniform {
     }
   }
 
-  private cacheValue(x: any, y?: any, z?: any, w?: any): boolean {
+  private cacheX(x: any): boolean {
     let changed = false
     let cache = this.cachedValue
-    for (let i = 0; i < arguments.length; i++) {
-      if (cache[i] !== arguments[i]) { changed = true }
-      cache[i] = arguments[i]
+    if (cache[0] !== x) {
+      cache[0] = x
+      changed = true
     }
-    cache.length = arguments.length
+    cache.length = 1
+    return changed
+  }
+
+  private cacheXY(x: any, y: any): boolean {
+    let changed = false
+    let cache = this.cachedValue
+    if (cache[0] !== x) {
+      cache[0] = x
+      changed = true
+    }
+    if (cache[1] !== y) {
+      cache[1] = y
+      changed = true
+    }
+    cache.length = 2
+    return changed
+  }
+
+  private cacheXYZ(x: any, y: any, z: any): boolean {
+    let changed = false
+    let cache = this.cachedValue
+    if (cache[0] !== x) {
+      cache[0] = x
+      changed = true
+    }
+    if (cache[1] !== y) {
+      cache[1] = y
+      changed = true
+    }
+    if (cache[2] !== y) {
+      cache[2] = y
+      changed = true
+    }
+    cache.length = 3
+    return changed
+  }
+
+  private cacheXYZW(x: any, y: any, z: any, w: any): boolean {
+    let changed = false
+    let cache = this.cachedValue
+    if (cache[0] !== x) {
+      cache[0] = x
+      changed = true
+    }
+    if (cache[1] !== y) {
+      cache[1] = y
+      changed = true
+    }
+    if (cache[2] !== y) {
+      cache[2] = y
+      changed = true
+    }
+    if (cache[3] !== y) {
+      cache[3] = y
+      changed = true
+    }
+    cache.length = 4
     return changed
   }
 
@@ -197,7 +281,7 @@ export class ShaderUniform {
    * Sets an int value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt(value: number) {
-    if (this.cacheValue(value | 0)) {
+    if (this.cacheX(value | 0)) {
       this.gl.uniform1i(this.location, value | 0)
     }
   }
@@ -206,7 +290,7 @@ export class ShaderUniform {
    * Sets an int value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt2(v1: number, v2: number) {
-    if (this.cacheValue(v1 | 0, v2 | 0)) {
+    if (this.cacheXY(v1 | 0, v2 | 0)) {
       this.gl.uniform2i(this.location, v1 | 0, v2 | 0)
     }
   }
@@ -215,7 +299,7 @@ export class ShaderUniform {
    * Sets an int value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt3(v1: number, v2: number, v3: number) {
-    if (this.cacheValue(v1 | 0, v2 | 0, v3 | 0)) {
+    if (this.cacheXYZ(v1 | 0, v2 | 0, v3 | 0)) {
       this.gl.uniform3i(this.location, v1 | 0, v2 | 0, v3 | 0)
     }
   }
@@ -224,7 +308,7 @@ export class ShaderUniform {
    * Sets an int value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt4(v1: number, v2: number, v3: number, v4: number) {
-    if (this.cacheValue(v1 | 0, v2 | 0, v3 | 0, v4 | 0)) {
+    if (this.cacheXYZW(v1 | 0, v2 | 0, v3 | 0, v4 | 0)) {
       this.gl.uniform4i(this.location, v1 | 0, v2 | 0, v3 | 0, v4 | 0)
     }
   }
@@ -233,7 +317,7 @@ export class ShaderUniform {
    * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool(value: boolean) {
-    if (this.cacheValue(value)) {
+    if (this.cacheX(value)) {
       this.gl.uniform1i(this.location, value ? 1 : 0)
     }
   }
@@ -242,7 +326,7 @@ export class ShaderUniform {
    * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool2(v1: boolean, v2: boolean) {
-    if (this.cacheValue(v1, v2)) {
+    if (this.cacheXY(v1, v2)) {
       this.gl.uniform2i(this.location, v1 ? 1 : 0, v2 ? 1 : 0)
     }
   }
@@ -251,7 +335,7 @@ export class ShaderUniform {
    * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool3(v1: boolean, v2: boolean, v3: boolean) {
-    if (this.cacheValue(v1, v2, v3)) {
+    if (this.cacheXYZ(v1, v2, v3)) {
       this.gl.uniform3i(this.location, v1 ? 1 : 0, v2 ? 1 : 0, v3 ? 1 : 0)
     }
   }
@@ -260,7 +344,7 @@ export class ShaderUniform {
    * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool4(v1: boolean, v2: boolean, v3: boolean, v4: boolean) {
-    if (this.cacheValue(v1, v2, v3, v4)) {
+    if (this.cacheXYZW(v1, v2, v3, v4)) {
       this.gl.uniform4i(this.location, v1 ? 1 : 0, v2 ? 1 : 0, v3 ? 1 : 0, v4 ? 1 : 0)
     }
   }
@@ -269,7 +353,7 @@ export class ShaderUniform {
    * Sets a float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setFloat(value: number) {
-    if (this.cacheValue(value)) {
+    if (this.cacheX(value)) {
       this.gl.uniform1f(this.location, value)
     }
   }
@@ -278,7 +362,7 @@ export class ShaderUniform {
    * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setFloat2(v1: number, v2: number) {
-    if (this.cacheValue(v1, v2)) {
+    if (this.cacheXY(v1, v2)) {
       this.gl.uniform2f(this.location, v1, v2)
     }
   }
@@ -287,7 +371,7 @@ export class ShaderUniform {
    * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setFloat3(v1: number, v2: number, v3: number) {
-    if (this.cacheValue(v1, v2, v3)) {
+    if (this.cacheXYZ(v1, v2, v3)) {
       this.gl.uniform3f(this.location, v1, v2, v3)
     }
   }
@@ -296,7 +380,7 @@ export class ShaderUniform {
    * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setFloat4(v1: number, v2: number, v3: number, v4: number) {
-    if (this.cacheValue(v1, v2, v3, v4)) {
+    if (this.cacheXYZW(v1, v2, v3, v4)) {
       this.gl.uniform4f(this.location, v1, v2, v3, v4)
     }
   }
@@ -306,11 +390,11 @@ export class ShaderUniform {
    */
   public setVec2(value: {x: number, y: number} | number[]) {
     if (Array.isArray(value)) {
-      if (this.cacheValue(value[0], value[1])) {
+      if (this.cacheXY(value[0], value[1])) {
         this.gl.uniform2f(this.location, value[0], value[1])
       }
     } else {
-      if (this.cacheValue(value.x, value.y)) {
+      if (this.cacheXY(value.x, value.y)) {
         this.gl.uniform2f(this.location, value.x, value.y)
       }
     }
@@ -321,11 +405,11 @@ export class ShaderUniform {
    */
   public setVec3(value: {x: number, y: number, z: number} | number[]) {
     if (Array.isArray(value)) {
-      if (this.cacheValue(value[0], value[1], value[2])) {
+      if (this.cacheXYZ(value[0], value[1], value[2])) {
         this.gl.uniform3f(this.location, value[0], value[1], value[2])
       }
     } else {
-      if (this.cacheValue(value.x, value.y, value.z)) {
+      if (this.cacheXYZ(value.x, value.y, value.z)) {
         this.gl.uniform3f(this.location, value.x, value.y, value.z)
       }
     }
@@ -336,18 +420,18 @@ export class ShaderUniform {
    */
   public setVec4(value: {x: number, y: number, z: number, w: number} | number[]) {
     if (Array.isArray(value)) {
-      if (this.cacheValue(value[0], value[1], value[2], value[3])) {
+      if (this.cacheXYZW(value[0], value[1], value[2], value[3])) {
         this.gl.uniform4f(this.location, value[0], value[1], value[2], value[3])
       }
     } else {
-      if (this.cacheValue(value.x, value.y, value.z, value.w)) {
+      if (this.cacheXYZW(value.x, value.y, value.z, value.w)) {
         this.gl.uniform4f(this.location, value.x, value.y, value.z, value.w)
       }
     }
   }
 
   /**
-   * Sets a float array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setFloatArray(value: Float32Array) {
     this.cachedValue.length = 0
@@ -355,7 +439,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a float array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setFloat2Array(value: Float32Array) {
     this.cachedValue.length = 0
@@ -363,7 +447,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a float array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setFloat3Array(value: Float32Array) {
     this.cachedValue.length = 0
@@ -371,7 +455,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a float array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setFloat4Array(value: Float32Array) {
     this.cachedValue.length = 0
@@ -379,7 +463,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a integer array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a integer array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setIntArray(value: Int32Array) {
     this.cachedValue.length = 0
@@ -387,7 +471,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a integer array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a integer array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setInt2Array(value: Int32Array) {
     this.cachedValue.length = 0
@@ -395,7 +479,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a Int array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a Int array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setInt3Array(value: Int32Array) {
     this.cachedValue.length = 0
@@ -403,7 +487,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a Int array value. Commits it to the uniform. Does not perform or test caching
+   * Sets a Int array value. Commits it to the uniform. Skips (and clears) the cache.
    */
   public setInt4Array(value: Int32Array) {
     this.cachedValue.length = 0
@@ -411,7 +495,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a 2x2 matrix value on the uniform. Does not perform or test caching
+   * Sets a 2x2 matrix value on the uniform. Skips (and clears) the cache.
    */
   public setMat2(value: { data: number[]|Float32Array }, transpose: boolean) {
     this.cachedValue.length = 0
@@ -419,7 +503,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a 3x3 matrix value on the uniform. Does not perform or test caching
+   * Sets a 3x3 matrix value on the uniform. Skips (and clears) the cache.
    */
   public setMat3(value: { data: number[]|Float32Array }, transpose: boolean) {
     this.cachedValue.length = 0
@@ -427,7 +511,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a 4x4 matrix value on the uniform. Does not perform or test caching
+   * Sets a 4x4 matrix value on the uniform. Skips (and clears) the cache.
    */
   public setMat4(value: { data: number[]|Float32Array }, transpose: boolean) {
     this.cachedValue.length = 0
@@ -438,8 +522,8 @@ export class ShaderUniform {
    * Binds a texture to this uniform
    */
   public setTexture(value: Texture) {
-    let device = this.device
-    let sampler = device.samplerStates[this.register] || device.samplerStates[0]
+    const device = this.device
+    const sampler = device.samplerStates[this.register] || device.samplerStates[0]
 
     // perform the update
     // - for video textures this will update the playback state
@@ -452,9 +536,17 @@ export class ShaderUniform {
       value = this.device.defaultTexture
     }
     sampler.texture = value
-    // prefer the filter defined in the shader
-    // otherwise just use whatever has been assigned to the texture
-    sampler.commit(this.filter || value.sampler)
+
+    if (this.filter) {
+      // prefer filter state as it is defined in the shader
+      sampler.commit(this.filter)
+    } else if (value.sampler) {
+      // otherwise fallback to sampler state defined by texture
+      sampler.commit(value.sampler)
+    } else {
+      // otherwise keep going without state change
+      sampler.commit()
+    }
 
     this.setInt(sampler.register)
   }

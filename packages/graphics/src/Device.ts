@@ -42,8 +42,17 @@ import { Model, ModelOptions } from './Model'
 import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { SpriteBatch } from './SpriteBatch'
 
-const supportsWebGL = typeof WebGLRenderingContext === 'function'
-const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
+/**
+ * Determines whether webgl is supported
+ * @public
+ */
+export const supportsWebGL = typeof WebGLRenderingContext === 'function'
+
+/**
+ * Determines whether webgl 2.0 is supported
+ * @public
+ */
+export const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
 
 /**
  * Options that will be passed to
@@ -122,38 +131,30 @@ function getOrCreateCanvas(canvas?: string|HTMLCanvasElement): HTMLCanvasElement
   return document.createElement('canvas') as HTMLCanvasElement
 }
 
-function getOrCreateContext(canvas: HTMLCanvasElement, options: any): WebGLRenderingContext | WebGL2RenderingContext {
+function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceOptions): WebGLRenderingContext | WebGL2RenderingContext {
   let context = options.context
-  const attributes = extend({}, DEFAULT_CONTEXT_ATTRIBUTES, options.contextAttributes || {})
-
-  if (context && typeof context !== 'string') {
-    // assume a valid context is already given
-    return context as any
+  const attributes = {
+    ...DEFAULT_CONTEXT_ATTRIBUTES,
+    ...options.contextAttributes || {},
   }
 
-  if (context) {
+  if (typeof context === 'string') {
     // specific context is requested
-    try {
-      context = canvas.getContext(context, attributes) as any
-    } catch (e) {
-      context = null
-    }
+    return canvas.getContext(context, attributes) as any
+  } else if (context) {
+    return context
   }
 
   // apply fallback strategy
   for (const name of ['webgl2', 'webgl', 'experimental-webgl']) {
     try {
-      context = context || canvas.getContext(name, attributes)
+      return canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
     } catch (e) {
       Log.i('[Device]', `${name} is not supported`)
     }
   }
 
-  if (!context) {
-    throw Error('WebGL is not supported')
-  }
-
-  return context
+  throw Error('WebGL is not supported')
 }
 
 /**
@@ -186,7 +187,7 @@ export class Device {
   public context: WebGLRenderingContext | WebGL2RenderingContext
 
   /**
-   * A collection of capabilites of the currently running graphics unit.
+   * A collection of capabilities of the currently running graphics unit.
    */
   public capabilities: Capabilities
 
@@ -256,7 +257,7 @@ export class Device {
    * Gets a copy of the cull state parameters
    *
    * @remarks
-   * On set it updates the cull state parameters and direclty commits the state to the GPU
+   * On set it updates the cull state parameters and directly commits the state to the GPU
    */
   public get cullState() {
     return this.$cullState.copy()
@@ -268,7 +269,7 @@ export class Device {
   public get blendState() {
     return this.$blendState.copy()
   }
-  /** Updates the blend state parameters and direclty commits the state to the GPU */
+  /** Updates the blend state parameters and directly commits the state to the GPU */
   public set blendState(v: BlendStateParams) {
     this.$blendState.commit(v)
   }
@@ -276,7 +277,7 @@ export class Device {
   public get depthState() {
     return this.$depthState.copy()
   }
-  /** Updates the depth state parameters and direclty commits the state to the GPU */
+  /** Updates the depth state parameters and directly commits the state to the GPU */
   public set depthState(v: DepthStateParams) {
     this.$depthState.commit(v)
   }
@@ -284,7 +285,7 @@ export class Device {
   public get offsetState() {
     return this.$offsetState.copy()
   }
-  /** Updates the offset state parameters and direclty commits the state to the GPU */
+  /** Updates the offset state parameters and directly commits the state to the GPU */
   public set offsetState(v: OffsetStateParams) {
     this.$offsetState.commit(v)
   }
@@ -292,7 +293,7 @@ export class Device {
   public get stencilState() {
     return this.$stencilState.copy()
   }
-  /** Updates the stencil state parameters and direclty commits the state to the GPU */
+  /** Updates the stencil state parameters and directly commits the state to the GPU */
   public set stencilState(v: StencilStateParams) {
     this.$stencilState.commit(v)
   }
@@ -300,7 +301,7 @@ export class Device {
   public get scissorState() {
     return this.$scissorState.copy()
   }
-  /** Updates the scissor state parameters and direclty commits the state to the GPU */
+  /** Updates the scissor state parameters and directly commits the state to the GPU */
   public set scissorState(v: ScissorStateParams) {
     this.$scissorState.commit(v)
   }
@@ -308,7 +309,7 @@ export class Device {
   public get viewportState() {
     return this.$viewportState.copy()
   }
-  /** Updates the viewport state parameters and direclty commits the state to the GPU */
+  /** Updates the viewport state parameters and directly commits the state to the GPU */
   public set viewportState(v: ViewportStateParams) {
     this.$viewportState.commit(v)
   }
@@ -319,8 +320,8 @@ export class Device {
         data: [
           0x0F, 0x0F, 0x0F, 0xFF,
           0x00, 0x00, 0x00, 0xFF,
-          0x0F, 0x0F, 0x0F, 0xFF,
           0x00, 0x00, 0x00, 0xFF,
+          0x0F, 0x0F, 0x0F, 0xFF,
         ],
         sampler: SamplerState.PointWrap,
       })
@@ -695,7 +696,7 @@ export class Device {
     return this.currentFrameBuffer
   }
   /**
-   * Sets and activates a frame buffer as the currently active frane buffer
+   * Sets and activates a frame buffer as the currently active frame buffer
    */
   set frameBuffer(buffer: FrameBuffer) {
     if (this.currentFrameBuffer !== buffer) {
@@ -970,7 +971,7 @@ export class Device {
   }
 
   /**
-   * Creates a vertex layout obect from name
+   * Creates a vertex layout object from name
    */
   public createVertexLayout(name: string): any {
     return VertexLayout.create.apply(this, arguments)

@@ -8,7 +8,7 @@ const keyLookup = {
 }
 
 /**
- * Defines a quaternion.
+ * A quaternion.
  *
  * @public
  */

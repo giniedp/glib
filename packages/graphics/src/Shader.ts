@@ -5,7 +5,7 @@ import { nameOfShaderType, ShaderType, ShaderTypeOption, valueOfShaderType } fro
 import { ShaderInspector } from './ShaderInspector'
 
 /**
- * The shader constructor options
+ * Constructor options for {@link Shader}
  *
  * @public
  */
@@ -17,15 +17,15 @@ export interface ShaderOptions {
   /**
    * The shader type e.g. VertexShader or Fragment shader
    */
-  type?: ShaderTypeOption,
+  type: ShaderTypeOption,
   /**
-   * A WebGLShader object to be reused
+   * A {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLShader | WebGLShader} object to be reused
    */
   handle?: WebGLShader
 }
 
 /**
- * Represents the source code of a `VertexShader` or a `FragmentShader`
+ * A wrapper class around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLShader | WebGLShader}
  *
  * @public
  */
@@ -42,27 +42,23 @@ export class Shader {
    */
   public readonly device: Device
   /**
-   * The rendering context
-   */
-  public readonly gl: WebGLRenderingContext
-  /**
    * The shader source code
    */
   public source: string
   /**
-   * The shader type (as a  WebGL constant)
+   * The shader type as a  WebGL constant
    */
   public type: ShaderType
   /**
-   * The shader type (as readable name e.g. VertexShader or FragmentShader)
+   * The shader type as readable name e.g. VertexShader or FragmentShader
    */
   public typeName: string
   /**
-   * The web gl shader instance
+   * The {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLShader | WebGLShader} instance
    */
   public handle: WebGLShader
   /**
-   * Whether compilation was successfull
+   * Whether compilation was successful
    */
   public compiled: boolean
   /**
@@ -73,9 +69,8 @@ export class Shader {
   /**
    *
    */
-  constructor(device: Device, options: ShaderOptions= {}) {
+  constructor(device: Device, options: ShaderOptions) {
     this.device = device
-    this.gl = device.context
 
     this.source = options.source
     this.type = valueOfShaderType(options.type)
@@ -86,8 +81,8 @@ export class Shader {
     }
 
     this.handle = options.handle
-    if (!this.handle || !this.gl.isShader(this.handle)) {
-      this.handle = this.gl.createShader(this.type)
+    if (!this.handle || !this.device.context.isShader(this.handle)) {
+      this.handle = this.device.context.createShader(this.type)
     }
 
     if (this.source) {
@@ -98,9 +93,9 @@ export class Shader {
   /**
    * Releases the shader handle
    */
-  public destroy(): Shader {
-    if (this.gl.isShader(this.handle)) {
-      this.gl.deleteShader(this.handle)
+  public destroy(): this {
+    if (this.device.context.isShader(this.handle)) {
+      this.device.context.deleteShader(this.handle)
       this.handle = null
     }
     return this
@@ -109,16 +104,16 @@ export class Shader {
   /**
    * Compiles the shader source code
    */
-  public compile(): Shader {
+  public compile(): this {
     if (!this.source) {
       Log.e('[Shader] can not compile shader, source is missing', this)
       return this
     }
-
-    this.gl.shaderSource(this.handle, this.source)
-    this.gl.compileShader(this.handle)
-    this.compiled = this.gl.getShaderParameter(this.handle, this.gl.COMPILE_STATUS)
-    this.info = this.gl.getShaderInfoLog(this.handle)
+    const gl = this.device.context
+    gl.shaderSource(this.handle, this.source)
+    gl.compileShader(this.handle)
+    this.compiled = gl.getShaderParameter(this.handle, gl.COMPILE_STATUS)
+    this.info = gl.getShaderInfoLog(this.handle)
 
     if (!this.compiled) {
       Log.e('[Shader] compilation failed', ShaderInspector.formatInfoLog(this.info, this.source))

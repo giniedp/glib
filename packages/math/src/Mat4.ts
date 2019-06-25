@@ -41,7 +41,7 @@ export type Mat4Data = [
 ] | Float32Array
 
 /**
- * Defines a 4x4 matrix.
+ * A 4x4 matrix.
  *
  * @public
  */

@@ -6,7 +6,7 @@ const keyLookup = {
 }
 
 /**
- * Defines a vector with three components.
+ * A vector with three components.
  *
  * @public
  */

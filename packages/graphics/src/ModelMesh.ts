@@ -6,6 +6,8 @@ import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from './enum
 import { ShaderProgram } from './ShaderProgram'
 
 /**
+ * Constructor options for {@link ModelMesh}
+ *
  * @public
  */
 export interface ModelMeshOptions {
@@ -78,7 +80,7 @@ export class ModelMesh {
    */
   public materialId: number | string = 0
   /**
-   * The inex buffer
+   * The index buffer
    */
   public indexBuffer: Buffer
   /**

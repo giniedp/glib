@@ -2,7 +2,7 @@ import { IRect, IVec2 } from './Types'
 import { Vec2 } from './Vec2'
 
 /**
- * Defines a rectangle area.
+ * A rectangle.
  *
  * @public
  */

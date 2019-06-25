@@ -56,7 +56,7 @@ const fShader = `
 let spritePool: Sprite[] = []
 
 /**
- * SpriteBatch constructor options
+ * Constructor options for {@link SpriteBatch}
  *
  * @public
  */
@@ -65,6 +65,7 @@ export interface SpriteBatchOptions {
 }
 
 /**
+ * Options for {@link SpriteBatch.begin}
  *
  * @public
  */
@@ -182,12 +183,12 @@ export class SpriteBuilder {
     sprite.flipY = false
   }
 
-  public color(color: number|Color): SpriteBuilder {
+  public color(color: number|Color): this {
     this.sprite.color = color
     return this
   }
 
-  public alpha(alpha: number): SpriteBuilder {
+  public alpha(alpha: number): this {
     let color = this.sprite.color as number
     if (color == null) {
       color = 0xFFFFFFFF
@@ -196,7 +197,7 @@ export class SpriteBuilder {
     return this
   }
 
-  public source(x: number, y: number, width?: number, height?: number): SpriteBuilder {
+  public source(x: number, y: number, width?: number, height?: number): this {
     let s = this.sprite
     s.srcX = x
     s.srcY = y
@@ -216,7 +217,7 @@ export class SpriteBuilder {
     return this.source(rect.x, rect.y, rect.width, rect.height)
   }
 
-  public destination(x: number, y: number, width?: number, height?: number): SpriteBuilder {
+  public destination(x: number, y: number, width?: number, height?: number): this {
     let s = this.sprite
     s.dstX = x
     s.dstY = y
@@ -236,24 +237,24 @@ export class SpriteBuilder {
     return this.destination(rect.x, rect.y, rect.width, rect.height)
   }
 
-  public origin(x: number, y: number): SpriteBuilder {
+  public origin(x: number, y: number): this {
     let s = this.sprite
     s.originX = x
     s.originY = y
     return this
   }
 
-  public rotation(rotation: number): SpriteBuilder {
+  public rotation(rotation: number): this {
     this.sprite.rotation = rotation
     return this
   }
 
-  public depth(depth: number): SpriteBuilder {
+  public depth(depth: number): this {
     this.sprite.depth = depth
     return this
   }
 
-  public flip(x: boolean, y: boolean): SpriteBuilder {
+  public flip(x: boolean, y: boolean): this {
     let s = this.sprite
     s.flipX = x
     s.flipY = y
@@ -266,7 +267,6 @@ export class SpriteBuilder {
  */
 export class SpriteBatch {
   private device: Device
-  private gl: any
   private hasBegun: boolean
   private spriteQueue: Sprite[]
 
@@ -290,7 +290,6 @@ export class SpriteBatch {
 
   constructor(device: Device, options: SpriteBatchOptions = {}) {
     this.device = device
-    this.gl = device.context
     this.hasBegun = false
     this.spriteQueue = []
     this.batchSize = options.batchSize || 512

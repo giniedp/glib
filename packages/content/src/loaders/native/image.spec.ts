@@ -19,7 +19,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads HTMLImageElement', (done) => {
-      manager.load('/assets/textures/proto_gray.jpg', HTMLImageElement).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.jpg', HTMLImageElement).then((result) => {
         expect(result instanceof Image).toBe(true)
         expect(result.src).toContain('proto_gray.jpg')
       })
@@ -34,7 +34,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads HTMLImageElement', (done) => {
-      manager.load('/assets/textures/proto_gray.jpg', Image).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.jpg', Image).then((result) => {
         expect(result instanceof Image).toBe(true)
         expect(result.src).toContain('proto_gray.jpg')
       })
@@ -49,7 +49,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads HTMLImageElement', (done) => {
-      manager.load('/assets/textures/proto_gray.png', HTMLImageElement).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.png', HTMLImageElement).then((result) => {
         expect(result instanceof Image).toBe(true)
         expect(result.src).toContain('proto_gray.png')
       })
@@ -64,7 +64,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads HTMLImageElement', (done) => {
-      manager.load('/assets/textures/proto_gray.png', Image).then((result) => {
+      manager.load('/assets/textures/prototype/proto_gray.png', Image).then((result) => {
         expect(result instanceof Image).toBe(true)
         expect(result.src).toContain('proto_gray.png')
       })

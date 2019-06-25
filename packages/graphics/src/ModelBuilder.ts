@@ -14,6 +14,8 @@ import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChann
 
 let tmpBuffer: any[] = []
 
+export type ModelBuilderFunction = <T>(b: ModelBuilder, options?: T) => void
+
 /**
  * @public
  */
@@ -129,7 +131,7 @@ export class ModelBuilder {
   }
 
   /**
-   * Pushes and pops tranform matrix to/from the stack around the given callback
+   * Pushes and pops transform matrix to/from the stack around the given callback
    *
    * @param transform the transform matrix
    * @param callback the callback

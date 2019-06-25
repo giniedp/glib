@@ -21,10 +21,7 @@ export interface ShaderFxPass {
 }
 
 export type ShaderFxIncludeHandler = (includePath: string) => Promise<string>
-
-function missingIncludeHandler(path: string): Promise<string> {
-  throw new Error(`Unable to include '${path}'. Include handler is missing.`)
-}
+export type ShaderFxIncludeSyncHandler = (includePath: string) => string
 
 export async function createShaderEffect(
   device: Device,
@@ -38,11 +35,13 @@ export async function createShaderEffectOptions(
   includeHandler?: ShaderFxIncludeHandler): Promise<ShaderEffectOptions> {
   return {
     name: doc.name,
-    techniques: await mapTechnqiues(doc, includeHandler || missingIncludeHandler),
+    techniques: await processTechniques(doc, includeHandler || ((path) => {
+      throw new Error(`Unable to include '${path}'. Include handler is missing.`)
+    })),
   }
 }
 
-async function mapTechnqiues(
+async function processTechniques(
   doc: ShaderFxDocument,
   includeHandler: ShaderFxIncludeHandler,
 ): Promise<ShaderTechniqueOptions[]> {
@@ -57,15 +56,13 @@ async function mapTechnqiues(
     }))
 }
 
-async function  mapPasses(
+async function mapPasses(
   doc: ShaderFxDocument,
   passes: ShaderFxPass | ShaderFxPass[],
   includeHandler: ShaderFxIncludeHandler,
 ): Promise<ShaderPassOptions[]> {
-  passes = Array.isArray(passes) ? passes : [passes]
-  return Promise.all(passes
-    .filter((it) => !!it)
-    .map(async (it) => {
+  passes = (Array.isArray(passes) ? passes : [passes]).filter((it) => !!it)
+  return Promise.all(passes.map(async (it) => {
       return {
         name: it.name,
         program: await processProgram(
@@ -75,13 +72,6 @@ async function  mapPasses(
         ),
       }
     }))
-}
-
-let regInclude = /#include\s+<(.*)>/
-let charNewLine = '\n'
-
-function getLines(value: string): string[] {
-  return value.replace(/\r/g, '\n').replace(/\n+/g, '\n').split('\n')
 }
 
 async function processProgram(vertexShader: string, fragmentShader: string, include: ShaderFxIncludeHandler) {
@@ -105,4 +95,76 @@ async function processShader(source: string, include: ShaderFxIncludeHandler): P
   })).then((lines) => {
     return lines.join(charNewLine)
   })
+}
+
+export function createShaderEffectSync(
+  device: Device,
+  doc: ShaderFxDocument,
+  includeHandler?: ShaderFxIncludeSyncHandler): ShaderEffect {
+  return device.createEffect(createShaderEffectOptionsSync(doc, includeHandler))
+}
+
+export function createShaderEffectOptionsSync(
+  doc: ShaderFxDocument,
+  includeHandler?: ShaderFxIncludeSyncHandler): ShaderEffectOptions {
+  return {
+    name: doc.name,
+    techniques: processTechniquesSync(doc, includeHandler || ((path) => {
+      throw new Error(`Unable to include '${path}'. Include handler is missing.`)
+    })),
+  }
+}
+
+function processTechniquesSync(
+  doc: ShaderFxDocument,
+  includeHandler: ShaderFxIncludeSyncHandler,
+): ShaderTechniqueOptions[] {
+  const techniques = Array.isArray(doc.technique) ? doc.technique : [doc.technique]
+  return techniques
+    .filter((it) => !!it)
+    .map((it) => {
+      return {
+        name: it.name,
+        passes: mapPassesSync(doc, it.pass, includeHandler),
+      }
+    })
+}
+
+function mapPassesSync(
+  doc: ShaderFxDocument,
+  passes: ShaderFxPass | ShaderFxPass[],
+  includeHandler: ShaderFxIncludeSyncHandler,
+): ShaderPassOptions[] {
+  passes = (Array.isArray(passes) ? passes : [passes]).filter((it) => !!it)
+  return passes.map((it) => {
+    return {
+      name: it.name,
+      program: processProgramSync(
+        ['#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n'),
+        ['#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n'),
+        includeHandler,
+      ),
+    }
+  })
+}
+
+function processProgramSync(vertexShader: string, fragmentShader: string, include: ShaderFxIncludeSyncHandler) {
+  return {
+    vertexShader: processShaderSync(vertexShader, include),
+    // attribute declaration is only allowed in vertex shader
+    fragmentShader: processShaderSync(fragmentShader, include).replace(/attribute.*;/g, ''),
+  }
+}
+
+function processShaderSync(source: string, include: ShaderFxIncludeSyncHandler): string {
+  return getLines(source).map((line) => {
+    const includeMatch = line.match(regInclude)
+    return includeMatch ? include(includeMatch[1]) : line
+  }).join(charNewLine)
+}
+
+const regInclude = /#include\s+<(.*)>/
+const charNewLine = '\n'
+function getLines(value: string): string[] {
+  return value.replace(/\r/g, '\n').replace(/\n+/g, '\n').split('\n')
 }

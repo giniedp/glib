@@ -23,7 +23,7 @@ const TOP = 4
 const BOTTOM = 5
 
 /**
- * Defines a frustum volume.
+ * A frustum volume.
  *
  * @public
  */
