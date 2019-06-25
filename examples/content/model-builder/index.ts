@@ -2,10 +2,10 @@
 //
 // ---
 
-import { Manager as ContentManager } from '@gglib/content'
+import { ContentManager } from '@gglib/content'
 import { CullState, Device, Model, ModelBuilder, ShaderEffect } from '@gglib/graphics'
-import { loop } from '@gglib/utils'
 import { Mat4 } from '@gglib/math'
+import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
 const device = new Device({

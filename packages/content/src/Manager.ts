@@ -22,7 +22,7 @@ function getOption<T>(options: IManagerOptions, key: keyof IManagerOptions, fall
 /**
  * @public
  */
-export class Manager {
+export class ContentManager {
   /**
    * The instance of the graphics device
    */
@@ -198,21 +198,21 @@ export class Manager {
    *
    * If the batch value is a string, then that is used as an asset path where the asset is downloaded from.
    *
-   *    ```
+   *    ```ts
    *    load({ Model: 'path/to/model.obj' })
    *    // => { Model: INSTANCE }
    *    ```
    *
    * If the batch value is an array, then each entry is used as an asset path.
    *
-   *    ```
+   *    ```ts
    *    load({ Model: ['path/1.obj', 'path/2.obj'] })
    *    // => { Model: [INSTANCE1, INSTANCE2] }
    *    ```
    *
    * If the batch value is an object, then each entry is used as an asset path.
    *
-   *    ```
+   *    ```ts
    *    load({ Model: { foo: 'path/foo.obj' })
    *    // => { Model: { foo: INSTANCE } }
    *    ```
@@ -245,8 +245,8 @@ export class Manager {
   /**
    * Checks whether loading from given source is supported.
    *
-   * @param src The source url to load from. This will be passed to `rewriteUrl`.
-   * @param targetType The target asset type or a symbol identifying the target type.
+   * @param src - The source url to load from. This will be passed to `rewriteUrl`.
+   * @param targetType - The target asset type or a symbol identifying the target type.
    */
   public canLoad<T = any>(src: string, targetType: symbol | Type<T>) {
     const remapped = this.rewriteUrl(src)
@@ -264,9 +264,9 @@ export class Manager {
   /**
    * Loads and instantiates a single asset
    *
-   * @param src The source url to load from. This will be passed to `rewriteUrl`.
-   * @param targetType The target asset type or a symbol identifying the target type.
-   * @param options Options which will be available in the loading context.
+   * @param src - The source url to load from. This will be passed to `rewriteUrl`.
+   * @param targetType - The target asset type or a symbol identifying the target type.
+   * @param options - Options which will be available in the loading context.
    */
   public async load<T = any>(src: string, targetType: symbol | Type<T>, options: { [key: string]: any } = {}): Promise<T> {
     const requested = Uri.merge(location.pathname, src)

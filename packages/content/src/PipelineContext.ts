@@ -1,12 +1,12 @@
 import { Type } from '@gglib/utils'
-import { Manager } from './Manager'
+import { ContentManager } from './Manager'
 import { Pipeline } from './Pipeline'
 
 export interface PipelineContext<T = any> {
   /**
    * The current processing content manager
    */
-  manager: Manager
+  manager: ContentManager
   /**
    * The instance of the pipeline that is currently handling the loading process
    */

@@ -1,4 +1,4 @@
-import { IManagerOptions, Manager as ContentManager } from '@gglib/content'
+import { ContentManager, IManagerOptions } from '@gglib/content'
 import { Device, DeviceOptions, LightType } from '@gglib/graphics'
 
 import {

@@ -41,8 +41,8 @@ export enum NeighboringType {
  * Creates an array with relative index offsets for a point in a 2 dimensional
  * grid (heightmap) to its neighboring points.
  *
- * @param width The width of the 2 dimensional grid
- * @param neighboring The neighbor type to be used
+ * @param width - The width of the 2 dimensional grid
+ * @param neighboring - The neighbor type to be used
  */
 export function neighborOffsets(width: number, neighboring: NeighboringType): number[] {
   let w = width

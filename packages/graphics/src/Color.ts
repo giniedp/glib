@@ -2,6 +2,11 @@ import { IVec4, Vec4 } from '@gglib/math'
 
 // tslint:disable no-bitwise
 
+/**
+ * RGBA formatted color parser
+ *
+ * @public
+ */
 export const RGBA_FORMAT = Object.freeze({
   r: (rgba: number): number => (rgba >> 0) & 255,
   g: (rgba: number): number => (rgba >> 8) & 255,
@@ -14,6 +19,11 @@ export const RGBA_FORMAT = Object.freeze({
   w: (rgba: number): number => ((rgba >> 24) & 255) / 255,
 })
 
+/**
+ * ARGB formatted color parser
+ *
+ * @public
+ */
 export const ABGR_FORMAT = Object.freeze({
   a: (argb: number): number => (argb >> 0) & 255,
   b: (argb: number): number => (argb >> 8) & 255,

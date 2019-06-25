@@ -18,7 +18,7 @@ import {
   TransformComponent,
 } from '@gglib/ecs'
 
-import { Manager as ContentManager } from '@gglib/content'
+import { ContentManager } from '@gglib/content'
 import { AutoMaterial, TerrainMaterial } from '@gglib/effects'
 import { buildSphere, Device, flipWindingOrder, ModelBuilder, Texture } from '@gglib/graphics'
 import { BTTRoot, HeightMap } from '@gglib/terrain'

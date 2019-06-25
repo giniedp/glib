@@ -8,6 +8,9 @@ export interface ModelBuilderChannelMap {
   [key: string]: ModelBuilderChannel
 }
 
+/**
+ * @public
+ */
 export class ModelBuilderChannel {
 
   public readonly stride: number
@@ -24,8 +27,8 @@ export class ModelBuilderChannel {
   /**
    * Reads a single element value of a vertex attribute.
    *
-   * @param vIndex The vertex index to read at
-   * @param elementIndex The element index to read. e.g. `0` is usually the `x` coordinate, `1` is `y` etc.
+   * @param vIndex - The vertex index to read at
+   * @param elementIndex - The element index to read. e.g. `0` is usually the `x` coordinate, `1` is `y` etc.
    */
   public read(vIndex: number, elementIndex: number): number {
     return this.buffer.data[this.stride * vIndex + this.offset + elementIndex]
@@ -34,9 +37,9 @@ export class ModelBuilderChannel {
   /**
    * Reads a whole vertex attribute into the given target array
    *
-   * @param vIndex The vertex index to read at
-   * @param target The target array to read into
-   * @param targetOffset The offset in target array where to start writing
+   * @param vIndex - The vertex index to read at
+   * @param target - The target array to read into
+   * @param targetOffset - The offset in target array where to start writing
    */
   public readAttribute(vIndex: number, target: number[] = [], targetOffset: number = 0): number[] {
     const index = this.stride * vIndex + this.offset
@@ -49,9 +52,9 @@ export class ModelBuilderChannel {
   /**
    * Writes a single element value to a vertex attribute
    *
-   * @param vIndex The vertex index to write to
-   * @param elementIndex The element index to write. e.g. `0` is usually the `x` coordinate, `1` is `y` etc.
-   * @param value The value
+   * @param vIndex - The vertex index to write to
+   * @param elementIndex - The element index to write. e.g. `0` is usually the `x` coordinate, `1` is `y` etc.
+   * @param value - The value
    */
   public write(vIndex: number, elementIndex: number, value: number): void {
     this.buffer.data[this.stride * vIndex + this.offset + elementIndex] = value
@@ -60,9 +63,9 @@ export class ModelBuilderChannel {
   /**
    * Writes a whole vertex attribute at given vertex index
    *
-   * @param vIndex The vertex index to write at
-   * @param source The attribute data to write
-   * @param sourceOffset The offset in source array where to start reading
+   * @param vIndex - The vertex index to write at
+   * @param source - The attribute data to write
+   * @param sourceOffset - The offset in source array where to start reading
    */
   public writeAttribute(vIndex: number, source: number[] = [], sourceOffset: number = 0) {
     const index = this.stride * vIndex + this.offset
@@ -74,9 +77,9 @@ export class ModelBuilderChannel {
   /**
    * Reads a vertex attribute channel from start to end and emits each attribute
    *
-   * @param emitter The callback function
-   * @param startVertex The start vertex index where the scan begins
-   * @param endVertex The end vertex index where the scan ends
+   * @param emitter - The callback function
+   * @param startVertex - The start vertex index where the scan begins
+   * @param endVertex - The end vertex index where the scan ends
    */
   public forEach(
     emitter: (attr: number[], index: number) => void,

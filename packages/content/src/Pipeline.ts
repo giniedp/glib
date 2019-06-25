@@ -49,7 +49,7 @@ export class Pipeline {
   /**
    * Registeres a loader function
    *
-   * @param loader The loader specification
+   * @param loader - The loader specification
    */
   public register<I, O, D>(loader: LoaderSpec<I, O, D>) {
     const inputs = Array.isArray(loader.input) ? loader.input : [loader.input]
@@ -66,10 +66,10 @@ export class Pipeline {
 
   /**
    *
-   * @param source The source type or symbol identifying the input type
-   * @param target The target type or symbol identifying the target type
-   * @param input The input value to import. Its type is identified by `source`
-   * @param context The context use during the import
+   * @param source - The source type or symbol identifying the input type
+   * @param target - The target type or symbol identifying the target type
+   * @param input - The input value to import. Its type is identified by `source`
+   * @param context - The context use during the import
    */
   public async run(source: string | symbol | Type<any>, target: symbol | Type<any>, input: any, context: PipelineContext) {
 
@@ -92,8 +92,8 @@ export class Pipeline {
   /**
    * Detects whether there is a loding path from `source` type to the `target` type
    *
-   * @param source The source type or symbol identifying the input type
-   * @param target The target type or symbol identifying the target type
+   * @param source - The source type or symbol identifying the input type
+   * @param target - The target type or symbol identifying the target type
    */
   public canLoad(source: string | symbol | Type<any>, target: symbol | Type<any>): boolean {
     return this.resolve(source, target).length > 0

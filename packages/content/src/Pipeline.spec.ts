@@ -1,4 +1,4 @@
-import { Manager } from './Manager'
+import { ContentManager } from './Manager'
 import { Pipeline } from './Pipeline'
 import { PipelineContext } from './PipelineContext'
 
@@ -6,7 +6,7 @@ const Model = Symbol('Model')
 
 describe('Content.Loader', () => {
   let loader: Pipeline
-  let manager: Manager
+  let manager: ContentManager
 
   beforeEach(() => {
     loader = new Pipeline()

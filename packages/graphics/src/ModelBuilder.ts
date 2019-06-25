@@ -14,9 +14,16 @@ import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChann
 
 let tmpBuffer: any[] = []
 
+/**
+ * A function that adds geometry into a given {@link ModelBuilder}
+ *
+ * @public
+ */
 export type ModelBuilderFunction = <T>(b: ModelBuilder, options?: T) => void
 
 /**
+ * Constructor options for {@link ModelBuilder}
+ *
  * @public
  */
 export interface ModelBuilderOptions {
@@ -31,11 +38,8 @@ export interface ModelBuilderOptions {
 }
 
 /**
- * A mesh building formula function
- */
-export type ModelBuildFormula<T = any> = (builder: ModelBuilder, options: T) => void
-
-/**
+ * A helper class for building 3d geometries
+ *
  * @public
  */
 export class ModelBuilder {
@@ -45,7 +49,7 @@ export class ModelBuilder {
    *
    * @remarks simply calls the constructor with given options
    *
-   * @param options the constructor options
+   * @param options - the constructor options
    */
   public static begin(options?: ModelBuilderOptions): ModelBuilder {
     return new ModelBuilder(options)
@@ -108,7 +112,7 @@ export class ModelBuilder {
   /**
    * Pushes a transform matrix to transform all subsequent vertices (positions and normals)
    *
-   * @param transform the transform matrix
+   * @param transform - the transform matrix
    */
   public beginTransform(transform: Mat4): number {
     let id = this.transformStack.length
@@ -124,7 +128,7 @@ export class ModelBuilder {
   /**
    * Pops transform matrices from stack up until the given id
    *
-   * @param id the id that has been returned byt a call to `beginTransform`
+   * @param id - the id that has been returned byt a call to `beginTransform`
    */
   public endTransform(id: number) {
     this.transformStack.length = id
@@ -133,8 +137,8 @@ export class ModelBuilder {
   /**
    * Pushes and pops transform matrix to/from the stack around the given callback
    *
-   * @param transform the transform matrix
-   * @param callback the callback
+   * @param transform - the transform matrix
+   * @param callback - the callback
    */
   public withTransform(transform: Mat4, callback: (builder: ModelBuilder) => void): ModelBuilder {
     const id = this.beginTransform(transform)

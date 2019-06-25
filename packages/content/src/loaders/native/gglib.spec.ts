@@ -1,4 +1,4 @@
-import { loaders, Manager, Pipeline } from '@gglib/content'
+import { loaders, ContentManager, Pipeline } from '@gglib/content'
 import {
   buildCube,
   Device,
@@ -16,11 +16,11 @@ import {
 describe('content/loader/native', () => {
 
   let device: Device
-  let manager: Manager
+  let manager: ContentManager
 
   beforeEach(() => {
     device = new Device()
-    manager = new Manager(device, {
+    manager = new ContentManager(device, {
       loader: new Pipeline(),
     })
   })

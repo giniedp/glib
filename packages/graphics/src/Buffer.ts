@@ -18,6 +18,11 @@ import {
   valueOfDataType,
 } from './enums'
 
+/**
+ * Data type that is accepted by the `setData*` methods
+ *
+ * @public
+ */
 export type BufferDataOption = number[] | ArrayBuffer | ArrayBufferView
 
 /**
@@ -156,8 +161,8 @@ export class Buffer {
   /**
    * Creates a new Buffer
    *
-   * @param device The graphics device
-   * @param opts The creation options
+   * @param device - The graphics device
+   * @param opts - The creation options
    */
   constructor(device: Device, opts?: BufferOptions) {
     this.device = device

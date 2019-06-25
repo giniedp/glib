@@ -1,4 +1,4 @@
-import { Manager as ContentManager } from '@gglib/content'
+import { ContentManager } from '@gglib/content'
 import {
   addCamera,
   addDirectionalLight,

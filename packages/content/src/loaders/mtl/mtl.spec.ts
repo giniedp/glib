@@ -1,4 +1,4 @@
-import { Manager } from '@gglib/content'
+import { ContentManager } from '@gglib/content'
 import { Device, Material, MaterialOptions, ShaderEffect } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test/utils.spec'
 
@@ -10,12 +10,12 @@ import './mtl'
 describe('content loader mtl', () => {
 
   let device: Device
-  let manager: Manager
+  let manager: ContentManager
 
   afterAll(clearScripts)
   beforeAll(() => {
     device = new Device()
-    manager = new Manager(device)
+    manager = new ContentManager(device)
     defineScript('default.ggfx', 'application/x-yaml', `
 name: effect name
 program:

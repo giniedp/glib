@@ -51,8 +51,8 @@ export class Accessor {
   /**
    * Performs an access into the source data
    *
-   * @param index The index at which the access is performed
-   * @param emit Callback function that is called for each `param` with its value
+   * @param index - The index at which the access is performed
+   * @param emit - Callback function that is called for each `param` with its value
    */
   public access(index: number, emit: (param: Param, value: any) => void): void {
     this.params.forEach((param, i) => {
@@ -67,7 +67,7 @@ export class Accessor {
    * In contrast to `access` this will return a plain object where each param.name
    * is mapped to a value
    *
-   * @param index The index at which the access is performed
+   * @param index - The index at which the access is performed
    */
   public accessElement(index: number): any {
     const result: any = {}

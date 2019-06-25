@@ -1,10 +1,10 @@
 import * as TweakUi from 'tweak-ui'
 
-import { Manager as ContentManager } from '@gglib/content'
-import { loop } from '@gglib/utils'
+import { ContentManager } from '@gglib/content'
 import { Device, Model } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
 import { BasicStage, Manager as RenderManager } from '@gglib/render'
+import { loop } from '@gglib/utils'
 
 let device = new Device({ canvas: document.getElementById('canvas') as HTMLCanvasElement })
 let content = new ContentManager(device)

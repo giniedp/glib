@@ -129,7 +129,7 @@ export class ModelMesh {
   /**
    * Draws the mesh with the given program
    *
-   * @param program the program to draw with
+   * @param program - the program to draw with
    */
   public draw(program: ShaderProgram): ModelMesh {
     const device = this.device

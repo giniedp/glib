@@ -88,7 +88,7 @@ export interface ContextAttributes {
 }
 
 /**
- * Options for the {@link Device.constructor}
+ * Options for the {@link Device."constructor"}
  *
  * @public
  */
@@ -107,6 +107,9 @@ export interface DeviceOptions {
   contextAttributes?: ContextAttributes,
 }
 
+/**
+ * @public
+ */
 export const DEFAULT_CONTEXT_ATTRIBUTES = Object.freeze<ContextAttributes>({
   alpha: true,
   antialias: true,
@@ -228,8 +231,6 @@ export class Device {
 
   /**
    * Constructs a {@link Device}
-   *
-   * @param options
    */
   constructor(options: DeviceOptions = {}) {
 

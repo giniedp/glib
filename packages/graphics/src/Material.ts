@@ -27,6 +27,7 @@ export interface MaterialOptions<T = ShaderEffectOptions | ShaderEffect | string
 /**
  * Defines a parameter set for a specific {@link ShaderEffect}
  *
+ * @public
  * @remarks
  * A material holds a reference to a {@link ShaderEffect} and a
  * set of parameters that should be used together when rendering.

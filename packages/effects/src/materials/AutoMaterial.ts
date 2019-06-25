@@ -482,7 +482,7 @@ export class AutoMaterial extends Material {
   /**
    * Gets the light at given index
    *
-   * @param index The index of the light
+   * @param index - The index of the light
    */
   public getLight(index: number): AutoMaterialLight {
     return this.lights[index]
