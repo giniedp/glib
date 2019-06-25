@@ -42,11 +42,8 @@ export function api(cb) {
 
 export function docs() {
   return spawn({
-    cmd: './node_modules/.bin/api-documenter markdown -i api -o docs',
+    cmd: './node_modules/.bin/api-documenter markdown -i api -o dist/docs',
     shell: true,
     stdio: 'inherit',
   })
 }
-
-task(api)
-task(docs)

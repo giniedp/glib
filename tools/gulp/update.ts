@@ -124,13 +124,9 @@ export function update(cb) {
   )(cb)
 }
 
-task(update)
-
 export function copyPackageFiles() {
   return src([
     project.pkgSrcDir('*', 'package.json'),
     project.pkgSrcDir('*', 'Readme.md'),
   ]).pipe(dest(path.join(project.dist, 'packages')))
 }
-
-task(copyPackageFiles)

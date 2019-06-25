@@ -52,6 +52,9 @@ export function examples() {
         fs.symlink(project.pkgDstDir('gglib', 'bundles', 'gglib.umd.js'), path.join(path.dirname(file.path), 'gglib.umd.js'), () => {
           cb(null, null)
         })
+        fs.symlink(project.pkgDstDir('gglib', 'bundles', 'gglib.umd.js.map'), path.join(path.dirname(file.path), 'gglib.umd.js.map'), () => {
+          // cb(null, null)
+        })
       },
       flush: (cb) => cb(),
     }))
@@ -82,6 +85,3 @@ export function watchExamples(end) {
     process.exit(1)
   })
 }
-
-task(serve)
-task(watchExamples)

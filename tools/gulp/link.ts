@@ -19,6 +19,3 @@ export function unlink(cb) {
     cb()
   }
 }
-
-task('link', link)
-task('unlink', unlink)

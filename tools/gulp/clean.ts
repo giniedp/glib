@@ -5,5 +5,3 @@ import project from '../project'
 export function clean() {
   return del([project.dist])
 }
-
-task(clean)

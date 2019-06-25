@@ -18,6 +18,3 @@ export function watchAssets(end) {
     process.exit(1)
   })
 }
-
-task(assets)
-task(watchAssets)

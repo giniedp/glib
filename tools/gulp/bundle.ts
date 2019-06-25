@@ -53,5 +53,3 @@ export function bundle(done) {
     ...project.packages.map((pkg) => `bundle:${pkg}`),
   )(done)
 }
-
-task(bundle)
