@@ -7,11 +7,11 @@ import {
   StencilOperationOption,
   valueOfCompareFunction,
   valueOfStencilOperation,
-} from './../enums/Enums'
+} from './../enums'
 
 import { Device } from './../Device'
 
-const propertyKeys: Array<keyof StencilStateParams> = [
+const params: Array<keyof StencilStateParams> = [
   'enable',
   'stencilFunction',
   'stencilReference',
@@ -287,7 +287,7 @@ export class StencilState implements StencilStateParams {
   }
 
   public assign(state: StencilStateParams= {}): StencilState {
-    for (let key of propertyKeys) {
+    for (let key of params) {
       if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
@@ -334,13 +334,13 @@ export class StencilState implements StencilStateParams {
   }
 
   public copy(out: any= {}): StencilStateParams {
-    for (let key of propertyKeys) { out[key] = this[key] }
+    for (let key of params) { out[key] = this[key] }
     return out
   }
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key as any] = undefined }
+    for (let key of params) { this.changes[key as any] = undefined }
   }
 
   public static convert(state: string | StencilStateOptions): StencilStateParams {
@@ -352,33 +352,33 @@ export class StencilState implements StencilStateParams {
       return null
     }
 
-    if (state.stencilFunction) {
-      state.stencilFunction = valueOfCompareFunction(state.stencilFunction)
+    const result: StencilStateParams = {} as any
+    for (const key of params) {
+      if (!(key in state)) {
+        continue
+      }
+      switch (key) {
+        case 'stencilFunction':
+        case 'stencilBackFunction':
+          result[key] = valueOfCompareFunction(state[key])
+          break
+        case 'stencilFail':
+        case 'stencilDepthFail':
+        case 'stencilDepthPass':
+        case 'stencilBackFail':
+        case 'stencilBackDepthFail':
+        case 'stencilBackDepthPass':
+          result[key] = valueOfStencilOperation(state[key])
+          break
+        case 'enable':
+          result[key] = state[key]
+          break
+        default:
+          result[key] = state[key]
+          break
+      }
     }
-    if (state.stencilBackFunction) {
-      state.stencilBackFunction = valueOfCompareFunction(state.stencilBackFunction)
-    }
-
-    if (state.stencilFail) {
-      state.stencilFail = valueOfStencilOperation(state.stencilFail)
-    }
-    if (state.stencilDepthFail) {
-      state.stencilDepthFail = valueOfStencilOperation(state.stencilDepthFail)
-    }
-    if (state.stencilDepthPass) {
-      state.stencilDepthPass = valueOfStencilOperation(state.stencilDepthPass)
-    }
-
-    if (state.stencilBackFail) {
-      state.stencilBackFail = valueOfStencilOperation(state.stencilBackFail)
-    }
-    if (state.stencilBackDepthFail) {
-      state.stencilBackDepthFail = valueOfStencilOperation(state.stencilBackDepthFail)
-    }
-    if (state.stencilBackDepthPass) {
-      state.stencilBackDepthPass = valueOfStencilOperation(state.stencilBackDepthPass)
-    }
-    return state as StencilStateParams
+    return result
   }
 
   public static resolve(gl: WebGLRenderingContext, out: any= {}): StencilStateParams {

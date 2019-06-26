@@ -25,7 +25,7 @@ const TextureUnitMap = [
   0x84DC, 0x84DD, 0x84DE, 0x84DF,
 ]
 
-const propertyKeys = [
+const params = [
   'texture',
   'minFilter',
   'magFilter',
@@ -181,7 +181,7 @@ export class SamplerState implements SamplerStateParams {
   }
 
   public assign(state: SamplerStateParams): SamplerState {
-    for (let key of propertyKeys) {
+    for (let key of params) {
       if (state.hasOwnProperty(key) && key !== 'register') {
         this[key] = state[key]
       }
@@ -217,7 +217,7 @@ export class SamplerState implements SamplerStateParams {
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key as any] = undefined }
+    for (let key of params) { this.changes[key as any] = undefined }
   }
 
   public static convert(state: SamplerStateParams): SamplerStateParams {

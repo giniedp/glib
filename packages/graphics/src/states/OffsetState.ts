@@ -1,136 +1,214 @@
 import { Device } from './../Device'
 
-let optionKeys: Array<keyof OffsetStateParams> = [
-  'offsetEnable',
+const params: Array<keyof OffsetStateParams> = [
+  'enable',
   'offsetFactor',
   'offsetUnits',
 ]
 
 /**
+ * An object with all offset state parameters
+ *
  * @public
  */
-export interface OffsetStateParams {
-  offsetEnable?: boolean
-  offsetFactor?: number
-  offsetUnits?: number
+export interface IOffsetState {
+  enable: boolean
+  offsetFactor: number
+  offsetUnits: number
 }
+
+/**
+ * Represents a sub set of {@link IOffsetState}
+ *
+ * @public
+ */
+export type OffsetStateParams = Partial<IOffsetState>
 
 /**
  * @public
  */
-export class OffsetState implements OffsetStateParams {
+export class OffsetState implements IOffsetState {
+  /**
+   * The graphics device
+   */
   public device: Device
-  public gl: WebGLRenderingContext
-  private offsetEnableField: boolean = false
-  private offsetFactorField: number = 0
-  private offsetUnitsField: number = 0
-  private hasChanged: boolean = false
-  private changes: OffsetStateParams = {}
 
+  private $enable: boolean = false
+  private $offsetFactor: number = 0
+  private $offsetUnits: number = 0
+  private $hasChanged: boolean = false
+  private $changes: OffsetStateParams = {}
+
+  /**
+   * Indicates whether the state has changes which are not committed to the GPU
+   */
   public get isDirty() {
-    return this.hasChanged
+    return this.$hasChanged
   }
 
-  constructor(device: Device, state?: OffsetStateParams) {
+  /**
+   * Instantiates the {@link OffsetState}
+   */
+  constructor(device: Device) {
     this.device = device
-    this.gl = device.context
     this.resolve()
-    if (state) { this.assign(state) }
   }
 
-  get offsetEnable(): boolean {
-    return this.offsetEnableField
+  /**
+   * Enables or disables the offset
+   */
+  public get enable(): boolean {
+    return this.$enable
   }
-
-  set offsetEnable(value: boolean) {
-    if (this.offsetEnableField !== value) {
-      this.offsetEnableField = value
-      this.changes.offsetEnable = value
-      this.hasChanged = true
+  public set enable(value: boolean) {
+    if (this.$enable !== value) {
+      this.$enable = value
+      this.$changes.enable = value
+      this.$hasChanged = true
     }
   }
 
-  get offsetFactor(): number {
-    return this.offsetFactorField
+  /**
+   * Gets and sets the offset factor
+   */
+  public get offsetFactor(): number {
+    return this.$offsetFactor
   }
-
-  set offsetFactor(value: number) {
-    if (this.offsetFactorField !== value) {
-      this.offsetFactorField = value
-      this.changes.offsetFactor = value
-      this.hasChanged = true
+  public set offsetFactor(value: number) {
+    if (this.$offsetFactor !== value) {
+      this.$offsetFactor = value
+      this.$changes.offsetFactor = value
+      this.$hasChanged = true
     }
   }
 
-  get offsetUnits(): number {
-    return this.offsetUnitsField
+  /**
+   * Gets and sets the offset units
+   */
+  public get offsetUnits(): number {
+    return this.$offsetUnits
   }
-
-  set offsetUnits(value: number) {
-    if (this.offsetUnitsField !== value) {
-      this.offsetUnitsField = value
-      this.changes.offsetUnits = value
-      this.hasChanged = true
+  public set offsetUnits(value: number) {
+    if (this.$offsetUnits !== value) {
+      this.$offsetUnits = value
+      this.$changes.offsetUnits = value
+      this.$hasChanged = true
     }
   }
 
-  public assign(state: OffsetStateParams): OffsetState {
-    for (let key of optionKeys) {
+  /**
+   * Assigns multiple parameters to the current state
+   */
+  public assign(state: OffsetStateParams): this {
+    for (let key of params) {
       if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
   }
 
-  public commit(state?: OffsetStateParams): OffsetState {
+  /**
+   * Uploads all changes to the GPU
+   *
+   * @param state - State changes to be assigned before committing
+   */
+  public commit(state?: OffsetStateParams): this {
     if (state) { this.assign(state) }
-    if (!this.hasChanged) { return this }
-    let changes = this.changes
-    let gl = this.gl
-    if (this.changes.offsetEnable === true) {
+    if (!this.$hasChanged) { return this }
+    const changes = this.$changes
+    const gl = this.device.context
+    if (changes.enable === true) {
       gl.enable(gl.POLYGON_OFFSET_FILL)
     }
-    if (this.changes.offsetEnable === false) {
+    if (changes.enable === false) {
       gl.disable(gl.POLYGON_OFFSET_FILL)
     }
-    if (this.changes.offsetFactor !== null || this.changes.offsetUnits !== null) {
+    if (changes.offsetFactor !== null || changes.offsetUnits !== null) {
       gl.polygonOffset(this.offsetFactor, this.offsetUnits)
     }
     this.clearChanges()
     return this
   }
 
-  public copy(out: any= {}): OffsetStateParams {
-    for (let key of optionKeys) { out[key] = this[key] }
+  /**
+   * Creates a copy of this state state
+   */
+  public copy(): IOffsetState
+  /**
+   * Creates a copy of this state and writes it into the target object
+   *
+   * @param target - Where the state should be written to
+   */
+  public copy<T>(target: T): T & IOffsetState
+  public copy(out: any= {}): IOffsetState {
+    for (let key of params) { out[key] = this[key] }
     return out
   }
 
-  public resolve(): OffsetState {
-    OffsetState.resolve(this.gl, this)
+  /**
+   * Resolves the current state from the GPU
+   */
+  public resolve(): this {
+    OffsetState.resolve(this.device, this)
     this.clearChanges()
     return this
   }
 
   private clearChanges() {
-    this.hasChanged = false
-    for (let key of optionKeys) { this.changes[key as any] = undefined }
+    this.$hasChanged = false
+    for (let key of params) { this.$changes[key as any] = undefined }
   }
 
+  /**
+   * Converts a state name or options into {@link DepthStateParams}
+   *
+   * @param state - The state name or state options to convert
+   */
   public static convert(state: string | OffsetStateParams): OffsetStateParams {
     if (typeof state === 'string') {
       return OffsetState[state] ? {...OffsetState[state]} : null
     }
-    return state
+    if (!state) {
+      return null
+    }
+
+    const result: OffsetStateParams = {}
+    for (const key of params) {
+      if (!(key in state)) {
+        continue
+      }
+      switch (key) {
+        case 'enable':
+          result[key] = state[key]
+          break
+        default:
+          result[key] = state[key]
+          break
+      }
+    }
+    return result
   }
 
-  public static resolve(gl: any, out: any= {}): OffsetStateParams {
-    out.offsetEnable = gl.getParameter(gl.POLYGON_OFFSET_FILL)
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve(device: Device): IOffsetState
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve<T>(device: Device, out: T): T & IOffsetState
+  public static resolve(device: Device, out: OffsetStateParams = {}): IOffsetState {
+    const gl = device.context
+    out.enable = gl.getParameter(gl.POLYGON_OFFSET_FILL)
     out.offsetFactor = gl.getParameter(gl.POLYGON_OFFSET_FACTOR)
     out.offsetUnits = gl.getParameter(gl.POLYGON_OFFSET_UNITS)
-    return out
+    return out as IOffsetState
   }
 
+  /**
+   * A default state with offset disabled
+   */
   public static Default = Object.freeze<OffsetStateParams>({
-    offsetEnable: false,
+    enable: false,
     offsetFactor: 0,
     offsetUnits: 0,
   })

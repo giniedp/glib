@@ -26,8 +26,8 @@ describe('glib/graphics/CullState', () => {
 
   beforeEach(() => {
     device = new Device()
-    stateA = new CullState(device, paramsA)
-    stateB = new CullState(device, stateB)
+    stateA = new CullState(device).assign(paramsA)
+    stateB = new CullState(device).assign(stateB)
     stateC = new CullState(device)
   })
   describe(`get/set/change`, () => {

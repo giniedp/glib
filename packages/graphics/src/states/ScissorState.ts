@@ -1,112 +1,140 @@
 import { Device } from './../Device'
 
-const paramNames: Array<keyof ScissorStateParams> = ['enable', 'x', 'y', 'width', 'height']
+const params: Array<keyof ScissorStateParams> = [
+  'enable',
+  'x',
+  'y',
+  'width',
+  'height',
+]
 
 /**
- * The ScissorState parameters
+ * An object with all scissor state parameters
  *
  * @public
  */
-export interface ScissorStateParams {
-  enable?: boolean
-  x?: number
-  y?: number
-  width?: number
-  height?: number
+export interface IScissorState {
+  enable: boolean
+  x: number
+  y: number
+  width: number
+  height: number
 }
+
+/**
+ * Represents a sub set of {@link IScissorState}
+ *
+ * @public
+ */
+export type ScissorStateParams = Partial<IScissorState>
 
 /**
  * @public
  */
-export class ScissorState implements ScissorStateParams {
+export class ScissorState implements IScissorState {
+  /**
+   * The graphics device
+   */
   public device: Device
-  public gl: WebGLRenderingContext
-  private enableField: boolean = false
-  private xField: number = 0
-  private yField: number = 0
-  private widthField: number = 0
-  private heightField: number = 0
-  private hasChanged: boolean = false
-  private changes: ScissorStateParams = {}
 
+  private $enable: boolean = false
+  private $x: number = 0
+  private $y: number = 0
+  private $width: number = 0
+  private $height: number = 0
+  private $hasChanged: boolean = false
+  private $changes: ScissorStateParams = {}
+
+  /**
+   * Indicates whether the state has changes which are not committed to the GPU
+   */
   public get isDirty() {
-    return this.hasChanged
+    return this.$hasChanged
   }
 
-  constructor(device: Device, state?: ScissorStateParams) {
+  /**
+   * Instantiates the {@link ScissorState}
+   */
+  constructor(device: Device) {
     this.device = device
-    this.gl = device.context
     this.resolve()
-    if (state) { this.assign(state) }
   }
 
+  /**
+   * Enables or disables the scissor test
+   */
   public get enable(): boolean {
-    return this.enableField
+    return this.$enable
   }
-
   public set enable(value: boolean) {
-    if (this.enableField !== value) {
-      this.enableField = value
-      this.changes.enable = value
-      this.hasChanged = true
-    }
-  }
-
-  public get x(): number {
-    return this.xField
-  }
-
-  public set x(value: number) {
-    if (this.xField !== value) {
-      this.xField = value
-      this.changes.x = value
-      this.hasChanged = true
-    }
-  }
-
-  public get y(): number {
-    return this.yField
-  }
-
-  public set y(value: number) {
-    if (this.yField !== value) {
-      this.yField = value
-      this.changes.y = value
-      this.hasChanged = true
-    }
-  }
-
-  public get width(): number {
-    return this.widthField
-  }
-
-  public set width(value: number) {
-    if (this.widthField !== value) {
-      this.widthField = value
-      this.changes.width = value
-      this.hasChanged = true
-    }
-  }
-
-  public get height(): number {
-    return this.heightField
-  }
-
-  public set height(value: number) {
-    if (this.heightField !== value) {
-      this.heightField = value
-      this.changes.height = value
-      this.hasChanged = true
+    if (this.$enable !== value) {
+      this.$enable = value
+      this.$changes.enable = value
+      this.$hasChanged = true
     }
   }
 
   /**
-   * Assings state variable
-   *
-   * @param state - the state variables to assign
+   * Gets and sets the x scissor parameter
+   */
+  public get x(): number {
+    return this.$x
+  }
+  public set x(value: number) {
+    if (this.$x !== value) {
+      this.$x = value
+      this.$changes.x = value
+      this.$hasChanged = true
+    }
+  }
+
+  /**
+   * Gets and sets the y scissor parameter
+   */
+  public get y(): number {
+    return this.$y
+  }
+  public set y(value: number) {
+    if (this.$y !== value) {
+      this.$y = value
+      this.$changes.y = value
+      this.$hasChanged = true
+    }
+  }
+
+  /**
+   * Gets and sets the width scissor parameter
+   */
+  public get width(): number {
+    return this.$width
+  }
+  public set width(value: number) {
+    if (this.$width !== value) {
+      this.$width = value
+      this.$changes.width = value
+      this.$hasChanged = true
+    }
+  }
+
+  /**
+   * Gets and sets the height scissor parameter
+   */
+  public get height(): number {
+    return this.$height
+  }
+  public set height(value: number) {
+    if (this.$height !== value) {
+      this.$height = value
+      this.$changes.height = value
+      this.$hasChanged = true
+    }
+  }
+
+  /**
+   * Assigns multiple parameters to the current state
    */
   public assign(state: ScissorStateParams= {}): ScissorState {
-    for (const key of paramNames) {
+    for (const key of params) {
       if (state.hasOwnProperty(key)) {
         this[key as any] = state[key]
       }
@@ -115,15 +143,15 @@ export class ScissorState implements ScissorStateParams {
   }
 
   /**
-   * Commits the changed state variables to the GPU
+   * Uploads all changes to the GPU
    *
-   * @param state - the state variables to assing before commit
+   * @param state - State changes to be assigned before committing
    */
   public commit(state?: ScissorStateParams): ScissorState {
     if (state) { this.assign(state) }
-    if (!this.hasChanged) { return this }
-    let changes = this.changes
-    let gl = this.gl
+    if (!this.$hasChanged) { return this }
+    const changes = this.$changes
+    const gl = this.device.context
     if (changes.enable === true) {
       gl.enable(gl.SCISSOR_TEST)
     }
@@ -138,55 +166,60 @@ export class ScissorState implements ScissorStateParams {
   }
 
   /**
-   * Resolves the GPU state
+   * Resolves the current state from the GPU
    */
   public resolve(): ScissorState {
-    ScissorState.resolve(this.gl, this)
+    ScissorState.resolve(this.device, this)
     this.clearChanges()
     return this
   }
 
-  public copy(out: any= {}): ScissorStateParams {
-    for (const key of paramNames) {
+  /**
+   * Creates a copy of this state state
+   */
+  public copy(): IScissorState
+  /**
+   * Creates a copy of this state and writes it into the target object
+   *
+   * @param target - Where the state should be written to
+   */
+  public copy<T>(target: T): T & IScissorState
+  public copy(out: any= {}): IScissorState {
+    for (const key of params) {
       out[key] = this[key]
     }
     return out
   }
 
   private clearChanges() {
-    this.hasChanged = false
-    for (const key of paramNames) {
-      this.changes[key as any] = undefined
+    this.$hasChanged = false
+    for (const key of params) {
+      this.$changes[key as any] = undefined
     }
   }
 
-  public static commit(gl: WebGLRenderingContext | WebGL2RenderingContext, state: ScissorStateParams) {
-    const x = state.x
-    const y = state.y
-    const width = state.width
-    const height = state.height
-    const enable = state.enable
-    if (enable === true) {
-      gl.enable(gl.SCISSOR_TEST)
-    }
-    if (enable === false) {
-      gl.disable(gl.SCISSOR_TEST)
-    }
-    if (x != null && y != null && width != null && height != null) {
-      gl.scissor(x, y, width, height)
-    }
-  }
-
-  public static resolve(gl: WebGLRenderingContext | WebGL2RenderingContext, out: ScissorStateParams= {}): ScissorStateParams {
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve(device: Device): IScissorState
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve<T>(device: Device, out: T): T & IScissorState
+  public static resolve(device: Device, out: ScissorStateParams = {}): IScissorState {
+    const gl = device.context
     out.enable = gl.getParameter(gl.SCISSOR_TEST)
     const scissor = gl.getParameter(gl.SCISSOR_BOX)
     out.x = scissor[0]
     out.y = scissor[1]
     out.width = scissor[2]
     out.height = scissor[3]
-    return out
+    return out as IScissorState
   }
 
+  /**
+   * A default state with scissor test disabled
+   */
   public static Default = Object.freeze<ScissorStateParams>({
     enable: false,
     x: 0,

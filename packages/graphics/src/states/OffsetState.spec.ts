@@ -24,8 +24,8 @@ describe('glib/graphics/OffsetState', () => {
 
   beforeEach(() => {
     device = new Device()
-    stateA = new OffsetState(device, paramsA)
-    stateB = new OffsetState(device, stateB)
+    stateA = new OffsetState(device).assign(paramsA)
+    stateB = new OffsetState(device).assign(stateB)
     stateC = new OffsetState(device)
   })
 

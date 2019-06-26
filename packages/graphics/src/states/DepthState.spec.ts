@@ -25,8 +25,8 @@ describe('glib/graphics/DepthState', () => {
 
   beforeEach(() => {
     device = new Device()
-    stateA = new DepthState(device, paramsA)
-    stateB = new DepthState(device, stateB)
+    stateA = new DepthState(device).assign(paramsA)
+    stateB = new DepthState(device).assign(stateB)
     stateC = new DepthState(device)
   })
 

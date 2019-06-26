@@ -6,113 +6,150 @@ import {
   nameOfFrontFace,
   valueOfCullMode,
   valueOfFrontFace,
-} from './../enums/Enums'
+} from './../enums'
 
 import { Device } from './../Device'
 
-const optionKeys: Array<keyof CullStateParams> = ['frontFace', 'cullMode', 'culling']
+const params: Array<keyof CullStateParams> = [
+  'cullMode',
+  'enable',
+  'frontFace',
+]
 
 /**
- * @public
- */
-export interface CullStateParams {
-  frontFace?: FrontFace
-  cullMode?: CullMode
-  culling?: boolean
-}
-
-/**
+ * Options to be converted into {@link CullStateParams} via {@link CullState.convert}
+ *
  * @public
  */
 export interface CullStateOptions {
   frontFace?: FrontFaceOption
   cullMode?: CullModeOption
-  culling?: boolean
+  enable?: boolean
 }
+
+/**
+ * An object with all cull state parameters
+ *
+ * @public
+ */
+export interface ICullState {
+  frontFace: FrontFace
+  cullMode: CullMode
+  enable: boolean
+}
+
+/**
+ * An object with all cull state parameters
+ *
+ * @public
+ */
+export type CullStateParams = Partial<ICullState>
 
 /**
  * @public
  */
 export class CullState implements CullStateParams {
+  /**
+   * The graphics device
+   */
   public device: Device
-  public gl: WebGLRenderingContext
-  private frontFaceField: number = FrontFace.CounterClockWise
-  private cullModeField: number = CullMode.Back
-  private cullingField: boolean = false
-  private hasChanged: boolean = false
-  private changes: CullStateParams = {}
+
+  private $frontFace: number = FrontFace.CounterClockWise
+  private $cullMode: number = CullMode.Back
+  private $enable: boolean = false
+  private $hasChanged: boolean = false
+  private $changes: CullStateParams = {}
+
+  /**
+   * Instantiates the {@link CullState}
+   */
+  constructor(device: Device) {
+    this.device = device
+    this.resolve()
+  }
 
   public get isDirty() {
-    return this.hasChanged
+    return this.$hasChanged
   }
 
-  constructor(device: Device, state?: CullStateParams) {
-    this.device = device
-    this.gl = device.context
-    this.resolve()
-    if (state) { this.assign(state) }
+  /**
+   * Enables or disables the culling
+   */
+  public get enable(): boolean {
+    return this.$enable
   }
-
-  get culling(): boolean {
-    return this.cullingField
-  }
-
-  set culling(value: boolean) {
-    if (this.cullingField !== value) {
-      this.cullingField = value
-      this.changes.culling = value
-      this.hasChanged = true
+  public set enable(value: boolean) {
+    if (this.$enable !== value) {
+      this.$enable = value
+      this.$changes.enable = value
+      this.$hasChanged = true
     }
   }
 
-  get frontFaceName(): string {
+  /**
+   * Gets the readable name of the front face
+   */
+  public get frontFaceName(): string {
     return nameOfFrontFace(this.frontFace)
   }
-
-  get frontFace(): number {
-    return this.frontFaceField
+  /**
+   * Gets and sets the front face
+   */
+  public get frontFace(): number {
+    return this.$frontFace
   }
-
-  set frontFace(value: number) {
-    if (this.frontFaceField !== value) {
-      this.frontFaceField = value
-      this.changes.frontFace = value
-      this.hasChanged = true
+  public set frontFace(value: number) {
+    if (this.$frontFace !== value) {
+      this.$frontFace = value
+      this.$changes.frontFace = value
+      this.$hasChanged = true
     }
   }
 
-  get cullModeName(): string {
+  /**
+   * Gets the readable name of the cull mode
+   */
+  public get cullModeName(): string {
     return nameOfFrontFace(this.cullMode)
   }
-
-  get cullMode(): number {
-    return this.cullModeField
+  /**
+   * Gets and sets the cull mode
+   */
+  public get cullMode(): number {
+    return this.$cullMode
   }
-
-  set cullMode(value: number) {
-    if (this.cullModeField !== value) {
-      this.cullModeField = value
-      this.changes.cullMode = value
-      this.hasChanged = true
+  public set cullMode(value: number) {
+    if (this.$cullMode !== value) {
+      this.$cullMode = value
+      this.$changes.cullMode = value
+      this.$hasChanged = true
     }
   }
 
-  public assign(state: CullStateParams): CullState {
-    for (let key of optionKeys) {
+  /**
+   * Assigns multiple parameters to the current state
+   */
+  public assign(state: CullStateParams): this {
+    for (let key of params) {
       if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
   }
 
-  public commit(state?: CullStateParams): CullState {
+  /**
+   * Uploads all changes to the GPU
+   *
+   * @param state - State changes to be assigned before committing
+   */
+  public commit(state?: CullStateParams): this {
     if (state) { this.assign(state) }
-    if (!this.hasChanged) { return this }
-    let gl = this.gl
-    let changes = this.changes
-    if (changes.culling === true) {
+    if (!this.$hasChanged) { return this }
+    const gl = this.device.context
+    const changes = this.$changes
+    if (changes.enable === true) {
       gl.enable(gl.CULL_FACE)
     }
-    if (changes.culling === false) {
+    if (changes.enable === false) {
       gl.disable(gl.CULL_FACE)
     }
     if (changes.cullMode !== null) {
@@ -125,22 +162,40 @@ export class CullState implements CullStateParams {
     return this
   }
 
-  public resolve(): CullState {
-    CullState.resolve(this.gl, this)
+  /**
+   * Resolves the current state from the GPU
+   */
+  public resolve(): this {
+    CullState.resolve(this.device, this)
     this.clearChanges()
     return this
   }
 
-  public copy(out: any= {}): CullStateParams {
-    for (let key of optionKeys) { out[key] = this[key] }
+  /**
+   * Creates a copy of this state state
+   */
+  public copy(): ICullState
+  /**
+   * Creates a copy of this state and writes it into the target object
+   *
+   * @param target - Where the state should be written to
+   */
+  public copy<T>(target: T): T & ICullState
+  public copy(out: any= {}): ICullState {
+    for (let key of params) { out[key] = this[key] }
     return out
   }
 
   private clearChanges() {
-    this.hasChanged = false
-    for (let key of optionKeys) { this.changes[key as any] = undefined }
+    this.$hasChanged = false
+    for (let key of params) { this.$changes[key as any] = undefined }
   }
 
+  /**
+   * Converts a state name or options into {@link CullStateParams}
+   *
+   * @param state - The state name or state options to convert
+   */
   public static convert(state: string | CullStateOptions): CullStateParams {
     if (typeof state === 'string') {
       return CullState[state] ? {...CullState[state]} : null
@@ -149,42 +204,74 @@ export class CullState implements CullStateParams {
       return null
     }
 
-    if (state.cullMode) {
-      state.cullMode = valueOfCullMode(state.cullMode)
+    const result: CullStateParams = {} as any
+    for (const key of params) {
+      if (!(key in state)) {
+        continue
+      }
+      switch (key) {
+        case 'cullMode':
+          result[key] = valueOfCullMode(state[key])
+          break
+        case 'frontFace':
+          result[key] = valueOfFrontFace(state[key])
+          break
+        default:
+          result[key] = state[key]
+          break
+      }
     }
-    if (state.frontFace) {
-      state.frontFace = valueOfFrontFace(state.frontFace)
-    }
-    return state as CullStateParams
+    return result
   }
 
-  public static resolve(gl: any, out: any= {}): CullStateParams {
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve(device: Device): ICullState
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve<T>(device: Device, out: T): T & ICullState
+  public static resolve(device: Device, out: CullStateParams= {}): ICullState {
+    const gl = device.context
     out.frontFace = gl.getParameter(gl.FRONT_FACE)
-    out.culling = gl.getParameter(gl.CULL_FACE)
+    out.enable = gl.getParameter(gl.CULL_FACE)
     out.cullMode = gl.getParameter(gl.CULL_FACE_MODE)
-    return out
+    return out as ICullState
   }
 
+  /**
+   * A default state with culling disabled
+   */
   public static Default = Object.freeze<CullStateParams>({
-    culling: false,
+    enable: false,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,
   })
 
+  /**
+   * A state with culling disabled
+   */
   public static CullNone = Object.freeze<CullStateParams>({
-    culling: false,
+    enable: false,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,
   })
 
+  /**
+   * A state with culling clock wise faces enabled
+   */
   public static CullClockWise = Object.freeze<CullStateParams>({
-    culling: true,
+    enable: true,
     cullMode: CullMode.Back,
     frontFace: FrontFace.CounterClockWise,
   })
 
+  /**
+   * A state with culling counter clock wise faces enabled
+   */
   public static CullCounterClockWise = Object.freeze<CullStateParams>({
-    culling: true,
+    enable: true,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,
   })

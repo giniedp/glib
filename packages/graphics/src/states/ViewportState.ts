@@ -1,25 +1,44 @@
 import { Device } from './../Device'
 
-const propertyKeys: Array<keyof ViewportStateParams> = ['x', 'y', 'width', 'height', 'zMin', 'zMax']
+const params: Array<keyof ViewportStateParams> = [
+  'x',
+  'y',
+  'width',
+  'height',
+  'zMin',
+  'zMax',
+]
 
 /**
+ * An object with all viewport state parameters
+ *
  * @public
  */
-export interface ViewportStateParams {
-  x?: number
-  y?: number
-  width?: number
-  height?: number
-  zMin?: number
-  zMax?: number
+export interface IViewPortState {
+  x: number
+  y: number
+  width: number
+  height: number
+  zMin: number
+  zMax: number
 }
 
 /**
+ * Represents a sub set of {@link IViewPortState}
+ *
  * @public
  */
-export class ViewportState implements ViewportStateParams {
+export type ViewportStateParams = Partial<IViewPortState>
+
+/**
+ * @public
+ */
+export class ViewportState implements IViewPortState {
+  /**
+   * The graphics device
+   */
   public device: Device
-  public gl: WebGLRenderingContext
+
   private xField: number = 0
   private yField: number = 0
   private widthField: number = 0
@@ -33,18 +52,21 @@ export class ViewportState implements ViewportStateParams {
     return this.hasChanged
   }
 
-  constructor(device: Device, state?: ViewportStateParams) {
+  /**
+   * Instantiates the {@link ViewportState}
+   */
+  constructor(device: Device) {
     this.device = device
-    this.gl = device.context
     this.resolve()
-    if (state) { this.apply(state) }
   }
 
-  get x(): number {
+  /**
+   * Gets and sets the viewport x parameter
+   */
+  public get x(): number {
     return this.xField
   }
-
-  set x(value: number) {
+  public set x(value: number) {
     if (this.xField !== value) {
       this.xField = value
       this.changes.x = value
@@ -52,11 +74,13 @@ export class ViewportState implements ViewportStateParams {
     }
   }
 
-  get y(): number {
+  /**
+   * Gets and sets the viewport y parameter
+   */
+  public get y(): number {
     return this.yField
   }
-
-  set y(value: number) {
+  public set y(value: number) {
     if (this.yField !== value) {
       this.yField = value
       this.changes.y = value
@@ -64,11 +88,13 @@ export class ViewportState implements ViewportStateParams {
     }
   }
 
-  get width(): number {
+  /**
+   * Gets and sets the viewport width parameter
+   */
+  public get width(): number {
     return this.widthField
   }
-
-  set width(value: number) {
+  public set width(value: number) {
     if (this.widthField !== value) {
       this.widthField = value
       this.changes.width = value
@@ -76,11 +102,13 @@ export class ViewportState implements ViewportStateParams {
     }
   }
 
-  get height(): number {
+  /**
+   * Gets and sets the viewport height parameter
+   */
+  public get height(): number {
     return this.heightField
   }
-
-  set height(value: number) {
+  public set height(value: number) {
     if (this.heightField !== value) {
       this.heightField = value
       this.changes.height = value
@@ -88,11 +116,13 @@ export class ViewportState implements ViewportStateParams {
     }
   }
 
-  get zMin(): number {
+  /**
+   * Gets and sets the viewport zMin parameter
+   */
+  public get zMin(): number {
     return this.zMinField
   }
-
-  set zMin(value: number) {
+  public set zMin(value: number) {
     if (this.zMinField !== value) {
       this.zMinField = value
       this.changes.zMin = value
@@ -100,11 +130,13 @@ export class ViewportState implements ViewportStateParams {
     }
   }
 
-  get zMax(): number {
+  /**
+   * Gets and sets the viewport zMax parameter
+   */
+  public get zMax(): number {
     return this.zMaxField
   }
-
-  set zMax(value: number) {
+  public set zMax(value: number) {
     if (this.zMaxField !== value) {
       this.zMaxField = value
       this.changes.zMax = value
@@ -112,18 +144,26 @@ export class ViewportState implements ViewportStateParams {
     }
   }
 
-  public apply(state: ViewportStateParams= {}): ViewportState {
-    for (let key of propertyKeys) {
+  /**
+   * Assigns multiple parameters to the current state
+   */
+  public assign(state: ViewportStateParams= {}): this {
+    for (let key of params) {
       if (state.hasOwnProperty(key)) { this[key] = state[key] }
     }
     return this
   }
 
-  public commit(state?: ViewportStateParams): ViewportState {
-    if (state) { this.apply(state) }
+  /**
+   * Uploads all changes to the GPU
+   *
+   * @param state - State changes to be assigned before committing
+   */
+  public commit(state?: ViewportStateParams): this {
+    if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
-    let gl = this.gl
-    let changes = this.changes
+    const gl = this.device.context
+    const changes = this.changes
     if (changes.x !== null || changes.y !== null ||
       changes.width !== null || changes.height !== null) {
       gl.viewport(this.x, this.y, this.width, this.height)
@@ -135,31 +175,53 @@ export class ViewportState implements ViewportStateParams {
     return this
   }
 
-  public copy(out: any= {}): ViewportStateParams {
-    for (let key of propertyKeys) { out[key] = this[key] }
+  /**
+   * Creates a copy of this state state
+   */
+  public copy(): IViewPortState
+  /**
+   * Creates a copy of this state and writes it into the target object
+   *
+   * @param target - Where the state should be written to
+   */
+  public copy<T>(target: T): T & IViewPortState
+  public copy(out: any= {}): IViewPortState {
+    for (let key of params) { out[key] = this[key] }
     return out
   }
 
-  public resolve(): ViewportState {
-    ViewportState.resolve(this.gl, this)
+  /**
+   * Resolves the current state from the GPU
+   */
+  public resolve(): this {
+    ViewportState.resolve(this.device, this)
     this.clearChanges()
     return this
   }
 
   private clearChanges() {
     this.hasChanged = false
-    for (let key of propertyKeys) { this.changes[key as any] = undefined }
+    for (let key of params) { this.changes[key as any] = undefined }
   }
 
-  public static resolve(gl: WebGLRenderingContext, out: any= {}): ViewportStateParams {
-    let range = gl.getParameter(gl.DEPTH_RANGE)
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve(device: Device): IViewPortState
+  /**
+   * Resolves the current state from the GPU
+   */
+  public static resolve<T>(device: Device, out: T): T & IViewPortState
+  public static resolve(device: Device, out: ViewportStateParams = {}): IViewPortState {
+    const gl = device.context
+    const range = gl.getParameter(gl.DEPTH_RANGE)
     out.zMin = range[0]
     out.zMax = range[1]
-    let viewport = gl.getParameter(gl.VIEWPORT)
-    out.width = viewport[2]
-    out.height = viewport[3]
+    const viewport = gl.getParameter(gl.VIEWPORT)
     out.x = viewport[0]
     out.y = viewport[1]
-    return out
+    out.width = viewport[2]
+    out.height = viewport[3]
+    return out as IViewPortState
   }
 }

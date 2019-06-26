@@ -28,8 +28,8 @@ describe('glib/graphics/ScissorState', () => {
 
   beforeEach(() => {
     device = new Device()
-    stateA = new ScissorState(device, paramsA)
-    stateB = new ScissorState(device, stateB)
+    stateA = new ScissorState(device).assign(paramsA)
+    stateB = new ScissorState(device).assign(stateB)
     stateC = new ScissorState(device)
   })
 

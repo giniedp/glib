@@ -46,8 +46,8 @@ describe('glib/graphics/BlendState', () => {
 
   beforeEach(() => {
     device = new Device({ context: 'webgl' })
-    stateA = new BlendState(device, paramsA)
-    stateB = new BlendState(device, stateB)
+    stateA = new BlendState(device).assign(paramsA)
+    stateB = new BlendState(device).assign(stateB)
     stateC = new BlendState(device)
   })
 
