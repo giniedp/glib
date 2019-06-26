@@ -42,6 +42,7 @@ let requestCounter = 0
  * in the application bundle as well as in the worker bundle
  *
  * @example
+ * ```ts
  * const myTask = WebWorker.task("myBackgroundTask", () => {
  *   // do heavy things
  * })
@@ -54,6 +55,7 @@ let requestCounter = 0
  * WebWorker.disable()                // disables webworker functionality
  * myTask()                           // will run on main thread
  * WebWorker.exec("myBackgroundTask") // same task as above
+ * ```
  */
 export class WebWorker {
 

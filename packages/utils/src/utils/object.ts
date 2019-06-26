@@ -28,7 +28,6 @@ export function pick<T>(src: T, ...rest: string[]): Partial<T> {
  * Creates a copy of an object, an array or a primitive.
  *
  * @public
- * @deprecated
  */
 export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
   let deep = false
@@ -68,7 +67,6 @@ export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
 
 /**
  * @public
- * @deprecated
  */
 export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?: any): T {
   let length = arguments.length

@@ -1,6 +1,5 @@
 // tslint:disable max-classes-per-file
 import { IVec3, Vec3 } from '@gglib/math'
-import { extend } from '@gglib/utils'
 import { Buffer } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
@@ -207,7 +206,10 @@ export class ParticleChannel {
   private settings: ParticleChannelOptions
 
   constructor(private device: Device, options: ParticleChannelOptions = {}) {
-    this.settings = extend({}, defaultOptions, options)
+    this.settings = {
+      ...defaultOptions,
+      ...options,
+    }
     this.particleCount = this.settings.maxParticles
 
     this.vertices = new ParticleVertices(this.particleCount * 4)
@@ -245,7 +247,11 @@ export class ParticleChannel {
 
   public setup(options?: ParticleChannelOptions) {
     if (options) {
-      this.settings = extend(this.settings, defaultOptions, options)
+      this.settings = {
+        ...defaultOptions,
+        ...this.settings,
+        ...options,
+      }
     }
 
     this.program.setUniform('duration', this.settings.duration)

@@ -3,7 +3,7 @@ import { Events, Loop, loop } from '@gglib/utils'
 const statekeys: Array<keyof Gamepad> = ['id', 'index', 'connected', 'mapping', 'timestamp']
 
 /**
- * Options for {@link Gamepads.constructor}
+ * Constructor options for {@link Gamepads}
  *
  * @public
  */
@@ -95,7 +95,7 @@ export class Gamepads extends Events {
    */
   protected readonly onDisconnected = this.handleDisconnectionEvent.bind(this)
   /**
-   * If {@see autopoll} is `true` then this holds the polling loop which captures the state automatically
+   * If {@link Gamepads.autopoll} is `true` then this holds the polling loop which captures the state automatically
    */
   protected poll: Loop = null
   /**
