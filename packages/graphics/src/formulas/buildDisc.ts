@@ -1,10 +1,12 @@
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
-import { addParametricSurface } from './addParametricSurface'
+import { buildParametricSurface } from './buildParametricSurface'
 
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
-
+/**
+ * Options for the {@link buildDisc} function
+ *
+ * @public
+ */
 export interface BuildDiscOptions {
   /**
    * The offset along the y axis
@@ -25,15 +27,17 @@ export interface BuildDiscOptions {
 }
 
 /**
+ * Builds a disc shape into the {@link ModelBuilder}
+ *
  * @public
  */
 export function buildDisc(builder: ModelBuilder, options: BuildDiscOptions = {}) {
 
-  const h = withDefault(options.offset, 0.0)
-  const r1 = withDefault(options.outerRadius, 0.5)
-  const r2 = withDefault(options.innerRadius, 0.25)
+  const h = getOption(options, 'offset', 0.0)
+  const r1 = getOption(options, 'outerRadius', 0.5)
+  const r2 = getOption(options, 'innerRadius', 0.25)
 
-  addParametricSurface(builder, {
+  buildParametricSurface(builder, {
     f: (u: number, v: number) => {
       return {
         x: v * Math.sin(u),
@@ -41,8 +45,8 @@ export function buildDisc(builder: ModelBuilder, options: BuildDiscOptions = {})
         z: v * Math.cos(u),
       }
     },
-    tu: withDefault(options.tesselation, 32),
-    tv: withDefault(options.tesselation, 32),
+    tu: getOption(options, 'tesselation', 32),
+    tv: getOption(options, 'tesselation', 32),
     u0: 0,
     u1: Math.PI * 2,
     v0: r2,

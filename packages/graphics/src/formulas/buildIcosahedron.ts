@@ -41,6 +41,8 @@ function subdivide(a: number[], b: number[], c: number[], depth: number, block: 
 }
 
 /**
+ * Builds an tetrahedron shape into the {@link ModelBuilder}
+ *
  * @public
  */
 export function buildTetrahedron(builder: ModelBuilder, options: {
@@ -79,6 +81,8 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
 }
 
 /**
+ * Builds an octahedron shape into the {@link ModelBuilder}
+ *
  * @public
  */
 export function buildOctahedron(builder: ModelBuilder, options: {
@@ -123,9 +127,11 @@ export function buildOctahedron(builder: ModelBuilder, options: {
 }
 
 /**
- * implementation is based on http://www.opengl.org.ru/docs/pg/0208.html
+ * Builds an icosahedron shape into the {@link ModelBuilder}
  *
  * @public
+ * @remarks
+ * The implementation is based on http://www.opengl.org.ru/docs/pg/0208.html
  */
 export function buildIcosahedron(builder: ModelBuilder, options: {
   radius?: number

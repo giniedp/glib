@@ -148,11 +148,11 @@ export class ShaderPass {
       meta: copy(true, this.meta),
       program: this.program.clone(),
     }
-    if (this.stencilState) { opts.stencilState = copy(true, this.stencilState) }
-    if (this.offsetState) { opts.offsetState = copy(true, this.offsetState) }
-    if (this.blendState) { opts.blendState = copy(true, this.blendState) }
-    if (this.depthState) { opts.depthState = copy(true, this.depthState) }
-    if (this.cullState) { opts.cullState = copy(true, this.cullState) }
+    if (this.stencilState) { opts.stencilState = {...this.stencilState} }
+    if (this.offsetState) { opts.offsetState = {...this.offsetState} }
+    if (this.blendState) { opts.blendState = {...this.blendState} }
+    if (this.depthState) { opts.depthState = {...this.depthState} }
+    if (this.cullState) { opts.cullState = {...this.cullState} }
     return new ShaderPass(this.device, opts)
   }
 }

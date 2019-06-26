@@ -1,10 +1,12 @@
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
-import { addParametricSurface } from './addParametricSurface'
+import { buildParametricSurface } from './buildParametricSurface'
 
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
-
+/**
+ * Options for the {@link buildCone} function
+ *
+ * @public
+ */
 export interface BuildConeOptions {
   /**
    * The height of the cone
@@ -31,15 +33,17 @@ export interface BuildConeOptions {
 }
 
 /**
+ * Builds a cone shape into the {@link ModelBuilder}
+ *
  * @public
  */
 export function buildCone(builder: ModelBuilder, options: BuildConeOptions = {}) {
 
-  const r1 = withDefault(options.lowerRadius, 0.5)
-  const r2 = withDefault(options.upperRadius, 0)
-  const h = withDefault(options.height, 1.0)
+  const r1 = getOption(options, 'lowerRadius', 0.5)
+  const r2 = getOption(options, 'upperRadius', 0)
+  const h = getOption(options, 'height', 1.0)
 
-  addParametricSurface(builder, {
+  buildParametricSurface(builder, {
     f: (u: number, v: number) => {
       u = 1 - u
       v = 1 - v
@@ -51,7 +55,7 @@ export function buildCone(builder: ModelBuilder, options: BuildConeOptions = {})
         z: r * Math.sin(Math.PI * 2 * u),
       }
     },
-    tu: withDefault(options.tesselation, 32),
-    tv: withDefault(options.tesselation, 32),
+    tu: getOption(options, 'tesselation', 32),
+    tv: getOption(options, 'tesselation', 32),
   })
 }

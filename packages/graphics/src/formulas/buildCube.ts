@@ -1,11 +1,13 @@
 import { Mat4 } from '@gglib/math'
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
 import { buildPlane } from './buildPlane'
 
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
-
+/**
+ * Options for the {@link buildCube} function
+ *
+ * @public
+ */
 export interface BuildCubeOptions {
   /**
    * The uniform size (width, height, depth) of the cube
@@ -20,15 +22,17 @@ export interface BuildCubeOptions {
 }
 
 /**
+ * Builds a cube shape into the {@link ModelBuilder}
+ *
  * @public
  */
 export function buildCube(builder: ModelBuilder, options: BuildCubeOptions = {}) {
-  let size = withDefault(options.size, 1)
-  let halfSize = size * 0.5
-  let halfPi = Math.PI * 0.5
-  let steps = withDefault(options.tesselation, 1)
-  let halfUp = Mat4.createTranslation(0, size * 0.5, 0)
-  let transform = Mat4.createIdentity()
+  const size = getOption(options, 'size', 1)
+  const halfSize = size * 0.5
+  const halfPi = Math.PI * 0.5
+  const steps = getOption(options, 'tesselation', 1)
+  const halfUp = Mat4.createTranslation(0, size * 0.5, 0)
+  const transform = Mat4.createIdentity()
   let tId: number
 
   // top plane

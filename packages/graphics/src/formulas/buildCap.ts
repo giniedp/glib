@@ -1,4 +1,5 @@
 import { Vec2, Vec3 } from '@gglib/math'
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
 
 function circleVector(t: number, out: Vec3) {
@@ -9,11 +10,9 @@ function circleVector(t: number, out: Vec3) {
   return out.init(dx, 0, dz)
 }
 
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
-
 /**
+ * Builds a cap shape into the {@link ModelBuilder}
+ *
  * @public
  */
 export function buildCap(builder: ModelBuilder, options: {
@@ -21,11 +20,11 @@ export function buildCap(builder: ModelBuilder, options: {
   radius?: number,
   steps?: number,
 } = {}) {
-  let radius = withDefault(options.radius, withDefault(options.diameter, 1) * 0.5)
-  let steps = withDefault(options.steps, 16)
-  let baseVertex = builder.vertexCount
-  let position = Vec3.createZero()
-  let texture = Vec2.createZero()
+  const radius = getOption(options, 'radius', getOption(options, 'diameter', 1) * 0.5)
+  const steps = getOption(options, 'steps', 16)
+  const baseVertex = builder.vertexCount
+  const position = Vec3.createZero()
+  const texture = Vec2.createZero()
 
   for (let step = 0; step <= steps; step += 1) {
     circleVector(step / steps, position)

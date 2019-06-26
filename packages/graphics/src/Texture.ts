@@ -484,14 +484,14 @@ export class Texture {
   /**
    * returns the result of `1 / texture.width`
    */
-  public get textelX(): number {
+  public get texelX(): number {
     return 1.0 / this.width
   }
 
   /**
    * returns the result of `1 / texture.height`
    */
-  public get textelY(): number {
+  public get texelY(): number {
     return 1.0 / this.height
   }
 

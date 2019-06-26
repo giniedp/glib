@@ -185,7 +185,7 @@ export class ShaderEffect {
   }
 
   /**
-   * Gets a pass by name or index from the currently active {@link ShaderPass.technique}
+   * Gets a pass by name or index from the currently active {@link ShaderEffect.technique}
    *
    * @param passIdentifier
    */
@@ -194,7 +194,7 @@ export class ShaderEffect {
   }
 
   /**
-   * Calls `draw` on given object for each {@link ShaderPass} of the current {@link ShaderPass.technique}
+   * Calls `draw` on given object for each {@link ShaderPass} of the current {@link ShaderEffect.technique}
    */
   public draw(drawable: { draw: (p: ShaderProgram) => void }, parameters = this.parameters) {
     for (const pass of this.technique.passes) {

@@ -8,7 +8,11 @@ const baseMatrix: Mat4 = Mat4.create(
   -1, 3, -3, 1,
 )
 
-export function addBezierSurface(builder: ModelBuilder, patch: number[], tesselation: number, basis: Mat4 = baseMatrix) {
+/**
+ * Builds a bezier surface into the {@link ModelBuilder}
+ * @public
+ */
+export function buildBezierSurface(builder: ModelBuilder, patch: number[], tesselation: number, basis: Mat4 = baseMatrix) {
   if (patch.length !== 16 * 3) {
     throw new Error(`Bezier patch expected to have a total length of 48 but was ${patch.length}`)
   }

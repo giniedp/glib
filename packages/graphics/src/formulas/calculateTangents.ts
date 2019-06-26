@@ -4,7 +4,10 @@ import { FrontFace } from '../enums'
 import { ModelBuilderChannelMap } from '../ModelBuilderChannel'
 
 /**
+ * Recalculates the tangents for each vertex
+ *
  * @public
+ * @remarks channels must contain a `normal` a `texture` and a `tangent` channel
  */
 export function calculateTangents(
   indices: number[],

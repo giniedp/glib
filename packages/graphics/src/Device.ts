@@ -88,7 +88,7 @@ export interface ContextAttributes {
 }
 
 /**
- * Options for the {@link Device."constructor"}
+ * Constructor options for the {@link Device}
  *
  * @public
  */

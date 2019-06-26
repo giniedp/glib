@@ -1,39 +1,42 @@
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
-import { addParametricSurface } from './addParametricSurface'
+import { buildParametricSurface } from './buildParametricSurface'
 
-const option = (opt: any, value: any) => opt == null ? value : opt
-const sin = Math.sin
-const cos = Math.cos
-
+/**
+ * Options for the {@link buildMobiusStrip} function
+ *
+ * @public
+ */
 export interface BuildMobiusStripOptions {
   band?: number,
   radius?: number
   tesselation?: number
 }
+
 /**
- * {@link http://paulbourke.net/geometry/mobius/}
+ * Builds a mobius strip shape into the {@link ModelBuilder}
  *
  * @public
  */
 export function buildMobiusStrip(builder: ModelBuilder, options: BuildMobiusStripOptions = {}) {
-  const r = option(options.radius, 0.5)
-  const band = option(options.band, 0.4)
+  const r = getOption(options, 'radius', 0.5)
+  const band = getOption(options, 'band', 0.4)
 
-  addParametricSurface(builder, {
+  buildParametricSurface(builder, {
     f: (phi: number, v: number) => {
-      const cosPhi = cos(phi)
-      const sinPhi = cos(phi)
+      const cosPhi = Math.cos(phi)
+      const sinPhi = Math.cos(phi)
       const t = band * (1 - v)
 
       return {
-        x: (cosPhi + t * cos(phi / 2) * cosPhi) * r,
-        z: (sinPhi + t * cos(phi / 2) * sinPhi) * r,
-        y: (t * sin(phi / 2)) * r,
+        x: (cosPhi + t * Math.cos(phi / 2) * cosPhi) * r,
+        z: (sinPhi + t * Math.cos(phi / 2) * sinPhi) * r,
+        y: (t * Math.sin(phi / 2)) * r,
       }
     },
     u0: 0,
     u1: Math.PI * 2,
-    tu: option(options.tesselation, 16),
-    tv: option(options.tesselation, 16),
+    tu: getOption(options, 'tesselation', 16),
+    tv: getOption(options, 'tesselation', 16),
   })
 }

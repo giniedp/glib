@@ -5,7 +5,12 @@ function withDefault(opt: any, value: any) {
   return opt == null ? value : opt
 }
 
-export interface AddParametricSurfaceOptions {
+/**
+ * Options for the {@link buildParametricSurface} function
+ *
+ * @public
+ */
+export interface BuildParametricSurfaceOptions {
   /**
    * Function returning xyz position for u v input
    */
@@ -37,9 +42,10 @@ export interface AddParametricSurfaceOptions {
 }
 
 /**
+ * Builds a parametric surface into the {@link ModelBuilder}
  * @public
  */
-export function addParametricSurface(builder: ModelBuilder, options: AddParametricSurfaceOptions = {}) {
+export function buildParametricSurface(builder: ModelBuilder, options: BuildParametricSurfaceOptions = {}) {
   const f = withDefault(options.f, (u: number, v: number) => {
     return { x: 0, y: 0, z: 0 }
   })

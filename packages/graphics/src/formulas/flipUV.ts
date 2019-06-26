@@ -3,7 +3,7 @@ import { VertexLayout } from './../VertexLayout'
 /**
  * @public
  */
-export function flipUV(layout: VertexLayout, indices: number[], vertices: number[]) {
+export function flipUV(layout: VertexLayout, vertices: number[]) {
 
   Object.keys(layout).forEach((key) => {
     if (!key.match('texture|uv|texcoord')) {

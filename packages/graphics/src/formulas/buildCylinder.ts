@@ -1,44 +1,43 @@
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
-import { addParametricSurface } from './addParametricSurface'
+import { buildParametricSurface } from './buildParametricSurface'
 
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
-
+/**
+ * Options for the {@link buildCylinder} function
+ *
+ * @public
+ */
 export interface BuildCylinderOptions {
   /**
-   * The height of the cylinder
+   * The height of the cylinder. Defaults to `1.0`.
    */
   height?: number,
   /**
-   * The offset along the y axis
+   * The offset along the y axis. Defaults to `-0.5`.
    */
   offset?: number,
   /**
-   * Radius of the cylinder
+   * Radius of the cylinder. Defaults to `0.5`.
    */
   radius?: number,
   /**
-   * The tesselation
+   * The tesselation. Defaults to `32`.
    */
   tesselation?: number,
 }
 
 /**
+ * Builds a cylinder shape into the {@link ModelBuilder}
+ *
  * @public
  */
-export function buildCylinder(builder: ModelBuilder, options: {
-  height?: number,
-  offset?: number,
-  radius?: number,
-  tesselation?: number,
-} = {}) {
+export function buildCylinder(builder: ModelBuilder, options: BuildCylinderOptions = {}) {
 
-  const r = withDefault(options.radius, 0.5)
-  const h = withDefault(options.height, 1.0)
-  const o = withDefault(options.offset, -0.5)
+  const r = getOption(options, 'radius', 0.5)
+  const h = getOption(options, 'height', 1.0)
+  const o = getOption(options, 'offset', -0.5)
 
-  addParametricSurface(builder, {
+  buildParametricSurface(builder, {
     f: (u: number, v: number) => {
       return {
         x: r * Math.sin(u),
@@ -46,8 +45,8 @@ export function buildCylinder(builder: ModelBuilder, options: {
         z: r * Math.cos(u),
       }
     },
-    tu: withDefault(options.tesselation, 32),
-    tv: withDefault(options.tesselation, 32),
+    tu: getOption(options, 'tesselation', 32),
+    tv: getOption(options, 'tesselation', 32),
     u0: 0,
     u1: Math.PI * 2,
     v0: o + h,
