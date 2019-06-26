@@ -65,7 +65,7 @@ function makeArray(arg: any): any {
  */
 export class ShaderEffect {
   /**
-   * A symbol identifying the Array<{@link ShaderEffect}> type.
+   * A symbol identifying the Array {@link ShaderEffect} type.
    */
   public static readonly Array = Symbol('ShaderEffect[]')
 
@@ -75,7 +75,7 @@ export class ShaderEffect {
   public static readonly Options = Symbol('ShaderEffectOptions')
 
   /**
-   * A symbol identifying the Array<{@link ShaderEffectOptions}> type.
+   * A symbol identifying the Array {@link ShaderEffectOptions} type.
    */
   public static readonly OptionsArray = Symbol('ShaderEffectOptions[]')
 
@@ -186,8 +186,6 @@ export class ShaderEffect {
 
   /**
    * Gets a pass by name or index from the currently active {@link ShaderEffect.technique}
-   *
-   * @param passIdentifier
    */
   public pass(passIdentifier: string|number): ShaderPass {
     return this.technique.pass(passIdentifier)
@@ -221,6 +219,7 @@ export class ShaderEffect {
    * @remarks
    * This simply gets the parameter from {@link ShaderEffect.parameters} by its name.
    * The method exists to allow type assertion on the returned value in typescript e.g.
+   *
    * ```ts
    * getParameter<Mat4>('World').setTranslation(...)
    * ```

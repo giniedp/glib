@@ -73,7 +73,6 @@ export class ShaderTechnique {
 
   /**
    * Gets a {@link ShaderPass} by name or index
-   * @param passIdentifier
    */
   public pass(passIdentifier: string|number): ShaderPass {
     let result: ShaderPass

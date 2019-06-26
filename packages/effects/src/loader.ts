@@ -2,7 +2,10 @@ import { loader } from '@gglib/content'
 import { Material, MaterialOptions, ShaderEffect, ShaderEffectOptions, ShaderProgramOptions } from '@gglib/graphics'
 import { defaultProgram, DefaultProgramDefs } from './programs'
 
-export const materialOptionsToShaderEffectOptions = loader<MaterialOptions, ShaderEffectOptions>({
+/**
+ * @public
+ */
+export const loadMaterialOptionsToShaderEffectOptions = loader<MaterialOptions, ShaderEffectOptions>({
   input: Material.Options,
   output: ShaderEffect.Options,
   handle: async (input, _) => {

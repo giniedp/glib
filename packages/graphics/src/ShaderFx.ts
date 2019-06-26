@@ -3,26 +3,45 @@ import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { ShaderPassOptions } from './ShaderPass'
 import { ShaderTechniqueOptions } from './ShaderTechnique'
 
+/**
+ * @public
+ */
 export interface ShaderFxDocument {
   name: string
   program: string
   technique: ShaderFxTechnique | ShaderFxTechnique[]
 }
 
+/**
+ * @public
+ */
 export interface ShaderFxTechnique {
   name: string
   pass: ShaderFxPass | ShaderFxPass[]
 }
 
+/**
+ * @public
+ */
 export interface ShaderFxPass {
   name?: string,
   vertexShader: string,
   fragmentShader: string,
 }
 
+/**
+ * @public
+ */
 export type ShaderFxIncludeHandler = (includePath: string) => Promise<string>
+
+/**
+ * @public
+ */
 export type ShaderFxIncludeSyncHandler = (includePath: string) => string
 
+/**
+ * @public
+ */
 export async function createShaderEffect(
   device: Device,
   doc: ShaderFxDocument,
@@ -30,6 +49,9 @@ export async function createShaderEffect(
   return device.createEffect(await createShaderEffectOptions(doc, includeHandler))
 }
 
+/**
+ * @public
+ */
 export async function createShaderEffectOptions(
   doc: ShaderFxDocument,
   includeHandler?: ShaderFxIncludeHandler): Promise<ShaderEffectOptions> {
@@ -97,6 +119,9 @@ async function processShader(source: string, include: ShaderFxIncludeHandler): P
   })
 }
 
+/**
+ * @public
+ */
 export function createShaderEffectSync(
   device: Device,
   doc: ShaderFxDocument,
@@ -104,6 +129,9 @@ export function createShaderEffectSync(
   return device.createEffect(createShaderEffectOptionsSync(doc, includeHandler))
 }
 
+/**
+ * @public
+ */
 export function createShaderEffectOptionsSync(
   doc: ShaderFxDocument,
   includeHandler?: ShaderFxIncludeSyncHandler): ShaderEffectOptions {

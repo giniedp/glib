@@ -36,7 +36,7 @@ export interface MaterialOptions<T = ShaderEffectOptions | ShaderEffect | string
  */
 export class Material {
   /**
-   * A symbol identifying the Array<{@link Material}> type.
+   * A symbol identifying the Array {@link Material} type.
    */
   public static readonly Array = Symbol('Material[]')
 
@@ -46,7 +46,7 @@ export class Material {
   public static readonly Options = Symbol('MaterialOptions')
 
   /**
-   * A symbol identifying the Array<{@link MaterialOptions}> type.
+   * A symbol identifying the Array {@link MaterialOptions} type.
    */
   public static readonly OptionsArray = Symbol('MaterialOptions[]')
 

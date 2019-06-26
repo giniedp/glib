@@ -512,10 +512,11 @@ export class ModelBuilder {
   /**
    * Calls the given function with `this` as argument for manipulation
    *
-   * @example
+   * ```ts
    * return ModelBuilder.begin().tap((b) => {
    *   buildMyFancyMesh(b)
    * }).endModel(...)
+   * ```
    *
    * @param fn - The function to call with this model builder
    */

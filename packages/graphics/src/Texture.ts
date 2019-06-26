@@ -22,6 +22,10 @@ import {
 import { Device } from './Device'
 import { SamplerStateParams } from './states'
 
+/**
+ * Type that is accepted by the {@link Texture.setData} method
+ * @public
+ */
 export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
 
 function isPowerOfTwo(value: number): boolean {
@@ -251,7 +255,7 @@ export class Texture {
   }
 
   /**
-   * Gets the name of {@link Texture.type}
+   * Gets the name of {@link Texture."type"}
    */
   get typeName(): string {
     return nameOfTextureType(this.type)

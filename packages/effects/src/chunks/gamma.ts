@@ -21,6 +21,7 @@ export interface GammaDefs {
 /**
  * Enables gamma correction on a shader
  *
+ * @public
  * @remarks
  * Uses the following defines
  *

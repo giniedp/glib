@@ -7,6 +7,9 @@ import { ShaderProgram } from './ShaderProgram'
 import { SamplerState, SamplerStateParams } from './states'
 import { Texture } from './Texture'
 
+/**
+ * @public
+ */
 export type ShaderUniformParameter = string | boolean | number | number[] | Int32Array | Texture | IVec2 | IVec3 | IVec4 | IMat
 
 function parseArray(value: string) {

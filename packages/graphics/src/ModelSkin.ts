@@ -1,5 +1,8 @@
 import { IVec3, IVec4, Mat4Data } from '@gglib/math'
 
+/**
+ * @public
+ */
 export interface ModelJointPose {
   /**
    * The scale of this joint
@@ -15,6 +18,9 @@ export interface ModelJointPose {
   translation: IVec3
 }
 
+/**
+ * @public
+ */
 export interface ModelJoint {
   /**
    * The name of this joint
@@ -26,6 +32,9 @@ export interface ModelJoint {
   parent: number
 }
 
+/**
+ * @public
+ */
 export interface ModelSkin {
   /**
    * The skeleton Hierarchy

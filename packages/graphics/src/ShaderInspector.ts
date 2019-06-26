@@ -11,6 +11,9 @@ const regTrim = /^\s*|\s*$/
 const isSamplerType = /sampler(2D|2DArray|2DArrayShadow|3D|Cube|CubeShadow)|[iu]?sampler(2D|3D|Cube|2DArray)/
 const regAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/
 
+/**
+ * @public
+ */
 export interface ShaderObjectMeta {
   [key: string]: any
 
@@ -19,6 +22,9 @@ export interface ShaderObjectMeta {
   type: string
 }
 
+/**
+ * @public
+ */
 export interface ProgramInspection {
   attributes: { [key: string]: ShaderObjectMeta }
   uniforms: { [key: string]: ShaderObjectMeta }
@@ -27,6 +33,9 @@ export interface ProgramInspection {
   fragmentShader: string
 }
 
+/**
+ * @public
+ */
 export interface ShaderInspection {
   defines: { [key: string]: any }
   constants: { [key: string]: ShaderObjectMeta }

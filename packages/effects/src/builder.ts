@@ -40,6 +40,14 @@ export interface ShaderDefines {
   [key: string]: any
 }
 
+/**
+ * Builds a program from GLSL chunks
+ *
+ * @public
+ * @param base - The base GLSL script
+ * @param chunks - GLSL chunks
+ * @param defines - GLSL defines
+ */
 export function buildProgram(base: string, chunks: ShaderChunkSet[], defines?: ShaderDefines): ShaderProgramOptions {
   return {
     vertexShader: buildShader(base, [{ defines: glsl`#define VERTEX_SHADER` }, ...chunks], defines),
@@ -48,11 +56,12 @@ export function buildProgram(base: string, chunks: ShaderChunkSet[], defines?: S
 }
 
 /**
+ * Builds a shader from GLSL chunks
  *
  * @public
- * @param base
- * @param chunks
- * @param defines
+ * @param base - The base GLSL script
+ * @param chunks - GLSL chunks
+ * @param defines - GLSL defines
  */
 export function buildShader(base: string, chunks: ShaderChunkSet[], defines: ShaderDefines = {}): string {
   const defs = Object.keys(defines).sort().map((k) => {
