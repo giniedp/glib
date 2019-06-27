@@ -5,7 +5,7 @@ const noises = [
   'cell', 'lattice', 'perlin', 'simplex', 'value',
 ]
 const fractals = [
-  'none', 'fractal', 'hybridMultifractal', 'multifractal', 'rigedMultifractal',
+  'none', 'fractal', 'hybridMultifractal', 'multifractal', 'ridgedMultifractal',
 ]
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement

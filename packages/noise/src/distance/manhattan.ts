@@ -1,3 +1,9 @@
-export function manhattanDistance(...d: number[]): number {
-  return d.map((x) => x * x).reduce((a, b) => a + b, 0)
+/**
+ * Calculates manhattan distance of a vector
+ *
+ * @public
+ * @param v - The vector
+ */
+export function manhattanDistance(...v: number[]): number {
+  return v.map((x) => x * x).reduce((a, b) => a + b, 0)
 }

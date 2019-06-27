@@ -6,7 +6,7 @@ import { lerp } from '../utils'
 import { grad1D, grad2D, grad3D, Permutation } from './utils'
 
 /**
- * Generates a lattice perlin sampler
+ * Generates a perlin noise sampler
  *
  * @public
  */

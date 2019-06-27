@@ -1,6 +1,12 @@
 import { Sampler } from '../types'
-import { FractalOptions } from './options'
+import { FractalParams } from './options'
 
+/**
+ * Generates a fractal sampler
+ *
+ * @public
+ * @param src - The source sampler
+ */
 export function fractal(
   src: Sampler,
   {
@@ -8,7 +14,7 @@ export function fractal(
     frequency = 1,
     lacunarity = 2,
     persistence = 1,
-  }: FractalOptions = {},
+  }: FractalParams = {},
 ): Sampler {
   const exponents: number[] = []
   for (let i = 0; i <= octaves; i++) {

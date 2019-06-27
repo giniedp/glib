@@ -24,6 +24,7 @@ import { SamplerStateParams } from './states'
 
 /**
  * Type that is accepted by the {@link Texture.setData} method
+ *
  * @public
  */
 export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
@@ -222,10 +223,10 @@ export class Texture {
   /**
    * Depth stencil format if this is a render target
    */
-  get depthFormat(): number {
+  public get depthFormat(): number {
     return this.depthFormatField
   }
-  set depthFormat(value: number) {
+  public set depthFormat(value: number) {
     this.device.unregisterRenderTarget(this)
     this.depthFormatField = value
     if (value != null) {
@@ -236,28 +237,28 @@ export class Texture {
   /**
    * Indicates whether this texture is intended to be used as a renter target
    */
-  get isRenderTarget(): boolean {
+  public get isRenderTarget(): boolean {
     return this.depthFormatField != null
   }
 
   /**
    * Gets the name of {@link Texture.pixelFormat}
    */
-  get pixelFormatName(): string {
+  public get pixelFormatName(): string {
     return nameOfPixelFormat(this.pixelFormat)
   }
 
   /**
    * Gets the name of {@link Texture.pixelType}
    */
-  get pixelTypeName(): string {
+  public get pixelTypeName(): string {
     return nameOfDataType(this.pixelType)
   }
 
   /**
    * Gets the name of {@link Texture."type"}
    */
-  get typeName(): string {
+  public get typeName(): string {
     return nameOfTextureType(this.type)
   }
 
@@ -345,7 +346,7 @@ export class Texture {
   }
 
   /**
-   * Bind the texture to the gl context.
+   * Binds the texture to the gl context.
    */
   public use(): this {
     this.device.context.bindTexture(this.type, this.handle)
@@ -356,7 +357,7 @@ export class Texture {
    * Sets the texture source from an url.
    *
    * @remarks
-   * The url is checked against the `Texture.videoTypes` array to detect
+   * The url is checked against the {@link Texture.videoTypes} array to detect
    * whether the url points to an image or video.
    */
   public setUrl(url: string): this {

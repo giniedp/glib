@@ -312,6 +312,12 @@ function Worley3D(x: number, y: number, z: number, F: number[], distance: Distan
     return
 }
 
+/**
+ * Generates a sampler that generates cell noise values
+ *
+ * @public
+ * @param distance - The distance function to be used
+ */
 export function cellNoise(distance: DistanceFunc = euclideanDistance): Sampler {
 
   return (...x: number[]) => {

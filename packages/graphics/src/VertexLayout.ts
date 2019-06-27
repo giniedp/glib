@@ -3,7 +3,13 @@ import { extend, Log } from '@gglib/utils'
 import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
 
 /**
+ * Describes an attribute of a vertex
+ *
  * @public
+ * @remarks
+ * An attribute of a vertex may be for example a `position` a `normal` or a `color`.
+ * A vertex may consist of multiple attributes. This data structure
+ * describes where the data of an attribute starts and how it is laid out.
  */
 export interface VertexAttribute {
   /**
@@ -33,22 +39,17 @@ export interface VertexAttribute {
 }
 
 /**
- * @public
- */
-export interface VertexPreset {
-  type: DataTypeOption
-  elements: number
-  normalize?: boolean
-  packed?: boolean
-}
-
-/**
+ * Provides vertex layout utility functions
+ *
  * @public
  */
 export class VertexLayout {
   [key: string]: VertexAttribute
 
-  public static preset: { [key: string]: VertexPreset } = {
+  /**
+   * Contains vertex attribute presets for common attribute names like `position`, `color`, `texture` etc.
+   */
+  public static preset: { [key: string]: Omit<VertexAttribute, 'offset'> } = {
     position: {
       type: 'float',
       elements: 3,
@@ -107,6 +108,9 @@ export class VertexLayout {
     },
   }
 
+  /**
+   * Calls {@link VertexLayout.create} if parameter is a string, otherwise simply returns the input value
+   */
   public static convert(nameOrLayout: string|VertexLayout): VertexLayout {
     return typeof nameOrLayout === 'string' ? VertexLayout.create(nameOrLayout) : nameOrLayout
   }
@@ -114,8 +118,10 @@ export class VertexLayout {
   /**
    * Creates a vertex layout object from given names
    *
-   * ```
+   * @remarks
+   * uses the {@link VertexLayout.preset} to lookup the attribute layout for each name
    *
+   * ```ts
    * VertexLayout.create('position', 'normal', 'texture');
    * VertexLayout.create('PositionNormalTexture');
    * // in both cases the following layout is returned:
@@ -152,6 +158,8 @@ export class VertexLayout {
 
   /**
    * Counts the number of elements in a single vertex.
+   *
+   * @remarks
    * For example if a layout has defined a `position` and a `normal`
    * (both with three elements) this will return 6.
    * packed elements will count as one.
@@ -202,7 +210,10 @@ export class VertexLayout {
   }
 
   /**
-   * Counts the number of bytes in a single vertex. For example if a layout has a `position` and a `normal` defined
+   * Counts the number of bytes in a single vertex.
+   *
+   * @remarks
+   * For example if a layout has a `position` and a `normal` defined
    * both with three elements and each element is a float, this will return 24.
    */
   public static countBytes(layout: VertexLayout): number {

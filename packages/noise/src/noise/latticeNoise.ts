@@ -1,6 +1,11 @@
 // tslint:disable no-bitwise
 import { Sampler } from '../types'
 
+/**
+ * Options for the {@link latticeNoise} sampler
+ *
+ * @public
+ */
 export interface LatticeNoiseOptions {
   prime1?: number
   prime2?: number

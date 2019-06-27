@@ -5,7 +5,7 @@ import { Color } from './Color'
 import { Device } from './Device'
 import { Model, ModelOptions } from './Model'
 import { ModelMesh, ModelMeshOptions } from './ModelMesh'
-import { VertexLayout, VertexPreset } from './VertexLayout'
+import { VertexLayout } from './VertexLayout'
 
 import { BufferType, DataType, FrontFace } from './enums'
 import { calculateNormals } from './formulas/calculateNormals'
@@ -300,7 +300,7 @@ export class ModelBuilder {
     return this
   }
 
-  public ensureLayoutChannel(name: string, channel: VertexPreset = VertexLayout.preset[name]) {
+  public ensureLayoutChannel(name: string, channel = VertexLayout.preset[name]) {
     if (this.channels[name]) {
       return
     }

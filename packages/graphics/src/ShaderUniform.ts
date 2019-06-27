@@ -8,6 +8,8 @@ import { SamplerState, SamplerStateParams } from './states'
 import { Texture } from './Texture'
 
 /**
+ * A union type combining all types that are supported by the {@link ShaderUniform}
+ *
  * @public
  */
 export type ShaderUniformParameter = string | boolean | number | number[] | Int32Array | Texture | IVec2 | IVec3 | IVec4 | IMat
@@ -54,7 +56,7 @@ export interface ShaderUniformOptions {
    * @remarks
    * Bindings are defined in the shader source code by adding a comment above a uniform e.g.
    *
-   * ```glsl
+   * ```
    * // @binding lightDirection
    * uniform vec3 uLightDirection;
    * ```
@@ -115,7 +117,7 @@ export class ShaderUniform {
    */
   public program: ShaderProgram
   /**
-   * Meta data and annotations about this uniform
+   * Meta data and annotations of this uniform
    */
   public meta: any
   /**
@@ -123,7 +125,7 @@ export class ShaderUniform {
    */
   public name: string
   /**
-   * The type of the uniform variable in the shader
+   * The type name of the uniform in the shader
    */
   public type: string
   /**
@@ -141,12 +143,18 @@ export class ShaderUniform {
   public dirty: boolean = true
 
   public set: (v: any, ...rest: any[]) => void
-  public put: (v: any, ...rest: any[]) => void
+
+  /**
+   * The texture register index
+   */
   public register: number
+  /**
+   * The texture sampler parameters
+   */
   public filter: SamplerStateParams
 
   /**
-   *
+   * Instantiates the {@link ShaderUniform}
    */
   constructor(program: ShaderProgram, options: ShaderUniformOptions) {
 
@@ -290,7 +298,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets an int value. Commits it to the uniform variable of the program if it has changed.
+   * Sets an int2 value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt2(v1: number, v2: number) {
     if (this.cacheXY(v1 | 0, v2 | 0)) {
@@ -299,7 +307,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets an int value. Commits it to the uniform variable of the program if it has changed.
+   * Sets an int3 value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt3(v1: number, v2: number, v3: number) {
     if (this.cacheXYZ(v1 | 0, v2 | 0, v3 | 0)) {
@@ -308,7 +316,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets an int value. Commits it to the uniform variable of the program if it has changed.
+   * Sets an int4 value. Commits it to the uniform variable of the program if it has changed.
    */
   public setInt4(v1: number, v2: number, v3: number, v4: number) {
     if (this.cacheXYZW(v1 | 0, v2 | 0, v3 | 0, v4 | 0)) {
@@ -326,7 +334,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
+   * Sets a boolean2 value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool2(v1: boolean, v2: boolean) {
     if (this.cacheXY(v1, v2)) {
@@ -335,7 +343,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
+   * Sets a boolean3 value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool3(v1: boolean, v2: boolean, v3: boolean) {
     if (this.cacheXYZ(v1, v2, v3)) {
@@ -344,7 +352,7 @@ export class ShaderUniform {
   }
 
   /**
-   * Sets a boolean value. Commits it to the uniform variable of the program if it has changed.
+   * Sets a boolean4 value. Commits it to the uniform variable of the program if it has changed.
    */
   public setBool4(v1: boolean, v2: boolean, v3: boolean, v4: boolean) {
     if (this.cacheXYZW(v1, v2, v3, v4)) {

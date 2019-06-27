@@ -1,12 +1,17 @@
 import { Sampler } from './types'
 
-import { fractal, FractalOptions, hybridMultifractal, multifractal, rigedMultifractal } from './fractal'
+import { fractal, FractalParams, hybridMultifractal, multifractal, ridgedMultifractal } from './fractal'
 import { scale, shift } from './modifier'
 
 import { DistanceFunc, euclideanDistance, manhattanDistance } from './distance'
 import { cellNoise, latticeNoise, LatticeNoiseOptions, perlinNoise, simplexNoise, valueNoise } from './noise'
 import { abs, add, clamp, max, min, multiply, negate, sinus, subtract } from './operator'
 
+/**
+ * The noise builder
+ *
+ * @public
+ */
 export class Noise {
 
   public static lattice(options: LatticeNoiseOptions = {}): Noise {
@@ -51,23 +56,23 @@ export class Noise {
   // fractal
   //
 
-  public fractal(options: FractalOptions = {}): this {
+  public fractal(options: FractalParams = {}): this {
     this.sampler = fractal(this.sampler, options)
     return this
   }
 
-  public hybridMultifractal(options: FractalOptions = {}): this {
+  public hybridMultifractal(options: FractalParams = {}): this {
     this.sampler = hybridMultifractal(this.sampler, options)
     return this
   }
 
-  public multifractal(options: FractalOptions = {}): this {
+  public multifractal(options: FractalParams = {}): this {
     this.sampler = multifractal(this.sampler, options)
     return this
   }
 
-  public rigedMultifractal(options: FractalOptions = {}): this {
-    this.sampler = rigedMultifractal(this.sampler, options)
+  public ridgedMultifractal(options: FractalParams = {}): this {
+    this.sampler = ridgedMultifractal(this.sampler, options)
     return this
   }
 
