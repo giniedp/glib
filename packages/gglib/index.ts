@@ -4,7 +4,7 @@ import * as GglibEffects from '@gglib/effects'
 import * as GglibGraphics from '@gglib/graphics'
 import * as GglibInput from '@gglib/input'
 import * as GglibMath from '@gglib/math'
-import * as GglibProcedural from '@gglib/procedural'
+import * as GglibNoise from '@gglib/noise'
 import * as GglibRender from '@gglib/render'
 import * as GglibTerrain from '@gglib/terrain'
 import * as GglibUtils from '@gglib/utils'
@@ -40,7 +40,7 @@ export const Math = GglibMath
 /**
  * @public
  */
-export const Procedural = GglibProcedural
+export const Noise = GglibNoise
 /**
  * @public
  */
@@ -60,7 +60,7 @@ export const Gglib = {
   Graphics,
   Input,
   Math,
-  Procedural,
+  Noise,
   Render,
   Terrain,
 }

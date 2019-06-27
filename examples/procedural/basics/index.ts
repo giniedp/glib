@@ -1,4 +1,4 @@
-import { Noise } from '@gglib/procedural'
+import { Noise } from '@gglib/nosie'
 import * as TweakUi from 'tweak-ui'
 
 const noises = [

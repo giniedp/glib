@@ -1,5 +1,5 @@
 {
-  "name": "@gglib/procedural",
+  "name": "@gglib/noise",
   "description": "Part of the [G]glib project",
   "version": "0.2.0",
   "repository": {
@@ -14,7 +14,7 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/procedural.umd.js",
+  "main": "./bundles/noise.umd.js",
   "module": "./index.js",
   "typings": "./index.d.ts",
   "peerDependencies": {}
