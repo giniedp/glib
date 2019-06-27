@@ -6,12 +6,12 @@ import { Color } from './Color'
 import { Device } from './Device'
 import { BufferUsage, PrimitiveType } from './enums'
 import { ShaderProgram } from './ShaderProgram'
-import { BlendState, BlendStateParams } from './states/BlendState'
-import { CullState, CullStateParams } from './states/CullState'
-import { DepthState, DepthStateParams } from './states/DepthState'
-import { ScissorState, ScissorStateParams } from './states/ScissorState'
-import { StencilState, StencilStateParams } from './states/StencilState'
-import { ViewportState, ViewportStateParams } from './states/ViewportState'
+import { BlendStateParams } from './states/BlendState'
+import { CullStateParams } from './states/CullState'
+import { DepthStateParams } from './states/DepthState'
+import { ScissorStateParams } from './states/ScissorState'
+import { StencilStateParams } from './states/StencilState'
+import { ViewportStateParams } from './states/ViewportState'
 import { Texture } from './Texture'
 import { VertexLayout } from './VertexLayout'
 
@@ -53,7 +53,7 @@ const fShader = `
     gl_FragColor = texture2D(textureSampler, texCoord) * texColor;
   }`
 
-let spritePool: Sprite[] = []
+const spritePool: Sprite[] = []
 
 /**
  * Constructor options for {@link SpriteBatch}

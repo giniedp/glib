@@ -286,7 +286,7 @@ export class Buffer {
   }
 
   /**
-   * Releases any graphics resouces.
+   * Releases any graphics resources.
    */
   public destroy(): Buffer {
     if (this.device.context.isBuffer(this.handle)) {

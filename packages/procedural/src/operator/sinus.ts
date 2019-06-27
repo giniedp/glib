@@ -2,7 +2,7 @@ import { Sampler } from '../types'
 import { sampler } from '../utils'
 
 /**
- * Generates a sampler that utilises the sinus function
+ * Generates a sampler that utilizes the sinus function
  *
  * @public
  * @param src - The source sampler
