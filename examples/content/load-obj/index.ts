@@ -5,8 +5,9 @@
 //
 // ---
 
-import { Manager } from '@gglib/content'
-import { BlendState, CullState, DepthState, Device, Model } from '@gglib/graphics'
+import { ContentManager } from '@gglib/content'
+import { LightParams } from '@gglib/effects'
+import { BlendState, CullState, DepthState, Device, LightType, Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
@@ -27,7 +28,12 @@ const device = new Device({
 })
 
 // Create the content manager
-const content = new Manager(device)
+const content = new ContentManager(device)
+const light = new LightParams()
+light.enabled = true
+light.type = LightType.Directional
+light.color = [1, 1, 1]
+light.direction = [-1, -1, -1]
 
 // Declare scene variables
 let model: Model = null
@@ -115,14 +121,7 @@ loop((dt) => {
     params.CameraPosition = cam.getTranslation()
 
     // Update light properties
-    params.Lights0Color = [1, 1, 1, 1.5]
-    params.Lights0Direction = [0, -1, -1, 1]
-    params.Lights0Misc = [
-      1000, // point light range
-      0,
-      0,
-      1,     // 1:dir light 2:point light
-    ]
+    light.assign(0, params)
   })
 
   // Draw the model.

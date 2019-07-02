@@ -20,7 +20,7 @@ function describeSym(sym: any) {
 }
 
 function info(msg: string) {
-  Log.i('[Content.Loader] ' + msg)
+  Log.d('[Content.Loader] ' + msg)
 }
 
 function warn(msg: string) {

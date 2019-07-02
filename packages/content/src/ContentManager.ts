@@ -272,7 +272,7 @@ export class ContentManager {
     const requested = Uri.merge(location.pathname, src)
     const remapped = this.rewriteUrl(requested)
     if (requested !== remapped) {
-      Log.i(`[Content.Manager] remap Url ${src} => ${remapped}`)
+      Log.d(`[Content.Manager] remap Url ${src} => ${remapped}`)
       src = remapped
     } else {
       src = requested
@@ -284,12 +284,12 @@ export class ContentManager {
       const source = ContentType.parse(uri.contentType).mimeType
       const target = targetType['name'] || targetType.toString()
       key = `${source} => ${target}`
-      Log.i(`[Content.Manager] load ${key} (from DataUri '${uri.contentType}')`)
+      Log.d(`[Content.Manager] load ${key} (from DataUri '${uri.contentType}')`)
     } else {
       const source = src
       const target = targetType['name'] || targetType.toString()
       key = `${source} => ${target}`
-      Log.i(`[Content.Manager] load ${key}`)
+      Log.d(`[Content.Manager] load ${key}`)
     }
 
     if (this.loading.has(key)) {

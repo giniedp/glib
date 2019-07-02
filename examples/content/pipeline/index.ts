@@ -20,15 +20,16 @@ import {
   CullState,
   DepthState,
   Device,
+  LightType,
   Model,
   ModelBuilder,
 } from '@gglib/graphics'
 
 import {
+  ContentManager,
   loader,
-  Manager,
 } from '@gglib/content'
-import { AutoMaterial } from '@gglib/effects';
+import { AutoMaterial, LightParams } from '@gglib/effects'
 
 // For this we want to have an intermediate format called `PixelsData` which we want to
 // identify by this symbol
@@ -93,6 +94,7 @@ loader({
     })
     const material = new AutoMaterial(device)
     material.VertexColor = true
+    material.LightCount = 1
 
     const result = builder
       .calculateNormals()
@@ -112,12 +114,19 @@ loader({
 const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
-const content = new Manager(device)
+const content = new ContentManager(device)
 
 const world = Mat4.createIdentity()
 const view = Mat4.createIdentity()
 const proj = Mat4.createIdentity()
 const cam = Mat4.createIdentity()
+const light = new LightParams()
+light.color = [0.8, 0.8, 0.8]
+light.position = [0, 0, 500]
+light.direction = [0, 0, -1]
+light.type = LightType.Directional
+light.enabled = true
+
 let model: Model
 
 let time = 0
@@ -145,16 +154,7 @@ loop((dt) => {
       params.View = view
       params.Projection = proj
       params.CameraPosition = cam.getTranslation()
-
-      params.Lights0Color = [1, 1, 1, 0.8]
-      params.Lights0Position = [0, 0, 500]
-      params.Lights0Direction = [0, 0, -1, 1]
-      params.Lights0Misc = [
-        1000, // point light range
-        0,
-        0,
-        2,     // 1:directional 2:point
-      ]
+      light.assign(0, params)
     })
     model.draw()
   }

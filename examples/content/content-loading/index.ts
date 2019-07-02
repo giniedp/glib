@@ -1,7 +1,7 @@
 // # Content loading
 //
 
-import { Manager } from '@gglib/content'
+import { ContentManager } from '@gglib/content'
 import { CullState, Device, Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -35,7 +35,7 @@ let device = new Device({
 // Create the content manager and start loading the demo model asynchronously.
 // All referenced assets like the material and effect will also be loaded
 // and associated with the model.
-let content = new Manager(device)
+let content = new ContentManager(device)
 let model: Model = null
 content.load('./model.ggmod', Model).then((result) => {
   model = result
