@@ -1,27 +1,21 @@
 import { defaultProgram } from '@gglib/effects'
-import { buildCube, buildPlane, Device, ModelBuilder } from '@gglib/graphics'
+import { buildCube, Device, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
-let device = new Device({
+const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 
-const unlitColoredProgram = device.createProgram(defaultProgram({
-  DIFFUSE_COLOR: true,
-}))
-const unlitTexturedProgram = device.createProgram(defaultProgram({
-  DIFFUSE_MAP: true,
-}))
+const textureMappedEffect = device.createEffect({
+  program: defaultProgram({
+    DIFFUSE_COLOR: true,
+  }),
+})
 
-const model = ModelBuilder.begin()
-  .withTransform(Mat4.createTranslation(0, -1, 0), (b) => {
-    buildPlane(b, { size: 20, tesselation: 4 })
-    b.endMesh({
-      materialId: 'water',
-      name: 'Water Surface',
-    })
-  })
+const model = ModelBuilder.begin({
+  layout: ['position'],
+})
   .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
     buildCube(b, { size: 2 })
     b.endMesh({
@@ -46,27 +40,21 @@ const model = ModelBuilder.begin()
   .endModel(device, {
     materials: [{
       name: 'red',
-      effect: { program: unlitColoredProgram },
+      effect: textureMappedEffect,
       parameters: {
         DiffuseColor: [1, 0, 0],
       },
     }, {
       name: 'green',
-      effect: { program: unlitColoredProgram },
+      effect: textureMappedEffect,
       parameters: {
         DiffuseColor: [0, 1, 0],
       },
     }, {
       name: 'blue',
-      effect: { program: unlitColoredProgram },
+      effect: textureMappedEffect,
       parameters: {
         DiffuseColor: [0, 0, 1],
-      },
-    }, {
-      name: 'water',
-      effect: { program: unlitTexturedProgram },
-      parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_water.png' }),
       },
     }],
   })
@@ -88,10 +76,10 @@ loop((dt) => {
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 
   model.materials.forEach((mtl) => {
-    mtl.parameters['World'] = world
-    mtl.parameters['View'] = view
-    mtl.parameters['Projection'] = proj
-    mtl.parameters['CameraPosition'] = cam.getTranslation()
+    mtl.parameters.World = world
+    mtl.parameters.View = view
+    mtl.parameters.Projection = proj
+    mtl.parameters.CameraPosition = cam.getTranslation()
   })
   model.draw()
 })

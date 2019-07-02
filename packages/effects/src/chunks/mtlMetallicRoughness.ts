@@ -28,19 +28,20 @@ export interface MtlMetallicRoughness {
  * @public
  * @remarks
  * Uses defines
- * - `METALLIC_ROUGHNESS` enables metallic and groughness uniforms
+ * - `METALLIC_ROUGHNESS` enables metallic and roughness uniforms
  * - `METALLIC_ROUGHNESS_MAP` enables texture
  * - `METALLIC_ROUGHNESS_MAP_UV` defaults to `vTexture.xy`
  */
 export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef METALLIC_ROUGHNESS_MAP
-      #if !defined(V_TEXTURE1) || !defined(V_TEXTURE1)
-      #define V_TEXTURE1
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+        #define V_TEXTURE1
       #endif
-    #endif
-    #ifndef METALLIC_ROUGHNESS_MAP_UV
-    #define METALLIC_ROUGHNESS_MAP_UV vTexture.xy
+
+      #ifndef METALLIC_ROUGHNESS_MAP_UV
+        #define METALLIC_ROUGHNESS_MAP_UV vTexture.xy
+      #endif
     #endif
   `,
   uniforms: glsl`
@@ -59,7 +60,17 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
   `,
 
   functions: glsl`
-    void getMetallicRoughness(out float metallic, out float roughness) {
+    #ifdef METALLIC_ROUGHNESS_MAP
+    vec2 getMetallicRoughnessUV() {
+      #ifdef METALLIC_ROUGHNESS_MAP_OFFSET_SCALE
+      return METALLIC_ROUGHNESS_MAP_UV * uMetallicRoughnessOffsetScale.zw + uMetallicRoughnessOffsetScale.xy
+      #else
+      return METALLIC_ROUGHNESS_MAP_UV;
+      #endif
+    }
+    #endif
+
+    void getMetallicRoughness(out float metallic, out float roughness, in vec2 uv) {
       #ifdef METALLIC_ROUGHNESS
       metallic = uMetallicRoughness.x;
       roughness = uMetallicRoughness.y;
@@ -68,7 +79,7 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
       roughness = 1.0;
       #endif
       #ifdef METALLIC_ROUGHNESS_MAP
-      vec4 sample = texture2D(uMetallicRoughnessMap, METALLIC_ROUGHNESS_MAP_UV);
+      vec4 sample = texture2D(uMetallicRoughnessMap, uv);
       metallic = sample.b * metallic;
       roughness = sample.g * roughness;
       #endif
@@ -77,8 +88,10 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
     }
   `,
   fs_surface: glsl`
-    #if defined(METALLIC_ROUGHNESS) || defined(METALLIC_ROUGHNESS_MAP)
-    getMetallicRoughness(surface.PBR.r, surface.PBR.g);
+    #if defined(METALLIC_ROUGHNESS_MAP)
+    getMetallicRoughness(surface.PBR.r, surface.PBR.g, getMetallicRoughnessUV() + uvOffset);
+    #elif defined(METALLIC_ROUGHNESS)
+    getMetallicRoughness(surface.PBR.r, surface.PBR.g, uvOffset);
     #endif
   `,
 })

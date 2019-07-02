@@ -40,18 +40,21 @@ export const SHADE: ShaderChunkSet = Object.freeze({
   functions_after: glsl`
     highp vec4 shade(in SurfaceParams surface) {
       #ifdef LIGHT
+      vec3 toEye = normalize(vToEyeInWS);
       vec4 color = vec4(surface.Diffuse.rgb * getAmbientColor(), surface.Diffuse.a);
       for (int i = 0; i < LIGHT_COUNT; i++)
       {
         LightParams light = uLights[i];
-        int type = int(light.Misc.w);
+        int type = int(light.Color.w);
         if (type <= 0) break; // stop on first light that is off
 
         ShadeParams shade;
-        shade.V = normalize(uCameraPosition.xyz - vWorldPosition.xyz);
-        getLight(light, type, vWorldPosition.xyz, shade.L, shade.I);
+        shade.V = toEye;
+        getLight(light, type, vPositionInWS.xyz, shade.L, shade.I);
         color.rgb += SHADE_FUNCTION(shade, surface).rgb;
       }
+      color.rgb += surface.Emission.rgb;
+
       return color;
       #else
       return surface.Diffuse;
@@ -60,5 +63,20 @@ export const SHADE: ShaderChunkSet = Object.freeze({
   `,
   fs_shade: glsl`
     color = shade(surface);
+    #ifdef DEBUG_NORMAL
+    color.rgb = surface.Normal.rgb;
+    #endif
+    #if defined(DEBUG_V_NORMAL) && defined(V_NORMAL)
+    color.rgb = normalize(vWorldNormal.rgb);
+    #endif
+    #ifdef DEBUG_SPECULAR
+    color.rgb = surface.Specular.rgb;
+    #endif
+    #ifdef DEBUG_EMISSION
+    color.rgb = surface.Emission.rgb;
+    #endif
+    #ifdef DEBUG_PBR
+    color.rgb = surface.PBR.rgb;
+    #endif
   `,
 })

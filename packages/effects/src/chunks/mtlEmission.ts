@@ -40,12 +40,13 @@ export interface MtlEmissionDefs {
 export const MTL_EMISSION: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef EMISSION_MAP
-      #if !defined(V_TEXTURE1) || !defined(V_TEXTURE1)
-      #define V_TEXTURE1
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+        #define V_TEXTURE1
       #endif
-    #endif
-    #ifndef EMISSION_MAP_UV
-    #define EMISSION_MAP_UV vTexture.xy
+
+      #ifndef EMISSION_MAP_UV
+        #define EMISSION_MAP_UV vTexture.xy
+      #endif
     #endif
   `,
   uniforms: glsl`
@@ -67,18 +68,23 @@ export const MTL_EMISSION: ShaderChunkSet = Object.freeze({
     uniform vec4 uEmissionMapOffsetScale;
     #endif
   `,
-
+  functions: glsl`
+    #ifdef EMISSION_MAP
+    vec2 getEmissionMapUV() {
+      #ifdef EMISSION_MAP_OFFSET_SCALE
+      return EMISSION_MAP_UV * uEmissionMapOffsetScale.zw + uEmissionMapOffsetScale.xy;
+      #else
+      return EMISSION_MAP_UV;
+      #endif
+    }
+    #endif
+  `,
   fs_surface: glsl`
     #if defined(EMISSION_MAP)
-
-    #ifdef EMISSION_MAP_OFFSET_SCALE
-    surface.Emission.rgb = texture2D(uEmissionMap, uEmissionMapOffsetScale.xy + uEmissionMapOffsetScale.zw * EMISSION_MAP_UV).rgb;
-    #else
-    surface.Emission.rgb = texture2D(uEmissionMap, EMISSION_MAP_UV).rgb;
-    #endif
-    #ifdef EMISSION_COLOR
+    surface.Emission.rgb = texture2D(uEmissionMap, getEmissionMapUV() + uvOffset).rgb;
+      #ifdef EMISSION_COLOR
     surface.Emission.rgb *= uEmissionColor;
-    #endif
+      #endif
 
     #elif defined(EMISSION_COLOR)
     surface.Emission = uEmissionColor;

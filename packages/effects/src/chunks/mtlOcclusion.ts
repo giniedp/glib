@@ -44,15 +44,17 @@ export interface MtlOcclusionDefs {
 export const MTL_OCCLUSION: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef OCCLUSION_MAP
-      #if !defined(V_TEXTURE1) || !defined(V_TEXTURE1)
-      #define V_TEXTURE1
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+        #define V_TEXTURE1
       #endif
-    #endif
-    #ifndef OCCLUSION_MAP_UV
-    #define OCCLUSION_MAP_UV vTexture.xy
-    #endif
-    #ifndef OCCLUSION_MAP_CHANNEL
-    #define OCCLUSION_MAP_CHANNEL r
+
+      #ifndef OCCLUSION_MAP_UV
+        #define OCCLUSION_MAP_UV vTexture.xy
+      #endif
+
+      #ifndef OCCLUSION_MAP_CHANNEL
+        #define OCCLUSION_MAP_CHANNEL r
+      #endif
     #endif
   `,
   uniforms: glsl`
@@ -67,14 +69,20 @@ export const MTL_OCCLUSION: ShaderChunkSet = Object.freeze({
     uniform vec4 uOcclusionMapOffsetScale;
     #endif
   `,
-
+  functions: glsl`
+    #ifdef OCCLUSION_MAP
+    vec2 getOcclusionMapUV() {
+      #ifdef OCCLUSION_MAP_OFFSET_SCALE
+      return OCCLUSION_MAP_UV * uOcclusionMapOffsetScale.zw + uOcclusionMapOffsetScale.xy;
+      #else
+      return OCCLUSION_MAP_UV;
+      #endif
+    }
+    #endif
+  `,
   fs_shade_after: glsl`
     #ifdef OCCLUSION_MAP
-    #ifdef OCCLUSION_MAP_OFFSET_SCALE
-    color.rgb *= texture2D(uOcclusionMap, uOcclusionMapOffsetScale.xy + uOcclusionMapOffsetScale.zw * OCCLUSION_MAP_UV).OCCLUSION_MAP_CHANNEL;
-    #else
-    color.rgb *= texture2D(uOcclusionMap, OCCLUSION_MAP_UV).OCCLUSION_MAP_CHANNEL;
-    #endif
+    color.rgb *= texture2D(uOcclusionMap, getOcclusionMapUV() + uvOffset).OCCLUSION_MAP_CHANNEL;
     #endif
   `,
 })

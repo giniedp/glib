@@ -36,12 +36,15 @@ export interface MtlNormalDefs {
 export const MTL_NORMAL: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef NORMAL_MAP
-    #if !defined(V_TEXTURE1) || !defined(V_TEXTURE1)
-    #define V_TEXTURE1
+
+    #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+      #define V_TEXTURE1
     #endif
-    #endif
+
     #ifndef NORMAL_MAP_UV
-    #define NORMAL_MAP_UV vTexture.xy
+      #define NORMAL_MAP_UV vTexture.xy
+    #endif
+
     #endif
   `,
   uniforms: glsl`
@@ -49,23 +52,28 @@ export const MTL_NORMAL: ShaderChunkSet = Object.freeze({
     // @binding NormalMap
     // @filter   LinearWrap
     uniform sampler2D uNormalMap;
-    #endif
 
     #ifdef NORMAL_MAP_OFFSET_SCALE
     // @binding NormalMapOffsetScale
     uniform vec4 uNormalMapOffsetScale;
     #endif
-  `,
 
-  fs_surface: glsl`
-    #if defined(V_TBN)
+    #endif
+  `,
+  functions: glsl`
     #ifdef NORMAL_MAP
-    #ifdef NORMAL_MAP_OFFSET_SCALE
-    surface.Normal.xyz = normalize(vTBN * texture2D(uNormalMap, uNormalMapOffsetScale.xy + uNormalMapOffsetScale.zw * NORMAL_MAP_UV).rgb * 2.0 - 1.0);
-    #else
-    surface.Normal.xyz = normalize(vTBN * texture2D(uNormalMap, NORMAL_MAP_UV).rgb * 2.0 - 1.0);
+    vec2 getNormalMapUV() {
+      #ifdef NORMAL_MAP_OFFSET_SCALE
+      return NORMAL_MAP_UV * uNormalMapOffsetScale.zw + uNormalMapOffsetScale.xy;
+      #else
+      return NORMAL_MAP_UV;
+      #endif
+    }
     #endif
-    #endif
+  `,
+  fs_surface: glsl`
+    #if defined(NORMAL_MAP) && defined(V_TBN)
+    surface.Normal.xyz = normalize(vTTW * (texture2D(uNormalMap, getNormalMapUV() + uvOffset).rgb * 2.0 - 1.0));
     #elif defined(V_NORMAL)
     surface.Normal.xyz = normalize(vWorldNormal.xyz);
     #endif

@@ -119,9 +119,9 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
     // @default 0.5
     uniform float uSaturation;
 
-    // @binding Pertubation
+    // @binding Perturbation
     // @default 0.25
-    uniform float uPertubation;
+    uniform float uPerturbation;
 
     // @binding Tiling
     // @default 64.0
@@ -161,7 +161,7 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
     vec4 splatColor(in vec2 uv, in vec4 splat, in float slope){
       vec4 tempColor = vec4(0.0, 0.0, 0.0, 0.0);
       vec2 uv0 = uv.xy;
-      vec2 uv1 = uv.xy * vec2(uPertubation, uPertubation);
+      vec2 uv1 = uv.xy * vec2(uPerturbation, uPerturbation);
       float brightness = uBrightness;//1.5;
       float saturatuion = uSaturation;
 
@@ -235,7 +235,7 @@ export const MTL_SPLATTING: ShaderChunkSet = Object.freeze({
     #endif
 
     #if defined(SPLATTING_NORMAL) && defined(V_TBN)
-    surface.Normal.xyz = normalize(vTBN * splatNormal(splatUV, splatWeight, splatSlope).rbg);
+    surface.Normal.xyz = normalize(vTTW * splatNormal(splatUV, splatWeight, splatSlope).rbg);
     #elif defined(V_NORMAL)
     surface.Normal.xyz = normalize(vWorldNormal.xyz);
     #endif

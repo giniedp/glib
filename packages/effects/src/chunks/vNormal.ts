@@ -47,10 +47,12 @@ export const V_NORMAL: ShaderChunkSet = Object.freeze({
   `,
   varyings: glsl`
     #ifdef V_NORMAL
+    // @remarks Surface normal in world space
     varying vec3 vWorldNormal;
     #endif
     #ifdef V_TBN
-    varying mat3 vTBN;
+    // @remarks TBN Matrix converting tangent to world space
+    varying mat3 vTTW;
     #endif
   `,
   functions: glsl`
@@ -58,22 +60,28 @@ export const V_NORMAL: ShaderChunkSet = Object.freeze({
     void writeNormal() {
       #ifdef V_NORMAL
       mat3 normalMatrix = mat3(uWorld);
-      vWorldNormal.xyz = normalize(normalMatrix * aNormal);
-      #endif
+      vWorldNormal.xyz = normalMatrix * aNormal;
 
       #if defined(V_TANGENT_PLANE)
-      vTBN[0] = cross(normalMatrix[0], vWorldNormal.xyz);
-      vTBN[1] = cross(vWorldNormal.xyz, vTBN[0]);
-      vTBN[2] = vWorldNormal.xyz;
+      vTTW[0] = cross(normalMatrix[0], vWorldNormal.xyz);
+      vTTW[1] = cross(vWorldNormal.xyz, vTTW[0]);
+      vTTW[2] = vWorldNormal.xyz;
       #elif defined(V_TANGENT)
-      vTBN[0] = normalize(normalMatrix * aTangent);
-      vTBN[1] = cross(vWorldNormal.xyz, vTBN[0]);
-      vTBN[2] = vWorldNormal.xyz;
+      vTTW[0] = normalMatrix * aTangent;
+      vTTW[1] = normalMatrix * cross(aTangent, aNormal);
+      vTTW[2] = vWorldNormal.xyz;
+      #endif
+
       #endif
     }
     #endif
   `,
   vs_normal: glsl`
     writeNormal();
+  `,
+  fs_start_before: glsl`
+    #if defined(V_TBN)
+    mat3 WTT = transposeMat3(vTTW);
+    #endif
   `,
 })

@@ -40,12 +40,13 @@ export interface MtlDiffuseDefs {
 export const MTL_DIFFUSE: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef DIFFUSE_MAP
-      #if !defined(V_TEXTURE1) || !defined(V_TEXTURE2)
-      #define V_TEXTURE1
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE1
       #endif
-    #endif
-    #ifndef DIFFUSE_MAP_UV
-    #define DIFFUSE_MAP_UV vTexture.xy
+
+      #ifndef DIFFUSE_MAP_UV
+        #define DIFFUSE_MAP_UV vTexture.xy
+      #endif
     #endif
   `,
   uniforms: glsl`
@@ -67,17 +68,23 @@ export const MTL_DIFFUSE: ShaderChunkSet = Object.freeze({
     uniform vec4 uDiffuseMapOffsetScale;
     #endif
   `,
-
+  functions: glsl`
+    #ifdef DIFFUSE_MAP
+    vec2 getDiffuseMapUV() {
+      #ifdef DIFFUSE_MAP_OFFSET_SCALE
+      return DIFFUSE_MAP_UV * uDiffuseMapOffsetScale.zw + uDiffuseMapOffsetScale.xy;
+      #else
+      return DIFFUSE_MAP_UV;
+      #endif
+    }
+    #endif
+  `,
   fs_surface: glsl`
     #if defined(DIFFUSE_MAP)
-    #ifdef DIFFUSE_MAP_OFFSET_SCALE
-    surface.Diffuse = texture2D(uDiffuseMap, uDiffuseMapOffsetScale.xy + uDiffuseMapOffsetScale.zw * DIFFUSE_MAP_UV);
-    #else
-    surface.Diffuse = texture2D(uDiffuseMap, DIFFUSE_MAP_UV);
-    #endif
-    #ifdef DIFFUSE_COLOR
+    surface.Diffuse = texture2D(uDiffuseMap, getDiffuseMapUV() + uvOffset);
+      #ifdef DIFFUSE_COLOR
     surface.Diffuse.rgb *= uDiffuseColor;
-    #endif
+      #endif
 
     #elif defined(DIFFUSE_COLOR)
     surface.Diffuse = vec4(uDiffuseColor, 1.0);

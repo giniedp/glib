@@ -4,6 +4,7 @@ import {
   buildCylinder,
   buildDisc,
   buildIcosahedron,
+  buildLines,
   buildOctahedron,
   buildPlane,
   buildSphere,
@@ -12,6 +13,8 @@ import {
   Device,
   ModelBuilder,
   ModelMesh,
+  PrimitiveType,
+  DepthState,
 } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -32,6 +35,11 @@ const program = device.createProgram({
   fragmentShader: document.getElementById('fragment-shader').textContent,
 })
 
+const linesProgram = device.createProgram({
+  vertexShader: document.getElementById('vertex-shader-lines').textContent,
+  fragmentShader: document.getElementById('fragment-shader-lines').textContent,
+})
+
 // Create a texture
 const texture = device.createTexture({
   data: '/assets/textures/uvgrids/UV_Grid_Sm.jpg',
@@ -39,6 +47,7 @@ const texture = device.createTexture({
 
 // The mesh variable. It will be rendered once it has been built.
 let mesh: ModelMesh = null
+let linesMesh: ModelMesh = null
 
 // The mesh rotation state
 const meshRotation = {
@@ -61,7 +70,16 @@ function buildMesh(name: string) {
     const fn = builderFunctions[name]
     const options = builderFunctionOptions[name]
     fn(b, options)
-  }).endMesh(device)
+  })
+  .endMesh(device)
+
+  linesMesh = ModelBuilder.begin({
+    layout: ['position', 'color'],
+  }).tap((b) => {
+    buildLines(b, mesh.vertexBuffer)
+  }).endMesh(device, {
+    primitiveType: PrimitiveType.LineList,
+  })
 }
 
 const builderFunctions = {
@@ -204,6 +222,7 @@ loop(() => {
   // prepare render state
   device.resize()
   device.cullState = CullState.CullNone
+  device.depthState = DepthState.Default
   device.clear(0xff2e2620, 1.0)
 
   // Skip rendering while the mesh has not been built
@@ -224,4 +243,11 @@ loop(() => {
 
   // Render the mesh
   mesh.draw(program)
+
+  // Set shader variables
+  linesProgram.setUniform('world', world)
+  linesProgram.setUniform('view', view)
+  linesProgram.setUniform('projection', proj)
+  // Render the mesh
+  linesMesh.draw(linesProgram)
 })

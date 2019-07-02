@@ -119,7 +119,7 @@ export const FOG: ShaderChunkSet = Object.freeze({
   `,
   vs_end: glsl`
     #ifdef FOG
-    vFogDistance = length(vWorldPosition.xyz - uCameraPosition.xyz);
+    vFogDistance = length(vToEyeInWS);
     #endif
   `,
   fs_end: glsl`

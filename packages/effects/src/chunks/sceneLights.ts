@@ -17,28 +17,28 @@ export interface LightDefs {
    */
   LIGHT_COUNT?: any
   /**
-   * Defines the light type constat for no light
+   * Defines the light type constant for no light
    *
    * @remarks
    * defaults to `0`
    */
   LIGHT_TYPE_NONE?: any
   /**
-   * Defines the light type constat for directional light
+   * Defines the light type constant for directional light
    *
    * @remarks
    * defaults to `1`
    */
   LIGHT_TYPE_DIRECTIONAL?: any
   /**
-   * Defines the light type constat for point light
+   * Defines the light type constant for point light
    *
    * @remarks
    * defaults to `2`
    */
   LIGHT_TYPE_POINT?: any
   /**
-   * Defines the light type constat for spot light
+   * Defines the light type constant for spot light
    *
    * @remarks
    * defaults to `3`
@@ -74,15 +74,26 @@ export const LIGHTS: ShaderChunkSet = Object.freeze({
   `,
   structs: glsl`
     struct LightParams {
-      vec4 Position;  // xyz = position       , w is unused
-      vec4 Direction; // xyz = direction      , w is unused
-      vec4 Color;     // rgb = diffuse color  , a = intensity
-      vec4 Misc;      // xyz components are implementation dependent light attributes
-                      //   w component is light type
-                      //     0 = off
-                      //     1 = directional,
-                      //     2 = point
-                      //     3 = spot
+      vec4 Color;
+      vec4 Position;
+      vec4 Direction;
+
+      //              | Directional   | Point Light | Spot Light | Area Light
+      // Color     R  | Color.R       | Color.R     | Color.R    | Color.R
+      // Color     G  | Color.G       | Color.G     | Color.G    | Color.G
+      // Color     B  | Color.B       | Color.B     | Color.B    | Color.B
+      // Color     A  | type: 1       | type: 2     | type: 3    | type: 4
+      //              |               |             |            |
+      // Position  R  | -             | Pos.X       | Pos.X      | Pos.X
+      // Position  G  | -             | Pos.Y       | Pos.Y      | Pos.Y
+      // Position  B  | -             | Pos.Z       | Pos.Z      | Pos.Z
+      // Position  A  | -             | Range       | Range      | Height
+      //              |               |             |            |
+      // Direction R  | Dir.X         | -           | Dir.X      | Dir.X
+      // Direction G  | Dir.Y         | -           | Dir.Y      | Dir.Y
+      // Direction B  | Dir.Z         | -           | Dir.Z      | Dir.Z
+      // Direction A  | -             | -           | Angle      | Width
+
     };
     // @binding Lights
     uniform LightParams uLights[LIGHT_COUNT];
@@ -94,7 +105,7 @@ export const LIGHTS: ShaderChunkSet = Object.freeze({
       if (type == LIGHT_TYPE_DIRECTIONAL)
       {
         lightDir = normalize(-light.Direction.xyz);
-        lightColor = light.Color.rgb * light.Color.a;
+        lightColor = light.Color.rgb;
         return;
       }
       #endif
@@ -103,10 +114,11 @@ export const LIGHTS: ShaderChunkSet = Object.freeze({
       // point light (radial linear attenuation)
       if (type == LIGHT_TYPE_POINT)
       {
-        float range = max(0.00001, light.Misc.x);
+        float range = max(0.00001, light.Position.a);
         vec3 toLight = light.Position.xyz - position;
         lightDir = normalize(toLight);
-        lightColor = light.Color.rgb * light.Color.a * max(1.0 - min(1.0, length(toLight) / range), 1.0);
+        float lightAtt = clamp(1.0 - min(1.0, length(toLight) / range), 0.0, 1.0);
+        lightColor = light.Color.rgb * lightAtt;
         return;
       }
       #endif
@@ -115,13 +127,16 @@ export const LIGHTS: ShaderChunkSet = Object.freeze({
       // spot light (cone and linear attenuation)
       if (type == LIGHT_TYPE_SPOT)
       {
-        float range = max(0.00001, light.Misc.x);
-        float cosOuter = light.Misc.y;
-        float cosInner = light.Misc.z;
+        // same as point light
+        float range = max(0.00001, light.Position.a);
         vec3 toLight = light.Position.xyz - position;
         lightDir = normalize(toLight);
-        float spot = smoothstep(cosOuter, cosInner, dot(lightDir, -light.Direction.xyz));
-        lightColor = light.Color.rgb * light.Color.a * (1.0 - min(1.0, length(toLight) / range)) * spot;
+        float lightAtt = clamp(1.0 - min(1.0, length(toLight) / range), 0.0, 1.0);
+        // spot cutoff
+        float cosAngle = light.Direction.w;
+        lightAtt *= smoothstep(cosAngle, cosAngle + 0.0174533, dot(lightDir, normalize(-light.Direction.xyz)));
+
+        lightColor = light.Color.rgb * lightAtt;
         return;
       }
       #endif

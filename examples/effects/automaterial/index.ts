@@ -1,7 +1,7 @@
 import * as TweakUi from 'tweak-ui'
 
 import { AutoMaterial } from '@gglib/effects'
-import { Color, Device, ModelBuilder, buildCube, buildSphere, buildCylinder, buildCone } from '@gglib/graphics'
+import { buildCone, buildCube, buildCylinder, buildSphere, Color, Device, LightType, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -43,6 +43,7 @@ material.NormalMap = normalMaps.Red
 material.SpecularMap = specularMaps.Red
 material.SpecularPower = 64
 material.LightCount = 2
+material.ShadeFunction = 'shadeOptimized'
 
 TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
   q.add({
@@ -85,9 +86,10 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     })
     c.add({
       type: 'color',
-      format: 'rgba',
+      format: '[n]rgba',
+      value: color,
       hidden: () => !colorOn,
-      onInput: (it) => color = material.DiffuseColor = Color.fromRgbaHex(it.value as string).xyzw,
+      onInput: (it) => color = material.DiffuseColor = it.value as number[],
     })
   })
 
@@ -107,9 +109,10 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     })
     c.add({
       type: 'color',
-      format: 'rgba',
+      format: '[n]rgba',
+      value: color,
       hidden: () => !colorOn,
-      onInput: (it) => color = material.SpecularColor = Color.fromRgbaHex(it.value as string).xyzw,
+      onInput: (it) => color = material.SpecularColor = it.value as number[],
     })
   })
 
@@ -117,8 +120,6 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     c.select(material, 'NormalMap', { options: normalMaps })
   })
 })
-
-material.ShadeFunction = 'shadePhong'
 
 const world = Mat4.createIdentity()
 const view = Mat4.createIdentity()
@@ -142,15 +143,17 @@ loop((dt) => {
   material.Projection = proj
 
   if (material.LightCount > 0) {
-    material.getLight(0).Direction = [-1, 0, -1]
-    material.getLight(0).Color = [1, 1, 1, 1]
-    material.getLight(0).Misc = [1, 1, 1, 1]
+    material.getLight(0).type = LightType.Directional
+    material.getLight(0).enabled = true
+    material.getLight(0).color = [1, 1, 1]
+    material.getLight(0).direction = [-1, 0, -1]
   }
 
   if (material.LightCount > 1) {
-    material.getLight(1).Direction = [1, 0, -1]
-    material.getLight(1).Color = [1, 1, 1, 1]
-    material.getLight(1).Misc = [1, 1, 1, 1]
+    material.getLight(1).type = LightType.Directional
+    material.getLight(1).enabled = true
+    material.getLight(1).color = [1, 1, 1]
+    material.getLight(1).direction = [1, 0, -1]
   }
 
   if (mesh) {

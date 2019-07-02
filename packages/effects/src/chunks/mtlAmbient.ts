@@ -40,12 +40,13 @@ export interface MtlAmbientDefs {
 export const MTL_AMBIENT: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef AMBIENT_MAP
-      #if !defined(V_TEXTURE1) || !defined(V_TEXTURE2)
-      #define V_TEXTURE1
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE1
       #endif
-    #endif
-    #ifndef AMBIENT_MAP_UV
-    #define AMBIENT_MAP_UV vTexture.xy
+
+      #ifndef AMBIENT_MAP_UV
+        #define AMBIENT_MAP_UV vTexture.xy
+      #endif
     #endif
   `,
   uniforms: glsl`
@@ -65,14 +66,23 @@ export const MTL_AMBIENT: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 getAmbientColor() {
       #if defined(AMBIENT_MAP) && defined(AMBIENT_COLOR)
-      return (texture2D(uAmbientMap, AMBIENT_MAP_UV).rgb * uAmbientColor);
+      return (texture2D(uAmbientMap, getAmbientMapUV()).rgb * uAmbientColor);
       #elif defined(AMBIENT_MAP)
-      return texture2D(uAmbientMap, AMBIENT_MAP_UV).rgb;
+      return texture2D(uAmbientMap, getAmbientMapUV()).rgb;
       #elif defined(AMBIENT_COLOR)
       return uAmbientColor;
       #endif
       return vec3(0, 0, 0);
     }
+    #ifdef AMBIENT_MAP
+    vec2 getAmbientMapUV() {
+      #ifdef AMBIENT_MAP_OFFSET_SCALE
+      return AMBIENT_MAP_UV * uAmbientMapOffsetScale.zw + uAmbientMapOffsetScale.xy;
+      #else
+      return AMBIENT_MAP_UV;
+      #endif
+    }
+    #endif
   `,
 
 })

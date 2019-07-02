@@ -20,7 +20,7 @@ export interface VSkinningDefs {
    * Defines the number bone weights
    *
    * @remarks
-   * If not set defaults to `2`. The value should be in ragne of [1:4]
+   * If not set defaults to `2`. The value should be in range of [1:4]
    */
   SKINNING_WEIGHT_COUNT?: any
 }
@@ -69,7 +69,7 @@ export const V_SKINNING: ShaderChunkSet = Object.freeze({
     #if SKINNING_WEIGHT_COUNT > 3
     skinMat += uBones[int(aIndices.w)] * aWeights.w;
     #endif
-    vWorldPosition = skinMat * vec4(aPosition, 1.0);
+    vPositionInWS = skinMat * vec4(aPosition, 1.0);
     #endif
   `,
 })

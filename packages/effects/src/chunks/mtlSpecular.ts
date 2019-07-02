@@ -49,12 +49,13 @@ export interface MtlSpecularDefs {
 export const MTL_SPECULAR: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef SPECULAR_MAP
-      #if !defined(V_TEXTURE1) || !defined(V_TEXTURE1)
-      #define V_TEXTURE1
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+        #define V_TEXTURE1
       #endif
-    #endif
-    #ifndef SPECULAR_MAP_UV
-    #define SPECULAR_MAP_UV vTexture.xy
+
+      #ifndef SPECULAR_MAP_UV
+        #define SPECULAR_MAP_UV vTexture.xy
+      #endif
     #endif
   `,
   uniforms: glsl`
@@ -81,20 +82,29 @@ export const MTL_SPECULAR: ShaderChunkSet = Object.freeze({
     uniform vec4 uSpecularMapOffsetScale;
     #endif
   `,
-
+  functions: glsl`
+    #ifdef SPECULAR_MAP
+    vec2 getSpecularMapUV() {
+      #ifdef SPECULAR_MAP_OFFSET_SCALE
+      return SPECULAR_MAP_UV * uSpecularMapOffsetScale.zw + uSpecularMapOffsetScale.xy;
+      #else
+      return SPECULAR_MAP_UV;
+      #endif
+    }
+    #endif
+  `,
   fs_surface: glsl`
     #if defined(SPECULAR_MAP)
-    #ifdef SPECULAR_MAP_OFFSET_SCALE
-    surface.Specular = texture2D(uSpecularMap, uSpecularMapOffsetScale.xy + uSpecularMapOffsetScale.zw * SPECULAR_MAP_UV);
-    #else
-    surface.Specular = texture2D(uSpecularMap, SPECULAR_MAP_UV);
-    #endif
-    #ifdef SPECULAR_COLOR
+    surface.Specular = texture2D(uSpecularMap, getSpecularMapUV() + uvOffset);
+
+      #ifdef SPECULAR_COLOR
     surface.Specular.rgb *= uSpecularColor;
-    #endif
+      #endif
 
     #elif defined(SPECULAR_COLOR)
     surface.Specular = vec4(uSpecularColor, 1.0);
+    #else
+    surface.Specular = vec4(surface.Diffuse.rgb, 1.0);
     #endif
 
     #ifdef SPECULAR_POWER

@@ -14,7 +14,13 @@ export const COMMON: ShaderChunkSet = Object.freeze({
   `,
   varyings: glsl`
     // @remarks vertex position in world space after vertex shader
-    varying vec4 vWorldPosition;
+    varying vec4 vPositionInWS;
+
+    // @remarks vector from vertex to camera in world space
+    varying vec3 vToEyeInWS;
+
+    // @remarks the eye vector to pixel in tangent space
+    varying vec3 vEyeTangent;
   `,
   uniforms: glsl`
     // @binding World
@@ -43,11 +49,12 @@ export const COMMON: ShaderChunkSet = Object.freeze({
   `,
   vs_position: glsl`
     #ifndef SKINNED
-    vWorldPosition = uWorld * vec4(aPosition, 1.0);
+    vPositionInWS = uWorld * vec4(aPosition, 1.0);
     #endif
   `,
   vs_end: glsl`
-    gl_Position = uProjection * uView * vWorldPosition;
+    gl_Position = uProjection * uView * vPositionInWS;
+    vToEyeInWS = uCameraPosition.xyz - vPositionInWS.xyz;
   `,
   fs_start_before: glsl`
     SurfaceParams surface;

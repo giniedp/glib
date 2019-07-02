@@ -30,12 +30,11 @@ export const V_BILLBOARD: ShaderChunkSet = Object.freeze({
   `,
   vs_position_after: glsl`
     #ifdef BILLBOARD
-    vec3 eyeVector = vWorldPosition.xyz - uCameraPosition;
     vec3 upVector = vec3(0, 1, 0);
-    vec3 sideVector = normalize(cross(eyeVector, upVector));
+    vec3 sideVector = normalize(cross(vToEyeInWS, upVector));
 
-    vWorldPosition.xyz += (aTexture.x - 0.5) * sideVector * uBillboardSize.x;
-    vWorldPosition.xyz += (1.5 - aTexture.y * 1.5) * upVector * uBillboardSize.y;
+    vPositionInWS.xyz += (aTexture.x - 0.5) * sideVector * uBillboardSize.x;
+    vPositionInWS.xyz += (1.5 - aTexture.y * 1.5) * upVector * uBillboardSize.y;
     #endif
   `,
 })
