@@ -37,6 +37,13 @@ export function buildPlane(builder: ModelBuilder, options: BuildPlaneOptions = {
         z: (v - 0.5) * size,
       }
     },
+    n: (u: number, v: number) => {
+      return {
+        x: 0,
+        y: 1,
+        z: 0,
+      }
+    },
     tu: getOption(options, 'tesselation', 1),
     tv: getOption(options, 'tesselation', 1),
   })

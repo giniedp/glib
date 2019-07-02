@@ -48,6 +48,13 @@ export function buildTorus(builder: ModelBuilder, options: BuildTorusOptions = {
         z: (r1 + r2 * Math.sin(theta)) * Math.cos(phi),
       }
     },
+    n: (phi: number, theta: number) => {
+      return {
+        x: Math.sin(theta) * Math.sin(phi),
+        y: Math.cos(theta),
+        z: Math.sin(theta) * Math.cos(phi),
+      }
+    },
     tu: getOption(options, 'tesselation', 32),
     tv: getOption(options, 'tesselation', 32),
     u0: 0,

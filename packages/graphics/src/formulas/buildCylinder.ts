@@ -45,6 +45,13 @@ export function buildCylinder(builder: ModelBuilder, options: BuildCylinderOptio
         z: r * Math.cos(u),
       }
     },
+    n: (u: number, v: number) => {
+      return {
+        x: Math.sin(u),
+        y: 0,
+        z: Math.cos(u),
+      }
+    },
     tu: getOption(options, 'tesselation', 32),
     tv: getOption(options, 'tesselation', 32),
     u0: 0,

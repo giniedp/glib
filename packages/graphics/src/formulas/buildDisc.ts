@@ -45,6 +45,13 @@ export function buildDisc(builder: ModelBuilder, options: BuildDiscOptions = {})
         z: v * Math.cos(u),
       }
     },
+    n: (u: number, v: number) => {
+      return {
+        x: 0,
+        y: 1,
+        z: 0,
+      }
+    },
     tu: getOption(options, 'tesselation', 32),
     tv: getOption(options, 'tesselation', 32),
     u0: 0,

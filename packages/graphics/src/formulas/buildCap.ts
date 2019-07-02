@@ -34,6 +34,7 @@ export function buildCap(builder: ModelBuilder, options: {
     builder.addVertex({
       position: position,
       texture: texture,
+      normal: [0, 1, 0],
     })
   }
 

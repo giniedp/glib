@@ -31,7 +31,6 @@ export function buildCube(builder: ModelBuilder, options: BuildCubeOptions = {})
   const halfSize = size * 0.5
   const halfPi = Math.PI * 0.5
   const steps = getOption(options, 'tesselation', 1)
-  const halfUp = Mat4.createTranslation(0, size * 0.5, 0)
   const transform = Mat4.createIdentity()
   let tId: number
 

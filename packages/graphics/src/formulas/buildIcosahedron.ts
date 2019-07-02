@@ -1,9 +1,6 @@
 import { Vec2, Vec3 } from '@gglib/math'
+import { getOption } from '@gglib/utils'
 import { ModelBuilder } from '../ModelBuilder'
-
-function withDefault(opt: any, value: any) {
-  return opt == null ? value : opt
-}
 
 function normalize(v: number[]) {
     let x = v[0]
@@ -49,15 +46,15 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
   radius?: number
   tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, 0.5)
-  let steps = withDefault(options.tesselation, 0)
-  let vertices = [
+  const radius = getOption(options, 'radius', 0.5)
+  const steps = getOption(options, 'tesselation', 0)
+  const vertices = [
     [+1, +1, +1],
     [+1, -1, -1],
     [-1, +1, -1],
     [-1, -1, +1],
   ]
-  let faces = [
+  const faces = [
     [0, 3, 2],
     [1, 3, 0],
     [2, 1, 0],
@@ -71,7 +68,7 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
       texture: Vec2.create(v.x, v.z),
     })
   }
-  for (let face of faces) {
+  for (const face of faces) {
     subdivide(
       normalize(vertices[face[0]]),
       normalize(vertices[face[1]]),
@@ -89,9 +86,9 @@ export function buildOctahedron(builder: ModelBuilder, options: {
   radius?: number
   tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, 0.5)
-  let steps = withDefault(options.tesselation, 0)
-  let vertices = [
+  const radius = getOption(options, 'radius', 0.5)
+  const steps = getOption(options, 'tesselation', 0)
+  const vertices = [
     [+1, 0, 0],
     [-1, 0, 0], // left
     [0, +1, 0], // up
@@ -99,7 +96,7 @@ export function buildOctahedron(builder: ModelBuilder, options: {
     [0, 0, +1], // front
     [0, 0, -1],  // back
   ]
-  let faces = [
+  const faces = [
     [0, 4, 2],
     [0, 3, 4],
     [0, 5, 3],
@@ -137,17 +134,17 @@ export function buildIcosahedron(builder: ModelBuilder, options: {
   radius?: number
   tesselation?: number,
 } = {}) {
-  let radius = withDefault(options.radius, 0.5)
-  let steps = withDefault(options.tesselation, 0)
+  const radius = getOption(options, 'radius', 0.5)
+  const steps = getOption(options, 'tesselation', 0)
 
-  let X = .525731112119133606
-  let Z = .850650808352039932
-  let vertices = [
+  const X = .525731112119133606
+  const Z = .850650808352039932
+  const vertices = [
     [-X, 0, Z], [X, 0, Z], [-X, 0, -Z], [X, 0, -Z],
     [0, Z, X], [0, Z, -X], [0, -Z, X], [0, -Z, -X],
     [Z, X, 0], [-Z, X, 0], [Z, -X, 0], [-Z, -X, 0],
   ]
-  let faces = [
+  const faces = [
     [0, 4, 1], [0, 9, 4], [9, 5, 4], [4, 5, 8], [4, 8, 1],
     [8, 10, 1], [8, 3, 10], [5, 3, 8], [5, 2, 3], [2, 7, 3],
     [7, 10, 3], [7, 6, 10], [7, 11, 6], [11, 0, 6], [0, 1, 6],
