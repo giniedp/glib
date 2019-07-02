@@ -1,7 +1,6 @@
 import * as fs from 'fs'
 import { dest, parallel, series, src, task, watch } from 'gulp'
-import * as livereload from 'gulp-livereload'
-import * as webserver from 'gulp-webserver'
+import * as connect from 'gulp-connect'
 import * as path from 'path'
 import { Transform } from 'stream'
 
@@ -61,18 +60,16 @@ export function examples() {
 }
 
 function reload() {
-  return Promise.resolve(livereload.reload())
+  return Promise.resolve(connect.reload())
 }
 
 export function serve() {
-  return src([project.dist], { allowEmpty: true })
-    .pipe(webserver({
-      host: '0.0.0.0',
-      port: 3000,
-      livereload: true,
-      directoryListing: false,
-      open: false,
-    }))
+  connect.server({
+    name: 'Glib Examples',
+    root: project.dist,
+    port: 3000,
+    livereload: true,
+  })
 }
 
 export function watchExamples(end) {
@@ -82,6 +79,7 @@ export function watchExamples(end) {
   process.on('SIGINT', () => {
     w.close()
     end()
+    connect.serverClose()
     process.exit(1)
   })
 }
