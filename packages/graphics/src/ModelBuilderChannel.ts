@@ -1,4 +1,4 @@
-import { BufferOptions } from './Buffer'
+import { Buffer, BufferOptions } from './Buffer'
 import { VertexLayout } from './VertexLayout'
 
 /**
@@ -16,8 +16,14 @@ export class ModelBuilderChannel {
   public readonly stride: number
   public readonly offset: number
   public readonly elements: number
+  private data: number[]
 
-  constructor(public readonly buffer: BufferOptions<number[]>, public readonly name: string) {
+  constructor(public readonly buffer: BufferOptions<number[]> | Buffer, public readonly name: string) {
+    if (buffer instanceof Buffer) {
+      this.data = new Float32Array(buffer.data as any) as any
+    } else {
+      this.data = buffer.data
+    }
     this.stride = VertexLayout.countElements(this.buffer.layout)
     this.offset = VertexLayout.countElementsBefore(this.buffer.layout, name)
     const attr = this.buffer.layout[name]
@@ -31,7 +37,7 @@ export class ModelBuilderChannel {
    * @param elementIndex - The element index to read. e.g. `0` is usually the `x` coordinate, `1` is `y` etc.
    */
   public read(vIndex: number, elementIndex: number): number {
-    return this.buffer.data[this.stride * vIndex + this.offset + elementIndex]
+    return this.data[this.stride * vIndex + this.offset + elementIndex]
   }
 
   /**
@@ -44,7 +50,7 @@ export class ModelBuilderChannel {
   public readAttribute(vIndex: number, target: number[] = [], targetOffset: number = 0): number[] {
     const index = this.stride * vIndex + this.offset
     for (let j = 0; j < this.elements; j++) {
-      target[targetOffset + j] = this.buffer.data[index + j]
+      target[targetOffset + j] = this.data[index + j]
     }
     return target
   }
@@ -57,7 +63,7 @@ export class ModelBuilderChannel {
    * @param value - The value
    */
   public write(vIndex: number, elementIndex: number, value: number): void {
-    this.buffer.data[this.stride * vIndex + this.offset + elementIndex] = value
+    this.data[this.stride * vIndex + this.offset + elementIndex] = value
   }
 
   /**
@@ -70,7 +76,7 @@ export class ModelBuilderChannel {
   public writeAttribute(vIndex: number, source: number[] = [], sourceOffset: number = 0) {
     const index = this.stride * vIndex + this.offset
     for (let j = 0; j < Math.min(this.elements, source.length - sourceOffset); j++) {
-      this.buffer.data[index + j] = source[sourceOffset + j]
+      this.data[index + j] = source[sourceOffset + j]
     }
   }
 
@@ -84,9 +90,9 @@ export class ModelBuilderChannel {
   public forEach(
     emitter: (attr: number[], index: number) => void,
     startVertex: number = 0,
-    endVertex: number = this.buffer.data.length / this.stride,
+    endVertex: number = this.buffer instanceof Buffer ? this.buffer.elementCount : this.data.length / this.stride,
   ) {
-    let data = this.buffer.data
+    let data = this.data
     let vertex: number[] = []
     let index = this.offset + startVertex * this.stride
     for (let i = startVertex; i < endVertex; i++) {
@@ -98,7 +104,7 @@ export class ModelBuilderChannel {
     }
   }
 
-  public static createMap(vBuffers: Array<BufferOptions<number[]>>): ModelBuilderChannelMap {
+  public static createMap(vBuffers: Array<BufferOptions<number[]> | Buffer>): ModelBuilderChannelMap {
     const channels = {}
     for (let buffer of vBuffers) {
       Object.keys(buffer.layout).forEach((name) => {
