@@ -121,6 +121,14 @@ export class Texture {
   public static readonly TextureCube = Symbol('TextureCube')
 
   /**
+   * Value for the `crossOrigin` attribute to be used when fetching image or video by url
+   *
+   * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image}
+   * {@link https://blog.chromium.org/2011/07/using-cross-domain-images-in-webgl-and.html}
+   */
+  public static crossOrigin: string
+
+  /**
    * Unique resource id
    */
   public uid: string = uuid()
@@ -200,7 +208,7 @@ export class Texture {
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image}
    * {@link https://blog.chromium.org/2011/07/using-cross-domain-images-in-webgl-and.html}
    */
-  public readonly crossOrigin: string
+  public readonly crossOrigin: string = Texture.crossOrigin
 
   /**
    * The recent video playback timestamp.
