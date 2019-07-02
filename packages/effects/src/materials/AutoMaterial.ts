@@ -10,17 +10,8 @@ import {
   SHADE_PHONG_FUNCTION,
   SHADE_SZIRMAY_FUNCTION,
 } from '../chunks'
+import { LightParams } from '../lights'
 import { defaultProgram, DefaultProgramDefs } from '../programs'
-
-/**
- * @public
- */
-export interface AutoMaterialLight {
-  Position: number[]
-  Direction: number[]
-  Color: number[]
-  Misc: number[]
-}
 
 const defineMap = {
   Alpha: 'ALPHA',
@@ -136,10 +127,10 @@ export class AutoMaterial extends Material {
       this.lights.length = v
       for (let i = 0; i < v; i++) {
         const index = i
-        this.lights[index] = new Proxy({}, {
+        this.lights[index] = this.lights[index] || new Proxy(new LightParams(), {
           set: (target, key, value) => {
             target[key] = value
-            this.parameters[`Lights${index}${key.toString()}`] = value
+            target.assign(index, this.parameters)
             return true
           },
         }) as any
@@ -472,7 +463,7 @@ export class AutoMaterial extends Material {
   }
 
   private defines: DefaultProgramDefs = {}
-  private lights: AutoMaterialLight[] = []
+  private lights: LightParams[] = []
   private hasChanged = true
   private $effect: ShaderEffect
 
@@ -493,7 +484,7 @@ export class AutoMaterial extends Material {
    *
    * @param index - The index of the light
    */
-  public getLight(index: number): AutoMaterialLight {
+  public getLight(index: number): LightParams {
     return this.lights[index]
   }
 

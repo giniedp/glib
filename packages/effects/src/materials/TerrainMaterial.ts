@@ -1,7 +1,8 @@
 import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
-import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
+import { IMat, IVec3, Mat4 } from '@gglib/math'
+import { LightParams } from '../lights'
 import { defaultProgram, DefaultProgramDefs } from '../programs'
-import { AutoMaterialLight, ShadeFunction } from './AutoMaterial'
+import { ShadeFunction } from './AutoMaterial'
 
 const defineMap = {
   Alpha: 'ALPHA',
@@ -88,10 +89,10 @@ export class TerrainMaterial extends Material {
       this.lights.length = v
       for (let i = 0; i < v; i++) {
         const index = i
-        this.lights[index] = new Proxy({}, {
+        this.lights[index] = this.lights[index] || new Proxy(new LightParams(), {
           set: (target, key, value) => {
             target[key] = value
-            this.parameters[`Lights${index}${key.toString()}`] = value
+            target.assign(index, this.parameters)
             return true
           },
         }) as any
@@ -350,7 +351,7 @@ export class TerrainMaterial extends Material {
   }
 
   private defines: DefaultProgramDefs = {}
-  private lights: AutoMaterialLight[] = []
+  private lights: LightParams[] = []
   private hasChanged = true
   private $effect: ShaderEffect
 
@@ -371,7 +372,7 @@ export class TerrainMaterial extends Material {
    *
    * @param index - The index of the light
    */
-  public getLight(index: number): AutoMaterialLight {
+  public getLight(index: number): LightParams {
     return this.lights[index]
   }
 

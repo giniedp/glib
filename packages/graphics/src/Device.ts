@@ -153,7 +153,7 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceOptions): 
     try {
       return canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
     } catch (e) {
-      Log.i('[Device]', `${name} is not supported`)
+      Log.e('[Device]', `${name} is not supported`)
     }
   }
 
