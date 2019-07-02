@@ -171,7 +171,7 @@ export class ShaderUniform {
       return
     }
 
-    let value = options['default']
+    let value = options.default
     switch (this.type) {
       case 'int':
         this.defaultValue = Number(value) || 0
@@ -220,7 +220,7 @@ export class ShaderUniform {
     }
   }
 
-  private cacheX(x: any): boolean {
+  private cacheX(x: number | boolean): boolean {
     let changed = false
     let cache = this.cachedValue
     if (cache[0] !== x) {
@@ -231,7 +231,7 @@ export class ShaderUniform {
     return changed
   }
 
-  private cacheXY(x: any, y: any): boolean {
+  private cacheXY(x: number | boolean, y: number | boolean): boolean {
     let changed = false
     let cache = this.cachedValue
     if (cache[0] !== x) {
@@ -246,7 +246,7 @@ export class ShaderUniform {
     return changed
   }
 
-  private cacheXYZ(x: any, y: any, z: any): boolean {
+  private cacheXYZ(x: number | boolean, y: number | boolean, z: number | boolean): boolean {
     let changed = false
     let cache = this.cachedValue
     if (cache[0] !== x) {
@@ -257,15 +257,15 @@ export class ShaderUniform {
       cache[1] = y
       changed = true
     }
-    if (cache[2] !== y) {
-      cache[2] = y
+    if (cache[2] !== z) {
+      cache[2] = z
       changed = true
     }
     cache.length = 3
     return changed
   }
 
-  private cacheXYZW(x: any, y: any, z: any, w: any): boolean {
+  private cacheXYZW(x: number | boolean, y: number | boolean, z: number | boolean, w: number | boolean): boolean {
     let changed = false
     let cache = this.cachedValue
     if (cache[0] !== x) {
@@ -276,12 +276,12 @@ export class ShaderUniform {
       cache[1] = y
       changed = true
     }
-    if (cache[2] !== y) {
-      cache[2] = y
+    if (cache[2] !== z) {
+      cache[2] = z
       changed = true
     }
-    if (cache[3] !== y) {
-      cache[3] = y
+    if (cache[3] !== w) {
+      cache[3] = w
       changed = true
     }
     cache.length = 4
@@ -399,14 +399,14 @@ export class ShaderUniform {
   /**
    * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public setVec2(value: {x: number, y: number} | number[]) {
-    if (Array.isArray(value)) {
-      if (this.cacheXY(value[0], value[1])) {
-        this.gl.uniform2f(this.location, value[0], value[1])
+  public setVec2(value: {x: number, y: number} | ArrayLike<number>) {
+    if (value['x'] != null) {
+      if (this.cacheXY(value['x'], value['y'])) {
+        this.gl.uniform2f(this.location, value['x'], value['y'])
       }
     } else {
-      if (this.cacheXY(value.x, value.y)) {
-        this.gl.uniform2f(this.location, value.x, value.y)
+      if (this.cacheXY(value[0], value[1])) {
+        this.gl.uniform2f(this.location, value[0], value[1])
       }
     }
   }
@@ -414,14 +414,14 @@ export class ShaderUniform {
   /**
    * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public setVec3(value: {x: number, y: number, z: number} | number[]) {
-    if (Array.isArray(value)) {
-      if (this.cacheXYZ(value[0], value[1], value[2])) {
-        this.gl.uniform3f(this.location, value[0], value[1], value[2])
+  public setVec3(value: {x: number, y: number, z: number} | ArrayLike<number>) {
+    if (value['x'] != null) {
+      if (this.cacheXYZ(value['x'], value['y'], value['z'])) {
+        this.gl.uniform3f(this.location, value['x'], value['y'], value['z'])
       }
     } else {
-      if (this.cacheXYZ(value.x, value.y, value.z)) {
-        this.gl.uniform3f(this.location, value.x, value.y, value.z)
+      if (this.cacheXYZ(value[0], value[1], value[2])) {
+        this.gl.uniform3f(this.location, value[0], value[1], value[2])
       }
     }
   }
@@ -429,14 +429,14 @@ export class ShaderUniform {
   /**
    * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public setVec4(value: {x: number, y: number, z: number, w: number} | number[]) {
-    if (Array.isArray(value)) {
-      if (this.cacheXYZW(value[0], value[1], value[2], value[3])) {
-        this.gl.uniform4f(this.location, value[0], value[1], value[2], value[3])
+  public setVec4(value: {x: number, y: number, z: number, w: number} | ArrayLike<number>) {
+    if (value['x'] != null) {
+      if (this.cacheXYZW(value['x'], value['y'], value['z'], value['w'])) {
+        this.gl.uniform4f(this.location, value['x'], value['y'], value['z'], value['w'])
       }
     } else {
-      if (this.cacheXYZW(value.x, value.y, value.z, value.w)) {
-        this.gl.uniform4f(this.location, value.x, value.y, value.z, value.w)
+      if (this.cacheXYZW(value[0], value[1], value[2], value[3])) {
+        this.gl.uniform4f(this.location, value[0], value[1], value[2], value[3])
       }
     }
   }
@@ -444,7 +444,7 @@ export class ShaderUniform {
   /**
    * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setFloatArray(value: Float32Array) {
+  public setFloatArray(value: Float32List) {
     this.cachedValue.length = 0
     this.gl.uniform1fv(this.location, value)
   }
@@ -452,7 +452,7 @@ export class ShaderUniform {
   /**
    * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setFloat2Array(value: Float32Array) {
+  public setFloat2Array(value: Float32List) {
     this.cachedValue.length = 0
     this.gl.uniform2fv(this.location, value)
   }
@@ -460,7 +460,7 @@ export class ShaderUniform {
   /**
    * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setFloat3Array(value: Float32Array) {
+  public setFloat3Array(value: Float32List) {
     this.cachedValue.length = 0
     this.gl.uniform3fv(this.location, value)
   }
@@ -468,7 +468,7 @@ export class ShaderUniform {
   /**
    * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setFloat4Array(value: Float32Array) {
+  public setFloat4Array(value: Float32List) {
     this.cachedValue.length = 0
     this.gl.uniform4fv(this.location, value)
   }
@@ -476,7 +476,7 @@ export class ShaderUniform {
   /**
    * Sets a integer array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setIntArray(value: Int32Array) {
+  public setIntArray(value: Int32List) {
     this.cachedValue.length = 0
     this.gl.uniform1iv(this.location, value)
   }
@@ -484,7 +484,7 @@ export class ShaderUniform {
   /**
    * Sets a integer array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setInt2Array(value: Int32Array) {
+  public setInt2Array(value: Int32List) {
     this.cachedValue.length = 0
     this.gl.uniform2iv(this.location, value)
   }
@@ -492,7 +492,7 @@ export class ShaderUniform {
   /**
    * Sets a Int array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setInt3Array(value: Int32Array) {
+  public setInt3Array(value: Int32List) {
     this.cachedValue.length = 0
     this.gl.uniform3iv(this.location, value)
   }
@@ -500,7 +500,7 @@ export class ShaderUniform {
   /**
    * Sets a Int array value. Commits it to the uniform. Skips (and clears) the cache.
    */
-  public setInt4Array(value: Int32Array) {
+  public setInt4Array(value: Int32List) {
     this.cachedValue.length = 0
     this.gl.uniform4iv(this.location, value)
   }
@@ -508,7 +508,7 @@ export class ShaderUniform {
   /**
    * Sets a 2x2 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat2(value: { data: number[]|Float32Array }, transpose: boolean) {
+  public setMat2(value: { data: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
     this.gl.uniformMatrix2fv(this.location, !!transpose, value.data)
   }
@@ -516,7 +516,7 @@ export class ShaderUniform {
   /**
    * Sets a 3x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat3(value: { data: number[]|Float32Array }, transpose: boolean) {
+  public setMat3(value: { data: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
     this.gl.uniformMatrix3fv(this.location, !!transpose, value.data)
   }
@@ -524,7 +524,7 @@ export class ShaderUniform {
   /**
    * Sets a 4x4 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat4(value: { data: number[]|Float32Array }, transpose: boolean) {
+  public setMat4(value: { data: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
     this.gl.uniformMatrix4fv(this.location, !!transpose, value.data)
   }
