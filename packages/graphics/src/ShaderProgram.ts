@@ -234,7 +234,7 @@ export class ShaderProgram {
       const uniform = new ShaderUniform(this, options)
       if (uniform.location != null) {
         u.set(key, uniform)
-        Log.i(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
+        Log.d(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
       }
     })
     this.uniformKeys = Array.from(u.keys())
