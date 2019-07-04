@@ -4,7 +4,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export type SHADE_OPTIMIZED_FUNCTION = 'shadeOptimized'
+export type ShadeFunctionOptimized = 'shadeOptimized'
 
 /**
  * @public

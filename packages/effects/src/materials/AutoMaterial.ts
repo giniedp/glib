@@ -1,14 +1,14 @@
 import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
 import { IMat, IVec2, IVec3, IVec4, Mat4 } from '@gglib/math'
 import {
-  SHADE_BLINN_FUNCTION,
-  SHADE_COOK_TORRANCE_FUNCTION,
-  SHADE_LAMBERT_FUNCTION,
-  SHADE_NON_FUNCTION,
-  SHADE_OPTIMIZED_FUNCTION,
-  SHADE_PBR_FUNCTION,
-  SHADE_PHONG_FUNCTION,
-  SHADE_SZIRMAY_FUNCTION,
+  ShadeFunctionBlinn,
+  ShadeFunctionCookTorrance,
+  ShadeFunctionLambert,
+  ShadeFunctionNone,
+  ShadeFunctionOptimized,
+  ShadeFunctionPBR,
+  ShadeFunctionPhong,
+  ShadeFunctionSzirmay,
 } from '../chunks'
 import { LightParams } from '../lights'
 import { defaultProgram, DefaultProgramDefs } from '../programs'
@@ -52,14 +52,14 @@ const defineMap = {
 /**
  * @public
  */
-export type ShadeFunction = SHADE_NON_FUNCTION
-  | SHADE_PBR_FUNCTION
-  | SHADE_BLINN_FUNCTION
-  | SHADE_COOK_TORRANCE_FUNCTION
-  | SHADE_PHONG_FUNCTION
-  | SHADE_OPTIMIZED_FUNCTION
-  | SHADE_LAMBERT_FUNCTION
-  | SHADE_SZIRMAY_FUNCTION
+export type ShadeFunction = ShadeFunctionNone
+  | ShadeFunctionPBR
+  | ShadeFunctionBlinn
+  | ShadeFunctionCookTorrance
+  | ShadeFunctionPhong
+  | ShadeFunctionOptimized
+  | ShadeFunctionLambert
+  | ShadeFunctionSzirmay
 
 const tempMat4 = Mat4.createIdentity()
 

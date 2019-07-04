@@ -6,7 +6,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export type SHADE_PBR_FUNCTION = 'shadePbr'
+export type ShadeFunctionPBR = 'shadePbr'
 
 /**
  * @public

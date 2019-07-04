@@ -11,7 +11,7 @@ export interface ShadeDefs {
 /**
  * @public
  */
-export type SHADE_NON_FUNCTION = 'shadeNone'
+export type ShadeFunctionNone = 'shadeNone'
 
 /**
  * @public

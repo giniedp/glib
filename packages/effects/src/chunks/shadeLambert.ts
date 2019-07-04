@@ -4,7 +4,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export type SHADE_LAMBERT_FUNCTION = 'shadeLambert'
+export type ShadeFunctionLambert = 'shadeLambert'
 
 /**
  * @public

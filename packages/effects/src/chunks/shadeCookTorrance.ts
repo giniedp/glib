@@ -4,7 +4,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export type SHADE_COOK_TORRANCE_FUNCTION = 'shadeCookTorrance'
+export type ShadeFunctionCookTorrance = 'shadeCookTorrance'
 
 /**
  * @public

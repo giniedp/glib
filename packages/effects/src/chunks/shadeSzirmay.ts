@@ -4,7 +4,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export type SHADE_SZIRMAY_FUNCTION = 'shadeSzirmay'
+export type ShadeFunctionSzirmay = 'shadeSzirmay'
 
 /**
  * @public

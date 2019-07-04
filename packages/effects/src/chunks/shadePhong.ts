@@ -4,7 +4,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export type SHADE_PHONG_FUNCTION = 'shadePhong'
+export type ShadeFunctionPhong = 'shadePhong'
 
 /**
  * @public
