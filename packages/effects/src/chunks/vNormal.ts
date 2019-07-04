@@ -8,18 +8,18 @@ export interface VNormalDefs {
   /**
    * Enables vertex normal attribute
    */
-  V_NORMAL?: any
+  V_NORMAL?: boolean
   /**
    * Enables vertex tangent attribute
    */
-  V_TANGENT?: any
+  V_TANGENT?: boolean
   /**
    * If defined the tangent is calculated from world X coordinate and vertex normal
    *
    * @remarks
    * This is useful for flat surfaces laying on XZ plane or terrain meshes.
    */
-  V_TANGENT_PLANE?: any
+  V_TANGENT_PLANE?: boolean
 }
 
 /**

@@ -8,7 +8,7 @@ export interface VBillboardDefs {
   /**
    * Enables billboard rotation of the vertices
    */
-  BILLBOARD?: any
+  BILLBOARD?: boolean
 }
 
 /**

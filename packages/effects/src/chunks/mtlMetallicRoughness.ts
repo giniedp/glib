@@ -2,24 +2,46 @@ import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control metallic roughness material.
+ *
  * @public
  */
 export interface MtlMetallicRoughness {
   /**
-   * Enables the metallic roughness parameters
-   */
-  METALLIC_ROUGHNESS?: any
-  /**
-   * Enables the metallic roughness texture
-   */
-  METALLIC_ROUGHNESS_MAP?: any
-  /**
-   * Defines the uv accessor
+   * Enables uniform metallic roughness material
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform vec2 uMetallicRoughness` (bound as `MetallicRoughness`)
+   * that provides metallic and roughness values.
    */
-  METALLIC_ROUGHNESS_MAP_UV?: any
+  METALLIC_ROUGHNESS?: boolean
+  /**
+   * Enables metallic roughness material texture
+   *
+   * @remarks
+   * Adds a `uniform vec2 uMetallicRoughnessMap` (bound as `MetallicRoughnessMap`)
+   * that provides metallic and roughness values.
+   */
+  METALLIC_ROUGHNESS_MAP?: boolean
+  /**
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  METALLIC_ROUGHNESS_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
+   *
+   * @remarks
+   * Adds a `uniform vec4 uMetallicRoughnessMapScaleOffset` that is used to transform the texture coordinates.
+   * This is done in pixel shader for the MetallicRoughnessMap only.
+   */
+  METALLIC_ROUGHNESS_MAP_SCALE_OFFSET?: boolean
+  /**
+   * Defines the texture channel
+   *
+   * @remarks
+   * defaults to `bg` where `b` is for metallic and `g` is for roughness
+   */
+  METALLIC_ROUGHNESS_MAP_CHANNEL?: string
 }
 
 /**
@@ -27,10 +49,12 @@ export interface MtlMetallicRoughness {
  *
  * @public
  * @remarks
- * Uses defines
- * - `METALLIC_ROUGHNESS` enables metallic and roughness uniforms
- * - `METALLIC_ROUGHNESS_MAP` enables texture
- * - `METALLIC_ROUGHNESS_MAP_UV` defaults to `vTexture.xy`
+ *
+ * - {@link MtlMetallicRoughness.METALLIC_ROUGHNESS}
+ * - {@link MtlMetallicRoughness.METALLIC_ROUGHNESS_MAP}
+ * - {@link MtlMetallicRoughness.METALLIC_ROUGHNESS_MAP_UV}
+ * - {@link MtlMetallicRoughness.METALLIC_ROUGHNESS_MAP_SCALE_OFFSET}
+ * - {@link MtlMetallicRoughness.METALLIC_ROUGHNESS_MAP_CHANNEL}
  */
 export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
   defines: glsl`
@@ -42,11 +66,15 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
       #ifndef METALLIC_ROUGHNESS_MAP_UV
         #define METALLIC_ROUGHNESS_MAP_UV vTexture.xy
       #endif
+
+      #ifndef METALLIC_ROUGHNESS_MAP_CHANNEL
+        #define METALLIC_ROUGHNESS_MAP_CHANNEL bg
+      #endif
     #endif
   `,
   uniforms: glsl`
     #ifdef METALLIC_ROUGHNESS
-    // @binding MetallicRoughnessMap
+    // @binding MetallicRoughness
     // @widget  slider;min=0;max=1
     // @default [1, 1]
     uniform vec2 uMetallicRoughness;
@@ -57,41 +85,42 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
     // @filter   LinearWrap
     uniform sampler2D uMetallicRoughnessMap;
     #endif
+
+    #ifdef METALLIC_ROUGHNESS_MAP_SCALE_OFFSET
+    // @binding MetallicRoughnessMapScaleOffset
+    uniform vec4 uMetallicRoughnessMapScaleOffset;
+    #endif
   `,
 
   functions: glsl`
     #ifdef METALLIC_ROUGHNESS_MAP
     vec2 getMetallicRoughnessUV() {
-      #ifdef METALLIC_ROUGHNESS_MAP_OFFSET_SCALE
-      return METALLIC_ROUGHNESS_MAP_UV * uMetallicRoughnessOffsetScale.zw + uMetallicRoughnessOffsetScale.xy
+      #ifdef METALLIC_ROUGHNESS_MAP_SCALE_OFFSET
+      return METALLIC_ROUGHNESS_MAP_UV * uMetallicRoughnessMapScaleOffset.xy + uMetallicRoughnessMapScaleOffset.zw
       #else
       return METALLIC_ROUGHNESS_MAP_UV;
       #endif
     }
     #endif
 
-    void getMetallicRoughness(out float metallic, out float roughness, in vec2 uv) {
+    void getMetallicRoughness(out vec2 metallicRoughness, in vec2 uv) {
       #ifdef METALLIC_ROUGHNESS
-      metallic = uMetallicRoughness.x;
-      roughness = uMetallicRoughness.y;
+      metallicRoughness.xy = uMetallicRoughness.xy;
       #else
-      metallic = 1.0;
-      roughness = 1.0;
+      metallicRoughness.xy = vec2(1.0, 1.0);
       #endif
       #ifdef METALLIC_ROUGHNESS_MAP
-      vec4 sample = texture2D(uMetallicRoughnessMap, uv);
-      metallic = sample.b * metallic;
-      roughness = sample.g * roughness;
+      metallicRoughness.xy *= texture2D(uMetallicRoughnessMap, uv).METALLIC_ROUGHNESS_MAP_CHANNEL;
       #endif
-      metallic = clamp(metallic, 0.0, 1.0);
-      roughness = clamp(roughness, 0.04, 1.0);
+      metallicRoughness.x = clamp(metallicRoughness.x, 0.0, 1.0);
+      metallicRoughness.y = clamp(metallicRoughness.y, 0.04, 1.0);
     }
   `,
   fs_surface: glsl`
     #if defined(METALLIC_ROUGHNESS_MAP)
-    getMetallicRoughness(surface.PBR.r, surface.PBR.g, getMetallicRoughnessUV() + uvOffset);
+    getMetallicRoughness(surface.PBR.rg, getMetallicRoughnessUV() + uvOffset);
     #elif defined(METALLIC_ROUGHNESS)
-    getMetallicRoughness(surface.PBR.r, surface.PBR.g, uvOffset);
+    getMetallicRoughness(surface.PBR.rg, uvOffset);
     #endif
   `,
 })

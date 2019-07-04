@@ -1,33 +1,39 @@
-// tslint:disable:max-line-length
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control occlusion mapping.
+ *
  * @public
  */
 export interface MtlOcclusionDefs {
   /**
-   * Enables the occlusion texture
-   */
-  OCCLUSION_MAP?: any
-  /**
-   * Defines the uv accessor
+   * Enables occlusion texture
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform sampler2D uOcclusionMap` (bound as `OcclusionMap`)
+   * that is multiplied to the final output color.
+   *
+   * The occlusion map can also be used as light map.
    */
-  OCCLUSION_MAP_UV?: any
+  OCCLUSION_MAP?: boolean
   /**
-   * Defines the texture channel which should be used for occlusion
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  OCCLUSION_MAP_UV?: string
+  /**
+   * Defines the texture channels (defaults to `r`)
+   */
+  OCCLUSION_MAP_CHANNEL?: string
+  /**
+   * Allows to scale and offset the texture
    *
    * @remarks
-   * defaults to `rgb`
+   * Adds a `uniform vec4 uOcclusionMapScaleOffset` (bound as `OcclusionMapScale`)Offset
+   * that is used to transform the texture coordinates.
+   * This is done in pixel shader for the OcclusionMap only.
    */
-  OCCLUSION_MAP_CHANNEL?: any
-  /**
-   * Adds offset and scale operation on OcclusionMap
-   */
-  OCCLUSION_MAP_OFFSET_SCALE?: any
+  OCCLUSION_MAP_SCALE_OFFSET?: boolean
 }
 
 /**
@@ -35,11 +41,11 @@ export interface MtlOcclusionDefs {
  *
  * @public
  * @remarks
- * Uses defines
  *
- * - `OCCLUSION_MAP` enables texture
- * - `OCCLUSION_MAP_UV` defaults to `vTexture.xy`
- * - `OCCLUSION_MAP_CHANNEL` defaults to `rgb`
+ * - {@link MtlOcclusionDefs.OCCLUSION_MAP}
+ * - {@link MtlOcclusionDefs.OCCLUSION_MAP_UV}
+ * - {@link MtlOcclusionDefs.OCCLUSION_MAP_CHANNEL}
+ * - {@link MtlOcclusionDefs.OCCLUSION_MAP_SCALE_OFFSET}
  */
 export const MTL_OCCLUSION: ShaderChunkSet = Object.freeze({
   defines: glsl`
@@ -64,16 +70,16 @@ export const MTL_OCCLUSION: ShaderChunkSet = Object.freeze({
     uniform sampler2D uOcclusionMap;
     #endif
 
-    #ifdef OCCLUSION_MAP_OFFSET_SCALE
-    // @binding OcclusionMapOffsetScale
-    uniform vec4 uOcclusionMapOffsetScale;
+    #ifdef OCCLUSION_MAP_SCALE_OFFSET
+    // @binding OcclusionMapScaleOffset
+    uniform vec4 uOcclusionMapScaleOffset;
     #endif
   `,
   functions: glsl`
     #ifdef OCCLUSION_MAP
     vec2 getOcclusionMapUV() {
-      #ifdef OCCLUSION_MAP_OFFSET_SCALE
-      return OCCLUSION_MAP_UV * uOcclusionMapOffsetScale.zw + uOcclusionMapOffsetScale.xy;
+      #ifdef OCCLUSION_MAP_SCALE_OFFSET
+      return OCCLUSION_MAP_UV * uOcclusionMapScaleOffset.xy + uOcclusionMapScaleOffset.zw;
       #else
       return OCCLUSION_MAP_UV;
       #endif

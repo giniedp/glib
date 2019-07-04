@@ -32,8 +32,8 @@ const normalMapSpecularMapEffect = device.createEffect({
     LIGHT: true,
     LIGHT_COUNT: 1,
     SHADE_FUNCTION: 'shadeBlinn',
-    DIFFUSE_MAP_OFFSET_SCALE: true,
-    NORMAL_MAP_OFFSET_SCALE: true,
+    DIFFUSE_MAP_SCALE_OFFSET: true,
+    NORMAL_MAP_SCALE_OFFSET: true,
     V_TANGENT: true,
 
   }),
@@ -124,8 +124,8 @@ loop((dt) => {
     mtl.parameters['View'] = view
     mtl.parameters['Projection'] = proj
     mtl.parameters['CameraPosition'] = cam.getTranslation()
-    mtl.parameters['DiffuseMapOffsetScale'] = [time / 80000, time / 40000, 1, 1]
-    mtl.parameters['NormalMapOffsetScale'] = [time / 40000, time / 80000, 1, 1]
+    mtl.parameters['DiffuseMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
+    mtl.parameters['NormalMapScaleOffset'] = [1, 1, time / 40000, time / 80000]
 
     light.assign(0, mtl.parameters)
   })

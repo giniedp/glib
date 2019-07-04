@@ -60,7 +60,7 @@ export const COMMON: ShaderChunkSet = Object.freeze({
     SurfaceParams surface;
     vec4 color;
   `,
-  fs_end_after: glsl`
+  fs_frag_color_after: glsl`
     gl_FragColor = color;
   `,
 })

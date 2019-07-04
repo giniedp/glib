@@ -6,17 +6,47 @@ import { glsl } from '../glsl'
  */
 export interface MtlAlphaDefs {
   /**
-   * Enables alpha lookup from an alpha map
+   * Enables uniform alpha value
+   *
+   * @remarks
+   * Adds a `uniform float uAlpha` (bound as `Alpha`) that is used as alpha value.
+   * If an alpha map is used, then both are multiplied.
    */
-  ALPHA_MAP?: any,
+  ALPHA?: boolean
   /**
-   * Enables the alpha uniform
+   * Enables premultiplied alpha
+   *
+   * @remarks
+   * multiplies the final color value with alpha
    */
-  ALPHA?: any
+  ALPHA_PREMULTIPLY?: boolean
+  /**
+   * Enables alpha texture
+   *
+   * @remarks
+   * Adds a `uniform sampler2D uAlphaMap` (bound as `AlphaMap`) that is used as alpha value.
+   * If uniform alpha value is used, then both are multiplied.
+   */
+  ALPHA_MAP?: boolean,
+  /**
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  ALPHA_MAP_UV?: string
+  /**
+   * Defines the texture channel which should be used for alpha value
+   *
+   * @remarks
+   * defaults to `r`
+   */
+  ALPHA_MAP_CHANNEL?: string
   /**
    * Enables alpha clipping
+   *
+   * @remarks
+   * Adds a `uniform float uAlphaClip` (bound as `AlphaClip`) that is used to discard
+   * the fragment shader before the shade stage.
    */
-  ALPHA_CLIP?: any
+  ALPHA_CLIP?: boolean
 }
 
 /**
@@ -24,11 +54,12 @@ export interface MtlAlphaDefs {
  *
  * @public
  * @remarks
- * Uses the following defines
  *
- *  - ALPHA
- *  - ALPHA_CLIP
- *  - ALPHA_MAP
+ * - {@link MtlMetallicRoughness.ALPHA}
+ * - {@link MtlMetallicRoughness.ALPHA_MAP}
+ * - {@link MtlMetallicRoughness.ALPHA_MAP_UV}
+ * - {@link MtlMetallicRoughness.ALPHA_MAP_CHANNEL}
+ * - {@link MtlMetallicRoughness.ALPHA_CLIP}
  */
 export const MTL_ALPHA: ShaderChunkSet = Object.freeze({
   defines: glsl`
@@ -39,6 +70,10 @@ export const MTL_ALPHA: ShaderChunkSet = Object.freeze({
 
       #ifndef ALPHA_MAP_UV
         #define ALPHA_MAP_UV vTexture.xy
+      #endif
+
+      #ifndef ALPHA_MAP_CHANNEL
+        #define ALPHA_MAP_CHANNEL r
       #endif
     #endif
   `,
@@ -63,16 +98,16 @@ export const MTL_ALPHA: ShaderChunkSet = Object.freeze({
     uniform sampler2D uAlphaMap;
     #endif
 
-    #ifdef ALPHA_MAP_OFFSET_SCALE
-    // @binding AlphaMapOffsetScale
-    uniform vec4 uAlphaMapOffsetScale;
+    #ifdef ALPHA_MAP_SCALE_OFFSET
+    // @binding AlphaMapScaleOffset
+    uniform vec4 uAlphaMapScaleOffset;
     #endif
   `,
   functions: glsl`
     #ifdef ALPHA_MAP
     vec2 getAlphaMapUV() {
-      #ifdef ALPHA_MAP_OFFSET_SCALE
-      return ALPHA_MAP_UV * uAlphaMapOffsetScale.zw + uAlphaMapOffsetScale.xy;
+      #ifdef ALPHA_MAP_SCALE_OFFSET
+      return ALPHA_MAP_UV * uAlphaMapScaleOffset.xy + uAlphaMapScaleOffset.zw;
       #else
       return ALPHA_MAP_UV;
       #endif
@@ -81,7 +116,7 @@ export const MTL_ALPHA: ShaderChunkSet = Object.freeze({
   `,
   fs_surface_after: glsl`
     #if defined(ALPHA_MAP)
-    surface.Diffuse.a = texture2D(uAlphaMap, getAlphaMapUV() + uvOffset).r;
+    surface.Diffuse.a = texture2D(uAlphaMap, getAlphaMapUV() + uvOffset).ALPHA_MAP_CHANNEL;
     #endif
 
     #ifdef ALPHA
@@ -90,6 +125,11 @@ export const MTL_ALPHA: ShaderChunkSet = Object.freeze({
 
     #ifdef ALPHA_CLIP
     if ((surface.Diffuse.a - uAlphaClip) <= 0.0) discard;
+    #endif
+  `,
+  fs_frag_color: glsl`
+    #if defined(ALPHA_PREMULTIPLY)
+    color.rgb *= surface.Diffuse.a;
     #endif
   `,
 })

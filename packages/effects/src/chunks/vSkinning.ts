@@ -8,21 +8,21 @@ export interface VSkinningDefs {
   /**
    * Enables vertex indices and vertex weights attributes for skinning animation
    */
-  SKINNING?: any
+  SKINNING?: boolean
   /**
    * Defines the number of bones
    *
    * @remarks
    * If not set defaults to 16
    */
-  SKINNING_BONE_COUNT?: any
+  SKINNING_BONE_COUNT?: number
   /**
    * Defines the number bone weights
    *
    * @remarks
    * If not set defaults to `2`. The value should be in range of [1:4]
    */
-  SKINNING_WEIGHT_COUNT?: any
+  SKINNING_WEIGHT_COUNT?: number
 }
 
 /**
@@ -34,16 +34,12 @@ export const V_SKINNING: ShaderChunkSet = Object.freeze({
       #define SKINNING
     #endif
 
-    #ifndef SKINNING_BONE_COUNT
-    #ifdef SKINNING
+    #if !defined(SKINNING_BONE_COUNT) && defined(SKINNING)
       #define SKINNING_BONE_COUNT 16
     #endif
-    #endif
 
-    #ifndef SKINNING_WEIGHT_COUNT
-    #ifdef SKINNING
+    #if !defined(SKINNING_WEIGHT_COUNT) && defined(SKINNING)
       #define SKINNING_WEIGHT_COUNT 2
-    #endif
     #endif
   `,
   attributes: glsl`

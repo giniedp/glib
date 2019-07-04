@@ -3,6 +3,8 @@ import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control parallax mapping.
+ *
  * @public
  */
 export interface MtlParallaxDefs {
@@ -10,39 +12,46 @@ export interface MtlParallaxDefs {
    * Enables parallax mapping
    *
    * @remarks
-   * Adds `uParallaxMap` uniform and binds as `ParallaxMap` parameter
+   * Adds a `uniform sampler2D uParallaxMap` (bound as `ParallaxMap`)
+   * that is used as height map.
    */
-  PARALLAX_MAP?: any
+  PARALLAX_MAP?: boolean
   /**
-   * Defines the uv accessor
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  PARALLAX_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform vec4 uParallaxMapScaleOffset` that is used to transform the texture coordinates.
+   * This is done in pixel shader for the ParallaxMap only.
    */
-  PARALLAX_MAP_UV?: any
-  /**
-   * Adds offset and scale operation on ParallaxMap
-   */
-  PARALLAX_MAP_OFFSET_SCALE?: any
+  PARALLAX_MAP_SCALE_OFFSET?: boolean
   /**
    * Enables parallax occlusion algorithm
+   *
+   * @remarks
+   * {@link MtlParallaxDefs.PARALLAX_OCCLUSION_SAMPLES}
    */
-  PARALLAX_OCCLUSION?: any
+  PARALLAX_OCCLUSION?: boolean
   /**
    * Defines maximum number of parallax occlusion samples
    */
-  PARALLAX_OCCLUSION_SAMPLES?: any
+  PARALLAX_OCCLUSION_SAMPLES?: number
 }
 
 /**
- * Adds Diffuse or Albedo texture / color to the shader
+ * Contributes parallax mapping to the shader
  *
  * @public
  * @remarks
- * Uses defines
  *
- * - `PARALLAX_MAP` enables texture
- * - `PARALLAX_MAP_UV` defaults to `vTexture.xy`
+ * - {@link MtlNormalDefs.PARALLAX_MAP}
+ * - {@link MtlNormalDefs.PARALLAX_MAP_UV}
+ * - {@link MtlNormalDefs.PARALLAX_MAP_SCALE_OFFSET}
+ * - {@link MtlNormalDefs.PARALLAX_OCCLUSION}
+ * - {@link MtlNormalDefs.PARALLAX_OCCLUSION_SAMPLES}
  */
 export const MTL_PARALLAX: ShaderChunkSet = Object.freeze({
   defines: glsl`
@@ -68,16 +77,16 @@ export const MTL_PARALLAX: ShaderChunkSet = Object.freeze({
   `,
   uniforms: glsl`
     #ifdef PARALLAX_MAP
-    // @binding ParallaxMap
+    // @binding  ParallaxMap
     // @filter   LinearWrap
     uniform sampler2D uParallaxMap;
 
-    #ifdef PARALLAX_MAP_OFFSET_SCALE
-    // @binding ParallaxMapOffsetScale
-    uniform vec4 uParallaxMapOffsetScale;
+    #ifdef PARALLAX_MAP_SCALE_OFFSET
+    // @binding ParallaxMapScaleOffset
+    uniform vec4 uParallaxMapScaleOffset;
     #endif
 
-    // @default [1, 0.01]
+    // @default [1, 0.0]
     // @binding ParallaxScaleBias
     uniform vec2 uParallaxScaleBias;
     #endif
@@ -85,8 +94,8 @@ export const MTL_PARALLAX: ShaderChunkSet = Object.freeze({
   functions: glsl`
     #ifdef PARALLAX_MAP
     vec2 getParallaxMapUV() {
-      #ifdef PARALLAX_MAP_OFFSET_SCALE
-      return PARALLAX_MAP_UV * uParallaxMapOffsetScale.zw + uParallaxMapOffsetScale.xy;
+      #ifdef PARALLAX_MAP_SCALE_OFFSET
+      return PARALLAX_MAP_UV * uParallaxMapScaleOffset.xy + uParallaxMapScaleOffset.zw;
       #else
       return PARALLAX_MAP_UV;
       #endif

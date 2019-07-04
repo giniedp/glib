@@ -2,54 +2,67 @@ import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control specular color contribution.
+ *
  * @public
  */
 export interface MtlSpecularDefs {
   /**
-   * Adds `uSpecularPower` float uniform with a binding to `SpecularPower` parameter
-   */
-  SPECULAR_POWER?: any
-  /**
-   * Adds `uSpecularColor` uniform with a binding to `SpecularColor` parameter
-   */
-  SPECULAR_COLOR?: any
-  /**
-   * Adds `uSpecularMap` sampler uniform with a binding to `SpecularMap` parameter
-   */
-  SPECULAR_MAP?: any
-  /**
-   * Defines the texture accessor coordinates
+   * Enables a uniform specular power value
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform float uSpecularPower` (bound as `SpecularPower`)
+   * that is used as specular power exponent.
    */
-  SPECULAR_MAP_UV?: any
+  SPECULAR_POWER?: boolean
   /**
-   * Adds `uSpecularMapOffsetScale` uniform with a binding to `SpecularMapOffsetScale`
+   * Enables a uniform specular color
    *
    * @remarks
-   * This adds texture offset and scale operations at pixel shader level.
+   * Adds a `uniform vec3 uSpecularColor` (bound as `SpecularColor`)
+   * that is used as specular color.
+   * If a `SpecularMap` is used, then both are multiplied.
    */
-  SPECULAR_MAP_OFFSET_SCALE?: any
+  SPECULAR_COLOR?: boolean
+  /**
+   * Enables specular color from texture
+   *
+   * @remarks
+   * Adds a `uniform sampler2D uSpecularMap` that is used as surface color.
+   * If a `SpecularColor` is used, then both are multiplied.
+   * The uniform is bound as `SpecularMap`.
+   */
+  SPECULAR_MAP?: boolean
+  /**
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  SPECULAR_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
+   *
+   * @remarks
+   * Adds a `uniform vec4 uSpecularMapScaleOffset` that is used to transform the texture coordinates.
+   * This is done in pixel shader for the SpecularMap only.
+   */
+  SPECULAR_MAP_SCALE_OFFSET?: boolean
 }
 
 /**
- * Adds Specular color contribution to the shader
+ * Contributes specular color to the shader
  *
  * @public
  * @remarks
- * Defines used in this chunk
  *
- * - `SPECULAR_POWER` - Adds `SpecularPower` parameter
- * - `SPECULAR_COLOR` - Adds `SpecularColor` parameter
- * - `SPECULAR_MAP` - Adds `SpecularMap` parameter. Automatically defines `V_TEXTURE1`.
- * - `SPECULAR_MAP_UV` - defaults to `vTexture.xy`
- * - `SPECULAR_MAP_OFFSET_SCALE` - Adds `SpecularMapOffsetScale` parameter
+ * - {@link MtlSpecularDefs.SPECULAR_POWER}
+ * - {@link MtlSpecularDefs.SPECULAR_COLOR}
+ * - {@link MtlSpecularDefs.SPECULAR_MAP}
+ * - {@link MtlSpecularDefs.SPECULAR_MAP_UV}
+ * - {@link MtlSpecularDefs.SPECULAR_MAP_SCALE_OFFSET}
  */
 export const MTL_SPECULAR: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef SPECULAR_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE1
       #endif
 
@@ -77,16 +90,16 @@ export const MTL_SPECULAR: ShaderChunkSet = Object.freeze({
     uniform sampler2D uSpecularMap;
     #endif
 
-    #ifdef SPECULAR_MAP_OFFSET_SCALE
-    // @binding SpecularMapOffsetScale
-    uniform vec4 uSpecularMapOffsetScale;
+    #ifdef SPECULAR_MAP_SCALE_OFFSET
+    // @binding SpecularMapScaleOffset
+    uniform vec4 uSpecularMapScaleOffset;
     #endif
   `,
   functions: glsl`
     #ifdef SPECULAR_MAP
     vec2 getSpecularMapUV() {
-      #ifdef SPECULAR_MAP_OFFSET_SCALE
-      return SPECULAR_MAP_UV * uSpecularMapOffsetScale.zw + uSpecularMapOffsetScale.xy;
+      #ifdef SPECULAR_MAP_SCALE_OFFSET
+      return SPECULAR_MAP_UV * uSpecularMapScaleOffset.xy + uSpecularMapScaleOffset.zw;
       #else
       return SPECULAR_MAP_UV;
       #endif
@@ -104,7 +117,7 @@ export const MTL_SPECULAR: ShaderChunkSet = Object.freeze({
     #elif defined(SPECULAR_COLOR)
     surface.Specular = vec4(uSpecularColor, 1.0);
     #else
-    surface.Specular = vec4(surface.Diffuse.rgb, 1.0);
+    surface.Specular = vec4(surface.Specular.rgb, 1.0);
     #endif
 
     #ifdef SPECULAR_POWER

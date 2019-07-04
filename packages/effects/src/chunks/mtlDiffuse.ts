@@ -2,40 +2,54 @@ import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control diffuse color contribution.
+ *
  * @public
  */
 export interface MtlDiffuseDefs {
   /**
-   * Enables the DiffuseColor
-   */
-  DIFFUSE_COLOR?: any
-  /**
-   * Enables the DiffuseMap
-   */
-  DIFFUSE_MAP?: any
-  /**
-   * Defines the uv accessor
+   * Enables diffuse color
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform vec3 uDiffuseColor` (bound as `DiffuseColor`)
+   * that is used as surface color.
+   * If a `DiffuseMap` is used, then both are multiplied.
    */
-  DIFFUSE_MAP_UV?: any
+  DIFFUSE_COLOR?: boolean
   /**
-   * Adds offset and scale operation on DiffuseMap
+   * Enables diffuse color from texture
+   *
+   * @remarks
+   * Adds a `uniform sampler2D uDiffuseMap` (bound as `DiffuseMap`)
+   * that is used as surface color.
+   * If a `DiffuseColor` is used, then both are multiplied.
    */
-  DIFFUSE_MAP_OFFSET_SCALE?: any
+  DIFFUSE_MAP?: boolean
+  /**
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  DIFFUSE_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
+   *
+   * @remarks
+   * Adds a `uniform vec4 uDiffuseMapScaleOffset` (bound as `DiffuseMapScaleOffset`)
+   * that is used to transform the texture coordinates.
+   * This is done in pixel shader for the DiffuseMap only.
+   */
+  DIFFUSE_MAP_SCALE_OFFSET?: boolean
 }
 
 /**
- * Adds Diffuse or Albedo texture / color to the shader
+ * Contributes diffuse lighting and mapping to the shader
  *
  * @public
  * @remarks
- * Uses defines
  *
- * - `DIFFUSE_MAP` enables texture
- * - `DIFFUSE_MAP_UV` defaults to `vTexture.xy`
- * - `DIFFUSE_COLOR` enables vertex color
+ * - {@link MtlDiffuseDefs.DIFFUSE_COLOR}
+ * - {@link MtlDiffuseDefs.DIFFUSE_MAP}
+ * - {@link MtlDiffuseDefs.DIFFUSE_MAP_UV}
+ * - {@link MtlDiffuseDefs.DIFFUSE_MAP_SCALE_OFFSET}
  */
 export const MTL_DIFFUSE: ShaderChunkSet = Object.freeze({
   defines: glsl`
@@ -52,27 +66,27 @@ export const MTL_DIFFUSE: ShaderChunkSet = Object.freeze({
   uniforms: glsl`
     #ifdef DIFFUSE_COLOR
     // @binding DiffuseColor
-    // @widget   color
-    // @default  [1, 1, 1]
+    // @widget  color
+    // @default [1, 1, 1]
     uniform vec3 uDiffuseColor;
     #endif
 
     #ifdef DIFFUSE_MAP
-    // @binding  DiffuseMap
-    // @filter   LinearWrap
+    // @binding DiffuseMap
+    // @filter  LinearWrap
     uniform sampler2D uDiffuseMap;
     #endif
 
-    #ifdef DIFFUSE_MAP_OFFSET_SCALE
-    // @binding DiffuseMapOffsetScale
-    uniform vec4 uDiffuseMapOffsetScale;
+    #ifdef DIFFUSE_MAP_SCALE_OFFSET
+    // @binding DiffuseMapScaleOffset
+    uniform vec4 uDiffuseMapScaleOffset;
     #endif
   `,
   functions: glsl`
     #ifdef DIFFUSE_MAP
     vec2 getDiffuseMapUV() {
-      #ifdef DIFFUSE_MAP_OFFSET_SCALE
-      return DIFFUSE_MAP_UV * uDiffuseMapOffsetScale.zw + uDiffuseMapOffsetScale.xy;
+      #ifdef DIFFUSE_MAP_SCALE_OFFSET
+      return DIFFUSE_MAP_UV * uDiffuseMapScaleOffset.xy + uDiffuseMapScaleOffset.zw;
       #else
       return DIFFUSE_MAP_UV;
       #endif
@@ -92,6 +106,9 @@ export const MTL_DIFFUSE: ShaderChunkSet = Object.freeze({
     surface.Diffuse = vec4(vColor, 1.0);
     #elif defined(V_COLOR2)
     surface.Diffuse = vec4(vColor2, 1.0);
+    #else
+    surface.Diffuse.rgb = vec3(0.0);
+    surface.Diffuse.a = 1.0;
     #endif
   `,
 })

@@ -1,5 +1,5 @@
 import { defaultProgram, LightParams } from '@gglib/effects'
-import { buildCube, Device, LightType, ModelBuilder, CullState, BlendState, DepthState } from '@gglib/graphics'
+import { BlendState, buildCube, CullState, DepthState, Device, LightType, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
@@ -18,6 +18,7 @@ const lightingEffect = device.createEffect({
     LIGHT: true,
     LIGHT_COUNT: 1,
     SHADE_FUNCTION: 'shadeBlinn',
+
   }),
 })
 

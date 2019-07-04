@@ -20,8 +20,10 @@ export const MAIN: ShaderChunkSet = Object.freeze({
       #pragma block:fs_start
       #pragma block:fs_surface
       #pragma block:fs_shade
+      #pragma block:fs_fog
       #pragma block:fs_post
       #pragma block:fs_end
+      #pragma block:fs_frag_color
     }
   `,
 })

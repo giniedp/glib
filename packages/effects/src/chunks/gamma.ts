@@ -8,14 +8,14 @@ export interface GammaDefs {
   /**
    * Enables gamma correction
    */
-  GAMMA_CORRECTION?: any
+  GAMMA_CORRECTION?: boolean
   /**
    * The gamma constant
    *
    * @remarks
    * defaults to `2.2`
    */
-  GAMMA?: any
+  GAMMA?: number
 }
 
 /**
@@ -40,7 +40,7 @@ export const GAMMA: ShaderChunkSet = Object.freeze({
     surface.Specular.rgb = pow(surface.Specular.rgb, vec3(GAMMA));
     #endif
   `,
-  fs_shade_after: glsl`
+  fs_post_before: glsl`
     #ifdef GAMMA_CORRECTION
     color.rgb = pow(color.rgb, vec3(1.0/GAMMA));
     #endif

@@ -8,11 +8,11 @@ export interface VColorDefs {
   /**
    * Enables the first vertex color attribute
    */
-  V_COLOR1?: any
+  V_COLOR1?: boolean
   /**
    * Enables a second vertex color attribute
    */
-  V_COLOR2?: any
+  V_COLOR2?: boolean
 }
 /**
  * @public

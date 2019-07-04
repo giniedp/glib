@@ -2,45 +2,59 @@ import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control emissive color contribution.
+ *
  * @public
  */
 export interface MtlEmissionDefs {
   /**
-   * Adds EmissionColor
-   */
-  EMISSION_COLOR?: any
-  /**
-   * Adds EmissionMap texture
-   */
-  EMISSION_MAP?: any
-  /**
-   * Defines the uv accessor
+   * Enables emission color
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform vec3 uEmissionColor` ( bound as `EmissionColor`)
+   * that is used as emitted color.
+   * If a `EmissionMap` is used, then both are multiplied.
    */
-  EMISSION_MAP_UV?: any
+  EMISSION_COLOR?: boolean
   /**
-   * Adds offset and scale operation on EmissionMap
+   * Enables emission color from texture
+   *
+   * @remarks
+   * Adds a `uniform sampler2D uEmissionMap` (bound as `EmissionMap`)
+   * that is used as emissive surface color.
+   * If a `EmissionColor` is used, then both are multiplied.
    */
-  EMISSION_MAP_OFFSET_SCALE?: any
+  EMISSION_MAP?: boolean
+  /**
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
+   */
+  EMISSION_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
+   *
+   * @remarks
+   * Adds a `uniform vec4 uEmissionMapScaleOffset` (bound as `EmissionMapScaleOffset`)
+   * that is used to transform the texture coordinates.
+   * This is done in pixel shader for the EmissionMap only.
+   */
+  EMISSION_MAP_SCALE_OFFSET?: boolean
 }
 
 /**
- * Adds Emission texture / color to the shader
+ * Contributes emission lighting and mapping to the shader
  *
  * @public
  * @remarks
- * Uses defines
  *
- * - `EMISSION_MAP` enables emission texture
- * - `EMISSION_MAP_UV` defaults to `vTexture.xy`
- * - `EMISSION_COLOR` enables emission color
+ * - {@link MtlEmissionDefs.EMISSION_COLOR}
+ * - {@link MtlEmissionDefs.EMISSION_MAP}
+ * - {@link MtlEmissionDefs.EMISSION_MAP_UV}
+ * - {@link MtlEmissionDefs.EMISSION_MAP_SCALE_OFFSET}
  */
 export const MTL_EMISSION: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef EMISSION_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE1
       #endif
 
@@ -52,27 +66,27 @@ export const MTL_EMISSION: ShaderChunkSet = Object.freeze({
   uniforms: glsl`
     #ifdef EMISSION_COLOR
     // @binding EmissionColor
-    // @widget   color
-    // @default  [1, 1, 1]
+    // @widget  color
+    // @default [1, 1, 1]
     uniform vec3 uEmissionColor;
     #endif
 
     #ifdef EMISSION_MAP
     // @binding EmissionMap
-    // @filter   LinearWrap
+    // @filter  LinearWrap
     uniform sampler2D uEmissionMap;
     #endif
 
-    #ifdef EMISSION_MAP_OFFSET_SCALE
-    // @binding EmissionMapOffsetScale
-    uniform vec4 uEmissionMapOffsetScale;
+    #ifdef EMISSION_MAP_SCALE_OFFSET
+    // @binding EmissionMapScaleOffset
+    uniform vec4 uEmissionMapScaleOffset;
     #endif
   `,
   functions: glsl`
     #ifdef EMISSION_MAP
     vec2 getEmissionMapUV() {
-      #ifdef EMISSION_MAP_OFFSET_SCALE
-      return EMISSION_MAP_UV * uEmissionMapOffsetScale.zw + uEmissionMapOffsetScale.xy;
+      #ifdef EMISSION_MAP_SCALE_OFFSET
+      return EMISSION_MAP_UV * uEmissionMapScaleOffset.xy + uEmissionMapScaleOffset.zw;
       #else
       return EMISSION_MAP_UV;
       #endif
@@ -87,7 +101,7 @@ export const MTL_EMISSION: ShaderChunkSet = Object.freeze({
       #endif
 
     #elif defined(EMISSION_COLOR)
-    surface.Emission = uEmissionColor;
+    surface.Emission.rgb = uEmissionColor;
     #endif
   `,
 })

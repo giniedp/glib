@@ -66,17 +66,17 @@ async function convertMaterial(mtl: MtlData, context: PipelineContext): Promise<
       params[name] = resolveUri(param.file, context)
       if (param.options) {
         const options = param.options
-        const offsetScale = [0, 0, 1, 1]
-        if (options.o) {
-          offsetScale[0] = options.o[0] || 0
-          offsetScale[1] = options.o[1] || 0
-        }
+        const offsetScale = [1, 1, 0, 0]
         if (options.s) {
-          offsetScale[2] = options.s[0]
-          offsetScale[3] = options.s[1]
+          offsetScale[0] = options.s[0]
+          offsetScale[1] = options.s[1]
+        }
+        if (options.o) {
+          offsetScale[2] = options.o[0] || 0
+          offsetScale[3] = options.o[1] || 0
         }
         if (options.o || options.s) {
-          params[name + 'OffsetScale'] = offsetScale
+          params[name + 'ScaleOffset'] = offsetScale
         }
       }
     }

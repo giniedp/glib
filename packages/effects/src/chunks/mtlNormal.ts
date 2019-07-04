@@ -1,70 +1,79 @@
-// tslint:disable:max-line-length
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control normal mapping.
+ *
  * @public
  */
 export interface MtlNormalDefs {
   /**
-   * Adds NormalMap texture
-   */
-  NORMAL_MAP?: any
-  /**
-   * Defines the uv accessor
+   * Enables normal color from texture
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform sampler2D uNormalMap` (bound as `NormalMap`) that is used as surface color.
    */
-  NORMAL_MAP_UV?: any
+  NORMAL_MAP?: boolean
   /**
-   * Adds offset and scale operation on NormalMap
+   * Allows to override the texture coordinates. Default is `vTexture.xy`.
    */
-  NORMAL_MAP_OFFSET_SCALE?: any
+  NORMAL_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
+   *
+   * @remarks
+   * Adds a `uniform vec4 uNormalMapScaleOffset` that is used to transform the texture coordinates.
+   * This is done in pixel shader for the NormalMap only.
+   */
+  NORMAL_MAP_SCALE_OFFSET?: boolean
+  // /**
+  //  * Indicates that the geometry is rendered from both sides
+  //  *
+  //  * @remarks
+  //  * Flips the normal for shading when shaded from back face
+  //  */
+  // TWOSIDED?: boolean
 }
 
 /**
- * Adds Diffuse or Albedo texture / color to the shader
+ * Contributes normal lighting and mapping to the shader
  *
  * @public
  * @remarks
- * Uses defines
  *
- * - `NORMAL_MAP` enables texture
- * - `NORMAL_MAP_UV` defaults to `vTexture.xy`
+ * - {@link MtlNormalDefs.NORMAL_MAP}
+ * - {@link MtlNormalDefs.NORMAL_MAP_UV}
+ * - {@link MtlNormalDefs.NORMAL_MAP_SCALE_OFFSET}
  */
 export const MTL_NORMAL: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef NORMAL_MAP
+      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE1
+      #endif
 
-    #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
-      #define V_TEXTURE1
-    #endif
-
-    #ifndef NORMAL_MAP_UV
-      #define NORMAL_MAP_UV vTexture.xy
-    #endif
-
+      #ifndef NORMAL_MAP_UV
+        #define NORMAL_MAP_UV vTexture.xy
+      #endif
     #endif
   `,
   uniforms: glsl`
     #ifdef NORMAL_MAP
     // @binding NormalMap
-    // @filter   LinearWrap
+    // @filter  LinearWrap
     uniform sampler2D uNormalMap;
-
-    #ifdef NORMAL_MAP_OFFSET_SCALE
-    // @binding NormalMapOffsetScale
-    uniform vec4 uNormalMapOffsetScale;
     #endif
 
+    #ifdef NORMAL_MAP_SCALE_OFFSET
+    // @binding NormalMapScaleOffset
+    uniform vec4 uNormalMapScaleOffset;
     #endif
   `,
   functions: glsl`
     #ifdef NORMAL_MAP
     vec2 getNormalMapUV() {
-      #ifdef NORMAL_MAP_OFFSET_SCALE
-      return NORMAL_MAP_UV * uNormalMapOffsetScale.zw + uNormalMapOffsetScale.xy;
+      #ifdef NORMAL_MAP_SCALE_OFFSET
+      return NORMAL_MAP_UV * uNormalMapScaleOffset.xy + uNormalMapScaleOffset.zw;
       #else
       return NORMAL_MAP_UV;
       #endif
@@ -77,5 +86,8 @@ export const MTL_NORMAL: ShaderChunkSet = Object.freeze({
     #elif defined(V_NORMAL)
     surface.Normal.xyz = normalize(vWorldNormal.xyz);
     #endif
+    // #if defined(TWOSIDED)
+    // surface.Normal.xyz *= gl_FrontFacing ? 1.0 : -1.0;
+    // #endif
   `,
 })

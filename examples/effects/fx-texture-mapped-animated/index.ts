@@ -10,7 +10,7 @@ const device = new Device({
 const textureMappedEffect = device.createEffect({
   program: defaultProgram({
     DIFFUSE_MAP: true,
-    DIFFUSE_MAP_OFFSET_SCALE: true,
+    DIFFUSE_MAP_SCALE_OFFSET: true,
   }),
 })
 
@@ -82,11 +82,11 @@ loop((dt) => {
     mtl.parameters.Projection = proj
     mtl.parameters.CameraPosition = cam.getTranslation()
     const t = Math.sin(time / 1000)
-    mtl.parameters.DiffuseMapOffsetScale = [
-      -t * 0.5, // offset X
-      -t * 0.5, // offset Y
+    mtl.parameters.DiffuseMapScaleOffset = [
       t + 1,    // scale X
       t + 1,    // scale Y
+      -t * 0.5, // offset X
+      -t * 0.5, // offset Y
     ]
   })
   model.draw()

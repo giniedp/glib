@@ -212,17 +212,17 @@ async function loadMaterial(
 function readTextureTransforms(params: any, name: string, info: TextureInfo) {
   if (info.extensions && info.extensions[KHR_texture_transform]) {
     const transform = info.extensions[KHR_texture_transform] as TextureTransform
-    const offsetScale = [0, 0, 1, 1]
-    if (transform.offset) {
-      offsetScale[0] = transform.offset[0] || 0
-      offsetScale[1] = transform.offset[1] || 0
-    }
+    const offsetScale = [1, 1, 0, 0]
     if (transform.scale) {
-      offsetScale[2] = transform.scale[0]
-      offsetScale[3] = transform.scale[1]
+      offsetScale[0] = transform.scale[0]
+      offsetScale[1] = transform.scale[1]
+    }
+    if (transform.offset) {
+      offsetScale[2] = transform.offset[0] || 0
+      offsetScale[3] = transform.offset[1] || 0
     }
     if (transform.offset || transform.scale) {
-      params[name + 'OffsetScale'] = offsetScale
+      params[name + 'ScaleOffset'] = offsetScale
     }
   }
 }

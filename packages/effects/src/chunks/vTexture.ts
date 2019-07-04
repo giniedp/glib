@@ -8,21 +8,21 @@ export interface VTextureDefs {
   /**
    * Enables the first vertex texture attribute
    */
-  V_TEXTURE1?: any
+  V_TEXTURE1?: boolean
   /**
    * Enables a second vertex texture attribute
    */
-  V_TEXTURE2?: any
+  V_TEXTURE2?: boolean
 
   /**
    * Offsets and scales Texture 1 coordinates
    */
-  V_TEXTURE1_OFFSET_SCALE?: any
+  V_TEXTURE1_SCALE_OFFSET?: boolean
 
   /**
    * Offsets and scales Texture 2 coordinates
    */
-  V_TEXTURE2_OFFSET_SCALE?: any
+  V_TEXTURE2_SCALE_OFFSET?: boolean
 }
 
 /**
@@ -50,27 +50,27 @@ export const V_TEXTURE: ShaderChunkSet = Object.freeze({
     #endif
   `,
   uniforms: glsl`
-    #ifdef V_TEXTURE1_OFFSET_SCALE
-    // @binding TextureOffsetScale
-    uniform vec4 uTexture1OffsetScale;
+    #ifdef V_TEXTURE1_SCALE_OFFSET
+    // @binding TextureScaleOffset
+    uniform vec4 uTexture1ScaleOffset;
     #endif
-    #ifdef V_TEXTURE2_OFFSET_SCALE
-    // @binding Texture2OffsetScale
-    uniform vec4 uTexture2OffsetScale;
+    #ifdef V_TEXTURE2_SCALE_OFFSET
+    // @binding Texture2ScaleOffset
+    uniform vec4 uTexture2ScaleOffset;
     #endif
   `,
   vs_texture: glsl`
     #ifdef V_TEXTURE1
     vTexture = aTexture;
-    #ifdef V_TEXTURE1_OFFSET_SCALE
-    vTexture = uTexture1OffsetScale.xy + vTexture * uTexture1OffsetScale.zw;
+    #ifdef V_TEXTURE1_SCALE_OFFSET
+    vTexture = vTexture * uTexture1ScaleOffset.xy + uTexture1ScaleOffset.zw;
     #endif
     #endif
 
     #ifdef V_TEXTURE2
     vTexture2 = aTexture2;
-    #ifdef V_TEXTURE2_OFFSET_SCALE
-    vTexture2 = uTexture2OffsetScale.xy + vTexture2 * uTexture2OffsetScale.zw;
+    #ifdef V_TEXTURE2_SCALE_OFFSET
+    vTexture2 = vTexture2 * uTexture2ScaleOffset.xy + uTexture2ScaleOffset.zw;
     #endif
     #endif
   `,

@@ -5,7 +5,7 @@ import { glsl } from '../glsl'
  * @public
  */
 export interface ShadeDefs {
-  SHADE_FUNCTION?: any
+  SHADE_FUNCTION?: string
 }
 
 /**
@@ -40,8 +40,8 @@ export const SHADE: ShaderChunkSet = Object.freeze({
   functions_after: glsl`
     highp vec4 shade(in SurfaceParams surface) {
       #ifdef LIGHT
+      vec4 color = vec4(0.0, 0.0, 0.0, surface.Diffuse.a);
       vec3 toEye = normalize(vToEyeInWS);
-      vec4 color = vec4(surface.Diffuse.rgb * getAmbientColor(), surface.Diffuse.a);
       for (int i = 0; i < LIGHT_COUNT; i++)
       {
         LightParams light = uLights[i];
@@ -54,7 +54,6 @@ export const SHADE: ShaderChunkSet = Object.freeze({
         color.rgb += SHADE_FUNCTION(shade, surface).rgb;
       }
       color.rgb += surface.Emission.rgb;
-
       return color;
       #else
       return surface.Diffuse;

@@ -2,40 +2,52 @@ import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 
 /**
+ * Describes preprocessor definitions which control ambient light color contribution.
+ *
  * @public
  */
 export interface MtlAmbientDefs {
   /**
-   * Enables constant AmbientColor
-   */
-  AMBIENT_COLOR?: any
-  /**
-   * Enables the ambient texture
-   */
-  AMBIENT_MAP?: any
-  /**
-   * Defines the uv accessor
+   * Enables ambient lighting with constant color
    *
    * @remarks
-   * defaults to `vTexture.xy`
+   * Adds a `uniform vec3 uAmbientColor` (bound as `AmbientColor`)
+   * that is added to the final output.
    */
-  AMBIENT_MAP_UV?: any
+  AMBIENT_COLOR?: boolean
   /**
-   * Adds offset and scale operation on AmbientMap
+   * Enables ambient lighting with color from a texture
+   *
+   * @remarks
+   * Adds a `uniform sampler2D uAmbientMap` (bound as `AmbientMap`)
+   * that is added to the final output.
    */
-  AMBIENT_MAP_OFFSET_SCALE?: any
+  AMBIENT_MAP?: boolean
+  /**
+   * Allows to override the texture coordinates. Default is `vTexture.xy`
+   */
+  AMBIENT_MAP_UV?: string
+  /**
+   * Allows to scale and offset the texture
+   *
+   * @remarks
+   * Adds a `uniform vec4 uAmbientMapScaleOffset` (bound as `AmbientMapScaleOffset`)
+   * that is used to transform the texture coordinates.
+   * This is done in pixel shader for the AmbientMap only.
+   */
+  AMBIENT_MAP_SCALE_OFFSET?: boolean
 }
 
 /**
- * Adds Diffuse or Albedo texture / color to the shader
+ * Contributes ambient lighting and mapping to the shader
  *
  * @public
  * @remarks
- * Uses defines
  *
- * - `AMBIENT_MAP` enables texture
- * - `AMBIENT_MAP_UV` defaults to `vTexture.xy`
- * - `AMBIENT_COLOR` enables vertex color
+ * - {@link MtlAmbientDefs.AMBIENT_COLOR}
+ * - {@link MtlAmbientDefs.AMBIENT_MAP}
+ * - {@link MtlAmbientDefs.AMBIENT_MAP_UV}
+ * - {@link MtlAmbientDefs.AMBIENT_MAP_SCALE_OFFSET}
  */
 export const MTL_AMBIENT: ShaderChunkSet = Object.freeze({
   defines: glsl`
@@ -52,36 +64,47 @@ export const MTL_AMBIENT: ShaderChunkSet = Object.freeze({
   uniforms: glsl`
     #ifdef AMBIENT_COLOR
     // @binding AmbientColor
-    // @widget   color
-    // @default  [1, 1, 1]
+    // @widget  color
+    // @default [1, 1, 1]
     uniform vec3 uAmbientColor;
     #endif
 
     #ifdef AMBIENT_MAP
-    // @binding  AmbientMap
-    // @filter   LinearWrap
+    // @binding AmbientMap
+    // @filter  LinearWrap
     uniform sampler2D uAmbientMap;
+    #endif
+
+    #ifdef AMBIENT_MAP_SCALE_OFFSET
+    // @binding AmbientMapScaleOffset
+    uniform vec4 uAmbientMapScaleOffset;
     #endif
   `,
   functions: glsl`
-    highp vec3 getAmbientColor() {
-      #if defined(AMBIENT_MAP) && defined(AMBIENT_COLOR)
-      return (texture2D(uAmbientMap, getAmbientMapUV()).rgb * uAmbientColor);
-      #elif defined(AMBIENT_MAP)
-      return texture2D(uAmbientMap, getAmbientMapUV()).rgb;
-      #elif defined(AMBIENT_COLOR)
-      return uAmbientColor;
-      #endif
-      return vec3(0, 0, 0);
-    }
     #ifdef AMBIENT_MAP
     vec2 getAmbientMapUV() {
-      #ifdef AMBIENT_MAP_OFFSET_SCALE
-      return AMBIENT_MAP_UV * uAmbientMapOffsetScale.zw + uAmbientMapOffsetScale.xy;
+      #ifdef AMBIENT_MAP_SCALE_OFFSET
+      return AMBIENT_MAP_UV * uAmbientMapScaleOffset.xy + uAmbientMapScaleOffset.zw;
       #else
       return AMBIENT_MAP_UV;
       #endif
     }
+    #endif
+    vec3 getAmbientColor(vec2 uvOffset) {
+      vec3 result = vec3(0.0, 0.0, 0.0);
+      #if defined(AMBIENT_MAP)
+      result += texture2D(uAmbientMap, getAmbientMapUV() + uvOffset).rgb;
+      #endif
+
+      #if defined(AMBIENT_COLOR)
+      result += uAmbientColor;
+      #endif
+      return result;
+    }
+  `,
+  fs_shade_after: glsl`
+    #if defined(AMBIENT_MAP) || defined(AMBIENT_COLOR)
+    color.rgb += getAmbientColor(uvOffset);
     #endif
   `,
 

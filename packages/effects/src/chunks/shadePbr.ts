@@ -48,7 +48,7 @@ export const SHADE_PBR: ShaderChunkSet = Object.freeze({
       float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
 
       // For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
-      // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
+      // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflectance to 0%.
       float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
       vec3 R0 = specularColor.rgb;
 

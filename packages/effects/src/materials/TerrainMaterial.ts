@@ -24,7 +24,7 @@ const tempMat4 = Mat4.createIdentity()
 export class TerrainMaterial extends Material {
 
   public get ShadeFunction(): ShadeFunction {
-    return this.defines.SHADE_FUNCTION
+    return this.defines.SHADE_FUNCTION as any
   }
   public set ShadeFunction(name: ShadeFunction) {
     if (this.ShadeFunction !== name) {

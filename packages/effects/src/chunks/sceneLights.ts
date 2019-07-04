@@ -8,42 +8,42 @@ export interface LightDefs {
   /**
    * Enables lighting
    */
-  LIGHT?: any
+  LIGHT?: true
   /**
    * Defines total number of lights
    *
    * @remarks
    * defaults to `4`
    */
-  LIGHT_COUNT?: any
+  LIGHT_COUNT?: number
   /**
    * Defines the light type constant for no light
    *
    * @remarks
    * defaults to `0`
    */
-  LIGHT_TYPE_NONE?: any
+  LIGHT_TYPE_NONE?: number
   /**
    * Defines the light type constant for directional light
    *
    * @remarks
    * defaults to `1`
    */
-  LIGHT_TYPE_DIRECTIONAL?: any
+  LIGHT_TYPE_DIRECTIONAL?: number
   /**
    * Defines the light type constant for point light
    *
    * @remarks
    * defaults to `2`
    */
-  LIGHT_TYPE_POINT?: any
+  LIGHT_TYPE_POINT?: number
   /**
    * Defines the light type constant for spot light
    *
    * @remarks
    * defaults to `3`
    */
-  LIGHT_TYPE_SPOT?: any
+  LIGHT_TYPE_SPOT?: number
 }
 
 /**
