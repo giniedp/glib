@@ -14,6 +14,7 @@ const lightingEffect = device.createEffect({
     NORMAL_MAP: true,
     PARALLAX_MAP: true,
     PARALLAX_OCCLUSION: true,
+    AMBIENT_MAP: true,
     V_TANGENT: true,
     LIGHT: true,
     LIGHT_COUNT: 1,
@@ -39,9 +40,10 @@ const model = ModelBuilder.begin().tap((b) => {
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_d.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_n.png' }),
-        ParallaxMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_h.png' }),
+        AmbientMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_AO.png' }),
+        DiffuseMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_Base_Color.png' }),
+        NormalMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_Normal.png' }),
+        ParallaxMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_Height.png' }),
         ParallaxScaleBias: [0.04, 0.01],
       },
     }],
