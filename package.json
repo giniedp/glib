@@ -20,8 +20,8 @@
     "url": "github.com/giniedp/glib.git"
   },
   "devDependencies": {
-    "@microsoft/api-documenter": "^7.3.1",
-    "@microsoft/api-extractor": "^7.1.8",
+    "@microsoft/api-documenter": "~7.2.0",
+    "@microsoft/api-extractor": "~7.2.0",
     "@types/del": "^4.0.0",
     "@types/gulp": "^4.0.6",
     "@types/jasmine": "^2.5.53",
