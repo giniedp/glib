@@ -37,17 +37,9 @@ export interface MtlOcclusionDefs {
 }
 
 /**
- * Adds Occlusion texture to the shader
- *
- * @public
- * @remarks
- *
- * - {@link MtlOcclusionDefs.OCCLUSION_MAP}
- * - {@link MtlOcclusionDefs.OCCLUSION_MAP_UV}
- * - {@link MtlOcclusionDefs.OCCLUSION_MAP_CHANNEL}
- * - {@link MtlOcclusionDefs.OCCLUSION_MAP_SCALE_OFFSET}
+ * Adds Occlusion texture to the shader. See {@link MtlOcclusionDefs}
  */
-export const MTL_OCCLUSION: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_OCCLUSION: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef OCCLUSION_MAP
       #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)

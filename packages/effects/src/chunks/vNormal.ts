@@ -25,7 +25,7 @@ export interface VNormalDefs {
 /**
  * @public
  */
-export const V_NORMAL: ShaderChunkSet = Object.freeze({
+export const FXC_V_NORMAL: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #if defined(V_TANGENT) || defined(V_TANGENT_PLANE)
     #define V_NORMAL

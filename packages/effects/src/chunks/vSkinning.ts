@@ -28,7 +28,7 @@ export interface VSkinningDefs {
 /**
  * @public
  */
-export const V_SKINNING: ShaderChunkSet = Object.freeze({
+export const FXC_V_SKINNING: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #if defined(SKINNING_BONE_COUNT) || defined(SKINNING_WEIGHT_COUNT)
       #define SKINNING

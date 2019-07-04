@@ -42,18 +42,9 @@ export interface MtlParallaxDefs {
 }
 
 /**
- * Contributes parallax mapping to the shader
- *
- * @public
- * @remarks
- *
- * - {@link MtlNormalDefs.PARALLAX_MAP}
- * - {@link MtlNormalDefs.PARALLAX_MAP_UV}
- * - {@link MtlNormalDefs.PARALLAX_MAP_SCALE_OFFSET}
- * - {@link MtlNormalDefs.PARALLAX_OCCLUSION}
- * - {@link MtlNormalDefs.PARALLAX_OCCLUSION_SAMPLES}
+ * Contributes parallax mapping to the shader. See {@link MtlParallaxDefs}
  */
-export const MTL_PARALLAX: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_PARALLAX: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef PARALLAX_MAP
 

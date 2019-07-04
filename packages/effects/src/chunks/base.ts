@@ -6,7 +6,7 @@ import { glsl } from '../glsl'
  *
  * @public
  */
-export const BASE: ShaderChunk = glsl`
+export const FXC_BASE: ShaderChunk = glsl`
 #pragma block:version
 
 #pragma block:extensions

@@ -15,7 +15,7 @@ export interface VertexAttribute {
   /**
    * Offset in bytes from beginning of vertex to this attribute
    */
-  offset: number
+  offset?: number
   /**
    * The data type of a single element in the vertex attribute
    */
@@ -49,7 +49,7 @@ export class VertexLayout {
   /**
    * Contains vertex attribute presets for common attribute names like `position`, `color`, `texture` etc.
    */
-  public static preset: { [key: string]: Omit<VertexAttribute, 'offset'> } = {
+  public static preset: { [key: string]: VertexAttribute } = {
     position: {
       type: 'float',
       elements: 3,

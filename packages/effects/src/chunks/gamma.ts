@@ -28,7 +28,7 @@ export interface GammaDefs {
  *  - `GAMMA_CORRECTION` - enables gamma correction
  *  - `GAMMA` - defaults to 2.2
  */
-export const GAMMA: ShaderChunkSet = Object.freeze({
+export const FXC_GAMMA: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifndef GAMMA
     #define GAMMA 2.2

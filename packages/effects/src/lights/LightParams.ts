@@ -71,7 +71,8 @@ export class LightParams {
   /**
    * Gets and sets the width of the light source rectangle
    *
-   * @only applicable to area light types
+   * @remarks
+   * only applicable to area light types
    */
   public get width() {
     return this.dataRow2[3]
@@ -83,7 +84,8 @@ export class LightParams {
   /**
    * Gets and sets the height of the light source rectangle
    *
-   * @only applicable to area light types
+   * @remarks
+   * only applicable to area light types
    */
   public get height() {
     return this.dataRow3[3]

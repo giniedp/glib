@@ -41,17 +41,9 @@ export interface MtlEmissionDefs {
 }
 
 /**
- * Contributes emission lighting and mapping to the shader
- *
- * @public
- * @remarks
- *
- * - {@link MtlEmissionDefs.EMISSION_COLOR}
- * - {@link MtlEmissionDefs.EMISSION_MAP}
- * - {@link MtlEmissionDefs.EMISSION_MAP_UV}
- * - {@link MtlEmissionDefs.EMISSION_MAP_SCALE_OFFSET}
+ * Contributes emission lighting and mapping to the shader. See {@link MtlEmissionDefs}
  */
-export const MTL_EMISSION: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_EMISSION: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef EMISSION_MAP
       #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)

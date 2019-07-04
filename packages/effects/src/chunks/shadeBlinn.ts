@@ -9,7 +9,7 @@ export type SHADE_BLINN_FUNCTION = 'shadeBlinn'
 /**
  * @public
  */
-export const SHADE_BLINN: ShaderChunkSet = Object.freeze({
+export const FXC_SHADE_BLINN: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeBlinn(
       inout ShadeParams shade,

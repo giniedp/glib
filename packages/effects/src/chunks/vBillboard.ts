@@ -20,7 +20,7 @@ export interface VBillboardDefs {
  *
  *  - BILLBOARD
  */
-export const V_BILLBOARD: ShaderChunkSet = Object.freeze({
+export const FXC_V_BILLBOARD: ShaderChunkSet = Object.freeze({
   uniforms: glsl`
     #ifdef BILLBOARD
     // @binding BillboardSize

@@ -4,7 +4,7 @@ import { glsl } from '../glsl'
 /**
  * @public
  */
-export const MAIN: ShaderChunkSet = Object.freeze({
+export const FXC_BASE_MAIN: ShaderChunkSet = Object.freeze({
   vs: glsl`
     void main() {
       #pragma block:vs_start

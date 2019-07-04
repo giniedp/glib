@@ -9,7 +9,7 @@ export type SHADE_OPTIMIZED_FUNCTION = 'shadeOptimized'
 /**
  * @public
  */
-export const SHADE_OPTIMIZED: ShaderChunkSet = Object.freeze({
+export const FXC_SHADE_OPTIMIZED: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeOptimized(
       inout ShadeParams shade,

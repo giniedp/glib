@@ -6,7 +6,7 @@ import { glsl } from '../glsl'
  *
  * @public
  */
-export const COMMON: ShaderChunkSet = Object.freeze({
+export const FXC_COMMON: ShaderChunkSet = Object.freeze({
   attributes: glsl`
     // @binding position
     // @remarks The vertex position attribute

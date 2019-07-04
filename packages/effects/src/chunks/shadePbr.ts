@@ -11,7 +11,7 @@ export type SHADE_PBR_FUNCTION = 'shadePbr'
 /**
  * @public
  */
-export const SHADE_PBR: ShaderChunkSet = Object.freeze({
+export const FXC_SHADE_PBR: ShaderChunkSet = Object.freeze({
   functions: glsl`
     // This calculates the specular geometric attenuation (aka G()),
     // where rougher material will reflect less light back to the viewer.

@@ -18,7 +18,7 @@ export interface VColorDefs {
  * @public
  */
 
-export const V_COLOR: ShaderChunkSet = Object.freeze({
+export const FXC_V_COLOR: ShaderChunkSet = Object.freeze({
   attributes: glsl`
     #ifdef V_COLOR1
     // @binding color

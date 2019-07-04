@@ -50,18 +50,11 @@ export interface MtlAlphaDefs {
 }
 
 /**
- * Adds alpha clip functionality to a shader
+ * Adds alpha clip functionality to a shader. See {@link MtlAlphaDefs}
  *
  * @public
- * @remarks
- *
- * - {@link MtlMetallicRoughness.ALPHA}
- * - {@link MtlMetallicRoughness.ALPHA_MAP}
- * - {@link MtlMetallicRoughness.ALPHA_MAP_UV}
- * - {@link MtlMetallicRoughness.ALPHA_MAP_CHANNEL}
- * - {@link MtlMetallicRoughness.ALPHA_CLIP}
  */
-export const MTL_ALPHA: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_ALPHA: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef ALPHA_MAP
       #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)

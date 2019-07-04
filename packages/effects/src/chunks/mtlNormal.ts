@@ -36,16 +36,9 @@ export interface MtlNormalDefs {
 }
 
 /**
- * Contributes normal lighting and mapping to the shader
- *
- * @public
- * @remarks
- *
- * - {@link MtlNormalDefs.NORMAL_MAP}
- * - {@link MtlNormalDefs.NORMAL_MAP_UV}
- * - {@link MtlNormalDefs.NORMAL_MAP_SCALE_OFFSET}
+ * Contributes normal lighting and mapping to the shader. See {@link MtlNormalDefs}
  */
-export const MTL_NORMAL: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_NORMAL: ShaderChunkSet = Object.freeze({
   defines: glsl`
     #ifdef NORMAL_MAP
       #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
