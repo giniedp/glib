@@ -67,7 +67,7 @@ export class TerrainMaterial extends Material {
   }
 
   /**
-   * The number of simultanious lights
+   * The number of simultaneous lights
    *
    * @remarks
    * Changing this value forces the shader to recompile. This value must be set
@@ -121,13 +121,10 @@ export class TerrainMaterial extends Material {
    * Requires the the fog effect to be enabled via `FogColor` parameter.
    */
   public get FogStart(): number {
-    const params = this.parameters.FogParams
-    return params ? params[0] : 0
+    return this.readFogParameter(0)
   }
   public set FogStart(v: number) {
-    const params = this.parameters.FogParams || [0, 0, 0, 0]
-    params[0] = v
-    this.parameters.FogParams = params
+    this.writeFogParameter(0, v)
   }
 
   /**
@@ -137,13 +134,10 @@ export class TerrainMaterial extends Material {
    * Requires the the fog effect to be enabled via `FogColor` parameter.
    */
   public get FogEnd(): number {
-    const params = this.parameters.FogParams
-    return params ? params[1] : 0
+    return this.readFogParameter(1)
   }
   public set FogEnd(v: number) {
-    const params = this.parameters.FogParams || [0, 0, 0, 0]
-    params[1] = v
-    this.parameters.FogParams = params
+    this.writeFogParameter(1, v)
   }
 
   /**
@@ -153,13 +147,10 @@ export class TerrainMaterial extends Material {
    * Requires the the fog effect to be enabled via `FogColor` parameter.
    */
   public get FogDensity(): number {
-    const params = this.parameters.FogParams
-    return params ? params[2] : 0
+    return this.readFogParameter(2)
   }
   public set FogDensity(v: number) {
-    const params = this.parameters.FogParams || [0, 0, 0, 0]
-    params[2] = v
-    this.parameters.FogParams = params
+    this.writeFogParameter(2, v)
   }
 
   /**
@@ -169,13 +160,10 @@ export class TerrainMaterial extends Material {
    * Requires the the fog effect to be enabled via `FogColor` parameter.
    */
   public get FogType(): number {
-    const params = this.parameters.FogParams
-    return params ? params[3] : 0
+    return this.readFogParameter(3)
   }
   public set FogType(v: number) {
-    const params = this.parameters.FogParams || [0, 0, 0, 0]
-    params[3] = v
-    this.parameters.FogParams = params
+    this.writeFogParameter(3, v)
   }
 
   /**
@@ -374,6 +362,18 @@ export class TerrainMaterial extends Material {
    */
   public getLight(index: number): LightParams {
     return this.lights[index]
+  }
+
+  private fogParamsDefaults = [0, 0, 0, 0]
+  private readFogParameter(component: number) {
+    const params = this.parameters.FogParams || this.fogParamsDefaults
+    return params[component]
+  }
+
+  private writeFogParameter(component: number, value: number) {
+    const params = this.parameters.FogParams || [...this.fogParamsDefaults]
+    params[component] = value
+    this.parameters.FogParams = params
   }
 
   private setParamValue(params: any, name: string | number | symbol, value: any) {

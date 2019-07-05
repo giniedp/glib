@@ -47,7 +47,7 @@ export interface MtlMetallicRoughness {
 /**
  * Adds Diffuse or Albedo texture / color to the shader. See {@link MtlMetallicRoughness}
  */
-export const FXC_MTL_METALLIC_ROUGHNESS: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = Object.freeze({
   defines: glsl`
     #ifdef METALLIC_ROUGHNESS_MAP
       #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)

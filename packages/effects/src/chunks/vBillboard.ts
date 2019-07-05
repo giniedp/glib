@@ -13,14 +13,8 @@ export interface VBillboardDefs {
 
 /**
  * Adds billboard functionality to a shader
- *
- * @public
- * @remarks
- * Uses the following defines
- *
- *  - BILLBOARD
  */
-export const FXC_V_BILLBOARD: ShaderChunkSet = Object.freeze({
+export const FXC_V_BILLBOARD: ShaderChunkSet<VBillboardDefs> = Object.freeze({
   uniforms: glsl`
     #ifdef BILLBOARD
     // @binding BillboardSize

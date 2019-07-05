@@ -36,7 +36,7 @@ export interface MtlSplattingDefs {
 /**
  * @public
  */
-export const FXC_MTL_SPLATTING: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = Object.freeze({
   uniforms: glsl`
     #ifdef SPLATTING
     // @binding  SplatMap

@@ -11,8 +11,7 @@ export const FXC_BASE: ShaderChunk = glsl`
 
 #pragma block:extensions
 
-precision highp float;
-precision highp int;
+#pragma block:precision
 
 #pragma block:defines
 

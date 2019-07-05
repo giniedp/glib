@@ -13,7 +13,7 @@ export type ShaderChunk = string
  *
  * @public
  */
-export interface ShaderChunkSet {
+export interface ShaderChunkSet<T = void> {
   [key: string]: ShaderChunk
 }
 

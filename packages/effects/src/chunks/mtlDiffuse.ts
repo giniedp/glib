@@ -43,7 +43,7 @@ export interface MtlDiffuseDefs {
 /**
  * Contributes diffuse lighting and mapping to the shader. See {@link MtlDiffuseDefs}
  */
-export const FXC_MTL_DIFFUSE: ShaderChunkSet = Object.freeze({
+export const FXC_MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = Object.freeze({
   defines: glsl`
     #ifdef DIFFUSE_MAP
       #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)

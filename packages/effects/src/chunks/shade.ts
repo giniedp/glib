@@ -16,7 +16,7 @@ export type ShadeFunctionNone = 'shadeNone'
 /**
  * @public
  */
-export const FXC_SHADE: ShaderChunkSet = Object.freeze({
+export const FXC_SHADE: ShaderChunkSet<ShadeDefs> = Object.freeze({
   defines: glsl`
     #ifndef SHADE_FUNCTION
     #define SHADE_FUNCTION shadeNone

@@ -5,6 +5,10 @@ import { glsl } from '../glsl'
  * @public
  */
 export const FXC_BASE_MAIN: ShaderChunkSet = Object.freeze({
+  precision: glsl`
+    precision highp float;
+    precision highp int;
+  `,
   vs: glsl`
     void main() {
       #pragma block:vs_start

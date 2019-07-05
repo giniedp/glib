@@ -40,10 +40,10 @@ const model = ModelBuilder.begin().tap((b) => {
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_Base_Color.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_Normal.png' }),
-        OcclusionMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_AO.png' }),
-        ParallaxMap: device.createTexture({ data: '/assets/textures/sharetextures/Red_stone_wall_01_1K_Height.png' }),
+        DiffuseMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_Base.png' }),
+        NormalMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_Normal.png' }),
+        OcclusionMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_AO.png' }),
+        ParallaxMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_Height.png' }),
         ParallaxScaleBias: [0.04, 0.01],
       },
     }],
