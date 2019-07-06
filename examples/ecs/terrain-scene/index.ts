@@ -1,4 +1,7 @@
-// tslint:disable:max-classes-per-file
+// # Terrain Scene
+//
+// ---
+//
 
 import {
   addBasicRenderer,
@@ -10,11 +13,14 @@ import {
   CameraComponent,
   createGame,
   Entity,
+  Inject,
   ModelComponent,
   OnAdded,
   OnInit,
   OnRemoved,
   OnUpdate,
+  Service,
+  TimeComponent,
   TransformComponent,
 } from '@gglib/ecs'
 
@@ -28,34 +34,35 @@ class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
   public name = 'Sky'
   public entity: Entity
+  public time: TimeComponent
   public transform: TransformComponent
-  public renderable: ModelComponent
 
-  public onAdded(entity: Entity) {
-    this.entity = entity
-    entity.root.addService(SkyComponent, this)
+  public onAdded(e: Entity) {
+    this.entity = e
+    e.root.addService(SkyComponent, this)
   }
 
-  public onRemoved(entity: Entity) {
-    entity.root.removeService(SkyComponent)
+  public onRemoved(e: Entity) {
+    e.root.removeService(SkyComponent)
     this.entity = null
   }
 
   public onInit(entity: Entity) {
+    this.time = entity.root.getService(TimeComponent)
+    this.transform = entity.getService(TransformComponent)
 
     const device = entity.root.getService(Device)
+    const content = entity.root.getService(ContentManager)
+    const renderable = entity.getService(ModelComponent)
 
-    this.transform = entity.getService(TransformComponent)
-    this.renderable = entity.getService(ModelComponent)
-
-    entity.root.getService(ContentManager).load('/assets/textures/Grey_Sky.png', Texture).then((texture) => {
+    content.load('/assets/textures/Grey_Sky.png', Texture).then((texture) => {
 
       const material = new AutoMaterial(device)
       material.DiffuseMap = texture
       material.ShadeFunction = 'shadeNone'
       material.LightCount = 0
 
-      this.renderable.model = ModelBuilder.begin()
+      renderable.model = ModelBuilder.begin()
         .tap((b) => {
           buildSphere(b, {
             radius: 1,
@@ -73,61 +80,67 @@ class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
     const camera = this.entity.root.children.find((it) => it.name === 'Camera')
     this.transform.setPosition(camera.getService(TransformComponent).position)
     this.transform.setScaleUniform(camera.getService(CameraComponent).far - 1)
+    this.transform.setRotationXYZAngle(0, 1, 0, Math.PI / 180 * this.time.totalMsInGame / 1000)
   }
 }
 
-class TerrainComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
+// tslint:disable-next-line: max-classes-per-file
+@Service({ at: 'root' })
+class TerrainComponent implements OnInit, OnUpdate {
 
   public name = 'Terrain'
+
+  @Inject(Device, { from: 'root' })
+  public device: Device
+
+  @Inject(ContentManager, { from: 'root' })
+  public content: ContentManager
+
+  @Inject(Entity)
   public entity: Entity
 
-  public heightmap: HeightMap = null
+  @Inject(TransformComponent)
   public transform: TransformComponent
+
+  @Inject(ModelComponent)
   public renderable: ModelComponent
+
   public bttRoot: BTTRoot
+  public heightmap: HeightMap = null
 
-  public onAdded(entity: Entity) {
-    this.entity = entity
-    entity.root.addService(TerrainComponent, this)
-  }
+  public onInit() {
 
-  public onRemoved(entity: Entity) {
-    entity.root.removeService(TerrainComponent)
-    this.entity = null
-  }
-
-  public onInit(entity: Entity) {
-
-    const device = entity.root.getService(Device)
-
-    this.transform = entity.getService(TransformComponent)
-    this.renderable = entity.getService(ModelComponent)
-
-    entity.root.getService(ContentManager).loadBatch({
-      heightmap: ['/assets/heightmaps/heightmap1.png', Image],
+    const device = this.device
+    this.content.loadBatch({
+      heightmap: ['/assets/heightmaps/heightmap_rgb.png', Image],
     }).then((res) => {
 
-      const heightmap = HeightMap.fromImage(res.heightmap).smooth().calculateNormals()
-      const material = new TerrainMaterial(device)
-      material.SplatMap = device.createTexture({ data: '/assets/heightmaps/heightmap1-splat.png' })
-      material.DiffuseMap = device.createTexture({ data: '/assets/textures/terrain/grass.jpg' })
-      material.DiffuseMapR = device.createTexture({ data: '/assets/textures/terrain/mud.jpg' })
-      material.DiffuseMapG = device.createTexture({ data: '/assets/textures/terrain/earth.jpg' })
-      material.DiffuseMapB = device.createTexture({ data: '/assets/textures/terrain/dirt.jpg' })
-      material.DiffuseMapSlope = device.createTexture({ data: '/assets/textures/terrain/rock2.jpg' })
+      const heightmap = HeightMap.fromImage(res.heightmap).rescale(0.8).smooth().calculateNormals()
+      this.heightmap = heightmap
 
+      const material = new TerrainMaterial(device)
+      material.SplatMap = device.createTexture({ data: '/assets/heightmaps/heightmap_flow.png' })
+      material.DiffuseMap = device.createTexture({ data: '/assets/textures/terrain/savanna_green_d.jpg' })
+      material.DiffuseMapR = device.createTexture({ data: '/assets/textures/terrain/ground_dry_d.jpg' })
+      material.DiffuseMapG = device.createTexture({ data: '/assets/textures/terrain/ground_mud_d.jpg' })
+      material.DiffuseMapB = device.createTexture({ data: '/assets/textures/terrain/savanna_green_d.jpg' })
+      // material.DiffuseMapSlope = device.createTexture({ data: '/assets/textures/terrain/adesert_mntn4_d.jpg' })
+
+      material.NormalMap = device.createTexture({ data: '/assets/textures/terrain/savanna_green_n.jpg' })
+      material.NormalMapR = device.createTexture({ data: '/assets/textures/terrain/ground_dry_n.jpg' })
+      material.NormalMapG = device.createTexture({ data: '/assets/textures/terrain/ground_mud_n.jpg' })
+      material.NormalMapB = device.createTexture({ data: '/assets/textures/terrain/savanna_green_n.jpg' })
+
+      material.AmbientColor = [0.1, 0.1, 0.1]
+
+      material.FogType = 2
       material.FogStart = 0
-      material.FogEnd = 100
+      material.FogEnd = 500
       material.FogColor = [1, 1, 1]
-      // material.NormalMap = device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' })
-      // material.NormalMapA = material.NormalMap
-      // material.NormalMapR = material.NormalMap
-      // material.NormalMapG = material.NormalMap
-      // material.NormalMapB = material.NormalMap
-      // material.NormalMapSlope = material.NormalMap
+      material.FogDensity = 0.003
 
       material.ShadeFunction = 'shadeOptimized'
-      material.LightCount = 0
+      material.LightCount = 1
 
       this.bttRoot = new BTTRoot(device, {
         heightMap: heightmap,
@@ -136,17 +149,57 @@ class TerrainComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
       this.renderable.model = this.bttRoot.model
 
       material.parameters.Tiling = 32
-      material.parameters.Brightness = 1
-      material.parameters.Saturation = 1
-      material.parameters.Pertubation = 0.25
+      material.parameters.Brightness = 1.5
+      material.parameters.Saturation = 1.5
+      material.parameters.Perturbation = 0.25
       material.parameters.SlopeStrength = 1
 
+      document.querySelector('#tweak-ui').addEventListener('mousemove', (e) => {
+        // e.stopPropagation()
+      })
       TweakUi.build('#tweak-ui', (q) => {
-        q.slider(material.parameters, 'Tiling', { min: 1, max: 128, step: 1 })
-        q.slider(material.parameters, 'Brightness', { min: 0.1, max: 2, step: 0.01 })
-        q.slider(material.parameters, 'Saturation', { min: 0.1, max: 2, step: 0.01 })
-        q.slider(material.parameters, 'Pertubation', { min: 0.1, max: 2, step: 0.01 })
-        q.slider(material.parameters, 'SlopeStrength', { min: 0.1, max: 1, step: 0.01 })
+        q.group('Fog', (f) => {
+          f.color(material, 'FogColor', { format: '[n]rgb' })
+          f.slider(material, 'FogStart', { min: 0, max: 1000, step: 0.5 })
+          f.slider(material, 'FogEnd', { min: 0, max: 1000, step: 0.5 })
+          f.slider(material, 'FogDensity', { min: 0, max: 0.1, step: 0.0001 })
+          f.select(material, 'FogType', {
+            options: [
+              { id: 'off', label: 'Off', value: 0 },
+              { id: 'exp', label: 'Exp', value: 1 },
+              { id: 'exp2', label: 'Exp2', value: 2 },
+              { id: 'linear', label: 'Linear', value: 3 },
+            ],
+          })
+        })
+        q.group('Light', (l) => {
+          l.color(material, 'AmbientColor', { format: '[n]rgb' })
+          let angle = -1
+          l.add({
+            type: 'slider',
+            label: 'Angle',
+            get value() {
+              return angle
+            },
+            set value(v) {
+              angle = v
+            },
+            onInput: () => {
+              const e = this.entity.root.find('/Light') as Entity
+              e.getService(TransformComponent).setRotationXYZAngle(1, 0, 0, angle)
+            },
+            min: -Math.PI,
+            max: Math.PI,
+            step: 0.01,
+          })
+        })
+        q.group('Terrain', (t) => {
+          t.slider(material, 'Tiling', { min: 1, max: 128, step: 1 })
+          t.slider(material, 'Brightness', { min: 0.1, max: 2, step: 0.01 })
+          t.slider(material, 'Saturation', { min: 0.1, max: 2, step: 0.01 })
+          t.slider(material, 'Perturbation', { min: 0.1, max: 2, step: 0.01 })
+          t.slider(material, 'SlopeStrength', { min: 0.1, max: 1, step: 0.01 })
+        })
       })
 
       // notify that the terrain is loaded and the heightmap is available
@@ -164,56 +217,6 @@ class TerrainComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
   }
 }
 
-// class BillboardComponent {
-
-//   public enable = true
-//   public visible = true
-//   public entity: Entity
-
-//   public setup() {
-//     // listen to event when terrain is loaded and only then load own content
-//     this.entity.find('/Terrain').once('terrain-loaded', () => {
-//       this.loadContent()
-//     })
-//   }
-
-//   public loadContent() {
-//     this.entity.root.getService('Assets').loadBatch({
-//       material: ['/assets/materials/billboard.ggmat', Material],
-//       texture: ['/assets/textures/billboard_tree.png', Image],
-//     }).then((res) => {
-//       // find the terrain component
-//       const terrain: TerrainComponent = this.entity.find('/*:TerrainComponent')
-//       const material = res.material
-//       const image = res.texture
-//       const builder = new ModelBuilder()
-
-//       const w = terrain.bttRoot.heightMap.width
-//       const h = terrain.bttRoot.heightMap.height
-//       for (let i = 0; i < 1000; i++) {
-//         const x = Math.floor(Math.random() * w)
-//         const z = Math.floor(Math.random() * h)
-//         const y = terrain.bttRoot.heightMap.heightAt(x, z)
-//         builder.addVertex({ position: [x, y, z], texture: [0, 0] })
-//         builder.addVertex({ position: [x, y, z], texture: [1, 0] })
-//         builder.addVertex({ position: [x, y, z], texture: [0, 1] })
-//         builder.addVertex({ position: [x, y, z], texture: [1, 1] })
-//         builder.addIndex(i * 4 + 0)
-//         builder.addIndex(i * 4 + 1)
-//         builder.addIndex(i * 4 + 2)
-//         builder.addIndex(i * 4 + 1)
-//         builder.addIndex(i * 4 + 3)
-//         builder.addIndex(i * 4 + 2)
-//       }
-
-//       const device = this.entity.root.getService('Device')
-//       this.entity.getService('Renderable').model = builder.endModel(device, {
-//         materials: [material],
-//       })
-//     })
-//   }
-// }
-
 const game = createGame({
   device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
   autorun: true,
@@ -221,11 +224,11 @@ const game = createGame({
 .createChild(addCamera, addWASD, (e) => {
   e.name = 'Camera'
   e.getService(CameraComponent).activate()
-  e.getService(TransformComponent).translateXYZ(0, 256, 0)
+  e.getService(TransformComponent).translateXYZ(512, 256, 512)
 })
 .createChild(addTransform, addDirectionalLight, (e) => {
   e.name = 'Light'
-  e.getService(TransformComponent).rotateYawPitchRoll(0, -Math.PI / 2, 0)
+  e.getService(TransformComponent).setRotationXYZAngle(1, 0, 0, -1)
 })
 .createChild(addModel, (e) => {
   e.name = 'Sky'
@@ -235,7 +238,3 @@ const game = createGame({
   e.name = 'Terrain'
   e.addComponent(new TerrainComponent())
 })
-// .buildEntity(['Model'], (e) => {
-//   e.name = 'Trees'
-//   e.addComponent(new BillboardComponent())
-// })
