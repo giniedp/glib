@@ -129,6 +129,13 @@ export interface Scene {
      * Height on screen
      */
     height: number,
+    /**
+     * Aspect ration
+     *
+     * @remarks
+     * Will be calculated based on canvas size and written back to this property
+     */
+    aspect?: number,
   },
   /**
    * The camera that is rendering this view

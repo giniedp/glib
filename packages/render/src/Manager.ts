@@ -374,6 +374,9 @@ export class Manager {
       output.width = viewport.width
       output.height = viewport.height
     }
+    if (viewport) {
+      viewport.aspect = output.width / output.height
+    }
 
     this.sceneOutputs.set(scene.id, output)
     return output
