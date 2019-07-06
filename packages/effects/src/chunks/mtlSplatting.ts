@@ -145,7 +145,7 @@ export const FXC_MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = Object.freeze
 
     float splatBlendSlope(in float slope, in vec2 uv){
       #ifdef SPLATTING_SLOPE
-      float blend = texture2D(uDiffuseMapSlope, uv).r;
+      float blend = length(texture2D(uDiffuseMapSlope, uv).rgb);
 
       if(slope < 0.5){
         blend = 2.0 * slope * blend;
