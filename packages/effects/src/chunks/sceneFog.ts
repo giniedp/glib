@@ -71,13 +71,17 @@ export const FXC_SCENE_FOG: ShaderChunkSet<FogDefs> = Object.freeze({
       float fogEnd = uFogParams.y;
       float fogDistance = vFogDistance;
       float fogDensity = uFogParams.z;
-      if (uFogParams.w == FOG_LINEAR) {
+      float d = fogDistance - fogStart;
+      if (d < 0.0) {
+        fog = 1.0;
+      } else if (uFogParams.w == FOG_LINEAR) {
         fog = (fogEnd - fogDistance) / (fogEnd - fogStart);
       } else if (uFogParams.w == FOG_EXP) {
-        fog = 1.0 / pow(2.71828, fogDistance * fogDensity);
+        fog = 1.0 / pow(2.71828, d * fogDensity) + abs(vPositionInWS.y) / fogEnd;
       } else if (uFogParams.w == FOG_EXP2) {
-        fog = 1.0 / pow(2.71828, fogDistance * fogDistance * fogDensity * fogDensity);
+        fog = 1.0 / pow(2.71828, d * d * fogDensity * fogDensity) + abs(vPositionInWS.y) / fogEnd;
       }
+      fog = clamp(fog, 0.0, 1.0);
       color.rgb = fog * color.rgb + (1.0 - fog) * uFogColor;
     }
     #endif
