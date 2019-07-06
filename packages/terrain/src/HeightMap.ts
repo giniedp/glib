@@ -1,5 +1,47 @@
-import { getImageData } from '@gglib/utils'
+// tslint:disable: no-bitwise
 import { IVec3, Vec3 } from '@gglib/math'
+
+let canvas: HTMLCanvasElement = null
+
+/**
+ * Extracts image data from an {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement | HTMLImageElement}
+ *
+ * @public
+ */
+export function getImageData(image: HTMLImageElement, width?: number, height?: number) {
+  if (!image.complete) {
+    throw new Error('image must be completed')
+  }
+  canvas = canvas || document.createElement('canvas')
+  canvas.width = width || image.naturalWidth
+  canvas.height = height || image.naturalHeight
+
+  let ctx = canvas.getContext('2d')
+
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+  let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  let data = imgData.data
+  let result: number[] = []
+  result.length = data.length / 4
+  for (let i = 0; i < result.length; i++) {
+    const r = data[i * 4 + 0]
+    const g = data[i * 4 + 1]
+    const b = data[i * 4 + 2]
+
+    if (r === g && r === b) {
+      result[i] = r
+    } else if (b) {
+      result[i] = 255 + 255 + b
+    } else if (g) {
+      result[i] = 255 + g
+    } else if (r) {
+      result[i] = r
+    } else {
+      result[i] = 0
+    }
+  }
+  return result
+}
 
 /**
  * Constructor options for the {@link HeightMap}
@@ -65,10 +107,9 @@ export class HeightMap {
    * @param y - The y coordinate
    */
   public heightAt(x: number, y: number): number {
-    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-      return this.heights[(x + y * this.width) || 0]
-    }
-    return 0
+    x = Math.max(Math.min(x, this.width - 1), 0) | 0
+    y = Math.max(Math.min(y, this.height - 1), 0) | 0
+    return this.heights[(x + y * this.width) || 0]
   }
 
   /**
@@ -88,8 +129,8 @@ export class HeightMap {
   public normalAt<T>(x: number, y: number, out: T): T & IVec3
   public normalAt(x: number, y: number, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    x = Math.min(x, this.width - 1)
-    y = Math.min(y, this.height - 1)
+    x = Math.max(Math.min(x, this.width - 1), 0)
+    y = Math.max(Math.min(y, this.height - 1), 0)
     if (x >= 0 && y >= 0) {
       const index = (x + y * this.width) * 3
       out.x = this.normals[index]
@@ -179,25 +220,25 @@ export class HeightMap {
     const data = this.heights
     const data1 = new Float32Array(data.length)
 
-    function withFallback(value: number, fallback: number) {
-      return value == null ? fallback : value
+    for (let i = 0; i < data.length; i++) {
+      data1[i] = data[i]
     }
+
     while (steps > 0) {
       steps--
-      for (let x = 0; x < w; x++) {
-        for (let y = 0; y < h; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        for (let y = 1; y < h - 1; y++) {
           const i = x + y * w
 
-          data1[i] = 0
-          data1[i] += data[i] * 4
-          data1[i] += withFallback(data[i + w], data[i]) * 2
-          data1[i] += withFallback(data[i - w], data[i]) * 2
-          data1[i] += withFallback(data[i + 1], data[i]) * 2
-          data1[i] += withFallback(data[i - 1], data[i]) * 2
-          data1[i] += withFallback(data[i + w + 1], data[i]) * 1
-          data1[i] += withFallback(data[i + w - 1], data[i]) * 1
-          data1[i] += withFallback(data[i - w + 1], data[i]) * 1
-          data1[i] += withFallback(data[i - w - 1], data[i]) * 1
+          data1[i] = data[i] * 4
+          data1[i] += data[i + w] * 2
+          data1[i] += data[i - w] * 2
+          data1[i] += data[i + 1] * 2
+          data1[i] += data[i - 1] * 2
+          data1[i] += data[i + w + 1] * 1
+          data1[i] += data[i + w - 1] * 1
+          data1[i] += data[i - w + 1] * 1
+          data1[i] += data[i - w - 1] * 1
 
           data1[i] = data1[i] / 16
         }
