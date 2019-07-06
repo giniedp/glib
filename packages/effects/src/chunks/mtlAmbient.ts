@@ -96,7 +96,7 @@ export const FXC_MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = Object.freeze({
   `,
   fs_shade_after: glsl`
     #if defined(AMBIENT_MAP) || defined(AMBIENT_COLOR)
-    color.rgb += getAmbientColor(uvOffset);
+    color.rgb += surface.Diffuse.rgb * getAmbientColor(uvOffset);
     #endif
   `,
 
