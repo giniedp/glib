@@ -3,7 +3,7 @@ import { Device } from './Device'
 import { ShaderType } from './enums'
 import { Shader, ShaderOptions } from './Shader'
 import { ShaderInspector, ShaderObjectMeta } from './ShaderInspector'
-import { ShaderUniform, ShaderUniformParameter } from './ShaderUniform'
+import { ShaderUniform, ShaderUniformValue, ShaderUniformBinding } from './ShaderUniform'
 
 /**
  * Constructor options for {@link ShaderProgram}
@@ -264,11 +264,11 @@ export class ShaderProgram {
    * @remarks
    * Takes only known uniform names into account and ignores `null` values
    */
-  public setUniforms(uniforms?: { [key: string]: ShaderUniformParameter }): this {
+  public setUniforms(uniforms?: { [key: string]: ShaderUniformValue }): this {
     if (!uniforms) { return this }
     this.use()
     for (const key of this.uniformKeys) {
-      if (key in uniforms && uniforms[key] != null) {
+      if (uniforms[key] != null) {
         this.uniforms.get(key).set(uniforms[key])
       }
     }
@@ -281,7 +281,7 @@ export class ShaderProgram {
    * @remarks
    * `null` values are ignored
    */
-  public setUniform(name: string, value: ShaderUniformParameter): this {
+  public setUniform(name: string, value: ShaderUniformValue): this {
     if (value == null) { return }
     const uniform = this.uniforms.get(name)
     if (!uniform) {
@@ -291,6 +291,19 @@ export class ShaderProgram {
       uniform.set(value)
     }
     return this
+  }
+
+  public applyBindings(bindings: ShaderUniformBinding[]) {
+    let binding: ShaderUniformBinding
+    let uniform: ShaderUniform
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < bindings.length; i++) {
+      binding = bindings[i]
+      uniform = this.uniforms.get(binding.name)
+      if (uniform && uniform.type === binding.type) {
+        uniform.set(binding.value)
+      }
+    }
   }
 
   private logMissingUniform(name: string) {

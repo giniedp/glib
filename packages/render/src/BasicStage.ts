@@ -36,7 +36,7 @@ export class BasicStage implements Stage {
       return
     }
 
-    binder.updateCamera(cam.world, cam.view, cam.projection)
+    binder.setCamera(cam.world, cam.view, cam.projection)
     binder.updateLights(scene.lights)
 
     const rt = manager.beginStep()
@@ -65,11 +65,11 @@ export class BasicStage implements Stage {
     for (const pass of technique.passes) {
       pass.commit(item.material.parameters)
       binder
-        .updateTransform(item.world)
-        .bindTransform(pass.program)
-        .bindView(pass.program)
-        .bindTime(pass.program)
-        .bindLights(pass.program)
+        .setTransform(item.world)
+        .applyTransform(pass.program)
+        .applyView(pass.program)
+        .applyTime(pass.program)
+        .applyLights(pass.program)
       drawable.draw(pass.program)
     }
   }

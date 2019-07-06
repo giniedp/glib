@@ -1,7 +1,7 @@
 import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
-import { ShaderUniformParameter } from './ShaderUniform'
+import { ShaderUniformValue } from './ShaderUniform'
 import {
   BlendState,
   BlendStateParams,
@@ -124,7 +124,7 @@ export class ShaderPass {
   /**
    * Prepares the graphics device state for this shader pass and sets the given uniform parameters
    */
-  public commit(parameters?: { [key: string]: ShaderUniformParameter }): this {
+  public commit(parameters?: { [key: string]: ShaderUniformValue }): this {
     this.program.use()
     const device = this.device
     if (this.stencilState) { device.stencilState = this.stencilState }

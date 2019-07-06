@@ -66,7 +66,7 @@ export class RendererComponent implements OnAdded, OnRemoved, OnInit, OnUpdate, 
         return
       }
       const camera = scene.camera
-      this.manager.binder.updateCamera(camera.world, camera.view, camera.projection)
+      this.manager.binder.setCamera(camera.world, camera.view, camera.projection)
       this.cullVisitor.run(this.entity.root, scene)
       this.manager.renderScene(scene)
       this.toRender.push(scene)
@@ -109,8 +109,8 @@ export class SimpleCullVisitor implements CullVisitor {
       comp.collectDrawables(this)
     }
     const light = entity.getService(LightComponent, null)
-    if (light) {
-      this.addLight(light.packedData)
+    if (light && light.enabled) {
+      this.addLight(light.params)
     }
   }
 }

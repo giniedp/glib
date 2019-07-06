@@ -1,17 +1,7 @@
 import { LightType } from '@gglib/graphics'
+import { IVec3 } from '@gglib/math'
 
 export class LightParams {
-
-  /**
-   * Gets and sets the light type
-   */
-  public get type() {
-    return this.$type
-  }
-  public set type(v: LightType) {
-    this.$type = v
-    this.enabled = this.enabled // updates value in buffer
-  }
 
   /**
    * Color of the light source
@@ -26,6 +16,9 @@ export class LightParams {
     this.$color[0] = v[0]
     this.$color[1] = v[1]
     this.$color[2] = v[2]
+    if (v.length > 3) {
+      this.$color[4] = v[4]
+    }
   }
 
   /**
@@ -41,6 +34,9 @@ export class LightParams {
     this.$position[0] = v[0]
     this.$position[1] = v[1]
     this.$position[2] = v[2]
+    if (v.length > 3) {
+      this.$position[4] = v[4]
+    }
   }
 
   /**
@@ -56,16 +52,30 @@ export class LightParams {
     this.$direction[0] = v[0]
     this.$direction[1] = v[1]
     this.$direction[2] = v[2]
+    if (v.length > 3) {
+      this.$direction[4] = v[4]
+    }
+  }
+
+  /**
+   * Gets and sets the light type
+   */
+  public get type() {
+    return this.$type
+  }
+  public set type(v: LightType) {
+    this.$type = v
+    this.enabled = this.enabled // updates value in buffer
   }
 
   /**
    * Enables or disables the light source
    */
   public get enabled(): boolean {
-    return this.dataRow1[3] > 0
+    return this.$color[3] > 0
   }
   public set enabled(v: boolean) {
-    this.dataRow1[3] = v ? this.$type : 0
+    this.$color[3] = v ? this.$type : 0
   }
 
   /**
@@ -75,10 +85,10 @@ export class LightParams {
    * only applicable to area light types
    */
   public get width() {
-    return this.dataRow2[3]
+    return this.$position[3]
   }
   public set width(v: number) {
-    this.dataRow2[3] = v
+    this.$position[3] = v
   }
 
   /**
@@ -88,10 +98,10 @@ export class LightParams {
    * only applicable to area light types
    */
   public get height() {
-    return this.dataRow3[3]
+    return this.$direction[3]
   }
   public set height(v: number) {
-    this.dataRow3[3] = v
+    this.$direction[3] = v
   }
 
   /**
@@ -101,10 +111,10 @@ export class LightParams {
    * Only applicable to point light and spot light types
    */
   public get range() {
-    return this.dataRow2[3]
+    return this.$position[3]
   }
   public set range(v: number) {
-    this.dataRow2[3] = v
+    this.$position[3] = v
   }
 
   /**
@@ -114,10 +124,10 @@ export class LightParams {
    * Only applicable to spot light type
    */
   public get angle() {
-    return (Math.acos(this.dataRow3[3]) * 180) / Math.PI
+    return (Math.acos(this.$direction[3]) * 180) / Math.PI
   }
   public set angle(v: number) {
-    this.dataRow3[3] = Math.cos(v * Math.PI / 180)
+    this.$direction[3] = Math.cos(v * Math.PI / 180)
   }
 
   private $type = LightType.Directional
@@ -125,10 +135,7 @@ export class LightParams {
   private $position: Float32Array
   private $direction: Float32Array
 
-  protected readonly data: Float32Array
-  protected readonly dataRow1: Float32Array
-  protected readonly dataRow2: Float32Array
-  protected readonly dataRow3: Float32Array
+  public readonly data: Float32Array
 
   public constructor() {
     this.data = new Float32Array([
@@ -136,12 +143,27 @@ export class LightParams {
       0, 0, 0, 0,
       0, 0, 0, 0,
     ])
-    this.dataRow1 = this.data.subarray(0, 4)
-    this.dataRow2 = this.data.subarray(4, 8)
-    this.dataRow3 = this.data.subarray(8, 12)
-    this.$color = this.dataRow1.subarray(0, 3)
-    this.$position = this.dataRow2.subarray(0, 3)
-    this.$direction = this.dataRow3.subarray(0, 3)
+    this.$color = this.data.subarray(0, 4)
+    this.$position = this.data.subarray(4, 8)
+    this.$direction = this.data.subarray(8, 12)
+  }
+
+  public setPosition(v: IVec3) {
+    this.$position[0] = v.x
+    this.$position[1] = v.y
+    this.$position[2] = v.z
+  }
+
+  public setDirection(v: IVec3) {
+    this.$direction[0] = v.x
+    this.$direction[1] = v.y
+    this.$direction[2] = v.z
+  }
+
+  public setColor(v: IVec3, intensity = 1) {
+    this.$color[0] = v.x * intensity
+    this.$color[1] = v.y * intensity
+    this.$color[2] = v.z * intensity
   }
 
   public write(buffer: Float32Array, offset: number) {
@@ -151,8 +173,8 @@ export class LightParams {
   }
 
   public assign(lightIndex: number, toParams: { [k: string]: any }) {
-    toParams[`Lights${lightIndex}Color`] = this.dataRow1
-    toParams[`Lights${lightIndex}Position`] = this.dataRow2
-    toParams[`Lights${lightIndex}Direction`] = this.dataRow3
+    toParams[`Lights${lightIndex}Color`] = this.$color
+    toParams[`Lights${lightIndex}Position`] = this.$position
+    toParams[`Lights${lightIndex}Direction`] = this.$direction
   }
 }

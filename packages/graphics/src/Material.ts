@@ -2,7 +2,7 @@ import { uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { ShaderProgram } from './ShaderProgram'
-import { ShaderUniformParameter } from './ShaderUniform'
+import { ShaderUniformValue } from './ShaderUniform'
 
 /**
  * Constructor options for {@link Material}
@@ -21,7 +21,7 @@ export interface MaterialOptions<T = ShaderEffectOptions | ShaderEffect | string
   /**
    * Effect parameters to be applied before rendering
    */
-  parameters: { [key: string]: ShaderUniformParameter }
+  parameters: { [key: string]: ShaderUniformValue }
 }
 
 /**

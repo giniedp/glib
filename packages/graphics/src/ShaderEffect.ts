@@ -5,7 +5,7 @@ import { ShaderTechnique, ShaderTechniqueOptions } from './ShaderTechnique'
 
 import { Device } from './Device'
 import { ShaderPass } from './ShaderPass'
-import { ShaderUniformParameter } from './ShaderUniform'
+import { ShaderUniformValue } from './ShaderUniform'
 
 /**
  * Constructor options for {@link ShaderEffect}
@@ -20,7 +20,7 @@ export interface ShaderEffectOptions {
   /**
    * The parameters to be applied to the effect
    */
-  parameters?: { [key: string]: ShaderUniformParameter }
+  parameters?: { [key: string]: ShaderUniformValue }
   /**
    * A collection of programs of this effect
    *
@@ -93,7 +93,7 @@ export class ShaderEffect {
    * @remarks
    * When using {@link ShaderEffect.draw} these parameters are used as defaults but can be overridden
    */
-  public readonly parameters: { [key: string]: ShaderUniformParameter }
+  public readonly parameters: { [key: string]: ShaderUniformValue }
   /**
    * The technique collection
    */
@@ -226,7 +226,7 @@ export class ShaderEffect {
    *
    * @param name - The name of the parameter
    */
-  public getParameter<T extends ShaderUniformParameter>(name: string): T | null {
+  public getParameter<T extends ShaderUniformValue>(name: string): T | null {
     return this.parameters[name] as T
   }
 }

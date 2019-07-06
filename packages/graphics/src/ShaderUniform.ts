@@ -12,7 +12,25 @@ import { Texture } from './Texture'
  *
  * @public
  */
-export type ShaderUniformParameter = string | boolean | number | number[] | Int32Array | Texture | IVec2 | IVec3 | IVec4 | IMat
+export type ShaderUniformValue = string | boolean | number | ArrayLike<number> | Texture | IVec2 | IVec3 | IVec4 | IMat
+
+/**
+ * @public
+ */
+export interface ShaderUniformBinding<T extends ShaderUniformValue = ShaderUniformValue> {
+  /**
+   * The shader uniform (binding) name
+   */
+  name: string
+  /**
+   * The shader uniform type
+   */
+  type: string
+  /**
+   * The value to be set to bound uniform
+   */
+  value: T
+}
 
 function parseArray(value: string) {
   let result: any = value.replace(/[\[\]]/g, '').split(',')

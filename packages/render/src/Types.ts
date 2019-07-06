@@ -12,7 +12,7 @@ export interface Drawable {
 }
 
 /**
- * On Object holding a drawable objec
+ * On Object holding a drawable object
  *
  * @public
  */
@@ -31,22 +31,15 @@ export interface LightData {
   /**
    * The light color
    */
-  color: IVec4
+  color: IVec4 | ArrayLike<number>
   /**
    * The position of the light source
    */
-  position: IVec4
+  position: IVec4 | ArrayLike<number>
   /**
    * The direction of the light source
    */
-  direction: IVec4
-  /**
-   * Miscellaneous light source properties
-   *
-   * @remarks
-   * The meaning of the values depends on the shader implementation.
-   */
-  misc: IVec4
+  direction: IVec4 | ArrayLike<number>
 }
 
 /**

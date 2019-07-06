@@ -1,100 +1,64 @@
-import { Vec3, Vec4 } from '@gglib/math'
-import { extend } from '@gglib/utils'
+import { Vec3 } from '@gglib/math'
+import { getOption } from '@gglib/utils'
 
-import { OnAdded, OnRemoved, OnUpdate } from './../Component'
+import { LightParams } from '@gglib/effects'
+import { LightType } from '@gglib/graphics'
+import { Inject, Service } from '../decorators'
+import { OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { TransformComponent } from './TransformComponent'
 
 /**
+ * Constructor options for {@link LightComponent }
+ *
  * @public
  */
-export interface LightProperties {
+export interface LightComponentOptions {
+  enabled?: boolean
   range?: number
   intensity?: number
-  specularIntensity?: number
-  spotOuterAngle?: number
-  spotInnerAngle?: number
+  spotAngle?: number
   castShadow?: boolean
   position?: Vec3
   direction?: Vec3
-  color?: Vec4
-  type?: number
+  color?: Vec3
+  type?: LightType
 }
 
 /**
  * @public
  */
-export interface LightData {
-  position: Vec4
-  direction: Vec4
-  color: Vec4
-  misc: Vec4
-}
+@Service()
+export class LightComponent implements OnUpdate {
 
-/**
- * @public
- */
-export let LightType = {
-  None: 0,
-  Directional: 1,
-  Point: 2,
-  Spot: 3,
-}
-
-/**
- * @public
- */
-export let LightTypeName = {
-  0: 'None',
-  1: 'Directional',
-  2: 'Point',
-  3: 'Spot',
-}
-
-/**
- * @public
- */
-export class LightComponent implements LightProperties, OnAdded, OnRemoved, OnUpdate {
-
+  @Inject(Entity)
   public entity: Entity
 
-  public range: number = 0
-  public intensity: number = 1
-  public specularIntensity: number = 1
-  public spotOuterAngle: number = 0
-  public spotInnerAngle: number = 0
+  public enabled: boolean
+  public range: number
+  public intensity: number
+  public spotAngle: number = Math.PI / 4
   public castShadow: boolean = false
   public position: Vec3
   public direction: Vec3
-  public color: Vec4
-  public type: number
-  public packedData: LightData
+  public color: Vec3
+  public type: LightType
 
-  constructor(params?: LightProperties) {
-    if (params) {
-      extend(this, params)
-    }
+  public readonly params: LightParams
 
-    this.position = Vec3.convert(this.position || Vec3.create(0, 0, 0))
-    this.direction = Vec3.convert(this.direction || Vec3.create(0, 0, -1))
-    this.color = Vec4.convert(this.color || Vec4.create(1, 1, 1, 1))
+  constructor(params?: LightComponentOptions) {
+    this.enabled = getOption(params, 'enabled', true)
+    this.range = getOption(params, 'range', 0)
+    this.intensity = getOption(params, 'intensity', 1)
+    this.spotAngle = getOption(params, 'spotAngle', Math.PI / 4)
+    this.castShadow = getOption(params, 'castShadow', false)
+    this.type = getOption(params, 'type', LightType.Directional)
+    this.color = Vec3.convert(getOption(params, 'color', Vec3.create(1, 1, 1)))
+    this.position = Vec3.convert(getOption(params, 'position', Vec3.create(0, 0, 0)))
+    this.direction = Vec3.convert(getOption(params, 'direction', Vec3.create(0, 0, -1)))
+
     this.type = this.type
-    this.packedData = {
-      position: Vec4.createZero(),
-      direction: Vec4.createZero(),
-      color: Vec4.createZero(),
-      misc: Vec4.createZero(),
-    }
-  }
-
-  public onAdded(entity: Entity) {
-    this.entity = entity
-    entity.addService(LightComponent, this)
-  }
-
-  public onRemoved() {
-    this.entity.removeService(LightComponent)
-    this.entity = null
+    this.params = new LightParams()
   }
 
   public onUpdate() {
@@ -109,28 +73,17 @@ export class LightComponent implements LightProperties, OnAdded, OnRemoved, OnUp
       this.position.z = t.worldMat.translation[2]
     }
 
-    this.updatePackedData()
+    this.updateParams()
   }
 
-  public updatePackedData() {
-    let data = this.packedData
-
-    data.position.x = this.position.x
-    data.position.y = this.position.y
-    data.position.z = this.position.z
-
-    data.direction.x = this.direction.x
-    data.direction.y = this.direction.y
-    data.direction.z = this.direction.z
-
-    data.color.x = this.color.x * this.intensity
-    data.color.y = this.color.y * this.intensity
-    data.color.z = this.color.z * this.intensity
-    data.color.w = this.color.w * this.specularIntensity
-
-    data.misc.x = this.range
-    data.misc.y = Math.cos(this.spotOuterAngle)
-    data.misc.z = Math.cos(this.spotInnerAngle)
-    data.misc.w = this.type
+  public updateParams() {
+    const data = this.params
+    data.setPosition(this.position)
+    data.setDirection(this.direction)
+    data.setColor(this.color, this.intensity)
+    data.range = this.range
+    data.angle = this.spotAngle
+    data.enabled = this.enabled
+    data.type = this.type
   }
 }

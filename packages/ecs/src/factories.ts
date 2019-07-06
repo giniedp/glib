@@ -9,7 +9,7 @@ import {
   GameLoopOptions,
   KeyboardComponent,
   LightComponent,
-  LightProperties,
+  LightComponentOptions,
   ModelComponent,
   MouseComponent,
   RendererComponent,
@@ -120,7 +120,7 @@ export function addCamera(entity: Entity, options?: CameraProperties) {
  * @param entity - The entity
  * @param options - Constructor options for the {@link LightComponent}
  */
-export function addPointLight(entity: Entity, options: LightProperties = {}) {
+export function addPointLight(entity: Entity, options: LightComponentOptions = {}) {
   if (!entity.services.has(LightComponent)) {
     options.type = LightType.Point
     entity.addComponent(new LightComponent(options))
@@ -134,7 +134,7 @@ export function addPointLight(entity: Entity, options: LightProperties = {}) {
  * @param entity - The entity
  * @param options - Constructor options for the {@link LightComponent}
  */
-export function addSpotLight(entity: Entity, options: LightProperties = {}) {
+export function addSpotLight(entity: Entity, options: LightComponentOptions = {}) {
   if (!entity.services.has(LightComponent)) {
     options.type = LightType.Spot
     entity.addComponent(new LightComponent(options))
@@ -148,7 +148,7 @@ export function addSpotLight(entity: Entity, options: LightProperties = {}) {
  * @param entity - The entity
  * @param options - Constructor options for the {@link LightComponent}
  */
-export function addDirectionalLight(entity: Entity, options: LightProperties = {}) {
+export function addDirectionalLight(entity: Entity, options: LightComponentOptions = {}) {
   if (!entity.services.has(LightComponent)) {
     options.type = LightType.Directional
     entity.addComponent(new LightComponent(options))
@@ -162,7 +162,7 @@ export function addDirectionalLight(entity: Entity, options: LightProperties = {
  * @param entity - The entity
  * @param options - Constructor options for the {@link LightComponent}
  */
-export function addLight(entity: Entity, options: LightProperties = {}) {
+export function addLight(entity: Entity, options: LightComponentOptions = {}) {
   if (!entity.services.has(LightComponent)) {
     entity.addComponent(new LightComponent(options))
   }
