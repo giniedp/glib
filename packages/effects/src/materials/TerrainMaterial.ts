@@ -9,6 +9,8 @@ const defineMap = {
   AlphaClip: 'ALPHA_CLIP',
   FogColor: 'FOG',
 
+  AmbientColor: 'AMBIENT_COLOR',
+
   TintMap: 'SPLATTING_TINT',
 
   DiffuseMap: 'SPLATTING_BASE',
@@ -98,6 +100,19 @@ export class TerrainMaterial extends Material {
         }) as any
       }
     }
+  }
+
+  /**
+   * Gets and sets the ambient color.
+   *
+   * @remarks
+   * Changing this value from or to `null` forces the shader to recompile.
+   */
+  public get AmbientColor(): number[] | IVec3 {
+    return this.parameters.AmbientColor
+  }
+  public set AmbientColor(v: number[] | IVec3) {
+    this.parameters.AmbientColor = v
   }
 
   /**
@@ -306,11 +321,18 @@ export class TerrainMaterial extends Material {
     this.parameters.Saturation = v
   }
 
-  public get Pertubation(): number {
-    return this.parameters.Pertubation
+  public get Perturbation(): number {
+    return this.parameters.Perturbation
   }
-  public set Pertubation(v: number) {
-    this.parameters.Pertubation = v
+  public set Perturbation(v: number) {
+    this.parameters.Perturbation = v
+  }
+
+  public get SlopeStrength(): number {
+    return this.parameters.SlopeStrength
+  }
+  public set SlopeStrength(v: number) {
+    this.parameters.SlopeStrength = v
   }
 
   public get Tiling(): number {
