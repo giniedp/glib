@@ -1,6 +1,7 @@
 import { Mat4 } from '@gglib/math'
 import { Scene } from '@gglib/render'
-import { extend } from '@gglib/utils'
+import { extend, Log } from '@gglib/utils'
+import { Inject, Service } from '../decorators'
 import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { RendererComponent } from './RendererComponent'
@@ -19,8 +20,8 @@ export interface CameraProperties {
 /**
  * @public
  */
-export class CameraComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
-  public entity: Entity
+@Service()
+export class CameraComponent implements /*OnAdded, OnRemoved, OnInit,*/ OnUpdate {
 
   public near: number = 0.1
   public far: number = 1000
@@ -30,7 +31,13 @@ export class CameraComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
   public view: Mat4 = Mat4.createIdentity()
   public projection: Mat4 = Mat4.createIdentity()
   public viewProjection: Mat4 = Mat4.createIdentity()
+
+  @Inject(Entity)
+  public entity: Entity
+
+  @Inject(TransformComponent)
   public transform: TransformComponent
+
   private scene: Scene
 
   public get world() {
@@ -43,24 +50,10 @@ export class CameraComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
     }
   }
 
-  public onAdded(entity: Entity) {
-    this.entity = entity
-    entity.addService(CameraComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(CameraComponent)
-    this.entity = null
-  }
-
-  public onInit(entity: Entity) {
-    this.transform = entity.getService(TransformComponent)
-  }
-
   public onUpdate() {
-    // if (this.scene && this.scene.viewport) {
-    //   this.aspect = this.scene.viewport.width / this.scene.viewport.height
-    // }
+    if (this.scene && this.scene.viewport && this.scene.viewport.aspect) {
+      this.aspect = this.scene.viewport.aspect
+    }
     this.view.initFrom(this.transform.inverseMat)
     this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far)
     Mat4.multiply(this.view, this.projection, this.viewProjection)
@@ -71,7 +64,7 @@ export class CameraComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
     const view: Scene = renderer.manager.scenes.get(viewId)
 
     if (!view) {
-      // TODO: log
+      Log.w('[CameraComponent]', `camera can not be attached to scene ${viewId}. Scene not found.`)
       return
     }
 

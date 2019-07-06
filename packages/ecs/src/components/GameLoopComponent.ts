@@ -1,6 +1,7 @@
 import { extend, getTime, requestFrame } from '@gglib/utils'
 import { OnAdded, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
+import { Service } from '../decorators';
 
 /**
  * Constructor options for the {@link GameLoopComponent}
@@ -24,6 +25,7 @@ function getOption<T>(options: GameLoopOptions, key: keyof GameLoopOptions, fall
 /**
  * @public
  */
+@Service()
 export class GameLoopComponent implements OnAdded, OnRemoved {
 
   public readonly preferTimeout: boolean = false
@@ -50,11 +52,9 @@ export class GameLoopComponent implements OnAdded, OnRemoved {
 
   public onAdded(entity: Entity) {
     this.entity = entity
-    entity.addService(GameLoopComponent, this)
   }
 
   public onRemoved(entity: Entity) {
-    entity.removeService(GameLoopComponent)
     this.entity = null
   }
 

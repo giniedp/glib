@@ -21,7 +21,7 @@ export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemo
       this.$drawables = value.meshes.map((it) => {
         return {
           drawable: it,
-          material: value.materials[it.materialId],
+          material: value.materials[it.materialId] || value.materials.find((e) => e.name === it.materialId),
           world: this.world,
           data: null,
         }

@@ -1,5 +1,6 @@
 import { Events, Type } from '@gglib/utils'
 import { Component } from './Component'
+import { getInjectMetadata, getServiceMetadata } from './decorators'
 import { find, findAll } from './finder'
 
 /**
@@ -176,6 +177,8 @@ export class Entity extends Events {
    * will be called at the end of this function.
    */
   public addComponent(comp: Component): Entity {
+
+    // Bind to entity
     // TODO: find a way to store a component->entity relation without
     // writing to the component object
     if (comp['$$boundEntity']) {
@@ -183,6 +186,7 @@ export class Entity extends Events {
     }
     comp['$$boundEntity'] = this
 
+    // Add to update lists
     if (this.components.indexOf(comp) < 0) {
       (this.components as Component[]).push(comp)
     }
@@ -190,6 +194,10 @@ export class Entity extends Events {
       this.toInitialize.push(comp)
     }
 
+    this.injectEntity(comp)
+    this.registerServices(comp)
+
+    // Run life cycle
     if (typeof comp.onAdded === 'function') {
       comp.onAdded(this)
     }
@@ -201,12 +209,16 @@ export class Entity extends Events {
    */
   public removeComponent(comp: Component): Entity {
     let isRemoved = false
+
+    // Unbind
     let index = this.components.indexOf(comp)
     if (index >= 0) {
       (this.components as Component[]).splice(index, 1)
       comp['$$boundEntity'] = null
       isRemoved = true
     }
+
+    // Unregister from update lists
     index = this.toUpdate.indexOf(comp)
     if (index >= 0) {
       this.toUpdate.splice(index, 1)
@@ -215,9 +227,15 @@ export class Entity extends Events {
     if (index >= 0) {
       this.toDraw.splice(index, 1)
     }
+
+    this.ejectServices(comp)
+    this.unregisterServices(comp)
+
+    // Run life cycle
     if (isRemoved && typeof comp.onRemoved === 'function') {
       comp.onRemoved(this)
     }
+
     return this
   }
 
@@ -227,9 +245,13 @@ export class Entity extends Events {
    * @param recursive - Whether to continue the initialization recursively on every child
    */
   public initializeComponents(recursive: boolean = true): this {
-    let cmp
+    let cmp: Component
     while (this.toInitialize.length > 0) {
       cmp = this.toInitialize.shift()
+
+      this.injectServices(cmp)
+
+      // Run life cycle
       if (typeof cmp.onInit === 'function') {
         cmp.onInit(this)
       }
@@ -240,6 +262,7 @@ export class Entity extends Events {
         this.toDraw.push(cmp)
       }
     }
+
     if (recursive) {
       for (const it of this.children) {
         it.initializeComponents(recursive)
@@ -347,5 +370,52 @@ export class Entity extends Events {
   public tap(cb: (entity: this) => void): this {
     cb(this)
     return this
+  }
+
+  private injectEntity(component: Component) {
+    const meta = getInjectMetadata(component)
+    if (meta) {
+      meta.forEach((m) => {
+        if (m.service === Entity) {
+          m.target[m.property] = this[m.from] as Entity || this
+        }
+      })
+    }
+  }
+
+  private injectServices(component: Component) {
+    const meta = getInjectMetadata(component)
+    if (meta) {
+      meta.forEach((m) => {
+        if (m.service !== Entity) {
+          m.target[m.property] = (this[m.from] as Entity || this).getService(m.service)
+        }
+      })
+    }
+  }
+
+  private ejectServices(component: Component, which?: 'root' | 'parent' | 'self') {
+    const meta = getInjectMetadata(component)
+    if (meta) {
+      meta.forEach((m) => {
+        if (!which || which === m.from) {
+          m.target[m.property] = null
+        }
+      })
+    }
+  }
+
+  private registerServices(component: Component) {
+    const sMeta = getServiceMetadata(component)
+    if (sMeta) {
+      (this[sMeta.at] as Entity || this).addService(sMeta.as, component)
+    }
+  }
+
+  private unregisterServices(component: Component, which?: 'root' | 'parent' | 'self') {
+    const m = getServiceMetadata(component)
+    if (m && (!which || which === m.at)) {
+      (this[m.at] as Entity || this).removeService(m.as)
+    }
   }
 }

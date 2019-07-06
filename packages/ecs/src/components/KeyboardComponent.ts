@@ -1,12 +1,13 @@
 import { IKeyboardState, Keyboard } from '@gglib/input'
 import { extend } from '@gglib/utils'
-import { OnAdded, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { Service } from '../decorators'
+import { OnUpdate } from './../Component'
 
 /**
  * @public
  */
-export class KeyboardComponent implements OnAdded, OnRemoved, OnUpdate {
+@Service()
+export class KeyboardComponent implements OnUpdate {
   public keyboard: Keyboard
   public newState: IKeyboardState
   public oldState: IKeyboardState
@@ -16,14 +17,6 @@ export class KeyboardComponent implements OnAdded, OnRemoved, OnUpdate {
     extend(this, options)
     this.newState = this.keyboard.copyState({})
     this.oldState = this.keyboard.copyState({})
-  }
-
-  public onAdded(entity: Entity) {
-    entity.addService(KeyboardComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(KeyboardComponent)
   }
 
   public onUpdate() {

@@ -1,33 +1,23 @@
-import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { Inject, Service } from '../decorators'
+import { OnUpdate } from './../Component'
 import { TimeComponent } from './TimeComponent'
 
 /**
  * @public
  */
-export class FpsComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
+@Service({ at: 'root' })
+export class FpsComponent implements OnUpdate {
 
   public frames: number
   public fps: number
   public fpsTimer: number
   public fpsCounter: number
 
+  @Inject(TimeComponent, { from: 'root' })
   public time: TimeComponent
 
   constructor() {
     this.reset()
-  }
-
-  public onAdded(entity: Entity) {
-    entity.addService(FpsComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(FpsComponent)
-  }
-
-  public onInit(entity: Entity) {
-    this.time = entity.root.getService(TimeComponent)
   }
 
   public reset() {
