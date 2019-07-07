@@ -2,6 +2,7 @@ import {
   Device,
   ScissorState,
 } from '@gglib/graphics'
+import { ScissorStateParams } from './ScissorState'
 
 describe('glib/graphics/ScissorState', () => {
 
@@ -9,14 +10,14 @@ describe('glib/graphics/ScissorState', () => {
   let stateA: ScissorState
   let stateB: ScissorState
   let stateC: ScissorState
-  let paramsA = {
+  let paramsA: ScissorStateParams = {
     enable: false,
     x: 1,
     y: 2,
     width: 3,
     height: 4,
   }
-  let paramsB = {
+  let paramsB: ScissorStateParams = {
     enable: true,
     x: 5,
     y: 6,
@@ -29,7 +30,7 @@ describe('glib/graphics/ScissorState', () => {
   beforeEach(() => {
     device = new Device()
     stateA = new ScissorState(device).assign(paramsA)
-    stateB = new ScissorState(device).assign(stateB)
+    stateB = new ScissorState(device).assign(paramsB)
     stateC = new ScissorState(device)
   })
 

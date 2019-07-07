@@ -2,6 +2,7 @@ import {
   Device,
   OffsetState,
 } from '@gglib/graphics'
+import { OffsetStateParams } from './OffsetState'
 
 describe('glib/graphics/OffsetState', () => {
 
@@ -9,13 +10,13 @@ describe('glib/graphics/OffsetState', () => {
   let stateA: OffsetState
   let stateB: OffsetState
   let stateC: OffsetState
-  let paramsA = {
-    offsetEnable: false,
+  let paramsA: OffsetStateParams = {
+    enable: false,
     offsetFactor: 1,
     offsetUnits: 2,
   }
-  let paramsB = {
-    offsetEnable: true,
+  let paramsB: OffsetStateParams = {
+    enable: true,
     offsetFactor: 3,
     offsetUnits: 4,
   }
@@ -25,7 +26,7 @@ describe('glib/graphics/OffsetState', () => {
   beforeEach(() => {
     device = new Device()
     stateA = new OffsetState(device).assign(paramsA)
-    stateB = new OffsetState(device).assign(stateB)
+    stateB = new OffsetState(device).assign(paramsB)
     stateC = new OffsetState(device)
   })
 

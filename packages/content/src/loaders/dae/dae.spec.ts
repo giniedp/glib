@@ -57,9 +57,9 @@ technique:
 
     manager.rewriteUrl = (url) => {
       switch (url) {
-        case '/assets/dae/default':
+        case '/assets/models/dae/default':
           return '/default.ggfx'
-        case '/assets/dae/lambert':
+        case '/assets/models/dae/lambert':
           return '/default.ggfx'
         default:
           return url
@@ -69,7 +69,7 @@ technique:
 
   describe('assets/dae/cube.dae', () => {
     it('loads', (done) => {
-      manager.load('/assets/dae/cubes.dae', Model).then((model) => {
+      manager.load('/assets/models/dae/cubes.dae', Model).then((model) => {
         expect(model.meshes.length).toBe(9)
         expect(model.materials.length).toBe(3)
       })

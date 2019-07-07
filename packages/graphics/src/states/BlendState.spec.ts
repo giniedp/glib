@@ -4,6 +4,7 @@ import {
   BlendState,
   Device,
 } from '@gglib/graphics'
+import { BlendStateParams } from './BlendState'
 
 describe('glib/graphics/BlendState', () => {
 
@@ -11,7 +12,7 @@ describe('glib/graphics/BlendState', () => {
   let stateA: BlendState
   let stateB: BlendState
   let stateC: BlendState
-  let paramsA = {
+  let paramsA: BlendStateParams = {
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Subtract,
 
@@ -24,9 +25,9 @@ describe('glib/graphics/BlendState', () => {
     constantG: 0.2,
     constantB: 0.3,
     constantA: 0.4,
-    enabled: true,
+    enable: true,
   }
-  let paramsB = {
+  let paramsB: BlendStateParams = {
     colorBlendFunction: BlendFunction.Subtract,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -39,7 +40,7 @@ describe('glib/graphics/BlendState', () => {
     constantG: 0.3,
     constantB: 0.2,
     constantA: 0.1,
-    enabled: false,
+    enable: false,
   }
 
   let keys = Object.keys(paramsA)
@@ -47,7 +48,7 @@ describe('glib/graphics/BlendState', () => {
   beforeEach(() => {
     device = new Device({ context: 'webgl' })
     stateA = new BlendState(device).assign(paramsA)
-    stateB = new BlendState(device).assign(stateB)
+    stateB = new BlendState(device).assign(paramsB)
     stateC = new BlendState(device)
   })
 
@@ -58,7 +59,7 @@ describe('glib/graphics/BlendState', () => {
     })
     keys.forEach((key) => {
       it (`${key} is a getter`, () => {
-        if (key === 'enabled') {
+        if (key === 'enable') {
           expect(stateA[key]).toBe(paramsA[key])
         } else {
           expect(stateA[key]).toBeCloseTo(paramsA[key])
@@ -80,7 +81,7 @@ describe('glib/graphics/BlendState', () => {
       it(`resolves ${key}`, () => {
         stateA.commit()
         stateC.resolve()
-        if (key === 'enabled') {
+        if (key === 'enable') {
           expect(stateC[key]).toBe(paramsA[key])
         } else {
           expect(stateC[key]).toBeCloseTo(paramsA[key])
@@ -93,7 +94,7 @@ describe('glib/graphics/BlendState', () => {
       it(`resolves ${key}`, () => {
         stateA.commit(paramsB)
         stateC.resolve()
-        if (key === 'enabled') {
+        if (key === 'enable') {
           expect(stateC[key]).toBe(paramsB[key])
         } else {
           expect(stateC[key]).toBeCloseTo(paramsB[key])

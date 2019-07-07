@@ -3,6 +3,7 @@ import {
   DepthState,
   Device,
 } from '@gglib/graphics'
+import { DepthStateParams } from './DepthState'
 
 describe('glib/graphics/DepthState', () => {
 
@@ -10,13 +11,13 @@ describe('glib/graphics/DepthState', () => {
   let stateA: DepthState
   let stateB: DepthState
   let stateC: DepthState
-  let paramsA = {
-    depthEnable: true,
+  let paramsA: DepthStateParams = {
+    enable: true,
     depthFunction: CompareFunction.Always,
     depthWriteEnable: false,
   }
-  let paramsB = {
-    depthEnable: false,
+  let paramsB: DepthStateParams = {
+    enable: false,
     depthFunction: CompareFunction.Never,
     depthWriteEnable: true,
   }
@@ -26,7 +27,7 @@ describe('glib/graphics/DepthState', () => {
   beforeEach(() => {
     device = new Device()
     stateA = new DepthState(device).assign(paramsA)
-    stateB = new DepthState(device).assign(stateB)
+    stateB = new DepthState(device).assign(paramsB)
     stateC = new DepthState(device)
   })
 

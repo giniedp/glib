@@ -58,16 +58,16 @@ technique:
     manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     manager.rewriteUrl = (url) => {
-      if (url.match(/assets\/gltf\/pbr/)) {
+      if (url.match(/assets\/models\/gltf\/pbr/)) {
         return '/default.ggfx'
       }
       return url
     }
   })
 
-  describe('assets/gltf/box.gltf', () => {
+  describe('assets/models/gltf/box.gltf', () => {
     it('loads', (done) => {
-      manager.load('/assets/gltf/box.gltf', Model).then((model) => {
+      manager.load('/assets/models/gltf/box.gltf', Model).then((model) => {
         expect(model.meshes.length).toBe(1)
         expect(model.materials.length).toBe(1)
       })
@@ -76,9 +76,9 @@ technique:
     })
   })
 
-  describe('assets/gltf/box-binary.glb', () => {
+  describe('assets/models/gltf/box-binary.glb', () => {
     it('loads', (done) => {
-      manager.load('assets/gltf/box-binary.glb', Model).then((model) => {
+      manager.load('assets/models/gltf/box-binary.glb', Model).then((model) => {
         expect(model.meshes.length).toBe(1)
         expect(model.materials.length).toBe(1)
       })
@@ -87,9 +87,9 @@ technique:
     })
   })
 
-  describe('assets/gltf/box-embedded.gltf', () => {
+  describe('assets/models/gltf/box-embedded.gltf', () => {
     it('loads', (done) => {
-      manager.load('assets/gltf/box-embedded.gltf', Model).then((model) => {
+      manager.load('assets/models/gltf/box-embedded.gltf', Model).then((model) => {
         expect(model.meshes.length).toBe(1)
         expect(model.materials.length).toBe(1)
       })

@@ -4,6 +4,7 @@ import {
   StencilOperation,
   StencilState,
 } from '@gglib/graphics'
+import { StencilStateParams } from './StencilState'
 
 describe('glib/graphics/StencilState', () => {
 
@@ -11,7 +12,7 @@ describe('glib/graphics/StencilState', () => {
   let stateA: StencilState
   let stateB: StencilState
   let stateC: StencilState
-  let paramsA = {
+  let paramsA: StencilStateParams = {
     enable: false,
 
     // front face stencil
@@ -32,7 +33,7 @@ describe('glib/graphics/StencilState', () => {
     stencilBackDepthFail: StencilOperation.Replace,
     stencilBackDepthPass: StencilOperation.Zero,
   }
-  let paramsB = {
+  let paramsB: StencilStateParams = {
     enable: true,
 
     // front face stencil

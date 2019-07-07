@@ -4,7 +4,7 @@ import { STL } from './stl'
 describe('content/formats/stl', () => {
   it('parses binary file', (done) => {
     Http.request({
-      url: '/assets/stl/cube.stl',
+      url: '/assets/models/stl/cube.stl',
       xhr: Http.createXMLHttpRequest('arraybuffer'),
     }).then((res) => {
       const result = STL.parse(res.response)
@@ -17,7 +17,7 @@ describe('content/formats/stl', () => {
 
   it('parses ascii file', (done) => {
     Http.request({
-      url: '/assets/stl/cube.ascii.stl',
+      url: '/assets/models/stl/cube.ascii.stl',
       xhr: Http.createXMLHttpRequest('arraybuffer'),
     }).then((res) => {
       const result = STL.parse(res.response)

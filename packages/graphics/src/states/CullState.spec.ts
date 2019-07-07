@@ -4,6 +4,7 @@ import {
   Device,
   FrontFace,
 } from '@gglib/graphics'
+import { CullStateParams } from './CullState'
 
 describe('glib/graphics/CullState', () => {
 
@@ -11,13 +12,13 @@ describe('glib/graphics/CullState', () => {
   let stateA: CullState
   let stateB: CullState
   let stateC: CullState
-  let paramsA = {
-    culling: false,
+  let paramsA: CullStateParams = {
+    enable: false,
     cullMode: CullMode.Back,
     frontFace: FrontFace.CounterClockWise,
   }
-  let paramsB = {
-    culling: true,
+  let paramsB: CullStateParams = {
+    enable: true,
     cullMode: CullMode.Front,
     frontFace: FrontFace.ClockWise,
   }
@@ -27,7 +28,7 @@ describe('glib/graphics/CullState', () => {
   beforeEach(() => {
     device = new Device()
     stateA = new CullState(device).assign(paramsA)
-    stateB = new CullState(device).assign(stateB)
+    stateB = new CullState(device).assign(paramsB)
     stateC = new CullState(device)
   })
   describe(`get/set/change`, () => {

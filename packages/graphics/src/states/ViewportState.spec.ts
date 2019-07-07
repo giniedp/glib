@@ -31,7 +31,7 @@ describe('glib/graphics/ViewportState', () => {
   beforeEach(() => {
     device = new Device()
     stateA = new ViewportState(device).assign(paramsA)
-    stateB = new ViewportState(device).assign(stateB)
+    stateB = new ViewportState(device).assign(paramsB)
     stateC = new ViewportState(device)
   })
   describe(`get/set/change`, () => {
