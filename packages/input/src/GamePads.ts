@@ -11,67 +11,7 @@ export interface IGamepadsOptions {
   /**
    * If true, the polling of new gamepad state is done automatically
    */
-  autopoll?: boolean
-}
-
-/**
- * The state of a game pad button
- *
- * @public
- */
-export interface GamepadButtonState {
-  /**
-   * Determines whether the button is pressed
-   */
-  pressed?: boolean
-  /**
-   * The button value
-   */
-  value?: number
-}
-
-/**
- * The captured state of a gamepad
- *
- * @public
- */
-export interface IGamepadState {
-  buttonValues: number[]
-  axes: number[]
-  buttons: GamepadButtonState[]
-  /**
-   * Determines whether the game pad is connected
-   */
-  connected: boolean
-  /**
-   * The game pad id
-   */
-  id: string
-  /**
-   * The game pad index
-   */
-  index: number
-  /**
-   * The button mapping being used
-   */
-  mapping: string
-  /**
-   * Time when the state was resolved
-   */
-  timestamp: number
-}
-
-function emptyGamepadState(): IGamepadState {
-  return {
-    buttonValues: null,
-    axes: null,
-    buttons: null,
-    connected: null,
-    id: null,
-    index: null,
-    mapping: null,
-    timestamp: null,
-  }
+  autoUpdate?: boolean
 }
 
 /**
@@ -81,11 +21,11 @@ export class Gamepads extends Events {
   /**
    * The current captured state
    */
-  public readonly state: IGamepadState[] = []
+  public readonly state: Gamepad[] = []
   /**
    * Whether automatic state polling should be activated or not
    */
-  protected autopoll: boolean = true
+  protected autoUpdate: boolean = true
   /**
    * Is called on the `gamepadconnected` event
    */
@@ -103,8 +43,8 @@ export class Gamepads extends Events {
    */
   constructor(options?: IGamepadsOptions) {
     super()
-    if (options && options.autopoll != null) {
-      this.autopoll = !!options.autopoll
+    if (options && options.autoUpdate != null) {
+      this.autoUpdate = !!options.autoUpdate
     }
     this.activate()
   }
@@ -117,8 +57,8 @@ export class Gamepads extends Events {
     this.deactivate()
     window.addEventListener('gamepadconnected', this.onConnected)
     window.addEventListener('gamepaddisconnected', this.onDisconnected)
-    if (this.autopoll) {
-      this.poll = loop(this.pollState.bind(this))
+    if (this.autoUpdate) {
+      this.poll = loop(() => this.update(false))
     }
   }
 
@@ -135,114 +75,28 @@ export class Gamepads extends Events {
    * Polls all gamepad states and captures the data. If any gamepad state has changed
    * this triggers the `changed` event.
    */
-  public pollState(trigger: boolean= true) {
-
+  public update(silent: boolean) {
     let pads = navigator.getGamepads()
-    let changed = false
     for (let i = 0; i < pads.length; i++) {
-      let pad = pads[i]
-      if (!pad) {
-        if (this.state[i]) {
-          delete this.state[i]
-          changed = true
-        }
-      } else {
-        changed = this.captureState(pad) || changed
-      }
-    }
-    if (changed && trigger) {
-      this.trigger('changed', this)
+      this.captureState(pads[i], i, silent)
     }
   }
 
   protected handleConnectionEvent(e: GamepadEvent) {
-    // this.gamepads[e.gamepad.index] = e.gamepad
-    this.captureState(e.gamepad)
-    this.trigger('changed', this, e)
+    this.captureState(e.gamepad, e.gamepad.index, false)
   }
+
   protected handleDisconnectionEvent(e: GamepadEvent) {
-    // this.gamepads[e.gamepad.index] = null
-    this.captureState(e.gamepad)
-    this.trigger('changed', this, e)
+    this.captureState(e.gamepad, e.gamepad.index, false)
   }
 
-  /**
-   * Gets a copy of the current state for given identifier.
-   */
-  public copyState(index: number, out: any= {}): IGamepadState {
-    let state = this.state[index]
-    let result = out as IGamepadState
-    // make sure arrays exist
-    result.axes = result.axes || []
-    result.buttons = result.buttons || []
-    result.buttonValues = result.buttonValues || []
-    if (!state) {
-      // make sure the interface is fulfilled
-      for (let key of statekeys) { result[key] = void 0 }
-      // empty state arrays
-      result.axes.length = 0
-      result.buttons.length = 0
-      result.buttonValues.length = 0
-      // fix index property and mark as disconnected
-      result.index = index
-      result.connected = false
-      return result
+  private captureState(pad: Gamepad, index: number, silent: boolean) {
+    if (this.state[index] !== pad) {
+      this.state[index] = pad
+      if (!silent) {
+        this.trigger('changed', this, index)
+      }
     }
-    // copy shallow data
-    for (let key of statekeys) {
-      result[key] = state[key]
-    }
-    // copy button data
-    for (let i = 0; i < state.buttons.length; i++) {
-      result.buttons[i] = result.buttons[i] || {}
-      result.buttons[i].pressed = state.buttons[i].pressed
-      result.buttons[i].value = state.buttons[i].value
-      result.buttonValues[i] = state.buttonValues[i]
-    }
-    // copy axis data
-    for (let i = 0; i < state.axes.length; i++) {
-      result.axes[i] = state.axes[i]
-    }
-    return result
-  }
-
-  protected captureState(pad: Gamepad): boolean {
-    let changed = false
-    let state: IGamepadState = this.state[pad.index] || emptyGamepadState()
-
-    // if timestamp did not change, there was no change in state
-    if ((state.timestamp === pad.timestamp) && (pad.timestamp !== void 0)) {
-      return false
-    }
-    // ensure arrays exist
-    state.axes = state.axes || []
-    state.buttons = state.buttons || []
-    state.buttonValues = state.buttonValues || []
-    // copy shallow data
-    for (let key of statekeys) {
-      changed = (changed || (state[key] !== pad[key]))
-      state[key] = pad[key]
-    }
-    // copy button data
-    changed = (changed || (state.buttons.length !== pad.buttons.length))
-    for (let i = 0; i < pad.buttons.length; i++) {
-      let a = state.buttons[i] || {} as GamepadButton // tslint:disable-line
-      let b = pad.buttons[i]
-      changed = (changed || (a.value !== b.value))
-      changed = (changed || (a.pressed !== b.pressed))
-      a.pressed = b.pressed
-      a.value = b.value
-      state.buttons[i] = a
-      state.buttonValues[i] = b.value
-    }
-    // copy axis data
-    changed = (changed || (state.axes.length !== pad.axes.length))
-    for (let i = 0; i < pad.axes.length; i++) {
-      changed = (changed || (state.axes[i] !== pad.axes[i]))
-      state.axes[i] = pad.axes[i]
-    }
-    this.state[pad.index] = state
-    return changed
   }
 }
 
