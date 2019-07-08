@@ -1,44 +1,35 @@
+// # Hello Triangle
+//
+// This example shows how to render primitive geometry using the @gglib/graphics package.
+//
 import { Device } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 
-// # Hello Triangle
-//
-// This example shows how to render primitive geometry using the gglib graphics package.
-// The steps can be summarized as follows:
-// 1. Instantiate the graphics `Device`.
-// 2. Create a program with a vertex and a fragment shader.
-// 3. Create a vertex buffer.
-// 4. Use the graphics device to draw the vertex buffer with the program.
-//
-// ---
-
-// Instantiate the graphics device by passing an existing canvas element as an option.
-
-let device = new Device({
+// Instantiate the graphics device and pass a reference to an existing canvas element
+const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 
 // Create a shader program with vertex and fragment shaders.
 // Here the shader source code is grabbed from the script tags.
-let program = device.createProgram({
+const program = device.createProgram({
   vertexShader: document.getElementById('vertex-shader').textContent,
   fragmentShader: document.getElementById('fragment-shader').textContent,
 })
 
 // Create the vertex buffer. In this example each triangle vertex
-// is defined by a position attribute.
-//
+// only has a position attribute.
 // The `layout` option describes how the `data` is structured.
-// Our vertex shader expects a vertex attribute with the name `vPosition` of type `vec3`.
-//
-// The `data` is simply a sequence of floats.
-// Each 3 floats define a vertex position
-let vertices = device.createVertexBuffer({
+// The vertex shader expects a vertex attribute with the name `vPosition`
+// of type `vec3` which in the end consists of `3` elements of type `float`
+const vertices = device.createVertexBuffer({
   layout: {
     vPosition: {
       type: 'float', offset: 0, elements: 3,
     },
   },
+  // The `data` is simply a sequence of floats.
+  // Each 3 floats define a vertex position
   data: [
     -0.5, -0.5, 0.0, // vertex 1
      0.5, -0.5, 0.0, // vertex 2
