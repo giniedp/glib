@@ -1,11 +1,12 @@
 import { extend, getTime } from '@gglib/utils'
-import { OnAdded, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { Service } from '../decorators'
+import { OnUpdate } from './../Component'
 
 /**
  * @public
  */
-export class TimeComponent implements OnAdded, OnRemoved, OnUpdate {
+@Service()
+export class TimeComponent implements OnUpdate {
 
   public current: number
   public elapsedMsInGame: number
@@ -24,14 +25,6 @@ export class TimeComponent implements OnAdded, OnRemoved, OnUpdate {
     this.totalMsInGame = 0
     this.elapsedMsInReal = 0
     this.totalMsInReal = 0
-  }
-
-  public onAdded(entity: Entity) {
-    entity.addService(TimeComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(TimeComponent)
   }
 
   public onUpdate(ms: number) {

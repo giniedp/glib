@@ -4,14 +4,10 @@
  * @public
  */
 export const getTime: () => number = (() => {
-  let result = () => new Date().getTime()
-  if (window['mozAnimationStartTime']) {
-    result = () => window['mozAnimationStartTime']()
-  }
   if (window.performance && typeof window.performance.now === 'function') {
-    result = () => window.performance.now()
+    return () => window.performance.now()
   }
-  return result
+  return () => Date.now()
 })()
 
 const raf: (cb: any) => void =

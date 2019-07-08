@@ -1,36 +1,58 @@
+// tslint:disable: max-classes-per-file
+
 import { Mat4 } from '@gglib/math'
-import { Scene } from '@gglib/render'
-import { extend, Log } from '@gglib/utils'
+import { getOption } from '@gglib/utils'
+import { OnUpdate } from '../Component'
 import { Inject, Service } from '../decorators'
-import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
-import { RendererComponent } from './RendererComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
  * @public
  */
-export interface CameraProperties {
+export abstract class CameraComponent {
+  public name = 'Camera'
+
+  public abstract get world(): Mat4
+  public view: Mat4 = Mat4.createIdentity()
+  public projection: Mat4 = Mat4.createIdentity()
+  public viewProjection: Mat4 = Mat4.createIdentity()
+}
+
+/**
+ * Constructor options for {@link PerspectiveCameraComponent}
+ *
+ * @public
+ */
+export interface PerspectiveCameraOptions {
+  /**
+   * The distance to near plane
+   */
   near?: number
+  /**
+   * The distance to far plane
+   */
   far?: number
+  /**
+   * The field of view
+   */
   fov?: number
+  /**
+   * The aspect ratio
+   */
   aspect?: number
 }
 
 /**
- * @public
+ * Adds perspective camera capability to an entity
  */
-@Service()
-export class CameraComponent implements /*OnAdded, OnRemoved, OnInit,*/ OnUpdate {
+@Service({ as: CameraComponent })
+export class PerspectiveCameraComponent extends CameraComponent implements OnUpdate {
 
   public near: number = 0.1
   public far: number = 1000
   public fov: number = Math.PI * 0.25
   public aspect: number = 4 / 3
-
-  public view: Mat4 = Mat4.createIdentity()
-  public projection: Mat4 = Mat4.createIdentity()
-  public viewProjection: Mat4 = Mat4.createIdentity()
 
   @Inject(Entity)
   public entity: Entity
@@ -38,48 +60,81 @@ export class CameraComponent implements /*OnAdded, OnRemoved, OnInit,*/ OnUpdate
   @Inject(TransformComponent)
   public transform: TransformComponent
 
-  private scene: Scene
-
   public get world() {
-    return this.transform.worldMat
+    return this.transform.matrix
   }
 
-  constructor(params?: CameraProperties) {
-    if (params) {
-      extend(this, params)
-    }
+  constructor(options: PerspectiveCameraOptions = {}) {
+    super()
+    this.near = getOption(options, 'near', 0.1)
+    this.far = getOption(options, 'far', 1000)
+    this.fov = getOption(options, 'fov', Math.PI * 0.5)
+    this.aspect = getOption(options, 'aspect', 16 / 9)
   }
 
   public onUpdate() {
-    if (this.scene && this.scene.viewport && this.scene.viewport.aspect) {
-      this.aspect = this.scene.viewport.aspect
-    }
-    this.view.initFrom(this.transform.inverseMat)
+    this.view.initFrom(this.transform.inverse)
     this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far)
     Mat4.multiply(this.view, this.projection, this.viewProjection)
   }
+}
 
-  public activate(viewId: number = 0) {
-    const renderer: RendererComponent = this.entity.root.getService(RendererComponent)
-    const view: Scene = renderer.manager.scenes.get(viewId)
+/**
+ * Constructor options for {@link OrthographicCameraComponent}
+ *
+ * @public
+ */
+export interface OrthographicCameraOptions {
+  /**
+   * The distance to near plane
+   */
+  near?: number
+  /**
+   * The distance to far plane
+   */
+  far?: number
+  /**
+   * The orthographic width
+   */
+  width?: number
+  /**
+   * The orthographic height
+   */
+  height?: number
+}
 
-    if (!view) {
-      Log.w('[CameraComponent]', `camera can not be attached to scene ${viewId}. Scene not found.`)
-      return
-    }
+/**
+ * Adds orthographic camera capability to an entity
+ */
+@Service({ as: CameraComponent })
+export class OrthographicCameraComponent extends CameraComponent implements OnUpdate {
 
-    const oldCamera: any = view.camera
-    if (oldCamera instanceof CameraComponent) {
-      oldCamera.deactivate()
-    }
-    this.scene = view
-    this.scene.camera = this
+  public near: number
+  public far: number
+  public width: number
+  public height: number
+
+  @Inject(Entity)
+  public entity: Entity
+
+  @Inject(TransformComponent)
+  public transform: TransformComponent
+
+  public get world() {
+    return this.transform.matrix
   }
 
-  public deactivate() {
-    if (this.scene) {
-      this.scene.camera = void 0
-      this.scene = void 0
-    }
+  constructor(options: OrthographicCameraOptions = {}) {
+    super()
+    this.near = getOption(options, 'near', 0.1)
+    this.far = getOption(options, 'far', 100)
+    this.width = getOption(options, 'width', 10)
+    this.height = getOption(options, 'height', 10)
+  }
+
+  public onUpdate() {
+    this.view.initFrom(this.transform.inverse)
+    this.projection.initOrthographic(this.width, this.height, this.near, this.far)
+    Mat4.multiply(this.view, this.projection, this.viewProjection)
   }
 }

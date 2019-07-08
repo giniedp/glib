@@ -7,40 +7,7 @@ files:
   - index.html
 ---
 extends /_layouts/_example
+block append script
+  script(type='text/javascript' src='./index.js')
 block content
-  .canvas-container
-  style().
-    .pad {
-      display: block;
-      padding: 0.5rem;
-    }
-    .pad .box {
-      position: relative;
-      background: #333;
-      padding: 0.5rem;
-      margin: 0.2rem 0.2rem;
-      display: block;
-      min-width: 135px;
-      float: left;
-      border: 0px;
-      border-radius: 0 15px 0 15px ;
-    }
-    .pad .box.id {
-      float: none;
-    }
-    .axes, .buttons {
-      display: block;
-      padding: 0;
-      clear: both;
-      float: none;
-    }
-
-    .pad label {
-      color: #aaaaaa;
-    }
-    .pad value {
-      color: #aaaaaa;
-      font-size: 1.2rem;
-      display: block;
-      text-align: right;
-    }
+  pre.canvas-container

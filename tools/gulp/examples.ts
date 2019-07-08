@@ -67,6 +67,7 @@ export function serve() {
   connect.server({
     name: 'Glib Examples',
     root: project.dist,
+    host: '0.0.0.0',
     port: 3000,
     livereload: true,
   })

@@ -1,7 +1,5 @@
 import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/utils'
 
-const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'screenX', 'screenY', 'clientX', 'clientY', 'x', 'y']
-
 /**
  * TouchPane constructor options
  *
@@ -10,23 +8,6 @@ const stateKeys: Array<keyof ITouchState> = ['identifier', 'pageX', 'pageY', 'sc
 export interface ITouchPaneOptions {
   eventTarget?: EventTarget,
   events?: string[]
-}
-
-/**
- * The captured touch state
- *
- * @public
- */
-export interface ITouchState {
-  identifier: number
-  pageX: number
-  pageY: number
-  screenX: number
-  screenY: number
-  clientX: number
-  clientY: number
-  x: number
-  y: number
 }
 
 /**
@@ -43,7 +24,7 @@ export class TouchPane extends Events  {
   /**
    * The current captured state
    */
-  public state: { [identifier: string]: ITouchState } = {}
+  public state: Map<number, Touch> = new Map<number, Touch>()
   /**
    * If `true` calls `preventDefault` on each received event
    */
@@ -136,42 +117,24 @@ export class TouchPane extends Events  {
   }
 
   /**
-   * Gets a copy of the current state for given identifier.
-   */
-  public copyState(id: number, out: any= {}): ITouchState {
-    let state = this.state[id]
-    if (!state) {
-      for (let key of stateKeys) { out[key] = void 0 }
-      out.identifier = id
-      out.active = false
-      return out
-    }
-    for (let key of stateKeys) { out[key] = state[key] }
-    out.identifier = id
-    out.active = true
-    return out
-  }
-  /**
    * Clears all captured states (or a specific if an `id` is given)
    */
   public clearState(id?: number) {
     if (id !== undefined) {
-      delete this.state[id]
+      this.state.delete(id)
       return
     }
-    for (let key of stateKeys) {
-      delete this.state[key]
-    }
+    this.state.clear()
   }
+
   /**
    * Updates the state from given `touchstart` event
    */
   private handleTouchStart(e: TouchEvent) {
-    let list = e.changedTouches
+    const list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      let touch = list[i]
-      this.state[touch.identifier] = TouchPane.copyState(touch, this.eventTarget, this.state[touch.identifier] || {})
+      this.state.set(list[i].identifier, list[i])
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
@@ -180,11 +143,10 @@ export class TouchPane extends Events  {
    * Updates the state from given `touchcancel` event
    */
   private handleTouchCancel(e: TouchEvent) {
-    let list = e.changedTouches
+    const list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      let touch = list[i]
-      delete this.state[touch.identifier]
+      this.state.delete(list[i].identifier)
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
@@ -193,11 +155,10 @@ export class TouchPane extends Events  {
    * Updates the state from given `touchmove` event
    */
   private handleTouchMove(e: TouchEvent) {
-    let list = e.changedTouches
+    const list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      let touch = list[i]
-      this.state[touch.identifier] = TouchPane.copyState(touch, this.eventTarget, this.state[touch.identifier] || {})
+      this.state.set(list[i].identifier, list[i])
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
@@ -209,21 +170,25 @@ export class TouchPane extends Events  {
     let list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      let touch = list[i]
-      delete this.state[touch.identifier]
+      this.state.delete(list[i].identifier)
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
   }
-  public static copyState(t: Touch, el: EventTarget, out: any): ITouchState {
-    for (let key of stateKeys) { out[key] = t[key] }
-    out.x = t.clientX
-    out.y = t.clientY
-    if (el['getBoundingClientRect']) {
-      let rect = el['getBoundingClientRect']()
-      out.x = t.clientX - rect.left
-      out.y = t.clientY - rect.top
+
+  public static getX(t: Touch): number {
+    if ('getBoundingClientRect' in t.target) {
+      const r = (t.target as HTMLElement).getBoundingClientRect()
+      return t.clientX - r.left
     }
-    return out
+    return t.clientX
+  }
+
+  public static getY(t: Touch): number {
+    if ('getBoundingClientRect' in t.target) {
+      const r = (t.target as HTMLElement).getBoundingClientRect()
+      return t.clientY - r.top
+    }
+    return t.clientY
   }
 }

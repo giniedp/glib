@@ -1,6 +1,6 @@
 export * from './CameraComponent'
 export * from './FpsComponent'
-export * from './GameLoopComponent'
+export * from './LoopComponent'
 export * from './KeyboardComponent'
 export * from './LightComponent'
 export * from './ModelComponent'

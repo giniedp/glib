@@ -1,14 +1,13 @@
-import { extend, getTime, requestFrame } from '@gglib/utils'
-import { OnAdded, OnRemoved } from './../Component'
+import { getOption, getTime, requestFrame } from '@gglib/utils'
+import { Inject, Service } from '../decorators'
 import { Entity } from './../Entity'
-import { Service } from '../decorators';
 
 /**
  * Constructor options for the {@link GameLoopComponent}
  *
  * @public
  */
-export interface GameLoopOptions {
+export interface LoopComponentOptions {
   preferTimeout?: boolean
   fixedTimeStep?: number
   isFixedTimeStep?: boolean
@@ -18,16 +17,13 @@ export interface GameLoopOptions {
   recursiveDraw?: boolean
 }
 
-function getOption<T>(options: GameLoopOptions, key: keyof GameLoopOptions, fallback: T): T {
-  return key in options ? options[key] as any : fallback
-}
-
 /**
  * @public
  */
 @Service()
-export class GameLoopComponent implements OnAdded, OnRemoved {
+export class LoopComponent {
 
+  public readonly name = 'Loop'
   public readonly preferTimeout: boolean = false
   public readonly fixedTimeStep: number = 1000 / 60
   public readonly isFixedTimeStep: boolean = true
@@ -39,23 +35,17 @@ export class GameLoopComponent implements OnAdded, OnRemoved {
   private tickFunction: () => void
   private time: number = 0
   private timeRest: number = 0
+
+  @Inject(Entity)
   private entity: Entity
 
-  constructor(params: GameLoopOptions = {}) {
+  constructor(params: LoopComponentOptions = {}) {
     this.preferTimeout = getOption(params, 'preferTimeout', this.preferTimeout)
     this.fixedTimeStep = getOption(params, 'fixedTimeStep', this.fixedTimeStep)
     this.isFixedTimeStep = getOption(params, 'isFixedTimeStep', this.isFixedTimeStep)
     this.recursiveSetup = getOption(params, 'recursiveSetup', this.recursiveSetup)
     this.recursiveUpdate = getOption(params, 'recursiveUpdate', this.recursiveUpdate)
     this.recursiveDraw = getOption(params, 'recursiveDraw', this.recursiveDraw)
-  }
-
-  public onAdded(entity: Entity) {
-    this.entity = entity
-  }
-
-  public onRemoved(entity: Entity) {
-    this.entity = null
   }
 
   public run() {

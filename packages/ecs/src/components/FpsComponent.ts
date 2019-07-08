@@ -5,7 +5,7 @@ import { TimeComponent } from './TimeComponent'
 /**
  * @public
  */
-@Service({ at: 'root' })
+@Service({ on: 'root' })
 export class FpsComponent implements OnUpdate {
 
   public frames: number

@@ -1,7 +1,7 @@
 import { Keys } from '@gglib/input'
 import { Quat, Vec3 } from '@gglib/math'
-import { OnAdded, OnInit, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { Inject, Service } from '../decorators'
+import { OnUpdate } from './../Component'
 import { KeyboardComponent } from './KeyboardComponent'
 import { MouseComponent } from './MouseComponent'
 import { TransformComponent } from './TransformComponent'
@@ -9,7 +9,8 @@ import { TransformComponent } from './TransformComponent'
 /**
  * @public
  */
-export class WASDComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
+@Service()
+export class WASDComponent implements OnUpdate {
 
   public yaw: number = 0
   public pitch: number = 0
@@ -28,23 +29,14 @@ export class WASDComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
   private translation: Vec3 = Vec3.createZero()
   private rotation: Quat = Quat.createIdentity()
 
+  @Inject(MouseComponent)
   private mouse: MouseComponent
+
+  @Inject(KeyboardComponent)
   private keyboard: KeyboardComponent
+
+  @Inject(TransformComponent)
   private transform: TransformComponent
-
-  public onAdded(entity: Entity) {
-    entity.addService(WASDComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(WASDComponent)
-  }
-
-  public onInit(entity: Entity) {
-    this.mouse = entity.getService(MouseComponent)
-    this.keyboard = entity.getService(KeyboardComponent)
-    this.transform = entity.getService(TransformComponent)
-  }
 
   public onUpdate(timeMs: number) {
     const timeSec = timeMs / 1000.0
@@ -56,32 +48,32 @@ export class WASDComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
     this.translation.init(0, 0, 0)
 
     if (keyboard.isPressed(Keys.KeyW)) {
-      trans.worldMat.getForward(this.direction)
+      trans.matrix.getForward(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
     if (keyboard.isPressed(Keys.KeyS)) {
-      trans.worldMat.getBackward(this.direction)
+      trans.matrix.getBackward(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
     if (keyboard.isPressed(Keys.KeyA)) {
-      trans.worldMat.getLeft(this.direction)
+      trans.matrix.getLeft(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
     if (keyboard.isPressed(Keys.KeyD)) {
-      trans.worldMat.getRight(this.direction)
+      trans.matrix.getRight(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
     if (keyboard.isPressed(Keys.KeyQ)) {
-      trans.worldMat.getDown(this.direction)
+      trans.matrix.getDown(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
     if (keyboard.isPressed(Keys.KeyE)) {
-      trans.worldMat.getUp(this.direction)
+      trans.matrix.getUp(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }

@@ -1,3 +1,4 @@
+import { Mat4 } from './Mat4'
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
@@ -170,6 +171,59 @@ export class Quat implements IVec2, IVec3, IVec4 {
     this.y = other.y
     this.z = other.z
     this.w = other.w
+    return this
+  }
+
+  public initFromMatrix(m: Mat4): this {
+    // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+    const a = m.data
+    const m00 = a[0]
+    const m01 = a[4]
+    const m02 = a[8]
+    const m03 = a[12]
+
+    const m10 = a[1]
+    const m11 = a[5]
+    const m12 = a[9]
+    const m13 = a[13]
+
+    const m20 = a[2]
+    const m21 = a[6]
+    const m22 = a[10]
+    const m23 = a[14]
+
+    const m30 = a[3]
+    const m31 = a[7]
+    const m32 = a[11]
+    const m33 = a[15]
+
+    const tr = m00 + m11 + m22
+
+    if (tr > 0) {
+      const s = Math.sqrt(tr + 1.0) * 2 // S=4*qw
+      this.w = 0.25 * s
+      this.x = (m21 - m12) / s
+      this.y = (m02 - m20) / s
+      this.z = (m10 - m01) / s
+    } else if ((m00 > m11) && (m00 > m22)) {
+      const s = Math.sqrt(1.0 + m00 - m11 - m22) * 2 // S=4*qx
+      this.w = (m21 - m12) / s
+      this.x = 0.25 * s
+      this.y = (m01 + m10) / s
+      this.z = (m02 + m20) / s
+    } else if (m11 > m22) {
+      const s = Math.sqrt(1.0 + m11 - m00 - m22) * 2 // S=4*qy
+      this.w = (m02 - m20) / s
+      this.x = (m01 + m10) / s
+      this.y = 0.25 * s
+      this.z = (m12 + m21) / s
+    } else {
+      const s = Math.sqrt(1.0 + m22 - m00 - m11) * 2 // S=4*qz
+      this.w = (m10 - m01) / s
+      this.x = (m02 + m20) / s
+      this.y = (m12 + m21) / s
+      this.z = 0.25 * s
+    }
     return this
   }
 

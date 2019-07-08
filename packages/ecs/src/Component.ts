@@ -1,6 +1,34 @@
 import { Entity } from './Entity'
 
 /**
+ * A life cycle hook that is called when the entity has been added to its parent
+ *
+ * @public
+ */
+export interface OnAttached {
+  /**
+   * A method that is called when the entity has been added to its parent
+   *
+   * @param entity - The entity
+   */
+  onAttached: (entity: Entity) => void
+}
+
+/**
+ * A life cycle hook that is called when the entity is about to be removed from its parent
+ *
+ * @public
+ */
+export interface OnDetach {
+  /**
+   * A method that is called when the entity is about to be removed from its parent
+   *
+   * @param entity - The entity
+   */
+  onDetach: (entity: Entity) => void
+}
+
+/**
  * A life cycle hook that is called when the component has been added to the entity
  *
  * @public
@@ -66,8 +94,20 @@ export interface OnDraw {
 }
 
 /**
+ * A life cycle hook that is called when an entity is being destroyed
+ *
  * @public
  */
-export interface Component extends Partial<OnAdded & OnRemoved & OnInit & OnUpdate & OnDraw> {
+export interface OnDestroy {
+  /**
+   * A method that is called when the entity is being destroyed
+   */
+  onDestroy: (entity: Entity) => void
+}
+
+/**
+ * @public
+ */
+export interface Component extends Partial<OnAttached & OnDetach & OnAdded & OnRemoved & OnInit & OnUpdate & OnDraw & OnDestroy> {
   name?: string
 }

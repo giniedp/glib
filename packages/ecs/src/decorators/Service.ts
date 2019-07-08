@@ -1,12 +1,14 @@
-import { Type } from '@gglib/utils';
+// tslint:disable: ban-types
+
+import { Type } from '@gglib/utils'
 
 export interface ServiceMetadata {
-  type: any
+  type: Object
   as: any
-  at: 'root' | 'parent' | 'self'
+  on: 'root' | 'parent' | 'self'
 }
 
-export const serviceMetadata = Symbol('serviceMetadata')
+const serviceMetadata = Symbol('serviceMetadata')
 
 export function getServiceMetadata<T>(target: T): ServiceMetadata | null {
   return target.constructor[serviceMetadata]
@@ -14,13 +16,13 @@ export function getServiceMetadata<T>(target: T): ServiceMetadata | null {
 
 export function Service<T, R>(options?: {
   as?: R,
-  at?: 'root' | 'parent' | 'self',
+  on?: 'root' | 'parent' | 'self',
 }) {
   return (target: Type<T>) => {
     target[serviceMetadata] = {
       type: target,
       as: options && options.as ? options.as : target,
-      at: options && options.at ? options.at : 'self',
+      on: options && options.on ? options.on : 'self',
     }
   }
 }

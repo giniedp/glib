@@ -1,91 +1,83 @@
-import { TouchPane } from '@gglib/input'
-import { extend } from '@gglib/utils'
-import { OnAdded, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { ITouchPaneOptions, TouchPane } from '@gglib/input'
+import { Service } from '../decorators'
+import { OnUpdate } from './../Component'
 
 /**
  * Constructor options for the {@link TouchComponent}
  *
  * @public
  */
-export interface TouchComponentOptions {
-  eventTarget?: EventTarget
-}
+export type TouchComponentOptions = ITouchPaneOptions
 
 /**
  * @public
  */
-export class TouchComponent implements OnAdded, OnRemoved, OnUpdate {
+@Service()
+export class TouchComponent implements OnUpdate {
 
-  public touch: TouchPane
-  public touchIds: number[]
+  public readonly name = 'Touch'
 
-  public oldStates: any
-  public newStates: any
+  public readonly touch: TouchPane
+  public readonly touchIds: ReadonlyArray<number>
 
-  constructor(options: TouchComponentOptions = {}) {
-    this.touch = new TouchPane({ eventTarget: options.eventTarget || document })
+  public oldStates = new Map<number, Touch>()
+  public newStates = new Map<number, Touch>()
+
+  constructor(options: TouchComponentOptions) {
+    this.touch = new TouchPane(options)
     this.touchIds = []
-    extend(this, options)
-    this.newStates = {}
-    this.oldStates = {}
-  }
-
-  public onAdded(entity: Entity) {
-    entity.addService(TouchComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(TouchComponent)
   }
 
   public onUpdate() {
-    let ids = this.touchIds
-    ids.length = 0
-    for (let id in this.touch.state) {
-      if (this.touch.state.hasOwnProperty(id)) {
-        ids.push(Number(id))
-      }
-    }
-    for (let id of ids) {
-      let tmp = this.oldStates[id] || {}
-      this.oldStates = this.newStates[id] || {}
-      this.newStates = tmp
-      this.touch.copyState(Number(id), tmp)
-    }
+    const ids = this.touchIds as number[]
+    ids.length = 0;
+
+    // swap states
+    [this.oldStates, this.newStates] = [this.newStates, this.oldStates]
+
+    this.newStates.clear()
+    this.touch.state.forEach((touch, id) => {
+      ids.push(id)
+      this.newStates.set(id, touch)
+    })
+  }
+
+  public justTouched(id: number) {
+    return this.newStates.has(id) && !this.oldStates.has(id)
+  }
+
+  public justReleased(id: number) {
+    return !this.newStates.has(id) && this.oldStates.has(id)
   }
 
   public x(id: number) {
-    let n = this.newStates[id]
-    if (n) { return n.x }
+    const t = this.newStates.get(id) || this.oldStates.get(id)
+    return t ? TouchPane.getX(t) : null
   }
 
   public y(id: number) {
-    let n = this.newStates[id]
-    if (n) { return n.y }
+    const t = this.newStates.get(id) || this.oldStates.get(id)
+    return t ? TouchPane.getY(t) : null
   }
 
-  public xDelta(id: number) {
-    let n = this.newStates[id]
-    let o = this.oldStates[id]
-    if (n && o && n.active && o.active) {
-      return n.x - o.x
-    }
-    return 0
+  public deltaX(id: number) {
+    return this.delta(id, 'clientX')
   }
 
-  public yDelta(id: number) {
-    let n = this.newStates[id]
-    let o = this.oldStates[id]
-    if (n && o && n.active && o.active) {
-      return n.y - o.y
-    }
-    return 0
+  public deltaY(id: number) {
+    return this.delta(id, 'clientY')
   }
 
   public isActive(id: number) {
-    let n = this.newStates[id]
-    let o = this.oldStates[id]
-    return n && o && n.active && o.active
+    return this.newStates.has(id) && this.oldStates.has(id)
+  }
+
+  public delta(id: number, key: keyof Touch) {
+    const n = this.newStates.get(id)
+    const o = this.oldStates.get(id)
+    if (n && o) {
+      return (n[key] as number) - (o[key] as number)
+    }
+    return 0
   }
 }

@@ -3,15 +3,18 @@ import { Device, DeviceOptions, LightType } from '@gglib/graphics'
 
 import {
   CameraComponent,
-  CameraProperties,
   FpsComponent,
-  GameLoopComponent,
-  GameLoopOptions,
   KeyboardComponent,
   LightComponent,
   LightComponentOptions,
+  LoopComponent,
+  LoopComponentOptions,
   ModelComponent,
   MouseComponent,
+  OrthographicCameraComponent,
+  OrthographicCameraOptions,
+  PerspectiveCameraComponent,
+  PerspectiveCameraOptions,
   RendererComponent,
   TimeComponent,
   TransformComponent,
@@ -38,10 +41,10 @@ export interface CreateGameOptions {
   /**
    * An instance of the game loop component or options for the constructor
    */
-  gameLoop?: GameLoopOptions | GameLoopComponent
+  gameLoop?: LoopComponentOptions | LoopComponent
 
   /**
-   * If `true` the game loop will start immediately
+   * If `true` the game loop will start automatically on next macro task (scheduled with `setTimeout`)
    */
   autorun?: boolean
 }
@@ -66,11 +69,11 @@ export function createGame(options: CreateGameOptions, ...tap: Array<(entity: En
     ? options.content
     : new ContentManager(device, options.content)
 
-  const gameLoop = options.gameLoop instanceof GameLoopComponent
+  const gameLoop = options.gameLoop instanceof LoopComponent
     ? options.gameLoop
-    : new GameLoopComponent(options.gameLoop)
+    : new LoopComponent(options.gameLoop)
 
-  return new Entity().tap((entity) => {
+  return Entity.createRoot().tap((entity) => {
     entity
       .addService(Device, device)
       .addService(ContentManager, content)
@@ -79,7 +82,7 @@ export function createGame(options: CreateGameOptions, ...tap: Array<(entity: En
       .addComponent(new FpsComponent())
     tap.forEach((t) => t(entity))
     if (options.autorun !== false) {
-      entity.getService(GameLoopComponent).run()
+      setTimeout(() => entity.getService(LoopComponent).run())
     }
   })
 }
@@ -106,10 +109,10 @@ export function addBasicRenderer(entity: Entity) {
  * @param entity - The entity
  * @param options - Constructor options for the {@link CameraComponent}
  */
-export function addCamera(entity: Entity, options?: CameraProperties) {
+export function addCamera(entity: Entity, options?: PerspectiveCameraOptions) {
   addTransform(entity)
   if (entity.getService(CameraComponent, null) == null) {
-    entity.addComponent(new CameraComponent(options))
+    entity.addComponent(new PerspectiveCameraComponent(options))
   }
 }
 

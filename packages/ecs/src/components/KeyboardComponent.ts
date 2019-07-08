@@ -1,5 +1,4 @@
-import { IKeyboardState, Keyboard } from '@gglib/input'
-import { extend } from '@gglib/utils'
+import { IKeyboardOptions, IKeyboardState, Keyboard } from '@gglib/input'
 import { Service } from '../decorators'
 import { OnUpdate } from './../Component'
 
@@ -8,13 +7,14 @@ import { OnUpdate } from './../Component'
  */
 @Service()
 export class KeyboardComponent implements OnUpdate {
+  public readonly name = 'Keyboard'
+
   public keyboard: Keyboard
   public newState: IKeyboardState
   public oldState: IKeyboardState
 
-  constructor(options: any= {}) {
-    this.keyboard = new Keyboard()
-    extend(this, options)
+  constructor(options: IKeyboardOptions= {}) {
+    this.keyboard = new Keyboard(options)
     this.newState = this.keyboard.copyState({})
     this.oldState = this.keyboard.copyState({})
   }

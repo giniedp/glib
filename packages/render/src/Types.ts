@@ -3,7 +3,7 @@ import { IVec4, Mat4 } from '@gglib/math'
 import { Manager } from './Manager'
 
 /**
- * Describes an object that can be rendered using a shader program
+ * An object that is drawable with a shader program
  *
  * @public
  */

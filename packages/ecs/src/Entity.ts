@@ -1,7 +1,11 @@
 import { Events, Type } from '@gglib/utils'
 import { Component } from './Component'
 import { getInjectMetadata, getServiceMetadata } from './decorators'
-import { find, findAll } from './finder'
+import { errorOnMissingService } from './errors'
+import { Query } from './query'
+
+const query = new Query()
+const boundEntity = Symbol('boundEntity')
 
 /**
  * An object that holds a collection of components a collection of services and a collection of child entities.
@@ -30,6 +34,13 @@ export class Entity extends Events {
    * The root entity
    */
   public readonly root: Entity
+
+  /**
+   * Indicates whether this entity is a root entity
+   */
+  public get isRoot() {
+    return this.root === this
+  }
 
   /**
    * The parent entity
@@ -61,9 +72,20 @@ export class Entity extends Events {
   private toUpdate: Component[] = []
   private toInitialize: Component[] = []
 
-  constructor() {
+  private constructor(scope: Entity) {
     super()
-    this.root = this
+    this.root = scope || this
+  }
+
+  /**
+   * Creates a new root entity
+   *
+   * @remarks
+   * The created entity has the `root` property set to itself.
+   * That makes it a root entity and it can never be added as a child.
+   */
+  public static createRoot() {
+    return new Entity(null)
   }
 
   /**
@@ -100,39 +122,32 @@ export class Entity extends Events {
   /**
    * Gets a service for given key
    */
-  public getService<T>(key: any, fallback?: T): T
+  public getService<T>(key: any, fallback?: T): T // tslint:disable-line: unified-signatures
   public getService(key: any, fallback?: any) {
     const result = this.services.get(key)
-    if (result == null && fallback !== undefined) {
+    if (result != null) {
+      return result
+    }
+    if (fallback !== undefined) {
       return fallback
     }
-    if (result == null) {
-      throw new Error(`Service '${key}' is missing`)
-    }
-    return result
+    errorOnMissingService(key)
   }
 
   /**
-   * Adds a child entity and creates a parent child relationship
-   */
-  public addChild(entity: Entity): this {
-    if (entity.parent) {
-      entity.parent.removeChild(entity)
-    }
-    (this.children as Entity[]).push(entity);
-    (entity as { parent: Entity }).parent = this;
-    (entity as { root: Entity }).root = this.root
-    return this
-  }
-
-  /**
-   * Creates and adds a new child entity and passes it to the given callback
+   * Creates and adds a new child entity.
+   *
+   * @remarks
+   * The created child is not returned. Use a callback to access
+   * and populate the created entity.
+   * @param callbacks - The callbacks to call with the new child entity
    */
   public createChild(...callbacks: Array<(entity: Entity) => void>): this {
-    const child = new Entity()
+    const child = new Entity(this.root)
     this.addChild(child)
-    for (const cb of callbacks) {
-      cb(child)
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < callbacks.length; i++) {
+      callbacks[i](child)
     }
     return this
   }
@@ -146,14 +161,65 @@ export class Entity extends Events {
   }
 
   /**
+   * Adds a child entity and creates a parent child relationship
+   *
+   * @remarks
+   * Entities can not leave their root scope. Thus the given entity
+   * must have the same root entity as its new parent. Otherwise
+   * an error is thrown.
+   *
+   * The entity will be removed from its current parent if it already
+   * has one.
+   */
+  public addChild(entity: Entity): this {
+    if (entity.root !== this.root) {
+      throw new Error('Child entities must belong to the same root')
+    }
+    if (entity === this) {
+      throw new Error('An entity can not be a child of itself')
+    }
+    if (entity.isRoot) {
+      throw new Error('A root entity can not be added as a child')
+    }
+    if (entity.parent === this) {
+      return
+    }
+    if (entity.parent) {
+      entity.parent.removeChild(entity)
+    }
+    (this.children as Entity[]).push(entity);
+    (entity as { parent: Entity }).parent = this
+
+    for (const cmp of entity.components) {
+      this.registerService(cmp, 'parent')
+      this.injectServices(cmp, 'parent')
+      if (cmp.onAttached) {
+        cmp.onAttached(entity)
+      }
+    }
+
+    return this
+  }
+
+  /**
    * Removes the given entity from the child collection and breaks the parent child relation ship
    */
   public removeChild(entity: Entity): this {
     const index = this.children.indexOf(entity)
-    if (index >= 0) {
-      (this.children as Entity[]).splice(index, 1);
-      (entity as { parent: Entity }).parent = null
+    if (index === -1) {
+      return this
     }
+
+    for (const cmp of entity.components) {
+      this.ejectServices(cmp, 'parent')
+      this.unregisterService(cmp, 'parent')
+      if (cmp.onDetach) {
+        cmp.onDetach(entity)
+      }
+    }
+
+    (this.children as Entity[]).splice(index, 1);
+    (entity as { parent: Entity }).parent = null
     return this
   }
 
@@ -177,14 +243,10 @@ export class Entity extends Events {
    * will be called at the end of this function.
    */
   public addComponent(comp: Component): Entity {
-
-    // Bind to entity
-    // TODO: find a way to store a component->entity relation without
-    // writing to the component object
-    if (comp['$$boundEntity']) {
-      (comp['$$boundEntity'] as Entity).removeComponent(comp)
+    if (comp[boundEntity]) {
+      (comp[boundEntity] as Entity).removeComponent(comp)
     }
-    comp['$$boundEntity'] = this
+    comp[boundEntity] = this
 
     // Add to update lists
     if (this.components.indexOf(comp) < 0) {
@@ -195,10 +257,10 @@ export class Entity extends Events {
     }
 
     this.injectEntity(comp)
-    this.registerServices(comp)
+    this.registerService(comp)
 
     // Run life cycle
-    if (typeof comp.onAdded === 'function') {
+    if (comp.onAdded) {
       comp.onAdded(this)
     }
     return this
@@ -214,7 +276,7 @@ export class Entity extends Events {
     let index = this.components.indexOf(comp)
     if (index >= 0) {
       (this.components as Component[]).splice(index, 1)
-      comp['$$boundEntity'] = null
+      comp[boundEntity] = null
       isRemoved = true
     }
 
@@ -229,10 +291,10 @@ export class Entity extends Events {
     }
 
     this.ejectServices(comp)
-    this.unregisterServices(comp)
+    this.unregisterService(comp)
 
     // Run life cycle
-    if (isRemoved && typeof comp.onRemoved === 'function') {
+    if (isRemoved && comp.onRemoved) {
       comp.onRemoved(this)
     }
 
@@ -251,22 +313,24 @@ export class Entity extends Events {
 
       this.injectServices(cmp)
 
-      // Run life cycle
-      if (typeof cmp.onInit === 'function') {
-        cmp.onInit(this)
-      }
-      if (typeof cmp.onUpdate === 'function' && this.toUpdate.indexOf(cmp) < 0) {
+      if (cmp.onUpdate && this.toUpdate.indexOf(cmp) < 0) {
         this.toUpdate.push(cmp)
       }
-      if (typeof cmp.onDraw === 'function' && this.toDraw.indexOf(cmp) < 0) {
+      if (cmp.onDraw && this.toDraw.indexOf(cmp) < 0) {
         this.toDraw.push(cmp)
+      }
+      // Run life cycle
+      if (cmp.onInit) {
+        cmp.onInit(this)
       }
     }
 
-    if (recursive) {
-      for (const it of this.children) {
-        it.initializeComponents(recursive)
-      }
+    if (!recursive) {
+      return this
+    }
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].initializeComponents(recursive)
     }
     return this
   }
@@ -274,17 +338,19 @@ export class Entity extends Events {
   /**
    * Calls `onUpdate` on each attached component
    *
-   * @param time - The current game time
    * @param recursive - Whether to continue the update call recursively on every child
    */
   public updateComponents(time: number, recursive: boolean = true): void {
-    for (const cmp of this.toUpdate) {
-      cmp.onUpdate(time)
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < this.toUpdate.length; i++) {
+      this.toUpdate[i].onUpdate(time)
     }
-    if (recursive) {
-      for (const it of this.children) {
-        it.updateComponents(time, recursive)
-      }
+    if (!recursive) {
+      return
+    }
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].updateComponents(time, recursive)
     }
   }
 
@@ -295,28 +361,31 @@ export class Entity extends Events {
    * @param recursive - Whether to continue the draw call recursively on every child
    */
   public drawComponents(time: number, recursive: boolean = true): void {
-    for (const cmp of this.toDraw) {
-      cmp.onDraw(time)
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < this.toDraw.length; i++) {
+      this.toDraw[i].onDraw(time)
     }
-    if (recursive) {
-      for (const it of this.children) {
-        it.drawComponents(time, recursive)
-      }
+    if (!recursive) {
+      return
+    }
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].drawComponents(time, recursive)
     }
   }
 
   /**
    * Finds the objects that match the given expression.
    */
-  public findAll(query: string) {
-    return findAll(query, this)
+  public findAll(search: string, result?: Entity[]) {
+    return query.findAll(this, search, result)
   }
 
   /**
    * Finds the first object that matches the given expression.
    */
-  public find(query: string) {
-    return find(query, this)
+  public find(search: string) {
+    return query.findOne(this, search)
   }
 
   /**
@@ -329,8 +398,9 @@ export class Entity extends Events {
     if (includeSelf) {
       result.push(this)
     }
-    for (const it of this.children) {
-      it.descendants(true, result)
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < this.children.length; i++) {
+      this.children[i].descendants(true, result)
     }
     return result
   }
@@ -348,9 +418,11 @@ export class Entity extends Events {
       }
       return result
     }
-    for (const it of this.parent.children) {
-      if (it !== this || includeSelf) {
-        result.push(it)
+    const c = this.parent.children
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < c.length; i++) {
+      if (c[i] !== this || includeSelf) {
+        result.push(c[i])
       }
     }
     return result
@@ -374,48 +446,66 @@ export class Entity extends Events {
 
   private injectEntity(component: Component) {
     const meta = getInjectMetadata(component)
-    if (meta) {
-      meta.forEach((m) => {
-        if (m.service === Entity) {
-          m.target[m.property] = this[m.from] as Entity || this
-        }
-      })
+    if (!meta) {
+      return
     }
+    meta.forEach((m) => {
+      if (m.serviceKey === Entity) {
+        component[m.properyKey] = this[m.from] as Entity || this
+      }
+    })
   }
 
-  private injectServices(component: Component) {
+  private ejectEntity(component: Component) {
     const meta = getInjectMetadata(component)
-    if (meta) {
-      meta.forEach((m) => {
-        if (m.service !== Entity) {
-          m.target[m.property] = (this[m.from] as Entity || this).getService(m.service)
-        }
-      })
+    if (!meta) {
+      return
     }
+    meta.forEach((m) => {
+      if (m.serviceKey === Entity) {
+        component[m.properyKey] = null
+      }
+    })
   }
 
-  private ejectServices(component: Component, which?: 'root' | 'parent' | 'self') {
+  private injectServices(component: Component, from?: 'root' | 'parent' | 'self') {
     const meta = getInjectMetadata(component)
-    if (meta) {
-      meta.forEach((m) => {
-        if (!which || which === m.from) {
-          m.target[m.property] = null
-        }
-      })
+    if (!meta) {
+      return
+    }
+    meta.forEach((m) => {
+      if (m.serviceKey === Entity) {
+        return
+      }
+      if (!from || from === m.from) {
+        component[m.properyKey] = (this[m.from] as Entity || this).getService(m.serviceKey)
+      }
+    })
+  }
+
+  private ejectServices(component: Component, from?: 'root' | 'parent' | 'self') {
+    const meta = getInjectMetadata(component)
+    if (!meta) {
+      return
+    }
+    meta.forEach((m) => {
+      if (!from || from === m.from) {
+        component[m.properyKey] = null
+      }
+    })
+  }
+
+  private registerService(component: Component, on?: 'root' | 'parent' | 'self') {
+    const meta = getServiceMetadata(component)
+    if (meta && (!on || on === meta.on)) {
+      (this[meta.on] as Entity || this).addService(meta.as, component, true)
     }
   }
 
-  private registerServices(component: Component) {
-    const sMeta = getServiceMetadata(component)
-    if (sMeta) {
-      (this[sMeta.at] as Entity || this).addService(sMeta.as, component)
-    }
-  }
-
-  private unregisterServices(component: Component, which?: 'root' | 'parent' | 'self') {
-    const m = getServiceMetadata(component)
-    if (m && (!which || which === m.at)) {
-      (this[m.at] as Entity || this).removeService(m.as)
+  private unregisterService(component: Component, on?: 'root' | 'parent' | 'self') {
+    const meta = getServiceMetadata(component)
+    if (meta && (!on || on === meta.on)) {
+      (this[meta.on] as Entity || this).removeService(meta.as)
     }
   }
 }

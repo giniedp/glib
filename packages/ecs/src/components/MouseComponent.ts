@@ -1,30 +1,28 @@
-import { IMouseState, Mouse} from '@gglib/input'
-import { extend } from '@gglib/utils'
-import { OnAdded, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { IMouseOptions, IMouseState, Mouse } from '@gglib/input'
+import { Service } from '../decorators'
+import { OnUpdate } from './../Component'
+
+/**
+ * Constructor options for {@link MouseComponent}
+ */
+export type MouseComponentOptions = IMouseOptions
 
 /**
  * @public
  */
-export class MouseComponent implements OnAdded, OnRemoved, OnUpdate {
+@Service()
+export class MouseComponent implements OnUpdate {
+
+  public readonly name = 'Mouse'
 
   public readonly mouse: Mouse
   public newState: IMouseState
   public oldState: IMouseState
 
-  constructor(options: any= {}) {
-    this.mouse = new Mouse({ eventTarget: options.el || document })
-    extend(this, options)
+  constructor(options: MouseComponentOptions = {}) {
+    this.mouse = new Mouse(options)
     this.newState = this.mouse.copyState({})
     this.oldState = this.mouse.copyState({})
-  }
-
-  public onAdded(entity: Entity) {
-    entity.addService(MouseComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(MouseComponent)
   }
 
   public onUpdate() {
@@ -34,75 +32,75 @@ export class MouseComponent implements OnAdded, OnRemoved, OnUpdate {
     this.mouse.copyState(toUpdate)
   }
 
-  get x() {
+  public get x() {
     return this.newState.x
   }
 
-  get y() {
+  public get y() {
     return this.newState.y
   }
 
-  get xDelta() {
+  public get xDelta() {
     return this.newState.x - this.oldState.x
   }
 
-  get yDelta() {
+  public get yDelta() {
     return this.newState.y - this.oldState.y
   }
 
-  get wheel() {
+  public get wheel() {
     return this.newState.wheel
   }
 
-  get wheelDelta() {
+  public get wheelDelta() {
     return this.newState.wheel - this.oldState.wheel
   }
 
-  get leftButtonIsPressed(): boolean {
+  public get leftButtonIsPressed(): boolean {
     return this.newState.buttons[0]
   }
 
-  get leftButtonJustPressed(): boolean {
+  public get leftButtonJustPressed(): boolean {
     return !this.oldState.buttons[0] && this.newState.buttons[0]
   }
 
-  get leftButtonIsReleased(): boolean {
+  public get leftButtonIsReleased(): boolean {
     return this.newState.buttons[0]
   }
 
-  get leftButtonJustReleased(): boolean {
+  public get leftButtonJustReleased(): boolean {
     return this.oldState.buttons[0] && !this.newState.buttons[0]
   }
 
-  get middleButtonIsPressed(): boolean {
+  public get middleButtonIsPressed(): boolean {
     return this.newState.buttons[1]
   }
 
-  get middleButtonJustPressed(): boolean {
+  public get middleButtonJustPressed(): boolean {
     return !this.oldState.buttons[1] && this.newState.buttons[1]
   }
 
-  get middleButtonIsReleased(): boolean {
+  public get middleButtonIsReleased(): boolean {
     return this.newState.buttons[1]
   }
 
-  get middleButtonJustReleased(): boolean {
+  public get middleButtonJustReleased(): boolean {
     return this.oldState.buttons[1] && !this.newState.buttons[1]
   }
 
-  get rightButtonIsPressed(): boolean {
+  public get rightButtonIsPressed(): boolean {
     return this.newState.buttons[2]
   }
 
-  get rightButtonJustPressed(): boolean {
+  public get rightButtonJustPressed(): boolean {
     return !this.oldState.buttons[2] && this.newState.buttons[2]
   }
 
-  get rightButtonIsReleased(): boolean {
+  public get rightButtonIsReleased(): boolean {
     return this.newState.buttons[2]
   }
 
-  get rightButtonJustReleased(): boolean {
+  public get rightButtonJustReleased(): boolean {
     return this.oldState.buttons[2] && !this.newState.buttons[2]
   }
 

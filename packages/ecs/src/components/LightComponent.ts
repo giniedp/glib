@@ -26,6 +26,8 @@ export interface LightComponentOptions {
 }
 
 /**
+ * Adds a light source capability to an entity
+ *
  * @public
  */
 @Service()
@@ -33,6 +35,9 @@ export class LightComponent implements OnUpdate {
 
   @Inject(Entity)
   public entity: Entity
+
+  @Inject(TransformComponent)
+  public transform: TransformComponent
 
   public enabled: boolean
   public range: number
@@ -62,17 +67,10 @@ export class LightComponent implements OnUpdate {
   }
 
   public onUpdate() {
-    let t = this.entity.getService(TransformComponent, null)
-    if (t) {
-      this.direction.x = -t.worldMat.backward[0]
-      this.direction.y = -t.worldMat.backward[1]
-      this.direction.z = -t.worldMat.backward[2]
-
-      this.position.x = t.worldMat.translation[0]
-      this.position.y = t.worldMat.translation[1]
-      this.position.z = t.worldMat.translation[2]
+    if (this.transform) {
+      this.transform.matrix.getForward(this.direction)
+      this.transform.matrix.getTranslation(this.position)
     }
-
     this.updateParams()
   }
 

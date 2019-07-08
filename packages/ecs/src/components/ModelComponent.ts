@@ -1,6 +1,7 @@
 import { Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { DrawableData } from '@gglib/render'
+import { Inject } from '../decorators'
 import { OnAdded, OnInit, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
 import { DrawablesCollector, DrawablesProvider } from './Renderable'
@@ -29,9 +30,10 @@ export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemo
     }
   }
 
+  @Inject(TransformComponent)
   public transform: TransformComponent
-  public world: Mat4 = Mat4.createIdentity()
 
+  private world: Mat4 = Mat4.createIdentity()
   private $model: Model
   private $drawables: DrawableData[] = []
 
@@ -55,20 +57,11 @@ export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemo
 
   public onUpdate() {
     if (this.transform) {
-      this.world.initFrom(this.transform.worldMat)
+      this.world.initFrom(this.transform.matrix)
     }
   }
 
   public collectDrawables(result: DrawablesCollector) {
-    // if (this.model) {
-    //   for (const mesh of this.model.meshes) {
-    //     result.addDrawable({
-    //       drawable: mesh,
-    //       material: this.model.materials[0],
-    //       world: this.world,
-    //     })
-    //   }
-    // }
     for (const it of this.$drawables) {
       result.addDrawable(it)
     }

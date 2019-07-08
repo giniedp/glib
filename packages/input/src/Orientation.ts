@@ -1,8 +1,5 @@
-import { Events, extend, Log } from '@gglib/utils'
 import { IVec3 } from '@gglib/math'
-
-const hasOrientationApi = 'DeviceOrientationEvent' in window
-const hasMotionApi = 'DeviceMotionEvent' in window
+import { Events, extend, Log } from '@gglib/utils'
 
 /**
  * Orientation constructor options
@@ -50,6 +47,10 @@ export interface IOrientationState {
  * @public
  */
 export class Orientation extends Events {
+
+  public static readonly hasOrientationApi = 'DeviceOrientationEvent' in window
+  public static readonly hasMotionApi = 'DeviceMotionEvent' in window
+
   public state: IOrientationState = {
     orientation: {
       absolute: false, alpha: 0, beta: 0, gamma: 0,
@@ -86,8 +87,8 @@ export class Orientation extends Events {
    */
   constructor() {
     super()
-    if (!hasOrientationApi) { Log.w('[Device] orientation api is not supported by the device') }
-    if (!hasMotionApi) { Log.w('[Device] motion api is not supported by the device') }
+    if (!Orientation.hasOrientationApi) { Log.w('[Orientation] orientation api is not supported') }
+    if (!Orientation.hasMotionApi) { Log.w('[Orientation] motion api is not supported') }
     this.activate()
   }
 

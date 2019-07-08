@@ -266,7 +266,7 @@ export class Mouse extends Events {
    * Updates the movement state from given event
    */
   protected onMouseMove(e: MouseEvent) {
-    let s = this.state
+    const s = this.state
     s.pageX = e.pageX
     s.pageY = e.pageY
     s.screenX = e.screenX
@@ -277,8 +277,8 @@ export class Mouse extends Events {
     s.movementY = e[cross.movementY]
     s.x = e.clientX
     s.y = e.clientY
-    if (this.eventTarget['getBoundingClientRect']) {
-      let rect = this.eventTarget['getBoundingClientRect']()
+    if (e.target['getBoundingClientRect']) {
+      const rect = (e.target as HTMLElement).getBoundingClientRect()
       s.x = e.clientX - rect.left
       s.y = e.clientY - rect.top
     }

@@ -1,15 +1,27 @@
-import { IVec3, Mat4, Quat, Vec3 } from '@gglib/math'
-import { extend } from '@gglib/utils'
-import { OnAdded, OnRemoved, OnUpdate } from './../Component'
-import { Entity } from './../Entity'
+import { IVec3, IVec4, Mat4, Quat, Vec3 } from '@gglib/math'
+import { getOption } from '@gglib/utils'
+
+import { Service } from '../decorators'
+import { OnUpdate } from './../Component'
 
 /**
+ * Constructor options for {@link TransformComponent}
+ *
  * @public
  */
-export interface TransformProperties {
-  position?: Vec3
-  rotation?: Quat
-  scale?: Vec3
+export interface TransformComponentOptions {
+  /**
+   * The scale vector.
+   */
+  scale?: IVec3
+  /**
+   * The scale vector.
+   */
+  position?: IVec3
+  /**
+   * The rotation
+   */
+  rotation?: IVec4
 }
 
 const tempQuat = Quat.createIdentity()
@@ -19,43 +31,76 @@ const tempVec = Vec3.createZero()
 /**
  * @public
  */
-export class TransformComponent implements OnAdded, OnRemoved, OnUpdate {
+@Service()
+export class TransformComponent implements OnUpdate {
 
-  public readonly scale = Vec3.createOne()
-  public readonly position: Vec3 = Vec3.createZero()
-  public readonly rotation: Quat = Quat.createIdentity()
-  public readonly worldMat: Mat4 = Mat4.createIdentity()
-  public readonly inverseMat: Mat4 = Mat4.createIdentity()
+  public readonly name = 'Transform'
 
-  public dirty = true
+  /**
+   * The current scale state
+   *
+   * @remarks
+   * Prefer not to change this property directly but instead by using the `set*` methods.
+   * If changed directly, make sure that the `dirty` property is set to true to
+   * indicate that the matrix must be updated
+   */
+  public readonly scale: Vec3
+  /**
+   * The current translation state
+   *
+   * @remarks
+   * Prefer not to change this property directly but instead by using the `set*` methods.
+   * If changed directly, make sure that the `dirty` property is set to true to
+   * indicate that the matrix must be updated
+   */
+  public readonly position: Vec3
+  /**
+   * The current rotation state
+   *
+   * @remarks
+   * Prefer not to change this property directly but instead by using the `set*` methods.
+   * If changed directly, make sure that the `dirty` property is set to true to
+   * indicate that the matrix must be updated
+   */
+  public readonly rotation: Quat
 
-  constructor(params?: TransformProperties) {
-    if (params) {
-      extend(this, params)
-    }
-    this.scale = Vec3.convert(this.scale || Vec3.createOne())
-    this.position = Vec3.convert(this.position || Vec3.createZero())
-    this.rotation = Quat.convert(this.rotation || Quat.createIdentity())
-  }
+  /**
+   * The current transform matrix.
+   *
+   * @remarks
+   * This is updated automatically on every frame if the `dirty` property
+   * is `true`.
+   */
+  public readonly matrix: Mat4 = Mat4.createIdentity()
+  /**
+   * The current inverse of the transform matrix.
+   *
+   * @remarks
+   * This is updated automatically on every frame if the `dirty` property
+   * is `true`.
+   */
+  public readonly inverse: Mat4 = Mat4.createIdentity()
 
-  public onAdded(entity: Entity) {
-    entity.addService(TransformComponent, this)
-  }
+  /**
+   * Indicates that the state has changed and the transform matrix must be updated
+   */
+  public dirty: boolean
 
-  public onRemoved(entity: Entity) {
-    entity.removeService(TransformComponent)
+  constructor(options: TransformComponentOptions = {}) {
+    this.scale = Vec3.convert(getOption(options, 'scale', Vec3.createOne()))
+    this.position = Vec3.convert(getOption(options, 'position', Vec3.createZero()))
+    this.rotation = Quat.convert(getOption(options, 'rotation', Quat.createIdentity()))
+    this.dirty = true
   }
 
   public onUpdate() {
     if (this.dirty) {
-      this.worldMat
+      this.matrix
         .initIdentity()
         .setScale(this.scale)
         .multiply(tempMat.initFromQuaternion(this.rotation))
         .setTranslation(this.position)
-      this.inverseMat
-        .initFrom(this.worldMat)
-        .invert()
+      Mat4.invert(this.matrix, this.inverse)
       this.dirty = false
     }
   }
@@ -118,6 +163,14 @@ export class TransformComponent implements OnAdded, OnRemoved, OnUpdate {
     return this
   }
 
+  public setScaleUniform(value: number): this {
+    this.scale.x = value
+    this.scale.y = value
+    this.scale.z = value
+    this.dirty = true
+    return this
+  }
+
   public scaleBy(scale: IVec3): this {
     this.scale.x *= scale.x
     this.scale.y *= scale.y
@@ -142,14 +195,6 @@ export class TransformComponent implements OnAdded, OnRemoved, OnUpdate {
       return this
   }
 
-  public setScaleUniform(value: number): this {
-    this.scale.x = value
-    this.scale.y = value
-    this.scale.z = value
-    this.dirty = true
-    return this
-  }
-
   public setPosition(position: IVec3): this {
     this.position.x = position.x
     this.position.y = position.y
@@ -166,18 +211,24 @@ export class TransformComponent implements OnAdded, OnRemoved, OnUpdate {
     return this
   }
 
-  public translate(vec: IVec3): this {
-    this.position.x += vec.x
-    this.position.y += vec.y
-    this.position.z += vec.z
+  public translate(delta: IVec3): this {
+    this.position.x += delta.x
+    this.position.y += delta.y
+    this.position.z += delta.z
     this.dirty = true
     return this
   }
 
-  public translateXYZ(x: number, y: number, z: number): this {
-    this.position.x += x
-    this.position.y += y
-    this.position.z += z
+  public translateXYZ(dx: number, dy: number, dz: number): this {
+    this.position.x += dx
+    this.position.y += dy
+    this.position.z += dz
+    this.dirty = true
+    return this
+  }
+
+  public lookAt(v: IVec3, up?: IVec3): this {
+    this.rotation.initFromMatrix(tempMat.initLookAt(this.position, v, up || Vec3.Up))
     this.dirty = true
     return this
   }

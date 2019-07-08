@@ -2,7 +2,8 @@
 
 import { Device } from '@gglib/graphics'
 import { BasicStage, DrawableData, LightData, Manager as RenderManager, Scene } from '@gglib/render'
-import { OnAdded, OnDraw, OnInit, OnRemoved, OnUpdate } from './../Component'
+import { Inject, Service } from '../decorators'
+import { OnDraw, OnInit, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
 import { LightComponent } from './LightComponent'
 import { DrawablesProvider } from './Renderable'
@@ -20,29 +21,24 @@ export interface CullVisitor {
 /**
  * @public
  */
-export class RendererComponent implements OnAdded, OnRemoved, OnInit, OnUpdate, OnDraw {
+@Service()
+export class RendererComponent implements OnInit, OnUpdate, OnDraw {
+
+  @Inject(Entity)
   public entity: Entity
 
+  @Inject(TimeComponent, { from: 'root' })
   public time: TimeComponent
+
+  @Inject(Device, { from: 'root' })
   public device: Device
+
   public manager: RenderManager
   public cullVisitor: CullVisitor = new SimpleCullVisitor()
 
   private toRender: Scene[] = []
 
-  public onAdded(entity: Entity) {
-    this.entity = entity
-    entity.addService(RendererComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(RendererComponent)
-    this.entity = null
-  }
-
   public onInit() {
-    this.time = this.entity.root.getService(TimeComponent)
-    this.device = this.entity.root.getService(Device)
     this.manager = new RenderManager(this.device)
     this.manager.addScene({
       id: 0,
@@ -55,12 +51,12 @@ export class RendererComponent implements OnAdded, OnRemoved, OnInit, OnUpdate, 
 
   public onUpdate() {
     this.manager.update()
-    this.manager.binder.updateTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
   }
 
   public onDraw() {
     this.toRender.length = 0
     this.manager.device.resize()
+    this.manager.binder.updateTime(this.time.totalMsInGame, this.time.elapsedMsInGame)
     this.manager.scenes.forEach((scene) => {
       if (!scene || !scene.camera || scene.enabled === false) {
         return

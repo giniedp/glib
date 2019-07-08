@@ -19,6 +19,7 @@ import {
   OnInit,
   OnRemoved,
   OnUpdate,
+  RendererComponent,
   Service,
   TimeComponent,
   TransformComponent,
@@ -27,9 +28,31 @@ import {
 import { ContentManager } from '@gglib/content'
 import { AutoMaterial, TerrainMaterial } from '@gglib/effects'
 import { buildSphere, Device, flipWindingOrder, ModelBuilder, Texture } from '@gglib/graphics'
+import { Vec3 } from '@gglib/math'
 import { BTTRoot, HeightMap } from '@gglib/terrain'
 import * as TweakUi from 'tweak-ui'
 
+class MyGame implements OnInit, OnUpdate {
+  public name = 'MyGame'
+
+  @Inject(Entity)
+  public entity: Entity
+
+  @Inject(RendererComponent)
+  public renderer: RendererComponent
+
+  public onInit() {
+    const scene = this.renderer.manager.scenes.get(0)
+    scene.camera = (this.entity.find('/Camera') as Entity).getService(CameraComponent)
+  }
+
+  public onUpdate() {
+    const scene = this.renderer.manager.scenes.get(0);
+    (this.entity.find('/Camera') as Entity).getService(CameraComponent).aspect = scene.viewport.aspect
+  }
+}
+
+// tslint:disable-next-line: max-classes-per-file
 class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 
   public name = 'Sky'
@@ -85,7 +108,7 @@ class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
 }
 
 // tslint:disable-next-line: max-classes-per-file
-@Service({ at: 'root' })
+@Service({ on: 'root' })
 class TerrainComponent implements OnInit, OnUpdate {
 
   public name = 'Terrain'
@@ -172,27 +195,27 @@ class TerrainComponent implements OnInit, OnUpdate {
             ],
           })
         })
-        q.group('Light', (l) => {
-          l.color(material, 'AmbientColor', { format: '[n]rgb' })
-          let angle = -1
-          l.add({
-            type: 'slider',
-            label: 'Angle',
-            get value() {
-              return angle
-            },
-            set value(v) {
-              angle = v
-            },
-            onInput: () => {
-              const e = this.entity.root.find('/Light') as Entity
-              e.getService(TransformComponent).setRotationXYZAngle(1, 0, 0, angle)
-            },
-            min: -Math.PI,
-            max: Math.PI,
-            step: 0.01,
-          })
-        })
+        // q.group('Light', (l) => {
+        //   l.color(material, 'AmbientColor', { format: '[n]rgb' })
+        //   let angle = -1
+        //   l.add({
+        //     type: 'slider',
+        //     label: 'Angle',
+        //     get value() {
+        //       return angle
+        //     },
+        //     set value(v) {
+        //       angle = v
+        //     },
+        //     onInput: () => {
+        //       const e = this.entity.root.find('/Light') as Entity
+        //       e.getService(TransformComponent).setRotationXYZAngle(1, 0, 0, angle)
+        //     },
+        //     min: -Math.PI,
+        //     max: Math.PI,
+        //     step: 0.01,
+        //   })
+        // })
         q.group('Terrain', (t) => {
           t.slider(material, 'Tiling', { min: 1, max: 128, step: 1 })
           t.slider(material, 'Brightness', { min: 0.1, max: 2, step: 0.01 })
@@ -220,11 +243,16 @@ class TerrainComponent implements OnInit, OnUpdate {
 const game = createGame({
   device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
   autorun: true,
-}, addBasicRenderer)
+}, (e) => {
+  e.name = 'Root'
+  addBasicRenderer(e)
+  e.addComponent(new MyGame())
+})
 .createChild(addCamera, addWASD, (e) => {
   e.name = 'Camera'
-  e.getService(CameraComponent).activate()
-  e.getService(TransformComponent).translateXYZ(512, 256, 512)
+  e.getService(TransformComponent)
+    .setPositionXYZ(512, 256, 512)
+    .lookAt(Vec3.Zero)
 })
 .createChild(addTransform, addDirectionalLight, (e) => {
   e.name = 'Light'
