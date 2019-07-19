@@ -1,5 +1,5 @@
 import { LightType } from '@gglib/graphics'
-import { IVec3 } from '@gglib/math'
+import { IVec3, Vec3 } from '@gglib/math'
 
 export class LightParams {
 
@@ -176,5 +176,49 @@ export class LightParams {
     toParams[`Lights${lightIndex}Color`] = this.$color
     toParams[`Lights${lightIndex}Position`] = this.$position
     toParams[`Lights${lightIndex}Direction`] = this.$direction
+  }
+
+  public static createDirectionalLight(options: {
+    direction: IVec3 | number[],
+    color: IVec3 | number[],
+  }): LightParams {
+    const result = new LightParams()
+    result.enabled = true
+    result.color = Vec3.convert(options.color).toArray()
+    result.direction = Vec3.convert(options.direction).toArray()
+    result.type = LightType.Directional
+    return result
+  }
+
+  public static createPointLight(options: {
+    position: IVec3 | number[],
+    color: IVec3 | number[],
+    range: number,
+  }): LightParams {
+    const result = new LightParams()
+    result.enabled = true
+    result.color = Vec3.convert(options.color).toArray()
+    result.position = Vec3.convert(options.position).toArray()
+    result.type = LightType.Point
+    result.range = options.range
+    return result
+  }
+
+  public static createSpotLight(options: {
+    position: IVec3 | number[],
+    direction: IVec3 | number[],
+    color: IVec3 | number[],
+    range: number,
+    angle: number,
+  }): LightParams {
+    const result = new LightParams()
+    result.enabled = true
+    result.color = Vec3.convert(options.color).toArray()
+    result.position = Vec3.convert(options.position).toArray()
+    result.direction = Vec3.convert(options.direction).toArray()
+    result.type = LightType.Spot
+    result.range = options.range
+    result.angle = options.angle
+    return result
   }
 }

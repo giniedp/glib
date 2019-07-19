@@ -1,7 +1,5 @@
 import { Events, Loop, loop } from '@gglib/utils'
 
-const statekeys: Array<keyof Gamepad> = ['id', 'index', 'connected', 'mapping', 'timestamp']
-
 /**
  * Constructor options for {@link Gamepads}
  *
@@ -15,6 +13,9 @@ export interface IGamepadsOptions {
 }
 
 /**
+ * A wrapper class around the
+ * {@link https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API | Gamepad API}
+ *
  * @public
  */
 export class Gamepads extends Events {
@@ -35,7 +36,7 @@ export class Gamepads extends Events {
    */
   protected readonly onDisconnected = this.handleDisconnectionEvent.bind(this)
   /**
-   * If {@link Gamepads.autopoll} is `true` then this holds the polling loop which captures the state automatically
+   * If {@link Gamepads.autoUpdate} is `true` then this holds the polling loop which captures the state automatically
    */
   protected poll: Loop = null
   /**
@@ -50,8 +51,11 @@ export class Gamepads extends Events {
   }
 
   /**
-   * Activates all event listeners. If `autopoll` is true then
-   * the poll loop is started
+   * Activates all event listeners and starts tracking
+   *
+   * @remarks
+   * If {@link Gamepads.autoUpdate} is `true` then an poll loop is scheduled for automatic
+   * state update.
    */
   public activate() {
     this.deactivate()
@@ -63,17 +67,22 @@ export class Gamepads extends Events {
   }
 
   /**
-   * Deactivates all event listeners and stops the poll loop if it is active
+   * Deactivates all event listeners and stops the auto update loop if it is active
    */
   public deactivate() {
     window.removeEventListener('gamepadconnected', this.onConnected)
     window.removeEventListener('gamepaddisconnected', this.onDisconnected)
-    if (this.poll) { this.poll.kill() }
+    if (this.poll) {
+      this.poll.kill()
+    }
   }
 
   /**
-   * Polls all gamepad states and captures the data. If any gamepad state has changed
-   * this triggers the `changed` event.
+   * Polls all gamepad states and captures the data.
+   *
+   * @remarks
+   * Triggers the `changed` event for every game pad state
+   * that has been changed.
    */
   public update(silent: boolean) {
     let pads = navigator.getGamepads()

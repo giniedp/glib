@@ -68,7 +68,7 @@ export class PerspectiveCameraComponent extends CameraComponent implements OnUpd
     super()
     this.near = getOption(options, 'near', 0.1)
     this.far = getOption(options, 'far', 1000)
-    this.fov = getOption(options, 'fov', Math.PI * 0.5)
+    this.fov = getOption(options, 'fov', 70 * Math.PI / 180)
     this.aspect = getOption(options, 'aspect', 16 / 9)
   }
 

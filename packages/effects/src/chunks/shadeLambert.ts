@@ -19,8 +19,7 @@ export const FXC_SHADE_LAMBERT: ShaderChunkSet = Object.freeze({
       vec3 L = shade.L;
       vec3 I = shade.I;
 
-      float Fd = max(dot(N, L), 0.0);
-      return Fd * surface.Diffuse.rgb * I;
+      return dot(N, L) * surface.Diffuse.rgb * I;
     }
   `,
 })

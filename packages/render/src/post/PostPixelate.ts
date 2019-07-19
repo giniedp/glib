@@ -1,5 +1,5 @@
 import { glsl } from '@gglib/effects'
-import { createShaderEffect, Device, ShaderEffect } from '@gglib/graphics'
+import { createShaderEffect, Device, ShaderEffect, ShaderFxDocument } from '@gglib/graphics'
 import { Manager } from '../Manager'
 import { Stage } from '../Types'
 
@@ -73,7 +73,7 @@ export class PostPixelate implements Stage {
   }
 }
 
-const SHADER = {
+const SHADER: ShaderFxDocument = {
   name: 'Pixelate',
   program: glsl`
     precision highp float;

@@ -1,35 +1,48 @@
 /**
+ * A wrapper around a string. Simplifies reading arbitrary formatted text data.
+ *
  * @public
  */
 export class TextReader {
   private index: number = 0
 
+  /**
+   * Characters that identify a white space. Default is `' \t\r\n\f'`.
+   */
   public whitespaces = ' \t\r\n\f'
 
+  /**
+   * Checks whether the readers position has not reached the end of the string
+   */
   public get canRead(): boolean {
     return this.index < this.text.length
   }
 
   /**
-   * The character at current read position
+   * Gets the character at the current readers position.
    */
   public get char(): string {
     return this.text[this.index]
   }
 
   /**
-   * The remaining text
+   * Gets a substring until the end of the string.
    */
   public get rest(): string {
     return this.text.substring(this.index)
   }
 
+  /**
+   * Creates a new instance of {@link TextReader}
+   *
+   * @param text - The text data to read
+   */
   constructor(private readonly text: string) {
 
   }
 
   /**
-   * Advances the reader position to the next character
+   * Advances the readers position to the next character.
    *
    * @remarks
    * If the reader is finished reading, an empty string will be returned
@@ -45,7 +58,7 @@ export class TextReader {
   }
 
   /**
-   * Skips whitespaces at current position and then reads until next whitespace character
+   * Skips whites paces at current position and then reads until next whitespace character
    *
    * @returns the string that was being read
    */
@@ -61,7 +74,7 @@ export class TextReader {
   }
 
   /**
-   * Reads until next occurance of a new line character
+   * Reads until next occurrence of a new line character
    *
    * @param cb - on optional callback that will receive a new reader for the new line
    * @returns the string that was being read
@@ -81,7 +94,7 @@ export class TextReader {
   }
 
   /**
-   * Reads until next occurance of `start` and then until `end`
+   * Skips until next occurrence of `start` character and then reads the text until the `end` character
    *
    * @param start - character identifying the begin of a block
    * @param end - character identifying the begin of a block
@@ -123,7 +136,7 @@ export class TextReader {
   }
 
   /**
-   * Returns the next character but does not advance the reader position
+   * Returns the next character but does not advance the reader position.
    */
   public peek() {
     const i = this.index
@@ -133,7 +146,7 @@ export class TextReader {
   }
 
   /**
-   * Returns the next token but does not advance the reader position
+   * Returns the next token but does not advance the reader position.
    */
   public peekToken() {
     const i = this.index
@@ -171,7 +184,7 @@ export class TextReader {
   }
 
   /**
-   * Skips characters until occurance of one in the given string
+   * Skips characters until occurrence of one in the given string
    *
    * @param char - the characters to stop at
    */
@@ -184,17 +197,25 @@ export class TextReader {
     }
   }
 
-  public consumeToken(name: string) {
-    if (this.peekToken() !== name) {
+  /**
+   * Reads the next token but throws an error if it does not match the given value
+   *
+   * @param value - The value to match
+   */
+  public consumeToken(value: string) {
+    if (this.peekToken() !== value) {
       const line = (this.text.match(/\n/g) || []).length
       const post = this.index - this.text.lastIndexOf('\n')
-      throw new Error(`expected token "${name}" but was "${this.peekToken()}" at ${line}:${post}`)
+      throw new Error(`expected token "${value}" but was "${this.peekToken()}" at ${line}:${post}`)
     }
     this.nextToken()
   }
 
-  public acceptToken(name: string): boolean {
-    if (this.peekToken() !== name) {
+  /**
+   * Consumes the next token only if it matches the given value. Otherwise leaves the state untouched.
+   */
+  public acceptToken(value: string): boolean {
+    if (this.peekToken() !== value) {
       return false
     }
     this.nextToken()

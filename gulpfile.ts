@@ -6,8 +6,8 @@ import { watchPackages } from './tools/gulp/build'
 import { bundle } from './tools/gulp/bundle'
 import { clean } from './tools/gulp/clean'
 import { compile } from './tools/gulp/compile'
-import { serve, watchExamples } from './tools/gulp/examples'
 import { link, unlink } from './tools/gulp/link'
+import { serve, watchPage } from './tools/gulp/page'
 import { copyPackageFiles, update } from './tools/gulp/update'
 
 task(api)
@@ -21,7 +21,7 @@ task(serve)
 task(unlink)
 task(update)
 task(watchAssets)
-task(watchExamples)
+task(watchPage)
 task(watchPackages)
 
 task('build', series(
@@ -35,6 +35,6 @@ task('build', series(
 task('watch', parallel(
   serve,
   watchAssets,
-  watchExamples,
+  watchPage,
   watchPackages,
 ))

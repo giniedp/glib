@@ -28,6 +28,7 @@ export interface BloomOptions {
   glowCut?: number
   multiplier?: number
   gaussSigma?: number
+  iterations?: number
 }
 
 function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
@@ -46,9 +47,10 @@ export class PostBloom implements Stage {
   }
 
   public enabled: boolean = true
-  public glowCut: number = 0.6
-  public multiplier: number = 0.83
+  public glowCut: number = 0.8
+  public multiplier: number = 0.5
   public gaussSigma: number = 0.5
+  public iterations: number = 1
   private offsetWeights: number[][]
   private effect: ShaderEffect
 
@@ -134,38 +136,42 @@ export class PostBloom implements Stage {
     // manager.endStep(rt1)
     // return
 
-    // ------------------------------------------------
-    // [2] HORIZONTAL BLUR -> rt2
-    //
-    // calculate filter offsets and weights
-    device.program = this.effect.getTechnique('hBlur').pass(0).program
-    device.program.setUniform('texture', rt1)
-    for (let i = 0; i < this.offsetWeights.length; i++) {
-      device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i])
-    }
-    device.setRenderTarget(rt2)
-    device.clear(Color.TransparentBlack, 1)
-    device.drawQuad(false)
-    device.setRenderTarget(null)
+    for (let n = 0; n < this.iterations; n++) {
 
-    // DEBUG
-    // manager.releaseTarget(rt2)
-    // manager.endStep(rt1)
-    // return
+      // ------------------------------------------------
+      // [2] HORIZONTAL BLUR -> rt2
+      //
+      // calculate filter offsets and weights
+      device.program = this.effect.getTechnique('hBlur').pass(0).program
+      device.program.setUniform('texture', rt1)
+      for (let i = 0; i < this.offsetWeights.length; i++) {
+        device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i])
+      }
+      device.setRenderTarget(rt2)
+      device.clear(Color.TransparentBlack, 1)
+      device.drawQuad(false)
+      device.setRenderTarget(null)
 
-    // ------------------------------------------------
-    // [2] VERTICAL BLUR -> rt1
-    //
-    // calculate filter offsets and weights
-    device.program = this.effect.getTechnique('vBlur').pass(0).program
-    device.program.setUniform('texture', rt2)
-    for (let i = 0; i < this.offsetWeights.length; i++) {
-      device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i])
+      // DEBUG
+      // manager.releaseTarget(rt2)
+      // manager.endStep(rt1)
+      // return
+
+      // ------------------------------------------------
+      // [2] VERTICAL BLUR -> rt1
+      //
+      // calculate filter offsets and weights
+      device.program = this.effect.getTechnique('vBlur').pass(0).program
+      device.program.setUniform('texture', rt2)
+      for (let i = 0; i < this.offsetWeights.length; i++) {
+        device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i])
+      }
+      device.setRenderTarget(rt1)
+      device.clear(Color.TransparentBlack, 1)
+      device.drawQuad(false)
+      device.setRenderTarget(null)
+
     }
-    device.setRenderTarget(rt1)
-    device.clear(Color.TransparentBlack, 1)
-    device.drawQuad(false)
-    device.setRenderTarget(null)
 
     // DEBUG
     // manager.releaseTarget(rt2)
@@ -205,6 +211,9 @@ const SHADER: ShaderFxDocument = {
 
     // @default 0.75
     uniform float threshold;
+
+    // @default 0.5
+    uniform float multiplier;
 
     // x -> offset horizontal
     // y -> offset vertical
@@ -247,10 +256,8 @@ const SHADER: ShaderFxDocument = {
 
     vec4 combine(vec2 uv) {
       vec3 base = texture2D(textureSampler, uv).rgb;
-      vec3 bloom = texture2D(bloomSampler, uv).rgb * 0.5;
-
+      vec3 bloom = texture2D(bloomSampler, uv).rgb;
       base *= (1.0 - clamp(bloom, vec3(0), vec3(1)));
-
       return vec4((base + bloom).rgb, 1.0);
     }
   `,

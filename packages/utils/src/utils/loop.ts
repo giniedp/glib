@@ -17,6 +17,7 @@ const raf: (cb: any) => void =
   window['msRequestAnimationFrame']
 
 /**
+ *
  * @public
  */
 export const requestFrame = typeof raf === 'function'
@@ -24,10 +25,18 @@ export const requestFrame = typeof raf === 'function'
   : (callback: any) => self.setTimeout(callback, 1)
 
 /**
+ * A loop function that can be started and killed
+ *
  * @public
  */
 export interface Loop {
+  /**
+   * Kills the loop
+   */
   kill(): void
+  /**
+   * Starts the loop
+   */
   (): void
 }
 

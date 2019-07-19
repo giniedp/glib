@@ -236,7 +236,7 @@ export class Mouse extends Events {
    *
    * @returns true if any document element has a mouse lock
    */
-  public isLocked(): boolean {
+  public get isLocked(): boolean {
     return Mouse.isLocked()
   }
   /**

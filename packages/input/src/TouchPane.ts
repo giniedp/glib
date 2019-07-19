@@ -15,7 +15,8 @@ export interface ITouchPaneOptions {
  *
  * @remarks
  * Listens to the `touchstart`, `touchmove`, `touchend` and `touchcancel`
- * events and tracks the touch position and movement.
+ * events and tracks the {@link https://developer.mozilla.org/en-US/docs/Web/API/Touch | Touch} states.
+ *
  * On each recognized change of state the `changed` event is triggered.
  *
  * @public
@@ -24,7 +25,7 @@ export class TouchPane extends Events  {
   /**
    * The current captured state
    */
-  public state: Map<number, Touch> = new Map<number, Touch>()
+  public touches: Map<number, Touch> = new Map<number, Touch>()
   /**
    * If `true` calls `preventDefault` on each received event
    */
@@ -74,6 +75,7 @@ export class TouchPane extends Events  {
     super()
     if (options) {
       this.eventTarget = (options.eventTarget || this.eventTarget)
+      this.delegatedEvents = (options.events || this.delegatedEvents)
     }
     this.activate()
   }
@@ -121,10 +123,10 @@ export class TouchPane extends Events  {
    */
   public clearState(id?: number) {
     if (id !== undefined) {
-      this.state.delete(id)
+      this.touches.delete(id)
       return
     }
-    this.state.clear()
+    this.touches.clear()
   }
 
   /**
@@ -134,7 +136,7 @@ export class TouchPane extends Events  {
     const list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      this.state.set(list[i].identifier, list[i])
+      this.touches.set(list[i].identifier, list[i])
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
@@ -146,7 +148,7 @@ export class TouchPane extends Events  {
     const list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      this.state.delete(list[i].identifier)
+      this.touches.delete(list[i].identifier)
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
@@ -158,7 +160,7 @@ export class TouchPane extends Events  {
     const list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      this.state.set(list[i].identifier, list[i])
+      this.touches.set(list[i].identifier, list[i])
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)
@@ -170,7 +172,7 @@ export class TouchPane extends Events  {
     let list = e.changedTouches
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
-      this.state.delete(list[i].identifier)
+      this.touches.delete(list[i].identifier)
     }
     if (this.preventDefault) { e.preventDefault() }
     this.trigger('changed', this, e)

@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import * as ts from 'typescript'
-
 import project from '../../project'
 
 export default function transpileExample(file: string) {

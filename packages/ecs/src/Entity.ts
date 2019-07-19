@@ -1,4 +1,4 @@
-import { Events, Type } from '@gglib/utils'
+import { Events, Type, Log } from '@gglib/utils'
 import { Component } from './Component'
 import { getInjectMetadata, getServiceMetadata } from './decorators'
 import { errorOnMissingService } from './errors'
@@ -468,7 +468,7 @@ export class Entity extends Events {
     })
   }
 
-  private injectServices(component: Component, from?: 'root' | 'parent' | 'self') {
+  private injectServices(component: Component, from?: 'root' | 'parent') {
     const meta = getInjectMetadata(component)
     if (!meta) {
       return
@@ -477,13 +477,30 @@ export class Entity extends Events {
       if (m.serviceKey === Entity) {
         return
       }
-      if (!from || from === m.from) {
-        component[m.properyKey] = (this[m.from] as Entity || this).getService(m.serviceKey)
+      if (from && m.from !== from) {
+        return
+      }
+      let source: Entity
+      switch (m.from) {
+        case 'root':
+          source = this.root
+          break
+        case 'parent':
+          source = this.parent
+          break
+        default:
+          source = m.from ? this.find(m.from) : this
+          break
+      }
+      if (!source) {
+        Log.w('[Entity]', `unable to inject service from '${m.from}'. Entity is not available.`)
+      } else {
+        component[m.properyKey] = source.getService(m.serviceKey)
       }
     })
   }
 
-  private ejectServices(component: Component, from?: 'root' | 'parent' | 'self') {
+  private ejectServices(component: Component, from?: 'root' | 'parent') {
     const meta = getInjectMetadata(component)
     if (!meta) {
       return
@@ -495,17 +512,57 @@ export class Entity extends Events {
     })
   }
 
-  private registerService(component: Component, on?: 'root' | 'parent' | 'self') {
+  private registerService(component: Component, on?: 'root' | 'parent') {
     const meta = getServiceMetadata(component)
-    if (meta && (!on || on === meta.on)) {
-      (this[meta.on] as Entity || this).addService(meta.as, component, true)
+    if (!meta) {
+      return
+    }
+    if (on && meta.on !== on) {
+      return
+    }
+    let target: Entity
+    switch (meta.on) {
+      case 'root':
+        target = this.root
+        break
+      case 'parent':
+        target = this.parent
+        break
+      default:
+        target = meta.on ? this.find(meta.on) : this
+        break
+    }
+    if (!target) {
+      Log.w('[Entity]', `unable to register service on '${meta.on}'. Entity is not available.`)
+    } else {
+      target.addService(meta.as, component, true)
     }
   }
 
-  private unregisterService(component: Component, on?: 'root' | 'parent' | 'self') {
+  private unregisterService(component: Component, on?: 'root' | 'parent') {
     const meta = getServiceMetadata(component)
-    if (meta && (!on || on === meta.on)) {
-      (this[meta.on] as Entity || this).removeService(meta.as)
+    if (!meta) {
+      return
+    }
+    if (on && meta.on !== on) {
+      return
+    }
+    let target: Entity
+    switch (meta.on) {
+      case 'root':
+        target = this.root
+        break
+      case 'parent':
+        target = this.parent
+        break
+      default:
+        target = meta.on ? this.find(meta.on) : this
+        break
+    }
+    if (!target) {
+      Log.w('[Entity]', `unable to unregister service on '${meta.on}'. Entity is not available.`)
+    } else {
+      target.removeService(meta.as)
     }
   }
 }

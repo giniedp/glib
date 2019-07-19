@@ -1,4 +1,4 @@
-import { IKeyboardOptions, IKeyboardState, Keyboard } from '@gglib/input'
+import { IKeyboardOptions, Keyboard, KeyboardKey } from '@gglib/input'
 import { Service } from '../decorators'
 import { OnUpdate } from './../Component'
 
@@ -9,36 +9,46 @@ import { OnUpdate } from './../Component'
 export class KeyboardComponent implements OnUpdate {
   public readonly name = 'Keyboard'
 
-  public keyboard: Keyboard
-  public newState: IKeyboardState
-  public oldState: IKeyboardState
+  /**
+   * The keyboard helper class
+   */
+  public readonly keyboard: Keyboard
+
+  /**
+   * Pressed keys in current frame
+   */
+  public newState = new Set<KeyboardKey>()
+
+  /**
+   * Pressed keys in last frame
+   */
+  public oldState = new Set<KeyboardKey>()
+
+  private addToNewState = (k: KeyboardKey) => this.newState.add(k)
 
   constructor(options: IKeyboardOptions= {}) {
     this.keyboard = new Keyboard(options)
-    this.newState = this.keyboard.copyState({})
-    this.oldState = this.keyboard.copyState({})
   }
 
   public onUpdate() {
-    const toUpdate = this.oldState
-    this.oldState = this.newState
-    this.newState = toUpdate
-    this.keyboard.copyState(toUpdate)
+    [this.oldState, this.newState] = [this.newState, this.oldState]
+    this.newState.clear()
+    this.keyboard.keys.forEach(this.addToNewState)
   }
 
-  public isPressed(key: number): boolean {
-    return this.newState.pressedKeys.indexOf(key) >= 0
+  public isPressed(key: KeyboardKey): boolean {
+    return this.newState.has(key)
   }
 
-  public justPressed(key: number): boolean {
-    return (this.oldState.pressedKeys.indexOf(key) < 0) && (this.newState.pressedKeys.indexOf(key) >= 0)
+  public justPressed(key: KeyboardKey): boolean {
+    return this.oldState.has(key) && this.newState.has(key)
   }
 
-  public isReleased(key: number): boolean {
-    return (this.newState.pressedKeys.indexOf(key) >= 0)
+  public isReleased(key: KeyboardKey): boolean {
+    return (this.newState.has(key))
   }
 
-  public justReleased(key: number): boolean {
-    return (this.oldState.pressedKeys.indexOf(key) >= 0) && (this.newState.pressedKeys.indexOf(key) < 0)
+  public justReleased(key: KeyboardKey): boolean {
+    return this.oldState.has(key) && !this.newState.has(key)
   }
 }

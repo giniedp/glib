@@ -137,6 +137,7 @@ export class Orientation extends Events {
     this.state.accelerationIncludingGravity = acceleration
 
     let rotation = this.state.rotation || {} as IDeviceRotation // tslint:disable-line
+    rotation.alpha = e.rotationRate.alpha
     rotation.beta = e.rotationRate.beta
     rotation.gamma = e.rotationRate.gamma
     this.state.rotation = rotation

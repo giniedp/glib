@@ -1,4 +1,4 @@
-import { Keys } from '@gglib/input'
+import { KeyboardKey } from '@gglib/input'
 import { Quat, Vec3 } from '@gglib/math'
 import { Inject, Service } from '../decorators'
 import { OnUpdate } from './../Component'
@@ -47,37 +47,37 @@ export class WASDComponent implements OnUpdate {
     let targetSpeed = 0
     this.translation.init(0, 0, 0)
 
-    if (keyboard.isPressed(Keys.KeyW)) {
+    if (keyboard.isPressed(KeyboardKey.KeyW)) {
       trans.matrix.getForward(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Keys.KeyS)) {
+    if (keyboard.isPressed(KeyboardKey.KeyS)) {
       trans.matrix.getBackward(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Keys.KeyA)) {
+    if (keyboard.isPressed(KeyboardKey.KeyA)) {
       trans.matrix.getLeft(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Keys.KeyD)) {
+    if (keyboard.isPressed(KeyboardKey.KeyD)) {
       trans.matrix.getRight(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Keys.KeyQ)) {
+    if (keyboard.isPressed(KeyboardKey.KeyQ)) {
       trans.matrix.getDown(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Keys.KeyE)) {
+    if (keyboard.isPressed(KeyboardKey.KeyE)) {
       trans.matrix.getUp(this.direction)
       this.translation.add(this.direction)
       targetSpeed = speed
     }
-    if (keyboard.isPressed(Keys.ShiftLeft)) {
+    if (keyboard.isPressed(KeyboardKey.ShiftLeft)) {
       targetSpeed = this.runSpeed
     }
     if (this.translation.lengthSquared() > 0) {

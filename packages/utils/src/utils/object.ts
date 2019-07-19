@@ -66,6 +66,8 @@ export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
 }
 
 /**
+ * Extends the first argument with properties of all latter arguments
+ *
  * @public
  */
 export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?: any): T {

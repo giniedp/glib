@@ -30,12 +30,33 @@ class Project {
   /**
    * Project source code directory where all examples are located
    */
-  public sampleSrc = path.join(this.root, 'examples')
+  public pageSrc = path.join(this.root, 'page')
 
-  /**
-   * The compilation directory for all examples
-   */
-  public sampleDist = path.join(this.dist, 'examples')
+  public page = {
+    src: path.join(this.root, 'page'),
+    scss: [
+      path.join(this.pageSrc, '**/*.scss'),
+      '!**/_*',
+    ],
+    pages: [
+      path.join(this.pageSrc, '**/*'),
+      '!**/_*',
+      '!**/*.scss',
+      '!**/tsconfig.json',
+    ],
+    assets: [
+      'dist/packages/gglib/bundles/gglib.umd.js',
+      'dist/packages/gglib/bundles/gglib.umd.js.map',
+      'node_modules/tweak-ui/dist/tweak-ui.umd.js',
+      'node_modules/tweak-ui/dist/tweak-ui.umd.js.map',
+      'node_modules/tweak-ui/dist/tweak-ui.css',
+      'node_modules/tweak-ui/dist/tweak-ui.css.map',
+      'node_modules/showdown/dist/showdown.js',
+      'node_modules/prismjs/prism.js',
+      'node_modules/prismjs/components/prism-typescript.js',
+      'node_modules/mithril/mithril.js',
+    ],
+  }
 
   /**
    * The package json

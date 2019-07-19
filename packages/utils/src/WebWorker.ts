@@ -2,14 +2,14 @@ import { JsonRPCRequest, JsonRPCResponse } from './JsonRpc'
 import { Log } from './Log'
 
 /**
- * A function that can be registered at the `WebWorker` class
+ * A function that can be registered at the {@link WebWorker} class
  *
  * @public
  */
 export type WebWorkerFunction<T> = (...args: any[]) => T | Promise<T>
 
 /**
- * A function that has been registered at `WebWorker` class
+ * A function that has been registered at {@link WebWorker} class
  *
  * @public
  */

@@ -36,7 +36,7 @@ export class TouchComponent implements OnUpdate {
     [this.oldStates, this.newStates] = [this.newStates, this.oldStates]
 
     this.newStates.clear()
-    this.touch.state.forEach((touch, id) => {
+    this.touch.touches.forEach((touch, id) => {
       ids.push(id)
       this.newStates.set(id, touch)
     })

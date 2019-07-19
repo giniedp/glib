@@ -138,16 +138,14 @@ export class Model {
   }
 
   /**
-   * Simply iterates over all meshes and renderes each with its assigned material
+   * Simply iterates over all meshes and renders each with its assigned material
    *
    * @remarks
    * If a mesh points to a missing material it is silently ignored.
    */
   public draw(): Model {
     for (const mesh of this.meshes) {
-      const material: Material = this.materials[mesh.materialId]
-        || this.materials.find((it) => it.name === mesh.materialId)
-        || this.materials[0]
+      const material: Material = this.getMaterial(mesh.materialId) || this.materials[0]
       if (!material) {
         // mesh has no material so it can not be rendered
         continue
@@ -155,5 +153,14 @@ export class Model {
       material.draw(mesh)
     }
     return this
+  }
+
+  /**
+   * Gets a material of this mesh by index or name
+   *
+   * @param indexOrName - The index or name of the material
+   */
+  public getMaterial(indexOrName: number | string) {
+    return this.materials[indexOrName] || this.materials.find((it) => it.name === indexOrName)
   }
 }

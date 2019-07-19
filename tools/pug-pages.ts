@@ -8,7 +8,7 @@ import * as vinyl from 'vinyl'
 export interface PugPagesOptions {
   [key: string]: any
   cwd?: string
-  jade?: any
+  pug?: any
   compileOptions?: any
 }
 
@@ -26,7 +26,7 @@ function readData(base: string, dir: string, name: string) {
     return null
   }
   if (stats.isDirectory()) {
-    return readData(base, path.join(dir, name), 'index.jade')
+    return readData(base, path.join(dir, name), 'index.pug')
   }
   if (!stats.isFile()) {
     return null
@@ -70,14 +70,25 @@ function childrenOf(filePath: string, base: string) {
     .map((it) => readData(base, fileDir, it))
     .map((it) => it ? it.meta : null)
     .filter((it) => it && !it.draft)
-    .filter((it) => /\.jade$/.test(it.original))
-    .sort((a, b) => a.weight < b.weight ? -1 : 1)
+    .filter((it) => /\.pug$/.test(it.original))
+    .sort((a, b) => {
+      if (a.weight && !b.weight) {
+        return -1
+      }
+      if (b.weight && !a.weight) {
+        return 1
+      }
+      if (a.weight === b.weight) {
+        return String(a.title).localeCompare(String(b.title))
+      }
+      return String(a.weight).localeCompare(String(b.weight))
+    })
 }
 
 export function page(options: PugPagesOptions, file: any, enc: string, cb: any) {
   const fileDir = path.dirname(file.path)
   const fileName = path.basename(file.path)
-  if (!/\.jade$/.test(file.path)) {
+  if (!/\.pug$/.test(file.path)) {
     cb(null, file)
     return
   }
@@ -87,16 +98,16 @@ export function page(options: PugPagesOptions, file: any, enc: string, cb: any) 
     return
   }
 
-  const jade = options.jade || require('jade')
+  const pug = options.pug || require('pug')
   const cwd = options.cwd || process.cwd()
   const compileOptions = options.compileOptions || {}
   const locals = typeof compileOptions.locals === 'function' ? compileOptions.locals(file.path) : compileOptions.locals || {}
 
-  if (fileName === 'index.jade') {
+  if (fileName === 'index.pug') {
     data.meta.children = childrenOf(file.path, file.base)
   }
 
-  const template = jade.compile(data.content, {
+  const template = pug.compile(data.content, {
     filename: file.path,
     basedir: cwd,
     doctype: 'html',
@@ -116,7 +127,7 @@ export function page(options: PugPagesOptions, file: any, enc: string, cb: any) 
     cwd: file.cwd,
     base: file.base,
     path: path.join(file.base, data.meta.path, 'index.html'),
-    contents: new Buffer(content),
+    contents: Buffer.from(content),
   }))
 }
 

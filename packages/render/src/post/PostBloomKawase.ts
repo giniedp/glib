@@ -207,8 +207,6 @@ const SHADER: ShaderFxDocument = {
     }
 
     vec4 adjustSaturation(in vec4 color, in float saturation) {
-      // The constants 0.299, 0.587, 0.114 are chosen because the
-      // human eye is more sensitive to green light, and less to blue.
       float lum = dot(color.rgb, vec3(0.299, 0.587, 0.114));
       return vec4(mix(vec3(lum), color.rgb, saturation), color.a);
     }
@@ -219,8 +217,8 @@ const SHADER: ShaderFxDocument = {
       vec4 bloom = texture2D(texture2, uv);
 
       // Adjust color saturation and intensity.
-      bloom = adjustSaturation(bloom, 1.0) * 0.5;
-      base = adjustSaturation(base, 1.0) * 1.0;
+      bloom = adjustSaturation(bloom, 1.0);
+      base = adjustSaturation(base, 1.0);
 
       // Darken down the base image in areas where there is a lot of bloom,
       // to prevent things looking excessively burned-out.

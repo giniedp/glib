@@ -67,6 +67,8 @@ export function buildBezierSurface(builder: ModelBuilder, patch: number[], tesse
 
       builder.addVertex({
         position: p,
+        normal: [0, 1, 0],
+        texture: [i / stride, j / stride],
       })
     }
   }

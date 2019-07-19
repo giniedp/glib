@@ -18,11 +18,17 @@ export const FXC_SHADE_BLINN: ShaderChunkSet = Object.freeze({
       vec3 V = shade.V;
       vec3 N = surface.Normal.xyz;
       vec3 L = shade.L;
-      vec3 H = normalize(L + V);
       vec3 I = shade.I;
+      vec3 H = normalize(L + V);
 
-      float Fr = pow(max(dot(H, N), 0.0), surface.Specular.a);
-      float Fd = max(dot(N, L), 0.0);
+      float dotNL = dot(N, L);
+      if (dotNL <= 0.0) {
+        return vec3(0.0, 0.0, 0.0);
+      }
+
+      float dotNH = dot(N, H);
+      float Fr = pow(dotNH, surface.Specular.a);
+      float Fd = dotNL;
 
       return (Fr * surface.Specular.rgb + Fd * surface.Diffuse.rgb) * I;
     }

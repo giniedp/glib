@@ -73,11 +73,31 @@ export class Manager {
   }
 
   /**
+   * Creates an empty scene with given id
+   *
+   * @remarks
+   * The created scene has no rendering steps so it wont be able
+   * to render anything.
+   *
+   * @param id - The id for the scene
+   */
+  public createScene(id: any): Scene {
+    const scene: Scene = {
+      id: id,
+      items: [],
+      lights: [],
+      steps: [],
+    }
+    this.addScene(scene)
+    return scene
+  }
+
+  /**
    * Adds a scene for rendering
    *
    * @param scene - The scene to be rendered
    */
-  public addScene(scene: Scene) {
+  public addScene(scene: Scene): Scene {
     if (scene.id == null) {
       throw new Error(`id is missing`)
     }
@@ -91,6 +111,8 @@ export class Manager {
       scene.viewport = { type: 'normalized', x: 0, y: 0, width: 1, height: 1 }
     }
     this.scenes.set(scene.id, scene)
+
+    return scene
   }
 
   /**
@@ -279,7 +301,7 @@ export class Manager {
     this.device.setRenderTarget(null)
   }
 
-  public resolveBounds(scene: Scene, target?: Texture) {
+  public resolveLayout(scene: Scene, target?: Texture) {
     const output = this.updateOutput(scene, target)
     return {
       x: output.x,

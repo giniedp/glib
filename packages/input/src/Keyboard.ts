@@ -21,9 +21,7 @@ export interface IKeyboardOptions {
  *
  * @public
  */
-export interface IKeyboardState {
-  pressedKeys: number[]
-}
+export type IKeyboardState = Set<KeyboardKey>
 
 /**
  * Captures key events and tracks keyboard state.
@@ -42,9 +40,23 @@ export class Keyboard extends Events {
   protected eventTarget: EventTarget = document
 
   /**
-   * The tracked keyboard state
+   * Tracked set of pressed {@link KeyboardKey} enum values
+   *
+   * @remarks
+   * Values are {@link KeyboardKey} enum values (numbers)
    */
-  public state: IKeyboardState = {pressedKeys: []}
+  public readonly keys: ReadonlySet<KeyboardKey> = new Set<KeyboardKey>()
+
+  /**
+   * Tracked set of pressed {@link KeyboardKey} enum keys
+   *
+   * @remarks
+   * Values are {@link KeyboardKey} enum keys (strings). These are the
+   * untransformed original values as returned by the
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code | KeyboardEvent.code}
+   * thus the list may contain values which are not yet enumerated by {@link KeyboardKey} enum.
+   */
+  public readonly codes: ReadonlySet<string> = new Set<string>()
 
   /**
    * Collection of html events that are delegated (triggered) on this instance.
@@ -56,21 +68,21 @@ export class Keyboard extends Events {
   ]
 
   /**
-   * Is called on the `keypress` event and marks the `event.keyCode` as pressed
+   * Is called on the `keypress` event and marks the `event.code` as pressed
    */
-  protected onKeyPress = (e: KeyboardEvent) => { /* */ }
+  protected onKeyPress = (e: KeyboardEvent) => this.setKeyPressed(e)
   /**
-   * Is called on the `keypress` event and marks the `event.keyCode` as pressed
+   * Is called on the `keydown` event and marks the `event.code` as pressed
    */
-  protected onKeyDown = (e: KeyboardEvent) => this.setKeyPressed(Keyboard.getCode(e))
+  protected onKeyDown = (e: KeyboardEvent) => this.setKeyPressed(e)
   /**
-   * Is called on the `keyup` event and marks the `event.keyCode` as released
+   * Is called on the `keyup` event and marks the `event.code` as released
    */
-  protected onKeyUp = (e: KeyboardEvent) => this.setKeyReleased(Keyboard.getCode(e))
+  protected onKeyUp = (e: KeyboardEvent) => this.setKeyReleased(e)
   /**
    * Is called when `document` or `window` loose focus e.g. user switches to another tab or application
    */
-  protected onNeedsClear = () => this.clearState()
+  protected onNeedsClear = (e: Event) => this.clearState(e)
   /**
    * Triggers the Event that occurred on the element
    */
@@ -126,62 +138,71 @@ export class Keyboard extends Events {
   }
 
   /**
-   * Gets a copy of the current keyboard state.
-   */
-  public copyState(): IKeyboardState
-  public copyState<T = any>(out: T): T & IKeyboardState
-  public copyState(out: any = {}) {
-    let inKeys = this.state.pressedKeys
-    let outKeys = out.pressedKeys || []
-
-    outKeys.length = inKeys.length
-    for (let i = 0; i < inKeys.length; i++) {
-      outKeys[i] = inKeys[i]
-    }
-
-    out.pressedKeys = outKeys
-    return out
-  }
-  /**
    * Marks the given `code` as being pressed and triggers the `changed` event
    */
-  public setKeyPressed(code: number) {
-    let index = this.state.pressedKeys.indexOf(code)
-    if (index < 0) {
-      this.state.pressedKeys.push(code)
-      this.trigger('changed', this)
+  protected setKeyPressed(e: KeyboardEvent) {
+    const key = Keyboard.getKeyboardKey(e)
+    if (!this.keys.has(key)) {
+      (this.keys as Set<number>).add(key);
+      (this.codes as Set<string>).add(e.code)
+      this.onChanged(e)
     }
   }
   /**
    * Marks the given `keyCode` as not being pressed and triggers the `changed` event
    */
-  public setKeyReleased(code: number) {
-    let index = this.state.pressedKeys.indexOf(code)
-    if (index >= 0) {
-      this.state.pressedKeys.splice(index)
-      this.trigger('changed', this)
+  protected setKeyReleased(e: KeyboardEvent) {
+    const code = Keyboard.getKeyboardKey(e)
+    if (this.keys.has(code)) {
+      (this.keys as Set<number>).delete(code);
+      (this.codes as Set<string>).delete(e.code)
+      this.onChanged(e)
     }
   }
   /**
    * Clears the state and triggers the `changed` event
    */
-  public clearState() {
-    if (!this.state.pressedKeys.length) { return }
-    this.state.pressedKeys.length = 0
-    this.trigger('changed', this)
+  public clearState(e?: Event) {
+    if (this.keys.size > 0) {
+      (this.keys as Set<number>).clear();
+      (this.codes as Set<string>).clear()
+      this.onChanged(e)
+    }
   }
 
-  public static getCode(e: KeyboardEvent) {
-    let code = e['code']
-    if (code !== void 0) { return Keys[code] }
-    return KeyCodeToKey[e.keyCode]
+  /**
+   * Gets the {@link KeyboardKey} from given event
+   *
+   * @remarks
+   * Prefers the value of {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code | KeyboardEvent.code}
+   * if available. If it is not available then
+   * {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode | KeyboardEvent.keyCode} is used
+   * and remapped if possible.
+   *
+   * @param e - The keyboard event
+   */
+  public static getKeyboardKey(e: KeyboardEvent): KeyboardKey {
+    if ('code' in e) {
+      return KeyboardKey[e.code]
+    } else {
+      return KeyCodeToKey[e['keyCode']]
+    }
+  }
+
+  protected onChanged(e?: KeyboardEvent | Event) {
+    this.trigger('changed', this, e)
   }
 }
 
 /**
+ * Enumeration of keyboard keys
+ *
  * @public
+ * @remarks
+ * This is a mapping from {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code/code_values | KeyboardEvent.code}
+ * values
  */
-export enum Keys {
+export enum KeyboardKey {
   // Alphanumeric Section
 
   Backquote = 1,
@@ -357,107 +378,104 @@ export enum Keys {
   WakeUp,
 }
 
-/**
- * @public
- */
-export const KeyCodeToKey = Object.freeze({
-  8 : Keys.Backspace,
-  9 : Keys.Tab,
-  13 : Keys.Enter,
-  16 : Keys.ShiftLeft,
-  17 : Keys.ControlLeft,
-  18 : Keys.AltLeft,
-  19 : Keys.Pause,
-  20 : Keys.CapsLock,
-  27 : Keys.Escape,
-  32 : Keys.Space,
-  33 : Keys.PageUp,
-  34 : Keys.PageDown,
-  35 : Keys.End,
-  36 : Keys.Home,
-  37 : Keys.ArrowLeft,
-  38 : Keys.ArrowUp,
-  39 : Keys.ArrowRight,
-  40 : Keys.ArrowDown,
-  45 : Keys.Insert,
-  46 : Keys.Delete,
-  48 : Keys.Digit0,
-  49 : Keys.Digit1,
-  50 : Keys.Digit2,
-  51 : Keys.Digit3,
-  52 : Keys.Digit4,
-  53 : Keys.Digit5,
-  54 : Keys.Digit6,
-  55 : Keys.Digit7,
-  56 : Keys.Digit8,
-  57 : Keys.Digit9,
-  65 : Keys.KeyA,
-  66 : Keys.KeyB,
-  67 : Keys.KeyC,
-  68 : Keys.KeyD,
-  69 : Keys.KeyE,
-  70 : Keys.KeyF,
-  71 : Keys.KeyG,
-  72 : Keys.KeyH,
-  73 : Keys.KeyI,
-  74 : Keys.KeyJ,
-  75 : Keys.KeyK,
-  76 : Keys.KeyL,
-  77 : Keys.KeyM,
-  78 : Keys.KeyN,
-  79 : Keys.KeyO,
-  80 : Keys.KeyP,
-  81 : Keys.KeyQ,
-  82 : Keys.KeyR,
-  83 : Keys.KeyS,
-  84 : Keys.KeyT,
-  85 : Keys.KeyU,
-  86 : Keys.KeyV,
-  87 : Keys.KeyW,
-  88 : Keys.KeyX,
-  89 : Keys.KeyY,
-  90 : Keys.KeyZ,
-  91 : Keys.MetaLeft,
-  92 : Keys.MetaRight,
-  93 : Keys.MediaSelect,
-  96 :  Keys.Numpad0,
-  97 :  Keys.Numpad1,
-  98 :  Keys.Numpad2,
-  99 :  Keys.Numpad3,
-  100 : Keys.Numpad4,
-  101 : Keys.Numpad5,
-  102 : Keys.Numpad6,
-  103 : Keys.Numpad7,
-  104 : Keys.Numpad8,
-  105 : Keys.Numpad9,
-  106 : Keys.NumpadMultiply,
-  107 : Keys.NumpadAdd,
-  109 : Keys.NumpadSubtract,
-  110 : Keys.NumpadDecimal,
-  111 : Keys.NumpadDivide,
-  112 : Keys.F1,
-  113 : Keys.F2,
-  114 : Keys.F3,
-  115 : Keys.F4,
-  116 : Keys.F5,
-  117 : Keys.F6,
-  118 : Keys.F7,
-  119 : Keys.F8,
-  120 : Keys.F9,
-  121 : Keys.F10,
-  122 : Keys.F11,
-  123 : Keys.F12,
-  144 : Keys.NumLock,
-  145 : Keys.ScrollLock,
-  186 : Keys.Semicolon,
-  187 : Keys.Equal,
-  188 : Keys.Comma,
-  189 : Keys.Minus,
-  190 : Keys.Period,
-  191 : Keys.Slash,
-  192 : Keys.Backquote,
-  219 : Keys.BracketLeft,
-  220 : Keys.Backslash,
-  221 : Keys.BracketRight,
-  222 : Keys.IntlRo,
+const KeyCodeToKey = Object.freeze({
+  8 : KeyboardKey.Backspace,
+  9 : KeyboardKey.Tab,
+  13 : KeyboardKey.Enter,
+  16 : KeyboardKey.ShiftLeft,
+  17 : KeyboardKey.ControlLeft,
+  18 : KeyboardKey.AltLeft,
+  19 : KeyboardKey.Pause,
+  20 : KeyboardKey.CapsLock,
+  27 : KeyboardKey.Escape,
+  32 : KeyboardKey.Space,
+  33 : KeyboardKey.PageUp,
+  34 : KeyboardKey.PageDown,
+  35 : KeyboardKey.End,
+  36 : KeyboardKey.Home,
+  37 : KeyboardKey.ArrowLeft,
+  38 : KeyboardKey.ArrowUp,
+  39 : KeyboardKey.ArrowRight,
+  40 : KeyboardKey.ArrowDown,
+  45 : KeyboardKey.Insert,
+  46 : KeyboardKey.Delete,
+  48 : KeyboardKey.Digit0,
+  49 : KeyboardKey.Digit1,
+  50 : KeyboardKey.Digit2,
+  51 : KeyboardKey.Digit3,
+  52 : KeyboardKey.Digit4,
+  53 : KeyboardKey.Digit5,
+  54 : KeyboardKey.Digit6,
+  55 : KeyboardKey.Digit7,
+  56 : KeyboardKey.Digit8,
+  57 : KeyboardKey.Digit9,
+  65 : KeyboardKey.KeyA,
+  66 : KeyboardKey.KeyB,
+  67 : KeyboardKey.KeyC,
+  68 : KeyboardKey.KeyD,
+  69 : KeyboardKey.KeyE,
+  70 : KeyboardKey.KeyF,
+  71 : KeyboardKey.KeyG,
+  72 : KeyboardKey.KeyH,
+  73 : KeyboardKey.KeyI,
+  74 : KeyboardKey.KeyJ,
+  75 : KeyboardKey.KeyK,
+  76 : KeyboardKey.KeyL,
+  77 : KeyboardKey.KeyM,
+  78 : KeyboardKey.KeyN,
+  79 : KeyboardKey.KeyO,
+  80 : KeyboardKey.KeyP,
+  81 : KeyboardKey.KeyQ,
+  82 : KeyboardKey.KeyR,
+  83 : KeyboardKey.KeyS,
+  84 : KeyboardKey.KeyT,
+  85 : KeyboardKey.KeyU,
+  86 : KeyboardKey.KeyV,
+  87 : KeyboardKey.KeyW,
+  88 : KeyboardKey.KeyX,
+  89 : KeyboardKey.KeyY,
+  90 : KeyboardKey.KeyZ,
+  91 : KeyboardKey.MetaLeft,
+  92 : KeyboardKey.MetaRight,
+  93 : KeyboardKey.MediaSelect,
+  96 :  KeyboardKey.Numpad0,
+  97 :  KeyboardKey.Numpad1,
+  98 :  KeyboardKey.Numpad2,
+  99 :  KeyboardKey.Numpad3,
+  100 : KeyboardKey.Numpad4,
+  101 : KeyboardKey.Numpad5,
+  102 : KeyboardKey.Numpad6,
+  103 : KeyboardKey.Numpad7,
+  104 : KeyboardKey.Numpad8,
+  105 : KeyboardKey.Numpad9,
+  106 : KeyboardKey.NumpadMultiply,
+  107 : KeyboardKey.NumpadAdd,
+  109 : KeyboardKey.NumpadSubtract,
+  110 : KeyboardKey.NumpadDecimal,
+  111 : KeyboardKey.NumpadDivide,
+  112 : KeyboardKey.F1,
+  113 : KeyboardKey.F2,
+  114 : KeyboardKey.F3,
+  115 : KeyboardKey.F4,
+  116 : KeyboardKey.F5,
+  117 : KeyboardKey.F6,
+  118 : KeyboardKey.F7,
+  119 : KeyboardKey.F8,
+  120 : KeyboardKey.F9,
+  121 : KeyboardKey.F10,
+  122 : KeyboardKey.F11,
+  123 : KeyboardKey.F12,
+  144 : KeyboardKey.NumLock,
+  145 : KeyboardKey.ScrollLock,
+  186 : KeyboardKey.Semicolon,
+  187 : KeyboardKey.Equal,
+  188 : KeyboardKey.Comma,
+  189 : KeyboardKey.Minus,
+  190 : KeyboardKey.Period,
+  191 : KeyboardKey.Slash,
+  192 : KeyboardKey.Backquote,
+  219 : KeyboardKey.BracketLeft,
+  220 : KeyboardKey.Backslash,
+  221 : KeyboardKey.BracketRight,
+  222 : KeyboardKey.IntlRo,
 })
