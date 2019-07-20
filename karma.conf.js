@@ -3,6 +3,7 @@
 const path = require("path")
 const IS_COVERAGE = !!process.env.IS_COVERAGE;
 const IS_TRAVIS = !!process.env.TRAVIS;
+const BROWSER = process.env.BROWSER;
 
 module.exports = function (config) {
 
@@ -21,7 +22,7 @@ module.exports = function (config) {
       'karma-typescript',
     ],
     browsers: [
-      IS_TRAVIS ? 'Firefox' : 'ChromeDebugging'
+      BROWSER || 'Chrome'
     ],
     browserDisconnectTimeout: 60 * 60 * 1000,
     customLaunchers: {

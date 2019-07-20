@@ -93,7 +93,7 @@ describe('glib/graphics/StencilState', () => {
       })
     })
   })
-  describe(`commit paramsB int stateA resolve into stateC`, () => {
+  describe(`commit paramsB into stateA resolve into stateC`, () => {
     keys.forEach((key) => {
       it(`resolves ${key}`, () => {
         stateA.commit(paramsB)
