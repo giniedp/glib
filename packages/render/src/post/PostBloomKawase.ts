@@ -1,8 +1,8 @@
 // tslint:disable no-bitwise
 import { glsl } from '@gglib/effects'
 import { BlendState, createShaderEffect, DepthFormat, Device, ShaderEffect, ShaderFxDocument, ShaderProgram } from '@gglib/graphics'
-import { Manager } from '../Manager'
-import { Stage } from '../Types'
+import { RenderManager } from '../RenderManager'
+import { RenderStep } from '../Types'
 
 /**
  * Constructor options for {@link PostBloomKawase}
@@ -26,7 +26,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class PostBloomKawase implements Stage {
+export class PostBloomKawase implements RenderStep {
   public get ready() {
     return this.effect != null
   }
@@ -53,7 +53,7 @@ export class PostBloomKawase implements Stage {
     this.effect = await createShaderEffect(this.device, SHADER)
   }
 
-  public render(manager: Manager) {
+  public render(manager: RenderManager) {
     if (!this.ready || !this.enabled) {
       return
     }

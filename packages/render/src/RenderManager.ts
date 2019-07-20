@@ -11,8 +11,8 @@ import {
   Texture,
 } from '@gglib/graphics'
 import { Log } from '@gglib/utils'
-import { Binder } from './Binder'
 import { Scene, SceneOutput } from './Types'
+import { UniformBinder } from './UniformBinder'
 
 /**
  * @public
@@ -24,9 +24,11 @@ export interface RenderTargetRegistry {
 }
 
 /**
+ * A utility class for managing render targets and rendering scenes
+ *
  * @public
  */
-export class Manager {
+export class RenderManager {
 
   /**
    * The graphics device
@@ -35,7 +37,7 @@ export class Manager {
   /**
    * The shader uniform binder
    */
-  public readonly binder: Binder
+  public readonly binder: UniformBinder
   /**
    * Collection of all registered scenes
    */
@@ -47,15 +49,15 @@ export class Manager {
   /**
    * SpriteBatch that is used to compose the results of all views into final image
    */
-  protected spriteBatch: SpriteBatch
+  protected readonly spriteBatch: SpriteBatch
   /**
-   * Collection of created but not currently used render targets
+   * Collection of render targets currently being unused
    */
-  protected freeTargets: RenderTargetRegistry[] = []
+  protected readonly freeTargets: RenderTargetRegistry[] = []
   /**
-   * Collection of currently used render targets
+   * Collection of render targets currently being in use
    */
-  protected usedTargets: RenderTargetRegistry[] = []
+  protected readonly usedTargets: RenderTargetRegistry[] = []
 
   /**
    * Maximum life time (number of frames) of an unused render target
@@ -68,12 +70,12 @@ export class Manager {
 
   constructor(device: Device) {
     this.device = device
-    this.binder = new Binder(device)
+    this.binder = new UniformBinder(device)
     this.spriteBatch = device.createSpriteBatch()
   }
 
   /**
-   * Creates an empty scene with given id
+   * Creates and adds an empty scene with given id
    *
    * @remarks
    * The created scene has no rendering steps so it wont be able
@@ -142,7 +144,7 @@ export class Manager {
    * Gets an existing render target with given options. Creates a new one if no such exists or is not free.
    */
   public acquireTarget(opts: RenderTargetOptions): Texture {
-    const found = this.freeTargets.find((it) => Manager.compareTargetOptions(it.options, opts))
+    const found = this.freeTargets.find((it) => RenderManager.compareTargetOptions(it.options, opts))
     if (found) {
       // remove from free list
       let index = this.freeTargets.indexOf(found)
@@ -278,7 +280,6 @@ export class Manager {
    */
   public presentScenes(scenes: Scene[], target?: Texture): void {
     this.device.setRenderTarget(target)
-    // this.device.clear(0xFF000000, 1)
     this.spriteBatch.begin({
       depthState: DepthState.None,
       blendState: BlendState.Default,

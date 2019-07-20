@@ -12,8 +12,8 @@ import {
   TextureFilter,
   TextureWrapMode,
 } from '@gglib/graphics'
-import { Manager } from '../Manager'
-import { Stage } from '../Types'
+import { RenderManager } from '../RenderManager'
+import { RenderStep } from '../Types'
 
 /**
  * Constructor options for {@link PostTonemap}
@@ -39,7 +39,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class PostTonemap implements Stage {
+export class PostTonemap implements RenderStep {
   public get ready() {
     return this.effect != null
   }
@@ -87,13 +87,13 @@ export class PostTonemap implements Stage {
     this.effect = await createShaderEffect(this.device, SHADER)
   }
 
-  public setup(manager: Manager) {
+  public setup(manager: RenderManager) {
     // get luminance history buffers
     this.lum1 = manager.acquireTarget(this.lumOptions)
     this.lum2 = manager.acquireTarget(this.lumOptions)
   }
 
-  public render(manager: Manager) {
+  public render(manager: RenderManager) {
     if (!this.ready || !this.enabled) {
       return
     }
@@ -233,7 +233,7 @@ export class PostTonemap implements Stage {
     manager.endStep(targetBuffer)
   }
 
-  public cleanup(manager: Manager) {
+  public cleanup(manager: RenderManager) {
     manager.releaseTarget(this.lum1)
     manager.releaseTarget(this.lum2)
   }

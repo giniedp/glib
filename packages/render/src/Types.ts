@@ -1,6 +1,6 @@
 import { Material, ShaderProgram, Texture } from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
-import { Manager } from './Manager'
+import { RenderManager } from './RenderManager'
 
 /**
  * An object that is drawable with a shader program
@@ -8,26 +8,45 @@ import { Manager } from './Manager'
  * @public
  */
 export interface Drawable {
+  /**
+   * Is called when the object should be rendered with given program
+   */
   draw: (program: ShaderProgram) => void
 }
 
 /**
- * On Object holding a drawable object
+ * An object holding a drawable with its rendering properties
  *
  * @public
  */
 export interface DrawableData<T = any> {
-  world: Mat4
+  /**
+   * The transform matrix
+   */
+  transform: Mat4
+  /**
+   * The drawable object
+   */
   drawable: Drawable
+  /**
+   * The drawing material
+   */
   material: Material
+  /**
+   * Additional data.
+   *
+   * @remarks
+   * The actual data depends on the used rendering pipeline
+   */
   data?: T
 }
 
 /**
- * Describes a light source
+ * Light source properties
+ *
  * @public
  */
-export interface LightData {
+export interface LightSourceData {
   /**
    * The light color
    */
@@ -43,16 +62,16 @@ export interface LightData {
 }
 
 /**
- * Describes a camera and its placement in the world
+ * An object with camera properties
  *
  * @public
  */
 export interface CameraData {
   /**
-   * The world matrix
+   * The transform matrix.
    *
    * @remarks
-   * If null then identity is assumed
+   * If not set, the inverse ov `view` matrix is assumed
    */
   world?: Mat4
   /**
@@ -70,35 +89,51 @@ export interface CameraData {
 }
 
 /**
+ * An object implementing one step of a rendering pipeline
+ *
  * @public
  */
-export interface Stage {
+export interface RenderStep {
+  /**
+   * Indicates whether the render step is ready to render
+   */
   ready: boolean
-  setup?: (manager: Manager) => void
-  render: (manager: Manager) => void
-  cleanup?: (manager: Manager) => void
+  /**
+   * Is called for each step before any step is rendered
+   */
+  setup?: (manager: RenderManager) => void
+  /**
+   * Is called for each step to render its technique
+   */
+  render: (manager: RenderManager) => void
+  /**
+   * Is called for each step after all steps have been rendered
+   */
+  cleanup?: (manager: RenderManager) => void
 }
 
 /**
+ * An object describing a renderable scene
+ *
  * @public
  */
 export interface Scene {
   /**
-   * The unique identifier of this view
+   * The unique identifier
    */
   id: string | number,
   /**
-   * Whether this view is enabled for rendering or not
+   * Indicates whether this scene is enabled for rendering
    *
    * @remarks
-   * A missing value defaults to `true`
+   * If value is missing `true` is assumed
    */
   enabled?: boolean
   /**
    * A custom tag
    *
    * @remarks
-   * All scenes without a tag are automatically rendered on screen by the render manager
+   * All scenes without a tag are automatically rendered on screen by the render manager.
    */
   tag?: string
   /**
@@ -141,11 +176,11 @@ export interface Scene {
   /**
    * The lights that affect this view
    */
-  lights: LightData[]
+  lights: LightSourceData[]
   /**
    * The rendering steps
    */
-  steps: Stage[]
+  steps: RenderStep[]
 }
 
 /**

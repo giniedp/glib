@@ -11,8 +11,8 @@ import {
   StencilState,
 } from '@gglib/graphics'
 
-import { Manager } from '../Manager'
-import { Stage } from '../Types'
+import { RenderManager } from '../RenderManager'
+import { RenderStep } from '../Types'
 
 function gauss(n: number, theta: number) {
   return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)))
@@ -39,9 +39,11 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 }
 
 /**
+ * Implements simple bloom post processing
+ *
  * @public
  */
-export class PostBloom implements Stage {
+export class PostBloom implements RenderStep {
   public get ready() {
     return this.effect != null
   }
@@ -97,7 +99,7 @@ export class PostBloom implements Stage {
     }
   }
 
-  public render(manager: Manager) {
+  public render(manager: RenderManager) {
     if (!this.ready || !this.enabled) {
       return
     }

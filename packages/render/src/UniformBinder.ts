@@ -1,6 +1,6 @@
-import { Device, ShaderProgram, ShaderUniform, ShaderUniformBinding } from '@gglib/graphics'
+import { Device, ShaderProgram, ShaderUniformBinding } from '@gglib/graphics'
 import { IVec2, IVec3, IVec4, Mat4, Vec2, Vec3, Vec4 } from '@gglib/math'
-import { LightData } from './Types'
+import { LightSourceData } from './Types'
 
 /**
  * @public
@@ -14,13 +14,25 @@ export interface LightBinding {
 /**
  * @public
  */
-export class Binder {
+export class UniformBinder {
+
+  /**
+   * A vector that is applied to a uniform with `"Position"` binding name
+   */
   public readonly Position: ShaderUniformBinding<IVec3> = {
     name: 'Position', type: 'vec3', value: Vec3.createZero(),
   }
+
+  /**
+   * A vector that is applied to a uniform with `"Direction"` binding name
+   */
   public readonly Direction: ShaderUniformBinding<IVec3> = {
     name: 'Direction', type: 'vec3', value: Vec3.createZero(),
   }
+
+  /**
+   * A matrix that is applied to a uniform with `"World"` binding name
+   */
   public readonly World: ShaderUniformBinding<Mat4> = {
     name: 'World', type: 'mat4', value: Mat4.createIdentity(),
   }
@@ -31,32 +43,65 @@ export class Binder {
     this.World,
   ]
 
+  /**
+   * A matrix that is applied to a uniform with `"View"` binding name
+   */
   public readonly View: ShaderUniformBinding<Mat4> = {
     name: 'View', type: 'mat4', value: Mat4.createIdentity(),
   }
+
+  /**
+   * A matrix that is applied to a uniform with `"Projection"` binding name
+   */
   public readonly Projection: ShaderUniformBinding<Mat4> = {
     name: 'Projection', type: 'mat4', value: Mat4.createIdentity(),
   }
+
+  /**
+   * A matrix that is applied to a uniform with `"ViewProjection"` binding name
+   */
   public readonly ViewProjection: ShaderUniformBinding<Mat4> = {
     name: 'ViewProjection', type: 'mat4', value: Mat4.createIdentity(),
   }
+
+  /**
+   * A vector that is applied to a uniform with `"CameraPosition"` binding name
+   */
   public readonly CameraPosition: ShaderUniformBinding<IVec3> = {
     name: 'CameraPosition', type: 'vec3', value: Vec3.createZero(),
   }
+
+  /**
+   * A vector that is applied to a uniform with `"CameraDirection"` binding name
+   */
   public readonly CameraDirection: ShaderUniformBinding<IVec3> = {
     name: 'CameraDirection', type: 'vec3', value: Vec3.createZero(),
   }
 
+  /**
+   * A vector that is applied to a uniform with `"TargetSize"` binding name
+   */
   public readonly TargetSize: ShaderUniformBinding<IVec2> = {
     name: 'TargetSize', type: 'vec2', value: Vec2.createZero(),
   }
+
+  /**
+   * A vector that is applied to a uniform with `"TargetPixelSize"` binding name
+   */
   public readonly TargetPixelSize: ShaderUniformBinding<IVec2> = {
     name: 'TargetPixelSize', type: 'vec2', value: Vec2.createZero(),
   }
 
+  /**
+   * A vector that is applied to a uniform with `"ViewportSize"` binding name
+   */
   public readonly ViewportSize: ShaderUniformBinding<IVec2> = {
     name: 'ViewportSize', type: 'vec2', value: Vec2.createZero(),
   }
+
+  /**
+   * A vector that is applied to a uniform with `"ViewportPixelSize"` binding name
+   */
   public readonly ViewportPixelSize: ShaderUniformBinding<IVec2> = {
     name: 'ViewportPixelSize', type: 'vec2', value: Vec2.createZero(),
   }
@@ -73,9 +118,16 @@ export class Binder {
     this.ViewportPixelSize,
   ]
 
+  /**
+   * A number value that is applied to a uniform with `"TimeNow"` binding name
+   */
   public readonly TimeNow: ShaderUniformBinding<number> = {
     name: 'TimeNow', type: 'float', value: 0,
   }
+
+  /**
+   * A number value that is applied to a uniform with `"TimeLast"` binding name
+   */
   public readonly TimeLast: ShaderUniformBinding<number> = {
     name: 'TimeLast', type: 'float', value: 0,
   }
@@ -84,6 +136,9 @@ export class Binder {
     this.TimeLast,
   ]
 
+  /**
+   * A collection of light source bindings
+   */
   public Lights = [
     this.buildLightBinding(0),
     this.buildLightBinding(1),
@@ -119,10 +174,17 @@ export class Binder {
     }
   }
 
-  public setCamera(world: Mat4, view: Mat4, proj: Mat4): Binder {
-    if (world) {
-      world.getTranslation(this.CameraPosition.value)
-      world.getForward(this.CameraDirection.value)
+  /**
+   * Updates camera binding values
+   *
+   * @param transform - The transform matrix
+   * @param view - The view matrix
+   * @param proj - The projection matrix
+   */
+  public updateCamera(transform: Mat4, view: Mat4, proj: Mat4): UniformBinder {
+    if (transform) {
+      transform.getTranslation(this.CameraPosition.value)
+      transform.getForward(this.CameraDirection.value)
     }
     if (view) {
       this.View.value.initFrom(view)
@@ -136,7 +198,12 @@ export class Binder {
     return this
   }
 
-  public setViewportSize(view: {width: number, height: number}): Binder {
+  /**
+   * Updates viewport binding values
+   *
+   * @param view - The viewport dimensions
+   */
+  public updateViewportSize(view: {width: number, height: number}): UniformBinder {
     this.ViewportSize.value.x = view.width
     this.ViewportSize.value.y = view.height
     this.ViewportPixelSize.value.x = 1.0 / view.width
@@ -144,7 +211,12 @@ export class Binder {
     return this
   }
 
-  public setTargetSize(target: {width: number, height: number}): Binder {
+  /**
+   * Updates render target binding values
+   *
+   * @param target - The render target dimensions
+   */
+  public updateTargetSize(target: {width: number, height: number}): UniformBinder {
     this.TargetSize.value.x = target.width
     this.TargetSize.value.y = target.height
     this.TargetPixelSize.value.x = 1.0 / target.width
@@ -152,7 +224,12 @@ export class Binder {
     return this
   }
 
-  public setTransform(world: Mat4): Binder {
+  /**
+   * Updates transform binding values
+   *
+   * @param world - The transform matrix
+   */
+  public updateTransform(world: Mat4): UniformBinder {
     if (world) {
       world.getTranslation(this.Position.value)
       world.getForward(this.Direction.value)
@@ -161,19 +238,30 @@ export class Binder {
     return this
   }
 
-  public updateTime(total: number, elapsed: number = 0): Binder {
+  /**
+   * Updates time binding values
+   *
+   * @param total - The total (game) time
+   * @param elapsed - The last frame time
+   */
+  public updateTime(total: number, elapsed: number = 0): UniformBinder {
     this.TimeNow.value = total
     this.TimeLast.value = total - elapsed
     return this
   }
 
-  public updateLights(lights: LightData[]) {
+  /**
+   * Updates binding values for multiple lights
+   *
+   * @param lights - The light sources providing values to bind
+   */
+  public updateLights(lights: LightSourceData[]) {
     for (let i = 0; i < lights.length; i++) {
       this.updateLight(lights[i], i)
     }
   }
 
-  public updateLight(light: LightData, index: number) {
+  public updateLight(light: LightSourceData, index: number) {
     let l = this.Lights[index]
     if (!l) {
       return
@@ -183,24 +271,44 @@ export class Binder {
     l.Direction.value = light.direction
   }
 
+  /**
+   * Applies per object binding values to the program
+   *
+   * @param program - The program which uniforms should receive new values
+   */
   public applyTransform(program: ShaderProgram): this {
     program.use()
     program.applyBindings(this.transformBindings)
     return this
   }
 
+  /**
+   * Applies per view binding values to the program
+   *
+   * @param program - The program which uniforms should receive new values
+   */
   public applyView(program: ShaderProgram): this {
     program.use()
     program.applyBindings(this.viewBindings)
     return this
   }
 
+  /**
+   * Applies per frame binding values to the program
+   *
+   * @param program - The program which uniforms should receive new values
+   */
   public applyTime(program: ShaderProgram): this {
     program.use()
     program.applyBindings(this.timeBindings)
     return this
   }
 
+  /**
+   * Applies per light binding values to the program
+   *
+   * @param program - The program which uniforms should receive new values
+   */
   public applyLights(program: ShaderProgram): this {
     program.use()
     for (let lightBinding of this.lightBindings) {

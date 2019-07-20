@@ -1,34 +1,36 @@
 import { BlendState, CullState, DepthState, ShaderTechnique, StencilState } from '@gglib/graphics'
-import { Binder } from './Binder'
-import { Manager } from './Manager'
-import { DrawableData, Stage } from './Types'
+import { RenderManager } from './RenderManager'
+import { DrawableData, RenderStep } from './Types'
+import { UniformBinder } from './UniformBinder'
 
 /**
- * Constructor options for {@link BasicStage}
+ * Constructor options for {@link BasicRenderStep}
  *
  * @public
  */
-export interface BasicStageOptions {
+export interface BasicRenderStepOptions {
   clearColor?: number
 }
 
 /**
+ * A basic implementation of a forward renderer
+ *
  * @public
  */
-export class BasicStage implements Stage {
+export class BasicRenderStep implements RenderStep {
   public get ready() {
     return true
   }
 
   public clearColor: number = 0xFF000000
 
-  public constructor(options: BasicStageOptions = {}) {
+  public constructor(options: BasicRenderStepOptions = {}) {
     if (options.clearColor != null) {
       this.clearColor = options.clearColor
     }
   }
 
-  public render(manager: Manager) {
+  public render(manager: RenderManager) {
     const binder = manager.binder
     const scene = manager.scene
     const cam = scene.camera
@@ -36,7 +38,7 @@ export class BasicStage implements Stage {
       return
     }
 
-    binder.setCamera(cam.world, cam.view, cam.projection)
+    binder.updateCamera(cam.world, cam.view, cam.projection)
     binder.updateLights(scene.lights)
 
     const rt = manager.beginStep()
@@ -58,14 +60,14 @@ export class BasicStage implements Stage {
     manager.endStep(rt)
   }
 
-  public renderItem(item: DrawableData, binder: Binder) {
+  public renderItem(item: DrawableData, binder: UniformBinder) {
     const effect = item.material.effect
     const drawable = item.drawable
     const technique: ShaderTechnique = effect.technique
     for (const pass of technique.passes) {
       pass.commit(item.material.parameters)
       binder
-        .setTransform(item.world)
+        .updateTransform(item.transform)
         .applyTransform(pass.program)
         .applyView(pass.program)
         .applyTime(pass.program)

@@ -1,7 +1,7 @@
 import { glsl } from '@gglib/effects'
 import { createShaderEffect, Device, ShaderEffect, ShaderFxDocument } from '@gglib/graphics'
-import { Manager } from '../Manager'
-import { Stage } from '../Types'
+import { RenderManager } from '../RenderManager'
+import { RenderStep } from '../Types'
 
 /**
  * Constructor options for {@link PostPixelate}
@@ -25,7 +25,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class PostPixelate implements Stage {
+export class PostPixelate implements RenderStep {
   public get ready() {
     return this.effect != null
   }
@@ -48,7 +48,7 @@ export class PostPixelate implements Stage {
     this.effect = await createShaderEffect(this.device, SHADER)
   }
 
-  public render(manager: Manager) {
+  public render(manager: RenderManager) {
     if (!this.ready || !this.enabled) {
       return
     }

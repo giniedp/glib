@@ -23,7 +23,7 @@ export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemo
         return {
           drawable: it,
           material: value.materials[it.materialId] || value.materials.find((e) => e.name === it.materialId),
-          world: this.world,
+          transform: this.world,
           data: null,
         }
       })

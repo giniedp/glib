@@ -1,7 +1,7 @@
 // tslint:disable:max-classes-per-file
 
 import { Device } from '@gglib/graphics'
-import { BasicStage, DrawableData, LightData, Manager as RenderManager, Scene } from '@gglib/render'
+import { BasicRenderStep, DrawableData, LightSourceData, RenderManager, Scene } from '@gglib/render'
 import { Inject, Service } from '../decorators'
 import { OnDraw, OnInit, OnUpdate } from './../Component'
 import { Entity } from './../Entity'
@@ -15,7 +15,7 @@ import { TimeComponent } from './TimeComponent'
 export interface CullVisitor {
   run(entity: Entity, view: Scene): void
   addDrawable(item: DrawableData): void
-  addLight(item: LightData): void
+  addLight(item: LightSourceData): void
 }
 
 /**
@@ -43,7 +43,7 @@ export class RendererComponent implements OnInit, OnUpdate, OnDraw {
     this.manager.addScene({
       id: 0,
       enabled: true,
-      steps: [new BasicStage()],
+      steps: [new BasicRenderStep()],
       items: [],
       lights: [],
     })
@@ -62,7 +62,7 @@ export class RendererComponent implements OnInit, OnUpdate, OnDraw {
         return
       }
       const camera = scene.camera
-      this.manager.binder.setCamera(camera.world, camera.view, camera.projection)
+      this.manager.binder.updateCamera(camera.world, camera.view, camera.projection)
       this.cullVisitor.run(this.entity.root, scene)
       this.manager.renderScene(scene)
       this.toRender.push(scene)
@@ -88,7 +88,7 @@ export class SimpleCullVisitor implements CullVisitor {
     this.scene.items.push(item)
   }
 
-  public addLight(light: LightData) {
+  public addLight(light: LightSourceData) {
     this.scene.lights.push(light)
   }
 
