@@ -1,7 +1,7 @@
 {
   "name": "@gglib/math",
   "description": "Part of the [G]glib project",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"

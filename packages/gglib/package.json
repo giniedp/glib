@@ -1,7 +1,7 @@
 {
   "name": "@gglib/gglib",
   "description": "Part of the [G]glib project",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,15 +18,15 @@
   "module": "./index.js",
   "typings": "./index.d.ts",
   "peerDependencies": {
-    "@gglib/content": "0.3.0",
-    "@gglib/ecs": "0.3.0",
-    "@gglib/effects": "0.3.0",
-    "@gglib/graphics": "0.3.0",
-    "@gglib/input": "0.3.0",
-    "@gglib/math": "0.3.0",
-    "@gglib/noise": "0.3.0",
-    "@gglib/render": "0.3.0",
-    "@gglib/terrain": "0.3.0",
-    "@gglib/utils": "0.3.0"
+    "@gglib/content": "0.3.1",
+    "@gglib/ecs": "0.3.1",
+    "@gglib/effects": "0.3.1",
+    "@gglib/graphics": "0.3.1",
+    "@gglib/input": "0.3.1",
+    "@gglib/math": "0.3.1",
+    "@gglib/noise": "0.3.1",
+    "@gglib/render": "0.3.1",
+    "@gglib/terrain": "0.3.1",
+    "@gglib/utils": "0.3.1"
   }
 }
