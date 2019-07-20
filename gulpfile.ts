@@ -27,8 +27,10 @@ task(watchPackages)
 
 task('build', series(
   clean,
+  update,
   compile,
   bundle,
+  copyPackageFiles,
   api,
   docs,
 ))
