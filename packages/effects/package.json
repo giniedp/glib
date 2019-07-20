@@ -1,7 +1,7 @@
 {
   "name": "@gglib/effects",
   "description": "Part of the [G]glib project",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,8 +18,8 @@
   "module": "./index.js",
   "typings": "./index.d.ts",
   "peerDependencies": {
-    "@gglib/graphics": "0.2.0",
-    "@gglib/content": "0.2.0",
-    "@gglib/math": "0.2.0"
+    "@gglib/graphics": "0.3.0",
+    "@gglib/math": "0.3.0",
+    "@gglib/content": "0.3.0"
   }
 }
