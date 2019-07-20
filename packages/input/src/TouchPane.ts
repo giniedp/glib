@@ -87,8 +87,8 @@ export class TouchPane extends Events  {
     this.deactivate()
     // update events
     this.eventTarget.addEventListener('touchcancel', this.onTouchCancel)
-    this.eventTarget.addEventListener('touchstart', this.onTouchStart)
-    this.eventTarget.addEventListener('touchmove', this.onTouchMove)
+    this.eventTarget.addEventListener('touchstart', this.onTouchStart, { passive: true })
+    this.eventTarget.addEventListener('touchmove', this.onTouchMove, { passive: true })
     this.eventTarget.addEventListener('touchend', this.onTouchEnd)
     // visibility events
     onDocumentVisibilityChange(this.onNeedsClear)
@@ -96,7 +96,7 @@ export class TouchPane extends Events  {
     window.addEventListener('blur', this.onNeedsClear)
     // delegated events
     for (let name of this.delegatedEvents) {
-      this.eventTarget.addEventListener(name, this.onEvent)
+      this.eventTarget.addEventListener(name, this.onEvent, { passive: true })
     }
   }
 
