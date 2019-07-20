@@ -8,6 +8,7 @@ import { clean } from './tools/gulp/clean'
 import { compile } from './tools/gulp/compile'
 import { link, unlink } from './tools/gulp/link'
 import { serve, watchPage } from './tools/gulp/page'
+import { publish } from './tools/gulp/publish'
 import { copyPackageFiles, update } from './tools/gulp/update'
 
 task(api)
@@ -38,3 +39,5 @@ task('watch', parallel(
   watchPage,
   watchPackages,
 ))
+
+task('release', series('build', publish))
