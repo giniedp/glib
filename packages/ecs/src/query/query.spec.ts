@@ -1,7 +1,7 @@
 import { Entity } from '../Entity'
 import { Query } from './query'
 
-fdescribe('@gglib/ecs/query', () => {
+describe('@gglib/ecs/query', () => {
   let root: Entity
   let A: Entity
   let B: Entity
