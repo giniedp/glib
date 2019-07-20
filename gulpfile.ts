@@ -7,7 +7,7 @@ import { bundle } from './tools/gulp/bundle'
 import { clean } from './tools/gulp/clean'
 import { compile } from './tools/gulp/compile'
 import { link, unlink } from './tools/gulp/link'
-import { serve, watchPage } from './tools/gulp/page'
+import { page, serve, watchPage } from './tools/gulp/page'
 import { publish } from './tools/gulp/publish'
 import { copyPackageFiles, update } from './tools/gulp/update'
 
@@ -33,6 +33,8 @@ task('build', series(
   copyPackageFiles,
   api,
   docs,
+  assets,
+  page,
 ))
 
 task('watch', parallel(

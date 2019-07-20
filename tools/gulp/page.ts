@@ -70,6 +70,8 @@ export function serve() {
   })
 }
 
+export const page = series(scss, pages, assets)
+
 export function watchPage(end) {
   const watchScss = watch(project.page.scss.filter((it) => it[0] !== '!'), { delay: 500 }, scss)
   const watchPages = watch(project.page.pages, { delay: 500 }, pages)
