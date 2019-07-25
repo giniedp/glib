@@ -1,0 +1,26 @@
+---
+title: Hello Triangle
+weight: 001-001
+group: graphics
+files:
+  - Readme.md
+  - index.ts
+  - index.html
+---
+extends /_layouts/_example
+block append script
+  script(type='text/javascript' src='./index.js')
+block prepend script
+  script#vertex-shader(type='text/glsl').
+    // # Vertex shader
+    // A minimal vertex shader. It passes the vertex position without any transformation to the fragment stage.
+    attribute vec3 vPosition;
+    void main(void) {
+      gl_Position = vec4(vPosition, 1.0);
+    }
+  script#fragment-shader(type='text/glsl').
+    // # Fragment shader
+    // A minimal fragment shader. It simply returns a white pixel.
+    void main(void) {
+      gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    }

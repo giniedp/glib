@@ -1,0 +1,42 @@
+---
+title: Keyboard
+weight: 1
+group: input
+files:
+  - Readme.md
+  - index.ts
+  - index.html
+---
+extends /_layouts/_example
+block style
+  style().
+    html {
+      background: #dedede;
+      padding: 0.25rem;
+    }
+    .key {
+      position: relative;
+      background: #333;
+      padding: 0.5rem;
+      margin: 0.25rem;
+      display: block;
+      min-width: 135px;
+      float: left;
+      border: 0px;
+      border-radius: 0 15px 0 15px ;
+    }
+    label, value {
+      color: #aaaaaa;
+      display: block;
+      padding: 2px 3px;
+      height: 1rem;
+      line-height: 1rem;
+    }
+    value {
+      text-align: right;
+      font-size: 1.2rem;
+    }
+block content
+  .key-container
+block append script
+  script(type='text/javascript' src='./index.js')

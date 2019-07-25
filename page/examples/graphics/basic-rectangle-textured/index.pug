@@ -1,0 +1,31 @@
+---
+title: Rectangle textured
+weight: 001-006
+group: graphics
+files:
+  - Readme.md
+  - index.ts
+  - index.html
+---
+extends /_layouts/_example
+block append script
+  script(type='text/javascript' src='./index.js')
+block prepend script
+  script#vertex-shader(type='text/glsl').
+    precision highp float;
+    attribute vec3 vPosition;
+    attribute vec2 vTexture;
+    varying vec2 texCoord;
+    void main(void) {
+      texCoord = vTexture;
+      gl_Position = vec4(vPosition, 1.0);
+    }
+
+  script#fragment-shader(type='text/glsl').
+    precision highp float;
+    uniform sampler2D uTexture;
+    varying vec2 texCoord;
+    void main(void) {
+      // Read the color from texture and render the pixel with that color.
+      gl_FragColor = vec4(texture2D(uTexture, texCoord).rgb, 1.0);
+    }

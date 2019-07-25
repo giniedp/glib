@@ -1,0 +1,150 @@
+extends /_layouts/_page
+block content
+  .page-content
+    .container(style="max-width: 960px;")
+      h1.mt-4 [G]glib
+      :markdown-it
+        [Glib](https://github.com/giniedp/glib) is a collection of graphics related libraries.
+        At its core it abstracts WebGL calls hides state management and in general provides a graphics api
+        that is nicer to work with.
+
+        XNA developers might recognize parts of Glibs structure and methods. That is because Glib actually
+        mimics a portion of XNAs public api.
+
+        Besides of the abstraction of WebGL Glib implements following modules and concepts.
+
+      dl
+        dt Math
+        dd
+          :markdown-it
+            A 3D library providing common structures like `Vec2`, `Vec3`, `Vec4`, `Quat`, `Mat4` and a rich set of operations among them.
+            As well as primitive bounding volumes and methods to test for geometry intersection.
+        dt Content Pipeline
+        dd
+          :markdown-it
+            A library for downloading and processing assets. Provides several built in loaders for common data fromats like
+            `obj` and `gltf`. Implements a flexible mechanism for building custom pipelines or extending built in loaders.
+        dt Shader inspection
+        dd
+          :markdown-it
+            Shader source code is inspected at runtime when shader programs are created. Uniform variables are bound and exposed into the
+            javascript world. Special comment syntax in glsl code can be used to add metadata on uniform variables allowing to set default values or
+            change binding names for automatic update.
+        dt Entity component system
+        dd
+          :markdown-it
+            A lightweight and simple yet flexible and powerful entity component system.
+            It comes bundeled with some basic components to get you started. None of which must be used.
+            Write your custom components for your game, app or even your own engine.
+
+      .alert.alert-info
+        span This is a spare time project. Frequently changed. Occassionally maintained. Mainly to learn concepts of 3D programming.
+
+      :markdown-it
+
+        ## Github
+
+        The project is hosted at [https://github.com/giniedp/glib](https://github.com/giniedp/glib)
+
+        To build from source do
+
+        ```bash
+        $ git clone git@github.com:giniedp/glib.git
+        $ cd glib
+        ```
+
+        install dependencies
+
+        ```sh
+        $ yarn install
+        ```
+
+        build the project
+
+        ```sh
+        $ gulp build
+        ```
+
+        ## NPM
+
+        Glib is separated into differend packages each of which can be found at [www.npmjs.com](https://www.npmjs.com/search?q=%40gglib)
+
+        If you are ok with a big bundle then use
+
+        ```bash
+        $ npm install @gglib/gglib --save
+        ```
+
+        If you are just interested for example in the graphics package use
+
+        ```bash
+        $ npm install @gglib/graphics --save
+        ```
+
+        Each package is distributed with typescript definition files. There is no need to add additional types in your `tsconfig.json`.
+
+        ## CDN
+
+        Since all packages are distributed via NPM the bundles are available via [https://unpkg.com/](https://unpkg.com/).
+
+        If you are interested in the complete bundle use
+
+        ```html
+        <script src="https://unpkg.com/@gglib/gglib@x.x.x/bundles/gglib.umd.js"></script>
+        ```
+
+        If you are only interested in the graphics package you also have to reference the graphics package dependencies
+
+        ```html
+        <script src="https://unpkg.com/@gglib/utils@x.x.x/bundles/utils.umd.js"></script>
+        <script src="https://unpkg.com/@gglib/math@x.x.x/bundles/math.umd.js"></script>
+        <script src="https://unpkg.com/@gglib/gglib@x.x.x/bundles/gglib.umd.js"></script>
+        ```
+
+        Replace the `x.x.x` with a specific version or leave the placeholder as is so unpkg will forward you to the recent version.
+
+        ## What does Gglib stand for?
+
+        The original name was `glib` and stands for 'graphics library'. At the time of publishing it on npm, `glib` was already used so the [G] was added
+        and the name since then is `gglib`. The library collection has grown and is not only about graphics any more.
+        The new name therefore stands for 'graphics and game library'. The source code and parts of this page use both names so dont get confused.
+
+        ## How is it better than THREE.js and BABYLON.js etc.
+
+        It is not. Other libraries are much more mature have great communities and are pretty much battle tested already.
+
+        Gglib so far is a one man project written in spare time and may or may not turn into something useful.
+
+        If you are about to write your own renderer gglib may serve you with a great baseground yet giving
+        you enough freedom for your own concepts at the same time.
+
+        ## How to learn?
+
+        Take a look at the examples page and read the source code.
+
+        ## License
+
+        MIT
+
+        ## Assets
+
+        Assets used in the examples mostly have a CC0 license or have been distributed in a free prototype package.
+        Contact me if you encounter any wrongly licensed asset. Here are some content creators and websites
+        i like to mention.
+
+        - [https://www.sharetextures.com/](https://www.sharetextures.com/)
+        - [https://opengameart.org/](https://opengameart.org/)
+        - [https://helloluxx.com](https://helloluxx.com)
+        - [http://www.dexsoft-games.com](http://www.dexsoft-games.com)
+        - [http://www.kenney.nl](http://www.kenney.nl)
+
+      #disqus_thread.padding
+    script#dsq-count-scr(src="//ginie.disqus.com/count.js" async)
+    script(type='text/javascript').
+      (function() {
+          var d = document, s = d.createElement('script');
+          s.src = '//glib.disqus.com/embed.js';
+          s.setAttribute('data-timestamp', +new Date());
+          (d.head || d.body).appendChild(s);
+      })();
+

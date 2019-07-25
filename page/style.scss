@@ -1,0 +1,26 @@
+// $primary:       #3A3F44 !default;
+// $secondary:     #7A8288 !default;
+$dark: #1c2128;
+
+// @import "./_style/theme-simplex";
+
+@import "bootstrap/scss/bootstrap";
+
+@import "./_style/scrollbar";
+@import "./_style/sample";
+@import "./_style/prismjs";
+@import "./_style/docs";
+
+nav.fixed-top {
+  .navbar-nav {
+    width: 75rem;
+  }
+  .nav-item {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+nav.fixed-top + * {
+  margin-top: 56px;
+}
