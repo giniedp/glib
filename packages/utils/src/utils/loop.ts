@@ -10,19 +10,29 @@ export const getTime: () => number = (() => {
   return () => Date.now()
 })()
 
-const raf: (cb: any) => void =
+/**
+ * Browsersafe {@link https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame | requestAnimationFrame }
+ * function
+ * @public
+ */
+export const requestAnimationFrame: (cb: FrameRequestCallback) => number =
   window['requestAnimationFrame'] ||
   window['mozRequestAnimationFrame'] ||
   window['webkitRequestAnimationFrame'] ||
-  window['msRequestAnimationFrame']
+  window['msRequestAnimationFrame'] ||
+  ((cb) => setTimeout(() => cb(getTime())))
 
 /**
- *
+ * Browsersafe {@link https://developer.mozilla.org/en-US/docs/Web/API/window/cancelAnimationFrame | cancelAnimationFrame }
+ * function
  * @public
  */
-export const requestFrame = typeof raf === 'function'
-  ? (callback: any) => raf(callback)
-  : (callback: any) => self.setTimeout(callback, 1)
+export const cancelAnimationFrame: (requestId: number) => number =
+  window['cancelAnimationFrame'] ||
+  window['mozCancelAnimationFrame'] ||
+  window['webkitCancelAnimationFrame'] ||
+  window['msCancelAnimationFrame'] ||
+  clearTimeout
 
 /**
  * A loop function that can be started and killed
@@ -41,20 +51,23 @@ export interface Loop {
 }
 
 /**
+ * Spins the given `callback` in a loop by utilizing `requestAnimationFrame`
+ *
  * @public
  */
-export function loop(loopFunc: (...arg: any[]) => any): Loop {
-  let time = getTime()
-  let tick: any = () => {
-    if (!tick) { return }
-    let now = getTime()
-    let dt = now - time
-    time = now
-    loopFunc(dt)
-    if (!tick) { return }
-    requestFrame(tick)
-    return tick
+export function loop(callback: (timestamp?: number, dt?: number) => any): Loop {
+  let requestId: number = null
+  let timestamp: number = getTime()
+  const looper: any = () => {
+    const dt = getTime() - timestamp
+    cancelAnimationFrame(requestId)
+    callback(timestamp, dt)
+    timestamp += dt
+    requestId = requestAnimationFrame(looper)
   }
-  tick.kill = () => { tick = null }
-  return tick()
+  looper.kill = () => {
+    cancelAnimationFrame(requestId)
+  }
+  looper()
+  return looper
 }
