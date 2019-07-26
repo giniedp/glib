@@ -13,7 +13,7 @@ const params: Array<keyof DepthStateParams> = [
 ]
 
 /**
- * Options to be converted into {@link DepthStateParams} via {@link DepthState.convert}
+ * Options to be converted into {@link IDepthState} via {@link DepthState.convert}
  *
  * @public
  */
@@ -49,7 +49,7 @@ export class DepthState implements IDepthState {
   /**
    * A default state with depth buffer read and write enabled
    */
-  public static Default = Object.freeze<DepthStateParams>({
+  public static Default = Object.freeze<IDepthState>({
     enable: true,
     depthFunction: CompareFunction.LessEqual,
     depthWriteEnable: true,
@@ -58,7 +58,7 @@ export class DepthState implements IDepthState {
   /**
    * A state with depth buffer read and write both disabled
    */
-  public static None = Object.freeze<DepthStateParams>({
+  public static None = Object.freeze<IDepthState>({
     enable: false,
     depthFunction: CompareFunction.Always,
     depthWriteEnable: false,
@@ -67,18 +67,18 @@ export class DepthState implements IDepthState {
   /**
    * A state with depth buffer enabled for read only
    */
-  public static DepthRead = Object.freeze<DepthStateParams>({
+  public static DepthRead = Object.freeze<IDepthState>({
     enable: true,
     depthFunction: CompareFunction.LessEqual,
     depthWriteEnable: false,
   })
 
   /**
-   * Converts a state name or options into {@link DepthStateParams}
+   * Converts a state name or options into {@link IDepthState}
    *
    * @param state - The state name or state options to convert
    */
-  public static convert(state: string | DepthStateOptions): DepthStateParams {
+  public static convert(state: string | DepthStateOptions): IDepthState {
     if (typeof state === 'string') {
       return DepthState[state] ? {...DepthState[state]} : null
     }
@@ -100,7 +100,7 @@ export class DepthState implements IDepthState {
           break
       }
     }
-    return result
+    return result as IDepthState
   }
 
   /**

@@ -17,7 +17,7 @@ const params: Array<keyof CullStateParams> = [
 ]
 
 /**
- * Options to be converted into {@link CullStateParams} via {@link CullState.convert}
+ * Options to be converted into {@link ICullState} via {@link CullState.convert}
  *
  * @public
  */
@@ -192,11 +192,11 @@ export class CullState implements CullStateParams {
   }
 
   /**
-   * Converts a state name or options into {@link CullStateParams}
+   * Converts a state name or options into {@link ICullState}
    *
    * @param state - The state name or state options to convert
    */
-  public static convert(state: string | CullStateOptions): CullStateParams {
+  public static convert(state: string | CullStateOptions): ICullState {
     if (typeof state === 'string') {
       return CullState[state] ? {...CullState[state]} : null
     }
@@ -221,7 +221,7 @@ export class CullState implements CullStateParams {
           break
       }
     }
-    return result
+    return result as ICullState
   }
 
   /**
@@ -243,7 +243,7 @@ export class CullState implements CullStateParams {
   /**
    * A default state with culling disabled
    */
-  public static Default = Object.freeze<CullStateParams>({
+  public static Default = Object.freeze<ICullState>({
     enable: false,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,
@@ -252,7 +252,7 @@ export class CullState implements CullStateParams {
   /**
    * A state with culling disabled
    */
-  public static CullNone = Object.freeze<CullStateParams>({
+  public static CullNone = Object.freeze<ICullState>({
     enable: false,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,
@@ -261,7 +261,7 @@ export class CullState implements CullStateParams {
   /**
    * A state with culling clock wise faces enabled
    */
-  public static CullClockWise = Object.freeze<CullStateParams>({
+  public static CullClockWise = Object.freeze<ICullState>({
     enable: true,
     cullMode: CullMode.Back,
     frontFace: FrontFace.CounterClockWise,
@@ -270,7 +270,7 @@ export class CullState implements CullStateParams {
   /**
    * A state with culling counter clock wise faces enabled
    */
-  public static CullCounterClockWise = Object.freeze<CullStateParams>({
+  public static CullCounterClockWise = Object.freeze<ICullState>({
     enable: true,
     cullMode: CullMode.Back,
     frontFace: FrontFace.ClockWise,

@@ -1,4 +1,21 @@
-import { BlendState, CullState, DepthState, ShaderTechnique, StencilState } from '@gglib/graphics'
+import {
+  BlendState,
+  BlendStateOptions,
+  Color,
+  CullState,
+  CullStateOptions,
+  DepthState,
+  DepthStateOptions,
+  IBlendState,
+  ICullState,
+  IDepthState,
+  IStencilState,
+  ShaderTechnique,
+  StencilState,
+  StencilStateOptions,
+} from '@gglib/graphics'
+import { getOption } from '@gglib/utils'
+
 import { RenderManager } from './RenderManager'
 import { DrawableData, RenderStep } from './Types'
 import { UniformBinder } from './UniformBinder'
@@ -9,7 +26,34 @@ import { UniformBinder } from './UniformBinder'
  * @public
  */
 export interface BasicRenderStepOptions {
+  /**
+   * The color to be used when clearing the screen. Defaults to solid black.
+   */
   clearColor?: number
+  /**
+   * The depth value to be used when clearing the screen. Defaults to `1`
+   */
+  clearDepth?: number
+  /**
+   * The stencil value to be used when clearing the screen. Defaults to `null`
+   */
+  clearStencil?: number
+  /**
+   * The default blend state
+   */
+  blendState?: BlendStateOptions
+  /**
+   * The default cull state
+   */
+  cullState?: CullStateOptions
+  /**
+   * The default depth state
+   */
+  depthState?: DepthStateOptions
+  /**
+   * The default stencil state
+   */
+  stencilState?: StencilStateOptions
 }
 
 /**
@@ -22,12 +66,43 @@ export class BasicRenderStep implements RenderStep {
     return true
   }
 
-  public clearColor: number = 0xFF000000
+  /**
+   * The color to be used when clearing the screen. Defaults to solid black.
+   */
+  public clearColor: number
+  /**
+   * The depth value to be used when clearing the screen. Defaults to `1`
+   */
+  public clearDepth: number
+  /**
+   * The stencil value to be used when clearing the screen. Defaults to `null`
+   */
+  public clearStencil: number
+  /**
+   * The default blend state
+   */
+  public blendState: IBlendState
+  /**
+   * The default cull state
+   */
+  public cullState: ICullState
+  /**
+   * The default depth state
+   */
+  public depthState: IDepthState
+  /**
+   * The default stencil state
+   */
+  public stencilState: IStencilState
 
   public constructor(options: BasicRenderStepOptions = {}) {
-    if (options.clearColor != null) {
-      this.clearColor = options.clearColor
-    }
+    this.clearColor = getOption(options, 'clearColor', Color.Black.rgba)
+    this.clearDepth = getOption(options, 'clearDepth', 1)
+    this.clearStencil = getOption(options, 'clearStencil', null)
+    this.blendState = BlendState.convert(getOption(options, 'blendState', BlendState.Default))
+    this.cullState = CullState.convert(getOption(options, 'cullState', CullState.Default))
+    this.depthState = DepthState.convert(getOption(options, 'depthState', DepthState.Default))
+    this.stencilState = StencilState.convert(getOption(options, 'stencilState', StencilState.Default))
   }
 
   public render(manager: RenderManager) {
@@ -46,11 +121,11 @@ export class BasicRenderStep implements RenderStep {
       manager.device.setRenderTarget(rt)
     }
 
-    manager.device.cullState = CullState.CullClockWise
-    manager.device.depthState = DepthState.Default
-    manager.device.blendState = BlendState.Default
-    manager.device.stencilState = StencilState.Default
-    manager.device.clear(this.clearColor, 1)
+    manager.device.cullState = this.cullState
+    manager.device.depthState = this.depthState
+    manager.device.blendState = this.blendState
+    manager.device.stencilState = this.stencilState
+    manager.device.clear(this.clearColor, this.clearDepth, this.clearStencil)
 
     for (const item of manager.scene.items) {
       this.renderItem(item, manager.binder)

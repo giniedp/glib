@@ -11,7 +11,6 @@ import {
   valueOfBlendFunction,
 } from './../enums'
 
-
 const params: Array<keyof BlendStateParams> = [
   'alphaBlendFunction',
   'alphaDstBlend',
@@ -27,7 +26,7 @@ const params: Array<keyof BlendStateParams> = [
 ]
 
 /**
- * Options to be converted into {@link BlendStateParams} via {@link BlendState.convert}
+ * Options to be converted into {@link IBlendState} via {@link BlendState.convert}
  *
  * @public
  */
@@ -412,7 +411,7 @@ export class BlendState implements IBlendState {
    *
    * @param state - The state name or state options to convert
    */
-  public static convert(state: string | BlendStateOptions): BlendStateParams {
+  public static convert(state: string | BlendStateOptions): IBlendState {
     if (typeof state === 'string') {
       return BlendState[state] ? {...BlendState[state]} : null
     }
@@ -447,13 +446,13 @@ export class BlendState implements IBlendState {
       }
     }
 
-    return result
+    return result as IBlendState
   }
 
   /**
    * A default blend state where blending is disabled
    */
-  public static readonly Default = Object.freeze<BlendStateParams>({
+  public static readonly Default = Object.freeze<IBlendState>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -472,7 +471,7 @@ export class BlendState implements IBlendState {
   /**
    * A blend state with disabled blending
    */
-  public static readonly None = Object.freeze<BlendStateParams>({
+  public static readonly None = Object.freeze<IBlendState>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -491,7 +490,7 @@ export class BlendState implements IBlendState {
   /**
    * A blend state for additive blending
    */
-  public static readonly Additive = Object.freeze<BlendStateParams>({
+  public static readonly Additive = Object.freeze<IBlendState>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -510,7 +509,7 @@ export class BlendState implements IBlendState {
   /**
    * A blend state for pre multiplied alpha blending
    */
-  public static readonly AlphaBlend = Object.freeze<BlendStateParams>({
+  public static readonly AlphaBlend = Object.freeze<IBlendState>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 
@@ -530,7 +529,7 @@ export class BlendState implements IBlendState {
   /**
    * A blend state for non pre multiplied alpha blending
    */
-  public static readonly NonPremultiplied = Object.freeze<BlendStateParams>({
+  public static readonly NonPremultiplied = Object.freeze<IBlendState>({
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Add,
 

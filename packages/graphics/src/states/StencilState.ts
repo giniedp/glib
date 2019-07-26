@@ -28,25 +28,8 @@ const params: Array<keyof StencilStateParams> = [
 ]
 
 /**
- * @public
- */
-export interface StencilStateParams {
-  enable?: boolean
-  stencilFunction?: CompareFunction
-  stencilReference?: number
-  stencilMask?: number
-  stencilFail?: StencilOperation
-  stencilDepthFail?: StencilOperation
-  stencilDepthPass?: StencilOperation
-  stencilBackFunction?: CompareFunction
-  stencilBackReference?: number
-  stencilBackMask?: number
-  stencilBackFail?: StencilOperation
-  stencilBackDepthFail?: StencilOperation
-  stencilBackDepthPass?: StencilOperation
-}
-
-/**
+ * Options to be converted into {@link IStencilState} via {@link StencilState.convert}
+ *
  * @public
  */
 export interface StencilStateOptions {
@@ -66,9 +49,37 @@ export interface StencilStateOptions {
 }
 
 /**
+ * An object with all depth state parameters
+ *
  * @public
  */
-export class StencilState implements StencilStateParams {
+export interface IStencilState {
+  enable: boolean
+  stencilFunction: CompareFunction
+  stencilReference: number
+  stencilMask: number
+  stencilFail: StencilOperation
+  stencilDepthFail: StencilOperation
+  stencilDepthPass: StencilOperation
+  stencilBackFunction: CompareFunction
+  stencilBackReference: number
+  stencilBackMask: number
+  stencilBackFail: StencilOperation
+  stencilBackDepthFail: StencilOperation
+  stencilBackDepthPass: StencilOperation
+}
+
+/**
+ * Represents a sub set of {@link IStencilState}
+ *
+ * @public
+ */
+export type StencilStateParams = Partial<IStencilState>
+
+/**
+ * @public
+ */
+export class StencilState implements IStencilState {
   public device: Device
   public gl: WebGLRenderingContext
   private enableField: boolean = false
@@ -343,7 +354,7 @@ export class StencilState implements StencilStateParams {
     for (let key of params) { this.changes[key as any] = undefined }
   }
 
-  public static convert(state: string | StencilStateOptions): StencilStateParams {
+  public static convert(state: string | StencilStateOptions): IStencilState {
     if (typeof state === 'string') {
       return StencilState[state] ? {...StencilState[state]} : null
     }
@@ -378,10 +389,10 @@ export class StencilState implements StencilStateParams {
           break
       }
     }
-    return result
+    return result as IStencilState
   }
 
-  public static resolve(gl: WebGLRenderingContext, out: any= {}): StencilStateParams {
+  public static resolve(gl: WebGLRenderingContext, out: any= {}): IStencilState {
     out.enable = gl.getParameter(gl.STENCIL_TEST)
 
     out.stencilFunction = gl.getParameter(gl.STENCIL_FUNC)
@@ -402,7 +413,7 @@ export class StencilState implements StencilStateParams {
     return out
   }
 
-  public static Default = Object.freeze<StencilStateParams>({
+  public static Default = Object.freeze<IStencilState>({
     enable: false,
 
     // front face stencil
