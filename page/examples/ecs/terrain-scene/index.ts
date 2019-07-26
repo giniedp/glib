@@ -107,7 +107,7 @@ class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
     const camera = this.entity.find('/Camera')
     this.transform.setPosition(camera.getService(TransformComponent).position)
     this.transform.setScaleUniform(camera.getService<PerspectiveCameraComponent>(CameraComponent).far - 1)
-    this.transform.setRotationXYZAngle(0, 1, 0, Math.PI / 180 * this.time.totalMsInGame / 1000)
+    this.transform.setRotationXYZAngle(0, 1, 0, Math.PI / 180 * this.time.gameTimeTotalMs / 1000)
   }
 }
 

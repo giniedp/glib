@@ -10,29 +10,40 @@ export const getTime: () => number = (() => {
   return () => Date.now()
 })()
 
+function withWindowBinding(...names: string[]) {
+  for (const name of names) {
+    if (name in window) {
+      return window[name].bind(window)
+    }
+  }
+  return null
+}
+
 /**
  * Browsersafe {@link https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame | requestAnimationFrame }
  * function
  * @public
  */
 export const requestAnimationFrame: (cb: FrameRequestCallback) => number =
-  window['requestAnimationFrame'] ||
-  window['mozRequestAnimationFrame'] ||
-  window['webkitRequestAnimationFrame'] ||
-  window['msRequestAnimationFrame'] ||
-  ((cb) => setTimeout(() => cb(getTime())))
+  withWindowBinding(
+    'requestAnimationFrame',                     // prefer without wendor prefix
+    'mozRequestAnimationFrame',                  // fallback to vendor prefix
+    'webkitRequestAnimationFrame',
+    'msRequestAnimationFrame',
+  ) || ((cb) => setTimeout(() => cb(getTime()))) // no RAF support => usage with setTimeout
 
 /**
  * Browsersafe {@link https://developer.mozilla.org/en-US/docs/Web/API/window/cancelAnimationFrame | cancelAnimationFrame }
  * function
  * @public
  */
-export const cancelAnimationFrame: (requestId: number) => number =
-  window['cancelAnimationFrame'] ||
-  window['mozCancelAnimationFrame'] ||
-  window['webkitCancelAnimationFrame'] ||
-  window['msCancelAnimationFrame'] ||
-  clearTimeout
+export const cancelAnimationFrame: (requestId: number) => number = withWindowBinding(
+  'cancelAnimationFrame',       // prefer without wendor prefix
+  'mozCancelAnimationFrame',    // fallback to vendor prefix
+  'webkitCancelAnimationFrame',
+  'msCancelAnimationFrame',
+  'clearTimeout',               // no RAF support => usage with setTimeout
+)
 
 /**
  * A loop function that can be started and killed
@@ -51,23 +62,37 @@ export interface Loop {
 }
 
 /**
- * Spins the given `callback` in a loop by utilizing `requestAnimationFrame`
+ * Spins the given `update` function in a loop by utilizing `requestAnimationFrame`
  *
  * @public
+ * @remarks
+ * A primitive loop scheduler with no fixed time support or any optimizations.
+ * Simply schedules the given `update` function with `requestAnimationFrame`.
  */
-export function loop(callback: (timestamp?: number, dt?: number) => any): Loop {
+export function loop(update: (timestamp?: number, dt?: number) => any): Loop {
   let requestId: number = null
   let timestamp: number = getTime()
-  const looper: any = () => {
+
+  function tick() {
     const dt = getTime() - timestamp
-    cancelAnimationFrame(requestId)
-    callback(timestamp, dt)
     timestamp += dt
-    requestId = requestAnimationFrame(looper)
+    update(timestamp, dt)
+
+    requestId = requestAnimationFrame(tick)
+  }
+  const looper = () => {
+    if (requestId == null) {
+      timestamp = getTime()
+      requestId = requestAnimationFrame(tick)
+    }
   }
   looper.kill = () => {
-    cancelAnimationFrame(requestId)
+    if (requestId != null) {
+      cancelAnimationFrame(requestId)
+      requestId = null
+    }
   }
   looper()
+
   return looper
 }

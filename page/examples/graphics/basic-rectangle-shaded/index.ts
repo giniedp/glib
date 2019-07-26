@@ -52,11 +52,9 @@ const proj = Mat4.createIdentity()
 const camPosition = Vec3.create(0, 0, 1)
 const lightDirection = Vec3.create(0, 0, -1)
 const lightColor = Vec3.create(1, 1, 1)
-let time = 0
 
 // Begin render loop and accumulate the time
-loop((dt) => {
-  time += dt
+loop((time, dt) => {
 
   // resize (if needed) and clear the screen
   device.resize()

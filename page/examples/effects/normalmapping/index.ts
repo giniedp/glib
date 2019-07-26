@@ -108,9 +108,7 @@ const model = ModelBuilder.begin().tap((b) => {
     }],
   })
 
-let time = 0
-loop((dt) => {
-  time += dt
+loop((time, dt) => {
 
   device.resize()
   device.clear(0xff2e2620, 1)

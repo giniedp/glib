@@ -1,4 +1,4 @@
-import { Keyboard, Keys } from '@gglib/input'
+import { Keyboard, KeyboardKey } from '@gglib/input'
 
 // Create an instance of the `Keyboard` class.
 // The `eventTarget` option tells that the `Keyboard`
@@ -17,7 +17,7 @@ keyboard.on('changed', (k: Keyboard, e) => {
     const el = document.createElement('span')
     el.classList.add('key')
     el.innerHTML = `<span class="key">
-      <label>${Keys[code]}</label>
+      <label>${KeyboardKey[code]}</label>
       <value>${code}</value>
     </span>`
     container.appendChild(el)
