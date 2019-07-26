@@ -73,11 +73,16 @@ export class SamplerState implements SamplerStateParams {
   private wrapVField: number = TextureWrapMode.Clamp
   private hasChanged: boolean
   private changes: SamplerStateParams = {}
+  private samplerHandle: WebGLSampler
 
   constructor(device: Device, register: number) {
     this.device = device
     this.gl = device.context
     this.registerField = register
+
+    if (this.device.isWebGL2) {
+      this.samplerHandle = (this.device.context as WebGL2RenderingContext).createSampler()
+    }
   }
 
   public get register(): number {
@@ -98,12 +103,8 @@ export class SamplerState implements SamplerStateParams {
       this.textureField = value
       this.changes.texture = value
       this.hasChanged = true
-      if (value && !value.ready) {
-        // TODO: should we fall back to something valid or rely on ShaderUniform.ts for doing this?
-      }
-      if (value && value.sampler) {
-        // TODO: should we assign the sample state now or rely on ShaderUniform.ts for doing this?
-      }
+      // ShaderUniform.ts will take care for non-ready textures
+      // ShaderUniform.ts will commit sampler state params which are attached to textures
     }
   }
 
@@ -190,26 +191,50 @@ export class SamplerState implements SamplerStateParams {
   }
 
   public commit(state?: SamplerStateParams): SamplerState {
+    if (state) {
+      this.assign(state)
+    }
 
-    if (state) { this.assign(state) }
-    let texture = this.texture
+    const texture = this.texture
     if (texture && !texture.isPOT && this.autofixNonPOT) {
+      // will assign sampler state params that are safe for
+      // non power of two textures
       SamplerState.fixNonPowerOfTwo(this)
     }
 
-    // if (!this.hasChanged) return this
+    if (this.device.isWebGL2 && !this.hasChanged) {
+      return this
+    }
 
-    let gl = this.gl
+    let gl = this.gl as WebGL2RenderingContext
     let changes = this.changes
     let type = texture ? texture.type : gl.TEXTURE_2D
     let handle = texture ? texture.handle : null
 
-    gl.activeTexture(this.unit)
-    gl.bindTexture(type, handle)
-    if (changes.minFilter !== null) { gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, this.minFilter) }
-    if (changes.magFilter !== null) { gl.texParameteri(type, gl.TEXTURE_MAG_FILTER, this.magFilter) }
-    if (changes.wrapU !== null) { gl.texParameteri(type, gl.TEXTURE_WRAP_S, this.wrapU) }
-    if (changes.wrapV !== null) { gl.texParameteri(type, gl.TEXTURE_WRAP_T, this.wrapV) }
+    if (this.device.isWebGL2) {
+      if (changes.minFilter !== null) {
+        gl.samplerParameteri(this.samplerHandle, gl.TEXTURE_MIN_FILTER, this.minFilter)
+      }
+      if (changes.magFilter !== null) {
+        gl.samplerParameteri(this.samplerHandle, gl.TEXTURE_MAG_FILTER, this.magFilter)
+      }
+      if (changes.wrapU !== null) {
+        gl.samplerParameteri(this.samplerHandle, gl.TEXTURE_WRAP_S, this.wrapU)
+      }
+      if (changes.wrapV !== null) {
+        gl.samplerParameteri(this.samplerHandle, gl.TEXTURE_WRAP_T, this.wrapV)
+      }
+      gl.activeTexture(this.unit)
+      gl.bindTexture(type, handle)
+      gl.bindSampler(this.register, this.samplerHandle)
+    } else {
+      gl.activeTexture(this.unit)
+      gl.bindTexture(type, handle)
+      if (changes.minFilter !== null) { gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, this.minFilter) }
+      if (changes.magFilter !== null) { gl.texParameteri(type, gl.TEXTURE_MAG_FILTER, this.magFilter) }
+      if (changes.wrapU !== null) { gl.texParameteri(type, gl.TEXTURE_WRAP_S, this.wrapU) }
+      if (changes.wrapV !== null) { gl.texParameteri(type, gl.TEXTURE_WRAP_T, this.wrapV) }
+    }
 
     this.clearChanges()
     return this

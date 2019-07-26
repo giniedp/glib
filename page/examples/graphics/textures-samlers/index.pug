@@ -43,13 +43,13 @@ block prepend script
     varying vec2 texCoord;
 
     // @binding texture1
-    // @filter PointClamp
+    // @filter LinearWrap
     uniform sampler2D uTexture1;
     // @binding texture2
-    // @filter PointClamp
+    // @filter LinearClamp
     uniform sampler2D uTexture2;
     // @binding texture3
-    // @filter PointClamp
+    // @filter PointWrap
     uniform sampler2D uTexture3;
     // @binding texture4
     // @filter PointClamp
