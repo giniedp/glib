@@ -17,6 +17,9 @@ module.exports = function (config) {
       'karma-typescript',
     ],
     logLevel: 'info',
+    browserConsoleLogOptions: {
+      level: 'info',
+    },
     frameworks: [
       'jasmine',
       'karma-typescript',
@@ -31,6 +34,7 @@ module.exports = function (config) {
         flags: [ '--remote-debugging-port=9222' ]
       }
     },
+
     proxies: {
       '/assets': path.join(__dirname, 'assets'),
     },
@@ -50,7 +54,7 @@ module.exports = function (config) {
       '**/*.ts': ['karma-typescript'],
     },
     reporters: [
-      // 'progress',
+      'progress',
       'mocha',
       'karma-typescript',
     ],
