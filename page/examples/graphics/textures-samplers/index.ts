@@ -1,10 +1,12 @@
-import { buildPlane, CullState, Device, ModelBuilder, Texture } from '@gglib/graphics'
+import { buildPlane, CullState, Device, ModelBuilder, SamplerState } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
+import * as TweakUi from 'tweak-ui'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
 const device = new Device({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
+  context: 'webgl2',
 })
 
 // Create a shader program with vertex and fragment shaders.
@@ -57,4 +59,16 @@ loop((time, dt) => {
   program.setUniform('texture4', texture)
 
   mesh.draw(program)
+})
+
+TweakUi.build('#tweak-ui', (q) => {
+  q.select(texture, 'samplerParams', {
+    options: [
+      { id: 'null', label: 'null', value: null },
+      { id: 'LinearClamp', label: 'LinearClamp', value: SamplerState.LinearClamp },
+      { id: 'LinearWrap', label: 'LinearWrap', value: SamplerState.LinearWrap },
+      { id: 'PointClamp', label: 'PointClamp', value: SamplerState.PointClamp },
+      { id: 'PointWrap', label: 'PointWrap', value: SamplerState.PointWrap },
+    ],
+  })
 })

@@ -1,11 +1,11 @@
 # Texture Samplers
 
-In open gl the texture resource and its sampler parameters are defined in the same object.
-Thus the filtering method is always bound to a texture resource. If the same texture
-must be filtered with different sampler parameters, the resource must be cloned and
-assigned with a different parameter set.
+In open gl the texture resource and its sampler parameters are declared on the same object
+so that a texture resource is always bound to its filtering method.
+If we wanted to use the same texture with different filtering methods in the same draw call
+then usually the resource must be cloned and assigned with a different parameter set.
 
-In DirectX however, textures and sampler parameters are decoupled. Open gl
+In DirectX textures and sampler parameters are decoupled. Open gl
 allowed the same by using the [https://www.khronos.org/opengl/wiki/Sampler_Object](Sampler Object)
 extension.
 
@@ -17,5 +17,5 @@ assigned to a texture unit upon rendering.
 
 For WebGL 1.0 gglib will commit sampling parameters to a texture object when a
 texture is used. It still allows you to use different filtering methods for the same
-texture resource. However, a texture resource can not be used with multiple filtering
+texture resource. However, a texture resource can not be rendered with different filtering
 methods at the same time.
