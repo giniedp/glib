@@ -1,7 +1,7 @@
-import { Device } from './../Device'
-import { Texture } from './../Texture'
+import { Device } from '../Device'
+import { TextureType } from '../enums'
+import { Texture } from '../Texture'
 import { SamplerState, SamplerStateParams } from './SamplerState'
-import { TextureType } from '../enums';
 
 const TextureUnitMap = [
   0x84C0, 0x84C1, 0x84C2, 0x84C3,
@@ -44,10 +44,10 @@ export class TextureUnitState {
    *
    * @remarks
    * If the texture provides its own {@link Texture.samplerParams}
-   * then the {@link samplerState} of this unit is ignored.
+   * then the {@link TextureUnitState.sampler} of this unit is ignored.
    *
    * Changing this value does not bind the texture instantly.
-   * {@link commit} must be called to actually bind the texture.
+   * {@link TextureUnitState.commit} must be called to actually bind the texture.
    */
   public texture: Texture
 
