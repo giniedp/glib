@@ -4,6 +4,8 @@ import { OnUpdate } from './../Component'
 
 /**
  * Constructor options for {@link MouseComponent}
+ *
+ * @public
  */
 export type MouseComponentOptions = IMouseOptions
 

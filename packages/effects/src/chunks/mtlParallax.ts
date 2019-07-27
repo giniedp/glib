@@ -43,6 +43,7 @@ export interface MtlParallaxDefs {
 
 /**
  * Contributes parallax mapping to the shader. See {@link MtlParallaxDefs}
+ * @public
  */
 export const FXC_MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = Object.freeze({
   defines: glsl`

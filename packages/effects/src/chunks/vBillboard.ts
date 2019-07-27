@@ -13,6 +13,7 @@ export interface VBillboardDefs {
 
 /**
  * Adds billboard functionality to a shader
+ * @public
  */
 export const FXC_V_BILLBOARD: ShaderChunkSet<VBillboardDefs> = Object.freeze({
   uniforms: glsl`

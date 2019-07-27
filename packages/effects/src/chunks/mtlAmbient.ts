@@ -40,6 +40,7 @@ export interface MtlAmbientDefs {
 
 /**
  * Contributes ambient lighting and mapping to the shader. See {@link MtlAmbientDefs}
+ * @public
  */
 export const FXC_MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = Object.freeze({
   defines: glsl`

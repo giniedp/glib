@@ -1,7 +1,8 @@
-// tslint:disable: ban-types
-
 import { Type } from '@gglib/utils'
 
+/**
+ * @public
+ */
 export interface ServiceMetadata {
   type: Object
   as: any
@@ -10,10 +11,16 @@ export interface ServiceMetadata {
 
 const serviceMetadata = Symbol('serviceMetadata')
 
+/**
+ * @public
+ */
 export function getServiceMetadata<T>(target: T): ServiceMetadata | null {
   return target.constructor[serviceMetadata]
 }
 
+/**
+ * @public
+ */
 export function Service<T, R>(options?: {
   as?: R,
   on?: 'root' | 'parent' | string,

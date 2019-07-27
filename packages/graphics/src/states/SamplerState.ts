@@ -11,6 +11,10 @@ import {
 
 import { Device } from './../Device'
 
+/**
+ * An object with a reference to a webgl texture
+ * @public
+ */
 export interface TextureLike {
   handle: WebGLTexture
   type: TextureType
@@ -62,7 +66,7 @@ export type SamplerStateParams = Partial<ISamplerState>
 export class SamplerState implements ISamplerState {
 
   /**
-   * The default sampler state which is essentially the same as {@link PointClamp}
+   * The default sampler state which is essentially the same as {@link SamplerState.PointClamp}
    */
   public static Default = Object.freeze<ISamplerState>({
     minFilter: TextureFilter.PointMipLinear,

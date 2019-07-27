@@ -45,6 +45,8 @@ export interface PerspectiveCameraOptions {
 
 /**
  * Adds perspective camera capability to an entity
+ *
+ * @public
  */
 @Service({ as: CameraComponent })
 export class PerspectiveCameraComponent extends CameraComponent implements OnUpdate {
@@ -105,6 +107,8 @@ export interface OrthographicCameraOptions {
 
 /**
  * Adds orthographic camera capability to an entity
+ *
+ * @public
  */
 @Service({ as: CameraComponent })
 export class OrthographicCameraComponent extends CameraComponent implements OnUpdate {

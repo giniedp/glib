@@ -42,6 +42,7 @@ export interface MtlEmissionDefs {
 
 /**
  * Contributes emission lighting and mapping to the shader. See {@link MtlEmissionDefs}
+ * @public
  */
 export const FXC_MTL_EMISSION: ShaderChunkSet<MtlEmissionDefs> = Object.freeze({
   defines: glsl`

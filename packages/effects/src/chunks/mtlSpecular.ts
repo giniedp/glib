@@ -49,6 +49,7 @@ export interface MtlSpecularDefs {
 
 /**
  * Contributes specular color to the shader. See {@link MtlSpecularDefs}
+ * @public
  */
 export const FXC_MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = Object.freeze({
   defines: glsl`

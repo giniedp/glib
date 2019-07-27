@@ -4,6 +4,8 @@ import { Service } from '../decorators'
 
 /**
  * Constructor options for {@link TimeComponent}
+ *
+ * @public
  */
 export interface TimeComponentOptions {
   /**

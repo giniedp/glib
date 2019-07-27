@@ -38,6 +38,7 @@ export interface MtlOcclusionDefs {
 
 /**
  * Adds Occlusion texture to the shader. See {@link MtlOcclusionDefs}
+ * @public
  */
 export const FXC_MTL_OCCLUSION: ShaderChunkSet<MtlOcclusionDefs> = Object.freeze({
   defines: glsl`

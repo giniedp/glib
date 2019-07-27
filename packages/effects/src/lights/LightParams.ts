@@ -1,6 +1,9 @@
 import { LightType } from '@gglib/graphics'
 import { IVec3, Vec3 } from '@gglib/math'
 
+/**
+ * @public
+ */
 export class LightParams {
 
   /**
