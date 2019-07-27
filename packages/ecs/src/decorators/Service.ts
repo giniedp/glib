@@ -4,7 +4,7 @@ import { Type } from '@gglib/utils'
  * @public
  */
 export interface ServiceMetadata {
-  type: Object
+  type: object
   as: any
   on: 'root' | 'parent' | string
 }

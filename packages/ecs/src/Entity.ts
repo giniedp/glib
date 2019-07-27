@@ -1,4 +1,4 @@
-import { Events, Type, Log } from '@gglib/utils'
+import { Events, Log, Type } from '@gglib/utils'
 import { Component } from './Component'
 import { getInjectMetadata, getServiceMetadata } from './decorators'
 import { errorOnMissingService } from './errors'
@@ -451,7 +451,7 @@ export class Entity extends Events {
     }
     meta.forEach((m) => {
       if (m.service === Entity) {
-        component[m.property] = this[m.from] as Entity || this
+        component[m.property] = this.resolveEntity(m.from)
       }
     })
   }
@@ -480,22 +480,11 @@ export class Entity extends Events {
       if (from && m.from !== from) {
         return
       }
-      let source: Entity
-      switch (m.from) {
-        case 'root':
-          source = this.root
-          break
-        case 'parent':
-          source = this.parent
-          break
-        default:
-          source = m.from ? this.find(m.from) : this
-          break
-      }
-      if (!source) {
-        Log.w('[Entity]', `unable to inject service from '${m.from}'. Entity is not available.`)
-      } else {
+      const source = this.resolveEntity(m.from)
+      if (source) {
         component[m.property] = source.getService(m.service)
+      } else {
+        Log.w('[Entity]', `unable to inject service from '${m.from}'. Entity is not available.`)
       }
     })
   }
@@ -520,22 +509,11 @@ export class Entity extends Events {
     if (on && meta.on !== on) {
       return
     }
-    let target: Entity
-    switch (meta.on) {
-      case 'root':
-        target = this.root
-        break
-      case 'parent':
-        target = this.parent
-        break
-      default:
-        target = meta.on ? this.find(meta.on) : this
-        break
-    }
-    if (!target) {
-      Log.w('[Entity]', `unable to register service on '${meta.on}'. Entity is not available.`)
-    } else {
+    const target = this.resolveEntity(meta.on)
+    if (target) {
       target.addService(meta.as, component, true)
+    } else {
+      Log.w('[Entity]', `unable to register service on '${meta.on}'. Entity is not available.`)
     }
   }
 
@@ -547,22 +525,24 @@ export class Entity extends Events {
     if (on && meta.on !== on) {
       return
     }
-    let target: Entity
-    switch (meta.on) {
-      case 'root':
-        target = this.root
-        break
-      case 'parent':
-        target = this.parent
-        break
-      default:
-        target = meta.on ? this.find(meta.on) : this
-        break
-    }
-    if (!target) {
-      Log.w('[Entity]', `unable to unregister service on '${meta.on}'. Entity is not available.`)
-    } else {
+    const target = this.resolveEntity(meta.on)
+    if (target) {
       target.removeService(meta.as)
+    } else {
+      Log.w('[Entity]', `unable to unregister service on '${meta.on}'. Entity is not available.`)
     }
+  }
+
+  private resolveEntity(lookup: 'root' | 'parent' | string): Entity {
+    if (!lookup) {
+      return this
+    }
+    if (lookup === 'root') {
+      return this.root
+    }
+    if (lookup === 'parent') {
+      return this.parent
+    }
+    return this.find(lookup)
   }
 }
