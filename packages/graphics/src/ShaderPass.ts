@@ -125,7 +125,7 @@ export class ShaderPass {
    * Prepares the graphics device state for this shader pass and sets the given uniform parameters
    */
   public commit(parameters?: { [key: string]: ShaderUniformValue }): this {
-    this.program.use()
+    this.program.bind()
     const device = this.device
     if (this.stencilState) { device.stencilState = this.stencilState }
     if (this.offsetState) { device.offsetState = this.offsetState }

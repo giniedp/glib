@@ -552,7 +552,8 @@ export class ShaderUniform {
    */
   public setTexture(value: Texture) {
     const device = this.device
-    const sampler = device.samplerStates[this.register] || device.samplerStates[0]
+    const unit = device.textureUnits[this.register] || device.textureUnits[0]
+    this.setInt(unit.index)
 
     // perform the update
     // - for video textures this will update the playback state
@@ -564,19 +565,8 @@ export class ShaderUniform {
     if (!value || !value.ready) {
       value = this.device.defaultTexture
     }
-    sampler.texture = value
 
-    if (this.filter) {
-      // prefer filter state as it is defined in the shader
-      sampler.commit(this.filter)
-    } else if (value.sampler) {
-      // otherwise fallback to sampler state defined by texture
-      sampler.commit(value.sampler)
-    } else {
-      // otherwise keep going without state change
-      sampler.commit()
-    }
-
-    this.setInt(sampler.register)
+    unit.texture = value
+    unit.commit(this.filter)
   }
 }

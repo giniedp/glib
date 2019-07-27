@@ -158,7 +158,7 @@ export class ShaderProgram {
   /**
    * Sets this program as the current program on the graphics device
    */
-  public use(): this {
+  public bind(): this {
     return this.device.program = this
   }
 
@@ -202,7 +202,7 @@ export class ShaderProgram {
    *
    */
   private assignAttributes(attributes: { [key: string]: ShaderObjectMeta }): this {
-    this.use()
+    this.bind()
     this.attributes.clear()
     this.attributeLocations.length = 0
     Object.keys(attributes).forEach((key) => {
@@ -223,7 +223,7 @@ export class ShaderProgram {
    *
    */
   private assignUniforms(uniforms: { [key: string]: ShaderObjectMeta }): this {
-    this.use()
+    this.bind()
     const u = this.uniforms as Map<string, ShaderUniform>
     u.clear()
     Object.keys(uniforms).forEach((key) => {
@@ -266,7 +266,7 @@ export class ShaderProgram {
    */
   public setUniforms(uniforms?: { [key: string]: ShaderUniformValue }): this {
     if (!uniforms) { return this }
-    this.use()
+    this.bind()
     for (const key of this.uniformKeys) {
       if (uniforms[key] != null) {
         this.uniforms.get(key).set(uniforms[key])
@@ -287,7 +287,7 @@ export class ShaderProgram {
     if (!uniform) {
       this.logMissingUniform(name)
     } else {
-      this.use()
+      this.bind()
       uniform.set(value)
     }
     return this

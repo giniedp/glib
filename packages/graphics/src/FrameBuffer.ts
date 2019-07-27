@@ -163,9 +163,10 @@ export class FrameBuffer {
 
   public unsetSamplersUsedAsAttachments() {
     for (const texture of this.colorAttachments) {
-      for (const sampler of this.device.samplerStates) {
-        if (texture === sampler.texture) {
-          sampler.commit({ texture: null })
+      for (const unit of this.device.textureUnits) {
+        if (texture === unit.texture) {
+          unit.texture = null
+          unit.commit()
         }
       }
     }

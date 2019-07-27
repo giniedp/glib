@@ -299,7 +299,7 @@ export class Buffer {
   /**
    * Sets this buffer on the graphics device as current vertex or index buffer depending on the 'type' property
    */
-  public use(): Buffer {
+  public bind(): Buffer {
     if (this.type === BufferType.VertexBuffer) {
       this.device.vertexBuffer = this
     } else if (this.type === BufferType.IndexBuffer) {
@@ -331,7 +331,7 @@ export class Buffer {
     }
     this.$data = buffer
 
-    this.use()
+    this.bind()
     if (srcByteOffset || srcByteLength) {
       const off = srcByteOffset || 0
       const len = srcByteLength || (buffer.byteLength - off);
@@ -371,7 +371,7 @@ export class Buffer {
       buffer = (data as ArrayBufferView).buffer
     }
     byteOffset = byteOffset || 0
-    this.use();
+    this.bind();
     (this.device.context as WebGLRenderingContext).bufferSubData(this.type, byteOffset, buffer)
 
     this.$sizeInBytes = Math.max(this.sizeInBytes, byteOffset + buffer.byteLength)
@@ -391,7 +391,7 @@ export class Buffer {
    */
   public getBufferSubData(srcByteOffset: number, dst: ArrayBufferView, dstOffset: number, dstLength: number): void {
     // WebGL2 call
-    this.use();
+    this.bind();
     (this.device.context as WebGL2RenderingContext).getBufferSubData(this.type, srcByteOffset, dst, dstOffset, dstLength)
   }
 }

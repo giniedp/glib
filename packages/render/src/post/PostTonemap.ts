@@ -128,7 +128,7 @@ export class PostTonemap implements RenderStep {
     device.depthState = DepthState.Default
     device.stencilState = StencilState.Default
     device.cullState = CullState.CullNone
-    device.samplerStates[0].commit({
+    device.textureUnits[0].commit({
       minFilter: TextureFilter.Point,
       magFilter: TextureFilter.Point,
       wrapU: TextureWrapMode.Clamp,

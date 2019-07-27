@@ -353,7 +353,7 @@ async function loadTexture(context: PipelineContext, doc: Document, index: numbe
   if (image.uri) {
     return context.manager.device.createTexture({
       data: resolveUri(image.uri, context),
-      sampler: sampler ? {
+      samplerParams: sampler ? {
         minFilter: sampler.minFilter,
         magFilter: sampler.magFilter,
         wrapU: sampler.wrapS,

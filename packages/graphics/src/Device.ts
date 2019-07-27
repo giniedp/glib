@@ -4,6 +4,7 @@ import { isString, Log } from '@gglib/utils'
 
 import {
   BufferType,
+  PixelFormat,
   PrimitiveType,
   PrimitiveTypeName,
   valueOfDataType,
@@ -41,6 +42,7 @@ import { Color, RGBA_FORMAT } from './Color'
 import { Model, ModelOptions } from './Model'
 import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { SpriteBatch } from './SpriteBatch'
+import { TextureUnitState } from './states/TextureUnitState'
 
 /**
  * Determines whether webgl is supported
@@ -110,12 +112,12 @@ export interface DeviceOptions {
 /**
  * @public
  */
-export const DEFAULT_CONTEXT_ATTRIBUTES = Object.freeze<ContextAttributes>({
+export const DefaultContextAttributes = Object.freeze<ContextAttributes>({
   alpha: true,
   antialias: true,
   depth: true,
   premultipliedAlpha: true,
-  preserveDrawingBuffer: true,
+  preserveDrawingBuffer: false, // TODO: does not work with sampler objects in chrome
   stencil: true,
 })
 
@@ -137,7 +139,7 @@ function getOrCreateCanvas(canvas?: string|HTMLCanvasElement): HTMLCanvasElement
 function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceOptions): WebGLRenderingContext | WebGL2RenderingContext {
   let context = options.context
   const attributes = {
-    ...DEFAULT_CONTEXT_ATTRIBUTES,
+    ...DefaultContextAttributes,
     ...options.contextAttributes || {},
   }
 
@@ -195,13 +197,113 @@ export class Device {
   public capabilities: Capabilities
 
   /**
+   * Collection of assigned textures
+   *
+   * @remarks
+   * The number of texture units is limited by {@link Capabilities.maxTextureUnits}
+   */
+  public readonly textures: Texture[]
+
+  /**
    * Collection of {@link SamplerState}.
    *
    * @remarks
-   * The size of the collection and thus the number of
-   * sampler units is determined by `capabilities.maxTextureUnits`
+   * The number of sampler states is limited by {@link Capabilities.maxTextureUnits}
    */
-  public samplerStates: SamplerState[]
+  public readonly textureUnits: TextureUnitState[]
+
+  /**
+   * Gets a copy of the cull state parameters
+   * Updates the cull state parameters and commits the state to the GPU
+   */
+  public get cullState() {
+    return this.$cullState.copy()
+  }
+  public set cullState(v: CullStateParams) {
+    this.$cullState.commit(v)
+  }
+  /**
+   * Gets a copy of the blend state parameters.
+   * Updates the blend state parameters and commits the state to the GPU.
+   */
+  public get blendState() {
+    return this.$blendState.copy()
+  }
+  public set blendState(v: BlendStateParams) {
+    this.$blendState.commit(v)
+  }
+  /**
+   * Gets a copy of the depth state parameters
+   * Updates the depth state parameters and commits the state to the GPU
+   */
+  public get depthState() {
+    return this.$depthState.copy()
+  }
+  public set depthState(v: DepthStateParams) {
+    this.$depthState.commit(v)
+  }
+  /**
+   * Gets a copy of the offset state parameters
+   * Updates the offset state parameters and commits the state to the GPU
+   */
+  public get offsetState() {
+    return this.$offsetState.copy()
+  }
+  public set offsetState(v: OffsetStateParams) {
+    this.$offsetState.commit(v)
+  }
+  /**
+   * Gets a copy of the stencil state parameters
+   * Updates the stencil state parameters and commits the state to the GPU
+   */
+  public get stencilState() {
+    return this.$stencilState.copy()
+  }
+  public set stencilState(v: StencilStateParams) {
+    this.$stencilState.commit(v)
+  }
+  /**
+   * Gets a copy of the scissor state parameters
+   * Updates the scissor state parameters and commits the state to the GPU
+   */
+  public get scissorState() {
+    return this.$scissorState.copy()
+  }
+  public set scissorState(v: ScissorStateParams) {
+    this.$scissorState.commit(v)
+  }
+  /**
+   * Gets a copy of the viewport state parameters
+   * Updates the viewport state parameters and commits the state to the GPU
+   */
+  public get viewportState() {
+    return this.$viewportState.copy()
+  }
+  public set viewportState(v: ViewportStateParams) {
+    this.$viewportState.commit(v)
+  }
+
+  public get defaultTexture(): Texture {
+    if (!this.defaultTextureInstance) {
+      this.defaultTextureInstance = this.createTexture2D({
+        data: [
+          0x0F, 0x0F, 0x0F, 0xFF,
+          0x00, 0x00, 0x00, 0xFF,
+          0x00, 0x00, 0x00, 0xFF,
+          0x0F, 0x0F, 0x0F, 0xFF,
+        ],
+        width: 2,
+        height: 2,
+        pixelFormat: PixelFormat.RGBA,
+        samplerParams: SamplerState.PointWrap,
+      })
+    }
+    return this.defaultTextureInstance
+  }
+
+  public get isWebGL2(): boolean {
+    return supportsWebGL2 && this.context instanceof WebGL2RenderingContext
+  }
 
   private $indexBuffer: Buffer
   private $vertexBuffer: Buffer
@@ -247,91 +349,10 @@ export class Device {
     this.$viewportState = new ViewportState(this)
     this.$vertexAttribArrayState = new VertexAttribArrayState(this)
 
-    this.samplerStates = []
-    let max = Number(this.capabilities.maxTextureUnits)
-    while (this.samplerStates.length < max) {
-      this.samplerStates.push(new SamplerState(this, this.samplerStates.length))
+    this.textureUnits = []
+    for (let i = 0; i < Number(this.capabilities.maxTextureUnits); i++) {
+      this.textureUnits[i] = new TextureUnitState(this, i)
     }
-  }
-
-  /**
-   * Gets a copy of the cull state parameters
-   *
-   * @remarks
-   * On set it updates the cull state parameters and directly commits the state to the GPU
-   */
-  public get cullState() {
-    return this.$cullState.copy()
-  }
-  public set cullState(v: CullStateParams) {
-    this.$cullState.commit(v)
-  }
-  /** Gets a copy of the blend state parameters */
-  public get blendState() {
-    return this.$blendState.copy()
-  }
-  /** Updates the blend state parameters and directly commits the state to the GPU */
-  public set blendState(v: BlendStateParams) {
-    this.$blendState.commit(v)
-  }
-  /** Gets a copy of the depth state parameters */
-  public get depthState() {
-    return this.$depthState.copy()
-  }
-  /** Updates the depth state parameters and directly commits the state to the GPU */
-  public set depthState(v: DepthStateParams) {
-    this.$depthState.commit(v)
-  }
-  /** Gets a copy of the offset state parameters */
-  public get offsetState() {
-    return this.$offsetState.copy()
-  }
-  /** Updates the offset state parameters and directly commits the state to the GPU */
-  public set offsetState(v: OffsetStateParams) {
-    this.$offsetState.commit(v)
-  }
-  /** Gets a copy of the stencil state parameters */
-  public get stencilState() {
-    return this.$stencilState.copy()
-  }
-  /** Updates the stencil state parameters and directly commits the state to the GPU */
-  public set stencilState(v: StencilStateParams) {
-    this.$stencilState.commit(v)
-  }
-  /** Gets a copy of the scissor state parameters */
-  public get scissorState() {
-    return this.$scissorState.copy()
-  }
-  /** Updates the scissor state parameters and directly commits the state to the GPU */
-  public set scissorState(v: ScissorStateParams) {
-    this.$scissorState.commit(v)
-  }
-  /** Gets a copy of the viewport state parameters */
-  public get viewportState() {
-    return this.$viewportState.copy()
-  }
-  /** Updates the viewport state parameters and directly commits the state to the GPU */
-  public set viewportState(v: ViewportStateParams) {
-    this.$viewportState.commit(v)
-  }
-
-  public get defaultTexture(): Texture {
-    if (!this.defaultTextureInstance) {
-      this.defaultTextureInstance = this.createTexture2D({
-        data: [
-          0x0F, 0x0F, 0x0F, 0xFF,
-          0x00, 0x00, 0x00, 0xFF,
-          0x00, 0x00, 0x00, 0xFF,
-          0x0F, 0x0F, 0x0F, 0xFF,
-        ],
-        sampler: SamplerState.PointWrap,
-      })
-    }
-    return this.defaultTextureInstance
-  }
-
-  public get isWebGL2(): boolean {
-    return supportsWebGL2 && this.context instanceof WebGL2RenderingContext
   }
 
   /**
@@ -626,14 +647,14 @@ export class Device {
   }
 
   /**
-   * Sets or unsets a single render target
+   * Sets or un sets a single render target
    */
   public setRenderTarget(texture: Texture) {
     this.setRenderTargets(texture)
   }
 
   /**
-   * Sets or unsets multiple render targets
+   * Sets or un sets multiple render targets
    */
   public setRenderTargets(
     rt01?: Texture, rt02?: Texture, rt03?: Texture, rt04?: Texture,
@@ -693,13 +714,13 @@ export class Device {
   /**
    * Gets the currently active frame buffer
    */
-  get frameBuffer(): FrameBuffer {
+  public get frameBuffer(): FrameBuffer {
     return this.currentFrameBuffer
   }
   /**
    * Sets and activates a frame buffer as the currently active frame buffer
    */
-  set frameBuffer(buffer: FrameBuffer) {
+  public set frameBuffer(buffer: FrameBuffer) {
     if (this.currentFrameBuffer !== buffer) {
       let handle = buffer ? buffer.handle : null
       this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle)
@@ -713,7 +734,7 @@ export class Device {
    * @remarks
    * Restricts the `vertexBuffer` property to only this set of buffers.
    */
-  set vertexBuffers(buffer: Buffer[]) {
+  public set vertexBuffers(buffer: Buffer[]) {
     this.$vertexBuffers = buffer
     this.vertexBuffer = null
   }
@@ -721,13 +742,13 @@ export class Device {
   /**
    * Gets the currently active vertex buffer
    */
-  get vertexBuffer(): Buffer {
+  public get vertexBuffer(): Buffer {
     return this.$vertexBuffer
   }
   /**
    * Sets and activates a buffer as the currently active vertex buffer
    */
-  set vertexBuffer(buffer: Buffer) {
+  public set vertexBuffer(buffer: Buffer) {
     if (this.$vertexBuffer !== buffer) {
       if (buffer && this.$vertexBuffers && this.$vertexBuffers.indexOf(buffer) === -1) {
         throw new Error('vertexBuffer is not part of the vertexBuffers list')
@@ -740,13 +761,13 @@ export class Device {
   /**
    * Gets the currently active index buffer
    */
-  get indexBuffer(): Buffer {
+  public get indexBuffer(): Buffer {
     return this.$indexBuffer
   }
   /**
    * Sets and activates a buffer as the currently active index buffer
    */
-  set indexBuffer(buffer: Buffer) {
+  public set indexBuffer(buffer: Buffer) {
     if (this.$indexBuffer !== buffer) {
       this.context.bindBuffer(BufferType.IndexBuffer, buffer ? buffer.handle : null)
       this.$indexBuffer = buffer
@@ -756,13 +777,13 @@ export class Device {
   /**
    * Gets the currently active shader program
    */
-  get program(): ShaderProgram {
+  public get program(): ShaderProgram {
     return this.$program
   }
   /**
    * Sets and activates a program as the currently active program
    */
-  set program(program: ShaderProgram) {
+  public set program(program: ShaderProgram) {
     if (this.$program !== program) {
       let handle = program ? program.handle : null
       this.context.useProgram(handle)
@@ -773,7 +794,7 @@ export class Device {
   /**
    * Gets the aspect ratio of the drawing buffer
    */
-  get drawingBufferAspectRatio(): number {
+  public get drawingBufferAspectRatio(): number {
     return this.context.drawingBufferWidth / this.context.drawingBufferHeight
   }
 
@@ -783,7 +804,7 @@ export class Device {
         for (const buffer of vBuffer) {
           const channel = buffer.layout[name]
           if (channel) {
-            buffer.use()
+            buffer.bind()
             this.context.vertexAttribPointer(
               attribute.location,
               channel.elements,
@@ -803,7 +824,7 @@ export class Device {
       program.attributes.forEach((attribute, name) => {
         const channel = vBuffer.layout[name]
         if (channel) {
-          vBuffer.use()
+          vBuffer.bind()
           this.context.vertexAttribPointer(
             attribute.location,
             channel.elements,

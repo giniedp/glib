@@ -277,7 +277,7 @@ export class UniformBinder {
    * @param program - The program which uniforms should receive new values
    */
   public applyTransform(program: ShaderProgram): this {
-    program.use()
+    program.bind()
     program.applyBindings(this.transformBindings)
     return this
   }
@@ -288,7 +288,7 @@ export class UniformBinder {
    * @param program - The program which uniforms should receive new values
    */
   public applyView(program: ShaderProgram): this {
-    program.use()
+    program.bind()
     program.applyBindings(this.viewBindings)
     return this
   }
@@ -299,7 +299,7 @@ export class UniformBinder {
    * @param program - The program which uniforms should receive new values
    */
   public applyTime(program: ShaderProgram): this {
-    program.use()
+    program.bind()
     program.applyBindings(this.timeBindings)
     return this
   }
@@ -310,7 +310,7 @@ export class UniformBinder {
    * @param program - The program which uniforms should receive new values
    */
   public applyLights(program: ShaderProgram): this {
-    program.use()
+    program.bind()
     for (let lightBinding of this.lightBindings) {
       program.applyBindings(lightBinding)
     }

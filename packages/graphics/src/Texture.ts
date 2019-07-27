@@ -1,5 +1,5 @@
 import { IVec2 } from '@gglib/math'
-import { isArray, isObject, isString, Log, uuid } from '@gglib/utils'
+import { getOption, isArray, isObject, isString, Log, uuid } from '@gglib/utils'
 import {
   ArrayType,
   DataType,
@@ -20,7 +20,8 @@ import {
 } from './enums'
 
 import { Device } from './Device'
-import { SamplerStateParams } from './states'
+
+import { SamplerState, SamplerStateParams } from './states/SamplerState'
 
 /**
  * Type that is accepted by the {@link Texture.setData} method
@@ -31,13 +32,6 @@ export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
 
 function isPowerOfTwo(value: number): boolean {
   return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
-}
-
-function getDefinedOption<T, V>(options: T, key: keyof T, fallback: V): V {
-  if (key in options) {
-    return options[key] as any
-  }
-  return fallback
 }
 
 /**
@@ -88,7 +82,7 @@ export interface TextureOptions {
   /**
    * The sampler state to be used together with this texture
    */
-  sampler?: SamplerStateParams
+  samplerParams?: SamplerStateParams
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
    *
@@ -198,9 +192,23 @@ export class Texture {
   public readonly handle: WebGLTexture = null
 
   /**
-   * The sampler state to be used together with this texture
+   * The sampler state of this texture. Always reflects current state of this texture.
    */
-  public sampler: SamplerStateParams = null
+  public readonly sampler: SamplerState
+
+  /**
+   * The sampler state params that should always apply to this texture
+   *
+   * @remarks
+   * If this is set, this state parameters will always be used with this texture
+   * when assigning it to a texture unit. Other sampler states defined in a shader or
+   * elsewhere will be ignored.
+   *
+   * Use this if you prefer the original way of handling sampling parameters in opengl.
+   *
+   * Don't use this if you want separate the concerns of texture and samplers.
+   */
+  public samplerParams: SamplerStateParams
 
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
@@ -280,13 +288,14 @@ export class Texture {
     let width = options.width || this.width
     let height = options.height || this.height
 
-    let type = valueOfTextureType(getDefinedOption(options, 'type', this.type))
-    let pixelType = valueOfDataType(getDefinedOption(options, 'pixelType', this.pixelType))
-    let pixelFormat = valueOfPixelFormat(getDefinedOption(options, 'pixelFormat', this.pixelFormat))
-    let depthFormat = valueOfDepthFormat(getDefinedOption(options, 'depthFormat', this.depthFormat))
-    let handle = getDefinedOption(options, 'handle', this.handle)
-    let genMipMaps = getDefinedOption(options, 'generateMipmap', this.generateMipmap)
-    let crossOrigin = getDefinedOption(options, 'crossOrigin', this.crossOrigin)
+    let type = valueOfTextureType(getOption(options, 'type', this.type))
+    let pixelType = valueOfDataType(getOption(options, 'pixelType', this.pixelType))
+    let pixelFormat = valueOfPixelFormat(getOption(options, 'pixelFormat', this.pixelFormat))
+    let depthFormat = valueOfDepthFormat(getOption(options, 'depthFormat', this.depthFormat))
+    let handle = getOption(options, 'handle', this.handle)
+    let genMipMaps = getOption(options, 'generateMipmap', this.generateMipmap)
+    let crossOrigin = getOption(options, 'crossOrigin', this.crossOrigin)
+    let samplerParams = getOption(options, 'samplerParams', this.samplerParams)
 
     if (
       (handle && handle !== this.handle) ||
@@ -296,27 +305,28 @@ export class Texture {
       pixelType !== this.pixelType ||
       type !== this.type
     ) {
-      this.destroy();
-      (this as { handle: WebGLTexture}).handle = options.handle
+      this.destroy()
+      this.writeProperty('handle', handle)
     }
     if (!this.handle || !this.device.context.isTexture(this.handle)) {
-      (this as { handle: WebGLTexture}).handle = this.device.context.createTexture()
+      this.writeProperty('handle', this.device.context.createTexture())
+    }
+    if (!this.sampler) {
+      this.writeProperty('sampler', new SamplerState(this.device, this))
     }
 
-    (this as { width: number }).width = width;
-    (this as { height: number }).height  = height;
-    (this as { type: number }).type = type;
-    (this as { pixelType: number }).pixelType  = pixelType;
-    (this as { pixelFormat: number }).pixelFormat  = pixelFormat;
-    (this as { depthFormat: number }).depthFormat = depthFormat;
-    (this as { generateMipmap: boolean }).generateMipmap = genMipMaps;
-    (this as { ready: boolean }).ready = false;
-    (this as { crossOrigin: string }).crossOrigin = crossOrigin
+    this.writeProperty('width', width)
+    this.writeProperty('height', height)
+    this.writeProperty('type', type)
+    this.writeProperty('pixelType', pixelType)
+    this.writeProperty('pixelFormat', pixelFormat)
+    this.writeProperty('depthFormat', depthFormat)
+    this.writeProperty('generateMipmap', genMipMaps)
+    this.writeProperty('ready', false)
+    this.writeProperty('crossOrigin', crossOrigin)
+    this.writeProperty('samplerParams', samplerParams)
 
-    this.sampler = options.sampler // || {...SamplerState.Default}
-
-    let source = options.data
-
+    const source = options.data
     if (isString(source)) {
       this.setUrl(source)
     } else if (source instanceof HTMLImageElement) {
@@ -331,7 +341,7 @@ export class Texture {
       if (source) {
         Log.w(`[Texture] 'data' option has an unrecognized type.`)
       }
-      (this as { ready: boolean }).ready = true
+      this.writeProperty('ready', true)
       this.device.context.bindTexture(this.type, this.handle)
       this.device.context.texImage2D(this.type, 0, this.pixelFormat, this.width, this.height, 0, this.pixelFormat, this.pixelType, null)
       this.device.context.bindTexture(this.type, null)
@@ -343,20 +353,22 @@ export class Texture {
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
   public destroy(): this {
-    (this as { image: any }).image = null;
-    (this as { video: any }).video = null
+    this.writeProperty('image', null)
+    this.writeProperty('video', null)
     this.device.unregisterRenderTarget(this)
     if (this.handle != null && this.device.context.isTexture(this.handle)) {
-      this.device.context.deleteTexture(this.handle);
-      (this as { handle: any }).handle = null
+      this.device.context.deleteTexture(this.handle)
     }
+    this.writeProperty('handle', null)
     return this
   }
 
   /**
    * Binds the texture to the gl context.
+   *
+   * @returns the previously bound texture handle
    */
-  public use(): this {
+  public bind(): this {
     this.device.context.bindTexture(this.type, this.handle)
     return this
   }
@@ -383,7 +395,7 @@ export class Texture {
    * Sets the texture source from an image url
    */
   public setImageUrl(url: string, crossOrigin: string = this.crossOrigin): this {
-    (this as {ready: boolean}).ready = false
+    this.writeProperty('ready', false)
     const image = new Image()
     image.crossOrigin = crossOrigin
     image.src = url
@@ -395,7 +407,7 @@ export class Texture {
    * Sets the texture source from a video url
    */
   public setVideoUrl(url: string, crossOrigin: string = this.crossOrigin): this {
-    (this as {ready: boolean}).ready = false
+    this.writeProperty('ready', false)
     const video = document.createElement('video')
     video.src = url
     video.crossOrigin = crossOrigin
@@ -408,7 +420,7 @@ export class Texture {
    * Sets the texture source from video urls.
    */
   public setVideoUrls(options: Array<{ src: string, type: string }>): this {
-    (this as {ready: boolean}).ready = false
+    this.writeProperty('ready', false)
     const video = document.createElement('video')
     let valid = false
     for (let option of options) {
@@ -430,9 +442,8 @@ export class Texture {
    * Sets the texture source from HtmlImageElement
    */
   public setImage(image: HTMLImageElement): this {
-    (this as { image: any }).image = image;
-    (this as { video: any }).video = null
-
+    this.writeProperty('image', image)
+    this.writeProperty('video', null)
     this.update()
     return this
   }
@@ -441,9 +452,8 @@ export class Texture {
    * Sets the texture source from HTMLVideoElement
    */
   public setVideo(video: HTMLVideoElement): this {
-    (this as { image: any }).image = null;
-    (this as { video: any }).video = video
-
+    this.writeProperty('image', null)
+    this.writeProperty('video', video)
     this.update()
     return this
   }
@@ -456,8 +466,8 @@ export class Texture {
    * @param height - The new texture height
    */
   public setData(data: TextureDataOption, width?: number, height?: number): this {
-    (this as { image: any }).image = null;
-    (this as { video: any }).video = null
+    this.writeProperty('image', null)
+    this.writeProperty('video', null)
 
     let buffer: ArrayBufferView
     if (data instanceof Array || data instanceof ArrayBuffer) {
@@ -481,16 +491,16 @@ export class Texture {
       throw new Error('width and height does not match the data length')
     }
 
-    this.use()
+    this.bind()
     this.device.context.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, buffer)
     if (this.generateMipmap) {
       this.device.context.generateMipmap(this.type)
     }
 
-    (this as { width: any }).width = width;
-    (this as { height: any }).height = height;
-    (this as { ready: any }).ready = true;
-    (this as { isPOT: any }).isPOT = isPowerOfTwo(width) && isPowerOfTwo(height)
+    this.writeProperty('width', width)
+    this.writeProperty('height', height)
+    this.writeProperty('ready', true)
+    this.writeProperty('isPOT', isPowerOfTwo(width) && isPowerOfTwo(height))
     return this
   }
 
@@ -550,12 +560,12 @@ export class Texture {
     if (texture.generateMipmap) {
       gl.generateMipmap(texture.type)
     }
-    gl.bindTexture(texture.type, null);
+    gl.bindTexture(texture.type, null)
 
-    (texture as { ready: any }).ready = true;
-    (texture as { width: any }).width = image.naturalWidth;
-    (texture as { height: any }).height = image.naturalHeight;
-    (texture as { isPOT: any }).isPOT = isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height)
+    texture.writeProperty('ready', true)
+    texture.writeProperty('width', image.naturalWidth)
+    texture.writeProperty('height', image.naturalHeight)
+    texture.writeProperty('isPOT', isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height))
   }
 
   private static updateFromVideo(texture: Texture, video: HTMLVideoElement) {
@@ -569,12 +579,16 @@ export class Texture {
     if (texture.generateMipmap && texture.isPOT) {
       gl.generateMipmap(texture.type)
     }
-    gl.bindTexture(texture.type, null);
+    gl.bindTexture(texture.type, null)
 
-    (texture as { ready: any }).ready = video.readyState >= 3;
-    (texture as { width: any }).width = video.videoWidth;
-    (texture as { height: any }).height = video.videoHeight;
-    (texture as { isPOT: any }).isPOT = isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height)
+    texture.writeProperty('ready', video.readyState >= 3)
+    texture.writeProperty('width', video.videoWidth)
+    texture.writeProperty('height', video.videoHeight)
+    texture.writeProperty('isPOT', isPowerOfTwo(texture.width) && isPowerOfTwo(texture.height))
     texture.videoTime = video.currentTime
+  }
+
+  private writeProperty<K extends keyof Texture>(key: K, value: Texture[K]) {
+    (this as any)[key] = value
   }
 }
