@@ -411,7 +411,7 @@ export class BlendState implements IBlendState {
    *
    * @param state - The state name or state options to convert
    */
-  public static convert(state: string | BlendStateOptions): IBlendState {
+  public static convert(state: string | BlendStateOptions): BlendStateParams {
     if (typeof state === 'string') {
       return BlendState[state] ? {...BlendState[state]} : null
     }
@@ -420,7 +420,7 @@ export class BlendState implements IBlendState {
       return null
     }
 
-    const result: BlendStateParams = {} as any
+    const result: BlendStateParams = {}
 
     for (const key of params) {
       if (!(key in state)) {
@@ -446,7 +446,7 @@ export class BlendState implements IBlendState {
       }
     }
 
-    return result as IBlendState
+    return result
   }
 
   /**

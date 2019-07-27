@@ -1,18 +1,18 @@
 import {
   BlendState,
   BlendStateOptions,
+  BlendStateParams,
   Color,
   CullState,
   CullStateOptions,
+  CullStateParams,
   DepthState,
   DepthStateOptions,
-  IBlendState,
-  ICullState,
-  IDepthState,
-  IStencilState,
+  DepthStateParams,
   ShaderTechnique,
   StencilState,
   StencilStateOptions,
+  StencilStateParams,
 } from '@gglib/graphics'
 import { getOption } from '@gglib/utils'
 
@@ -81,19 +81,19 @@ export class BasicRenderStep implements RenderStep {
   /**
    * The default blend state
    */
-  public blendState: IBlendState
+  public blendState: BlendStateParams
   /**
    * The default cull state
    */
-  public cullState: ICullState
+  public cullState: CullStateParams
   /**
    * The default depth state
    */
-  public depthState: IDepthState
+  public depthState: DepthStateParams
   /**
    * The default stencil state
    */
-  public stencilState: IStencilState
+  public stencilState: StencilStateParams
 
   public constructor(options: BasicRenderStepOptions = {}) {
     this.clearColor = getOption(options, 'clearColor', Color.Black.rgba)

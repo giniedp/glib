@@ -196,7 +196,7 @@ export class CullState implements CullStateParams {
    *
    * @param state - The state name or state options to convert
    */
-  public static convert(state: string | CullStateOptions): ICullState {
+  public static convert(state: string | CullStateOptions): CullStateParams {
     if (typeof state === 'string') {
       return CullState[state] ? {...CullState[state]} : null
     }
@@ -204,7 +204,7 @@ export class CullState implements CullStateParams {
       return null
     }
 
-    const result: CullStateParams = {} as any
+    const result: CullStateParams = {}
     for (const key of params) {
       if (!(key in state)) {
         continue
@@ -221,7 +221,7 @@ export class CullState implements CullStateParams {
           break
       }
     }
-    return result as ICullState
+    return result
   }
 
   /**

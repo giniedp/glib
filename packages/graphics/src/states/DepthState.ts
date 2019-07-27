@@ -5,6 +5,7 @@ import {
   nameOfCompareFunction,
   valueOfCompareFunction,
 } from './../enums'
+import { BlendStateParams } from './BlendState';
 
 const params: Array<keyof DepthStateParams> = [
   'depthFunction',
@@ -78,7 +79,7 @@ export class DepthState implements IDepthState {
    *
    * @param state - The state name or state options to convert
    */
-  public static convert(state: string | DepthStateOptions): IDepthState {
+  public static convert(state: string | DepthStateOptions): BlendStateParams {
     if (typeof state === 'string') {
       return DepthState[state] ? {...DepthState[state]} : null
     }
@@ -100,7 +101,7 @@ export class DepthState implements IDepthState {
           break
       }
     }
-    return result as IDepthState
+    return result
   }
 
   /**

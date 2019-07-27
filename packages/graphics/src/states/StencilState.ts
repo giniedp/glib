@@ -354,7 +354,7 @@ export class StencilState implements IStencilState {
     for (let key of params) { this.changes[key as any] = undefined }
   }
 
-  public static convert(state: string | StencilStateOptions): IStencilState {
+  public static convert(state: string | StencilStateOptions): StencilStateParams {
     if (typeof state === 'string') {
       return StencilState[state] ? {...StencilState[state]} : null
     }
@@ -363,7 +363,7 @@ export class StencilState implements IStencilState {
       return null
     }
 
-    const result: StencilStateParams = {} as any
+    const result: StencilStateParams = {}
     for (const key of params) {
       if (!(key in state)) {
         continue
@@ -389,7 +389,7 @@ export class StencilState implements IStencilState {
           break
       }
     }
-    return result as IStencilState
+    return result
   }
 
   public static resolve(gl: WebGLRenderingContext, out: any= {}): IStencilState {
