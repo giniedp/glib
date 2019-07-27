@@ -2,9 +2,9 @@
 
 export interface InjectMetadata {
   target: Object,
-  properyKey: string | symbol,
+  property: string | symbol,
   from: 'root' | 'parent' | string,
-  serviceKey: any,
+  service: any,
 }
 
 export type InjectMetadataMap = Map<string | symbol, InjectMetadata>
@@ -20,9 +20,9 @@ export function Inject(type: Function, options?: { from: 'root' | 'parent' | str
     const map: InjectMetadataMap = getInjectMetadata(target) || new Map<string | symbol, InjectMetadata>()
     map.set(propertyKey, {
       target: target,
-      properyKey: propertyKey,
+      property: propertyKey,
       from: options && options.from ? options.from : '',
-      serviceKey: type,
+      service: type,
     })
     target.constructor[injectMetadata] = map
   }

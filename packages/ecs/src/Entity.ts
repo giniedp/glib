@@ -450,8 +450,8 @@ export class Entity extends Events {
       return
     }
     meta.forEach((m) => {
-      if (m.serviceKey === Entity) {
-        component[m.properyKey] = this[m.from] as Entity || this
+      if (m.service === Entity) {
+        component[m.property] = this[m.from] as Entity || this
       }
     })
   }
@@ -462,8 +462,8 @@ export class Entity extends Events {
       return
     }
     meta.forEach((m) => {
-      if (m.serviceKey === Entity) {
-        component[m.properyKey] = null
+      if (m.service === Entity) {
+        component[m.property] = null
       }
     })
   }
@@ -474,7 +474,7 @@ export class Entity extends Events {
       return
     }
     meta.forEach((m) => {
-      if (m.serviceKey === Entity) {
+      if (m.service === Entity) {
         return
       }
       if (from && m.from !== from) {
@@ -495,7 +495,7 @@ export class Entity extends Events {
       if (!source) {
         Log.w('[Entity]', `unable to inject service from '${m.from}'. Entity is not available.`)
       } else {
-        component[m.properyKey] = source.getService(m.serviceKey)
+        component[m.property] = source.getService(m.service)
       }
     })
   }
@@ -507,7 +507,7 @@ export class Entity extends Events {
     }
     meta.forEach((m) => {
       if (!from || from === m.from) {
-        component[m.properyKey] = null
+        component[m.property] = null
       }
     })
   }
