@@ -2,7 +2,7 @@ import { Model } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { DrawableData } from '@gglib/render'
 import { Inject } from '../decorators'
-import { OnAdded, OnInit, OnRemoved } from './../Component'
+import { OnAdded, OnRemoved } from './../Component'
 import { Entity } from './../Entity'
 import { DrawablesCollector, DrawablesProvider } from './Renderable'
 import { TransformComponent } from './TransformComponent'
@@ -10,7 +10,7 @@ import { TransformComponent } from './TransformComponent'
 /**
  * @public
  */
-export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemoved, OnInit {
+export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemoved {
 
   public get model() {
     return this.$model
@@ -49,10 +49,6 @@ export class ModelComponent extends DrawablesProvider implements OnAdded, OnRemo
   public onRemoved(entity: Entity) {
     entity.removeService(ModelComponent)
     entity.removeService(DrawablesProvider)
-  }
-
-  public onInit(entity: Entity) {
-    this.transform = entity.getService(TransformComponent, null)
   }
 
   public onUpdate() {

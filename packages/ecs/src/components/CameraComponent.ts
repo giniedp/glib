@@ -8,14 +8,35 @@ import { Entity } from './../Entity'
 import { TransformComponent } from './TransformComponent'
 
 /**
+ * An abstract component that describes a camera
+ *
  * @public
  */
 export abstract class CameraComponent {
-  public name = 'Camera'
 
+  /**
+   * The component name (`'Camera'`)
+   */
+  public readonly name = 'Camera'
+
+  /**
+   * The world transform
+   */
   public abstract get world(): Mat4
+
+  /**
+   * The view matrix that is the inverse of the world transform
+   */
   public view: Mat4 = Mat4.createIdentity()
+
+  /**
+   * The projection matrix
+   */
   public projection: Mat4 = Mat4.createIdentity()
+
+  /**
+   * The premultiplied view and projection matrix
+   */
   public viewProjection: Mat4 = Mat4.createIdentity()
 }
 
@@ -26,15 +47,15 @@ export abstract class CameraComponent {
  */
 export interface PerspectiveCameraOptions {
   /**
-   * The distance to near plane
+   * The near plane distance
    */
   near?: number
   /**
-   * The distance to far plane
+   * The far plane distance
    */
   far?: number
   /**
-   * The field of view
+   * The field of view in radians
    */
   fov?: number
   /**
@@ -51,17 +72,46 @@ export interface PerspectiveCameraOptions {
 @Service({ as: CameraComponent })
 export class PerspectiveCameraComponent extends CameraComponent implements OnUpdate {
 
+  /**
+   * The near plane distance
+   */
   public near: number = 0.1
+
+  /**
+   * The far plane distance
+   */
   public far: number = 1000
+
+  /**
+   * The field of view in radians
+   */
   public fov: number = Math.PI * 0.25
+
+  /**
+   * The aspect ratio
+   */
   public aspect: number = 4 / 3
 
+  /**
+   * The entity that owns this component instance
+   */
   @Inject(Entity)
-  public entity: Entity
+  public readonly entity: Entity
 
+  /**
+   * The transform component
+   */
   @Inject(TransformComponent)
-  public transform: TransformComponent
+  public readonly transform: TransformComponent
 
+  /**
+   * The world transform of this camera.
+   *
+   * @remarks
+   * This returns tha matrix of the `transform` property
+   * and is meat to be read only. To change the camera transform
+   * use the `transform` property.
+   */
   public get world() {
     return this.transform.matrix
   }
@@ -74,6 +124,9 @@ export class PerspectiveCameraComponent extends CameraComponent implements OnUpd
     this.aspect = getOption(options, 'aspect', 16 / 9)
   }
 
+  /**
+   * Updates the `view`, `projection` and `viewProjection` matrices
+   */
   public onUpdate() {
     this.view.initFrom(this.transform.inverse)
     this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far)
@@ -88,11 +141,12 @@ export class PerspectiveCameraComponent extends CameraComponent implements OnUpd
  */
 export interface OrthographicCameraOptions {
   /**
-   * The distance to near plane
+   * The near plane distance
    */
   near?: number
+
   /**
-   * The distance to far plane
+   * The far plane distance
    */
   far?: number
   /**
@@ -113,29 +167,59 @@ export interface OrthographicCameraOptions {
 @Service({ as: CameraComponent })
 export class OrthographicCameraComponent extends CameraComponent implements OnUpdate {
 
-  public near: number
-  public far: number
-  public width: number
-  public height: number
+  /**
+   * The near plane distance
+   */
+  public near: number = 0.1
 
+  /**
+   * The far plane distance
+   */
+  public far: number = 1000
+  /**
+   * The orthographic width
+   */
+  public width: number = 10
+  /**
+   * The orthographic height
+   */
+  public height: number = 10
+
+  /**
+   * The entity that owns this component instance
+   */
   @Inject(Entity)
-  public entity: Entity
+  public readonly entity: Entity
 
+  /**
+   * The transform component
+   */
   @Inject(TransformComponent)
-  public transform: TransformComponent
+  public readonly transform: TransformComponent
 
+  /**
+   * The world transform of this camera.
+   *
+   * @remarks
+   * This returns tha matrix of the `transform` property
+   * and is meat to be read only. To change the camera transform
+   * use the `transform` property.
+   */
   public get world() {
     return this.transform.matrix
   }
 
   constructor(options: OrthographicCameraOptions = {}) {
     super()
-    this.near = getOption(options, 'near', 0.1)
-    this.far = getOption(options, 'far', 100)
-    this.width = getOption(options, 'width', 10)
-    this.height = getOption(options, 'height', 10)
+    this.near = getOption(options, 'near', this.near)
+    this.far = getOption(options, 'far', this.far)
+    this.width = getOption(options, 'width', this.width)
+    this.height = getOption(options, 'height', this.height)
   }
 
+  /**
+   * Updates the `view`, `projection` and `viewProjection` matrices
+   */
   public onUpdate() {
     this.view.initFrom(this.transform.inverse)
     this.projection.initOrthographic(this.width, this.height, this.near, this.far)

@@ -107,7 +107,7 @@ class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
     const camera = this.entity.find('/Camera')
     this.transform.setPosition(camera.getService(TransformComponent).position)
     this.transform.setScaleUniform(camera.getService<PerspectiveCameraComponent>(CameraComponent).far - 1)
-    this.transform.setRotationXYZAngle(0, 1, 0, Math.PI / 180 * this.time.gameTimeTotalMs / 1000)
+    this.transform.setRotationAnglePara(0, 1, 0, Math.PI / 180 * this.time.gameTimeTotalMs / 1000)
   }
 }
 
@@ -213,7 +213,7 @@ class TerrainComponent implements OnInit, OnUpdate {
         //     },
         //     onInput: () => {
         //       const e = this.entity.root.find('/Light') as Entity
-        //       e.getService(TransformComponent).setRotationXYZAngle(1, 0, 0, angle)
+        //       e.getService(TransformComponent).setRotationAnglePara(1, 0, 0, angle)
         //     },
         //     min: -Math.PI,
         //     max: Math.PI,
@@ -260,7 +260,7 @@ const game = createGame({
 })
 .createChild(addTransform, addDirectionalLight, (e) => {
   e.name = 'Light'
-  e.getService(TransformComponent).setRotationXYZAngle(1, 0, 0, -1)
+  e.getService(TransformComponent).setRotationAnglePara(1, 0, 0, -1)
 })
 .createChild(addModel, (e) => {
   e.name = 'Sky'

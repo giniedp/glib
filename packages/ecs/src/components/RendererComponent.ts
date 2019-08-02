@@ -56,7 +56,7 @@ export class RendererComponent implements OnInit, OnUpdate, OnDraw {
   public onDraw() {
     this.toRender.length = 0
     this.manager.device.resize()
-    this.manager.binder.updateTime(this.time.gameTimeTotalMs, this.time.gameTimeElapsedMs)
+    this.manager.binder.updateTime(this.time.game.totalMs, this.time.game.elapsedMs)
     this.manager.scenes.forEach((scene) => {
       if (!scene || !scene.camera || scene.enabled === false) {
         return

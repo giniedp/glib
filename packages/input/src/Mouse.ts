@@ -1,40 +1,30 @@
-import { Events, Log, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/utils'
-
-function prefix(vendor: string, name: string, upper: boolean): string {
-  if (vendor == null) { return null }
-  if (vendor === '') { return name }
-  if (upper) {
-    name = name[0] + name.substr(1)
-  }
-  return vendor + name
-}
-const browser = (() => {
-  for (const name of ['', 'moz', 'webkit', 'ms', 'o']) {
-    let pref = prefix(name, 'exitPointerLock', true)
-    if (pref in document) { return name }
-  }
-})()
-
-const cross = {
-  requestPointerLock: prefix(browser, 'requestPointerLock', true),
-  exitPointerLock: prefix(browser, 'exitPointerLock', true),
-  pointerlockchange: prefix(browser, 'pointerlockchange', false),
-  pointerlockerror: prefix(browser, 'pointerlockerror', false),
-  pointerLockElement: prefix(browser, 'pointerLockElement', true),
-
-  movementX: prefix(browser, 'movementX', true),
-  movementY: prefix(browser, 'movementY', true),
-}
-const hasPointerlockApi = !!cross.requestPointerLock
+import {
+  documentVisibilityApi,
+  Events,
+  getOption,
+  getTime,
+  Log,
+  PointerLockApi,
+} from '@gglib/utils'
 
 /**
- * Mouse constructor options
+ * Constructor options for {@link Mouse}
  *
  * @public
  */
-export interface IMouseOptions {
-  eventTarget?: EventTarget,
-  events?: string[]
+export interface MouseOptions {
+  /**
+   * The target element where the events should be captured at. Defaults to `document.documentElement`
+   */
+  eventTarget?: HTMLElement
+  /**
+   * The reference element that the pointer coordinates should be relative to.
+   */
+  captureTarget?: HTMLElement
+  /**
+   * List of events that are captured on the `eventTarget` and re-emitted on this instance
+   */
+  proxyEvents?: string[]
 }
 
 /**
@@ -42,18 +32,38 @@ export interface IMouseOptions {
  *
  * @public
  */
-export interface IMouseState {
-  pageX: number
-  pageY: number
-  screenX: number
-  screenY: number
+export interface MouseState {
+  /**
+   * Time when the mouse state was captured
+   */
+  timestamp: number
+  /**
+   * The mouse event that caused the mouse state change
+   */
+  event: MouseEvent | null
+  /**
+   * Mouse X position in client coordinates
+   */
   clientX: number
+  /**
+   * Mouse Y position in client coordinates
+   */
   clientY: number
-  x: number
-  y: number
-  movementX: number
-  movementY: number
+  /**
+   * Mouse X position in normalized client coordinates
+   */
+  normalizedX: number
+  /**
+   * Mouse Y position in normalized client coordinates
+   */
+  normalizedY: number
+  /**
+   * The value of the scroll wheel
+   */
   wheel: number
+  /**
+   * Left middle and right mouse button states
+   */
   buttons: boolean[]
 }
 
@@ -61,39 +71,40 @@ export interface IMouseState {
  * Captures the mouse state.
  *
  * @remarks
- * The mouse events are captured at the given {@link IMouseOptions.eventTarget}. Using these events a mouse state
+ * The mouse events are captured at the given {@link MouseOptions.eventTarget}. Using these events a mouse state
  * is recorded. On each recognized  state change the `changed` event is triggered.
  *
  * @public
  */
 export class Mouse extends Events {
   /**
-   * The target eventTarget at which to listen for mouse events.
+   * The target eventTarget at which to listen for mouse events. Defaults to `document.documentElement`
    */
-  protected readonly eventTarget: EventTarget = document
+  public readonly eventTarget: HTMLElement = document.documentElement
+
+  /**
+   * The reference element that the pointer coordinates should be relative to. Defaults to given `eventTarget` or `document`
+   */
+  public readonly captureTarget: HTMLElement = null
 
   /**
    * The current Mouse state
    */
-  public readonly state: IMouseState = {
-    pageX: 0,
-    pageY: 0,
-    screenX: 0,
-    screenY: 0,
+  public readonly state: MouseState = {
+    event: null,
+    timestamp: 0,
     clientX: 0,
     clientY: 0,
-    x: 0,
-    y: 0,
+    normalizedX: 0,
+    normalizedY: 0,
     wheel: 0,
-    movementX: 0,
-    movementY: 0,
     buttons: [false, false, false],
   }
 
   /**
    * {@link https://developer.mozilla.org/de/docs/Web/Events | Event} names that are delegated to this instance.
    */
-  protected readonly delegatedEvents = [
+  public readonly proxiedEvents: ReadonlyArray<string> = [
     'click',
     'contextmenu',
     'dblclick',
@@ -104,45 +115,36 @@ export class Mouse extends Events {
     'mouseout',
     'mouseover',
     'mouseup',
-    'show',
     'mousewheel',
   ]
 
   /**
-   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/wheel | wheel} events
-   */
-  protected readonly onMouseWheelListener: EventListener = this.onMouseWheel.bind(this)
-  /**
-   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/mousemove | mousemove} events
-   */
-  protected readonly onMouseMoveListener: EventListener = this.onMouseMove.bind(this)
-  /**
-   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/mousedown | mousedown} events
-   */
-  protected readonly onMouseDownListener: EventListener = this.onMouseButton.bind(this)
-  /**
-   * Listener for {@link https://developer.mozilla.org/de/docs/Web/Events/mouseup | mouseup} events
-   */
-  protected readonly onMouseUpListener: EventListener = this.onMouseButton.bind(this)
-  /**
    * Listener for any {@link https://developer.mozilla.org/de/docs/Web/Events | Event}
-   * see {@link Mouse.delegatedEvents}.
+   * see {@link Mouse.proxiedEvents}.
    */
   protected readonly onEvent: EventListener = (e) => this.trigger(e.type, this, e)
   /**
    * Listener that issues a clear state operation on this instance
    */
   protected readonly onClearStateListener: EventListener = this.onClearState.bind(this)
+  /**
+   * Listener that issues a clear state operation on this instance
+   */
+  protected readonly onCaptureStateListener: EventListener = this.onCaptureState.bind(this)
+  /**
+   *
+   */
+  protected readonly lockApi = new PointerLockApi()
 
   /**
    * Initializes the Mouse with given options and activates the capture listeners
    */
-  constructor(options?: IMouseOptions) {
+  constructor(options?: MouseOptions) {
     super()
-    if (options) {
-      this.eventTarget = (options.eventTarget || this.eventTarget)
-      this.delegatedEvents = (options.events || this.delegatedEvents)
-    }
+    this.eventTarget = getOption(options, 'eventTarget', this.eventTarget)
+    this.captureTarget = getOption(options, 'captureTarget', this.captureTarget)
+    this.proxiedEvents = getOption(options, 'proxyEvents', this.proxiedEvents)
+
     this.activate()
   }
 
@@ -152,23 +154,21 @@ export class Mouse extends Events {
   public activate() {
     this.deactivate()
     // update state events
-    this.eventTarget.addEventListener('mousewheel', this.onMouseWheelListener)
-    this.eventTarget.addEventListener('mousemove', this.onMouseMoveListener)
-    this.eventTarget.addEventListener('mousedown', this.onMouseDownListener)
-    this.eventTarget.addEventListener('mouseup', this.onMouseUpListener)
+    this.eventTarget.addEventListener('mousewheel', this.onCaptureStateListener)
+    this.eventTarget.addEventListener('mousemove', this.onCaptureStateListener)
+    this.eventTarget.addEventListener('mousedown', this.onCaptureStateListener)
+    this.eventTarget.addEventListener('mouseup', this.onCaptureStateListener)
     // visibility events
-    onDocumentVisibilityChange(this.onClearStateListener)
+    documentVisibilityApi.onVisibilityChange(this.onClearStateListener)
     document.addEventListener('blur', this.onClearStateListener)
     window.addEventListener('blur', this.onClearStateListener)
     // delegated events
-    for (let name of this.delegatedEvents) {
+    for (let name of this.proxiedEvents) {
       this.eventTarget.addEventListener(name, this.onEvent)
     }
     // pointerlock events
-    if (hasPointerlockApi) {
-      document.addEventListener(cross.pointerlockchange, this.onEvent)
-      document.addEventListener(cross.pointerlockerror, this.onEvent)
-    }
+    this.lockApi.onChange(this.onEvent)
+    this.lockApi.onError(this.onEvent)
   }
 
   /**
@@ -176,33 +176,44 @@ export class Mouse extends Events {
    */
   public deactivate() {
     // update logic events
-    this.eventTarget.removeEventListener('mousewheel', this.onMouseWheelListener)
-    this.eventTarget.removeEventListener('mousemove', this.onMouseMoveListener)
-    this.eventTarget.removeEventListener('mousedown', this.onMouseDownListener)
-    this.eventTarget.removeEventListener('mouseup', this.onMouseUpListener)
+    this.eventTarget.removeEventListener('mousewheel', this.onCaptureStateListener)
+    this.eventTarget.removeEventListener('mousemove', this.onCaptureStateListener)
+    this.eventTarget.removeEventListener('mousedown', this.onCaptureStateListener)
+    this.eventTarget.removeEventListener('mouseup', this.onCaptureStateListener)
     // visibility events
-    offDocumentVisibilityChange(this.onClearStateListener)
+    documentVisibilityApi.offVisibilityChange(this.onClearStateListener)
     document.removeEventListener('blur', this.onClearStateListener)
     window.removeEventListener('blur', this.onClearStateListener)
     // delegated events
-    for (let name of this.delegatedEvents) {
+    for (let name of this.proxiedEvents) {
       this.eventTarget.removeEventListener(name, this.onEvent)
     }
     // pointerlock events
-    if (hasPointerlockApi) {
-      document.removeEventListener(cross.pointerlockchange, this.onEvent)
-      document.removeEventListener(cross.pointerlockerror, this.onEvent)
-    }
+    this.lockApi.offChange(this.onEvent)
+    this.lockApi.offError(this.onEvent)
   }
 
   /**
    * Gets a copy of the captured state
+   *
    * @param out - Where the state is written to
    */
-  public copyState(out: any = {}): IMouseState {
-    out.x = this.state.x
-    out.y = this.state.y
-    out.wheelValue = this.state.wheel
+  public copyState<T>(out: T): T & MouseState
+  /**
+   * Gets a copy of the captured state
+   */
+  public copyState(): MouseState
+  /**
+   * Gets a copy of the captured state
+   */
+  public copyState(out: any = {}): MouseState {
+    out.timestamp = this.state.timestamp
+    out.event = this.state.event
+    out.clientX = this.state.clientX
+    out.clientY = this.state.clientY
+    out.normalizedX = this.state.normalizedX
+    out.normalizedY = this.state.normalizedY
+    out.wheel = this.state.wheel
     out.buttons = out.buttons || []
     out.buttons.length = 3
     out.buttons[0] = this.state.buttons[0]
@@ -218,15 +229,15 @@ export class Mouse extends Events {
    * Mouse cursor will be invisible and only the `movementX` and `movementY` state properties are updated.
    */
   public lock() {
-    if (!hasPointerlockApi) {
+    if (!this.lockApi.isSupported) {
       Log.w('[Mouse] pointerlock api is not available')
       return
     }
-    if (this.eventTarget === document[cross.pointerLockElement]) {
+    if (this.eventTarget === this.lockApi.pointerLockElement) {
       return
     }
     if (this.eventTarget instanceof Element) {
-      this.eventTarget[cross.requestPointerLock]()
+      this.lockApi.requestLock(this.captureTarget || this.eventTarget)
     } else {
       Log.w('[Mouse] lock() is only available for elements of type "Element"')
     }
@@ -237,81 +248,64 @@ export class Mouse extends Events {
    * @returns true if any document element has a mouse lock
    */
   public get isLocked(): boolean {
-    return Mouse.isLocked()
+    return !!this.lockApi.pointerLockElement
   }
   /**
    * Releases the active mouse lock in the document
    */
   public unlock() {
-    return Mouse.unlock()
+    this.lockApi.exitLock()
   }
-  /**
-   * Checks for an active mouse lock
-   */
-  public static isLocked(): boolean {
-    return !!document[cross.pointerLockElement]
+
+  protected onCaptureState(e: MouseEvent) {
+    this.state.event = e
+    this.state.timestamp = getTime()
+    this.capturePointer(e, this.state)
+    this.captureButtons(e, this.state)
+    this.captureWheel(e, this.state)
+    this.trigger('changed', this, e)
   }
-  /**
-   * Releases the mouse lock
-   */
-  public static unlock() {
-    if (hasPointerlockApi) {
-      document[cross.exitPointerLock]()
+
+  protected capturePointer(e: MouseEvent, state: MouseState) {
+    const client = this.captureTarget || this.eventTarget
+    if (this.isLocked) {
+      state.clientX += e.movementX
+      state.clientY += e.movementY
     } else {
-      Log.w('[Mouse] pointerlock api is not available')
+      const rect = client.getBoundingClientRect()
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      state.clientX = e.pageX - (rect.left + scrollLeft)
+      state.clientY = e.pageY - (rect.top + scrollTop)
+    }
+
+    state.normalizedX = state.clientX / client.clientWidth
+    state.normalizedY = state.clientY / client.clientHeight
+  }
+
+  protected captureButtons(e: MouseEvent, state: MouseState) {
+    const isDown = e.type === 'mousedown'
+    const isUp = e.type === 'mouseup'
+    if (isDown || isUp) {
+      if (e.which !== undefined) {
+        state.buttons[e.which - 1] = isDown
+      } else if (e.button !== undefined) {
+        state.buttons[e.button] = isDown
+      }
     }
   }
 
-  /**
-   * Updates the movement state from given event
-   */
-  protected onMouseMove(e: MouseEvent) {
-    const s = this.state
-    s.pageX = e.pageX
-    s.pageY = e.pageY
-    s.screenX = e.screenX
-    s.screenY = e.screenY
-    s.clientX = e.clientX
-    s.clientY = e.clientY
-    s.movementX = e[cross.movementX]
-    s.movementY = e[cross.movementY]
-    s.x = e.clientX
-    s.y = e.clientY
-    if (e.target['getBoundingClientRect']) {
-      const rect = (e.target as HTMLElement).getBoundingClientRect()
-      s.x = e.clientX - rect.left
-      s.y = e.clientY - rect.top
-    }
-    this.trigger('changed', this, e)
-  }
-
-  /**
-   * Updates the button states from given event
-   */
-  protected onMouseButton(e: MouseEvent) {
-    let isDown = e.type === 'mousedown'
-    if (e.which !== undefined) {
-      this.state.buttons[e.which - 1] = isDown
-    } else if (e.button !== undefined) {
-      this.state.buttons[e.button] = isDown
-    }
-    this.trigger('changed', this, e)
-  }
-
-  /**
-   * Updates the wheel state from given event
-   */
-  protected onMouseWheel(e: MouseEvent) {
-    let state = this.state
+  protected captureWheel(e: MouseEvent, state: MouseState) {
     state.wheel = state.wheel || 0
-    if (e.detail) {
-      state.wheel += -1 * e.detail
-    } else if (e['wheelDelta']) {
-      state.wheel += e['wheelDelta'] / 120
-    } else {
-      state.wheel += 0
+    if (e.type === 'mousewheel') {
+      if (e.detail) {
+        state.wheel += -1 * e.detail
+      } else if (e['wheelDelta']) {
+        state.wheel += e['wheelDelta'] / 120
+      } else {
+        state.wheel += 0
+      }
     }
-    this.trigger('changed', this, e)
   }
 
   /**

@@ -14,7 +14,7 @@ Beginning with a simple triangle and then continuing you will learn
 * applying textures to a mesh
 * creating shader programs
 * use annotations in glsl shaders
-* ... and more
+* and more
 
 The examples utilize only the `graphics` and the `math` packages. No other high level concepts are
 used. Even if there is no direct interaction with WebGL this is still pretty low level.

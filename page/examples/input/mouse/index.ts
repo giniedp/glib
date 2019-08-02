@@ -7,7 +7,8 @@ import { Mouse } from '@gglib/input'
 // If we want to be able to lock the mouse we have to specify
 // a custom element as we do here
 const mouse = new Mouse({
-  eventTarget: document.querySelector('.capture-pane'),
+  eventTarget: document.documentElement,
+  captureTarget: document.querySelector('.capture-pane'),
 })
 
 // The `changed` event will be fired when the mouse has moved or a button
@@ -18,8 +19,8 @@ mouse.on('changed', (m: Mouse, e) => {
 
   code.textContent = JSON.stringify(m.state, null, 2)
 
-  cursor.style.left = (m.state.x - cursor.getBoundingClientRect().width / 2) + 'px'
-  cursor.style.top = (m.state.y - cursor.getBoundingClientRect().height / 2) + 'px'
+  cursor.style.left = (m.state.clientX - cursor.getBoundingClientRect().width / 2) + 'px'
+  cursor.style.top = (m.state.clientY - cursor.getBoundingClientRect().height / 2) + 'px'
 })
 
 // Here we simply use `dbclick` event on which

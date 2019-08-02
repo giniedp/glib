@@ -1,27 +1,27 @@
-import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/utils'
+import { documentVisibilityApi, Events, getOption } from '@gglib/utils'
 
 /**
  * Options for {@link Keyboard}
  *
  * @public
  */
-export interface IKeyboardOptions {
+export interface KeyboardOptions {
   /**
    * The element at which to listen for input events
    */
   eventTarget?: EventTarget,
   /**
-   * The event names to listen to
+   * Events that are captured and re-triggered on the {@link Keyboard} instance
    */
-  events?: string[]
+  proxyEvents?: string[]
 }
 
 /**
- * The captured Keyboard state
+ * A captured keyboard state holding all keys which are pressed
  *
  * @public
  */
-export type IKeyboardState = Set<KeyboardKey>
+export type KeyboardState = Set<KeyboardKey>
 
 /**
  * Captures key events and tracks keyboard state.
@@ -59,9 +59,9 @@ export class Keyboard extends Events {
   public readonly codes: ReadonlySet<string> = new Set<string>()
 
   /**
-   * Collection of html events that are delegated (triggered) on this instance.
+   * Collection of html events that are captured and re-triggered on this instance
    */
-  protected delegatedEvents = [
+  protected proxiedEvents = [
     'keypress',
     'keydown',
     'keyup',
@@ -91,12 +91,10 @@ export class Keyboard extends Events {
   /**
    * Initializes the Keyboard with given options and activates the capture listeners
    */
-  constructor(options?: IKeyboardOptions) {
+  constructor(options?: KeyboardOptions) {
     super()
-    if (options) {
-      this.eventTarget = (options.eventTarget || this.eventTarget)
-      this.delegatedEvents = (options.events || this.delegatedEvents)
-    }
+    this.eventTarget = getOption(options, 'eventTarget', this.eventTarget)
+    this.proxiedEvents = getOption(options, 'proxyEvents', this.proxiedEvents) || []
     this.activate()
   }
 
@@ -110,11 +108,11 @@ export class Keyboard extends Events {
     this.eventTarget.addEventListener('keydown', this.onKeyDown)
     this.eventTarget.addEventListener('keyup', this.onKeyUp)
     // visibility events
-    onDocumentVisibilityChange(this.onNeedsClear)
+    documentVisibilityApi.onVisibilityChange(this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
     window.addEventListener('blur', this.onNeedsClear)
     // delegated events
-    for (let name of this.delegatedEvents) {
+    for (let name of this.proxiedEvents) {
       this.eventTarget.addEventListener(name, this.onEvent)
     }
   }
@@ -128,11 +126,11 @@ export class Keyboard extends Events {
     this.eventTarget.removeEventListener('keydown', this.onKeyDown)
     this.eventTarget.removeEventListener('keyup', this.onKeyUp)
     // visibility events
-    offDocumentVisibilityChange(this.onNeedsClear)
+    documentVisibilityApi.offVisibilityChange(this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
     window.removeEventListener('blur', this.onNeedsClear)
     // delegated events
-    for (let name of this.delegatedEvents) {
+    for (let name of this.proxiedEvents) {
       this.eventTarget.removeEventListener(name, this.onEvent)
     }
   }

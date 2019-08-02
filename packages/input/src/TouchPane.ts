@@ -1,4 +1,4 @@
-import { Events, offDocumentVisibilityChange, onDocumentVisibilityChange } from '@gglib/utils'
+import { Events, documentVisibilityApi } from '@gglib/utils'
 
 /**
  * TouchPane constructor options
@@ -91,7 +91,7 @@ export class TouchPane extends Events  {
     this.eventTarget.addEventListener('touchmove', this.onTouchMove)
     this.eventTarget.addEventListener('touchend', this.onTouchEnd)
     // visibility events
-    onDocumentVisibilityChange(this.onNeedsClear)
+    documentVisibilityApi.onVisibilityChange(this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
     window.addEventListener('blur', this.onNeedsClear)
     // delegated events
@@ -109,7 +109,7 @@ export class TouchPane extends Events  {
     this.eventTarget.removeEventListener('touchmove', this.onTouchMove)
     this.eventTarget.removeEventListener('touchend', this.onTouchEnd)
     // visibility events
-    offDocumentVisibilityChange(this.onNeedsClear)
+    documentVisibilityApi.offVisibilityChange(this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
     window.removeEventListener('blur', this.onNeedsClear)
     // delegated events

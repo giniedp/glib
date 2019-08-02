@@ -28,7 +28,7 @@ The following annotations are available
 Changes a uniforms accessor in javascript as seen above.
 
 **@default**
-Sets a default value on the uniform. Vectors must be set with an array suntax
+Sets a default value on the uniform. Vectors must be set with an array syntax
 
 ```
 // @default [1, 1, 1]

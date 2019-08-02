@@ -29,7 +29,7 @@ export class FpsComponent implements OnUpdate {
 
   public onUpdate() {
     this.frames += 1
-    this.fpsTimer += this.time.realTimeElapsedMs
+    this.fpsTimer += this.time.real.elapsedMs
     this.fpsCounter += 1
     if (this.fpsTimer >= 1000) {
       this.fps = this.fpsCounter * this.fpsTimer * 0.001
