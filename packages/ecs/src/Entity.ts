@@ -256,8 +256,18 @@ export class Entity extends Events {
       this.toInitialize.push(comp)
     }
 
+    // Inject the entity before the 'onAdded' lifecycle
+    // so during 'onAdded' the component has an entity
+    // to work with.
     this.injectEntity(comp)
+    // It is also safe to register this component as a
+    // service at this stage
     this.registerService(comp)
+    // However, we can not inject further dependencies
+    // right now since the entity/component tree might be
+    // incomplete as it might be in the 'design' state.
+    // We have to defer the dependency injection up
+    // until the 'initializeComponents' stage
 
     // Run life cycle
     if (comp.onAdded) {
@@ -290,13 +300,17 @@ export class Entity extends Events {
       this.toDraw.splice(index, 1)
     }
 
-    this.ejectServices(comp)
-    this.unregisterService(comp)
-
     // Run life cycle
     if (isRemoved && comp.onRemoved) {
       comp.onRemoved(this)
     }
+
+    // Lastly eject all automatically injected services
+    // Doing this after and not before 'onRemove'
+    // allows the component to say goodbye to its
+    // services before they are ejected
+    this.ejectServices(comp)
+    this.unregisterService(comp)
 
     return this
   }
@@ -338,39 +352,40 @@ export class Entity extends Events {
   /**
    * Calls `onUpdate` on each attached component
    *
+   * @param dt - The elapsed time since last update call
    * @param recursive - Whether to continue the update call recursively on every child
    */
-  public updateComponents(time: number, recursive: boolean = true): void {
+  public updateComponents(dt: number, recursive: boolean = true): void {
     // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.toUpdate.length; i++) {
-      this.toUpdate[i].onUpdate(time)
+      this.toUpdate[i].onUpdate(dt)
     }
     if (!recursive) {
       return
     }
     // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.children.length; i++) {
-      this.children[i].updateComponents(time, recursive)
+      this.children[i].updateComponents(dt, recursive)
     }
   }
 
   /**
    * Calls `onDraw` on each attached component
    *
-   * @param time - The current game time
+   * @param dt - The elapsed time since last draw call
    * @param recursive - Whether to continue the draw call recursively on every child
    */
-  public drawComponents(time: number, recursive: boolean = true): void {
+  public drawComponents(dt: number, recursive: boolean = true): void {
     // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.toDraw.length; i++) {
-      this.toDraw[i].onDraw(time)
+      this.toDraw[i].onDraw(dt)
     }
     if (!recursive) {
       return
     }
     // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.children.length; i++) {
-      this.children[i].drawComponents(time, recursive)
+      this.children[i].drawComponents(dt, recursive)
     }
   }
 
@@ -389,10 +404,10 @@ export class Entity extends Events {
   }
 
   /**
-   * Gets all descendant of this entity
+   * Gets all descendants of this entity
    *
-   * @param includeSelf - pass `true` to include this entity in the result set
-   * @param result - a collection where the results should be added to
+   * @param includeSelf - whether to include this entity in the result array
+   * @param result - an array where the result is written to
    */
   public descendants(includeSelf: boolean = false, result: Entity[] = []) {
     if (includeSelf) {
@@ -408,8 +423,8 @@ export class Entity extends Events {
   /**
    * Gets all siblings of this entity
    *
-   * @param includeSelf - pass `true` to include this entity in the result set
-   * @param result - a collection where the results should be added to
+   * @param includeSelf - whether to include this entity in the result array
+   * @param result - an array where the result is written to
    */
   public siblings(includeSelf: boolean = false, result: Entity[] = []) {
     if (!this.parent) {
@@ -432,7 +447,7 @@ export class Entity extends Events {
    * Taps this entity by calling the given function
    *
    * @example
-   * ```
+   * ```ts
    * return new Entity().tap((entity) => {
    *   // modify entity
    * })
