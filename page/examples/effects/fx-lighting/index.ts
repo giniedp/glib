@@ -46,7 +46,7 @@ loop((time, dt) => {
   device.resize()
   device.clear(0xff2e2620, 1)
 
-  cam.setTranslationXYZ(0, 0, 3)
+  cam.setTranslation(0, 0, 3)
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
   world.initRotationY(time / 4000)

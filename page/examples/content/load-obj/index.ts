@@ -89,9 +89,10 @@ loop((time, dt) => {
 
   // Update runtime variables
   world
-    .initTranslation(-model.boundingSphere.center.x, -model.boundingSphere.center.y, -model.boundingSphere.center.z)
+    .initScaleUniform(scale)
     .rotateY(gameTime / 4000)
-    .scaleUniform(scale)
+    .translate(-model.boundingSphere.center.x, -model.boundingSphere.center.y, -model.boundingSphere.center.z)
+
   cam.initLookAt(
     { x: 0, y: controls.offset, z: controls.distance },
     { x: 0, y: 0, z: 0 },

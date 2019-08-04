@@ -120,7 +120,7 @@ loop((time, dt) => {
     for (let j = 0; j < cols.length; j++) {
       let texture = cols[j]
 
-      world.setTranslationXYZ(
+      world.setTranslation(
         -0.5 * cols.length + j + 0.5,
         +0.5 * rows.length - i - 0.5,
         -1,

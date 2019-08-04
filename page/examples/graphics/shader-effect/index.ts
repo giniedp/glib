@@ -69,8 +69,8 @@ loop((time, dt) => {
 function draw(time: number, effect: ShaderEffect, x: number, y: number) {
   const aspect = device.drawingBufferAspectRatio
   effect.getParameter<Mat4>('world').initIdentity()
-  effect.getParameter<Mat4>('world').rotate(time / 2000, time / 4000, time / 8000)
-  effect.getParameter<Mat4>('world').setTranslationXYZ(x - (size - 1) / 2, size - y - (size + 1) / 2, -2)
+  effect.getParameter<Mat4>('world').rotateYawPitchRoll(time / 2000, time / 4000, time / 8000)
+  effect.getParameter<Mat4>('world').setTranslation(x - (size - 1) / 2, size - y - (size + 1) / 2, -2)
   effect.getParameter<Mat4>('view').initTranslation(0, 0, -2)
   effect.getParameter<Mat4>('projection').initPerspectiveFieldOfView(Math.PI / 3, aspect, 1, 10)
   effect.draw(mesh)

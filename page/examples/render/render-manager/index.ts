@@ -97,8 +97,8 @@ function updateObject(object: GameObject, time: number, dt: number) {
   if (object.type === 'ship') {
     object.world
       .initIdentity()
-      .translate(100, 0.5 * Math.sin(time / 200) - 3, 0)
       .rotateY(time / 8000)
+      .translate(100, 0.5 * Math.sin(time / 200) - 3, 0)
   }
 }
 

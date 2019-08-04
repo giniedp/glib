@@ -65,7 +65,7 @@ loop((time, dt) => {
   // rotate the rectangle, place the camera
   // and update projection with the aspect ration of the canvas
   world.initRotationY(time / 1000)
-  view.initIdentity().setTranslation(camPosition).invert()
+  view.initIdentity().setTranslationV(camPosition).invert()
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
 
   // pass variables to the shader

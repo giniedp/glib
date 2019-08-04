@@ -43,7 +43,7 @@ loop((time, dt) => {
   device.depthState = DepthState.Default
 
   // update scene state
-  world.rotate(dt / 2000, dt / 4000, dt / 8000)
+  world.rotateYawPitchRoll(dt / 2000, dt / 4000, dt / 8000)
   view.initTranslation(0, 0, -2)
   projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 0, 10)
 
