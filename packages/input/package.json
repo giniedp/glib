@@ -1,7 +1,7 @@
 {
   "name": "@gglib/input",
   "description": "Part of the [G]glib project",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,7 +18,7 @@
   "module": "./index.js",
   "typings": "./index.d.ts",
   "peerDependencies": {
-    "@gglib/utils": "0.4.0",
-    "@gglib/math": "0.4.0"
+    "@gglib/utils": "0.5.0",
+    "@gglib/math": "0.5.0"
   }
 }
