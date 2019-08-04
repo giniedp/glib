@@ -1,4 +1,4 @@
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
 
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z',
@@ -932,12 +932,12 @@ export class Vec3 implements IVec2, IVec3 {
    *
    * @returns this vector for chaining
    */
-  public transformByMat4(mat: { data: number[]|Float64Array|Float32Array }): this {
+  public transformByMat4(mat: IMat): this {
     const x = this.x
     const y = this.y
     const z = this.z
     const w = 1
-    const d = mat.data
+    const d = mat.m
     this.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
     this.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
     this.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
@@ -949,11 +949,11 @@ export class Vec3 implements IVec2, IVec3 {
    *
    * @returns this vector for chaining
    */
-  public transformByMat3(mat: { data: number[]|Float64Array|Float32Array }): this {
+  public transformByMat3(mat: IMat): this {
     const x = this.x
     const y = this.y
     const z = this.z
-    const d = mat.data
+    const d = mat.m
     this.x = x * d[0] + y * d[3] + z * d[6]
     this.y = x * d[1] + y * d[4] + z * d[7]
     this.z = x * d[2] + y * d[5] + z * d[8]
@@ -965,10 +965,10 @@ export class Vec3 implements IVec2, IVec3 {
    *
    * @returns this vector for chaining
    */
-  public transformByMat2(mat: { data: number[]|Float64Array|Float32Array }): this {
+  public transformByMat2(mat: IMat): this {
     const x = this.x
     const y = this.y
-    const d = mat.data
+    const d = mat.m
     this.x = x * d[0] + y * d[2]
     this.y = x * d[1] + y * d[3]
     return this

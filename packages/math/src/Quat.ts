@@ -2,7 +2,6 @@ import { Mat4 } from './Mat4'
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
-const keys = ['x', 'y', 'z', 'w']
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z', 3: 'w',
   x: 'x', y: 'y', z: 'z', w: 'w',
@@ -81,14 +80,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, value: number): Quat {
+  public set(key: 0 | 1 | 2 | 3 | 'x' | 'y' | 'z' | 'w', value: number): Quat {
     this[keyLookup[key]] = value
     return this
   }
   /**
    * Gets the component by using an index (or name)
    */
-  public get(key: number|string): number {
+  public get(key: 0 | 1 | 2 | 3 | 'x' | 'y' | 'z' | 'w'): number {
     return this[keyLookup[key]]
   }
 
@@ -174,9 +173,26 @@ export class Quat implements IVec2, IVec3, IVec4 {
     return this
   }
 
+  /**
+   * Creates a new quaternion by taking the components from the given quaternion or vector.
+   *
+   * @returns a new quaternion
+   */
+  public static createFrom(other: IVec4): Quat {
+    return new Quat(
+      other.x,
+      other.y,
+      other.z,
+      other.w,
+    )
+  }
+
+  /**
+   * Initializes this quaternion by extracting rotation from matrix
+   */
   public initFromMatrix(m: Mat4): this {
     // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
-    const a = m.data
+    const a = m.m
     const m00 = a[0]
     const m01 = a[4]
     const m02 = a[8]
@@ -228,21 +244,15 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Creates a new quaternion by taking the components from the given quaternion or vector.
-   *
-   * @returns a new quaternion
+   * Creates a new quaternion by extracting rotation from matrix
    */
-  public static createFrom(other: IVec4): Quat {
-    return new Quat(
-      other.x,
-      other.y,
-      other.z,
-      other.w,
-    )
+  public static createFromMatrix(m: Mat4): Quat {
+    return new Quat().initFromMatrix(m)
   }
 
   /**
    * Initializes the components of this quaternion by taking values from the given array in successive order.
+   *
    * @param buffer - The array to read from
    * @param offset - The zero based index at which start reading the values
    * @returns Reference to `this` for chaining.
@@ -257,6 +267,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a new quaternion by taking values from the given array in successive order.
+   *
    * @param buffer - The array to read from
    * @param offset - The zero based index at which start reading the values
    * @returns Reference to `this` for chaining.
@@ -272,8 +283,9 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the quaternion from axis and an angle.
+   *
    * @param axis - The axis as vector
-   * @param angle - The angle in degrees
+   * @param angle - The angle in radians
    * @returns Reference to `this` for chaining.
    */
   public initAxisAngle(axis: IVec3, angle: number): Quat {
@@ -288,8 +300,9 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a new quaternion from given axis vector and an angle
+   *
    * @param axis - The axis vector
-   * @param angle - The angle in degree
+   * @param angle - The angle in radians
    * @returns A new quaternion
    */
   public static createAxisAngle(axis: IVec3, angle: number): Quat {
@@ -298,6 +311,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Initializes the quaternion from yaw pitch and roll angles.
+   *
    * @param yaw - The yaw angle in radians
    * @param pitch - The pitch angle in radians
    * @param roll - The roll angle in radians
@@ -325,6 +339,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a new quaternion from given `yaw` `pitch` and `roll` angles
+   *
    * @param yaw - The yaw angle in radians
    * @param pitch - The pitch angle in radians
    * @param roll - The roll angle in radians
@@ -336,6 +351,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a copy of this quaternion
+   *
    * @returns The cloned quaternion
    */
   public clone<T extends IVec4 = Quat>(out?: T|Quat): T|Quat {
@@ -350,7 +366,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
   /**
    * Copies the source vector to the destination vector
    *
-   *
    * @returns the destination vector.
    */
   public static clone<T extends IVec4 = Quat>(src: IVec4, dst?: T|IVec4): T {
@@ -364,6 +379,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the components successively into the given array.
+   *
    * @param array - The array to copy into
    * @param offset - Zero based index where to start writing in the array
    * @returns Reference to `this` for chaining.
@@ -398,6 +414,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Checks for component wise equality with given quaternion
+   *
    * @param other - The quaternion to compare with
    * @returns true if components are equal, false otherwise
    */
@@ -407,6 +424,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Checks for component wise equality with given quaternion
+   *
    * @param q1 - First value to compare with
    * @param q2 - Second value to compare with
    * @returns true if components are equal, false otherwise
@@ -417,6 +435,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the length of this quaternion
+   *
    * @returns The length.
    */
   public length(): number {
@@ -429,6 +448,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the length of a quaternion
+   *
    * @returns The length.
    */
   public static len(q: IVec4): number {
@@ -441,6 +461,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the squared length of this quaternion
+   *
    * @returns The squared length.
    */
   public lengthSquared(): number {
@@ -453,6 +474,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
 
   /**
    * Calculates the squared length of a quaternion
+   *
    * @returns The squared length.
    */
   public static lengthSquared(q: IVec4): number {

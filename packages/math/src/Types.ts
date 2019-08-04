@@ -37,7 +37,7 @@ export interface IPoint {
 }
 
 /**
- * An object havin a width and a height.
+ * An object having width and height properties.
  *
  * @public
  */
@@ -60,7 +60,7 @@ export interface IRect extends IPoint, ISize {
  * @public
  */
 export interface IMat {
-  data: Float32Array
+  m: ArrayLike<number>
 }
 
 /**
@@ -72,3 +72,30 @@ export interface ArrayLike<T> {
   length: number
   [n: number]: T
 }
+
+/**
+ * @public
+ */
+export type Mat4Data = [
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number
+] | Float32Array | Float64Array
+
+/**
+ * @public
+ */
+export type Mat3Data = [
+  number, number, number,
+  number, number, number,
+  number, number, number,
+] | Float32Array | Float64Array
+
+/**
+ * @public
+ */
+export type Mat2Data = [
+  number, number,
+  number, number,
+] | Float32Array | Float64Array

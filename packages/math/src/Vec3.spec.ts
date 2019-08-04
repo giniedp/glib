@@ -367,11 +367,11 @@ describe('Vec3', () => {
       c = new Vec3(5, 12, 21)
     })
     describe('#multiply', () => {
-      it ('multiplys', () => expectEquality(a.multiply(b), c))
+      it ('multiplies', () => expectEquality(a.multiply(b), c))
       it ('returns instance', () => expect(a.multiply(b)).toBe(a))
     })
     describe('.multiply', () => {
-      it ('multiplys', () => expectEquality(Vec3.multiply(a, b), c))
+      it ('multiplies', () => expectEquality(Vec3.multiply(a, b), c))
       it ('returns new instance', () => {
         let res = Vec3.multiply(a, b)
         expect(res).not.toBe(a)
@@ -380,7 +380,7 @@ describe('Vec3', () => {
       it ('returns given instance', () => expect(Vec3.multiply(a, b, d)).toBe(d))
     })
     describe('#multiplyScalar', () => {
-      it ('multiplys', () => {
+      it ('multiplies', () => {
         a = new Vec3(1, 2, 3)
         c = a.multiplyScalar(0.5)
         expectComponents(c, 0.5, 1, 1.5)
@@ -417,7 +417,7 @@ describe('Vec3', () => {
       })
     })
     describe('#multiplyAdd', () => {
-      it ('multiplys', () => {
+      it ('multiplies', () => {
         a = new Vec3(1, 2, 3)
         b = new Vec3(5, 6, 7)
         c = new Vec3(9, 10, 11)
@@ -427,7 +427,7 @@ describe('Vec3', () => {
       })
     })
     describe('.multiplyAdd', () => {
-      it ('multiplys', () => {
+      it ('multiplies', () => {
         a = new Vec3(1, 2, 3)
         b = new Vec3(5, 6, 7)
         c = new Vec3(9, 10, 11)
@@ -594,17 +594,17 @@ describe('Vec3', () => {
 
   describe('#transformByMat4', () => {
     it ('transforms by Mat4', () => {
-      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
-      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
-      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngleV({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngleV({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat4(Mat4.createAxisAngleV({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
     })
   })
 
   describe('#transformByMat3', () => {
     it ('transforms by Mat3', () => {
-      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
-      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
-      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngleV({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngleV({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1)
+      expectComponents(Vec3.create(1, 1, 1).transformByMat3(Mat3.createAxisAngleV({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1)
     })
   })
 

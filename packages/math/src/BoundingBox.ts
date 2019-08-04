@@ -57,7 +57,7 @@ export class BoundingBox {
   }
 
   /**
-   * Initialises the instance {@link BoundingBox}
+   * Initializes the instance {@link BoundingBox}
    *
    * @param minX - x component of the minimum point
    * @param minY - y component of the minimum point

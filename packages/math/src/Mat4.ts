@@ -1,19 +1,15 @@
-import { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
+// https://www.opengl.org/archives/resources/faq/technical/transformations.htm
+// http://duckmaestro.com/2013/08/17/matrices-are-not-transforms/
+
+import { ArrayLike, IMat, IVec2, IVec3, IVec4, Mat4Data } from './Types'
 import { Vec3 } from './Vec3'
 
-// column major matrix layout
-
-// translation matrix
-// 1 0 0 x
-// 0 1 0 y
-// 0 0 1 z
-// 0 0 0 1
-
-// index layout
-// 0 4 8  12
-// 1 5 9  13
-// 2 6 10 14
-// 3 7 11 15
+const enum M {
+ _00 = 0, _10 = 4, _20 = 8, _30 = 12,
+ _01 = 1, _11 = 5, _21 = 9, _31 = 13,
+ _02 = 2, _12 = 6, _22 = 10, _32 = 14,
+ _03 = 3, _13 = 7, _23 = 11, _33 = 15,
+}
 
 /* missing function
   Decompose
@@ -23,192 +19,621 @@ import { Vec3 } from './Vec3'
   CreateConstrainedBillboard
   */
 
-let helper: Mat4
-
-function tempMat() {
-  helper = helper || new Mat4()
-  return helper
-}
-
 /**
- * @public
- */
-export type Mat4Data = [
-  number, number, number, number,
-  number, number, number, number,
-  number, number, number, number,
-  number, number, number, number
-] | Float32Array
-
-/**
- * A 4x4 matrix.
+ * A 4x4 matrix using column major layout
  *
  * @public
+ * @remarks
+ * The matrix stores its values in a typed `Float32Array` array.
+ * The elements are laid out in column major order meaning that
+ * elements of each base vector reside next to each other.
+ *
+ * For example, having a translation matrix in standard notation
+ * where `x`, `y` and `z` are elements of the translation vector
+ *
+ * ```txt
+ * 1 0 0 x
+ * 0 1 0 y
+ * 0 0 1 z
+ * 0 0 0 1
+ * ```
+ * the index layout would be
+ * ```txt
+ * 0 4 8  12
+ * 1 5 9  13
+ * 2 6 10 14
+ * 3 7 11 15
+ * ```
  */
 export class Mat4 {
 
-  public readonly data: Float32Array
-  public readonly right: Float32Array
-  public readonly up: Float32Array
-  public readonly backward: Float32Array
-  public readonly translation: Float32Array
+  /**
+   * The matrix data array
+   */
+  public readonly m: Float32Array | Float64Array
+
+  /**
+   * Gets and sets value at column 0 row 0
+   */
+  public get m00() {
+    return this.m[M._00]
+  }
+  public set m00(v: number) {
+    this.m[M._00] = v
+  }
+
+  /**
+   * Gets and sets value at column 0 row 1
+   */
+  public get m01() {
+    return this.m[M._01]
+  }
+  public set m01(v: number) {
+    this.m[M._01] = v
+  }
+
+  /**
+   * Gets and sets value at column 0 row 2
+   */
+  public get m02() {
+    return this.m[M._02]
+  }
+  public set m02(v: number) {
+    this.m[M._02] = v
+  }
+
+  /**
+   * Gets and sets value at column 0 row 3
+   */
+  public get m03() {
+    return this.m[M._03]
+  }
+  public set m03(v: number) {
+    this.m[M._03] = v
+  }
+
+  /**
+   * Gets and sets value at column 1 row 0
+   */
+  public get m10() {
+    return this.m[M._10]
+  }
+  public set m10(v: number) {
+    this.m[M._10] = v
+  }
+
+  /**
+   * Gets and sets value at column 1 row 1
+   */
+  public get m11() {
+    return this.m[M._11]
+  }
+  public set m11(v: number) {
+    this.m[M._11] = v
+  }
+
+  /**
+   * Gets and sets value at column 1 row 2
+   */
+  public get m12() {
+    return this.m[M._12]
+  }
+  public set m12(v: number) {
+    this.m[M._12] = v
+  }
+
+  /**
+   * Gets and sets value at column 1 row 3
+   */
+  public get m13() {
+    return this.m[M._13]
+  }
+  public set m13(v: number) {
+    this.m[M._13] = v
+  }
+
+  /**
+   * Gets and sets value at column 2 row 0
+   */
+  public get m20() {
+    return this.m[M._20]
+  }
+  public set m20(v: number) {
+    this.m[M._20] = v
+  }
+
+  /**
+   * Gets and sets value at column 2 row 1
+   */
+  public get m21() {
+    return this.m[M._21]
+  }
+  public set m21(v: number) {
+    this.m[M._21] = v
+  }
+
+  /**
+   * Gets and sets value at column 2 row 2
+   */
+  public get m22() {
+    return this.m[M._22]
+  }
+  public set m22(v: number) {
+    this.m[M._22] = v
+  }
+
+  /**
+   * Gets and sets value at column 2 row 3
+   */
+  public get m23() {
+    return this.m[M._23]
+  }
+  public set m23(v: number) {
+    this.m[M._23] = v
+  }
+
+  /**
+   * Gets and sets value at column 3 row 0
+   */
+  public get m30() {
+    return this.m[M._30]
+  }
+  public set m30(v: number) {
+    this.m[M._30] = v
+  }
+
+  /**
+   * Gets and sets value at column 3 row 1
+   */
+  public get m31() {
+    return this.m[M._31]
+  }
+  public set m31(v: number) {
+    this.m[M._31] = v
+  }
+
+  /**
+   * Gets and sets value at column 3 row 2
+   */
+  public get m32() {
+    return this.m[M._32]
+  }
+  public set m32(v: number) {
+    this.m[M._32] = v
+  }
+
+  /**
+   * Gets and sets value at column 3 row 3
+   */
+  public get m33() {
+    return this.m[M._33]
+  }
+  public set m33(v: number) {
+    this.m[M._33] = v
+  }
 
   /**
    * Constructs a new instance of {@link Mat4}
    *
-   * @param data - the data to initialise with
+   * @param m - the data to initialize with
    */
-  constructor(data?: Float32Array | Mat4Data) {
-    if (data instanceof Float32Array) {
-      this.data = data
-    } else if (data) {
-      this.data = new Float32Array(data)
+  constructor(m?: Mat4Data) {
+    if (Array.isArray(m)) {
+      this.m = new Float32Array(m)
     } else {
-      this.data = new Float32Array(16)
+      this.m = m || new Float32Array(16)
     }
-    this.right = this.data.subarray(0, 3)
-    this.up = this.data.subarray(4, 7)
-    this.backward = this.data.subarray(8, 11)
-    this.translation = this.data.subarray(12, 15)
   }
 
   /**
-   * Initializes the matrix with the given values in given order. The values are applied in column major order
-   *
-   * @returns Reference to `this` for chaining.
+   * Gets the forward direction as a new vector
    */
-  public init(
-    m0: number, m1: number, m2: number, m3: number,
-    m4: number, m5: number, m6: number, m7: number,
-    m8: number, m9: number, m10: number, m11: number,
-    m12: number, m13: number, m14: number, m15: number,
-  ): Mat4 {
-    const d = this.data
-    d[0] = m0
-    d[1] = m1
-    d[2] = m2
-    d[3] = m3
-    d[4] = m4
-    d[5] = m5
-    d[6] = m6
-    d[7] = m7
-    d[8] = m8
-    d[9] = m9
-    d[10] = m10
-    d[11] = m11
-    d[12] = m12
-    d[13] = m13
-    d[14] = m14
-    d[15] = m15
+  public getForward(): Vec3
+  /**
+   * Gets the forward direction into an existing vector
+   */
+  public getForward<T>(out?: T): T & IVec3
+  public getForward(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = -this.m[M._20]
+    out.y = -this.m[M._21]
+    out.z = -this.m[M._22]
+    return out
+  }
+
+  /**
+   * Sets the forward vector
+   */
+  public setForward(vec: IVec3): this {
+    this.m[M._20] = -vec.x
+    this.m[M._21] = -vec.y
+    this.m[M._22] = -vec.z
     return this
   }
 
   /**
-   * Creates a new matrix. This method should be called with 16 or 0 arguments. If less than 16 but more than 0 arguments
-   * are given some components are going to be undefined. The arguments are expected to be in column major order.
-   * @returns a new matrix
+   * Gets the backward direction as a new vector
+   */
+  public getBackward(): Vec3
+  /**
+   * Gets the backward direction into an existing vector
+   */
+  public getBackward<T>(out?: T): T & IVec3
+  public getBackward(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = this.m[M._20]
+    out.y = this.m[M._21]
+    out.z = this.m[M._22]
+    return out
+  }
+
+  /**
+   * Sets the backward vector
+   */
+  public setBackward(vec: IVec3): this {
+    this.m[M._20] = vec.x
+    this.m[M._21] = vec.y
+    this.m[M._22] = vec.z
+    return this
+  }
+
+  /**
+   * Gets the right direction as a new vector
+   */
+  public getRight(): Vec3
+  /**
+   * Gets the right direction into an existing vector
+   */
+  public getRight<T>(out?: T): T & IVec3
+  public getRight(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = this.m[M._00]
+    out.y = this.m[M._01]
+    out.z = this.m[M._02]
+    return out
+  }
+
+  /**
+   * Sets the right vector
+   */
+  public setRight(vec: IVec3): this {
+    this.m[M._00] = vec.x
+    this.m[M._01] = vec.y
+    this.m[M._02] = vec.z
+    return this
+  }
+
+  /**
+   * Gets the left direction as a new vector
+   */
+  public getLeft(): Vec3
+  /**
+   * Gets the left direction into an existing vector
+   */
+  public getLeft<T>(out?: T): T & IVec3
+  public getLeft(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = -this.m[M._00]
+    out.y = -this.m[M._01]
+    out.z = -this.m[M._02]
+    return out
+  }
+
+  /**
+   * Sets the left vector
+   */
+  public setLeft(vec: IVec3): this {
+    this.m[M._00] = -vec.x
+    this.m[M._01] = -vec.y
+    this.m[M._02] = -vec.z
+    return this
+  }
+
+  /**
+   * Gets the up direction as a new vector
+   */
+  public getUp(): Vec3
+  /**
+   * Gets the up direction into an existing vector
+   */
+  public getUp<T>(out?: T): T & IVec3
+  public getUp(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = this.m[M._10]
+    out.y = this.m[M._11]
+    out.z = this.m[M._12]
+    return out
+  }
+
+  /**
+   * Sets the up vector
+   * @param vec - The vector to take values from
+   */
+  public setUp(vec: IVec3): this {
+    this.m[M._10] = vec.x
+    this.m[M._11] = vec.y
+    this.m[M._12] = vec.z
+    return this
+  }
+
+  /**
+   * Gets the down direction as a new vector
+   */
+  public getDown(): Vec3
+  /**
+   * Gets the down direction into an existing vector
+   */
+  public getDown<T>(out?: T): T & IVec3
+  public getDown(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = -this.m[M._10]
+    out.y = -this.m[M._11]
+    out.z = -this.m[M._12]
+    return out
+  }
+
+  /**
+   * Sets the down vector
+   */
+  public setDown(vec: IVec3): this {
+    this.m[M._10] = -vec.x
+    this.m[M._11] = -vec.y
+    this.m[M._12] = -vec.z
+    return this
+  }
+
+  /**
+   * Gets the scale part as a new vector
+   */
+  public getScale(): Vec3
+  /**
+   * Gets the scale part into an existing vector
+   */
+  public getScale<T>(out?: T): T & IVec3
+  public getScale(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = this.m[M._00]
+    out.y = this.m[M._11]
+    out.z = this.m[M._22]
+    return out
+  }
+
+  /**
+   * Sets the scale part
+   */
+  public setScale(vec: IVec3): this {
+    this.m[M._00] = vec.x
+    this.m[M._11] = vec.y
+    this.m[M._22] = vec.z
+    return this
+  }
+
+  /**
+   * Gets the translation direction as a new vector
+   */
+  public getTranslation(): Vec3
+  /**
+   * Gets the translation direction into an existing vector
+   */
+  public getTranslation<T>(out?: T): T & IVec3
+  public getTranslation(out?: Vec3): Vec3 {
+    out = out || new Vec3()
+    out.x = this.m[M._30]
+    out.y = this.m[M._31]
+    out.z = this.m[M._32]
+    return out
+  }
+
+  /**
+   * Sets the translation part
+   */
+  public setTranslation(x: number, y: number, z: number): this {
+    this.m[M._30] = x
+    this.m[M._31] = y
+    this.m[M._32] = z
+    return this
+  }
+
+  /**
+   * Sets the translation part from vector
+   */
+  public setTranslationV(vec: IVec3): this {
+    this.m[M._30] = vec.x
+    this.m[M._31] = vec.y
+    this.m[M._32] = vec.z
+    return this
+  }
+
+  /**
+   * Sets the x component of the translation part
+   */
+  public setTranslationX(value: number): this {
+    this.m[M._30] = value
+    return this
+  }
+
+  /**
+   * Sets the y component of the translation part
+   */
+  public setTranslationY(value: number): this {
+    this.m[M._31] = value
+    return this
+  }
+
+  /**
+   * Sets the z component of the translation part
+   */
+  public setTranslationZ(value: number): this {
+    this.m[M._32] = value
+    return this
+  }
+
+  /**
+   * Creates a matrix by reading the arguments in column major order
    */
   public static create(
-    m0: number, m1: number, m2: number, m3: number,
-    m4: number, m5: number, m6: number, m7: number,
-    m8: number, m9: number, m10: number, m11: number,
-    m12: number, m13: number, m14: number, m15: number,
+    m00: number, m01: number, m02: number, m03: number,
+    m10: number, m11: number, m12: number, m13: number,
+    m20: number, m21: number, m22: number, m23: number,
+    m30: number, m31: number, m32: number, m33: number,
   ): Mat4 {
     const out = new Mat4()
-    const d = out.data
-    // tslint:disable
-    d[ 0] = m0;  d[ 1] = m1;  d[ 2] = m2;  d[ 3] = m3;
-    d[ 4] = m4;  d[ 5] = m5;  d[ 6] = m6;  d[ 7] = m7;
-    d[ 8] = m8;  d[ 9] = m9;  d[10] = m10; d[11] = m11;
-    d[12] = m12; d[13] = m13; d[14] = m14; d[15] = m15;
-    // tslint:enable
+    const m = out.m
+    m[M._00] = m00
+    m[M._01] = m01
+    m[M._02] = m02
+    m[M._03] = m03
+
+    m[M._10] = m10
+    m[M._11] = m11
+    m[M._12] = m12
+    m[M._13] = m13
+
+    m[M._20] = m20
+    m[M._21] = m21
+    m[M._22] = m22
+    m[M._23] = m23
+
+    m[M._30] = m30
+    m[M._31] = m31
+    m[M._32] = m32
+    m[M._33] = m33
     return out
   }
 
   /**
-   * Initializes the matrix with the given values. The values are read in row major order.
-   * @returns Reference to `this` for chaining.
+   * Initializes the matrix by reading the arguments in column major order
    */
-  public initRowMajor(
-    m0: number, m4: number, m8: number, m12: number,
-    m1: number, m5: number, m9: number, m13: number,
-    m2: number, m6: number, m10: number, m14: number,
-    m3: number, m7: number, m11: number, m15: number,
-  ): Mat4 {
-    const d = this.data
-    d[0] = m0
-    d[1] = m1
-    d[2] = m2
-    d[3] = m3
-    d[4] = m4
-    d[5] = m5
-    d[6] = m6
-    d[7] = m7
-    d[8] = m8
-    d[9] = m9
-    d[10] = m10
-    d[11] = m11
-    d[12] = m12
-    d[13] = m13
-    d[14] = m14
-    d[15] = m15
+  public init(
+    m00: number, m01: number, m02: number, m03: number,
+    m10: number, m11: number, m12: number, m13: number,
+    m20: number, m21: number, m22: number, m23: number,
+    m30: number, m31: number, m32: number, m33: number,
+  ): this {
+    const m = this.m
+    m[M._00] = m00
+    m[M._01] = m01
+    m[M._02] = m02
+    m[M._03] = m03
+
+    m[M._10] = m10
+    m[M._11] = m11
+    m[M._12] = m12
+    m[M._13] = m13
+
+    m[M._20] = m20
+    m[M._21] = m21
+    m[M._22] = m22
+    m[M._23] = m23
+
+    m[M._30] = m30
+    m[M._31] = m31
+    m[M._32] = m32
+    m[M._33] = m33
     return this
   }
 
   /**
-   * Creates a new matrix. The arguments are expected to be in row major order.
-   * @returns a new matrix
+   * Creates a matrix by reading the arguments in row major order
+   *
+   * @remarks
+   * The storage layout of the matrix does not change and keeps being
+   * column major. Solely the given arguments are scanned in row major
+   * order
    */
   public static createRowMajor(
-    m0: number, m4: number, m8: number, m12: number,
-    m1: number, m5: number, m9: number, m13: number,
-    m2: number, m6: number, m10: number, m14: number,
-    m3: number, m7: number, m11: number, m15: number,
+    m00: number, m10: number, m20: number, m30: number,
+    m01: number, m11: number, m21: number, m31: number,
+    m02: number, m12: number, m22: number, m32: number,
+    m03: number, m13: number, m23: number, m33: number,
   ): Mat4 {
     const out = new Mat4()
-    const d = out.data
-    // tslint:disable
-    d[ 0] = m0;  d[ 1] = m1;  d[ 2] = m2;  d[ 3] = m3;
-    d[ 4] = m4;  d[ 5] = m5;  d[ 6] = m6;  d[ 7] = m7;
-    d[ 8] = m8;  d[ 9] = m9;  d[10] = m10; d[11] = m11;
-    d[12] = m12; d[13] = m13; d[14] = m14; d[15] = m15;
-    // tslint:enable
+    const m = out.m
+    m[M._00] = m00
+    m[M._01] = m01
+    m[M._02] = m02
+    m[M._03] = m03
+
+    m[M._10] = m10
+    m[M._11] = m11
+    m[M._12] = m12
+    m[M._13] = m13
+
+    m[M._20] = m20
+    m[M._21] = m21
+    m[M._22] = m22
+    m[M._23] = m23
+
+    m[M._30] = m30
+    m[M._31] = m31
+    m[M._32] = m32
+    m[M._33] = m33
     return out
   }
 
   /**
-   * Initializes all components of this matrix with the given number.
-   * @param number - The number to set all matrix components to.
-   * @returns Reference to `this` for chaining.
+   * Initializes the matrix by reading the arguments in row major order
+   *
+   * @remarks
+   * The storage layout of the matrix does not change and keeps being
+   * column major. Solely the given arguments are scanned in row major
+   * order
    */
-  public initWith(value: number): Mat4 {
-    const d = this.data
-    d[0] = d[1] = d[2] = d[3] = d[4] = d[5] = d[6] = d[7] = d[8] = d[9] = d[10] = d[11] = d[12] = d[13] = d[14] = d[15] = value
+  public initRowMajor(
+    m00: number, m10: number, m20: number, m30: number,
+    m01: number, m11: number, m21: number, m31: number,
+    m02: number, m12: number, m22: number, m32: number,
+    m03: number, m13: number, m23: number, m33: number,
+  ): this {
+    const m = this.m
+    m[M._00] = m00
+    m[M._01] = m01
+    m[M._02] = m02
+    m[M._03] = m03
+
+    m[M._10] = m10
+    m[M._11] = m11
+    m[M._12] = m12
+    m[M._13] = m13
+
+    m[M._20] = m20
+    m[M._21] = m21
+    m[M._22] = m22
+    m[M._23] = m23
+
+    m[M._30] = m30
+    m[M._31] = m31
+    m[M._32] = m32
+    m[M._33] = m33
     return this
   }
 
   /**
-   * Initializes all components of this matrix with the given number.
+   * Crates a matrix with all components initialized to given value
+   *
    * @param number - The number to set all matrix components to.
-   * @returns Reference to `this` for chaining.
    */
   public static createWith(value: number): Mat4 {
     return new Mat4().initWith(value)
   }
 
   /**
-   * Initializes the components of this matrix to the identity.
-   * @returns Reference to `this` for chaining.
+   * Initializes all components with given value
+   *
+   * @param number - The number to set all matrix components to.
    */
-  public initIdentity(): Mat4 {
-    const d = this.data
-    d[0] = d[5] = d[10] = d[15] = 1
-    d[1] = d[2] = d[3] = d[4] = d[6] = d[7] = d[8] = d[9] = d[11] = d[12] = d[13] = d[14] = 0
+  public initWith(value: number): this {
+    const m = this.m
+    m[M._00] = value; m[M._10] = value; m[M._20] = value; m[M._30] = value
+    m[M._01] = value; m[M._11] = value; m[M._21] = value; m[M._31] = value
+    m[M._02] = value; m[M._12] = value; m[M._22] = value; m[M._32] = value
+    m[M._03] = value; m[M._13] = value; m[M._23] = value; m[M._33] = value
     return this
   }
 
   /**
    * Creates a new matrix that is initialized to identity
+   *
    * @returns a new matrix
    */
   public static createIdentity(): Mat4 {
@@ -216,32 +641,49 @@ export class Mat4 {
   }
 
   /**
-   * Initializes the components of this matrix to 0.
-   * @returns Reference to `this` for chaining.
+   * Initializes the components of this matrix to the identity.
    */
-  public initZero(): Mat4 {
-    const d = this.data
-    d[0] = d[5] = d[10] = d[15] = 0
-    d[1] = d[2] = d[3] = d[4] = d[6] = d[7] = d[8] = d[9] = d[11] = d[12] = d[13] = d[14] = 0
+  public initIdentity(): this {
+    const m = this.m
+    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = 0
+    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = 0
+    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = 0
+    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
     return this
   }
 
   /**
    * Creates a new matrix with all components set to 0
-   * @returns a new matrix
    */
   public static createZero(): Mat4 {
     return new Mat4()
   }
 
   /**
-   * Initializes this matrix from another matrix.
-   *
-   * @returns Reference to `this` for chaining.
+   * Initializes the components of this matrix to 0.
    */
-  public initFrom(other: Mat4): Mat4 {
-    const a = this.data
-    const b = other.data
+  public initZero(): this {
+    const m = this.m
+    m[M._00] = 0; m[M._10] = 0; m[M._20] = 0; m[M._30] = 0
+    m[M._01] = 0; m[M._11] = 0; m[M._21] = 0; m[M._31] = 0
+    m[M._02] = 0; m[M._12] = 0; m[M._22] = 0; m[M._32] = 0
+    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 0
+    return this
+  }
+
+  /**
+   * Creates a new matrix from another.
+   */
+  public static createFrom(other: Mat4): Mat4 {
+    return new Mat4().initFrom(other)
+  }
+
+  /**
+   * Initializes this matrix from another matrix.
+   */
+  public initFrom(other: Mat4): this {
+    const a = this.m
+    const b = other.m
     a[0] = b[0]
     a[1] = b[1]
     a[2] = b[2]
@@ -262,66 +704,134 @@ export class Mat4 {
   }
 
   /**
-   * Initializes this matrix from another matrix.
-   *
-   * @returns new Matrix
+   * Reads an array starting at given offset and initializes the elements of this matrix.
    */
-  public static createFrom(other: Mat4): Mat4 {
-    return new Mat4().initFrom(other)
+  public static createFromArray(array: ArrayLike<number>, offset?: number): Mat4 {
+    return new Mat4().initFromArray(array, offset)
   }
 
   /**
-   * Reads a buffer starting at given offset and initializes the elements of this matrix.
-   * The given buffer must have at least 16 elements starting at given offset.
-   * The elements are expected to be in column major layout.
-   *
-   *
-   * @returns Reference to `this` for chaining.
+   * Reads an array starting at given offset and creates a new matrix.
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset?: number): Mat4 {
+  public initFromArray(array: ArrayLike<number>, offset?: number): this {
     offset = offset || 0
-    const a = this.data
-    a[0] = buffer[offset]
-    a[1] = buffer[offset + 1]
-    a[2] = buffer[offset + 2]
-    a[3] = buffer[offset + 3]
-    a[4] = buffer[offset + 4]
-    a[5] = buffer[offset + 5]
-    a[6] = buffer[offset + 6]
-    a[7] = buffer[offset + 7]
-    a[8] = buffer[offset + 8]
-    a[9] = buffer[offset + 9]
-    a[10] = buffer[offset + 10]
-    a[11] = buffer[offset + 11]
-    a[12] = buffer[offset + 12]
-    a[13] = buffer[offset + 13]
-    a[14] = buffer[offset + 14]
-    a[15] = buffer[offset + 15]
+    const a = this.m
+    a[0] = array[offset]
+    a[1] = array[offset + 1]
+    a[2] = array[offset + 2]
+    a[3] = array[offset + 3]
+    a[4] = array[offset + 4]
+    a[5] = array[offset + 5]
+    a[6] = array[offset + 6]
+    a[7] = array[offset + 7]
+    a[8] = array[offset + 8]
+    a[9] = array[offset + 9]
+    a[10] = array[offset + 10]
+    a[11] = array[offset + 11]
+    a[12] = array[offset + 12]
+    a[13] = array[offset + 13]
+    a[14] = array[offset + 14]
+    a[15] = array[offset + 15]
     return this
   }
 
   /**
-   * Reads a buffer starting at given offset and initializes the elements of this matrix.
-   * The given buffer must have at least 16 elements starting at given offset.
-   * The elements are expected to be in column major layout.
+   * Creates a matrix from given quaternion.
    *
-   *
-   * @returns new Matrix
+   * @param q - The quaternion
    */
-  public static createFromBuffer(buffer: ArrayLike<number>, offset?: number): Mat4 {
-    return new Mat4().initFromBuffer(buffer, offset)
+  public static createFromQuat(q: IVec4): Mat4 {
+    return new Mat4().initFromQuaternion(q.x, q.y, q.z, q.w)
   }
 
   /**
    * Initializes this matrix from given quaternion.
+   *
    * @param q - The quaternion
-   * @returns Reference to `this` for chaining.
    */
-  public initFromQuaternion(q: IVec4): Mat4 {
-    const x = q.x
-    const y = q.y
-    const z = q.z
-    const w = q.w
+  public initFromQuat(q: IVec4): this {
+    return this.initFromQuaternion(q.x, q.y, q.z, q.w)
+  }
+
+  /**
+   * Creates a matrix from given quaternion parameters
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public static createFromQuaternion(x: number, y: number, z: number, w: number): Mat4 {
+    return new Mat4().initFromQuaternion(x, y, z, w)
+  }
+
+  /**
+   * Initializes this matrix from given quaternion parameters
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public initFromQuaternion(x: number, y: number, z: number, w: number): this {
+    const xx = x * x
+    const xy = x * y
+    const xz = x * z
+    const xw = x * w
+
+    const yy = y * y
+    const yz = y * z
+    const yw = y * w
+
+    const zz = z * z
+    const zw = z * w
+
+    const m = this.m
+    m[M._00] = 1 - 2 * (yy + zz)
+    m[M._01] =     2 * (xy + zw)
+    m[M._02] =     2 * (xz - yw)
+    m[M._03] = 0
+
+    m[M._10] =     2 * (xy - zw)
+    m[M._11] = 1 - 2 * (zz + xx)
+    m[M._12] =     2 * (yz + xw)
+    m[M._13] = 0
+
+    m[M._20] =     2 * (xz + yw)
+    m[M._21] =     2 * (yz - xw)
+    m[M._22] = 1 - 2 * (yy + xx)
+    m[M._23] = 0
+
+    m[M._30] = 0
+    m[M._31] = 0
+    m[M._32] = 0
+    m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Rotates this matrix by a quaternion
+   *
+   * @param q - The rotation quaternion
+   */
+  public rotateQuat(q: IVec4): this {
+    return this.rotateQuaternion(q.x, q.y, q.z, q.w)
+  }
+
+  /**
+   * Rotates this matrix by a quaternion
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public rotateQuaternion(x: number, y: number, z: number, w: number): this {
+    // matrix from quaternion
     const xx = x * x
     const yy = y * y
     const zz = z * z
@@ -331,36 +841,169 @@ export class Mat4 {
     const yw = y * w
     const yz = y * z
     const xw = x * w
-    return this.initRowMajor(
-      1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (zx + yw), 0,
-      2 * (xy + zw), 1 - 2 * (zz + xx), 2 * (yz - xw), 0,
-      2 * (zx - yw), 2 * (yz + xw), 1 - 2 * (yy + xx), 0,
-      0, 0, 0, 1,
-    )
+
+    const r00 = 1 - 2 * (yy + zz)
+    const r01 = 2 * (xy + zw)
+    const r02 = 2 * (zx - yw)
+
+    const r10 = 2 * (xy - zw)
+    const r11 = 1 - 2 * (zz + xx)
+    const r12 = 2 * (yz + xw)
+
+    const r20 = 2 * (zx + yw)
+    const r21 = 2 * (yz - xw)
+    const r22 = 1 - 2 * (yy + xx)
+
+    const m = this.m
+    const m00 = m[M._00]
+    const m01 = m[M._01]
+    const m02 = m[M._02]
+    const m03 = m[M._03]
+    const m10 = m[M._10]
+    const m11 = m[M._11]
+    const m12 = m[M._12]
+    const m13 = m[M._13]
+    const m20 = m[M._20]
+    const m21 = m[M._21]
+    const m22 = m[M._22]
+    const m23 = m[M._23]
+
+    m[M._00] = r00 * m00 + r01 * m10 + r02 * m20
+    m[M._01] = r00 * m01 + r01 * m11 + r02 * m21
+    m[M._02] = r00 * m02 + r01 * m12 + r02 * m22
+    m[M._03] = r00 * m03 + r01 * m13 + r02 * m23
+    m[M._10] = r10 * m00 + r11 * m10 + r12 * m20
+    m[M._11] = r10 * m01 + r11 * m11 + r12 * m21
+    m[M._12] = r10 * m02 + r11 * m12 + r12 * m22
+    m[M._13] = r10 * m03 + r11 * m13 + r12 * m23
+    m[M._20] = r20 * m00 + r21 * m10 + r22 * m20
+    m[M._21] = r20 * m01 + r21 * m11 + r22 * m21
+    m[M._22] = r20 * m02 + r21 * m12 + r22 * m22
+    m[M._23] = r20 * m03 + r21 * m13 + r22 * m23
+
+    return this
   }
 
   /**
-   * Creates a matrix from given quaternion.
-   * @param q - The quaternion
-   * @returns Reference to `this` for chaining.
+   * Creates a rotation matrix from an axis and angle
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
    */
-  public static createFromQuaternion(q: IVec4): Mat4 {
-    return new Mat4().initFromQuaternion(q)
+  public static createAxisAngleV(axis: IVec3, angle: number): Mat4 {
+    return new Mat4().initAxisAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
    * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
-   * @param axis - The axis vector. This is expected to be normalized.
-   * @param angle - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
    */
-  public initAxisAngle(axis: IVec3, angle: number): Mat4 {
+  public initAxisAngleV(axis: IVec3, angle: number): this {
+    return this.initAxisAngle(axis.x, axis.y, axis.z, angle)
+  }
+
+  /**
+   * Applies a rotation around the given axis and angle
+   *
+   * @remarks
+   * This affects only the 3x3 rotation part of the matrix.
+   * Meaning that the matrix changes its facing direction
+   * but keeps its position and shearing as is.
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
+   */
+  public rotateAxisAngleV(axis: IVec3, angle: number): this {
+    return this.rotateAxisAngle(axis.x, axis.y, axis.z, angle)
+  }
+
+  /**
+   * Creates a rotation matrix from axis angle parameters
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
+   */
+  public static createAxisAngle(x: number, y: number, z: number, angle: number): Mat4 {
+    return new Mat4().initAxisAngle(x, y, z, angle)
+  }
+
+  /**
+   * Initializes this matrix to a rotation matrix defined by given axis and angle.
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
+   */
+  public initAxisAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
-    const x = axis.x * scale
-    const y = axis.y * scale
-    const z = axis.z * scale
+    x *= scale
+    y *= scale
+    z *= scale
+    const w = Math.cos(halfAngle)
+
+    // matrix from quaternion
+    const xx = x * x
+    const xy = x * y
+    const xz = z * x
+    const xw = x * w
+
+    const yy = y * y
+    const yz = y * z
+    const yw = y * w
+
+    const zz = z * z
+    const zw = z * w
+
+    const m = this.m
+    m[M._00] = 1 - 2 * (yy + zz)
+    m[M._01] =     2 * (xy + zw)
+    m[M._02] =     2 * (xz - yw)
+    m[M._03] = 0
+
+    m[M._10] =     2 * (xy - zw)
+    m[M._11] = 1 - 2 * (zz + xx)
+    m[M._12] =     2 * (yz + xw)
+    m[M._13] = 0
+
+    m[M._20] =     2 * (xz + yw)
+    m[M._21] =     2 * (yz - xw)
+    m[M._22] = 1 - 2 * (yy + xx)
+    m[M._23] = 0
+
+    m[M._30] = 0
+    m[M._31] = 0
+    m[M._32] = 0
+    m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Applies a rotation around the given axis and angle
+   *
+   * @remarks
+   * This affects only the 3x3 rotation part of the matrix.
+   * Meaning that the matrix changes its facing direction
+   * but keeps its position and shearing as is.
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
+   */
+  public rotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+    // create quaternion
+    const halfAngle = angle * 0.5
+    const scale = Math.sin(halfAngle)
+    x *= scale
+    y *= scale
+    z *= scale
     const w = Math.cos(halfAngle)
 
     // matrix from quaternion
@@ -374,32 +1017,67 @@ export class Mat4 {
     const yz = y * z
     const xw = x * w
 
-    return this.initRowMajor(
-      1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (zx + yw), 0,
-      2 * (xy + zw), 1 - 2 * (zz + xx), 2 * (yz - xw), 0,
-      2 * (zx - yw), 2 * (yz + xw), 1 - 2 * (yy + xx), 0,
-      0, 0, 0, 1,
-    )
+    const r00 = 1 - 2 * (yy + zz)
+    const r01 = 2 * (xy + zw)
+    const r02 = 2 * (zx - yw)
+
+    const r10 = 2 * (xy - zw)
+    const r11 = 1 - 2 * (zz + xx)
+    const r12 = 2 * (yz + xw)
+
+    const r20 = 2 * (zx + yw)
+    const r21 = 2 * (yz - xw)
+    const r22 = 1 - 2 * (yy + xx)
+
+    const m = this.m
+    const m00 = m[M._00]
+    const m01 = m[M._01]
+    const m02 = m[M._02]
+    const m03 = m[M._03]
+    const m10 = m[M._10]
+    const m11 = m[M._11]
+    const m12 = m[M._12]
+    const m13 = m[M._13]
+    const m20 = m[M._20]
+    const m21 = m[M._21]
+    const m22 = m[M._22]
+    const m23 = m[M._23]
+
+    m[M._00] = r00 * m00 + r01 * m10 + r02 * m20
+    m[M._01] = r00 * m01 + r01 * m11 + r02 * m21
+    m[M._02] = r00 * m02 + r01 * m12 + r02 * m22
+    m[M._03] = r00 * m03 + r01 * m13 + r02 * m23
+    m[M._10] = r10 * m00 + r11 * m10 + r12 * m20
+    m[M._11] = r10 * m01 + r11 * m11 + r12 * m21
+    m[M._12] = r10 * m02 + r11 * m12 + r12 * m22
+    m[M._13] = r10 * m03 + r11 * m13 + r12 * m23
+    m[M._20] = r20 * m00 + r21 * m10 + r22 * m20
+    m[M._21] = r20 * m01 + r21 * m11 + r22 * m21
+    m[M._22] = r20 * m02 + r21 * m12 + r22 * m22
+    m[M._23] = r20 * m03 + r21 * m13 + r22 * m23
+
+    return this
   }
 
   /**
-   * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
-   * @param axis - The axis vector. This is expected to be normalized.
-   * @param angle - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Creates a rotation matrix from yaw pitch roll angles
+   *
+   * @param yaw - angle in rad around the Y axis
+   * @param pitch - angle in rad around the X axis
+   * @param roll - angle in rad around the Z axis
    */
-  public static createAxisAngle(axis: IVec3, angle: number): Mat4 {
-    return new Mat4().initAxisAngle(axis, angle)
+  public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
+    return new Mat4().initYawPitchRoll(yaw, pitch, roll)
   }
 
   /**
-   * Initializes this matrix to a rotation matrix defined by given yaw pitch and roll values.
-   * @param yaw - Angle in radians around the Y axis
-   * @param pitch - Angle in radians around the X axis
-   * @param roll - Angle in radians around the Z axis
-   * @returns Reference to `this` for chaining.
+   * Initializes this to a rotation matrix from yaw pitch roll angles
+   *
+   * @param yaw - angle in rad around the Y axis
+   * @param pitch - angle in rad around the X axis
+   * @param roll - angle in rad around the Z axis
    */
-  public initYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
+  public initYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     // create quaternion
     const zHalf = roll * 0.5
     const zSin = Math.sin(zHalf)
@@ -417,156 +1095,597 @@ export class Mat4 {
     const y = ySin * xCos * zCos - yCos * xSin * zSin
     const z = yCos * xCos * zSin - ySin * xSin * zCos
     const w = yCos * xCos * zCos + ySin * xSin * zSin
+
     // matrix from quaternion
     const xx = x * x
-    const yy = y * y
-    const zz = z * z
     const xy = x * y
-    const zw = z * w
-    const zx = z * x
-    const yw = y * w
-    const yz = y * z
+    const xz = z * x
     const xw = x * w
 
-    return this.initRowMajor(
-      1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (zx + yw), 0,
-      2 * (xy + zw), 1 - 2 * (zz + xx), 2 * (yz - xw), 0,
-      2 * (zx - yw), 2 * (yz + xw), 1 - 2 * (yy + xx), 0,
-      0, 0, 0, 1,
-    )
+    const yy = y * y
+    const yz = y * z
+    const yw = y * w
+
+    const zz = z * z
+    const zw = z * w
+
+    const m = this.m
+    m[M._00] = 1 - 2 * (yy + zz)
+    m[M._01] =     2 * (xy + zw)
+    m[M._02] =     2 * (xz - yw)
+    m[M._03] = 0
+
+    m[M._10] =     2 * (xy - zw)
+    m[M._11] = 1 - 2 * (zz + xx)
+    m[M._12] =     2 * (yz + xw)
+    m[M._13] = 0
+
+    m[M._20] =     2 * (xz + yw)
+    m[M._21] =     2 * (yz - xw)
+    m[M._22] = 1 - 2 * (yy + xx)
+    m[M._23] = 0
+
+    m[M._30] = 0
+    m[M._31] = 0
+    m[M._32] = 0
+    m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Applies a yaw pitch roll rotation to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param yaw - angle in rad around the Y axis
+   * @param pitch - angle in rad around the X axis
+   * @param roll - angle in rad around the Z axis
    */
-  public static createYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
-    return new Mat4().initYawPitchRoll(yaw, pitch, roll)
+  public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
+    // create quaternion
+    const zHalf = roll * 0.5
+    const zSin = Math.sin(zHalf)
+    const zCos = Math.cos(zHalf)
+
+    const xHalf = pitch * 0.5
+    const xSin = Math.sin(xHalf)
+    const xCos = Math.cos(xHalf)
+
+    const yHalf = yaw * 0.5
+    const ySin = Math.sin(yHalf)
+    const yCos = Math.cos(yHalf)
+
+    const x = yCos * xSin * zCos + ySin * xCos * zSin
+    const y = ySin * xCos * zCos - yCos * xSin * zSin
+    const z = yCos * xCos * zSin - ySin * xSin * zCos
+    const w = yCos * xCos * zCos + ySin * xSin * zSin
+    return this.rotateQuaternion(x, y, z, w)
   }
 
   /**
-   * Initializes this matrix with a rotation around the X axis.
-   * @param rad - The angle in radians.
-   * @returns Reference to `this` for chaining.
-   */
-  public initRotationX(rad: number): Mat4 {
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-    return this.initRowMajor(
-      1, 0, 0, 0,
-      0, cos, -sin, 0,
-      0, sin, cos, 0,
-      0, 0, 0, 1,
-    )
-  }
-
-  /**
-   * @returns a new matrix
+   * Creates a new rotation matrix
    */
   public static createRotationX(rad: number): Mat4 {
     return new Mat4().initRotationX(rad)
   }
 
   /**
-   * Initializes this matrix with a rotation around the Y axis.
-   * @param rad - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Initializes this matrix with a rotation around the X axis.
+   *
+   * @param angle - angle in rad
    */
-  public initRotationY(rad: number): Mat4 {
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-
-    return this.initRowMajor(
-      cos, 0, sin, 0,
-      0, 1, 0, 0,
-      -sin, 0, cos, 0,
-      0, 0, 0, 1,
-    )
+  public initRotationX(angle: number): this {
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    const m = this.m
+    m[M._00] = 1; m[M._10] = 0;   m[M._20] = 0;    m[M._30] = 0
+    m[M._01] = 0; m[M._11] = cos; m[M._21] = -sin; m[M._31] = 0
+    m[M._02] = 0; m[M._12] = sin; m[M._22] =  cos; m[M._32] = 0
+    m[M._03] = 0; m[M._13] = 0;   m[M._23] = 0;    m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Applies a rotation around X axis to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param angle - angle in rad
+   */
+  public rotateX(angle: number): this {
+    const m = this.m
+    const m10 = m[M._10]
+    const m11 = m[M._11]
+    const m12 = m[M._12]
+    const m13 = m[M._13]
+    const m20 = m[M._20]
+    const m21 = m[M._21]
+    const m22 = m[M._22]
+    const m23 = m[M._23]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._10]  = c * m10 + s * m20
+    m[M._11]  = c * m11 + s * m21
+    m[M._12]  = c * m12 + s * m22
+    m[M._13]  = c * m13 + s * m23
+    m[M._20]  = c * m20 - s * m10
+    m[M._21]  = c * m21 - s * m11
+    m[M._22] = c * m22 - s * m12
+    m[M._23] = c * m23 - s * m13
+
+    return this
+  }
+
+  /**
+   * Creates a new rotation matrix
    */
   public static createRotationY(rad: number): Mat4 {
     return new Mat4().initRotationY(rad)
   }
 
   /**
-   * Initializes this matrix with a rotation around the Z axis.
-   * @param rad - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Initializes this matrix with a rotation around the Y axis.
+   *
+   * @param angle - angle in rad
    */
-  public initRotationZ(rad: number): Mat4 {
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-    return this.initRowMajor(
-      cos, -sin, 0, 0,
-      sin, cos, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    )
+  public initRotationY(angle: number): this {
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    const m = this.m
+    m[M._00] = cos;  m[M._10] = 0; m[M._20] = sin; m[M._30] = 0
+    m[M._01] = 0;    m[M._11] = 1; m[M._21] = 0;   m[M._31] = 0
+    m[M._02] = -sin; m[M._12] = 0; m[M._22] = cos; m[M._32] = 0
+    m[M._03] = 0;    m[M._13] = 0; m[M._23] = 0;   m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Applies a rotation around Y axis to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param angle - angle in rad
+   */
+  public rotateY(angle: number): this {
+    const m = this.m
+    const m00 = m[M._00]
+    const m01 = m[M._01]
+    const m02 = m[M._02]
+    const m03 = m[M._03]
+    const m20 = m[M._20]
+    const m21 = m[M._21]
+    const m22 = m[M._22]
+    const m23 = m[M._23]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._00] = c * m00 - s * m20
+    m[M._01] = c * m01 - s * m21
+    m[M._02] = c * m02 - s * m22
+    m[M._03] = c * m03 - s * m23
+    m[M._20] = c * m20 + s * m00
+    m[M._21] = c * m21 + s * m01
+    m[M._22] = c * m22 + s * m02
+    m[M._23] = c * m23 + s * m03
+
+    return this
+  }
+
+  /**
+   * Creates a new rotation matrix
    */
   public static createRotationZ(rad: number): Mat4 {
     return new Mat4().initRotationZ(rad)
   }
 
   /**
-   * Initializes a translation matrix.
-   * @param x - Translation along the x-axis
-   * @param y - Translation along the y-axis
-   * @param z - Translation along the z-axis
-   * @returns Reference to `this` for chaining.
+   * Initializes this matrix with a rotation around the Z axis.
+   *
+   * @param angle - angle in rad
    */
-  public initTranslation(x: number, y: number, z: number): Mat4 {
-    return this.initRowMajor(
-      1, 0, 0, x,
-      0, 1, 0, y,
-      0, 0, 1, z,
-      0, 0, 0, 1,
-    )
+  public initRotationZ(angle: number): this {
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    const m = this.m
+    m[M._00] = cos; m[M._10] = -sin; m[M._20] = 0; m[M._30] = 0
+    m[M._01] = sin; m[M._11] =  cos; m[M._21] = 0; m[M._31] = 0
+    m[M._02] = 0;   m[M._12] = 0;    m[M._22] = 1; m[M._32] = 0
+    m[M._03] = 0;   m[M._13] = 0;    m[M._23] = 0; m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Applies a rotation around Z axis to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param angle - angle in rad
    */
-  public static createTranslation(x: number, y: number, z: number): Mat4 {
-    return new Mat4().initTranslation(x, y, z)
+  public rotateZ(angle: number): this {
+    const m = this.m
+    const m00 = m[M._00]
+    const m01 = m[M._01]
+    const m02 = m[M._02]
+    const m03 = m[M._03]
+    const m10 = m[M._10]
+    const m11 = m[M._11]
+    const m12 = m[M._12]
+    const m13 = m[M._13]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._00] = c * m00 + s * m10
+    m[M._01] = c * m01 + s * m11
+    m[M._02] = c * m02 + s * m12
+    m[M._03] = c * m03 + s * m13
+    m[M._10] = c * m10 - s * m00
+    m[M._11] = c * m11 - s * m01
+    m[M._12] = c * m12 - s * m02
+    m[M._13] = c * m13 - s * m03
+
+    return this
   }
 
   /**
-   * Initializes a scale matrix.
-   * @param x - Scale along x-axis
-   * @param y - Scale along y-axis
-   * @param z - Scale along z-axis
-   * @returns Reference to `this` for chaining.
-   */
-  public initScale(x: number, y: number, z: number): Mat4 {
-    return this.initRowMajor(
-      x, 0, 0, 0,
-      0, y, 0, 0,
-      0, 0, z, 0,
-      0, 0, 0, 1,
-    )
-  }
-
-  /**
-   * @returns a new matrix
+   * Creates a new matrix with a predefined scale
    */
   public static createScale(x: number, y: number, z: number): Mat4 {
     return new Mat4().initScale(x, y, z)
   }
 
   /**
+   * Initializes a scale matrix
+   *
+   * @param x - x scale factor
+   * @param y - y scale factor
+   * @param z - z scale factor
+   */
+  public initScale(x: number, y: number, z: number): this {
+    const m = this.m
+    m[M._00] = x; m[M._10] = 0; m[M._20] = 0; m[M._30] = 0
+    m[M._01] = 0; m[M._11] = y; m[M._21] = 0; m[M._31] = 0
+    m[M._02] = 0; m[M._12] = 0; m[M._22] = z; m[M._32] = 0
+    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Applies a scale to this matrix
+   *
+   * @param x - x scale factor
+   * @param y - y scale factor
+   * @param z - z scale factor
+   */
+  public scale(x: number, y: number, z: number): this {
+    const m = this.m
+    m[M._00] *= x
+    m[M._01] *= x
+    m[M._02] *= x
+    m[M._03] *= x
+    m[M._10] *= y
+    m[M._11] *= y
+    m[M._12] *= y
+    m[M._13] *= y
+    m[M._20] *= z
+    m[M._21] *= z
+    m[M._22] *= z
+    m[M._23] *= z
+    return this
+  }
+
+  /**
+   * Creates a new matrix with a predefined scale
+   */
+  public static createScaleV(vec: IVec3): Mat4 {
+    return new Mat4().initScale(vec.x, vec.y, vec.z)
+  }
+
+  /**
+   * Initializes a scale matrix
+   *
+   * @param vec - The scale vector
+   */
+  public initScaleV(vec: IVec3): this {
+    return this.initScale(vec.x, vec.y, vec.z)
+  }
+
+  /**
+   * Applies a scale to this matrix
+   *
+   * @param scale - the scale vector
+   */
+  public scaleV(scale: IVec3): this {
+    const x = scale.x
+    const y = scale.y
+    const z = scale.z
+    const m = this.m
+    m[M._00] *= x
+    m[M._01] *= x
+    m[M._02] *= x
+    m[M._03] *= x
+    m[M._10] *= y
+    m[M._11] *= y
+    m[M._12] *= y
+    m[M._13] *= y
+    m[M._20] *= z
+    m[M._21] *= z
+    m[M._22] *= z
+    m[M._23] *= z
+    return this
+  }
+
+  /**
+   * Creates a new matrix with a predefined scale
+   */
+  public static createScaleUniform(scale: number): Mat4 {
+    return new Mat4().initScale(scale, scale, scale)
+  }
+
+  /**
+   * Initializes a scale matrix
+   *
+   * @param scale - The uniform scale value
+   */
+  public initScaleUniform(scale: number): this {
+    return this.initScale(scale, scale, scale)
+  }
+
+  /**
+   * Applies a uniform scale to this matrix
+   *
+   * @param scale - the uniform scale factor
+   */
+  public scaleUniform(scale: number): this {
+    const m = this.m
+    m[0] *= scale
+    m[1] *= scale
+    m[2] *= scale
+    m[3] *= scale
+    m[4] *= scale
+    m[5] *= scale
+    m[6] *= scale
+    m[7] *= scale
+    m[8] *= scale
+    m[9] *= scale
+    m[10] *= scale
+    m[11] *= scale
+    return this
+  }
+
+  /**
+   * Applies a scale to this matrix
+   *
+   * @param x - scale factor on x axis
+   */
+  public scaleX(x: number): this {
+    const m = this.m
+    m[M._00] *= x
+    m[M._01] *= x
+    m[M._02] *= x
+    m[M._03] *= x
+    return this
+  }
+
+  /**
+   * Applies a scale to this matrix
+   *
+   * @param y - scale factor on y axis
+   */
+  public scaleY(y: number): this {
+    const m = this.m
+    m[M._10] *= y
+    m[M._11] *= y
+    m[M._12] *= y
+    m[M._13] *= y
+    return this
+  }
+
+  /**
+   * Applies a scale to this matrix
+   *
+   * @param z - scale factor on z axis
+   */
+  public scaleZ(z: number): this {
+    const m = this.m
+    m[M._20] *= z
+    m[M._21] *= z
+    m[M._22] *= z
+    m[M._23] *= z
+    return this
+  }
+
+  /**
+   * Creates a new translation matrix
+   */
+  public static createTranslation(x: number, y: number, z: number): Mat4 {
+    return new Mat4().initTranslation(x, y, z)
+  }
+
+  /**
+   * Initializes a translation matrix.
+   *
+   * @param x - x component of the translation vector
+   * @param y - y component of the translation vector
+   * @param z - z component of the translation vector
+   */
+  public initTranslation(x: number, y: number, z: number): this {
+    const m = this.m
+    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = x
+    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = y
+    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = z
+    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix
+   *
+   * @param x - translation in x direction
+   * @param y - translation in y direction
+   * @param z - translation in z direction
+   */
+  public translate(x: number, y: number, z: number): this {
+    const m = this.m
+    m[12] = m[0] * x + m[4] * y + m[8] * z + m[12]
+    m[13] = m[1] * x + m[5] * y + m[9] * z + m[13]
+    m[14] = m[2] * x + m[6] * y + m[10] * z + m[14]
+    m[15] = m[3] * x + m[7] * y + m[11] * z + m[15]
+    return this
+  }
+
+  /**
+   * Creates a new translation matrix
+   */
+  public static createTranslationV(vec: IVec3): Mat4 {
+    return new Mat4().initTranslationV(vec)
+  }
+
+  /**
+   * Initializes a translation matrix.
+   *
+   * @param vec - the translation vector
+   */
+  public initTranslationV(vec: IVec3): this {
+    const m = this.m
+    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = vec.x
+    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = vec.y
+    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = vec.z
+    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix
+   *
+   * @param v - the translation vector
+   */
+  public translateV(v: IVec3): this {
+    const x = v.x
+    const y = v.y
+    const z = v.z
+    const m = this.m
+    m[12] = m[0] * x + m[4] * y + m[8] * z + m[12]
+    m[13] = m[1] * x + m[5] * y + m[9] * z + m[13]
+    m[14] = m[2] * x + m[6] * y + m[10] * z + m[14]
+    m[15] = m[3] * x + m[7] * y + m[11] * z + m[15]
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix
+   *
+   * @param x - translation in x direction
+   */
+  public translateX(x: number): this {
+    const m = this.m
+    m[M._30] = m[M._00] * x + m[M._30]
+    m[M._31] = m[M._01] * x + m[M._31]
+    m[M._32] = m[M._02] * x + m[M._32]
+    m[M._33] = m[M._03] * x + m[M._33]
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix
+   *
+   * @param y - translation in y direction
+   */
+  public translateY(y: number): this {
+    const m = this.m
+    m[M._30] = m[M._10] * y + m[M._30]
+    m[M._31] = m[M._11] * y + m[M._31]
+    m[M._32] = m[M._12] * y + m[M._32]
+    m[M._33] = m[M._13] * y + m[M._33]
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix
+   *
+   * @param z - translation in z direction
+   */
+  public translateZ(z: number): this {
+    const m = this.m
+    m[M._30] = m[M._20] * z + m[M._30]
+    m[M._31] = m[M._21] * z + m[M._31]
+    m[M._32] = m[M._22] * z + m[M._32]
+    m[M._33] = m[M._23] * z + m[M._33]
+    return this
+  }
+
+  /**
+   * Creates a rotation matrix by using direction vector
+   */
+  public static createOrientation(forward: IVec3, up: IVec3): Mat4 {
+    return new Mat4().createOrientation(forward, up)
+  }
+
+  /**
+   * Initializes a rotation matrix by using direction vector
+   *
+   * @param forward - The forward vector
+   * @param up - The up vector of the viewer
+   */
+  public createOrientation(forward: IVec3, up: IVec3): this {
+    // back = position - lookAt
+    let backX = - forward.x
+    let backY = - forward.y
+    let backZ = - forward.z
+
+    // right = cross(up, back)
+    let rightX = up.y * backZ - up.z * backY
+    let rightY = up.z * backX - up.x * backZ
+    let rightZ = up.x * backY - up.y * backX
+
+    // back = normalize(back)
+    let d = 1.0 / Math.sqrt(backX * backX + backY * backY + backZ * backZ)
+    backX *= d
+    backY *= d
+    backZ *= d
+
+    // right = normalize(right)
+    d = 1.0 / Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
+    rightX *= d
+    rightY *= d
+    rightZ *= d
+
+    // up = cross(back, right)
+    const upX = backY * rightZ - backZ * rightY
+    const upY = backZ * rightX - backX * rightZ
+    const upZ = backX * rightY - backY * rightX
+
+    const m = this.m
+    m[M._00] = rightX; m[M._10] = upX; m[M._20] = backX; m[M._30] = 0
+    m[M._01] = rightY; m[M._11] = upY; m[M._21] = backY; m[M._31] = 0
+    m[M._02] = rightZ; m[M._12] = upZ; m[M._22] = backZ; m[M._32] = 0
+    m[M._03] = 0;      m[M._13] = 0;   m[M._23] = 0;     m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Creates a new matrix
+   */
+  public static createLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): Mat4 {
+    return new Mat4().initLookAt(pos, lookAt, up)
+  }
+
+  /**
    * Initializes a rotation matrix by using a position and a lookat point.
+   *
    * @param pos - The position where the viewer stands
    * @param lookAt - The position where the viewer is looking to
    * @param up - The up vector of the viewer
-   * @returns Reference to `this` for chaining.
    */
-  public initLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): Mat4 {
+  public initLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): this {
     // back = position - lookAt
     let backX = pos.x - lookAt.x
     let backY = pos.y - lookAt.y
@@ -594,29 +1713,29 @@ export class Mat4 {
     const upY = backZ * rightX - backX * rightZ
     const upZ = backX * rightY - backY * rightX
 
-    return this.initRowMajor(
-      rightX, upX, backX, pos.x,
-      rightY, upY, backY, pos.y,
-      rightZ, upZ, backZ, pos.z,
-      0, 0, 0, 1,
-    )
+    const m = this.m
+    m[M._00] = rightX; m[M._10] = upX; m[M._20] = backX; m[M._30] = pos.x
+    m[M._01] = rightY; m[M._11] = upY; m[M._21] = backY; m[M._31] = pos.y
+    m[M._02] = rightZ; m[M._12] = upZ; m[M._22] = backZ; m[M._32] = pos.z
+    m[M._03] = 0;      m[M._13] = 0;   m[M._23] = 0;     m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Creates a new matrix with a position and facing direction
    */
-  public static createLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): Mat4 {
-    return new Mat4().initLookAt(pos, lookAt, up)
+  public static createWorld(position: IVec3, forward: IVec3, up: IVec3) {
+    return new Mat4().initWorld(position, forward, up)
   }
 
   /**
    * Initializes a matrix from a position point and a forward and up vectors
+   *
    * @param position - The translation part
    * @param forward - The facing direction
    * @param up - The up vector
-   * @returns Reference to `this` for chaining.
    */
-  public initWorld(position: IVec3, forward: IVec3, up: IVec3): Mat4 {
+  public initWorld(position: IVec3, forward: IVec3, up: IVec3): this {
     // backward = negate(normalize(forward))
     let x = forward.x
     let y = forward.y
@@ -642,115 +1761,89 @@ export class Mat4 {
     y = backZ * rightX - backX * rightZ
     z = backX * rightY - backY * rightX
 
-    return this.initRowMajor(
-      rightX, x, backX, position.x,
-      rightY, y, backY, position.y,
-      rightZ, z, backZ, position.z,
-      0, 0, 0, 1,
-    )
+    const m = this.m
+    m[M._00] = rightX; m[M._10] = x; m[M._20] = backX; m[M._30] = position.x
+    m[M._01] = rightY; m[M._11] = y; m[M._21] = backY; m[M._31] = position.y
+    m[M._02] = rightZ; m[M._12] = z; m[M._22] = backZ; m[M._32] = position.z
+    m[M._03] = 0;      m[M._13] = 0; m[M._23] = 0;     m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
-   */
-  public static createWorld(position: IVec3, forward: IVec3, up: IVec3) {
-    return new Mat4().initWorld(position, forward, up)
-  }
-
-  /**
-   * Initializes a perspective matrix
-   *
-   *
-   * @param near - The near plane distance
-   * @param far - The far plane distance
-   * @returns Reference to `this` for chaining.
-   */
-  public initPerspective(width: number, height: number, near: number, far: number): Mat4 {
-    return this.initRowMajor(
-      near / width, 0, 0, 0,
-      0, near / height, 0, 0,
-      0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near),
-      0, 0, -1, 0,
-    )
-  }
-
-  /**
-   * @returns a new matrix
+   * Creates a new perspective matrix
    */
   public static createPerspective(width: number, height: number, near: number, far: number): Mat4 {
     return new Mat4().initPerspective(width, height, near, far)
   }
 
   /**
-   * Initializes a perspective matrix with given field of view angle
+   * Initializes a perspective matrix
+   */
+  public initPerspective(width: number, height: number, near: number, far: number): this {
+    const m = this.m
+    const d = (far - near)
+    m[M._00] = near / width; m[M._10] = 0;             m[M._20] = 0;                 m[M._30] = 0
+    m[M._01] = 0;            m[M._11] = near / height; m[M._21] = 0;                 m[M._31] = 0
+    m[M._02] = 0;            m[M._12] = 0;             m[M._22] = -(far + near) / d; m[M._32] = -(2 * far * near) / d
+    m[M._03] = 0;            m[M._13] = 0;             m[M._23] = -1;                m[M._33] = 1
+    return this
+  }
+
+  /**
+   * Creates a new perspective matrix with given field of view angle
+   *
    * @param fov - The field of view angle in radians
    * @param aspect - The aspect ratio
    * @param near - The near plane distance
    * @param far - The far plane distance
-   * @returns Reference to `this` for chaining.
    */
-  public initPerspectiveFieldOfView(fov: number, aspect: number, near: number, far: number): Mat4 {
-    const s = 1.0 / Math.tan(fov * 0.5)
-    return this.initRowMajor(
-      s / aspect, 0,                            0,                                0,
-      0,          s,                            0,                                0,
-      0,          0, -(far + near) / (far - near), -(2 * far * near) / (far - near),
-      0,          0,                           -1,                                0,
-    )
+  public static createPerspectiveFieldOfView(fov: number, aspect: number, near: number, far: number): Mat4 {
+    return new Mat4().initPerspectiveFieldOfView(fov, aspect, near, far)
   }
 
   /**
-   * @returns a new matrix
-   */
-  public static createPerspectiveFieldOfView(fov: number, aspec: number, near: number, far: number): Mat4 {
-    return new Mat4().initPerspectiveFieldOfView(fov, aspec, near, far)
-  }
-
-  /**
-   * Initializes a perspective matrix
+   * Initializes a perspective matrix with given field of view angle
    *
-   *
-   *
-   *
+   * @param fov - The field of view angle in radians
+   * @param aspect - The aspect ratio
    * @param near - The near plane distance
    * @param far - The far plane distance
-   * @returns Reference to `this` for chaining.
    */
-  public initPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
-    return this.initRowMajor(
-      2 * near / (right - left), 0, (right + left) / (right - left), 0,
-      0, 2 * near / (top - bottom), (top + bottom) / (top - bottom), 0,
-      0, 0, -(far + near) / (far - near), -(2 * far * near) / (far - near),
-      0, 0, -1, 0,
-    )
+  public initPerspectiveFieldOfView(fov: number, aspect: number, near: number, far: number): this {
+    const s = 1.0 / Math.tan(fov * 0.5)
+    const d = (far - near)
+    const m = this.m
+    m[M._00] = s / aspect; m[M._10] = 0; m[M._20] = 0;                 m[M._30] = 0
+    m[M._01] = 0;          m[M._11] = s; m[M._21] = 0;                 m[M._31] = 0
+    m[M._02] = 0;          m[M._12] = 0; m[M._22] = -(far + near) / d; m[M._32] = -(2 * far * near) / d
+    m[M._03] = 0;          m[M._13] = 0; m[M._23] = -1;                m[M._33] = 0
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Creates a new perspective matrix
    */
   public static createPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
     return new Mat4().initPerspectiveOffCenter(left, right, bottom, top, near, far)
   }
 
   /**
-   * Initializes an orthographic matrix
-   *
-   *
-   * @param near - The near plane distance
-   * @param far - The far plane distance
-   * @returns Reference to `this` for chaining.
+   * Initializes a perspective matrix
    */
-  public initOrthographic(width: number, height: number, near: number, far: number): Mat4 {
-    return this.initRowMajor(
-      1 / width, 0, 0, 0,
-      0, 1 / height, 0, 0,
-      0, 0, -2 / (far - near), -(far + near) / (far - near),
-      0, 0, 0, 1,
-    )
+  public initPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): this {
+    const w = right - left
+    const h = top - bottom
+    const d = far - near
+    const m = this.m
+    m[M._00] = 2 * near / w; m[M._10] = 0;            m[M._20] = (right + left) / w; m[M._30] = 0
+    m[M._01] = 0;            m[M._11] = 2 * near / h; m[M._21] = (top + bottom) / h; m[M._31] = 0
+    m[M._02] = 0;            m[M._12] = 0;            m[M._22] = -(far + near) / d;  m[M._32] = -(2 * far * near) / d
+    m[M._03] = 0;            m[M._13] = 0;            m[M._23] = -1;                 m[M._33] = 0
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Creates a new perspective matrix
    */
   public static createOrthographic(width: number, height: number, near: number, far: number): Mat4 {
     return new Mat4().initOrthographic(width, height, near, far)
@@ -758,404 +1851,36 @@ export class Mat4 {
 
   /**
    * Initializes an orthographic matrix
-   *
-   *
-   *
-   *
-   * @param near - The near plane distance
-   * @param far - The far plane distance
-   * @returns Reference to `this` for chaining.
    */
-  public initOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
-    return this.initRowMajor(
-      2 / (right - left), 0, 0, -(right + left) / (right - left),
-      0, 2 / (top - bottom), 0, -(top + bottom) / (top - bottom),
-      0, 0, -2 / (far - near), -(far + near) / (far - near),
-      0, 0, 0, 1,
-    )
+  public initOrthographic(width: number, height: number, near: number, far: number): this {
+    const d = far - near
+    const m = this.m
+    m[M._00] = 1 / width; m[M._10] = 0;          m[M._20] = 0;                 m[M._30] = 0
+    m[M._01] = 0;         m[M._11] = 1 / height; m[M._21] = 0;                 m[M._31] = 0
+    m[M._02] = 0;         m[M._12] = 0;          m[M._22] = -2 / (far - near); m[M._32] = -(far + near) / d
+    m[M._03] = 0;         m[M._13] = 0;          m[M._23] = 0;                 m[M._33] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * creates a new orthographic matrix
    */
   public static createOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
     return new Mat4().initOrthographicOffCenter(left, right, bottom, top, near, far)
   }
 
   /**
-   * Creates a copy of this matrix
-   * @returns The cloned matrix.
+   * Initializes an orthographic matrix
    */
-  public clone(out: Mat4 = new Mat4()): Mat4 {
-    const d = this.data
-    return out.init(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15])
-  }
-
-  /**
-   * Creates a copy of this matrix
-   * @returns The cloned matrix.
-   */
-  public static clone(mat: Mat4, out: Mat4 = new Mat4()): Mat4 {
-    const d = mat.data
-    return out.init(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15])
-  }
-
-  /**
-   * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   * @returns the given buffer
-   */
-  public toArray(): number[]
-  public toArray<T>(buffer?: T, offset?: number): T
-  public toArray(buffer?: number[], offset?: number): number[] {
-    return Mat4.toArray(this, buffer, offset)
-  }
-
-  /**
-   * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   * @returns the given buffer
-   */
-  public static toArray(mat: Mat4): number[]
-  public static toArray<T>(mat: Mat4, buffer: T, offset?: number): T
-  public static toArray(mat: Mat4, buffer?: number[], offset?: number): number[] {
-    buffer = buffer || []
-    offset = offset || 0
-    const d = mat.data
-    buffer[offset] = d[0]
-    buffer[offset + 1] = d[1]
-    buffer[offset + 2] = d[2]
-    buffer[offset + 3] = d[3]
-    buffer[offset + 4] = d[4]
-    buffer[offset + 5] = d[5]
-    buffer[offset + 6] = d[6]
-    buffer[offset + 7] = d[7]
-    buffer[offset + 8] = d[8]
-    buffer[offset + 9] = d[9]
-    buffer[offset + 10] = d[10]
-    buffer[offset + 11] = d[11]
-    buffer[offset + 12] = d[12]
-    buffer[offset + 13] = d[13]
-    buffer[offset + 14] = d[14]
-    buffer[offset + 15] = d[15]
-    return buffer
-  }
-
-  /**
-   * Checks for component wise equality with given matrix
-   * @param other - The matrix to compare with
-   * @returns true if components are equal, false otherwise
-   */
-  public equals(other: Mat4): boolean {
-    return Mat4.equals(this, other)
-  }
-
-  /**
-   * Checks for component wise equality with given matrix
-   * @param other - The matrix to compare with
-   * @returns true if components are equal, false otherwise
-   */
-  public static equals(m1: Mat4, m2: Mat4): boolean {
-    const a = m1.data
-    const b = m2.data
-    return a[0] === b[0] &&
-      a[1] === b[1] &&
-      a[2] === b[2] &&
-      a[3] === b[3] &&
-      a[4] === b[4] &&
-      a[5] === b[5] &&
-      a[6] === b[6] &&
-      a[7] === b[7] &&
-      a[8] === b[8] &&
-      a[9] === b[9] &&
-      a[10] === b[10] &&
-      a[11] === b[11] &&
-      a[12] === b[12] &&
-      a[13] === b[13] &&
-      a[14] === b[14] &&
-      a[15] === b[15]
-  }
-
-  /**
-   * Gets the forward vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getForward<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = -this.backward[0]
-    out.y = -this.backward[1]
-    out.z = -this.backward[2]
-    return out
-  }
-
-  /**
-   * Gets the backward vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getBackward<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = this.backward[0]
-    out.y = this.backward[1]
-    out.z = this.backward[2]
-    return out
-  }
-
-  /**
-   * Gets the right vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getRight<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = this.right[0]
-    out.y = this.right[1]
-    out.z = this.right[2]
-    return out
-  }
-
-  /**
-   * Gets the left vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getLeft<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = -this.right[0]
-    out.y = -this.right[1]
-    out.z = -this.right[2]
-    return out
-  }
-
-  /**
-   * Gets the up vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getUp<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = this.up[0]
-    out.y = this.up[1]
-    out.z = this.up[2]
-    return out
-  }
-
-  /**
-   * Gets the down vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getDown<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = -this.up[0]
-    out.y = -this.up[1]
-    out.z = -this.up[2]
-    return out
-  }
-
-  /**
-   * Gets the translation part as vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getTranslation<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = this.translation[0]
-    out.y = this.translation[1]
-    out.z = this.translation[2]
-    return out
-  }
-
-  /**
-   * Gets the projection part as vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getProjection<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = this.data[3]
-    out.y = this.data[7]
-    out.z = this.data[11]
-    return out
-  }
-
-  /**
-   * Gets the scale part as vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
-   */
-  public getScale<T extends IVec3= Vec3>(out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = this.data[0]
-    out.y = this.data[5]
-    out.z = this.data[10]
-    return out
-  }
-
-  /**
-   * Sets the forward vector
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setForward(vec: IVec3): Mat4 {
-    this.backward[0] = -vec.x
-    this.backward[1] = -vec.y
-    this.backward[2] = -vec.z
-    return this
-  }
-
-  /**
-   * Sets the backward vector
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setBackward(vec: IVec3): Mat4 {
-    this.backward[0] = vec.x
-    this.backward[1] = vec.y
-    this.backward[2] = vec.z
-    return this
-  }
-
-  /**
-   * Sets the right vector
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setRight(vec: IVec3): Mat4 {
-    this.right[0] = vec.x
-    this.right[1] = vec.y
-    this.right[2] = vec.z
-    return this
-  }
-
-  /**
-   * Sets the left vector
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setLeft(vec: IVec3): Mat4 {
-    this.right[0] = -vec.x
-    this.right[1] = -vec.y
-    this.right[2] = -vec.z
-    return this
-  }
-
-  /**
-   * Sets the up vector
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setUp(vec: IVec3): Mat4 {
-    this.up[0] = vec.x
-    this.up[1] = vec.y
-    this.up[2] = vec.z
-    return this
-  }
-
-  /**
-   * Sets the down vector
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setDown(vec: IVec3): Mat4 {
-    this.up[0] = -vec.x
-    this.up[1] = -vec.y
-    this.up[2] = -vec.z
-    return this
-  }
-
-  /**
-   * Sets the translation part
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setTranslation(vec: IVec3): Mat4 {
-    this.translation[0] = vec.x
-    this.translation[1] = vec.y
-    this.translation[2] = vec.z
-    return this
-  }
-
-  public setTranslationX(v: number): Mat4 {
-    this.translation[0] = v
-    return this
-  }
-  public setTranslationY(v: number): Mat4 {
-    this.translation[1] = v
-    return this
-  }
-  public setTranslationZ(v: number): Mat4 {
-    this.translation[2] = v
-    return this
-  }
-  public setTranslationXYZ(x: number, y: number, z: number) {
-    this.translation[0] = x
-    this.translation[1] = y
-    this.translation[2] = z
-    return this
-  }
-
-  /**
-   * Sets the projection part
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setProjection(vec: IVec3): Mat4 {
-    this.data[3] = vec.x
-    this.data[7] = vec.y
-    this.data[11] = vec.z
-    return this
-  }
-
-  public setProjectionX(v: number): Mat4 {
-    this.data[3] = v
-    return this
-  }
-  public setProjectionY(v: number): Mat4 {
-    this.data[7] = v
-    return this
-  }
-  public setProjectionZ(v: number): Mat4 {
-    this.data[11] = v
-    return this
-  }
-  public setProjectionXYZ(x: number, y: number, z: number) {
-    this.data[3] = x
-    this.data[7] = y
-    this.data[11] = z
-    return this
-  }
-
-  /**
-   * Sets the scale part
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
-   */
-  public setScale(vec: IVec3): Mat4 {
-    this.data[0] = vec.x
-    this.data[5] = vec.y
-    this.data[10] = vec.z
-    return this
-  }
-  public setScaleX(v: number): Mat4 {
-    this.data[0] = v
-    return this
-  }
-  public setScaleY(v: number): Mat4 {
-    this.data[5] = v
-    return this
-  }
-  public setScaleZ(v: number): Mat4 {
-    this.data[10] = v
-    return this
-  }
-  public setScaleXYZ(x: number, y: number, z: number): Mat4 {
-    this.data[0] = x
-    this.data[5] = y
-    this.data[10] = z
+  public initOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): this {
+    const w = right - left
+    const h = top - bottom
+    const d = far - near
+    const m = this.m
+    m[M._00] = 2 / w; m[M._10] = 0;     m[M._20] = 0;      m[M._30] = -(right + left) / w
+    m[M._01] = 0;     m[M._11] = 2 / h; m[M._21] = 0;      m[M._31] = -(top + bottom) / h
+    m[M._02] = 0;     m[M._12] = 0;     m[M._22] = -2 / d; m[M._32] = -(far + near) / d
+    m[M._03] = 0;     m[M._13] = 0;     m[M._23] = 0;      m[M._33] = 1
     return this
   }
 
@@ -1163,7 +1888,7 @@ export class Mat4 {
    * Calculates the determinant of this matrix
    */
   public determinant(): number {
-    const a = this.data
+    const a = this.m
 
     const a11 = a[0]
     const a12 = a[4]
@@ -1203,411 +1928,13 @@ export class Mat4 {
   }
 
   /**
-   * Transposes this matrix
-   * @returns Reference to `this` for chaining.
-   */
-  public transpose(): Mat4 {
-    return Mat4.transpose(this, this)
-  }
-
-  /**
-   * Inverts this matrix
-   * @returns Reference to `this` for chaining.
-   */
-  public invert(): Mat4 {
-    return Mat4.invert(this, this)
-  }
-
-  /**
-   * Negates all components of this matrix
-   * @returns Reference to `this` for chaining.
-   */
-  public negate(): Mat4 {
-    return Mat4.negate(this, this)
-  }
-
-  /**
-   * Adds the given matrix to `this`
-   * @param other - The matrix to add
-   * @returns Reference to `this` for chaining.
-   */
-  public add(other: Mat4): Mat4 {
-    const a = this.data
-    const b = other.data
-    // tslint:disable
-    a[ 0] += b[ 0]; a[ 1] += b[ 1]; a[ 2] += b[ 2]; a[ 3] += b[ 3];
-    a[ 4] += b[ 4]; a[ 5] += b[ 5]; a[ 6] += b[ 6]; a[ 7] += b[ 7];
-    a[ 8] += b[ 8]; a[ 9] += b[ 9]; a[10] += b[10]; a[11] += b[11];
-    a[12] += b[12]; a[13] += b[13]; a[14] += b[14]; a[15] += b[15];
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Adds the given scalar to each component of `this`
-   * @param scalar - The scalar to add
-   * @returns Reference to `this` for chaining.
-   */
-  public addScalar(s: number): Mat4 {
-    const a = this.data
-    // tslint:disable
-    a[ 0] += s; a[ 1] += s; a[ 2] += s; a[ 3] += s;
-    a[ 4] += s; a[ 5] += s; a[ 6] += s; a[ 7] += s;
-    a[ 8] += s; a[ 9] += s; a[10] += s; a[11] += s;
-    a[12] += s; a[13] += s; a[14] += s; a[15] += s;
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Subtracts the given matrix from `this`
-   * @param other - The matrix to subtract
-   * @returns Reference to `this` for chaining.
-   */
-  public subtract(other: Mat4): Mat4 {
-    const a = this.data
-    const b = other.data
-    // tslint:disable
-    a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; a[ 2] -= b[ 2]; a[ 3] -= b[ 3];
-    a[ 4] -= b[ 4]; a[ 5] -= b[ 5]; a[ 6] -= b[ 6]; a[ 7] -= b[ 7];
-    a[ 8] -= b[ 8]; a[ 9] -= b[ 9]; a[10] -= b[10]; a[11] -= b[11];
-    a[12] -= b[12]; a[13] -= b[13]; a[14] -= b[14]; a[15] -= b[15];
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Subtracts the given scalar from each component of `this`
-   * @param scalar - The scalar to subtract
-   * @returns Reference to `this` for chaining.
-   */
-  public subtractScalar(s: number): Mat4 {
-    const a = this.data
-    // tslint:disable
-    a[ 0] -= s; a[ 1] -= s; a[ 2] -= s; a[ 3] -= s;
-    a[ 4] -= s; a[ 5] -= s; a[ 6] -= s; a[ 7] -= s;
-    a[ 8] -= s; a[ 9] -= s; a[10] -= s; a[11] -= s;
-    a[12] -= s; a[13] -= s; a[14] -= s; a[15] -= s;
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Multiplies the given matrix with this
-   * @param other - The matrix to multiply
-   * @returns Reference to `this` for chaining.
-   */
-  public multiply(other: Mat4): Mat4 {
-    const a = other.data
-    const b = this.data
-    const c = this.data
-
-    // tslint:disable
-    let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], a_3 = a[ 3],
-        a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
-        a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
-        a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
-    // tslint:enable
-
-    c[0] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
-    c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
-    c[2] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14
-    c[3] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15
-    c[4] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12
-    c[5] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13
-    c[6] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14
-    c[7] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15
-    c[8] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12
-    c[9] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13
-    c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14
-    c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15
-    c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12
-    c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
-    c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
-    c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
-    return this
-  }
-
-  /**
-   * Concatenates the given matrix to this
-   * @param other - The matrix to concatenate
-   * @returns Reference to `this` for chaining.
-   */
-  public concat(other: Mat4): Mat4 {
-    const a = this.data
-    const b = other.data
-    const c = this.data
-    // tslint:disable
-    let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], a_3 = a[ 3],
-        a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
-        a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
-        a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15]
-    // tslint:enable
-    c[0] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
-    c[1] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
-    c[2] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14
-    c[3] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15
-    c[4] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12
-    c[5] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13
-    c[6] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14
-    c[7] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15
-    c[8] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12
-    c[9] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13
-    c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14
-    c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15
-    c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12
-    c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
-    c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
-    c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
-    return this
-  }
-
-  public rotateX(rad: number): Mat4 {
-    return this.multiply(tempMat().initRotationX(rad))
-  }
-
-  public rotateY(rad: number): Mat4 {
-    return this.multiply(tempMat().initRotationY(rad))
-  }
-
-  public rotateZ(rad: number): Mat4 {
-    return this.multiply(tempMat().initRotationZ(rad))
-  }
-
-  public rotate(yaw: number, pitch: number, roll: number): Mat4 {
-    return this.multiply(tempMat().initYawPitchRoll(yaw, pitch, roll))
-  }
-
-  public translate(x: number, y: number = 0, z: number = 0): Mat4 {
-    return this.multiply(tempMat().initTranslation(x, y, z))
-  }
-
-  public scale(x: number, y: number, z: number): Mat4 {
-    return this.multiply(tempMat().initScale(x, y, z))
-  }
-
-  public scaleUniform(scale: number): Mat4 {
-    return this.multiply(tempMat().initScale(scale, scale, scale))
-  }
-
-  /**
-   * Multiplies each component of `this` with given scalar
-   * @param scalar - The scalar to multiply
-   * @returns Reference to `this` for chaining.
-   */
-  public multiplyScalar(s: number): Mat4 {
-    const a = this.data
-    // tslint:disable
-    a[ 0] *= s; a[ 1] *= s; a[ 2] *= s; a[ 3] *= s;
-    a[ 4] *= s; a[ 5] *= s; a[ 6] *= s; a[ 7] *= s;
-    a[ 8] *= s; a[ 9] *= s; a[10] *= s; a[11] *= s;
-    a[12] *= s; a[13] *= s; a[14] *= s; a[15] *= s;
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Divides each matching component pair
-   * @param other - The matrix by which to divide
-   * @returns Reference to `this` for chaining.
-   */
-  public divide(other: Mat4): Mat4 {
-    const a = this.data
-    const b = other.data
-    // tslint:disable
-    a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; a[ 2] /= b[ 2]; a[ 3] /= b[ 3];
-    a[ 4] /= b[ 4]; a[ 5] /= b[ 5]; a[ 6] /= b[ 6]; a[ 7] /= b[ 7];
-    a[ 8] /= b[ 8]; a[ 9] /= b[ 9]; a[10] /= b[10]; a[11] /= b[11];
-    a[12] /= b[12]; a[13] /= b[13]; a[14] /= b[14]; a[15] /= b[15];
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Divides each component of `this` by given scalar
-   * @param scalar - The scalar by which to divide
-   * @returns Reference to `this` for chaining.
-   */
-  public divideScalar(s: number): Mat4 {
-    const a = this.data
-    const b = 1.0 / s
-    // tslint:disable
-    a[ 0] *= b; a[ 1] *= b; a[ 2] *= b; a[ 3] *= b;
-    a[ 4] *= b; a[ 5] *= b; a[ 6] *= b; a[ 7] *= b;
-    a[ 8] *= b; a[ 9] *= b; a[10] *= b; a[11] *= b;
-    a[12] *= b; a[13] *= b; a[14] *= b; a[15] *= b;
-    // tslint:enable
-    return this
-  }
-
-  /**
-   * Transform the given vector with this matrix.
-   *
-   * @returns the given vector
-   */
-  public transform<T extends IVec2|IVec3|IVec4>(vec: T): T {
-    const x = vec.x || 0
-    const y = vec.y || 0
-    const z = (vec as IVec3).z || 0
-    const w = (vec as IVec4).w != null ? (vec as IVec4).w : 1
-    const d = this.data
-    vec.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
-    vec.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
-    if (vec.hasOwnProperty('z')) {
-      (vec as IVec3).z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
-      if (vec.hasOwnProperty('w')) {
-        (vec as IVec4).w = x * d[3] + y * d[7] + z * d[11] + w * d[15]
-      }
-    }
-    return vec
-  }
-
-  /**
-   * Rotates and scales the given vector with this matrix.
-   *
-   * @returns the given vector
-   */
-  public transformNormal<T extends IVec2|IVec3|IVec4>(vec: T): T {
-    const x = vec.x || 0
-    const y = vec.y || 0
-    const z = (vec as IVec3).z || 0
-    const d = this.data
-    vec.x = x * d[0] + y * d[4] + z * d[8]
-    vec.y = x * d[1] + y * d[5] + z * d[9]
-    if (vec.hasOwnProperty('z')) {
-      (vec as IVec3).z = x * d[2] + y * d[6] + z * d[10]
-    }
-    return vec
-  }
-
-  /**
-   * Transforms the given buffer with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV2Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    const d = this.data
-    offset = offset || 0
-    stride = stride === undefined ? 2 : stride
-    count = count === undefined ? buffer.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      buffer[offset] = x * d[0] + y * d[4] + d[8] + d[12]
-      buffer[offset + 1] = x * d[1] + y * d[5] + d[9] + d[13]
-      offset += stride
-    }
-  }
-
-  /**
-   * Transforms the given buffer with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV3Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    let z
-    const d = this.data
-    offset = offset || 0
-    stride = stride === undefined ? 3 : stride
-    count = count === undefined ? buffer.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      z = buffer[offset + 2]
-      buffer[offset] = x * d[0] + y * d[4] + z * d[8] + d[12]
-      buffer[offset + 1] = x * d[1] + y * d[5] + z * d[9] + d[13]
-      buffer[offset + 2] = x * d[2] + y * d[6] + z * d[10] + d[14]
-      offset += stride
-    }
-  }
-
-  /**
-   * Transforms the given buffer with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV4Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    let z
-    let w
-    const d = this.data
-    offset = offset || 0
-    stride = stride === undefined ? 4 : stride
-    count = count === undefined ? buffer.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      z = buffer[offset + 2]
-      w = buffer[offset + 3]
-      buffer[offset] = x * d[0] + y * d[4] + z * d[8] + w * d[12]
-      buffer[offset + 1] = x * d[1] + y * d[5] + z * d[9] + w * d[13]
-      buffer[offset + 2] = x * d[2] + y * d[6] + z * d[10] + w * d[14]
-      buffer[offset + 3] = x * d[3] + y * d[7] + z * d[11] + w * d[15]
-      offset += stride
-    }
-  }
-
-  /**
-   * Transforms the given buffer with the rotation and scale part of `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformNormalBuffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    let z
-    const d = this.data
-    offset = offset || 0
-    stride = stride === undefined ? 3 : stride
-    count = count === undefined ? buffer.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      z = buffer[offset + 2]
-      buffer[offset] = x * d[0] + y * d[4] + z * d[8]
-      buffer[offset + 1] = x * d[1] + y * d[5] + z * d[9]
-      buffer[offset + 2] = x * d[2] + y * d[6] + z * d[10]
-      offset += stride
-    }
-  }
-
-  /**
    * Transpose the given matrix
    * @param mat - The matrix to transpose
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static transpose(mat: IMat, out?: Mat4): Mat4 {
-    const d = mat.data
+    const d = mat.m
     return (out || new Mat4()).init(
       d[0], d[4], d[8], d[12],
       d[1], d[5], d[9], d[13],
@@ -1617,15 +1944,49 @@ export class Mat4 {
   }
 
   /**
+   * Transposes this matrix
+   */
+  public transpose(): this {
+    const m = this.m
+    let t
+
+    t = m[1]
+    m[1] = m[4]
+    m[4] = t
+
+    t = m[2]
+    m[2] = m[8]
+    m[8] = t
+
+    t = m[3]
+    m[3] = m[12]
+    m[12] = t
+
+    t = m[6]
+    m[6] = m[9]
+    m[9] = t
+
+    t = m[7]
+    m[7] = m[13]
+    m[13] = t
+
+    t = m[11]
+    m[11] = m[14]
+    m[14] = t
+
+    return this
+  }
+
+  /**
    * Invert the given matrix
    * @param mat - The matrix to transpose
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static invert(mat: IMat, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = mat.data
-    const b = out.data
+    const a = mat.m
+    const b = out.m
 
     const a11 = a[0]
     const a12 = a[4]
@@ -1698,290 +2059,800 @@ export class Mat4 {
   }
 
   /**
-   * Negate the components of the given matrix
-   * @param mat - The matrix to transpose
-   * @param out - The matrix to write to
+   * Inverts this matrix
+   */
+  public invert(): Mat4 {
+    return Mat4.invert(this, this)
+  }
+
+  /**
+   * Negate each component of given matrix
+   *
+   * @param mat - The matrix to negate
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static negate(mat: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const d = mat.data
-    const o = out.data
-    // tslint:disable
-    o[ 0] = -d[ 0]; o[ 1] = -d[ 1]; o[ 2] = -d[ 2]; o[ 3] = -d[ 3];
-    o[ 4] = -d[ 4]; o[ 5] = -d[ 5]; o[ 6] = -d[ 6]; o[ 7] = -d[ 7];
-    o[ 8] = -d[ 8]; o[ 9] = -d[ 9]; o[10] = -d[10]; o[11] = -d[11];
-    o[12] = -d[12]; o[13] = -d[13]; o[14] = -d[14]; o[15] = -d[15];
-    // tslint:enable
+    const d = mat.m
+    const o = out.m
+    o[ 0] = -d[ 0]; o[ 1] = -d[ 1]; o[ 2] = -d[ 2]; o[ 3] = -d[ 3]
+    o[ 4] = -d[ 4]; o[ 5] = -d[ 5]; o[ 6] = -d[ 6]; o[ 7] = -d[ 7]
+    o[ 8] = -d[ 8]; o[ 9] = -d[ 9]; o[10] = -d[10]; o[11] = -d[11]
+    o[12] = -d[12]; o[13] = -d[13]; o[14] = -d[14]; o[15] = -d[15]
     return out
   }
 
   /**
-   * Adds a matrix to another
+   * Negates all components of this matrix
+   */
+  public negate(): Mat4 {
+    return Mat4.negate(this, this)
+  }
+  /**
+   * Adds components of one matrix to another
+   *
    * @param matA - The first matrix
    * @param matB - The second matrix
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static add(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3];
-    c[ 4] = a[ 4] + b[ 4]; c[ 5] = a[ 5] + b[ 5]; c[ 6] = a[ 6] + b[ 6]; c[ 7] = a[ 7] + b[ 7];
-    c[ 8] = a[ 8] + b[ 8]; c[ 9] = a[ 9] + b[ 9]; c[10] = a[10] + b[10]; c[11] = a[11] + b[11];
-    c[12] = a[12] + b[12]; c[13] = a[13] + b[13]; c[14] = a[14] + b[14]; c[15] = a[15] + b[15];
-    // tslint:enable
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3]
+    c[ 4] = a[ 4] + b[ 4]; c[ 5] = a[ 5] + b[ 5]; c[ 6] = a[ 6] + b[ 6]; c[ 7] = a[ 7] + b[ 7]
+    c[ 8] = a[ 8] + b[ 8]; c[ 9] = a[ 9] + b[ 9]; c[10] = a[10] + b[10]; c[11] = a[11] + b[11]
+    c[12] = a[12] + b[12]; c[13] = a[13] + b[13]; c[14] = a[14] + b[14]; c[15] = a[15] + b[15]
     return out
+  }
+
+  /**
+   * Adds the given matrix to `this`
+   *
+   * @param other - The matrix to add
+   */
+  public add(other: Mat4): this {
+    const a = this.m
+    const b = other.m
+    a[ 0] += b[ 0]; a[ 1] += b[ 1]; a[ 2] += b[ 2]; a[ 3] += b[ 3]
+    a[ 4] += b[ 4]; a[ 5] += b[ 5]; a[ 6] += b[ 6]; a[ 7] += b[ 7]
+    a[ 8] += b[ 8]; a[ 9] += b[ 9]; a[10] += b[10]; a[11] += b[11]
+    a[12] += b[12]; a[13] += b[13]; a[14] += b[14]; a[15] += b[15]
+    return this
   }
 
   /**
    * Adds a scalar to each component of a matrix
+   *
    * @param mat - The matrix
    * @param scalar - The scalar to add
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static addScalar(mat: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = mat.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar; c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar;
-    c[ 4] = a[ 4] + scalar; c[ 5] = a[ 5] + scalar; c[ 6] = a[ 6] + scalar; c[ 7] = a[ 7] + scalar;
-    c[ 8] = a[ 8] + scalar; c[ 9] = a[ 9] + scalar; c[10] = a[10] + scalar; c[11] = a[11] + scalar;
-    c[12] = a[12] + scalar; c[13] = a[13] + scalar; c[14] = a[14] + scalar; c[15] = a[15] + scalar;
-    // tslint:enable
+    const a = mat.m
+    const c = out.m
+    c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar; c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar
+    c[ 4] = a[ 4] + scalar; c[ 5] = a[ 5] + scalar; c[ 6] = a[ 6] + scalar; c[ 7] = a[ 7] + scalar
+    c[ 8] = a[ 8] + scalar; c[ 9] = a[ 9] + scalar; c[10] = a[10] + scalar; c[11] = a[11] + scalar
+    c[12] = a[12] + scalar; c[13] = a[13] + scalar; c[14] = a[14] + scalar; c[15] = a[15] + scalar
     return out
   }
 
   /**
-   * Subtracts the second matrix from the first
+   * Adds the given scalar to each component of `this`
+   *
+   * @param scalar - The scalar to add
+   */
+  public addScalar(s: number): this {
+    const a = this.m
+    a[ 0] += s; a[ 1] += s; a[ 2] += s; a[ 3] += s
+    a[ 4] += s; a[ 5] += s; a[ 6] += s; a[ 7] += s
+    a[ 8] += s; a[ 9] += s; a[10] += s; a[11] += s
+    a[12] += s; a[13] += s; a[14] += s; a[15] += s
+    return this
+  }
+
+  /**
+   * Subtracts components of one matrix from another
+   *
    * @param matA - The first matrix
    * @param matB - The second matrix
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static subtract(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3];
-    c[ 4] = a[ 4] - b[ 4]; c[ 5] = a[ 5] - b[ 5]; c[ 6] = a[ 6] - b[ 6]; c[ 7] = a[ 7] - b[ 7];
-    c[ 8] = a[ 8] - b[ 8]; c[ 9] = a[ 9] - b[ 9]; c[10] = a[10] - b[10]; c[11] = a[11] - b[11];
-    c[12] = a[12] - b[12]; c[13] = a[13] - b[13]; c[14] = a[14] - b[14]; c[15] = a[15] - b[15];
-    // tslint:enable
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3]
+    c[ 4] = a[ 4] - b[ 4]; c[ 5] = a[ 5] - b[ 5]; c[ 6] = a[ 6] - b[ 6]; c[ 7] = a[ 7] - b[ 7]
+    c[ 8] = a[ 8] - b[ 8]; c[ 9] = a[ 9] - b[ 9]; c[10] = a[10] - b[10]; c[11] = a[11] - b[11]
+    c[12] = a[12] - b[12]; c[13] = a[13] - b[13]; c[14] = a[14] - b[14]; c[15] = a[15] - b[15]
     return out
   }
 
   /**
-   * Subtracts a scalar from each somponent of a matrix
+   * Subtracts the given matrix from `this`
+   *
+   * @param other - The matrix to subtract
+   */
+  public subtract(other: Mat4): this {
+    const a = this.m
+    const b = other.m
+    a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; a[ 2] -= b[ 2]; a[ 3] -= b[ 3]
+    a[ 4] -= b[ 4]; a[ 5] -= b[ 5]; a[ 6] -= b[ 6]; a[ 7] -= b[ 7]
+    a[ 8] -= b[ 8]; a[ 9] -= b[ 9]; a[10] -= b[10]; a[11] -= b[11]
+    a[12] -= b[12]; a[13] -= b[13]; a[14] -= b[14]; a[15] -= b[15]
+    return this
+  }
+
+  /**
+   * Subtracts a scalar from each component of a matrix
+   *
    * @param mat - The matrix to subtract from
    * @param scalar - The scalar to subtract
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static subtractScalar(mat: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = mat.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar; c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar;
-    c[ 4] = a[ 4] - scalar; c[ 5] = a[ 5] - scalar; c[ 6] = a[ 6] - scalar; c[ 7] = a[ 7] - scalar;
-    c[ 8] = a[ 8] - scalar; c[ 9] = a[ 9] - scalar; c[10] = a[10] - scalar; c[11] = a[11] - scalar;
-    c[12] = a[12] - scalar; c[13] = a[13] - scalar; c[14] = a[14] - scalar; c[15] = a[15] - scalar;
-    // tslint:enable
+    const a = mat.m
+    const c = out.m
+    c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar; c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar
+    c[ 4] = a[ 4] - scalar; c[ 5] = a[ 5] - scalar; c[ 6] = a[ 6] - scalar; c[ 7] = a[ 7] - scalar
+    c[ 8] = a[ 8] - scalar; c[ 9] = a[ 9] - scalar; c[10] = a[10] - scalar; c[11] = a[11] - scalar
+    c[12] = a[12] - scalar; c[13] = a[13] - scalar; c[14] = a[14] - scalar; c[15] = a[15] - scalar
     return out
   }
 
   /**
-   * Multiplies a matrix by another matrix
-   * @param matA - The first matrix
-   * @param matB - The second matrix
+   * Subtracts the given scalar from each component of `this`
+   *
+   * @param scalar - The scalar to subtract
+   */
+  public subtractScalar(s: number): this {
+    const a = this.m
+    a[ 0] -= s; a[ 1] -= s; a[ 2] -= s; a[ 3] -= s
+    a[ 4] -= s; a[ 5] -= s; a[ 6] -= s; a[ 7] -= s
+    a[ 8] -= s; a[ 9] -= s; a[10] -= s; a[11] -= s
+    a[12] -= s; a[13] -= s; a[14] -= s; a[15] -= s
+    return this
+  }
+
+  /**
+   * Performs a matrix multiplication `matA * matB` meaning `matB` is post-multiplied on `matA`.
+   *
+   * @param matA - The main matrix
+   * @param matB - The matrix to post-multiply
    * @param out - The matrix to write to
+   *
    * @returns The given `out` parameter or a new matrix
    */
   public static multiply(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matB.data
-    const b = matA.data
-    const c = out.data
-    // tslint:disable
-    let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], a_3 = a[ 3],
-        a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
-        a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
-        a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
-    // tslint:enable
-    c[0 ] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
-    c[1 ] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
-    c[2 ] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14
-    c[3 ] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15
-    c[4 ] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12
-    c[5 ] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13
-    c[6 ] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14
-    c[7 ] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15
-    c[8 ] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12
-    c[9 ] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13
-    c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14
-    c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15
-    c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12
-    c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
-    c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
-    c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+
+    const a00 = a[M._00]
+    const a01 = a[M._01]
+    const a02 = a[M._02]
+    const a03 = a[M._03]
+    const a10 = a[M._10]
+    const a11 = a[M._11]
+    const a12 = a[M._12]
+    const a13 = a[M._13]
+    const a20 = a[M._20]
+    const a21 = a[M._21]
+    const a22 = a[M._22]
+    const a23 = a[M._23]
+    const a30 = a[M._30]
+    const a31 = a[M._31]
+    const a32 = a[M._32]
+    const a33 = a[M._33]
+
+    const b00 = b[M._00]
+    const b01 = b[M._01]
+    const b02 = b[M._02]
+    const b03 = b[M._03]
+    const b10 = b[M._10]
+    const b11 = b[M._11]
+    const b12 = b[M._12]
+    const b13 = b[M._13]
+    const b20 = b[M._20]
+    const b21 = b[M._21]
+    const b22 = b[M._22]
+    const b23 = b[M._23]
+    const b30 = b[M._30]
+    const b31 = b[M._31]
+    const b32 = b[M._32]
+    const b33 = b[M._33]
+
+    c[M._00] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30
+    c[M._01] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31
+    c[M._02] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32
+    c[M._03] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33
+    c[M._10] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30
+    c[M._11] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31
+    c[M._12] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32
+    c[M._13] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33
+    c[M._20] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30
+    c[M._21] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31
+    c[M._22] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32
+    c[M._23] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33
+    c[M._30] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30
+    c[M._31] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31
+    c[M._32] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32
+    c[M._33] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
     return out
   }
 
   /**
-   * Multiplies a matrix by another matrix
-   * @param matA - The first matrix
-   * @param matB - The second matrix
+   * Performs a matrix multiplication `this = this * other` meaning `other` is post-multiplied t `this`.
+   *
+   * @param other - The matrix to post-multiply
+   */
+  public multiply(other: Mat4): this {
+    const a = this.m
+    const b = other.m
+    const c = this.m
+
+    const a00 = a[M._00]
+    const a01 = a[M._01]
+    const a02 = a[M._02]
+    const a03 = a[M._03]
+    const a10 = a[M._10]
+    const a11 = a[M._11]
+    const a12 = a[M._12]
+    const a13 = a[M._13]
+    const a20 = a[M._20]
+    const a21 = a[M._21]
+    const a22 = a[M._22]
+    const a23 = a[M._23]
+    const a30 = a[M._30]
+    const a31 = a[M._31]
+    const a32 = a[M._32]
+    const a33 = a[M._33]
+
+    const b00 = b[M._00]
+    const b01 = b[M._01]
+    const b02 = b[M._02]
+    const b03 = b[M._03]
+    const b10 = b[M._10]
+    const b11 = b[M._11]
+    const b12 = b[M._12]
+    const b13 = b[M._13]
+    const b20 = b[M._20]
+    const b21 = b[M._21]
+    const b22 = b[M._22]
+    const b23 = b[M._23]
+    const b30 = b[M._30]
+    const b31 = b[M._31]
+    const b32 = b[M._32]
+    const b33 = b[M._33]
+
+    c[M._00] = a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03
+    c[M._01] = a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03
+    c[M._02] = a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03
+    c[M._03] = a03 * b00 + a13 * b01 + a23 * b02 + a33 * b03
+    c[M._10] = a00 * b10 + a10 * b11 + a20 * b12 + a30 * b13
+    c[M._11] = a01 * b10 + a11 * b11 + a21 * b12 + a31 * b13
+    c[M._12] = a02 * b10 + a12 * b11 + a22 * b12 + a32 * b13
+    c[M._13] = a03 * b10 + a13 * b11 + a23 * b12 + a33 * b13
+    c[M._20] = a00 * b20 + a10 * b21 + a20 * b22 + a30 * b23
+    c[M._21] = a01 * b20 + a11 * b21 + a21 * b22 + a31 * b23
+    c[M._22] = a02 * b20 + a12 * b21 + a22 * b22 + a32 * b23
+    c[M._23] = a03 * b20 + a13 * b21 + a23 * b22 + a33 * b23
+    c[M._30] = a00 * b30 + a10 * b31 + a20 * b32 + a30 * b33
+    c[M._31] = a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33
+    c[M._32] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33
+    c[M._33] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33
+    return this
+  }
+
+  /**
+   * Performs a matrix multiplication `matB * matA` meaning `matB` is pre-multiplied on `matA`.
+   *
+   * @param matA - The main matrix
+   * @param matB - The matrix to pre-multiply
    * @param out - The matrix to write to
+   *
    * @returns The given `out` parameter or a new matrix
    */
-  public static concat(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
+  public static premultiply(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    // tslint:disable
-    let a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2], a_3 = a[ 3],
-        a_4 = a[ 4], a_5 = a[ 5], a_6 = a[ 6], a_7 = a[ 7],
-        a_8 = a[ 8], a_9 = a[ 9], a10 = a[10], a11 = a[11],
-        a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-    let b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2], b_3 = b[ 3],
-        b_4 = b[ 4], b_5 = b[ 5], b_6 = b[ 6], b_7 = b[ 7],
-        b_8 = b[ 8], b_9 = b[ 9], b10 = b[10], b11 = b[11],
-        b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
-    // tslint:enable
-    c[0 ] = b_0 * a_0 + b_1 * a_4 + b_2 * a_8 + b_3 * a12
-    c[1 ] = b_0 * a_1 + b_1 * a_5 + b_2 * a_9 + b_3 * a13
-    c[2 ] = b_0 * a_2 + b_1 * a_6 + b_2 * a10 + b_3 * a14
-    c[3 ] = b_0 * a_3 + b_1 * a_7 + b_2 * a11 + b_3 * a15
-    c[4 ] = b_4 * a_0 + b_5 * a_4 + b_6 * a_8 + b_7 * a12
-    c[5 ] = b_4 * a_1 + b_5 * a_5 + b_6 * a_9 + b_7 * a13
-    c[6 ] = b_4 * a_2 + b_5 * a_6 + b_6 * a10 + b_7 * a14
-    c[7 ] = b_4 * a_3 + b_5 * a_7 + b_6 * a11 + b_7 * a15
-    c[8 ] = b_8 * a_0 + b_9 * a_4 + b10 * a_8 + b11 * a12
-    c[9 ] = b_8 * a_1 + b_9 * a_5 + b10 * a_9 + b11 * a13
-    c[10] = b_8 * a_2 + b_9 * a_6 + b10 * a10 + b11 * a14
-    c[11] = b_8 * a_3 + b_9 * a_7 + b10 * a11 + b11 * a15
-    c[12] = b12 * a_0 + b13 * a_4 + b14 * a_8 + b15 * a12
-    c[13] = b12 * a_1 + b13 * a_5 + b14 * a_9 + b15 * a13
-    c[14] = b12 * a_2 + b13 * a_6 + b14 * a10 + b15 * a14
-    c[15] = b12 * a_3 + b13 * a_7 + b14 * a11 + b15 * a15
+    const a = matB.m
+    const b = matA.m
+    const c = out.m
+
+    const a00 = a[M._00]
+    const a01 = a[M._01]
+    const a02 = a[M._02]
+    const a03 = a[M._03]
+    const a10 = a[M._10]
+    const a11 = a[M._11]
+    const a12 = a[M._12]
+    const a13 = a[M._13]
+    const a20 = a[M._20]
+    const a21 = a[M._21]
+    const a22 = a[M._22]
+    const a23 = a[M._23]
+    const a30 = a[M._30]
+    const a31 = a[M._31]
+    const a32 = a[M._32]
+    const a33 = a[M._33]
+
+    const b00 = b[M._00]
+    const b01 = b[M._01]
+    const b02 = b[M._02]
+    const b03 = b[M._03]
+    const b10 = b[M._10]
+    const b11 = b[M._11]
+    const b12 = b[M._12]
+    const b13 = b[M._13]
+    const b20 = b[M._20]
+    const b21 = b[M._21]
+    const b22 = b[M._22]
+    const b23 = b[M._23]
+    const b30 = b[M._30]
+    const b31 = b[M._31]
+    const b32 = b[M._32]
+    const b33 = b[M._33]
+
+    c[M._00] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30
+    c[M._01] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31
+    c[M._02] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32
+    c[M._03] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33
+    c[M._10] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30
+    c[M._11] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31
+    c[M._12] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32
+    c[M._13] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33
+    c[M._20] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30
+    c[M._21] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31
+    c[M._22] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32
+    c[M._23] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33
+    c[M._30] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30
+    c[M._31] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31
+    c[M._32] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32
+    c[M._33] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
     return out
   }
 
   /**
-   * Multiplies a chain of matrices
-   * @returns The result of the multiplication
+   * Performs a matrix multiplication `this = other * this` meaning `other` is pre-multiplied on `this`.
+   *
+   * @param other - The matrix to pre-multiply
    */
-  public static concatChain(...rest: Mat4[]) {
-    // (a, (b, (c, (d, e))))
-    const result = arguments[arguments.length - 1].clone()
-    for (let i = arguments.length - 2; i >= 0; i--) {
-      Mat4.concat(arguments[i], result, result)
-    }
-    return result
+  public premultiply(other: Mat4): this {
+    const a = this.m
+    const b = other.m
+    const c = this.m
+
+    const a00 = a[M._00]
+    const a01 = a[M._01]
+    const a02 = a[M._02]
+    const a03 = a[M._03]
+    const a10 = a[M._10]
+    const a11 = a[M._11]
+    const a12 = a[M._12]
+    const a13 = a[M._13]
+    const a20 = a[M._20]
+    const a21 = a[M._21]
+    const a22 = a[M._22]
+    const a23 = a[M._23]
+    const a30 = a[M._30]
+    const a31 = a[M._31]
+    const a32 = a[M._32]
+    const a33 = a[M._33]
+
+    const b00 = b[M._00]
+    const b01 = b[M._01]
+    const b02 = b[M._02]
+    const b03 = b[M._03]
+    const b10 = b[M._10]
+    const b11 = b[M._11]
+    const b12 = b[M._12]
+    const b13 = b[M._13]
+    const b20 = b[M._20]
+    const b21 = b[M._21]
+    const b22 = b[M._22]
+    const b23 = b[M._23]
+    const b30 = b[M._30]
+    const b31 = b[M._31]
+    const b32 = b[M._32]
+    const b33 = b[M._33]
+
+    c[M._00] = a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03
+    c[M._01] = a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03
+    c[M._02] = a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03
+    c[M._03] = a03 * b00 + a13 * b01 + a23 * b02 + a33 * b03
+    c[M._10] = a00 * b10 + a10 * b11 + a20 * b12 + a30 * b13
+    c[M._11] = a01 * b10 + a11 * b11 + a21 * b12 + a31 * b13
+    c[M._12] = a02 * b10 + a12 * b11 + a22 * b12 + a32 * b13
+    c[M._13] = a03 * b10 + a13 * b11 + a23 * b12 + a33 * b13
+    c[M._20] = a00 * b20 + a10 * b21 + a20 * b22 + a30 * b23
+    c[M._21] = a01 * b20 + a11 * b21 + a21 * b22 + a31 * b23
+    c[M._22] = a02 * b20 + a12 * b21 + a22 * b22 + a32 * b23
+    c[M._23] = a03 * b20 + a13 * b21 + a23 * b22 + a33 * b23
+    c[M._30] = a00 * b30 + a10 * b31 + a20 * b32 + a30 * b33
+    c[M._31] = a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33
+    c[M._32] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33
+    c[M._33] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33
+    return this
   }
 
-  /**
-   * Multiplies a chain of matrices
-   * @returns The result of the multiplication
-   */
-  public static multiplyChain(...rest: Mat4[]) {
-    // ((((a, b), c), d), e)
-    const result = arguments[0].clone()
-    for (let i = 1; i < arguments.length; i += 1) {
-      Mat4.multiply(result, arguments[i], result)
-    }
-    return result
-  }
+  // /**
+  //  * Solves a multiplication chain of patrices
+  //  *
+  //  * @returns The result of the multiplication
+  //  */
+  // public static multiplyChain(...rest: Mat4[]): Mat4
+  // public static multiplyChain() {
+  //   // (a, (b, (c, (d, e))))
+  //   const result: Mat4 = arguments[arguments.length - 1].clone()
+  //   for (let i = arguments.length - 2; i >= 0; i--) {
+  //     Mat4.multiply(arguments[i], result, result)
+  //   }
+  //   return result
+  // }
+
+  // /**
+  //  * Solves a multiplication chain of patrices where each matrix is
+  //  *
+  //  * @returns The result of the multiplication
+  //  */
+  // public static premultiplyChain(...rest: Mat4[]): Mat4
+  // public static premultiplyChain() {
+  //   // ((((a, b), c), d), e)
+  //   const result: Mat4 = arguments[0].clone()
+  //   for (let i = 1; i < arguments.length; i += 1) {
+  //     Mat4.premultiply(result, arguments[i], result)
+  //   }
+  //   return result
+  // }
 
   /**
-   * Multiplies a matrix with a scalar value
+   * Multiplies the components of a matrix by with a scalar value
+   *
    * @param matA - The matrix
    * @param scalar - The scalar to multiply
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static multiplyScalar(matA: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
+    const a = matA.m
     const b = scalar
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b;
-    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b;
-    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b;
-    // tslint:enable
+    const c = out.m
+    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b
+    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b
+    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b
+    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b
     return out
+  }
+
+  /**
+   * Multiplies each component of `this` with given scalar
+   *
+   * @param s - The scalar to multiply
+   */
+  public multiplyScalar(s: number): this {
+    const a = this.m
+    a[ 0] *= s; a[ 1] *= s; a[ 2] *= s; a[ 3] *= s
+    a[ 4] *= s; a[ 5] *= s; a[ 6] *= s; a[ 7] *= s
+    a[ 8] *= s; a[ 9] *= s; a[10] *= s; a[11] *= s
+    a[12] *= s; a[13] *= s; a[14] *= s; a[15] *= s
+    return this
   }
 
   /**
    * Divides the components of the first matrix by the components of the second matrix
+   *
    * @param matA - The first matrix
    * @param matB - The second matrix
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static divide(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1]; c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3];
-    c[ 4] = a[ 4] / b[ 4]; c[ 5] = a[ 5] / b[ 5]; c[ 6] = a[ 6] / b[ 6]; c[ 7] = a[ 7] / b[ 7];
-    c[ 8] = a[ 8] / b[ 8]; c[ 9] = a[ 9] / b[ 9]; c[10] = a[10] / b[10]; c[11] = a[11] / b[11];
-    c[12] = a[12] / b[12]; c[13] = a[13] / b[13]; c[14] = a[14] / b[14]; c[15] = a[15] / b[15];
-    // tslint:enable
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+    c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1]; c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3]
+    c[ 4] = a[ 4] / b[ 4]; c[ 5] = a[ 5] / b[ 5]; c[ 6] = a[ 6] / b[ 6]; c[ 7] = a[ 7] / b[ 7]
+    c[ 8] = a[ 8] / b[ 8]; c[ 9] = a[ 9] / b[ 9]; c[10] = a[10] / b[10]; c[11] = a[11] / b[11]
+    c[12] = a[12] / b[12]; c[13] = a[13] / b[13]; c[14] = a[14] / b[14]; c[15] = a[15] / b[15]
     return out
+  }
+
+  /**
+   * Divides each component of this matrix by its according component of the other matrix
+   *
+   * @param other - The matrix by which to divide
+   */
+  public divide(other: Mat4): this {
+    const a = this.m
+    const b = other.m
+    a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; a[ 2] /= b[ 2]; a[ 3] /= b[ 3]
+    a[ 4] /= b[ 4]; a[ 5] /= b[ 5]; a[ 6] /= b[ 6]; a[ 7] /= b[ 7]
+    a[ 8] /= b[ 8]; a[ 9] /= b[ 9]; a[10] /= b[10]; a[11] /= b[11]
+    a[12] /= b[12]; a[13] /= b[13]; a[14] /= b[14]; a[15] /= b[15]
+    return this
   }
 
   /**
    * Divides the components of a matrix by a scalar
+   *
    * @param matA - The matrix
    * @param scalar - The scalar by which to divide
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static divideScalar(matA: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
+    const a = matA.m
     const b = 1 / scalar
-    const c = out.data
-    // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b;
-    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b;
-    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b;
-    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b;
-    // tslint:enable
+    const c = out.m
+    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b
+    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b
+    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b
+    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b
     return out
   }
 
   /**
+   * Divides each component of this matrix by given scalar value
+   *
+   * @param s - The scalar by which to divide
+   */
+  public divideScalar(s: number): this {
+    const a = this.m
+    const b = 1.0 / s
+    a[ 0] *= b; a[ 1] *= b; a[ 2] *= b; a[ 3] *= b
+    a[ 4] *= b; a[ 5] *= b; a[ 6] *= b; a[ 7] *= b
+    a[ 8] *= b; a[ 9] *= b; a[10] *= b; a[11] *= b
+    a[12] *= b; a[13] *= b; a[14] *= b; a[15] *= b
+    return this
+  }
+
+  /**
+   * Transform the given vector with this matrix.
+   */
+  public transformV2<T extends IVec2>(vec: T): T {
+    const x = vec.x
+    const y = vec.y
+    const w = 1
+    const d = this.m
+    vec.x = x * d[0] + y * d[4] + w * d[12]
+    vec.y = x * d[1] + y * d[5] + w * d[13]
+    return vec
+  }
+
+  /**
+   * Transform the given vector with this matrix.
+   */
+  public transformV3<T extends IVec3>(vec: T): T {
+    const x = vec.x
+    const y = vec.y
+    const z = vec.z
+    const w = 1
+    const d = this.m
+    vec.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
+    vec.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
+    vec.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
+    return vec
+  }
+
+  /**
+   * Transform the given vector with this matrix.
+   *
+   * @returns the given vector
+   */
+  public transformV4<T extends IVec4>(vec: T): T {
+    const x = vec.x
+    const y = vec.y
+    const z = vec.z
+    const w = vec.w
+    const d = this.m
+    vec.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
+    vec.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
+    vec.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
+    vec.w = x * d[3] + y * d[7] + z * d[11] + w * d[15]
+    return vec
+  }
+
+  /**
+   * Rotates and scales the given vector with this matrix.
+   *
+   * @returns the given vector
+   */
+  public transformV2Normal<T extends IVec2>(vec: T): T {
+    const x = vec.x || 0
+    const y = vec.y || 0
+    const d = this.m
+    vec.x = x * d[0] + y * d[4]
+    vec.y = x * d[1] + y * d[5]
+    return vec
+  }
+
+  /**
+   * Rotates and scales the given vector with this matrix.
+   *
+   * @returns the given vector
+   */
+  public transformV3Normal<T extends IVec3>(vec: T): T {
+    const x = vec.x || 0
+    const y = vec.y || 0
+    const z = vec.z || 0
+    const d = this.m
+    vec.x = x * d[0] + y * d[4] + z * d[8]
+    vec.y = x * d[1] + y * d[5] + z * d[9]
+    vec.z = x * d[2] + y * d[6] + z * d[10]
+    return vec
+  }
+
+  /**
+   * Walks through the array and transforms 2 component vectors
+   *
+   * @param array - The array to transform
+   * @param offset - Offset in array where to start
+   * @param stride - Number of components to step with each iteration
+   * @param count - Number of vector elements to transform
+   */
+  public transformV2Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+    let x
+    let y
+    const d = this.m
+    offset = offset || 0
+    stride = stride == null ? 2 : stride
+    count = count == null ? array.length / stride : count
+
+    while (count > 0) {
+      count--
+      x = array[offset]
+      y = array[offset + 1]
+      array[offset] = x * d[0] + y * d[4] + d[8] + d[12]
+      array[offset + 1] = x * d[1] + y * d[5] + d[9] + d[13]
+      offset += stride
+    }
+  }
+
+  /**
+   * Walks through the array and transforms 3 component vectors
+   *
+   * @param array - The array to transform
+   * @param offset - Offset in array where to start
+   * @param stride - Number of components to step with each iteration
+   * @param count - Number of vector elements to transform
+   */
+  public transformV3Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+    let x
+    let y
+    let z
+    const d = this.m
+    offset = offset || 0
+    stride = stride == null ? 3 : stride
+    count = count == null ? array.length / stride : count
+
+    while (count > 0) {
+      count--
+      x = array[offset]
+      y = array[offset + 1]
+      z = array[offset + 2]
+      array[offset] = x * d[0] + y * d[4] + z * d[8] + d[12]
+      array[offset + 1] = x * d[1] + y * d[5] + z * d[9] + d[13]
+      array[offset + 2] = x * d[2] + y * d[6] + z * d[10] + d[14]
+      offset += stride
+    }
+  }
+
+  /**
+   * Walks through the array and transforms 4 component vectors
+   *
+   * @param array - The array to transform
+   * @param offset - Offset in array where to start
+   * @param stride - Number of components to step with each iteration
+   * @param count - Number of vector elements to transform
+   */
+  public transformV4Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+    let x
+    let y
+    let z
+    let w
+    const d = this.m
+    offset = offset || 0
+    stride = stride == null ? 4 : stride
+    count = count == null ? array.length / stride : count
+
+    while (count > 0) {
+      count--
+      x = array[offset]
+      y = array[offset + 1]
+      z = array[offset + 2]
+      w = array[offset + 3]
+      array[offset] = x * d[0] + y * d[4] + z * d[8] + w * d[12]
+      array[offset + 1] = x * d[1] + y * d[5] + z * d[9] + w * d[13]
+      array[offset + 2] = x * d[2] + y * d[6] + z * d[10] + w * d[14]
+      array[offset + 3] = x * d[3] + y * d[7] + z * d[11] + w * d[15]
+      offset += stride
+    }
+  }
+
+  /**
+   * Walks through the array and transforms 3 component normals
+   *
+   * @param array - The array to transform
+   * @param offset - Offset in array where to start
+   * @param stride - Number of components to step with each iteration
+   * @param count - Number of vector elements to transform
+   */
+  public transformV2NormalArray(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+    let x
+    let y
+    const d = this.m
+    offset = offset || 0
+    stride = stride == null ? 2 : stride
+    count = count == null ? array.length / stride : count
+
+    while (count > 0) {
+      count--
+      x = array[offset]
+      y = array[offset + 1]
+      array[offset] = x * d[0] + y * d[4]
+      array[offset + 1] = x * d[1] + y * d[5]
+      offset += stride
+    }
+  }
+
+  /**
+   * Walks through the array and transforms 3 component normals
+   *
+   * @param array - The array to transform
+   * @param offset - Offset in array where to start
+   * @param stride - Number of components to step with each iteration
+   * @param count - Number of vector elements to transform
+   */
+  public transformV3NormalArray(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+    let x
+    let y
+    let z
+    const d = this.m
+    offset = offset || 0
+    stride = stride == null ? 3 : stride
+    count = count == null ? array.length / stride : count
+
+    while (count > 0) {
+      count--
+      x = array[offset]
+      y = array[offset + 1]
+      z = array[offset + 2]
+      array[offset] = x * d[0] + y * d[4] + z * d[8]
+      array[offset + 1] = x * d[1] + y * d[5] + z * d[9]
+      array[offset + 2] = x * d[2] + y * d[6] + z * d[10]
+      offset += stride
+    }
+  }
+
+  /**
    * Performs a linear interpolation between two matrices
+   *
    * @param matA - The first matrix
    * @param matB - The second matrix
    * @param t - The interpolation value. This is assumed to be in [0:1] range
-   * @param out - The matrix to write to
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
   public static lerp(matA: Mat4, matB: Mat4, t: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
     c[0] = a[0] + (b[0] - a[0]) * t
     c[1] = a[1] + (b[1] - a[1]) * t
     c[2] = a[2] + (b[2] - a[2]) * t
@@ -2003,19 +2874,20 @@ export class Mat4 {
 
   /**
    * Performs a component wise smooth interpolation between the given two elements.
+   *
    * @param a - The first matrix.
    * @param b - The second matrix.
    * @param t - The interpolation value. Assumed to be in range [0:1].
-   * @param out - The matrix to write to.
+   * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix.
    */
   public static smooth(matA: Mat4, matB: Mat4, t: number, out?: Mat4): Mat4 {
     t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
     t = t * t * (3 - 2 * t)
     out = out || new Mat4()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
     c[0] = a[0] + (b[0] - a[0]) * t
     c[1] = a[1] + (b[1] - a[1]) * t
     c[2] = a[2] + (b[2] - a[2]) * t
@@ -2035,20 +2907,187 @@ export class Mat4 {
     return out
   }
 
+  /**
+   * Creates a copy of this matrix
+   * @returns The cloned matrix.
+   */
+  public static clone(mat: Mat4, out: Mat4 = new Mat4()): Mat4 {
+    const d = mat.m
+    const o = out.m
+    o[0] = d[0]
+    o[1] = d[1]
+    o[2] = d[2]
+    o[3] = d[3]
+    o[4] = d[4]
+    o[5] = d[5]
+    o[6] = d[6]
+    o[7] = d[7]
+    o[8] = d[8]
+    o[9] = d[9]
+    o[10] = d[10]
+    o[11] = d[11]
+    o[12] = d[12]
+    o[13] = d[13]
+    o[14] = d[14]
+    o[15] = d[15]
+    return out
+  }
+
+  /**
+   * Creates a copy of this matrix
+   * @returns The cloned matrix.
+   */
+  public clone(out: Mat4 = new Mat4()): Mat4 {
+    const d = this.m
+    const o = out.m
+    o[0] = d[0]
+    o[1] = d[1]
+    o[2] = d[2]
+    o[3] = d[3]
+    o[4] = d[4]
+    o[5] = d[5]
+    o[6] = d[6]
+    o[7] = d[7]
+    o[8] = d[8]
+    o[9] = d[9]
+    o[10] = d[10]
+    o[11] = d[11]
+    o[12] = d[12]
+    o[13] = d[13]
+    o[14] = d[14]
+    o[15] = d[15]
+    return out
+  }
+
+  /**
+   * Checks for component wise equality with given matrix
+   *
+   * @param other - The matrix to compare with
+   */
+  public static equals(m1: Mat4, m2: Mat4): boolean {
+    const a = m1.m
+    const b = m2.m
+    return a[0] === b[0] &&
+      a[1] === b[1] &&
+      a[2] === b[2] &&
+      a[3] === b[3] &&
+      a[4] === b[4] &&
+      a[5] === b[5] &&
+      a[6] === b[6] &&
+      a[7] === b[7] &&
+      a[8] === b[8] &&
+      a[9] === b[9] &&
+      a[10] === b[10] &&
+      a[11] === b[11] &&
+      a[12] === b[12] &&
+      a[13] === b[13] &&
+      a[14] === b[14] &&
+      a[15] === b[15]
+  }
+
+  /**
+   * Checks for component wise equality with given matrix
+   *
+   * @param other - The matrix to compare with
+   */
+  public equals(other: Mat4): boolean {
+    const a = this.m
+    const b = other.m
+    return a[0] === b[0] &&
+      a[1] === b[1] &&
+      a[2] === b[2] &&
+      a[3] === b[3] &&
+      a[4] === b[4] &&
+      a[5] === b[5] &&
+      a[6] === b[6] &&
+      a[7] === b[7] &&
+      a[8] === b[8] &&
+      a[9] === b[9] &&
+      a[10] === b[10] &&
+      a[11] === b[11] &&
+      a[12] === b[12] &&
+      a[13] === b[13] &&
+      a[14] === b[14] &&
+      a[15] === b[15]
+  }
+
+  /**
+   * Formats this into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public format(fractionDigits: number = 5) {
     return Mat4.format(this, fractionDigits)
   }
 
   /**
+   * Formats given matrix into a readable string
    *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param mat - The matrix to format
+   * @param fractionDigits - Number of digits after decimal point
    */
   public static format(mat: Mat4, fractionDigits: number = 5) {
-    const m = mat.data
+    const m = mat.m
     return [
       [m[0].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[8].toFixed(fractionDigits), m[12].toFixed(fractionDigits)].join(','),
       [m[1].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[9].toFixed(fractionDigits), m[13].toFixed(fractionDigits)].join(','),
       [m[2].toFixed(fractionDigits), m[6].toFixed(fractionDigits), m[10].toFixed(fractionDigits), m[14].toFixed(fractionDigits)].join(','),
       [m[3].toFixed(fractionDigits), m[7].toFixed(fractionDigits), m[11].toFixed(fractionDigits), m[15].toFixed(fractionDigits)].join(','),
     ].join(',\n')
+  }
+
+  /**
+   * Returns a copy of given matrix as plain array
+   */
+  public static toArray(mat: Mat4): number[]
+  /**
+   * Copies the given matrix into a given array starting at given offset
+   *
+   * @param array - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   */
+  public static toArray<T>(mat: Mat4, array: T, offset?: number): T
+  public static toArray(mat: Mat4, array?: number[], offset?: number): number[] {
+    array = array || []
+    offset = offset || 0
+    const d = mat.m
+    array[offset] = d[0]
+    array[offset + 1] = d[1]
+    array[offset + 2] = d[2]
+    array[offset + 3] = d[3]
+    array[offset + 4] = d[4]
+    array[offset + 5] = d[5]
+    array[offset + 6] = d[6]
+    array[offset + 7] = d[7]
+    array[offset + 8] = d[8]
+    array[offset + 9] = d[9]
+    array[offset + 10] = d[10]
+    array[offset + 11] = d[11]
+    array[offset + 12] = d[12]
+    array[offset + 13] = d[13]
+    array[offset + 14] = d[14]
+    array[offset + 15] = d[15]
+    return array
+  }
+
+  /**
+   * Returns a copy of this matrix as plain array
+   */
+  public toArray(): number[]
+  /**
+   * Copies this matrix into a given array starting at given offset
+   *
+   * @param array - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   */
+  public toArray<T>(array?: T, offset?: number): T
+  public toArray(array?: number[], offset?: number): number[] {
+    return Mat4.toArray(this, array, offset)
   }
 }

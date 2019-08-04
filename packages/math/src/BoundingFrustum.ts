@@ -36,7 +36,7 @@ export class BoundingFrustum {
   /**
    * Constructs a new instance of {@link BoundingFrustum}
    *
-   * @param matrix - The matrix to initialise with.
+   * @param matrix - The matrix to initialize with.
    */
   constructor(matrix?: Mat4) {
     this.planes = []
@@ -88,7 +88,7 @@ export class BoundingFrustum {
     // 1 5 9  13
     // 2 6 10 14
     // 3 7 11 15
-    const m = this.matrix.data
+    const m = this.matrix.m
     let plane = this.planes[LEFT]
     plane.x = m[12] + m[0]
     plane.y = m[13] + m[1]

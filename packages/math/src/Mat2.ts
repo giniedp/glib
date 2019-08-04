@@ -1,97 +1,190 @@
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 
+const enum M {
+ _00 = 0, _10 = 2,
+ _01 = 1, _11 = 3,
+}
+
 /**
- * A 2x2 matrix.
+ * A 2x2 matrix using column major layout
  *
  * @public
+ * @remarks
+ * The matrix stores its values in a typed `Float32Array` array.
+ * The elements are laid out in column major order meaning that
+ * elements of each base vector reside next to each other.
  */
 export class Mat2 {
 
-  constructor(public data: Float32Array = new Float32Array(4)) {}
+  /**
+   * The matrix data array
+   */
+  public readonly m: Float32Array | Float64Array
 
   /**
-   * Initializes the matrix with the given values in given order. The values are applied in column major order
-   *
-   * @returns Reference to `this` for chaining.
+   * Gets and sets value at column 0 row 0
    */
-  public init(
-    m0: number, m1: number,
-    m2: number, m3: number,
-  ): Mat2 {
-    const d = this.data
-    d[0] = m0; d[1] = m1; // tslint:disable-line
-    d[2] = m2; d[3] = m3; // tslint:disable-line
-    return this
+  public get m00() {
+    return this.m[0]
+  }
+  public set m00(v: number) {
+    this.m[0] = v
+  }
+
+  /**
+   * Gets and sets value at column 0 row 1
+   */
+  public get m01() {
+    return this.m[1]
+  }
+  public set m01(v: number) {
+    this.m[1] = v
+  }
+
+  /**
+   * Gets and sets value at column 1 row 0
+   */
+  public get m10() {
+    return this.m[2]
+  }
+  public set m10(v: number) {
+    this.m[2] = v
+  }
+
+  /**
+   * Gets and sets value at column 1 row 1
+   */
+  public get m11() {
+    return this.m[3]
+  }
+  public set m11(v: number) {
+    this.m[3] = v
   }
 
   /**
    * Constructs a new instance of {@link Mat2}
    *
-   * @remarks
-   * Creates a new matrix. This method should be called with 16 or 0 arguments. If less than 16 but more than 0 arguments
-   * are given some components are going to be undefined. The arguments are expected to be in column major order.
-   *
-   * @returns a new matrix
+   * @param m - the data to initialize with
+   */
+  constructor(m?: number[] | Float32Array | Float64Array) {
+    if (Array.isArray(m)) {
+      this.m = new Float32Array(m)
+    } else {
+      this.m = m || new Float32Array(4)
+    }
+  }
+
+  /**
+   * Initializes the matrix by reading the arguments in column major order
+   */
+  public init(
+    m0: number, m1: number,
+    m2: number, m3: number,
+  ): this {
+    const d = this.m
+    d[0] = m0
+    d[1] = m1
+    d[2] = m2
+    d[3] = m3
+    return this
+  }
+
+  /**
+   * Creates a matrix by reading the arguments in column major order
    */
   public static create(
     m0: number, m1: number, m2: number, m3: number,
   ): Mat2 {
     const out = new Mat2()
-    const d = out.data
-    d[ 0] = m0; d[ 1] = m1 // tslint:disable-line
-    d[ 2] = m2; d[ 3] = m3 // tslint:disable-line
+    const d = out.m
+    d[ 0] = m0; d[ 1] = m1
+    d[ 2] = m2; d[ 3] = m3
     return out
   }
 
   /**
-   * Initializes the matrix with the given values. The values are read in row major order.
+   * Initializes the matrix by reading the arguments in row major order
    *
-   * @returns Reference to `this` for chaining.
+   * @remarks
+   * The storage layout of the matrix does not change and keeps being
+   * column major. Solely the given arguments are scanned in row major
+   * order
    */
   public initRowMajor(
     m0: number, m2: number,
     m1: number, m3: number,
-  ): Mat2 {
-    const d = this.data
-    d[0] = m0; d[1] = m1; // tslint:disable-line
-    d[2] = m2; d[3] = m3; // tslint:disable-line
+  ): this {
+    const d = this.m
+    d[0] = m0; d[1] = m1
+    d[2] = m2; d[3] = m3
     return this
   }
 
   /**
-   * Creates a new matrix. The arguments are expected to be in row major order.
+   * Creates a matrix by reading the arguments in row major order
    *
-   * @returns a new matrix
+   * @remarks
+   * The storage layout of the matrix does not change and keeps being
+   * column major. Solely the given arguments are scanned in row major
+   * order
    */
   public static createRowMajor(
     m0: number, m2: number,
     m1: number, m3: number,
   ): Mat2 {
     const out = new Mat2()
-    const d = out.data
-    d[ 0] = m0; d[ 1] = m1 // tslint:disable-line
-    d[ 2] = m2; d[ 3] = m3 // tslint:disable-line
+    const d = out.m
+    d[ 0] = m0; d[ 1] = m1
+    d[ 2] = m2; d[ 3] = m3
     return out
   }
 
   /**
-   * Initializes all components of this matrix with the given number.
+   * Initializes all components with given value
+   *
    * @param number - The number to set all matrix components to.
-   * @returns Reference to `this` for chaining.
    */
-  public initWith(value: number): Mat2 {
-    const d = this.data
-    d[0] = value; d[1] = value; // tslint:disable-line
-    d[2] = value; d[3] = value; // tslint:disable-line
+  public initWith(value: number): this {
+    const d = this.m
+    d[0] = value; d[1] = value
+    d[2] = value; d[3] = value
     return this
   }
 
   /**
+   * Crates a matrix with all components initialized to given value
    *
+   * @param number - The number to set all matrix components to.
    */
-  public initZero(): Mat2 {
-    const d = this.data
+  public static createWith(value: number): Mat2 {
+    return new Mat2().initWith(value)
+  }
+
+  /**
+   * Initializes the components of this matrix to the identity.
+   */
+  public initIdentity(): this {
+    const d = this.m
+    d[0] = 1; d[1] = 0
+    d[2] = 0; d[3] = 1
+    return this
+  }
+
+  /**
+   * Creates a new matrix that is initialized to identity
+   *
+   * @returns a new matrix
+   */
+  public static createIdentity(): Mat2 {
+    return new Mat2().initIdentity()
+  }
+
+  /**
+   * Initializes the components of this matrix to 0.
+   */
+  public initZero(): this {
+    const d = this.m
     d[0] = 0
     d[1] = 0
     d[2] = 0
@@ -101,72 +194,81 @@ export class Mat2 {
 
   /**
    * Creates a new matrix with all components set to 0
-   * @returns a new matrix
    */
-  public static zero(): Mat2 {
+  public static createZero(): Mat2 {
     return new Mat2()
   }
 
   /**
-   * Initializes the components of this matrix to the identity.
-   * @returns Reference to `this` for chaining.
-   */
-  public initIdentity(): Mat2 {
-    const d = this.data
-    d[0] = 1; d[1] = 0; // tslint:disable-line
-    d[2] = 0; d[3] = 1; // tslint:disable-line
-    return this
-  }
-
-  /**
-   * Creates a new matrix that is initialized to identity
-   * @returns a new matrix
-   */
-  public static identity(): Mat2 {
-    return new Mat2().initIdentity()
-  }
-
-  /**
    * Initializes this matrix from another matrix.
-   *
-   * @returns Reference to `this` for chaining.
    */
-  public initFrom(other: Mat2): Mat2 {
-    const a = this.data
-    const b = other.data
-    a[0] = b[0]; a[1] = b[1]; // tslint:disable-line
-    a[2] = b[2]; a[3] = b[3]; // tslint:disable-line
+  public initFrom(other: Mat2): this {
+    const a = this.m
+    const b = other.m
+    a[0] = b[0]
+    a[1] = b[1]
+    a[2] = b[2]
+    a[3] = b[3]
     return this
   }
 
   /**
-   * Reads a buffer starting at given offset and initializes the elements of this matrix.
-   * The given buffer must have at least 16 elements starting at given offset.
-   * The elements are expected to be in column major layout.
-   *
-   *
-   * @returns Reference to `this` for chaining.
+   * Creates a new matrix from another.
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset?: number): Mat2 {
+  public static createFrom(other: Mat2): Mat2 {
+    return new Mat2().initFrom(other)
+  }
+
+  /**
+   * Reads a array starting at given offset and creates a new matrix.
+   */
+  public initFromArray(array: ArrayLike<number>, offset?: number): this {
     offset = offset || 0
-    const a = this.data
-    a[0] = buffer[offset]
-    a[1] = buffer[offset + 1]
-    a[2] = buffer[offset + 2]
-    a[3] = buffer[offset + 3]
+    const a = this.m
+    a[0] = array[offset]
+    a[1] = array[offset + 1]
+    a[2] = array[offset + 2]
+    a[3] = array[offset + 3]
     return this
+  }
+
+  /**
+   * Reads a array starting at given offset and initializes the elements of this matrix.
+   */
+  public static createFromArray(array: ArrayLike<number>, offset?: number): Mat2 {
+    return new Mat2().initFromArray(array, offset)
+  }
+
+  /**
+   * Creates a matrix from given quaternion parameters
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public static createFromQuaternion(x: number, y: number, z: number, w: number): Mat2 {
+    return new Mat2().initFromQuaternion(x, y, z, w)
   }
 
   /**
    * Initializes this matrix from given quaternion.
+   *
    * @param q - The quaternion
-   * @returns Reference to `this` for chaining.
    */
-  public initFromQuaternion(q: IVec4): Mat2 {
-    const x = q.x
-    const y = q.y
-    const z = q.z
-    const w = q.w
+  public initFromQuat(q: IVec4): Mat2 {
+    return this.initFromQuaternion(q.x, q.y, q.z, q.w)
+  }
+
+  /**
+   * Initializes this matrix from given quaternion parameters
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public initFromQuaternion(x: number, y: number, z: number, w: number): Mat2 {
     const xx = x * x
     const yy = y * y
     const zz = z * z
@@ -179,18 +281,52 @@ export class Mat2 {
   }
 
   /**
-   * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
-   * @param axis - The axis vector. This is expected to be normalized.
-   * @param angle - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Creates a rotation matrix from axis angle parameters
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
    */
-  public initAxisAngle(axis: IVec2|IVec3, angle: number): Mat2 {
+  public static createAxisAngle(x: number, y: number, z: number, angle: number): Mat2 {
+    return new Mat2().initAxisAngle(x, y, z, angle)
+  }
+
+  /**
+   * Creates a rotation matrix from an axis and angle
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
+   */
+  public static createAxisAngleV(axis: IVec2 | IVec3, angle: number): Mat2 {
+    return new Mat2().initAxisAngle(axis.x, axis.y, (axis as any).z || 0, angle)
+  }
+
+  /**
+   * Initializes this matrix to a rotation matrix defined by given axis vector and angle.
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
+   */
+  public initAxisAngleV(axis: IVec2 | IVec3, angle: number): this {
+    return this.initAxisAngle(axis.x, axis.y, (axis as any).z || 0, angle)
+  }
+
+  /**
+   * Initializes this matrix to a rotation matrix defined by given axis and angle.
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
+   */
+  public initAxisAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
-    const x = axis.x * scale
-    const y = axis.y * scale
-    const z = ((axis as IVec3).z || 0) * scale
+    x *= scale
+    y *= scale
+    z *= scale
     const w = Math.cos(halfAngle)
 
     // matrix from quaternion
@@ -207,105 +343,293 @@ export class Mat2 {
   }
 
   /**
-   * @returns a new matrix
+   * Applies a rotation around the given axis and angle
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
    */
-  public static createAxisAngle(axis: IVec3, angle: number): Mat2 {
-    return new Mat2().initAxisAngle(axis, angle)
+  public rotateAxisAngleV(axis: IVec2|IVec3, angle: number): this {
+    return this.rotateAxisAngle(axis.x, axis.y, (axis as any).z, angle)
   }
 
   /**
-   * Initializes this matrix with a rotation around the X axis.
-   * @param rad - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Applies a rotation around the given axis and angle
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
    */
-  public initRotationX(rad: number): Mat2 {
-    return this.initRowMajor(
-      1, 0,
-      0, Math.cos(rad),
-    )
+  public rotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+    // create quaternion
+    const halfAngle = angle * 0.5
+    const scale = Math.sin(halfAngle)
+    x *= scale
+    y *= scale
+    z *= scale
+    const w = Math.cos(halfAngle)
+
+    // matrix from quaternion
+    const xx = x * x
+    const yy = y * y
+    const zz = z * z
+    const xy = x * y
+    const zw = z * w
+
+    const r00 = 1 - 2 * (yy + zz)
+    const r01 = 2 * (xy + zw)
+
+    const r10 = 2 * (xy - zw)
+    const r11 = 1 - 2 * (zz + xx)
+
+    const m = this.m
+    const m00 = m[0]
+    const m01 = m[1]
+    const m10 = m[2]
+    const m11 = m[3]
+
+    m[0] = r00 * m00 + r01 * m10
+    m[1] = r00 * m01 + r01 * m11
+    m[2] = r10 * m00 + r11 * m10
+    m[3] = r10 * m01 + r11 * m11
+
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Rotates this matrix by a quaternion
+   *
+   * @param q - The rotation quaternion
+   */
+  public rotateQuat(q: IVec4): this {
+    return this.rotateQuaternion(q.x, q.y, q.z, q.w)
+  }
+
+  /**
+   * Rotates this matrix by a quaternion
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public rotateQuaternion(x: number, y: number, z: number, w: number): this {
+    // matrix from quaternion
+    const xx = x * x
+    const yy = y * y
+    const zz = z * z
+    const xy = x * y
+    const zw = z * w
+
+    const r00 = 1 - 2 * (yy + zz)
+    const r01 = 2 * (xy + zw)
+
+    const r10 = 2 * (xy - zw)
+    const r11 = 1 - 2 * (zz + xx)
+
+    const m = this.m
+    const m00 = m[0]
+    const m01 = m[1]
+    const m10 = m[2]
+    const m11 = m[3]
+
+    m[0] = r00 * m00 + r01 * m10
+    m[1] = r00 * m01 + r01 * m11
+    m[2] = r10 * m00 + r11 * m10
+    m[3] = r10 * m01 + r11 * m11
+
+    return this
+  }
+
+  /**
+   * Creates a new rotation matrix
    */
   public static createRotationX(rad: number): Mat2 {
     return new Mat2().initRotationX(rad)
   }
 
   /**
-   * Initializes this matrix with a rotation around the Y axis.
-   * @param rad - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Initializes this matrix with a rotation around the X axis.
+   *
+   * @param angle - angle in rad
    */
-  public initRotationY(rad: number): Mat2 {
-    return this.initRowMajor(
-      Math.cos(rad), 0,
-      0, 1,
-    )
+  public initRotationX(angle: number): this {
+    const m = this.m
+    m[0] = 1; m[2] = 0
+    m[1] = 0; m[3] = Math.cos(angle)
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Applies a rotation around X axis to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param angle - angle in rad
+   */
+  public rotateX(angle: number): this {
+    const m = this.m
+    const m10 = m[2]
+    const m11 = m[3]
+    const c = Math.cos(angle)
+
+    m[2]  = c * m10
+    m[3]  = c * m11
+
+    return this
+  }
+
+  /**
+   * Creates a new rotation matrix
    */
   public static createRotationY(rad: number): Mat2 {
     return new Mat2().initRotationY(rad)
   }
 
   /**
-   * Initializes this matrix with a rotation around the Z axis.
-   * @param rad - The angle in radians.
-   * @returns Reference to `this` for chaining.
+   * Initializes this matrix with a rotation around the Y axis.
+   *
+   * @param angle - angle in rad
    */
-  public initRotationZ(rad: number): Mat2 {
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-    return this.initRowMajor(
-      cos, -sin,
-      sin, cos,
-    )
+  public initRotationY(angle: number): this {
+    const cos = Math.cos(angle)
+    const m = this.m
+    m[0] = cos;  m[2] = 0
+    m[1] = 0;    m[3] = 1
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Applies a rotation around Y axis to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param angle - angle in rad
+   */
+  public rotateY(angle: number): this {
+    const m = this.m
+    const m00 = m[0]
+    const m01 = m[1]
+    const c = Math.cos(angle)
+
+    m[0] = c * m00
+    m[1] = c * m01
+
+    return this
+  }
+
+  /**
+   * Creates a new rotation matrix
    */
   public static createRotationZ(rad: number): Mat2 {
     return new Mat2().initRotationZ(rad)
   }
 
-  public initRotation(rad: number): Mat2 {
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-    return this.initRowMajor(
-      cos, -sin,
-      sin, cos,
-    )
-  }
-
   /**
-   * @returns a new matrix
+   * Initializes this matrix with a rotation around the Z axis.
+   *
+   * @param angle - angle in rad
    */
-  public static createRotation(rad: number): Mat2 {
-    return new Mat2().initRotation(rad)
+  public initRotationZ(angle: number): this {
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    const m = this.m
+    m[0] = cos; m[2] = -sin
+    m[1] = sin; m[3] =  cos
+    return this
   }
 
   /**
-   * Initializes a scale matrix.
-   * @param x - Scale along x-axis
-   * @param y - Scale along y-axis
-   * @returns Reference to `this` for chaining.
+   * Applies a rotation around Z axis to this matrix
+   *
+   * @remarks
+   * Does not affect the translation. Translation is kept as is.
+   * Only the matrix orientation will change.
+   *
+   * @param angle - angle in rad
    */
-  public initScale(x: number, y: number): Mat2 {
-    return this.initRowMajor(
-      x, 0,
-      0, y,
-    )
+  public rotateZ(angle: number): this {
+    const m = this.m
+    const m00 = m[0]
+    const m01 = m[1]
+    const m10 = m[2]
+    const m11 = m[3]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[0] = c * m00 + s * m10
+    m[1] = c * m01 + s * m11
+    m[2] = c * m10 - s * m00
+    m[3] = c * m11 - s * m01
+
+    return this
   }
 
   /**
-   * @returns a new matrix
+   * Initializes a scale matrix
+   *
+   * @param x - x scale factor
+   * @param y - y scale factor
+   * @param z - z scale factor
+   */
+  public initScale(x: number, y: number): this {
+    const m = this.m
+    m[0] = x; m[2] = 0
+    m[1] = 0; m[3] = y
+    return this
+  }
+
+  /**
+   * Initializes a scale matrix
+   *
+   * @param vec - The scale vector
+   */
+  public initScaleV(vec: IVec2): this {
+    const m = this.m
+    m[0] = vec.x; m[2] = 0
+    m[1] = 0; m[3] = vec.y
+    return this
+  }
+
+  /**
+   * Initializes a scale matrix
+   *
+   * @param scale - The uniform scale value
+   */
+  public initScaleUniform(scale: number): this {
+    const m = this.m
+    m[0] = scale; m[2] = 0
+    m[1] = 0; m[3] = scale
+    return this
+  }
+
+  /**
+   * Creates a new matrix with a predefined scale
    */
   public static createScale(x: number, y: number): Mat2 {
     return new Mat2().initScale(x, y)
+  }
+
+  /**
+   * Creates a new matrix with a predefined scale
+   */
+  public static createScaleV(vec: IVec3): Mat2 {
+    return new Mat2().initScale(vec.x, vec.y)
+  }
+
+  /**
+   * Creates a new matrix with a predefined scale
+   */
+  public static createScaleUniform(scale: number): Mat2 {
+    return new Mat2().initScale(scale, scale)
   }
 
   /**
@@ -313,27 +637,66 @@ export class Mat2 {
    * @returns The cloned matrix.
    */
   public clone(): Mat2 {
-    const d = this.data
+    const d = this.m
     return new Mat2().init(d[0], d[1], d[2], d[3])
   }
 
   /**
-   * Copies the components successively into the given array.
-   * @param buffer - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   * @returns the given buffer
+   * Creates a copy of this matrix
+   * @returns The cloned matrix.
+   */
+  public static clone(mat: Mat2, out: Mat2 = new Mat2()): Mat2 {
+    const d = mat.m
+    const o = out.m
+    o[0] = d[0]
+    o[1] = d[1]
+    o[2] = d[2]
+    o[3] = d[3]
+    return out
+  }
+
+  /**
+   * Returns a copy of this matrix as plain array
    */
   public toArray(): number[]
-  public toArray<T>(buffer?: T, offset?: number): T
-  public toArray(buffer?: number[], offset?: number): number[] {
-    buffer = buffer || []
+  /**
+   * Copies this matrix into a given array starting at given offset
+   *
+   * @param array - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   */
+  public toArray<T>(array?: T, offset?: number): T
+  public toArray(array?: number[], offset?: number): number[] {
+    array = array || []
     offset = offset || 0
-    const d = this.data
-    buffer[offset] = d[0]
-    buffer[offset + 1] = d[1]
-    buffer[offset + 2] = d[2]
-    buffer[offset + 3] = d[3]
-    return buffer
+    const d = this.m
+    array[offset] = d[0]
+    array[offset + 1] = d[1]
+    array[offset + 2] = d[2]
+    array[offset + 3] = d[3]
+    return array
+  }
+
+  /**
+   * Returns a copy of given matrix as plain array
+   */
+  public static toArray(mat: Mat2): number[]
+  /**
+   * Copies the given matrix into a given array starting at given offset
+   *
+   * @param array - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   */
+  public static toArray<T>(mat: Mat2, array: T, offset?: number): T
+  public static toArray(mat: Mat2, array?: number[], offset?: number): number[] {
+    array = array || []
+    offset = offset || 0
+    const d = mat.m
+    array[offset] = d[0]
+    array[offset + 1] = d[1]
+    array[offset + 2] = d[2]
+    array[offset + 3] = d[3]
+    return array
   }
 
   /**
@@ -342,8 +705,8 @@ export class Mat2 {
    * @returns true if components are equal, false otherwise
    */
   public equals(other: Mat2): boolean {
-    const a = this.data
-    const b = other.data
+    const a = this.m
+    const b = other.m
     return a[0] === b[0] &&
       a[1] === b[1] &&
       a[2] === b[2] &&
@@ -351,38 +714,65 @@ export class Mat2 {
   }
 
   /**
-   * Gets the scale part as vector
-   * @param out - The vector to write to
-   * @returns the given `out` parameter or a new vector
+   * Checks for component wise equality with given matrix
+   *
+   * @param other - The matrix to compare with
    */
-  public getScale<T extends IVec2 = Vec2>(out?: T|Vec2): T|Vec2 {
+  public static equals(m1: Mat2, m2: Mat2): boolean {
+    const a = m1.m
+    const b = m2.m
+    return a[0] === b[0] &&
+      a[1] === b[1] &&
+      a[2] === b[2] &&
+      a[3] === b[3]
+  }
+
+  /**
+   * Gets the scale part as a new vector
+   */
+  public getScale(): Vec2
+  /**
+   * Gets the scale part into an existing vector
+   */
+  public getScale<T>(out?: T): T & IVec2
+  public getScale(out?: Vec2): Vec2 {
     out = out || new Vec2()
-    out.x = this.data[0]
-    out.y = this.data[3]
+    out.x = this.m[M._00]
+    out.y = this.m[M._11]
     return out
   }
 
   /**
    * Sets the scale part
-   * @param vec - The vector to take values from
-   * @returns Reference to `this` for chaining.
    */
-  public setScale(vec: IVec2): Mat2 {
-    this.data[0] = vec.x
-    this.data[3] = vec.y
+  public setScale(x: number, y: number): this {
+    this.m[M._00] = x
+    this.m[M._11] = y
     return this
   }
-  public setScaleX(v: number): Mat2 {
-    this.data[0] = v
+
+  /**
+   * Sets the scale part
+   */
+  public setScaleV(vec: IVec2): this {
+    this.m[M._00] = vec.x
+    this.m[M._11] = vec.y
     return this
   }
-  public setScaleY(v: number): Mat2 {
-    this.data[3] = v
+
+  /**
+   * Sets the x component of the scale part
+   */
+  public setScaleX(v: number): this {
+    this.m[M._00] = v
     return this
   }
-  public setScaleXY(x: number, y: number): Mat2 {
-    this.data[0] = x
-    this.data[3] = y
+
+  /**
+   * Sets the y component of the scale part
+   */
+  public setScaleY(v: number): this {
+    this.m[M._11] = v
     return this
   }
 
@@ -390,7 +780,7 @@ export class Mat2 {
    * Calculates the determinant of this matrix
    */
   public determinant(): number {
-    const a = this.data
+    const a = this.m
 
     const a11 = a[0]
     const a12 = a[1]
@@ -405,7 +795,7 @@ export class Mat2 {
    * Calculates the determinant of a matrix
    */
   public static determinant(mat: Mat2): number {
-    const a = mat.data
+    const a = mat.m
 
     const a11 = a[0]
     const a12 = a[1]
@@ -418,14 +808,14 @@ export class Mat2 {
 
   /**
    * Transposes this matrix
-   * @returns Reference to `this` for chaining.
    */
-  public transpose(): Mat2 {
-    const d = this.data
-    return this.init(
-      d[0], d[2],
-      d[1], d[3],
-    )
+  public transpose(): this {
+    const m = this.m
+    let t
+    t = m[1]
+    m[1] = m[2]
+    m[2] = t
+    return this
   }
 
   /**
@@ -435,7 +825,7 @@ export class Mat2 {
    * @returns The given `out` parameter or a new matrix
    */
   public static transpose(mat: Mat2, out?: Mat2): Mat2 {
-    const d = mat.data
+    const d = mat.m
     return (out || new Mat2()).init(
       d[0], d[2],
       d[1], d[3],
@@ -444,11 +834,10 @@ export class Mat2 {
 
   /**
    * Inverts this matrix
-   * @returns Reference to `this` for chaining.
    */
-  public invert(): Mat2 {
-    const a = this.data
-    const b = this.data
+  public invert(): this {
+    const a = this.m
+    const b = this.m
 
     const a11 = a[0]; const a12 = a[2]
     const a21 = a[1]; const a22 = a[3]
@@ -470,8 +859,8 @@ export class Mat2 {
   public static invert(mat: Mat2, out?: Mat2): Mat2 {
     out = out || new Mat2()
 
-    const a = mat.data
-    const b = out.data
+    const a = mat.m
+    const b = out.m
 
     const a11 = a[0]; const a12 = a[2]
     const a21 = a[1]; const a22 = a[3]
@@ -486,13 +875,12 @@ export class Mat2 {
 
   /**
    * Negates all components of this matrix
-   * @returns Reference to `this` for chaining.
    */
-  public negate(): Mat2 {
-    const a = this.data
-    const b = this.data
-    a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; // tslint:disable-line
-    a[ 2] = -b[ 2]; a[ 3] = -b[ 3]; // tslint:disable-line
+  public negate(): this {
+    const a = this.m
+    const b = this.m
+    a[ 0] = -b[ 0]; a[ 1] = -b[ 1]
+    a[ 2] = -b[ 2]; a[ 3] = -b[ 3]
     return this
   }
 
@@ -504,23 +892,22 @@ export class Mat2 {
    */
   public static negate(mat: Mat2, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const d = mat.data
-    const o = out.data
-    o[ 0] = -d[ 0]; o[ 1] = -d[ 1] // tslint:disable-line
-    o[ 2] = -d[ 2]; o[ 3] = -d[ 3] // tslint:disable-line
+    const d = mat.m
+    const o = out.m
+    o[ 0] = -d[ 0]; o[ 1] = -d[ 1]
+    o[ 2] = -d[ 2]; o[ 3] = -d[ 3]
     return out
   }
 
   /**
    * Adds the given matrix to `this`
    * @param other - The matrix to add
-   * @returns Reference to `this` for chaining.
    */
-  public add(other: Mat2): Mat2 {
-    const a = this.data
-    const b = other.data
-    a[ 0] += b[ 0]; a[ 1] += b[ 1]; // tslint:disable-line
-    a[ 2] += b[ 2]; a[ 3] += b[ 3]; // tslint:disable-line
+  public add(other: Mat2): this {
+    const a = this.m
+    const b = other.m
+    a[ 0] += b[ 0]; a[ 1] += b[ 1]
+    a[ 2] += b[ 2]; a[ 3] += b[ 3]
     return this
   }
 
@@ -533,23 +920,22 @@ export class Mat2 {
    */
   public static add(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1] // tslint:disable-line
-    c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3] // tslint:disable-line
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]
+    c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3]
     return out
   }
 
   /**
    * Adds the given scalar to each component of `this`
    * @param scalar - The scalar to add
-   * @returns Reference to `this` for chaining.
    */
-  public addScalar(s: number): Mat2 {
-    const a = this.data
-    a[ 0] += s; a[ 1] += s; // tslint:disable-line
-    a[ 2] += s; a[ 3] += s; // tslint:disable-line
+  public addScalar(s: number): this {
+    const a = this.m
+    a[ 0] += s; a[ 1] += s
+    a[ 2] += s; a[ 3] += s
     return this
   }
 
@@ -562,23 +948,22 @@ export class Mat2 {
    */
   public static addScalar(mat: Mat2, scalar: number, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = mat.data
-    const c = out.data
-    c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar // tslint:disable-line
-    c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar // tslint:disable-line
+    const a = mat.m
+    const c = out.m
+    c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar
+    c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar
     return out
   }
 
   /**
    * Subtracts the given matrix from `this`
    * @param other - The matrix to subtract
-   * @returns Reference to `this` for chaining.
    */
-  public subtract(other: Mat2): Mat2 {
-    const a = this.data
-    const b = other.data
-    a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; // tslint:disable-line
-    a[ 2] -= b[ 2]; a[ 3] -= b[ 3]; // tslint:disable-line
+  public subtract(other: Mat2): this {
+    const a = this.m
+    const b = other.m
+    a[ 0] -= b[ 0]; a[ 1] -= b[ 1]
+    a[ 2] -= b[ 2]; a[ 3] -= b[ 3]
     return this
   }
 
@@ -591,28 +976,27 @@ export class Mat2 {
    */
   public static subtract(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1] // tslint:disable-line
-    c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3] // tslint:disable-line
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]
+    c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3]
     return out
   }
 
   /**
    * Subtracts the given scalar from each component of `this`
    * @param scalar - The scalar to subtract
-   * @returns Reference to `this` for chaining.
    */
-  public subtractScalar(s: number): Mat2 {
-    const a = this.data
-    a[ 0] -= s; a[ 1] -= s; // tslint:disable-line
-    a[ 2] -= s; a[ 3] -= s; // tslint:disable-line
+  public subtractScalar(s: number): this {
+    const a = this.m
+    a[ 0] -= s; a[ 1] -= s
+    a[ 2] -= s; a[ 3] -= s
     return this
   }
 
   /**
-   * Subtracts a scalar from each somponent of a matrix
+   * Subtracts a scalar from each component of a matrix
    * @param mat - The matrix to subtract from
    * @param scalar - The scalar to subtract
    * @param out - The matrix to write to
@@ -620,22 +1004,22 @@ export class Mat2 {
    */
   public static subtractScalar(mat: Mat2, scalar: number, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = mat.data
-    const c = out.data
-    c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar // tslint:disable-line
-    c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar // tslint:disable-line
+    const a = mat.m
+    const c = out.m
+    c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar
+    c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar
     return out
   }
 
   /**
-   * Concatenates the given matrix to this
-   * @param other - The matrix to concatenate
-   * @returns Reference to `this` for chaining.
+   * Performs a matrix multiplication `this = this * other` meaning `other` is post-multiplied t `this`.
+   *
+   * @param other - The matrix to post-multiply
    */
-  public multiply(other: Mat2): Mat2 {
-    const a = other.data
-    const b = this.data
-    const c = this.data
+  public multiply(other: Mat2): this {
+    const a = this.m
+    const b = other.m
+    const c = this.m
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1],
           a_2 = a[ 2], a_3 = a[ 3]
@@ -650,17 +1034,19 @@ export class Mat2 {
   }
 
   /**
-   * Multiplies a matrix by another matrix
-   * @param matA - The first matrix
-   * @param matB - The second matrix
+   * Performs a matrix multiplication `matA * matB` meaning `matB` is post-multiplied on `matA`.
+   *
+   * @param matA - The main matrix
+   * @param matB - The matrix to post-multiply
    * @param out - The matrix to write to
+   *
    * @returns The given `out` parameter or a new matrix
    */
   public static multiply(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matB.data
-    const b = matA.data
-    const c = out.data
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1],
           a_2 = a[ 2], a_3 = a[ 3]
@@ -674,28 +1060,28 @@ export class Mat2 {
     return out
   }
 
-  /**
-   * Multiplies a chain of matrices
-   * @returns The result of the multiplication
-   */
-  public static multiplyChain(...rest: Mat2[]) {
-    // ((((a, b), c), d), e)
-    const result = arguments[0].clone()
-    for (let i = 1; i < arguments.length; i += 1) {
-      Mat2.multiply(result, arguments[i], result)
-    }
-    return result
-  }
+  // /**
+  //  * Multiplies a chain of matrices
+  //  * @returns The result of the multiplication
+  //  */
+  // public static multiplyChain(...rest: Mat2[]) {
+  //   // ((((a, b), c), d), e)
+  //   const result = arguments[0].clone()
+  //   for (let i = 1; i < arguments.length; i += 1) {
+  //     Mat2.multiply(result, arguments[i], result)
+  //   }
+  //   return result
+  // }
 
   /**
-   * Concatenates the given matrix to this
-   * @param other - The matrix to concatenate
-   * @returns Reference to `this` for chaining.
+   * Performs a matrix multiplication `this = other * this` meaning `other` is pre-multiplied on `this`.
+   *
+   * @param other - The matrix to pre-multiply
    */
-  public concat(other: Mat2): Mat2 {
-    const a = this.data
-    const b = other.data
-    const c = this.data
+  public premultiply(other: Mat2): this {
+    const a = other.m
+    const b = this.m
+    const c = this.m
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1],
           a_2 = a[ 2], a_3 = a[ 3]
@@ -710,17 +1096,19 @@ export class Mat2 {
   }
 
   /**
-   * Multiplies a matrix by another matrix
-   * @param matA - The first matrix
-   * @param matB - The second matrix
+   * Performs a matrix multiplication `matB * matA` meaning `matB` is pre-multiplied on `matA`.
+   *
+   * @param matA - The main matrix
+   * @param matB - The matrix to pre-multiply
    * @param out - The matrix to write to
+   *
    * @returns The given `out` parameter or a new matrix
    */
-  public static concat(matA: Mat2, matB: Mat2, out?: Mat2) {
+  public static premultiply(matA: Mat2, matB: Mat2, out?: Mat2) {
     out = out || new Mat2()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
+    const a = matB.m
+    const b = matA.m
+    const c = out.m
     // tslint:disable
     const a_0 = a[ 0], a_1 = a[ 1],
           a_2 = a[ 2], a_3 = a[ 3]
@@ -734,28 +1122,27 @@ export class Mat2 {
     return out
   }
 
-  /**
-   * Multiplies a chain of matrices
-   * @returns The result of the multiplication
-   */
-  public static concatChain(...rest: Mat2[]) {
-    // (a, (b, (c, (d, e))))
-    const result = arguments[arguments.length - 1].clone()
-    for (let i = arguments.length - 2; i >= 0; i--) {
-      Mat2.concat(arguments[i], result, result)
-    }
-    return result
-  }
+  // /**
+  //  * Multiplies a chain of matrices
+  //  * @returns The result of the multiplication
+  //  */
+  // public static concatChain(...rest: Mat2[]) {
+  //   // (a, (b, (c, (d, e))))
+  //   const result = arguments[arguments.length - 1].clone()
+  //   for (let i = arguments.length - 2; i >= 0; i--) {
+  //     Mat2.concat(arguments[i], result, result)
+  //   }
+  //   return result
+  // }
 
   /**
    * Multiplies each component of `this` with given scalar
    * @param scalar - The scalar to multiply
-   * @returns Reference to `this` for chaining.
    */
-  public multiplyScalar(s: number): Mat2 {
-    const a = this.data
-    a[ 0] *= s; a[ 1] *= s; // tslint:disable-line
-    a[ 2] *= s; a[ 3] *= s; // tslint:disable-line
+  public multiplyScalar(s: number): this {
+    const a = this.m
+    a[ 0] *= s; a[ 1] *= s
+    a[ 2] *= s; a[ 3] *= s
     return this
   }
 
@@ -768,24 +1155,23 @@ export class Mat2 {
    */
   public static multiplyScalar(matA: Mat2, scalar: number, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matA.data
+    const a = matA.m
     const b = scalar
-    const c = out.data
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b // tslint:disable-line
-    c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b // tslint:disable-line
+    const c = out.m
+    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b
+    c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b
     return out
   }
 
   /**
    * Divides each matching component pair
    * @param other - The matrix by which to divide
-   * @returns Reference to `this` for chaining.
    */
-  public divide(other: Mat2): Mat2 {
-    const a = this.data
-    const b = other.data
-    a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; // tslint:disable-line
-    a[ 2] /= b[ 2]; a[ 3] /= b[ 3]; // tslint:disable-line
+  public divide(other: Mat2): this {
+    const a = this.m
+    const b = other.m
+    a[ 0] /= b[ 0]; a[ 1] /= b[ 1]
+    a[ 2] /= b[ 2]; a[ 3] /= b[ 3]
     return this
   }
 
@@ -798,24 +1184,23 @@ export class Mat2 {
    */
   public static divide(matA: Mat2, matB: Mat2, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
-    c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1] // tslint:disable-line
-    c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3] // tslint:disable-line
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
+    c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1]
+    c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3]
     return out
   }
 
   /**
    * Divides each component of `this` by given scalar
    * @param scalar - The scalar by which to divide
-   * @returns Reference to `this` for chaining.
    */
-  public divideScalar(s: number): Mat2 {
-    const a = this.data
+  public divideScalar(s: number): this {
+    const a = this.m
     const b = 1.0 / s
-    a[ 0] *= b; a[ 1] *= b; // tslint:disable-line
-    a[ 2] *= b; a[ 3] *= b; // tslint:disable-line
+    a[ 0] *= b; a[ 1] *= b
+    a[ 2] *= b; a[ 3] *= b
     return this
   }
 
@@ -828,11 +1213,11 @@ export class Mat2 {
    */
   public static divideScalar(matA: Mat2, scalar: number, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matA.data
+    const a = matA.m
     const b = 1 / scalar
-    const c = out.data
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b // tslint:disable-line
-    c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b // tslint:disable-line
+    const c = out.m
+    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b
+    c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b
     return out
   }
 
@@ -844,83 +1229,80 @@ export class Mat2 {
   public transform<T extends IVec2>(vec: T): T {
     const x = vec.x || 0
     const y = vec.y || 0
-    const d = this.data
-    vec.x = x * d[0] + y * d[2]; // tslint:disable-line
-    vec.y = x * d[1] + y * d[3]; // tslint:disable-line
+    const d = this.m
+    vec.x = x * d[0] + y * d[2]
+    vec.y = x * d[1] + y * d[3]
     return vec
   }
 
   /**
-   * Transforms the given buffer with `this` matrix.
-   *
-   *
-   *
+   * Transforms the given array with `this` matrix.
    *
    */
-  public transformV2Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+  public transformV2Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
     let y
-    const d = this.data
+    const d = this.m
     offset = offset || 0
     stride = stride === undefined ? 2 : stride
-    count = count === undefined ? buffer.length / stride : count
+    count = count === undefined ? array.length / stride : count
 
     while (count > 0) {
       count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      buffer[offset] = x * d[0] + y * d[2]
-      buffer[offset + 1] = x * d[1] + y * d[3]
+      x = array[offset]
+      y = array[offset + 1]
+      array[offset] = x * d[0] + y * d[2]
+      array[offset + 1] = x * d[1] + y * d[3]
       offset += stride
     }
   }
 
   /**
-   * Transforms the given buffer with `this` matrix.
+   * Transforms the given array with `this` matrix.
    *
    *
    *
    *
    */
-  public transformV3Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+  public transformV3Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
     let y
-    const d = this.data
+    const d = this.m
     offset = offset || 0
     stride = stride === undefined ? 3 : stride
-    count = count === undefined ? buffer.length / stride : count
+    count = count === undefined ? array.length / stride : count
 
     while (count > 0) {
       count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      buffer[offset] = x * d[0] + y * d[2]
-      buffer[offset + 1] = x * d[1] + y * d[3]
+      x = array[offset]
+      y = array[offset + 1]
+      array[offset] = x * d[0] + y * d[2]
+      array[offset + 1] = x * d[1] + y * d[3]
       offset += stride
     }
   }
 
   /**
-   * Transforms the given buffer with `this` matrix.
+   * Transforms the given array with `this` matrix.
    *
    *
    *
    *
    */
-  public transformV4Buffer(buffer: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
+  public transformV4Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
     let y
-    const d = this.data
+    const d = this.m
     offset = offset || 0
     stride = stride === undefined ? 4 : stride
-    count = count === undefined ? buffer.length / stride : count
+    count = count === undefined ? array.length / stride : count
 
     while (count > 0) {
       count--
-      x = buffer[offset]
-      y = buffer[offset + 1]
-      buffer[offset    ] = x * d[0] + y * d[2]
-      buffer[offset + 1] = x * d[1] + y * d[3]
+      x = array[offset]
+      y = array[offset + 1]
+      array[offset    ] = x * d[0] + y * d[2]
+      array[offset + 1] = x * d[1] + y * d[3]
       offset += stride
     }
   }
@@ -935,9 +1317,9 @@ export class Mat2 {
    */
   public static lerp(matA: Mat2, matB: Mat2, t: number, out?: Mat2): Mat2 {
     out = out || new Mat2()
-    const a = matA.data
-    const b = matB.data
-    const c = out.data
+    const a = matA.m
+    const b = matB.m
+    const c = out.m
     c[0] = a[0] + (b[0] - a[0]) * t
     c[1] = a[1] + (b[1] - a[1]) * t
     c[2] = a[2] + (b[2] - a[2]) * t
@@ -946,21 +1328,31 @@ export class Mat2 {
   }
 
   /**
+   * Formats this into a readable string
    *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param fractionDigits - Number of digits after decimal point
    */
-  public format(): string {
-    return Mat2.format(this)
+  public format(fractionDigits: number = 5): string {
+    return Mat2.format(this, fractionDigits)
   }
 
   /**
+   * Formats given matrix into a readable string
    *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param mat - The matrix to format
+   * @param fractionDigits - Number of digits after decimal point
    */
-  public static format(mat: Mat2) {
-    const m = mat.data
-    const fixed = 5
+  public static format(mat: Mat2, fractionDigits: number = 5): string {
+    const m = mat.m
     return [
-      [m[0].toFixed(fixed), m[2].toFixed(fixed)].join(','),
-      [m[1].toFixed(fixed), m[3].toFixed(fixed)].join(','),
+      [m[0].toFixed(fractionDigits), m[2].toFixed(fractionDigits)].join(','),
+      [m[1].toFixed(fractionDigits), m[3].toFixed(fractionDigits)].join(','),
     ].join('\n')
   }
 }

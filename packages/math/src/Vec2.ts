@@ -1,6 +1,5 @@
 import { IVec2 } from './Types'
 
-const keys = ['x', 'y']
 const keyLookup = {
   0: 'x', 1: 'y',
   x: 'x', y: 'y',
@@ -51,14 +50,14 @@ export class Vec2 implements IVec2 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number | string, v: number): this {
-    this[keyLookup[key]] = v
+  public set(key: 0 | 1 | 'x' | 'y', value: number): this {
+    this[keyLookup[key]] = value
     return this
   }
   /**
    * Gets the component by using an index (or name)
    */
-  public get(key: number | string): number {
+  public get(key: 0 | 1 | 'x' | 'y'): number {
     return this[keyLookup[key]]
   }
   /**
