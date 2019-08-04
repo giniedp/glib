@@ -118,7 +118,7 @@ export class ModelBuilder {
     let id = this.transformStack.length
     let last = this.transformStack[id - 1]
     if (last) {
-      this.transformStack[id] = Mat4.multiply(transform, last)
+      this.transformStack[id] = Mat4.premultiply(transform, last)
     } else {
       this.transformStack[id] = transform.clone()
     }
@@ -235,9 +235,9 @@ export class ModelBuilder {
       if (!transform) {
         // ok
       } else if (name === 'position') {
-        transform.transformV3Buffer(item)
+        transform.transformV3Array(item)
       } else if (name.match('normal|tangent')) {
-        transform.transformNormalBuffer(item)
+        transform.transformV3NormalArray(item)
       } else if (name.match('texture|uv|texcoord')) {
         // TODO: transform texture
       }

@@ -216,10 +216,10 @@ export class ModelAnimation {
     for (let i = 0; i < this.jointCount; i++) {
       const global = this.globalTransforms[i]
       this.skinTransforms[i]
-        .initScale(global.scale.x, global.scale.y, global.scale.z)
-        .multiply(tempMat.initFromQuaternion(global.rotation))
-        .setTranslation(global.translation)
-        .concat(this.inverseBindPose[i])
+        .initScaleV(global.scale)
+        .premultiply(tempMat.initFromQuat(global.rotation))
+        .setTranslationV(global.translation)
+        .multiply(this.inverseBindPose[i])
     }
   }
 }

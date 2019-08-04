@@ -526,25 +526,25 @@ export class ShaderUniform {
   /**
    * Sets a 2x2 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat2(value: { data: Float32List }, transpose: boolean) {
+  public setMat2(value: { m: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
-    this.gl.uniformMatrix2fv(this.location, !!transpose, value.data)
+    this.gl.uniformMatrix2fv(this.location, !!transpose, value.m)
   }
 
   /**
    * Sets a 3x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat3(value: { data: Float32List }, transpose: boolean) {
+  public setMat3(value: { m: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
-    this.gl.uniformMatrix3fv(this.location, !!transpose, value.data)
+    this.gl.uniformMatrix3fv(this.location, !!transpose, value.m)
   }
 
   /**
    * Sets a 4x4 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat4(value: { data: Float32List }, transpose: boolean) {
+  public setMat4(value: { m: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
-    this.gl.uniformMatrix4fv(this.location, !!transpose, value.data)
+    this.gl.uniformMatrix4fv(this.location, !!transpose, value.m)
   }
 
   /**

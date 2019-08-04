@@ -1,7 +1,7 @@
 import { Entity } from '../Entity'
 import { TimeComponent } from './TimeComponent'
 
-fdescribe('@gglib/ecs/TimeComponent', () => {
+describe('@gglib/ecs/TimeComponent', () => {
 
   let entity: Entity
   let component: TimeComponent

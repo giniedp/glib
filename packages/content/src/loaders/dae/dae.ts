@@ -95,7 +95,7 @@ async function walkNodes(
 ) => Promise<void>) {
   for (const node of nodes) {
 
-    const subTransform = Mat4.multiply(transform, createTransform(node.transforms))
+    const subTransform = Mat4.premultiply(transform, createTransform(node.transforms))
     await Promise.all(node.instanceGeometries.map(async (it) => {
       const geometry = await it.getGeometry()
       const material = it.bindMaterial
@@ -199,9 +199,9 @@ function createTransform(transforms: DaeNodeTranform[]) {
           Vec3.createFromBuffer(it.data, 6),
         )
       case 'matrix':
-        return Mat4.createFromBuffer(it.data)
+        return Mat4.createFromArray(it.data)
       case 'rotate':
-        return Mat4.createAxisAngle(Vec3.createFromBuffer(it.data, 0), it.data[3] * Math.PI / 180)
+        return Mat4.createAxisAngle(it.data[0], it.data[1], it.data[2], it.data[3] * Math.PI / 180)
       case 'scale':
         return Mat4.createScale(it.data[0], it.data[1], it.data[2])
       case 'skew':
@@ -213,7 +213,7 @@ function createTransform(transforms: DaeNodeTranform[]) {
         return Mat4.createIdentity()
     }
   }).reduce((result, m) => {
-    return result == null ? m : result.multiply(m)
+    return result == null ? m : result.premultiply(m)
   }, null) || Mat4.createIdentity()
 }
 

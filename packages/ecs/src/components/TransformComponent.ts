@@ -123,10 +123,9 @@ export class TransformComponent implements OnUpdate {
   public onUpdate() {
     if (this.dirty) {
       this.matrix
-        .initIdentity()
-        .setScale(this.scale)
-        .multiply(tempMat.initFromQuaternion(this.rotation))
-        .setTranslation(this.position)
+        .initScaleV(this.scale)
+        .premultiply(tempMat.initFromQuat(this.rotation))
+        .setTranslationV(this.position)
       Mat4.invert(this.matrix, this.inverse)
       this.dirty = false
     }
@@ -502,7 +501,7 @@ export class TransformComponent implements OnUpdate {
    * @param out - The vector to write to
    * @returns The given `out` parameter or a new vector.
    */
-  public transform<T extends IVec3 = Vec3>(v: IVec3, out?: T): T {
+  public transform<T extends IVec3>(v: IVec3, out?: T): T {
     Quat.transform(this.rotation, v, out)
     Vec3.multiply(this.scale, out, out)
     Vec3.add(this.position, out)
@@ -516,7 +515,7 @@ export class TransformComponent implements OnUpdate {
    * @param out - The vector to write to
    * @returns The given `out` parameter or a new vector.
    */
-  public transformNormal<T extends IVec3 = Vec3>(v: IVec3, out?: T): T {
+  public transformNormal<T extends IVec3>(v: IVec3, out?: T): T {
     Quat.transform(this.rotation, v, out)
     Vec3.multiply(this.scale, out, out)
     return out

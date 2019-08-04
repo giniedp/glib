@@ -130,7 +130,7 @@ export class PerspectiveCameraComponent extends CameraComponent implements OnUpd
   public onUpdate() {
     this.view.initFrom(this.transform.inverse)
     this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far)
-    Mat4.multiply(this.view, this.projection, this.viewProjection)
+    Mat4.premultiply(this.view, this.projection, this.viewProjection)
   }
 }
 
@@ -223,6 +223,6 @@ export class OrthographicCameraComponent extends CameraComponent implements OnUp
   public onUpdate() {
     this.view.initFrom(this.transform.inverse)
     this.projection.initOrthographic(this.width, this.height, this.near, this.far)
-    Mat4.multiply(this.view, this.projection, this.viewProjection)
+    Mat4.premultiply(this.view, this.projection, this.viewProjection)
   }
 }

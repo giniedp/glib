@@ -274,16 +274,16 @@ async function loadSkin(context: PipelineContext, doc: Document, skinIndex: numb
 
 function loadMatrix(node: Node): number[] {
   if (node.matrix) {
-    return Mat4.createFromBuffer(node.matrix).toArray()
+    return Mat4.createFromArray(node.matrix).toArray()
   } else {
     const s = node.scale || [1, 1, 1]
     const r = node.rotation || [0, 0, 0, 1]
     const t = node.translation || [0, 0, 0]
-    return Mat4.concatChain(
-      Mat4.createTranslation(t[0], t[1], t[2]),
-      Mat4.createFromQuaternion(Quat.convert(r)),
-      Mat4.createScale(s[0], s[1], s[2]),
-    ).toArray()
+    Mat4
+      .createScale(s[0], s[1], s[2])
+      .rotateQuaternion(r[0], r[1], r[2], r[3])
+      .setTranslation(t[0], t[1], t[2])
+      .toArray()
   }
 }
 

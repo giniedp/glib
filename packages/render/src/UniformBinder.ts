@@ -193,7 +193,7 @@ export class UniformBinder {
       this.Projection.value.initFrom(proj)
     }
     if (view && proj) {
-      Mat4.multiply(this.View.value, this.Projection.value, this.ViewProjection.value)
+      Mat4.premultiply(this.View.value, this.Projection.value, this.ViewProjection.value)
     }
     return this
   }
