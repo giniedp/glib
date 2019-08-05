@@ -35,7 +35,7 @@ $ gulp build
 | Command | Description |
 |---|---|
 | `gulp clean`  | Cleans the `dist` folder |
-| `gulp update` | Regenerates `package.json` and `api-extractor.json` files. Synchronises the version number |
+| `gulp update` | Regenerates `package.json` and `api-extractor.json` files. Synchronizes the version number |
 | `gulp compile`| Compiles all packages using `tsc` |
 | `gulp bundle` | Bundles all packages using `rollup` |
 | `gulp build`  | Basically runs all commands above to build all packages |
