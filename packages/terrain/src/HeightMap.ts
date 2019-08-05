@@ -203,7 +203,7 @@ export class HeightMap {
       for (let x = 0; x < this.width; x += 1) {
         this.heights[index] *= scale
         this.normals[nIndex + 1] /= scale
-        normal.initFromBuffer(this.normals, nIndex).normalize().toArray(this.normals, nIndex)
+        normal.initFromArray(this.normals, nIndex).normalize().toArray(this.normals, nIndex)
         index += 1
         nIndex += 3
       }

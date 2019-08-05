@@ -45,14 +45,14 @@ export const loadModelOptionsToModel = loader<ModelOptions, Model>({
     }))
 
     // handle bounding boxes
-    if (input.meshes.length && (!input.boundingBox || BoundingBox.convert(input.boundingBox).isZero)) {
+    if (input.meshes.length && !BoundingBox.convert(input.boundingBox)) {
       const box = input.meshes
         .map((it) => BoundingBox.convert(it.boundingBox))
         .reduce((a, b) => BoundingBox.merge(a || b, b), null)
       const sphere = BoundingSphere.createFromBox(box)
 
-      input.boundingBox = box.dump()
-      input.boundingSphere = sphere.dump()
+      input.boundingBox = box.toArray()
+      input.boundingSphere = sphere.toArray()
     }
 
     return context.manager.device.createModel({

@@ -194,9 +194,9 @@ function createTransform(transforms: DaeNodeTranform[]) {
     switch (it.type) {
       case 'lookat':
         return Mat4.createLookAt(
-          Vec3.createFromBuffer(it.data, 0),
-          Vec3.createFromBuffer(it.data, 3),
-          Vec3.createFromBuffer(it.data, 6),
+          Vec3.createFromArray(it.data, 0),
+          Vec3.createFromArray(it.data, 3),
+          Vec3.createFromArray(it.data, 6),
         )
       case 'matrix':
         return Mat4.createFromArray(it.data)

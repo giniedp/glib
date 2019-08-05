@@ -38,24 +38,24 @@ export function buildBezierSurface(builder: ModelBuilder, patch: number[], tesse
 
       const si = Vec4.create(1, ti, ti * ti, ti * ti * ti)
       const p1 = Vec3.create(
-        Vec4.createFromBuffer(patch, 0, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 1, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 2, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 0, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 1, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 2, 3).transformByMat4(basis).dot(si),
       )
       const p2 = Vec3.create(
-        Vec4.createFromBuffer(patch, 12, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 13, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 14, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 12, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 13, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 14, 3).transformByMat4(basis).dot(si),
       )
       const p3 = Vec3.create(
-        Vec4.createFromBuffer(patch, 24, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 25, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 26, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 24, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 25, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 26, 3).transformByMat4(basis).dot(si),
       )
       const p4 = Vec3.create(
-        Vec4.createFromBuffer(patch, 36, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 37, 3).transformByMat4(basis).dot(si),
-        Vec4.createFromBuffer(patch, 38, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 36, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 37, 3).transformByMat4(basis).dot(si),
+        Vec4.createFromArray(patch, 38, 3).transformByMat4(basis).dot(si),
       )
 
       const sj = Vec4.create(1, tj, tj * tj, tj * tj * tj)
