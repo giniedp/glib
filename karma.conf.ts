@@ -1,11 +1,13 @@
-'use strict';
+'use strict'
 
-const path = require("path")
-const IS_COVERAGE = !!process.env.IS_COVERAGE;
-const IS_TRAVIS = !!process.env.TRAVIS;
-const BROWSER = process.env.BROWSER;
+const path = require('path')
+const argv = require('yargs').argv
 
-module.exports = function (config) {
+const IS_COVERAGE = !!process.env.IS_COVERAGE
+const IS_TRAVIS = !!process.env.TRAVIS
+const BROWSER = process.env.BROWSER
+
+module.exports = (config) => {
 
   config.set({
     basePath: './packages',
@@ -25,7 +27,7 @@ module.exports = function (config) {
       'karma-typescript',
     ],
     browsers: [
-      BROWSER || 'Chrome'
+      BROWSER || 'Chrome',
     ],
     browserDisconnectTimeout: 60 * 60 * 1000,
     customLaunchers: {
@@ -39,7 +41,7 @@ module.exports = function (config) {
       '/assets': path.join(__dirname, 'assets'),
     },
     files: [{
-      pattern: '**/*.ts',
+      pattern: argv.package ? path.join(argv.package, '**/*.ts') : '**/*.ts',
       watched: true,
       served: true,
       included: true,
@@ -59,7 +61,7 @@ module.exports = function (config) {
       'karma-typescript',
     ],
     mochaReporter: {
-      output: 'minimal'
+      output: 'minimal',
     },
 
     karmaTypescriptConfig: {
@@ -76,7 +78,7 @@ module.exports = function (config) {
         // a regex for excluding files from remapping
         // exclude: '',
         // a function for handling error messages
-        warn: (msg) => console.log(msg)
+        warn: (msg) => console.log(msg),
       },
       converageOptions: {
         instrumentation: IS_COVERAGE,
