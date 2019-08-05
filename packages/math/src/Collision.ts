@@ -51,7 +51,7 @@ export function closestPointSegment(point: IVec3, a: IVec3, b: IVec3, out: IVec3
   recycle.begin()
 
   const ab = Vec3.subtract(b, a, recycle.next())
-  // project c onto ab, computing parametrized poition d(t) = a + t * (b - a)
+  // project c onto ab, computing parametrized position d(t) = a + t * (b - a)
   const ac = Vec3.subtract(point, a, recycle.next())
   let t = Vec3.dot(ac, ab) / Vec3.lengthSquared(ab)
   // if outside segment, clamp t (and therefore d) to closest endpoint

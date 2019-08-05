@@ -91,7 +91,7 @@ describe('BoundingBox', () => {
 
   describe('#initFromBuffer', () => {
     it ('merges points', () => {
-      const box1 = new BoundingBox().initFromBuffer([1, 2, 3, 4, 5, 6])
+      const box1 = new BoundingBox().initFromArray([1, 2, 3, 4, 5, 6])
       expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
       expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
     })
@@ -99,7 +99,7 @@ describe('BoundingBox', () => {
 
   describe('.createFromBuffer', () => {
     it ('merges points', () => {
-      const box1 = BoundingBox.createFromBuffer([1, 2, 3, 4, 5, 6])
+      const box1 = BoundingBox.createFromArray([1, 2, 3, 4, 5, 6])
       expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
       expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
     })
@@ -107,7 +107,7 @@ describe('BoundingBox', () => {
 
   describe('#initFromVec3Buffer', () => {
     it ('merges points', () => {
-      const box1 = new BoundingBox().initFromVec3Buffer([Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)])
+      const box1 = new BoundingBox().initFromPoints([Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)])
       expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
       expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
     })
@@ -115,7 +115,7 @@ describe('BoundingBox', () => {
 
   describe('.createFromVec3Buffer', () => {
     it ('merges points', () => {
-      const box1 = BoundingBox.createFromVec3Buffer([Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)])
+      const box1 = BoundingBox.createFromPoints([Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)])
       expectVec3Equality(box1.min, Vec3.create(1, 2, 3))
       expectVec3Equality(box1.max, Vec3.create(4, 5, 6))
     })
@@ -343,14 +343,14 @@ describe('BoundingBox', () => {
       expect(box.intersectsRay(Ray.create( 1, -1,  1,  0,  1,  0))).toBe(true, 'from below')
       expect(box.intersectsRay(Ray.create( 1,  3,  1,  0, -1,  0))).toBe(true, 'from above')
       expect(box.intersectsRay(Ray.create( 1,  1, -1,  0,  0,  1))).toBe(true, 'from behind')
-      expect(box.intersectsRay(Ray.create( 1,  1,  3,  0,  0, -1))).toBe(true, 'from infront')
+      expect(box.intersectsRay(Ray.create( 1,  1,  3,  0,  0, -1))).toBe(true, 'from upfront')
 
       expect(box.intersectsRay(Ray.create(-1,  1,  1, -1,  0,  0))).toBe(false, 'away, left')
       expect(box.intersectsRay(Ray.create( 3,  1,  1,  1,  0,  0))).toBe(false, 'away, right')
       expect(box.intersectsRay(Ray.create( 1, -1,  1,  0, -1,  0))).toBe(false, 'away, below')
       expect(box.intersectsRay(Ray.create( 1,  3,  1,  0,  1,  0))).toBe(false, 'away, above')
       expect(box.intersectsRay(Ray.create( 1,  1, -1,  0,  0, -1))).toBe(false, 'away, behind')
-      expect(box.intersectsRay(Ray.create( 1,  1,  3,  0,  0,  1))).toBe(false, 'away, infront')
+      expect(box.intersectsRay(Ray.create( 1,  1,  3,  0,  0,  1))).toBe(false, 'away, upfront')
     })
   })
 
@@ -480,7 +480,7 @@ describe('BoundingBox', () => {
       expect(box.intersectionWithBox(BoundingBox.create( 0, -1,  0,  1, -0,  1))).toBe(1, 'below')
       expect(box.intersectionWithBox(BoundingBox.create( 0,  1,  0,  1,  2,  1))).toBe(1, 'above')
       expect(box.intersectionWithBox(BoundingBox.create( 0,  0, -1,  1,  1, -0))).toBe(1, 'behind')
-      expect(box.intersectionWithBox(BoundingBox.create( 0,  0,  1,  1,  1,  2))).toBe(1, 'infront')
+      expect(box.intersectionWithBox(BoundingBox.create( 0,  0,  1,  1,  1,  2))).toBe(1, 'upfront')
 
       // outside
       expect(box.intersectionWithBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1))).toBe(0, 'left')
@@ -488,7 +488,7 @@ describe('BoundingBox', () => {
       expect(box.intersectionWithBox(BoundingBox.create(0, -1.000, 0,  1, -0.001, 1))).toBe(0, 'below')
       expect(box.intersectionWithBox(BoundingBox.create(0,  1.001, 0,  1,  2.000, 1))).toBe(0, 'above')
       expect(box.intersectionWithBox(BoundingBox.create(0, 0, -1.000,  1, 1, -0.001))).toBe(0, 'behind')
-      expect(box.intersectionWithBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000))).toBe(0, 'infront')
+      expect(box.intersectionWithBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000))).toBe(0, 'upfront')
     })
   })
 
@@ -505,7 +505,7 @@ describe('BoundingBox', () => {
       expect(box.intersectionWithSphere(BoundingSphere.create( 0, -1,  0,  1))).toBe(1, 'below')
       expect(box.intersectionWithSphere(BoundingSphere.create( 0,  3,  0,  1))).toBe(1, 'above')
       expect(box.intersectionWithSphere(BoundingSphere.create( 0,  0, -1,  1))).toBe(1, 'behind')
-      expect(box.intersectionWithSphere(BoundingSphere.create( 0,  0,  3,  1))).toBe(1, 'infront')
+      expect(box.intersectionWithSphere(BoundingSphere.create( 0,  0,  3,  1))).toBe(1, 'upfront')
 
       // outside
       expect(box.intersectionWithSphere(BoundingSphere.create(-1,  0,  0,  0.999))).toBe(0, 'left')
@@ -513,7 +513,7 @@ describe('BoundingBox', () => {
       expect(box.intersectionWithSphere(BoundingSphere.create( 0, -1,  0,  0.999))).toBe(0, 'below')
       expect(box.intersectionWithSphere(BoundingSphere.create( 0,  3,  0,  0.999))).toBe(0, 'above')
       expect(box.intersectionWithSphere(BoundingSphere.create( 0,  0, -1,  0.999))).toBe(0, 'behind')
-      expect(box.intersectionWithSphere(BoundingSphere.create( 0,  0,  3,  0.999))).toBe(0, 'infront')
+      expect(box.intersectionWithSphere(BoundingSphere.create( 0,  0,  3,  0.999))).toBe(0, 'upfront')
     })
   })
 

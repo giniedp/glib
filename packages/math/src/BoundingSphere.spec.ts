@@ -74,26 +74,26 @@ describe('BoundingSphere', () => {
 
   describe('#initFromBuffer', () => {
     it ('merges points', () => {
-      expectComponents(new BoundingSphere().initFromBuffer([0, 0, 0, 1, 1, 1]), 0.5, 0.5, 0.5, 0.8660254037844386)
+      expectComponents(new BoundingSphere().initFromArray([0, 0, 0, 1, 1, 1]), 0.5, 0.5, 0.5, 0.8660254037844386)
     })
   })
 
   describe('.createFromBuffer', () => {
     it ('merges points', () => {
-      expectComponents(BoundingSphere.createFromBuffer([0, 0, 0, 1, 1, 1]), 0.5, 0.5, 0.5, 0.8660254037844386)
+      expectComponents(BoundingSphere.createFromArray([0, 0, 0, 1, 1, 1]), 0.5, 0.5, 0.5, 0.8660254037844386)
     })
   })
 
   describe('#initFromVec3Buffer', () => {
     it ('merges points', () => {
-      const sphere = new BoundingSphere().initFromVec3Buffer([Vec3.create(0, 0, 0), Vec3.create(1, 1, 1)])
+      const sphere = new BoundingSphere().initFromPoints([Vec3.create(0, 0, 0), Vec3.create(1, 1, 1)])
       expectComponents(sphere, 0.5, 0.5, 0.5, 0.8660254037844386)
     })
   })
 
   describe('.createFromVec3Buffer', () => {
     it ('merges points', () => {
-      const sphere = BoundingSphere.createFromVec3Buffer([Vec3.create(0, 0, 0), Vec3.create(1, 1, 1)])
+      const sphere = BoundingSphere.createFromPoints([Vec3.create(0, 0, 0), Vec3.create(1, 1, 1)])
       expectComponents(sphere, 0.5, 0.5, 0.5, 0.8660254037844386)
     })
   })

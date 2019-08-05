@@ -1,6 +1,5 @@
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 
-const keys = ['x', 'y', 'z', 'w']
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z', 3: 'w',
   x: 'x', y: 'y', z: 'z', w: 'w',
@@ -117,6 +116,18 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Creates a new instance.
+   * @param x - The x component
+   * @param y - The y component
+   * @param z - The z component
+   * @param w - The w component
+   * @returns A new instance.
+   */
+  public static create(x?: number, y?: number, z?: number, w?: number): Vec4 {
+    return new Vec4(x, y, z, w)
+  }
+
+  /**
    * Initializes the components of this value with given values.
    * @param x - value for X component
    * @param y - value for Y component
@@ -133,15 +144,11 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Creates a new instance.
-   * @param x - The x component
-   * @param y - The y component
-   * @param z - The z component
-   * @param w - The w component
+   * Creates a new instance with all components set to 0.
    * @returns A new instance.
    */
-  public static create(x?: number, y?: number, z?: number, w?: number): Vec4 {
-    return new Vec4(x, y, z, w)
+  public static createZero(): Vec4 {
+    return new Vec4(0, 0, 0, 0)
   }
 
   /**
@@ -157,11 +164,11 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Creates a new instance with all components set to 0.
+   * Creates a new instance with all components set to 1.
    * @returns A new instance.
    */
-  public static createZero(): Vec4 {
-    return new Vec4(0, 0, 0, 0)
+  public static createOne(): Vec4 {
+    return new Vec4(1, 1, 1, 1)
   }
 
   /**
@@ -173,27 +180,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     this.y = 1
     this.z = 1
     this.w = 1
-    return this
-  }
-
-  /**
-   * Creates a new instance with all components set to 1.
-   * @returns A new instance.
-   */
-  public static createOne(): Vec4 {
-    return new Vec4(1, 1, 1, 1)
-  }
-
-  /**
-   * Initializes the components of this value by taking the components from the given value.
-   * @param other - The value to read from
-   * @returns `this` instance for chaining
-   */
-  public initFrom(other: IVec4): this {
-    this.x = other.x
-    this.y = other.y
-    this.z = other.z
-    this.w = other.w
     return this
   }
 
@@ -212,17 +198,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Initializes the components of this value by taking values from the given array in successive order.
-   * @param buffer - The array to read from
-   * @param offset - The zero based index at which start reading the values
-   * @param stride - The offset between each component in buffer
+   * Initializes the components of this value by taking the components from the given value.
+   * @param other - The value to read from
    * @returns `this` instance for chaining
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): this {
-    this.x = buffer[offset]
-    this.y = buffer[offset + 1 * stride]
-    this.z = buffer[offset + 2 * stride]
-    this.w = buffer[offset + 3 * stride]
+  public initFrom(other: IVec4): this {
+    this.x = other.x
+    this.y = other.y
+    this.z = other.z
+    this.w = other.w
     return this
   }
 
@@ -233,13 +217,28 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param stride - The offset between each component in buffer
    * @returns `this` instance for chaining
    */
-  public static createFromBuffer(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): Vec4 {
+  public static createFromArray(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): Vec4 {
     return new Vec4(
       buffer[offset],
       buffer[offset + 1 * stride],
       buffer[offset + 2 * stride],
       buffer[offset + 3 * stride],
     )
+  }
+
+  /**
+   * Initializes the components of this value by taking values from the given array in successive order.
+   * @param buffer - The array to read from
+   * @param offset - The zero based index at which start reading the values
+   * @param stride - The offset between each component in buffer
+   * @returns `this` instance for chaining
+   */
+  public initFromArray(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): this {
+    this.x = buffer[offset]
+    this.y = buffer[offset + 1 * stride]
+    this.z = buffer[offset + 2 * stride]
+    this.w = buffer[offset + 3 * stride]
+    return this
   }
 
   /**
@@ -309,19 +308,19 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Checks for component wise equality with given value
-   * @returns true if components are equal, false otherwise
-   */
-  public equals(other: IVec4): boolean {
-    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
-  }
-
-  /**
    * Checks for component wise equality
    * @returns true if components are equal, false otherwise
    */
   public static equals(a: IVec4, b: IVec4): boolean {
     return ((a.x === b.x) && (a.y === b.y) && (a.z === b.z) && (a.w === b.w))
+  }
+
+  /**
+   * Checks for component wise equality with given value
+   * @returns true if components are equal, false otherwise
+   */
+  public equals(other: IVec4): boolean {
+    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
   }
 
   /**
@@ -350,18 +349,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Calculates the squared length of this value
-   * @returns The squared length.
-   */
-  public lengthSquared(): number {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    return x * x + y * y + z * z + w * w
-  }
-
-  /**
    * Calculates the squared length of a value
    *
    * @returns The squared length.
@@ -375,16 +362,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Calculates the distance to the `other` value
-   * @param other - The distant vector
-   * @returns The distance between the vectors.
+   * Calculates the squared length of this value
+   * @returns The squared length.
    */
-  public distance(other: IVec4): number {
-    const x = this.x - other.x
-    const y = this.y - other.y
-    const z = this.z - other.z
-    const w = this.w - other.w
-    return Math.sqrt(x * x + y * y + z * z + w * w)
+  public lengthSquared(): number {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    const w = this.w
+    return x * x + y * y + z * z + w * w
   }
 
   /**
@@ -402,16 +388,16 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Calculates the squared distance to the `other` value
+   * Calculates the distance to the `other` value
    * @param other - The distant vector
-   * @returns The squared distance between the vectors.
+   * @returns The distance between the vectors.
    */
-  public distanceSquared(other: IVec4): number {
+  public distance(other: IVec4): number {
     const x = this.x - other.x
     const y = this.y - other.y
     const z = this.z - other.z
     const w = this.w - other.w
-    return x * x + y * y + z * z + w * w
+    return Math.sqrt(x * x + y * y + z * z + w * w)
   }
 
   /**
@@ -429,12 +415,16 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Calculates the dot product with the `other` value
-   *
-   * @returns The dot product.
+   * Calculates the squared distance to the `other` value
+   * @param other - The distant vector
+   * @returns The squared distance between the vectors.
    */
-  public dot(other: IVec4): number {
-    return this.x * other.x + this.y * other.y + this.z * other.z + this.w * other.w
+  public distanceSquared(other: IVec4): number {
+    const x = this.x - other.x
+    const y = this.y - other.y
+    const z = this.z - other.z
+    const w = this.w - other.w
+    return x * x + y * y + z * z + w * w
   }
 
   /**
@@ -448,20 +438,12 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Normalizes `this` value.
-   * @returns `this` instance for chaining
+   * Calculates the dot product with the `other` value
+   *
+   * @returns The dot product.
    */
-  public normalize(): this {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
-    this.x *= d
-    this.y *= d
-    this.z *= d
-    this.w *= d
-    return this
+  public dot(other: IVec4): number {
+    return this.x * other.x + this.y * other.y + this.z * other.z + this.w * other.w
   }
 
   /**
@@ -487,14 +469,19 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Inverts this value.
+   * Normalizes `this` value.
    * @returns `this` instance for chaining
    */
-  public invert(): this {
-    this.x = 1.0 / this.x
-    this.y = 1.0 / this.y
-    this.z = 1.0 / this.z
-    this.w = 1.0 / this.w
+  public normalize(): this {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    const w = this.w
+    const d = 1.0 / Math.sqrt(x * x + y * y + z * z + w * w)
+    this.x *= d
+    this.y *= d
+    this.z *= d
+    this.w *= d
     return this
   }
 
@@ -516,14 +503,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Negates the components of `this` vector. Applies the result to `this`
+   * Inverts this value.
    * @returns `this` instance for chaining
    */
-  public negate(): this {
-    this.x = -this.x
-    this.y = -this.y
-    this.z = -this.z
-    this.w = -this.w
+  public invert(): this {
+    this.x = 1.0 / this.x
+    this.y = 1.0 / this.y
+    this.z = 1.0 / this.z
+    this.w = 1.0 / this.w
     return this
   }
 
@@ -545,15 +532,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this += other`
-   * @param other - The value to add
+   * Negates the components of `this` vector. Applies the result to `this`
    * @returns `this` instance for chaining
    */
-  public add(other: IVec4): this {
-    this.x += other.x
-    this.y += other.y
-    this.z += other.z
-    this.w += other.w
+  public negate(): this {
+    this.x = -this.x
+    this.y = -this.y
+    this.z = -this.z
+    this.w = -this.w
     return this
   }
 
@@ -576,15 +562,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this += scalar`
-   * @param scalar - The value to add
+   * Performs the calculation `this += other`
+   * @param other - The value to add
    * @returns `this` instance for chaining
    */
-  public addScalar(scalar: number): this {
-    this.x += scalar
-    this.y += scalar
-    this.z += scalar
-    this.w += scalar
+  public add(other: IVec4): this {
+    this.x += other.x
+    this.y += other.y
+    this.z += other.z
+    this.w += other.w
     return this
   }
 
@@ -607,15 +593,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this += other * scale`
-   * @param other - The value to add
+   * Performs the calculation `this += scalar`
+   * @param scalar - The value to add
    * @returns `this` instance for chaining
    */
-  public addScaled(other: IVec4, scale: number): this {
-    this.x += other.x * scale
-    this.y += other.y * scale
-    this.z += other.z * scale
-    this.w += other.w * scale
+  public addScalar(scalar: number): this {
+    this.x += scalar
+    this.y += scalar
+    this.z += scalar
+    this.w += scalar
     return this
   }
 
@@ -633,16 +619,17 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     out.w = v1.w + v2.w * scale
     return out
   }
+
   /**
-   * Performs the calculation `this -= other`
-   * @param other - The value to subtract
+   * Performs the calculation `this += other * scale`
+   * @param other - The value to add
    * @returns `this` instance for chaining
    */
-  public subtract(other: IVec4): this {
-    this.x -= other.x
-    this.y -= other.y
-    this.z -= other.z
-    this.w -= other.w
+  public addScaled(other: IVec4, scale: number): this {
+    this.x += other.x * scale
+    this.y += other.y * scale
+    this.z += other.z * scale
+    this.w += other.w * scale
     return this
   }
 
@@ -665,15 +652,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this -= scalar`
-   * @param scalar - The value to subtract
+   * Performs the calculation `this -= other`
+   * @param other - The value to subtract
    * @returns `this` instance for chaining
    */
-  public subtractScalar(scalar: number): this {
-    this.x -= scalar
-    this.y -= scalar
-    this.z -= scalar
-    this.w -= scalar
+  public subtract(other: IVec4): this {
+    this.x -= other.x
+    this.y -= other.y
+    this.z -= other.z
+    this.w -= other.w
     return this
   }
 
@@ -696,6 +683,19 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Performs the calculation `this -= scalar`
+   * @param scalar - The value to subtract
+   * @returns `this` instance for chaining
+   */
+  public subtractScalar(scalar: number): this {
+    this.x -= scalar
+    this.y -= scalar
+    this.z -= scalar
+    this.w -= scalar
+    return this
+  }
+
+  /**
    * Performs the calculation `this -= other * scale`
    * @param other - The value to subtract
    * @param scale - The value to multoply to `other`
@@ -706,19 +706,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     this.y -= other.y * scale
     this.z -= other.z * scale
     this.w -= other.w * scale
-    return this
-  }
-
-  /**
-   * Performs the calculation `this *= other`
-   * @param other - The value to multiply
-   * @returns `this` instance for chaining
-   */
-  public multiply(other: IVec4): this {
-    this.x *= other.x
-    this.y *= other.y
-    this.z *= other.z
-    this.w *= other.w
     return this
   }
 
@@ -741,15 +728,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this *= scalar`
-   * @param scalar - The value to multiply
+   * Performs the calculation `this *= other`
+   * @param other - The value to multiply
    * @returns `this` instance for chaining
    */
-  public multiplyScalar(scalar: number): this {
-    this.x *= scalar
-    this.y *= scalar
-    this.z *= scalar
-    this.w *= scalar
+  public multiply(other: IVec4): this {
+    this.x *= other.x
+    this.y *= other.y
+    this.z *= other.z
+    this.w *= other.w
     return this
   }
 
@@ -772,15 +759,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this /= other`
-   * @param other - The value to divide
+   * Performs the calculation `this *= scalar`
+   * @param scalar - The value to multiply
    * @returns `this` instance for chaining
    */
-  public divide(other: IVec4): this {
-    this.x /= other.x
-    this.y /= other.y
-    this.z /= other.z
-    this.w /= other.w
+  public multiplyScalar(scalar: number): this {
+    this.x *= scalar
+    this.y *= scalar
+    this.z *= scalar
+    this.w *= scalar
     return this
   }
 
@@ -803,16 +790,15 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this *= (1 / scalar)`
-   * @param scalar - The value to divide
+   * Performs the calculation `this /= other`
+   * @param other - The value to divide
    * @returns `this` instance for chaining
    */
-  public divideScalar(scalar: number): this {
-    scalar = 1.0 / scalar
-    this.x *= scalar
-    this.y *= scalar
-    this.z *= scalar
-    this.w *= scalar
+  public divide(other: IVec4): this {
+    this.x /= other.x
+    this.y /= other.y
+    this.z /= other.z
+    this.w /= other.w
     return this
   }
 
@@ -836,16 +822,16 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Performs the calculation `this = this * a + b`
-   * @param a - The value to multiply.
-   * @param b - The value to add on top of the multiplication.
+   * Performs the calculation `this *= (1 / scalar)`
+   * @param scalar - The value to divide
    * @returns `this` instance for chaining
    */
-  public multiplyAdd(a: IVec4, b: IVec4): this {
-    this.x = this.x * a.x + b.x
-    this.y = this.y * a.y + b.y
-    this.z = this.z * a.z + b.z
-    this.w = this.w * a.w + b.w
+  public divideScalar(scalar: number): this {
+    scalar = 1.0 / scalar
+    this.x *= scalar
+    this.y *= scalar
+    this.z *= scalar
+    this.w *= scalar
     return this
   }
 
@@ -869,17 +855,16 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Multiplies this value with a scalar and adds another vector.
-   * @param mul - The scalar to multiply.
-   * @param add - The value to add on top of the multiplication.
-   * @param out - The value to write to.
-   * @returns The given `out` parameter or a new instance.
+   * Performs the calculation `this = this * a + b`
+   * @param a - The value to multiply.
+   * @param b - The value to add on top of the multiplication.
+   * @returns `this` instance for chaining
    */
-  public multiplyScalarAdd(mul: number, add: IVec4): this {
-    this.x = this.x * mul + add.x
-    this.y = this.y * mul + add.y
-    this.z = this.z * mul + add.z
-    this.w = this.w * mul + add.w
+  public multiplyAdd(a: IVec4, b: IVec4): this {
+    this.x = this.x * a.x + b.x
+    this.y = this.y * a.y + b.y
+    this.z = this.z * a.z + b.z
+    this.w = this.w * a.w + b.w
     return this
   }
 
@@ -900,6 +885,21 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     out.z = vecA.z * mul + add.z
     out.w = vecA.w * mul + add.w
     return out
+  }
+
+  /**
+   * Multiplies this value with a scalar and adds another vector.
+   * @param mul - The scalar to multiply.
+   * @param add - The value to add on top of the multiplication.
+   * @param out - The value to write to.
+   * @returns The given `out` parameter or a new instance.
+   */
+  public multiplyScalarAdd(mul: number, add: IVec4): this {
+    this.x = this.x * mul + add.x
+    this.y = this.y * mul + add.y
+    this.z = this.z * mul + add.z
+    this.w = this.w * mul + add.w
+    return this
   }
 
   /**

@@ -31,13 +31,6 @@ export class BoundingBox {
   public max: IVec3 = { x: 0, y: 0, z: 0}
 
   /**
-   * Checks if every component is zero
-   */
-  public get isZero() {
-    return this.min.x === 0 && this.min.y === 0 && this.min.z === 0 && this.max.x === 0 && this.max.y === 0 && this.max.z
-  }
-
-  /**
    * Constructs a new instance of {@link BoundingBox}
    *
    * @param minX - x component of the minimum point
@@ -57,26 +50,6 @@ export class BoundingBox {
   }
 
   /**
-   * Initializes the instance {@link BoundingBox}
-   *
-   * @param minX - x component of the minimum point
-   * @param minY - y component of the minimum point
-   * @param minZ - z component of the minimum point
-   * @param maxX - x component of the maximum point
-   * @param maxY - y component of the maximum point
-   * @param maxZ - z component of the maximum point
-   */
-  public init(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number): BoundingBox {
-    this.min.x = minX || 0
-    this.min.y = minY || 0
-    this.min.z = minZ || 0
-    this.max.x = maxX || 0
-    this.max.y = maxY || 0
-    this.max.z = maxZ || 0
-    return this
-  }
-
-  /**
    * Constructs a new instance of {@link BoundingBox}
    *
    * @param minX - x component of the minimum point
@@ -90,16 +63,31 @@ export class BoundingBox {
     return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ)
   }
 
-  public initFrom(box: BoundingBox): BoundingBox {
-    this.min.x = box.min.x
-    this.min.y = box.min.y
-    this.min.z = box.min.z
-    this.max.x = box.max.x
-    this.max.y = box.max.y
-    this.max.z = box.max.z
+  /**
+   * Initializes the {@link BoundingBox} instance with values
+   *
+   * @param minX - x component of the minimum point
+   * @param minY - y component of the minimum point
+   * @param minZ - z component of the minimum point
+   * @param maxX - x component of the maximum point
+   * @param maxY - y component of the maximum point
+   * @param maxZ - z component of the maximum point
+   */
+  public init(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number): this {
+    this.min.x = minX || 0
+    this.min.y = minY || 0
+    this.min.z = minZ || 0
+    this.max.x = maxX || 0
+    this.max.y = maxY || 0
+    this.max.z = maxZ || 0
     return this
   }
 
+  /**
+   * Creates a new instance and copies values from given box
+   *
+   * @param box - the box to initialize from
+   */
   public static createFrom(box: BoundingBox): BoundingBox {
     return new BoundingBox(
       box.min.x,
@@ -111,17 +99,28 @@ export class BoundingBox {
     )
   }
 
-  public initFromMinMax(min: IVec3, max: IVec3): BoundingBox {
-    this.min.x = min.x
-    this.min.y = min.y
-    this.min.z = min.z
-    this.max.x = max.x
-    this.max.y = max.y
-    this.max.z = max.z
+  /**
+   * Initializes this instance by copying the values from given box
+   *
+   * @param box - the box to initialize from
+   */
+  public initFrom(box: BoundingBox): this {
+    this.min.x = box.min.x
+    this.min.y = box.min.y
+    this.min.z = box.min.z
+    this.max.x = box.max.x
+    this.max.y = box.max.y
+    this.max.z = box.max.z
     return this
   }
 
-  public static createFromMinMax(min: IVec3, max: IVec3) {
+  /**
+   * Creates a new instance by copying the given min and max points
+   *
+   * @param min - the min point
+   * @param max - the max point
+   */
+  public static createFromMinMax(min: IVec3, max: IVec3): BoundingBox {
     return new BoundingBox(
       min.x,
       min.y,
@@ -132,16 +131,27 @@ export class BoundingBox {
     )
   }
 
-  public initFromSphere(sphere: BoundingSphere): BoundingBox {
-    this.min.x = sphere.center.x - sphere.radius
-    this.min.y = sphere.center.y - sphere.radius
-    this.min.z = sphere.center.z - sphere.radius
-    this.max.x = sphere.center.x + sphere.radius
-    this.max.y = sphere.center.y + sphere.radius
-    this.max.z = sphere.center.z + sphere.radius
+  /**
+   * Initializes this instance by copying the given min and max points
+   *
+   * @param min - the min point
+   * @param max - the max point
+   */
+  public initFromMinMax(min: IVec3, max: IVec3): this {
+    this.min.x = min.x
+    this.min.y = min.y
+    this.min.z = min.z
+    this.max.x = max.x
+    this.max.y = max.y
+    this.max.z = max.z
     return this
   }
 
+  /**
+   * Creates a new instance that contains the given sphere
+   *
+   * @param sphere - the sphere volume to contain
+   */
   public static createFromSphere(sphere: BoundingSphere): BoundingBox {
     return new BoundingBox(
       sphere.center.x - sphere.radius,
@@ -153,38 +163,87 @@ export class BoundingBox {
     )
   }
 
-  public initFromBuffer(buffer: ArrayLike<number>, offset: number = 0, stride: number = 3): BoundingBox {
+  /**
+   * Initializes this instance to contain the given sphere
+   *
+   * @param sphere - the sphere volume to contain
+   */
+  public initFromSphere(sphere: BoundingSphere): this {
+    this.min.x = sphere.center.x - sphere.radius
+    this.min.y = sphere.center.y - sphere.radius
+    this.min.z = sphere.center.z - sphere.radius
+    this.max.x = sphere.center.x + sphere.radius
+    this.max.y = sphere.center.y + sphere.radius
+    this.max.z = sphere.center.z + sphere.radius
+    return this
+  }
+
+  /**
+   * Creates a new instance from a numbers array
+   *
+   * @param array - the numbers array forming a point list
+   * @param offset - offset at which to start reading in array. Default is `0`
+   * @param stride - step size for each iteration. Default is `3`
+   */
+  public static createFromArray(array: ArrayLike<number>, offset?: number, stride?: number): BoundingBox {
+    return new BoundingBox().initFromArray(array, offset, stride)
+  }
+
+  /**
+   * Initializes this instance from a numbers array
+   *
+   * @param array - the numbers array forming a point list
+   * @param offset - offset at which to start reading in array. Default is `0`
+   * @param stride - step size for each iteration. Default is `3`
+   */
+  public initFromArray(array: ArrayLike<number>, offset: number = 0, stride: number = 3): BoundingBox {
     let zero = true
     const min = this.min
     const max = this.max
     min.x = min.y = min.z = Number.MAX_VALUE
     max.x = max.y = max.z = Number.MIN_VALUE
     let index = offset
-    while (index + 2 < buffer.length) {
+    while (index + 2 < array.length) {
       zero = false
-      min.x = Math.min(min.x, buffer[index])
-      min.y = Math.min(min.y, buffer[index + 1])
-      min.z = Math.min(min.z, buffer[index + 2])
-      max.x = Math.max(max.x, buffer[index])
-      max.y = Math.max(max.y, buffer[index + 1])
-      max.z = Math.max(max.z, buffer[index + 2])
+      min.x = Math.min(min.x, array[index])
+      min.y = Math.min(min.y, array[index + 1])
+      min.z = Math.min(min.z, array[index + 2])
+      max.x = Math.max(max.x, array[index])
+      max.y = Math.max(max.y, array[index + 1])
+      max.z = Math.max(max.z, array[index + 2])
       index += stride
+    }
+    if (zero) {
+      this.init(0, 0, 0, 0, 0, 0)
     }
     return this
   }
 
-  public static createFromBuffer(buffer: ArrayLike<number>, offset?: number, stride?: number): BoundingBox {
-    return new BoundingBox().initFromBuffer(buffer, offset, stride)
+  /**
+   * Creates a new instance from a point list
+   *
+   * @param array - the point list
+   * @param offset - the offset in `array`
+   */
+  public static createFromPoints(array: IVec3[], offset?: number): BoundingBox {
+    return new BoundingBox().initFromPoints(array, offset)
   }
 
-  public initFromVec3Buffer(buffer: IVec3[]): BoundingBox {
+  /**
+   * Initializes this instance from a point list
+   *
+   * @param array - the point list
+   * @param offset - the offset in `array`
+   */
+  public initFromPoints(array: IVec3[], offset = 0): BoundingBox {
     let zero = true
     const min = this.min
     const max = this.max
     min.x = min.y = min.z = Number.MAX_VALUE
     max.x = max.y = max.z = Number.MIN_VALUE
-    for (const vec of buffer) {
+    for (let i = offset; i < array.length; i++) {
       zero = false
+      const vec = array[i]
       min.x = Math.min(min.x, vec.x)
       min.y = Math.min(min.y, vec.y)
       min.z = Math.min(min.z, vec.z)
@@ -192,53 +251,98 @@ export class BoundingBox {
       max.y = Math.max(max.y, vec.y)
       max.z = Math.max(max.z, vec.z)
     }
+    if (zero) {
+      this.init(0, 0, 0, 0, 0, 0)
+    }
     return this
   }
 
-  public static createFromVec3Buffer(buffer: IVec3[]): BoundingBox {
-    return new BoundingBox().initFromVec3Buffer(buffer)
-  }
-
-  public clone(out?: BoundingBox): BoundingBox {
-    out = out || new BoundingBox()
-    Vec3.clone(this.min, out.min)
-    Vec3.clone(this.max, out.max)
-    return out
-  }
-
+  /**
+   * Clones this instance into a new or an existing one
+   *
+   * @param box - the box to clone
+   * @param out - where the result is written to
+   * @retruns the given `out` parameter or a new instance
+   */
   public static clone(box: BoundingBox, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
-    Vec3.clone(box.min, out.min)
-    Vec3.clone(box.max, out.max)
+    out.initFrom(box)
     return out
   }
 
-  public toArray<T extends ArrayLike<number>>(buffer: T, offset: number= 0): T {
-    Vec3.toArray(this.min, buffer, offset)
-    Vec3.toArray(this.max, buffer, offset + 3)
-    return buffer
+  /**
+   * Clones this instance into a new or an existing one
+   *
+   * @param out - where the result is written to
+   * @retruns the given `out` parameter or a new instance
+   */
+  public clone(out?: BoundingBox): BoundingBox {
+    out = out || new BoundingBox()
+    out.initFrom(this)
+    return out
   }
 
-  public static toArray<T extends ArrayLike<number>>(src: BoundingBox, buffer: T, offset: number= 0): T {
-    Vec3.toArray(src.min, buffer, offset)
-    Vec3.toArray(src.max, buffer, offset + 3)
-    return buffer
+  /**
+   * Dumps the min and max points into an array
+   */
+  public toArray(): number[]
+  /**
+   * Dumps the min and max points into an array at given offset
+   */
+  public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
+  public toArray(array: number[] = [], offset: number= 0): number[] {
+    Vec3.toArray(this.min, array, offset)
+    Vec3.toArray(this.max, array, offset + 3)
+    return array
   }
 
-  public equals(other: BoundingBox): boolean {
-    return Vec3.equals(this.min, other.min) && Vec3.equals(this.max, other.max)
+  /**
+   * Dumps the min and max points into an array
+   */
+  public static toArray(box: BoundingBox): number[]
+  /**
+   * Dumps the min and max points into an array at given offset
+   */
+  public static toArray<T>(box: BoundingBox, array: T, offset?: number): T
+  public static toArray(box: BoundingBox, array: number[] = [], offset: number = 0): number[] {
+    Vec3.toArray(box.min, array, offset)
+    Vec3.toArray(box.max, array, offset + 3)
+    return array
   }
 
+  /**
+   * Checks whether two instances are equal
+   */
   public static equals(a: BoundingBox, b: BoundingBox): boolean {
     return Vec3.equals(a.min, b.min) && Vec3.equals(a.max, b.max)
   }
 
-  public merge(other: BoundingBox): BoundingBox {
+  /**
+   * Checks for equality with another instance
+   */
+  public equals(other: BoundingBox): boolean {
+    return Vec3.equals(this.min, other.min) && Vec3.equals(this.max, other.max)
+  }
+
+  /**
+   * Merges another volume into this by expanding this volume if necessary
+   *
+   * @param other - the volume to merge
+   */
+  public merge(other: BoundingBox): this {
     Vec3.min(this.min, other.min, this.min)
     Vec3.max(this.max, other.max, this.max)
     return this
   }
 
+  /**
+   * Creates a new box by merging two volumes
+   *
+   * @param box1 - the first volume
+   * @param box2 - the second volume
+   * @param out - where the result should be written to
+   * @returns the given `out` parameter or a new instance
+   */
   public static merge(box1: BoundingBox, box2: BoundingBox, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
     Vec3.min(box1.min, box2.min, out.min)
@@ -246,12 +350,25 @@ export class BoundingBox {
     return out
   }
 
-  public mergePoint(point: IVec3): BoundingBox {
+  /**
+   * Merges a point into this volume by expanding the volume if necessary
+   *
+   * @param point - the point to merge
+   */
+  public mergePoint(point: IVec3): this {
     Vec3.min(this.min, point, this.min)
     Vec3.max(this.max, point, this.max)
     return this
   }
 
+  /**
+   * Creates a new box by merging a box and a point by expanding the volume if necessary
+   *
+   * @param box - the box to merge
+   * @param point - the point to merge
+   * @param out - where the result should be written to
+   * @returns the given `out` parameter or a new instance
+   */
   public static mergePoint(box: BoundingBox, point: IVec3, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
     Vec3.min(box.min, point, out.min)
@@ -259,61 +376,129 @@ export class BoundingBox {
     return out
   }
 
+  /**
+   * Checks whether the given ray intersects this volume
+   */
   public intersectsRay(ray: Ray): boolean {
     return rayIntersectsBox(ray.position, ray.direction, this.min, this.max)
   }
+  /**
+   * Checks whether the given plane intersects this volume
+   */
   public intersectsPlane(plane: IVec4): boolean {
     return boxIntersectsPlane(this.min, this.max, plane)
   }
+  /**
+   * Checks whether the given box intersects this volume
+   */
   public intersectsBox(box: BoundingBox): boolean {
     return boxIntersectBox(this.min, this.max, box.min, box.max)
   }
+  /**
+   * Checks whether the given sphere intersects this volume
+   */
   public intersectsSphere(sphere: BoundingSphere): boolean {
     return boxIntersectSphere(sphere.center, sphere.radius, this.min, this.max)
   }
 
+  /**
+   * Checks whether the given point is contained by this volume
+   */
   public containsPoint(point: IVec3): boolean {
     return boxIntersectsPoint(this.min, this.max, point)
   }
+  /**
+   * Checks whether the given box is contained by this volume
+   */
   public containsBox(box: BoundingBox): boolean {
     return boxBoxIntersection(this.min, this.max, box.min, box.max) === 2
   }
+  /**
+   * Checks whether the given sphere is contained by this volume
+   */
   public containsSphere(sphere: BoundingSphere): boolean {
     return boxSphereIntersection(this.min, this.max, sphere.center, sphere.radius) === 2
   }
+  /**
+   * Checks whether the given frustum is contained by this volume
+   */
   public containsFrustum(frustum: BoundingFrustum): boolean {
     return boxFrustumIntersection(this.min, this.max, frustum) === 2
   }
 
+  /**
+   * Checks for collosion with another box and returns the intersection type
+   */
   public intersectionWithBox(box: BoundingBox): number {
     return boxBoxIntersection(this.min, this.max, box.min, box.max)
   }
+  /**
+   * Checks for collosion with another sphere and returns the intersection type
+   */
   public intersectionWithSphere(sphere: BoundingSphere): number {
     return boxSphereIntersection(this.min, this.max, sphere.center, sphere.radius)
   }
+  /**
+   * Checks for collosion with another frustum and returns the intersection type
+   */
   public intersectionWithFrustum(frustum: BoundingFrustum): number {
     return boxFrustumIntersection(this.min, this.max, frustum)
   }
 
-  public static convert(item: BoundingBox|number[]): BoundingBox {
+  /**
+   * Converts an array into a BoundingBox.
+   *
+   * @remarks
+   * For convenience the method accepts a `BoundingBox` instance as a parameter
+   * which is instantly returned.
+   *
+   * @param item - the data to convert
+   * @returns a BoundingBox instance or `null` if conversion fails
+   */
+  public static convert(item: BoundingBox | number[] | Float32Array): BoundingBox {
     if (item instanceof BoundingBox) {
       return item
-    } else if (Array.isArray(item)) {
-      return new BoundingBox(item[0], item[1], item[2], item[3], item[4], item[5])
-    } else {
-      return new BoundingBox()
+    } else if (item instanceof Float32Array || Array.isArray(item)) {
+      return BoundingBox.createFromArray(item)
     }
+    return null
   }
 
-  public dump(): number[] {
-    return [this.min.x, this.min.y, this.min.z, this.max.x, this.max.y, this.max.z]
-  }
-
-  public getCorner<T extends IVec3 = Vec3>(index: 0|1|2|3|4|5|6|7, out?: T|Vec3): T {
+  /**
+   * Gets the 3D-coordinate of a corner of the box
+   *
+   * @param index - the corner index
+   */
+  public getCorner(index: number): Vec3
+  /**
+   * Gets the 3D-coordinate of a corner of the box
+   *
+   * @param index - the corner index
+   * @param out - where the result should be written to
+   */
+  public getCorner<T>(index: number, out?: T): T & IVec3
+  public getCorner(index: number, out?: IVec3): IVec3 {
     return BoundingBox.getCorner(index, this.min, this.max, out)
   }
 
-  public static getCorner<T extends IVec3 = Vec3>(index: 0|1|2|3|4|5|6|7, min: IVec3, max: IVec3, out?: T|Vec3): T {
+  /**
+   * Gets the 3D-coordinate of a corner of the box
+   *
+   * @param index - the corner index
+   * @param min - this min point in box
+   * @param max - this max point in box
+   */
+  public static getCorner(index: number, min: IVec3, max: IVec3): Vec3
+  /**
+   * Gets the 3D-coordinate of a corner of the box
+   *
+   * @param index - the corner index
+   * @param min - this min point in box
+   * @param max - this max point in box
+   * @param out - where the result should be written to
+   */
+  public static getCorner<T>(index: number, min: IVec3, max: IVec3, out?: T): T & IVec3
+  public static getCorner(index: number, min: IVec3, max: IVec3, out?: IVec3): IVec3 {
     out = out || new Vec3()
     if (index === 0) {
       out.x = min.x
@@ -350,6 +535,6 @@ export class BoundingBox {
     } else {
       throw new Error('index out of range')
     }
-    return out as T
+    return out
   }
 }

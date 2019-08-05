@@ -64,14 +64,14 @@ describe('Mat3', () => {
       })
     })
 
-    describe('.zero', () => {
+    describe('.createZero', () => {
       it ('sets all components to 0', () => {
-        expectComponents(Mat3.zero(), [
+        expectComponents(Mat3.createZero(), [
           0, 0, 0,
           0, 0, 0,
           0, 0, 0,
         ])
-        expect(Mat3.zero()).not.toBe(Mat3.zero())
+        expect(Mat3.createZero()).not.toBe(Mat3.createZero())
       })
     })
 
@@ -151,14 +151,14 @@ describe('Mat3', () => {
       })
     })
 
-    describe('.identity', () => {
+    describe('.createIdentity', () => {
       it ('sets all components', () => {
-        expectComponents(Mat3.identity(), [
+        expectComponents(Mat3.createIdentity(), [
           1, 0, 0,
           0, 1, 0,
           0, 0, 1,
         ])
-        expect(Mat3.identity()).not.toBe(Mat3.identity())
+        expect(Mat3.createIdentity()).not.toBe(Mat3.createIdentity())
       })
     })
 
@@ -754,7 +754,7 @@ describe('Mat3', () => {
           -5, 0,  1,
           -2, 2,  0,
         )
-        expectEquality(A.clone().invert().multiply(A), Mat3.identity(), 5)
+        expectEquality(A.clone().invert().multiply(A), Mat3.createIdentity(), 5)
       })
       it ('a.multiply(b) is mathematically: A*B', () => {
         const A = Mat3.createRotationX(Math.PI)
@@ -779,7 +779,7 @@ describe('Mat3', () => {
           -5, 0,  1,
           -2, 2,  0,
         )
-        expectEquality(Mat3.multiply(Mat3.invert(A), A), Mat3.identity(), 5)
+        expectEquality(Mat3.multiply(Mat3.invert(A), A), Mat3.createIdentity(), 5)
       })
       it ('multiply(a, b) is mathematically: A*B', () => {
         const A = Mat3.createRotationX(Math.PI)
@@ -821,7 +821,7 @@ describe('Mat3', () => {
           -5, 0,  1,
           -2, 2,  0,
         )
-        expectEquality(A.clone().invert().premultiply(A), Mat3.identity(), 5)
+        expectEquality(A.clone().invert().premultiply(A), Mat3.createIdentity(), 5)
       })
       it ('a.premultiply(b) is mathematically: B*A', () => {
         const A = Mat3.createRotationX(Math.PI)
@@ -846,7 +846,7 @@ describe('Mat3', () => {
           -5, 0,  1,
           -2, 2,  0,
         )
-        expectEquality(Mat3.premultiply(Mat3.invert(A), A), Mat3.identity(), 5)
+        expectEquality(Mat3.premultiply(Mat3.invert(A), A), Mat3.createIdentity(), 5)
       })
       it ('premultiply(a, b) is mathematically: BA*', () => {
         const A = Mat3.createRotationX(Math.PI)
@@ -902,7 +902,7 @@ describe('Mat3', () => {
   })
 
   describe('transforms', () => {
-    describe('#trasnformV2Buffer', () => {
+    describe('#transformV2Buffer', () => {
       it('transforms all vectors in buffer', () => {
         const mat = Mat3.createRotationZ(Math.PI * 0.5)
         const buf = [
@@ -919,7 +919,7 @@ describe('Mat3', () => {
       })
     })
 
-    describe('#trasnformV3Buffer', () => {
+    describe('#transformV3Buffer', () => {
       it('transforms all vectors in buffer', () => {
         const mat = Mat3.createRotationZ(Math.PI * 0.5)
         const buf = [
@@ -936,7 +936,7 @@ describe('Mat3', () => {
       })
     })
 
-    describe('#trasnformV4Buffer', () => {
+    describe('#transformV4Buffer', () => {
       it('transforms all vectors in buffer', () => {
         const mat = Mat3.createRotationZ(Math.PI * 0.5)
         const buf = [

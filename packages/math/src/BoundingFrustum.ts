@@ -11,9 +11,11 @@ import {
   rayIntersectsPlaneAt,
 } from './Collision'
 import { Mat4 } from './Mat4'
+import { Plane } from './Plane'
 import { Ray } from './Ray'
-import { IVec2, IVec3, IVec4 } from './Types'
+import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
+import { Vec4 } from './Vec4'
 
 const NEAR = 0
 const FAR = 1
@@ -23,11 +25,73 @@ const TOP = 4
 const BOTTOM = 5
 
 /**
- * A frustum volume.
+ * Enumeration of bounding frustum planes
+ *
+ * @public
+ */
+export enum BoundingFrustumPlane {
+  Near = NEAR,
+  Far = FAR,
+  Left = LEFT,
+  Right = RIGHT,
+  Top = TOP,
+  Bottom = BOTTOM,
+}
+
+/**
+ * Describes a frustum volume
  *
  * @public
  */
 export class BoundingFrustum {
+
+  /**
+   * Gets and sets the frustum matrix
+   */
+  public get matrix() {
+    return this.$matrix
+  }
+  public set matrix(mat: Mat4) {
+    this.$matrix = mat
+    this.update()
+  }
+
+  /**
+   * Gets a vector describing the near plane
+   */
+  public get near(): Readonly<IVec4> {
+    return this.planes[NEAR]
+  }
+  /**
+   * Gets a vector describing the far plane
+   */
+  public get far(): Readonly<IVec4> {
+    return this.planes[FAR]
+  }
+  /**
+   * Gets a vector describing the left plane
+   */
+  public get left(): Readonly<IVec4> {
+    return this.planes[LEFT]
+  }
+  /**
+   * Gets a vector describing the right plane
+   */
+  public get right(): Readonly<IVec4> {
+    return this.planes[RIGHT]
+  }
+  /**
+   * Gets a vector describing the top plane
+   */
+  public get top(): Readonly<IVec4> {
+    return this.planes[TOP]
+  }
+  /**
+   * Gets a vector describing the bottom plane
+   */
+  public get bottom(): Readonly<IVec4> {
+    return this.planes[BOTTOM]
+  }
 
   public readonly planes: IVec4[]
   public readonly corners: IVec3[]
@@ -50,33 +114,81 @@ export class BoundingFrustum {
     this.matrix = matrix || Mat4.createIdentity()
   }
 
-  get matrix() {
-    return this.$matrix
+  /**
+   * Gets a copy of the near plane
+   */
+  public getNearPlane(): Plane
+  /**
+   * Gets a copy of the near plane
+   */
+  public getNearPlane<T>(out: IVec4): T & IVec4
+  public getNearPlane(out?: IVec4): IVec4 {
+    return Vec4.clone(this.planes[NEAR], out || new Plane())
   }
-  set matrix(mat: Mat4) {
-    this.$matrix = mat
-    this.update()
+  /**
+   * Gets a copy of the far plane
+   */
+  public getFarPlane(): Plane
+  /**
+   * Gets a copy of the far plane
+   */
+  public getFarPlane<T>(out: IVec4): T & IVec4
+  public getFarPlane(out?: IVec4): IVec4 {
+    return Vec4.clone(this.planes[FAR], out || new Plane())
+  }
+  /**
+   * Gets a copy of the left plane
+   */
+  public getLeftPlane(): Plane
+  /**
+   * Gets a copy of the left plane
+   */
+  public getLeftPlane<T>(out: IVec4): T & IVec4
+  public getLeftPlane(out?: IVec4): IVec4 {
+    return Vec4.clone(this.planes[LEFT], out || new Plane())
+  }
+  /**
+   * Gets a copy of the right plane
+   */
+  public getRightPlane(): Plane
+  /**
+   * Gets a copy of the right plane
+   */
+  public getRightPlane<T>(out: IVec4): T & IVec4
+  public getRightPlane(out?: IVec4): IVec4 {
+    return Vec4.clone(this.planes[RIGHT], out || new Plane())
+  }
+  /**
+   * Gets a copy of the top plane
+   */
+  public getTopPlane(): Plane
+  /**
+   * Gets a copy of the top plane
+   */
+  public getTopPlane<T>(out: IVec4): T & IVec4
+  public getTopPlane(out?: IVec4): IVec4 {
+    return Vec4.clone(this.planes[TOP], out || new Plane())
+  }
+  /**
+   * Gets a copy of the bottom plane
+   */
+  public getBottomPlane(): Plane
+  /**
+   * Gets a copy of the bottom plane
+   */
+  public getBottomPlane<T>(out: IVec4): T & IVec4
+  public getBottomPlane(out?: IVec4): IVec4 {
+    return Vec4.clone(this.planes[BOTTOM], out || new Plane())
   }
 
-  get near() {
-    return this.planes[NEAR]
-  }
-  get far() {
-    return this.planes[FAR]
-  }
-  get left() {
-    return this.planes[LEFT]
-  }
-  get right() {
-    return this.planes[RIGHT]
-  }
-  get top() {
-    return this.planes[TOP]
-  }
-  get bottom() {
-    return this.planes[BOTTOM]
-  }
-
+  /**
+   * Calculates the frustum planes and corners
+   *
+   * @remarks
+   * This is called automatically when a new {@link BoundingFrustum.matrix} is set.
+   * However if the matrix has been modified afterwards this method must be called
+   * manually.
+   */
   public update() {
     this.updatePlanes()
     this.updateCorners()
@@ -141,67 +253,115 @@ export class BoundingFrustum {
 
     planePlaneIntersection(this.planes[NEAR], this.planes[LEFT], ray.position, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    this.corners[0] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[0])
 
     Vec3.negate(ray.direction, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    this.corners[3] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[3])
 
     planePlaneIntersection(this.planes[RIGHT], this.planes[NEAR], ray.position, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    this.corners[1] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[1])
 
     Vec3.negate(ray.direction, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    this.corners[2] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[2])
 
     planePlaneIntersection(this.planes[LEFT], this.planes[FAR], ray.position, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    this.corners[4] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[4])
 
     Vec3.negate(ray.direction, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    this.corners[7] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[7])
 
     planePlaneIntersection(this.planes[FAR], this.planes[RIGHT], ray.position, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    this.corners[5] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[5])
 
     Vec3.negate(ray.direction, ray.direction)
     distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    this.corners[6] = ray.positionAt(distance, { x: 0, y: 0, z: 0 })
+    ray.positionAt(distance, this.corners[6])
   }
 
+  /**
+   * Checks for intersaction with a ray
+   */
   public intersectsRay(ray: Ray): boolean {
     throw new Error('not implemented')
   }
+  /**
+   * Checks for intersaction with a plane
+   */
   public intersectsPlane(plane: IVec4): boolean {
     return frustumIntersectsPlane(this, plane)
   }
+  /**
+   * Checks for intersaction with a bounding box
+   */
   public intersectsBox(box: BoundingBox): boolean {
     return frustumIntersectsBox(this, box.min, box.max)
   }
+  /**
+   * Checks for intersaction with a sphere
+   */
   public intersectsSphere(sphere: BoundingSphere): boolean {
     return frustumIntersectsSphere(this, sphere.center, sphere.radius)
   }
+  /**
+   * Checks for intersaction with another frustum
+   */
   public intersectsFrustum(other: BoundingFrustum): boolean {
     throw new Error('not implemented')
   }
 
+  /**
+   * Checks whether this frustum contains the given volume
+   */
   public containsBox(box: BoundingBox): boolean {
     return frustumBoxIntersection(this, box.min, box.max) === 2
   }
+  /**
+   * Checks whether this frustum contains the given volume
+   */
   public containsSphere(sphere: BoundingSphere): boolean {
     return frustumSphereIntersection(this, sphere.center, sphere.radius) === 2
   }
+  /**
+   * Checks whether this frustum contains the given volume
+   */
   public containsPoint(point: IVec3): boolean {
     return frustumIntersectsPoint(this, point)
   }
 
+  /**
+   * Checks for intersection type with given volume
+   */
   public intersectionWithBox(box: BoundingBox): number {
     return frustumBoxIntersection(this, box.min, box.max)
   }
+  /**
+   * Checks for intersection type with given volume
+   */
   public intersectionWithSphere(sphere: BoundingSphere): number {
     return frustumSphereIntersection(this, sphere.center, sphere.radius)
+  }
+  /**
+   * Checks for intersection type with given volume
+   */
+  public intersectionWithFrustum(frustum: BoundingFrustum): number {
+    let count = 0
+    for (let i = 0; i < frustum.corners.length; i++) {
+      if (this.containsPoint(frustum.corners[i])) {
+        count++
+      }
+    }
+    if (count === 0) {
+      return 0
+    }
+    if (count === 6) {
+      return 2
+    }
+    return 1
   }
 }

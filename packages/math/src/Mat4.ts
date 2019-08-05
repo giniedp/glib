@@ -1626,7 +1626,7 @@ export class Mat4 {
    * Creates a rotation matrix by using direction vector
    */
   public static createOrientation(forward: IVec3, up: IVec3): Mat4 {
-    return new Mat4().createOrientation(forward, up)
+    return new Mat4().initOrientation(forward, up)
   }
 
   /**
@@ -1635,39 +1635,36 @@ export class Mat4 {
    * @param forward - The forward vector
    * @param up - The up vector of the viewer
    */
-  public createOrientation(forward: IVec3, up: IVec3): this {
-    // back = position - lookAt
-    let backX = - forward.x
-    let backY = - forward.y
-    let backZ = - forward.z
+  public initOrientation(forward: IVec3, up: IVec3): this {
+    // backward = negate(normalize(forward))
+    let x = forward.x
+    let y = forward.y
+    let z = forward.z
+    let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
 
-    // right = cross(up, back)
-    let rightX = up.y * backZ - up.z * backY
-    let rightY = up.z * backX - up.x * backZ
-    let rightZ = up.x * backY - up.y * backX
+    const backX = -x * d
+    const backY = -y * d
+    const backZ = -z * d
 
-    // back = normalize(back)
-    let d = 1.0 / Math.sqrt(backX * backX + backY * backY + backZ * backZ)
-    backX *= d
-    backY *= d
-    backZ *= d
+    // right = normalize(cross(up, back))
+    x = up.y * backZ - up.z * backY
+    y = up.z * backX - up.x * backZ
+    z = up.x * backY - up.y * backX
+    d = 1.0 / Math.sqrt(x * x + y * y + z * z)
 
-    // right = normalize(right)
-    d = 1.0 / Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ)
-    rightX *= d
-    rightY *= d
-    rightZ *= d
+    const rightX = x * d
+    const rightY = y * d
+    const rightZ = z * d
 
     // up = cross(back, right)
-    const upX = backY * rightZ - backZ * rightY
-    const upY = backZ * rightX - backX * rightZ
-    const upZ = backX * rightY - backY * rightX
+    x = backY * rightZ - backZ * rightY
+    y = backZ * rightX - backX * rightZ
+    z = backX * rightY - backY * rightX
 
     const m = this.m
-    m[M._00] = rightX; m[M._10] = upX; m[M._20] = backX; m[M._30] = 0
-    m[M._01] = rightY; m[M._11] = upY; m[M._21] = backY; m[M._31] = 0
-    m[M._02] = rightZ; m[M._12] = upZ; m[M._22] = backZ; m[M._32] = 0
-    m[M._03] = 0;      m[M._13] = 0;   m[M._23] = 0;     m[M._33] = 1
+    m[M._00] = rightX; m[M._10] = x; m[M._20] = backX
+    m[M._01] = rightY; m[M._11] = y; m[M._21] = backY
+    m[M._02] = rightZ; m[M._12] = z; m[M._22] = backZ
     return this
   }
 
@@ -2884,27 +2881,7 @@ export class Mat4 {
   public static smooth(matA: Mat4, matB: Mat4, t: number, out?: Mat4): Mat4 {
     t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
     t = t * t * (3 - 2 * t)
-    out = out || new Mat4()
-    const a = matA.m
-    const b = matB.m
-    const c = out.m
-    c[0] = a[0] + (b[0] - a[0]) * t
-    c[1] = a[1] + (b[1] - a[1]) * t
-    c[2] = a[2] + (b[2] - a[2]) * t
-    c[3] = a[3] + (b[3] - a[3]) * t
-    c[4] = a[4] + (b[4] - a[4]) * t
-    c[5] = a[5] + (b[5] - a[5]) * t
-    c[6] = a[6] + (b[6] - a[6]) * t
-    c[7] = a[7] + (b[7] - a[7]) * t
-    c[8] = a[8] + (b[8] - a[8]) * t
-    c[9] = a[9] + (b[9] - a[9]) * t
-    c[10] = a[10] + (b[10] - a[10]) * t
-    c[11] = a[11] + (b[11] - a[11]) * t
-    c[12] = a[12] + (b[12] - a[12]) * t
-    c[13] = a[13] + (b[13] - a[13]) * t
-    c[14] = a[14] + (b[14] - a[14]) * t
-    c[15] = a[15] + (b[15] - a[15]) * t
-    return out
+    return Mat4.lerp(matA, matB, t, out)
   }
 
   /**

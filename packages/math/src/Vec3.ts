@@ -119,6 +119,17 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Creates a new vector.
+   * @param x - The x component
+   * @param y - The y component
+   * @param z - The z component
+   * @returns A new vector.
+   */
+  public static create(x?: number, y?: number, z?: number): Vec3 {
+    return new Vec3(x || 0, y || 0, z || 0)
+  }
+
+  /**
    * Initializes the components of this vector with given values.
    * @param x - value for X component
    * @param y - value for Y component
@@ -133,14 +144,11 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Creates a new vector.
-   * @param x - The x component
-   * @param y - The y component
-   * @param z - The z component
+   * Creates a new vector with all components set to 0.
    * @returns A new vector.
    */
-  public static create(x?: number, y?: number, z?: number): Vec3 {
-    return new Vec3(x || 0, y || 0, z || 0)
+  public static createZero(): Vec3 {
+    return new Vec3(0, 0, 0)
   }
 
   /**
@@ -155,11 +163,11 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Creates a new vector with all components set to 0.
+   * Creates a new vector with all components set to 1.
    * @returns A new vector.
    */
-  public static createZero(): Vec3 {
-    return new Vec3(0, 0, 0)
+  public static createOne(): Vec3 {
+    return new Vec3(1, 1, 1)
   }
 
   /**
@@ -170,26 +178,6 @@ export class Vec3 implements IVec2, IVec3 {
     this.x = 1
     this.y = 1
     this.z = 1
-    return this
-  }
-
-  /**
-   * Creates a new vector with all components set to 1.
-   * @returns A new vector.
-   */
-  public static createOne(): Vec3 {
-    return new Vec3(1, 1, 1)
-  }
-
-  /**
-   * Initializes the components of this vector by taking the components from the given vector.
-   * @param other - The vector to read from
-   *
-   */
-  public initFrom(other: IVec3): this {
-    this.x = other.x
-    this.y = other.y
-    this.z = other.z
     return this
   }
 
@@ -207,44 +195,42 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer - The array to read from
-   * @param offset - The zero based index at which start reading the values
+   * Initializes the components of this vector by taking the components from the given vector.
+   * @param other - The vector to read from
    *
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): this {
-    this.x = buffer[offset]
-    this.y = buffer[offset + 1]
-    this.z = buffer[offset + 2]
+  public initFrom(other: IVec3): this {
+    this.x = other.x
+    this.y = other.y
+    this.z = other.z
     return this
   }
 
   /**
    * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer - The array to read from
+   * @param array - The array to read from
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Vec3 {
+  public static createFromArray(array: ArrayLike<number>, offset: number= 0): Vec3 {
     return new Vec3(
-      buffer[offset],
-      buffer[offset + 1],
-      buffer[offset + 2],
+      array[offset],
+      array[offset + 1],
+      array[offset + 2],
     )
   }
 
   /**
-   * Creates a copy of this vector
-   * @returns The cloned vector
+   * Initializes the components of this vector by taking values from the given array in successive order.
+   * @param array - The array to read from
+   * @param offset - The zero based index at which start reading the values
+   *
    */
-  public clone(): Vec3
-  public clone<T>(out: T): T & IVec3
-  public clone(out?: IVec3): IVec3 {
-    out = out || new Vec3()
-    out.x = this.x
-    out.y = this.y
-    out.z = this.z
-    return out
+  public initFromArray(array: ArrayLike<number>, offset: number= 0): this {
+    this.x = array[offset]
+    this.y = array[offset + 1]
+    this.z = array[offset + 2]
+    return this
   }
 
   /**
@@ -264,19 +250,17 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Copies the components successively into the given array.
-   *
-   * @param array - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   *
+   * Creates a copy of this vector
+   * @returns The cloned vector
    */
-  public toArray(): number[]
-  public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
-    array[offset] = this.x
-    array[offset + 1] = this.y
-    array[offset + 2] = this.z
-    return array
+  public clone(): Vec3
+  public clone<T>(out: T): T & IVec3
+  public clone(out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    out.x = this.x
+    out.y = this.y
+    out.z = this.z
+    return out
   }
 
   /**
@@ -297,12 +281,19 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Checks for component wise equality with given vector
-   * @param other - The vector to compare with
-   * @returns true if components are equal, false otherwise
+   * Copies the components successively into the given array.
+   *
+   * @param array - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   *
    */
-  public equals(other: IVec3): boolean {
-    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z))
+  public toArray(): number[]
+  public toArray<T>(array: T, offset?: number): T
+  public toArray(array: number[] = [], offset: number= 0): number[] {
+    array[offset] = this.x
+    array[offset + 1] = this.y
+    array[offset + 2] = this.z
+    return array
   }
 
   /**
@@ -315,14 +306,12 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Calculates the length of this vector
-   * @returns The length.
+   * Checks for component wise equality with given vector
+   * @param other - The vector to compare with
+   * @returns true if components are equal, false otherwise
    */
-  public length(): number {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    return Math.sqrt(x * x + y * y + z * z)
+  public equals(other: IVec3): boolean {
+    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z))
   }
 
   /**
@@ -338,14 +327,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Calculates the squared length of this vector
-   * @returns The squared length.
+   * Calculates the length of this vector
+   * @returns The length.
    */
-  public lengthSquared(): number {
+  public length(): number {
     const x = this.x
     const y = this.y
     const z = this.z
-    return x * x + y * y + z * z
+    return Math.sqrt(x * x + y * y + z * z)
   }
 
   /**
@@ -361,15 +350,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Calculates the distance to the given vector
-   * @param other - The distant vector
-   * @returns The distance between the vectors.
+   * Calculates the squared length of this vector
+   * @returns The squared length.
    */
-  public distance(other: IVec3): number {
-    const x = this.x - other.x
-    const y = this.y - other.y
-    const z = this.z - other.z
-    return Math.sqrt(x * x + y * y + z * z)
+  public lengthSquared(): number {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    return x * x + y * y + z * z
   }
 
   /**
@@ -386,15 +374,15 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Calculates the squared distance to the given vector
+   * Calculates the distance to the given vector
    * @param other - The distant vector
-   * @returns The squared distance between the vectors.
+   * @returns The distance between the vectors.
    */
-  public distanceSquared(other: IVec3): number {
+  public distance(other: IVec3): number {
     const x = this.x - other.x
     const y = this.y - other.y
     const z = this.z - other.z
-    return x * x + y * y + z * z
+    return Math.sqrt(x * x + y * y + z * z)
   }
 
   /**
@@ -411,12 +399,15 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Calculates the dot product with the given vector
-   *
-   * @returns The dot product.
+   * Calculates the squared distance to the given vector
+   * @param other - The distant vector
+   * @returns The squared distance between the vectors.
    */
-  public dot(other: IVec3): number {
-    return this.x * other.x + this.y * other.y + this.z * other.z
+  public distanceSquared(other: IVec3): number {
+    const x = this.x - other.x
+    const y = this.y - other.y
+    const z = this.z - other.z
+    return x * x + y * y + z * z
   }
 
   /**
@@ -430,18 +421,12 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Calculates the cross product with another vector.
-   * @param other - The second vector.
-   * @returns A new vector.
+   * Calculates the dot product with the given vector
+   *
+   * @returns The dot product.
    */
-  public cross(other: IVec3): this {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    this.x = y * other.z - z * other.y
-    this.y = z * other.x - x * other.z
-    this.z = x * other.y - y * other.x
-    return this
+  public dot(other: IVec3): number {
+    return this.x * other.x + this.y * other.y + this.z * other.z
   }
 
   /**
@@ -465,17 +450,17 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Normalizes `this` vector. Applies the result to `this` vector.
-   * @returns this vector for chaining
+   * Calculates the cross product with another vector.
+   * @param other - The second vector.
+   * @returns A new vector.
    */
-  public normalize(): this {
+  public cross(other: IVec3): this {
     const x = this.x
     const y = this.y
     const z = this.z
-    const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
-    this.x *= d
-    this.y *= d
-    this.z *= d
+    this.x = y * other.z - z * other.y
+    this.y = z * other.x - x * other.z
+    this.z = x * other.y - y * other.x
     return this
   }
 
@@ -500,13 +485,17 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Inverts this vector.
+   * Normalizes `this` vector. Applies the result to `this` vector.
    * @returns this vector for chaining
    */
-  public invert(): this {
-    this.x = 1.0 / this.x
-    this.y = 1.0 / this.y
-    this.z = 1.0 / this.z
+  public normalize(): this {
+    const x = this.x
+    const y = this.y
+    const z = this.z
+    const d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+    this.x *= d
+    this.y *= d
+    this.z *= d
     return this
   }
 
@@ -527,13 +516,13 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Negates the components of `this` vector. Applies the result to `this`
+   * Inverts this vector.
    * @returns this vector for chaining
    */
-  public negate(): this {
-    this.x = -this.x
-    this.y = -this.y
-    this.z = -this.z
+  public invert(): this {
+    this.x = 1.0 / this.x
+    this.y = 1.0 / this.y
+    this.z = 1.0 / this.z
     return this
   }
 
@@ -554,14 +543,13 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this += other`
-   * @param other - The vector to add
+   * Negates the components of `this` vector. Applies the result to `this`
    * @returns this vector for chaining
    */
-  public add(other: IVec3): this {
-    this.x += other.x
-    this.y += other.y
-    this.z += other.z
+  public negate(): this {
+    this.x = -this.x
+    this.y = -this.y
+    this.z = -this.z
     return this
   }
 
@@ -583,14 +571,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this += scalar`
-   * @param scalar - The value to add
+   * Performs the calculation `this += other`
+   * @param other - The vector to add
    * @returns this vector for chaining
    */
-  public addScalar(scalar: number): this {
-    this.x += scalar
-    this.y += scalar
-    this.z += scalar
+  public add(other: IVec3): this {
+    this.x += other.x
+    this.y += other.y
+    this.z += other.z
     return this
   }
 
@@ -612,14 +600,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this += other * scale`
-   * @param other - The vector to add
+   * Performs the calculation `this += scalar`
+   * @param scalar - The value to add
    * @returns this vector for chaining
    */
-  public addScaled(other: IVec3, scale: number): this {
-    this.x += other.x * scale
-    this.y += other.y * scale
-    this.z += other.z * scale
+  public addScalar(scalar: number): this {
+    this.x += scalar
+    this.y += scalar
+    this.z += scalar
     return this
   }
 
@@ -638,14 +626,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this -= other`
-   * @param other - The vector to subtract
+   * Performs the calculation `this += other * scale`
+   * @param other - The vector to add
    * @returns this vector for chaining
    */
-  public subtract(other: IVec3): this {
-    this.x -= other.x
-    this.y -= other.y
-    this.z -= other.z
+  public addScaled(other: IVec3, scale: number): this {
+    this.x += other.x * scale
+    this.y += other.y * scale
+    this.z += other.z * scale
     return this
   }
 
@@ -667,14 +655,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this -= scalar`
-   * @param scalar - The value to subtract
+   * Performs the calculation `this -= other`
+   * @param other - The vector to subtract
    * @returns this vector for chaining
    */
-  public subtractScalar(scalar: number): this {
-    this.x -= scalar
-    this.y -= scalar
-    this.z -= scalar
+  public subtract(other: IVec3): this {
+    this.x -= other.x
+    this.y -= other.y
+    this.z -= other.z
     return this
   }
 
@@ -696,15 +684,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this -= other * scale`
-   * @param other - The vector to subtract
-   * @param scale - The value to multoply to `other`
+   * Performs the calculation `this -= scalar`
+   * @param scalar - The value to subtract
    * @returns this vector for chaining
    */
-  public subtractScaled(other: IVec3, scale: number): this {
-    this.x -= other.x * scale
-    this.y -= other.y * scale
-    this.z -= other.z * scale
+  public subtractScalar(scalar: number): this {
+    this.x -= scalar
+    this.y -= scalar
+    this.z -= scalar
     return this
   }
 
@@ -721,6 +708,19 @@ export class Vec3 implements IVec2, IVec3 {
     out.y = v1.y - v2.y * scale
     out.z = v1.z - v2.z * scale
     return out
+  }
+
+  /**
+   * Performs the calculation `this -= other * scale`
+   * @param other - The vector to subtract
+   * @param scale - The value to multoply to `other`
+   * @returns this vector for chaining
+   */
+  public subtractScaled(other: IVec3, scale: number): this {
+    this.x -= other.x * scale
+    this.y -= other.y * scale
+    this.z -= other.z * scale
+    return this
   }
 
   /**
@@ -753,18 +753,6 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this *= scalar`
-   * @param scalar - The value to multiply
-   * @returns this vector for chaining
-   */
-  public multiplyScalar(scalar: number): this {
-    this.x *= scalar
-    this.y *= scalar
-    this.z *= scalar
-    return this
-  }
-
-  /**
    * Multiplies a scalar to each component of a vector.
    * @param vec - The first vector.
    * @param scalar - The scalar to add.
@@ -782,14 +770,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this /= other`
-   * @param other - The vector to divide
+   * Performs the calculation `this *= scalar`
+   * @param scalar - The value to multiply
    * @returns this vector for chaining
    */
-  public divide(other: IVec3): this {
-    this.x /= other.x
-    this.y /= other.y
-    this.z /= other.z
+  public multiplyScalar(scalar: number): this {
+    this.x *= scalar
+    this.y *= scalar
+    this.z *= scalar
     return this
   }
 
@@ -811,15 +799,14 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this *= (1 / scalar)`
-   * @param scalar - The value to divide
+   * Performs the calculation `this /= other`
+   * @param other - The vector to divide
    * @returns this vector for chaining
    */
-  public divideScalar(scalar: number): this {
-    scalar = 1.0 / scalar
-    this.x *= scalar
-    this.y *= scalar
-    this.z *= scalar
+  public divide(other: IVec3): this {
+    this.x /= other.x
+    this.y /= other.y
+    this.z /= other.z
     return this
   }
 
@@ -842,15 +829,15 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Performs the calculation `this = this * a + b`
-   * @param a - The vector to multiply.
-   * @param b - The vector to add on top of the multiplication.
+   * Performs the calculation `this *= (1 / scalar)`
+   * @param scalar - The value to divide
    * @returns this vector for chaining
    */
-  public multiplyAdd(a: IVec3, b: IVec3): this {
-    this.x = this.x * a.x + b.x
-    this.y = this.y * a.y + b.y
-    this.z = this.z * a.z + b.z
+  public divideScalar(scalar: number): this {
+    scalar = 1.0 / scalar
+    this.x *= scalar
+    this.y *= scalar
+    this.z *= scalar
     return this
   }
 
@@ -888,6 +875,19 @@ export class Vec3 implements IVec2, IVec3 {
     out.y = vecA.y * mul + add.y
     out.z = vecA.z * mul + add.z
     return out
+  }
+
+  /**
+   * Performs the calculation `this = this * a + b`
+   * @param a - The vector to multiply.
+   * @param b - The vector to add on top of the multiplication.
+   * @returns this vector for chaining
+   */
+  public multiplyAdd(a: IVec3, b: IVec3): this {
+    this.x = this.x * a.x + b.x
+    this.y = this.y * a.y + b.y
+    this.z = this.z * a.z + b.z
+    return this
   }
 
   /**

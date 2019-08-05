@@ -97,11 +97,11 @@ describe('Vec2', () => {
     })
   })
   describe('#initFromBuffer', () => {
-    it ('inits all components', () => expectComponents(a.initFromBuffer([1, 2, 3, 4], 1), 2, 3))
-    it ('returns same instance', () => expect(a.initFromBuffer([1, 2, 3, 4, 5], 1)).toBe(a))
+    it ('inits all components', () => expectComponents(a.initFromArray([1, 2, 3, 4], 1), 2, 3))
+    it ('returns same instance', () => expect(a.initFromArray([1, 2, 3, 4, 5], 1)).toBe(a))
   })
   describe('.createFromBuffer', () => {
-    it ('inits all components', () => expectComponents(Vec2.createFromBuffer([1, 2, 3, 4], 1), 2, 3))
+    it ('inits all components', () => expectComponents(Vec2.createFromArray([1, 2, 3, 4], 1), 2, 3))
   })
   describe('#clone', () => {
     beforeEach(() => {

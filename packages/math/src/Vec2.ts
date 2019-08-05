@@ -60,6 +60,17 @@ export class Vec2 implements IVec2 {
   public get(key: 0 | 1 | 'x' | 'y'): number {
     return this[keyLookup[key]]
   }
+
+  /**
+   * Creates a new vector.
+   * @param x - The x component
+   * @param y - The y component
+   * @returns A new vector.
+   */
+  public static create(x?: number, y?: number): Vec2 {
+    return new Vec2(x || 0, y || 0)
+  }
+
   /**
    * Initializes the components of this vector with given values.
    */
@@ -70,13 +81,11 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Creates a new vector.
-   * @param x - The x component
-   * @param y - The y component
+   * Creates a new vector with all components set to 0.
    * @returns A new vector.
    */
-  public static create(x?: number, y?: number): Vec2 {
-    return new Vec2(x || 0, y || 0)
+  public static createZero(): Vec2 {
+    return new Vec2(0, 0)
   }
 
   /**
@@ -90,11 +99,11 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Creates a new vector with all components set to 0.
+   * Creates a new vector with all components set to 1.
    * @returns A new vector.
    */
-  public static createZero(): Vec2 {
-    return new Vec2(0, 0)
+  public static createOne(): Vec2 {
+    return new Vec2(1, 1)
   }
 
   /**
@@ -104,23 +113,6 @@ export class Vec2 implements IVec2 {
   public initOne(): this {
     this.x = 1
     this.y = 1
-    return this
-  }
-
-  /**
-   * Creates a new vector with all components set to 1.
-   * @returns A new vector.
-   */
-  public static createOne(): Vec2 {
-    return new Vec2(1, 1)
-  }
-
-  /**
-   * Initializes the components of this vector by taking the components from the given vector.
-   */
-  public initFrom(other: IVec2): this {
-    this.x = other.x
-    this.y = other.y
     return this
   }
 
@@ -135,14 +127,11 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Initializes the components of this vector by taking values from the given array in successive order.
-   * @param buffer - The array to read from
-   * @param offset - The zero based index at which start reading the values
-   *
+   * Initializes the components of this vector by taking the components from the given vector.
    */
-  public initFromBuffer(buffer: { [key: number]: number }, offset: number= 0): this {
-    this.x = buffer[offset]
-    this.y = buffer[offset + 1]
+  public initFrom(other: IVec2): this {
+    this.x = other.x
+    this.y = other.y
     return this
   }
 
@@ -152,7 +141,7 @@ export class Vec2 implements IVec2 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public static createFromBuffer(buffer: { [key: number]: number }, offset: number= 0): Vec2 {
+  public static createFromArray(buffer: { [key: number]: number }, offset: number= 0): Vec2 {
     return new Vec2(
       buffer[offset],
       buffer[offset + 1],
@@ -160,16 +149,15 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Creates a copy of this vector
-   * @returns The cloned vector
+   * Initializes the components of this vector by taking values from the given array in successive order.
+   * @param buffer - The array to read from
+   * @param offset - The zero based index at which start reading the values
+   *
    */
-  public clone(): Vec2
-  public clone<T>(out: T): T & IVec2
-  public clone(out?: IVec2): IVec2 {
-    out = out || new Vec2()
-    out.x = this.x
-    out.y = this.y
-    return out
+  public initFromArray(buffer: { [key: number]: number }, offset: number= 0): this {
+    this.x = buffer[offset]
+    this.y = buffer[offset + 1]
+    return this
   }
 
   /**
@@ -188,17 +176,16 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Copies the components successively into the given array.
-   * @param array - The array to copy into
-   * @param offset - Zero based index where to start writing in the array
-   * @returns the given array parameter
+   * Creates a copy of this vector
+   * @returns The cloned vector
    */
-  public toArray(): number[]
-  public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
-    array[offset] = this.x
-    array[offset + 1] = this.y
-    return array
+  public clone(): Vec2
+  public clone<T>(out: T): T & IVec2
+  public clone(out?: IVec2): IVec2 {
+    out = out || new Vec2()
+    out.x = this.x
+    out.y = this.y
+    return out
   }
 
   /**
@@ -218,12 +205,17 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Checks for component wise equality with given vector
-   * @param other - The vector to compare with
-   * @returns true if components are equal, false otherwise
+   * Copies the components successively into the given array.
+   * @param array - The array to copy into
+   * @param offset - Zero based index where to start writing in the array
+   * @returns the given array parameter
    */
-  public equals(other: IVec2): boolean {
-    return ((this.x === other.x) && (this.y === other.y))
+  public toArray(): number[]
+  public toArray<T>(array: T, offset?: number): T
+  public toArray(array: number[] = [], offset: number= 0): number[] {
+    array[offset] = this.x
+    array[offset + 1] = this.y
+    return array
   }
 
   /**
@@ -235,13 +227,12 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Calculates the length of this vector
-   * @returns The length.
+   * Checks for component wise equality with given vector
+   * @param other - The vector to compare with
+   * @returns true if components are equal, false otherwise
    */
-  public length(): number {
-    const x = this.x
-    const y = this.y
-    return Math.sqrt(x * x + y * y)
+  public equals(other: IVec2): boolean {
+    return ((this.x === other.x) && (this.y === other.y))
   }
 
   /**
@@ -256,13 +247,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Calculates the squared length of this vector
-   * @returns The squared length.
+   * Calculates the length of this vector
+   * @returns The length.
    */
-  public lengthSquared(): number {
+  public length(): number {
     const x = this.x
     const y = this.y
-    return x * x + y * y
+    return Math.sqrt(x * x + y * y)
   }
 
   /**
@@ -277,14 +268,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Calculates the distance to the given vector
-   * @param other - The distant vector
-   * @returns The distance between the vectors.
+   * Calculates the squared length of this vector
+   * @returns The squared length.
    */
-  public distance(other: IVec2): number {
-    const x = this.x - other.x
-    const y = this.y - other.y
-    return Math.sqrt(x * x + y * y)
+  public lengthSquared(): number {
+    const x = this.x
+    const y = this.y
+    return x * x + y * y
   }
 
   /**
@@ -300,14 +290,14 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Calculates the squared distance to the given vector
+   * Calculates the distance to the given vector
    * @param other - The distant vector
-   * @returns The squared distance between the vectors.
+   * @returns The distance between the vectors.
    */
-  public distanceSquared(other: IVec2): number {
+  public distance(other: IVec2): number {
     const x = this.x - other.x
     const y = this.y - other.y
-    return x * x + y * y
+    return Math.sqrt(x * x + y * y)
   }
 
   /**
@@ -323,12 +313,14 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Calculates the dot product with the given vector
-   *
-   * @returns The dot product.
+   * Calculates the squared distance to the given vector
+   * @param other - The distant vector
+   * @returns The squared distance between the vectors.
    */
-  public dot(other: IVec2): number {
-    return this.x * other.x + this.y * other.y
+  public distanceSquared(other: IVec2): number {
+    const x = this.x - other.x
+    const y = this.y - other.y
+    return x * x + y * y
   }
 
   /**
@@ -342,16 +334,12 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Normalizes this vector. Applies the result to this vector.
-   * @returns Reference to `this` for chaining.
+   * Calculates the dot product with the given vector
+   *
+   * @returns The dot product.
    */
-  public normalize(): Vec2 {
-    const x = this.x
-    const y = this.y
-    const d = 1.0 / Math.sqrt(x * x + y * y)
-    this.x *= d
-    this.y *= d
-    return this
+  public dot(other: IVec2): number {
+    return this.x * other.x + this.y * other.y
   }
 
   /**
@@ -373,12 +361,15 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Inverts this vector.
+   * Normalizes this vector. Applies the result to this vector.
    * @returns Reference to `this` for chaining.
    */
-  public invert(): this {
-    this.x = 1.0 / this.x
-    this.y = 1.0 / this.y
+  public normalize(): Vec2 {
+    const x = this.x
+    const y = this.y
+    const d = 1.0 / Math.sqrt(x * x + y * y)
+    this.x *= d
+    this.y *= d
     return this
   }
 
@@ -398,12 +389,12 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Negates the components of this vector.
+   * Inverts this vector.
    * @returns Reference to `this` for chaining.
    */
-  public negate(): this {
-    this.x = -this.x
-    this.y = -this.y
+  public invert(): this {
+    this.x = 1.0 / this.x
+    this.y = 1.0 / this.y
     return this
   }
 
@@ -423,13 +414,12 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Performs the operation `this += other`
-   * @param other - The vector to add
+   * Negates the components of this vector.
    * @returns Reference to `this` for chaining.
    */
-  public add(other: IVec2): this {
-    this.x += other.x
-    this.y += other.y
+  public negate(): this {
+    this.x = -this.x
+    this.y = -this.y
     return this
   }
 
@@ -450,13 +440,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Adds the given scalar to `this`
-   * @param scalar - The scalar to add.
+   * Performs the operation `this += other`
+   * @param other - The vector to add
    * @returns Reference to `this` for chaining.
    */
-  public addScalar(scalar: number): this {
-    this.x += scalar
-    this.y += scalar
+  public add(other: IVec2): this {
+    this.x += other.x
+    this.y += other.y
     return this
   }
 
@@ -477,6 +467,17 @@ export class Vec2 implements IVec2 {
   }
 
   /**
+   * Adds the given scalar to `this`
+   * @param scalar - The scalar to add.
+   * @returns Reference to `this` for chaining.
+   */
+  public addScalar(scalar: number): this {
+    this.x += scalar
+    this.y += scalar
+    return this
+  }
+
+  /**
    * Performs the calculation `this += other * scale`
    * @param other - The vector to add
    * @returns this vector for chaining
@@ -484,17 +485,6 @@ export class Vec2 implements IVec2 {
   public addScaled(other: IVec2, scale: number): this {
     this.x += other.x * scale
     this.y += other.y * scale
-    return this
-  }
-
-  /**
-   * Subtracts the given from this vector from `this`.
-   * @param other - The vector to subtract.
-   * @returns Reference to `this` for chaining.
-   */
-  public subtract(other: IVec2): this {
-    this.x -= other.x
-    this.y -= other.y
     return this
   }
 
@@ -515,13 +505,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Subtracts the given scalar from `this`.
-   * @param scalar - The scalar to subtract.
+   * Subtracts the given from this vector from `this`.
+   * @param other - The vector to subtract.
    * @returns Reference to `this` for chaining.
    */
-  public subtractScalar(scalar: number): this {
-    this.x -= scalar
-    this.y -= scalar
+  public subtract(other: IVec2): this {
+    this.x -= other.x
+    this.y -= other.y
     return this
   }
 
@@ -542,6 +532,17 @@ export class Vec2 implements IVec2 {
   }
 
   /**
+   * Subtracts the given scalar from `this`.
+   * @param scalar - The scalar to subtract.
+   * @returns Reference to `this` for chaining.
+   */
+  public subtractScalar(scalar: number): this {
+    this.x -= scalar
+    this.y -= scalar
+    return this
+  }
+
+  /**
    * Performs the calculation `this -= other * scale`
    * @param other - The vector to subtract
    * @param scale - The value to multoply to `other`
@@ -550,17 +551,6 @@ export class Vec2 implements IVec2 {
   public subtractScaled(other: IVec2, scale: number): this {
     this.x -= other.x * scale
     this.y -= other.y * scale
-    return this
-  }
-
-  /**
-   * Multiplies `this` with the given vector.
-   * @param other - The vector to multiply.
-   * @returns Reference to `this` for chaining.
-   */
-  public multiply(other: IVec2): this {
-    this.x *= other.x
-    this.y *= other.y
     return this
   }
 
@@ -581,13 +571,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Multiplies `this` with the given scalar.
-   * @param scalar - The scalar to multiply.
+   * Multiplies `this` with the given vector.
+   * @param other - The vector to multiply.
    * @returns Reference to `this` for chaining.
    */
-  public multiplyScalar(scalar: number): this {
-    this.x *= scalar
-    this.y *= scalar
+  public multiply(other: IVec2): this {
+    this.x *= other.x
+    this.y *= other.y
     return this
   }
 
@@ -608,14 +598,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Multiplies `this` with the first vector and adds the second after.
-   * @param mul - The vector to multiply.
-   * @param add - The vector to add on top of the multiplication.
+   * Multiplies `this` with the given scalar.
+   * @param scalar - The scalar to multiply.
    * @returns Reference to `this` for chaining.
    */
-  public multiplyAdd(mul: IVec2, add: IVec2): this {
-    this.x = this.x * mul.x + add.x
-    this.y = this.y * mul.y + add.y
+  public multiplyScalar(scalar: number): this {
+    this.x *= scalar
+    this.y *= scalar
     return this
   }
 
@@ -637,14 +626,14 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Multiplies `this` with the first vector and adds the second scalar after.
-   * @param mul - The scalar to multiply.
+   * Multiplies `this` with the first vector and adds the second after.
+   * @param mul - The vector to multiply.
    * @param add - The vector to add on top of the multiplication.
    * @returns Reference to `this` for chaining.
    */
-  public multiplyScalarAdd(mul: number, add: IVec2): this {
-    this.x = this.x * mul + add.x
-    this.y = this.y * mul + add.y
+  public multiplyAdd(mul: IVec2, add: IVec2): this {
+    this.x = this.x * mul.x + add.x
+    this.y = this.y * mul.y + add.y
     return this
   }
 
@@ -666,13 +655,14 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Divides `this` by the given vector.
-   * @param other - The vector to divide with.
+   * Multiplies `this` with the first vector and adds the second scalar after.
+   * @param mul - The scalar to multiply.
+   * @param add - The vector to add on top of the multiplication.
    * @returns Reference to `this` for chaining.
    */
-  public divide(other: IVec2): this {
-    this.x /= other.x
-    this.y /= other.y
+  public multiplyScalarAdd(mul: number, add: IVec2): this {
+    this.x = this.x * mul + add.x
+    this.y = this.y * mul + add.y
     return this
   }
 
@@ -693,14 +683,13 @@ export class Vec2 implements IVec2 {
   }
 
   /**
-   * Divides `this` by the given scalar.
-   * @param scalar - The scalar to divide with.
+   * Divides `this` by the given vector.
+   * @param other - The vector to divide with.
    * @returns Reference to `this` for chaining.
    */
-  public divideScalar(scalar: number): this {
-    scalar = 1 / scalar
-    this.x *= scalar
-    this.y *= scalar
+  public divide(other: IVec2): this {
+    this.x /= other.x
+    this.y /= other.y
     return this
   }
 
@@ -719,6 +708,18 @@ export class Vec2 implements IVec2 {
     out.x = vec.x * scalar
     out.y = vec.y * scalar
     return out
+  }
+
+  /**
+   * Divides `this` by the given scalar.
+   * @param scalar - The scalar to divide with.
+   * @returns Reference to `this` for chaining.
+   */
+  public divideScalar(scalar: number): this {
+    scalar = 1 / scalar
+    this.x *= scalar
+    this.y *= scalar
+    return this
   }
 
   /**
@@ -968,6 +969,6 @@ export class Vec2 implements IVec2 {
   }
 
   public static format(vec: IVec2, fractionDigits: number = 5) {
-    return [vec.x.toFixed(fractionDigits), vec.y.toFixed(5)].join(',')
+    return [vec.x.toFixed(fractionDigits), vec.y.toFixed(fractionDigits)].join(',')
   }
 }
