@@ -642,6 +642,15 @@ export class Mat4 {
 
   /**
    * Initializes the components of this matrix to the identity.
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0 0 0
+   * 0 1 0 0
+   * 0 0 1 0
+   * 0 0 0 1
+   * ```
    */
   public initIdentity(): this {
     const m = this.m
@@ -654,6 +663,15 @@ export class Mat4 {
 
   /**
    * Creates a new matrix with all components set to 0
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 0 0 0 0
+   * 0 0 0 0
+   * 0 0 0 0
+   * 0 0 0 0
+   * ```
    */
   public static createZero(): Mat4 {
     return new Mat4()
@@ -661,6 +679,15 @@ export class Mat4 {
 
   /**
    * Initializes the components of this matrix to 0.
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 0 0 0 0
+   * 0 0 0 0
+   * 0 0 0 0
+   * 0 0 0 0
+   * ```
    */
   public initZero(): this {
     const m = this.m
@@ -810,7 +837,11 @@ export class Mat4 {
   }
 
   /**
-   * Rotates this matrix by a quaternion
+   * Creates a rotation matrix from quaternion and post-multiplies it to `this`
+   *
+   * @remarks
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param q - The rotation quaternion
    */
@@ -819,11 +850,23 @@ export class Mat4 {
   }
 
   /**
-   * Rotates this matrix by a quaternion
+   * Creates a rotation matrix from quaternion and pre-multiplies it to `this`
    *
    * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param q - The rotation quaternion
+   */
+  public preRotateQuat(q: IVec4): this {
+    return this.preRotateQuaternion(q.x, q.y, q.z, q.w)
+  }
+
+  /**
+   * Creates a rotation matrix from quaternion parameters and post-multiplies it to `this`
+   *
+   * @remarks
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param x - x component of the quaternion
    * @param y - y component of the quaternion
@@ -885,6 +928,71 @@ export class Mat4 {
   }
 
   /**
+   * Creates a rotation matrix from quaternion parameters and pre-multiplies it to `this`
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public preRotateQuaternion(x: number, y: number, z: number, w: number): this {
+    // matrix from quaternion
+    const xx = x * x
+    const yy = y * y
+    const zz = z * z
+    const xy = x * y
+    const zw = z * w
+    const zx = z * x
+    const yw = y * w
+    const yz = y * z
+    const xw = x * w
+
+    const r00 = 1 - 2 * (yy + zz)
+    const r01 = 2 * (xy + zw)
+    const r02 = 2 * (zx - yw)
+
+    const r10 = 2 * (xy - zw)
+    const r11 = 1 - 2 * (zz + xx)
+    const r12 = 2 * (yz + xw)
+
+    const r20 = 2 * (zx + yw)
+    const r21 = 2 * (yz - xw)
+    const r22 = 1 - 2 * (yy + xx)
+
+    const m = this.m
+    const m00 = m[M._00]
+    const m10 = m[M._10]
+    const m20 = m[M._20]
+    const m30 = m[M._30]
+    const m01 = m[M._01]
+    const m11 = m[M._11]
+    const m21 = m[M._21]
+    const m31 = m[M._31]
+    const m02 = m[M._02]
+    const m12 = m[M._12]
+    const m22 = m[M._22]
+    const m32 = m[M._32]
+
+    m[M._00] = r00 * m00 + r01 * m01 + r02 * m02
+    m[M._10] = r00 * m10 + r01 * m11 + r02 * m12
+    m[M._20] = r00 * m20 + r01 * m21 + r02 * m22
+    m[M._30] = r00 * m30 + r01 * m31 + r02 * m32
+    m[M._01] = r10 * m00 + r11 * m01 + r12 * m02
+    m[M._11] = r10 * m10 + r11 * m11 + r12 * m12
+    m[M._21] = r10 * m20 + r11 * m21 + r12 * m22
+    m[M._31] = r10 * m30 + r11 * m31 + r12 * m32
+    m[M._02] = r20 * m00 + r21 * m01 + r22 * m02
+    m[M._12] = r20 * m10 + r21 * m11 + r22 * m12
+    m[M._22] = r20 * m20 + r21 * m21 + r22 * m22
+    m[M._32] = r20 * m30 + r21 * m31 + r22 * m32
+
+    return this
+  }
+
+  /**
    * Creates a rotation matrix from an axis and angle
    *
    * @param axis - normalized rotation axis vector
@@ -908,15 +1016,27 @@ export class Mat4 {
    * Applies a rotation around the given axis and angle
    *
    * @remarks
-   * This affects only the 3x3 rotation part of the matrix.
-   * Meaning that the matrix changes its facing direction
-   * but keeps its position and shearing as is.
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
   public rotateAxisAngleV(axis: IVec3, angle: number): this {
     return this.rotateAxisAngle(axis.x, axis.y, axis.z, angle)
+  }
+
+  /**
+   * Applies a rotation around the given axis and angle
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
+   */
+  public preRotateAxisAngleV(axis: IVec3, angle: number): this {
+    return this.preRotateAxisAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -988,9 +1108,8 @@ export class Mat4 {
    * Applies a rotation around the given axis and angle
    *
    * @remarks
-   * This affects only the 3x3 rotation part of the matrix.
-   * Meaning that the matrix changes its facing direction
-   * but keeps its position and shearing as is.
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param x - x component of the normalized rotation axis
    * @param y - y component of the normalized rotation axis
@@ -1005,57 +1124,30 @@ export class Mat4 {
     y *= scale
     z *= scale
     const w = Math.cos(halfAngle)
+    this.rotateQuaternion(x, y, z, w)
+    return this
+  }
 
-    // matrix from quaternion
-    const xx = x * x
-    const yy = y * y
-    const zz = z * z
-    const xy = x * y
-    const zw = z * w
-    const zx = z * x
-    const yw = y * w
-    const yz = y * z
-    const xw = x * w
-
-    const r00 = 1 - 2 * (yy + zz)
-    const r01 = 2 * (xy + zw)
-    const r02 = 2 * (zx - yw)
-
-    const r10 = 2 * (xy - zw)
-    const r11 = 1 - 2 * (zz + xx)
-    const r12 = 2 * (yz + xw)
-
-    const r20 = 2 * (zx + yw)
-    const r21 = 2 * (yz - xw)
-    const r22 = 1 - 2 * (yy + xx)
-
-    const m = this.m
-    const m00 = m[M._00]
-    const m01 = m[M._01]
-    const m02 = m[M._02]
-    const m03 = m[M._03]
-    const m10 = m[M._10]
-    const m11 = m[M._11]
-    const m12 = m[M._12]
-    const m13 = m[M._13]
-    const m20 = m[M._20]
-    const m21 = m[M._21]
-    const m22 = m[M._22]
-    const m23 = m[M._23]
-
-    m[M._00] = r00 * m00 + r01 * m10 + r02 * m20
-    m[M._01] = r00 * m01 + r01 * m11 + r02 * m21
-    m[M._02] = r00 * m02 + r01 * m12 + r02 * m22
-    m[M._03] = r00 * m03 + r01 * m13 + r02 * m23
-    m[M._10] = r10 * m00 + r11 * m10 + r12 * m20
-    m[M._11] = r10 * m01 + r11 * m11 + r12 * m21
-    m[M._12] = r10 * m02 + r11 * m12 + r12 * m22
-    m[M._13] = r10 * m03 + r11 * m13 + r12 * m23
-    m[M._20] = r20 * m00 + r21 * m10 + r22 * m20
-    m[M._21] = r20 * m01 + r21 * m11 + r22 * m21
-    m[M._22] = r20 * m02 + r21 * m12 + r22 * m22
-    m[M._23] = r20 * m03 + r21 * m13 + r22 * m23
-
+  /**
+   * Applies a rotation around the given axis and angle
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
+   */
+  public preRotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+    // create quaternion
+    const halfAngle = angle * 0.5
+    const scale = Math.sin(halfAngle)
+    x *= scale
+    y *= scale
+    z *= scale
+    const w = Math.cos(halfAngle)
+    this.preRotateQuaternion(x, y, z, w)
     return this
   }
 
@@ -1136,8 +1228,8 @@ export class Mat4 {
    * Applies a yaw pitch roll rotation to this matrix
    *
    * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param yaw - angle in rad around the Y axis
    * @param pitch - angle in rad around the X axis
@@ -1165,7 +1257,49 @@ export class Mat4 {
   }
 
   /**
+   * Applies a yaw pitch roll rotation to this matrix
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param yaw - angle in rad around the Y axis
+   * @param pitch - angle in rad around the X axis
+   * @param roll - angle in rad around the Z axis
+   */
+  public preRotateYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
+    // create quaternion
+    const zHalf = roll * 0.5
+    const zSin = Math.sin(zHalf)
+    const zCos = Math.cos(zHalf)
+
+    const xHalf = pitch * 0.5
+    const xSin = Math.sin(xHalf)
+    const xCos = Math.cos(xHalf)
+
+    const yHalf = yaw * 0.5
+    const ySin = Math.sin(yHalf)
+    const yCos = Math.cos(yHalf)
+
+    const x = yCos * xSin * zCos + ySin * xCos * zSin
+    const y = ySin * xCos * zCos - yCos * xSin * zSin
+    const z = yCos * xCos * zSin - ySin * xSin * zCos
+    const w = yCos * xCos * zCos + ySin * xSin * zSin
+
+    return this.preRotateQuaternion(x, y, z, w)
+  }
+
+  /**
    * Creates a new rotation matrix
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0  0 0
+   * 0 c -s 0
+   * 0 s  c 0
+   * 0 0  0 1
+   * ```
+   * where `c = cos(angle)` and `s = sin(angle)`
    */
   public static createRotationX(rad: number): Mat4 {
     return new Mat4().initRotationX(rad)
@@ -1173,6 +1307,16 @@ export class Mat4 {
 
   /**
    * Initializes this matrix with a rotation around the X axis.
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0  0 0
+   * 0 c -s 0
+   * 0 s  c 0
+   * 0 0  0 1
+   * ```
+   * where `c = cos(angle)` and `s = sin(angle)`
    *
    * @param angle - angle in rad
    */
@@ -1188,11 +1332,11 @@ export class Mat4 {
   }
 
   /**
-   * Applies a rotation around X axis to this matrix
+   * Applies a post-rotation around X axis to this matrix
    *
    * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param angle - angle in rad
    */
@@ -1209,14 +1353,47 @@ export class Mat4 {
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._10]  = c * m10 + s * m20
-    m[M._11]  = c * m11 + s * m21
-    m[M._12]  = c * m12 + s * m22
-    m[M._13]  = c * m13 + s * m23
-    m[M._20]  = c * m20 - s * m10
-    m[M._21]  = c * m21 - s * m11
+    m[M._10] = c * m10 + s * m20
+    m[M._11] = c * m11 + s * m21
+    m[M._12] = c * m12 + s * m22
+    m[M._13] = c * m13 + s * m23
+    m[M._20] = c * m20 - s * m10
+    m[M._21] = c * m21 - s * m11
     m[M._22] = c * m22 - s * m12
     m[M._23] = c * m23 - s * m13
+
+    return this
+  }
+
+  /**
+   * Applies a pre-rotation around X axis to this matrix in world space
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param angle - angle in rad
+   */
+  public preRotateX(angle: number): this {
+    const m = this.m
+    const m01 = m[M._01]
+    const m11 = m[M._11]
+    const m21 = m[M._21]
+    const m31 = m[M._31]
+    const m02 = m[M._02]
+    const m12 = m[M._12]
+    const m22 = m[M._22]
+    const m32 = m[M._32]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._01] = c * m01 - s * m02
+    m[M._11] = c * m11 - s * m12
+    m[M._21] = c * m21 - s * m22
+    m[M._31] = c * m31 - s * m32
+    m[M._02] = c * m02 + s * m01
+    m[M._12] = c * m12 + s * m11
+    m[M._22] = c * m22 + s * m21
+    m[M._32] = c * m32 + s * m31
 
     return this
   }
@@ -1248,8 +1425,8 @@ export class Mat4 {
    * Applies a rotation around Y axis to this matrix
    *
    * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param angle - angle in rad
    */
@@ -1279,6 +1456,38 @@ export class Mat4 {
   }
 
   /**
+   * Applies a rotation around Y axis to this matrix
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param angle - angle in rad
+   */
+  public preRotateY(angle: number): this {
+    const m = this.m
+    const m00 = m[M._00]
+    const m10 = m[M._10]
+    const m20 = m[M._20]
+    const m30 = m[M._30]
+    const m02 = m[M._02]
+    const m12 = m[M._12]
+    const m22 = m[M._22]
+    const m32 = m[M._32]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._00] = c * m00 + s * m02
+    m[M._10] = c * m10 + s * m12
+    m[M._20] = c * m20 + s * m22
+    m[M._30] = c * m30 + s * m32
+    m[M._02] = c * m02 - s * m00
+    m[M._12] = c * m12 - s * m10
+    m[M._22] = c * m22 - s * m20
+    m[M._32] = c * m32 - s * m30
+
+    return this
+  }
+  /**
    * Creates a new rotation matrix
    */
   public static createRotationZ(rad: number): Mat4 {
@@ -1305,8 +1514,8 @@ export class Mat4 {
    * Applies a rotation around Z axis to this matrix
    *
    * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
+   * This essentially will change tha matrix orientation but keep its translation vector
+   * since the rotation is post-multiplied and hence happens in local space.
    *
    * @param angle - angle in rad
    */
@@ -1336,6 +1545,39 @@ export class Mat4 {
   }
 
   /**
+   * Applies a rotation around Z axis to this matrix
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param angle - angle in rad
+   */
+  public preRotateZ(angle: number): this {
+    const m = this.m
+    const m00 = m[M._00]
+    const m10 = m[M._10]
+    const m20 = m[M._20]
+    const m30 = m[M._30]
+    const m01 = m[M._01]
+    const m11 = m[M._11]
+    const m21 = m[M._21]
+    const m31 = m[M._31]
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._00] = c * m00 - s * m01
+    m[M._10] = c * m10 - s * m11
+    m[M._20] = c * m20 - s * m21
+    m[M._30] = c * m30 - s * m31
+    m[M._01] = c * m01 + s * m00
+    m[M._11] = c * m11 + s * m10
+    m[M._21] = c * m21 + s * m20
+    m[M._31] = c * m31 + s * m30
+
+    return this
+  }
+
+  /**
    * Creates a new matrix with a predefined scale
    */
   public static createScale(x: number, y: number, z: number): Mat4 {
@@ -1359,7 +1601,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a scale to this matrix
+   * Post-multiplies the scale so it happens in local space.
    *
    * @param x - x scale factor
    * @param y - y scale factor
@@ -1383,6 +1625,30 @@ export class Mat4 {
   }
 
   /**
+   * Pre-multiplies the scale so it happens in global space.
+   *
+   * @param x - x scale factor
+   * @param y - y scale factor
+   * @param z - z scale factor
+   */
+  public preScale(x: number, y: number, z: number): this {
+    const m = this.m
+    m[M._00] *= x
+    m[M._10] *= x
+    m[M._20] *= x
+    m[M._30] *= x
+    m[M._01] *= y
+    m[M._11] *= y
+    m[M._21] *= y
+    m[M._31] *= y
+    m[M._02] *= z
+    m[M._12] *= z
+    m[M._22] *= z
+    m[M._32] *= z
+    return this
+  }
+
+  /**
    * Creates a new matrix with a predefined scale
    */
   public static createScaleV(vec: IVec3): Mat4 {
@@ -1399,7 +1665,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a scale to this matrix
+   * Post-multiplies the scale so it happens in local space.
    *
    * @param scale - the scale vector
    */
@@ -1424,6 +1690,31 @@ export class Mat4 {
   }
 
   /**
+   * Pre-multiplies the scale so it happens in global space.
+   *
+   * @param scale - the scale vector
+   */
+  public preScaleV(scale: IVec3): this {
+    const x = scale.x
+    const y = scale.y
+    const z = scale.z
+    const m = this.m
+    m[M._00] *= x
+    m[M._10] *= x
+    m[M._20] *= x
+    m[M._30] *= x
+    m[M._01] *= y
+    m[M._11] *= y
+    m[M._21] *= y
+    m[M._31] *= y
+    m[M._02] *= z
+    m[M._12] *= z
+    m[M._22] *= z
+    m[M._32] *= z
+    return this
+  }
+
+  /**
    * Creates a new matrix with a predefined scale
    */
   public static createScaleUniform(scale: number): Mat4 {
@@ -1440,7 +1731,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a uniform scale to this matrix
+   * Post-multiplies the scale so it happens in local space.
    *
    * @param scale - the uniform scale factor
    */
@@ -1462,7 +1753,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a scale to this matrix
+   * Post-multiplies the scale so it happens in local space.
    *
    * @param x - scale factor on x axis
    */
@@ -1476,7 +1767,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a scale to this matrix
+   * Post-multiplies the scale so it happens in local space.
    *
    * @param y - scale factor on y axis
    */
@@ -1490,7 +1781,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a scale to this matrix
+   * Post-multiplies the scale so it happens in local space.
    *
    * @param z - scale factor on z axis
    */
@@ -1505,6 +1796,15 @@ export class Mat4 {
 
   /**
    * Creates a new translation matrix
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
    */
   public static createTranslation(x: number, y: number, z: number): Mat4 {
     return new Mat4().initTranslation(x, y, z)
@@ -1512,6 +1812,15 @@ export class Mat4 {
 
   /**
    * Initializes a translation matrix.
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
    *
    * @param x - x component of the translation vector
    * @param y - y component of the translation vector
@@ -1527,7 +1836,18 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix
+   * Applies a post-translation to this matrix
+   *
+   * @remarks
+   * This performs an optimized post-multiplication with a translation matrix.
+   *
+   * `this = this * T` where `T` is a translation matrix
+   * ```
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
    *
    * @param x - translation in x direction
    * @param y - translation in y direction
@@ -1543,28 +1863,85 @@ export class Mat4 {
   }
 
   /**
-   * Creates a new translation matrix
+   * Applies a translation to this matrix relative to global space
+   *
+   * @remarks
+   * This performs an optimized pre-multiplication with a translation matrix.
+   *
+   * `this = T * this` where `T` is a translation matrix
+   * ```
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
+   *
+   * @param x - translation in x direction
+   * @param y - translation in y direction
+   * @param z - translation in z direction
    */
-  public static createTranslationV(vec: IVec3): Mat4 {
-    return new Mat4().initTranslationV(vec)
+  public preTranslate(x: number, y: number, z: number): this {
+    const m = this.m
+    m[M._30] += x
+    m[M._31] += y
+    m[M._32] += z
+    return this
+  }
+
+  /**
+   * Creates a new translation matrix
+   *
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0 0 v.x
+   * 0 1 0 v.y
+   * 0 0 1 v.z
+   * 0 0 0 1
+   * ```
+   *
+   * @param v - the translation vector
+   */
+  public static createTranslationV(v: IVec3): Mat4 {
+    return new Mat4().initTranslationV(v)
   }
 
   /**
    * Initializes a translation matrix.
    *
-   * @param vec - the translation vector
+   * @remarks
+   * Sets the following values
+   * ```
+   * 1 0 0 v.x
+   * 0 1 0 v.y
+   * 0 0 1 v.z
+   * 0 0 0 1
+   * ```
+   *
+   * @param v - the translation vector
    */
-  public initTranslationV(vec: IVec3): this {
+  public initTranslationV(v: IVec3): this {
     const m = this.m
-    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = vec.x
-    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = vec.y
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = vec.z
+    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = v.x
+    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = v.y
+    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = v.z
     m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
     return this
   }
 
   /**
-   * Applies a translation to this matrix
+   * Applies a translation to this matrix relative to its local space
+   *
+   * @remarks
+   * This performs an optimized post-multiplication with a translation matrix.
+   *
+   * `this = this * T` where `T` is a translation matrix
+   * ```
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
    *
    * @param v - the translation vector
    */
@@ -1581,7 +1958,42 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix
+   * Applies a translation to this matrix relative to global space
+   *
+   * @remarks
+   * This performs an optimized pre-multiplication with a translation matrix.
+   *
+   * `this = T * this` where `T` is a translation matrix
+   * ```
+   * 1 0 0 x
+   * 0 1 0 y
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
+   *
+   * @param v - the translation vector
+   */
+  public preTranslateV(v: IVec3): this {
+    const m = this.m
+    m[M._30] += v.x
+    m[M._31] += v.y
+    m[M._32] += v.z
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix relative to its local space
+   *
+   * @remarks
+   * This performs an optimized post-multiplication with a translation matrix.
+   *
+   * `this = this * T` where `T` is a translation matrix
+   * ```
+   * 1 0 0 x
+   * 0 1 0 0
+   * 0 0 1 0
+   * 0 0 0 1
+   * ```
    *
    * @param x - translation in x direction
    */
@@ -1595,7 +2007,18 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix
+   * Applies a translation to this matrix relative to its local space
+   *
+   * @remarks
+   * This performs an optimized post-multiplication with a translation matrix.
+   *
+   * `this = this * T` where `T` is a translation matrix
+   * ```
+   * 1 0 0 0
+   * 0 1 0 y
+   * 0 0 1 0
+   * 0 0 0 1
+   * ```
    *
    * @param y - translation in y direction
    */
@@ -1609,7 +2032,18 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix
+   * Applies a translation to this matrix relative to global space
+   *
+   * @remarks
+   * This performs an optimized post-multiplication with a translation matrix.
+   *
+   * `this = this * T` where `T` is a translation matrix
+   * ```
+   * 1 0 0 0
+   * 0 1 0 0
+   * 0 0 1 z
+   * 0 0 0 1
+   * ```
    *
    * @param z - translation in z direction
    */
@@ -1619,6 +2053,45 @@ export class Mat4 {
     m[M._31] = m[M._21] * z + m[M._31]
     m[M._32] = m[M._22] * z + m[M._32]
     m[M._33] = m[M._23] * z + m[M._33]
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix relative to global space
+   *
+   * @remarks
+   * Simply adds the translation value to the translation part of the matrix
+   *
+   * @param x - translation in x direction
+   */
+  public preTranslateX(x: number): this {
+    this.m[M._30] += x
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix relative to global space
+   *
+   * @remarks
+   * Simply adds the translation value to the translation part of the matrix
+   *
+   * @param y - translation in y direction
+   */
+  public preTranslateY(y: number): this {
+    this.m[M._31] += y
+    return this
+  }
+
+  /**
+   * Applies a translation to this matrix relative to global space
+   *
+   * @remarks
+   * Simply adds the translation value to the translation part of the matrix
+   *
+   * @param z - translation in z direction
+   */
+  public preTranslateZ(z: number): this {
+    this.m[M._32] += z
     return this
   }
 
@@ -1669,7 +2142,7 @@ export class Mat4 {
   }
 
   /**
-   * Creates a new matrix
+   * Creates a new look at matrix
    */
   public static createLookAt(pos: IVec3, lookAt: IVec3, up: IVec3): Mat4 {
     return new Mat4().initLookAt(pos, lookAt, up)
@@ -2619,78 +3092,197 @@ export class Mat4 {
   }
 
   /**
-   * Transform the given vector with this matrix.
+   * Transform the given point with projective division.
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, 0, 1)`
+   * and is multiplied with this matrix. Finally a division by `w`
+   * is performed if necessary to convert back to nonhomogeneous
+   * representation
    */
-  public transformV2<T extends IVec2>(vec: T): T {
+  public transformP2<T extends IVec2>(vec: T): T
+  /**
+   * Transform the given point with projective division but writes the result into `out`
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, 0, 1)`
+   * and is multiplied with this matrix. Finally a division by `w`
+   * is performed if necessary to convert back to nonhomogeneous
+   * representation
+   *
+   * @returns the given `out` parameter or a new vector
+   */
+  public transformP2<T extends IVec2, O>(vec: T, out: O): O & IVec2
+  public transformP2(vec: IVec2, out?: IVec2): IVec2 {
     const x = vec.x
     const y = vec.y
     const w = 1
     const d = this.m
-    vec.x = x * d[0] + y * d[4] + w * d[12]
-    vec.y = x * d[1] + y * d[5] + w * d[13]
+    out = out || vec
+    out.x = x * d[0] + y * d[4] + w * d[12]
+    out.y = x * d[1] + y * d[5] + w * d[13]
+    let wp = x * d[3] + y * d[7] + w * d[15]
+    if (wp !== 1) {
+      out.x /= wp
+      out.y /= wp
+    }
     return vec
   }
 
   /**
-   * Transform the given vector with this matrix.
+   * Transform the given point with projective division.
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, z, 1)`
+   * and is multiplied with this matrix. Finally a division by `w`
+   * is performed if necessary to convert back to nonhomogeneous
+   * representation
    */
-  public transformV3<T extends IVec3>(vec: T): T {
+  public transformP3<T extends IVec3>(vec: T): T
+  /**
+   * Transform the given point with projective division but writes the result into `out`
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, z, 1)`
+   * and is multiplied with this matrix. Finally a division by `w`
+   * is performed if necessary to convert back to nonhomogeneous
+   * representation
+   *
+   * @returns the given `out` parameter or a new vector
+   */
+  public transformP3<T extends IVec3, O>(vec: T, out: O): O & IVec3
+  public transformP3(vec: IVec3, out?: IVec3): IVec3 {
     const x = vec.x
     const y = vec.y
     const z = vec.z
     const w = 1
     const d = this.m
-    vec.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
-    vec.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
-    vec.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
+    out = out || vec
+    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
+    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
+    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22] + w * d[M._32]
+    let wp = x * d[M._03] + y * d[M._13] + z * d[M._23] + w * d[M._33]
+    if (wp !== 1) {
+      out.x /= wp
+      out.y /= wp
+      out.z /= wp
+    }
     return vec
   }
 
   /**
-   * Transform the given vector with this matrix.
+   * Transform the given vector skipping projective division.
    *
-   * @returns the given vector
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, 0, 1)`
+   * and is multiplied with this matrix. Division by `w` is entirely skipped.
    */
-  public transformV4<T extends IVec4>(vec: T): T {
+  public transformV2<T extends IVec2>(vec: T): T
+  /**
+   * Transform the given vector skipping projective division and writes the result into `out`
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, 0, 1)`
+   * and is multiplied with this matrix. Division by `w` is entirely skipped.
+   */
+  public transformV2<T extends IVec2, O>(vec: T, out: O): O & IVec2
+  public transformV2(vec: IVec2, out?: IVec2): IVec2 {
+    const x = vec.x
+    const y = vec.y
+    const w = 1
+    const d = this.m
+    out = out || vec
+    out.x = x * d[0] + y * d[4] + w * d[12]
+    out.y = x * d[1] + y * d[5] + w * d[13]
+    return vec
+  }
+
+  /**
+   * Transform the given vector skipping projective division.
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, z, 1)`
+   * and is multiplied with this matrix. Division by `w` is entirely skipped.
+   */
+  public transformV3<T extends IVec3>(vec: T): T
+  /**
+   * Transform the given vector skipping projective division and writes the result into `out`
+   *
+   * @remarks
+   * The given point is interpreted as a homogeneous column `(x, y, z, 1)`
+   * and is multiplied with this matrix. Division by `w` is entirely skipped.
+   */
+  public transformV3<T extends IVec3, O>(vec: T, out: O): O & IVec3
+  public transformV3(vec: IVec3, out?: IVec3): IVec3 {
+    const x = vec.x
+    const y = vec.y
+    const z = vec.z
+    const w = 1
+    const d = this.m
+    out = out || vec
+    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
+    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
+    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22] + w * d[M._32]
+    return vec
+  }
+
+  /**
+   * Transform the given vector skipping projective division.
+   */
+  public transformV4<T extends IVec4>(vec: T): T
+  /**
+   * Transform the given vector but writes the result into another
+   */
+  public transformV4<T extends IVec4, O>(vec: T, out: O): O & IVec4
+  public transformV4(vec: IVec4, out?: IVec4): IVec4 {
     const x = vec.x
     const y = vec.y
     const z = vec.z
     const w = vec.w
     const d = this.m
-    vec.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
-    vec.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
-    vec.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
-    vec.w = x * d[3] + y * d[7] + z * d[11] + w * d[15]
+    out = out || vec
+    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
+    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
+    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22] + w * d[M._32]
+    out.w = x * d[M._03] + y * d[M._13] + z * d[M._23] + w * d[M._33]
     return vec
   }
 
   /**
-   * Rotates and scales the given vector with this matrix.
-   *
-   * @returns the given vector
+   * Transforms the given vector ignoring the translation
    */
-  public transformV2Normal<T extends IVec2>(vec: T): T {
+  public transformV2Normal<T extends IVec2>(vec: T): T
+  /**
+   * Transforms the given vector ignoring the translation. Writes the result to `out` parameter
+   */
+  public transformV2Normal<T extends IVec2, O>(vec: T, out: O): O & IVec2
+  public transformV2Normal<T extends IVec2>(vec: T, out?: IVec2): T {
     const x = vec.x || 0
     const y = vec.y || 0
     const d = this.m
-    vec.x = x * d[0] + y * d[4]
-    vec.y = x * d[1] + y * d[5]
+    out = out || vec
+    out.x = x * d[M._00] + y * d[M._10]
+    out.y = x * d[M._01] + y * d[M._11]
     return vec
   }
 
   /**
-   * Rotates and scales the given vector with this matrix.
-   *
-   * @returns the given vector
+   * Transforms the given vector ignoring the translation
    */
-  public transformV3Normal<T extends IVec3>(vec: T): T {
+  public transformV3Normal<T extends IVec3>(vec: T): T
+  /**
+   * Transforms the given vector ignoring the translation. Writes the result to `out` parameter
+   */
+  public transformV3Normal<T extends IVec3, O>(vec: T, out: O): O & IVec3
+  public transformV3Normal<T extends IVec3>(vec: T, out?: IVec3): T {
     const x = vec.x || 0
     const y = vec.y || 0
     const z = vec.z || 0
     const d = this.m
-    vec.x = x * d[0] + y * d[4] + z * d[8]
-    vec.y = x * d[1] + y * d[5] + z * d[9]
-    vec.z = x * d[2] + y * d[6] + z * d[10]
+    out = out || vec
+    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20]
+    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21]
+    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22]
     return vec
   }
 
@@ -2850,22 +3442,23 @@ export class Mat4 {
     const a = matA.m
     const b = matB.m
     const c = out.m
-    c[0] = a[0] + (b[0] - a[0]) * t
-    c[1] = a[1] + (b[1] - a[1]) * t
-    c[2] = a[2] + (b[2] - a[2]) * t
-    c[3] = a[3] + (b[3] - a[3]) * t
-    c[4] = a[4] + (b[4] - a[4]) * t
-    c[5] = a[5] + (b[5] - a[5]) * t
-    c[6] = a[6] + (b[6] - a[6]) * t
-    c[7] = a[7] + (b[7] - a[7]) * t
-    c[8] = a[8] + (b[8] - a[8]) * t
-    c[9] = a[9] + (b[9] - a[9]) * t
-    c[10] = a[10] + (b[10] - a[10]) * t
-    c[11] = a[11] + (b[11] - a[11]) * t
-    c[12] = a[12] + (b[12] - a[12]) * t
-    c[13] = a[13] + (b[13] - a[13]) * t
-    c[14] = a[14] + (b[14] - a[14]) * t
-    c[15] = a[15] + (b[15] - a[15]) * t
+    const t1 = 1 - t
+    c[M._00] = t1 * a[M._00] + t * b[M._00]
+    c[M._01] = t1 * a[M._01] + t * b[M._01]
+    c[M._02] = t1 * a[M._02] + t * b[M._02]
+    c[M._03] = t1 * a[M._03] + t * b[M._03]
+    c[M._10] = t1 * a[M._10] + t * b[M._10]
+    c[M._11] = t1 * a[M._11] + t * b[M._11]
+    c[M._12] = t1 * a[M._12] + t * b[M._12]
+    c[M._13] = t1 * a[M._13] + t * b[M._13]
+    c[M._20] = t1 * a[M._20] + t * b[M._20]
+    c[M._21] = t1 * a[M._21] + t * b[M._21]
+    c[M._22] = t1 * a[M._22] + t * b[M._22]
+    c[M._23] = t1 * a[M._23] + t * b[M._23]
+    c[M._30] = t1 * a[M._30] + t * b[M._30]
+    c[M._31] = t1 * a[M._31] + t * b[M._31]
+    c[M._32] = t1 * a[M._32] + t * b[M._32]
+    c[M._33] = t1 * a[M._33] + t * b[M._33]
     return out
   }
 

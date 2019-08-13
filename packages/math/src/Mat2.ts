@@ -1258,56 +1258,6 @@ export class Mat2 {
   }
 
   /**
-   * Transforms the given array with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV3Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    const d = this.m
-    offset = offset || 0
-    stride = stride === undefined ? 3 : stride
-    count = count === undefined ? array.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = array[offset]
-      y = array[offset + 1]
-      array[offset] = x * d[0] + y * d[2]
-      array[offset + 1] = x * d[1] + y * d[3]
-      offset += stride
-    }
-  }
-
-  /**
-   * Transforms the given array with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV4Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    const d = this.m
-    offset = offset || 0
-    stride = stride === undefined ? 4 : stride
-    count = count === undefined ? array.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = array[offset]
-      y = array[offset + 1]
-      array[offset    ] = x * d[0] + y * d[2]
-      array[offset + 1] = x * d[1] + y * d[3]
-      offset += stride
-    }
-  }
-
-  /**
    * Performs a linear interpolation between two matrices
    * @param matA - The first matrix
    * @param matB - The second matrix

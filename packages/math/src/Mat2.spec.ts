@@ -766,39 +766,5 @@ describe('Mat2', () => {
         ], 5)
       })
     })
-
-    describe('#transformV3Buffer', () => {
-      it('transforms all vectors in buffer', () => {
-        const mat = Mat2.createRotationZ(Math.PI * 0.5)
-        const buf = [
-          1, 0, 3,
-          1, 0, 3,
-          1, 0, 3,
-        ]
-        mat.transformV3Array(buf)
-        expectBuffer(buf, [
-          0, 1, 3,
-          0, 1, 3,
-          0, 1, 3,
-        ], 5)
-      })
-    })
-
-    describe('#transformV4Buffer', () => {
-      it('transforms all vectors in buffer', () => {
-        const mat = Mat2.createRotationZ(Math.PI * 0.5)
-        const buf = [
-          1, 0, 3, 4,
-          1, 0, 3, 4,
-          1, 0, 3, 4,
-        ]
-        mat.transformV4Array(buf)
-        expectBuffer(buf, [
-          0, 1, 3, 4,
-          0, 1, 3, 4,
-          0, 1, 3, 4,
-        ], 5)
-      })
-    })
   })
 })

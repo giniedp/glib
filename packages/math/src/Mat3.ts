@@ -1960,34 +1960,6 @@ export class Mat3 {
   }
 
   /**
-   * Transforms the given array with `this` matrix.
-   *
-   *
-   *
-   *
-   */
-  public transformV4Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
-    let z
-    const d = this.m
-    offset = offset || 0
-    stride = stride == null ? 4 : stride
-    count = count == null ? array.length / stride : count
-
-    while (count > 0) {
-      count--
-      x = array[offset]
-      y = array[offset + 1]
-      z = array[offset + 2]
-      array[offset    ] = x * d[0] + y * d[3] + z * d[6]
-      array[offset + 1] = x * d[1] + y * d[4] + z * d[7]
-      array[offset + 2] = x * d[2] + y * d[5] + z * d[8]
-      offset += stride
-    }
-  }
-
-  /**
    * Performs a linear interpolation between two matrices
    * @param matA - The first matrix
    * @param matB - The second matrix

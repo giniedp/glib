@@ -47,6 +47,8 @@ class Project {
     assets: [
       'dist/packages/gglib/bundles/gglib.umd.js',
       'dist/packages/gglib/bundles/gglib.umd.js.map',
+      'dist/packages/math/bundles/math.umd.js',
+      'dist/packages/math/bundles/math.umd.js.map',
       'node_modules/tweak-ui/dist/tweak-ui.umd.js',
       'node_modules/tweak-ui/dist/tweak-ui.umd.js.map',
       'node_modules/tweak-ui/dist/tweak-ui.css',

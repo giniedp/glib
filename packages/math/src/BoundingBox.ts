@@ -24,11 +24,11 @@ export class BoundingBox {
   /**
    * The minimum contained point
    */
-  public min: IVec3 = { x: 0, y: 0, z: 0}
+  public readonly min: Vec3
   /**
    * The maximum contained point
    */
-  public max: IVec3 = { x: 0, y: 0, z: 0}
+  public readonly max: Vec3
 
   /**
    * Constructs a new instance of {@link BoundingBox}
@@ -41,12 +41,8 @@ export class BoundingBox {
    * @param maxZ - z component of the maximum point
    */
   constructor(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number) {
-    this.min.x = minX || 0
-    this.min.y = minY || 0
-    this.min.z = minZ || 0
-    this.max.x = maxX || 0
-    this.max.y = maxY || 0
-    this.max.z = maxZ || 0
+    this.min = Vec3.create(minX, minY, minZ)
+    this.max = Vec3.create(maxX, maxY, maxZ)
   }
 
   /**
@@ -262,7 +258,7 @@ export class BoundingBox {
    *
    * @param box - the box to clone
    * @param out - where the result is written to
-   * @retruns the given `out` parameter or a new instance
+   * @returns the given `out` parameter or a new instance
    */
   public static clone(box: BoundingBox, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
@@ -274,7 +270,7 @@ export class BoundingBox {
    * Clones this instance into a new or an existing one
    *
    * @param out - where the result is written to
-   * @retruns the given `out` parameter or a new instance
+   * @returns the given `out` parameter or a new instance
    */
   public clone(out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()

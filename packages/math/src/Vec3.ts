@@ -15,47 +15,47 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Readonly vector with all components set to zero
    */
-  public static Zero: IVec3 = Object.freeze<IVec3>({ x: 0, y: 0, z: 0 })
+  public static Zero: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: 0 })
   /**
    * Readonly vector with all components set to one
    */
-  public static One: IVec3 = Object.freeze<IVec3>({ x: 1, y: 1, z: 1 })
+  public static One: Readonly<IVec3> = Object.freeze<IVec3>({ x: 1, y: 1, z: 1 })
   /**
    * Readonly vector x component set to one
    */
-  public static Right: IVec3 = Object.freeze<IVec3>({ x: 1, y: 0, z: 0 })
+  public static Right: Readonly<IVec3> = Object.freeze<IVec3>({ x: 1, y: 0, z: 0 })
   /**
    * Readonly vector x component set to minus one
    */
-  public static Left: IVec3 = Object.freeze<IVec3>({ x: -1, y: 0, z: 0 })
+  public static Left: Readonly<IVec3> = Object.freeze<IVec3>({ x: -1, y: 0, z: 0 })
   /**
    * Readonly vector y component set to one
    */
-  public static Up: IVec3 = Object.freeze<IVec3>({ x: 0, y: 1, z: 0 })
+  public static Up: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 1, z: 0 })
   /**
    * Readonly vector y component set to minus one
    */
-  public static Down: IVec3 = Object.freeze<IVec3>({ x: 0, y: -1, z: 0 })
+  public static Down: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: -1, z: 0 })
   /**
    * Readonly vector z component set to one
    */
-  public static Backward: IVec3 = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
+  public static Backward: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
   /**
    * Readonly vector z component set to minus one
    */
-  public static Forward: IVec3 = Object.freeze<IVec3>({ x: 0, y: 0, z: -1 })
+  public static Forward: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: -1 })
   /**
    * Readonly vector x component set to one
    */
-  public static UnitX: IVec3 = Object.freeze<IVec3>({ x: 1, y: 0, z: 0 })
+  public static UnitX: Readonly<IVec3> = Object.freeze<IVec3>({ x: 1, y: 0, z: 0 })
   /**
    * Readonly vector y component set to one
    */
-  public static UnitY: IVec3 = Object.freeze<IVec3>({ x: 0, y: 1, z: 0 })
+  public static UnitY: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 1, z: 0 })
   /**
    * Readonly vector z component set to one
    */
-  public static UnitZ: IVec3 = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
+  public static UnitZ: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
 
   /**
    * The X component
@@ -120,6 +120,7 @@ export class Vec3 implements IVec2, IVec3 {
 
   /**
    * Creates a new vector.
+   *
    * @param x - The x component
    * @param y - The y component
    * @param z - The z component
@@ -130,11 +131,27 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Initializes the given vector
+   *
+   * @param out - the vector to initialize
+   * @param x - The x component
+   * @param y - The y component
+   * @param z - The z component
+   */
+  public static init<T>(out: T, x: number, y: number, z: number): T & IVec3
+  public static init(out: IVec3, x: number, y: number, z: number): IVec3 {
+    out.x = x
+    out.y = y
+    out.z = z
+    return out
+  }
+
+  /**
    * Initializes the components of this vector with given values.
+   *
    * @param x - value for X component
    * @param y - value for Y component
    * @param z - value for Z component
-   * @returns this vector for chaining
    */
   public init(x: number, y: number, z: number): this {
     this.x = x
@@ -144,7 +161,72 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Creates a new vector with all components set to 0.
+   * Creates a new vector with random values in range [0..1]
+   *
+   * @returns A new vector.
+   */
+  public static createRandom(): Vec3 {
+    return new Vec3(Math.random(), Math.random(), Math.random())
+  }
+
+  /**
+   * Initializes the given vector with random values in range [0..1]
+   *
+   * @param out - the vector to initialize
+   */
+  public static initRandom<T>(out: T): T & IVec3
+  public static initRandom(out: IVec3): IVec3 {
+    out.x = Math.random()
+    out.y = Math.random()
+    out.z = Math.random()
+    return out
+  }
+
+  /**
+   * Initializes the components of this vector with random values in range [0..1]
+   */
+  public initRandom(): this {
+    this.x = Math.random()
+    this.y = Math.random()
+    this.z = Math.random()
+    return this
+  }
+
+  /**
+   * Creates a new vector with random values in range [-1..1]
+   *
+   * @returns A new vector.
+   */
+  public static createRandomUnit(): Vec3 {
+    return new Vec3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+  }
+
+  /**
+   * Initializes the given vector with random values in range [-1..1]
+   *
+   * @param out - the vector to initialize
+   */
+  public static initRandomUnit<T>(out: T): T & IVec3
+  public static initRandomUnit(out: IVec3): IVec3 {
+    out.x = Math.random() * 2 - 1
+    out.y = Math.random() * 2 - 1
+    out.z = Math.random() * 2 - 1
+    return out
+  }
+
+  /**
+   * Initializes the components of this vector with random values in range [-1..1]
+   */
+  public initRandomUnit(): this {
+    this.x = Math.random() * 2 - 1
+    this.y = Math.random() * 2 - 1
+    this.z = Math.random() * 2 - 1
+    return this
+  }
+
+  /**
+   * Creates a new vector with all components set to `0`
+   *
    * @returns A new vector.
    */
   public static createZero(): Vec3 {
@@ -152,8 +234,20 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Initializes the vector with all components set to 0.
-   * @returns this vector for chaining
+   * Initializes all components of given vector to `0`
+   *
+   * @param out - the vector to initialize
+   */
+  public static initZero<T>(out: T): T & IVec3
+  public static initZero(out: IVec3): IVec3 {
+    out.x = 0
+    out.y = 0
+    out.z = 0
+    return out
+  }
+
+  /**
+   * Initializes all components of this vector to `0`
    */
   public initZero(): this {
     this.x = 0
@@ -163,7 +257,8 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Creates a new vector with all components set to 1.
+   * Creates a new vector with all components set to `1`
+   *
    * @returns A new vector.
    */
   public static createOne(): Vec3 {
@@ -171,8 +266,20 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Initializes the vector with all components set to 1.
-   * @returns this vector for chaining
+   * Initializes all components of given vector to `1`
+   *
+   * @param out - the vector to initialize
+   */
+  public static initOne<T>(out: T): T & IVec3
+  public static initOne(out: IVec3): IVec3 {
+    out.x = 1
+    out.y = 1
+    out.z = 1
+    return out
+  }
+
+  /**
+   * Initializes all components of this vector to `1`
    */
   public initOne(): this {
     this.x = 1
@@ -486,7 +593,6 @@ export class Vec3 implements IVec2, IVec3 {
 
   /**
    * Normalizes `this` vector. Applies the result to `this` vector.
-   * @returns this vector for chaining
    */
   public normalize(): this {
     const x = this.x
@@ -517,7 +623,6 @@ export class Vec3 implements IVec2, IVec3 {
 
   /**
    * Inverts this vector.
-   * @returns this vector for chaining
    */
   public invert(): this {
     this.x = 1.0 / this.x
@@ -544,7 +649,6 @@ export class Vec3 implements IVec2, IVec3 {
 
   /**
    * Negates the components of `this` vector. Applies the result to `this`
-   * @returns this vector for chaining
    */
   public negate(): this {
     this.x = -this.x
@@ -573,7 +677,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this += other`
    * @param other - The vector to add
-   * @returns this vector for chaining
    */
   public add(other: IVec3): this {
     this.x += other.x
@@ -602,7 +705,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this += scalar`
    * @param scalar - The value to add
-   * @returns this vector for chaining
    */
   public addScalar(scalar: number): this {
     this.x += scalar
@@ -628,7 +730,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this += other * scale`
    * @param other - The vector to add
-   * @returns this vector for chaining
    */
   public addScaled(other: IVec3, scale: number): this {
     this.x += other.x * scale
@@ -657,7 +758,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this -= other`
    * @param other - The vector to subtract
-   * @returns this vector for chaining
    */
   public subtract(other: IVec3): this {
     this.x -= other.x
@@ -686,7 +786,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this -= scalar`
    * @param scalar - The value to subtract
-   * @returns this vector for chaining
    */
   public subtractScalar(scalar: number): this {
     this.x -= scalar
@@ -714,7 +813,6 @@ export class Vec3 implements IVec2, IVec3 {
    * Performs the calculation `this -= other * scale`
    * @param other - The vector to subtract
    * @param scale - The value to multoply to `other`
-   * @returns this vector for chaining
    */
   public subtractScaled(other: IVec3, scale: number): this {
     this.x -= other.x * scale
@@ -726,7 +824,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this *= other`
    * @param other - The vector to multiply
-   * @returns this vector for chaining
    */
   public multiply(other: IVec3): this {
     this.x *= other.x
@@ -772,7 +869,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this *= scalar`
    * @param scalar - The value to multiply
-   * @returns this vector for chaining
    */
   public multiplyScalar(scalar: number): this {
     this.x *= scalar
@@ -801,7 +897,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this /= other`
    * @param other - The vector to divide
-   * @returns this vector for chaining
    */
   public divide(other: IVec3): this {
     this.x /= other.x
@@ -831,7 +926,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Performs the calculation `this *= (1 / scalar)`
    * @param scalar - The value to divide
-   * @returns this vector for chaining
    */
   public divideScalar(scalar: number): this {
     scalar = 1.0 / scalar
@@ -881,7 +975,6 @@ export class Vec3 implements IVec2, IVec3 {
    * Performs the calculation `this = this * a + b`
    * @param a - The vector to multiply.
    * @param b - The vector to add on top of the multiplication.
-   * @returns this vector for chaining
    */
   public multiplyAdd(a: IVec3, b: IVec3): this {
     this.x = this.x * a.x + b.x
@@ -891,9 +984,101 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Reflects this vector along the given `normal`
+   *
+   * @param normal - the normal used for reflection
+   */
+  public reflect(normal: IVec3): this {
+    const dot = this.x * normal.x + this.y * normal.y + this.z * normal.z
+    this.x = this.x - (2.0 * dot * normal.x)
+    this.y = this.y - (2.0 * dot * normal.y)
+    this.z = this.z - (2.0 * dot * normal.z)
+    return this
+  }
+
+  /**
+   * Creates a new vector that is the reflected of `vec`
+   *
+   * @param vec - the vector to reflect
+   * @param normal - the normal
+   */
+  public static reflect(vec: IVec3, normal: IVec3): Vec3
+  /**
+   * Reflects the `vec` and writes the result to `out`
+   *
+   * @param vec - the vector to reflect
+   * @param normal - the normal
+   * @param out - The vector to write to
+   */
+  public static reflect<T>(vec: IVec3, normal: IVec3, out: T): T & IVec3
+  public static reflect(vec: IVec3, normal: IVec3, out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    const dot = vec.x * normal.x + vec.y * normal.y + vec.z * normal.z
+    out.x = vec.x - (2.0  * dot * normal.x)
+    out.y = vec.y - (2.0  * dot * normal.y)
+    out.z = vec.z - (2.0  * dot * normal.z)
+    return out
+  }
+
+  /**
+   * Refracts this vector
+   *
+   * @param normal - a normal vector
+   * @param eta - refraction index
+   */
+  public refract(normal: IVec3, eta: number): this {
+    const dot = this.x * normal.x + this.y * normal.y + this.z * normal.z
+    const k = 1.0 - eta * eta * (1.0 - dot * dot)
+    if (k < 0) {
+      this.x = 0
+      this.y = 0
+      this.z = 0
+    } else {
+      const sqrt = Math.sqrt(k)
+      this.x = eta * this.x - (eta * dot + sqrt) * normal.x
+      this.y = eta * this.y - (eta * dot + sqrt) * normal.y
+      this.z = eta * this.z - (eta * dot + sqrt) * normal.z
+    }
+    return this
+  }
+
+  /**
+   * Creates a new vector that is the refracted of `vec`
+   *
+   * @param vec - the vector to refract
+   * @param normal - the normal
+   * @param eta - refraction index
+   */
+  public static refract(vec: IVec3, normal: IVec3, eta: number): Vec3
+  /**
+   * Refreacts the `vec` but writes the result to `out`
+   *
+   * @param vec - the vector to refract
+   * @param normal - the normal
+   * @param eta - refraction index
+   * @param out - The vector to write to
+   */
+  public static refract<T>(vec: IVec3, normal: IVec3, eta: number, out?: T): T & IVec3
+  public static refract(vec: IVec3, normal: IVec3, eta: number, out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    const dot = vec.x * normal.x + vec.y * normal.y + vec.z * normal.z
+    const k = 1.0 - eta * eta * (1.0 - dot * dot)
+    if (k < 0) {
+      out.x = 0
+      out.y = 0
+      out.z = 0
+    } else {
+      const sqrt = Math.sqrt(k)
+      out.x = eta * vec.x - (eta * dot + sqrt) * normal.x
+      out.y = eta * vec.y - (eta * dot + sqrt) * normal.y
+      out.z = eta * vec.z - (eta * dot + sqrt) * normal.z
+    }
+    return out
+  }
+
+  /**
    * Transforms `this` with the given quaternion.
    *
-   * @returns this vector for chaining
    */
   public transformByQuat(quat: IVec4): this {
     const x = quat.x
@@ -930,7 +1115,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Transforms `this` with the given matrix.
    *
-   * @returns this vector for chaining
    */
   public transformByMat4(mat: IMat): this {
     const x = this.x
@@ -947,7 +1131,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Transforms `this` with the given matrix.
    *
-   * @returns this vector for chaining
    */
   public transformByMat3(mat: IMat): this {
     const x = this.x
@@ -963,7 +1146,6 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Transforms `this` with the given matrix. The `z` component of `this` keeps untouched.
    *
-   * @returns this vector for chaining
    */
   public transformByMat2(mat: IMat): this {
     const x = this.x
@@ -1175,40 +1357,41 @@ export class Vec3 implements IVec2, IVec3 {
 
   /**
    * Tries to converts the given data to a vector
-   *
-   *
    */
   public static convert(data: number | IVec3 | number[]): Vec3 {
     if (typeof data === 'number') {
       return new Vec3(data, data, data)
     }
     if (Array.isArray(data)) {
-      return new Vec3(
-        data[0] || 0,
-        data[1] || 0,
-        data[2] || 0,
-      )
+      return new Vec3(data[0], data[1], data[2])
     }
-    return new Vec3(
-      data.x || 0,
-      data.y || 0,
-      data.z || 0,
-    )
+    return new Vec3(data.x, data.y, data.z)
   }
 
+  /**
+   * Formats this into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public format(fractionDigits?: number): string {
     return Vec3.format(this, fractionDigits)
   }
 
+  /**
+   * Formats given value into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param vec - The value to format
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public static format(vec: IVec3, fractionDigits: number = 5): string {
-    return [vec.x.toFixed(fractionDigits), vec.y.toFixed(fractionDigits), vec.z.toFixed(fractionDigits)].join(',')
-  }
-
-  public static createRandom<T extends IVec3 = Vec3>(rand: { random: () => number } = Math, out?: T|Vec3): T|Vec3 {
-    out = out || new Vec3()
-    out.x = rand.random() - 0.5
-    out.y = rand.random() - 0.5
-    out.z = rand.random() - 0.5
-    return out
+    return vec.x.toFixed(fractionDigits) +
+      ',' + vec.y.toFixed(fractionDigits) +
+      ',' + vec.z.toFixed(fractionDigits)
   }
 }

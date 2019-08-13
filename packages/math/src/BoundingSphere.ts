@@ -24,12 +24,12 @@ export class BoundingSphere {
   /**
    * The sphere center
    */
-  public center: IVec3 = { x: 0, y: 0, z: 0}
+  public readonly center: Vec3
 
   /**
    * The sphere radius
    */
-  public radius: number = 0
+  public radius: number
 
   /**
    * Constructs a new instance of {@link BoundingSphere}
@@ -40,9 +40,7 @@ export class BoundingSphere {
    * @param r - the radius
    */
   constructor(x?: number, y?: number, z?: number, r?: number) {
-    this.center.x = x || 0
-    this.center.y = y || 0
-    this.center.z = z || 0
+    this.center = Vec3.create(x, y, z)
     this.radius = r || 0
   }
 
@@ -238,7 +236,7 @@ export class BoundingSphere {
    *
    * @param sphere - the volume to clone
    * @param out - where the result is written to
-   * @retruns the given `out` parameter or a new instance
+   * @returns the given `out` parameter or a new instance
    */
   public static clone(sphere: BoundingSphere, out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
@@ -250,7 +248,7 @@ export class BoundingSphere {
    * Clones this instance into a new or an existing one
    *
    * @param out - where the result is written to
-   * @retruns the given `out` parameter or a new instance
+   * @returns the given `out` parameter or a new instance
    */
   public clone(out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()

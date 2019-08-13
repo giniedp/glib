@@ -72,6 +72,20 @@ export class Vec2 implements IVec2 {
   }
 
   /**
+   * Initializes the given vector
+   *
+   * @param out - the vector to initialize
+   * @param x - The x component
+   * @param y - The y component
+   */
+  public static init<T>(out: T, x: number, y: number, z: number): T & IVec2
+  public static init(out: IVec2, x: number, y: number, z: number): IVec2 {
+    out.x = x
+    out.y = y
+    return out
+  }
+
+  /**
    * Initializes the components of this vector with given values.
    */
   public init(x: number, y: number): this {
@@ -81,11 +95,83 @@ export class Vec2 implements IVec2 {
   }
 
   /**
+   * Creates a new vector with random values in range [0..1]
+   *
+   * @returns A new vector.
+   */
+  public static createRandom(): Vec2 {
+    return new Vec2(Math.random(), Math.random())
+  }
+
+  /**
+   * Initializes the given vector with random values in range [0..1]
+   *
+   * @param out - the vector to initialize
+   */
+  public static initRandom<T>(out: T): T & IVec2
+  public static initRandom(out: IVec2): IVec2 {
+    out.x = Math.random()
+    out.y = Math.random()
+    return out
+  }
+
+  /**
+   * Initializes the components of this vector with random values in range [0..1]
+   */
+  public initRandom(): this {
+    this.x = Math.random()
+    this.y = Math.random()
+    return this
+  }
+
+  /**
+   * Creates a new vector with random values in range [-1..1]
+   *
+   * @returns A new vector.
+   */
+  public static createRandomUnit(): Vec2 {
+    return new Vec2(Math.random() * 2 - 1, Math.random() * 2 - 1)
+  }
+
+  /**
+   * Initializes the given vector with random values in range [-1..1]
+   *
+   * @param out - the vector to initialize
+   */
+  public static initRandomUnit<T>(out: T): T & IVec2
+  public static initRandomUnit(out: IVec2): IVec2 {
+    out.x = Math.random() * 2 - 1
+    out.y = Math.random() * 2 - 1
+    return out
+  }
+
+  /**
+   * Initializes the components of this vector with random values in range [-1..1]
+   */
+  public initRandomUnit(): this {
+    this.x = Math.random() * 2 - 1
+    this.y = Math.random() * 2 - 1
+    return this
+  }
+
+  /**
    * Creates a new vector with all components set to 0.
    * @returns A new vector.
    */
   public static createZero(): Vec2 {
     return new Vec2(0, 0)
+  }
+
+  /**
+   * Initializes all components of given vector to `0`
+   *
+   * @param out - the vector to initialize
+   */
+  public static initZero<T>(out: T): T & IVec2
+  public static initZero(out: IVec2): IVec2 {
+    out.x = 0
+    out.y = 0
+    return out
   }
 
   /**
@@ -104,6 +190,18 @@ export class Vec2 implements IVec2 {
    */
   public static createOne(): Vec2 {
     return new Vec2(1, 1)
+  }
+
+  /**
+   * Initializes all components of given vector to `1`
+   *
+   * @param out - the vector to initialize
+   */
+  public static initOne<T>(out: T): T & IVec2
+  public static initOne(out: IVec2): IVec2 {
+    out.x = 1
+    out.y = 1
+    return out
   }
 
   /**
@@ -950,25 +1048,37 @@ export class Vec2 implements IVec2 {
    */
   public static convert(data: any): Vec2 {
     if (Array.isArray(data)) {
-      return new Vec2(
-        data[0] || 0,
-        data[1] || 0,
-      )
+      return new Vec2(data[0], data[1])
     } else if (typeof data === 'number') {
       return new Vec2(data, data)
     } else {
-      return new Vec2(
-        data.x || 0,
-        data.y || 0,
-      )
+      return new Vec2(data.x, data.y)
     }
   }
 
+  /**
+   * Formats this into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public format(fractionDigits?: number) {
     return Vec2.format(this, fractionDigits)
   }
 
+  /**
+   * Formats given value into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param vec - The value to format
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public static format(vec: IVec2, fractionDigits: number = 5) {
-    return [vec.x.toFixed(fractionDigits), vec.y.toFixed(fractionDigits)].join(',')
+    return vec.x.toFixed(fractionDigits) +
+      ',' + vec.y.toFixed(fractionDigits)
   }
 }

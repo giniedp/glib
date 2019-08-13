@@ -184,7 +184,11 @@ export function rayIntersectsPlane(orig: IVec3, dir: IVec3, plane: IVec4): boole
  * @public
  */
 export function rayIntersectsPlaneAt(orig: IVec3, dir: IVec3, plane: IVec4): number {
-  return (plane.w - Vec3.dot(plane, orig)) / Vec3.dot(plane, dir)
+  const d = Vec3.dot(plane, dir)
+  if (Math.abs(d) > EPSILON) {
+    return (plane.w - Vec3.dot(plane, orig)) / d
+  }
+  return Number.NaN
 }
 
 /**
@@ -230,9 +234,17 @@ export function rayIntersectsSphereAt(orig: IVec3, dir: IVec3, center: IVec3, ra
     return recycle.end(Number.NaN)
   }
   // Ray now found to intersect sphere, compute smallest t value of intersection
-  const result = -b - Math.sqrt(discr)
+  let result = -b - Math.sqrt(discr)
+  if (result > 0) {
+    return recycle.end(result)
+  }
+  result = -b + Math.sqrt(discr)
+  if (result > 0) {
+    return recycle.end(result)
+  }
+  return recycle.end(Number.NaN)
   // If t is negative, ray started inside sphere , so clamp to zero
-  return recycle.end(result < 0 ? 0 : result)
+  // return recycle.end(result < 0 ? 0 : result)
 }
 
 /**

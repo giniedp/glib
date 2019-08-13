@@ -188,7 +188,7 @@ export class TransformComponent implements OnUpdate {
    * @param angle - The rotation angle in rad
    */
   public rotateAxisAngle(axis: IVec3, angle: number): this {
-    this.rotation.concat(tempQuat.initAxisAngle(axis, angle))
+    this.rotation.preMultiply(tempQuat.initAxisAngle(axis, angle))
     this.dirty = true
     return this
   }
@@ -213,7 +213,7 @@ export class TransformComponent implements OnUpdate {
    * @param roll - The roll angle in rad
    */
   public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): this {
-    this.rotation.concat(tempQuat.initYawPitchRoll(yaw, pitch, roll))
+    this.rotation.preMultiply(tempQuat.initYawPitchRoll(yaw, pitch, roll))
     this.dirty = true
     return this
   }
@@ -489,7 +489,7 @@ export class TransformComponent implements OnUpdate {
   }
 
   public lookAt(v: IVec3, up?: IVec3): this {
-    this.rotation.initFromMatrix(tempMat.initLookAt(this.position, v, up || Vec3.Up))
+    this.rotation.initFromMat4(tempMat.initLookAt(this.position, v, up || Vec3.Up))
     this.dirty = true
     return this
   }

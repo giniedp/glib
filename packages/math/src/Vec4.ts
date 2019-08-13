@@ -117,23 +117,41 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
   /**
    * Creates a new instance.
+   *
    * @param x - The x component
    * @param y - The y component
    * @param z - The z component
    * @param w - The w component
-   * @returns A new instance.
    */
   public static create(x?: number, y?: number, z?: number, w?: number): Vec4 {
     return new Vec4(x, y, z, w)
   }
 
   /**
-   * Initializes the components of this value with given values.
+   * Initializes the given vector
+   *
+   * @param out - the vector to initialize
+   * @param x - The x component
+   * @param y - The y component
+   * @param z - The z component
+   * @param w - The w component
+   */
+  public static init<T>(out: T, x: number, y: number, z: number, w: number): T & IVec4
+  public static init(out: IVec4, x: number, y: number, z: number, w: number): IVec4 {
+    out.x = x
+    out.y = y
+    out.z = z
+    out.w = w
+    return out
+  }
+
+  /**
+   * Initializes the components of this instance with given values.
+   *
    * @param x - value for X component
    * @param y - value for Y component
    * @param z - value for Z component
    * @param w - value for W component
-   * @returns `this` instance for chaining
    */
   public init(x: number, y: number, z: number, w: number): this {
     this.x = x
@@ -144,16 +162,94 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Creates a new vector with random values in range [0..1]
+   *
+   * @returns A new vector.
+   */
+  public static createRandom(): Vec4 {
+    return new Vec4(Math.random(), Math.random(), Math.random(), Math.random())
+  }
+
+  /**
+   * Initializes the given vector with random values in range [0..1]
+   *
+   * @param out - the vector to initialize
+   */
+  public static initRandom<T>(out: T): T & IVec4
+  public static initRandom(out: IVec4): IVec4 {
+    out.x = Math.random()
+    out.y = Math.random()
+    out.z = Math.random()
+    out.w = Math.random()
+    return out
+  }
+
+  /**
+   * Initializes the components of this vector with random values in range [0..1]
+   */
+  public initRandom(): this {
+    this.x = Math.random()
+    this.y = Math.random()
+    this.z = Math.random()
+    this.w = Math.random()
+    return this
+  }
+
+  /**
+   * Creates a new vector with random values in range [-1..1]
+   *
+   * @returns A new vector.
+   */
+  public static createRandomUnit(): Vec4 {
+    return new Vec4(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
+  }
+
+  /**
+   * Initializes the given vector with random values in range [-1..1]
+   *
+   * @param out - the vector to initialize
+   */
+  public static initRandomUnit<T>(out: T): T & IVec4
+  public static initRandomUnit(out: IVec4): IVec4 {
+    out.x = Math.random() * 2 - 1
+    out.y = Math.random() * 2 - 1
+    out.z = Math.random() * 2 - 1
+    out.w = Math.random() * 2 - 1
+    return out
+  }
+
+  /**
+   * Initializes the components of this vector with random values in range [-1..1]
+   */
+  public initRandomUnit(): this {
+    this.x = Math.random() * 2 - 1
+    this.y = Math.random() * 2 - 1
+    this.z = Math.random() * 2 - 1
+    this.w = Math.random() * 2 - 1
+    return this
+  }
+
+  /**
    * Creates a new instance with all components set to 0.
-   * @returns A new instance.
    */
   public static createZero(): Vec4 {
     return new Vec4(0, 0, 0, 0)
   }
 
   /**
+   * Initializes components of given instance to `0`
+   */
+  public static initZero<T>(out: T): T & IVec4
+  public static initZero(out: IVec4): IVec4 {
+    out.x = 0
+    out.y = 0
+    out.z = 0
+    out.w = 0
+    return out
+  }
+
+  /**
    * Resets all components to zero
-   * @returns `this` instance for chaining
    */
   public initZero(): this {
     this.x = 0
@@ -172,8 +268,19 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
+   * Initializes components of given instance to `1`
+   */
+  public static initOne<T>(out: T): T & IVec4
+  public static initOne(out: IVec4): IVec4 {
+    out.x = 1
+    out.y = 1
+    out.z = 1
+    out.w = 1
+    return out
+  }
+
+  /**
    * Resets all components to 1
-   * @returns `this` instance for chaining
    */
   public initOne(): this {
     this.x = 1
@@ -186,7 +293,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Creates a new instance by taking the components from the given value.
    * @param other - The value to read from
-   * @returns `this` instance for chaining
    */
   public static createFrom(other: IVec4): Vec4 {
     return new Vec4(
@@ -200,7 +306,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Initializes the components of this value by taking the components from the given value.
    * @param other - The value to read from
-   * @returns `this` instance for chaining
    */
   public initFrom(other: IVec4): this {
     this.x = other.x
@@ -215,7 +320,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param buffer - The array to read from
    * @param offset - The zero based index at which start reading the values
    * @param stride - The offset between each component in buffer
-   * @returns `this` instance for chaining
    */
   public static createFromArray(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): Vec4 {
     return new Vec4(
@@ -231,7 +335,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param buffer - The array to read from
    * @param offset - The zero based index at which start reading the values
    * @param stride - The offset between each component in buffer
-   * @returns `this` instance for chaining
    */
   public initFromArray(buffer: ArrayLike<number>, offset: number = 0, stride: number = 1): this {
     this.x = buffer[offset]
@@ -242,10 +345,16 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Creates a copy of this value
-   * @returns The cloned vector
+   * Creates a copy of this instance
+   *
+   * @returns a new instance
    */
   public clone(): Vec4
+  /**
+   * Copies this into the given `out` parameter
+   *
+   * @returns the given `out` parameter
+   */
   public clone<T>(out: T): T & IVec4
   public clone(out?: IVec4): IVec4 {
     out = out || new Vec4()
@@ -257,20 +366,24 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Copies the `src` value to the `dst` value
+   * Creates a copy of the given `src` value
    *
-   *
-   * @returns the `dst` value.
+   * @returns a new instance
    */
   public static clone(src: IVec4): Vec4
-  public static clone<T>(src: IVec4, dst: T): T & IVec4
-  public static clone(src: IVec4, dst?: IVec4): IVec4 {
-    dst = dst || new Vec4()
-    dst.x = src.x
-    dst.y = src.y
-    dst.z = src.z
-    dst.w = src.w
-    return dst
+  /**
+   * Creates a copy of the given `src` value but writes into `out`
+   *
+   * @returns the given `out` parameter
+   */
+  public static clone<T>(src: IVec4, out: T): T & IVec4
+  public static clone(src: IVec4, out?: IVec4): IVec4 {
+    out = out || new Vec4()
+    out.x = src.x
+    out.y = src.y
+    out.z = src.z
+    out.w = src.w
+    return out
   }
 
   /**
@@ -470,7 +583,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
   /**
    * Normalizes `this` value.
-   * @returns `this` instance for chaining
    */
   public normalize(): this {
     const x = this.x
@@ -504,7 +616,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
   /**
    * Inverts this value.
-   * @returns `this` instance for chaining
    */
   public invert(): this {
     this.x = 1.0 / this.x
@@ -533,7 +644,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
   /**
    * Negates the components of `this` vector. Applies the result to `this`
-   * @returns `this` instance for chaining
    */
   public negate(): this {
     this.x = -this.x
@@ -564,7 +674,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this += other`
    * @param other - The value to add
-   * @returns `this` instance for chaining
    */
   public add(other: IVec4): this {
     this.x += other.x
@@ -595,7 +704,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this += scalar`
    * @param scalar - The value to add
-   * @returns `this` instance for chaining
    */
   public addScalar(scalar: number): this {
     this.x += scalar
@@ -623,7 +731,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this += other * scale`
    * @param other - The value to add
-   * @returns `this` instance for chaining
    */
   public addScaled(other: IVec4, scale: number): this {
     this.x += other.x * scale
@@ -654,7 +761,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this -= other`
    * @param other - The value to subtract
-   * @returns `this` instance for chaining
    */
   public subtract(other: IVec4): this {
     this.x -= other.x
@@ -685,7 +791,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this -= scalar`
    * @param scalar - The value to subtract
-   * @returns `this` instance for chaining
    */
   public subtractScalar(scalar: number): this {
     this.x -= scalar
@@ -699,7 +804,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Performs the calculation `this -= other * scale`
    * @param other - The value to subtract
    * @param scale - The value to multoply to `other`
-   * @returns `this` instance for chaining
    */
   public subtractScaled(other: IVec4, scale: number): this {
     this.x -= other.x * scale
@@ -730,7 +834,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this *= other`
    * @param other - The value to multiply
-   * @returns `this` instance for chaining
    */
   public multiply(other: IVec4): this {
     this.x *= other.x
@@ -761,7 +864,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this *= scalar`
    * @param scalar - The value to multiply
-   * @returns `this` instance for chaining
    */
   public multiplyScalar(scalar: number): this {
     this.x *= scalar
@@ -792,7 +894,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this /= other`
    * @param other - The value to divide
-   * @returns `this` instance for chaining
    */
   public divide(other: IVec4): this {
     this.x /= other.x
@@ -824,7 +925,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Performs the calculation `this *= (1 / scalar)`
    * @param scalar - The value to divide
-   * @returns `this` instance for chaining
    */
   public divideScalar(scalar: number): this {
     scalar = 1.0 / scalar
@@ -858,7 +958,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Performs the calculation `this = this * a + b`
    * @param a - The value to multiply.
    * @param b - The value to add on top of the multiplication.
-   * @returns `this` instance for chaining
    */
   public multiplyAdd(a: IVec4, b: IVec4): this {
     this.x = this.x * a.x + b.x
@@ -903,9 +1002,10 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Transforms `this` with the given quaternion. The `w` component of `this` keeps untouched.
+   * Transforms `this` with the given quaternion.
    *
-   * @returns `this` instance for chaining
+   * @remarks
+   * Transforms this vector but keeps `w` component unchanged
    */
   public transformByQuat(quat: IVec4): this {
     const x = quat.x
@@ -940,11 +1040,12 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Transforms `this` with the given matrix.
+   * Transforms `this` with the given 4x4 matrix.
    *
-   * @returns `this` instance for chaining
+   * @remarks
+   * Transforms this vector but does not perform a division by `w`
    */
-  public transformByMat4(mat: { m: number[]|Float64Array|Float32Array }): this {
+  public transformByMat4(mat: { m: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -958,11 +1059,12 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Transforms `this` with the given matrix. The `w` component of `this` is set to 1.
+   * Transforms `this` with the given 3x3 matrix.
    *
-   * @returns `this` instance for chaining
+   * @remarks
+   * Transforms this vector but keeps `w` component unchanged.
    */
-  public transformByMat3(mat: { m: number[]|Float64Array|Float32Array }): this {
+  public transformByMat3(mat: { m: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const z = this.z
@@ -970,16 +1072,16 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     this.x = x * d[0] + y * d[3] + z * d[6]
     this.y = x * d[1] + y * d[4] + z * d[7]
     this.z = x * d[2] + y * d[5] + z * d[8]
-    this.w = 1
     return this
   }
 
   /**
-   * Transforms `this` with the given matrix. The `z` and `w` components of `this` keep untouched.
+   * Transforms `this` with the given 2x2 matrix.
    *
-   * @returns `this` instance for chaining
+   * @remarks
+   * Transforms this vector but keeps `z` and `w` components unchanged.
    */
-  public transformByMat2(mat: { m: number[]|Float64Array|Float32Array }): this {
+  public transformByMat2(mat: { m: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const d = mat.m
@@ -1213,39 +1315,42 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
 
   /**
    * Tries to converts the given data to a vector
-   *
-   *
    */
   public static convert(data: number | number[] | IVec2 | IVec3 | IVec4): Vec4 {
     if (typeof data === 'number') {
       return new Vec4(data, data, data, data)
     }
     if (Array.isArray(data)) {
-      return new Vec4(
-        data[0] || 0,
-        data[1] || 0,
-        data[2] || 0,
-        data[3] || 0,
-      )
+      return new Vec4(data[0], data[1], data[2], data[3])
     }
-    return new Vec4(
-      data.x || 0,
-      data.y || 0,
-      data['z'] || 0,
-      data['w'] || 0,
-    )
+    return new Vec4(data.x, data.y, data['z'], data['w'])
   }
 
+  /**
+   * Formats this into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public format(fractionDigits: number = 5): string {
     return Vec4.format(this, fractionDigits)
   }
 
+  /**
+   * Formats given value into a readable string
+   *
+   * @remarks
+   * Mainly meant for debugging. Do not use this for serialization.
+   *
+   * @param vec - The value to format
+   * @param fractionDigits - Number of digits after decimal point
+   */
   public static format(vec: IVec4, fractionDigits: number = 5): string {
-    return [
-      vec.x.toFixed(fractionDigits),
-      vec.y.toFixed(fractionDigits),
-      vec.z.toFixed(fractionDigits),
-      vec.w.toFixed(fractionDigits),
-    ].join(',')
+    return vec.x.toFixed(fractionDigits) +
+      ',' + vec.y.toFixed(fractionDigits) +
+      ',' + vec.z.toFixed(fractionDigits) +
+      ',' + vec.w.toFixed(fractionDigits)
   }
 }

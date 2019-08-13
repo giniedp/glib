@@ -102,182 +102,156 @@ describe('Mat4', () => {
   })
 
   describe('initialization', () => {
-    describe('#new', () => {
-      it ('sets all components to 0', () => {
-        expectComponents(new Mat4(), [
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-        ])
-      })
+    it ('#constructor', () => {
+      expectComponents(new Mat4(), [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+      ])
     })
 
-    describe('#init', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat4().init(
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ), [
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ])
-      })
+    it ('#init', () => {
+      expectComponents(new Mat4().init(
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ), [
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ])
     })
 
-    describe('.create', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat4.create(
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ), [
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ])
-      })
+    it ('.create', () => {
+      expectComponents(Mat4.create(
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ), [
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ])
     })
 
-    describe('#initZero', () => {
-      it ('sets all components to 0', () => {
-        expectComponents(Mat4.createWith(1).initZero(), [
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-        ])
-      })
+    it ('#initZero', () => {
+      expectComponents(Mat4.createWith(1).initZero(), [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+      ])
     })
 
-    describe('.createZero', () => {
-      it ('sets all components to 0', () => {
-        expectComponents(Mat4.createZero(), [
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-        ])
-        expect(Mat4.createZero()).not.toBe(Mat4.createZero())
-      })
+    it ('.createZero', () => {
+      expectComponents(Mat4.createZero(), [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+      ])
+      expect(Mat4.createZero()).not.toBe(Mat4.createZero())
     })
 
-    describe('#initRowMajor', () => {
-      it ('reads arguments in row major layout', () => {
-        expectComponents(new Mat4().initRowMajor(
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ), [
-          1, 5, 9, 13,
-          2, 6, 10, 14,
-          3, 7, 11, 15,
-          4, 8, 12, 16,
-        ])
-      })
+    it ('#initRowMajor', () => {
+      expectComponents(new Mat4().initRowMajor(
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ), [
+        1, 5, 9, 13,
+        2, 6, 10, 14,
+        3, 7, 11, 15,
+        4, 8, 12, 16,
+      ])
     })
 
-    describe('.createRowMajor', () => {
-      it ('reads arguments in row major layout', () => {
-        expectComponents(Mat4.createRowMajor(
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ), [
-          1, 5, 9, 13,
-          2, 6, 10, 14,
-          3, 7, 11, 15,
-          4, 8, 12, 16,
-        ])
-      })
+    it ('.createRowMajor', () => {
+      expectComponents(Mat4.createRowMajor(
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ), [
+        1, 5, 9, 13,
+        2, 6, 10, 14,
+        3, 7, 11, 15,
+        4, 8, 12, 16,
+      ])
     })
 
-    describe('#initWith', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat4().initWith(1), [
-          1, 1, 1, 1,
-          1, 1, 1, 1,
-          1, 1, 1, 1,
-          1, 1, 1, 1,
-        ])
-      })
+    it ('#initWith', () => {
+      expectComponents(new Mat4().initWith(1), [
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+      ])
     })
 
-    describe('.createWith', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat4.createWith(1), [
-          1, 1, 1, 1,
-          1, 1, 1, 1,
-          1, 1, 1, 1,
-          1, 1, 1, 1,
-        ])
-      })
+    it ('.createWith', () => {
+      expectComponents(Mat4.createWith(1), [
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+      ])
     })
 
-    describe('#initIdentity', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat4().initWith(1).initIdentity(), [
-          1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          0, 0, 0, 1,
-        ])
-      })
+    it ('#initIdentity', () => {
+      expectComponents(new Mat4().initWith(1).initIdentity(), [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+      ])
     })
 
-    describe('.createIdentity', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat4.createIdentity(), [
-          1, 0, 0, 0,
-          0, 1, 0, 0,
-          0, 0, 1, 0,
-          0, 0, 0, 1,
-        ])
-        expect(Mat4.createIdentity()).not.toBe(Mat4.createIdentity())
-      })
+    it ('.createIdentity', () => {
+      expectComponents(Mat4.createIdentity(), [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+      ])
+      expect(Mat4.createIdentity()).not.toBe(Mat4.createIdentity())
     })
 
-    describe('#initFrom', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat4().initFrom(new Mat4().init(
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        )), [
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ])
-      })
+    it ('#initFrom', () => {
+      expectComponents(new Mat4().initFrom(new Mat4().init(
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      )), [
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ])
     })
 
-    describe('.createFrom', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat4.createFrom(new Mat4().init(
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        )), [
-          1, 2, 3, 4,
-          5, 6, 7, 8,
-          9, 10, 11, 12,
-          13, 14, 15, 16,
-        ])
-      })
+    it ('.createFrom', () => {
+      expectComponents(Mat4.createFrom(new Mat4().init(
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      )), [
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+        13, 14, 15, 16,
+      ])
     })
 
-    describe('#initFromBuffer', () => {
+    describe('#initFromArray', () => {
       it ('sets all components', () => {
         expectComponents(new Mat4().initFromArray([
           1, 2, 3, 4,
@@ -308,7 +282,7 @@ describe('Mat4', () => {
       })
     })
 
-    describe('.createFromBuffer', () => {
+    describe('.createFromArray', () => {
       it ('sets all components', () => {
         expectComponents(Mat4.createFromArray([
           1, 2, 3, 4,
@@ -339,209 +313,169 @@ describe('Mat4', () => {
       })
     })
 
-    describe('#initFromQuaternion', () => {
-      it('creates rotation matrix', () => {
-        const angle = Math.PI * 0.5
-        expectEquality(
-          new Mat4().initFromQuat(Quat.createAxisAngle(Vec3.Right, angle)),
-          Mat4.createRotationX(angle),
-        )
-        expectEquality(
-          new Mat4().initFromQuat(Quat.createAxisAngle(Vec3.Up, angle)),
-          Mat4.createRotationY(angle),
-        )
-        expectEquality(
-          new Mat4().initFromQuat(Quat.createAxisAngle(Vec3.Backward, angle)),
-          Mat4.createRotationZ(angle),
-        )
-      })
+    it('#initFromQuaternion', () => {
+      const angle = Math.PI * 0.5
+      expectEquality(
+        new Mat4().initFromQuat(Quat.createAxisAngle(Vec3.Right, angle)),
+        Mat4.createRotationX(angle),
+      )
+      expectEquality(
+        new Mat4().initFromQuat(Quat.createAxisAngle(Vec3.Up, angle)),
+        Mat4.createRotationY(angle),
+      )
+      expectEquality(
+        new Mat4().initFromQuat(Quat.createAxisAngle(Vec3.Backward, angle)),
+        Mat4.createRotationZ(angle),
+      )
     })
 
-    describe('.createFromQuaternion', () => {
-      it('creates rotation matrix', () => {
-        const angle = Math.PI * 0.5
-        expectEquality(
-          Mat4.createFromQuat(Quat.createAxisAngle(Vec3.Right, angle)),
-          Mat4.createRotationX(angle),
-        )
-        expectEquality(
-          Mat4.createFromQuat(Quat.createAxisAngle(Vec3.Up, angle)),
-          Mat4.createRotationY(angle),
-        )
-        expectEquality(
-          Mat4.createFromQuat(Quat.createAxisAngle(Vec3.Backward, angle)),
-          Mat4.createRotationZ(angle),
-        )
-      })
+    it('.createFromQuaternion', () => {
+      const angle = Math.PI * 0.5
+      expectEquality(
+        Mat4.createFromQuat(Quat.createAxisAngle(Vec3.Right, angle)),
+        Mat4.createRotationX(angle),
+      )
+      expectEquality(
+        Mat4.createFromQuat(Quat.createAxisAngle(Vec3.Up, angle)),
+        Mat4.createRotationY(angle),
+      )
+      expectEquality(
+        Mat4.createFromQuat(Quat.createAxisAngle(Vec3.Backward, angle)),
+        Mat4.createRotationZ(angle),
+      )
     })
 
-    describe('#initAxisAngle', () => {
-      it('creates rotation matrix', () => {
-        const angle = Math.PI * 0.5
-        expectEquality(
-          new Mat4().initAxisAngleV(Vec3.Right, angle),
-          Mat4.createRotationX(angle),
-        )
-        expectEquality(
-          new Mat4().initAxisAngleV(Vec3.Up, angle),
-          Mat4.createRotationY(angle),
-        )
-        expectEquality(
-          new Mat4().initAxisAngleV(Vec3.Backward, angle),
-          Mat4.createRotationZ(angle),
-        )
-      })
+    it('#initAxisAngle', () => {
+      const angle = Math.PI * 0.5
+      expectEquality(
+        new Mat4().initAxisAngleV(Vec3.Right, angle),
+        Mat4.createRotationX(angle),
+      )
+      expectEquality(
+        new Mat4().initAxisAngleV(Vec3.Up, angle),
+        Mat4.createRotationY(angle),
+      )
+      expectEquality(
+        new Mat4().initAxisAngleV(Vec3.Backward, angle),
+        Mat4.createRotationZ(angle),
+      )
     })
 
-    describe('.createAxisAngle', () => {
-      it('creates rotation matrix', () => {
-        const angle = Math.PI * 0.5
-        expectEquality(
-          Mat4.createAxisAngleV(Vec3.Right, angle),
-          Mat4.createRotationX(angle),
-        )
-        expectEquality(
-          Mat4.createAxisAngleV(Vec3.Up, angle),
-          Mat4.createRotationY(angle),
-        )
-        expectEquality(
-          Mat4.createAxisAngleV(Vec3.Backward, angle),
-          Mat4.createRotationZ(angle),
-        )
-      })
+    it('.createAxisAngle', () => {
+      const angle = Math.PI * 0.5
+      expectEquality(
+        Mat4.createAxisAngleV(Vec3.Right, angle),
+        Mat4.createRotationX(angle),
+      )
+      expectEquality(
+        Mat4.createAxisAngleV(Vec3.Up, angle),
+        Mat4.createRotationY(angle),
+      )
+      expectEquality(
+        Mat4.createAxisAngleV(Vec3.Backward, angle),
+        Mat4.createRotationZ(angle),
+      )
     })
 
-    describe('#initYawPitchRoll', () => {
-      it('creates rotation matrix', () => {
-        const mat = new Mat4().initYawPitchRoll(Math.PI * 0.5, Math.PI * 0.5, Math.PI * 0.5)
-        const vec = Vec3.create(0, 0, -1)
-        const vec2 = mat.transformV3(vec)
-        expectVec3Components(vec2, [0, 1, 0])
-      })
+    it('#initYawPitchRoll', () => {
+      const mat = new Mat4().initYawPitchRoll(Math.PI * 0.5, Math.PI * 0.5, Math.PI * 0.5)
+      const vec = Vec3.create(0, 0, -1)
+      const vec2 = mat.transformV3(vec)
+      expectVec3Components(vec2, [0, 1, 0])
     })
 
-    describe('.createYawPitchRoll', () => {
-      it('creates rotation matrix', () => {
-        const mat = Mat4.createYawPitchRoll(Math.PI * 0.5, Math.PI * 0.5, Math.PI * 0.5)
-        const vec = Vec3.create(0, 0, -1)
-        const vec2 = mat.transformV3(vec)
-        expectVec3Components(vec2, [0, 1, 0])
-      })
+    it('.createYawPitchRoll', () => {
+      const mat = Mat4.createYawPitchRoll(Math.PI * 0.5, Math.PI * 0.5, Math.PI * 0.5)
+      const vec = Vec3.create(0, 0, -1)
+      const vec2 = mat.transformV3(vec)
+      expectVec3Components(vec2, [0, 1, 0])
     })
 
-    describe('#initRotationX', () => {
-      it('creates rotation matrix', () => {
-        expectVec3Components(new Mat4().initRotationX(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [1,  0, 0])
-        expectVec3Components(new Mat4().initRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0,  0, 1])
-        expectVec3Components(new Mat4().initRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [0, -1, 0])
-      })
+    it('#initRotationX', () => {
+      expectVec3Components(new Mat4().initRotationX(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [1,  0, 0])
+      expectVec3Components(new Mat4().initRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0,  0, 1])
+      expectVec3Components(new Mat4().initRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [0, -1, 0])
     })
 
-    describe('.createRotationX', () => {
-      it('creates rotation matrix', () => {
-        expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [1,  0, 0])
-        expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0,  0, 1])
-        expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [0, -1, 0])
-      })
+    it('.createRotationX', () => {
+      expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [1,  0, 0])
+      expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0,  0, 1])
+      expectVec3Components(Mat4.createRotationX(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [0, -1, 0])
     })
 
-    describe('#initRotationY', () => {
-      it('creates rotation matrix', () => {
-        expectVec3Components(new Mat4().initRotationY(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [0, 0, -1])
-        expectVec3Components(new Mat4().initRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0, 1,  0])
-        expectVec3Components(new Mat4().initRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [1, 0,  0])
-      })
+    it('#initRotationY', () => {
+      expectVec3Components(new Mat4().initRotationY(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [0, 0, -1])
+      expectVec3Components(new Mat4().initRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0, 1,  0])
+      expectVec3Components(new Mat4().initRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [1, 0,  0])
     })
 
-    describe('.createRotationY', () => {
-      it('creates rotation matrix', () => {
-        expectVec3Components(Mat4.createRotationY(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [0, 0, -1])
-        expectVec3Components(Mat4.createRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0, 1,  0])
-        expectVec3Components(Mat4.createRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [1, 0,  0])
-      })
+    it('.createRotationY', () => {
+      expectVec3Components(Mat4.createRotationY(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [0, 0, -1])
+      expectVec3Components(Mat4.createRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [0, 1,  0])
+      expectVec3Components(Mat4.createRotationY(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [1, 0,  0])
     })
 
-    describe('#initRotationZ', () => {
-      it('creates rotation matrix', () => {
-        expectVec3Components(new Mat4().initRotationZ(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [ 0, 1, 0])
-        expectVec3Components(new Mat4().initRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [-1, 0, 0])
-        expectVec3Components(new Mat4().initRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 1])
-      })
+    it('#initRotationZ', () => {
+      expectVec3Components(new Mat4().initRotationZ(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [ 0, 1, 0])
+      expectVec3Components(new Mat4().initRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [-1, 0, 0])
+      expectVec3Components(new Mat4().initRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 1])
     })
 
-    describe('.createRotationZ', () => {
-      it('creates rotation matrix', () => {
-        expectVec3Components(Mat4.createRotationZ(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [ 0, 1, 0])
-        expectVec3Components(Mat4.createRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [-1, 0, 0])
-        expectVec3Components(Mat4.createRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 1])
-      })
+    it('.createRotationZ', () => {
+      expectVec3Components(Mat4.createRotationZ(Math.PI * 0.5).transformV3(Vec3.create(1, 0, 0)), [ 0, 1, 0])
+      expectVec3Components(Mat4.createRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 1, 0)), [-1, 0, 0])
+      expectVec3Components(Mat4.createRotationZ(Math.PI * 0.5).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 1])
     })
 
-    describe('#initTranslation', () => {
-      it('creates translation matrix', () => {
-        expectVec3Components(new Mat4().initTranslation(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 2, 2, 3])
-        expectVec3Components(new Mat4().initTranslation(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 1, 3, 3])
-        expectVec3Components(new Mat4().initTranslation(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 1, 2, 4])
-      })
+    it('#initTranslation', () => {
+      expectVec3Components(new Mat4().initTranslation(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 2, 2, 3])
+      expectVec3Components(new Mat4().initTranslation(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 1, 3, 3])
+      expectVec3Components(new Mat4().initTranslation(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 1, 2, 4])
     })
 
-    describe('.createTranslation', () => {
-      it('creates translation matrix', () => {
-        expectVec3Components(Mat4.createTranslation(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 2, 2, 3])
-        expectVec3Components(Mat4.createTranslation(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 1, 3, 3])
-        expectVec3Components(Mat4.createTranslation(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 1, 2, 4])
-      })
+    it('.createTranslation', () => {
+      expectVec3Components(Mat4.createTranslation(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 2, 2, 3])
+      expectVec3Components(Mat4.createTranslation(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 1, 3, 3])
+      expectVec3Components(Mat4.createTranslation(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 1, 2, 4])
     })
 
-    describe('#initScale', () => {
-      it('creates scale matrix', () => {
-        expectVec3Components(new Mat4().initScale(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 1, 0, 0])
-        expectVec3Components(new Mat4().initScale(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 0, 2, 0])
-        expectVec3Components(new Mat4().initScale(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 3])
-      })
+    it('#initScale', () => {
+      expectVec3Components(new Mat4().initScale(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 1, 0, 0])
+      expectVec3Components(new Mat4().initScale(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 0, 2, 0])
+      expectVec3Components(new Mat4().initScale(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 3])
     })
 
-    describe('.createScale', () => {
-      it('creates scale matrix', () => {
-        expectVec3Components(Mat4.createScale(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 1, 0, 0])
-        expectVec3Components(Mat4.createScale(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 0, 2, 0])
-        expectVec3Components(Mat4.createScale(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 3])
-      })
+    it('.createScale', () => {
+      expectVec3Components(Mat4.createScale(1, 2, 3).transformV3(Vec3.create(1, 0, 0)), [ 1, 0, 0])
+      expectVec3Components(Mat4.createScale(1, 2, 3).transformV3(Vec3.create(0, 1, 0)), [ 0, 2, 0])
+      expectVec3Components(Mat4.createScale(1, 2, 3).transformV3(Vec3.create(0, 0, 1)), [ 0, 0, 3])
     })
 
-    describe('#initLookAt', () => {
-      it('creates rotation matrix', () => {
-        expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Right, Vec3.Up), Mat4.createRotationY(-Math.PI * 0.5))
-        expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Left, Vec3.Up), Mat4.createRotationY(Math.PI * 0.5))
-        expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Forward, Vec3.Up), Mat4.createRotationY(0))
-        expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Backward, Vec3.Up), Mat4.createRotationY(Math.PI))
-      })
+    it('#initLookAt', () => {
+      expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Right, Vec3.Up), Mat4.createRotationY(-Math.PI * 0.5))
+      expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Left, Vec3.Up), Mat4.createRotationY(Math.PI * 0.5))
+      expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Forward, Vec3.Up), Mat4.createRotationY(0))
+      expectEquality(new Mat4().initLookAt(Vec3.Zero, Vec3.Backward, Vec3.Up), Mat4.createRotationY(Math.PI))
     })
 
-    describe('.createLookAt', () => {
-      it('creates rotation matrix', () => {
-        expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Right, Vec3.Up), Mat4.createRotationY(-Math.PI * 0.5))
-        expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Left, Vec3.Up), Mat4.createRotationY(Math.PI * 0.5))
-        expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Forward, Vec3.Up), Mat4.createRotationY(0))
-        expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Backward, Vec3.Up), Mat4.createRotationY(Math.PI))
-      })
+    it('.createLookAt', () => {
+      expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Right, Vec3.Up), Mat4.createRotationY(-Math.PI * 0.5))
+      expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Left, Vec3.Up), Mat4.createRotationY(Math.PI * 0.5))
+      expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Forward, Vec3.Up), Mat4.createRotationY(0))
+      expectEquality(Mat4.createLookAt(Vec3.Zero, Vec3.Backward, Vec3.Up), Mat4.createRotationY(Math.PI))
     })
 
-    describe('#initWorld', () => {
-      it('creates affine matrix', () => {
-        expectEquality(
-          new Mat4().initWorld(Vec3.create(1, 1, 1), Vec3.create(-1, -1, -1), Vec3.Up),
-          Mat4.createLookAt(Vec3.create(1, 1, 1), Vec3.Zero, Vec3.Up),
-        )
-      })
+    it('#initWorld', () => {
+      expectEquality(
+        new Mat4().initWorld(Vec3.create(1, 1, 1), Vec3.create(-1, -1, -1), Vec3.Up),
+        Mat4.createLookAt(Vec3.create(1, 1, 1), Vec3.Zero, Vec3.Up),
+      )
     })
-    describe('.createWorld', () => {
-      it('creates affine matrix', () => {
-        expectEquality(
-          Mat4.createWorld(Vec3.create(1, 1, 1), Vec3.create(-1, -1, -1), Vec3.Up),
-          Mat4.createLookAt(Vec3.create(1, 1, 1), Vec3.Zero, Vec3.Up),
-        )
-      })
+    it('.createWorld', () => {
+      expectEquality(
+        Mat4.createWorld(Vec3.create(1, 1, 1), Vec3.create(-1, -1, -1), Vec3.Up),
+        Mat4.createLookAt(Vec3.create(1, 1, 1), Vec3.Zero, Vec3.Up),
+      )
     })
 
     describe('#initPerspectiveFieldOfView', () => {
@@ -1098,31 +1032,98 @@ describe('Mat4', () => {
   })
 
   describe('#rotateX', () => {
-    it ('rotates a matrix', () => {
+    it ('#rotateX', () => {
       const m = Mat4.createTranslation(1, 2, 3)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateX(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 0, 1])
       expectVec3Components(m.getBackward(), [0, -1, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateX(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, -1, 0])
       expectVec3Components(m.getBackward(), [0, 0, -1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateX(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 0, -1])
       expectVec3Components(m.getBackward(), [0, 1, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateX(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+
+    it ('post rotates (in local space)', () => {
+      const m = Mat4.createWorld({ x: 1, y: 2, z: 3}, Vec3.Left, Vec3.Up)
+      expectVec3Components(m.getRight(),    [0, 0, -1])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [1, 0, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.rotateX(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [0, 0, -1])
+      expectVec3Components(m.getUp(),       [1, 0, 0])
+      expectVec3Components(m.getBackward(), [0, -1, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+  })
+
+  describe('#preRotateX', () => {
+    it ('#preRotateX', () => {
+      const m = Mat4.createTranslation(1, 2, 3)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.preRotateX(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 0, 1])
+      expectVec3Components(m.getBackward(), [0, -1, 0])
+      expectVec3Components(m.getTranslation(), [1, -3, 2])
+
+      m.preRotateX(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, -1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, -1])
+      expectVec3Components(m.getTranslation(), [1, -2, -3])
+
+      m.preRotateX(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 0, -1])
+      expectVec3Components(m.getBackward(), [0, 1, 0])
+      expectVec3Components(m.getTranslation(), [1, 3, -2])
+
+      m.preRotateX(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+
+    it ('pre rotates (in global space)', () => {
+      const m = Mat4.createWorld({ x: 1, y: 2, z: 3}, Vec3.Left, Vec3.Up)
+      expectVec3Components(m.getRight(),    [0, 0, -1])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [1, 0, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.preRotateX(Math.PI * 0.5)
+      // expectVec3Components(m.getRight(),    [0, 0, -1])
+      // expectVec3Components(m.getUp(),       [1, 0, 0])
+      // expectVec3Components(m.getBackward(), [0, -1, 0])
+      expectVec3Components(m.getTranslation(), [1, -3, 2])
     })
   })
 
@@ -1132,26 +1133,93 @@ describe('Mat4', () => {
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateY(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [0, 0, -1])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [1, 0, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateY(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [-1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, -1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateY(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [0, 0, 1])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [-1, 0, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateY(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+
+    it ('post rotates (in local space)', () => {
+      const m = Mat4.createWorld({ x: 1, y: 2, z: 3}, Vec3.Left, Vec3.Up)
+      expectVec3Components(m.getRight(),    [0, 0, -1])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [1, 0, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.rotateY(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [-1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, -1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+  })
+
+  describe('#preRotateY', () => {
+    it ('rotates a matrix', () => {
+      const m = Mat4.createTranslation(1, 2, 3)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.preRotateY(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [0, 0, -1])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [1, 0, 0])
+      expectVec3Components(m.getTranslation(), [3, 2, -1])
+
+      m.preRotateY(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [-1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, -1])
+      expectVec3Components(m.getTranslation(), [-1, 2, -3])
+
+      m.preRotateY(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [0, 0, 1])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [-1, 0, 0])
+      expectVec3Components(m.getTranslation(), [-3, 2, 1])
+
+      m.preRotateY(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+
+    it ('pre rotates (in global space)', () => {
+      const m = Mat4.createWorld({ x: 1, y: 2, z: 3}, Vec3.Left, Vec3.Up)
+      expectVec3Components(m.getRight(),    [0, 0, -1])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [1, 0, 0])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.preRotateY(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [-1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, -1])
+      expectVec3Components(m.getTranslation(), [3, 2, -1])
     })
   })
 
@@ -1161,26 +1229,65 @@ describe('Mat4', () => {
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateZ(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [0, 1, 0])
       expectVec3Components(m.getUp(),       [-1, 0, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateZ(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [-1, 0, 0])
       expectVec3Components(m.getUp(),       [0, -1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateZ(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [0, -1, 0])
       expectVec3Components(m.getUp(),       [1, 0, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
 
       m.rotateZ(Math.PI * 0.5)
       expectVec3Components(m.getRight(),    [1, 0, 0])
       expectVec3Components(m.getUp(),       [0, 1, 0])
       expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+    })
+  })
+
+  describe('#preRotateZ', () => {
+    it ('rotates a matrix', () => {
+      const m = Mat4.createTranslation(1, 2, 3)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
+
+      m.preRotateZ(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [0, 1, 0])
+      expectVec3Components(m.getUp(),       [-1, 0, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [-2, 1, 3])
+
+      m.preRotateZ(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [-1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, -1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [-1, -2, 3])
+
+      m.preRotateZ(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [0, -1, 0])
+      expectVec3Components(m.getUp(),       [1, 0, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [2, -1, 3])
+
+      m.preRotateZ(Math.PI * 0.5)
+      expectVec3Components(m.getRight(),    [1, 0, 0])
+      expectVec3Components(m.getUp(),       [0, 1, 0])
+      expectVec3Components(m.getBackward(), [0, 0, 1])
+      expectVec3Components(m.getTranslation(), [1, 2, 3])
     })
   })
 

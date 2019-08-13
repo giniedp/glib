@@ -1,7 +1,6 @@
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
-const keys = ['x', 'y', 'z', 'w']
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z', 3: 'w',
   x: 'x', y: 'y', z: 'z', w: 'w',
@@ -47,7 +46,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
   /**
    * Sets the X component
    */
-  public setX(value: number): Plane {
+  public setX(value: number): this {
     this.x = value
     return this
   }
@@ -55,7 +54,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
   /**
    * Sets the Y component
    */
-  public setY(value: number): Plane {
+  public setY(value: number): this {
     this.y = value
     return this
   }
@@ -63,7 +62,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
   /**
    * Sets the Z component
    */
-  public setZ(value: number): Plane {
+  public setZ(value: number): this {
     this.z = value
     return this
   }
@@ -71,7 +70,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
   /**
    * Sets the W component
    */
-  public setW(value: number): Plane {
+  public setW(value: number): this {
     this.w = value
     return this
   }
@@ -79,7 +78,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, value: number): Plane {
+  public set(key: number|string, value: number): this {
     this[keyLookup[key]] = value
     return this
   }
@@ -94,7 +93,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * Gets the xyz components
    * @param out - The value to write to
    */
-  public getNormal<T extends IVec3 = Vec3>(out?: T|Vec3): T|Vec3 {
+  public getNormal(): Vec3
+  public getNormal<T>(out?: T): T & IVec3
+  public getNormal(out?: IVec3): IVec3 {
     out = out || new Vec3()
     out.x = this.x
     out.y = this.y
@@ -210,7 +211,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * Creates a copy of this vector
    * @returns The cloned vector
    */
-  public clone<T extends IVec4 = Plane>(out?: T|Plane): T|Plane {
+  public clone(): Plane
+  public clone<T>(out?: T): T & Plane
+  public clone(out?: IVec4): IVec4 {
     out = out || new Plane()
     out.x = this.x
     out.y = this.y
@@ -221,7 +224,6 @@ export class Plane implements IVec2, IVec3, IVec4 {
 
   /**
    * Copies the source vector to the destination vector
-   *
    *
    * @returns the destination vector.
    */
@@ -299,44 +301,6 @@ export class Plane implements IVec2, IVec3, IVec4 {
    */
   public static dot(a: IVec4, b: IVec4): number {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
-  }
-
-  /**
-   * Calculates the dot product with the `other` vector
-   *
-   * @returns The dot product.
-   */
-  public dotCoordinate(other: IVec4): number {
-    return this.x * other.x + this.y * other.y + this.z * other.z + this.w
-  }
-
-  /**
-   * Calculates the dot product with the given vector
-   *
-   *
-   * @returns The dot product.
-   */
-  public static dotCoordinate(plane: IVec4, b: IVec3): number {
-    return plane.x * b.x + plane.y * b.y + plane.z * b.z + plane.w
-  }
-
-  /**
-   * Calculates the dot product with the `other` vector
-   *
-   * @returns The dot product.
-   */
-  public dotNormal(other: IVec3): number {
-    return this.x * other.x + this.y * other.y + this.z * other.z
-  }
-
-  /**
-   * Calculates the dot product with the given vector
-   *
-   *
-   * @returns The dot product.
-   */
-  public static dotNormal(plane: IVec4, b: IVec3): number {
-    return plane.x * b.x + plane.y * b.y + plane.z * b.z
   }
 
   /**

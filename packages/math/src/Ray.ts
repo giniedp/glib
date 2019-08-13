@@ -19,26 +19,33 @@ import { Vec3 } from './Vec3'
  * @public
  */
 export class Ray {
-  public position: IVec3
-  public direction: IVec3
+  /**
+   * The ray origin
+   */
+  public readonly position: Vec3
+  /**
+   * The ray direction
+   */
+  public readonly direction: Vec3
 
   /**
    * Constructs a new instance of {@link Ray}
-   *
    */
   constructor(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number) {
-    this.position = {
-      x: pX || 0,
-      y: pY || 0,
-      z: pZ || 0,
-    }
-    this.direction = {
-      x: dX || 0,
-      y: dY || 0,
-      z: dZ || 0,
-    }
+    this.position = Vec3.create(pX, pY, pZ)
+    this.direction = Vec3.create(dX, dY, dZ)
   }
 
+  /**
+   * Initializes the ray to given components
+   *
+   * @param pX - x component of ray origin
+   * @param pY - y component of ray origin
+   * @param pZ - z component of ray origin
+   * @param dX - x component of ray direction
+   * @param dY - y component of ray direction
+   * @param dZ - z component of ray direction
+   */
   public init(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number): Ray {
     this.position.x = pX || 0
     this.position.y = pY || 0
@@ -49,19 +56,27 @@ export class Ray {
     return this
   }
 
+  /**
+   * Creates a new ray from given components
+   *
+   * @param pX - x component of ray origin
+   * @param pY - y component of ray origin
+   * @param pZ - z component of ray origin
+   * @param dX - x component of ray direction
+   * @param dY - y component of ray direction
+   * @param dZ - z component of ray direction
+   */
   public static create(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number): Ray {
     return new Ray(pX, pY, pZ, dX, dY, dZ)
   }
 
-  public initFrom(ray: Ray): Ray {
-    return this.initFromVectors(ray.position, ray.direction)
-  }
-
-  public static createFrom(ray: Ray): Ray {
-    return this.createFromVectors(ray.position, ray.direction)
-  }
-
-  public initFromVectors(position: IVec3, direction: IVec3): Ray {
+  /**
+   * Initializes the ray by copying the given vectors
+   *
+   * @param position - the ray position to copy
+   * @param direction - the ray direction to copy
+   */
+  public initV(position: IVec3, direction: IVec3): Ray {
     this.position.x = position.x
     this.position.y = position.y
     this.position.z = position.z
@@ -71,7 +86,13 @@ export class Ray {
     return this
   }
 
-  public static createFromVectors(position: IVec3, direction: IVec3): Ray {
+  /**
+   * Creates a new ray by copying the given vectors
+   *
+   * @param position - the ray position to copy
+   * @param direction - the ray direction to copy
+   */
+  public static createV(position: IVec3, direction: IVec3): Ray {
     return new Ray(
       position.x,
       position.y,
@@ -82,38 +103,112 @@ export class Ray {
     )
   }
 
+  /**
+   * Initializes the ray by copying the given ray
+   *
+   * @param ray - the ray to copy
+   */
+  public initFrom(ray: Ray): Ray {
+    return this.initV(ray.position, ray.direction)
+  }
+
+  /**
+   * Creates a new ray by copying the given ray
+   *
+   * @param ray - the ray to copy
+   */
+  public static createFrom(ray: Ray): Ray {
+    return this.createV(ray.position, ray.direction)
+  }
+
+  /**
+   * Clones this ray
+   *
+   * @param out - where the result should be written to
+   * @returns - the given `out` parameter or a new vector
+   */
   public clone(out?: Ray): Ray {
     out = out || new Ray()
     return out.initFrom(this)
   }
 
-  public static clone(src: Ray, out?: Ray): Ray {
+  /**
+   * Clones the given ray
+   *
+   * @param ray - the ray to clone
+   * @param out - where the result should be written to
+   * @returns - the given `out` parameter or a new ray
+   */
+  public static clone(ray: Ray, out?: Ray): Ray {
     out = out || new Ray()
-    return out.initFrom(src)
+    return out.initFrom(ray)
   }
 
+  /**
+   * Compares this to another ray for component wise equality
+   *
+   * @param other - the ray to compare with
+   */
   public equals(other: Ray): boolean {
     return Vec3.equals(this.position, other.position) && Vec3.equals(this.direction, other.direction)
   }
 
+  /**
+   * Compares two rays for component wise equality
+   *
+   * @param a - the first ray to compare
+   * @param b - the second ray to compare
+   */
   public static equals(a: Ray, b: Ray): boolean {
     return Vec3.equals(a.position, b.position) && Vec3.equals(a.direction, b.direction)
   }
 
-  public positionAt<T extends IVec3>(distance: number, result?: T): T {
-    result = result || new Vec3() as any
-    result.x = this.direction.x * distance + this.position.x
-    result.y = this.direction.y * distance + this.position.y
-    result.z = this.direction.z * distance + this.position.z
-    return result
+  /**
+   * Calculates the position at given distance from ray origin along ray direction
+   *
+   * @param distance - the distance from ray origin
+   * @returns - a new Vector
+   */
+  public positionAt(distance: number): Vec3
+  /**
+   * Calculates the position at given distance from ray origin along ray direction
+   *
+   * @param distance - the distance from ray origin
+   * @param out - where the result should be written to
+   * @returns - the given `out` parameter or a new vector
+   */
+  public positionAt<T>(distance: number, out?: T): T & IVec3
+  public positionAt(distance: number, out?: IVec3): IVec3 {
+    out = out || new Vec3() as any
+    out.x = this.direction.x * distance + this.position.x
+    out.y = this.direction.y * distance + this.position.y
+    out.z = this.direction.z * distance + this.position.z
+    return out
   }
 
-  public static positionAt<T extends IVec3>(ray: Ray, distance: number, result?: T): T {
-    result = result || new Vec3() as any
-    result.x = ray.direction.x * distance + ray.position.x
-    result.y = ray.direction.y * distance + ray.position.y
-    result.z = ray.direction.z * distance + ray.position.z
-    return result
+  /**
+   * Calculates the position at given distance from ray origin along ray direction
+   *
+   * @param ray - the ray in question
+   * @param distance - the distance from ray origin
+   * @returns - a new Vector
+   */
+  public static positionAt(ray: Ray, distance: number): Vec3
+  /**
+   * Calculates the position at given distance from ray origin along ray direction
+   *
+   * @param ray - the ray in question
+   * @param distance - the distance from ray origin
+   * @param out - where the result should be written to
+   * @returns - the given `out` parameter or a new vector
+   */
+  public static positionAt<T>(ray: Ray, distance: number, out?: T): T & IVec3
+  public static positionAt(ray: Ray, distance: number, out?: IVec3): IVec3 {
+    out = out || new Vec3() as any
+    out.x = ray.direction.x * distance + ray.position.x
+    out.y = ray.direction.y * distance + ray.position.y
+    out.z = ray.direction.z * distance + ray.position.z
+    return out
   }
 
   public intersectsSphere(sphere: BoundingSphere): boolean {

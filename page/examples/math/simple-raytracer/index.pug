@@ -1,0 +1,18 @@
+---
+title: Simple Raytracer
+weight: 000
+group: math
+files:
+  - Readme.md
+  - scene.ts
+  - index.ts
+  - worker.ts
+  - index.html
+---
+extends /_layouts/_example
+block append script
+  script(type='text/javascript' src='./index.js')
+block style
+  style.
+    body { margin: 0; position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; }
+    #tweak-ui { position: fixed; top:0; right: 0; }

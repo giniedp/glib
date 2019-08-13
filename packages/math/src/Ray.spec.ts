@@ -56,15 +56,15 @@ describe('Ray', () => {
 
   describe('#initFromVectors', () => {
     it ('takes components from other ray', () => {
-      expectVec3Components(new Ray().initFromVectors(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
-      expectVec3Components(new Ray().initFromVectors(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
+      expectVec3Components(new Ray().initV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
+      expectVec3Components(new Ray().initV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
     })
   })
 
   describe('.createFromVectors', () => {
     it ('takes components from other ray', () => {
-      expectVec3Components(Ray.createFromVectors(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
-      expectVec3Components(Ray.createFromVectors(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
+      expectVec3Components(Ray.createV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
+      expectVec3Components(Ray.createV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
     })
   })
 
