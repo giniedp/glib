@@ -54,7 +54,7 @@ function loadModel(url: string) {
     model = result
     if (model) {
       scale = 1 / model.boundingSphere.radius
-      console.log(model)
+      console.log(model, scale)
     }
   }).catch((e) => {
     model = null
@@ -89,9 +89,10 @@ loop((time, dt) => {
 
   // Update runtime variables
   world
-    .initScaleUniform(scale)
-    .rotateY(gameTime / 4000)
+    .initIdentity()
+    .scaleUniform(scale)
     .translate(-model.boundingSphere.center.x, -model.boundingSphere.center.y, -model.boundingSphere.center.z)
+    .rotateY(gameTime / 4000)
 
   cam.initLookAt(
     { x: 0, y: controls.offset, z: controls.distance },

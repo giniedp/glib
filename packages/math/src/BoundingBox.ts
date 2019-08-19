@@ -1,14 +1,15 @@
 import { BoundingFrustum } from './BoundingFrustum'
 import { BoundingSphere } from './BoundingSphere'
 import {
-  boxBoxIntersection,
-  boxFrustumIntersection,
+  boxContainsBox,
+  boxContainsFrustum,
+  boxContainsSphere,
   boxIntersectBox,
   boxIntersectSphere,
   boxIntersectsPlane,
   boxIntersectsPoint,
-  boxSphereIntersection,
   rayIntersectsBox,
+  ContainmentType,
 } from './Collision'
 
 import { Ray } from './Ray'
@@ -116,7 +117,7 @@ export class BoundingBox {
    * @param min - the min point
    * @param max - the max point
    */
-  public static createFromMinMax(min: IVec3, max: IVec3): BoundingBox {
+  public static createFromV(min: IVec3, max: IVec3): BoundingBox {
     return new BoundingBox(
       min.x,
       min.y,
@@ -175,14 +176,40 @@ export class BoundingBox {
   }
 
   /**
+   * Creates a new instance by deserializing an instance from array
+   *
+   * @param array - the array containing a serialized instance
+   * @param offset - offset at which to start reading in array. Default is `0`
+   */
+  public static createFromArray(array: ArrayLike<number>, offset?: number): BoundingBox {
+    return new BoundingBox().initFromArray(array, offset)
+  }
+
+  /**
+   * Initializes this instance by deserializing an instance from array
+   *
+   * @param array - the array containing a serialized instance
+   * @param offset - offset at which to start reading in array. Default is `0`
+   */
+  public initFromArray(array: ArrayLike<number>, offset: number = 0): BoundingBox {
+    this.min.x = array[offset + 0]
+    this.min.y = array[offset + 1]
+    this.min.z = array[offset + 2]
+    this.max.x = array[offset + 3]
+    this.max.y = array[offset + 4]
+    this.max.z = array[offset + 5]
+    return this
+  }
+
+  /**
    * Creates a new instance from a numbers array
    *
    * @param array - the numbers array forming a point list
    * @param offset - offset at which to start reading in array. Default is `0`
    * @param stride - step size for each iteration. Default is `3`
    */
-  public static createFromArray(array: ArrayLike<number>, offset?: number, stride?: number): BoundingBox {
-    return new BoundingBox().initFromArray(array, offset, stride)
+  public static createFromPointsBuffer(array: ArrayLike<number>, offset?: number, stride?: number): BoundingBox {
+    return new BoundingBox().initFromPointsBuffer(array, offset, stride)
   }
 
   /**
@@ -192,7 +219,7 @@ export class BoundingBox {
    * @param offset - offset at which to start reading in array. Default is `0`
    * @param stride - step size for each iteration. Default is `3`
    */
-  public initFromArray(array: ArrayLike<number>, offset: number = 0, stride: number = 3): BoundingBox {
+  public initFromPointsBuffer(array: ArrayLike<number>, offset: number = 0, stride: number = 3): BoundingBox {
     let zero = true
     const min = this.min
     const max = this.max
@@ -214,7 +241,6 @@ export class BoundingBox {
     }
     return this
   }
-
   /**
    * Creates a new instance from a point list
    *
@@ -373,6 +399,12 @@ export class BoundingBox {
   }
 
   /**
+   * Checks whether the given point intersects this volume
+   */
+  public intersectsPoint(point: IVec3): boolean {
+    return boxIntersectsPoint(this.min, this.max, point)
+  }
+  /**
    * Checks whether the given ray intersects this volume
    */
   public intersectsRay(ray: Ray): boolean {
@@ -394,51 +426,45 @@ export class BoundingBox {
    * Checks whether the given sphere intersects this volume
    */
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return boxIntersectSphere(sphere.center, sphere.radius, this.min, this.max)
+    return boxIntersectSphere(this.min, this.max, sphere.center, sphere.radius)
   }
 
-  /**
-   * Checks whether the given point is contained by this volume
-   */
-  public containsPoint(point: IVec3): boolean {
-    return boxIntersectsPoint(this.min, this.max, point)
-  }
   /**
    * Checks whether the given box is contained by this volume
    */
   public containsBox(box: BoundingBox): boolean {
-    return boxBoxIntersection(this.min, this.max, box.min, box.max) === 2
+    return boxContainsBox(this.min, this.max, box.min, box.max) === ContainmentType.Contains
   }
   /**
    * Checks whether the given sphere is contained by this volume
    */
   public containsSphere(sphere: BoundingSphere): boolean {
-    return boxSphereIntersection(this.min, this.max, sphere.center, sphere.radius) === 2
+    return boxContainsSphere(this.min, this.max, sphere.center, sphere.radius) === ContainmentType.Contains
   }
   /**
    * Checks whether the given frustum is contained by this volume
    */
   public containsFrustum(frustum: BoundingFrustum): boolean {
-    return boxFrustumIntersection(this.min, this.max, frustum) === 2
+    return boxContainsFrustum(this.min, this.max, frustum) === ContainmentType.Contains
   }
 
   /**
-   * Checks for collosion with another box and returns the intersection type
+   * Checks for collision with another box and returns the intersection type
    */
-  public intersectionWithBox(box: BoundingBox): number {
-    return boxBoxIntersection(this.min, this.max, box.min, box.max)
+  public containmentOfBox(box: BoundingBox): ContainmentType {
+    return boxContainsBox(this.min, this.max, box.min, box.max)
   }
   /**
-   * Checks for collosion with another sphere and returns the intersection type
+   * Checks for collision with another sphere and returns the intersection type
    */
-  public intersectionWithSphere(sphere: BoundingSphere): number {
-    return boxSphereIntersection(this.min, this.max, sphere.center, sphere.radius)
+  public containmentOfSphere(sphere: BoundingSphere): ContainmentType {
+    return boxContainsSphere(this.min, this.max, sphere.center, sphere.radius)
   }
   /**
-   * Checks for collosion with another frustum and returns the intersection type
+   * Checks for collision with another frustum and returns the intersection type
    */
-  public intersectionWithFrustum(frustum: BoundingFrustum): number {
-    return boxFrustumIntersection(this.min, this.max, frustum)
+  public containmentOfFrustum(frustum: BoundingFrustum): ContainmentType {
+    return boxContainsFrustum(this.min, this.max, frustum)
   }
 
   /**

@@ -319,6 +319,18 @@ export class Mat2 {
   }
 
   /**
+   * Creates a rotation matrix from quaternion and pre-multiplies it to `this`
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param q - The rotation quaternion
+   */
+  public preRotateQuat(q: IVec4): this {
+    return this.preRotateQuaternion(q.x, q.y, q.z, q.w)
+  }
+
+  /**
    * Creates a matrix from given quaternion parameters
    *
    * @param x - x component of the quaternion
@@ -352,10 +364,6 @@ export class Mat2 {
 
   /**
    * Rotates this matrix by a quaternion
-   *
-   * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
    *
    * @param x - x component of the quaternion
    * @param y - y component of the quaternion
@@ -391,6 +399,46 @@ export class Mat2 {
   }
 
   /**
+   * Creates a rotation matrix from quaternion parameters and pre-multiplies it to `this`
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param x - x component of the quaternion
+   * @param y - y component of the quaternion
+   * @param z - z component of the quaternion
+   * @param w - w component of the quaternion
+   */
+  public preRotateQuaternion(x: number, y: number, z: number, w: number): this {
+    // matrix from quaternion
+    const xx = x * x
+    const yy = y * y
+    const zz = z * z
+    const xy = x * y
+    const zw = z * w
+
+    const r00 = 1 - 2 * (yy + zz)
+    const r01 = 2 * (xy + zw)
+
+    const r10 = 2 * (xy - zw)
+    const r11 = 1 - 2 * (zz + xx)
+
+
+    const m = this.m
+    const m00 = m[M._00]
+    const m10 = m[M._10]
+    const m01 = m[M._01]
+    const m11 = m[M._11]
+
+    m[M._00] = r00 * m00 + r01 * m01
+    m[M._10] = r00 * m10 + r01 * m11
+    m[M._01] = r10 * m00 + r11 * m01
+    m[M._11] = r10 * m10 + r11 * m11
+
+    return this
+  }
+
+  /**
    * Creates a rotation matrix from an axis and angle
    *
    * @param axis - normalized rotation axis vector
@@ -418,6 +466,19 @@ export class Mat2 {
    */
   public rotateAxisAngleV(axis: IVec2 | IVec3, angle: number): this {
     return this.rotateAxisAngle(axis.x, axis.y, (axis as any).z, angle)
+  }
+
+  /**
+   * Applies a rotation around the given axis and angle
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param axis - normalized rotation axis vector
+   * @param angle - rotation angle in rad
+   */
+  public preRotateAxisAngleV(axis: IVec3, angle: number): this {
+    return this.preRotateAxisAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -507,6 +568,29 @@ export class Mat2 {
   }
 
   /**
+   * Applies a rotation around the given axis and angle
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param x - x component of the normalized rotation axis
+   * @param y - y component of the normalized rotation axis
+   * @param z - z component of the normalized rotation axis
+   * @param angle - rotation angle in rad
+   */
+  public preRotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+    // create quaternion
+    const halfAngle = angle * 0.5
+    const scale = Math.sin(halfAngle)
+    x *= scale
+    y *= scale
+    z *= scale
+    const w = Math.cos(halfAngle)
+    this.preRotateQuaternion(x, y, z, w)
+    return this
+  }
+
+  /**
    * Creates a new rotation matrix
    */
   public static createRotationX(rad: number): Mat2 {
@@ -528,10 +612,6 @@ export class Mat2 {
   /**
    * Applies a rotation around X axis to this matrix
    *
-   * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
-   *
    * @param angle - angle in rad
    */
   public rotateX(angle: number): this {
@@ -542,6 +622,27 @@ export class Mat2 {
 
     m[2]  = c * m10
     m[3]  = c * m11
+
+    return this
+  }
+
+  /**
+   * Applies a pre-rotation around X axis to this matrix in world space
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param angle - angle in rad
+   */
+  public preRotateX(angle: number): this {
+    const m = this.m
+    const m01 = m[M._01]
+    const m11 = m[M._11]
+
+    const c = Math.cos(angle)
+
+    m[M._01] = c * m01
+    m[M._11] = c * m11
 
     return this
   }
@@ -569,10 +670,6 @@ export class Mat2 {
   /**
    * Applies a rotation around Y axis to this matrix
    *
-   * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
-   *
    * @param angle - angle in rad
    */
   public rotateY(angle: number): this {
@@ -583,6 +680,27 @@ export class Mat2 {
 
     m[0] = c * m00
     m[1] = c * m01
+
+    return this
+  }
+
+  /**
+   * Applies a rotation around Y axis to this matrix
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param angle - angle in rad
+   */
+  public preRotateY(angle: number): this {
+    const m = this.m
+    const m00 = m[M._00]
+    const m10 = m[M._10]
+
+    const c = Math.cos(angle)
+
+    m[M._00] = c * m00
+    m[M._10] = c * m10
 
     return this
   }
@@ -611,10 +729,6 @@ export class Mat2 {
   /**
    * Applies a rotation around Z axis to this matrix
    *
-   * @remarks
-   * Does not affect the translation. Translation is kept as is.
-   * Only the matrix orientation will change.
-   *
    * @param angle - angle in rad
    */
   public rotateZ(angle: number): this {
@@ -630,6 +744,34 @@ export class Mat2 {
     m[1] = c * m01 + s * m11
     m[2] = c * m10 - s * m00
     m[3] = c * m11 - s * m01
+
+    return this
+  }
+
+  /**
+   * Applies a rotation around Z axis to this matrix
+   *
+   * @remarks
+   * This pre-multiplies the rotation so the rotation happens in global space.
+   *
+   * @param angle - angle in rad
+   */
+  public preRotateZ(angle: number): this {
+    const m = this.m
+    const m00 = m[M._00]
+    const m10 = m[M._10]
+
+    const m01 = m[M._01]
+    const m11 = m[M._11]
+
+    const c = Math.cos(angle)
+    const s = Math.sin(angle)
+
+    m[M._00] = c * m00 - s * m01
+    m[M._10] = c * m10 - s * m11
+
+    m[M._01] = c * m01 + s * m00
+    m[M._11] = c * m11 + s * m10
 
     return this
   }
@@ -671,6 +813,24 @@ export class Mat2 {
   }
 
   /**
+   * Pre-multiplies the scale so it happens in global space.
+   *
+   * @param x - x scale factor
+   * @param y - y scale factor
+   * @param z - z scale factor
+   */
+  public preScale(x: number, y: number): this {
+    const m = this.m
+    m[M._00] *= x
+    m[M._10] *= x
+
+    m[M._01] *= y
+    m[M._11] *= y
+
+    return this
+  }
+
+  /**
    * Creates a new matrix with a predefined scale
    */
   public static createScaleV(vec: IVec2): Mat2 {
@@ -702,6 +862,25 @@ export class Mat2 {
     m[M._01] *= x
     m[M._10] *= y
     m[M._11] *= y
+    return this
+  }
+
+  /**
+   * Pre-multiplies the scale so it happens in global space.
+   *
+   * @param scale - the scale vector
+   */
+  public preScaleV(scale: IVec2): this {
+    const x = scale.x
+    const y = scale.y
+
+    const m = this.m
+    m[M._00] *= x
+    m[M._10] *= x
+
+    m[M._01] *= y
+    m[M._11] *= y
+
     return this
   }
 
@@ -756,6 +935,18 @@ export class Mat2 {
   }
 
   /**
+   * Pre-multiplies the scale so it happens in global space
+   *
+   * @param x - scale factor on x axis
+   */
+  public preScaleX(x: number): this {
+    const m = this.m
+    m[M._00] *= x
+    m[M._10] *= x
+    return this
+  }
+
+  /**
    * Applies a scale to this matrix
    *
    * @param y - scale factor on y axis
@@ -763,6 +954,18 @@ export class Mat2 {
   public scaleY(y: number): this {
     const m = this.m
     m[M._10] *= y
+    m[M._11] *= y
+    return this
+  }
+
+  /**
+   * Pre-multiplies the scale so it happens in global space
+   *
+   * @param y - scale factor on y axis
+   */
+  public preScaleY(y: number): this {
+    const m = this.m
+    m[M._01] *= y
     m[M._11] *= y
     return this
   }

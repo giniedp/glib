@@ -162,8 +162,8 @@ class Scene {
   public initRay(u: number, v: number, out: Ray) {
     const start = Vec3.create(u * 2 - 1, -(v * 2 - 1), 0)
     const end = Vec3.createFrom(start).setZ(1)
-    this.viewProjInv.transformPoint3(start)
-    this.viewProjInv.transformPoint3(end)
+    this.viewProjInv.transformP3(start)
+    this.viewProjInv.transformP3(end)
     return out.initV(start, end.subtract(start).normalize())
   }
 

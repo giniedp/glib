@@ -840,8 +840,8 @@ export class Mat4 {
    * Creates a rotation matrix from quaternion and post-multiplies it to `this`
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param q - The rotation quaternion
    */
@@ -865,8 +865,8 @@ export class Mat4 {
    * Creates a rotation matrix from quaternion parameters and post-multiplies it to `this`
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param x - x component of the quaternion
    * @param y - y component of the quaternion
@@ -1016,8 +1016,8 @@ export class Mat4 {
    * Applies a rotation around the given axis and angle
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
@@ -1108,8 +1108,8 @@ export class Mat4 {
    * Applies a rotation around the given axis and angle
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param x - x component of the normalized rotation axis
    * @param y - y component of the normalized rotation axis
@@ -1228,8 +1228,8 @@ export class Mat4 {
    * Applies a yaw pitch roll rotation to this matrix
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param yaw - angle in rad around the Y axis
    * @param pitch - angle in rad around the X axis
@@ -1266,7 +1266,7 @@ export class Mat4 {
    * @param pitch - angle in rad around the X axis
    * @param roll - angle in rad around the Z axis
    */
-  public preRotateYawPitchRoll(yaw: number, pitch: number, roll: number): Mat4 {
+  public preRotateYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     // create quaternion
     const zHalf = roll * 0.5
     const zSin = Math.sin(zHalf)
@@ -1335,8 +1335,8 @@ export class Mat4 {
    * Applies a post-rotation around X axis to this matrix
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param angle - angle in rad
    */
@@ -1425,8 +1425,8 @@ export class Mat4 {
    * Applies a rotation around Y axis to this matrix
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param angle - angle in rad
    */
@@ -1514,8 +1514,8 @@ export class Mat4 {
    * Applies a rotation around Z axis to this matrix
    *
    * @remarks
-   * This essentially will change tha matrix orientation but keep its translation vector
-   * since the rotation is post-multiplied and hence happens in local space.
+   * This post-multiplies the rotation so the rotation happens in local space
+   * so the translation vector is not affected.
    *
    * @param angle - angle in rad
    */
@@ -1731,29 +1731,51 @@ export class Mat4 {
   }
 
   /**
-   * Post-multiplies the scale so it happens in local space.
+   * Post-multiplies the scale so it happens in local space (does not affect translation)
    *
    * @param scale - the uniform scale factor
    */
   public scaleUniform(scale: number): this {
     const m = this.m
-    m[0] *= scale
-    m[1] *= scale
-    m[2] *= scale
-    m[3] *= scale
-    m[4] *= scale
-    m[5] *= scale
-    m[6] *= scale
-    m[7] *= scale
-    m[8] *= scale
-    m[9] *= scale
-    m[10] *= scale
-    m[11] *= scale
+    m[M._00] *= scale
+    m[M._01] *= scale
+    m[M._02] *= scale
+    m[M._03] *= scale
+    m[M._10] *= scale
+    m[M._11] *= scale
+    m[M._12] *= scale
+    m[M._13] *= scale
+    m[M._20] *= scale
+    m[M._21] *= scale
+    m[M._22] *= scale
+    m[M._23] *= scale
     return this
   }
 
   /**
-   * Post-multiplies the scale so it happens in local space.
+   * Pre-multiplies the scale so it happens in global space (does affect translation)
+   *
+   * @param scale - the uniform scale factor
+   */
+  public preScaleUniform(scale: number): this {
+    const m = this.m
+    m[M._00] *= scale
+    m[M._10] *= scale
+    m[M._20] *= scale
+    m[M._30] *= scale
+    m[M._01] *= scale
+    m[M._11] *= scale
+    m[M._21] *= scale
+    m[M._31] *= scale
+    m[M._02] *= scale
+    m[M._12] *= scale
+    m[M._22] *= scale
+    m[M._32] *= scale
+    return this
+  }
+
+  /**
+   * Post-multiplies the scale so it happens in local space (does not affect translation)
    *
    * @param x - scale factor on x axis
    */
@@ -1767,7 +1789,21 @@ export class Mat4 {
   }
 
   /**
-   * Post-multiplies the scale so it happens in local space.
+   * Pre-multiplies the scale so it happens in global space (does affect translation)
+   *
+   * @param x - scale factor on x axis
+   */
+  public preScaleX(x: number): this {
+    const m = this.m
+    m[M._00] *= x
+    m[M._10] *= x
+    m[M._20] *= x
+    m[M._30] *= x
+    return this
+  }
+
+  /**
+   * Post-multiplies the scale so it happens in local space (does not affect translation)
    *
    * @param y - scale factor on y axis
    */
@@ -1781,7 +1817,21 @@ export class Mat4 {
   }
 
   /**
-   * Post-multiplies the scale so it happens in local space.
+   * Pre-multiplies the scale so it happens in global space (does affect translation)
+   *
+   * @param y - scale factor on y axis
+   */
+  public preScaleY(y: number): this {
+    const m = this.m
+    m[M._01] *= y
+    m[M._11] *= y
+    m[M._21] *= y
+    m[M._31] *= y
+    return this
+  }
+
+  /**
+   * Post-multiplies the scale so it happens in local space (does not affect translation)
    *
    * @param z - scale factor on z axis
    */
@@ -1791,6 +1841,20 @@ export class Mat4 {
     m[M._21] *= z
     m[M._22] *= z
     m[M._23] *= z
+    return this
+  }
+
+  /**
+   * Pre-multiplies the scale so it happens in global space (does affect translation)
+   *
+   * @param z - scale factor on z axis
+   */
+  public preScaleZ(z: number): this {
+    const m = this.m
+    m[M._02] *= z
+    m[M._12] *= z
+    m[M._22] *= z
+    m[M._32] *= z
     return this
   }
 
@@ -1836,7 +1900,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a post-translation to this matrix
+   * Post-multiplies the translation so it happens in local space
    *
    * @remarks
    * This performs an optimized post-multiplication with a translation matrix.
@@ -1863,7 +1927,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to global space
+   * Pre-multiplies the translation so it happens in global space
    *
    * @remarks
    * This performs an optimized pre-multiplication with a translation matrix.
@@ -1930,7 +1994,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to its local space
+   * Post-multiplies the translation so it happens in local space
    *
    * @remarks
    * This performs an optimized post-multiplication with a translation matrix.
@@ -1958,7 +2022,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to global space
+   * Pre-multiplies the translation so it happens in global space
    *
    * @remarks
    * This performs an optimized pre-multiplication with a translation matrix.
@@ -1982,7 +2046,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to its local space
+   * Post-multiplies the translation so it happens in local space
    *
    * @remarks
    * This performs an optimized post-multiplication with a translation matrix.
@@ -2007,7 +2071,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to its local space
+   * Post-multiplies the translation so it happens in local space
    *
    * @remarks
    * This performs an optimized post-multiplication with a translation matrix.
@@ -2032,7 +2096,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to global space
+   * Post-multiplies the translation so it happens in local space
    *
    * @remarks
    * This performs an optimized post-multiplication with a translation matrix.
@@ -2057,7 +2121,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to global space
+   * Pre-multiplies the translation so it happens in global space
    *
    * @remarks
    * Simply adds the translation value to the translation part of the matrix
@@ -2070,7 +2134,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to global space
+   * Pre-multiplies the translation so it happens in global space
    *
    * @remarks
    * Simply adds the translation value to the translation part of the matrix
@@ -2083,7 +2147,7 @@ export class Mat4 {
   }
 
   /**
-   * Applies a translation to this matrix relative to global space
+   * Pre-multiplies the translation so it happens in global space
    *
    * @remarks
    * Simply adds the translation value to the translation part of the matrix
@@ -2560,7 +2624,7 @@ export class Mat4 {
     return Mat4.negate(this, this)
   }
   /**
-   * Adds components of one matrix to another
+   * Performs component wise addition of two matrices
    *
    * @param matA - The first matrix
    * @param matB - The second matrix
@@ -2580,7 +2644,7 @@ export class Mat4 {
   }
 
   /**
-   * Adds the given matrix to `this`
+   * Performs component wise addition with another matrix.
    *
    * @param other - The matrix to add
    */
@@ -2628,7 +2692,7 @@ export class Mat4 {
   }
 
   /**
-   * Subtracts components of one matrix from another
+   * Performs component wise subtraction between two matrices
    *
    * @param matA - The first matrix
    * @param matB - The second matrix
@@ -2648,7 +2712,7 @@ export class Mat4 {
   }
 
   /**
-   * Subtracts the given matrix from `this`
+   * Performs component wise subtraction of given matrix from `this`
    *
    * @param other - The matrix to subtract
    */
@@ -2701,7 +2765,6 @@ export class Mat4 {
    * @param matA - The main matrix
    * @param matB - The matrix to post-multiply
    * @param out - The matrix to write to
-   *
    * @returns The given `out` parameter or a new matrix
    */
   public static multiply(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
@@ -2988,10 +3051,10 @@ export class Mat4 {
   // }
 
   /**
-   * Multiplies the components of a matrix by with a scalar value
+   * Multiplies a scalar with each component of a matrix
    *
    * @param matA - The matrix
-   * @param scalar - The scalar to multiply
+   * @param scalar - The scalar to multiply with
    * @param out - The matrix to write to. Leave it out or pass null to create a new matrix.
    * @returns The given `out` parameter or a new matrix
    */
@@ -3022,7 +3085,7 @@ export class Mat4 {
   }
 
   /**
-   * Divides the components of the first matrix by the components of the second matrix
+   * Divides each component of one matrix by according component of another
    *
    * @param matA - The first matrix
    * @param matB - The second matrix
@@ -3042,7 +3105,7 @@ export class Mat4 {
   }
 
   /**
-   * Divides each component of this matrix by its according component of the other matrix
+   * Divides each component of `this` matrix by its according component of the `other`
    *
    * @param other - The matrix by which to divide
    */
@@ -3057,7 +3120,7 @@ export class Mat4 {
   }
 
   /**
-   * Divides the components of a matrix by a scalar
+   * Divides each component of a matrix by a scalar
    *
    * @param matA - The matrix
    * @param scalar - The scalar by which to divide
@@ -3077,7 +3140,7 @@ export class Mat4 {
   }
 
   /**
-   * Divides each component of this matrix by given scalar value
+   * Divides each component of `this` matrix by a scalar
    *
    * @param s - The scalar by which to divide
    */

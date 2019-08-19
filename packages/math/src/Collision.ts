@@ -1,38 +1,230 @@
 import { BoundingFrustum } from './BoundingFrustum'
-import { Recycler } from './Recycler'
 import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
-/**
- * @public
- */
-export const DISJOINT = 0
+export const enum ContainmentType {
+  Disjoint = 0,
+  Intersects = 1,
+  Contains = 2,
+}
 
-/**
- * @public
- */
-export const INTERSECTS = 1
-
-/**
- * @public
- */
-export const CONTAINS = 2
+export const enum PlaneIntersectionType {
+  Back = -1,
+  Front = 0,
+  Intersects = 1,
+}
 
 const EPSILON = Number.EPSILON
 
-const recycle = new Recycler<IVec4>(20, () => {
-  return { x: 0, y: 0, z: 0, w: 0 }
-})
+const v3temp1 = Vec3.create()
+const v3temp2 = Vec3.create()
+const v3temp3 = Vec3.create()
+const v3temp4 = Vec3.create()
+const v3temp5 = Vec3.create()
+const v3temp6 = Vec3.create()
 
 /**
+ * Calculates a point on a line segment that is closest to a given point
+ *
  * @public
+ * @param point - the point in question
+ * @param segmentStart - line start position
+ * @param segmentEnd - line end position
+ * @param out - where the result is written to
  */
-export function closestPointToPlane(point: IVec3, plane: IVec4, result: IVec3): void {
+export function closestPointOnSegment<T>(point: IVec3, segmentStart: IVec3, segmentEnd: IVec3, out: T): T & IVec3
+export function closestPointOnSegment(point: IVec3, segmentStart: IVec3, segmentEnd: IVec3, out: IVec3): IVec3 {
+  // Real Time Collision Detection Chapter 5.1.2 page 128
+
+  const ab = Vec3.subtract(segmentEnd, segmentStart, v3temp1)
+  // project c onto ab, computing parametrized position d(t) = a + t * (b - a)
+  const ac = Vec3.subtract(point, segmentStart, v3temp2)
+  let t = Vec3.dot(ac, ab) / Vec3.lengthSquared(ab)
+  // if outside segment, clamp t (and therefore d) to closest endpoint
+  t = t < 0.0 ? 0.0 : (t > 1.0 ? 1.0 : t)
+  // compute projected position from the clamped t
+  out.x = segmentStart.x + t * ab.x
+  out.y = segmentStart.y + t * ab.y
+  out.z = segmentStart.z + t * ab.z
+  return out
+}
+
+/**
+ * Calculates the point on a plane that is the closest to a given point
+ *
+ * @public
+ * @param point - the point in question
+ * @param plane - the plane in question
+ * @param out - where the result is written to
+ */
+export function closestPointOnPlane<T>(point: IVec3, plane: IVec4, out: T): T & IVec3
+export function closestPointOnPlane(point: IVec3, plane: IVec4, out: IVec3): IVec3 {
   // Real Time Collision Detection Chapter 5.1.1 page 127
   const t = Vec3.dot(plane, point) - plane.w
-  result.x = point.x - plane.x * t
-  result.y = point.y - plane.y * t
-  result.z = point.z - plane.z * t
+  out.x = point.x - plane.x * t
+  out.y = point.y - plane.y * t
+  out.z = point.z - plane.z * t
+  return out
+}
+
+/**
+ * Calculates a point on triangle that is closest to a given point
+ *
+ * @public
+ * @param point - the point in question
+ * @param a - first vertex of triangle
+ * @param b - second vertex of triangle
+ * @param c - third vertex of triangle
+ * @param out - where the result is written to
+ */
+export function closestPointOnTriangle<T>(point: IVec3, a: IVec3, b: IVec3, c: IVec3, out: T): T & IVec3
+export function closestPointOnTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec3, out: IVec3): IVec3 {
+
+  const ab = Vec3.subtract(b, a, v3temp1)
+  const ac = Vec3.subtract(c, a, v3temp2)
+  const ap = Vec3.subtract(point, a, v3temp3)
+  const d1 = Vec3.dot(ab, ap)
+  const d2 = Vec3.dot(ac, ap)
+  if (d1 <= 0 && d2 <= 0) {
+    // barycentric coordinates (1, 0, 0)
+    out.x = a.x
+    out.y = a.y
+    out.z = a.z
+    return out
+  }
+
+  const bp = Vec3.subtract(point, b, v3temp4)
+  const d3 = Vec3.dot(ab, bp)
+  const d4 = Vec3.dot(ac, bp)
+  if (d3 <= 0 && d4 <= 0) {
+    // barycentric coordinates (0, 1, 0)
+    out.x = b.x
+    out.y = b.y
+    out.z = b.z
+    return out
+  }
+
+  const vc = d1 * d4 - d3 * d2
+  if (vc <= 0 && d1 >= 0 && d3 <= 0) {
+    const w = d1 / (d1 - d3)
+    out.x = a.x + w * ab.x
+    out.y = a.y + w * ab.y
+    out.z = a.z + w * ab.z
+    return out
+  }
+
+  const cp = Vec3.subtract(point, c, v3temp5)
+  const d5 = Vec3.dot(ab, cp)
+  const d6 = Vec3.dot(ac, cp)
+  if (d5 <= 0 && d6 <= 0) {
+    // barycentric coordinates (0, 0, 1)
+    out.x = c.x
+    out.y = c.y
+    out.z = c.z
+    return out
+  }
+
+  const vb = d5 * d2 - d1 * d6
+  if (vb <= 0 && d2 >= 0 && d6 <= 0) {
+    const w = d2 / (d2 - d6)
+    out.x = a.x + w * ac.x
+    out.y = a.y + w * ac.y
+    out.z = a.z + w * ac.z
+    return out
+  }
+
+  const va = d3 * d6 - d5 * d4
+  if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) {
+    const w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+    out.x = b.x + w * (c.x - b.x)
+    out.y = b.y + w * (c.y - b.y)
+    out.z = b.z + w * (c.z - b.z)
+    return out
+  }
+
+  const denom = 1 / (va + vb + vc)
+  out.x = a.x + ab.x * vb * denom + ac.x * vc * denom
+  out.y = a.y + ab.y * vb * denom + ac.y * vc * denom
+  out.z = a.z + ab.z * vb * denom + ac.z * vc * denom
+  return out
+}
+
+/**
+ * Calculates the closest two points between two segments
+ *
+ * @param segment1Start - the first segment start point
+ * @param segment1End - the first segment end point
+ * @param segment2Start - the second segment start point
+ * @param segment2End - the second segment end point
+ * @param outP1 - the closest point on first segment
+ * @param outP2 - the closest point on second segment
+ * @returns the squared distance between the closest points
+ */
+function closestPointsOfSegments(
+  segment1Start: IVec3,
+  segment1End: IVec3,
+  segment2Start: IVec3,
+  segment2End: IVec3,
+  outP1: IVec3,
+  outP2: IVec3,
+): number {
+  // Real Time Collision Detection Chapter 5.1.9 page 150
+
+  const d1 = Vec3.subtract(segment1End, segment1Start, v3temp1) // direction vector of segmen s1
+  const d2 = Vec3.subtract(segment2End, segment2Start, v3temp2) // direction vector of segmen s2
+  const r = Vec3.subtract(segment1Start, segment2Start, v3temp3)
+  let a = d1.lengthSquared() // squared length of segment s1, always nonnegative
+  let e = d2.lengthSquared() // squared length of segment s2, always nonnegative
+  let f = Vec3.dot(d2, r)
+
+  let s = 0
+  let t = 0
+
+  // check if either or both segments degenerate into points
+  if (a <= EPSILON && e <= EPSILON) {
+    // both segments degenerate into points
+    Vec3.clone(segment1Start, outP1)
+    Vec3.clone(segment2Start, outP2)
+    return Vec3.distanceSquared(outP1, outP2)
+  }
+  if (a <= EPSILON) {
+    // first segment degenerates into point
+    t = f / e // s = 0 => t = (b*s + f) / e = f / e
+    t = t < 0 ? 0 : t > 1 ? 1 : t
+  } else if (e <= EPSILON) {
+    let c = Vec3.dot(d1, r)
+    // second segment degenerates into point
+    t = 0
+    s = -c / a // t = 0 => s = *b*t -c) / a = -c / a
+    s = s < 0 ? 0 : s > 1 ? 1 : s
+  } else {
+    let c = Vec3.dot(d1, r)
+    // the generat londegenerate case starts here
+    let b = Vec3.dot(d1, d2)
+    let denom = a * e - b * b // alwasy nonnegative
+
+    if (denom !== 0) {
+      s = (b * f - c * e) / denom
+      s = s < 0 ? 0 : s > 1 ? 1 : s
+      t = (b * s + f) / e
+    } else {
+      s = 0
+      t = f / e
+    }
+
+    if (t < 0) {
+      t = 0
+      s = -c / a
+      s = s < 0 ? 0 : s > 1 ? 1 : s
+    } else if (t > 1) {
+      t = 1
+      s = (b - c) / a
+      s = s < 0 ? 0 : s > 1 ? 1 : s
+    }
+  }
+  Vec3.addScaled(segment1Start, d1, s, outP1)
+  Vec3.addScaled(segment2Start, d2, s, outP2)
+  return Vec3.distanceSquared(outP1, outP2)
 }
 
 /**
@@ -46,142 +238,48 @@ export function distancePointToPlane(point: IVec3, plane: IVec4): number {
 /**
  * @public
  */
-export function closestPointSegment(point: IVec3, a: IVec3, b: IVec3, out: IVec3): void {
-  // Real Time Collision Detection Chapter 5.1.2 page 128
-  recycle.begin()
-
-  const ab = Vec3.subtract(b, a, recycle.next())
-  // project c onto ab, computing parametrized position d(t) = a + t * (b - a)
-  const ac = Vec3.subtract(point, a, recycle.next())
-  let t = Vec3.dot(ac, ab) / Vec3.lengthSquared(ab)
-  // if outside segment, clamp t (and therefore d) to closest endpoint
-  t = t < 0.0 ? 0.0 : (t > 1.0 ? 1.0 : t)
-  // compute projected position from the clamped t
-  out.x = a.x + t * ab.x
-  out.y = a.y + t * ab.y
-  out.z = a.z + t * ab.z
-
-  recycle.end()
-}
-
-/**
- * @public
- */
-export function squaredDistancePointSegment(a: IVec3, b: IVec3, c: IVec3): number {
+export function distanceSquaredPointToSegment(a: IVec3, b: IVec3, c: IVec3): number {
   // Real Time Collision Detection Chapter 5.1.3 page 130
-  recycle.begin()
 
-  const ab = Vec3.subtract(b, a, recycle.next())
-  const ac = Vec3.subtract(c, a, recycle.next())
-  const bc = Vec3.subtract(c, b, recycle.next())
-  let result
+  const ab = Vec3.subtract(b, a, v3temp1)
+  const ac = Vec3.subtract(c, a, v3temp2)
+  const bc = Vec3.subtract(c, b, v3temp3)
 
   const e = Vec3.dot(ac, ab)
   // handle cases where c projects outside ab
   if (e < 0.0) {
-    result = Vec3.lengthSquared(ac)
-    return recycle.end(result)
+    return Vec3.lengthSquared(ac)
   }
 
   const f = Vec3.lengthSquared(ab)
   if (e >= f) {
-    result = Vec3.lengthSquared(bc)
-    return recycle.end(result)
+    return Vec3.lengthSquared(bc)
   }
 
   // handle cases where c projects onto ab
-  result = Vec3.lengthSquared(ac) - e * e / f
-  return recycle.end(result)
+  return Vec3.lengthSquared(ac) - e * e / f
 }
 
 /**
+ * Checks whether a ray intersects a plane
+ *
  * @public
- */
-export function closestPointTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec3, result: IVec3): IVec3 {
-  recycle.begin()
-
-  const ab = Vec3.subtract(b, a, recycle.next())
-  const ac = Vec3.subtract(c, a, recycle.next())
-  const ap = Vec3.subtract(point, a, recycle.next())
-  const d1 = Vec3.dot(ab, ap)
-  const d2 = Vec3.dot(ac, ap)
-  if (d1 <= 0 && d2 <= 0) {
-    // barycentric coordinates (1, 0, 0)
-    result.x = a.x
-    result.y = a.y
-    result.z = a.z
-    return recycle.end(result)
-  }
-
-  const bp = Vec3.subtract(point, b, recycle.next())
-  const d3 = Vec3.dot(ab, bp)
-  const d4 = Vec3.dot(ac, bp)
-  if (d3 <= 0 && d4 <= 0) {
-    // barycentric coordinates (0, 1, 0)
-    result.x = b.x
-    result.y = b.y
-    result.z = b.z
-    return recycle.end(result)
-  }
-
-  const vc = d1 * d4 - d3 * d2
-  if (vc <= 0 && d1 >= 0 && d3 <= 0) {
-    const w = d1 / (d1 - d3)
-    result.x = a.x + w * ab.x
-    result.y = a.y + w * ab.y
-    result.z = a.z + w * ab.z
-    return recycle.end(result)
-  }
-
-  const cp = Vec3.subtract(point, c, recycle.next())
-  const d5 = Vec3.dot(ab, cp)
-  const d6 = Vec3.dot(ac, cp)
-  if (d5 <= 0 && d6 <= 0) {
-    // barycentric coordinates (0, 0, 1)
-    result.x = c.x
-    result.y = c.y
-    result.z = c.z
-    return recycle.end(result)
-  }
-
-  const vb = d5 * d2 - d1 * d6
-  if (vb <= 0 && d2 >= 0 && d6 <= 0) {
-    const w = d2 / (d2 - d6)
-    result.x = a.x + w * ac.x
-    result.y = a.y + w * ac.y
-    result.z = a.z + w * ac.z
-    return recycle.end(result)
-  }
-
-  const va = d3 * d6 - d5 * d4
-  if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) {
-    const w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
-    result.x = b.x + w * (c.x - b.x)
-    result.y = b.y + w * (c.y - b.y)
-    result.z = b.z + w * (c.z - b.z)
-    return recycle.end(result)
-  }
-
-  const denom = 1 / (va + vb + vc)
-  result.x = a.x + ab.x * vb * denom + ac.x * vc * denom
-  result.y = a.y + ab.y * vb * denom + ac.y * vc * denom
-  result.z = a.z + ab.z * vb * denom + ac.z * vc * denom
-  return recycle.end(result)
-}
-
-//
-// rayIntersects[TYPE](At)
-//
-
-/**
- * @public
+ * @param orig - the ray origin
+ * @param dir - the ray direction
+ * @param plane - the plane
  */
 export function rayIntersectsPlane(orig: IVec3, dir: IVec3, plane: IVec4): boolean {
   return ((plane.w - Vec3.dot(plane, orig)) / Vec3.dot(plane, dir)) >= 0
 }
 
 /**
+ * Calculates the distance where a ray intersects a plane
+ *
  * @public
+ * @param orig - the ray origin
+ * @param dir - the ray direction
+ * @param plane - the plane
+ * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function rayIntersectsPlaneAt(orig: IVec3, dir: IVec3, plane: IVec4): number {
   const d = Vec3.dot(plane, dir)
@@ -192,70 +290,94 @@ export function rayIntersectsPlaneAt(orig: IVec3, dir: IVec3, plane: IVec4): num
 }
 
 /**
+ * Checks whether a ray intersects a plane
+ *
  * @public
+ * @param orig - the ray origin
+ * @param dir - the ray direction
+ * @param center - the sphere center
+ * @param radius - the sphere radius
  */
 export function rayIntersectsSphere(orig: IVec3, dir: IVec3, center: IVec3, radius: number): boolean {
-  recycle.begin()
 
-  const m = Vec3.subtract(orig, center, recycle.next())
+  const m = Vec3.subtract(orig, center, v3temp1)
   const c = Vec3.dot(m, m) - radius * radius
   // if there is definitely at least one real root, there must be an intersection
   if (c <= 0) {
-    return recycle.end(true)
+    return true
   }
 
   const b = Vec3.dot(m, dir)
   // exit if rays origin outside sphere and ray pointing away from sphere
   if (b > 0) {
-    return recycle.end(false)
+    return false
   }
 
   // a negative discriminant corresponds to ray missing sphere
-  return recycle.end((b * b - c) >= 0)
+  return (b * b - c) >= 0
 }
 
 /**
+ * Calculates the distance where a ray intersects a sphere
+ *
  * @public
+ * @param orig - the ray origin
+ * @param dir - the ray direction
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function rayIntersectsSphereAt(orig: IVec3, dir: IVec3, center: IVec3, radius: number): number {
-  recycle.begin()
 
-  const m = Vec3.subtract(orig, center, recycle.next())
+  const m = Vec3.subtract(orig, center, v3temp1)
   const b = Vec3.dot (m, dir)
   const c = Vec3.dot(m, m) - radius * radius
   // exit if rays origin outside sphere (c < 0) and ray pointing away from sphere (b > 0)
   if (c > 0 && b > 0) {
-    return recycle.end(Number.NaN)
+    return Number.NaN
   }
 
   const discr = b * b - c
   // negative discriminant corresponds to ray missing sphere
   if (discr < 0) {
-    return recycle.end(Number.NaN)
+    return Number.NaN
   }
   // Ray now found to intersect sphere, compute smallest t value of intersection
   let result = -b - Math.sqrt(discr)
   if (result > 0) {
-    return recycle.end(result)
+    return result
   }
   result = -b + Math.sqrt(discr)
   if (result > 0) {
-    return recycle.end(result)
+    return result
   }
-  return recycle.end(Number.NaN)
+  return Number.NaN
   // If t is negative, ray started inside sphere , so clamp to zero
   // return recycle.end(result < 0 ? 0 : result)
 }
 
 /**
+ * Checks whether a ray intersects an axis aligned bounding box
+ *
  * @public
+ * @param rayPos - the ray origin
+ * @param rayDir - the ray direction
+ * @param boxMin - the min point of the box
+ * @param boxMax - the max point of the box
  */
 export function rayIntersectsBox(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, boxMax: IVec3): boolean {
   return rayIntersectsBoxAt(rayPos, rayDir, boxMin, boxMax) >= 0
 }
 
 /**
+ * Calculates the distance where a ray intersects an axis aligned bounding box
+ *
  * @public
+ * @param rayPos - the ray origin
+ * @param rayDir - the ray direction
+ * @param boxMin - the min point of the box
+ * @param boxMax - the max point of the box
+ * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function rayIntersectsBoxAt(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, boxMax: IVec3): number {
   // source
@@ -334,76 +456,90 @@ export function rayIntersectsBoxAt(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, 
 }
 
 /**
+ * Checks whether a ray intersects a triangle
+ *
  * @public
+ * @param orig - the ray origin
+ * @param dir - the ray direction
+ * @param v0 - the first triangle vertex
+ * @param v1 - the second triangle vertex
+ * @param v2 - the third triangle vertex
  */
 export function rayIntersectsTriangle(orig: IVec3, dir: IVec3, v0: IVec3, v1: IVec3, v2: IVec3): boolean {
-  recycle.begin()
-  const edge1 = Vec3.subtract(v1, v0, recycle.next())
-  const edge2 = Vec3.subtract(v2, v0, recycle.next())
+
+  const edge1 = Vec3.subtract(v1, v0, v3temp1)
+  const edge2 = Vec3.subtract(v2, v0, v3temp2)
 
   // Compute triangle normal.
-  const n = Vec3.cross(edge1, edge2, recycle.next())
+  const n = Vec3.cross(edge1, edge2, v3temp3)
 
   // Compute denominator d. If d <= 0, segment is parallel to or points away from triangle
   const d = Vec3.dot(dir, n)
   if (d < Number.EPSILON) {
-    return recycle.end(false)
+    return false
   }
 
-  // Compute intersection t value of pq with plane of triangle. A ray intersects if t >= 0
-  const ap = Vec3.subtract(orig, v0, recycle.next())
+  // Compute intersection t value of pq with plane of triangle. A ray ContainmentType.intersects if t >= 0
+  const ap = Vec3.subtract(orig, v0, v3temp4)
   const result = Vec3.dot(ap, n)
   if (result < 0) {
-    return recycle.end(false)
+    return false
   }
 
   // Compute barycentric coordinate components and tes if within bounds
-  const e = Vec3.cross(dir, ap, recycle.next())
+  const e = Vec3.cross(dir, ap, v3temp5)
   const v = Vec3.dot(edge2, e)
   if (v < 0 || v > d) {
-    return recycle.end(false)
+    return false
   }
   const w = -Vec3.dot(edge1, e)
   if (w < 0 || v + w > d) {
-    return recycle.end(false)
+    return false
   }
-  return recycle.end(true)
+  return true
 }
 
 /**
+ * Calculates the distance where a ray intersects a triangle
+ *
  * @public
+ * @param orig - the ray origin
+ * @param dir - the ray direction
+ * @param v0 - the first triangle vertex
+ * @param v1 - the second triangle vertex
+ * @param v2 - the third triangle vertex
+ * @returns the distance to intersection point or `Number.NaN` in case of no intersection.
  */
 export function rayIntersectsTriangleAt(orig: IVec3, dir: IVec3, v0: IVec3, v1: IVec3, v2: IVec3): number {
-  recycle.begin()
 
-  const ab = Vec3.subtract(v1, v0, recycle.next())
-  const ac = Vec3.subtract(v2, v0, recycle.next())
+  const ab = Vec3.subtract(v1, v0, v3temp1)
+  const ac = Vec3.subtract(v2, v0, v3temp2)
 
   // Compute triangle normal.
-  const n = Vec3.cross(ab, ac, recycle.next())
+  const n = Vec3.cross(ab, ac, v3temp3)
 
   // Compute denominator d. If d <= 0, segment is parallel to or points away from triangle
   const d = Vec3.dot(dir, n)
   if (d <= 0) {
-    return recycle.end(Number.POSITIVE_INFINITY)
+    return Number.NaN
   }
 
-  // Compute intersection t value of pq with plane of triangle. A ray intersects if t >= 0
-  const ap = Vec3.subtract(orig, v0, recycle.next())
+  // Compute intersection t value of pq with plane of triangle. A ray ContainmentType.intersects if t >= 0
+  const ap = Vec3.subtract(orig, v0, v3temp4)
   let result = Vec3.dot(ap, n)
   if (result < 0) {
-    return recycle.end(Number.NaN)
+    return Number.NaN
   }
 
   // Compute barycentric coordinate components and tes if within bounds
-  const e = Vec3.cross(dir, ap, recycle.next())
+  const e = Vec3.cross(dir, ap, v3temp5)
   const v = Vec3.dot(ac, e)
   if (v < 0 || v > d) {
-    return recycle.end(Number.NaN)
+    return Number.NaN
   }
   const w = -Vec3.dot(ab, e)
   if (w < 0 || v + w > d) {
-    return recycle.end(Number.NaN)
+    return Number.NaN
   }
 
   //
@@ -413,128 +549,78 @@ export function rayIntersectsTriangleAt(orig: IVec3, dir: IVec3, v0: IVec3, v1: 
   // v *= ood
   // w *= ood
   // float u = 1f - v - w
-  return recycle.end(result)
+  return result
 }
 
-//
-// plane[TYPE]Intersection
-//
+/**
+ * Checks for intersection between a plane and a 3d point
+ *
+ * @public
+ * @param plane - the plane
+ * @param point - the point
+ */
+export function planeIntersectsPoint(plane: IVec4, point: IVec3): PlaneIntersectionType {
+  const distance = plane.x * point.x + plane.y * point.y + plane.z * point.z + plane.w
+  if (distance > 0) {
+    return PlaneIntersectionType.Front
+  }
+  if (distance < 0) {
+    return PlaneIntersectionType.Back
+  }
+  return PlaneIntersectionType.Intersects
+}
 
 /**
+ * Checks for intersection between a plane and a sphere
+ *
  * @public
+ * @param plane - the plane
+ * @param center - the sphere center
+ * @param radius - the sphere radius
  */
-export function planeSphereIntersection(center: IVec3, radius: number, plane: IVec4): number {
+export function planeIntersectsSphere(plane: IVec4, center: IVec3, radius: number): PlaneIntersectionType {
   const dist = Vec3.dot(center, plane) - plane.w
   if (dist > radius) {
     // front
-    return 1
+    return PlaneIntersectionType.Front
   }
   if (dist < -radius) {
     // back
-    return -1
+    return PlaneIntersectionType.Back
   }
-  // intersects
-  return 0
+  return PlaneIntersectionType.Intersects
 }
 
 /**
- * @public
+ * Checks for intersection between a plane and a capsule
+ *
+ * @param plane - the plane
+ * @param capsuleStart - the capsule start point
+ * @param capsuleEnd - the capsule end point
+ * @param capsuleR - the capsule radius
  */
-export function planePlaneIntersection(plane1: IVec4, plane2: IVec4, position: IVec3, direction: IVec3) {
-  recycle.begin()
-  Vec3.cross(plane1, plane2, direction)
-  const denom = Vec3.lengthSquared(direction)
-  if (denom < EPSILON) {
-    position.x = 0
-    position.y = 0
-    position.z = 0
-    return recycle.end(false)
-  }
-
-  const p1 = Vec3.multiplyScalar(plane2, plane1.w, recycle.next())
-  const p2 = Vec3.multiplyScalar(plane1, -plane2.w, recycle.next())
-  Vec3.add(p1, p2, position)
-  Vec3.cross(position, direction, position)
-  Vec3.divideScalar(position, denom, position)
-
-  return recycle.end(true)
+export function planeIntersectsCapsule(plane: IVec4, capsuleStart: IVec3, capsuleEnd: IVec3, capsuleR: number): PlaneIntersectionType {
+  const pi1 = planeIntersectsSphere(plane, capsuleStart, capsuleR)
+  const pi2 = planeIntersectsSphere(plane, capsuleStart, capsuleR)
+  return pi1 === pi2 ? pi1 : PlaneIntersectionType.Intersects
 }
 
 /**
+ * Checks for intersection between a plane and a box
+ *
  * @public
+ * @param plane - the plane
+ * @param boxMin - the min point of the box
+ * @param boxMax - the max point of the box
  */
-export function planePlanePlaneIntersection(p1: IVec4, p2: IVec4, p3: IVec4, outPoint?: IVec3): boolean {
-  recycle.begin()
-
-  const m1 = recycle.next()
-  m1.x = p1.x
-  m1.y = p2.x
-  m1.z = p3.x
-
-  const m2 = recycle.next()
-  m2.x = p1.y
-  m2.y = p2.y
-  m2.z = p3.y
-
-  const m3 = recycle.next()
-  m3.x = p1.z
-  m3.y = p2.z
-  m3.z = p3.z
-
-  const u = Vec3.cross(m2, m3, recycle.next())
-  const denom = Vec3.dot(m1, u)
-
-  if (Math.abs(denom) < EPSILON) {
-    outPoint.x = 0
-    outPoint.y = 0
-    outPoint.z = 0
-    return recycle.end(false)
-  }
-
-  const d = recycle.next()
-  d.x = p1.w
-  d.y = p2.w
-  d.z = p3.w
-  const v = Vec3.cross(m1, d, recycle.next())
-  const ood = 1 / denom
-
-  if (outPoint) {
-    outPoint.x = Vec3.dot(d, u) * ood
-    outPoint.y = Vec3.dot(m3, v) * ood
-    outPoint.z = -Vec3.dot(m2, v) * ood
-  }
-
-  return recycle.end(true)
-}
-
-//
-// [TYPE]Intersects[TYPE]
-//
-
-/**
- * @public
- */
-export function boxIntersectsPoint(boxMin: IVec3, boxMax: IVec3, point: IVec3): boolean {
-  return !(
-    boxMin.x > point.x ||
-    point.x > boxMax.x ||
-    boxMin.y > point.y ||
-    point.y > boxMax.y ||
-    boxMin.z > point.z ||
-    point.z > boxMax.z)
-}
-
-/**
- * @public
- */
-export function boxIntersectsPlane(boxMin: IVec3, boxMax: IVec3, plane: IVec4): boolean {
+export function planeIntersectsBox(plane: IVec4, boxMin: IVec3, boxMax: IVec3): PlaneIntersectionType {
   let pX = plane.x >= 0 ? boxMin.x : boxMax.x
   let pY = plane.y >= 0 ? boxMin.y : boxMax.y
   let pZ = plane.z >= 0 ? boxMin.z : boxMax.z
   let dot = plane.x * pX + plane.y * pY + plane.z * pZ
 
   if (dot + plane.w > 0) {
-      return false
+      return PlaneIntersectionType.Front
   }
 
   pX = plane.x >= 0 ? boxMax.x : boxMin.x
@@ -543,37 +629,228 @@ export function boxIntersectsPlane(boxMin: IVec3, boxMax: IVec3, plane: IVec4): 
 
   dot = plane.x * pX + plane.y * pY + plane.z * pZ
 
+  if (dot + plane.w > 0) {
+    return PlaneIntersectionType.Back
+  }
+
+  return PlaneIntersectionType.Intersects
+}
+
+/**
+ * Checks for intersection between a plane and frustum
+ *
+ * @public
+ * @param plane - the plane
+ * @param frustum - the frustum
+ */
+export function planeIntersectsFrustum(plane: IVec4, frustum: BoundingFrustum): PlaneIntersectionType {
+  let result: PlaneIntersectionType = planeIntersectsPoint(plane, frustum.corners[0])
+  for (let i = 1; i < frustum.corners.length; i++) {
+    if (result !== planeIntersectsPoint(plane, frustum.corners[i])) {
+      result = PlaneIntersectionType.Intersects
+    }
+  }
+  return result
+}
+
+/**
+ * Calculates the intersection edge between two planes
+ *
+ * @public
+ * @param plane1 - the first plane
+ * @param plane2 - the second plane
+ * @param outPosition - the resulting edge position
+ * @param outDirection - the resulting edge direction
+ * @returns `true` if the planes intersects, `false` otherwise
+ */
+export function planePlaneIntersection(plane1: IVec4, plane2: IVec4, outPosition: IVec3, outDirection: IVec3): boolean {
+
+  Vec3.cross(plane1, plane2, outDirection)
+  const denom = Vec3.lengthSquared(outDirection)
+  if (denom < EPSILON) {
+    return false
+  }
+
+  const p1 = Vec3.multiplyScalar(plane2, plane1.w, v3temp1)
+  const p2 = Vec3.multiplyScalar(plane1, -plane2.w, v3temp2)
+  Vec3.add(p1, p2, outPosition)
+  Vec3.cross(outPosition, outDirection, outPosition)
+  Vec3.divideScalar(outPosition, denom, outPosition)
+
+  return true
+}
+
+/**
+ * Calculates the intersection point between three planes
+ *
+ * @public
+ * @param p1 - the first plane
+ * @param p2 - the second plane
+ * @param p3 - the third plane
+ * @param out - where the result is written to
+ * @returns `true` if the planes intersect, `false` otherwise
+ */
+export function planePlanePlaneIntersection(p1: IVec4, p2: IVec4, p3: IVec4, out?: IVec3): boolean {
+
+  const m1 = v3temp1
+  m1.x = p1.x
+  m1.y = p2.x
+  m1.z = p3.x
+
+  const m2 = v3temp2
+  m2.x = p1.y
+  m2.y = p2.y
+  m2.z = p3.y
+
+  const m3 = v3temp3
+  m3.x = p1.z
+  m3.y = p2.z
+  m3.z = p3.z
+
+  const u = Vec3.cross(m2, m3, v3temp4)
+  const denom = Vec3.dot(m1, u)
+
+  if (Math.abs(denom) < EPSILON) {
+    out.x = 0
+    out.y = 0
+    out.z = 0
+    return false
+  }
+
+  const d = v3temp5
+  d.x = p1.w
+  d.y = p2.w
+  d.z = p3.w
+  const v = Vec3.cross(m1, d, v3temp6)
+  const ood = 1 / denom
+
+  if (out) {
+    out.x = Vec3.dot(d, u) * ood
+    out.y = Vec3.dot(m3, v) * ood
+    out.z = -Vec3.dot(m2, v) * ood
+  }
+
+  return true
+}
+
+/**
+ * Checks whether a box intersects a point
+ *
+ * @public
+ * @param min - the min point of box volume
+ * @param max - the max point of box volume
+ * @param point - the point
+ */
+export function boxIntersectsPoint(min: IVec3, max: IVec3, point: IVec3): boolean {
+  return !(
+    min.x > point.x ||
+    point.x > max.x ||
+    min.y > point.y ||
+    point.y > max.y ||
+    min.z > point.z ||
+    point.z > max.z)
+}
+
+/**
+ * Checks whether a box intersects a plane
+ *
+ * @public
+ * @param min - the min point of box volume
+ * @param max - the max point of box volume
+ * @param plane - the plane
+ */
+export function boxIntersectsPlane(min: IVec3, max: IVec3, plane: IVec4): boolean {
+  let pX = plane.x >= 0 ? min.x : max.x
+  let pY = plane.y >= 0 ? min.y : max.y
+  let pZ = plane.z >= 0 ? min.z : max.z
+  let dot = plane.x * pX + plane.y * pY + plane.z * pZ
+
+  if (dot + plane.w > 0) {
+      return false
+  }
+
+  pX = plane.x >= 0 ? max.x : min.x
+  pY = plane.y >= 0 ? max.y : min.y
+  pZ = plane.z >= 0 ? max.z : min.z
+
+  dot = plane.x * pX + plane.y * pY + plane.z * pZ
+
   return (dot + plane.w) >= 0
 }
 
 /**
- * @public
+ * Checks whether a box intersects a sphere
+ *
+ * @publix
+ * @param min - the min point of box volume
+ * @param max - the max point of box volume
+ * @param center - the sphere center
+ * @param radius - the sphere radius
  */
-export function boxIntersectSphere(center: IVec3, radius: number, boxMin: IVec3, boxMax: IVec3): boolean {
-  recycle.begin()
-  const c = Vec3.clamp(center, boxMin, boxMax, recycle.next())
+export function boxIntersectSphere(min: IVec3, max: IVec3, center: IVec3, radius: number): boolean {
+
+  const c = Vec3.clamp(center, min, max, v3temp1)
   const d = Vec3.distanceSquared(center, c)
-  return recycle.end(d <= (radius * radius))
+  return d <= (radius * radius)
 }
 
 /**
- * @public
+ * Checks whether a box intersects another box
+ *
+ * @param min1 - the min point of first box volume
+ * @param max1 - the max point of first box volume
+ * @param min2 - the min point of second box volume
+ * @param max2 - the max point of second box volume
  */
-export function boxIntersectBox(box1Min: IVec3, box1Max: IVec3, box2Min: IVec3, box2Max: IVec3): boolean {
-    return (box1Max.x >= box2Min.x && box1Min.x <= box2Max.x &&
-            box1Max.y >= box2Min.y && box1Min.y <= box2Max.y &&
-            box1Max.z >= box2Min.z && box1Min.z <= box2Max.z)
+export function boxIntersectBox(min1: IVec3, max1: IVec3, min2: IVec3, max2: IVec3): boolean {
+    return (max1.x >= min2.x && min1.x <= max2.x &&
+            max1.y >= min2.y && min1.y <= max2.y &&
+            max1.z >= min2.z && min1.z <= max2.z)
 }
 
 /**
+ * Checks whether a box intersects a capsule volume
+ *
+ * @param boxMin - the min point of box volume
+ * @param boxMax - the max point of box volume
+ * @param capsuleStart - the capsule start point
+ * @param capsuleEnd - the capsule end point
+ * @param capsuleR - the capsule radius
+ */
+export function boxIntersectsCapsule(
+  boxMin: IVec3,
+  boxMax: IVec3,
+  capsuleStart: IVec3,
+  capsuleEnd: IVec3,
+  capsuleR: number,
+): boolean {
+  const boxCenter = v3temp1
+  boxCenter.x = (boxMax.x - boxMin.x) * 0.5 + boxMin.x
+  boxCenter.y = (boxMax.y - boxMin.y) * 0.5 + boxMin.y
+  boxCenter.z = (boxMax.z - boxMin.z) * 0.5 + boxMin.z
+  const closest = closestPointOnSegment(boxCenter, capsuleStart, capsuleEnd, v3temp2)
+  return boxIntersectSphere(boxMin, boxMax, closest, capsuleR)
+}
+
+/**
+ * Checks whether a sphere intersects a point
+ *
  * @public
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ * @param point - the point
  */
 export function sphereIntersectsPoint(center: IVec3, radius: number, point: IVec3): boolean {
   return Vec3.distanceSquared(point, center) <= (radius * radius)
 }
 
 /**
+ * Checks whether a sphere intersects a plane
+ *
  * @public
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ * @param plane - the plane
  */
 export function sphereIntersectsPlane(center: IVec3, radius: number, plane: IVec4): boolean {
   const dist = Vec3.dot(center, plane) - plane.w
@@ -581,7 +858,13 @@ export function sphereIntersectsPlane(center: IVec3, radius: number, plane: IVec
 }
 
 /**
+ * Checks wphether a sphere intersects another sphere
+ *
  * @public
+ * @param c1 - the first sphere center
+ * @param r1 - the first sphere radius
+ * @param c2 - the second sphere center
+ * @param r2 - the second sphere radius
  */
 export function sphereIntersectsSphere(c1: IVec3, r1: number, c2: IVec3, r2: number): boolean {
   // Calculate squared distance between centers
@@ -592,17 +875,48 @@ export function sphereIntersectsSphere(c1: IVec3, r1: number, c2: IVec3, r2: num
 }
 
 /**
+ * Checks whether a sphere intersects a triangle
+ *
  * @public
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ * @param v0 - first point of triangle
+ * @param v1 - second point of triangle
+ * @param v2 - third point of triangle
  */
 export function sphereIntersectsTriangle(center: IVec3, radius: number, v0: IVec3, v1: IVec3, v2: IVec3): boolean {
-  recycle.begin()
-  const p = closestPointTriangle(center, v0, v1, v2, recycle.next())
+  const p = closestPointOnTriangle(center, v0, v1, v2, v3temp1)
   Vec3.subtract(p, center, p)
-  return recycle.end(Vec3.lengthSquared(p) <= radius * radius)
+  return Vec3.lengthSquared(p) <= radius * radius
 }
 
 /**
+ * Checks whether a sphere intersects a capsule
+ *
+ * @param sphereCenter - the sphere center
+ * @param sphereRaidus - the sphere radisu
+ * @param capsuleStart - the capsule start point
+ * @param capsuleEnd - the capsule end point
+ * @param capsuleRadius - the capsule radius
+ */
+export function sphereIntersectsCapsule(
+  sphereCenter: IVec3,
+  sphereRaidus: number,
+  capsuleStart: IVec3,
+  capsuleEnd: IVec3,
+  capsuleRadius: number,
+): boolean {
+  const dist2 = distanceSquaredPointToSegment(capsuleStart, capsuleEnd, sphereCenter)
+  const radius = capsuleRadius + sphereRaidus
+  return dist2 <= radius * radius
+}
+
+/**
+ * Checks whether a frustum intersects a point
+ *
  * @public
+ * @param frustum - the frustum
+ * @param point - the point
  */
 export function frustumIntersectsPoint(frustum: BoundingFrustum, point: IVec3): boolean {
   for (let i = 0; i < 6; i++) {
@@ -615,242 +929,13 @@ export function frustumIntersectsPoint(frustum: BoundingFrustum, point: IVec3): 
   return true
 }
 
-//
-// - box[TYPE]Intersection
-//
-
 /**
+ * Checks whether a frustum intersects a sphere
+ *
  * @public
- */
-export function boxBoxIntersection(b1Min: IVec3, b1Max: IVec3, b2Min: IVec3, b2Max: IVec3): number {
-  if (
-    (b1Max.x < b2Min.x) ||
-    (b1Min.x > b2Max.x) ||
-    (b1Max.y < b2Min.y) ||
-    (b1Min.y > b2Max.y) ||
-    (b1Max.z < b2Min.z) ||
-    (b1Min.z > b2Max.z)) {
-    return DISJOINT
-  }
-  if (
-    (b1Min.x <= b2Min.x) &&
-    (b1Max.x >= b2Max.x) &&
-    (b1Min.y <= b2Min.y) &&
-    (b1Max.y >= b2Max.y) &&
-    (b1Min.z <= b2Min.z) &&
-    (b1Max.z >= b2Max.z)) {
-    return CONTAINS
-  }
-  return INTERSECTS
-}
-
-/**
- * @public
- */
-export function boxSphereIntersection(boxMin: IVec3, boxMax: IVec3, center: IVec3, radius: number): number {
-  recycle.begin()
-  const vector = Vec3.clamp(center, boxMin, boxMax, recycle.next())
-  const distance = Vec3.distanceSquared(center, vector)
-  if (distance > radius * radius) {
-    return recycle.end(DISJOINT)
-  }
-  if (((boxMin.x + radius) > center.x) || (center.x > (boxMax.x - radius)) || ((boxMax.x - boxMin.x) <= radius) ||
-      ((boxMin.y + radius) > center.y) || (center.y > (boxMax.y - radius)) || ((boxMax.y - boxMin.y) <= radius) ||
-      ((boxMin.z + radius) > center.z) || (center.z > (boxMax.z - radius)) || ((boxMax.z - boxMin.z) <= radius)) {
-    return recycle.end(INTERSECTS)
-  }
-  return recycle.end(CONTAINS)
-}
-
-/**
- * @public
- */
-export function boxFrustumIntersection(boxMin: IVec3, boxMax: IVec3, frustum: BoundingFrustum): number {
-  let inside = 0
-  let outside = 0
-  for (const point of frustum.corners) {
-    if (boxMin.x > point.x || point.x > boxMax.x ||
-        boxMin.y > point.y || point.y > boxMax.y ||
-        boxMin.z > point.z || point.z > boxMax.z) {
-      outside++
-    } else {
-      inside++
-    }
-  }
-  if (inside === frustum.corners.length) {
-    return CONTAINS
-  }
-  if (outside === frustum.corners.length) {
-    return DISJOINT
-  }
-  return INTERSECTS
-}
-
-//
-// - sphere[TYPE]Intersection
-//
-
-/**
- * @public
- */
-export function sphereBoxIntersection(center: IVec3, radius: number, boxMin: IVec3, boxMax: IVec3): number {
-  if (!boxIntersectSphere(center, radius, boxMin, boxMax)) {
-    return DISJOINT
-  }
-  const r2 = radius * radius
-  let vecX = center.x - boxMin.x
-  let vecY = center.y - boxMax.y
-  let vecZ = center.z - boxMax.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMax.x
-  vecY = center.y - boxMax.y
-  vecZ = center.z - boxMax.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMax.x
-  vecY = center.y - boxMin.y
-  vecZ = center.z - boxMax.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMin.x
-  vecY = center.y - boxMin.y
-  vecZ = center.z - boxMax.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMin.x
-  vecY = center.y - boxMax.y
-  vecZ = center.z - boxMin.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMax.x
-  vecY = center.y - boxMax.y
-  vecZ = center.z - boxMin.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMax.x
-  vecY = center.y - boxMin.y
-  vecZ = center.z - boxMin.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  vecX = center.x - boxMin.x
-  vecY = center.y - boxMin.y
-  vecZ = center.z - boxMin.z
-  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
-    return INTERSECTS
-  }
-  return CONTAINS
-}
-
-/**
- * @public
- */
-export function sphereSphereIntersection(c1: IVec3, r1: number, c2: IVec3, r2: number): number {
-  const distance = Vec3.distance(c1, c2)
-  if (r1 + r2 < distance) {
-    return 0
-  }
-  if (r1 - r2 < distance) {
-    return 1
-  }
-  return 2
-}
-
-/**
- * @public
- */
-export function sphereFrustumIntersection(center: IVec3, radius: number, frustum: BoundingFrustum): number {
-  const r2 = radius * radius
-  let inside = 0
-  let outside = 0
-  for (const point of frustum.corners) {
-    const d2 = Vec3.distanceSquared(point, center)
-    if (d2 - r2 <= Number.EPSILON) {
-      inside++
-    } else {
-      outside++
-    }
-  }
-  if (inside === frustum.corners.length) {
-    return 2
-  }
-  if (outside === frustum.corners.length) {
-    return 0
-  }
-  return 1
-}
-
-//
-// - frustum[TYPE]Intersection
-//
-
-/**
- * @public
- */
-export function frustumSphereIntersection(frustum: BoundingFrustum, center: IVec3, radius: number): number {
-  // assume sphere is inside
-  let result = 2
-
-  for (const plane of frustum.planes) {
-    const d = Vec3.dot(plane, center) + plane.w
-    if (d < -radius) {
-      // back -> outside
-      return 0
-    }
-    if (d > radius) {
-      // front -> intersects
-      result = 1
-    }
-  }
-  return result
-}
-
-/**
- * @public
- */
-export function frustumBoxIntersection(frustum: BoundingFrustum, boxMin: IVec3, boxMax: IVec3): number {
-  // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
-  // section: Geometric Approach - Testing Boxes II
-
-  let result = 2 // inside
-
-  // for each plane do ...
-  for (let i = 0; i < 6; i++) {
-      let plane = frustum.planes[i]
-
-      let pX = plane.x >= 0 ? boxMax.x : boxMin.x
-      let pY = plane.y >= 0 ? boxMax.y : boxMin.y
-      let pZ = plane.z >= 0 ? boxMax.z : boxMin.z
-      let distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w
-      if (distance < 0) {
-        return 0 // outside
-      }
-
-      pX = plane.x >= 0 ? boxMin.x : boxMax.x
-      pY = plane.y >= 0 ? boxMin.y : boxMax.y
-      pZ = plane.z >= 0 ? boxMin.z : boxMax.z
-      distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w
-
-      if (distance < 0) {
-          result = 1 // intersect
-      }
-  }
-  return result
-}
-
-//
-// - frustumIntersection[TYPE]
-//
-
-/**
- * @public
+ * @param frustum - the frustum
+ * @param center - the sphere center
+ * @param radius - the sphere radius
  */
 export function frustumIntersectsSphere(frustum: BoundingFrustum, center: IVec3, radius: number): boolean {
   for (let i = 0; i < 6; i++) {
@@ -865,9 +950,14 @@ export function frustumIntersectsSphere(frustum: BoundingFrustum, center: IVec3,
 }
 
 /**
+ * Checks whether a frustum intersects a box
+ *
  * @public
+ * @param frustum - the frustum
+ * @param min - the min point of box volume
+ * @param max - the max point of box volume
  */
-export function frustumIntersectsBox(frustum: BoundingFrustum, boxMin: IVec3, boxMax: IVec3): boolean {
+export function frustumIntersectsBox(frustum: BoundingFrustum, min: IVec3, max: IVec3): boolean {
   // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
   // section: Geometric Approach - Testing Boxes II
 
@@ -879,17 +969,17 @@ export function frustumIntersectsBox(frustum: BoundingFrustum, boxMin: IVec3, bo
   // for each plane do ...
   for (const plane of frustum.planes) {
     // build positive vertex as described in link above
-    pX = boxMin.x
-    pY = boxMin.y
-    pZ = boxMin.z
+    pX = min.x
+    pY = min.y
+    pZ = min.z
     if (plane.x >= 0) {
-      pX = boxMax.x
+      pX = max.x
     }
     if (plane.y >= 0) {
-      pY = boxMax.y
+      pY = max.y
     }
     if (plane.z >= 0) {
-      pZ = boxMax.z
+      pZ = max.z
     }
 
     // is the positive vertex outside?
@@ -902,7 +992,11 @@ export function frustumIntersectsBox(frustum: BoundingFrustum, boxMin: IVec3, bo
 }
 
 /**
+ * Checks whether a frustum intersects a plane
+ *
  * @public
+ * @param frustum - the frustum
+ * @param plane - the plane
  */
 export function frustumIntersectsPlane(frustum: BoundingFrustum, plane: IVec4): boolean {
   let back
@@ -919,4 +1013,319 @@ export function frustumIntersectsPlane(frustum: BoundingFrustum, plane: IVec4): 
     }
   }
   return false
+}
+
+/**
+ * Checks whether a box contains another box volume
+ *
+ * @public
+ * @param min1 - the min point of the box
+ * @param max1 - the max point of the box
+ * @param min2 - the min point of another box
+ * @param max2 - the max point of another box
+ */
+export function boxContainsBox(min1: IVec3, max1: IVec3, min2: IVec3, max2: IVec3): ContainmentType {
+  if (
+    (max1.x < min2.x) ||
+    (min1.x > max2.x) ||
+    (max1.y < min2.y) ||
+    (min1.y > max2.y) ||
+    (max1.z < min2.z) ||
+    (min1.z > max2.z)) {
+    return ContainmentType.Disjoint
+  }
+  if (
+    (min1.x <= min2.x) &&
+    (max1.x >= max2.x) &&
+    (min1.y <= min2.y) &&
+    (max1.y >= max2.y) &&
+    (min1.z <= min2.z) &&
+    (max1.z >= max2.z)) {
+    return ContainmentType.Contains
+  }
+  return ContainmentType.Intersects
+}
+
+/**
+ * Checks whether a box contains a sphere volume
+ *
+ * @public
+ * @param min - the min point of the box
+ * @param max - the max point of the box
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ */
+export function boxContainsSphere(min: IVec3, max: IVec3, center: IVec3, radius: number): ContainmentType {
+  const vector = Vec3.clamp(center, min, max, v3temp1)
+  const distance = Vec3.distanceSquared(center, vector)
+  if (distance > radius * radius) {
+    return ContainmentType.Disjoint
+  }
+  if (((min.x + radius) > center.x) || (center.x > (max.x - radius)) || ((max.x - min.x) <= radius) ||
+      ((min.y + radius) > center.y) || (center.y > (max.y - radius)) || ((max.y - min.y) <= radius) ||
+      ((min.z + radius) > center.z) || (center.z > (max.z - radius)) || ((max.z - min.z) <= radius)) {
+    return ContainmentType.Intersects
+  }
+  return ContainmentType.Contains
+}
+
+/**
+ * Checks whether a box contains a capsule volume
+ *
+ * @param boxMin - the min point of the box
+ * @param boxMax - the max point of the box
+ * @param capsuleStart - the capsule start point
+ * @param capsuleEnd - the capsule end point
+ * @param capsuleR - the capsule radius
+ */
+export function boxContainsCapsule(
+  boxMin: IVec3,
+  boxMax: IVec3,
+  capsuleStart: IVec3,
+  capsuleEnd: IVec3,
+  capsuleR: number,
+) {
+  if (!boxIntersectsCapsule(
+    boxMin,
+    boxMax,
+    capsuleStart,
+    capsuleEnd,
+    capsuleR)
+  ) {
+    return ContainmentType.Disjoint
+  }
+  const c1 = boxContainsSphere(boxMin, boxMax, capsuleStart, capsuleR)
+  const c2 = boxContainsSphere(boxMin, boxMax, capsuleEnd, capsuleR)
+  return c1 === c2 ? c1 : ContainmentType.Intersects
+}
+
+/**
+ * Checks whether a box contains a frustum volume
+ *
+ * @public
+ * @param min - the min point of the box
+ * @param max - the max point of the box
+ * @param frustum - the frustum volume
+ */
+export function boxContainsFrustum(min: IVec3, max: IVec3, frustum: BoundingFrustum): ContainmentType {
+  let inside = 0
+  let outside = 0
+  for (const point of frustum.corners) {
+    if (min.x > point.x || point.x > max.x ||
+        min.y > point.y || point.y > max.y ||
+        min.z > point.z || point.z > max.z) {
+      outside++
+    } else {
+      inside++
+    }
+  }
+  if (inside === frustum.corners.length) {
+    return ContainmentType.Contains
+  }
+  if (outside === frustum.corners.length) {
+    return ContainmentType.Disjoint
+  }
+  return ContainmentType.Intersects
+}
+
+/**
+ * Checks whether a sphere contains a box volume
+ *
+ * @public
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ * @param min - the min point of the box volume
+ * @param max - the max point of the box volume
+ */
+export function sphereContainsBox(center: IVec3, radius: number, min: IVec3, max: IVec3): ContainmentType {
+  if (!boxIntersectSphere(min, max, center, radius)) {
+    return ContainmentType.Disjoint
+  }
+  const r2 = radius * radius
+  let vecX = center.x - min.x
+  let vecY = center.y - max.y
+  let vecZ = center.z - max.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - max.x
+  vecY = center.y - max.y
+  vecZ = center.z - max.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - max.x
+  vecY = center.y - min.y
+  vecZ = center.z - max.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - min.x
+  vecY = center.y - min.y
+  vecZ = center.z - max.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - min.x
+  vecY = center.y - max.y
+  vecZ = center.z - min.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - max.x
+  vecY = center.y - max.y
+  vecZ = center.z - min.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - max.x
+  vecY = center.y - min.y
+  vecZ = center.z - min.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  vecX = center.x - min.x
+  vecY = center.y - min.y
+  vecZ = center.z - min.z
+  if ((vecX * vecX + vecY * vecY + vecZ * vecZ) > r2) {
+    return ContainmentType.Intersects
+  }
+  return ContainmentType.Contains
+}
+
+/**
+ * Checks whether a sphere contains another sphere volume
+ *
+ * @public
+ * @param c1 - the sphere center
+ * @param r1 - the sphere radius
+ * @param c2 - the other sphere center
+ * @param r2 - the other sphere radius
+ */
+export function sphereContainsSphere(c1: IVec3, r1: number, c2: IVec3, r2: number): ContainmentType {
+  const distance = Vec3.distance(c1, c2)
+  if (r1 + r2 < distance) {
+    return ContainmentType.Disjoint
+  }
+  if (r1 - r2 < distance) {
+    return ContainmentType.Intersects
+  }
+  return ContainmentType.Contains
+}
+
+/**
+ * Checks whether a sphere contains a capsule volume
+ *
+ * @param sphereCenter - the sphere center
+ * @param sphereRadius - the sphere radius
+ * @param capsuleStart - the capsule start point
+ * @param capsuleEnd - the capsule end point
+ * @param capsuleRadius - the capsule radius
+ */
+export function sphereContainsCapsule(
+  sphereCenter: IVec3,
+  sphereRadius: number,
+  capsuleStart: IVec3,
+  capsuleEnd: IVec3,
+  capsuleRadius: number,
+): ContainmentType {
+  if (!sphereIntersectsCapsule(sphereCenter, sphereRadius, capsuleStart, capsuleEnd, capsuleRadius)) {
+    return ContainmentType.Disjoint
+  }
+  const c1 = sphereContainsSphere(sphereCenter, sphereRadius, capsuleStart, capsuleRadius)
+  const c2 = sphereContainsSphere(sphereCenter, sphereRadius, capsuleEnd, capsuleRadius)
+  return c1 === c2 ? c1 : ContainmentType.Intersects
+}
+
+/**
+ * Checks whether a sphere contains a frustum volume
+ *
+ * @public
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ * @param frustum - the frustum
+ */
+export function sphereContainsFrustum(center: IVec3, radius: number, frustum: BoundingFrustum): ContainmentType {
+  const r2 = radius * radius
+  let inside = 0
+  let outside = 0
+  for (const point of frustum.corners) {
+    const d2 = Vec3.distanceSquared(point, center)
+    if (d2 - r2 <= Number.EPSILON) {
+      inside++
+    } else {
+      outside++
+    }
+  }
+  if (inside === frustum.corners.length) {
+    return ContainmentType.Contains
+  }
+  if (outside === frustum.corners.length) {
+    return ContainmentType.Disjoint
+  }
+  return ContainmentType.Intersects
+}
+
+/**
+ * Checks whether a frustum contains a sphere volume
+ *
+ * @public
+ * @param frustum - the frustum
+ * @param center - the sphere center
+ * @param radius - the sphere radius
+ */
+export function frustumContainsSphere(frustum: BoundingFrustum, center: IVec3, radius: number): ContainmentType {
+  // assume sphere is inside
+  let result = ContainmentType.Contains
+
+  for (const plane of frustum.planes) {
+    const d = Vec3.dot(plane, center) + plane.w
+    if (d < -radius) {
+      // back -> outside
+      return ContainmentType.Disjoint
+    }
+    if (d > radius) {
+      // front -> ContainmentType.intersects
+      result = ContainmentType.Intersects
+    }
+  }
+  return result
+}
+
+/**
+ * Checks whether a frustum contains a box volume
+ *
+ * @public
+ * @param frustum - the frustum
+ * @param min - the min point of the box volume
+ * @param max - the max point of the box volume
+ */
+export function frustumContainsBox(frustum: BoundingFrustum, min: IVec3, max: IVec3): ContainmentType {
+  // http://zach.in.tu-clausthal.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
+  // section: Geometric Approach - Testing Boxes II
+
+  let result = ContainmentType.Contains // inside
+
+  // for each plane do ...
+  for (let i = 0; i < 6; i++) {
+      let plane = frustum.planes[i]
+
+      let pX = plane.x >= 0 ? max.x : min.x
+      let pY = plane.y >= 0 ? max.y : min.y
+      let pZ = plane.z >= 0 ? max.z : min.z
+      let distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w
+      if (distance < 0) {
+        return ContainmentType.Disjoint // outside
+      }
+
+      pX = plane.x >= 0 ? min.x : max.x
+      pY = plane.y >= 0 ? min.y : max.y
+      pZ = plane.z >= 0 ? min.z : max.z
+      distance = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w
+
+      if (distance < 0) {
+          result = ContainmentType.Intersects // intersect
+      }
+  }
+  return result
 }

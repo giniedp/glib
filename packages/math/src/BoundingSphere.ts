@@ -2,13 +2,14 @@ import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
 import {
   boxIntersectSphere,
+  ContainmentType,
   rayIntersectsSphere,
-  sphereBoxIntersection,
-  sphereFrustumIntersection,
+  sphereContainsBox,
+  sphereContainsFrustum,
+  sphereContainsSphere,
   sphereIntersectsPlane,
   sphereIntersectsPoint,
   sphereIntersectsSphere,
-  sphereSphereIntersection,
 } from './Collision'
 import { Ray } from './Ray'
 import { ArrayLike, IVec3, IVec4 } from './Types'
@@ -64,7 +65,7 @@ export class BoundingSphere {
    * @param z - z coordinate of sphere center
    * @param r - radius of the sphere
    */
-  public init(x?: number, y?: number, z?: number, r?: number): BoundingSphere {
+  public init(x?: number, y?: number, z?: number, r?: number): this {
     this.center.x = x || 0
     this.center.y = y || 0
     this.center.z = z || 0
@@ -91,7 +92,7 @@ export class BoundingSphere {
    *
    * @param other - the instance to copy from
    */
-  public initFrom(other: BoundingSphere): BoundingSphere {
+  public initFrom(other: BoundingSphere): this {
     this.center.x = other.center.x
     this.center.y = other.center.y
     this.center.z = other.center.z
@@ -120,7 +121,7 @@ export class BoundingSphere {
    * @param center - the sphere center pooint to copy
    * @param radius - the sphere radius
    */
-  public initFromCenterRadius(center: IVec3, radius: number): BoundingSphere {
+  public initFromCenterRadius(center: IVec3, radius: number): this {
     this.center.x = center.x
     this.center.y = center.y
     this.center.z = center.z
@@ -145,9 +146,33 @@ export class BoundingSphere {
    *
    * @param box - the box volume to containe
    */
-  public initFromBox(box: BoundingBox): BoundingSphere {
+  public initFromBox(box: BoundingBox): this {
     this.radius = Vec3.distance(box.min, box.max) * 0.5
     Vec3.lerp(box.min, box.max, 0.5, this.center)
+    return this
+  }
+
+  /**
+   * Deserializes a new instance from a numbers array
+   *
+   * @param array - the numbers array containing a serialized sphere
+   * @param offset - offset at which to start reading in array. Default is `0`
+   */
+  public static createFromArray(array: ArrayLike<number>, offset?: number): BoundingSphere {
+    return new BoundingSphere().initFromArray(array, offset)
+  }
+
+  /**
+   * Initializes this instance by deserializeng an instance from array
+   *
+   * @param array - the numbers array containing a serialized sphere
+   * @param offset - offset at which to start reading in array. Default is `0`
+   */
+  public initFromArray(array: ArrayLike<number>, offset: number = 0): this {
+    this.center.x = array[offset + 0]
+    this.center.y = array[offset + 1]
+    this.center.z = array[offset + 2]
+    this.radius = array[offset + 3]
     return this
   }
 
@@ -158,8 +183,8 @@ export class BoundingSphere {
    * @param offset - offset at which to start reading in array. Default is `0`
    * @param stride - step size for each iteration. Default is `3`
    */
-  public static createFromArray(array: ArrayLike<number>, offset?: number, stride?: number): BoundingSphere {
-    return new BoundingSphere().initFromArray(array, offset, stride)
+  public static createFromPointsBuffer(array: ArrayLike<number>, offset?: number, stride?: number): BoundingSphere {
+    return new BoundingSphere().initFromPointsBuffer(array, offset, stride)
   }
 
   /**
@@ -169,7 +194,7 @@ export class BoundingSphere {
    * @param offset - offset at which to start reading in array. Default is `0`
    * @param stride - step size for each iteration. Default is `3`
    */
-  public initFromArray(array: ArrayLike<number>, offset: number = 0, stride: number = 3): BoundingSphere {
+  public initFromPointsBuffer(array: ArrayLike<number>, offset: number = 0, stride: number = 3): this {
     let zero = true
     const min = { x: 0, y: 0, z: 0 }
     const max = { x: 0, y: 0, z: 0 }
@@ -211,7 +236,7 @@ export class BoundingSphere {
    * @param array - the point list
    * @param offset - the offset in `array`
    */
-  public initFromPoints(array: IVec3[]): BoundingSphere {
+  public initFromPoints(array: IVec3[]): this {
     let zero = true
     const min = { x: 0, y: 0, z: 0 }
     const max = { x: 0, y: 0, z: 0 }
@@ -319,7 +344,7 @@ export class BoundingSphere {
    *
    * @param point - the point to merge
    */
-  public mergePoint(point: IVec3): BoundingSphere {
+  public mergePoint(point: IVec3): this {
     const distance = Vec3.distance(this.center, point)
     if (this.radius < distance) {
       this.radius = distance
@@ -327,6 +352,12 @@ export class BoundingSphere {
     return this
   }
 
+  /**
+   * Checks whether the given point intersects this volume
+   */
+  public intersectsPoint(point: IVec3): boolean {
+    return sphereIntersectsPoint(this.center, this.radius, point)
+  }
   /**
    * Checks whether the given ray intersects this volume
    */
@@ -337,7 +368,7 @@ export class BoundingSphere {
    * Checks whether the given box intersects this volume
    */
   public intersectsBox(box: BoundingBox): boolean {
-    return boxIntersectSphere(this.center, this.radius, box.min, box.max)
+    return boxIntersectSphere(box.min, box.max, this.center, this.radius)
   }
   /**
    * Checks whether the given sphere intersects this volume
@@ -353,47 +384,41 @@ export class BoundingSphere {
   }
 
   /**
-   * Checks whether the given point is contained by this volume
-   */
-  public containsPoint(point: IVec3): boolean {
-    return sphereIntersectsPoint(this.center, this.radius, point)
-  }
-  /**
    * Checks whether the given box is contained by this volume
    */
   public containsBox(box: BoundingBox): boolean {
-    return sphereBoxIntersection(this.center, this.radius, box.min, box.max) === 2
+    return sphereContainsBox(this.center, this.radius, box.min, box.max) === 2
   }
   /**
    * Checks whether the given sphere is contained by this volume
    */
   public containsSphere(sphere: BoundingSphere): boolean {
-    return sphereSphereIntersection(this.center, this.radius, sphere.center, sphere.radius) === 2
+    return sphereContainsSphere(this.center, this.radius, sphere.center, sphere.radius) === 2
   }
   /**
    * Checks whether the given frustum is contained by this volume
    */
   public containsFrustum(frustum: BoundingFrustum): boolean {
-    return sphereFrustumIntersection(this.center, this.radius, frustum) === 2
+    return sphereContainsFrustum(this.center, this.radius, frustum) === 2
   }
 
   /**
-   * Checks for collosion with another box and returns the intersection type
+   * Checks for collision with another box and returns the containment type
    */
-  public intersectionWithBox(box: BoundingBox): number {
-    return sphereBoxIntersection(this.center, this.radius, box.min, box.max)
+  public containmentOfBox(box: BoundingBox): ContainmentType {
+    return sphereContainsBox(this.center, this.radius, box.min, box.max)
   }
   /**
-   * Checks for collosion with another sphere and returns the intersection type
+   * Checks for collision with another sphere and returns the containment type
    */
-  public intersectionWithSphere(sphere: BoundingSphere): number {
-    return sphereSphereIntersection(this.center, this.radius, sphere.center, sphere.radius)
+  public containmentOfSphere(sphere: BoundingSphere): ContainmentType {
+    return sphereContainsSphere(this.center, this.radius, sphere.center, sphere.radius)
   }
   /**
-   * Checks for collosion with another frustum and returns the intersection type
+   * Checks for collision with another frustum and returns the containment type
    */
-  public intersectionWithFrustum(frustum: BoundingFrustum): number {
-    return sphereFrustumIntersection(this.center, this.radius, frustum)
+  public containmentOfFrustum(frustum: BoundingFrustum): ContainmentType {
+    return sphereContainsFrustum(this.center, this.radius, frustum)
   }
 
   /**

@@ -48,7 +48,8 @@ export const loadModelOptionsToModel = loader<ModelOptions, Model>({
     if (input.meshes.length && !BoundingBox.convert(input.boundingBox)) {
       const box = input.meshes
         .map((it) => BoundingBox.convert(it.boundingBox))
-        .reduce((a, b) => BoundingBox.merge(a || b, b), null)
+        .filter((it) => it != null)
+        .reduce((a, b) => BoundingBox.merge(a || b, b), null) || new BoundingBox()
       const sphere = BoundingSphere.createFromBox(box)
 
       input.boundingBox = box.toArray()

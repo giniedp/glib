@@ -1,12 +1,13 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingSphere } from './BoundingSphere'
 import {
-  frustumBoxIntersection,
+  ContainmentType,
+  frustumContainsBox,
+  frustumContainsSphere,
   frustumIntersectsBox,
   frustumIntersectsPlane,
   frustumIntersectsPoint,
   frustumIntersectsSphere,
-  frustumSphereIntersection,
   planePlaneIntersection,
   rayIntersectsPlaneAt,
 } from './Collision'
@@ -202,28 +203,28 @@ export class BoundingFrustum {
     // 3 7 11 15
     const m = this.matrix.m
     let plane = this.planes[LEFT]
-    plane.x = m[12] + m[0]
-    plane.y = m[13] + m[1]
-    plane.z = m[14] + m[2]
-    plane.w = m[15] + m[3]
-
-    plane = this.planes[RIGHT]
     plane.x = m[12] - m[0]
     plane.y = m[13] - m[1]
     plane.z = m[14] - m[2]
     plane.w = m[15] - m[3]
 
-    plane = this.planes[TOP]
-    plane.x = m[12] - m[4]
-    plane.y = m[13] - m[5]
-    plane.z = m[14] - m[6]
-    plane.w = m[15] - m[7]
+    plane = this.planes[RIGHT]
+    plane.x = m[12] + m[0]
+    plane.y = m[13] + m[1]
+    plane.z = m[14] + m[2]
+    plane.w = m[15] + m[3]
 
-    plane = this.planes[BOTTOM]
+    plane = this.planes[TOP]
     plane.x = m[12] + m[4]
     plane.y = m[13] + m[5]
     plane.z = m[14] + m[6]
     plane.w = m[15] + m[7]
+
+    plane = this.planes[BOTTOM]
+    plane.x = m[12] - m[4]
+    plane.y = m[13] - m[5]
+    plane.z = m[14] - m[6]
+    plane.w = m[15] - m[7]
 
     plane = this.planes[NEAR]
     plane.x = m[12] + m[8]
@@ -284,11 +285,17 @@ export class BoundingFrustum {
     ray.positionAt(distance, this.corners[6])
   }
 
+  // /**
+  //  * Checks for intersaction with a ray
+  //  */
+  // public intersectsRay(ray: Ray): boolean {
+  //   throw new Error('not implemented')
+  // }
   /**
-   * Checks for intersaction with a ray
+   * Checks for intersaction with a point
    */
-  public intersectsRay(ray: Ray): boolean {
-    throw new Error('not implemented')
+  public intersectsPoint(point: IVec3): boolean {
+    return frustumIntersectsPoint(this, point)
   }
   /**
    * Checks for intersaction with a plane
@@ -319,40 +326,35 @@ export class BoundingFrustum {
    * Checks whether this frustum contains the given volume
    */
   public containsBox(box: BoundingBox): boolean {
-    return frustumBoxIntersection(this, box.min, box.max) === 2
+    return frustumContainsBox(this, box.min, box.max) === ContainmentType.Contains
   }
   /**
    * Checks whether this frustum contains the given volume
    */
   public containsSphere(sphere: BoundingSphere): boolean {
-    return frustumSphereIntersection(this, sphere.center, sphere.radius) === 2
-  }
-  /**
-   * Checks whether this frustum contains the given volume
-   */
-  public containsPoint(point: IVec3): boolean {
-    return frustumIntersectsPoint(this, point)
+    return frustumContainsSphere(this, sphere.center, sphere.radius) === ContainmentType.Contains
   }
 
   /**
    * Checks for intersection type with given volume
    */
-  public intersectionWithBox(box: BoundingBox): number {
-    return frustumBoxIntersection(this, box.min, box.max)
+  public containmentOfBox(box: BoundingBox): ContainmentType {
+    return frustumContainsBox(this, box.min, box.max)
   }
   /**
    * Checks for intersection type with given volume
    */
-  public intersectionWithSphere(sphere: BoundingSphere): number {
-    return frustumSphereIntersection(this, sphere.center, sphere.radius)
+  public containmentOfSphere(sphere: BoundingSphere): ContainmentType {
+    return frustumContainsSphere(this, sphere.center, sphere.radius)
   }
   /**
    * Checks for intersection type with given volume
    */
-  public intersectionWithFrustum(frustum: BoundingFrustum): number {
+  public containmentOfFrustum(frustum: BoundingFrustum): number {
     let count = 0
-    for (let i = 0; i < frustum.corners.length; i++) {
-      if (this.containsPoint(frustum.corners[i])) {
+    for (let i = 0; i < frustum.planes.length; i++) {
+
+      if (this.intersectsPoint(frustum.corners[i])) {
         count++
       }
     }

@@ -179,7 +179,8 @@ describe('Ray', () => {
     it('#intersectsSphereAt', () => {
       const sphere = new BoundingSphere(0, 0, 0, 1)
 
-      expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsSphereAt(sphere)).toBe(0, 'inside')
+      expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsSphereAt(sphere)).toBe(1, 'inside')
+      expect(Ray.create(0.5, 0, 0, 1, 0, 0).intersectsSphereAt(sphere)).toBe(0.5, 'inside')
 
       expect(Ray.create(-2, 0, 0,  1, 0, 0).intersectsSphereAt(sphere)).toBe(1, 'left to right')
       expect(Ray.create( 2, 0, 0, -1, 0, 0).intersectsSphereAt(sphere)).toBe(1, 'right to left')
