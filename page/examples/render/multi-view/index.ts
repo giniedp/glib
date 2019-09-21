@@ -4,7 +4,7 @@ import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
 import { Device, Model } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
-import { BasicRenderStep, DrawableData, LightSourceData, RenderManager, RenderStep } from '@gglib/render'
+import { BasicRenderStep, LightSourceData, RenderManager, RenderStep, SceneItemDrawable } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // Create the `Device` and `ContentManager` as usual
@@ -16,7 +16,7 @@ const renderer = new RenderManager(device)
 
 // All scenes will be referencing the same
 // data and rendering arrays.
-const items: DrawableData[] = [] as any[]
+const items: SceneItemDrawable[] = [] as any[]
 const lights: LightSourceData[] = [
   LightParams.createDirectionalLight({
     color: new Vec4(1, 1, 1, 1),
@@ -102,6 +102,7 @@ loop((time, dt) => {
 content.load('/assets/models/obj/piratekit/ship_dark.obj', Model).then((model) => {
   model.meshes.forEach((mesh) => {
     items.push({
+      type: 'drawable',
       transform: Mat4.createIdentity(),
       drawable: mesh,
       material: model.getMaterial(mesh.materialId),

@@ -4,7 +4,7 @@ import { ContentManager } from '@gglib/content'
 import { AutoMaterial, LightParams } from '@gglib/effects'
 import { buildPlane, buildSphere, Device, flipWindingOrder, Model, ModelBuilder } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderStep, DrawableData, PostBloom, PostPixelate, RenderManager } from '@gglib/render'
+import { BasicRenderStep, PostBloom, PostPixelate, RenderManager, SceneItemDrawable } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // ### Setup the render manager
@@ -68,7 +68,7 @@ interface GameObject {
   type: 'tree' | 'ship' | 'static',
   world: Mat4,
   model: Model,
-  renderItems: DrawableData[],
+  renderItems: SceneItemDrawable[],
 }
 
 // The tiny render loop
@@ -216,9 +216,10 @@ function loadSky() {
 }
 loadSky()
 
-function makeDrawableList(model: Model, world: Mat4): DrawableData[] {
+function makeDrawableList(model: Model, world: Mat4): SceneItemDrawable[] {
   return model.meshes.map((mesh) => {
     return {
+      type: 'drawable',
       transform: world,
       drawable: mesh,
       material: model.getMaterial(mesh.materialId),

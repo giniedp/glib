@@ -3,7 +3,7 @@ import { Device } from './Device'
 import { ShaderType } from './enums'
 import { Shader, ShaderOptions } from './Shader'
 import { ShaderInspector, ShaderObjectMeta } from './ShaderInspector'
-import { ShaderUniform, ShaderUniformValue, ShaderUniformBinding } from './ShaderUniform'
+import { ShaderUniform, ShaderUniformBinding, ShaderUniformValue } from './ShaderUniform'
 
 /**
  * Constructor options for {@link ShaderProgram}

@@ -43,7 +43,7 @@ loop((time, dt) => {
     .draw(texture1)
     // Set the tint color. This will be multiplied with the texture color.
     // Since we use white here, it actually has no effect on the output.
-    .color(0xFFFFFFFF)
+    .tint(0xFFFFFFFF)
     // Set the alpha. This can only be called after `color` is set. Otherwise it would have no effect.
     .alpha(pulse)
     // Set destination rectangle on screen.
@@ -69,15 +69,20 @@ loop((time, dt) => {
     // Begin drawing a texture.
     .draw(texture3)
     // Rotate the sprite
-    .rotation(2 * Math.PI * time / 2000)
+    // .rotation()
     // Set the origin of the rotation (in normalized cooridnates).
-    .origin(0.5, 0.5)
+    // .origin(0.5, 0.5)
     // Set destination rectangle on screen.
     .destination(
       pad + 2 * (size + pad),
       pad,
       size,
-      size)
+      size,
+      null,
+      2 * Math.PI * time / 2000,
+      size / 2,
+      size / 2,
+    )
 
   // video split 1
   spriteBatch

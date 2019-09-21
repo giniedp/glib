@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "rootDir": ".",
     "outDir": "dist",
     "sourceMap": true,
     "module": "commonjs",
@@ -33,5 +32,6 @@
     "dist",
     "packages",
     "examples",
+    "node_modules"
   ]
 }

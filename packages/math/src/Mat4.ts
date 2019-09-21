@@ -2963,8 +2963,8 @@ export class Mat4 {
    * @param other - The matrix to pre-multiply
    */
   public premultiply(other: Mat4): this {
-    const a = this.m
-    const b = other.m
+    const a = other.m
+    const b = this.m
     const c = this.m
 
     const a00 = a[M._00]

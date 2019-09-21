@@ -20,20 +20,20 @@ export const RGBA_FORMAT = Object.freeze({
 })
 
 /**
- * ARGB formatted color parser
+ * ABGR formatted color parser
  *
  * @public
  */
 export const ABGR_FORMAT = Object.freeze({
-  a: (argb: number): number => (argb >> 0) & 255,
-  b: (argb: number): number => (argb >> 8) & 255,
-  g: (argb: number): number => (argb >> 16) & 255,
-  r: (argb: number): number => (argb >> 24) & 255,
+  a: (abgr: number): number => (abgr >> 0) & 255,
+  b: (abgr: number): number => (abgr >> 8) & 255,
+  g: (abgr: number): number => (abgr >> 16) & 255,
+  r: (abgr: number): number => (abgr >> 24) & 255,
 
-  x: (argb: number): number => ((argb >> 0) & 255) / 255,
-  y: (argb: number): number => ((argb >> 8) & 255) / 255,
-  z: (argb: number): number => ((argb >> 16) & 255) / 255,
-  w: (argb: number): number => ((argb >> 24) & 255) / 255,
+  x: (abgr: number): number => ((abgr >> 0) & 255) / 255,
+  y: (abgr: number): number => ((abgr >> 8) & 255) / 255,
+  z: (abgr: number): number => ((abgr >> 16) & 255) / 255,
+  w: (abgr: number): number => ((abgr >> 24) & 255) / 255,
 })
 
 /**
@@ -249,39 +249,70 @@ export class Color {
   public static YellowGreen = Color.create(154, 205, 50, 255)
 
   constructor(
+    /**
+     * The red component. This is assumed to be a byte value.
+     */
     public r: number= 0,
+    /**
+     * The green component. This is assumed to be a byte value.
+     */
     public g: number= 0,
+    /**
+     * The blure component. This is assumed to be a byte value.
+     */
     public b: number= 0,
+    /**
+     * The alpha component. This is assumed to be a byte value.
+     */
     public a: number= 0,
   ) { }
 
-  get rgba(): number {
+  /**
+   * Gets the color as 0xRGBA number where R starts at low bit and A ends at high bit
+   */
+  public get rgba(): number {
     return (this.a | 0) << 24 | (this.b | 0) << 16 | (this.g | 0) << 8 | (this.r | 0) << 0
   }
-  get argb(): number {
-    return (this.b | 0) << 24 | (this.g | 0) << 16 | (this.r | 0) << 8 | (this.a | 0) << 0
+  /**
+   * Gets the color as 0xABGR number where A starts at low bit and R ends at high bit
+   */
+  public get abgr(): number {
+    return (this.r | 0) << 24 | (this.g | 0) << 16 | (this.b | 0) << 8 | (this.a | 0) << 0
   }
-  get xyzw(): number[] {
+
+  public get xyzw(): number[] {
     return Vec4.toArray(this)
   }
 
-  get x(): number {
+  /**
+   * Gets the red component divided by 255
+   */
+  public get x(): number {
     return this.r / 255
   }
 
-  get y(): number {
+  /**
+   * Gets the green component divided by 255
+   */
+  public get y(): number {
     return this.g / 255
   }
 
-  get z(): number {
+  /**
+   * Gets the blue component divided by 255
+   */
+  public get z(): number {
     return this.b / 255
   }
 
-  get w(): number {
+  /**
+   * Gets the alpha component divided by 255
+   */
+  public get w(): number {
     return this.a / 255
   }
 
-  get clone(): Color {
+  public get clone(): Color {
     return new Color(this.r, this.g, this.b, this.a)
   }
 }

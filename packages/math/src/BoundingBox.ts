@@ -1,5 +1,6 @@
 import { BoundingFrustum } from './BoundingFrustum'
 import { BoundingSphere } from './BoundingSphere'
+import { BoundingVolume } from './BoundingVolume'
 import {
   boxContainsBox,
   boxContainsFrustum,
@@ -8,20 +9,27 @@ import {
   boxIntersectSphere,
   boxIntersectsPlane,
   boxIntersectsPoint,
+  frustumContainsBox,
+  frustumIntersectsBox,
+  IntersectionType,
   rayIntersectsBox,
-  ContainmentType,
+  sphereContainsBox,
 } from './Collision'
 
+import { Mat4 } from './Mat4'
 import { Ray } from './Ray'
 import { ArrayLike, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
+
+let temp: IVec3
 
 /**
  * An axis aligned box volume.
  *
  * @public
  */
-export class BoundingBox {
+export class BoundingBox implements BoundingVolume {
+
   /**
    * The minimum contained point
    */
@@ -305,6 +313,34 @@ export class BoundingBox {
   }
 
   /**
+   * Transforms a bounding box with a matrix
+   *
+   * @param box - the box to transform
+   * @param transform - the transform matrix
+   * @param out - where to write the result. Must not be the same instance as `box`
+   */
+  public static transform(box: BoundingBox, transform: Mat4, out?: BoundingBox): BoundingBox {
+    out = out || new BoundingBox()
+    temp = temp || new Vec3()
+    if (box === out) {
+      throw new Error('can not transform the box into the same instance')
+    }
+
+    transform.transformV3(box.getCorner(0, temp))
+    out.init(temp.x, temp.y, temp.z, temp.x, temp.y, temp.z)
+
+    out.mergePoint(transform.transformV3(box.getCorner(1, temp)))
+    out.mergePoint(transform.transformV3(box.getCorner(2, temp)))
+    out.mergePoint(transform.transformV3(box.getCorner(3, temp)))
+    out.mergePoint(transform.transformV3(box.getCorner(4, temp)))
+    out.mergePoint(transform.transformV3(box.getCorner(5, temp)))
+    out.mergePoint(transform.transformV3(box.getCorner(6, temp)))
+    out.mergePoint(transform.transformV3(box.getCorner(7, temp)))
+
+    return
+  }
+
+  /**
    * Dumps the min and max points into an array
    */
   public toArray(): number[]
@@ -428,43 +464,82 @@ export class BoundingBox {
   public intersectsSphere(sphere: BoundingSphere): boolean {
     return boxIntersectSphere(this.min, this.max, sphere.center, sphere.radius)
   }
+  /**
+   * Checks whether the frustum intersects this volume
+   */
+  public intersectsFrustum(frustum: BoundingFrustum): boolean {
+    return frustumIntersectsBox(frustum, this.min, this.max)
+  }
 
   /**
    * Checks whether the given box is contained by this volume
    */
   public containsBox(box: BoundingBox): boolean {
-    return boxContainsBox(this.min, this.max, box.min, box.max) === ContainmentType.Contains
+    return boxContainsBox(this.min, this.max, box.min, box.max) === IntersectionType.Contains
   }
   /**
    * Checks whether the given sphere is contained by this volume
    */
   public containsSphere(sphere: BoundingSphere): boolean {
-    return boxContainsSphere(this.min, this.max, sphere.center, sphere.radius) === ContainmentType.Contains
+    return boxContainsSphere(this.min, this.max, sphere.center, sphere.radius) === IntersectionType.Contains
   }
   /**
    * Checks whether the given frustum is contained by this volume
    */
   public containsFrustum(frustum: BoundingFrustum): boolean {
-    return boxContainsFrustum(this.min, this.max, frustum) === ContainmentType.Contains
+    return boxContainsFrustum(this.min, this.max, frustum) === IntersectionType.Contains
   }
 
   /**
    * Checks for collision with another box and returns the intersection type
    */
-  public containmentOfBox(box: BoundingBox): ContainmentType {
+  public containmentOfBox(box: BoundingBox): IntersectionType {
     return boxContainsBox(this.min, this.max, box.min, box.max)
   }
   /**
    * Checks for collision with another sphere and returns the intersection type
    */
-  public containmentOfSphere(sphere: BoundingSphere): ContainmentType {
+  public containmentOfSphere(sphere: BoundingSphere): IntersectionType {
     return boxContainsSphere(this.min, this.max, sphere.center, sphere.radius)
   }
   /**
    * Checks for collision with another frustum and returns the intersection type
    */
-  public containmentOfFrustum(frustum: BoundingFrustum): ContainmentType {
+  public containmentOfFrustum(frustum: BoundingFrustum): IntersectionType {
     return boxContainsFrustum(this.min, this.max, frustum)
+  }
+
+  public containedByBox(box: BoundingBox): boolean {
+    return boxContainsBox(box.min, box.max, this.min, this.max) === IntersectionType.Contains
+  }
+
+  public containedBySphere(sphere: BoundingSphere): boolean {
+    return sphereContainsBox(sphere.center, sphere.radius, this.min, this.max) === IntersectionType.Contains
+  }
+
+  public containedByFrustum(frustum: BoundingFrustum): boolean {
+    return frustumContainsBox(frustum, this.min, this.max) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks for collision with another box and returns the intersection type
+   */
+  public containmentByBox(box: BoundingBox): IntersectionType {
+    return boxContainsBox(box.min, box.max, this.min, this.max)
+  }
+
+  /**
+   * Checks for collision with another sphere and returns the intersection type
+   */
+  public containmentBySphere(sphere: BoundingSphere): IntersectionType {
+    return sphereContainsBox(sphere.center, sphere.radius, this.min, this.max)
+  }
+
+  /**
+   * Checks for collision with another frustum and returns the intersection type
+   */
+  public containmentByFrustum(frustum: BoundingFrustum): IntersectionType {
+    return frustumContainsBox(frustum, this.min, this.max)
   }
 
   /**
@@ -531,11 +606,11 @@ export class BoundingBox {
       out.y = max.y
       out.z = max.z
     } else if (index === 2) {
-      out.x = max.x
+      out.x = min.x
       out.y = min.y
       out.z = max.z
     } else if (index === 3) {
-      out.x = min.x
+      out.x = max.x
       out.y = min.y
       out.z = max.z
     } else if (index === 4) {
@@ -547,11 +622,11 @@ export class BoundingBox {
       out.y = max.y
       out.z = min.z
     } else if (index === 6) {
-      out.x = max.x
+      out.x = min.x
       out.y = min.y
       out.z = min.z
     } else if (index === 7) {
-      out.x = min.x
+      out.x = max.x
       out.y = min.y
       out.z = min.z
     } else {

@@ -1,8 +1,12 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
+import { BoundingVolume } from './BoundingVolume'
 import {
+  boxContainsSphere,
   boxIntersectSphere,
-  ContainmentType,
+  frustumContainsSphere,
+  frustumIntersectsSphere,
+  IntersectionType,
   rayIntersectsSphere,
   sphereContainsBox,
   sphereContainsFrustum,
@@ -11,6 +15,7 @@ import {
   sphereIntersectsPoint,
   sphereIntersectsSphere,
 } from './Collision'
+import { Mat4 } from './Mat4'
 import { Ray } from './Ray'
 import { ArrayLike, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
@@ -20,7 +25,7 @@ import { Vec3 } from './Vec3'
  *
  * @public
  */
-export class BoundingSphere {
+export class BoundingSphere implements BoundingVolume {
 
   /**
    * The sphere center
@@ -282,6 +287,17 @@ export class BoundingSphere {
     return out
   }
 
+  public static transform(sphere: BoundingSphere, transform: Mat4, out?: BoundingSphere) {
+    out = out || new BoundingSphere()
+    if (sphere === out) {
+      throw new Error('can not transform the sphere into the same instance')
+    }
+    // use center vector as temporary variable
+    out.center.init(sphere.radius, sphere.radius, sphere.radius)
+    out.radius = transform.transformV3Normal(out.center).length()
+    transform.transformV3(sphere.center, out.center)
+  }
+
   /**
    * Dumps the min and max points into an array
    */
@@ -365,6 +381,12 @@ export class BoundingSphere {
     return rayIntersectsSphere(ray.position, ray.direction, this.center, this.radius)
   }
   /**
+   * Checks whether the given plane intersects this volume
+   */
+  public intersectsPlane(plane: IVec4): boolean {
+    return sphereIntersectsPlane(this.center, this.radius, plane)
+  }
+  /**
    * Checks whether the given box intersects this volume
    */
   public intersectsBox(box: BoundingBox): boolean {
@@ -377,10 +399,10 @@ export class BoundingSphere {
     return sphereIntersectsSphere(this.center, this.radius, sphere.center, sphere.radius)
   }
   /**
-   * Checks whether the given plane intersects this volume
+   * Checks whether the frustum intersects this volume
    */
-  public intersectsPlane(plane: IVec4): boolean {
-    return sphereIntersectsPlane(this.center, this.radius, plane)
+  public intersectsFrustum(frustum: BoundingFrustum): boolean {
+    return frustumIntersectsSphere(frustum, this.center, this.radius)
   }
 
   /**
@@ -405,20 +427,62 @@ export class BoundingSphere {
   /**
    * Checks for collision with another box and returns the containment type
    */
-  public containmentOfBox(box: BoundingBox): ContainmentType {
+  public containmentOfBox(box: BoundingBox): IntersectionType {
     return sphereContainsBox(this.center, this.radius, box.min, box.max)
   }
   /**
    * Checks for collision with another sphere and returns the containment type
    */
-  public containmentOfSphere(sphere: BoundingSphere): ContainmentType {
+  public containmentOfSphere(sphere: BoundingSphere): IntersectionType {
     return sphereContainsSphere(this.center, this.radius, sphere.center, sphere.radius)
   }
   /**
    * Checks for collision with another frustum and returns the containment type
    */
-  public containmentOfFrustum(frustum: BoundingFrustum): ContainmentType {
+  public containmentOfFrustum(frustum: BoundingFrustum): IntersectionType {
     return sphereContainsFrustum(this.center, this.radius, frustum)
+  }
+
+  /**
+   * Checks whether the given box contains this volume
+   */
+  public containedByBox(box: BoundingBox): boolean {
+    return boxContainsSphere(box.min, box.max, this.center, this.radius) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks whether the given sphere contains this volume
+   */
+  public containedBySphere(sphere: BoundingSphere): boolean {
+    return sphereContainsSphere(sphere.center, sphere.radius, this.center, this.radius) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks whether the given frustum contains this volume
+   */
+  public containedByFrustum(frustum: BoundingFrustum): boolean {
+    return frustumContainsSphere(frustum, this.center, this.radius) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks for collision with another box and returns the intersection type
+   */
+  public containmentByBox(box: BoundingBox): IntersectionType {
+    return boxContainsSphere(box.min, box.max, this.center, this.radius)
+  }
+
+  /**
+   * Checks for collision with another sphere and returns the intersection type
+   */
+  public containmentBySphere(sphere: BoundingSphere): IntersectionType {
+    return sphereContainsSphere(sphere.center, sphere.radius, this.center, this.radius)
+  }
+
+  /**
+   * Checks for collision with another frustum and returns the intersection type
+   */
+  public containmentByFrustum(frustum: BoundingFrustum): IntersectionType {
+    return frustumContainsSphere(frustum, this.center, this.radius)
   }
 
   /**
@@ -440,5 +504,4 @@ export class BoundingSphere {
       return null
     }
   }
-
 }

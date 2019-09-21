@@ -45,6 +45,7 @@ class Project {
       '!**/tsconfig.json',
     ],
     assets: [
+      'assets/**/*',
       'dist/packages/gglib/bundles/gglib.umd.js',
       'dist/packages/gglib/bundles/gglib.umd.js.map',
       'dist/packages/math/bundles/math.umd.js',
@@ -57,6 +58,7 @@ class Project {
       'node_modules/prismjs/prism.js',
       'node_modules/prismjs/components/prism-typescript.js',
       'node_modules/mithril/mithril.js',
+      'node_modules/ammojs-typed/ammo/ammo.js',
     ],
   }
 
@@ -72,24 +74,24 @@ class Project {
   public get packages(): string[] {
     if (!packages) {
       packages = glob
-      .sync(path.join(this.pkgSrc, '*'))
-      .filter((it) => it.indexOf('.') === -1)
-      .map((it) => path.basename(it))
-      .sort((a, b) => {
-        const nameOfA = this.pkgName(a)
-        const peersOfA = this.pkgPeerDependencies(a)
+        .sync(path.join(this.pkgSrc, '*'))
+        .filter((it) => it.indexOf('.') === -1)
+        .map((it) => path.basename(it))
+        .sort((a, b) => {
+          const nameOfA = this.pkgName(a)
+          const peersOfA = this.pkgPeerDependencies(a)
 
-        const nameOfB = this.pkgName(b)
-        const peersOfB = this.pkgPeerDependencies(b)
+          const nameOfB = this.pkgName(b)
+          const peersOfB = this.pkgPeerDependencies(b)
 
-        if (peersOfB.indexOf(nameOfA) === -1) {
-          return 1
-        }
-        if (peersOfA.indexOf(nameOfB) === -1) {
-          return -1
-        }
-        return a.localeCompare(b)
-      })
+          if (peersOfB.indexOf(nameOfA) === -1) {
+            return 1
+          }
+          if (peersOfA.indexOf(nameOfB) === -1) {
+            return -1
+          }
+          return a.localeCompare(b)
+        })
     }
     return [...packages]
   }

@@ -5,7 +5,7 @@ import {
   nameOfCompareFunction,
   valueOfCompareFunction,
 } from './../enums'
-import { BlendStateParams } from './BlendState';
+import { BlendStateParams } from './BlendState'
 
 const params: Array<keyof DepthStateParams> = [
   'depthFunction',

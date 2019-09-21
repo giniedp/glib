@@ -7,5 +7,6 @@
 /node_modules
 npm-debug.log
 /temp
+/tmp
 /docs
 /api

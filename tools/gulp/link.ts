@@ -1,4 +1,3 @@
-import { task } from 'gulp'
 import * as shell from 'shelljs'
 import project from '../project'
 

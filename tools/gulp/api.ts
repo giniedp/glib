@@ -68,7 +68,6 @@ function mdToHtml() {
     flush: (cb) => cb(),
   }))
   .pipe(dest(path.join(project.dist, 'docs')))
-  // .pipe(connect.reload())
 }
 
 export function docs() {

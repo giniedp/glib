@@ -7,8 +7,8 @@
  * @param fallback - The fallback value
  * @returns the value behind the `key`. If the `key` is missing `fallback` is returned.
  */
-export function getOption<T, V>(options: T, key: keyof T, fallback?: V): V {
-  if (key in options) {
+export function getOption<T, K extends keyof T>(options: T, key: K, fallback?: T[K]): T[K] {
+  if (options && key in options) {
     return options[key] as any
   }
   return fallback

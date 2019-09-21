@@ -1,5 +1,3 @@
 export * from './src/Component'
-export * from './src/components'
 export * from './src/decorators'
-export * from './src/factories'
 export * from './src/Entity'

@@ -1,7 +1,7 @@
 // tslint:disable no-bitwise
 // tslint:disable max-classes-per-file
 import { Buffer, Device, Material, MaterialOptions, Model, ModelMesh, VertexLayout } from '@gglib/graphics'
-import { IVec3, Vec3 } from '@gglib/math'
+import { IVec3, Vec3, BoundingBox } from '@gglib/math'
 import { HeightMap } from './HeightMap'
 
 function highestBit(value: number): number {
@@ -80,6 +80,7 @@ export class BTTRoot {
 
     this.patches = patches
     this.model = device.createModel({
+      boundingBox: meshes.reduce((box, next) => box.merge(next.boundingBox), meshes[0].boundingBox.clone()),
       materials: options.materials,
       meshes: meshes,
     })
@@ -300,14 +301,17 @@ export class BTTPatch {
       z: this.startY + (this.patchSize - 1) / 2,
     }
 
-    this.mesh = new ModelMesh(device, {
-      indexBuffer: this.parent.indexBuffers[0][0],
-      vertexBuffer: device.createVertexBuffer({
-        data: BTTPatch.createVertices(
+    const vertices = BTTPatch.createVertices(
           this.parent.heightMap,
           this.startX,
           this.startY,
-          this.patchSize + 1),
+          this.patchSize + 1)
+
+    this.mesh = new ModelMesh(device, {
+      boundingBox: BoundingBox.createFromPointsBuffer(vertices, 0, 3 + 3 + 2),
+      indexBuffer: this.parent.indexBuffers[0][0],
+      vertexBuffer: device.createVertexBuffer({
+        data: vertices,
         dataType: 'float',
         layout: VertexLayout.create('PositionNormalTexture'),
       }),

@@ -12,7 +12,7 @@ project.packages.forEach((pkg) => {
   }))
 })
 
-export function compile() {
+export function compilePackages() {
   return spawn({
     cmd: `./node_modules/.bin/tsc -p ${path.join(project.pkgSrc, 'tsconfig.json')}`,
     shell: true,
@@ -20,4 +20,4 @@ export function compile() {
   })
 }
 
-task('compile', series(compile, copyPackageFiles))
+task('compile', series(compilePackages, copyPackageFiles))

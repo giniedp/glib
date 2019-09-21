@@ -501,7 +501,7 @@ describe('content/formats/obj', () => {
           mg: [0, 0],
           o: '',
         },
-        data: [{ vp: 0 }, { vp: 1 } ,{ vp: 2 }, { vp: 3 }, { vp: 4 }, { vp: 5 }, { vp: 0 }],
+        data: [{ vp: 0 }, { vp: 1 } , { vp: 2 }, { vp: 3 }, { vp: 4 }, { vp: 5 }, { vp: 0 }],
         state: {},
         body: [
           { type: 'parm u', data: [0, 1, 2] },

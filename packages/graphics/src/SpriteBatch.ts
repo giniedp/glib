@@ -1,11 +1,10 @@
-// tslint:disable max-classes-per-file
-
-import { IRect, IVec2 } from '@gglib/math'
+import { Mat4 } from '@gglib/math'
+import { getOption } from '@gglib/utils'
 import { Buffer } from './Buffer'
-import { Color } from './Color'
 import { Device } from './Device'
 import { BufferUsage, PrimitiveType } from './enums'
 import { ShaderProgram } from './ShaderProgram'
+import { Sprite } from './Sprite'
 import { BlendStateParams } from './states/BlendState'
 import { CullStateParams } from './states/CullState'
 import { DepthStateParams } from './states/DepthState'
@@ -27,33 +26,33 @@ const vShader = `
   // @default [1,0,0,1]
   attribute vec4 vColor;
 
+  // @binding ViewProjection
+  uniform mat4 uViewProjection;
+
   varying vec2 texCoord;
   varying vec4 texColor;
 
   void main(void) {
     texColor = vColor;
     texCoord = vTexture;
-    vec2 pos = vPosition.xy * vec2(2, -2) + vec2(-1, 1);
-    gl_Position = vec4(pos.xy, vPosition.z, 1);
+    gl_Position = uViewProjection * vec4(vPosition, 1);
   }`
 
 const fShader = `
   precision highp float;
   precision highp int;
 
-  // @binding texture
+  // @binding Texture
   // @register 0
   // @filter LinearWrap
-  uniform sampler2D textureSampler;
+  uniform sampler2D uSampler;
 
   varying vec2 texCoord;
   varying vec4 texColor;
 
   void main(void) {
-    gl_FragColor = texture2D(textureSampler, texCoord) * texColor;
+    gl_FragColor = texture2D(uSampler, texCoord) * texColor;
   }`
-
-const spritePool: Sprite[] = []
 
 /**
  * Constructor options for {@link SpriteBatch}
@@ -61,7 +60,14 @@ const spritePool: Sprite[] = []
  * @public
  */
 export interface SpriteBatchOptions {
+  /**
+   * The maximum number of sprites this batch should handle in one draw call
+   */
   batchSize?: number
+  /**
+   * A custom shader that should be used for rendering the sprites
+   */
+  program?: ShaderProgram
 }
 
 /**
@@ -71,195 +77,38 @@ export interface SpriteBatchOptions {
  */
 export interface SpriteBatchBeginOptions {
   sortMode?: any
+  /**
+   * The blend state
+   */
   blendState?: BlendStateParams
+  /**
+   * The cull state
+   */
   cullState?: CullStateParams
+  /**
+   * The depth state
+   */
   depthState?: DepthStateParams
+  /**
+   * The stencil state
+   */
   stencilState?: StencilStateParams
+  /**
+   * The scissor state
+   */
   scissorState?: ScissorStateParams
+  /**
+   * The viewport state
+   */
   viewportState?: ViewportStateParams
-}
-
-/**
- * Describes a single sprite
- *
- * @public
- */
-export interface Sprite {
   /**
-   * The texture being used with the sprite
+   * The viewProjection matrix to use for rendering
    */
-  texture?: Texture
+  viewProjection?: Mat4,
   /**
-   * The tint color of the sprite
+   * A custom shader that should be used for rendering the sprites
    */
-  color?: number|Color
-
-  /**
-   * X coordinate of the source rectangle of the texture
-   */
-  srcX?: number
-  /**
-   * Y coordinate of the source rectangle of the texture
-   */
-  srcY?: number
-  /**
-   * Width of the source rectangle of the texture
-   */
-  srcWidth?: number
-  /**
-   * Height of the source rectangle of the texture
-   */
-  srcHeight?: number
-
-  /**
-   * X destination on screen
-   */
-  dstX?: number
-  /**
-   * Y destination on screen
-   */
-  dstY?: number
-  /**
-   * Resulting width on screen
-   */
-  dstWidth?: number
-  /**
-   * Resulting height on screen
-   */
-  dstHeight?: number
-
-  /**
-   * Rotation of the sprate
-   */
-  rotation?: number
-  /**
-   * The rotation origin
-   */
-  originX?: number
-  /**
-   * The rotation origin
-   */
-  originY?: number
-
-  /**
-   * The depth at which the sprite is rendered
-   */
-  depth?: number
-  /**
-   * Whether the texture should be flipped on X axis
-   */
-  flipX?: boolean
-  /**
-   * Whether the texture should be flipped on Y axis
-   */
-  flipY?: boolean
-}
-
-/**
- * @public
- */
-export class SpriteBuilder {
-  private sprite: Sprite
-
-  public setup(sprite: Sprite) {
-    this.sprite = sprite
-    sprite.color = 0xFFFFFFFF
-
-    sprite.srcX = 0
-    sprite.srcY = 0
-    sprite.srcWidth = 0
-    sprite.srcHeight = 0
-
-    sprite.dstX = 0
-    sprite.dstY = 0
-    sprite.dstWidth = 0
-    sprite.dstHeight = 0
-
-    sprite.originX = 0
-    sprite.originY = 0
-    sprite.rotation = 0
-    sprite.depth = 0
-    sprite.flipX = false
-    sprite.flipY = false
-  }
-
-  public color(color: number|Color): this {
-    this.sprite.color = color
-    return this
-  }
-
-  public alpha(alpha: number): this {
-    let color = this.sprite.color as number
-    if (color == null) {
-      color = 0xFFFFFFFF
-    }
-    this.sprite.color = (color & 0x00FFFFFF) | (((alpha * 255) & 0xFF) << 24) // tslint:disable-line
-    return this
-  }
-
-  public source(x: number, y: number, width?: number, height?: number): this {
-    let s = this.sprite
-    s.srcX = x
-    s.srcY = y
-    s.srcWidth = width
-    s.srcHeight = height
-    return this
-  }
-
-  public sourceVec(vec: IVec2) {
-    let s = this.sprite
-    s.srcX = vec.x
-    s.srcY = vec.y
-    return this
-  }
-
-  public sourceRect(rect: IRect) {
-    return this.source(rect.x, rect.y, rect.width, rect.height)
-  }
-
-  public destination(x: number, y: number, width?: number, height?: number): this {
-    let s = this.sprite
-    s.dstX = x
-    s.dstY = y
-    s.dstWidth = width
-    s.dstHeight = height
-    return this
-  }
-
-  public destinationVec(vec: IVec2) {
-    let s = this.sprite
-    s.dstX = vec.x
-    s.dstY = vec.y
-    return this
-  }
-
-  public destinationRect(rect: IRect) {
-    return this.destination(rect.x, rect.y, rect.width, rect.height)
-  }
-
-  public origin(x: number, y: number): this {
-    let s = this.sprite
-    s.originX = x
-    s.originY = y
-    return this
-  }
-
-  public rotation(rotation: number): this {
-    this.sprite.rotation = rotation
-    return this
-  }
-
-  public depth(depth: number): this {
-    this.sprite.depth = depth
-    return this
-  }
-
-  public flip(x: boolean, y: boolean): this {
-    let s = this.sprite
-    s.flipX = x
-    s.flipY = y
-    return this
-  }
+  program?: ShaderProgram
 }
 
 /**
@@ -271,11 +120,15 @@ export class SpriteBatch {
   private spriteQueue: Sprite[]
 
   private arrayBuffer: ArrayBuffer
-  private positionTextureView: Float32Array
-  private colorBufferView: Uint32Array
+  private vertexPositionView: Float32Array
+  private vertexTextureView: Float32Array
+  private vertexColorView: Int32Array
   private vertexBuffer: Buffer
   private indexBuffer: Buffer
+  private mainProgram: ShaderProgram
+  private mainMatrix: Mat4
   private program: ShaderProgram
+  private matrix: Mat4
 
   private blendState: BlendStateParams
   private cullState: CullStateParams
@@ -285,45 +138,45 @@ export class SpriteBatch {
   private viewportState: ViewportStateParams
   private sortMode: any
   private batchSize: number
-  private batchPosition: number
-  private builder: SpriteBuilder = new SpriteBuilder()
+  private spritePool: Sprite[] = []
 
   constructor(device: Device, options: SpriteBatchOptions = {}) {
     this.device = device
     this.hasBegun = false
     this.spriteQueue = []
     this.batchSize = options.batchSize || 512
-    this.batchPosition = 0
 
-    let vertexLayout = VertexLayout.create('PositionTextureColor')
-    let sizeInBytes = VertexLayout.countBytes(vertexLayout)
+    const vertexLayout = VertexLayout.create('PositionTextureColor')
+    const sizeInBytes = VertexLayout.countBytes(vertexLayout)
 
     this.arrayBuffer = new ArrayBuffer(this.batchSize * 4 * sizeInBytes)
-    this.positionTextureView = new Float32Array(this.arrayBuffer)
-    this.colorBufferView = new Uint32Array(this.arrayBuffer)
+    this.vertexPositionView = new Float32Array(this.arrayBuffer)
+    this.vertexTextureView = new Float32Array(this.arrayBuffer)
+    this.vertexColorView = new Int32Array(this.arrayBuffer)
     this.vertexBuffer = device.createVertexBuffer({
       layout: vertexLayout,
-      data: this.positionTextureView,
+      data: this.arrayBuffer,
       usage: BufferUsage.Dynamic,
     })
-    this.program = device.createProgram({
+    this.mainProgram = options.program || device.createProgram({
       vertexShader: vShader,
       fragmentShader: fShader,
     })
-    let data = new Uint16Array(this.batchSize * 6)
+    this.mainMatrix = Mat4.createIdentity()
+    const indexData = new Uint16Array(this.batchSize * 6)
     let index = 0
-    for (let i = 0; i < data.length; i += 6, index += 4) { // tslint:disable-line
-      data[i] = index
-      data[i + 1] = index + 1
-      data[i + 2] = index + 3
+    for (let i = 0; i < indexData.length; i += 6, index += 4) {
+      indexData[i] = index
+      indexData[i + 1] = index + 1
+      indexData[i + 2] = index + 2
 
-      data[i + 3] = index
-      data[i + 4] = index + 3
-      data[i + 5] = index + 2
+      indexData[i + 3] = index + 1
+      indexData[i + 4] = index + 3
+      indexData[i + 5] = index + 2
     }
 
     this.indexBuffer = device.createIndexBuffer({
-      data: data,
+      data: indexData,
     })
   }
 
@@ -331,29 +184,28 @@ export class SpriteBatch {
     if (this.hasBegun) {
       throw new Error('end() must be called before a new batch can be started with begin()')
     }
-    this.sortMode = void 0
-    this.blendState = void 0
-    this.cullState = void 0
-    this.depthState = void 0
-    this.stencilState = void 0
-    this.scissorState = void 0
-    this.viewportState = void 0
-    if (options) {
-      this.sortMode = options.sortMode
-      this.blendState = options.blendState
-      this.cullState = options.cullState
-      this.depthState = options.depthState
-      this.stencilState = options.stencilState
-      this.scissorState = options.scissorState
-      this.viewportState = options.viewportState
-    }
+
+    this.sortMode = getOption(options, 'sortMode', undefined)
+    this.blendState = getOption(options, 'blendState', undefined)
+    this.cullState = getOption(options, 'cullState', undefined)
+    this.depthState = getOption(options, 'depthState', undefined)
+    this.stencilState = getOption(options, 'stencilState', undefined)
+    this.scissorState = getOption(options, 'scissorState', undefined)
+    this.viewportState = getOption(options, 'viewportState', undefined)
+    this.program = getOption(options, 'program', this.mainProgram)
+    this.matrix = getOption(options, 'viewProjection', this.mainMatrix)
+
+    const viewWidth = (this.viewportState || this.device.viewportState).width
+    const viewHeight = (this.viewportState || this.device.viewportState).height
+    this.mainMatrix.initOrthographicOffCenter(0, viewWidth, viewHeight, 0, 0, 1)
+
     this.hasBegun = true
   }
 
   /**
    * @param texture - The texture to draw
    */
-  public draw(texture: Texture): SpriteBuilder {
+  public draw(texture: Texture): Sprite {
 
     if (!this.hasBegun) {
       throw new Error('begin() must be called before draw()')
@@ -362,12 +214,10 @@ export class SpriteBatch {
       throw new Error('no texture given')
     }
 
-    let sprite = spritePool.pop() || {}
-    sprite.texture = texture
-    let builder = this.builder
-    builder.setup(sprite)
+    const sprite = this.spritePool.pop() || new Sprite()
+    sprite.reset(texture)
     this.spriteQueue.push(sprite)
-    return builder
+    return sprite
   }
 
   public end() {
@@ -379,7 +229,7 @@ export class SpriteBatch {
     this.drawBatch()
 
     for (let sprite of this.spriteQueue) {
-      spritePool.push(sprite)
+      this.spritePool.push(sprite)
     }
     this.spriteQueue.length = 0
     this.hasBegun = false
@@ -408,50 +258,11 @@ export class SpriteBatch {
     }
   }
 
-  private buildSprites() {
-    let queue = this.spriteQueue
-    for (const sprite of queue) {
-      let tW = sprite.texture.width
-      let tH = sprite.texture.height
-      let sX = sprite.srcX || 0
-      let sY = sprite.srcY || 0
-      let sW = sprite.srcWidth || (tW - sX)
-      let sH = sprite.srcHeight || (tH - sY)
-
-      sprite.srcX = sX
-      sprite.srcY = sY
-      sprite.srcWidth = sW
-      sprite.srcHeight = sH
-
-      sprite.dstX = sprite.dstX || 0
-      sprite.dstY = sprite.dstY || 0
-      sprite.dstWidth = sprite.dstWidth || sW
-      sprite.dstHeight = sprite.dstHeight || sH
-
-      sprite.rotation = sprite.rotation || 0
-      sprite.originX = sprite.originX || 0
-      sprite.originY = sprite.originY || 0
-
-      sprite.depth = sprite.depth || 0
-      sprite.flipX = !!sprite.flipX
-      sprite.flipY = !!sprite.flipY
-
-      let color = sprite.color as any
-      if (color instanceof Color) {
-        sprite.color = color.rgba
-      } else if (typeof color === 'number') {
-        sprite.color = color
-      } else {
-        sprite.color = 0xFFFFFFFF
-      }
-    }
-  }
-
   private drawBatch() {
     let start = 0
     let texture = null
     let queue = this.spriteQueue
-    this.buildSprites()
+
     this.device.indexBuffer = this.indexBuffer
     this.device.vertexBuffer = this.vertexBuffer
     this.device.program = this.program
@@ -459,7 +270,8 @@ export class SpriteBatch {
     for (let i = 0; i < queue.length; i++) {
       if (texture !== queue[i].texture) {
         if (i > start) {
-          this.device.program.setUniform('texture', texture)
+          this.device.program.setUniform('Texture', texture)
+          this.device.program.setUniform('ViewProjection', this.matrix)
           this.drawSlice(start, i - start)
         }
         texture = queue[i].texture
@@ -467,7 +279,8 @@ export class SpriteBatch {
       }
     }
     if (queue.length > 0 && texture) {
-      this.device.program.setUniform('texture', texture)
+      this.device.program.setUniform('Texture', texture)
+      this.device.program.setUniform('ViewProjection', this.matrix)
       this.drawSlice(start, queue.length - start)
     }
   }
@@ -477,93 +290,58 @@ export class SpriteBatch {
       return
     }
 
-    let queue = this.spriteQueue
-    let posTexView = this.positionTextureView
-    let colorView = this.colorBufferView
-
-    let texture = queue[start].texture
-    let texelX = 1.0 / texture.width
-    let texelY = 1.0 / texture.height
-    let texelViewX = 1.0 / this.device.viewportState.width
-    let texelViewY = 1.0 / this.device.viewportState.height
-
-    let end = start + length
+    const queue = this.spriteQueue
+    const end = start + length
     while (start < end) {
-      let slice = end - start
-      slice = slice > this.batchSize ? this.batchSize : slice
+      let count = end - start
+      count = count > this.batchSize ? this.batchSize : count
 
-      let vIndex = 0
-      for (let i = 0; i < slice; i ++) {
-        let sprite = queue[start + i]
-        let cosA = 1
-        let sinA = 0
-        if (sprite.rotation !== 0) {
-          cosA = Math.cos(sprite.rotation)
-          sinA = Math.sin(sprite.rotation)
-        }
-        let cX = sprite.dstX + sprite.originX * sprite.dstWidth
-        let cY = sprite.dstY + sprite.originY * sprite.dstHeight
-        let p1X = sprite.dstX - cX
-        let p1Y = sprite.dstY - cY
-        let p2X = (sprite.dstX + sprite.dstWidth) - cX
-        let p2Y = (sprite.dstY + sprite.dstHeight) - cY
-        let flipX = sprite.flipX ? sprite.srcWidth : 0
-        let flipY = sprite.flipY ? sprite.srcHeight : 0
-
-        // VERTEX TOP LEFT
+      let offset = 0
+      for (let i = 0; i < count; i ++) {
+        const sprite = queue[start + i]
+        // position
+        this.vertexPositionView[offset++] = sprite.vertex1.x
+        this.vertexPositionView[offset++] = sprite.vertex1.y
+        this.vertexPositionView[offset++] = sprite.vertex1.z
+        // texture
+        this.vertexTextureView[offset++] = sprite.uv1.x
+        this.vertexTextureView[offset++] = sprite.uv1.y
+        // color
+        this.vertexColorView[offset++] = sprite.color
 
         // position
-        posTexView[vIndex++] = (cX + cosA * p1X + sinA * p1Y) * texelViewX
-        posTexView[vIndex++] = (cY - sinA * p1X + cosA * p1Y) * texelViewY
-        posTexView[vIndex++] = sprite.depth
+        this.vertexPositionView[offset++] = sprite.vertex2.x
+        this.vertexPositionView[offset++] = sprite.vertex2.y
+        this.vertexPositionView[offset++] = sprite.vertex2.z
         // texture
-        posTexView[vIndex++] = (sprite.srcX + flipX) * texelX
-        posTexView[vIndex++] = (sprite.srcY + flipY) * texelY
+        this.vertexTextureView[offset++] = sprite.uv2.x
+        this.vertexTextureView[offset++] = sprite.uv1.y
         // color
-        colorView[vIndex++] = sprite.color as number
-
-        // VERTEX TOP RIGHT
+        this.vertexColorView[offset++] = sprite.color
 
         // position
-        posTexView[vIndex++] = (cX + cosA * p2X + sinA * p1Y) * texelViewX
-        posTexView[vIndex++] = (cY - sinA * p2X + cosA * p1Y) * texelViewY
-        posTexView[vIndex++] = sprite.depth
+        this.vertexPositionView[offset++] = sprite.vertex3.x
+        this.vertexPositionView[offset++] = sprite.vertex3.y
+        this.vertexPositionView[offset++] = sprite.vertex3.z
         // texture
-        posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth - flipX) * texelX
-        posTexView[vIndex++] = (sprite.srcY + flipY) * texelY
+        this.vertexTextureView[offset++] = sprite.uv1.x
+        this.vertexTextureView[offset++] = sprite.uv2.y
         // color
-        colorView[vIndex++] = sprite.color as number
-
-        // VERTEX BOTTOM LEFT
+        this.vertexColorView[offset++] = sprite.color
 
         // position
-        posTexView[vIndex++] = (cX + cosA * p1X + sinA * p2Y) * texelViewX
-        posTexView[vIndex++] = (cY - sinA * p1X + cosA * p2Y) * texelViewY
-        posTexView[vIndex++] = sprite.depth
+        this.vertexPositionView[offset++] = sprite.vertex4.x
+        this.vertexPositionView[offset++] = sprite.vertex4.y
+        this.vertexPositionView[offset++] = sprite.vertex4.z
         // texture
-        posTexView[vIndex++] = (sprite.srcX + flipX) * texelX
-        posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight - flipY) * texelY
+        this.vertexTextureView[offset++] = sprite.uv2.x
+        this.vertexTextureView[offset++] = sprite.uv2.y
         // color
-        colorView[vIndex++] = sprite.color as number
-
-        // VERTEX BOTTOM RIGHT
-
-        // position
-        posTexView[vIndex++] = (cX + cosA * p2X + sinA * p2Y) * texelViewX
-        posTexView[vIndex++] = (cY - sinA * p2X + cosA * p2Y) * texelViewY
-        posTexView[vIndex++] = sprite.depth
-        // texture
-        posTexView[vIndex++] = (sprite.srcX + sprite.srcWidth - flipX) * texelX
-        posTexView[vIndex++] = (sprite.srcY + sprite.srcHeight - flipY) * texelY
-        // color
-        colorView[vIndex++] = sprite.color as number
+        this.vertexColorView[offset++] = sprite.color
       }
-
-      start += slice
-
-      let dat: any = this.positionTextureView
-      this.vertexBuffer.setSubData(dat, 0)
-      this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, slice * 6)
+      start += count
+      this.vertexBuffer.setSubData(this.arrayBuffer, 0)
+      this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, count * 6)
     }
   }
 }

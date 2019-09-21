@@ -8,6 +8,7 @@
  * @packageDocumentation
  */
 
+import * as $Components from '@gglib/components'
 import * as $Content from '@gglib/content'
 import * as $Ecs from '@gglib/ecs'
 import * as $Effects from '@gglib/effects'
@@ -37,6 +38,12 @@ export const Utils = $Utils
  * @public
  */
 export const Ecs = $Ecs
+/**
+ * Entity component system components
+ *
+ * @public
+ */
+export const Components = $Components
 /**
  * Shader and effect composition library.
  *
@@ -88,6 +95,7 @@ export const Gglib = {
   Content,
   Utils,
   Ecs,
+  Components,
   Effects,
   Graphics,
   Input,

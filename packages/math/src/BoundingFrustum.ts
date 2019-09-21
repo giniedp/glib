@@ -1,15 +1,17 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingSphere } from './BoundingSphere'
+import { BoundingVolume } from './BoundingVolume'
 import {
-  ContainmentType,
+  boxContainsFrustum,
   frustumContainsBox,
   frustumContainsSphere,
   frustumIntersectsBox,
   frustumIntersectsPlane,
   frustumIntersectsPoint,
   frustumIntersectsSphere,
-  planePlaneIntersection,
-  rayIntersectsPlaneAt,
+  IntersectionType,
+  planePlanePlaneIntersection,
+  sphereContainsFrustum,
 } from './Collision'
 import { Mat4 } from './Mat4'
 import { Plane } from './Plane'
@@ -18,12 +20,12 @@ import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 import { Vec4 } from './Vec4'
 
-const NEAR = 0
-const FAR = 1
-const LEFT = 2
-const RIGHT = 3
-const TOP = 4
-const BOTTOM = 5
+const LEFT = 0
+const RIGHT = 1
+const BOTTOM = 2
+const TOP = 3
+const FAR = 4
+const NEAR = 5
 
 /**
  * Enumeration of bounding frustum planes
@@ -31,30 +33,44 @@ const BOTTOM = 5
  * @public
  */
 export enum BoundingFrustumPlane {
-  Near = NEAR,
-  Far = FAR,
   Left = LEFT,
   Right = RIGHT,
-  Top = TOP,
   Bottom = BOTTOM,
+  Top = TOP,
+  Far = FAR,
+  Near = NEAR,
 }
+
+const unitCorners: IVec3[] = [
+  Vec3.init({}, -1,  1,  1),
+  Vec3.init({},  1,  1,  1),
+  Vec3.init({}, -1, -1,  1),
+  Vec3.init({},  1, -1,  1),
+  Vec3.init({}, -1,  1, -1),
+  Vec3.init({},  1,  1, -1),
+  Vec3.init({}, -1, -1, -1),
+  Vec3.init({},  1, -1, -1),
+]
 
 /**
  * Describes a frustum volume
  *
  * @public
  */
-export class BoundingFrustum {
+export class BoundingFrustum implements BoundingVolume {
 
   /**
    * Gets and sets the frustum matrix
+   *
+   * @remarks
+   * On `set` the values of the given matrix are copied to the internal matrix
+   * and `update` is called.
    */
   public get matrix() {
     return this.$matrix
   }
   public set matrix(mat: Mat4) {
-    this.$matrix = mat
-    this.update()
+    this.update(mat)
   }
 
   /**
@@ -94,9 +110,17 @@ export class BoundingFrustum {
     return this.planes[BOTTOM]
   }
 
+  /**
+   * 6 planes of the bounding frustum
+   */
   public readonly planes: IVec4[]
+
+  /**
+   * 8 corners of the bounding frustum
+   */
   public readonly corners: IVec3[]
-  private $matrix: Mat4
+
+  private $matrix: Mat4 = Mat4.createIdentity()
 
   /**
    * Constructs a new instance of {@link BoundingFrustum}
@@ -111,6 +135,9 @@ export class BoundingFrustum {
     this.corners = []
     for (let i = 0; i < 8; i++) {
       this.corners[i] = { x: 0, y: 0, z: 0 }
+    }
+    if (matrix) {
+      this.$matrix.initFrom(matrix)
     }
     this.matrix = matrix || Mat4.createIdentity()
   }
@@ -190,7 +217,10 @@ export class BoundingFrustum {
    * However if the matrix has been modified afterwards this method must be called
    * manually.
    */
-  public update() {
+  public update(transform?: Mat4) {
+    if (transform) {
+      this.$matrix.initFrom(transform)
+    }
     this.updatePlanes()
     this.updateCorners()
   }
@@ -202,41 +232,43 @@ export class BoundingFrustum {
     // 2 6 10 14
     // 3 7 11 15
     const m = this.matrix.m
-    let plane = this.planes[LEFT]
-    plane.x = m[12] - m[0]
-    plane.y = m[13] - m[1]
-    plane.z = m[14] - m[2]
-    plane.w = m[15] - m[3]
+    let plane: IVec4
+
+    plane = this.planes[LEFT]
+    plane.x = - m[3]  - m[0]
+    plane.y = - m[7]  - m[4]
+    plane.z = - m[11] - m[8]
+    plane.w = - m[15] - m[12]
 
     plane = this.planes[RIGHT]
-    plane.x = m[12] + m[0]
-    plane.y = m[13] + m[1]
-    plane.z = m[14] + m[2]
-    plane.w = m[15] + m[3]
-
-    plane = this.planes[TOP]
-    plane.x = m[12] + m[4]
-    plane.y = m[13] + m[5]
-    plane.z = m[14] + m[6]
-    plane.w = m[15] + m[7]
+    plane.x = - m[3]  + m[0]
+    plane.y = - m[7]  + m[4]
+    plane.z = - m[11] + m[8]
+    plane.w = - m[15] + m[12]
 
     plane = this.planes[BOTTOM]
-    plane.x = m[12] - m[4]
-    plane.y = m[13] - m[5]
-    plane.z = m[14] - m[6]
-    plane.w = m[15] - m[7]
+    plane.x = - m[3]  - m[1]
+    plane.y = - m[7]  - m[5]
+    plane.z = - m[11] - m[9]
+    plane.w = - m[15] - m[13]
 
-    plane = this.planes[NEAR]
-    plane.x = m[12] + m[8]
-    plane.y = m[13] + m[9]
-    plane.z = m[14] + m[10]
-    plane.w = m[15] + m[11]
+    plane = this.planes[TOP]
+    plane.x = - m[3]  + m[1]
+    plane.y = - m[7]  + m[5]
+    plane.z = - m[11] + m[9]
+    plane.w = - m[15] + m[13]
 
     plane = this.planes[FAR]
-    plane.x = m[12] - m[8]
-    plane.y = m[13] - m[9]
-    plane.z = m[14] - m[10]
-    plane.w = m[15] - m[11]
+    plane.x = - m[3]  - m[2]
+    plane.y = - m[7]  - m[6]
+    plane.z = - m[11] - m[10]
+    plane.w = - m[15] - m[14]
+
+    plane = this.planes[NEAR]
+    plane.x = - m[3]  + m[2]
+    plane.y = - m[7]  + m[6]
+    plane.z = - m[11] + m[10]
+    plane.w = - m[15] + m[14]
 
     for (let i = 0; i < 6; i++) {
       plane = this.planes[i]
@@ -249,48 +281,30 @@ export class BoundingFrustum {
   }
 
   private updateCorners() {
-    const ray = new Ray()
-    let distance: number
+    planePlanePlaneIntersection(this.near, this.top, this.left, this.corners[0])
+    planePlanePlaneIntersection(this.near, this.top, this.right, this.corners[1])
+    planePlanePlaneIntersection(this.near, this.bottom, this.left, this.corners[2])
+    planePlanePlaneIntersection(this.near, this.bottom, this.right, this.corners[3])
 
-    planePlaneIntersection(this.planes[NEAR], this.planes[LEFT], ray.position, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    ray.positionAt(distance, this.corners[0])
-
-    Vec3.negate(ray.direction, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    ray.positionAt(distance, this.corners[3])
-
-    planePlaneIntersection(this.planes[RIGHT], this.planes[NEAR], ray.position, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    ray.positionAt(distance, this.corners[1])
-
-    Vec3.negate(ray.direction, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    ray.positionAt(distance, this.corners[2])
-
-    planePlaneIntersection(this.planes[LEFT], this.planes[FAR], ray.position, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    ray.positionAt(distance, this.corners[4])
-
-    Vec3.negate(ray.direction, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    ray.positionAt(distance, this.corners[7])
-
-    planePlaneIntersection(this.planes[FAR], this.planes[RIGHT], ray.position, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[TOP])
-    ray.positionAt(distance, this.corners[5])
-
-    Vec3.negate(ray.direction, ray.direction)
-    distance = rayIntersectsPlaneAt(ray.position, ray.direction, this.planes[BOTTOM])
-    ray.positionAt(distance, this.corners[6])
+    planePlanePlaneIntersection(this.far, this.top, this.left, this.corners[4])
+    planePlanePlaneIntersection(this.far, this.top, this.right, this.corners[5])
+    planePlanePlaneIntersection(this.far, this.bottom, this.left, this.corners[6])
+    planePlanePlaneIntersection(this.far, this.bottom, this.right, this.corners[7])
   }
 
-  // /**
-  //  * Checks for intersaction with a ray
-  //  */
-  // public intersectsRay(ray: Ray): boolean {
-  //   throw new Error('not implemented')
-  // }
+  /**
+   * Creates a clone of this frustum
+   */
+  public clone(): BoundingFrustum {
+    return new BoundingFrustum(this.matrix)
+  }
+
+  /**
+   * Checks for intersaction with a ray
+   */
+  public intersectsRay(ray: Ray): boolean {
+    throw new Error('not implemented')
+  }
   /**
    * Checks for intersaction with a point
    */
@@ -326,25 +340,29 @@ export class BoundingFrustum {
    * Checks whether this frustum contains the given volume
    */
   public containsBox(box: BoundingBox): boolean {
-    return frustumContainsBox(this, box.min, box.max) === ContainmentType.Contains
+    return frustumContainsBox(this, box.min, box.max) === IntersectionType.Contains
   }
   /**
    * Checks whether this frustum contains the given volume
    */
   public containsSphere(sphere: BoundingSphere): boolean {
-    return frustumContainsSphere(this, sphere.center, sphere.radius) === ContainmentType.Contains
+    return frustumContainsSphere(this, sphere.center, sphere.radius) === IntersectionType.Contains
+  }
+
+  public containsFrustum(frustum: BoundingFrustum): boolean {
+    return this.containmentOfFrustum(frustum) === IntersectionType.Contains
   }
 
   /**
    * Checks for intersection type with given volume
    */
-  public containmentOfBox(box: BoundingBox): ContainmentType {
+  public containmentOfBox(box: BoundingBox): IntersectionType {
     return frustumContainsBox(this, box.min, box.max)
   }
   /**
    * Checks for intersection type with given volume
    */
-  public containmentOfSphere(sphere: BoundingSphere): ContainmentType {
+  public containmentOfSphere(sphere: BoundingSphere): IntersectionType {
     return frustumContainsSphere(this, sphere.center, sphere.radius)
   }
   /**
@@ -365,5 +383,60 @@ export class BoundingFrustum {
       return 2
     }
     return 1
+  }
+
+  /**
+   * Checks whether the given box contains this volume
+   */
+  public containedByBox(box: BoundingBox): boolean {
+    return boxContainsFrustum(box.min, box.max, this) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks whether the given sphere contains this volume
+   */
+  public containedBySphere(sphere: BoundingSphere): boolean {
+    return sphereContainsFrustum(sphere.center, sphere.radius, this) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks whether the given frustum contains this volume
+   */
+  public containedByFrustum(frustum: BoundingFrustum): boolean {
+    return frustum.containmentOfFrustum(this) === IntersectionType.Contains
+  }
+
+  /**
+   * Checks for collision with another box and returns the intersection type
+   */
+  public containmentByBox(box: BoundingBox): IntersectionType {
+    return boxContainsFrustum(box.min, box.max, this)
+  }
+
+  /**
+   * Checks for collision with another sphere and returns the intersection type
+   */
+  public containmentBySphere(sphere: BoundingSphere): IntersectionType {
+    return sphereContainsFrustum(sphere.center, sphere.radius, this)
+  }
+
+  /**
+   * Checks for collision with another frustum and returns the intersection type
+   */
+  public containmentByFrustum(frustum: BoundingFrustum): IntersectionType {
+    return frustum.containmentOfFrustum(this)
+  }
+
+  public format(fractionDigits?: number) {
+    let result = 'matrix:\n' + this.matrix.format(fractionDigits) + '\n'
+    result += 'planes:\n'
+    for (const plane of this.planes) {
+      result += Vec4.format(plane, fractionDigits) + '\n'
+    }
+    result += 'corners:\n'
+    for (const corner of this.corners) {
+      result += Vec3.format(corner, fractionDigits) + '\n'
+    }
+    return result
   }
 }

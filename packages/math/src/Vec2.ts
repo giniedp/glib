@@ -78,8 +78,8 @@ export class Vec2 implements IVec2 {
    * @param x - The x component
    * @param y - The y component
    */
-  public static init<T>(out: T, x: number, y: number, z: number): T & IVec2
-  public static init(out: IVec2, x: number, y: number, z: number): IVec2 {
+  public static init<T>(out: T, x: number, y: number): T & IVec2
+  public static init(out: IVec2, x: number, y: number): IVec2 {
     out.x = x
     out.y = y
     return out

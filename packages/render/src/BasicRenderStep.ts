@@ -10,14 +10,17 @@ import {
   DepthStateOptions,
   DepthStateParams,
   ShaderTechnique,
+  SpriteBatch,
   StencilState,
   StencilStateOptions,
   StencilStateParams,
+  PrimitiveBatch,
+  PrimitiveType,
 } from '@gglib/graphics'
 import { getOption } from '@gglib/utils'
 
 import { RenderManager } from './RenderManager'
-import { DrawableData, RenderStep } from './Types'
+import { RenderStep, SceneItemDrawable, SceneItemSprite, DebugDrawable, SceneDebugDrawable } from './Types'
 import { UniformBinder } from './UniformBinder'
 
 /**
@@ -95,6 +98,9 @@ export class BasicRenderStep implements RenderStep {
    */
   public stencilState: StencilStateParams
 
+  private spriteBatch: SpriteBatch
+  private debugBatch: PrimitiveBatch
+
   public constructor(options: BasicRenderStepOptions = {}) {
     this.clearColor = getOption(options, 'clearColor', Color.Black.rgba)
     this.clearDepth = getOption(options, 'clearDepth', 1)
@@ -108,9 +114,15 @@ export class BasicRenderStep implements RenderStep {
   public render(manager: RenderManager) {
     const binder = manager.binder
     const scene = manager.scene
-    const cam = scene.camera
-    if (!scene.items.length || !cam) {
+    const cam = scene.debugCamera || scene.camera
+    if (!cam) {
       return
+    }
+    if (!this.spriteBatch) {
+      this.spriteBatch = new SpriteBatch(manager.device)
+    }
+    if (!this.debugBatch) {
+      this.debugBatch = new PrimitiveBatch(manager.device)
     }
 
     binder.updateCamera(cam.world, cam.view, cam.projection)
@@ -127,15 +139,30 @@ export class BasicRenderStep implements RenderStep {
     manager.device.stencilState = this.stencilState
     manager.device.clear(this.clearColor, this.clearDepth, this.clearStencil)
 
-    for (const item of manager.scene.items) {
-      this.renderItem(item, manager.binder)
+    this.spriteBatch.begin({
+      viewProjection: binder.ViewProjection.value,
+    })
+    this.debugBatch.begin({
+      viewProjection: binder.ViewProjection.value,
+      primitiveType: PrimitiveType.LineList,
+    })
+    for (const item of scene.items) {
+      if (item.type === 'sprite') {
+        (item as SceneItemSprite).sprite.draw(this.spriteBatch)
+      } else if (item.type === 'debug') {
+        (item as SceneDebugDrawable).debug.draw(this.debugBatch)
+      } else {
+        this.renderItem(item as SceneItemDrawable, manager.binder)
+      }
     }
+    this.spriteBatch.end()
+    this.debugBatch.end()
 
     manager.device.setRenderTarget(null)
     manager.endStep(rt)
   }
 
-  public renderItem(item: DrawableData, binder: UniformBinder) {
+  public renderItem(item: SceneItemDrawable, binder: UniformBinder) {
     const effect = item.material.effect
     const drawable = item.drawable
     const technique: ShaderTechnique = effect.technique

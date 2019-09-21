@@ -143,7 +143,7 @@ export class Mouse extends Events {
     super()
     this.eventTarget = getOption(options, 'eventTarget', this.eventTarget)
     this.captureTarget = getOption(options, 'captureTarget', this.captureTarget)
-    this.proxiedEvents = getOption(options, 'proxyEvents', this.proxiedEvents)
+    this.proxiedEvents = getOption(options, 'proxyEvents', Array.from(this.proxiedEvents))
 
     this.activate()
   }

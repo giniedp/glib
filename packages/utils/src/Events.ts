@@ -1,6 +1,6 @@
 function triggerEvents(events: EventRegistry[], args: any[]) {
-  for (const e of events) {
-    e.callback.apply(e.ctx, args)
+  for (let i = 0; i < events.length; i++) {
+    events[i].callback.apply(events[i].ctx, args)
   }
 }
 
@@ -118,13 +118,11 @@ export class Events {
     if (!this.events) {
       return this
     }
-    const events = this.events[name]
-    if (events) {
-      triggerEvents(events, args)
+    if (this.events[name]) {
+      triggerEvents(this.events[name], args)
     }
-    const allEvents = this.events.all
-    if (allEvents) {
-      triggerEvents(allEvents, args)
+    if (this.events.all) {
+      triggerEvents(this.events.all, args)
     }
     return this
   }

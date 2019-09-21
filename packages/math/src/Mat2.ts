@@ -423,7 +423,6 @@ export class Mat2 {
     const r10 = 2 * (xy - zw)
     const r11 = 1 - 2 * (zz + xx)
 
-
     const m = this.m
     const m00 = m[M._00]
     const m10 = m[M._10]

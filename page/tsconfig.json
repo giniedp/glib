@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "rootDir": ".",
     "baseUrl": ".",
     "module": "es2015",
     "moduleResolution": "node",
@@ -15,7 +14,7 @@
     "skipLibCheck": true,
     "target": "es6",
     "paths": {
-      "@gglib/*": ["../dist/packages/*"]
+      "@gglib/*": ["./../dist/packages/*"]
     }
   }
 }

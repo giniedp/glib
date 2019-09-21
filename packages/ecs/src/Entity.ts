@@ -1,6 +1,6 @@
 import { Events, Log, Type } from '@gglib/utils'
 import { Component } from './Component'
-import { getInjectMetadata, getServiceMetadata } from './decorators'
+import { getInjectMetadata, getListenerMetadata, getServiceMetadata, ListenerMetadata } from './decorators'
 import { errorOnMissingService } from './errors'
 import { Query } from './query'
 
@@ -72,7 +72,7 @@ export class Entity extends Events {
   private toUpdate: Component[] = []
   private toInitialize: Component[] = []
 
-  private constructor(scope: Entity) {
+  protected constructor(scope?: Entity) {
     super()
     this.root = scope || this
   }
@@ -117,10 +117,16 @@ export class Entity extends Events {
 
   /**
    * Gets a service for given key
+   *
+   * @param key - the key to lookup
+   * @param fallback - the fallback value to return.
    */
   public getService<T>(key: Type<T>, fallback?: T): T
   /**
    * Gets a service for given key
+   *
+   * @param key - the key to lookup
+   * @param fallback - the fallback value to return.
    */
   public getService<T>(key: any, fallback?: T): T // tslint:disable-line: unified-signatures
   public getService(key: any, fallback?: any) {
@@ -131,7 +137,7 @@ export class Entity extends Events {
     if (fallback !== undefined) {
       return fallback
     }
-    errorOnMissingService(key)
+    errorOnMissingService(key, this)
   }
 
   /**
@@ -145,7 +151,6 @@ export class Entity extends Events {
   public createChild(...callbacks: Array<(entity: Entity) => void>): this {
     const child = new Entity(this.root)
     this.addChild(child)
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < callbacks.length; i++) {
       callbacks[i](child)
     }
@@ -233,6 +238,26 @@ export class Entity extends Events {
   }
 
   /**
+   * Destroys and removes all child entities
+   */
+  public destroyChildren() {
+    while (this.children.length) {
+      this.children[0].destroy()
+    }
+  }
+
+  /**
+   * Destroys and removes all child entities
+   */
+  public destroy() {
+    while (this.children.length) {
+      this.children[0].destroy()
+    }
+    this.destroyComponents()
+    this.remove()
+  }
+
+  /**
    * Adds a component to this entity
    *
    * @remarks
@@ -277,9 +302,19 @@ export class Entity extends Events {
   }
 
   /**
-   * Removes the component from this entity.
+   * Removes the given component from this entity
+   *
+   * @remarks
+   * The following steps are performed for the removed component
+   * - component is removed from components list
+   * - `onRemove` life cycle is called
+   * - component is unregistered from services list if it was a `@Service`
+   * - `@Inject` bindings are unset
+   * - `@Listener` callbacks are unregistered
+   *
+   * However the `onDestroy` lifecycle is not called. To do this use `destroyComponent`.
    */
-  public removeComponent(comp: Component): Entity {
+  public removeComponent(comp: Component): this {
     let isRemoved = false
 
     // Unbind
@@ -311,7 +346,33 @@ export class Entity extends Events {
     // services before they are ejected
     this.ejectServices(comp)
     this.unregisterService(comp)
+    this.removeEventListeners(comp)
 
+    return this
+  }
+
+  /**
+   * Removes the component and calls the `onDestroy` lifecycle
+   *
+   * @param comp - the component to remove
+   */
+  public destroyComponent(comp: Component): this {
+    this.removeComponent(comp)
+    if (comp.onDestroy) {
+      comp.onDestroy(this)
+    }
+    return this
+  }
+
+  /**
+   * Destroys and removes all components of this entity
+   */
+  public destroyComponents(): this {
+    try {
+      this.destroyComponent(this.components[0])
+    } catch (e) {
+      console.error(e)
+    }
     return this
   }
 
@@ -326,6 +387,7 @@ export class Entity extends Events {
       cmp = this.toInitialize.shift()
 
       this.injectServices(cmp)
+      this.addEventListeners(cmp)
 
       if (cmp.onUpdate && this.toUpdate.indexOf(cmp) < 0) {
         this.toUpdate.push(cmp)
@@ -342,7 +404,6 @@ export class Entity extends Events {
     if (!recursive) {
       return this
     }
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].initializeComponents(recursive)
     }
@@ -356,14 +417,12 @@ export class Entity extends Events {
    * @param recursive - Whether to continue the update call recursively on every child
    */
   public updateComponents(dt: number, recursive: boolean = true): void {
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.toUpdate.length; i++) {
       this.toUpdate[i].onUpdate(dt)
     }
     if (!recursive) {
       return
     }
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].updateComponents(dt, recursive)
     }
@@ -376,14 +435,12 @@ export class Entity extends Events {
    * @param recursive - Whether to continue the draw call recursively on every child
    */
   public drawComponents(dt: number, recursive: boolean = true): void {
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.toDraw.length; i++) {
       this.toDraw[i].onDraw(dt)
     }
     if (!recursive) {
       return
     }
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].drawComponents(dt, recursive)
     }
@@ -413,7 +470,6 @@ export class Entity extends Events {
     if (includeSelf) {
       result.push(this)
     }
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < this.children.length; i++) {
       this.children[i].descendants(true, result)
     }
@@ -434,7 +490,6 @@ export class Entity extends Events {
       return result
     }
     const c = this.parent.children
-    // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < c.length; i++) {
       if (c[i] !== this || includeSelf) {
         result.push(c[i])
@@ -497,7 +552,12 @@ export class Entity extends Events {
       }
       const source = this.resolveEntity(m.from)
       if (source) {
-        component[m.property] = source.getService(m.service)
+        const service = source.getService(m.service, null)
+        if (service) {
+          component[m.property] = service
+        } else if (!m.optional) {
+          errorOnMissingService(m.service, source, component)
+        }
       } else {
         Log.w('[Entity]', `unable to inject service from '${m.from}'. Entity is not available.`)
       }
@@ -546,6 +606,28 @@ export class Entity extends Events {
     } else {
       Log.w('[Entity]', `unable to unregister service on '${meta.on}'. Entity is not available.`)
     }
+  }
+
+  private addEventListeners(component: Component) {
+    const meta = getListenerMetadata(component)
+    if (!meta) {
+      return
+    }
+    meta.forEach((m: ListenerMetadata) => {
+      const target = this.resolveEntity(m.on)
+      target.on(m.event, m.handler, component)
+    })
+  }
+
+  private removeEventListeners(component: Component) {
+    const meta = getListenerMetadata(component)
+    if (!meta) {
+      return
+    }
+    meta.forEach((m: ListenerMetadata) => {
+      const target = this.resolveEntity(m.on)
+      target.off(m.event, m.handler, component)
+    })
   }
 
   private resolveEntity(lookup: 'root' | 'parent' | string): Entity {

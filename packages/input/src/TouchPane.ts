@@ -1,4 +1,4 @@
-import { Events, documentVisibilityApi } from '@gglib/utils'
+import { documentVisibilityApi, Events } from '@gglib/utils'
 
 /**
  * TouchPane constructor options

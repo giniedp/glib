@@ -177,24 +177,33 @@ export class UniformBinder {
   /**
    * Updates camera binding values
    *
-   * @param transform - The transform matrix
-   * @param view - The view matrix
-   * @param proj - The projection matrix
+   * @param transform - The transform matrix. If missing, inverse of `view` is used
+   * @param view - The view matrix. If missing, identity is used
+   * @param proj - The projection matrix. If missing, identity is used
    */
-  public updateCamera(transform: Mat4, view: Mat4, proj: Mat4): UniformBinder {
+  public updateCamera(transform?: Mat4, view?: Mat4, proj?: Mat4): UniformBinder {
     if (transform) {
       transform.getTranslation(this.CameraPosition.value)
       transform.getForward(this.CameraDirection.value)
+    } else if (view) {
+      Mat4.invert(view, this.View.value)
+      this.View.value.getTranslation(this.CameraPosition.value)
+      this.View.value.getForward(this.CameraDirection.value)
+    } else {
+      Vec3.clone(Vec3.Zero, this.CameraPosition.value)
+      Vec3.clone(Vec3.Forward, this.CameraDirection.value)
     }
     if (view) {
       this.View.value.initFrom(view)
+    } else {
+      this.View.value.initIdentity()
     }
     if (proj) {
       this.Projection.value.initFrom(proj)
+    } else {
+      this.Projection.value.initIdentity()
     }
-    if (view && proj) {
-      Mat4.premultiply(this.View.value, this.Projection.value, this.ViewProjection.value)
-    }
+    Mat4.premultiply(this.View.value, this.Projection.value, this.ViewProjection.value)
     return this
   }
 

@@ -1,9 +1,9 @@
 extends /_layouts/_page
 block append script
-  script(type='text/javascript' src='/assets/showdown.js')
-  script(type='text/javascript' src='/assets/prism.js')
-  script(type='text/javascript' src='/assets/prism-typescript.js')
-  script(type='text/javascript' src='/assets/mithril.js')
+  script(type='text/javascript' src=assetPath('/assets/showdown.js'))
+  script(type='text/javascript' src=assetPath('/assets/prism.js'))
+  script(type='text/javascript' src=assetPath('/assets/prism-typescript.js'))
+  script(type='text/javascript' src=assetPath('/assets/mithril.js'))
   script(type='text/javascript' src='./index.js')
 block content
   .example-page

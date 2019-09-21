@@ -1,4 +1,4 @@
-import { Material, ShaderProgram, Texture } from '@gglib/graphics'
+import { Material, PrimitiveBatch, ShaderProgram, SpriteBatch, Texture, ViewportStateParams } from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
 import { RenderManager } from './RenderManager'
 
@@ -15,30 +15,98 @@ export interface Drawable {
 }
 
 /**
+ * An object that is drawable with a debug batch
+ *
+ * @public
+ */
+export interface DebugDrawable {
+  /**
+   * Is called when the object should be rendered with given primitive batch
+   */
+  draw: (batch: PrimitiveBatch) => void
+}
+
+/**
+ * An object that is drawable with a sprite batch
+ *
+ * @public
+ */
+export interface SpriteBatchDrawable {
+  /**
+   * Is called when the object should be rendered with given sprite batch
+   */
+  draw: (batch: SpriteBatch) => void
+}
+
+export interface SceneItem {
+  /**
+   * The drawable type
+   */
+  type: 'sprite' | 'debug' | 'drawable'
+  /**
+   * The world transform of the drawable object. If not provided identity is assumed
+   */
+  transform: Mat4
+  /**
+   * The sort order key
+   */
+  sortkey?: number
+}
+
+/**
  * An object holding a drawable with its rendering properties
  *
  * @public
  */
-export interface DrawableData<T = any> {
+export interface SceneItemDrawable extends SceneItem {
   /**
-   * The transform matrix
+   * The drawable type
    */
-  transform: Mat4
+  type: 'drawable'
   /**
-   * The drawable object
+   * The drawable object.
    */
   drawable: Drawable
   /**
-   * The drawing material
+   * The drawing material.
    */
   material: Material
+}
+
+/**
+ * An object holding a drawable with its rendering properties
+ *
+ * @public
+ */
+export interface SceneDebugDrawable extends SceneItem {
   /**
-   * Additional data.
-   *
-   * @remarks
-   * The actual data depends on the used rendering pipeline
+   * The drawable type
    */
-  data?: T
+  type: 'debug'
+  /**
+   * The drawable object.
+   */
+  debug: DebugDrawable
+}
+
+/**
+ * An object holding a sprite with its rendering properties
+ *
+ * @public
+ */
+export interface SceneItemSprite extends SceneItem {
+  /**
+   * The drawable type
+   */
+  type: 'sprite'
+  /**
+   * The drawable object.
+   */
+  sprite: SpriteBatchDrawable
+  /**
+   * The drawing material.
+   */
+  material: Material
 }
 
 /**
@@ -121,58 +189,83 @@ export interface Scene {
   /**
    * The unique identifier
    */
-  id: string | number,
+  id: string | number
   /**
-   * Indicates whether this scene is enabled for rendering
+   * The rendering priority key.
    *
    * @remarks
-   * If value is missing `true` is assumed
+   * Scenes with lower sortKey value are rendered first
    */
-  enabled?: boolean
+  sortKey?: number
   /**
-   * A custom tag
+   * Indicates whether the scene should be skipped during rendering
+   */
+  disabled?: boolean
+  /**
+   * Indicates whether this scene is used for off screen rendering
    *
    * @remarks
-   * All scenes without a tag are automatically rendered on screen by the render manager.
+   * If `true` the result of this scene will not be presented on screen
    */
-  tag?: string
+  offscreen?: boolean
   /**
-   * Render destination on Screen (or texture)
+   * Render destination on screen or render target
    */
   viewport?: {
-    type?: 'normalized' | 'pixels',
     /**
-     * X position on screen
-     */
-    x: number,
-    /**
-     * Y position on screen
-     */
-    y: number,
-    /**
-     * Width on screen
-     */
-    width: number,
-    /**
-     * Height on screen
-     */
-    height: number,
-    /**
-     * Aspect ration
+     * How the  `x`, `y`, `width` and `height` parameters should be interpreted
      *
      * @remarks
-     * Will be calculated based on canvas size and written back to this property
+     * When set to `pixels`, the parameters are directly used as pixel values.
+     *
+     * When set to `normalized`, the parameters are assumed to be in range [0:1]
+     *
+     * When missing `pixels` is assumed.
+     */
+    type?: 'normalized' | 'pixels'
+    /**
+     * X position on screen or render target
+     */
+    x: number
+    /**
+     * Y position on screen or render target
+     */
+    y: number
+    /**
+     * Width on screen or render target
+     */
+    width: number
+    /**
+     * Height on screen or render target
+     */
+    height: number
+    /**
+     * The aspect ratio
+     *
+     * @remarks
+     * This is calculated automatically each frame based on current canvas size (or render target).
+     * Thus this must not be provided manually when setting up the scene viewport.
      */
     aspect?: number,
-  },
+  }
   /**
    * The camera that is rendering this view
+   *
+   * @remarks
+   * If this is missing, the scene is not rendered even if it is enabled.
    */
   camera?: CameraData
   /**
+   * The camera that is rendering this view
+   *
+   * @remarks
+   * If this is missing, the scene is not rendered even if it is enabled.
+   */
+  debugCamera?: CameraData
+  /**
    * The items that are visible by this view
    */
-  items: DrawableData[]
+  items: SceneItem[]
   /**
    * The lights that affect this view
    */
@@ -186,25 +279,9 @@ export interface Scene {
 /**
  * @public
  */
-export interface SceneOutput {
+export interface SceneOutput extends ViewportStateParams {
   /**
    * The render target
    */
   target?: Texture
-  /**
-   * X position on render target
-   */
-  x?: number
-  /**
-   * Y position on render target
-   */
-  y?: number
-  /**
-   * Width on render target
-   */
-  width?: number
-  /**
-   * Height on render target
-   */
-  height?: number
 }

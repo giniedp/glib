@@ -1,5 +1,4 @@
 import './api'
-import './assets'
 import './build'
 import './bundle'
 import './clean'

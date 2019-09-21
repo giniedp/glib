@@ -1,5 +1,22 @@
-export function errorOnMissingService(key: any) {
-  throw new Error(`Service '${key}' is missing`)
+function stringify(item: any) {
+  if (!item) {
+    return item
+  }
+  if ('name' in item) {
+    return item.name
+  }
+  return item.toString()
+}
+
+export function errorOnMissingService(key: any, onEntity?: any, requiredBy?: any) {
+  let msg = `Service '${stringify(key)}' is missing`
+  if (onEntity) {
+    msg += ` on entity ${stringify(onEntity)}`
+  }
+  if (requiredBy) {
+    msg += ` required by ${stringify(requiredBy)}`
+  }
+  throw new Error(msg)
 }
 
 export function errorOnInjectUndefinedType(target: object, propertyKey?: string|symbol) {

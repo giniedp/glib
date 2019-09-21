@@ -1,35 +1,27 @@
-// # Terrain Scene
-//
-// ---
-//
-
 import {
-  addBasicRenderer,
-  addCamera,
-  addDirectionalLight,
-  addModel,
-  addTransform,
-  addWASD,
   CameraComponent,
   createGame,
-  Entity,
-  Inject,
+  KeyboardComponent,
+  LightComponent,
+  MeshComponent,
   ModelComponent,
-  OnAdded,
-  OnInit,
-  OnRemoved,
-  OnUpdate,
+  OccTree,
   PerspectiveCameraComponent,
   RendererComponent,
-  Service,
+  SpatialCullVisitor,
+  SpatialSystemComponent,
   TimeComponent,
   TransformComponent,
-} from '@gglib/ecs'
+  WASDComponent,
+} from '@gglib/components'
+
+import { Entity, Inject, OnInit, OnUpdate, Service } from '@gglib/ecs'
 
 import { ContentManager } from '@gglib/content'
 import { AutoMaterial, TerrainMaterial } from '@gglib/effects'
 import { buildSphere, Device, flipWindingOrder, ModelBuilder, Texture } from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
+import { BasicRenderStep } from '@gglib/render'
 import { BTTRoot, HeightMap } from '@gglib/terrain'
 import * as TweakUi from 'tweak-ui'
 
@@ -43,75 +35,92 @@ class MyGame implements OnInit, OnUpdate {
   public renderer: RendererComponent
 
   @Inject(CameraComponent, { from: '/Camera' })
-  private camera: PerspectiveCameraComponent
+  private camera1: PerspectiveCameraComponent
+
+  @Inject(CameraComponent, { from: '/Camera2' })
+  private camera2: PerspectiveCameraComponent
 
   public onInit() {
-    const scene = this.renderer.manager.scenes.get(0)
-    scene.camera = this.camera
+    this.renderer.manager.removeScene(0)
+    this.renderer.manager.addScene({
+      id: 0,
+      lights: [],
+      items: [],
+      steps: [new BasicRenderStep()],
+      viewport: { type: 'normalized', x: 0.0, y: 0.0, width: 1, height: 1 },
+    })
+    this.renderer.manager.addScene({
+      id: 1,
+      lights: [],
+      items: [],
+      steps: [new BasicRenderStep()],
+      viewport: { type: 'normalized', x: 0.75, y: 0.0, width: 0.25, height: 0.25 },
+    })
+
+    this.renderer.manager.getScene(0).camera = this.camera1
+    this.renderer.manager.getScene(1).camera = this.camera1
+    this.renderer.manager.getScene(1).debugCamera = this.camera2
   }
 
   public onUpdate() {
-    const scene = this.renderer.manager.scenes.get(0)
-    this.camera.aspect = scene.viewport.aspect
+    this.camera1.aspect = this.renderer.manager.getScene(0).viewport.aspect
+    this.camera2.aspect = this.renderer.manager.getScene(1).viewport.aspect
   }
 }
 
-// tslint:disable-next-line: max-classes-per-file
-class SkyComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
+@Service()
+class SkyComponent implements OnInit, OnUpdate {
 
   public name = 'Sky'
-  public entity: Entity
-  public time: TimeComponent
+
+  @Inject(TransformComponent)
   public transform: TransformComponent
 
-  public onAdded(e: Entity) {
-    this.entity = e
-    e.root.addService(SkyComponent, this)
-  }
+  @Inject(ModelComponent)
+  public renderable: ModelComponent
 
-  public onRemoved(e: Entity) {
-    e.root.removeService(SkyComponent)
-    this.entity = null
-  }
+  @Inject(Device, { from: 'root' })
+  public device: Device
 
-  public onInit(entity: Entity) {
-    this.time = entity.root.getService(TimeComponent)
-    this.transform = entity.getService(TransformComponent)
+  @Inject(ContentManager, { from: 'root' })
+  public content: ContentManager
 
-    const device = entity.root.getService(Device)
-    const content = entity.root.getService(ContentManager)
-    const renderable = entity.getService(ModelComponent)
+  @Inject(TimeComponent, { from: 'root' })
+  public time: TimeComponent
 
-    content.load('/assets/textures/Grey_Sky.png', Texture).then((texture) => {
+  @Inject(CameraComponent, { from: '/Camera' })
+  public camera: PerspectiveCameraComponent
 
-      const material = new AutoMaterial(device)
+  public onInit() {
+    this.content.load('/assets/textures/Grey_Sky.png', Texture).then((texture) => {
+      const material = new AutoMaterial(this.device)
       material.DiffuseMap = texture
       material.ShadeFunction = 'shadeNone'
       material.LightCount = 0
 
-      renderable.model = ModelBuilder.begin()
+      this.renderable.model = ModelBuilder.begin()
         .tap((b) => {
           buildSphere(b, {
             radius: 1,
             tesselation: 32,
           })
+          b.calculateBoundings()
           flipWindingOrder(b.indices)
         })
-        .endModel(device, {
+        .endModel(this.device, {
           materials: [material],
         })
     })
   }
 
   public onUpdate() {
-    const camera = this.entity.find('/Camera')
-    this.transform.setPosition(camera.getService(TransformComponent).position)
-    this.transform.setScaleUniform(camera.getService<PerspectiveCameraComponent>(CameraComponent).far - 1)
-    this.transform.setRotationAnglePara(0, 1, 0, Math.PI / 180 * this.time.gameTimeTotalMs / 1000)
+    const camera = this.camera
+    this.transform.setPositionV(camera.world.getTranslation())
+    this.transform.setScaleUniform(camera.far - 1)
+    this.transform.setRotationAxisAngle(0, 1, 0, Math.PI / 180 * this.time.game.totalMs / 1000)
   }
 }
 
-// tslint:disable-next-line: max-classes-per-file
 @Service({ on: 'root' })
 class TerrainComponent implements OnInit, OnUpdate {
 
@@ -125,12 +134,6 @@ class TerrainComponent implements OnInit, OnUpdate {
 
   @Inject(Entity)
   public entity: Entity
-
-  @Inject(TransformComponent)
-  public transform: TransformComponent
-
-  @Inject(ModelComponent)
-  public renderable: ModelComponent
 
   public bttRoot: BTTRoot
   public heightmap: HeightMap = null
@@ -151,7 +154,7 @@ class TerrainComponent implements OnInit, OnUpdate {
       material.DiffuseMapR = device.createTexture({ data: '/assets/textures/terrain/ground_dry_d.jpg' })
       material.DiffuseMapG = device.createTexture({ data: '/assets/textures/terrain/ground_mud_d.jpg' })
       material.DiffuseMapB = device.createTexture({ data: '/assets/textures/terrain/savanna_green_d.jpg' })
-      // material.DiffuseMapSlope = device.createTexture({ data: '/assets/textures/terrain/adesert_mntn4_d.jpg' })
+      /* material.DiffuseMapSlope = device.createTexture({ data: '/assets/textures/terrain/adesert_mntn4_d.jpg' }) */
 
       material.NormalMap = device.createTexture({ data: '/assets/textures/terrain/savanna_green_n.jpg' })
       material.NormalMapR = device.createTexture({ data: '/assets/textures/terrain/ground_dry_n.jpg' })
@@ -173,7 +176,16 @@ class TerrainComponent implements OnInit, OnUpdate {
         heightMap: heightmap,
         materials: [material],
       })
-      this.renderable.model = this.bttRoot.model
+
+      this.bttRoot.model.meshes.forEach((mesh) => {
+        this.entity.createChild(
+          MeshComponent.ensure,
+          (e) => {
+            const mc = e.getService(MeshComponent)
+            mc.mesh = mesh
+            mc.material = material
+          })
+      })
 
       material.parameters.Tiling = 32
       material.parameters.Brightness = 1.5
@@ -181,9 +193,6 @@ class TerrainComponent implements OnInit, OnUpdate {
       material.parameters.Perturbation = 0.25
       material.parameters.SlopeStrength = 1
 
-      document.querySelector('#tweak-ui').addEventListener('mousemove', (e) => {
-        // e.stopPropagation()
-      })
       TweakUi.build('#tweak-ui', (q) => {
         q.group('Fog', (f) => {
           f.color(material, 'FogColor', { format: '[n]rgb' })
@@ -199,27 +208,6 @@ class TerrainComponent implements OnInit, OnUpdate {
             ],
           })
         })
-        // q.group('Light', (l) => {
-        //   l.color(material, 'AmbientColor', { format: '[n]rgb' })
-        //   let angle = -1
-        //   l.add({
-        //     type: 'slider',
-        //     label: 'Angle',
-        //     get value() {
-        //       return angle
-        //     },
-        //     set value(v) {
-        //       angle = v
-        //     },
-        //     onInput: () => {
-        //       const e = this.entity.root.find('/Light') as Entity
-        //       e.getService(TransformComponent).setRotationAnglePara(1, 0, 0, angle)
-        //     },
-        //     min: -Math.PI,
-        //     max: Math.PI,
-        //     step: 0.01,
-        //   })
-        // })
         q.group('Terrain', (t) => {
           t.slider(material, 'Tiling', { min: 1, max: 128, step: 1 })
           t.slider(material, 'Brightness', { min: 0.1, max: 2, step: 0.01 })
@@ -229,7 +217,6 @@ class TerrainComponent implements OnInit, OnUpdate {
         })
       })
 
-      // notify that the terrain is loaded and the heightmap is available
       this.entity.trigger('terrain-loaded')
     })
   }
@@ -244,29 +231,47 @@ class TerrainComponent implements OnInit, OnUpdate {
   }
 }
 
-const game = createGame({
+createGame({
   device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
   autorun: true,
 }, (e) => {
   e.name = 'Root'
-  addBasicRenderer(e)
+  e.addComponent(new KeyboardComponent())
+  e.addComponent(new SpatialSystemComponent({
+    system: OccTree.create(Vec3.create(-1024, -1024, -1024), Vec3.create(1024, 1024, 1024), 6),
+  }))
+  e.addComponent(new RendererComponent({
+    cullVisitor: new SpatialCullVisitor(),
+  }))
   e.addComponent(new MyGame())
 })
-.createChild(addCamera, addWASD, (e) => {
-  e.name = 'Camera'
-  e.getService(TransformComponent)
-    .setPositionXYZ(512, 256, 512)
-    .lookAt(Vec3.Zero)
-})
-.createChild(addTransform, addDirectionalLight, (e) => {
-  e.name = 'Light'
-  e.getService(TransformComponent).setRotationAnglePara(1, 0, 0, -1)
-})
-.createChild(addModel, (e) => {
-  e.name = 'Sky'
-  e.addComponent(new SkyComponent())
-})
-.createChild(addModel, (e) => {
-  e.name = 'Terrain'
-  e.addComponent(new TerrainComponent())
-})
+  .createChild((e) => {
+    e.name = 'Camera'
+    PerspectiveCameraComponent.ensure(e)
+    WASDComponent.ensure(e)
+    e.getService(TransformComponent)
+      .setPosition(512, 256, 512)
+      .lookAt(Vec3.Zero)
+
+  })
+  .createChild((e) => {
+    e.name = 'Camera2'
+    PerspectiveCameraComponent.ensure(e)
+    e.getService(TransformComponent)
+      .setPosition(512, 256, 1024)
+      .lookAt(Vec3.Zero)
+  })
+  .createChild((e) => {
+    e.name = 'Light'
+    LightComponent.addDirectionalLight(e)
+    e.getService(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
+  })
+  .createChild((e) => {
+    e.name = 'Sky'
+    ModelComponent.ensure(e)
+    e.addComponent(new SkyComponent())
+  })
+  .createChild((e) => {
+    e.name = 'Terrain'
+    e.addComponent(new TerrainComponent())
+  })

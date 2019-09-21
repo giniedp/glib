@@ -1,7 +1,7 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
 import { BoundingSphere } from './BoundingSphere'
-import { boxIntersectsCapsule, ContainmentType, PlaneIntersectionType, planeIntersectsCapsule, sphereIntersectsCapsule } from './Collision'
+import { boxIntersectsCapsule, IntersectionType, PlaneIntersectionType, planeIntersectsCapsule, sphereIntersectsCapsule } from './Collision'
 import { Ray } from './Ray'
 import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'

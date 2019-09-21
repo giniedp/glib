@@ -47,7 +47,7 @@ class ExampleComponent {
 
   public async oncreate() {
     const data = this.node.attrs
-    const url = data.href.replace('#', location.pathname)
+    const url = data.href.replace('#', location.pathname).replace(/\/+/g, '/')
 
     if (!data.skipPreview && !data.frontpage) {
       this.previewUrl = url

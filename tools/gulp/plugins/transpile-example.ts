@@ -1,9 +1,31 @@
 import * as fs from 'fs'
+import * as path from 'path'
+import { Transform } from 'stream'
 import * as ts from 'typescript'
+import vinyl = require('vinyl')
 import project from '../../project'
 
-export default function transpileExample(file: string) {
+export default function transpileExample() {
+  return new Transform({
+    objectMode: true,
+    transform: function(file: any, encoding, cb) {
+      if (path.extname(file.path) === '.ts') {
+        this.push(new vinyl({
+          cwd: file.cwd,
+          base: file.base,
+          path: path.join(path.dirname(file.path), path.basename(file.path, '.ts')) + '.js',
+          contents: Buffer.from(transpileTsFile(file.path)),
+        }))
+      }
+      cb(null, file)
+    },
+    flush: (cb) => cb(null, null),
+  })
+}
+
+export function transpileTsFile(file: string) {
   const out = ts.transpileModule(fs.readFileSync(file).toString(), {
+    reportDiagnostics: true,
     transformers: {
       before: [(context) => {
         const visit: ts.Visitor = (node) => {
@@ -47,10 +69,15 @@ export default function transpileExample(file: string) {
 
   if (out.diagnostics) {
     for (const it of out.diagnostics) {
-      if (Array.isArray(it.messageText)) {
-        it.messageText.forEach((msg) => console.warn(msg.messageText)  )
-      } else {
+      if (typeof it.messageText === 'string')  {
         console.warn(it.messageText)
+      } else if (it.messageText) {
+        console.warn(JSON.stringify(it.messageText, null, 2))
+        // let chain = it.messageText
+        // while (chain) {
+        //   console.warn(chain.messageText)
+        //   chain = chain.next
+        // }
       }
     }
   }

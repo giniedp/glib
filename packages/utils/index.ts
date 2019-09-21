@@ -1,5 +1,6 @@
 export * from './src/BinaryReader'
 export * from './src/TextReader'
+export * from './src/Immutable'
 export * from './src/DataUri'
 export * from './src/Events'
 export * from './src/Http'

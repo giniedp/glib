@@ -1,6 +1,7 @@
 export * from './src/BoundingBox'
 export * from './src/BoundingFrustum'
 export * from './src/BoundingSphere'
+export * from './src/BoundingVolume'
 export * from './src/Collision'
 export * from './src/Mat2'
 export * from './src/Mat3'

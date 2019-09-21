@@ -1,0 +1,30 @@
+{
+  "name": "@gglib/components",
+  "description": "Part of the [G]glib project",
+  "version": "0.5.0",
+  "repository": {
+    "type": "git",
+    "url": "github.com/giniedp/glib.git"
+  },
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
+  "author": "Alexander Graefenstein",
+  "license": "MIT",
+  "main": "./bundles/components.umd.js",
+  "module": "./index.js",
+  "typings": "./index.d.ts",
+  "peerDependencies": {
+    "@gglib/content": "0.5.0",
+    "@gglib/ecs": "0.5.0",
+    "@gglib/graphics": "0.5.0",
+    "@gglib/math": "0.5.0",
+    "@gglib/utils": "0.5.0",
+    "@gglib/input": "0.5.0",
+    "@gglib/effects": "0.5.0",
+    "@gglib/render": "0.5.0"
+  }
+}

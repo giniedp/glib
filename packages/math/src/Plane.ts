@@ -1,3 +1,7 @@
+import { BoundingBox } from './BoundingBox'
+import { BoundingCapsule } from './BoundingCapsule'
+import { BoundingSphere } from './BoundingSphere'
+import { PlaneIntersectionType, planeIntersectsBox, planeIntersectsCapsule, planeIntersectsPoint, planeIntersectsSphere } from './Collision'
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
@@ -13,19 +17,19 @@ const keyLookup = {
  */
 export class Plane implements IVec2, IVec3, IVec4 {
   /**
-   * The X component
+   * The X component of the plane normal
    */
   public x: number
   /**
-   * The Y component
+   * The Y component of the plane normal
    */
   public y: number
   /**
-   * The Z component
+   * The Z component of the plane normal
    */
   public z: number
   /**
-   * The W component, used as distance
+   * The W component, used as shortest distance from plane to origin
    */
   public w: number
 
@@ -87,20 +91,6 @@ export class Plane implements IVec2, IVec3, IVec4 {
    */
   public get(key: number|string): number {
     return this[keyLookup[key]]
-  }
-
-  /**
-   * Gets the xyz components
-   * @param out - The value to write to
-   */
-  public getNormal(): Vec3
-  public getNormal<T>(out?: T): T & IVec3
-  public getNormal(out?: IVec3): IVec3 {
-    out = out || new Vec3()
-    out.x = this.x
-    out.y = this.y
-    out.z = this.z
-    return out
   }
 
   /**
@@ -227,13 +217,15 @@ export class Plane implements IVec2, IVec3, IVec4 {
    *
    * @returns the destination vector.
    */
-  public static clone<T extends IVec4 = Plane>(src: IVec4, dst?: T|Plane): T|Plane {
-    dst = dst || new Plane()
-    dst.x = src.x
-    dst.y = src.y
-    dst.z = src.z
-    dst.w = src.w
-    return dst
+  public static clone(src: IVec4): Plane
+  public static clone<T>(src: IVec4, out?: T): T & IVec4
+  public static clone(src: IVec4, out?: IVec4): IVec4 {
+    out = out || new Plane()
+    out.x = src.x
+    out.y = src.y
+    out.z = src.z
+    out.w = src.w
+    return out
   }
 
   /**
@@ -285,68 +277,41 @@ export class Plane implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Calculates the dot product with the `other` vector
-   *
-   * @returns The dot product.
+   * Gets the xyz components
+   * @param out - The value to write to
    */
-  public dot(other: IVec4): number {
-    return this.x * other.x + this.y * other.y + this.z * other.z + this.w * other.w
-  }
-
-  /**
-   * Calculates the dot product with the given vector
-   *
-   *
-   * @returns The dot product.
-   */
-  public static dot(a: IVec4, b: IVec4): number {
-    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
-  }
-
-  /**
-   * Normalizes `this` vector. Applies the result to `this` vector.
-   * @returns this vector for chaining
-   */
-  public normalize(): Plane {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    const w = this.w
-    let d = Math.sqrt(x * x + y * y + z * z + w * w)
-    if (Math.abs(d - 1) < Number.EPSILON) {
-      return this
-    }
-    d = 1.0 / d
-    this.x *= d
-    this.y *= d
-    this.z *= d
-    this.w *= d
-    return this
-  }
-
-  /**
-   * Normalizes the given vector.
-   * @param vec - The vector to normalize.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new instance.
-   */
-  public static normalize<T extends IVec4 = Plane>(vec: IVec4, out?: T|Plane): T|Plane {
-    out = out || new Plane()
-    const x = vec.x
-    const y = vec.y
-    const z = vec.z
-    const w = vec.w
-    let d = Math.sqrt(x * x + y * y + z * z + w * w)
-    if (Math.abs(d - 1) < Number.EPSILON) {
-      d = 1
-    } else {
-      d = 1.0 / d
-    }
-    out.x = x * d
-    out.y = y * d
-    out.z = z * d
-    out.w = w * d
+  public getNormal(): Vec3
+  public getNormal<T>(out?: T): T & IVec3
+  public getNormal(out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    out.x = this.x
+    out.y = this.y
+    out.z = this.z
     return out
   }
 
+  /**
+   * Calculates the distance from plane to a point
+   *
+   * @param p - the point
+   */
+  public distanceToPoint(p: IVec3): number {
+    return this.x * p.x + this.y * p.y + this.z * p.z + this.w
+  }
+
+  public intersectsPoint(point: IVec3): PlaneIntersectionType {
+    return planeIntersectsPoint(this, point)
+  }
+
+  public intersectsSphere(sphere: BoundingSphere): PlaneIntersectionType {
+    return planeIntersectsSphere(this, sphere.center, sphere.radius)
+  }
+
+  public intersectsBox(box: BoundingBox): PlaneIntersectionType {
+    return planeIntersectsBox(this, box.min, box.max)
+  }
+
+  public intersectsCapsule(capsule: BoundingCapsule): PlaneIntersectionType {
+    return planeIntersectsCapsule(this, capsule.start, capsule.end, capsule.radius)
+  }
 }
