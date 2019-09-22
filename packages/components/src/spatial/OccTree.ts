@@ -3,6 +3,9 @@ import { SpatialEntry, SpatialNode, SpatialSystem } from '../SpatialSystem'
 
 type KeyMatchingType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T]
 
+/**
+ * @public
+ */
 export class OccTree<T = any> implements SpatialSystem<T>, SpatialNode<T> {
   /**
    * The AABB volume of this node

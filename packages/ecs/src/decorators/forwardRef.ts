@@ -28,6 +28,7 @@ export function forwardRef<T>(fn: () => T) {
  * Resolves a type that has been wrapped with {@link forwardRef}
  *
  * @param type - The type to resolve
+ * @public
  */
 export function resolveForwardRef<T>(type: T): T {
   if (typeof type === 'function' && type[forwardRefFn] === forwardRef) {

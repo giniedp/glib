@@ -1,1 +1,1 @@
-# Physics integration with Ammo.js
+# Physics with Ammo.js

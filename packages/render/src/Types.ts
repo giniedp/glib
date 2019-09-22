@@ -38,11 +38,14 @@ export interface SpriteBatchDrawable {
   draw: (batch: SpriteBatch) => void
 }
 
+/**
+ * @public
+ */
 export interface SceneItem {
   /**
    * The drawable type
    */
-  type: 'sprite' | 'debug' | 'drawable'
+  type: string
   /**
    * The world transform of the drawable object. If not provided identity is assumed
    */

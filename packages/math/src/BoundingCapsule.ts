@@ -1,11 +1,12 @@
 import { BoundingBox } from './BoundingBox'
-import { BoundingFrustum } from './BoundingFrustum'
 import { BoundingSphere } from './BoundingSphere'
-import { boxIntersectsCapsule, IntersectionType, PlaneIntersectionType, planeIntersectsCapsule, sphereIntersectsCapsule } from './Collision'
-import { Ray } from './Ray'
+import { boxIntersectsCapsule, PlaneIntersectionType, planeIntersectsCapsule, sphereIntersectsCapsule } from './Collision'
 import { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
+/**
+ * @public
+ */
 export class BoundingCapsule {
   /**
    * The start point of medial line
@@ -271,7 +272,7 @@ export class BoundingCapsule {
    * Dumps the min and max points into an array at given offset
    */
   public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     Vec3.toArray(this.start, array, offset)
     Vec3.toArray(this.end, array, offset + 3)
     array[offset + 6] = this.radius

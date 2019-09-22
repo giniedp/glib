@@ -1,4 +1,5 @@
 export * from './src/BoundingBox'
+export * from './src/BoundingCapsule'
 export * from './src/BoundingFrustum'
 export * from './src/BoundingSphere'
 export * from './src/BoundingVolume'

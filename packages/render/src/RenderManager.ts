@@ -217,7 +217,7 @@ export class RenderManager {
    *
    * @remarks
    * Detects and destroys stale render targets.
-   * This should be called once per frame and/or a sufficient value for {@link keepAliveFrames} property must be used.
+   * This should be called once per frame and/or a sufficient value for `keepAliveFrames` property must be used.
    */
   public update() {
     this.toKill.length = 0

@@ -7,6 +7,9 @@ import { KeyboardComponent } from './KeyboardComponent'
 import { MouseComponent } from './MouseComponent'
 import { TransformComponent } from './TransformComponent'
 
+/**
+ * @public
+ */
 export interface WASDComponentOptions {
   keyForwad?: KeyboardKey
   keyBackward?: KeyboardKey

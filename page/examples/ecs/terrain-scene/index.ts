@@ -4,7 +4,6 @@ import {
   KeyboardComponent,
   LightComponent,
   MeshComponent,
-  ModelComponent,
   OccTree,
   PerspectiveCameraComponent,
   RendererComponent,
@@ -76,8 +75,8 @@ class SkyComponent implements OnInit, OnUpdate {
   @Inject(TransformComponent)
   public transform: TransformComponent
 
-  @Inject(ModelComponent)
-  public renderable: ModelComponent
+  @Inject(MeshComponent)
+  public renderable: MeshComponent
 
   @Inject(Device, { from: 'root' })
   public device: Device
@@ -98,18 +97,14 @@ class SkyComponent implements OnInit, OnUpdate {
       material.ShadeFunction = 'shadeNone'
       material.LightCount = 0
 
-      this.renderable.model = ModelBuilder.begin()
+      this.renderable.material = material
+      this.renderable.mesh = ModelBuilder.begin()
         .tap((b) => {
-          buildSphere(b, {
-            radius: 1,
-            tesselation: 32,
-          })
+          buildSphere(b, { radius: 1, tesselation: 32 })
           b.calculateBoundings()
           flipWindingOrder(b.indices)
         })
-        .endModel(this.device, {
-          materials: [material],
-        })
+        .endMesh(this.device)
     })
   }
 
@@ -178,13 +173,12 @@ class TerrainComponent implements OnInit, OnUpdate {
       })
 
       this.bttRoot.model.meshes.forEach((mesh) => {
-        this.entity.createChild(
-          MeshComponent.ensure,
-          (e) => {
-            const mc = e.getService(MeshComponent)
-            mc.mesh = mesh
-            mc.material = material
-          })
+        this.entity.createChild((e) => {
+          MeshComponent.ensure(e)
+          const mc = e.getService(MeshComponent)
+          mc.mesh = mesh
+          mc.material = material
+        })
       })
 
       material.parameters.Tiling = 32
@@ -268,7 +262,7 @@ createGame({
   })
   .createChild((e) => {
     e.name = 'Sky'
-    ModelComponent.ensure(e)
+    MeshComponent.ensure(e)
     e.addComponent(new SkyComponent())
   })
   .createChild((e) => {

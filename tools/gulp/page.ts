@@ -16,12 +16,12 @@ function assets() {
 
 function scss() {
   return src(project.page.scss)
-  .pipe(gulpSass({
-    includePaths: ['node_modules'],
-  }).on('error', (e: Error) => {
-    console.error(e)
-  }))
-  .pipe(dest(project.dist))
+    .pipe(gulpSass({
+      includePaths: ['node_modules'],
+    }).on('error', (e: Error) => {
+      console.error(e)
+    }))
+    .pipe(dest(project.dist))
 }
 
 function pages() {

@@ -5,6 +5,9 @@ import { IntersectionType } from './Collision'
 import { Ray } from './Ray'
 import { IVec3, IVec4 } from './Types'
 
+/**
+ * @public
+ */
 export interface BoundingVolume {
   /**
    * Clones the volume

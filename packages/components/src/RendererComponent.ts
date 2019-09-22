@@ -17,6 +17,9 @@ export interface CullVisitor extends SceneryCollector {
   run(entity: Entity, view: Scene): void
 }
 
+/**
+ * @public
+ */
 export interface RendererComponentOptions {
   manager?: RenderManager
   cullVisitor?: CullVisitor

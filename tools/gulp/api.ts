@@ -13,7 +13,7 @@ import { convertMarkdownToHtml } from './plugins/transpile-md'
 import { spawn } from './utils'
 
 async function runApiExtractor(pkg: string) {
-  return new Promise((resolve, reject)  => {
+  return new Promise((resolve, reject) => {
     const apiExtractorJsonPath: string = project.pkgSrcDir(pkg, 'api-extractor.json')
 
     // Load and parse the api-extractor.json file
@@ -50,24 +50,27 @@ function mdToHtml() {
     basedir: project.pageSrc,
     doctype: 'html',
     pretty: true,
-  })({})
+  })({
+    project: project,
+    assetPath: (asset: string) => asset,
+  })
 
   src([
     'api/docs/*.md',
   ])
-  .pipe(new Transform({
-    objectMode: true,
-    transform: function(file: any, encoding, cb) {
-      cb(null, new vinyl({
-        cwd: file.cwd,
-        base: file.base,
-        path: path.join(path.dirname(file.path), path.basename(file.path, '.md')) + '.html',
-        contents: Buffer.from(template.replace(/CONTENT/, convertMarkdownToHtml(file.path))),
-      }))
-    },
-    flush: (cb) => cb(),
-  }))
-  .pipe(dest(path.join(project.dist, 'docs')))
+    .pipe(new Transform({
+      objectMode: true,
+      transform: function (file: any, encoding, cb) {
+        cb(null, new vinyl({
+          cwd: file.cwd,
+          base: file.base,
+          path: path.join(path.dirname(file.path), path.basename(file.path, '.md')) + '.html',
+          contents: Buffer.from(template.replace(/CONTENT/, convertMarkdownToHtml(file.path))),
+        }))
+      },
+      flush: (cb) => cb(),
+    }))
+    .pipe(dest(path.join(project.dist, 'docs')))
 }
 
 export function docs() {

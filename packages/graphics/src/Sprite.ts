@@ -2,6 +2,9 @@ import { IVec2, IVec3, Mat3, Mat4, Quat, Vec2, Vec3 } from '@gglib/math'
 import { Color } from './Color'
 import { Texture } from './Texture'
 
+/**
+ * @public
+ */
 export class Sprite {
   public texture: Texture
   public color: number = 0

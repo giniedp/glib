@@ -3,6 +3,9 @@ import { SpatialEntry, SpatialNode, SpatialSystem } from '../SpatialSystem'
 
 type KeyMatchingType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T]
 
+/**
+ * @public
+ */
 export class QuadTree<T = any> implements SpatialSystem<T>, SpatialNode<T> {
   /**
    * The AABB volume of this node
@@ -91,7 +94,7 @@ export class QuadTree<T = any> implements SpatialSystem<T>, SpatialNode<T> {
    */
   public subdivide(maxDepth: number): this {
     if (!this.children) {
-      const step = Vec3.subtract(this.volume.max, this.volume.min).multiply({ x: 0.5, y: 1, z: 0.5})
+      const step = Vec3.subtract(this.volume.max, this.volume.min).multiply({ x: 0.5, y: 1, z: 0.5 })
       const offset = new Vec3()
       this.children = []
       for (let i = 0; i < 4; i++) {

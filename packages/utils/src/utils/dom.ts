@@ -2,6 +2,12 @@ import { getOption } from './get-option'
 
 const vendors = ['', 'moz', 'webkit', 'ms', 'o']
 
+/**
+ * @public
+ * @param el
+ * @param name
+ * @param variants
+ */
 export function vendorProperty<T extends Element | Document>(el: T, name: keyof T, ...variants: string[]): string {
   for (const prefix of vendors) {
     if (prefix) {
@@ -21,6 +27,12 @@ export function vendorProperty<T extends Element | Document>(el: T, name: keyof 
   return null
 }
 
+/**
+ * @public
+ * @param el
+ * @param name
+ * @param variants
+ */
 export function vendorEvent<T extends Element | Document>(el: T, name: keyof T, ...variants: string[]): string {
   const suffix = name.toString().replace(/^on/, '')
   for (const prefix of vendors) {
@@ -41,6 +53,9 @@ const docHidden = vendorProperty(document, 'hidden')
 const docVisibilityState = vendorProperty(document, 'visibilityState')
 const docVisibilityChange = vendorEvent(document, 'onvisibilitychange')
 
+/**
+ * @public
+ */
 export const documentVisibilityApi = {
   /**
    * Checks whether the current document is hidden.
@@ -95,6 +110,9 @@ export const documentVisibilityApi = {
   },
 }
 
+/**
+ * @public
+ */
 export class PointerLockApi {
 
   private pointerlockchange = vendorEvent(document as any, 'pointerlockchange')

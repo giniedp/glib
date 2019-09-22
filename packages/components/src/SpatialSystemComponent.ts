@@ -5,10 +5,16 @@ import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { QuadTree } from './spatial'
 import { SpatialEntry, SpatialSystem } from './SpatialSystem'
 
+/**
+ * @public
+ */
 export interface SpatialSystemComponentOptions {
   system?: SpatialSystem<Entity>
 }
 
+/**
+ * @public
+ */
 @Service()
 export class SpatialSystemComponent {
   /**

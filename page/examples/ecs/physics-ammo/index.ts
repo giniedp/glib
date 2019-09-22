@@ -1,13 +1,13 @@
 import {
   CameraComponent,
   createGame,
+  KeyboardComponent,
   LightComponent,
   ModelComponent,
   PerspectiveCameraComponent,
   RendererComponent,
   TransformComponent,
   WASDComponent,
-  KeyboardComponent,
 } from '@gglib/components'
 
 import {
@@ -153,7 +153,6 @@ class PhysicsProxy implements OnUpdate {
     }
 
     const shape = new Ammo.btBoxShape(new Ammo.btVector3(size / 2, size / 2, size / 2))
-
     const isDynamic = !!mass
     const localInertia = new Ammo.btVector3(0, 0, 0)
 

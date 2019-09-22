@@ -7,6 +7,7 @@ import { ModelBuilderChannel } from '../ModelBuilderChannel'
 /**
  * Builds lines to display vertex normal tangent and bitangent vectors
  *
+ * @public
  * @param builder - The model builder
  * @param vertexBuffer - The vertex buffer to inspect
  */

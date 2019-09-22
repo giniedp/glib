@@ -636,6 +636,7 @@ export function planeIntersectsBox(plane: IVec4, boxMin: IVec3, boxMax: IVec3): 
  * @param capsuleR - the capsule radius
  */
 export function planeIntersectsCapsule(plane: IVec4, capsuleStart: IVec3, capsuleEnd: IVec3, capsuleR: number): PlaneIntersectionType {
+
   const pi1 = planeIntersectsSphere(plane, capsuleStart, capsuleR)
   const pi2 = planeIntersectsSphere(plane, capsuleEnd, capsuleR)
   return pi1 === pi2 ? pi1 : PlaneIntersectionType.Intersects
