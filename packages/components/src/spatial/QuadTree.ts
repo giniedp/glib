@@ -1,7 +1,18 @@
-import { BoundingBox, BoundingFrustum, BoundingSphere, BoundingVolume, IVec3, IVec4, Ray, Vec3 } from '@gglib/math'
+import {
+  BoundingBox,
+  BoundingFrustum,
+  BoundingSphere,
+  BoundingVolume,
+  IVec3,
+  IVec4,
+  Ray,
+  Vec3,
+} from '@gglib/math'
 import { SpatialEntry, SpatialNode, SpatialSystem } from '../SpatialSystem'
 
-type KeyMatchingType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T]
+type KeyMatchingType<T, V> = {
+  [K in keyof T]: T[K] extends V ? K : never
+}[keyof T]
 
 /**
  * @public
@@ -39,7 +50,12 @@ export class QuadTree<T = any> implements SpatialSystem<T>, SpatialNode<T> {
   private children: Array<QuadTree<T>>
   private entries: Array<SpatialEntry<T>> = []
 
-  private constructor(min: IVec3, max: IVec3, level: number, private parent?: QuadTree<T>) {
+  private constructor(
+    min: IVec3,
+    max: IVec3,
+    level: number,
+    private parent?: QuadTree<T>,
+  ) {
     this.volume = BoundingBox.createFromV(min, max)
     this.level = level
   }
@@ -94,12 +110,16 @@ export class QuadTree<T = any> implements SpatialSystem<T>, SpatialNode<T> {
    */
   public subdivide(maxDepth: number): this {
     if (!this.children) {
-      const step = Vec3.subtract(this.volume.max, this.volume.min).multiply({ x: 0.5, y: 1, z: 0.5 })
+      const step = Vec3.subtract(this.volume.max, this.volume.min).multiply({
+        x: 0.5,
+        y: 1,
+        z: 0.5,
+      })
       const offset = new Vec3()
       this.children = []
       for (let i = 0; i < 4; i++) {
-        offset.x = (i & 1) ? step.x : 0 // tslint:disable-line: no-bitwise
-        offset.z = (i & 2) ? step.z : 0 // tslint:disable-line: no-bitwise
+        offset.x = i & 1 ? step.x : 0 // tslint:disable-line: no-bitwise
+        offset.z = i & 2 ? step.z : 0 // tslint:disable-line: no-bitwise
         const min = Vec3.add(this.volume.min, offset)
         const max = Vec3.add(min, step)
         this.children[i] = new QuadTree(min, max, this.level + 1, this)

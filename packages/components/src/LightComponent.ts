@@ -1,7 +1,7 @@
 import { Entity, Inject, OnInit, OnRemoved, OnUpdate, Service } from '@gglib/ecs'
 import { LightParams } from '@gglib/effects'
 import { LightType } from '@gglib/graphics'
-import { BoundingFrustum, frustumIntersectsSphere, Vec3, BoundingSphere } from '@gglib/math'
+import { BoundingSphere, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
@@ -33,7 +33,6 @@ export interface LightComponentOptions {
  */
 @Service()
 export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
-
   /**
    * Adds a {@link LightComponent} to the entity if it does not exist
    *

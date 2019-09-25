@@ -6,7 +6,6 @@ import { TimeComponent } from './TimeComponent'
  */
 @Service()
 export class FpsComponent implements OnUpdate {
-
   /**
    * Number of counted frames since reset
    */

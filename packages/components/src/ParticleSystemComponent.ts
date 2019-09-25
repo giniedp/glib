@@ -80,11 +80,11 @@ export class ParticlesWriter {
   private data: DataView
 
   public layout = {
-    corner:   { type: 'short', offset: 0, elements: 2 },
+    corner: { type: 'short', offset: 0, elements: 2 },
     position: { type: 'float', offset: 4, elements: 3 },
     velocity: { type: 'float', offset: 16, elements: 3 },
-    random:   { type: 'ubyte', offset: 28, elements: 4, normalize: true, packed: true },
-    time:     { type: 'float', offset: 32, elements: 1},
+    random: { type: 'ubyte', offset: 28, elements: 4, normalize: true, packed: true },
+    time: { type: 'float', offset: 32, elements: 1 },
   }
 
   constructor(data: ArrayBuffer) {
@@ -130,7 +130,6 @@ export class ParticlesWriter {
 }
 
 export class ParticleSystemComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
-
   public device: Device
 
   /**
@@ -177,7 +176,6 @@ export class ParticleSystemComponent implements OnAdded, OnRemoved, OnInit, OnUp
     if (this.startRetired === this.startActive) {
       this.frame = 0
     }
-
   }
 
   public emit(position: IVec3, velocity: IVec3, channel: string) {

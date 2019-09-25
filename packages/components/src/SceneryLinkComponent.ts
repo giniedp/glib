@@ -12,7 +12,6 @@ import { SceneryCollectable, SceneryCollector } from './Scenery'
  */
 @Service()
 export class SceneryLinkComponent implements SceneryCollectable {
-
   public static ensure(e: Entity) {
     if (!e.getService(SceneryLinkComponent, null)) {
       e.addComponent(new SceneryLinkComponent())

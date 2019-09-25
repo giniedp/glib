@@ -16,7 +16,6 @@ import { TransformComponent } from './TransformComponent'
  * in order to update the `view` matrix
  */
 export abstract class CameraComponent {
-
   /**
    * The component name (`'Camera'`)
    */
@@ -82,7 +81,6 @@ export interface PerspectiveCameraOptions {
  */
 @Service({ as: CameraComponent })
 export class PerspectiveCameraComponent extends CameraComponent implements OnUpdate {
-
   /**
    * Adds a {@link PerspectiveCameraComponent} component to the entity if there is no camera added
    *
@@ -147,7 +145,7 @@ export class PerspectiveCameraComponent extends CameraComponent implements OnUpd
     super()
     this.near = getOption(options, 'near', 0.1)
     this.far = getOption(options, 'far', 1000)
-    this.fov = getOption(options, 'fov', 70 * Math.PI / 180)
+    this.fov = getOption(options, 'fov', (70 * Math.PI) / 180)
     this.aspect = getOption(options, 'aspect', 16 / 9)
   }
 
@@ -201,7 +199,6 @@ export interface OrthographicCameraOptions {
  */
 @Service({ as: CameraComponent })
 export class OrthographicCameraComponent extends CameraComponent implements OnUpdate {
-
   /**
    * Adds a {@link CameraComponent} to the entity if it does not exist
    *

@@ -20,7 +20,6 @@ import { TransformComponent } from './TransformComponent'
  */
 @Service()
 export class MeshComponent implements SceneryCollectable, OnInit, OnRemoved {
-
   /**
    * The name of this component (`Mesh`)
    */

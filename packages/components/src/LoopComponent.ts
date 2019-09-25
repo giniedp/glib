@@ -65,7 +65,6 @@ export interface LoopComponentOptions {
  */
 @Service()
 export class LoopComponent {
-
   /**
    * The name of this component (`'Loop'`)
    */
@@ -240,7 +239,6 @@ export class LoopComponent {
       }
 
       this.detectSlowLoop(scheduleCount)
-
     } else {
       consumedTime = elapsedTime
       elapsedTime = 0

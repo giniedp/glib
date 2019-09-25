@@ -1,9 +1,7 @@
-import * as TweakUi from 'tweak-ui'
-
 import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { Device, Model, DepthState, CullState } from '@gglib/graphics'
-import { Mat4, Vec3, Vec4 } from '@gglib/math'
+import { CullState, DepthState, Device, Model } from '@gglib/graphics'
+import { Mat4, Vec3 } from '@gglib/math'
 import { BasicRenderStep, LightSourceData, RenderManager, RenderStep, SceneItemDrawable } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
@@ -26,7 +24,7 @@ const lights: LightSourceData[] = [
 
 const steps: RenderStep[] = [
   new BasicRenderStep({
-    clearColor: 0xFFFFFFFF,
+    clearColor: 0xffffffff,
     depthState: DepthState.Default,
     cullState: CullState.CullClockWise,
   }),
@@ -101,8 +99,8 @@ loop((time, dt) => {
   renderer.render()
 })
 
-content.load('/assets/models/obj/piratekit/ship_dark.obj', Model).then((model) => {
-  model.meshes.forEach((mesh) => {
+content.load('/assets/models/obj/piratekit/ship_dark.obj', Model).then(model => {
+  model.meshes.forEach(mesh => {
     items.push({
       type: 'drawable',
       transform: Mat4.createIdentity(),
@@ -113,9 +111,9 @@ content.load('/assets/models/obj/piratekit/ship_dark.obj', Model).then((model) =
 })
 
 function updateViews(t: number, dt: number) {
-  renderer.eachScene((scene) => {
+  renderer.eachScene(scene => {
     const camera = scene.camera
     Mat4.invert(camera.world, camera.view)
-    camera.projection.initOrthographic(100,  100 / scene.viewport.aspect || 1, 0.1, 1000)
+    camera.projection.initOrthographic(100, 100 / scene.viewport.aspect || 1, 0.1, 1000)
   })
 }

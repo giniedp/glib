@@ -73,7 +73,6 @@ export class RendererComponent implements OnInit, OnDraw {
  * @public
  */
 export class BruteForceCullVisitor implements CullVisitor {
-
   public scene: Scene
   public readonly frustum: BoundingFrustum = new BoundingFrustum()
 
@@ -127,7 +126,6 @@ export class BruteForceCullVisitor implements CullVisitor {
  * @public
  */
 export class SpatialCullVisitor implements CullVisitor {
-
   public readonly frustum: BoundingFrustum = new BoundingFrustum()
   public readonly entities: Entity[] = []
   public scene: Scene

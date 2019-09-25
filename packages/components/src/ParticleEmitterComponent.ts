@@ -7,7 +7,6 @@ import { TransformComponent } from './TransformComponent'
  * @public
  */
 export class ParticleEmitterComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
-
   /**
    * Number of particles per second
    */

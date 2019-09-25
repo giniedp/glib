@@ -104,7 +104,6 @@ export interface TimeComponentOptions {
 
 @Service()
 export class TimeComponent implements OnUpdate, OnDraw {
-
   /**
    * The real time clock
    */

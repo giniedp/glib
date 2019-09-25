@@ -1,4 +1,11 @@
-import { Entity, Inject, OnInit, OnRemoved, OnUpdate, Service } from '@gglib/ecs'
+import {
+  Entity,
+  Inject,
+  OnInit,
+  OnRemoved,
+  OnUpdate,
+  Service,
+} from '@gglib/ecs'
 import { SpriteBatch, Texture } from '@gglib/graphics'
 import { BoundingSphere, IRect } from '@gglib/math'
 import { SceneItemSprite } from '@gglib/render'
@@ -26,9 +33,9 @@ export interface SpriteData {
    * The slice distances to form a 9-sliced sprite
    */
   slice?: {
-    top: number,
-    right: number,
-    bottom: number,
+    top: number
+    right: number
+    bottom: number
     left: number,
   }
 }
@@ -76,8 +83,8 @@ export interface SpriteComponentOptions {
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
 @Service()
-export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
-
+export class SpriteComponent
+  implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
   /**
    * The name of the component (`Sprite`)
    */
@@ -111,7 +118,7 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
   /**
    * The tint color
    */
-  public color: number = 0xFFFFFFFF
+  public color: number = 0xffffffff
   /**
    * Whether to flip horizontally
    */
@@ -242,7 +249,10 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
   public onUpdate() {
     if (this.$dimensionsChanged && this.volume) {
       this.$sphere.center.init(0, 0, 0)
-      this.$sphere.radius = Math.max(Math.abs(this.width - this.pivotX), Math.abs(this.height - this.pivotX))
+      this.$sphere.radius = Math.max(
+        Math.abs(this.width - this.pivotX),
+        Math.abs(this.height - this.pivotX),
+      )
       this.volume.linkVolume(this.$sphere)
       this.$dimensionsChanged = false
     }
@@ -281,29 +291,57 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
     }
   }
 
-  private drawSpriteDefault(batch: SpriteBatch, texture: Texture, frame?: IRect) {
+  private drawSpriteDefault(
+    batch: SpriteBatch,
+    texture: Texture,
+    frame?: IRect,
+  ) {
     const builder = batch.draw(texture)
 
     if (frame) {
-      builder.source(frame.x, frame.y, frame.width, frame.height, this.flipX, this.flipY)
+      builder.source(
+        frame.x,
+        frame.y,
+        frame.width,
+        frame.height,
+        this.flipX,
+        this.flipY,
+      )
     } else {
-      builder.source(0, 0, texture.width, texture.height, this.flipX, this.flipY)
+      builder.source(
+        0,
+        0,
+        texture.width,
+        texture.height,
+        this.flipX,
+        this.flipY,
+      )
     }
 
     builder.tint(this.color)
-    builder.destination(-this.pivotX, this.height - this.pivotY, this.width, -this.height)
+    builder.destination(
+      -this.pivotX,
+      this.height - this.pivotY,
+      this.width,
+      -this.height,
+    )
 
     if (this.transform) {
       builder.transformMat4(this.transform.world)
     }
   }
 
-  private drawSpriteSliced(batch: SpriteBatch, texture: Texture, frame: IRect, slice: {
-    top: number,
-    right: number,
-    bottom: number,
-    left: number,
-  }) {
+  private drawSpriteSliced(
+    batch: SpriteBatch,
+    texture: Texture,
+    frame: IRect,
+    slice: {
+      top: number
+      right: number
+      bottom: number
+      left: number,
+    },
+  ) {
     let fw = frame ? frame.width : texture.width
     let fh = frame ? frame.height : texture.height
     let ux = /*(this.width / fw) */ this.pixelScaleX
@@ -354,12 +392,17 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
     this.drawTile(batch, texture, sx2, sy2, sw2, sh2, dx2, dy2, dw2, dh2)
   }
 
-  private drawSpriteTiled(batch: SpriteBatch, texture: Texture, frame: IRect, slice: {
-    top: number,
-    right: number,
-    bottom: number,
-    left: number,
-  }) {
+  private drawSpriteTiled(
+    batch: SpriteBatch,
+    texture: Texture,
+    frame: IRect,
+    slice: {
+      top: number
+      right: number
+      bottom: number
+      left: number,
+    },
+  ) {
     let ux = this.width / frame.width
     let uy = this.height / frame.height
 
@@ -411,8 +454,14 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
   private drawTile(
     batch: SpriteBatch,
     texture: Texture,
-    sx: number, sy: number, sw: number, sh: number,
-    dx: number, dy: number, dw: number, dh: number,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+    dx: number,
+    dy: number,
+    dw: number,
+    dh: number,
   ) {
     const builder = batch
       .draw(texture)

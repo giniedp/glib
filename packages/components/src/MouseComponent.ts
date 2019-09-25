@@ -15,7 +15,6 @@ export type MouseComponentOptions = MouseOptions
  */
 @Service()
 export class MouseComponent implements OnUpdate {
-
   /**
    * Adds a {@link MouseComponent} to the entity if it does not exist
    *

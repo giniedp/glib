@@ -8,7 +8,6 @@ import { Keyboard, KeyboardKey, KeyboardOptions } from '@gglib/input'
  */
 @Service()
 export class KeyboardComponent implements OnUpdate {
-
   /**
    * Adds a {@link KeyboardComponent} to the entity if it does not exist
    *
@@ -48,7 +47,7 @@ export class KeyboardComponent implements OnUpdate {
 
   private addToNewState = (k: KeyboardKey) => this.newState.add(k)
 
-  constructor(options: KeyboardOptions= {}) {
+  constructor(options: KeyboardOptions = {}) {
     this.keyboard = new Keyboard(options)
   }
 
@@ -85,7 +84,7 @@ export class KeyboardComponent implements OnUpdate {
    * @param key - The key to check
    */
   public isReleased(key: KeyboardKey): boolean {
-    return (this.newState.has(key))
+    return this.newState.has(key)
   }
 
   /**

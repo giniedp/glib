@@ -28,9 +28,10 @@ export class TouchComponent implements OnUpdate {
 
   public onUpdate() {
     const ids = this.touchIds as number[]
-    ids.length = 0;
+    ids.length = 0
 
-    // swap states
+      // swap states
+      ;
     [this.oldStates, this.newStates] = [this.newStates, this.oldStates]
 
     this.newStates.clear()

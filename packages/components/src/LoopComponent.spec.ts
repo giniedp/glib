@@ -3,7 +3,6 @@ import { LoopComponent } from './LoopComponent'
 import { TimeComponent } from './TimeComponent'
 
 describe('@gglib/ecs/LoopComponent', () => {
-
   let entity: Entity
   let looper: LoopComponent
   let timer: TimeComponent
@@ -125,7 +124,6 @@ describe('@gglib/ecs/LoopComponent', () => {
     })
 
     it('detects slow running loop', () => {
-
       mockedRealTime = 0
 
       mockedRealTime += targetElapsedTime
@@ -142,27 +140,27 @@ describe('@gglib/ecs/LoopComponent', () => {
 
       mockedRealTime += targetElapsedTime * 2
       mockedAnimationFrame()
-      expect(looper.isRunningSlowly).toBe(true)  // 1 frame and 1 lagging frame => 5 lagging frames (exceeds maxLaggingFrames)
+      expect(looper.isRunningSlowly).toBe(true) // 1 frame and 1 lagging frame => 5 lagging frames (exceeds maxLaggingFrames)
 
       mockedRealTime += targetElapsedTime
       mockedAnimationFrame()
-      expect(looper.isRunningSlowly).toBe(true)  // reduced to 4 lagging frames
+      expect(looper.isRunningSlowly).toBe(true) // reduced to 4 lagging frames
 
       mockedRealTime += targetElapsedTime
       mockedAnimationFrame()
-      expect(looper.isRunningSlowly).toBe(true)  // reduced to 3 lagging frames
+      expect(looper.isRunningSlowly).toBe(true) // reduced to 3 lagging frames
 
       mockedRealTime += targetElapsedTime
       mockedAnimationFrame()
-      expect(looper.isRunningSlowly).toBe(true)  // reduced to 2 lagging frames
+      expect(looper.isRunningSlowly).toBe(true) // reduced to 2 lagging frames
 
       mockedRealTime += targetElapsedTime
       mockedAnimationFrame()
-      expect(looper.isRunningSlowly).toBe(true)  // reduced to 1 lagging frames
+      expect(looper.isRunningSlowly).toBe(true) // reduced to 1 lagging frames
 
       mockedRealTime += targetElapsedTime
       mockedAnimationFrame()
-      expect(looper.isRunningSlowly).toBe(false)  // reduced to 0 lagging frames
+      expect(looper.isRunningSlowly).toBe(false) // reduced to 0 lagging frames
     })
   })
 })

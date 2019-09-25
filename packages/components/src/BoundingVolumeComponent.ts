@@ -19,7 +19,6 @@ import { TransformComponent } from './TransformComponent'
  */
 @Service()
 export class BoundingVolumeComponent implements OnUpdate, OnRemoved {
-
   /**
    * Adds a {@link BoundingVolumeComponent} component to the entity if it is missing
    *
@@ -117,9 +116,9 @@ export class BoundingVolumeComponent implements OnUpdate, OnRemoved {
     this.linkedVolume = volume
 
     if (volume instanceof BoundingSphere) {
-      (this as { volume: BoundingVolume}).volume = new UpdatableBoundingSphere(volume)
+      (this as { volume: BoundingVolume }).volume = new UpdatableBoundingSphere(volume)
     } else if (volume instanceof BoundingBox) {
-      (this as { volume: BoundingVolume}).volume = new UpdatableBoundingBox(volume)
+      (this as { volume: BoundingVolume }).volume = new UpdatableBoundingBox(volume)
     } else if (volume) {
       throw new Error(`Unsupported volume type: ${typeof volume}`)
     }

@@ -2,7 +2,6 @@ import { Entity } from '@gglib/ecs'
 import { TimeComponent } from './TimeComponent'
 
 describe('@gglib/ecs/TimeComponent', () => {
-
   let entity: Entity
   let component: TimeComponent
   let mockedRealTime = 0
@@ -14,7 +13,7 @@ describe('@gglib/ecs/TimeComponent', () => {
     entity.initializeComponents(true)
   })
 
-  it ('accumulates game time', () => {
+  it('accumulates game time', () => {
     entity.updateComponents(16, true)
     expect(component.game.elapsedMs).toBe(16)
     expect(component.game.totalMs).toBe(16)
@@ -35,7 +34,7 @@ describe('@gglib/ecs/TimeComponent', () => {
     expect(component.game.totalMs).toBe(48)
   })
 
-  it ('accumulates real time', () => {
+  it('accumulates real time', () => {
     mockedRealTime = 16
     entity.updateComponents(0, true)
     expect(component.real.elapsedMs).toBe(16)

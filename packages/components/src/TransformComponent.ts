@@ -1,4 +1,12 @@
-import { Entity, forwardRef, Inject, Listener, OnInit, OnUpdate, Service } from '@gglib/ecs'
+import {
+  Entity,
+  forwardRef,
+  Inject,
+  Listener,
+  OnInit,
+  OnUpdate,
+  Service,
+} from '@gglib/ecs'
 import { IVec3, IVec4, Mat4, Quat, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 
@@ -8,7 +16,6 @@ import { getOption } from '@gglib/utils'
  * @public
  */
 export interface TransformComponentOptions {
-
   /**
    * The initial scale value
    */
@@ -65,7 +72,10 @@ export class TransformComponent implements OnInit, OnUpdate {
   /**
    * The parent transform
    */
-  @Inject(forwardRef(() => TransformComponent), { from: 'parent', optional: true })
+  @Inject(forwardRef(() => TransformComponent), {
+    from: 'parent',
+    optional: true,
+  })
   public readonly parent: TransformComponent
 
   /**
@@ -147,8 +157,12 @@ export class TransformComponent implements OnInit, OnUpdate {
 
   constructor(options: TransformComponentOptions = {}) {
     this.scale = Vec3.convert(getOption(options, 'scale', Vec3.createOne()))
-    this.position = Vec3.convert(getOption(options, 'position', Vec3.createZero()))
-    this.rotation = Quat.convert(getOption(options, 'rotation', Quat.createIdentity()))
+    this.position = Vec3.convert(
+      getOption(options, 'position', Vec3.createZero()),
+    )
+    this.rotation = Quat.convert(
+      getOption(options, 'rotation', Quat.createIdentity()),
+    )
     this.dirty = true
   }
 
@@ -217,7 +231,12 @@ export class TransformComponent implements OnInit, OnUpdate {
    * @param z - Rotation axis Z parameter
    * @param angle - The rotation angle in radians
    */
-  public setRotationAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public setRotationAxisAngle(
+    x: number,
+    y: number,
+    z: number,
+    angle: number,
+  ): this {
     this.rotation.initAxisAngle(tempVec.init(x, y, z).normalize(), angle)
     this.dirty = true
     return this
@@ -230,7 +249,11 @@ export class TransformComponent implements OnInit, OnUpdate {
    * @param pitch - The pitch angle in rad
    * @param roll - The roll angle in rad
    */
-  public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): this {
+  public setRotationYawPitchRoll(
+    yaw: number,
+    pitch: number,
+    roll: number,
+  ): this {
     this.rotation.initYawPitchRoll(yaw, pitch, roll)
     this.dirty = true
     return this
@@ -544,7 +567,9 @@ export class TransformComponent implements OnInit, OnUpdate {
   }
 
   public lookAt(v: IVec3, up?: IVec3): this {
-    this.rotation.initFromMat4(tempMat.initLookAt(this.position, v, up || Vec3.Up))
+    this.rotation.initFromMat4(
+      tempMat.initLookAt(this.position, v, up || Vec3.Up)
+    )
     this.dirty = true
     return this
   }

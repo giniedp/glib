@@ -26,7 +26,6 @@ export interface WASDComponentOptions {
  */
 @Service()
 export class WASDComponent implements OnUpdate {
-
   /**
    * Adds a {@link WASDComponent} to the entity if it does not exist
    *
@@ -156,14 +155,22 @@ export class WASDComponent implements OnUpdate {
       this.temp.initFrom(this.translation)
     }
 
-    this.currentMoveSpeed += (targetSpeed - this.currentMoveSpeed) * this.moveDamping
+    this.currentMoveSpeed +=
+      (targetSpeed - this.currentMoveSpeed) * this.moveDamping
     this.currentMoveSpeed = Math.floor(this.currentMoveSpeed * 1000) / 1000
     if (this.currentMoveSpeed !== 0) {
-      Vec3.multiplyScalar(this.temp, this.currentMoveSpeed * dtSec, this.translation)
+      Vec3.multiplyScalar(
+        this.temp,
+        this.currentMoveSpeed * dtSec,
+        this.translation,
+      )
       trans.translateV(this.translation)
     }
 
-    if (this.mouseButton === 0 && mouse.leftButtonIsPressed || this.mouseButton !== 0 && mouse.rightButtonIsPressed) {
+    if (
+      (this.mouseButton === 0 && mouse.leftButtonIsPressed) ||
+      (this.mouseButton !== 0 && mouse.rightButtonIsPressed)
+    ) {
       let mouseX = mouse.dxNormalized
       let mouseY = mouse.dyNormalized
 
