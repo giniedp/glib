@@ -9,7 +9,16 @@ const models = {
   Tower: '/assets/models/obj/piratekit/tower.obj',
   Cannon: '/assets/models/obj/piratekit/cannonMobile.obj',
   Chest: '/assets/models/obj/piratekit/chest.obj',
-  Ship: '/assets/models/obj/piratekit/ship_dark.obj',
+  Boat: '/assets/models/obj/piratekit/boat_large.obj',
+  Bottle: '/assets/models/obj/piratekit/bottle.obj',
+  Paddle: '/assets/models/obj/piratekit/paddle.obj',
+  Palm: '/assets/models/obj/piratekit/palm_detailed_long.obj',
+  Pirate: '/assets/models/obj/piratekit/pirate_captain.obj',
+  Plant: '/assets/models/obj/piratekit/plant.obj',
+  Shovel: '/assets/models/obj/piratekit/shovel.obj',
+  Sword: '/assets/models/obj/piratekit/sword.obj',
+  'Ship Dark': '/assets/models/obj/piratekit/ship_dark.obj',
+  'Ship Light': '/assets/models/obj/piratekit/ship_light.obj',
 }
 
 // Create the graphics device and pass the existing canvas element from the DOM.
@@ -54,7 +63,6 @@ function loadModel(url: string) {
     model = result
     if (model) {
       scale = 1 / model.boundingSphere.radius
-      console.log(model, scale)
     }
   }).catch((e) => {
     model = null

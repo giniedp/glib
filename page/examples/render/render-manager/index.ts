@@ -2,7 +2,7 @@ import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
 import { AutoMaterial, LightParams } from '@gglib/effects'
-import { buildPlane, buildSphere, Device, flipWindingOrder, Model, ModelBuilder } from '@gglib/graphics'
+import { buildPlane, buildSphere, CullState, DepthState, Device, flipWindingOrder, Model, ModelBuilder } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import { BasicRenderStep, PostBloom, PostPixelate, RenderManager, SceneItemDrawable } from '@gglib/render'
 import { loop } from '@gglib/utils'
@@ -35,7 +35,7 @@ const scene = renderer.addScene({
   camera: {
     world: Mat4.createLookAt({ x: 0, y: 25, z: 75 }, Vec3.Zero, Vec3.Up),
     view: Mat4.createIdentity(),
-    projection: Mat4.createPerspectiveFieldOfView(Math.PI / 2.4, device.drawingBufferAspectRatio, 0.1, 1500),
+    projection: Mat4.createIdentity(),
   },
   // Our scene has only one light. But it could have more.
   // These can be used by a rendering step to feed the shader with lighting parameters.
@@ -50,7 +50,10 @@ const scene = renderer.addScene({
   // rendering steps.
   // Here we add a basic rendering stage and 2 post processing stages.
   steps: [
-    new BasicRenderStep(),
+    new BasicRenderStep({
+      depthState: DepthState.Default,
+      cullState: CullState.CullClockWise,
+    }),
     new PostBloom(device, { enabled: true }),
     new PostPixelate(device, { enabled: false }),
   ],
@@ -73,6 +76,7 @@ interface GameObject {
 
 // The tiny render loop
 loop((time, dt) => {
+  device.resize()
   updateObjects(time, dt)
   updateCamera(time, dt)
   renderer.update()
@@ -114,6 +118,7 @@ function updateCamera(time: number, dt: number) {
     )
   }
   Mat4.invert(camera.world, camera.view)
+  camera.projection.initPerspectiveFieldOfView(Math.PI / 2.4, device.drawingBufferAspectRatio, 0.1, 1500)
 }
 
 // ### Step 3 - Load models and create game objects

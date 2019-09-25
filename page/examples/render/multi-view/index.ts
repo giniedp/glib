@@ -2,7 +2,7 @@ import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { Device, Model } from '@gglib/graphics'
+import { Device, Model, DepthState, CullState } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
 import { BasicRenderStep, LightSourceData, RenderManager, RenderStep, SceneItemDrawable } from '@gglib/render'
 import { loop } from '@gglib/utils'
@@ -19,14 +19,16 @@ const renderer = new RenderManager(device)
 const items: SceneItemDrawable[] = [] as any[]
 const lights: LightSourceData[] = [
   LightParams.createDirectionalLight({
-    color: new Vec4(1, 1, 1, 1),
-    direction: new Vec4(0, -1, -1, 1),
+    color: [1, 1, 1],
+    direction: [-1, -1, -1],
   }),
 ]
 
 const steps: RenderStep[] = [
   new BasicRenderStep({
     clearColor: 0xFFFFFFFF,
+    depthState: DepthState.Default,
+    cullState: CullState.CullClockWise,
   }),
 ]
 
@@ -111,10 +113,9 @@ content.load('/assets/models/obj/piratekit/ship_dark.obj', Model).then((model) =
 })
 
 function updateViews(t: number, dt: number) {
-  renderer.scenes.forEach((scene) => {
-    const aspect = renderer.resolveLayout(scene).aspect
+  renderer.eachScene((scene) => {
     const camera = scene.camera
     Mat4.invert(camera.world, camera.view)
-    camera.projection.initOrthographic(100,  100 / aspect, 0.1, 1000)
+    camera.projection.initOrthographic(100,  100 / scene.viewport.aspect || 1, 0.1, 1000)
   })
 }
