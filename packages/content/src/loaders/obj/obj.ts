@@ -60,19 +60,22 @@ export const loadObjToModelOptions = loader<null, ModelOptions>({
   },
 })
 
-function readVertex<T = any>(data: Data, element: VertexTextureNormalRef, target: T): T & {
-  position: number[],
-  texture?: number[],
-  normal?: number[],
-} {
-  target['position'] = data.v[element.v]
+function readVertex<T>(data: Data, element: VertexTextureNormalRef, target: T) {
+  const result = target as T & {
+    position?: number[],
+    texture?: number[],
+    normal?: number[],
+  }
+  if (data.v != null && data.v[element.v] != null) {
+    result.position = data.v[element.v]
+  }
   if (element.vt != null && data.vt != null) {
-    target['texture'] = data.vt[element.vt]
+    result.texture = data.vt[element.vt]
   }
   if (element.vn != null && data.vn != null) {
-    target['normal'] = data.vn[element.vn]
+    result.normal = data.vn[element.vn]
   }
-  return target as any
+  return result
 }
 
 function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
@@ -81,15 +84,15 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
       VertexLayout.convert('PositionTexture'),
       VertexLayout.convert('Normal'),
       VertexLayout.convert('TangentBitangent'),
-      // metadata channel
-      // allows us to split the mesh by material later
+      // we abuse an attribute channel as metadata for a material id
+      // so we can later split by material
       {
         material: {
-          elements: 1,
-          offset: 0,
-          packed: false,
-          normalize: false,
-          type: 'float', // FIXME: actually it's a string, but the implementation does not care
+          elements: 1,      // - we dont care about this
+          offset: 0,        // - and this
+          packed: false,    // - and this
+          normalize: false, // - and this
+          type: 'float',    // - and this since we dont operate on this buffer
         },
       },
     ],
@@ -131,15 +134,22 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
 
 function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
   const result: ModelMeshOptions[] = []
-  const byMtl = new Map<string, {
+  const split = new Map<string, {
     builder: ModelBuilder,
     indexMap: Map<number, number>,
   }>()
 
+  const position = builder.getChannel('position')
+  const texture = builder.getChannel('texture')
+  const normal = builder.getChannel('normal')
+  const tangent = builder.getChannel('tangent')
+  const bitangent = builder.getChannel('bitangent')
+  const material = builder.getChannel('material')
+
   builder.indices.forEach((index) => {
-    const mtl = builder.getChannel('material').read(index, 0) as any
-    if (!byMtl.has(mtl)) {
-      byMtl.set(mtl, {
+    const materialId: string = material.read(index, 0) as any
+    if (!split.has(materialId)) {
+      split.set(materialId, {
         builder: ModelBuilder.begin({
           layout: [
             'PositionTexture',
@@ -151,38 +161,42 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
       })
     }
 
-    const mesh = byMtl.get(mtl)
-    if (index % 3 === 0 && mesh.builder.vertexCount >= (65536 - 2)) {
+    const mesh = split.get(materialId)
+    if (mesh.builder.indexCount % 3 === 0 && mesh.builder.vertexCount >= (65536 - 2)) {
       mesh.indexMap.clear()
-      result.push(mesh.builder
-      .calculateBoundings()
-      .endMesh({
-        materialId: mtl,
-      }))
+      result.push(
+        mesh.builder
+          .calculateBoundings()
+          .endMesh({
+            materialId: materialId,
+          }),
+      )
     }
 
-    let newIndex = mesh.indexMap.get(index)
-    if (newIndex == null) {
-      newIndex = mesh.builder.vertexCount
-      mesh.indexMap.set(index, newIndex)
+    let remapped = mesh.indexMap.get(index)
+    if (remapped == null) {
+      remapped = mesh.builder.vertexCount
+      mesh.indexMap.set(index, remapped)
       mesh.builder.addVertex({
-        position: builder.getChannel('position').readAttribute(index),
-        texture: builder.getChannel('texture').readAttribute(index),
-        normal: builder.getChannel('normal').readAttribute(index),
-        tangent: builder.getChannel('tangent').readAttribute(index),
-        bitangent: builder.getChannel('bitangent').readAttribute(index),
+        position: position.readAttribute(index),
+        texture: texture.readAttribute(index),
+        normal: normal.readAttribute(index),
+        tangent: tangent.readAttribute(index),
+        bitangent: bitangent.readAttribute(index),
       })
     }
-    mesh.builder.addIndex(newIndex)
+    mesh.builder.addIndex(remapped)
   })
 
-  byMtl.forEach((entry, mtl) => {
+  split.forEach((entry, mtl) => {
     if (entry.builder.vertexCount > 0) {
-      result.push(entry.builder
-      .calculateBoundings()
-      .endMesh({
-        materialId: mtl,
-      }))
+      result.push(
+        entry.builder
+          .calculateBoundings()
+          .endMesh({
+            materialId: mtl,
+          }),
+      )
     }
   })
 
