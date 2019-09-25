@@ -15,10 +15,21 @@ const regAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/
  * @public
  */
 export interface ShaderObjectMeta {
+  /**
+   * Annotated metadata about the defined object
+   */
   [key: string]: any
-
+  /**
+   * The user defind binding name of the defined object
+   */
   binding?: string
+  /**
+   * The identifier of the defined object as it appears in the source code
+   */
   name: string
+  /**
+   * The type of the defined object
+   */
   type: string
 }
 
@@ -26,10 +37,25 @@ export interface ShaderObjectMeta {
  * @public
  */
 export interface ProgramInspection {
+  /**
+   * All attribute statements
+   */
   attributes: { [key: string]: ShaderObjectMeta }
+  /**
+   * All uniform statements
+   */
   uniforms: { [key: string]: ShaderObjectMeta }
+  /**
+   * All varying statements
+   */
   varying: { [key: string]: ShaderObjectMeta }
+  /**
+   * The vertex shader source
+   */
   vertexShader: string
+  /**
+   * The fragment shader source
+   */
   fragmentShader: string
 }
 
@@ -42,7 +68,7 @@ export interface ShaderInspection {
   attributes: { [key: string]: ShaderObjectMeta }
   uniforms: { [key: string]: ShaderObjectMeta }
   varying: { [key: string]: ShaderObjectMeta }
-  structs: {}
+  structs: { [key: string]: ShaderObjectMeta }
   lines: string[]
 }
 
