@@ -1,5 +1,5 @@
 import { COLLADA } from './collada'
-import { DocumentCache, mapChild, textContentToNumberArray } from './utils'
+import { textContentToNumberArray } from './utils'
 
 export default class Skew {
   public readonly type = 'skew'

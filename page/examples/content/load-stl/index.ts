@@ -1,6 +1,6 @@
 import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { BlendState, CullState, DepthState, Device, LightType, Model } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, Device, Model } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
@@ -43,7 +43,7 @@ function loadModel(url: string) {
       scale = 1 / model.boundingSphere.radius
     }
   }).catch((e) => {
-    model  = null
+    model = null
     console.error(e)
   })
 }
@@ -116,7 +116,7 @@ TweakUi.build('#tweak-ui', (q) => {
     onChange: (it, value) => loadModel(value),
   })
   q.slider(controls, 'distance', { min: 0.01, max: 3, label: 'Camera distance' })
-  q.slider(controls, 'offset', { min: -3, max: 3, label: 'Camera height'})
+  q.slider(controls, 'offset', { min: -3, max: 3, label: 'Camera height' })
   q.slider(controls, 'fov', { min: 1, max: 120, step: 1 })
   q.checkbox(controls, 'update')
 })

@@ -1,6 +1,6 @@
 import { defaultProgram, LightParams } from '@gglib/effects'
-import { buildCube, buildPlane, Device, ModelBuilder, LightType } from '@gglib/graphics'
-import { Mat4, Vec3 } from '@gglib/math'
+import { buildCube, buildPlane, Device, LightType, ModelBuilder } from '@gglib/graphics'
+import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
@@ -113,7 +113,7 @@ loop((time, dt) => {
   device.resize()
   device.clear(0xff2e2620, 1)
 
-  cam.initLookAt({ x: 0, y: 5, z: 3}, { x: 0, y: 0, z: 0}, { x: 0, y: 1, z: 0})
+  cam.initLookAt({ x: 0, y: 5, z: 3 }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 })
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 

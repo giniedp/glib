@@ -59,7 +59,7 @@ class ExampleComponent {
       return
     }
 
-    const files = await Promise.all<ExampleContent>(this.node.attrs.files.map(async(name: string) => {
+    const files = await Promise.all<ExampleContent>(this.node.attrs.files.map(async (name: string) => {
       return m.request({
         url: url + '/' + name,
         extract: (r) => r.responseText,
@@ -125,11 +125,11 @@ class ExampleSectionComponent {
     return !!this.code || !!this.content || !!this.annotated && this.annotated.length
   }
 
-  constructor(private node: Vnode<{ data: ExampleContent}>) {
+  constructor(private node: Vnode<{ data: ExampleContent }>) {
     this.onupdate(node)
   }
 
-  public onupdate(node: Vnode<{ data: ExampleContent}>) {
+  public onupdate(node: Vnode<{ data: ExampleContent }>) {
     const hadContent = this.hasContent
 
     this.node = node
@@ -234,11 +234,11 @@ class ExampleTabsComponent {
       { class: 'example-tabs' },
       data.tabs.map((tab, i) => {
         return m('button.example-tab[type="button"]',
-        {
-          class: i === data.active ? 'active' : '',
-          onclick: () => this.node.attrs.select(i),
-        },
-        tab.name)
+          {
+            class: i === data.active ? 'active' : '',
+            onclick: () => this.node.attrs.select(i),
+          },
+          tab.name)
       }),
     )
   }
@@ -316,14 +316,14 @@ interface Section {
 }
 
 // escapes HTML entities
-function escapeHtml(html: string) {
-  return String(html)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-}
+// function escapeHtml(html: string) {
+//   return String(html)
+//     .replace(/&/g, '&amp;')
+//     .replace(/"/g, '&quot;')
+//     .replace(/'/g, '&#39;')
+//     .replace(/</g, '&lt;')
+//     .replace(/>/g, '&gt;')
+// }
 
 function fixIndents(text: string) {
   let lines = text.split('\n')

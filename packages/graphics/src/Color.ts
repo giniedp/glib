@@ -1,4 +1,4 @@
-import { IVec4, Vec4 } from '@gglib/math'
+import { Vec4 } from '@gglib/math'
 
 // tslint:disable no-bitwise
 
@@ -252,19 +252,19 @@ export class Color {
     /**
      * The red component. This is assumed to be a byte value.
      */
-    public r: number= 0,
+    public r: number = 0,
     /**
      * The green component. This is assumed to be a byte value.
      */
-    public g: number= 0,
+    public g: number = 0,
     /**
      * The blure component. This is assumed to be a byte value.
      */
-    public b: number= 0,
+    public b: number = 0,
     /**
      * The alpha component. This is assumed to be a byte value.
      */
-    public a: number= 0,
+    public a: number = 0,
   ) { }
 
   /**

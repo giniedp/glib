@@ -3,12 +3,11 @@
 const path = require('path')
 const argv = require('yargs').argv
 
+// const IS_TRAVIS = !!process.env.TRAVIS
 const IS_COVERAGE = !!process.env.IS_COVERAGE
-const IS_TRAVIS = !!process.env.TRAVIS
 const BROWSER = process.env.BROWSER
 
 module.exports = (config) => {
-
   config.set({
     basePath: './packages',
     plugins: [
@@ -22,44 +21,38 @@ module.exports = (config) => {
     browserConsoleLogOptions: {
       level: 'info',
     },
-    frameworks: [
-      'jasmine',
-      'karma-typescript',
-    ],
-    browsers: [
-      BROWSER || 'Chrome',
-    ],
+    frameworks: ['jasmine', 'karma-typescript'],
+    browsers: [BROWSER || 'Chrome'],
     browserDisconnectTimeout: 60 * 60 * 1000,
     customLaunchers: {
       ChromeDebugging: {
         base: 'Chrome',
-        flags: [ '--remote-debugging-port=9222' ]
-      }
+        flags: ['--remote-debugging-port=9222'],
+      },
     },
 
     proxies: {
       '/assets': path.join(__dirname, 'assets'),
     },
-    files: [{
-      pattern: argv.package ? path.join(argv.package, '**/*.ts') : '**/*.ts',
-      watched: true,
-      served: true,
-      included: true,
-    }, {
-      pattern: '../assets/**/*',
-      watched: true,
-      served: true,
-      included: false,
-    }],
+    files: [
+      {
+        pattern: argv.package ? path.join(argv.package, '**/*.ts') : '**/*.ts',
+        watched: true,
+        served: true,
+        included: true,
+      },
+      {
+        pattern: '../assets/**/*',
+        watched: true,
+        served: true,
+        included: false,
+      },
+    ],
     exclude: [],
     preprocessors: {
       '**/*.ts': ['karma-typescript'],
     },
-    reporters: [
-      'progress',
-      'mocha',
-      'karma-typescript',
-    ],
+    reporters: ['progress', 'mocha', 'karma-typescript'],
     mochaReporter: {
       output: 'minimal',
     },
@@ -95,8 +88,7 @@ module.exports = (config) => {
           subdirectory: 'lcov',
           filename: 'lcov.info',
         },
-
       },
     },
-  });
-};
+  })
+}

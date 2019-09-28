@@ -142,7 +142,7 @@ export class SamplerState implements ISamplerState {
 
   public static convert(state: SamplerStateParams): ISamplerState {
     if (typeof state === 'string') {
-      return SamplerState[state] ? {...SamplerState[state] as ISamplerState} : null
+      return SamplerState[state] ? { ...SamplerState[state] as ISamplerState } : null
     }
     if (!state) {
       return null
@@ -216,7 +216,7 @@ export class SamplerState implements ISamplerState {
       state.minFilter === TextureFilter.LinearMipPoint) {
       state.minFilter = TextureFilter.Linear
     } else if (state.minFilter === TextureFilter.PointMipLinear ||
-      state.minFilter === TextureFilter.PointMipLinear) {
+      state.minFilter === TextureFilter.PointMipPoint) {
       state.minFilter = TextureFilter.Point
     }
 
@@ -224,7 +224,7 @@ export class SamplerState implements ISamplerState {
       state.magFilter === TextureFilter.LinearMipPoint) {
       state.magFilter = TextureFilter.Linear
     } else if (state.magFilter === TextureFilter.PointMipLinear ||
-      state.magFilter === TextureFilter.PointMipLinear) {
+      state.magFilter === TextureFilter.PointMipPoint) {
       state.magFilter = TextureFilter.Point
     }
     return state
@@ -451,7 +451,7 @@ export class SamplerState implements ISamplerState {
    * @param target - Where the state should be written to
    */
   public copy<T>(target: T): T & ISamplerState
-  public copy(out: any= {}): ISamplerState {
+  public copy(out: any = {}): ISamplerState {
     for (const key of params) {
       out[key] = this[key]
     }

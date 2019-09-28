@@ -3,7 +3,7 @@ import { Sampler } from './types'
 import { fractal, FractalParams, hybridMultifractal, multifractal, ridgedMultifractal } from './fractal'
 import { scale, shift } from './modifier'
 
-import { DistanceFunc, euclideanDistance, manhattanDistance } from './distance'
+import { DistanceFunc, manhattanDistance } from './distance'
 import { cellNoise, latticeNoise, LatticeNoiseOptions, perlinNoise, simplexNoise, valueNoise } from './noise'
 import { abs, add, clamp, max, min, multiply, negate, sinus, subtract } from './operator'
 

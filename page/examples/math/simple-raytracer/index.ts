@@ -96,7 +96,7 @@ class RaytracerClient {
     }
 
     const w = this.totalWidth
-    const h = this.totalHeight
+    // const h = this.totalHeight
     const x1 = data[1]
     const y1 = data[2]
     const x2 = data[3]

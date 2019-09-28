@@ -1,5 +1,5 @@
 import { COLLADA } from './collada'
-import { DocumentCache, mapChild, mapChildren } from './utils'
+import { DocumentCache } from './utils'
 import { VisualScene } from './visualScene'
 
 export class InstanceVisualScene {

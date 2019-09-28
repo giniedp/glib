@@ -52,7 +52,7 @@ function readData(base: string, dir: string, name: string) {
   }
   result.title = result.title || result.slug.replace(/-/g, ' ')
   result.linkTitle = result.linkTitle || result.title
-  result.weight = result.weight
+  // result.weight = result.weight
   result.path = '/' + path.relative(base, path.join(dir, result.slug))
   result.original = path.join(dir, name)
   return {

@@ -26,7 +26,7 @@ export class Profile {
    * This may target a specific piece of hardware or a hardware family
    */
   public get platforms(): string[] {
-    return this.el.getAttribute('platforms').split('/\s+/')
+    return this.el.getAttribute('platforms').split(/\s+/)
   }
 
   /**

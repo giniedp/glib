@@ -28,7 +28,6 @@ const view = Mat4.createIdentity()
 const proj = Mat4.createIdentity()
 const cam = Mat4.createIdentity()
 
-const cubeSize = 5
 const model = ModelBuilder.begin().tap((b) => {
   buildCube(b, { size: 2 })
 })

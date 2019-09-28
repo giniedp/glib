@@ -1,5 +1,5 @@
 import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
-import { IMat, IVec2, IVec3, IVec4, Mat4 } from '@gglib/math'
+import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
 import {
   ShadeFunctionBlinn,
   ShadeFunctionCookTorrance,

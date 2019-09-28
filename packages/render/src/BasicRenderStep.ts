@@ -9,18 +9,18 @@ import {
   DepthState,
   DepthStateOptions,
   DepthStateParams,
+  PrimitiveBatch,
+  PrimitiveType,
   ShaderTechnique,
   SpriteBatch,
   StencilState,
   StencilStateOptions,
   StencilStateParams,
-  PrimitiveBatch,
-  PrimitiveType,
 } from '@gglib/graphics'
 import { getOption } from '@gglib/utils'
 
 import { RenderManager } from './RenderManager'
-import { RenderStep, SceneItemDrawable, SceneItemSprite, DebugDrawable, SceneDebugDrawable } from './Types'
+import { RenderStep, SceneDebugDrawable, SceneItemDrawable, SceneItemSprite } from './Types'
 import { UniformBinder } from './UniformBinder'
 
 /**

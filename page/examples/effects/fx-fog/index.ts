@@ -1,5 +1,5 @@
 import { defaultProgram, LightParams } from '@gglib/effects'
-import { buildCube, Device, LightType, ModelBuilder, Color, RGBA_FORMAT } from '@gglib/graphics'
+import { buildCube, Color, Device, LightType, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
@@ -76,17 +76,17 @@ loop((time, dt) => {
 
 TweakUi.build('#tweak-ui', (q) => {
   const params = model.materials[0].parameters
-  q.group('Fog', { open: true}, (b) => {
+  q.group('Fog', { open: true }, (b) => {
     b.slider(params.FogParams, 0, { min: 0, max: 10, step: 0.01, label: 'Start' })
     b.slider(params.FogParams, 1, { min: 0, max: 10, step: 0.01, label: 'End' })
     b.slider(params.FogParams, 2, { min: 0, max: 10, step: 0.01, label: 'Density' })
     b.select(params.FogParams, 3, {
       label: 'Type',
       options: [
-        { id: 'off', label: 'off',  value: 0 },
-        { id: 'exp', label: 'exp',  value: 1 },
-        { id: 'exp2', label: 'exp2',  value: 2 },
-        { id: 'linear', label: 'linear',  value: 3 },
+        { id: 'off', label: 'off', value: 0 },
+        { id: 'exp', label: 'exp', value: 1 },
+        { id: 'exp2', label: 'exp2', value: 2 },
+        { id: 'linear', label: 'linear', value: 3 },
       ],
     })
   })

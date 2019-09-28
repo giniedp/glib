@@ -11,7 +11,6 @@ export function flipUV(layout: VertexLayout, vertices: number[]) {
     }
     let stride = VertexLayout.countElements(layout)
     let offTex = VertexLayout.countElementsBefore(layout, key)
-    let count = VertexLayout.countElements(layout)
 
     if (layout[key].elements < 2) {
       return

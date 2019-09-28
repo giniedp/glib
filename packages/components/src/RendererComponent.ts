@@ -2,7 +2,7 @@ import { Entity, Inject, OnDraw, OnInit, Service } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { BasicRenderStep, LightSourceData, RenderManager, Scene, SceneItem } from '@gglib/render'
 
-import { BoundingFrustum, Mat4 } from '@gglib/math'
+import { BoundingFrustum } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { SceneryCollector } from './Scenery'

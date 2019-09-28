@@ -1,4 +1,3 @@
-import { glsl } from '../glsl'
 
 /**
  * @public

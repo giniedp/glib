@@ -170,7 +170,7 @@ export function closestPointOnTriangle(point: IVec3, a: IVec3, b: IVec3, c: IVec
  * @param outP2 - the closest point on second segment
  * @returns the squared distance between the closest points
  */
-function closestPointsOfSegments(
+export function closestPointsOfSegments(
   segment1Start: IVec3,
   segment1End: IVec3,
   segment2Start: IVec3,
@@ -339,7 +339,7 @@ export function rayIntersectsSphere(orig: IVec3, dir: IVec3, center: IVec3, radi
 export function rayIntersectsSphereAt(orig: IVec3, dir: IVec3, center: IVec3, radius: number): number {
 
   const m = Vec3.subtract(orig, center, v3temp1)
-  const b = Vec3.dot (m, dir)
+  const b = Vec3.dot(m, dir)
   const c = Vec3.dot(m, m) - radius * radius
   // exit if rays origin outside sphere (c < 0) and ray pointing away from sphere (b > 0)
   if (c > 0 && b > 0) {
@@ -436,7 +436,7 @@ export function rayIntersectsBoxAt(rayPos: IVec3, rayDir: IVec3, boxMin: IVec3, 
     tMin = Math.max(t1, tMin)
     tMax = Math.min(t2, tMax)
     if (tMin > tMax) {
-        return Number.NaN
+      return Number.NaN
     }
   }
 
@@ -612,7 +612,7 @@ export function planeIntersectsBox(plane: IVec4, boxMin: IVec3, boxMax: IVec3): 
   let pZ = plane.z >= 0 ? boxMin.z : boxMax.z
   let d = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w
   if (d > 0) {
-      return PlaneIntersectionType.Front
+    return PlaneIntersectionType.Front
   }
 
   pX = plane.x >= 0 ? boxMax.x : boxMin.x
@@ -771,7 +771,7 @@ export function boxIntersectsPlane(min: IVec3, max: IVec3, plane: IVec4): boolea
   let pZ = plane.z >= 0 ? min.z : max.z
   let d = plane.x * pX + plane.y * pY + plane.z * pZ + plane.w
   if (d > 0) {
-      return false
+    return false
   }
 
   pX = plane.x >= 0 ? max.x : min.x
@@ -811,9 +811,9 @@ export function boxIntersectSphere(min: IVec3, max: IVec3, center: IVec3, radius
  * @param max2 - the max point of second box volume
  */
 export function boxIntersectBox(min1: IVec3, max1: IVec3, min2: IVec3, max2: IVec3): boolean {
-    return (max1.x >= min2.x && min1.x <= max2.x &&
-            max1.y >= min2.y && min1.y <= max2.y &&
-            max1.z >= min2.z && min1.z <= max2.z)
+  return (max1.x >= min2.x && min1.x <= max2.x &&
+    max1.y >= min2.y && min1.y <= max2.y &&
+    max1.z >= min2.z && min1.z <= max2.z)
 }
 
 /**
@@ -1059,8 +1059,8 @@ export function boxContainsSphere(min: IVec3, max: IVec3, center: IVec3, radius:
     return IntersectionType.Disjoint
   }
   if (((min.x + radius) > center.x) || (center.x > (max.x - radius)) || ((max.x - min.x) <= radius) ||
-      ((min.y + radius) > center.y) || (center.y > (max.y - radius)) || ((max.y - min.y) <= radius) ||
-      ((min.z + radius) > center.z) || (center.z > (max.z - radius)) || ((max.z - min.z) <= radius)) {
+    ((min.y + radius) > center.y) || (center.y > (max.y - radius)) || ((max.y - min.y) <= radius) ||
+    ((min.z + radius) > center.z) || (center.z > (max.z - radius)) || ((max.z - min.z) <= radius)) {
     return IntersectionType.Intersects
   }
   return IntersectionType.Contains
@@ -1110,8 +1110,8 @@ export function boxContainsFrustum(min: IVec3, max: IVec3, frustum: BoundingFrus
   let outside = 0
   for (const point of frustum.corners) {
     if (min.x > point.x || point.x > max.x ||
-        min.y > point.y || point.y > max.y ||
-        min.z > point.z || point.z > max.z) {
+      min.y > point.y || point.y > max.y ||
+      min.z > point.z || point.z > max.z) {
       outside++
     } else {
       inside++

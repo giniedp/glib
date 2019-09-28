@@ -1,4 +1,4 @@
-import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
+import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { flattenArray, isString, uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { Material, MaterialOptions } from './Material'

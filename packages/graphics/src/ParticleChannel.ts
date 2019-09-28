@@ -1,5 +1,5 @@
 // tslint:disable max-classes-per-file
-import { IVec3, Vec3 } from '@gglib/math'
+import { IVec3 } from '@gglib/math'
 import { Buffer } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
@@ -103,11 +103,11 @@ export class ParticleVertices {
   private index: number
 
   public readonly layout: VertexLayout = {
-    corner:   { type: 'short', offset: 0, elements: 2 },
+    corner: { type: 'short', offset: 0, elements: 2 },
     position: { type: 'float', offset: 4, elements: 3 },
     velocity: { type: 'float', offset: 16, elements: 3 },
-    random:   { type: 'ubyte', offset: 28, elements: 4, normalize: true, packed: true },
-    time:     { type: 'float', offset: 32, elements: 1},
+    random: { type: 'ubyte', offset: 28, elements: 4, normalize: true, packed: true },
+    time: { type: 'float', offset: 32, elements: 1 },
   }
 
   constructor(count: number) {
@@ -215,9 +215,9 @@ export class ParticleChannel {
     this.vertices = new ParticleVertices(this.particleCount * 4)
     for (let i = 0; i < this.particleCount; i++) {
       this.vertices.seek(i * 4 + 0).setCorner(-1, -1)
-      this.vertices.seek(i * 4 + 1).setCorner( 1, -1)
-      this.vertices.seek(i * 4 + 2).setCorner( 1,  1)
-      this.vertices.seek(i * 4 + 3).setCorner(-1,  1)
+      this.vertices.seek(i * 4 + 1).setCorner(1, -1)
+      this.vertices.seek(i * 4 + 2).setCorner(1, 1)
+      this.vertices.seek(i * 4 + 3).setCorner(-1, 1)
     }
     this.vertexBuffer = this.device.createVertexBuffer({
       layout: this.vertices.layout,

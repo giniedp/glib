@@ -41,17 +41,6 @@ export enum BoundingFrustumPlane {
   Near = NEAR,
 }
 
-const unitCorners: IVec3[] = [
-  Vec3.init({}, -1,  1,  1),
-  Vec3.init({},  1,  1,  1),
-  Vec3.init({}, -1, -1,  1),
-  Vec3.init({},  1, -1,  1),
-  Vec3.init({}, -1,  1, -1),
-  Vec3.init({},  1,  1, -1),
-  Vec3.init({}, -1, -1, -1),
-  Vec3.init({},  1, -1, -1),
-]
-
 /**
  * Describes a frustum volume
  *
@@ -235,38 +224,38 @@ export class BoundingFrustum implements BoundingVolume {
     let plane: IVec4
 
     plane = this.planes[LEFT]
-    plane.x = - m[3]  - m[0]
-    plane.y = - m[7]  - m[4]
+    plane.x = - m[3] - m[0]
+    plane.y = - m[7] - m[4]
     plane.z = - m[11] - m[8]
     plane.w = - m[15] - m[12]
 
     plane = this.planes[RIGHT]
-    plane.x = - m[3]  + m[0]
-    plane.y = - m[7]  + m[4]
+    plane.x = - m[3] + m[0]
+    plane.y = - m[7] + m[4]
     plane.z = - m[11] + m[8]
     plane.w = - m[15] + m[12]
 
     plane = this.planes[BOTTOM]
-    plane.x = - m[3]  - m[1]
-    plane.y = - m[7]  - m[5]
+    plane.x = - m[3] - m[1]
+    plane.y = - m[7] - m[5]
     plane.z = - m[11] - m[9]
     plane.w = - m[15] - m[13]
 
     plane = this.planes[TOP]
-    plane.x = - m[3]  + m[1]
-    plane.y = - m[7]  + m[5]
+    plane.x = - m[3] + m[1]
+    plane.y = - m[7] + m[5]
     plane.z = - m[11] + m[9]
     plane.w = - m[15] + m[13]
 
     plane = this.planes[FAR]
-    plane.x = - m[3]  - m[2]
-    plane.y = - m[7]  - m[6]
+    plane.x = - m[3] - m[2]
+    plane.y = - m[7] - m[6]
     plane.z = - m[11] - m[10]
     plane.w = - m[15] - m[14]
 
     plane = this.planes[NEAR]
-    plane.x = - m[3]  + m[2]
-    plane.y = - m[7]  + m[6]
+    plane.x = - m[3] + m[2]
+    plane.y = - m[7] + m[6]
     plane.z = - m[11] + m[10]
     plane.w = - m[15] + m[14]
 

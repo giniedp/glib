@@ -1,4 +1,3 @@
-import { Log } from '@gglib/utils'
 import { Device } from './../Device'
 import {
   Blend,
@@ -358,7 +357,7 @@ export class BlendState implements IBlendState {
    * @param target - Where the state should be written to
    */
   public copy<T>(target: T): T & IBlendState
-  public copy(out: any= {}): IBlendState {
+  public copy(out: any = {}): IBlendState {
     for (let key of params) {
       out[key] = this[key]
     }
@@ -388,7 +387,7 @@ export class BlendState implements IBlendState {
    * Resolves the current state from the GPU
    */
   public static resolve<T>(device: Device, out: T): T & IBlendState
-  public static resolve(device: Device, out: BlendStateParams= {}): IBlendState {
+  public static resolve(device: Device, out: BlendStateParams = {}): IBlendState {
     const gl = device.context
     out.colorBlendFunction = gl.getParameter(gl.BLEND_EQUATION_RGB)
     out.alphaBlendFunction = gl.getParameter(gl.BLEND_EQUATION_ALPHA)
@@ -413,7 +412,7 @@ export class BlendState implements IBlendState {
    */
   public static convert(state: string | BlendStateOptions): BlendStateParams {
     if (typeof state === 'string') {
-      return BlendState[state] ? {...BlendState[state]} : null
+      return BlendState[state] ? { ...BlendState[state] } : null
     }
 
     if (!state) {

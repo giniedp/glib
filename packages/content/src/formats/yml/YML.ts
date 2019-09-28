@@ -130,7 +130,7 @@ export let YML = {
    */
   parse(content: string): any {
     // replace tabs with space
-    content = content.replace(/\t/i, ' ')
+    content = content.replace(/\t/g, ' ')
     let lines = getLines(content)
 
     // skip blank lines
@@ -148,7 +148,7 @@ export let YML = {
     let indent = lines[index].match(/^(\s*)/)[1]
 
     // build initial state holding all lines and current line index
-    let state = {lines: lines, index: index}
+    let state = { lines: lines, index: index }
 
     return parse(state, indent)
   },

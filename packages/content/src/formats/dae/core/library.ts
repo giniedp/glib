@@ -1,6 +1,5 @@
 import { Asset, parseAsset } from './asset'
 import { COLLADA } from './collada'
-import { Light } from './light'
 import { DocumentCache, mapChild, mapChildren } from './utils'
 
 export abstract class Library<T extends { id: string }> {

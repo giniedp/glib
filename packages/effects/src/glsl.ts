@@ -4,7 +4,7 @@ function prepareSnippet(snippet: string): string {
   // detect indents
   let minIndent = Number.MAX_VALUE
   for (let i = 0; i < lines.length; i++) {
-    lines[i] = lines[i].replace('\t', '  ')
+    lines[i] = lines[i].replace(/\t/g, '  ')
     if (lines[i].trim()) {
       minIndent = Math.min(minIndent, lines[i].match(/^(\s*)/)[1].length)
     }

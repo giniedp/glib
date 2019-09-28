@@ -242,13 +242,11 @@ export class BoundingSphere implements BoundingVolume {
    * @param offset - the offset in `array`
    */
   public initFromPoints(array: IVec3[]): this {
-    let zero = true
     const min = { x: 0, y: 0, z: 0 }
     const max = { x: 0, y: 0, z: 0 }
     min.x = min.y = min.z = Number.MAX_VALUE
     max.x = max.y = max.z = Number.MIN_VALUE
     for (const vec of array) {
-      zero = false
       min.x = Math.min(min.x, vec.x)
       min.y = Math.min(min.y, vec.y)
       min.z = Math.min(min.z, vec.z)
@@ -306,7 +304,7 @@ export class BoundingSphere implements BoundingVolume {
    * Dumps the min and max points into an array at given offset
    */
   public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     Vec3.toArray(this.center, array, offset)
     array[offset + 3] = this.radius
     return array

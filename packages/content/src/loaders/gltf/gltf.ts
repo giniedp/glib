@@ -1,5 +1,5 @@
 import { ArrayType, MaterialOptions, Model, ModelJoint, ModelJointPose, ModelMeshOptions, ModelOptions, ModelSkin } from '@gglib/graphics'
-import { BoundingBox, BoundingSphere, Mat4, Quat } from '@gglib/math'
+import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Log } from '@gglib/utils'
 
 import {
@@ -272,20 +272,20 @@ async function loadSkin(context: PipelineContext, doc: Document, skinIndex: numb
   return result
 }
 
-function loadMatrix(node: Node): number[] {
-  if (node.matrix) {
-    return Mat4.createFromArray(node.matrix).toArray()
-  } else {
-    const s = node.scale || [1, 1, 1]
-    const r = node.rotation || [0, 0, 0, 1]
-    const t = node.translation || [0, 0, 0]
-    Mat4
-      .createScale(s[0], s[1], s[2])
-      .rotateQuaternion(r[0], r[1], r[2], r[3])
-      .setTranslation(t[0], t[1], t[2])
-      .toArray()
-  }
-}
+// function loadMatrix(node: Node): number[] {
+//   if (node.matrix) {
+//     return Mat4.createFromArray(node.matrix).toArray()
+//   } else {
+//     const s = node.scale || [1, 1, 1]
+//     const r = node.rotation || [0, 0, 0, 1]
+//     const t = node.translation || [0, 0, 0]
+//     Mat4
+//       .createScale(s[0], s[1], s[2])
+//       .rotateQuaternion(r[0], r[1], r[2], r[3])
+//       .setTranslation(t[0], t[1], t[2])
+//       .toArray()
+//   }
+// }
 
 async function loadMesh(
   context: PipelineContext,
@@ -368,8 +368,8 @@ async function loadTexture(context: PipelineContext, doc: Document, index: numbe
         // context.loader.transform(ImagePng, ImageData, ..., context)
         break
       case 'image/jpeg':
-        // TODO:
-        // context.loader.transform(ImageJpeg, ImageData, ..., context)
+      // TODO:
+      // context.loader.transform(ImageJpeg, ImageData, ..., context)
       default:
     }
   }

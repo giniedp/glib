@@ -1,4 +1,4 @@
-import { BlendState, buildCube, buildSphere, buildTorus, CullState, DepthState, Device, ModelBuilder } from '@gglib/graphics'
+import { BlendState, buildSphere, CullState, DepthState, Device, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 

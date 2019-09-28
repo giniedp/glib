@@ -3,17 +3,17 @@ import { Sampler } from '../types'
 import { Permutation } from './utils'
 
 const grad3 = [
-  1,  1,  0,
- -1,  1,  0,
-  1, -1,  0,
- -1, -1,  0,
-  1,  0,  1,
- -1,  0,  1,
-  1,  0, -1,
- -1,  0, -1,
-  0,  1,  1,
-  0, -1,  1,
-  0,  1, -1,
+  1, 1, 0,
+  -1, 1, 0,
+  1, -1, 0,
+  -1, -1, 0,
+  1, 0, 1,
+  -1, 0, 1,
+  1, 0, -1,
+  -1, 0, -1,
+  0, 1, 1,
+  0, -1, 1,
+  0, 1, -1,
   0, -1, -1,
 ]
 
@@ -38,9 +38,6 @@ export function simplexNoise(): Sampler {
       return simplexNoise3D(x[0], x[1], x[2])
     }
   }
-}
-function simplexNoise1D(x: number) {
-  return simplexNoise2D(x, 0)
 }
 
 function simplexNoise2D(x: number, y: number) {

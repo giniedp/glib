@@ -1,6 +1,6 @@
 import { COLLADA } from './collada'
 import { Light } from './light'
-import { DocumentCache, mapChild, mapChildren } from './utils'
+import { DocumentCache } from './utils'
 
 export class InstanceLight {
   private cache = new DocumentCache()
