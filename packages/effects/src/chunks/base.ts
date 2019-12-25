@@ -19,6 +19,12 @@ export const FXC_BASE: ShaderChunk = glsl`
 
 #ifdef VERTEX_SHADER
 #pragma block:attributes
+#pragma block:vs_inputs
+#pragma block:vs_outputs
+#endif
+#ifdef FRAGMENT_SHADER
+#pragma block:fs_inputs
+#pragma block:fs_outputs
 #endif
 
 #pragma block:varyings

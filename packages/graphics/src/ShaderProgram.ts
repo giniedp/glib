@@ -2,7 +2,7 @@ import { Log, uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderType } from './enums'
 import { Shader, ShaderOptions } from './Shader'
-import { ShaderInspector, ShaderObjectMeta } from './ShaderInspector'
+import { ShaderInspector, ShaderObjectInfo } from './ShaderInspector'
 import { ShaderUniform, ShaderUniformBinding, ShaderUniformValue } from './ShaderUniform'
 
 /**
@@ -77,11 +77,11 @@ export class ShaderProgram {
   /**
    * A map of shader attributes
    */
-  public readonly attributes = new Map<string, ShaderObjectMeta & { location: number }>()
+  public readonly inputs = new Map<string, ShaderObjectInfo & { location: number }>()
   /**
    * Collection of all detected attribute locations
    */
-  public readonly attributeLocations: number[] = []
+  public readonly inputLocations: number[] = []
   /**
    * A map of all shader uniforms
    */
@@ -98,7 +98,7 @@ export class ShaderProgram {
 
   private errLogs = {}
   private uniformKeys: string[] = []
-  private attributeKeys: string[] = []
+  private inputKeys: string[] = []
 
   constructor(device: Device, options: ShaderProgramOptions= {}) {
     this.device = device
@@ -140,7 +140,7 @@ export class ShaderProgram {
     this.link()
 
     const inspection = ShaderInspector.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
-    this.assignAttributes(inspection.attributes)
+    this.assignInputs(inspection.inputs)
     this.assignUniforms(inspection.uniforms)
   }
 
@@ -201,28 +201,30 @@ export class ShaderProgram {
   /**
    *
    */
-  private assignAttributes(attributes: { [key: string]: ShaderObjectMeta }): this {
+  private assignInputs(inputs: { [key: string]: ShaderObjectInfo }): this {
     this.bind()
-    this.attributes.clear()
-    this.attributeLocations.length = 0
-    Object.keys(attributes).forEach((key) => {
-      const location = this.device.context.getAttribLocation(this.handle, attributes[key].name || key)
+    this.inputs.clear()
+    this.inputLocations.length = 0
+    Object.keys(inputs).forEach((key) => {
+      const input = inputs[key]
+      // TODO: use input.layout.location
+      const location = this.device.context.getAttribLocation(this.handle, input.name || key)
       if (location >= 0) {
-        this.attributes.set(key, {
-          ...attributes[key],
+        this.inputs.set(key, {
+          ...input,
           location: location,
         })
-        this.attributeLocations.push(location)
+        this.inputLocations.push(location)
       }
     })
-    this.attributeKeys = Array.from(this.attributes.keys())
+    this.inputKeys = Array.from(this.inputs.keys())
     return this
   }
 
   /**
    *
    */
-  private assignUniforms(uniforms: { [key: string]: ShaderObjectMeta }): this {
+  private assignUniforms(uniforms: { [key: string]: ShaderObjectInfo }): this {
     this.bind()
     const u = this.uniforms as Map<string, ShaderUniform>
     u.clear()

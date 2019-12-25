@@ -1,20 +1,22 @@
 import { extend, getLines, trim } from '@gglib/utils'
 
-const charNewLine = '\n'
-const regComment = /\s*\/\/(.*)\n?\s*$/
-const regUniform = /^\s*uniform\s+(.+)\s+(.+)\s*;/
-const regAttribute = /^\s*attribute\s+(.+)\s+(.+)\s*;/
-const regVarying = /^\s*varying\s+(.+)\s+(.+)\s*;/
-const regConst = /^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/
-const regTrim = /^\s*|\s*$/
+const regLayout = /^\s*layout\((.+)\)\s+/
 
 const isSamplerType = /sampler(2D|2DArray|2DArrayShadow|3D|Cube|CubeShadow)|[iu]?sampler(2D|3D|Cube|2DArray)/
-const regAnnotation = /^(\s*)@(\w+)\s*(.*)(\s*)/
+
+const storageMap: { [k: string]: keyof ShaderInspection} = {
+  in: 'inputs',
+  out: 'outputs',
+  const: 'constants',
+  attribute: 'attributes',
+  varying: 'varying',
+  uniform: 'uniforms',
+}
 
 /**
  * @public
  */
-export interface ShaderObjectMeta {
+export interface ShaderObjectInfo {
   /**
    * Annotated metadata about the defined object
    */
@@ -31,6 +33,10 @@ export interface ShaderObjectMeta {
    * The type of the defined object
    */
   type: string
+  /**
+   * The layout qualifier
+   */
+  layout?: any
 }
 
 /**
@@ -40,15 +46,11 @@ export interface ProgramInspection {
   /**
    * All attribute statements
    */
-  attributes: { [key: string]: ShaderObjectMeta }
+  inputs: { [key: string]: ShaderObjectInfo }
   /**
    * All uniform statements
    */
-  uniforms: { [key: string]: ShaderObjectMeta }
-  /**
-   * All varying statements
-   */
-  varying: { [key: string]: ShaderObjectMeta }
+  uniforms: { [key: string]: ShaderObjectInfo }
   /**
    * The vertex shader source
    */
@@ -64,11 +66,13 @@ export interface ProgramInspection {
  */
 export interface ShaderInspection {
   defines: { [key: string]: any }
-  constants: { [key: string]: ShaderObjectMeta }
-  attributes: { [key: string]: ShaderObjectMeta }
-  uniforms: { [key: string]: ShaderObjectMeta }
-  varying: { [key: string]: ShaderObjectMeta }
-  structs: { [key: string]: ShaderObjectMeta }
+  constants: { [key: string]: ShaderObjectInfo }
+  attributes: { [key: string]: ShaderObjectInfo }
+  uniforms: { [key: string]: ShaderObjectInfo }
+  varying: { [key: string]: ShaderObjectInfo }
+  inputs: { [key: string]: ShaderObjectInfo }
+  outputs: { [key: string]: ShaderObjectInfo }
+  structs: { [key: string]: ShaderObjectInfo }
   lines: string[]
 }
 
@@ -108,24 +112,30 @@ export class ShaderInspector {
 
   public static inspectProgram(vertexShader: string, fragmentShader: string): ProgramInspection {
     const result: ProgramInspection = {
-      attributes: {},
+      inputs: {},
       uniforms: {},
-      varying: {},
       vertexShader: '',
       fragmentShader: '',
     }
     if (vertexShader) {
       const inspection = this.inspectShader(vertexShader)
-      extend(result.attributes, inspection.attributes)
-      extend(result.uniforms, inspection.uniforms)
-      extend(result.varying, inspection.varying)
+      result.inputs = {
+        ...result.inputs,
+        ...inspection.attributes,
+        ...inspection.inputs,
+      }
+      result.uniforms = {
+        ...result.uniforms,
+        ...inspection.uniforms,
+      }
       result.vertexShader = inspection.lines.join('\n')
     }
     if (fragmentShader) {
       const inspection = this.inspectShader(fragmentShader)
-      extend(result.attributes, inspection.attributes)
-      extend(result.uniforms, inspection.uniforms)
-      extend(result.varying, inspection.varying)
+      result.uniforms = {
+        ...result.uniforms,
+        ...inspection.uniforms,
+      }
       result.fragmentShader = inspection.lines.join('\n')
     }
 
@@ -139,6 +149,8 @@ export class ShaderInspector {
       attributes: {},
       uniforms: {},
       varying: {},
+      inputs: {},
+      outputs: {},
       structs: {},
       lines: [],
     }
@@ -151,7 +163,7 @@ export class ShaderInspector {
     return result
   }
 
-  public static fixTextureRegisters(uniforms: { [key: string]: ShaderObjectMeta }) {
+  public static fixTextureRegisters(uniforms: { [key: string]: ShaderObjectInfo }) {
     // map of used registers
     let used = []
     // uniforms without a valid register annotation
@@ -194,6 +206,15 @@ export class ShaderInspector {
     result.attributes = result.attributes || {}
     result.uniforms = result.uniforms || {}
     result.varying = result.varying || {}
+    result.inputs = result.inputs || {}
+    result.outputs = result.outputs || {}
+
+    // https://regexper.com/#%2F%5E%5Cs*%28layout%5C%28%28.%2B%29%5C%29%5Cs%2B%29uniform%5Cs%2B%28.%2B%29%5Cs%2B%28.%2B%29%5Cs*%3B%2F
+    // - group 2 : layout qualifier
+    // - group 3 : storage qualifier
+    // - group 4 : variable type
+    // - group 5 : variable name
+    const regVariable = /^\s*(layout\((.+)\)\s+)?(const|in|out|attribute|uniform|varying|buffer|shared)\s+(.+)\s+(.+)\s*;/
 
     let lines = Array.isArray(source) ? source : getLines(source)
     let comments = []
@@ -204,43 +225,33 @@ export class ShaderInspector {
         continue
       }
 
-      let match = line.match(regComment)
+      // comments
+      let match = line.match(/\s*\/\/(.*)\n?\s*$/)
       if (match) {
         comments.push(match[1])
         continue
       }
 
-      match = line.match(regUniform)
+      // variables: const,in,out,attribute,varying,uniform
+      match = line.match(regVariable)
       if (match) {
-        let annotations = this.parseAnnotations(comments)
-        annotations.type = match[1]
-        annotations.name = match[2]
-        result.uniforms[annotations.binding || annotations.name] = annotations
+        const annotations = this.parseAnnotations(comments) || {}
+        const layout = match[2]
+        const storage = match[3]
+        annotations.type = match[4]
+        annotations.name = match[5]
+
+        const bucket = storageMap[storage]
+        result[bucket][annotations.binding || annotations.name] = {
+          ...annotations,
+          layout: layout || null,
+        }
         comments = []
         continue
       }
 
-      match = line.match(regAttribute)
-      if (match) {
-        let annotations = this.parseAnnotations(comments)
-        annotations.type = match[1]
-        annotations.name = match[2]
-        result.attributes[annotations.binding || annotations.name] = annotations
-        comments = []
-        continue
-      }
-
-      match = line.match(regVarying)
-      if (match) {
-        let annotations = this.parseAnnotations(comments)
-        annotations.type = match[1]
-        annotations.name = match[2]
-        result.varying[annotations.binding || annotations.name] = annotations
-        comments = []
-        continue
-      }
-
-      match = line.match(regConst)
+      // constants
+      match = line.match(/^\s*const\s+(.+)\s+(.+)\s*=\s*(.+)\s*;/)
       if (match) {
         let annotations = this.parseAnnotations('')
         annotations.type = match[1]
@@ -270,9 +281,27 @@ export class ShaderInspector {
 
       name = source.substr(index, left - index).match(/struct\s+(.+)\s*/)[1]
       block = source.substr(left + 1, right - left - 1)
-      result[trim(name)] = this.inspectMembers(block)
+      result[trim(name)] = this.inspectStructMembers(block)
       index = right
     }
+  }
+
+  public static inspectStructMembers(block: string, out: any= {}): any {
+    const expressions = block
+      .replace(/\s*\/\/.*\n/gi, '')  // remove comments
+      .replace(/\n/gi, '')           // remove new lines
+      .trim()
+      .split(';')
+
+    for (let e of expressions) {
+      let match = e.match(/\s*(\w+)\s+(\w+)\s*$/)
+      if (!match) { continue }
+      out[match[2]] = {
+        name: match[2],
+        type: match[1],
+      }
+    }
+    return out
   }
 
   /**
@@ -376,24 +405,6 @@ export class ShaderInspector {
     }
   }
 
-  public static inspectMembers(block: string, out: any= {}): any {
-    block = block
-      .split(/\s*\/\/.*\n/).join('') // remove comments
-      .split(charNewLine).join('')   // remove new lines
-      .split(regTrim).join('')       // trim
-
-    let expressions = block.split(';')
-    for (let e of expressions) {
-      let match = e.match(/\s*(\w+)\s+(\w+)\s*$/)
-      if (!match) { continue }
-      out[match[2]] = {
-        name: match[2],
-        type: match[1],
-      }
-    }
-    return out
-  }
-
   // matches annotation directives e.g. '@key some value'
 
   /**
@@ -403,14 +414,14 @@ export class ShaderInspector {
     // lines to process
     const lines = Array.isArray(source) ? source : getLines(source)
     for (const line of lines) {
-      const match = line.match(regAnnotation)
+      const match = line.match(/^(\s*)@(\w+)\s*(.*)(\s*)/)
       if (!match) { continue }
       out[match[2]] = match[3]
     }
     return out
   }
 
-  public static fixStructUniforms(uniforms: any, structs: any, defines: { [key: string]: ShaderObjectMeta }): void {
+  public static fixStructUniforms(uniforms: any, structs: any, defines: { [key: string]: ShaderObjectInfo }): void {
     let reg = /\s*(.*)\s*\[(.+)].*/
     Object
       .keys(uniforms)

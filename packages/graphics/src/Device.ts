@@ -800,7 +800,7 @@ export class Device {
 
   private bindAttribPointerAndLocation(vBuffer: Buffer | Buffer[], program: ShaderProgram) {
     if (Array.isArray(vBuffer)) {
-      program.attributes.forEach((attribute, name) => {
+      program.inputs.forEach((attribute, name) => {
         for (const buffer of vBuffer) {
           const channel = buffer.layout[name]
           if (channel) {
@@ -818,10 +818,10 @@ export class Device {
           }
         }
         // tslint:disable-next-line
-        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.attributes.keys())}' but '${name}' is missing in vertex buffer.`)
+        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.inputs.keys())}' but '${name}' is missing in vertex buffer.`)
       })
     } else {
-      program.attributes.forEach((attribute, name) => {
+      program.inputs.forEach((attribute, name) => {
         const channel = vBuffer.layout[name]
         if (channel) {
           vBuffer.bind()
@@ -838,7 +838,7 @@ export class Device {
         }
 
         // tslint:disable-next-line
-        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.attributes.keys())}' but '${name}' is missing in vertex buffer.`)
+        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.inputs.keys())}' but '${name}' is missing in vertex buffer.`)
       })
     }
     // enable attributes so that the vertex shader is actually able to use them
