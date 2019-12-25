@@ -3,13 +3,13 @@ import {
   BoundingBox,
   BoundingFrustum,
   BoundingSphere,
+  BoundingVolume,
   IVec3,
   IVec4,
   Ray,
   Vec3,
 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
-import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { QuadTree } from './spatial'
 import { SpatialEntry, SpatialSystem } from './SpatialSystem'
 
@@ -53,12 +53,12 @@ export class SpatialSystemComponent {
    * Inserts an entity into the spatial system
    *
    * @param entity - the entity to insert
+   * @param volume - the volume of the entity
    * @remarks
    * If the entity is already inserted in the system its placement
    * will be re-evaluated and updated if needed
    */
-  public insert(entity: Entity): void {
-    const volume = entity.getService(BoundingVolumeComponent).volume
+  public insert(entity: Entity, volume: BoundingVolume): void {
     const node = this.system.fit(volume)
 
     let entry = this.lookup.get(entity)

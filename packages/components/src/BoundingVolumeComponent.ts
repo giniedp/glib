@@ -81,7 +81,7 @@ export class BoundingVolumeComponent implements OnUpdate, OnRemoved {
         this.transformChanged = false
         this.volume.update(this.transform.world)
         if (this.spatial) {
-          this.spatial.insert(this.entity)
+          this.spatial.insert(this.entity, this.volume)
           this.isAdded = true
         }
       } else if (this.isAdded && this.spatial) {
