@@ -3,17 +3,17 @@ import { rollup } from 'rollup'
 import project from '../project'
 
 async function rollupPackage(pkg: string) {
-  const alias = require('rollup-plugin-alias')
-  const resolve = require('rollup-plugin-node-resolve')
+  const alias = require('@rollup/plugin-alias')
+  const resolve = require('@rollup/plugin-node-resolve')
   const sourcemaps = require('rollup-plugin-sourcemaps')
 
   const globals = {}
-  const aliase = {}
+  const entries = {}
   for (const name of project.packages) {
     if (pkg !== 'gglib') {
       globals[project.pkgName(name)] = project.pkgGlobalName(name)
     }
-    aliase[project.pkgName(name)] = project.pkgDstDir(name, 'index.js')
+    entries[project.pkgName(name)] = project.pkgDstDir(name, 'index.js')
   }
 
   await rollup({
@@ -24,7 +24,9 @@ async function rollupPackage(pkg: string) {
     },
     plugins: [
       resolve(),
-      alias(aliase),
+      alias({
+        entries: entries,
+      }),
       sourcemaps(),
     ],
     external: Object.keys(globals),
