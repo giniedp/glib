@@ -11,7 +11,7 @@ import {
   buildTorus,
   CullState,
   DepthState,
-  Device,
+  DeviceGL,
   ModelBuilder,
   ModelMesh,
   PrimitiveType,
@@ -22,7 +22,7 @@ import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 

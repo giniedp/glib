@@ -1,6 +1,6 @@
 import { ContentManager, IManagerOptions } from '@gglib/content'
 import { Entity } from '@gglib/ecs'
-import { Device, DeviceOptions } from '@gglib/graphics'
+import { Device, DeviceGL, DeviceOptions } from '@gglib/graphics'
 
 import {
   FpsComponent,
@@ -50,7 +50,7 @@ export interface CreateGameOptions {
 export function createGame(options: CreateGameOptions, ...tap: Array<(entity: Entity) => void> ) {
   const device = options.device instanceof Device
     ? options.device
-    : new Device(options.device)
+    : new DeviceGL(options.device)
 
   const content = options.content instanceof ContentManager
     ? options.content
@@ -62,7 +62,7 @@ export function createGame(options: CreateGameOptions, ...tap: Array<(entity: En
 
   return Entity.createRoot().tap((entity) => {
     entity
-      .addService(Device, device)
+      .addService(Device as any, device)
       .addService(ContentManager, content)
       .addComponent(gameLoop)
       .addComponent(new TimeComponent())

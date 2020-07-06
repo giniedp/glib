@@ -23,12 +23,12 @@
     "skipLibCheck": true,
     "target": "es5",
     "typeRoots": [
-      "../node_modules/@types",
-      "../node_modules/reflect-metadata"
+      "../node_modules"
     ],
     "types": [
-      "jasmine",
-      "webgl2"
+      "@types/jasmine",
+      "@types/webgl2",
+      "@webgpu/types"
     ]
   },
   "exclude": [

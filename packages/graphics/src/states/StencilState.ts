@@ -80,33 +80,25 @@ export type StencilStateParams = Partial<IStencilState>
  * @public
  */
 export class StencilState implements IStencilState {
-  public device: Device
-  public gl: WebGLRenderingContext
-  private enableField: boolean = false
-  private stencilFunctionField: number = CompareFunction.Always
-  private stencilReferenceField: number = 0
-  private stencilMaskField: number = 0xffffffff
-  private stencilFailField: number = StencilOperation.Keep
-  private stencilDepthFailField: number = StencilOperation.Keep
-  private stencilDepthPassField: number = StencilOperation.Keep
-  private stencilBackFunctionField: number = CompareFunction.Always
-  private stencilBackReferenceField: number = 0
-  private stencilBackMaskField: number = 0xffffffff
-  private stencilBackFailField: number = StencilOperation.Keep
-  private stencilBackDepthFailField: number = StencilOperation.Keep
-  private stencilBackDepthPassField: number = StencilOperation.Keep
-  private changes: StencilStateParams = {}
-  private hasChanged: boolean = false
+
+  protected enableField: boolean = false
+  protected stencilFunctionField: number = CompareFunction.Always
+  protected stencilReferenceField: number = 0
+  protected stencilMaskField: number = 0xffffffff
+  protected stencilFailField: number = StencilOperation.Keep
+  protected stencilDepthFailField: number = StencilOperation.Keep
+  protected stencilDepthPassField: number = StencilOperation.Keep
+  protected stencilBackFunctionField: number = CompareFunction.Always
+  protected stencilBackReferenceField: number = 0
+  protected stencilBackMaskField: number = 0xffffffff
+  protected stencilBackFailField: number = StencilOperation.Keep
+  protected stencilBackDepthFailField: number = StencilOperation.Keep
+  protected stencilBackDepthPassField: number = StencilOperation.Keep
+  protected changes: StencilStateParams = {}
+  protected hasChanged: boolean = false
 
   public get isDirty() {
     return this.hasChanged
-  }
-
-  constructor(device: Device, state?: StencilStateParams) {
-    this.device = device
-    this.gl = device.context
-    this.resolve()
-    if (state) { this.assign(state) }
   }
 
   get stencilFunctionName(): string {
@@ -297,49 +289,17 @@ export class StencilState implements IStencilState {
     }
   }
 
-  public assign(state: StencilStateParams= {}): StencilState {
+  public assign(state: StencilStateParams= {}): this {
     for (let key of params) {
       if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
     }
     return this
   }
 
-  public commit(state?: StencilStateParams): StencilState {
+  public commit(state?: StencilStateParams): this {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
-
-    let gl = this.gl
-    let changes = this.changes
-
-    let enable = changes.enable
-    if (enable === true) {
-      gl.enable(gl.STENCIL_TEST)
-    } else if (enable === false) {
-      gl.disable(gl.STENCIL_TEST)
-    }
-
-    if (changes.stencilFunction !== null || changes.stencilReference !== null || changes.stencilMask !== null) {
-      gl.stencilFuncSeparate(CullMode.Front, this.stencilFunction, this.stencilReference, this.stencilMask)
-    }
-
-    if (changes.stencilFail !== null || changes.stencilDepthFail !== null || changes.stencilDepthPass !== null) {
-      gl.stencilOpSeparate(CullMode.Front, this.stencilFail, this.stencilDepthFail, this.stencilDepthPass)
-    }
-
-    if (changes.stencilBackFunction !== null || changes.stencilBackReference !== null || changes.stencilBackMask !== null) {
-      gl.stencilFuncSeparate(CullMode.Back, this.stencilBackFunction, this.stencilBackReference, this.stencilBackMask)
-    }
-
-    if (changes.stencilBackFail !== null || changes.stencilBackDepthFail !== null || changes.stencilBackDepthPass !== null) {
-      gl.stencilOpSeparate(CullMode.Back, this.stencilBackFail, this.stencilBackDepthFail, this.stencilBackDepthPass)
-    }
-
-    this.clearChanges()
-    return this
-  }
-
-  public resolve(): StencilState {
-    StencilState.resolve(this.gl, this)
+    this.commitChanges(this.changes)
     this.clearChanges()
     return this
   }
@@ -349,7 +309,11 @@ export class StencilState implements IStencilState {
     return out
   }
 
-  private clearChanges() {
+  protected commitChanges(changes: Partial<IStencilState>) {
+    //
+  }
+
+  protected clearChanges() {
     this.hasChanged = false
     for (let key of params) { this.changes[key as any] = undefined }
   }
@@ -390,27 +354,6 @@ export class StencilState implements IStencilState {
       }
     }
     return result
-  }
-
-  public static resolve(gl: WebGLRenderingContext, out: any= {}): IStencilState {
-    out.enable = gl.getParameter(gl.STENCIL_TEST)
-
-    out.stencilFunction = gl.getParameter(gl.STENCIL_FUNC)
-    out.stencilReference = gl.getParameter(gl.STENCIL_REF)
-    out.stencilMask = gl.getParameter(gl.STENCIL_VALUE_MASK)
-
-    out.stencilFail = gl.getParameter(gl.STENCIL_FAIL)
-    out.stencilDepthFail = gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL)
-    out.stencilDepthPass = gl.getParameter(gl.STENCIL_PASS_DEPTH_PASS)
-
-    out.stencilBackFunction = gl.getParameter(gl.STENCIL_BACK_FUNC)
-    out.stencilBackReference = gl.getParameter(gl.STENCIL_BACK_REF)
-    out.stencilBackMask = gl.getParameter(gl.STENCIL_BACK_VALUE_MASK)
-
-    out.stencilBackFail = gl.getParameter(gl.STENCIL_BACK_FAIL)
-    out.stencilBackDepthFail = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_FAIL)
-    out.stencilBackDepthPass = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_PASS)
-    return out
   }
 
   public static Default = Object.freeze<IStencilState>({

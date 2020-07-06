@@ -1,6 +1,6 @@
 import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { BlendState, CullState, DepthState, Device, Model } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, DeviceGL, Model } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
@@ -22,7 +22,7 @@ const models = {
 }
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 

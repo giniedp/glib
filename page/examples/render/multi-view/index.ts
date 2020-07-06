@@ -1,6 +1,6 @@
 import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { CullState, DepthState, Device, Model } from '@gglib/graphics'
+import { CullState, DepthState, DeviceGL, Model } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import {
   BasicRenderStep,
@@ -12,7 +12,7 @@ import {
 import { loop } from '@gglib/utils'
 
 // Create the `Device` and `ContentManager` as usual
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 const content = new ContentManager(device)

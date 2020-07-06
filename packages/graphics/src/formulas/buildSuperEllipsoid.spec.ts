@@ -1,12 +1,12 @@
-import { buildSuperEllipsoid, Device, ModelBuilder } from '@gglib/graphics'
+import { buildSuperEllipsoid, DeviceGL, ModelBuilder } from '@gglib/graphics'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSuperEllipsoid', () => {
-    let device: Device
+    let device: DeviceGL
     let builder: ModelBuilder
 
     beforeEach(() => {
-      device = new Device()
+      device = new DeviceGL()
       builder = new ModelBuilder()
     })
 

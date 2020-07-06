@@ -1,12 +1,10 @@
-import { buildSphere, Device, ModelBuilder } from '@gglib/graphics'
+import { buildSphere, ModelBuilder } from '@gglib/graphics'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSphere', () => {
-    let device: Device
     let builder: ModelBuilder
 
     beforeEach(() => {
-      device = new Device()
       builder = new ModelBuilder()
     })
 

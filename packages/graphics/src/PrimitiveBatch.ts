@@ -1,9 +1,8 @@
 import { IVec3, Mat4 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
-import { Buffer } from './Buffer'
 import { Device } from './Device'
 import { BufferUsage, nameOfPrimitiveType, PrimitiveType } from './enums'
-import { ShaderProgram } from './ShaderProgram'
+import { Buffer, ShaderProgram } from './resources'
 import { BlendStateParams, CullStateParams, DepthStateParams, ScissorStateParams, StencilStateParams, ViewportStateParams } from './states'
 import { VertexLayout } from './VertexLayout'
 

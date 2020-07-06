@@ -8,7 +8,7 @@ import {
   Color,
   CullState,
   DepthState,
-  Device,
+  DeviceGL,
   LightType,
   Model,
   ModelBuilder,
@@ -108,7 +108,7 @@ loader({
 // The pipeline itself has several built in `loader` functions for example
 // `Model.Options` ~> `Model`
 
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 const content = new ContentManager(device)

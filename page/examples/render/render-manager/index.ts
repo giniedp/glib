@@ -2,7 +2,7 @@ import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
 import { AutoMaterial, LightParams } from '@gglib/effects'
-import { buildPlane, buildSphere, CullState, DepthState, Device, flipWindingOrder, Model, ModelBuilder } from '@gglib/graphics'
+import { buildPlane, buildSphere, CullState, DepthState, DeviceGL, flipWindingOrder, Model, ModelBuilder } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import { BasicRenderStep, PostBloom, PostPixelate, RenderManager, SceneItemDrawable } from '@gglib/render'
 import { loop } from '@gglib/utils'
@@ -12,7 +12,7 @@ import { loop } from '@gglib/utils'
 // ---
 
 // Create the `Device` and `ContentManager` as usual
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 const content = new ContentManager(device)

@@ -1,6 +1,6 @@
-import { BufferOptions } from './Buffer'
 import { DataType, dataTypeSize } from './enums'
 import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChannel'
+import { BufferOptions } from './resources'
 
 describe('Graphics.ModelBuilderChannel', () => {
   let channels: ModelBuilderChannelMap

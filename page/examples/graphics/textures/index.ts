@@ -1,9 +1,9 @@
-import { buildPlane, CullState, Device, ModelBuilder, Texture } from '@gglib/graphics'
+import { buildPlane, CullState, DeviceGL, ModelBuilder, Texture } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 
@@ -102,7 +102,7 @@ loop((time, dt) => {
   device.clear(0xff2e2620, 1.0)
 
   // update view and projection matrices
-  let aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight
+  let aspect = device.drawingBufferWidth / device.drawingBufferHeight
   view.initTranslation(0, 0, -1)
   proj.initPerspectiveFieldOfView(Math.PI / 2, aspect, 0, 100)
 

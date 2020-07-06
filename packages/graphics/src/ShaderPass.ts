@@ -1,7 +1,7 @@
 import { copy } from '@gglib/utils'
 import { Device } from './Device'
-import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
-import { ShaderUniformValue } from './ShaderUniform'
+
+import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
 import {
   BlendState,
   BlendStateParams,
@@ -32,27 +32,27 @@ export interface ShaderPassOptions {
   /**
    * The shader program or constructor options
    */
-  program: ShaderProgram|ShaderProgramOptions
+  program: ShaderProgram | ShaderProgramOptions
   /**
    * The cull state to be used for this shader pass
    */
-  cullState?: string|CullStateParams,
+  cullState?: string | CullStateParams
   /**
    * The blend state to be used for this shader pass
    */
-  blendState?: string|BlendStateParams,
+  blendState?: string | BlendStateParams
   /**
    * The depth state to be used for this shader pass
    */
-  depthState?: string|DepthStateParams,
+  depthState?: string | DepthStateParams
   /**
    * The offset state to be used for this shader pass
    */
-  offsetState?: string|OffsetStateParams,
+  offsetState?: string | OffsetStateParams
   /**
    * The stencil state to be used for this shader pass
    */
-  stencilState?: string|StencilStateParams
+  stencilState?: string | StencilStateParams
 }
 
 /**
@@ -108,16 +108,26 @@ export class ShaderPass {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    if (options.cullState) { this.cullState = CullState.convert(options.cullState) }
-    if (options.blendState) { this.blendState = BlendState.convert(options.blendState) }
-    if (options.depthState) { this.depthState = DepthState.convert(options.depthState) }
-    if (options.offsetState) { this.offsetState = OffsetState.convert(options.offsetState) }
-    if (options.stencilState) { this.stencilState = StencilState.convert(options.stencilState) }
+    if (options.cullState) {
+      this.cullState = CullState.convert(options.cullState)
+    }
+    if (options.blendState) {
+      this.blendState = BlendState.convert(options.blendState)
+    }
+    if (options.depthState) {
+      this.depthState = DepthState.convert(options.depthState)
+    }
+    if (options.offsetState) {
+      this.offsetState = OffsetState.convert(options.offsetState)
+    }
+    if (options.stencilState) {
+      this.stencilState = StencilState.convert(options.stencilState)
+    }
     const program = options.program
     if (program instanceof ShaderProgram) {
       this.program = program
     } else {
-      this.program = new ShaderProgram(device, program)
+      this.program = this.device.createProgram(program)
     }
   }
 
@@ -127,12 +137,24 @@ export class ShaderPass {
   public commit(parameters?: { [key: string]: ShaderUniformValue }): this {
     this.program.bind()
     const device = this.device
-    if (this.stencilState) { device.stencilState = this.stencilState }
-    if (this.offsetState) { device.offsetState = this.offsetState }
-    if (this.blendState) { device.blendState = this.blendState }
-    if (this.depthState) { device.depthState = this.depthState }
-    if (this.cullState) { device.cullState = this.cullState }
-    if (parameters) { this.program.setUniforms(parameters) }
+    if (this.stencilState) {
+      device.stencilState = this.stencilState
+    }
+    if (this.offsetState) {
+      device.offsetState = this.offsetState
+    }
+    if (this.blendState) {
+      device.blendState = this.blendState
+    }
+    if (this.depthState) {
+      device.depthState = this.depthState
+    }
+    if (this.cullState) {
+      device.cullState = this.cullState
+    }
+    if (parameters) {
+      this.program.setUniforms(parameters)
+    }
     return this
   }
 
@@ -148,11 +170,21 @@ export class ShaderPass {
       meta: copy(true, this.meta),
       program: this.program.clone(),
     }
-    if (this.stencilState) { opts.stencilState = {...this.stencilState} }
-    if (this.offsetState) { opts.offsetState = {...this.offsetState} }
-    if (this.blendState) { opts.blendState = {...this.blendState} }
-    if (this.depthState) { opts.depthState = {...this.depthState} }
-    if (this.cullState) { opts.cullState = {...this.cullState} }
+    if (this.stencilState) {
+      opts.stencilState = { ...this.stencilState }
+    }
+    if (this.offsetState) {
+      opts.offsetState = { ...this.offsetState }
+    }
+    if (this.blendState) {
+      opts.blendState = { ...this.blendState }
+    }
+    if (this.depthState) {
+      opts.depthState = { ...this.depthState }
+    }
+    if (this.cullState) {
+      opts.cullState = { ...this.cullState }
+    }
     return new ShaderPass(this.device, opts)
   }
 }

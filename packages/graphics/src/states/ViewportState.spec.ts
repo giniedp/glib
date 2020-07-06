@@ -1,14 +1,12 @@
-import {
-  Device,
-  ViewportState,
-} from '@gglib/graphics'
+import { DeviceGL } from '../webgl'
+import { ViewportStateGL } from '../webgl/states'
 
 describe('glib/graphics/ViewportState', () => {
 
-  let device: Device
-  let stateA: ViewportState
-  let stateB: ViewportState
-  let stateC: ViewportState
+  let device: DeviceGL
+  let stateA: ViewportStateGL
+  let stateB: ViewportStateGL
+  let stateC: ViewportStateGL
   let paramsA = {
     x: 1,
     y: 2,
@@ -29,10 +27,10 @@ describe('glib/graphics/ViewportState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device()
-    stateA = new ViewportState(device).assign(paramsA)
-    stateB = new ViewportState(device).assign(paramsB)
-    stateC = new ViewportState(device)
+    device = new DeviceGL()
+    stateA = new ViewportStateGL(device).assign(paramsA)
+    stateB = new ViewportStateGL(device).assign(paramsB)
+    stateC = new ViewportStateGL(device)
   })
   describe(`get/set/change`, () => {
     beforeEach(() => {

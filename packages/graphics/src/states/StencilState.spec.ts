@@ -2,16 +2,18 @@ import {
   CompareFunction,
   Device,
   StencilOperation,
-  StencilState,
 } from '@gglib/graphics'
+
+import { DeviceGL } from '../webgl'
+import { StencilStateGL } from '../webgl/states'
 import { StencilStateParams } from './StencilState'
 
 describe('glib/graphics/StencilState', () => {
 
-  let device: Device
-  let stateA: StencilState
-  let stateB: StencilState
-  let stateC: StencilState
+  let device: DeviceGL
+  let stateA: StencilStateGL
+  let stateB: StencilStateGL
+  let stateC: StencilStateGL
   let paramsA: StencilStateParams = {
     enable: false,
 
@@ -58,10 +60,10 @@ describe('glib/graphics/StencilState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device({ contextAttributes: { depth: true, stencil: true} })
-    stateA = new StencilState(device, paramsA)
-    stateB = new StencilState(device, stateB)
-    stateC = new StencilState(device)
+    device = new DeviceGL({ contextAttributes: { depth: true, stencil: true} })
+    stateA = new StencilStateGL(device).assign(paramsA)
+    stateB = new StencilStateGL(device).assign(stateB)
+    stateC = new StencilStateGL(device)
   })
 
   describe(`get/set/change`, () => {

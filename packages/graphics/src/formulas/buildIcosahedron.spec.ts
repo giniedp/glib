@@ -1,12 +1,10 @@
-import { buildIcosahedron, buildOctahedron, buildTetrahedron, Device, ModelBuilder } from '@gglib/graphics'
+import { buildIcosahedron, buildOctahedron, buildTetrahedron, ModelBuilder } from '@gglib/graphics'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildIcosahedron', () => {
-    let device: Device
     let builder: ModelBuilder
 
     beforeEach(() => {
-      device = new Device()
       builder = new ModelBuilder()
     })
 

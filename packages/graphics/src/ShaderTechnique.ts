@@ -19,7 +19,7 @@ export interface ShaderTechniqueOptions {
   /**
    * Collection of passes of this technique
    */
-  passes: Array<ShaderPassOptions|ShaderPass>
+  passes: Array<ShaderPassOptions | ShaderPass>
 }
 
 /**
@@ -74,7 +74,7 @@ export class ShaderTechnique {
   /**
    * Gets a {@link ShaderPass} by name or index
    */
-  public pass(passIdentifier: string|number): ShaderPass {
+  public pass(passIdentifier: string | number): ShaderPass {
     let result: ShaderPass
     if (typeof passIdentifier === 'number') {
       result = this.passes[passIdentifier]

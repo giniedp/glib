@@ -34,30 +34,18 @@ export type ViewportStateParams = Partial<IViewPortState>
  * @public
  */
 export class ViewportState implements IViewPortState {
-  /**
-   * The graphics device
-   */
-  public device: Device
 
-  private xField: number = 0
-  private yField: number = 0
-  private widthField: number = 0
-  private heightField: number = 0
-  private zMinField: number = 0
-  private zMaxField: number = 1
-  private hasChanged: boolean = false
-  private changes: ViewportStateParams = {}
+  protected xField: number = 0
+  protected yField: number = 0
+  protected widthField: number = 0
+  protected heightField: number = 0
+  protected zMinField: number = 0
+  protected zMaxField: number = 1
+  protected hasChanged: boolean = false
+  protected changes: ViewportStateParams = {}
 
   public get isDirty() {
     return this.hasChanged
-  }
-
-  /**
-   * Instantiates the {@link ViewportState}
-   */
-  constructor(device: Device) {
-    this.device = device
-    this.resolve()
   }
 
   /**
@@ -162,15 +150,7 @@ export class ViewportState implements IViewPortState {
   public commit(state?: ViewportStateParams): this {
     if (state) { this.assign(state) }
     if (!this.hasChanged) { return this }
-    const gl = this.device.context
-    const changes = this.changes
-    if (changes.x !== null || changes.y !== null ||
-      changes.width !== null || changes.height !== null) {
-      gl.viewport(this.x, this.y, this.width, this.height)
-    }
-    if (changes.zMin !== undefined || changes.zMax !== undefined) {
-      gl.depthRange(this.zMin, this.zMax)
-    }
+    this.commitChanges(this.changes)
     this.clearChanges()
     return this
   }
@@ -190,38 +170,12 @@ export class ViewportState implements IViewPortState {
     return out
   }
 
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    ViewportState.resolve(this.device, this)
-    this.clearChanges()
-    return this
+  protected commitChanges(changes: Partial<IViewPortState>) {
+    //
   }
 
-  private clearChanges() {
+  protected clearChanges() {
     this.hasChanged = false
     for (let key of params) { this.changes[key as any] = undefined }
-  }
-
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve(device: Device): IViewPortState
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve<T>(device: Device, out: T): T & IViewPortState
-  public static resolve(device: Device, out: ViewportStateParams = {}): IViewPortState {
-    const gl = device.context
-    const range = gl.getParameter(gl.DEPTH_RANGE)
-    out.zMin = range[0]
-    out.zMax = range[1]
-    const viewport = gl.getParameter(gl.VIEWPORT)
-    out.x = viewport[0]
-    out.y = viewport[1]
-    out.width = viewport[2]
-    out.height = viewport[3]
-    return out as IViewPortState
   }
 }

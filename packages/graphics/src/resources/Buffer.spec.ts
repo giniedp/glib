@@ -1,12 +1,13 @@
-import { Buffer, BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, Device  } from '@gglib/graphics'
-import { DataType } from './enums'
+import { BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DeviceGL  } from '@gglib/graphics'
+import { DataType } from '../enums'
+import { BufferGL } from '../webgl'
 
 describe('graphics/Buffer', () => {
 
-  let device: Device
+  let device: DeviceGL
 
   beforeEach(() => {
-    device = new Device({ context: 'webgl2' })
+    device = new DeviceGL({ context: 'webgl2' })
   })
 
   describe('constructor', () => {
@@ -17,23 +18,23 @@ describe('graphics/Buffer', () => {
         return
       }
       // default value
-      expect(new Buffer(device).usage).toBe(BufferUsage.Static);
+      expect(new BufferGL(device).usage).toBe(BufferUsage.Static);
 
       //
       ['Dynamic', 'DYNAMIC_DRAW', BufferUsage.Dynamic].forEach((usage: BufferUsageOption) => {
-        let buffer = new Buffer(device, { usage: usage })
+        let buffer = new BufferGL(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Dynamic)
         expect(buffer.usageName).toBe('Dynamic')
       });
 
       ['Static', 'STATIC_DRAW', BufferUsage.Static].forEach((usage: BufferUsageOption) => {
-        let buffer = new Buffer(device, { usage: usage })
+        let buffer = new BufferGL(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Static)
         expect(buffer.usageName).toBe('Static')
       });
 
       ['Stream', 'STREAM_DRAW', BufferUsage.Stream].forEach((usage: BufferUsageOption) => {
-        let buffer = new Buffer(device, { usage: usage })
+        let buffer = new BufferGL(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Stream)
         expect(buffer.usageName).toBe('Stream')
       })
@@ -45,10 +46,10 @@ describe('graphics/Buffer', () => {
         return
       }
       // default value
-      expect(new Buffer(device).type).toBe(BufferType.IndexBuffer);
+      expect(new BufferGL(device).type).toBe(BufferType.IndexBuffer);
 
       ['IndexBuffer', 'ELEMENT_ARRAY_BUFFER', BufferType.IndexBuffer].forEach((it: BufferTypeOption) => {
-        let buffer = new Buffer(device, { type: it })
+        let buffer = new BufferGL(device, { type: it })
         expect(buffer.type).toBe(BufferType.IndexBuffer)
         expect(buffer.isIndexBuffer).toBe(true)
         expect(buffer.isVertexBuffer).toBe(false)
@@ -56,7 +57,7 @@ describe('graphics/Buffer', () => {
       });
 
       ['VertexBuffer', 'ARRAY_BUFFER', BufferType.VertexBuffer].forEach((it: BufferTypeOption) => {
-        let buffer = new Buffer(device, {
+        let buffer = new BufferGL(device, {
           type: it,
           layout: {
             position: {
@@ -85,7 +86,7 @@ describe('graphics/Buffer', () => {
           [1, 2, 3, 4, 5, 6, 7, 8, 9],
           Uint16Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9]),
         ].forEach((data) => {
-          let buffer = new Buffer(device, {
+          let buffer = new BufferGL(device, {
             usage: 'Dynamic',
             type: 'IndexBuffer',
             dataType: 'ushort',

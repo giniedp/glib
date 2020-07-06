@@ -1,4 +1,3 @@
-import { Device } from './../Device'
 import {
   Blend,
   BlendFunction,
@@ -73,32 +72,20 @@ export type BlendStateParams = Partial<IBlendState>
  * @public
  */
 export class BlendState implements IBlendState {
-  /**
-   * The graphics device
-   */
-  public readonly device: Device
 
-  private $colorBlendFunction = BlendFunction.Add
-  private $alphaBlendFunction = BlendFunction.Add
-  private $colorSrcBlend = Blend.One
-  private $alphaSrcBlend = Blend.One
-  private $colorDstBlend = Blend.Zero
-  private $alphaDstBlend = Blend.Zero
-  private $constantR: number = 0
-  private $constantG: number = 0
-  private $constantB: number = 0
-  private $constantA: number = 0
-  private $enable: boolean = false
-  private $hasChanged: boolean = false
-  private $changes: BlendStateParams = {}
-
-  /**
-   * Instantiates the {@link BlendState}
-   */
-  constructor(device: Device) {
-    this.device = device
-    this.resolve()
-  }
+  protected $colorBlendFunction = BlendFunction.Add
+  protected $alphaBlendFunction = BlendFunction.Add
+  protected $colorSrcBlend = Blend.One
+  protected $alphaSrcBlend = Blend.One
+  protected $colorDstBlend = Blend.Zero
+  protected $alphaDstBlend = Blend.Zero
+  protected $constantR: number = 0
+  protected $constantG: number = 0
+  protected $constantB: number = 0
+  protected $constantA: number = 0
+  protected $enable: boolean = false
+  protected $hasChanged: boolean = false
+  protected $changes: BlendStateParams = {}
 
   /**
    * Indicates whether the state has changes which are not committed to the GPU
@@ -317,32 +304,7 @@ export class BlendState implements IBlendState {
   public commit(state?: BlendStateParams): this {
     if (state) { this.assign(state) }
     if (!this.$hasChanged) { return this }
-    const gl = this.device.context
-    const changes = this.$changes
-    const enabled = this.enable
-    if (enabled === true) {
-      gl.enable(gl.BLEND)
-    }
-    if (enabled === false) {
-      gl.disable(gl.BLEND)
-    }
-    if (changes.colorBlendFunction !== undefined || changes.alphaBlendFunction !== undefined) {
-      gl.blendEquationSeparate(this.colorBlendFunction, this.alphaBlendFunction)
-    }
-    if (
-      changes.colorSrcBlend !== undefined ||
-      changes.colorDstBlend !== undefined ||
-      changes.alphaSrcBlend !== undefined ||
-      changes.alphaDstBlend !== undefined) {
-      gl.blendFuncSeparate(this.colorSrcBlend, this.colorDstBlend, this.alphaSrcBlend, this.alphaDstBlend)
-    }
-    if (
-      changes.constantR !== undefined ||
-      changes.constantG !== undefined ||
-      changes.constantB !== undefined ||
-      changes.constantA !== undefined) {
-      gl.blendColor(this.constantR, this.constantG, this.constantB, this.constantA)
-    }
+    this.commitChanges(this.$changes)
     this.clearChanges()
     return this
   }
@@ -364,45 +326,13 @@ export class BlendState implements IBlendState {
     return out
   }
 
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    BlendState.resolve(this.device, this)
-    this.$hasChanged = false
-    this.$changes = {}
-    return this
+  protected commitChanges(changes: Partial<IBlendState>) {
+    //
   }
 
-  private clearChanges() {
+  protected clearChanges() {
     this.$hasChanged = false
     for (let key of params) { this.$changes[key as any] = undefined }
-  }
-
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve(device: Device): IBlendState
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve<T>(device: Device, out: T): T & IBlendState
-  public static resolve(device: Device, out: BlendStateParams = {}): IBlendState {
-    const gl = device.context
-    out.colorBlendFunction = gl.getParameter(gl.BLEND_EQUATION_RGB)
-    out.alphaBlendFunction = gl.getParameter(gl.BLEND_EQUATION_ALPHA)
-    out.colorSrcBlend = gl.getParameter(gl.BLEND_SRC_RGB)
-    out.alphaSrcBlend = gl.getParameter(gl.BLEND_SRC_ALPHA)
-    out.colorDstBlend = gl.getParameter(gl.BLEND_DST_RGB)
-    out.alphaDstBlend = gl.getParameter(gl.BLEND_DST_ALPHA)
-    const color = gl.getParameter(gl.BLEND_COLOR)
-    // Linux Firefox returns null instead of an array if blend is disabled
-    out.constantR = color ? color[0] : 0
-    out.constantG = color ? color[1] : 0
-    out.constantB = color ? color[2] : 0
-    out.constantA = color ? color[3] : 0
-    out.enable = gl.getParameter(gl.BLEND)
-    return out as IBlendState
   }
 
   /**

@@ -1,8 +1,8 @@
-import { Device } from '@gglib/graphics'
+import { DeviceGL } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 

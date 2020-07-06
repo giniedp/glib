@@ -4,7 +4,7 @@ import project from '../project'
 
 async function rollupPackage(pkg: string) {
   const alias = require('@rollup/plugin-alias')
-  const resolve = require('@rollup/plugin-node-resolve')
+  const { nodeResolve } = require('@rollup/plugin-node-resolve')
   const sourcemaps = require('rollup-plugin-sourcemaps')
 
   const globals = {}
@@ -23,7 +23,7 @@ async function rollupPackage(pkg: string) {
       warn(warning)
     },
     plugins: [
-      resolve(),
+      nodeResolve(),
       alias({
         entries: entries,
       }),

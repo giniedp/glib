@@ -1,10 +1,10 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { copy, Log } from '@gglib/utils'
-import { BufferOptions } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
 import { Model, ModelOptions } from './Model'
 import { ModelMesh, ModelMeshOptions } from './ModelMesh'
+import { BufferOptions } from './resources'
 import { VertexLayout } from './VertexLayout'
 
 import { BufferType, DataType, FrontFace } from './enums'

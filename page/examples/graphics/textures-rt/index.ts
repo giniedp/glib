@@ -1,9 +1,9 @@
-import { buildCube, buildPlane, CullState, DepthFormat, Device, ModelBuilder } from '@gglib/graphics'
+import { buildCube, buildPlane, CullState, DepthFormat, DeviceGL, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-let device = new Device({
+let device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 

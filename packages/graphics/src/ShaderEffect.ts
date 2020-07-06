@@ -1,11 +1,10 @@
 import { copy } from '@gglib/utils'
 
-import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
 import { ShaderTechnique, ShaderTechniqueOptions } from './ShaderTechnique'
 
 import { Device } from './Device'
+import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
 import { ShaderPass } from './ShaderPass'
-import { ShaderUniformValue } from './ShaderUniform'
 
 /**
  * Constructor options for {@link ShaderEffect}
@@ -128,7 +127,7 @@ export class ShaderEffect {
     if (options.program instanceof ShaderProgram) {
       program = options.program
     } else if (options.program) {
-      program = new ShaderProgram(this.device, options.program)
+      program = this.device.createProgram(options.program)
     }
     if (program) {
       techniques.push(new ShaderTechnique(this.device, {

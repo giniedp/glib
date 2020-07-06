@@ -1,15 +1,13 @@
-import {
-  Device,
-  ScissorState,
-} from '@gglib/graphics'
+import { DeviceGL } from '../webgl'
+import { ScissorStateGL } from '../webgl/states'
 import { ScissorStateParams } from './ScissorState'
 
 describe('glib/graphics/ScissorState', () => {
 
-  let device: Device
-  let stateA: ScissorState
-  let stateB: ScissorState
-  let stateC: ScissorState
+  let device: DeviceGL
+  let stateA: ScissorStateGL
+  let stateB: ScissorStateGL
+  let stateC: ScissorStateGL
   let paramsA: ScissorStateParams = {
     enable: false,
     x: 1,
@@ -28,10 +26,10 @@ describe('glib/graphics/ScissorState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device()
-    stateA = new ScissorState(device).assign(paramsA)
-    stateB = new ScissorState(device).assign(paramsB)
-    stateC = new ScissorState(device)
+    device = new DeviceGL()
+    stateA = new ScissorStateGL(device).assign(paramsA)
+    stateB = new ScissorStateGL(device).assign(paramsB)
+    stateC = new ScissorStateGL(device)
   })
 
   describe(`get/set/change`, () => {

@@ -1,5 +1,5 @@
 import { ContentManager } from '@gglib/content'
-import { Device, Material } from '@gglib/graphics'
+import { DeviceGL, Material } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test/utils.spec'
 
 import '../native'
@@ -7,13 +7,13 @@ import './ggmat'
 
 describe('content loader ggmat', () => {
 
-  let device: Device
+  let device: DeviceGL
   let manager: ContentManager
 
   afterAll(clearScripts)
 
   beforeAll(() => {
-    device = new Device()
+    device = new DeviceGL()
     manager = new ContentManager(device)
     defineScript('effect.ggfx', 'application/json', `
 name: effect name
@@ -49,7 +49,6 @@ technique:
         expect(result.effect.techniques[0].name).toBe('TECHNIQUE0')
         expect(result.effect.techniques[0].passes.length).toBe(1)
         expect(result.effect.techniques[0].passes[0].name).toBe('PASS0')
-        expect(result.effect.techniques[0].passes[0].program.linked).toBe(true)
       })
       .then(done)
       .catch(fail)
@@ -63,7 +62,6 @@ technique:
         expect(result[0].effect.techniques[0].name).toBe('TECHNIQUE0')
         expect(result[0].effect.techniques[0].passes.length).toBe(1)
         expect(result[0].effect.techniques[0].passes[0].name).toBe('PASS0')
-        expect(result[0].effect.techniques[0].passes[0].program.linked).toBe(true)
       })
       .then(done)
       .catch(fail)

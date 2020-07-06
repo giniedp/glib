@@ -414,8 +414,8 @@ export class RenderManager {
       ? this.sceneOutputs.get(scene.id)
       : {}
 
-    const w = target ? target.width : this.device.context.drawingBufferWidth
-    const h = target ? target.height : this.device.context.drawingBufferHeight
+    const w = target ? target.width : this.device.drawingBufferWidth
+    const h = target ? target.height : this.device.drawingBufferHeight
     const viewport = scene.viewport
     if (!viewport) {
       output.x = 0

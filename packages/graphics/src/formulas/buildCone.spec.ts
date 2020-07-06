@@ -1,12 +1,10 @@
-import { buildCone, Device, ModelBuilder } from '@gglib/graphics'
+import { buildCone, ModelBuilder } from '@gglib/graphics'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCone', () => {
-    let device: Device
     let builder: ModelBuilder
 
     beforeEach(() => {
-      device = new Device()
       builder = new ModelBuilder()
     })
 

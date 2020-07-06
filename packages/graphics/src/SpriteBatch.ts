@@ -1,9 +1,10 @@
 import { Mat4 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
-import { Buffer } from './Buffer'
 import { Device } from './Device'
 import { BufferUsage, PrimitiveType } from './enums'
-import { ShaderProgram } from './ShaderProgram'
+import { Buffer } from './resources/Buffer'
+import { ShaderProgram } from './resources/ShaderProgram'
+import { Texture } from './resources/Texture'
 import { Sprite } from './Sprite'
 import { BlendStateParams } from './states/BlendState'
 import { CullStateParams } from './states/CullState'
@@ -11,7 +12,6 @@ import { DepthStateParams } from './states/DepthState'
 import { ScissorStateParams } from './states/ScissorState'
 import { StencilStateParams } from './states/StencilState'
 import { ViewportStateParams } from './states/ViewportState'
-import { Texture } from './Texture'
 import { VertexLayout } from './VertexLayout'
 
 const vShader = `
@@ -340,7 +340,7 @@ export class SpriteBatch {
         this.vertexColorView[offset++] = sprite.color
       }
       start += count
-      this.vertexBuffer.setSubData(this.arrayBuffer, 0)
+      this.vertexBuffer.setSubData(0, this.arrayBuffer)
       this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, count * 6)
     }
   }

@@ -1,9 +1,9 @@
 import { defaultProgram } from '@gglib/effects'
-import { buildCube, Color, Device, ModelBuilder } from '@gglib/graphics'
+import { buildCube, Color, DeviceGL, ModelBuilder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 

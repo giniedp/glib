@@ -1,17 +1,17 @@
 import {
   Blend,
   BlendFunction,
-  BlendState,
-  Device,
+  DeviceGL,
 } from '@gglib/graphics'
+import { BlendStateGL } from '../webgl/states'
 import { BlendStateParams } from './BlendState'
 
 describe('glib/graphics/BlendState', () => {
 
-  let device: Device
-  let stateA: BlendState
-  let stateB: BlendState
-  let stateC: BlendState
+  let device: DeviceGL
+  let stateA: BlendStateGL
+  let stateB: BlendStateGL
+  let stateC: BlendStateGL
   let paramsA: BlendStateParams = {
     colorBlendFunction: BlendFunction.Add,
     alphaBlendFunction: BlendFunction.Subtract,
@@ -46,10 +46,10 @@ describe('glib/graphics/BlendState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device({ context: 'webgl' })
-    stateA = new BlendState(device).assign(paramsA)
-    stateB = new BlendState(device).assign(paramsB)
-    stateC = new BlendState(device)
+    device = new DeviceGL({ context: 'webgl' })
+    stateA = new BlendStateGL(device).assign(paramsA)
+    stateB = new BlendStateGL(device).assign(paramsB)
+    stateC = new BlendStateGL(device)
   })
 
   describe(`get/set/change`, () => {

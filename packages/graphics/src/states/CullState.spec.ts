@@ -1,17 +1,18 @@
 import {
   CullMode,
-  CullState,
   Device,
+  DeviceGL,
   FrontFace,
 } from '@gglib/graphics'
+import { CullStateGL } from '../webgl/states'
 import { CullStateParams } from './CullState'
 
 describe('glib/graphics/CullState', () => {
 
-  let device: Device
-  let stateA: CullState
-  let stateB: CullState
-  let stateC: CullState
+  let device: DeviceGL
+  let stateA: CullStateGL
+  let stateB: CullStateGL
+  let stateC: CullStateGL
   let paramsA: CullStateParams = {
     enable: false,
     cullMode: CullMode.Back,
@@ -26,10 +27,10 @@ describe('glib/graphics/CullState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device()
-    stateA = new CullState(device).assign(paramsA)
-    stateB = new CullState(device).assign(paramsB)
-    stateC = new CullState(device)
+    device = new DeviceGL()
+    stateA = new CullStateGL(device).assign(paramsA)
+    stateB = new CullStateGL(device).assign(paramsB)
+    stateC = new CullStateGL(device)
   })
   describe(`get/set/change`, () => {
     beforeEach(() => {

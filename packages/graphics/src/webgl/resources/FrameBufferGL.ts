@@ -1,51 +1,40 @@
-import { DepthBuffer } from './DepthBuffer'
-import { Device } from './Device'
-import { Texture } from './Texture'
+import { DepthBuffer, FrameBuffer, FrameBufferOptions, Texture } from '../../resources'
+import { DeviceGL } from '../DeviceGL'
+import { DepthBufferGL } from './DepthBufferGL'
+import { TextureGL } from './TextureGL'
 
 /**
  * @public
  */
-export interface FrameBufferOptions {
-  /**
-   *
-   */
-  textures?: Texture[],
-  /**
-   *
-   */
-  depthBuffer?: DepthBuffer,
-}
+export class FrameBufferGL extends FrameBuffer {
+  public readonly device: DeviceGL
 
-/**
- * @public
- */
-export class FrameBuffer {
-  public device: Device
-  public gl: any
   public handle: WebGLFramebuffer
+
   private colorAttachments: Texture[] = []
   private depthAttachment: DepthBuffer
   private colorAttachmentCountField: number = 0
   private colorAttachmentPoints: number[] = []
   private maxColorAttachments: number = 1
-  private drawBuffersExtension: any
+  private drawBuffersExtension: WEBGL_draw_buffers
 
-  constructor(device: Device, options?: FrameBufferOptions) {
+  constructor(device: DeviceGL, options?: FrameBufferOptions) {
+    super()
     this.device = device
-    this.gl = device.context
+
     this.drawBuffersExtension = device.capabilities.extension('WEBGL_draw_buffers')
     this.maxColorAttachments = device.capabilities.maxColorAttachments
-    this.setup(options)
+    this.init(options)
   }
 
   get colorAttachmentCount(): number {
     return this.colorAttachmentCountField
   }
 
-  public setup(options: FrameBufferOptions= {}) {
-    let gl = this.gl
+  public init(options: FrameBufferOptions= {}) {
+    let gl = this.device.context
 
-    if (!FrameBuffer.validateAttachments(options.textures, options.depthBuffer)) {
+    if (!FrameBufferGL.validateAttachments(options.textures, options.depthBuffer)) {
       throw new Error('All attachments must have same width and height')
     }
     let textures = options.textures || []
@@ -56,21 +45,21 @@ export class FrameBuffer {
 
     let needsRebind = false
     // ensure framebuffer is created
-    if (this.handle == null || !this.gl.isFramebuffer(this.handle)) {
-      this.handle = this.gl.createFramebuffer()
+    if (this.handle == null || !gl.isFramebuffer(this.handle)) {
+      this.handle = gl.createFramebuffer()
       needsRebind = true
     }
 
     //
     // BEGIN UPDATE
     //
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.handle)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.handle)
 
     // replace color attachments
     let count = 0
     for (let i = 0; i < targetCount; i++) {
-      const oldTexture = this.colorAttachments[i]
-      const newTexture = textures[i]
+      const oldTexture: TextureGL = this.colorAttachments[i] as TextureGL
+      const newTexture: TextureGL = textures[i] as TextureGL
 
       if (!needsRebind && newTexture && oldTexture && newTexture.handle === oldTexture.handle) {
         // skip binding if the new texture is already bound
@@ -98,8 +87,8 @@ export class FrameBuffer {
       this.drawBuffersExtension.drawBuffersWEBGL(this.colorAttachmentPoints)
     }
 
-    let oldBuffer = this.depthAttachment
-    let newBuffer = options.depthBuffer
+    let oldBuffer: DepthBufferGL = this.depthAttachment as DepthBufferGL
+    let newBuffer: DepthBufferGL = options.depthBuffer as DepthBufferGL
     if (oldBuffer && newBuffer && oldBuffer.handle === newBuffer.handle) {
       // skip binding if the new buffer is already bound
     } else if (newBuffer) {
@@ -114,12 +103,14 @@ export class FrameBuffer {
     //
     // END UPDATE
     //
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+
+    return this
   }
 
   public destroy() {
-    if (this.handle != null && this.gl.isFramebuffer(this.handle)) {
-      this.gl.deleteFramebuffer(this.handle)
+    if (this.handle != null && this.device.context.isFramebuffer(this.handle)) {
+      this.device.context.deleteFramebuffer(this.handle)
       this.handle = null
     }
   }

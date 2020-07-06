@@ -130,8 +130,8 @@ async function loadStringKeysAsTexture(input: any, context: PipelineContext) {
         continue
       }
       const uri = resolveUri(value, context)
-      if (context.manager.canLoad(uri, Texture)) {
-        input[name] = await context.manager.load(uri, Texture)
+      if (context.manager.canLoad(uri, Texture.Texture2D)) {
+        input[name] = await context.manager.load(uri, Texture.Texture2D)
       } else {
         //
       }
@@ -193,7 +193,7 @@ export const loadImageDataToTextureOptions = loader<ImageData, TextureOptions>({
  */
 export const loadTextureOptionsToTexture = loader<TextureOptions, Texture>({
   input: Texture.Options,
-  output: Texture,
+  output: Texture.Texture2D,
   handle: async (input, context) => {
     return context.manager.device.createTexture(input)
   },
@@ -203,7 +203,7 @@ export const loadTextureOptionsToTexture = loader<TextureOptions, Texture>({
  * @public
  */
 export const loadTextureToMaterialOptions = loader<Texture, MaterialOptions>({
-  input: Texture,
+  input: Texture.Texture2D,
   output: Material.Options,
   handle: (input, _) => {
     return Promise.resolve({

@@ -1,5 +1,5 @@
 import { ContentManager } from '@gglib/content'
-import { Device, Model } from '@gglib/graphics'
+import { DeviceGL, Model } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test/utils.spec'
 
 import '../ggfx'
@@ -9,13 +9,13 @@ import './ggmod'
 
 describe('content loader ggmod', () => {
 
-  let device: Device
+  let device: DeviceGL
   let manager: ContentManager
 
   afterAll(clearScripts)
 
   beforeAll(() => {
-    device = new Device()
+    device = new DeviceGL()
     manager = new ContentManager(device)
 
     defineScript('effect.ggfx', 'application/x-yml', `
@@ -82,7 +82,6 @@ technique:
         expect(result.materials[0].effect.techniques[0].name).toBe('TECHNIQUE0')
         expect(result.materials[0].effect.techniques[0].passes.length).toBe(1)
         expect(result.materials[0].effect.techniques[0].passes[0].name).toBe('PASS0')
-        expect(result.materials[0].effect.techniques[0].passes[0].program.linked).toBe(true)
       }).catch(fail)
         .then(done)
     })

@@ -11,13 +11,13 @@ import {
   loadShaderEffectOptionsToShaderEffectArray,
   Pipeline,
 } from '@gglib/content'
-import { Device, Model } from '@gglib/graphics'
+import { DeviceGL, Model } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test/utils.spec'
 
 describe('content/loaders/gltf', () => {
   afterAll(clearScripts)
   beforeAll(() => {
-    device = new Device()
+    device = new DeviceGL()
     manager = new ContentManager(device)
 
     defineScript('default.ggfx', 'application/x-yaml', `
@@ -39,10 +39,10 @@ technique:
     `)
   })
 
-  let device: Device
+  let device: DeviceGL
   let manager: ContentManager
   beforeEach(() => {
-    device = new Device()
+    device = new DeviceGL()
     manager = new ContentManager(device, {
       loader: new Pipeline(),
     })

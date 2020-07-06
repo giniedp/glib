@@ -1,11 +1,11 @@
-import { Device } from '@gglib/graphics'
+import { DeviceGL } from '@gglib/graphics'
 import { defaultProgram } from './defaultProgram'
 
 describe('@gglib/effects/fx', () => {
-  let device: Device
+  let device: DeviceGL
 
   beforeEach(() => {
-    device = new Device()
+    device = new DeviceGL()
   })
 
   it ('default is valid', () => {

@@ -104,7 +104,7 @@ function processEnum(name, data, constants) {
     buffer.push(`/**\n`)
     buffer.push(` * @public\n`)
     buffer.push(` */\n`)
-  buffer.push(`export type ${name}Name\n  = ${values.map((it) => `'${it.name}'`).join('\n  | ')}\n`)
+  buffer.push(`export type ${name}Name = keyof typeof ${name}\n`)
 
   if (node.nameOf) {
     buffer.push(`const ${name}ValueMap = Object.freeze<any>({\n`)
@@ -124,21 +124,11 @@ function processEnum(name, data, constants) {
     buffer.push(`  return ${name}ValueMap[keyOrValue]\n`)
     buffer.push(`}\n`)
 
-    buffer.push(`const ${name}NameMap = Object.freeze<any>({\n`)
-    values.forEach((it) => {
-      buffer.push(`  ${it.value}: '${it.name}',\n`)
-      if (node.aliases && it.name !== it.glName) {
-        buffer.push(`  ${it.glName}: '${it.name}',\n`)
-      }
-      buffer.push(`  ${it.name}: '${it.name}',\n`)
-    })
-    buffer.push(`})\n`)
-
     buffer.push(`/**\n`)
     buffer.push(` * @public\n`)
     buffer.push(` */\n`)
     buffer.push(`export function nameOf${name}(keyOrValue: ${name} | ${name}Name): ${name}Name {\n`)
-    buffer.push(`  return ${name}NameMap[keyOrValue]\n`)
+    buffer.push(`  return ${name}[valueOf${name}(keyOrValue)] as ${name}Name\n`)
     buffer.push(`}\n`)
 
     buffer.push(`/**\n`)
@@ -178,6 +168,7 @@ module.exports = (options) => {
     console.log(contents.toString())
     file.contents = process(data, constants)
     file.path = path.join(path.dirname(file.path), path.basename(file.path, '.json') + '.ts')
+    console.log(file.path)
     cb(null, file)
   })
 }

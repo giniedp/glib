@@ -12,7 +12,7 @@ const forwardRefFn = Symbol('forwardRef')
  * ```ts
  * class A {
  *   // references B before it is defined
- *   Inject(forwardRef(() => B))
+ *   @Inject(forwardRef(() => B))
  *   bInstance
  * }
  * // this class is defined after it has been referenced

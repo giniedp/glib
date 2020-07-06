@@ -3,12 +3,12 @@
 // ---
 
 import { ContentManager } from '@gglib/content'
-import { CullState, Device, Model, ModelBuilder, ShaderEffect } from '@gglib/graphics'
+import { CullState, DeviceGL, Model, ModelBuilder, ShaderEffect } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 
@@ -82,7 +82,8 @@ loop((time, dt) => {
 
   // update scene variables
   view.initTranslation(0, 0, -2)
-  const aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight
+
+  const aspect = device.drawingBufferWidth / device.drawingBufferHeight
   proj.initPerspectiveFieldOfView(Math.PI / 2, aspect, 0, 100)
 
   // apply material parameters

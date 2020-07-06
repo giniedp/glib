@@ -1,4 +1,4 @@
-import { Buffer, BufferOptions } from './Buffer'
+import { Buffer, BufferOptions } from './resources'
 import { VertexLayout } from './VertexLayout'
 
 /**
@@ -20,7 +20,9 @@ export class ModelBuilderChannel {
 
   constructor(public readonly buffer: BufferOptions<number[]> | Buffer, public readonly name: string) {
     if (buffer instanceof Buffer) {
-      this.data = new Float32Array(buffer.data as any) as any
+      // TODO
+      throw new Error('not supported')
+      // this.data = new Float32Array(buffer.data as any) as any
     } else {
       this.data = buffer.data
     }

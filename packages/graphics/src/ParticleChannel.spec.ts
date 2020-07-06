@@ -1,16 +1,14 @@
 import {
-  Device,
+  DeviceGL,
   ParticleChannel,
-  ParticleChannelOptions,
-  Texture,
 } from '@gglib/graphics'
 
 describe('graphics/ParticleChannel', () => {
 
-  let device: Device
+  let device: DeviceGL
 
   beforeAll(() => {
-    device = new Device({ context: 'webgl2' })
+    device = new DeviceGL({ context: 'webgl2' })
   })
 
   describe('constructor', () => {
@@ -36,10 +34,6 @@ describe('graphics/ParticleChannel', () => {
     it ('creates particles', () => {
       expect(channel.vertices).toBeDefined()
       expect(channel.vertices.stride).toBe(36)
-    })
-
-    it ('compiles the program', () => {
-      expect(channel.program.linked).toBe(true)
     })
 
   })

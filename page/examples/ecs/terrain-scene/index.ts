@@ -91,7 +91,7 @@ class SkyComponent implements OnInit, OnUpdate {
   public camera: PerspectiveCameraComponent
 
   public onInit() {
-    this.content.load('/assets/textures/Grey_Sky.png', Texture).then((texture) => {
+    this.content.load('/assets/textures/Grey_Sky.png', Texture.Texture2D).then((texture) => {
       const material = new AutoMaterial(this.device)
       material.DiffuseMap = texture
       material.ShadeFunction = 'shadeNone'

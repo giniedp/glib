@@ -142,12 +142,12 @@ export class PostTonemap implements RenderStep {
       this.clearNext = false
       for (const target of this.targets) {
         device.setRenderTarget(target)
-        device.clearColor(0)
+        device.clear(0)
       }
       device.setRenderTarget(this.lum1)
-      device.clearColor(0)
+      device.clear(0)
       device.setRenderTarget(this.lum2)
-      device.clearColor(0)
+      device.clear(0)
     }
 
     // -------------------------------------------------

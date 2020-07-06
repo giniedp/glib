@@ -1,10 +1,10 @@
-import { BlendState, CullState, DepthState, Device, ParticleChannel } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, DeviceGL, ParticleChannel } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new Device({
+const device = new DeviceGL({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 
@@ -64,7 +64,7 @@ loop((time, dt) => {
   device.depthState = DepthState.Default
   device.blendState = BlendState.Additive
 
-  let aspect = device.context.drawingBufferWidth / device.context.drawingBufferHeight
+  let aspect = device.drawingBufferWidth / device.drawingBufferHeight
   view.initTranslation(0, 0, -100)
   projection.initPerspectiveFieldOfView(Math.PI / 3, aspect, 0, 200)
 

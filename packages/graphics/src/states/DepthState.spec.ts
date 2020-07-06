@@ -1,16 +1,16 @@
 import {
   CompareFunction,
-  DepthState,
-  Device,
 } from '@gglib/graphics'
+import { DeviceGL } from '../webgl'
+import { DepthStateGL } from '../webgl/states'
 import { DepthStateParams } from './DepthState'
 
 describe('glib/graphics/DepthState', () => {
 
-  let device: Device
-  let stateA: DepthState
-  let stateB: DepthState
-  let stateC: DepthState
+  let device: DeviceGL
+  let stateA: DepthStateGL
+  let stateB: DepthStateGL
+  let stateC: DepthStateGL
   let paramsA: DepthStateParams = {
     enable: true,
     depthFunction: CompareFunction.Always,
@@ -25,10 +25,10 @@ describe('glib/graphics/DepthState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device()
-    stateA = new DepthState(device).assign(paramsA)
-    stateB = new DepthState(device).assign(paramsB)
-    stateC = new DepthState(device)
+    device = new DeviceGL()
+    stateA = new DepthStateGL(device).assign(paramsA)
+    stateB = new DepthStateGL(device).assign(paramsB)
+    stateC = new DepthStateGL(device)
   })
 
   describe(`get/set/change`, () => {

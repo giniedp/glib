@@ -16,17 +16,7 @@ export enum DataType {
 /**
  * @public
  */
-export type DataTypeName
-  = 'byte'
-  | 'short'
-  | 'int'
-  | 'ubyte'
-  | 'ushort'
-  | 'uint'
-  | 'float'
-  | 'ushort565'
-  | 'ushort4444'
-  | 'ushort5551'
+export type DataTypeName = keyof typeof DataType
 const DataTypeValueMap = Object.freeze<any>({
   byte: 0x1400,
   BYTE: 0x1400,
@@ -65,43 +55,11 @@ const DataTypeValueMap = Object.freeze<any>({
 export function valueOfDataType(keyOrValue: DataType | DataTypeName): DataType {
   return DataTypeValueMap[keyOrValue]
 }
-const DataTypeNameMap = Object.freeze<any>({
-  0x1400: 'byte',
-  BYTE: 'byte',
-  byte: 'byte',
-  0x1402: 'short',
-  SHORT: 'short',
-  short: 'short',
-  0x1404: 'int',
-  INT: 'int',
-  int: 'int',
-  0x1401: 'ubyte',
-  UNSIGNED_BYTE: 'ubyte',
-  ubyte: 'ubyte',
-  0x1403: 'ushort',
-  UNSIGNED_SHORT: 'ushort',
-  ushort: 'ushort',
-  0x1405: 'uint',
-  UNSIGNED_INT: 'uint',
-  uint: 'uint',
-  0x1406: 'float',
-  FLOAT: 'float',
-  float: 'float',
-  0x8363: 'ushort565',
-  UNSIGNED_SHORT_5_6_5: 'ushort565',
-  ushort565: 'ushort565',
-  0x8033: 'ushort4444',
-  UNSIGNED_SHORT_4_4_4_4: 'ushort4444',
-  ushort4444: 'ushort4444',
-  0x8034: 'ushort5551',
-  UNSIGNED_SHORT_5_5_5_1: 'ushort5551',
-  ushort5551: 'ushort5551',
-})
 /**
  * @public
  */
 export function nameOfDataType(keyOrValue: DataType | DataTypeName): DataTypeName {
-  return DataTypeNameMap[keyOrValue]
+  return DataType[valueOfDataType(keyOrValue)] as DataTypeName
 }
 /**
  * @public
@@ -191,10 +149,7 @@ export enum BufferUsage {
 /**
  * @public
  */
-export type BufferUsageName
-  = 'Static'
-  | 'Dynamic'
-  | 'Stream'
+export type BufferUsageName = keyof typeof BufferUsage
 const BufferUsageValueMap = Object.freeze<any>({
   Static: 0x88E4,
   STATIC_DRAW: 0x88E4,
@@ -212,22 +167,11 @@ const BufferUsageValueMap = Object.freeze<any>({
 export function valueOfBufferUsage(keyOrValue: BufferUsage | BufferUsageName): BufferUsage {
   return BufferUsageValueMap[keyOrValue]
 }
-const BufferUsageNameMap = Object.freeze<any>({
-  0x88E4: 'Static',
-  STATIC_DRAW: 'Static',
-  Static: 'Static',
-  0x88E8: 'Dynamic',
-  DYNAMIC_DRAW: 'Dynamic',
-  Dynamic: 'Dynamic',
-  0x88E0: 'Stream',
-  STREAM_DRAW: 'Stream',
-  Stream: 'Stream',
-})
 /**
  * @public
  */
 export function nameOfBufferUsage(keyOrValue: BufferUsage | BufferUsageName): BufferUsageName {
-  return BufferUsageNameMap[keyOrValue]
+  return BufferUsage[valueOfBufferUsage(keyOrValue)] as BufferUsageName
 }
 /**
  * @public
@@ -243,9 +187,7 @@ export enum BufferType {
 /**
  * @public
  */
-export type BufferTypeName
-  = 'VertexBuffer'
-  | 'IndexBuffer'
+export type BufferTypeName = keyof typeof BufferType
 const BufferTypeValueMap = Object.freeze<any>({
   VertexBuffer: 0x8892,
   ARRAY_BUFFER: 0x8892,
@@ -260,19 +202,11 @@ const BufferTypeValueMap = Object.freeze<any>({
 export function valueOfBufferType(keyOrValue: BufferType | BufferTypeName): BufferType {
   return BufferTypeValueMap[keyOrValue]
 }
-const BufferTypeNameMap = Object.freeze<any>({
-  0x8892: 'VertexBuffer',
-  ARRAY_BUFFER: 'VertexBuffer',
-  VertexBuffer: 'VertexBuffer',
-  0x8893: 'IndexBuffer',
-  ELEMENT_ARRAY_BUFFER: 'IndexBuffer',
-  IndexBuffer: 'IndexBuffer',
-})
 /**
  * @public
  */
 export function nameOfBufferType(keyOrValue: BufferType | BufferTypeName): BufferTypeName {
-  return BufferTypeNameMap[keyOrValue]
+  return BufferType[valueOfBufferType(keyOrValue)] as BufferTypeName
 }
 /**
  * @public
@@ -301,22 +235,7 @@ export enum Blend {
 /**
  * @public
  */
-export type BlendName
-  = 'Zero'
-  | 'One'
-  | 'SrcColor'
-  | 'SrcColorInv'
-  | 'SrcAlpha'
-  | 'SrcAlphaInv'
-  | 'SrcAlphaSat'
-  | 'DstColor'
-  | 'DstColorInv'
-  | 'DstAlpha'
-  | 'DstAlphaInv'
-  | 'ConstantColor'
-  | 'ConstantColorInv'
-  | 'ConstantAlpha'
-  | 'ConstantAlphaInv'
+export type BlendName = keyof typeof Blend
 const BlendValueMap = Object.freeze<any>({
   Zero: 0,
   ZERO: 0,
@@ -370,58 +289,11 @@ const BlendValueMap = Object.freeze<any>({
 export function valueOfBlend(keyOrValue: Blend | BlendName): Blend {
   return BlendValueMap[keyOrValue]
 }
-const BlendNameMap = Object.freeze<any>({
-  0: 'Zero',
-  ZERO: 'Zero',
-  Zero: 'Zero',
-  1: 'One',
-  ONE: 'One',
-  One: 'One',
-  0x0300: 'SrcColor',
-  SRC_COLOR: 'SrcColor',
-  SrcColor: 'SrcColor',
-  0x0301: 'SrcColorInv',
-  ONE_MINUS_SRC_COLOR: 'SrcColorInv',
-  SrcColorInv: 'SrcColorInv',
-  0x0302: 'SrcAlpha',
-  SRC_ALPHA: 'SrcAlpha',
-  SrcAlpha: 'SrcAlpha',
-  0x0303: 'SrcAlphaInv',
-  ONE_MINUS_SRC_ALPHA: 'SrcAlphaInv',
-  SrcAlphaInv: 'SrcAlphaInv',
-  0x0308: 'SrcAlphaSat',
-  SRC_ALPHA_SATURATE: 'SrcAlphaSat',
-  SrcAlphaSat: 'SrcAlphaSat',
-  0x0306: 'DstColor',
-  DST_COLOR: 'DstColor',
-  DstColor: 'DstColor',
-  0x0307: 'DstColorInv',
-  ONE_MINUS_DST_COLOR: 'DstColorInv',
-  DstColorInv: 'DstColorInv',
-  0x0304: 'DstAlpha',
-  DST_ALPHA: 'DstAlpha',
-  DstAlpha: 'DstAlpha',
-  0x0305: 'DstAlphaInv',
-  ONE_MINUS_DST_ALPHA: 'DstAlphaInv',
-  DstAlphaInv: 'DstAlphaInv',
-  0x8001: 'ConstantColor',
-  CONSTANT_COLOR: 'ConstantColor',
-  ConstantColor: 'ConstantColor',
-  0x8002: 'ConstantColorInv',
-  ONE_MINUS_CONSTANT_COLOR: 'ConstantColorInv',
-  ConstantColorInv: 'ConstantColorInv',
-  0x8003: 'ConstantAlpha',
-  CONSTANT_ALPHA: 'ConstantAlpha',
-  ConstantAlpha: 'ConstantAlpha',
-  0x8004: 'ConstantAlphaInv',
-  ONE_MINUS_CONSTANT_ALPHA: 'ConstantAlphaInv',
-  ConstantAlphaInv: 'ConstantAlphaInv',
-})
 /**
  * @public
  */
 export function nameOfBlend(keyOrValue: Blend | BlendName): BlendName {
-  return BlendNameMap[keyOrValue]
+  return Blend[valueOfBlend(keyOrValue)] as BlendName
 }
 /**
  * @public
@@ -438,10 +310,7 @@ export enum BlendFunction {
 /**
  * @public
  */
-export type BlendFunctionName
-  = 'Add'
-  | 'Subtract'
-  | 'ReverseSubtract'
+export type BlendFunctionName = keyof typeof BlendFunction
 const BlendFunctionValueMap = Object.freeze<any>({
   Add: 0x8006,
   FUNC_ADD: 0x8006,
@@ -459,22 +328,11 @@ const BlendFunctionValueMap = Object.freeze<any>({
 export function valueOfBlendFunction(keyOrValue: BlendFunction | BlendFunctionName): BlendFunction {
   return BlendFunctionValueMap[keyOrValue]
 }
-const BlendFunctionNameMap = Object.freeze<any>({
-  0x8006: 'Add',
-  FUNC_ADD: 'Add',
-  Add: 'Add',
-  0x800A: 'Subtract',
-  FUNC_SUBTRACT: 'Subtract',
-  Subtract: 'Subtract',
-  0x800B: 'ReverseSubtract',
-  FUNC_REVERSE_SUBTRACT: 'ReverseSubtract',
-  ReverseSubtract: 'ReverseSubtract',
-})
 /**
  * @public
  */
 export function nameOfBlendFunction(keyOrValue: BlendFunction | BlendFunctionName): BlendFunctionName {
-  return BlendFunctionNameMap[keyOrValue]
+  return BlendFunction[valueOfBlendFunction(keyOrValue)] as BlendFunctionName
 }
 /**
  * @public
@@ -496,15 +354,7 @@ export enum CompareFunction {
 /**
  * @public
  */
-export type CompareFunctionName
-  = 'Never'
-  | 'Less'
-  | 'Equal'
-  | 'LessEqual'
-  | 'Greater'
-  | 'NotEqual'
-  | 'GreaterEqual'
-  | 'Always'
+export type CompareFunctionName = keyof typeof CompareFunction
 const CompareFunctionValueMap = Object.freeze<any>({
   Never: 0x0200,
   NEVER: 0x0200,
@@ -537,37 +387,11 @@ const CompareFunctionValueMap = Object.freeze<any>({
 export function valueOfCompareFunction(keyOrValue: CompareFunction | CompareFunctionName): CompareFunction {
   return CompareFunctionValueMap[keyOrValue]
 }
-const CompareFunctionNameMap = Object.freeze<any>({
-  0x0200: 'Never',
-  NEVER: 'Never',
-  Never: 'Never',
-  0x0201: 'Less',
-  LESS: 'Less',
-  Less: 'Less',
-  0x0202: 'Equal',
-  EQUAL: 'Equal',
-  Equal: 'Equal',
-  0x0203: 'LessEqual',
-  LEQUAL: 'LessEqual',
-  LessEqual: 'LessEqual',
-  0x0204: 'Greater',
-  GREATER: 'Greater',
-  Greater: 'Greater',
-  0x0205: 'NotEqual',
-  NOTEQUAL: 'NotEqual',
-  NotEqual: 'NotEqual',
-  0x0206: 'GreaterEqual',
-  GEQUAL: 'GreaterEqual',
-  GreaterEqual: 'GreaterEqual',
-  0x0207: 'Always',
-  ALWAYS: 'Always',
-  Always: 'Always',
-})
 /**
  * @public
  */
 export function nameOfCompareFunction(keyOrValue: CompareFunction | CompareFunctionName): CompareFunctionName {
-  return CompareFunctionNameMap[keyOrValue]
+  return CompareFunction[valueOfCompareFunction(keyOrValue)] as CompareFunctionName
 }
 /**
  * @public
@@ -584,10 +408,7 @@ export enum CullMode {
 /**
  * @public
  */
-export type CullModeName
-  = 'Front'
-  | 'Back'
-  | 'FrontAndBack'
+export type CullModeName = keyof typeof CullMode
 const CullModeValueMap = Object.freeze<any>({
   Front: 0x0404,
   FRONT: 0x0404,
@@ -605,22 +426,11 @@ const CullModeValueMap = Object.freeze<any>({
 export function valueOfCullMode(keyOrValue: CullMode | CullModeName): CullMode {
   return CullModeValueMap[keyOrValue]
 }
-const CullModeNameMap = Object.freeze<any>({
-  0x0404: 'Front',
-  FRONT: 'Front',
-  Front: 'Front',
-  0x0405: 'Back',
-  BACK: 'Back',
-  Back: 'Back',
-  0x0408: 'FrontAndBack',
-  FRONT_AND_BACK: 'FrontAndBack',
-  FrontAndBack: 'FrontAndBack',
-})
 /**
  * @public
  */
 export function nameOfCullMode(keyOrValue: CullMode | CullModeName): CullModeName {
-  return CullModeNameMap[keyOrValue]
+  return CullMode[valueOfCullMode(keyOrValue)] as CullModeName
 }
 /**
  * @public
@@ -636,9 +446,7 @@ export enum FrontFace {
 /**
  * @public
  */
-export type FrontFaceName
-  = 'ClockWise'
-  | 'CounterClockWise'
+export type FrontFaceName = keyof typeof FrontFace
 const FrontFaceValueMap = Object.freeze<any>({
   ClockWise: 0x0900,
   CW: 0x0900,
@@ -653,19 +461,11 @@ const FrontFaceValueMap = Object.freeze<any>({
 export function valueOfFrontFace(keyOrValue: FrontFace | FrontFaceName): FrontFace {
   return FrontFaceValueMap[keyOrValue]
 }
-const FrontFaceNameMap = Object.freeze<any>({
-  0x0900: 'ClockWise',
-  CW: 'ClockWise',
-  ClockWise: 'ClockWise',
-  0x0901: 'CounterClockWise',
-  CCW: 'CounterClockWise',
-  CounterClockWise: 'CounterClockWise',
-})
 /**
  * @public
  */
 export function nameOfFrontFace(keyOrValue: FrontFace | FrontFaceName): FrontFaceName {
-  return FrontFaceNameMap[keyOrValue]
+  return FrontFace[valueOfFrontFace(keyOrValue)] as FrontFaceName
 }
 /**
  * @public
@@ -687,15 +487,7 @@ export enum StencilOperation {
 /**
  * @public
  */
-export type StencilOperationName
-  = 'Zero'
-  | 'Keep'
-  | 'Replace'
-  | 'Increment'
-  | 'Decrement'
-  | 'Invert'
-  | 'IncrementWrap'
-  | 'DecrementWrap'
+export type StencilOperationName = keyof typeof StencilOperation
 const StencilOperationValueMap = Object.freeze<any>({
   Zero: 0,
   ZERO: 0,
@@ -728,37 +520,11 @@ const StencilOperationValueMap = Object.freeze<any>({
 export function valueOfStencilOperation(keyOrValue: StencilOperation | StencilOperationName): StencilOperation {
   return StencilOperationValueMap[keyOrValue]
 }
-const StencilOperationNameMap = Object.freeze<any>({
-  0: 'Zero',
-  ZERO: 'Zero',
-  Zero: 'Zero',
-  0x1E00: 'Keep',
-  KEEP: 'Keep',
-  Keep: 'Keep',
-  0x1E01: 'Replace',
-  REPLACE: 'Replace',
-  Replace: 'Replace',
-  0x1E02: 'Increment',
-  INCR: 'Increment',
-  Increment: 'Increment',
-  0x1E03: 'Decrement',
-  DECR: 'Decrement',
-  Decrement: 'Decrement',
-  0x150A: 'Invert',
-  INVERT: 'Invert',
-  Invert: 'Invert',
-  0x8507: 'IncrementWrap',
-  INCR_WRAP: 'IncrementWrap',
-  IncrementWrap: 'IncrementWrap',
-  0x8508: 'DecrementWrap',
-  DECR_WRAP: 'DecrementWrap',
-  DecrementWrap: 'DecrementWrap',
-})
 /**
  * @public
  */
 export function nameOfStencilOperation(keyOrValue: StencilOperation | StencilOperationName): StencilOperationName {
-  return StencilOperationNameMap[keyOrValue]
+  return StencilOperation[valueOfStencilOperation(keyOrValue)] as StencilOperationName
 }
 /**
  * @public
@@ -777,12 +543,7 @@ export enum PixelFormat {
 /**
  * @public
  */
-export type PixelFormatName
-  = 'Alpha'
-  | 'Luminance'
-  | 'LuminanceAlpha'
-  | 'RGB'
-  | 'RGBA'
+export type PixelFormatName = keyof typeof PixelFormat
 const PixelFormatValueMap = Object.freeze<any>({
   Alpha: 0x1906,
   ALPHA: 0x1906,
@@ -804,26 +565,11 @@ const PixelFormatValueMap = Object.freeze<any>({
 export function valueOfPixelFormat(keyOrValue: PixelFormat | PixelFormatName): PixelFormat {
   return PixelFormatValueMap[keyOrValue]
 }
-const PixelFormatNameMap = Object.freeze<any>({
-  0x1906: 'Alpha',
-  ALPHA: 'Alpha',
-  Alpha: 'Alpha',
-  0x1909: 'Luminance',
-  LUMINANCE: 'Luminance',
-  Luminance: 'Luminance',
-  0x190A: 'LuminanceAlpha',
-  LUMINANCE_ALPHA: 'LuminanceAlpha',
-  LuminanceAlpha: 'LuminanceAlpha',
-  0x1907: 'RGB',
-  RGB: 'RGB',
-  0x1908: 'RGBA',
-  RGBA: 'RGBA',
-})
 /**
  * @public
  */
 export function nameOfPixelFormat(keyOrValue: PixelFormat | PixelFormatName): PixelFormatName {
-  return PixelFormatNameMap[keyOrValue]
+  return PixelFormat[valueOfPixelFormat(keyOrValue)] as PixelFormatName
 }
 /**
  * @public
@@ -864,13 +610,7 @@ export enum PrimitiveType {
 /**
  * @public
  */
-export type PrimitiveTypeName
-  = 'PointList'
-  | 'LineList'
-  | 'LineStrip'
-  | 'TriangleList'
-  | 'TriangleStrip'
-  | 'TriangleFan'
+export type PrimitiveTypeName = keyof typeof PrimitiveType
 const PrimitiveTypeValueMap = Object.freeze<any>({
   PointList: 0x0000,
   POINTS: 0x0000,
@@ -897,31 +637,11 @@ const PrimitiveTypeValueMap = Object.freeze<any>({
 export function valueOfPrimitiveType(keyOrValue: PrimitiveType | PrimitiveTypeName): PrimitiveType {
   return PrimitiveTypeValueMap[keyOrValue]
 }
-const PrimitiveTypeNameMap = Object.freeze<any>({
-  0x0000: 'PointList',
-  POINTS: 'PointList',
-  PointList: 'PointList',
-  0x0001: 'LineList',
-  LINES: 'LineList',
-  LineList: 'LineList',
-  0x0003: 'LineStrip',
-  LINE_STRIP: 'LineStrip',
-  LineStrip: 'LineStrip',
-  0x0004: 'TriangleList',
-  TRIANGLES: 'TriangleList',
-  TriangleList: 'TriangleList',
-  0x0005: 'TriangleStrip',
-  TRIANGLE_STRIP: 'TriangleStrip',
-  TriangleStrip: 'TriangleStrip',
-  0x0006: 'TriangleFan',
-  TRIANGLE_FAN: 'TriangleFan',
-  TriangleFan: 'TriangleFan',
-})
 /**
  * @public
  */
 export function nameOfPrimitiveType(keyOrValue: PrimitiveType | PrimitiveTypeName): PrimitiveTypeName {
-  return PrimitiveTypeNameMap[keyOrValue]
+  return PrimitiveType[valueOfPrimitiveType(keyOrValue)] as PrimitiveTypeName
 }
 /**
  * @public
@@ -938,10 +658,7 @@ export enum TextureType {
 /**
  * @public
  */
-export type TextureTypeName
-  = 'Texture'
-  | 'Texture2D'
-  | 'TextureCube'
+export type TextureTypeName = keyof typeof TextureType
 const TextureTypeValueMap = Object.freeze<any>({
   Texture: 0x1702,
   TEXTURE: 0x1702,
@@ -959,22 +676,11 @@ const TextureTypeValueMap = Object.freeze<any>({
 export function valueOfTextureType(keyOrValue: TextureType | TextureTypeName): TextureType {
   return TextureTypeValueMap[keyOrValue]
 }
-const TextureTypeNameMap = Object.freeze<any>({
-  0x1702: 'Texture',
-  TEXTURE: 'Texture',
-  Texture: 'Texture',
-  0x0DE1: 'Texture2D',
-  TEXTURE_2D: 'Texture2D',
-  Texture2D: 'Texture2D',
-  0x8513: 'TextureCube',
-  TEXTURE_CUBE_MAP: 'TextureCube',
-  TextureCube: 'TextureCube',
-})
 /**
  * @public
  */
 export function nameOfTextureType(keyOrValue: TextureType | TextureTypeName): TextureTypeName {
-  return TextureTypeNameMap[keyOrValue]
+  return TextureType[valueOfTextureType(keyOrValue)] as TextureTypeName
 }
 /**
  * @public
@@ -991,10 +697,7 @@ export enum TextureWrapMode {
 /**
  * @public
  */
-export type TextureWrapModeName
-  = 'Repeat'
-  | 'Clamp'
-  | 'Mirror'
+export type TextureWrapModeName = keyof typeof TextureWrapMode
 const TextureWrapModeValueMap = Object.freeze<any>({
   Repeat: 0x2901,
   REPEAT: 0x2901,
@@ -1012,22 +715,11 @@ const TextureWrapModeValueMap = Object.freeze<any>({
 export function valueOfTextureWrapMode(keyOrValue: TextureWrapMode | TextureWrapModeName): TextureWrapMode {
   return TextureWrapModeValueMap[keyOrValue]
 }
-const TextureWrapModeNameMap = Object.freeze<any>({
-  0x2901: 'Repeat',
-  REPEAT: 'Repeat',
-  Repeat: 'Repeat',
-  0x812F: 'Clamp',
-  CLAMP_TO_EDGE: 'Clamp',
-  Clamp: 'Clamp',
-  0x8370: 'Mirror',
-  MIRRORED_REPEAT: 'Mirror',
-  Mirror: 'Mirror',
-})
 /**
  * @public
  */
 export function nameOfTextureWrapMode(keyOrValue: TextureWrapMode | TextureWrapModeName): TextureWrapModeName {
-  return TextureWrapModeNameMap[keyOrValue]
+  return TextureWrapMode[valueOfTextureWrapMode(keyOrValue)] as TextureWrapModeName
 }
 /**
  * @public
@@ -1047,13 +739,7 @@ export enum TextureFilter {
 /**
  * @public
  */
-export type TextureFilterName
-  = 'Point'
-  | 'Linear'
-  | 'PointMipPoint'
-  | 'LinearMipPoint'
-  | 'PointMipLinear'
-  | 'LinearMipLinear'
+export type TextureFilterName = keyof typeof TextureFilter
 const TextureFilterValueMap = Object.freeze<any>({
   Point: 0x2600,
   NEAREST: 0x2600,
@@ -1080,31 +766,11 @@ const TextureFilterValueMap = Object.freeze<any>({
 export function valueOfTextureFilter(keyOrValue: TextureFilter | TextureFilterName): TextureFilter {
   return TextureFilterValueMap[keyOrValue]
 }
-const TextureFilterNameMap = Object.freeze<any>({
-  0x2600: 'Point',
-  NEAREST: 'Point',
-  Point: 'Point',
-  0x2601: 'Linear',
-  LINEAR: 'Linear',
-  Linear: 'Linear',
-  0x2700: 'PointMipPoint',
-  NEAREST_MIPMAP_NEAREST: 'PointMipPoint',
-  PointMipPoint: 'PointMipPoint',
-  0x2701: 'LinearMipPoint',
-  LINEAR_MIPMAP_NEAREST: 'LinearMipPoint',
-  LinearMipPoint: 'LinearMipPoint',
-  0x2702: 'PointMipLinear',
-  NEAREST_MIPMAP_LINEAR: 'PointMipLinear',
-  PointMipLinear: 'PointMipLinear',
-  0x2703: 'LinearMipLinear',
-  LINEAR_MIPMAP_LINEAR: 'LinearMipLinear',
-  LinearMipLinear: 'LinearMipLinear',
-})
 /**
  * @public
  */
 export function nameOfTextureFilter(keyOrValue: TextureFilter | TextureFilterName): TextureFilterName {
-  return TextureFilterNameMap[keyOrValue]
+  return TextureFilter[valueOfTextureFilter(keyOrValue)] as TextureFilterName
 }
 /**
  * @public
@@ -1120,9 +786,7 @@ export enum ShaderType {
 /**
  * @public
  */
-export type ShaderTypeName
-  = 'VertexShader'
-  | 'FragmentShader'
+export type ShaderTypeName = keyof typeof ShaderType
 const ShaderTypeValueMap = Object.freeze<any>({
   VertexShader: 0x8B31,
   VERTEX_SHADER: 0x8B31,
@@ -1137,19 +801,11 @@ const ShaderTypeValueMap = Object.freeze<any>({
 export function valueOfShaderType(keyOrValue: ShaderType | ShaderTypeName): ShaderType {
   return ShaderTypeValueMap[keyOrValue]
 }
-const ShaderTypeNameMap = Object.freeze<any>({
-  0x8B31: 'VertexShader',
-  VERTEX_SHADER: 'VertexShader',
-  VertexShader: 'VertexShader',
-  0x8B30: 'FragmentShader',
-  FRAGMENT_SHADER: 'FragmentShader',
-  FragmentShader: 'FragmentShader',
-})
 /**
  * @public
  */
 export function nameOfShaderType(keyOrValue: ShaderType | ShaderTypeName): ShaderTypeName {
-  return ShaderTypeNameMap[keyOrValue]
+  return ShaderType[valueOfShaderType(keyOrValue)] as ShaderTypeName
 }
 /**
  * @public
@@ -1170,14 +826,7 @@ export enum DepthFormat {
 /**
  * @public
  */
-export type DepthFormatName
-  = 'None'
-  | 'DepthStencil'
-  | 'Depth16'
-  | 'Depth24'
-  | 'Depth32'
-  | 'Depth24Stencil8'
-  | 'Depth32Stencil8'
+export type DepthFormatName = keyof typeof DepthFormat
 const DepthFormatValueMap = Object.freeze<any>({
   None: 0,
   ZERO: 0,
@@ -1207,34 +856,11 @@ const DepthFormatValueMap = Object.freeze<any>({
 export function valueOfDepthFormat(keyOrValue: DepthFormat | DepthFormatName): DepthFormat {
   return DepthFormatValueMap[keyOrValue]
 }
-const DepthFormatNameMap = Object.freeze<any>({
-  0: 'None',
-  ZERO: 'None',
-  None: 'None',
-  0x84F9: 'DepthStencil',
-  DEPTH_STENCIL: 'DepthStencil',
-  DepthStencil: 'DepthStencil',
-  0x81A5: 'Depth16',
-  DEPTH_COMPONENT16: 'Depth16',
-  Depth16: 'Depth16',
-  0x81A6: 'Depth24',
-  DEPTH_COMPONENT24: 'Depth24',
-  Depth24: 'Depth24',
-  0x8CAC: 'Depth32',
-  DEPTH_COMPONENT32F: 'Depth32',
-  Depth32: 'Depth32',
-  0x88F0: 'Depth24Stencil8',
-  DEPTH24_STENCIL8: 'Depth24Stencil8',
-  Depth24Stencil8: 'Depth24Stencil8',
-  0x8CAD: 'Depth32Stencil8',
-  DEPTH32F_STENCIL8: 'Depth32Stencil8',
-  Depth32Stencil8: 'Depth32Stencil8',
-})
 /**
  * @public
  */
 export function nameOfDepthFormat(keyOrValue: DepthFormat | DepthFormatName): DepthFormatName {
-  return DepthFormatNameMap[keyOrValue]
+  return DepthFormat[valueOfDepthFormat(keyOrValue)] as DepthFormatName
 }
 /**
  * @public
@@ -1249,8 +875,7 @@ export enum StencilFormat {
 /**
  * @public
  */
-export type StencilFormatName
-  = 'Stencil8'
+export type StencilFormatName = keyof typeof StencilFormat
 const StencilFormatValueMap = Object.freeze<any>({
   Stencil8: 0x8D48,
   STENCIL_INDEX8: 0x8D48,
@@ -1262,16 +887,11 @@ const StencilFormatValueMap = Object.freeze<any>({
 export function valueOfStencilFormat(keyOrValue: StencilFormat | StencilFormatName): StencilFormat {
   return StencilFormatValueMap[keyOrValue]
 }
-const StencilFormatNameMap = Object.freeze<any>({
-  0x8D48: 'Stencil8',
-  STENCIL_INDEX8: 'Stencil8',
-  Stencil8: 'Stencil8',
-})
 /**
  * @public
  */
 export function nameOfStencilFormat(keyOrValue: StencilFormat | StencilFormatName): StencilFormatName {
-  return StencilFormatNameMap[keyOrValue]
+  return StencilFormat[valueOfStencilFormat(keyOrValue)] as StencilFormatName
 }
 /**
  * @public
@@ -1290,12 +910,7 @@ export enum LightType {
 /**
  * @public
  */
-export type LightTypeName
-  = 'None'
-  | 'Directional'
-  | 'Point'
-  | 'Spot'
-  | 'Box'
+export type LightTypeName = keyof typeof LightType
 const LightTypeValueMap = Object.freeze<any>({
   None: 0,
   0: 0,
@@ -1314,23 +929,11 @@ const LightTypeValueMap = Object.freeze<any>({
 export function valueOfLightType(keyOrValue: LightType | LightTypeName): LightType {
   return LightTypeValueMap[keyOrValue]
 }
-const LightTypeNameMap = Object.freeze<any>({
-  0: 'None',
-  None: 'None',
-  1: 'Directional',
-  Directional: 'Directional',
-  2: 'Point',
-  Point: 'Point',
-  3: 'Spot',
-  Spot: 'Spot',
-  4: 'Box',
-  Box: 'Box',
-})
 /**
  * @public
  */
 export function nameOfLightType(keyOrValue: LightType | LightTypeName): LightTypeName {
-  return LightTypeNameMap[keyOrValue]
+  return LightType[valueOfLightType(keyOrValue)] as LightTypeName
 }
 /**
  * @public

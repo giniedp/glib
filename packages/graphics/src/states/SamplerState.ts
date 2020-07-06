@@ -11,19 +11,6 @@ import {
 
 import { Device } from './../Device'
 
-/**
- * An object with a reference to a webgl texture
- * @public
- */
-export interface TextureLike {
-  handle: WebGLTexture
-  type: TextureType
-}
-
-function isTextureLike(it: any): it is TextureLike {
-  return it && it.handle instanceof WebGLTexture
-}
-
 const params: Array<keyof ISamplerState> = [
   'minFilter',
   'magFilter',
@@ -63,7 +50,7 @@ export type SamplerStateParams = Partial<ISamplerState>
 /**
  * @public
  */
-export class SamplerState implements ISamplerState {
+export abstract class SamplerState implements ISamplerState {
 
   /**
    * The default sampler state which is essentially the same as {@link SamplerState.PointClamp}
@@ -172,38 +159,6 @@ export class SamplerState implements ISamplerState {
   }
 
   /**
-   * Resolves sampler state parameters from a texture or a sampler state object
-   */
-  public static resolve<T>(device: Device, handle: WebGLSampler | TextureLike, out: T): T & SamplerStateParams
-  public static resolve(device: Device, handle: WebGLSampler | TextureLike, out: SamplerStateParams = {}): SamplerStateParams {
-    const gl = device.context as WebGL2RenderingContext
-    if (isTextureLike(handle)) {
-      gl.bindTexture(handle.type, handle.handle)
-      out.minFilter = gl.getTexParameter(handle.type, gl.TEXTURE_MIN_FILTER)
-      out.magFilter = gl.getTexParameter(handle.type, gl.TEXTURE_MAG_FILTER)
-      out.wrapU = gl.getTexParameter(handle.type, gl.TEXTURE_WRAP_S)
-      out.wrapV = gl.getTexParameter(handle.type, gl.TEXTURE_WRAP_T)
-      out.wrapW = gl.getTexParameter(handle.type, gl.TEXTURE_WRAP_R)
-      out.minLod = gl.getTexParameter(handle.type, gl.TEXTURE_MIN_LOD)
-      out.maxLod = gl.getTexParameter(handle.type, gl.TEXTURE_MAX_LOD)
-      out.compareMode = gl.getTexParameter(handle.type, gl.TEXTURE_COMPARE_MODE)
-      out.compareFunc = gl.getTexParameter(handle.type, gl.TEXTURE_COMPARE_FUNC)
-    } else if (handle) {
-      out.minFilter = gl.getSamplerParameter(handle, gl.TEXTURE_MIN_FILTER)
-      out.magFilter = gl.getSamplerParameter(handle, gl.TEXTURE_MAG_FILTER)
-      out.wrapU = gl.getSamplerParameter(handle, gl.TEXTURE_WRAP_S)
-      out.wrapV = gl.getSamplerParameter(handle, gl.TEXTURE_WRAP_T)
-      out.wrapW = gl.getSamplerParameter(handle, gl.TEXTURE_WRAP_R)
-      out.minLod = gl.getSamplerParameter(handle, gl.TEXTURE_MIN_LOD)
-      out.maxLod = gl.getSamplerParameter(handle, gl.TEXTURE_MAX_LOD)
-      out.compareMode = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_MODE)
-      out.compareFunc = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_FUNC)
-    }
-
-    return out
-  }
-
-  /**
    * Applies sampler state params that are safe for non power of two textures
    */
   public static fixNonPowerOfTwo(state: SamplerStateParams): SamplerStateParams {
@@ -233,30 +188,20 @@ export class SamplerState implements ISamplerState {
   /**
    * The graphics device
    */
-  public readonly device: Device
+  public abstract readonly device: Device
 
-  public get samplerHandle() {
-    return this.handle
-  }
-
-  public get textureHandle() {
-    return this.texture ? this.texture.handle : null
-  }
-
-  private $minFilter: number = TextureFilter.PointMipLinear
-  private $magFilter: number = TextureFilter.Point
-  private $wrapU: number = TextureWrapMode.Clamp
-  private $wrapV: number = TextureWrapMode.Clamp
-  private $wrapW: number = TextureWrapMode.Clamp
-  private $minLod: number = -1000
-  private $maxLod: number = 1000
-  private $compareMode: number = 0
-  private $compareFunc: number = CompareFunction.LessEqual
+  protected $minFilter: number = TextureFilter.PointMipLinear
+  protected $magFilter: number = TextureFilter.Point
+  protected $wrapU: number = TextureWrapMode.Clamp
+  protected $wrapV: number = TextureWrapMode.Clamp
+  protected $wrapW: number = TextureWrapMode.Clamp
+  protected $minLod: number = -1000
+  protected $maxLod: number = 1000
+  protected $compareMode: number = 0
+  protected $compareFunc: number = CompareFunction.LessEqual
 
   private hasChanged: boolean
   private changes: SamplerStateParams = {}
-  private handle: WebGLSampler = null
-  private texture: { type: number, handle: WebGLTexture } | null
 
   /**
    * @internal
@@ -408,31 +353,12 @@ export class SamplerState implements ISamplerState {
     }
   }
 
-  constructor(device: Device, texture?: { type: number, handle: WebGLTexture }) {
-    this.device = device
-    this.texture = texture
-    this.setup()
-    this.resolve()
-  }
-
   /**
    * Recreates the underlying sampler object if necessary
    */
-  public setup() {
-    const gl = this.device.context as WebGL2RenderingContext
-    if (this.texture) {
-      return
-    } else if (this.device.isWebGL2 && !gl.isSampler(this.handle)) {
-      this.handle = gl.createSampler()
-    }
-  }
+  public abstract setup(): this
 
-  public destroy() {
-    if (this.handle) {
-      (this.device.context as WebGL2RenderingContext).deleteSampler(this.handle)
-      this.handle = null
-    }
-  }
+  public abstract destroy(): this
 
   public assign(state: SamplerStateParams): this {
     for (const key of params) {
@@ -467,86 +393,14 @@ export class SamplerState implements ISamplerState {
     }
 
     const gl = this.device.context as WebGL2RenderingContext
-    const changes = this.changes
-
-    if (this.handle) {
-      if (changes.minFilter !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MIN_FILTER, this.minFilter)
-      }
-      if (changes.magFilter !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MAG_FILTER, this.magFilter)
-      }
-      if (changes.wrapU !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_WRAP_S, this.wrapU)
-      }
-      if (changes.wrapV !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_WRAP_T, this.wrapV)
-      }
-      if (changes.wrapW !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_WRAP_R, this.wrapW)
-      }
-      if (changes.minLod !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MIN_LOD, this.minLod)
-      }
-      if (changes.maxLod !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MAX_LOD, this.maxLod)
-      }
-      if (changes.compareMode !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_COMPARE_MODE, this.compareMode)
-      }
-      if (changes.compareFunc !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_COMPARE_FUNC, this.compareFunc)
-      }
-    } else if (this.texture) {
-      gl.bindTexture(this.texture.type, this.texture.handle)
-      const type = this.texture.type
-      if (changes.minFilter !== null) {
-        gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, this.minFilter)
-      }
-      if (changes.magFilter !== null) {
-        gl.texParameteri(type, gl.TEXTURE_MAG_FILTER, this.magFilter)
-      }
-      if (changes.wrapU !== null) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_S, this.wrapU)
-      }
-      if (changes.wrapV !== null) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_T, this.wrapV)
-      }
-      if (changes.wrapW !== null) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_R, this.wrapW)
-      }
-      if (changes.minLod !== null) {
-        gl.texParameteri(type, gl.TEXTURE_MIN_LOD, this.minLod)
-      }
-      if (changes.maxLod !== null) {
-        gl.texParameteri(type, gl.TEXTURE_MAX_LOD, this.maxLod)
-      }
-      if (changes.compareMode !== null) {
-        gl.texParameteri(type, gl.TEXTURE_COMPARE_MODE, this.compareMode)
-      }
-      if (changes.compareFunc !== null) {
-        gl.texParameteri(type, gl.TEXTURE_COMPARE_FUNC, this.compareFunc)
-      }
-    }
-
+    this.commitChanges(this.changes)
     this.clearChanges()
     return this
   }
 
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    if (this.handle) {
-      SamplerState.resolve(this.device, this.handle, this)
-    } else if (this.texture) {
-      SamplerState.resolve(this.device, this.texture, this)
-    }
-    this.clearChanges()
-    return this
-  }
+  public abstract commitChanges(changes: SamplerStateParams): this
 
-  private clearChanges() {
+  protected clearChanges() {
     this.hasChanged = false
     for (let key of params) {
       this.changes[key as any] = undefined

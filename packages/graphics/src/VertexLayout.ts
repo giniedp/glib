@@ -280,7 +280,7 @@ export class VertexLayout {
    * @param data - The data array
    * @param layoutOrType - The data layout information
    */
-  public static convertArrayToArrayBuffer(data: number[], layoutOrType: string | VertexLayout): ArrayBuffer {
+  public static convertArrayToBufferView(data: number[], layoutOrType: string | VertexLayout): ArrayBufferView {
     let layout: VertexLayout
     if (typeof layoutOrType === 'string') {
       layout = {
@@ -351,6 +351,6 @@ export class VertexLayout {
       }
     }
 
-    return result
+    return view
   }
 }

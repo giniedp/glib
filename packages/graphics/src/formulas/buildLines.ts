@@ -1,8 +1,8 @@
 import { Vec3 } from '@gglib/math'
-import { Buffer } from '../Buffer'
 import { Color } from '../Color'
 import { ModelBuilder } from '../ModelBuilder'
 import { ModelBuilderChannel } from '../ModelBuilderChannel'
+import { Buffer } from '../resources'
 
 /**
  * Builds lines to display vertex normal tangent and bitangent vectors

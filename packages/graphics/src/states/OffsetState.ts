@@ -1,5 +1,3 @@
-import { Device } from './../Device'
-
 const params: Array<keyof OffsetStateParams> = [
   'enable',
   'offsetFactor',
@@ -28,30 +26,18 @@ export type OffsetStateParams = Partial<IOffsetState>
  * @public
  */
 export class OffsetState implements IOffsetState {
-  /**
-   * The graphics device
-   */
-  public device: Device
 
-  private $enable: boolean = false
-  private $offsetFactor: number = 0
-  private $offsetUnits: number = 0
-  private $hasChanged: boolean = false
-  private $changes: OffsetStateParams = {}
+  protected $enable: boolean = false
+  protected $offsetFactor: number = 0
+  protected $offsetUnits: number = 0
+  protected $hasChanged: boolean = false
+  protected $changes: OffsetStateParams = {}
 
   /**
    * Indicates whether the state has changes which are not committed to the GPU
    */
   public get isDirty() {
     return this.$hasChanged
-  }
-
-  /**
-   * Instantiates the {@link OffsetState}
-   */
-  constructor(device: Device) {
-    this.device = device
-    this.resolve()
   }
 
   /**
@@ -114,17 +100,7 @@ export class OffsetState implements IOffsetState {
   public commit(state?: OffsetStateParams): this {
     if (state) { this.assign(state) }
     if (!this.$hasChanged) { return this }
-    const changes = this.$changes
-    const gl = this.device.context
-    if (changes.enable === true) {
-      gl.enable(gl.POLYGON_OFFSET_FILL)
-    }
-    if (changes.enable === false) {
-      gl.disable(gl.POLYGON_OFFSET_FILL)
-    }
-    if (changes.offsetFactor !== null || changes.offsetUnits !== null) {
-      gl.polygonOffset(this.offsetFactor, this.offsetUnits)
-    }
+    this.commitChanges(this.$changes)
     this.clearChanges()
     return this
   }
@@ -144,16 +120,11 @@ export class OffsetState implements IOffsetState {
     return out
   }
 
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    OffsetState.resolve(this.device, this)
-    this.clearChanges()
-    return this
+  protected commitChanges(changes: Partial<IOffsetState>) {
+
   }
 
-  private clearChanges() {
+  protected clearChanges() {
     this.$hasChanged = false
     for (let key of params) { this.$changes[key as any] = undefined }
   }
@@ -186,22 +157,6 @@ export class OffsetState implements IOffsetState {
       }
     }
     return result
-  }
-
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve(device: Device): IOffsetState
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve<T>(device: Device, out: T): T & IOffsetState
-  public static resolve(device: Device, out: OffsetStateParams = {}): IOffsetState {
-    const gl = device.context
-    out.enable = gl.getParameter(gl.POLYGON_OFFSET_FILL)
-    out.offsetFactor = gl.getParameter(gl.POLYGON_OFFSET_FACTOR)
-    out.offsetUnits = gl.getParameter(gl.POLYGON_OFFSET_UNITS)
-    return out as IOffsetState
   }
 
   /**

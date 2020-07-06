@@ -17,7 +17,7 @@ import {
 
 import {
   buildCube,
-  Device,
+  DeviceGL,
   Material,
   MaterialOptions,
   Model,
@@ -31,11 +31,11 @@ import {
 
 describe('content/loader/native', () => {
 
-  let device: Device
+  let device: DeviceGL
   let manager: ContentManager
 
   beforeEach(() => {
-    device = new Device()
+    device = new DeviceGL()
     manager = new ContentManager(device, {
       loader: new Pipeline(),
     })
@@ -62,7 +62,7 @@ describe('content/loader/native', () => {
   it('loads jpeg to Texture', (done) => {
     manager.loader.register(loadJpegToTextureOptions)
     manager.loader.register(loadTextureOptionsToTexture)
-    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture).then((result) => {
+    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D).then((result) => {
       expect(result instanceof Texture).toBe(true)
       expect(result.image instanceof Image).toBe(true)
       // expect(result.ready).toBe(false) // may be both, depends on cache
@@ -77,7 +77,7 @@ describe('content/loader/native', () => {
     manager.loader.register(loadJpegToHTMLImageElement)
     manager.loader.register(loadImageDataToTextureOptions)
     manager.loader.register(loadTextureOptionsToTexture)
-    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture).then((result) => {
+    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D).then((result) => {
       expect(result instanceof Texture).toBe(true)
       expect(result.ready).toBe(true)
       expect(result.image).toBeFalsy()

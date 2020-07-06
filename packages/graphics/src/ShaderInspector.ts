@@ -4,7 +4,7 @@ const regLayout = /^\s*layout\((.+)\)\s+/
 
 const isSamplerType = /sampler(2D|2DArray|2DArrayShadow|3D|Cube|CubeShadow)|[iu]?sampler(2D|3D|Cube|2DArray)/
 
-const storageMap: { [k: string]: keyof ShaderInspection} = {
+const storageMap: { [k: string]: keyof ShaderInspection } = {
   in: 'inputs',
   out: 'outputs',
   const: 'constants',
@@ -80,7 +80,6 @@ export interface ShaderInspection {
  * @public
  */
 export class ShaderInspector {
-
   public static formatInfoLog(log: string, source: string): string {
     if (!log) {
       return ''
@@ -110,7 +109,10 @@ export class ShaderInspector {
     return result.join('\n')
   }
 
-  public static inspectProgram(vertexShader: string, fragmentShader: string): ProgramInspection {
+  public static inspectProgram(
+    vertexShader: string,
+    fragmentShader: string,
+  ): ProgramInspection {
     const result: ProgramInspection = {
       inputs: {},
       uniforms: {},
@@ -163,7 +165,9 @@ export class ShaderInspector {
     return result
   }
 
-  public static fixTextureRegisters(uniforms: { [key: string]: ShaderObjectInfo }) {
+  public static fixTextureRegisters(uniforms: {
+    [key: string]: ShaderObjectInfo
+  }) {
     // map of used registers
     let used = []
     // uniforms without a valid register annotation
@@ -172,7 +176,9 @@ export class ShaderInspector {
     for (const key in uniforms) {
       if (uniforms.hasOwnProperty(key)) {
         const uniform = uniforms[key]
-        if (!uniform || !isSamplerType.test(uniform.type)) { continue }
+        if (!uniform || !isSamplerType.test(uniform.type)) {
+          continue
+        }
 
         const register = Number(uniform.register)
         if (isNaN(register)) {
@@ -189,7 +195,9 @@ export class ShaderInspector {
 
     for (let uniform of delayed) {
       for (let register in used) {
-        if (used[register]) { continue }
+        if (used[register]) {
+          continue
+        }
         uniform.register = register
         used[register] = true
         break
@@ -201,7 +209,10 @@ export class ShaderInspector {
     }
   }
 
-  public static inspectQualifiers(source: string|string[], result: ShaderInspection): any {
+  public static inspectQualifiers(
+    source: string | string[],
+    result: ShaderInspection,
+  ): any {
     result.constants = result.constants || {}
     result.attributes = result.attributes || {}
     result.uniforms = result.uniforms || {}
@@ -286,16 +297,18 @@ export class ShaderInspector {
     }
   }
 
-  public static inspectStructMembers(block: string, out: any= {}): any {
+  public static inspectStructMembers(block: string, out: any = {}): any {
     const expressions = block
-      .replace(/\s*\/\/.*\n/gi, '')  // remove comments
-      .replace(/\n/gi, '')           // remove new lines
+      .replace(/\s*\/\/.*\n/gi, '') // remove comments
+      .replace(/\n/gi, '') // remove new lines
       .trim()
       .split(';')
 
     for (let e of expressions) {
       let match = e.match(/\s*(\w+)\s+(\w+)\s*$/)
-      if (!match) { continue }
+      if (!match) {
+        continue
+      }
       out[match[2]] = {
         name: match[2],
         type: match[1],
@@ -307,7 +320,10 @@ export class ShaderInspector {
   /**
    *
    */
-  public static preprocess(source: string|string[], out: ShaderInspection): any {
+  public static preprocess(
+    source: string | string[],
+    out: ShaderInspection,
+  ): any {
     out.defines = out.defines || {}
     out.lines = out.lines || []
 
@@ -382,16 +398,28 @@ export class ShaderInspector {
     return defines
   }
 
-  public static evaluateIfExpression(expression: string, defines: any): boolean {
-    if (!expression) { return false }
+  public static evaluateIfExpression(
+    expression: string,
+    defines: any,
+  ): boolean {
+    if (!expression) {
+      return false
+    }
     // evaluates all 'defined(NAME)' macros
-    expression = expression.replace(/defined\s*\(?(.\w+)\)?/gi, (a: string, b: string) => {
-      if (b === 'false' || b === 'true') { return b }
-      return String(b in defines)
-    })
+    expression = expression.replace(
+      /defined\s*\(?(.\w+)\)?/gi,
+      (a: string, b: string) => {
+        if (b === 'false' || b === 'true') {
+          return b
+        }
+        return String(b in defines)
+      },
+    )
     // evaluates all 'CONSTANT' macros
     expression = expression.replace(/(\w+)/gi, (a: string, b: string) => {
-      if (b === 'false' || b === 'true') { return b }
+      if (b === 'false' || b === 'true') {
+        return b
+      }
       return defines[b]
     })
     // limit character set befor going into eval
@@ -410,21 +438,29 @@ export class ShaderInspector {
   /**
    *
    */
-  public static parseAnnotations(source: string|string[], out: any= {}): any {
+  public static parseAnnotations(
+    source: string | string[],
+    out: any = {},
+  ): any {
     // lines to process
     const lines = Array.isArray(source) ? source : getLines(source)
     for (const line of lines) {
       const match = line.match(/^(\s*)@(\w+)\s*(.*)(\s*)/)
-      if (!match) { continue }
+      if (!match) {
+        continue
+      }
       out[match[2]] = match[3]
     }
     return out
   }
 
-  public static fixStructUniforms(uniforms: any, structs: any, defines: { [key: string]: ShaderObjectInfo }): void {
+  public static fixStructUniforms(
+    uniforms: any,
+    structs: any,
+    defines: { [key: string]: ShaderObjectInfo },
+  ): void {
     let reg = /\s*(.*)\s*\[(.+)].*/
-    Object
-      .keys(uniforms)
+    Object.keys(uniforms)
       .map((key) => {
         const item = uniforms[key]
         return {
@@ -441,12 +477,14 @@ export class ShaderInspector {
         const match = data.match
 
         if (!struct) {
-          if (!match) { return }
+          if (!match) {
+            return
+          }
           let name: string = match[1]
           let count = Number(defines[match[2]] || match[2])
           for (let i = 0; i < count; i += 1) {
-            let ubinding = `${(item.binding || name)}${i}`
-            let uName = `${(name)}[${i}]`
+            let ubinding = `${item.binding || name}${i}`
+            let uName = `${name}[${i}]`
             uniforms[ubinding] = {
               name: uName,
               binfing: ubinding,
@@ -480,8 +518,8 @@ export class ShaderInspector {
 
           Object.keys(struct).forEach((field) => {
             for (let i = 0; i < count; i += 1) {
-              let ubinding = `${(item.binding || name)}${i}${field}`
-              let uName = `${(name)}[${i}].${field}`
+              let ubinding = `${item.binding || name}${i}${field}`
+              let uName = `${name}[${i}].${field}`
               uniforms[ubinding] = {
                 name: uName,
                 binding: ubinding,
@@ -491,11 +529,11 @@ export class ShaderInspector {
           })
         } else {
           delete uniforms[key]
-          uniforms[(item.binding || item.name)] = item
+          uniforms[item.binding || item.name] = item
 
           Object.keys(struct).forEach((field) => {
-            const ubinding = `${(item.binding || name)}${field}`
-            const uName = `${(name)}.${field}`
+            const ubinding = `${item.binding || name}${field}`
+            const uName = `${name}.${field}`
             uniforms[ubinding] = {
               name: uName,
               binding: ubinding,

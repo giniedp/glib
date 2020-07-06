@@ -1,8 +1,7 @@
 import { uuid } from '@gglib/utils'
 import { Device } from './Device'
+import { ShaderProgram, ShaderUniformValue } from './resources'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
-import { ShaderProgram } from './ShaderProgram'
-import { ShaderUniformValue } from './ShaderUniform'
 
 /**
  * Constructor options for {@link Material}

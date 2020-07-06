@@ -24,9 +24,9 @@ export interface ShaderFxTechnique {
  * @public
  */
 export interface ShaderFxPass {
-  name?: string,
-  vertexShader: string,
-  fragmentShader: string,
+  name?: string
+  vertexShader: string
+  fragmentShader: string
 }
 
 /**
@@ -45,7 +45,8 @@ export type ShaderFxIncludeSyncHandler = (includePath: string) => string
 export async function createShaderEffect(
   device: Device,
   doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeHandler): Promise<ShaderEffect> {
+  includeHandler?: ShaderFxIncludeHandler,
+): Promise<ShaderEffect> {
   return device.createEffect(await createShaderEffectOptions(doc, includeHandler))
 }
 
@@ -54,12 +55,17 @@ export async function createShaderEffect(
  */
 export async function createShaderEffectOptions(
   doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeHandler): Promise<ShaderEffectOptions> {
+  includeHandler?: ShaderFxIncludeHandler,
+): Promise<ShaderEffectOptions> {
   return {
     name: doc.name,
-    techniques: await processTechniques(doc, includeHandler || ((path) => {
-      throw new Error(`Unable to include '${path}'. Include handler is missing.`)
-    })),
+    techniques: await processTechniques(
+      doc,
+      includeHandler ||
+        ((path) => {
+          throw new Error(`Unable to include '${path}'. Include handler is missing.`)
+        }),
+    ),
   }
 }
 
@@ -68,14 +74,16 @@ async function processTechniques(
   includeHandler: ShaderFxIncludeHandler,
 ): Promise<ShaderTechniqueOptions[]> {
   const techniques = Array.isArray(doc.technique) ? doc.technique : [doc.technique]
-  return Promise.all(techniques
-    .filter((it) => !!it)
-    .map(async (it) => {
-      return {
-        name: it.name,
-        passes: await mapPasses(doc, it.pass, includeHandler),
-      }
-    }))
+  return Promise.all(
+    techniques
+      .filter((it) => !!it)
+      .map(async (it) => {
+        return {
+          name: it.name,
+          passes: await mapPasses(doc, it.pass, includeHandler),
+        }
+      }),
+  )
 }
 
 async function mapPasses(
@@ -84,7 +92,8 @@ async function mapPasses(
   includeHandler: ShaderFxIncludeHandler,
 ): Promise<ShaderPassOptions[]> {
   passes = (Array.isArray(passes) ? passes : [passes]).filter((it) => !!it)
-  return Promise.all(passes.map(async (it) => {
+  return Promise.all(
+    passes.map(async (it) => {
       return {
         name: it.name,
         program: await processProgram(
@@ -93,28 +102,30 @@ async function mapPasses(
           includeHandler,
         ),
       }
-    }))
+    }),
+  )
 }
 
 async function processProgram(vertexShader: string, fragmentShader: string, include: ShaderFxIncludeHandler) {
   // solve all preprocessor directives
-  return Promise.all([
-    processShader(vertexShader, include),
-    processShader(fragmentShader, include),
-  ]).then(([ vSource, fSource ]) => {
-    return {
-      vertexShader: vSource,
-      // attribute declaration is only allowed in vertex shader
-      fragmentShader: fSource.replace(/attribute.*;/g, ''),
-    }
-  })
+  return Promise.all([processShader(vertexShader, include), processShader(fragmentShader, include)]).then(
+    ([vSource, fSource]) => {
+      return {
+        vertexShader: vSource,
+        // attribute declaration is only allowed in vertex shader
+        fragmentShader: fSource.replace(/attribute.*;/g, ''),
+      }
+    },
+  )
 }
 
 async function processShader(source: string, include: ShaderFxIncludeHandler): Promise<string> {
-  return Promise.all(getLines(source).map((line) => {
-    const includeMatch = line.match(regInclude)
-    return includeMatch ? include(includeMatch[1]) : line
-  })).then((lines) => {
+  return Promise.all(
+    getLines(source).map((line) => {
+      const includeMatch = line.match(regInclude)
+      return includeMatch ? include(includeMatch[1]) : line
+    }),
+  ).then((lines) => {
     return lines.join(charNewLine)
   })
 }
@@ -125,7 +136,8 @@ async function processShader(source: string, include: ShaderFxIncludeHandler): P
 export function createShaderEffectSync(
   device: Device,
   doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeSyncHandler): ShaderEffect {
+  includeHandler?: ShaderFxIncludeSyncHandler,
+): ShaderEffect {
   return device.createEffect(createShaderEffectOptionsSync(doc, includeHandler))
 }
 
@@ -134,12 +146,17 @@ export function createShaderEffectSync(
  */
 export function createShaderEffectOptionsSync(
   doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeSyncHandler): ShaderEffectOptions {
+  includeHandler?: ShaderFxIncludeSyncHandler,
+): ShaderEffectOptions {
   return {
     name: doc.name,
-    techniques: processTechniquesSync(doc, includeHandler || ((path) => {
-      throw new Error(`Unable to include '${path}'. Include handler is missing.`)
-    })),
+    techniques: processTechniquesSync(
+      doc,
+      includeHandler ||
+        ((path) => {
+          throw new Error(`Unable to include '${path}'. Include handler is missing.`)
+        }),
+    ),
   }
 }
 
@@ -185,14 +202,19 @@ function processProgramSync(vertexShader: string, fragmentShader: string, includ
 }
 
 function processShaderSync(source: string, include: ShaderFxIncludeSyncHandler): string {
-  return getLines(source).map((line) => {
-    const includeMatch = line.match(regInclude)
-    return includeMatch ? include(includeMatch[1]) : line
-  }).join(charNewLine)
+  return getLines(source)
+    .map((line) => {
+      const includeMatch = line.match(regInclude)
+      return includeMatch ? include(includeMatch[1]) : line
+    })
+    .join(charNewLine)
 }
 
 const regInclude = /#include\s+<(.*)>/
 const charNewLine = '\n'
 function getLines(value: string): string[] {
-  return value.replace(/\r/g, '\n').replace(/\n+/g, '\n').split('\n')
+  return value
+    .replace(/\r/g, '\n')
+    .replace(/\n+/g, '\n')
+    .split('\n')
 }

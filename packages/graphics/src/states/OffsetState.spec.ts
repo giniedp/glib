@@ -1,15 +1,13 @@
-import {
-  Device,
-  OffsetState,
-} from '@gglib/graphics'
+import { DeviceGL } from '../webgl'
+import { OffsetStateGL } from '../webgl/states'
 import { OffsetStateParams } from './OffsetState'
 
 describe('glib/graphics/OffsetState', () => {
 
-  let device: Device
-  let stateA: OffsetState
-  let stateB: OffsetState
-  let stateC: OffsetState
+  let device: DeviceGL
+  let stateA: OffsetStateGL
+  let stateB: OffsetStateGL
+  let stateC: OffsetStateGL
   let paramsA: OffsetStateParams = {
     enable: false,
     offsetFactor: 1,
@@ -24,10 +22,10 @@ describe('glib/graphics/OffsetState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new Device()
-    stateA = new OffsetState(device).assign(paramsA)
-    stateB = new OffsetState(device).assign(paramsB)
-    stateC = new OffsetState(device)
+    device = new DeviceGL()
+    stateA = new OffsetStateGL(device).assign(paramsA)
+    stateB = new OffsetStateGL(device).assign(paramsB)
+    stateC = new OffsetStateGL(device)
   })
 
   describe(`get/set/change`, () => {

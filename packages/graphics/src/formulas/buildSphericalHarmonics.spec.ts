@@ -1,12 +1,12 @@
-import { buildSphericalHarmonics, Device, ModelBuilder } from '@gglib/graphics'
+import { buildSphericalHarmonics, DeviceGL, ModelBuilder } from '@gglib/graphics'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSphericalHarmonics', () => {
-    let device: Device
+    let device: DeviceGL
     let builder: ModelBuilder
 
     beforeEach(() => {
-      device = new Device()
+      device = new DeviceGL()
       builder = new ModelBuilder()
     })
 

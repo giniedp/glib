@@ -1,16 +1,19 @@
 // tslint:disable no-bitwise
+import { isString } from '@gglib/utils'
 
-import { isString, Log } from '@gglib/utils'
-
+import { PixelFormat, PrimitiveType, PrimitiveTypeName, ShaderType } from './enums'
 import {
-  BufferType,
-  PixelFormat,
-  PrimitiveType,
-  PrimitiveTypeName,
-  valueOfDataType,
-  valueOfPrimitiveType,
-} from './enums'
-
+  Buffer,
+  BufferOptions,
+  DepthBuffer,
+  DepthBufferOptions,
+  Shader,
+  ShaderOptions,
+  ShaderProgram,
+  ShaderProgramOptions,
+  Texture,
+  TextureOptions,
+} from './resources'
 import {
   BlendState,
   BlendStateParams,
@@ -25,142 +28,18 @@ import {
   ScissorStateParams,
   StencilState,
   StencilStateParams,
+  TextureUnitState,
   VertexAttribArrayState,
   ViewportState,
   ViewportStateParams,
 } from './states'
 
-import { DepthBuffer, DepthBufferOptions } from './DepthBuffer'
-import { FrameBuffer, FrameBufferOptions } from './FrameBuffer'
-import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
-import { Texture, TextureOptions } from './Texture'
-import { VertexLayout } from './VertexLayout'
-
-import { Buffer, BufferOptions } from './Buffer'
 import { Capabilities } from './Capabilities'
-import { Color, RGBA_FORMAT } from './Color'
+import { Color } from './Color'
 import { Model, ModelOptions } from './Model'
-import { ShaderProgram, ShaderProgramOptions } from './ShaderProgram'
+import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { SpriteBatch } from './SpriteBatch'
-import { TextureUnitState } from './states/TextureUnitState'
-
-/**
- * Determines whether webgl is supported
- * @public
- */
-export const supportsWebGL = typeof WebGLRenderingContext === 'function'
-
-/**
- * Determines whether webgl 2.0 is supported
- * @public
- */
-export const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
-
-/**
- * Options that will be passed to
- * {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/getContext | HTMLCanvasElement.getContext() }
- *
- * @public
- */
-export interface ContextAttributes {
-  /**
-   * Indicates if the canvas contains an alpha buffer.
-   */
-  alpha?: boolean,
-  /**
-   * Indicates that the drawing buffer has a depth buffer of at least 16 bits.
-   */
-  depth?: boolean,
-  /**
-   * Indicates that the drawing buffer has a stencil buffer of at least 8 bits.
-   */
-  stencil?: boolean,
-  /**
-   * Indicates whether or not to perform anti-aliasing.
-   */
-  antialias?: boolean,
-  /**
-   * Indicates that the page compositor will assume the drawing buffer contains colors with pre-multiplied alpha.
-   */
-  premultipliedAlpha?: boolean,
-  /**
-   * If true the buffers will not be cleared and will preserve their values until cleared or overwritten by the author.
-   */
-  preserveDrawingBuffer?: boolean
-}
-
-/**
- * Constructor options for the {@link Device}
- *
- * @public
- */
-export interface DeviceOptions {
-  /**
-   * Canvas element or selector
-   */
-  canvas?: string|HTMLCanvasElement,
-  /**
-   * Rendering context or a context type
-   */
-  context?: 'webgl'|'webgl2'|'experimental-webgl'|WebGLRenderingContext|WebGL2RenderingContext,
-  /**
-   * Context attributes
-   */
-  contextAttributes?: ContextAttributes,
-}
-
-/**
- * @public
- */
-export const DefaultContextAttributes = Object.freeze<ContextAttributes>({
-  alpha: true,
-  antialias: true,
-  depth: true,
-  premultipliedAlpha: true,
-  preserveDrawingBuffer: false, // TODO: does not work with sampler objects in chrome
-  stencil: true,
-})
-
-function getOrCreateCanvas(canvas?: string|HTMLCanvasElement): HTMLCanvasElement {
-  if (canvas instanceof HTMLCanvasElement) {
-    return canvas
-  }
-  if (isString(canvas)) {
-    const element = document.getElementById(canvas as string)
-    if (element instanceof HTMLCanvasElement) {
-      return element
-    } else {
-      throw new Error(`expected '${canvas}' to select a HTMLCanvasElement but got '${element}'`)
-    }
-  }
-  return document.createElement('canvas') as HTMLCanvasElement
-}
-
-function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceOptions): WebGLRenderingContext | WebGL2RenderingContext {
-  let context = options.context
-  const attributes = {
-    ...DefaultContextAttributes,
-    ...options.contextAttributes || {},
-  }
-
-  if (typeof context === 'string') {
-    // specific context is requested
-    return canvas.getContext(context, attributes) as any
-  } else if (context) {
-    return context
-  }
-
-  // apply fallback strategy
-  for (const name of ['webgl2', 'webgl', 'experimental-webgl']) {
-    try {
-      return canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
-    } catch (e) {
-      Log.e('[Device]', `${name} is not supported`)
-    }
-  }
-
-  throw Error('WebGL is not supported')
-}
+import { VertexLayout } from './VertexLayout'
 
 /**
  * Describes the Graphics Device
@@ -172,24 +51,32 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceOptions): 
  *
  * @public
  */
-export class Device {
+export abstract class Device<T = unknown> {
+  public static getOrCreateCanvas(canvas?: string | HTMLCanvasElement): HTMLCanvasElement {
+    if (canvas instanceof HTMLCanvasElement) {
+      return canvas
+    }
+    if (isString(canvas)) {
+      const element = document.getElementById(canvas as string)
+      if (element instanceof HTMLCanvasElement) {
+        return element
+      } else {
+        throw new Error(`expected '${canvas}' to select a HTMLCanvasElement but got '${element}'`)
+      }
+    }
+    return document.createElement('canvas') as HTMLCanvasElement
+  }
 
   /**
    * The html canvas element
    * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement | HTMLCanvasElement}
    */
-  public canvas: HTMLCanvasElement
+  public readonly canvas: HTMLCanvasElement
 
   /**
-   * The webgl rendering context.
-   *
-   * @remarks
-   * see
-   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext | WebGLRenderingContext}
-   * and
-   * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext | WebGL2RenderingContext}
+   * The rendering context.
    */
-  public context: WebGLRenderingContext | WebGL2RenderingContext
+  public readonly context: T
 
   /**
    * A collection of capabilities of the currently running graphics unit.
@@ -210,7 +97,7 @@ export class Device {
    * @remarks
    * The number of sampler states is limited by {@link Capabilities.maxTextureUnits}
    */
-  public readonly textureUnits: TextureUnitState[]
+  public readonly textureUnits: TextureUnitState[] = []
 
   /**
    * Gets a copy of the cull state parameters
@@ -286,12 +173,7 @@ export class Device {
   public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
       this.defaultTextureInstance = this.createTexture2D({
-        data: [
-          0x0F, 0x0F, 0x0F, 0xFF,
-          0x00, 0x00, 0x00, 0xFF,
-          0x00, 0x00, 0x00, 0xFF,
-          0x0F, 0x0F, 0x0F, 0xFF,
-        ],
+        data: [0x0f, 0x0f, 0x0f, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x0f, 0x0f, 0x0f, 0xff],
         width: 2,
         height: 2,
         pixelFormat: PixelFormat.RGBA,
@@ -301,258 +183,70 @@ export class Device {
     return this.defaultTextureInstance
   }
 
-  public get isWebGL2(): boolean {
-    return supportsWebGL2 && this.context instanceof WebGL2RenderingContext
-  }
+  protected abstract $indexBuffer: Buffer
+  protected abstract $vertexBuffer: Buffer
+  protected abstract $vertexBuffers: Buffer[]
+  protected abstract $program: ShaderProgram
+  protected abstract $cullState: CullState
+  protected abstract $blendState: BlendState
+  protected abstract $depthState: DepthState
+  protected abstract $offsetState: OffsetState
+  protected abstract $stencilState: StencilState
+  protected abstract $scissorState: ScissorState
+  protected abstract $viewportState: ViewportState
 
-  private $indexBuffer: Buffer
-  private $vertexBuffer: Buffer
-  private $vertexBuffers: Buffer[]
-  private $program: ShaderProgram
-  private quadIndexBuffer: Buffer
-  private quadVertexBuffer: Buffer
-  private quadVertexBufferFlipped: Buffer
+  protected quadIndexBuffer: Buffer
+  protected quadVertexBuffer: Buffer
+  protected quadVertexBufferFlipped: Buffer
 
-  private $cullState: CullState
-  private $blendState: BlendState
-  private $depthState: DepthState
-  private $offsetState: OffsetState
-  private $stencilState: StencilState
-  private $scissorState: ScissorState
-  private $viewportState: ViewportState
-  private $vertexAttribArrayState: VertexAttribArrayState
-  private registeredRenderTargets: Texture[] = []
-  private registeredDepthBuffers: DepthBuffer[] = []
-  private registeredFrameBuffers: FrameBuffer[] = []
+  protected $vertexAttribArrayState: VertexAttribArrayState
+  protected registeredDepthBuffers: DepthBuffer[] = []
 
-  private currentFrameBuffer: FrameBuffer
-  private customFrameBuffer: FrameBuffer
-  private customFrameBufferOptions: FrameBufferOptions = { textures: [], depthBuffer: null }
+  protected defaultTextureInstance: Texture
 
-  private defaultTextureInstance: Texture
-
-  /**
-   * Constructs a {@link Device}
-   */
-  constructor(options: DeviceOptions = {}) {
-
-    this.canvas = getOrCreateCanvas(options.canvas)
-    this.context = getOrCreateContext(this.canvas, options)
-    this.capabilities = new Capabilities(this)
-
-    this.$cullState = new CullState(this).commit(CullState.Default).resolve()
-    this.$blendState = new BlendState(this).commit(BlendState.Default).resolve()
-    this.$depthState = new DepthState(this).commit(DepthState.Default).resolve()
-    this.$offsetState = new OffsetState(this).commit(OffsetState.Default).resolve()
-    this.$stencilState = new StencilState(this).commit(StencilState.Default).resolve()
-    this.$scissorState = new ScissorState(this).commit(ScissorState.Default).resolve()
-    this.$viewportState = new ViewportState(this)
-    this.$vertexAttribArrayState = new VertexAttribArrayState(this)
-
-    this.textureUnits = []
-    for (let i = 0; i < Number(this.capabilities.maxTextureUnits); i++) {
-      this.textureUnits[i] = new TextureUnitState(this, i)
-    }
+  public init(): Promise<void> {
+    return Promise.resolve()
   }
 
   /**
    * Clears the color, depth and stencil buffers
    */
-  public clear(color?: number|number[]|Color, depth?: number, stencil?: number): Device {
-    let gl = this.context
-    let mask = 0
-
-    if (color instanceof Color) {
-      mask = mask | gl.COLOR_BUFFER_BIT
-      gl.clearColor(color.x, color.y, color.z, color.w)
-    } else if (typeof color === 'number') {
-      mask = mask | gl.COLOR_BUFFER_BIT
-      gl.clearColor(RGBA_FORMAT.x(color), RGBA_FORMAT.y(color), RGBA_FORMAT.z(color), RGBA_FORMAT.w(color))
-    } else if (color !== undefined) {
-      mask = mask | gl.COLOR_BUFFER_BIT
-      gl.clearColor(color[0], color[1], color[2], color[3])
-    }
-    if (depth != null) {
-      mask = mask | gl.DEPTH_BUFFER_BIT
-      gl.clearDepth(depth)
-    }
-    if (stencil != null) {
-      mask = mask | gl.STENCIL_BUFFER_BIT
-      gl.clearStencil(stencil)
-    }
-
-    if (mask) {
-      gl.clear(mask)
-    }
-    return this
-  }
-  /**
-   * Clears the color buffer
-   */
-  public clearColor(color: number|number[]|Color= 0xFFFFFFFF): Device {
-    let gl = this.context
-    let mask = gl.COLOR_BUFFER_BIT
-    if (color instanceof Color) {
-      gl.clearColor(color.x, color.y, color.z, color.w)
-    } else if (typeof color === 'number') {
-      gl.clearColor(RGBA_FORMAT.x(color), RGBA_FORMAT.y(color), RGBA_FORMAT.z(color), RGBA_FORMAT.w(color))
-    } else {
-      gl.clearColor(color[0], color[1], color[2], color[3])
-    }
-    gl.clear(mask)
-    return this
-  }
-  /**
-   * Clears the color and depth buffers
-   */
-  public clearColorDepth(color: number|number[]|Color= 0xFFFFFFFF, depth: number = 1): Device {
-    let gl = this.context
-    let mask = 0
-
-    if (color instanceof Color) {
-      mask = mask | gl.COLOR_BUFFER_BIT
-      gl.clearColor(color.x, color.y, color.z, color.w)
-    } else if (typeof color === 'number') {
-      mask = mask | gl.COLOR_BUFFER_BIT
-
-      gl.clearColor(RGBA_FORMAT.x(color), RGBA_FORMAT.y(color), RGBA_FORMAT.z(color), RGBA_FORMAT.w(color))
-    } else if (color !== undefined) {
-      mask = mask | gl.COLOR_BUFFER_BIT
-      gl.clearColor(color[0], color[1], color[2], color[3])
-    }
-    if (depth != null) {
-      mask = mask | gl.DEPTH_BUFFER_BIT
-      gl.clearDepth(depth)
-    }
-    if (mask) {
-      gl.clear(mask)
-    }
-    return this
-  }
-  /**
-   * Clears the depth buffer
-   */
-  public clearDepth(depth: number = 1): Device {
-    let gl = this.context
-    gl.clearDepth(depth)
-    gl.clear(gl.DEPTH_BUFFER_BIT)
-    return this
-  }
-  /**
-   * Clears the stencil buffer
-   */
-  public clearStencil(stencil: number = 0): Device {
-    let gl = this.context
-    gl.clearDepth(stencil)
-    gl.clear(gl.STENCIL_BUFFER_BIT)
-    return this
-  }
-  /**
-   * Clears the depth and stencil buffer
-   */
-  public clearDepthStencil(depth: number = 1, stencil: number = 0): Device {
-    let gl = this.context
-    gl.clearDepth(depth)
-    gl.clearDepth(stencil)
-    gl.clear(gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
-    return this
-  }
+  public abstract clear(color?: number | number[] | Color, depth?: number, stencil?: number): this
 
   /**
    * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
-   *
-   *
-   *
    */
-  public drawIndexedPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, elementOffset?: number, elementCount?: number): Device {
-    const iBuffer = this.$indexBuffer
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program
-    if (!iBuffer) {
-      throw new Error(`device.indexBuffer must be set before calling drawIndexedPrimitives()`)
-    }
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
-      throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawIndexedPrimitives()`)
-    }
-    if (!program) {
-      throw new Error(`device.program must be set before calling drawIndexedPrimitives()`)
-    }
+  public abstract drawIndexedPrimitives(
+    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    elementOffset?: number,
+    elementCount?: number,
+  ): this
 
-    const dataType = iBuffer.dataType
-    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
-
-    elementOffset = (elementOffset || 0) * iBuffer.stride
-    elementCount = elementCount || iBuffer.elementCount
-
-    this.bindAttribPointerAndLocation(vBuffer || vBuffers, program)
-    this.context.drawElements(type, elementCount, dataType, elementOffset)
-
-    return this
-  }
-
-  /**
-   * Renders multiple instances of the same geometry defined by current index buffer, indexing vertices in current vertex buffer.
-   */
-  public drawInstancedPrimitives(
-    instanceCount?: number, primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number,
-  ): Device {
-    const iBuffer = this.$indexBuffer
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program
-    if (!iBuffer) {
-      throw new Error(`device.indexBuffer must be set before calling drawInstancedPrimitives()`)
-    }
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
-      throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawInstancedPrimitives()`)
-    }
-    if (!program) {
-      throw new Error(`device.program must be set before calling drawInstancedPrimitives()`)
-    }
-
-    const dataType = iBuffer.dataType
-    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
-
-    offset = offset || 0
-    count = count || iBuffer.elementCount
-    instanceCount = instanceCount || 1
-
-    this.bindAttribPointerAndLocation(vBuffer || vBuffers, program);
-    (this.context as any).drawElementsInstanced(type, count, dataType, offset * iBuffer.stride, instanceCount)
-    return this
-  }
+  public abstract drawInstancedPrimitives(
+    instanceCount?: number,
+    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    offset?: number,
+    count?: number,
+  ): this
 
   /**
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
-  public drawPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number): Device {
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
-      throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawPrimitives()`)
-    }
-    if (!program) {
-      throw new Error(`device.program must be set before calling drawPrimitives()`)
-    }
-
-    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
-    count = count || (vBuffer || vBuffers[0]).elementCount
-    offset = offset || 0
-
-    this.bindAttribPointerAndLocation(vBuffer || vBuffers, program)
-    this.context.drawArrays(type, offset, count)
-    return this
-  }
+  public abstract drawPrimitives(
+    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    offset?: number,
+    count?: number,
+  ): this
 
   /**
    * Draws a full screen quad with the [0,0] texture coordinate starting at the bottom left.
    * @param flipY - if true, then the [0,0] texture coordinate starts in the top left.
    *
    */
-  public drawQuad(flipY?: boolean): Device {
-    let iBuffer = this.quadIndexBuffer || this.createIndexBuffer({
+  public drawQuad(flipY?: boolean): this {
+    let iBuffer =
+      this.quadIndexBuffer ||
+      this.createIndexBuffer({
         data: [0, 3, 1, 0, 2, 3],
         dataType: 'ushort',
       })
@@ -560,28 +254,22 @@ export class Device {
 
     let vBuffer
     if (flipY) {
-      vBuffer = this.quadVertexBufferFlipped || this.createVertexBuffer({
-        data: [
-          -1,  1, 0, 0, 0,
-            1,  1, 0, 1, 0,
-          -1, -1, 0, 0, 1,
-            1, -1, 0, 1, 1,
-        ],
-        layout: this.createVertexLayout('PositionTexture'),
-        dataType: 'float',
-      })
+      vBuffer =
+        this.quadVertexBufferFlipped ||
+        this.createVertexBuffer({
+          data: [-1, 1, 0, 0, 0, 1, 1, 0, 1, 0, -1, -1, 0, 0, 1, 1, -1, 0, 1, 1],
+          layout: this.createVertexLayout('PositionTexture'),
+          dataType: 'float',
+        })
       this.quadVertexBufferFlipped = vBuffer
     } else {
-      vBuffer = this.quadVertexBuffer || this.createVertexBuffer({
-        data: [
-          -1,  1, 0, 0, 1,
-            1,  1, 0, 1, 1,
-          -1, -1, 0, 0, 0,
-            1, -1, 0, 1, 0,
-        ],
-        layout: this.createVertexLayout('PositionTexture'),
-        dataType: 'float',
-      })
+      vBuffer =
+        this.quadVertexBuffer ||
+        this.createVertexBuffer({
+          data: [-1, 1, 0, 0, 1, 1, 1, 0, 1, 1, -1, -1, 0, 0, 0, 1, -1, 0, 1, 0],
+          layout: this.createVertexLayout('PositionTexture'),
+          dataType: 'float',
+        })
       this.quadVertexBuffer = vBuffer
     }
 
@@ -599,52 +287,11 @@ export class Device {
    *
    * @param ratio - The pixel ratio for retina displays
    */
-  public resize(pixelRatio: number= window.devicePixelRatio || 1): Device {
-    if (this.frameBuffer) {
-      throw new Error('can not perform a resize while a render target is still active. Unset the rendertarget before calling resize()')
-    }
-    let displayWidth  = Math.floor(this.canvas.clientWidth  * pixelRatio)
-    let displayHeight = Math.floor(this.canvas.clientHeight * pixelRatio)
-
-    // Check if the canvas is not the same size.
-    if (this.canvas.width  !== displayWidth ||
-        this.canvas.height !== displayHeight) {
-
-      // Make the canvas the same size
-      this.canvas.width  = displayWidth
-      this.canvas.height = displayHeight
-
-      let state = this.$viewportState
-      state.x = 0
-      state.y = 0
-      state.width = this.context.drawingBufferWidth
-      state.height = this.context.drawingBufferHeight
-      state.commit()
-    }
-
-    return this
-  }
-
-  public reset(): Device {
-    let ext = this.context.getExtension('WEBGL_lose_context')
-    if (ext) {
-      ext.loseContext() // trigger a context loss
-      ext.restoreContext() // restores the context
-    } else {
-      Log.l('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context')
-      // TODO:
-      // this.trigger('reset')
-    }
-    return this
-  }
-
-  public getBackBufferData() {
-    throw new Error('not supported')
-  }
-
-  public getRenderTargets() {
-    throw new Error('not supported')
-  }
+  public abstract resize(pixelRatio?: number): this
+  /**
+   *
+   */
+  public abstract reset(): this
 
   /**
    * Sets or un sets a single render target
@@ -656,77 +303,7 @@ export class Device {
   /**
    * Sets or un sets multiple render targets
    */
-  public setRenderTargets(
-    rt01?: Texture, rt02?: Texture, rt03?: Texture, rt04?: Texture,
-    rt05?: Texture, rt06?: Texture, rt07?: Texture, rt08?: Texture,
-    rt09?: Texture, rt10?: Texture, rt11?: Texture, rt12?: Texture,
-    rt13?: Texture, rt14?: Texture, rt15?: Texture, rt16?: Texture,
-  ): Device {
-    let opts = this.customFrameBufferOptions
-    opts.textures.length = arguments.length
-    let firstTexture: Texture = null
-    for (let i = 0; i < arguments.length; i++) {
-      let argument = arguments[i]
-      opts.textures[i] = argument
-      if (argument instanceof Texture) {
-        firstTexture = firstTexture || argument
-      }
-    }
-
-    // render targets are set to null
-    // unset the framebuffer
-    if (!firstTexture) {
-      this.frameBuffer = null
-      this.viewportState = {
-        x: 0,
-        y: 0,
-        width: this.context.drawingBufferWidth,
-        height: this.context.drawingBufferHeight,
-      }
-      return this
-    }
-
-    // There is at least one render target set.
-    // The first defines the depth buffer and the size of the frame buffer.
-
-    if (firstTexture.depthFormat) {
-      opts.depthBuffer = this.getSharedDepthBuffer(firstTexture)
-    } else {
-      opts.depthBuffer = null
-    }
-
-    // Reuse cached framebuffer
-    if (this.customFrameBuffer) {
-      this.customFrameBuffer.setup(opts)
-    } else {
-      this.customFrameBuffer = new FrameBuffer(this, opts)
-    }
-    this.frameBuffer = this.customFrameBuffer
-    this.viewportState = {
-      x: 0,
-      y: 0,
-      width: firstTexture.width,
-      height: firstTexture.height,
-    }
-    return this
-  }
-
-  /**
-   * Gets the currently active frame buffer
-   */
-  public get frameBuffer(): FrameBuffer {
-    return this.currentFrameBuffer
-  }
-  /**
-   * Sets and activates a frame buffer as the currently active frame buffer
-   */
-  public set frameBuffer(buffer: FrameBuffer) {
-    if (this.currentFrameBuffer !== buffer) {
-      let handle = buffer ? buffer.handle : null
-      this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle)
-      this.currentFrameBuffer = buffer
-    }
-  }
+  public abstract setRenderTargets(...targets: Texture[]): this
 
   /**
    * Sets multiple vertex buffers
@@ -742,140 +319,126 @@ export class Device {
   /**
    * Gets the currently active vertex buffer
    */
-  public get vertexBuffer(): Buffer {
-    return this.$vertexBuffer
-  }
+  public abstract get vertexBuffer(): Buffer
   /**
    * Sets and activates a buffer as the currently active vertex buffer
    */
-  public set vertexBuffer(buffer: Buffer) {
-    if (this.$vertexBuffer !== buffer) {
-      if (buffer && this.$vertexBuffers && this.$vertexBuffers.indexOf(buffer) === -1) {
-        throw new Error('vertexBuffer is not part of the vertexBuffers list')
-      }
-      this.context.bindBuffer(BufferType.VertexBuffer, buffer ? buffer.handle : null)
-      this.$vertexBuffer = buffer
-    }
-  }
-
+  public abstract set vertexBuffer(buffer: Buffer)
   /**
    * Gets the currently active index buffer
    */
-  public get indexBuffer(): Buffer {
-    return this.$indexBuffer
-  }
+  public abstract get indexBuffer(): Buffer
   /**
    * Sets and activates a buffer as the currently active index buffer
    */
-  public set indexBuffer(buffer: Buffer) {
-    if (this.$indexBuffer !== buffer) {
-      this.context.bindBuffer(BufferType.IndexBuffer, buffer ? buffer.handle : null)
-      this.$indexBuffer = buffer
-    }
-  }
+  public abstract set indexBuffer(buffer: Buffer)
 
   /**
    * Gets the currently active shader program
    */
-  public get program(): ShaderProgram {
-    return this.$program
-  }
+  public abstract get program(): ShaderProgram
   /**
    * Sets and activates a program as the currently active program
    */
-  public set program(program: ShaderProgram) {
-    if (this.$program !== program) {
-      let handle = program ? program.handle : null
-      this.context.useProgram(handle)
-      this.$program = program
-    }
-  }
+  public abstract set program(program: ShaderProgram)
 
+  /**
+   * Gets the current width of the drawing buffer
+   */
+  public abstract get drawingBufferWidth(): number
+  /**
+   * Gets the current height of the drawing buffer
+   */
+  public abstract get drawingBufferHeight(): number
   /**
    * Gets the aspect ratio of the drawing buffer
    */
-  public get drawingBufferAspectRatio(): number {
-    return this.context.drawingBufferWidth / this.context.drawingBufferHeight
-  }
-
-  private bindAttribPointerAndLocation(vBuffer: Buffer | Buffer[], program: ShaderProgram) {
-    if (Array.isArray(vBuffer)) {
-      program.inputs.forEach((attribute, name) => {
-        for (const buffer of vBuffer) {
-          const channel = buffer.layout[name]
-          if (channel) {
-            buffer.bind()
-            this.context.vertexAttribPointer(
-              attribute.location,
-              channel.elements,
-              valueOfDataType(channel.type),
-              !!attribute.normalize || !!channel.normalize,
-              buffer.stride,
-              channel.offset,
-            )
-            this.context.enableVertexAttribArray(attribute.location)
-            return
-          }
-        }
-        // tslint:disable-next-line
-        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.inputs.keys())}' but '${name}' is missing in vertex buffer.`)
-      })
-    } else {
-      program.inputs.forEach((attribute, name) => {
-        const channel = vBuffer.layout[name]
-        if (channel) {
-          vBuffer.bind()
-          this.context.vertexAttribPointer(
-            attribute.location,
-            channel.elements,
-            valueOfDataType(channel.type),
-            !!attribute.normalize || !!channel.normalize,
-            vBuffer.stride,
-            channel.offset,
-          )
-          this.context.enableVertexAttribArray(attribute.location)
-          return
-        }
-
-        // tslint:disable-next-line
-        throw new Error(`VertexBuffer is not compatible with Program. Required attributes are '${Array.from(program.inputs.keys())}' but '${name}' is missing in vertex buffer.`)
-      })
-    }
-    // enable attributes so that the vertex shader is actually able to use them
-    // this.$vertexAttribArrayState.commit(program.attributeLocations)
-  }
+  public abstract get drawingBufferAspectRatio(): number
 
   /**
-   * used internally when a render target is created
-   *
-   * @internal
+   * Creates a new Buffer of type IndexBuffer. Overrides the type option
+   * before it calls the Buffer constructor with given options.
    */
-  public registerRenderTarget(texture: Texture) {
-    let list = this.registeredRenderTargets
-    let index = list.indexOf(texture)
-    if (index >= 0) { return }
-    for (let i in list) {
-      if (list[i] == null) {
-        list[i] = texture
-        return
-      }
-    }
-    list.push(texture)
+  public abstract createIndexBuffer(options: BufferOptions): Buffer
+  /**
+   * Creates a new Buffer of type VertexBuffer. Overrides the type option
+   * before it calls the Buffer constructor with given options.
+   */
+  public abstract createVertexBuffer(options: BufferOptions): Buffer
+  /**
+   * Creates a new Shader
+   */
+  public abstract createShader(options: ShaderOptions): Shader
+  /**
+   *
+   */
+  public createVertexShader(options: Partial<ShaderOptions> = {}): Shader {
+    return this.createShader({
+      type: ShaderType.VertexShader,
+      ...options,
+    })
   }
+  /**
+   *
+   */
+  public createFragmentShader(options: Partial<ShaderOptions> = {}): Shader {
+    return this.createShader({
+      type: ShaderType.FragmentShader,
+      ...options,
+    })
+  }
+  /**
+   * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
+   */
+  public abstract createProgram(options: ShaderProgramOptions): ShaderProgram
+  /**
+   * Creates a new Texture. Calls the Texture constructor with given options.
+   */
+  public abstract createTexture(options?: TextureOptions): Texture
+  /**
+   * Creates a new Texture that can be used as a render target. Ensures that
+   * the depthFormat option is set and calls the Texture constructor.
+   */
+  public abstract createRenderTarget(options?: TextureOptions): Texture
+  /**
+   * Creates a new Texture of type Texture2D. Overrides the type option
+   * before it calls the Texture constructor with given options.
+   */
+  public abstract createTexture2D(options?: TextureOptions): Texture
+  /**
+   * Creates a new Texture of type TextureCube. Overrides the type option
+   * before it calls the Texture constructor with given options.
+   */
+  public abstract createTextureCube(options?: TextureOptions): Texture
+  /**
+   * Creates a new sampler state object
+   */
+  public abstract createSamplerState(options?: { texture?: Texture }): SamplerState
 
   /**
-   * used internally when a render target is destroyed
-   *
-   * @internal
+   * Creates a depth buffer
    */
-  public unregisterRenderTarget(texture: Texture) {
-    let list = this.registeredRenderTargets
-    let index = list.indexOf(texture)
-    if (index < 0) { return }
-    list[index] = null
-    if (list.length === (index + 1)) {
-      list.length = index
-    }
+  public abstract createDepthBuffer(options: DepthBufferOptions): DepthBuffer
+  /**
+   * Creates a new sprite batch.
+   */
+  public createSpriteBatch(): SpriteBatch {
+    return new SpriteBatch(this)
+  }
+  /**
+   * Creates a vertex layout object from name
+   */
+  public createVertexLayout(name: string): any {
+    return VertexLayout.create.apply(this, arguments)
+  }
+  /**
+   * Creates a new model. Calls the model constructor with given options.
+   */
+  public createModel(options: ModelOptions): Model {
+    return new Model(this, options)
+  }
+  public createEffect(options: ShaderEffectOptions): ShaderEffect {
+    return new ShaderEffect(this, options)
   }
 
   /**
@@ -886,7 +449,9 @@ export class Device {
   public registerDepthBuffer(buffer: DepthBuffer) {
     let list = this.registeredDepthBuffers
     let index = list.indexOf(buffer)
-    if (index >= 0) { return }
+    if (index >= 0) {
+      return
+    }
     for (let i in list) {
       if (list[i] == null) {
         list[i] = buffer
@@ -904,112 +469,14 @@ export class Device {
   public unregisterDepthBuffer(buffer: DepthBuffer) {
     let list = this.registeredDepthBuffers
     let index = list.indexOf(buffer)
-    if (index < 0) { return }
+    if (index < 0) {
+      return
+    }
     list[index] = null
-    if (list.length === (index + 1)) {
+    if (list.length === index + 1) {
       list.length = index
     }
   }
-
-  /**
-   * Creates a new Buffer of type IndexBuffer. Overrides the type option
-   * before it calls the Buffer constructor with given options.
-   */
-  public createIndexBuffer(options: BufferOptions): Buffer {
-    options.type = 'IndexBuffer'
-    options.dataType = options.dataType || 'ushort'
-    return new Buffer(this, options)
-  }
-
-  /**
-   * Creates a new Buffer of type VertexBuffer. Overrides the type option
-   * before it calls the Buffer constructor with given options.
-   */
-  public createVertexBuffer(options: BufferOptions): Buffer {
-    options.type = 'VertexBuffer'
-    return new Buffer(this, options)
-  }
-
-  /**
-   * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
-   */
-  public createProgram(options: ShaderProgramOptions): ShaderProgram {
-    let vSource = options.vertexShader
-    let fSource = options.fragmentShader
-
-    if (typeof vSource === 'string' && typeof fSource === 'string') {
-      if (vSource.startsWith('#') && vSource.indexOf('\n') < 0) {
-        vSource = document.getElementById(vSource.substr(1)).textContent
-        options.vertexShader = vSource
-      }
-      if (fSource.startsWith('#') && fSource.indexOf('\n') < 0) {
-        fSource = document.getElementById(fSource.substr(1)).textContent
-        options.fragmentShader = fSource
-      }
-    }
-
-    return new ShaderProgram(this, options)
-  }
-
-  /**
-   * Creates a new Texture. Calls the Texture constructor with given options.
-   */
-  public createTexture(options: TextureOptions): Texture {
-    return new Texture(this, options)
-  }
-
-  /**
-   * Creates a new Texture that can be used as a render target. Ensures that
-   * the depthFormat option is set and calls the Texture constructor.
-   */
-  public createRenderTarget(options: TextureOptions): Texture {
-    options.depthFormat = (options.depthFormat || 'None')
-    return new Texture(this, options)
-  }
-
-  /**
-   * Creates a new Texture of type Texture2D. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public createTexture2D(options: TextureOptions = {}): Texture {
-    options.type = 'Texture2D'
-    return new Texture(this, options)
-  }
-
-  /**
-   * Creates a new Texture of type TextureCube. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public createTextureCube(options: TextureOptions = {}): Texture {
-    options.type = 'TextureCube'
-    return new Texture(this, options)
-  }
-
-  /**
-   * Creates a new sprite batch.
-   */
-  public createSpriteBatch(): SpriteBatch {
-    return new SpriteBatch(this)
-  }
-
-  /**
-   * Creates a vertex layout object from name
-   */
-  public createVertexLayout(name: string): any {
-    return VertexLayout.create.apply(this, arguments)
-  }
-
-  /**
-   * Creates a new model. Calls the model constructor with given options.
-   */
-  public createModel(options: ModelOptions): Model {
-    return new Model(this, options)
-  }
-
-  public createEffect(options: ShaderEffectOptions): ShaderEffect {
-    return new ShaderEffect(this, options)
-  }
-
   public getSharedDepthBuffer(options: DepthBufferOptions) {
     // no depthFormat no buffer
     if (!options.depthFormat) {
@@ -1022,18 +489,27 @@ export class Device {
       }
     }
     // create and register a new depth buffer
-    let buffer = new DepthBuffer(this, {
+    let buffer = this.createDepthBuffer({
       width: options.width,
       height: options.height,
       depthFormat: options.depthFormat,
     })
+
     this.registerDepthBuffer(buffer)
     return buffer
   }
 
-  public unsetSamplersUsedAsAttachments() {
-    if (this.frameBuffer) {
-      this.frameBuffer.unsetSamplersUsedAsAttachments()
+  protected convertShaderOption<S>(input: string | S): string | S {
+    if (typeof input === 'string' && input.startsWith('#') && input.indexOf('\n') < 0) {
+      const element = document.getElementById(input.substr(1))
+      if (element) {
+        return element.textContent
+      }
     }
+    return input
+  }
+
+  protected set<K extends keyof this>(key: K, value: this[K]) {
+    (this as any)[key] = value
   }
 }

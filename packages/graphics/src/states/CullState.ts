@@ -8,8 +8,6 @@ import {
   valueOfFrontFace,
 } from './../enums'
 
-import { Device } from './../Device'
-
 const params: Array<keyof CullStateParams> = [
   'cullMode',
   'enable',
@@ -49,24 +47,12 @@ export type CullStateParams = Partial<ICullState>
  * @public
  */
 export class CullState implements CullStateParams {
-  /**
-   * The graphics device
-   */
-  public device: Device
 
-  private $frontFace: number = FrontFace.CounterClockWise
-  private $cullMode: number = CullMode.Back
-  private $enable: boolean = false
-  private $hasChanged: boolean = false
-  private $changes: CullStateParams = {}
-
-  /**
-   * Instantiates the {@link CullState}
-   */
-  constructor(device: Device) {
-    this.device = device
-    this.resolve()
-  }
+  protected $frontFace: number = FrontFace.CounterClockWise
+  protected $cullMode: number = CullMode.Back
+  protected $enable: boolean = false
+  protected $hasChanged: boolean = false
+  protected $changes: CullStateParams = {}
 
   public get isDirty() {
     return this.$hasChanged
@@ -144,29 +130,7 @@ export class CullState implements CullStateParams {
   public commit(state?: CullStateParams): this {
     if (state) { this.assign(state) }
     if (!this.$hasChanged) { return this }
-    const gl = this.device.context
-    const changes = this.$changes
-    if (changes.enable === true) {
-      gl.enable(gl.CULL_FACE)
-    }
-    if (changes.enable === false) {
-      gl.disable(gl.CULL_FACE)
-    }
-    if (changes.cullMode !== null) {
-      gl.cullFace(this.cullMode)
-    }
-    if (changes.frontFace !== null) {
-      gl.frontFace(this.frontFace)
-    }
-    this.clearChanges()
-    return this
-  }
-
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    CullState.resolve(this.device, this)
+    this.commitChanges(this.$changes)
     this.clearChanges()
     return this
   }
@@ -186,7 +150,11 @@ export class CullState implements CullStateParams {
     return out
   }
 
-  private clearChanges() {
+  protected commitChanges(changes: Partial<ICullState>) {
+    //
+  }
+
+  protected clearChanges() {
     this.$hasChanged = false
     for (let key of params) { this.$changes[key as any] = undefined }
   }
@@ -222,22 +190,6 @@ export class CullState implements CullStateParams {
       }
     }
     return result
-  }
-
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve(device: Device): ICullState
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve<T>(device: Device, out: T): T & ICullState
-  public static resolve(device: Device, out: CullStateParams= {}): ICullState {
-    const gl = device.context
-    out.frontFace = gl.getParameter(gl.FRONT_FACE)
-    out.enable = gl.getParameter(gl.CULL_FACE)
-    out.cullMode = gl.getParameter(gl.CULL_FACE_MODE)
-    return out as ICullState
   }
 
   /**

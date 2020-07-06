@@ -105,7 +105,7 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
     if (!vertices.has(key)) {
       vertices.set(key, builder.vertexCount)
       builder.addVertex(readVertex(data, ref, {
-        material: [mtl],
+        material: [mtl as any],
       }))
       if (ref.vn == null) {
         hasNormals = false

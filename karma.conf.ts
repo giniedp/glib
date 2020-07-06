@@ -29,6 +29,10 @@ module.exports = (config) => {
         base: 'Chrome',
         flags: ['--remote-debugging-port=9222'],
       },
+      Canary: {
+        base: 'ChromeCanary',
+        flags: ['--enable-unsafe-webgpu=true'],
+      },
     },
 
     proxies: {

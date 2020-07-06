@@ -1,4 +1,3 @@
-import { Device } from './../Device'
 import {
   CompareFunction,
   CompareFunctionOption,
@@ -104,46 +103,17 @@ export class DepthState implements IDepthState {
     return result
   }
 
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve(device: Device): IDepthState
-  /**
-   * Resolves the current state from the GPU
-   */
-  public static resolve<T>(device: Device, out: T): T & IDepthState
-  public static resolve(device: Device, out: DepthStateParams = {}): IDepthState {
-    const gl = device.context
-    out.enable = gl.getParameter(gl.DEPTH_TEST)
-    out.depthFunction = gl.getParameter(gl.DEPTH_FUNC)
-    out.depthWriteEnable = gl.getParameter(gl.DEPTH_WRITEMASK)
-    return out as IDepthState
-  }
-
-  /**
-   * The graphics device
-   */
-  public device: Device
-
-  private $enable: boolean = true
-  private $depthFunction: number = CompareFunction.LessEqual
-  private $depthWriteEnable: boolean = true
-  private $hasChanged: boolean
-  private $changes: DepthStateParams = {}
+  protected $enable: boolean = true
+  protected $depthFunction: number = CompareFunction.LessEqual
+  protected $depthWriteEnable: boolean = true
+  protected $hasChanged: boolean
+  protected $changes: DepthStateParams = {}
 
   /**
    * Indicates whether the state has changes which are not committed to the GPU
    */
   public get isDirty() {
     return this.$hasChanged
-  }
-
-  /**
-   * Instantiates the {@link DepthState}
-   */
-  constructor(device: Device) {
-    this.device = device
-    this.resolve()
   }
 
   /**
@@ -218,20 +188,7 @@ export class DepthState implements IDepthState {
     if (!this.$hasChanged) {
       return this
     }
-    const gl = this.device.context
-    const changes = this.$changes
-    if (changes.depthFunction != null) {
-      gl.depthFunc(changes.depthFunction)
-    }
-    if (changes.depthWriteEnable != null) {
-      gl.depthMask(changes.depthWriteEnable)
-    }
-    if (changes.enable === true) {
-      gl.enable(gl.DEPTH_TEST)
-    }
-    if (changes.enable === false) {
-      gl.disable(gl.DEPTH_TEST)
-    }
+    this.commitChanges(this.$changes)
     this.clearChanges()
     return this
   }
@@ -253,16 +210,11 @@ export class DepthState implements IDepthState {
     return out
   }
 
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    DepthState.resolve(this.device, this)
-    this.clearChanges()
-    return this
+  protected commitChanges(changes: Partial<IDepthState>) {
+    //
   }
 
-  private clearChanges() {
+  protected clearChanges() {
     this.$hasChanged = false
     for (const key of params) {
       this.$changes[key as any] = undefined

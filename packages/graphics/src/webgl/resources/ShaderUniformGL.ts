@@ -1,36 +1,11 @@
 // tslint:disable:no-bitwise
 
-import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
 import { copy } from '@gglib/utils'
-import { Device } from './Device'
-import { ShaderProgram } from './ShaderProgram'
-import { SamplerState, SamplerStateParams } from './states'
-import { Texture } from './Texture'
 
-/**
- * A union type combining all types that are supported by the {@link ShaderUniform}
- *
- * @public
- */
-export type ShaderUniformValue = string | boolean | number | ArrayLike<number> | Texture | IVec2 | IVec3 | IVec4 | IMat
-
-/**
- * @public
- */
-export interface ShaderUniformBinding<T extends ShaderUniformValue = ShaderUniformValue> {
-  /**
-   * The shader uniform (binding) name
-   */
-  name: string
-  /**
-   * The shader uniform type
-   */
-  type: string
-  /**
-   * The value to be set to bound uniform
-   */
-  value: T
-}
+import { ShaderUniform, ShaderUniformOptions } from '../../resources/ShaderUniform'
+import { SamplerState } from '../../states'
+import { DeviceGL } from '../DeviceGL'
+import { ShaderProgramGL } from '../resources'
 
 function parseArray(value: string) {
   let result: any = value.replace(/[\[\]]/g, '').split(',')
@@ -53,129 +28,31 @@ function makeVec4(data: number[]) {
 }
 
 /**
- * Constructor options for {@link ShaderUniform}
  * @public
  */
-export interface ShaderUniformOptions {
-  /**
-   * The original name of the uniform as it appears in the shader source code
-   *
-   * @remarks
-   * This is used to get the uniform location in the compiled program
-   */
-  name: string
-  /**
-   * The type of the uniform e.g. `float`, `vec2`, `vec3`, `mat4`
-   */
-  type: string
-  /**
-   * The binding name of the uniform by which the uniform will be accessible in the javascript world
-   *
-   * @remarks
-   * Bindings are defined in the shader source code by adding a comment above a uniform e.g.
-   *
-   * ```
-   * // @binding lightDirection
-   * uniform vec3 uLightDirection;
-   * ```
-   */
-  binding?: string
-  /**
-   * The default value of the uniform that will be set initially
-   *
-   * @remarks
-   * Default values are defined in the shader source code by adding a comment above a uniform e.g.
-   *
-   * ```glsl
-   * // @default [1, 1, 1]
-   * uniform vec3 uLightDirection;
-   * ```
-   */
-  default?: any
-  /**
-   * The sampler state preset name e.g. 'LinearClamp', 'LinearWrap', 'PointClamp' or 'PointWrap'
-   *
-   * @remarks
-   * Filters are defined in the shader source code by adding a comment above a uniform e.g.
-   *
-   * ```glsl
-   * // @filter LinearWrap
-   * uniform sampler2d uTexture
-   * ```
-   */
-  filter?: string
-  /**
-   * This is the sampler register index
-   *
-   * @remarks
-   * Register index is defined in the shader source code by adding a comment above a uniform e.g.
-   *
-   * ```glsl
-   * // @register 2
-   * uniform sampler2d uTexture;
-   * ```
-   */
-  register?: number
-}
-
-/**
- * @public
- */
-export class ShaderUniform {
+export class ShaderUniformGL extends ShaderUniform {
   /**
    * The graphics device
    */
-  public device: Device
+  public readonly device: DeviceGL
   /**
    * The rendering context
    */
-  public gl: WebGLRenderingContext
+  // public gl: WebGLRenderingContext
   /**
    * The shader program
    */
-  public program: ShaderProgram
-  /**
-   * Meta data and annotations of this uniform
-   */
-  public meta: any
-  /**
-   * The binding name of this uniform
-   */
-  public name: string
-  /**
-   * The type name of the uniform in the shader
-   */
-  public type: string
-  /**
-   * The web gl location
-   */
-  public location: WebGLUniformLocation
-  /**
-   * The default value
-   */
-  public defaultValue: any
-  /**
-   * The currently cached value
-   */
-  public cachedValue: any[] = []
-  public dirty: boolean = true
+  public readonly program: ShaderProgramGL
 
-  public set: (v: any, ...rest: any[]) => void
+  public readonly location: WebGLUniformLocation
 
-  /**
-   * The texture register index
-   */
-  public register: number
-  /**
-   * The texture sampler parameters
-   */
-  public filter: SamplerStateParams
+  private gl: WebGLRenderingContext
 
   /**
    * Instantiates the {@link ShaderUniform}
    */
-  constructor(program: ShaderProgram, options: ShaderUniformOptions) {
-
+  constructor(program: ShaderProgramGL, options: ShaderUniformOptions) {
+    super()
     this.device = program.device
     this.gl = this.device.context
 
@@ -236,74 +113,6 @@ export class ShaderUniform {
     if (this.defaultValue !== void 0) {
       this.set(this.defaultValue)
     }
-  }
-
-  private cacheX(x: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    cache.length = 1
-    return changed
-  }
-
-  private cacheXY(x: number | boolean, y: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    if (cache[1] !== y) {
-      cache[1] = y
-      changed = true
-    }
-    cache.length = 2
-    return changed
-  }
-
-  private cacheXYZ(x: number | boolean, y: number | boolean, z: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    if (cache[1] !== y) {
-      cache[1] = y
-      changed = true
-    }
-    if (cache[2] !== z) {
-      cache[2] = z
-      changed = true
-    }
-    cache.length = 3
-    return changed
-  }
-
-  private cacheXYZW(x: number | boolean, y: number | boolean, z: number | boolean, w: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    if (cache[1] !== y) {
-      cache[1] = y
-      changed = true
-    }
-    if (cache[2] !== z) {
-      cache[2] = z
-      changed = true
-    }
-    if (cache[3] !== w) {
-      cache[3] = w
-      changed = true
-    }
-    cache.length = 4
-    return changed
   }
 
   /**
@@ -545,28 +354,5 @@ export class ShaderUniform {
   public setMat4(value: { m: Float32List }, transpose: boolean) {
     this.cachedValue.length = 0
     this.gl.uniformMatrix4fv(this.location, !!transpose, value.m)
-  }
-
-  /**
-   * Binds a texture to this uniform
-   */
-  public setTexture(value: Texture) {
-    const device = this.device
-    const unit = device.textureUnits[this.register] || device.textureUnits[0]
-    this.setInt(unit.index)
-
-    // perform the update
-    // - for video textures this will update the playback state
-    // - for image textures this will update the ready state
-    if (value) {
-      value.update()
-    }
-    // as long as a texture is not ready to render use a fallback texture instead
-    if (!value || !value.ready) {
-      value = this.device.defaultTexture
-    }
-
-    unit.texture = value
-    unit.commit(this.filter)
   }
 }

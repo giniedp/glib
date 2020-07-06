@@ -1,9 +1,9 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
-import { Buffer, BufferOptions } from './Buffer'
 import { Device } from './Device'
 import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from './enums'
-import { ShaderProgram } from './ShaderProgram'
+import { Buffer, BufferOptions } from './resources/Buffer'
+import { ShaderProgram } from './resources/ShaderProgram'
 
 /**
  * Constructor options for {@link ModelMesh}
@@ -64,10 +64,6 @@ export class ModelMesh {
    */
   public readonly device: Device
   /**
-   * The rendering context
-   */
-  public readonly gl: WebGLRenderingContext | WebGL2RenderingContext
-  /**
    * The axis aligned bounding box containing the mesh in local space
    */
   public boundingBox: BoundingBox
@@ -98,7 +94,6 @@ export class ModelMesh {
 
   constructor(device: Device, params: ModelMeshOptions) {
     this.device = device
-    this.gl = device.context
 
     this.materialId = params.materialId || 0
     this.boundingBox = BoundingBox.convert(params.boundingBox)

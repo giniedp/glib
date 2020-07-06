@@ -1,12 +1,10 @@
 // tslint:disable max-classes-per-file
 import { IVec3 } from '@gglib/math'
-import { Buffer } from './Buffer'
 import { Color } from './Color'
 import { Device } from './Device'
 import { BufferUsage, PrimitiveType } from './enums'
-import { ShaderProgram } from './ShaderProgram'
+import { Buffer, ShaderProgram, Texture } from './resources'
 import { BlendState, BlendStateParams } from './states'
-import { Texture } from './Texture'
 import { VertexLayout } from './VertexLayout'
 
 import fs from './Particle.fs'
