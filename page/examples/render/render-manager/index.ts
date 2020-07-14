@@ -2,9 +2,9 @@ import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
 import { AutoMaterial, LightParams } from '@gglib/effects'
-import { buildPlane, buildSphere, CullState, DepthState, DeviceGL, flipWindingOrder, Model, ModelBuilder } from '@gglib/graphics'
+import { buildPlane, buildSphere, CullState, DepthState, flipWindingOrder, Model, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderStep, PostBloom, PostPixelate, RenderManager, SceneItemDrawable } from '@gglib/render'
+import { BasicRenderStep, PostBloom, PostPixelate, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // ### Setup the render manager
@@ -12,7 +12,7 @@ import { loop } from '@gglib/utils'
 // ---
 
 // Create the `Device` and `ContentManager` as usual
-const device = new DeviceGL({
+const device = createDevice({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 const content = new ContentManager(device)
@@ -21,10 +21,8 @@ const content = new ContentManager(device)
 // The render manager is responsible for managing render targets
 // and rendering scenes.
 const renderer = new RenderManager(device)
-// A scene is what we need next. Create one.
-const scene = renderer.addScene({
-  // We could have more than one scene. To identify them we must provide an id.
-  id: 0,
+
+const scene: Scene = {
   // The scene will be populated with renderable items.
   // For now it is an empty array. We will fill that later.
   items: [],
@@ -57,7 +55,16 @@ const scene = renderer.addScene({
     new PostBloom(device, { enabled: true }),
     new PostPixelate(device, { enabled: false }),
   ],
-})
+  views: [{
+    viewport: {
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      type: 'normalized'
+    }
+  }]
+}
 
 // ### Define the game logic
 //
@@ -80,7 +87,7 @@ loop((time, dt) => {
   updateObjects(time, dt)
   updateCamera(time, dt)
   renderer.update()
-  renderer.render()
+  renderer.render([scene])
 })
 
 // This function simply iterates over all known game objects

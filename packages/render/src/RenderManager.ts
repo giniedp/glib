@@ -12,7 +12,7 @@ import {
   Texture,
 } from '@gglib/graphics'
 import { Log } from '@gglib/utils'
-import { Scene, SceneOutput } from './Types'
+import { Scene, SceneOutput, SceneView } from './Types'
 import { UniformBinder } from './UniformBinder'
 
 /**
@@ -24,23 +24,12 @@ export interface RenderTargetRegistry {
   options: RenderTargetOptions
 }
 
-function pushIfEnabled(this: Scene[], scene: Scene) {
-  if (!scene.disabled) {
-    this.push(scene)
-  }
-}
-
-function compareSortKey(a: Scene, b: Scene) {
-  return a.sortKey < b.sortKey ? -1 : +1
-}
-
 /**
  * A utility class for managing render targets and rendering scenes
  *
  * @public
  */
 export class RenderManager {
-
   /**
    * The graphics device
    */
@@ -54,9 +43,13 @@ export class RenderManager {
    */
   public scene: Scene | null
   /**
+   * The view that is currently being rendered
+   */
+  public view: SceneView | null
+  /**
    * Collection of all registered scenes
    */
-  protected readonly scenes = new Map<any, Scene>()
+  // protected readonly scenes = new Map<any, Scene>()
   /**
    * SpriteBatch that is used to compose the results of all views into final image
    */
@@ -75,7 +68,11 @@ export class RenderManager {
    */
   public keepAliveFrames = 1
 
-  private readonly sceneOutputs = new Map<any, SceneOutput>()
+  private get currentViewId() {
+    return this.scene.views.indexOf(this.view)
+  }
+
+  private readonly sceneOutputs = new Map<Scene, SceneOutput[]>()
   private readonly toKill: RenderTargetRegistry[] = []
   private readonly toRender: Scene[] = []
   private readonly toPresent: Scene[] = []
@@ -93,65 +90,56 @@ export class RenderManager {
     this.spriteBatch = device.createSpriteBatch()
   }
 
-  /**
-   * Gets a scene by its id
-   *
-   * @param id - The scene id
-   */
-  public getScene(id: string | number) {
-    return this.scenes.get(id)
-  }
+  // /**
+  //  * Gets a scene by its id
+  //  *
+  //  * @param id - The scene id
+  //  */
+  // public getScene(id: string | number) {
+  //   return this.scenes.get(id)
+  // }
+
+  // /**
+  //  * Adds a scene for rendering
+  //  *
+  //  * @param scene - The scene to be rendered
+  //  */
+  // public addScene(scene: Scene): Scene {
+  //   if (scene.id == null) {
+  //     throw new Error(`id is missing`)
+  //   }
+  //   if (this.scenes.has(scene.id)) {
+  //     throw new Error(`id is already taken`)
+  //   }
+  //   if (scene.views == null) {
+  //     scene.views = []
+  //   }
+  //   if (scene.views.length === 0) {
+  //     scene.views.push({
+  //       viewport: {
+  //         type: 'normalized',
+  //         x: 0,
+  //         y: 0,
+  //         width: 1,
+  //         height: 1,
+  //       },
+  //     })
+  //   }
+  //   this.scenes.set(scene.id, scene)
+
+  //   return scene
+  // }
 
   /**
-   * Adds a scene for rendering
-   *
-   * @param scene - The scene to be rendered
+   * Releases resources that have been cached for the given scene
    */
-  public addScene(scene: Scene): Scene {
-    if (scene.id == null) {
-      throw new Error(`id is missing`)
-    }
-    if (this.scenes.has(scene.id)) {
-      throw new Error(`id is already taken`)
-    }
-    if (scene.viewport == null) {
-      scene.viewport = { type: 'normalized', x: 0, y: 0, width: 1, height: 1 }
-    }
-    this.scenes.set(scene.id, scene)
-
-    return scene
-  }
-
-  /**
-   * Removes a scene and releases associated resources
-   *
-   * @param idOrScene - The scene or its id to be removed
-   */
-  public removeScene(idOrScene: string | number | Scene) {
-    let scene = idOrScene as Scene
-    let output: SceneOutput
-    if (typeof idOrScene === 'number' || typeof idOrScene === 'string') {
-      scene = this.scenes.get(idOrScene)
-      output = this.sceneOutputs.get(idOrScene)
-    } else {
-      output = this.sceneOutputs.get(scene.id)
-    }
+  public releaseScene(scene: Scene) {
+    let output: SceneOutput[]
+    output = this.sceneOutputs.get(scene)
     if (output) {
-      this.releaseTarget(output.target)
-      this.sceneOutputs.delete(scene.id)
+      output.forEach((it) => this.releaseTarget(it.target))
+      this.sceneOutputs.delete(scene)
     }
-    if (scene) {
-      this.scenes.delete(scene.id)
-    }
-  }
-
-  /**
-   * Iterates through all scenes calling the callback
-   *
-   * @param fn - the callback to call for each scene
-   */
-  public eachScene(fn: (scene: Scene) => void, thisArg: any = this) {
-    this.scenes.forEach(fn, thisArg)
   }
 
   /**
@@ -209,7 +197,7 @@ export class RenderManager {
   }
 
   private static compareTargetOptions(a: RenderTargetOptions, b: RenderTargetOptions): boolean {
-    return (a.width === b.width) && (a.height === b.height) && (!!a.depthFormat === !!b.depthFormat)
+    return a.width === b.width && a.height === b.height && !!a.depthFormat === !!b.depthFormat
   }
 
   /**
@@ -236,33 +224,24 @@ export class RenderManager {
   }
 
   /**
-   * Detects active scenes sorts by priority and renders them all. Presents results on screen.
-   *
-   * @remarks
-   * Will only render scenes that don't have a custom tag
+   * Takes an array of scenes, renders which are not disabled and presents all non-offset views on screen.
    */
-  public render() {
+  public render(scenes: Scene[]) {
     this.toRender.length = 0
     this.toPresent.length = 0
     this.device.resize()
-    this.getEnabledScenes(this.toRender)
-    for (const scene of this.toRender) {
-      this.renderScene(scene)
-      if (!scene.offscreen) {
-        this.toPresent.push(scene)
+    for (const scene of scenes) {
+      if (!scene.disabled) {
+        this.toRender.push(scene)
+        if (!scene.offscreen) {
+          this.toPresent.push(scene)
+        }
       }
     }
+    for (const scene of this.toRender) {
+      this.renderScene(scene)
+    }
     this.presentScenes(this.toPresent)
-  }
-
-  /**
-   * Gets all enabled scenes sorted by their key
-   *
-   * @param out - the array to collect into
-   */
-  public getEnabledScenes(out: Scene[]) {
-    this.scenes.forEach(pushIfEnabled, out)
-    out.sort(compareSortKey)
   }
 
   /**
@@ -279,29 +258,39 @@ export class RenderManager {
       throw new Error('another scene is already rendering')
     }
 
-    const camera = scene.camera
-    if (camera) {
-      this.binder.updateCamera(camera.world, camera.view, camera.projection)
-    } else {
-      this.binder.updateCamera()
-    }
-    this.updateViewport(scene, target)
-    for (let step of scene.steps) {
-      if (step.setup) {
-        this.scene = scene
-        step.setup(this)
+    for (const view of scene.views) {
+      if (view.disabled) {
+        continue
       }
-    }
-    for (let step of scene.steps) {
-      if (step.render) {
-        this.scene = scene
-        step.render(this)
+
+      const camera = view.camera || scene.camera
+      if (camera) {
+        this.binder.updateCamera(camera.world, camera.view, camera.projection)
+      } else {
+        this.binder.updateCamera()
       }
-    }
-    for (let step of scene.steps) {
-      if (step.cleanup) {
-        this.scene = scene
-        step.cleanup(this)
+
+      this.updateViewport(scene, view, target)
+      for (let step of scene.steps) {
+        if (typeof step.setup === 'function') {
+          this.scene = scene
+          this.view = view
+          step.setup(this)
+        }
+      }
+      for (let step of scene.steps) {
+        if (typeof step.render === 'function') {
+          this.scene = scene
+          this.view = view
+          step.render(this)
+        }
+      }
+      for (let step of scene.steps) {
+        if (typeof step.cleanup === 'function') {
+          this.scene = scene
+          this.view = view
+          step.cleanup(this)
+        }
       }
     }
     this.scene = null
@@ -325,28 +314,22 @@ export class RenderManager {
     this.device.setRenderTarget(target)
     this.spriteBatch.begin(batchOptions || this.batchOptions)
     for (const scene of scenes) {
-      const output = this.sceneOutputs.get(scene.id)
-      if (output && output.target) {
-        this.spriteBatch
-          .draw(output.target)
-          .source(0, 0, output.target.width, output.target.height)
-          .flipY()
-          .destination(output.x, output.y, output.width, output.height)
+      const outputs = this.sceneOutputs.get(scene)
+      if (!outputs || !outputs.length) {
+        continue
+      }
+      for (const output of outputs) {
+        if (output && output.target) {
+          this.spriteBatch
+            .draw(output.target)
+            .source(0, 0, output.target.width, output.target.height)
+            .flipY()
+            .destination(output.x, output.y, output.width, output.height)
+        }
       }
     }
     this.spriteBatch.end()
     this.device.setRenderTarget(null)
-  }
-
-  public resolveLayout(scene: Scene, target?: Texture) {
-    const output = this.updateViewport(scene, target)
-    return {
-      x: output.x,
-      y: output.y,
-      width: output.width,
-      height: output.height,
-      aspect: output.width / output.height,
-    }
   }
 
   private stepHasBegun: boolean
@@ -362,18 +345,22 @@ export class RenderManager {
     }
     this.stepHasBegun = true
     const scene = this.scene
-    const output = this.sceneOutputs.get(scene.id)
+    const outputs = this.sceneOutputs.get(scene)
+    const output = outputs[this.currentViewId]
     let needsTarget = !output.target || output.target.width !== output.width || output.target.height !== output.height
 
+    // TODO: review this decision
     if (scene.steps.length === 1 && !output.target) {
-      // no need for a render target. Render directly to backbuffer
-      // TODO:
+      // if only one rendering step is active, we assume a basic
+      // ForwarRendering technique that goes directly into the backbuffer
       this.device.viewportState = output
       this.device.scissorState = {
         enable: true,
         ...output,
       }
     } else if (scene.steps.length > 1 && needsTarget) {
+      // otherwise we assume some kind of rendering stack that
+      // renders into a render target first which will be combined later
       if (output.target) {
         this.releaseTarget(output.target)
       }
@@ -399,7 +386,8 @@ export class RenderManager {
       throw new Error('each beginStep() call must be paired with an endStep() call.')
     }
     this.stepHasBegun = false
-    const output = this.sceneOutputs.get(this.scene.id)
+    const outputs = this.sceneOutputs.get(this.scene)
+    const output = outputs[this.currentViewId]
     if (!renderTarget || renderTarget === output.target) {
       return
     }
@@ -409,14 +397,17 @@ export class RenderManager {
     output.target = renderTarget
   }
 
-  private updateViewport(scene: Scene, target?: Texture) {
-    const output: SceneOutput = this.sceneOutputs.has(scene.id)
-      ? this.sceneOutputs.get(scene.id)
-      : {}
+  private updateViewport(scene: Scene, view: SceneView, target?: Texture) {
+    const viewId = scene.views.indexOf(view)
+    const outputs: SceneOutput[] = this.sceneOutputs.has(scene) ? this.sceneOutputs.get(scene) : []
+    const output = outputs[viewId] || {}
+
+    outputs[viewId] = output
+    this.sceneOutputs.set(scene, outputs)
 
     const w = target ? target.width : this.device.drawingBufferWidth
     const h = target ? target.height : this.device.drawingBufferHeight
-    const viewport = scene.viewport
+    const viewport = view.viewport
     if (!viewport) {
       output.x = 0
       output.y = 0
@@ -437,7 +428,6 @@ export class RenderManager {
       viewport.aspect = output.width / output.height
     }
 
-    this.sceneOutputs.set(scene.id, output)
     return output
   }
 }

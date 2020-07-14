@@ -190,9 +190,9 @@ export interface RenderStep {
  */
 export interface Scene {
   /**
-   * The unique identifier
+   * A use defined tag object
    */
-  id: string | number
+  tag?: any
   /**
    * The rendering priority key.
    *
@@ -212,59 +212,13 @@ export interface Scene {
    */
   offscreen?: boolean
   /**
-   * Render destination on screen or render target
-   */
-  viewport?: {
-    /**
-     * How the  `x`, `y`, `width` and `height` parameters should be interpreted
-     *
-     * @remarks
-     * When set to `pixels`, the parameters are directly used as pixel values.
-     *
-     * When set to `normalized`, the parameters are assumed to be in range [0:1]
-     *
-     * When missing `pixels` is assumed.
-     */
-    type?: 'normalized' | 'pixels'
-    /**
-     * X position on screen or render target
-     */
-    x: number
-    /**
-     * Y position on screen or render target
-     */
-    y: number
-    /**
-     * Width on screen or render target
-     */
-    width: number
-    /**
-     * Height on screen or render target
-     */
-    height: number
-    /**
-     * The aspect ratio
-     *
-     * @remarks
-     * This is calculated automatically each frame based on current canvas size (or render target).
-     * Thus this must not be provided manually when setting up the scene viewport.
-     */
-    aspect?: number,
-  }
-  /**
-   * The camera that is rendering this view
+   * The camera being used for rendering for any view without an own camera object
    *
    * @remarks
-   * If this is missing, the scene is not rendered even if it is enabled.
+   * If this is missing, any view without camera is not rendered even if it is enabled.
+   * This object is also used for view frustum culling
    */
   camera?: CameraData
-  /**
-   * The camera that is rendering this view
-   *
-   * @remarks
-   * If this is missing, the scene is not rendered even if it is enabled.
-   */
-  debugCamera?: CameraData
   /**
    * The items that are visible by this view
    */
@@ -277,6 +231,66 @@ export interface Scene {
    * The rendering steps
    */
   steps: RenderStep[]
+  /**
+   *
+   */
+  views: SceneView[]
+}
+
+export interface SceneView {
+  /**
+   * Indicates whether this viewport should be skipped for rendering
+   */
+  disabled?: boolean
+  /**
+   * The viewport area where this view should be rendered to
+   */
+  viewport: SceneViewport
+  /**
+   * The camera to be used to render this view
+   *
+   * @remarks
+   * If missing, the main Scene camera will be used
+   */
+  camera?: CameraData
+}
+
+export interface SceneViewport {
+  /**
+   * How the  `x`, `y`, `width` and `height` parameters should be interpreted
+   *
+   * @remarks
+   * When set to `pixels`, the parameters are directly used as pixel values.
+   *
+   * When set to `normalized`, the parameters are assumed to be in range [0:1]
+   *
+   * When missing `pixels` is assumed.
+   */
+  type?: 'normalized' | 'pixels'
+  /**
+   * X position on screen or render target
+   */
+  x: number
+  /**
+   * Y position on screen or render target
+   */
+  y: number
+  /**
+   * Width on screen or render target
+   */
+  width: number
+  /**
+   * Height on screen or render target
+   */
+  height: number
+  /**
+   * The aspect ratio
+   *
+   * @remarks
+   * This is calculated automatically each frame based on current canvas size (or render target).
+   * Thus this must not be provided manually when setting up the scene viewport.
+   */
+  aspect?: number
 }
 
 /**

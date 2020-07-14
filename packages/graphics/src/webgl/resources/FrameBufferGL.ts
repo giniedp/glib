@@ -9,7 +9,7 @@ import { TextureGL } from './TextureGL'
 export class FrameBufferGL extends FrameBuffer {
   public readonly device: DeviceGL
 
-  public handle: WebGLFramebuffer
+  public readonly handle: WebGLFramebuffer
 
   private colorAttachments: Texture[] = []
   private depthAttachment: DepthBuffer
@@ -46,7 +46,7 @@ export class FrameBufferGL extends FrameBuffer {
     let needsRebind = false
     // ensure framebuffer is created
     if (this.handle == null || !gl.isFramebuffer(this.handle)) {
-      this.handle = gl.createFramebuffer()
+      this.assign({ handle: gl.createFramebuffer() })
       needsRebind = true
     }
 
@@ -111,7 +111,7 @@ export class FrameBufferGL extends FrameBuffer {
   public destroy() {
     if (this.handle != null && this.device.context.isFramebuffer(this.handle)) {
       this.device.context.deleteFramebuffer(this.handle)
-      this.handle = null
+      this.assign({ handle: null })
     }
   }
 
@@ -161,5 +161,9 @@ export class FrameBufferGL extends FrameBuffer {
         }
       }
     }
+  }
+
+  private assign(options: Partial<FrameBufferGL>) {
+    Object.assign(this, options)
   }
 }

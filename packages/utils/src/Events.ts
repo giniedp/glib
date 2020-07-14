@@ -47,7 +47,7 @@ export class Events {
       context: context,
       ctx: context || this,
     })
-    return this
+    return () => this.off(name, callback)
   }
 
   /**

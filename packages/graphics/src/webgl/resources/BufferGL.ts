@@ -90,7 +90,7 @@ export class BufferGL extends Buffer {
       )
       this.$sizeInBytes = Math.min(data.byteLength - off, len)
     } else {
-      throw new Error(`not supported`)
+      throw new Error(`setData with srcByteOffset > 0 is not supported in WebGL1`)
     }
 
     this.$elementCount = this.sizeInBytes / this.stride
@@ -128,7 +128,7 @@ export class BufferGL extends Buffer {
         data,
       )
     } else {
-      throw new Error(`not supported`)
+      throw new Error(`setSubData with srcByteOffset > 0 is not supported in WebGL1`)
     }
     return this
   }
@@ -153,7 +153,7 @@ export class BufferGL extends Buffer {
         dstLength,
       )
     } else {
-      throw new Error(`not supported`)
+      throw new Error(`getBufferSubData is not supported in WebGL1`)
     }
 
     return this

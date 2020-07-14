@@ -41,6 +41,23 @@ export class RendererComponent implements OnInit, OnDraw {
 
   public manager: RenderManager
   public cullVisitor: CullVisitor
+  public scenes: Scene[] = []
+
+  /**
+   * Gets the default scene (scene at index `0`)
+   */
+  public get scene() {
+    this.ensureSceneValidity()
+    return this.scenes[0]
+  }
+
+  /**
+   * Gets the default view (view at index `0`) of default scene
+   */
+  public get view() {
+    this.ensureSceneValidity()
+    return this.scene.views[0]
+  }
 
   public constructor(options: RendererComponentOptions = {}) {
     this.manager = getOption(options, 'manager', null)
@@ -49,23 +66,53 @@ export class RendererComponent implements OnInit, OnDraw {
 
   public onInit() {
     this.manager = this.manager || new RenderManager(this.device)
-    this.manager.addScene({
-      id: 0,
-      steps: [new BasicRenderStep()],
-      items: [],
-      lights: [],
-    })
+    this.ensureSceneValidity(0)
   }
 
   public onDraw() {
-    this.manager.eachScene(this.cullScene, this)
+    for (const scene of this.scenes) {
+      if (!scene.disabled) {
+        this.cullVisitor.run(this.entity, scene)
+      }
+    }
     this.manager.update()
     this.manager.binder.updateTime(this.time.game.totalMs, this.time.game.elapsedMs)
-    this.manager.render()
+    this.manager.render(this.scenes)
   }
 
-  private cullScene(scene: Scene) {
-    this.cullVisitor.run(this.entity, scene)
+  public addScene<T extends Scene>(scene: T) {
+    this.scenes.push(scene)
+  }
+
+  private ensureSceneValidity(index: number = 0, view: number = 0) {
+    if (!this.scenes[index]) {
+      this.scenes[index] = {
+        steps: [new BasicRenderStep()],
+        items: [],
+        lights: [],
+        views: [],
+      }
+    }
+    if (!this.scenes[index].views[view]) {
+      this.scenes[index].views[view] = {
+        viewport: {
+          x: 0,
+          y: 0,
+          width: 1,
+          height: 1,
+          type: 'normalized',
+        }
+      }
+    }
+    if (!this.scenes[index].views[view].viewport) {
+      this.scenes[index].views[view].viewport = {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        type: 'normalized',
+      }
+    }
   }
 }
 
@@ -80,14 +127,15 @@ export class BruteForceCullVisitor implements CullVisitor {
     this.scene = scene
     scene.items.length = 0
     scene.lights.length = 0
-    if (!scene.camera) {
+    const camera = scene.camera || scene.views[0]?.camera
+    if (!camera) {
       return
     }
-    if (scene.camera.viewProjection) {
-      this.frustum.update(scene.camera.viewProjection)
+    if (camera.viewProjection) {
+      this.frustum.update(camera.viewProjection)
     } else {
-      this.frustum.matrix.initFrom(scene.camera.view)
-      this.frustum.matrix.premultiply(scene.camera.projection)
+      this.frustum.matrix.initFrom(camera.view)
+      this.frustum.matrix.premultiply(camera.projection)
       this.frustum.update()
     }
 
@@ -135,16 +183,16 @@ export class SpatialCullVisitor implements CullVisitor {
     scene.lights.length = 0
     this.entities.length = 0
     this.scene = scene
-
-    if (!scene.camera) {
+    const camera = scene.camera || scene.views[0]?.camera
+    if (!camera) {
       return
     }
 
-    if (scene.camera.viewProjection) {
-      this.frustum.update(scene.camera.viewProjection)
+    if (camera.viewProjection) {
+      this.frustum.update(camera.viewProjection)
     } else {
-      this.frustum.matrix.initFrom(scene.camera.view)
-      this.frustum.matrix.premultiply(scene.camera.projection)
+      this.frustum.matrix.initFrom(camera.view)
+      this.frustum.matrix.premultiply(camera.projection)
       this.frustum.update()
     }
     node.getService(SpatialSystemComponent).testFrustum(this.frustum, this.entities)

@@ -114,7 +114,8 @@ export class BasicRenderStep implements RenderStep {
   public render(manager: RenderManager) {
     const binder = manager.binder
     const scene = manager.scene
-    const cam = scene.debugCamera || scene.camera
+    const view = manager.view
+    const cam = view.camera || scene.camera
     if (!cam) {
       return
     }

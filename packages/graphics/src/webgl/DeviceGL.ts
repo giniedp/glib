@@ -1,6 +1,6 @@
-// tslint:disable no-bitwise
 
-import { Log } from '@gglib/utils'
+
+import { Log, getOrCreateCanvas } from '@gglib/utils'
 
 import { BufferType, PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
 import {
@@ -58,7 +58,7 @@ export const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
  *
  * @public
  */
-export interface DeviceOptions {
+export interface DeviceGLOptions {
   /**
    * Canvas element or selector
    */
@@ -70,24 +70,24 @@ export interface DeviceOptions {
   /**
    * Context attributes
    */
-  contextAttributes?: WebGLContextAttributes
+  contextAttributes?: WebGLContextAttributes & { xrCompatible?: boolean }
 }
 
 /**
  * @public
  */
-export const DefaultContextAttributes = Object.freeze<WebGLContextAttributes>({
+export const DefaultContextAttributes = Object.freeze<WebGLContextAttributes & { xrCompatible?: boolean }>({
   alpha: true,
   antialias: true,
   depth: true,
   premultipliedAlpha: true,
-  preserveDrawingBuffer: false, // TODO: does not work with sampler objects in chrome
+  preserveDrawingBuffer: true, // TODO: does not work with sampler objects in chrome
   stencil: true,
 })
 
 function getOrCreateContext(
   canvas: HTMLCanvasElement,
-  options: DeviceOptions,
+  options: DeviceGLOptions,
 ): WebGLRenderingContext | WebGL2RenderingContext {
   let context = options.context
   const attributes = {
@@ -159,19 +159,31 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   protected $viewportState: ViewportStateGL
 
   protected currentFrameBuffer: FrameBufferGL
-  protected customFrameBuffer: FrameBufferGL
-  protected customFrameBufferOptions: FrameBufferOptions = {
+  protected reusableFrameBuffer: FrameBufferGL
+  protected reusableFrameBufferOptions: FrameBufferOptions = {
     textures: [],
     depthBuffer: null,
   }
 
+  public get backBuffer(): FrameBufferGL {
+    return this.customFrameBuffer
+  }
+
+  public set backBuffer(value: FrameBufferGL) {
+    if (this.customFrameBuffer) {
+      this.customFrameBuffer.destroy()
+    }
+    this.customFrameBuffer = value
+  }
+  private customFrameBuffer: FrameBufferGL
+
   /**
    * Constructs a {@link Device}
    */
-  constructor(options: DeviceOptions = {}) {
+  constructor(options: DeviceGLOptions = {}) {
     super()
 
-    this.canvas = Device.getOrCreateCanvas(options.canvas)
+    this.canvas = getOrCreateCanvas(options.canvas)
     this.context = getOrCreateContext(this.canvas, options)
     this.capabilities = new Capabilities(this)
 
@@ -385,7 +397,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    */
   public setRenderTargets(...targets: Texture[]): this
   public setRenderTargets(): this {
-    let opts = this.customFrameBufferOptions
+    const opts = this.reusableFrameBufferOptions
     opts.textures.length = arguments.length
     let firstTexture: Texture = null
     for (let i = 0; i < arguments.length; i++) {
@@ -399,7 +411,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     // render targets are set to null
     // unset the framebuffer
     if (!firstTexture) {
-      this.frameBuffer = null
+      this.frameBuffer = this.customFrameBuffer
       this.viewportState = {
         x: 0,
         y: 0,
@@ -419,12 +431,12 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     }
 
     // Reuse cached framebuffer
-    if (this.customFrameBuffer) {
-      this.customFrameBuffer.init(opts)
+    if (this.reusableFrameBuffer) {
+      this.reusableFrameBuffer.init(opts)
     } else {
-      this.customFrameBuffer = new FrameBufferGL(this, opts)
+      this.reusableFrameBuffer = new FrameBufferGL(this, opts)
     }
-    this.frameBuffer = this.customFrameBuffer
+    this.frameBuffer = this.reusableFrameBuffer
     this.viewportState = {
       x: 0,
       y: 0,

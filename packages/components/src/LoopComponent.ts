@@ -191,17 +191,39 @@ export class LoopComponent {
    */
   public run() {
     if (!this.isRunning) {
-      this.frameId = 0
-      this.tick()
+      this.schedule()
     }
   }
 
   /**
    * Stops the loop. A pending animation request is immediately cancelled.
+   *
+   * @returns true if the loop was running and has been stopped
    */
   public stop() {
+    const wasRunning = this.isRunning
     this.cancelAnimationFrame(this.frameId)
     this.frameId = null
+    return wasRunning
+  }
+
+  public installAnimationFrame(options: {
+    requestAnimationFrame?: (fn: FrameRequestCallback) => number
+    cancelAnimationFrame?: (id: number) => void
+  }) {
+    const wasRunning = this.stop()
+    this.requestAnimationFrame = getOption(options, 'requestAnimationFrame', this.requestAnimationFrame)
+    this.cancelAnimationFrame = getOption(options, 'cancelAnimationFrame', this.cancelAnimationFrame)
+    if (wasRunning) {
+      this.schedule()
+    }
+  }
+
+  public uninstallAnimationFrame() {
+    this.installAnimationFrame({
+      requestAnimationFrame,
+      cancelAnimationFrame
+    })
   }
 
   private readonly tick = () => {
@@ -210,8 +232,13 @@ export class LoopComponent {
     this.timeElapsed += dt
     this.consumeTime()
     if (this.isRunning) {
-      this.frameId = this.requestAnimationFrame(this.tick)
+      this.schedule()
     }
+  }
+
+  private schedule() {
+    this.cancelAnimationFrame(this.frameId)
+    this.frameId = this.requestAnimationFrame(this.tick)
   }
 
   protected consumeTime() {

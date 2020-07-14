@@ -1,6 +1,6 @@
 import { ContentManager, IManagerOptions } from '@gglib/content'
 import { Entity } from '@gglib/ecs'
-import { Device, DeviceGL, DeviceOptions } from '@gglib/graphics'
+import { Device, DeviceGLOptions, DeviceGPUOptions, createDevice } from '@gglib/graphics'
 
 import {
   FpsComponent,
@@ -18,7 +18,7 @@ export interface CreateGameOptions {
   /**
    * The graphics device or options for the device constructor
    */
-  device: Device | DeviceOptions
+  device: Device | DeviceGLOptions | DeviceGPUOptions
 
   /**
    * An instance of the content manager or options for the constructor
@@ -50,7 +50,7 @@ export interface CreateGameOptions {
 export function createGame(options: CreateGameOptions, ...tap: Array<(entity: Entity) => void> ) {
   const device = options.device instanceof Device
     ? options.device
-    : new DeviceGL(options.device)
+    : createDevice(options.device)
 
   const content = options.content instanceof ContentManager
     ? options.content
@@ -69,7 +69,7 @@ export function createGame(options: CreateGameOptions, ...tap: Array<(entity: En
       .addComponent(new FpsComponent())
     tap.forEach((t) => t(entity))
     if (options.autorun !== false) {
-      setTimeout(() => entity.getService(LoopComponent).run())
+      entity.getService(LoopComponent).run()
     }
   })
 }
