@@ -58,6 +58,7 @@ function pages() {
 export function serve() {
   browserSync.init({
     server: project.dist,
+    reloadDebounce: 5000,
   })
   watch(path.join(project.dist, '**', '*'), { delay: 500 }).on(
     'change',
