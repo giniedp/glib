@@ -4,7 +4,6 @@
     "module": "es2015",
     "moduleResolution": "node",
     "outDir": "../dist/examples",
-    "incremental": true,
     "noImplicitAny": true,
     "experimentalDecorators": true,
     "suppressImplicitAnyIndexErrors": true,

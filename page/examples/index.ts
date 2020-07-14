@@ -1,4 +1,4 @@
-// tslint:disable: max-classes-per-file
+
 
 import { Static as Mithril, Vnode } from 'mithril'
 
@@ -246,7 +246,7 @@ class ExampleTabsComponent {
 
 function loadExample() {
   const hash = location.hash || links[0].getAttribute('href')
-  if (!hash.match(/^#[0-9a-zA-Z\/\-_]+$/)) {
+  if (!hash.match(/^#[0-9a-zA-Z/\-_]+$/)) {
     console.warn('invalid URL', hash)
     return
   }

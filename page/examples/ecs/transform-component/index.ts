@@ -23,11 +23,11 @@ class MyGame implements OnInit, OnUpdate {
   public readonly camera: PerspectiveCameraComponent
 
   public onInit() {
-    this.renderer.manager.getScene(0).camera = this.camera
+    this.renderer.scene.camera = this.camera
   }
 
   public onUpdate() {
-    this.camera.aspect = this.renderer.manager.getScene(0).viewport.aspect
+    this.camera.aspect = this.renderer.view.viewport.aspect
   }
 }
 

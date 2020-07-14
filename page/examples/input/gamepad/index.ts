@@ -1,7 +1,7 @@
 import { Gamepads } from '@gglib/input'
 
 new Gamepads({
-  autopoll: true,
+  autoUpdate: true,
 }).on('changed', (gamepads: Gamepads, index: number) => {
   const copy = gamepads.state.map((it) => {
     if (!it) {

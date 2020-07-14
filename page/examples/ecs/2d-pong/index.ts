@@ -44,7 +44,7 @@ class PongGame implements OnInit, OnUpdate {
   public onInit() {
     // The render manager already contains a default scene
     // but no camera. We must provide that.
-    this.renderer.manager.getScene(0).camera = this.camera
+    this.renderer.scene.camera = this.camera
     // All components will render this white pixel texture as a sprite
     this.whitePixel = this.renderer.device.createTexture({
       data: [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF],

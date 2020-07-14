@@ -55,14 +55,12 @@ class MyGame implements OnInit, OnUpdate {
       }),
     })
 
-    const scene = this.renderer.manager.getScene(0)
-    scene.camera = this.camera
+    this.renderer.scene.camera = this.camera
     setTimeout(() => this.resetCubes())
   }
 
   public onUpdate() {
-    const scene = this.renderer.manager.getScene(0)
-    this.camera.aspect = scene.viewport.aspect
+    this.camera.aspect = this.renderer.view.viewport.aspect
 
     if (this.keyboard.justReleased(KeyboardKey.Space)) {
       this.resetCubes()
@@ -102,7 +100,7 @@ class PhysicsWorld implements OnDestroy, OnUpdate {
   public readonly solver = new Ammo.btSequentialImpulseConstraintSolver()
   public readonly world = new Ammo.btDiscreteDynamicsWorld(
     this.dispatcher,
-    this.pairCache,
+    this.pairCache as any,
     this.solver,
     this.config,
   )

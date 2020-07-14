@@ -8,10 +8,10 @@ import {
   Color,
   CullState,
   DepthState,
-  DeviceGL,
   LightType,
   Model,
   ModelBuilder,
+  createDevice,
 } from '@gglib/graphics'
 
 import {
@@ -108,7 +108,7 @@ loader({
 // The pipeline itself has several built in `loader` functions for example
 // `Model.Options` ~> `Model`
 
-const device = new DeviceGL({
+const device = createDevice({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 const content = new ContentManager(device)

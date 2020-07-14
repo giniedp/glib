@@ -1,10 +1,10 @@
-import { buildPlane, CullState, DeviceGL, ModelBuilder, SamplerState } from '@gglib/graphics'
+import { buildPlane, CullState, DeviceGL, ModelBuilder, SamplerState, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
-const device = new DeviceGL({
+const device = createDevice({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
   context: 'webgl',
 })

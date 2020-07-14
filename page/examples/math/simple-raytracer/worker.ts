@@ -1,4 +1,6 @@
 declare function importScripts(script: string): void
+declare function postMessage(data: any): void
+declare const scene: any
 // load the math library
 importScripts('/assets/math.umd.js')
 // load our raytracing scene
@@ -19,7 +21,7 @@ interface Query extends Job {
 const jobQueue: Job[] = []
 let jobBuffer: Float32Array
 
-self.onmessage = (e) => {
+self.onmessage = (e: any) => {
   const data = e.data as Query
   jobQueue.length = 0
   for (let i = 0; i < data.samples; i++) {

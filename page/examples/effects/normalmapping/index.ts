@@ -1,10 +1,10 @@
 import { defaultProgram, LightParams } from '@gglib/effects'
-import { buildCube, buildPlane, DeviceGL, LightType, ModelBuilder } from '@gglib/graphics'
+import { buildCube, buildPlane, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
-const device = new DeviceGL({
+const device = createDevice({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
 })
 

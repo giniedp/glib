@@ -17,7 +17,6 @@ import { ContentManager } from '@gglib/content'
 import { Entity, Inject, OnInit, OnUpdate, Service } from '@gglib/ecs'
 import { Model } from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
-import { BasicRenderStep } from '@gglib/render'
 
 class MyGame implements OnInit, OnUpdate {
 
@@ -31,30 +30,18 @@ class MyGame implements OnInit, OnUpdate {
   private camera2: PerspectiveCameraComponent
 
   public onInit() {
-    this.renderer.manager.removeScene(0)
-    this.renderer.manager.addScene({
-      id: 0,
-      lights: [],
-      items: [],
-      steps: [new BasicRenderStep()],
+    this.renderer.scene.views = [{
+      camera: this.camera1,
       viewport: { type: 'normalized', x: 0.0, y: 0.0, width: 1, height: 1 },
-    })
-    this.renderer.manager.addScene({
-      id: 1,
-      lights: [],
-      items: [],
-      steps: [new BasicRenderStep()],
+    }, {
+      camera: this.camera2,
       viewport: { type: 'normalized', x: 0.75, y: 0.0, width: 0.25, height: 0.25 },
-    })
-
-    this.renderer.manager.getScene(0).camera = this.camera1
-    this.renderer.manager.getScene(1).camera = this.camera1
-    this.renderer.manager.getScene(1).debugCamera = this.camera2
+    }]
   }
 
   public onUpdate() {
-    this.camera1.aspect = this.renderer.manager.getScene(0).viewport.aspect
-    this.camera2.aspect = this.renderer.manager.getScene(1).viewport.aspect
+    this.camera1.aspect = this.renderer.scene.views[0].viewport.aspect
+    this.camera2.aspect = this.renderer.scene.views[1].viewport.aspect
   }
 }
 

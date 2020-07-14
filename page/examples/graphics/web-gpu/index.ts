@@ -1,9 +1,10 @@
-import { DeviceGL, createDevice } from '@gglib/graphics'
+import { createDevice } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 
 // Instantiate the graphics device and pass a reference to an existing canvas element
 const device = createDevice({
   canvas: document.getElementById('canvas') as HTMLCanvasElement,
+  context: 'gpu'
 })
 
 device.init().then(() => {
