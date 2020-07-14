@@ -14,6 +14,10 @@ export interface FrameBufferOptions {
    *
    */
   depthBuffer?: DepthBuffer,
+  /**
+   *
+   */
+  handle?: WebGLFramebuffer
 }
 
 /**

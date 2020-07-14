@@ -68,7 +68,6 @@ export class Profile {
   }
 }
 
-// tslint:disable-next-line
 export class ProfileGLES2 extends Profile {
 
   /**
@@ -83,7 +82,6 @@ export class ProfileGLES2 extends Profile {
   }
 }
 
-// tslint:disable-next-line
 export class ProfileGLSL extends Profile {
 
   constructor(root: COLLADA, public readonly parent: Effect, el: Element) {

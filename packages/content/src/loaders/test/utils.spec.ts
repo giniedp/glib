@@ -1,6 +1,5 @@
 const scripts: HTMLScriptElement[] = []
 
-// tslint:disable-next-line
 export const RED10x20 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAUCAYAAAC07qxWAAAAGElEQVR42mP8z8AARIQB46jCUYWjCkEAAMXUJ+1sUc+CAAAAAElFTkSuQmCC'
 
 export function defineScript(id: string, type: string, scriptContent: string) {

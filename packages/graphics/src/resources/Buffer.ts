@@ -269,6 +269,14 @@ export abstract class Buffer {
     dstLength: number,
   ): this
 
+  public getData(): ArrayBufferView {
+    const length = this.sizeInBytes / this.stride
+    const array = ArrayType[this.dataType]
+    const dst = new array(length)
+    this.getBufferSubData(0, dst, 0, length)
+    return dst
+  }
+
   protected convertDataOption(src: BufferDataOption): ArrayBufferView {
     if (src && (src as ArrayBufferView).buffer) {
       return src as ArrayBufferView

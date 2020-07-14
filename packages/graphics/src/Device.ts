@@ -1,4 +1,4 @@
-// tslint:disable no-bitwise
+
 import { isString } from '@gglib/utils'
 
 import { PixelFormat, PrimitiveType, PrimitiveTypeName, ShaderType } from './enums'
@@ -52,20 +52,6 @@ import { VertexLayout } from './VertexLayout'
  * @public
  */
 export abstract class Device<T = unknown> {
-  public static getOrCreateCanvas(canvas?: string | HTMLCanvasElement): HTMLCanvasElement {
-    if (canvas instanceof HTMLCanvasElement) {
-      return canvas
-    }
-    if (isString(canvas)) {
-      const element = document.getElementById(canvas as string)
-      if (element instanceof HTMLCanvasElement) {
-        return element
-      } else {
-        throw new Error(`expected '${canvas}' to select a HTMLCanvasElement but got '${element}'`)
-      }
-    }
-    return document.createElement('canvas') as HTMLCanvasElement
-  }
 
   /**
    * The html canvas element

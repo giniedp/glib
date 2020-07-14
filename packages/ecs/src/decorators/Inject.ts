@@ -1,4 +1,3 @@
-// tslint:disable: ban-types
 import { errorOnInjectUndefinedType } from '../errors'
 import { resolveForwardRef } from './forwardRef'
 

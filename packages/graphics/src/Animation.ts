@@ -1,4 +1,4 @@
-// tslint:disable max-classes-per-file
+
 export class Animation {
   public channels: AnimationChannel[]
   public samplers: AnimationSampler[]

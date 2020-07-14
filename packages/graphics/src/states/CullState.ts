@@ -7,6 +7,7 @@ import {
   valueOfCullMode,
   valueOfFrontFace,
 } from './../enums'
+import { hasOwnProperty } from '@gglib/utils'
 
 const params: Array<keyof CullStateParams> = [
   'cullMode',
@@ -117,7 +118,7 @@ export class CullState implements CullStateParams {
    */
   public assign(state: CullStateParams): this {
     for (let key of params) {
-      if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
+      if (hasOwnProperty(state, key)) { this[key as any] = state[key] }
     }
     return this
   }

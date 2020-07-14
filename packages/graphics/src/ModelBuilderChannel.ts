@@ -20,9 +20,7 @@ export class ModelBuilderChannel {
 
   constructor(public readonly buffer: BufferOptions<number[]> | Buffer, public readonly name: string) {
     if (buffer instanceof Buffer) {
-      // TODO
-      throw new Error('not supported')
-      // this.data = new Float32Array(buffer.data as any) as any
+      this.data = Array.from(buffer.getData() as any)
     } else {
       this.data = buffer.data
     }

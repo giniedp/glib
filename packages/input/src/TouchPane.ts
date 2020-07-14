@@ -134,7 +134,6 @@ export class TouchPane extends Events  {
    */
   private handleTouchStart(e: TouchEvent) {
     const list = e.changedTouches
-    // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
       this.touches.set(list[i].identifier, list[i])
     }
@@ -146,7 +145,6 @@ export class TouchPane extends Events  {
    */
   private handleTouchCancel(e: TouchEvent) {
     const list = e.changedTouches
-    // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
       this.touches.delete(list[i].identifier)
     }
@@ -158,7 +156,6 @@ export class TouchPane extends Events  {
    */
   private handleTouchMove(e: TouchEvent) {
     const list = e.changedTouches
-    // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
       this.touches.set(list[i].identifier, list[i])
     }
@@ -170,7 +167,6 @@ export class TouchPane extends Events  {
    */
   private handleTouchEnd(e: TouchEvent) {
     let list = e.changedTouches
-    // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < list.length; i++) {
       this.touches.delete(list[i].identifier)
     }

@@ -1,3 +1,5 @@
+import { hasOwnProperty } from '@gglib/utils'
+
 const params: Array<keyof OffsetStateParams> = [
   'enable',
   'offsetFactor',
@@ -87,7 +89,7 @@ export class OffsetState implements IOffsetState {
    */
   public assign(state: OffsetStateParams): this {
     for (let key of params) {
-      if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
+      if (hasOwnProperty(state, key)) { this[key as any] = state[key] }
     }
     return this
   }

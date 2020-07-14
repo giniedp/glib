@@ -8,6 +8,7 @@ import {
   valueOfBlend,
   valueOfBlendFunction,
 } from './../enums'
+import { hasOwnProperty } from '@gglib/utils'
 
 const params: Array<keyof BlendStateParams> = [
   'alphaBlendFunction',
@@ -289,7 +290,7 @@ export class BlendState implements IBlendState {
    */
   public assign(state: BlendStateParams): this {
     for (let key of params) {
-      if (state.hasOwnProperty(key)) {
+      if (hasOwnProperty(state, key)) {
         this[key as any] = state[key]
       }
     }

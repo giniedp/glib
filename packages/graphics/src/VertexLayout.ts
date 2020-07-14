@@ -1,4 +1,4 @@
-import { extend, Log } from '@gglib/utils'
+import { extend, Log, hasOwnProperty } from '@gglib/utils'
 
 import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
 
@@ -142,7 +142,7 @@ export class VertexLayout {
 
     for (let name of names) {
       name = String(name).toLowerCase()
-      if (!VertexLayout.preset.hasOwnProperty(name)) {
+      if (!hasOwnProperty(VertexLayout.preset, name)) {
         Log.l('[VertexLayout] unknown element name ', name)
         continue
       }
@@ -167,7 +167,7 @@ export class VertexLayout {
   public static countElements(layout: VertexLayout): number {
     let count = 0
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         count += item.packed ? 1 : item.elements
       }
@@ -182,7 +182,7 @@ export class VertexLayout {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         if (item.offset < target.offset) {
           count += item.packed ? 1 : item.elements
@@ -199,7 +199,7 @@ export class VertexLayout {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         if (item.offset > target.offset) {
           count += item.packed ? 1 : item.elements
@@ -219,7 +219,7 @@ export class VertexLayout {
   public static countBytes(layout: VertexLayout): number {
     let count = 0
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         count += dataTypeSize(item.type) * item.elements
       }
@@ -234,7 +234,7 @@ export class VertexLayout {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         if (item.offset < target.offset) {
           count += dataTypeSize(item.type) * item.elements
@@ -251,7 +251,7 @@ export class VertexLayout {
     let count = 0
     let target = layout[name]
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         if (item.offset > target.offset) {
           count += dataTypeSize(item.type) * item.elements
@@ -264,7 +264,7 @@ export class VertexLayout {
   public static uniqueTypes(layout: VertexLayout): Array<string | number> {
     const types: Array<string | number> = []
     for (const key in layout) {
-      if (layout.hasOwnProperty(key)) {
+      if (hasOwnProperty(layout, key)) {
         const item = layout[key]
         if (item.type && types.indexOf(item.type) < 0) {
           types.push(item.type)

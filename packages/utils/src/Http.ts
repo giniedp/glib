@@ -1,3 +1,5 @@
+import { hasOwnProperty } from './utils'
+
 /**
  * Options for {@link httpRequest}
  *
@@ -41,7 +43,7 @@ export interface HttpOptions {
 function setXhrHeaders(xhr: XMLHttpRequest, headers: { [key: string]: string }) {
   if (!headers) { return }
   for (let key in headers) {
-    if (headers.hasOwnProperty(key)) {
+    if (hasOwnProperty(headers, key)) {
       xhr.setRequestHeader(key, headers[key])
     }
   }

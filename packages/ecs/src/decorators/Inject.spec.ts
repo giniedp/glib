@@ -1,4 +1,4 @@
-// tslint:disable: max-classes-per-file
+
 import { forwardRef } from './forwardRef'
 import { getInjectMetadata, Inject } from './Inject'
 

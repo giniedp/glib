@@ -31,14 +31,14 @@ export class BufferGPU extends Buffer {
 
   public create(): this {
     if (!this.handle) {
-      // tslint:disable-next-line: no-bitwise
+
       let usage = GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
       if (this.isIndexBuffer) {
-        // tslint:disable-next-line: no-bitwise
+
         usage = usage | GPUBufferUsage.INDEX
       }
       if (this.isVertexBuffer) {
-        // tslint:disable-next-line: no-bitwise
+
         usage = usage | GPUBufferUsage.VERTEX
       }
       switch (this.usage) {

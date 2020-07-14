@@ -1,4 +1,5 @@
 import { Device } from './../Device'
+import { hasOwnProperty } from '@gglib/utils'
 
 const params: Array<keyof ScissorStateParams> = [
   'enable',
@@ -123,7 +124,7 @@ export class ScissorState implements IScissorState {
    */
   public assign(state: ScissorStateParams= {}): this {
     for (const key of params) {
-      if (state.hasOwnProperty(key)) {
+      if (hasOwnProperty(state, key)) {
         this[key as any] = state[key]
       }
     }

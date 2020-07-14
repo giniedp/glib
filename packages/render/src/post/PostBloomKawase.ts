@@ -1,4 +1,4 @@
-// tslint:disable no-bitwise
+
 import { glsl } from '@gglib/effects'
 import { BlendState, createShaderEffect, DepthFormat, Device, ShaderEffect, ShaderFxDocument, ShaderProgram } from '@gglib/graphics'
 import { RenderManager } from '../RenderManager'

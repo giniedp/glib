@@ -5,6 +5,7 @@ import {
   valueOfCompareFunction,
 } from './../enums'
 import { BlendStateParams } from './BlendState'
+import { hasOwnProperty } from '@gglib/utils'
 
 const params: Array<keyof DepthStateParams> = [
   'depthFunction',
@@ -169,7 +170,7 @@ export class DepthState implements IDepthState {
    */
   public assign(state: DepthStateParams): this {
     for (const key of params) {
-      if (state.hasOwnProperty(key)) {
+      if (hasOwnProperty(state, key)) {
         this[key as any] = state[key]
       }
     }

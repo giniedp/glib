@@ -81,28 +81,24 @@ export class CommonTechnique {
   }
 }
 
-// tslint:disable-next-line
 export class Blinn extends CommonTechnique {
   public constructor(public readonly tex: { newparam: Newparam[] }, public readonly el: Element) {
     super(tex, el)
   }
 }
 
-// tslint:disable-next-line
 export class Phong extends CommonTechnique {
   public constructor(public readonly tex: { newparam: Newparam[] }, public readonly el: Element) {
     super(tex, el)
   }
 }
 
-// tslint:disable-next-line
 export class Lambert extends CommonTechnique {
   public constructor(public readonly tex: { newparam: Newparam[] }, public readonly el: Element) {
     super(tex, el)
   }
 }
 
-// tslint:disable-next-line
 export class Constant extends CommonTechnique {
   public constructor(public readonly tex: { newparam: Newparam[] }, public readonly el: Element) {
     super(tex, el)

@@ -1,5 +1,3 @@
-// tslint:disable
-
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 

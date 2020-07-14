@@ -55,7 +55,7 @@ export class TextureGPU extends Texture {
           height: this.height,
           depth: 1,
         },
-        // tslint:disable-next-line: no-bitwise
+
         usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.SAMPLED | GPUTextureUsage.OUTPUT_ATTACHMENT,
       }))
     }

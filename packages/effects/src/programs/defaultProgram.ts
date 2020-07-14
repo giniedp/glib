@@ -1,5 +1,3 @@
-// tslint:disable:no-duplicate-imports
-
 import { ShaderProgramOptions } from '@gglib/graphics'
 import { buildProgram } from '../builder'
 import {

@@ -1,4 +1,4 @@
-import { Device } from './../Device'
+import { hasOwnProperty } from '@gglib/utils'
 
 const params: Array<keyof ViewportStateParams> = [
   'x',
@@ -137,7 +137,7 @@ export class ViewportState implements IViewPortState {
    */
   public assign(state: ViewportStateParams= {}): this {
     for (let key of params) {
-      if (state.hasOwnProperty(key)) { this[key] = state[key] }
+      if (hasOwnProperty(state, key)) { this[key] = state[key] }
     }
     return this
   }

@@ -1,4 +1,4 @@
-// tslint:disable max-classes-per-file
+
 import { IVec3 } from '@gglib/math'
 import { Color } from './Color'
 import { Device } from './Device'

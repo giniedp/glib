@@ -1,3 +1,5 @@
+import { hasOwnProperty } from '@gglib/utils'
+
 function trim(value: string): string {
   return value.replace(/(^\s*|\s*$)/g, '')
 }
@@ -91,7 +93,7 @@ function parse(state: { lines: string[], index: number }, indent: string) {
         block = new Node()
         block.lines.push(trim(value))
 
-        if (!result.hasOwnProperty(key)) {
+        if (!hasOwnProperty(result, key)) {
           result[key] = block
         } else {
           if (result[key] instanceof Node) {

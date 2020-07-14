@@ -1,4 +1,3 @@
-// tslint:disable max-classes-per-file
 import { Entity, OnAdded, OnInit, OnRemoved, OnUpdate } from '@gglib/ecs'
 import { BlendStateParams, Buffer, Color, Device, Texture } from '@gglib/graphics'
 import { IVec3 } from '@gglib/math'

@@ -1,7 +1,7 @@
 import { constant } from './operator/constant'
 import { Sampler } from './types'
 
-// tslint:disable no-bitwise
+
 
 export function samplerArray(...src: Array<Sampler | number>): Sampler[] {
   return src.map(sampler)

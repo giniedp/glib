@@ -1,6 +1,5 @@
 import { Property } from './common'
 
-// tslint:disable-next-line variable-name
 export const KHR_texture_transform = 'KHR_texture_transform'
 
 export interface TextureTransform {

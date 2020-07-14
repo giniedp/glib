@@ -1,3 +1,5 @@
+import { hasOwnProperty } from './hasOwnProperty'
+
 /**
  * Checks whether a value is of type 'object' and is not an array or null
  *
@@ -49,7 +51,7 @@ export function copy(srcOrDeep: any, srcOrDest?: any, dest?: any): any {
   let isArray
   let isObj
   for (let key in src) {
-    if (src.hasOwnProperty(key)) {
+    if (hasOwnProperty(src, key)) {
       value = src[key]
       isArray = Array.isArray(value)
       isObj = value != null && typeof value === 'object'
@@ -80,7 +82,7 @@ export function extend<T>(dst: T, a: any, b?: any, c?: any, d?: any, e?: any, f?
   for (i = 1; i < length; i += 1) {
     src = arguments[i]
     for (let key in src) {
-      if (src.hasOwnProperty(key)) {
+      if (hasOwnProperty(src, key)) {
         (dst as any)[key] = src[key]
       }
     }

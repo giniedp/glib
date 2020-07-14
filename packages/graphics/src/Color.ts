@@ -1,6 +1,6 @@
 import { Vec4 } from '@gglib/math'
 
-// tslint:disable no-bitwise
+
 
 /**
  * RGBA formatted color parser

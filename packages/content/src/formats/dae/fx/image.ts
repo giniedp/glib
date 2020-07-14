@@ -1,4 +1,3 @@
-// tslint:disable no-bitwise
 import { COLLADA } from '../core/collada'
 import { DocumentCache, mapChild, mapChildren, textContent } from '../core/utils'
 

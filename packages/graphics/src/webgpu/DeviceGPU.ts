@@ -1,6 +1,6 @@
-// tslint:disable no-bitwise
 
-import { Log } from '@gglib/utils'
+
+import { Log, getOrCreateCanvas } from '@gglib/utils'
 
 import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
 import {
@@ -41,7 +41,8 @@ import {
 import { TextureUnitStateGPU } from './states/TextureUnitStateGPU'
 
 // tslint:disable-next-line: no-submodule-imports
-import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel/glslang'
+// TODO: dynamic import
+import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel-onefile/glslang'
 import { toPrimitiveTopology } from './utils/primitiveTopology'
 
 /**
@@ -57,7 +58,7 @@ export interface DeviceGPUOptions {
   /**
    * Rendering context or a context type
    */
-  context?: 'gpupresent'
+  context?: 'gpu'
 }
 
 function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceGPUOptions): GPUCanvasContext {
@@ -70,7 +71,7 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceGPUOptions
   }
 
   // apply fallback strategy
-  for (const name of ['gpupresent']) {
+  for (const name of ['gpu']) {
     try {
       return canvas.getContext(name) as any
     } catch (e) {
@@ -153,7 +154,7 @@ export class DeviceGPU extends Device<any> {
   constructor(options: DeviceGPUOptions = {}) {
     super()
 
-    this.canvas = Device.getOrCreateCanvas(options.canvas)
+    this.canvas = getOrCreateCanvas(options.canvas)
     this.context = getOrCreateContext(this.canvas, options)
 
     this.$cullState = new CullStateGPU().commit(CullState.Default)

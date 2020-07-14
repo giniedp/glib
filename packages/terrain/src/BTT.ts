@@ -1,5 +1,5 @@
-// tslint:disable no-bitwise
-// tslint:disable max-classes-per-file
+
+
 import { Buffer, Device, Material, MaterialOptions, Model, ModelMesh, VertexLayout } from '@gglib/graphics'
 import { IVec3, Vec3, BoundingBox } from '@gglib/math'
 import { HeightMap } from './HeightMap'

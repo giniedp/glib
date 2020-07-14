@@ -1,4 +1,4 @@
-import { extend, getLines, trim } from '@gglib/utils'
+import { extend, getLines, trim, hasOwnProperty } from '@gglib/utils'
 
 const regLayout = /^\s*layout\((.+)\)\s+/
 
@@ -174,7 +174,7 @@ export class ShaderInspector {
     let delayed = []
 
     for (const key in uniforms) {
-      if (uniforms.hasOwnProperty(key)) {
+      if (hasOwnProperty(uniforms, key)) {
         const uniform = uniforms[key]
         if (!uniform || !isSamplerType.test(uniform.type)) {
           continue
@@ -423,11 +423,11 @@ export class ShaderInspector {
       return defines[b]
     })
     // limit character set befor going into eval
-    if (!/^[a-zA-Z0-9 \(\)\|\&\!\^]*$/gi.test(expression)) {
+    if (!/^[a-zA-Z0-9 ()|&!^]*$/gi.test(expression)) {
       return false
     }
     try {
-      return !!eval(expression) // tslint:disable-line
+      return !!eval(expression)
     } catch (e) {
       return false
     }

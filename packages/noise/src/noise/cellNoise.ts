@@ -2,7 +2,7 @@ import { DistanceFunc, euclideanDistance } from '../distance'
 import { Sampler } from '../types'
 import { floor } from '../utils'
 
-// tslint:disable no-bitwise
+
 // tslint:disable one-variable-per-declaration
 const poissonCount: number[] = [
   4, 3, 1, 1, 1, 2, 4, 2, 2, 2, 5, 1, 0, 2, 1, 2,

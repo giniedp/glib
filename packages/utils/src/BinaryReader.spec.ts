@@ -1,4 +1,4 @@
-// tslint:disable no-bitwise
+
 
 import { BinaryReader } from '@gglib/utils'
 describe('Glib.Core.BinaryReader', () => {

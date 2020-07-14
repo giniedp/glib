@@ -128,7 +128,7 @@ export class Entity extends Events {
    * @param key - the key to lookup
    * @param fallback - the fallback value to return.
    */
-  public getService<T>(key: any, fallback?: T): T // tslint:disable-line: unified-signatures
+  public getService<T>(key: any, fallback?: T): T
   public getService(key: any, fallback?: any) {
     const result = this.services.get(key)
     if (result != null) {

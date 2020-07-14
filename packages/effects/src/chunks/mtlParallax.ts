@@ -1,4 +1,3 @@
-// tslint:disable:max-line-length
 import { ShaderChunkSet } from '../builder'
 import { glsl } from '../glsl'
 

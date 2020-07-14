@@ -176,13 +176,10 @@ export interface Material extends RootProperty {
   doubleSided?: boolean
 }
 
-// tslint:disable-next-line variable-name
 export const KHR_materials_unlit = 'KHR_materials_unlit'
 
-// tslint:disable-next-line variable-name
 export const KHR_materials_pbrSpecularGlossiness = 'KHR_materials_pbrSpecularGlossiness'
 
-// tslint:disable-next-line class-name
 export interface PbrMaterialSpecularGlossiness extends Property {
   /**
    * The reflected diffuse factor of the material.

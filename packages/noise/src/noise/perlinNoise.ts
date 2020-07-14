@@ -1,4 +1,4 @@
-// tslint:disable no-bitwise
+
 
 import { easeCubic, easeLinear } from '../easing'
 import { Ease, Sampler } from '../types'

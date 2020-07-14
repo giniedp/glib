@@ -1,4 +1,4 @@
-// tslint:disable no-bitwise
+
 import { Sampler } from '../types'
 
 /**

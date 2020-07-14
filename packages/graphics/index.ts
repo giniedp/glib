@@ -26,5 +26,6 @@ export * from './src/Sprite'
 export * from './src/SpriteBatch'
 export * from './src/VertexLayout'
 
+export * from './src/create'
 export * from './src/webgl'
 export * from './src/webgpu'

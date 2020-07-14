@@ -1,4 +1,4 @@
-// tslint:disable no-bitwise
+
 
 /**
  * Permutation table. This is just a random jumble of all numbers 0-255,

@@ -10,6 +10,7 @@ import {
 } from './../enums'
 
 import { Device } from './../Device'
+import { hasOwnProperty } from '@gglib/utils'
 
 const params: Array<keyof StencilStateParams> = [
   'enable',
@@ -291,7 +292,7 @@ export class StencilState implements IStencilState {
 
   public assign(state: StencilStateParams= {}): this {
     for (let key of params) {
-      if (state.hasOwnProperty(key)) { this[key as any] = state[key] }
+      if (hasOwnProperty(state, key)) { this[key as any] = state[key] }
     }
     return this
   }
