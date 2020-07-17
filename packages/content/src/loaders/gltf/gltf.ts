@@ -1,9 +1,8 @@
-import { ArrayType, MaterialOptions, Model, ModelJoint, ModelJointPose, ModelMeshOptions, ModelOptions, ModelSkin } from '@gglib/graphics'
+import { ArrayType, MaterialOptions, Model, ModelJoint, ModelJointPose, ModelMeshOptions, ModelOptions, ModelSkin, BufferOptions, BufferType, VertexLayout, Buffer, dataTypeSize, nameOfDataType } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Log } from '@gglib/utils'
 
 import {
-  Accessor,
   AccessorType,
   Document,
   GLTF,
@@ -14,6 +13,8 @@ import {
   PbrMaterialSpecularGlossiness,
   TextureInfo,
   TextureTransform,
+  MeshPrimitive,
+  AccessorComponentType,
 } from '../../formats/gltf'
 import { PipelineContext } from '../../PipelineContext'
 import { loader, resolveUri } from '../../utils'
@@ -99,7 +100,6 @@ async function loadModel(
 ): Promise<ModelOptions> {
 
   const meshes = await loadMesh(context, doc, node)
-
   const mtlMap = new Map<number | string, Promise<MaterialOptions>>()
   for (const mesh of meshes) {
     if (!mtlMap.has(mesh.materialId)) {
@@ -260,7 +260,17 @@ async function loadSkin(context: PipelineContext, doc: Document, skinIndex: numb
     return result
   }
 
-  const inverseBindBuffer = await loadBufferView(context, doc, doc.accessors[skin.inverseBindMatrices])
+  const accessor = doc.accessors[skin.inverseBindMatrices]
+  if (accessor.type !== 'MAT4' || accessor.componentType !== AccessorComponentType.FLOAT) {
+    // TODO: warn?
+    return result
+  }
+
+  const bufferView = doc.bufferViews[accessor.bufferView]
+  const buffer = await loadBuffer(context, doc, bufferView.buffer)
+  const byteOffset = (accessor.byteOffset || 0) + (accessor.byteOffset || 0)
+
+  const inverseBindBuffer = new Float32Array(buffer, byteOffset, accessor.count * 16)
   if (inverseBindBuffer instanceof Float32Array) {
     const inverseBindMatrices = []
     for (let i = 0; i < hierarchy.length * 16; i += 16) {
@@ -297,46 +307,19 @@ async function loadMesh(
   let min = [0, 0, 0]
   let max = [0, 0, 0]
   const result = mesh.primitives.map(async (part): Promise<ModelMeshOptions> => {
-    const semantics: string[] = []
-
-    const indexBuffer = part.indices == null ? null : (async (accessor: Accessor) => {
-      const bufferView = await loadBufferView(context, doc, accessor)
-      return context.manager.device.createIndexBuffer({
-        data: bufferView,
-        stride: doc.bufferViews[accessor.bufferView].byteStride,
-        dataType: accessor.componentType as number,
-      })
-    })(doc.accessors[part.indices])
-
-    const vertexBuffers = Object.keys(part.attributes).map(async (semantic) => {
-      semantics.push(semantic)
+    Object.keys(part.attributes).forEach(async (semantic) => {
       const accessor = doc.accessors[part.attributes[semantic]]
       if (semantic === 'POSITION') {
         min = [...accessor.min]
         max = [...accessor.max]
       }
-      const bufferView = await loadBufferView(context, doc, accessor)
-      return context.manager.device.createVertexBuffer({
-        data: bufferView,
-        dataType: accessor.componentType as number,
-        stride: doc.bufferViews[accessor.bufferView].byteStride,
-        layout: {
-          [semantic.toLowerCase().replace(/_0$/, '').replace(/^texcoord/, 'texture')]: {
-            offset: 0,
-            normalize: accessor.normalized,
-            elements: elementCount(accessor.type),
-            type: accessor.componentType as number,
-          },
-        },
-      })
     })
 
-    const sphere = BoundingSphere.createFromBox(BoundingBox.create(...min, ...max))
     return {
       boundingBox: [...min, ...max],
-      boundingSphere: [sphere.center.x, sphere.center.y, sphere.center.z, sphere.radius],
-      vertexBuffer: await Promise.all(vertexBuffers),
-      indexBuffer: await indexBuffer,
+      boundingSphere: BoundingSphere.createFromBox(BoundingBox.create(...min, ...max)).toArray(),
+      vertexBuffer: await loadVertexBuffers(context, doc, part),
+      indexBuffer: await loadIndexBuffer(context, doc, part),
       materialId: part.material,
       primitiveType: part.mode,
       name: mesh.name,
@@ -344,6 +327,84 @@ async function loadMesh(
   })
 
   return Promise.all(result)
+}
+
+async function loadIndexBuffer(context: PipelineContext, doc: Document, part: MeshPrimitive) {
+  if (part.indices == null) {
+    return null
+  }
+  const accessor = doc.accessors[part.indices]
+  const bufferView = doc.bufferViews[accessor.bufferView]
+  const buffer = await loadBuffer(context, doc, bufferView.buffer)
+  const byteOffset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0)
+  const data = new ArrayType[accessor.componentType](buffer, byteOffset, accessor.count)
+
+  return context.manager.device.createIndexBuffer({
+    data: data,
+    stride: bufferView.byteStride,
+    dataType: accessor.componentType as number,
+  })
+}
+
+async function loadVertexBuffers(context: PipelineContext, doc: Document, part: MeshPrimitive) {
+
+  const bufferViewGroups = new Map<number, string[]>()
+  const result: Buffer[] = []
+
+  for (const attribute of Object.keys(part.attributes)) {
+    const accessor = doc.accessors[part.attributes[attribute]]
+    if (!bufferViewGroups.has(accessor.bufferView)) {
+      bufferViewGroups.set(accessor.bufferView, [])
+    }
+    bufferViewGroups.get(accessor.bufferView).push(attribute)
+  }
+
+  for (const [bufferViewId, attributes] of Array.from(bufferViewGroups.entries())) {
+
+    const bufferView = doc.bufferViews[bufferViewId]
+    const buffer = await loadBuffer(context, doc, bufferView.buffer)
+
+    const bufferOptions: BufferOptions = {
+      stride: bufferView.byteStride,
+      layout: {}
+    }
+
+    for (const attribute of attributes) {
+      const semantic = attribute.toLowerCase().replace(/_0$/, '').replace(/^texcoord/, 'texture')
+      const accessor = doc.accessors[part.attributes[attribute]]
+
+      if (bufferOptions.dataType == null) {
+        bufferOptions.dataType = accessor.componentType as number
+      } else if (bufferOptions.dataType !== accessor.componentType as number) {
+        console.warn(`interleaved buffer with different component types detected: ${nameOfDataType(bufferOptions.dataType as any)}, ${nameOfDataType(accessor.componentType as any)}`)
+        if (dataTypeSize(accessor.componentType as any) > dataTypeSize(bufferOptions.dataType)) {
+          bufferOptions.dataType = accessor.componentType as number
+        }
+      }
+
+      bufferOptions.layout[semantic] = {
+        type: accessor.componentType as number,
+        elements: elementCount(accessor.type),
+        normalize: accessor.normalized || false,
+        offset: accessor.byteOffset || 0
+      }
+    }
+
+    const layoutStride = VertexLayout.countBytes(bufferOptions.layout)
+    if (!bufferOptions.stride) {
+      bufferOptions.stride = layoutStride
+    } else if (bufferOptions.stride !== layoutStride) {
+      console.warn(`buffer stride does not equal to layout stride: ${bufferOptions.stride} != ${layoutStride}`)
+    }
+
+    if (!bufferOptions.data) {
+      bufferOptions.data = new ArrayType[bufferOptions.dataType](buffer, bufferView.byteOffset || 0, bufferView.byteLength / dataTypeSize(bufferOptions.dataType))
+    }
+
+    result.push(context.manager.device.createVertexBuffer(bufferOptions))
+  }
+
+  return result
 }
 
 async function loadTexture(context: PipelineContext, doc: Document, index: number) {
@@ -375,18 +436,6 @@ async function loadTexture(context: PipelineContext, doc: Document, index: numbe
   }
   Log.w(`[glTF] loading image from buffer is not supported yet`)
   return null
-}
-
-async function loadBufferView(
-  context: PipelineContext,
-  doc: Document,
-  accessor: Accessor,
-) {
-  const bufferView = doc.bufferViews[accessor.bufferView]
-  const bufferIndex = bufferView.buffer
-  const buffer = await loadBuffer(context, doc, bufferIndex)
-  const offset = (bufferView.byteOffset || 0) + (accessor.byteOffset || 0)
-  return new ArrayType[accessor.componentType](await buffer, offset, accessor.count * elementCount(accessor.type))
 }
 
 async function loadBuffer(
