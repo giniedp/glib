@@ -1,4 +1,4 @@
-import { Entity, OnAdded, OnInit, OnRemoved, OnUpdate } from '@gglib/ecs'
+import { Entity, OnAdded, OnInit, OnRemoved, OnUpdate, Component, Inject } from '@gglib/ecs'
 import { Vec3 } from '@gglib/math'
 import { ParticleSystemComponent } from './ParticleSystemComponent'
 import { TransformComponent } from './TransformComponent'
@@ -6,7 +6,13 @@ import { TransformComponent } from './TransformComponent'
 /**
  * @public
  */
-export class ParticleEmitterComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
+@Component({
+  install: [
+    ParticleSystemComponent,
+    TransformComponent
+  ]
+})
+export class ParticleEmitterComponent implements OnInit, OnUpdate {
   /**
    * Number of particles per second
    */
@@ -24,20 +30,13 @@ export class ParticleEmitterComponent implements OnAdded, OnRemoved, OnInit, OnU
    */
   private timeFraction: number = 0
 
-  private particleSystem: ParticleSystemComponent
-  private transform: TransformComponent
+  @Inject(ParticleSystemComponent)
+  private readonly particleSystem: ParticleSystemComponent
 
-  public onAdded(entity: Entity) {
-    entity.addService(ParticleEmitterComponent, this)
-  }
+  @Inject(TransformComponent)
+  private readonly transform: TransformComponent
 
-  public onRemoved(entity: Entity) {
-    entity.removeService(ParticleEmitterComponent)
-  }
-
-  public onInit(entity: Entity) {
-    this.particleSystem = entity.getService(ParticleSystemComponent)
-    this.transform = entity.getService(TransformComponent)
+  public onInit() {
     this.lastPosition.initFrom(this.transform.position)
   }
 

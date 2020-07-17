@@ -1,4 +1,4 @@
-import { Entity, OnAdded, OnInit, OnRemoved, OnUpdate } from '@gglib/ecs'
+import { Entity, OnAdded, OnInit, OnRemoved, OnUpdate, Component, Inject } from '@gglib/ecs'
 import { BlendStateParams, Buffer, Color, Device, Texture } from '@gglib/graphics'
 import { IVec3 } from '@gglib/math'
 
@@ -128,8 +128,11 @@ export class ParticlesWriter {
   }
 }
 
-export class ParticleSystemComponent implements OnAdded, OnRemoved, OnInit, OnUpdate {
-  public device: Device
+@Component()
+export class ParticleSystemComponent implements OnUpdate {
+
+  @Inject(Device, { from: 'root' })
+  public readonly device: Device
 
   /**
    * The vertex buffer
@@ -152,19 +155,6 @@ export class ParticleSystemComponent implements OnAdded, OnRemoved, OnInit, OnUp
   private frame: number
 
   private settings: ParticleSystemSettings
-
-  public onAdded(entity: Entity) {
-    entity.addService(ParticleSystemComponent, this)
-  }
-
-  public onRemoved(entity: Entity) {
-    entity.removeService(ParticleSystemComponent)
-  }
-
-  public onInit(entity: Entity) {
-    this.device = entity.getService(Device)
-  }
-
   public onUpdate(dt: number) {
     this.time += dt
     this.retireParticles()

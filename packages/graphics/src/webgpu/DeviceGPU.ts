@@ -42,7 +42,7 @@ import { TextureUnitStateGPU } from './states/TextureUnitStateGPU'
 
 // tslint:disable-next-line: no-submodule-imports
 // TODO: dynamic import
-import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel-onefile/glslang'
+// import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel-onefile/glslang'
 import { toPrimitiveTopology } from './utils/primitiveTopology'
 
 /**
@@ -112,7 +112,7 @@ export class DeviceGPU extends Device<any> {
   public readonly device: GPUDevice
   public readonly adapter: GPUAdapter
   public readonly swapChain: GPUSwapChain
-  public readonly glslang: Glslang
+  // public readonly glslang: Glslang
 
   public readonly msaaSampleCount = 4
 
@@ -172,7 +172,10 @@ export class DeviceGPU extends Device<any> {
     }
 
     this.initPromise = (async () => {
-      this.set('glslang', await initGlslang())
+      if (!navigator.gpu) {
+        throw new Error('WebGPU is not supported')
+      }
+      // this.set('glslang', await initGlslang())
       this.set('adapter', await navigator.gpu.requestAdapter({
         powerPreference: 'low-power',
       }))

@@ -15,8 +15,9 @@
     "watch": "gulp watch",
     "build": "gulp build",
     "build:api": "gulp api",
-    "lint": "eslint -c .eslintrc.js",
-    "lint:examples": "tsc -p ./page/tsconfig.json --noEmit --incremental=false"
+    "lint": "yarn lint:packages && yarn lint:examples",
+    "lint:packages": "eslint -c .eslintrc.js",
+    "lint:examples": "tsc -p ./page/tsconfig.json --noEmit"
   },
   "repository": {
     "type": "git",
@@ -83,6 +84,7 @@
     "tweak-ui": "^0.1.0",
     "typedoc": "^0.17.8",
     "typescript": "^3.9.6",
+    "webidl2ts": "^1.0.1",
     "yargs": "^15.4.0"
   },
   "keywords": [

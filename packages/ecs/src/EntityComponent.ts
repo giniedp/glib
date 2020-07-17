@@ -29,6 +29,20 @@ export interface OnDetach {
 }
 
 /**
+ * A life cycle hook that is called when a component is installed with options
+ *
+ * @public
+ */
+export interface OnSetup<T = any> {
+  /**
+   * A method that is called when the component is installed with options
+   */
+  onSetup: (options: T) => void
+}
+
+export type OnSetupOptions<T extends OnSetup> = T extends OnSetup<infer O> ? O : unknown
+
+/**
  * A life cycle hook that is called when the component has been added to the entity
  *
  * @public
@@ -108,6 +122,6 @@ export interface OnDestroy {
 /**
  * @public
  */
-export interface Component extends Partial<OnAttached & OnDetach & OnAdded & OnRemoved & OnInit & OnUpdate & OnDraw & OnDestroy> {
+export interface EntityComponent extends Object, Partial<OnAttached & OnDetach & OnAdded & OnRemoved & OnSetup & OnInit & OnUpdate & OnDraw & OnDestroy> {
   name?: string
 }

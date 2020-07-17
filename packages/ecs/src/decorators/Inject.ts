@@ -1,24 +1,25 @@
 import { errorOnInjectUndefinedType } from '../errors'
-import { resolveForwardRef } from './forwardRef'
+import { resolveForwardRef, ForwardRefResolvable } from './forwardRef'
+import { Type, AbstractType } from '@gglib/utils'
 
 /**
  * A metadata object that is created when using {@link Inject} decorator on a property
  *
  * @public
  */
-export interface InjectMetadata {
+export interface InjectMetadata<T = unknown> {
   /**
    * The property name on which a type should be injected
    */
-  property: string | symbol,
+  property: string | symbol
   /**
    * The service lookup key
    */
-  service: any,
+  type: Type<T> | AbstractType<T> | Symbol
   /**
    * Identifier or query string where the injected type should be resolved from
    */
-  from: 'root' | 'parent' | string,
+  from: 'root' | 'parent' | string
   /**
    * Whether this injection is optional and should not raise an error if missing
    */
@@ -41,7 +42,7 @@ export interface InjectOptions {
   /**
    * Identifier or query string where the injected type should be resolved from
    */
-  from?: 'root' | 'parent' | string,
+  from?: 'root' | 'parent' | string
   /**
    * Whether this injection is optional and should not raise an error if missing
    */
@@ -62,18 +63,20 @@ export function getInjectMetadata<T>(target: T): InjectMetadataMap | null {
  *
  * @public
  */
-export function Inject(type: Function, options?: InjectOptions) {
-  return (target: object, property?: string|symbol, parameterIndex?: number) => {
+export function Inject<T>(type: ForwardRefResolvable<Type<T> | AbstractType<T> | Symbol>, options?: InjectOptions): PropertyDecorator {
+  return (target: object, property?: string | symbol, parameterIndex?: number) => {
     if (!type) {
-      errorOnInjectUndefinedType(target, property)
+      throw errorOnInjectUndefinedType(target, property)
     }
     const map: InjectMetadataMap = getInjectMetadata(target) || new Map()
-    const data: InjectMetadata & { _type: Function } = {
+    const data: InjectMetadata & { _type: ForwardRefResolvable<any> } = {
       _type: type,
       property: property,
-      from: options && options.from ? options.from : '',
-      optional: !!(options && options.optional),
-      get service() { return resolveForwardRef(this._type) },
+      from: options?.from || '',
+      optional: !!options?.optional,
+      get type() {
+        return resolveForwardRef(this._type)
+      },
     }
     map.set(property, data)
     target.constructor[injectMetadata] = map

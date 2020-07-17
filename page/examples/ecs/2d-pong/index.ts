@@ -2,22 +2,24 @@ import {
   createGame,
   KeyboardComponent,
   RendererComponent,
-  SceneryLinkComponent,
   SpriteComponent,
   TransformComponent,
 } from '@gglib/components'
 
-import { forwardRef, Inject, OnInit, OnUpdate, Service } from '@gglib/ecs'
+import { forwardRef, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs'
 import { Color, PixelFormat, Texture } from '@gglib/graphics'
 import { KeyboardKey } from '@gglib/input'
 import { Mat4 } from '@gglib/math'
 import { CameraData } from '@gglib/render'
+import { getOption } from '@gglib/utils'
 
-// The PongGame component sits at the root entity.
-// It is decorated with the `@Service` decorator so it is automatically
-// registered as a service on its entity and other components are
-// able to `@Inject` it.
-@Service()
+@Component({
+  install: [
+    RendererComponent,
+    KeyboardComponent,
+    forwardRef(() => LogicComponent),
+  ]
+})
 class PongGame implements OnInit, OnUpdate {
 
   @Inject(RendererComponent)
@@ -83,8 +85,7 @@ class PongGame implements OnInit, OnUpdate {
   }
 }
 
-// This component has no `@Service` decorator since no other
-// component needs access to it.
+@Component()
 class LogicComponent implements OnUpdate {
 
   // Inject the PongGame in order to access the play area dimensions.
@@ -140,8 +141,13 @@ class LogicComponent implements OnUpdate {
   }
 }
 
-@Service()
-class PaddleComponent implements OnInit, OnUpdate {
+@Component({
+  install: [
+    TransformComponent,
+    SpriteComponent,
+  ]
+})
+class PaddleComponent implements OnInit, OnUpdate, OnSetup<{ isLeft: boolean }> {
   public name = 'Paddle'
 
   @Inject(SpriteComponent)
@@ -161,8 +167,10 @@ class PaddleComponent implements OnInit, OnUpdate {
   public w = 1
   public h = 5
 
-  public constructor(private isLeft: boolean) {
+  private isLeft: boolean
 
+  public onSetup(options: { isLeft: boolean }) {
+    this.isLeft = getOption(options, 'isLeft', this.isLeft)
   }
 
   public async onInit() {
@@ -215,7 +223,12 @@ class PaddleComponent implements OnInit, OnUpdate {
 
 // The BacllComponent renders the ball sprite and
 // updates its position according to its movement state.
-@Service()
+@Component({
+  install: [
+    SpriteComponent,
+    TransformComponent,
+  ]
+})
 class BallComponent implements OnInit, OnUpdate {
   public name = 'Ball'
 
@@ -261,7 +274,12 @@ class BallComponent implements OnInit, OnUpdate {
 }
 
 // The FieldComponent simply fills the screen with a backgorund color
-@Service()
+@Component({
+  install: [
+    SpriteComponent,
+    TransformComponent,
+  ]
+})
 class FieldComponent implements OnInit {
   public name = 'Field'
 
@@ -291,36 +309,21 @@ createGame({
   autorun: true,
 }, (e) => {
   e.name = 'Pong'
-  e.addComponent(new RendererComponent())
-  e.addComponent(new PongGame())
-  e.addComponent(new KeyboardComponent())
-  e.addComponent(new LogicComponent())
+  e.install(PongGame)
 })
 .createChild((e) => {
   e.name = 'Field'
-  e.addComponent(new SceneryLinkComponent())
-  e.addComponent(new TransformComponent())
-  e.addComponent(new SpriteComponent())
-  e.addComponent(new FieldComponent())
+  e.install(FieldComponent)
 })
 .createChild((e) => {
   e.name = 'Paddle1'
-  e.addComponent(new SceneryLinkComponent())
-  e.addComponent(new TransformComponent())
-  e.addComponent(new SpriteComponent())
-  e.addComponent(new PaddleComponent(true))
+  e.install(PaddleComponent, { isLeft: true })
 })
 .createChild((e) => {
   e.name = 'Paddle2'
-  e.addComponent(new SceneryLinkComponent())
-  e.addComponent(new TransformComponent())
-  e.addComponent(new SpriteComponent())
-  e.addComponent(new PaddleComponent(false))
+  e.install(PaddleComponent, { isLeft: false })
 })
 .createChild((e) => {
   e.name = 'Ball'
-  e.addComponent(new SceneryLinkComponent())
-  e.addComponent(new TransformComponent())
-  e.addComponent(new SpriteComponent())
-  e.addComponent(new BallComponent())
+  e.install(BallComponent)
 })

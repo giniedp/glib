@@ -188,12 +188,12 @@ function loadWater() {
   mtl.FogType = 3
   mtl.ShadeFunction = 'shadeLambert'
 
-  const model = ModelBuilder.begin().tap((b) => {
-    buildPlane(b, { size: 1000, tesselation: 4 })
-    b.calculateTangents(true)
-  }).endModel(device, {
-    materials: [mtl],
-  })
+  const model = ModelBuilder.begin()
+    .append(buildPlane, { size: 1000, tesselation: 4 })
+    .calculateTangents(true)
+    .endModel(device, {
+      materials: [mtl],
+    })
 
   const world = Mat4.createIdentity()
   gameObjects.push({
@@ -211,7 +211,7 @@ function loadSky() {
   mtl.DiffuseColor = [1, 1, 1]
   mtl.ShadeFunction = 'shadeNone'
 
-  const model = ModelBuilder.begin().tap((b) => {
+  const model = ModelBuilder.begin().append((b) => {
     buildSphere(b, { radius: 1000, tesselation: 32 })
     flipWindingOrder(b.indices)
   }).endModel(device, {

@@ -16,7 +16,7 @@ export interface MouseOptions {
   /**
    * The target element where the events should be captured at. Defaults to `document.documentElement`
    */
-  eventTarget?: HTMLElement
+  eventTarget?: EventTarget
   /**
    * The reference element that the pointer coordinates should be relative to.
    */
@@ -80,7 +80,7 @@ export class Mouse extends Events {
   /**
    * The target eventTarget at which to listen for mouse events. Defaults to `document.documentElement`
    */
-  public readonly eventTarget: HTMLElement = document.documentElement
+  public readonly eventTarget: EventTarget = document.documentElement
 
   /**
    * The reference element that the pointer coordinates should be relative to. Defaults to given `eventTarget` or `document`
@@ -141,10 +141,19 @@ export class Mouse extends Events {
    */
   constructor(options?: MouseOptions) {
     super()
-    this.eventTarget = getOption(options, 'eventTarget', this.eventTarget)
-    this.captureTarget = getOption(options, 'captureTarget', this.captureTarget)
-    this.proxiedEvents = getOption(options, 'proxyEvents', Array.from(this.proxiedEvents))
+    this.setup(options)
+  }
 
+  /**
+   * Re-initializes this instance. Can be used to switch eventTarget on the fly
+   */
+  public setup(options?: MouseOptions) {
+    this.deactivate()
+    Object.assign<Mouse, Partial<Mouse>>(this, {
+      eventTarget: getOption(options, 'eventTarget', this.eventTarget),
+      captureTarget: getOption(options, 'captureTarget', this.captureTarget),
+      proxiedEvents: getOption(options, 'proxyEvents', Array.from(this.proxiedEvents)),
+    })
     this.activate()
   }
 
@@ -271,16 +280,17 @@ export class Mouse extends Events {
     if (this.isLocked) {
       state.clientX += e.movementX
       state.clientY += e.movementY
-    } else {
+    } else if (client instanceof HTMLElement) {
       const rect = client.getBoundingClientRect()
       const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop
       state.clientX = e.pageX - (rect.left + scrollLeft)
       state.clientY = e.pageY - (rect.top + scrollTop)
     }
-
-    state.normalizedX = state.clientX / client.clientWidth
-    state.normalizedY = state.clientY / client.clientHeight
+    if (client instanceof HTMLElement) {
+      state.normalizedX = state.clientX / client.clientWidth
+      state.normalizedY = state.clientY / client.clientHeight
+    }
   }
 
   protected captureButtons(e: MouseEvent, state: MouseState) {

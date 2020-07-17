@@ -64,7 +64,7 @@ function destroyMesh() {
 // Builds the mesh using the specified formula.
 function buildMesh(name: string) {
   destroyMesh()
-  mesh = ModelBuilder.begin().tap((b) => {
+  mesh = ModelBuilder.begin().append((b) => {
     const fn = builderFunctions[name]
     const options = builderFunctionOptions[name]
     fn(b, options)
@@ -73,7 +73,7 @@ function buildMesh(name: string) {
 
   linesMesh = ModelBuilder.begin({
     layout: ['position', 'color'],
-  }).tap((b) => {
+  }).append((b) => {
     buildLines(b, mesh.vertexBuffer)
   }).endMesh(device, {
     primitiveType: PrimitiveType.LineList,

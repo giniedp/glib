@@ -14,3 +14,21 @@ const concatArray = [].concat
 export function flattenArray<T>(value: T): T {
   return concatArray.apply([], value || [])
 }
+
+export function removeFromList<T>(list: T[], item: T) {
+  const index = list.indexOf(item)
+  if (index > 0) {
+    list.splice(index, 1)
+    return true
+  }
+  return false
+}
+
+export function addToList<T>(list: T[], item: T) {
+  const index = list.indexOf(item)
+  if (index === -1) {
+    list.push(item)
+    return true
+  }
+  return false
+}

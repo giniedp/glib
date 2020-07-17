@@ -71,12 +71,12 @@ module.exports = (config) => {
       // compilerOptions: tsconfig.compilerOptions,
       tsconfig: 'tsconfig.cjs.json',
       // Pass options to remap-istanbul.
-      remapOptions: {
-        // a regex for excluding files from remapping
-        // exclude: '',
-        // a function for handling error messages
-        warn: (msg) => console.log(msg),
-      },
+      // remapOptions: {
+      //   // a regex for excluding files from remapping
+      //   // exclude: '',
+      //   // a function for handling error messages
+      //   warn: (msg) => console.log(msg),
+      // },
       converageOptions: {
         instrumentation: IS_COVERAGE,
         exclude: /\.(d|spec|test)\.ts/i,

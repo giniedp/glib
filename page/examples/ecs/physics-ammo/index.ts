@@ -16,19 +16,27 @@ import {
   OnDestroy,
   OnInit,
   OnUpdate,
-  Service,
+  Component,
+  OnAdded,
+  forwardRef,
 } from '@gglib/ecs'
 
 import { ContentManager } from '@gglib/content'
-import { defaultProgram } from '@gglib/effects'
-import { Device, Model, ShaderEffect } from '@gglib/graphics'
+import { Device, Model, LightType, Color } from '@gglib/graphics'
 
 import { KeyboardKey } from '@gglib/input'
 import { Vec3 } from '@gglib/math'
 import Ammo from 'ammojs-typed'
+import { BasicRenderStep } from '@gglib/render'
 
-@Service()
-class MyGame implements OnInit, OnUpdate {
+@Component({
+  install: [
+    KeyboardComponent,
+    forwardRef(() => PhysicsWorld),
+    RendererComponent,
+  ]
+})
+class MyGame implements OnAdded, OnInit, OnUpdate {
   public name = 'MyGame'
 
   @Inject(Entity)
@@ -46,14 +54,50 @@ class MyGame implements OnInit, OnUpdate {
   @Inject(KeyboardComponent)
   public keyboard: KeyboardComponent
 
-  public defaultEffect: ShaderEffect
+
+  public onAdded(entity: Entity) {
+    entity.createChild(
+      (e) => {
+        e.name = 'Camera'
+        e.install(PerspectiveCameraComponent)
+        e.install(WASDComponent)
+        e.get(TransformComponent).setPosition(0, 25, 50)
+      },
+    )
+    .createChild(
+      (e) => {
+        e.name = 'Light'
+        e.install(TransformComponent)
+        e.install(LightComponent, { type: LightType.Directional })
+        e.get(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
+      },
+    )
+    .createChild(
+      (e) => {
+        e.name = 'Ground'
+        e.install(ModelComponent)
+        e.addComponent(new PhysicsProxy(0, 100))
+        e.get(PhysicsProxy).resetPosition(0, -50, 0)
+      },
+    )
+    .createChild((e) => {
+      e.name = 'Cubes'
+      const boxCount = 100
+      for (let i = 0; i < boxCount; i++) {
+        e.createChild((e) => {
+          e.name = `Cube ${i}`
+          e.install(ModelComponent)
+          e.addComponent(new PhysicsProxy(1, 2))
+          e.addComponent(new CubeComponent())
+        })
+      }
+    })
+
+  }
 
   public onInit() {
-    this.defaultEffect = this.device.createEffect({
-      program: defaultProgram({
-        DIFFUSE_COLOR: true,
-      }),
-    })
+    const step = this.renderer.scene.steps[0] as BasicRenderStep
+    step.clearColor = Color.CornflowerBlue.rgba
 
     this.renderer.scene.camera = this.camera
     setTimeout(() => this.resetCubes())
@@ -79,7 +123,7 @@ class MyGame implements OnInit, OnUpdate {
           if (i >= cubes.length) {
             return
           }
-          cubes[i++].getService(PhysicsProxy).resetPosition(
+          cubes[i++].get(PhysicsProxy).resetPosition(
             (x - side / 2 + 0.5) * (2.2 + Math.random()),
             25 + y * (3 + Math.random()),
             (z - side / 2 + 0.5) * (2.2 + Math.random()),
@@ -90,7 +134,7 @@ class MyGame implements OnInit, OnUpdate {
   }
 }
 
-@Service()
+@Component()
 class PhysicsWorld implements OnDestroy, OnUpdate {
   public readonly name = 'PhysicsWorld'
 
@@ -118,7 +162,9 @@ class PhysicsWorld implements OnDestroy, OnUpdate {
   }
 }
 
-@Service()
+@Component({
+  install: [TransformComponent]
+})
 class PhysicsProxy implements OnUpdate {
   public readonly name = 'Physics'
 
@@ -198,7 +244,9 @@ class PhysicsProxy implements OnUpdate {
   }
 }
 
-@Service()
+@Component({
+  install: [ModelComponent]
+})
 class CubeComponent implements OnInit {
 
   public name = 'Cube'
@@ -214,55 +262,9 @@ class CubeComponent implements OnInit {
   }
 }
 
-function boot() {
-
+Ammo(Ammo).then(() => {
   createGame({
     device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
     autorun: true,
-  }, (e) => {
-    e.name = 'Root'
-    e.addComponent(new KeyboardComponent())
-    e.addComponent(new PhysicsWorld())
-    e.addComponent(new RendererComponent())
-    e.addComponent(new MyGame())
-  })
-    .createChild(
-      PerspectiveCameraComponent.ensure,
-      WASDComponent.ensure,
-      (e) => {
-        e.name = 'Camera'
-        e.getService(TransformComponent).setPosition(0, 25, 50)
-      },
-    )
-    .createChild(
-      TransformComponent.ensure,
-      LightComponent.addDirectionalLight,
-      (e) => {
-        e.name = 'Light'
-        e.getService(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
-      },
-    )
-    .createChild(
-      ModelComponent.ensure,
-      (e) => {
-        e.name = 'Ground'
-        e.addComponent(new PhysicsProxy(0, 100))
-        e.getService(PhysicsProxy).resetPosition(0, -50, 0)
-      },
-    )
-    .createChild((e) => {
-      e.name = 'Cubes'
-      const boxCount = 100
-      for (let i = 0; i < boxCount; i++) {
-        e.createChild((e) => {
-          ModelComponent.ensure(e)
-          e.name = `Cube ${i}`
-          e.addComponent(new PhysicsProxy(1, 2))
-          e.addComponent(new CubeComponent())
-        })
-      }
-    })
-
-}
-
-Ammo(Ammo).then(boot)
+  }).install(MyGame)
+})

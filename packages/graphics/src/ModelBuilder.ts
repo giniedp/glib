@@ -19,7 +19,7 @@ let tmpBuffer: any[] = []
  *
  * @public
  */
-export type ModelBuilderFunction = <T>(b: ModelBuilder, options?: T) => void
+export type ModelBuilderFunction<T> = (b: ModelBuilder, options?: T) => void
 
 /**
  * Constructor options for {@link ModelBuilder}
@@ -500,6 +500,12 @@ export class ModelBuilder {
     }
     options.materials = materials
     options.meshes = this.meshes
+    if (!options.boundingBox && this.meshes.every((mesh) => !!mesh.boundingBox)) {
+      options.boundingBox = this.meshes.reduce((box, mesh) => {
+        const meshBox = BoundingBox.convert(mesh.boundingBox)
+        return box ? box.merge(meshBox) : BoundingBox.createFrom(meshBox)
+      }, null as BoundingBox)
+    }
     this.reset()
 
     if (device) {
@@ -510,18 +516,13 @@ export class ModelBuilder {
   }
 
   /**
-   * Calls the given function with `this` as argument for manipulation
+   * Calls the given model builder function and adds the result to this model
    *
-   * ```ts
-   * return ModelBuilder.begin().tap((b) => {
-   *   buildMyFancyMesh(b)
-   * }).endModel(...)
-   * ```
-   *
-   * @param fn - The function to call with this model builder
+   * @param builderFn - The model builder function to call
+   * @param options - The model builder options to use
    */
-  public tap(fn: (builder: this) => void): this {
-    fn(this)
+  public append<T>(builderFn: ModelBuilderFunction<T>, options?: T) {
+    builderFn(this, options)
     return this
   }
 }

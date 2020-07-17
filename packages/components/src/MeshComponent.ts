@@ -1,4 +1,4 @@
-import { Entity, Inject, OnInit, OnRemoved, Service } from '@gglib/ecs'
+import { Entity, Inject, OnInit, OnRemoved, Component } from '@gglib/ecs'
 import { Material, ModelMesh } from '@gglib/graphics'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
@@ -18,26 +18,19 @@ import { TransformComponent } from './TransformComponent'
  * - `TransformComponent` in order to update the position of the mesh
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
-@Service()
+@Component({
+  install: [
+    // TODO: check if thi can be optional
+    // BoundingVolumeComponent,
+    SceneryLinkComponent,
+    TransformComponent,
+  ]
+})
 export class MeshComponent implements SceneryCollectable, OnInit, OnRemoved {
   /**
    * The name of this component (`Mesh`)
    */
   public readonly name = 'Mesh'
-
-  /**
-   * Adds a {@link MeshComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   */
-  public static ensure(entity: Entity) {
-    BoundingVolumeComponent.ensure(entity)
-    SceneryLinkComponent.ensure(entity)
-    TransformComponent.ensure(entity)
-    if (!entity.getService(MeshComponent, null)) {
-      entity.addComponent(new MeshComponent())
-    }
-  }
 
   /**
    * Gets and sets the mesh

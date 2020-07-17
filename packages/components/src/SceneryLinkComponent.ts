@@ -1,4 +1,4 @@
-import { Entity, Service } from '@gglib/ecs'
+import { Entity, Component } from '@gglib/ecs'
 import { SceneryCollectable, SceneryCollector } from './Scenery'
 
 /**
@@ -10,13 +10,8 @@ import { SceneryCollectable, SceneryCollector } from './Scenery'
  * scene rendering. This component is a link between the rendering system and
  * the renderable components of an entity.
  */
-@Service()
+@Component()
 export class SceneryLinkComponent implements SceneryCollectable {
-  public static ensure(e: Entity) {
-    if (!e.getService(SceneryLinkComponent, null)) {
-      e.addComponent(new SceneryLinkComponent())
-    }
-  }
 
   public readonly name = 'SceneryLink'
 

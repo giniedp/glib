@@ -1,5 +1,5 @@
 import { defaultProgram, LightParams } from '@gglib/effects'
-import { BlendState, buildCube, CullState, DepthState, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
+import { BlendState, buildCube, CullState, DepthState, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
@@ -33,9 +33,8 @@ const view = Mat4.createIdentity()
 const proj = Mat4.createIdentity()
 const cam = Mat4.createIdentity()
 
-const model = ModelBuilder.begin().tap((b) => {
-  buildCube(b, { size: 2 })
-})
+const model = ModelBuilder.begin()
+  .append(buildCube, { size: 2 })
   .endModel(device, {
     materials: [{
       effect: lightingEffect,

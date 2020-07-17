@@ -1,4 +1,4 @@
-import { OnUpdate, Service } from '@gglib/ecs'
+import { OnUpdate, Component } from '@gglib/ecs'
 import { ITouchPaneOptions, TouchPane } from '@gglib/input'
 
 /**
@@ -11,7 +11,7 @@ export type TouchComponentOptions = ITouchPaneOptions
 /**
  * @public
  */
-@Service()
+@Component()
 export class TouchComponent implements OnUpdate {
   public readonly name = 'Touch'
 

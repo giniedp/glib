@@ -1,4 +1,4 @@
-import { Entity, Service } from '@gglib/ecs'
+import { Entity, Component } from '@gglib/ecs'
 import {
   BoundingBox,
   BoundingFrustum,
@@ -23,7 +23,7 @@ export interface SpatialSystemComponentOptions {
 /**
  * @public
  */
-@Service()
+@Component()
 export class SpatialSystemComponent {
   /**
    * The component name (`SpatialSystem`)

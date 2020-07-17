@@ -32,9 +32,9 @@ const view = Mat4.createIdentity()
 const proj = Mat4.createIdentity()
 const cam = Mat4.createIdentity()
 
-const model = ModelBuilder.begin().tap((b) => {
-  buildCube(b, { size: 2 })
-})
+const model = ModelBuilder
+  .begin()
+  .append(buildCube, { size: 2 })
   .endModel(device, {
     materials: [{
       effect: lightingEffect,

@@ -23,12 +23,14 @@
     "skipLibCheck": true,
     "target": "es5",
     "typeRoots": [
-      "../node_modules"
+      "../node_modules",
+      "../types"
     ],
     "types": [
       "@types/jasmine",
       "@types/webgl2",
-      "@webgpu/types"
+      "gpuweb",
+      "webxr"
     ]
   },
   "exclude": [

@@ -1,4 +1,4 @@
-import { Entity, Inject, OnDraw, OnInit, Service } from '@gglib/ecs'
+import { Entity, Inject, OnDraw, OnInit, Component } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { BasicRenderStep, LightSourceData, RenderManager, Scene, SceneItem } from '@gglib/render'
 
@@ -28,7 +28,7 @@ export interface RendererComponentOptions {
 /**
  * @public
  */
-@Service()
+@Component()
 export class RendererComponent implements OnInit, OnDraw {
   @Inject(Entity)
   public entity: Entity
@@ -158,12 +158,12 @@ export class BruteForceCullVisitor implements CullVisitor {
   }
 
   private visit(entity: Entity) {
-    const bounds = entity.getService(BoundingVolumeComponent, null)
+    const bounds = entity.get(BoundingVolumeComponent, null)
     if (bounds && bounds.volume && !bounds.volume.intersectsFrustum(this.frustum)) {
       return
     }
 
-    const link = entity.getService(SceneryLinkComponent, null)
+    const link = entity.get(SceneryLinkComponent, null)
     if (link) {
       link.collectScenery(this)
     }
@@ -195,7 +195,7 @@ export class SpatialCullVisitor implements CullVisitor {
       this.frustum.matrix.premultiply(camera.projection)
       this.frustum.update()
     }
-    node.getService(SpatialSystemComponent).testFrustum(this.frustum, this.entities)
+    node.get(SpatialSystemComponent).testFrustum(this.frustum, this.entities)
     this.entities.forEach(this.visit, this)
   }
 
@@ -208,7 +208,7 @@ export class SpatialCullVisitor implements CullVisitor {
   }
 
   private visit(entity: Entity) {
-    const link = entity.getService(SceneryLinkComponent, null)
+    const link = entity.get(SceneryLinkComponent, null)
     if (link) {
       link.collectScenery(this)
     }

@@ -10,11 +10,17 @@ import {
 } from '@gglib/components'
 
 import { ContentManager } from '@gglib/content'
-import { Entity, Inject, OnInit, OnUpdate, Service } from '@gglib/ecs'
-import { Model } from '@gglib/graphics'
+import { Entity, Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'
+import { Model, LightType } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import * as TweakUi from 'tweak-ui'
 
+@Component({
+  install: [
+    WebXRComponent,
+    RendererComponent,
+  ]
+})
 class MyGame implements OnInit, OnUpdate {
 
   public name = 'MyGame'
@@ -114,7 +120,12 @@ class MyGame implements OnInit, OnUpdate {
   }
 }
 
-@Service()
+@Component({
+  install: [
+    ModelComponent,
+    TransformComponent,
+  ]
+})
 class CubeComponent implements OnInit, OnUpdate {
 
   public name = 'Cube'
@@ -138,9 +149,9 @@ class CubeComponent implements OnInit, OnUpdate {
 }
 
 function buildCube(e: Entity, x: number, y: number, z: number) {
-  ModelComponent.ensure(e)
-  e.addComponent(new CubeComponent())
-  e.getService(TransformComponent).setPosition(x, y, z)
+  e.install(ModelComponent)
+  e.install(CubeComponent)
+  e.get(TransformComponent).setPosition(x, y, z)
   return e
 }
 
@@ -150,18 +161,16 @@ createGame({
   } as any },
   autorun: true,
 }, (e) => {
-  e.addComponent(new WebXRComponent())
-  e.addComponent(new RendererComponent())
-  e.addComponent(new MyGame())
+  e.install(MyGame)
 })
 .createChild((e) => {
   e.name = 'Camera'
-  PerspectiveCameraComponent.ensure(e)
+  e.install(PerspectiveCameraComponent)
 })
 .createChild((e) => {
   e.name = 'Light'
-  LightComponent.addDirectionalLight(e)
-  e.getService(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
+  e.install(LightComponent, { type: LightType.Directional })
+  e.get(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
 })
 .createChild((e) => {
   buildCube(e, 0, 0, -10)

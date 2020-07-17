@@ -1,4 +1,4 @@
-import { Entity, OnUpdate, Service } from '@gglib/ecs'
+import { Entity, OnUpdate, Component } from '@gglib/ecs'
 import { Mouse, MouseOptions, MouseState } from '@gglib/input'
 
 /**
@@ -13,18 +13,8 @@ export type MouseComponentOptions = MouseOptions
  *
  * @public
  */
-@Service()
+@Component()
 export class MouseComponent implements OnUpdate {
-  /**
-   * Adds a {@link MouseComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   */
-  public static ensure(entity: Entity) {
-    if (entity.getService(MouseComponent, null) == null) {
-      entity.addComponent(new MouseComponent())
-    }
-  }
 
   /**
    * The component name (`'Mouse'`)

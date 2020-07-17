@@ -30,9 +30,15 @@ export function forwardRef<T>(fn: () => T) {
  * @param type - The type to resolve
  * @public
  */
-export function resolveForwardRef<T>(type: T): T {
-  if (typeof type === 'function' && type[forwardRefFn] === forwardRef) {
+export function resolveForwardRef<T>(type: ForwardRefResolvable<T>): T {
+  if (isForwardRef(type)) {
     return type()
   }
   return type
+}
+
+export type ForwardRefResolvable<T> = T | (() => T)
+
+function isForwardRef<T>(fr: ForwardRefResolvable<T>): fr is (() => T) {
+  return typeof fr === 'function' && fr[forwardRefFn] === forwardRef
 }

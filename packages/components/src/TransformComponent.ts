@@ -5,7 +5,7 @@ import {
   Listener,
   OnInit,
   OnUpdate,
-  Service,
+  Component,
 } from '@gglib/ecs'
 import { IVec3, IVec4, Mat4, Quat, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
@@ -42,21 +42,9 @@ const tempVec = Vec3.createZero()
  * Calculates the final world transform matrix once position, rotation or scale properties have changed.
  * Takes the transform of the parent entity into account if the parent also owns a `TransformComponent`
  */
-@Service()
+@Component()
 export class TransformComponent implements OnInit, OnUpdate {
   public static readonly EVENT_UPDATED = 'TransformComponentUpdated'
-
-  /**
-   * Adds a {@link TransformComponent} to the entity if it does not exist
-   *
-   * @public
-   * @param entity - The entity
-   */
-  public static ensure(entity: Entity, options?: TransformComponentOptions) {
-    if (!entity.getService(TransformComponent, null)) {
-      entity.addComponent(new TransformComponent(options))
-    }
-  }
 
   /**
    * The name identifying this component

@@ -24,7 +24,7 @@ describe('@gglib/ecs/Inject', () => {
     expect(metaOfA).toBeDefined()
     expect(metaOfA.has('b')).toBe(true)
     expect(metaOfA.get('b').property).toBe('b')
-    expect(metaOfA.get('b').service).toBe(B)
+    expect(metaOfA.get('b').type).toBe(B)
     expect(metaOfA.get('b').from).toBe('foo')
     expect(metaOfA.get('b').optional).toBe(true)
 
@@ -32,7 +32,7 @@ describe('@gglib/ecs/Inject', () => {
     expect(metaOfC).toBeDefined()
     expect(metaOfC.has('b')).toBe(true)
     expect(metaOfC.get('b').property).toBe('b')
-    expect(metaOfC.get('b').service).toBe(B)
+    expect(metaOfC.get('b').type).toBe(B)
     expect(metaOfC.get('b').from).toBe('')
     expect(metaOfC.get('b').optional).toBe(false)
   })

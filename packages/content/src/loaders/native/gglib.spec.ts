@@ -110,7 +110,7 @@ describe('content/loader/native', () => {
     manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const modelOptions = ModelBuilder.begin()
-      .tap((b) => buildCube(b))
+      .append(buildCube)
       .endModel({
         materials: [new Material(device, {
           name: 'material instance',

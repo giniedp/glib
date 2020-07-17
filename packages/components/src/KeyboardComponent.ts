@@ -1,4 +1,4 @@
-import { Entity, OnUpdate, Service } from '@gglib/ecs'
+import { Entity, OnUpdate, Component } from '@gglib/ecs'
 import { Keyboard, KeyboardKey, KeyboardOptions } from '@gglib/input'
 
 /**
@@ -6,18 +6,8 @@ import { Keyboard, KeyboardKey, KeyboardOptions } from '@gglib/input'
  *
  * @public
  */
-@Service()
+@Component()
 export class KeyboardComponent implements OnUpdate {
-  /**
-   * Adds a {@link KeyboardComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   */
-  public static ensure(entity: Entity) {
-    if (entity.getService(KeyboardComponent, null) == null) {
-      entity.addComponent(new KeyboardComponent())
-    }
-  }
 
   /**
    * The component name (`'Keyboard'`)

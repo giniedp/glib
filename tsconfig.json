@@ -23,7 +23,8 @@
       "es2017.string"
     ],
     "typeRoots": [
-      "node_modules/@types"
+      "node_modules/@types",
+      "types"
     ]
   },
   "exclude": [

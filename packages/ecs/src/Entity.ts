@@ -1,7 +1,14 @@
-import { Events, Log, Type } from '@gglib/utils'
-import { Component } from './Component'
-import { getInjectMetadata, getListenerMetadata, getServiceMetadata, ListenerMetadata } from './decorators'
-import { errorOnMissingService } from './errors'
+import { Events, Log, Type, TypeWithEmptyConstructor, addToList, removeFromList, getOption } from '@gglib/utils'
+import { EntityComponent, OnSetup, OnSetupOptions } from './EntityComponent'
+import {
+  getInjectMetadata,
+  getListenerMetadata,
+  getComponentMetadata,
+  ListenerMetadata,
+  ComponentMetadataOptions,
+  decorateComponent,
+} from './decorators'
+import { errorOnMissingDependency, errorOnInstallNoMetadata, errorOnMultipleInstancesOfSingletonComponent } from './errors'
 import { Query } from './query'
 
 const query = new Query()
@@ -13,12 +20,11 @@ const boundEntity = Symbol('boundEntity')
  * @public
  */
 export class Entity extends Events {
-
   /**
    * A user defined name
    *
    * @remarks
-   * This serves no purpose for this library and can be changed at any time
+   * This is used to query components by name
    */
   public name: string = 'Entity'
 
@@ -48,17 +54,12 @@ export class Entity extends Events {
   public readonly parent: Entity = null
 
   /**
-   * A collection of services
-   */
-  public readonly services: ReadonlyMap<any, any> = new Map()
-
-  /**
    * A collection of all attached components
    *
    * @remarks
    * To register and remove components from an entity use {@link Entity.addComponent} and {@link Entity.removeComponent} methods
    */
-  public readonly components: ReadonlyArray<Component> = []
+  public readonly components: ReadonlyArray<EntityComponent> = []
 
   /**
    * A collection of child entities
@@ -68,9 +69,10 @@ export class Entity extends Events {
    */
   public readonly children: ReadonlyArray<Entity> = []
 
-  private toDraw: Component[] = []
-  private toUpdate: Component[] = []
-  private toInitialize: Component[] = []
+  private toDraw: EntityComponent[] = []
+  private toUpdate: EntityComponent[] = []
+  private toInitialize: EntityComponent[] = []
+  private provider: Map<any, EntityComponent[]> = new Map()
 
   protected constructor(scope?: Entity) {
     super()
@@ -89,55 +91,41 @@ export class Entity extends Events {
   }
 
   /**
-   * Adds a service object to this entity
-   */
-  public addService<T>(key: Type<T>, service: T, override?: boolean): this
-  /**
-   * Adds a service object to this entity
-   */
-  public addService<T>(key: string, service: any, override?: boolean): this
-  public addService(key: any, service: any, override?: boolean): this {
-    if (this.services.has(key)) {
-      if (override) {
-        this.removeService(key)
-      } else {
-        throw new Error(`Service '${key}' is already registered`)
-      }
-    }
-    (this.services as Map<any, any>).set(key, service)
-    return this
-  }
-
-  /**
-   * Removes a service by given key.
-   */
-  public removeService(key: any): boolean {
-    return (this.services as Map<any, any>).delete(key)
-  }
-
-  /**
-   * Gets a service for given key
+   * Gets a component for given key
    *
    * @param key - the key to lookup
    * @param fallback - the fallback value to return.
    */
-  public getService<T>(key: Type<T>, fallback?: T): T
+  public get<T>(key: Type<T>, fallback?: T): T
   /**
-   * Gets a service for given key
+   * Gets a component for given key
    *
    * @param key - the key to lookup
    * @param fallback - the fallback value to return.
    */
-  public getService<T>(key: any, fallback?: T): T
-  public getService(key: any, fallback?: any) {
-    const result = this.services.get(key)
+  public get<T>(key: any, fallback?: T): T
+  public get(key: any, fallback?: any) {
+    const result = this.provider.get(key)?.[0]
     if (result != null) {
       return result
     }
     if (fallback !== undefined) {
       return fallback
     }
-    errorOnMissingService(key, this)
+    throw errorOnMissingDependency(key, this)
+  }
+
+  public getMulti(key: any): ReadonlyArray<EntityComponent> {
+    return this.provider.get(key)
+  }
+
+  /**
+   * Checks if a component is registered with given key.
+   *
+   * @param key - the key to lookup
+   */
+  public has(key: any) {
+    return !!this.provider.get(key)?.length
   }
 
   /**
@@ -192,12 +180,11 @@ export class Entity extends Events {
     if (entity.parent) {
       entity.parent.removeChild(entity)
     }
-    (this.children as Entity[]).push(entity);
-    (entity as { parent: Entity }).parent = this
+    ;(this.children as Entity[]).push(entity)
+    ;(entity as { parent: Entity }).parent = this
 
     for (const cmp of entity.components) {
-      this.registerService(cmp, 'parent')
-      this.injectServices(cmp, 'parent')
+      this.injectDependencies(cmp, 'parent')
       if (cmp.onAttached) {
         cmp.onAttached(entity)
       }
@@ -216,15 +203,14 @@ export class Entity extends Events {
     }
 
     for (const cmp of entity.components) {
-      this.ejectServices(cmp, 'parent')
-      this.unregisterService(cmp, 'parent')
+      this.ejectDependencies(cmp, 'parent')
       if (cmp.onDetach) {
         cmp.onDetach(entity)
       }
     }
 
-    (this.children as Entity[]).splice(index, 1);
-    (entity as { parent: Entity }).parent = null
+    ;(this.children as Entity[]).splice(index, 1)
+    ;(entity as { parent: Entity }).parent = null
     return this
   }
 
@@ -257,42 +243,65 @@ export class Entity extends Events {
     this.remove()
   }
 
+  public install<T extends OnSetup>(type: TypeWithEmptyConstructor<T>, options: OnSetupOptions<T>): this
+  public install<T extends EntityComponent>(type: TypeWithEmptyConstructor<T>): this
   /**
-   * Adds a component to this entity
+   * Creates and adds an instance of the given component type
+   *
+   * @remarks
+   * If the given type has a Service() decorator, an instance will only be created
+   * if this entity does not already have a service of that type.
+   */
+  public install<T extends EntityComponent>(type: TypeWithEmptyConstructor<T>, options?: any): this {
+    const meta = getComponentMetadata(type)
+    if (!meta) {
+      throw errorOnInstallNoMetadata(type)
+    }
+    let component: EntityComponent = this.get(meta.as, null)
+    const mustAdd = !component
+    if (mustAdd) {
+      component = new type()
+    }
+    if (options && component.onSetup) {
+      component.onSetup(options)
+    }
+    if (mustAdd) {
+      this.addComponent(component)
+    }
+    return this
+  }
+
+  /**
+   * Adds a component instance to this entity
    *
    * @remarks
    * The added component will be marked for initialization which will happen
    * on next update turn.
    *
-   * If the component implements the {@link @gglib/ecs#OnAdded} life cycle this
-   * will be called at the end of this function.
+   * If the component implements the {@link @gglib/ecs#OnAdded} life cycle
+   * it will be called at the end of this function.
    */
-  public addComponent(comp: Component): Entity {
+  public addComponent<T extends EntityComponent>(comp: T extends Function ? never : T): Entity {
     if (comp[boundEntity]) {
-      (comp[boundEntity] as Entity).removeComponent(comp)
+      ;(comp[boundEntity] as Entity).removeComponent(comp)
     }
-    comp[boundEntity] = this
 
-    // Add to update lists
-    if (this.components.indexOf(comp) < 0) {
-      (this.components as Component[]).push(comp)
-    }
+    // Register the component on this entity
+    this.registerComponent(comp)
+    // Bind the entity to the component
+    comp[boundEntity] = this
+    addToList(this.components as EntityComponent[], comp)
+
+    // Push to the initialization list
     if (this.toInitialize.indexOf(comp) < 0) {
       this.toInitialize.push(comp)
     }
 
-    // Inject the entity before the 'onAdded' lifecycle
-    // so during 'onAdded' the component has an entity
-    // to work with.
+    // Create dependencies for the given component.
+    this.installDependencies(comp)
+
+    // Inject the entity before calling the 'onAdded' lifecycle
     this.injectEntity(comp)
-    // It is also safe to register this component as a
-    // service at this stage
-    this.registerService(comp)
-    // However, we can not inject further dependencies
-    // right now since the entity/component tree might be
-    // incomplete as it might be in the 'design' state.
-    // We have to defer the dependency injection up
-    // until the 'initializeComponents' stage
 
     // Run life cycle
     if (comp.onAdded) {
@@ -314,26 +323,16 @@ export class Entity extends Events {
    *
    * However the `onDestroy` lifecycle is not called. To do this use `destroyComponent`.
    */
-  public removeComponent(comp: Component): this {
-    let isRemoved = false
-
-    // Unbind
-    let index = this.components.indexOf(comp)
-    if (index >= 0) {
-      (this.components as Component[]).splice(index, 1)
+  public removeComponent(comp: EntityComponent): this {
+    const isRemoved = removeFromList(this.components as EntityComponent[], comp)
+    if (isRemoved) {
       comp[boundEntity] = null
-      isRemoved = true
     }
 
     // Unregister from update lists
-    index = this.toUpdate.indexOf(comp)
-    if (index >= 0) {
-      this.toUpdate.splice(index, 1)
-    }
-    index = this.toDraw.indexOf(comp)
-    if (index >= 0) {
-      this.toDraw.splice(index, 1)
-    }
+    removeFromList(this.toUpdate, comp)
+    removeFromList(this.toDraw, comp)
+    removeFromList(this.toInitialize, comp)
 
     // Run life cycle
     if (isRemoved && comp.onRemoved) {
@@ -344,9 +343,9 @@ export class Entity extends Events {
     // Doing this after and not before 'onRemove'
     // allows the component to say goodbye to its
     // services before they are ejected
-    this.ejectServices(comp)
-    this.unregisterService(comp)
+    this.ejectDependencies(comp)
     this.removeEventListeners(comp)
+    this.unregisterComponent(comp)
 
     return this
   }
@@ -356,7 +355,7 @@ export class Entity extends Events {
    *
    * @param comp - the component to remove
    */
-  public destroyComponent(comp: Component): this {
+  public destroyComponent(comp: EntityComponent): this {
     this.removeComponent(comp)
     if (comp.onDestroy) {
       comp.onDestroy(this)
@@ -382,12 +381,15 @@ export class Entity extends Events {
    * @param recursive - Whether to continue the initialization recursively on every child
    */
   public initializeComponents(recursive: boolean = true): this {
-    let cmp: Component
+    let cmp: EntityComponent
+    for (let i = 0; i < this.toInitialize.length; i++) {
+      cmp = this.toInitialize[i]
+      this.injectDependencies(cmp)
+      this.addEventListeners(cmp)
+    }
+
     while (this.toInitialize.length > 0) {
       cmp = this.toInitialize.shift()
-
-      this.injectServices(cmp)
-      this.addEventListeners(cmp)
 
       if (cmp.onUpdate && this.toUpdate.indexOf(cmp) < 0) {
         this.toUpdate.push(cmp)
@@ -401,11 +403,10 @@ export class Entity extends Events {
       }
     }
 
-    if (!recursive) {
-      return this
-    }
-    for (let i = 0; i < this.children.length; i++) {
-      this.children[i].initializeComponents(recursive)
+    if (recursive) {
+      for (let i = 0; i < this.children.length; i++) {
+        this.children[i].initializeComponents(recursive)
+      }
     }
     return this
   }
@@ -514,37 +515,31 @@ export class Entity extends Events {
     return this
   }
 
-  private injectEntity(component: Component) {
+  private injectEntity(component: EntityComponent) {
     const meta = getInjectMetadata(component)
     if (!meta) {
       return
     }
     meta.forEach((m) => {
-      if (m.service === Entity) {
+      if (m.type === Entity) {
         component[m.property] = this.resolveEntity(m.from)
       }
     })
   }
 
-  private ejectEntity(component: Component) {
+  private ejectEntity(component: EntityComponent) {
     const meta = getInjectMetadata(component)
-    if (!meta) {
-      return
-    }
-    meta.forEach((m) => {
-      if (m.service === Entity) {
+    meta?.forEach((m) => {
+      if (m.type === Entity) {
         component[m.property] = null
       }
     })
   }
 
-  private injectServices(component: Component, from?: 'root' | 'parent') {
+  private injectDependencies(component: EntityComponent, from?: 'root' | 'parent') {
     const meta = getInjectMetadata(component)
-    if (!meta) {
-      return
-    }
-    meta.forEach((m) => {
-      if (m.service === Entity) {
+    meta?.forEach((m) => {
+      if (m.type === Entity) {
         return
       }
       if (from && m.from !== from) {
@@ -552,63 +547,53 @@ export class Entity extends Events {
       }
       const source = this.resolveEntity(m.from)
       if (source) {
-        const service = source.getService(m.service, null)
-        if (service) {
-          component[m.property] = service
+        const dep = source.get(m.type, null)
+        if (dep) {
+          component[m.property] = dep
         } else if (!m.optional) {
-          errorOnMissingService(m.service, source, component)
+          throw errorOnMissingDependency(m.type, source, component)
         }
       } else {
-        Log.w('[Entity]', `unable to inject service from '${m.from}'. Entity is not available.`)
+        Log.w('[Entity]', `unable to inject dependency from '${m.from}'. Entity is not available.`)
       }
     })
   }
 
-  private ejectServices(component: Component, from?: 'root' | 'parent') {
+  private ejectDependencies(component: EntityComponent, from?: 'root' | 'parent') {
     const meta = getInjectMetadata(component)
-    if (!meta) {
-      return
-    }
-    meta.forEach((m) => {
+    meta?.forEach((m) => {
       if (!from || from === m.from) {
         component[m.property] = null
       }
     })
   }
 
-  private registerService(component: Component, on?: 'root' | 'parent') {
-    const meta = getServiceMetadata(component)
-    if (!meta) {
-      return
-    }
-    if (on && meta.on !== on) {
-      return
-    }
-    const target = this.resolveEntity(meta.on)
-    if (target) {
-      target.addService(meta.as, component, true)
-    } else {
-      Log.w('[Entity]', `unable to register service on '${meta.on}'. Entity is not available.`)
-    }
-  }
-
-  private unregisterService(component: Component, on?: 'root' | 'parent') {
-    const meta = getServiceMetadata(component)
-    if (!meta) {
-      return
-    }
-    if (on && meta.on !== on) {
-      return
-    }
-    const target = this.resolveEntity(meta.on)
-    if (target) {
-      target.removeService(meta.as)
-    } else {
-      Log.w('[Entity]', `unable to unregister service on '${meta.on}'. Entity is not available.`)
+  private registerComponent(component: EntityComponent) {
+    const meta = getComponentMetadata(component)
+    if (meta) {
+      if (!meta.multi && this.has(meta.as)) {
+        throw errorOnMultipleInstancesOfSingletonComponent(component)
+      }
+      let list = this.provider.get(meta.as)
+      if (!list) {
+        list = []
+        this.provider.set(meta.as, list)
+      }
+      addToList(list, component)
     }
   }
 
-  private addEventListeners(component: Component) {
+  private unregisterComponent(component: EntityComponent) {
+    const meta = getComponentMetadata(component)
+    if (meta) {
+      let list = this.provider.get(meta.as)
+      if (list) {
+        removeFromList(list, component)
+      }
+    }
+  }
+
+  private addEventListeners(component: EntityComponent) {
     const meta = getListenerMetadata(component)
     if (!meta) {
       return
@@ -619,7 +604,7 @@ export class Entity extends Events {
     })
   }
 
-  private removeEventListeners(component: Component) {
+  private removeEventListeners(component: EntityComponent) {
     const meta = getListenerMetadata(component)
     if (!meta) {
       return
@@ -641,5 +626,14 @@ export class Entity extends Events {
       return this.parent
     }
     return this.find(lookup)
+  }
+
+  private installDependencies(component: EntityComponent) {
+    const meta = getComponentMetadata(component)
+    if (meta?.install.length) {
+      for (const dep of meta.install) {
+        this.install(dep)
+      }
+    }
   }
 }

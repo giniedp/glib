@@ -1,4 +1,4 @@
-import { Entity, Inject, OnInit, OnRemoved, OnUpdate, Service } from '@gglib/ecs'
+import { Entity, Inject, OnInit, OnRemoved, OnUpdate, Component, OnSetup } from '@gglib/ecs'
 import { LightParams } from '@gglib/effects'
 import { LightType } from '@gglib/graphics'
 import { BoundingSphere, Vec3 } from '@gglib/math'
@@ -31,66 +31,14 @@ export interface LightComponentOptions {
  *
  * @public
  */
-@Service()
-export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
-  /**
-   * Adds a {@link LightComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   * @param options - Constructor options for the {@link LightComponent}
-   */
-  public static addPointLight(entity: Entity, options: LightComponentOptions = {}) {
-    BoundingVolumeComponent.ensure(entity)
-    SceneryLinkComponent.ensure(entity)
-    if (!entity.services.has(LightComponent)) {
-      options.type = LightType.Point
-      entity.addComponent(new LightComponent(options))
-    }
-  }
-
-  /**
-   * Adds a {@link LightComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   * @param options - Constructor options for the {@link LightComponent}
-   */
-  public static addSpotLight(entity: Entity, options: LightComponentOptions = {}) {
-    BoundingVolumeComponent.ensure(entity)
-    SceneryLinkComponent.ensure(entity)
-    if (!entity.services.has(LightComponent)) {
-      options.type = LightType.Spot
-      entity.addComponent(new LightComponent(options))
-    }
-  }
-
-  /**
-   * Adds a {@link LightComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   * @param options - Constructor options for the {@link LightComponent}
-   */
-  public static addDirectionalLight(entity: Entity, options: LightComponentOptions = {}) {
-    BoundingVolumeComponent.ensure(entity)
-    SceneryLinkComponent.ensure(entity)
-    if (!entity.services.has(LightComponent)) {
-      options.type = LightType.Directional
-      entity.addComponent(new LightComponent(options))
-    }
-  }
-
-  /**
-   * Adds a {@link LightComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   * @param options - Constructor options for the {@link LightComponent}
-   */
-  public static addLight(entity: Entity, options: LightComponentOptions = {}) {
-    BoundingVolumeComponent.ensure(entity)
-    SceneryLinkComponent.ensure(entity)
-    if (!entity.services.has(LightComponent)) {
-      entity.addComponent(new LightComponent(options))
-    }
-  }
+@Component({
+  install: [
+    BoundingVolumeComponent,
+    TransformComponent,
+    SceneryLinkComponent,
+  ]
+})
+export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved, OnSetup<LightComponentOptions> {
 
   /**
    * The transform component of the entity
@@ -113,15 +61,15 @@ export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnR
   /**
    * Enables and disables the light source
    */
-  public enabled: boolean
+  public enabled: boolean = true
   /**
    * The range of the light source (e.g. for point and spoit lights)
    */
-  public range: number
+  public range: number = 0
   /**
    * The light intensity
    */
-  public intensity: number
+  public intensity: number = 1
   /**
    * The cone angle of the spot light
    */
@@ -133,36 +81,39 @@ export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnR
   /**
    * The current light position
    */
-  public position: Vec3
+  public position: Vec3 = Vec3.create(0, 0, 0)
   /**
    * The current light direction
    */
-  public direction: Vec3
+  public direction: Vec3 = Vec3.create(0, 0, -1)
   /**
    * The current light color
    */
-  public color: Vec3
+  public color: Vec3 = Vec3.create(1, 1, 1)
   /**
    * The light type
    */
-  public type: LightType
+  public type: LightType = LightType.Directional
 
-  public readonly params: LightParams
+  public readonly params: LightParams = new LightParams()
   private localVolume = new BoundingSphere(0, 0, 0, Number.MAX_SAFE_INTEGER)
 
-  constructor(params?: LightComponentOptions) {
-    this.enabled = getOption(params, 'enabled', true)
-    this.range = getOption(params, 'range', 0)
-    this.intensity = getOption(params, 'intensity', 1)
-    this.spotAngle = getOption(params, 'spotAngle', Math.PI / 4)
-    this.castShadow = getOption(params, 'castShadow', false)
-    this.type = getOption(params, 'type', LightType.Directional)
-    this.color = Vec3.convert(getOption(params, 'color', Vec3.create(1, 1, 1)))
-    this.position = Vec3.convert(getOption(params, 'position', Vec3.create(0, 0, 0)))
-    this.direction = Vec3.convert(getOption(params, 'direction', Vec3.create(0, 0, -1)))
+  constructor(options?: LightComponentOptions) {
+    if (options) {
+      this.onSetup(options)
+    }
+  }
 
-    this.type = this.type
-    this.params = new LightParams()
+  public onSetup(options: LightComponentOptions) {
+    this.enabled = getOption(options, 'enabled', this.enabled)
+    this.range = getOption(options, 'range', this.range)
+    this.intensity = getOption(options, 'intensity', this.intensity)
+    this.spotAngle = getOption(options, 'spotAngle', this.spotAngle)
+    this.castShadow = getOption(options, 'castShadow', this.castShadow)
+    this.type = getOption(options, 'type', this.type)
+    this.color = Vec3.convert(getOption(options, 'color', this.color))
+    this.position = Vec3.convert(getOption(options, 'position', this.position))
+    this.direction = Vec3.convert(getOption(options, 'direction', this.direction))
   }
 
   /**
@@ -170,9 +121,7 @@ export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnR
    */
   public onInit() {
     this.link.register(this)
-    if (this.volume) {
-      this.volume.linkVolume(this.localVolume)
-    }
+    this.volume?.linkVolume(this.localVolume)
   }
 
   /**

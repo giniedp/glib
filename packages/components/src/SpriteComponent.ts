@@ -4,7 +4,7 @@ import {
   OnInit,
   OnRemoved,
   OnUpdate,
-  Service,
+  Component,
 } from '@gglib/ecs'
 import { SpriteBatch, Texture } from '@gglib/graphics'
 import { BoundingSphere, IRect } from '@gglib/math'
@@ -82,30 +82,17 @@ export interface SpriteComponentOptions {
  * __Required Services__
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
-@Service()
+@Component({
+  install: [
+    SceneryLinkComponent
+  ]
+})
 export class SpriteComponent
   implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
   /**
    * The name of the component (`Sprite`)
    */
   public readonly name = 'Sprite'
-
-  /**
-   * Adds a {@link SpriteComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   * @remarks
-   * Also ensures that following components are added
-   * - `SceneryLinkComponent`
-   * - `TransformComponent`
-   */
-  public static ensure(entity: Entity) {
-    SceneryLinkComponent.ensure(entity)
-    TransformComponent.ensure(entity)
-    if (!entity.getService(SpriteComponent, null)) {
-      entity.addComponent(new SpriteComponent())
-    }
-  }
 
   /**
    * The sprite data

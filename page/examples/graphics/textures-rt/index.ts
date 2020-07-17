@@ -15,8 +15,8 @@ let program = device.createProgram({
 })
 
 // Create meshes which are going to be rendered
-let planeMesh = ModelBuilder.begin().tap(buildPlane).endMesh(device)
-let cubeMesh = ModelBuilder.begin().tap(buildCube).endMesh(device)
+let planeMesh = ModelBuilder.begin().append(buildPlane).endMesh(device)
+let cubeMesh = ModelBuilder.begin().append(buildCube).endMesh(device)
 
 // Create a texture and a render target
 let texture = device.createTexture({

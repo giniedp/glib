@@ -1,4 +1,4 @@
-import { Entity, Inject, Service } from '@gglib/ecs'
+import { Entity, Inject, Component, OnSetup } from '@gglib/ecs'
 import { cancelAnimationFrame, getOption, getTime, requestAnimationFrame } from '@gglib/utils'
 
 /**
@@ -63,8 +63,8 @@ export interface LoopComponentOptions {
 /**
  * @public
  */
-@Service()
-export class LoopComponent {
+@Component()
+export class LoopComponent implements OnSetup<LoopComponentOptions> {
   /**
    * The name of this component (`'Loop'`)
    */
@@ -174,16 +174,24 @@ export class LoopComponent {
    */
   protected frameLag: number = 0
 
-  constructor(params: LoopComponentOptions = {}) {
-    this.targetElapsedTime = getOption(params, 'targetElapsedTime', this.targetElapsedTime)
-    this.maxElapsedTime = getOption(params, 'maxElapsedTime', this.maxElapsedTime)
-    this.useFixedTimeStep = getOption(params, 'useFixedTimeStep', this.useFixedTimeStep)
-    this.recursiveInit = getOption(params, 'recursiveInit', this.recursiveInit)
-    this.recursiveUpdate = getOption(params, 'recursiveUpdate', this.recursiveUpdate)
-    this.recursiveDraw = getOption(params, 'recursiveDraw', this.recursiveDraw)
-    this.getTime = getOption(params, 'getTime', this.getTime)
-    this.requestAnimationFrame = getOption(params, 'requestAnimationFrame', this.requestAnimationFrame)
-    this.cancelAnimationFrame = getOption(params, 'cancelAnimationFrame', this.cancelAnimationFrame)
+  constructor(params?: LoopComponentOptions) {
+    if (params) {
+      this.onSetup(params)
+    }
+  }
+
+  public onSetup(options: LoopComponentOptions) {
+    this.targetElapsedTime = getOption(options, 'targetElapsedTime', this.targetElapsedTime)
+    this.maxElapsedTime = getOption(options, 'maxElapsedTime', this.maxElapsedTime)
+    this.useFixedTimeStep = getOption(options, 'useFixedTimeStep', this.useFixedTimeStep)
+    this.recursiveInit = getOption(options, 'recursiveInit', this.recursiveInit)
+    this.recursiveUpdate = getOption(options, 'recursiveUpdate', this.recursiveUpdate)
+    this.recursiveDraw = getOption(options, 'recursiveDraw', this.recursiveDraw)
+    this.getTime = getOption(options, 'getTime', this.getTime)
+    this.installAnimationFrame({
+      requestAnimationFrame: getOption(options, 'requestAnimationFrame', this.requestAnimationFrame),
+      cancelAnimationFrame: getOption(options, 'cancelAnimationFrame', this.cancelAnimationFrame),
+    })
   }
 
   /**

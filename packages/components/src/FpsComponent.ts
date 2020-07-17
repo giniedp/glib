@@ -1,10 +1,10 @@
-import { Inject, OnUpdate, Service } from '@gglib/ecs'
+import { Inject, OnUpdate, Component } from '@gglib/ecs'
 import { TimeComponent } from './TimeComponent'
 
 /**
  * @public
  */
-@Service()
+@Component()
 export class FpsComponent implements OnUpdate {
   /**
    * Number of counted frames since reset

@@ -30,8 +30,10 @@ export class ShaderGPU extends Shader {
   }
 
   public compile() {
+    const source = this.source.trim()
+    // const code = this.device.glslang.compileGLSL(source, this.type === ShaderType.VertexShader ? 'vertex' : 'fragment', true)
     this.descriptor.module = this.device.device.createShaderModule({
-      code: this.device.glslang.compileGLSL(this.source.trim(), this.type === ShaderType.VertexShader ? 'vertex' : 'fragment', true),
+      code: source,
     })
     this.compiled = !!this.descriptor.module
     return this

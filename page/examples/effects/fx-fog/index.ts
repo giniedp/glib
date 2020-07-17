@@ -31,11 +31,13 @@ const view = Mat4.createIdentity()
 const proj = Mat4.createIdentity()
 const cam = Mat4.createIdentity()
 
-const model = ModelBuilder.begin().tap((b) => {
-  for (let i = 0; i < 10; i++) {
-    b.withTransform(Mat4.createTranslation(i * 2, -1, -i * 2), buildCube)
-  }
-})
+const model = ModelBuilder
+  .begin()
+  .append((b) => {
+    for (let i = 0; i < 10; i++) {
+      b.withTransform(Mat4.createTranslation(i * 2, -1, -i * 2), buildCube)
+    }
+  })
   .endModel(device, {
     materials: [{
       effect: lightingEffect,

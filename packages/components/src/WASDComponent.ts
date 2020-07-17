@@ -1,4 +1,4 @@
-import { Entity, Inject, OnUpdate, Service } from '@gglib/ecs'
+import { Entity, Inject, OnUpdate, Component } from '@gglib/ecs'
 import { KeyboardKey } from '@gglib/input'
 import { Vec3 } from '@gglib/math'
 
@@ -24,22 +24,14 @@ export interface WASDComponentOptions {
 /**
  * @public
  */
-@Service()
+@Component({
+  install: [
+    MouseComponent,
+    KeyboardComponent,
+    TransformComponent,
+  ]
+})
 export class WASDComponent implements OnUpdate {
-  /**
-   * Adds a {@link WASDComponent} to the entity if it does not exist
-   *
-   * @public
-   * @param entity - The entity
-   */
-  public static ensure(entity: Entity) {
-    MouseComponent.ensure(entity)
-    KeyboardComponent.ensure(entity)
-    TransformComponent.ensure(entity)
-    if (entity.getService(WASDComponent, null) == null) {
-      entity.addComponent(new WASDComponent())
-    }
-  }
 
   /**
    * Default movement speed in units per second
@@ -100,6 +92,10 @@ export class WASDComponent implements OnUpdate {
   private mouseButton: number = 0
 
   public constructor(options: WASDComponentOptions = {}) {
+    this.setup(options)
+  }
+
+  public setup(options: WASDComponentOptions) {
     this.keyForwad = getOption(options, 'keyForwad', this.keyForwad)
     this.keyBackward = getOption(options, 'keyBackward', this.keyBackward)
     this.keyLeft = getOption(options, 'keyLeft', this.keyLeft)

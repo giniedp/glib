@@ -1,4 +1,4 @@
-import { Entity, Inject, Listener, OnRemoved, OnUpdate, Service } from '@gglib/ecs'
+import { Entity, Inject, Listener, OnRemoved, OnUpdate, Component } from '@gglib/ecs'
 import { BoundingBox, BoundingSphere, BoundingVolume, Mat4, Vec3 } from '@gglib/math'
 import { SpatialSystemComponent } from './SpatialSystemComponent'
 import { TransformComponent } from './TransformComponent'
@@ -17,22 +17,10 @@ import { TransformComponent } from './TransformComponent'
  * - `TransformComponent` in order to update the volume into world space
  * - `SpatialSystemComponent` which is resolved from `root` entity
  */
-@Service()
+@Component({
+  install: [TransformComponent],
+})
 export class BoundingVolumeComponent implements OnUpdate, OnRemoved {
-  /**
-   * Adds a {@link BoundingVolumeComponent} component to the entity if it is missing
-   *
-   * @param entity - The entity
-   * @remarks
-   * Also ensures the existence of following components
-   * - `TransformComponent`
-   */
-  public static ensure(entity: Entity) {
-    TransformComponent.ensure(entity)
-    if (!entity.getService(BoundingVolumeComponent, null)) {
-      entity.addComponent(new BoundingVolumeComponent())
-    }
-  }
 
   /**
    * The name of this component (`BoundingVolume`)

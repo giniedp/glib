@@ -7,14 +7,20 @@ import {
   RendererComponent,
   TimeComponent,
   TransformComponent,
+  WASDComponent,
 } from '@gglib/components'
 
 import { ContentManager } from '@gglib/content'
-import { Inject, OnInit, OnUpdate, Service } from '@gglib/ecs'
-import { Model } from '@gglib/graphics'
+import { Inject, OnInit, OnUpdate, Component, OnSetup, OnAdded, Entity } from '@gglib/ecs'
+import { Model, LightType, Color } from '@gglib/graphics'
 import * as TweakUi from 'tweak-ui'
+import { getOption } from '@gglib/utils'
+import { BasicRenderStep } from '@gglib/render'
 
-class MyGame implements OnInit, OnUpdate {
+@Component({
+  install: [RendererComponent]
+})
+class MyGame implements OnAdded, OnInit, OnUpdate {
 
   @Inject(RendererComponent)
   public readonly renderer: RendererComponent
@@ -25,8 +31,32 @@ class MyGame implements OnInit, OnUpdate {
   @Inject(TimeComponent, { from: 'root' })
   public readonly time: TimeComponent
 
+  public onAdded(entity: Entity) {
+    entity.createChild((e) => {
+      e.name = 'Camera'
+      e.install(PerspectiveCameraComponent)
+      e.install(WASDComponent)
+      e.install(LightComponent, { type: LightType.Directional })
+    })
+    .createChild((e) => {
+      e.name = 'Cube1'
+      e.install(ModelComponent)
+      e.install(CubeComponent, { timeKey: 'time1' })
+      e.get(TransformComponent).translate(-2, 0, -5)
+    })
+    .createChild((e) => {
+      e.name = 'Cube2'
+      e.install(ModelComponent)
+      e.install(CubeComponent, { timeKey: 'time2' })
+      e.get(TransformComponent).translate(2, 0, -5)
+    })
+  }
+
   public onInit() {
     this.renderer.scene.camera = this.camera
+    const step = this.renderer.scene.steps[0] as BasicRenderStep
+    step.clearColor = Color.CornflowerBlue.rgba
+
     this.time.getOrCreate('time1')
     this.time.getOrCreate('time2')
   }
@@ -36,8 +66,13 @@ class MyGame implements OnInit, OnUpdate {
   }
 }
 
-@Service()
-class CubeComponent implements OnInit, OnUpdate {
+@Component({
+  install: [
+    ModelComponent,
+    TransformComponent,
+  ]
+})
+class CubeComponent implements OnInit, OnUpdate, OnSetup<{ timeKey: string }> {
 
   @Inject(TimeComponent, { from: 'root' })
   public readonly time: TimeComponent
@@ -51,8 +86,10 @@ class CubeComponent implements OnInit, OnUpdate {
   @Inject(TransformComponent)
   public readonly transform: TransformComponent
 
-  public constructor(private timeKey: string) {
-    //
+  private timeKey: string
+
+  public onSetup(options?: { timeKey: string }) {
+    this.timeKey = getOption(options, 'timeKey', this.timeKey)
   }
 
   public async onInit() {
@@ -70,38 +107,16 @@ const game = createGame({
   autorun: true,
 }, (e) => {
   e.name = 'Root'
-  e.addComponent(new RendererComponent())
-  e.addComponent(new MyGame())
-})
-.createChild((e) => {
-  e.name = 'Camera'
-  PerspectiveCameraComponent.ensure(e)
-})
-.createChild((e) => {
-  e.name = 'Light'
-  LightComponent.addDirectionalLight(e)
-  e.getService(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
-})
-.createChild((e) => {
-  ModelComponent.ensure(e)
-  e.name = 'Cube1'
-  e.addComponent(new CubeComponent('time1'))
-  e.getService(TransformComponent).translate(-2, 0, -5)
-})
-.createChild((e) => {
-  ModelComponent.ensure(e)
-  e.name = 'Cube2'
-  e.addComponent(new CubeComponent('time2'))
-  e.getService(TransformComponent).translate(2, 0, -5)
+  e.install(MyGame)
 })
 
 TweakUi.build('#tweak-ui', (q) => {
   q.group('Time 1', (f) => {
-    const t = game.getService(TimeComponent).getOrCreate('time1')
+    const t = game.get(TimeComponent).getOrCreate('time1')
     f.slider(t, 'factor', { min: -10, max: 10, step: 0.1 })
   })
   q.group('Time 2', (f) => {
-    const t = game.getService(TimeComponent).getOrCreate('time2')
+    const t = game.get(TimeComponent).getOrCreate('time2')
     f.slider(t, 'factor', { min: -10, max: 10, step: 0.1 })
   })
 })

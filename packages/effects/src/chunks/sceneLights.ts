@@ -8,7 +8,7 @@ export interface LightDefs {
   /**
    * Enables lighting
    */
-  LIGHT?: true
+  LIGHT?: boolean
   /**
    * Defines total number of lights
    *

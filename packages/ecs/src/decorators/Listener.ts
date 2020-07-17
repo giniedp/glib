@@ -60,7 +60,7 @@ export function getListenerMetadata<T>(target: T): ListenerMetadataMap | null {
 export function Listener(event: string, options?: ListenerOptions) {
   return (target: object, method?: string|symbol) => {
     if (!event) {
-      errorOnInjectUndefinedType(target, method)
+      throw errorOnInjectUndefinedType(target, method)
     }
     const map: ListenerMetadataMap = getListenerMetadata(target) || new Map()
     const data: ListenerMetadata = {

@@ -86,6 +86,10 @@ export class ContentManager {
    */
   constructor(device: Device, options: IManagerOptions= {}) {
     this.device = device
+    this.setup(options)
+  }
+
+  public setup(options: IManagerOptions) {
     this.enableDomAssets = getOption(options, 'enableDomAssets', this.enableDomAssets)
     this.loader = getOption(options, 'loader', this.loader)
   }

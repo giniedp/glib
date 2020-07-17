@@ -1,4 +1,4 @@
-import { OnDraw, OnUpdate, Service } from '@gglib/ecs'
+import { OnDraw, OnUpdate, Component } from '@gglib/ecs'
 import { getOption, getTime } from '@gglib/utils'
 
 /**
@@ -97,12 +97,12 @@ export interface TimeComponentOptions {
  *
  * ```ts
  * Entity.createRoot()
- *   .addComponent(new LoopComponent())
- *   .addComponent(new TimeComponent())
+ *   .install(LoopComponent)
+ *   .install(TimeComponent)
  * ```
  */
 
-@Service()
+@Component()
 export class TimeComponent implements OnUpdate, OnDraw {
   /**
    * The real time clock

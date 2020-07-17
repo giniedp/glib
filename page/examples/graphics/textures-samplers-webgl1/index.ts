@@ -17,7 +17,7 @@ const program = device.createProgram({
 })
 
 // Create a mesh which is going to be rendered
-const mesh = ModelBuilder.begin().tap(buildPlane).endMesh(device)
+const mesh = ModelBuilder.begin().append(buildPlane).endMesh(device)
 
 const texture = device.createTexture({
   width: 2,

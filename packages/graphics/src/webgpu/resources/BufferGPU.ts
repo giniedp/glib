@@ -105,7 +105,8 @@ export class BufferGPU extends Buffer {
       this.$elementCount = this.sizeInBytes / this.stride
       this.create()
     }
-    this.handle.setSubData(0, data, off, len)
+    // TODO: https://github.com/gpuweb/gpuweb/blob/main/design/BufferOperations.md
+    throw new Error('not implemented')
     return this
   }
 
@@ -122,7 +123,8 @@ export class BufferGPU extends Buffer {
     byteOffset = byteOffset || 0
     const off = srcByteOffset || 0
     const len = srcByteLength || (data.byteLength - off)
-    this.handle.setSubData(byteOffset, data, off, len)
+    // TODO: https://github.com/gpuweb/gpuweb/blob/main/design/BufferOperations.md
+    throw new Error('not implemented')
     return this
   }
 

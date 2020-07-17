@@ -1,4 +1,4 @@
-import { Entity, Inject, OnUpdate, Service } from '@gglib/ecs'
+import { Entity, Inject, OnUpdate, Component } from '@gglib/ecs'
 import { Mat4 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 import { TransformComponent } from './TransformComponent'
@@ -79,24 +79,8 @@ export interface PerspectiveCameraOptions {
  * ## Required Services
  * - `TransformComponent`
  */
-@Service({ as: CameraComponent })
+@Component({ as: CameraComponent, install: [TransformComponent] })
 export class PerspectiveCameraComponent extends CameraComponent implements OnUpdate {
-  /**
-   * Adds a {@link PerspectiveCameraComponent} component to the entity if there is no camera added
-   *
-   * @param entity - The entity
-   * @param options - Constructor options for the {@link PerspectiveCameraComponent}
-   * @remarks
-   * Also ensures the existence of following components
-   * - `TransformComponent`
-   */
-  public static ensure(entity: Entity, options?: PerspectiveCameraOptions) {
-    TransformComponent.ensure(entity)
-    if (entity.getService(CameraComponent, null) == null) {
-      entity.addComponent(new PerspectiveCameraComponent(options))
-    }
-  }
-
   /**
    * The near plane distance
    */
@@ -197,21 +181,8 @@ export interface OrthographicCameraOptions {
  *
  * @public
  */
-@Service({ as: CameraComponent })
+@Component({ as: CameraComponent, install: [TransformComponent] })
 export class OrthographicCameraComponent extends CameraComponent implements OnUpdate {
-  /**
-   * Adds a {@link CameraComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   * @param options - Constructor options for the {@link CameraComponent}
-   */
-  public static ensure(entity: Entity, options?: OrthographicCameraOptions) {
-    TransformComponent.ensure(entity)
-    if (entity.getService(CameraComponent, null) == null) {
-      entity.addComponent(new OrthographicCameraComponent(options))
-    }
-  }
-
   /**
    * The near plane distance
    */

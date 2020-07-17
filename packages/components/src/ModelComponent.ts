@@ -1,4 +1,4 @@
-import { Entity, Inject, OnInit, OnRemoved, Service } from '@gglib/ecs'
+import { Entity, Inject, OnInit, OnRemoved, Component } from '@gglib/ecs'
 import { Model } from '@gglib/graphics'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
@@ -18,23 +18,16 @@ import { TransformComponent } from './TransformComponent'
  * - `TransformComponent` in order to update the position of the model
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
-@Service()
+@Component({
+  install: [
+    // TODO: check if this can be optional
+    // BoundingVolumeComponent,
+    SceneryLinkComponent,
+    TransformComponent,
+  ]
+})
 export class ModelComponent implements SceneryCollectable, OnInit, OnRemoved {
   public readonly name = 'Model'
-
-  /**
-   * Adds a {@link ModelComponent} to the entity if it does not exist
-   *
-   * @param entity - The entity
-   */
-  public static ensure(entity: Entity) {
-    BoundingVolumeComponent.ensure(entity)
-    SceneryLinkComponent.ensure(entity)
-    TransformComponent.ensure(entity)
-    if (!entity.getService(ModelComponent, null)) {
-      entity.addComponent(new ModelComponent())
-    }
-  }
 
   /**
    * Gets and seths the model to be rendered

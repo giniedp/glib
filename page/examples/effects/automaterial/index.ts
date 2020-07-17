@@ -20,19 +20,19 @@ const device = createDevice({
 
 const meshes = {
   Cube: ModelBuilder.begin()
-    .tap(buildCube)
+    .append(buildCube)
     .calculateNormalsAndTangents(true)
     .endMesh(device),
   Sphere: ModelBuilder.begin()
-    .tap(buildSphere)
+    .append(buildSphere)
     .calculateNormalsAndTangents(true)
     .endMesh(device),
   Cylinder: ModelBuilder.begin()
-    .tap(buildCylinder)
+    .append(buildCylinder)
     .calculateNormalsAndTangents(true)
     .endMesh(device),
   Cone: ModelBuilder.begin()
-    .tap(buildCone)
+    .append(buildCone)
     .calculateNormalsAndTangents(true)
     .endMesh(device),
 }

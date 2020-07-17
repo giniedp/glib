@@ -1,5 +1,5 @@
 import { ContentManager, IManagerOptions } from '@gglib/content'
-import { Entity } from '@gglib/ecs'
+import { Entity, decorateComponent } from '@gglib/ecs'
 import { Device, DeviceGLOptions, DeviceGPUOptions, createDevice } from '@gglib/graphics'
 
 import {
@@ -62,14 +62,14 @@ export function createGame(options: CreateGameOptions, ...tap: Array<(entity: En
 
   return Entity.createRoot().tap((entity) => {
     entity
-      .addService(Device as any, device)
-      .addService(ContentManager, content)
+      .addComponent(decorateComponent(device, { as: Device }))
+      .addComponent(decorateComponent(content, { as: ContentManager }))
       .addComponent(gameLoop)
-      .addComponent(new TimeComponent())
-      .addComponent(new FpsComponent())
+      .install(TimeComponent)
+      .install(FpsComponent)
     tap.forEach((t) => t(entity))
     if (options.autorun !== false) {
-      entity.getService(LoopComponent).run()
+      entity.get(LoopComponent).run()
     }
   })
 }

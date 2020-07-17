@@ -1,5 +1,5 @@
 import { Events } from '@gglib/utils'
-import { Service, Inject, OnInit } from '@gglib/ecs'
+import { Component, Inject, OnInit } from '@gglib/ecs'
 import { LoopComponent } from './LoopComponent'
 import { Device, DeviceGL, FrameBufferGL } from '@gglib/graphics'
 import { SceneView, SceneViewport } from '@gglib/render'
@@ -25,16 +25,16 @@ async function requestSession(mode: XRSessionMode, options?: any): Promise<XRSes
   })
 }
 
-@Service()
+@Component()
 export class WebXRComponent extends Events implements OnInit {
   public static readonly isSupported = isSupported
   public static readonly isSessionSupported = isSessionSupported
   public static readonly requestSession = requestSession
 
-  @Inject(LoopComponent)
+  @Inject(LoopComponent, { from: 'root' })
   public looper: LoopComponent
 
-  @Inject(Device)
+  @Inject(Device, { from: 'root' })
   public device: DeviceGL
 
   public get session() {
@@ -156,191 +156,4 @@ export class WebXRComponent extends Events implements OnInit {
       buffer.destroy()
     }
   }
-}
-
-type EventHandler = () => void
-
-interface XR extends EventTarget {
-  isSessionSupported(mode: XRSessionMode): Promise<boolean>;
-  requestSession(
-    mode: XRSessionMode,
-    options?: XRSessionInit
-  ): Promise<XRSession>;
-  ondevicechange: EventHandler;
-}
-type XRSessionMode =
-  | "inline"
-  | "immersive-vr"
-
-interface XRSessionInit {
-  requiredFeatures?: any[];
-  optionalFeatures?: any[];
-}
-type XRVisibilityState =
-  | "visible"
-  | "visible-blurred"
-  | "hidden"
-
-interface XRSession extends EventTarget {
-  readonly visibilityState: XRVisibilityState;
-  readonly renderState: XRRenderState;
-  readonly inputSources: XRInputSourceArray;
-  updateRenderState(state?: XRRenderStateInit): void;
-  requestReferenceSpace(type: XRReferenceSpaceType): Promise<XRReferenceSpace>;
-  requestAnimationFrame(callback: XRFrameRequestCallback): number;
-  cancelAnimationFrame(handle: number): void;
-  end(): Promise<void>;
-  onend: EventHandler;
-  onselect: EventHandler;
-  oninputsourceschange: EventHandler;
-  onselectstart: EventHandler;
-  onselectend: EventHandler;
-  onvisibilitychange: EventHandler;
-}
-interface XRRenderStateInit {
-  depthNear?: number;
-  depthFar?: number;
-  inlineVerticalFieldOfView?: number;
-  baseLayer?: XRWebGLLayer;
-}
-interface XRRenderState {
-  readonly depthNear: number;
-  readonly depthFar: number;
-  readonly inlineVerticalFieldOfView: number;
-  readonly baseLayer: XRWebGLLayer;
-}
-export type XRFrameRequestCallback = (
-  time: DOMHighResTimeStamp,
-  frame: XRFrame
-) => void;
-interface XRFrame {
-  readonly session: XRSession;
-  getViewerPose(referenceSpace: XRReferenceSpace): XRViewerPose;
-  getPose(space: XRSpace, baseSpace: XRSpace): XRPose;
-}
-interface XRSpace extends EventTarget {}
-export type XRReferenceSpaceType =
-  | "viewer"
-  | "local"
-  | "local-floor"
-  | "bounded-floor"
-  | "unbounded"
-
-  interface XRReferenceSpace extends XRSpace {
-  getOffsetReferenceSpace(originOffset: XRRigidTransform): XRReferenceSpace;
-  onreset: EventHandler;
-}
-interface XRBoundedReferenceSpace extends XRReferenceSpace {
-  readonly boundsGeometry: ReadonlyArray<DOMPointReadOnly>;
-}
-export type XREye =
-  | "none"
-  | "left"
-  | "right"
-
-  interface XRView {
-  readonly eye: XREye;
-  readonly projectionMatrix: Float32Array;
-  readonly transform: XRRigidTransform;
-}
-interface XRViewport {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
-export type XRRigidTransform = {
-  new (position?: DOMPointInit, orientation?: DOMPointInit): XRRigidTransform;
-  readonly position: DOMPointReadOnly;
-  readonly orientation: DOMPointReadOnly;
-  readonly matrix: Float32Array;
-  readonly inverse: XRRigidTransform;
-}
-interface XRPose {
-  readonly transform: XRRigidTransform;
-  readonly emulatedPosition: boolean;
-}
-interface XRViewerPose extends XRPose {
-  readonly views: ReadonlyArray<XRView>;
-}
-export type XRHandedness =
-  | "none"
-  | "left"
-  | "right"
-  export type XRTargetRayMode =
-  | "gaze"
-  | "tracked-pointer"
-  | "screen"
-
-  interface XRInputSource {
-  readonly handedness: XRHandedness;
-  readonly targetRayMode: XRTargetRayMode;
-  readonly targetRaySpace: XRSpace;
-  readonly gripSpace: XRSpace;
-  readonly profiles: ReadonlyArray<string>;
-}
-interface XRInputSourceArray extends Iterable<XRInputSource> {
-  readonly length: number;
-  (index: number): XRInputSource;
-}
-interface XRWebGLLayerInit {
-  antialias?: boolean;
-  depth?: boolean;
-  stencil?: boolean;
-  alpha?: boolean;
-  ignoreDepthValues?: boolean;
-  framebufferScaleFactor?: number;
-}
-declare class XRWebGLLayer {
-  constructor (
-    session: XRSession,
-    context: WebGLRenderingContext | WebGL2RenderingContext,
-    layerInit?: XRWebGLLayerInit
-  );
-  readonly antialias: boolean;
-  readonly ignoreDepthValues: boolean;
-  readonly framebuffer: WebGLFramebuffer;
-  readonly framebufferWidth: number;
-  readonly framebufferHeight: number;
-  getViewport(view: XRView): XRViewport;
-  getNativeFramebufferScaleFactor(session: XRSession): number;
-}
-interface WebGLContextAttributes {
-  xrCompatible?: boolean;
-}
-declare class XRSessionEvent extends Event {
-  constructor (type: string, eventInitDict: XRSessionEventInit);
-  readonly session: XRSession;
-}
-interface XRSessionEventInit extends EventInit {
-  session: XRSession;
-}
-declare class XRInputSourceEvent extends Event {
-  constructor(type: string, eventInitDict: XRInputSourceEventInit);
-  readonly frame: XRFrame;
-  readonly inputSource: XRInputSource;
-}
-interface XRInputSourceEventInit extends EventInit {
-  frame: XRFrame;
-  inputSource: XRInputSource;
-}
-declare class XRInputSourcesChangeEvent extends Event {
-  constructor (type: string, eventInitDict: XRInputSourcesChangeEventInit);
-  readonly session: XRSession;
-  readonly added: ReadonlyArray<XRInputSource>;
-  readonly removed: ReadonlyArray<XRInputSource>;
-}
-interface XRInputSourcesChangeEventInit extends EventInit {
-  session: XRSession;
-  added: ReadonlyArray<XRInputSource>;
-  removed: ReadonlyArray<XRInputSource>;
-}
-declare class XRReferenceSpaceEvent extends Event {
-  constructor (type: string, eventInitDict: XRReferenceSpaceEventInit);
-  readonly referenceSpace: XRReferenceSpace;
-  readonly transform: XRRigidTransform;
-}
-interface XRReferenceSpaceEventInit extends EventInit {
-  referenceSpace: XRReferenceSpace;
-  transform?: XRRigidTransform;
 }

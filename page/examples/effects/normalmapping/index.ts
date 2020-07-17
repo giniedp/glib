@@ -69,7 +69,7 @@ TweakUi.build('#tweak-ui', (q) => {
 })
 
 const cubeSize = 5
-const model = ModelBuilder.begin().tap((b) => {
+const model = ModelBuilder.begin().append((b) => {
   for (let x = -1; x <= 1; x++) {
     for (let y = -1; y <= 1; y++) {
       if (x === 0 && y === 0) {
