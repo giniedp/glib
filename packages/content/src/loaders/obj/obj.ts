@@ -1,4 +1,4 @@
-import { Material, Model, ModelBuilder, ModelMeshOptions, ModelOptions, VertexLayout } from '@gglib/graphics'
+import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions, VertexLayout } from '@gglib/graphics'
 
 import { Data, FaceElement, OBJ, VertexTextureNormalRef } from '../../formats/obj'
 import { loader, resolveUri } from '../../utils'
@@ -6,10 +6,10 @@ import { loader, resolveUri } from '../../utils'
 /**
  * @public
  */
-export const loadObjToModelOptions = loader<null, ModelOptions>({
+export const loadObjToModelOptions = loader({
   input: ['.obj', 'application/x-obj'],
   output: Model.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ModelOptions> => {
 
     const content = (await context.manager.downloadText(context.source)).content
     const data = OBJ.parse(content)
@@ -37,10 +37,10 @@ export const loadObjToModelOptions = loader<null, ModelOptions>({
       })
     })
 
-    const meshes: ModelMeshOptions[] = []
+    const parts: ModelMeshPartOptions[] = []
     groups.forEach((group, g) => {
       group.forEach((faces, s) => {
-        meshes.push(...buildGroup(data, faces, s))
+        parts.push(...buildGroup(data, faces, s))
       })
     })
 
@@ -54,8 +54,10 @@ export const loadObjToModelOptions = loader<null, ModelOptions>({
       }, [])
     })
     return {
-      materials: materials,
-      meshes: meshes,
+      meshes: [{
+        materials: materials,
+        parts: parts,
+      }]
     }
   },
 })
@@ -132,8 +134,8 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
   return splitByMaterial(builder)
 }
 
-function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
-  const result: ModelMeshOptions[] = []
+function splitByMaterial(builder: ModelBuilder): ModelMeshPartOptions[] {
+  const result: ModelMeshPartOptions[] = []
   const split = new Map<string, {
     builder: ModelBuilder,
     indexMap: Map<number, number>,
@@ -167,7 +169,7 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
       result.push(
         mesh.builder
           .calculateBoundings()
-          .endMesh({
+          .endMeshPart({
             materialId: materialId,
           }),
       )
@@ -193,7 +195,7 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshOptions[] {
       result.push(
         entry.builder
           .calculateBoundings()
-          .endMesh({
+          .endMeshPart({
             materialId: mtl,
           }),
       )

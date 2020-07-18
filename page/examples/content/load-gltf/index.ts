@@ -7,38 +7,38 @@ import * as TweakUi from 'tweak-ui'
 
 const baseUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/'
 const models = {
-  Avocado:                  `${baseUrl}Avocado/glTF/Avocado.gltf`,
-  BarramundiFish:           `${baseUrl}BarramundiFish/glTF/BarramundiFish.gltf`,
-  BoomBox:                  `${baseUrl}BoomBox/glTF/BoomBox.gltf`,
-  BoxInterleaved:           `${baseUrl}BoxInterleaved/glTF/BoxInterleaved.gltf`,
-  BoxTextured:              `${baseUrl}BoxTextured/glTF/BoxTextured.gltf`,
-  'BoxTextured (binary)':   `/assets/models/BoxTextured.glb`,
-  'BoxTextured (embedded)': `${baseUrl}BoxTextured/glTF-Embedded/BoxTextured.gltf`,
-  'BoxTextured (specular)': `${baseUrl}BoxTextured/glTF-pbrSpecularGlossiness/BoxTextured.gltf`,
-  CesiumMan:                `${baseUrl}CesiumMan/glTF/CesiumMan.gltf`,
-  CesiumMilkTruck:          `${baseUrl}CesiumMilkTruck/glTF/CesiumMilkTruck.gltf`,
-  Corset:                   `${baseUrl}Corset/glTF/Corset.gltf`,
-  Cube:                     `${baseUrl}Cube/glTF/Cube.gltf`,
-  DamagedHelmet:            `${baseUrl}DamagedHelmet/glTF/DamagedHelmet.gltf`,
-  Duck:                     `${baseUrl}Duck/glTF/Duck.gltf`,
-  FlightHelmet:             `${baseUrl}FlightHelmet/glTF/FlightHelmet.gltf`,
-  Lantern:                  `${baseUrl}Lantern/glTF/Lantern.gltf`,
-  MetalRoughSpheres:        `${baseUrl}MetalRoughSpheres/glTF/MetalRoughSpheres.gltf`,
-  Monster:                  `${baseUrl}Monster/glTF/Monster.gltf`,
-  NormalTangentMirrorTest:  `${baseUrl}NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf`,
-  NormalTangentTest:        `${baseUrl}NormalTangentTest/glTF/NormalTangentTest.gltf`,
-  SciFiHelmet:              `${baseUrl}SciFiHelmet/glTF/SciFiHelmet.gltf`,
-  Sponza:                   `${baseUrl}Sponza/glTF/Sponza.gltf`,
-  Suzanne:                  `${baseUrl}Suzanne/glTF/Suzanne.gltf`,
-  TextureCoordinateTest:    `${baseUrl}TextureCoordinateTest/glTF/TextureCoordinateTest.gltf`,
-  TextureSettingsTest:      `${baseUrl}TextureSettingsTest/glTF/TextureSettingsTest.gltf`,
-  TextureTransformTest:     `${baseUrl}TextureTransformTest/glTF/TextureTransformTest.gltf`,
-  Triangle:                 `${baseUrl}Triangle/glTF/Triangle.gltf`,
-  TriangleWithoutIndices:   `${baseUrl}TriangleWithoutIndices/glTF/TriangleWithoutIndices.gltf`,
-  VC:                       `${baseUrl}VC/glTF/VC.gltf`,
-  'VC (glossiness)':        `${baseUrl}VC/glTF-pbrSpecularGlossiness/VC.gltf`,
-  WaterBottle:              `${baseUrl}WaterBottle/glTF/WaterBottle.gltf`,
-  RiggedSimple:             `${baseUrl}RiggedSimple/glTF/RiggedSimple.gltf`,
+  // Avocado:                  `${baseUrl}Avocado/glTF/Avocado.gltf`,
+  // BarramundiFish:           `${baseUrl}BarramundiFish/glTF/BarramundiFish.gltf`,
+  // BoomBox:                  `${baseUrl}BoomBox/glTF/BoomBox.gltf`,
+  // BoxInterleaved:           `${baseUrl}BoxInterleaved/glTF/BoxInterleaved.gltf`,
+  // BoxTextured:              `${baseUrl}BoxTextured/glTF/BoxTextured.gltf`,
+  // 'BoxTextured (embedded)': `${baseUrl}BoxTextured/glTF-Embedded/BoxTextured.gltf`,
+  // BoxVertexColors:          `${baseUrl}BoxVertexColors/glTF/BoxVertexColors.gltf`,
+  // CesiumMan:                `${baseUrl}CesiumMan/glTF/CesiumMan.gltf`,
+  // CesiumMilkTruck:          `${baseUrl}CesiumMilkTruck/glTF/CesiumMilkTruck.gltf`,
+  // Corset:                   `${baseUrl}Corset/glTF/Corset.gltf`,
+  // Cube:                     `${baseUrl}Cube/glTF/Cube.gltf`,
+  // DamagedHelmet:            `${baseUrl}DamagedHelmet/glTF/DamagedHelmet.gltf`,
+  // Duck:                     `${baseUrl}Duck/glTF/Duck.gltf`,
+  // FlightHelmet:             `${baseUrl}FlightHelmet/glTF/FlightHelmet.gltf`,
+  // Lantern:                  `${baseUrl}Lantern/glTF/Lantern.gltf`,
+  // MetalRoughSpheres:        `${baseUrl}MetalRoughSpheres/glTF/MetalRoughSpheres.gltf`,
+  // NormalTangentMirrorTest:  `${baseUrl}NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf`,
+  // NormalTangentTest:        `${baseUrl}NormalTangentTest/glTF/NormalTangentTest.gltf`,
+  // SciFiHelmet:              `${baseUrl}SciFiHelmet/glTF/SciFiHelmet.gltf`,
+  // Sponza:                   `${baseUrl}Sponza/glTF/Sponza.gltf`,
+  // Suzanne:                  `${baseUrl}Suzanne/glTF/Suzanne.gltf`,
+  // TextureCoordinateTest:    `${baseUrl}TextureCoordinateTest/glTF/TextureCoordinateTest.gltf`,
+  // TextureSettingsTest:      `${baseUrl}TextureSettingsTest/glTF/TextureSettingsTest.gltf`,
+  // TextureTransformTest:     `${baseUrl}TextureTransformTest/glTF/TextureTransformTest.gltf`,
+  // Triangle:                 `${baseUrl}Triangle/glTF/Triangle.gltf`,
+  // TriangleWithoutIndices:   `${baseUrl}TriangleWithoutIndices/glTF/TriangleWithoutIndices.gltf`,
+  // VC:                       `${baseUrl}VC/glTF/VC.gltf`,
+  // 'VC (glossiness)':        `${baseUrl}VC/glTF-pbrSpecularGlossiness/VC.gltf`,
+  // WaterBottle:              `${baseUrl}WaterBottle/glTF/WaterBottle.gltf`,
+  // RiggedSimple:             `${baseUrl}RiggedSimple/glTF/RiggedSimple.gltf`,
+
+  AlphaBlendModeTest: `${baseUrl}AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf`
 }
 
 Texture.crossOrigin = 'anonymous'
@@ -68,8 +68,8 @@ const controls = {
 
 // Allow scene variables to be manipulated via gui controls
 TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
-  loadModel(models.BarramundiFish)
-  q.select({ model: models.BarramundiFish }, 'model', {
+  loadModel(models.AlphaBlendModeTest)
+  q.select({ model: models.AlphaBlendModeTest }, 'model', {
     options: models,
     onChange: (it, value) => loadModel(value),
   })
@@ -86,7 +86,7 @@ function loadModel(url: string) {
   content.load(url, Model).then((result) => {
     model = result
     if (model) {
-      scale = 1 / model.boundingSphere.radius
+      scale = 1 / model.meshes[0].boundingSphere.radius
       console.log(model)
     }
   }).catch((e) => {
@@ -120,11 +120,12 @@ loop((time, dt) => {
     return
   }
 
+  const bs = model.meshes[0].boundingSphere
   // Update runtime variables
   world
     .initScaleUniform(scale)
     .rotateY(gameTime / 4000)
-    .translate(-model.boundingSphere.center.x, -model.boundingSphere.center.y, -model.boundingSphere.center.z)
+    .translate(-bs.center.x, -bs.center.y, -bs.center.z)
   cam.initLookAt(
     { x: 0, y: controls.offset, z: controls.distance },
     { x: 0, y: 0, z: 0 },
@@ -134,15 +135,18 @@ loop((time, dt) => {
   proj.initPerspectiveFieldOfView(controls.fov * Math.PI / 180, device.drawingBufferAspectRatio, 0.001, 10)
 
   // Update materials
-  model.materials.forEach((material) => {
-    const params = material.parameters
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((material) => {
+      const params = material.parameters
 
-    params.World = world
-    params.View = view
-    params.Projection = proj
-    params.CameraPosition = cam.getTranslation()
-    light.assign(0, params)
+      params.World = world
+      params.View = view
+      params.Projection = proj
+      params.CameraPosition = cam.getTranslation()
+      light.assign(0, params)
+    })
   })
+
 
   // Draw the model.
   // In case of an error the model is cleared and the error is logged to console

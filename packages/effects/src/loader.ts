@@ -5,10 +5,10 @@ import { defaultProgram, DefaultProgramDefs } from './programs'
 /**
  * @public
  */
-export const loadMaterialOptionsToShaderEffectOptions = loader<MaterialOptions, ShaderEffectOptions>({
+export const loadMaterialOptionsToShaderEffectOptions = loader({
   input: Material.Options,
   output: ShaderEffect.Options,
-  handle: async (input, _) => {
+  handle: async (input: MaterialOptions, _): Promise<ShaderEffectOptions> => {
 
     if (!input) {
       return null

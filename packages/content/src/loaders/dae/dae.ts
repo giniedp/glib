@@ -4,7 +4,7 @@ import {
   MaterialOptions,
   Model,
   ModelBuilder,
-  ModelMeshOptions,
+  ModelMeshPartOptions,
   ModelOptions,
   PrimitiveType,
   valueOfDataType,
@@ -31,7 +31,7 @@ import {
 /**
  * @public
  */
-export const loadDaeToColladaDocument = loader<null, COLLADA>({
+export const loadDaeToColladaDocument = loader({
   input: ['.dae', 'application/xml'],
   output: COLLADA,
   handle: async (_, context) => {
@@ -43,17 +43,17 @@ export const loadDaeToColladaDocument = loader<null, COLLADA>({
 /**
  * @public
  */
-export const loadColladaDocumentToModelOptions = loader<COLLADA, ModelOptions>({
+export const loadColladaDocumentToModelOptions = loader({
   input: COLLADA,
   output: Model.Options,
-  handle: async (dae, context) => {
+  handle: async (dae: COLLADA, context): Promise<ModelOptions> => {
 
     if (!dae.scene || !dae.scene.instanceVisualScene) {
       throw new Error('invalid dae document')
     }
 
     const scene = await dae.scene.instanceVisualScene.getScene()
-    const meshes: ModelMeshOptions[] = []
+    const meshes: ModelMeshPartOptions[] = []
     const materials = new Map<string, InstanceMaterial>()
 
     await walkNodes(scene.nodes, Mat4.createIdentity(), async (geometry, transform, material) => {
@@ -82,8 +82,10 @@ export const loadColladaDocumentToModelOptions = loader<COLLADA, ModelOptions>({
       })
     })
     return {
-      materials: await Promise.all(Array.from(materials.values()).map((it) => loadMaterial(it, context))),
-      meshes: meshes,
+      meshes: [{
+        materials: await Promise.all(Array.from(materials.values()).map((it) => loadMaterial(it, context))),
+        parts: meshes,
+      }]
     }
   },
 })
@@ -142,8 +144,8 @@ function convertMesh(
   dae: COLLADA,
   source: DaeMeshBuilderDef[],
   type: PrimitiveType,
-): ModelMeshOptions[] {
-  const meshOptions: ModelMeshOptions[] = []
+): ModelMeshPartOptions[] {
+  const meshOptions: ModelMeshPartOptions[] = []
   if (!source) {
     return meshOptions
   }
@@ -178,7 +180,7 @@ function convertMesh(
       endPrimitive: () => {
         meshOptions.push(builder
         .calculateBoundings()
-        .endMesh({
+        .endMeshPart({
           primitiveType: type,
           materialId: it.material,
         }))

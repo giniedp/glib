@@ -49,9 +49,10 @@ class MyGame implements OnInit, OnUpdate {
       .append(buildIcosahedron, { radius: 1, tesselation: 0 })
       .calculateNormals(true)
       .calculateBoundings()
-      .endModel(this.renderer.device, {
+      .closeMesh({
         materials: [material],
       })
+      .endModel(this.renderer.device)
 
     const step = this.renderer.scene.steps[0] as BasicRenderStep
     step.clearColor = Color.CornflowerBlue.rgba

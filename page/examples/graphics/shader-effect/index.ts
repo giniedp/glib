@@ -25,7 +25,7 @@ const program = device.createProgram({
 })
 
 // Create the mesh that should be rendered
-const mesh = ModelBuilder.begin().append(buildCube).endMesh(device)
+const mesh = ModelBuilder.begin().append(buildCube).endMeshPart(device)
 
 // Create several effects.
 // All effects share the same shader program. But each has its own set of parameters.

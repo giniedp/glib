@@ -21,7 +21,7 @@ const texture = device.createTexture({
 })
 
 // Create Cube mesh which is going to be rendered
-const mesh = ModelBuilder.begin().append(buildCube).endMesh(device)
+const mesh = ModelBuilder.begin().append(buildCube).endMeshPart(device)
 
 // Allocate state variables
 const world = Mat4.createIdentity()

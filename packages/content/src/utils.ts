@@ -1,5 +1,5 @@
 import { DataUri, Uri } from '@gglib/utils'
-import { LoaderSpec } from './Loader'
+import { LoaderSpec, LoaderInputs, LoaderOutput } from './Loader'
 import { Pipeline } from './Pipeline'
 import { PipelineContext } from './PipelineContext'
 
@@ -10,7 +10,7 @@ import { PipelineContext } from './PipelineContext'
  * @public
  * @param spec - The loader specification to register
  */
-export function loader<I = any, O = any, D = any>(spec: LoaderSpec<I, O, D>): LoaderSpec<I, O, D> {
+export function loader<T extends LoaderSpec>(spec: T): T {
   Pipeline.default.register(spec)
   return spec
 }

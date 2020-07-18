@@ -19,26 +19,26 @@ const model = ModelBuilder.begin({
 })
   .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
     buildCube(b, { size: 2 })
-    b.endMesh({
+    b.endMeshPart({
       materialId: 'red',
       name: 'Red Cube',
     })
   })
   .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
     buildCube(b, { size: 2 })
-    b.endMesh({
+    b.endMeshPart({
       materialId: 'green',
       name: 'Green Cube',
     })
   })
   .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
     buildCube(b, { size: 2 })
-    b.endMesh({
+    b.endMeshPart({
       materialId: 'blue',
       name: 'Blue Cube',
     })
   })
-  .endModel(device, {
+  .closeMesh({
     materials: [{
       name: 'red',
       effect: textureMappedEffect,
@@ -59,6 +59,7 @@ const model = ModelBuilder.begin({
       },
     }],
   })
+  .endModel(device)
 
 const world = Mat4.createIdentity()
 const view = Mat4.createIdentity()
@@ -74,18 +75,20 @@ loop((time, dt) => {
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 
-  model.materials.forEach((mtl) => {
-    mtl.parameters.World = world
-    mtl.parameters.View = view
-    mtl.parameters.Projection = proj
-    mtl.parameters.CameraPosition = cam.getTranslation()
-    const t = Math.sin(time / 1000)
-    mtl.parameters.DiffuseMapScaleOffset = [
-      t + 1,    // scale X
-      t + 1,    // scale Y
-      -t * 0.5, // offset X
-      -t * 0.5, // offset Y
-    ]
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((mtl) => {
+      mtl.parameters.World = world
+      mtl.parameters.View = view
+      mtl.parameters.Projection = proj
+      mtl.parameters.CameraPosition = cam.getTranslation()
+      const t = Math.sin(time / 1000)
+      mtl.parameters.DiffuseMapScaleOffset = [
+        t + 1,    // scale X
+        t + 1,    // scale Y
+        -t * 0.5, // offset X
+        -t * 0.5, // offset Y
+      ]
+    })
   })
   model.draw()
 })

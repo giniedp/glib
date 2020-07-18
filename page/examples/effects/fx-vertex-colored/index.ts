@@ -19,7 +19,7 @@ const model = ModelBuilder.begin({
   .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
     b.defaultAttributes.color = [Color.DarkRed.rgba]
     buildCube(b, { size: 2 })
-    b.endMesh({
+    b.endMeshPart({
       materialId: 0,
       name: 'Red Cube',
     })
@@ -27,7 +27,7 @@ const model = ModelBuilder.begin({
   .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
     b.defaultAttributes.color = [Color.DarkGreen.rgba]
     buildCube(b, { size: 2 })
-    b.endMesh({
+    b.endMeshPart({
       materialId: 0,
       name: 'Green Cube',
     })
@@ -35,17 +35,18 @@ const model = ModelBuilder.begin({
   .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
     b.defaultAttributes.color = [Color.DarkBlue.rgba]
     buildCube(b, { size: 2 })
-    b.endMesh({
+    b.endMeshPart({
       materialId: 0,
       name: 'Blue Cube',
     })
   })
-  .endModel(device, {
+  .closeMesh({
     materials: [{
       effect: vertexColorEffect,
       parameters: {},
     }],
   })
+  .endModel(device)
 
 const world = Mat4.createIdentity()
 const view = Mat4.createIdentity()
@@ -61,11 +62,13 @@ loop((time, dt) => {
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 
-  model.materials.forEach((mtl) => {
-    mtl.parameters.World = world
-    mtl.parameters.View = view
-    mtl.parameters.Projection = proj
-    mtl.parameters.CameraPosition = cam.getTranslation()
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((mtl) => {
+      mtl.parameters.World = world
+      mtl.parameters.View = view
+      mtl.parameters.Projection = proj
+      mtl.parameters.CameraPosition = cam.getTranslation()
+    })
   })
   model.draw()
 })

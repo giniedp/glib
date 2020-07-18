@@ -113,11 +113,13 @@ content
   .load('/assets/models/obj/piratekit/ship_dark.obj', Model)
   .then((model) => {
     model.meshes.forEach((mesh) => {
-      items.push({
-        type: 'drawable',
-        transform: Mat4.createIdentity(),
-        drawable: mesh,
-        material: model.getMaterial(mesh.materialId),
+      mesh.parts.forEach((part) => {
+        items.push({
+          type: 'drawable',
+          transform: Mat4.createIdentity(),
+          drawable: part,
+          material: mesh.getMaterial(part.materialId),
+        })
       })
     })
   })

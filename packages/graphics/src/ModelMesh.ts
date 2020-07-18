@@ -1,151 +1,142 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
-import { uuid } from '@gglib/utils'
+import { isString, uuid } from '@gglib/utils'
 import { Device } from './Device'
-import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from './enums'
-import { Buffer, BufferOptions } from './resources/Buffer'
-import { ShaderProgram } from './resources/ShaderProgram'
+import { Material, MaterialOptions } from './Material'
+import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
 
 /**
- * Constructor options for {@link ModelMesh}
- *
  * @public
  */
 export interface ModelMeshOptions {
   /**
-   * A user defined name of the mesh object
+   * The identifying name of the mesh
    */
   name?: string
   /**
-   * An axis aligned bounding box containing the mesh in local space
+   * The axis aligned bounding box containing all mesh parts
    */
   boundingBox?: number[] | BoundingBox
   /**
-   * A bounding sphere containing the mesh in local space
+   * The bounding sphere containing all mesh parts
    */
   boundingSphere?: number[] | BoundingSphere
   /**
-   * The material identifier. Defaults to 0
+   * Collection of materials that are used by the mesh
    */
-  materialId?: number | string
+  materials?: Array<Material | MaterialOptions | string>
   /**
-   * The index buffer
+   * Collection of mesh parts
    */
-  indexBuffer?: Buffer | BufferOptions
-  /**
-   * A single vertex buffer or an array ob vertex buffers
-   */
-  vertexBuffer?: Buffer | BufferOptions | Array<Buffer | BufferOptions>
-  /**
-   * Offset in vertex buffer
-   */
-  vertexOffset?: number
-  /**
-   * The mode of the mesh. e.g. TrinagleList, LineList etc.
-   */
-  primitiveType?: PrimitiveTypeOption
-  /**
-   * Number of primitives to render
-   */
-  primitiveCount?: number
+  parts?: Array<ModelMeshPart | ModelMeshPartOptions>
 }
 
 /**
  * @public
  */
 export class ModelMesh {
-  public static readonly Options = Symbol('ModelMeshOptions')
-
   /**
-   * A unique id
+   * A symbol identifying the `ModelMesh[]` type.
    */
-  public uid: string = uuid()
+  public static readonly Array = Symbol('ModelMesh[]')
+  /**
+   * A symbol identifying the `ModelMeshOptions` type.
+   */
+  public static readonly Options = Symbol('ModelMeshOptions')
+  /**
+   * A symbol identifying the `ModelMeshOptions[]` type.
+   */
+  public static readonly OptionsArray = Symbol('ModelMeshOptions[]')
+  /**
+   * Autmatically generated unique identifier
+   */
+  public readonly uid: string
   /**
    * The graphics device
    */
   public readonly device: Device
   /**
-   * The axis aligned bounding box containing the mesh in local space
+   * The models local bounding box
    */
   public boundingBox: BoundingBox
   /**
-   * The bounding sphere containing the mesh in local space
+   * The models local bounign sphere
    */
   public boundingSphere: BoundingSphere
   /**
-   * The material id or name referencing the material in the models material collection
+   * Collection of materials that are used by the model meshes
    */
-  public materialId: number | string = 0
+  public materials: Material[] = []
   /**
-   * The index buffer
+   * Collection of meshes
    */
-  public indexBuffer: Buffer
-  /**
-   * Offset in index buffer
-   */
-  public indexOffset: number | null
-  /**
-   * The vertex buffers
-   */
-  public vertexBuffer: Buffer[]
-  /**
-   * The vertex buffer primitive type
-   */
-  public primitiveType: number
+  public parts: ModelMeshPart[] = []
 
-  constructor(device: Device, params: ModelMeshOptions) {
+  constructor(device: Device, options: ModelMeshOptions) {
+    this.uid = uuid()
     this.device = device
+    this.boundingBox = BoundingBox.convert(options.boundingBox)
+    this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
 
-    this.materialId = params.materialId || 0
-    this.boundingBox = BoundingBox.convert(params.boundingBox)
-    this.boundingSphere = BoundingSphere.convert(params.boundingSphere)
-    this.primitiveType = valueOfPrimitiveType(params.primitiveType) || PrimitiveType.TriangleList
-
-    if (params.indexBuffer instanceof Buffer) {
-      this.indexBuffer = params.indexBuffer
-    } else if (params.indexBuffer) {
-      this.indexBuffer = device.createIndexBuffer(params.indexBuffer)
-    } else {
-      // no index buffer given
-      // the geometry will be rendered using the gl.drawArrays() method
+    for (const mesh of (options.parts || [])) {
+      if (mesh instanceof ModelMeshPart) {
+        this.parts.push(mesh)
+      } else {
+        this.parts.push(new ModelMeshPart(this.device, mesh))
+      }
     }
 
-    if (!params.vertexBuffer) {
-      throw new Error(`'vertexBuffer' option is missing`)
+    const materials: Material[] = []
+    for (const material of (options.materials || [])) {
+      if (material instanceof Material) {
+        this.materials.push(material)
+      } else if (typeof material === 'string') {
+        throw new Error(`[ModelMesh] can not use string as material: ${material}`)
+      } else {
+        this.materials.push(new Material(this.device, material))
+      }
     }
-    const vBuffers = Array.isArray(params.vertexBuffer)
-      ? params.vertexBuffer
-      : [params.vertexBuffer]
 
-    this.vertexBuffer = vBuffers.map((buffer) => {
-      return buffer instanceof Buffer ? buffer : device.createVertexBuffer(buffer)
-    })
+    // convert materialIds from string name to numeric index
+    for (const meshItem of this.parts) {
+      const name = meshItem.materialId
+      if (!isString(name)) {
+        continue
+      }
+      let index = 0
+      for (const materialItem of materials) {
+        if (materialItem.name === name) {
+          meshItem.materialId = index
+          break
+        }
+        index += 1
+      }
+    }
   }
 
   /**
-   * Draws the mesh with the given program
+   * Simply iterates over all meshes and renders each with its assigned material
    *
-   * @param program - the program to draw with
+   * @remarks
+   * If a mesh points to a missing material it is silently ignored.
    */
-  public draw(program: ShaderProgram): ModelMesh {
-    const device = this.device
-    device.vertexBuffers = this.vertexBuffer
-    device.indexBuffer = this.indexBuffer
-    device.program = program
-    try {
-      if (device.indexBuffer) {
-        device.drawIndexedPrimitives(this.primitiveType)
-      } else {
-        device.drawPrimitives(this.primitiveType)
+  public draw(): this {
+    for (const mesh of this.parts) {
+      const material: Material = this.getMaterial(mesh.materialId) || this.materials[0]
+      if (!material) {
+        // mesh has no material so it can not be rendered
+        continue
       }
-    } finally {
-      device.vertexBuffers = null
+      material.draw(mesh)
     }
-
     return this
   }
 
-  public destroy() {
-    this.indexBuffer.destroy()
-    this.vertexBuffer.forEach((it) => it.destroy())
+  /**
+   * Gets a material of this mesh by index or name
+   *
+   * @param indexOrName - The index or name of the material
+   */
+  public getMaterial(indexOrName: number | string) {
+    return this.materials[indexOrName] || this.materials.find((it) => it.name === indexOrName)
   }
 }

@@ -7,10 +7,10 @@ import { loader, resolveUri } from '../../utils'
 /**
  * @public
  */
-export const loadMtlToMaterialOptions = loader<null, MaterialOptions>({
+export const loadMtlToMaterialOptions = loader({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<MaterialOptions> => {
     return (await context.manager.load(context.source, Material.OptionsArray))[0]
   },
 })
@@ -18,10 +18,10 @@ export const loadMtlToMaterialOptions = loader<null, MaterialOptions>({
 /**
  * @public
  */
-export const loadMtlToMaterialOptionsArray = loader<null, MaterialOptions[]>({
+export const loadMtlToMaterialOptionsArray = loader({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.OptionsArray,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<MaterialOptions[]> => {
     const text = (await context.manager.downloadText(context.source)).content
     return Promise.all(MTL.parse(text).map((data) => convertMaterial(data, context)))
   },

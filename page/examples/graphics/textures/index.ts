@@ -15,7 +15,7 @@ const program = device.createProgram({
 })
 
 // Create a mesh which is going to be rendered
-const mesh = ModelBuilder.begin().append(buildPlane).endMesh(device)
+const mesh = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
 
 // The easiest way to create a texture is to pass the Image URL as an option to the constructor.
 const texturesFromUrls = [

@@ -15,7 +15,7 @@ const program = device.createProgram({
 })
 
 // Create the mesh that should be rendered
-const mesh = ModelBuilder.begin().append(buildCube).endMesh(device)
+const mesh = ModelBuilder.begin().append(buildCube).endMeshPart(device)
 const world = Mat4.createIdentity()
 const view = Mat4.createIdentity()
 const projection = Mat4.createIdentity()

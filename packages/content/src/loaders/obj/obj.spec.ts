@@ -96,8 +96,9 @@ f  2//1  8//1  4//1
         expect(result).toBeDefined()
         expect(result.device).toBe(device)
         expect(result.meshes.length).toBe(1)
-        expect(result.materials.length).toBe(1)
-        expect(result.meshes[0].vertexBuffer[0].elementCount).toBe(6 * 4) // 4 vertices for each side of the cube
+        expect(result.meshes[0].parts.length).toBe(1)
+        expect(result.meshes[0].materials.length).toBe(1)
+        expect(result.meshes[0].parts[0].vertexBuffer[0].elementCount).toBe(6 * 4) // 4 vertices for each side of the cube
       })
       .catch(fail)
       .then(done)

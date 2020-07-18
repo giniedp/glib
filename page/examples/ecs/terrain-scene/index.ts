@@ -12,6 +12,7 @@ import {
   TransformComponent,
   WASDComponent,
   BoundingVolumeComponent,
+  MeshPartComponent,
 } from '@gglib/components'
 
 import { Entity, Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'
@@ -102,7 +103,7 @@ class MyGame implements OnInit, OnUpdate {
   install: [
     BoundingVolumeComponent,
     TransformComponent,
-    MeshComponent,
+    MeshPartComponent,
   ]
 })
 class SkyComponent implements OnInit, OnUpdate {
@@ -112,8 +113,8 @@ class SkyComponent implements OnInit, OnUpdate {
   @Inject(TransformComponent)
   public transform: TransformComponent
 
-  @Inject(MeshComponent)
-  public renderable: MeshComponent
+  @Inject(MeshPartComponent)
+  public renderable: MeshPartComponent
 
   @Inject(Device, { from: 'root' })
   public device: Device
@@ -141,7 +142,7 @@ class SkyComponent implements OnInit, OnUpdate {
           b.calculateBoundings()
           flipWindingOrder(b.indices)
         })
-        .endMesh(this.device)
+        .endMeshPart(this.device)
     })
   }
 
@@ -210,12 +211,14 @@ class TerrainComponent implements OnInit, OnUpdate {
         })
 
         this.bttRoot.model.meshes.forEach((mesh) => {
-          this.entity.createChild((e) => {
-            e.install(BoundingVolumeComponent)
-            e.install(MeshComponent)
-            const mc = e.get(MeshComponent)
-            mc.mesh = mesh
-            mc.material = material
+          mesh.parts.forEach((part) => {
+            this.entity.createChild((e) => {
+              e.install(BoundingVolumeComponent)
+              e.install(MeshPartComponent)
+              const mc = e.get(MeshPartComponent)
+              mc.mesh = part
+              mc.material = material
+            })
           })
         })
 

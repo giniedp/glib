@@ -69,7 +69,8 @@ technique:
     it('loads', (done) => {
       manager.load('/assets/models/gltf/box.gltf', Model).then((model) => {
         expect(model.meshes.length).toBe(1)
-        expect(model.materials.length).toBe(1)
+        expect(model.meshes[0].parts.length).toBe(1)
+        expect(model.meshes[0].materials.length).toBe(1)
       })
       .catch(fail)
       .then(done)
@@ -80,7 +81,8 @@ technique:
     it('loads', (done) => {
       manager.load('assets/models/gltf/box-binary.glb', Model).then((model) => {
         expect(model.meshes.length).toBe(1)
-        expect(model.materials.length).toBe(1)
+        expect(model.meshes[0].parts.length).toBe(1)
+        expect(model.meshes[0].materials.length).toBe(1)
       })
       .catch(fail)
       .then(done)
@@ -91,7 +93,8 @@ technique:
     it('loads', (done) => {
       manager.load('assets/models/gltf/box-embedded.gltf', Model).then((model) => {
         expect(model.meshes.length).toBe(1)
-        expect(model.materials.length).toBe(1)
+        expect(model.meshes[0].parts.length).toBe(1)
+        expect(model.meshes[0].materials.length).toBe(1)
       })
       .catch(fail)
       .then(done)

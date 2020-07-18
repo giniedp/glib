@@ -6,10 +6,10 @@ import { loader } from '../../utils'
 /**
  * @public
  */
-export const loadStlToModelOptions = loader<null, ModelOptions>({
+export const loadStlToModelOptions = loader({
   input: '.stl',
   output: Model.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ModelOptions> => {
     const content = (await context.manager.downloadArrayBuffer(context.source)).content
     const data = STL.parse(content)
 
@@ -23,7 +23,7 @@ export const loadStlToModelOptions = loader<null, ModelOptions>({
         if (builder.vertexCount > 65536 - 2) {
           builder
             .calculateTangents()
-            .endMesh({
+            .endMeshPart({
               name: solid.name,
               materialId: 0,
             })
@@ -43,7 +43,7 @@ export const loadStlToModelOptions = loader<null, ModelOptions>({
       builder
         .calculateTangents()
         .calculateBoundings()
-        .endMesh({
+        .endMeshPart({
           name: solid.name,
           materialId: 0,
         })
@@ -52,7 +52,7 @@ export const loadStlToModelOptions = loader<null, ModelOptions>({
     return builder
       .calculateTangents()
       .calculateBoundings()
-      .endModel({
+      .closeMesh({
         materials: [{
           effect: 'default',
           parameters: {
@@ -62,5 +62,6 @@ export const loadStlToModelOptions = loader<null, ModelOptions>({
           },
         }],
       })
+      .endModel()
   },
 })

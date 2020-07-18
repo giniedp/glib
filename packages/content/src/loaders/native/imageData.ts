@@ -3,10 +3,10 @@ import { loader } from '../../utils'
 /**
  * @public
  */
-export const loadJpegToImageData = loader<null, ImageData>({
+export const loadJpegToImageData = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: ImageData,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ImageData> => {
     return context.manager.load(context.source, HTMLImageElement).then((image) => getImageData(image))
   },
 })
@@ -14,10 +14,10 @@ export const loadJpegToImageData = loader<null, ImageData>({
 /**
  * @public
  */
-export const loadPngToImageData = loader<null, ImageData>({
+export const loadPngToImageData = loader({
   input: ['.png', 'image/png'],
   output: ImageData,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ImageData> => {
     return context.manager.load(context.source, HTMLImageElement).then((image) => getImageData(image))
   },
 })

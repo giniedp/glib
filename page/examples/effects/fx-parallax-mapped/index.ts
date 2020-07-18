@@ -36,7 +36,7 @@ const cam = Mat4.createIdentity()
 const model = ModelBuilder
   .begin()
   .append(buildCube, { size: 2, tesselation: 32 })
-  .endModel(device, {
+  .closeMesh({
     materials: [{
       effect: lightingEffect,
       parameters: {
@@ -48,6 +48,7 @@ const model = ModelBuilder
       },
     }],
   })
+  .endModel(device)
 
 loop((time, dt) => {
 
@@ -59,21 +60,23 @@ loop((time, dt) => {
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
   world.initRotationY(time / 4000)
 
-  model.materials.forEach((mtl) => {
-    mtl.parameters.World = world
-    mtl.parameters.View = view
-    mtl.parameters.Projection = proj
-    mtl.parameters.CameraPosition = cam.getTranslation()
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((mtl) => {
+      mtl.parameters.World = world
+      mtl.parameters.View = view
+      mtl.parameters.Projection = proj
+      mtl.parameters.CameraPosition = cam.getTranslation()
 
-    light.assign(0, mtl.parameters)
+      light.assign(0, mtl.parameters)
+    })
   })
   model.draw()
 })
 
 TweakUi.build('#tweak-ui', (q) => {
   q.group('Parallax', { open: true}, (b) => {
-    b.slider(model.materials[0].parameters.ParallaxScaleBias, 0, { min: -0.5, max: 0.5, step: 0.001, label: 'Scale' })
-    b.slider(model.materials[0].parameters.ParallaxScaleBias, 1, { min: -0.5, max: 0.5, step: 0.001, label: 'Bias' })
+    b.slider(model.meshes[0].materials[0].parameters.ParallaxScaleBias, 0, { min: -0.5, max: 0.5, step: 0.001, label: 'Scale' })
+    b.slider(model.meshes[0].materials[0].parameters.ParallaxScaleBias, 1, { min: -0.5, max: 0.5, step: 0.001, label: 'Bias' })
   })
   q.group('Light', { open: true }, (b) => {
     b.checkbox(light, 'enabled')

@@ -28,6 +28,7 @@ import {
   TextureOptions,
   TextureType,
 } from '@gglib/graphics'
+import { ModelMesh } from '@gglib/graphics/src/ModelMesh'
 
 describe('content/loader/native', () => {
 
@@ -111,7 +112,7 @@ describe('content/loader/native', () => {
 
     const modelOptions = ModelBuilder.begin()
       .append(buildCube)
-      .endModel({
+      .closeMesh({
         materials: [new Material(device, {
           name: 'material instance',
           effect: {
@@ -132,6 +133,7 @@ describe('content/loader/native', () => {
           parameters: {},
         }],
       })
+      .endModel()
 
     manager.loader.run(Model.Options, Model, modelOptions, {
       manager: manager,
@@ -140,7 +142,8 @@ describe('content/loader/native', () => {
       target: Model,
     }).then((result: Model) => {
       expect(result instanceof Model).toBe(true)
-      expect(result.materials.length).toBe(2)
+      expect(result.meshes[0] instanceof ModelMesh).toBe(true)
+      expect(result.meshes[0].materials.length).toBe(2)
     })
     .catch(fail)
     .then(done)

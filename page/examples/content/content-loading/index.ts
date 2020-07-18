@@ -43,11 +43,13 @@ loop(() => {
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0, 100)
 
   // Apply material parameters
-  model.materials.forEach((material) => {
-    material.parameters.world = world
-    material.parameters.view = view
-    material.parameters.projection = proj
-    material.parameters.eyePosition = { x: 0, y: 0, z: 1.5 }
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((material) => {
+      material.parameters.world = world
+      material.parameters.view = view
+      material.parameters.projection = proj
+      material.parameters.eyePosition = { x: 0, y: 0, z: 1.5 }
+    })
   })
 
   // Draw the loaded model

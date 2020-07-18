@@ -3,7 +3,7 @@ import { copy, Log } from '@gglib/utils'
 import { Color } from './Color'
 import { Device } from './Device'
 import { Model, ModelOptions } from './Model'
-import { ModelMesh, ModelMeshOptions } from './ModelMesh'
+import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
 import { BufferOptions } from './resources'
 import { VertexLayout } from './VertexLayout'
 
@@ -11,6 +11,7 @@ import { BufferType, DataType, FrontFace } from './enums'
 import { calculateNormals } from './formulas/calculateNormals'
 import { calculateTangents } from './formulas/calculateTangents'
 import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChannel'
+import { ModelMeshOptions, ModelMesh } from './ModelMesh'
 
 let tmpBuffer: any[] = []
 
@@ -69,6 +70,7 @@ export class ModelBuilder {
 
   public defaultAttributes: { [key: string]: number[] }
   private layout: VertexLayout[]
+  private meshParts: ModelMeshPartOptions[] = []
   private meshes: ModelMeshOptions[] = []
 
   private iBuffer: BufferOptions<number[]>
@@ -180,6 +182,10 @@ export class ModelBuilder {
     this.makeChannels()
   }
 
+  private resetMeshParts() {
+    this.meshParts = []
+  }
+
   private resetMeshes() {
     this.meshes = []
   }
@@ -194,6 +200,7 @@ export class ModelBuilder {
   public reset() {
     this.resetTransform()
     this.resetData()
+    this.resetMeshParts()
     this.resetMeshes()
     return this
   }
@@ -416,22 +423,38 @@ export class ModelBuilder {
   // }
 
   /**
-   * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
+   * Same as {@link endMeshPart} but returns the builder for chaining
    *
    * @param options - options to start with
    */
-  public endMesh(options?: ModelMeshOptions): ModelMeshOptions
+  public closeMeshPart(options?: ModelMeshPartOptions): this {
+    this.endMeshPart(options)
+    return this
+  }
+
+  /**
+   * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
+   *
+   * @param options - options to start with
+   * @returns ModelMeshPartOptions or null if current state has no mesh part data
+   */
+  public endMeshPart(options?: ModelMeshPartOptions): ModelMeshPartOptions | null
   /**
    * Creates new mesh with current index and vertex buffer and saves them in the meshes array.
    *
    * @param device - the graphics device
    * @param options - options to start with
+   * @returns ModelMeshPart or null if current state has no mesh part data
    */
-  public endMesh(device: Device, options?: ModelMeshOptions): ModelMesh
-  public endMesh(): ModelMesh | ModelMeshOptions {
+  public endMeshPart(device: Device, options?: ModelMeshPartOptions): ModelMeshPart | null
+  public endMeshPart(): ModelMeshPart | ModelMeshPartOptions {
+    if (this.indexCount === 0 || this.vertexCount === 0) {
+      return null
+    }
+
     let device: Device
-    let options: ModelMeshOptions
-    let result: ModelMeshOptions | ModelMesh
+    let options: ModelMeshPartOptions
+    let result: ModelMeshPartOptions | ModelMeshPart
     if (arguments[0] instanceof Device) {
       device = arguments[0]
       options = arguments[1] || {}
@@ -443,7 +466,7 @@ export class ModelBuilder {
     }
 
     if (this.indexCount === 0 && this.vCount === 0) {
-      Log.w(`[ModelBuilder] endMesh called on empty builder. ignore.`)
+      Log.w(`[ModelBuilder] endMeshPart called on empty builder. ignore.`)
       return result
     }
 
@@ -453,37 +476,51 @@ export class ModelBuilder {
     options.boundingBox = this.bBox
     options.boundingSphere = this.bSphere
 
-    this.meshes.push(options)
+    this.meshParts.push(options)
     this.resetData()
 
     if (device) {
-      result = new ModelMesh(device, options)
+      result = new ModelMeshPart(device, options)
     }
 
     return result
   }
 
+
   /**
-   * Creates model options from the current builder state an resets the builder.
+   * Same as {@link endMesh} but returns the builder for chaining
    *
-   * @param options - The custom model options to be used. The 'meshes' option is ignored.
+   * @param options - options to start with
    */
-  public endModel(options?: ModelOptions): ModelOptions
+  public closeMesh(options?: ModelMeshOptions): this {
+    this.endMesh(options)
+    return this
+  }
+
   /**
-   * Creates a model from the current builder state and resets the builder.
+   * From current state it creates model mesh options and resets the builder
+   *
+   * @param options - Additional mesh options. The `parts` option is ignored.
+   * @returns ModelMeshOptions or null if current state has no mesh data
+   */
+  public endMesh(options?: ModelMeshOptions): ModelMeshOptions | null
+  /**
+   * From current state it creates in instance of ModelMesh and resets the builder.
    *
    * @param device - The graphics device
-   * @param options - The model options.
+   * @param options - Additional mesh options. The `parts` option is ignored.
+   * @returns ModelMesh or null if current state has no mesh data
    */
-  public endModel(device: Device, options?: ModelOptions): Model
-  public endModel(): Model | ModelOptions {
-    if (this.indexCount !== 0 || this.vertexCount !== 0) {
-      this.endMesh()
+  public endMesh(device: Device, options?: ModelMeshOptions): ModelMesh | null
+  public endMesh(): Model | ModelMeshOptions {
+    this.endMeshPart()
+    if (!this.meshParts.length) {
+      return null
     }
 
     let device: Device
-    let options: ModelOptions
-    let result: ModelOptions | Model
+    let options: ModelMeshOptions
+    let result: ModelMeshOptions | ModelMesh
     if (arguments[0] instanceof Device) {
       device = arguments[0]
       options = arguments[1] || {}
@@ -499,13 +536,61 @@ export class ModelBuilder {
       materials = [materials]
     }
     options.materials = materials
-    options.meshes = this.meshes
-    if (!options.boundingBox && this.meshes.every((mesh) => !!mesh.boundingBox)) {
-      options.boundingBox = this.meshes.reduce((box, mesh) => {
+    options.parts = this.meshParts
+    if (!options.boundingBox && this.meshParts.every((mesh) => !!mesh.boundingBox)) {
+      options.boundingBox = this.meshParts.reduce((box, mesh) => {
         const meshBox = BoundingBox.convert(mesh.boundingBox)
         return box ? box.merge(meshBox) : BoundingBox.createFrom(meshBox)
       }, null as BoundingBox)
     }
+
+    this.meshes.push(options)
+
+    this.resetData()
+    this.resetMeshParts()
+
+    if (device) {
+      result = new ModelMesh(device, options)
+    }
+
+    return result
+  }
+
+  /**
+   * From current state it creates model options and resets the builder
+   *
+   * @param options - Additional model options. The `meshes` option is ignored.
+   * @returns ModelOptions or null if current state has no model data
+   */
+  public endModel(options?: ModelOptions): ModelOptions | null
+  /**
+   * From current state it creates a Model instance and resets the builder
+   *
+   * @param device - The graphics device
+   * @param options - Additional model options. The `meshes` option is ignored.
+   * @returns Model or null if current state has no model data
+   */
+  public endModel(device: Device, options?: ModelOptions): Model | null
+  public endModel(): Model | ModelOptions {
+    this.endMesh()
+    if (!this.meshes.length) {
+      return null
+    }
+
+    let device: Device
+    let options: ModelOptions
+    let result: ModelOptions | Model
+    if (arguments[0] instanceof Device) {
+      device = arguments[0]
+      options = arguments[1] || {}
+      result = null
+    } else {
+      device = null
+      options = arguments[0] || {}
+      result = options
+    }
+
+    options.meshes = this.meshes
     this.reset()
 
     if (device) {

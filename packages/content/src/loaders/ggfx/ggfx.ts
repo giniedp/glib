@@ -7,10 +7,10 @@ import { loader, resolveUri } from '../../utils'
 /**
  * @public
  */
-export const loadGgfxToShaderEffectOptions = loader<null, ShaderEffectOptions>({
+export const loadGgfxToShaderEffectOptions = loader({
   input: ['.ggfx', 'application/x-yaml'],
   output: ShaderEffect.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ShaderEffectOptions> => {
     const text = (await context.manager.downloadText(context.source)).content
     const includeHandler = createIncludeHandler(context)
     const doc = YML.parse(text) as ShaderFxDocument

@@ -1,5 +1,5 @@
 import { PipelineContext } from '@gglib/content'
-import { Material, MaterialOptions, Model, ModelOptions, ShaderEffect, ShaderEffectOptions, Texture, TextureOptions } from '@gglib/graphics'
+import { Material, MaterialOptions, Model, ModelOptions, ShaderEffect, ShaderEffectOptions, Texture, TextureOptions, ModelMesh } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { loader, resolveUri } from '../../utils'
 
@@ -17,48 +17,59 @@ import { loader, resolveUri } from '../../utils'
  * If the models bounding box is missing or is of zero size then the box is created by
  * merging all bounding boxes of all meshes
  */
-export const loadModelOptionsToModel = loader<ModelOptions, Model>({
+export const loadModelOptionsToModel = loader({
   input: Model.Options,
   output: Model,
-  handle: async (input, context) => {
-    // handle materials
-    const materials = await Promise.all(input.materials.map((it) => {
+  handle: async (modelOptions: ModelOptions, context) => {
+    const meshes: ModelMesh[] = []
 
-      if (it instanceof Material) {
-        return it
+    for (const meshOptions of modelOptions.meshes) {
+      if (meshOptions instanceof ModelMesh) {
+        meshes.push(meshOptions)
+        continue
       }
 
-      if (typeof it === 'object') {
-        return context.pipeline.run(Material.Options, Material, it, context)
-      }
-
-      if (typeof it === 'string') {
-        const uri = resolveUri(it, context)
-        if (context.manager.canLoad(uri, Material)) {
-          return context.manager.load(uri, Material)
-        } else {
-          return Promise.reject(`can not load model material '${typeof it}' can not be loaded as a model material`)
+      const materials: Promise<Material>[] = []
+      for (const mtlOptions of meshOptions.materials) {
+        if (mtlOptions instanceof Material) {
+          materials.push(Promise.resolve(mtlOptions))
+          continue
         }
+        if (typeof mtlOptions === 'object') {
+          materials.push(context.pipeline.run(Material.Options, Material, mtlOptions, context))
+          continue
+        }
+        if (typeof mtlOptions === 'string') {
+          const uri = resolveUri(mtlOptions, context)
+          if (context.manager.canLoad(uri, Material)) {
+            materials.push(context.manager.load(uri, Material))
+            continue
+          }
+        }
+        materials.push(Promise.reject(`type '${typeof mtlOptions}' can not be loaded as a model material`))
       }
 
-      return Promise.reject(`type '${typeof it}' can not be loaded as a model material`)
-    }))
+      // handle bounding boxes
+      if (meshOptions.parts.length && !BoundingBox.convert(meshOptions.boundingBox)) {
+        const box = meshOptions.parts
+          .map((it) => BoundingBox.convert(it.boundingBox))
+          .filter((it) => it != null)
+          .reduce((a, b) => BoundingBox.merge(a || b, b), null) || new BoundingBox()
+        const sphere = BoundingSphere.createFromBox(box)
 
-    // handle bounding boxes
-    if (input.meshes.length && !BoundingBox.convert(input.boundingBox)) {
-      const box = input.meshes
-        .map((it) => BoundingBox.convert(it.boundingBox))
-        .filter((it) => it != null)
-        .reduce((a, b) => BoundingBox.merge(a || b, b), null) || new BoundingBox()
-      const sphere = BoundingSphere.createFromBox(box)
+        meshOptions.boundingBox = box.toArray()
+        meshOptions.boundingSphere = sphere.toArray()
+      }
 
-      input.boundingBox = box.toArray()
-      input.boundingSphere = sphere.toArray()
+      meshes.push(new ModelMesh(context.manager.device, {
+        ...meshOptions,
+        materials: await Promise.all(materials),
+      }))
+
     }
 
     return context.manager.device.createModel({
-      ...input,
-      materials: materials,
+      meshes: meshes
     })
   },
 })
@@ -66,10 +77,10 @@ export const loadModelOptionsToModel = loader<ModelOptions, Model>({
 /**
  * @public
  */
-export const loadMaterialOptionsToMaterial = loader<MaterialOptions, Material>({
+export const loadMaterialOptionsToMaterial = loader({
   input: Material.Options,
   output: Material,
-  handle: async (input, context) => {
+  handle: async (input: MaterialOptions, context): Promise<Material> => {
     const effect = input.effect
     if (typeof effect === 'string') {
       const uri = resolveUri(effect, context)
@@ -102,10 +113,10 @@ export const loadMaterialOptionsToMaterial = loader<MaterialOptions, Material>({
 /**
  * @public
  */
-export const loadMaterialOptionsToMaterialArray = loader<MaterialOptions[], Material[]>({
+export const loadMaterialOptionsToMaterialArray = loader({
   input: Material.OptionsArray,
   output: Material.Array,
-  handle: async (input, context) => {
+  handle: async (input: MaterialOptions[], context): Promise<Material[]> => {
     return Promise.all(input.map((options) => context.pipeline.run(Material.Options, Material, options, context)))
   },
 })
@@ -113,10 +124,10 @@ export const loadMaterialOptionsToMaterialArray = loader<MaterialOptions[], Mate
 /**
  * @public
  */
-export const loadShaderEffectOptionsToShaderEffect = loader<ShaderEffectOptions, ShaderEffect>({
+export const loadShaderEffectOptionsToShaderEffect = loader({
   input: ShaderEffect.Options,
   output: ShaderEffect,
-  handle: async (input, context) => {
+  handle: async (input: ShaderEffectOptions, context): Promise<ShaderEffect> => {
     await loadStringKeysAsTexture(input.parameters, context)
     return new ShaderEffect(context.manager.device, input)
   },
@@ -143,10 +154,10 @@ async function loadStringKeysAsTexture(input: any, context: PipelineContext) {
 /**
  * @public
  */
-export const loadShaderEffectOptionsToShaderEffectArray = loader<ShaderEffectOptions[], ShaderEffect[]>({
+export const loadShaderEffectOptionsToShaderEffectArray = loader({
   input: ShaderEffect.OptionsArray,
   output: ShaderEffect.Array,
-  handle: (input, context) => {
+  handle: (input: ShaderEffectOptions[], context): Promise<ShaderEffect[]> => {
     return Promise.all(input.map((options) => context.pipeline.run(ShaderEffect.Options, ShaderEffect, options, context)))
   },
 })
@@ -154,10 +165,10 @@ export const loadShaderEffectOptionsToShaderEffectArray = loader<ShaderEffectOpt
 /**
  * @public
  */
-export const loadJpegToTextureOptions = loader<null, TextureOptions>({
+export const loadJpegToTextureOptions = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Texture.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<TextureOptions> => {
     return { data: context.source }
   },
 })
@@ -165,10 +176,10 @@ export const loadJpegToTextureOptions = loader<null, TextureOptions>({
 /**
  * @public
  */
-export const loadPngToTextureOptions = loader<null, TextureOptions>({
+export const loadPngToTextureOptions = loader({
   input: ['.png', 'image/png'],
   output: Texture.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<TextureOptions> => {
     return { data: context.source }
   },
 })
@@ -176,10 +187,10 @@ export const loadPngToTextureOptions = loader<null, TextureOptions>({
 /**
  * @public
  */
-export const loadImageDataToTextureOptions = loader<ImageData, TextureOptions>({
+export const loadImageDataToTextureOptions = loader({
   input: ImageData,
   output: Texture.Options,
-  handle: async (input, _) => {
+  handle: async (input: ImageData, _): Promise<TextureOptions> => {
     return {
       data: input.data,
       width: input.width,
@@ -191,10 +202,10 @@ export const loadImageDataToTextureOptions = loader<ImageData, TextureOptions>({
 /**
  * @public
  */
-export const loadTextureOptionsToTexture = loader<TextureOptions, Texture>({
+export const loadTextureOptionsToTexture = loader({
   input: Texture.Options,
   output: Texture.Texture2D,
-  handle: async (input, context) => {
+  handle: async (input: TextureOptions, context): Promise<Texture> => {
     return context.manager.device.createTexture(input)
   },
 })
@@ -202,10 +213,10 @@ export const loadTextureOptionsToTexture = loader<TextureOptions, Texture>({
 /**
  * @public
  */
-export const loadTextureToMaterialOptions = loader<Texture, MaterialOptions>({
+export const loadTextureToMaterialOptions = loader({
   input: Texture.Texture2D,
   output: Material.Options,
-  handle: (input, _) => {
+  handle: (input: Texture, _): Promise<MaterialOptions> => {
     return Promise.resolve({
       name: 'Default',
       effect: 'default',

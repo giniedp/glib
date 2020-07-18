@@ -1,4 +1,4 @@
-import { Entity, Inject, OnInit, OnRemoved, Component } from '@gglib/ecs'
+import { Inject, OnInit, OnRemoved, Component } from '@gglib/ecs'
 import { Model } from '@gglib/graphics'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
@@ -20,8 +20,6 @@ import { TransformComponent } from './TransformComponent'
  */
 @Component({
   install: [
-    // TODO: check if this can be optional
-    // BoundingVolumeComponent,
     SceneryLinkComponent,
     TransformComponent,
   ]
@@ -33,11 +31,11 @@ export class ModelComponent implements SceneryCollectable, OnInit, OnRemoved {
    * Gets and seths the model to be rendered
    */
   public get model() {
-    return this.$model
+    return this._model
   }
   public set model(value: Model) {
-    if (this.$model !== value) {
-      this.$model = value
+    if (this._model !== value) {
+      this._model = value
       this.onModelChanged()
     }
   }
@@ -60,8 +58,8 @@ export class ModelComponent implements SceneryCollectable, OnInit, OnRemoved {
   @Inject(SceneryLinkComponent)
   public readonly link: SceneryLinkComponent
 
-  private $model: Model
-  private $drawables: SceneItemDrawable[] = []
+  private _model: Model
+  private _drawables: SceneItemDrawable[] = []
 
   /**
    * Component life cycle method
@@ -81,37 +79,46 @@ export class ModelComponent implements SceneryCollectable, OnInit, OnRemoved {
    * SceneryCollectable method
    */
   public collectScenery(result: SceneryCollector) {
-    for (let i = 0; i < this.$drawables.length; i++) {
-      result.addItem(this.$drawables[i])
+    for (let i = 0; i < this._drawables.length; i++) {
+      result.addItem(this._drawables[i])
     }
   }
 
   private onModelChanged() {
-    if (!this.$model) {
-      this.$drawables.length = 0
+    if (!this._model) {
+      this._drawables.length = 0
       if (this.volume) {
         this.volume.linkVolume(null)
       }
       return
     }
 
-    this.$drawables.length = this.$model.meshes.length
-    for (let i = 0; i < this.$drawables.length; i++) {
-      if (this.$drawables[i]) {
-        this.$drawables[i].drawable = this.$model.meshes[i]
-        this.$drawables[i].material = this.$model.getMaterial(this.$model.meshes[i].materialId)
-        this.$drawables[i].transform = this.transform.world
-      } else {
-        this.$drawables[i] = {
-          type: 'drawable',
-          drawable: this.$model.meshes[i],
-          material: this.$model.getMaterial(this.$model.meshes[i].materialId),
-          transform: this.transform.world,
+    let index = 0
+    for (let m = 0; m < this._model.meshes.length; m++) {
+      const mesh = this._model.meshes[m]
+      for (let p = 0; p < mesh.parts.length; p++) {
+        const part = mesh.parts[p]
+        if (!this._drawables[index]) {
+          this._drawables[index] = {
+            type: 'drawable',
+            drawable: null,
+            material: null,
+            transform: null,
+          }
         }
+        // TODO: get bone transform
+        this._drawables[index].drawable = part
+        this._drawables[index].material = mesh.getMaterial(part.materialId)
+        this._drawables[index].transform = this.transform.world
+        index++
       }
     }
+    this._drawables.length = index
+
     if (this.volume) {
-      const volume = this.$model.boundingSphere || this.$model.boundingBox
+      // TODO: merge bounding volumes of all meshes
+      const mesh = this._model.meshes[0]
+      const volume = mesh.boundingSphere || mesh.boundingBox
       if (!volume) {
         console.warn('model has no bounding volume and can not provide a volume to the BoundingVolume component', this)
       }

@@ -1,4 +1,4 @@
-import { ArrayType, MaterialOptions, Model, ModelJoint, ModelJointPose, ModelMeshOptions, ModelOptions, ModelSkin, BufferOptions, BufferType, VertexLayout, Buffer, dataTypeSize, nameOfDataType } from '@gglib/graphics'
+import { ArrayType, MaterialOptions, Model, ModelJoint, ModelJointPose, ModelMeshPartOptions, ModelOptions, ModelSkin, BufferOptions, BufferType, VertexLayout, Buffer, dataTypeSize, nameOfDataType } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Log } from '@gglib/utils'
 
@@ -18,14 +18,15 @@ import {
 } from '../../formats/gltf'
 import { PipelineContext } from '../../PipelineContext'
 import { loader, resolveUri } from '../../utils'
+import { ModelMeshOptions } from '@gglib/graphics/src/ModelMesh'
 
 /**
  * @public
  */
-export const loadGlbToGLTFDocument = loader<null, Document>({
+export const loadGlbToGLTFDocument = loader({
   input: ['.glb', 'model/gltf-binary'],
   output: GLTF.Document,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<Document> => {
     const data = await context.manager.downloadArrayBuffer(context.source)
     return GLTF.parseBinary(data.content)
   },
@@ -34,10 +35,10 @@ export const loadGlbToGLTFDocument = loader<null, Document>({
 /**
  * @public
  */
-export const loadGltfToGLTFDocument = loader<null, Document>({
+export const loadGltfToGLTFDocument = loader({
   input: ['.gltf', 'model/gltf+json'],
   output: GLTF.Document,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<Document> => {
     const data = await context.manager.downloadText(context.source)
     return GLTF.parse(data.content)
   },
@@ -46,10 +47,10 @@ export const loadGltfToGLTFDocument = loader<null, Document>({
 /**
  * @public
  */
-export const loadGltfDocumentToModleOptions = loader<Document, ModelOptions>({
+export const loadGltfDocumentToModleOptions = loader({
   input: GLTF.Document,
   output: Model.Options,
-  handle: async (input, context) => {
+  handle: async (input: Document, context): Promise<ModelOptions> => {
     const scene = input.scenes[input.scene || 0]
 
     const nodes: Node[] = []
@@ -59,27 +60,7 @@ export const loadGltfDocumentToModleOptions = loader<Document, ModelOptions>({
       }
     })
 
-    return loadModel(context, input, nodes[0])
-  },
-})
-
-/**
- * @public
- */
-export const loadGltfDocumentToModleOptionsArray = loader<Document, ModelOptions[]>({
-  input: GLTF.Document,
-  output: Model.OptionsArray,
-  handle: async (input, context) => {
-    const scene = input.scenes[input.scene || 0]
-
-    const nodes: Node[] = []
-    walkNodes(input, scene.nodes, (node) => {
-      if (node.mesh != null) {
-        nodes.push(node)
-      }
-    })
-
-    return Promise.all(nodes.map(async (node) => loadModel(context, input, node)))
+    return loadModel(context, input, nodes)
   },
 })
 
@@ -91,33 +72,6 @@ function walkNodes(doc: Document, nodes: number[], callback: (node: Node) => voi
       walkNodes(doc, node.children, callback)
     }
   })
-}
-
-async function loadModel(
-  context: PipelineContext,
-  doc: Document,
-  node: Node,
-): Promise<ModelOptions> {
-
-  const meshes = await loadMesh(context, doc, node)
-  const mtlMap = new Map<number | string, Promise<MaterialOptions>>()
-  for (const mesh of meshes) {
-    if (!mtlMap.has(mesh.materialId)) {
-      mtlMap.set(mesh.materialId, loadMaterial(context, doc, mesh.materialId as number))
-    }
-  }
-
-  const materials = Array.from(mtlMap.entries())
-  for (const mesh of meshes) {
-    mesh.materialId = materials.findIndex(([id]) => id === mesh.materialId)
-  }
-
-  return {
-    name: node.name,
-    materials: await Promise.all(materials.map(([, promise]) => promise)),
-    meshes: meshes,
-    skin: node.skin == null ? null : await loadSkin(context, doc, node.skin),
-  }
 }
 
 async function loadMaterial(
@@ -297,16 +251,61 @@ async function loadSkin(context: PipelineContext, doc: Document, skinIndex: numb
 //   }
 // }
 
-async function loadMesh(
+async function loadModel(
+  context: PipelineContext,
+  doc: Document,
+  nodes: Node[],
+): Promise<ModelOptions> {
+
+  const meshes = await loadMeshes(context, doc, nodes)
+  return {
+    meshes: meshes,
+  }
+}
+
+async function loadMeshes(
+  context: PipelineContext,
+  doc: Document,
+  nodes: Node[],
+): Promise<ModelMeshOptions[]> {
+
+  const result: ModelMeshOptions[] = []
+  for (const node of nodes) {
+    const parts = await loadMeshParts(context, doc, node)
+    const mtlMap = new Map<number | string, Promise<MaterialOptions>>()
+    for (const mesh of parts) {
+      if (!mtlMap.has(mesh.materialId)) {
+        mtlMap.set(mesh.materialId, loadMaterial(context, doc, mesh.materialId as number))
+      }
+    }
+
+    const materials = Array.from(mtlMap.entries())
+    for (const mesh of parts) {
+      mesh.materialId = materials.findIndex(([id]) => id === mesh.materialId)
+    }
+
+    result.push({
+      name: node.name,
+      materials: await Promise.all(materials.map(([, promise]) => promise)),
+      parts: parts,
+      // TODO: load skin
+      // skin: node.skin == null ? null : await loadSkin(context, doc, node.skin),
+    })
+  }
+
+  return result
+}
+
+async function loadMeshParts(
   context: PipelineContext,
   doc: Document,
   node: Node,
-): Promise<ModelMeshOptions[]> {
+): Promise<ModelMeshPartOptions[]> {
 
   const mesh = doc.meshes[node.mesh]
   let min = [0, 0, 0]
   let max = [0, 0, 0]
-  const result = mesh.primitives.map(async (part): Promise<ModelMeshOptions> => {
+  const result = mesh.primitives.map(async (part): Promise<ModelMeshPartOptions> => {
     Object.keys(part.attributes).forEach(async (semantic) => {
       const accessor = doc.accessors[part.attributes[semantic]]
       if (semantic === 'POSITION') {

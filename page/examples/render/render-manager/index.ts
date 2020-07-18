@@ -191,9 +191,10 @@ function loadWater() {
   const model = ModelBuilder.begin()
     .append(buildPlane, { size: 1000, tesselation: 4 })
     .calculateTangents(true)
-    .endModel(device, {
+    .closeMesh({
       materials: [mtl],
     })
+    .endModel(device)
 
   const world = Mat4.createIdentity()
   gameObjects.push({
@@ -214,9 +215,9 @@ function loadSky() {
   const model = ModelBuilder.begin().append((b) => {
     buildSphere(b, { radius: 1000, tesselation: 32 })
     flipWindingOrder(b.indices)
-  }).endModel(device, {
+  }).closeMesh({
     materials: [mtl],
-  })
+  }).endModel(device)
 
   const world = Mat4.createIdentity()
   gameObjects.push({
@@ -229,14 +230,18 @@ function loadSky() {
 loadSky()
 
 function makeDrawableList(model: Model, world: Mat4): SceneItemDrawable[] {
-  return model.meshes.map((mesh) => {
-    return {
-      type: 'drawable',
-      transform: world,
-      drawable: mesh,
-      material: model.getMaterial(mesh.materialId),
-    }
+  const result: SceneItemDrawable[] = []
+  model.meshes.map((mesh) => {
+    mesh.parts.forEach((part) => {
+      result.push({
+        type: 'drawable',
+        transform: world,
+        drawable: part,
+        material: mesh.getMaterial(part.materialId),
+      })
+    })
   })
+  return result
 }
 
 TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {

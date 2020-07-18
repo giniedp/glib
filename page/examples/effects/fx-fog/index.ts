@@ -38,7 +38,7 @@ const model = ModelBuilder
       b.withTransform(Mat4.createTranslation(i * 2, -1, -i * 2), buildCube)
     }
   })
-  .endModel(device, {
+  .closeMesh({
     materials: [{
       effect: lightingEffect,
       parameters: {
@@ -54,6 +54,7 @@ const model = ModelBuilder
       },
     }],
   })
+  .endModel(device)
 
 loop((time, dt) => {
 
@@ -65,19 +66,21 @@ loop((time, dt) => {
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
   // world.initRotationY(time / 4000)
 
-  model.materials.forEach((mtl) => {
-    mtl.parameters.World = world
-    mtl.parameters.View = view
-    mtl.parameters.Projection = proj
-    mtl.parameters.CameraPosition = cam.getTranslation()
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((mtl) => {
+      mtl.parameters.World = world
+      mtl.parameters.View = view
+      mtl.parameters.Projection = proj
+      mtl.parameters.CameraPosition = cam.getTranslation()
 
-    light.assign(0, mtl.parameters)
+      light.assign(0, mtl.parameters)
+    })
   })
   model.draw()
 })
 
 TweakUi.build('#tweak-ui', (q) => {
-  const params = model.materials[0].parameters
+  const params = model.meshes[0].materials[0].parameters
   q.group('Fog', { open: true }, (b) => {
     b.slider(params.FogParams, 0, { min: 0, max: 10, step: 0.01, label: 'Start' })
     b.slider(params.FogParams, 1, { min: 0, max: 10, step: 0.01, label: 'End' })

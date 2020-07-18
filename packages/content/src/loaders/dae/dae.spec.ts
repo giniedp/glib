@@ -70,8 +70,9 @@ technique:
   describe('assets/dae/cube.dae', () => {
     it('loads', (done) => {
       manager.load('/assets/models/dae/cubes.dae', Model).then((model) => {
-        expect(model.meshes.length).toBe(9)
-        expect(model.materials.length).toBe(3)
+        expect(model.meshes.length).toBe(1)
+        expect(model.meshes[0].parts.length).toBe(9)
+        expect(model.meshes[0].materials.length).toBe(3)
       })
       .catch(fail)
       .then(done)

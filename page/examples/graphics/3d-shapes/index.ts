@@ -13,7 +13,7 @@ import {
   DepthState,
   DeviceGL,
   ModelBuilder,
-  ModelMesh,
+  ModelMeshPart,
   PrimitiveType,
   createDevice,
 } from '@gglib/graphics'
@@ -44,8 +44,8 @@ const texture = device.createTexture({
 })
 
 // The mesh variable. It will be rendered once it has been built.
-let mesh: ModelMesh = null
-let linesMesh: ModelMesh = null
+let mesh: ModelMeshPart = null
+let linesMesh: ModelMeshPart = null
 
 // The mesh rotation state
 const meshRotation = {
@@ -69,13 +69,13 @@ function buildMesh(name: string) {
     const options = builderFunctionOptions[name]
     fn(b, options)
   })
-  .endMesh(device)
+  .endMeshPart(device)
 
   linesMesh = ModelBuilder.begin({
     layout: ['position', 'color'],
   }).append((b) => {
     buildLines(b, mesh.vertexBuffer)
-  }).endMesh(device, {
+  }).endMeshPart(device, {
     primitiveType: PrimitiveType.LineList,
   })
 }

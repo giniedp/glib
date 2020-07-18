@@ -54,7 +54,7 @@ export class Pipeline {
    *
    * @param loader - The loader specification
    */
-  public register<I, O, D>(loader: LoaderSpec<I, O, D>) {
+  public register(loader: LoaderSpec) {
     const inputs = Array.isArray(loader.input) ? loader.input : [loader.input]
     inputs.forEach((input) => {
       for (const entry of this.loaders) {

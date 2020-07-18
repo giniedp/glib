@@ -22,19 +22,19 @@ const meshes = {
   Cube: ModelBuilder.begin()
     .append(buildCube)
     .calculateNormalsAndTangents(true)
-    .endMesh(device),
+    .endMeshPart(device),
   Sphere: ModelBuilder.begin()
     .append(buildSphere)
     .calculateNormalsAndTangents(true)
-    .endMesh(device),
+    .endMeshPart(device),
   Cylinder: ModelBuilder.begin()
     .append(buildCylinder)
     .calculateNormalsAndTangents(true)
-    .endMesh(device),
+    .endMeshPart(device),
   Cone: ModelBuilder.begin()
     .append(buildCone)
     .calculateNormalsAndTangents(true)
-    .endMesh(device),
+    .endMeshPart(device),
 }
 let mesh = meshes.Cube
 

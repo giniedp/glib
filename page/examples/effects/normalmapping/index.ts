@@ -75,38 +75,39 @@ const model = ModelBuilder.begin().append((b) => {
       if (x === 0 && y === 0) {
         b.withTransform(Mat4.createTranslation(x * cubeSize, 2, y * cubeSize), (b) => {
           buildPlane(b, { size: cubeSize, tesselation: 4 })
-          b.endMesh({ materialId: 'water' })
+          b.endMeshPart({ materialId: 'water' })
         })
       } else {
         b.withTransform(Mat4.createTranslation(x * cubeSize, 0, y * cubeSize), (b) => {
           buildCube(b, { size: cubeSize, tesselation: 4 })
-          b.endMesh({ materialId: 'solid' })
+          b.endMeshPart({ materialId: 'solid' })
         })
       }
     }
   }
 })
-  .endModel(device, {
-    materials: [{
-      name: 'solid',
-      effect: normalMapEffect,
-      parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_orange.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' }),
-        SpecularPower: 1024,
-        SpecularColor: [1, 1, 1],
-      },
-    }, {
-      name: 'water',
-      effect: normalMapSpecularMapEffect,
-      parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_water.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_water_N.png' }),
-        SpecularMap: device.createTexture({ data: '/assets/textures/prototype/proto_water_S.png' }),
-        SpecularPower: 255,
-      },
-    }],
-  })
+.closeMesh({
+  materials: [{
+    name: 'solid',
+    effect: normalMapEffect,
+    parameters: {
+      DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_orange.png' }),
+      NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' }),
+      SpecularPower: 1024,
+      SpecularColor: [1, 1, 1],
+    },
+  }, {
+    name: 'water',
+    effect: normalMapSpecularMapEffect,
+    parameters: {
+      DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_water.png' }),
+      NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_water_N.png' }),
+      SpecularMap: device.createTexture({ data: '/assets/textures/prototype/proto_water_S.png' }),
+      SpecularPower: 255,
+    },
+  }],
+})
+  .endModel(device)
 
 loop((time, dt) => {
 
@@ -117,15 +118,17 @@ loop((time, dt) => {
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 
-  model.materials.forEach((mtl) => {
-    mtl.parameters['World'] = world
-    mtl.parameters['View'] = view
-    mtl.parameters['Projection'] = proj
-    mtl.parameters['CameraPosition'] = cam.getTranslation()
-    mtl.parameters['DiffuseMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
-    mtl.parameters['NormalMapScaleOffset'] = [1, 1, time / 40000, time / 80000]
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((mtl) => {
+      mtl.parameters['World'] = world
+      mtl.parameters['View'] = view
+      mtl.parameters['Projection'] = proj
+      mtl.parameters['CameraPosition'] = cam.getTranslation()
+      mtl.parameters['DiffuseMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
+      mtl.parameters['NormalMapScaleOffset'] = [1, 1, time / 40000, time / 80000]
 
-    light.assign(0, mtl.parameters)
+      light.assign(0, mtl.parameters)
+    })
   })
   model.draw()
 })

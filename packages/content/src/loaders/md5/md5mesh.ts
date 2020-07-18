@@ -1,4 +1,4 @@
-import { Material, Model, ModelBuilder, ModelMeshOptions, ModelOptions } from '@gglib/graphics'
+import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions } from '@gglib/graphics'
 import { Quat, Vec4 } from '@gglib/math'
 
 import { MD5Mesh } from '../../formats/md5'
@@ -7,10 +7,10 @@ import { loader, resolveUri } from '../../utils'
 /**
  * @public
  */
-export const loadMd5meshToModelOptions = loader<null, ModelOptions>({
+export const loadMd5meshToModelOptions = loader({
   input: ['.md5mesh'],
   output: Model.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ModelOptions> => {
     const content = (await context.manager.downloadText(context.source)).content
     const data = MD5Mesh.parse(content)
     const builder = new ModelBuilder({
@@ -34,7 +34,7 @@ export const loadMd5meshToModelOptions = loader<null, ModelOptions>({
     })
 
     const mtlIds: string[] = []
-    const meshes = data.meshes.map((mesh): ModelMeshOptions => {
+    const parts = data.meshes.map((mesh): ModelMeshPartOptions => {
       mesh.tri.forEach((tri, index) => {
         for (const i of [tri.v1, tri.v2, tri.v3]) {
           const vert = mesh.vert[i]
@@ -64,17 +64,17 @@ export const loadMd5meshToModelOptions = loader<null, ModelOptions>({
       if (mtlIds.indexOf(mesh.shader) === -1) {
         mtlIds.push(mesh.shader)
       }
-      return builder.endMesh({
+      return builder.endMeshPart({
         name: mesh.name,
         materialId: mtlIds.indexOf(mesh.shader),
       })
     })
 
-    const result: ModelOptions = {
-      meshes: meshes,
-      materials: await Promise.all(mtlIds.map((name: string) => context.manager.load(resolveUri(name, context), Material))),
+    return {
+      meshes: [{
+        parts: parts,
+        materials: await Promise.all(mtlIds.map((name: string) => context.manager.load(resolveUri(name, context), Material))),
+      }]
     }
-
-    return Promise.resolve(result)
   },
 })

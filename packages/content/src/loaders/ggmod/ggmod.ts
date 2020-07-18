@@ -4,10 +4,10 @@ import { loader } from '../../utils'
 /**
  * @public
  */
-export const loadGgmodToModelOptions = loader<null, ModelOptions>({
+export const loadGgmodToModelOptions = loader({
   input: '.ggmod',
   output: Model.Options,
-  handle: async (_, context) => {
+  handle: async (_, context): Promise<ModelOptions> => {
     const text = (await context.manager.downloadText(context.source)).content
     return JSON.parse(text)
   },

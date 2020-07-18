@@ -55,12 +55,12 @@ content.load('./effect.ggfx', ShaderEffect).then((effect) => {
   // To finish the model call `builder.endModel` and give it some material options.
   // Thats it for a simple model. The `ModelBuilder` is helpful when writing
   // model importers.
-  model = builder.endModel(device, {
+  model = builder.closeMesh({
     materials: [{
       effect: effect,
       parameters: {},
     }],
-  })
+  }).endModel(device)
 })
 
 // allocate scene variables
@@ -87,10 +87,12 @@ loop((time, dt) => {
   proj.initPerspectiveFieldOfView(Math.PI / 2, aspect, 0, 100)
 
   // apply material parameters
-  model.materials.forEach((material) => {
-    material.parameters.world = world
-    material.parameters.view = view
-    material.parameters.projection = proj
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((material) => {
+      material.parameters.world = world
+      material.parameters.view = view
+      material.parameters.projection = proj
+    })
   })
 
   // draw the loaded model

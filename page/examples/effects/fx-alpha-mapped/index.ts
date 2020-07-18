@@ -35,7 +35,7 @@ const cam = Mat4.createIdentity()
 
 const model = ModelBuilder.begin()
   .append(buildCube, { size: 2 })
-  .endModel(device, {
+  .closeMesh({
     materials: [{
       effect: lightingEffect,
       parameters: {
@@ -46,6 +46,7 @@ const model = ModelBuilder.begin()
       },
     }],
   })
+  .endModel(device, )
 
 loop((time, dt) => {
 
@@ -60,13 +61,15 @@ loop((time, dt) => {
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
   world.initRotationY(time / 4000)
 
-  model.materials.forEach((mtl) => {
-    mtl.parameters.World = world
-    mtl.parameters.View = view
-    mtl.parameters.Projection = proj
-    mtl.parameters.CameraPosition = cam.getTranslation()
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((mtl) => {
+      mtl.parameters.World = world
+      mtl.parameters.View = view
+      mtl.parameters.Projection = proj
+      mtl.parameters.CameraPosition = cam.getTranslation()
 
-    light.assign(0, mtl.parameters)
+      light.assign(0, mtl.parameters)
+    })
   })
   model.draw()
 })

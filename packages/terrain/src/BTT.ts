@@ -1,6 +1,6 @@
 
 
-import { Buffer, Device, Material, MaterialOptions, Model, ModelMesh, VertexLayout } from '@gglib/graphics'
+import { Buffer, Device, Material, MaterialOptions, Model, ModelMeshPart, VertexLayout } from '@gglib/graphics'
 import { IVec3, Vec3, BoundingBox } from '@gglib/math'
 import { HeightMap } from './HeightMap'
 
@@ -65,7 +65,7 @@ export class BTTRoot {
     }
 
     const patches = []
-    const meshes = []
+    const parts = []
     for (let y = 0; y < this.heightMap.height; y += this.patchSize) {
       for (let x = 0; x < this.heightMap.width; x += this.patchSize) {
         const patch = new BTTPatch(device, {
@@ -74,15 +74,17 @@ export class BTTRoot {
           startY: y,
         })
         patches.push(patch)
-        meshes.push(patch.mesh)
+        parts.push(patch.mesh)
       }
     }
 
     this.patches = patches
     this.model = device.createModel({
-      boundingBox: meshes.reduce((box, next) => box.merge(next.boundingBox), meshes[0].boundingBox.clone()),
-      materials: options.materials,
-      meshes: meshes,
+      meshes: [{
+        boundingBox: parts.reduce((box, next) => box.merge(next.boundingBox), parts[0].boundingBox.clone()),
+        materials: options.materials,
+        parts: parts,
+      }]
     })
   }
 
@@ -277,7 +279,7 @@ export class BTTPatch {
   public currentVersion: number = 0
 
   public parent: BTTRoot
-  public mesh: ModelMesh
+  public mesh: ModelMeshPart
   public startX: number
   public startY: number
   public patchSize: number
@@ -307,7 +309,7 @@ export class BTTPatch {
           this.startY,
           this.patchSize + 1)
 
-    this.mesh = new ModelMesh(device, {
+    this.mesh = new ModelMeshPart(device, {
       boundingBox: BoundingBox.createFromPointsBuffer(vertices, 0, 3 + 3 + 2),
       indexBuffer: this.parent.indexBuffers[0][0],
       vertexBuffer: device.createVertexBuffer({

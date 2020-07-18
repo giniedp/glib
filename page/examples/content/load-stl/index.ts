@@ -40,7 +40,7 @@ function loadModel(url: string) {
   content.load(url, Model).then((result) => {
     model = result
     if (model) {
-      scale = 1 / model.boundingSphere.radius
+      scale = 1 / model.meshes[0].boundingSphere.radius
     }
   }).catch((e) => {
     model = null
@@ -74,10 +74,11 @@ loop((time, dt) => {
   }
 
   // Update runtime variables
+  const bs = model.meshes[0].boundingSphere
   world
     .initScaleUniform(scale)
     .rotateY(gameTime / 4000)
-    .translate(-model.boundingSphere.center.x, -model.boundingSphere.center.y, -model.boundingSphere.center.z)
+    .translate(-bs.center.x, -bs.center.y, -bs.center.z)
 
   cam.initLookAt(
     { x: 0, y: controls.offset, z: controls.distance },
@@ -88,14 +89,16 @@ loop((time, dt) => {
   proj.initPerspectiveFieldOfView(controls.fov * Math.PI / 180, device.drawingBufferAspectRatio, 0.001, 10)
 
   // Update materials
-  model.materials.forEach((material) => {
-    const params = material.parameters
+  model.meshes.forEach((mesh) => {
+    mesh.materials.forEach((material) => {
+      const params = material.parameters
 
-    params.World = world
-    params.View = view
-    params.Projection = proj
-    params.CameraPosition = cam.getTranslation()
-    light.assign(0, params)
+      params.World = world
+      params.View = view
+      params.Projection = proj
+      params.CameraPosition = cam.getTranslation()
+      light.assign(0, params)
+    })
   })
 
   // Draw the model.

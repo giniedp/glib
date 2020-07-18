@@ -96,9 +96,10 @@ loader({
     const result = builder
       .calculateNormals()
       .calculateBoundings()
-      .endModel({
+      .closeMesh({
         materials: [material],
       })
+      .endModel()
     return Promise.resolve(result)
   },
 })
@@ -142,14 +143,16 @@ loop((time, dt) => {
   if (model) {
     world.initRotationY(time2pi / 5000)
 
-    model.materials.forEach((material) => {
-      let params = material.parameters
+    model.meshes.forEach((mesh) => {
+      mesh.materials.forEach((material) => {
+        let params = material.parameters
 
-      params.World = world
-      params.View = view
-      params.Projection = proj
-      params.CameraPosition = cam.getTranslation()
-      light.assign(0, params)
+        params.World = world
+        params.View = view
+        params.Projection = proj
+        params.CameraPosition = cam.getTranslation()
+        light.assign(0, params)
+      })
     })
     model.draw()
   }

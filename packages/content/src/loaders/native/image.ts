@@ -3,37 +3,37 @@ import { loader } from '../../utils'
 /**
  * @public
  */
-export const loadJpegToHTMLImageElement = loader<null, HTMLImageElement>({
+export const loadJpegToHTMLImageElement = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: HTMLImageElement,
-  handle: (_, context) => loadImage(context.source),
+  handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
 })
 
 /**
  * @public
  */
-export const loadJpegToImage = loader<null, HTMLImageElement>({
+export const loadJpegToImage = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Image,
-  handle: (_, context) => loadImage(context.source),
+  handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
 })
 
 /**
  * @public
  */
-export const loadPngToHTMLImageElement = loader<null, HTMLImageElement>({
+export const loadPngToHTMLImageElement = loader({
   input: ['.png', 'image/png'],
   output: HTMLImageElement,
-  handle: (_, context) => loadImage(context.source),
+  handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
 })
 
 /**
  * @public
  */
-export const loadPngToImage = loader<null, HTMLImageElement>({
+export const loadPngToImage = loader({
   input: ['.png', 'image/png'],
   output: Image,
-  handle: (_, context) => loadImage(context.source),
+  handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
 })
 
 async function loadImage(url: string) {

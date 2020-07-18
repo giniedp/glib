@@ -1,19 +1,33 @@
-import { Type } from '@gglib/utils'
+import { Type, AbstractType } from '@gglib/utils'
 import { PipelineContext } from './PipelineContext'
+
+export type LoaderInput<T = unknown> = string | symbol | Type<T> | AbstractType<T>
+export type LoaderInputs<T = unknown> = LoaderInput<T> | Array<LoaderInput<T>>
+export type LoaderOutput<T = unknown> = symbol | Type<T> | AbstractType<T>
+
+export type LoaderInputType<T extends LoaderInputs> =
+  T extends string ? unknown :
+  T extends symbol ? unknown :
+  T extends LoaderInput<infer O> ? O : unknown
+
+export type LoaderOutputType<T extends LoaderOutput> =
+  T extends string ? unknown :
+  T extends symbol ? unknown :
+  T extends LoaderOutput<infer O> ? O : unknown
 
 /**
  * A function that transforms an input of type `I` to output of type `O` using context with data type `D`
  *
  * @public
  */
-export type Loader<I = any, O = any, D = any> = (input: I, context: PipelineContext<D>) => Promise<O>
+export type LoaderHandle<I extends LoaderInputs, O extends LoaderOutput, D = any> = (input: LoaderInputType<I>, context: PipelineContext<D>) => Promise<LoaderOutputType<O>>
 
 /**
  * A specification of a loader function declaring its input and output types
  *
  * @public
  */
-export interface LoaderSpec<I = any, O = any, D = any> {
+export interface LoaderSpec<Input extends LoaderInputs = any, Output extends LoaderOutput = any, D = any> {
   /**
    * The input type or input types that the loader can load from
    *
@@ -32,7 +46,7 @@ export interface LoaderSpec<I = any, O = any, D = any> {
    * input: HTMLImageElement
    * ```
    */
-  readonly input: string | symbol | Array<string | symbol> | Type<I>
+  readonly input: Input
   /**
    * The output type that the loader can load to
    *
@@ -46,21 +60,21 @@ export interface LoaderSpec<I = any, O = any, D = any> {
    * output: HTMLImageElement
    * ```
    */
-  readonly output: symbol | Type<O>
+  readonly output: Output
   /**
    * The loader function
    */
-  readonly handle: Loader<I, O, D>
+  readonly handle: LoaderHandle<Input, Output, D>
 }
 
 /**
  * @public
  */
-export class LoaderEntry<I = any, O = any, D = any> {
+export class LoaderEntry<Input extends LoaderInput = any, Output extends LoaderOutput = any, D = any> {
   public constructor(
-    public input: symbol | string | Type<I>,
-    public output: symbol | Type<O>,
-    public handle: Loader<I, O, D>,
+    public input: Input,
+    public output: Output,
+    public handle: LoaderHandle<Input, Output, D>,
   ) {
 
   }
