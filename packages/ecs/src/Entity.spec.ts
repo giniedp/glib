@@ -1,7 +1,7 @@
 import { Component, forwardRef, Inject } from './decorators'
 import { Entity } from './Entity'
 
-fdescribe('@gglib/ecs/Entity', () => {
+describe('@gglib/ecs/Entity', () => {
 
   describe('#install', () => {
     @Component()

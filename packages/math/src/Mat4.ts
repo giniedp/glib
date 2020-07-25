@@ -212,6 +212,12 @@ export class Mat4 {
     this.m[M._33] = v
   }
 
+  private get debug(): unknown {
+    const result = this.format(3)
+    console.log(result)
+    return result
+  }
+
   /**
    * Constructs a new instance of {@link Mat4}
    *

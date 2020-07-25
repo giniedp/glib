@@ -17,7 +17,7 @@ const model = ModelBuilder.begin({
   layout: ['position', 'color'],
 })
   .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
-    b.defaultAttributes.color = [Color.DarkRed.rgba]
+    b.defaults.color = [Color.DarkRed.rgba]
     buildCube(b, { size: 2 })
     b.endMeshPart({
       materialId: 0,
@@ -25,7 +25,7 @@ const model = ModelBuilder.begin({
     })
   })
   .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
-    b.defaultAttributes.color = [Color.DarkGreen.rgba]
+    b.defaults.color = [Color.DarkGreen.rgba]
     buildCube(b, { size: 2 })
     b.endMeshPart({
       materialId: 0,
@@ -33,7 +33,7 @@ const model = ModelBuilder.begin({
     })
   })
   .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
-    b.defaultAttributes.color = [Color.DarkBlue.rgba]
+    b.defaults.color = [Color.DarkBlue.rgba]
     buildCube(b, { size: 2 })
     b.endMeshPart({
       materialId: 0,

@@ -1,5 +1,5 @@
 import { loader } from '@gglib/content'
-import { Material, MaterialOptions, ShaderEffect, ShaderEffectOptions, ShaderProgramOptions } from '@gglib/graphics'
+import { Material, MaterialOptions, ShaderEffect, ShaderEffectOptions, ShaderProgramOptions, CullState, BlendState, IBlendState, ICullState } from '@gglib/graphics'
 import { defaultProgram, DefaultProgramDefs } from './programs'
 
 /**
@@ -21,6 +21,9 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
     const params = input.parameters || {}
 
     const defines: DefaultProgramDefs = {}
+
+    let blendState: IBlendState = null
+    let cullState: ICullState
 
     if (params.AlphaClip != null) {
       defines.ALPHA_CLIP = true
@@ -85,6 +88,19 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
     }
     if (params.Texture2ScaleOffset) {
       defines.V_TEXTURE2_SCALE_OFFSET = params.Texture2ScaleOffset != null
+    }
+
+    if ('Blend' in params) {
+      delete params.Blend
+      blendState = {
+        ...BlendState.AlphaBlend
+      }
+    }
+    if ('DoubleSided' in params) {
+      delete params.DoubleSided
+      cullState = {
+        ...CullState.CullNone
+      }
     }
 
     let options: ShaderProgramOptions
@@ -153,12 +169,15 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
       return null
     }
 
-    return {
+    const result: ShaderEffectOptions = {
       techniques: [{
         passes: [{
           program: options,
         }],
       }],
     }
+    result.techniques[0].passes[0].blendState = blendState
+    result.techniques[0].passes[0].cullState = cullState
+    return result
   },
 })

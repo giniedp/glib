@@ -32,3 +32,9 @@ export function addToList<T>(list: T[], item: T) {
   }
   return false
 }
+
+export function append<T>(list: T[] | null, item: T) {
+  list = list || []
+  list.push(item)
+  return list
+}

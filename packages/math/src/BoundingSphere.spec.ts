@@ -112,6 +112,15 @@ describe('BoundingSphere', () => {
     })
   })
 
+  describe('#mergeSphere', () => {
+    it ('merges spheres', () => {
+      const b1 = BoundingSphere.createFromArray([-1, 0, 0, 1])
+      const b2 = BoundingSphere.createFromArray([1, 0, 0, 1])
+      b1.mergeSphere(b2)
+      expectComponents(b1, 0, 0, 0, 2)
+    })
+  })
+
   describe('#clone', () => {
     it ('creates a cloned instance', () => {
       const sphere1 = new BoundingSphere(1, 2, 3, 4)

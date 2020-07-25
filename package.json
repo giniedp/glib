@@ -9,7 +9,7 @@
   "typings": "dist/packages/index.d.ts",
   "scripts": {
     "test": "karma start --single-run",
-    "test:watch": "BROWSER=ChromeDebugging karma start --single-run=false",
+    "test:watch": "BROWSER=ChromeHeadless karma start --single-run=false",
     "test:coverage": "IS_COVERAGE=yes karma start --single-run",
     "test:coveralls": "IS_COVERAGE=yes karma start --single-run && cat ./coverage/lcov/lcov.info | ./node_modules/.bin/coveralls",
     "watch": "gulp watch",

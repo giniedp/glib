@@ -1,5 +1,5 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
-import { isString, uuid } from '@gglib/utils'
+import { isString, uuid, TypeToken } from '@gglib/utils'
 import { Device } from './Device'
 import { Material, MaterialOptions } from './Material'
 import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
@@ -37,15 +37,15 @@ export class ModelMesh {
   /**
    * A symbol identifying the `ModelMesh[]` type.
    */
-  public static readonly Array = Symbol('ModelMesh[]')
+  public static readonly Array = new TypeToken<ModelMesh[]>('ModelMesh[]', { factory: () => ([])})
   /**
    * A symbol identifying the `ModelMeshOptions` type.
    */
-  public static readonly Options = Symbol('ModelMeshOptions')
+  public static readonly Options = new TypeToken<ModelMeshOptions>('ModelMeshOptions', { factory: () => ({})})
   /**
    * A symbol identifying the `ModelMeshOptions[]` type.
    */
-  public static readonly OptionsArray = Symbol('ModelMeshOptions[]')
+  public static readonly OptionsArray = new TypeToken<ModelMeshOptions[]>('ModelMeshOptions[]', { factory: () => ([])})
   /**
    * Autmatically generated unique identifier
    */
@@ -70,10 +70,19 @@ export class ModelMesh {
    * Collection of meshes
    */
   public parts: ModelMeshPart[] = []
+  /**
+   * The index of the parent bone for this mesh
+   */
+  public boneId: number | null = null
+  /**
+   * The name of this mesh
+   */
+  public name: string | null
 
   constructor(device: Device, options: ModelMeshOptions) {
     this.uid = uuid()
     this.device = device
+    this.name = options.name
     this.boundingBox = BoundingBox.convert(options.boundingBox)
     this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
 

@@ -38,7 +38,7 @@ export interface ModelMeshPartOptions {
   /**
    * Offset in vertex buffer
    */
-  vertexOffset?: number
+  // vertexOffset?: number // TODOL
   /**
    * The mode of the mesh. e.g. TrinagleList, LineList etc.
    */
@@ -46,7 +46,7 @@ export interface ModelMeshPartOptions {
   /**
    * Number of primitives to render
    */
-  primitiveCount?: number
+  // primitiveCount?: number // TODO:
 }
 
 /**

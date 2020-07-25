@@ -1,5 +1,6 @@
 import { Buffer, BufferOptions } from './resources'
 import { VertexLayout } from './VertexLayout'
+import { ArrayLike } from '@gglib/math'
 
 /**
  * @public
@@ -13,17 +14,49 @@ export interface ModelBuilderChannelMap {
  */
 export class ModelBuilderChannel {
 
+  /**
+   * The vertex stride of the current buffer
+   *
+   * @remarks
+   * For example if a vertex has a `position` and a `normal`
+   * (both with three elements) it has a stride of 6 elements.
+   */
   public readonly stride: number
+  /**
+   * Offset to the first attribute element from beginning of vertex
+   *
+   * @remarks
+   * For example if a vertex consists of a `position` followed by a `normal`
+   * (both with three elements)
+   * the `position` has an offset of 0 and the `normal` an offset of 3
+   */
   public readonly offset: number
+  /**
+   * Number of elements in a single attribute. e.g. a Vec3 has 3 elements
+   */
   public readonly elements: number
-  private data: number[]
 
-  constructor(public readonly buffer: BufferOptions<number[]> | Buffer, public readonly name: string) {
+  /**
+   * The semantic name of this channel
+   */
+  public readonly name: string
+  public readonly buffer: BufferOptions | Buffer
+
+  private data: ArrayLike<number>
+
+  constructor(
+    buffer: BufferOptions | Buffer,
+    name: string,
+  ) {
     if (buffer instanceof Buffer) {
       this.data = Array.from(buffer.getData() as any)
-    } else {
+    } else if (Array.isArray(buffer.data)) {
       this.data = buffer.data
+    } else {
+      throw new Error('not supported')
     }
+    this.name = name
+    this.buffer = buffer
     this.stride = VertexLayout.countElements(this.buffer.layout)
     this.offset = VertexLayout.countElementsBefore(this.buffer.layout, name)
     const attr = this.buffer.layout[name]
@@ -73,7 +106,7 @@ export class ModelBuilderChannel {
    * @param source - The attribute data to write
    * @param sourceOffset - The offset in source array where to start reading
    */
-  public writeAttribute(vIndex: number, source: number[] = [], sourceOffset: number = 0) {
+  public writeAttribute(vIndex: number, source: ReadonlyArray<number> = [], sourceOffset: number = 0) {
     const index = this.stride * vIndex + this.offset
     for (let j = 0; j < Math.min(this.elements, source.length - sourceOffset); j++) {
       this.data[index + j] = source[sourceOffset + j]
@@ -104,7 +137,7 @@ export class ModelBuilderChannel {
     }
   }
 
-  public static createMap(vBuffers: Array<BufferOptions<number[]> | Buffer>): ModelBuilderChannelMap {
+  public static fromVertexBuffer(vBuffers: Array<BufferOptions | Buffer>): ModelBuilderChannelMap {
     const channels = {}
     for (let buffer of vBuffers) {
       Object.keys(buffer.layout).forEach((name) => {

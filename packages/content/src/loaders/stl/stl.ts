@@ -23,7 +23,8 @@ export const loadStlToModelOptions = loader({
         if (builder.vertexCount > 65536 - 2) {
           builder
             .calculateTangents()
-            .endMeshPart({
+            .calculateBoundings()
+            .closeMeshPart({
               name: solid.name,
               materialId: 0,
             })
@@ -43,7 +44,7 @@ export const loadStlToModelOptions = loader({
       builder
         .calculateTangents()
         .calculateBoundings()
-        .endMeshPart({
+        .closeMeshPart({
           name: solid.name,
           materialId: 0,
         })

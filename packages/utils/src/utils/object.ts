@@ -26,6 +26,10 @@ export function pick<T>(src: T, ...rest: string[]): Partial<T> {
   return result
 }
 
+export function copy<T>(src?: T[], dest?: T[]): T[]
+export function copy<T>(src?: T, dest?: T): T
+export function copy<T>(srcOrDeep: boolean, srcOrDest?: T[], dest?: T[]): T[]
+export function copy<T>(srcOrDeep: boolean, srcOrDest?: T, dest?: Partial<T>): T
 /**
  * Creates a copy of an object, an array or a primitive.
  *

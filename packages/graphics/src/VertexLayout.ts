@@ -38,6 +38,10 @@ export interface VertexAttribute {
   packed?: boolean
 }
 
+export interface VertexLayoutPreset {
+  [key: string]: VertexAttribute
+}
+
 /**
  * Provides vertex layout utility functions
  *
@@ -49,7 +53,7 @@ export class VertexLayout {
   /**
    * Contains vertex attribute presets for common attribute names like `position`, `color`, `texture` etc.
    */
-  public static preset: { [key: string]: VertexAttribute } = {
+  public static preset: VertexLayoutPreset = {
     position: {
       type: 'float',
       elements: 3,

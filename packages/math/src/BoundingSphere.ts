@@ -26,7 +26,6 @@ import { Vec3 } from './Vec3'
  * @public
  */
 export class BoundingSphere implements BoundingVolume {
-
   /**
    * The sphere center
    */
@@ -84,12 +83,7 @@ export class BoundingSphere implements BoundingVolume {
    * @param other - the instance to copy from
    */
   public static createFrom(other: BoundingSphere): BoundingSphere {
-    return new BoundingSphere(
-      other.center.x,
-      other.center.y,
-      other.center.z,
-      other.radius,
-    )
+    return new BoundingSphere(other.center.x, other.center.y, other.center.z, other.radius)
   }
 
   /**
@@ -112,12 +106,7 @@ export class BoundingSphere implements BoundingVolume {
    * @param radius - the sphere radius
    */
   public static createFromCenterRadius(center: IVec3, radius: number): BoundingSphere {
-    return new BoundingSphere(
-      center.x,
-      center.y,
-      center.z,
-      radius,
-    )
+    return new BoundingSphere(center.x, center.y, center.z, radius)
   }
 
   /**
@@ -241,21 +230,105 @@ export class BoundingSphere implements BoundingVolume {
    * @param array - the point list
    * @param offset - the offset in `array`
    */
-  public initFromPoints(array: IVec3[]): this {
-    const min = { x: 0, y: 0, z: 0 }
-    const max = { x: 0, y: 0, z: 0 }
-    min.x = min.y = min.z = Number.MAX_VALUE
-    max.x = max.y = max.z = Number.MIN_VALUE
-    for (const vec of array) {
-      min.x = Math.min(min.x, vec.x)
-      min.y = Math.min(min.y, vec.y)
-      min.z = Math.min(min.z, vec.z)
-      max.x = Math.max(max.x, vec.x)
-      max.y = Math.max(max.y, vec.y)
-      max.z = Math.max(max.z, vec.z)
+  public initFromPoints(P: ArrayLike<IVec3>): this {
+
+    // bounding box extremes
+    let xmax: number
+    let ymax: number
+    let zmax: number
+    let xmin: number
+    let ymin: number
+    let zmin: number
+    // index of  P[] at box extreme
+    let Pxmax: number = 0
+    let Pymax: number = 0
+    let Pzmax: number = 0
+    let Pxmin: number = 0
+    let Pymin: number = 0
+    let Pzmin: number = 0
+    // find a large diameter to start with
+    // first get the bounding box and P[] extreme points for it
+    xmin = xmax = P[0].x
+    ymin = ymax = P[0].y
+    zmin = zmax = P[0].z
+
+
+    for (let i = 1; i < P.length; i++) {
+      let Pi = P[i]
+      if (Pi.x < xmin) {
+        xmin = Pi.x
+        Pxmin = i
+      } else if (Pi.x > xmax) {
+        xmax = Pi.x
+        Pxmax = i
+      }
+      if (Pi.y < ymin) {
+        ymin = Pi.y
+        Pymin = i
+      } else if (Pi.y > ymax) {
+        ymax = Pi.y
+        Pymax = i
+      }
+      if (Pi.z < zmin) {
+        zmin = Pi.z
+        Pzmin = i
+      } else if (Pi.z > zmax) {
+        zmax = Pi.z
+        Pzmax = i
+      }
     }
-    this.radius = Vec3.distance(min, max) * 0.5
-    Vec3.lerp(min, max, 0.5, this.center)
+
+    // select the largest extent as an initial diameter for the  ball
+    let dPx = Vec3.subtract(P[Pxmax], P[Pxmin], {}) // diff of Px max and min
+    let dPy = Vec3.subtract(P[Pymax], P[Pymin], {}) // diff of Py max and min
+    let dPz = Vec3.subtract(P[Pzmax], P[Pzmin], {}) // diff of Pz max and min
+    let dx2 = Vec3.lengthSquared(dPx) // Px diff squared
+    let dy2 = Vec3.lengthSquared(dPy) // Py diff squared
+    let dz2 = Vec3.lengthSquared(dPz) // Pz diff squared
+
+    let d = dx2
+    let dP = dPx
+    let iMax = Pxmax
+    let iMin = Pxmin
+
+    if (dy2 > d) {
+      d = dy2
+      iMax = Pymax
+      iMin = Pymin
+    }
+    if (dz2 > d) {
+      d = dz2
+      iMax = Pzmax
+      iMin = Pzmin
+    }
+
+    // Center = midpoint of extremes
+    let C = Vec3.addScaled(P[iMin], dP, 0.5, {})
+    // radius squared
+    let rad2 = Vec3.distanceSquared(P[iMax], C)
+    let rad = Math.sqrt(rad2)
+
+    // now check that all points P[i] are in the ball
+    // and if not, expand the ball just enough to include them
+    let dist
+    let dist2
+    for (let i = 0; i < P.length; i++) {
+      Vec3.subtract(P[i], C, dP)
+      dist2 = Vec3.lengthSquared(dP)
+      if (dist2 <= rad2) {
+        // P[i] is inside the ball already
+        continue
+      }
+      // P[i] not in ball, so expand ball  to include it
+      dist = Math.sqrt(dist2)
+      // enlarge radius just enough
+      rad = (rad + dist) / 2.0
+      rad2 = rad * rad
+      // shift Center toward P[i]
+      Vec3.addScaled(C, dP, (dist - rad) / dist, C)
+    }
+
+    this.initFromCenterRadius(C, rad)
     return this
   }
 
@@ -285,15 +358,42 @@ export class BoundingSphere implements BoundingVolume {
     return out
   }
 
-  public static transform(sphere: BoundingSphere, transform: Mat4, out?: BoundingSphere) {
+  /**
+   * Transforms this sphere with given matrix
+   *
+   * @param sphere - the sphere to transform
+   * @param m - the matrix to transform with
+   * @param out - where the result is written to
+   * @returns the given `out` parameter or a new instance
+   */
+  public static transform(sphere: BoundingSphere, m: Mat4, out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
-    if (sphere === out) {
-      throw new Error('can not transform the sphere into the same instance')
-    }
-    // use center vector as temporary variable
-    out.center.init(sphere.radius, sphere.radius, sphere.radius)
-    out.radius = transform.transformV3Normal(out.center).length()
-    transform.transformV3(sphere.center, out.center)
+    out.radius = sphere.radius * Math.sqrt(
+      Math.max(
+        m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
+        m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
+        m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+      )
+    )
+    m.transformV3(sphere.center, out.center)
+    return out
+  }
+
+  /**
+   * Transforms this sphere with given matrix
+   *
+   * @param m - the matrix to transform with
+   */
+  public transform(m: Mat4): this {
+    this.radius = this.radius * Math.sqrt(
+      Math.max(
+        m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
+        m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
+        m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+      )
+    )
+    m.transformV3(this.center, this.center)
+    return this
   }
 
   /**
@@ -364,6 +464,81 @@ export class BoundingSphere implements BoundingVolume {
       this.radius = distance
     }
     return this
+  }
+
+  /**
+   * Merges two spheres
+   *
+   * @param a - the sphere to merge
+   * @param b - another sphere to merge
+   * @param out - where the result should be written to
+   * @returns the given `out` parameter or a new instance
+   */
+  public static mergeSphere(a: BoundingSphere, b: BoundingSphere, out?: BoundingSphere): BoundingSphere {
+    out = out || new BoundingSphere()
+    const vx = a.center.x - b.center.x
+    const vy = a.center.y - b.center.y
+    const vz = a.center.z - b.center.z
+    const d = Math.sqrt(vx * vx + vy * vy + vz * vz)
+    const r1 = a.radius
+    const r2 = b.radius
+
+    if (d <= r1 + r2) {
+      if (d <= r1 - r2) {
+        // a contains b
+        out.initFrom(a)
+        return out;
+      }
+      if (d <= r2 - r1) {
+        // b contains a
+        out.initFrom(b)
+        return out;
+      }
+    }
+
+    const rl = Math.max(r1 - d, r2);
+    const rr = Math.max(r1 + d, r2);
+    const s = ((rl - rr) / (2 * d))
+    out.center.x = a.center.x + vx * s
+    out.center.y = a.center.y + vy * s
+    out.center.z = a.center.z + vz * s
+    out.radius = (rl + rr) / 2
+    return out
+  }
+
+  /**
+   * Merges another sphere into this
+   *
+   * @param other - another sphere to merge
+   */
+  public mergeSphere(other: BoundingSphere): this {
+    const vx = this.center.x - other.center.x
+    const vy = this.center.y - other.center.y
+    const vz = this.center.z - other.center.z
+    const d = Math.sqrt(vx * vx + vy * vy + vz * vz)
+    const r1 = this.radius
+    const r2 = other.radius
+
+    if (d <= r1 + r2) {
+      if (d <= r1 - r2) {
+        // this contains other
+        return this;
+      }
+      if (d <= r2 - r1) {
+        // other contains this
+        this.initFrom(other)
+        return this;
+      }
+    }
+
+    const rl = Math.max(r1 - d, r2);
+    const rr = Math.max(r1 + d, r2);
+    const s = ((rl - rr) / (2 * d))
+    this.center.x += vx * s
+    this.center.y += vy * s
+    this.center.z += vz * s
+    this.radius = (rl + rr) / 2
+    return this;
   }
 
   /**

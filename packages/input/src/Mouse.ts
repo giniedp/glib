@@ -266,6 +266,15 @@ export class Mouse extends Events {
     this.lockApi.exitLock()
   }
 
+  /**
+   * Adds a callback that is call on 'changed' event
+   *
+   * @param fn - the callback function
+   */
+  public onChanged(fn: (m: Mouse, e?: Event) => void) {
+    this.on('changed', fn)
+  }
+
   protected onCaptureState(e: MouseEvent) {
     this.state.event = e
     this.state.timestamp = getTime()

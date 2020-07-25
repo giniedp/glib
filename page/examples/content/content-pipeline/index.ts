@@ -84,7 +84,7 @@ loader({
           rows.length - y  - rows.length / 2 + 0.5 - y  * gap,
           0)
         builder.withTransform(transform, () => {
-          builder.defaultAttributes.color = colorMap[col]
+          builder.defaults.color = colorMap[col]
           buildCube(builder, { size: 1 })
         })
       })

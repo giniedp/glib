@@ -1,4 +1,5 @@
 import { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
+import { hermite } from './utils/hermite'
 
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z',
@@ -56,6 +57,19 @@ export class Vec3 implements IVec2, IVec3 {
    * Readonly vector z component set to one
    */
   public static UnitZ: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
+
+  /**
+   * A temporary variable
+   */
+  public static readonly $0 = Vec3.create()
+  /**
+   * A temporary variable
+   */
+  public static readonly $1 = Vec3.create()
+  /**
+   * A temporary variable
+   */
+  public static readonly $2 = Vec3.create()
 
   /**
    * The X component
@@ -339,6 +353,36 @@ export class Vec3 implements IVec2, IVec3 {
     this.z = array[offset + 2]
     return this
   }
+
+  /**
+   * Creates a vector from spherical coorinates
+   *
+   * @param theta - theta angle
+   * @param phi - phi angle
+   * @param scale - radius
+   */
+  public static createSpherical(theta: number, phi: number, radius: number = 1): Vec3 {
+    return new Vec3(
+      radius * Math.sin(theta) * Math.sin(phi),
+      radius * Math.cos(theta),
+      radius * Math.sin(theta) * Math.cos(phi),
+    )
+  }
+
+  /**
+   * Initializes the components from spherical coorinates
+   *
+   * @param theta - theta angle
+   * @param phi - phi angle
+   * @param scale - radius
+   */
+  public initSpherical(theta: number, phi: number, radius: number = 1): this {
+    this.x = radius * Math.sin(theta) * Math.sin(phi)
+    this.y = radius * Math.cos(theta)
+    this.z = radius * Math.sin(theta) * Math.cos(phi)
+    return this
+  }
+
 
   /**
    * Copies the source vector to the destination vector
@@ -1290,6 +1334,7 @@ export class Vec3 implements IVec2, IVec3 {
 
   /**
    * Performs a component wise linear interpolation between the given two vectors.
+   *
    * @param a - The first vector.
    * @param b - The second vector.
    * @param t - The interpolation value. Assumed to be in range [0:1].
@@ -1306,6 +1351,25 @@ export class Vec3 implements IVec2, IVec3 {
     out.x = x + (b.x - x) * t
     out.y = y + (b.y - y) * t
     out.z = z + (b.z - z) * t
+    return out
+  }
+
+  /**
+   * Performs a component wise hermite interpolation between the given two vectors.
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @param t - The interpolation value. Assumed to be in range [0:1].
+   * @param out - The vector to write to.
+   * @returns The given `out` parameter or a new vector.
+   */
+  public static hermite(a: IVec3, ta: IVec3, b: IVec3, tb: IVec3, t: number): Vec3
+  public static hermite<T>(a: IVec3, ta: IVec3, b: IVec3, tb: IVec3, t: number, out?: T): T & IVec3
+  public static hermite(a: IVec3, ta: IVec3, b: IVec3, tb: IVec3, t: number, out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    out.x = hermite(a.x, ta.x, b.x, tb.x, t)
+    out.y = hermite(a.y, ta.y, b.y, tb.y, t)
+    out.z = hermite(a.z, ta.z, b.z, tb.z, t)
     return out
   }
 

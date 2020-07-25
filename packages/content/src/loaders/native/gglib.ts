@@ -20,7 +20,7 @@ import { loader, resolveUri } from '../../utils'
 export const loadModelOptionsToModel = loader({
   input: Model.Options,
   output: Model,
-  handle: async (modelOptions: ModelOptions, context) => {
+  handle: async (modelOptions: ModelOptions, context): Promise<Model> => {
     const meshes: ModelMesh[] = []
 
     for (const meshOptions of modelOptions.meshes) {
@@ -65,10 +65,10 @@ export const loadModelOptionsToModel = loader({
         ...meshOptions,
         materials: await Promise.all(materials),
       }))
-
     }
 
     return context.manager.device.createModel({
+      ...modelOptions,
       meshes: meshes
     })
   },

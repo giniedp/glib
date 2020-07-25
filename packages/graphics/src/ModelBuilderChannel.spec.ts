@@ -45,7 +45,7 @@ describe('Graphics.ModelBuilderChannel', () => {
         },
       },
     }]
-    channels = ModelBuilderChannel.createMap(buffers)
+    channels = ModelBuilderChannel.fromVertexBuffer(buffers)
   })
 
   describe('#read', () => {

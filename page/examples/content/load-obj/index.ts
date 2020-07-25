@@ -1,9 +1,14 @@
 import { ContentManager } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { BlendState, CullState, DepthState, Model, createDevice } from '@gglib/graphics'
-import { Mat4, Vec3 } from '@gglib/math'
+import { BlendState, CullState, DepthState, Model, createDevice, Color } from '@gglib/graphics'
+import { Mat4, Vec3, BoundingSphere } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
+import { Mouse } from '@gglib/input'
+
+// Create the graphics device and pass the existing canvas element from the DOM.
+const device = createDevice({ canvas: '#canvas' })
+const content = new ContentManager(device)
 
 const models = {
   Tower: '/assets/models/obj/piratekit/tower.obj',
@@ -21,67 +26,64 @@ const models = {
   'Ship Light': '/assets/models/obj/piratekit/ship_light.obj',
 }
 
-// Create the graphics device and pass the existing canvas element from the DOM.
-const device = createDevice({
-  canvas: document.getElementById('canvas') as HTMLCanvasElement,
+TweakUi.build('#tweak-ui', (q) => {
+  loadModel(models.Tower)
+  Object.entries(models).forEach(([name, url]) => {
+    q.button(name, { onClick: () => loadModel(url)})
+  })
 })
 
-// Create the content manager
-const content = new ContentManager(device)
-const light = LightParams.createDirectionalLight({
-  direction: Vec3.Forward,
+let model: Model = null
+const light1 = LightParams.createDirectionalLight({
+  direction: Vec3.create(-1, -1, -1),
+  color: Vec3.One,
+})
+const light2 = LightParams.createDirectionalLight({
+  direction: Vec3.create(1, 1, 1),
   color: Vec3.One,
 })
 
-// Declare scene variables
-let model: Model = null
-let scale = 1
-const controls = {
-  distance: 1.5,
-  offset: 0,
-  fov: 90,
-  update: true,
+const cam = {
+  mouse: new Mouse(),
+  view: Mat4.createIdentity(),
+  proj: Mat4.createIdentity(),
+  lookAt: new Vec3(),
+  position: new Vec3(),
+  clip: { near: 0.001, far: 1000 },
+  radial: { phi: 0, theta: 0, d: 10 },
+  mx: 0,
+  my: 0,
+  reset: (bs: BoundingSphere) => {
+    cam.lookAt.initFrom(bs.center)
+    cam.radial = { phi: 0, theta: Math.PI / 2, d: bs.radius * 2 }
+    cam.clip.far = Math.max(bs.radius * 4, 10)
+  },
+  update: (dt: number) => {
+    const mouse = cam.mouse.state
+    const [dx, dy] = [mouse.normalizedX - cam.mx, mouse.normalizedY - cam.my]
+    cam.mx += dx
+    cam.my += dy
+    if (mouse.buttons[0]) {
+      cam.radial.phi -= dt * dx * 0.2
+      cam.radial.theta -= dt * dy * 0.2
+    }
+    cam.position.initSpherical(cam.radial.theta, cam.radial.phi, cam.radial.d)
+    cam.view.initLookAt(cam.position, cam.lookAt, Vec3.Up).invert()
+    cam.proj.initPerspectiveFieldOfView(Math.PI / 4, device.drawingBufferAspectRatio, cam.clip.near, cam.clip.far)
+  },
 }
-// Allow scene variables to be manipulated via gui controls
-TweakUi.build('#tweak-ui', (q) => {
-  loadModel(models.Tower)
-  q.select({ model: models.Tower }, 'model', {
-    options: models,
-    onChange: (it, value) => loadModel(value),
-  })
-  q.slider(controls, 'distance', { min: 0.01, max: 3, label: 'Camera distance' })
-  q.slider(controls, 'offset', { min: -3, max: 3, label: 'Camera height' })
-  q.slider(controls, 'fov', { min: 1, max: 120, step: 1 })
-  q.checkbox(controls, 'update')
-})
 
-// This is called every time a model has been selected
-// In case of an error the model will not be rendered
-// and the error will be logged to console
 function loadModel(url: string) {
   content.load(url, Model).then((result) => {
     model = result
-    if (model) {
-      scale = 1 / model.meshes[0].boundingSphere.radius
-    }
+    cam.reset(model.getAbsoluteBoundingSphere())
   }).catch((e) => {
     model = null
     console.error(e)
   })
 }
 
-// Declare runtime variables
-const world = Mat4.createIdentity()
-const view = Mat4.createIdentity()
-const proj = Mat4.createIdentity()
-const cam = Mat4.createIdentity()
-
-// Begin the rendering loop and accumulate the time
-let gameTime = 0
 loop((time, dt) => {
-  if (controls.update) {
-    gameTime += dt
-  }
 
   // Resize and clear the screen
   device.resize()
@@ -95,39 +97,26 @@ loop((time, dt) => {
     return
   }
 
-  const bs = model.meshes[0].boundingSphere
-  // Update runtime variables
-  world
-    .initIdentity()
-    .scaleUniform(scale)
-    .translate(-bs.center.x, -bs.center.y, -bs.center.z)
-    .rotateY(gameTime / 4000)
-
-  cam.initLookAt(
-    { x: 0, y: controls.offset, z: controls.distance },
-    { x: 0, y: 0, z: 0 },
-    { x: 0, y: 1, z: 0 },
-  )
-  Mat4.invert(cam, view)
-  proj.initPerspectiveFieldOfView(controls.fov * Math.PI / 180, device.drawingBufferAspectRatio, 0.001, 10)
+  // Update camera
+  cam.update(dt)
 
   // Update materials
   model.meshes.forEach((mesh) => {
     mesh.materials.forEach((material) => {
       const params = material.parameters
 
-      params.World = world
-      params.View = view
-      params.Projection = proj
-      params.CameraPosition = cam.getTranslation()
+      params.World = params.World || Mat4.createIdentity()
+      params.View = cam.view
+      params.Projection = cam.proj
+      params.CameraPosition = cam.position
 
       // Update light properties
-      light.assign(0, params)
+      light1.assign(0, params)
+      light2.assign(1, params)
     })
   })
 
-  // Draw the model.
-  // In case of an error the model is cleared and the error is logged to console
+  // Draw the model but stop rendering in case of an error
   try {
     model.draw()
   } catch (e) {

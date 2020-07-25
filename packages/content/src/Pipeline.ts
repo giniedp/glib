@@ -1,7 +1,7 @@
-import { DataUri, Log, Type, Uri } from '@gglib/utils'
+import { DataUri, Log, Uri } from '@gglib/utils'
 
 import { ContentType } from './ContentType'
-import { LoaderEntry, LoaderSpec } from './Loader'
+import { LoaderEntry, LoaderSpec, LoaderInput, LoaderOutput } from './Loader'
 import { PipelineContext } from './PipelineContext'
 
 interface Node {
@@ -74,7 +74,7 @@ export class Pipeline {
    * @param input - The input value to import. Its type is identified by `source`
    * @param context - The context use during the import
    */
-  public async run(source: string | symbol | Type<any>, target: symbol | Type<any>, input: any, context: PipelineContext) {
+  public async run(source: LoaderInput, target: LoaderOutput, input: any, context: PipelineContext) {
 
     if (typeof source === 'string') {
       if (DataUri.isDataUri(source)) {
@@ -98,13 +98,13 @@ export class Pipeline {
    * @param source - The source type or symbol identifying the input type
    * @param target - The target type or symbol identifying the target type
    */
-  public canLoad(source: string | symbol | Type<any>, target: symbol | Type<any>): boolean {
+  public canLoad(source: LoaderInput, target: LoaderOutput): boolean {
     return this.resolve(source, target).length > 0
   }
 
   private resolve(
-    source: symbol | string | Type<any>,
-    target: symbol | string | Type<any>,
+    source: LoaderInput,
+    target: LoaderOutput,
     exclude: LoaderEntry[] = [],
   ): Node[] {
     const candidates = this.loaders.filter((it) => exclude.indexOf(it) === -1 && it.input === source)

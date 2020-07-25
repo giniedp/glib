@@ -1,5 +1,5 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
-import { copy, Log } from '@gglib/utils'
+import { copy, Log, isArray } from '@gglib/utils'
 import { Color } from './Color'
 import { Device } from './Device'
 import { Model, ModelOptions } from './Model'
@@ -12,8 +12,6 @@ import { calculateNormals } from './formulas/calculateNormals'
 import { calculateTangents } from './formulas/calculateTangents'
 import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChannel'
 import { ModelMeshOptions, ModelMesh } from './ModelMesh'
-
-let tmpBuffer: any[] = []
 
 /**
  * A function that adds geometry into a given {@link ModelBuilder}
@@ -31,7 +29,7 @@ export interface ModelBuilderOptions {
   /**
    * Mapping of attribute name to its default value
    */
-  defaultAttributes?: { [key: string]: number[] }
+  defaults?: { [key: string]: number[] }
   /**
    * The vertex buffer layout
    */
@@ -56,19 +54,36 @@ export class ModelBuilder {
     return new ModelBuilder(options)
   }
 
-  public get indices(): number[] {
+  /**
+   * Gets the indices in current state
+   */
+  public get indices(): ReadonlyArray<number>  {
     return this.iBuffer.data
   }
 
+  /**
+   * The index count in current state
+   */
   public get indexCount(): number {
     return this.iBuffer.data.length
   }
 
+  /**
+   * The vertex count in current state
+   */
   public get vertexCount(): number {
     return this.vCount
   }
 
-  public defaultAttributes: { [key: string]: number[] }
+  /**
+   * A map of default attributes
+   *
+   * @remarks
+   * If {@link addVertex} is called with missing attributes, this is where
+   * the default values are resolved from
+   */
+  public defaults: { [key: string]: number[] }
+
   private layout: VertexLayout[]
   private meshParts: ModelMeshPartOptions[] = []
   private meshes: ModelMeshOptions[] = []
@@ -82,7 +97,15 @@ export class ModelBuilder {
 
   private transformStack: Mat4[] = []
   private channels: ModelBuilderChannelMap
+  private tmp: any[] = []
 
+  /**
+   * Creates a new instance of the ModelBuilder
+   *
+   * @param options
+   * @example
+   * new ModelBuilder({ layout: 'PositionTexture' })
+   */
   constructor(options: ModelBuilderOptions = {}) {
     if (Array.isArray(options.layout) && options.layout.length > 0) {
       this.layout = options.layout.map(VertexLayout.convert)
@@ -98,14 +121,14 @@ export class ModelBuilder {
 
     // The fallback values that should be used during the build process.
     // If any vertex is pushed into the builder with missing attributes they are resolved from here.
-    this.defaultAttributes = {
+    this.defaults = {
       position: [0, 0, 0],
       normal: [0, 1, 0],
       tangent: [1, 0, 0],
       bitangent: [0, 0, 1],
       color: [Color.Black.rgba],
       texture: [0, 0],
-      ...(options.defaultAttributes || {}),
+      ...(options.defaults || {}),
     }
 
     this.reset()
@@ -133,7 +156,9 @@ export class ModelBuilder {
    * @param id - the id that has been returned byt a call to `beginTransform`
    */
   public endTransform(id: number) {
-    this.transformStack.length = id
+    if (id > this.transformStack.length) {
+      this.transformStack.length = id
+    }
   }
 
   /**
@@ -142,30 +167,28 @@ export class ModelBuilder {
    * @param transform - the transform matrix
    * @param callback - the callback
    */
-  public withTransform(transform: Mat4, callback: (builder: ModelBuilder) => void): ModelBuilder {
+  public withTransform(transform: Mat4, callback: (builder: ModelBuilder) => void): this {
     const id = this.beginTransform(transform)
     callback(this)
     this.endTransform(id)
     return this
   }
 
+  /**
+   * Gets a data channel of current state by its semantic name
+   *
+   * @param name - the data channel name e.g. 'position'
+   */
   public getChannel(name: string) {
     return this.channels[name]
   }
 
-  private resetTransform() {
-    this.transformStack.length = 0
-  }
-
   private resetData() {
-    // The new index buffer that is going to be filled with indices
     this.iBuffer = {
       type: BufferType.IndexBuffer,
       dataType: DataType.ushort,
       data: [],
     }
-
-    // The new index buffer that is going to be filled with vertices
     this.vBuffer = this.layout.map((l): BufferOptions<number[]> => {
       return {
         layout: copy(l),
@@ -182,56 +205,55 @@ export class ModelBuilder {
     this.makeChannels()
   }
 
-  private resetMeshParts() {
-    this.meshParts = []
-  }
-
-  private resetMeshes() {
-    this.meshes = []
-  }
-
   private makeChannels() {
-    this.channels = ModelBuilderChannel.createMap(this.vBuffer)
+    this.channels = ModelBuilderChannel.fromVertexBuffer(this.vBuffer)
   }
 
   /**
-   * Resets the builder state
+   * Resets the builder state.
+   *
+   * @remarks
+   * Any open state will be lost
    */
   public reset() {
-    this.resetTransform()
     this.resetData()
-    this.resetMeshParts()
-    this.resetMeshes()
+    this.transformStack.length = 0
+    this.meshParts.length = 0
+    this.meshes.length = 0
     return this
   }
 
   /**
-   * Pushes given indices into the state.
+   * Pushes a single index into current state.
    */
-  public addIndex(index: number): ModelBuilder {
+  public addIndex(index: number): this {
     this.iBuffer.data.push(index)
     return this
   }
 
   /**
-   * Pushes a single vertex definition into the state
+   * Pushes a single vertex definition into current state
    *
+   * @remarks
+   * The given vertex should contain all attributes for current layout. If any attribute is missing
+   * a default value will be used: see {@link defaults}
    */
-  public addVertex(vertex: {[key: string]: number[] | number | { toArray: (buf: number[]) => void }}): ModelBuilder {
+  public addVertex(vertex: {[key: string]: ReadonlyArray<number> | number | { toArray: (buf: number[]) => void }}): this {
     const transform = this.transformStack[this.transformStack.length - 1]
-    const defaults = this.defaultAttributes
+    const defaults = this.defaults
+    const tmpBuffer = this.tmp
 
     Object.keys(this.channels).forEach((name) => {
       const channel = this.channels[name]
       let item = vertex[name] || defaults[name]
 
-      if (Array.isArray(item)) {
+      if (isArray(item)) {
         // ok
       } else if (typeof item === 'number') {
         tmpBuffer.length = 1
         tmpBuffer[0] = item
         item = tmpBuffer
-      } else if (typeof item.toArray === 'function') {
+      } else if ('toArray' in item && typeof item.toArray === 'function') {
         tmpBuffer.length = channel.elements
         item.toArray(tmpBuffer)
         item = tmpBuffer
@@ -245,8 +267,6 @@ export class ModelBuilder {
         transform.transformV3Array(item)
       } else if (name.match('normal|tangent')) {
         transform.transformV3NormalArray(item)
-      } else if (name.match('texture|uv|texcoord')) {
-        // TODO: transform texture
       }
 
       channel.writeAttribute(this.vCount, item)
@@ -257,12 +277,10 @@ export class ModelBuilder {
   }
 
   public calculateBoundings() {
+    this.bBox.init(0, 0, 0, 0, 0, 0)
+
     this.getChannel('position').forEach((item, i) => {
       if (i === 0) {
-        this.bSphere.center.x = item[0]
-        this.bSphere.center.y = item[1]
-        this.bSphere.center.z = item[2]
-
         this.bBox.min.x = item[0]
         this.bBox.min.y = item[1]
         this.bBox.min.z = item[2]
@@ -271,14 +289,14 @@ export class ModelBuilder {
         this.bBox.max.y = item[1]
         this.bBox.max.z = item[2]
       } else {
-        this.bSphere.mergePoint({ x: item[0], y: item[1], z: item[2] })
         this.bBox.mergePoint({ x: item[0], y: item[1], z: item[2] })
       }
     })
+    this.bSphere.initFromBox(this.bBox)
     return this
   }
 
-  public calculateNormals(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): ModelBuilder {
+  public calculateNormals(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
     if (!this.channels.normal && create) {
       this.ensureLayoutChannel('normal')
     }
@@ -288,7 +306,7 @@ export class ModelBuilder {
     return this
   }
 
-  public calculateTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): ModelBuilder {
+  public calculateTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
     if (!this.channels.tangent && create) {
       this.ensureLayoutChannel('tangent')
     }
@@ -301,24 +319,34 @@ export class ModelBuilder {
     return this
   }
 
-  public calculateNormalsAndTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): ModelBuilder {
+  public calculateNormalsAndTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
     this.calculateNormals(create, frontFace)
     this.calculateTangents(create, frontFace)
     return this
   }
 
+  /**
+   * For current state it ensures that the vertex buffer contains a channel with given semantic name
+   *
+   * @remarks
+   * Does nothing if a channel with given semantic name already exists.
+   * Otherwise adds a channel with given name to the vertex buffer and fills it with default values: see {@link defaults}
+   *
+   * This does not operate on already closed mesh parts. When building a model with multiple
+   * meshes or parts, this must be called each time before closing a part.
+   */
   public ensureLayoutChannel(name: string, channel = VertexLayout.preset[name]) {
     if (this.channels[name]) {
       return
     }
     if (!channel) {
-      throw new Error(`unknown channel preset for '${name}'`)
+      throw new Error(`preset for is '${name}' missing`)
     }
 
     const data = []
     for (let i = 0; i < this.vCount; i++) {
-      if (this.defaultAttributes[name] && this.defaultAttributes[name].length === channel.elements) {
-        data.push(...this.defaultAttributes[name])
+      if (this.defaults[name] && this.defaults[name].length === channel.elements) {
+        data.push(...this.defaults[name])
       } else {
         for (let j = 0; j < channel.elements; j++) {
           data.push(0)
@@ -341,7 +369,14 @@ export class ModelBuilder {
     this.makeChannels()
   }
 
-  public mergeDublicates(): ModelBuilder {
+  /**
+   * In current state it reads through the vertex buffer and eliminates redundant vertices
+   *
+   * @remarks
+   * This does not operate on already closed mesh parts. When building a model with multiple
+   * meshes or parts, this must be called each time before closing a part.
+   */
+  public mergeDublicates(): this {
     // vertex index cache
     const hashMap = new Map<string, number>()
     // the new vertex buffer
@@ -352,7 +387,7 @@ export class ModelBuilder {
       }
     })
     // accessor to new vertex buffer
-    const vChannels = ModelBuilderChannel.createMap(vBuffer)
+    const vChannels = ModelBuilderChannel.fromVertexBuffer(vBuffer)
     // new vertex count
     let vCount = 0
     // new indices
@@ -399,33 +434,10 @@ export class ModelBuilder {
     return this
   }
 
-  // public groupBy(fn: (index: number) => string): Map<string, ModelBuilder> {
-  //   const groups = new Map<string, ModelBuilder>()
-  //   const indexMap = new Map<number, string>()
-  //   this.iBuffer.data.forEach((index) => {
-  //     if (!indexMap.has(index)) {
-  //       indexMap.set(index, fn(index))
-  //     }
-  //     const groupName = indexMap.get(index)
-  //     let group = groups.get(groupName)
-  //     if (!group) {
-  //       group = new ModelBuilder({
-  //         layout: this.layout.map((it) => {
-  //           return { ...it }
-  //         }),
-  //         defaultAttributes: { ...this.defaultAttributes },
-  //       })
-  //       groups.set(groupName, group)
-  //     }
-  //   })
-
-  //   return map
-  // }
-
   /**
    * Same as {@link endMeshPart} but returns the builder for chaining
    *
-   * @param options - options to start with
+   * @param options - options for `endMeshPart`
    */
   public closeMeshPart(options?: ModelMeshPartOptions): this {
     this.endMeshPart(options)
@@ -465,11 +477,6 @@ export class ModelBuilder {
       result = options
     }
 
-    if (this.indexCount === 0 && this.vCount === 0) {
-      Log.w(`[ModelBuilder] endMeshPart called on empty builder. ignore.`)
-      return result
-    }
-
     options.materialId = options.materialId || 0
     options.indexBuffer = this.iBuffer
     options.vertexBuffer = this.vBuffer
@@ -486,11 +493,10 @@ export class ModelBuilder {
     return result
   }
 
-
   /**
    * Same as {@link endMesh} but returns the builder for chaining
    *
-   * @param options - options to start with
+   * @param options - options for `endMesh`
    */
   public closeMesh(options?: ModelMeshOptions): this {
     this.endMesh(options)
@@ -498,18 +504,18 @@ export class ModelBuilder {
   }
 
   /**
-   * From current state it creates model mesh options and resets the builder
+   * From current state it creates {@link ModelMeshOptions} and prepares the builder for the next mesh
    *
-   * @param options - Additional mesh options. The `parts` option is ignored.
-   * @returns ModelMeshOptions or null if current state has no mesh data
+   * @param options - Additional {@link ModelMeshOptions} . The {@link ModelMeshOptions.parts} option is ignored.
+   * @returns `ModelMeshOptions` or `null` if current state has no mesh data
    */
   public endMesh(options?: ModelMeshOptions): ModelMeshOptions | null
   /**
-   * From current state it creates in instance of ModelMesh and resets the builder.
+   * From current state it creates in instance of {@link ModelMesh} and prepares the builder for the next mesh
    *
    * @param device - The graphics device
-   * @param options - Additional mesh options. The `parts` option is ignored.
-   * @returns ModelMesh or null if current state has no mesh data
+   * @param options - Additional {@link ModelMeshOptions} . The {@link ModelMeshOptions.parts} option is ignored.
+   * @returns `ModelMesh` or `null` if current state has no mesh data
    */
   public endMesh(device: Device, options?: ModelMeshOptions): ModelMesh | null
   public endMesh(): Model | ModelMeshOptions {
@@ -537,17 +543,20 @@ export class ModelBuilder {
     }
     options.materials = materials
     options.parts = this.meshParts
+
     if (!options.boundingBox && this.meshParts.every((mesh) => !!mesh.boundingBox)) {
       options.boundingBox = this.meshParts.reduce((box, mesh) => {
         const meshBox = BoundingBox.convert(mesh.boundingBox)
         return box ? box.merge(meshBox) : BoundingBox.createFrom(meshBox)
       }, null as BoundingBox)
     }
+    if (!options.boundingSphere && options.boundingBox) {
+      options.boundingSphere = BoundingSphere.createFromBox(BoundingBox.convert(options.boundingBox)).toArray()
+    }
 
     this.meshes.push(options)
-
+    this.meshParts = []
     this.resetData()
-    this.resetMeshParts()
 
     if (device) {
       result = new ModelMesh(device, options)
@@ -557,17 +566,17 @@ export class ModelBuilder {
   }
 
   /**
-   * From current state it creates model options and resets the builder
+   * From current state it creates {@link ModelOptions} and resets the builder
    *
-   * @param options - Additional model options. The `meshes` option is ignored.
+   * @param options - Additional {@link ModelOptions}. The {@link ModelOptions.meshes} option is ignored.
    * @returns ModelOptions or null if current state has no model data
    */
   public endModel(options?: ModelOptions): ModelOptions | null
   /**
-   * From current state it creates a Model instance and resets the builder
+   * From current state it creates a {@link Model} instance and resets the builder
    *
    * @param device - The graphics device
-   * @param options - Additional model options. The `meshes` option is ignored.
+   * @param options - Additional {@link ModelOptions}. The {@link ModelOptions.meshes} option is ignored.
    * @returns Model or null if current state has no model data
    */
   public endModel(device: Device, options?: ModelOptions): Model | null
@@ -591,6 +600,7 @@ export class ModelBuilder {
     }
 
     options.meshes = this.meshes
+    this.meshes = []
     this.reset()
 
     if (device) {
@@ -601,7 +611,7 @@ export class ModelBuilder {
   }
 
   /**
-   * Calls the given model builder function and adds the result to this model
+   * Calls the given model builder function to add geometry to current state
    *
    * @param builderFn - The model builder function to call
    * @param options - The model builder options to use

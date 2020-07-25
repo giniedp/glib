@@ -1,4 +1,5 @@
 import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import { hermite } from './utils/hermite'
 
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z', 3: 'w',
@@ -36,6 +37,19 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * Readonly vector w component set to one
    */
   public static UnitW = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 1})
+
+  /**
+   * A temporary variable
+   */
+  public static readonly $0: IVec4 = { x: 0, y: 0, z: 0, w: 0 }
+  /**
+   * A temporary variable
+   */
+  public static readonly $1: IVec4 = { x: 0, y: 0, z: 0, w: 0 }
+  /**
+   * A temporary variable
+   */
+  public static readonly $2: IVec4 = { x: 0, y: 0, z: 0, w: 0 }
 
   /**
    * The X component
@@ -1260,6 +1274,26 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     out.y = y + (b.y - y) * t
     out.z = z + (b.z - z) * t
     out.w = w + (b.w - w) * t
+    return out
+  }
+
+  /**
+   * Performs a component wise hermite interpolation between the given two vectors.
+   *
+   * @param a - The first vector.
+   * @param b - The second vector.
+   * @param t - The interpolation value. Assumed to be in range [0:1].
+   * @param out - The vector to write to.
+   * @returns The given `out` parameter or a new vector.
+   */
+  public static hermite(a: IVec4, ta: IVec4, b: IVec4, tb: IVec4, t: number): Vec4
+  public static hermite<T>(a: IVec4, ta: IVec4, b: IVec4, tb: IVec4, t: number, out?: T): T & IVec4
+  public static hermite(a: IVec4, ta: IVec4, b: IVec4, tb: IVec4, t: number, out?: IVec4): IVec4 {
+    out = out || new Vec4()
+    out.x = hermite(a.x, ta.x, b.x, tb.x, t)
+    out.y = hermite(a.y, ta.y, b.y, tb.y, t)
+    out.z = hermite(a.z, ta.z, b.z, tb.z, t)
+    out.w = hermite(a.w, ta.w, b.w, tb.w, t)
     return out
   }
 

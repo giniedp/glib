@@ -10,7 +10,7 @@ import { ModelBuilderChannelMap } from '../ModelBuilderChannel'
  * @remarks channels must contain a `normal` a `texture` and a `tangent` channel
  */
 export function calculateTangents(
-  indices: number[],
+  indices: ReadonlyArray<number>,
   channels: ModelBuilderChannelMap,
   vCount: number,
   frontFace: FrontFace = FrontFace.CounterClockWise) {

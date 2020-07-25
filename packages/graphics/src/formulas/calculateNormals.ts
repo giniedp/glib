@@ -1,4 +1,4 @@
-import { Vec3 } from '@gglib/math'
+import { Vec3, ArrayLike } from '@gglib/math'
 import { Log } from '@gglib/utils'
 import { FrontFace } from '../enums'
 import { ModelBuilderChannelMap } from '../ModelBuilderChannel'
@@ -10,7 +10,7 @@ import { ModelBuilderChannelMap } from '../ModelBuilderChannel'
  * @remarks channels must contain a `normal` and a `position` channel
  */
 export function calculateNormals(
-  indices: number[],
+  indices: ArrayLike<number>,
   channels: ModelBuilderChannelMap,
   vCount: number,
   frontFace: FrontFace = FrontFace.CounterClockWise) {

@@ -12,7 +12,7 @@ import { Buffer } from '../resources'
  * @param vertexBuffer - The vertex buffer to inspect
  */
 export function buildLines(builder: ModelBuilder, vertexBuffer: Buffer[]) {
-  const channels = ModelBuilderChannel.createMap(vertexBuffer)
+  const channels = ModelBuilderChannel.fromVertexBuffer(vertexBuffer)
   const position = channels.position
   const normal = channels.normal
   const tangent = channels.tangent
