@@ -1,4 +1,4 @@
-import { Events, Log, Type, TypeWithEmptyConstructor, addToList, removeFromList, getOption } from '@gglib/utils'
+import { Events, Log, Type, TypeWithEmptyConstructor, addToArraySet, removeFromArray } from '@gglib/utils'
 import { EntityComponent, OnSetup, OnSetupOptions } from './EntityComponent'
 import {
   getInjectMetadata,
@@ -290,7 +290,7 @@ export class Entity extends Events {
     this.registerComponent(comp)
     // Bind the entity to the component
     comp[boundEntity] = this
-    addToList(this.components as EntityComponent[], comp)
+    addToArraySet(this.components as EntityComponent[], comp)
 
     // Push to the initialization list
     if (this.toInitialize.indexOf(comp) < 0) {
@@ -324,15 +324,15 @@ export class Entity extends Events {
    * However the `onDestroy` lifecycle is not called. To do this use `destroyComponent`.
    */
   public removeComponent(comp: EntityComponent): this {
-    const isRemoved = removeFromList(this.components as EntityComponent[], comp)
+    const isRemoved = removeFromArray(this.components as EntityComponent[], comp)
     if (isRemoved) {
       comp[boundEntity] = null
     }
 
     // Unregister from update lists
-    removeFromList(this.toUpdate, comp)
-    removeFromList(this.toDraw, comp)
-    removeFromList(this.toInitialize, comp)
+    removeFromArray(this.toUpdate, comp)
+    removeFromArray(this.toDraw, comp)
+    removeFromArray(this.toInitialize, comp)
 
     // Run life cycle
     if (isRemoved && comp.onRemoved) {
@@ -579,7 +579,7 @@ export class Entity extends Events {
         list = []
         this.provider.set(meta.as, list)
       }
-      addToList(list, component)
+      addToArraySet(list, component)
     }
   }
 
@@ -588,7 +588,7 @@ export class Entity extends Events {
     if (meta) {
       let list = this.provider.get(meta.as)
       if (list) {
-        removeFromList(list, component)
+        removeFromArray(list, component)
       }
     }
   }
