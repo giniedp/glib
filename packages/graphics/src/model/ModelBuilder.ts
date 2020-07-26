@@ -154,7 +154,7 @@ export class ModelBuilder {
    * @param id - the id that has been returned byt a call to `beginTransform`
    */
   public endTransform(id: number) {
-    if (id > this.transformStack.length) {
+    if (id < this.transformStack.length) {
       this.transformStack.length = id
     }
   }
