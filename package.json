@@ -81,6 +81,7 @@
     "showdown": "^1.9.1",
     "through-gulp": "^0.5.0",
     "ts-node": "^8.10.2",
+    "tslib": "^2.0.0",
     "tweak-ui": "^0.1.0",
     "typedoc": "^0.17.8",
     "typescript": "^3.9.6",

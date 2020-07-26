@@ -11,6 +11,7 @@
     "noImplicitAny": true,
     "suppressImplicitAnyIndexErrors": true,
     "noFallthroughCasesInSwitch": true,
+    "importHelpers": true,
     "paths": {
       "@gglib/*": ["./*"]
     },
