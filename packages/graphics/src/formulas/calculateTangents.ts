@@ -1,7 +1,7 @@
 import { Vec2, Vec3 } from '@gglib/math'
 import { Log } from '@gglib/utils'
 import { FrontFace } from '../enums'
-import { ModelBuilderChannelMap } from '../ModelBuilderChannel'
+import { ModelBuilderChannelMap } from '../model/ModelBuilderChannel'
 
 /**
  * Recalculates the tangents for each vertex

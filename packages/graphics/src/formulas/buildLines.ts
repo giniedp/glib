@@ -1,7 +1,7 @@
 import { Vec3 } from '@gglib/math'
 import { Color } from '../Color'
-import { ModelBuilder } from '../ModelBuilder'
-import { ModelBuilderChannel } from '../ModelBuilderChannel'
+import type { ModelBuilder } from '../model'
+import { ModelBuilderChannel } from '../model/ModelBuilderChannel'
 import { Buffer } from '../resources'
 
 /**

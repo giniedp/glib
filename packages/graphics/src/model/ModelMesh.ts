@@ -1,8 +1,10 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { isString, uuid, TypeToken } from '@gglib/utils'
-import { Device } from './Device'
-import { Material, MaterialOptions } from './Material'
+
 import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
+
+import { Device } from '../Device'
+import { Material, MaterialOptions } from '../Material'
 
 /**
  * @public

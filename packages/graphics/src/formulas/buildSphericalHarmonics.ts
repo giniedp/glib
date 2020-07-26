@@ -1,6 +1,6 @@
 import { Vec2, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
-import { ModelBuilder } from '../ModelBuilder'
+import type { ModelBuilder } from '../model/ModelBuilder'
 
 /**
  * Builds a spherical harmonics shape into the {@link ModelBuilder}

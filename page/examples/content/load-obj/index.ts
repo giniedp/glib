@@ -76,6 +76,7 @@ const cam = {
 function loadModel(url: string) {
   content.load(url, Model).then((result) => {
     model = result
+    console.log(model)
     cam.reset(model.getAbsoluteBoundingSphere())
   }).catch((e) => {
     model = null

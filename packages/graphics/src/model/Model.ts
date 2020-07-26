@@ -1,10 +1,13 @@
 import { uuid, TypeToken } from '@gglib/utils'
 import { Mat4, BoundingSphere, Quat, Vec3, Vec4 } from '@gglib/math'
-import { Device } from './Device'
+import { Device } from '../Device'
+import { AnimationData } from '../AnimationData'
+import { AnimationPlayer } from '../AnimationPlayer'
+
+import { ModelSkin } from './ModelSkin'
 import { ModelMeshOptions, ModelMesh } from './ModelMesh'
 import { ModelNode, ModelNodePose } from './ModelNode'
-import { AnimationData, AnimationTargetPose } from './AnimationData'
-import { AnimationPlayer } from './AnimationPlayer'
+import { ModelPose } from './ModelPose'
 
 /**
  * @public
@@ -23,6 +26,10 @@ export interface ModelOptions {
    */
   animations?: AnimationData[]
   /**
+   * Collection of skins
+   */
+  skins?: ModelSkin[]
+  /**
    * Scene nodes
    */
   nodes?: ModelNode[]
@@ -30,6 +37,10 @@ export interface ModelOptions {
    * Indices of the root nodes
    */
   roots?: number[]
+  /**
+   * Collection of cameras to preview this model
+   */
+  cameras?: any[]
 }
 
 /**
@@ -65,6 +76,10 @@ export class Model {
    */
   public readonly nodes: ReadonlyArray<ModelNode>
   /**
+   * Collection of skins
+   */
+  public readonly skins: ReadonlyArray<ModelSkin>
+  /**
    * The ids of all root nodes
    */
   public readonly roots: ReadonlyArray<number>
@@ -72,8 +87,13 @@ export class Model {
    * Model animation data
    */
   public readonly animations?: AnimationData[]
+  /**
+   * Collection of cameras to preview this model
+   */
+  public readonly cameras?: any[]
 
   private player: AnimationPlayer
+  private pose: ModelPose
 
   constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
@@ -82,7 +102,9 @@ export class Model {
     const meshes: ModelMesh[] = []
     const nodes = options.nodes || []
     const roots = options.roots || []
+    this.skins = options.skins || []
     this.animations = options.animations || []
+    this.cameras = options.cameras || []
 
     this.meshes = meshes
     this.nodes = nodes
@@ -110,7 +132,7 @@ export class Model {
    * Simply iterates over all meshes and renders each with its assigned material
    *
    * @remarks
-   * If a mesh points to a missing material it is silently ignored.
+   * This ignores the model nodes and just calls `draw()` for each mesh.
    */
   public draw(): Model {
     for (const mesh of this.meshes) {
@@ -125,7 +147,23 @@ export class Model {
    * @param visit - the callback function
    */
   public walkNodes(visit: (node: ModelNode, index: number, parent: number) => void) {
-    this.walk(visit, this.roots, null)
+    Model.walkNodes(this.nodes, visit, this.roots, null)
+  }
+
+  public static walkNodes(nodes: ReadonlyArray<ModelNode>, visit: (node: ModelNode, index: number, parent: number) => void, ids: ReadonlyArray<number>, parent: number) {
+    if (!ids) {
+      return
+    }
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i]
+      const node = nodes[id]
+      if (node) {
+        visit(node, id, parent)
+        if (node.children) {
+          this.walkNodes(nodes, visit, node.children, id)
+        }
+      }
+    }
   }
 
   /**
@@ -134,71 +172,80 @@ export class Model {
    * @param node - the node
    * @param out - the resulting matrix
    */
-  public getNodeTransform(node: ModelNode, out: Mat4 = Mat4.createIdentity()): Mat4 {
-    if (node.matrix) {
-      out.initFromArray(node.matrix)
-    } else {
-      const t = node.translation
-      if (t) {
-        out.translate(t[0], t[1], t[2])
-      }
-      const r = node.rotation
-      if (r) {
-        out.rotateQuaternion(r[0], r[1], r[2], r[3])
-      }
-      const s = node.scale
-      if (s) {
-        out.scale(s[0], s[1], s[2])
-      }
+  public static getLocalTransform(node: ModelNode, out?: Mat4): Mat4 {
+    if (node.matrix?.length) {
+      return out ? out.initFromArray(node.matrix) : Mat4.createFromArray(node.matrix)
+    }
+    out = out ? out.initIdentity() : Mat4.createIdentity()
+    const t = node.translation
+    if (t) {
+      out.translate(t[0], t[1], t[2])
+    }
+    const r = node.rotation
+    if (r) {
+      out.rotateQuaternion(r[0], r[1], r[2], r[3])
+    }
+    const s = node.scale
+    if (s) {
+      out.scale(s[0], s[1], s[2])
     }
     return out
   }
 
   /**
-   * Resolves a nodes local transform matrix and possibly animated components for a node
+   * Resolves the local pose for a given node
    *
    * @param node - the node
    * @param out - the resulting pose object
    */
-  public getNodePose(node: ModelNode, out: ModelNodePose) {
+  public static getLocalPose(node: ModelNode, out: ModelNodePose): ModelNodePose {
     if (node.matrix) {
+      // node is not animated, copy the matrix
       out.matrix.initFromArray(node.matrix)
-    } else {
-      // if we are here, the node is animated
-      // read the components and update the matrix
-      {
-        const t = node.translation
-        if (t) {
-          out.translation = Vec3.init(out.translation || {}, t[0], t[1], t[2])
-        }
-      }
-      {
-        const r = node.rotation
-        if (r) {
-          out.rotation = Vec4.init(out.rotation || {}, r[0], r[1], r[2], r[3])
-        }
-      }
-      {
-        const s = node.scale
-        if (s) {
-          out.scale = Vec3.init(out.scale || {}, s[0], s[1], s[2])
-        }
-      }
+      return out
+    }
+
+    const t = node.translation
+    const r = node.rotation
+    const s = node.scale
+    let isAnimated = false
+
+    // if we are here, the node is animated
+    // read the components and update the matrix
+    if (t) {
+      isAnimated = true
+      out.translation = Vec3.init(out.translation || {}, t[0], t[1], t[2])
+    }
+    if (r) {
+      isAnimated = true
+      out.rotation = Vec4.init(out.rotation || {}, r[0], r[1], r[2], r[3])
+    }
+    if (s) {
+      isAnimated = true
+      out.scale = Vec3.init(out.scale || {}, s[0], s[1], s[2])
+    }
+    if (isAnimated) {
       this.updatePoseTransform(out)
+    } else {
+      // neither transformed nor animated
+      // TODO: optimize?
+      out.matrix.initIdentity()
     }
     return out
   }
 
-  private updatePoseTransform(out: ModelNodePose) {
-    out.matrix.initIdentity()
-    if (out.translation) {
-      out.matrix.translateV(out.translation)
-    }
-    if (out.rotation) {
-      out.matrix.rotateQuat(out.rotation)
-    }
-    if (out.scale) {
-      out.matrix.scaleV(out.scale)
+  private static updatePoseTransform(out: ModelNodePose) {
+    if (out.translation || out.rotation || out.scale) {
+      out.matrix.initIdentity()
+      if (out.translation) {
+        out.matrix.translateV(out.translation)
+      }
+      if (out.rotation) {
+        out.matrix.rotateQuat(out.rotation)
+      }
+      if (out.scale) {
+        out.matrix.scaleV(out.scale)
+      }
     }
     return out
   }
@@ -206,12 +253,17 @@ export class Model {
   /**
    * For each node it gets the locale node pose (translation, rotation, scale and matrix)
    *
-   * @param out - where to write the results (may be an empty array)
+   * @param out - where the results should be written to
+   * @remarks
+   * The `out` parameter may be an array of any length.
+   * - If an entry for a node index exist it will be reused and the transforms will be overridden
+   * - If an entry does not exist, it will be created
+   * - The array will be capped at the maximum node id that has been seen in this model
    */
   public getLocalPose(out: ModelNodePose[]) {
     let max = 0
     this.walkNodes((node, id) => {
-      out[id] = this.getNodePose(node, out[id] || { matrix: new Mat4() })
+      out[id] = Model.getLocalPose(node, out[id] || { matrix: new Mat4() })
       max = Math.max(max, id)
     })
     out.length = max + 1
@@ -219,25 +271,33 @@ export class Model {
   }
 
   /**
-   * Having a local pose as input this calculates the absolute transform for each node
+   * For each node it gets the absolute transform matrix
    *
-   * @param out - where to write the results (may be an empty array)
-   * @param input - optional preanimated pose
+   * @param out - where the results should be written to
+   * @param input - if set, this is treated as local pose array and used for the calculations
    */
   public getAbsoluteTransforms(out?: Mat4[], input?: ModelNodePose[]): Mat4[] {
     out = out || []
     let max = 0
+    let child: Mat4
+    let parent: Mat4
+
     this.walkNodes((node, id, parentId) => {
       max = Math.max(max, id)
-      if (input && input[id]) {
-        this.updatePoseTransform(input[id])
-        out[id].initFrom(input[id].matrix)
+      child = out[id] = (out[id] || Mat4.createIdentity())
+      parent = out[parentId]
+      if (input) {
+        Model.updatePoseTransform(input[id])
+        if (parent) {
+          Mat4.premultiply(input[id].matrix, parent, child)
+        } else {
+          child.initFrom(input[id].matrix)
+        }
       } else {
-        out[id] = this.getNodeTransform(node, out[id])
-      }
-
-      if (out[parentId]) {
-        Mat4.premultiply(out[id], out[parentId], out[id])
+        Model.getLocalTransform(node, child)
+        if (parent) {
+          Mat4.premultiply(child, parent, child)
+        }
       }
     })
     out.length = max + 1
@@ -262,30 +322,21 @@ export class Model {
     return result
   }
 
-  public getAnimationPlayer(): AnimationPlayer | null {
-    if (this.player) {
+  public getPose(options?: { copy?: boolean }): ModelPose {
+    if (this.pose && !options?.copy) {
+      return this.pose
+    }
+    this.pose = new ModelPose(this)
+    return this.pose
+  }
+
+  public getAnimationPlayer(options?: { copy?: boolean }): AnimationPlayer | null {
+    if (this.player && !options?.copy) {
       return this.player
     }
     if (this.animations?.length) {
       this.player = new AnimationPlayer(this.animations)
     }
     return this.player || null
-  }
-
-  private walk(visit: (node: ModelNode, index: number, parent: number) => void, ids: ReadonlyArray<number>, parent: number) {
-    if (!ids) {
-      return
-    }
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i]
-      const node = this.nodes[id]
-      if (!node) {
-        continue
-      }
-      visit(node, id, parent)
-      if (node.children) {
-        this.walk(visit, node.children, id)
-      }
-    }
   }
 }

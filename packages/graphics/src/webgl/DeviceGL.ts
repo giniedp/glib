@@ -22,7 +22,7 @@ import {
 import { Capabilities } from '../Capabilities'
 import { Color, RGBA_FORMAT } from '../Color'
 import { Device } from '../Device'
-import { Model, ModelOptions } from '../Model'
+import { Model, ModelOptions } from '../model/Model'
 import { ShaderEffect, ShaderEffectOptions } from '../ShaderEffect'
 import { SpriteBatch } from '../SpriteBatch'
 import { VertexLayout } from '../VertexLayout'

@@ -44,9 +44,9 @@ export const FXC_V_SKINNING: ShaderChunkSet<VSkinningDefs> = Object.freeze({
   `,
   attributes: glsl`
     #ifdef SKINNING
-    // @binding indices
+    // @binding joints
     // @remarks The vertex weight indices
-    attribute vec4 aIndices;
+    attribute vec4 aJoints;
     // @binding weights
     // @remarks The vertex weights
     attribute vec4 aWeights;
@@ -55,15 +55,15 @@ export const FXC_V_SKINNING: ShaderChunkSet<VSkinningDefs> = Object.freeze({
   vs_position: glsl`
     #ifdef SKINNING
     mat4 skinMat;
-    skinMat = uBones[int(aIndices.x)] * aWeights.x;
+    skinMat = uBones[int(aJoints.x)] * aWeights.x;
     #if SKINNING_WEIGHT_COUNT > 1
-    skinMat += uBones[int(aIndices.y)] * aWeights.y;
+    skinMat += uBones[int(aJoints.y)] * aWeights.y;
     #endif
     #if SKINNING_WEIGHT_COUNT > 2
-    skinMat += uBones[int(aIndices.z)] * aWeights.z;
+    skinMat += uBones[int(aJoints.z)] * aWeights.z;
     #endif
     #if SKINNING_WEIGHT_COUNT > 3
-    skinMat += uBones[int(aIndices.w)] * aWeights.w;
+    skinMat += uBones[int(aJoints.w)] * aWeights.w;
     #endif
     vPositionInWS = skinMat * vec4(aPosition, 1.0);
     #endif

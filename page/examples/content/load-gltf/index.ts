@@ -1,10 +1,10 @@
 import { ContentManager, Data } from '@gglib/content'
 import { LightParams } from '@gglib/effects'
-import { BlendState, CullState, DepthState, LightType, Model, ModelNodePose, Texture, createDevice, AnimationPlayer } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, LightType, Model, ModelNodePose, Texture, createDevice, AnimationPlayer, ModelPose } from '@gglib/graphics'
 import { Mat4, Vec3, BoundingSphere } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
-import { Mouse } from '@gglib/input'
+import { Mouse, Keyboard, KeyboardKey } from '@gglib/input'
 
 const baseUrl = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0'
 const githubUrl = 'https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0'
@@ -40,6 +40,7 @@ content.downloadJSON({ url: indexFile }).then((data: Data<GltfIndex>) => {
 
 const cam = {
   mouse: new Mouse(),
+  keyboard: new Keyboard(),
   view: Mat4.createIdentity(),
   proj: Mat4.createIdentity(),
   lookAt: new Vec3(),
@@ -48,6 +49,7 @@ const cam = {
   radial: { phi: 0, theta: 0, d: 10 },
   mx: 0,
   my: 0,
+  camId: 0,
   reset: (bs: BoundingSphere) => {
     cam.lookAt.initFrom(bs.center)
     cam.radial = { phi: 0, theta: Math.PI / 2, d: bs.radius * 2 }
@@ -58,21 +60,37 @@ const cam = {
     const [dx, dy] = [mouse.normalizedX - cam.mx, mouse.normalizedY - cam.my]
     cam.mx += dx
     cam.my += dy
+    for (let i = 0; i < 9; i++) {
+      if (cam.keyboard.keys.has(KeyboardKey.Digit0 + i)) {
+        if (cam.keyboard.keys.has(KeyboardKey.ShiftLeft)) {
+          player.loadClip(i, true)
+        } else {
+          cam.camId = i
+        }
+      }
+    }
     if (mouse.buttons[0]) {
       cam.radial.phi -= dt * dx * 0.2
       cam.radial.theta -= dt * dy * 0.2
     }
-    cam.position.initSpherical(cam.radial.theta, cam.radial.phi, cam.radial.d)
-    cam.view.initLookAt(cam.position, cam.lookAt, Vec3.Up).invert()
-    cam.proj.initPerspectiveFieldOfView(Math.PI / 4, device.drawingBufferAspectRatio, cam.clip.near, cam.clip.far)
+    const camNodeId = model?.nodes?.findIndex((it) => it.camera === (cam.camId - 1))
+    if (camNodeId >= 0) {
+      pose.getTransform(camNodeId).getTranslation(cam.position)
+      cam.view.initLookAt(cam.position, Vec3.$0.initSpherical(cam.radial.theta, -cam.radial.phi, 1).add(cam.position), Vec3.Up).invert()
+      cam.proj.initPerspectiveFieldOfView(Math.PI / 4, device.drawingBufferAspectRatio, cam.clip.near, cam.clip.far)
+    } else {
+      cam.position.initSpherical(cam.radial.theta, cam.radial.phi, cam.radial.d)
+      cam.view.initLookAt(cam.position, cam.lookAt, Vec3.Up).invert()
+      cam.proj.initPerspectiveFieldOfView(Math.PI / 4, device.drawingBufferAspectRatio, cam.clip.near, cam.clip.far)
+    }
   },
 }
 
 let model: Model = null
+let pose: ModelPose = null
 let player: AnimationPlayer = null
 let aniTime = 0
-const transforms: Mat4[] = []
-const localPose: ModelNodePose[] = []
+
 const light = new LightParams()
 light.enabled = true
 light.type = LightType.Directional
@@ -82,18 +100,13 @@ light.direction = [-1, -1, -1]
 function loadModel(url: string) {
   content.load(url, Model).then((result) => {
     model = result
+    pose = model.getPose({ copy: true })
+    player = model.getAnimationPlayer({ copy: true })
+    player?.loadClip(0, true)
     console.log(model)
 
-    player = model.getAnimationPlayer()
-    player?.loadClip(0, true)
-    console.log(player)
-
     aniTime = 0
-    localPose.length = 0
-    transforms.length = 0
-    model.getLocalPose(localPose)
-    model.getAbsoluteTransforms(transforms)
-    cam.reset(model.getAbsoluteBoundingSphere(transforms))
+    cam.reset(model.getAbsoluteBoundingSphere(pose.absoluteTransforms))
   })
 }
 
@@ -108,12 +121,13 @@ loop((time, dt) => {
   try {
     if (player) {
       aniTime += dt
-      player.sample(aniTime / 1000, localPose)
+      pose.updateFromAnimation(aniTime / 1000, player)
     }
   } catch (e) {
     // abort animation
     console.error(e)
-    localPose.length = 0
+    player = null
+    pose.reset()
   }
 
   if (!model) {
@@ -122,11 +136,6 @@ loop((time, dt) => {
 
   cam.update(dt)
 
-  if (player && localPose.length) {
-    // we have an animation, so we have to recalculate the transforms
-    model.getAbsoluteTransforms(transforms, localPose)
-  }
-
   model.walkNodes((node, id) => {
     const mesh = model?.meshes[node.mesh]
     if (!mesh) {
@@ -134,7 +143,7 @@ loop((time, dt) => {
     }
     mesh.materials.forEach((material) => {
       const params = material.parameters
-      params.World = transforms[id]
+      params.World = pose.getTransform(id)
       params.View = cam.view
       params.Projection = cam.proj
       params.CameraPosition = cam.position

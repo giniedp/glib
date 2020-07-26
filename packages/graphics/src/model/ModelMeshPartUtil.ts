@@ -1,9 +1,12 @@
-import { BufferOptions } from './resources'
-import { ModelBuilderChannel } from './ModelBuilderChannel'
-import { VertexAttribute, VertexLayout } from './VertexLayout'
-import { BufferType, PrimitiveType, FrontFace } from './enums'
 import { Log } from '@gglib/utils'
-import { calculateNormals, calculateTangents } from './formulas'
+import { BoundingBox, BoundingSphere } from '@gglib/math'
+
+import { BufferOptions } from '../resources'
+import { VertexAttribute, VertexLayout } from '../VertexLayout'
+import { BufferType, PrimitiveType, FrontFace, nameOfPrimitiveType } from '../enums'
+import { calculateNormals, calculateTangents } from '../formulas'
+
+import { ModelBuilderChannel } from './ModelBuilderChannel'
 
 export class ModelMeshPartUtil {
 
@@ -12,14 +15,23 @@ export class ModelMeshPartUtil {
     return this.iBuffer.data as any
   }
 
+  public boundingBox: BoundingBox = new BoundingBox()
+  public boundingSphere: BoundingSphere = new BoundingSphere()
+
+  public channelNames: string[] = []
+
   public constructor(
     public readonly iBuffer: BufferOptions,
     public readonly vBuffer: BufferOptions[],
     public readonly primitiveType: PrimitiveType,
   ) {
+    if (primitiveType !== PrimitiveType.TriangleList) {
+      throw new Error(`primitive type is not supporetd: '${nameOfPrimitiveType(primitiveType)}'`)
+    }
 
     for (const buffer of vBuffer) {
       Object.keys(buffer.layout).forEach((name) => {
+        this.channelNames.push(name)
         this.channels.set(name, new ModelBuilderChannel(buffer, name))
       })
     }
@@ -33,7 +45,7 @@ export class ModelMeshPartUtil {
     return this.channels.get(semantic)
   }
 
-  public chreateChannel(semantic: string, attribute: VertexAttribute, defaults?: number[]) {
+  public createChannel(semantic: string, attribute: VertexAttribute, defaults?: number[]) {
 
     if (this.hasChannel(semantic)) {
       throw new Error(`channel '${semantic}' already exists`)
@@ -64,6 +76,7 @@ export class ModelMeshPartUtil {
       dataType: attribute.type,
       data: data,
     })
+    this.channelNames.push(semantic)
   }
 
   public getVertexCount() {
@@ -151,34 +164,40 @@ export class ModelMeshPartUtil {
   }
 
   public calculateBoundings() {
-    // TODO:
-    // this.bBox.init(0, 0, 0, 0, 0, 0)
+    const box = this.boundingBox
+    const sphere = this.boundingSphere
 
-    // this.getChannel('position').forEach((item, i) => {
-    //   if (i === 0) {
-    //     this.bBox.min.x = item[0]
-    //     this.bBox.min.y = item[1]
-    //     this.bBox.min.z = item[2]
+    box.init(0, 0, 0, 0, 0, 0)
+    sphere.init(0, 0, 0, 0)
 
-    //     this.bBox.max.x = item[0]
-    //     this.bBox.max.y = item[1]
-    //     this.bBox.max.z = item[2]
-    //   } else {
-    //     this.bBox.mergePoint({ x: item[0], y: item[1], z: item[2] })
-    //   }
-    // })
-    // this.bSphere.initFromBox(this.bBox)
+    this.getChannel('position').forEach((item, i) => {
+      if (i === 0) {
+        box.min.x = item[0]
+        box.min.y = item[1]
+        box.min.z = item[2]
+
+        box.max.x = item[0]
+        box.max.y = item[1]
+        box.max.z = item[2]
+      } else {
+        box.mergePoint({ x: item[0], y: item[1], z: item[2] })
+      }
+    })
+
+    sphere.initFromBox(box)
     return this
   }
 
   public calculateNormals(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
     const semantic = 'normal'
     if (!this.hasChannel(semantic) && create) {
-      this.chreateChannel(semantic, VertexLayout.preset[semantic], [0, 1, 0])
+      this.createChannel(semantic, VertexLayout.preset[semantic], [0, 1, 0])
     }
     if (this.hasChannel(semantic)) {
-      // TODO
-      // calculateNormals(this.indices, this.channels, this.vCount, frontFace)
+      calculateNormals(this.indices, {
+        [semantic]: this.getChannel(semantic),
+        position: this.getChannel('position'),
+      }, this.getVertexCount(), frontFace)
     }
     return this
   }
@@ -186,15 +205,20 @@ export class ModelMeshPartUtil {
   public calculateTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
     const semantic1 = 'tangent'
     if (!this.hasChannel(semantic1) && create) {
-      this.chreateChannel(semantic1, VertexLayout.preset[semantic1], [1, 0, 0])
+      this.createChannel(semantic1, VertexLayout.preset[semantic1], [1, 0, 0])
     }
     const semantic2 = 'bitangent'
     if (!this.hasChannel(semantic2) && create) {
-      this.chreateChannel(semantic2, VertexLayout.preset[semantic2], [0, 0, 1])
+      this.createChannel(semantic2, VertexLayout.preset[semantic2], [0, 0, 1])
     }
     if (this.hasChannel(semantic1) && this.hasChannel(semantic2)) {
-      // TODO
-      // calculateTangents(this.indices, this.channels, this.vCount, frontFace)
+      calculateTangents(this.indices, {
+        position: this.getChannel('position'),
+        normal: this.getChannel('normal'),
+        texture: this.getChannel('texture') || this.getChannel('texcoord'),
+        [semantic1]: this.getChannel(semantic1),
+        [semantic2]: this.getChannel(semantic2)
+      }, this.getVertexCount(), frontFace)
     }
     return this
   }

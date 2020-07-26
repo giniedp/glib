@@ -1,7 +1,7 @@
 import { Vec3, ArrayLike } from '@gglib/math'
 import { Log } from '@gglib/utils'
 import { FrontFace } from '../enums'
-import { ModelBuilderChannelMap } from '../ModelBuilderChannel'
+import { ModelBuilderChannelMap } from '../model/ModelBuilderChannel'
 
 /**
  * Recalculates the normals for each vertex

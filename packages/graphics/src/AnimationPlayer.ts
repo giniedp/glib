@@ -44,6 +44,7 @@ export class AnimationPlayer {
     for (const i of clip.targets) {
       targets[i] = clip.sample(time, i, targets[i] || {})
     }
+    return true
   }
 }
 

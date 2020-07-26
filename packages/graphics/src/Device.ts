@@ -36,7 +36,7 @@ import {
 
 import { Capabilities } from './Capabilities'
 import { Color } from './Color'
-import { Model, ModelOptions } from './Model'
+import { Model, ModelOptions } from './model/Model'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { SpriteBatch } from './SpriteBatch'
 import { VertexLayout } from './VertexLayout'

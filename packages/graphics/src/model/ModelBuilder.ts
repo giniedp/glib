@@ -1,17 +1,16 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { copy, Log, isArray } from '@gglib/utils'
-import { Color } from './Color'
-import { Device } from './Device'
-import { Model, ModelOptions } from './Model'
-import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
-import { BufferOptions } from './resources'
-import { VertexLayout } from './VertexLayout'
 
-import { BufferType, DataType, FrontFace } from './enums'
-import { calculateNormals } from './formulas/calculateNormals'
-import { calculateTangents } from './formulas/calculateTangents'
-import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChannel'
+import { Color } from '../Color'
+import { Device } from '../Device'
+import { BufferOptions } from '../resources'
+import { VertexLayout } from '../VertexLayout'
+import { BufferType, DataType, FrontFace, PrimitiveType } from '../enums'
+
+import type { Model, ModelOptions } from './Model'
+import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
 import { ModelMeshOptions, ModelMesh } from './ModelMesh'
+import { ModelMeshPartUtil } from './ModelMeshPartUtil'
 
 /**
  * A function that adds geometry into a given {@link ModelBuilder}
@@ -88,15 +87,14 @@ export class ModelBuilder {
   private meshParts: ModelMeshPartOptions[] = []
   private meshes: ModelMeshOptions[] = []
 
+  private bBox: BoundingBox
+  private bSphere: BoundingSphere
   private iBuffer: BufferOptions<number[]>
   private vBuffer: Array<BufferOptions<number[]>>
   private vCount: number
-
-  private bBox: BoundingBox
-  private bSphere: BoundingSphere
+  private partUtil: ModelMeshPartUtil
 
   private transformStack: Mat4[] = []
-  private channels: ModelBuilderChannelMap
   private tmp: any[] = []
 
   /**
@@ -179,9 +177,9 @@ export class ModelBuilder {
    *
    * @param name - the data channel name e.g. 'position'
    */
-  public getChannel(name: string) {
-    return this.channels[name]
-  }
+  // public getChannel(name: string) {
+  //   return this.channels[name]
+  // }
 
   private resetData() {
     this.iBuffer = {
@@ -191,7 +189,7 @@ export class ModelBuilder {
     }
     this.vBuffer = this.layout.map((l): BufferOptions<number[]> => {
       return {
-        layout: copy(l),
+        layout: copy(true, l),
         type: BufferType.VertexBuffer,
         dataType: 'float',
         data: [],
@@ -199,15 +197,19 @@ export class ModelBuilder {
     })
 
     this.vCount = 0
-
     this.bBox = new BoundingBox()
     this.bSphere = new BoundingSphere()
-    this.makeChannels()
+    this.partUtil = new ModelMeshPartUtil(
+      this.iBuffer,
+      this.vBuffer,
+      PrimitiveType.TriangleList
+    )
+    // this.makeChannels()
   }
 
-  private makeChannels() {
-    this.channels = ModelBuilderChannel.fromVertexBuffer(this.vBuffer)
-  }
+  // private makeChannels() {
+  //   this.channels = ModelBuilderChannel.fromVertexBuffer(this.vBuffer)
+  // }
 
   /**
    * Resets the builder state.
@@ -243,9 +245,9 @@ export class ModelBuilder {
     const defaults = this.defaults
     const tmpBuffer = this.tmp
 
-    Object.keys(this.channels).forEach((name) => {
-      const channel = this.channels[name]
-      let item = vertex[name] || defaults[name]
+    for (const semantic of this.partUtil.channelNames) {
+      const channel = this.partUtil.getChannel(semantic)
+      let item = vertex[semantic] || defaults[semantic]
 
       if (isArray(item)) {
         // ok
@@ -263,65 +265,46 @@ export class ModelBuilder {
 
       if (!transform) {
         // ok
-      } else if (name === 'position') {
+      } else if (semantic === 'position') {
         transform.transformV3Array(item)
-      } else if (name.match('normal|tangent')) {
+      } else if (semantic.match('normal|tangent')) {
         transform.transformV3NormalArray(item)
       }
 
       channel.writeAttribute(this.vCount, item)
-    })
+    }
 
     this.vCount += 1
     return this
   }
 
-  public calculateBoundings() {
-    this.bBox.init(0, 0, 0, 0, 0, 0)
-
-    this.getChannel('position').forEach((item, i) => {
-      if (i === 0) {
-        this.bBox.min.x = item[0]
-        this.bBox.min.y = item[1]
-        this.bBox.min.z = item[2]
-
-        this.bBox.max.x = item[0]
-        this.bBox.max.y = item[1]
-        this.bBox.max.z = item[2]
-      } else {
-        this.bBox.mergePoint({ x: item[0], y: item[1], z: item[2] })
-      }
+  public readVertex(index: number, channels = this.partUtil.channelNames): { [k: string]: number[] } {
+    const result: any = {}
+    channels.map((semantic) => {
+      result[semantic] = this.partUtil.getChannel(semantic).readAttribute(index, result[semantic] || [])
     })
-    this.bSphere.initFromBox(this.bBox)
+    return result
+  }
+
+  public calculateBoundings() {
+    this.partUtil.calculateBoundings()
+    this.bBox.initFrom(this.partUtil.boundingBox)
+    this.bSphere.initFrom(this.partUtil.boundingSphere)
     return this
   }
 
   public calculateNormals(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
-    if (!this.channels.normal && create) {
-      this.ensureLayoutChannel('normal')
-    }
-    if (this.channels.normal) {
-      calculateNormals(this.iBuffer.data, this.channels, this.vCount, frontFace)
-    }
+    this.partUtil.calculateNormals(create, frontFace)
     return this
   }
 
   public calculateTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
-    if (!this.channels.tangent && create) {
-      this.ensureLayoutChannel('tangent')
-    }
-    if (!this.channels.bitangent && create) {
-      this.ensureLayoutChannel('bitangent')
-    }
-    if (this.channels.tangent && this.channels.bitangent) {
-      calculateTangents(this.iBuffer.data, this.channels, this.vCount, frontFace)
-    }
+    this.partUtil.calculateTangents(create, frontFace)
     return this
   }
 
   public calculateNormalsAndTangents(create: boolean = false, frontFace: FrontFace = FrontFace.CounterClockWise): this {
-    this.calculateNormals(create, frontFace)
-    this.calculateTangents(create, frontFace)
+    this.partUtil.calculateNormalsAndTangents(create, frontFace)
     return this
   }
 
@@ -336,102 +319,13 @@ export class ModelBuilder {
    * meshes or parts, this must be called each time before closing a part.
    */
   public ensureLayoutChannel(name: string, channel = VertexLayout.preset[name]) {
-    if (this.channels[name]) {
+    if (this.partUtil.hasChannel(name)) {
       return
     }
     if (!channel) {
       throw new Error(`preset for is '${name}' missing`)
     }
-
-    const data = []
-    for (let i = 0; i < this.vCount; i++) {
-      if (this.defaults[name] && this.defaults[name].length === channel.elements) {
-        data.push(...this.defaults[name])
-      } else {
-        for (let j = 0; j < channel.elements; j++) {
-          data.push(0)
-        }
-      }
-    }
-    const layout: VertexLayout = {
-      [name]: {
-        ...channel,
-        offset: 0,
-      },
-    }
-    this.layout.push(layout)
-    this.vBuffer.push({
-      layout: layout,
-      type: BufferType.VertexBuffer,
-      dataType: 'float',
-      data: data,
-    })
-    this.makeChannels()
-  }
-
-  /**
-   * In current state it reads through the vertex buffer and eliminates redundant vertices
-   *
-   * @remarks
-   * This does not operate on already closed mesh parts. When building a model with multiple
-   * meshes or parts, this must be called each time before closing a part.
-   */
-  public mergeDublicates(): this {
-    // vertex index cache
-    const hashMap = new Map<string, number>()
-    // the new vertex buffer
-    const vBuffer = this.vBuffer.map((buf) => {
-      return {
-        ...buf,
-        data: [],
-      }
-    })
-    // accessor to new vertex buffer
-    const vChannels = ModelBuilderChannel.fromVertexBuffer(vBuffer)
-    // new vertex count
-    let vCount = 0
-    // new indices
-    let newIndices: any = []
-
-    const vertex: number[] = []
-    const channelNames = Object.keys(this.channels)
-
-    for (let index of this.iBuffer.data) {
-      // build vertex object
-      vertex.length = 0
-      for (const name of channelNames) {
-        const channel = this.channels[name]
-        const elements = channel.elements
-        for (let i = 0; i < elements; i++) {
-          vertex.push(channel.read(index, i))
-        }
-      }
-      // build vertex hash value
-      const hash = vertex.join('|')
-      if (!hashMap.has(hash)) {
-        // write back new vertex
-        for (const name of channelNames) {
-          const channel = vChannels[name]
-          const elements = channel.elements
-          for (let i = 0; i < elements; i++) {
-            channel.write(vCount, i, vertex.shift())
-          }
-        }
-        // remember vertex position
-        hashMap.set(hash, vCount)
-        vCount += 1
-      }
-      newIndices.push(hashMap.get(hash))
-    }
-
-    if (this.vCount !== vCount) {
-      Log.d(`[ModelBuilder] Mesh size reduced from ${this.vCount} to ${vCount} vertices.`)
-      this.vBuffer = vBuffer
-      this.channels = vChannels
-      this.vCount = vCount
-      this.iBuffer.data = newIndices
-    }
-    return this
+    this.partUtil.createChannel(name, channel)
   }
 
   /**

@@ -1,6 +1,6 @@
 import { IVec3, Vec2, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
-import { ModelBuilder } from '../ModelBuilder'
+import type { ModelBuilder } from '../model/ModelBuilder'
 
 /**
  * Options for the {@link buildParametricSurface} function

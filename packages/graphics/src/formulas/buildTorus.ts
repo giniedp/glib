@@ -1,5 +1,5 @@
 import { getOption } from '@gglib/utils'
-import { ModelBuilder } from '../ModelBuilder'
+import type { ModelBuilder } from '../model/ModelBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**

@@ -1,4 +1,5 @@
 import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions, VertexLayout } from '@gglib/graphics'
+import { addToArraySet } from '@gglib/utils'
 
 import { Data, FaceElement, OBJ, VertexTextureNormalRef } from '../../formats/obj'
 import { loader, resolveUri } from '../../utils'
@@ -81,7 +82,7 @@ function readVertex<T>(data: Data, element: VertexTextureNormalRef, target: T) {
 }
 
 function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
-  let builder = ModelBuilder.begin({
+  const builder = ModelBuilder.begin({
     layout: [
       VertexLayout.convert('PositionTexture'),
       VertexLayout.convert('Normal'),
@@ -102,12 +103,13 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
 
   let hasNormals = true
   let vertices = new Map<string, number>()
-  function addVertex(ref: VertexTextureNormalRef, mtl: string) {
+  let mtlNames: string[] = []
+  function addVertex(ref: VertexTextureNormalRef, mtl: number) {
     let key = [ref.v, ref.vn, ref.vt, mtl].join('-')
     if (!vertices.has(key)) {
       vertices.set(key, builder.vertexCount)
       builder.addVertex(readVertex(data, ref, {
-        material: [mtl as any],
+        material: [mtl],
       }))
       if (ref.vn == null) {
         hasNormals = false
@@ -120,9 +122,11 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
     let count = 0
     while (count < f.data.length - 2) {
       count++
-      addVertex(f.data[0], f.state.usemtl)
-      addVertex(f.data[count], f.state.usemtl)
-      addVertex(f.data[count + 1], f.state.usemtl)
+      addToArraySet(mtlNames, f.state.usemtl)
+      const mtlIndex = mtlNames.indexOf(f.state.usemtl)
+      addVertex(f.data[0], mtlIndex)
+      addVertex(f.data[count], mtlIndex)
+      addVertex(f.data[count + 1], mtlIndex)
     }
   }
 
@@ -131,25 +135,21 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
   }
   builder.calculateTangents()
 
-  return splitByMaterial(builder)
+  return splitByMaterial(builder, mtlNames)
 }
 
-function splitByMaterial(builder: ModelBuilder): ModelMeshPartOptions[] {
+function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPartOptions[] {
   const result: ModelMeshPartOptions[] = []
-  const split = new Map<string, {
+  const split = new Map<number, {
     builder: ModelBuilder,
     indexMap: Map<number, number>,
   }>()
 
-  const position = builder.getChannel('position')
-  const texture = builder.getChannel('texture')
-  const normal = builder.getChannel('normal')
-  const tangent = builder.getChannel('tangent')
-  const bitangent = builder.getChannel('bitangent')
-  const material = builder.getChannel('material')
-
   builder.indices.forEach((index) => {
-    const materialId: string = material.read(index, 0) as any
+    const vertex = builder.readVertex(index)
+    const materialId: number = vertex.material[0]
+    delete vertex.material
+
     if (!split.has(materialId)) {
       split.set(materialId, {
         builder: ModelBuilder.begin({
@@ -170,7 +170,7 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshPartOptions[] {
         mesh.builder
           .calculateBoundings()
           .endMeshPart({
-            materialId: materialId,
+            materialId: mtlNames[materialId],
           }),
       )
     }
@@ -179,13 +179,7 @@ function splitByMaterial(builder: ModelBuilder): ModelMeshPartOptions[] {
     if (remapped == null) {
       remapped = mesh.builder.vertexCount
       mesh.indexMap.set(index, remapped)
-      mesh.builder.addVertex({
-        position: position.readAttribute(index),
-        texture: texture.readAttribute(index),
-        normal: normal.readAttribute(index),
-        tangent: tangent.readAttribute(index),
-        bitangent: bitangent.readAttribute(index),
-      })
+      mesh.builder.addVertex(vertex)
     }
     mesh.builder.addIndex(remapped)
   })

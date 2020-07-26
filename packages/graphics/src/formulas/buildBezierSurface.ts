@@ -1,5 +1,5 @@
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
-import { ModelBuilder } from '../ModelBuilder'
+import type { ModelBuilder } from '../model/ModelBuilder'
 
 const baseMatrix: Mat4 = Mat4.create(
   1, 0, 0, 0,

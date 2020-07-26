@@ -1,5 +1,5 @@
-import { Buffer, BufferOptions } from './resources'
-import { VertexLayout } from './VertexLayout'
+import { Buffer, BufferOptions } from '../resources'
+import { VertexLayout } from '../VertexLayout'
 import { ArrayLike } from '@gglib/math'
 
 /**
@@ -40,18 +40,18 @@ export class ModelBuilderChannel {
    * The semantic name of this channel
    */
   public readonly name: string
-  public readonly buffer: BufferOptions | Buffer
+  public readonly buffer: BufferOptions
 
   private data: ArrayLike<number>
 
   constructor(
-    buffer: BufferOptions | Buffer,
+    buffer: BufferOptions,
     name: string,
   ) {
     if (buffer instanceof Buffer) {
       this.data = Array.from(buffer.getData() as any)
-    } else if (Array.isArray(buffer.data)) {
-      this.data = buffer.data
+    } else if (Array.isArray(buffer.data) || ArrayBuffer.isView(buffer.data)) {
+      this.data = buffer.data as any
     } else {
       throw new Error('not supported')
     }
@@ -106,7 +106,7 @@ export class ModelBuilderChannel {
    * @param source - The attribute data to write
    * @param sourceOffset - The offset in source array where to start reading
    */
-  public writeAttribute(vIndex: number, source: ReadonlyArray<number> = [], sourceOffset: number = 0) {
+  public writeAttribute(vIndex: number, source: ReadonlyArray<number>, sourceOffset: number = 0) {
     const index = this.stride * vIndex + this.offset
     for (let j = 0; j < Math.min(this.elements, source.length - sourceOffset); j++) {
       this.data[index + j] = source[sourceOffset + j]

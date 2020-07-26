@@ -1,5 +1,5 @@
-import { IVec4, IVec3, Mat4Data, Mat4 } from '@gglib/math'
-import { AnimationTargetPose } from './AnimationData'
+import { Mat4 } from '@gglib/math'
+import { AnimationTargetPose } from '../AnimationData'
 
 export interface ModelNode {
   /**

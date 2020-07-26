@@ -1,9 +1,10 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
-import { Device } from './Device'
-import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from './enums'
-import { Buffer, BufferOptions } from './resources/Buffer'
-import { ShaderProgram } from './resources/ShaderProgram'
+
+import { Device } from '../Device'
+import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from '../enums'
+import { Buffer, BufferOptions } from '../resources/Buffer'
+import { ShaderProgram } from '../resources/ShaderProgram'
 
 /**
  * Constructor options for {@link ModelMeshPart}

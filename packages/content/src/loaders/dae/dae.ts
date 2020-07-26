@@ -10,11 +10,11 @@ import {
   valueOfDataType,
   VertexLayout,
 } from '@gglib/graphics'
+import { Mat4, Vec3 } from '@gglib/math'
 
 import { PipelineContext } from '../../PipelineContext'
 import { loader } from '../../utils'
 
-import { Mat4, Vec3 } from '@gglib/math'
 import {
   BindMaterial as DaeBindMaterial,
   COLLADA,

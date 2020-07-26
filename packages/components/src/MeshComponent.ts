@@ -4,7 +4,7 @@ import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { SceneryCollectable, SceneryCollector } from './Scenery'
 import { SceneryLinkComponent } from './SceneryLinkComponent'
 import { TransformComponent } from './TransformComponent'
-import { ModelMesh } from '@gglib/graphics/src/ModelMesh'
+import { ModelMesh } from '@gglib/graphics'
 
 /**
  * A component that knows how to render a model

@@ -27,8 +27,8 @@ import {
   Texture,
   TextureOptions,
   TextureType,
+  ModelMesh,
 } from '@gglib/graphics'
-import { ModelMesh } from '@gglib/graphics/src/ModelMesh'
 
 describe('content/loader/native', () => {
 

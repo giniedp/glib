@@ -1,6 +1,6 @@
 import { Mat4 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
-import { ModelBuilder } from '../ModelBuilder'
+import type { ModelBuilder } from '../model/ModelBuilder'
 import { buildPlane } from './buildPlane'
 
 /**
