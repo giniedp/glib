@@ -237,10 +237,10 @@ class TerrainComponent implements OnInit, OnUpdate {
               f.slider(material, 'FogDensity', { min: 0, max: 0.1, step: 0.0001 })
               f.select(material, 'FogType', {
                 options: [
-                  { id: 'off', label: 'Off', value: 0 },
-                  { id: 'exp', label: 'Exp', value: 1 },
-                  { id: 'exp2', label: 'Exp2', value: 2 },
-                  { id: 'linear', label: 'Linear', value: 3 },
+                  { label: 'Off', value: 0 },
+                  { label: 'Exp', value: 1 },
+                  { label: 'Exp2', value: 2 },
+                  { label: 'Linear', value: 3 },
                 ],
               })
             })
@@ -272,3 +272,4 @@ createGame({
   device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
   autorun: true,
 }).install(MyGame)
+
