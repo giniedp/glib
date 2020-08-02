@@ -27,6 +27,15 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
 
     if (params.AlphaClip != null) {
       defines.ALPHA_CLIP = true
+      delete params.AlphaClip
+    }
+    if (typeof params.BoneCount === 'number') {
+      defines.SKINNING_BONE_COUNT = params.BoneCount
+      delete params.BoneCount
+    }
+    if (typeof params.WeightCount === 'number') {
+      defines.SKINNING_WEIGHT_COUNT = params.WeightCount
+      delete params.WeightCount
     }
 
     if (params.AmbientColor != null) {

@@ -27,7 +27,7 @@ export async function loadGltfModel(
   scene: Scene,
 ): Promise<ModelOptions> {
 
-  return {
+  const result: ModelOptions = {
     cameras: copy(true, reader.doc.cameras),
     roots: copy(true, scene.nodes),
     nodes: copy(true, reader.doc.nodes),
@@ -35,6 +35,23 @@ export async function loadGltfModel(
     meshes: await loadMeshes(context, reader),
     skins: await loadGltfSkins(reader),
   }
+
+  for (const node of result.nodes) {
+    const mesh = result.meshes[node.mesh] as ModelMeshOptions
+    const skin = result.skins[node.skin]
+    if (!mesh || !skin) {
+      continue
+    }
+    for (const part of mesh.parts) {
+      const mtl = mesh.materials[part.materialId] as MaterialOptions
+      if (!mtl) {
+        continue
+      }
+      mtl.parameters.BoneCount = skin.joints.length
+      mtl.parameters.WeightCount = 1 // TODO:
+    }
+  }
+  return result
 }
 
 async function loadMeshes(context: PipelineContext, reader: DocumentReader): Promise<ModelMeshOptions[]> {

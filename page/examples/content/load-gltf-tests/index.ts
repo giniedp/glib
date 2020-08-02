@@ -126,15 +126,15 @@ function loadModel(url: string, m: ManifestModel) {
     model.getAbsoluteTransforms(transforms)
     cam.reset(model.getAbsoluteBoundingSphere(transforms))
 
-    model.meshes.forEach((mesh) => {
-      mesh.materials.forEach((material, i) => {
-        const mtl = new AutoMaterial(mesh.device)
-        Object.entries(material.parameters).forEach(([key, value]) => {
-          mtl.parameters[key] = value
-        })
-        mesh.materials[i] = mtl
-      })
-    })
+    // model.meshes.forEach((mesh) => {
+    //   mesh.materials.forEach((material, i) => {
+    //     const mtl = new AutoMaterial(mesh.device)
+    //     Object.entries(material.parameters).forEach(([key, value]) => {
+    //       mtl.parameters[key] = value
+    //     })
+    //     mesh.materials[i] = mtl
+    //   })
+    // })
   })
 }
 

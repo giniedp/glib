@@ -52,6 +52,12 @@ export const FXC_V_SKINNING: ShaderChunkSet<VSkinningDefs> = Object.freeze({
     attribute vec4 aWeights;
     #endif
   `,
+  uniforms: glsl`
+    #ifdef SKINNING
+    // @binding Bones
+    uniform mat4 uBones[SKINNING_BONE_COUNT];
+    #endif
+  `,
   vs_position: glsl`
     #ifdef SKINNING
     mat4 skinMat;
