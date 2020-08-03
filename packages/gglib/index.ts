@@ -10,6 +10,7 @@
 
 import * as $Components from '@gglib/components'
 import * as $Content from '@gglib/content'
+import * as $ContentLoaders from '@gglib/content-loaders'
 import * as $Ecs from '@gglib/ecs'
 import * as $Effects from '@gglib/effects'
 import * as $Graphics from '@gglib/graphics'
@@ -26,6 +27,12 @@ import * as $Utils from '@gglib/utils'
  * @public
  */
 export const Content = $Content
+/**
+ * This contains all content loaders using the contentn pipeline
+ *
+ * @public
+ */
+export const ContentLoaders = $ContentLoaders
 /**
  * Common utility functions that are used by most of the other packages.
  *
@@ -93,6 +100,7 @@ export const Terrain = $Terrain
  */
 export const Gglib = {
   Content,
+  ContentLoaders,
   Utils,
   Ecs,
   Components,
