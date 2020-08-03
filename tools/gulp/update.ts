@@ -13,7 +13,7 @@ function updatePackageJson(pkg: string) {
       project.pkgSrcDir(pkg, 'package.json'),
       JSON.stringify(
         {
-          name: `@gglib/${pkg}`,
+          name: project.pkgName(pkg),
           description: 'Part of the [G]glib project',
           version: project.packageJson.version,
           repository: project.packageJson.repository,
@@ -44,7 +44,7 @@ function updateTsconfigJson(pkg: string) {
       project.pkgSrcDir(pkg, 'tsconfig.json'),
       JSON.stringify(
         {
-          extends: '../tsconfig.json',
+          extends: path.relative(project.pkgSrcDir(pkg), path.join(project.pkgSrc, 'tsconfig.json')),
           baseUrl: '.',
           rootDir: '.',
         },

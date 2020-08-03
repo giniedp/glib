@@ -1,5 +1,5 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
-import { copy, Log, isArray } from '@gglib/utils'
+import { copy, isArray } from '@gglib/utils'
 
 import { Color } from '../Color'
 import { Device } from '../Device'

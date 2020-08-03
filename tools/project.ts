@@ -74,9 +74,8 @@ class Project {
   public get packages(): string[] {
     if (!packages) {
       packages = glob
-        .sync(path.join(this.pkgSrc, '*'))
-        .filter((it) => it.indexOf('.') === -1)
-        .map((it) => path.basename(it))
+        .sync(path.join(this.pkgSrc, '**', 'package.json'))
+        .map((it) => path.relative(this.pkgSrc, path.dirname(it)))
         .sort((a, b) => {
           const nameOfA = this.pkgName(a)
           const peersOfA = this.pkgPeerDependencies(a)
@@ -100,7 +99,7 @@ class Project {
    * Gets a package name as it will appear in package.json
    */
   public pkgName(pkg: string) {
-    return `@gglib/${pkg}`
+    return `@gglib/${pkg.replace(/[\/\\]/g, '-')}`
   }
 
   /**
@@ -149,7 +148,11 @@ class Project {
    * Gets a global package name as it will be used by rollup umd
    */
   public pkgGlobalName(pkg: string) {
-    return 'Gglib' + (pkg === 'gglib' ? '' : '.' + pkg[0].toUpperCase() + pkg.substr(1))
+    let result = 'Gglib'
+    if (pkg === 'gglib') {
+      return result
+    }
+    return result + '.' + pkg.split(/[\/\\-]/).map((it) => it[0].toUpperCase() + it.substr(1)).join('.')
   }
 }
 
