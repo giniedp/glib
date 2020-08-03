@@ -17,31 +17,34 @@ export const loadObjToModelOptions = loader({
 
     const mtllib = new Set<string>()
     const groups = new Map<string, Map<number, FaceElement[]>>()
+    const usemtls = new Set<string>()
 
-    data.f.forEach((face) => {
-
-      (face.state.mtllib || []).forEach((name) => mtllib.add(name))
-
-      face.group.g.forEach((g) => {
+    for (const face of data.f) {
+      for (const mtl of face.state.mtllib || []) {
+        mtllib.add(mtl)
+      }
+      if (face.state.usemtl) {
+        usemtls.add(face.state.usemtl)
+      }
+      for (const g of face.group.g) {
         const s = face.group.s
-        let group = groups.get(g)
-        if (!group) {
-          group = new Map<number, FaceElement[]>()
-          groups.set(g, group)
+        if (!groups.has(g)) {
+          groups.set(g, new Map<number, FaceElement[]>())
         }
-        let sGroup = group.get(s)
-        if (!sGroup) {
-          sGroup = []
-          group.set(s, sGroup)
+        const group = groups.get(g)
+        if (!group.has(s)) {
+          group.set(s, [])
         }
+        const sGroup = group.get(s)
         sGroup.push(face)
-      })
-    })
+      }
+    }
 
     const parts: ModelMeshPartOptions[] = []
+    const mtls = Array.from(usemtls.values())
     groups.forEach((group, g) => {
       group.forEach((faces, s) => {
-        parts.push(...buildGroup(data, faces, s))
+        parts.push(...buildGroup(data, faces, s, mtls))
       })
     })
 
@@ -81,7 +84,7 @@ function readVertex<T>(data: Data, element: VertexTextureNormalRef, target: T) {
   return result
 }
 
-function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
+function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number, mtlNames: string[]) {
   const builder = ModelBuilder.begin({
     layout: [
       VertexLayout.convert('PositionTexture'),
@@ -103,7 +106,6 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
 
   let hasNormals = true
   let vertices = new Map<string, number>()
-  let mtlNames: string[] = []
   function addVertex(ref: VertexTextureNormalRef, mtl: number) {
     let key = [ref.v, ref.vn, ref.vt, mtl].join('-')
     if (!vertices.has(key)) {
@@ -122,7 +124,6 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number) {
     let count = 0
     while (count < f.data.length - 2) {
       count++
-      addToArraySet(mtlNames, f.state.usemtl)
       const mtlIndex = mtlNames.indexOf(f.state.usemtl)
       addVertex(f.data[0], mtlIndex)
       addVertex(f.data[count], mtlIndex)
