@@ -52,7 +52,7 @@ export class DocumentReader {
         // return new SparseAccessor(accessor, iData, vView, vData)
       }
 
-      throw new Error('[]glTF] buffer accessor has neither a vier nor a sparse definition')
+      throw new Error('[]glTF] buffer accessor has neither a view nor a sparse definition')
     })
   }
 
