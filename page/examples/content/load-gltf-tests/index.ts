@@ -10,13 +10,14 @@ import {
   createDevice,
   AnimationPlayer,
   ModelNodePose,
+  ModelPose,
 } from '@gglib/graphics'
 import { Mat4, Vec3, BoundingSphere } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 import { Mouse } from '@gglib/input'
 
-const baseUrl = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Asset-Generator/Output/Positive'
+const baseUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Asset-Generator/master/Output/Positive'// 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Asset-Generator/Output/Positive'
 const githubUrl = 'https://github.com/KhronosGroup/glTF-Asset-Generator/tree/master/Output/Positive'
 const manifest = `${baseUrl}/Manifest.json`
 type Manifest = ManifestFolder[]
@@ -104,9 +105,9 @@ const cam = {
 }
 let model: Model = null
 let player: AnimationPlayer = null
+let pose: ModelPose = null
 let aniTime = 0
-const localPose: ModelNodePose[] = []
-const transforms: Mat4[] = []
+const identity = Mat4.createIdentity()
 const light = new LightParams()
 light.enabled = true
 light.type = LightType.Directional
@@ -117,24 +118,11 @@ function loadModel(url: string, m: ManifestModel) {
   content.load(url, Model).then((result) => {
     console.log(result)
     model = result
+    pose = model.getPose({ copy: true })
     player = model.getAnimationPlayer()
     player?.loadClip(0, true)
-    localPose.length = 0
-    transforms.length = 0
     aniTime = 0
-    model.getLocalPose(localPose)
-    model.getAbsoluteTransforms(transforms)
-    cam.reset(model.getAbsoluteBoundingSphere(transforms))
-
-    // model.meshes.forEach((mesh) => {
-    //   mesh.materials.forEach((material, i) => {
-    //     const mtl = new AutoMaterial(mesh.device)
-    //     Object.entries(material.parameters).forEach(([key, value]) => {
-    //       mtl.parameters[key] = value
-    //     })
-    //     mesh.materials[i] = mtl
-    //   })
-    // })
+    cam.reset(model.getAbsoluteBoundingSphere(pose.transforms))
   })
 }
 
@@ -150,12 +138,13 @@ loop((time, dt) => {
   try {
     if (player) {
       aniTime += dt
-      player.sample(aniTime / 1000, localPose)
+      pose.updateFromAnimation(aniTime / 1000, player)
     }
   } catch (e) {
     // abort animation
     console.error(e)
-    localPose.length = 0
+    player = null
+    pose.reset()
   }
 
   // Do not proceed until model is loaded
@@ -165,31 +154,37 @@ loop((time, dt) => {
   // Update runtime variables
   cam.update(dt)
 
-  if (player && localPose.length) {
-    // we have an animation, so we have to recalculate the transforms
-    model.getAbsoluteTransforms(transforms, localPose)
-  }
-
-  model.walkNodes((node, id, parentId) => {
-    const mesh = model.meshes[node.mesh]
+  for (let id = 0; id < model.nodes.length; id++) {
+    const node = model.nodes[id]
+    const mesh = model?.meshes[node.mesh]
     if (!mesh) {
-      return
+      continue
     }
-    mesh.materials.forEach((material) => {
+    for (const part of mesh.parts) {
+      const material = mesh.getMaterial(part.materialId)
+      const joints = pose.updateSkin(node.skin)
       const params = material.parameters
-      params.World = transforms[id]
+      params.World = pose.transforms[id]
       params.View = cam.view
       params.Projection = cam.proj
       params.CameraPosition = cam.position
-      light.assign(0, params)
-    })
 
-    try {
-      mesh.draw()
-    } catch (e) {
-      // abort
-      console.error(e)
-      model = null
+      light.assign(0, params)
+      if (joints) {
+        params.World = identity
+        for (let i = 0; i < joints?.length; i++) {
+          params[`Joints${i}`] = joints[i]
+        }
+      }
+
+      try {
+        material.draw(part)
+      } catch (e) {
+        // abort
+        console.error(e)
+        model = null
+        return
+      }
     }
-  })
+  }
 })

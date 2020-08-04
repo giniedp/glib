@@ -47,8 +47,8 @@ export async function loadGltfModel(
       if (!mtl) {
         continue
       }
-      mtl.parameters.BoneCount = skin.joints.length
-      mtl.parameters.WeightCount = 1 // TODO:
+      mtl.parameters.JointCount = skin.joints.length
+      mtl.parameters.WeightCount = 4 // TODO:
     }
   }
   return result

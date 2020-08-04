@@ -29,9 +29,9 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
       defines.ALPHA_CLIP = true
       delete params.AlphaClip
     }
-    if (typeof params.BoneCount === 'number') {
-      defines.SKINNING_BONE_COUNT = params.BoneCount
-      delete params.BoneCount
+    if (typeof params.JointCount === 'number') {
+      defines.SKINNING_JOINT_COUNT = params.JointCount
+      delete params.JointCount
     }
     if (typeof params.WeightCount === 'number') {
       defines.SKINNING_WEIGHT_COUNT = params.WeightCount

@@ -289,14 +289,14 @@ export class Model {
       if (input) {
         Model.updatePoseTransform(input[id])
         if (parent) {
-          Mat4.premultiply(input[id].matrix, parent, child)
+          Mat4.multiply(parent, input[id].matrix, child)
         } else {
           child.initFrom(input[id].matrix)
         }
       } else {
         Model.getLocalTransform(node, child)
         if (parent) {
-          Mat4.premultiply(child, parent, child)
+          Mat4.multiply(parent, child, child)
         }
       }
     })

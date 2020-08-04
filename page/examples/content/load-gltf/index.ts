@@ -75,7 +75,7 @@ const cam = {
     }
     const camNodeId = model?.nodes?.findIndex((it) => it.camera === (cam.camId - 1))
     if (camNodeId >= 0) {
-      pose.getTransform(camNodeId).getTranslation(cam.position)
+      pose.transforms[camNodeId].getTranslation(cam.position)
       cam.view.initLookAt(cam.position, Vec3.$0.initSpherical(cam.radial.theta, -cam.radial.phi, 1).add(cam.position), Vec3.Up).invert()
       cam.proj.initPerspectiveFieldOfView(Math.PI / 4, device.drawingBufferAspectRatio, cam.clip.near, cam.clip.far)
     } else {
@@ -90,7 +90,7 @@ let model: Model = null
 let pose: ModelPose = null
 let player: AnimationPlayer = null
 let aniTime = 0
-
+const identity = Mat4.createIdentity()
 const light = new LightParams()
 light.enabled = true
 light.type = LightType.Directional
@@ -106,7 +106,7 @@ function loadModel(url: string) {
     console.log(model)
 
     aniTime = 0
-    cam.reset(model.getAbsoluteBoundingSphere(pose.absoluteTransforms))
+    cam.reset(model.getAbsoluteBoundingSphere(pose.transforms))
   })
 }
 
@@ -136,25 +136,38 @@ loop((time, dt) => {
 
   cam.update(dt)
 
-  model.walkNodes((node, id) => {
+  for (let id = 0; id < model.nodes.length; id++) {
+    const node = model.nodes[id]
     const mesh = model?.meshes[node.mesh]
     if (!mesh) {
-      return
+      continue
     }
-    mesh.materials.forEach((material) => {
+    for (const part of mesh.parts) {
+      const material = mesh.getMaterial(part.materialId)
+      const joints = pose.updateSkin(node.skin)
+
       const params = material.parameters
-      params.World = pose.getTransform(id)
-      params.View = cam.view
-      params.Projection = cam.proj
       params.CameraPosition = cam.position
+      params.Projection = cam.proj
+      params.View = cam.view
+      params.World = pose.transforms[id]
+
       light.assign(0, params)
-    })
-    try {
-      mesh.draw()
-    } catch (e) {
-      console.error(e)
-      model = null
-      return
+      if (joints) {
+        params.World = identity
+        for (let i = 0; i < joints?.length; i++) {
+          params[`Joints${i}`] = joints[i]
+        }
+      }
+
+      try {
+        material.draw(part)
+      } catch (e) {
+        // abort
+        console.error(e)
+        model = null
+        return
+      }
     }
-  })
+  }
 })

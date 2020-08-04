@@ -147,7 +147,7 @@ export class ModelMesh {
    *
    * @param indexOrName - The index or name of the material
    */
-  public getMaterial(indexOrName: number | string) {
+  public getMaterial(indexOrName: number | string): Material {
     return this.materials[indexOrName] || this.materials.find((it) => it.name === indexOrName)
   }
 }

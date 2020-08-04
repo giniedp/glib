@@ -42,6 +42,13 @@ export class ModelBuilderChannel {
   public readonly name: string
   public readonly buffer: BufferOptions
 
+  /**
+   * Returns the number of attributes
+   */
+  public get count() {
+    return this.data.length / this.stride
+  }
+
   private data: ArrayLike<number>
 
   constructor(

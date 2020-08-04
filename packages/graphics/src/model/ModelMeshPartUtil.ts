@@ -58,7 +58,7 @@ export class ModelMeshPartUtil {
     const vCount = this.getVertexCount()
     for (let i = 0; i < vCount; i++) {
       if (defaults?.length === attribute.elements) {
-        data.push(...defaults[semantic])
+        data.push(...defaults)
       } else {
         for (let j = 0; j < attribute.elements; j++) {
           data.push(0)
@@ -80,22 +80,7 @@ export class ModelMeshPartUtil {
   }
 
   public getVertexCount() {
-    const l = (this.iBuffer.data as any).length
-    switch (this.primitiveType) {
-      case PrimitiveType.TriangleList:
-        return l / 3
-      case PrimitiveType.LineList:
-        return l / 2
-      case PrimitiveType.PointList:
-        return l
-      case PrimitiveType.LineStrip:
-      case PrimitiveType.TriangleFan:
-        return l - 1
-      case PrimitiveType.TriangleStrip:
-        return l - 2
-      case PrimitiveType.TriangleFan:
-        return l - 2
-    }
+    return this.getChannel('position').count
   }
   /**
    * In current state it reads through the vertex buffer and eliminates redundant vertices

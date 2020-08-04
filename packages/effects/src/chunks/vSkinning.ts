@@ -15,7 +15,7 @@ export interface VSkinningDefs {
    * @remarks
    * If not set defaults to 16
    */
-  SKINNING_BONE_COUNT?: number
+  SKINNING_JOINT_COUNT?: number
   /**
    * Defines the number bone weights
    *
@@ -30,12 +30,12 @@ export interface VSkinningDefs {
  */
 export const FXC_V_SKINNING: ShaderChunkSet<VSkinningDefs> = Object.freeze({
   defines: glsl`
-    #if defined(SKINNING_BONE_COUNT) || defined(SKINNING_WEIGHT_COUNT)
+    #if defined(SKINNING_JOINT_COUNT) || defined(SKINNING_WEIGHT_COUNT)
       #define SKINNING
     #endif
 
-    #if !defined(SKINNING_BONE_COUNT) && defined(SKINNING)
-      #define SKINNING_BONE_COUNT 16
+    #if !defined(SKINNING_JOINT_COUNT) && defined(SKINNING)
+      #define SKINNING_JOINT_COUNT 16
     #endif
 
     #if !defined(SKINNING_WEIGHT_COUNT) && defined(SKINNING)
@@ -54,24 +54,23 @@ export const FXC_V_SKINNING: ShaderChunkSet<VSkinningDefs> = Object.freeze({
   `,
   uniforms: glsl`
     #ifdef SKINNING
-    // @binding Bones
-    uniform mat4 uBones[SKINNING_BONE_COUNT];
+    // @binding Joints
+    uniform mat4 uJoints[SKINNING_JOINT_COUNT];
     #endif
   `,
   vs_position: glsl`
     #ifdef SKINNING
-    mat4 skinMat;
-    skinMat = uBones[int(aJoints.x)] * aWeights.x;
+    mat4 skin = uJoints[int(aJoints.x)] * aWeights.x;
     #if SKINNING_WEIGHT_COUNT > 1
-    skinMat += uBones[int(aJoints.y)] * aWeights.y;
+    skin += uJoints[int(aJoints.y)] * aWeights.y;
     #endif
     #if SKINNING_WEIGHT_COUNT > 2
-    skinMat += uBones[int(aJoints.z)] * aWeights.z;
+    skin += uJoints[int(aJoints.z)] * aWeights.z;
     #endif
     #if SKINNING_WEIGHT_COUNT > 3
-    skinMat += uBones[int(aJoints.w)] * aWeights.w;
+    skin += uJoints[int(aJoints.w)] * aWeights.w;
     #endif
-    vPositionInWS = skinMat * vec4(aPosition, 1.0);
+    vPositionInWS = uWorld * skin * vec4(aPosition, 1.0);
     #endif
   `,
 })
