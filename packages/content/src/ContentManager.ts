@@ -3,6 +3,7 @@ import { DataUri, Http, HttpOptions, Log, Type, Uri } from '@gglib/utils'
 import { ContentType } from './ContentType'
 import { Data, dataFromElement, dataFromXhr } from './Data'
 import { Pipeline } from './Pipeline'
+import { LoaderOutput } from './Loader'
 
 /**
  * @public
@@ -252,7 +253,7 @@ export class ContentManager {
    * @param src - The source url to load from. This will be passed to `rewriteUrl`.
    * @param targetType - The target asset type or a symbol identifying the target type.
    */
-  public canLoad<T = any>(src: string, targetType: symbol | Type<T>) {
+  public canLoad<T = any>(src: string, targetType: LoaderOutput<T>) {
     const remapped = this.rewriteUrl(src)
     if (remapped) {
       src = remapped
@@ -272,7 +273,7 @@ export class ContentManager {
    * @param targetType - The target asset type or a symbol identifying the target type.
    * @param options - Options which will be available in the loading context.
    */
-  public async load<T = any>(src: string, targetType: symbol | Type<T>, options: { [key: string]: any } = {}): Promise<T> {
+  public async load<T = any>(src: string, targetType: LoaderOutput<T>, options: { [key: string]: any } = {}): Promise<T> {
     const requested = Uri.merge(location.pathname, src)
     const remapped = this.rewriteUrl(requested)
     if (requested !== remapped) {

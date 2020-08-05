@@ -18,34 +18,34 @@ export async function loadGltfMaterial(
 ): Promise<MaterialOptions> {
   const material = (reader.doc.materials || [])[materialIndex] || {}
 
-  const params = {}
+  const params: { [k: string]: any } = {}
   let effect = 'default'
 
   if (material.normalTexture != null) {
-    params['NormalMap'] = await loadTexture(context, reader, material.normalTexture.index)
-    readTextureTransforms(params, 'NormalMap', material.normalTexture)
+    params.NormalMap = await loadTexture(context, reader, material.normalTexture.index)
+    readTextureInfo(params, 'NormalMap', material.normalTexture)
   }
   if (material.occlusionTexture != null) {
-    params['OcclusionMap'] = await loadTexture(context, reader, material.occlusionTexture.index)
-    readTextureTransforms(params, 'OcclusionMap', material.occlusionTexture)
+    params.OcclusionMap = await loadTexture(context, reader, material.occlusionTexture.index)
+    readTextureInfo(params, 'OcclusionMap', material.occlusionTexture)
   }
   if (material.emissiveTexture != null) {
-    params['EmissionMap'] = await loadTexture(context, reader, material.emissiveTexture.index)
-    readTextureTransforms(params, 'EmissionMap', material.emissiveTexture)
+    params.EmissionMap = await loadTexture(context, reader, material.emissiveTexture.index)
+    readTextureInfo(params, 'EmissionMap', material.emissiveTexture)
   }
   if (material.emissiveFactor != null) {
-    params['EmissionColor'] = material.emissiveFactor
+    params.EmissionColor = material.emissiveFactor
   }
   if (material.alphaMode != null) {
     switch (material.alphaMode) {
       case 'BLEND':
-        params['Blend'] = true
+        params.Blend = true
         break
       case 'MASK':
         if (material.alphaCutoff != null) {
-          params['AlphaClip'] = material.alphaCutoff
+          params.AlphaClip = material.alphaCutoff
         } else {
-          params['AlphaClip'] = 0.5
+          params.AlphaClip = 0.5
         }
         break
       case 'OPAQUE':
@@ -54,26 +54,23 @@ export async function loadGltfMaterial(
     }
   }
   if (material.doubleSided) {
-    params['DoubleSided'] = true
+    params.DoubleSided = true
   }
 
   if (material.pbrMetallicRoughness) {
     effect = 'pbr'
 
     const pbr = material.pbrMetallicRoughness
-    if (pbr.baseColorFactor != null) {
-      params['DiffuseColor'] = pbr.baseColorFactor
-    }
+    params.DiffuseColor = pbr.baseColorFactor || [1, 1, 1, 1]
+    params.MetallicRoughness = [pbr.metallicFactor ?? 1, pbr.roughnessFactor ?? 1]
+
     if (pbr.baseColorTexture != null) {
-      params['DiffuseMap'] = await loadTexture(context, reader, pbr.baseColorTexture.index)
-      readTextureTransforms(params, 'DiffuseMap', pbr.baseColorTexture)
-    }
-    if (pbr.metallicFactor != null || pbr.roughnessFactor) {
-      params['MetallicRoughness'] = [pbr.metallicFactor || 0, pbr.roughnessFactor || 0]
+      params.DiffuseMap = await loadTexture(context, reader, pbr.baseColorTexture.index)
+      readTextureInfo(params, 'DiffuseMap', pbr.baseColorTexture)
     }
     if (pbr.metallicRoughnessTexture != null) {
-      params['MetallicRoughnessMap'] = await loadTexture(context, reader, pbr.metallicRoughnessTexture.index)
-      readTextureTransforms(params, 'MetallicRoughnessMap', pbr.metallicRoughnessTexture)
+      params.MetallicRoughnessMap = await loadTexture(context, reader, pbr.metallicRoughnessTexture.index)
+      readTextureInfo(params, 'MetallicRoughnessMap', pbr.metallicRoughnessTexture)
     }
   }
 
@@ -81,22 +78,17 @@ export async function loadGltfMaterial(
     effect = 'default'
 
     const gloss: PbrMaterialSpecularGlossiness = material.extensions[KHR_materials_pbrSpecularGlossiness]
-    if (gloss.diffuseFactor) {
-      params['DiffuseColor'] = gloss.diffuseFactor
-    }
+    params.DiffuseColor = gloss.diffuseFactor || params.DiffuseColor || [1, 1, 1, 1]
+    params.SpecularColor = gloss.specularFactor || [1, 1, 1]
+    params.Glossiness = gloss.glossinessFactor || 1
+
     if (gloss.diffuseTexture) {
-      params['DiffuseMap'] = await loadTexture(context, reader, gloss.diffuseTexture.index)
-      readTextureTransforms(params, 'DiffuseMap', gloss.diffuseTexture)
-    }
-    if (gloss.specularFactor) {
-      params['SpecularColor'] = gloss.specularFactor
-    }
-    if (gloss.glossinessFactor) {
-      params['Glossiness'] = gloss.glossinessFactor
+      params.DiffuseMap = await loadTexture(context, reader, gloss.diffuseTexture.index)
+      readTextureInfo(params, 'DiffuseMap', gloss.diffuseTexture)
     }
     if (gloss.specularGlossinessTexture) {
-      params['SpecularMap'] = await loadTexture(context, reader, gloss.specularGlossinessTexture.index)
-      readTextureTransforms(params, 'SpecularMap', gloss.specularGlossinessTexture)
+      params.SpecularMap = await loadTexture(context, reader, gloss.specularGlossinessTexture.index)
+      readTextureInfo(params, 'SpecularMap', gloss.specularGlossinessTexture)
     }
   }
 
@@ -111,7 +103,7 @@ export async function loadGltfMaterial(
   }
 }
 
-function readTextureTransforms(params: any, name: string, info: TextureInfo) {
+function readTextureInfo(params: { [k: string]: unknown }, name: string, info: TextureInfo) {
   if (info.extensions && info.extensions[KHR_texture_transform]) {
     const transform = info.extensions[KHR_texture_transform] as TextureTransform
     const offsetScale = [1, 1, 0, 0]
@@ -126,6 +118,9 @@ function readTextureTransforms(params: any, name: string, info: TextureInfo) {
     if (transform.offset || transform.scale) {
       params[name + 'ScaleOffset'] = offsetScale
     }
+  }
+  if (info.texCoord > 0) {
+    params[name + 'Coord'] = info.texCoord
   }
 }
 

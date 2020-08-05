@@ -39,16 +39,14 @@ export async function loadGltfModel(
   for (const node of result.nodes) {
     const mesh = result.meshes[node.mesh] as ModelMeshOptions
     const skin = result.skins[node.skin]
-    if (!mesh || !skin) {
-      continue
-    }
-    for (const part of mesh.parts) {
-      const mtl = mesh.materials[part.materialId] as MaterialOptions
-      if (!mtl) {
-        continue
+    if (mesh) {
+      for (const part of mesh.parts) {
+        const mtl = mesh.materials[part.materialId] as MaterialOptions
+        if (mtl && skin) {
+          mtl.parameters.JointCount = skin.joints.length
+          mtl.parameters.WeightCount = 4 // TODO: can we get exact number of weight count from file?
+        }
       }
-      mtl.parameters.JointCount = skin.joints.length
-      mtl.parameters.WeightCount = 4 // TODO:
     }
   }
   return result
@@ -157,8 +155,12 @@ async function loadVertexBuffers(reader: DocumentReader, part: MeshPrimitive): P
     for (const attribute of attributes) {
       const accessor = doc.accessors[part.attributes[attribute]]
       const semantic = attribute
+        // glib uses lowercase semantics
         .toLowerCase()
+        // e.g. texcoord_0 -> texcoord
         .replace(/_0$/, '')
+        // e.g. texcoord_02 -> texcoord2
+        .replace(/_(\d+)$/, (_, g) => String(Number(g)))
         .replace(/^texcoord/, 'texture')
 
       if (bufferOptions.dataType == null) {

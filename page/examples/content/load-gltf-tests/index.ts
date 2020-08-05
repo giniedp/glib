@@ -154,15 +154,14 @@ loop((time, dt) => {
   // Update runtime variables
   cam.update(dt)
 
-  for (let id = 0; id < model.nodes.length; id++) {
-    const node = model.nodes[id]
+  model.hierarchy.walk((node, id) => {
     const mesh = model?.meshes[node.mesh]
     if (!mesh) {
-      continue
+      return
     }
     for (const part of mesh.parts) {
       const material = mesh.getMaterial(part.materialId)
-      const joints = pose.updateSkin(node.skin)
+      const joints = pose.updateSkin(node.skin, id)
       const params = material.parameters
       params.World = pose.transforms[id]
       params.View = cam.view
@@ -171,7 +170,6 @@ loop((time, dt) => {
 
       light.assign(0, params)
       if (joints) {
-        params.World = identity
         for (let i = 0; i < joints?.length; i++) {
           params[`Joints${i}`] = joints[i]
         }
@@ -186,5 +184,6 @@ loop((time, dt) => {
         return
       }
     }
-  }
+  })
+
 })

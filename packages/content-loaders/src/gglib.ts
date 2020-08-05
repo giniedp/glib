@@ -229,7 +229,9 @@ export const loadShaderEffectOptionsToShaderEffectArray = loader({
   output: ShaderEffect.Array,
   handle: (input: ShaderEffectOptions[], context): Promise<ShaderEffect[]> => {
     return Promise.all(
-      input.map((options) => context.pipeline.run(ShaderEffect.Options, ShaderEffect, options, context)),
+      input.map((options) => {
+        return context.pipeline.run(ShaderEffect.Options, ShaderEffect, options, context)
+      }),
     )
   },
 })

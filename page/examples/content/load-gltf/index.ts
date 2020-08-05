@@ -73,7 +73,7 @@ const cam = {
       cam.radial.phi -= dt * dx * 0.2
       cam.radial.theta -= dt * dy * 0.2
     }
-    const camNodeId = model?.nodes?.findIndex((it) => it.camera === (cam.camId - 1))
+    const camNodeId = model?.hierarchy?.nodes?.findIndex((it) => it.camera === (cam.camId - 1))
     if (camNodeId >= 0) {
       pose.transforms[camNodeId].getTranslation(cam.position)
       cam.view.initLookAt(cam.position, Vec3.$0.initSpherical(cam.radial.theta, -cam.radial.phi, 1).add(cam.position), Vec3.Up).invert()
@@ -136,15 +136,15 @@ loop((time, dt) => {
 
   cam.update(dt)
 
-  for (let id = 0; id < model.nodes.length; id++) {
-    const node = model.nodes[id]
+  model.hierarchy.walk((node, id) => {
     const mesh = model?.meshes[node.mesh]
     if (!mesh) {
-      continue
+      return
     }
+
     for (const part of mesh.parts) {
       const material = mesh.getMaterial(part.materialId)
-      const joints = pose.updateSkin(node.skin)
+      const joints = pose.updateSkin(node.skin, id)
 
       const params = material.parameters
       params.CameraPosition = cam.position
@@ -154,7 +154,6 @@ loop((time, dt) => {
 
       light.assign(0, params)
       if (joints) {
-        params.World = identity
         for (let i = 0; i < joints?.length; i++) {
           params[`Joints${i}`] = joints[i]
         }
@@ -166,8 +165,7 @@ loop((time, dt) => {
         // abort
         console.error(e)
         model = null
-        return
       }
     }
-  }
+  })
 })

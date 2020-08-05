@@ -1,6 +1,7 @@
 import { Type } from '@gglib/utils'
 import { ContentManager } from './ContentManager'
 import { Pipeline } from './Pipeline'
+import { LoaderOutput } from './Loader'
 
 /**
  * @public
@@ -24,12 +25,12 @@ export interface PipelineContext<T = any> {
   /**
    * The target type
    */
-  target: symbol | Type<T>
+  target: LoaderOutput<T>
   /**
    * Any user defined options that might be used during the pipeline
    *
    * @remarks
    * Not used or inspected by the pipeline or manager
    */
-  options?: any
+  options?: { [key: string]: unknown }
 }

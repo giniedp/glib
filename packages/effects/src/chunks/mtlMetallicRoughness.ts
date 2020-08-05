@@ -51,8 +51,8 @@ export interface MtlMetallicRoughness {
 export const FXC_MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = Object.freeze({
   defines: glsl`
     #ifdef METALLIC_ROUGHNESS_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE)
+        #define V_TEXTURE
       #endif
 
       #ifndef METALLIC_ROUGHNESS_MAP_UV

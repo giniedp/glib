@@ -54,8 +54,8 @@ export interface MtlSpecularDefs {
 export const FXC_MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = Object.freeze({
   defines: glsl`
     #ifdef SPECULAR_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE
       #endif
 
       #ifndef SPECULAR_MAP_UV

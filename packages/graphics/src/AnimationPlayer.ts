@@ -8,7 +8,7 @@ export class AnimationPlayer {
   /**
    * The model that is being animated
    */
-  public readonly data: AnimationData[]
+  public readonly data: ReadonlyArray<AnimationData>
 
   private clips: IAnimationClip[] = []
 
@@ -18,7 +18,7 @@ export class AnimationPlayer {
 
   private activeClip: IAnimationClip
   private looping: boolean
-  constructor(data: AnimationData[]) {
+  constructor(data: ReadonlyArray<AnimationData>) {
     this.data = data
     for (const data of this.data) {
       this.clips.push(new AnimationChannelsSampler(data))

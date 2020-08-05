@@ -176,8 +176,14 @@ export interface Material extends RootProperty {
   doubleSided?: boolean
 }
 
+/**
+ * https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit
+ */
 export const KHR_materials_unlit = 'KHR_materials_unlit'
 
+/**
+ * https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_materials_pbrSpecularGlossiness/README.md
+ */
 export const KHR_materials_pbrSpecularGlossiness = 'KHR_materials_pbrSpecularGlossiness'
 
 export interface PbrMaterialSpecularGlossiness extends Property {
@@ -229,4 +235,44 @@ export interface PbrMaterialSpecularGlossiness extends Property {
    * material (RGB components) and its glossiness (A component). The values are in sRGB space.
    */
   specularGlossinessTexture?: TextureInfo
+}
+
+/**
+ * https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_materials_clearcoat/README.md
+ */
+export const KHR_materials_clearcoat = 'KHR_materials_clearcoat'
+
+export interface MaterialClearcoat extends Property {
+  /**
+   * The clearcoat layer intensity.
+   */
+  clearcoatFactor?: number
+
+  /**
+   * The clearcoat layer intensity texture.
+   */
+  clearcoatTexture?: TextureInfo
+
+  /**
+   * The clearcoat layer roughness.
+   */
+  clearcoatRoughnessFactor?: number
+
+  /**
+   * The specular RGB color of the material.
+   *
+   * @remarks
+   * The specular RGB color of the material. This value is linear.
+   */
+  specularFactor?: number[]
+
+  /**
+   * The clearcoat layer roughness texture.
+   */
+  clearcoatRoughnessTexture?: TextureInfo
+
+  /**
+   * The clearcoat normal map texture.
+   */
+  clearcoatNormalTexture?: NormalTextureIinfo
 }

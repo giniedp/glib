@@ -22,91 +22,83 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
 
     const defines: DefaultProgramDefs = {}
 
-    let blendState: IBlendState = null
+    let blendState: IBlendState = {
+      ...BlendState.AlphaBlend
+    }
     let cullState: ICullState
 
     if (params.AlphaClip != null) {
       defines.ALPHA_CLIP = true
-      delete params.AlphaClip
     }
     if (typeof params.JointCount === 'number') {
       defines.SKINNING_JOINT_COUNT = params.JointCount
-      delete params.JointCount
     }
     if (typeof params.WeightCount === 'number') {
       defines.SKINNING_WEIGHT_COUNT = params.WeightCount
-      delete params.WeightCount
+    }
+
+    function defineMap(MAP: keyof DefaultProgramDefs) {
+      const MAP_SCALE_OFFSET = `${MAP}_SCALE_OFFSET`
+      const MAP_UV = `${MAP}_UV`
+
+      const prop = MAP.toLocaleLowerCase().split('_').map((it) => it[0].toLocaleUpperCase() + it.substring(1)).join('')
+      const map = params[prop]
+      const mapScaleOffset = params[`${prop}ScaleOffset`]
+      const mapCoord = params[`${prop}Coord`]
+
+      if (!map) {
+        return
+      }
+
+      defines[MAP as any] = true
+
+      if (mapScaleOffset) {
+        defines[MAP_SCALE_OFFSET] = mapScaleOffset != null
+      }
+      if (mapCoord) {
+        defines[MAP_UV] = `vTexture${mapCoord}.xy`
+        defines[`V_TEXTURE${mapCoord}`] = true
+      } else {
+        defines.V_TEXTURE = true
+      }
     }
 
     if (params.AmbientColor != null) {
       defines.AMBIENT_COLOR = true
     }
-    if (params.AmbientMap) {
-      defines.AMBIENT_MAP = true
-    }
-    if (params.AmbientMapScaleOffset) {
-      defines.AMBIENT_MAP_SCALE_OFFSET = params.AmbientMapScaleOffset != null
-    }
-
     if (params.DiffuseColor) {
       defines.DIFFUSE_COLOR = true
     }
-    if (params.DiffuseMap) {
-      defines.DIFFUSE_MAP = true
-    }
-    if (params.DiffuseMapScaleOffset) {
-      defines.DIFFUSE_MAP_SCALE_OFFSET = params.DiffuseMapScaleOffset != null
-    }
-
     if (params.SpecularColor) {
       defines.SPECULAR_COLOR = true
     }
-    if (params.SpecularMap) {
-      defines.SPECULAR_MAP = true
-    }
-    if (params.SpecularMapScaleOffset) {
-      defines.SPECULAR_MAP_SCALE_OFFSET = params.SpecularMapScaleOffset != null
-    }
-
     if (params.EmissionColor) {
       defines.EMISSION_COLOR = true
     }
-    if (params.EmissionMap) {
-      defines.EMISSION_MAP = true
-    }
-    if (params.EmissionMapScaleOffset) {
-      defines.EMISSION_MAP_SCALE_OFFSET = params.EmissionMapScaleOffset != null
-    }
 
-    if (params.OcclusionMap) {
-      defines.OCCLUSION_MAP = true
-    }
-    if (params.OcclusionMapScaleOffset) {
-      defines.OCCLUSION_MAP_SCALE_OFFSET = params.OcclusionMapScaleOffset != null
-    }
-
-    if (params.NormalMap) {
-      defines.NORMAL_MAP = true
-    }
-    if (params.NormalMapScaleOffset) {
-      defines.NORMAL_MAP_SCALE_OFFSET = params.NormalMapScaleOffset != null
-    }
+    defineMap('AMBIENT_MAP')
+    defineMap('DIFFUSE_MAP')
+    defineMap('SPECULAR_MAP')
+    defineMap('EMISSION_MAP')
+    defineMap('OCCLUSION_MAP')
+    defineMap('NORMAL_MAP')
 
     if (params.TextureScaleOffset) {
-      defines.V_TEXTURE1_SCALE_OFFSET = params.TextureScaleOffset != null
+      defines.V_TEXTURE_SCALE_OFFSET = params.TextureScaleOffset != null
+    }
+    if (params.Texture1ScaleOffset) {
+      defines.V_TEXTURE1_SCALE_OFFSET = params.Texture1ScaleOffset != null
     }
     if (params.Texture2ScaleOffset) {
       defines.V_TEXTURE2_SCALE_OFFSET = params.Texture2ScaleOffset != null
     }
 
     if ('Blend' in params) {
-      delete params.Blend
       blendState = {
         ...BlendState.AlphaBlend
       }
     }
     if ('DoubleSided' in params) {
-      delete params.DoubleSided
       cullState = {
         ...CullState.CullNone
       }

@@ -47,8 +47,8 @@ export interface MtlDiffuseDefs {
 export const FXC_MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = Object.freeze({
   defines: glsl`
     #ifdef DIFFUSE_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE
       #endif
 
       #ifndef DIFFUSE_MAP_UV

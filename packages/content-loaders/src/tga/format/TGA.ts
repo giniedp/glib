@@ -1,6 +1,6 @@
 import { BinaryReader } from '@gglib/utils'
 
-export interface TgaHeader {
+export interface TGAHeader {
   idLength: number
   colorMapType: number
   imageType: number
@@ -15,7 +15,7 @@ export interface TgaHeader {
   imageDescriptor: number
 }
 
-export interface TgaFooter {
+export interface TGAFooter {
   extensionOffset: number
   developerOffset: number
   signature: string
@@ -23,7 +23,7 @@ export interface TgaFooter {
   terminator: number
 }
 
-function readHeader(reader: BinaryReader): TgaHeader {
+function readHeader(reader: BinaryReader): TGAHeader {
   reader.seekAbsolute(0)
   return {
     idLength: reader.readByte(),
@@ -41,7 +41,7 @@ function readHeader(reader: BinaryReader): TgaHeader {
   }
 }
 
-function readFooter(reader: BinaryReader): TgaFooter {
+function readFooter(reader: BinaryReader): TGAFooter {
   reader.seekAbsolute(reader.data.byteLength - 26)
   const footer = {
     extensionOffset: reader.readInt(),
@@ -86,8 +86,8 @@ export class TGA {
     return new TGA().init(data).getImageData()
   }
 
-  public header: TgaHeader
-  public footer: TgaFooter
+  public header: TGAHeader
+  public footer: TGAFooter
 
   public colorData: Uint8Array
   public imageData: Uint8Array

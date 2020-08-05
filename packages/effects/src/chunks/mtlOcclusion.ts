@@ -43,8 +43,8 @@ export interface MtlOcclusionDefs {
 export const FXC_MTL_OCCLUSION: ShaderChunkSet<MtlOcclusionDefs> = Object.freeze({
   defines: glsl`
     #ifdef OCCLUSION_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE1)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE)
+        #define V_TEXTURE
       #endif
 
       #ifndef OCCLUSION_MAP_UV

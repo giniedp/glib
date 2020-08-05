@@ -57,8 +57,8 @@ export interface MtlAlphaDefs {
 export const FXC_MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = Object.freeze({
   defines: glsl`
     #ifdef ALPHA_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE
       #endif
 
       #ifndef ALPHA_MAP_UV

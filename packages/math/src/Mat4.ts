@@ -475,6 +475,23 @@ export class Mat4 {
   }
 
   /**
+   * Instantiates an array of matrices
+   *
+   * @param count - number of matrices to allocate
+   * @remarks
+   * Allocates one single continous Float32Array and gives each matrix
+   * its own subview of that arrays buffer.
+   */
+  public static alloc(count: number): Mat4[] {
+    const array = new Float32Array(16 * count)
+    const list: Mat4[] = []
+    for (let i = 0; i < count; i++) {
+      list[i] = new Mat4(array.subarray(i * 16, i * 16 + 16)).initIdentity()
+    }
+    return list
+  }
+
+  /**
    * Creates a matrix by reading the arguments in column major order
    */
   public static create(

@@ -1,5 +1,8 @@
 import { Property } from './common'
 
+/**
+ * https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_texture_transform/README.md
+ */
 export const KHR_texture_transform = 'KHR_texture_transform'
 
 export interface TextureTransform {
@@ -40,5 +43,5 @@ export interface TextureInfo extends Property {
    * corresponds to `TEXCOORD_0`). Mesh must have corresponding texture coordinate attributes
    * for the material to be applicable to it.
    */
-  textCoord?: number
+  texCoord?: number
 }

@@ -430,7 +430,7 @@ export class TerrainMaterial extends Material {
 
   private updateEffect() {
     this.defines.SPLATTING = true
-    this.defines.V_TEXTURE1 = true
+    this.defines.V_TEXTURE = true
 
     if (this.useTangentPlane) {
       delete this.defines.V_TANGENT

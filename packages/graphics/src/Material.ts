@@ -1,4 +1,4 @@
-import { uuid } from '@gglib/utils'
+import { uuid, TypeToken } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderProgram, ShaderUniformValue } from './resources'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
@@ -37,17 +37,29 @@ export class Material {
   /**
    * A symbol identifying the Array {@link Material} type.
    */
-  public static readonly Array = Symbol('Material[]')
+  public static readonly Array = new TypeToken<Material[]>('Material[]', {
+    factory: () => {
+      return []
+    },
+  })
 
   /**
    * A symbol identifying the {@link MaterialOptions} type.
    */
-  public static readonly Options = Symbol('MaterialOptions')
+  public static readonly Options = new TypeToken<MaterialOptions>('MaterialOptions', {
+    factory: () => {
+      return { effect: 'default' } as MaterialOptions
+    },
+  })
 
   /**
    * A symbol identifying the Array {@link MaterialOptions} type.
    */
-  public static readonly OptionsArray = Symbol('MaterialOptions[]')
+  public static readonly OptionsArray = new TypeToken<MaterialOptions[]>('MaterialOptions[]', {
+    factory: () => {
+      return []
+    }
+  })
 
   /**
    * A unique id

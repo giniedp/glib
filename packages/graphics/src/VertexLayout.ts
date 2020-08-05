@@ -17,11 +17,11 @@ export interface VertexAttribute {
    */
   offset?: number
   /**
-   * The data type of a single element in the vertex attribute
+   * The data type of a single element in this attribute
    */
   type: DataTypeOption
   /**
-   * The number of `type` elements in this attribute
+   * The number of elements in this attribute. e.g. a vec3 has 3 elements
    */
   elements: number
   /**
@@ -33,13 +33,67 @@ export interface VertexAttribute {
    */
   normalize?: boolean
   /**
-   *
+   * If true, all elements are packed into a single element
    */
   packed?: boolean
 }
 
-export interface VertexLayoutPreset {
-  [key: string]: VertexAttribute
+const f = Object.freeze
+
+/**
+ * Contains vertex attribute presets for common attribute names like `position`, `color`, `texture` etc.
+ */
+export const CommonVertexAttributes = {
+  position: f({
+    type: 'float',
+    elements: 3,
+  }),
+  color: f({
+    type: 'ubyte',
+    elements: 4,
+    normalize: true,
+    packed: true,
+  }),
+  normal: f({
+    type: 'float',
+    elements: 3,
+  }),
+  tangent: f({
+    type: 'float',
+    elements: 3,
+  }),
+  bitangent: f({
+    type: 'float',
+    elements: 3,
+  }),
+  texture: f({
+    type: 'float',
+    elements: 2,
+  }),
+}
+
+/**
+ * Gets a vertex attribute specification for given attribute semantic
+ *
+ * @remarks
+ * Matches only `/[a-z]+/` characters in the semantic. Meaning `texture`, `texture1`, `texture_2` all return
+ * the same attribute representation
+ */
+export function commonVertexAttribute(semantic: string, overrides?: Partial<VertexAttribute>): VertexAttribute {
+  semantic = semantic.match(/[a-z]+/)[0]
+  const preset = CommonVertexAttributes[semantic]
+  if (!preset) {
+    return null
+  }
+  if (overrides) {
+    return {
+      ...CommonVertexAttributes[semantic],
+      ...overrides,
+    }
+  }
+  return {
+    ...CommonVertexAttributes[semantic],
+  }
 }
 
 /**
@@ -49,68 +103,6 @@ export interface VertexLayoutPreset {
  */
 export class VertexLayout {
   [key: string]: VertexAttribute
-
-  /**
-   * Contains vertex attribute presets for common attribute names like `position`, `color`, `texture` etc.
-   */
-  public static preset: VertexLayoutPreset = {
-    position: {
-      type: 'float',
-      elements: 3,
-    },
-    color: {
-      type: 'ubyte',
-      elements: 4,
-      normalize: true,
-      packed: true,
-    },
-    color0: {
-      type: 'ubyte',
-      elements: 4,
-      normalize: true,
-      packed: true,
-    },
-    color1: {
-      type: 'ubyte',
-      elements: 4,
-      normalize: true,
-      packed: true,
-    },
-    color2: {
-      type: 'ubyte',
-      elements: 4,
-      normalize: true,
-      packed: true,
-    },
-    normal: {
-      type: 'float',
-      elements: 3,
-    },
-    tangent: {
-      type: 'float',
-      elements: 3,
-    },
-    bitangent: {
-      type: 'float',
-      elements: 3,
-    },
-    texture: {
-      type: 'float',
-      elements: 2,
-    },
-    texcoord0: {
-      type: 'float',
-      elements: 2,
-    },
-    texcoord1: {
-      type: 'float',
-      elements: 2,
-    },
-    texcoord2: {
-      type: 'float',
-      elements: 2,
-    },
-  }
 
   /**
    * Calls {@link VertexLayout.create} if parameter is a string, otherwise simply returns the input value
@@ -146,15 +138,13 @@ export class VertexLayout {
 
     for (let name of names) {
       name = String(name).toLowerCase()
-      if (!hasOwnProperty(VertexLayout.preset, name)) {
-        Log.l('[VertexLayout] unknown element name ', name)
-        continue
+      const attribute = commonVertexAttribute(name, { offset: offset })
+      if (attribute) {
+        result[name] = attribute
+        offset += dataTypeSize(attribute.type) * attribute.elements
+      } else {
+        Log.l('[VertexLayout] No preset found for semantic:', name)
       }
-
-      let element = extend<VertexAttribute>({} as any, VertexLayout.preset[name], { offset: offset })
-
-      result[name] = element
-      offset += dataTypeSize(element.type) * element.elements
     }
 
     return result

@@ -45,8 +45,8 @@ export interface MtlAmbientDefs {
 export const FXC_MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = Object.freeze({
   defines: glsl`
     #ifdef AMBIENT_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE
       #endif
 
       #ifndef AMBIENT_MAP_UV

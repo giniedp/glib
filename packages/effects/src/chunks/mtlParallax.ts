@@ -48,8 +48,8 @@ export const FXC_MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = Object.freeze({
   defines: glsl`
     #ifdef PARALLAX_MAP
 
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE
       #endif
 
       #ifndef PARALLAX_MAP_UV

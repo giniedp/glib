@@ -42,8 +42,8 @@ export interface MtlNormalDefs {
 export const FXC_MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = Object.freeze({
   defines: glsl`
     #ifdef NORMAL_MAP
-      #if !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
-        #define V_TEXTURE1
+      #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
+        #define V_TEXTURE
       #endif
 
       #ifndef NORMAL_MAP_UV

@@ -1,4 +1,4 @@
-import { copy } from '@gglib/utils'
+import { copy, TypeToken } from '@gglib/utils'
 
 import { ShaderTechnique, ShaderTechniqueOptions } from './ShaderTechnique'
 
@@ -66,17 +66,29 @@ export class ShaderEffect {
   /**
    * A symbol identifying the Array {@link ShaderEffect} type.
    */
-  public static readonly Array = Symbol('ShaderEffect[]')
+  public static readonly Array = new TypeToken<ShaderEffect[]>('ShaderEffect[]', {
+    factory: () => {
+      return []
+    },
+  })
 
   /**
    * A symbol identifying the {@link ShaderEffectOptions} type.
    */
-  public static readonly Options = Symbol('ShaderEffectOptions')
+  public static readonly Options = new TypeToken<ShaderEffectOptions>('ShaderEffectOptions', {
+    factory: () => {
+      return {}
+    },
+  })
 
   /**
    * A symbol identifying the Array {@link ShaderEffectOptions} type.
    */
-  public static readonly OptionsArray = Symbol('ShaderEffectOptions[]')
+  public static readonly OptionsArray = new TypeToken<ShaderEffectOptions[]>('ShaderEffectOptions[]', {
+    factory: () => {
+      return []
+    },
+  })
 
   /**
    * The graphics device
@@ -117,8 +129,8 @@ export class ShaderEffect {
    * @param options - The options for initialization
    */
   public setup(options: ShaderEffectOptions) {
-    (this as { name: string }).name = options.name;
-    (this as { parameters: any }).parameters = options.parameters || {}
+    ;(this as { name: string }).name = options.name
+    ;(this as { parameters: any }).parameters = options.parameters || {}
 
     const techniques = this.techniques as ShaderTechnique[]
     techniques.length = 0
@@ -130,12 +142,16 @@ export class ShaderEffect {
       program = this.device.createProgram(options.program)
     }
     if (program) {
-      techniques.push(new ShaderTechnique(this.device, {
-        passes: [{
-          program: program,
-        }],
-      }));
-      (this as { technique: ShaderTechnique }).technique = this.getTechnique(0)
+      techniques.push(
+        new ShaderTechnique(this.device, {
+          passes: [
+            {
+              program: program,
+            },
+          ],
+        }),
+      )
+      ;(this as { technique: ShaderTechnique }).technique = this.getTechnique(0)
     } else if (options.techniques) {
       for (let technique of makeArray(options.techniques)) {
         if (technique instanceof ShaderTechnique) {
@@ -144,7 +160,7 @@ export class ShaderEffect {
           techniques.push(new ShaderTechnique(this.device, technique))
         }
       }
-      (this as { technique: ShaderTechnique }).technique = this.getTechnique(options.technique || 0)
+      ;(this as { technique: ShaderTechnique }).technique = this.getTechnique(options.technique || 0)
     } else {
       throw new Error('ShaderEffect can not be created. techniques (and program) are missing')
     }
@@ -159,8 +175,8 @@ export class ShaderEffect {
   /**
    * Switches to another technique identified by given name or index
    */
-  public useTechnique(nameOrIndex: number|string): this {
-    (this as { technique: ShaderTechnique }).technique = this.getTechnique(nameOrIndex)
+  public useTechnique(nameOrIndex: number | string): this {
+    ;(this as { technique: ShaderTechnique }).technique = this.getTechnique(nameOrIndex)
     return this
   }
 
@@ -170,7 +186,7 @@ export class ShaderEffect {
    * @remarks
    * Throws an error if no technique can be found
    */
-  public getTechnique(nameOrIndex: string|number): ShaderTechnique {
+  public getTechnique(nameOrIndex: string | number): ShaderTechnique {
     let result: ShaderTechnique
     if (typeof nameOrIndex === 'number') {
       result = this.techniques[nameOrIndex]
@@ -186,7 +202,7 @@ export class ShaderEffect {
   /**
    * Gets a pass by name or index from the currently active {@link ShaderEffect.technique}
    */
-  public pass(passIdentifier: string|number): ShaderPass {
+  public pass(passIdentifier: string | number): ShaderPass {
     return this.technique.pass(passIdentifier)
   }
 
