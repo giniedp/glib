@@ -7,11 +7,20 @@
   overflow: hidden;
 
   $toolbar-size: 3rem;
-  $sidebar-size: 15rem;
+  $sidebar-size: 20rem;
   $sidebar-speed: .25s;
 
+  border-left: 1px solid $gray-200;
+  border-right: 1px solid $gray-200;
+  width: 100%;
+
+  @media (min-width: 100rem) {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100rem;
+  }
+
   .example-nav {
-    background: $dark;
     flex: none;
     max-width:$sidebar-size;
     width: $sidebar-size;
@@ -19,6 +28,7 @@
     transition: transform $sidebar-speed, opacity $sidebar-speed;
     z-index: 2;
     opacity: 1;
+    border-right: 1px solid $gray-200;
 
     position: absolute;
     top: 0;
@@ -32,8 +42,8 @@
     overflow-y: auto;
 
     .list-group {
-      margin-bottom: 2rem;
-      padding: 0 1rem;
+      margin-bottom: 1rem;
+      padding: 0;
     }
 
     .list-group-item {
@@ -41,12 +51,10 @@
       padding: 0.5rem 1rem;
       line-height: 1em;
       border: none;
-      border-left: 0px solid $gray-200;
-      transition: border-width 0.1s ease-in-out;
-      border-bottom: 1px solid #2d333b;
+      transition: background-color 0.1s ease-in-out;
 
       &.active {
-        border-left: 4px solid $gray-200;
+        background-color: $gray-200;
       }
 
       h5 {
@@ -60,15 +68,15 @@
 
     a {
       text-decoration: none;
-      color: $gray-600;
+      color: $dark;
     }
 
     a:hover {
-      color: $gray-400;
+      // color: $gray-400;
     }
 
     a.active {
-      color: $gray-200;
+      // color: $gray-200;
     }
   }
 
