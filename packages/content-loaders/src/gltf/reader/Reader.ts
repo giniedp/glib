@@ -1,20 +1,23 @@
-import { Document } from './Document'
-import { Texture } from './Texture'
-import { Sampler } from './Sampler'
-import { Image } from './Image'
-import { Buffer } from './Buffer'
-import { BufferView } from './BufferView'
-import { Accessor, AccessorComponentType } from './Accessor'
+import {
+  GLTFDocument,
+  GLTFTexture,
+  GLTFSampler,
+  GLTFImage,
+  GLTFBuffer,
+  GLTFBufferView,
+  GLTFAccessor,
+  GLTFAccessorComponentType,
+} from '../format'
 
-export class DocumentReader {
-
+export class GLTFReader {
   private cache = new Map<string, Promise<any>>()
 
-  public constructor(public readonly doc: Document, private loader: (buffer: Buffer) => Promise<ArrayBuffer>) {
+  public constructor(public readonly doc: GLTFDocument, private loader: (buffer: GLTFBuffer) => Promise<ArrayBuffer>) {}
 
-  }
-
-  async loadTexture<T>(index: number, loader: (texture: Texture, sampler: Sampler, image: Image) => Promise<T>) {
+  async loadTexture<T>(
+    index: number,
+    loader: (texture: GLTFTexture, sampler: GLTFSampler, image: GLTFImage) => Promise<T>,
+  ) {
     return this.cached(`texture-${index}`, async () => {
       if (!this.doc.textures?.[index]) {
         throw new Error(`[glTF] texture not found: ${index}`)
@@ -26,34 +29,37 @@ export class DocumentReader {
     })
   }
 
-  public loadAccessor(index: number): Promise<AccessorBase> {
-    return this.cached(`accessor-${index}`, async (): Promise<AccessorBase> => {
-      if (!this.doc.accessors?.[index]) {
-        throw new Error(`[glTF] accessor not found: ${index}`)
-      }
-      const accessor = this.doc.accessors[index]
+  public loadAccessor(index: number): Promise<GLTFAccessorBase> {
+    return this.cached(
+      `accessor-${index}`,
+      async (): Promise<GLTFAccessorBase> => {
+        if (!this.doc.accessors?.[index]) {
+          throw new Error(`[glTF] accessor not found: ${index}`)
+        }
+        const accessor = this.doc.accessors[index]
 
-      if (accessor.bufferView >= 0) {
-        const view = await this.loadBufferView(accessor.bufferView)
-        return new BufferViewAccessor(accessor, view.buffer, view)
-      }
+        if (accessor.bufferView >= 0) {
+          const view = await this.loadBufferView(accessor.bufferView)
+          return new GLTFBufferViewAccessor(accessor, view.buffer, view)
+        }
 
-      if (accessor.sparse) {
-        const sparse = accessor.sparse
-        const iView = await this.loadBufferView(sparse.indices.bufferView)
+        if (accessor.sparse) {
+          const sparse = accessor.sparse
+          const iView = await this.loadBufferView(sparse.indices.bufferView)
 
-        // const iData = createTypedArray({
-        //   buffer: iView.buffer,
-        //   byteOffset: iView.byteOffset || 0,
+          // const iData = createTypedArray({
+          //   buffer: iView.buffer,
+          //   byteOffset: iView.byteOffset || 0,
 
-        // }, sparse.indices.componentType as number)
-        // const vView = await this.loadBufferView(sparse.values.bufferView)
-        // const vData = createTypedArray(vView, accessor.componentType as number)
-        // return new SparseAccessor(accessor, iData, vView, vData)
-      }
+          // }, sparse.indices.componentType as number)
+          // const vView = await this.loadBufferView(sparse.values.bufferView)
+          // const vData = createTypedArray(vView, accessor.componentType as number)
+          // return new SparseAccessor(accessor, iData, vView, vData)
+        }
 
-      throw new Error('[]glTF] buffer accessor has neither a view nor a sparse definition')
-    })
+        throw new Error('[]glTF] buffer accessor has neither a view nor a sparse definition')
+      },
+    )
   }
 
   public async loadBufferView(index: number) {
@@ -72,12 +78,15 @@ export class DocumentReader {
   }
 
   public loadBuffer(index: number): Promise<ArrayBuffer> {
-    return this.cached(`buffer-${index}`, async (): Promise<ArrayBuffer> => {
-      if (!this.doc.buffers?.[index]) {
-        throw new Error(`[glTF] buffer not found: ${index}`)
-      }
-      return this.loader(this.doc.buffers[index])
-    })
+    return this.cached(
+      `buffer-${index}`,
+      async (): Promise<ArrayBuffer> => {
+        if (!this.doc.buffers?.[index]) {
+          throw new Error(`[glTF] buffer not found: ${index}`)
+        }
+        return this.loader(this.doc.buffers[index])
+      },
+    )
   }
 
   private cached<T>(key: string, loadFn: () => Promise<T>): Promise<T> {
@@ -88,11 +97,11 @@ export class DocumentReader {
   }
 }
 
-export abstract class AccessorBase {
+export abstract class GLTFAccessorBase {
   /**
    * The gltf accessor definition
    */
-  public readonly accessor: Accessor
+  public readonly accessor: GLTFAccessor
 
   /**
    * Specifies if the attribute is a scalar, vector, or matrix.
@@ -145,17 +154,17 @@ export abstract class AccessorBase {
    */
   public get componentSize(): number {
     switch (this.accessor.componentType) {
-      case AccessorComponentType.BYTE:
+      case GLTFAccessorComponentType.BYTE:
         return 1
-      case AccessorComponentType.FLOAT:
+      case GLTFAccessorComponentType.FLOAT:
         return 4
-      case AccessorComponentType.SHORT:
+      case GLTFAccessorComponentType.SHORT:
         return 2
-      case AccessorComponentType.UNSIGNED_BYTE:
+      case GLTFAccessorComponentType.UNSIGNED_BYTE:
         return 1
-      case AccessorComponentType.UNSIGNED_INT:
+      case GLTFAccessorComponentType.UNSIGNED_INT:
         return 4
-      case AccessorComponentType.UNSIGNED_SHORT:
+      case GLTFAccessorComponentType.UNSIGNED_SHORT:
         return 2
     }
   }
@@ -165,7 +174,7 @@ export abstract class AccessorBase {
 
   public abstract readonly data: AnyTypedArray
 
-  constructor(accessor: Accessor) {
+  constructor(accessor: GLTFAccessor) {
     this.accessor = accessor
     this.byteOffset = accessor.byteOffset || 0
     this.byteStride = this.componentSize * this.componentCount
@@ -174,11 +183,14 @@ export abstract class AccessorBase {
   public getDataWithoutOffset() {
     if (this.byteOffset) {
       const componentCount = this.byteStride / this.componentSize
-      const result = createTypedArray({
-        buffer: this.data.buffer,
-        byteOffset: this.data.byteOffset + this.byteOffset,
-        count: this.attributeCount * componentCount,
-      }, this.componentType)
+      const result = createTypedArray(
+        {
+          buffer: this.data.buffer,
+          byteOffset: this.data.byteOffset + this.byteOffset,
+          count: this.attributeCount * componentCount,
+        },
+        this.componentType,
+      )
       return result
     }
     return this.data
@@ -205,17 +217,12 @@ export abstract class AccessorBase {
   }
 }
 
-export class BufferViewAccessor extends AccessorBase {
-
+export class GLTFBufferViewAccessor extends GLTFAccessorBase {
   public readonly data: AnyTypedArray
   private stride: number
   private offset: number
 
-  constructor(
-    public readonly accessor: Accessor,
-    buffer: ArrayBuffer,
-    view: Omit<BufferView, 'buffer'>,
-  ) {
+  constructor(public readonly accessor: GLTFAccessor, buffer: ArrayBuffer, view: Omit<GLTFBufferView, 'buffer'>) {
     super(accessor)
     this.offset = this.byteOffset / this.componentSize
     if (view.byteStride) {
@@ -223,11 +230,14 @@ export class BufferViewAccessor extends AccessorBase {
     } else {
       this.stride = this.componentCount
     }
-    this.data = createTypedArray({
-      buffer: buffer,
-      byteOffset: view.byteOffset,
-      count: this.offset + this.attributeCount * this.stride
-    }, this.componentType)
+    this.data = createTypedArray(
+      {
+        buffer: buffer,
+        byteOffset: view.byteOffset,
+        count: this.offset + this.attributeCount * this.stride,
+      },
+      this.componentType,
+    )
   }
 
   public readComponent(aIndex: number, cIndex: number): number {
@@ -235,14 +245,13 @@ export class BufferViewAccessor extends AccessorBase {
   }
 }
 
-export class SparseAccessor extends AccessorBase {
-
+export class GLTFSparseAccessor extends GLTFAccessorBase {
   public readonly data: AnyTypedArray
 
   constructor(
-    public readonly accessor: Accessor,
+    public readonly accessor: GLTFAccessor,
     public readonly indices: AnyTypedArray,
-    public readonly valuesView: Omit<BufferView, 'buffer'>,
+    public readonly valuesView: Omit<GLTFBufferView, 'buffer'>,
     public readonly valuesArray: AnyTypedArray,
   ) {
     super(accessor)
@@ -263,7 +272,10 @@ export class SparseAccessor extends AccessorBase {
   }
 }
 
-function createTypedArray(spec: { buffer: ArrayBuffer, byteOffset?: number, count: number }, type: number): AnyTypedArray {
+function createTypedArray(
+  spec: { buffer: ArrayBuffer; byteOffset?: number; count: number },
+  type: number,
+): AnyTypedArray {
   const TYPE = ArrayType[type]
   const result = new TYPE(spec.buffer, spec.byteOffset || 0, spec.count)
   return result
@@ -283,13 +295,13 @@ export const ArrayType = Object.freeze({
 })
 
 type AnyTypedArray =
- | Int8Array
- | Int16Array
- | Int32Array
- | Uint8Array
- | Uint16Array
- | Uint32Array
- | Float32Array
- | Uint16Array
- | Uint16Array
- | Uint16Array
+  | Int8Array
+  | Int16Array
+  | Int32Array
+  | Uint8Array
+  | Uint16Array
+  | Uint32Array
+  | Float32Array
+  | Uint16Array
+  | Uint16Array
+  | Uint16Array

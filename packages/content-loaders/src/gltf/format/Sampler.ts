@@ -1,9 +1,9 @@
-import { RootProperty } from './common'
+import { GLTFRootProperty } from './common'
 
 /**
  * Texture sampler properties for filtering and wrapping modes.
  */
-export interface Sampler extends RootProperty {
+export interface GLTFSampler extends GLTFRootProperty {
   /**
    * Magnification filter.
    *

@@ -1,8 +1,8 @@
-import { DocumentReader } from './format'
 import { AnimationData, AnimationDataChannels } from '@gglib/graphics'
 import { Log, append } from '@gglib/utils'
+import { GLTFReader } from './reader'
 
-export async function loadGltfAnimations(reader: DocumentReader): Promise<AnimationData[]> {
+export async function loadGltfAnimations(reader: GLTFReader): Promise<AnimationData[]> {
   const result: AnimationData[] = []
 
   for (const srcAnimation of reader.doc.animations || []) {

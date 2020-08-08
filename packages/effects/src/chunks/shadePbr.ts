@@ -40,7 +40,7 @@ export const FXC_SHADE_PBR: ShaderChunkSet = Object.freeze({
       float roughness = surface.PBR.g;
 
       vec3 f0 = vec3(0.04);
-      vec3 diffuseColor = surface.Diffuse.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
+      vec3 diffuseColor = mix(surface.Diffuse.rgb * (vec3(1.0) - f0), vec3(0), metallic);
       vec3 specularColor = mix(f0, surface.Diffuse.rgb, metallic);
 
       float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);

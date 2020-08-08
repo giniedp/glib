@@ -55,7 +55,7 @@ export const loadStlToModelOptions = loader({
       .calculateBoundings()
       .closeMesh({
         materials: [{
-          effect: 'default',
+          technique: 'default',
           parameters: {
             DiffuseColor: [1, 1, 1],
             SpecularColor: [1, 1, 1],

@@ -1,11 +1,11 @@
-import { Property } from './common'
+import { GLTFProperty } from './common'
 
 /**
  * https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_texture_transform/README.md
  */
 export const KHR_texture_transform = 'KHR_texture_transform'
 
-export interface TextureTransform {
+export interface GLTFTextureTransform {
   /**
    * The offset of the UV coordinate origin as a factor of the texture dimensions.
    */
@@ -28,7 +28,7 @@ export interface TextureTransform {
 /**
  * Reference to a texture.
  */
-export interface TextureInfo extends Property {
+export interface GLTFTextureInfo extends GLTFProperty {
   /**
    * The index of the texture.
    */

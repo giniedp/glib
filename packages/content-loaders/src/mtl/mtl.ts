@@ -1,7 +1,7 @@
-import { Material, MaterialOptions } from '@gglib/graphics'
+import { Material, MaterialOptions, ShaderEffectOptions } from '@gglib/graphics'
 import { loader, resolveUri, PipelineContext } from '@gglib/content'
 
-import { MTL, MtlData, MtlTextureData } from './format'
+import { MTL, MtlTextureData } from './format'
 
 /**
  * @public
@@ -15,14 +15,21 @@ export const loadMtlToMaterialOptions = loader({
 })
 
 /**
+ * Downloads text from file, parses it using {@link MTL.parse} and converts into {@link MaterialOptions} array.
  * @public
+ * @remarks
+ * This loader consults the `MTL` -> `Material.Options` loader if available.
  */
 export const loadMtlToMaterialOptionsArray = loader({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.OptionsArray,
   handle: async (_, context): Promise<MaterialOptions[]> => {
     const text = (await context.manager.downloadText(context.source)).content
-    return Promise.all(MTL.parse(text).map((data) => convertMaterial(data, context)))
+    const list = MTL.parse(text)
+    if (context.pipeline.canLoad(MTL, Material.Options)) {
+      return Promise.all(list.map((mtl) => context.pipeline.run(MTL, Material.Options, mtl, context)))
+    }
+    return Promise.all(list.map((data) => convertMaterial(data, context)))
   },
 })
 
@@ -42,11 +49,11 @@ const textureMap = {
   refl: 'ReflectionMap',
 }
 
-async function convertMaterial(mtl: MtlData, context: PipelineContext): Promise<MaterialOptions> {
-  const result: MaterialOptions<string> = {
+async function convertMaterial(mtl: MTL, context: PipelineContext): Promise<MaterialOptions> {
+  const result: MaterialOptions<ShaderEffectOptions> = {
     name: mtl.name,
     parameters: {},
-    effect: 'default',
+    technique: 'default',
   }
   const params = result.parameters
 

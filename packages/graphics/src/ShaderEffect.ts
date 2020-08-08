@@ -17,7 +17,7 @@ export interface ShaderEffectOptions {
    */
   name?: string
   /**
-   * The parameters to be applied to the effect
+   * The default set of parameters
    */
   parameters?: { [key: string]: ShaderUniformValue }
   /**

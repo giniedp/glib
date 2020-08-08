@@ -15,16 +15,17 @@ import { copy } from '@gglib/utils'
 import { BoundingSphere, BoundingBox } from '@gglib/math'
 import { PipelineContext } from '@gglib/content'
 
-import { DocumentReader, Scene, Mesh, MeshPrimitive, AccessorType } from './format'
+import { GLTFScene, GLTFMesh, GLTFMeshPrimitive, GLTFAccessorType } from './format'
 
 import { loadGltfAnimations } from './gltfAnimations'
 import { loadGltfMaterial } from './gltfMaterials'
 import { loadGltfSkins } from './gltfSkins'
+import { GLTFReader } from './reader'
 
 export async function loadGltfModel(
   context: PipelineContext,
-  reader: DocumentReader,
-  scene: Scene,
+  reader: GLTFReader,
+  scene: GLTFScene,
 ): Promise<ModelOptions> {
 
   const result: ModelOptions = {
@@ -46,13 +47,23 @@ export async function loadGltfModel(
           mtl.parameters.JointCount = skin.joints.length
           mtl.parameters.WeightCount = 4 // TODO: can we get exact number of weight count from file?
         }
+        const vb = part.vertexBuffer as BufferOptions[]
+        if (mtl && vb.some((it) => !!it.layout.color)) {
+          mtl.parameters.VertexColor = true
+        }
+        if (mtl && vb.some((it) => !!it.layout.color1)) {
+          mtl.parameters.VertexColor1 = true
+        }
+        if (mtl && vb.some((it) => !!it.layout.color2)) {
+          mtl.parameters.VertexColor2 = true
+        }
       }
     }
   }
   return result
 }
 
-async function loadMeshes(context: PipelineContext, reader: DocumentReader): Promise<ModelMeshOptions[]> {
+async function loadMeshes(context: PipelineContext, reader: GLTFReader): Promise<ModelMeshOptions[]> {
   const result: ModelMeshOptions[] = []
   for (const mesh of reader.doc.meshes) {
     const parts = await loadMeshParts(reader, mesh)
@@ -78,7 +89,7 @@ async function loadMeshes(context: PipelineContext, reader: DocumentReader): Pro
   return result
 }
 
-async function loadMeshParts(reader: DocumentReader, mesh: Mesh): Promise<ModelMeshPartOptions[]> {
+async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<ModelMeshPartOptions[]> {
   let min = [0, 0, 0]
   let max = [0, 0, 0]
   const doc = reader.doc
@@ -118,7 +129,7 @@ async function loadMeshParts(reader: DocumentReader, mesh: Mesh): Promise<ModelM
   return Promise.all(result)
 }
 
-async function loadIndexBuffer(reader: DocumentReader, part: MeshPrimitive): Promise<BufferOptions> {
+async function loadIndexBuffer(reader: GLTFReader, part: GLTFMeshPrimitive): Promise<BufferOptions> {
   if (part.indices == null) {
     return null
   }
@@ -130,7 +141,7 @@ async function loadIndexBuffer(reader: DocumentReader, part: MeshPrimitive): Pro
   }
 }
 
-async function loadVertexBuffers(reader: DocumentReader, part: MeshPrimitive): Promise<BufferOptions[]> {
+async function loadVertexBuffers(reader: GLTFReader, part: GLTFMeshPrimitive): Promise<BufferOptions[]> {
   const vbOptions: BufferOptions[] = []
   const bufferViewGroups = new Map<number, string[]>()
   const doc = reader.doc
@@ -206,7 +217,7 @@ async function loadVertexBuffers(reader: DocumentReader, part: MeshPrimitive): P
   return vbOptions
 }
 
-function elementCount(type: AccessorType) {
+function elementCount(type: GLTFAccessorType) {
   return {
     SCALAR: 1,
     VEC2: 2,

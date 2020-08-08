@@ -24,15 +24,18 @@ const content = new ContentManager(device)
 
 content.downloadJSON({ url: indexFile }).then((data: Data<GltfIndex>) => {
   TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
-    data.content.forEach((mdl) => {
-      q.group(mdl.name, (f) => {
-        f.image(null, {
-          src: `${baseUrl}/${mdl.name}/${mdl.screenshot}`,
+    q.accordeon({ autoscroll: false }, (a) => {
+      data.content.forEach((mdl) => {
+        a.group(mdl.name, (f) => {
+          f.image(null, {
+            height: 150,
+            src: `${baseUrl}/${mdl.name}/${mdl.screenshot}`,
+          })
+          Object.entries(mdl.variants).forEach(([name, path]) => {
+            f.button(name, { onClick: () => loadModel(`${baseUrl}/${mdl.name}/${name}/${path}`) })
+          })
+          f.button('open in github', { onClick: () => window.open(`${githubUrl}/${mdl.name}`, '_blank') })
         })
-        Object.entries(mdl.variants).forEach(([name, path]) => {
-          f.button(name, { onClick: () => loadModel(`${baseUrl}/${mdl.name}/${name}/${path}`) })
-        })
-        f.button('open in github', { onClick: () => window.open(`${githubUrl}/${mdl.name}`, '_blank') })
       })
     })
   })

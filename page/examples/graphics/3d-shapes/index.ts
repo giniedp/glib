@@ -52,6 +52,10 @@ const meshRotation = {
   yaw: 0,
   pitch: 0.25,
   roll: 0,
+  update: {
+    dx: 0,
+    dy: 0,
+  }
 }
 
 function destroyMesh() {
@@ -142,71 +146,67 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
   buildMesh('Cube')
 
   q.group('Rotation', { open: true }, (g) => {
-    g.slider(meshRotation, 'yaw', { min: -1, max: 1, step: 0.01 })
-    g.slider(meshRotation, 'pitch', { min: -1, max: 1, step: 0.01 })
-    g.slider(meshRotation, 'roll', { min: -1, max: 1, step: 0.01 })
+    g.pad(meshRotation, 'update', {
+      label: '',
+      keys: ['dx', 'dy'],
+      xRange: [-1, 1],
+      yRange: [-1, 1],
+    })
+  })
+  q.accordeon((a) => {
+    a.group('Cube', { onOpen: () => buildMesh('Cube') }, (g) => {
+      g.slider(builderFunctionOptions.Cube, 'size', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Cube') })
+      g.slider(builderFunctionOptions.Cube, 'tesselation', { min: 0, max: 12, step: 1, onChange: () => buildMesh('Cube')})
+    })
+
+    a.group('Cylinder', { onOpen: () => buildMesh('Cylinder') }, (g) => {
+      g.slider(builderFunctionOptions.Cylinder, 'height', { min: 0, max: 2, step: 0.1, onChange: () => buildMesh('Cylinder') })
+      g.slider(builderFunctionOptions.Cylinder, 'offset', { min: -1, max: 1, step: 0.1, onChange: () => buildMesh('Cylinder') })
+      g.slider(builderFunctionOptions.Cylinder, 'radius', { min: 0, max: 1, step: 0.1, onChange: () => buildMesh('Cylinder') })
+      g.slider(builderFunctionOptions.Cylinder, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Cylinder') })
+    })
+
+    a.group('Cone', { onOpen: () => buildMesh('Cone') }, (g) => {
+      g.slider(builderFunctionOptions.Cone, 'upperRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Cone') })
+      g.slider(builderFunctionOptions.Cone, 'lowerRadius', { min: 0.0, max: 2, step: 0.1, onChange: () => buildMesh('Cone') })
+      g.slider(builderFunctionOptions.Cone, 'height', { min: -1, max: 1, step: 0.1, onChange: () => buildMesh('Cone') })
+      g.slider(builderFunctionOptions.Cone, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Cone') })
+    })
+
+    a.group('Disc', { onOpen: () => buildMesh('Disc') }, (g) => {
+      g.slider(builderFunctionOptions.Disc, 'innerRadius', { min: 0.0, max: 2, step: 0.1, onChange: () => buildMesh('Disc')})
+      g.slider(builderFunctionOptions.Disc, 'outerRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Disc')})
+      g.slider(builderFunctionOptions.Disc, 'offset', { min: -1, max: 1, step: 0.1, onChange: () => buildMesh('Disc')})
+      g.slider(builderFunctionOptions.Disc, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Disc')})
+    })
+
+    a.group('Plane', { onOpen: () => buildMesh('Plane') }, (g) => {
+      g.slider(builderFunctionOptions.Plane, 'size', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Plane')})
+      g.slider(builderFunctionOptions.Plane, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Plane')})
+    })
+
+    a.group('Sphere', { onOpen: () => buildMesh('Sphere') }, (g) => {
+      g.slider(builderFunctionOptions.Sphere, 'radius', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Sphere')})
+      g.slider(builderFunctionOptions.Sphere, 'tesselation', { min: 3, max: 32, step: 1, onChange: () => buildMesh('Sphere')})
+    })
+
+    a.group('Octahedron', { onOpen: () => buildMesh('Octahedron') }, (g) => {
+      g.slider(builderFunctionOptions.Octahedron, 'radius', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Octahedron')})
+      g.slider(builderFunctionOptions.Octahedron, 'tesselation', { min: 0, max: 5, step: 1, onChange: () => buildMesh('Octahedron')})
+    })
+
+    a.group('Icosahedron', { onOpen: () => buildMesh('Icosahedron') }, (g) => {
+      g.slider(builderFunctionOptions.Icosahedron, 'radius', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Icosahedron')})
+      g.slider(builderFunctionOptions.Icosahedron, 'tesselation', { min: 0, max: 5, step: 1, onChange: () => buildMesh('Icosahedron')})
+    })
+
+    a.group('Torus', { onOpen: () => buildMesh('Torus') }, (g) => {
+      g.slider(builderFunctionOptions.Torus, 'innerRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Torus')})
+      g.slider(builderFunctionOptions.Torus, 'outerRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Torus')})
+      g.slider(builderFunctionOptions.Torus, 'tesselation', { min: 3, max: 32, step: 1, onChange: () => buildMesh('Torus')})
+    })
   })
 
-  q.group('Cube', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Cube, 'size', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Cube') })
-    g.slider(builderFunctionOptions.Cube, 'tesselation', { min: 0, max: 12, step: 1, onChange: () => buildMesh('Cube')})
-    g.button('show', { onClick: () => buildMesh('Cube') })
-  })
-
-  q.group('Cylinder', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Cylinder, 'height', { min: 0, max: 2, step: 0.1, onChange: () => buildMesh('Cylinder') })
-    g.slider(builderFunctionOptions.Cylinder, 'offset', { min: -1, max: 1, step: 0.1, onChange: () => buildMesh('Cylinder') })
-    g.slider(builderFunctionOptions.Cylinder, 'radius', { min: 0, max: 1, step: 0.1, onChange: () => buildMesh('Cylinder') })
-    g.slider(builderFunctionOptions.Cylinder, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Cylinder') })
-    g.button('show', { onClick: () => buildMesh('Cylinder') })
-  })
-
-  q.group('Cone', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Cone, 'upperRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Cone') })
-    g.slider(builderFunctionOptions.Cone, 'lowerRadius', { min: 0.0, max: 2, step: 0.1, onChange: () => buildMesh('Cone') })
-    g.slider(builderFunctionOptions.Cone, 'height', { min: -1, max: 1, step: 0.1, onChange: () => buildMesh('Cone') })
-    g.slider(builderFunctionOptions.Cone, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Cone') })
-    g.button('show', { onClick: () => buildMesh('Cone') })
-  })
-
-  q.group('Disc', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Disc, 'innerRadius', { min: 0.0, max: 2, step: 0.1, onChange: () => buildMesh('Disc')})
-    g.slider(builderFunctionOptions.Disc, 'outerRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Disc')})
-    g.slider(builderFunctionOptions.Disc, 'offset', { min: -1, max: 1, step: 0.1, onChange: () => buildMesh('Disc')})
-    g.slider(builderFunctionOptions.Disc, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Disc')})
-    g.button('show', { onClick: () => buildMesh('Disc') })
-  })
-
-  q.group('Plane', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Plane, 'size', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Plane')})
-    g.slider(builderFunctionOptions.Plane, 'tesselation', { min: 1, max: 32, step: 1, onChange: () => buildMesh('Plane')})
-    g.button('show', { onClick: () => buildMesh('Plane') })
-  })
-
-  q.group('Sphere', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Sphere, 'radius', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Sphere')})
-    g.slider(builderFunctionOptions.Sphere, 'tesselation', { min: 3, max: 32, step: 1, onChange: () => buildMesh('Sphere')})
-    g.button('show', { onClick: () => buildMesh('Sphere') })
-  })
-
-  q.group('Octahedron', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Octahedron, 'radius', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Octahedron')})
-    g.slider(builderFunctionOptions.Octahedron, 'tesselation', { min: 0, max: 5, step: 1, onChange: () => buildMesh('Octahedron')})
-    g.button('show', { onClick: () => buildMesh('Octahedron') })
-  })
-
-  q.group('Icosahedron', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Icosahedron, 'radius', { min: 0.5, max: 2, step: 0.1, onChange: () => buildMesh('Icosahedron')})
-    g.slider(builderFunctionOptions.Icosahedron, 'tesselation', { min: 0, max: 5, step: 1, onChange: () => buildMesh('Icosahedron')})
-    g.button('show', { onClick: () => buildMesh('Icosahedron') })
-  })
-
-  q.group('Torus', { open: true }, (g) => {
-    g.slider(builderFunctionOptions.Torus, 'innerRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Torus')})
-    g.slider(builderFunctionOptions.Torus, 'outerRadius', { min: 0.1, max: 2, step: 0.1, onChange: () => buildMesh('Torus')})
-    g.slider(builderFunctionOptions.Torus, 'tesselation', { min: 3, max: 32, step: 1, onChange: () => buildMesh('Torus')})
-    g.button('show', { onClick: () => buildMesh('Torus') })
-  })
 })
 
 // Allocate state variables
@@ -215,7 +215,7 @@ let view = Mat4.createIdentity()
 let proj = Mat4.createIdentity()
 
 // Begin render loop
-loop(() => {
+loop((time, dt) => {
 
   // prepare render state
   device.resize()
@@ -229,6 +229,8 @@ loop(() => {
   }
 
   // Update World/View transforms
+  meshRotation.yaw += meshRotation.update.dx * dt * 0.001
+  meshRotation.pitch += meshRotation.update.dy * dt * 0.001
   world.initYawPitchRoll(meshRotation.yaw * Math.PI, meshRotation.pitch * Math.PI, meshRotation.roll * Math.PI)
   view.initTranslation(0, 0, -1.5)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)

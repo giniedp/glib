@@ -17,7 +17,7 @@ const defineMap = {
   Alpha: 'ALPHA',
   AlphaClip: 'ALPHA_CLIP',
   FogColor: 'FOG',
-  VertexColor: 'V_COLOR1',
+  VertexColor: 'V_COLOR',
 
   AmbientColor: 'AMBIENT_COLOR',
   AmbientMap: 'AMBIENT_MAP',
@@ -618,5 +618,9 @@ export class AutoMaterial extends Material {
       program: defaultProgram(this.defines),
     })
     this.hasChanged = false
+  }
+
+  protected onConstructWithoutEffect() {
+    // ignore
   }
 }

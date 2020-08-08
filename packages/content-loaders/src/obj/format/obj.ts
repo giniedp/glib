@@ -395,7 +395,7 @@ export interface Group {
   mg: [number, number]
 }
 
-export interface Data {
+export interface OBJ {
   v?: Vertex[]
   vp?: VertexPoint[]
   vt?: VertexTexture[]
@@ -409,116 +409,14 @@ export interface Data {
   surf?: SurfaceElement[]
 }
 
-export interface ParseOptions {
-  /**
-   * Indicates whether the y texture coordinate should be flipped
-   */
-  flipY?: boolean
-}
-
-function readFloat(item: string): number {
-  return item ? parseFloat(item) : null
-}
-
-function readFloatArray(item: string, minLength: 16, maxLength: 16): Matrix
-function readFloatArray(item: string, minLength: 2): [number, number, ...number[]]
-function readFloatArray(item: string, minLength: 2, maxLength: 2): [number, number]
-function readFloatArray(item: string, minLength: 1): [number, ...number[]]
-function readFloatArray(item: string, minLength: 1, maxLength: 1): [number]
-function readFloatArray(item: string, minLength?: number, maxLength?: number): number[]
-function readFloatArray(item: string, minLength?: number, maxLength?: number): number[] {
-  const result = item.split(' ').map(readFloat)
-  if (minLength != null && result.length < minLength) {
-    result.length = minLength
-  }
-  if (maxLength != null && result.length > maxLength) {
-    result.length = maxLength
-  }
-  return result
-}
-function readTriplet(item: string): number[] {
-  return item.split('/').map(readFloat)
-}
-
-function readTripletArray(item: string): number[][] {
-  return item.split(' ').map(readTriplet)
-}
-
-function readRefArray(item: string,  minLength: 2): [VertexTextureNormalRef, VertexTextureNormalRef, ...VertexTextureNormalRef[]]
-function readRefArray(item: string,  minLength: 1): [VertexTextureNormalRef, ...VertexTextureNormalRef[]]
-function readRefArray(item: string): VertexTextureNormalRef[]
-function readRefArray(item: string): VertexTextureNormalRef[] {
-  return readTripletArray(item).map((it) => {
-    const result: VertexTextureNormalRef = {
-      v: it[0],
-    }
-    if (it[1] != null) {
-      result.vt = it[1]
-    }
-    if (it[2] != null) {
-      result.vn = it[2]
-    }
-    return result
-  })
-}
-
-function readCurv2DRef(input: string) {
-  const result: Curve2DReference[] = []
-  const arr = readFloatArray(input)
-  while (arr.length) {
-    result.push({
-      u0: arr[0],
-      u1: arr[1],
-      curv2d: arr[2],
-    })
-    arr.shift()
-    arr.shift()
-    arr.shift()
-  }
-  return result
-}
-
-function makeAbsoluteIndex(index: number, buffer: any[]): number {
-  return index < 0 ? buffer.length + index : index - 1
-}
-
-function append<T>(arr: T[], el: T, tap?: (el: T) => void): T[] {
-  arr = arr || []
-  arr.push(el)
-  if (tap) {
-    tap(el)
-  }
-  return arr
-}
-
-function appendIfExists<T>(arr: T[], el: T, tap?: (el: T) => void): T[] {
-  if (arr) {
-    arr.push(el)
-    if (tap) {
-      tap(el)
-    }
-  }
-  return arr
-}
-
-function eachLine(input: string, cb: (line: string) => void) {
-  for (let line of input.split(/\r?\n/g)) {
-    // remove comments
-    let cIndex = line.indexOf('#')
-    if (cIndex >= 0) {
-      line = line.substr(0, cIndex)
-    }
-    // collapse whitespaces
-    line = line.replace(/\s+/g, ' ').trim()
-    // skip blank lines
-    if (line) {
-      cb(line)
-    }
+export class OBJ {
+  public static parse(content: string): OBJ {
+    return parse(content)
   }
 }
 
-function parse(input: string): Data {
-  const data: Data = {}
+function parse(input: string): OBJ {
+  const data: OBJ = {}
   let group: Group = {
     g: ['default'],
     o: '',
@@ -781,8 +679,103 @@ function parse(input: string): Data {
   return data
 }
 
-export class OBJ {
-  public static parse(content: string, options: ParseOptions = {}): Data {
-    return parse(content)
+function readFloat(item: string): number {
+  return item ? parseFloat(item) : null
+}
+
+function readFloatArray(item: string, minLength: 16, maxLength: 16): Matrix
+function readFloatArray(item: string, minLength: 2): [number, number, ...number[]]
+function readFloatArray(item: string, minLength: 2, maxLength: 2): [number, number]
+function readFloatArray(item: string, minLength: 1): [number, ...number[]]
+function readFloatArray(item: string, minLength: 1, maxLength: 1): [number]
+function readFloatArray(item: string, minLength?: number, maxLength?: number): number[]
+function readFloatArray(item: string, minLength?: number, maxLength?: number): number[] {
+  const result = item.split(' ').map(readFloat)
+  if (minLength != null && result.length < minLength) {
+    result.length = minLength
+  }
+  if (maxLength != null && result.length > maxLength) {
+    result.length = maxLength
+  }
+  return result
+}
+function readTriplet(item: string): number[] {
+  return item.split('/').map(readFloat)
+}
+
+function readTripletArray(item: string): number[][] {
+  return item.split(' ').map(readTriplet)
+}
+
+function readRefArray(item: string,  minLength: 2): [VertexTextureNormalRef, VertexTextureNormalRef, ...VertexTextureNormalRef[]]
+function readRefArray(item: string,  minLength: 1): [VertexTextureNormalRef, ...VertexTextureNormalRef[]]
+function readRefArray(item: string): VertexTextureNormalRef[]
+function readRefArray(item: string): VertexTextureNormalRef[] {
+  return readTripletArray(item).map((it) => {
+    const result: VertexTextureNormalRef = {
+      v: it[0],
+    }
+    if (it[1] != null) {
+      result.vt = it[1]
+    }
+    if (it[2] != null) {
+      result.vn = it[2]
+    }
+    return result
+  })
+}
+
+function readCurv2DRef(input: string) {
+  const result: Curve2DReference[] = []
+  const arr = readFloatArray(input)
+  while (arr.length) {
+    result.push({
+      u0: arr[0],
+      u1: arr[1],
+      curv2d: arr[2],
+    })
+    arr.shift()
+    arr.shift()
+    arr.shift()
+  }
+  return result
+}
+
+function makeAbsoluteIndex(index: number, buffer: any[]): number {
+  return index < 0 ? buffer.length + index : index - 1
+}
+
+function append<T>(arr: T[], el: T, tap?: (el: T) => void): T[] {
+  arr = arr || []
+  arr.push(el)
+  if (tap) {
+    tap(el)
+  }
+  return arr
+}
+
+function appendIfExists<T>(arr: T[], el: T, tap?: (el: T) => void): T[] {
+  if (arr) {
+    arr.push(el)
+    if (tap) {
+      tap(el)
+    }
+  }
+  return arr
+}
+
+function eachLine(input: string, cb: (line: string) => void) {
+  for (let line of input.split(/\r?\n/g)) {
+    // remove comments
+    let cIndex = line.indexOf('#')
+    if (cIndex >= 0) {
+      line = line.substr(0, cIndex)
+    }
+    // collapse whitespaces
+    line = line.replace(/\s+/g, ' ').trim()
+    // skip blank lines
+    if (line) {
+      cb(line)
+    }
   }
 }

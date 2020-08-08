@@ -1,76 +1,91 @@
 import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions, VertexLayout } from '@gglib/graphics'
-import { addToArraySet } from '@gglib/utils'
 import { loader, resolveUri } from '@gglib/content'
 
-import { Data, FaceElement, OBJ, VertexTextureNormalRef } from './format'
+import { OBJ, FaceElement, VertexTextureNormalRef } from './format'
+import { PipelineContext } from '@gglib/content/src'
 
 /**
+ * Downloads text from source, parses it using {@link OBJ.parse} and converts into {@link ModelOptions}.
  * @public
+ * @remarks
+ * This loader consults the `OBJ` -> `ModelOptions.Options` loader if available.
  */
 export const loadObjToModelOptions = loader({
   input: ['.obj', 'application/x-obj'],
   output: Model.Options,
   handle: async (_, context): Promise<ModelOptions> => {
-
     const content = (await context.manager.downloadText(context.source)).content
     const data = OBJ.parse(content)
-
-    const mtllib = new Set<string>()
-    const groups = new Map<string, Map<number, FaceElement[]>>()
-    const usemtls = new Set<string>()
-
-    for (const face of data.f) {
-      for (const mtl of face.state.mtllib || []) {
-        mtllib.add(mtl)
-      }
-      if (face.state.usemtl) {
-        usemtls.add(face.state.usemtl)
-      }
-      for (const g of face.group.g) {
-        const s = face.group.s
-        if (!groups.has(g)) {
-          groups.set(g, new Map<number, FaceElement[]>())
-        }
-        const group = groups.get(g)
-        if (!group.has(s)) {
-          group.set(s, [])
-        }
-        const sGroup = group.get(s)
-        sGroup.push(face)
+    if (context.pipeline.canLoad(OBJ, Model.Options)) {
+      const result = await context.pipeline.run(OBJ, Model.Options, data, context)
+      if (result) {
+        return result
       }
     }
-
-    const parts: ModelMeshPartOptions[] = []
-    const mtls = Array.from(usemtls.values())
-    groups.forEach((group, g) => {
-      group.forEach((faces, s) => {
-        parts.push(...buildGroup(data, faces, s, mtls))
-      })
-    })
-
-    const materials = await Promise.all(Array.from(mtllib.values()).map((file) => {
-      const uri = resolveUri(file, context)
-      return context.manager.load<Material[]>(uri, Material.Array)
-    })).then((value) => {
-      return value.reduce((sum, b) => {
-        sum.push(...b)
-        return sum
-      }, [])
-    })
-    return {
-      meshes: [{
-        materials: materials,
-        parts: parts,
-      }]
-    }
+    return convertData(data, context)
   },
 })
 
-function readVertex<T>(data: Data, element: VertexTextureNormalRef, target: T) {
+async function convertData(data: OBJ, context: PipelineContext) {
+  const mtllib = new Set<string>()
+  const groups = new Map<string, Map<number, FaceElement[]>>()
+  const usemtls = new Set<string>()
+
+  for (const face of data.f) {
+    for (const mtl of face.state.mtllib || []) {
+      mtllib.add(mtl)
+    }
+    if (face.state.usemtl) {
+      usemtls.add(face.state.usemtl)
+    }
+    for (const g of face.group.g) {
+      const s = face.group.s
+      if (!groups.has(g)) {
+        groups.set(g, new Map<number, FaceElement[]>())
+      }
+      const group = groups.get(g)
+      if (!group.has(s)) {
+        group.set(s, [])
+      }
+      const sGroup = group.get(s)
+      sGroup.push(face)
+    }
+  }
+
+  const parts: ModelMeshPartOptions[] = []
+  const mtls = Array.from(usemtls.values())
+  groups.forEach((group, g) => {
+    group.forEach((faces, s) => {
+      parts.push(...buildGroup(data, faces, s, mtls))
+    })
+  })
+
+  const materials = await Promise.all(
+    Array.from(mtllib.values()).map((file) => {
+      const uri = resolveUri(file, context)
+      return context.manager.load<Material[]>(uri, Material.Array)
+    }),
+  ).then((value) => {
+    return value.reduce((sum, b) => {
+      sum.push(...b)
+      return sum
+    }, [])
+  })
+  return {
+    meshes: [
+      {
+        materials: materials,
+        parts: parts,
+      },
+    ],
+  }
+}
+
+function readVertex<T>(data: OBJ, element: VertexTextureNormalRef, target: T) {
   const result = target as T & {
-    position?: number[],
-    texture?: number[],
-    normal?: number[],
+    position?: number[]
+    texture?: number[]
+    normal?: number[]
   }
   if (data.v != null && data.v[element.v] != null) {
     result.position = data.v[element.v]
@@ -84,7 +99,7 @@ function readVertex<T>(data: Data, element: VertexTextureNormalRef, target: T) {
   return result
 }
 
-function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number, mtlNames: string[]) {
+function buildGroup(data: OBJ, faces: FaceElement[], smoothingGroup: number, mtlNames: string[]) {
   const builder = ModelBuilder.begin({
     layout: [
       VertexLayout.convert('PositionTexture'),
@@ -94,11 +109,11 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number, mt
       // so we can later split by material
       {
         material: {
-          elements: 1,      // - we dont care about this
-          offset: 0,        // - and this
-          packed: false,    // - and this
+          elements: 1, // - we dont care about this
+          offset: 0, // - and this
+          packed: false, // - and this
           normalize: false, // - and this
-          type: 'float',    // - and this since we dont operate on this buffer
+          type: 'float', // - and this since we dont operate on this buffer
         },
       },
     ],
@@ -110,9 +125,11 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number, mt
     let key = [ref.v, ref.vn, ref.vt, mtl].join('-')
     if (!vertices.has(key)) {
       vertices.set(key, builder.vertexCount)
-      builder.addVertex(readVertex(data, ref, {
-        material: [mtl],
-      }))
+      builder.addVertex(
+        readVertex(data, ref, {
+          material: [mtl],
+        }),
+      )
       if (ref.vn == null) {
         hasNormals = false
       }
@@ -141,10 +158,13 @@ function buildGroup(data: Data, faces: FaceElement[], smoothingGroup: number, mt
 
 function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPartOptions[] {
   const result: ModelMeshPartOptions[] = []
-  const split = new Map<number, {
-    builder: ModelBuilder,
-    indexMap: Map<number, number>,
-  }>()
+  const split = new Map<
+    number,
+    {
+      builder: ModelBuilder
+      indexMap: Map<number, number>
+    }
+  >()
 
   builder.indices.forEach((index) => {
     const vertex = builder.readVertex(index)
@@ -154,25 +174,19 @@ function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPa
     if (!split.has(materialId)) {
       split.set(materialId, {
         builder: ModelBuilder.begin({
-          layout: [
-            'PositionTexture',
-            'Normal',
-            'TangentBitangent',
-          ],
+          layout: ['PositionTexture', 'Normal', 'TangentBitangent'],
         }),
         indexMap: new Map<number, number>(),
       })
     }
 
     const mesh = split.get(materialId)
-    if (mesh.builder.indexCount % 3 === 0 && mesh.builder.vertexCount >= (65536 - 2)) {
+    if (mesh.builder.indexCount % 3 === 0 && mesh.builder.vertexCount >= 65536 - 2) {
       mesh.indexMap.clear()
       result.push(
-        mesh.builder
-          .calculateBoundings()
-          .endMeshPart({
-            materialId: mtlNames[materialId],
-          }),
+        mesh.builder.calculateBoundings().endMeshPart({
+          materialId: mtlNames[materialId],
+        }),
       )
     }
 
@@ -188,11 +202,9 @@ function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPa
   split.forEach((entry, mtl) => {
     if (entry.builder.vertexCount > 0) {
       result.push(
-        entry.builder
-          .calculateBoundings()
-          .endMeshPart({
-            materialId: mtl,
-          }),
+        entry.builder.calculateBoundings().endMeshPart({
+          materialId: mtl,
+        }),
       )
     }
   })

@@ -1,14 +1,14 @@
 import { BinaryReader } from '@gglib/utils'
-import { Document } from './Document'
+import { GLTFDocument } from './Document'
 
 export class GLTF {
   public static readonly Document = Symbol('gltf Document')
 
-  public static parse(content: string): Document {
-    return JSON.parse(content) as Document
+  public static parse(content: string): GLTFDocument {
+    return JSON.parse(content) as GLTFDocument
   }
 
-  public static async parseBinary(content: ArrayBuffer): Promise<Document> {
+  public static async parseBinary(content: ArrayBuffer): Promise<GLTFDocument> {
     const reader = new BinaryReader(content)
 
     const magic = reader.readString(4)
@@ -39,10 +39,10 @@ export class GLTF {
 
     const blob = new Blob([jsonChunk.data])
     const fReader = new FileReader()
-    return new Promise<Document>((resolve, reject) => {
+    return new Promise<GLTFDocument>((resolve, reject) => {
       fReader.onload = () => resolve({
         chunks: dataChunks,
-        ...JSON.parse(fReader.result as string) as Document,
+        ...JSON.parse(fReader.result as string) as GLTFDocument,
       })
       fReader.onabort = reject
       fReader.readAsText(blob)

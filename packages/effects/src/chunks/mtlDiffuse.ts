@@ -90,13 +90,20 @@ export const FXC_MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = Object.freeze({
     #if defined(DIFFUSE_MAP)
     surface.Diffuse = texture2D(uDiffuseMap, getDiffuseMapUV() + uvOffset);
       #ifdef DIFFUSE_COLOR
-    surface.Diffuse.rgb *= uDiffuseColor;
+      surface.Diffuse.rgb *= uDiffuseColor;
       #endif
-
+      #ifdef V_COLOR
+      surface.Diffuse.rgb *= vColor;
+      #endif
     #elif defined(DIFFUSE_COLOR)
     surface.Diffuse = vec4(uDiffuseColor, 1.0);
-    #elif defined(V_COLOR1)
+      #ifdef V_COLOR
+      surface.Diffuse.rgb *= vColor;
+      #endif
+    #elif defined(V_COLOR)
     surface.Diffuse = vec4(vColor, 1.0);
+    #elif defined(V_COLOR1)
+    surface.Diffuse = vec4(vColor1, 1.0);
     #elif defined(V_COLOR2)
     surface.Diffuse = vec4(vColor2, 1.0);
     #else

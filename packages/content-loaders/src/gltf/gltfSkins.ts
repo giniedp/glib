@@ -1,8 +1,8 @@
-import { DocumentReader } from './format'
 import { Mat4 } from '@gglib/math'
 import { ModelSkin } from '@gglib/graphics'
+import { GLTFReader } from './reader'
 
-export async function loadGltfSkins(reader: DocumentReader): Promise<ModelSkin[]> {
+export async function loadGltfSkins(reader: GLTFReader): Promise<ModelSkin[]> {
   const doc = reader.doc
   const result = doc.skins?.map(async (srcSkin) => {
     const result: ModelSkin = {

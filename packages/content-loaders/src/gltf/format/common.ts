@@ -1,28 +1,28 @@
 /**
  * Application-specific data.
  */
-export type Extras = any
+export type GLTFExtras = any
 
 /**
  * Dictionary object with extension-specific objects.
  */
-export interface Extension {
+export interface GLTFExtension {
   [key: string]: any
 }
 
-export interface Property {
+export interface GLTFProperty {
   /**
    * Dictionary object with extension-specific objects.
    */
-  extensions?: Extension
+  extensions?: GLTFExtension
 
   /**
    * Application-specific data.
    */
-  extras?: Extras
+  extras?: GLTFExtras
 }
 
-export interface RootProperty extends Property {
+export interface GLTFRootProperty extends GLTFProperty {
   /**
    * The user-defined name of this object.
    *

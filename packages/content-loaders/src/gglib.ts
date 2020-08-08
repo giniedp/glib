@@ -16,6 +16,7 @@ import { loader, resolveUri, PipelineContext } from '@gglib/content'
 import { YML } from './yml'
 
 /**
+ * Downloads `.ggmod` textfile and interprets the content as `ModelOptions` json
  * @public
  */
 export const loadGgmodToModelOptions = loader({
@@ -28,7 +29,11 @@ export const loadGgmodToModelOptions = loader({
 })
 
 /**
+ * Downloads `.ggmat` textfile and interprets the content as `MaterialOptions` json object
+ *
  * @public
+ * @remarks
+ * If the file contains a json array, only the first entry is resolved
  */
 export const loadGgmatToMaterialOptions = loader({
   input: '.ggmat',
@@ -39,7 +44,10 @@ export const loadGgmatToMaterialOptions = loader({
 })
 
 /**
+ * Downloads `.ggmat` textfile and interprets the content as `MaterialOptions[]` json array
  * @public
+ * @remarks
+ * If the file contains a json object, it is pushed into a new array and returned
  */
 export const loadGgmatToMaterialOptionsArray = loader({
   input: '.ggmat',
@@ -52,26 +60,27 @@ export const loadGgmatToMaterialOptionsArray = loader({
 })
 
 /**
+ * Downloads `.ggfx` textfile and interprets the content as `ShaderEffectOptions` yaml
  * @public
  */
 export const loadGgfxToShaderEffectOptions = loader({
   input: ['.ggfx', 'application/x-yaml'],
   output: ShaderEffect.Options,
   handle: async (_, context): Promise<ShaderEffectOptions> => {
-    const text = (await context.manager.downloadText(context.source)).content
+    const data = await context.manager.downloadText(context.source)
     const includeHandler = (includePath: string) => {
       const url = resolveUri(includePath, context)
       const cache = context.options.includeCache || {}
       context.options.includeCache = cache
       return (cache[url] = cache[url] || context.manager.download(url).then((res) => res.content))
     }
-    const doc = YML.parse(text) as ShaderFxDocument
+    const doc = YML.parse(data.content) as ShaderFxDocument
     return createShaderEffectOptions(doc, includeHandler)
   },
 })
 
 /**
- * Loads and instantiates a Model from ModelOptions
+ * Instantiates a `Model` from `ModelOptions`
  *
  * @public
  * @remarks
@@ -145,38 +154,72 @@ export const loadModelOptionsToModel = loader({
 })
 
 /**
+ * Instantiates a `Material` from `MaterialOptions`
+ *
  * @public
+ * @remarks
+ * Effects are resolved as follows
+ * - if `effectUri` is set, pipeline for `Material.OptionsUri` -> `Material.Options` is run
+ * - if `technique` is set, pipeline for `Material.OptionsTechnique` -> `Material.Options` is run
+ * - if `effect` is type of `object`, pipeline for `ShaderEffect.Options` -> `ShaderEffect` is run
+ * - if `effect` is instance of `ShaderEffect`, it is kept as is
+ * - It is an error, if in the end no instance of `ShaderEffect` could be resolved
+ *
+ * The parameters are processed in a way, that values having type of `string` are interpreted
+ * as texture URIs
  */
 export const loadMaterialOptionsToMaterial = loader({
   input: Material.Options,
   output: Material,
   handle: async (input: MaterialOptions, context): Promise<Material> => {
-    const effect = input.effect
-    if (typeof effect === 'string') {
-      const uri = resolveUri(effect, context)
-      if (context.manager.canLoad(uri, ShaderEffect.Options)) {
-        input.effect = await context.manager.load(resolveUri(effect, context), ShaderEffect.Options)
-      } else if (context.pipeline.canLoad(Material.Options, ShaderEffect.Options)) {
-        const loaded = await context.pipeline.run(Material.Options, ShaderEffect.Options, input, context)
-        if (loaded) {
-          input.effect = loaded
-        } else {
-          // TODO: report error
-        }
-      } else {
-        return Promise.reject(`can not load effect from '${effect}' nor from '${uri}'`)
+
+    if (!input.effect && input.effectUri) {
+      if (context.pipeline.canLoad(Material.OptionsUri, Material.Options)) {
+        input = (await context.pipeline.run(Material.OptionsUri, Material.Options, input, context)) || input
+      }
+    }
+    if (!input.effect && input.technique) {
+      if (context.pipeline.canLoad(Material.OptionsTechnique, Material.Options)) {
+        input = (await context.pipeline.run(Material.OptionsTechnique, Material.Options, input, context)) || input
       }
     }
 
-    if (typeof input.effect === 'object') {
+    if (input.effect instanceof ShaderEffect) {
+      // OK
+    } else if (typeof input.effect === 'object') {
       input.effect = await context.pipeline.run(ShaderEffect.Options, ShaderEffect, input.effect, context)
-    } else {
+    }
+
+    if (!(input.effect instanceof ShaderEffect)) {
       return Promise.reject(`can not load effect from ${input.effect}`)
     }
 
     await loadStringKeysAsTexture(input.parameters, context)
 
     return new Material(context.manager.device, input)
+  },
+})
+
+/**
+ * Processes material options which have the `effectUri` property set
+ *
+ * @public
+ */
+export const loadMaterialOptionsUriToMaterialOptions = loader({
+  input: Material.OptionsUri,
+  output: Material.Options,
+  handle: async (input: MaterialOptions, context): Promise<MaterialOptions> => {
+    const uri = resolveUri(input.effectUri, context)
+    if (!context.manager.canLoad(uri, ShaderEffect.Options)) {
+      return null
+    }
+    return {
+      ...input,
+      effect: await context.manager.load(uri, ShaderEffect.Options),
+      parameters: {
+        ...(input.parameters || {})
+      }
+    }
   },
 })
 
@@ -293,7 +336,7 @@ export const loadTextureToMaterialOptions = loader({
   handle: (input: Texture, _): Promise<MaterialOptions> => {
     return Promise.resolve({
       name: 'Default',
-      effect: 'default',
+      technique: 'default',
       parameters: {
         DiffuseMap: input,
       },

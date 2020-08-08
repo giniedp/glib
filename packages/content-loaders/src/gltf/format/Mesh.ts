@@ -1,5 +1,5 @@
 import { PrimitiveType } from '@gglib/graphics'
-import { Property, RootProperty } from './common'
+import { GLTFProperty, GLTFRootProperty } from './common'
 
 /**
  * A dictionary object specifying attributes displacements in a Morph Target,
@@ -7,7 +7,7 @@ import { Property, RootProperty } from './common'
  * (`POSITION`, `NORMAL`, or `TANGENT`) and each value is the index of the
  * accessor containing the attribute displacements' data.
  */
-export interface MorphTarget {
+export interface GLTFMorphTarget {
   POSITION: number
   NORMAL: number
   TANGENT: number
@@ -16,7 +16,7 @@ export interface MorphTarget {
 /**
  * Geometry to be rendered with the given material.
  */
-export interface MeshPrimitive extends Property {
+export interface GLTFMeshPrimitive extends GLTFProperty {
   /**
    * A dictionary object, where each key corresponds to mesh attribute semantic and each value
    * is the index of the accessor containing attribute's data.
@@ -52,17 +52,17 @@ export interface MeshPrimitive extends Property {
    * An array of Morph Targets, each  Morph Target is a dictionary mapping attributes
    * (only `POSITION`, `NORMAL`, and `TANGENT` supported) to their deviations in the Morph Target.
    */
-  targets?: MorphTarget[]
+  targets?: GLTFMorphTarget[]
 }
 
 /**
  * A set of primitives to be rendered.  A node can contain one mesh.  A node's transform places the mesh in the scene.
  */
-export interface Mesh extends RootProperty {
+export interface GLTFMesh extends GLTFRootProperty {
   /**
    * An array of primitives, each defining geometry to be rendered with a material.
    */
-  primitives: MeshPrimitive[]
+  primitives: GLTFMeshPrimitive[]
 
   /**
    * Array of weights to be applied to the Morph Targets.

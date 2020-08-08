@@ -27,6 +27,32 @@ export const FXC_GAMMA: ShaderChunkSet<GammaDefs> = Object.freeze({
     #ifndef GAMMA
     #define GAMMA 2.2
     #endif
+    const float INV_GAMMA = 1.0 / GAMMA;
+  `,
+  functions: glsl`
+    vec3 linearTosRGB(vec3 color) {
+      #ifdef GAMMA_CORRECTION
+      // see http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+      return pow(color, vec3(INV_GAMMA));
+      #endif
+      return color;
+    }
+
+    // sRGB to linear approximation
+    // see http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
+    vec3 sRGBToLinear(vec3 srgbIn) {
+      #ifdef GAMMA_CORRECTION
+      return vec3(pow(srgbIn.xyz, vec3(GAMMA)));
+      #endif
+      return srgbIn;
+    }
+
+    vec4 sRGBToLinear(vec4 srgbIn) {
+      #ifdef GAMMA_CORRECTION
+      return vec4(sRGBToLinear(srgbIn.xyz), srgbIn.w);
+      #endif
+      return srgbIn;
+    }
   `,
   fs_shade_before: glsl`
     #ifdef GAMMA_CORRECTION

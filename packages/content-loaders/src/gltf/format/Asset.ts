@@ -1,9 +1,9 @@
-import { Property } from './common'
+import { GLTFProperty } from './common'
 
 /**
  * Metadata about the glTF asset.
  */
-export interface Asset extends Property {
+export interface GLTFAsset extends GLTFProperty {
   /**
    * A copyright message suitable for display to credit the content creator.
    */

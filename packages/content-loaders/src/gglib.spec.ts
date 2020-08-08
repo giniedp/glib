@@ -100,7 +100,7 @@ describe('content/loader/native', () => {
     manager.loader.register(loadTextureOptionsToTexture)
     manager.loader.register(loadTextureToMaterialOptions)
     manager.load('/assets/textures/prototype/proto_gray.jpg', Material.Options).then((result: MaterialOptions) => {
-      expect(result.effect).toBe('default')
+      expect(result.technique).toBe('default')
       expect(result.parameters.DiffuseMap).toBeDefined()
       expect(result.parameters.DiffuseMap instanceof Texture).toBe(true)
     })

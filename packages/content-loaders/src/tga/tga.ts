@@ -2,6 +2,7 @@ import { loader } from '@gglib/content'
 import { TGA } from './format'
 
 /**
+ * Downloads an array buffer from source and parses with the TGA parser
  * @public
  */
 export const loadTgaToImageData = loader({

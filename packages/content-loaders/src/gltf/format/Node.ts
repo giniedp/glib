@@ -1,4 +1,4 @@
-import { RootProperty } from './common'
+import { GLTFRootProperty } from './common'
 
 /**
  * A node in the node hierarchy.
@@ -12,7 +12,7 @@ import { RootProperty } from './common'
  * When a node is targeted for animation (referenced by an animation.channel.target), only TRS properties may be present;
  * `matrix` will not be present.
  */
-export interface Node extends RootProperty {
+export interface GLTFNode extends GLTFRootProperty {
   /**
    * The index of the camera referenced by this node.
    */

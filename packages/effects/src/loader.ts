@@ -1,41 +1,22 @@
 import { loader } from '@gglib/content'
-import { Material, MaterialOptions, ShaderEffect, ShaderEffectOptions, ShaderProgramOptions, CullState, BlendState, IBlendState, ICullState } from '@gglib/graphics'
+import { Material, MaterialOptions, ShaderProgramOptions, CullState, BlendState, IBlendState, ICullState } from '@gglib/graphics'
 import { defaultProgram, DefaultProgramDefs } from './programs'
 
 /**
  * @public
  */
 export const loadMaterialOptionsToShaderEffectOptions = loader({
-  input: Material.Options,
-  output: ShaderEffect.Options,
-  handle: async (input: MaterialOptions, _): Promise<ShaderEffectOptions> => {
+  input: Material.OptionsTechnique,
+  output: Material.Options,
+  handle: async (input: MaterialOptions, _): Promise<MaterialOptions> => {
 
-    if (!input) {
-      return null
-    }
-    if (typeof input.effect !== 'string') {
+    if (!input?.technique) {
       return null
     }
 
-    const effect = input.effect
+    const technique = input.technique
     const params = input.parameters || {}
-
     const defines: DefaultProgramDefs = {}
-
-    let blendState: IBlendState = {
-      ...BlendState.AlphaBlend
-    }
-    let cullState: ICullState
-
-    if (params.AlphaClip != null) {
-      defines.ALPHA_CLIP = true
-    }
-    if (typeof params.JointCount === 'number') {
-      defines.SKINNING_JOINT_COUNT = params.JointCount
-    }
-    if (typeof params.WeightCount === 'number') {
-      defines.SKINNING_WEIGHT_COUNT = params.WeightCount
-    }
 
     function defineMap(MAP: keyof DefaultProgramDefs) {
       const MAP_SCALE_OFFSET = `${MAP}_SCALE_OFFSET`
@@ -63,6 +44,13 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
       }
     }
 
+    defineMap('AMBIENT_MAP')
+    defineMap('DIFFUSE_MAP')
+    defineMap('SPECULAR_MAP')
+    defineMap('EMISSION_MAP')
+    defineMap('OCCLUSION_MAP')
+    defineMap('NORMAL_MAP')
+
     if (params.AmbientColor != null) {
       defines.AMBIENT_COLOR = true
     }
@@ -75,13 +63,15 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
     if (params.EmissionColor) {
       defines.EMISSION_COLOR = true
     }
-
-    defineMap('AMBIENT_MAP')
-    defineMap('DIFFUSE_MAP')
-    defineMap('SPECULAR_MAP')
-    defineMap('EMISSION_MAP')
-    defineMap('OCCLUSION_MAP')
-    defineMap('NORMAL_MAP')
+    if (params.VertexColor) {
+      defines.V_COLOR = true
+    }
+    if (params.VertexColo1) {
+      defines.V_COLOR1 = true
+    }
+    if (params.VertexColo2) {
+      defines.V_COLOR2 = true
+    }
 
     if (params.TextureScaleOffset) {
       defines.V_TEXTURE_SCALE_OFFSET = params.TextureScaleOffset != null
@@ -92,6 +82,50 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
     if (params.Texture2ScaleOffset) {
       defines.V_TEXTURE2_SCALE_OFFSET = params.Texture2ScaleOffset != null
     }
+
+    if (params.AlphaClip != null) {
+      defines.ALPHA_CLIP = true
+    }
+    if (typeof params.JointCount === 'number') {
+      defines.SKINNING_JOINT_COUNT = params.JointCount
+    }
+    if (typeof params.WeightCount === 'number') {
+      defines.SKINNING_WEIGHT_COUNT = params.WeightCount
+    }
+
+    defines.LIGHT = true
+    defines.V_NORMAL = true
+
+    if (technique === 'default') {
+      defines.SHADE_FUNCTION = 'shadeOptimized'
+    } else if (technique === 'pbr') {
+      if (params.MetallicRoughness) {
+        defines.METALLIC_ROUGHNESS = true
+      }
+      if (params.MetallicRoughnessMap) {
+        defines.METALLIC_ROUGHNESS_MAP = true
+      }
+      defines.SHADE_FUNCTION = 'shadePbr'
+    } else if (technique === 'blinn') {
+      defines.SHADE_FUNCTION = 'shadeBlinn'
+    } else if (technique === 'phong') {
+      defines.SHADE_FUNCTION = 'shadePhong'
+    } else if (technique === 'lambert') {
+      defines.SHADE_FUNCTION = 'shadeLambert'
+    } else if (technique === 'constant') {
+      // OK
+    } else if (technique === 'unlit') {
+      defines.SHADE_FUNCTION = 'shadeNone'
+      delete defines.LIGHT
+      delete defines.V_NORMAL
+    } else {
+      return null
+    }
+
+    let blendState: IBlendState = {
+      ...BlendState.AlphaBlend
+    }
+    let cullState: ICullState
 
     if ('Blend' in params) {
       blendState = {
@@ -104,81 +138,17 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
       }
     }
 
-    let options: ShaderProgramOptions
-    if (effect === 'default') {
-      options = defaultProgram({
-        ...defines,
-        LIGHT: true,
-        V_NORMAL: true,
-        SHADE_FUNCTION: 'shadeOptimized',
-      })
-    }
-    if (effect === 'pbr') {
-      if (params.MetallicRoughness) {
-        defines.METALLIC_ROUGHNESS = true
-      }
-      if (params.MetallicRoughnessMap) {
-        defines.METALLIC_ROUGHNESS_MAP = true
-      }
-
-      options = defaultProgram({
-        ...defines,
-        LIGHT: true,
-        V_NORMAL: true,
-        SHADE_FUNCTION: 'shadePbr',
-      })
-    }
-    if (effect === 'blinn') {
-      options = defaultProgram({
-        ...defines,
-        LIGHT: true,
-        V_NORMAL: true,
-        SHADE_FUNCTION: 'shadeBlinn',
-      })
-    }
-    if (effect === 'phong') {
-      options = defaultProgram({
-        ...defines,
-        LIGHT: true,
-        V_NORMAL: true,
-        SHADE_FUNCTION: 'shadePhong',
-      })
-    }
-    if (effect === 'lambert') {
-      options = defaultProgram({
-        ...defines,
-        LIGHT: true,
-        V_NORMAL: true,
-        SHADE_FUNCTION: 'shadeLambert',
-      })
-    }
-    if (effect === 'constant') {
-      options = defaultProgram({
-        ...defines,
-        LIGHT: true,
-        V_NORMAL: true,
-      })
-    }
-    if (effect === 'unlit') {
-      options = defaultProgram({
-        ...defines,
-        SHADE_FUNCTION: 'shadeNone',
-      })
-    }
-
-    if (!options) {
-      return null
-    }
-
-    const result: ShaderEffectOptions = {
-      techniques: [{
-        passes: [{
-          program: options,
+    return {
+      ...input,
+      effect: {
+        techniques: [{
+          passes: [{
+            program: defaultProgram(defines),
+            blendState: blendState,
+            cullState: cullState,
+          }],
         }],
-      }],
+      }
     }
-    result.techniques[0].passes[0].blendState = blendState
-    result.techniques[0].passes[0].cullState = cullState
-    return result
   },
 })

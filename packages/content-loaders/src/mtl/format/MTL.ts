@@ -1,4 +1,13 @@
-export interface MtlData {
+/**
+ * The parser implementation is based on the format specification from http://paulbourke.net/dataformats/mtl/
+ */
+export class MTL {
+  public static parse(data: string): MTL[] {
+    return readMtl(data)
+  }
+}
+
+export interface MTL {
   /**
    * Name of the material.
    *
@@ -348,9 +357,9 @@ function readTextureOptions(data: string) {
   return result
 }
 
-function readMtl(data: string): MtlData[] {
+function readMtl(data: string): MTL[] {
   const lines = data.split(/\r?\n/g)
-  const materials: MtlData[] = []
+  const materials: MTL[] = []
 
   let currentLine = ''
   for (let line of lines) {
@@ -431,13 +440,4 @@ function readMtl(data: string): MtlData[] {
     }
   }
   return materials
-}
-
-/**
- * The parser implementation is based on the format specification from http://paulbourke.net/dataformats/mtl/
- */
-export class MTL {
-  public static parse(data: string): MtlData[] {
-    return readMtl(data)
-  }
 }

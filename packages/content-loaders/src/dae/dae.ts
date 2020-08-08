@@ -222,7 +222,7 @@ async function loadMaterial(instance: InstanceMaterial, context: PipelineContext
 
   const result: MaterialOptions = {
     name: instance.symbol + instance.target,
-    effect: 'default',
+    technique: 'default',
     parameters: {},
   }
 
@@ -234,16 +234,16 @@ async function loadMaterial(instance: InstanceMaterial, context: PipelineContext
     let tech: DaeCommonTechnique
     if (common.techniqueBlinn) {
       tech = common.techniqueBlinn
-      result.effect = 'blinn'
+      result.technique = 'blinn'
     } else if (common.techniqueConstant) {
       tech = common.techniqueConstant
-      result.effect = 'unlit'
+      result.technique = 'unlit'
     } else if (common.techniqueLambert) {
       tech = common.techniqueLambert
-      result.effect = 'lambert'
+      result.technique = 'lambert'
     } else if (common.techniquePhong) {
       tech = common.techniquePhong
-      result.effect = 'phong'
+      result.technique = 'phong'
     }
 
     if (tech.ambient && tech.ambient.color) {

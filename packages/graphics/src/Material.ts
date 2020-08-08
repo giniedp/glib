@@ -1,26 +1,47 @@
-import { uuid, TypeToken } from '@gglib/utils'
+import { uuid, TypeToken, Log } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderProgram, ShaderUniformValue } from './resources'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
+
+/**
+ * @public
+ */
+export type MaterialParameters = { [key: string]: ShaderUniformValue }
 
 /**
  * Constructor options for {@link Material}
  *
  * @public
  */
-export interface MaterialOptions<T = ShaderEffectOptions | ShaderEffect | string> {
+export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = ShaderEffectOptions | ShaderEffect, P extends MaterialParameters = MaterialParameters> {
   /**
-   * A user defined name of the material
+   * The descriptive name of this effect
    */
   name?: string
   /**
-   * The effect to be used or options to create an effect instance
+   * The effect instance or constructor options for {@link ShaderEffect}
    */
-  effect: T
+  effect?: E
+  /**
+   * The uri of the effect file.
+   *
+   * @remarks
+   * Can not be resolved inside the {@link Material} constructor.
+   * Intended to be used by preprocessing tools e.g. content pipeline.
+   */
+  effectUri?: string
+  /**
+   * The technique name of the effect
+   *
+   * @remarks
+   * Is not used inside the {@link Material} constructor.
+   * Intended to be used by preprocessing tools e.g. content pipeline.
+   */
+  technique?: string
   /**
    * Effect parameters to be applied before rendering
    */
-  parameters: { [key: string]: ShaderUniformValue }
+  parameters: MaterialParameters
 }
 
 /**
@@ -48,7 +69,25 @@ export class Material {
    */
   public static readonly Options = new TypeToken<MaterialOptions>('MaterialOptions', {
     factory: () => {
-      return { effect: 'default' } as MaterialOptions
+      return { } as MaterialOptions
+    },
+  })
+
+  /**
+   * A symbol identifying the {@link MaterialOptions} type with effectUri set.
+   */
+  public static readonly OptionsUri = new TypeToken<MaterialOptions>('OptionsUri', {
+    factory: () => {
+      return { effectUri: '' } as MaterialOptions
+    },
+  })
+
+  /**
+   * A symbol identifying the {@link MaterialOptions} type with effectUri set.
+   */
+  public static readonly OptionsTechnique = new TypeToken<MaterialOptions>('OptionsTechnique', {
+    factory: () => {
+      return { technique: 'default' } as MaterialOptions
     },
   })
 
@@ -89,13 +128,10 @@ export class Material {
     this.parameters = options.parameters || {}
     if (options.effect instanceof ShaderEffect) {
       this.effect = options.effect
-    } else if (typeof options.effect === 'string') {
-      // TODO: describe the error
-      throw new Error(`[Material] can not use string as effect: ${options.effect}`)
     } else if (options.effect) {
       this.effect = device.createEffect(options.effect)
     } else {
-      // TODO: warn
+      this.onConstructWithoutEffect()
     }
   }
 
@@ -104,5 +140,9 @@ export class Material {
    */
   public draw(drawable: { draw: (p: ShaderProgram) => void }) {
     this.effect.draw(drawable, this.parameters)
+  }
+
+  protected onConstructWithoutEffect() {
+    throw new Error(`[Material] constructor option is missing: 'options.effect'. `)
   }
 }

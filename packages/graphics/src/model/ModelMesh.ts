@@ -1,5 +1,5 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
-import { isString, uuid, TypeToken } from '@gglib/utils'
+import { isString, uuid, TypeToken, Log } from '@gglib/utils'
 
 import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
 
@@ -25,7 +25,7 @@ export interface ModelMeshOptions {
   /**
    * Collection of materials that are used by the mesh
    */
-  materials?: Array<Material | MaterialOptions | string>
+  materials?: Array<Material | MaterialOptions>
   /**
    * Collection of mesh parts
    */
@@ -96,12 +96,9 @@ export class ModelMesh {
       }
     }
 
-    const materials: Material[] = []
     for (const material of (options.materials || [])) {
       if (material instanceof Material) {
         this.materials.push(material)
-      } else if (typeof material === 'string') {
-        throw new Error(`[ModelMesh] can not use string as material: ${material}`)
       } else {
         this.materials.push(new Material(this.device, material))
       }
@@ -114,7 +111,7 @@ export class ModelMesh {
         continue
       }
       let index = 0
-      for (const materialItem of materials) {
+      for (const materialItem of this.materials) {
         if (materialItem.name === name) {
           meshItem.materialId = index
           break
@@ -131,13 +128,15 @@ export class ModelMesh {
    * If a mesh points to a missing material it is silently ignored.
    */
   public draw(): this {
-    for (const mesh of this.parts) {
-      const material: Material = this.getMaterial(mesh.materialId) || this.materials[0]
-      if (!material) {
-        // mesh has no material so it can not be rendered
-        continue
+    const parts = this.parts
+    let part: ModelMeshPart
+    let material: Material
+    for (let i = 0; i < parts.length; i++){
+      part = parts[i]
+      material = this.getMaterial(part.materialId || 0)
+      if (material) {
+        material.draw(part)
       }
-      material.draw(mesh)
     }
     return this
   }

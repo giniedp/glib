@@ -1,9 +1,9 @@
-import { RootProperty } from './common'
+import { GLTFRootProperty } from './common'
 
 /**
  * A texture and its sampler.
  */
-export interface Texture extends RootProperty {
+export interface GLTFTexture extends GLTFRootProperty {
   /**
    * The index of the sampler used by this texture. When undefined,
    * a sampler with repeat wrapping and auto filtering should be used.

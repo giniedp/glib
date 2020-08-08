@@ -1,9 +1,9 @@
-import { Property, RootProperty } from './common'
+import { GLTFProperty, GLTFRootProperty } from './common'
 
 /**
  * An orthographic camera containing properties to create an orthographic projection matrix.
  */
-export interface CameraOrthographic {
+export interface GLTFCameraOrthographic {
   /**
    * The floating-point horizontal magnification of the view. Must not be zero.
    */
@@ -28,7 +28,7 @@ export interface CameraOrthographic {
 /**
  * A perspective camera containing properties to create a perspective projection matrix.
  */
-export interface CameraPerspective extends Property {
+export interface GLTFCameraPerspective extends GLTFProperty {
   /**
    * The floating-point aspect ratio of the field of view.
    *
@@ -58,16 +58,16 @@ export interface CameraPerspective extends Property {
   znear?: number
 }
 
-export interface Camera extends RootProperty {
+export interface GLTFCamera extends GLTFRootProperty {
   /**
    * An orthographic camera containing properties to create an orthographic projection matrix.
    */
-  orthographic?: CameraOrthographic
+  orthographic?: GLTFCameraOrthographic
 
   /**
    * A perspective camera containing properties to create a perspective projection matrix.
    */
-  perspective?: CameraPerspective
+  perspective?: GLTFCameraPerspective
 
   /**
    * pecifies if the camera uses a perspective or orthographic projection.

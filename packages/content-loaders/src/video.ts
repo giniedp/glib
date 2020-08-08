@@ -1,6 +1,8 @@
 import { loader } from '@gglib/content'
+import { Texture } from '@gglib/graphics'
 
 /**
+ *
  * @public
  */
 export const loadWebmToHTMLVideoElement = loader({
@@ -20,6 +22,7 @@ export const loadMp4ToHTMLVideoElement = loader({
 
 function loadVideo(src: string): HTMLVideoElement {
   const video = document.createElement('video')
+  video.crossOrigin = Texture.crossOrigin
   video.src = src
   return video
 }
