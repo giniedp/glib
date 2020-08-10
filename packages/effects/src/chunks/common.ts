@@ -37,6 +37,12 @@ export const FXC_COMMON: ShaderChunkSet = Object.freeze({
     uniform vec3 uCameraDirection;
     // @binding CameraPosition
     uniform vec3 uCameraPosition;
+    // @binding ClipPlanes
+    // @remarks
+    //   x: near
+    //   y: far
+    //   z: logarithmic depth buffer coefficient: 2.0 / log2(farplane + 1.0)
+    uniform vec3 uClipPlanes;
   `,
   structs: glsl`
     struct SurfaceParams {
@@ -53,8 +59,8 @@ export const FXC_COMMON: ShaderChunkSet = Object.freeze({
     #endif
   `,
   vs_end: glsl`
-    gl_Position = uProjection * uView * vPositionInWS;
-    vToEyeInWS = uCameraPosition.xyz - vPositionInWS.xyz;
+  gl_Position = uProjection * uView * vPositionInWS;
+  vToEyeInWS = uCameraPosition.xyz - vPositionInWS.xyz;
   `,
   fs_start_before: glsl`
     SurfaceParams surface;
