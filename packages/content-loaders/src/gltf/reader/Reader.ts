@@ -7,6 +7,7 @@ import {
   GLTFBufferView,
   GLTFAccessor,
   GLTFAccessorComponentType,
+  GLTFMaterial,
 } from '../format'
 
 export class GLTFReader {
@@ -87,6 +88,15 @@ export class GLTFReader {
         return this.loader(this.doc.buffers[index])
       },
     )
+  }
+
+  public loadMaterial<T>(index: number, cacheToken: string, loader: (texture: GLTFMaterial) => Promise<T>) {
+    return this.cached(`material-${index}-${cacheToken}`, async () => {
+      if (!this.doc.materials?.[index]) {
+        throw new Error(`[glTF] material not found: ${index}`)
+      }
+      return loader(this.doc.materials[index])
+    })
   }
 
   private cached<T>(key: string, loadFn: () => Promise<T>): Promise<T> {

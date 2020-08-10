@@ -24,6 +24,7 @@ const models = {
   Sword: '/assets/models/obj/piratekit/sword.obj',
   'Ship Dark': '/assets/models/obj/piratekit/ship_dark.obj',
   'Ship Light': '/assets/models/obj/piratekit/ship_light.obj',
+  'Tree': '/assets/models/obj/medieval/tree.obj',
 }
 
 TweakUi.build('#tweak-ui', (q) => {

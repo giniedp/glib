@@ -1,5 +1,5 @@
 import { loader } from '@gglib/content'
-import { Material, MaterialOptions, ShaderProgramOptions, CullState, BlendState, IBlendState, ICullState } from '@gglib/graphics'
+import { Material, MaterialOptions, ShaderProgramOptions, CullState, BlendState, IBlendState, ICullState, ShaderPassOptions, DepthState } from '@gglib/graphics'
 import { defaultProgram, DefaultProgramDefs } from './programs'
 
 /**
@@ -122,31 +122,24 @@ export const loadMaterialOptionsToShaderEffectOptions = loader({
       return null
     }
 
-    let blendState: IBlendState = {
-      ...BlendState.AlphaBlend
+    const pass: ShaderPassOptions = {
+      program: defaultProgram(defines),
     }
-    let cullState: ICullState
 
-    if ('Blend' in params) {
-      blendState = {
-        ...BlendState.AlphaBlend
-      }
+    if (params.Blend) {
+      pass.blendState = BlendState.AlphaBlend
+    } else {
+      pass.blendState = BlendState.None
     }
-    if ('DoubleSided' in params) {
-      cullState = {
-        ...CullState.CullNone
-      }
+    if (params.DoubleSided) {
+      pass.cullState = CullState.CullNone
     }
 
     return {
       ...input,
       effect: {
         techniques: [{
-          passes: [{
-            program: defaultProgram(defines),
-            blendState: blendState,
-            cullState: cullState,
-          }],
+          passes: [pass],
         }],
       }
     }

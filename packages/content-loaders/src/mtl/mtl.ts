@@ -57,18 +57,18 @@ async function convertMaterial(mtl: MTL, context: PipelineContext): Promise<Mate
   }
   const params = result.parameters
 
-  Object.keys(mtl).forEach((mtlName) => {
+  Object.keys(mtl).forEach((key) => {
     // convert simple parameters
-    if (mtlName in paramMap) {
-      const param = mtl[mtlName]
-      const name = paramMap[mtlName]
+    if (key in paramMap) {
+      const param = mtl[key]
+      const name = paramMap[key]
       params[name] = param
       return
     }
     // convert texture parameters
-    if (mtlName in textureMap) {
-      const param = mtl[mtlName] as MtlTextureData
-      const name = textureMap[mtlName]
+    if (key in textureMap) {
+      const param = mtl[key] as MtlTextureData
+      const name = textureMap[key]
       params[name] = resolveUri(param.file, context)
       if (param.options) {
         const options = param.options
@@ -88,9 +88,11 @@ async function convertMaterial(mtl: MTL, context: PipelineContext): Promise<Mate
     }
   })
   // convert other parmeters
-  params.AlphaClip = 0.9
   if (mtl.d != null) {
     params.Alpha = mtl.d
+    params.Blend = true
+  } else {
+    params.Blend = false
   }
   if (mtl.Ni != null) {
     // params.refraction = m.Ni
@@ -104,5 +106,21 @@ async function convertMaterial(mtl: MTL, context: PipelineContext): Promise<Mate
     // }
   }
 
+  switch(mtl.illum) {
+    case "0":
+      result.technique = "unlit"
+      break;
+    case "1":
+      result.technique = "lamber"
+      break;
+    case "2":
+      result.technique = "default"
+      break;
+    default:
+      result.technique = "default"
+      break;
+  }
+
+  mtl.illum
   return result
 }

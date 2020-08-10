@@ -1,8 +1,17 @@
-import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions, VertexLayout } from '@gglib/graphics'
+import {
+  Material,
+  Model,
+  ModelBuilder,
+  ModelMeshPartOptions,
+  ModelOptions,
+  VertexLayout,
+  MaterialOptions,
+} from '@gglib/graphics'
 import { loader, resolveUri } from '@gglib/content'
 
 import { OBJ, FaceElement, VertexTextureNormalRef } from './format'
 import { PipelineContext } from '@gglib/content/src'
+import { addToArraySet, flattenArray } from '@gglib/utils'
 
 /**
  * Downloads text from source, parses it using {@link OBJ.parse} and converts into {@link ModelOptions}.
@@ -27,16 +36,16 @@ export const loadObjToModelOptions = loader({
 })
 
 async function convertData(data: OBJ, context: PipelineContext) {
-  const mtllib = new Set<string>()
   const groups = new Map<string, Map<number, FaceElement[]>>()
-  const usemtls = new Set<string>()
+  const mtllibs: string[] = []
+  const usemtls: string[] = []
 
   for (const face of data.f) {
     for (const mtl of face.state.mtllib || []) {
-      mtllib.add(mtl)
+      addToArraySet(mtllibs, mtl)
     }
     if (face.state.usemtl) {
-      usemtls.add(face.state.usemtl)
+      addToArraySet(usemtls, face.state.usemtl)
     }
     for (const g of face.group.g) {
       const s = face.group.s
@@ -52,25 +61,17 @@ async function convertData(data: OBJ, context: PipelineContext) {
     }
   }
 
+  const materials = (await loadMtllibs(mtllibs, context)).filter((mtl) => {
+    return usemtls.indexOf(mtl.name) >= 0
+  })
+  const mtlNames = materials.map((it) => it.name)
   const parts: ModelMeshPartOptions[] = []
-  const mtls = Array.from(usemtls.values())
   groups.forEach((group, g) => {
     group.forEach((faces, s) => {
-      parts.push(...buildGroup(data, faces, s, mtls))
+      parts.push(...buildGroup(data, faces, s, mtlNames))
     })
   })
 
-  const materials = await Promise.all(
-    Array.from(mtllib.values()).map((file) => {
-      const uri = resolveUri(file, context)
-      return context.manager.load<Material[]>(uri, Material.Array)
-    }),
-  ).then((value) => {
-    return value.reduce((sum, b) => {
-      sum.push(...b)
-      return sum
-    }, [])
-  })
   return {
     meshes: [
       {
@@ -79,6 +80,13 @@ async function convertData(data: OBJ, context: PipelineContext) {
       },
     ],
   }
+}
+
+async function loadMtllibs(files: string[], context: PipelineContext) {
+  return Promise.all(files.map((file) => loadMtllib(file, context))).then(flattenArray)
+}
+function loadMtllib(file: string, context: PipelineContext) {
+  return context.manager.load<MaterialOptions[]>(resolveUri(file, context), Material.OptionsArray)
 }
 
 function readVertex<T>(data: OBJ, element: VertexTextureNormalRef, target: T) {

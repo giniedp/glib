@@ -13,7 +13,7 @@ export type MaterialParameters = { [key: string]: ShaderUniformValue }
  *
  * @public
  */
-export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = ShaderEffectOptions | ShaderEffect, P extends MaterialParameters = MaterialParameters> {
+export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = ShaderEffectOptions | ShaderEffect> {
   /**
    * The descriptive name of this effect
    */

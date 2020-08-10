@@ -1,7 +1,6 @@
 import {
   ModelOptions,
   ModelMeshOptions,
-  MaterialOptions,
   ModelMeshPartOptions,
   PrimitiveType,
   ModelMeshPartUtil,
@@ -10,17 +9,18 @@ import {
   dataTypeSize,
   VertexLayout,
   ArrayType,
+  Material,
 } from '@gglib/graphics'
-import { copy } from '@gglib/utils'
+import { copy, Log } from '@gglib/utils'
 import { BoundingSphere, BoundingBox } from '@gglib/math'
 import { PipelineContext } from '@gglib/content'
 
 import { GLTFScene, GLTFMesh, GLTFMeshPrimitive, GLTFAccessorType } from './format'
 
 import { loadGltfAnimations } from './gltfAnimations'
-import { loadGltfMaterial } from './gltfMaterials'
 import { loadGltfSkins } from './gltfSkins'
 import { GLTFReader } from './reader'
+import { loadGltfMaterial } from './gltfMaterials'
 
 export async function loadGltfModel(
   context: PipelineContext,
@@ -36,57 +36,57 @@ export async function loadGltfModel(
     meshes: await loadMeshes(context, reader),
     skins: await loadGltfSkins(reader),
   }
-
-  for (const node of result.nodes) {
-    const mesh = result.meshes[node.mesh] as ModelMeshOptions
-    const skin = result.skins[node.skin]
-    if (mesh) {
-      for (const part of mesh.parts) {
-        const mtl = mesh.materials[part.materialId] as MaterialOptions
-        if (mtl && skin) {
-          mtl.parameters.JointCount = skin.joints.length
-          mtl.parameters.WeightCount = 4 // TODO: can we get exact number of weight count from file?
-        }
-        const vb = part.vertexBuffer as BufferOptions[]
-        if (mtl && vb.some((it) => !!it.layout.color)) {
-          mtl.parameters.VertexColor = true
-        }
-        if (mtl && vb.some((it) => !!it.layout.color1)) {
-          mtl.parameters.VertexColor1 = true
-        }
-        if (mtl && vb.some((it) => !!it.layout.color2)) {
-          mtl.parameters.VertexColor2 = true
-        }
-      }
-    }
-  }
   return result
 }
 
 async function loadMeshes(context: PipelineContext, reader: GLTFReader): Promise<ModelMeshOptions[]> {
-  const result: ModelMeshOptions[] = []
-  for (const mesh of reader.doc.meshes) {
+  const result: Array<Promise<ModelMeshOptions>> = reader.doc.meshes.map(async (mesh, meshIndex) => {
     const parts = await loadMeshParts(reader, mesh)
-    const mtlMap = new Map<number | string, Promise<MaterialOptions>>()
+
+    const materials: Material[] = []
+    const mtlMap = new Map<number | string, number>()
     for (const part of parts) {
+      const features = analyzeMeshPart(reader, part, meshIndex)
       if (!mtlMap.has(part.materialId)) {
-        mtlMap.set(part.materialId, loadGltfMaterial(context, reader, part.materialId as number))
+        mtlMap.set(part.materialId, materials.length)
+        materials.push(await loadGltfMaterial(context, reader, part.materialId as number, features))
       }
+      part.materialId = mtlMap.get(part.materialId)
     }
 
-    const materials = Array.from(mtlMap.entries())
-    for (const part of parts) {
-      part.materialId = materials.findIndex(([id]) => id === part.materialId)
-    }
-
-    result.push({
+    return {
       name: mesh.name,
-      materials: await Promise.all(materials.map(([, promise]) => promise)),
+      materials: materials,
       parts: parts,
-    })
-  }
+    }
+  })
 
-  return result
+  return Promise.all(result)
+}
+
+function analyzeMeshPart(reader: GLTFReader, part: ModelMeshPartOptions, meshIndex: number) {
+  const features: { [key: string]: any } = {}
+  const nodes = reader.doc.nodes
+    .filter((it) => it.mesh === meshIndex)
+  const skins = nodes
+    .map((it) => reader.doc.skins?.[it.skin])
+    .filter((it) => it != null)
+
+  if (skins.length) {
+    features.JointCount = skins[0].joints.length
+    features.WeightCount = 4 // TODO: can we get exact number of weight count from file?
+  }
+  const vb = part.vertexBuffer as BufferOptions[]
+  if (vb.some((it) => !!it.layout.color)) {
+    features.VertexColor = true
+  }
+  if (vb.some((it) => !!it.layout.color1)) {
+    features.VertexColor1 = true
+  }
+  if (vb.some((it) => !!it.layout.color2)) {
+    features.VertexColor2 = true
+  }
+  return features
 }
 
 async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<ModelMeshPartOptions[]> {

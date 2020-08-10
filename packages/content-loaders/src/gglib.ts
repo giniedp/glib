@@ -87,8 +87,7 @@ export const loadGgfxToShaderEffectOptions = loader({
  * Materials are resolved as follows
  * - instance of `Material` is kept as is
  * - type of `object` is assumed to be a `MaterialOptions` object. `Material.Options` to `Material` loader is consulted
- * - type of `string` is assumed to be a URI referencing a material file relative to given context.
- * - Everything else is an error
+ * - otherwise its an error
  *
  * If the models bounding box is missing or is of zero size then the box is created by
  * merging all bounding boxes of all meshes
@@ -115,14 +114,7 @@ export const loadModelOptionsToModel = loader({
           materials.push(context.pipeline.run(Material.Options, Material, mtlOptions, context))
           continue
         }
-        if (typeof mtlOptions === 'string') {
-          const uri = resolveUri(mtlOptions, context)
-          if (context.manager.canLoad(uri, Material)) {
-            materials.push(context.manager.load(uri, Material))
-            continue
-          }
-        }
-        materials.push(Promise.reject(`type '${typeof mtlOptions}' can not be loaded as a model material`))
+        throw new Error(`type '${typeof mtlOptions}' can not be loaded as a model material`)
       }
 
       // handle bounding boxes

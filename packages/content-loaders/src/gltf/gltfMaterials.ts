@@ -1,5 +1,5 @@
 import { resolveUri, PipelineContext } from '@gglib/content'
-import { MaterialOptions } from '@gglib/graphics'
+import { MaterialOptions, Material } from '@gglib/graphics'
 
 import {
   GLTFTextureInfo,
@@ -11,37 +11,47 @@ import {
 } from './format'
 import { GLTFReader } from './reader'
 
+export async function loadGltfMaterials(
+  context: PipelineContext,
+  reader: GLTFReader,
+) {
+  return Promise.all(reader.doc.materials.map((mtl, i) => loadGltfMaterial(context, reader, i, {})))
+}
+
 export async function loadGltfMaterial(
   context: PipelineContext,
   reader: GLTFReader,
   materialIndex: number,
-): Promise<MaterialOptions> {
-  const material = (reader.doc.materials || [])[materialIndex] || {}
+  features: { [key: string]: any},
+): Promise<Material> {
+  return reader.loadMaterial(materialIndex, JSON.stringify(features), async (material) => {
+    const params = {
+      ...features,
+    }
 
-  const params: { [k: string]: any } = {}
-  let technique = 'default'
+    let technique = 'default'
 
-  if (material.normalTexture != null) {
-    params.NormalMap = await loadTexture(context, reader, material.normalTexture.index)
-    readTextureInfo(params, 'NormalMap', material.normalTexture)
-  }
-  if (material.occlusionTexture != null) {
-    params.OcclusionMap = await loadTexture(context, reader, material.occlusionTexture.index)
-    readTextureInfo(params, 'OcclusionMap', material.occlusionTexture)
-  }
-  if (material.emissiveTexture != null) {
-    params.EmissionMap = await loadTexture(context, reader, material.emissiveTexture.index)
-    readTextureInfo(params, 'EmissionMap', material.emissiveTexture)
-  }
-  if (material.emissiveFactor != null) {
-    params.EmissionColor = material.emissiveFactor
-  }
-  if (material.alphaMode != null) {
+    if (material.normalTexture != null) {
+      params.NormalMap = await loadTexture(context, reader, material.normalTexture.index)
+      readTextureInfo(params, 'NormalMap', material.normalTexture)
+    }
+    if (material.occlusionTexture != null) {
+      params.OcclusionMap = await loadTexture(context, reader, material.occlusionTexture.index)
+      readTextureInfo(params, 'OcclusionMap', material.occlusionTexture)
+    }
+    if (material.emissiveTexture != null) {
+      params.EmissionMap = await loadTexture(context, reader, material.emissiveTexture.index)
+      readTextureInfo(params, 'EmissionMap', material.emissiveTexture)
+    }
+    if (material.emissiveFactor != null) {
+      params.EmissionColor = material.emissiveFactor
+    }
     switch (material.alphaMode) {
       case 'BLEND':
         params.Blend = true
         break
       case 'MASK':
+        params.Blend = false
         if (material.alphaCutoff != null) {
           params.AlphaClip = material.alphaCutoff
         } else {
@@ -49,58 +59,60 @@ export async function loadGltfMaterial(
         }
         break
       case 'OPAQUE':
-        //
+        params.Blend = false
         break
     }
-  }
-  if (material.doubleSided) {
-    params.DoubleSided = true
-  }
-
-  if (material.pbrMetallicRoughness) {
-    technique = 'pbr'
-
-    const pbr = material.pbrMetallicRoughness
-    params.DiffuseColor = pbr.baseColorFactor || [1, 1, 1, 1]
-    params.MetallicRoughness = [pbr.metallicFactor ?? 1, pbr.roughnessFactor ?? 1]
-
-    if (pbr.baseColorTexture != null) {
-      params.DiffuseMap = await loadTexture(context, reader, pbr.baseColorTexture.index)
-      readTextureInfo(params, 'DiffuseMap', pbr.baseColorTexture)
+    if (material.doubleSided) {
+      params.DoubleSided = true
     }
-    if (pbr.metallicRoughnessTexture != null) {
-      params.MetallicRoughnessMap = await loadTexture(context, reader, pbr.metallicRoughnessTexture.index)
-      readTextureInfo(params, 'MetallicRoughnessMap', pbr.metallicRoughnessTexture)
+
+    if (material.extensions && material.extensions[KHR_materials_pbrSpecularGlossiness]) {
+      technique = 'default'
+
+      const ext: GLTFPbrMaterialSpecularGlossiness = material.extensions[KHR_materials_pbrSpecularGlossiness]
+      params.DiffuseColor = ext.diffuseFactor // || [1, 1, 1, 1]
+      params.SpecularColor = ext.specularFactor // || [1, 1, 1]
+      params.Glossiness = ext.glossinessFactor // || 1
+
+      if (ext.diffuseTexture) {
+        params.DiffuseMap = await loadTexture(context, reader, ext.diffuseTexture.index)
+        readTextureInfo(params, 'DiffuseMap', ext.diffuseTexture)
+      }
+      if (ext.specularGlossinessTexture) {
+        params.SpecularMap = await loadTexture(context, reader, ext.specularGlossinessTexture.index)
+        readTextureInfo(params, 'SpecularMap', ext.specularGlossinessTexture)
+      }
+    } else if (material.pbrMetallicRoughness) {
+      technique = 'pbr'
+
+      const pbr = material.pbrMetallicRoughness
+      if (pbr.baseColorFactor != null) {
+        params.DiffuseColor = pbr.baseColorFactor
+      }
+      if (pbr.metallicFactor != null || pbr.roughnessFactor != null) {
+        params.MetallicRoughness = [pbr.metallicFactor ?? 1, pbr.roughnessFactor ?? 1]
+      }
+      if (pbr.baseColorTexture != null) {
+        params.DiffuseMap = await loadTexture(context, reader, pbr.baseColorTexture.index)
+        readTextureInfo(params, 'DiffuseMap', pbr.baseColorTexture)
+      }
+      if (pbr.metallicRoughnessTexture != null) {
+        params.MetallicRoughnessMap = await loadTexture(context, reader, pbr.metallicRoughnessTexture.index)
+        readTextureInfo(params, 'MetallicRoughnessMap', pbr.metallicRoughnessTexture)
+      }
     }
-  }
 
-  if (material.extensions && material.extensions[KHR_materials_pbrSpecularGlossiness]) {
-    technique = 'default'
-
-    const gloss: GLTFPbrMaterialSpecularGlossiness = material.extensions[KHR_materials_pbrSpecularGlossiness]
-    params.DiffuseColor = gloss.diffuseFactor || params.DiffuseColor || [1, 1, 1, 1]
-    params.SpecularColor = gloss.specularFactor || [1, 1, 1]
-    params.Glossiness = gloss.glossinessFactor || 1
-
-    if (gloss.diffuseTexture) {
-      params.DiffuseMap = await loadTexture(context, reader, gloss.diffuseTexture.index)
-      readTextureInfo(params, 'DiffuseMap', gloss.diffuseTexture)
+    if (material.extensions && material.extensions[KHR_materials_unlit]) {
+      technique = 'unlit'
     }
-    if (gloss.specularGlossinessTexture) {
-      params.SpecularMap = await loadTexture(context, reader, gloss.specularGlossinessTexture.index)
-      readTextureInfo(params, 'SpecularMap', gloss.specularGlossinessTexture)
+
+    const mtlOptions: MaterialOptions = {
+      name: material.name,
+      technique: technique,
+      parameters: params,
     }
-  }
-
-  if (material.extensions && material.extensions[KHR_materials_unlit]) {
-    technique = 'unlit'
-  }
-
-  return {
-    name: material.name,
-    technique: technique,
-    parameters: params,
-  }
+    return context.pipeline.run(Material.Options, Material, mtlOptions, context)
+  })
 }
 
 function readTextureInfo(params: { [k: string]: unknown }, name: string, info: GLTFTextureInfo) {
