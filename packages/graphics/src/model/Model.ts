@@ -83,11 +83,11 @@ export class Model {
   /**
    * Model animation data
    */
-  public readonly animations?: AnimationData[]
+  public readonly animations?: ReadonlyArray<AnimationData>
   /**
    * Collection of cameras to preview this model
    */
-  public readonly cameras?: any[]
+  public readonly cameras?: ReadonlyArray<any>
 
   private player: AnimationPlayer
   private pose: ModelPose

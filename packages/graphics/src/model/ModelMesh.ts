@@ -67,11 +67,11 @@ export class ModelMesh {
   /**
    * Collection of materials that are used by the model meshes
    */
-  public materials: Material[] = []
+  public materials: ReadonlyArray<Material>
   /**
    * Collection of meshes
    */
-  public parts: ModelMeshPart[] = []
+  public parts: ReadonlyArray<ModelMeshPart>
   /**
    * The index of the parent bone for this mesh
    */
@@ -88,21 +88,25 @@ export class ModelMesh {
     this.boundingBox = BoundingBox.convert(options.boundingBox)
     this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
 
+    const parts: ModelMeshPart[] = []
     for (const mesh of (options.parts || [])) {
       if (mesh instanceof ModelMeshPart) {
-        this.parts.push(mesh)
+        parts.push(mesh)
       } else {
-        this.parts.push(new ModelMeshPart(this.device, mesh))
+        parts.push(new ModelMeshPart(this.device, mesh))
       }
     }
+    this.parts = parts
 
+    const materials: Material[] = []
     for (const material of (options.materials || [])) {
       if (material instanceof Material) {
-        this.materials.push(material)
+        materials.push(material)
       } else {
-        this.materials.push(new Material(this.device, material))
+        materials.push(new Material(this.device, material))
       }
     }
+    this.materials = materials
 
     // convert materialIds from string name to numeric index
     for (const meshItem of this.parts) {
