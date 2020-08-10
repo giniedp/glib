@@ -81,7 +81,7 @@ export const DefaultContextAttributes = Object.freeze<WebGLContextAttributes & {
   antialias: true,
   depth: true,
   premultipliedAlpha: true,
-  preserveDrawingBuffer: true, // TODO: does not work with sampler objects in chrome
+  preserveDrawingBuffer: true,
   stencil: true,
 })
 
@@ -176,6 +176,17 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     this.customFrameBuffer = value
   }
   private customFrameBuffer: FrameBufferGL
+
+  public get driverInfo() {
+    // https://developer.mozilla.org/en-US/docs/Web/API/WEBGL_debug_renderer_info
+    const debugInfo = this.capabilities.extension('WEBGL_debug_renderer_info');
+    if (debugInfo) {
+      const vendor = this.context.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+      const renderer = this.context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      return `${vendor} ${renderer}`
+    }
+    return ""
+  }
 
   /**
    * Constructs a {@link Device}

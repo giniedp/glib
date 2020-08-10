@@ -48,9 +48,10 @@ export class Capabilities {
   private $maxDrawBuffers: number
   get maxDrawBuffers() {
     if (this.$maxDrawBuffers == null) {
-      this.$maxDrawBuffers = this.gl2 instanceof WebGL2RenderingContext
-      ? this.gl2.getParameter(this.gl2.MAX_DRAW_BUFFERS)
-      : this.capability('MAX_DRAW_BUFFERS_WEBGL', 'WEBGL_draw_buffers')
+      this.$maxDrawBuffers =
+        this.gl2 instanceof WebGL2RenderingContext
+          ? this.gl2.getParameter(this.gl2.MAX_DRAW_BUFFERS)
+          : this.capability('MAX_DRAW_BUFFERS_WEBGL', 'WEBGL_draw_buffers')
     }
     return this.$maxDrawBuffers
   }
@@ -58,18 +59,19 @@ export class Capabilities {
   private $maxColorAttachments: number
   get maxColorAttachments() {
     if (this.$maxColorAttachments == null) {
-      this.$maxColorAttachments = this.gl2 instanceof WebGL2RenderingContext
-      ? this.gl2.getParameter(this.gl2.MAX_COLOR_ATTACHMENTS)
-      : this.capability('MAX_COLOR_ATTACHMENTS_WEBGL', 'WEBGL_draw_buffers')
+      this.$maxColorAttachments =
+        this.gl2 instanceof WebGL2RenderingContext
+          ? this.gl2.getParameter(this.gl2.MAX_COLOR_ATTACHMENTS)
+          : this.capability('MAX_COLOR_ATTACHMENTS_WEBGL', 'WEBGL_draw_buffers')
     }
     return this.$maxColorAttachments
   }
 
   get textureFormatFloat() {
-      return !!this.extension('OES_texture_float')
+    return !!this.extension('OES_texture_float')
   }
   get textureFormatHalfFloat() {
-      return !!this.extension('OES_texture_half_float')
+    return !!this.extension('OES_texture_half_float')
   }
 
   constructor(device: Device<WebGLRenderingContext | WebGL2RenderingContext>) {
@@ -80,12 +82,14 @@ export class Capabilities {
   }
   public capability(name: string, extension?: string) {
     let result = this.capabilities[name]
-    if (result !== void 0) { return result }
+    if (result !== void 0) {
+      return result
+    }
     let lookup = extension ? this.extension(extension as any) : this.gl
     if (lookup) {
-      return this.capabilities[name] = this.gl.getParameter(lookup[name])
+      return (this.capabilities[name] = this.gl.getParameter(lookup[name]))
     }
-    return this.capabilities[name] = null
+    return (this.capabilities[name] = null)
   }
 
   public extension(extensionName: 'EXT_blend_minmax'): EXT_blend_minmax | null
@@ -113,7 +117,7 @@ export class Capabilities {
   public extension(name: string) {
     let result = this.extensions[name]
     if (result === void 0) {
-      return this.extensions[name] = this.gl.getExtension(name)
+      return (this.extensions[name] = this.gl.getExtension(name))
     }
     return result
   }

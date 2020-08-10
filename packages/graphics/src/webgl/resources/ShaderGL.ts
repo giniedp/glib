@@ -74,4 +74,10 @@ export class ShaderGL extends Shader {
     }
     return this
   }
+
+  public get debug() {
+    const compiled = this.device.capabilities.extension('WEBGL_debug_shaders')?.getTranslatedShaderSource(this.handle)
+    console.log(compiled)
+    return compiled
+  }
 }

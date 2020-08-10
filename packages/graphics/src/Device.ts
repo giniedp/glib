@@ -190,6 +190,10 @@ export abstract class Device<T = unknown> {
 
   protected defaultTextureInstance: Texture
 
+  public get driverInfo(): string {
+    return ""
+  }
+
   public init(): Promise<void> {
     return Promise.resolve()
   }
