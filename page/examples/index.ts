@@ -94,9 +94,13 @@ class ExampleComponent {
           m.redraw()
         },
       }),
-      m(ExampleSectionComponent, {
-        data: this.tab,
-      }),
+      m.fragment({}, [
+        m(ExampleSectionComponent, {
+          key: `panel-${this.tabIndex}`,
+          data: this.tab,
+        }),
+      ])
+
     )
   }
 }
@@ -185,7 +189,7 @@ class ExampleSectionComponent {
       this.content,
       m(ExampleCodeComponent, { code: this.code } as any),
       !this.annotated ? null : m(
-        'ul.annotated-section',
+        'ul.annotated-section.row',
         this.annotated.map((it) => {
           return m(
             'li' as any,
@@ -235,6 +239,7 @@ class ExampleTabsComponent {
       data.tabs.map((tab, i) => {
         return m('button.example-tab[type="button"]',
           {
+            key: `tab-${i}`,
             class: i === data.active ? 'active' : '',
             onclick: () => this.node.attrs.select(i),
           },

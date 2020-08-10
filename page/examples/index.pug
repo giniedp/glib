@@ -7,7 +7,7 @@ block append script
   script(type='text/javascript' src='./index.js')
 block content
   .example-page
-    .example-nav
+    .example-nav.bg-white
       each child in meta.children
         .list-group.list-group-flush(role="tablist")
           a.list-group-item.list-group-title()&attributes({ href: '#' + child.path.replace(meta.path, ''), "data-data": child })
