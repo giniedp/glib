@@ -49,9 +49,6 @@ let linesMesh: ModelMeshPart = null
 
 // The mesh rotation state
 const meshRotation = {
-  yaw: 0,
-  pitch: 0.25,
-  roll: 0,
   update: {
     dx: 0,
     dy: 0,
@@ -68,12 +65,10 @@ function destroyMesh() {
 // Builds the mesh using the specified formula.
 function buildMesh(name: string) {
   destroyMesh()
-  mesh = ModelBuilder.begin().append((b) => {
-    const fn = builderFunctions[name]
-    const options = builderFunctionOptions[name]
-    fn(b, options)
-  })
-  .endMeshPart(device)
+  mesh = ModelBuilder
+    .begin()
+    .append(builderFunctions[name], builderFunctionOptions[name])
+    .endMeshPart(device)
 
   linesMesh = ModelBuilder.begin({
     layout: ['position', 'color'],
@@ -229,9 +224,8 @@ loop((time, dt) => {
   }
 
   // Update World/View transforms
-  meshRotation.yaw += meshRotation.update.dx * dt * 0.001
-  meshRotation.pitch += meshRotation.update.dy * dt * 0.001
-  world.initYawPitchRoll(meshRotation.yaw * Math.PI, meshRotation.pitch * Math.PI, meshRotation.roll * Math.PI)
+  world.preRotateX(meshRotation.update.dy * dt * 0.001)
+  world.preRotateY(meshRotation.update.dx * dt * 0.001)
   view.initTranslation(0, 0, -1.5)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
 
