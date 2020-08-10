@@ -456,4 +456,8 @@ export class TerrainMaterial extends Material {
     })
     this.hasChanged = false
   }
+
+  protected onConstructWithoutEffect() {
+    // OK
+  }
 }
