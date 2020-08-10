@@ -14,9 +14,8 @@ let program = device.createProgram({
   fragmentShader: document.getElementById('fragment-shader').textContent,
 })
 
-// Create meshes which are going to be rendered
-let planeMesh = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
-let cubeMesh = ModelBuilder.begin().append(buildCube).endMeshPart(device)
+// Create the geometry
+let mesh = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
 
 // Create a texture and a render target
 let texture = device.createTexture({
@@ -32,43 +31,49 @@ let world = Mat4.createIdentity()
 let view = Mat4.createIdentity()
 let proj = Mat4.createIdentity()
 
-// Begin the render loop and accumulate the time
+// In the render loop
 loop((time, dt) => {
 
-  // Begin rendering to the render target by setting it to the device and clear it
-  device.setRenderTarget(renderTarget)
-  device.clear(0xFF888888, 1.0)
-
+  // ## Step 1
   // update state variables
-  // and pass them to the shader
-  world.initRotationX(Math.PI * 0.5)
-  world.setTranslationZ(Math.sin(Math.PI * time / 2000) - 1)
+  world
+  .initIdentity()
+  .preRotateX(Math.PI * 0.5)
+  .preRotateZ(Math.PI * time / 10000)
   view.initTranslation(0, 0, -1)
   proj.initPerspectiveFieldOfView(Math.PI / 2, 1, 0, 100)
-
+  // and pass them to the shader
   program.setUniform('world', world)
   program.setUniform('view', view)
   program.setUniform('projection', proj)
   program.setUniform('texture', texture)
 
-  // draw the plane with the prepared shader
-  planeMesh.draw(program)
+  // set the render target and clear the color
+  device.setRenderTarget(renderTarget)
+  device.clear(0xFF0088FF, 1.0)
 
-  // unset the render target. The render target now holds the image of the plane that we
-  // just rendered. The target can now be used as a tecture
+  // draw the mesh and unset the render target again.
+  mesh.draw(program)
   device.setRenderTarget(null)
 
-  // Now continue rendering to the backbuffer. Resize and clear the backbuffer
+  // The render target holds the image of the plane that we
+  // just rendered and can now be used as a texture in the next step.
+
+  // ## Step 2
+  // Resize and lcear the backbuffer
   device.resize()
   device.clear(0xff2e2620, 1.0)
-  device.cullState = CullState.CullClockWise
+  // Our geometry is spinning and we will see it from front and back side, so disable culling.
+  device.cullState = CullState.CullNone
 
   // update state variables
-  // and pass them to the shader
-  world.initRotationY(Math.PI * time / 10000)
+  world
+  .initIdentity()
+  .preRotateX(Math.PI * 0.5)
+  .preRotateY(Math.PI * time / 10000)
   view.initTranslation(0, 0, -1)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0, 100)
-
+  // and pass them to the shader
   program.setUniform('world', world)
   program.setUniform('view', view)
   program.setUniform('projection', proj)
@@ -76,5 +81,5 @@ loop((time, dt) => {
   program.setUniform('texture', renderTarget)
 
   // draw the cube with the prepared shader
-  cubeMesh.draw(program)
+  mesh.draw(program)
 })
