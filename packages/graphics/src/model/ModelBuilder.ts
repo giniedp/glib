@@ -412,7 +412,7 @@ export class ModelBuilder {
    * @returns `ModelMesh` or `null` if current state has no mesh data
    */
   public endMesh(device: Device, options?: ModelMeshOptions): ModelMesh | null
-  public endMesh(): Model | ModelMeshOptions {
+  public endMesh(): ModelMesh | ModelMeshOptions {
     this.endMeshPart()
     if (!this.meshParts.length) {
       return null
