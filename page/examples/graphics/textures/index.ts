@@ -1,4 +1,4 @@
-import { buildPlane, CullState, DeviceGL, ModelBuilder, Texture, createDevice } from '@gglib/graphics'
+import { buildPlane, CullState, DeviceGL, ModelBuilder, Texture, createDevice, BlendState } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 

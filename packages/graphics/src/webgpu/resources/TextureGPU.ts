@@ -4,7 +4,7 @@ import {
   TextureType,
 } from '../../enums'
 
-import { Texture, TextureDataOption, TextureOptions } from '../../resources/Texture'
+import { Texture, TextureDataOption, TextureOptions, TextureSourceOption } from '../../resources/Texture'
 import { DeviceGPU } from '../DeviceGPU'
 import { toTextureFormat } from '../utils/textureFormat'
 
@@ -66,8 +66,7 @@ export class TextureGPU extends Texture {
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
   public destroy(): this {
-    this.set('image', null)
-    this.set('video', null)
+    this.set('source', null)
     this.set('handle', null)
     return this
   }
@@ -90,8 +89,7 @@ export class TextureGPU extends Texture {
    * @param height - The new texture height
    */
   public setData(data: TextureDataOption, width?: number, height?: number): this {
-    this.set('image', null)
-    this.set('video', null)
+    this.set('source', null)
 
     let buffer: ArrayBufferView
     if (data instanceof Array || data instanceof ArrayBuffer) {
@@ -129,6 +127,11 @@ export class TextureGPU extends Texture {
     return this
   }
 
+  public setFaces(faces: TextureSourceOption[]) {
+    // TODO:
+    return this
+  }
+
   /**
    * Updates the texture from current image or video element.
    *
@@ -144,48 +147,20 @@ export class TextureGPU extends Texture {
    * the texture data. When data has arrived the {@link Texture.ready}
    * property will be set to `true`
    */
-  public update() {
-    if (this.image) {
-      this.updateFromImage(this.image)
-    }
-    if (this.video) {
-      this.updateFromVideo(this.video)
-    }
-    return this
-  }
-
-  private updateFromImage(image: HTMLImageElement) {
-    if (this.ready || !image || !image.complete) {
-      return
+  public update(): boolean {
+    if (!this.source || !this.source.update()) {
+      return false
     }
 
-    if (this.width !== image.naturalWidth || this.height !== image.naturalHeight) {
+    if (this.width !== this.source.width || this.height !== this.source.height) {
       this.destroy()
     }
-    this.set('width', image.naturalWidth)
-    this.set('height', image.naturalHeight)
+    this.set('width', this.source.width)
+    this.set('height', this.source.height)
     this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
     this.create()
+
     // TODO:
-
-    this.set('ready', true)
-  }
-
-  private updateFromVideo(video: HTMLVideoElement) {
-    if (!video || video.readyState < 3 || video.currentTime === this.videoTime) {
-      return
-    }
-
-    if (this.width !== video.width || this.height !== video.height) {
-      this.destroy()
-    }
-    this.set('width', video.videoWidth)
-    this.set('height', video.videoHeight)
-    this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
-    this.create()
-    // TODO:
-
-    this.set('ready', video.readyState >= 3)
-    this.videoTime = video.currentTime
+    return true
   }
 }

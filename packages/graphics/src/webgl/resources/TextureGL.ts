@@ -1,15 +1,25 @@
 import {
   ArrayType,
   pixelFormatElementCount,
+  TextureType,
 } from '../../enums'
 
 import { Device } from '../../Device'
 
-import { Texture, TextureDataOption, TextureOptions } from '../../resources/Texture'
+import { Texture, TextureDataOption, TextureOptions, TextureSourceOption } from '../../resources/Texture'
 
 function isPowerOfTwo(value: number): boolean {
   return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
 }
+
+const cubeFaceTypes = [
+  0x8515, // TEXTURE_CUBE_MAP_POSITIVE_X
+  0x8516, // TEXTURE_CUBE_MAP_NEGATIVE_X
+  0x8517, // TEXTURE_CUBE_MAP_POSITIVE_Y
+  0x8518, // TEXTURE_CUBE_MAP_NEGATIVE_Y
+  0x8519, // TEXTURE_CUBE_MAP_POSITIVE_Z
+  0x851a, // TEXTURE_CUBE_MAP_NEGATIVE_Z
+]
 
 /**
  * Describes a texture object.
@@ -19,6 +29,11 @@ function isPowerOfTwo(value: number): boolean {
 export class TextureGL extends Texture {
 
   public readonly handle: WebGLTexture
+
+  /**
+   * Determines whether this is a cubemap face
+   */
+  public readonly isFace: boolean
 
   /**
    * Constructs an instance of a Texture.
@@ -33,6 +48,7 @@ export class TextureGL extends Texture {
 
   public create(): this {
     if (!this.device.context.isTexture(this.handle)) {
+      this.set('isFace', cubeFaceTypes.indexOf(this.type) >= 0)
       this.set('handle', this.device.context.createTexture())
       this.device.context.bindTexture(this.type, this.handle)
       this.device.context.texImage2D(this.type, 0, this.pixelFormat, this.width, this.height, 0, this.pixelFormat, this.pixelType, null)
@@ -45,8 +61,7 @@ export class TextureGL extends Texture {
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
   public destroy(): this {
-    this.set('image', null)
-    this.set('video', null)
+    this.set('source', null)
     if (this.handle != null && this.device.context.isTexture(this.handle)) {
       this.device.context.deleteTexture(this.handle)
     }
@@ -72,8 +87,7 @@ export class TextureGL extends Texture {
    * @param height - The new texture height
    */
   public setData(data: TextureDataOption, width?: number, height?: number): this {
-    this.set('image', null)
-    this.set('video', null)
+    this.set('source', null)
 
     let buffer: ArrayBufferView
     if (data instanceof Array || data instanceof ArrayBuffer) {
@@ -110,8 +124,40 @@ export class TextureGL extends Texture {
     return this
   }
 
+  public setFaces(faces: TextureSourceOption[]) {
+    if (this.type !== TextureType.TextureCube) {
+      throw new Error('setFaces is only allowed on cube textures')
+    }
+    if (faces.length !== 6) {
+      throw new Error('faces must be an array of length 6')
+    }
+    const types = [
+      0x8515, // TEXTURE_CUBE_MAP_POSITIVE_X
+      0x8516, // TEXTURE_CUBE_MAP_NEGATIVE_X
+      0x8517, // TEXTURE_CUBE_MAP_POSITIVE_Y
+      0x8518, // TEXTURE_CUBE_MAP_NEGATIVE_Y
+      0x8519, // TEXTURE_CUBE_MAP_POSITIVE_Z
+      0x851a, // TEXTURE_CUBE_MAP_NEGATIVE_Z
+    ]
+
+    this.bind()
+    this.set('faces', faces.map((face, i) => {
+      return new TextureGL(this.device, {
+        type: types[i],
+        data: face,
+        width: this.width,
+        height: this.height,
+        generateMipmap: false,
+      })
+    }))
+    this.update()
+
+
+    return this
+  }
+
   /**
-   * Updates the texture from current image or video element.
+   * Updates the texture from current image source.
    *
    * @remarks
    * This method is called automatically from inside the {@link ShaderUniform}
@@ -125,52 +171,56 @@ export class TextureGL extends Texture {
    * the texture data. When data has arrived the {@link Texture.ready}
    * property will be set to `true`
    */
-  public update() {
-    if (this.image) {
-      this.updateFromImage(this.image)
+  public update(): boolean {
+    if (this.isCube) {
+      return this.updateCubemap()
     }
-    if (this.video) {
-      this.updateFromVideo(this.video)
-    }
-    return this
+    return this.updateSource()
   }
 
-  private updateFromImage(image: HTMLImageElement) {
-    if (this.ready || !image || !image.complete) {
-      return
+  private updateCubemap(): boolean {
+    if (!this.faces) {
+      return false
+    }
+    let updated = false
+    let ready = true
+    for (const face of this.faces) {
+      updated = updated || face.update()
+      ready = ready && face.ready
+    }
+    if (updated && ready) {
+      this.bind()
+      for (const face of this.faces) {
+        this.device.context.texImage2D(face.type, 0, face.pixelFormat, face.pixelFormat, face.pixelType, face.source.data)
+      }
+    }
+    if (ready) {
+      this.set('ready', ready)
+      this.set('width', this.faces[0].width)
+      this.set('height', this.faces[0].height)
+      this.set('isPOT', this.faces[0].isPOT)
+    }
+    return updated
+  }
+
+  private updateSource(): boolean {
+    if (!this.source || !this.source.update()) {
+      return false
     }
 
     const gl = this.device.context
     gl.bindTexture(this.type, this.handle)
-    gl.texImage2D(this.type, 0, this.pixelFormat, this.pixelFormat, this.pixelType, image)
+    gl.texImage2D(this.type, 0, this.pixelFormat, this.pixelFormat, this.pixelType, this.source.data)
     if (this.generateMipmap) {
       gl.generateMipmap(this.type)
     }
     gl.bindTexture(this.type, null)
 
-    this.set('ready', true)
-    this.set('width', image.naturalWidth)
-    this.set('height', image.naturalHeight)
-    this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
+    this.set('ready', this.source.isReady)
+    this.set('width', this.source.width)
+    this.set('height', this.source.height)
+    this.set('isPOT', this.source.isPowerOfTwo)
+    return true
   }
 
-  private updateFromVideo(video: HTMLVideoElement) {
-    if (!video || video.readyState < 3 || video.currentTime === this.videoTime) {
-      return
-    }
-
-    const gl = this.device.context
-    gl.bindTexture(this.type, this.handle)
-    gl.texImage2D(this.type, 0, this.pixelFormat, this.pixelFormat, this.pixelType, video)
-    if (this.generateMipmap && this.isPOT) {
-      gl.generateMipmap(this.type)
-    }
-    gl.bindTexture(this.type, null)
-
-    this.set('ready', video.readyState >= 3)
-    this.set('width', video.videoWidth)
-    this.set('height', video.videoHeight)
-    this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
-    this.videoTime = video.currentTime
-  }
 }

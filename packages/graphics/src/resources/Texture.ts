@@ -1,7 +1,6 @@
 import { IVec2 } from '@gglib/math'
 import { getOption, isArray, isObject, isString, Log, uuid } from '@gglib/utils'
 import {
-  ArrayType,
   DataType,
   DataTypeOption,
   DepthFormatOption,
@@ -21,6 +20,7 @@ import {
 
 import { Device } from '../Device'
 import { SamplerState, SamplerStateParams } from '../states/SamplerState'
+import { TextureSource, TextureSourceImage, TextureSourceVideo, TextureSourceData } from './TextureSource'
 
 /**
  * Type that is accepted by the {@link Texture.setData} method
@@ -29,9 +29,10 @@ import { SamplerState, SamplerStateParams } from '../states/SamplerState'
  */
 export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
 
-function isPowerOfTwo(value: number): boolean {
-  return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
-}
+/**
+ * @public
+ */
+export type TextureSourceOption = string | TexImageSource | TextureDataOption | TextureSource
 
 /**
  * Constructor options for {@link Texture}
@@ -55,6 +56,7 @@ export interface TextureOptions {
    * The texture type
    */
   type?: TextureTypeOption
+
   /**
    * The texture width
    */
@@ -69,7 +71,11 @@ export interface TextureOptions {
    * @remarks
    * A value of type `string` is interpreted as an image or video URL
    */
-  data?: string | HTMLImageElement | HTMLVideoElement | TextureDataOption
+  data?: TextureSourceOption
+  /**
+   * The faces for a Cube Texture
+   */
+  faces?: Array<TextureSourceOption>
   /**
    * The depth format of the depth stencil buffer to use when the texture is used as a render target
    */
@@ -144,7 +150,7 @@ export abstract class Texture {
    * If the texture data must be loaded asynchronously (e.g. image or video URL) this property will be false as long
    * as the data has not arrived. A shader should not attempt to bind this texture until the property is switched to true.
    */
-  public readonly ready: boolean
+  public readonly ready: boolean = false
 
   /**
    * Indicates whether the texture size is a power of two value.
@@ -172,19 +178,23 @@ export abstract class Texture {
   public readonly type: TextureType = TextureType.Texture2D
 
   /**
-   * The HTMLVideoElement that was passed as data.
+   * The data source for this texture
    */
-  public readonly video: HTMLVideoElement = null
+  public readonly source: TextureSource = null
 
   /**
-   * The HTMLImageElement that was passed as data.
+   * The faces of a cube texture
    */
-  public readonly image: HTMLImageElement = null
+  public readonly faces: Texture[] = null
 
   /**
-   * The webgl resource handle
+   * Returns the video element if the {@link source} is an instance of {@link TextureSourceVideo}
    */
-  // public readonly handle: WebGLTexture = null
+  public get video(): HTMLVideoElement {
+    if (this.source instanceof TextureSourceVideo) {
+      return this.source.data
+    }
+  }
 
   /**
    * The sampler state of this texture. Always reflects current state of this texture.
@@ -258,6 +268,14 @@ export abstract class Texture {
     return nameOfTextureType(this.type)
   }
 
+  public get isCube() {
+    return this.type === TextureType.TextureCube
+  }
+
+  public get is2D() {
+    return this.type === TextureType.Texture2D
+  }
+
   /**
    * Collection of file extensions that are recognized as video files.
    */
@@ -268,7 +286,12 @@ export abstract class Texture {
     let width = options.width || this.width
     let height = options.height || this.height
 
+    let givenType = getOption(options, 'type', this.type)
     let type = valueOfTextureType(getOption(options, 'type', this.type))
+    if (type == null && typeof givenType === 'number') {
+      type = givenType
+    }
+
     let pixelType = valueOfDataType(getOption(options, 'pixelType', this.pixelType))
     let pixelFormat = valueOfPixelFormat(getOption(options, 'pixelFormat', this.pixelFormat))
     let depthFormat = valueOfDepthFormat(getOption(options, 'depthFormat', this.depthFormat))
@@ -301,21 +324,32 @@ export abstract class Texture {
     }
     this.create()
 
+    const faces = getOption(options, 'faces', null)
+    if (faces && this.type === TextureType.TextureCube) {
+      this.setFaces(faces)
+      return this
+    }
+
     const source = options.data
-    if (isString(source)) {
+
+    if (!source) {
+      this.set('ready', true)
+    } else if (isString(source)) {
       this.setUrl(source)
     } else if (source instanceof HTMLImageElement) {
-      this.setImage(source)
+      this.setSource(source)
     } else if (source instanceof HTMLVideoElement) {
-      this.setVideo(source)
+      this.setSource(source)
+    } else if (source instanceof TextureSource) {
+      this.setSource(source)
+    } else if ('width' in source && 'height' in source) {
+      this.setSource(new TextureSourceData(source))
     } else if (isArray(source) && isObject(source[0])) {
       this.setVideoUrls(source as any)
     } else if (source && (source instanceof Array || source instanceof ArrayBuffer || source.buffer)) {
       this.setData(source, options.width, options.height)
     } else {
-      if (source) {
-        Log.w(`[Texture] 'data' option has an unrecognized type.`)
-      }
+      Log.w(`[Texture] 'data' option has an unrecognized type.`)
       this.set('ready', true)
     }
     return this
@@ -361,7 +395,7 @@ export abstract class Texture {
     const image = new Image()
     image.crossOrigin = crossOrigin
     image.src = url
-    this.setImage(image)
+    this.setSource(image)
     return this
   }
 
@@ -374,7 +408,7 @@ export abstract class Texture {
     video.src = url
     video.crossOrigin = crossOrigin
     video.load()
-    this.setVideo(video)
+    this.setSource(video)
     return this
   }
 
@@ -396,26 +430,25 @@ export abstract class Texture {
     if (!valid) {
       Log.w("[Texture] no supported format found. Video won't play.", options)
     }
-    this.setVideo(video)
+    this.setSource(video)
     return this
   }
 
   /**
    * Sets the texture source from HtmlImageElement
    */
-  public setImage(image: HTMLImageElement): this {
-    this.set('image', image)
-    this.set('video', null)
-    this.update()
-    return this
-  }
-
-  /**
-   * Sets the texture source from HTMLVideoElement
-   */
-  public setVideo(video: HTMLVideoElement): this {
-    this.set('image', null)
-    this.set('video', video)
+  public setSource(value: TexImageSource | TextureSource): this {
+    let source: TextureSource
+    if (value instanceof TextureSource) {
+      source = value
+    } else if (value instanceof HTMLImageElement) {
+      source = new TextureSourceImage(value)
+    } else if (value instanceof HTMLVideoElement) {
+      source = new TextureSourceVideo(value)
+    } else if (value) {
+      source = new TextureSourceData(value)
+    }
+    this.set('source', source)
     this.update()
     return this
   }
@@ -428,6 +461,13 @@ export abstract class Texture {
    * @param height - The new texture height
    */
   public abstract setData(data: TextureDataOption, width?: number, height?: number): this
+
+  /**
+   * Sets the cubemap faces
+   *
+   * @param faces - The source options for each face
+   */
+  public abstract setFaces(faces: TextureSourceOption[]): this
 
   /**
    * returns the result of `1 / texture.width`
@@ -465,9 +505,9 @@ export abstract class Texture {
    * the texture data. When data has arrived the {@link Texture.ready}
    * property will be set to `true`
    */
-  public abstract update(): this
+  public abstract update(): boolean
 
   protected set<K extends keyof this>(key: K, value: this[K]) {
-    (this as any)[key] = value
+    this[key] = value
   }
 }
