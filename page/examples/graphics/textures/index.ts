@@ -1,10 +1,10 @@
-import { buildPlane, CullState, DeviceGL, ModelBuilder, Texture, createDevice, BlendState } from '@gglib/graphics'
+import { buildPlane, CullState, ModelBuilder, Texture, createDevice, DepthState } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
 // Create the graphics device and pass the existing canvas element from the DOM.
 const device = createDevice({
-  canvas: document.getElementById('canvas') as HTMLCanvasElement,
+  canvas: '#canvas',
 })
 
 // Create a shader program with vertex and fragment shaders.
@@ -15,7 +15,7 @@ const program = device.createProgram({
 })
 
 // Create a mesh which is going to be rendered
-const mesh = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
+const geometry = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
 
 // The easiest way to create a texture is to pass the Image URL as an option to the constructor.
 const texturesFromUrls = [
@@ -41,52 +41,60 @@ texturesFromUrls.forEach((texture) => {
 // option the `width`, `height`, `pixelFormat` and the `pixelType` must be specified.
 const texturesFromData: Texture[] = []
 texturesFromData.push(device.createTexture({
-  width: 2,
-  height: 2,
   pixelFormat: 'RGBA',
   pixelType: 'ubyte',
-  data: [
-    0xFF, 0x00, 0x00, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0x00, 0x00, 0xFF,
-  ],
+  data: {
+    width: 2,
+    height: 2,
+    data: new Uint8ClampedArray([
+      0xFF, 0x00, 0x00, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0xFF, 0x00, 0x00, 0xFF,
+    ])
+  },
 }))
 texturesFromData.push(device.createTexture({
-  width: 2,
-  height: 2,
   pixelFormat: 'RGBA',
   pixelType: 'ubyte',
-  data: [
-    0x00, 0xFF, 0x00, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0xFF, 0x00, 0xFF,
-  ],
+  data: {
+    width: 2,
+    height: 2,
+    data: new Uint8ClampedArray([
+      0x00, 0xFF, 0x00, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0x00, 0xFF, 0x00, 0xFF,
+    ]),
+  }
 }))
 texturesFromData.push(device.createTexture({
-  width: 2,
-  height: 2,
   pixelFormat: 'RGBA',
   pixelType: 'ubyte',
-  data: [
-    0x00, 0x00, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0xFF, 0xFF,
-  ],
+  data: {
+    width: 2,
+    height: 2,
+    data: new Uint8ClampedArray([
+      0x00, 0x00, 0xFF, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0x00, 0x00, 0xFF, 0xFF,
+    ]),
+  }
 }))
 texturesFromData.push(device.createTexture({
-  width: 2,
-  height: 2,
   pixelFormat: 'RGBA',
   pixelType: 'ubyte',
-  data: [
-    0x00, 0x00, 0x00, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0x00, 0x00, 0x00, 0xFF,
-  ],
+  data: {
+    width: 2,
+    height: 2,
+    data: new Uint8ClampedArray([
+      0x00, 0x00, 0x00, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0xFF, 0xFF, 0xFF, 0xFF,
+      0x00, 0x00, 0x00, 0xFF,
+    ]),
+  }
 }))
 
 // Prepare some state variables
@@ -98,13 +106,13 @@ const proj = Mat4.createIdentity()
 loop((time, dt) => {
   // prepare render state
   device.resize()
-  device.cullState = CullState.CullClockWise
   device.clear(0xff2e2620, 1.0)
+  device.depthState = DepthState.Default
+  device.cullState = CullState.CullClockWise
 
   // update view and projection matrices
-  let aspect = device.drawingBufferWidth / device.drawingBufferHeight
   view.initTranslation(0, 0, -1)
-  proj.initPerspectiveFieldOfView(Math.PI / 2, aspect, 0, 100)
+  proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0, 100)
 
   // assign state to shader
   program.setUniform('view', view)
@@ -129,7 +137,7 @@ loop((time, dt) => {
       program.setUniform('texture', texture)
       program.setUniform('world', world)
 
-      mesh.draw(program)
+      geometry.draw(program)
     }
   }
 })
