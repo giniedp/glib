@@ -191,7 +191,7 @@ export class TextureGL extends Texture {
     if (updated && ready) {
       this.bind()
       for (const face of this.faces) {
-        this.device.context.texImage2D(face.type, 0, face.pixelFormat, face.pixelFormat, face.pixelType, face.source.data)
+        this.device.context.texImage2D(face.type, 0, face.surfaceFormat, face.pixelFormat, face.pixelType, face.source.data)
       }
     }
     if (ready) {
@@ -210,7 +210,7 @@ export class TextureGL extends Texture {
 
     const gl = this.device.context
     gl.bindTexture(this.type, this.handle)
-    gl.texImage2D(this.type, 0, this.pixelFormat, this.pixelFormat, this.pixelType, this.source.data)
+    gl.texImage2D(this.type, 0, this.surfaceFormat, this.pixelFormat, this.pixelType, this.source.data)
     if (this.generateMipmap) {
       gl.generateMipmap(this.type)
     }

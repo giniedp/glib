@@ -16,6 +16,9 @@ import {
   valueOfDepthFormat,
   valueOfPixelFormat,
   valueOfTextureType,
+  SurfaceFormatOption,
+  SurfaceFormat,
+  valueOfSurfaceFormat,
 } from '../enums'
 
 import { Device } from '../Device'
@@ -44,6 +47,10 @@ export interface TextureOptions {
    * Whether or not to automatically generate mip maps
    */
   generateMipmap?: boolean
+  /**
+   * The internal surface format of the texture
+   */
+  surfaceFormat?: SurfaceFormatOption
   /**
    * The pixel format to be used
    */
@@ -161,6 +168,11 @@ export abstract class Texture {
    * Indicates whether mip maps should be generated.
    */
   public readonly generateMipmap: boolean = true
+
+  /**
+   * Indicates the used pixel format.
+   */
+  public readonly surfaceFormat: SurfaceFormat
 
   /**
    * Indicates the used pixel format.
@@ -294,6 +306,7 @@ export abstract class Texture {
 
     let pixelType = valueOfDataType(getOption(options, 'pixelType', this.pixelType))
     let pixelFormat = valueOfPixelFormat(getOption(options, 'pixelFormat', this.pixelFormat))
+    let surfaceFormat = valueOfSurfaceFormat(getOption(options, 'surfaceFormat', this.surfaceFormat)) || pixelFormat
     let depthFormat = valueOfDepthFormat(getOption(options, 'depthFormat', this.depthFormat))
     let genMipMaps = getOption(options, 'generateMipmap', this.generateMipmap)
     let crossOrigin = getOption(options, 'crossOrigin', this.crossOrigin)
@@ -302,6 +315,7 @@ export abstract class Texture {
     if (
       width !== this.width ||
       height !== this.height ||
+      surfaceFormat !== this.surfaceFormat ||
       pixelFormat !== this.pixelFormat ||
       pixelType !== this.pixelType ||
       type !== this.type
@@ -314,6 +328,7 @@ export abstract class Texture {
     this.set('type', type)
     this.set('pixelType', pixelType)
     this.set('pixelFormat', pixelFormat)
+    this.set('surfaceFormat', surfaceFormat as SurfaceFormat)
     this.set('depthFormat', depthFormat)
     this.set('generateMipmap', genMipMaps)
     this.set('ready', false)
