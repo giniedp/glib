@@ -19,14 +19,14 @@ describe('Graphics.ModelBuilderChannel', () => {
           normalize: false,
           offset: 0,
           packed: false,
-          type: DataType.float,
+          type: DataType.float32,
         },
         normal: {
           elements: 3,
           normalize: false,
-          offset: 3 * dataTypeSize(DataType.float),
+          offset: 3 * dataTypeSize(DataType.float32),
           packed: false,
-          type: DataType.float,
+          type: DataType.float32,
         },
       },
     }, {
@@ -41,7 +41,7 @@ describe('Graphics.ModelBuilderChannel', () => {
           normalize: false,
           offset: 0,
           packed: false,
-          type: DataType.float,
+          type: DataType.float32,
         },
       },
     }]

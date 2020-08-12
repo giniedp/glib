@@ -1,53 +1,75 @@
+import { GLConst as gl } from './GLConst'
+
 /**
  * @public
  */
 export enum DataType {
-  byte = 0x1400,
-  short = 0x1402,
-  int = 0x1404,
-  ubyte = 0x1401,
-  ushort = 0x1403,
-  uint = 0x1405,
-  float = 0x1406,
-  ushort565 = 0x8363,
-  ushort4444 = 0x8033,
-  ushort5551 = 0x8034,
+  int8 = gl.BYTE,
+  int16 = gl.SHORT,
+  int32 = gl.INT,
+  uint8 = gl.UNSIGNED_BYTE,
+  uint16 = gl.UNSIGNED_SHORT,
+  uint32 = gl.UNSIGNED_INT,
+  float16 = gl.HALF_FLOAT,
+  float32 = gl.FLOAT,
+  uint16_5_6_5 = gl.UNSIGNED_SHORT_5_6_5,
+  uint16_4_4_4_4 = gl.UNSIGNED_SHORT_4_4_4_4,
+  uint16_5_5_5_1 = gl.UNSIGNED_SHORT_5_5_5_1,
+  uint32_5_9_9_9_REV = gl.UNSIGNED_INT_5_9_9_9_REV,
+  uint32_2_10_10_10_REV = gl.UNSIGNED_INT_2_10_10_10_REV,
+  uint32_10F_11F_11F_REV = gl.UNSIGNED_INT_10F_11F_11F_REV,
+  uint32_24_8 = gl.UNSIGNED_INT_24_8,
 }
 /**
  * @public
  */
 export type DataTypeName = keyof typeof DataType
 const DataTypeValueMap = Object.freeze<any>({
-  byte: 0x1400,
-  BYTE: 0x1400,
-  0x1400: 0x1400,
-  short: 0x1402,
-  SHORT: 0x1402,
-  0x1402: 0x1402,
-  int: 0x1404,
-  INT: 0x1404,
-  0x1404: 0x1404,
-  ubyte: 0x1401,
-  UNSIGNED_BYTE: 0x1401,
-  0x1401: 0x1401,
-  ushort: 0x1403,
-  UNSIGNED_SHORT: 0x1403,
-  0x1403: 0x1403,
-  uint: 0x1405,
-  UNSIGNED_INT: 0x1405,
-  0x1405: 0x1405,
-  float: 0x1406,
-  FLOAT: 0x1406,
-  0x1406: 0x1406,
-  ushort565: 0x8363,
-  UNSIGNED_SHORT_5_6_5: 0x8363,
-  0x8363: 0x8363,
-  ushort4444: 0x8033,
-  UNSIGNED_SHORT_4_4_4_4: 0x8033,
-  0x8033: 0x8033,
-  ushort5551: 0x8034,
-  UNSIGNED_SHORT_5_5_5_1: 0x8034,
-  0x8034: 0x8034,
+  int8: gl.BYTE,
+  BYTE: gl.BYTE,
+  [gl.BYTE]: gl.BYTE,
+  int16: gl.SHORT,
+  SHORT: gl.SHORT,
+  [gl.SHORT]: gl.SHORT,
+  int32: gl.INT,
+  INT: gl.INT,
+  [gl.INT]: gl.INT,
+  uint8: gl.UNSIGNED_BYTE,
+  UNSIGNED_BYTE: gl.UNSIGNED_BYTE,
+  [gl.UNSIGNED_BYTE]: gl.UNSIGNED_BYTE,
+  uint16: gl.UNSIGNED_SHORT,
+  UNSIGNED_SHORT: gl.UNSIGNED_SHORT,
+  [gl.UNSIGNED_SHORT]: gl.UNSIGNED_SHORT,
+  uint32: gl.UNSIGNED_INT,
+  UNSIGNED_INT: gl.UNSIGNED_INT,
+  [gl.UNSIGNED_INT]: gl.UNSIGNED_INT,
+  float16: gl.HALF_FLOAT,
+  HALF_FLOAT: gl.HALF_FLOAT,
+  [gl.HALF_FLOAT]: gl.HALF_FLOAT,
+  float32: gl.FLOAT,
+  FLOAT: gl.FLOAT,
+  [gl.FLOAT]: gl.FLOAT,
+  uint16_5_6_5: gl.UNSIGNED_SHORT_5_6_5,
+  UNSIGNED_SHORT_5_6_5: gl.UNSIGNED_SHORT_5_6_5,
+  [gl.UNSIGNED_SHORT_5_6_5]: gl.UNSIGNED_SHORT_5_6_5,
+  uint16_4_4_4_4: gl.UNSIGNED_SHORT_4_4_4_4,
+  UNSIGNED_SHORT_4_4_4_4: gl.UNSIGNED_SHORT_4_4_4_4,
+  [gl.UNSIGNED_SHORT_4_4_4_4]: gl.UNSIGNED_SHORT_4_4_4_4,
+  uint16_5_5_5_1: gl.UNSIGNED_SHORT_5_5_5_1,
+  UNSIGNED_SHORT_5_5_5_1: gl.UNSIGNED_SHORT_5_5_5_1,
+  [gl.UNSIGNED_SHORT_5_5_5_1]: gl.UNSIGNED_SHORT_5_5_5_1,
+  uint32_5_9_9_9_REV: gl.UNSIGNED_INT_5_9_9_9_REV,
+  UNSIGNED_INT_5_9_9_9_REV: gl.UNSIGNED_INT_5_9_9_9_REV,
+  [gl.UNSIGNED_INT_5_9_9_9_REV]: gl.UNSIGNED_INT_5_9_9_9_REV,
+  uint32_2_10_10_10_REV: gl.UNSIGNED_INT_2_10_10_10_REV,
+  UNSIGNED_INT_2_10_10_10_REV: gl.UNSIGNED_INT_2_10_10_10_REV,
+  [gl.UNSIGNED_INT_2_10_10_10_REV]: gl.UNSIGNED_INT_2_10_10_10_REV,
+  uint32_10F_11F_11F_REV: gl.UNSIGNED_INT_10F_11F_11F_REV,
+  UNSIGNED_INT_10F_11F_11F_REV: gl.UNSIGNED_INT_10F_11F_11F_REV,
+  [gl.UNSIGNED_INT_10F_11F_11F_REV]: gl.UNSIGNED_INT_10F_11F_11F_REV,
+  uint32_24_8: gl.UNSIGNED_INT_24_8,
+  UNSIGNED_INT_24_8: gl.UNSIGNED_INT_24_8,
+  [gl.UNSIGNED_INT_24_8]: gl.UNSIGNED_INT_24_8,
 })
 /**
  * @public
@@ -66,36 +88,51 @@ export function nameOfDataType(keyOrValue: DataType | DataTypeName): DataTypeNam
  */
 export type DataTypeOption = DataType | DataTypeName
 const dataTypeSizeMap = Object.freeze({
-  byte: 1,
+  int8: 1,
   BYTE: 1,
-  0x1400: 1,
-  short: 2,
+  [gl.BYTE]: 1,
+  int16: 2,
   SHORT: 2,
-  0x1402: 2,
-  int: 4,
+  [gl.SHORT]: 2,
+  int32: 4,
   INT: 4,
-  0x1404: 4,
-  ubyte: 1,
+  [gl.INT]: 4,
+  uint8: 1,
   UNSIGNED_BYTE: 1,
-  0x1401: 1,
-  ushort: 2,
+  [gl.UNSIGNED_BYTE]: 1,
+  uint16: 2,
   UNSIGNED_SHORT: 2,
-  0x1403: 2,
-  uint: 4,
+  [gl.UNSIGNED_SHORT]: 2,
+  uint32: 4,
   UNSIGNED_INT: 4,
-  0x1405: 4,
-  float: 4,
+  [gl.UNSIGNED_INT]: 4,
+  float16: 2,
+  HALF_FLOAT: 2,
+  [gl.HALF_FLOAT]: 2,
+  float32: 4,
   FLOAT: 4,
-  0x1406: 4,
-  ushort565: 2,
+  [gl.FLOAT]: 4,
+  uint16_5_6_5: 2,
   UNSIGNED_SHORT_5_6_5: 2,
-  0x8363: 2,
-  ushort4444: 2,
+  [gl.UNSIGNED_SHORT_5_6_5]: 2,
+  uint16_4_4_4_4: 2,
   UNSIGNED_SHORT_4_4_4_4: 2,
-  0x8033: 2,
-  ushort5551: 2,
+  [gl.UNSIGNED_SHORT_4_4_4_4]: 2,
+  uint16_5_5_5_1: 2,
   UNSIGNED_SHORT_5_5_5_1: 2,
-  0x8034: 2,
+  [gl.UNSIGNED_SHORT_5_5_5_1]: 2,
+  uint32_5_9_9_9_REV: 4,
+  UNSIGNED_INT_5_9_9_9_REV: 4,
+  [gl.UNSIGNED_INT_5_9_9_9_REV]: 4,
+  uint32_2_10_10_10_REV: 4,
+  UNSIGNED_INT_2_10_10_10_REV: 4,
+  [gl.UNSIGNED_INT_2_10_10_10_REV]: 4,
+  uint32_10F_11F_11F_REV: 4,
+  UNSIGNED_INT_10F_11F_11F_REV: 4,
+  [gl.UNSIGNED_INT_10F_11F_11F_REV]: 4,
+  uint32_24_8: 4,
+  UNSIGNED_INT_24_8: 4,
+  [gl.UNSIGNED_INT_24_8]: 4,
 })
 /**
  * @public
@@ -107,59 +144,74 @@ export function dataTypeSize(value: DataTypeOption) {
  * @public
  */
 export const ArrayType = Object.freeze({
-  byte: Int8Array,
+  int8: Int8Array,
   BYTE: Int8Array,
-  0x1400: Int8Array,
-  short: Int16Array,
+  [gl.BYTE]: Int8Array,
+  int16: Int16Array,
   SHORT: Int16Array,
-  0x1402: Int16Array,
-  int: Int32Array,
+  [gl.SHORT]: Int16Array,
+  int32: Int32Array,
   INT: Int32Array,
-  0x1404: Int32Array,
-  ubyte: Uint8Array,
+  [gl.INT]: Int32Array,
+  uint8: Uint8Array,
   UNSIGNED_BYTE: Uint8Array,
-  0x1401: Uint8Array,
-  ushort: Uint16Array,
+  [gl.UNSIGNED_BYTE]: Uint8Array,
+  uint16: Uint16Array,
   UNSIGNED_SHORT: Uint16Array,
-  0x1403: Uint16Array,
-  uint: Uint32Array,
+  [gl.UNSIGNED_SHORT]: Uint16Array,
+  uint32: Uint32Array,
   UNSIGNED_INT: Uint32Array,
-  0x1405: Uint32Array,
-  float: Float32Array,
+  [gl.UNSIGNED_INT]: Uint32Array,
+  float16: Uint16Array,
+  HALF_FLOAT: Uint16Array,
+  [gl.HALF_FLOAT]: Uint16Array,
+  float32: Float32Array,
   FLOAT: Float32Array,
-  0x1406: Float32Array,
-  ushort565: Uint16Array,
+  [gl.FLOAT]: Float32Array,
+  uint16_5_6_5: Uint16Array,
   UNSIGNED_SHORT_5_6_5: Uint16Array,
-  0x8363: Uint16Array,
-  ushort4444: Uint16Array,
+  [gl.UNSIGNED_SHORT_5_6_5]: Uint16Array,
+  uint16_4_4_4_4: Uint16Array,
   UNSIGNED_SHORT_4_4_4_4: Uint16Array,
-  0x8033: Uint16Array,
-  ushort5551: Uint16Array,
+  [gl.UNSIGNED_SHORT_4_4_4_4]: Uint16Array,
+  uint16_5_5_5_1: Uint16Array,
   UNSIGNED_SHORT_5_5_5_1: Uint16Array,
-  0x8034: Uint16Array,
+  [gl.UNSIGNED_SHORT_5_5_5_1]: Uint16Array,
+  uint32_5_9_9_9_REV: Uint32Array,
+  UNSIGNED_INT_5_9_9_9_REV: Uint32Array,
+  [gl.UNSIGNED_INT_5_9_9_9_REV]: Uint32Array,
+  uint32_2_10_10_10_REV: Uint32Array,
+  UNSIGNED_INT_2_10_10_10_REV: Uint32Array,
+  [gl.UNSIGNED_INT_2_10_10_10_REV]: Uint32Array,
+  uint32_10F_11F_11F_REV: Uint32Array,
+  UNSIGNED_INT_10F_11F_11F_REV: Uint32Array,
+  [gl.UNSIGNED_INT_10F_11F_11F_REV]: Uint32Array,
+  uint32_24_8: Uint32Array,
+  UNSIGNED_INT_24_8: Uint32Array,
+  [gl.UNSIGNED_INT_24_8]: Uint32Array,
 })
 /**
  * @public
  */
 export enum BufferUsage {
-  Static = 0x88E4,
-  Dynamic = 0x88E8,
-  Stream = 0x88E0,
+  Static = gl.STATIC_DRAW,
+  Dynamic = gl.DYNAMIC_DRAW,
+  Stream = gl.STREAM_DRAW,
 }
 /**
  * @public
  */
 export type BufferUsageName = keyof typeof BufferUsage
 const BufferUsageValueMap = Object.freeze<any>({
-  Static: 0x88E4,
-  STATIC_DRAW: 0x88E4,
-  0x88E4: 0x88E4,
-  Dynamic: 0x88E8,
-  DYNAMIC_DRAW: 0x88E8,
-  0x88E8: 0x88E8,
-  Stream: 0x88E0,
-  STREAM_DRAW: 0x88E0,
-  0x88E0: 0x88E0,
+  Static: gl.STATIC_DRAW,
+  STATIC_DRAW: gl.STATIC_DRAW,
+  [gl.STATIC_DRAW]: gl.STATIC_DRAW,
+  Dynamic: gl.DYNAMIC_DRAW,
+  DYNAMIC_DRAW: gl.DYNAMIC_DRAW,
+  [gl.DYNAMIC_DRAW]: gl.DYNAMIC_DRAW,
+  Stream: gl.STREAM_DRAW,
+  STREAM_DRAW: gl.STREAM_DRAW,
+  [gl.STREAM_DRAW]: gl.STREAM_DRAW,
 })
 /**
  * @public
@@ -181,20 +233,20 @@ export type BufferUsageOption = BufferUsage | BufferUsageName
  * @public
  */
 export enum BufferType {
-  VertexBuffer = 0x8892,
-  IndexBuffer = 0x8893,
+  VertexBuffer = gl.ARRAY_BUFFER,
+  IndexBuffer = gl.ELEMENT_ARRAY_BUFFER,
 }
 /**
  * @public
  */
 export type BufferTypeName = keyof typeof BufferType
 const BufferTypeValueMap = Object.freeze<any>({
-  VertexBuffer: 0x8892,
-  ARRAY_BUFFER: 0x8892,
-  0x8892: 0x8892,
-  IndexBuffer: 0x8893,
-  ELEMENT_ARRAY_BUFFER: 0x8893,
-  0x8893: 0x8893,
+  VertexBuffer: gl.ARRAY_BUFFER,
+  ARRAY_BUFFER: gl.ARRAY_BUFFER,
+  [gl.ARRAY_BUFFER]: gl.ARRAY_BUFFER,
+  IndexBuffer: gl.ELEMENT_ARRAY_BUFFER,
+  ELEMENT_ARRAY_BUFFER: gl.ELEMENT_ARRAY_BUFFER,
+  [gl.ELEMENT_ARRAY_BUFFER]: gl.ELEMENT_ARRAY_BUFFER,
 })
 /**
  * @public
@@ -216,72 +268,72 @@ export type BufferTypeOption = BufferType | BufferTypeName
  * @public
  */
 export enum Blend {
-  Zero = 0,
-  One = 1,
-  SrcColor = 0x0300,
-  SrcColorInv = 0x0301,
-  SrcAlpha = 0x0302,
-  SrcAlphaInv = 0x0303,
-  SrcAlphaSat = 0x0308,
-  DstColor = 0x0306,
-  DstColorInv = 0x0307,
-  DstAlpha = 0x0304,
-  DstAlphaInv = 0x0305,
-  ConstantColor = 0x8001,
-  ConstantColorInv = 0x8002,
-  ConstantAlpha = 0x8003,
-  ConstantAlphaInv = 0x8004,
+  Zero = gl.ZERO,
+  One = gl.ONE,
+  SrcColor = gl.SRC_COLOR,
+  SrcColorInv = gl.ONE_MINUS_SRC_COLOR,
+  SrcAlpha = gl.SRC_ALPHA,
+  SrcAlphaInv = gl.ONE_MINUS_SRC_ALPHA,
+  SrcAlphaSat = gl.SRC_ALPHA_SATURATE,
+  DstColor = gl.DST_COLOR,
+  DstColorInv = gl.ONE_MINUS_DST_COLOR,
+  DstAlpha = gl.DST_ALPHA,
+  DstAlphaInv = gl.ONE_MINUS_DST_ALPHA,
+  ConstantColor = gl.CONSTANT_COLOR,
+  ConstantColorInv = gl.ONE_MINUS_CONSTANT_COLOR,
+  ConstantAlpha = gl.CONSTANT_ALPHA,
+  ConstantAlphaInv = gl.ONE_MINUS_CONSTANT_ALPHA,
 }
 /**
  * @public
  */
 export type BlendName = keyof typeof Blend
 const BlendValueMap = Object.freeze<any>({
-  Zero: 0,
-  ZERO: 0,
-  0: 0,
-  One: 1,
-  ONE: 1,
-  1: 1,
-  SrcColor: 0x0300,
-  SRC_COLOR: 0x0300,
-  0x0300: 0x0300,
-  SrcColorInv: 0x0301,
-  ONE_MINUS_SRC_COLOR: 0x0301,
-  0x0301: 0x0301,
-  SrcAlpha: 0x0302,
-  SRC_ALPHA: 0x0302,
-  0x0302: 0x0302,
-  SrcAlphaInv: 0x0303,
-  ONE_MINUS_SRC_ALPHA: 0x0303,
-  0x0303: 0x0303,
-  SrcAlphaSat: 0x0308,
-  SRC_ALPHA_SATURATE: 0x0308,
-  0x0308: 0x0308,
-  DstColor: 0x0306,
-  DST_COLOR: 0x0306,
-  0x0306: 0x0306,
-  DstColorInv: 0x0307,
-  ONE_MINUS_DST_COLOR: 0x0307,
-  0x0307: 0x0307,
-  DstAlpha: 0x0304,
-  DST_ALPHA: 0x0304,
-  0x0304: 0x0304,
-  DstAlphaInv: 0x0305,
-  ONE_MINUS_DST_ALPHA: 0x0305,
-  0x0305: 0x0305,
-  ConstantColor: 0x8001,
-  CONSTANT_COLOR: 0x8001,
-  0x8001: 0x8001,
-  ConstantColorInv: 0x8002,
-  ONE_MINUS_CONSTANT_COLOR: 0x8002,
-  0x8002: 0x8002,
-  ConstantAlpha: 0x8003,
-  CONSTANT_ALPHA: 0x8003,
-  0x8003: 0x8003,
-  ConstantAlphaInv: 0x8004,
-  ONE_MINUS_CONSTANT_ALPHA: 0x8004,
-  0x8004: 0x8004,
+  Zero: gl.ZERO,
+  ZERO: gl.ZERO,
+  [gl.ZERO]: gl.ZERO,
+  One: gl.ONE,
+  ONE: gl.ONE,
+  [gl.ONE]: gl.ONE,
+  SrcColor: gl.SRC_COLOR,
+  SRC_COLOR: gl.SRC_COLOR,
+  [gl.SRC_COLOR]: gl.SRC_COLOR,
+  SrcColorInv: gl.ONE_MINUS_SRC_COLOR,
+  ONE_MINUS_SRC_COLOR: gl.ONE_MINUS_SRC_COLOR,
+  [gl.ONE_MINUS_SRC_COLOR]: gl.ONE_MINUS_SRC_COLOR,
+  SrcAlpha: gl.SRC_ALPHA,
+  SRC_ALPHA: gl.SRC_ALPHA,
+  [gl.SRC_ALPHA]: gl.SRC_ALPHA,
+  SrcAlphaInv: gl.ONE_MINUS_SRC_ALPHA,
+  ONE_MINUS_SRC_ALPHA: gl.ONE_MINUS_SRC_ALPHA,
+  [gl.ONE_MINUS_SRC_ALPHA]: gl.ONE_MINUS_SRC_ALPHA,
+  SrcAlphaSat: gl.SRC_ALPHA_SATURATE,
+  SRC_ALPHA_SATURATE: gl.SRC_ALPHA_SATURATE,
+  [gl.SRC_ALPHA_SATURATE]: gl.SRC_ALPHA_SATURATE,
+  DstColor: gl.DST_COLOR,
+  DST_COLOR: gl.DST_COLOR,
+  [gl.DST_COLOR]: gl.DST_COLOR,
+  DstColorInv: gl.ONE_MINUS_DST_COLOR,
+  ONE_MINUS_DST_COLOR: gl.ONE_MINUS_DST_COLOR,
+  [gl.ONE_MINUS_DST_COLOR]: gl.ONE_MINUS_DST_COLOR,
+  DstAlpha: gl.DST_ALPHA,
+  DST_ALPHA: gl.DST_ALPHA,
+  [gl.DST_ALPHA]: gl.DST_ALPHA,
+  DstAlphaInv: gl.ONE_MINUS_DST_ALPHA,
+  ONE_MINUS_DST_ALPHA: gl.ONE_MINUS_DST_ALPHA,
+  [gl.ONE_MINUS_DST_ALPHA]: gl.ONE_MINUS_DST_ALPHA,
+  ConstantColor: gl.CONSTANT_COLOR,
+  CONSTANT_COLOR: gl.CONSTANT_COLOR,
+  [gl.CONSTANT_COLOR]: gl.CONSTANT_COLOR,
+  ConstantColorInv: gl.ONE_MINUS_CONSTANT_COLOR,
+  ONE_MINUS_CONSTANT_COLOR: gl.ONE_MINUS_CONSTANT_COLOR,
+  [gl.ONE_MINUS_CONSTANT_COLOR]: gl.ONE_MINUS_CONSTANT_COLOR,
+  ConstantAlpha: gl.CONSTANT_ALPHA,
+  CONSTANT_ALPHA: gl.CONSTANT_ALPHA,
+  [gl.CONSTANT_ALPHA]: gl.CONSTANT_ALPHA,
+  ConstantAlphaInv: gl.ONE_MINUS_CONSTANT_ALPHA,
+  ONE_MINUS_CONSTANT_ALPHA: gl.ONE_MINUS_CONSTANT_ALPHA,
+  [gl.ONE_MINUS_CONSTANT_ALPHA]: gl.ONE_MINUS_CONSTANT_ALPHA,
 })
 /**
  * @public
@@ -303,24 +355,24 @@ export type BlendOption = Blend | BlendName
  * @public
  */
 export enum BlendFunction {
-  Add = 0x8006,
-  Subtract = 0x800A,
-  ReverseSubtract = 0x800B,
+  Add = gl.FUNC_ADD,
+  Subtract = gl.FUNC_SUBTRACT,
+  ReverseSubtract = gl.FUNC_REVERSE_SUBTRACT,
 }
 /**
  * @public
  */
 export type BlendFunctionName = keyof typeof BlendFunction
 const BlendFunctionValueMap = Object.freeze<any>({
-  Add: 0x8006,
-  FUNC_ADD: 0x8006,
-  0x8006: 0x8006,
-  Subtract: 0x800A,
-  FUNC_SUBTRACT: 0x800A,
-  0x800A: 0x800A,
-  ReverseSubtract: 0x800B,
-  FUNC_REVERSE_SUBTRACT: 0x800B,
-  0x800B: 0x800B,
+  Add: gl.FUNC_ADD,
+  FUNC_ADD: gl.FUNC_ADD,
+  [gl.FUNC_ADD]: gl.FUNC_ADD,
+  Subtract: gl.FUNC_SUBTRACT,
+  FUNC_SUBTRACT: gl.FUNC_SUBTRACT,
+  [gl.FUNC_SUBTRACT]: gl.FUNC_SUBTRACT,
+  ReverseSubtract: gl.FUNC_REVERSE_SUBTRACT,
+  FUNC_REVERSE_SUBTRACT: gl.FUNC_REVERSE_SUBTRACT,
+  [gl.FUNC_REVERSE_SUBTRACT]: gl.FUNC_REVERSE_SUBTRACT,
 })
 /**
  * @public
@@ -342,44 +394,44 @@ export type BlendFunctionOption = BlendFunction | BlendFunctionName
  * @public
  */
 export enum CompareFunction {
-  Never = 0x0200,
-  Less = 0x0201,
-  Equal = 0x0202,
-  LessEqual = 0x0203,
-  Greater = 0x0204,
-  NotEqual = 0x0205,
-  GreaterEqual = 0x0206,
-  Always = 0x0207,
+  Never = gl.NEVER,
+  Less = gl.LESS,
+  Equal = gl.EQUAL,
+  LessEqual = gl.LEQUAL,
+  Greater = gl.GREATER,
+  NotEqual = gl.NOTEQUAL,
+  GreaterEqual = gl.GEQUAL,
+  Always = gl.ALWAYS,
 }
 /**
  * @public
  */
 export type CompareFunctionName = keyof typeof CompareFunction
 const CompareFunctionValueMap = Object.freeze<any>({
-  Never: 0x0200,
-  NEVER: 0x0200,
-  0x0200: 0x0200,
-  Less: 0x0201,
-  LESS: 0x0201,
-  0x0201: 0x0201,
-  Equal: 0x0202,
-  EQUAL: 0x0202,
-  0x0202: 0x0202,
-  LessEqual: 0x0203,
-  LEQUAL: 0x0203,
-  0x0203: 0x0203,
-  Greater: 0x0204,
-  GREATER: 0x0204,
-  0x0204: 0x0204,
-  NotEqual: 0x0205,
-  NOTEQUAL: 0x0205,
-  0x0205: 0x0205,
-  GreaterEqual: 0x0206,
-  GEQUAL: 0x0206,
-  0x0206: 0x0206,
-  Always: 0x0207,
-  ALWAYS: 0x0207,
-  0x0207: 0x0207,
+  Never: gl.NEVER,
+  NEVER: gl.NEVER,
+  [gl.NEVER]: gl.NEVER,
+  Less: gl.LESS,
+  LESS: gl.LESS,
+  [gl.LESS]: gl.LESS,
+  Equal: gl.EQUAL,
+  EQUAL: gl.EQUAL,
+  [gl.EQUAL]: gl.EQUAL,
+  LessEqual: gl.LEQUAL,
+  LEQUAL: gl.LEQUAL,
+  [gl.LEQUAL]: gl.LEQUAL,
+  Greater: gl.GREATER,
+  GREATER: gl.GREATER,
+  [gl.GREATER]: gl.GREATER,
+  NotEqual: gl.NOTEQUAL,
+  NOTEQUAL: gl.NOTEQUAL,
+  [gl.NOTEQUAL]: gl.NOTEQUAL,
+  GreaterEqual: gl.GEQUAL,
+  GEQUAL: gl.GEQUAL,
+  [gl.GEQUAL]: gl.GEQUAL,
+  Always: gl.ALWAYS,
+  ALWAYS: gl.ALWAYS,
+  [gl.ALWAYS]: gl.ALWAYS,
 })
 /**
  * @public
@@ -401,24 +453,24 @@ export type CompareFunctionOption = CompareFunction | CompareFunctionName
  * @public
  */
 export enum CullMode {
-  Front = 0x0404,
-  Back = 0x0405,
-  FrontAndBack = 0x0408,
+  Front = gl.FRONT,
+  Back = gl.BACK,
+  FrontAndBack = gl.FRONT_AND_BACK,
 }
 /**
  * @public
  */
 export type CullModeName = keyof typeof CullMode
 const CullModeValueMap = Object.freeze<any>({
-  Front: 0x0404,
-  FRONT: 0x0404,
-  0x0404: 0x0404,
-  Back: 0x0405,
-  BACK: 0x0405,
-  0x0405: 0x0405,
-  FrontAndBack: 0x0408,
-  FRONT_AND_BACK: 0x0408,
-  0x0408: 0x0408,
+  Front: gl.FRONT,
+  FRONT: gl.FRONT,
+  [gl.FRONT]: gl.FRONT,
+  Back: gl.BACK,
+  BACK: gl.BACK,
+  [gl.BACK]: gl.BACK,
+  FrontAndBack: gl.FRONT_AND_BACK,
+  FRONT_AND_BACK: gl.FRONT_AND_BACK,
+  [gl.FRONT_AND_BACK]: gl.FRONT_AND_BACK,
 })
 /**
  * @public
@@ -440,20 +492,20 @@ export type CullModeOption = CullMode | CullModeName
  * @public
  */
 export enum FrontFace {
-  ClockWise = 0x0900,
-  CounterClockWise = 0x0901,
+  ClockWise = gl.CW,
+  CounterClockWise = gl.CCW,
 }
 /**
  * @public
  */
 export type FrontFaceName = keyof typeof FrontFace
 const FrontFaceValueMap = Object.freeze<any>({
-  ClockWise: 0x0900,
-  CW: 0x0900,
-  0x0900: 0x0900,
-  CounterClockWise: 0x0901,
-  CCW: 0x0901,
-  0x0901: 0x0901,
+  ClockWise: gl.CW,
+  CW: gl.CW,
+  [gl.CW]: gl.CW,
+  CounterClockWise: gl.CCW,
+  CCW: gl.CCW,
+  [gl.CCW]: gl.CCW,
 })
 /**
  * @public
@@ -475,44 +527,44 @@ export type FrontFaceOption = FrontFace | FrontFaceName
  * @public
  */
 export enum StencilOperation {
-  Zero = 0,
-  Keep = 0x1E00,
-  Replace = 0x1E01,
-  Increment = 0x1E02,
-  Decrement = 0x1E03,
-  Invert = 0x150A,
-  IncrementWrap = 0x8507,
-  DecrementWrap = 0x8508,
+  Zero = gl.ZERO,
+  Keep = gl.KEEP,
+  Replace = gl.REPLACE,
+  Increment = gl.INCR,
+  Decrement = gl.DECR,
+  Invert = gl.INVERT,
+  IncrementWrap = gl.INCR_WRAP,
+  DecrementWrap = gl.DECR_WRAP,
 }
 /**
  * @public
  */
 export type StencilOperationName = keyof typeof StencilOperation
 const StencilOperationValueMap = Object.freeze<any>({
-  Zero: 0,
-  ZERO: 0,
-  0: 0,
-  Keep: 0x1E00,
-  KEEP: 0x1E00,
-  0x1E00: 0x1E00,
-  Replace: 0x1E01,
-  REPLACE: 0x1E01,
-  0x1E01: 0x1E01,
-  Increment: 0x1E02,
-  INCR: 0x1E02,
-  0x1E02: 0x1E02,
-  Decrement: 0x1E03,
-  DECR: 0x1E03,
-  0x1E03: 0x1E03,
-  Invert: 0x150A,
-  INVERT: 0x150A,
-  0x150A: 0x150A,
-  IncrementWrap: 0x8507,
-  INCR_WRAP: 0x8507,
-  0x8507: 0x8507,
-  DecrementWrap: 0x8508,
-  DECR_WRAP: 0x8508,
-  0x8508: 0x8508,
+  Zero: gl.ZERO,
+  ZERO: gl.ZERO,
+  [gl.ZERO]: gl.ZERO,
+  Keep: gl.KEEP,
+  KEEP: gl.KEEP,
+  [gl.KEEP]: gl.KEEP,
+  Replace: gl.REPLACE,
+  REPLACE: gl.REPLACE,
+  [gl.REPLACE]: gl.REPLACE,
+  Increment: gl.INCR,
+  INCR: gl.INCR,
+  [gl.INCR]: gl.INCR,
+  Decrement: gl.DECR,
+  DECR: gl.DECR,
+  [gl.DECR]: gl.DECR,
+  Invert: gl.INVERT,
+  INVERT: gl.INVERT,
+  [gl.INVERT]: gl.INVERT,
+  IncrementWrap: gl.INCR_WRAP,
+  INCR_WRAP: gl.INCR_WRAP,
+  [gl.INCR_WRAP]: gl.INCR_WRAP,
+  DecrementWrap: gl.DECR_WRAP,
+  DECR_WRAP: gl.DECR_WRAP,
+  [gl.DECR_WRAP]: gl.DECR_WRAP,
 })
 /**
  * @public
@@ -534,30 +586,45 @@ export type StencilOperationOption = StencilOperation | StencilOperationName
  * @public
  */
 export enum PixelFormat {
-  Alpha = 0x1906,
-  Luminance = 0x1909,
-  LuminanceAlpha = 0x190A,
-  RGB = 0x1907,
-  RGBA = 0x1908,
+  ALPHA = gl.ALPHA,
+  LUMINANCE = gl.LUMINANCE,
+  LUMINANCE_ALPHA = gl.LUMINANCE_ALPHA,
+  RGB = gl.RGB,
+  RGBA = gl.RGBA,
+  RED = gl.RED,
+  RED_INTEGER = gl.RED_INTEGER,
+  RG = gl.RG,
+  RG_INTEGER = gl.RG_INTEGER,
+  RGB_INTEGER = gl.RGB_INTEGER,
+  RGBA_INTEGER = gl.RGBA_INTEGER,
 }
 /**
  * @public
  */
 export type PixelFormatName = keyof typeof PixelFormat
 const PixelFormatValueMap = Object.freeze<any>({
-  Alpha: 0x1906,
-  ALPHA: 0x1906,
-  0x1906: 0x1906,
-  Luminance: 0x1909,
-  LUMINANCE: 0x1909,
-  0x1909: 0x1909,
-  LuminanceAlpha: 0x190A,
-  LUMINANCE_ALPHA: 0x190A,
-  0x190A: 0x190A,
-  RGB: 0x1907,
-  0x1907: 0x1907,
-  RGBA: 0x1908,
-  0x1908: 0x1908,
+  ALPHA: gl.ALPHA,
+  [gl.ALPHA]: gl.ALPHA,
+  LUMINANCE: gl.LUMINANCE,
+  [gl.LUMINANCE]: gl.LUMINANCE,
+  LUMINANCE_ALPHA: gl.LUMINANCE_ALPHA,
+  [gl.LUMINANCE_ALPHA]: gl.LUMINANCE_ALPHA,
+  RGB: gl.RGB,
+  [gl.RGB]: gl.RGB,
+  RGBA: gl.RGBA,
+  [gl.RGBA]: gl.RGBA,
+  RED: gl.RED,
+  [gl.RED]: gl.RED,
+  RED_INTEGER: gl.RED_INTEGER,
+  [gl.RED_INTEGER]: gl.RED_INTEGER,
+  RG: gl.RG,
+  [gl.RG]: gl.RG,
+  RG_INTEGER: gl.RG_INTEGER,
+  [gl.RG_INTEGER]: gl.RG_INTEGER,
+  RGB_INTEGER: gl.RGB_INTEGER,
+  [gl.RGB_INTEGER]: gl.RGB_INTEGER,
+  RGBA_INTEGER: gl.RGBA_INTEGER,
+  [gl.RGBA_INTEGER]: gl.RGBA_INTEGER,
 })
 /**
  * @public
@@ -576,19 +643,28 @@ export function nameOfPixelFormat(keyOrValue: PixelFormat | PixelFormatName): Pi
  */
 export type PixelFormatOption = PixelFormat | PixelFormatName
 const pixelFormatElementCountMap = Object.freeze({
-  Alpha: 1,
   ALPHA: 1,
-  0x1906: 1,
-  Luminance: 1,
+  [gl.ALPHA]: 1,
   LUMINANCE: 1,
-  0x1909: 1,
-  LuminanceAlpha: 2,
+  [gl.LUMINANCE]: 1,
   LUMINANCE_ALPHA: 2,
-  0x190A: 2,
+  [gl.LUMINANCE_ALPHA]: 2,
   RGB: 3,
-  0x1907: 3,
+  [gl.RGB]: 3,
   RGBA: 4,
-  0x1908: 4,
+  [gl.RGBA]: 4,
+  RED: 1,
+  [gl.RED]: 1,
+  RED_INTEGER: 1,
+  [gl.RED_INTEGER]: 1,
+  RG: 2,
+  [gl.RG]: 2,
+  RG_INTEGER: 2,
+  [gl.RG_INTEGER]: 2,
+  RGB_INTEGER: 3,
+  [gl.RGB_INTEGER]: 3,
+  RGBA_INTEGER: 4,
+  [gl.RGBA_INTEGER]: 4,
 })
 /**
  * @public
@@ -599,37 +675,157 @@ export function pixelFormatElementCount(value: PixelFormatOption) {
 /**
  * @public
  */
+export enum SurfaceFormat {
+  ALPHA = gl.ALPHA,
+  LUMINANCE = gl.LUMINANCE,
+  LUMINANCE_ALPHA = gl.LUMINANCE_ALPHA,
+  RGB = gl.RGB,
+  RGBA = gl.RGBA,
+  R8 = gl.R8,
+  R16F = gl.R16F,
+  R32F = gl.R32F,
+  R8UI = gl.R8UI,
+  RG8 = gl.RG8,
+  RG16F = gl.RG16F,
+  RG32F = gl.RG32F,
+  RG8UI = gl.RG8UI,
+  RG16UI = gl.RG16UI,
+  RG32UI = gl.RG32UI,
+  RGB8 = gl.RGB8,
+  SRGB8 = gl.SRGB8,
+  RGB565 = gl.RGB565,
+  R11F_G11F_B10F = gl.R11F_G11F_B10F,
+  RGB9_E5 = gl.RGB9_E5,
+  RGB16F = gl.RGB16F,
+  RGB32F = gl.RGB32F,
+  RGB8UI = gl.RGB8UI,
+  RGBA8 = gl.RGBA8,
+  SRGB8_ALPHA8 = gl.SRGB8_ALPHA8,
+  RGB5_A1 = gl.RGB5_A1,
+  RGB10_A2 = gl.RGB10_A2,
+  RGBA4 = gl.RGBA4,
+  RGBA16F = gl.RGBA16F,
+  RGBA32F = gl.RGBA32F,
+  RGBA8UI = gl.RGBA8UI,
+}
+/**
+ * @public
+ */
+export type SurfaceFormatName = keyof typeof SurfaceFormat
+const SurfaceFormatValueMap = Object.freeze<any>({
+  ALPHA: gl.ALPHA,
+  [gl.ALPHA]: gl.ALPHA,
+  LUMINANCE: gl.LUMINANCE,
+  [gl.LUMINANCE]: gl.LUMINANCE,
+  LUMINANCE_ALPHA: gl.LUMINANCE_ALPHA,
+  [gl.LUMINANCE_ALPHA]: gl.LUMINANCE_ALPHA,
+  RGB: gl.RGB,
+  [gl.RGB]: gl.RGB,
+  RGBA: gl.RGBA,
+  [gl.RGBA]: gl.RGBA,
+  R8: gl.R8,
+  [gl.R8]: gl.R8,
+  R16F: gl.R16F,
+  [gl.R16F]: gl.R16F,
+  R32F: gl.R32F,
+  [gl.R32F]: gl.R32F,
+  R8UI: gl.R8UI,
+  [gl.R8UI]: gl.R8UI,
+  RG8: gl.RG8,
+  [gl.RG8]: gl.RG8,
+  RG16F: gl.RG16F,
+  [gl.RG16F]: gl.RG16F,
+  RG32F: gl.RG32F,
+  [gl.RG32F]: gl.RG32F,
+  RG8UI: gl.RG8UI,
+  [gl.RG8UI]: gl.RG8UI,
+  RG16UI: gl.RG16UI,
+  [gl.RG16UI]: gl.RG16UI,
+  RG32UI: gl.RG32UI,
+  [gl.RG32UI]: gl.RG32UI,
+  RGB8: gl.RGB8,
+  [gl.RGB8]: gl.RGB8,
+  SRGB8: gl.SRGB8,
+  [gl.SRGB8]: gl.SRGB8,
+  RGB565: gl.RGB565,
+  [gl.RGB565]: gl.RGB565,
+  R11F_G11F_B10F: gl.R11F_G11F_B10F,
+  [gl.R11F_G11F_B10F]: gl.R11F_G11F_B10F,
+  RGB9_E5: gl.RGB9_E5,
+  [gl.RGB9_E5]: gl.RGB9_E5,
+  RGB16F: gl.RGB16F,
+  [gl.RGB16F]: gl.RGB16F,
+  RGB32F: gl.RGB32F,
+  [gl.RGB32F]: gl.RGB32F,
+  RGB8UI: gl.RGB8UI,
+  [gl.RGB8UI]: gl.RGB8UI,
+  RGBA8: gl.RGBA8,
+  [gl.RGBA8]: gl.RGBA8,
+  SRGB8_ALPHA8: gl.SRGB8_ALPHA8,
+  [gl.SRGB8_ALPHA8]: gl.SRGB8_ALPHA8,
+  RGB5_A1: gl.RGB5_A1,
+  [gl.RGB5_A1]: gl.RGB5_A1,
+  RGB10_A2: gl.RGB10_A2,
+  [gl.RGB10_A2]: gl.RGB10_A2,
+  RGBA4: gl.RGBA4,
+  [gl.RGBA4]: gl.RGBA4,
+  RGBA16F: gl.RGBA16F,
+  [gl.RGBA16F]: gl.RGBA16F,
+  RGBA32F: gl.RGBA32F,
+  [gl.RGBA32F]: gl.RGBA32F,
+  RGBA8UI: gl.RGBA8UI,
+  [gl.RGBA8UI]: gl.RGBA8UI,
+})
+/**
+ * @public
+ */
+export function valueOfSurfaceFormat(keyOrValue: SurfaceFormat | SurfaceFormatName): SurfaceFormat {
+  return SurfaceFormatValueMap[keyOrValue]
+}
+/**
+ * @public
+ */
+export function nameOfSurfaceFormat(keyOrValue: SurfaceFormat | SurfaceFormatName): SurfaceFormatName {
+  return SurfaceFormat[valueOfSurfaceFormat(keyOrValue)] as SurfaceFormatName
+}
+/**
+ * @public
+ */
+export type SurfaceFormatOption = SurfaceFormat | SurfaceFormatName
+/**
+ * @public
+ */
 export enum PrimitiveType {
-  PointList = 0x0000,
-  LineList = 0x0001,
-  LineStrip = 0x0003,
-  TriangleList = 0x0004,
-  TriangleStrip = 0x0005,
-  TriangleFan = 0x0006,
+  PointList = gl.POINTS,
+  LineList = gl.LINES,
+  LineStrip = gl.LINE_STRIP,
+  TriangleList = gl.TRIANGLES,
+  TriangleStrip = gl.TRIANGLE_STRIP,
+  TriangleFan = gl.TRIANGLE_FAN,
 }
 /**
  * @public
  */
 export type PrimitiveTypeName = keyof typeof PrimitiveType
 const PrimitiveTypeValueMap = Object.freeze<any>({
-  PointList: 0x0000,
-  POINTS: 0x0000,
-  0x0000: 0x0000,
-  LineList: 0x0001,
-  LINES: 0x0001,
-  0x0001: 0x0001,
-  LineStrip: 0x0003,
-  LINE_STRIP: 0x0003,
-  0x0003: 0x0003,
-  TriangleList: 0x0004,
-  TRIANGLES: 0x0004,
-  0x0004: 0x0004,
-  TriangleStrip: 0x0005,
-  TRIANGLE_STRIP: 0x0005,
-  0x0005: 0x0005,
-  TriangleFan: 0x0006,
-  TRIANGLE_FAN: 0x0006,
-  0x0006: 0x0006,
+  PointList: gl.POINTS,
+  POINTS: gl.POINTS,
+  [gl.POINTS]: gl.POINTS,
+  LineList: gl.LINES,
+  LINES: gl.LINES,
+  [gl.LINES]: gl.LINES,
+  LineStrip: gl.LINE_STRIP,
+  LINE_STRIP: gl.LINE_STRIP,
+  [gl.LINE_STRIP]: gl.LINE_STRIP,
+  TriangleList: gl.TRIANGLES,
+  TRIANGLES: gl.TRIANGLES,
+  [gl.TRIANGLES]: gl.TRIANGLES,
+  TriangleStrip: gl.TRIANGLE_STRIP,
+  TRIANGLE_STRIP: gl.TRIANGLE_STRIP,
+  [gl.TRIANGLE_STRIP]: gl.TRIANGLE_STRIP,
+  TriangleFan: gl.TRIANGLE_FAN,
+  TRIANGLE_FAN: gl.TRIANGLE_FAN,
+  [gl.TRIANGLE_FAN]: gl.TRIANGLE_FAN,
 })
 /**
  * @public
@@ -651,24 +847,24 @@ export type PrimitiveTypeOption = PrimitiveType | PrimitiveTypeName
  * @public
  */
 export enum TextureType {
-  Texture = 0x1702,
-  Texture2D = 0x0DE1,
-  TextureCube = 0x8513,
+  Texture = gl.TEXTURE,
+  Texture2D = gl.TEXTURE_2D,
+  TextureCube = gl.TEXTURE_CUBE_MAP,
 }
 /**
  * @public
  */
 export type TextureTypeName = keyof typeof TextureType
 const TextureTypeValueMap = Object.freeze<any>({
-  Texture: 0x1702,
-  TEXTURE: 0x1702,
-  0x1702: 0x1702,
-  Texture2D: 0x0DE1,
-  TEXTURE_2D: 0x0DE1,
-  0x0DE1: 0x0DE1,
-  TextureCube: 0x8513,
-  TEXTURE_CUBE_MAP: 0x8513,
-  0x8513: 0x8513,
+  Texture: gl.TEXTURE,
+  TEXTURE: gl.TEXTURE,
+  [gl.TEXTURE]: gl.TEXTURE,
+  Texture2D: gl.TEXTURE_2D,
+  TEXTURE_2D: gl.TEXTURE_2D,
+  [gl.TEXTURE_2D]: gl.TEXTURE_2D,
+  TextureCube: gl.TEXTURE_CUBE_MAP,
+  TEXTURE_CUBE_MAP: gl.TEXTURE_CUBE_MAP,
+  [gl.TEXTURE_CUBE_MAP]: gl.TEXTURE_CUBE_MAP,
 })
 /**
  * @public
@@ -690,24 +886,24 @@ export type TextureTypeOption = TextureType | TextureTypeName
  * @public
  */
 export enum TextureWrapMode {
-  Repeat = 0x2901,
-  Clamp = 0x812F,
-  Mirror = 0x8370,
+  Repeat = gl.REPEAT,
+  Clamp = gl.CLAMP_TO_EDGE,
+  Mirror = gl.MIRRORED_REPEAT,
 }
 /**
  * @public
  */
 export type TextureWrapModeName = keyof typeof TextureWrapMode
 const TextureWrapModeValueMap = Object.freeze<any>({
-  Repeat: 0x2901,
-  REPEAT: 0x2901,
-  0x2901: 0x2901,
-  Clamp: 0x812F,
-  CLAMP_TO_EDGE: 0x812F,
-  0x812F: 0x812F,
-  Mirror: 0x8370,
-  MIRRORED_REPEAT: 0x8370,
-  0x8370: 0x8370,
+  Repeat: gl.REPEAT,
+  REPEAT: gl.REPEAT,
+  [gl.REPEAT]: gl.REPEAT,
+  Clamp: gl.CLAMP_TO_EDGE,
+  CLAMP_TO_EDGE: gl.CLAMP_TO_EDGE,
+  [gl.CLAMP_TO_EDGE]: gl.CLAMP_TO_EDGE,
+  Mirror: gl.MIRRORED_REPEAT,
+  MIRRORED_REPEAT: gl.MIRRORED_REPEAT,
+  [gl.MIRRORED_REPEAT]: gl.MIRRORED_REPEAT,
 })
 /**
  * @public
@@ -729,36 +925,36 @@ export type TextureWrapModeOption = TextureWrapMode | TextureWrapModeName
  * @public
  */
 export enum TextureFilter {
-  Point = 0x2600,
-  Linear = 0x2601,
-  PointMipPoint = 0x2700,
-  LinearMipPoint = 0x2701,
-  PointMipLinear = 0x2702,
-  LinearMipLinear = 0x2703,
+  Point = gl.NEAREST,
+  Linear = gl.LINEAR,
+  PointMipPoint = gl.NEAREST_MIPMAP_NEAREST,
+  LinearMipPoint = gl.LINEAR_MIPMAP_NEAREST,
+  PointMipLinear = gl.NEAREST_MIPMAP_LINEAR,
+  LinearMipLinear = gl.LINEAR_MIPMAP_LINEAR,
 }
 /**
  * @public
  */
 export type TextureFilterName = keyof typeof TextureFilter
 const TextureFilterValueMap = Object.freeze<any>({
-  Point: 0x2600,
-  NEAREST: 0x2600,
-  0x2600: 0x2600,
-  Linear: 0x2601,
-  LINEAR: 0x2601,
-  0x2601: 0x2601,
-  PointMipPoint: 0x2700,
-  NEAREST_MIPMAP_NEAREST: 0x2700,
-  0x2700: 0x2700,
-  LinearMipPoint: 0x2701,
-  LINEAR_MIPMAP_NEAREST: 0x2701,
-  0x2701: 0x2701,
-  PointMipLinear: 0x2702,
-  NEAREST_MIPMAP_LINEAR: 0x2702,
-  0x2702: 0x2702,
-  LinearMipLinear: 0x2703,
-  LINEAR_MIPMAP_LINEAR: 0x2703,
-  0x2703: 0x2703,
+  Point: gl.NEAREST,
+  NEAREST: gl.NEAREST,
+  [gl.NEAREST]: gl.NEAREST,
+  Linear: gl.LINEAR,
+  LINEAR: gl.LINEAR,
+  [gl.LINEAR]: gl.LINEAR,
+  PointMipPoint: gl.NEAREST_MIPMAP_NEAREST,
+  NEAREST_MIPMAP_NEAREST: gl.NEAREST_MIPMAP_NEAREST,
+  [gl.NEAREST_MIPMAP_NEAREST]: gl.NEAREST_MIPMAP_NEAREST,
+  LinearMipPoint: gl.LINEAR_MIPMAP_NEAREST,
+  LINEAR_MIPMAP_NEAREST: gl.LINEAR_MIPMAP_NEAREST,
+  [gl.LINEAR_MIPMAP_NEAREST]: gl.LINEAR_MIPMAP_NEAREST,
+  PointMipLinear: gl.NEAREST_MIPMAP_LINEAR,
+  NEAREST_MIPMAP_LINEAR: gl.NEAREST_MIPMAP_LINEAR,
+  [gl.NEAREST_MIPMAP_LINEAR]: gl.NEAREST_MIPMAP_LINEAR,
+  LinearMipLinear: gl.LINEAR_MIPMAP_LINEAR,
+  LINEAR_MIPMAP_LINEAR: gl.LINEAR_MIPMAP_LINEAR,
+  [gl.LINEAR_MIPMAP_LINEAR]: gl.LINEAR_MIPMAP_LINEAR,
 })
 /**
  * @public
@@ -780,20 +976,20 @@ export type TextureFilterOption = TextureFilter | TextureFilterName
  * @public
  */
 export enum ShaderType {
-  VertexShader = 0x8B31,
-  FragmentShader = 0x8B30,
+  VertexShader = gl.VERTEX_SHADER,
+  FragmentShader = gl.FRAGMENT_SHADER,
 }
 /**
  * @public
  */
 export type ShaderTypeName = keyof typeof ShaderType
 const ShaderTypeValueMap = Object.freeze<any>({
-  VertexShader: 0x8B31,
-  VERTEX_SHADER: 0x8B31,
-  0x8B31: 0x8B31,
-  FragmentShader: 0x8B30,
-  FRAGMENT_SHADER: 0x8B30,
-  0x8B30: 0x8B30,
+  VertexShader: gl.VERTEX_SHADER,
+  VERTEX_SHADER: gl.VERTEX_SHADER,
+  [gl.VERTEX_SHADER]: gl.VERTEX_SHADER,
+  FragmentShader: gl.FRAGMENT_SHADER,
+  FRAGMENT_SHADER: gl.FRAGMENT_SHADER,
+  [gl.FRAGMENT_SHADER]: gl.FRAGMENT_SHADER,
 })
 /**
  * @public
@@ -815,40 +1011,40 @@ export type ShaderTypeOption = ShaderType | ShaderTypeName
  * @public
  */
 export enum DepthFormat {
-  None = 0,
-  DepthStencil = 0x84F9,
-  Depth16 = 0x81A5,
-  Depth24 = 0x81A6,
-  Depth32 = 0x8CAC,
-  Depth24Stencil8 = 0x88F0,
-  Depth32Stencil8 = 0x8CAD,
+  None = gl.ZERO,
+  DepthStencil = gl.DEPTH_STENCIL,
+  Depth16 = gl.DEPTH_COMPONENT16,
+  Depth24 = gl.DEPTH_COMPONENT24,
+  Depth32 = gl.DEPTH_COMPONENT32F,
+  Depth24Stencil8 = gl.DEPTH24_STENCIL8,
+  Depth32Stencil8 = gl.DEPTH32F_STENCIL8,
 }
 /**
  * @public
  */
 export type DepthFormatName = keyof typeof DepthFormat
 const DepthFormatValueMap = Object.freeze<any>({
-  None: 0,
-  ZERO: 0,
-  0: 0,
-  DepthStencil: 0x84F9,
-  DEPTH_STENCIL: 0x84F9,
-  0x84F9: 0x84F9,
-  Depth16: 0x81A5,
-  DEPTH_COMPONENT16: 0x81A5,
-  0x81A5: 0x81A5,
-  Depth24: 0x81A6,
-  DEPTH_COMPONENT24: 0x81A6,
-  0x81A6: 0x81A6,
-  Depth32: 0x8CAC,
-  DEPTH_COMPONENT32F: 0x8CAC,
-  0x8CAC: 0x8CAC,
-  Depth24Stencil8: 0x88F0,
-  DEPTH24_STENCIL8: 0x88F0,
-  0x88F0: 0x88F0,
-  Depth32Stencil8: 0x8CAD,
-  DEPTH32F_STENCIL8: 0x8CAD,
-  0x8CAD: 0x8CAD,
+  None: gl.ZERO,
+  ZERO: gl.ZERO,
+  [gl.ZERO]: gl.ZERO,
+  DepthStencil: gl.DEPTH_STENCIL,
+  DEPTH_STENCIL: gl.DEPTH_STENCIL,
+  [gl.DEPTH_STENCIL]: gl.DEPTH_STENCIL,
+  Depth16: gl.DEPTH_COMPONENT16,
+  DEPTH_COMPONENT16: gl.DEPTH_COMPONENT16,
+  [gl.DEPTH_COMPONENT16]: gl.DEPTH_COMPONENT16,
+  Depth24: gl.DEPTH_COMPONENT24,
+  DEPTH_COMPONENT24: gl.DEPTH_COMPONENT24,
+  [gl.DEPTH_COMPONENT24]: gl.DEPTH_COMPONENT24,
+  Depth32: gl.DEPTH_COMPONENT32F,
+  DEPTH_COMPONENT32F: gl.DEPTH_COMPONENT32F,
+  [gl.DEPTH_COMPONENT32F]: gl.DEPTH_COMPONENT32F,
+  Depth24Stencil8: gl.DEPTH24_STENCIL8,
+  DEPTH24_STENCIL8: gl.DEPTH24_STENCIL8,
+  [gl.DEPTH24_STENCIL8]: gl.DEPTH24_STENCIL8,
+  Depth32Stencil8: gl.DEPTH32F_STENCIL8,
+  DEPTH32F_STENCIL8: gl.DEPTH32F_STENCIL8,
+  [gl.DEPTH32F_STENCIL8]: gl.DEPTH32F_STENCIL8,
 })
 /**
  * @public
@@ -870,16 +1066,16 @@ export type DepthFormatOption = DepthFormat | DepthFormatName
  * @public
  */
 export enum StencilFormat {
-  Stencil8 = 0x8D48,
+  Stencil8 = gl.STENCIL_INDEX8,
 }
 /**
  * @public
  */
 export type StencilFormatName = keyof typeof StencilFormat
 const StencilFormatValueMap = Object.freeze<any>({
-  Stencil8: 0x8D48,
-  STENCIL_INDEX8: 0x8D48,
-  0x8D48: 0x8D48,
+  Stencil8: gl.STENCIL_INDEX8,
+  STENCIL_INDEX8: gl.STENCIL_INDEX8,
+  [gl.STENCIL_INDEX8]: gl.STENCIL_INDEX8,
 })
 /**
  * @public
@@ -913,15 +1109,15 @@ export enum LightType {
 export type LightTypeName = keyof typeof LightType
 const LightTypeValueMap = Object.freeze<any>({
   None: 0,
-  0: 0,
+  [0]: 0,
   Directional: 1,
-  1: 1,
+  [1]: 1,
   Point: 2,
-  2: 2,
+  [2]: 2,
   Spot: 3,
-  3: 3,
+  [3]: 3,
   Box: 4,
-  4: 4,
+  [4]: 4,
 })
 /**
  * @public

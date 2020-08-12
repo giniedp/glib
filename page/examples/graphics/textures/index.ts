@@ -42,7 +42,7 @@ texturesFromUrls.forEach((texture) => {
 const texturesFromData: Texture[] = []
 texturesFromData.push(device.createTexture({
   pixelFormat: 'RGBA',
-  pixelType: 'ubyte',
+  pixelType: 'uint8',
   data: {
     width: 2,
     height: 2,
@@ -56,7 +56,7 @@ texturesFromData.push(device.createTexture({
 }))
 texturesFromData.push(device.createTexture({
   pixelFormat: 'RGBA',
-  pixelType: 'ubyte',
+  pixelType: 'uint8',
   data: {
     width: 2,
     height: 2,
@@ -70,7 +70,7 @@ texturesFromData.push(device.createTexture({
 }))
 texturesFromData.push(device.createTexture({
   pixelFormat: 'RGBA',
-  pixelType: 'ubyte',
+  pixelType: 'uint8',
   data: {
     width: 2,
     height: 2,
@@ -84,7 +84,7 @@ texturesFromData.push(device.createTexture({
 }))
 texturesFromData.push(device.createTexture({
   pixelFormat: 'RGBA',
-  pixelType: 'ubyte',
+  pixelType: 'uint8',
   data: {
     width: 2,
     height: 2,

@@ -31,7 +31,7 @@ function dereference(node, data, constants) {
     let glName = null
     if (typeof value === 'string' && value.indexOf('gl:') >= 0) {
       glName = value.split(':')[1] || data.aliases[key]
-      value = constants[glName]
+      value = `gl.${glName}` // constants[glName]
     }
 
     return {
@@ -54,10 +54,13 @@ function processTypemap(name, data, constants) {
   buffer.push(`export const ${name} = Object.freeze({\n`)
   values.forEach((it) => {
     buffer.push(`  ${it.name}: ${it.value},\n`)
-    if (node.aliases && it.name !== it.glName) {
+    if (node.aliases && it.name !== it.glName && it.glName != null) {
       buffer.push(`  ${it.glName}: ${it.value},\n`)
     }
-    buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
+    if (it.glName != null) {
+      // buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
+      buffer.push(`  [gl.${it.glName}]: ${it.value},\n`)
+    }
   })
   buffer.push(`})\n`)
 
@@ -73,10 +76,13 @@ function processSize(name, data, constants) {
   buffer.push(`const ${name}Map = Object.freeze({\n`)
   values.forEach((it) => {
     buffer.push(`  ${it.name}: ${it.value},\n`)
-    if (node.aliases && it.name !== it.glName) {
+    if (node.aliases && it.name !== it.glName && it.glName != null) {
       buffer.push(`  ${it.glName}: ${it.value},\n`)
     }
-    buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
+    if (it.glName != null) {
+      // buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
+      buffer.push(`  [gl.${it.glName}]: ${it.value},\n`)
+    }
   })
   buffer.push(`})\n`)
 
@@ -110,10 +116,10 @@ function processEnum(name, data, constants) {
     buffer.push(`const ${name}ValueMap = Object.freeze<any>({\n`)
     values.forEach((it) => {
       buffer.push(`  ${it.name}: ${it.value},\n`)
-      if (node.aliases && it.name !== it.glName) {
+      if (node.aliases && it.name !== it.glName && it.glName != null) {
         buffer.push(`  ${it.glName}: ${it.value},\n`)
       }
-      buffer.push(`  ${it.value}: ${it.value},\n`)
+      buffer.push(`  [${it.value}]: ${it.value},\n`)
     })
     buffer.push(`})\n`)
 

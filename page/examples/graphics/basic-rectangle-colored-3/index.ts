@@ -17,8 +17,8 @@ const program = device.createProgram({
 // its own vertex buffer.
 const vertices = [
   device.createVertexBuffer({
-    layout: { vPosition: { type: 'float', offset: 0, elements: 3  } },
-    dataType: 'float',
+    layout: { vPosition: { type: 'float32', offset: 0, elements: 3  } },
+    dataType: 'float32',
     data: [
       -0.5, -0.5, 0.0,
       0.5, -0.5, 0.0,
@@ -27,8 +27,8 @@ const vertices = [
     ],
   }),
   device.createVertexBuffer({
-    layout: { vColor: { type: 'ubyte', offset: 0, elements: 4, packed: true, normalize: true } },
-    dataType: 'uint',
+    layout: { vColor: { type: 'uint8', offset: 0, elements: 4, packed: true, normalize: true } },
+    dataType: 'uint32',
     data: [
       0xFF0000FF,
       0xFF00FF00,
@@ -40,7 +40,7 @@ const vertices = [
 
 // Create the index buffer.
 const indices = device.createIndexBuffer({
-  dataType: 'ushort',
+  dataType: 'uint16',
   data: [
     0, 2, 1,
     1, 2, 3,

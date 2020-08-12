@@ -598,7 +598,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    */
   public createIndexBuffer(options: BufferOptions): BufferGL {
     options.type = 'IndexBuffer'
-    options.dataType = options.dataType || 'ushort'
+    options.dataType = options.dataType || 'uint16'
     return new BufferGL(this, options)
   }
 

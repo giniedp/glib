@@ -238,7 +238,7 @@ export abstract class Device<T = unknown> {
       this.quadIndexBuffer ||
       this.createIndexBuffer({
         data: [0, 3, 1, 0, 2, 3],
-        dataType: 'ushort',
+        dataType: 'uint16',
       })
     this.quadIndexBuffer = iBuffer
 
@@ -249,7 +249,7 @@ export abstract class Device<T = unknown> {
         this.createVertexBuffer({
           data: [-1, 1, 0, 0, 0, 1, 1, 0, 1, 0, -1, -1, 0, 0, 1, 1, -1, 0, 1, 1],
           layout: this.createVertexLayout('PositionTexture'),
-          dataType: 'float',
+          dataType: 'float32',
         })
       this.quadVertexBufferFlipped = vBuffer
     } else {
@@ -258,7 +258,7 @@ export abstract class Device<T = unknown> {
         this.createVertexBuffer({
           data: [-1, 1, 0, 0, 1, 1, 1, 0, 1, 1, -1, -1, 0, 0, 0, 1, -1, 0, 1, 0],
           layout: this.createVertexLayout('PositionTexture'),
-          dataType: 'float',
+          dataType: 'float32',
         })
       this.quadVertexBuffer = vBuffer
     }

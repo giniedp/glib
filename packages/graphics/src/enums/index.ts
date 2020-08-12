@@ -1,2 +1,2 @@
 export * from './Enums'
-export * from './GLenum'
+export * from './GLConst'

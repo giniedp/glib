@@ -79,11 +79,11 @@ export class ParticlesWriter {
   private data: DataView
 
   public layout = {
-    corner: { type: 'short', offset: 0, elements: 2 },
-    position: { type: 'float', offset: 4, elements: 3 },
-    velocity: { type: 'float', offset: 16, elements: 3 },
-    random: { type: 'ubyte', offset: 28, elements: 4, normalize: true, packed: true },
-    time: { type: 'float', offset: 32, elements: 1 },
+    corner: { type: 'int16', offset: 0, elements: 2 },
+    position: { type: 'float32', offset: 4, elements: 3 },
+    velocity: { type: 'float32', offset: 16, elements: 3 },
+    random: { type: 'uint8', offset: 28, elements: 4, normalize: true, packed: true },
+    time: { type: 'float32', offset: 32, elements: 1 },
   }
 
   constructor(data: ArrayBuffer) {

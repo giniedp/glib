@@ -58,7 +58,7 @@ export class BTTRoot {
         } else {
           iBuffers[i][j] = device.createIndexBuffer({
             data: BTTPatch.createIndices(i, j, this.patchSize + 1),
-            dataType: 'ushort',
+            dataType: 'uint16',
           })
         }
       }
@@ -314,7 +314,7 @@ export class BTTPatch {
       indexBuffer: this.parent.indexBuffers[0][0],
       vertexBuffer: device.createVertexBuffer({
         data: vertices,
-        dataType: 'float',
+        dataType: 'float32',
         layout: VertexLayout.create('PositionNormalTexture'),
       }),
     })

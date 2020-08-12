@@ -24,7 +24,7 @@ device.init().then(() => {
   const vertices = device.createVertexBuffer({
     layout: {
       vPosition: {
-        type: 'float', offset: 0, elements: 3,
+        type: 'float32', offset: 0, elements: 3,
       },
     },
     // The `data` is simply a sequence of floats.
