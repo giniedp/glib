@@ -107,9 +107,11 @@ export class TextureGL extends Texture {
     if (!width || !height) {
       width = height = Math.floor(Math.sqrt(pixelCount))
     }
-    if (width * height !== pixelCount) {
-      throw new Error('width and height does not match the data length')
-    }
+    // TODO: fix invalid size detection
+    // this does not work with formats like 5551
+    // if (width * height !== pixelCount) {
+    //   throw new Error('width and height does not match the data length')
+    // }
 
     this.bind()
     this.device.context.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, buffer)

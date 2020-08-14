@@ -197,6 +197,20 @@ export class BinaryReader {
     this.position += length
     return this.data.slice(this.position - length, this.position)
   }
+
+  public subarray(type: Type<Int16Array>, byteLength: number): Int16Array
+  public subarray(type: Type<Int32Array>, byteLength: number): Int32Array
+  public subarray(type: Type<Int8Array>, byteLength: number): Int8Array
+  public subarray(type: Type<Uint16Array>, byteLength: number): Uint16Array
+  public subarray(type: Type<Uint32Array>, byteLength: number): Uint32Array
+  public subarray(type: Type<Uint8Array>, byteLength: number): Uint8Array
+  public subarray(type: Type<Float32Array>, byteLength: number): Float32Array
+  public subarray(type: Type<Float64Array>, byteLength: number): Float64Array
+  public subarray(type: any, byteLength: number): any {
+    const result = new type(this.data, this.position, byteLength / type.BYTES_PER_ELEMENT)
+    this.position += byteLength
+    return result
+  }
 }
 
 export default BinaryReader
