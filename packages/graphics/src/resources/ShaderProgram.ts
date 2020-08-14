@@ -143,7 +143,7 @@ export abstract class ShaderProgram {
 
   private reportMissingUniform(name: string) {
     if (!this.errLogs[name]) {
-      Log.w(`Uniform '${name}' not found`, this)
+      Log.warn(`Uniform '${name}' not found`, this)
       this.errLogs[name] = true
     }
   }

@@ -139,7 +139,7 @@ export class ModelMeshPartUtil {
 
     const oldVCount = this.getVertexCount()
     if (oldVCount !== vCount) {
-      Log.d(`[ModelBuilder] Mesh size reduced from ${oldVCount} to ${vCount} vertices.`)
+      Log.debug(`[ModelBuilder] Mesh size reduced from ${oldVCount} to ${vCount} vertices.`)
       vBuffer.forEach((buf, i) => {
         this.vBuffer[i].data = buf.data
       })

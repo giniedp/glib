@@ -277,24 +277,25 @@ export class ContentManager {
     const requested = Uri.merge(location.pathname, src)
     const remapped = this.rewriteUrl(requested)
     if (requested !== remapped) {
-      Log.d(`[Content.Manager] remap Url ${src} => ${remapped}`)
+      Log.debug(`[Content.Manager] remap Url ${src} => ${remapped}`)
       src = remapped
     } else {
       src = requested
     }
 
     let key: string
+    let group: string
     if (DataUri.isDataUri(src)) {
       const uri = DataUri.parse(src)
       const source = ContentType.parse(uri.contentType).mimeType
       const target = targetType['name'] || targetType.toString()
       key = `${source} => ${target}`
-      Log.d(`[Content.Manager] load ${key} (from DataUri '${uri.contentType}')`)
+      group = `[Content.Manager] load ${key} (from DataUri '${uri.contentType}')`
     } else {
       const source = src
       const target = targetType['name'] || targetType.toString()
       key = `${source} => ${target}`
-      Log.d(`[Content.Manager] load ${key}`)
+      group = `[Content.Manager] load ${key}`
     }
 
     if (this.loading.has(key)) {
@@ -305,13 +306,15 @@ export class ContentManager {
       return Promise.resolve(this.loaded.get(key))
     }
 
-    return this.loading.set(key, Pipeline.run({
+    Log.group(group)
+    const loader = Log.groupEndAsync(() => Pipeline.run({
       manager: this,
       source: src,
       target: targetType,
       options: options,
       pipeline: this.loader,
-    })).get(key).then((result) => {
+    }))
+    return this.loading.set(key, loader).get(key).then((result) => {
       this.loading.delete(key)
       this.loaded.set(key, result)
       return result
@@ -326,7 +329,7 @@ export class ContentManager {
       try {
         if (typeof value.unload === 'function') { value.unload() }
       } catch (e) {
-        Log.w(`[Content.Manager] failed to unload asset at '${key}'`, e)
+        Log.warn(`[Content.Manager] failed to unload asset at '${key}'`, e)
       }
     })
     this.loaded.clear()

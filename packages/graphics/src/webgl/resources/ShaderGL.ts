@@ -34,7 +34,7 @@ export class ShaderGL extends Shader {
     this.type = valueOfShaderType(options.type)
     this.typeName = nameOfShaderType(this.type)
     if (!this.typeName) {
-      Log.w('[Shader] unknown "type" option', options.type, this)
+      Log.warn('[Shader] unknown "type" option', options.type, this)
     }
     if (this.source) {
       this.compile()
@@ -60,7 +60,7 @@ export class ShaderGL extends Shader {
       this.handle = this.device.context.createShader(this.type)
     }
     if (!this.source) {
-      Log.e('[Shader] can not compile shader, source is missing', this)
+      Log.error('[Shader] can not compile shader, source is missing', this)
       return this
     }
     const gl = this.device.context
@@ -70,7 +70,7 @@ export class ShaderGL extends Shader {
     this.info = gl.getShaderInfoLog(this.handle)
 
     if (!this.compiled) {
-      Log.e('[Shader] compilation failed', ShaderInspector.formatInfoLog(this.info, this.source))
+      Log.error('[Shader] compilation failed', ShaderInspector.formatInfoLog(this.info, this.source))
     }
     return this
   }

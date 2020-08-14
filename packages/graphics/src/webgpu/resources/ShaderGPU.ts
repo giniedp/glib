@@ -22,7 +22,7 @@ export class ShaderGPU extends Shader {
     this.type = valueOfShaderType(options.type)
     this.typeName = nameOfShaderType(this.type)
     if (!this.typeName) {
-      Log.w('[Shader] unknown "type" option', options.type, this)
+      Log.warn('[Shader] unknown "type" option', options.type, this)
     }
     if (this.source) {
       this.compile()

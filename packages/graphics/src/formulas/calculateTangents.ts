@@ -15,15 +15,15 @@ export function calculateTangents(
   vCount: number,
   frontFace: FrontFace = FrontFace.CounterClockWise) {
   if (!channels.normal) {
-    Log.w('Can not calculate tangents for buffer. Normal definition not found in layout ')
+    Log.warn('Can not calculate tangents for buffer. Normal definition not found in layout ')
     return
   }
   if (!channels.texture && !channels.texcoord) {
-    Log.w('Can not calculate tangents for buffer. Texture definition not found in layout ')
+    Log.warn('Can not calculate tangents for buffer. Texture definition not found in layout ')
     return
   }
   if (!channels.tangent) {
-    Log.w('Can not calculate tangents for buffer. Tangent definition not found in layout ')
+    Log.warn('Can not calculate tangents for buffer. Tangent definition not found in layout ')
     return
   }
 

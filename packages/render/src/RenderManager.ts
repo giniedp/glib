@@ -163,7 +163,7 @@ export class RenderManager {
         depthFormat: opts.depthFormat,
       }
     }
-    Log.d('[Render.Manager]', 'create render target', opts)
+    Log.debug('[Render.Manager]', 'create render target', opts)
     let target = this.device.createTexture2D(opts)
     this.usedTargets.push({
       frames: 0,
@@ -218,7 +218,7 @@ export class RenderManager {
     for (const item of this.toKill) {
       const index = this.freeTargets.indexOf(item)
       this.freeTargets.splice(index, 1)
-      Log.d('[Render.Manager]', 'destroy render target')
+      Log.debug('[Render.Manager]', 'destroy render target')
       item.target.destroy()
     }
   }

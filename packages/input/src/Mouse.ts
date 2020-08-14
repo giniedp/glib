@@ -239,7 +239,7 @@ export class Mouse extends Events {
    */
   public lock() {
     if (!this.lockApi.isSupported) {
-      Log.w('[Mouse] pointerlock api is not available')
+      Log.warn('[Mouse] pointerlock api is not available')
       return
     }
     if (this.eventTarget === this.lockApi.pointerLockElement) {
@@ -248,7 +248,7 @@ export class Mouse extends Events {
     if (this.eventTarget instanceof Element) {
       this.lockApi.requestLock(this.captureTarget || this.eventTarget)
     } else {
-      Log.w('[Mouse] lock() is only available for elements of type "Element"')
+      Log.warn('[Mouse] lock() is only available for elements of type "Element"')
     }
   }
   /**

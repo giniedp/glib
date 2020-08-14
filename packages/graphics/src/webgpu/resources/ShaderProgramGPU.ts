@@ -72,7 +72,7 @@ export class ShaderProgramGPU extends ShaderProgram {
     //   const uniform = new ShaderUniform(this, options)
     //   if (uniform.location != null) {
     //     u.set(key, uniform)
-    //     Log.d(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
+    //     Log.debug(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
     //   }
     // })
     return this

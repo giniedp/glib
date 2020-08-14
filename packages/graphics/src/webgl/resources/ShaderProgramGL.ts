@@ -165,7 +165,7 @@ export class ShaderProgramGL extends ShaderProgram {
       const uniform = new ShaderUniformGL(this, options)
       if (uniform.location != null) {
         u.set(key, uniform)
-        Log.d(`ShaderProgram ${this.uid.substr(0, 8)}... binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
+        Log.debug(`binds uniform '${uniform.meta.name}' to '${uniform.name}'`)
       }
     })
     return this
@@ -178,18 +178,22 @@ export class ShaderProgramGL extends ShaderProgram {
     this.detach()
     this.attach()
 
+    Log.groupCollapsed(`[ShaderProgram] ${this.uid} link()`)
+
     const gl = this.device.context
     gl.linkProgram(this.handle)
     this.linked = gl.getProgramParameter(this.handle, gl.LINK_STATUS)
     this.info = gl.getProgramInfoLog(this.handle)
 
     if (!this.linked) {
-      Log.e('ShaderProgram#link failed', this.info)
+      Log.error('failed', this.info)
     }
 
     const inspection = ShaderInspector.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
     this.assignInputs(inspection.inputs)
     this.assignUniforms(inspection.uniforms)
+
+    Log.groupEnd()
     return this
   }
 

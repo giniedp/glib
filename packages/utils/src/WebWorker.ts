@@ -162,7 +162,7 @@ export class WebWorker {
   constructor(script: string) {
     this.worker = new Worker(script)
     this.worker.onmessage = this.handleMessage.bind(this)
-    this.worker.onerror = (e) => Log.e(e)
+    this.worker.onerror = (e) => Log.error(e)
   }
 
   private terminate() {

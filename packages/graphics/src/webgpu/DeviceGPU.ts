@@ -75,7 +75,7 @@ function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceGPUOptions
     try {
       return canvas.getContext(name) as any
     } catch (e) {
-      Log.e('[Device]', `${name} is not supported`)
+      Log.error('[Device]', `${name} is not supported`)
     }
   }
 

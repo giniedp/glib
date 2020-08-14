@@ -87,8 +87,8 @@ export class Orientation extends Events {
    */
   constructor() {
     super()
-    if (!Orientation.hasOrientationApi) { Log.w('[Orientation] orientation api is not supported') }
-    if (!Orientation.hasMotionApi) { Log.w('[Orientation] motion api is not supported') }
+    if (!Orientation.hasOrientationApi) { Log.warn('[Orientation] orientation api is not supported') }
+    if (!Orientation.hasMotionApi) { Log.warn('[Orientation] motion api is not supported') }
     this.activate()
   }
 

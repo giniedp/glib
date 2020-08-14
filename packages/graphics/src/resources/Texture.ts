@@ -364,7 +364,7 @@ export abstract class Texture {
     } else if (source && (source instanceof Array || source instanceof ArrayBuffer || source.buffer)) {
       this.setData(source, options.width, options.height)
     } else {
-      Log.w(`[Texture] 'data' option has an unrecognized type.`)
+      Log.warn(`[Texture] 'data' option has an unrecognized type.`)
       this.set('ready', true)
     }
     return this
@@ -443,7 +443,7 @@ export abstract class Texture {
       }
     }
     if (!valid) {
-      Log.w("[Texture] no supported format found. Video won't play.", options)
+      Log.warn("[Texture] no supported format found. Video won't play.", options)
     }
     this.setSource(video)
     return this

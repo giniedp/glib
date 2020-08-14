@@ -143,7 +143,7 @@ export class VertexLayout {
         result[name] = attribute
         offset += dataTypeSize(attribute.type) * attribute.elements
       } else {
-        Log.l('[VertexLayout] No preset found for semantic:', name)
+        Log.warn('[VertexLayout] No preset found for semantic:', name)
       }
     }
 

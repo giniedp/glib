@@ -19,12 +19,8 @@ function describeSym(sym: any) {
   return sym.toString()
 }
 
-function info(msg: string) {
-  Log.d('[Content.Loader] ' + msg)
-}
-
 function warn(msg: string) {
-  Log.w('[Content.Loader] ' + msg)
+  Log.warn('[Content.Loader] ' + msg)
 }
 
 let defaultPipeline: Pipeline
@@ -72,7 +68,7 @@ export class Pipeline {
    * @param source - The source type or symbol identifying the input type
    * @param target - The target type or symbol identifying the target type
    * @param input - The input value to import. Its type is identified by `source`
-   * @param context - The context use during the import
+   * @param context - The context to use during the import
    */
   public async run(source: LoaderInput, target: LoaderOutput, input: any, context: PipelineContext) {
 
@@ -88,8 +84,11 @@ export class Pipeline {
     if (pipeline.length === 0) {
       throw new Error(`Loader is missing: ${describeSym(source)} => ${describeSym(target)}`)
     }
-
     return this.walk(pipeline, input, context)
+  }
+
+  public async graph(source: LoaderInput, target: LoaderOutput, input: any, context: PipelineContext) {
+
   }
 
   /**
@@ -126,7 +125,7 @@ export class Pipeline {
     .sort((a, b) => a.next.length <= b.next.length ? -1 : 1)
   }
 
-  private async walk<T>(nodes: Node[], input: any, context: PipelineContext<T>, stage: number = 1) {
+  private async walk<T>(nodes: Node[], input: any, context: PipelineContext<T>, depth: number = 1) {
     if (nodes.length === 0) {
       // finish recursion
       return input
@@ -134,9 +133,10 @@ export class Pipeline {
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i]
       context.pipeline = this
-      info(`load stage:${stage} attempt:${i + 1}: ${describeSym(node.entry.input)} => ${describeSym(node.entry.output)}`)
-      const loaded = await node.entry.handle(input, context)
-      const result: T = await this.walk(node.next, loaded, context, stage + 1)
+
+      Log.group(`stage:${depth} (${i + 1}) ${describeSym(node.entry.input)} => ${describeSym(node.entry.output)}`)
+      const loaded = await Log.groupEndAsync(() => node.entry.handle(input, context))
+      const result: T = await this.walk(node.next, loaded, context, depth + 1)
       if (result) {
         return result
       }

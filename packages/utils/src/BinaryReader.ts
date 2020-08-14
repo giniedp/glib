@@ -1,3 +1,5 @@
+import { Type } from './utils'
+
 /**
  * A wrapper around the ArrayBuffer and DataView. Simplifies reading binary data.
  *

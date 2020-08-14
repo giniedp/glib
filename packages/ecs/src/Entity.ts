@@ -554,7 +554,7 @@ export class Entity extends Events {
           throw errorOnMissingDependency(m.type, source, component)
         }
       } else {
-        Log.w('[Entity]', `unable to inject dependency from '${m.from}'. Entity is not available.`)
+        Log.warn('[Entity]', `unable to inject dependency from '${m.from}'. Entity is not available.`)
       }
     })
   }

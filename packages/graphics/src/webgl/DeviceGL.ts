@@ -107,7 +107,7 @@ function getOrCreateContext(
     try {
       return canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
     } catch (e) {
-      Log.e('[Device]', `${name} is not supported`)
+      Log.error('[Device]', `${name} is not supported`)
     }
   }
 
@@ -389,7 +389,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
       ext.loseContext() // trigger a context loss
       ext.restoreContext() // restores the context
     } else {
-      Log.l('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context')
+      Log.warn('[reset]', 'reset is not available due to missing extension: WEBGL_lose_context')
       // TODO:
       // this.trigger('reset')
     }

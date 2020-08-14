@@ -23,7 +23,7 @@ export async function loadGltfAnimations(reader: GLTFReader): Promise<AnimationD
       const channel = channels.get(target)
       const path = srcChannel.target.path
       if (path in channel) {
-        Log.w('channel samples ignored. It targets same path of same node as one of the previous channels.')
+        Log.warn('channel samples ignored. It targets same path of same node as one of the previous channels.')
         continue
       }
 

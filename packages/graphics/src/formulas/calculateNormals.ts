@@ -15,11 +15,11 @@ export function calculateNormals(
   vCount: number,
   frontFace: FrontFace = FrontFace.CounterClockWise) {
   if (!channels.normal) {
-    Log.w(`[calculateNormals] buffer must have a 'normal' attribute`)
+    Log.warn(`[calculateNormals] buffer must have a 'normal' attribute`)
     return
   }
   if (!channels.position) {
-    Log.w(`[calculateNormals] buffer must have a 'position' attribute`)
+    Log.warn(`[calculateNormals] buffer must have a 'position' attribute`)
     return
   }
 
