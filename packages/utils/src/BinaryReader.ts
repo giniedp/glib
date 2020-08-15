@@ -129,13 +129,9 @@ export class BinaryReader {
    * Reads a two uint32 values as low and high bits.
    */
   public readLong(): number {
-    let lo = String(this.view.getUint32(this.position, this.littleEndian))
-    let hi = String(this.view.getUint32(this.position, this.littleEndian))
-    while (hi.length < 10) {
-      hi = '0' + hi
-    }
-    this.position += 8
-    return parseFloat(hi + lo)
+    let lo = this.readUInt()
+    let hi = this.readUInt() << 32
+    return hi + lo
   }
 
   /**
