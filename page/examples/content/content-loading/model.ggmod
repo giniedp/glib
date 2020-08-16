@@ -1,25 +1,29 @@
 {
   "meshes": [{
-    "materials": [
-      "material.ggmat"
-    ],
+    "materials": [{
+      "effectUri": "effect.ggfx",
+      "parameters": {
+        "texture": "/assets/textures/prototype/proto_red.png",
+        "specularPower": 16
+      }
+    }],
     "parts": [{
       "material": 0,
       "indexCount": 6,
       "vertexCount": 4,
       "indexBuffer": {
-        "dataType": "ushort",
+        "dataType": "uint16",
         "data": [
           0,  1,  2,      0,  2,  3
         ]
       },
       "vertexBuffer": {
         "layout": {
-          "position": { "type": "float", "offset": 0, "elements": 3 },
-          "normal": { "type": "float", "offset": 12, "elements": 3 },
-          "texture": { "type": "float", "offset": 24, "elements": 2 }
+          "position": { "type": "float32", "offset": 0, "elements": 3 },
+          "normal": { "type": "float32", "offset": 12, "elements": 3 },
+          "texture": { "type": "float32", "offset": 24, "elements": 2 }
         },
-        "dataType": "float",
+        "dataType": "float32",
         "data": [
           -1.0, -1.0,  0.0,     0, 0, 1,  0, 1,
           -1.0,  1.0,  0.0,     0, 0, 1,  0, 0,

@@ -1,7 +1,0 @@
-{
-  "effectUri": "effect.ggfx",
-  "parameters": {
-    "texture": "/assets/textures/prototype/proto_red.png",
-    "specularPower": 16
-  }
-}
