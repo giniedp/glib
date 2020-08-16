@@ -359,6 +359,27 @@ function fixIndents(text: string) {
   }).join('\n')
 }
 
+function explainLine(line: string, fn: (line: string, comment: string) => void) {
+  const match = line.match(/^\s*\/\/(.*)/)
+  if (!match) {
+    return fn(line, null)
+  }
+
+  const comment = match[1]
+
+  if (comment.match(/^\s*@/)) {
+    return fn(line, null)
+  }
+  if (comment.match(/^\//)) {
+    return fn(line, null)
+  }
+  if (comment.trim() === "prettier-ignore") {
+    return
+  }
+
+  return fn(line, comment)
+}
+
 function explainCode(js: string) {
 
   // replace tabs with spaces
@@ -393,18 +414,18 @@ function explainCode(js: string) {
       return
     }
 
-    // add next comment or code
-    const commentMatch = line.match(/^\s*\/\/(.*)/)
-    if (commentMatch && !commentMatch[1].match(/^\s*@/) && !commentMatch[1].match(/^\//)) {
-      if (!wasComment) {
-        nextSection()
+    explainLine(line, (l, c) => {
+      if (c) {
+        if (!wasComment) {
+          nextSection()
+        }
+        section.comments.push(c)
+        wasComment = true
+      } else {
+        section.code.push(l)
+        wasComment = false
       }
-      section.comments.push(commentMatch[1])
-      wasComment = true
-    } else {
-      section.code.push(line)
-      wasComment = false
-    }
+    })
   })
 
   return sections.map((s) => {

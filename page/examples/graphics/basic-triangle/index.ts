@@ -28,10 +28,11 @@ device.init().then(() => {
     },
     // The `data` is simply a sequence of floats.
     // Each 3 floats define a vertex position
+    // prettier-ignore
     data: [
       -0.5, -0.5, 0.0, // vertex 1
-      0.5, -0.5, 0.0, // vertex 2
-      0.0,  0.5, 0.0, // vertex 3
+       0.5, -0.5, 0.0, // vertex 2
+       0.0,  0.5, 0.0, // vertex 3
     ],
   })
 

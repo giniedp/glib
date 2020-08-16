@@ -9,7 +9,7 @@ const device = createDevice({
 })
 
 const settings = {
-  texture: device.createTexture({ source: '/assets/textures/particles/star_2.png' }),
+  texture: device.createTexture({ source: '/assets/textures/particles/star_1.png' }),
   duration: 2000,
   maxParticles: 100,
   minHorizontalVelocity: 0,
@@ -61,12 +61,11 @@ loop((time, dt) => {
   device.resize()
   device.clear(0xff2e2620, 1, 1)
   device.cullState = CullState.CullNone
-  device.depthState = DepthState.Default
-  device.blendState = BlendState.Additive
+  device.depthState = DepthState.DepthRead
+  device.blendState = BlendState.AlphaBlend
 
-  let aspect = device.drawingBufferWidth / device.drawingBufferHeight
   view.initTranslation(0, 0, -100)
-  projection.initPerspectiveFieldOfView(Math.PI / 3, aspect, 0, 200)
+  projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 0.001, 200)
 
   while (gameTime > rate) {
     channel.emit({ x: 0, y: 0, z: 0}, { x: 0, y: 0.02, z: 0})
