@@ -45,42 +45,42 @@ const textureOptions: TweakUi.SelectModelOptions = [
     id: 'proto_red',
     label: 'proto_red',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_red.png',
+      source: '/assets/textures/prototype/proto_red.png',
     }),
   },
   {
     id: 'proto_green',
     label: 'proto_green',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_green.png',
+      source: '/assets/textures/prototype/proto_green.png',
     }),
   },
   {
     id: 'proto_blue',
     label: 'proto_blue',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_blue.png',
+      source: '/assets/textures/prototype/proto_blue.png',
     }),
   },
   {
     id: 'proto_gray_n',
     label: 'proto_gray_n',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_gray_n.png',
+      source: '/assets/textures/prototype/proto_gray_n.png',
     }),
   },
   {
     id: 'proto_gray_h',
     label: 'proto_gray_h',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_gray_h.png',
+      source: '/assets/textures/prototype/proto_gray_h.png',
     }),
   },
   {
     id: 'proto_gray_s',
     label: 'proto_gray_s',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_gray_s.png',
+      source: '/assets/textures/prototype/proto_gray_s.png',
     }),
   },
 
@@ -88,28 +88,28 @@ const textureOptions: TweakUi.SelectModelOptions = [
     id: 'proto_water',
     label: 'proto_water',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_water.png',
+      source: '/assets/textures/prototype/proto_water.png',
     }),
   },
   {
     id: 'proto_water_N',
     label: 'proto_water_N',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_water_N.png',
+      source: '/assets/textures/prototype/proto_water_N.png',
     }),
   },
   {
     id: 'proto_water_H',
     label: 'proto_water_H',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_water_H.png',
+      source: '/assets/textures/prototype/proto_water_H.png',
     }),
   },
   {
     id: 'proto_water_S',
     label: 'proto_water_S',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_water_S.png',
+      source: '/assets/textures/prototype/proto_water_S.png',
     }),
   },
 
@@ -117,28 +117,28 @@ const textureOptions: TweakUi.SelectModelOptions = [
     id: 'proto_alpha',
     label: 'proto_alpha',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_alpha_d.png',
+      source: '/assets/textures/prototype/proto_alpha_d.png',
     }),
   },
   {
     id: 'proto_alpha_n',
     label: 'proto_alpha_n',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_alpha_n.png',
+      source: '/assets/textures/prototype/proto_alpha_n.png',
     }),
   },
   {
     id: 'proto_alpha_h',
     label: 'proto_alpha_h',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_alpha_h.png',
+      source: '/assets/textures/prototype/proto_alpha_h.png',
     }),
   },
   {
     id: 'proto_alpha_op',
     label: 'proto_alpha_op',
     value: device.createTexture({
-      data: '/assets/textures/prototype/proto_alpha_op.png',
+      source: '/assets/textures/prototype/proto_alpha_op.png',
     }),
   },
 
@@ -146,42 +146,42 @@ const textureOptions: TweakUi.SelectModelOptions = [
     id: 'SciFiWall',
     label: 'SciFiWall',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/SciFiWall_diffuse.png',
+      source: '/assets/textures/sharetextures/SciFiWall_diffuse.png',
     }),
   },
   {
     id: 'SciFiWall_normal',
     label: 'SciFiWall_normal',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/SciFiWall_normal.png',
+      source: '/assets/textures/sharetextures/SciFiWall_normal.png',
     }),
   },
   {
     id: 'SciFiWall_height',
     label: 'SciFiWall_height',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/SciFiWall_height.png',
+      source: '/assets/textures/sharetextures/SciFiWall_height.png',
     }),
   },
   {
     id: 'SciFiWall_ao',
     label: 'SciFiWall_ao',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/SciFiWall_ao.png',
+      source: '/assets/textures/sharetextures/SciFiWall_ao.png',
     }),
   },
   {
     id: 'SciFiWall_metallic',
     label: 'SciFiWall_metallic',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/SciFiWall_metallic.png',
+      source: '/assets/textures/sharetextures/SciFiWall_metallic.png',
     }),
   },
   {
     id: 'SciFiWall_roughness',
     label: 'SciFiWall_roughness',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/SciFiWall_roughness.png',
+      source: '/assets/textures/sharetextures/SciFiWall_roughness.png',
     }),
   },
 
@@ -189,35 +189,35 @@ const textureOptions: TweakUi.SelectModelOptions = [
     id: 'StoneWall_Base',
     label: 'StoneWall_Base',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/StoneWall_Base.png',
+      source: '/assets/textures/sharetextures/StoneWall_Base.png',
     }),
   },
   {
     id: 'StoneWall_Normal',
     label: 'StoneWall_Normal',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/StoneWall_Normal.png',
+      source: '/assets/textures/sharetextures/StoneWall_Normal.png',
     }),
   },
   {
     id: 'StoneWall_Height',
     label: 'StoneWall_Height',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/StoneWall_Height.png',
+      source: '/assets/textures/sharetextures/StoneWall_Height.png',
     }),
   },
   {
     id: 'StoneWall_AO',
     label: 'StoneWall_AO',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/StoneWall_AO.png',
+      source: '/assets/textures/sharetextures/StoneWall_AO.png',
     }),
   },
   {
     id: 'StoneWall_Roughness',
     label: 'StoneWall_Roughness',
     value: device.createTexture({
-      data: '/assets/textures/sharetextures/StoneWall_Roughness.png',
+      source: '/assets/textures/sharetextures/StoneWall_Roughness.png',
     }),
   },
 ]

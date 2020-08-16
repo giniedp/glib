@@ -35,7 +35,7 @@ const model = ModelBuilder
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_orange.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_orange.png' }),
       },
     }],
   })

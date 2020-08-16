@@ -149,7 +149,7 @@ async function loadTexture(context: PipelineContext, reader: GLTFReader, index: 
       uri = URL.createObjectURL(blob)
     }
     return context.manager.device.createTexture({
-      data: resolveUri(image.uri, context),
+      source: resolveUri(image.uri, context),
       samplerParams: sampler
         ? {
             minFilter: sampler.minFilter,

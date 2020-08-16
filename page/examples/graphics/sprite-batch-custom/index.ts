@@ -10,7 +10,7 @@ const device = createDevice({
 // Create a sprite batch and several textures that we want to render
 const spriteBatch = device.createSpriteBatch()
 const texture = device.createTexture({
-  data: '/assets/videos/big-buck-bunny.mp4',
+  source: '/assets/videos/big-buck-bunny.mp4',
 })
 // start the playback of the video texture automatically
 texture.video.autoplay = true

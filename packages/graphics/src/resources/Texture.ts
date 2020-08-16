@@ -78,7 +78,7 @@ export interface TextureOptions {
    * @remarks
    * A value of type `string` is interpreted as an image or video URL
    */
-  data?: TextureSourceOption
+  source?: TextureSourceOption
   /**
    * The faces for a Cube Texture
    */
@@ -345,7 +345,7 @@ export abstract class Texture {
       return this
     }
 
-    const source = options.data
+    const source = options.source
 
     if (!source) {
       this.set('ready', true)

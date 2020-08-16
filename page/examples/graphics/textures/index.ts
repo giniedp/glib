@@ -19,10 +19,10 @@ const geometry = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
 
 // The easiest way to create a texture is to pass the Image URL as an option to the constructor.
 const texturesFromUrls = [
-  device.createTexture({ data: '/assets/textures/prototype/proto_red.png' }),
-  device.createTexture({ data: '/assets/textures/prototype/proto_green.png' }),
-  device.createTexture({ data: '/assets/textures/prototype/proto_blue.png' }),
-  device.createTexture({ data: '/assets/videos/big-buck-bunny.mp4' }),
+  device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
+  device.createTexture({ source: '/assets/textures/prototype/proto_green.png' }),
+  device.createTexture({ source: '/assets/textures/prototype/proto_blue.png' }),
+  device.createTexture({ source: '/assets/videos/big-buck-bunny.mp4' }),
 ]
 // Video URLs work the same way. The video element is then available on the texture instance
 // behind the `video` property. The video however wont start the playback automatically.
@@ -41,60 +41,40 @@ texturesFromUrls.forEach((texture) => {
 // option the `width`, `height`, `pixelFormat` and the `pixelType` must be specified.
 const texturesFromData: Texture[] = []
 texturesFromData.push(device.createTexture({
-  pixelFormat: 'RGBA',
-  pixelType: 'uint8',
-  data: {
-    width: 2,
-    height: 2,
-    data: new Uint8ClampedArray([
-      0xFF, 0x00, 0x00, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0x00, 0x00, 0xFF,
-    ])
-  },
+  source: [
+    0xFF, 0x00, 0x00, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0x00, 0x00, 0xFF,
+  ],
+  width: 2,
+  height: 2,
 }))
 texturesFromData.push(device.createTexture({
-  pixelFormat: 'RGBA',
-  pixelType: 'uint8',
-  data: {
-    width: 2,
-    height: 2,
-    data: new Uint8ClampedArray([
-      0x00, 0xFF, 0x00, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0x00, 0xFF, 0x00, 0xFF,
-    ]),
-  }
+  source: new Uint8ClampedArray([
+    0x00, 0xFF, 0x00, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0xFF, 0x00, 0xFF,
+  ]),
+  width: 2,
+  height: 2,
 }))
 texturesFromData.push(device.createTexture({
-  pixelFormat: 'RGBA',
-  pixelType: 'uint8',
-  data: {
-    width: 2,
-    height: 2,
-    data: new Uint8ClampedArray([
-      0x00, 0x00, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0x00, 0x00, 0xFF, 0xFF,
-    ]),
-  }
+  source: new ImageData(new Uint8ClampedArray([
+    0x00, 0x00, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0xFF, 0xFF,
+  ]), 2, 2),
 }))
 texturesFromData.push(device.createTexture({
-  pixelFormat: 'RGBA',
-  pixelType: 'uint8',
-  data: {
-    width: 2,
-    height: 2,
-    data: new Uint8ClampedArray([
-      0x00, 0x00, 0x00, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0xFF, 0xFF, 0xFF, 0xFF,
-      0x00, 0x00, 0x00, 0xFF,
-    ]),
-  }
+  source: new ImageData(new Uint8ClampedArray([
+    0x00, 0x00, 0x00, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF,
+    0x00, 0x00, 0x00, 0xFF,
+  ]), 2, 2)
 }))
 
 // Prepare some state variables

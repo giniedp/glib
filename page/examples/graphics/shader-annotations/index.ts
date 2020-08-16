@@ -17,7 +17,7 @@ const program = device.createProgram({
 // Create a texture object.
 // Simply pass an URL to the image that should be used as a texture.
 const texture = device.createTexture({
-  data: '/assets/textures/prototype/proto_red.png',
+  source: '/assets/textures/prototype/proto_red.png',
 })
 
 // Create Cube mesh which is going to be rendered

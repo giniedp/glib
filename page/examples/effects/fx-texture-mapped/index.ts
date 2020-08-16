@@ -42,19 +42,19 @@ const model = ModelBuilder.begin({
       name: 'red',
       effect: textureMappedEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_red.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
       },
     }, {
       name: 'green',
       effect: textureMappedEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_green.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_green.png' }),
       },
     }, {
       name: 'blue',
       effect: textureMappedEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_blue.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_blue.png' }),
       },
     }],
   })

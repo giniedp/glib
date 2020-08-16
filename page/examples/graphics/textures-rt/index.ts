@@ -19,7 +19,7 @@ let mesh = ModelBuilder.begin().append(buildPlane).endMeshPart(device)
 
 // Create a texture and a render target
 let texture = device.createTexture({
-  data: '/assets/textures/prototype/proto_red.png',
+  source: '/assets/textures/prototype/proto_red.png',
 })
 let renderTarget = device.createRenderTarget({
   width: 512,

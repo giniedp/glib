@@ -21,12 +21,12 @@ let geometry = new ModelBuilder().append(buildCube).endMeshPart(device)
 // like when creating a 2D texture
 let texture = device.createTextureCube({
   faces: [
-    '/assets/textures/prototype/proto_red.png',
-    '/assets/textures/prototype/proto_red.png',
-    '/assets/textures/prototype/proto_green.png',
-    '/assets/textures/prototype/proto_green.png',
-    '/assets/textures/prototype/proto_blue.png',
-    '/assets/textures/prototype/proto_blue.png',
+    '/assets/textures/cubemaps/dust_rt.jpg',
+    '/assets/textures/cubemaps/dust_lf.jpg',
+    '/assets/textures/cubemaps/dust_up.jpg',
+    '/assets/textures/cubemaps/dust_dn.jpg',
+    '/assets/textures/cubemaps/dust_bk.jpg',
+    '/assets/textures/cubemaps/dust_ft.jpg',
   ],
   samplerParams: {
     minFilter: TextureFilter.Linear,
@@ -52,9 +52,7 @@ loop((time) => {
 
   // Update scene.
   world.initIdentity()
-    .rotateX((Math.PI * time) / 10000)
     .rotateY((Math.PI * time) / 20000)
-    .rotateZ((Math.PI * time) / 30000)
   view.initTranslation(0, 0, -1)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0, 100)
 

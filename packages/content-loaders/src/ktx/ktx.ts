@@ -29,7 +29,7 @@ export const loadKtxToTexture2D = loader({
       surfaceFormat: ktx.glInfo.glInternalFormat,
       pixelFormat: ktx.glInfo.glFormat,
       pixelType: ktx.glInfo.glType,
-      data: layer0.faces[0],
+      source: layer0.faces[0],
       width: ktx.width,
       height: ktx.height,
     })

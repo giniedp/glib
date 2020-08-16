@@ -40,10 +40,10 @@ const model = ModelBuilder
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_Base.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_Normal.png' }),
-        OcclusionMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_AO.png' }),
-        ParallaxMap: device.createTexture({ data: '/assets/textures/sharetextures/StoneWall_Height.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/sharetextures/StoneWall_Base.png' }),
+        NormalMap: device.createTexture({ source: '/assets/textures/sharetextures/StoneWall_Normal.png' }),
+        OcclusionMap: device.createTexture({ source: '/assets/textures/sharetextures/StoneWall_AO.png' }),
+        ParallaxMap: device.createTexture({ source: '/assets/textures/sharetextures/StoneWall_Height.png' }),
         ParallaxScaleBias: [0.04, 0.01],
       },
     }],

@@ -146,7 +146,7 @@ export class TextureGL extends Texture {
     this.set('faces', faces.map((face, i) => {
       return new TextureGL(this.device, {
         type: types[i],
-        data: face,
+        source: face,
         width: this.width,
         height: this.height,
         generateMipmap: false,

@@ -196,7 +196,7 @@ export class TGA {
     if (this.isGray) {
       if (pixelDepth === 8) {
         return {
-          data: this.decode_gray8('ui8'),
+          source: this.decode_gray8('ui8'),
           // TODO: R8 with RED is invalid in webgl 2, why?
           pixelFormat: 'LUMINANCE',
           pixelType: 'uint8',
@@ -206,7 +206,7 @@ export class TGA {
       }
       if (pixelDepth === 16) {
         return {
-          data: this.decode_gray16('f32'),
+          source: this.decode_gray16('f32'),
           surfaceFormat: 'R32F',
           pixelFormat: 'RED',
           pixelType: 'float32',
@@ -220,7 +220,7 @@ export class TGA {
       switch (this.colorMapStride) {
         case 2:
           return {
-            data: this.decode_cm8('i5551'),
+            source: this.decode_cm8('i5551'),
             pixelFormat: 'RGBA',
             pixelType: 'uint16_5_5_5_1',
             width: this.width,
@@ -228,7 +228,7 @@ export class TGA {
           }
         case 3:
           return {
-            data: this.decode_cm8('ui888'),
+            source: this.decode_cm8('ui888'),
             pixelFormat: 'RGB',
             pixelType: 'uint8',
             width: this.width,
@@ -236,7 +236,7 @@ export class TGA {
           }
         case 4:
           return {
-            data: this.decode_cm8('ui8888'),
+            source: this.decode_cm8('ui8888'),
             pixelFormat: 'RGBA',
             pixelType: 'uint8',
             width: this.width,
@@ -246,7 +246,7 @@ export class TGA {
     }
     if (pixelDepth === 16) {
       return {
-        data: this.decode_rgba16('i5551'),
+        source: this.decode_rgba16('i5551'),
         pixelFormat: 'RGBA',
         pixelType: 'uint16_5_5_5_1',
         width: this.width,
@@ -255,7 +255,7 @@ export class TGA {
     }
     if (pixelDepth === 24) {
       return {
-        data: this.decode_rgb24('ui888'),
+        source: this.decode_rgb24('ui888'),
         pixelFormat: 'RGB',
         pixelType: 'uint8',
         width: this.width,
@@ -264,7 +264,7 @@ export class TGA {
     }
     if (pixelDepth === 32) {
       return {
-        data: this.decode_rgba32('ui8888'),
+        source: this.decode_rgba32('ui8888'),
         pixelFormat: 'RGBA',
         pixelType: 'uint8',
         width: this.width,

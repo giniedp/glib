@@ -50,7 +50,7 @@ describe('content/loader/native', () => {
   it('loads jpeg to Texture.Options', (done) => {
     manager.loader.register(loadJpegToTextureOptions)
     manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Options).then((result: TextureOptions) => {
-      expect(result).toEqual({ data: '/assets/textures/prototype/proto_gray.jpg' })
+      expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.jpg' })
     })
     .catch(fail)
     .then(done)
@@ -59,7 +59,7 @@ describe('content/loader/native', () => {
   it('loads png to Texture.Options', (done) => {
     manager.loader.register(loadPngToTextureOptions)
     manager.load('/assets/textures/prototype/proto_gray.png', Texture.Options).then((result: TextureOptions) => {
-      expect(result).toEqual({ data: '/assets/textures/prototype/proto_gray.png' })
+      expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.png' })
     })
     .catch(fail)
     .then(done)

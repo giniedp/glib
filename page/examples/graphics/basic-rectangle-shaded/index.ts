@@ -42,7 +42,7 @@ const indices = device.createIndexBuffer({
 // Create a texture object.
 // Simply pass an URL to the image that should be used as a texture.
 const texture = device.createTexture({
-  data: '/assets/textures/prototype/proto_red.png',
+  source: '/assets/textures/prototype/proto_red.png',
 })
 
 // Define some variables that will be passed to the shader.

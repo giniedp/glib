@@ -8,10 +8,10 @@ const device = createDevice({
 
 // Create a sprite batch and several textures that we want to render
 const spriteBatch = device.createSpriteBatch()
-const texture1 = device.createTexture({ data: '/assets/textures/prototype/proto_red.png' })
-const texture2 = device.createTexture({ data: '/assets/textures/prototype/proto_green.png' })
-const texture3 = device.createTexture({ data: '/assets/textures/prototype/proto_blue.png' })
-const texture4 = device.createTexture({ data: '/assets/videos/big-buck-bunny.mp4' })
+const texture1 = device.createTexture({ source: '/assets/textures/prototype/proto_red.png' })
+const texture2 = device.createTexture({ source: '/assets/textures/prototype/proto_green.png' })
+const texture3 = device.createTexture({ source: '/assets/textures/prototype/proto_blue.png' })
+const texture4 = device.createTexture({ source: '/assets/videos/big-buck-bunny.mp4' })
 // start the playback of the video texture automatically
 texture4.video.autoplay = true
 texture4.video.loop = true

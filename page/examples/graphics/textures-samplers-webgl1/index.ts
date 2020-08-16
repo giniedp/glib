@@ -24,7 +24,7 @@ const texture = device.createTexture({
   height: 2,
   pixelFormat: 'RGBA',
   pixelType: 'uint8',
-  data: [
+  source: [
     0xFF, 0x00, 0x00, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF,
@@ -64,11 +64,11 @@ loop((time, dt) => {
 TweakUi.build('#tweak-ui', (q) => {
   q.select(texture, 'samplerParams', {
     options: [
-      { id: 'null', label: 'null', value: null },
-      { id: 'LinearClamp', label: 'LinearClamp', value: SamplerState.LinearClamp },
-      { id: 'LinearWrap', label: 'LinearWrap', value: SamplerState.LinearWrap },
-      { id: 'PointClamp', label: 'PointClamp', value: SamplerState.PointClamp },
-      { id: 'PointWrap', label: 'PointWrap', value: SamplerState.PointWrap },
+      { label: 'null', value: null },
+      { label: 'LinearClamp', value: SamplerState.LinearClamp },
+      { label: 'LinearWrap', value: SamplerState.LinearWrap },
+      { label: 'PointClamp', value: SamplerState.PointClamp },
+      { label: 'PointWrap', value: SamplerState.PointWrap },
     ],
   })
 })

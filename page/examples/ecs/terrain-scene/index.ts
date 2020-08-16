@@ -182,17 +182,17 @@ class TerrainComponent implements OnInit, OnUpdate {
         this.heightmap = heightmap
 
         const material = new TerrainMaterial(device)
-        material.SplatMap = device.createTexture({ data: '/assets/heightmaps/heightmap_flow.png' })
-        material.DiffuseMap = device.createTexture({ data: '/assets/textures/terrain/savanna_green_d.jpg' })
-        material.DiffuseMapR = device.createTexture({ data: '/assets/textures/terrain/ground_dry_d.jpg' })
-        material.DiffuseMapG = device.createTexture({ data: '/assets/textures/terrain/ground_mud_d.jpg' })
-        material.DiffuseMapB = device.createTexture({ data: '/assets/textures/terrain/savanna_green_d.jpg' })
-        /* material.DiffuseMapSlope = device.createTexture({ data: '/assets/textures/terrain/adesert_mntn4_d.jpg' }) */
+        material.SplatMap = device.createTexture({ source: '/assets/heightmaps/heightmap_flow.png' })
+        material.DiffuseMap = device.createTexture({ source: '/assets/textures/terrain/savanna_green_d.jpg' })
+        material.DiffuseMapR = device.createTexture({ source: '/assets/textures/terrain/ground_dry_d.jpg' })
+        material.DiffuseMapG = device.createTexture({ source: '/assets/textures/terrain/ground_mud_d.jpg' })
+        material.DiffuseMapB = device.createTexture({ source: '/assets/textures/terrain/savanna_green_d.jpg' })
+        /* material.DiffuseMapSlope = device.createTexture({ source: '/assets/textures/terrain/adesert_mntn4_d.jpg' }) */
 
-        material.NormalMap = device.createTexture({ data: '/assets/textures/terrain/savanna_green_n.jpg' })
-        material.NormalMapR = device.createTexture({ data: '/assets/textures/terrain/ground_dry_n.jpg' })
-        material.NormalMapG = device.createTexture({ data: '/assets/textures/terrain/ground_mud_n.jpg' })
-        material.NormalMapB = device.createTexture({ data: '/assets/textures/terrain/savanna_green_n.jpg' })
+        material.NormalMap = device.createTexture({ source: '/assets/textures/terrain/savanna_green_n.jpg' })
+        material.NormalMapR = device.createTexture({ source: '/assets/textures/terrain/ground_dry_n.jpg' })
+        material.NormalMapG = device.createTexture({ source: '/assets/textures/terrain/ground_mud_n.jpg' })
+        material.NormalMapB = device.createTexture({ source: '/assets/textures/terrain/savanna_green_n.jpg' })
 
         material.AmbientColor = [0.1, 0.1, 0.1]
 

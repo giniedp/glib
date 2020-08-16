@@ -39,9 +39,9 @@ const model = ModelBuilder.begin()
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_d.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_n.png' }),
-        AlphaMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_op.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_alpha_d.png' }),
+        NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_alpha_n.png' }),
+        AlphaMap: device.createTexture({ source: '/assets/textures/prototype/proto_alpha_op.png' }),
         Alpha: 1,
       },
     }],

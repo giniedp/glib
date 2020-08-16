@@ -49,7 +49,7 @@ class PongGame implements OnInit, OnUpdate {
     this.renderer.scene.camera = this.camera
     // All components will render this white pixel texture as a sprite
     this.whitePixel = this.renderer.device.createTexture({
-      data: [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF],
+      source: [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF],
       width: 1, height: 1, pixelFormat: PixelFormat.RGBA,
     })
   }

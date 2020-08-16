@@ -9,7 +9,7 @@ const device = createDevice({
 })
 
 const settings = {
-  texture: device.createTexture({ data: '/assets/textures/particles/star_2.png' }),
+  texture: device.createTexture({ source: '/assets/textures/particles/star_2.png' }),
   duration: 2000,
   maxParticles: 100,
   minHorizontalVelocity: 0,

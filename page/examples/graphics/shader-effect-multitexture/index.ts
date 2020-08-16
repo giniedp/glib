@@ -26,10 +26,10 @@ const effect = device.createEffect({
     world: world,
     view: view,
     projection: projection,
-    texture1: device.createTexture({ data: '/assets/textures/prototype/proto_green.png' }),
-    texture2: device.createTexture({ data: '/assets/textures/prototype/proto_red.png' }),
-    texture3: device.createTexture({ data: '/assets/textures/prototype/proto_blue.png' }),
-    texture4: device.createTexture({ data: '/assets/textures/prototype/proto_gray.png' }),
+    texture1: device.createTexture({ source: '/assets/textures/prototype/proto_green.png' }),
+    texture2: device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
+    texture3: device.createTexture({ source: '/assets/textures/prototype/proto_blue.png' }),
+    texture4: device.createTexture({ source: '/assets/textures/prototype/proto_gray.png' }),
   },
 })
 

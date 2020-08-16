@@ -40,7 +40,7 @@ const linesProgram = device.createProgram({
 
 // Create a texture
 const texture = device.createTexture({
-  data: '/assets/textures/uvgrids/UV_Grid_Sm.jpg',
+  source: '/assets/textures/uvgrids/UV_Grid_Sm.jpg',
 })
 
 // The mesh variable. It will be rendered once it has been built.

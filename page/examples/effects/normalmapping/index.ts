@@ -89,8 +89,8 @@ const model = ModelBuilder.begin().append((b) => {
     name: 'solid',
     effect: normalMapEffect,
     parameters: {
-      DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_orange.png' }),
-      NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' }),
+      DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_orange.png' }),
+      NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_gray_n.png' }),
       SpecularPower: 1024,
       SpecularColor: [1, 1, 1],
     },
@@ -98,9 +98,9 @@ const model = ModelBuilder.begin().append((b) => {
     name: 'water',
     effect: normalMapSpecularMapEffect,
     parameters: {
-      DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_water.png' }),
-      NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_water_N.png' }),
-      SpecularMap: device.createTexture({ data: '/assets/textures/prototype/proto_water_S.png' }),
+      DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_water.png' }),
+      NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_water_N.png' }),
+      SpecularMap: device.createTexture({ source: '/assets/textures/prototype/proto_water_S.png' }),
       SpecularPower: 255,
     },
   }],

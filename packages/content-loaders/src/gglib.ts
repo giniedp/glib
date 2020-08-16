@@ -279,7 +279,7 @@ export const loadJpegToTextureOptions = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Texture.Options,
   handle: async (_, context): Promise<TextureOptions> => {
-    return { data: context.source }
+    return { source: context.source }
   },
 })
 
@@ -290,7 +290,7 @@ export const loadPngToTextureOptions = loader({
   input: ['.png', 'image/png'],
   output: Texture.Options,
   handle: async (_, context): Promise<TextureOptions> => {
-    return { data: context.source }
+    return { source: context.source }
   },
 })
 
@@ -301,7 +301,7 @@ export const loadImageDataToTextureOptions = loader({
   input: ImageData,
   output: Texture.Options,
   handle: async (input: ImageData, _): Promise<TextureOptions> => {
-    return { data: new TextureSourceData(input) }
+    return { source: new TextureSourceData(input) }
   },
 })
 

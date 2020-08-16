@@ -37,7 +37,7 @@ const indices = device.createIndexBuffer({
 
 // Create a texture object. We simply pass an URL as `data` option.
 const texture = device.createTexture({
-  data: '/assets/textures/prototype/proto_red.png',
+  source: '/assets/textures/prototype/proto_red.png',
 })
 
 // Begin render loop

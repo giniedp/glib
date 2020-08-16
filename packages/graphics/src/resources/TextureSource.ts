@@ -96,7 +96,14 @@ export class TextureSourceData extends TextureSource<ImageBitmap | ImageData | H
 
   public constructor(data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas) {
     super()
-    this.data = data
+    if (data instanceof ImageBitmap || data instanceof ImageData || data instanceof HTMLCanvasElement || data instanceof OffscreenCanvas) {
+      this.data = data
+    } else if ("data" in data && "width" in data && "height" in data) {
+      const input = data as ImageData
+      this.data = new ImageData(input.data, input.width, input.height)
+    } else {
+      throw new Error()
+    }
   }
 
   public hasChanged = false

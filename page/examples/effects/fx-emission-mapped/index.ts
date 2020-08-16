@@ -39,9 +39,9 @@ const model = ModelBuilder
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ data: '/assets/textures/prototype/proto_red.png' }),
-        NormalMap: device.createTexture({ data: '/assets/textures/prototype/proto_gray_n.png' }),
-        EmissionMap: device.createTexture({ data: '/assets/textures/prototype/proto_alpha_op.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
+        NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_gray_n.png' }),
+        EmissionMap: device.createTexture({ source: '/assets/textures/prototype/proto_alpha_op.png' }),
         EmissionColor: [0.2, 0.2, 0.2],
       },
     }],
