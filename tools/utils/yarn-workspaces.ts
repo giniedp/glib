@@ -16,5 +16,9 @@ export interface YarnWorkspacesInfo {
 }
 
 export function yarnWorkspaces(): YarnWorkspacesInfo {
-  return JSON.parse(cp.execSync('yarn workspaces info --json').toString())
+  let json = cp.execSync('yarn workspaces info --json').toString()
+  // TODO: remove hotfix
+  // when executed under 'concurrently' the output has a prefix making the json invalid
+  json = json.substr(json.indexOf("{"))
+  return JSON.parse(json.trim())
 }
