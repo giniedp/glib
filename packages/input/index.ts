@@ -1,5 +1,0 @@
-export * from './src/GamePads'
-export * from './src/Keyboard'
-export * from './src/Mouse'
-export * from './src/Orientation'
-export * from './src/TouchPane'

@@ -10,7 +10,7 @@ import {
 import { loader, resolveUri } from '@gglib/content'
 
 import { OBJ, FaceElement, VertexTextureNormalRef } from './format'
-import { PipelineContext } from '@gglib/content/src'
+import { PipelineContext } from '@gglib/content'
 import { addToArraySet, flattenArray } from '@gglib/utils'
 
 /**

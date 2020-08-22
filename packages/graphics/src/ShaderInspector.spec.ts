@@ -1,4 +1,4 @@
-import { ShaderInspector } from '@gglib/graphics'
+import { ShaderInspector } from './index'
 import { ProgramInspection } from './ShaderInspector'
 
 describe('ShaderInspector', () => {

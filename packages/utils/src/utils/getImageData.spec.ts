@@ -1,4 +1,4 @@
-import { getImageData } from '@gglib/utils'
+import { getImageData } from './getImageData'
 
 describe('@gglib/utils/utils', () => {
   // tslint:disable-next-line

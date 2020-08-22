@@ -1,4 +1,4 @@
-import { WebWorker } from '@gglib/utils'
+import { WebWorker } from './WebWorker'
 
 describe('@gglib/utils/WebWorker', () => {
   describe('.enable', () => {

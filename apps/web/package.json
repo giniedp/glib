@@ -1,0 +1,20 @@
+{
+  "name": "@apps/web",
+  "version": "1.0.0",
+  "description": "Gglib Website",
+  "main": "index.js",
+  "author": "Alexander Gräfenstein",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@gglib/gglib": "0.6.0",
+    "@types/browser-sync": "^2.26.1",
+    "@types/gulp-sass": "^4.0.0",
+    "@types/mithril": "^2.0.3",
+    "bootstrap": "^4.5.2",
+    "browser-sync": "^2.26.12",
+    "gulp": "^4.0.2",
+    "gulp-sass": "^4.1.0",
+    "mithril": "^2.0.4"
+  }
+}

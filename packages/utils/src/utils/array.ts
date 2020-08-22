@@ -5,6 +5,15 @@
  */
 export const isArray = Array.isArray
 
+/**
+ *
+ * @param v Checks whether an object is an ArrayBufferView
+ */
+export function isArrayBufferView(v: any): v is ArrayBufferView {
+  const it = v as ArrayBufferView
+  return it != null && it.buffer != null && it.byteLength != null && it.byteOffset != null
+}
+
 const concatArray = [].concat
 
 /**

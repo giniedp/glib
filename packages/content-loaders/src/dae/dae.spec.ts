@@ -11,7 +11,7 @@ import {
   loadGgfxToShaderEffectOptions,
   loadColladaDocumentToModelOptions,
   loadDaeToColladaDocument,
-} from '@gglib/content-loaders'
+} from '../index'
 import { DeviceGL, Model } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test'
 

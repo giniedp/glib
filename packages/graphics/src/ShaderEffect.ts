@@ -26,7 +26,7 @@ export interface ShaderEffectOptions {
    * @remarks
    * `techniques` option is mutually exclusive with `program` option
    */
-  techniques?: Array<ShaderTechniqueOptions | ShaderTechnique> | ShaderTechnique
+  techniques?: ReadonlyArray<ShaderTechniqueOptions | ShaderTechnique> | ShaderTechnique
   /**
    * The name or index of the default technique of an effect. Defaults to `0`
    */

@@ -63,6 +63,8 @@ export interface LoaderSpec<Input extends LoaderInputs = any, Output extends Loa
   readonly handle: LoaderHandle<Input, Output>
 }
 
+export type Loader<Input, Output> = LoaderSpec<LoaderInputs<Input>, LoaderOutput<Output>>
+
 /**
  * @public
  */

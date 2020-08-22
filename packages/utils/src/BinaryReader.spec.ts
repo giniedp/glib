@@ -1,6 +1,6 @@
 
 
-import { BinaryReader } from '@gglib/utils'
+import { BinaryReader } from './BinaryReader'
 describe('Glib.Core.BinaryReader', () => {
   let data
   let reader: BinaryReader

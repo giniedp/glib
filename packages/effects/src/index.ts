@@ -1,3 +1,5 @@
+import './loader'
+
 export * from './builder'
 export * from './chunks'
 export * from './glsl'

@@ -15,12 +15,13 @@ import {
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { loader, resolveUri, PipelineContext } from '@gglib/content'
 import { YML } from './yml'
+import { Loader } from '@gglib/content'
 
 /**
  * Downloads `.ggmod` textfile and interprets the content as `ModelOptions` json
  * @public
  */
-export const loadGgmodToModelOptions = loader({
+export const loadGgmodToModelOptions: Loader<string, ModelOptions> = loader({
   input: '.ggmod',
   output: Model.Options,
   handle: async (_, context): Promise<ModelOptions> => {
@@ -36,7 +37,7 @@ export const loadGgmodToModelOptions = loader({
  * @remarks
  * If the file contains a json array, only the first entry is resolved
  */
-export const loadGgmatToMaterialOptions = loader({
+export const loadGgmatToMaterialOptions: Loader<string, MaterialOptions> = loader({
   input: '.ggmat',
   output: Material.Options,
   handle: async (_, context): Promise<MaterialOptions> => {
@@ -50,7 +51,7 @@ export const loadGgmatToMaterialOptions = loader({
  * @remarks
  * If the file contains a json object, it is pushed into a new array and returned
  */
-export const loadGgmatToMaterialOptionsArray = loader({
+export const loadGgmatToMaterialOptionsArray: Loader<string, ModelOptions[]> = loader({
   input: '.ggmat',
   output: Material.OptionsArray,
   handle: async (_, context): Promise<MaterialOptions[]> => {
@@ -64,7 +65,7 @@ export const loadGgmatToMaterialOptionsArray = loader({
  * Downloads `.ggfx` textfile and interprets the content as `ShaderEffectOptions` yaml
  * @public
  */
-export const loadGgfxToShaderEffectOptions = loader({
+export const loadGgfxToShaderEffectOptions: Loader<string, ShaderEffectOptions> = loader({
   input: ['.ggfx', 'application/x-yaml'],
   output: ShaderEffect.Options,
   handle: async (_, context): Promise<ShaderEffectOptions> => {
@@ -93,7 +94,7 @@ export const loadGgfxToShaderEffectOptions = loader({
  * If the models bounding box is missing or is of zero size then the box is created by
  * merging all bounding boxes of all meshes
  */
-export const loadModelOptionsToModel = loader({
+export const loadModelOptionsToModel: Loader<ModelOptions, Model> = loader({
   input: Model.Options,
   output: Model,
   handle: async (modelOptions: ModelOptions, context): Promise<Model> => {
@@ -161,7 +162,7 @@ export const loadModelOptionsToModel = loader({
  * The parameters are processed in a way, that values having type of `string` are interpreted
  * as texture URIs
  */
-export const loadMaterialOptionsToMaterial = loader({
+export const loadMaterialOptionsToMaterial: Loader<MaterialOptions, Material> = loader({
   input: Material.Options,
   output: Material,
   handle: async (input: MaterialOptions, context): Promise<Material> => {
@@ -198,7 +199,7 @@ export const loadMaterialOptionsToMaterial = loader({
  *
  * @public
  */
-export const loadMaterialOptionsUriToMaterialOptions = loader({
+export const loadMaterialOptionsUriToMaterialOptions: Loader<MaterialOptions, MaterialOptions> = loader({
   input: Material.OptionsUri,
   output: Material.Options,
   handle: async (input: MaterialOptions, context): Promise<MaterialOptions> => {
@@ -219,7 +220,7 @@ export const loadMaterialOptionsUriToMaterialOptions = loader({
 /**
  * @public
  */
-export const loadMaterialOptionsToMaterialArray = loader({
+export const loadMaterialOptionsToMaterialArray: Loader<MaterialOptions[], Material[]> = loader({
   input: Material.OptionsArray,
   output: Material.Array,
   handle: async (input: MaterialOptions[], context): Promise<Material[]> => {
@@ -230,7 +231,7 @@ export const loadMaterialOptionsToMaterialArray = loader({
 /**
  * @public
  */
-export const loadShaderEffectOptionsToShaderEffect = loader({
+export const loadShaderEffectOptionsToShaderEffect: Loader<ShaderEffectOptions, ShaderEffect> = loader({
   input: ShaderEffect.Options,
   output: ShaderEffect,
   handle: async (input: ShaderEffectOptions, context): Promise<ShaderEffect> => {
@@ -260,7 +261,7 @@ async function loadStringKeysAsTexture(input: any, context: PipelineContext) {
 /**
  * @public
  */
-export const loadShaderEffectOptionsToShaderEffectArray = loader({
+export const loadShaderEffectOptionsToShaderEffectArray: Loader<ShaderEffectOptions[], ShaderEffect[]> = loader({
   input: ShaderEffect.OptionsArray,
   output: ShaderEffect.Array,
   handle: (input: ShaderEffectOptions[], context): Promise<ShaderEffect[]> => {
@@ -275,7 +276,7 @@ export const loadShaderEffectOptionsToShaderEffectArray = loader({
 /**
  * @public
  */
-export const loadJpegToTextureOptions = loader({
+export const loadJpegToTextureOptions: Loader<string, TextureOptions> = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Texture.Options,
   handle: async (_, context): Promise<TextureOptions> => {
@@ -286,7 +287,7 @@ export const loadJpegToTextureOptions = loader({
 /**
  * @public
  */
-export const loadPngToTextureOptions = loader({
+export const loadPngToTextureOptions: Loader<string, TextureOptions> = loader({
   input: ['.png', 'image/png'],
   output: Texture.Options,
   handle: async (_, context): Promise<TextureOptions> => {
@@ -297,7 +298,7 @@ export const loadPngToTextureOptions = loader({
 /**
  * @public
  */
-export const loadImageDataToTextureOptions = loader({
+export const loadImageDataToTextureOptions: Loader<ImageData, TextureOptions> = loader({
   input: ImageData,
   output: Texture.Options,
   handle: async (input: ImageData, _): Promise<TextureOptions> => {
@@ -308,7 +309,7 @@ export const loadImageDataToTextureOptions = loader({
 /**
  * @public
  */
-export const loadTextureOptionsToTexture = loader({
+export const loadTextureOptionsToTexture: Loader<TextureOptions, Texture> = loader({
   input: Texture.Options,
   output: Texture.Texture2D,
   handle: async (input: TextureOptions, context): Promise<Texture> => {
@@ -319,7 +320,7 @@ export const loadTextureOptionsToTexture = loader({
 /**
  * @public
  */
-export const loadTextureToMaterialOptions = loader({
+export const loadTextureToMaterialOptions: Loader<Texture, MaterialOptions> = loader({
   input: Texture.Texture2D,
   output: Material.Options,
   handle: (input: Texture, _): Promise<MaterialOptions> => {

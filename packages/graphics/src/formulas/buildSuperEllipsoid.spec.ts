@@ -1,4 +1,4 @@
-import { buildSuperEllipsoid, DeviceGL, ModelBuilder } from '@gglib/graphics'
+import { buildSuperEllipsoid, DeviceGL, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSuperEllipsoid', () => {

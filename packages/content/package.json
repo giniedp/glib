@@ -14,11 +14,20 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/content.umd.js",
-  "module": "./index.js",
-  "typings": "./index.d.ts",
+  "index": "dist/bundles/content.umd.js",
+  "module": "dist/content/src/index.js",
+  "typings": "dist/content/src/index.d.ts",
+  "devDependencies": {
+    "@gglib/graphics": "0.6.0",
+    "@gglib/utils": "0.6.0"
+  },
   "peerDependencies": {
     "@gglib/graphics": "0.6.0",
     "@gglib/utils": "0.6.0"
-  }
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
 }

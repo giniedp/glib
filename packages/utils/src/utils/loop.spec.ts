@@ -1,4 +1,4 @@
-import { loop } from '@gglib/utils'
+import { loop } from './loop'
 
 describe('@gglib/utils/utils/time', () => {
   describe('loop', () => {

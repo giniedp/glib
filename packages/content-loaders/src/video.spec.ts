@@ -6,7 +6,7 @@ import {
 import {
   loadMp4ToHTMLVideoElement,
   loadWebmToHTMLVideoElement,
-} from '@gglib/content-loaders'
+} from './index'
 
 import { DeviceGL } from '@gglib/graphics'
 

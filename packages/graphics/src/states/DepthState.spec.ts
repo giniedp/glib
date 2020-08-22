@@ -1,6 +1,6 @@
 import {
   CompareFunction,
-} from '@gglib/graphics'
+} from '../index'
 import { DeviceGL } from '../webgl'
 import { DepthStateGL } from '../webgl/states'
 import { DepthStateParams } from './DepthState'

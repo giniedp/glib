@@ -3,18 +3,13 @@
   "version": "0.6.0",
   "private": true,
   "description": "A Web GL Framework",
-  "main": "dist/packages/index.js",
-  "module": "dist/packages/index.js",
-  "es2015": "dist/packages/index.js",
-  "typings": "dist/packages/index.d.ts",
   "scripts": {
+    "tasks": "gulp -T",
     "test": "karma start --single-run",
     "test:watch": "BROWSER=ChromeHeadless karma start --single-run=false",
     "test:coverage": "IS_COVERAGE=yes karma start --single-run",
     "test:coveralls": "IS_COVERAGE=yes karma start --single-run && cat ./coverage/lcov/lcov.info | ./node_modules/.bin/coveralls",
-    "watch": "gulp watch",
-    "build": "gulp build",
-    "build:api": "gulp api",
+    "dev": "concurrently -n ⬢,⬢,⬢ -c red,green,blue -p '{name}' -k 'gulp glib:watch' 'gulp web:watch' 'gulp web:serve'",
     "lint": "yarn lint:packages && yarn lint:examples",
     "lint:packages": "eslint -c .eslintrc.js",
     "lint:examples": "tsc -p ./page/tsconfig.json --noEmit"
@@ -39,9 +34,7 @@
     "@webgpu/glslang": "^0.0.15",
     "@webgpu/types": "^0.0.24",
     "ammojs-typed": "^1.0.3",
-    "benchmark": "^2.1.4",
-    "bootstrap": "^4.5.0",
-    "browser-sync": "^2.26.7",
+    "concurrently": "^5.3.0",
     "coveralls": "^3.1.0",
     "del": "^5.1.0",
     "eslint": "^7.4.0",
@@ -50,13 +43,6 @@
     "eslint-plugin-jsdoc": "^28.6.1",
     "eslint-plugin-prefer-arrow": "^1.2.1",
     "gulp": "^4.0.2",
-    "gulp-connect": "^5.7.0",
-    "gulp-livereload": "^4.0.2",
-    "gulp-markdown-it": "^0.1.1",
-    "gulp-notify": "^3.2.0",
-    "gulp-plumber": "^1.2.1",
-    "gulp-sass": "^4.1.0",
-    "gulp-server-livereload": "^1.9.2",
     "inflection": "^1.12.0",
     "jasmine-core": "^3.5.0",
     "jslint": "^0.12.1",
@@ -96,5 +82,10 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {},
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "tools/*"
+  ]
 }

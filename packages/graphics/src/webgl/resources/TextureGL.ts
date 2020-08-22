@@ -7,6 +7,7 @@ import {
 import { Device } from '../../Device'
 
 import { Texture, TextureDataOption, TextureOptions, TextureSourceOption } from '../../resources/Texture'
+import { isArray, isArrayBufferView } from '@gglib/utils'
 
 function isPowerOfTwo(value: number): boolean {
   return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
@@ -82,36 +83,31 @@ export class TextureGL extends Texture {
   /**
    * Sets the texture source from data array or buffer
    *
+   * @remarks
+   * Sets current {@link source} property to null and uses given data as texture source.
+   * If data is a plain javascript array or an ArrayBuffer, a TypedArray is instantiated
+   * based on current {@link pixelType} respecting WebGL rules for array buffers types.
+   *
+   * If width and height are given they are used as new texture widht and height values.
+   *
+   * Given data must match the width and heigth otherwise WebGL will complain.
+   *
    * @param data - The texture data to be set
    * @param width - The new texture width
    * @param height - The new texture height
    */
-  public setData(data: TextureDataOption, width?: number, height?: number): this {
+  public setData(data: TextureDataOption, width: number = this.width, height: number = this.height): this {
     this.set('source', null)
+    // TODO: allow set mipmap level
 
     let buffer: ArrayBufferView
-    if (data instanceof Array || data instanceof ArrayBuffer) {
+    if (isArray(data) || data instanceof ArrayBuffer) {
       buffer = new ArrayType[this.pixelType](data)
-    } else if (data && (data as ArrayBufferView).buffer instanceof ArrayBuffer) {
-      if (data instanceof Uint8ClampedArray) {
-        buffer = new Uint8Array(data.buffer)
-      } else {
-        buffer = (data as ArrayBufferView)
-      }
-    }
-    if (!buffer) {
+    } else if (isArrayBufferView(data)) {
+      buffer = data
+    } else {
       throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
     }
-
-    let pixelCount = buffer.byteLength / pixelFormatElementCount(this.pixelFormat)
-    if (!width || !height) {
-      width = height = Math.floor(Math.sqrt(pixelCount))
-    }
-    // TODO: fix invalid size detection
-    // this does not work with formats like 5551
-    // if (width * height !== pixelCount) {
-    //   throw new Error('width and height does not match the data length')
-    // }
 
     this.bind()
     this.device.context.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, buffer)
@@ -153,8 +149,6 @@ export class TextureGL extends Texture {
       })
     }))
     this.update()
-
-
     return this
   }
 

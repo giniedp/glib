@@ -1,7 +1,7 @@
 import {
   DeviceGL,
   ParticleChannel,
-} from '@gglib/graphics'
+} from './index'
 
 describe('graphics/ParticleChannel', () => {
 

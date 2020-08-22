@@ -14,8 +14,14 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/noise.umd.js",
-  "module": "./index.js",
-  "typings": "./index.d.ts",
-  "peerDependencies": {}
+  "index": "dist/bundles/noise.umd.js",
+  "module": "dist/noise/src/index.js",
+  "typings": "dist/noise/src/index.d.ts",
+  "devDependencies": {},
+  "peerDependencies": {},
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
 }

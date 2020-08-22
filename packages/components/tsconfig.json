@@ -1,5 +1,43 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../tsconfig.tsc.json",
   "baseUrl": ".",
-  "rootDir": "."
+  "rootDir": ".",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist"
+  },
+  "include": [
+    "./index.ts",
+    "./src/**/*.ts"
+  ],
+  "exclude": [
+    "./dist/**/*",
+    "./node_modules/**/*"
+  ],
+  "references": [
+    {
+      "path": "../ecs/tsconfig.json"
+    },
+    {
+      "path": "../math/tsconfig.json"
+    },
+    {
+      "path": "../utils/tsconfig.json"
+    },
+    {
+      "path": "../content/tsconfig.json"
+    },
+    {
+      "path": "../graphics/tsconfig.json"
+    },
+    {
+      "path": "../input/tsconfig.json"
+    },
+    {
+      "path": "../effects/tsconfig.json"
+    },
+    {
+      "path": "../render/tsconfig.json"
+    }
+  ]
 }

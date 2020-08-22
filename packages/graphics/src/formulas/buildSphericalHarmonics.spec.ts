@@ -1,4 +1,4 @@
-import { buildSphericalHarmonics, DeviceGL, ModelBuilder } from '@gglib/graphics'
+import { buildSphericalHarmonics, DeviceGL, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSphericalHarmonics', () => {

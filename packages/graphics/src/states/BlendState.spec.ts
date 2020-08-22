@@ -2,7 +2,7 @@ import {
   Blend,
   BlendFunction,
   DeviceGL,
-} from '@gglib/graphics'
+} from '../index'
 import { BlendStateGL } from '../webgl/states'
 import { BlendStateParams } from './BlendState'
 

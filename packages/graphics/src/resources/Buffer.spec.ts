@@ -1,4 +1,4 @@
-import { BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DeviceGL  } from '@gglib/graphics'
+import { BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DeviceGL  } from '../index'
 import { DataType } from '../enums'
 import { BufferGL } from '../webgl'
 

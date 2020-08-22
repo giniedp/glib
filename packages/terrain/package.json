@@ -14,11 +14,20 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/terrain.umd.js",
-  "module": "./index.js",
-  "typings": "./index.d.ts",
+  "index": "dist/bundles/terrain.umd.js",
+  "module": "dist/terrain/src/index.js",
+  "typings": "dist/terrain/src/index.d.ts",
+  "devDependencies": {
+    "@gglib/graphics": "0.6.0",
+    "@gglib/math": "0.6.0"
+  },
   "peerDependencies": {
     "@gglib/graphics": "0.6.0",
     "@gglib/math": "0.6.0"
-  }
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
 }

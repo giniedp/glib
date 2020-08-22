@@ -7,7 +7,7 @@ import {
   loadJpegToImage,
   loadPngToHTMLImageElement,
   loadPngToImage,
-} from '@gglib/content-loaders'
+} from './index'
 
 import { DeviceGL } from '@gglib/graphics'
 

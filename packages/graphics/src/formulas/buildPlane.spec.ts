@@ -1,4 +1,4 @@
-import { buildPlane, ModelBuilder } from '@gglib/graphics'
+import { buildPlane, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildPlane', () => {

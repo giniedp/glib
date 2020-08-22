@@ -1,0 +1,25 @@
+{
+  "name": "sample-webpack",
+  "version": "1.0.0",
+  "description": "Gglib Experiment",
+  "main": "index.js",
+  "author": "Alexander Gräfenstein",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "webpack"
+  },
+  "dependencies": {
+    "@gglib/graphics": "^0.6.0",
+    "@gglib/math": "^0.6.0",
+    "@gglib/utils": "^0.6.0",
+    "@types/mithril": "^2.0.3",
+    "html-webpack-plugin": "^4.3.0",
+    "mithril": "^2.0.4",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.0.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  }
+}

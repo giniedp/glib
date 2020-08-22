@@ -5,10 +5,26 @@
 
 > This is a spare time project and is maintained occasionally.
 
-[G]glib
-======
+# [G]glib
 
-Gglib framework is a collection of graphics related libraries and tools written in Typescript. It abstracts WebGL calls and provides a simplified interface for graphics rendering.
+Gglib framework is a collection of graphics related libraries and tools written in Typescript.
+It abstracts WebGL calls and provides a simplified interface for graphics rendering.
+
+# Project structure
+
+This project uses yarn workspaces and gulp tasks
+
+```
+  ├── assets              // Contains assets (textures, models, materials etc.) that are shared across all apps
+  ├── apps                // Contains workspaces for everything that is executable
+  │   ├── web             // Workspace for the gglib website
+  │   ├── ...             //
+  ├── packages            // Contains workspaces for all gglib packages
+  │   ├── ...             //
+  ├── tools               // Contains workspaces for build tools
+  │   ├── gglib           // build tasks for the gglib packages
+  │   ├── ...             //
+```
 
 # Installation
 
@@ -25,23 +41,11 @@ install dependencies
 $ yarn install
 ```
 
-build the project
+build the packages and the website
 
 ```sh
-$ gulp build
+$ yarn build
 ```
-
-# Gulp commands
-| Command | Description |
-|---|---|
-| `gulp clean`  | Cleans the `dist` folder |
-| `gulp update` | Regenerates `package.json` and `api-extractor.json` files. Synchronizes the version number |
-| `gulp compile`| Compiles all packages using `tsc` |
-| `gulp bundle` | Bundles all packages using `rollup` |
-| `gulp build`  | Basically runs all commands above to build all packages |
-| `gulp api`    | Runs the api extractor and generates `api/*.api.json` files |
-| `gulp docs`   | Generates API for each package |
-| `gulp -T`     | List all available tasks |
 
 [travis-url]: https://travis-ci.org/giniedp/glib
 [travis-shield]: https://img.shields.io/travis/giniedp/glib.svg

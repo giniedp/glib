@@ -1,5 +1,4 @@
 import { BoundingBox } from './BoundingBox'
-import { BoundingCapsule } from './BoundingCapsule'
 import { BoundingSphere } from './BoundingSphere'
 import { PlaneIntersectionType } from './Collision'
 import { Plane } from './Plane'

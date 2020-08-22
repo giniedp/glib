@@ -1,4 +1,4 @@
-import { buildCube, ModelBuilder } from '@gglib/graphics'
+import { buildCube, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCube', () => {

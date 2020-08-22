@@ -3,7 +3,7 @@ import {
   Device,
   DeviceGL,
   FrontFace,
-} from '@gglib/graphics'
+} from '../index'
 import { CullStateGL } from '../webgl/states'
 import { CullStateParams } from './CullState'
 

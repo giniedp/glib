@@ -1,4 +1,4 @@
-import { Uri } from '@gglib/utils'
+import { Uri } from './Uri'
 
 describe('@gglib/utils/Uri', () => {
   describe('.parse', () => {

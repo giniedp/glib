@@ -2,6 +2,7 @@ import { extend, Log, hasOwnProperty } from '@gglib/utils'
 
 import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
 
+
 /**
  * Describes an attribute of a vertex
  *

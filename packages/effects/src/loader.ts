@@ -1,11 +1,12 @@
-import { loader } from '@gglib/content'
-import { Material, MaterialOptions, ShaderProgramOptions, CullState, BlendState, IBlendState, ICullState, ShaderPassOptions, DepthState } from '@gglib/graphics'
+import { loader, LoaderSpec } from '@gglib/content'
+import { Material, MaterialOptions, CullState, BlendState, ShaderPassOptions } from '@gglib/graphics'
 import { defaultProgram, DefaultProgramDefs } from './programs'
+import { TypeToken } from '@gglib/utils'
 
 /**
  * @public
  */
-export const loadMaterialOptionsToShaderEffectOptions = loader({
+export const loadMaterialOptionsToShaderEffectOptions: LoaderSpec<TypeToken<MaterialOptions>, TypeToken<MaterialOptions>> = loader({
   input: Material.OptionsTechnique,
   output: Material.Options,
   handle: async (input: MaterialOptions, _): Promise<MaterialOptions> => {

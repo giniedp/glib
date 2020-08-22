@@ -1,4 +1,4 @@
-import { buildSphere, ModelBuilder } from '@gglib/graphics'
+import { buildSphere, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSphere', () => {

@@ -1,4 +1,4 @@
-import { buildIcosahedron, buildOctahedron, buildTetrahedron, ModelBuilder } from '@gglib/graphics'
+import { buildIcosahedron, buildOctahedron, buildTetrahedron, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildIcosahedron', () => {

@@ -1,4 +1,3 @@
-import { Vec3 } from '@gglib/math'
 import { ModelBuilder } from './ModelBuilder'
 
 describe('Graphics.ModelBuilder', () => {

@@ -1,41 +1,17 @@
-import { parallel, series, task } from 'gulp'
-import './tools/gulp'
-import { api, docs } from './tools/gulp/api'
-import { watchPackages } from './tools/gulp/build'
-import { bundle } from './tools/gulp/bundle'
-import { clean } from './tools/gulp/clean'
-import { compilePackages } from './tools/gulp/compile'
-import { link, unlink } from './tools/gulp/link'
-import { page, serve, watchPage } from './tools/gulp/page'
-import { publish } from './tools/gulp/publish'
-import { copyPackageFiles, update } from './tools/gulp/update'
+import * as fs from 'fs'
+import * as path from 'path'
 
-task(api)
-task(bundle)
-task(clean)
-task(copyPackageFiles)
-task(docs)
-task(link)
-task(serve)
-task(unlink)
-task(update)
-task(watchPage)
-task(watchPackages)
+import { yarnWorkspaces } from './tools/utils'
+import { task, TaskFunction } from 'gulp'
 
-task('build', series(
-  clean,
-  update,
-  compilePackages,
-  bundle,
-  copyPackageFiles,
-  api,
-  docs,
-  page,
-))
-
-task('watch', parallel(
-  serve,
-  watchPage,
-))
-
-task('release', series('build', publish))
+const workspaces = yarnWorkspaces()
+Object.keys(workspaces).forEach((wsName) => {
+  const ws = workspaces[wsName]
+  const tasksDir = path.resolve(path.join(ws.location, 'tasks'))
+  if (fs.existsSync(tasksDir)) {
+    const tasks = require(tasksDir) as { [k: string]: TaskFunction }
+    Object.entries(tasks).forEach(([key, fn]) => {
+      task(`${path.basename(ws.location)}:${key}`, fn)
+    })
+  }
+})

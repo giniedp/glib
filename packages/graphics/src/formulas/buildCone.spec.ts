@@ -1,4 +1,4 @@
-import { buildCone, ModelBuilder } from '@gglib/graphics'
+import { buildCone, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCone', () => {

@@ -66,17 +66,22 @@ export interface TextureOptions {
 
   /**
    * The texture width
+   *
+   * @remarks
+   * The width is only used if the widht of the {@link source} data can not be determined.
+   * This is the case when {@link source} is an ArrayBuffer or array
    */
   width?: number
   /**
    * The texture height
+   *
+   * @remarks
+   * The width is only used if the height of the {@link source} data can not be determined.
+   * This is the case when {@link source} is an ArrayBuffer or array
    */
   height?: number
   /**
-   * The initial texture data to set
-   *
-   * @remarks
-   * A value of type `string` is interpreted as an image or video URL
+   * The texture source data
    */
   source?: TextureSourceOption
   /**
@@ -358,7 +363,7 @@ export abstract class Texture {
     } else if (source instanceof TextureSource) {
       this.setSource(source)
     } else if ('width' in source && 'height' in source) {
-      this.setSource(new TextureSourceData(source))
+      this.setSource(source)
     } else if (isArray(source) && isObject(source[0])) {
       this.setVideoUrls(source as any)
     } else if (source && (source instanceof Array || source instanceof ArrayBuffer || source.buffer)) {
@@ -506,7 +511,7 @@ export abstract class Texture {
   }
 
   /**
-   * Updates the texture from current image or video element.
+   * Updates the texture from current source element.
    *
    * @remarks
    * This method is called automatically from inside the {@link ShaderUniform}

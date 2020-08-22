@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": ".",
+    "declaration": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declarationMap": true,
+    "module": "es2015",
+    "moduleResolution": "node",
+    "incremental": true,
+    "noImplicitAny": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noFallthroughCasesInSwitch": true,
+    "importHelpers": true,
+    "sourceMap": true,
+    "inlineSourceMap": false,
+    "inlineSources": true,
+    "lib": ["es6", "dom", "es2015.promise", "es2015.collection", "es2015.iterable"],
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "target": "es5",
+    "typeRoots": [
+      "../node_modules",
+      "../types"
+    ],
+    "types": [
+      "@types/jasmine",
+      "@types/webgl2",
+      "gpuweb",
+      "webxr"
+    ]
+  }
+}

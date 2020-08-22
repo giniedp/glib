@@ -1,5 +1,5 @@
 import { ContentManager, Pipeline } from '@gglib/content'
-import { loadTgaToImageData } from '@gglib/content-loaders'
+import { loadTgaToImageData } from '../index'
 import { DeviceGL } from '@gglib/graphics'
 
 describe('content/loaders/tga', () => {

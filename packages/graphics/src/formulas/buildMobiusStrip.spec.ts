@@ -1,4 +1,4 @@
-import { buildMobiusStrip, ModelBuilder } from '@gglib/graphics'
+import { buildMobiusStrip, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildMobiusStrip', () => {

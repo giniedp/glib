@@ -1,4 +1,4 @@
-import { TextReader } from '@gglib/utils'
+import { TextReader } from './TextReader'
 
 describe('Glib.Core.TextReader', () => {
 

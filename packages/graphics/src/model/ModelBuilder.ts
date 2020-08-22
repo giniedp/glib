@@ -4,7 +4,7 @@ import { copy, isArray } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device } from '../Device'
 import { BufferOptions } from '../resources'
-import { VertexLayout, commonVertexAttribute } from '../VertexLayout'
+import { VertexLayout, commonVertexAttribute, VertexAttribute } from '../VertexLayout'
 import { BufferType, DataType, FrontFace, PrimitiveType } from '../enums'
 
 import type { Model, ModelOptions } from './Model'
@@ -318,7 +318,7 @@ export class ModelBuilder {
    * This does not operate on already closed mesh parts. When building a model with multiple
    * meshes or parts, this must be called each time before closing a part.
    */
-  public ensureLayoutChannel(name: string, channel = commonVertexAttribute(name)) {
+  public ensureLayoutChannel(name: string, channel: VertexAttribute = commonVertexAttribute(name)) {
     if (this.partUtil.hasChannel(name)) {
       return
     }

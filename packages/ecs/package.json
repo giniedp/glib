@@ -14,10 +14,18 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/ecs.umd.js",
-  "module": "./index.js",
-  "typings": "./index.d.ts",
+  "index": "dist/bundles/ecs.umd.js",
+  "module": "dist/ecs/src/index.js",
+  "typings": "dist/ecs/src/index.d.ts",
+  "devDependencies": {
+    "@gglib/utils": "0.6.0"
+  },
   "peerDependencies": {
     "@gglib/utils": "0.6.0"
-  }
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
 }

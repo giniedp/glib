@@ -1,4 +1,4 @@
-import { Http } from '@gglib/utils'
+import { Http } from './Http'
 
 describe('@gglib/utils/http', () => {
   describe('.request', () => {

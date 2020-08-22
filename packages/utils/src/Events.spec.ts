@@ -1,4 +1,4 @@
-import { Events } from '@gglib/utils'
+import { Events } from './Events'
 
 describe('@gglib/utils/Events', () => {
   let ev: Events

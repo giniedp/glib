@@ -2,7 +2,7 @@ import {
   CompareFunction,
   Device,
   StencilOperation,
-} from '@gglib/graphics'
+} from '../index'
 
 import { DeviceGL } from '../webgl'
 import { StencilStateGL } from '../webgl/states'

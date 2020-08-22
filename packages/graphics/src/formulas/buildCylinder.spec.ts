@@ -1,4 +1,4 @@
-import { buildCylinder, ModelBuilder } from '@gglib/graphics'
+import { buildCylinder, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCylinder', () => {

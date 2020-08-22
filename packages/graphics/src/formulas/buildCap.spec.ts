@@ -1,4 +1,4 @@
-import { buildCap, ModelBuilder } from '@gglib/graphics'
+import { buildCap, ModelBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCap', () => {

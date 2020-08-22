@@ -14,12 +14,13 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/gglib.umd.js",
-  "module": "./index.js",
-  "typings": "./index.d.ts",
-  "peerDependencies": {
+  "index": "dist/bundles/gglib.umd.js",
+  "module": "dist/gglib/src/index.js",
+  "typings": "dist/gglib/src/index.d.ts",
+  "devDependencies": {
     "@gglib/components": "0.6.0",
     "@gglib/content": "0.6.0",
+    "@gglib/content-loaders": "0.6.0",
     "@gglib/ecs": "0.6.0",
     "@gglib/effects": "0.6.0",
     "@gglib/graphics": "0.6.0",
@@ -29,5 +30,24 @@
     "@gglib/render": "0.6.0",
     "@gglib/terrain": "0.6.0",
     "@gglib/utils": "0.6.0"
-  }
+  },
+  "peerDependencies": {
+    "@gglib/components": "0.6.0",
+    "@gglib/content": "0.6.0",
+    "@gglib/content-loaders": "0.6.0",
+    "@gglib/ecs": "0.6.0",
+    "@gglib/effects": "0.6.0",
+    "@gglib/graphics": "0.6.0",
+    "@gglib/input": "0.6.0",
+    "@gglib/math": "0.6.0",
+    "@gglib/noise": "0.6.0",
+    "@gglib/render": "0.6.0",
+    "@gglib/terrain": "0.6.0",
+    "@gglib/utils": "0.6.0"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
 }

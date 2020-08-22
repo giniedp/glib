@@ -1,6 +1,6 @@
 import { Entity, Inject, OnDraw, OnInit, Component } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { BasicRenderStep, LightSourceData, RenderManager, Scene, SceneItem } from '@gglib/render'
+import { BasicRenderStep, LightSourceData, RenderManager, Scene, SceneItem, SceneView } from '@gglib/render'
 
 import { BoundingFrustum } from '@gglib/math'
 import { getOption } from '@gglib/utils'
@@ -54,7 +54,7 @@ export class RendererComponent implements OnInit, OnDraw {
   /**
    * Gets the default view (view at index `0`) of default scene
    */
-  public get view() {
+  public get view(): SceneView {
     this.ensureSceneValidity()
     return this.scene.views[0]
   }

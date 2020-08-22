@@ -14,8 +14,14 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "main": "./bundles/math.umd.js",
-  "module": "./index.js",
-  "typings": "./index.d.ts",
-  "peerDependencies": {}
+  "index": "dist/bundles/math.umd.js",
+  "module": "dist/math/src/index.js",
+  "typings": "dist/math/src/index.d.ts",
+  "devDependencies": {},
+  "peerDependencies": {},
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
 }
