@@ -9,7 +9,7 @@ import vinyl = require('vinyl')
 
 import { dest, series, src, task, parallel } from 'gulp'
 import project, { GlibPackageContext } from '../context'
-import { convertMarkdownToHtml } from '../../gulp/plugins/transpile-md'
+// import { convertMarkdownToHtml } from '../../gulp/plugins/transpile-md'
 import { spawn, namedTask } from '../../utils'
 
 async function runApiExtractor(pkg: GlibPackageContext) {

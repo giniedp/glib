@@ -9,6 +9,7 @@
     "test:watch": "BROWSER=ChromeHeadless karma start --single-run=false",
     "test:coverage": "IS_COVERAGE=yes karma start --single-run",
     "test:coveralls": "IS_COVERAGE=yes karma start --single-run && cat ./coverage/lcov/lcov.info | ./node_modules/.bin/coveralls",
+    "build": "gulp glib:build && gulp web:build",
     "dev": "concurrently -n ⬢,⬢,⬢ -c red,green,blue -p '{name}' -k 'gulp glib:watch' 'gulp web:watch' 'gulp web:serve'",
     "lint": "yarn lint:packages && yarn lint:examples",
     "lint:packages": "eslint -c .eslintrc.js",

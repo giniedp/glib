@@ -18,14 +18,14 @@
   "module": "dist/content-loaders/src/index.js",
   "typings": "dist/content-loaders/src/index.d.ts",
   "devDependencies": {
-    "@gglib/content": "0.6.0",
     "@gglib/graphics": "0.6.0",
+    "@gglib/content": "0.6.0",
     "@gglib/math": "0.6.0",
     "@gglib/utils": "0.6.0"
   },
   "peerDependencies": {
-    "@gglib/content": "0.6.0",
     "@gglib/graphics": "0.6.0",
+    "@gglib/content": "0.6.0",
     "@gglib/math": "0.6.0",
     "@gglib/utils": "0.6.0"
   },
