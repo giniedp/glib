@@ -15,6 +15,9 @@
     "browser-sync": "^2.26.12",
     "gulp": "^4.0.2",
     "gulp-sass": "^4.1.0",
-    "mithril": "^2.0.4"
+    "mithril": "^2.0.4",
+    "ammojs-typed": "^1.0.3",
+    "prismjs": "^1.20.0",
+    "tweak-ui": "^0.2.7"
   }
 }
