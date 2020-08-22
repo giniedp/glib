@@ -7,16 +7,18 @@ declare const showdown: any
 declare const m: Mithril
 
 const links = document.querySelectorAll('a.list-group-item')
-const container = document.querySelector('.example-content')
-const page = document.querySelector('.example-page')
+const containerEl = document.querySelector('.example-content')
+const pageEl = document.querySelector('.example-page')
+const titleEl = document.querySelector('.example-title')
 
 document.querySelector('a.example-button-menu').addEventListener('click', () => {
-  page.classList.toggle('sidebar-off')
+  pageEl.classList.toggle('sidebar-off')
 })
 document.querySelector('a.example-button-prev').addEventListener('click', prevExample)
 document.querySelector('a.example-button-next').addEventListener('click', nextExample)
 
 interface ExampleData {
+  title: string,
   href: string,
   frontpage: boolean,
   skipPreview: boolean,
@@ -189,13 +191,12 @@ class ExampleSectionComponent {
       this.content,
       m(ExampleCodeComponent, { code: this.code } as any),
       !this.annotated ? null : m(
-        'ul.annotated-section.row',
+        '.annotated-section',
         this.annotated.map((it) => {
-          return m(
-            'li' as any,
+          return m.fragment({}, [
             m('div', { class: 'annotation' }, it.comments),
             m('pre', m('code', it.code)),
-          )
+          ])
         }),
       ),
     )
@@ -299,18 +300,19 @@ function openExample(hash: string, data: ExampleData) {
     }
   })
 
-  container.classList.remove('show')
-  container.classList.add('hide')
+  containerEl.classList.remove('show')
+  containerEl.classList.add('hide')
+  titleEl.textContent = data.title
   setTimeout(() => {
-    m.mount(container, {
+    m.mount(containerEl, {
       view: () => m(ExampleComponent, {
         ...data,
         href: hash,
       }),
     })
     setTimeout(() => {
-      container.classList.remove('hide')
-      container.classList.add('show')
+      containerEl.classList.remove('hide')
+      containerEl.classList.add('show')
     }, 500)
   }, 250)
 }

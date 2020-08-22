@@ -15,7 +15,7 @@ block content
           each grandChild in childrenOf(child)
             a.list-group-item()&attributes({ href: '#' + grandChild.path.replace(meta.path, ''), "data-data": grandChild })= grandChild.linkTitle
     .example-container
-      .example-toolbar.shadow-sm
+      .example-toolbar.shadow
         a.example-button-menu
         a.example-button-prev
         .example-title

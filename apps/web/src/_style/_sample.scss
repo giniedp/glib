@@ -11,8 +11,6 @@
   $sidebar-speed: .25s;
   background: $white;
 
-  border-left: 1px solid $gray-200;
-  border-right: 1px solid $gray-200;
   width: 100%;
 
   @media (min-width: 100rem) {
@@ -29,7 +27,6 @@
     transition: transform $sidebar-speed, opacity $sidebar-speed;
     z-index: 2;
     opacity: 1;
-    border-right: 1px solid $gray-200;
 
     position: absolute;
     top: 0;
@@ -43,41 +40,41 @@
     overflow-y: auto;
 
     .list-group {
-      margin-bottom: 1rem;
+      margin: 0.25rem 0;
       padding: 0;
     }
 
     .list-group-item {
       background-color: initial;
-      padding: 0.5rem 1rem;
-      line-height: 1em;
-      border: none;
-      transition: background-color 0.1s ease-in-out;
+      padding: 0;
+      margin: 0;
+      padding-left: 2rem;
+      line-height: 1.5rem;
+      border: 0;
+      border-left: 1px solid $gray-200;
+      transition: border-width 0.2s ease-in-out;
 
       &.active {
-        background-color: $gray-200;
+        border-width: 4px;
       }
 
       h5 {
         margin: 0;
         font-size: 1rem;
-        text-transform: uppercase;
-        line-height: 1em;
-        font-weight: initial;
+        line-height: 2.2rem;
       }
+    }
+
+    .list-group-title {
+      padding-left: 1rem;
     }
 
     a {
       text-decoration: none;
       color: $dark;
-    }
-
-    a:hover {
-      // color: $gray-400;
-    }
-
-    a.active {
-      // color: $gray-200;
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 
@@ -87,6 +84,8 @@
     margin-left: $sidebar-size;
     width: calc(100% - #{$sidebar-size});
     max-width: calc(100% - #{$sidebar-size});
+    border-left: 1px solid $gray-200;
+    border-right: 1px solid $gray-200;
 
     @media (max-width: 75rem) {
       margin-left: 0;
@@ -119,6 +118,7 @@
     display: flex;
     flex-direction: row nowrap;
     height: $toolbar-size;
+    line-height: $toolbar-size;
 
     a {
       line-height: $toolbar-size;
@@ -206,103 +206,36 @@
     max-width: 70rem;
   }
 
-  .example-section > ul.annotated-section.row {
-    padding: 0;
+  .example-section > .annotated-section {
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) 2fr;
+    padding-bottom: 1rem;
 
-    list-style: none;
-    margin: 0;
-    overflow-x: auto;
-    background: $white;
-
-    li {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: row;
+    > .annotation {
+      grid-column-start: 1;
+      padding: 0.5rem 1.5rem 0.5rem 3rem;
     }
 
-    .annotation,
-    pre {
-      padding: 1rem 1.5rem 0rem 3rem;
-      box-sizing: border-box;
-
-      margin: 0;
-      background: none;
-      flex: none;
+    > pre {
+      grid-column-start: 2;
+      padding: 0.5rem 1.5rem 0.5rem 3rem;
+    }
+    p {
+      margin-bottom: 0.25rem;
     }
 
-    li:last-child {
+    @media (max-width: 40rem) {
+      grid-template-columns: 1fr;
+
       .annotation,
       pre {
-        padding-bottom: 1rem;
-      }
-    }
-
-    .annotation {
-      user-select: none;
-      background: $white;
-
-      min-width: 30rem;
-      width: 30rem;
-
-      p {
-        margin-bottom: 0.25rem;
+        grid-column-start: 1;
       }
 
-      @media (max-width: 75rem) {
-        min-width: 50vw;
-        width: 50vw;
-      }
-
-      @media (max-width: 40rem) {
-        min-width: 100vw;
-        width: 100vw;
+      pre {
+        background-color: $gray-200;
       }
     }
   }
 
-  .example-section > ul.annotated-section.column {
-    padding: 0;
-
-    list-style: none;
-    margin: 0;
-    overflow-x: auto;
-    background: $white;
-
-    li {
-      margin: 0;
-      padding: 0;
-    }
-
-    pre {
-      margin: 0.5rem 1.5rem 0.5rem 5rem;
-      box-sizing: border-box;
-      background: none;
-      flex: none;
-    }
-
-    li:last-child {
-      .annotation,
-      pre {
-        padding-bottom: 1rem;
-      }
-    }
-
-    .annotation:empty {
-      display: none;
-    }
-
-    .annotation {
-      user-select: none;
-      background: $white;
-      font-style: italic;
-      opacity: 0.75;
-      background-color: $gray-200;
-      padding: 0.5rem 1rem 0.5rem 5rem;
-
-      p {
-        margin-bottom: 0.25rem;
-      }
-    }
-  }
 }

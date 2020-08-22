@@ -1,3 +1,4 @@
+$enable-responsive-font-sizes: true;
 // $primary:       #3A3F44 !default;
 // $secondary:     #7A8288 !default;
 $dark: #1c2128;
@@ -11,14 +12,9 @@ $dark: #1c2128;
 @import "./_style/prismjs";
 @import "./_style/docs";
 
-nav.fixed-top {
-  .navbar-nav {
-    width: 75rem;
-  }
-  .nav-item {
-    flex: 1;
-    text-align: center;
-  }
+nav.navbar {
+  padding: 0 1rem;
+  height: 56px;
 }
 
 nav.fixed-top + * {
