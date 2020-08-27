@@ -6,6 +6,8 @@ import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 const models = {
+  Logo: '/assets/logo/gglib.stl',
+  "Logo (binary)": '/assets/logo/gglib-binary.stl',
   Bottle: '/assets/models/stl/bottle.stl',
   Cube: '/assets/models/stl/cube.stl',
   CubeASCII: '/assets/models/stl/cube.ascii.stl',

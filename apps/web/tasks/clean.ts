@@ -1,4 +1,4 @@
-import * as del from "del"
+import del from "del"
 import manifest from "../manifest"
 
 export async function clean() {

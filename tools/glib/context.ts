@@ -1,31 +1,15 @@
-import * as fs from 'fs'
 import * as glob from 'glob'
 import * as path from 'path'
+import { WorkspacesRootContext, WorkspacePackageContext } from '@tools/utils'
 
-export class GlibBuildContext {
-  /**
-   * Project root directory
-   */
-  public root = process.cwd()
-
-  /**
-   * Project source code directory where all packages are located
-   */
-  public packagesDir = path.join(this.root, 'packages')
-
-  /**
-   * The package json
-   */
-  public get rootPackageJson() {
-    return require(path.join(this.root, 'package.json'))
-  }
+export class GlibBuildContext extends WorkspacesRootContext {
 
   public get glibPackages() {
     if (this.cashedPackages) {
       return this.cashedPackages
     }
     this.cashedPackages = glob
-      .sync(path.join(this.packagesDir, '*', 'package.json'))
+      .sync(this.packagesDir('*', 'package.json'))
       .map((it) => new GlibPackageContext(this, path.dirname(it)))
       .sort((a, b) => {
         if (b.glibReferences.indexOf(a.packageName) === -1) {
@@ -40,33 +24,23 @@ export class GlibBuildContext {
   }
 
   private cashedPackages: GlibPackageContext[]
+
+  public packagesDir(...subPath: string[]) {
+    return this.subPath('packages', ...subPath)
+  }
+
+  public toolsDir(...subPath: string[]) {
+    return this.subPath('tools', 'glib', ...subPath)
+  }
 }
 
-export class GlibPackageContext {
-  get packageJsonPath() {
-    return this.subPath('packahe.json')
-  }
-
-  /**
-   * Gets the base name of the package (name of directory)
-   */
-  get baseName() {
-    return path.basename(this.pkgDir)
-  }
-
-  /**
-   * Gets the package name, as it should appear in package.json
-   */
-  get packageName() {
-    return `@gglib/${this.baseName}`
-  }
-
+export class GlibPackageContext extends WorkspacePackageContext {
   /**
    * Gets the UMD global name
    */
-  get globalName() {
+  public get globalName() {
     const prefix = 'Gglib'
-    if (this.baseName === 'gglib') {
+    if (this.isRootModule) {
       return prefix
     }
     return (
@@ -79,52 +53,31 @@ export class GlibPackageContext {
     )
   }
 
-  /**
-   * Resolves all references gglib packages
-   */
-  get glibReferences(): string[] {
-    if (this.cachedReferences) {
-      return this.cachedReferences
-    }
-
-    const result = new Set<string>()
-    glob.sync(`${this.pkgDir}/**/*.ts`).forEach((file) => {
-      fs.readFileSync(file)
-        .toString()
-        .match(/from ["']@gglib\/(\w+([\-/_]\w+)*)["']/g)
-        ?.forEach((value) => {
-          const m = value.match(/from ["'](@gglib\/\w+([\-/_]\w+)*)["']/)
-          if (m && m[1] !== this.packageName) {
-            result.add(m[1])
-          }
-        })
-    })
-    return this.cachedReferences = Array.from(result.values())
+  public get isRootModule() {
+    return this.baseName === 'gglib'
   }
-  private cachedReferences: string[] = null
 
-  constructor(private context: GlibBuildContext, public readonly pkgDir: string) {}
+  public get tsconfigPath() {
+    return this.subPath('tsconfig.json')
+  }
 
-  /**
-   * Gets a sub path of this package
-   */
-  public subPath(...sub: string[]) {
-    return path.join(this.pkgDir, ...sub)
+  constructor(private context: GlibBuildContext, public readonly pkgDir: string) {
+    super(context, pkgDir)
   }
 
   /**
-   * Gets a sub path of the package dist directory
+   * Returns a path into the typescript output directory
    */
-  public distDir(...sub: string[]) {
-    return this.subPath('dist', ...sub)
+  public tscOutDir(...subPath: string[]) {
+    return this.distDir(this.baseName, 'src', ...subPath)
   }
 
   /**
-   * Gets a sub path of the package src directory
+   * Returns a path into the rollup output directory
    */
-  public srcDir(...sub: string[]) {
-    return this.subPath('src', ...sub)
+  public rollupOutDir(...subPath: string[]) {
+    return this.distDir('bundles', ...subPath)
   }
 }
 
-export default new GlibBuildContext()
+export default new GlibBuildContext(process.cwd())

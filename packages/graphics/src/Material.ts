@@ -116,20 +116,23 @@ export class Material {
   /**
    * The effect to be used
    */
-  public readonly effect: ShaderEffect
+  public get effect(): ShaderEffect {
+    return this.$effect
+  }
   /**
    * Effect parameters to be applied before rendering
    */
   public readonly parameters: { [key: string]: any }
 
+  protected $effect: ShaderEffect
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
     this.name = options.name
     this.parameters = options.parameters || {}
     if (options.effect instanceof ShaderEffect) {
-      this.effect = options.effect
+      this.$effect = options.effect
     } else if (options.effect) {
-      this.effect = device.createEffect(options.effect)
+      this.$effect = device.createEffect(options.effect)
     } else {
       this.onConstructWithoutEffect()
     }
@@ -143,6 +146,6 @@ export class Material {
   }
 
   protected onConstructWithoutEffect() {
-    throw new Error(`[Material] constructor option is missing: 'options.effect'. `)
+    throw new Error(`[Material] constructor option is missing: 'options.effect'.`)
   }
 }

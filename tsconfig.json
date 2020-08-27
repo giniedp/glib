@@ -12,6 +12,7 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "newLine": "LF",
     "baseUrl": ".",
     "lib": [

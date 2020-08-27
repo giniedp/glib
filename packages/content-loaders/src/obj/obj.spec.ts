@@ -1,10 +1,8 @@
 import { ContentManager } from '@gglib/content'
-import { DeviceGL, Model } from '@gglib/graphics'
+import { DeviceGL, Model, Material, MaterialOptions, ShaderEffect } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test'
 
-import '../ggfx'
-import '../ggmat'
-import '../native'
+import '../gglib'
 import './obj'
 
 describe('content loader obj', () => {
@@ -16,6 +14,19 @@ describe('content loader obj', () => {
   beforeAll(() => {
     device = new DeviceGL()
     manager = new ContentManager(device)
+    manager.loader.register({
+      input: Material.OptionsTechnique,
+      output: Material.Options,
+      handle: async (input: MaterialOptions, context) => {
+        if (!input?.technique) {
+          return null
+        }
+        return {
+          ...input,
+          effect: await context.manager.load('default.ggfx', ShaderEffect.Options)
+        }
+      }
+    })
 
     defineScript('default.ggfx', 'application/x-yaml', `
 name: effect name
@@ -84,14 +95,6 @@ f  2//1  8//1  4//1
 
   describe('objModel', () => {
     it('loads from DOM', (done) => {
-      manager.rewriteUrl = (url) => {
-        switch (url) {
-          case '/default':
-            return '/default.ggfx'
-          default:
-            return url
-        }
-      }
       manager.load('model.obj', Model).then((result: Model) => {
         expect(result).toBeDefined()
         expect(result.device).toBe(device)

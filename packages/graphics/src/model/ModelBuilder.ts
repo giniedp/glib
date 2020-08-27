@@ -323,7 +323,7 @@ export class ModelBuilder {
       return
     }
     if (!channel) {
-      throw new Error(`preset for is '${name}' missing`)
+      throw new Error(`preset for '${name}' is missing`)
     }
     this.partUtil.createChannel(name, channel)
   }

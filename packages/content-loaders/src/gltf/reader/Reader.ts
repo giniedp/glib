@@ -85,6 +85,9 @@ export class GLTFReader {
         if (!this.doc.buffers?.[index]) {
           throw new Error(`[glTF] buffer not found: ${index}`)
         }
+        if (!this.doc.buffers[index].uri && this.doc.chunks?.[index]) {
+          return Promise.resolve(this.doc.chunks[index])
+        }
         return this.loader(this.doc.buffers[index])
       },
     )

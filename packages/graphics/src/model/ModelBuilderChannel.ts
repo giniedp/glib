@@ -55,6 +55,9 @@ export class ModelBuilderChannel {
     buffer: BufferOptions,
     name: string,
   ) {
+    if (!name) {
+      throw new Error('"name" must not be empty')
+    }
     if (buffer instanceof Buffer) {
       this.data = Array.from(buffer.getData() as any)
     } else if (Array.isArray(buffer.data) || ArrayBuffer.isView(buffer.data)) {

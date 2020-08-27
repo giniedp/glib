@@ -65,34 +65,26 @@ describe('content/loader/native', () => {
     .then(done)
   })
 
-  it('loads jpeg to Texture', (done) => {
+  it('loads jpeg to Texture', async () => {
     manager.loader.register(loadJpegToTextureOptions)
     manager.loader.register(loadTextureOptionsToTexture)
-    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D).then((result) => {
-      expect(result instanceof Texture).toBe(true)
-      expect(result.image instanceof Image).toBe(true)
-      // expect(result.ready).toBe(false) // may be both, depends on cache
-      expect(result.type).toBe(TextureType.Texture2D)
-    })
-    .catch(fail)
-    .then(done)
+    const result = await manager.load<Texture>('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
+    expect(result instanceof Texture).toBe(true)
+    expect(result.type).toBe(TextureType.Texture2D)
   })
 
-  it('loads ImageData to Texture', (done) => {
+  it('loads ImageData to Texture', async () => {
     manager.loader.register(loadJpegToImageData)
     manager.loader.register(loadJpegToHTMLImageElement)
     manager.loader.register(loadImageDataToTextureOptions)
     manager.loader.register(loadTextureOptionsToTexture)
-    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D).then((result) => {
+    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
       expect(result instanceof Texture).toBe(true)
       expect(result.ready).toBe(true)
       expect(result.image).toBeFalsy()
       expect(result.width).toBe(512)
       expect(result.height).toBe(512)
       expect(result.type).toBe(TextureType.Texture2D)
-    })
-    .catch(fail)
-    .then(done)
   })
 
   it('loads Texture to MaterialOptions', (done) => {
@@ -226,6 +218,19 @@ describe('content/loader/native', () => {
     beforeAll(() => {
       device = new DeviceGL()
       manager = new ContentManager(device)
+      manager.loader.register({
+        input: Material.OptionsTechnique,
+        output: Material.Options,
+        handle: async (input: MaterialOptions, context) => {
+          if (!input?.technique) {
+            return null
+          }
+          return {
+            ...input,
+            effect: await context.manager.load('effect.ggfx', ShaderEffect.Options)
+          }
+        }
+      })
       defineScript('effect.ggfx', 'text/yml', `
   name: effect name
   program:
@@ -273,6 +278,19 @@ describe('content/loader/native', () => {
     beforeAll(() => {
       device = new DeviceGL()
       manager = new ContentManager(device)
+      manager.loader.register({
+        input: Material.OptionsTechnique,
+        output: Material.Options,
+        handle: async (input: MaterialOptions, context) => {
+          if (!input?.technique) {
+            return null
+          }
+          return {
+            ...input,
+            effect: await context.manager.load('effect.ggfx', ShaderEffect.Options)
+          }
+        }
+      })
       defineScript('effect.ggfx', 'application/json', `
   name: effect name
   program:
@@ -293,7 +311,7 @@ describe('content/loader/native', () => {
 
       defineScript('material.ggmat', 'application/json', JSON.stringify({
         name: 'material name',
-        effect: 'effect.ggfx',
+        effectUri: 'effect.ggfx',
         parameters: {},
       }))
     })
@@ -338,7 +356,19 @@ describe('content/loader/native', () => {
     beforeAll(() => {
       device = new DeviceGL()
       manager = new ContentManager(device)
-
+      manager.loader.register({
+        input: Material.OptionsTechnique,
+        output: Material.Options,
+        handle: async (input: MaterialOptions, context) => {
+          if (!input?.technique) {
+            return null
+          }
+          return {
+            ...input,
+            effect: await context.manager.load('effect.ggfx', ShaderEffect.Options)
+          }
+        }
+      })
       defineScript('effect.ggfx', 'application/x-yml', `
   name: effect name
   program:
@@ -359,7 +389,7 @@ describe('content/loader/native', () => {
 
       defineScript('material.ggmat', 'application/json;format=ggmat', JSON.stringify({
         name: 'material1',
-        effect: 'effect.ggfx',
+        effectUri: 'effect.ggfx',
         parameters: {},
       }))
 
@@ -367,29 +397,31 @@ describe('content/loader/native', () => {
         name: 'triangle model',
         boundingBox: [0, 0, 0, 1, 1, 1],
         boundingSphere: [0.5, 0.5, 0.5, 1],
-        materials: ['material.ggmat', {
-          name: 'material2',
-          effect: 'effect.ggfx',
-          parameters: {},
-        }],
         meshes: [{
-          name: 'triangle mesh',
-          boundingBox: [0, 0, 0, 1, 1, 1],
-          boundingSphere: [0.5, 0.5, 0.5, 1],
-          materialId: 0,
-          indexBuffer: [0, 1, 2, 1, 2, 3],
-          vertexBuffer: {
-            layout: {
-              position: {
-                type: 'float32', offset: 0, elements: 3,
+          materials: ['material.ggmat', {
+            name: 'material2',
+            effectUri: 'effect.ggfx',
+            parameters: {},
+          }],
+          meshParts: [{
+            name: 'triangle mesh',
+            boundingBox: [0, 0, 0, 1, 1, 1],
+            boundingSphere: [0.5, 0.5, 0.5, 1],
+            materialId: 0,
+            indexBuffer: [0, 1, 2, 1, 2, 3],
+            vertexBuffer: {
+              layout: {
+                position: {
+                  type: 'float32', offset: 0, elements: 3,
+                },
               },
+              data: [
+                -0.5, -0.5, 0.0,
+                0.5, -0.5, 0.0,
+                0.0,  0.5, 0.0,
+              ],
             },
-            data: [
-              -0.5, -0.5, 0.0,
-              0.5, -0.5, 0.0,
-              0.0,  0.5, 0.0,
-            ],
-          },
+          }]
         }],
       }))
     })

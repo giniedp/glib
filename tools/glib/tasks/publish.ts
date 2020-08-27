@@ -1,11 +1,8 @@
-import * as cp from 'child_process'
 import context from '../context'
+import { exec } from '@tools/utils'
 
-export function publish(): Promise<void> {
-  context.glibPackages.forEach((pkg) => {
-    cp.execSync(`cd ${pkg.pkgDir} && npm publish --access=public`, {
-      stdio: [0, 1, 2],
-    })
-  })
-  return Promise.resolve()
+export async function publish() {
+  for (const pkg of context.glibPackages) {
+    await exec(`cd ${pkg.pkgDir} && npm publish --access=public`, {})
+  }
 }

@@ -189,7 +189,11 @@ export class ContentManager {
             return Promise.resolve(dataFromElement(path, element))
           }
         }
-        return Http.request(options).then(dataFromXhr)
+        return Http.request(options)
+          .catch((xhr: XMLHttpRequest) => {
+            throw new Error(`${xhr.responseURL} ${xhr.statusText} (${xhr.status})`)
+          })
+          .then(dataFromXhr)
       })())
       .get(path)
   }

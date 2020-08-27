@@ -88,6 +88,7 @@ export const loadGgfxToShaderEffectOptions: Loader<string, ShaderEffectOptions> 
  * @remarks
  * Materials are resolved as follows
  * - instance of `Material` is kept as is
+ * - type of `string` is assumed to be a material uri
  * - type of `object` is assumed to be a `MaterialOptions` object. `Material.Options` to `Material` loader is consulted
  * - otherwise its an error
  *
@@ -107,9 +108,13 @@ export const loadModelOptionsToModel: Loader<ModelOptions, Model> = loader({
       }
 
       const materials: Promise<Material>[] = []
-      for (const mtlOptions of meshOptions.materials) {
+      for (const mtlOptions of meshOptions.materials || []) {
         if (mtlOptions instanceof Material) {
           materials.push(Promise.resolve(mtlOptions))
+          continue
+        }
+        if (typeof mtlOptions === 'string') {
+          materials.push(context.manager.load(resolveUri(mtlOptions, context), Material))
           continue
         }
         if (typeof mtlOptions === 'object') {
@@ -120,7 +125,7 @@ export const loadModelOptionsToModel: Loader<ModelOptions, Model> = loader({
       }
 
       // handle bounding boxes
-      if (meshOptions.parts.length && !BoundingBox.convert(meshOptions.boundingBox)) {
+      if (meshOptions.parts?.length && !BoundingBox.convert(meshOptions.boundingBox)) {
         const box =
           meshOptions.parts
             .map((it) => BoundingBox.convert(it.boundingBox))
@@ -185,7 +190,7 @@ export const loadMaterialOptionsToMaterial: Loader<MaterialOptions, Material> = 
     }
 
     if (!(input.effect instanceof ShaderEffect)) {
-      return Promise.reject(`can not load effect from ${input.effect}`)
+      return Promise.reject(new Error(`can not load effect from ${input.effect}`))
     }
 
     await loadStringKeysAsTexture(input.parameters, context)

@@ -1,5 +1,5 @@
 import { ContentManager, Pipeline } from '@gglib/content'
-import { loadTgaToImageData } from '../index'
+import { loadTgaToImageData, loadTgaToTGA } from '../index'
 import { DeviceGL } from '@gglib/graphics'
 
 describe('content/loaders/tga', () => {
@@ -16,6 +16,7 @@ describe('content/loaders/tga', () => {
 
   describe('tgaToImageData', () => {
     beforeEach(() => {
+      manager.loader.register(loadTgaToTGA)
       manager.loader.register(loadTgaToImageData)
     })
 
@@ -30,3 +31,4 @@ describe('content/loaders/tga', () => {
     })
   })
 })
+

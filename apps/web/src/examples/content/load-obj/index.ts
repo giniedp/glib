@@ -11,6 +11,7 @@ const device = createDevice({ canvas: '#canvas' })
 const content = new ContentManager(device)
 
 const models = {
+  Logo: '/assets/logo/gglib.gltf',
   Tower: '/assets/models/obj/piratekit/tower.obj',
   Cannon: '/assets/models/obj/piratekit/cannonMobile.obj',
   Chest: '/assets/models/obj/piratekit/chest.obj',
@@ -28,7 +29,7 @@ const models = {
 }
 
 TweakUi.build('#tweak-ui', (q) => {
-  loadModel(models.Tower)
+  loadModel(models.Logo)
   Object.entries(models).forEach(([name, url]) => {
     q.button(name, { onClick: () => loadModel(url)})
   })

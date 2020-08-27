@@ -3,7 +3,9 @@ import * as fs from 'fs'
 import * as frontMatter from 'parser-front-matter'
 import * as path from 'path'
 import { Transform } from 'stream'
-import * as vinyl from 'vinyl'
+import vinyl from 'vinyl'
+import { PrimaryExpression } from 'typescript'
+import * as Prism from 'prismjs'
 
 export interface PugPagesOptions {
   [key: string]: any
@@ -112,6 +114,10 @@ export function pugPage(options: PugPagesOptions, file: any, enc: string, cb: an
     basedir: cwd,
     doctype: 'html',
     pretty: true,
+    filters: {
+      highlight: prism,
+      ...(options?.filters || {}),
+    },
     ...compileOptions,
   })
   const content = template({
@@ -135,4 +141,14 @@ export function pugPages(options: PugPagesOptions) {
     transform: (file, encoding, cb) => pugPage(options, file, encoding, cb),
     flush: (cb) => cb(),
   })
+}
+
+function prism(source: string, options: string | { lang: string }) {
+  let lang: string = typeof options === "string" ? options : options?.lang
+  let grammar = Prism.languages[lang]
+  if (!grammar) {
+    require(`prismjs/components/prism-${lang}.js`)
+    grammar = Prism.languages[lang]
+  }
+  return Prism.highlight(source, grammar, lang)
 }

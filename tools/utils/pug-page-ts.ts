@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { Transform, TransformOptions } from 'stream'
 import * as ts from 'typescript'
-import vinyl = require('vinyl')
+import vinyl from 'vinyl'
 import glib from '../glib/context'
 
 export function transform(options: TransformOptions) {
@@ -71,7 +71,10 @@ function transpileTsFile(file: string) {
   }
 
   // TODO: remove replacer
-  return out.outputText.replace(/^import.*from.*;$/gm, '').trim()
+  return out.outputText
+    .replace(/^import.*from.*;$/gm, '')
+    .replace(/^export {};$/gm, '')
+    .trim()
 }
 
 function transformTsNode(node: ts.Node) {

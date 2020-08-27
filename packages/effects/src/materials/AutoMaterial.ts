@@ -552,7 +552,7 @@ export class AutoMaterial extends Material {
   private defines: DefaultProgramDefs = {}
   private lights: LightParams[] = []
   private hasChanged = true
-  private $effect: ShaderEffect
+  protected $effect: ShaderEffect
 
   constructor(device: Device) {
     super(device, {

@@ -1,56 +1,92 @@
-import { rollup } from 'rollup'
-import project, { GlibPackageContext } from '../context'
-import { parallel } from 'gulp'
-import { namedTask } from '../../utils'
+import { RollupOptions, OutputOptions } from 'rollup'
+import alias from '@rollup/plugin-alias'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
+import sourcemaps from 'rollup-plugin-sourcemaps'
+import multi from '@rollup/plugin-multi-entry'
+import visualizer from 'rollup-plugin-visualizer'
 
-async function rollupPackage(pkg: GlibPackageContext) {
-  const alias = require('@rollup/plugin-alias')
-  const { nodeResolve } = require('@rollup/plugin-node-resolve')
-  const sourcemaps = require('rollup-plugin-sourcemaps')
+import context, { GlibPackageContext } from '../context'
+import { rollupOrWatch, BundleWatchOptions, rollupIgnoreWarnings, rollupIstanbulInstrumenter } from './plugins'
 
-  const globals = {}
-  const entries = {}
+export function bundle(options: { watch?: boolean } = {}) {
+  return Promise.all(context.glibPackages.map((pkg) => rollupPackage(pkg, options)))
+}
 
-  for (const it of project.glibPackages) {
-    if (pkg.baseName !== 'gglib') {
-      globals[it.packageName] = it.globalName
-    }
-    entries[it.packageName] = it.distDir(it.baseName, 'src', 'index.js')
-  }
+export const bundleTests = rollupTests
 
-  await rollup({
-    input: pkg.distDir(pkg.baseName, 'src', 'index.js'),
-    onwarn: (warning, warn) => {
-      if (warning['code'] === 'THIS_IS_UNDEFINED') {
-        return
-      }
-      warn(warning)
-    },
+const IS_COVERAGE = !!process.env.IS_COVERAGE
+
+async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOptions = {}) {
+  const [entries, globals] = resolveAliases(pkg.baseName !== 'gglib')
+  const inputOptions: RollupOptions = {
+    input: pkg.tscOutDir('index.js'),
+    onwarn: rollupIgnoreWarnings(['THIS_IS_UNDEFINED']),
     plugins: [
       nodeResolve(),
       alias({
         entries: entries,
       }),
       sourcemaps(),
+      visualizer({
+        file: pkg.distDir('stats.html'),
+      }),
     ],
     external: Object.keys(globals),
-  }).then((b) => {
-    return b.write({
-      amd: {
-        id: pkg.globalName,
-      },
-      format: 'umd',
-      sourcemap: true,
-      file: pkg.distDir('bundles', pkg.baseName + '.umd.js'),
-      name: pkg.globalName,
-      globals: globals,
-      exports: 'named',
-    })
-  })
+  }
+  const outputOptions: OutputOptions = {
+    amd: { id: pkg.globalName },
+    format: 'umd',
+    sourcemap: true,
+    file: pkg.rollupOutDir(pkg.baseName + '.umd.js'),
+    name: pkg.globalName,
+    globals: globals,
+    exports: 'named',
+  }
+  return rollupOrWatch(inputOptions, outputOptions, options)
 }
 
-export const bundle = parallel(
-  project.glibPackages.map((pkg) => {
-    return namedTask(`bundle:${pkg.baseName}`, () => rollupPackage(pkg))
-  }),
-)
+async function rollupTests(options: BundleWatchOptions = {}) {
+  const [entries, globals] = resolveAliases(false)
+  const pkgs = context.glibPackages.filter((it) => !it.isRootModule)
+  const globSpecs = pkgs.map((pkg) => pkg.tscOutDir('**', '*.spec.js'))
+  const globSrc = pkgs.map((pkg) => pkg.tscOutDir('**', '*.js'))
+  const inputOptions: RollupOptions = {
+    input: globSpecs,
+    onwarn: rollupIgnoreWarnings(['THIS_IS_UNDEFINED']),
+    plugins: [
+      multi(),
+      nodeResolve(),
+      alias({
+        entries: entries,
+      }),
+      sourcemaps(),
+      IS_COVERAGE
+        ? rollupIstanbulInstrumenter({
+            include: globSrc,
+            exclude: globSpecs,
+          })
+        : null,
+    ].filter((it) => it != null),
+    external: Object.keys(globals),
+  }
+  const outputOptions: OutputOptions = {
+    format: 'cjs',
+    sourcemap: true,
+    file: context.toolsDir('test', 'index.spec.js'),
+    name: 'TEST',
+    globals: globals,
+  }
+  return rollupOrWatch(inputOptions, outputOptions, options)
+}
+
+function resolveAliases(andGlobals: boolean) {
+  const globals: Record<string, string> = {}
+  const entries: Record<string, string> = {}
+  for (const it of context.glibPackages) {
+    if (andGlobals) {
+      globals[it.packageName] = it.globalName
+    }
+    entries[it.packageName] = it.distDir(it.baseName, 'src', 'index.js')
+  }
+  return [entries, globals]
+}

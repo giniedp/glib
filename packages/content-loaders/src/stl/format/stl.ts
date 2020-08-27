@@ -144,7 +144,7 @@ function readSolid(reader: TextReader): Solid {
     // name is skipped
   } else {
     // read name
-    result.name = reader.nextToken()
+    result.name = reader.nextLine()
   }
 
   // read the body
@@ -160,7 +160,7 @@ function readSolid(reader: TextReader): Solid {
     // name is skipped
   } else {
     // consume name, but we dont compare since some files use a different token here
-    reader.nextToken()
+    reader.nextLine()
   }
 
   return result

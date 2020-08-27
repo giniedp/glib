@@ -9,27 +9,23 @@ function updateSrcPackageJson(pkg: GlibPackageContext) {
       {
         name: pkg.packageName,
         description: 'Part of the [G]glib project',
-        version: context.rootPackageJson.version,
-        repository: context.rootPackageJson.repository,
-        keywords: context.rootPackageJson.keywords,
-        author: context.rootPackageJson.author,
-        license: context.rootPackageJson.license,
-        index: path.relative(pkg.pkgDir, pkg.distDir("bundles", pkg.baseName + ".umd.js")),
-        module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, "src", "index.js")),
-        typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, "src", "index.d.ts")),
-        devDependencies:  pkg.glibReferences.reduce((result, peer) => {
-          result[peer] = context.rootPackageJson.version
+        version: context.packageJson.version,
+        repository: context.packageJson.repository,
+        keywords: context.packageJson.keywords,
+        author: context.packageJson.author,
+        license: context.packageJson.license,
+        index: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.umd.js')),
+        module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
+        typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
+        devDependencies: pkg.glibReferences.reduce((result, peer) => {
+          result[peer] = context.packageJson.version
           return result
         }, {}),
         peerDependencies: pkg.glibReferences.reduce((result, peer) => {
-          result[peer] = context.rootPackageJson.version
+          result[peer] = context.packageJson.version
           return result
         }, {}),
-        files: [
-          "package.json",
-          "dist",
-          "Readme.md"
-        ]
+        files: ['package.json', 'dist', 'Readme.md'],
       },
       null,
       2,
@@ -42,24 +38,18 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
     pkg.subPath('tsconfig.json'),
     JSON.stringify(
       {
-        extends: path.relative(pkg.pkgDir, path.join(context.packagesDir, 'tsconfig.tsc.json')),
+        extends: path.relative(pkg.pkgDir, context.packagesDir('tsconfig.tsc.json')),
         baseUrl: '.',
         rootDir: '.',
         compilerOptions: {
           composite: true,
-          outDir: './dist'
+          outDir: './dist',
         },
-        include: [
-          "./index.ts",
-          "./src/**/*.ts"
-        ],
-        exclude: [
-          "./dist/**/*",
-          "./node_modules/**/*",
-        ],
+        include: ['./index.ts', './src/**/*.ts'],
+        exclude: ['./dist/**/*', './node_modules/**/*'],
         references: pkg.glibReferences.map((it) => {
           const ref = context.glibPackages.find((p) => p.packageName === it)
-          return { path: path.relative(pkg.pkgDir, path.join(ref.pkgDir, "tsconfig.json")) }
+          return { path: path.relative(pkg.pkgDir, path.join(ref.pkgDir, 'tsconfig.json')) }
         }),
       },
       null,
@@ -68,8 +58,28 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
   )
 }
 
+function updateSpecTsconfig() {
+  return writeFile(
+    context.packagesDir('tsconfig.cjs.json'),
+    JSON.stringify(
+      {
+        extends: './tsconfig.tsc.json',
+        compilerOptions: {
+          outDir: '../dist/cjs',
+          module: 'commonjs',
+          paths: {
+            '@gglib/*': ['./*']
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  )
+}
+
 function updateSrcReadme(pkg: GlibPackageContext) {
-  const pj = context.rootPackageJson
+  const pj = context.packageJson
   return writeFile(
     pkg.subPath('Readme.md'),
     `
@@ -88,7 +98,7 @@ Licence: ${pj.license}
 }
 
 function updateSrcApiExtractor(pkg: GlibPackageContext) {
-  const pathToRoot = path.relative(pkg.pkgDir, context.root)
+  const pathToRoot = path.relative(pkg.pkgDir, context.dir)
   const pathToDist = path.relative(pkg.pkgDir, pkg.distDir())
   return writeFile(
     pkg.distDir('api-extractor.json'),
@@ -149,6 +159,7 @@ function updateSrcPackage(pkg: GlibPackageContext) {
   return Promise.all([
     updateSrcPackageJson(pkg),
     updateSrcTsconfig(pkg),
+    updateSpecTsconfig(),
     // updateSrcApiExtractor(pkg),
     updateSrcReadme(pkg),
   ])

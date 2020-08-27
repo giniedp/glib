@@ -1,7 +1,7 @@
 import { Log } from '@gglib/utils'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 
-import { BufferOptions } from '../resources'
+import { BufferOptions, BufferDataOption } from '../resources'
 import { VertexAttribute, commonVertexAttribute } from '../VertexLayout'
 import { BufferType, PrimitiveType, FrontFace, nameOfPrimitiveType } from '../enums'
 import { calculateNormals, calculateTangents } from '../formulas'
@@ -10,7 +10,7 @@ import { ModelBuilderChannel } from './ModelBuilderChannel'
 
 export class ModelMeshPartUtil {
 
-  private channels = new Map<string, ModelBuilderChannel>()
+  public channels = new Map<string, ModelBuilderChannel>()
   private get indices(): ReadonlyArray<number> {
     return this.iBuffer.data as any
   }
@@ -65,7 +65,8 @@ export class ModelMeshPartUtil {
         }
       }
     }
-    this.vBuffer.push({
+
+    const vBuffer: BufferOptions = {
       layout: {
         [semantic]: {
           ...attribute,
@@ -75,8 +76,10 @@ export class ModelMeshPartUtil {
       type: BufferType.VertexBuffer,
       dataType: attribute.type,
       data: data,
-    })
+    }
+    this.vBuffer.push(vBuffer)
     this.channelNames.push(semantic)
+    this.channels.set(semantic, new ModelBuilderChannel(vBuffer, semantic))
   }
 
   public getVertexCount() {

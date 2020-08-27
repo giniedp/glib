@@ -1,11 +1,11 @@
 import { dest, src, series } from 'gulp'
-import * as gulpSass from 'gulp-sass'
+import gulpSass from 'gulp-sass'
 import * as path from 'path'
-import { transform, pugPages, pugPageTS } from '@tools/utils'
+import { pugPages, pugPageTS } from '@tools/utils'
 import manifest from "../manifest"
 
-export function  assets() {
-  return src(manifest.assets, { cwd: manifest.cwd })
+export function assets() {
+  return src(manifest.assets, { cwd: manifest.cwd, allowEmpty: true })
     .pipe(dest(path.join(manifest.dist, "assets")))
 }
 
@@ -40,7 +40,7 @@ export function pages() {
                   path.dirname(file.replace(manifest.cwd, manifest.dist)),
                   path.join(manifest.dist, asset),
                 )
-              },
+              }
             }
           },
         },

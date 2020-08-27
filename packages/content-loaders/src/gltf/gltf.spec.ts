@@ -15,7 +15,7 @@ import {
   loadGltfToGLTFDocument,
 } from '../index'
 
-import { DeviceGL, Model } from '@gglib/graphics'
+import { DeviceGL, Model, Material, MaterialOptions, ShaderEffect } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test'
 
 describe('content/loaders/gltf', () => {
@@ -59,49 +59,36 @@ technique:
     manager.loader.register(loadMaterialOptionsToMaterialArray)
     manager.loader.register(loadGgfxToShaderEffectOptions)
     manager.loader.register(loadShaderEffectOptionsToShaderEffect)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
-
-    manager.rewriteUrl = (url) => {
-      if (url.match(/assets\/models\/gltf\/pbr/)) {
-        return '/default.ggfx'
+    manager.loader.register({
+      input: Material.OptionsTechnique,
+      output: Material.Options,
+      handle: async (input: MaterialOptions, context) => {
+        if (!input?.technique) {
+          return null
+        }
+        return {
+          ...input,
+          effect: await context.manager.load('default.ggfx', ShaderEffect.Options)
+        }
       }
-      return url
-    }
-  })
-
-  describe('assets/models/gltf/box.gltf', () => {
-    it('loads', (done) => {
-      manager.load('/assets/models/gltf/box.gltf', Model).then((model) => {
-        expect(model.meshes.length).toBe(1)
-        expect(model.meshes[0].parts.length).toBe(1)
-        expect(model.meshes[0].materials.length).toBe(1)
-      })
-      .catch(fail)
-      .then(done)
     })
   })
 
-  describe('assets/models/gltf/box-binary.glb', () => {
-    it('loads', (done) => {
-      manager.load('assets/models/gltf/box-binary.glb', Model).then((model) => {
-        expect(model.meshes.length).toBe(1)
-        expect(model.meshes[0].parts.length).toBe(1)
-        expect(model.meshes[0].materials.length).toBe(1)
-      })
-      .catch(fail)
-      .then(done)
+  describe('/assets/logo/gglib.glb', () => {
+    it('loads', async () => {
+      const result = await manager.load('/assets/logo/gglib.glb', Model.Options)
+      expect(result.meshes.length).toBe(1)
+      expect(result.meshes[0].parts.length).toBe(3)
+      expect(result.meshes[0].materials.length).toBe(3)
     })
   })
 
-  describe('assets/models/gltf/box-embedded.gltf', () => {
-    it('loads', (done) => {
-      manager.load('assets/models/gltf/box-embedded.gltf', Model).then((model) => {
-        expect(model.meshes.length).toBe(1)
-        expect(model.meshes[0].parts.length).toBe(1)
-        expect(model.meshes[0].materials.length).toBe(1)
-      })
-      .catch(fail)
-      .then(done)
+  describe('/assets/logo/gglib.gltf', () => {
+    it('loads', async () => {
+      const result = await manager.load('/assets/logo/gglib.gltf', Model.Options)
+      expect(result.meshes.length).toBe(1)
+      expect(result.meshes[0].parts.length).toBe(3)
+      expect(result.meshes[0].materials.length).toBe(3)
     })
   })
 })
