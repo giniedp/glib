@@ -22,43 +22,37 @@ describe('content/loaders/native', () => {
   beforeEach(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline(),
+      pipeline: new Pipeline(),
     })
   })
 
   describe('jpegToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loadJpegToHTMLImageElement)
-      manager.loader.register(loadJpegToImage)
-      manager.loader.register(loadJpegToImageData)
+      manager.pipeline.register(loadJpegToHTMLImageElement)
+      manager.pipeline.register(loadJpegToImage)
+      manager.pipeline.register(loadJpegToImageData)
     })
 
-    it ('loads ImageData', (done) => {
-      manager.load('/assets/textures/prototype/proto_gray.jpg', ImageData).then((result) => {
-        expect(result instanceof ImageData).toBe(true)
-        expect(result.width).toBe(512)
-        expect(result.height).toBe(512)
-      })
-      .catch(fail)
-      .then(done)
+    it ('loads ImageData', async () => {
+      const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', ImageData)
+      expect(result instanceof ImageData).toBe(true)
+      expect(result.width).toBe(512)
+      expect(result.height).toBe(512)
     })
   })
 
   describe('pngToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loadPngToHTMLImageElement)
-      manager.loader.register(loadPngToImage)
-      manager.loader.register(loadPngToImageData)
+      manager.pipeline.register(loadPngToHTMLImageElement)
+      manager.pipeline.register(loadPngToImage)
+      manager.pipeline.register(loadPngToImageData)
     })
 
-    it ('loads ImageData', (done) => {
-      manager.load('/assets/textures/prototype/proto_gray.png', ImageData).then((result) => {
-        expect(result instanceof ImageData).toBe(true)
-        expect(result.width).toBe(512)
-        expect(result.height).toBe(512)
-      })
-      .catch(fail)
-      .then(done)
+    it ('loads ImageData', async () => {
+      const result = await manager.load('/assets/textures/prototype/proto_gray.png', ImageData)
+      expect(result instanceof ImageData).toBe(true)
+      expect(result.width).toBe(512)
+      expect(result.height).toBe(512)
     })
   })
 })

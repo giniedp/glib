@@ -9,20 +9,14 @@ describe('@gglib/utils/WebWorker', () => {
   })
 
   describe('register and execute', () => {
-    it('calls registered method', (done) => {
+    it('calls registered method', async () => {
       let wasCalled = false
       WebWorker.task('my-method', () => {
         wasCalled = true
       })
       expect(wasCalled).toBe(false)
-      WebWorker.exec('my-method').then(() => {
-        expect(wasCalled).toBe(true)
-        done()
-      })
-      .catch((e: any) => {
-        fail(e)
-        done()
-      })
+      await WebWorker.exec('my-method')
+      expect(wasCalled).toBe(true)
     })
   })
 })

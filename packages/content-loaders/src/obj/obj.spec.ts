@@ -6,7 +6,6 @@ import '../gglib'
 import './obj'
 
 describe('content loader obj', () => {
-
   let device: DeviceGL
   let manager: ContentManager
 
@@ -14,7 +13,7 @@ describe('content loader obj', () => {
   beforeAll(() => {
     device = new DeviceGL()
     manager = new ContentManager(device)
-    manager.loader.register({
+    manager.pipeline.register({
       input: Material.OptionsTechnique,
       output: Material.Options,
       handle: async (input: MaterialOptions, context) => {
@@ -23,12 +22,15 @@ describe('content loader obj', () => {
         }
         return {
           ...input,
-          effect: await context.manager.load('default.ggfx', ShaderEffect.Options)
+          effect: await context.manager.load('default.ggfx', ShaderEffect.Options),
         }
-      }
+      },
     })
 
-    defineScript('default.ggfx', 'application/x-yaml', `
+    defineScript(
+      'default.ggfx',
+      'application/x-yaml',
+      `
 name: effect name
 program:
 // comment
@@ -44,18 +46,26 @@ technique:
       void main(void) {
         gl_FragColor = vec4(0, 0, 0, 2);
       }
-    `)
+    `,
+    )
 
-    defineScript('materials.mtl', 'application/x-mtl', `
+    defineScript(
+      'materials.mtl',
+      'application/x-mtl',
+      `
 # some comment
 newmtl myMaterial
 Ka 1 2 3
 map_Ka texture.png
 d 0.1
 Ns 16
-    `)
+    `,
+    )
 
-    defineScript('model.obj', 'text/obj', `
+    defineScript(
+      'model.obj',
+      'text/obj',
+      `
 # cube.obj
 #
 mtllib materials.mtl
@@ -90,21 +100,19 @@ f  1//4  5//4  6//4
 f  1//4  6//4  2//4
 f  2//1  6//1  8//1
 f  2//1  8//1  4//1
-    `)
+    `,
+    )
   })
 
   describe('objModel', () => {
-    it('loads from DOM', (done) => {
-      manager.load('model.obj', Model).then((result: Model) => {
-        expect(result).toBeDefined()
-        expect(result.device).toBe(device)
-        expect(result.meshes.length).toBe(1)
-        expect(result.meshes[0].parts.length).toBe(1)
-        expect(result.meshes[0].materials.length).toBe(1)
-        expect(result.meshes[0].parts[0].vertexBuffer[0].elementCount).toBe(6 * 4) // 4 vertices for each side of the cube
-      })
-      .catch(fail)
-      .then(done)
+    it('loads from DOM', async () => {
+      const result = await manager.load('model.obj', Model)
+      expect(result).toBeDefined()
+      expect(result.device).toBe(device)
+      expect(result.meshes.length).toBe(1)
+      expect(result.meshes[0].parts.length).toBe(1)
+      expect(result.meshes[0].materials.length).toBe(1)
+      expect(result.meshes[0].parts[0].vertexBuffer[0].elementCount).toBe(6 * 4) // 4 vertices for each side of the cube
     })
   })
 })

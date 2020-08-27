@@ -27,17 +27,17 @@ describe('content/loaders/dae', () => {
   beforeEach(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline(),
+      pipeline: new Pipeline(),
     })
 
-    manager.loader.register(loadDaeToColladaDocument)
-    manager.loader.register(loadColladaDocumentToModelOptions)
-    manager.loader.register(loadModelOptionsToModel)
-    manager.loader.register(loadMaterialOptionsToMaterial)
-    manager.loader.register(loadMaterialOptionsToMaterialArray)
-    manager.loader.register(loadGgfxToShaderEffectOptions)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
+    manager.pipeline.register(loadDaeToColladaDocument)
+    manager.pipeline.register(loadColladaDocumentToModelOptions)
+    manager.pipeline.register(loadModelOptionsToModel)
+    manager.pipeline.register(loadMaterialOptionsToMaterial)
+    manager.pipeline.register(loadMaterialOptionsToMaterialArray)
+    manager.pipeline.register(loadGgfxToShaderEffectOptions)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffect)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffectArray)
   })
 
   describe('assets/dae/cube.dae', () => {

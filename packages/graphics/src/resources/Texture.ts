@@ -1,5 +1,5 @@
 import { IVec2 } from '@gglib/math'
-import { getOption, isArray, isObject, isString, Log, uuid } from '@gglib/utils'
+import { getOption, isArray, isObject, isString, Log, uuid, TypeToken } from '@gglib/utils'
 import {
   DataType,
   DataTypeOption,
@@ -115,17 +115,17 @@ export abstract class Texture {
   /**
    * A symbol identifying the TextureOptions
    */
-  public static readonly Options = Symbol('TextureOptions')
+  public static readonly Options = new TypeToken<TextureOptions>('TextureOptions')
 
   /**
    * A symbol identifying the Texture2D class
    */
-  public static readonly Texture2D = Symbol('Texture2D')
+  public static readonly Texture2D = new TypeToken<Texture>('Texture2D')
 
   /**
    * A symbol identifying the TextureCube class
    */
-  public static readonly TextureCube = Symbol('TextureCube')
+  public static readonly TextureCube = new TypeToken<Texture>('TextureCube')
 
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url

@@ -43,69 +43,59 @@ describe('content/loader/native', () => {
   beforeEach(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline(),
+      pipeline: new Pipeline(),
     })
   })
 
-  it('loads jpeg to Texture.Options', (done) => {
-    manager.loader.register(loadJpegToTextureOptions)
-    manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Options).then((result: TextureOptions) => {
-      expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.jpg' })
-    })
-    .catch(fail)
-    .then(done)
+  it('loads jpeg to Texture.Options', async () => {
+    manager.pipeline.register(loadJpegToTextureOptions)
+    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Options)
+    expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.jpg' })
   })
 
-  it('loads png to Texture.Options', (done) => {
-    manager.loader.register(loadPngToTextureOptions)
-    manager.load('/assets/textures/prototype/proto_gray.png', Texture.Options).then((result: TextureOptions) => {
-      expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.png' })
-    })
-    .catch(fail)
-    .then(done)
+  it('loads png to Texture.Options', async () => {
+    manager.pipeline.register(loadPngToTextureOptions)
+    const result = await manager.load('/assets/textures/prototype/proto_gray.png', Texture.Options)
+    expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.png' })
   })
 
   it('loads jpeg to Texture', async () => {
-    manager.loader.register(loadJpegToTextureOptions)
-    manager.loader.register(loadTextureOptionsToTexture)
-    const result = await manager.load<Texture>('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
+    manager.pipeline.register(loadJpegToTextureOptions)
+    manager.pipeline.register(loadTextureOptionsToTexture)
+    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
     expect(result instanceof Texture).toBe(true)
     expect(result.type).toBe(TextureType.Texture2D)
   })
 
   it('loads ImageData to Texture', async () => {
-    manager.loader.register(loadJpegToImageData)
-    manager.loader.register(loadJpegToHTMLImageElement)
-    manager.loader.register(loadImageDataToTextureOptions)
-    manager.loader.register(loadTextureOptionsToTexture)
+    manager.pipeline.register(loadJpegToImageData)
+    manager.pipeline.register(loadJpegToHTMLImageElement)
+    manager.pipeline.register(loadImageDataToTextureOptions)
+    manager.pipeline.register(loadTextureOptionsToTexture)
     const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
       expect(result instanceof Texture).toBe(true)
       expect(result.ready).toBe(true)
-      expect(result.image).toBeFalsy()
       expect(result.width).toBe(512)
       expect(result.height).toBe(512)
       expect(result.type).toBe(TextureType.Texture2D)
   })
 
-  it('loads Texture to MaterialOptions', (done) => {
-    manager.loader.register(loadJpegToTextureOptions)
-    manager.loader.register(loadTextureOptionsToTexture)
-    manager.loader.register(loadTextureToMaterialOptions)
-    manager.load('/assets/textures/prototype/proto_gray.jpg', Material.Options).then((result: MaterialOptions) => {
-      expect(result.technique).toBe('default')
-      expect(result.parameters.DiffuseMap).toBeDefined()
-      expect(result.parameters.DiffuseMap instanceof Texture).toBe(true)
-    })
-    .catch(fail)
-    .then(done)
+  it('loads Texture to MaterialOptions', async () => {
+    manager.pipeline.register(loadJpegToTextureOptions)
+    manager.pipeline.register(loadTextureOptionsToTexture)
+    manager.pipeline.register(loadTextureToMaterialOptions)
+    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Material.Options)
+    expect(result.technique).toBe('default')
+    expect(result.parameters.DiffuseMap).toBeDefined()
+    expect(result.parameters.DiffuseMap instanceof Texture).toBe(true)
   })
 
-  it('loads ModelOptions to Model', (done) => {
-    manager.loader.register(loadModelOptionsToModel)
-    manager.loader.register(loadMaterialOptionsToMaterial)
-    manager.loader.register(loadMaterialOptionsToMaterialArray)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
+  it('loads ModelOptions to Model', async () => {
+    manager.pipeline.register(loadModelOptionsToModel)
+    manager.pipeline.register(loadMaterialOptionsToMaterial)
+    manager.pipeline.register(loadMaterialOptionsToMaterialArray)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffect)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const modelOptions = ModelBuilder.begin()
       .append(buildCube)
@@ -132,25 +122,22 @@ describe('content/loader/native', () => {
       })
       .endModel()
 
-    manager.loader.run(Model.Options, Model, modelOptions, {
+      const result = await manager.pipeline.run(Model.Options, Model, modelOptions, {
       manager: manager,
-      pipeline: manager.loader,
+      pipeline: manager.pipeline,
       source: '',
       target: Model,
-    }).then((result: Model) => {
-      expect(result instanceof Model).toBe(true)
-      expect(result.meshes[0] instanceof ModelMesh).toBe(true)
-      expect(result.meshes[0].materials.length).toBe(2)
     })
-    .catch(fail)
-    .then(done)
+    expect(result instanceof Model).toBe(true)
+    expect(result.meshes[0] instanceof ModelMesh).toBe(true)
+    expect(result.meshes[0].materials.length).toBe(2)
   })
 
-  it('loads MaterialOptions[] to Material[]', (done) => {
-    manager.loader.register(loadMaterialOptionsToMaterial)
-    manager.loader.register(loadMaterialOptionsToMaterialArray)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
+  it('loads MaterialOptions[] to Material[]', async () => {
+    manager.pipeline.register(loadMaterialOptionsToMaterial)
+    manager.pipeline.register(loadMaterialOptionsToMaterialArray)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffect)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const materialOptions: MaterialOptions[] = [{
       name: 'material options',
@@ -163,25 +150,22 @@ describe('content/loader/native', () => {
       parameters: {},
     }]
 
-    manager.loader.run(Material.OptionsArray, Material.Array, materialOptions, {
+    const result = await manager.pipeline.run(Material.OptionsArray, Material.Array, materialOptions, {
       manager: manager,
-      pipeline: manager.loader,
+      pipeline: manager.pipeline,
       source: '',
       target: Material.Array,
-    }).then((result: Material[]) => {
-      expect(result[0] instanceof Material).toBe(true)
-      expect(result[0].effect instanceof ShaderEffect).toBe(true)
     })
-    .catch(fail)
-    .then(done)
+    expect(result[0] instanceof Material).toBe(true)
+    expect(result[0].effect instanceof ShaderEffect).toBe(true)
   })
 
-  it('loads ShaderEffectOptions[] to ShaderEffect[]', (done) => {
-    manager.loader.register(loadJpegToTextureOptions)
-    manager.loader.register(loadTextureOptionsToTexture)
+  it('loads ShaderEffectOptions[] to ShaderEffect[]', async () => {
+    manager.pipeline.register(loadJpegToTextureOptions)
+    manager.pipeline.register(loadTextureOptionsToTexture)
 
-    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffectArray)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffect)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffectArray)
 
     const options: ShaderEffectOptions[] = [{
       name: 'the name',
@@ -194,18 +178,15 @@ describe('content/loader/native', () => {
       },
     }]
 
-    manager.loader.run(ShaderEffect.OptionsArray, ShaderEffect.Array, options, {
+    const result = await manager.pipeline.run(ShaderEffect.OptionsArray, ShaderEffect.Array, options, {
       manager: manager,
-      pipeline: manager.loader,
+      pipeline: manager.pipeline,
       source: '',
       target: ShaderEffect.Array,
-    }).then((result: ShaderEffect[]) => {
-      expect(result[0] instanceof ShaderEffect).toBe(true)
-      expect(result[0].name).toBe('the name')
-      expect(result[0].parameters.DiffuseMap instanceof Texture).toBe(true)
     })
-    .catch(fail)
-    .then(done)
+    expect(result[0] instanceof ShaderEffect).toBe(true)
+    expect(result[0].name).toBe('the name')
+    expect(result[0].parameters.DiffuseMap instanceof Texture).toBe(true)
   })
 
   describe('ggfx', () => {
@@ -218,7 +199,7 @@ describe('content/loader/native', () => {
     beforeAll(() => {
       device = new DeviceGL()
       manager = new ContentManager(device)
-      manager.loader.register({
+      manager.pipeline.register({
         input: Material.OptionsTechnique,
         output: Material.Options,
         handle: async (input: MaterialOptions, context) => {
@@ -251,19 +232,14 @@ describe('content/loader/native', () => {
     })
 
     describe('ymlEffect', () => {
-      it('loads from DOM', (done) => {
-        manager.load('effect.ggfx', ShaderEffect).then((result: ShaderEffect) => {
-          expect(result).toBeDefined()
-          expect(result.device).toBe(device)
-          expect(result.name).toBe('effect name')
-          expect(result.techniques.length).toBe(1)
-          expect(result.techniques[0].name).toBe('technique name')
-          expect(result.techniques[0].passes[0].name).toBe('pass name')
-          done()
-        }).catch((e) => {
-          fail(e)
-          done()
-        })
+      it('loads from DOM', async () => {
+        const result = await manager.load('effect.ggfx', ShaderEffect)
+        expect(result).toBeDefined()
+        expect(result.device).toBe(device)
+        expect(result.name).toBe('effect name')
+        expect(result.techniques.length).toBe(1)
+        expect(result.techniques[0].name).toBe('technique name')
+        expect(result.techniques[0].passes[0].name).toBe('pass name')
       })
     })
   })
@@ -278,7 +254,7 @@ describe('content/loader/native', () => {
     beforeAll(() => {
       device = new DeviceGL()
       manager = new ContentManager(device)
-      manager.loader.register({
+      manager.pipeline.register({
         input: Material.OptionsTechnique,
         output: Material.Options,
         handle: async (input: MaterialOptions, context) => {
@@ -317,30 +293,24 @@ describe('content/loader/native', () => {
     })
 
     describe('jsonMaterial', () => {
-      it('loads Material from DOM', (done) => {
-        manager.load('material.ggmat', Material).then((result: Material) => {
-          expect(result).toBeDefined()
-          expect(result.device).toBe(device)
-          expect(result.effect.techniques.length).toBe(1)
-          expect(result.effect.techniques[0].name).toBe('TECHNIQUE0')
-          expect(result.effect.techniques[0].passes.length).toBe(1)
-          expect(result.effect.techniques[0].passes[0].name).toBe('PASS0')
-        })
-        .then(done)
-        .catch(fail)
+      it('loads Material from DOM', async () => {
+        const result = await manager.load('material.ggmat', Material)
+        expect(result).toBeDefined()
+        expect(result.device).toBe(device)
+        expect(result.effect.techniques.length).toBe(1)
+        expect(result.effect.techniques[0].name).toBe('TECHNIQUE0')
+        expect(result.effect.techniques[0].passes.length).toBe(1)
+        expect(result.effect.techniques[0].passes[0].name).toBe('PASS0')
       })
 
-      it('loads Material[] from DOM', (done) => {
-        manager.load('material.ggmat', Material.Array).then((result: Material[]) => {
-          expect(result[0]).toBeDefined()
-          expect(result[0].device).toBe(device)
-          expect(result[0].effect.techniques.length).toBe(1)
-          expect(result[0].effect.techniques[0].name).toBe('TECHNIQUE0')
-          expect(result[0].effect.techniques[0].passes.length).toBe(1)
-          expect(result[0].effect.techniques[0].passes[0].name).toBe('PASS0')
-        })
-        .then(done)
-        .catch(fail)
+      it('loads Material[] from DOM', async () => {
+        const result = await manager.load('material.ggmat', Material.Array)
+        expect(result[0]).toBeDefined()
+        expect(result[0].device).toBe(device)
+        expect(result[0].effect.techniques.length).toBe(1)
+        expect(result[0].effect.techniques[0].name).toBe('TECHNIQUE0')
+        expect(result[0].effect.techniques[0].passes.length).toBe(1)
+        expect(result[0].effect.techniques[0].passes[0].name).toBe('PASS0')
       })
     })
   })
@@ -356,7 +326,7 @@ describe('content/loader/native', () => {
     beforeAll(() => {
       device = new DeviceGL()
       manager = new ContentManager(device)
-      manager.loader.register({
+      manager.pipeline.register({
         input: Material.OptionsTechnique,
         output: Material.Options,
         handle: async (input: MaterialOptions, context) => {
@@ -427,16 +397,14 @@ describe('content/loader/native', () => {
     })
 
     describe('jsonModel', () => {
-      it('loads Model from DOM', (done) => {
-        manager.load('cube.ggmod', Model).then((result: Model) => {
-          expect(result).toBeDefined()
-          expect(result.device).toBe(device)
-          expect(result.meshes[0].materials[0].effect.techniques.length).toBe(1)
-          expect(result.meshes[0].materials[0].effect.techniques[0].name).toBe('TECHNIQUE0')
-          expect(result.meshes[0].materials[0].effect.techniques[0].passes.length).toBe(1)
-          expect(result.meshes[0].materials[0].effect.techniques[0].passes[0].name).toBe('PASS0')
-        }).catch(fail)
-          .then(done)
+      it('loads Model from DOM', async () => {
+        const result = await manager.load('cube.ggmod', Model)
+        expect(result).toBeDefined()
+        expect(result.device).toBe(device)
+        expect(result.meshes[0].materials[0].effect.techniques.length).toBe(1)
+        expect(result.meshes[0].materials[0].effect.techniques[0].name).toBe('TECHNIQUE0')
+        expect(result.meshes[0].materials[0].effect.techniques[0].passes.length).toBe(1)
+        expect(result.meshes[0].materials[0].effect.techniques[0].passes[0].name).toBe('PASS0')
       })
     })
   })

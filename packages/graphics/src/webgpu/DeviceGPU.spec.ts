@@ -3,11 +3,8 @@ import { DeviceGPU } from './DeviceGPU'
 describe('@gglib/graphics/DeviceGPU', () => {
   let device: DeviceGPU
 
-  xit ('initializes', (done) => {
+  xit ('initializes', async () => {
     device = new DeviceGPU()
-    device.init().then(() => {
-      done()
-    })
-    .catch(done.fail)
+    await device.init()
   })
 })

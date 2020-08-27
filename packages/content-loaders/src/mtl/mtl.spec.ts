@@ -12,10 +12,10 @@ describe('content loader mtl', () => {
   beforeAll(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline()
+      pipeline: new Pipeline()
     })
-    manager.loader.register(loadMtlToMaterialOptions)
-    manager.loader.register(loadMtlToMaterialOptionsArray)
+    manager.pipeline.register(loadMtlToMaterialOptions)
+    manager.pipeline.register(loadMtlToMaterialOptionsArray)
 
     defineScript('material.mtl', 'application/x-mtl', `
 # some comment

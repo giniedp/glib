@@ -15,9 +15,9 @@ describe('content loader stl', () => {
   beforeAll(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline()
+      pipeline: new Pipeline()
     })
-    manager.loader.register(loadStlToModelOptions)
+    manager.pipeline.register(loadStlToModelOptions)
 
     defineScript('model.stl', 'text/plain', `
 solid cube

@@ -10,24 +10,21 @@ describe('content/loaders/tga', () => {
   beforeEach(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline(),
+      pipeline: new Pipeline(),
     })
   })
 
   describe('tgaToImageData', () => {
     beforeEach(() => {
-      manager.loader.register(loadTgaToTGA)
-      manager.loader.register(loadTgaToImageData)
+      manager.pipeline.register(loadTgaToTGA)
+      manager.pipeline.register(loadTgaToImageData)
     })
 
-    it ('loads ImageData', (done) => {
-      manager.load('/assets/textures/prototype/proto_gray.tga', ImageData).then((result) => {
-        expect(result instanceof ImageData).toBe(true)
-        expect(result.width).toBe(512)
-        expect(result.height).toBe(512)
-      })
-      .catch(fail)
-      .then(done)
+    it ('loads ImageData', async () => {
+      const result = await manager.load('/assets/textures/prototype/proto_gray.tga', ImageData)
+      expect(result instanceof ImageData).toBe(true)
+      expect(result.width).toBe(512)
+      expect(result.height).toBe(512)
     })
   })
 })

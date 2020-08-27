@@ -48,18 +48,18 @@ technique:
   beforeEach(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      loader: new Pipeline(),
+      pipeline: new Pipeline(),
     })
 
-    manager.loader.register(loadGlbToGLTFDocument)
-    manager.loader.register(loadGltfToGLTFDocument)
-    manager.loader.register(loadGltfDocumentToModleOptions)
-    manager.loader.register(loadModelOptionsToModel)
-    manager.loader.register(loadMaterialOptionsToMaterial)
-    manager.loader.register(loadMaterialOptionsToMaterialArray)
-    manager.loader.register(loadGgfxToShaderEffectOptions)
-    manager.loader.register(loadShaderEffectOptionsToShaderEffect)
-    manager.loader.register({
+    manager.pipeline.register(loadGlbToGLTFDocument)
+    manager.pipeline.register(loadGltfToGLTFDocument)
+    manager.pipeline.register(loadGltfDocumentToModleOptions)
+    manager.pipeline.register(loadModelOptionsToModel)
+    manager.pipeline.register(loadMaterialOptionsToMaterial)
+    manager.pipeline.register(loadMaterialOptionsToMaterialArray)
+    manager.pipeline.register(loadGgfxToShaderEffectOptions)
+    manager.pipeline.register(loadShaderEffectOptionsToShaderEffect)
+    manager.pipeline.register({
       input: Material.OptionsTechnique,
       output: Material.Options,
       handle: async (input: MaterialOptions, context) => {

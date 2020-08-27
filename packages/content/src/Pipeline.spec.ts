@@ -59,39 +59,33 @@ describe('Content.Loader', () => {
     } as any
   })
 
-  it('takes a fallback route if a loader returns null', (done) => {
-    Pipeline.run({
+  it('takes a fallback route if a loader returns null', async () => {
+    const result = await Pipeline.run({
       manager: manager,
       source: 'url/format1.json',
       target: Model,
       pipeline: loader,
-    }).then((result) => {
-      expect(result).toBe('format1')
-      done()
-    }).catch(done.fail)
+    })
+    expect(result).toBe('format1')
   })
 
-  it('takes a fallback route if a loader returns null', (done) => {
-    Pipeline.run({
+  it('takes a fallback route if a loader returns null', async () => {
+    const result = await Pipeline.run({
       manager: manager,
       source: 'url/format2.json',
       target: Model,
       pipeline: loader,
-    }).then((result) => {
-      expect(result).toBe('format2')
-      done()
-    }).catch(done.fail)
+    })
+    expect(result).toBe('format2')
   })
 
-  it('takes a fallback route if a loader returns null', (done) => {
-    Pipeline.run({
+  it('takes a fallback route if a loader returns null', async () => {
+    const result = await Pipeline.run({
       manager: manager,
       source: 'url/format3.json',
       target: Model,
       pipeline: loader,
-    }).then((result) => {
-      expect(result).toBe('format3')
-      done()
-    }).catch(done.fail)
+    })
+    expect(result).toBe('format3')
   })
 })

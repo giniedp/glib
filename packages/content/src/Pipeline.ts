@@ -70,7 +70,7 @@ export class Pipeline {
    * @param input - The input value to import. Its type is identified by `source`
    * @param context - The context to use during the import
    */
-  public async run(source: LoaderInput, target: LoaderOutput, input: any, context: PipelineContext) {
+  public async run<S = unknown, T = unknown>(source: LoaderInput<S>, target: LoaderOutput<T>, input: any, context: PipelineContext): Promise<T> {
 
     if (typeof source === 'string') {
       if (DataUri.isDataUri(source)) {

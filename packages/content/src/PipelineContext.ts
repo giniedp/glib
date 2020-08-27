@@ -13,6 +13,9 @@ export interface PipelineContext<T = any> {
   manager: ContentManager
   /**
    * The instance of the pipeline that is currently handling the loading process
+   *
+   * @remarks
+   * this is usually the same instance as owned by the {@link manager}
    */
   pipeline: Pipeline
   /**

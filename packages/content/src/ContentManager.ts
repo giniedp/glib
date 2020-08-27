@@ -10,7 +10,7 @@ import { LoaderOutput } from './Loader'
  */
 export interface IManagerOptions {
   enableDomAssets?: boolean
-  loader?: Pipeline
+  pipeline?: Pipeline
 }
 
 function getOption<T>(options: IManagerOptions, key: keyof IManagerOptions, fallback: T): T {
@@ -66,7 +66,7 @@ export class ContentManager {
   /**
    * The instance of the loader to use
    */
-  public loader: Pipeline = Pipeline.default
+  public pipeline: Pipeline = Pipeline.default
 
   /**
    * Collection of all loaded assets
@@ -92,7 +92,7 @@ export class ContentManager {
 
   public setup(options: IManagerOptions) {
     this.enableDomAssets = getOption(options, 'enableDomAssets', this.enableDomAssets)
-    this.loader = getOption(options, 'loader', this.loader)
+    this.pipeline = getOption(options, 'pipeline', this.pipeline)
   }
 
   /**
@@ -264,9 +264,9 @@ export class ContentManager {
     }
 
     if (DataUri.isDataUri(src)) {
-      return this.loader.canLoad(ContentType.parse(DataUri.parse(src).contentType).mimeType, targetType)
+      return this.pipeline.canLoad(ContentType.parse(DataUri.parse(src).contentType).mimeType, targetType)
     } else {
-      return this.loader.canLoad(Uri.ext(src), targetType)
+      return this.pipeline.canLoad(Uri.ext(src), targetType)
     }
   }
 
@@ -277,7 +277,7 @@ export class ContentManager {
    * @param targetType - The target asset type or a symbol identifying the target type.
    * @param options - Options which will be available in the loading context.
    */
-  public async load<T = any>(src: string, targetType: LoaderOutput<T>, options: { [key: string]: any } = {}): Promise<T> {
+  public async load<T = unknown>(src: string, targetType: LoaderOutput<T>, options: { [key: string]: any } = {}): Promise<T> {
     const requested = Uri.merge(location.pathname, src)
     const remapped = this.rewriteUrl(requested)
     if (requested !== remapped) {
@@ -316,7 +316,7 @@ export class ContentManager {
       source: src,
       target: targetType,
       options: options,
-      pipeline: this.loader,
+      pipeline: this.pipeline,
     }))
     return this.loading.set(key, loader).get(key).then((result) => {
       this.loading.delete(key)
