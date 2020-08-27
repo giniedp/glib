@@ -23,13 +23,10 @@
     "url": "github.com/giniedp/glib.git"
   },
   "devDependencies": {
-    "@microsoft/api-documenter": "7.8.34",
-    "@microsoft/api-extractor": "7.9.10",
-    "@types/del": "^4.0.0",
     "@types/gulp": "^4.0.6",
     "@types/jasmine": "^3.5.13",
     "@types/mithril": "^2.0.3",
-    "@types/node": "^8.0.17",
+    "@types/node": "^12.0.0",
     "@types/webgl2": "^0.0.5",
     "@typescript-eslint/eslint-plugin": "^3.6.0",
     "@typescript-eslint/parser": "^3.6.0",
@@ -44,15 +41,7 @@
     "eslint-plugin-jsdoc": "^28.6.1",
     "eslint-plugin-prefer-arrow": "^1.2.1",
     "gulp": "^4.0.2",
-    "jasmine-core": "^3.6.0",
     "jslint": "^0.12.1",
-    "jstransformer-markdown-it": "^2.1.0",
-    "jstransformer-prismjs": "^0.1.0",
-
-    "markdown-it": "^11.0.0",
-    "markdown-it-headinganchor": "^1.3.0",
-    "pug": "^3.0.0",
-    "showdown": "^1.9.1",
     "ts-node": "^9.0.0",
     "tslib": "^2.0.0",
     "typescript": "^4.0.2",
@@ -72,5 +61,8 @@
     "./packages/*",
     "./apps/*",
     "./tools/*"
-  ]
+  ],
+  "engines": {
+    "node": "12"
+  }
 }
