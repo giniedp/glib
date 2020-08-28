@@ -1,5 +1,9 @@
 import { Rect } from './Rect'
 
+function printEdges(rect: Rect) {
+  return [rect.y, rect.xEnd, rect.yEnd, rect.x].map((it) => it.toFixed(2)).join(' ')
+}
+
 describe('Rect', () => {
   function expectComponents(r: Rect, x: number, y: number, width: number, height: number) {
     expect(r.x).toBeCloseTo(x, 5, 'x component')
@@ -18,59 +22,34 @@ describe('Rect', () => {
     })
   })
 
-  describe('#left', () => {
-    it ('gets x', () => {
-      const r = new Rect(1, 2, 3, 4)
-      expect(r.x).toBe(1)
-      expect(r.left).toBe(1)
-    })
-    it ('sets x', () => {
-      const r = new Rect(1, 2, 3, 4)
-      r.left = 10
-      expect(r.x).toBe(10)
-      expect(r.left).toBe(10)
-    })
-  })
-
-  describe('#top', () => {
-    it ('gets y', () => {
-      const r = new Rect(1, 2, 3, 4)
-      expect(r.y).toBe(2)
-      expect(r.top).toBe(2)
-    })
-    it ('sets y', () => {
-      const r = new Rect(1, 2, 3, 4)
-      r.top = 10
-      expect(r.y).toBe(10)
-      expect(r.top).toBe(10)
-    })
-  })
-
   describe('#right', () => {
     it ('gets x + width', () => {
       const r = new Rect(1, 2, 30, 40)
       expect(r.width).toBe(30)
-      expect(r.right).toBe(31)
+      expect(r.xEnd).toBe(31)
     })
     it ('sets width', () => {
       const r = new Rect(1, 2, 30, 40)
-      r.right = 11
-      expect(r.width).toBe(10)
-      expect(r.right).toBe(11)
+      r.xEnd = 11
+      expect(r.width).toBe(30)
+      expect(r.xEnd).toBe(11)
+      expect(r.x).toBe(-19)
     })
   })
 
   describe('#bottom', () => {
     it ('gets y + height', () => {
       const r = new Rect(1, 2, 30, 40)
-      expect(r.bottom).toBe(42)
-      expect(r.bottom).toBe(42)
+      expect(r.y).toBe(2)
+      expect(r.height).toBe(40)
+      expect(r.yEnd).toBe(42)
     })
     it ('sets height', () => {
       const r = new Rect(1, 2, 30, 40)
-      r.bottom = 12
-      expect(r.height).toBe(10)
-      expect(r.bottom).toBe(12)
+      r.yEnd = 12
+      expect(r.yEnd).toBe(12)
+      expect(r.height).toBe(40)
+      expect(r.y).toBe(-28)
     })
   })
 
@@ -227,9 +206,9 @@ describe('Rect', () => {
         new Rect(2.9, 1, 1, 1),
         new Rect(1, 2.9, 1, 1),
       ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).intersects(it)).toBe(true, `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`)
-        expect(Rect.intersects(it, new Rect(1, 1, 2, 2))).toBe(true,
-        `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`)
+        const rect = new Rect(1, 1, 2, 2)
+        expect(rect.intersects(it)).toBe(true, `${printEdges(rect)} intersects ${printEdges(it)}`)
+        expect(Rect.intersects(it, rect)).toBe(true, `${printEdges(rect)} intersects ${printEdges(it)}`)
       });
 
       [

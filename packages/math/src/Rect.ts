@@ -23,49 +23,45 @@ export class Rect {
   }
 
   /**
-   * Gets the left border of the rectangle
+   * Gets the value of `x + width`
+   *
+   * @remarks
+   * On set, the `width` of the rectangle is unchanged
+   * but instead the `x` position is adjusted
    */
-  public get left(): number {
-    return this.x
-  }
-
-  public set left(v: number) {
-    this.x = v
-  }
-
-  /**
-   * Gets the top border of the rectangle
-   */
-  public get top(): number {
-    return this.y
-  }
-
-  public set top(v: number) {
-    this.y = v
-  }
-
-  /**
-   * Gets the right border of the rectangle
-   */
-  public get right(): number {
+  public get xEnd(): number {
     return this.x + this.width
   }
 
-  public set right(v: number) {
-    this.width = v - this.x
+  public set xEnd(v: number) {
+    this.x = v - this.width
   }
 
   /**
-   * Gets the bottom border of the rectangle
+   * Gets the value of `y + height`
+   *
+   * @remarks
+   * On set, the `height` of the rectangle is unchanged
+   * but instead the `y` position is adjusted
    */
-  public get bottom(): number {
+  public get yEnd(): number {
     return this.y + this.height
   }
-
-  public set bottom(v: number) {
-    this.height = v - this.y
+  public set yEnd(v: number) {
+    this.y = v - this.height
   }
 
+  public get centerX() {
+    return this.x + this.width * 0.5
+  }
+
+  public get centerY() {
+    return this.y + this.height * 0.5
+  }
+
+  /**
+   * calls `Math.floor` for each component
+   */
   public floor(): this {
     this.x = Math.floor(this.x)
     this.y = Math.floor(this.y)
@@ -74,6 +70,9 @@ export class Rect {
     return this
   }
 
+  /**
+   * calls `Math.ceil` for each component
+   */
   public ceil(): this {
     this.x = Math.ceil(this.x)
     this.y = Math.ceil(this.y)
@@ -82,6 +81,9 @@ export class Rect {
     return this
   }
 
+  /**
+   * calls `Math.round` for each component
+   */
   public round(): this {
     this.x = Math.round(this.x)
     this.y = Math.round(this.y)
@@ -145,35 +147,35 @@ export class Rect {
    * Checks whether the given coordinate is inside the rectangle
    */
   public containsXY(x: number, y: number): boolean {
-    return this.left <= x && x < this.right && this.top <= y && y < this.bottom
+    return this.x <= x && x < this.xEnd && this.y <= y && y < this.yEnd
   }
 
   /**
    * Checks whether the given point is inside the rectangle
    */
   public contains(point: IVec2): boolean {
-    return this.left <= point.x && point.x < this.right && this.top <= point.y && point.y < this.bottom
+    return this.x <= point.x && point.x < this.xEnd && this.y <= point.y && point.y < this.yEnd
   }
 
   /**
    * Checks whether the given rectangle is contained by this rectangle
    */
   public containsRect(r: Rect): boolean {
-    return this.left <= r.left && r.right <= this.right && this.top <= r.top && r.bottom <= this.bottom
+    return this.x <= r.x && r.xEnd <= this.xEnd && this.y <= r.y && r.yEnd <= this.yEnd
   }
 
   /**
    * Checks whether the given rectangle intersects this rectangle
    */
   public intersects(r: Rect): boolean {
-    return r.left < this.right && this.left < r.right && r.top < this.bottom && this.top < r.bottom
+    return r.x < this.xEnd && this.x < r.xEnd && r.y < this.yEnd && this.y < r.yEnd
   }
 
   /**
    * Checks whether two rectangles do intersect
    */
   public static intersects(r1: Rect, r2: Rect): boolean {
-    return r2.left < r1.right && r1.left < r2.right && r2.top < r1.bottom && r1.top < r2.bottom
+    return r2.x < r1.xEnd && r1.x < r2.xEnd && r2.y < r1.yEnd && r1.y < r2.yEnd
   }
 
   /**
