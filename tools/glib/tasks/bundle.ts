@@ -28,7 +28,7 @@ async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOption
       }),
       sourcemaps(),
       visualizer({
-        file: pkg.distDir('stats.html'),
+        filename: pkg.distDir('stats.html'),
       }),
     ],
     external: Object.keys(globals),
