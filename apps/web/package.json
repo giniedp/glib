@@ -19,6 +19,6 @@
     "gulp-sass": "^4.1.0",
     "mithril": "^2.0.4",
     "prismjs": "^1.21.0",
-    "tweak-ui": "^0.2.7"
+    "tweak-ui": "^0.2.8"
   }
 }

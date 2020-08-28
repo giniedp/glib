@@ -7865,10 +7865,10 @@ tunnel-agent@^0.6.0:
   dependencies:
     safe-buffer "^5.0.1"
 
-tweak-ui@^0.2.7:
-  version "0.2.7"
-  resolved "https://registry.yarnpkg.com/tweak-ui/-/tweak-ui-0.2.7.tgz#3c4a8ff27c47c10265663aec4f347807d9684944"
-  integrity sha512-nEQ5m4oT2nbMUhYNn+HXvingOv05SzNL17qdO9l5MzKsMNwm+lf6DbKsT0Sz76gfPow89vIE0puqCHPwGepqog==
+tweak-ui@^0.2.8:
+  version "0.2.8"
+  resolved "https://registry.yarnpkg.com/tweak-ui/-/tweak-ui-0.2.8.tgz#c23203d817c71e126bcbe33afe328d00853ab767"
+  integrity sha512-Ob9NBWXL2utkXmqEe6exTlkfm3Uy1A3YerjtuUKfk0YvG7nP9wuVMHqJXoIFe9/rk1bJNuU/smWiLMjR+VGi2Q==
   dependencies:
     mithril "^2.0.4"
 
