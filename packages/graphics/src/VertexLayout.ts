@@ -1,4 +1,4 @@
-import { extend, Log, hasOwnProperty } from '@gglib/utils'
+import { Log, hasOwnProperty } from '@gglib/utils'
 
 import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
 
@@ -42,9 +42,9 @@ export interface VertexAttribute {
 const f = Object.freeze
 
 /**
- * Contains vertex attribute presets for common attribute names like `position`, `color`, `texture` etc.
+ * Provides layouts of common attributes like `position`, `color`, `texture` etc.
  */
-export const CommonVertexAttributes = {
+export const VertexLayoutCommons = {
   position: f<VertexAttribute>({
     type: 'float32',
     elements: 3,
@@ -77,23 +77,28 @@ export const CommonVertexAttributes = {
  * Gets a vertex attribute specification for given attribute semantic
  *
  * @remarks
- * Matches only `/[a-z]+/` characters in the semantic. Meaning `texture`, `texture1`, `texture_2` all return
- * the same attribute representation
+ * Uses {@link VertexLayoutCommons} to lookup a common specification for given semantic name.
+ *
+ * The semantic name is stripped down to [a-z] characters. So `texture`, `texture1`, `texture_2`
+ * are all treated as same semantic: `texture`
+ *
+ * @param semantic - the semantic name
+ * @param overrides - used to enrich or override the result
  */
 export function commonVertexAttribute(semantic: string, overrides?: Partial<VertexAttribute>): VertexAttribute {
   semantic = semantic.match(/[a-z]+/)[0]
-  const preset = CommonVertexAttributes[semantic]
+  const preset = VertexLayoutCommons[semantic]
   if (!preset) {
     return null
   }
   if (overrides) {
     return {
-      ...CommonVertexAttributes[semantic],
+      ...VertexLayoutCommons[semantic],
       ...overrides,
     }
   }
   return {
-    ...CommonVertexAttributes[semantic],
+    ...VertexLayoutCommons[semantic],
   }
 }
 
@@ -161,46 +166,37 @@ export class VertexLayout {
    */
   public static countElements(layout: VertexLayout): number {
     let count = 0
-    for (const key in layout) {
-      if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        count += item.packed ? 1 : item.elements
-      }
-    }
+    VertexLayout.forEach(layout, (_, item) => {
+      count += item.packed ? 1 : item.elements
+    })
     return count
   }
 
   /**
    * Counts the number of elements in a single vertex until the given attribute.
    */
-  public static countElementsBefore(layout: VertexLayout, name: string): number {
+  public static countElementsBefore(layout: VertexLayout, semantic: string): number {
     let count = 0
-    let target = layout[name]
-    for (const key in layout) {
-      if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        if (item.offset < target.offset) {
-          count += item.packed ? 1 : item.elements
-        }
+    const target = layout[semantic]
+    VertexLayout.forEach(layout, (_, item) => {
+      if (item.offset < target.offset) {
+        count += item.packed ? 1 : item.elements
       }
-    }
+    })
     return count
   }
 
   /**
    * Counts the number of elements in a single vertex after the given attribute.
    */
-  public static countElementsAfter(layout: VertexLayout, name: string): number {
+  public static countElementsAfter(layout: VertexLayout, semantic: string): number {
     let count = 0
-    let target = layout[name]
-    for (const key in layout) {
-      if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        if (item.offset > target.offset) {
-          count += item.packed ? 1 : item.elements
-        }
+    const target = layout[semantic]
+    VertexLayout.forEach(layout, (_, item) => {
+      if (item.offset > target.offset) {
+        count += item.packed ? 1 : item.elements
       }
-    }
+    })
     return count
   }
 
@@ -213,60 +209,52 @@ export class VertexLayout {
    */
   public static countBytes(layout: VertexLayout): number {
     let count = 0
-    for (const key in layout) {
-      if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        count += dataTypeSize(item.type) * item.elements
-      }
-    }
+    VertexLayout.forEach(layout, (_, item) => {
+      count += dataTypeSize(item.type) * item.elements
+    })
     return count
   }
 
   /**
    * Counts the number of bytes in a single vertex until the given attribute.
    */
-  public static countBytesBefore(layout: VertexLayout, name: string): number {
+  public static countBytesBefore(layout: VertexLayout, semantic: string): number {
     let count = 0
-    let target = layout[name]
-    for (const key in layout) {
-      if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        if (item.offset < target.offset) {
-          count += dataTypeSize(item.type) * item.elements
-        }
+    const target = layout[semantic]
+    VertexLayout.forEach(layout, (_, item) => {
+      if (item.offset < target.offset) {
+        count += dataTypeSize(item.type) * item.elements
       }
-    }
+    })
     return count
   }
 
   /**
    * Counts the number of bytes in a single vertex after the given attribute.
    */
-  public static countBytesAfter(layout: VertexLayout, name: string): number {
+  public static countBytesAfter(layout: VertexLayout, semantic: string): number {
     let count = 0
-    let target = layout[name]
-    for (const key in layout) {
-      if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        if (item.offset > target.offset) {
-          count += dataTypeSize(item.type) * item.elements
-        }
+    let target = layout[semantic]
+    VertexLayout.forEach(layout, (_, item) => {
+      if (item.offset > target.offset) {
+        count += dataTypeSize(item.type) * item.elements
       }
-    }
+    })
     return count
   }
 
-  public static uniqueTypes(layout: VertexLayout): Array<string | number> {
-    const types: Array<string | number> = []
+  /**
+   * Iterates over all vertex attributes in a layout
+   *
+   * @param layout - the layout
+   * @param fn - function to call for each attribute
+   */
+  public static forEach(layout: VertexLayout, fn: (semantic: string, attribute: VertexAttribute) => void): void {
     for (const key in layout) {
       if (hasOwnProperty(layout, key)) {
-        const item = layout[key]
-        if (item.type && types.indexOf(item.type) < 0) {
-          types.push(item.type)
-        }
+        fn(key, layout[key])
       }
     }
-    return types
   }
 
   /**

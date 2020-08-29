@@ -1,8 +1,8 @@
 import { Log } from '@gglib/utils'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 
-import { BufferOptions, BufferDataOption } from '../resources'
-import { VertexAttribute, commonVertexAttribute } from '../VertexLayout'
+import { BufferOptions } from '../resources'
+import { VertexAttribute, commonVertexAttribute, VertexLayout } from '../VertexLayout'
 import { BufferType, PrimitiveType, FrontFace, nameOfPrimitiveType } from '../enums'
 import { calculateNormals, calculateTangents } from '../formulas'
 
@@ -12,7 +12,7 @@ export class ModelMeshPartUtil {
 
   public channels = new Map<string, ModelBuilderChannel>()
   private get indices(): ReadonlyArray<number> {
-    return this.iBuffer.data as any
+    return this.indexBuffer.data as any
   }
 
   public boundingBox: BoundingBox = new BoundingBox()
@@ -21,30 +21,47 @@ export class ModelMeshPartUtil {
   public channelNames: string[] = []
 
   public constructor(
-    public readonly iBuffer: BufferOptions,
-    public readonly vBuffer: BufferOptions[],
+    public readonly indexBuffer: BufferOptions,
+    public readonly vertexBuffer: BufferOptions[],
     public readonly primitiveType: PrimitiveType,
   ) {
     if (primitiveType !== PrimitiveType.TriangleList) {
       throw new Error(`primitive type is not supporetd: '${nameOfPrimitiveType(primitiveType)}'`)
     }
 
-    for (const buffer of vBuffer) {
-      Object.keys(buffer.layout).forEach((name) => {
-        this.channelNames.push(name)
-        this.channels.set(name, new ModelBuilderChannel(buffer, name))
+    for (const buffer of vertexBuffer) {
+      VertexLayout.forEach(buffer.layout, (semantic) => {
+        this.channelNames.push(semantic)
+        this.channels.set(semantic, new ModelBuilderChannel(buffer, semantic))
       })
     }
   }
 
-  public hasChannel(semantic: string) {
+  /**
+   * Checks if vertex buffer channel with given semantic exists
+   *
+   * @param semantic
+   */
+  public hasChannel(semantic: string): boolean {
     return this.channels.has(semantic)
   }
 
-  public getChannel(semantic: string) {
+  /**
+   * Returns a vertex buffer channel with given semantic
+   *
+   * @param semantic
+   */
+  public getChannel(semantic: string): ModelBuilderChannel | null {
     return this.channels.get(semantic)
   }
 
+  /**
+   * Creates a channel in vertex buffer
+   *
+   * @param semantic - the semantic channel name
+   * @param attribute - the attribute specification
+   * @param defaults - default vertex values
+   */
   public createChannel(semantic: string, attribute: VertexAttribute, defaults?: number[]) {
 
     if (this.hasChannel(semantic)) {
@@ -77,14 +94,25 @@ export class ModelMeshPartUtil {
       dataType: attribute.type,
       data: data,
     }
-    this.vBuffer.push(vBuffer)
+    this.vertexBuffer.push(vBuffer)
     this.channelNames.push(semantic)
     this.channels.set(semantic, new ModelBuilderChannel(vBuffer, semantic))
   }
 
+  /**
+   * Gets the number of vertices
+   *
+   * @remarks
+   * This is defined by the number vertices in the `position` channel
+   */
   public getVertexCount() {
     return this.getChannel('position').count
   }
+
+  public getIndexCount() {
+    return this.indices.length
+  }
+
   /**
    * In current state it reads through the vertex buffer and eliminates redundant vertices
    *
@@ -96,7 +124,7 @@ export class ModelMeshPartUtil {
     // vertex index cache
     const hashMap = new Map<string, number>()
     // the new vertex buffer
-    const vBuffer = this.vBuffer.map((buf) => {
+    const vBuffer = this.vertexBuffer.map((buf) => {
       return {
         ...buf,
         data: [],
@@ -144,9 +172,9 @@ export class ModelMeshPartUtil {
     if (oldVCount !== vCount) {
       Log.debug(`[ModelBuilder] Mesh size reduced from ${oldVCount} to ${vCount} vertices.`)
       vBuffer.forEach((buf, i) => {
-        this.vBuffer[i].data = buf.data
+        this.vertexBuffer[i].data = buf.data
       })
-      this.iBuffer.data = newIndices
+      this.indexBuffer.data = newIndices
     }
     return this
   }
