@@ -173,7 +173,7 @@ export class TimeComponent implements OnUpdate, OnDraw {
   }
 
   /**
-   * Deletes an existing clock with given key or creates a new one by cloning the current game time
+   * Gets an existing clock with given key or creates a new one by cloning the current game time
    */
   public getOrCreate(key: any) {
     if (!this.clocks.has(key)) {
