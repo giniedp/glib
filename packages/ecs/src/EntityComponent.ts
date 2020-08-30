@@ -90,7 +90,7 @@ export interface OnInit {
  */
 export interface OnUpdate {
   /**
-   * A method that is called when once every update cycle
+   * A method that is called once every update cycle
    */
   onUpdate: (elapsedTime: number) => void
 }
@@ -102,7 +102,7 @@ export interface OnUpdate {
  */
 export interface OnDraw {
   /**
-   * A method that is called when once every draw cycle
+   * A method that is called once every draw cycle
    */
   onDraw: (elapsedTime: number) => void
 }
