@@ -143,6 +143,14 @@ export class Rect {
     return this
   }
 
+  public getX(t: number) {
+    return this.x + this.width * t
+  }
+
+  public getY(t: number) {
+    return this.y + this.height * t
+  }
+
   /**
    * Checks whether the given coordinate is inside the rectangle
    */
