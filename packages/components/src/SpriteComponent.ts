@@ -1,11 +1,4 @@
-import {
-  Entity,
-  Inject,
-  OnInit,
-  OnRemoved,
-  OnUpdate,
-  Component,
-} from '@gglib/ecs'
+import { Inject, OnInit, OnRemoved, OnUpdate, Component } from '@gglib/ecs'
 import { SpriteBatch, Texture } from '@gglib/graphics'
 import { BoundingSphere, IRect } from '@gglib/math'
 import { SceneItemSprite } from '@gglib/render'
@@ -16,58 +9,97 @@ import { SceneryLinkComponent } from './SceneryLinkComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
- * Defines a sprite
+ * Slice offsets describing a 9-patch sprite
  *
  * @public
  */
-export interface SpriteData {
+export interface SpriteSlice {
   /**
-   * The sprite texture
+   * Slice offset in pixel from top edge
    */
-  texture: Texture
+  top: number
   /**
-   * The are of the sprite in the texture
+   * Slice offset in pixel from right edge
    */
-  source?: IRect
+  right: number
   /**
-   * The slice distances to form a 9-sliced sprite
+   * Slice offset in pixel from bottom edge
    */
-  slice?: {
-    top: number
-    right: number
-    bottom: number
-    left: number,
-  }
+  bottom: number
+  /**
+   * Slice offset in pixel from left edge
+   */
+  left: number
 }
 
 /**
- * Enumeration of sprite rendering modes
+ * Structure that defines a sprite with its sprite sheet texture
+ *
+ * @public
  */
-export enum SpriteMode {
+export interface SpriteSourceOptions {
   /**
-   * The default mode. Sprite is stretched vertically and horizontally.
+   * The sprite or sprite sheet texture
    */
-  Default = 0,
+  texture: Texture
   /**
-   * 9-patch sliced mode.
+   * The source rectangle into the {@link texture}
    */
-  Sliced = 1,
+  source?: IRect
   /**
-   * 9-patch tiled mode.
+   * The 9-patch slice offsets
    */
-  Tiled = 2,
+  slice?: SpriteSlice
 }
 
+/**
+ * Constructor and setup options for the {@link SpriteComponent}
+ */
 export interface SpriteComponentOptions {
-  sprite?: SpriteData
-  mode?: SpriteMode
+  /**
+   * The sprite or sprite sheet texture
+   */
+  texture?: Texture
+  /**
+   * The source rectangle into the {@link texture}
+   */
+  source?: IRect
+  /**
+   * The 9-patch slice offsets
+   */
+  slice?: SpriteSlice
+  /**
+   * The tint color
+   */
   color?: number
+  /**
+   * Whether to flip the sprite horizontally
+   */
   flipX?: boolean
+  /**
+   * Whether to flip the sprite vertically
+   */
   flipY?: boolean
+  /**
+   * Normalized pivot coordinate
+   */
   pivotX?: number
+  /**
+   * Normalized pivot coordinate
+   */
   pivotY?: number
+  /**
+   * The sprite width in units
+   */
   width?: number
+  /**
+   * The sprite height in units
+   */
   height?: number
+  /**
+   * Number of viewport pixels per world space unit
+   */
+  unitPixels?: number
 }
 
 /**
@@ -83,54 +115,137 @@ export interface SpriteComponentOptions {
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
 @Component({
-  install: [
-    SceneryLinkComponent
-  ]
+  install: [SceneryLinkComponent],
 })
-export class SpriteComponent
-  implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
+export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
   /**
    * The name of the component (`Sprite`)
    */
   public readonly name = 'Sprite'
 
   /**
-   * The sprite data
+   * The sprite texture
    */
-  public sprite?: SpriteData
+  public get texture() {
+    return this.$texture
+  }
+  public set texture(v: Texture) {
+    if (v !== this.$texture) {
+      this.$texture = v
+      this.$doSpriteUpdate = true
+    }
+  }
+
   /**
-   * The rendering mode
+   * The source rectangle into the {@link texture}
    */
-  public mode: SpriteMode = SpriteMode.Default
+  public get source() {
+    return this.$source
+  }
+  public set source(v: IRect) {
+    this.$source = v
+    this.$doSpriteUpdate = true
+  }
+
+  /**
+   * The 9-patch slice offsets
+   */
+  public get slice() {
+    return this.$slice
+  }
+  public set slice(v: SpriteSlice) {
+    this.$slice = v
+    this.$doSpriteUpdate = true
+  }
+
   /**
    * The tint color
    */
   public color: number = 0xffffffff
+
   /**
    * Whether to flip horizontally
    */
-  public flipX: boolean = false
+  public get flipX(): boolean {
+    return this.$flipX
+  }
+  public set flipX(v: boolean) {
+    if (this.$flipX !== v) {
+      this.$flipX = v
+      this.$doSpriteUpdate = true
+    }
+  }
+
   /**
    * Whether to flip vertically
    */
-  public flipY: boolean = false
+  public get flipY(): boolean {
+    return this.$flipY
+  }
+  public set flipY(v: boolean) {
+    if (this.$flipY !== v) {
+      this.$flipY = v
+      this.$doSpriteUpdate = true
+    }
+  }
 
   /**
-   * The pixel size in destination area
+   * Number of viewport pixels per world space unit
+   *
+   * @remarks
+   * This is only used when {@link enableSlicing} is `true` to calculate
+   * proper size for the tiles and sides that should not be stretched.
    */
-  public pixelScaleX = 1
-  /**
-   * The pixel size in destination area
-   */
-  public pixelScaleY = 1
+  public get unitPixels(): number {
+    return this.$unitPixels
+  }
+  public set unitPixels(v: number) {
+    if (this.$unitPixels !== v) {
+      this.$unitPixels = v
+      this.$doSpriteUpdate = true
+    }
+  }
 
+  /**
+   * Enables 9-patch rendering mode if slice data is available
+   *
+   * @remarks
+   * To make this work a proper Value for {@link unitPixels} is mandatory
+   */
+  public get enableSlicing(): boolean {
+    return this.$enableSlicing
+  }
+  public set enableSlicing(v: boolean) {
+    if (this.$enableSlicing !== v) {
+      this.$enableSlicing = v
+      this.$doSpriteUpdate
+    }
+  }
+
+  /**
+   * Enables sprite tiling
+   */
+  public get enableTiling(): boolean {
+    return this.$enableTiling
+  }
+  public set enableTiling(v: boolean) {
+    if (this.$enableTiling !== v) {
+      this.$enableTiling = v
+      this.$doSpriteUpdate = true
+    }
+  }
+
+  /**
+   *
+   */
   public get pivotX() {
     return this.$pivotX
   }
   public set pivotX(value: number) {
     if (this.$pivotX !== value) {
       this.$pivotX = value
-      this.$dimensionsChanged = true
+      this.$doBoundsUpdate = true
+      this.$doSpriteUpdate = true
     }
   }
 
@@ -140,7 +255,8 @@ export class SpriteComponent
   public set pivotY(value: number) {
     if (this.$pivotY !== value) {
       this.$pivotY = value
-      this.$dimensionsChanged = true
+      this.$doBoundsUpdate = true
+      this.$doSpriteUpdate = true
     }
   }
 
@@ -153,7 +269,8 @@ export class SpriteComponent
   public set width(value: number) {
     if (this.$width !== value) {
       this.$width = value
-      this.$dimensionsChanged = true
+      this.$doBoundsUpdate = true
+      this.$doSpriteUpdate = true
     }
   }
 
@@ -166,22 +283,8 @@ export class SpriteComponent
   public set height(value: number) {
     if (this.$height !== value) {
       this.$height = value
-      this.$dimensionsChanged = true
+      this.$doBoundsUpdate = true
     }
-  }
-
-  protected $width: number = 1
-  protected $height: number = 1
-  protected $pivotX: number = 0
-  protected $pivotY: number = 0
-  protected $dimensionsChanged = true
-  protected $sphere = new BoundingSphere()
-  protected readonly $drawable: SceneItemSprite = {
-    type: 'sprite',
-    sortkey: 0,
-    material: null,
-    transform: null,
-    sprite: this,
   }
 
   /**
@@ -202,10 +305,37 @@ export class SpriteComponent
   @Inject(SceneryLinkComponent)
   public readonly link: SceneryLinkComponent
 
+  protected $texture: Texture
+  protected $source: IRect
+  protected $slice: SpriteSlice
+  protected $flipX: boolean
+  protected $flipY: boolean
+  protected $unitPixels: number = 1
+  protected $width: number = 1
+  protected $height: number = 1
+  protected $pivotX: number = 0
+  protected $pivotY: number = 0
+  protected $enableSlicing = false
+  protected $enableTiling = false
+  protected $doSpriteUpdate = true
+  protected $doBoundsUpdate = true
+  protected $sphere = new BoundingSphere()
+
+  protected readonly $drawable: SceneItemSprite = {
+    type: 'sprite',
+    sortkey: 0,
+    material: null,
+    transform: null,
+    sprite: this,
+  }
+
+  private sprites = new SpriteSpecPool()
+
   public constructor(options?: SpriteComponentOptions) {
     if (options) {
-      this.sprite = getOption(options, 'sprite', this.sprite)
-      this.mode = getOption(options, 'mode', this.mode)
+      this.texture = getOption(options, 'texture', this.texture)
+      this.source = getOption(options, 'source', this.source)
+      this.slice = getOption(options, 'slice', this.slice)
       this.color = getOption(options, 'color', this.color)
       this.width = getOption(options, 'width', this.width)
       this.height = getOption(options, 'height', this.height)
@@ -214,6 +344,17 @@ export class SpriteComponent
       this.flipX = getOption(options, 'flipX', this.flipX)
       this.flipY = getOption(options, 'flipY', this.flipY)
     }
+  }
+
+  /**
+   * Sets the sprite source data
+   *
+   * @param options - sprite source options
+   */
+  public setSource(options: SpriteSourceOptions | null) {
+    this.texture = getOption(options, 'texture', null)
+    this.source = getOption(options, 'source', null)
+    this.slice = getOption(options, 'slice', null)
   }
 
   /**
@@ -234,14 +375,13 @@ export class SpriteComponent
    * Component life cycle method
    */
   public onUpdate() {
-    if (this.$dimensionsChanged && this.volume) {
-      this.$sphere.center.init(0, 0, 0)
-      this.$sphere.radius = Math.max(
-        Math.abs(this.width - this.pivotX),
-        Math.abs(this.height - this.pivotX),
-      )
-      this.volume.linkVolume(this.$sphere)
-      this.$dimensionsChanged = false
+    if (this.$doBoundsUpdate) {
+      this.updateBounds()
+      this.$doBoundsUpdate = false
+    }
+    if (this.$doSpriteUpdate) {
+      this.updateSprites()
+      this.$doBoundsUpdate = false
     }
   }
 
@@ -251,12 +391,11 @@ export class SpriteComponent
    * @param collector - the collector with a scene where to contribute
    */
   public collectScenery(collector: SceneryCollector): void {
-    if (!this.sprite) {
-      return
+    if (this.texture) {
+      this.$drawable.sprite = this
+      this.$drawable.transform = this.transform?.world
+      collector.addItem(this.$drawable)
     }
-
-    this.$drawable.transform = this.transform ? this.transform.world : null
-    collector.addItem(this.$drawable)
   }
 
   /**
@@ -265,182 +404,132 @@ export class SpriteComponent
    * @param batch - the sprite batch to draw with
    */
   public draw(batch: SpriteBatch) {
-    const sprite = this.sprite
-    const source = sprite.source
-    const slice = sprite.slice
-
-    if (this.mode === SpriteMode.Default || !slice) {
-      this.drawSpriteDefault(batch, this.sprite.texture, source)
-    } else if (this.mode === SpriteMode.Sliced) {
-      this.drawSpriteSliced(batch, sprite.texture, source, slice)
-    } else {
-      this.drawSpriteTiled(batch, sprite.texture, source, slice)
+    if (!this.texture) {
+      return
+    }
+    for (let i = 0; i < this.sprites.length; i++) {
+      const sprite = this.sprites.get(i)
+      const src = sprite.src
+      const dst = sprite.dst
+      const builder = batch
+        .draw(this.texture)
+        .source(src.x, src.y, src.width, src.height, this.flipX, this.flipY)
+        .tint(this.color)
+        .destination(dst.x, this.height - dst.y, dst.width, -dst.height)
+      if (this.transform) {
+        builder.transformMat4(this.transform.world)
+      }
     }
   }
 
-  private drawSpriteDefault(
-    batch: SpriteBatch,
-    texture: Texture,
-    frame?: IRect,
-  ) {
-    const builder = batch.draw(texture)
-
-    if (frame) {
-      builder.source(
-        frame.x,
-        frame.y,
-        frame.width,
-        frame.height,
-        this.flipX,
-        this.flipY,
-      )
-    } else {
-      builder.source(
-        0,
-        0,
-        texture.width,
-        texture.height,
-        this.flipX,
-        this.flipY,
-      )
-    }
-
-    builder.tint(this.color)
-    builder.destination(
-      -this.pivotX,
-      this.height - this.pivotY,
-      this.width,
-      -this.height,
+  private updateBounds() {
+    this.$sphere.center.init(0, 0, 0)
+    this.$sphere.radius = Math.max(
+      Math.abs(this.width - this.pivotX * this.width),
+      Math.abs(this.height - this.pivotX * this.height),
     )
+    this.volume?.linkVolume(this.$sphere)
+  }
 
-    if (this.transform) {
-      builder.transformMat4(this.transform.world)
+  private updateSprites() {
+    this.sprites.length = 0
+    if (!this.texture) {
+      return
+    }
+    if (this.enableSlicing && this.slice) {
+      this.collectSlices()
+    } else {
+      this.collectTiles(
+        (this.source ? this.source.x : 0) || 0,
+        (this.source ? this.source.y : 0) || 0,
+        (this.source ? this.source.width : this.texture.width) || 0,
+        (this.source ? this.source.height : this.texture.height) || 0,
+        -this.pivotX * this.width,
+        this.pivotY * this.height,
+        this.width,
+        this.height,
+        this.enableTiling,
+        this.enableTiling,
+      )
     }
   }
 
-  private drawSpriteSliced(
-    batch: SpriteBatch,
-    texture: Texture,
-    frame: IRect,
-    slice: {
-      top: number
-      right: number
-      bottom: number
-      left: number,
-    },
-  ) {
-    let fw = frame ? frame.width : texture.width
-    let fh = frame ? frame.height : texture.height
-    let ux = /*(this.width / fw) */ this.pixelScaleX
-    let uy = /*(this.height / fh) */ this.pixelScaleY
 
-    let sw0 = slice ? slice.left : 0
-    let sw2 = slice ? slice.right : 0
-    let sw1 = fw - sw0 - sw2
+  private collectSlices() {
+    //       sx0    sx1    sx2
+    //        :      :      :
+    //        :      :      :
+    //  sy0... ------ ------ ------
+    //        |      |      |      | sh0
+    //        |      |      |      |
+    //  sy1... ------+------+------
+    //        |      |      |      | sh1
+    //        |      |      |      |
+    //  sy2... ------+------+------
+    //        |      |      |      | sh2
+    //        |      |      |      |
+    //         ------ ------ ------
+    //           sw0    sw1   sw2
 
-    let sx0 = frame ? frame.x : 0
-    let sx1 = sx0 + sw0
-    let sx2 = sx1 + sw1
+    const slice = this.slice
+    const source = this.source
+    const texture = this.texture
 
-    let sh0 = slice ? slice.top : 0
-    let sh2 = slice ? slice.bottom : 0
-    let sh1 = fh - sh0 - sh2
+    const sw = (source ? source.width : texture.width) || 0
+    const sw0 = slice.left || 0
+    const sw2 = slice.right || 0
+    const sw1 = sw - sw0 - sw2
 
-    let sy0 = frame ? frame.y : 0
-    let sy1 = sy0 + sh0
-    let sy2 = sy1 + sh1
+    const sh = (source ? source.height : texture.height) || 0
+    const sh0 = slice.top || 0
+    const sh2 = slice.bottom || 0
+    const sh1 = sh - sh0 - sh2
 
-    let dw0 = sw0 * ux
-    let dw2 = sw2 * ux
-    let dw1 = this.width - dw0 - dw2
+    const sx0 = (source ? source.x : 0) || 0
+    const sx1 = sx0 + sw0
+    const sx2 = sx1 + sw1
 
-    let dx0 = -this.pivotX
+    const sy0 = (source ? source.y : 0) || 0
+    const sy1 = sy0 + sh0
+    const sy2 = sy1 + sh1
+
+    const dw0 = sw0 / this.unitPixels
+    const dw2 = sw2 / this.unitPixels
+    const dw1 = this.width - dw0 - dw2
+
+    let dx0 = -this.pivotX * this.width
     let dx1 = dx0 + dw0
     let dx2 = dx1 + dw1
 
-    let dh0 = sh0 * uy
-    let dh2 = sh2 * uy
-    let dh1 = this.height - dh0 - dh2
+    const dh0 = sh0 / this.unitPixels
+    const dh2 = sh2 / this.unitPixels
+    const dh1 = this.height - dh0 - dh2
 
-    let dy0 = -this.pivotY
+    let dy0 = this.height - this.pivotY * this.height
     let dy1 = dy0 + dh0
     let dy2 = dy1 + dh1
 
-    this.drawTile(batch, texture, sx0, sy0, sw0, sh0, dx0, dy0, dw0, dh0)
-    this.drawTile(batch, texture, sx1, sy0, sw1, sh0, dx1, dy0, dw1, dh0)
-    this.drawTile(batch, texture, sx2, sy0, sw2, sh0, dx2, dy0, dw2, dh0)
+    if (this.flipX) {
+      ;[dx0, dx2] = [dx2, dx0]
+    }
+    if (this.flipY) {
+      ;[dy0, dy2] = [dy2, dy0]
+    }
 
-    this.drawTile(batch, texture, sx0, sy1, sw0, sh1, dx0, dy1, dw0, dh1)
-    this.drawTile(batch, texture, sx1, sy1, sw1, sh1, dx1, dy1, dw1, dh1)
-    this.drawTile(batch, texture, sx2, sy1, sw2, sh1, dx2, dy1, dw2, dh1)
+    this.collectTiles(sx0, sy0, sw0, sh0, dx0, dy0, dw0, dh0, false, false)
+    this.collectTiles(sx1, sy0, sw1, sh0, dx1, dy0, dw1, dh0, true, false)
+    this.collectTiles(sx2, sy0, sw2, sh0, dx2, dy0, dw2, dh0, false, false)
 
-    this.drawTile(batch, texture, sx0, sy2, sw0, sh2, dx0, dy2, dw0, dh2)
-    this.drawTile(batch, texture, sx1, sy2, sw1, sh2, dx1, dy2, dw1, dh2)
-    this.drawTile(batch, texture, sx2, sy2, sw2, sh2, dx2, dy2, dw2, dh2)
+    this.collectTiles(sx0, sy1, sw0, sh1, dx0, dy1, dw0, dh1, false, true)
+    this.collectTiles(sx1, sy1, sw1, sh1, dx1, dy1, dw1, dh1, true, true)
+    this.collectTiles(sx2, sy1, sw2, sh1, dx2, dy1, dw2, dh1, false, true)
+
+    this.collectTiles(sx0, sy2, sw0, sh2, dx0, dy2, dw0, dh2, false, false)
+    this.collectTiles(sx1, sy2, sw1, sh2, dx1, dy2, dw1, dh2, true, false)
+    this.collectTiles(sx2, sy2, sw2, sh2, dx2, dy2, dw2, dh2, false, false)
   }
 
-  private drawSpriteTiled(
-    batch: SpriteBatch,
-    texture: Texture,
-    frame: IRect,
-    slice: {
-      top: number
-      right: number
-      bottom: number
-      left: number,
-    },
-  ) {
-    let ux = this.width / frame.width
-    let uy = this.height / frame.height
-
-    let sw0 = slice.left
-    let sw1 = frame.width - slice.left - slice.right
-    let sw2 = slice.right
-
-    let sx0 = frame.x
-    let sx1 = sx0 + sw0
-    let sx2 = sx1 + sw1
-
-    let sh0 = slice.top
-    let sh1 = frame.height - slice.top - slice.bottom
-    let sh2 = slice.bottom
-
-    let sy0 = frame.y
-    let sy1 = sy0 + sh0
-    let sy2 = sy1 + sh1
-
-    let dw0 = sw0 * ux
-    let dw1 = sw1 * ux
-    let dw2 = sw2 * ux
-
-    let dx0 = -this.pivotX
-    let dx1 = dx0 + dw0
-    let dx2 = dx1 + dw1
-
-    let dh0 = sh0 * uy
-    let dh1 = sh1 * uy
-    let dh2 = sh2 * uy
-
-    let dy0 = -this.pivotY
-    let dy1 = dy0 + dh0
-    let dy2 = dy1 + dh1
-
-    this.drawTile(batch, texture, sx0, sy0, sw0, sh0, dx0, dy0, dw0, dh0)
-    this.drawTile(batch, texture, sx1, sy0, sw1, sh0, dx1, dy0, dw1, dh0)
-    this.drawTile(batch, texture, sx2, sy0, sw2, sh0, dx2, dy0, dw2, dh0)
-
-    this.drawTile(batch, texture, sx0, sy1, sw0, sh1, dx0, dy1, dw0, dh1)
-    this.drawTile(batch, texture, sx1, sy1, sw1, sh1, dx1, dy1, dw1, dh1)
-    this.drawTile(batch, texture, sx2, sy1, sw2, sh1, dx2, dy1, dw2, dh1)
-
-    this.drawTile(batch, texture, sx0, sy2, sw0, sh2, dx0, dy2, dw0, dh2)
-    this.drawTile(batch, texture, sx1, sy2, sw1, sh2, dx1, dy2, dw1, dh2)
-    this.drawTile(batch, texture, sx2, sy2, sw2, sh2, dx2, dy2, dw2, dh2)
-  }
-
-  private drawTile(
-    batch: SpriteBatch,
-    texture: Texture,
+  private collectTiles(
     sx: number,
     sy: number,
     sw: number,
@@ -449,15 +538,72 @@ export class SpriteComponent
     dy: number,
     dw: number,
     dh: number,
+    tilingX: boolean,
+    tilingY: boolean,
   ) {
-    const builder = batch
-      .draw(texture)
-      .source(sx, sy, sw, sh, this.flipX, this.flipY)
-      .tint(this.color)
-      .destination(dx, this.height - dy, dw, -dh)
-
-    if (this.transform) {
-      builder.transformMat4(this.transform.world)
+    if (!dw || !dh) {
+      return
     }
+    if (!tilingX && !tilingY) {
+      const sprite = this.sprites.next()
+      sprite.src.x = sx
+      sprite.src.y = sy
+      sprite.src.width = sw
+      sprite.src.height = sh
+      sprite.dst.x = dx
+      sprite.dst.y = dy
+      sprite.dst.width = dw
+      sprite.dst.height = dh
+      return
+    }
+
+    const tilesX = tilingX ? Math.ceil(dw / (sw / this.unitPixels)) : 1
+    const tilesY = tilingY ? Math.ceil(dh / (sh / this.unitPixels)) : 1
+    const tileSizeX = dw / tilesX
+    const tileSizeY = dh / tilesY
+    for (let iy = 0; iy < tilesY; iy++) {
+      for (let ix = 0; ix < tilesX; ix++) {
+        const sprite = this.sprites.next()
+        sprite.src.x = sx
+        sprite.src.y = sy
+        sprite.src.width = sw
+        sprite.src.height = sh
+        sprite.dst.x = dx + ix * tileSizeX
+        sprite.dst.y = dy + iy * tileSizeY
+        sprite.dst.width = tileSizeX
+        sprite.dst.height = tileSizeY
+      }
+    }
+  }
+}
+
+interface SpriteSpec {
+  src: IRect
+  dst: IRect
+}
+
+class SpriteSpecPool {
+  public length: number = 0
+  private list: SpriteSpec[] = []
+
+  /**
+   * Gets an item at given index (generated if needed)
+   */
+  public get(i: number) {
+    if (!this.list[i]) {
+      this.list[i] = {
+        src: { x: 0, y: 0, width: 0, height: 0 },
+        dst: { x: 0, y: 0, width: 0, height: 0 }
+      }
+    }
+    return this.list[i]
+  }
+  /**
+   * Gets the next available item in pool (generated if needed)
+   */
+  public next() {
+    const result = this.get(this.length)
+    this.length++
+    return result
   }
 }
