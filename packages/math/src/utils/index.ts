@@ -1,4 +1,5 @@
 export * from './clamp'
+export * from './ease'
 export * from './hermite'
 export * from './transformBox'
 export * from './transformCapsule'
