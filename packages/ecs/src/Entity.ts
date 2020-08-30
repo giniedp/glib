@@ -600,7 +600,8 @@ export class Entity extends Events {
     }
     meta.forEach((m: ListenerMetadata) => {
       const target = this.resolveEntity(m.on)
-      target.on(m.event, m.handler, component)
+      // TODO: add optional flag to @Listener decorator
+      target?.on(m.event, m.handler, component)
     })
   }
 
