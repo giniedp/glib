@@ -7,7 +7,7 @@ import {
   RendererComponent,
   TransformComponent,
   WebXRComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import { ContentManager } from '@gglib/content'
 import { Entity, Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'

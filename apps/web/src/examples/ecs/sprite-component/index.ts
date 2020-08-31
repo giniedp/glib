@@ -1,4 +1,4 @@
-import { createGame, RendererComponent, SpriteComponent } from '@gglib/components'
+import { createGame, RendererComponent, SpriteComponent } from '@gglib/ecs-components'
 import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'

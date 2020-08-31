@@ -4,7 +4,7 @@ import {
   RendererComponent,
   SpriteComponent,
   TransformComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import { forwardRef, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs'
 import { Color, PixelFormat, Texture } from '@gglib/graphics'

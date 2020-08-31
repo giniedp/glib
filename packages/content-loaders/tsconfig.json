@@ -16,10 +16,10 @@
   ],
   "references": [
     {
-      "path": "../graphics/tsconfig.json"
+      "path": "../content/tsconfig.json"
     },
     {
-      "path": "../content/tsconfig.json"
+      "path": "../graphics/tsconfig.json"
     },
     {
       "path": "../math/tsconfig.json"

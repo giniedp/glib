@@ -1,8 +1,12 @@
 {
   "extends": "./tsconfig.tsc.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "outDir": "../dist/cjs",
-    "module": "commonjs"
+    "module": "commonjs",
+    "paths": {
+      "@gglib/*": [
+        "./*"
+      ]
+    }
   }
 }

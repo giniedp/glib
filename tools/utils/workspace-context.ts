@@ -20,10 +20,13 @@ export class WorkspaceBaseContext {
     if (this.cachedPackageJson) {
       return this.cachedPackageJson
     }
-    if (fs.existsSync(this.packageJsonPath)) {
-      this.cachedPackageJson = require(this.packageJsonPath)
-    } else {
-      this.cachedPackageJson = {}
+    this.cachedPackageJson = {}
+    try {
+      if (fs.existsSync(this.packageJsonPath)) {
+        this.cachedPackageJson = require(this.packageJsonPath)
+      }
+    } catch(e) {
+      //
     }
     return this.cachedPackageJson
   }

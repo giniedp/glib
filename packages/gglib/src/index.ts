@@ -8,7 +8,7 @@
  * @packageDocumentation
  */
 
-import * as $Components from '@gglib/components'
+import * as $EcsComponents from '@gglib/ecs-components'
 import * as $Content from '@gglib/content'
 import * as $ContentLoaders from '@gglib/content-loaders'
 import * as $Ecs from '@gglib/ecs'
@@ -50,7 +50,7 @@ export const Ecs = $Ecs
  *
  * @public
  */
-export const Components = $Components
+export const EcsComponents = $EcsComponents
 /**
  * Shader and effect composition library.
  *
@@ -103,7 +103,7 @@ export const Gglib = {
   ContentLoaders,
   Utils,
   Ecs,
-  Components,
+  EcsComponents,
   Effects,
   Graphics,
   Input,

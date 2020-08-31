@@ -8,7 +8,7 @@ import {
   MouseComponent,
   TweenComponent,
   SpriteSourceOptions,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import { forwardRef, Inject, OnInit, OnUpdate, Component, Entity, OnAdded, OnSetup } from '@gglib/ecs'
 import { Texture, BlendState, Color } from '@gglib/graphics'

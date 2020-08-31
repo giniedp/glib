@@ -19,13 +19,13 @@
       "path": "../graphics/tsconfig.json"
     },
     {
-      "path": "../math/tsconfig.json"
-    },
-    {
       "path": "../utils/tsconfig.json"
     },
     {
       "path": "../effects/tsconfig.json"
+    },
+    {
+      "path": "../math/tsconfig.json"
     }
   ]
 }

@@ -22,6 +22,9 @@
       "path": "../math/tsconfig.json"
     },
     {
+      "path": "../utils/tsconfig.json"
+    },
+    {
       "path": "../content/tsconfig.json"
     },
     {
@@ -35,9 +38,6 @@
     },
     {
       "path": "../render/tsconfig.json"
-    },
-    {
-      "path": "../utils/tsconfig.json"
     }
   ]
 }

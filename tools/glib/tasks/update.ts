@@ -2,35 +2,33 @@ import * as path from 'path'
 import context, { GlibPackageContext } from '../context'
 import { writeFile } from '../../utils'
 
-function updateSrcPackageJson(pkg: GlibPackageContext) {
-  return writeFile(
-    pkg.subPath('package.json'),
-    JSON.stringify(
-      {
-        name: pkg.packageName,
-        description: 'Part of the [G]glib project',
-        version: context.packageJson.version,
-        repository: context.packageJson.repository,
-        keywords: context.packageJson.keywords,
-        author: context.packageJson.author,
-        license: context.packageJson.license,
-        index: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.umd.js')),
-        module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
-        typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
-        devDependencies: pkg.glibReferences.reduce((result, peer) => {
-          result[peer] = context.packageJson.version
-          return result
-        }, {}),
-        peerDependencies: pkg.glibReferences.reduce((result, peer) => {
-          result[peer] = context.packageJson.version
-          return result
-        }, {}),
-        files: ['package.json', 'dist', 'Readme.md'],
-      },
-      null,
-      2,
-    ),
+async function updateSrcPackageJson(pkg: GlibPackageContext) {
+  const newPkgJson = JSON.stringify(
+    {
+      name: pkg.packageName,
+      description: 'Part of the [G]glib project',
+      version: context.packageJson.version,
+      repository: context.packageJson.repository,
+      keywords: context.packageJson.keywords,
+      author: context.packageJson.author,
+      license: context.packageJson.license,
+      index: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.umd.js')),
+      module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
+      typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
+      devDependencies: pkg.glibReferences.reduce((result, peer) => {
+        result[peer] = context.packageJson.version
+        return result
+      }, {}),
+      peerDependencies: pkg.glibReferences.reduce((result, peer) => {
+        result[peer] = context.packageJson.version
+        return result
+      }, {}),
+      files: ['package.json', 'dist', 'Readme.md'],
+    },
+    null,
+    2,
   )
+  return writeFile(pkg.subPath('package.json'), newPkgJson)
 }
 
 function updateSrcTsconfig(pkg: GlibPackageContext) {
@@ -68,7 +66,7 @@ function updateSpecTsconfig() {
           outDir: '../dist/cjs',
           module: 'commonjs',
           paths: {
-            '@gglib/*': ['./*']
+            '@gglib/*': ['./*'],
           },
         },
       },
@@ -155,9 +153,9 @@ function updateSrcApiExtractor(pkg: GlibPackageContext) {
   )
 }
 
-function updateSrcPackage(pkg: GlibPackageContext) {
+async function updateSrcPackage(pkg: GlibPackageContext) {
+  await updateSrcPackageJson(pkg)
   return Promise.all([
-    updateSrcPackageJson(pkg),
     updateSrcTsconfig(pkg),
     updateSpecTsconfig(),
     // updateSrcApiExtractor(pkg),

@@ -36,6 +36,13 @@ export class GlibBuildContext extends WorkspacesRootContext {
 
 export class GlibPackageContext extends WorkspacePackageContext {
   /**
+   * Gets the package name as it appers in the package.json
+   */
+  public get packageName() {
+    return `@gglib/${this.baseName}`
+  }
+
+  /**
    * Gets the UMD global name
    */
   public get globalName() {

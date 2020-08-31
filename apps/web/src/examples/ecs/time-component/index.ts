@@ -8,7 +8,7 @@ import {
   TimeComponent,
   TransformComponent,
   WASDComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import { ContentManager } from '@gglib/content'
 import { Inject, OnInit, OnUpdate, Component, OnSetup, OnAdded, Entity } from '@gglib/ecs'

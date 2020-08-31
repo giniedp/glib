@@ -13,7 +13,7 @@ import {
   WASDComponent,
   BoundingVolumeComponent,
   MeshPartComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import { Entity, Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'
 

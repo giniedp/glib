@@ -8,7 +8,7 @@ import {
   RendererComponent,
   TransformComponent,
   WASDComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import {
   Entity,

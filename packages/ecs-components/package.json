@@ -1,5 +1,5 @@
 {
-  "name": "@gglib/components",
+  "name": "@gglib/ecs-components",
   "description": "Part of the [G]glib project",
   "version": "0.6.0",
   "repository": {
@@ -14,28 +14,28 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist/bundles/components.umd.js",
-  "module": "dist/components/src/index.js",
-  "typings": "dist/components/src/index.d.ts",
+  "index": "dist/bundles/ecs-components.umd.js",
+  "module": "dist/ecs-components/src/index.js",
+  "typings": "dist/ecs-components/src/index.d.ts",
   "devDependencies": {
     "@gglib/ecs": "0.6.0",
     "@gglib/math": "0.6.0",
+    "@gglib/utils": "0.6.0",
     "@gglib/content": "0.6.0",
     "@gglib/graphics": "0.6.0",
     "@gglib/input": "0.6.0",
     "@gglib/effects": "0.6.0",
-    "@gglib/render": "0.6.0",
-    "@gglib/utils": "0.6.0"
+    "@gglib/render": "0.6.0"
   },
   "peerDependencies": {
     "@gglib/ecs": "0.6.0",
     "@gglib/math": "0.6.0",
+    "@gglib/utils": "0.6.0",
     "@gglib/content": "0.6.0",
     "@gglib/graphics": "0.6.0",
     "@gglib/input": "0.6.0",
     "@gglib/effects": "0.6.0",
-    "@gglib/render": "0.6.0",
-    "@gglib/utils": "0.6.0"
+    "@gglib/render": "0.6.0"
   },
   "files": [
     "package.json",

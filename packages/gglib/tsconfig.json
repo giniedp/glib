@@ -16,7 +16,7 @@
   ],
   "references": [
     {
-      "path": "../components/tsconfig.json"
+      "path": "../ecs-components/tsconfig.json"
     },
     {
       "path": "../content/tsconfig.json"

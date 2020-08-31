@@ -6,7 +6,7 @@ import {
   PerspectiveCameraComponent,
   RendererComponent,
   TransformComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'

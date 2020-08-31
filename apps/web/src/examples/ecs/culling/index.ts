@@ -12,7 +12,7 @@ import {
   TransformComponent,
   WASDComponent,
   BoundingVolumeComponent,
-} from '@gglib/components'
+} from '@gglib/ecs-components'
 
 import { Entity, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs'
 import { Model, LightType, ModelBuilder, buildIcosahedron, Device, TextureWrapMode, Color } from '@gglib/graphics'
