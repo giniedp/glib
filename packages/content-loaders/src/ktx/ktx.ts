@@ -1,4 +1,4 @@
-import { loader } from '@gglib/content'
+import { loader, Loader } from '@gglib/content'
 import { KTX } from './format'
 import { Texture } from '@gglib/graphics'
 
@@ -6,7 +6,7 @@ import { Texture } from '@gglib/graphics'
  * Downloads an array buffer from source and parses with the KTX parser
  * @public
  */
-export const loadKtxToKtx = loader({
+export const loadKtxToKtx: Loader<string, KTX> = loader({
   input: ['.ktx', '.ktx2', 'image/ktx2', 'image/ktx'],
   output: KTX,
   handle: async (_, context) => {
@@ -18,7 +18,7 @@ export const loadKtxToKtx = loader({
  * Converts a KTX image into Texture options
  * @public
  */
-export const loadKtxToTexture2D = loader({
+export const loadKtxToTexture2D: Loader<KTX, Texture> = loader({
   input: KTX,
   output: Texture.Texture2D,
   handle: async (ktx: KTX, context): Promise<Texture> => {
@@ -40,7 +40,7 @@ export const loadKtxToTexture2D = loader({
  * Converts a KTX image into Texture options
  * @public
  */
-export const loadKtxToTextureCube = loader({
+export const loadKtxToTextureCube: Loader<KTX, Texture> = loader({
   input: KTX,
   output: Texture.TextureCube,
   handle: async (ktx: KTX, context): Promise<Texture> => {

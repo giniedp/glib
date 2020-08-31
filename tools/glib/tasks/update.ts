@@ -99,12 +99,12 @@ function updateSrcApiExtractor(pkg: GlibPackageContext) {
   const pathToRoot = path.relative(pkg.pkgDir, context.dir)
   const pathToDist = path.relative(pkg.pkgDir, pkg.distDir())
   return writeFile(
-    pkg.distDir('api-extractor.json'),
+    pkg.subPath('api-extractor.json'),
     JSON.stringify(
       {
         $schema: 'https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json',
         projectFolder: '.',
-        mainEntryPointFilePath: '<projectFolder>/' + path.join(pathToDist, `index.d.ts`),
+        mainEntryPointFilePath: '<projectFolder>/' + path.relative(pkg.dir, pkg.tscOutDir('index.d.ts')),
         compiler: {
           tsconfigFilePath: '<projectFolder>/tsconfig.json',
         },
@@ -158,7 +158,7 @@ async function updateSrcPackage(pkg: GlibPackageContext) {
   return Promise.all([
     updateSrcTsconfig(pkg),
     updateSpecTsconfig(),
-    // updateSrcApiExtractor(pkg),
+    updateSrcApiExtractor(pkg),
     updateSrcReadme(pkg),
   ])
 }

@@ -15,7 +15,7 @@
     "@gglib/math": "^0.6.0",
     "@gglib/utils": "^0.6.0",
     "@types/mithril": "^2.0.3",
-    "html-webpack-plugin": "^4.3.0",
+    "html-webpack-plugin": "^4.4.1",
     "mithril": "^2.0.4",
     "rimraf": "^3.0.2",
     "typescript": "^4.0.2",

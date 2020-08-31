@@ -1,9 +1,9 @@
-import { loader } from '@gglib/content'
+import { loader, Loader } from '@gglib/content'
 
 /**
  * @public
  */
-export const loadJpegToHTMLImageElement = loader({
+export const loadJpegToHTMLImageElement: Loader<string, HTMLImageElement> = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: HTMLImageElement,
   handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
@@ -12,7 +12,7 @@ export const loadJpegToHTMLImageElement = loader({
 /**
  * @public
  */
-export const loadJpegToImage = loader({
+export const loadJpegToImage: Loader<string, HTMLImageElement> = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: Image,
   handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
@@ -21,7 +21,7 @@ export const loadJpegToImage = loader({
 /**
  * @public
  */
-export const loadPngToHTMLImageElement = loader({
+export const loadPngToHTMLImageElement: Loader<string, HTMLImageElement> = loader({
   input: ['.png', 'image/png'],
   output: HTMLImageElement,
   handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),
@@ -30,7 +30,7 @@ export const loadPngToHTMLImageElement = loader({
 /**
  * @public
  */
-export const loadPngToImage = loader({
+export const loadPngToImage: Loader<string, HTMLImageElement> = loader({
   input: ['.png', 'image/png'],
   output: Image,
   handle: (_, context): Promise<HTMLImageElement> => loadImage(context.source),

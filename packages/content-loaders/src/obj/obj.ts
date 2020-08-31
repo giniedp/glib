@@ -7,7 +7,7 @@ import {
   VertexLayout,
   MaterialOptions,
 } from '@gglib/graphics'
-import { loader, resolveUri } from '@gglib/content'
+import { loader, resolveUri, Loader } from '@gglib/content'
 
 import { OBJ, FaceElement, VertexTextureNormalRef } from './format'
 import { PipelineContext } from '@gglib/content'
@@ -19,7 +19,7 @@ import { addToArraySet, flattenArray } from '@gglib/utils'
  * @remarks
  * This loader consults the `OBJ` -> `ModelOptions.Options` loader if available.
  */
-export const loadObjToModelOptions = loader({
+export const loadObjToModelOptions: Loader<string, ModelOptions> = loader({
   input: ['.obj', 'application/x-obj'],
   output: Model.Options,
   handle: async (_, context): Promise<ModelOptions> => {

@@ -1,12 +1,12 @@
 import { Model, ModelBuilder, ModelOptions } from '@gglib/graphics'
-import { loader } from '@gglib/content'
+import { loader, Loader } from '@gglib/content'
 
 import { STL } from './format'
 
 /**
  * @public
  */
-export const loadStlToModelOptions = loader({
+export const loadStlToModelOptions: Loader<string, ModelOptions> = loader({
   input: '.stl',
   output: Model.Options,
   handle: async (_, context): Promise<ModelOptions> => {

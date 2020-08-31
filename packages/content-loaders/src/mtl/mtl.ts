@@ -1,12 +1,12 @@
 import { Material, MaterialOptions, ShaderEffectOptions } from '@gglib/graphics'
-import { loader, resolveUri, PipelineContext } from '@gglib/content'
+import { loader, resolveUri, PipelineContext, Loader } from '@gglib/content'
 
 import { MTL, MtlTextureData } from './format'
 
 /**
  * @public
  */
-export const loadMtlToMaterialOptions = loader({
+export const loadMtlToMaterialOptions: Loader<string, MaterialOptions> = loader({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.Options,
   handle: async (_, context): Promise<MaterialOptions> => {
@@ -20,7 +20,7 @@ export const loadMtlToMaterialOptions = loader({
  * @remarks
  * This loader consults the `MTL` -> `Material.Options` loader if available.
  */
-export const loadMtlToMaterialOptionsArray = loader({
+export const loadMtlToMaterialOptionsArray: Loader<string, MaterialOptions[]> = loader({
   input: ['.mtl', 'application/x-mtl'],
   output: Material.OptionsArray,
   handle: async (_, context): Promise<MaterialOptions[]> => {

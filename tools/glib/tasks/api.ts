@@ -14,7 +14,7 @@ import { spawn, namedTask } from '../../utils'
 
 async function runApiExtractor(pkg: GlibPackageContext) {
   return new Promise((resolve, reject) => {
-    const apiExtractorJsonPath: string = pkg.distDir('api-extractor.json')
+    const apiExtractorJsonPath: string = pkg.subPath('api-extractor.json')
 
     // Load and parse the api-extractor.json file
     const extractorConfig: ExtractorConfig = ExtractorConfig.loadFileAndPrepare(apiExtractorJsonPath)

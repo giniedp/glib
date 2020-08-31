@@ -1,5 +1,5 @@
 import { Model, ModelOptions } from '@gglib/graphics'
-import { loader, resolveUri } from '@gglib/content'
+import { loader, resolveUri, Loader } from '@gglib/content'
 
 import { GLTFDocument, GLTF } from './format'
 import { loadGltfModel } from './gltfModels'
@@ -8,7 +8,7 @@ import { GLTFReader } from './reader'
 /**
  * @public
  */
-export const loadGlbToGLTFDocument = loader({
+export const loadGlbToGLTFDocument: Loader<string, GLTFDocument> = loader({
   input: ['.glb', 'model/gltf-binary'],
   output: GLTF.Document,
   handle: async (_, context): Promise<GLTFDocument> => {
@@ -20,7 +20,7 @@ export const loadGlbToGLTFDocument = loader({
 /**
  * @public
  */
-export const loadGltfToGLTFDocument = loader({
+export const loadGltfToGLTFDocument: Loader<string, GLTFDocument> = loader({
   input: ['.gltf', 'model/gltf+json'],
   output: GLTF.Document,
   handle: async (_, context): Promise<GLTFDocument> => {
@@ -32,7 +32,7 @@ export const loadGltfToGLTFDocument = loader({
 /**
  * @public
  */
-export const loadGltfDocumentToModleOptions = loader({
+export const loadGltfDocumentToModleOptions: Loader<GLTFDocument, ModelOptions> = loader({
   input: GLTF.Document,
   output: Model.Options,
   handle: async (input: GLTFDocument, context): Promise<ModelOptions> => {

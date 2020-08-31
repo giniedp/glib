@@ -12,7 +12,7 @@ import {
 } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 
-import { PipelineContext, loader } from '@gglib/content'
+import { PipelineContext, loader, Loader } from '@gglib/content'
 
 import {
   BindMaterial as DaeBindMaterial,
@@ -30,7 +30,7 @@ import {
 /**
  * @public
  */
-export const loadDaeToColladaDocument = loader({
+export const loadDaeToColladaDocument: Loader<string, COLLADA> = loader({
   input: ['.dae', 'application/xml'],
   output: COLLADA,
   handle: async (_, context) => {
@@ -42,7 +42,7 @@ export const loadDaeToColladaDocument = loader({
 /**
  * @public
  */
-export const loadColladaDocumentToModelOptions = loader({
+export const loadColladaDocumentToModelOptions: Loader<COLLADA, ModelOptions> = loader({
   input: COLLADA,
   output: Model.Options,
   handle: async (dae: COLLADA, context): Promise<ModelOptions> => {

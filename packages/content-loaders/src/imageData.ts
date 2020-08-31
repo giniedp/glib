@@ -1,4 +1,4 @@
-import { loader } from '@gglib/content'
+import { loader, Loader } from '@gglib/content'
 
 /**
  * Gets the image data of a `.jpg` file.
@@ -7,7 +7,7 @@ import { loader } from '@gglib/content'
  * @remarks
  * Internally uses https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData
  */
-export const loadJpegToImageData = loader({
+export const loadJpegToImageData: Loader<string, ImageData> = loader({
   input: ['.jpg', '.jpeg', 'image/jpg'],
   output: ImageData,
   handle: async (_, context): Promise<ImageData> => {
@@ -22,7 +22,7 @@ export const loadJpegToImageData = loader({
  * @remarks
  * Internally uses https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/getImageData
  */
-export const loadPngToImageData = loader({
+export const loadPngToImageData: Loader<string, ImageData> = loader({
   input: ['.png', 'image/png'],
   output: ImageData,
   handle: async (_, context): Promise<ImageData> => {

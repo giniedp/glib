@@ -1,13 +1,13 @@
 import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions } from '@gglib/graphics'
 import { Quat, Vec4 } from '@gglib/math'
-import { loader, resolveUri } from '@gglib/content'
+import { loader, resolveUri, Loader } from '@gglib/content'
 
 import { MD5Mesh } from './format'
 
 /**
  * @public
  */
-export const loadMd5meshToModelOptions = loader({
+export const loadMd5meshToModelOptions: Loader<string, ModelOptions> = loader({
   input: ['.md5mesh'],
   output: Model.Options,
   handle: async (_, context): Promise<ModelOptions> => {

@@ -1,11 +1,11 @@
-import { loader } from '@gglib/content'
+import { loader, Loader } from '@gglib/content'
 import { Texture } from '@gglib/graphics'
 
 /**
  *
  * @public
  */
-export const loadWebmToHTMLVideoElement = loader({
+export const loadWebmToHTMLVideoElement: Loader<string, HTMLVideoElement> = loader({
   input: '.webm',
   output: HTMLVideoElement,
   handle: async (_, context): Promise<HTMLVideoElement> => loadVideo(context.source),
@@ -14,7 +14,7 @@ export const loadWebmToHTMLVideoElement = loader({
 /**
  * @public
  */
-export const loadMp4ToHTMLVideoElement = loader({
+export const loadMp4ToHTMLVideoElement: Loader<string, HTMLVideoElement> = loader({
   input: '.mp4',
   output: HTMLVideoElement,
   handle: async (_, context): Promise<HTMLVideoElement> => loadVideo(context.source),
