@@ -6,12 +6,13 @@ import {
   SpriteComponent,
   TransformComponent,
   MouseComponent,
-  SpriteData,
+  TweenComponent,
+  SpriteSourceOptions,
 } from '@gglib/components'
 
 import { forwardRef, Inject, OnInit, OnUpdate, Component, Entity, OnAdded, OnSetup } from '@gglib/ecs'
-import { Color, Texture, BlendState } from '@gglib/graphics'
-import { Mat4, Rect } from '@gglib/math'
+import { Texture, BlendState, Color } from '@gglib/graphics'
+import { Mat4, Rect, easeInCubic } from '@gglib/math'
 import { CameraData, BasicRenderStep } from '@gglib/render'
 import { Events } from '@gglib/utils'
 import { ContentManager } from '@gglib/content'
@@ -25,9 +26,11 @@ class AssetsComponent extends Events implements OnInit {
   public content: ContentManager
 
   // The only content this game needs is a sprite sheet.
-  public sprites: Map<string, SpriteData> = new Map()
+  public sprites: Map<string, SpriteSourceOptions> = new Map()
+  public background: Texture
 
   public async onInit() {
+    this.background = await this.content.load('/assets/textures/backgrounds/colored_castle.png', Texture.Texture2D)
     const [texture, sprites] = await Promise.all([
       this.content.load('/assets/textures/puzzle/sheet.png', Texture.Texture2D),
       this.content.downloadJSON('/assets/textures/puzzle/sheet.json'),
@@ -164,9 +167,9 @@ class LogicComponent implements OnUpdate {
   }
 
   private resetField() {
-    for (const entity of this.field.entity.children) {
-      entity.get(GameObjectComponent).isVisible = true
-    }
+    // for (const entity of this.field.entity.children) {
+    //   entity.get(GameObjectComponent).isVisible = true
+    // }
   }
 
   private resetBall() {
@@ -208,32 +211,32 @@ class LogicComponent implements OnUpdate {
     }
     for (const entity of this.field.entity.children) {
       const block = entity.get(GameObjectComponent)
-      if (!block.isVisible || !block.rect.intersects(ball.rect)) {
+      if (!block.isActive || !block.rect.intersects(ball.rect)) {
         continue
       }
-      block.isVisible = false
-      // hit from right side
-      if (ball.rect.x <= block.rect.xEnd && ball.rect.xEnd > block.rect.xEnd) {
-        ball.dx = Math.abs(ball.dx)
-      }
-      // hit from left side
-      if (ball.rect.xEnd >= block.rect.x && ball.rect.x < block.rect.x) {
-        ball.dx = -Math.abs(ball.dx)
-      }
-      // hot from below
-      if (ball.rect.yEnd >= block.rect.y && ball.rect.y < block.rect.y) {
+      block.kill()
+      if (ball.dy > 0 && ball.rect.yEnd >= block.rect.y && ball.rect.y < block.rect.y) {
+        // hot from below
         ball.dy = -Math.abs(ball.dy)
       }
-      // hot from above
-      if (ball.rect.y <= block.rect.yEnd && ball.rect.yEnd > block.rect.yEnd) {
+      else if (ball.dy < 0 && ball.rect.y <= block.rect.yEnd && ball.rect.yEnd > block.rect.yEnd) {
+        // hot from above
         ball.dy = Math.abs(ball.dy)
+      }
+      else if (ball.dx < 0 && ball.rect.x <= block.rect.xEnd && ball.rect.xEnd > block.rect.xEnd) {
+        // hit from right side
+        ball.dx = Math.abs(ball.dx)
+      }
+      else if (ball.dx > 0 && ball.rect.xEnd >= block.rect.x && ball.rect.x < block.rect.x) {
+        // hit from left side
+        ball.dx = -Math.abs(ball.dx)
       }
       break
     }
   }
 
   private checkWinOrLooseCondition() {
-    const fieldCleared = this.field.entity.children.every((e) => !e.get(GameObjectComponent).isVisible)
+    const fieldCleared = this.field.entity.children.every((e) => !e.get(GameObjectComponent).isActive)
     if (fieldCleared) {
       this.game.state = 'win'
     } else if (this.ball.rect.yEnd < 0) {
@@ -245,11 +248,11 @@ class LogicComponent implements OnUpdate {
 // A very basic game object that implements all we actually
 // need for all main objects.
 @Component({
-  install: [SceneryLinkComponent, TransformComponent, SpriteComponent],
+  install: [SceneryLinkComponent, TransformComponent, SpriteComponent, TweenComponent],
 })
 class GameObjectComponent implements OnSetup<any>, OnUpdate {
   @Inject(SpriteComponent)
-  private renderable: SpriteComponent
+  private sprite: SpriteComponent
 
   @Inject(TransformComponent)
   private transform: TransformComponent
@@ -260,41 +263,74 @@ class GameObjectComponent implements OnSetup<any>, OnUpdate {
   @Inject(BreakoutGame, { from: 'root' })
   private game: BreakoutGame
 
+  @Inject(TweenComponent)
+  private tween: TweenComponent
+
   public rect = new Rect(0, 0, 1, 1)
   public z: number = 0
-  public sprite: string
+  public spriteName: string
   public isVisible = true
+  public isActive = true
   public dx = 0
   public dy = 0
+  private killProgress = 0
 
   public onSetup(options: { x?: number; y?: number; width: number; height: number; sprite: string }) {
     this.rect.x = options.x || 0
     this.rect.y = options.y || 0
     this.rect.width = options.width
     this.rect.height = options.height
-    this.sprite = options.sprite
+    this.spriteName = options.sprite
   }
 
   public onUpdate(dt: number) {
+    if (this.game.state === 'reset') {
+      this.tween.cancelAll()
+      this.isVisible = true
+      this.isActive = true
+      this.killProgress = 0
+    }
     if (this.game.state === 'running') {
       this.rect.x += (this.dx * 20 * dt) / 1000
       this.rect.y += (this.dy * 20 * dt) / 1000
     }
     if (this.isVisible) {
-      this.renderable.width = this.rect.width
-      this.renderable.height = this.rect.height
-      this.renderable.sprite = this.assets.sprites.get(this.sprite)
+      this.sprite.setSource(this.assets.sprites.get(this.spriteName))
+      this.sprite.pivotX = 0.5
+      this.sprite.pivotY = 0.5
+      this.sprite.width = (1 - this.killProgress) * this.rect.width
+      this.sprite.height = (1 - this.killProgress) * this.rect.height
+      this.sprite.color = Color.xyzw(1, 1, 1, 1 - this.killProgress)
     } else {
-      this.renderable.sprite = null
+      this.sprite.setSource(null)
     }
-    this.transform.setPosition(this.rect.x, this.rect.y, this.z)
+
+    this.transform.setPosition(this.rect.getX(0.5), this.rect.getY(0.5) + this.killProgress, this.z)
+  }
+
+  public kill() {
+    if (!this.isActive) {
+      return
+    }
+    this.isActive = false
+    this.tween
+      .start({
+        from: [0],
+        to: [1],
+        durationInMs: 300,
+        ease: easeInCubic,
+      })
+      .onUpdateEvent((tween) => {
+        this.killProgress = tween.values[0]
+        this.isVisible = tween.progress < 1
+      })
   }
 }
 
 @Component({
   install: [SpriteComponent, TransformComponent],
 })
-class FieldComponent implements OnInit {
+class FieldComponent implements OnInit, OnUpdate {
   public name = 'Field'
 
   @Inject(BreakoutGame, { from: 'root' })
@@ -302,6 +338,12 @@ class FieldComponent implements OnInit {
 
   @Inject(Entity)
   public entity: Entity
+
+  @Inject(SpriteComponent)
+  public sprite: SpriteComponent
+
+  @Inject(AssetsComponent, { from: 'root' })
+  public assets: AssetsComponent
 
   public async onInit(e: Entity) {
     const cols = 10
@@ -321,6 +363,15 @@ class FieldComponent implements OnInit {
           })
         })
       }
+    }
+  }
+
+  public onUpdate() {
+    if (!this.sprite.texture) {
+      this.sprite.texture = this.assets.background
+      this.sprite.width = this.game.width
+      this.sprite.height = this.game.width
+      this.sprite.pivotY = 0.25
     }
   }
 }

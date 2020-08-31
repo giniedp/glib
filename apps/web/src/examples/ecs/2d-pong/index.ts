@@ -151,7 +151,7 @@ class PaddleComponent implements OnInit, OnUpdate, OnSetup<{ isLeft: boolean }> 
   public name = 'Paddle'
 
   @Inject(SpriteComponent)
-  public renderable: SpriteComponent
+  public sprite: SpriteComponent
 
   @Inject(TransformComponent)
   public transform: TransformComponent
@@ -174,12 +174,10 @@ class PaddleComponent implements OnInit, OnUpdate, OnSetup<{ isLeft: boolean }> 
   }
 
   public async onInit() {
-    this.renderable.sprite = {
-      texture: this.game.whitePixel,
-    }
-    this.renderable.width = this.w
-    this.renderable.height = this.h
-    this.renderable.color = Color.White.rgba
+    this.sprite.texture = this.game.whitePixel
+    this.sprite.width = this.w
+    this.sprite.height = this.h
+    this.sprite.color = Color.White.rgba
   }
 
   public onUpdate() {
@@ -242,7 +240,7 @@ class BallComponent implements OnInit, OnUpdate {
   public transform: TransformComponent
 
   public async onInit() {
-    this.sprite.sprite = { texture: this.game.whitePixel }
+    this.sprite.texture = this.game.whitePixel
     this.sprite.width = 1
     this.sprite.height = 1
     this.sprite.color = Color.White.rgba
@@ -293,9 +291,7 @@ class FieldComponent implements OnInit {
   public transform: TransformComponent
 
   public async onInit() {
-    this.renderable.sprite = {
-      texture: this.game.whitePixel,
-    }
+    this.renderable.texture = this.game.whitePixel
     this.renderable.width = this.game.width
     this.renderable.height = this.game.height
     this.renderable.color = Color.CornflowerBlue.rgba

@@ -7,6 +7,7 @@ import {
   RendererComponent,
   TransformComponent,
 } from '@gglib/components'
+import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
 import { Entity, Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'
