@@ -517,15 +517,15 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
     }
 
     this.collectTiles(sx0, sy0, sw0, sh0, dx0, dy0, dw0, dh0, false, false)
-    this.collectTiles(sx1, sy0, sw1, sh0, dx1, dy0, dw1, dh0, true, false)
+    this.collectTiles(sx1, sy0, sw1, sh0, dx1, dy0, dw1, dh0, this.enableTiling, false)
     this.collectTiles(sx2, sy0, sw2, sh0, dx2, dy0, dw2, dh0, false, false)
 
-    this.collectTiles(sx0, sy1, sw0, sh1, dx0, dy1, dw0, dh1, false, true)
-    this.collectTiles(sx1, sy1, sw1, sh1, dx1, dy1, dw1, dh1, true, true)
-    this.collectTiles(sx2, sy1, sw2, sh1, dx2, dy1, dw2, dh1, false, true)
+    this.collectTiles(sx0, sy1, sw0, sh1, dx0, dy1, dw0, dh1, false, this.enableTiling)
+    this.collectTiles(sx1, sy1, sw1, sh1, dx1, dy1, dw1, dh1, this.enableTiling, this.enableTiling)
+    this.collectTiles(sx2, sy1, sw2, sh1, dx2, dy1, dw2, dh1, false, this.enableTiling)
 
     this.collectTiles(sx0, sy2, sw0, sh2, dx0, dy2, dw0, dh2, false, false)
-    this.collectTiles(sx1, sy2, sw1, sh2, dx1, dy2, dw1, dh2, true, false)
+    this.collectTiles(sx1, sy2, sw1, sh2, dx1, dy2, dw1, dh2, this.enableTiling, false)
     this.collectTiles(sx2, sy2, sw2, sh2, dx2, dy2, dw2, dh2, false, false)
   }
 
