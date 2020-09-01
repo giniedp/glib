@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import * as Prism from 'prismjs'
 const loadLanguages = require('prismjs/components/') // tslint:line: no-submodule-imports
 loadLanguages(['typescript', 'glsl'])
@@ -47,6 +46,6 @@ patch('table_open', (tokens: any[], idx: number) => {
   tokens[idx].attrJoin('class', 'table table-borderless mb-4')
 })
 
-export function convertMarkdownToHtml(file: string) {
-  return md.render(fs.readFileSync(file).toString())
+export function transpileMd(content: string) {
+  return md.render(content)
 }

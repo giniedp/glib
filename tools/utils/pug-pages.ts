@@ -1,21 +1,47 @@
 
 import * as fs from 'fs'
-import * as frontMatter from 'parser-front-matter'
 import * as path from 'path'
-import { Transform } from 'stream'
-import vinyl from 'vinyl'
-import { PrimaryExpression } from 'typescript'
+import * as frontMatter from 'parser-front-matter'
+import { Transform, TransformCallback } from 'stream'
+import { default as File } from 'vinyl'
 import * as Prism from 'prismjs'
+import { transpileMd } from './transpile-md'
 
 export interface PugPagesOptions {
-  [key: string]: any
+  // [key: string]: any
   cwd?: string
   pug?: any
   compileOptions?: any
+  augmentMetadata?: (data: PugPageMeta) => PugPageMeta
 }
 
-function readData(base: string, dir: string, name: string) {
-  const filePath = path.join(dir, name)
+export interface PugPageMeta {
+  aliases?: string[]
+  createdAt?: string
+  updatedAt?: string
+  expiresAt?: string
+  publishAt?: string
+  draft?: boolean
+  description?: string
+  keywords?: string[]
+  type?: string
+  slug?: string
+  title?: string
+  linkTitle?: string
+  weight?: string
+  path?: string
+  original?: string
+  children?: PugPageMeta[]
+  template?: string
+  content?: string
+}
+
+interface ContentWithFrontmatter {
+  content: string
+  meta: PugPageMeta
+}
+
+function readFrontMatter(filePath: string, rootDir: string): ContentWithFrontmatter {
   const stats = (() => {
     try {
       return fs.lstatSync(filePath)
@@ -23,116 +49,136 @@ function readData(base: string, dir: string, name: string) {
       return null
     }
   })()
-
   if (!stats) {
     return null
   }
   if (stats.isDirectory()) {
-    return readData(base, path.join(dir, name), 'index.pug')
+    return readFrontMatter(path.join(filePath, 'index.pug'), rootDir)
   }
   if (!stats.isFile()) {
     return null
   }
-  const content = fs.readFileSync(filePath)
-  if (!content) {
+  const fileContent = fs.readFileSync(filePath)
+  if (!fileContent) {
     return null
   }
-  const fm = frontMatter.parseSync({ contents: content })
-  const result = fm.data
-  result.aliases = result.aliases || []
-  result.createdAt = result.createdAt || stats.ctime.toISOString()
-  result.updatedAt = result.updatedAt || stats.mtime.toISOString()
-  // result.expiresAt = result.expiresAt
-  // result.publishAt = result.publishAt
-  result.draft = result.draft || false
-  result.description = result.description || ''
-  result.keywords = result.keywords || []
-  result.type = path.basename(dir)
-  result.slug = result.slug || path.basename(name, path.extname(name))
-  if (result.slug === 'index') {
-    result.slug = ''
+  const fm = frontMatter.parseSync({ contents: fileContent })
+  const meta = fm.data as PugPageMeta
+  meta.aliases = meta.aliases || []
+  meta.createdAt = meta.createdAt || stats.ctime.toISOString()
+  meta.updatedAt = meta.updatedAt || stats.mtime.toISOString()
+  // meta.expiresAt = meta.expiresAt
+  // meta.publishAt = meta.publishAt
+  meta.draft = meta.draft || false
+  meta.description = meta.description || ''
+  meta.keywords = meta.keywords || []
+  // meta.type = path.basename(dirName)
+  meta.slug = meta.slug || path.basename(filePath, path.extname(filePath))
+  if (meta.slug === 'index') {
+    meta.slug = ''
   }
-  result.title = result.title || result.slug.replace(/-/g, ' ')
-  result.linkTitle = result.linkTitle || result.title
-  // result.weight = result.weight
-  result.path = '/' + path.relative(base, path.join(dir, result.slug))
-  result.original = path.join(dir, name)
-  return {
-    meta: fm.data,
-    content: fm.content,
+  meta.title = meta.title || meta.slug.replace(/-/g, ' ')
+  meta.linkTitle = meta.linkTitle || meta.title
+  // meta.weight = meta.weight
+  meta.path = '/' + path.relative(rootDir, path.join(path.dirname(filePath), meta.slug))
+  meta.original = filePath
+  if (meta.template) {
+    meta.template = path.join(path.dirname(filePath), meta.template)
   }
+  return { meta, content: fm.content }
 }
 
-function childrenOf(filePath: string, base: string) {
+function readChildren(filePath: string, rootDir: string) {
   const fileDir = path.dirname(filePath)
   const fileName = path.basename(filePath)
-
   return fs.readdirSync(fileDir)
     .filter((it) => it !== fileName)
-    .map((it) => readData(base, fileDir, it))
-    .map((it) => it ? it.meta : null)
+    .map((it) => readFrontMatter(path.join(fileDir, it), rootDir)?.meta)
+    .filter((it) => /\.pug/.test(it.original))
     .filter((it) => it && !it.draft)
-    .filter((it) => /\.pug$/.test(it.original))
-    .sort((a, b) => {
-      if (a.weight && !b.weight) {
-        return -1
-      }
-      if (b.weight && !a.weight) {
-        return 1
-      }
-      if (a.weight === b.weight) {
-        return String(a.title).localeCompare(String(b.title))
-      }
-      return String(a.weight).localeCompare(String(b.weight))
-    })
+    .sort((a, b) => String(a.weight || "").localeCompare(String(b.weight || "")))
 }
 
-export function pugPage(options: PugPagesOptions, file: any, enc: string, cb: any) {
+export function pugPage(options: PugPagesOptions, file: File, enc: string, cb: TransformCallback) {
   const fileDir = path.dirname(file.path)
   const fileName = path.basename(file.path)
-  if (!/\.pug$/.test(file.path)) {
+  const data = readFrontMatter(path.join(fileDir, fileName), file.base)
+  const meta = options.augmentMetadata?.(data.meta)
+  if (!meta || meta?.draft) {
     cb(null, file)
     return
   }
-  const data = readData(file.base, fileDir, fileName)
-  if (!data || data.draft) {
+  let content: string
+  if (/\.md$/.test(file.path) && meta.template) {
+    content = handlePug({
+      ...options,
+      rootDir: file.base,
+      templatePath: meta.template,
+      meta: {
+        ...meta,
+        content: transpileMd(data.content)
+      },
+    })
+  }
+  if (/\.pug$/.test(file.path)) {
+    content = handlePug({
+      ...options,
+      rootDir: file.base,
+      templatePath: file.path,
+      templateSource: data.content,
+      meta: meta,
+    })
+  }
+  if (!content) {
     cb(null, file)
     return
   }
+  cb(null, new File({
+    cwd: file.cwd,
+    base: file.base,
+    path: path.join(fileDir, path.basename(fileName, path.extname(fileName)) + '.html'),
+    contents: Buffer.from(content),
+  }))
+}
 
+interface HandlePugOptions extends PugPagesOptions {
+  templatePath: string
+  templateSource?: string
+  rootDir: string
+  meta: PugPageMeta
+}
+function handlePug(options: HandlePugOptions): string {
+  const templatePath = options.templatePath
+  const templateSource = options.templateSource ?? fs.readFileSync(templatePath)
+  const metadata = options.meta
   const pug = options.pug || require('pug')
   const cwd = options.cwd || process.cwd()
   const compileOptions = options.compileOptions || {}
-  const locals = typeof compileOptions.locals === 'function' ? compileOptions.locals(file.path) : compileOptions.locals || {}
-
-  if (fileName === 'index.pug') {
-    data.meta.children = childrenOf(file.path, file.base)
+  const locals = {
+    ...(typeof compileOptions.locals === 'function' ? compileOptions.locals(templatePath) : compileOptions.locals || {})
   }
-
-  const template = pug.compile(data.content, {
-    filename: file.path,
-    basedir: cwd,
+  const template = pug.compile(templateSource, {
     doctype: 'html',
     pretty: true,
+    basedir: cwd,
+    ...compileOptions,
     filters: {
       highlight: prism,
-      ...(options?.filters || {}),
+      ...(compileOptions.filters || {}),
     },
-    ...compileOptions,
+    filename: templatePath,
+
   })
-  const content = template({
+  return template({
     ...locals,
     ...{
-      meta: data.meta,
-      childrenOf: (child) => childrenOf(child.original, file.base),
+      meta: metadata,
+      children: () => {
+        return readChildren(metadata.original, options.rootDir)
+      },
+      childrenOf: (child: PugPageMeta) => readChildren(child.original, options.rootDir),
     },
   })
-  cb(null, new vinyl({
-    cwd: file.cwd,
-    base: file.base,
-    path: path.join(file.base, data.meta.path, 'index.html'),
-    contents: Buffer.from(content),
-  }))
 }
 
 export function pugPages(options: PugPagesOptions) {

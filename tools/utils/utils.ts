@@ -29,3 +29,7 @@ export async function copyFileWithCreateDir(src: string, dest: string) {
   }
   return copyFile(src, dest)
 }
+
+export function replaceExtName(filePath: string, extName: string) {
+  return path.join(path.dirname(filePath), path.basename(filePath, path.extname(filePath))) + extName
+}

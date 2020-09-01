@@ -7,9 +7,9 @@ import * as path from 'path'
 import { Transform } from 'stream'
 import vinyl = require('vinyl')
 
-import { dest, series, src, task, parallel } from 'gulp'
+import { dest, src, parallel } from 'gulp'
 import project, { GlibPackageContext } from '../context'
-// import { convertMarkdownToHtml } from '../../gulp/plugins/transpile-md'
+
 import { spawn, namedTask } from '../../utils'
 
 async function runApiExtractor(pkg: GlibPackageContext) {
@@ -36,49 +36,14 @@ async function runApiExtractor(pkg: GlibPackageContext) {
   })
 }
 
-// project.glibPackages.forEach((pkg) => {
-//   task(`glib:api:${pkg.baseName}`, () => runApiExtractor(pkg))
-// })
-
 export const api = parallel(
   ...project.glibPackages.map((pkg) => namedTask(pkg.packageName, () => runApiExtractor(pkg))),
 )
 
-// function mdToHtml() {
-//   const template = require('pug').compile('extends /_layouts/_page\nblock content\n  #docs-page.container CONTENT', {
-//     filename: 'template.pug',
-//     basedir: project.pageSrc,
-//     doctype: 'html',
-//     pretty: true,
-//   })({
-//     project: project,
-//     assetPath: (asset: string) => asset,
-//   })
-
-//   src([
-//     'api/docs/*.md',
-//   ])
-//     .pipe(new Transform({
-//       objectMode: true,
-//       transform: function (file: any, encoding, cb) {
-//         cb(null, new vinyl({
-//           cwd: file.cwd,
-//           base: file.base,
-//           path: path.join(path.dirname(file.path), path.basename(file.path, '.md')) + '.html',
-//           contents: Buffer.from(template.replace(/CONTENT/, convertMarkdownToHtml(file.path))),
-//         }))
-//       },
-//       flush: (cb) => cb(),
-//     }))
-//     .pipe(dest(path.join(process.cwd(), 'tmp')))
-// }
-
-// export function docs() {
-//   return spawn({
-//     cmd: './node_modules/.bin/api-documenter markdown -i api -o api/docs',
-//     shell: true,
-//     stdio: 'inherit',
-//   }).then(() => {
-//     mdToHtml()
-//   })
-// }
+export async function docs() {
+  return spawn({
+    cmd: 'api-documenter markdown -i api -o apps/web/src/docs/api',
+    shell: true,
+    stdio: 'inherit',
+  })
+}

@@ -1,38 +1,26 @@
 import * as fs from 'fs'
-import * as path from 'path'
-import { Transform, TransformOptions } from 'stream'
 import * as ts from 'typescript'
-import vinyl from 'vinyl'
-import glib from '../glib/context'
+import glib from 'glib/context'
+import { Transform } from 'stream'
+import { default as File } from 'vinyl'
+import { replaceExtName } from '@tools/utils'
 
-export function transform(options: TransformOptions) {
+export function gulpTranspileTs() {
   return new Transform({
     objectMode: true,
-    ...options,
-  })
-}
-
-export function pugPageTS() {
-  return new Transform({
-    objectMode: true,
-    transform: function (file: any, encoding, cb) {
-      if (path.extname(file.path) === '.ts') {
-        this.push(
-          new vinyl({
-            cwd: file.cwd,
-            base: file.base,
-            path: path.join(path.dirname(file.path), path.basename(file.path, '.ts')) + '.js',
-            contents: Buffer.from(transpileTsFile(file.path)),
-          }),
-        )
-      }
-      cb(null, file)
+    transform: (file, encoding, cb) => {
+      cb(null, new File({
+        cwd: file.cwd,
+        base: file.base,
+        path: replaceExtName(file.path, ".js"),
+        contents: Buffer.from(transpileTs(file.path)),
+      }))
     },
-    flush: (cb) => cb(null, null),
+    flush: (cb) => cb(),
   })
 }
 
-function transpileTsFile(file: string) {
+export function transpileTs(file: string) {
   const out = ts.transpileModule(fs.readFileSync(file).toString(), {
     reportDiagnostics: true,
     transformers: {
@@ -54,21 +42,6 @@ function transpileTsFile(file: string) {
       moduleResolution: ts.ModuleResolutionKind.NodeJs,
     },
   })
-
-  if (out.diagnostics) {
-    for (const it of out.diagnostics) {
-      if (typeof it.messageText === 'string') {
-        console.warn(it.messageText)
-      } else if (it.messageText) {
-        console.warn(JSON.stringify(it.messageText, null, 2))
-        // let chain = it.messageText
-        // while (chain) {
-        //   console.warn(chain.messageText)
-        //   chain = chain.next
-        // }
-      }
-    }
-  }
 
   // TODO: remove replacer
   return out.outputText

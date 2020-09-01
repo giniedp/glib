@@ -5,6 +5,7 @@
   "description": "A Web GL Framework",
   "scripts": {
     "ws": "yarn workspace",
+    "g": "yarn gulp",
     "tasks": "gulp -T",
     "glib:update": "gulp glib:update",
     "glib:build": "gulp glib:build",

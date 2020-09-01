@@ -1,6 +1,6 @@
 import { watch as gulpWatch, series } from 'gulp'
 import manifest from '../manifest'
-import { scss, pages, build, assets } from './build'
+import { scss, pages, build, assets, scripts } from './build'
 import { namedTask } from '@tools/utils'
 import { FSWatcher } from 'fs'
 
@@ -27,6 +27,11 @@ export const watch = series(
         manifest.assets,
         watchOptions,
         assets,
+      ))
+      watched.push(gulpWatch(
+        manifest.scripts,
+        watchOptions,
+        scripts,
       ))
 
       function exit() {

@@ -1,12 +1,13 @@
-import { dest, src, series } from 'gulp'
+import { dest, src, parallel } from 'gulp'
 import gulpSass from 'gulp-sass'
 import * as path from 'path'
-import { pugPages, pugPageTS } from '@tools/utils'
-import manifest from "../manifest"
+import { pugPages, PugPageMeta } from '@tools/utils'
+import manifest from '../manifest'
+import { gulpTranspileTs } from './utils'
+import minimatch from 'minimatch'
 
 export function assets() {
-  return src(manifest.assets, { cwd: manifest.cwd, allowEmpty: true })
-    .pipe(dest(path.join(manifest.dist, "assets")))
+  return src(manifest.assets, { cwd: manifest.cwd, allowEmpty: true }).pipe(dest(path.join(manifest.dist, 'assets')))
 }
 
 export function scss() {
@@ -21,11 +22,23 @@ export function scss() {
     .pipe(dest(manifest.dist))
 }
 
+export function scripts() {
+  return src(manifest.scripts, { cwd: manifest.cwd })
+    .pipe(gulpTranspileTs())
+    .pipe(dest(manifest.dist))
+}
+
 export function pages() {
   return src(manifest.pages, { cwd: manifest.cwd })
-    .pipe(pugPageTS())
     .pipe(
       pugPages({
+        cwd: manifest.cwd,
+        augmentMetadata: (meta: PugPageMeta): PugPageMeta => {
+          if (minimatch(meta.original, path.join(manifest.src, 'docs', 'api', '*.md'))) {
+            meta.template = path.join(manifest.src, '_layouts', '_api.pug')
+          }
+          return meta
+        },
         compileOptions: {
           pretty: true,
           basedir: manifest.src,
@@ -40,7 +53,7 @@ export function pages() {
                   path.dirname(file.replace(manifest.cwd, manifest.dist)),
                   path.join(manifest.dist, asset),
                 )
-              }
+              },
             }
           },
         },
@@ -49,4 +62,4 @@ export function pages() {
     .pipe(dest(manifest.dist))
 }
 
-export const build = series(scss, pages, assets)
+export const build = parallel(assets, scss, scripts, pages)

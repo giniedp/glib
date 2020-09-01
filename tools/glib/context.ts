@@ -56,7 +56,7 @@ export class GlibPackageContext extends WorkspacePackageContext {
       this.baseName
         .split(/[\/\\-]/)
         .map((it) => it[0].toUpperCase() + it.substr(1))
-        .join('.')
+        .join('')
     )
   }
 
