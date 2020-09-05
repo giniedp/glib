@@ -17,9 +17,9 @@ const program = device.createProgram({
 const vertices = device.createVertexBuffer({
   layout: {
     // The layout of `vPosition` stays unchanged
-    vPosition: { type: 'float32', offset: 0, elements: 3  },
+    vPosition: { type: 'float', offset: 0, elements: 3  },
     // The `vTexture` specifies the layout of the texture coordinates
-    vTexture: { type: 'float32', offset: 12, elements: 2  },
+    vTexture: { type: 'float', offset: 12, elements: 2  },
   },
   data: [
     -0.5, -0.5, 0.0,   0, 1,
@@ -31,7 +31,7 @@ const vertices = device.createVertexBuffer({
 
 // Create the index buffer.
 const indices = device.createIndexBuffer({
-  dataType: 'uint16',
+  dataType: 'ushort',
   data: [0, 1, 2, 1, 2, 3],
 })
 

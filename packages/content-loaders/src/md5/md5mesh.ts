@@ -17,17 +17,17 @@ export const loadMd5meshToModelOptions: Loader<string, ModelOptions> = loader({
       layout: {
         position: {
           offset: 0,
-          type: 'float32',
+          type: 'float',
           elements: 3,
         },
         normal: {
           offset: 20,
-          type: 'float32',
+          type: 'float',
           elements: 3,
         },
         texture: {
           offset: 12,
-          type: 'float32',
+          type: 'float',
           elements: 2,
         },
       },

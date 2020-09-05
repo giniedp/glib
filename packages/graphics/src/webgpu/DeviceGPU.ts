@@ -382,7 +382,7 @@ export class DeviceGPU extends Device<any> {
         height: displayHeight,
         generateMipmap: false,
         pixelFormat: 'RGBA',
-        pixelType: 'uint8',
+        pixelType: 'byte',
       }))
       this.set('mainDepth', this.createDepthBuffer({
         width: displayWidth,
@@ -532,7 +532,7 @@ export class DeviceGPU extends Device<any> {
    */
   public createIndexBuffer(options: BufferOptions): BufferGPU {
     options.type = 'IndexBuffer'
-    options.dataType = options.dataType || 'uint16'
+    options.dataType = options.dataType || 'ushort'
     return new BufferGPU(this, options)
   }
 

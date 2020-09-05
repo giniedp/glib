@@ -10,13 +10,13 @@ const formatLookup: { [k: number]: string } = {
   [PixelFormat.RGBA]: 'rgba',
 }
 const typeLookup: { [k: string]: string } = {
-  [DataType.int8]: '8sint',
-  [DataType.uint8]: '8uint',
-  [DataType.int16]: '16sint',
-  [DataType.uint16]: '16uint',
-  [DataType.int32]: '32sint',
-  [DataType.uint32]: '32uint',
-  [DataType.float32]: '32float',
+  [DataType.byte]: '8sint',
+  [DataType.ubyte]: '8uint',
+  [DataType.short]: '16sint',
+  [DataType.ushort]: '16uint',
+  [DataType.int]: '32sint',
+  [DataType.uint]: '32uint',
+  [DataType.float]: '32float',
 }
 
 export function toTextureFormat(f: PixelFormat, t: DataType, normalized: boolean = true, srgb: boolean = false): GPUTextureFormat {

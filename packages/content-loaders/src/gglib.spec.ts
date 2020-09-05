@@ -382,7 +382,7 @@ describe('content/loader/native', () => {
             vertexBuffer: {
               layout: {
                 position: {
-                  type: 'float32', offset: 0, elements: 3,
+                  type: 'float', offset: 0, elements: 3,
                 },
               },
               data: [

@@ -1,5 +1,5 @@
 import { BinaryReader } from '@gglib/utils'
-import { GLConst, TextureOptions } from '@gglib/graphics'
+import { GLConst, TextureOptions, DataType, PixelFormat, SurfaceFormat } from '@gglib/graphics'
 
 export interface TGAHeader {
   idLength: number
@@ -198,8 +198,8 @@ export class TGA {
         return {
           source: this.decode_gray8('ui8'),
           // TODO: R8 with RED is invalid in webgl 2, why?
-          pixelFormat: 'LUMINANCE',
-          pixelType: 'uint8',
+          pixelFormat: PixelFormat.LUMINANCE,
+          pixelType: DataType.ubyte,
           width: this.width,
           height: this.height
         }
@@ -207,9 +207,9 @@ export class TGA {
       if (pixelDepth === 16) {
         return {
           source: this.decode_gray16('f32'),
-          surfaceFormat: 'R32F',
-          pixelFormat: 'RED',
-          pixelType: 'float32',
+          surfaceFormat: SurfaceFormat.R32F,
+          pixelFormat: PixelFormat.RED,
+          pixelType: DataType.float,
           width: this.width,
           height: this.height
         }
@@ -221,24 +221,24 @@ export class TGA {
         case 2:
           return {
             source: this.decode_cm8('i5551'),
-            pixelFormat: 'RGBA',
-            pixelType: 'uint16_5_5_5_1',
+            pixelFormat: PixelFormat.RGBA,
+            pixelType: DataType.ushort_5_5_5_1,
             width: this.width,
             height: this.height
           }
         case 3:
           return {
             source: this.decode_cm8('ui888'),
-            pixelFormat: 'RGB',
-            pixelType: 'uint8',
+            pixelFormat: PixelFormat.RGB,
+            pixelType: DataType.ubyte,
             width: this.width,
             height: this.height
           }
         case 4:
           return {
             source: this.decode_cm8('ui8888'),
-            pixelFormat: 'RGBA',
-            pixelType: 'uint8',
+            pixelFormat: PixelFormat.RGBA,
+            pixelType: DataType.ubyte,
             width: this.width,
             height: this.height
           }
@@ -247,8 +247,8 @@ export class TGA {
     if (pixelDepth === 16) {
       return {
         source: this.decode_rgba16('i5551'),
-        pixelFormat: 'RGBA',
-        pixelType: 'uint16_5_5_5_1',
+        pixelFormat: PixelFormat.RGBA,
+        pixelType: DataType.ushort_5_5_5_1,
         width: this.width,
         height: this.height
       }
@@ -256,8 +256,8 @@ export class TGA {
     if (pixelDepth === 24) {
       return {
         source: this.decode_rgb24('ui888'),
-        pixelFormat: 'RGB',
-        pixelType: 'uint8',
+        pixelFormat: PixelFormat.RGB,
+        pixelType: DataType.ubyte,
         width: this.width,
         height: this.height
       }
@@ -265,8 +265,8 @@ export class TGA {
     if (pixelDepth === 32) {
       return {
         source: this.decode_rgba32('ui8888'),
-        pixelFormat: 'RGBA',
-        pixelType: 'uint8',
+        pixelFormat: PixelFormat.RGBA,
+        pixelType: DataType.ubyte,
         width: this.width,
         height: this.height
       }

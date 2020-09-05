@@ -23,7 +23,7 @@ const texture = device.createTexture({
   width: 2,
   height: 2,
   pixelFormat: 'RGBA',
-  pixelType: 'uint8',
+  pixelType: 'ubyte',
   source: [
     0xFF, 0x00, 0x00, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF,

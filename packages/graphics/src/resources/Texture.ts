@@ -187,7 +187,7 @@ export abstract class Texture {
   /**
    * Indicates the data type of the pixel elements
    */
-  public readonly pixelType: DataType = DataType.uint8
+  public readonly pixelType: DataType = DataType.ubyte
 
   /**
    * Indicates the texture type

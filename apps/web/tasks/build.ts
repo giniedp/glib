@@ -11,7 +11,7 @@ export function assets() {
 }
 
 export function scss() {
-  return src(manifest.styles, { cwd: manifest.cwd })
+  return src(manifest.styles.build, { cwd: manifest.cwd })
     .pipe(
       gulpSass({
         includePaths: ['node_modules'],
@@ -23,13 +23,13 @@ export function scss() {
 }
 
 export function scripts() {
-  return src(manifest.scripts, { cwd: manifest.cwd })
+  return src(manifest.scripts.build, { cwd: manifest.cwd })
     .pipe(gulpTranspileTs())
     .pipe(dest(manifest.dist))
 }
 
 export function pages() {
-  return src(manifest.pages, { cwd: manifest.cwd })
+  return src(manifest.pages.build, { cwd: manifest.cwd })
     .pipe(
       pugPages({
         cwd: manifest.cwd,

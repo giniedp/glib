@@ -121,7 +121,7 @@ function buildGroup(data: OBJ, faces: FaceElement[], smoothingGroup: number, mtl
           offset: 0, // - and this
           packed: false, // - and this
           normalize: false, // - and this
-          type: 'float32', // - and this since we dont operate on this buffer
+          type: 'float', // - and this since we dont operate on this buffer
         },
       },
     ],

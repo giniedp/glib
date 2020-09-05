@@ -184,14 +184,14 @@ export class ModelBuilder {
   private resetData() {
     this.iBuffer = {
       type: BufferType.IndexBuffer,
-      dataType: DataType.uint16,
+      dataType: DataType.ushort,
       data: [],
     }
     this.vBuffer = this.layout.map((l): BufferOptions<number[]> => {
       return {
         layout: copy(true, l),
         type: BufferType.VertexBuffer,
-        dataType: 'float32',
+        dataType: 'float',
         data: [],
       }
     })

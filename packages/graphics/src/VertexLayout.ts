@@ -46,29 +46,29 @@ const f = Object.freeze
  */
 export const VertexLayoutCommons = {
   position: f<VertexAttribute>({
-    type: 'float32',
+    type: DataType.float,
     elements: 3,
   }),
   color: f<VertexAttribute>({
-    type: 'uint8',
+    type: DataType.ubyte,
     elements: 4,
     normalize: true,
     packed: true,
   }),
   normal: f<VertexAttribute>({
-    type: 'float32',
+    type: DataType.float,
     elements: 3,
   }),
   tangent: f<VertexAttribute>({
-    type: 'float32',
+    type: DataType.float,
     elements: 3,
   }),
   bitangent: f<VertexAttribute>({
-    type: 'float32',
+    type: DataType.float,
     elements: 3,
   }),
   texture: f<VertexAttribute>({
-    type: 'float32',
+    type: DataType.float,
     elements: 2,
   }),
 }
@@ -128,9 +128,9 @@ export class VertexLayout {
    * VertexLayout.create('PositionNormalTexture');
    * // in both cases the following layout is returned:
    * // {
-   * //    position: { offset: 0, type: 'float32', elements: 3 }
-   * //    normal: { offset: 12, type: 'float32', elements: 2 }
-   * //    texture: { offset: 24, type: 'float32', elements: 2 }
+   * //    position: { offset: 0, type: 'float', elements: 3 }
+   * //    normal: { offset: 12, type: 'float', elements: 2 }
+   * //    texture: { offset: 24, type: 'float', elements: 2 }
    * // }
    * ```
    */
@@ -289,13 +289,13 @@ export class VertexLayout {
     const view = new DataView(result)
 
     const viewSetter: { [k: number]: (o: number, v: number) => void } = {
-      [DataType.int8]: (o, v) => view.setInt8(o, v),
-      [DataType.uint8]: (o, v) => view.setUint8(o, v),
-      [DataType.int16]: (o, v) => view.setInt16(o, v, littleEndian),
-      [DataType.uint16]: (o, v) => view.setUint16(o, v, littleEndian),
-      [DataType.int32]: (o, v) => view.setInt32(o, v, littleEndian),
-      [DataType.uint32]: (o, v) => view.setUint32(o, v, littleEndian),
-      [DataType.float32]: (o, v) => view.setFloat32(o, v, littleEndian),
+      [DataType.byte]: (o, v) => view.setInt8(o, v),
+      [DataType.ubyte]: (o, v) => view.setUint8(o, v),
+      [DataType.short]: (o, v) => view.setInt16(o, v, littleEndian),
+      [DataType.ushort]: (o, v) => view.setUint16(o, v, littleEndian),
+      [DataType.int]: (o, v) => view.setInt32(o, v, littleEndian),
+      [DataType.uint]: (o, v) => view.setUint32(o, v, littleEndian),
+      [DataType.float]: (o, v) => view.setFloat32(o, v, littleEndian),
     }
 
     const channels = Object.keys(layout)
@@ -312,9 +312,9 @@ export class VertexLayout {
           setter: viewSetter[valueOfDataType(spec.type)],
         }
         if (channel.packed) {
-          if (channel.size === 1) { channel.setter = viewSetter[DataType.uint8] }
-          if (channel.size === 2) { channel.setter = viewSetter[DataType.uint16] }
-          if (channel.size === 4) { channel.setter = viewSetter[DataType.uint32] }
+          if (channel.size === 1) { channel.setter = viewSetter[DataType.ubyte] }
+          if (channel.size === 2) { channel.setter = viewSetter[DataType.ushort] }
+          if (channel.size === 4) { channel.setter = viewSetter[DataType.uint] }
         }
         return channel
       })

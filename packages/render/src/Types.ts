@@ -237,6 +237,9 @@ export interface Scene {
   views: SceneView[]
 }
 
+/**
+ * @public
+ */
 export interface SceneView {
   /**
    * Indicates whether this viewport should be skipped for rendering
@@ -255,6 +258,9 @@ export interface SceneView {
   camera?: CameraData
 }
 
+/**
+ * @public
+ */
 export interface SceneViewport {
   /**
    * How the  `x`, `y`, `width` and `height` parameters should be interpreted

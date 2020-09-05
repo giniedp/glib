@@ -1,15 +1,16 @@
-'use strict'
 
-const fs = require('fs')
-const path = require('path')
-const globby = require('globby')
-const through = require('through-gulp')
+import * as fs from 'fs'
+import * as path from 'path'
+import globby from 'globby'
+import through from 'through-gulp'
+import File from 'vinyl'
+import type { Transform } from 'stream'
 
-function loadConstants(glob) {
+function parseConstants(glob: string | string[]) {
   const result = {}
   globby.sync(glob).forEach((path) => {
     fs
-      .readFileSync(path, 'UTF-8')
+      .readFileSync(path, { encoding: 'utf-8' })
       .toString()
       .replace(/\r\n/g, '\n')
       .split('\n')
@@ -25,13 +26,26 @@ function loadConstants(glob) {
   return result
 }
 
-function dereference(node, data, constants) {
+function processConstants(node: { [k: string]: string }) {
+  const buffer = []
+  buffer.push(`/**\n`)
+  buffer.push(` * @public\n`)
+  buffer.push(` */\n`)
+  buffer.push(`export const enum GLConst {\n`)
+  Object.entries(node).forEach(([k, v]) => {
+    buffer.push(`  ${k} = ${v},\n`)
+  })
+  buffer.push(`}\n`)
+  return buffer.join('')
+}
+
+function dereference(node, data) {
   return Object.keys(node.values).map((key) => {
     let value = node.values[key]
     let glName = null
     if (typeof value === 'string' && value.indexOf('gl:') >= 0) {
       glName = value.split(':')[1] || data.aliases[key]
-      value = `gl.${glName}` // constants[glName]
+      value = `gl.${glName}`
     }
 
     return {
@@ -42,9 +56,9 @@ function dereference(node, data, constants) {
   })
 }
 
-function processTypemap(name, data, constants) {
+function processTypemap(name: string, data) {
   const node = data[name]
-  const values = dereference(node, data, constants)
+  const values = dereference(node, data)
 
   const buffer = []
 
@@ -58,7 +72,6 @@ function processTypemap(name, data, constants) {
       buffer.push(`  ${it.glName}: ${it.value},\n`)
     }
     if (it.glName != null) {
-      // buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
       buffer.push(`  [gl.${it.glName}]: ${it.value},\n`)
     }
   })
@@ -67,9 +80,9 @@ function processTypemap(name, data, constants) {
   return buffer.join('')
 }
 
-function processSize(name, data, constants) {
+function processSize(name: string, data) {
   const node = data[name]
-  const values = dereference(node, data, constants)
+  const values = dereference(node, data)
 
   const buffer = []
 
@@ -80,7 +93,6 @@ function processSize(name, data, constants) {
       buffer.push(`  ${it.glName}: ${it.value},\n`)
     }
     if (it.glName != null) {
-      // buffer.push(`  ${constants[it.glName]}: ${it.value},\n`)
       buffer.push(`  [gl.${it.glName}]: ${it.value},\n`)
     }
   })
@@ -95,9 +107,9 @@ function processSize(name, data, constants) {
   return buffer.join('')
 }
 
-function processEnum(name, data, constants) {
+function processEnum(name: string, data) {
   const node = data[name]
-  const values = dereference(node, data, constants)
+  const values = dereference(node, data)
 
   const buffer = []
 
@@ -146,35 +158,42 @@ function processEnum(name, data, constants) {
   return buffer.join('')
 }
 
-function process(data, constants) {
-
+function process(data) {
   const buffer = []
+  buffer.push(`import { GLConst as gl } from './GLConst'\n\n`)
   Object.keys(data).forEach((name) => {
     const node = data[name]
     if (node.kind === undefined) {
       // skip
     } else if (node.kind === 'enum') {
-      buffer.push(processEnum(name, data, constants))
+      buffer.push(processEnum(name, data))
     } else if (node.kind === 'typemap') {
-      buffer.push(processTypemap(name, data, constants))
+      buffer.push(processTypemap(name, data))
     } else if (node.kind === 'size') {
-      buffer.push(processSize(name, data, constants))
+      buffer.push(processSize(name, data))
     } else {
       console.log('unknown node', node.kind, name)
     }
   })
-  return Buffer.from(buffer.join(''))
+  return buffer.join('')
 }
 
-module.exports = (options) => {
-  return through(function(file, enc, cb) {
-    const data = JSON.parse(file.contents.toString())
-    const constants = loadConstants(options.idl)
-    const contents = process(data, constants)
-    console.log(contents.toString())
-    file.contents = process(data, constants)
-    file.path = path.join(path.dirname(file.path), path.basename(file.path, '.json') + '.ts')
-    console.log(file.path)
-    cb(null, file)
+export default (options: { idl: string | string[]}) => {
+  return through(function(this: Transform, file: File, enc: string, cb) {
+    this.push(new File({
+      base: file.base,
+      cwd: file.cwd,
+      stat: file.stat,
+      path: path.join(path.dirname(file.path), 'GLConst.ts'),
+      contents: Buffer.from(processConstants(parseConstants(options.idl)))
+    }))
+    this.push(new File({
+      base: file.base,
+      cwd: file.cwd,
+      stat: file.stat,
+      path: path.join(path.dirname(file.path), 'Enums.ts'),
+      contents: Buffer.from(process(JSON.parse(file.contents.toString())))
+    }))
+    cb(null, null)
   })
 }

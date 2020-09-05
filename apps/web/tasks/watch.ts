@@ -14,12 +14,12 @@ export const watch = series(
       }
       const watched: FSWatcher[] = []
       watched.push(gulpWatch(
-        manifest.styles.filter((it) => it[0] !== '!'),
+        manifest.styles.watch,
         watchOptions,
         scss,
       ))
       watched.push(gulpWatch(
-        manifest.pages.filter((it) => it[0] !== '!'),
+        manifest.pages.watch,
         watchOptions,
         pages,
       ))
@@ -29,7 +29,7 @@ export const watch = series(
         assets,
       ))
       watched.push(gulpWatch(
-        manifest.scripts,
+        manifest.scripts.watch,
         watchOptions,
         scripts,
       ))

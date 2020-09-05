@@ -101,11 +101,11 @@ export class ParticleVertices {
   private index: number
 
   public readonly layout: VertexLayout = {
-    corner: { type: 'int16', offset: 0, elements: 2 },
-    position: { type: 'float32', offset: 4, elements: 3 },
-    velocity: { type: 'float32', offset: 16, elements: 3 },
-    random: { type: 'uint8', offset: 28, elements: 4, normalize: true, packed: true },
-    time: { type: 'float32', offset: 32, elements: 1 },
+    corner: { type: 'short', offset: 0, elements: 2 },
+    position: { type: 'float', offset: 4, elements: 3 },
+    velocity: { type: 'float', offset: 16, elements: 3 },
+    random: { type: 'byte', offset: 28, elements: 4, normalize: true, packed: true },
+    time: { type: 'float', offset: 32, elements: 1 },
   }
 
   constructor(count: number) {
@@ -232,7 +232,7 @@ export class ParticleChannel {
       indices[i * 6 + 5] = i * 4 + 3
     }
     this.indexBuffer = this.device.createIndexBuffer({
-      dataType: 'uint16',
+      dataType: 'ushort',
       data: indices,
     })
     this.program = this.device.createProgram({

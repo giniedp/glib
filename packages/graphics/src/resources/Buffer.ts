@@ -209,10 +209,10 @@ export abstract class Buffer {
       this.$dataType = valueOfDataType(opts.dataType)
     } else if (this.isIndexBuffer) {
       // default to ushort for IndexBuffer
-      this.$dataType = DataType.uint16
+      this.$dataType = DataType.ushort
     } else {
       // default to float for VertexBuffer
-      this.$dataType = DataType.float32
+      this.$dataType = DataType.float
     }
     if (!this.dataTypeName) {
       throw new Error(`invalid 'dataType' option: ${opts.dataType}`)

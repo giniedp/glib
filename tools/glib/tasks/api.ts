@@ -3,11 +3,8 @@ import {
   ExtractorConfig,
   ExtractorResult,
 } from '@microsoft/api-extractor'
-import * as path from 'path'
-import { Transform } from 'stream'
-import vinyl = require('vinyl')
 
-import { dest, src, parallel } from 'gulp'
+import { parallel } from 'gulp'
 import project, { GlibPackageContext } from '../context'
 
 import { spawn, namedTask } from '../../utils'

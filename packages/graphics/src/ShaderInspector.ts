@@ -1,7 +1,5 @@
 import { extend, getLines, trim, hasOwnProperty } from '@gglib/utils'
 
-const regLayout = /^\s*layout\((.+)\)\s+/
-
 const isSamplerType = /sampler(2D|2DArray|2DArrayShadow|3D|Cube|CubeShadow)|[iu]?sampler(2D|3D|Cube|2DArray)/
 
 const storageMap: { [k: string]: keyof ShaderInspection } = {
@@ -22,7 +20,7 @@ export interface ShaderObjectInfo {
    */
   [key: string]: any
   /**
-   * The user defind binding name of the defined object
+   * The user defined binding name of the defined object
    */
   binding?: string
   /**

@@ -17,8 +17,8 @@ const program = device.createProgram({
 // as in the triangle example.
 const vertices = device.createVertexBuffer({
   layout: {
-    vPosition: { type: 'float32', offset: 0, elements: 3  },
-    vColor: { type: 'float32', offset: 12, elements: 3 },
+    vPosition: { type: 'float', offset: 0, elements: 3  },
+    vColor: { type: 'float', offset: 12, elements: 3 },
   },
   // However, the data gets an additional vertex.
   data: [
@@ -32,7 +32,7 @@ const vertices = device.createVertexBuffer({
 // Now create an index buffer. The `dataType` must be either `ushort` or an `uint`
 // which defines the element type of the `data` array.
 const indices = device.createIndexBuffer({
-  dataType: 'uint16',
+  dataType: 'ushort',
   // The data array defines a triangle list. That means each 3 values
   // describe a triangle by indexing the vertices from the vertex buffer
   data: [

@@ -63,7 +63,7 @@ describe('graphics/Buffer', () => {
             position: {
               elements: 3,
               offset: 0,
-              type: DataType.float32,
+              type: DataType.float,
             },
           },
         })
@@ -76,7 +76,7 @@ describe('graphics/Buffer', () => {
   })
 
   describe('setData', () => {
-    describe('uint16', () => {
+    describe('ushort', () => {
       it ('sets the data', () => {
         if (!device.isWebGL2) {
           pending('webgl2 is not supported, skip webgl2 test')
@@ -89,7 +89,7 @@ describe('graphics/Buffer', () => {
           let buffer = new BufferGL(device, {
             usage: 'Dynamic',
             type: 'IndexBuffer',
-            dataType: 'uint16',
+            dataType: 'ushort',
           })
           expect(buffer.stride).toBe(2)
 

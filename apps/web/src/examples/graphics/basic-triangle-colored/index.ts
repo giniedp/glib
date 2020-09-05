@@ -27,10 +27,10 @@ const program = device.createProgram({
 const vertices = device.createVertexBuffer({
   layout: {
     vPosition: {
-      type: 'float32', offset: 0, elements: 3,
+      type: 'float', offset: 0, elements: 3,
     },
     vColor: {
-      type: 'float32', offset: 12, elements: 3,
+      type: 'float', offset: 12, elements: 3,
     },
   },
   data: [

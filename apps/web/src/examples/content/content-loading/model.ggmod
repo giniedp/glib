@@ -12,18 +12,18 @@
       "indexCount": 6,
       "vertexCount": 4,
       "indexBuffer": {
-        "dataType": "uint16",
+        "dataType": "ushort",
         "data": [
           0,  1,  2,      0,  2,  3
         ]
       },
       "vertexBuffer": {
         "layout": {
-          "position": { "type": "float32", "offset": 0, "elements": 3 },
-          "normal": { "type": "float32", "offset": 12, "elements": 3 },
-          "texture": { "type": "float32", "offset": 24, "elements": 2 }
+          "position": { "type": "float", "offset": 0, "elements": 3 },
+          "normal": { "type": "float", "offset": 12, "elements": 3 },
+          "texture": { "type": "float", "offset": 24, "elements": 2 }
         },
-        "dataType": "float32",
+        "dataType": "float",
         "data": [
           -1.0, -1.0,  0.0,     0, 0, 1,  0, 1,
           -1.0,  1.0,  0.0,     0, 0, 1,  0, 0,
@@ -34,3 +34,4 @@
     }]
   }]
 }
+

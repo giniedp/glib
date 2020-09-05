@@ -115,10 +115,9 @@ export class Capabilities {
   public extension(extensionName: 'OES_element_index_uint'): OES_element_index_uint | null
   public extension(extensionName: 'ANGLE_instanced_arrays'): ANGLE_instanced_arrays | null
   public extension(name: string) {
-    let result = this.extensions[name]
-    if (result === void 0) {
-      return (this.extensions[name] = this.gl.getExtension(name))
+    if (!(name in this.extensions)) {
+      this.extensions[name] = this.gl.getExtension(name)
     }
-    return result
+    return this.extensions[name]
   }
 }

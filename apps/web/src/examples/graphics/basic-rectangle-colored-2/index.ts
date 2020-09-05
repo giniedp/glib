@@ -17,12 +17,12 @@ const program = device.createProgram({
 const vertices = device.createVertexBuffer({
   layout: {
     // The layout of `vPosition` stays unchanged
-    vPosition: { type: 'float32', offset: 0, elements: 3  },
+    vPosition: { type: 'float', offset: 0, elements: 3  },
     // The `vColor` is now defined as a 4 ubyte element.
     vColor: {
       offset: 12,
       elements: 4,   // 4 elements
-      type: 'uint8', // of unsigned byte type
+      type: 'ubyte', // of unsigned byte type
       packed: true,  // but all 4 are packed in a single 32bit value
       // this indicates that a byte value should be normalized
       // into [0:1] range before it is utilized in the vertex shader stage
@@ -31,7 +31,7 @@ const vertices = device.createVertexBuffer({
   },
 
   // Each color attribute is now a 32bit color value in RGBA format.
-  dataType: 'float32',
+  dataType: 'float',
   data: [
     -0.5, -0.5, 0.0,   0xFF0000FF,
      0.5, -0.5, 0.0,   0xFF00FF00,
@@ -42,7 +42,7 @@ const vertices = device.createVertexBuffer({
 
 // Create the index buffer.
 const indices = device.createIndexBuffer({
-  dataType: 'uint16',
+  dataType: 'ushort',
   data: [
     0, 2, 1,
     1, 2, 3,
