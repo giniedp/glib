@@ -1,6 +1,5 @@
 import {
   ArrayType,
-  pixelFormatElementCount,
   TextureType,
 } from '../../enums'
 

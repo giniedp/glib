@@ -1,5 +1,5 @@
 {
-  "name": "@gglib/render",
+  "name": "@gglib/fx-procedural",
   "description": "Part of the [G]glib project",
   "version": "0.6.0",
   "repository": {
@@ -14,20 +14,14 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist/bundles/render.umd.js",
-  "module": "dist/render/src/index.js",
-  "typings": "dist/render/src/index.d.ts",
+  "index": "dist/bundles/fx-procedural.umd.js",
+  "module": "dist/fx-procedural/src/index.js",
+  "typings": "dist/fx-procedural/src/index.d.ts",
   "devDependencies": {
-    "@gglib/graphics": "0.6.0",
-    "@gglib/utils": "0.6.0",
-    "@gglib/fx-post": "0.6.0",
-    "@gglib/math": "0.6.0"
+    "@gglib/graphics": "0.6.0"
   },
   "peerDependencies": {
-    "@gglib/graphics": "0.6.0",
-    "@gglib/utils": "0.6.0",
-    "@gglib/fx-post": "0.6.0",
-    "@gglib/math": "0.6.0"
+    "@gglib/graphics": "0.6.0"
   },
   "files": [
     "package.json",

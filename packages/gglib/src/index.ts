@@ -8,11 +8,13 @@
  * @packageDocumentation
  */
 
-import * as $EcsComponents from '@gglib/ecs-components'
 import * as $Content from '@gglib/content'
 import * as $ContentLoaders from '@gglib/content-loaders'
 import * as $Ecs from '@gglib/ecs'
-import * as $Effects from '@gglib/fx-materials'
+import * as $EcsComponents from '@gglib/ecs-components'
+import * as $FxMaterials from '@gglib/fx-materials'
+import * as $FxPost from '@gglib/fx-post'
+import * as $FxProcedural from '@gglib/fx-procedural'
 import * as $Graphics from '@gglib/graphics'
 import * as $Input from '@gglib/input'
 import * as $Math from '@gglib/math'
@@ -56,7 +58,19 @@ export const EcsComponents = $EcsComponents
  *
  * @public
  */
-export const Effects = $Effects
+export const FxMaterials = $FxMaterials
+/**
+ * Shader and effect composition library.
+ *
+ * @public
+ */
+export const FxPost = $FxPost
+/**
+ * Shader and effect composition library.
+ *
+ * @public
+ */
+export const FxProcedural = $FxProcedural
 /**
  * WebGL abstraction and the heart of gglib.
  *
@@ -101,16 +115,18 @@ export const Terrain = $Terrain
 export const Gglib = {
   Content,
   ContentLoaders,
-  Utils,
   Ecs,
   EcsComponents,
-  Effects,
+  FxMaterials,
+  FxPost,
+  FxProcedural,
   Graphics,
   Input,
   Math,
   Noise,
   Render,
   Terrain,
+  Utils,
 }
 
 export default Gglib

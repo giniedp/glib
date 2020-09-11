@@ -527,6 +527,18 @@ export abstract class Texture {
    */
   public abstract update(): boolean
 
+  /**
+   * Resizes the render target
+   *
+   * @param width - The new width
+   * @param height - The new height
+   */
+  public resize(width: number, height: number): void {
+    if (this.ready && (width !== this.width || height !== this.height)) {
+      this.setup({ width, height })
+    }
+  }
+
   protected set<K extends keyof this>(key: K, value: this[K]) {
     this[key] = value
   }

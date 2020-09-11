@@ -83,7 +83,7 @@ export class PostBloomEffect {
 
   private offsetWeights: number[][]
 
-  constructor(device: Device, options: PostBloomOptions) {
+  constructor(device: Device, options?: PostBloomOptions) {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_BLOOM)
     if (options) {
@@ -140,8 +140,8 @@ export class PostBloomEffect {
     if (!rt2 || !rt2.isRenderTarget) {
       throw new Error(`intermediate2 must be a render target`)
     }
-    if (!output || !output.isRenderTarget) {
-      throw new Error(`output must be a render target`)
+    if (output && !output.isRenderTarget) {
+      throw new Error(`output must be a render target (or null)`)
     }
 
     this.updateGauss(1.0 / input.width, 1.0 / input.height)

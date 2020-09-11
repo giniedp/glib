@@ -1,4 +1,4 @@
-import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
+import { Device, Material, ShaderEffect, Texture, MaterialParameters } from '@gglib/graphics'
 import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
 import {
   ShadeFunctionBlinn,
@@ -63,10 +63,48 @@ export type ShadeFunction = ShadeFunctionNone
 
 const tempMat4 = Mat4.createIdentity()
 
+
 /**
  * @public
  */
-export class AutoMaterial extends Material {
+export interface AutoMaterialParams extends MaterialParameters {
+  World: IMat,
+  View: IMat,
+  CameraPosition: IVec3,
+  Projection: IMat,
+  VertexColor: boolean,
+  FogColor: number[] | IVec3,
+  FogParams: number[],
+  Alpha: number,
+  AlphaClip: number,
+  SpecularPower: number,
+  AmbientColor: number[] | IVec3,
+  DiffuseColor: number[] | IVec3,
+  SpecularColor: number[] | IVec3,
+  EmissionColor: number[] | IVec3,
+  AmbientMap: Texture,
+  AmbientMapScaleOffset: number[] | IVec4,
+  DiffuseMap: Texture,
+  DiffuseMapScaleOffset: number[] | IVec4,
+  SpecularMap: Texture,
+  SpecularMapScaleOffset: number[] | IVec4,
+  EmissionMap: Texture,
+  EmissionMapScaleOffset: number[] | IVec4,
+  NormalMap: Texture,
+  NormalMapScaleOffset: number[] | IVec4,
+  OcclusionMap: Texture,
+  OcclusionMapScaleOffset: number[] | IVec4,
+  ParallaxMap: Texture,
+  ParallaxMapScaleOffset: number[] | IVec4,
+  ParallaxScaleBias: number[],
+  MetallicRoughnessMap: Texture,
+  MetallicRoughness: number[],
+}
+
+/**
+ * @public
+ */
+export class AutoMaterial extends Material<AutoMaterialParams> {
 
   public get ShadeFunction(): ShadeFunction {
     return this.defines.SHADE_FUNCTION as any

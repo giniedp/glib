@@ -12,44 +12,27 @@ export const POST_PIXELATE: ShaderFxDocument = {
     // @binding texture
     attribute vec2 texture;
 
+    varying vec2 uv;
+
     // @binding texture
+    // @filter LinearClamp
     uniform sampler2D textureSampler;
 
-    // @binding targetWidth
-    uniform float targetWidth;
-
-    // @binding targetHeight
-    uniform float targetHeight;
-
-    varying vec2 texCoord;
-
-    // @default 0
-    uniform float vOffset;
-
-    // @default 4
-    uniform float pixelWidth;
-
-    // @default 4
-    uniform float pixelHeight;
+    // @default [0.01, 0.01]
+    uniform vec2 texel;
   `,
   technique: {
     name: '',
     pass: {
       vertexShader: glsl`
         void main(void) {
-          texCoord = texture;
+          uv = texture;
           gl_Position = vec4(position, 1.0);
         }
       `,
       fragmentShader: glsl`
         void main() {
-          vec2 uv = texCoord;
-          if (uv.x >= vOffset) {
-            float dx = pixelWidth / targetWidth;
-            float dy = pixelHeight / targetHeight;
-            uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
-          }
-          gl_FragColor = vec4(texture2D(textureSampler, uv).rgb, 1);
+          gl_FragColor = vec4(texture2D(textureSampler, texel * floor(uv / texel)).rgb, 1.0);
         }
       `,
     },

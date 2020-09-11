@@ -19,7 +19,7 @@ export interface ShaderEffectOptions {
   /**
    * The default set of parameters
    */
-  parameters?: { [key: string]: ShaderUniformValue }
+  parameters?: ShaderEffectParameters
   /**
    * A collection of programs of this effect
    *
@@ -43,6 +43,13 @@ export interface ShaderEffectOptions {
   program?: ShaderProgram | ShaderProgramOptions
 }
 
+/**
+ * @public
+ */
+export interface ShaderEffectParameters {
+  [key: string]: ShaderUniformValue
+}
+
 function makeArray(arg: any): any {
   if (Array.isArray(arg)) {
     return arg.slice()
@@ -62,7 +69,7 @@ function makeArray(arg: any): any {
  * A shader effect can hold several shader programs
  * There is only one active technique at a time which can be switched via `useTechnique`.
  */
-export class ShaderEffect {
+export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParameters> {
   /**
    * A symbol identifying the Array {@link ShaderEffect} type.
    */
@@ -104,7 +111,7 @@ export class ShaderEffect {
    * @remarks
    * When using {@link ShaderEffect.draw} these parameters are used as defaults but can be overridden
    */
-  public readonly parameters: { [key: string]: ShaderUniformValue }
+  public readonly parameters: P
   /**
    * The technique collection
    */
@@ -213,6 +220,14 @@ export class ShaderEffect {
     for (const pass of this.technique.passes) {
       pass.commit(parameters)
       drawable.draw(pass.program)
+    }
+  }
+
+  public drawQuad(flipY = false, parameters = this.parameters) {
+    for (const pass of this.technique.passes) {
+      pass.commit(parameters)
+      this.device.program = pass.program
+      this.device.drawQuad(flipY)
     }
   }
 

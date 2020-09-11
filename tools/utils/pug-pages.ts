@@ -94,7 +94,7 @@ function readChildren(filePath: string, rootDir: string) {
   return fs.readdirSync(fileDir)
     .filter((it) => it !== fileName)
     .map((it) => readFrontMatter(path.join(fileDir, it), rootDir)?.meta)
-    .filter((it) => /\.pug/.test(it.original))
+    .filter((it) => /\.pug/.test(it?.original || ""))
     .filter((it) => it && !it.draft)
     .sort((a, b) => String(a.weight || "").localeCompare(String(b.weight || "")))
 }

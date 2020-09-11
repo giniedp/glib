@@ -1,4 +1,4 @@
-import { Device, Material, ShaderEffect, Texture } from '@gglib/graphics'
+import { Device, Material, ShaderEffect, Texture, MaterialParameters } from '@gglib/graphics'
 import { IMat, IVec3, Mat4 } from '@gglib/math'
 import { LightParams } from '../lights'
 import { defaultProgram, DefaultProgramDefs } from '../programs'
@@ -23,7 +23,42 @@ const tempMat4 = Mat4.createIdentity()
 /**
  * @public
  */
-export class TerrainMaterial extends Material {
+export interface TerrainMaterialParams extends MaterialParameters {
+  World: IMat,
+  View: IMat,
+  CameraPosition: IVec3,
+  CameraDirection: IVec3,
+  Projection: IMat,
+  AmbientColor: number[] | IVec3,
+  FogColor: number[] | IVec3,
+  Alpha: number,
+  AlphaClip: number,
+  SplatMap: Texture,
+  TintMap: Texture,
+  DiffuseMap: Texture,
+  DiffuseMapR: Texture,
+  DiffuseMapG: Texture,
+  DiffuseMapB: Texture,
+  DiffuseMapA: Texture,
+  DiffuseMapSlope: Texture,
+  NormalMap: Texture,
+  NormalMapR: Texture,
+  NormalMapG: Texture,
+  NormalMapB: Texture,
+  NormalMapA: Texture,
+  NormalMapSlope: Texture,
+  Brightness: number,
+  Saturation: number,
+  Perturbation: number,
+  SlopeStrength: number,
+  Tiling: number,
+  FogParams: number[],
+}
+
+/**
+ * @public
+ */
+export class TerrainMaterial extends Material<TerrainMaterialParams> {
 
   public get ShadeFunction(): ShadeFunction {
     return this.defines.SHADE_FUNCTION as any

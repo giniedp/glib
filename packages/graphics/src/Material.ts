@@ -54,7 +54,7 @@ export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = 
  * This allows a {@link ShaderEffect} instance to be reused across
  * multiple materials each with a different set of parameters.
  */
-export class Material {
+export class Material<P extends MaterialParameters = MaterialParameters> {
   /**
    * A symbol identifying the Array {@link Material} type.
    */
@@ -122,14 +122,14 @@ export class Material {
   /**
    * Effect parameters to be applied before rendering
    */
-  public readonly parameters: { [key: string]: any }
+  public readonly parameters: P
 
   protected $effect: ShaderEffect
 
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
     this.name = options.name
-    this.parameters = options.parameters || {}
+    this.parameters = (options.parameters || {}) as P
     if (options.effect instanceof ShaderEffect) {
       this.$effect = options.effect
     } else if (options.effect) {

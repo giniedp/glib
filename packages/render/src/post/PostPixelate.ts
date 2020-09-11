@@ -24,12 +24,6 @@ export class PostPixelateStep implements RenderStep {
   public set pixelHeight(value: number) {
     this.effect.pixelHeight = value
   }
-  public get offset(): number {
-    return this.effect.offset
-  }
-  public set offset(value: number) {
-    this.effect.offset = value
-  }
 
   private effect: PostPixelateEffect
 

@@ -31,6 +31,12 @@
       "path": "../fx-materials/tsconfig.json"
     },
     {
+      "path": "../fx-post/tsconfig.json"
+    },
+    {
+      "path": "../fx-procedural/tsconfig.json"
+    },
+    {
       "path": "../graphics/tsconfig.json"
     },
     {

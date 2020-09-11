@@ -1,6 +1,7 @@
-import { ShaderEffect, Device, createShaderEffectSync, Texture } from '@gglib/graphics'
+import { ShaderEffect, Device, createShaderEffectSync, Texture, ShaderEffectParameters, ShaderUniformValue } from '@gglib/graphics'
 import { getOption } from '@gglib/utils'
 import { POST_PIXELATE } from './pixelate.program'
+import { IVec2, Vec2 } from '@gglib/math'
 
 /**
  * Constructor options for {@link PostPixelateEffect}
@@ -26,36 +27,37 @@ export class PostPixelateEffect {
 
   public pixelWidth: number = 10
   public pixelHeight: number = 10
-  public offset: number = 0
   public inputTexture: Texture
   public outputTexture: Texture
 
-  private effect: ShaderEffect
+  private effect: ShaderEffect<{
+    texel: IVec2,
+    texture: Texture
+  }>
 
   constructor(private device: Device, options: PostPixelateOptions) {
     if (options) {
       this.pixelWidth = getOption(options, 'pixelWidth', this.pixelWidth)
       this.pixelHeight = getOption(options, 'pixelHeight', this.pixelHeight)
-      this.offset = getOption(options, 'offset', this.offset)
     }
-    this.effect = createShaderEffectSync(device, POST_PIXELATE)
+    this.effect = createShaderEffectSync(device, POST_PIXELATE) as any // TODO
   }
 
   public draw() {
     let rt = this.inputTexture
     let rt2 = this.outputTexture
-
-    let program = this.effect.getTechnique(0).pass(0).program
-    program.setUniform('texture', rt)
-    program.setUniform('vOffset', this.offset)
-    program.setUniform('pixelWidth', this.pixelWidth)
-    program.setUniform('pixelHeight', this.pixelHeight)
-    program.setUniform('targetWidth', rt.width)
-    program.setUniform('targetHeight', rt.height)
-
+    let texel = this.effect.parameters.texel || Vec2.init({}, 1, 1)
+    if (rt2) {
+      texel.x = this.pixelWidth / rt2.width
+      texel.y = this.pixelHeight / rt2.height
+    } else {
+      texel.x = this.pixelWidth / this.device.drawingBufferWidth
+      texel.y = this.pixelHeight / this.device.drawingBufferHeight
+    }
     this.device.setRenderTarget(rt2)
-    this.device.program = program
-    this.device.drawQuad(false)
+    this.effect.parameters.texture = rt
+    this.effect.parameters.texel = texel
+    this.effect.drawQuad()
     this.device.setRenderTarget(null)
   }
 }
