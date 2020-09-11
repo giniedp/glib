@@ -1,4 +1,4 @@
-import { defaultProgram, LightParams } from '@gglib/effects'
+import { defaultProgram, LightParams } from '@gglib/fx-materials'
 import { buildCube, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'

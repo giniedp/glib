@@ -17,7 +17,7 @@ import {
 import { Entity, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs'
 import { Model, LightType, ModelBuilder, buildIcosahedron, Device, TextureWrapMode, Color } from '@gglib/graphics'
 import { Vec3, IVec3 } from '@gglib/math'
-import { defaultProgram, AutoMaterial } from '@gglib/effects'
+import { defaultProgram, AutoMaterial } from '@gglib/fx-materials'
 import { BasicRenderStep } from '@gglib/render'
 
 @Component({ })

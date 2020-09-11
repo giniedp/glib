@@ -22,6 +22,9 @@
       "path": "../math/tsconfig.json"
     },
     {
+      "path": "../utils/tsconfig.json"
+    },
+    {
       "path": "../content/tsconfig.json"
     },
     {
@@ -31,13 +34,10 @@
       "path": "../input/tsconfig.json"
     },
     {
-      "path": "../effects/tsconfig.json"
+      "path": "../fx-materials/tsconfig.json"
     },
     {
       "path": "../render/tsconfig.json"
-    },
-    {
-      "path": "../utils/tsconfig.json"
     }
   ]
 }

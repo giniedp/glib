@@ -19,15 +19,17 @@
   "typings": "dist/render/src/index.d.ts",
   "devDependencies": {
     "@gglib/graphics": "0.6.0",
-    "@gglib/math": "0.6.0",
     "@gglib/utils": "0.6.0",
-    "@gglib/effects": "0.6.0"
+    "@gglib/fx-post": "0.6.0",
+    "@gglib/fx-materials": "0.6.0",
+    "@gglib/math": "0.6.0"
   },
   "peerDependencies": {
     "@gglib/graphics": "0.6.0",
-    "@gglib/math": "0.6.0",
     "@gglib/utils": "0.6.0",
-    "@gglib/effects": "0.6.0"
+    "@gglib/fx-post": "0.6.0",
+    "@gglib/fx-materials": "0.6.0",
+    "@gglib/math": "0.6.0"
   },
   "files": [
     "package.json",

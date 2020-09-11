@@ -18,7 +18,7 @@ import {
 import { Entity, Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'
 
 import { ContentManager } from '@gglib/content'
-import { AutoMaterial, TerrainMaterial } from '@gglib/effects'
+import { AutoMaterial, TerrainMaterial } from '@gglib/fx-materials'
 import { buildSphere, Device, flipWindingOrder, ModelBuilder, Texture, LightType } from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
 import { BTTRoot, HeightMap } from '@gglib/terrain'

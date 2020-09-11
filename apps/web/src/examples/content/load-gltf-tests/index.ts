@@ -1,5 +1,5 @@
 import { ContentManager, Data } from '@gglib/content'
-import { LightParams, AutoMaterial } from '@gglib/effects'
+import { LightParams, AutoMaterial } from '@gglib/fx-materials'
 import {
   BlendState,
   CullState,

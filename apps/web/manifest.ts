@@ -17,12 +17,12 @@ export default {
   pages: {
     build: [
       'src/**/*.*',
+      '!src/docs/**/*.*',
       '!src/**/*.scss',
     ],
     watch: [
       'src/**/*.*',
       '!src/**/*.scss',
-      '!src/**/*.ts',
     ]
   },
   get assets() {

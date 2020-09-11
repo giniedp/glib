@@ -22,7 +22,7 @@ import {
 import {
   AutoMaterial,
   LightParams,
-} from '@gglib/effects'
+} from '@gglib/fx-materials'
 
 // This symbol will be used to identify the made up `.pixels` format that is used for this demo.
 const PixelsData = Symbol('PixelsData')

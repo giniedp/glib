@@ -125,6 +125,7 @@ export class Material {
   public readonly parameters: { [key: string]: any }
 
   protected $effect: ShaderEffect
+
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
     this.name = options.name

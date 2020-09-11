@@ -129,8 +129,8 @@ export class ShaderEffect {
    * @param options - The options for initialization
    */
   public setup(options: ShaderEffectOptions) {
-    ;(this as { name: string }).name = options.name
-    ;(this as { parameters: any }).parameters = options.parameters || {}
+    Object.assign(this, { name: options.name })
+    Object.assign(this, { parameters: options.parameters || {} })
 
     const techniques = this.techniques as ShaderTechnique[]
     techniques.length = 0

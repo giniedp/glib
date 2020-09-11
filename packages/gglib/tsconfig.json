@@ -28,7 +28,7 @@
       "path": "../ecs/tsconfig.json"
     },
     {
-      "path": "../effects/tsconfig.json"
+      "path": "../fx-materials/tsconfig.json"
     },
     {
       "path": "../graphics/tsconfig.json"

@@ -1,5 +1,5 @@
 import { ContentManager, Data } from '@gglib/content'
-import { LightParams } from '@gglib/effects'
+import { LightParams } from '@gglib/fx-materials'
 import { BlendState, CullState, DepthState, LightType, Model, ModelNodePose, Texture, createDevice, AnimationPlayer, ModelPose } from '@gglib/graphics'
 import { Mat4, Vec3, BoundingSphere } from '@gglib/math'
 import { loop } from '@gglib/utils'

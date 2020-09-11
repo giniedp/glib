@@ -1,0 +1,135 @@
+import { glsl, ShaderFxDocument } from '@gglib/graphics'
+
+export const POST_BLOOM: ShaderFxDocument = {
+  name: 'bloom',
+  program: glsl`
+    precision highp float;
+    precision highp int;
+
+    // @binding position
+    attribute vec3 position;
+
+    // @binding texture
+    attribute vec2 texture;
+
+    varying vec2 texCoord;
+
+    // @default 0.75
+    uniform float threshold;
+
+    // @default 0.5
+    uniform float multiplier;
+
+    // x -> offset horizontal
+    // y -> offset vertical
+    // z -> weight horizontal
+    // w -> weight vertical
+    uniform vec4 offsetWeights[9];
+
+    // @binding texture
+    // @register 0
+    uniform sampler2D textureSampler;
+    // @binding bloomTexture
+    // @register 1
+    uniform sampler2D bloomSampler;
+
+    vec4 glowCut(vec2 uv) {
+      vec3 color = texture2D(textureSampler, uv).rgb;
+      float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+      if (luminance > threshold) {
+        return vec4(color.rgb, 1.0);
+      }
+      return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
+    vec4 hBlur(vec2 uv) {
+      vec4 color = vec4(0);
+      for( int i = 0; i < 9; i++ ) {
+          color += texture2D(textureSampler, uv + vec2(offsetWeights[i].x, 0.0)) * offsetWeights[i].z;
+      }
+      return vec4(color.rgb, 1.0);
+    }
+
+    vec4 vBlur(vec2 uv) {
+      vec4 color = vec4(0);
+      for( int i = 0; i < 9; i++ ) {
+          color += texture2D(textureSampler, uv + vec2(0.0, offsetWeights[i].y)) * offsetWeights[i].w;
+      }
+      return vec4(color.rgb, 1.0);
+    }
+
+
+    vec4 combine(vec2 uv) {
+      vec3 base = texture2D(textureSampler, uv).rgb;
+      vec3 bloom = texture2D(bloomSampler, uv).rgb;
+      base *= (1.0 - clamp(bloom, vec3(0), vec3(1)));
+      return vec4((base + bloom).rgb, 1.0);
+    }
+  `,
+  technique: [
+    {
+      name: 'glowCut',
+      pass: {
+        vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+        fragmentShader: glsl`
+        void main() {
+          gl_FragColor = glowCut(texCoord);
+        }
+      `,
+      },
+    },
+    {
+      name: 'hBlur',
+      pass: {
+        vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+        fragmentShader: glsl`
+        void main() {
+          gl_FragColor = hBlur(texCoord);
+        }
+      `,
+      },
+    },
+    {
+      name: 'vBlur',
+      pass: {
+        vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+        fragmentShader: glsl`
+        void main() {
+          gl_FragColor = vBlur(texCoord);
+        }
+      `,
+      },
+    },
+    {
+      name: 'combine',
+      pass: {
+        vertexShader: glsl`
+        void main(void) {
+          texCoord = texture;
+          gl_Position = vec4(position, 1.0);
+        }
+      `,
+        fragmentShader: glsl`
+        void main() {
+          gl_FragColor = combine(texCoord);
+        }
+      `,
+      },
+    },
+  ],
+}

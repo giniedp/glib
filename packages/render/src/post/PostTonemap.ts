@@ -1,5 +1,5 @@
-import { glsl } from '@gglib/effects'
 import {
+  glsl,
   BlendState,
   createShaderEffect,
   CullState,

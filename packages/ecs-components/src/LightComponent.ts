@@ -1,5 +1,5 @@
 import { Entity, Inject, OnInit, OnRemoved, OnUpdate, Component, OnSetup } from '@gglib/ecs'
-import { LightParams } from '@gglib/effects'
+import { LightParams } from '@gglib/fx-materials'
 import { LightType } from '@gglib/graphics'
 import { BoundingSphere, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'

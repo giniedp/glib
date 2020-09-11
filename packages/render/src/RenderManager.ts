@@ -90,46 +90,6 @@ export class RenderManager {
     this.spriteBatch = device.createSpriteBatch()
   }
 
-  // /**
-  //  * Gets a scene by its id
-  //  *
-  //  * @param id - The scene id
-  //  */
-  // public getScene(id: string | number) {
-  //   return this.scenes.get(id)
-  // }
-
-  // /**
-  //  * Adds a scene for rendering
-  //  *
-  //  * @param scene - The scene to be rendered
-  //  */
-  // public addScene(scene: Scene): Scene {
-  //   if (scene.id == null) {
-  //     throw new Error(`id is missing`)
-  //   }
-  //   if (this.scenes.has(scene.id)) {
-  //     throw new Error(`id is already taken`)
-  //   }
-  //   if (scene.views == null) {
-  //     scene.views = []
-  //   }
-  //   if (scene.views.length === 0) {
-  //     scene.views.push({
-  //       viewport: {
-  //         type: 'normalized',
-  //         x: 0,
-  //         y: 0,
-  //         width: 1,
-  //         height: 1,
-  //       },
-  //     })
-  //   }
-  //   this.scenes.set(scene.id, scene)
-
-  //   return scene
-  // }
-
   /**
    * Releases resources that have been cached for the given scene
    */

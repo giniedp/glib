@@ -1,60 +1,54 @@
-import { defaultProgram } from '@gglib/effects'
-import { buildCube, ModelBuilder, createDevice } from '@gglib/graphics'
+import { defaultProgram } from '@gglib/fx-materials'
+import { buildCube, ModelBuilder, createDevice, Color, buildSphere, buildCone } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
-const device = createDevice({
-  canvas: document.getElementById('canvas') as HTMLCanvasElement,
-})
+// Create the graphics device as usual
+const device = createDevice({ canvas: '#canvas' })
 
+// Create a default program with only diffuse color enabled
 const textureMappedEffect = device.createEffect({
   program: defaultProgram({
     DIFFUSE_COLOR: true,
   }),
 })
 
+// Initialize the modelbuilder with only `position` attribute
 const model = ModelBuilder.begin({
   layout: ['position'],
 })
-  .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
-    buildCube(b, { size: 2 })
-    b.closeMeshPart({
-      materialId: 'red',
-      name: 'Red Cube',
-    })
-  })
-  .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
-    buildCube(b, { size: 2 })
-    b.closeMeshPart({
-      materialId: 'green',
-      name: 'Green Cube',
-    })
-  })
-  .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
-    buildCube(b, { size: 2 })
-    b.closeMeshPart({
-      materialId: 'blue',
-      name: 'Blue Cube',
-    })
-  })
+.withTransform(Mat4.createTranslation(-2.2, 0, 0), (b) => {
+  b.defaults.color = [Color.Red.rgba]
+  b.append(buildCube, { size: 2 })
+  b.closeMeshPart({ materialId: 0 })
+})
+.withTransform(Mat4.createTranslation(0, 0, 0), (b) => {
+  b.defaults.color = [Color.Green.rgba]
+  b.append(buildSphere, { radius: 1 })
+  b.closeMeshPart({ materialId: 1 })
+})
+.withTransform(Mat4.createTranslation(2.2, -1, 0), (b) => {
+  b.defaults.color = [Color.Blue.rgba]
+  b.append(buildCone, { upperRadius: 0, lowerRadius: 1, height: 2 })
+  b.closeMeshPart({ materialId: 2 })
+})
+  // Close the mesh and generate materials from color table.
+  // All materials use the same shader program instance
   .closeMesh({
     materials: [{
-      name: 'red',
       effect: textureMappedEffect,
       parameters: {
-        DiffuseColor: [1, 0, 0],
+        DiffuseColor: Color.Red.xyzw,
       },
     }, {
-      name: 'green',
       effect: textureMappedEffect,
       parameters: {
-        DiffuseColor: [0, 1, 0],
+        DiffuseColor: Color.Green.xyzw,
       },
     }, {
-      name: 'blue',
       effect: textureMappedEffect,
       parameters: {
-        DiffuseColor: [0, 0, 1],
+        DiffuseColor: Color.Blue.xyzw,
       },
     }],
   })
@@ -70,7 +64,7 @@ loop((time, dt) => {
   device.resize()
   device.clear(0xff2e2620, 1)
 
-  cam.initTranslation(0, 0, 5.0)
+  cam.initTranslation(0, 0, 4.0)
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 

@@ -1,6 +1,6 @@
 import * as TweakUi from 'tweak-ui'
 
-import { AutoMaterial } from '@gglib/effects'
+import { AutoMaterial } from '@gglib/fx-materials'
 import {
   buildCone,
   buildCube,

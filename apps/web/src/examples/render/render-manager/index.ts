@@ -1,10 +1,10 @@
 import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
-import { AutoMaterial, LightParams } from '@gglib/effects'
+import { AutoMaterial, LightParams } from '@gglib/fx-materials'
 import { buildPlane, buildSphere, CullState, DepthState, flipWindingOrder, Model, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderStep, PostBloom, PostPixelate, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
+import { BasicRenderStep, PostStepBloom, PostPixelate, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // ### Setup the render manager
@@ -52,7 +52,7 @@ const scene: Scene = {
       depthState: DepthState.Default,
       cullState: CullState.CullClockWise,
     }),
-    new PostBloom(device, { enabled: true }),
+    new PostStepBloom(device, { enabled: true }),
     new PostPixelate(device, { enabled: false }),
   ],
   views: [{
@@ -246,7 +246,7 @@ function makeDrawableList(model: Model, world: Mat4): SceneItemDrawable[] {
 
 TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
   scene.steps.forEach((it) => {
-    if (it instanceof PostBloom) {
+    if (it instanceof PostStepBloom) {
       q.group('Bloom', {}, (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'glowCut', { min: 0, max: 1, step: 0.001 })

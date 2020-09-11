@@ -1,44 +1,33 @@
-import { defaultProgram } from '@gglib/effects'
-import { buildCube, Color, DeviceGL, ModelBuilder, createDevice } from '@gglib/graphics'
+import { defaultProgram } from '@gglib/fx-materials'
+import { buildCube, Color, ModelBuilder, createDevice, buildSphere, buildCone } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
-const device = createDevice({
-  canvas: document.getElementById('canvas') as HTMLCanvasElement,
-})
+// Create the device as usual
+const device = createDevice({ canvas: '#canvas' })
 
+// Create a default program with onlye vertex color enabled
 const vertexColorEffect = device.createEffect({
   program: defaultProgram({
     V_COLOR1: true,
   }),
 })
 
+// Initialize the modelbuilder and use a layout with a `color` semantic
 const model = ModelBuilder.begin({
   layout: ['position', 'color'],
 })
-  .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
-    b.defaults.color = [Color.DarkRed.rgba]
-    buildCube(b, { size: 2 })
-    b.endMeshPart({
-      materialId: 0,
-      name: 'Red Cube',
-    })
+  .withTransform(Mat4.createTranslation(-2.2, 0, 0), (b) => {
+    b.defaults.color = [Color.Red.rgba]
+    b.append(buildCube, { size: 2 })
   })
-  .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
-    b.defaults.color = [Color.DarkGreen.rgba]
-    buildCube(b, { size: 2 })
-    b.endMeshPart({
-      materialId: 0,
-      name: 'Green Cube',
-    })
+  .withTransform(Mat4.createTranslation(0, 0, 0), (b) => {
+    b.defaults.color = [Color.Green.rgba]
+    b.append(buildSphere, { radius: 1 })
   })
-  .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
-    b.defaults.color = [Color.DarkBlue.rgba]
-    buildCube(b, { size: 2 })
-    b.endMeshPart({
-      materialId: 0,
-      name: 'Blue Cube',
-    })
+  .withTransform(Mat4.createTranslation(2.2, -1, 0), (b) => {
+    b.defaults.color = [Color.Blue.rgba]
+    b.append(buildCone, { upperRadius: 0, lowerRadius: 1, height: 2 })
   })
   .closeMesh({
     materials: [{
@@ -58,7 +47,7 @@ loop((time, dt) => {
   device.resize()
   device.clear(0xff2e2620, 1)
 
-  cam.initTranslation(0, 0, 5.0)
+  cam.initTranslation(0, 0, 4.0)
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 

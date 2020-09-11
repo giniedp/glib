@@ -1,5 +1,5 @@
-import { defaultProgram } from '@gglib/effects'
-import { buildCube, DeviceGL, ModelBuilder, createDevice } from '@gglib/graphics'
+import { defaultProgram } from '@gglib/fx-materials'
+import { buildCube, DeviceGL, ModelBuilder, createDevice, buildSphere, buildCone } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -13,45 +13,36 @@ const textureMappedEffect = device.createEffect({
   }),
 })
 
+// Initialize the modelbuilder with only `position` attribute
 const model = ModelBuilder.begin({
   layout: ['position', 'texture'],
 })
-  .withTransform(Mat4.createTranslation(-2, 0, 0), (b) => {
-    buildCube(b, { size: 2 })
-    b.endMeshPart({
-      materialId: 'red',
-      name: 'Red Cube',
-    })
+  .withTransform(Mat4.createTranslation(-2.2, 0, 0), (b) => {
+    b.append(buildCube, { size: 2 })
+    b.closeMeshPart({ materialId: 0 })
   })
-  .withTransform(Mat4.createTranslation(0, 2, 0), (b) => {
-    buildCube(b, { size: 2 })
-    b.endMeshPart({
-      materialId: 'green',
-      name: 'Green Cube',
-    })
+  .withTransform(Mat4.createTranslation(0, 0, 0), (b) => {
+    b.append(buildSphere, { radius: 1 })
+    b.closeMeshPart({ materialId: 1 })
   })
-  .withTransform(Mat4.createTranslation(2, 0, 0), (b) => {
-    buildCube(b, { size: 2 })
-    b.endMeshPart({
-      materialId: 'blue',
-      name: 'Blue Cube',
-    })
+  .withTransform(Mat4.createTranslation(2.2, -1, 0), (b) => {
+    b.append(buildCone, { upperRadius: 0, lowerRadius: 1, height: 2 })
+    b.closeMeshPart({ materialId: 2 })
   })
+  // Close the mesh and generate materials from color table.
+  // All materials use the same shader program instance
   .closeMesh({
     materials: [{
-      name: 'red',
       effect: textureMappedEffect,
       parameters: {
         DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
       },
     }, {
-      name: 'green',
       effect: textureMappedEffect,
       parameters: {
         DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_green.png' }),
       },
     }, {
-      name: 'blue',
       effect: textureMappedEffect,
       parameters: {
         DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_blue.png' }),
@@ -70,7 +61,7 @@ loop((time, dt) => {
   device.resize()
   device.clear(0xff2e2620, 1)
 
-  cam.initTranslation(0, 0, 5.0)
+  cam.initTranslation(0, 0, 3)
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 

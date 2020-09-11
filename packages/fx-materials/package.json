@@ -1,0 +1,37 @@
+{
+  "name": "@gglib/fx-materials",
+  "description": "Part of the [G]glib project",
+  "version": "0.6.0",
+  "repository": {
+    "type": "git",
+    "url": "github.com/giniedp/glib.git"
+  },
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
+  "author": "Alexander Graefenstein",
+  "license": "MIT",
+  "index": "dist/bundles/fx-materials.umd.js",
+  "module": "dist/fx-materials/src/index.js",
+  "typings": "dist/fx-materials/src/index.d.ts",
+  "devDependencies": {
+    "@gglib/graphics": "0.6.0",
+    "@gglib/math": "0.6.0",
+    "@gglib/content": "0.6.0",
+    "@gglib/utils": "0.6.0"
+  },
+  "peerDependencies": {
+    "@gglib/graphics": "0.6.0",
+    "@gglib/math": "0.6.0",
+    "@gglib/content": "0.6.0",
+    "@gglib/utils": "0.6.0"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
+}

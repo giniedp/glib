@@ -1,51 +1,40 @@
-import { glsl } from '@gglib/effects'
-import { createShaderEffect, Device, ShaderEffect, ShaderFxDocument } from '@gglib/graphics'
+import { Device } from '@gglib/graphics'
 import { RenderManager } from '../RenderManager'
 import { RenderStep } from '../Types'
-
-/**
- * Constructor options for {@link PostPixelate}
- *
- * @public
- */
-export interface PixelateOptions {
-  enabled?: boolean
-  pixelWidth?: number
-  pixelHeight?: number
-  offset?: number
-}
-
-function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
-  if (option in options) {
-    return options[option] as any
-  }
-  return fallback
-}
+import { PostPixelateOptions, PostPixelateEffect } from '@gglib/fx-post'
 
 /**
  * @public
  */
-export class PostPixelate implements RenderStep {
+export class PostPixelateStep implements RenderStep {
   public get ready() {
-    return this.effect != null
+    return this.effect.isReady
   }
 
   public enabled = true
-  public pixelWidth: number = 10
-  public pixelHeight: number = 10
-  public offset: number = 0
-  private effect: ShaderEffect
-
-  constructor(private device: Device, options: PixelateOptions = {}) {
-    this.pixelWidth = getOption(options, 'pixelWidth', this.pixelWidth)
-    this.pixelHeight = getOption(options, 'pixelHeight', this.pixelHeight)
-    this.enabled = getOption(options, 'enabled', this.enabled)
-    this.offset = getOption(options, 'offset', this.offset)
-    this.createEffect()
+  public get pixelWidth(): number {
+    return this.effect.pixelWidth
+  }
+  public set pixelWidth(value: number) {
+    this.effect.pixelWidth = value
+  }
+  public get pixelHeight(): number {
+    return this.effect.pixelHeight
+  }
+  public set pixelHeight(value: number) {
+    this.effect.pixelHeight = value
+  }
+  public get offset(): number {
+    return this.effect.offset
+  }
+  public set offset(value: number) {
+    this.effect.offset = value
   }
 
-  private async createEffect() {
-    this.effect = await createShaderEffect(this.device, SHADER)
+  private effect: PostPixelateEffect
+
+  constructor(device: Device, options: PostPixelateOptions) {
+    this.effect = new PostPixelateEffect(device, options)
   }
 
   public render(manager: RenderManager) {
@@ -53,78 +42,15 @@ export class PostPixelate implements RenderStep {
       return
     }
 
-    let rt = manager.beginStep()
-    let rt2 = manager.acquireTarget(rt)
+    const rt = manager.beginStep()
+    const rt2 = manager.acquireTarget(rt)
 
-    let program = this.effect.getTechnique(0).pass(0).program
-    program.setUniform('texture', rt)
-    program.setUniform('vOffset', this.offset)
-    program.setUniform('pixelWidth', this.pixelWidth)
-    program.setUniform('pixelHeight', this.pixelHeight)
-    program.setUniform('targetWidth', rt.width)
-    program.setUniform('targetHeight', rt.height)
-
-    manager.device.setRenderTarget(rt2)
-    manager.device.program = program
-    manager.device.drawQuad(false)
-    manager.device.setRenderTarget(null)
+    this.effect.inputTexture = rt
+    this.effect.outputTexture = rt2
+    this.effect.draw()
+    this.effect.inputTexture = null
+    this.effect.outputTexture = null
 
     manager.endStep(rt2)
   }
-}
-
-const SHADER: ShaderFxDocument = {
-  name: 'Pixelate',
-  program: glsl`
-    precision highp float;
-    precision highp int;
-
-    // @binding position
-    attribute vec3 position;
-
-    // @binding texture
-    attribute vec2 texture;
-
-    // @binding texture
-    uniform sampler2D textureSampler;
-
-    // @binding targetWidth
-    uniform float targetWidth;
-
-    // @binding targetHeight
-    uniform float targetHeight;
-
-    varying vec2 texCoord;
-
-    // @default 0
-    uniform float vOffset;
-
-    // @default 4
-    uniform float pixelWidth;
-
-    // @default 4
-    uniform float pixelHeight;
-  `,
-  technique: {
-    name: '',
-    pass: {
-      vertexShader: glsl`
-        void main(void) {
-          texCoord = texture;
-          gl_Position = vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: glsl`
-        void main() {
-          vec2 uv = texCoord;
-          if (uv.x >= vOffset) {
-            float dx = pixelWidth / targetWidth;
-            float dy = pixelHeight / targetHeight;
-            uv = vec2(dx * floor(uv.x / dx), dy * floor(uv.y / dy));
-          }
-          gl_FragColor = vec4(texture2D(textureSampler, uv).rgb, 1);
-        }
-      `,
-    },
-  },
 }
