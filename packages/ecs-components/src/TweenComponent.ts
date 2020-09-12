@@ -1,8 +1,11 @@
-import { Component, OnUpdate, Inject } from '@gglib/ecs';
-import { TimeComponent } from './TimeComponent';
-import { IVec2, IVec3, Vec3, Vec2, IVec4, Vec4, easeLinear, clamp } from '@gglib/math';
-import { isArray, Events, removeFromArray, addToArraySet } from '@gglib/utils';
+import { Component, OnUpdate, Inject } from '@gglib/ecs'
+import { TimeComponent } from './TimeComponent'
+import { IVec2, IVec3, Vec3, Vec2, IVec4, Vec4, easeLinear, clamp } from '@gglib/math'
+import { isArray, Events, removeFromArray, FunctionPropertyNames, NonFunctionPropertyNames } from '@gglib/utils'
 
+/**
+ * Constructor options for {@link Tween}
+ */
 export interface TweenOptions<T> {
   /**
    * The source values
@@ -30,10 +33,17 @@ export interface TweenOptions<T> {
   ease?: (t: number) => number
 }
 
-export type TweenEventName = 'update'
-export class Tween extends Events {
+/**
+ * Tween event names
+ *
+ * @public
+ */
+export type TweenEventName = 'update' | 'end' | 'start'
 
+export class Tween extends Events {
+  public static EVENT_START: TweenEventName = 'start'
   public static EVENT_UPDATE: TweenEventName = 'update'
+  public static EVENT_END: TweenEventName = 'end'
 
   /**
    * The time at which the tween has started
@@ -63,11 +73,20 @@ export class Tween extends Events {
    * The ease function
    */
   public readonly ease: (t: number) => number
-
+  /**
+   * Whether this tween is active
+   */
+  public get active() {
+    return this.activeValue
+  }
+  /**
+   * The tween progress in range of [0:1]
+   */
   public get progress() {
     return this.progressValue
   }
 
+  private activeValue = false
   private progressValue = 0
   constructor(options: TweenOptions<number[]>) {
     super()
@@ -87,18 +106,46 @@ export class Tween extends Events {
   }
 
   /**
+   * Restarts this tween
+   */
+  public restart() {
+    this.progressValue = 0
+  }
+
+  /**
    * Interpolates values based on given time
    *
    * @param timeInMs - the current time in ms
    * @returns the progress valie in range [0:1]
    */
   public update(timeInMs: number) {
+    if (!this.active && !this.progressValue) {
+      this.activeValue = true
+      this.progressValue = 0
+      this.trigger(Tween.EVENT_START, this)
+    }
+    if (!this.active) {
+      return
+    }
+
     this.progressValue = clamp((timeInMs - (this.startTime + this.delayInMs)) / this.durationInMs, 0, 1)
+    this.activeValue = this.progressValue < 1
     const t = this.ease(this.progressValue)
     for (let i = 0; i < this.from.length; i++) {
       this.values[i] = (1 - t) * this.from[i] + t * this.to[i]
     }
     this.trigger(Tween.EVENT_UPDATE, this)
+    if (!this.active) {
+      this.trigger(Tween.EVENT_END, this)
+    }
+  }
+  /**
+   * Registers a callback function that is called when tween starts
+   *
+   * @param fn - the callback function
+   */
+  public whenStart(fn: (tween: Tween) => void) {
+    return this.on(Tween.EVENT_START, fn)
   }
 
   /**
@@ -106,8 +153,41 @@ export class Tween extends Events {
    *
    * @param fn - the callback function
    */
-  public onUpdateEvent(fn: (tween: Tween) => void) {
+  public whenUpdate(fn: (tween: Tween) => void) {
     return this.on(Tween.EVENT_UPDATE, fn)
+  }
+
+  /**
+   * Registers a callback function that is called when tween is finished
+   *
+   * @param fn - the callback function
+   */
+  public whenEnd(fn: (tween: Tween) => void) {
+    return this.on(Tween.EVENT_END, fn)
+  }
+
+  public addUpdatable<T>(target: T, prop: NonFunctionPropertyNames<T>, index0 = 0) {
+    this.whenUpdate((tween: Tween) => target[prop as any] = tween.values[index0])
+  }
+
+  public addUpdatableWith1Arg<T>(target: T, fun: FunctionPropertyNames<T>, index0 = 0) {
+    this.whenUpdate((tween: Tween) => (target[fun] as any)(tween.values[index0]))
+  }
+
+  public addUpdatableWith2Args<T>(target: T, fun: FunctionPropertyNames<T>, index0 = 0, index1 = index0 + 1) {
+    this.whenUpdate((tween: Tween) => (target[fun] as any)(tween.values[index0], tween.values[index1]))
+  }
+
+  public addUpdatableWith3Args<T>(
+    target: T,
+    fun: FunctionPropertyNames<T>,
+    index0 = 0,
+    index1 = index0 + 1,
+    index2 = index0 + 2,
+  ) {
+    this.whenUpdate((tween: Tween) =>
+      (target[fun] as any)(tween.values[index0], tween.values[index1], tween.values[index2]),
+    )
   }
 }
 
@@ -116,7 +196,6 @@ export class Tween extends Events {
  */
 @Component()
 export class TweenComponent implements OnUpdate {
-
   private tweens: Tween[] = []
 
   @Inject(TimeComponent, { from: 'root' })
@@ -142,8 +221,9 @@ export class TweenComponent implements OnUpdate {
     }
   }
 
-  public cancelAll() {
+  public cancelAll(): this {
     this.tweens.length = 0
+    return this
   }
 
   public start(options: TweenOptions<number[]>) {
@@ -183,11 +263,7 @@ export class TweenComponent implements OnUpdate {
   private push(options: TweenOptions<number[]>) {
     const tween = new Tween(options)
     this.tweens.push(tween)
-    tween.onUpdateEvent((it) => {
-      if (it. progress >= 1) {
-        removeFromArray(this.tweens, tween)
-      }
-    })
+    tween.whenEnd((it) => removeFromArray(this.tweens, tween))
     return tween
   }
 }

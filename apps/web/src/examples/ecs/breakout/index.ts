@@ -320,7 +320,7 @@ class GameObjectComponent implements OnSetup<any>, OnUpdate {
         durationInMs: 300,
         ease: easeInCubic,
       })
-      .onUpdateEvent((tween) => {
+      .whenUpdate((tween) => {
         this.killProgress = tween.values[0]
         this.isVisible = tween.progress < 1
       })
