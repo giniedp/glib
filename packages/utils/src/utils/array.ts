@@ -32,7 +32,7 @@ export function flattenArray<T>(value: T[][]): T[] {
  */
 export function removeFromArray<T>(list: T[], item: T) {
   const index = list.indexOf(item)
-  if (index > 0) {
+  if (index >= 0) {
     list.splice(index, 1)
     return true
   }
