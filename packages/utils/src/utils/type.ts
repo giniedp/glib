@@ -38,3 +38,24 @@ export class TypeToken<T = unknown> {
     return `TypeToken ${this.name}`
   }
 }
+
+/**
+ * @public
+ */
+export type FunctionPropertyNames<T> = {
+  [K in keyof T]: T[K] extends Function ? K : never;
+}[keyof T];
+/**
+ * @public
+ */
+export type FunctionProperties<T> = Pick<T, FunctionPropertyNames<T>>;
+/**
+ * @public
+ */
+export type NonFunctionPropertyNames<T> = {
+  [K in keyof T]: T[K] extends Function ? never : K;
+}[keyof T];
+/**
+ * @public
+ */
+export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
