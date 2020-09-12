@@ -1,6 +1,5 @@
 import { proceduralProgram } from './base';
-import { glsl, ShaderEffect, Device, createShaderEffectSync } from '@gglib/graphics';
-
+import { glsl } from '@gglib/graphics';
 
 export function brickProgram() {
   return proceduralProgram({}, [{
@@ -33,27 +32,4 @@ export function brickProgram() {
       color.rgb = mix(colorMortar, colorBrick, w * h);
     `
   }])
-}
-
-export interface BrickEffectOptions {
-  brickWidth?: number
-  brickHeight?: number
-  mortarThickness?: number
-  mortarColor?: number
-  brickColor?: number
-}
-
-export class BrickEffect {
-
-  public readonly shader: ShaderEffect
-
-  constructor(device: Device, options: BrickEffectOptions) {
-    this.shader = device.createEffect({
-      program: brickProgram()
-    })
-  }
-
-  public draw() {
-    this.shader.drawQuad()
-  }
 }
