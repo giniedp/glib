@@ -1,6 +1,6 @@
 ---
-title: 3D Shapes
-weight: w004
+title: Shading
+weight: w007
 group: graphics
 files:
   - Readme.md
@@ -14,27 +14,18 @@ block prepend script
   script#vertex-shader(type='text/glsl').
     precision highp float;
 
-    // @binding position
     attribute vec3 vPosition;
-    // @binding normal
     attribute vec3 vNormal;
-    // @binding texture
     attribute vec2 vTexture;
-    // @binding color
-    attribute vec2 vColor;
 
-    // @binding world
     uniform mat4 uWorld;
-    // @binding view
     uniform mat4 uView;
-    // @binding projection
     uniform mat4 uProjection;
 
     // data for fragment stage
     varying vec3 normal;
     varying vec3 position;
     varying vec2 texCoord;
-    varying vec2 color;
 
     void main(void) {
       vec4 pos = uWorld * vec4(vPosition, 1.0);
@@ -46,23 +37,10 @@ block prepend script
 
   script#fragment-shader(type='text/glsl').
     precision highp float;
-    // @binding texture
-    // @filter   LinearWrap
     uniform sampler2D uTexture;
-    // @binding ambientColor
-    // @default [0.2, 0.2, 0.2]
-    uniform vec3 uAmbientColor;
-    // @binding lightColor
-    // @default [1, 1, 1]
     uniform vec3 uLightColor;
-    // @binding lightDirection
-    // @default [0, 0, -1]
     uniform vec3 uLightDirection;
-    // @binding eyePosition
-    // @default [0, 0, 1]
     uniform vec3 uEyePosition;
-    // @binding specularPower
-    // @default 16
     uniform float uSpecularPower;
 
     // data from vertex stage
@@ -95,36 +73,7 @@ block prepend script
     void main(void) {
       vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularPower);
       vec4 color = texture2D(uTexture, texCoord);
-      color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb + uAmbientColor;
+      color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb;
       color.a = 1.0;
       gl_FragColor = color;
-    }
-
-  script#vertex-shader-lines(type='text/glsl').
-    precision highp float;
-
-    // @binding position
-    attribute vec3 vPosition;
-    // @binding color
-    attribute vec3 vColor;
-
-    // @binding world
-    uniform mat4 uWorld;
-    // @binding view
-    uniform mat4 uView;
-    // @binding projection
-    uniform mat4 uProjection;
-
-    varying vec3 color;
-
-    void main(void) {
-      gl_Position = uProjection * uView * uWorld * vec4(vPosition, 1.0);
-      color = vColor;
-    }
-
-  script#fragment-shader-lines(type='text/glsl').
-    precision highp float;
-    varying vec3 color;
-    void main(void) {
-      gl_FragColor = vec4(color, 1.0);
     }

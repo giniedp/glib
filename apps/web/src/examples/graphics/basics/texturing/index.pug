@@ -1,6 +1,6 @@
 ---
-title: Web GPU Triangle
-weight: w005
+title: Texturing
+weight: w006
 group: graphics
 files:
   - Readme.md
@@ -12,15 +12,20 @@ block append script
   script(type='text/javascript' src='./index.js')
 block prepend script
   script#vertex-shader(type='text/glsl').
-    // # Vertex shader
-    // A minimal vertex shader. It passes the vertex position without any transformation to the fragment stage.
+    precision highp float;
     attribute vec3 vPosition;
+    attribute vec2 vTexture;
+    varying vec2 texCoord;
     void main(void) {
+      texCoord = vTexture;
       gl_Position = vec4(vPosition, 1.0);
     }
+
   script#fragment-shader(type='text/glsl').
-    // # Fragment shader
-    // A minimal fragment shader. It simply returns a white pixel.
+    precision highp float;
+    uniform sampler2D uTexture;
+    varying vec2 texCoord;
     void main(void) {
-      gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      // Read the color from texture and render the pixel with that color.
+      gl_FragColor = vec4(texture2D(uTexture, texCoord).rgb, 1.0);
     }

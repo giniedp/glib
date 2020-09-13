@@ -167,8 +167,8 @@ function handlePug(options: HandlePugOptions): string {
       ...(compileOptions.filters || {}),
     },
     filename: templatePath,
-
   })
+  const childrenCache = new Map()
   return template({
     ...locals,
     ...{
@@ -176,7 +176,12 @@ function handlePug(options: HandlePugOptions): string {
       children: () => {
         return readChildren(metadata.original, options.rootDir)
       },
-      childrenOf: (child: PugPageMeta) => readChildren(child.original, options.rootDir),
+      childrenOf: (child: PugPageMeta) => {
+        if (!childrenCache.has(child)) {
+          childrenCache.set(child, readChildren(child.original, options.rootDir))
+        }
+        return childrenCache.get(child)
+      },
     },
   })
 }
