@@ -18,10 +18,10 @@
   "module": "dist/gglib/src/index.js",
   "typings": "dist/gglib/src/index.d.ts",
   "devDependencies": {
-    "@gglib/ecs-components": "0.6.0",
     "@gglib/content": "0.6.0",
     "@gglib/content-loaders": "0.6.0",
     "@gglib/ecs": "0.6.0",
+    "@gglib/ecs-components": "0.6.0",
     "@gglib/fx-materials": "0.6.0",
     "@gglib/fx-post": "0.6.0",
     "@gglib/fx-procedural": "0.6.0",
@@ -30,14 +30,15 @@
     "@gglib/math": "0.6.0",
     "@gglib/noise": "0.6.0",
     "@gglib/render": "0.6.0",
+    "@gglib/particles": "0.6.0",
     "@gglib/terrain": "0.6.0",
     "@gglib/utils": "0.6.0"
   },
   "peerDependencies": {
-    "@gglib/ecs-components": "0.6.0",
     "@gglib/content": "0.6.0",
     "@gglib/content-loaders": "0.6.0",
     "@gglib/ecs": "0.6.0",
+    "@gglib/ecs-components": "0.6.0",
     "@gglib/fx-materials": "0.6.0",
     "@gglib/fx-post": "0.6.0",
     "@gglib/fx-procedural": "0.6.0",
@@ -46,6 +47,7 @@
     "@gglib/math": "0.6.0",
     "@gglib/noise": "0.6.0",
     "@gglib/render": "0.6.0",
+    "@gglib/particles": "0.6.0",
     "@gglib/terrain": "0.6.0",
     "@gglib/utils": "0.6.0"
   },

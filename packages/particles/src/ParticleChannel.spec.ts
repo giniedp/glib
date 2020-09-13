@@ -1,7 +1,5 @@
-import {
-  DeviceGL,
-  ParticleChannel,
-} from './index'
+import { DeviceGL } from "@gglib/graphics"
+import { ParticleChannel } from "./ParticleChannel"
 
 describe('graphics/ParticleChannel', () => {
 

@@ -20,6 +20,7 @@ import * as $Input from '@gglib/input'
 import * as $Math from '@gglib/math'
 import * as $Noise from '@gglib/noise'
 import * as $Render from '@gglib/render'
+import * as $Particles from '@gglib/particles'
 import * as $Terrain from '@gglib/terrain'
 import * as $Utils from '@gglib/utils'
 
@@ -89,6 +90,12 @@ export const Input = $Input
  * @public
  */
 export const Math = $Math
+/**
+ * Particles library
+ *
+ * @public
+ */
+export const Particles = $Particles
 /**
  * Procedural noise generation.
  *

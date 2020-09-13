@@ -11,7 +11,6 @@ export * from './Color'
 export * from './Device'
 export * from './Material'
 export * from './model/index' // rollup has problems without trailing /index
-export * from './ParticleChannel'
 export * from './PrimitiveBatch'
 export * from './RenderTargets'
 export * from './ShaderEffect'

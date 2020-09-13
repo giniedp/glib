@@ -16,9 +16,6 @@
   ],
   "references": [
     {
-      "path": "../ecs-components/tsconfig.json"
-    },
-    {
       "path": "../content/tsconfig.json"
     },
     {
@@ -26,6 +23,9 @@
     },
     {
       "path": "../ecs/tsconfig.json"
+    },
+    {
+      "path": "../ecs-components/tsconfig.json"
     },
     {
       "path": "../fx-materials/tsconfig.json"
@@ -50,6 +50,9 @@
     },
     {
       "path": "../render/tsconfig.json"
+    },
+    {
+      "path": "../particles/tsconfig.json"
     },
     {
       "path": "../terrain/tsconfig.json"

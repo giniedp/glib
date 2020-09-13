@@ -1,14 +1,17 @@
-
 import { IVec3 } from '@gglib/math'
-import { Color } from './Color'
-import { Device } from './Device'
-import { BufferUsage, PrimitiveType } from './enums'
-import { Buffer, ShaderProgram, Texture } from './resources'
-import { BlendState, BlendStateParams } from './states'
-import { VertexLayout } from './VertexLayout'
-
-import fs from './Particle.fs'
-import vs from './Particle.vs'
+import {
+  Color,
+  Device,
+  BufferUsage,
+  PrimitiveType,
+  Buffer,
+  Texture,
+  BlendState,
+  BlendStateParams,
+  VertexLayout,
+  ShaderProgram,
+} from '@gglib/graphics'
+import { ParticleEffect } from './ParticleEffect'
 
 /**
  * @public
@@ -63,8 +66,8 @@ export interface ParticleChannelOptions {
 
   // Range of values controlling the particle color and alpha. Values for
   // individual particles are randomly chosen from somewhere between these limits.
-  minColor?: number
-  maxColor?: number
+  minColor?: number[]
+  maxColor?: number[]
 
   // Range of values controlling how fast the particles rotate. Values for
   // individual particles are randomly chosen from somewhere between these
@@ -154,14 +157,15 @@ export class ParticleVertices {
 const defaultOptions = Object.freeze<ParticleChannelOptions>({
   maxParticles: 1000,
   duration: 1000,
+  durationRandomness: 0,
   emitterVelocitySensitivity: 1,
   minHorizontalVelocity: 0,
   maxHorizontalVelocity: 0,
   minVerticalVelocity: 0,
   maxVerticalVelocity: 0,
   endVelocity: 1,
-  minColor: Color.White.rgba,
-  maxColor: Color.White.rgba,
+  minColor: Color.White.xyzw,
+  maxColor: Color.White.xyzw,
   minRotateSpeed: 0,
   maxRotateSpeed: 0,
   minStartSize: 1,
@@ -175,7 +179,6 @@ const defaultOptions = Object.freeze<ParticleChannelOptions>({
  * @public
  */
 export class ParticleChannel {
-
   /**
    * The vertex buffer
    */
@@ -191,7 +194,7 @@ export class ParticleChannel {
   /**
    * The effect
    */
-  public readonly program: ShaderProgram
+  public readonly effect: ParticleEffect
 
   private startActive: number = 0
   private startNew: number = 0
@@ -201,7 +204,7 @@ export class ParticleChannel {
   private frame: number = 0
 
   private particleCount: number
-  private settings: ParticleChannelOptions
+  public readonly settings: ParticleChannelOptions
 
   constructor(private device: Device, options: ParticleChannelOptions = {}) {
     this.settings = {
@@ -235,38 +238,32 @@ export class ParticleChannel {
       dataType: 'ushort',
       data: indices,
     })
-    this.program = this.device.createProgram({
-      vertexShader: vs,
-      fragmentShader: fs,
-    })
 
-    this.setup()
+    this.effect = new ParticleEffect(this.device)
   }
 
-  public setup(options?: ParticleChannelOptions) {
-    if (options) {
-      this.settings = {
-        ...defaultOptions,
-        ...this.settings,
-        ...options,
-      }
-    }
-
-    this.program.setUniform('duration', this.settings.duration)
-    this.program.setUniform('durationRandomness', this.settings.durationRandomness)
-    this.program.setUniform('gravity', this.settings.gravity)
-    this.program.setUniform('endVelocity', this.settings.endVelocity)
-    this.program.setUniform('minColor', Color.fromRgba(this.settings.minColor))
-    this.program.setUniform('maxColor', Color.fromRgba(this.settings.maxColor))
-    this.program.setUniform('rotateSpeed', [this.settings.minRotateSpeed, this.settings.maxRotateSpeed])
-    this.program.setUniform('startSize', [this.settings.minStartSize, this.settings.maxStartSize])
-    this.program.setUniform('endSize', [this.settings.minEndSize, this.settings.maxEndSize])
+  private updateParameters() {
+    const params = this.effect.parameters
+    const settings = this.settings
+    params.duration = settings.duration
+    params.durationRandomness = settings.durationRandomness
+    params.gravity.initFrom(settings.gravity)
+    params.endVelocity = settings.endVelocity
+    params.minColor = settings.minColor
+    params.maxColor = settings.maxColor
+    params.rotateSpeed.init(settings.minRotateSpeed, settings.maxRotateSpeed)
+    params.startSize.init(settings.minStartSize, settings.maxStartSize)
+    params.endSize.init(settings.minEndSize, settings.maxEndSize)
+    params.viewportScale.init(0.5 / this.device.drawingBufferAspectRatio, -0.5)
+    params.currentTime = this.time
+    params.texture = settings.texture
   }
 
   public update(dt: number) {
     this.time += dt
     this.retireParticles()
     this.freeParticles()
+    this.updateParameters()
     if (this.startActive === this.startFree) {
       this.time = 0
     }
@@ -275,7 +272,7 @@ export class ParticleChannel {
     }
   }
 
-  public draw(program: ShaderProgram = this.program) {
+  public draw() {
     this.frame++
     // update vertex buffer
     this.vertexBuffer.setData(this.vertices.data)
@@ -286,13 +283,10 @@ export class ParticleChannel {
       return
     }
 
-    // update program uniforms
-    program.setUniform('viewportScale', [0.5 / this.device.drawingBufferAspectRatio, -0.5])
-    program.setUniform('currentTime', this.time)
-    program.setUniform('texture', this.settings.texture)
-
     // set device state
-    this.device.program = program
+    const pass = this.effect.getTechnique(0).pass(0)
+    pass.commit(this.effect.parameters)
+    this.device.program = pass.program
     this.device.blendState = this.settings.blendState
     this.device.indexBuffer = this.indexBuffer
     this.device.vertexBuffer = this.vertexBuffer
@@ -311,11 +305,7 @@ export class ParticleChannel {
         (this.particleCount - this.startActive) * 6,
       )
       if (this.startFree > 0) {
-        this.device.drawIndexedPrimitives(
-          PrimitiveType.TriangleList,
-          0,
-          (this.startFree) * 6,
-        )
+        this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, this.startFree * 6)
       }
     }
   }
