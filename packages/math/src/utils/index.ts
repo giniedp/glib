@@ -1,4 +1,5 @@
 export * from './clamp'
+export * from './lerp'
 export * from './ease'
 export * from './hermite'
 export * from './transformBox'

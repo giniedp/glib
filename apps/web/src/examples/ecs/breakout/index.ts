@@ -8,11 +8,12 @@ import {
   MouseComponent,
   TweenComponent,
   SpriteSourceOptions,
+  LimitTranslationConstraint,
 } from '@gglib/ecs-components'
 
 import { forwardRef, Inject, OnInit, OnUpdate, Component, Entity, OnAdded, OnSetup } from '@gglib/ecs'
 import { Texture, BlendState, Color } from '@gglib/graphics'
-import { Mat4, Rect, easeInCubic } from '@gglib/math'
+import { Mat4, Rect, easeInCubic, clamp } from '@gglib/math'
 import { CameraData, BasicRenderStep } from '@gglib/render'
 import { Events } from '@gglib/utils'
 import { ContentManager } from '@gglib/content'
@@ -178,7 +179,8 @@ class LogicComponent implements OnUpdate {
   }
 
   private updatePlayerInput() {
-    this.paddle.rect.x = this.game.width * this.mouse.xNormalized - this.paddle.rect.width / 2
+    this.paddle.rect.x += this.mouse.dxNormalized * this.game.width
+    this.paddle.rect.x = clamp(this.paddle.rect.x, 0, this.game.width - this.paddle.rect.width)
     this.paddle.rect.y = 2
     if (!this.ball.dx && !this.ball.dy) {
       if (this.mouse.buttonJustReleased(0)) {
