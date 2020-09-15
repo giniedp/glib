@@ -50,14 +50,14 @@ const post = new PostKawaseStreaksEffect(device, {
 })
 
 const rt1 = device.createRenderTarget({ width: device.drawingBufferWidth, height: device.drawingBufferHeight })
-const rt2 = device.createRenderTarget({ width: Math.floor(device.drawingBufferWidth), height: Math.floor(device.drawingBufferHeight) })
-const rt3 = device.createRenderTarget({ width: Math.floor(device.drawingBufferWidth), height: Math.floor(device.drawingBufferHeight) })
+const rt2 = device.createRenderTarget({ width: Math.floor(device.drawingBufferWidth / 2), height: Math.floor(device.drawingBufferHeight / 2) })
+const rt3 = device.createRenderTarget({ width: Math.floor(device.drawingBufferWidth / 2), height: Math.floor(device.drawingBufferHeight / 2) })
 
 loop((time, dt) => {
   device.resize()
   rt1.resize(device.drawingBufferWidth, device.drawingBufferHeight)
-  rt2.resize(Math.floor(device.drawingBufferWidth), Math.floor(device.drawingBufferHeight))
-  rt3.resize(Math.floor(device.drawingBufferWidth), Math.floor(device.drawingBufferHeight))
+  rt2.resize(Math.floor(device.drawingBufferWidth / 2), Math.floor(device.drawingBufferHeight / 2))
+  rt3.resize(Math.floor(device.drawingBufferWidth / 2), Math.floor(device.drawingBufferHeight / 2))
 
   device.cullState = CullState.Default
   device.depthState = DepthState.Default

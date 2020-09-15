@@ -27,9 +27,11 @@ export const POST_KAWASE_STREAKS: ShaderFxDocument = {
     uniform vec2 texel;
     // @binding texture1
     // @register 0
+    // @filter LinearClamp
     uniform sampler2D texture1Sampler;
     // @binding texture2
     // @register 1
+    // @filter LinearClamp
     uniform sampler2D texture2Sampler;
 
     vec4 glowCut(in sampler2D texture, in vec2 uv, in float threshold) {
