@@ -1,5 +1,5 @@
 import { defaultProgram } from '@gglib/fx-materials'
-import { buildCube, DeviceGL, ModelBuilder, createDevice, buildSphere, buildCone } from '@gglib/graphics'
+import { buildCube, DeviceGL, ModelBuilder, createDevice, buildSphere, buildCone, buildCylinder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -22,7 +22,7 @@ const model = ModelBuilder.begin({
     b.closeMeshPart({ materialId: 0 })
   })
   .withTransform(Mat4.createTranslation(0, 0, 0), (b) => {
-    b.append(buildSphere, { radius: 1 })
+    b.append(buildCylinder, { radius: 1, height: 2, offset: -1 })
     b.closeMeshPart({ materialId: 1 })
   })
   .withTransform(Mat4.createTranslation(2.2, -1, 0), (b) => {
@@ -35,17 +35,17 @@ const model = ModelBuilder.begin({
     materials: [{
       effect: textureMappedEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/cc0textures.com/TilesColor.jpg' }),
       },
     }, {
       effect: textureMappedEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_green.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/cc0textures.com/TilesColor.jpg' }),
       },
     }, {
       effect: textureMappedEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_blue.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/cc0textures.com/TilesColor.jpg' }),
       },
     }],
   })

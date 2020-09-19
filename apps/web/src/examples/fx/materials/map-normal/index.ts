@@ -11,9 +11,11 @@ const device = createDevice({
 const lightingEffect = device.createEffect({
   program: defaultProgram({
     DIFFUSE_MAP: true,
+    NORMAL_MAP: true,
+    V_TANGENT: true,
     LIGHT: true,
-    LIGHT_COUNT: 1,
-    SHADE_FUNCTION: 'shadeLambert',
+    LIGHT_COUNT: 3,
+    SHADE_FUNCTION: 'shadeBlinn',
   }),
 })
 
@@ -35,18 +37,19 @@ const model = ModelBuilder
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_orange.png' }),
+        DiffuseMap: device.createTexture({ source: '/assets/textures/cc0textures.com/LavaColor.jpg' }),
+        NormalMap: device.createTexture({ source: '/assets/textures/cc0textures.com/LavaNormal.jpg' }),
       },
     }],
   })
-  .endModel(device, )
+  .endModel(device)
 
 loop((time, dt) => {
 
   device.resize()
   device.clear(0xff2e2620, 1)
 
-  cam.setTranslation(0, 0, 3)
+  cam.setTranslation(0, 0, 2)
   Mat4.invert(cam, view)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
   world.initRotationY(time / 4000)
@@ -57,6 +60,7 @@ loop((time, dt) => {
       mtl.parameters.View = view
       mtl.parameters.Projection = proj
       mtl.parameters.CameraPosition = cam.getTranslation()
+
       light.assign(0, mtl.parameters)
     })
   })

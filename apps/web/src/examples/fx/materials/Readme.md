@@ -2,9 +2,17 @@
 
 ---
 
-The effects package provides a mechanism to create shaders using shader building blocks.
-It also implements various building blocks which can be invoked via the `defaultProgram`
-method. The constructed shaders are *feature based* where features are enabled or disabled
-by passing a set of glsl `#define` values.
+The fx-materials package implements various shader snippets which are combined in a single Ubershader.
 
-The examples show how common effects can be constructed.
+## defaultProgram
+
+To create the Ubershader the `defaultProgram` function must be called with an object
+that is interpreted as a set of `#define` statements. Based on these statements features
+will be activated or deactivated.
+
+These example demonstrate how `defaultProgram` can be used to create common shading effects.
+
+## AutoMaterial
+
+The `AutoMaterial` class uses the `defaultProgram` under the hood but gives a
+more object oriented way to interact with or create the Ubershader.

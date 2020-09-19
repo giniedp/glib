@@ -39,10 +39,10 @@ const model = ModelBuilder
     materials: [{
       effect: lightingEffect,
       parameters: {
-        DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_red.png' }),
-        NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_gray_n.png' }),
-        EmissionMap: device.createTexture({ source: '/assets/textures/prototype/proto_alpha_op.png' }),
-        EmissionColor: [0.2, 0.2, 0.2],
+        DiffuseMap: device.createTexture({ source: '/assets/textures/cc0textures.com/LavaColor.jpg' }),
+        NormalMap: device.createTexture({ source: '/assets/textures/cc0textures.com/LavaNormal.jpg' }),
+        EmissionMap: device.createTexture({ source: '/assets/textures/cc0textures.com/LavaEmission.jpg' }),
+        EmissionColor: [0.5, 0.5, 0.5],
       },
     }],
   })
