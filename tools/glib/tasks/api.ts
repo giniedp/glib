@@ -26,7 +26,7 @@ async function runApiExtractor(pkg: GlibPackageContext) {
     })
 
     if (extractorResult.succeeded) {
-      resolve()
+      resolve(void 0)
     } else {
       reject(`API Extractor completed with ${extractorResult.errorCount} errors and ${extractorResult.warningCount} warnings`)
     }

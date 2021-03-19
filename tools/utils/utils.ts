@@ -9,7 +9,7 @@ export function spawn(options: cp.SpawnOptions & { cmd: string, args?: any[] }) 
   const args = (options.args || []).filter((it) => it != null)
   return new Promise((resolve, reject) => {
     const c = cp.spawn(cmd, args, options)
-    c.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`Exit code ${code}`)))
+    c.on('exit', (code) => code === 0 ? resolve(void 0) : reject(new Error(`Exit code ${code}`)))
   })
 }
 
