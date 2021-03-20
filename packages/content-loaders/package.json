@@ -1,7 +1,7 @@
 {
   "name": "@gglib/content-loaders",
   "description": "Part of the [G]glib project",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,16 +18,16 @@
   "module": "dist/content-loaders/src/index.js",
   "typings": "dist/content-loaders/src/index.d.ts",
   "devDependencies": {
-    "@gglib/content": "0.6.0",
-    "@gglib/graphics": "0.6.0",
-    "@gglib/math": "0.6.0",
-    "@gglib/utils": "0.6.0"
+    "@gglib/graphics": "0.6.1",
+    "@gglib/content": "0.6.1",
+    "@gglib/math": "0.6.1",
+    "@gglib/utils": "0.6.1"
   },
   "peerDependencies": {
-    "@gglib/content": "0.6.0",
-    "@gglib/graphics": "0.6.0",
-    "@gglib/math": "0.6.0",
-    "@gglib/utils": "0.6.0"
+    "@gglib/graphics": "0.6.1",
+    "@gglib/content": "0.6.1",
+    "@gglib/math": "0.6.1",
+    "@gglib/utils": "0.6.1"
   },
   "files": [
     "package.json",

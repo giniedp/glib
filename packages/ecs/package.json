@@ -1,7 +1,7 @@
 {
   "name": "@gglib/ecs",
   "description": "Part of the [G]glib project",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,10 +18,10 @@
   "module": "dist/ecs/src/index.js",
   "typings": "dist/ecs/src/index.d.ts",
   "devDependencies": {
-    "@gglib/utils": "0.6.0"
+    "@gglib/utils": "0.6.1"
   },
   "peerDependencies": {
-    "@gglib/utils": "0.6.0"
+    "@gglib/utils": "0.6.1"
   },
   "files": [
     "package.json",

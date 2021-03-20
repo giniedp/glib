@@ -1,7 +1,7 @@
 {
   "name": "@gglib/utils",
   "description": "Part of the [G]glib project",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"

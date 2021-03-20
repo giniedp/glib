@@ -1,7 +1,7 @@
 {
   "name": "@gglib/content",
   "description": "Part of the [G]glib project",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,12 +18,12 @@
   "module": "dist/content/src/index.js",
   "typings": "dist/content/src/index.d.ts",
   "devDependencies": {
-    "@gglib/graphics": "0.6.0",
-    "@gglib/utils": "0.6.0"
+    "@gglib/graphics": "0.6.1",
+    "@gglib/utils": "0.6.1"
   },
   "peerDependencies": {
-    "@gglib/graphics": "0.6.0",
-    "@gglib/utils": "0.6.0"
+    "@gglib/graphics": "0.6.1",
+    "@gglib/utils": "0.6.1"
   },
   "files": [
     "package.json",
