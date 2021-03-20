@@ -21,10 +21,10 @@ describe('content/loaders/tga', () => {
     })
 
     it ('loads ImageData', async () => {
-      const result = await manager.load('/assets/textures/prototype/proto_gray.tga', ImageData)
+      const result = await manager.load('/assets/testimages/tga/avatar.tga', ImageData)
       expect(result instanceof ImageData).toBe(true)
-      expect(result.width).toBe(512)
-      expect(result.height).toBe(512)
+      expect(result.width).toBe(256)
+      expect(result.height).toBe(256)
     })
   })
 })

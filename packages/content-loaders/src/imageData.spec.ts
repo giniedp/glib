@@ -34,7 +34,7 @@ describe('content/loaders/native', () => {
     })
 
     it ('loads ImageData', async () => {
-      const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', ImageData)
+      const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', ImageData)
       expect(result instanceof ImageData).toBe(true)
       expect(result.width).toBe(512)
       expect(result.height).toBe(512)

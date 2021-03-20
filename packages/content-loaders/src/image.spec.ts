@@ -20,9 +20,9 @@ describe('content/loaders/native', () => {
     })
 
     it('loads HTMLImageElement', async () => {
-      const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', HTMLImageElement)
+      const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', HTMLImageElement)
       expect(result instanceof Image).toBe(true)
-      expect(result.src).toContain('proto_gray.jpg')
+      expect(result.src).toContain('dust_bk.jpg')
     })
   })
 
@@ -32,9 +32,9 @@ describe('content/loaders/native', () => {
     })
 
     it('loads HTMLImageElement', async () => {
-      const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Image)
+      const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', Image)
       expect(result instanceof Image).toBe(true)
-      expect(result.src).toContain('proto_gray.jpg')
+      expect(result.src).toContain('dust_bk.jpg')
     })
   })
 

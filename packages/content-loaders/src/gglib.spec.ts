@@ -49,8 +49,8 @@ describe('content/loader/native', () => {
 
   it('loads jpeg to Texture.Options', async () => {
     manager.pipeline.register(loadJpegToTextureOptions)
-    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Options)
-    expect(result).toEqual({ source: '/assets/textures/prototype/proto_gray.jpg' })
+    const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', Texture.Options)
+    expect(result).toEqual({ source: '/assets/textures/cubemaps/dust_bk.jpg' })
   })
 
   it('loads png to Texture.Options', async () => {
@@ -62,7 +62,7 @@ describe('content/loader/native', () => {
   it('loads jpeg to Texture', async () => {
     manager.pipeline.register(loadJpegToTextureOptions)
     manager.pipeline.register(loadTextureOptionsToTexture)
-    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
+    const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', Texture.Texture2D)
     expect(result instanceof Texture).toBe(true)
     expect(result.type).toBe(TextureType.Texture2D)
   })
@@ -72,7 +72,7 @@ describe('content/loader/native', () => {
     manager.pipeline.register(loadJpegToHTMLImageElement)
     manager.pipeline.register(loadImageDataToTextureOptions)
     manager.pipeline.register(loadTextureOptionsToTexture)
-    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Texture.Texture2D)
+    const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', Texture.Texture2D)
       expect(result instanceof Texture).toBe(true)
       expect(result.ready).toBe(true)
       expect(result.width).toBe(512)
@@ -84,7 +84,7 @@ describe('content/loader/native', () => {
     manager.pipeline.register(loadJpegToTextureOptions)
     manager.pipeline.register(loadTextureOptionsToTexture)
     manager.pipeline.register(loadTextureToMaterialOptions)
-    const result = await manager.load('/assets/textures/prototype/proto_gray.jpg', Material.Options)
+    const result = await manager.load('/assets/textures/cubemaps/dust_bk.jpg', Material.Options)
     expect(result.technique).toBe('default')
     expect(result.parameters.DiffuseMap).toBeDefined()
     expect(result.parameters.DiffuseMap instanceof Texture).toBe(true)
@@ -174,7 +174,7 @@ describe('content/loader/native', () => {
         vertexShader: 'void main() {}',
       }),
       parameters: {
-        DiffuseMap: '/assets/textures/prototype/proto_gray.jpg',
+        DiffuseMap: '/assets/textures/cubemaps/dust_bk.jpg',
       },
     }]
 
