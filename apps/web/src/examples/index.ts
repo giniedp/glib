@@ -1,5 +1,3 @@
-
-
 import { Static as Mithril, Vnode } from 'mithril'
 
 declare const Prism: any
@@ -18,11 +16,13 @@ document.querySelector('a.example-button-prev').addEventListener('click', prevEx
 document.querySelector('a.example-button-next').addEventListener('click', nextExample)
 
 interface ExampleData {
-  title: string,
-  href: string,
-  frontpage: boolean,
-  skipPreview: boolean,
-  files: string[],
+  title: string
+  description?: string
+  href: string
+  frontpage: boolean
+  sandbox: boolean
+  skipPreview: boolean
+  files: string[]
 }
 
 interface ExampleContent {
@@ -33,11 +33,11 @@ interface ExampleContent {
 }
 
 class ExampleComponent {
-
   private previewUrl: string
   private readme: ExampleContent
   private tabs: ExampleContent[]
   private tabIndex = 0
+  private hasSandbox: boolean
 
   private get tab() {
     return this.tabs ? this.tabs[this.tabIndex] : null
@@ -60,19 +60,23 @@ class ExampleComponent {
       m.redraw()
       return
     }
-
-    const files = await Promise.all<ExampleContent>(this.node.attrs.files.map(async (name: string) => {
-      return m.request({
-        url: url + '/' + name,
-        extract: (r) => r.responseText,
-      }).then((content) => {
-        return {
-          name: name,
-          content: content,
-          lang: name.split(/\./)[1],
-        }
-      })
-    }))
+    this.hasSandbox = data.sandbox
+    const files = await Promise.all<ExampleContent>(
+      this.node.attrs.files.map(async (name: string) => {
+        return m
+          .request({
+            url: url + '/' + name,
+            extract: (r) => r.responseText,
+          })
+          .then((content) => {
+            return {
+              name: name,
+              content: content,
+              lang: name.split(/\./)[1],
+            }
+          })
+      }),
+    )
 
     this.readme = files.find((it) => it.name === 'Readme.md')
     this.tabs = files.filter((it) => it.name !== 'Readme.md')
@@ -86,6 +90,17 @@ class ExampleComponent {
     return m(
       'div.example-body',
 
+      // m.fragment({}, [
+      //   this.hasSandbox
+      //     ? m(
+      //         'button.example-tab[type="button"]',
+      //         {
+      //           onclick: () => this.openSandbox(),
+      //         },
+      //         'Open In Sandbox',
+      //       )
+      //     : null,
+      // ]),
       m(ExamplePreviewComponent, { url: this.previewUrl }),
       m(ExampleSectionComponent, { data: this.readme }),
       m(ExampleTabsComponent, {
@@ -101,9 +116,38 @@ class ExampleComponent {
           key: `panel-${this.tabIndex}`,
           data: this.tab,
         }),
-      ])
-
+      ]),
     )
+  }
+
+  private openSandbox() {
+    const data = this.node.attrs
+    const sdk = (window as any).StackBlitzSDK
+    const project = {
+      files: {},
+      title: data.title,
+      description: data.description || '',
+      template: 'typescript',
+      tags: [] as string[],
+      dependencies: {},
+    }
+    this.tabs.forEach((tab) => {
+      if (tab.lang === 'ts' || tab.lang === 'html') {
+        project.files[tab.name] = tab.content
+      }
+      if (tab.lang === 'ts') {
+        tab.content.replace(/from '(@gglib\/[\w+-_]+)'/gi, (match, pkg) => {
+          project.dependencies[pkg] = '*'
+          return match
+        })
+        if (tab.content.match(/from 'tweak-ui'/gi)) {
+          project.dependencies['tweak-ui'] = '*'
+        }
+      }
+    })
+    sdk.openProject(project, {
+      newWindow: true
+    })
   }
 }
 
@@ -112,10 +156,7 @@ const ExamplePreviewComponent = {
     if (!node.attrs.url) {
       return null
     }
-    return m(
-      'div.example-preview.embed-responsive.embed-responsive-21by9',
-      m('iframe', { src: node.attrs.url }),
-    )
+    return m('div.example-preview.embed-responsive.embed-responsive-21by9', m('iframe', { src: node.attrs.url }))
   },
 }
 
@@ -123,12 +164,12 @@ class ExampleSectionComponent {
   private code: Vnode
   private content: Vnode
   private annotated: Array<{
-    code: Vnode,
-    comments: Vnode,
+    code: Vnode
+    comments: Vnode
   }>
 
   get hasContent() {
-    return !!this.code || !!this.content || !!this.annotated && this.annotated.length
+    return !!this.code || !!this.content || (!!this.annotated && this.annotated.length)
   }
 
   constructor(private node: Vnode<{ data: ExampleContent }>) {
@@ -181,7 +222,6 @@ class ExampleSectionComponent {
   }
 
   public view() {
-
     if (!this.hasContent) {
       return null
     }
@@ -190,15 +230,14 @@ class ExampleSectionComponent {
       `section.example-section.example-section-${this.node.attrs.data.lang}`,
       this.content,
       m(ExampleCodeComponent, { code: this.code } as any),
-      !this.annotated ? null : m(
-        '.annotated-section',
-        this.annotated.map((it) => {
-          return m.fragment({}, [
-            m('div', { class: 'annotation' }, it.comments),
-            m('pre', m('code', it.code)),
-          ])
-        }),
-      ),
+      !this.annotated
+        ? null
+        : m(
+            '.annotated-section',
+            this.annotated.map((it) => {
+              return m.fragment({}, [m('div', { class: 'annotation' }, it.comments), m('pre', m('code', it.code))])
+            }),
+          ),
     )
   }
 }
@@ -211,11 +250,10 @@ const ExampleCodeComponent = {
 }
 
 class ExampleTabsComponent {
-
   private node: Vnode<{
-    tabs: ExampleContent[],
-    active: number,
-    select: (i: number) => void,
+    tabs: ExampleContent[]
+    active: number
+    select: (i: number) => void
   }>
 
   constructor(node: Vnode<any>) {
@@ -238,13 +276,15 @@ class ExampleTabsComponent {
       'div',
       { class: 'example-tabs' },
       data.tabs.map((tab, i) => {
-        return m('button.example-tab[type="button"]',
+        return m(
+          'button.example-tab[type="button"]',
           {
             key: `tab-${i}`,
             class: i === data.active ? 'active' : '',
             onclick: () => this.node.attrs.select(i),
           },
-          tab.name)
+          tab.name,
+        )
       }),
     )
   }
@@ -305,10 +345,11 @@ function openExample(hash: string, data: ExampleData) {
   titleEl.textContent = data.title
   setTimeout(() => {
     m.mount(containerEl, {
-      view: () => m(ExampleComponent, {
-        ...data,
-        href: hash,
-      }),
+      view: () =>
+        m(ExampleComponent, {
+          ...data,
+          href: hash,
+        }),
     })
     setTimeout(() => {
       containerEl.classList.remove('hide')
@@ -318,7 +359,7 @@ function openExample(hash: string, data: ExampleData) {
 }
 
 interface Section {
-  comments: string[],
+  comments: string[]
   code: string[]
 }
 
@@ -356,9 +397,11 @@ function fixIndents(text: string) {
 
   // remove the smallest indent from all lines
   // and join to string
-  return lines.map((line) => {
-    return line.substring(minIndent)
-  }).join('\n')
+  return lines
+    .map((line) => {
+      return line.substring(minIndent)
+    })
+    .join('\n')
 }
 
 function explainLine(line: string, fn: (line: string, comment: string) => void) {
@@ -375,7 +418,7 @@ function explainLine(line: string, fn: (line: string, comment: string) => void) 
   if (comment.match(/^\//)) {
     return fn(line, null)
   }
-  if (comment.trim() === "prettier-ignore") {
+  if (comment.trim() === 'prettier-ignore') {
     return
   }
 
@@ -383,7 +426,6 @@ function explainLine(line: string, fn: (line: string, comment: string) => void) 
 }
 
 function explainCode(js: string) {
-
   // replace tabs with spaces
   js = js.replace(/[\t]/g, '  ')
   // normalize line feeds
@@ -405,7 +447,6 @@ function explainCode(js: string) {
 
   nextSection()
   lines.forEach((line) => {
-
     const isBlank = /^\s*$/.test(line)
     if (isBlank) {
       if (wasComment) {
@@ -437,6 +478,8 @@ function explainCode(js: string) {
     }
   })
 }
+
+function openSandbox(data: ExampleData, files: ExampleContent[]) {}
 
 if (Prism.plugins.NormalizeWhitespace) {
   Prism.plugins.NormalizeWhitespace.setDefaults({
