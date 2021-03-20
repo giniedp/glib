@@ -1,4 +1,4 @@
-import { defaultProgram, LightParams } from '@gglib/fx-materials'
+import { materialProgram, LightParams } from '@gglib/fx-materials'
 import { BlendState, buildCube, CullState, DepthState, LightType, ModelBuilder, createDevice, Color } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -9,7 +9,7 @@ const device = createDevice({
 })
 
 const lightingEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     ALPHA_MAP: true,
     ALPHA_CLIP: true,
     DIFFUSE_MAP: true,
@@ -75,12 +75,16 @@ loop((time, dt) => {
   model.draw()
 })
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Light', { open: true }, (b) => {
-    b.checkbox(light, 'enabled')
-    b.color(light, 'color', { format: '[n]rgb' })
-    b.direction(light, 'direction', {
-      keys: ['0', '1', '2'],
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.collapsible('Light', () => {
+    ui.checkbox(light, 'enabled')
+    ui.color(light, 'color', { format: '[n]rgb' })
+    ui.spherical(light, 'direction', {
+      codec: TweakUi.sphericalCodec({
+        axes: { 0: 'right', 1: 'up', 2: 'back' },
+        length: -1,
+        result: () => light.direction
+      })
     })
   })
 })

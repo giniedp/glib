@@ -1,3 +1,3 @@
-# Alpha & alpha clipping
+## Alpha & Alpha Clipping
 
-The example shows how to enable alpha and use alpha clipping
+How to create a program with alpha texture and enable alpha clipping

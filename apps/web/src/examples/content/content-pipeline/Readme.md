@@ -1,4 +1,4 @@
-# Custom Pipeline
+## Custom Pipeline
 
 The pipeline can be customized by adding `loader` functions.
 A `loader` function must be registered with an `input` and `output` type.

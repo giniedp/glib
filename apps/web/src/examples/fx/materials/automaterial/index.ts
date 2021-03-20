@@ -38,189 +38,38 @@ const meshes = {
 }
 let mesh = meshes.Cube
 
-const textureOptions: TweakUi.SelectModelOptions = [
-  { id: 'null', label: '-- none --', value: null },
-
-  {
-    id: 'proto_red',
-    label: 'proto_red',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_red.png',
-    }),
-  },
-  {
-    id: 'proto_green',
-    label: 'proto_green',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_green.png',
-    }),
-  },
-  {
-    id: 'proto_blue',
-    label: 'proto_blue',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_blue.png',
-    }),
-  },
-  {
-    id: 'proto_gray_n',
-    label: 'proto_gray_n',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_gray_n.png',
-    }),
-  },
-  {
-    id: 'proto_gray_h',
-    label: 'proto_gray_h',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_gray_h.png',
-    }),
-  },
-  {
-    id: 'proto_gray_s',
-    label: 'proto_gray_s',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_gray_s.png',
-    }),
-  },
-
-  {
-    id: 'proto_water',
-    label: 'proto_water',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_water.png',
-    }),
-  },
-  {
-    id: 'proto_water_N',
-    label: 'proto_water_N',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_water_N.png',
-    }),
-  },
-  {
-    id: 'proto_water_H',
-    label: 'proto_water_H',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_water_H.png',
-    }),
-  },
-  {
-    id: 'proto_water_S',
-    label: 'proto_water_S',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_water_S.png',
-    }),
-  },
-
-  {
-    id: 'proto_alpha',
-    label: 'proto_alpha',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_alpha_d.png',
-    }),
-  },
-  {
-    id: 'proto_alpha_n',
-    label: 'proto_alpha_n',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_alpha_n.png',
-    }),
-  },
-  {
-    id: 'proto_alpha_h',
-    label: 'proto_alpha_h',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_alpha_h.png',
-    }),
-  },
-  {
-    id: 'proto_alpha_op',
-    label: 'proto_alpha_op',
-    value: device.createTexture({
-      source: '/assets/textures/prototype/proto_alpha_op.png',
-    }),
-  },
-
-  {
-    id: 'SciFiWall',
-    label: 'SciFiWall',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/SciFiWall_diffuse.png',
-    }),
-  },
-  {
-    id: 'SciFiWall_normal',
-    label: 'SciFiWall_normal',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/SciFiWall_normal.png',
-    }),
-  },
-  {
-    id: 'SciFiWall_height',
-    label: 'SciFiWall_height',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/SciFiWall_height.png',
-    }),
-  },
-  {
-    id: 'SciFiWall_ao',
-    label: 'SciFiWall_ao',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/SciFiWall_ao.png',
-    }),
-  },
-  {
-    id: 'SciFiWall_metallic',
-    label: 'SciFiWall_metallic',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/SciFiWall_metallic.png',
-    }),
-  },
-  {
-    id: 'SciFiWall_roughness',
-    label: 'SciFiWall_roughness',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/SciFiWall_roughness.png',
-    }),
-  },
-
-  {
-    id: 'StoneWall_Base',
-    label: 'StoneWall_Base',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/StoneWall_Base.png',
-    }),
-  },
-  {
-    id: 'StoneWall_Normal',
-    label: 'StoneWall_Normal',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/StoneWall_Normal.png',
-    }),
-  },
-  {
-    id: 'StoneWall_Height',
-    label: 'StoneWall_Height',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/StoneWall_Height.png',
-    }),
-  },
-  {
-    id: 'StoneWall_AO',
-    label: 'StoneWall_AO',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/StoneWall_AO.png',
-    }),
-  },
-  {
-    id: 'StoneWall_Roughness',
-    label: 'StoneWall_Roughness',
-    value: device.createTexture({
-      source: '/assets/textures/sharetextures/StoneWall_Roughness.png',
-    }),
-  },
+const textures = [
+  '/assets/textures/prototype/proto_red.png',
+  '/assets/textures/prototype/proto_green.png',
+  '/assets/textures/prototype/proto_blue.png',
+  '/assets/textures/prototype/proto_gray_n.png',
+  '/assets/textures/prototype/proto_gray_h.png',
+  '/assets/textures/prototype/proto_gray_s.png',
+  '/assets/textures/prototype/proto_water.png',
+  '/assets/textures/prototype/proto_water_N.png',
+  '/assets/textures/prototype/proto_water_H.png',
+  '/assets/textures/prototype/proto_water_S.png',
+  '/assets/textures/prototype/proto_alpha_d.png',
+  '/assets/textures/prototype/proto_alpha_n.png',
+  '/assets/textures/prototype/proto_alpha_h.png',
+  '/assets/textures/prototype/proto_alpha_op.png',
+  '/assets/textures/sharetextures/StoneWall_Base.png',
+  '/assets/textures/sharetextures/StoneWall_Normal.png',
+  '/assets/textures/sharetextures/StoneWall_Height.png',
+  '/assets/textures/sharetextures/StoneWall_AO.png',
+  '/assets/textures/sharetextures/StoneWall_Roughness.png',
 ]
+const textureOptions: TweakUi.SelectModelOptions = [
+  { label: '-- none --', value: null }
+]
+for (const source of textures) {
+  textureOptions.push({
+    label: source.split('/')[4],
+    value: device.createTexture({
+      source: source,
+    }),
+  })
+}
 
 const material = new AutoMaterial(device)
 
@@ -228,20 +77,19 @@ material.SpecularPower = 64
 material.LightCount = 2
 material.ShadeFunction = 'shadeOptimized'
 
-TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
-  q.add({
-    type: 'select',
+TweakUi.mount('#tweak-ui', (ui: TweakUi.Builder) => {
+  ui.select({
     label: 'Mesh',
     options: meshes,
     value: mesh,
-    onChange: (ctrl) => (mesh = ctrl.value),
+    onChange: (m) => (mesh = m.value),
   })
 
-  q.select(material, 'LightCount', {
+  ui.select(material, 'LightCount', {
     options: [0, 1, 2, 3, 4],
   })
 
-  q.select(material, 'ShadeFunction', {
+  ui.select(material, 'ShadeFunction', {
     options: [
       'shadeNone',
       'shadeLambert',
@@ -254,20 +102,19 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     ],
   })
 
-  q.group('Ambient', {}, (c) => {
+  ui.collapsible('Ambient', {}, () => {
     let colorOn = false
     let color = [0, 0, 0]
-    c.select(material, 'AmbientMap', { options: textureOptions })
-    c.add({
-      type: 'checkbox',
+    ui.select(material, 'AmbientMap', { options: textureOptions })
+    ui.checkbox({
       label: 'AmbientColor',
       value: colorOn,
-      onChange: (it) => {
-        colorOn = it.value
+      onChange: (m, value: boolean) => {
+        colorOn = value
         material.AmbientColor = colorOn ? color : null
       },
     })
-    c.add({
+    ui.add({
       type: 'color',
       format: '[n]rgb',
       value: color,
@@ -276,21 +123,19 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     })
   })
 
-  q.group('Diffuse', {}, (c) => {
+  ui.collapsible('Diffuse', {}, () => {
     let colorOn = false
     let color = [0, 0, 0]
-    c.select(material, 'DiffuseMap', { options: textureOptions })
-    c.add({
-      type: 'checkbox',
+    ui.select(material, 'DiffuseMap', { options: textureOptions })
+    ui.checkbox({
       label: 'DiffuseColor',
       value: colorOn,
-      onChange: (it) => {
-        colorOn = it.value
+      onChange: (m, value: boolean) => {
+        colorOn = value
         material.DiffuseColor = colorOn ? color : null
       },
     })
-    c.add({
-      type: 'color',
+    ui.color({
       format: '[n]rgb',
       value: color,
       hidden: () => !colorOn,
@@ -298,22 +143,20 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     })
   })
 
-  q.group('Specular', {}, (c) => {
+  ui.collapsible('Specular', {}, () => {
     let colorOn = false
     let color = [0, 0, 0]
-    c.slider(material, 'SpecularPower', { min: 1, max: 1024, step: 1 })
-    c.select(material, 'SpecularMap', { options: textureOptions })
-    c.add({
-      type: 'checkbox',
+    ui.slider(material, 'SpecularPower', { min: 1, max: 1024, step: 1 })
+    ui.select(material, 'SpecularMap', { options: textureOptions })
+    ui.checkbox({
       label: 'SpecularColor',
       value: colorOn,
-      onChange: (it) => {
-        colorOn = it.value
+      onChange: (m, value: boolean) => {
+        colorOn = value
         material.SpecularColor = colorOn ? color : null
       },
     })
-    c.add({
-      type: 'color',
+    ui.color({
       format: '[n]rgb',
       value: color,
       hidden: () => !colorOn,
@@ -321,20 +164,19 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     })
   })
 
-  q.group('Emission', {}, (c) => {
+  ui.collapsible('Emission', {}, () => {
     let colorOn = false
     let color = [0, 0, 0]
-    c.select(material, 'EmissionMap', { options: textureOptions })
-    c.add({
-      type: 'checkbox',
+    ui.select(material, 'EmissionMap', { options: textureOptions })
+    ui.checkbox({
       label: 'EmissionColor',
       value: colorOn,
-      onChange: (it) => {
-        colorOn = it.value
+      onChange: (m, value: boolean) => {
+        colorOn = value
         material.EmissionColor = colorOn ? color : null
       },
     })
-    c.add({
+    ui.add({
       type: 'color',
       format: '[n]rgb',
       value: color,
@@ -343,25 +185,25 @@ TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
     })
   })
 
-  q.group('Normal', {}, (c) => {
-    c.select(material, 'NormalMap', { options: textureOptions })
+  ui.collapsible('Normal', {}, () => {
+    ui.select(material, 'NormalMap', { options: textureOptions })
   })
 
-  q.group('Parallax', {}, (c) => {
-    c.select(material, 'ParallaxMap', { options: textureOptions })
-    c.slider(material, 'ParallaxOcclusionSamples', { min: 0, max: 64, step: 1 })
-    c.slider(material, 'ParallaxScale', { min: -1, max: 1, step: 0.01 })
-    c.slider(material, 'ParallaxBias', { min: -1, max: 1, step: 0.01 })
+  ui.collapsible('Parallax', {}, () => {
+    ui.select(material, 'ParallaxMap', { options: textureOptions })
+    ui.slider(material, 'ParallaxOcclusionSamples', { min: 0, max: 64, step: 1 })
+    ui.slider(material, 'ParallaxScale', { min: -1, max: 1, step: 0.01 })
+    ui.slider(material, 'ParallaxBias', { min: -1, max: 1, step: 0.01 })
   })
 
-  q.group('OcclusionMap', {}, (c) => {
-    c.select(material, 'OcclusionMap', { options: textureOptions })
+  ui.collapsible('OcclusionMap', {}, () => {
+    ui.select(material, 'OcclusionMap', { options: textureOptions })
   })
 
-  q.group('MetallicRoughness', {}, (c) => {
-    c.select(material, 'MetallicRoughnessMap', { options: textureOptions })
-    c.slider(material, 'Metallic', { min: 0, max: 1, step: 0.01 })
-    c.slider(material, 'Roughness', { min: 0, max: 1, step: 0.01 })
+  ui.collapsible('MetallicRoughness', {}, () => {
+    ui.select(material, 'MetallicRoughnessMap', { options: textureOptions })
+    ui.slider(material, 'Metallic', { min: 0, max: 1, step: 0.01 })
+    ui.slider(material, 'Roughness', { min: 0, max: 1, step: 0.01 })
   })
 })
 

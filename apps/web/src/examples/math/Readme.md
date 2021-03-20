@@ -1,4 +1,1 @@
-# Math package examples
-
----
-
+## Math package examples

@@ -1,4 +1,4 @@
-# Vertex buffers as separate streams
+## Vertex buffers as separate streams
 
 Instead of a single vertex buffer we can use multiple vertex buffers. For example
 we can use one vertex buffer only for the vertex position attributes and another

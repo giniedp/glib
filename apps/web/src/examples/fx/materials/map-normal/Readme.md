@@ -1,3 +1,4 @@
-# Bump map
+## Normal Mapping
 
-The example shows how to enable normal mapping
+How to create a program for normal mapped material
+

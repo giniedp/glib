@@ -68,8 +68,8 @@ class MyGame implements OnAdded, OnInit, OnUpdate {
       c2.install(CubeComponent)
       c2.get(TransformComponent).setPosition(5, 0, -5).setScaleUniform(0.1)
 
-      TweakUi.build('#tweak-ui', (q) => {
-        q.button('Move', {
+      TweakUi.mount('#tweak-ui', (ui) => {
+        ui.button('Move', {
           onClick: () => {
             const pos = Vec3.createRandom().subtractScalar(0.5).normalize().multiplyScalar(5)
             pos.z -= 5

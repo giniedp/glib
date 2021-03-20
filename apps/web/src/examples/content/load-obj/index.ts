@@ -28,10 +28,10 @@ const models = {
   'Tree': '/assets/models/obj/medieval/tree.obj',
 }
 
-TweakUi.build('#tweak-ui', (q) => {
+TweakUi.mount('#tweak-ui', (ui) => {
   loadModel(models.Logo)
   Object.entries(models).forEach(([name, url]) => {
-    q.button(name, { onClick: () => loadModel(url)})
+    ui.button(name, { onClick: () => loadModel(url)})
   })
 })
 

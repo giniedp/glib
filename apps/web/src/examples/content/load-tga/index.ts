@@ -26,10 +26,10 @@ const files = {
   "utc32": '/assets/testimages/tga/utc32.tga',
 }
 
-TweakUi.build('#tweak-ui', (q) => {
+TweakUi.mount('#tweak-ui', (ui) => {
   loadTexture(files.avatar)
   Object.entries(files).forEach(([name, url]) => {
-    q.button(name, { onClick: () => loadTexture(url)})
+    ui.button(name, { onClick: () => loadTexture(url)})
   })
 })
 

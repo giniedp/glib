@@ -1,4 +1,4 @@
-# Touch input
+## Touch input
 
 The `TouchPane` class tracks touch based input.
 Internally it listens to the `touchstart`, `touchmove`, `touchend` and `touchcancel`

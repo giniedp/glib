@@ -1,3 +1,3 @@
-# SpriteComponent
+## SpriteComponent
 
 Demonstration of the `SpriteComponent`

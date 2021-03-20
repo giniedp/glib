@@ -1,4 +1,4 @@
-# Simple raytracer
+## Simple raytracer
 
 This simple implementation of a raytracer demonstrates some concepts of the math api.
 

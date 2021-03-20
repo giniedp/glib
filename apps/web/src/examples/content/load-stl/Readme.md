@@ -1,3 +1,3 @@
-# STL Models
+## STL Models
 
 Loading STL model example

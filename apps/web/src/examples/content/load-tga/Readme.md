@@ -1,4 +1,4 @@
-# TGA Loader
+## TGA Loader
 
 This is a TGA loading test and demonstration.
 

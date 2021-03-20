@@ -1,4 +1,4 @@
-import { defaultProgram, LightParams } from '@gglib/fx-materials'
+import { materialProgram, LightParams } from '@gglib/fx-materials'
 import { buildCube, buildPlane, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -9,7 +9,7 @@ const device = createDevice({
 })
 
 const normalMapEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_MAP: true,
     NORMAL_MAP: true,
     SPECULAR_POWER: true,
@@ -23,7 +23,7 @@ const normalMapEffect = device.createEffect({
 })
 
 const normalMapSpecularMapEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_MAP: true,
     NORMAL_MAP: true,
     SPECULAR_MAP: true,
@@ -53,16 +53,22 @@ const view = Mat4.createIdentity()
 const proj = Mat4.createIdentity()
 const cam = Mat4.createIdentity()
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Light', { open: true }, (b) => {
-    b.checkbox(light, 'enabled')
-    b.color(light, 'color', { format: '[n]rgb' })
-    b.slider(light.position, 0, { min: -10, max: 10, step: 0.1, label: 'Position X' })
-    b.slider(light.position, 1, { min: -10, max: 10, step: 0.1, label: 'Position Y' })
-    b.slider(light.position, 2, { min: -10, max: 10, step: 0.1, label: 'Position Z' })
-    b.direction(light, 'direction')
-    b.slider(light, 'range', { min: 0, max: 100, step: 0.01 })
-    b.slider(light, 'angle', { min: 0, max: 90, step: 0.01 })
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.collapsible('Light', () => {
+    ui.checkbox(light, 'enabled')
+    ui.color(light, 'color', { format: '[n]rgb' })
+    ui.slider(light.position, 0, { min: -10, max: 10, step: 0.1, label: 'Position X' })
+    ui.slider(light.position, 1, { min: -10, max: 10, step: 0.1, label: 'Position Y' })
+    ui.slider(light.position, 2, { min: -10, max: 10, step: 0.1, label: 'Position Z' })
+    ui.spherical(light, 'direction', {
+      codec: TweakUi.sphericalCodec({
+        axes: { 0: 'right', 1: 'up', 2: 'back' },
+        length: -1,
+        result: () => light.direction
+      })
+    })
+    ui.slider(light, 'range', { min: 0, max: 100, step: 0.01 })
+    ui.slider(light, 'angle', { min: 0, max: 90, step: 0.01 })
   })
 })
 

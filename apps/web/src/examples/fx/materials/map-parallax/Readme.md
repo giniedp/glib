@@ -1,3 +1,3 @@
-# Parallax
+## Parallax Mapping
 
-The example shows how to enable parallax effect
+How to create a program with a parallax effect

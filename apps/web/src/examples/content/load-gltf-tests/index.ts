@@ -39,35 +39,41 @@ Texture.crossOrigin = 'anonymous'
 const device = createDevice({ canvas: '#canvas' })
 const content = new ContentManager(device)
 content.downloadJSON({ url: manifest }).then((data: Data<Manifest>) => {
-  TweakUi.build('#tweak-ui', (b: TweakUi.Builder) => {
-    b.group('Controls', { open: true }, (q) => {
-      q.accordeon({ autoscroll: true }, (a) => {
+  TweakUi.mount('#tweak-ui', (ui) => {
+    ui.group('Controls', { collapsible: true }, () => {
+      ui.accordion(() => {
         const list = data.content.sort((a, b) => a.id - b.id)
         list.forEach((folder) => {
-          a.group(folder.folder, (f) => {
+          ui.group(folder.folder, () => {
             folder.models.forEach((model, modelId) => {
               if (!model.loadable) {
                 return
               }
-              if (model.sampleImageName) {
-                f.image(null, {
-                  height: 150,
-                  src: `${baseUrl}/${folder.folder}/${model.sampleImageName}`,
-                  onClick: () => loadModel(`${baseUrl}/${folder.folder}/${model.fileName}`, model),
+              ui.container({ horizontal: true }, () => {
+                if (model.sampleImageName) {
+                  ui.container({ style: { flex: 'none' } }, () => {
+                    ui.image({
+                      width: 70,
+                      src: `${baseUrl}/${folder.folder}/${model.sampleImageName}`,
+                      onClick: () => loadModel(`${baseUrl}/${folder.folder}/${model.fileName}`, model),
+                    })
+                  })
+                }
+                ui.container(() => {
+                  ui.button('show', {
+                    onClick: () => loadModel(`${baseUrl}/${folder.folder}/${model.fileName}`, model),
+                  })
+                  ui.button('open in github', {
+                    onClick: () => window.open(`${githubUrl}/${folder.folder}`, '_blank'),
+                  })
+                  ui.button('compare viewer', {
+                    onClick: () =>
+                      window.open(
+                        `https://bghgary.github.io/glTF-Assets-Viewer/?manifest=https://raw.githubusercontent.com/KhronosGroup/glTF-Asset-Generator/master/Output/Positive/Manifest.json&folder=${folder.id}&model=${modelId}`,
+                        '_blank',
+                      ),
+                  })
                 })
-              }
-              f.button(model.fileName, {
-                onClick: () => loadModel(`${baseUrl}/${folder.folder}/${model.fileName}`, model),
-              })
-              f.button('open in github', {
-                onClick: () => window.open(`${githubUrl}/${folder.folder}`, '_blank'),
-              })
-              f.button('compare viewer', {
-                onClick: () =>
-                  window.open(
-                    `https://bghgary.github.io/glTF-Assets-Viewer/?manifest=https://raw.githubusercontent.com/KhronosGroup/glTF-Asset-Generator/master/Output/Positive/Manifest.json&folder=${folder.id}&model=${modelId}`,
-                    '_blank',
-                  ),
               })
             })
           })

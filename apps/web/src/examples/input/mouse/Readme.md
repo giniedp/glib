@@ -1,4 +1,4 @@
-# Mouse input
+## Mouse input
 
 The `Mouse` class tracks the mouse movement as well as pressed buttons.
 Internally it listens to `mousemove`, `mousedown`, `mouseup` and `mousewheel` events and records

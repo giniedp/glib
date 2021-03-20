@@ -1,3 +1,3 @@
-# OBJ Models
+## OBJ Models
 
 Loading OBJ model example

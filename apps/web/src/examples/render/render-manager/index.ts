@@ -4,7 +4,7 @@ import { ContentManager } from '@gglib/content'
 import { AutoMaterial, LightParams } from '@gglib/fx-materials'
 import { buildPlane, buildSphere, CullState, DepthState, flipWindingOrder, Model, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderStep, PostStepBloom, PostPixelate, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
+import { BasicRenderStep, PostStepBloom, PostPixelateStep, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // ### Setup the render manager
@@ -52,8 +52,8 @@ const scene: Scene = {
       depthState: DepthState.Default,
       cullState: CullState.CullClockWise,
     }),
-    new PostStepBloom(device, { enabled: true }),
-    new PostPixelate(device, { enabled: false }),
+    new PostStepBloom(device, {  }),
+    new PostPixelateStep(device, {  }),
   ],
   views: [{
     viewport: {
@@ -214,7 +214,7 @@ function loadSky() {
 
   const model = ModelBuilder.begin().append((b) => {
     buildSphere(b, { radius: 1000, tesselation: 32 })
-    flipWindingOrder(b.indices)
+    flipWindingOrder(b.indices as number[])
   }).closeMesh({
     materials: [mtl],
   }).endModel(device)
@@ -244,10 +244,10 @@ function makeDrawableList(model: Model, world: Mat4): SceneItemDrawable[] {
   return result
 }
 
-TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
+TweakUi.mount('#tweak-ui' , (q: TweakUi.Builder) => {
   scene.steps.forEach((it) => {
     if (it instanceof PostStepBloom) {
-      q.group('Bloom', {}, (c) => {
+      q.collapsible('Bloom', (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'glowCut', { min: 0, max: 1, step: 0.001 })
         c.slider(it, 'multiplier', { min: 0, max: 1, step: 0.01 })
@@ -255,12 +255,11 @@ TweakUi.build('#tweak-ui' , (q: TweakUi.Builder) => {
         c.slider(it, 'iterations', { min: 0, max: 10, step: 1 })
       })
     }
-    if (it instanceof PostPixelate) {
-      q.group('Pixelate', {}, (c) => {
+    if (it instanceof PostPixelateStep) {
+      q.collapsible('Pixelate', (c) => {
         c.checkbox(it, 'enabled')
         c.slider(it, 'pixelWidth', { min: 1, max: 32, step: 1 })
         c.slider(it, 'pixelHeight', { min: 1, max: 32, step: 1 })
-        c.slider(it, 'offset', { min: 0, max: 1, step: 0.001 })
       })
     }
   })

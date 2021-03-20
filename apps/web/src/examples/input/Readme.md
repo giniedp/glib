@@ -1,4 +1,4 @@
-# Input package examples
+## Input package examples
 
 ---
 

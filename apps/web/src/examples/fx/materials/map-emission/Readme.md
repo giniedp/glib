@@ -1,3 +1,3 @@
-# Emission map
+## Emission mapping
 
-The example shows how to enable emission maps
+Ho to create a program with an emission texture

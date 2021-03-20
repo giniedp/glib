@@ -1,3 +1,3 @@
-# KTX Images
+## KTX Images
 
 Loading KTX Images

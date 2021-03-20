@@ -1,11 +1,6 @@
-# Graphics package examples (@gglib/graphics)
-
----
-
-The graphics package wraps WebGL calls with a more object oriented api.
-However the api is still pretty low level.
-
-The exampes in this section demonstrate how the API may be used.
+The `@gglib/graphics` package wraps WebGL calls in an object oriented api.
+The api itself is still pretty low level.
+Exampes in this section demonstrate how common rendering task are solved using only `@gglib/graphics` and `@gglib/math` packages.
 Beginning with a simple triangle and then continuing you will learn the following concepts:
 
 * creating vertex and index buffers
@@ -15,6 +10,3 @@ Beginning with a simple triangle and then continuing you will learn the followin
 * creating shader programs
 * using annotations in glsl shaders
 * and more
-
-The examples utilize only the `graphics` and the `math` packages.
-No other high level concepts are used.

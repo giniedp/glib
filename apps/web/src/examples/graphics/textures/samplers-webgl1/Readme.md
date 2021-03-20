@@ -1,4 +1,4 @@
-# Texture Samplers (WebGL 1)
+## Texture Samplers (WebGL 1)
 
 Same example as before, but demonstrates the behavior with WebGL 1
 

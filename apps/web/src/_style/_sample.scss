@@ -51,11 +51,10 @@
       padding-left: 2rem;
       line-height: 1.5rem;
       border: 0;
-      border-left: 1px solid $gray-200;
-      transition: border-width 0.2s ease-in-out;
-
+      background-color: transparent;
+      transition: background-color 0.3s linear;
       &.active {
-        border-width: 4px;
+        background-color: $gray-200;
       }
 
       h5 {
@@ -84,9 +83,6 @@
     a {
       text-decoration: none;
       color: $dark;
-      &:hover {
-        text-decoration: underline;
-      }
     }
   }
 

@@ -49,22 +49,22 @@ loop((time, dt) => {
   effect.drawQuad()
 })
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Fractal', { open: true }, (b) => {
-    b.slider(fbmEffect.parameters, 'octaves', { min: 1, max: 8, step: 1 })
-    b.slider(fbmEffect.parameters, 'frequency', { min: 0, max: 4 })
-    b.slider(fbmEffect.parameters, 'lacunarity', { min: 0, max: 4 })
-    b.slider(fbmEffect.parameters, 'persistence', { min: 0, max: 4 })
-    b.slider(fbmEffect.parameters, 'offset', { min: -2, max: 2 })
-    b.slider(fbmEffect.parameters, 'gain', { min: -2, max: 2 })
-    b.slider(fbmEffect.parameters, 'time', { min: 0, max: 10 })
-    b.checkbox(fbmEffect.parameters, 'normalize')
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.collapsible('Fractal', () => {
+    ui.slider(fbmEffect.parameters, 'octaves', { min: 1, max: 8, step: 1 })
+    ui.slider(fbmEffect.parameters, 'frequency', { min: 0, max: 4 })
+    ui.slider(fbmEffect.parameters, 'lacunarity', { min: 0, max: 4 })
+    ui.slider(fbmEffect.parameters, 'persistence', { min: 0, max: 4 })
+    ui.slider(fbmEffect.parameters, 'offset', { min: -2, max: 2 })
+    ui.slider(fbmEffect.parameters, 'gain', { min: -2, max: 2 })
+    ui.slider(fbmEffect.parameters, 'time', { min: 0, max: 10 })
+    ui.checkbox(fbmEffect.parameters, 'normalize')
   }),
-  q.group('Brick', { open: true }, (b) => {
-    b.slider(brickEffect.parameters, 'brickWidth', { min: 0.1, max: 1 })
-    b.slider(brickEffect.parameters, 'brickHeight', { min: 0.1, max: 1 })
-    b.slider(brickEffect.parameters, 'mortarThickness', { min: 0, max: 1 })
-    b.color(brickEffect.parameters, 'colorMortar', { format: '[n]rgb' })
-    b.color(brickEffect.parameters, 'colorBrick', { format: '[n]rgb' })
+  ui.group('Brick', () => {
+    ui.slider(brickEffect.parameters, 'brickWidth', { min: 0.1, max: 1 })
+    ui.slider(brickEffect.parameters, 'brickHeight', { min: 0.1, max: 1 })
+    ui.slider(brickEffect.parameters, 'mortarThickness', { min: 0, max: 1 })
+    ui.color(brickEffect.parameters, 'colorMortar', { format: '[n]rgb' })
+    ui.color(brickEffect.parameters, 'colorBrick', { format: '[n]rgb' })
   })
 })

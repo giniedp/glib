@@ -1,3 +1,4 @@
-# Lighting
+## Lighting
 
-The example shows how to enable and use multiple lights
+How to create a program with lighting enabled
+

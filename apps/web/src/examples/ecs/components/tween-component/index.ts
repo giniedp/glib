@@ -71,7 +71,7 @@ class CubeComponent implements OnInit {
   public async onInit() {
     this.renderable.model = await this.content.load('/assets/models/obj/cube.obj', Model)
 
-    TweakUi.build('#tweak-ui', (q) => {
+    TweakUi.mount('#tweak-ui', (ui) => {
       const positionOptions: TweenOptions<any> = {
         from: null,
         to: null,
@@ -79,9 +79,9 @@ class CubeComponent implements OnInit {
         delayInMs: 0,
         ease: easeInOutCubic,
       }
-      q.number(positionOptions, 'durationInMs', { min: 100, step: 1 })
-      q.number(positionOptions, 'delayInMs', { min: 0, step: 1 })
-      q.select(positionOptions, 'ease', {
+      ui.number(positionOptions, 'durationInMs', { min: 100, step: 1 })
+      ui.number(positionOptions, 'delayInMs', { min: 0, step: 1 })
+      ui.select(positionOptions, 'ease', {
         options: [
           { label: 'Linear', value: easeLinear },
           { label: 'InCubic', value: easeInCubic },
@@ -89,7 +89,7 @@ class CubeComponent implements OnInit {
           { label: 'InOutCubic', value: easeInOutCubic },
         ],
       })
-      q.button('Move', { onClick: () => this.tweenPosition(positionOptions) })
+      ui.button('Move', { onClick: () => this.tweenPosition(positionOptions) })
       const scaleOptions: TweenOptions<any> = {
         from: null,
         to: null,
@@ -97,9 +97,9 @@ class CubeComponent implements OnInit {
         delayInMs: 0,
         ease: easeInOutCubic,
       }
-      q.number(scaleOptions, 'durationInMs', { min: 100, step: 1 })
-      q.number(scaleOptions, 'delayInMs', { min: 0, step: 1 })
-      q.select(scaleOptions, 'ease', {
+      ui.number(scaleOptions, 'durationInMs', { min: 100, step: 1 })
+      ui.number(scaleOptions, 'delayInMs', { min: 0, step: 1 })
+      ui.select(scaleOptions, 'ease', {
         options: [
           { label: 'Linear', value: easeLinear },
           { label: 'InCubic', value: easeInCubic },
@@ -107,7 +107,7 @@ class CubeComponent implements OnInit {
           { label: 'InOutCubic', value: easeInOutCubic },
         ],
       })
-      q.button('Scale', { onClick: () => this.tweenScale(scaleOptions) })
+      ui.button('Scale', { onClick: () => this.tweenScale(scaleOptions) })
     })
   }
 

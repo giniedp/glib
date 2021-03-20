@@ -1,4 +1,4 @@
-import { defaultProgram, LightParams } from '@gglib/fx-materials'
+import { materialProgram, LightParams } from '@gglib/fx-materials'
 import { buildCube, Color, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -9,7 +9,7 @@ const device = createDevice({
 })
 
 const lightingEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     FOG: true,
     DIFFUSE_MAP: true,
     NORMAL_MAP: true,
@@ -79,60 +79,34 @@ loop((time, dt) => {
   model.draw()
 })
 
-TweakUi.build('#tweak-ui', (q) => {
+TweakUi.mount('#tweak-ui', (ui) => {
   const params = model.meshes[0].materials[0].parameters
-  q.group('Fog', { open: true }, (b) => {
-    b.slider(params.FogParams, 0, { min: 0, max: 10, step: 0.01, label: 'Start' })
-    b.slider(params.FogParams, 1, { min: 0, max: 10, step: 0.01, label: 'End' })
-    b.slider(params.FogParams, 2, { min: 0, max: 10, step: 0.01, label: 'Density' })
-    b.select(params.FogParams, 3, {
+  ui.collapsible('Fog', () => {
+    ui.slider(params.FogParams as number[], 0, { min: 0, max: 10, step: 0.01, label: 'Start' })
+    ui.slider(params.FogParams as number[], 1, { min: 0, max: 10, step: 0.01, label: 'End' })
+    ui.slider(params.FogParams as number[], 2, { min: 0, max: 10, step: 0.01, label: 'Density' })
+    ui.select(params.FogParams as number[], 3, {
       label: 'Type',
       options: [
-        { id: 'off', label: 'off', value: 0 },
-        { id: 'exp', label: 'exp', value: 1 },
-        { id: 'exp2', label: 'exp2', value: 2 },
-        { id: 'linear', label: 'linear', value: 3 },
+        { label: 'off', value: 0 },
+        { label: 'exp', value: 1 },
+        { label: 'exp2', value: 2 },
+        { label: 'linear', value: 3 },
       ],
     })
   })
-  q.group('Light', { open: true }, (b) => {
-    b.checkbox(light, 'enabled')
-    b.color(light, 'color', { format: '[n]rgb' })
+  ui.group('Light', () => {
+    ui.checkbox(light, 'enabled')
+    ui.color(light, 'color', { format: '[n]rgb' })
 
-    b.select(light, 'type', {
-      options: {
-        Directional: LightType.Directional,
-        Point: LightType.Point,
-        Spot: LightType.Spot,
-      },
-    })
-
-    b.group('Direction', {
-      open: true,
-      // hidden: () => light.type === LightType.Point,
-    }, (d) => {
-      d.slider(light.direction, 0, { min: -1, max: 1, step: 0.01, label: 'X' })
-      d.slider(light.direction, 1, { min: -1, max: 1, step: 0.01, label: 'Y' })
-      d.slider(light.direction, 2, { min: -1, max: 1, step: 0.01, label: 'Z' })
-    })
-
-    b.group('Position', {
-      open: true,
-      hidden: () => light.type === LightType.Directional,
-    }, (p) => {
-      p.slider(light.position, 0, { min: -5, max: 5, step: 0.01, label: 'X' })
-      p.slider(light.position, 1, { min: -5, max: 5, step: 0.01, label: 'Y' })
-      p.slider(light.position, 2, { min: -5, max: 5, step: 0.01, label: 'Z' })
-    })
-
-    b.slider(light, 'range', {
-      min: 0, max: 10, step: 0.01,
-      hidden: () => light.type === LightType.Directional,
-    })
-
-    b.slider(light, 'angle', {
-      min: 0, max: 90, step: 0.1,
-      hidden: () => light.type !== LightType.Spot,
+    ui.collapsible('Direction', () => {
+      ui.spherical(light, 'direction', {
+        codec: TweakUi.sphericalCodec({
+          axes: { 0: 'right', 1: 'up', 2: 'back' },
+          length: -1,
+          result: () => light.direction
+        })
+      })
     })
   })
 })

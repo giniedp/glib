@@ -174,8 +174,8 @@ function loadModel(path: string) {
 }
 loadModel(assets[0])
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.select({ model: assets[0] }, 'model', {
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.select({ model: assets[0] }, 'model', {
     options: assets,
     onChange: (ctrl) => {
       loadModel(ctrl.target.model)

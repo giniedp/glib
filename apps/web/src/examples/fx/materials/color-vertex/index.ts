@@ -1,4 +1,4 @@
-import { defaultProgram } from '@gglib/fx-materials'
+import { materialProgram } from '@gglib/fx-materials'
 import { buildCube, Color, ModelBuilder, createDevice, buildSphere, buildCone } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -8,7 +8,7 @@ const device = createDevice({ canvas: '#canvas' })
 
 // Create a default program with onlye vertex color enabled
 const vertexColorEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     V_COLOR1: true,
   }),
 })

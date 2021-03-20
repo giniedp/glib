@@ -62,16 +62,16 @@ class MyGame implements OnInit, OnUpdate {
       left: 24,
     }
 
-    TweakUi.build('#tweak-ui', (q) => {
-      q.group('SpriteComponent', { open: true }, (b) => {
-        b.slider(this.sprite, 'width', { min: 1, max: 90, step: 1 })
-        b.slider(this.sprite, 'height', { min: 1, max: 90, step: 1 })
-        b.slider(this.sprite, 'pivotX', { min: 0, max: 1, step: 0.1 })
-        b.slider(this.sprite, 'pivotY', { min: 0, max: 1, step: 0.1 })
-        b.checkbox(this.sprite, 'flipX')
-        b.checkbox(this.sprite, 'flipY')
-        b.checkbox(this.sprite, 'enableSlicing')
-        b.checkbox(this.sprite, 'enableTiling')
+    TweakUi.mount('#tweak-ui', (ui) => {
+      ui.group('SpriteComponent', { collapsible: true }, () => {
+        ui.slider(this.sprite, 'width', { min: 1, max: 90, step: 1 })
+        ui.slider(this.sprite, 'height', { min: 1, max: 90, step: 1 })
+        ui.slider(this.sprite, 'pivotX', { min: 0, max: 1, step: 0.1 })
+        ui.slider(this.sprite, 'pivotY', { min: 0, max: 1, step: 0.1 })
+        ui.checkbox(this.sprite, 'flipX')
+        ui.checkbox(this.sprite, 'flipY')
+        ui.checkbox(this.sprite, 'enableSlicing')
+        ui.checkbox(this.sprite, 'enableTiling')
       })
     })
   }

@@ -1,4 +1,4 @@
-import { defaultProgram, LightParams } from '@gglib/fx-materials'
+import { materialProgram, LightParams } from '@gglib/fx-materials'
 import { buildCube, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -9,7 +9,7 @@ const device = createDevice({
 })
 
 const lightingEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_MAP: true,
     NORMAL_MAP: true,
     PARALLAX_MAP: true,
@@ -73,16 +73,20 @@ loop((time, dt) => {
   model.draw()
 })
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Parallax', { open: true}, (b) => {
-    b.slider(model.meshes[0].materials[0].parameters.ParallaxScaleBias, 0, { min: -0.5, max: 0.5, step: 0.001, label: 'Scale' })
-    b.slider(model.meshes[0].materials[0].parameters.ParallaxScaleBias, 1, { min: -0.5, max: 0.5, step: 0.001, label: 'Bias' })
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.collapsible('Parallax', () => {
+    ui.slider<any>(model.meshes[0].materials[0].parameters.ParallaxScaleBias, 0, { min: -0.5, max: 0.5, step: 0.001, label: 'Scale' })
+    ui.slider<any>(model.meshes[0].materials[0].parameters.ParallaxScaleBias, 1, { min: -0.5, max: 0.5, step: 0.001, label: 'Bias' })
   })
-  q.group('Light', { open: true }, (b) => {
-    b.checkbox(light, 'enabled')
-    b.color(light, 'color', { format: '[n]rgb' })
-    b.direction(light, 'direction', {
-      keys: ['0', '1', '2'],
+  ui.collapsible('Light', () => {
+    ui.checkbox(light, 'enabled')
+    ui.color(light, 'color', { format: '[n]rgb' })
+    ui.spherical(light, 'direction', {
+      codec: TweakUi.sphericalCodec({
+        axes: { 0: 'right', 1: 'up', 2: 'back' },
+        length: -1,
+        result: () => light.direction
+      })
     })
   })
 })

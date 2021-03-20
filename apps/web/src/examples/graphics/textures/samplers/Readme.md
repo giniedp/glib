@@ -1,4 +1,4 @@
-# Texture Samplers
+## Texture Samplers
 
 In open gl the texture resource and its sampler parameters are declared on the same object
 so that a texture resource is always bound to its filtering method.

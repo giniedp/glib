@@ -114,14 +114,14 @@ loop((time, dt) => {
 })
 
 // Allow scene variables to be manipulated via gui controls
-TweakUi.build('#tweak-ui', (q) => {
+TweakUi.mount('#tweak-ui', (ui) => {
   loadModel(models.Bottle)
-  q.select({ model: models.Bottle }, 'model', {
+  ui.select({ model: models.Bottle }, 'model', {
     options: models,
-    onChange: (it, value) => loadModel(value),
+    onChange: (it, value: string) => loadModel(value),
   })
-  q.slider(controls, 'distance', { min: 0.01, max: 3, label: 'Camera distance' })
-  q.slider(controls, 'offset', { min: -3, max: 3, label: 'Camera height' })
-  q.slider(controls, 'fov', { min: 1, max: 120, step: 1 })
-  q.checkbox(controls, 'update')
+  ui.slider(controls, 'distance', { min: 0.01, max: 3, label: 'Camera distance' })
+  ui.slider(controls, 'offset', { min: -3, max: 3, label: 'Camera height' })
+  ui.slider(controls, 'fov', { min: 1, max: 120, step: 1 })
+  ui.checkbox(controls, 'update')
 })

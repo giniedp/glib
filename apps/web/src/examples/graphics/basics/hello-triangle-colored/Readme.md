@@ -1,4 +1,4 @@
-# Hello Colored Triangle
+## Hello Colored Triangle
 
 In the previous example each vertex in the vertex buffer only had a position attribute.
 Now we add a color attribute. Most of the code stays the same. Only

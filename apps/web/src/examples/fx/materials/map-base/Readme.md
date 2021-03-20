@@ -1,3 +1,3 @@
-# Texture mapping
+## Basic Texture Mapping
 
-The example shows how to enable diffuse texture map
+How to create a texture mapped program

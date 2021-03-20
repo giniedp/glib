@@ -8,7 +8,7 @@ import {
   buildIcosahedron,
 } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
-import { defaultProgram } from '@gglib/fx-materials'
+import { materialProgram } from '@gglib/fx-materials'
 import { PostPixelateEffect } from '@gglib/fx-post'
 import { Mat4 } from '@gglib/math'
 import * as TweakUi from 'tweak-ui'
@@ -18,7 +18,7 @@ const device = createDevice({
 })
 
 const effect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_COLOR: true,
     V_NORMAL: true,
   }),
@@ -80,8 +80,8 @@ function draw(time: number, effect: ShaderEffect, x: number, y: number) {
   effect.draw(mesh)
 }
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Bloom', { open: true }, (b) => {
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.collapsible('Bloom', (b) => {
     b.slider(post, 'pixelWidth', { min: 1, max: 100, step: 1 })
     b.slider(post, 'pixelHeight', { min: 1, max: 100, step: 1 })
   })

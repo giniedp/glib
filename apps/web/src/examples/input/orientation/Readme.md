@@ -1,4 +1,4 @@
-# Orientation & Acceleration
+## Orientation & Acceleration
 
 The `Orientation` class tracks the device orientation and motion events.
 Internally it listens to `deviceorientation` and `devicemotion` events and records

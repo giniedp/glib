@@ -1,4 +1,4 @@
-# A Textured Rectangle
+## A Textured Rectangle
 
 Again a rectangle example. This time we remove the color vertex attribute and
 replace that with texture coordinates. The shader program is changed to

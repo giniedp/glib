@@ -16,10 +16,10 @@ const files = {
   "dust": "/assets/textures/cubemaps/dust.ktx2"
 }
 
-TweakUi.build('#tweak-ui', (q) => {
+TweakUi.mount('#tweak-ui', (ui) => {
   loadTexture(files.dust)
   Object.entries(files).forEach(([name, url]) => {
-    q.button(name, { onClick: () => loadTexture(url)})
+    ui.button(name, { onClick: () => loadTexture(url)})
   })
 })
 

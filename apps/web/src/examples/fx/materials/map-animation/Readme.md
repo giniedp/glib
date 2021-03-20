@@ -1,3 +1,3 @@
-# Animated texture map
+## Animated Texture Mapping
 
-The example shows how to animate the diffuse texture map
+How to create a program with animated textures

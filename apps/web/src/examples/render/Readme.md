@@ -1,4 +1,4 @@
-# Render package examples
+## Render package examples
 
 The render package provides a `RenderManager` class which when instantiatet
 is responsible for managing render target textures and scenes.

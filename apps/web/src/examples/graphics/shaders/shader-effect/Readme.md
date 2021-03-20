@@ -1,4 +1,4 @@
-# ShaderEffect
+## ShaderEffect
 
 This example demonstrates how a shader program can be reused in multiple effects.
 

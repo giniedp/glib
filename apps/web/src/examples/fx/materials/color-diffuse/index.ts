@@ -1,4 +1,4 @@
-import { defaultProgram } from '@gglib/fx-materials'
+import { materialProgram } from '@gglib/fx-materials'
 import { buildCube, ModelBuilder, createDevice, Color, buildSphere, buildCone } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -8,7 +8,7 @@ const device = createDevice({ canvas: '#canvas' })
 
 // Create a default program with only diffuse color enabled
 const textureMappedEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_COLOR: true,
   }),
 })

@@ -17,7 +17,7 @@
     "dev": "concurrently -n ⬢,⬢,⬢ -c red,green,blue -p '{name}' -k 'gulp glib:watch' 'gulp web:watch' 'gulp web:serve'",
     "lint": "yarn lint:packages && yarn lint:examples",
     "lint:packages": "eslint -c .eslintrc.js",
-    "lint:examples": "tsc -p ./page/tsconfig.json --noEmit"
+    "lint:examples": "tsc -p ./apps/web/src/tsconfig.json --noEmit"
   },
   "repository": {
     "type": "git",

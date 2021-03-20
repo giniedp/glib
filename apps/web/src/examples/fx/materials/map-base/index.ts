@@ -1,4 +1,4 @@
-import { defaultProgram } from '@gglib/fx-materials'
+import { materialProgram } from '@gglib/fx-materials'
 import { buildCube, DeviceGL, ModelBuilder, createDevice, buildSphere, buildCone, buildCylinder } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -8,7 +8,7 @@ const device = createDevice({
 })
 
 const textureMappedEffect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_MAP: true,
   }),
 })

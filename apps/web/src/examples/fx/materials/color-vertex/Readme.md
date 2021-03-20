@@ -1,3 +1,4 @@
-# Vertex Colors
+## Vertex Colors
 
-The example shows how to enable vertex colors
+How to create a vertex color program
+

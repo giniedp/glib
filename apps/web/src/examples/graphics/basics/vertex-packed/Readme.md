@@ -1,4 +1,4 @@
-# Vertex color as packed attribute
+## Vertex color as packed attribute
 
 In the previous example the color attribute of a vertex was made of 3 floats.
 That is 12 bytes per vertex for the color. We can optimize that down to 4 bytes

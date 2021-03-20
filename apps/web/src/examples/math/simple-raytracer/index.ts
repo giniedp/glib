@@ -129,11 +129,11 @@ class RaytracerClient {
 const client = new RaytracerClient(document.querySelector('canvas'))
 client.update()
 
-TweakUi.build('#tweak-ui', (q: TweakUi.Builder) => {
-  q.slider(client, 'samples', { min: 1, max: 1000, step: 1, label: 'Num Samples' })
-  q.slider(client, 'depth', { min: 0, max: 1000, step: 1, label: 'Max Depth' })
-  q.slider(client, 'width', { min: 300, max: 1200, step: 1, label: 'Width' })
-  q.button('Render', {
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.slider(client, 'samples', { min: 1, max: 1000, step: 1, label: 'Num Samples' })
+  ui.slider(client, 'depth', { min: 0, max: 1000, step: 1, label: 'Max Depth' })
+  ui.slider(client, 'width', { min: 300, max: 1200, step: 1, label: 'Width' })
+  ui.button('Render', {
     onClick: () => {
       client.height = client.width / 2
       client.update()

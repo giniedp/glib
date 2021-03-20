@@ -110,13 +110,13 @@ const game = createGame({
   e.install(MyGame)
 })
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Time 1', (f) => {
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.group('Time 1', () => {
     const t = game.get(TimeComponent).getOrCreate('time1')
-    f.slider(t, 'factor', { min: -10, max: 10, step: 0.1 })
+    ui.slider(t, 'factor', { min: -10, max: 10, step: 0.1 })
   })
-  q.group('Time 2', (f) => {
+  ui.group('Time 2', () => {
     const t = game.get(TimeComponent).getOrCreate('time2')
-    f.slider(t, 'factor', { min: -10, max: 10, step: 0.1 })
+    ui.slider(t, 'factor', { min: -10, max: 10, step: 0.1 })
   })
 })

@@ -1,4 +1,4 @@
-# TimeComponent
+## TimeComponent
 
 In this example we show two spinning cubes each using a different time clock than the other
 

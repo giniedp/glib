@@ -61,8 +61,8 @@ loop((time, dt) => {
   mesh.draw(program)
 })
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.select(texture, 'samplerParams', {
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.select(texture, 'samplerParams', {
     options: [
       { label: 'null', value: null },
       { label: 'LinearClamp', value: SamplerState.LinearClamp },

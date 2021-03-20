@@ -8,7 +8,7 @@ import {
   buildIcosahedron,
 } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
-import { defaultProgram } from '@gglib/fx-materials'
+import { materialProgram } from '@gglib/fx-materials'
 import { PostKawaseStreaksEffect } from '@gglib/fx-post'
 import { Mat4 } from '@gglib/math'
 import * as TweakUi from 'tweak-ui'
@@ -18,7 +18,7 @@ const device = createDevice({
 })
 
 const effect = device.createEffect({
-  program: defaultProgram({
+  program: materialProgram({
     DIFFUSE_COLOR: true,
     V_NORMAL: true,
   }),
@@ -88,11 +88,11 @@ function draw(time: number, effect: ShaderEffect, x: number, y: number) {
   effect.draw(mesh)
 }
 
-TweakUi.build('#tweak-ui', (q) => {
-  q.group('Bloom', { open: true }, (b) => {
-    b.slider(post, 'threshold', { min: 0, max: 1 })
-    b.slider(post, 'iterations', { min: 1, max: 4, step: 1 })
-    b.slider(post, 'attenuation', { min: 0.9, max: 0.95, step: 0.001 })
-    b.slider(post, 'strength', { min: 0.5, max: 1.0, step: 0.001 })
+TweakUi.mount('#tweak-ui', (ui) => {
+  ui.collapsible('Bloom', (ui) => {
+    ui.slider(post, 'threshold', { min: 0, max: 1 })
+    ui.slider(post, 'iterations', { min: 1, max: 4, step: 1 })
+    ui.slider(post, 'attenuation', { min: 0.9, max: 0.95, step: 0.001 })
+    ui.slider(post, 'strength', { min: 0.5, max: 1.0, step: 0.001 })
   })
 })
