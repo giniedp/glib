@@ -43,7 +43,7 @@ async function loadImage(url: string) {
       image.onload = null
       image.onabort = null
       image.onerror = null
-      resolve()
+      resolve(void 0)
     }
     image.onabort = image.onerror = (err) => {
       image.onabort = image.onload = null

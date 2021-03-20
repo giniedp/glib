@@ -1,6 +1,6 @@
 import { loader, LoaderSpec } from '@gglib/content'
 import { Material, MaterialOptions, CullState, BlendState, ShaderPassOptions } from '@gglib/graphics'
-import { defaultProgram, DefaultProgramDefs } from './programs'
+import { materialProgram, DefaultProgramDefs } from './programs'
 import { TypeToken } from '@gglib/utils'
 
 /**
@@ -124,7 +124,7 @@ export const loadMaterialOptionsToShaderEffectOptions: LoaderSpec<TypeToken<Mate
     }
 
     const pass: ShaderPassOptions = {
-      program: defaultProgram(defines),
+      program: materialProgram(defines),
     }
 
     if (params.Blend) {

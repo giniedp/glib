@@ -36,7 +36,7 @@ export const watch = series(
 
       function exit() {
         watched.forEach(it => it.close())
-        resolve()
+        resolve(void 0)
       }
       process.on('SIGTERM', exit)
       process.on('SIGINT', exit)

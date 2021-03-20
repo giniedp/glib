@@ -11,7 +11,7 @@ import {
   ShadeFunctionSzirmay,
 } from '../chunks'
 import { LightParams } from '../lights'
-import { defaultProgram, DefaultProgramDefs } from '../programs'
+import { materialProgram, DefaultProgramDefs } from '../programs'
 
 const defineMap = {
   Alpha: 'ALPHA',
@@ -653,7 +653,7 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     }
 
     this.$effect = this.device.createEffect({
-      program: defaultProgram(this.defines),
+      program: materialProgram(this.defines),
     })
     this.hasChanged = false
   }

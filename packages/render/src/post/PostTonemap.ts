@@ -73,7 +73,7 @@ export class PostTonemap implements RenderStep {
     width: 2, height: 2, depthFormat: DepthFormat.None,
   }
 
-  constructor(private device: Device, options: TonemapOptions = {}) {
+  constructor(private device: Device, options?: TonemapOptions) {
     this.enabled = getOption(options, 'enabled', this.enabled)
     this.adaptSpeed = getOption(options, 'adaptSpeed', this.adaptSpeed)
     this.exposure = getOption(options, 'exposure', this.exposure)

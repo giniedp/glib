@@ -35,8 +35,9 @@ export class PostBloomKawase implements RenderStep {
 
   private effect: PostKawaseBloomEffect
 
-  constructor(device: Device, options?: PostKawaseBloomOptions) {
+  constructor(device: Device, options?: PostKawaseBloomOptions & { enabled?: boolean }) {
     this.effect = new PostKawaseBloomEffect(device, options)
+    this.enabled = options?.enabled ?? this.enabled
   }
 
   public render(manager: RenderManager) {

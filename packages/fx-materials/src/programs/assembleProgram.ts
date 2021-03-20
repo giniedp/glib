@@ -116,6 +116,6 @@ export interface DefaultProgramDefs extends
 /**
  * @public
  */
-export function defaultProgram(defs: DefaultProgramDefs): ShaderProgramOptions {
+export function materialProgram(defs: DefaultProgramDefs): ShaderProgramOptions {
   return assembleProgram(FXC_BASE, chunks, defs)
 }

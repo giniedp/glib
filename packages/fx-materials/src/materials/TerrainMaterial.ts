@@ -1,7 +1,7 @@
 import { Device, Material, ShaderEffect, Texture, MaterialParameters } from '@gglib/graphics'
 import { IMat, IVec3, Mat4 } from '@gglib/math'
 import { LightParams } from '../lights'
-import { defaultProgram, DefaultProgramDefs } from '../programs'
+import { materialProgram, DefaultProgramDefs } from '../programs'
 import { ShadeFunction } from './AutoMaterial'
 
 const defineMap = {
@@ -487,7 +487,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
     }
 
     this.$effect = this.device.createEffect({
-      program: defaultProgram(this.defines),
+      program: materialProgram(this.defines),
     })
     this.hasChanged = false
   }

@@ -1,7 +1,7 @@
 import { DeviceGL } from '@gglib/graphics'
-import { defaultProgram } from './defaultProgram'
+import { materialProgram } from './assembleProgram'
 
-describe('@gglib/fx-materials/defaultProgram', () => {
+describe('@gglib/fx-materials/assembleProgram', () => {
   let device: DeviceGL
 
   beforeEach(() => {
@@ -9,19 +9,19 @@ describe('@gglib/fx-materials/defaultProgram', () => {
   })
 
   it ('default is valid', () => {
-    expect(device.createProgram(defaultProgram({
+    expect(device.createProgram(materialProgram({
 
     })).linked).toBe(true)
   })
 
   it ('ALPHA_CLIP is valid', () => {
-    expect(device.createProgram(defaultProgram({
+    expect(device.createProgram(materialProgram({
       ALPHA_CLIP: true,
     })).linked).toBe(true)
   })
 
   it ('pbr is valid', () => {
-    expect(device.createProgram(defaultProgram({
+    expect(device.createProgram(materialProgram({
       // ALPHA_CLIP: false,
       // DIFFUSE_COLOR: false,
       DIFFUSE_MAP: true,

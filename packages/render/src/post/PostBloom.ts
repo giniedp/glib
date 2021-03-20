@@ -45,8 +45,9 @@ export class PostStepBloom implements RenderStep {
     this.effect.iterations = value
   }
 
-  constructor(device: Device, options: PostBloomOptions = {}) {
+  constructor(device: Device, options: PostBloomOptions & { enabled?: boolean } = {}) {
     this.effect = new PostBloomEffect(device, options)
+    this.enabled = options?.enabled ?? this.enabled
   }
 
   public render(manager: RenderManager) {

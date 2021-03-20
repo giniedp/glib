@@ -27,8 +27,9 @@ export class PostPixelateStep implements RenderStep {
 
   private effect: PostPixelateEffect
 
-  constructor(device: Device, options: PostPixelateOptions) {
+  constructor(device: Device, options?: PostPixelateOptions & { enabled?: boolean }) {
     this.effect = new PostPixelateEffect(device, options)
+    this.enabled = options?.enabled ?? this.enabled
   }
 
   public render(manager: RenderManager) {

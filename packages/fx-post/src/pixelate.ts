@@ -35,7 +35,7 @@ export class PostPixelateEffect {
     texture: Texture
   }>
 
-  constructor(private device: Device, options: PostPixelateOptions) {
+  constructor(private device: Device, options?: PostPixelateOptions) {
     if (options) {
       this.pixelWidth = getOption(options, 'pixelWidth', this.pixelWidth)
       this.pixelHeight = getOption(options, 'pixelHeight', this.pixelHeight)
