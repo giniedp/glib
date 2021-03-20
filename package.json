@@ -18,7 +18,7 @@
     "lint": "yarn lint:packages && yarn lint:examples",
     "lint:packages": "eslint -c .eslintrc.js",
     "lint:examples": "tsc -p ./apps/web/src/tsconfig.json --noEmit",
-    "test": "gulp glib: test"
+    "test": "gulp glib:test"
   },
   "repository": {
     "type": "git",
