@@ -3,6 +3,7 @@ import {
 } from '../../enums'
 import { SamplerState, SamplerStateParams } from '../../states'
 import { DeviceGL } from '../DeviceGL'
+import { isWebGL2 } from '../utils'
 
 /**
  * An object with a reference to a webgl texture
@@ -46,7 +47,7 @@ export class SamplerStateGL extends SamplerState {
    * Recreates the underlying sampler object if necessary
    */
   public setup() {
-    if (!this.texture && this.device.context instanceof WebGL2RenderingContext && !this.device.context.isSampler(this.handle)) {
+    if (!this.texture && isWebGL2(this.device.context) && !this.device.context.isSampler(this.handle)) {
       this.handle = this.device.context.createSampler()
     }
     return this
@@ -107,7 +108,7 @@ export class SamplerStateGL extends SamplerState {
       if (changes.wrapV !== null) {
         gl.texParameteri(type, gl.TEXTURE_WRAP_T, this.wrapV)
       }
-      if (gl instanceof WebGL2RenderingContext) {
+      if (isWebGL2(gl)) {
         if (changes.wrapW !== null) {
           gl.texParameteri(type, gl.TEXTURE_WRAP_R, this.wrapW)
         }
@@ -133,7 +134,8 @@ export class SamplerStateGL extends SamplerState {
   /**
    * Resolves the current state from the GPU
    */
-  public resolve(out: SamplerStateParams = {}): this {
+  public resolve(): this {
+    const out = this
     if (this.handle) {
       const handle = this.handle
       const gl = this.device.context as WebGL2RenderingContext
@@ -146,20 +148,20 @@ export class SamplerStateGL extends SamplerState {
       out.maxLod = gl.getSamplerParameter(handle, gl.TEXTURE_MAX_LOD)
       out.compareMode = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_MODE)
       out.compareFunc = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_FUNC)
-    } else if (this.texture) {
-      const handle = this.texture
+    } else if (this.texture?.handle) {
+      const texture = this.texture
       const gl = this.device.context
-      gl.bindTexture(handle.type, handle.handle)
-      out.minFilter = gl.getTexParameter(handle.type, gl.TEXTURE_MIN_FILTER)
-      out.magFilter = gl.getTexParameter(handle.type, gl.TEXTURE_MAG_FILTER)
-      out.wrapU = gl.getTexParameter(handle.type, gl.TEXTURE_WRAP_S)
-      out.wrapV = gl.getTexParameter(handle.type, gl.TEXTURE_WRAP_T)
-      if (gl instanceof WebGL2RenderingContext) {
-        out.wrapW = gl.getTexParameter(handle.type, gl.TEXTURE_WRAP_R)
-        out.minLod = gl.getTexParameter(handle.type, gl.TEXTURE_MIN_LOD)
-        out.maxLod = gl.getTexParameter(handle.type, gl.TEXTURE_MAX_LOD)
-        out.compareMode = gl.getTexParameter(handle.type, gl.TEXTURE_COMPARE_MODE)
-        out.compareFunc = gl.getTexParameter(handle.type, gl.TEXTURE_COMPARE_FUNC)
+      gl.bindTexture(texture.type, texture.handle)
+      out.minFilter = gl.getTexParameter(texture.type, gl.TEXTURE_MIN_FILTER)
+      out.magFilter = gl.getTexParameter(texture.type, gl.TEXTURE_MAG_FILTER)
+      out.wrapU = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_S)
+      out.wrapV = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_T)
+      if (isWebGL2(gl)) {
+        out.wrapW = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_R)
+        out.minLod = gl.getTexParameter(texture.type, gl.TEXTURE_MIN_LOD)
+        out.maxLod = gl.getTexParameter(texture.type, gl.TEXTURE_MAX_LOD)
+        out.compareMode = gl.getTexParameter(texture.type, gl.TEXTURE_COMPARE_MODE)
+        out.compareFunc = gl.getTexParameter(texture.type, gl.TEXTURE_COMPARE_FUNC)
       }
     }
     this.clearChanges()

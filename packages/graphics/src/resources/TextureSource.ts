@@ -82,6 +82,13 @@ export class TextureSourceVideo extends TextureSource<HTMLVideoElement> {
   }
 }
 
+function isImageBitmap(it: any): it is ImageBitmap {
+  return typeof ImageBitmap !== 'undefined' && it instanceof ImageBitmap
+}
+
+function isOffscreenCanvas(it: any): it is OffscreenCanvas {
+  return typeof OffscreenCanvas !== 'undefined' && it instanceof OffscreenCanvas
+}
 export class TextureSourceData extends TextureSource<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas> {
   public get isReady() {
     return true
@@ -96,7 +103,7 @@ export class TextureSourceData extends TextureSource<ImageBitmap | ImageData | H
 
   public constructor(data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas) {
     super()
-    if (data instanceof ImageBitmap || data instanceof ImageData || data instanceof HTMLCanvasElement || data instanceof OffscreenCanvas) {
+    if (isImageBitmap(data) || data instanceof ImageData || data instanceof HTMLCanvasElement || isOffscreenCanvas(data)) {
       this.data = data
     } else if ("data" in data && "width" in data && "height" in data) {
       const input = data as ImageData

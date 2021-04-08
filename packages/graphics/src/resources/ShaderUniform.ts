@@ -65,7 +65,7 @@ export interface ShaderUniformOptions {
    * @remarks
    * Default values are defined in the shader source code by adding a comment above a uniform e.g.
    *
-   * ```glsl
+   * ```c
    * // @default [1, 1, 1]
    * uniform vec3 uLightDirection;
    * ```
@@ -77,7 +77,7 @@ export interface ShaderUniformOptions {
    * @remarks
    * Filters are defined in the shader source code by adding a comment above a uniform e.g.
    *
-   * ```glsl
+   * ```c
    * // @filter LinearWrap
    * uniform sampler2d uTexture
    * ```
@@ -89,7 +89,7 @@ export interface ShaderUniformOptions {
    * @remarks
    * Register index is defined in the shader source code by adding a comment above a uniform e.g.
    *
-   * ```glsl
+   * ```c
    * // @register 2
    * uniform sampler2d uTexture;
    * ```

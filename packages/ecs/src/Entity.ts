@@ -553,7 +553,7 @@ export class Entity extends Events {
         } else if (!m.optional) {
           throw errorOnMissingDependency(m.type, source, component)
         }
-      } else {
+      } else if (!m.optional) {
         Log.warn('[Entity]', `unable to inject dependency from '${m.from}'. Entity is not available.`)
       }
     })

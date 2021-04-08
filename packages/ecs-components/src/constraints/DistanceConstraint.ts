@@ -1,9 +1,46 @@
 import { TransformComponent } from '../TransformComponent'
 import { Vec3 } from '@gglib/math'
 import { Inject, OnUpdate, Component } from '@gglib/ecs'
+import { getOption } from '@gglib/utils'
 
-let tmp0: Vec3
-let tmp1: Vec3
+let v0: Vec3
+let v1: Vec3
+
+/**
+ * Options for the {@link DistanceConstraint}
+ *
+ * @public
+ */
+ export interface DistanceConstraintOptions {
+  /**
+   * The source transform to copy from
+   */
+  source?: TransformComponent
+  /**
+   * The percentage that this constraint has on the object each frame
+   */
+  weight?: number
+  /**
+   * If true, the transform world matrix is updated after constraint is applied
+   */
+  commit?: boolean
+  /**
+   * The minimum distance
+   */
+  minDistance?: number
+  /**
+   * The maximum distance
+   */
+  maxDistance?: number
+  /**
+   * The space in which the the transform is read from source
+   */
+  sourceSpace?: 'local' | 'world'
+  /**
+   * The space in which the the transform is written to target
+   */
+  targetSpace?: 'local' | 'world'
+}
 
 /**
  * @public
@@ -27,46 +64,82 @@ export class DistanceConstraint implements OnUpdate {
    */
   public weight: number = 1
   /**
-   * The distance
+   * The minimum distance (defaults to 0)
    */
-  public distance = 1
+  public minDistance = 0
+  /**
+   * The maximum distance (defaults to 1)
+   */
+  public maxDistance = 1
+  /**
+   * If true, the transform world matrix is updated after constraint is applied
+   */
+  public commit: boolean
+  /**
+   * The space in which the the transform is read from source
+   */
+  public sourceSpace: 'local' | 'world'
+   /**
+    * The space in which the the transform is written to target
+    */
+  public targetSpace: 'local' | 'world'
 
   public onUpdate() {
     if (!this.source || !this.target || this.weight <= 0) {
       return
     }
 
-    let v0 = tmp0 || Vec3.create()
-    let v1 = tmp1 || Vec3.create()
+    let s = v0 = v0 || Vec3.create()
+    let t = v1 = v1 || Vec3.create()
 
-    // v0 = position of them in world space
-    v0.initFrom(this.source.position)
-    if (this.source.parent) {
-      v0.transformByMat4(this.source.inverse)
+    s.initFrom(this.source.position)
+    if (this.source.parent && this.sourceSpace === 'world') {
+      s.transformByMat4(this.source.parent.inverse)
     }
 
-    // v1 = position of us in world space
-    v1.initFrom(this.target.position)
-    if (this.target.parent) {
-      v1.transformByMat4(this.target.inverse)
+    t.initFrom(this.target.position)
+    if (this.target.parent && this.targetSpace === 'world') {
+      t.transformByMat4(this.target.parent.inverse)
     }
 
     // calculate distance between objects
-    let d = Vec3.distance(v1, v0)
-    d = d + (this.distance - d) * this.weight
+    let d = Vec3.distance(t, s)
 
-    // v1 = new position in world space
-    v1
-      .subtract(v0)
-      .normalize()
-      .multiplyScalar(d)
-      .add(v0)
-
-    // to local space
-    if (this.target.parent) {
-      v1.transformByMat4(this.target.parent.world)
+    if (d < this.minDistance) {
+      d = d + (this.minDistance - d) * this.weight
+    }
+    if (d > this.maxDistance) {
+      d = d + (this.maxDistance - d) * this.weight
+    }
+    if (Math.abs(d) >= Number.EPSILON) {
+      t
+        .subtract(s)
+        .normalize()
+        .multiplyScalar(d)
+        .add(s)
+    } else {
+      t.initFrom(s)
     }
 
-    this.target.setPositionV(v1)
+    if (this.target.parent && this.targetSpace === 'world') {
+      t.transformByMat4(this.target.parent.world)
+    }
+
+    if (!t.equals(this.target.position)) {
+      this.target.setPositionV(t)
+      if (this.commit) {
+        this.target.onUpdate()
+      }
+    }
+  }
+
+  public onSetup(options: DistanceConstraintOptions) {
+    this.source = getOption(options, 'source', this.source)
+    this.weight = getOption(options, 'weight', this.weight)
+    this.commit = getOption(options, 'commit', this.commit)
+    this.sourceSpace = getOption(options, 'sourceSpace', this.sourceSpace)
+    this.targetSpace = getOption(options, 'targetSpace', this.targetSpace)
+    this.minDistance = getOption(options, 'minDistance', this.minDistance)
+    this.maxDistance = getOption(options, 'maxDistance', this.maxDistance)
   }
 }

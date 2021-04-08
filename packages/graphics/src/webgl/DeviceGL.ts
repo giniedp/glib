@@ -40,18 +40,7 @@ import {
 } from './states'
 
 import { BufferGL, DepthBufferGL, FrameBufferGL, ShaderGL, ShaderProgramGL, TextureGL } from './resources'
-
-/**
- * Determines whether webgl is supported
- * @public
- */
-export const supportsWebGL = typeof WebGLRenderingContext === 'function'
-
-/**
- * Determines whether webgl 2.0 is supported
- * @public
- */
-export const supportsWebGL2 = typeof WebGL2RenderingContext === 'function'
+import { isWebGL2 } from './utils'
 
 /**
  * Constructor options for the {@link Device}
@@ -95,19 +84,31 @@ function getOrCreateContext(
     ...(options.contextAttributes || {}),
   }
 
+  let result: WebGLRenderingContext | WebGL2RenderingContext
   if (typeof context === 'string') {
     // specific context is requested
-    return canvas.getContext(context, attributes) as any
+    result = canvas.getContext(context, attributes) as any
   } else if (context) {
-    return context
+    result = context
+  }
+  if (result) {
+    return result
   }
 
   // apply fallback strategy
+  Log.info('[Device]', `context autodetection`)
   for (const name of ['webgl2', 'webgl', 'experimental-webgl']) {
     try {
-      return canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
+      Log.info('[Device]', `trying ${name}`)
+      result = canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
     } catch (e) {
-      Log.error('[Device]', `${name} is not supported`)
+      Log.error('[Device]', e)
+    }
+    if (!result) {
+      Log.info('[Device]', `${name} is not supported`)
+    } else {
+      Log.info('[Device]', `using ${name} context`)
+      return result
     }
   }
 
@@ -143,7 +144,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   public context: WebGLRenderingContext | WebGL2RenderingContext
 
   public get isWebGL2(): boolean {
-    return supportsWebGL2 && this.context instanceof WebGL2RenderingContext
+    return isWebGL2(this.context)
   }
 
   protected $program: ShaderProgramGL
@@ -308,7 +309,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     if (!program) {
       throw new Error(`device.program must be set before calling drawInstancedPrimitives()`)
     }
-    if (this.context instanceof WebGL2RenderingContext) {
+    if (isWebGL2(this.context)) {
       const dataType = iBuffer.dataType
       const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
 

@@ -3,12 +3,18 @@ import { TransformComponent } from '../TransformComponent'
 import { IVec3, Vec3, lerp } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 
+let p0: Vec3
+
 /**
  * Options for the {@link LimitTranslationConstraint}
  *
  * @public
  */
-export interface LimitTranslationOptions {
+export interface LimitPositionOptions {
+  /**
+   * The source transform to copy from
+   */
+  source?: TransformComponent
   /**
    * The percentage that this constraint has on the object each frame
    */
@@ -42,15 +48,15 @@ export interface LimitTranslationOptions {
   /**
    * Tha space in which this constraint operates
    */
-  space?: 'local' | 'global'
+  space?: 'local' | 'world'
 }
 
 /**
- * Constraints the translation of a transform in local or global space
+ * Constraints the translation of a transform in local or world space
  * @public
  */
 @Component()
-export class LimitTranslationConstraint implements OnUpdate, OnSetup<LimitTranslationOptions> {
+export class LimitPositionConstraint implements OnUpdate, OnSetup<LimitPositionOptions> {
   /**
    * The transform to manipulate
    */
@@ -89,19 +95,20 @@ export class LimitTranslationConstraint implements OnUpdate, OnSetup<LimitTransl
   /**
    * Tha space in which this constraint operates
    */
-  public space: 'local' | 'global'
+  public space: 'local' | 'world' = 'local'
 
   public onUpdate() {
     if (!this.target || this.weight <= 0) {
       return
     }
 
-    const position = Vec3.$0.initFrom(this.target.position)
+    const position = (p0 = p0 || Vec3.create()).initFrom(this.target.position)
     const min = this.min
     const max = this.max
+    const useWorldspace = this.space === 'world' && !!this.target.parent
 
-    if (this.space === 'global' && this.target.parent) {
-      position.transformByMat4(this.target.parent.inverse)
+    if (useWorldspace) {
+      position.transformByMat4(this.target.parent.world)
     }
 
     if (min) {
@@ -115,8 +122,8 @@ export class LimitTranslationConstraint implements OnUpdate, OnSetup<LimitTransl
       position.z = this.limitZ && (position.z > max.z) ? lerp(position.z, max.z, this.weight) : position.z
     }
 
-    if (this.space === 'global' && this.target.parent) {
-      position.transformByMat4(this.target.parent.world)
+    if (useWorldspace) {
+      position.transformByMat4(this.target.parent.inverse)
     }
 
     if (!position.equals(this.target.position)) {
@@ -127,7 +134,7 @@ export class LimitTranslationConstraint implements OnUpdate, OnSetup<LimitTransl
     }
   }
 
-  public onSetup(options: LimitTranslationOptions) {
+  public onSetup(options: LimitPositionOptions) {
     this.weight = getOption(options, 'weight', this.weight)
     this.limitX = getOption(options, 'limitX', this.limitX)
     this.limitY = getOption(options, 'limitY', this.limitY)

@@ -31,14 +31,14 @@ const enum M {
  * For example, having a translation matrix in standard notation
  * where `x`, `y` and `z` are elements of the translation vector
  *
- * ```txt
+ * ```
  * 1 0 0 x
  * 0 1 0 y
  * 0 0 1 z
  * 0 0 0 1
  * ```
  * the index layout would be
- * ```txt
+ * ```
  * 0 4 8  12
  * 1 5 9  13
  * 2 6 10 14

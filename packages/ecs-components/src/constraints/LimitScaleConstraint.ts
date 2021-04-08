@@ -79,6 +79,10 @@ export class LimitScaleConstraint implements OnUpdate, OnSetup<LimitScaleOptions
    * If true, the transform world matrix is updated after constraint is applied
    */
   public commit: boolean
+  /**
+   * Tha space in which this constraint operates
+   */
+  public space: 'local' | 'world' = 'local'
 
   public onUpdate() {
     if (!this.target || this.weight <= 0) {
@@ -88,6 +92,11 @@ export class LimitScaleConstraint implements OnUpdate, OnSetup<LimitScaleOptions
     const scale = Vec3.$0.initFrom(this.target.scale)
     const min = this.min
     const max = this.max
+    const useWorldspace = this.space === 'world' && !!this.target.parent
+
+    if (useWorldspace) {
+      this.target.parent.world.transformV3Normal(scale, scale)
+    }
 
     if (this.weight >= 1) {
       Vec3.clamp(scale, min || scale, max || scale)
@@ -102,6 +111,10 @@ export class LimitScaleConstraint implements OnUpdate, OnSetup<LimitScaleOptions
         scale.y = this.limitY && (scale.y > max.y) ? lerp(scale.y, max.y, this.weight) : scale.y
         scale.z = this.limitZ && (scale.z > max.z) ? lerp(scale.z, max.z, this.weight) : scale.z
       }
+    }
+
+    if (useWorldspace) {
+      this.target.parent.inverse.transformV3Normal(scale, scale)
     }
 
     if (!scale.equals(this.target.scale)) {

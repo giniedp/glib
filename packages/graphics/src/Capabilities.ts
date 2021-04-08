@@ -1,4 +1,5 @@
 import { Device } from './Device'
+import { isWebGL2 } from './webgl/utils'
 
 /**
  * @public
@@ -49,7 +50,7 @@ export class Capabilities {
   get maxDrawBuffers() {
     if (this.$maxDrawBuffers == null) {
       this.$maxDrawBuffers =
-        this.gl2 instanceof WebGL2RenderingContext
+        isWebGL2(this.gl2)
           ? this.gl2.getParameter(this.gl2.MAX_DRAW_BUFFERS)
           : this.capability('MAX_DRAW_BUFFERS_WEBGL', 'WEBGL_draw_buffers')
     }
@@ -60,7 +61,7 @@ export class Capabilities {
   get maxColorAttachments() {
     if (this.$maxColorAttachments == null) {
       this.$maxColorAttachments =
-        this.gl2 instanceof WebGL2RenderingContext
+        isWebGL2(this.gl2)
           ? this.gl2.getParameter(this.gl2.MAX_COLOR_ATTACHMENTS)
           : this.capability('MAX_COLOR_ATTACHMENTS_WEBGL', 'WEBGL_draw_buffers')
     }

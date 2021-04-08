@@ -116,15 +116,16 @@ export class TransformComponent implements OnInit, OnUpdate {
    * is `true`.
    */
   public readonly world: Mat4 = Mat4.createIdentity()
-  /**
-   * The current inverse of the transform matrix.
-   *
-   * @remarks
-   * This is updated automatically on every frame if the `dirty` property
-   * is `true`.
-   */
-  public readonly inverse: Mat4 = Mat4.createIdentity()
 
+  /**
+   * The inverse matrix
+   */
+  public get inverse(): Mat4 {
+    if (this.dirtyInverse) {
+      Mat4.invert(this.world, this.inverseMat)
+    }
+    return this.inverseMat
+  }
   /**
    * Indicates that the state has changed and the transform matrix must be updated
    *
@@ -142,6 +143,9 @@ export class TransformComponent implements OnInit, OnUpdate {
    * ```
    */
   public dirty: boolean
+
+  private inverseMat = Mat4.createIdentity()
+  private dirtyInverse: boolean
 
   constructor(options: TransformComponentOptions = {}) {
     this.scale = Vec3.convert(getOption(options, 'scale', Vec3.createOne()))
@@ -171,19 +175,23 @@ export class TransformComponent implements OnInit, OnUpdate {
    * but only if the `dirty` flag is true
    */
   public onUpdate() {
-    if (this.dirty) {
-      this.local
-        .initScaleV(this.scale)
-        .premultiply(tempMat.initFromQuat(this.rotation))
-        .setTranslationV(this.position)
+    if (!this.dirty) {
+      return
+    }
+    this.local
+      .initScaleV(this.scale)
+      .premultiply(tempMat.initFromQuat(this.rotation))
+      .setTranslationV(this.position)
 
-      if (this.parent) {
-        Mat4.premultiply(this.local, this.parent.world, this.world)
-      } else {
-        this.world.initFrom(this.local)
-      }
+    if (this.parent) {
+      Mat4.premultiply(this.local, this.parent.world, this.world)
+    } else {
+      this.world.initFrom(this.local)
+    }
 
-      this.dirty = false
+    this.dirtyInverse = true
+    this.dirty = false
+    if (this.entity) {
       this.entity.trigger(TransformComponent.EVENT_UPDATED, this)
     }
   }

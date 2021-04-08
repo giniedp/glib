@@ -1,6 +1,7 @@
 import { BufferType } from '../../enums'
 import { Buffer, BufferDataOption, BufferOptions } from '../../resources/Buffer'
 import { DeviceGL } from '../DeviceGL'
+import { isWebGL2 } from '../utils'
 
 /**
  * @public
@@ -80,7 +81,7 @@ export class BufferGL extends Buffer {
         this.usage,
       )
       this.$sizeInBytes = data.byteLength
-    } else if (this.device.context instanceof WebGL2RenderingContext) {
+    } else if (isWebGL2(this.device.context)) {
       this.device.context.bufferData(
         this.type,
         data.buffer,
@@ -113,7 +114,7 @@ export class BufferGL extends Buffer {
     const off = srcByteOffset || 0
     const len = srcByteLength || (data.byteLength - off)
 
-    if (this.device.context instanceof WebGL2RenderingContext) {
+    if (isWebGL2(this.device.context)) {
       this.device.context.bufferSubData(
         this.type,
         byteOffset,
@@ -144,7 +145,7 @@ export class BufferGL extends Buffer {
   ): this {
     this.bind()
 
-    if (this.device.context instanceof WebGL2RenderingContext) {
+    if (isWebGL2(this.device.context)) {
       this.device.context.getBufferSubData(
         this.type,
         srcByteOffset,
