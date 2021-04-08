@@ -38,7 +38,7 @@ uniform vec3 uColor;
 **@filter**
 Sets a samling method (texture samplers only)
 
-```glsl
+```c
 // @filter LinearWrap
 uniform sampler2d uTexture
 ```
@@ -46,7 +46,7 @@ uniform sampler2d uTexture
 **@register**
 Assigns a register index to a texture sampler
 
-```glsl
+```c
 // @register 2
 uniform sampler2d uTexture;
 ```

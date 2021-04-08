@@ -5,20 +5,25 @@ block append script
   script(type='text/javascript' src=assetPath('/assets/prism-typescript.js'))
   script(type='text/javascript' src=assetPath('/assets/mithril.js'))
   script(type='text/javascript' src='./index.js')
-mixin exampleGroup(list)
+mixin tree(list)
   each child in list
     .list-group.list-group-flush(role="tablist")
-      - var subList = childrenOf(child)
-      a.list-group-item(class=subList.length ? 'list-group-title' : '')&attributes({ href: '#' + child.path.replace(meta.path, ''), "data-data": child })
-        if subList.length > 0
+      - var hasChildren = child.children && child.children.length
+      - var subList = child.children || []
+      a.list-group-item(
+        class=hasChildren ? 'list-group-title' : ''
+        href='#' + child.urlPath.replace(meta.urlPath, '')
+        data-data=metadata(child))
+        if hasChildren
           h5= child.linkTitle
         else
           = child.linkTitle
-      +exampleGroup(subList)
+      +tree(subList)
 block content
   .example-page
     .example-nav.bg-white
-      +exampleGroup(children())
+      +tree(children(meta.file, { deep: true, ext: ['.pug']}))
+    .example-nav-overlay
     .example-container
       .example-toolbar
         a.example-button-menu

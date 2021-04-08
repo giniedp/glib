@@ -24,12 +24,7 @@ const texture = device.createTexture({
   height: 2,
   pixelFormat: 'RGBA',
   pixelType: 'ubyte',
-  source: [
-    0xFF, 0x00, 0x00, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0x00, 0x00, 0xFF,
-  ],
+  source: [0xff, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0xff],
 })
 
 // Prepare some state variables
@@ -62,13 +57,15 @@ loop((time, dt) => {
 })
 
 TweakUi.mount('#tweak-ui', (ui) => {
-  ui.select(texture, 'samplerParams', {
-    options: [
-      { label: 'null', value: null },
-      { label: 'LinearClamp', value: SamplerState.LinearClamp },
-      { label: 'LinearWrap', value: SamplerState.LinearWrap },
-      { label: 'PointClamp', value: SamplerState.PointClamp },
-      { label: 'PointWrap', value: SamplerState.PointWrap },
-    ],
+  ui.collapsible('Controls', { collapsed: true },() => {
+    ui.select(texture, 'samplerParams', {
+      options: [
+        { label: 'null', value: null },
+        { label: 'LinearClamp', value: SamplerState.LinearClamp },
+        { label: 'LinearWrap', value: SamplerState.LinearWrap },
+        { label: 'PointClamp', value: SamplerState.PointClamp },
+        { label: 'PointWrap', value: SamplerState.PointWrap },
+      ],
+    })
   })
 })

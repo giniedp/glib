@@ -55,3 +55,4 @@ device.init().then(() => {
     device.drawPrimitives('TriangleList', 0, 3)
   })
 })
+

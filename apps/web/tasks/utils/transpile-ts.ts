@@ -20,8 +20,9 @@ export function gulpTranspileTs() {
   })
 }
 
-export function transpileTs(file: string) {
-  const out = ts.transpileModule(fs.readFileSync(file).toString(), {
+export function transpileTs(file: string, content?: string, compilerOptions?: ts.CompilerOptions) {
+  content = content || fs.readFileSync(file).toString()
+  const out = ts.transpileModule(content, {
     reportDiagnostics: true,
     transformers: {
       before: [
@@ -36,7 +37,7 @@ export function transpileTs(file: string) {
         },
       ],
     },
-    compilerOptions: {
+    compilerOptions: compilerOptions || {
       target: ts.ScriptTarget.ESNext,
       module: ts.ModuleKind.ESNext,
       moduleResolution: ts.ModuleResolutionKind.NodeJs,

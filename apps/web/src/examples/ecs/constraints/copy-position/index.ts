@@ -6,7 +6,7 @@ import {
   PerspectiveCameraComponent,
   RendererComponent,
   TransformComponent,
-  LookAtConstraint,
+  CopyPositionConstraint,
 } from '@gglib/ecs-components'
 
 import { ContentManager } from '@gglib/content'
@@ -16,7 +16,7 @@ import { Model, LightType } from '@gglib/graphics'
 @Component({
   install: [ModelComponent, TransformComponent],
 })
-class CubeComponent implements OnInit {
+class ShapeComponent implements OnInit {
   public name = 'Cube'
 
   @Inject(ModelComponent)
@@ -66,42 +66,59 @@ class ExampleGame implements OnAdded, OnInit, OnUpdate {
   public readonly camera: PerspectiveCameraComponent
 
   public onAdded(e: Entity) {
-    e.createChild((e) => {
-      e.name = 'Light'
-      e.install(LightComponent, { type: LightType.Directional })
-      e.get(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
+    e.createChild((child) => {
+      child.name = 'Light'
+      child.install(LightComponent, { type: LightType.Directional })
+      child.get(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
     })
-    const w = 10
-    const h = 5
-    for (let y = 0; y <= h; y++) {
-      for (let x = 0; x <= w; x++) {
-        e.createChild((c1) => {
-          c1.name = `Cube`
-          c1.install(CubeComponent)
-          c1.install(LookAtConstraint)
-          c1.get(TransformComponent)
-            .setPosition(x - w/2, y - h/2, -8)
-            .setScaleUniform(0.4)
-        })
-      }
-    }
-    e.createChild((c2) => {
-      c2.name = 'Target'
-      c2.install(CubeComponent)
-      c2.install(TargetComponent)
-      c2.get(TransformComponent).setPosition(0, 0, -5).setScaleUniform(0.1)
+    let source: Entity
+    e.createChild((child) => {
+      source = child
+      child.name = 'Head'
+      child.install(ShapeComponent)
+      child.install(TargetComponent)
+      child.get(TransformComponent)
+        .setPosition(0, 0, -8)
+        .setScaleUniform(0.4)
+    })
+
+    e.createChild((child) => {
+      child.name = 'Bottom'
+      child.install(ShapeComponent)
+      child.install(CopyPositionConstraint, {
+        source: source.get(TransformComponent),
+        sourceSpace: 'world',
+        targetSpace: 'world',
+        copyX: true,
+        copyY: false,
+        copyZ: true,
+        weight: 0.01,
+      })
+      child.get(TransformComponent)
+        .setPosition(0, -4, -8)
+        .setScaleUniform(0.4)
+    })
+
+    e.createChild((child) => {
+      child.name = 'Right'
+      child.install(ShapeComponent)
+      child.install(CopyPositionConstraint, {
+        source: source.get(TransformComponent),
+        sourceSpace: 'world',
+        targetSpace: 'world',
+        copyX: false,
+        copyY: true,
+        copyZ: true,
+        weight: 0.01,
+      })
+      child.get(TransformComponent)
+        .setPosition(10, 0, -8)
+        .setScaleUniform(0.4)
     })
   }
 
   public onInit() {
     this.renderer.scene.camera = this.camera
-
-    const cubes = this.entity.findAll('/Cube')
-    const target = this.entity.find('/Target')
-    for (const cube of cubes) {
-      cube.get(LookAtConstraint).source = target.get(TransformComponent)
-      cube.get(LookAtConstraint).weight = 0.5
-    }
   }
 
   public onUpdate() {

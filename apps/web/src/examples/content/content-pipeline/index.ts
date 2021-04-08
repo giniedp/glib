@@ -175,10 +175,12 @@ function loadModel(path: string) {
 loadModel(assets[0])
 
 TweakUi.mount('#tweak-ui', (ui) => {
-  ui.select({ model: assets[0] }, 'model', {
-    options: assets,
-    onChange: (ctrl) => {
-      loadModel(ctrl.target.model)
-    },
+  ui.collapsible('Controls', { collapsed: true },() => {
+    ui.select({ model: assets[0] }, 'model', {
+      options: assets,
+      onChange: (ctrl) => {
+        loadModel(ctrl.target.model)
+      },
+    })
   })
 })

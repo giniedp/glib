@@ -11,8 +11,8 @@ html(lang="en")
         #tweak-ui:empty { display: none }
 body
   block content
-    #tweak-ui
     canvas#canvas(oncontextmenu="return false;")
+    #tweak-ui
   block script
     link(href=assetPath("/assets/tweak-ui.css") rel="stylesheet")
     script(type='text/javascript' src=assetPath('/assets/tweak-ui.umd.js'))

@@ -3,28 +3,6 @@ export default {
   cwd: __dirname,
   dist: path.join(__dirname, 'dist'),
   src: path.join(__dirname, 'src'),
-  styles: {
-    build: [
-      'src/**/*.scss',
-      '!src/**/_*',
-    ],
-    watch: ['src/**/*.scss']
-  },
-  scripts: {
-    build: 'src/**/*.ts',
-    watch: 'src/**/*.ts',
-  },
-  pages: {
-    build: [
-      'src/**/*.*',
-      '!src/docs/**/*.*',
-      '!src/**/*.scss',
-    ],
-    watch: [
-      'src/**/*.*',
-      '!src/**/*.scss',
-    ]
-  },
   get assets() {
     return [
       ...[

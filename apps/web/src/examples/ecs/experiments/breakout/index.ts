@@ -8,7 +8,7 @@ import {
   MouseComponent,
   TweenComponent,
   SpriteSourceOptions,
-  LimitTranslationConstraint,
+  LimitPositionConstraint,
 } from '@gglib/ecs-components'
 
 import { forwardRef, Inject, OnInit, OnUpdate, Component, Entity, OnAdded, OnSetup } from '@gglib/ecs'

@@ -14,7 +14,7 @@
     "glib:test:coverage": "IS_COVERAGE=yes gulp glib:test",
     "glib:test:coveralls": "IS_COVERAGE=yes gulp glib:test && cat ./coverage/lcov/lcov.info | ./node_modules/.bin/coveralls",
     "build": "gulp glib:build && gulp web:build",
-    "dev": "concurrently -n ⬢,⬢,⬢ -c red,green,blue -p '{name}' -k 'gulp glib:watch' 'gulp web:watch' 'gulp web:serve'",
+    "dev": "concurrently -n ⬢,⬢ -c red,green -p '{name}' -k 'gulp glib:watch' 'gulp web:watch'",
     "lint": "yarn lint:packages && yarn lint:examples",
     "lint:packages": "eslint -c .eslintrc.js",
     "lint:examples": "tsc -p ./apps/web/src/tsconfig.json --noEmit",
@@ -26,27 +26,27 @@
   },
   "devDependencies": {
     "@types/gulp": "^4.0.6",
-    "@types/jasmine": "^3.6.6",
-    "@types/mithril": "^2.0.3",
-    "@types/node": "^12.0.0",
+    "@types/jasmine": "^3.6.9",
+    "@types/mithril": "^2.0.7",
+    "@types/node": "^14.14.37",
     "@types/webgl2": "^0.0.5",
-    "@typescript-eslint/eslint-plugin": "^4.17.0",
-    "@typescript-eslint/parser": "^4.17.0",
+    "@typescript-eslint/eslint-plugin": "^4.21.0",
+    "@typescript-eslint/parser": "^4.21.0",
     "@webgpu/glslang": "^0.0.15",
     "@webgpu/types": "^0.0.38",
-    "concurrently": "^6.0.0",
+    "concurrently": "^6.0.1",
     "coveralls": "^3.1.0",
     "del": "^6.0.0",
-    "eslint": "^7.21.0",
+    "eslint": "^7.23.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-import": "^2.22.0",
-    "eslint-plugin-jsdoc": "^32.2.0",
+    "eslint-plugin-jsdoc": "^32.3.0",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "gulp": "^4.0.2",
     "jslint": "^0.12.1",
     "ts-node": "^9.0.0",
-    "tslib": "^2.0.0",
-    "typescript": "^4.2.3",
+    "tslib": "^2.2.0",
+    "typescript": "^4.2.4",
     "webidl2ts": "^1.0.1",
     "yargs": "^16.2.0"
   },
@@ -65,6 +65,6 @@
     "./tools/*"
   ],
   "engines": {
-    "node": "12"
+    "node": "14"
   }
 }

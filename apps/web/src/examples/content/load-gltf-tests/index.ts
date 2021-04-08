@@ -40,7 +40,7 @@ const device = createDevice({ canvas: '#canvas' })
 const content = new ContentManager(device)
 content.downloadJSON({ url: manifest }).then((data: Data<Manifest>) => {
   TweakUi.mount('#tweak-ui', (ui) => {
-    ui.group('Controls', { collapsible: true }, () => {
+    ui.collapsible('Controls', { collapsed: true },() => {
       ui.accordion(() => {
         const list = data.content.sort((a, b) => a.id - b.id)
         list.forEach((folder) => {
