@@ -1,7 +1,7 @@
 {
   "name": "@gglib/render",
   "description": "Part of the [G]glib project",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -18,16 +18,16 @@
   "module": "dist/render/src/index.js",
   "typings": "dist/render/src/index.d.ts",
   "devDependencies": {
-    "@gglib/graphics": "0.6.1",
-    "@gglib/fx-post": "0.6.1",
-    "@gglib/math": "0.6.1",
-    "@gglib/utils": "0.6.1"
+    "@gglib/graphics": "0.6.2",
+    "@gglib/fx-post": "0.6.2",
+    "@gglib/math": "0.6.2",
+    "@gglib/utils": "0.6.2"
   },
   "peerDependencies": {
-    "@gglib/graphics": "0.6.1",
-    "@gglib/fx-post": "0.6.1",
-    "@gglib/math": "0.6.1",
-    "@gglib/utils": "0.6.1"
+    "@gglib/graphics": "0.6.2",
+    "@gglib/fx-post": "0.6.2",
+    "@gglib/math": "0.6.2",
+    "@gglib/utils": "0.6.2"
   },
   "files": [
     "package.json",
