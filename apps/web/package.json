@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
-    "@gglib/gglib": "0.6.1",
+    "@gglib/gglib": "0.6.2",
     "@types/browser-sync": "^2.26.1",
     "@types/gulp-sass": "^4.0.0",
     "@types/metalsmith": "^2.3.0",
