@@ -28,11 +28,11 @@ export default (options: MetalsmithPugOptions) => {
   return (files: Record<string, MetalsmithFileMeta>, smith: Metalsmith, done: Function) => {
     Object.assign(memo, files)
     Object.keys(files)
+      .filter(isPugFile)
       .filter((file) => {
-        if (!isPartial(file)) return
+        if (!isPartial(file)) return true
         delete files[file]
       })
-      .filter(isPugFile)
       .forEach((file) => {
         try {
           const content = compile(options, file, memo, smith)
