@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import Metalsmith from 'metalsmith'
 
-import msSass from 'metalsmith-sass'
+import msSass from './utils/ms-sass'
 import filter from 'metalsmith-filter'
 import msMetadata from './utils/ms-metadata'
 import msPug from './utils/ms-pug'
@@ -28,7 +28,7 @@ async function run() {
     .use(msMetadata())
     .use(
       msSass({
-        includePaths: ['node_modules'],
+        includePaths: [path.join(process.cwd(), 'node_modules')],
       }),
     )
     .use([

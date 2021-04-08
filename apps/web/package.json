@@ -20,7 +20,6 @@
     "gulp-sass": "^4.1.0",
     "metalsmith": "^2.3.0",
     "metalsmith-filter": "^1.0.2",
-    "metalsmith-sass": "^1.7.0",
     "mithril": "^2.0.4",
     "prismjs": "^1.21.0",
     "tweak-ui": "^0.4.3"
