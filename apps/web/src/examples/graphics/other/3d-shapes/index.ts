@@ -70,13 +70,15 @@ function buildMesh(name: string) {
     .append(builderFunctions[name], builderFunctionOptions[name])
     .endMeshPart(device)
 
-  linesMesh = ModelBuilder.begin({
-    layout: ['position', 'color'],
-  }).append((b) => {
-    buildLines(b, mesh.vertexBuffer)
-  }).endMeshPart(device, {
-    primitiveType: PrimitiveType.LineList,
-  })
+  if ((device as DeviceGL).isWebGL2) {
+    linesMesh = ModelBuilder.begin({
+      layout: ['position', 'color'],
+    }).append((b) => {
+      buildLines(b, mesh.vertexBuffer)
+    }).endMeshPart(device, {
+      primitiveType: PrimitiveType.LineList,
+    })
+  }
 }
 
 const builderFunctions = {
@@ -253,5 +255,5 @@ loop((time, dt) => {
   linesProgram.setUniform('view', view)
   linesProgram.setUniform('projection', proj)
   // Render the mesh
-  linesMesh.draw(linesProgram)
+  linesMesh?.draw(linesProgram)
 })
