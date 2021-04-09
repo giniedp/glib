@@ -2,7 +2,7 @@ import { Entity } from '@gglib/ecs'
 import { Vec3 } from '@gglib/math'
 import { TransformComponent } from './TransformComponent'
 
-fdescribe('@gglib/ecs/TransformComponent', () => {
+describe('@gglib/ecs/TransformComponent', () => {
   let eParent: Entity
   let eChild: Entity
   let parent: TransformComponent
