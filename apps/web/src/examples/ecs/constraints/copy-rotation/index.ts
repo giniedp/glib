@@ -6,7 +6,7 @@ import {
   PerspectiveCameraComponent,
   RendererComponent,
   TransformComponent,
-  LookAtConstraint,
+  CopyRotationConstraint,
 } from '@gglib/ecs-components'
 
 import { ContentManager } from '@gglib/content'
@@ -47,8 +47,11 @@ class TargetComponent implements OnUpdate {
   public onUpdate(dt: number) {
     this.time += dt
     this.transform
-      .setPositionX(Math.sin(this.time / 2000) * 21 * 0.4)
-      .setPositionY(Math.sin(this.time / 1000) * 9 * 0.4)
+      .setRotationYawPitchRoll(
+        Math.sin(this.time / 2000),
+        Math.sin(this.time / 4000),
+        Math.sin(this.time / 8000)
+      )
   }
 }
 
@@ -71,16 +74,16 @@ class ExampleGame implements OnAdded, OnInit, OnUpdate {
       child.install(LightComponent, { type: LightType.Directional })
       child.get(TransformComponent).setRotationAxisAngle(1, 0, 0, -1)
     })
+
     let source: Entity
     e.createChild((child) => {
       source = child
       child.name = 'Target'
-      child
-        .install(CubeComponent)
-        .install(TargetComponent)
-        .get(TransformComponent)
+      child.install(CubeComponent)
+      child.install(TargetComponent)
+      child.get(TransformComponent)
         .setPosition(0, 0, -5)
-        .setScaleUniform(0.1)
+        .setScaleUniform(0.2)
     })
     const w = 10
     const h = 5
@@ -88,22 +91,23 @@ class ExampleGame implements OnAdded, OnInit, OnUpdate {
       for (let x = 0; x <= w; x++) {
         e.createChild((child) => {
           child.name = `Cube`
-          child
-            .install(CubeComponent)
-            .install(LookAtConstraint, {
-              source: source.get(TransformComponent),
-              weight: 0.5,
-            })
-            .get(TransformComponent)
-            .setPosition(x - w / 2, y - h / 2, -8)
+          child.install(CubeComponent)
+          child.install(CopyRotationConstraint, {
+            source: source.get(TransformComponent),
+            weight: ((x + 1) / h) * ((y + 1) / w) * 0.1
+          })
+          child.get(TransformComponent)
+            .setPosition(x - w/2, y - h/2, -8)
             .setScaleUniform(0.4)
         })
       }
     }
+
   }
 
   public onInit() {
     this.renderer.scene.camera = this.camera
+
   }
 
   public onUpdate() {
