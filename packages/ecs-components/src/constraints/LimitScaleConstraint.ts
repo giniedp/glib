@@ -114,7 +114,7 @@ export class LimitScaleConstraint implements OnUpdate, OnSetup<LimitScaleOptions
     }
 
     if (useWorldspace) {
-      this.target.parent.inverse.transformV3Normal(scale, scale)
+      this.target.parent.worldInverse.transformV3Normal(scale, scale)
     }
 
     if (!scale.equals(this.target.scale)) {

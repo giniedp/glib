@@ -105,7 +105,7 @@ export class LookAtConstraint implements OnUpdate {
 
     // to local space
     if (this.target.parent && this.targetSpace === 'world') {
-      v0.transformByMat4(this.target.parent.inverse)
+      v0.transformByMat4(this.target.parent.worldInverse)
     }
 
     this.target.lookAt(v0, this.up)

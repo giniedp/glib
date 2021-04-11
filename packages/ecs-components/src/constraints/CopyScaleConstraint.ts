@@ -117,7 +117,7 @@ export class CopyScaleConstraint implements OnUpdate, OnSetup<CopyScaleOptions> 
     Vec3.lerp(target, source, this.weight, source)
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      this.target.parent.inverse.transformV3Normal(source, source)
+      this.target.parent.worldInverse.transformV3Normal(source, source)
     }
 
     if (!this.copyX) {

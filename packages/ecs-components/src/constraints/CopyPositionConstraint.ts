@@ -117,7 +117,7 @@ export class CopyPositionConstraint implements OnUpdate, OnSetup<CopyPositionOpt
     Vec3.lerp(target, source, this.weight, source)
 
     if (this.targetSpace === 'world' && this.target.parent) {
-      source.transformByMat4(this.target.parent.inverse)
+      source.transformByMat4(this.target.parent.worldInverse)
     }
 
     if (!this.copyX) {

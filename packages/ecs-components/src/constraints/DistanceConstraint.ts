@@ -94,12 +94,12 @@ export class DistanceConstraint implements OnUpdate {
 
     s.initFrom(this.source.position)
     if (this.source.parent && this.sourceSpace === 'world') {
-      s.transformByMat4(this.source.parent.inverse)
+      s.transformByMat4(this.source.parent.worldInverse)
     }
 
     t.initFrom(this.target.position)
     if (this.target.parent && this.targetSpace === 'world') {
-      t.transformByMat4(this.target.parent.inverse)
+      t.transformByMat4(this.target.parent.worldInverse)
     }
 
     // calculate distance between objects

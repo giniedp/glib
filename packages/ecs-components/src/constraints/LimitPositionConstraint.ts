@@ -123,7 +123,7 @@ export class LimitPositionConstraint implements OnUpdate, OnSetup<LimitPositionO
     }
 
     if (useWorldspace) {
-      position.transformByMat4(this.target.parent.inverse)
+      position.transformByMat4(this.target.parent.worldInverse)
     }
 
     if (!position.equals(this.target.position)) {
