@@ -20,10 +20,10 @@ interface Pixel {
   hitNormal: Vec3    // normal at current hit point
   shape: Shape       // shape that has been hit
   material: Material // material of shape
-  color: Vec3        // temporary pixel color
+  color: Vec3        // accumulated pixel color
 }
 
-class Material implements Material {
+class Material {
   public constructor(
     public attenuation: IVec3,
     public metallic: number,
