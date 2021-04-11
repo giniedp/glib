@@ -118,14 +118,50 @@ export class TransformComponent implements OnInit, OnUpdate {
   public readonly world: Mat4 = Mat4.createIdentity()
 
   /**
-   * The inverse matrix
+   * The inverse of the world matrix
+   *
+   * @remarks
+   * This is marked as dirty on every frame, if `world` matrix has been updated.
+   * The fnal value is recalculated on demand if needed.
    */
-  public get inverse(): Mat4 {
-    if (this.dirtyInverse) {
-      Mat4.invert(this.world, this.inverseMat)
+  public get worldInverse(): Mat4 {
+    if (this.worldInvDirty) {
+      Mat4.invert(this.world, this.worldInv)
+      this.worldInvDirty = false
     }
-    return this.inverseMat
+    return this.worldInv
   }
+
+  /**
+   * The rotation in world space
+   *
+   * @remarks
+   * This is marked as dirty on every frame, if `world` matrix has been updated.
+   * The fnal value is recalculated on demand if needed.
+   */
+   public get worldRotation(): Quat {
+    if (this.worldRotDirty) {
+      this.worldRot.initFromMat4(this.world)
+      this.worldRotDirty = false
+    }
+    return this.worldRot
+  }
+
+  /**
+   * The iverse rotation in world space
+   *
+   * @remarks
+   * This is marked as dirty on every frame, if `world` matrix has been updated.
+   * The fnal value is recalculated on demand if needed.
+   */
+   public get worldRotationInverse(): Quat {
+    if (this.worldRotInvDirty) {
+      this.worldRotInv.initFrom(this.worldRotation).invert()
+      this.worldRotInvDirty = false
+    }
+    return this.worldRotInv
+  }
+
   /**
    * Indicates that the state has changed and the transform matrix must be updated
    *
@@ -144,8 +180,14 @@ export class TransformComponent implements OnInit, OnUpdate {
    */
   public dirty: boolean
 
-  private inverseMat = Mat4.createIdentity()
-  private dirtyInverse: boolean
+  private worldInvDirty: boolean
+  private worldInv = Mat4.createIdentity()
+
+  private worldRotDirty: boolean
+  private worldRot = Quat.createIdentity()
+
+  private worldRotInvDirty: boolean
+  private worldRotInv = Quat.createIdentity()
 
   constructor(options: TransformComponentOptions = {}) {
     this.scale = Vec3.convert(getOption(options, 'scale', Vec3.createOne()))
@@ -189,8 +231,10 @@ export class TransformComponent implements OnInit, OnUpdate {
       this.world.initFrom(this.local)
     }
 
-    this.dirtyInverse = true
     this.dirty = false
+    this.worldInvDirty = true
+    this.worldRotDirty = true
+    this.worldRotInvDirty = true
     if (this.entity) {
       this.entity.trigger(TransformComponent.EVENT_UPDATED, this)
     }
