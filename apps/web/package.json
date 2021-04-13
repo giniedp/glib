@@ -12,7 +12,7 @@
     "@types/gulp-sass": "^4.0.0",
     "@types/metalsmith": "^2.3.0",
     "@types/mithril": "^2.0.7",
-    "@types/prismjs": "^1.16.4",
+    "@types/prismjs": "^1.16.5",
     "ammojs-typed": "^1.0.3",
     "bootstrap": "^4.6.0",
     "browser-sync": "^2.26.14",
