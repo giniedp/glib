@@ -76,8 +76,8 @@ export class LookAtConstraint implements OnUpdate {
       return
     }
 
-    let v0 = tmp0 || Vec3.create()
-    let v1 = tmp1 || Vec3.create()
+    let v0 = (tmp0 = tmp0 || Vec3.create())
+    let v1 = (tmp1 = tmp1 || Vec3.create())
 
     // v0 = position of them in world space
     v0.initFrom(this.source.position)
@@ -104,9 +104,9 @@ export class LookAtConstraint implements OnUpdate {
     }
 
     // to local space
-    if (this.target.parent && this.targetSpace === 'world') {
-      v0.transformByMat4(this.target.parent.worldInverse)
-    }
+    // if (this.target.parent && this.targetSpace === 'world') {
+    //   v0.transformByMat4(this.target.parent.worldInverse)
+    // }
 
     this.target.lookAt(v0, this.up)
     if (this.commit) {
