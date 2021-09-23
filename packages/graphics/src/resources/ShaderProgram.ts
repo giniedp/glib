@@ -103,11 +103,6 @@ export abstract class ShaderProgram {
         uniform.set(uniforms[key])
       }
     })
-    // for (const key in this.uniforms.keys()) {
-    //   if (uniforms[key] != null) {
-    //     this.uniforms.get(key).set(uniforms[key])
-    //   }
-    // }
     return this
   }
 
@@ -129,6 +124,11 @@ export abstract class ShaderProgram {
     return this
   }
 
+  /**
+   * Sets the binding values to available uniforms.
+   *
+   * @param bindings
+   */
   public applyBindings(bindings: ShaderUniformBinding[]) {
     let binding: ShaderUniformBinding
     let uniform: ShaderUniform

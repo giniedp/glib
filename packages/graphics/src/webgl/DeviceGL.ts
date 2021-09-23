@@ -96,10 +96,8 @@ function getOrCreateContext(
   }
 
   // apply fallback strategy
-  Log.info('[Device]', `context autodetection`)
   for (const name of ['webgl2', 'webgl', 'experimental-webgl']) {
     try {
-      Log.info('[Device]', `trying ${name}`)
       result = canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
     } catch (e) {
       Log.error('[Device]', e)
@@ -107,7 +105,6 @@ function getOrCreateContext(
     if (!result) {
       Log.info('[Device]', `${name} is not supported`)
     } else {
-      Log.info('[Device]', `using ${name} context`)
       return result
     }
   }

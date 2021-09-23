@@ -37,6 +37,13 @@ export class UniformBinder {
     name: 'World', type: 'mat4', value: Mat4.createIdentity(),
   }
 
+  /**
+   * A matrix that is applied to a uniform with `"WorldInverse"` binding name
+   */
+   public readonly WorldInverse: ShaderUniformBinding<Mat4> = {
+    name: 'WorldInverse', type: 'mat4', value: Mat4.createIdentity(),
+  }
+
   private transformBindings = [
     this.Position,
     this.Direction,
@@ -62,6 +69,13 @@ export class UniformBinder {
    */
   public readonly ViewProjection: ShaderUniformBinding<Mat4> = {
     name: 'ViewProjection', type: 'mat4', value: Mat4.createIdentity(),
+  }
+
+  /**
+   * A matrix that is applied to a uniform with `"ViewProjectionInverse"` binding name
+   */
+   public readonly ViewProjectionInverse: ShaderUniformBinding<Mat4> = {
+    name: 'ViewProjectionInverse', type: 'mat4', value: Mat4.createIdentity(),
   }
 
   /**
@@ -110,6 +124,7 @@ export class UniformBinder {
     this.View,
     this.Projection,
     this.ViewProjection,
+    this.ViewProjectionInverse,
     this.CameraPosition,
     this.CameraDirection,
     this.TargetSize,
@@ -168,9 +183,9 @@ export class UniformBinder {
 
   private buildLightBinding(i: number): LightBinding {
     return {
-      Color: { name: `Lights${i}Color`, type: 'vec4', value: Vec4.createZero() },
-      Position: { name: `Lights${i}Position`, type: 'vec4', value: Vec4.createZero() },
-      Direction: { name: `Lights${i}Direction`, type: 'vec4', value: Vec4.createZero() },
+      Color: { name: `Lights[${i}].Color`, type: 'vec4', value: Vec4.createZero() },
+      Position: { name: `Lights[${i}].Position`, type: 'vec4', value: Vec4.createZero() },
+      Direction: { name: `Lights[${i}].Direction`, type: 'vec4', value: Vec4.createZero() },
     }
   }
 
@@ -204,6 +219,7 @@ export class UniformBinder {
       this.Projection.value.initIdentity()
     }
     Mat4.premultiply(this.View.value, this.Projection.value, this.ViewProjection.value)
+    Mat4.invert(this.ViewProjection.value, this.ViewProjectionInverse.value)
     return this
   }
 

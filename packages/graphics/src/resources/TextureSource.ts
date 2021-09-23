@@ -86,10 +86,7 @@ function isImageBitmap(it: any): it is ImageBitmap {
   return typeof ImageBitmap !== 'undefined' && it instanceof ImageBitmap
 }
 
-function isOffscreenCanvas(it: any): it is OffscreenCanvas {
-  return typeof OffscreenCanvas !== 'undefined' && it instanceof OffscreenCanvas
-}
-export class TextureSourceData extends TextureSource<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas> {
+export class TextureSourceData extends TextureSource<ImageBitmap | ImageData | HTMLCanvasElement> {
   public get isReady() {
     return true
   }
@@ -99,11 +96,11 @@ export class TextureSourceData extends TextureSource<ImageBitmap | ImageData | H
   public get height() {
     return this.data.height
   }
-  public readonly data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas
+  public readonly data: ImageBitmap | ImageData | HTMLCanvasElement
 
-  public constructor(data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas) {
+  public constructor(data: ImageBitmap | ImageData | HTMLCanvasElement) {
     super()
-    if (isImageBitmap(data) || data instanceof ImageData || data instanceof HTMLCanvasElement || isOffscreenCanvas(data)) {
+    if (isImageBitmap(data) || data instanceof ImageData || data instanceof HTMLCanvasElement) {
       this.data = data
     } else if ("data" in data && "width" in data && "height" in data) {
       const input = data as ImageData

@@ -172,7 +172,7 @@ export class PostBloomEffect {
       device.program = this.effect.getTechnique('hBlur').pass(0).program
       device.program.setUniform('texture', rt1)
       for (let i = 0; i < this.offsetWeights.length; i++) {
-        device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i])
+        device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i])
       }
       device.setRenderTarget(rt2)
       device.clear(Color.TransparentBlack, 1)
@@ -186,7 +186,7 @@ export class PostBloomEffect {
       device.program = this.effect.getTechnique('vBlur').pass(0).program
       device.program.setUniform('texture', rt2)
       for (let i = 0; i < this.offsetWeights.length; i++) {
-        device.program.setUniform(`offsetWeights${i}`, this.offsetWeights[i])
+        device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i])
       }
       device.setRenderTarget(rt1)
       device.clear(Color.TransparentBlack, 1)

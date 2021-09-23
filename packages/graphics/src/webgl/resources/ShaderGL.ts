@@ -2,8 +2,8 @@ import { Log } from '@gglib/utils'
 
 import { nameOfShaderType, valueOfShaderType } from '../../enums'
 import { Shader, ShaderOptions } from '../../resources'
-import { ShaderInspector } from '../../ShaderInspector'
 import { DeviceGL } from '../DeviceGL'
+import { Glsl } from '../glsl'
 
 /**
  * A wrapper class around the {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLShader | WebGLShader}
@@ -70,7 +70,7 @@ export class ShaderGL extends Shader {
     this.info = gl.getShaderInfoLog(this.handle)
 
     if (!this.compiled) {
-      Log.error('[Shader] compilation failed', ShaderInspector.formatInfoLog(this.info, this.source))
+      Log.error('[Shader] compilation failed', Glsl.formatError(this.info, this.source))
     }
     return this
   }

@@ -176,9 +176,9 @@ export class LightParams {
   }
 
   public assign(lightIndex: number, toParams: { [k: string]: any }) {
-    toParams[`Lights${lightIndex}Color`] = this.$color
-    toParams[`Lights${lightIndex}Position`] = this.$position
-    toParams[`Lights${lightIndex}Direction`] = this.$direction
+    toParams[`Lights[${lightIndex}].Color`] = this.$color
+    toParams[`Lights[${lightIndex}].Position`] = this.$position
+    toParams[`Lights[${lightIndex}].Direction`] = this.$direction
   }
 
   public static createDirectionalLight(options: {

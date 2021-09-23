@@ -1,10 +1,10 @@
 // tslint:disable:no-bitwise
 
 import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
-import { copy } from '@gglib/utils'
 import { Device } from '../Device'
 import { ShaderProgram, Texture } from '../resources'
-import { SamplerState, SamplerStateParams } from '../states'
+import { SamplerStateParams } from '../states'
+import { ShaderUniformState } from './ShaderUniformState'
 
 /**
  * A union type combining all types that are supported by the {@link ShaderUniform}
@@ -106,36 +106,30 @@ export abstract class ShaderUniform {
    */
   public abstract readonly device: Device
   /**
-   * The rendering context
-   */
-  // public gl: WebGLRenderingContext
-  /**
    * The shader program
    */
   public abstract readonly program: ShaderProgram
   /**
    * Meta data and annotations of this uniform
    */
-  public meta: any
+  public abstract readonly meta: Record<string, any>
   /**
    * The binding name of this uniform
    */
-  public name: string
+  public abstract readonly name: string
   /**
    * The type name of the uniform in the shader
    */
-  public type: string
+  public abstract readonly type: string
   /**
    * The default value
    */
-  public defaultValue: any
-  /**
-   * The currently cached value
-   */
-  public cachedValue: any[] = []
-  public dirty: boolean = true
+  public readonly defaultValue: unknown
 
-  public set: (v: any, ...rest: any[]) => void
+  /**
+   * Sets a value bu using the default setter mechanism for current type
+   */
+  public set: (v: unknown, ...args: unknown[]) => void
 
   /**
    * The texture register index
@@ -146,73 +140,7 @@ export abstract class ShaderUniform {
    */
   public filter: SamplerStateParams
 
-  protected cacheX(x: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    cache.length = 1
-    return changed
-  }
-
-  protected cacheXY(x: number | boolean, y: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    if (cache[1] !== y) {
-      cache[1] = y
-      changed = true
-    }
-    cache.length = 2
-    return changed
-  }
-
-  protected cacheXYZ(x: number | boolean, y: number | boolean, z: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    if (cache[1] !== y) {
-      cache[1] = y
-      changed = true
-    }
-    if (cache[2] !== z) {
-      cache[2] = z
-      changed = true
-    }
-    cache.length = 3
-    return changed
-  }
-
-  protected cacheXYZW(x: number | boolean, y: number | boolean, z: number | boolean, w: number | boolean): boolean {
-    let changed = false
-    let cache = this.cachedValue
-    if (cache[0] !== x) {
-      cache[0] = x
-      changed = true
-    }
-    if (cache[1] !== y) {
-      cache[1] = y
-      changed = true
-    }
-    if (cache[2] !== z) {
-      cache[2] = z
-      changed = true
-    }
-    if (cache[3] !== w) {
-      cache[3] = w
-      changed = true
-    }
-    cache.length = 4
-    return changed
-  }
+  protected state = new ShaderUniformState()
 
   /**
    * Sets an int value. Commits it to the uniform variable of the program if it has changed.
