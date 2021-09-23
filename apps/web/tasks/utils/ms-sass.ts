@@ -1,5 +1,5 @@
 import * as path from 'path'
-import * as sass from 'node-sass'
+import * as sass from 'sass'
 import Metalsmith from 'metalsmith'
 import { MetalsmithFile } from './ms-metadata'
 import wplog from 'webpack-log'
@@ -21,8 +21,8 @@ async function compile(config: sass.Options, filePath: string, content?: Buffer)
   const fileName = path.basename(filePath)
   const opts: sass.Options = {
     outputStyle: 'compressed',
-    imagePath: '/',
-    outputDir: fileDir,
+    // imagePath: '/',
+    // outputDir: fileDir,
     indentedSyntax: fileName.endsWith('.sass'),
     ...config,
     includePaths: [...(config?.includePaths || [])],
