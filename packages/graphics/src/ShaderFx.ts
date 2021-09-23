@@ -8,6 +8,7 @@ import { ShaderTechniqueOptions } from './ShaderTechnique'
  */
 export interface ShaderFxDocument {
   name: string
+  version?: string
   program: string
   technique: ShaderFxTechnique | ShaderFxTechnique[]
 }
@@ -97,8 +98,8 @@ async function mapPasses(
       return {
         name: it.name,
         program: await processProgram(
-          ['#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n'),
-          ['#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n'),
+          [`#version ${doc.version || '100'}`, '#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n').trim(),
+          [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n').trim(),
           includeHandler,
         ),
       }
@@ -185,8 +186,8 @@ function mapPassesSync(
     return {
       name: it.name,
       program: processProgramSync(
-        ['#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n'),
-        ['#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n'),
+        [`#version ${doc.version || '100'}`, '#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n'),
+        [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n'),
         includeHandler,
       ),
     }
