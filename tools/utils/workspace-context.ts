@@ -109,7 +109,7 @@ export class WorkspacePackageContext extends WorkspaceBaseContext {
    */
   public get glibReferences(): string[] {
     if (!this.cachedReferences) {
-      this.cachedReferences = glibReferences(this.dir)
+      this.cachedReferences = glibReferences(this.dir, this.packageName)
     }
     return this.cachedReferences
   }

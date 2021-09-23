@@ -1,7 +1,7 @@
 import * as glob from 'glob'
 import * as fs from 'fs'
 
-export function glibReferences(dir: string) {
+export function glibReferences(dir: string, packageName: string) {
   const result = new Set<string>()
   glob.sync(`${dir}/**/*.ts`).forEach((file) => {
     fs.readFileSync(file)
@@ -9,7 +9,7 @@ export function glibReferences(dir: string) {
       .match(/from ["']@gglib\/(\w+([\-/_]\w+)*)["']/g)
       ?.forEach((value) => {
         const m = value.match(/from ["'](@gglib\/\w+([\-/_]\w+)*)["']/)
-        if (m && m[1] !== this.packageName) {
+        if (m && m[1] !== packageName) {
           result.add(m[1])
         }
       })
