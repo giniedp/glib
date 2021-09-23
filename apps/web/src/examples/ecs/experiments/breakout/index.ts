@@ -2,7 +2,7 @@ import {
   createGame,
   KeyboardComponent,
   RendererComponent,
-  SceneryLinkComponent,
+
   SpriteComponent,
   TransformComponent,
   MouseComponent,
@@ -14,7 +14,7 @@ import {
 import { forwardRef, Inject, OnInit, OnUpdate, Component, Entity, OnAdded, OnSetup } from '@gglib/ecs'
 import { Texture, BlendState, Color } from '@gglib/graphics'
 import { Mat4, Rect, easeInCubic, clamp } from '@gglib/math'
-import { CameraData, BasicRenderStep } from '@gglib/render'
+import { CameraData, CommonRenderStep } from '@gglib/render'
 import { Events } from '@gglib/utils'
 import { ContentManager } from '@gglib/content'
 
@@ -109,7 +109,7 @@ class BreakoutGame extends Events implements OnAdded, OnInit, OnUpdate {
 
   public async onInit() {
     this.renderer.scene.camera = this.camera
-    const renderStep = this.renderer.scene.steps[0] as BasicRenderStep
+    const renderStep = this.renderer.scene.steps[0] as CommonRenderStep
     renderStep.blendState = BlendState.AlphaBlend
     renderStep.clearColor = 0xff2e2620
   }
@@ -218,11 +218,11 @@ class LogicComponent implements OnUpdate {
       }
       block.kill()
       if (ball.dy > 0 && ball.rect.yEnd >= block.rect.y && ball.rect.y < block.rect.y) {
-        // hot from below
+        // hit from below
         ball.dy = -Math.abs(ball.dy)
       }
       else if (ball.dy < 0 && ball.rect.y <= block.rect.yEnd && ball.rect.yEnd > block.rect.yEnd) {
-        // hot from above
+        // hit from above
         ball.dy = Math.abs(ball.dy)
       }
       else if (ball.dx < 0 && ball.rect.x <= block.rect.xEnd && ball.rect.xEnd > block.rect.xEnd) {
@@ -250,7 +250,7 @@ class LogicComponent implements OnUpdate {
 // A very basic game object that implements all we actually
 // need for all main objects.
 @Component({
-  install: [SceneryLinkComponent, TransformComponent, SpriteComponent, TweenComponent],
+  install: [TransformComponent, SpriteComponent, TweenComponent],
 })
 class GameObjectComponent implements OnSetup<any>, OnUpdate {
   @Inject(SpriteComponent)

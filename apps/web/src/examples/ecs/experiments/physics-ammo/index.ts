@@ -27,7 +27,7 @@ import { Device, Model, LightType, Color } from '@gglib/graphics'
 import { KeyboardKey } from '@gglib/input'
 import { Vec3 } from '@gglib/math'
 import Ammo from 'ammojs-typed'
-import { BasicRenderStep } from '@gglib/render'
+import { CommonRenderStep } from '@gglib/render'
 
 @Component({
   install: [
@@ -96,7 +96,7 @@ class MyGame implements OnAdded, OnInit, OnUpdate {
   }
 
   public onInit() {
-    const step = this.renderer.scene.steps[0] as BasicRenderStep
+    const step = this.renderer.scene.steps[0] as CommonRenderStep
     step.clearColor = Color.CornflowerBlue.rgba
 
     this.renderer.scene.camera = this.camera

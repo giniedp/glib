@@ -15,7 +15,7 @@ import { Inject, OnInit, OnUpdate, Component, OnSetup, OnAdded, Entity } from '@
 import { Model, LightType, Color } from '@gglib/graphics'
 import * as TweakUi from 'tweak-ui'
 import { getOption } from '@gglib/utils'
-import { BasicRenderStep } from '@gglib/render'
+import { CommonRenderStep } from '@gglib/render'
 
 @Component({
   install: [RendererComponent]
@@ -54,7 +54,7 @@ class MyGame implements OnAdded, OnInit, OnUpdate {
 
   public onInit() {
     this.renderer.scene.camera = this.camera
-    const step = this.renderer.scene.steps[0] as BasicRenderStep
+    const step = this.renderer.scene.steps[0] as CommonRenderStep
     step.clearColor = Color.CornflowerBlue.rgba
 
     this.time.getOrCreate('time1')

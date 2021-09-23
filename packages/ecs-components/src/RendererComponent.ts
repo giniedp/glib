@@ -1,19 +1,18 @@
 import { Entity, Inject, OnDraw, OnInit, Component } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { BasicRenderStep, LightSourceData, RenderManager, Scene, SceneItem, SceneView } from '@gglib/render'
+import { CommonRenderStep, LightSourceData, RenderManager, Scene, SceneItem, SceneView } from '@gglib/render'
 
 import { BoundingFrustum } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { SceneryCollector } from './Scenery'
-import { SceneryLinkComponent } from './SceneryLinkComponent'
+import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
 import { SpatialSystemComponent } from './SpatialSystemComponent'
 import { TimeComponent } from './TimeComponent'
 
 /**
  * @public
  */
-export interface CullVisitor extends SceneryCollector {
+export interface CullVisitor extends ScenePartCollector {
   run(entity: Entity, view: Scene): void
 }
 
@@ -87,7 +86,7 @@ export class RendererComponent implements OnInit, OnDraw {
   private ensureSceneValidity(index: number = 0, view: number = 0) {
     if (!this.scenes[index]) {
       this.scenes[index] = {
-        steps: [new BasicRenderStep()],
+        steps: [new CommonRenderStep()],
         items: [],
         lights: [],
         views: [],
@@ -163,9 +162,9 @@ export class BruteForceCullVisitor implements CullVisitor {
       return
     }
 
-    const link = entity.get(SceneryLinkComponent, null)
-    if (link) {
-      link.collectScenery(this)
+    const scenePart = entity.get(ScenePartComponent, null)
+    if (scenePart) {
+      scenePart.collect(this)
     }
   }
 }
@@ -208,9 +207,9 @@ export class SpatialCullVisitor implements CullVisitor {
   }
 
   private visit(entity: Entity) {
-    const link = entity.get(SceneryLinkComponent, null)
-    if (link) {
-      link.collectScenery(this)
+    const scenePart = entity.get(ScenePartComponent, null)
+    if (scenePart) {
+      scenePart.collect(this)
     }
   }
 }

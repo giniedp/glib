@@ -1,12 +1,11 @@
-import { Entity, Inject, OnInit, OnRemoved, OnUpdate, Component, OnSetup } from '@gglib/ecs'
+import { Inject, OnInit, OnUpdate, Component, OnSetup, Listener } from '@gglib/ecs'
 import { LightParams } from '@gglib/fx-materials'
 import { LightType } from '@gglib/graphics'
 import { BoundingSphere, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { SceneryCollectable, SceneryCollector } from './Scenery'
-import { SceneryLinkComponent } from './SceneryLinkComponent'
+import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -35,22 +34,16 @@ export interface LightComponentOptions {
   install: [
     BoundingVolumeComponent,
     TransformComponent,
-    SceneryLinkComponent,
+    ScenePartComponent,
   ]
 })
-export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved, OnSetup<LightComponentOptions> {
+export class LightComponent implements OnInit, OnUpdate, OnSetup<LightComponentOptions> {
 
   /**
    * The transform component of the entity
    */
   @Inject(TransformComponent)
   public readonly transform: TransformComponent
-
-  /**
-   * The scenery link component of the entity
-   */
-  @Inject(SceneryLinkComponent)
-  public readonly link: SceneryLinkComponent
 
   /**
    * The bounding volume component of the entity
@@ -120,15 +113,7 @@ export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnR
    * Component life cycle method
    */
   public onInit() {
-    this.link.register(this)
     this.volume?.linkVolume(this.localVolume)
-  }
-
-  /**
-   * Component life cycle method
-   */
-  public onRemoved() {
-    this.link.unregister(this)
   }
 
   /**
@@ -156,10 +141,8 @@ export class LightComponent implements SceneryCollectable, OnInit, OnUpdate, OnR
     data.type = this.type
   }
 
-  /**
-   * SceneryCollectable method
-   */
-  public collectScenery(collector: SceneryCollector): void {
+  @Listener(ScenePartComponent.EVENT_COLLECT)
+  public collectPart(collector: ScenePartCollector): void {
     collector.addLight(this.params)
   }
 }

@@ -20,15 +20,14 @@ import {
 import { getOption } from '@gglib/utils'
 
 import { RenderManager } from './RenderManager'
-import { RenderStep, SceneDebugDrawable, SceneItemDrawable, SceneItemSprite } from './Types'
-import { UniformBinder } from './UniformBinder'
+import { RenderStep, SceneItemPrimitive, SceneItemDrawable, SceneItemSprite } from './Types'
 
 /**
- * Constructor options for {@link BasicRenderStep}
+ * Constructor options for {@link CommonRenderStep}
  *
  * @public
  */
-export interface BasicRenderStepOptions {
+export interface CommonRenderStepOptions {
   /**
    * The color to be used when clearing the screen. Defaults to solid black.
    */
@@ -64,7 +63,7 @@ export interface BasicRenderStepOptions {
  *
  * @public
  */
-export class BasicRenderStep implements RenderStep {
+export class CommonRenderStep implements RenderStep {
   public get ready() {
     return true
   }
@@ -98,10 +97,10 @@ export class BasicRenderStep implements RenderStep {
    */
   public stencilState: StencilStateParams
 
-  private spriteBatch: SpriteBatch
-  private debugBatch: PrimitiveBatch
+  protected spriteBatch: SpriteBatch
+  protected primitiveBatch: PrimitiveBatch
 
-  public constructor(options: BasicRenderStepOptions = {}) {
+  public constructor(options: CommonRenderStepOptions = {}) {
     this.clearColor = getOption(options, 'clearColor', Color.Black.rgba)
     this.clearDepth = getOption(options, 'clearDepth', 1)
     this.clearStencil = getOption(options, 'clearStencil', null)
@@ -122,8 +121,8 @@ export class BasicRenderStep implements RenderStep {
     if (!this.spriteBatch) {
       this.spriteBatch = new SpriteBatch(manager.device)
     }
-    if (!this.debugBatch) {
-      this.debugBatch = new PrimitiveBatch(manager.device)
+    if (!this.primitiveBatch) {
+      this.primitiveBatch = new PrimitiveBatch(manager.device)
     }
 
     binder.updateCamera(cam.world, cam.view, cam.projection)
@@ -143,33 +142,37 @@ export class BasicRenderStep implements RenderStep {
     this.spriteBatch.begin({
       viewProjection: binder.ViewProjection.value,
     })
-    this.debugBatch.begin({
+    this.primitiveBatch.begin({
       viewProjection: binder.ViewProjection.value,
       primitiveType: PrimitiveType.LineList,
     })
-    for (const item of scene.items) {
-      if (item.type === 'sprite') {
-        (item as SceneItemSprite).sprite.draw(this.spriteBatch)
-      } else if (item.type === 'debug') {
-        (item as SceneDebugDrawable).debug.draw(this.debugBatch)
-      } else {
-        this.renderItem(item as SceneItemDrawable, manager.binder)
-      }
-    }
+    this.renderItems(manager)
     this.spriteBatch.end()
-    this.debugBatch.end()
+    this.primitiveBatch.end()
 
     manager.device.setRenderTarget(null)
     manager.endStep(rt)
   }
 
-  public renderItem(item: SceneItemDrawable, binder: UniformBinder) {
+  protected renderItems(manager: RenderManager) {
+    for (const item of manager.scene.items) {
+      if (item.type === 'sprite') {
+        (item as SceneItemSprite).sprite.draw(this.spriteBatch)
+      } else if (item.type === 'primitive') {
+        (item as SceneItemPrimitive).primitive.draw(this.primitiveBatch)
+      } else {
+        this.renderItem(item as SceneItemDrawable, manager)
+      }
+    }
+  }
+
+  protected renderItem(item: SceneItemDrawable, manager: RenderManager) {
     const effect = item.material.effect
     const drawable = item.drawable
     const technique: ShaderTechnique = effect.technique
     for (const pass of technique.passes) {
       pass.commit(item.material.parameters)
-      binder
+      manager.binder
         .updateTransform(item.transform)
         .applyTransform(pass.program)
         .applyView(pass.program)

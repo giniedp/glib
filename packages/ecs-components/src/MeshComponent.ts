@@ -1,8 +1,7 @@
-import { Inject, OnInit, OnRemoved, Component } from '@gglib/ecs'
+import { Inject, Component, Listener } from '@gglib/ecs'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { SceneryCollectable, SceneryCollector } from './Scenery'
-import { SceneryLinkComponent } from './SceneryLinkComponent'
+import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
 import { TransformComponent } from './TransformComponent'
 import { ModelMesh } from '@gglib/graphics'
 
@@ -20,11 +19,11 @@ import { ModelMesh } from '@gglib/graphics'
  */
 @Component({
   install: [
-    SceneryLinkComponent,
+    ScenePartComponent,
     TransformComponent,
   ]
 })
-export class MeshComponent implements SceneryCollectable, OnInit, OnRemoved {
+export class MeshComponent {
   public readonly name = 'Mesh'
 
   /**
@@ -55,32 +54,16 @@ export class MeshComponent implements SceneryCollectable, OnInit, OnRemoved {
   /**
    * The scenery link component of the entity
    */
-  @Inject(SceneryLinkComponent)
-  public readonly link: SceneryLinkComponent
+  @Inject(ScenePartComponent)
+  public readonly link: ScenePartComponent
 
   private _mesh: ModelMesh
   private _drawables: SceneItemDrawable[] = []
 
-  /**
-   * Component life cycle method
-   */
-  public onInit() {
-    this.link.register(this)
-  }
-
-  /**
-   * Component life cycle method
-   */
-  public onRemoved() {
-    this.link.unregister(this)
-  }
-
-  /**
-   * SceneryCollectable method
-   */
-  public collectScenery(result: SceneryCollector) {
+  @Listener(ScenePartComponent.EVENT_COLLECT)
+  public collectParts(collector: ScenePartCollector) {
     for (let i = 0; i < this._drawables.length; i++) {
-      result.addItem(this._drawables[i])
+      collector.addItem(this._drawables[i])
     }
   }
 

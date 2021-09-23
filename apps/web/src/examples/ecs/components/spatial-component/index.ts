@@ -18,7 +18,7 @@ import { Entity, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs
 import { Model, LightType, ModelBuilder, buildIcosahedron, Device, Color } from '@gglib/graphics'
 import { Vec3, IVec3 } from '@gglib/math'
 import { AutoMaterial } from '@gglib/fx-materials'
-import { BasicRenderStep } from '@gglib/render'
+import { CommonRenderStep } from '@gglib/render'
 
 @Component({ })
 class MyGame implements OnInit, OnUpdate {
@@ -54,7 +54,7 @@ class MyGame implements OnInit, OnUpdate {
       })
       .endModel(this.renderer.device)
 
-    const step = this.renderer.scene.steps[0] as BasicRenderStep
+    const step = this.renderer.scene.steps[0] as CommonRenderStep
     step.clearColor = Color.CornflowerBlue.rgba
     this.renderer.scene.views = [
       {

@@ -4,7 +4,7 @@ import * as TweakUi from 'tweak-ui'
 import { ContentManager } from '@gglib/content'
 import { Inject, OnInit, OnUpdate, Component } from '@gglib/ecs'
 import { Texture, BlendState } from '@gglib/graphics'
-import { BasicRenderStep, CameraData } from '@gglib/render'
+import { CommonRenderStep, CameraData } from '@gglib/render'
 import { Mat4 } from '@gglib/math'
 
 @Component({
@@ -40,7 +40,7 @@ class MyGame implements OnInit, OnUpdate {
 
   public async onInit() {
     this.renderer.scene.camera = this.camera
-    const renderStep = this.renderer.scene.steps[0] as BasicRenderStep
+    const renderStep = this.renderer.scene.steps[0] as CommonRenderStep
     renderStep.blendState = BlendState.AlphaBlend
     renderStep.clearColor = 0xff2e2620
 

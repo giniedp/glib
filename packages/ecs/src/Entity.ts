@@ -282,9 +282,8 @@ export class Entity extends Events {
    * it will be called at the end of this function.
    */
   public addComponent<T extends EntityComponent>(comp: T extends Function ? never : T): Entity {
-    if (comp[boundEntity]) {
-      ;(comp[boundEntity] as Entity).removeComponent(comp)
-    }
+    const old = comp[boundEntity] as Entity
+    old?.removeComponent(comp)
 
     // Register the component on this entity
     this.registerComponent(comp)
@@ -382,26 +381,33 @@ export class Entity extends Events {
    */
   public initializeComponents(recursive: boolean = true): this {
     let cmp: EntityComponent
-    for (let i = 0; i < this.toInitialize.length; i++) {
-      cmp = this.toInitialize[i]
-      this.injectDependencies(cmp)
-      this.addEventListeners(cmp)
+    let start = 0
+    let length = this.toInitialize.length
+    while (start < length) {
+      for (let i = start; i < length; i++) {
+        cmp = this.toInitialize[i]
+        this.injectDependencies(cmp)
+        this.addEventListeners(cmp)
+      }
+      for (let i = start; i < length; i++) {
+        cmp = this.toInitialize[i]
+        if (cmp.onUpdate && this.toUpdate.indexOf(cmp) < 0) {
+          this.toUpdate.push(cmp)
+        }
+        if (cmp.onDraw && this.toDraw.indexOf(cmp) < 0) {
+          this.toDraw.push(cmp)
+        }
+        // Run life cycle
+        if (cmp.onInit) {
+          cmp.onInit(this)
+        }
+      }
+      // components may hve been added during onInit phase
+      //
+      start = length
+      length = this.toInitialize.length
     }
-
-    while (this.toInitialize.length > 0) {
-      cmp = this.toInitialize.shift()
-
-      if (cmp.onUpdate && this.toUpdate.indexOf(cmp) < 0) {
-        this.toUpdate.push(cmp)
-      }
-      if (cmp.onDraw && this.toDraw.indexOf(cmp) < 0) {
-        this.toDraw.push(cmp)
-      }
-      // Run life cycle
-      if (cmp.onInit) {
-        cmp.onInit(this)
-      }
-    }
+    this.toInitialize.length = 0
 
     if (recursive) {
       for (let i = 0; i < this.children.length; i++) {

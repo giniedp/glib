@@ -1,11 +1,10 @@
-import { Inject, OnInit, OnRemoved, OnUpdate, Component } from '@gglib/ecs'
+import { Inject, OnUpdate, Component, Listener } from '@gglib/ecs'
 import { SpriteBatch, Texture } from '@gglib/graphics'
 import { BoundingSphere, IRect } from '@gglib/math'
 import { SceneItemSprite } from '@gglib/render'
 import { getOption } from '@gglib/utils'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { SceneryCollectable, SceneryCollector } from './Scenery'
-import { SceneryLinkComponent } from './SceneryLinkComponent'
+import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -115,9 +114,9 @@ export interface SpriteComponentOptions {
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
 @Component({
-  install: [SceneryLinkComponent],
+  install: [ScenePartComponent],
 })
-export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, OnRemoved {
+export class SpriteComponent implements OnUpdate {
   /**
    * The name of the component (`Sprite`)
    */
@@ -299,12 +298,6 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
   @Inject(BoundingVolumeComponent, { optional: true })
   public readonly volume: BoundingVolumeComponent
 
-  /**
-   * The scenery link component
-   */
-  @Inject(SceneryLinkComponent)
-  public readonly link: SceneryLinkComponent
-
   protected $texture: Texture
   protected $source: IRect
   protected $slice: SpriteSlice
@@ -360,20 +353,6 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
   /**
    * Component life cycle method
    */
-  public onInit() {
-    this.link.register(this)
-  }
-
-  /**
-   * Component life cycle method
-   */
-  public onRemoved() {
-    this.link.unregister(this)
-  }
-
-  /**
-   * Component life cycle method
-   */
   public onUpdate() {
     if (this.$doBoundsUpdate) {
       this.updateBounds()
@@ -390,7 +369,8 @@ export class SpriteComponent implements SceneryCollectable, OnInit, OnUpdate, On
    *
    * @param collector - the collector with a scene where to contribute
    */
-  public collectScenery(collector: SceneryCollector): void {
+   @Listener(ScenePartComponent.EVENT_COLLECT)
+   public collectParts(collector: ScenePartCollector) {
     if (this.texture) {
       this.$drawable.sprite = this
       this.$drawable.transform = this.transform?.world

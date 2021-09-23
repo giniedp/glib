@@ -4,7 +4,7 @@ import { ContentManager } from '@gglib/content'
 import { AutoMaterial, LightParams } from '@gglib/fx-materials'
 import { buildPlane, buildSphere, CullState, DepthState, flipWindingOrder, Model, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderStep, PostStepBloom, PostPixelateStep, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
+import { CommonRenderStep, PostStepBloom, PostPixelateStep, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // ### Setup the render manager
@@ -48,7 +48,7 @@ const scene: Scene = {
   // rendering steps.
   // Here we add a basic rendering stage and 2 post processing stages.
   steps: [
-    new BasicRenderStep({
+    new CommonRenderStep({
       depthState: DepthState.Default,
       cullState: CullState.CullClockWise,
     }),

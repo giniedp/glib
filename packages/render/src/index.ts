@@ -1,4 +1,4 @@
-export * from './BasicRenderStep'
+export * from './CommonRenderStep'
 export * from './post'
 export * from './RenderManager'
 export * from './Types'

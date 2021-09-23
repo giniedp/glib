@@ -47,10 +47,6 @@ export class RenderManager {
    */
   public view: SceneView | null
   /**
-   * Collection of all registered scenes
-   */
-  // protected readonly scenes = new Map<any, Scene>()
-  /**
    * SpriteBatch that is used to compose the results of all views into final image
    */
   protected readonly spriteBatch: SpriteBatch

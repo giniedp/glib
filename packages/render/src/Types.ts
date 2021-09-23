@@ -19,7 +19,7 @@ export interface Drawable {
  *
  * @public
  */
-export interface DebugDrawable {
+export interface PrimitiveBatchDrawable {
   /**
    * Is called when the object should be rendered with given primitive batch
    */
@@ -81,15 +81,15 @@ export interface SceneItemDrawable extends SceneItem {
  *
  * @public
  */
-export interface SceneDebugDrawable extends SceneItem {
+export interface SceneItemPrimitive extends SceneItem {
   /**
    * The drawable type
    */
-  type: 'debug'
+  type: 'primitive'
   /**
    * The drawable object.
    */
-  debug: DebugDrawable
+  primitive: PrimitiveBatchDrawable
 }
 
 /**

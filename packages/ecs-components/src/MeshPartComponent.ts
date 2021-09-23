@@ -1,9 +1,8 @@
-import { Inject, OnInit, OnRemoved, Component } from '@gglib/ecs'
+import { Inject, Component, Listener } from '@gglib/ecs'
 import { Material, ModelMeshPart } from '@gglib/graphics'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { SceneryCollectable, SceneryCollector } from './Scenery'
-import { SceneryLinkComponent } from './SceneryLinkComponent'
+import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -20,11 +19,11 @@ import { TransformComponent } from './TransformComponent'
  */
 @Component({
   install: [
-    SceneryLinkComponent,
+    ScenePartComponent,
     TransformComponent,
   ]
 })
-export class MeshPartComponent implements SceneryCollectable, OnInit, OnRemoved {
+export class MeshPartComponent {
   /**
    * The name of this component (`Mesh`)
    */
@@ -68,12 +67,6 @@ export class MeshPartComponent implements SceneryCollectable, OnInit, OnRemoved 
   @Inject(BoundingVolumeComponent, { optional: true })
   public readonly volume?: BoundingVolumeComponent
 
-  /**
-   * The scenery link component of the entity
-   */
-  @Inject(SceneryLinkComponent)
-  public readonly link: SceneryLinkComponent
-
   private $mesh: ModelMeshPart
   private $material: Material
   private $drawable: SceneItemDrawable = {
@@ -85,20 +78,6 @@ export class MeshPartComponent implements SceneryCollectable, OnInit, OnRemoved 
 
   private meshChanged = true
   private materialChanged = true
-
-  /**
-   * Component life cycle method
-   */
-  public onInit() {
-    this.link.register(this)
-  }
-
-  /**
-   * Component life cycle method
-   */
-  public onRemoved() {
-    this.link.unregister(this)
-  }
 
   /**
    * Component life cycle method
@@ -130,13 +109,11 @@ export class MeshPartComponent implements SceneryCollectable, OnInit, OnRemoved 
     }
   }
 
-  /**
-   * SceneryCollectable method
-   */
-  public collectScenery(scenery: SceneryCollector) {
+  @Listener(ScenePartComponent.EVENT_COLLECT)
+  public collectParts(collector: ScenePartCollector) {
     const drawable = this.$drawable
     if (drawable.material && drawable.drawable) {
-      scenery.addItem(drawable)
+      collector.addItem(drawable)
     }
   }
 }
