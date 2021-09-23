@@ -44,7 +44,7 @@ const tempVec = Vec3.createZero()
  */
 @Component()
 export class TransformComponent implements OnInit, OnUpdate {
-  public static readonly EVENT_UPDATED = 'TransformComponentUpdated'
+  public static readonly ON_UPDATED = 'TransformComponentUpdated'
 
   /**
    * The name identifying this component
@@ -203,7 +203,7 @@ export class TransformComponent implements OnInit, OnUpdate {
   /**
    * Marks this transform as dirty when parent transform has been updated
    */
-  @Listener(TransformComponent.EVENT_UPDATED, { on: 'parent' })
+  @Listener(TransformComponent.ON_UPDATED, { on: 'parent' })
   public onParentTransformUpdated() {
     this.dirty = true
   }
@@ -236,7 +236,7 @@ export class TransformComponent implements OnInit, OnUpdate {
     this.worldRotDirty = true
     this.worldRotInvDirty = true
     if (this.entity) {
-      this.entity.trigger(TransformComponent.EVENT_UPDATED, this)
+      this.entity.trigger(TransformComponent.ON_UPDATED, this)
     }
   }
 

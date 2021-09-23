@@ -41,9 +41,9 @@ export interface TweenOptions<T> {
 export type TweenEventName = 'update' | 'end' | 'start'
 
 export class Tween extends Events {
-  public static EVENT_START: TweenEventName = 'start'
-  public static EVENT_UPDATE: TweenEventName = 'update'
-  public static EVENT_END: TweenEventName = 'end'
+  public static ON_START: TweenEventName = 'start'
+  public static ON_UPDATE: TweenEventName = 'update'
+  public static ON_END: TweenEventName = 'end'
 
   /**
    * The time at which the tween has started
@@ -122,7 +122,7 @@ export class Tween extends Events {
     if (!this.active && !this.progressValue) {
       this.activeValue = true
       this.progressValue = 0
-      this.trigger(Tween.EVENT_START, this)
+      this.trigger(Tween.ON_START, this)
     }
     if (!this.active) {
       return
@@ -134,9 +134,9 @@ export class Tween extends Events {
     for (let i = 0; i < this.from.length; i++) {
       this.values[i] = (1 - t) * this.from[i] + t * this.to[i]
     }
-    this.trigger(Tween.EVENT_UPDATE, this)
+    this.trigger(Tween.ON_UPDATE, this)
     if (!this.active) {
-      this.trigger(Tween.EVENT_END, this)
+      this.trigger(Tween.ON_END, this)
     }
   }
   /**
@@ -145,7 +145,7 @@ export class Tween extends Events {
    * @param fn - the callback function
    */
   public whenStart(fn: (tween: Tween) => void) {
-    return this.on(Tween.EVENT_START, fn)
+    return this.on(Tween.ON_START, fn)
   }
 
   /**
@@ -154,7 +154,7 @@ export class Tween extends Events {
    * @param fn - the callback function
    */
   public whenUpdate(fn: (tween: Tween) => void) {
-    return this.on(Tween.EVENT_UPDATE, fn)
+    return this.on(Tween.ON_UPDATE, fn)
   }
 
   /**
@@ -163,7 +163,7 @@ export class Tween extends Events {
    * @param fn - the callback function
    */
   public whenEnd(fn: (tween: Tween) => void) {
-    return this.on(Tween.EVENT_END, fn)
+    return this.on(Tween.ON_END, fn)
   }
 
   public addUpdatable<T>(target: T, prop: NonFunctionPropertyNames<T>, index0 = 0) {

@@ -4,7 +4,7 @@ import { BoundingSphere, IRect } from '@gglib/math'
 import { SceneItemSprite } from '@gglib/render'
 import { getOption } from '@gglib/utils'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
+import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -114,7 +114,7 @@ export interface SpriteComponentOptions {
  * - `SceneryLinkComponent` in order to contribute to the scene rendering
  */
 @Component({
-  install: [ScenePartComponent],
+  install: [SceneNodeComponent],
 })
 export class SpriteComponent implements OnUpdate {
   /**
@@ -369,8 +369,8 @@ export class SpriteComponent implements OnUpdate {
    *
    * @param collector - the collector with a scene where to contribute
    */
-   @Listener(ScenePartComponent.EVENT_COLLECT)
-   public collectParts(collector: ScenePartCollector) {
+   @Listener(SceneNodeComponent.ON_VISIT)
+   public collectParts(collector: SceneNodeVisitor) {
     if (this.texture) {
       this.$drawable.sprite = this
       this.$drawable.transform = this.transform?.world

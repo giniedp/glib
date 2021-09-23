@@ -5,14 +5,14 @@ import { CommonRenderStep, LightSourceData, RenderManager, Scene, SceneItem, Sce
 import { BoundingFrustum } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
+import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { SpatialSystemComponent } from './SpatialSystemComponent'
 import { TimeComponent } from './TimeComponent'
 
 /**
  * @public
  */
-export interface CullVisitor extends ScenePartCollector {
+export interface CullVisitor extends SceneNodeVisitor {
   run(entity: Entity, view: Scene): void
 }
 
@@ -149,9 +149,9 @@ export class BruteForceCullVisitor implements CullVisitor {
     this.scene.lights.push(light)
   }
 
-  private acceptVisitor(node: Entity) {
-    this.visit(node)
-    for (const child of node.children) {
+  private acceptVisitor(entity: Entity) {
+    this.visit(entity)
+    for (const child of entity.children) {
       this.acceptVisitor(child)
     }
   }
@@ -162,9 +162,9 @@ export class BruteForceCullVisitor implements CullVisitor {
       return
     }
 
-    const scenePart = entity.get(ScenePartComponent, null)
-    if (scenePart) {
-      scenePart.collect(this)
+    const node = entity.get(SceneNodeComponent, null)
+    if (node) {
+      node.visit(this)
     }
   }
 }
@@ -207,9 +207,9 @@ export class SpatialCullVisitor implements CullVisitor {
   }
 
   private visit(entity: Entity) {
-    const scenePart = entity.get(ScenePartComponent, null)
-    if (scenePart) {
-      scenePart.collect(this)
+    const node = entity.get(SceneNodeComponent, null)
+    if (node) {
+      node.visit(this)
     }
   }
 }

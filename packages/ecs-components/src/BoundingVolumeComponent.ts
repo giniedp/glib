@@ -86,7 +86,7 @@ export class BoundingVolumeComponent implements OnUpdate, OnRemoved {
     this.spatial.remove(this.entity)
   }
 
-  @Listener(TransformComponent.EVENT_UPDATED)
+  @Listener(TransformComponent.ON_UPDATED)
   public onTransformUpdated() {
     this.transformChanged = true
   }

@@ -1,7 +1,7 @@
 import { Inject, Component, Listener } from '@gglib/ecs'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
+import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { TransformComponent } from './TransformComponent'
 import { ModelMesh } from '@gglib/graphics'
 
@@ -19,7 +19,7 @@ import { ModelMesh } from '@gglib/graphics'
  */
 @Component({
   install: [
-    ScenePartComponent,
+    SceneNodeComponent,
     TransformComponent,
   ]
 })
@@ -54,14 +54,14 @@ export class MeshComponent {
   /**
    * The scenery link component of the entity
    */
-  @Inject(ScenePartComponent)
-  public readonly link: ScenePartComponent
+  @Inject(SceneNodeComponent)
+  public readonly link: SceneNodeComponent
 
   private _mesh: ModelMesh
   private _drawables: SceneItemDrawable[] = []
 
-  @Listener(ScenePartComponent.EVENT_COLLECT)
-  public collectParts(collector: ScenePartCollector) {
+  @Listener(SceneNodeComponent.ON_VISIT)
+  public collectParts(collector: SceneNodeVisitor) {
     for (let i = 0; i < this._drawables.length; i++) {
       collector.addItem(this._drawables[i])
     }

@@ -5,7 +5,7 @@ import { BoundingSphere, Vec3 } from '@gglib/math'
 import { getOption } from '@gglib/utils'
 
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
+import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -34,7 +34,7 @@ export interface LightComponentOptions {
   install: [
     BoundingVolumeComponent,
     TransformComponent,
-    ScenePartComponent,
+    SceneNodeComponent,
   ]
 })
 export class LightComponent implements OnInit, OnUpdate, OnSetup<LightComponentOptions> {
@@ -141,8 +141,8 @@ export class LightComponent implements OnInit, OnUpdate, OnSetup<LightComponentO
     data.type = this.type
   }
 
-  @Listener(ScenePartComponent.EVENT_COLLECT)
-  public collectPart(collector: ScenePartCollector): void {
+  @Listener(SceneNodeComponent.ON_VISIT)
+  public collectPart(collector: SceneNodeVisitor): void {
     collector.addLight(this.params)
   }
 }

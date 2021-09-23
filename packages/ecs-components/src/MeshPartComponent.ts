@@ -2,7 +2,7 @@ import { Inject, Component, Listener } from '@gglib/ecs'
 import { Material, ModelMeshPart } from '@gglib/graphics'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { ScenePartComponent, ScenePartCollector } from './ScenePartComponent'
+import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -19,7 +19,7 @@ import { TransformComponent } from './TransformComponent'
  */
 @Component({
   install: [
-    ScenePartComponent,
+    SceneNodeComponent,
     TransformComponent,
   ]
 })
@@ -109,8 +109,8 @@ export class MeshPartComponent {
     }
   }
 
-  @Listener(ScenePartComponent.EVENT_COLLECT)
-  public collectParts(collector: ScenePartCollector) {
+  @Listener(SceneNodeComponent.ON_VISIT)
+  public collectParts(collector: SceneNodeVisitor) {
     const drawable = this.$drawable
     if (drawable.material && drawable.drawable) {
       collector.addItem(drawable)
