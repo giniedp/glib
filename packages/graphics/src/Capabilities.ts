@@ -15,34 +15,34 @@ export class Capabilities {
     return this.gl as WebGL2RenderingContext
   }
 
-  public get maxViewportWidth() {
+  public get maxViewportWidth(): number {
     return this.capability('MAX_VIEWPORT_DIMS')[0]
   }
-  public get maxViewportHeight() {
+  public get maxViewportHeight(): number {
     return this.capability('MAX_VIEWPORT_DIMS')[1]
   }
-  public get maxRenderBufferSize() {
+  public get maxRenderBufferSize(): number {
     return this.capability('MAX_RENDERBUFFER_SIZE')
   }
-  public get maxTextureUnits() {
+  public get maxTextureUnits(): number {
     return this.capability('MAX_TEXTURE_IMAGE_UNITS')
   }
-  public get maxTextureSize() {
+  public get maxTextureSize(): number {
     return this.capability('MAX_TEXTURE_SIZE')
   }
-  public get maxVertexAttributes() {
+  public get maxVertexAttributes(): number {
     return this.capability('MAX_VERTEX_ATTRIBS')
   }
-  public get maxVertexTextureUnits() {
+  public get maxVertexTextureUnits(): number {
     return this.capability('MAX_VERTEX_TEXTURE_IMAGE_UNITS')
   }
-  public get maxVertexUniformVectors() {
+  public get maxVertexUniformVectors(): number {
     return this.capability('MAX_VERTEX_UNIFORM_VECTORS')
   }
-  public get maxVaryingVectors() {
+  public get maxVaryingVectors(): number {
     return this.capability('MAX_VARYING_VECTORS')
   }
-  public get maxFragmentUniformVectors() {
+  public get maxFragmentUniformVectors(): number {
     return this.capability('MAX_FRAGMENT_UNIFORM_VECTORS')
   }
 
