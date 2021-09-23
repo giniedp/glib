@@ -49,7 +49,8 @@ export class STL {
 
     const reader = new TextReader(data)
     while (reader.canRead) {
-      if (reader.peekToken() !== 'solid') {
+      reader.skipWhitespace()
+      if (reader.peekText() !== 'solid') {
         throw new Error(`expected "solid" keyword`)
       }
       result.solids.push(readSolid(reader))
@@ -139,28 +140,30 @@ function readSolid(reader: TextReader): Solid {
 
   // consume: solid NAME
   // --
-  reader.consumeToken('solid')
-  if (reader.peekToken() === 'facet') {
+  reader.assert('solid', true)
+  reader.skipWhitespace()
+  if (reader.peekText() === 'facet') {
     // name is skipped
   } else {
     // read name
-    result.name = reader.nextLine()
+    result.name = reader.readLine()
   }
 
   // read the body
   // --
-  while (reader.canRead && reader.peekToken() !== 'endsolid') {
+  while (reader.canRead && reader.peekText() !== 'endsolid') {
     result.facets.push(readFacet(reader))
   }
 
   // consume: endsolid NAME
   // --
-  reader.consumeToken('endsolid')
-  if (reader.peekToken() === 'solid') {
+  reader.assert('endsolid', true)
+  reader.skipWhitespace()
+  if (reader.peekText() === 'solid') {
     // name is skipped
   } else {
     // consume name, but we dont compare since some files use a different token here
-    reader.nextLine()
+    reader.readLine()
   }
 
   return result
@@ -171,22 +174,26 @@ function readFacet(reader: TextReader): Facet {
   // ...
   // endfacet
 
-  reader.consumeToken('facet')
-  reader.consumeToken('normal')
+  reader.skipWhitespace()
+  reader.assert('facet', true)
+  reader.skipWhitespace()
+  reader.assert('normal', true)
+  reader.skipWhitespace()
 
   const facet: Facet = {
     normal: {
-      x: parseFloat(reader.nextToken()),
-      y: parseFloat(reader.nextToken()),
-      z: parseFloat(reader.nextToken()),
+      x: parseFloat(reader.readText()),
+      y: parseFloat(reader.readText()),
+      z: parseFloat(reader.readText()),
     },
     vertcies: [],
     attrCount: 0,
   }
 
-  while (reader.canRead && reader.peekToken() !== 'endfacet') {
-    switch (reader.peekToken()) {
+  while (reader.canRead && reader.peekText() !== 'endfacet') {
+    switch (reader.peekText()) {
       case 'outer':
+        reader.skipWhitespace()
         readLoop(reader, (x: number, y: number, z: number) => {
           facet.vertcies.push({
             x: x,
@@ -196,12 +203,12 @@ function readFacet(reader: TextReader): Facet {
         })
         break
       default:
-        throw new Error(`unknown token ${reader.peekToken()}`)
+        throw new Error(`unknown token ${reader.peekText()}`)
     }
   }
 
-  reader.consumeToken('endfacet')
-
+  reader.assert('endfacet', true)
+  reader.skipWhitespace()
   return facet
 }
 
@@ -211,17 +218,24 @@ function readLoop(reader: TextReader, emitter: (x: number, y: number, z: number)
   //   vertex v2x v2y v2z
   //   vertex v3x v3y v3z
   // endloop
-  reader.consumeToken('outer')
-  reader.consumeToken('loop')
+  reader.assert('outer', true)
+  reader.skipWhitespace()
+  reader.assert('loop', true)
+  reader.skipWhitespace()
 
-  while (reader.canRead && reader.peekToken() !== 'endloop') {
-    reader.consumeToken('vertex')
+  while (reader.canRead && reader.peekText() !== 'endloop') {
+    reader.skipWhitespace()
+    reader.assert('vertex', true)
+    reader.skipWhitespace()
+
     emitter(
-      parseFloat(reader.nextToken()),
-      parseFloat(reader.nextToken()),
-      parseFloat(reader.nextToken()),
+      parseFloat(reader.readText()),
+      parseFloat(reader.readText()),
+      parseFloat(reader.readText()),
     )
   }
 
-  reader.consumeToken('endloop')
+  reader.skipWhitespace()
+  reader.assert('endloop', true)
+  reader.skipWhitespace()
 }
