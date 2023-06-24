@@ -17,15 +17,10 @@
   "index": "dist/bundles/content-loaders.umd.js",
   "module": "dist/content-loaders/src/index.js",
   "typings": "dist/content-loaders/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/graphics": "0.6.2",
-    "@gglib/content": "0.6.2",
-    "@gglib/math": "0.6.2",
-    "@gglib/utils": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
-    "@gglib/graphics": "0.6.2",
     "@gglib/content": "0.6.2",
+    "@gglib/graphics": "0.6.2",
     "@gglib/math": "0.6.2",
     "@gglib/utils": "0.6.2"
   },

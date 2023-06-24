@@ -17,9 +17,7 @@
   "index": "dist/bundles/ecs.umd.js",
   "module": "dist/ecs/src/index.js",
   "typings": "dist/ecs/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/utils": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "@gglib/utils": "0.6.2"
   },

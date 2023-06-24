@@ -17,9 +17,7 @@
   "index": "dist/bundles/fx-procedural.umd.js",
   "module": "dist/fx-procedural/src/index.js",
   "typings": "dist/fx-procedural/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/graphics": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "@gglib/graphics": "0.6.2"
   },

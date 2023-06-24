@@ -16,11 +16,15 @@ async function updateSrcPackageJson(pkg: GlibPackageContext) {
       module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
       typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
       devDependencies: pkg.glibReferences.reduce((result, peer) => {
-        result[peer] = context.packageJson.version
+        if (pkg.packageName === '@gglib/gglib') {
+          result[peer] = context.packageJson.version
+        }
         return result
       }, {}),
       peerDependencies: pkg.glibReferences.reduce((result, peer) => {
-        result[peer] = context.packageJson.version
+        if (pkg.packageName !== '@gglib/gglib') {
+          result[peer] = context.packageJson.version
+        }
         return result
       }, {}),
       files: ['package.json', 'dist', 'Readme.md'],
@@ -84,7 +88,7 @@ function updateSrcReadme(pkg: GlibPackageContext) {
 [![Coverage Status](https://coveralls.io/repos/github/giniedp/glib/badge.svg?branch=master)](https://coveralls.io/github/giniedp/glib?branch=master)
 [![Build Status](https://travis-ci.org/giniedp/glib.svg?branch=master)](https://travis-ci.org/giniedp/glib)
 
-[G]glib - ${pkg}
+[G]glib - ${pkg.packageName}
 =======
 ${pj.description}
 

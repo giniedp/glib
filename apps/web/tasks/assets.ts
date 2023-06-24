@@ -1,9 +1,9 @@
 import { dest, parallel, src, watch } from 'gulp'
 import * as path from 'path'
-import manifest from '../manifest'
+import config from '../config'
 
 export function assets() {
-  return src(manifest.assets, { cwd: manifest.cwd, allowEmpty: true }).pipe(dest(path.join(manifest.dist, 'assets')))
+  return src(config.assets, { cwd: config.cwd, allowEmpty: true }).pipe(dest(path.join(config.dist, 'assets')))
 }
 
 export const assetsWatch = parallel([
@@ -11,9 +11,9 @@ export const assetsWatch = parallel([
   async () => {
     return new Promise((resolve) => {
       const w = watch(
-        manifest.assets,
+        config.assets,
         {
-          cwd: manifest.cwd,
+          cwd: config.cwd,
           delay: 500,
         },
         assets,

@@ -7,16 +7,16 @@ block content
           img(src="/assets/logo/gglib-192.png", style="max-width: 100%;")
         .col-md-8.order-md-1.text-center.text-md-left.pr-md-5
           h1.display-4.mb-3
-            span.mr-2
-              span.text-light.bg-dark.pl-2.pr-2.rounded G
+            span.me-2
+              span.text-light.bg-dark.ps-2.pe-2.rounded G
               span raphics
-            span.mr-2 and
-            span.mr-2
-              span.text-light.bg-dark.pl-2.pr-2.rounded G
+            span.me-2 and
+            span.me-2
+              span.text-light.bg-dark.ps-2.pe-2.rounded G
               span ame
             br.d-md-none
             span
-              span.text-light.bg-dark.pl-2.pr-2.rounded lib
+              span.text-light.bg-dark.ps-2.pe-2.rounded lib
               span rary
           .lead.mb-4
             :markdown-it
@@ -24,23 +24,11 @@ block content
               including packages to work with webGL, 3D math, content processing, scene management,
               shader composition and more.
 
-              Choose the tools you need or use them all and have a gg.
+              Choose the tools that you need or use them all and build a **GG**.
 
       .alert.alert-info(style="margin-bottom: 2rem;")
-        span This is a spare time project. Frequently changed. Occassionally maintained. Mainly to learn concepts of 3D programming.
+        span This is a spare time project. Frequently changed. Occasionally maintained. Mainly to poke around with browser technologies.
 
-      h2 Github
-      .row
-        .col-md-6.col-12
-          p: a(href="https://github.com/giniedp/glib" target="_blank") https://github.com/giniedp/glib
-          p Get the source at github, fork and contribute
-        .col-md-6.col-12
-          code: pre
-            :highlight(lang="bash")
-              git clone git@github.com:giniedp/glib.git
-              cd glib
-              yarn install
-              yarn build
       h2 NPM
       .row
         .col-md-6.col-12
@@ -88,9 +76,21 @@ block content
       :markdown-it
         Replace the `x.x.x` with a specific version or leave the placeholder as is so unpkg will forward you to the recent version.
 
+      h2 Github
+      .row
+        .col-md-6.col-12
+          p: a(href="https://github.com/giniedp/glib" target="_blank") https://github.com/giniedp/glib
+        .col-md-6.col-12
+          code: pre
+            :highlight(lang="bash")
+              git clone git@github.com:giniedp/glib.git
+              cd glib
+              yarn install
+              yarn build
 
       h2.mt-5 How to learn?
-      p Follow the examples, read the source code.
+      :markdown-it
+        Explore the [examples](./examples), read the [source code](https://github.com/giniedp/glib), ask [questions](#disqus_thread).
 
       h2.mt-5 Assets
       :markdown-it

@@ -23,5 +23,8 @@
     "prismjs": "^1.25.0",
     "sass": "^1.42.1",
     "tweak-ui": "^0.4.3"
+  },
+  "dependencies": {
+    "parcel": "^2.0.0-rc.0"
   }
 }

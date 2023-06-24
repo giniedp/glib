@@ -3,12 +3,13 @@
 [![Build status][travis-shield]][travis-url]
 [![Coverage status][cover-shield]][cover-url]
 
-> This is a spare time project and is maintained occasionally.
+> This is a spare time project. Frequently changed. Occasionally maintained. Mainly to poke around with browser technologies.
 
 # [G]glib
 
-Gglib framework is a collection of graphics related libraries and tools written in Typescript.
-It abstracts WebGL calls and provides a simplified interface for graphics rendering.
+A collection of graphics and game engine related libraries
+including packages to work with webGL, 3D math, content processing, scene management,
+shader composition and more.
 
 # Project structure
 

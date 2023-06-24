@@ -17,10 +17,7 @@
   "index": "dist/bundles/content.umd.js",
   "module": "dist/content/src/index.js",
   "typings": "dist/content/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/graphics": "0.6.2",
-    "@gglib/utils": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "@gglib/graphics": "0.6.2",
     "@gglib/utils": "0.6.2"

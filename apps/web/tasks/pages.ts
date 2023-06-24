@@ -11,19 +11,19 @@ import msBrowserSync from './utils/ms-browsersync'
 import msMarkdown, { highlight } from './utils/ms-markdown'
 import msWatch from './utils/ms-watch'
 import msRelayout from './utils/ms-relayout'
-import manifest from '../manifest'
+import config from '../config'
 
 require('jstransformer')(require('jstransformer-markdown-it'))
 
 async function run() {
-  Metalsmith(manifest.cwd)
+  Metalsmith(config.cwd)
     .metadata({
       //
     })
     .frontmatter(true)
     .clean(false)
-    .source(manifest.src)
-    .destination(manifest.dist)
+    .source(config.src)
+    .destination(config.dist)
     .use(filter(['**/*', '!**/_*/**/*', '!**/_*.*']))
     .use(msMetadata())
     .use(
@@ -53,7 +53,7 @@ async function run() {
         },
         locals: (file) => {
           return {
-            project: manifest,
+            project: config,
             assetPath: (asset: string) => {
               return asset
             },
@@ -81,8 +81,19 @@ async function run() {
       msBrowserSync({
         name: 'glib',
         config: {
-          server: manifest.dist,
-          open: false
+          server: config.dist,
+          open: false,
+          reloadDebounce: 2000,
+          // Workaround for https://github.com/BrowserSync/browser-sync/issues/1600
+          snippetOptions: {
+            rule: {
+              match: /<\/head>/u,
+              fn(snippet, match) {
+                const src = /src='(?<src>[^']+)'/u.exec(snippet).groups.src
+                return `<script src="${src}" async></script>${match}`
+              },
+            },
+          },
         },
       }),
     )

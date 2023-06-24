@@ -17,12 +17,7 @@
   "index": "dist/bundles/fx-materials.umd.js",
   "module": "dist/fx-materials/src/index.js",
   "typings": "dist/fx-materials/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/graphics": "0.6.2",
-    "@gglib/math": "0.6.2",
-    "@gglib/content": "0.6.2",
-    "@gglib/utils": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "@gglib/graphics": "0.6.2",
     "@gglib/math": "0.6.2",

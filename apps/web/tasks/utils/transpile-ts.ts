@@ -5,7 +5,7 @@ import { Transform } from 'stream'
 import { default as File } from 'vinyl'
 import { replaceExtName } from '@tools/utils'
 
-export function gulpTranspileTs() {
+export function gulpTranspileTs(compilerOptions?: ts.CompilerOptions) {
   return new Transform({
     objectMode: true,
     transform: (file, encoding, cb) => {
@@ -13,7 +13,7 @@ export function gulpTranspileTs() {
         cwd: file.cwd,
         base: file.base,
         path: replaceExtName(file.path, ".js"),
-        contents: Buffer.from(transpileTs(file.path)),
+        contents: Buffer.from(transpileTs(file.path, null, compilerOptions)),
       }))
     },
     flush: (cb) => cb(),

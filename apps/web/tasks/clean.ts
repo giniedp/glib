@@ -1,8 +1,8 @@
 import del from "del"
-import manifest from "../manifest"
+import config from "../config"
 
 export async function clean() {
-  return del(manifest.dist).then((files) => {
+  return del(config.dist).then((files) => {
     files.forEach((p) => console.log("removed", p))
   })
 }

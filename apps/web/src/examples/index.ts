@@ -156,7 +156,7 @@ const ExamplePreviewComponent = {
     if (!node.attrs.url) {
       return null
     }
-    return m('div.example-preview.embed-responsive.embed-responsive-21by9', m('iframe', { src: node.attrs.url }))
+    return m('div.example-preview.ratio ratio-21x9', m('iframe', { src: node.attrs.url }))
   },
 }
 

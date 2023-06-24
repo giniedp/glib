@@ -17,25 +17,16 @@
   "index": "dist/bundles/ecs-components.umd.js",
   "module": "dist/ecs-components/src/index.js",
   "typings": "dist/ecs-components/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/ecs": "0.6.2",
-    "@gglib/math": "0.6.2",
-    "@gglib/content": "0.6.2",
-    "@gglib/graphics": "0.6.2",
-    "@gglib/input": "0.6.2",
-    "@gglib/fx-materials": "0.6.2",
-    "@gglib/render": "0.6.2",
-    "@gglib/utils": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "@gglib/ecs": "0.6.2",
     "@gglib/math": "0.6.2",
+    "@gglib/utils": "0.6.2",
     "@gglib/content": "0.6.2",
     "@gglib/graphics": "0.6.2",
     "@gglib/input": "0.6.2",
     "@gglib/fx-materials": "0.6.2",
-    "@gglib/render": "0.6.2",
-    "@gglib/utils": "0.6.2"
+    "@gglib/render": "0.6.2"
   },
   "files": [
     "package.json",

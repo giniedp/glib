@@ -21,8 +21,6 @@ async function compile(config: sass.Options, filePath: string, content?: Buffer)
   const fileName = path.basename(filePath)
   const opts: sass.Options = {
     outputStyle: 'compressed',
-    // imagePath: '/',
-    // outputDir: fileDir,
     indentedSyntax: fileName.endsWith('.sass'),
     ...config,
     includePaths: [...(config?.includePaths || [])],

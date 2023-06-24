@@ -17,10 +17,7 @@
   "index": "dist/bundles/terrain.umd.js",
   "module": "dist/terrain/src/index.js",
   "typings": "dist/terrain/src/index.d.ts",
-  "devDependencies": {
-    "@gglib/graphics": "0.6.2",
-    "@gglib/math": "0.6.2"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "@gglib/graphics": "0.6.2",
     "@gglib/math": "0.6.2"
