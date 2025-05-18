@@ -1,5 +1,5 @@
 import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -11,32 +11,31 @@ export interface BuildCylinderOptions {
   /**
    * The height of the cylinder. Defaults to `1.0`.
    */
-  height?: number,
+  height?: number
   /**
    * The offset along the y axis. Defaults to `-0.5`.
    */
-  offset?: number,
+  offset?: number
   /**
    * Radius of the cylinder. Defaults to `0.5`.
    */
-  radius?: number,
+  radius?: number
   /**
    * The tesselation. Defaults to `32`.
    */
-  tesselation?: number,
+  tesselation?: number
 }
 
 /**
- * Builds a cylinder shape into the {@link ModelBuilder}
+ * Builds a cylinder shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildCylinder(builder: ModelBuilder, options: BuildCylinderOptions = {}) {
-
-  const r = getOption(options, 'radius', 0.5)
-  const h = getOption(options, 'height', 1.0)
-  const o = getOption(options, 'offset', -0.5)
-
+export function buildCylinder(builder: GeometryBuilder, options: BuildCylinderOptions = {}) {
+  const r = options.radius ?? 0.5
+  const h = options.height ?? 1.0
+  const o = options.offset ?? -0.5
+  const t = options.tesselation ?? 32
   buildParametricSurface(builder, {
     f: (u: number, v: number) => {
       return {
@@ -52,8 +51,8 @@ export function buildCylinder(builder: ModelBuilder, options: BuildCylinderOptio
         z: Math.cos(u),
       }
     },
-    tu: getOption(options, 'tesselation', 32),
-    tv: getOption(options, 'tesselation', 32),
+    tu: t,
+    tv: t,
     u0: 0,
     u1: Math.PI * 2,
     v0: o + h,

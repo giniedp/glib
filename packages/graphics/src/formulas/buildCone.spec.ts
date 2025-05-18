@@ -1,11 +1,11 @@
-import { buildCone, ModelBuilder } from '../index'
+import { buildCone, GeometryBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCone', () => {
-    let builder: ModelBuilder
+    let builder: GeometryBuilder
 
     beforeEach(() => {
-      builder = new ModelBuilder()
+      builder = new GeometryBuilder()
     })
 
     it ('builds without errors', () => {

@@ -42,7 +42,7 @@ export interface KTXLevelIndex {
 export interface KTXLevelImage {
   width: number
   height: number
-  layers: ReadonlyArray<{ faces: Uint8ClampedArray[] }>
+  layers: ReadonlyArray<{ faces: Uint8ClampedArray<ArrayBuffer>[] }>
 }
 
 export interface KTXFormatInfo {
@@ -89,9 +89,9 @@ function readLevelImage(buffer: ArrayBuffer, ktx: KTX, level: number): KTXLevelI
   const header = ktx.header
   const index = ktx.levelIndex[level]
 
-  const layers: Array<{ faces: Uint8ClampedArray[] }> = []
+  const layers: Array<{ faces: Uint8ClampedArray<ArrayBuffer>[] }> = []
   for (let l = 0; l < Math.max(1, header.layerCount); l++) {
-    const faces: Uint8ClampedArray[] = []
+    const faces: Uint8ClampedArray<ArrayBuffer>[] = []
     for (let i = 0; i < header.faceCount; i++) {
       const faceLength = index.byteLength / header.faceCount
       const faceOffset = index.byteOffset + faceLength * i

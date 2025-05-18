@@ -1,11 +1,12 @@
-import project from '../context'
-import { spawn } from '@tools/utils'
+import { project } from '../context'
+import { spawn } from '../../utils'
 
 export function compile(options: { watch?: boolean } = {}) {
   return spawn({
     cmd: `tsc`,
     args: [
-      '-b', ...project.glibPackages.map((pkg) => pkg.tsconfigPath),
+      '-b',
+      ...project.glibPackages.map((pkg) => pkg.tsconfigPath),
       options.watch ? '-w' : null,
       '-preserveWatchOutput', // do not clear screen
     ],

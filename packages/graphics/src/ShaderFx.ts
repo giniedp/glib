@@ -1,7 +1,7 @@
-import { Device } from './Device'
-import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
-import { ShaderPassOptions } from './ShaderPass'
-import { ShaderTechniqueOptions } from './ShaderTechnique'
+import type { Device } from './Device'
+import type { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
+import type { ShaderPassOptions } from './ShaderPass'
+import type { ShaderTechniqueOptions } from './ShaderTechnique'
 
 /**
  * @public
@@ -99,7 +99,9 @@ async function mapPasses(
         name: it.name,
         program: await processProgram(
           [`#version ${doc.version || '100'}`, '#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n').trim(),
-          [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n').trim(),
+          [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, it.fragmentShader]
+            .join('\n')
+            .trim(),
           includeHandler,
         ),
       }
@@ -214,8 +216,5 @@ function processShaderSync(source: string, include: ShaderFxIncludeSyncHandler):
 const regInclude = /#include\s+<(.*)>/
 const charNewLine = '\n'
 function getLines(value: string): string[] {
-  return value
-    .replace(/\r/g, '\n')
-    .replace(/\n+/g, '\n')
-    .split('\n')
+  return value.replace(/\r/g, '\n').replace(/\n+/g, '\n').split('\n')
 }

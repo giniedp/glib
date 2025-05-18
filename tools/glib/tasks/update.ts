@@ -1,5 +1,5 @@
 import * as path from 'path'
-import context, { GlibPackageContext } from '../context'
+import { project, GlibPackageContext } from '../context'
 import { writeFile } from '../../utils'
 
 async function updateSrcPackageJson(pkg: GlibPackageContext) {
@@ -7,23 +7,21 @@ async function updateSrcPackageJson(pkg: GlibPackageContext) {
     {
       name: pkg.packageName,
       description: 'Part of the [G]glib project',
-      version: context.packageJson.version,
-      repository: context.packageJson.repository,
-      keywords: context.packageJson.keywords,
-      author: context.packageJson.author,
-      license: context.packageJson.license,
+      version: project.packageJson.version,
+      repository: project.packageJson.repository,
+      keywords: project.packageJson.keywords,
+      author: project.packageJson.author,
+      license: project.packageJson.license,
       index: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.umd.js')),
       module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
       typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
       devDependencies: pkg.glibReferences.reduce((result, peer) => {
-        if (pkg.packageName === '@gglib/gglib') {
-          result[peer] = context.packageJson.version
-        }
+        result[peer] = `workspace:^${project.packageJson.version}`
         return result
       }, {}),
       peerDependencies: pkg.glibReferences.reduce((result, peer) => {
         if (pkg.packageName !== '@gglib/gglib') {
-          result[peer] = context.packageJson.version
+          result[peer] = project.packageJson.version
         }
         return result
       }, {}),
@@ -40,7 +38,7 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
     pkg.subPath('tsconfig.json'),
     JSON.stringify(
       {
-        extends: path.relative(pkg.pkgDir, context.packagesDir('tsconfig.tsc.json')),
+        extends: path.relative(pkg.pkgDir, project.packagesDir('tsconfig.tsc.json')),
         baseUrl: '.',
         rootDir: '.',
         compilerOptions: {
@@ -50,8 +48,10 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
         include: ['./index.ts', './src/**/*.ts'],
         exclude: ['./dist/**/*', './node_modules/**/*'],
         references: pkg.glibReferences.map((it) => {
-          const ref = context.glibPackages.find((p) => p.packageName === it)
-          return { path: path.relative(pkg.pkgDir, path.join(ref.pkgDir, 'tsconfig.json')) }
+          const ref = project.glibPackages.find((p) => p.packageName === it)!
+          return {
+            path: path.relative(pkg.pkgDir, path.join(ref.pkgDir, 'tsconfig.json'))
+          }
         }),
       },
       null,
@@ -62,7 +62,7 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
 
 function updateSpecTsconfig() {
   return writeFile(
-    context.packagesDir('tsconfig.cjs.json'),
+    project.packagesDir('tsconfig.cjs.json'),
     JSON.stringify(
       {
         extends: './tsconfig.tsc.json',
@@ -81,7 +81,7 @@ function updateSpecTsconfig() {
 }
 
 function updateSrcReadme(pkg: GlibPackageContext) {
-  const pj = context.packageJson
+  const pj = project.packageJson
   return writeFile(
     pkg.subPath('Readme.md'),
     `
@@ -100,7 +100,7 @@ Licence: ${pj.license}
 }
 
 function updateSrcApiExtractor(pkg: GlibPackageContext) {
-  const pathToRoot = path.relative(pkg.pkgDir, context.dir)
+  const pathToRoot = path.relative(pkg.pkgDir, project.dir)
   const pathToDist = path.relative(pkg.pkgDir, pkg.distDir())
   return writeFile(
     pkg.subPath('api-extractor.json'),
@@ -168,5 +168,5 @@ async function updateSrcPackage(pkg: GlibPackageContext) {
 }
 
 export async function update() {
-  return context.glibPackages.map(updateSrcPackage)
+  return project.glibPackages.map(updateSrcPackage)
 }

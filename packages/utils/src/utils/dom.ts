@@ -11,7 +11,7 @@ const vendors = ['', 'moz', 'webkit', 'ms', 'o']
 export function vendorProperty<T extends Element | Document>(el: T, name: keyof T, ...variants: string[]): string {
   for (const prefix of vendors) {
     if (prefix) {
-      const vendorName = prefix + name[0].toUpperCase() + String(name).substr(1)
+      const vendorName = prefix + String(name)[0].toUpperCase() + String(name).substr(1)
       if (vendorName in el) {
         return vendorName
       }
@@ -81,7 +81,7 @@ export const documentVisibilityApi = {
    *
    * @public
    */
-  get visibilityState(): VisibilityState {
+  get visibilityState(): DocumentVisibilityState {
     return getOption(document, docVisibilityState as 'visibilityState', 'visible')
   },
   /**
@@ -154,13 +154,13 @@ export class PointerLockApi {
   public requestLock(target: Element) {
     this.requestPointerLockName = this.requestPointerLockName || vendorProperty(target, 'requestPointerLock')
     if (this.requestPointerLockName) {
-      target[this.requestPointerLockName]()
+      target[this.requestPointerLockName as 'requestPointerLock']()
     }
   }
 
   public exitLock() {
     if (this.exitPointerLockName) {
-      document[this.exitPointerLockName]()
+      document[this.exitPointerLockName as 'exitPointerLock']()
     }
   }
 }

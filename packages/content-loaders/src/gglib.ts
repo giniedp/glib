@@ -7,7 +7,7 @@ import {
   ShaderEffectOptions,
   Texture,
   TextureOptions,
-  ModelMesh,
+  Mesh,
   ShaderFxDocument,
   createShaderEffectOptions,
   TextureSourceData,
@@ -99,10 +99,10 @@ export const loadModelOptionsToModel: Loader<ModelOptions, Model> = loader({
   input: Model.Options,
   output: Model,
   handle: async (modelOptions: ModelOptions, context): Promise<Model> => {
-    const meshes: ModelMesh[] = []
+    const meshes: Mesh[] = []
 
     for (const meshOptions of modelOptions.meshes) {
-      if (meshOptions instanceof ModelMesh) {
+      if (meshOptions instanceof Mesh) {
         meshes.push(meshOptions)
         continue
       }
@@ -138,7 +138,7 @@ export const loadModelOptionsToModel: Loader<ModelOptions, Model> = loader({
       }
 
       meshes.push(
-        new ModelMesh(context.manager.device, {
+        new Mesh(context.manager.device, {
           ...meshOptions,
           materials: await Promise.all(materials),
         }),

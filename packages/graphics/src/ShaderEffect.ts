@@ -11,7 +11,7 @@ import { ShaderPass } from './ShaderPass'
  *
  * @public
  */
-export interface ShaderEffectOptions {
+export interface ShaderEffectOptions<Params extends ShaderEffectParameters = ShaderEffectParameters> {
   /**
    * A user defined name of the effect
    */
@@ -19,7 +19,7 @@ export interface ShaderEffectOptions {
   /**
    * The default set of parameters
    */
-  parameters?: ShaderEffectParameters
+  parameters?: Params
   /**
    * A collection of programs of this effect
    *
@@ -46,9 +46,7 @@ export interface ShaderEffectOptions {
 /**
  * @public
  */
-export interface ShaderEffectParameters {
-  [key: string]: ShaderUniformValue
-}
+export type ShaderEffectParameters = Record<string, ShaderUniformValue>
 
 function makeArray(arg: any): any {
   if (Array.isArray(arg)) {
@@ -69,7 +67,7 @@ function makeArray(arg: any): any {
  * A shader effect can hold several shader programs
  * There is only one active technique at a time which can be switched via `useTechnique`.
  */
-export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParameters> {
+export class ShaderEffect<Params extends ShaderEffectParameters = ShaderEffectParameters> {
   /**
    * A symbol identifying the Array {@link ShaderEffect} type.
    */
@@ -100,33 +98,33 @@ export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParamet
   /**
    * The graphics device
    */
-  public readonly device: Device
+  public device: Device
   /**
    * A user defined name of the effect
    */
-  public readonly name: string
+  public name: string
   /**
    * The effect parameters that have been specified for this effect
    *
    * @remarks
    * When using {@link ShaderEffect.draw} these parameters are used as defaults but can be overridden
    */
-  public readonly parameters: P
+  public parameters: Params
   /**
    * The technique collection
    */
-  public readonly techniques: ReadonlyArray<ShaderTechnique> = []
+  public techniques: ShaderTechnique[] = []
   /**
    * The technique that is currently active
    */
-  public readonly technique: ShaderTechnique
+  public technique: ShaderTechnique
 
-  private readonly techniquesByName = new Map<string, ShaderTechnique>()
+  private techniqueIndex = new Map<string, ShaderTechnique>()
 
-  constructor(device: Device, options?: ShaderEffectOptions) {
+  constructor(device: Device, options?: ShaderEffectOptions<Params>) {
     this.device = device
     if (options) {
-      this.setup(options)
+      this.reset(options)
     }
   }
 
@@ -135,12 +133,11 @@ export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParamet
    *
    * @param options - The options for initialization
    */
-  public setup(options: ShaderEffectOptions) {
-    Object.assign(this, { name: options.name })
-    Object.assign(this, { parameters: options.parameters || {} })
+  public reset(options: ShaderEffectOptions<Params>) {
+    this.name = options.name || ''
+    this.parameters = options.parameters || ({} as Params)
 
-    const techniques = this.techniques as ShaderTechnique[]
-    techniques.length = 0
+    this.techniques.length = 0
 
     let program: ShaderProgram
     if (options.program instanceof ShaderProgram) {
@@ -149,7 +146,7 @@ export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParamet
       program = this.device.createProgram(options.program)
     }
     if (program) {
-      techniques.push(
+      this.techniques.push(
         new ShaderTechnique(this.device, {
           passes: [
             {
@@ -158,23 +155,27 @@ export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParamet
           ],
         }),
       )
-      ;(this as { technique: ShaderTechnique }).technique = this.getTechnique(0)
+      this.technique = this.getTechnique(0)
     } else if (options.techniques) {
       for (let technique of makeArray(options.techniques)) {
         if (technique instanceof ShaderTechnique) {
-          techniques.push(technique)
+          this.techniques.push(technique)
         } else {
-          techniques.push(new ShaderTechnique(this.device, technique))
+          this.techniques.push(new ShaderTechnique(this.device, technique))
         }
       }
-      ;(this as { technique: ShaderTechnique }).technique = this.getTechnique(options.technique || 0)
+      this.technique = this.getTechnique(options.technique || 0)
     } else {
       throw new Error('ShaderEffect can not be created. techniques (and program) are missing')
     }
-    this.techniquesByName.clear()
+    this.indexTechniques()
+  }
+
+  public indexTechniques() {
+    this.techniqueIndex.clear()
     for (const technique of this.techniques) {
       if (technique.name) {
-        this.techniquesByName.set(technique.name, technique)
+        this.techniqueIndex.set(technique.name, technique)
       }
     }
   }
@@ -183,7 +184,7 @@ export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParamet
    * Switches to another technique identified by given name or index
    */
   public useTechnique(nameOrIndex: number | string): this {
-    ;(this as { technique: ShaderTechnique }).technique = this.getTechnique(nameOrIndex)
+    this.technique = this.getTechnique(nameOrIndex)
     return this
   }
 
@@ -198,7 +199,7 @@ export class ShaderEffect<P extends ShaderEffectParameters = ShaderEffectParamet
     if (typeof nameOrIndex === 'number') {
       result = this.techniques[nameOrIndex]
     } else {
-      result = this.techniquesByName.get(nameOrIndex)
+      result = this.techniqueIndex.get(nameOrIndex)
     }
     if (!result) {
       throw new Error(`Technique '${nameOrIndex}' not found`)

@@ -1,13 +1,13 @@
-import { buildSuperEllipsoid, DeviceGL, ModelBuilder } from '../index'
+import { buildSuperEllipsoid, DeviceGL, GeometryBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildSuperEllipsoid', () => {
     let device: DeviceGL
-    let builder: ModelBuilder
+    let builder: GeometryBuilder
 
     beforeEach(() => {
       device = new DeviceGL()
-      builder = new ModelBuilder()
+      builder = new GeometryBuilder()
     })
 
     it ('builds without errors', () => {

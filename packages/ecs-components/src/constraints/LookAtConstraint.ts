@@ -1,7 +1,6 @@
+import { Component, Inject, OnUpdate } from '@gglib/ecs'
+import { IVec3, Vec3, clamp } from '@gglib/math'
 import { TransformComponent } from '../TransformComponent'
-import { Vec3, IVec3, clamp } from '@gglib/math'
-import { Inject, OnUpdate, Component } from '@gglib/ecs'
-import { getOption } from '@gglib/utils'
 
 let tmp0: Vec3
 let tmp1: Vec3
@@ -12,7 +11,7 @@ let tmp2: Vec3
  *
  * @public
  */
- export interface LookAtConstraintOptions {
+export interface LookAtConstraintOptions {
   /**
    * The source transform to copy from
    */
@@ -66,9 +65,9 @@ export class LookAtConstraint implements OnUpdate {
    * The space in which the the transform is read from source
    */
   public sourceSpace: 'local' | 'world' = 'local'
-   /**
-    * The space in which the the transform is written to target
-    */
+  /**
+   * The space in which the the transform is written to target
+   */
   public targetSpace: 'local' | 'world' = 'local'
 
   public onUpdate() {
@@ -115,11 +114,13 @@ export class LookAtConstraint implements OnUpdate {
   }
 
   public onSetup(options: LookAtConstraintOptions) {
-    this.up = getOption(options, 'up', this.up)
-    this.source = getOption(options, 'source', this.source)
-    this.weight = getOption(options, 'weight', this.weight)
-    this.commit = getOption(options, 'commit', this.commit)
-    this.sourceSpace = getOption(options, 'sourceSpace', this.sourceSpace)
-    this.targetSpace = getOption(options, 'targetSpace', this.targetSpace)
+    if (options) {
+      this.up = options?.up ?? this.up
+      this.source = options?.source ?? this.source
+      this.weight = options?.weight ?? this.weight
+      this.commit = options?.commit ?? this.commit
+      this.sourceSpace = options?.sourceSpace ?? this.sourceSpace
+      this.targetSpace = options?.targetSpace ?? this.targetSpace
+    }
   }
 }

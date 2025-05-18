@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.tsc.json",
+  "extends": "..\\tsconfig.tsc.json",
   "baseUrl": ".",
   "rootDir": ".",
   "compilerOptions": {
@@ -16,28 +16,28 @@
   ],
   "references": [
     {
-      "path": "../ecs/tsconfig.json"
+      "path": "..\\utils\\tsconfig.json"
     },
     {
-      "path": "../math/tsconfig.json"
+      "path": "..\\ecs\\tsconfig.json"
     },
     {
-      "path": "../utils/tsconfig.json"
+      "path": "..\\graphics\\tsconfig.json"
     },
     {
-      "path": "../content/tsconfig.json"
+      "path": "..\\render\\tsconfig.json"
     },
     {
-      "path": "../graphics/tsconfig.json"
+      "path": "..\\math\\tsconfig.json"
     },
     {
-      "path": "../input/tsconfig.json"
+      "path": "..\\input\\tsconfig.json"
     },
     {
-      "path": "../fx-materials/tsconfig.json"
+      "path": "..\\fx-materials\\tsconfig.json"
     },
     {
-      "path": "../render/tsconfig.json"
+      "path": "..\\content\\tsconfig.json"
     }
   ]
 }

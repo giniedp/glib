@@ -9,13 +9,13 @@ import {
   Material,
   MaterialOptions,
   Model,
-  ModelBuilder,
+  GeometryBuilder,
   ShaderEffect,
   ShaderEffectOptions,
   Texture,
   TextureOptions,
   TextureType,
-  ModelMesh,
+  Mesh,
 } from '@gglib/graphics'
 
 import {
@@ -97,7 +97,7 @@ describe('content/loader/native', () => {
     manager.pipeline.register(loadShaderEffectOptionsToShaderEffect)
     manager.pipeline.register(loadShaderEffectOptionsToShaderEffectArray)
 
-    const modelOptions = ModelBuilder.begin()
+    const modelOptions = GeometryBuilder.begin()
       .append(buildCube)
       .closeMesh({
         materials: [new Material(device, {
@@ -129,7 +129,7 @@ describe('content/loader/native', () => {
       target: Model,
     })
     expect(result instanceof Model).toBe(true)
-    expect(result.meshes[0] instanceof ModelMesh).toBe(true)
+    expect(result.meshes[0] instanceof Mesh).toBe(true)
     expect(result.meshes[0].materials.length).toBe(2)
   })
 

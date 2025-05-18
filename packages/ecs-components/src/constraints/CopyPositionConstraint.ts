@@ -1,7 +1,6 @@
-import { Inject, OnUpdate, OnSetup, Component } from '@gglib/ecs'
-import { TransformComponent } from '../TransformComponent'
+import { Component, Inject, OnSetup, OnUpdate } from '@gglib/ecs'
 import { Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
+import { TransformComponent } from '../TransformComponent'
 
 let p0: Vec3
 let p1: Vec3
@@ -139,13 +138,15 @@ export class CopyPositionConstraint implements OnUpdate, OnSetup<CopyPositionOpt
   }
 
   public onSetup(options: CopyPositionOptions) {
-    this.source = getOption(options, 'source', this.source)
-    this.weight = getOption(options, 'weight', this.weight)
-    this.commit = getOption(options, 'commit', this.commit)
-    this.copyX = getOption(options, 'copyX', this.copyX)
-    this.copyY = getOption(options, 'copyY', this.copyY)
-    this.copyZ = getOption(options, 'copyZ', this.copyZ)
-    this.sourceSpace = getOption(options, 'sourceSpace', this.sourceSpace)
-    this.targetSpace = getOption(options, 'targetSpace', this.targetSpace)
+    if (options) {
+      this.source = options.source ?? this.source
+      this.weight = options.weight ?? this.weight
+      this.commit = options.commit ?? this.commit
+      this.copyX = options.copyX ?? this.copyX
+      this.copyY = options.copyY ?? this.copyY
+      this.copyZ = options.copyZ ?? this.copyZ
+      this.sourceSpace = options.sourceSpace ?? this.sourceSpace
+      this.targetSpace = options.targetSpace ?? this.targetSpace
+    }
   }
 }

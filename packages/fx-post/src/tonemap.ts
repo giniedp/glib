@@ -1,6 +1,7 @@
 import {
   BlendState,
   CullState,
+  DepthFormat,
   DepthState,
   Device,
   ShaderEffect,
@@ -8,10 +9,8 @@ import {
   Texture,
   TextureFilter,
   TextureWrapMode,
-  DepthFormat,
   createShaderEffectSync,
 } from '@gglib/graphics'
-import { getOption } from '@gglib/utils'
 
 import { POST_TONEMAP } from './tonemap.program'
 
@@ -83,10 +82,10 @@ export class PostTonemapEffect {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_TONEMAP)
     if (options) {
-      this.adaptSpeed = getOption(options, 'adaptSpeed', this.adaptSpeed)
-      this.exposure = getOption(options, 'exposure', this.exposure)
-      this.blackPoint = getOption(options, 'blackPoint', this.blackPoint)
-      this.whitePoint = getOption(options, 'whitePoint', this.whitePoint)
+      this.adaptSpeed = options.adaptSpeed ?? this.adaptSpeed
+      this.exposure = options.exposure ?? this.exposure
+      this.blackPoint = options.blackPoint ?? this.blackPoint
+      this.whitePoint = options.whitePoint ?? this.whitePoint
     }
   }
 

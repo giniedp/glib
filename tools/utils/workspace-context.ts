@@ -1,10 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as glob from 'globby'
+import { globbySync } from 'globby'
 import { glibReferences } from './glib-references'
 
-export class WorkspaceBaseContext {
-
+export class WorkspaceContext {
   /**
    * Directory of this context
    */
@@ -25,7 +24,7 @@ export class WorkspaceBaseContext {
       if (fs.existsSync(this.packageJsonPath)) {
         this.cachedPackageJson = require(this.packageJsonPath)
       }
-    } catch(e) {
+    } catch (e) {
       //
     }
     return this.cachedPackageJson
@@ -61,7 +60,7 @@ export class WorkspaceBaseContext {
    * Gets a sub path of this package
    */
   public subPath(...sub: string[]): string {
-    return path.join(this.dir, ...sub)
+    return path.join(this.dir, ...sub).replace(/\\/g, '/')
   }
 
   /**
@@ -79,8 +78,7 @@ export class WorkspaceBaseContext {
   }
 }
 
-export class WorkspacesRootContext extends WorkspaceBaseContext {
-
+export class WorkspacesRootContext extends WorkspaceContext {
   public get workspaces() {
     if (this.cachedWorkspaces) {
       return this.cachedWorkspaces
@@ -89,9 +87,9 @@ export class WorkspacesRootContext extends WorkspaceBaseContext {
     if (!workspaces) {
       throw new Error(`no workspaces declared in ${this.packageJsonPath}`)
     }
-    this.cachedWorkspaces = glob
-      .sync(workspaces.map((it) => this.subPath(it, "package.json")))
-      .map((it) => new WorkspacePackageContext(this, path.dirname(it)))
+    this.cachedWorkspaces = globbySync(workspaces.map((it) => this.subPath(it, 'package.json'))).map(
+      (it) => new WorkspacePackageContext(this, path.dirname(it)),
+    )
 
     return this.cachedWorkspaces
   }
@@ -103,17 +101,20 @@ export class WorkspacesRootContext extends WorkspaceBaseContext {
   }
 }
 
-export class WorkspacePackageContext extends WorkspaceBaseContext {
+export class WorkspacePackageContext extends WorkspaceContext {
   /**
    * Resolves all references gglib packages
    */
   public get glibReferences(): string[] {
     if (!this.cachedReferences) {
-      this.cachedReferences = glibReferences(this.dir, this.packageName)
+      this.cachedReferences = glibReferences({
+        srcDir: this.dir,
+        exclude: [this.packageName],
+      })
     }
     return this.cachedReferences
   }
-  private cachedReferences: string[] = null
+  private cachedReferences: string[] | null = null
 
   constructor(public readonly root: WorkspacesRootContext, dir: string) {
     super(dir)

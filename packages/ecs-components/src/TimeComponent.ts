@@ -1,5 +1,5 @@
-import { OnDraw, OnUpdate, Component } from '@gglib/ecs'
-import { getOption, getTime } from '@gglib/utils'
+import { Component, OnDraw, OnUpdate } from '@gglib/ecs'
+import { getTime } from '@gglib/utils'
 
 /**
  * A timer object holding elapsed and accumulated time values
@@ -139,7 +139,7 @@ export class TimeComponent implements OnUpdate, OnDraw {
 
   protected resetAt: number
   constructor(options: TimeComponentOptions = {}) {
-    this.getTime = getOption(options, 'getTime', getTime)
+    this.getTime = options?.getTime ?? getTime
     this.reset()
   }
 

@@ -1,23 +1,25 @@
 import { Vec2, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 
 /**
- * Builds a spherical harmonics shape into the {@link ModelBuilder}
+ * Builds a spherical harmonics shape into the {@link GeometryBuilder}
  *
  * @public
  * @remarks
  * implementation is based on {@link http://paulbourke.net/geometry/sphericalh/}
  */
-export function buildSphericalHarmonics(builder: ModelBuilder, options: {
-  diameter?: number
-  radius?: number
-  steps?: number
-  parameters?: number[],
-} = {}) {
-  let radius = getOption(options, 'radius', getOption(options, 'diameter', 1) * 0.5)
-  let steps = getOption(options, 'steps', 16)
-  let params = getOption(options, 'parameters', [])
+export function buildSphericalHarmonics(
+  builder: GeometryBuilder,
+  options: {
+    diameter?: number
+    radius?: number
+    steps?: number
+    parameters?: number[]
+  } = {},
+) {
+  let radius = options?.radius ?? (options?.diameter ?? 1) * 0.5
+  let steps = options?.steps ?? 16
+  let params = options?.parameters ?? []
 
   let baseVertex = builder.vertexCount
   let stepsV = steps

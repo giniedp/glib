@@ -6,7 +6,6 @@
     "outDir": "../dist/tsc",
     "noImplicitAny": true,
     "experimentalDecorators": true,
-    "suppressImplicitAnyIndexErrors": true,
     "noFallthroughCasesInSwitch": true,
     "lib": ["es6", "dom", "es2015.promise", "es2015.collection", "es2015.iterable"],
     "skipDefaultLibCheck": true,

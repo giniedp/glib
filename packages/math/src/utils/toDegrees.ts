@@ -1,5 +1,5 @@
-const factor = 180 / Math.PI
+export const RAD_TO_DEGREE = 180 / Math.PI
 
 export function toDegrees(radians: number) {
-  return radians * factor
+  return radians * RAD_TO_DEGREE
 }

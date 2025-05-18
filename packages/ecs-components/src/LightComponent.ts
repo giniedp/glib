@@ -1,8 +1,7 @@
-import { Inject, OnInit, OnUpdate, Component, OnSetup, Listener } from '@gglib/ecs'
+import { Component, Inject, Listener, OnInit, OnSetup, OnUpdate } from '@gglib/ecs'
 import { LightParams } from '@gglib/fx-materials'
 import { LightType } from '@gglib/graphics'
 import { BoundingSphere, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
 
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
@@ -31,14 +30,9 @@ export interface LightComponentOptions {
  * @public
  */
 @Component({
-  install: [
-    BoundingVolumeComponent,
-    TransformComponent,
-    SceneNodeComponent,
-  ]
+  install: [BoundingVolumeComponent, TransformComponent, SceneNodeComponent],
 })
 export class LightComponent implements OnInit, OnUpdate, OnSetup<LightComponentOptions> {
-
   /**
    * The transform component of the entity
    */
@@ -92,21 +86,21 @@ export class LightComponent implements OnInit, OnUpdate, OnSetup<LightComponentO
   private localVolume = new BoundingSphere(0, 0, 0, Number.MAX_SAFE_INTEGER)
 
   constructor(options?: LightComponentOptions) {
-    if (options) {
-      this.onSetup(options)
-    }
+    this.onSetup(options)
   }
 
   public onSetup(options: LightComponentOptions) {
-    this.enabled = getOption(options, 'enabled', this.enabled)
-    this.range = getOption(options, 'range', this.range)
-    this.intensity = getOption(options, 'intensity', this.intensity)
-    this.spotAngle = getOption(options, 'spotAngle', this.spotAngle)
-    this.castShadow = getOption(options, 'castShadow', this.castShadow)
-    this.type = getOption(options, 'type', this.type)
-    this.color = Vec3.convert(getOption(options, 'color', this.color))
-    this.position = Vec3.convert(getOption(options, 'position', this.position))
-    this.direction = Vec3.convert(getOption(options, 'direction', this.direction))
+    if (options) {
+      this.enabled = options.enabled ?? this.enabled
+      this.range = options.range ?? this.range
+      this.intensity = options.intensity ?? this.intensity
+      this.spotAngle = options.spotAngle ?? this.spotAngle
+      this.castShadow = options.castShadow ?? this.castShadow
+      this.type = options.type ?? this.type
+      this.color = Vec3.convert(options.color ?? this.color)
+      this.position = Vec3.convert(options.position ?? this.position)
+      this.direction = Vec3.convert(options.direction ?? this.direction)
+    }
   }
 
   /**

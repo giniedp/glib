@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { FrontFace } from '../../enums'
 
 const lookup: { [k: number]: GPUFrontFace } = {
@@ -7,5 +6,5 @@ const lookup: { [k: number]: GPUFrontFace } = {
 }
 
 export function toFrontFace(v: FrontFace): GPUFrontFace {
-  return getOption(lookup, v, null)
+  return lookup[v] ?? null
 }

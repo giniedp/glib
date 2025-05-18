@@ -296,9 +296,9 @@ export class TGA {
   /**
    * Decodes 16bit rgba {@link imageData} into given format
    */
-  public decode_rgba16(format: 'i5551'): Uint16Array
-  public decode_rgba16(format: 'ui8888' | 'ui888'): Uint8ClampedArray
-  public decode_rgba16(format: 'ui8888' | 'ui888' | 'i5551') {
+  public decode_rgba16(format: 'i5551'): Uint16Array<ArrayBuffer>
+  public decode_rgba16(format: 'ui8888' | 'ui888'): Uint8ClampedArray<ArrayBuffer>
+  public decode_rgba16(format: 'ui8888' | 'ui888' | 'i5551'): any {
     const input = this.imageData
     if (format === 'i5551') {
       const output = new Uint16Array(this.width * this.height)
@@ -326,16 +326,16 @@ export class TGA {
   /**
    * Decodes 16bit grayscale {@link imageData} into given format
    */
-  public decode_gray16(format: 'ui16'): Uint16Array
+  public decode_gray16(format: 'ui16'): Uint16Array<ArrayBuffer>
   /**
    * Decodes 16bit grayscale {@link imageData} into given format
    */
-  public decode_gray16(format: 'f16' | 'f32'): Float32Array
+  public decode_gray16(format: 'f16' | 'f32'): Float32Array<ArrayBuffer>
   /**
    * Decodes 16bit grayscale {@link imageData} into given format
    */
   public decode_gray16(format: 'ui8888' | 'ui888'): Uint8ClampedArray
-  public decode_gray16(format: 'ui8888' | 'ui888' | 'f16' | 'f32' | 'ui16') {
+  public decode_gray16(format: 'ui8888' | 'ui888' | 'f16' | 'f32' | 'ui16'): any {
     const input = this.imageData
     switch (format) {
       case 'ui16': {
@@ -409,12 +409,12 @@ export class TGA {
    *
    * @remarks {@link colorMapStride} must be equal `2` otherwise error is thrown
    */
-  public decode_cm8(format: 'i5551'): Uint16Array
+  public decode_cm8(format: 'i5551'): Uint16Array<ArrayBuffer>
   /**
    * Decodes color mapped {@link imageData} into given format
    */
-  public decode_cm8(format: 'ui8888' | 'ui888'): Uint8ClampedArray
-  public decode_cm8(format: 'ui8888' | 'ui888' | 'i5551') {
+  public decode_cm8(format: 'ui8888' | 'ui888'): Uint8ClampedArray<ArrayBuffer>
+  public decode_cm8(format: 'ui8888' | 'ui888' | 'i5551'): any {
     if (this.colorMapStride === 2) {
       if (format === 'i5551') {
         const output = new Uint16Array(this.width * this.height)

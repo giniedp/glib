@@ -2,14 +2,14 @@ import { PostBloomOptions, PostBloomEffect } from '@gglib/fx-post'
 import { Device } from '@gglib/graphics'
 
 import { RenderManager } from '../RenderManager'
-import { RenderStep } from '../Types'
+import { RenderPass } from '../Types'
 
 /**
  * Implements simple bloom post processing
  *
  * @public
  */
-export class PostStepBloom implements RenderStep {
+export class PostStepBloom implements RenderPass {
   public get ready() {
     return this.effect.isReady
   }

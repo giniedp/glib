@@ -4,7 +4,7 @@ import { hermite } from './utils/hermite'
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z', 3: 'w',
   x: 'x', y: 'y', z: 'z', w: 'w',
-}
+} as Record<number|string, 'x'|'y'|'z'|'w'>
 
 /**
  * A vector with four components.
@@ -1357,7 +1357,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     if (Array.isArray(data)) {
       return new Vec4(data[0], data[1], data[2], data[3])
     }
-    return new Vec4(data.x, data.y, data['z'], data['w'])
+    return new Vec4(data.x, data.y, 'z' in data ? data.z : 0, 'w' in data ? data['w'] : 0)
   }
 
   /**

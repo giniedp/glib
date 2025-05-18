@@ -14,7 +14,7 @@ import {
 import { forwardRef, Inject, OnInit, OnUpdate, Component, Entity, OnAdded, OnSetup } from '@gglib/ecs'
 import { Texture, BlendState, Color } from '@gglib/graphics'
 import { Mat4, Rect, easeInCubic, clamp } from '@gglib/math'
-import { CameraData, CommonRenderStep } from '@gglib/render'
+import { CameraData, BasicRenderPass } from '@gglib/render'
 import { Events } from '@gglib/utils'
 import { ContentManager } from '@gglib/content'
 
@@ -109,7 +109,7 @@ class BreakoutGame extends Events implements OnAdded, OnInit, OnUpdate {
 
   public async onInit() {
     this.renderer.scene.camera = this.camera
-    const renderStep = this.renderer.scene.steps[0] as CommonRenderStep
+    const renderStep = this.renderer.scene.steps[0] as BasicRenderPass
     renderStep.blendState = BlendState.AlphaBlend
     renderStep.clearColor = 0xff2e2620
   }

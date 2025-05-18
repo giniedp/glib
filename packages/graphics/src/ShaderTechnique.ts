@@ -15,7 +15,7 @@ export interface ShaderTechniqueOptions {
   /**
    * Arbitrary meta data or info about the shader technique
    */
-  meta?: { [key: string]: any }
+  meta?: Record<string, any>
   /**
    * Collection of passes of this technique
    */
@@ -36,7 +36,7 @@ export class ShaderTechnique {
   /**
    * The graphics device
    */
-  public readonly device: Device
+  public device: Device
   /**
    * The user defined name of this technique
    */
@@ -44,11 +44,11 @@ export class ShaderTechnique {
   /**
    * Collection of passes of this technique
    */
-  public readonly passes: ReadonlyArray<ShaderPass> = []
+  public passes: ShaderPass[] = []
   /**
    * Arbitrary meta data or info about the shader technique
    */
-  public readonly meta: { [key: string]: any }
+  public meta: Record<string, any>
 
   private passesByName = new Map<string, ShaderPass>()
 
@@ -56,15 +56,14 @@ export class ShaderTechnique {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    const passes = this.passes as ShaderPass[]
     for (let pass of options.passes) {
       if (pass instanceof ShaderPass) {
-        passes.push(pass)
+        this.passes.push(pass)
       } else {
-        passes.push(new ShaderPass(device, pass))
+        this.passes.push(new ShaderPass(device, pass))
       }
     }
-    for (const pass of passes) {
+    for (const pass of this.passes) {
       if (pass.name) {
         this.passesByName.set(pass.name, pass)
       }

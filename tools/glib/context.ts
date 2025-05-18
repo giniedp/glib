@@ -1,15 +1,15 @@
-import * as glob from 'glob'
+import { globbySync } from 'globby'
 import * as path from 'path'
-import { WorkspacesRootContext, WorkspacePackageContext } from '@tools/utils'
+import { WorkspacesRootContext, WorkspacePackageContext } from '../utils'
 
 export class GlibBuildContext extends WorkspacesRootContext {
-
   public get glibPackages() {
     if (this.cashedPackages) {
       return this.cashedPackages
     }
-    this.cashedPackages = glob
-      .sync(this.packagesDir('*', 'package.json'))
+
+    const pattern = this.packagesDir('*', 'package.json').replace(/\\/g, '/')
+    this.cashedPackages = globbySync(pattern)
       .map((it) => new GlibPackageContext(this, path.dirname(it)))
       .sort((a, b) => {
         if (b.glibReferences.indexOf(a.packageName) === -1) {
@@ -87,4 +87,4 @@ export class GlibPackageContext extends WorkspacePackageContext {
   }
 }
 
-export default new GlibBuildContext(process.cwd())
+export const project = new GlibBuildContext(path.join(__dirname, "../../"))

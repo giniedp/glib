@@ -4,10 +4,9 @@ import {
   ExtractorResult,
 } from '@microsoft/api-extractor'
 
-import { parallel } from 'gulp'
-import project, { GlibPackageContext } from '../context'
+import { project, GlibPackageContext } from '../context'
 
-import { spawn, namedTask } from '../../utils'
+import { spawn } from '../../utils'
 
 async function runApiExtractor(pkg: GlibPackageContext) {
   return new Promise((resolve, reject) => {
@@ -33,9 +32,12 @@ async function runApiExtractor(pkg: GlibPackageContext) {
   })
 }
 
-export const api = parallel(
-  ...project.glibPackages.map((pkg) => namedTask(pkg.packageName, () => runApiExtractor(pkg))),
-)
+export async function api() {
+  for (const pkg of project.glibPackages) {
+    console.log(`Running API Extractor for ${pkg.baseName}`)
+    await runApiExtractor(pkg)
+  }
+}
 
 export async function docs() {
   return spawn({

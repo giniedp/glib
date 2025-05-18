@@ -581,16 +581,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
 
   public get effect() {
-    if (this.hasChanged || this.$effect == null) {
+    if (this.hasChanged || this._effect == null) {
       this.updateEffect()
     }
-    return this.$effect
+    return this._effect
   }
 
   private defines: DefaultProgramDefs = {}
   private lights: LightParams[] = []
   private hasChanged = true
-  protected $effect: ShaderEffect
+  protected _effect: ShaderEffect
 
   constructor(device: Device) {
     super(device, {
@@ -643,16 +643,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
       delete this.defines.V_TANGENT
     }
 
-    if (this.$effect) {
-      this.$effect.techniques.forEach((t) => {
+    if (this._effect) {
+      this._effect.techniques.forEach((t) => {
         t.passes.forEach((p) => {
           p.program.destroy()
         })
       })
-      this.$effect = null
+      this._effect = null
     }
 
-    this.$effect = this.device.createEffect({
+    this._effect = this.device.createEffect({
       program: materialProgram(this.defines),
     })
     this.hasChanged = false

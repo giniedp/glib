@@ -1,5 +1,4 @@
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder, GeometryBuilderFunction } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -11,20 +10,24 @@ export interface BuildSphereOptions {
   /**
    * The sphere radius
    */
-  radius?: number,
+  radius?: number
   /**
    * The tesselation
    */
-  tesselation?: number,
+  tesselation?: number
+}
+
+export function sphereBuilder(options: BuildSphereOptions = {}): GeometryBuilderFunction<void> {
+  return (builder: GeometryBuilder) => buildSphere(builder, options)
 }
 
 /**
- * Builds a sphere shape into the {@link ModelBuilder}
+ * Builds a sphere shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildSphere(builder: ModelBuilder, options: BuildSphereOptions = {}) {
-  const r = getOption(options, 'radius', 0.5)
+export function buildSphere(builder: GeometryBuilder, options: BuildSphereOptions = {}) {
+  const r = options?.radius ?? 0.5
 
   buildParametricSurface(builder, {
     f: (phi: number, theta: number) => {
@@ -41,8 +44,8 @@ export function buildSphere(builder: ModelBuilder, options: BuildSphereOptions =
         z: Math.sin(theta) * Math.cos(phi),
       }
     },
-    tu: getOption(options, 'tesselation', 32),
-    tv: getOption(options, 'tesselation', 32),
+    tu: options?.tesselation ?? 32,
+    tv: options?.tesselation ?? 32,
     u0: 0,
     u1: Math.PI * 2,
     v0: 0,

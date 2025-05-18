@@ -5,15 +5,12 @@ import { ArrayLike } from '@gglib/math'
 /**
  * @public
  */
-export interface ModelBuilderChannelMap {
-  [key: string]: ModelBuilderChannel
-}
+export type GeometryBuilderChannelMap = Record<string, GeometryBuilderChannel>
 
 /**
  * @public
  */
-export class ModelBuilderChannel {
-
+export class GeometryBuilderChannel {
   /**
    * The vertex stride of the current buffer
    *
@@ -51,10 +48,7 @@ export class ModelBuilderChannel {
 
   private data: ArrayLike<number>
 
-  constructor(
-    buffer: BufferOptions,
-    name: string,
-  ) {
+  constructor(buffer: BufferOptions, name: string) {
     if (!name) {
       throw new Error('"name" must not be empty')
     }
@@ -147,11 +141,11 @@ export class ModelBuilderChannel {
     }
   }
 
-  public static fromVertexBuffer(vBuffers: Array<BufferOptions | Buffer>): ModelBuilderChannelMap {
+  public static fromVertexBuffer(vBuffers: Array<BufferOptions | Buffer>): GeometryBuilderChannelMap {
     const channels = {}
     for (let buffer of vBuffers) {
       Object.keys(buffer.layout).forEach((name) => {
-        channels[name] = new ModelBuilderChannel(buffer, name)
+        channels[name] = new GeometryBuilderChannel(buffer, name)
       })
     }
     return channels

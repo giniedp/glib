@@ -1,9 +1,9 @@
 import { DataType, dataTypeSize } from '../enums'
-import { ModelBuilderChannel, ModelBuilderChannelMap } from './ModelBuilderChannel'
+import { GeometryBuilderChannel, GeometryBuilderChannelMap } from './GeometryBuilderChannel'
 import { BufferOptions } from '../resources'
 
-describe('Graphics.ModelBuilderChannel', () => {
-  let channels: ModelBuilderChannelMap
+describe('Graphics.GeometryBuilderChannel', () => {
+  let channels: GeometryBuilderChannelMap
   let buffers: Array<BufferOptions<number[]>>
 
   beforeEach(() => {
@@ -45,7 +45,7 @@ describe('Graphics.ModelBuilderChannel', () => {
         },
       },
     }]
-    channels = ModelBuilderChannel.fromVertexBuffer(buffers)
+    channels = GeometryBuilderChannel.fromVertexBuffer(buffers)
   })
 
   describe('#read', () => {

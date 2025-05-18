@@ -1,5 +1,5 @@
-import { Entity, Inject, Component, OnSetup } from '@gglib/ecs'
-import { cancelAnimationFrame, getOption, getTime, requestAnimationFrame } from '@gglib/utils'
+import { Component, Entity, Inject, OnSetup } from '@gglib/ecs'
+import { cancelAnimationFrame, getTime, requestAnimationFrame } from '@gglib/utils'
 
 /**
  * Constructor options for the {@link LoopComponent}
@@ -175,23 +175,23 @@ export class LoopComponent implements OnSetup<LoopComponentOptions> {
   protected frameLag: number = 0
 
   constructor(params?: LoopComponentOptions) {
-    if (params) {
-      this.onSetup(params)
-    }
+    this.onSetup(params)
   }
 
   public onSetup(options: LoopComponentOptions) {
-    this.targetElapsedTime = getOption(options, 'targetElapsedTime', this.targetElapsedTime)
-    this.maxElapsedTime = getOption(options, 'maxElapsedTime', this.maxElapsedTime)
-    this.useFixedTimeStep = getOption(options, 'useFixedTimeStep', this.useFixedTimeStep)
-    this.recursiveInit = getOption(options, 'recursiveInit', this.recursiveInit)
-    this.recursiveUpdate = getOption(options, 'recursiveUpdate', this.recursiveUpdate)
-    this.recursiveDraw = getOption(options, 'recursiveDraw', this.recursiveDraw)
-    this.getTime = getOption(options, 'getTime', this.getTime)
-    this.installAnimationFrame({
-      requestAnimationFrame: getOption(options, 'requestAnimationFrame', this.requestAnimationFrame),
-      cancelAnimationFrame: getOption(options, 'cancelAnimationFrame', this.cancelAnimationFrame),
-    })
+    if (options) {
+      this.targetElapsedTime = options.targetElapsedTime ?? this.targetElapsedTime
+      this.maxElapsedTime = options.maxElapsedTime ?? this.maxElapsedTime
+      this.useFixedTimeStep = options.useFixedTimeStep ?? this.useFixedTimeStep
+      this.recursiveInit = options.recursiveInit ?? this.recursiveInit
+      this.recursiveUpdate = options.recursiveUpdate ?? this.recursiveUpdate
+      this.recursiveDraw = options.recursiveDraw ?? this.recursiveDraw
+      this.getTime = options.getTime ?? this.getTime
+      this.installAnimationFrame({
+        requestAnimationFrame: options.requestAnimationFrame ?? this.requestAnimationFrame,
+        cancelAnimationFrame: options.cancelAnimationFrame ?? this.cancelAnimationFrame,
+      })
+    }
   }
 
   /**
@@ -220,8 +220,8 @@ export class LoopComponent implements OnSetup<LoopComponentOptions> {
     cancelAnimationFrame?: (id: number) => void
   }) {
     const wasRunning = this.stop()
-    this.requestAnimationFrame = getOption(options, 'requestAnimationFrame', this.requestAnimationFrame)
-    this.cancelAnimationFrame = getOption(options, 'cancelAnimationFrame', this.cancelAnimationFrame)
+    this.requestAnimationFrame = options?.requestAnimationFrame ?? this.requestAnimationFrame
+    this.cancelAnimationFrame = options?.cancelAnimationFrame ?? this.cancelAnimationFrame
     if (wasRunning) {
       this.schedule()
     }
@@ -230,7 +230,7 @@ export class LoopComponent implements OnSetup<LoopComponentOptions> {
   public uninstallAnimationFrame() {
     this.installAnimationFrame({
       requestAnimationFrame,
-      cancelAnimationFrame
+      cancelAnimationFrame,
     })
   }
 

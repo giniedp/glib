@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { BlendFunction } from '../../enums'
 
 const lookup: { [k: number]: GPUBlendOperation } = {
@@ -8,5 +7,5 @@ const lookup: { [k: number]: GPUBlendOperation } = {
 }
 
 export function toBlendOperation(v: BlendFunction): GPUBlendOperation {
-  return getOption(lookup, v, null)
+  return lookup[v] ?? null
 }

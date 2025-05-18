@@ -3,7 +3,7 @@ import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { TransformComponent } from './TransformComponent'
-import { ModelMesh } from '@gglib/graphics'
+import { Mesh } from '@gglib/graphics'
 
 /**
  * A component that knows how to render a model
@@ -32,7 +32,7 @@ export class MeshComponent {
   public get mesh() {
     return this._mesh
   }
-  public set mesh(value: ModelMesh) {
+  public set mesh(value: Mesh) {
     if (this._mesh !== value) {
       this._mesh = value
       this.onMeshChanged()
@@ -57,7 +57,7 @@ export class MeshComponent {
   @Inject(SceneNodeComponent)
   public readonly link: SceneNodeComponent
 
-  private _mesh: ModelMesh
+  private _mesh: Mesh
   private _drawables: SceneItemDrawable[] = []
 
   @Listener(SceneNodeComponent.ON_VISIT)

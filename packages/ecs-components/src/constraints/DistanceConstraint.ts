@@ -1,7 +1,6 @@
-import { TransformComponent } from '../TransformComponent'
+import { Component, Inject, OnUpdate } from '@gglib/ecs'
 import { Vec3 } from '@gglib/math'
-import { Inject, OnUpdate, Component } from '@gglib/ecs'
-import { getOption } from '@gglib/utils'
+import { TransformComponent } from '../TransformComponent'
 
 let v0: Vec3
 let v1: Vec3
@@ -11,7 +10,7 @@ let v1: Vec3
  *
  * @public
  */
- export interface DistanceConstraintOptions {
+export interface DistanceConstraintOptions {
   /**
    * The source transform to copy from
    */
@@ -79,9 +78,9 @@ export class DistanceConstraint implements OnUpdate {
    * The space in which the the transform is read from source
    */
   public sourceSpace: 'local' | 'world'
-   /**
-    * The space in which the the transform is written to target
-    */
+  /**
+   * The space in which the the transform is written to target
+   */
   public targetSpace: 'local' | 'world'
 
   public onUpdate() {
@@ -89,8 +88,8 @@ export class DistanceConstraint implements OnUpdate {
       return
     }
 
-    let s = v0 = v0 || Vec3.create()
-    let t = v1 = v1 || Vec3.create()
+    let s = (v0 = v0 || Vec3.create())
+    let t = (v1 = v1 || Vec3.create())
 
     s.initFrom(this.source.position)
     if (this.source.parent && this.sourceSpace === 'world') {
@@ -112,11 +111,7 @@ export class DistanceConstraint implements OnUpdate {
       d = d + (this.maxDistance - d) * this.weight
     }
     if (Math.abs(d) >= Number.EPSILON) {
-      t
-        .subtract(s)
-        .normalize()
-        .multiplyScalar(d)
-        .add(s)
+      t.subtract(s).normalize().multiplyScalar(d).add(s)
     } else {
       t.initFrom(s)
     }
@@ -134,12 +129,14 @@ export class DistanceConstraint implements OnUpdate {
   }
 
   public onSetup(options: DistanceConstraintOptions) {
-    this.source = getOption(options, 'source', this.source)
-    this.weight = getOption(options, 'weight', this.weight)
-    this.commit = getOption(options, 'commit', this.commit)
-    this.sourceSpace = getOption(options, 'sourceSpace', this.sourceSpace)
-    this.targetSpace = getOption(options, 'targetSpace', this.targetSpace)
-    this.minDistance = getOption(options, 'minDistance', this.minDistance)
-    this.maxDistance = getOption(options, 'maxDistance', this.maxDistance)
+    if (options) {
+      this.source = options.source ?? this.source
+      this.weight = options.weight ?? this.weight
+      this.commit = options.commit ?? this.commit
+      this.sourceSpace = options.sourceSpace ?? this.sourceSpace
+      this.targetSpace = options.targetSpace ?? this.targetSpace
+      this.minDistance = options.minDistance ?? this.minDistance
+      this.maxDistance = options.maxDistance ?? this.maxDistance
+    }
   }
 }

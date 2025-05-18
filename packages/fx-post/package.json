@@ -14,10 +14,14 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist/bundles/fx-post.umd.js",
-  "module": "dist/fx-post/src/index.js",
-  "typings": "dist/fx-post/src/index.d.ts",
-  "devDependencies": {},
+  "index": "dist\\bundles\\fx-post.umd.js",
+  "module": "dist\\fx-post\\src\\index.js",
+  "typings": "dist\\fx-post\\src\\index.d.ts",
+  "devDependencies": {
+    "@gglib/graphics": "workspace:^0.6.2",
+    "@gglib/utils": "workspace:^0.6.2",
+    "@gglib/math": "workspace:^0.6.2"
+  },
   "peerDependencies": {
     "@gglib/graphics": "0.6.2",
     "@gglib/utils": "0.6.2",

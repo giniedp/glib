@@ -13,13 +13,6 @@ export interface IManagerOptions {
   pipeline?: Pipeline
 }
 
-function getOption<T>(options: IManagerOptions, key: keyof IManagerOptions, fallback: T): T {
-  if (key in options) {
-    return options[key] as any
-  }
-  return fallback
-}
-
 /**
  * @public
  */
@@ -91,8 +84,8 @@ export class ContentManager {
   }
 
   public setup(options: IManagerOptions) {
-    this.enableDomAssets = getOption(options, 'enableDomAssets', this.enableDomAssets)
-    this.pipeline = getOption(options, 'pipeline', this.pipeline)
+    this.enableDomAssets = options.enableDomAssets ?? this.enableDomAssets
+    this.pipeline = options.pipeline ?? this.pipeline
   }
 
   /**

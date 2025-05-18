@@ -1,5 +1,3 @@
-import { getOption } from '@gglib/utils'
-
 import { Color, RGBA_FORMAT } from '../../Color'
 import { DepthBuffer, FrameBuffer, FrameBufferOptions, Texture } from '../../resources'
 import { DeviceGPU } from '../DeviceGPU'
@@ -34,12 +32,12 @@ export class FrameBufferGPU extends FrameBuffer {
   constructor(device: DeviceGPU, options: FrameBufferOptions) {
     super()
     this.device = device
-    this.init(options)
+    this.reset(options)
   }
 
-  public init(options: FrameBufferOptions) {
-    const textures = getOption(options, 'textures', this.colorAttachments as any) || []
-    const depthBuffer = getOption(options, 'depthBuffer', this.depthAttachment) as DepthBufferGPU
+  public reset(options: FrameBufferOptions) {
+    const textures = (options?.textures ?? (this.colorAttachments as any)) || []
+    const depthBuffer = options?.depthBuffer ?? (this.depthAttachment as DepthBufferGPU)
 
     const colorAttachmentsDesc = this.colorAttachmentsDesc as GPURenderPassColorAttachmentDescriptor[]
     colorAttachmentsDesc.length = textures.length
@@ -60,7 +58,7 @@ export class FrameBufferGPU extends FrameBuffer {
       }
     }
 
-    this.depthAttachmentDesc.attachment = depthBuffer ? depthBuffer.handle.createView() : null
+    this.depthAttachmentDesc.attachment = depthBuffer ? (depthBuffer as DepthBufferGPU).resource.createView() : null
 
     return this
   }

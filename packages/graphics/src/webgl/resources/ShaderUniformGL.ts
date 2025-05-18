@@ -2,12 +2,15 @@
 
 import { copy } from '@gglib/utils'
 
-import { ShaderUniform, ShaderUniformOptions } from '../../resources/ShaderUniform'
+import { ShaderUniform, ShaderUniformInfo } from '../../resources/ShaderUniform'
 import { SamplerState } from '../../states'
 import { DeviceGL } from '../DeviceGL'
 import type { ShaderProgramGL } from './ShaderProgramGL'
 
-function parseArray(value: string) {
+function parseArray(value: string | number) {
+  if (typeof value === 'number') {
+    return [value]
+  }
   let result: any = value.replace(/[\[\]]/g, '').split(',')
   for (let i = 0; i < result.length; i += 1) {
     result[i] = Number(result[i]) || 0
@@ -15,15 +18,15 @@ function parseArray(value: string) {
   return result
 }
 
-function makeVec2(data: number[]) {
+function toV2(data: number[]) {
   return { x: data[0] || 0, y: data[1] || 0 }
 }
 
-function makeVec3(data: number[]) {
+function toV3(data: number[]) {
   return { x: data[0] || 0, y: data[1] || 0, z: data[2] || 0 }
 }
 
-function makeVec4(data: number[]) {
+function toV4(data: number[]) {
   return { x: data[0] || 0, y: data[1] || 0, z: data[2] || 0, w: data[3] || 0 }
 }
 
@@ -48,7 +51,7 @@ export class ShaderUniformGL extends ShaderUniform {
   /**
    * Meta data and annotations of this uniform
    */
-  public readonly meta: Record<string, any>
+  public readonly info: ShaderUniformInfo
   /**
    * The binding name of this uniform
    */
@@ -71,20 +74,20 @@ export class ShaderUniformGL extends ShaderUniform {
   /**
    * Instantiates the {@link ShaderUniform}
    */
-  constructor(program: ShaderProgramGL, options: ShaderUniformOptions & { size: number }) {
+  constructor(program: ShaderProgramGL, options: ShaderUniformInfo & { size: number }) {
     super()
     this.device = program.device
     this.gl = this.device.context
 
     this.program = program
-    this.meta = options
+    this.info = options
     this.name = options.binding || options.name
     this.type = options.type
     this.size = options.size
 
-    this.location = this.device.context.getUniformLocation(program.handle, options.name)
+    this.location = this.device.context.getUniformLocation(program.resource, options.name)
     if (this.location == null) {
-      this.set = () => {}
+      this.set = () => {} // no-op, TODO: warn?
       return
     }
 
@@ -124,21 +127,21 @@ export class ShaderUniformGL extends ShaderUniform {
       case 'hvec2':
       case 'fvec2':
       case 'dvec2':
-        this.defaultValue = makeVec2(parseArray(value || ''))
+        this.defaultValue = toV2(parseArray(value || ''))
         this.set = this.setVec2
         break
       case 'vec3':
       case 'hvec3':
       case 'fvec3':
       case 'dvec3':
-        this.defaultValue = makeVec3(parseArray(value || ''))
+        this.defaultValue = toV3(parseArray(value || ''))
         this.set = this.setVec3
         break
       case 'vec4':
       case 'hvec4':
       case 'fvec4':
       case 'dvec4':
-        this.defaultValue = makeVec4(parseArray(value || ''))
+        this.defaultValue = toV4(parseArray(value || ''))
         this.set = this.setVec4
         break
 
@@ -178,16 +181,15 @@ export class ShaderUniformGL extends ShaderUniform {
       case 'sampler':
       case 'sampler2D':
       case 'samplerCube':
-        if (this.meta.register) {
-          this.register = Number(this.meta.register) | 0
+        if (this.info.register) {
+          this.register = Number(this.info.register) | 0
         }
-        this.filter = copy(SamplerState[this.meta.filter] || SamplerState.Default)
+        this.filter = copy(SamplerState[this.info.filter] || SamplerState.Default)
         this.set = this.setTexture
         break
       default:
-        this.set = () => {
-          /* */
-        }
+        console.warn(`Unhandled uniform type ${this.type} for ${this.name}`)
+        this.set = () => {} // no-op
         break
     }
   }
@@ -304,9 +306,9 @@ export class ShaderUniformGL extends ShaderUniform {
    * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setVec2(value: { x: number; y: number } | ArrayLike<number>) {
-    if (value['x'] != null) {
-      if (this.state.write2(value['x'], value['y'])) {
-        this.gl.uniform2f(this.location, value['x'], value['y'])
+    if ('x' in value) {
+      if (this.state.write2(value.x, value.y)) {
+        this.gl.uniform2f(this.location, value.x, value.y)
       }
     } else {
       if (this.state.write2(value[0], value[1])) {
@@ -319,9 +321,9 @@ export class ShaderUniformGL extends ShaderUniform {
    * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setVec3(value: { x: number; y: number; z: number } | ArrayLike<number>) {
-    if (value['x'] != null) {
-      if (this.state.write3(value['x'], value['y'], value['z'])) {
-        this.gl.uniform3f(this.location, value['x'], value['y'], value['z'])
+    if ('x' in value) {
+      if (this.state.write3(value.x, value.y, value.z)) {
+        this.gl.uniform3f(this.location, value.x, value.y, value.z)
       }
     } else {
       if (this.state.write3(value[0], value[1], value[2])) {
@@ -334,9 +336,9 @@ export class ShaderUniformGL extends ShaderUniform {
    * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
    */
   public setVec4(value: { x: number; y: number; z: number; w: number } | ArrayLike<number>) {
-    if (value['x'] != null) {
-      if (this.state.write4(value['x'], value['y'], value['z'], value['w'])) {
-        this.gl.uniform4f(this.location, value['x'], value['y'], value['z'], value['w'])
+    if ('x' in value) {
+      if (this.state.write4(value.x, value.y, value.z, value.w)) {
+        this.gl.uniform4f(this.location, value.x, value.y, value.z, value.w)
       }
     } else {
       if (this.state.write4(value[0], value[1], value[2], value[3])) {

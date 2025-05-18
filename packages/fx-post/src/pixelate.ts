@@ -1,7 +1,6 @@
-import { ShaderEffect, Device, createShaderEffectSync, Texture, ShaderEffectParameters, ShaderUniformValue } from '@gglib/graphics'
-import { getOption } from '@gglib/utils'
-import { POST_PIXELATE } from './pixelate.program'
+import { createShaderEffectSync, Device, ShaderEffect, Texture } from '@gglib/graphics'
 import { IVec2, Vec2 } from '@gglib/math'
+import { POST_PIXELATE } from './pixelate.program'
 
 /**
  * Constructor options for {@link PostPixelateEffect}
@@ -31,14 +30,14 @@ export class PostPixelateEffect {
   public outputTexture: Texture
 
   private effect: ShaderEffect<{
-    texel: IVec2,
+    texel: IVec2
     texture: Texture
   }>
 
   constructor(private device: Device, options?: PostPixelateOptions) {
     if (options) {
-      this.pixelWidth = getOption(options, 'pixelWidth', this.pixelWidth)
-      this.pixelHeight = getOption(options, 'pixelHeight', this.pixelHeight)
+      this.pixelWidth = options.pixelWidth ?? this.pixelWidth
+      this.pixelHeight = options.pixelHeight ?? this.pixelHeight
     }
     this.effect = createShaderEffectSync(device, POST_PIXELATE) as any // TODO
   }

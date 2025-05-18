@@ -1,6 +1,5 @@
-import { Entity, Inject, OnUpdate, Component } from '@gglib/ecs'
-import { Mat4 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
+import { Component, Entity, Inject, OnUpdate } from '@gglib/ecs'
+import { Mat4, RAD_TO_DEGREE } from '@gglib/math'
 import { TransformComponent } from './TransformComponent'
 
 /**
@@ -125,12 +124,12 @@ export class PerspectiveCameraComponent extends CameraComponent implements OnUpd
     return this.transform.world
   }
 
-  constructor(options: PerspectiveCameraOptions = {}) {
+  constructor(options?: PerspectiveCameraOptions) {
     super()
-    this.near = getOption(options, 'near', 0.1)
-    this.far = getOption(options, 'far', 1000)
-    this.fov = getOption(options, 'fov', (70 * Math.PI) / 180)
-    this.aspect = getOption(options, 'aspect', 16 / 9)
+    this.near = options?.near ?? 0.1
+    this.far = options?.far ?? 1000
+    this.fov = options?.fov ?? 70 * RAD_TO_DEGREE
+    this.aspect = options?.aspect ?? 16 / 9
   }
 
   /**
@@ -225,12 +224,14 @@ export class OrthographicCameraComponent extends CameraComponent implements OnUp
     return this.transform.world
   }
 
-  constructor(options: OrthographicCameraOptions = {}) {
+  constructor(options?: OrthographicCameraOptions) {
     super()
-    this.near = getOption(options, 'near', this.near)
-    this.far = getOption(options, 'far', this.far)
-    this.width = getOption(options, 'width', this.width)
-    this.height = getOption(options, 'height', this.height)
+    if (options) {
+      this.near = options.near ?? this.near
+      this.far = options.far ?? this.far
+      this.width = options.width ?? this.width
+      this.height = options.height ?? this.height
+    }
   }
 
   /**

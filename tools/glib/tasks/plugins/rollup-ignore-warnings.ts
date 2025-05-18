@@ -1,10 +1,6 @@
 import { RollupWarning, WarningHandler } from 'rollup'
-import getLogger from 'webpack-log'
 
-const log = getLogger({
-  name: 'rollup',
-  timestamp: true,
-})
+const log = console
 export function rollupIgnoreWarnings(codes: string[]) {
   return function(warning: RollupWarning, handle: WarningHandler) {
     if (!codes.includes(warning.code)) {

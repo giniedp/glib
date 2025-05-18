@@ -64,14 +64,14 @@ export class WebWorker {
    *
    * @public
    */
-  public static readonly isWorkerContext = typeof self['importScripts'] === 'function'
+  public static readonly isWorkerContext = typeof (self as any)['importScripts'] === 'function'
 
   /**
    * Determines whether this context is inside a browser window
    *
    * @public
    */
-  public static readonly isWindowContext = typeof self['importScripts'] !== 'function'
+  public static readonly isWindowContext = typeof (self as any)['importScripts'] !== 'function'
 
   /**
    * Determines whether web porker api is supported

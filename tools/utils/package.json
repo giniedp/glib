@@ -3,7 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "devDependencies": {
-    "parser-front-matter": "^1.6.4",
-    "through-gulp": "^0.5.0"
+    "parser-front-matter": "^1.6.4"
   }
 }

@@ -1,11 +1,11 @@
 import {
-  glsl,
   BlendState,
   createShaderEffect,
   CullState,
   DepthFormat,
   DepthState,
   Device,
+  glsl,
   ShaderEffect,
   StencilState,
   Texture,
@@ -13,7 +13,7 @@ import {
   TextureWrapMode,
 } from '@gglib/graphics'
 import { RenderManager } from '../RenderManager'
-import { RenderStep } from '../Types'
+import { RenderPass } from '../Types'
 
 /**
  * Constructor options for {@link PostTonemap}
@@ -29,7 +29,7 @@ export interface TonemapOptions {
   debugTarget?: number
 }
 
-function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
+function getOption<T, K extends object>(options: K, option: keyof K, fallback: T): T {
   if (option in options) {
     return options[option] as any
   }
@@ -39,7 +39,7 @@ function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
 /**
  * @public
  */
-export class PostTonemap implements RenderStep {
+export class PostTonemap implements RenderPass {
   public get ready() {
     return this.effect != null
   }
@@ -53,33 +53,51 @@ export class PostTonemap implements RenderStep {
   public debugTarget: number = 0
 
   private targets: Texture[] = []
-  private targetOptions = [{
-    width: 512, height: 512, depthFormat: DepthFormat.None,
-  }, {
-    width: 128, height: 128, depthFormat: DepthFormat.None,
-  }, {
-    width: 32, height: 32, depthFormat: DepthFormat.None,
-  }, {
-    width: 8, height: 8, depthFormat: DepthFormat.None,
-  }, {
-    width: 2, height: 2, depthFormat: DepthFormat.None,
-  }]
+  private targetOptions = [
+    {
+      width: 512,
+      height: 512,
+      depthFormat: DepthFormat.None,
+    },
+    {
+      width: 128,
+      height: 128,
+      depthFormat: DepthFormat.None,
+    },
+    {
+      width: 32,
+      height: 32,
+      depthFormat: DepthFormat.None,
+    },
+    {
+      width: 8,
+      height: 8,
+      depthFormat: DepthFormat.None,
+    },
+    {
+      width: 2,
+      height: 2,
+      depthFormat: DepthFormat.None,
+    },
+  ]
 
   private effect: ShaderEffect
 
   private lum1: Texture
   private lum2: Texture
   private lumOptions = {
-    width: 2, height: 2, depthFormat: DepthFormat.None,
+    width: 2,
+    height: 2,
+    depthFormat: DepthFormat.None,
   }
 
   constructor(private device: Device, options?: TonemapOptions) {
-    this.enabled = getOption(options, 'enabled', this.enabled)
-    this.adaptSpeed = getOption(options, 'adaptSpeed', this.adaptSpeed)
-    this.exposure = getOption(options, 'exposure', this.exposure)
-    this.blackPoint = getOption(options, 'blackPoint', this.blackPoint)
-    this.whitePoint = getOption(options, 'whitePoint', this.whitePoint)
-    this.debugTarget = getOption(options, 'debugTarget', this.debugTarget)
+    this.enabled = options?.enabled ?? this.enabled
+    this.adaptSpeed = options?.adaptSpeed ?? this.adaptSpeed
+    this.exposure = options?.exposure ?? this.exposure
+    this.blackPoint = options?.blackPoint ?? this.blackPoint
+    this.whitePoint = options?.whitePoint ?? this.whitePoint
+    this.debugTarget = options?.debugTarget ?? this.debugTarget
     this.createEffect()
   }
 
@@ -395,46 +413,49 @@ const SHADER = {
       return Ld;
     }
   `,
-  technique: [{
-    name: 'Luminance',
-    pass: {
-      vertexShader: glsl`
+  technique: [
+    {
+      name: 'Luminance',
+      pass: {
+        vertexShader: glsl`
         void main(void) {
           texCoord = texture;
           gl_Position = vec4(position, 1.0);
         }
       `,
-      fragmentShader: glsl`
+        fragmentShader: glsl`
         void main() {
           gl_FragColor = extractLuminance(texture1Sampler, texCoord, texture1Texel);
         }
       `,
+      },
     },
-  }, {
-    name: 'Downsample',
-    pass: {
-      vertexShader: glsl`
+    {
+      name: 'Downsample',
+      pass: {
+        vertexShader: glsl`
         void main(void) {
           texCoord = texture;
           gl_Position = vec4(position, 1.0);
         }
       `,
-      fragmentShader: glsl`
+        fragmentShader: glsl`
         void main() {
           gl_FragColor = downsample(texture1Sampler, texCoord, texture1Texel);
         }
       `,
+      },
     },
-  }, {
-    name: 'Combine',
-    pass: {
-      vertexShader: glsl`
+    {
+      name: 'Combine',
+      pass: {
+        vertexShader: glsl`
         void main(void) {
           texCoord = texture;
           gl_Position = vec4(position, 1.0);
         }
       `,
-      fragmentShader: glsl`
+        fragmentShader: glsl`
         // @default 0.2
         uniform float adaptSpeed;
 
@@ -442,17 +463,18 @@ const SHADER = {
           gl_FragColor = adaptLuminance(texture1Sampler, texture2Sampler, texCoord, texture1Texel, adaptSpeed * 0.0001);
         }
       `,
+      },
     },
-  }, {
-    name: 'Tonemap',
-    pass: {
-      vertexShader: glsl`
+    {
+      name: 'Tonemap',
+      pass: {
+        vertexShader: glsl`
         void main(void) {
           texCoord = texture;
           gl_Position = vec4(position, 1.0);
         }
       `,
-      fragmentShader: glsl`
+        fragmentShader: glsl`
         // @default 0.2
         uniform float exposure;
         // @default 0.8
@@ -477,17 +499,18 @@ const SHADER = {
           gl_FragColor = local;
         }
       `,
+      },
     },
-  }, {
-    name: 'Copy',
-    pass: {
-      vertexShader: glsl`
+    {
+      name: 'Copy',
+      pass: {
+        vertexShader: glsl`
         void main(void) {
           texCoord = texture;
           gl_Position = vec4(position, 1.0);
         }
       `,
-      fragmentShader: glsl`
+        fragmentShader: glsl`
         void main() {
           vec2 uv = texCoord;
           vec4 color = texture2D(texture1Sampler, uv);
@@ -495,6 +518,7 @@ const SHADER = {
           gl_FragColor = color;
         }
       `,
+      },
     },
-  }],
+  ],
 }

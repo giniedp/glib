@@ -1,11 +1,11 @@
-import { buildCube, ModelBuilder } from '../index'
+import { buildCube, GeometryBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCube', () => {
-    let builder: ModelBuilder
+    let builder: GeometryBuilder
 
     beforeEach(() => {
-      builder = new ModelBuilder()
+      builder = new GeometryBuilder()
     })
 
     it ('builds without errors', () => {

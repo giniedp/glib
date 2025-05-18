@@ -6,22 +6,16 @@ import {
   TransformComponent,
 } from '@gglib/ecs-components'
 
-import { forwardRef, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs'
+import { Component, forwardRef, Inject, OnInit, OnSetup, OnUpdate } from '@gglib/ecs'
 import { Color, PixelFormat, Texture } from '@gglib/graphics'
 import { KeyboardKey } from '@gglib/input'
 import { Mat4 } from '@gglib/math'
 import { CameraData } from '@gglib/render'
-import { getOption } from '@gglib/utils'
 
 @Component({
-  install: [
-    RendererComponent,
-    KeyboardComponent,
-    forwardRef(() => LogicComponent),
-  ]
+  install: [RendererComponent, KeyboardComponent, forwardRef(() => LogicComponent)],
 })
 class PongGame implements OnInit, OnUpdate {
-
   @Inject(RendererComponent)
   public renderer: RendererComponent
 
@@ -49,8 +43,10 @@ class PongGame implements OnInit, OnUpdate {
     this.renderer.scene.camera = this.camera
     // All components will render this white pixel texture as a sprite
     this.whitePixel = this.renderer.device.createTexture({
-      source: [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF],
-      width: 1, height: 1, pixelFormat: PixelFormat.RGBA,
+      source: [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
+      width: 1,
+      height: 1,
+      pixelFormat: PixelFormat.RGBA,
     })
   }
 
@@ -87,7 +83,6 @@ class PongGame implements OnInit, OnUpdate {
 
 @Component()
 class LogicComponent implements OnUpdate {
-
   // Inject the PongGame in order to access the play area dimensions.
   @Inject(PongGame)
   public game: PongGame
@@ -95,13 +90,13 @@ class LogicComponent implements OnUpdate {
   // Inject the other components with the use of `forwardRef` helper.
   // This is needed, because when the `@Inject` is evaluated the other
   // components are not yet defined.
-  @Inject(forwardRef(() => BallComponent), { from: '/Ball'})
+  @Inject(forwardRef(() => BallComponent), { from: '/Ball' })
   public ball: BallComponent
 
-  @Inject(forwardRef(() => PaddleComponent), { from: '/Paddle1'})
+  @Inject(forwardRef(() => PaddleComponent), { from: '/Paddle1' })
   public paddle1: PaddleComponent
 
-  @Inject(forwardRef(() => PaddleComponent), { from: '/Paddle2'})
+  @Inject(forwardRef(() => PaddleComponent), { from: '/Paddle2' })
   public paddle2: PaddleComponent
 
   // Unless the game is not running this component does nothing.
@@ -109,7 +104,6 @@ class LogicComponent implements OnUpdate {
   // to determine whether a player has scored a goal or a paddle
   // did hit the ball.
   public onUpdate() {
-
     if (this.game.state !== 'running') {
       return
     }
@@ -142,10 +136,7 @@ class LogicComponent implements OnUpdate {
 }
 
 @Component({
-  install: [
-    TransformComponent,
-    SpriteComponent,
-  ]
+  install: [TransformComponent, SpriteComponent],
 })
 class PaddleComponent implements OnInit, OnUpdate, OnSetup<{ isLeft: boolean }> {
   public name = 'Paddle'
@@ -170,7 +161,7 @@ class PaddleComponent implements OnInit, OnUpdate, OnSetup<{ isLeft: boolean }> 
   private isLeft: boolean
 
   public onSetup(options: { isLeft: boolean }) {
-    this.isLeft = getOption(options, 'isLeft', this.isLeft)
+    this.isLeft = options?.isLeft ?? this.isLeft
   }
 
   public async onInit() {
@@ -222,10 +213,7 @@ class PaddleComponent implements OnInit, OnUpdate, OnSetup<{ isLeft: boolean }> 
 // The BacllComponent renders the ball sprite and
 // updates its position according to its movement state.
 @Component({
-  install: [
-    SpriteComponent,
-    TransformComponent,
-  ]
+  install: [SpriteComponent, TransformComponent],
 })
 class BallComponent implements OnInit, OnUpdate {
   public name = 'Ball'
@@ -263,8 +251,8 @@ class BallComponent implements OnInit, OnUpdate {
     }
 
     if (this.game.state === 'running') {
-      this.x += this.dx * this.unitPerSec * dt / 1000
-      this.y += this.dy * this.unitPerSec * dt / 1000
+      this.x += (this.dx * this.unitPerSec * dt) / 1000
+      this.y += (this.dy * this.unitPerSec * dt) / 1000
     }
 
     this.transform.setPosition(this.x, this.y, 0)
@@ -273,10 +261,7 @@ class BallComponent implements OnInit, OnUpdate {
 
 // The FieldComponent simply fills the screen with a backgorund color
 @Component({
-  install: [
-    SpriteComponent,
-    TransformComponent,
-  ]
+  install: [SpriteComponent, TransformComponent],
 })
 class FieldComponent implements OnInit {
   public name = 'Field'
@@ -300,26 +285,29 @@ class FieldComponent implements OnInit {
 }
 
 // Now build up the entity component tree for the game
-createGame({
-  device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
-  autorun: true,
-}, (e) => {
-  e.name = 'Pong'
-  e.install(PongGame)
-})
-.createChild((e) => {
-  e.name = 'Field'
-  e.install(FieldComponent)
-})
-.createChild((e) => {
-  e.name = 'Paddle1'
-  e.install(PaddleComponent, { isLeft: true })
-})
-.createChild((e) => {
-  e.name = 'Paddle2'
-  e.install(PaddleComponent, { isLeft: false })
-})
-.createChild((e) => {
-  e.name = 'Ball'
-  e.install(BallComponent)
-})
+createGame(
+  {
+    device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
+    autorun: true,
+  },
+  (e) => {
+    e.name = 'Pong'
+    e.install(PongGame)
+  },
+)
+  .createChild((e) => {
+    e.name = 'Field'
+    e.install(FieldComponent)
+  })
+  .createChild((e) => {
+    e.name = 'Paddle1'
+    e.install(PaddleComponent, { isLeft: true })
+  })
+  .createChild((e) => {
+    e.name = 'Paddle2'
+    e.install(PaddleComponent, { isLeft: false })
+  })
+  .createChild((e) => {
+    e.name = 'Ball'
+    e.install(BallComponent)
+  })

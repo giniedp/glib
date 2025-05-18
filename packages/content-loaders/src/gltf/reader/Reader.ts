@@ -308,13 +308,13 @@ export const ArrayType = Object.freeze({
 })
 
 type AnyTypedArray =
-  | Int8Array
-  | Int16Array
-  | Int32Array
-  | Uint8Array
-  | Uint16Array
-  | Uint32Array
-  | Float32Array
-  | Uint16Array
-  | Uint16Array
-  | Uint16Array
+  | Int8Array<ArrayBuffer>
+  | Int16Array<ArrayBuffer>
+  | Int32Array<ArrayBuffer>
+  | Uint8Array<ArrayBuffer>
+  | Uint16Array<ArrayBuffer>
+  | Uint32Array<ArrayBuffer>
+  | Float32Array<ArrayBuffer>
+  | Uint16Array<ArrayBuffer>
+  | Uint16Array<ArrayBuffer>
+  | Uint16Array<ArrayBuffer>

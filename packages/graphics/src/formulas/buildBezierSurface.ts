@@ -1,5 +1,5 @@
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 
 const baseMatrix: Mat4 = Mat4.create(
   1, 0, 0, 0,
@@ -9,10 +9,10 @@ const baseMatrix: Mat4 = Mat4.create(
 )
 
 /**
- * Builds a bezier surface into the {@link ModelBuilder}
+ * Builds a bezier surface into the {@link GeometryBuilder}
  * @public
  */
-export function buildBezierSurface(builder: ModelBuilder, patch: number[], tesselation: number, basis: Mat4 = baseMatrix) {
+export function buildBezierSurface(builder: GeometryBuilder, patch: number[], tesselation: number, basis: Mat4 = baseMatrix) {
   if (patch.length !== 16 * 3) {
     throw new Error(`Bezier patch expected to have a total length of 48 but was ${patch.length}`)
   }

@@ -1,4 +1,4 @@
-import { uuid, TypeToken, Log } from '@gglib/utils'
+import { TypeToken, uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderProgram, ShaderUniformValue } from './resources'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
@@ -6,7 +6,7 @@ import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 /**
  * @public
  */
-export type MaterialParameters = { [key: string]: ShaderUniformValue }
+export type MaterialParameters = Record<string, ShaderUniformValue>
 
 /**
  * Constructor options for {@link Material}
@@ -54,7 +54,7 @@ export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = 
  * This allows a {@link ShaderEffect} instance to be reused across
  * multiple materials each with a different set of parameters.
  */
-export class Material<P extends MaterialParameters = MaterialParameters> {
+export class Material<Params extends MaterialParameters = MaterialParameters> {
   /**
    * A symbol identifying the Array {@link Material} type.
    */
@@ -69,7 +69,7 @@ export class Material<P extends MaterialParameters = MaterialParameters> {
    */
   public static readonly Options = new TypeToken<MaterialOptions>('MaterialOptions', {
     factory: () => {
-      return { } as MaterialOptions
+      return {} as MaterialOptions
     },
   })
 
@@ -97,7 +97,7 @@ export class Material<P extends MaterialParameters = MaterialParameters> {
   public static readonly OptionsArray = new TypeToken<MaterialOptions[]>('MaterialOptions[]', {
     factory: () => {
       return []
-    }
+    },
   })
 
   /**
@@ -108,32 +108,34 @@ export class Material<P extends MaterialParameters = MaterialParameters> {
   /**
    * The graphics device
    */
-  public readonly device: Device
+  public device: Device
+
   /**
    * A user defined name of the material
    */
   public name: string
+
   /**
    * The effect to be used
    */
   public get effect(): ShaderEffect {
-    return this.$effect
+    return this._effect
   }
+
   /**
    * Effect parameters to be applied before rendering
    */
-  public readonly parameters: P
+  public parameters: Params
 
-  protected $effect: ShaderEffect
-
+  protected _effect: ShaderEffect
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
     this.name = options.name
-    this.parameters = (options.parameters || {}) as P
+    this.parameters = (options.parameters || {}) as Params
     if (options.effect instanceof ShaderEffect) {
-      this.$effect = options.effect
+      this._effect = options.effect
     } else if (options.effect) {
-      this.$effect = device.createEffect(options.effect)
+      this._effect = device.createEffect(options.effect)
     } else {
       this.onConstructWithoutEffect()
     }

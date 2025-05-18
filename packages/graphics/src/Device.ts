@@ -1,6 +1,3 @@
-
-import { isString } from '@gglib/utils'
-
 import { PixelFormat, PrimitiveType, PrimitiveTypeName, ShaderType } from './enums'
 import {
   Buffer,
@@ -52,7 +49,6 @@ import { VertexLayout } from './VertexLayout'
  * @public
  */
 export abstract class Device<T = unknown> {
-
   /**
    * The html canvas element
    * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement | HTMLCanvasElement}
@@ -67,7 +63,7 @@ export abstract class Device<T = unknown> {
   /**
    * A collection of capabilities of the currently running graphics unit.
    */
-  public capabilities: Capabilities
+  public abstract capabilities: Capabilities
 
   /**
    * Collection of assigned textures
@@ -191,7 +187,7 @@ export abstract class Device<T = unknown> {
   protected defaultTextureInstance: Texture
 
   public get driverInfo(): string {
-    return ""
+    return ''
   }
 
   public init(): Promise<void> {
@@ -500,6 +496,6 @@ export abstract class Device<T = unknown> {
   }
 
   protected set<K extends keyof this>(key: K, value: this[K]) {
-    (this as any)[key] = value
+    ;(this as any)[key] = value
   }
 }

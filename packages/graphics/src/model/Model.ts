@@ -5,7 +5,7 @@ import { AnimationData } from '../AnimationData'
 import { AnimationPlayer } from '../AnimationPlayer'
 
 import { ModelSkin } from './ModelSkin'
-import { ModelMeshOptions, ModelMesh } from './ModelMesh'
+import { MeshOptions, Mesh } from './Mesh'
 import { ModelNode, ModelNodePose } from './ModelNode'
 import { ModelPose } from './ModelPose'
 import { ModelNodeHierarchy } from './ModelNodeHierarchy'
@@ -21,7 +21,7 @@ export interface ModelOptions {
   /**
    * Collection of meshes
    */
-  meshes?: Array<ModelMesh | ModelMeshOptions>
+  meshes?: Array<Mesh | MeshOptions>
   /**
    * Model animation data
    */
@@ -71,7 +71,7 @@ export class Model {
   /**
    * Collection of meshes
    */
-  public readonly meshes: ReadonlyArray<ModelMesh>
+  public readonly meshes: ReadonlyArray<Mesh>
   /**
    * Collection of skins
    */
@@ -96,15 +96,15 @@ export class Model {
     this.uid = uuid()
     this.device = device
 
-    const meshes: ModelMesh[] = []
+    const meshes: Mesh[] = []
     const nodes = options.nodes || []
     const roots = options.roots || []
 
     for (const mesh of (options.meshes || [])) {
-      if (mesh instanceof ModelMesh) {
+      if (mesh instanceof Mesh) {
         meshes.push(mesh)
       } else {
-        meshes.push(new ModelMesh(this.device, mesh))
+        meshes.push(new Mesh(this.device, mesh))
       }
     }
     if (!nodes.length) {

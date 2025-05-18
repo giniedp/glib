@@ -1,7 +1,7 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { isString, uuid, TypeToken, Log } from '@gglib/utils'
 
-import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
+import { Geometry, GeometryOptions } from './Geometry'
 
 import { Device } from '../Device'
 import { Material, MaterialOptions } from '../Material'
@@ -9,7 +9,7 @@ import { Material, MaterialOptions } from '../Material'
 /**
  * @public
  */
-export interface ModelMeshOptions {
+export interface MeshOptions {
   /**
    * The identifying name of the mesh
    */
@@ -29,25 +29,25 @@ export interface ModelMeshOptions {
   /**
    * Collection of mesh parts
    */
-  parts?: Array<ModelMeshPart | ModelMeshPartOptions>
+  parts?: Array<Geometry | GeometryOptions>
 }
 
 /**
  * @public
  */
-export class ModelMesh {
+export class Mesh {
   /**
    * A symbol identifying the `ModelMesh[]` type.
    */
-  public static readonly Array = new TypeToken<ModelMesh[]>('ModelMesh[]', { factory: () => ([])})
+  public static readonly Array = new TypeToken<Mesh[]>('ModelMesh[]', { factory: () => ([])})
   /**
    * A symbol identifying the `ModelMeshOptions` type.
    */
-  public static readonly Options = new TypeToken<ModelMeshOptions>('ModelMeshOptions', { factory: () => ({})})
+  public static readonly Options = new TypeToken<MeshOptions>('ModelMeshOptions', { factory: () => ({})})
   /**
    * A symbol identifying the `ModelMeshOptions[]` type.
    */
-  public static readonly OptionsArray = new TypeToken<ModelMeshOptions[]>('ModelMeshOptions[]', { factory: () => ([])})
+  public static readonly OptionsArray = new TypeToken<MeshOptions[]>('ModelMeshOptions[]', { factory: () => ([])})
   /**
    * Autmatically generated unique identifier
    */
@@ -71,7 +71,7 @@ export class ModelMesh {
   /**
    * Collection of meshes
    */
-  public parts: ReadonlyArray<ModelMeshPart>
+  public parts: ReadonlyArray<Geometry>
   /**
    * The index of the parent bone for this mesh
    */
@@ -81,19 +81,19 @@ export class ModelMesh {
    */
   public name: string | null
 
-  constructor(device: Device, options: ModelMeshOptions) {
+  constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
     this.name = options.name
     this.boundingBox = BoundingBox.convert(options.boundingBox)
     this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
 
-    const parts: ModelMeshPart[] = []
+    const parts: Geometry[] = []
     for (const mesh of (options.parts || [])) {
-      if (mesh instanceof ModelMeshPart) {
+      if (mesh instanceof Geometry) {
         parts.push(mesh)
       } else {
-        parts.push(new ModelMeshPart(this.device, mesh))
+        parts.push(new Geometry(this.device, mesh))
       }
     }
     this.parts = parts
@@ -133,7 +133,7 @@ export class ModelMesh {
    */
   public draw(): this {
     const parts = this.parts
-    let part: ModelMeshPart
+    let part: Geometry
     let material: Material
     for (let i = 0; i < parts.length; i++){
       part = parts[i]

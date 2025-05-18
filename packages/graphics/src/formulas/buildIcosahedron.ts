@@ -1,16 +1,15 @@
 import { Vec2, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 
 function normalize(v: number[]) {
-    let x = v[0]
-    let y = v[1]
-    let z = v[2]
-    let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
-    v[0] *= d
-    v[1] *= d
-    v[2] *= d
-    return v
+  let x = v[0]
+  let y = v[1]
+  let z = v[2]
+  let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+  v[0] *= d
+  v[1] *= d
+  v[2] *= d
+  return v
 }
 
 function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: Vec3) => void) {
@@ -38,16 +37,19 @@ function subdivide(a: number[], b: number[], c: number[], depth: number, block: 
 }
 
 /**
- * Builds an tetrahedron shape into the {@link ModelBuilder}
+ * Builds an tetrahedron shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildTetrahedron(builder: ModelBuilder, options: {
-  radius?: number
-  tesselation?: number,
-} = {}) {
-  const radius = getOption(options, 'radius', 0.5)
-  const steps = getOption(options, 'tesselation', 0)
+export function buildTetrahedron(
+  builder: GeometryBuilder,
+  options: {
+    radius?: number
+    tesselation?: number
+  } = {},
+) {
+  const radius = options?.radius ?? 0.5
+  const steps = options?.tesselation ?? 0
   const vertices = [
     [+1, +1, +1],
     [+1, -1, -1],
@@ -69,32 +71,31 @@ export function buildTetrahedron(builder: ModelBuilder, options: {
     })
   }
   for (const face of faces) {
-    subdivide(
-      normalize(vertices[face[0]]),
-      normalize(vertices[face[1]]),
-      normalize(vertices[face[2]]),
-      steps, onVetex)
+    subdivide(normalize(vertices[face[0]]), normalize(vertices[face[1]]), normalize(vertices[face[2]]), steps, onVetex)
   }
 }
 
 /**
- * Builds an octahedron shape into the {@link ModelBuilder}
+ * Builds an octahedron shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildOctahedron(builder: ModelBuilder, options: {
-  radius?: number
-  tesselation?: number,
-} = {}) {
-  const radius = getOption(options, 'radius', 0.5)
-  const steps = getOption(options, 'tesselation', 0)
+export function buildOctahedron(
+  builder: GeometryBuilder,
+  options: {
+    radius?: number
+    tesselation?: number
+  } = {},
+) {
+  const radius = options?.radius ?? 0.5
+  const steps = options?.tesselation ?? 0
   const vertices = [
     [+1, 0, 0],
     [-1, 0, 0], // left
     [0, +1, 0], // up
     [0, -1, 0], // down
     [0, 0, +1], // front
-    [0, 0, -1],  // back
+    [0, 0, -1], // back
   ]
   const faces = [
     [0, 4, 2],
@@ -115,40 +116,64 @@ export function buildOctahedron(builder: ModelBuilder, options: {
     })
   }
   for (let face of faces) {
-    subdivide(
-      normalize(vertices[face[0]]),
-      normalize(vertices[face[1]]),
-      normalize(vertices[face[2]]),
-      steps, onVetex)
+    subdivide(normalize(vertices[face[0]]), normalize(vertices[face[1]]), normalize(vertices[face[2]]), steps, onVetex)
   }
 }
 
 /**
- * Builds an icosahedron shape into the {@link ModelBuilder}
+ * Builds an icosahedron shape into the {@link GeometryBuilder}
  *
  * @public
  * @remarks
  * The implementation is based on http://www.opengl.org.ru/docs/pg/0208.html
  */
-export function buildIcosahedron(builder: ModelBuilder, options: {
-  radius?: number
-  tesselation?: number,
-} = {}) {
-  const radius = getOption(options, 'radius', 0.5)
-  const steps = getOption(options, 'tesselation', 0)
+export function buildIcosahedron(
+  builder: GeometryBuilder,
+  options: {
+    radius?: number
+    tesselation?: number
+  } = {},
+) {
+  const radius = options?.radius ?? 0.5
+  const steps = options?.tesselation ?? 0
 
-  const X = .525731112119133606
-  const Z = .850650808352039932
+  const X = 0.525731112119133606
+  const Z = 0.850650808352039932
   const vertices = [
-    [-X, 0, Z], [X, 0, Z], [-X, 0, -Z], [X, 0, -Z],
-    [0, Z, X], [0, Z, -X], [0, -Z, X], [0, -Z, -X],
-    [Z, X, 0], [-Z, X, 0], [Z, -X, 0], [-Z, -X, 0],
+    [-X, 0, Z],
+    [X, 0, Z],
+    [-X, 0, -Z],
+    [X, 0, -Z],
+    [0, Z, X],
+    [0, Z, -X],
+    [0, -Z, X],
+    [0, -Z, -X],
+    [Z, X, 0],
+    [-Z, X, 0],
+    [Z, -X, 0],
+    [-Z, -X, 0],
   ]
   const faces = [
-    [0, 4, 1], [0, 9, 4], [9, 5, 4], [4, 5, 8], [4, 8, 1],
-    [8, 10, 1], [8, 3, 10], [5, 3, 8], [5, 2, 3], [2, 7, 3],
-    [7, 10, 3], [7, 6, 10], [7, 11, 6], [11, 0, 6], [0, 1, 6],
-    [6, 1, 10], [9, 0, 11], [9, 11, 2], [9, 2, 5], [7, 2, 11],
+    [0, 4, 1],
+    [0, 9, 4],
+    [9, 5, 4],
+    [4, 5, 8],
+    [4, 8, 1],
+    [8, 10, 1],
+    [8, 3, 10],
+    [5, 3, 8],
+    [5, 2, 3],
+    [2, 7, 3],
+    [7, 10, 3],
+    [7, 6, 10],
+    [7, 11, 6],
+    [11, 0, 6],
+    [0, 1, 6],
+    [6, 1, 10],
+    [9, 0, 11],
+    [9, 11, 2],
+    [9, 2, 5],
+    [7, 2, 11],
   ]
   function onVetex(v: Vec3) {
     builder.addIndex(builder.vertexCount)
@@ -159,10 +184,6 @@ export function buildIcosahedron(builder: ModelBuilder, options: {
     })
   }
   for (let face of faces) {
-    subdivide(
-      vertices[face[0]],
-      vertices[face[1]],
-      vertices[face[2]],
-      steps, onVetex)
+    subdivide(vertices[face[0]], vertices[face[1]], vertices[face[2]], steps, onVetex)
   }
 }

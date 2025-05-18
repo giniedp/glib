@@ -14,10 +14,8 @@ export interface FrameBufferOptions {
    *
    */
   depthBuffer?: DepthBuffer,
-  /**
-   *
-   */
-  handle?: WebGLFramebuffer
+
+  resource?: unknown
 }
 
 /**
@@ -25,5 +23,8 @@ export interface FrameBufferOptions {
  */
 export abstract class FrameBuffer {
   public abstract readonly device: Device
-  public abstract init(options: FrameBufferOptions): this
+  /**
+   * Resets the framebuffer to the given options
+   */
+  public abstract reset(options: FrameBufferOptions): this
 }

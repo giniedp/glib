@@ -1,12 +1,18 @@
 import { IVec3, Mat4 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
 import { Device } from './Device'
 import { BufferUsage, nameOfPrimitiveType, PrimitiveType } from './enums'
 import { Buffer, ShaderProgram } from './resources'
-import { BlendStateParams, CullStateParams, DepthStateParams, ScissorStateParams, StencilStateParams, ViewportStateParams } from './states'
+import {
+  BlendStateParams,
+  CullStateParams,
+  DepthStateParams,
+  ScissorStateParams,
+  StencilStateParams,
+  ViewportStateParams,
+} from './states'
 import { VertexLayout } from './VertexLayout'
 
-const vShader = `
+const vertexShader = /* glsl */ `
   precision highp float;
   precision highp int;
 
@@ -27,7 +33,7 @@ const vShader = `
   }
 `
 
-const fShader = `
+const fragmentShader = /* glsl */ `
   precision highp float;
   precision highp int;
 
@@ -131,10 +137,10 @@ export class PrimitiveBatch {
   constructor(device: Device, options: PrimitiveBatchOptions = {}) {
     this.device = device
     this.hasBegun = false
-    this.batchSize = getOption(options, 'batchSize', 512)
-    this.primitiveType = getOption(options, 'primitiveType', PrimitiveType.TriangleList)
+    this.batchSize = options?.batchSize ?? 512
+    this.primitiveType = options?.primitiveType ?? PrimitiveType.TriangleList
 
-    const vertexLayout = VertexLayout.create('PositionColor')
+    const vertexLayout = VertexLayout.create(['position', 'color'])
     const sizeInBytes = VertexLayout.countBytes(vertexLayout)
 
     this.arrayBuffer = new ArrayBuffer(this.batchSize * sizeInBytes)
@@ -145,10 +151,12 @@ export class PrimitiveBatch {
       data: this.arrayBuffer,
       usage: BufferUsage.Dynamic,
     })
-    this.mainProgram = options.program || device.createProgram({
-      vertexShader: vShader,
-      fragmentShader: fShader,
-    })
+    this.mainProgram =
+      options.program ||
+      device.createProgram({
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+      })
     this.mainMatrix = Mat4.createIdentity()
   }
   public begin(options?: PrimitiveBatchBeginOptions) {
@@ -157,15 +165,15 @@ export class PrimitiveBatch {
     }
 
     if (options) {
-      this.blendState = getOption(options, 'blendState', null)
-      this.cullState = getOption(options, 'cullState', null)
-      this.depthState = getOption(options, 'depthState', null)
-      this.stencilState = getOption(options, 'stencilState', null)
-      this.scissorState = getOption(options, 'scissorState', null)
-      this.viewportState = getOption(options, 'viewportState', null)
-      this.program = getOption(options, 'program', this.mainProgram)
-      this.matrix = getOption(options, 'viewProjection', this.mainMatrix)
-      this.primitiveType = getOption(options, 'primitiveType', this.primitiveType)
+      this.blendState = options.blendState ?? null
+      this.cullState = options.cullState ?? null
+      this.depthState = options.depthState ?? null
+      this.stencilState = options.stencilState ?? null
+      this.scissorState = options.scissorState ?? null
+      this.viewportState = options.viewportState ?? null
+      this.program = options.program ?? this.mainProgram
+      this.matrix = options.viewProjection ?? this.mainMatrix
+      this.primitiveType = options.primitiveType ?? this.primitiveType
     }
     switch (this.primitiveType) {
       case PrimitiveType.PointList:
@@ -200,7 +208,10 @@ export class PrimitiveBatch {
     if (!this.hasBegun) {
       throw new Error('begin() must be called before addVertex()')
     }
-    if (this.vertexCount + this.verticesPerPrimitive >= this.batchSize && (this.vertexIndex % this.verticesPerPrimitive) === 0) {
+    if (
+      this.vertexCount + this.verticesPerPrimitive >= this.batchSize &&
+      this.vertexIndex % this.verticesPerPrimitive === 0
+    ) {
       this.drawBatch()
     }
     this.vertexPositionView[this.vertexIndex++] = position.x

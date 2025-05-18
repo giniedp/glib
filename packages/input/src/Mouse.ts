@@ -1,11 +1,4 @@
-import {
-  documentVisibilityApi,
-  Events,
-  getOption,
-  getTime,
-  Log,
-  PointerLockApi,
-} from '@gglib/utils'
+import { documentVisibilityApi, Events, getTime, Log, PointerLockApi } from '@gglib/utils'
 
 /**
  * Constructor options for {@link Mouse}
@@ -150,9 +143,9 @@ export class Mouse extends Events {
   public setup(options?: MouseOptions) {
     this.deactivate()
     Object.assign<Mouse, Partial<Mouse>>(this, {
-      eventTarget: getOption(options, 'eventTarget', this.eventTarget),
-      captureTarget: getOption(options, 'captureTarget', this.captureTarget),
-      proxiedEvents: getOption(options, 'proxyEvents', Array.from(this.proxiedEvents)),
+      eventTarget: options?.eventTarget ?? this.eventTarget,
+      captureTarget: options?.captureTarget ?? this.captureTarget,
+      proxiedEvents: options?.proxyEvents ?? Array.from(this.proxiedEvents),
     })
     this.activate()
   }
@@ -319,8 +312,8 @@ export class Mouse extends Events {
     if (e.type === 'mousewheel') {
       if (e.detail) {
         state.wheel += -1 * e.detail
-      } else if (e['wheelDelta']) {
-        state.wheel += e['wheelDelta'] / 120
+      } else if ((e as any)['wheelDelta']) {
+        state.wheel += (e as any)['wheelDelta'] / 120
       } else {
         state.wheel += 0
       }

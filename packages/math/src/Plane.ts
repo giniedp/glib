@@ -8,7 +8,7 @@ import { Vec3 } from './Vec3'
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z', 3: 'w',
   x: 'x', y: 'y', z: 'z', w: 'w',
-}
+} as Record<number|string, 'x'|'y'|'z'|'w'>
 
 /**
  * An infinite plane

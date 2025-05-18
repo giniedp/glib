@@ -1,4 +1,4 @@
-import { Material, Model, ModelBuilder, ModelMeshPartOptions, ModelOptions } from '@gglib/graphics'
+import { Material, Model, GeometryBuilder, GeometryOptions, ModelOptions } from '@gglib/graphics'
 import { Quat, Vec4 } from '@gglib/math'
 import { loader, resolveUri, Loader } from '@gglib/content'
 
@@ -13,28 +13,12 @@ export const loadMd5meshToModelOptions: Loader<string, ModelOptions> = loader({
   handle: async (_, context): Promise<ModelOptions> => {
     const content = (await context.manager.downloadText(context.source)).content
     const data = MD5Mesh.parse(content)
-    const builder = new ModelBuilder({
-      layout: {
-        position: {
-          offset: 0,
-          type: 'float',
-          elements: 3,
-        },
-        normal: {
-          offset: 20,
-          type: 'float',
-          elements: 3,
-        },
-        texture: {
-          offset: 12,
-          type: 'float',
-          elements: 2,
-        },
-      },
+    const builder = new GeometryBuilder({
+      layout: [['position', 'normal', 'texture']],
     })
 
     const mtlIds: string[] = []
-    const parts = data.meshes.map((mesh): ModelMeshPartOptions => {
+    const parts = data.meshes.map((mesh): GeometryOptions => {
       mesh.tri.forEach((tri, index) => {
         for (const i of [tri.v1, tri.v2, tri.v3]) {
           const vert = mesh.vert[i]
@@ -64,17 +48,21 @@ export const loadMd5meshToModelOptions: Loader<string, ModelOptions> = loader({
       if (mtlIds.indexOf(mesh.shader) === -1) {
         mtlIds.push(mesh.shader)
       }
-      return builder.endMeshPart({
+      return builder.endGeometry({
         name: mesh.name,
         materialId: mtlIds.indexOf(mesh.shader),
       })
     })
 
     return {
-      meshes: [{
-        parts: parts,
-        materials: await Promise.all(mtlIds.map((name: string) => context.manager.load(resolveUri(name, context), Material))),
-      }]
+      meshes: [
+        {
+          parts: parts,
+          materials: await Promise.all(
+            mtlIds.map((name: string) => context.manager.load(resolveUri(name, context), Material)),
+          ),
+        },
+      ],
     }
   },
 })

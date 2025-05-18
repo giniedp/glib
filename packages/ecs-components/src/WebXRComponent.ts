@@ -143,14 +143,14 @@ export class WebXRComponent extends Events implements OnInit {
     const frameBuffer = session.renderState.baseLayer.framebuffer
     if (frameBuffer != null && !this.device.backBuffer) {
       this.device.backBuffer = new FrameBufferGL(this.device, {
-        handle: frameBuffer
+        resource: frameBuffer
       })
     }
   }
 
   private uninstallBackbuffer(session:XRSession) {
     const frameBuffer = session.renderState.baseLayer.framebuffer
-    if (frameBuffer != null && this.device.backBuffer?.handle === frameBuffer) {
+    if (frameBuffer != null && this.device.backBuffer?.resource === frameBuffer) {
       const buffer = this.device.backBuffer
       this.device.backBuffer = null
       buffer.destroy()

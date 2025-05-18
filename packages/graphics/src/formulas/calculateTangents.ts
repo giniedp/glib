@@ -1,7 +1,7 @@
 import { Vec2, Vec3 } from '@gglib/math'
 import { Log } from '@gglib/utils'
 import { FrontFace } from '../enums'
-import { ModelBuilderChannelMap } from '../model/ModelBuilderChannel'
+import { GeometryBuilderChannelMap } from '../model/GeometryBuilderChannel'
 
 /**
  * Recalculates the tangents for each vertex
@@ -11,7 +11,7 @@ import { ModelBuilderChannelMap } from '../model/ModelBuilderChannel'
  */
 export function calculateTangents(
   indices: ReadonlyArray<number>,
-  channels: ModelBuilderChannelMap,
+  channels: GeometryBuilderChannelMap,
   vCount: number,
   frontFace: FrontFace = FrontFace.CounterClockWise) {
   if (!channels.normal) {

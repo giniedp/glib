@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { CullMode } from '../../enums'
 
 const lookup: { [k: number]: GPUCullMode } = {
@@ -8,5 +7,5 @@ const lookup: { [k: number]: GPUCullMode } = {
 }
 
 export function toCullMode(v: CullMode): GPUCullMode {
-  return getOption(lookup, v, null)
+  return lookup[v] ?? null
 }

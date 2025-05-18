@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { DataType, PixelFormat } from '../../enums'
 
 // https://gpuweb.github.io/gpuweb/#enumdef-gputextureformat
@@ -19,9 +18,14 @@ const typeLookup: { [k: string]: string } = {
   [DataType.float]: '32float',
 }
 
-export function toTextureFormat(f: PixelFormat, t: DataType, normalized: boolean = true, srgb: boolean = false): GPUTextureFormat {
-  let result = getOption(formatLookup, f, 'rgba')
-  result += getOption(typeLookup, t, '8sint')
+export function toTextureFormat(
+  f: PixelFormat,
+  t: DataType,
+  normalized: boolean = true,
+  srgb: boolean = false,
+): GPUTextureFormat {
+  let result = formatLookup[f] ?? 'rgba'
+  result += typeLookup[t] ?? '8sint'
   if (normalized) {
     result = result.replace(/int/, 'norm')
   }

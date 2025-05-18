@@ -1,15 +1,5 @@
-import { Entity, Component } from '@gglib/ecs'
-import {
-  BoundingBox,
-  BoundingFrustum,
-  BoundingSphere,
-  BoundingVolume,
-  IVec3,
-  IVec4,
-  Ray,
-  Vec3,
-} from '@gglib/math'
-import { getOption } from '@gglib/utils'
+import { Component, Entity } from '@gglib/ecs'
+import { BoundingBox, BoundingFrustum, BoundingSphere, BoundingVolume, IVec3, IVec4, Ray, Vec3 } from '@gglib/math'
 import { QuadTree } from './spatial'
 import { SpatialEntry, SpatialSystem } from './SpatialSystem'
 
@@ -38,15 +28,7 @@ export class SpatialSystemComponent {
   private lookup = new Map<Entity, SpatialEntry<Entity>>()
 
   public constructor(options: SpatialSystemComponentOptions = {}) {
-    this.system = getOption(
-      options,
-      'system',
-      QuadTree.create(
-        Vec3.create(-512, -512, -512),
-        Vec3.create(512, 512, 512),
-        6,
-      ),
-    )
+    this.system = options?.system ?? QuadTree.create(Vec3.create(-512, -512, -512), Vec3.create(512, 512, 512), 6)
   }
 
   /**

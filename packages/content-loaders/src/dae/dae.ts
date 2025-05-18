@@ -3,8 +3,8 @@ import {
   dataTypeSize,
   MaterialOptions,
   Model,
-  ModelBuilder,
-  ModelMeshPartOptions,
+  GeometryBuilder,
+  GeometryOptions,
   ModelOptions,
   PrimitiveType,
   valueOfDataType,
@@ -52,7 +52,7 @@ export const loadColladaDocumentToModelOptions: Loader<COLLADA, ModelOptions> = 
     }
 
     const scene = await dae.scene.instanceVisualScene.getScene()
-    const meshes: ModelMeshPartOptions[] = []
+    const meshes: GeometryOptions[] = []
     const materials = new Map<string, InstanceMaterial>()
 
     await walkNodes(scene.nodes, Mat4.createIdentity(), async (geometry, transform, material) => {
@@ -143,14 +143,14 @@ function convertMesh(
   dae: COLLADA,
   source: DaeMeshBuilderDef[],
   type: PrimitiveType,
-): ModelMeshPartOptions[] {
-  const meshOptions: ModelMeshPartOptions[] = []
+): GeometryOptions[] {
+  const meshOptions: GeometryOptions[] = []
   if (!source) {
     return meshOptions
   }
   source.forEach((it) => {
     const layout = convertLayout(dae, it.inputs)
-    const builder = new ModelBuilder({ layout: layout })
+    const builder = new GeometryBuilder({ layout: [layout] })
     builder.ensureLayoutChannel('normal')
     builder.ensureLayoutChannel('tangent')
     builder.ensureLayoutChannel('bitangent')
@@ -179,7 +179,7 @@ function convertMesh(
       endPrimitive: () => {
         meshOptions.push(builder
         .calculateBoundings()
-        .endMeshPart({
+        .endGeometry({
           primitiveType: type,
           materialId: it.material,
         }))

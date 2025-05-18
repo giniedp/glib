@@ -23,7 +23,7 @@ import {
  *
  * @public
  */
-export type BufferDataOption = number[] | ArrayBuffer | ArrayBufferView
+export type BufferDataOption = number[] | ArrayBuffer | ArrayBufferView<ArrayBuffer>
 
 /**
  * Constructor options for {@link Buffer}
@@ -72,39 +72,26 @@ export abstract class Buffer {
 
   public abstract readonly device: Device
 
-  protected $type: number
   /**
    * The buffer type e.g. VertexBuffer or IndexBuffer
    */
-  public get type(): number {
-    return this.$type
-  }
+  public type: number
 
-  protected $dataType: number
   /**
    * The data element type
    */
-  public get dataType(): number {
-    return this.$dataType
-  }
+  public dataType: number
 
-  protected $sizeInBytes: number
   /**
    * The size of the data in bytes
    */
-  public get sizeInBytes(): number {
-    return this.$sizeInBytes
-  }
+  public sizeInBytes: number
 
-  protected $usage: number
   /**
    *
    */
-  public get usage(): number {
-    return this.$usage
-  }
+  public usage: number
 
-  protected $stride: number
   /**
    * Size in bytes of a single element in the buffer
    *
@@ -112,11 +99,8 @@ export abstract class Buffer {
    * - For VertexBuffer this is the size in bytes of a whole vertex.
    * - For IndexBuffer this is the size in bytes of a single index value.
    */
-  public get stride(): number {
-    return this.$stride
-  }
+  public stride: number
 
-  protected $elementCount: number
   /**
    * The total number of elements in this buffer
    *
@@ -124,17 +108,12 @@ export abstract class Buffer {
    * - For VertexBuffer this is the count of all vertices.
    * - For IndexBuffer this is the count of all indices.
    */
-  public get elementCount(): number {
-    return this.$elementCount
-  }
+  public elementCount: number
 
-  protected $layout: VertexLayout
   /**
    *
    */
-  public get layout(): VertexLayout {
-    return this.$layout
-  }
+  public layout: VertexLayout
 
   /**
    * Translates and returns the current 'type' property to a readable name.
@@ -142,7 +121,7 @@ export abstract class Buffer {
    * @remarks
    * This property exists purely for debugging
    */
-  get typeName(): string {
+  public get typeName(): string {
     return nameOfBufferType(this.type)
   }
 
@@ -152,7 +131,7 @@ export abstract class Buffer {
    * @remarks
    * This property exists purely for debugging
    */
-  get usageName(): string {
+  public get usageName(): string {
     return nameOfBufferUsage(this.usage)
   }
 
@@ -162,33 +141,33 @@ export abstract class Buffer {
    * @remarks
    * This property exists purely for debugging
    */
-  get dataTypeName(): string {
+  public get dataTypeName(): string {
     return nameOfDataType(this.dataType)
   }
 
   /**
    * Indicates whether this is an IndexBuffer
    */
-  get isIndexBuffer(): boolean {
+  public get isIndexBuffer(): boolean {
     return this.type === BufferType.IndexBuffer
   }
 
   /**
    * Indicates whether this is a VertexBuffer
    */
-  get isVertexBuffer(): boolean {
+  public get isVertexBuffer(): boolean {
     return this.type === BufferType.VertexBuffer
   }
 
   /**
-   *
+   * Resets the buffer to the given options
    */
-  public init(opts: BufferOptions): this {
+  public reset(opts: BufferOptions): this {
     // must be one of [Static|Dynamic|Stream]
     if (opts.usage) {
-      this.$usage = valueOfBufferUsage(opts.usage)
+      this.usage = valueOfBufferUsage(opts.usage)
     } else {
-      this.$usage = this.usage || BufferUsage.Static
+      this.usage = this.usage || BufferUsage.Static
     }
     if (!this.usageName) {
       throw new Error(`invalid 'usage' option: ${opts.usage}`)
@@ -196,9 +175,9 @@ export abstract class Buffer {
 
     // must be one of [VertexBufferIndexBuffer]
     if (opts.type) {
-      this.$type = valueOfBufferType(opts.type)
+      this.type = valueOfBufferType(opts.type)
     } else {
-      this.$type = this.type || BufferType.IndexBuffer
+      this.type = this.type || BufferType.IndexBuffer
     }
     if (!this.typeName) {
       throw new Error(`invalid or missing 'type' option: ${opts.type}`)
@@ -206,36 +185,36 @@ export abstract class Buffer {
 
     if (opts.dataType) {
       // data type has been explicitly set
-      this.$dataType = valueOfDataType(opts.dataType)
+      this.dataType = valueOfDataType(opts.dataType)
     } else if (this.isIndexBuffer) {
       // default to ushort for IndexBuffer
-      this.$dataType = DataType.ushort
+      this.dataType = DataType.ushort
     } else {
       // default to float for VertexBuffer
-      this.$dataType = DataType.float
+      this.dataType = DataType.float
     }
     if (!this.dataTypeName) {
       throw new Error(`invalid 'dataType' option: ${opts.dataType}`)
     }
 
     if (opts.layout) {
-      this.$layout = opts.layout
+      this.layout = opts.layout
     } else if (this.isVertexBuffer) {
       throw new Error(`missing 'layout' option for VertexBuffer`)
     } else {
-      this.$layout = {}
+      this.layout = {}
     }
 
     if (opts.stride != null) {
-      this.$stride = opts.stride
+      this.stride = opts.stride
     } else if (this.isVertexBuffer) {
-      this.$stride = VertexLayout.countBytes(this.layout)
+      this.stride = VertexLayout.countBytes(this.layout)
     } else {
-      this.$stride = dataTypeSize(this.dataType)
+      this.stride = dataTypeSize(this.dataType)
     }
 
     if (this.sizeInBytes == null) {
-      this.$sizeInBytes = 0
+      this.sizeInBytes = 0
     }
 
     this.create()
@@ -277,9 +256,9 @@ export abstract class Buffer {
     return dst
   }
 
-  protected convertDataOption(src: BufferDataOption): ArrayBufferView {
-    if (src && (src as ArrayBufferView).buffer) {
-      return src as ArrayBufferView
+  protected convertDataOption(src: BufferDataOption): ArrayBufferView<ArrayBuffer> {
+    if (src && 'buffer' in src) {
+      return src as ArrayBufferView<ArrayBuffer>
     }
     if (src instanceof Array) {
       if (this.isIndexBuffer) {

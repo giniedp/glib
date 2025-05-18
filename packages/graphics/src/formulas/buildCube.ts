@@ -1,6 +1,5 @@
 import { Mat4 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 import { buildPlane } from './buildPlane'
 
 /**
@@ -14,59 +13,59 @@ export interface BuildCubeOptions {
    * @remarks
    * defaults to 1
    */
-  size?: number,
+  size?: number
   /**
    * The tesselation factor for each face
    */
-  tesselation?: number,
+  tesselation?: number
 }
 
 /**
- * Builds a cube shape into the {@link ModelBuilder}
+ * Builds a cube shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildCube(builder: ModelBuilder, options: BuildCubeOptions = {}) {
-  const size = getOption(options, 'size', 1)
+export function buildCube(builder: GeometryBuilder, options: BuildCubeOptions = {}) {
+  const size = options?.size ?? 1
   const halfSize = size * 0.5
   const halfPi = Math.PI * 0.5
-  const steps = getOption(options, 'tesselation', 1)
+  const steps = options?.tesselation ?? 1
   const transform = Mat4.createIdentity()
   let tId: number
 
   // top plane
   transform.initTranslation(0, halfSize, 0)
   tId = builder.beginTransform(transform)
-  buildPlane(builder, {size: size, tesselation: steps})
+  buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)
 
   // bottom plane
   transform.initYawPitchRoll(0, 0, Math.PI).setTranslationY(-halfSize)
   tId = builder.beginTransform(transform)
-  buildPlane(builder, {size: size, tesselation: steps})
+  buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)
 
   // front plane
   transform.initYawPitchRoll(0, halfPi, 0).setTranslationZ(halfSize)
   tId = builder.beginTransform(transform)
-  buildPlane(builder, {size: size, tesselation: steps})
+  buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)
 
   // right plane
   transform.initYawPitchRoll(halfPi, halfPi, 0).setTranslationX(halfSize)
   tId = builder.beginTransform(transform)
-  buildPlane(builder, {size: size, tesselation: steps})
+  buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)
 
   // back plane
   transform.initYawPitchRoll(Math.PI, halfPi, 0).setTranslationZ(-halfSize)
   tId = builder.beginTransform(transform)
-  buildPlane(builder, {size: size, tesselation: steps})
+  buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)
 
   // left plane
   transform.initYawPitchRoll(3 * halfPi, halfPi, 0).setTranslationX(-halfSize)
   tId = builder.beginTransform(transform)
-  buildPlane(builder, {size: size, tesselation: steps})
+  buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)
 }

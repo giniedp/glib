@@ -17,7 +17,7 @@ export class DepthBufferGPU extends DepthBuffer {
   /**
    * The wrapped WebGLRenderbuffer object
    */
-  public handle: GPUTexture
+  public resource: GPUTexture
 
   private get depthFormatGPU() {
     switch (this.depthFormat) {
@@ -40,12 +40,12 @@ export class DepthBufferGPU extends DepthBuffer {
   constructor(device: DeviceGPU, options: DepthBufferOptions) {
     super()
     this.device = device
-    this.init(options)
+    this.reset(options)
   }
 
   public create() {
-    if (this.handle == null) {
-      this.handle = this.device.device.createTexture({
+    if (this.resource == null) {
+      this.resource = this.device.device.createTexture({
         dimension: '2d',
         format: this.depthFormatGPU,
         mipLevelCount: 1,
@@ -62,10 +62,10 @@ export class DepthBufferGPU extends DepthBuffer {
   }
 
   public destroy() {
-    if (this.handle) {
+    if (this.resource) {
       this.device.unregisterDepthBuffer(this)
-      this.handle.destroy()
-      this.handle = null
+      this.resource.destroy()
+      this.resource = null
     }
     return this
   }

@@ -12,11 +12,7 @@ export class BufferGL extends Buffer {
    */
   public readonly device: DeviceGL
 
-  private $handle: WebGLBuffer
-
-  public get handle(): WebGLBuffer {
-    return this.$handle
-  }
+  public resource: WebGLBuffer
   /**
    * Creates a new Buffer
    *
@@ -26,12 +22,12 @@ export class BufferGL extends Buffer {
   constructor(device: DeviceGL, opts?: BufferOptions) {
     super()
     this.device = device
-    this.init(opts || {})
+    this.reset(opts || {})
   }
 
   public create(): this {
-    if (!this.handle || !this.device.context.isBuffer(this.handle)) {
-      this.$handle = this.device.context.createBuffer()
+    if (!this.resource || !this.device.context.isBuffer(this.resource)) {
+      this.resource = this.device.context.createBuffer()
     }
     return this
   }
@@ -40,9 +36,9 @@ export class BufferGL extends Buffer {
    * Releases any graphics resources.
    */
   public destroy(): this {
-    if (this.device.context.isBuffer(this.handle)) {
-      this.device.context.deleteBuffer(this.handle)
-      this.$handle = null
+    if (this.device.context.isBuffer(this.resource)) {
+      this.device.context.deleteBuffer(this.resource)
+      this.resource = null
     }
     return this
   }
@@ -80,21 +76,21 @@ export class BufferGL extends Buffer {
         data,
         this.usage,
       )
-      this.$sizeInBytes = data.byteLength
+      this.sizeInBytes = data.byteLength
     } else if (isWebGL2(this.device.context)) {
       this.device.context.bufferData(
         this.type,
-        data.buffer,
+        data,
         this.usage,
         off,
         len,
       )
-      this.$sizeInBytes = Math.min(data.byteLength - off, len)
+      this.sizeInBytes = Math.min(data.byteLength - off, len)
     } else {
       throw new Error(`setData with srcByteOffset > 0 is not supported in WebGL1`)
     }
 
-    this.$elementCount = this.sizeInBytes / this.stride
+    this.elementCount = this.sizeInBytes / this.stride
     return this
   }
 

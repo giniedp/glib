@@ -3,36 +3,46 @@ import { copy, isArray } from '@gglib/utils'
 
 import { Color } from '../Color'
 import { Device } from '../Device'
-import { BufferOptions } from '../resources'
-import { VertexLayout, commonVertexAttribute, VertexAttribute } from '../VertexLayout'
 import { BufferType, DataType, FrontFace, PrimitiveType } from '../enums'
+import { BufferOptions } from '../resources'
+import { AttributeSemantic, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
 
+import { Geometry, GeometryOptions } from './Geometry'
+import { GeometryUtil } from './GeometryUtil'
+import { Mesh, MeshOptions } from './Mesh'
 import type { Model, ModelOptions } from './Model'
-import { ModelMeshPart, ModelMeshPartOptions } from './ModelMeshPart'
-import { ModelMeshOptions, ModelMesh } from './ModelMesh'
-import { ModelMeshPartUtil } from './ModelMeshPartUtil'
 
 /**
- * A function that adds geometry into a given {@link ModelBuilder}
+ * A function that adds geometry into a given {@link GeometryBuilder}
  *
  * @public
  */
-export type ModelBuilderFunction<T> = (b: ModelBuilder, options?: T) => void
+export type GeometryBuilderFunction<T = void> = (b: GeometryBuilder, options?: T) => void
+
+export const enum TransformMode {
+  None = 0,
+  Position = 1,
+  Normal = 2,
+}
 
 /**
- * Constructor options for {@link ModelBuilder}
+ * Constructor options for {@link GeometryBuilder}
  *
  * @public
  */
-export interface ModelBuilderOptions {
+export interface GeometryBuilderOptions {
   /**
    * Mapping of attribute name to its default value
    */
-  defaults?: { [key: string]: number[] }
+  defaults?: Record<AttributeSemantic, number[]>
+  /**
+   * The transform modes for each attribute
+   */
+  transformModes?: Record<AttributeSemantic, TransformMode>
   /**
    * The vertex buffer layout
    */
-  layout?: string | VertexLayout | Array<string | VertexLayout>
+  layout?: Array<VertexLayout | AttributeSemantic[]>
 }
 
 /**
@@ -40,8 +50,7 @@ export interface ModelBuilderOptions {
  *
  * @public
  */
-export class ModelBuilder {
-
+export class GeometryBuilder {
   /**
    * Creates a new model builder
    *
@@ -49,29 +58,29 @@ export class ModelBuilder {
    *
    * @param options - the constructor options
    */
-  public static begin(options?: ModelBuilderOptions): ModelBuilder {
-    return new ModelBuilder(options)
+  public static begin(options?: GeometryBuilderOptions): GeometryBuilder {
+    return new GeometryBuilder(options)
   }
 
   /**
    * Gets the indices in current state
    */
-  public get indices(): ReadonlyArray<number>  {
-    return this.iBuffer.data
+  public get indices(): ReadonlyArray<number> {
+    return this.indexBuffer.data
   }
 
   /**
    * The index count in current state
    */
   public get indexCount(): number {
-    return this.iBuffer.data.length
+    return this.indexBuffer.data.length
   }
 
   /**
    * The vertex count in current state
    */
   public get vertexCount(): number {
-    return this.vCount
+    return this.primitiveCount
   }
 
   /**
@@ -81,18 +90,19 @@ export class ModelBuilder {
    * If {@link addVertex} is called with missing attributes, this is where
    * the default values are resolved from
    */
-  public defaults: { [key: string]: number[] }
+  public defaults: Record<AttributeSemantic, number[]>
+  public transformModes: Record<AttributeSemantic, TransformMode>
 
   private layout: VertexLayout[]
-  private meshParts: ModelMeshPartOptions[] = []
-  private meshes: ModelMeshOptions[] = []
+  private geometries: GeometryOptions[] = []
+  private meshes: MeshOptions[] = []
 
-  private bBox: BoundingBox
-  private bSphere: BoundingSphere
-  private iBuffer: BufferOptions<number[]>
-  private vBuffer: Array<BufferOptions<number[]>>
-  private vCount: number
-  private partUtil: ModelMeshPartUtil
+  private box: BoundingBox
+  private sphere: BoundingSphere
+  private indexBuffer: BufferOptions<number[]>
+  private vertexBuffer: Array<BufferOptions<number[]>>
+  private primitiveCount: number
+  private partUtil: GeometryUtil
 
   private transformStack: Mat4[] = []
   private tmp: any[] = []
@@ -104,16 +114,14 @@ export class ModelBuilder {
    * @example
    * new ModelBuilder({ layout: 'PositionTexture' })
    */
-  constructor(options: ModelBuilderOptions = {}) {
+  constructor(options: GeometryBuilderOptions = {}) {
     if (Array.isArray(options.layout) && options.layout.length > 0) {
       this.layout = options.layout.map(VertexLayout.convert)
-    } else if (options.layout) {
-      this.layout = [options.layout].map(VertexLayout.convert)
     } else {
       this.layout = [
-        VertexLayout.convert('PositionTexture'),
-        VertexLayout.convert('Normal'),
-        VertexLayout.convert('TangentBitangent'),
+        VertexLayout.convert(['position', 'texture']),
+        VertexLayout.convert(['normal']),
+        VertexLayout.convert(['tangent', 'bitangent']),
       ]
     }
 
@@ -127,6 +135,16 @@ export class ModelBuilder {
       color: [Color.Black.rgba],
       texture: [0, 0],
       ...(options.defaults || {}),
+    }
+
+    this.transformModes = {
+      position: TransformMode.Position,
+      normal: TransformMode.Normal,
+      tangent: TransformMode.Normal,
+      bitangent: TransformMode.Normal,
+      color: TransformMode.None,
+      texture: TransformMode.None,
+      ...(options.transformModes || {}),
     }
 
     this.reset()
@@ -165,7 +183,7 @@ export class ModelBuilder {
    * @param transform - the transform matrix
    * @param callback - the callback
    */
-  public withTransform(transform: Mat4, callback: (builder: ModelBuilder) => void): this {
+  public withTransform(transform: Mat4, callback: (builder: GeometryBuilder) => void): this {
     const id = this.beginTransform(transform)
     callback(this)
     this.endTransform(id)
@@ -182,12 +200,12 @@ export class ModelBuilder {
   // }
 
   private resetData() {
-    this.iBuffer = {
+    this.indexBuffer = {
       type: BufferType.IndexBuffer,
       dataType: DataType.ushort,
       data: [],
     }
-    this.vBuffer = this.layout.map((l): BufferOptions<number[]> => {
+    this.vertexBuffer = this.layout.map((l): BufferOptions<number[]> => {
       return {
         layout: copy(true, l),
         type: BufferType.VertexBuffer,
@@ -196,19 +214,15 @@ export class ModelBuilder {
       }
     })
 
-    this.vCount = 0
-    this.bBox = new BoundingBox()
-    this.bSphere = new BoundingSphere()
-    this.partUtil = new ModelMeshPartUtil(
-      this.iBuffer,
-      this.vBuffer,
-      PrimitiveType.TriangleList
-    )
+    this.primitiveCount = 0
+    this.box = new BoundingBox()
+    this.sphere = new BoundingSphere()
+    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer, PrimitiveType.TriangleList)
     // this.makeChannels()
   }
 
   // private makeChannels() {
-  //   this.channels = ModelBuilderChannel.fromVertexBuffer(this.vBuffer)
+  //   this.channels = GeometryBuilderChannel.fromVertexBuffer(this.vBuffer)
   // }
 
   /**
@@ -220,7 +234,7 @@ export class ModelBuilder {
   public reset() {
     this.resetData()
     this.transformStack.length = 0
-    this.meshParts.length = 0
+    this.geometries.length = 0
     this.meshes.length = 0
     return this
   }
@@ -229,7 +243,7 @@ export class ModelBuilder {
    * Pushes a single index into current state.
    */
   public addIndex(index: number): this {
-    this.iBuffer.data.push(index)
+    this.indexBuffer.data.push(index)
     return this
   }
 
@@ -240,10 +254,12 @@ export class ModelBuilder {
    * The given vertex should contain all attributes for current layout. If any attribute is missing
    * a default value will be used: see {@link defaults}
    */
-  public addVertex(vertex: {[key: string]: ReadonlyArray<number> | number | { toArray: (buf: number[]) => void }}): this {
+  public addVertex(
+    vertex: Record<string, ReadonlyArray<number> | number | { toArray: (buf: number[]) => void }>,
+  ): this {
     const transform = this.transformStack[this.transformStack.length - 1]
     const defaults = this.defaults
-    const tmpBuffer = this.tmp
+    const value = this.tmp
 
     for (const semantic of this.partUtil.channelNames) {
       const channel = this.partUtil.getChannel(semantic)
@@ -252,29 +268,33 @@ export class ModelBuilder {
       if (isArray(item)) {
         // ok
       } else if (typeof item === 'number') {
-        tmpBuffer.length = 1
-        tmpBuffer[0] = item
-        item = tmpBuffer
+        value.length = 1
+        value[0] = item
+        item = value
       } else if ('toArray' in item && typeof item.toArray === 'function') {
-        tmpBuffer.length = channel.elements
-        item.toArray(tmpBuffer)
-        item = tmpBuffer
+        value.length = channel.elements
+        item.toArray(value)
+        item = value
       } else {
-        throw new Error(`vertex attribute must be either a "number" or "number[]" or have "toArray" method. type was '${typeof item}'`)
+        throw new Error(
+          `vertex attribute must be either a "number" or "number[]" or have "toArray" method. type was '${typeof item}'`,
+        )
       }
 
-      if (!transform) {
-        // ok
-      } else if (semantic === 'position') {
-        transform.transformV3Array(item)
-      } else if (semantic.match('normal|tangent')) {
-        transform.transformV3NormalArray(item)
+      if (transform) {
+        const mode = this.transformModes[semantic]
+        if (mode == TransformMode.Position) {
+          transform.transformV3Array(item)
+        }
+        if (mode == TransformMode.Normal) {
+          transform.transformV3NormalArray(item)
+        }
       }
 
-      channel.writeAttribute(this.vCount, item)
+      channel.writeAttribute(this.primitiveCount, item)
     }
 
-    this.vCount += 1
+    this.primitiveCount += 1
     return this
   }
 
@@ -288,8 +308,8 @@ export class ModelBuilder {
 
   public calculateBoundings() {
     this.partUtil.calculateBoundings()
-    this.bBox.initFrom(this.partUtil.boundingBox)
-    this.bSphere.initFrom(this.partUtil.boundingSphere)
+    this.box.initFrom(this.partUtil.boundingBox)
+    this.sphere.initFrom(this.partUtil.boundingSphere)
     return this
   }
 
@@ -318,7 +338,7 @@ export class ModelBuilder {
    * This does not operate on already closed mesh parts. When building a model with multiple
    * meshes or parts, this must be called each time before closing a part.
    */
-  public ensureLayoutChannel(name: string, channel: VertexAttribute = commonVertexAttribute(name)) {
+  public ensureLayoutChannel(name: string, channel: VertexAttribute = vertexAttribute(name)) {
     if (this.partUtil.hasChannel(name)) {
       return
     }
@@ -329,38 +349,38 @@ export class ModelBuilder {
   }
 
   /**
-   * Same as {@link endMeshPart} but returns the builder for chaining
+   * Same as {@link endGeometry} but returns the builder for chaining
    *
    * @param options - options for `endMeshPart`
    */
-  public closeMeshPart(options?: ModelMeshPartOptions): this {
-    this.endMeshPart(options)
+  public closeGeometry(options?: GeometryOptions): this {
+    this.endGeometry(options)
     return this
   }
 
   /**
-   * Creates new mesh options with current index and vertex buffer and saves them in the meshes array.
+   * Creates new {@link GeometryOptions} with current index and vertex buffer and saves them in the geometries array.
    *
    * @param options - options to start with
-   * @returns ModelMeshPartOptions or null if current state has no mesh part data
+   * @returns GeometryOptions or null if current state has no mesh part data
    */
-  public endMeshPart(options?: ModelMeshPartOptions): ModelMeshPartOptions | null
+  public endGeometry(options?: GeometryOptions): GeometryOptions | null
   /**
-   * Creates new mesh with current index and vertex buffer and saves them in the meshes array.
+   * Creates new mesh with current index and vertex buffer and saves them in the geometries array.
    *
    * @param device - the graphics device
    * @param options - options to start with
-   * @returns ModelMeshPart or null if current state has no mesh part data
+   * @returns Geometry or null if current state has no mesh part data
    */
-  public endMeshPart(device: Device, options?: ModelMeshPartOptions): ModelMeshPart | null
-  public endMeshPart(): ModelMeshPart | ModelMeshPartOptions {
+  public endGeometry(device: Device, options?: GeometryOptions): Geometry | null
+  public endGeometry(): Geometry | GeometryOptions {
     if (this.indexCount === 0 || this.vertexCount === 0) {
       return null
     }
 
     let device: Device
-    let options: ModelMeshPartOptions
-    let result: ModelMeshPartOptions | ModelMeshPart
+    let options: GeometryOptions
+    let result: GeometryOptions | Geometry
     if (arguments[0] instanceof Device) {
       device = arguments[0]
       options = arguments[1] || {}
@@ -372,16 +392,16 @@ export class ModelBuilder {
     }
 
     options.materialId = options.materialId || 0
-    options.indexBuffer = this.iBuffer
-    options.vertexBuffer = this.vBuffer
-    options.boundingBox = this.bBox
-    options.boundingSphere = this.bSphere
+    options.indexBuffer = this.indexBuffer
+    options.vertexBuffer = this.vertexBuffer
+    options.boundingBox = this.box
+    options.boundingSphere = this.sphere
 
-    this.meshParts.push(options)
+    this.geometries.push(options)
     this.resetData()
-
+    console.log('endGeometry', this.geometries.length, options)
     if (device) {
-      result = new ModelMeshPart(device, options)
+      result = new Geometry(device, options)
     }
 
     return result
@@ -392,35 +412,35 @@ export class ModelBuilder {
    *
    * @param options - options for `endMesh`
    */
-  public closeMesh(options?: ModelMeshOptions): this {
+  public closeMesh(options?: MeshOptions): this {
     this.endMesh(options)
     return this
   }
 
   /**
-   * From current state it creates {@link ModelMeshOptions} and prepares the builder for the next mesh
+   * From current state it creates {@link MeshOptions} and prepares the builder for the next mesh
    *
-   * @param options - Additional {@link ModelMeshOptions} . The {@link ModelMeshOptions.parts} option is ignored.
+   * @param options - Additional {@link MeshOptions} . The {@link MeshOptions.parts} option is ignored.
    * @returns `ModelMeshOptions` or `null` if current state has no mesh data
    */
-  public endMesh(options?: ModelMeshOptions): ModelMeshOptions | null
+  public endMesh(options?: MeshOptions): MeshOptions | null
   /**
-   * From current state it creates in instance of {@link ModelMesh} and prepares the builder for the next mesh
+   * From current state it creates in instance of {@link Mesh} and prepares the builder for the next mesh
    *
    * @param device - The graphics device
-   * @param options - Additional {@link ModelMeshOptions} . The {@link ModelMeshOptions.parts} option is ignored.
+   * @param options - Additional {@link MeshOptions} . The {@link MeshOptions.parts} option is ignored.
    * @returns `ModelMesh` or `null` if current state has no mesh data
    */
-  public endMesh(device: Device, options?: ModelMeshOptions): ModelMesh | null
-  public endMesh(): ModelMesh | ModelMeshOptions {
-    this.endMeshPart()
-    if (!this.meshParts.length) {
+  public endMesh(device: Device, options?: MeshOptions): Mesh | null
+  public endMesh(): Mesh | MeshOptions {
+    this.endGeometry()
+    if (!this.geometries.length) {
       return null
     }
 
     let device: Device
-    let options: ModelMeshOptions
-    let result: ModelMeshOptions | ModelMesh
+    let options: MeshOptions
+    let result: MeshOptions | Mesh
     if (arguments[0] instanceof Device) {
       device = arguments[0]
       options = arguments[1] || {}
@@ -436,10 +456,10 @@ export class ModelBuilder {
       materials = [materials]
     }
     options.materials = materials
-    options.parts = this.meshParts
+    options.parts = this.geometries
 
-    if (!options.boundingBox && this.meshParts.every((mesh) => !!mesh.boundingBox)) {
-      options.boundingBox = this.meshParts.reduce((box, mesh) => {
+    if (!options.boundingBox && this.geometries.every((mesh) => !!mesh.boundingBox)) {
+      options.boundingBox = this.geometries.reduce((box, mesh) => {
         const meshBox = BoundingBox.convert(mesh.boundingBox)
         return box ? box.merge(meshBox) : BoundingBox.createFrom(meshBox)
       }, null as BoundingBox)
@@ -449,11 +469,11 @@ export class ModelBuilder {
     }
 
     this.meshes.push(options)
-    this.meshParts = []
+    this.geometries = []
     this.resetData()
 
     if (device) {
-      result = new ModelMesh(device, options)
+      result = new Mesh(device, options)
     }
 
     return result
@@ -505,13 +525,13 @@ export class ModelBuilder {
   }
 
   /**
-   * Calls the given model builder function to add geometry to current state
+   * Calls the given builder function to add geometry to current state
    *
-   * @param builderFn - The model builder function to call
-   * @param options - The model builder options to use
+   * @param builder - The builder function to call
+   * @param options - The builder options to use
    */
-  public append<T>(builderFn: ModelBuilderFunction<T>, options?: T) {
-    builderFn(this, options)
+  public append<T>(builder: GeometryBuilderFunction<T>, options?: T) {
+    builder(this, options)
     return this
   }
 }

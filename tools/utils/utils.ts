@@ -13,10 +13,6 @@ export function spawn(options: cp.SpawnOptions & { cmd: string, args?: any[] }) 
   })
 }
 
-export function namedTask<T>(name: string, taskFn: T) {
-  return Object.assign(taskFn, { displayName: name })
-}
-
 export const exec = promisify(cp.exec)
 export const writeFile = promisify(fs.writeFile)
 export const copyFile = promisify(fs.copyFile)

@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { CompareFunction } from '../../enums'
 
 const lookup: { [k: number]: GPUCompareFunction } = {
@@ -13,5 +12,5 @@ const lookup: { [k: number]: GPUCompareFunction } = {
 }
 
 export function toCompareFunction(v: CompareFunction): GPUCompareFunction {
-  return getOption(lookup, v, null)
+  return lookup[v] ?? null
 }

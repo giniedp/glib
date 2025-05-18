@@ -1,6 +1,6 @@
 import { compile } from './compile'
 import { bundle, bundleTests } from './bundle'
-import context from '../context'
+import { project } from '../context'
 import { spawn, ChildProcess } from 'child_process'
 
 export async function watch() {
@@ -14,7 +14,7 @@ export async function watchTests() {
   // make sure typescript is compiled
   // before rollup bundler starts watching
   await compile()
-  let karma: ChildProcess
+  let karma: ChildProcess | null
   return Promise.all([
     compile({ watch: true }),
     bundleTests({
@@ -26,7 +26,7 @@ export async function watchTests() {
         }
         if (e.code === 'END') {
           karma = spawn('karma', ['start', '--single-run'], {
-            cwd: context.toolsDir(),
+            cwd: project.toolsDir(),
             stdio: [0, 1, 2],
           })
         }

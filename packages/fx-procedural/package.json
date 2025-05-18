@@ -14,10 +14,12 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist/bundles/fx-procedural.umd.js",
-  "module": "dist/fx-procedural/src/index.js",
-  "typings": "dist/fx-procedural/src/index.d.ts",
-  "devDependencies": {},
+  "index": "dist\\bundles\\fx-procedural.umd.js",
+  "module": "dist\\fx-procedural\\src\\index.js",
+  "typings": "dist\\fx-procedural\\src\\index.d.ts",
+  "devDependencies": {
+    "@gglib/graphics": "workspace:^0.6.2"
+  },
   "peerDependencies": {
     "@gglib/graphics": "0.6.2"
   },

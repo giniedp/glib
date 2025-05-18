@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { StencilOperation } from '../../enums'
 
 const lookup: { [k: number]: GPUStencilOperation } = {
@@ -13,5 +12,5 @@ const lookup: { [k: number]: GPUStencilOperation } = {
 }
 
 export function toStencilOperation(v: StencilOperation): GPUStencilOperation {
-  return getOption(lookup, v, null)
+  return lookup[v] ?? null
 }

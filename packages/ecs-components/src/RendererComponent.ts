@@ -1,6 +1,6 @@
 import { Entity, Inject, OnDraw, OnInit, Component } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { CommonRenderStep, LightSourceData, RenderManager, Scene, SceneItem, SceneView } from '@gglib/render'
+import { BasicRenderPass, LightSourceData, RenderManager, Scene, SceneItem, SceneView } from '@gglib/render'
 
 import { BoundingFrustum } from '@gglib/math'
 import { getOption } from '@gglib/utils'
@@ -59,8 +59,8 @@ export class RendererComponent implements OnInit, OnDraw {
   }
 
   public constructor(options: RendererComponentOptions = {}) {
-    this.manager = getOption(options, 'manager', null)
-    this.cullVisitor = getOption(options, 'cullVisitor', new BruteForceCullVisitor())
+    this.manager = options?.manager ?? null
+    this.cullVisitor = options?.cullVisitor ?? new BruteForceCullVisitor()
   }
 
   public onInit() {
@@ -86,7 +86,7 @@ export class RendererComponent implements OnInit, OnDraw {
   private ensureSceneValidity(index: number = 0, view: number = 0) {
     if (!this.scenes[index]) {
       this.scenes[index] = {
-        steps: [new CommonRenderStep()],
+        steps: [new BasicRenderPass()],
         items: [],
         lights: [],
         views: [],
@@ -100,7 +100,7 @@ export class RendererComponent implements OnInit, OnDraw {
           width: 1,
           height: 1,
           type: 'normalized',
-        }
+        },
       }
     }
     if (!this.scenes[index].views[view].viewport) {

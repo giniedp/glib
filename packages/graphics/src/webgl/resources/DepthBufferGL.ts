@@ -16,7 +16,7 @@ export class DepthBufferGL extends DepthBuffer {
   /**
    * The wrapped WebGLRenderbuffer object
    */
-  public handle: WebGLRenderbuffer
+  public resource: WebGLRenderbuffer
 
   /**
    * Initializes a new instance
@@ -26,14 +26,14 @@ export class DepthBufferGL extends DepthBuffer {
   constructor(device: DeviceGL, options: DepthBufferOptions) {
     super()
     this.device = device
-    this.init(options)
+    this.reset(options)
   }
 
   public create() {
-    if (this.handle == null || this.device.context.isRenderbuffer(this.handle)) {
+    if (this.resource == null || this.device.context.isRenderbuffer(this.resource)) {
       const gl = this.device.context
-      this.handle = gl.createRenderbuffer()
-      gl.bindRenderbuffer(gl.RENDERBUFFER, this.handle)
+      this.resource = gl.createRenderbuffer()
+      gl.bindRenderbuffer(gl.RENDERBUFFER, this.resource)
       gl.renderbufferStorage(gl.RENDERBUFFER, this.depthFormat, this.width, this.height)
       gl.bindRenderbuffer(gl.RENDERBUFFER, null)
     }
@@ -42,9 +42,9 @@ export class DepthBufferGL extends DepthBuffer {
 
   public destroy() {
     this.device.unregisterDepthBuffer(this)
-    if (this.device.context.isRenderbuffer(this.handle)) {
-      this.device.context.deleteRenderbuffer(this.handle)
-      this.handle = null
+    if (this.device.context.isRenderbuffer(this.resource)) {
+      this.device.context.deleteRenderbuffer(this.resource)
+      this.resource = null
     }
     return this
   }

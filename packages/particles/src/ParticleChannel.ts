@@ -100,7 +100,7 @@ export interface ParticleChannelOptions {
  */
 export class ParticleVertices {
   public readonly stride: number
-  public readonly data: DataView
+  public readonly data: DataView<ArrayBuffer>
   private index: number
 
   public readonly layout: VertexLayout = {

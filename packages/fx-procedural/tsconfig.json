@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.tsc.json",
+  "extends": "..\\tsconfig.tsc.json",
   "baseUrl": ".",
   "rootDir": ".",
   "compilerOptions": {
@@ -16,7 +16,7 @@
   ],
   "references": [
     {
-      "path": "../graphics/tsconfig.json"
+      "path": "..\\graphics\\tsconfig.json"
     }
   ]
 }

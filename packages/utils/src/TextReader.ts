@@ -1,5 +1,3 @@
-import { getOption } from './utils'
-
 /**
  * Options for the {@link TextReader} constructor
  */
@@ -90,9 +88,9 @@ export class TextReader {
   /**
    * Detects whether the caracter at current position is [a-zA-Z]
    */
-   public get isAlpha() {
+  public get isAlpha() {
     const c = this.charCode
-    return c >= 65 && c <= 90 || c >= 97 && c <= 122
+    return (c >= 65 && c <= 90) || (c >= 97 && c <= 122)
   }
 
   public get position() {
@@ -110,16 +108,14 @@ export class TextReader {
    */
   constructor(private readonly text: string, options?: TextReaderOptions) {
     this.options = options
-    getOption(options, 'whitespaces', ' \t\r\n\f')
-      .split('')
-      .forEach((it) => {
-        this.charMap.set(it, TextCharKind.Whitespace)
-      })
-    getOption(options, 'symbols', '.+-/*%<>[](){}^|&~=!:;,?')
-      .split('')
-      .forEach((it) => {
-        this.charMap.set(it, TextCharKind.Symbol)
-      })
+    const whitespaces = options?.whitespaces ?? ' \t\r\n\f'
+    whitespaces.split('').forEach((it) => {
+      this.charMap.set(it, TextCharKind.Whitespace)
+    })
+    const symbols = options?.symbols ?? '.+-/*%<>[](){}^|&~=!:;,?'
+    symbols.split('').forEach((it) => {
+      this.charMap.set(it, TextCharKind.Symbol)
+    })
   }
 
   private getSet(set: string) {
@@ -332,7 +328,7 @@ export class TextReader {
   public readWhile(cahrSet: string) {
     const set = this.getSet(cahrSet)
     const i = this.index
-    while(this.canRead && set.has(this.char)) {
+    while (this.canRead && set.has(this.char)) {
       this.index += 1
     }
     return this.text.substr(i, this.index - i)

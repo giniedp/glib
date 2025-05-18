@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.tsc.json",
+  "extends": "..\\tsconfig.tsc.json",
   "baseUrl": ".",
   "rootDir": ".",
   "compilerOptions": {
@@ -16,49 +16,49 @@
   ],
   "references": [
     {
-      "path": "../content/tsconfig.json"
+      "path": "..\\content\\tsconfig.json"
     },
     {
-      "path": "../content-loaders/tsconfig.json"
+      "path": "..\\content-loaders\\tsconfig.json"
     },
     {
-      "path": "../ecs/tsconfig.json"
+      "path": "..\\ecs\\tsconfig.json"
     },
     {
-      "path": "../ecs-components/tsconfig.json"
+      "path": "..\\ecs-components\\tsconfig.json"
     },
     {
-      "path": "../fx-materials/tsconfig.json"
+      "path": "..\\fx-materials\\tsconfig.json"
     },
     {
-      "path": "../fx-post/tsconfig.json"
+      "path": "..\\fx-post\\tsconfig.json"
     },
     {
-      "path": "../fx-procedural/tsconfig.json"
+      "path": "..\\fx-procedural\\tsconfig.json"
     },
     {
-      "path": "../graphics/tsconfig.json"
+      "path": "..\\graphics\\tsconfig.json"
     },
     {
-      "path": "../input/tsconfig.json"
+      "path": "..\\input\\tsconfig.json"
     },
     {
-      "path": "../math/tsconfig.json"
+      "path": "..\\math\\tsconfig.json"
     },
     {
-      "path": "../noise/tsconfig.json"
+      "path": "..\\noise\\tsconfig.json"
     },
     {
-      "path": "../render/tsconfig.json"
+      "path": "..\\render\\tsconfig.json"
     },
     {
-      "path": "../particles/tsconfig.json"
+      "path": "..\\particles\\tsconfig.json"
     },
     {
-      "path": "../terrain/tsconfig.json"
+      "path": "..\\terrain\\tsconfig.json"
     },
     {
-      "path": "../utils/tsconfig.json"
+      "path": "..\\utils\\tsconfig.json"
     }
   ]
 }

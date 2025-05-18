@@ -1,7 +1,7 @@
-import { Log, uuid } from '@gglib/utils'
+import { uuid } from '@gglib/utils'
 
 import { Device } from '../Device'
-import { nameOfShaderType, ShaderType, ShaderTypeOption, valueOfShaderType } from '../enums'
+import { ShaderType, ShaderTypeOption } from '../enums'
 
 /**
  * Constructor options for {@link Shader}
@@ -12,15 +12,15 @@ export interface ShaderOptions {
   /**
    * The shader source code
    */
-  source?: string,
+  source?: string
   /**
    * The shader type e.g. VertexShader or Fragment shader
    */
-  type: ShaderTypeOption,
+  type: ShaderTypeOption
   /**
    * A {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGLShader | WebGLShader} object to be reused
    */
-  handle?: WebGLShader
+  resource?: WebGLShader
 }
 
 /**
@@ -29,7 +29,6 @@ export interface ShaderOptions {
  * @public
  */
 export abstract class Shader {
-
   public static readonly OptionsSymbol = Symbol('ShaderOptions')
 
   /**

@@ -4,12 +4,12 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import sourcemaps from 'rollup-plugin-sourcemaps'
 import multi from '@rollup/plugin-multi-entry'
 import visualizer from 'rollup-plugin-visualizer'
-
-import context, { GlibPackageContext } from '../context'
+import { build } from 'esbuild'
+import { project, GlibPackageContext } from '../context'
 import { rollupOrWatch, BundleWatchOptions, rollupIgnoreWarnings, rollupIstanbulInstrumenter } from './plugins'
 
 export function bundle(options: { watch?: boolean } = {}) {
-  return Promise.all(context.glibPackages.map((pkg) => rollupPackage(pkg, options)))
+  return Promise.all(project.glibPackages.map((pkg) => rollupPackage(pkg, options)))
 }
 
 export const bundleTests = rollupTests
@@ -47,7 +47,7 @@ async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOption
 
 async function rollupTests(options: BundleWatchOptions = {}) {
   const [entries, globals] = resolveAliases(false)
-  const pkgs = context.glibPackages.filter((it) => !it.isRootModule)
+  const pkgs = project.glibPackages.filter((it) => !it.isRootModule)
   const globSpecs = pkgs.map((pkg) => pkg.tscOutDir('**', '*.spec.js'))
   const globSrc = pkgs.map((pkg) => pkg.tscOutDir('**', '*.js'))
   const inputOptions: RollupOptions = {
@@ -72,7 +72,7 @@ async function rollupTests(options: BundleWatchOptions = {}) {
   const outputOptions: OutputOptions = {
     format: 'cjs',
     sourcemap: true,
-    file: context.toolsDir('test', 'index.spec.js'),
+    file: project.toolsDir('test', 'index.spec.js'),
     name: 'TEST',
     globals: globals,
   }
@@ -82,7 +82,7 @@ async function rollupTests(options: BundleWatchOptions = {}) {
 function resolveAliases(andGlobals: boolean) {
   const globals: Record<string, string> = {}
   const entries: Record<string, string> = {}
-  for (const it of context.glibPackages) {
+  for (const it of project.glibPackages) {
     if (andGlobals) {
       globals[it.packageName] = it.globalName
     }

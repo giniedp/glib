@@ -1,7 +1,6 @@
-import { Inject, OnUpdate, OnSetup, Component } from '@gglib/ecs'
-import { TransformComponent } from '../TransformComponent'
+import { Component, Inject, OnSetup, OnUpdate } from '@gglib/ecs'
 import { Quat } from '@gglib/math'
-import { getOption } from '@gglib/utils'
+import { TransformComponent } from '../TransformComponent'
 
 let p0: Quat
 let p1: Quat
@@ -102,11 +101,12 @@ export class CopyRotationConstraint implements OnUpdate, OnSetup<CopyRotationOpt
   }
 
   public onSetup(options: CopyRotationOptions) {
-    this.source = getOption(options, 'source', this.source)
-    this.weight = getOption(options, 'weight', this.weight)
-    this.commit = getOption(options, 'commit', this.commit)
-
-    this.sourceSpace = getOption(options, 'sourceSpace', this.sourceSpace)
-    this.targetSpace = getOption(options, 'targetSpace', this.targetSpace)
+    if (options) {
+      this.source = options.source ?? this.source
+      this.weight = options.weight ?? this.weight
+      this.commit = options.commit ?? this.commit
+      this.sourceSpace = options.sourceSpace ?? this.sourceSpace
+      this.targetSpace = options.targetSpace ?? this.targetSpace
+    }
   }
 }

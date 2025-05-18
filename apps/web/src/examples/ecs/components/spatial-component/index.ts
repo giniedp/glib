@@ -15,10 +15,10 @@ import {
 } from '@gglib/ecs-components'
 
 import { Entity, Inject, OnInit, OnUpdate, Component, OnSetup } from '@gglib/ecs'
-import { Model, LightType, ModelBuilder, buildIcosahedron, Device, Color } from '@gglib/graphics'
+import { Model, LightType, GeometryBuilder, buildIcosahedron, Device, Color } from '@gglib/graphics'
 import { Vec3, IVec3 } from '@gglib/math'
 import { AutoMaterial } from '@gglib/fx-materials'
-import { CommonRenderStep } from '@gglib/render'
+import { BasicRenderPass } from '@gglib/render'
 
 @Component({ })
 class MyGame implements OnInit, OnUpdate {
@@ -45,7 +45,7 @@ class MyGame implements OnInit, OnUpdate {
     material.LightCount = 1
     material.ShadeFunction = 'shadeBlinn'
 
-    this.model = new ModelBuilder()
+    this.model = new GeometryBuilder()
       .append(buildIcosahedron, { radius: 1, tesselation: 0 })
       .calculateNormals(true)
       .calculateBoundings()
@@ -54,7 +54,7 @@ class MyGame implements OnInit, OnUpdate {
       })
       .endModel(this.renderer.device)
 
-    const step = this.renderer.scene.steps[0] as CommonRenderStep
+    const step = this.renderer.scene.steps[0] as BasicRenderPass
     step.clearColor = Color.CornflowerBlue.rgba
     this.renderer.scene.views = [
       {

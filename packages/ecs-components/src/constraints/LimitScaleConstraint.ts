@@ -1,7 +1,6 @@
-import { Inject, OnUpdate, OnSetup, Component } from '@gglib/ecs'
-import { TransformComponent } from '../TransformComponent'
+import { Component, Inject, OnSetup, OnUpdate } from '@gglib/ecs'
 import { IVec3, Vec3, lerp } from '@gglib/math'
-import { getOption } from '@gglib/utils'
+import { TransformComponent } from '../TransformComponent'
 
 /**
  * Options for the {@link LimitScaleConstraint}
@@ -102,14 +101,14 @@ export class LimitScaleConstraint implements OnUpdate, OnSetup<LimitScaleOptions
       Vec3.clamp(scale, min || scale, max || scale)
     } else {
       if (min) {
-        scale.x = this.limitX && (scale.x < min.x) ? lerp(scale.x, min.x, this.weight) : scale.x
-        scale.y = this.limitY && (scale.y < min.y) ? lerp(scale.y, min.y, this.weight) : scale.y
-        scale.z = this.limitZ && (scale.z < min.z) ? lerp(scale.z, min.z, this.weight) : scale.z
+        scale.x = this.limitX && scale.x < min.x ? lerp(scale.x, min.x, this.weight) : scale.x
+        scale.y = this.limitY && scale.y < min.y ? lerp(scale.y, min.y, this.weight) : scale.y
+        scale.z = this.limitZ && scale.z < min.z ? lerp(scale.z, min.z, this.weight) : scale.z
       }
       if (max) {
-        scale.x = this.limitX && (scale.x > max.x) ? lerp(scale.x, max.x, this.weight) : scale.x
-        scale.y = this.limitY && (scale.y > max.y) ? lerp(scale.y, max.y, this.weight) : scale.y
-        scale.z = this.limitZ && (scale.z > max.z) ? lerp(scale.z, max.z, this.weight) : scale.z
+        scale.x = this.limitX && scale.x > max.x ? lerp(scale.x, max.x, this.weight) : scale.x
+        scale.y = this.limitY && scale.y > max.y ? lerp(scale.y, max.y, this.weight) : scale.y
+        scale.z = this.limitZ && scale.z > max.z ? lerp(scale.z, max.z, this.weight) : scale.z
       }
     }
 
@@ -126,11 +125,13 @@ export class LimitScaleConstraint implements OnUpdate, OnSetup<LimitScaleOptions
   }
 
   public onSetup(options: LimitScaleOptions) {
-    this.weight = getOption(options, 'weight', this.weight)
-    this.limitX = getOption(options, 'limitX', this.limitX)
-    this.limitY = getOption(options, 'limitY', this.limitY)
-    this.limitZ = getOption(options, 'limitZ', this.limitZ)
-    this.min = getOption(options, 'min', this.min)
-    this.max = getOption(options, 'max', this.max)
+    if (options) {
+      this.weight = options.weight ?? this.weight
+      this.limitX = options.limitX ?? this.limitX
+      this.limitY = options.limitY ?? this.limitY
+      this.limitZ = options.limitZ ?? this.limitZ
+      this.min = options.min ?? this.min
+      this.max = options.max ?? this.max
+    }
   }
 }

@@ -13,7 +13,7 @@ import {
   DepthState,
   DeviceGL,
   ModelBuilder,
-  ModelMeshPart,
+  Geometry,
   PrimitiveType,
   createDevice,
 } from '@gglib/graphics'
@@ -44,8 +44,8 @@ const texture = device.createTexture({
 })
 
 // The mesh variable. It will be rendered once it has been built.
-let mesh: ModelMeshPart = null
-let linesMesh: ModelMeshPart = null
+let mesh: Geometry = null
+let linesMesh: Geometry = null
 
 // The mesh rotation state
 const meshRotation = {
@@ -67,7 +67,7 @@ function buildMesh(name: string) {
   destroyMesh()
   mesh = ModelBuilder
     .begin()
-    .append(builderFunctions[name], builderFunctionOptions[name])
+    .append(builderFunctions[name as 'Cone'], builderFunctionOptions[name])
     .endMeshPart(device)
 
   if ((device as DeviceGL).isWebGL2) {

@@ -1,12 +1,12 @@
 import { Device } from '@gglib/graphics'
 import { RenderManager } from '../RenderManager'
-import { RenderStep } from '../Types'
+import { RenderPass } from '../Types'
 import { PostPixelateOptions, PostPixelateEffect } from '@gglib/fx-post'
 
 /**
  * @public
  */
-export class PostPixelateStep implements RenderStep {
+export class PostPixelateStep implements RenderPass {
   public get ready() {
     return this.effect.isReady
   }

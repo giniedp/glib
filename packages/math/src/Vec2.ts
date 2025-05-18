@@ -3,7 +3,7 @@ import { IVec2 } from './Types'
 const keyLookup = {
   0: 'x', 1: 'y',
   x: 'x', y: 'y',
-}
+} as Record<number|string, 'x'|'y'>
 
 /**
  * A vector with two components.

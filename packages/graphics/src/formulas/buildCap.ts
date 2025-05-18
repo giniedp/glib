@@ -1,6 +1,5 @@
 import { Vec2, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 
 function circleVector(t: number, out: Vec3) {
   out = out || new Vec3()
@@ -10,18 +9,20 @@ function circleVector(t: number, out: Vec3) {
   return out.init(dx, 0, dz)
 }
 
+export interface BuildCapOptions {
+  diameter?: number
+  radius?: number
+  steps?: number
+}
+
 /**
- * Builds a cap shape into the {@link ModelBuilder}
+ * Builds a cap shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildCap(builder: ModelBuilder, options: {
-  diameter?: number,
-  radius?: number,
-  steps?: number,
-} = {}) {
-  const radius = getOption(options, 'radius', getOption(options, 'diameter', 1) * 0.5)
-  const steps = getOption(options, 'steps', 16)
+export function buildCap(builder: GeometryBuilder, options: BuildCapOptions = {}) {
+  const radius = options.radius ?? (options.diameter ?? 1) * 0.5
+  const steps = options.steps ?? 16
   const baseVertex = builder.vertexCount
   const position = Vec3.createZero()
   const texture = Vec2.createZero()

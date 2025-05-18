@@ -82,7 +82,7 @@ export class RenderManager {
 
   constructor(device: Device) {
     this.device = device
-    this.binder = new UniformBinder(device)
+    this.binder = new UniformBinder()
     this.spriteBatch = device.createSpriteBatch()
   }
 

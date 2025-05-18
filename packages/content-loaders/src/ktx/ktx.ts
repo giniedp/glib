@@ -52,13 +52,9 @@ export const loadKtxToTextureCube: Loader<KTX, Texture> = loader({
       surfaceFormat: ktx.glInfo.glInternalFormat,
       pixelFormat: ktx.glInfo.glFormat,
       pixelType: ktx.glInfo.glType,
-      faces: layer0.faces.map((face) => {
-        return {
-          data: face,
-          width: ktx.width,
-          height: ktx.height,
-        }
-      })
+      width: ktx.width,
+      height: ktx.height,
+      faces: layer0.faces
     })
   },
 })

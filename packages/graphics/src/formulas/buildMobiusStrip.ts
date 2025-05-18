@@ -1,5 +1,4 @@
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -8,19 +7,19 @@ import { buildParametricSurface } from './buildParametricSurface'
  * @public
  */
 export interface BuildMobiusStripOptions {
-  band?: number,
+  band?: number
   radius?: number
   tesselation?: number
 }
 
 /**
- * Builds a mobius strip shape into the {@link ModelBuilder}
+ * Builds a mobius strip shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildMobiusStrip(builder: ModelBuilder, options: BuildMobiusStripOptions = {}) {
-  const r = getOption(options, 'radius', 0.5)
-  const band = getOption(options, 'band', 0.4)
+export function buildMobiusStrip(builder: GeometryBuilder, options: BuildMobiusStripOptions = {}) {
+  const r = options?.radius ?? 0.5
+  const band = options?.band ?? 0.4
 
   buildParametricSurface(builder, {
     f: (phi: number, v: number) => {
@@ -31,12 +30,12 @@ export function buildMobiusStrip(builder: ModelBuilder, options: BuildMobiusStri
       return {
         x: (cosPhi + t * Math.cos(phi / 2) * cosPhi) * r,
         z: (sinPhi + t * Math.cos(phi / 2) * sinPhi) * r,
-        y: (t * Math.sin(phi / 2)) * r,
+        y: t * Math.sin(phi / 2) * r,
       }
     },
     u0: 0,
     u1: Math.PI * 2,
-    tu: getOption(options, 'tesselation', 16),
-    tv: getOption(options, 'tesselation', 16),
+    tu: options?.tesselation ?? 16,
+    tv: options?.tesselation ?? 16,
   })
 }

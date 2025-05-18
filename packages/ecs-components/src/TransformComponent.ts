@@ -1,14 +1,5 @@
-import {
-  Entity,
-  forwardRef,
-  Inject,
-  Listener,
-  OnInit,
-  OnUpdate,
-  Component,
-} from '@gglib/ecs'
+import { Component, Entity, forwardRef, Inject, Listener, OnInit, OnUpdate } from '@gglib/ecs'
 import { IVec3, IVec4, Mat4, Quat, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
 
 /**
  * Constructor options for {@link TransformComponent}
@@ -139,7 +130,7 @@ export class TransformComponent implements OnInit, OnUpdate {
    * This is marked as dirty on every frame, if `world` matrix has been updated.
    * The fnal value is recalculated on demand if needed.
    */
-   public get worldRotation(): Quat {
+  public get worldRotation(): Quat {
     if (this.worldRotDirty) {
       this.worldRot.initFromMat4(this.world)
       this.worldRotDirty = false
@@ -154,7 +145,7 @@ export class TransformComponent implements OnInit, OnUpdate {
    * This is marked as dirty on every frame, if `world` matrix has been updated.
    * The fnal value is recalculated on demand if needed.
    */
-   public get worldRotationInverse(): Quat {
+  public get worldRotationInverse(): Quat {
     if (this.worldRotInvDirty) {
       this.worldRotInv.initFrom(this.worldRotation).invert()
       this.worldRotInvDirty = false
@@ -190,13 +181,9 @@ export class TransformComponent implements OnInit, OnUpdate {
   private worldRotInv = Quat.createIdentity()
 
   constructor(options: TransformComponentOptions = {}) {
-    this.scale = Vec3.convert(getOption(options, 'scale', Vec3.createOne()))
-    this.position = Vec3.convert(
-      getOption(options, 'position', Vec3.createZero()),
-    )
-    this.rotation = Quat.convert(
-      getOption(options, 'rotation', Quat.createIdentity()),
-    )
+    this.scale = Vec3.convert(options?.scale ?? Vec3.createOne())
+    this.position = Vec3.convert(options?.position ?? Vec3.createZero())
+    this.rotation = Quat.convert(options?.rotation ?? Quat.createIdentity())
     this.dirty = true
   }
 
@@ -220,10 +207,7 @@ export class TransformComponent implements OnInit, OnUpdate {
     if (!this.dirty) {
       return
     }
-    this.local
-      .initScaleV(this.scale)
-      .premultiply(tempMat.initFromQuat(this.rotation))
-      .setTranslationV(this.position)
+    this.local.initScaleV(this.scale).premultiply(tempMat.initFromQuat(this.rotation)).setTranslationV(this.position)
 
     if (this.parent) {
       Mat4.premultiply(this.local, this.parent.world, this.world)
@@ -271,12 +255,7 @@ export class TransformComponent implements OnInit, OnUpdate {
    * @param z - Rotation axis Z parameter
    * @param angle - The rotation angle in radians
    */
-  public setRotationAxisAngle(
-    x: number,
-    y: number,
-    z: number,
-    angle: number,
-  ): this {
+  public setRotationAxisAngle(x: number, y: number, z: number, angle: number): this {
     this.rotation.initAxisAngle(tempVec.init(x, y, z).normalize(), angle)
     this.dirty = true
     return this
@@ -289,11 +268,7 @@ export class TransformComponent implements OnInit, OnUpdate {
    * @param pitch - The pitch angle in rad
    * @param roll - The roll angle in rad
    */
-  public setRotationYawPitchRoll(
-    yaw: number,
-    pitch: number,
-    roll: number,
-  ): this {
+  public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     this.rotation.initYawPitchRoll(yaw, pitch, roll)
     this.dirty = true
     return this
@@ -607,9 +582,7 @@ export class TransformComponent implements OnInit, OnUpdate {
   }
 
   public lookAt(v: IVec3, up?: IVec3): this {
-    this.rotation.initFromMat4(
-      tempMat.initLookAt(this.position, v, up || Vec3.Up)
-    )
+    this.rotation.initFromMat4(tempMat.initLookAt(this.position, v, up || Vec3.Up))
     this.dirty = true
     return this
   }

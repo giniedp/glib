@@ -1,6 +1,6 @@
-import { ShaderEffect, Device, Texture, BlendState, ShaderProgram, createShaderEffectSync } from '@gglib/graphics'
-import { POST_KAWASE_STREAKS } from './kawase-streaks.program'
+import { BlendState, Device, ShaderEffect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
 import { IVec2 } from '@gglib/math'
+import { POST_KAWASE_STREAKS } from './kawase-streaks.program'
 
 /**
  * Constructor options for {@link PostBloomKawase}
@@ -15,7 +15,7 @@ export interface PostKawaseStreaksOptions {
   strength?: number
 }
 
-function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
+function getOption<T, K extends object>(options: K, option: keyof K, fallback: T): T {
   if (option in options) {
     return options[option] as any
   }
@@ -56,9 +56,9 @@ export class PostKawaseStreaksEffect {
    *
    */
   public directions: IVec2[] = [
-    { x:  1, y:  1 },
-    { x:  1, y: -1 },
-    { x: -1, y:  1 },
+    { x: 1, y: 1 },
+    { x: 1, y: -1 },
+    { x: -1, y: 1 },
     { x: -1, y: -1 },
   ]
   /**
@@ -93,11 +93,11 @@ export class PostKawaseStreaksEffect {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_KAWASE_STREAKS)
     if (options) {
-      this.threshold = getOption(options, 'threshold', this.threshold)
-      this.attenuation = getOption(options, 'attenuation', this.attenuation)
-      this.iterations = getOption(options, 'iterations', this.iterations)
-      this.directions = getOption(options, 'directions', this.directions)
-      this.strength = getOption(options, 'strength', this.strength)
+      this.threshold = options.threshold ?? this.threshold
+      this.attenuation = options.attenuation ?? this.attenuation
+      this.iterations = options.iterations ?? this.iterations
+      this.directions = options.directions ?? this.directions
+      this.strength = options.strength ?? this.strength
     }
   }
 

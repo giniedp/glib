@@ -11,17 +11,15 @@ import {
 } from '@gglib/ecs-components'
 
 import { ContentManager } from '@gglib/content'
-import { Inject, OnInit, OnUpdate, Component, OnSetup, OnAdded, Entity } from '@gglib/ecs'
-import { Model, LightType, Color } from '@gglib/graphics'
+import { Component, Entity, Inject, OnAdded, OnInit, OnSetup, OnUpdate } from '@gglib/ecs'
+import { Color, LightType, Model } from '@gglib/graphics'
+import { BasicRenderPass } from '@gglib/render'
 import * as TweakUi from 'tweak-ui'
-import { getOption } from '@gglib/utils'
-import { CommonRenderStep } from '@gglib/render'
 
 @Component({
-  install: [RendererComponent]
+  install: [RendererComponent],
 })
 class MyGame implements OnAdded, OnInit, OnUpdate {
-
   @Inject(RendererComponent)
   public readonly renderer: RendererComponent
 
@@ -32,29 +30,30 @@ class MyGame implements OnAdded, OnInit, OnUpdate {
   public readonly time: TimeComponent
 
   public onAdded(entity: Entity) {
-    entity.createChild((e) => {
-      e.name = 'Camera'
-      e.install(PerspectiveCameraComponent)
-      e.install(WASDComponent)
-      e.install(LightComponent, { type: LightType.Directional })
-    })
-    .createChild((e) => {
-      e.name = 'Cube1'
-      e.install(ModelComponent)
-      e.install(CubeComponent, { timeKey: 'time1' })
-      e.get(TransformComponent).translate(-2, 0, -5)
-    })
-    .createChild((e) => {
-      e.name = 'Cube2'
-      e.install(ModelComponent)
-      e.install(CubeComponent, { timeKey: 'time2' })
-      e.get(TransformComponent).translate(2, 0, -5)
-    })
+    entity
+      .createChild((e) => {
+        e.name = 'Camera'
+        e.install(PerspectiveCameraComponent)
+        e.install(WASDComponent)
+        e.install(LightComponent, { type: LightType.Directional })
+      })
+      .createChild((e) => {
+        e.name = 'Cube1'
+        e.install(ModelComponent)
+        e.install(CubeComponent, { timeKey: 'time1' })
+        e.get(TransformComponent).translate(-2, 0, -5)
+      })
+      .createChild((e) => {
+        e.name = 'Cube2'
+        e.install(ModelComponent)
+        e.install(CubeComponent, { timeKey: 'time2' })
+        e.get(TransformComponent).translate(2, 0, -5)
+      })
   }
 
   public onInit() {
     this.renderer.scene.camera = this.camera
-    const step = this.renderer.scene.steps[0] as CommonRenderStep
+    const step = this.renderer.scene.steps[0] as BasicRenderPass
     step.clearColor = Color.CornflowerBlue.rgba
 
     this.time.getOrCreate('time1')
@@ -67,13 +66,9 @@ class MyGame implements OnAdded, OnInit, OnUpdate {
 }
 
 @Component({
-  install: [
-    ModelComponent,
-    TransformComponent,
-  ]
+  install: [ModelComponent, TransformComponent],
 })
 class CubeComponent implements OnInit, OnUpdate, OnSetup<{ timeKey: string }> {
-
   @Inject(TimeComponent, { from: 'root' })
   public readonly time: TimeComponent
 
@@ -89,7 +84,7 @@ class CubeComponent implements OnInit, OnUpdate, OnSetup<{ timeKey: string }> {
   private timeKey: string
 
   public onSetup(options?: { timeKey: string }) {
-    this.timeKey = getOption(options, 'timeKey', this.timeKey)
+    this.timeKey = options?.timeKey ?? this.timeKey
   }
 
   public async onInit() {
@@ -102,13 +97,16 @@ class CubeComponent implements OnInit, OnUpdate, OnSetup<{ timeKey: string }> {
   }
 }
 
-const game = createGame({
-  device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
-  autorun: true,
-}, (e) => {
-  e.name = 'Root'
-  e.install(MyGame)
-})
+const game = createGame(
+  {
+    device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
+    autorun: true,
+  },
+  (e) => {
+    e.name = 'Root'
+    e.install(MyGame)
+  },
+)
 
 TweakUi.mount('#tweak-ui', (ui) => {
   ui.group('Time 1', () => {

@@ -1,16 +1,10 @@
-
 import * as fs from 'fs'
-import * as path from 'path'
-import globby from 'globby'
-import through from 'through-gulp'
-import File from 'vinyl'
-import type { Transform } from 'stream'
+import { globbySync } from 'globby'
 
 function parseConstants(glob: string | string[]) {
   const result = {}
-  globby.sync(glob).forEach((path) => {
-    fs
-      .readFileSync(path, { encoding: 'utf-8' })
+  globbySync(glob).forEach((path) => {
+    fs.readFileSync(path, { encoding: 'utf-8' })
       .toString()
       .replace(/\r\n/g, '\n')
       .split('\n')
@@ -19,7 +13,7 @@ function parseConstants(glob: string | string[]) {
         if (match) {
           const name = match[1].trim()
           const value = match[2]
-          result[name] = value;
+          result[name] = value
         }
       })
   })
@@ -51,7 +45,7 @@ function dereference(node, data) {
     return {
       name: key,
       value: value,
-      glName: glName || data.aliases[key]
+      glName: glName || data.aliases[key],
     }
   })
 }
@@ -119,9 +113,9 @@ function processEnum(name: string, data) {
   buffer.push(`export enum ${name} {\n`)
   values.forEach((it) => buffer.push(`  ${it.name} = ${it.value},\n`))
   buffer.push(`}\n`)
-    buffer.push(`/**\n`)
-    buffer.push(` * @public\n`)
-    buffer.push(` */\n`)
+  buffer.push(`/**\n`)
+  buffer.push(` * @public\n`)
+  buffer.push(` */\n`)
   buffer.push(`export type ${name}Name = keyof typeof ${name}\n`)
 
   if (node.nameOf) {
@@ -178,22 +172,16 @@ function process(data) {
   return buffer.join('')
 }
 
-export default (options: { idl: string | string[]}) => {
-  return through(function(this: Transform, file: File, enc: string, cb) {
-    this.push(new File({
-      base: file.base,
-      cwd: file.cwd,
-      stat: file.stat,
-      path: path.join(path.dirname(file.path), 'GLConst.ts'),
-      contents: Buffer.from(processConstants(parseConstants(options.idl)))
-    }))
-    this.push(new File({
-      base: file.base,
-      cwd: file.cwd,
-      stat: file.stat,
-      path: path.join(path.dirname(file.path), 'Enums.ts'),
-      contents: Buffer.from(process(JSON.parse(file.contents.toString())))
-    }))
-    cb(null, null)
+export function generateEnums(options: { file: string; idl: string | string[] }) {
+  const result: Array<{ name: string, content: Buffer }> = []
+  const data = fs.readFileSync(options.file, { encoding: 'utf-8' })
+  result.push({
+    name: 'GLConst.ts',
+    content: Buffer.from(processConstants(parseConstants(options.idl))),
   })
+  result.push({
+    name: 'Enums.ts',
+    content: Buffer.from(process(JSON.parse(data))),
+  })
+  return result
 }

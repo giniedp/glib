@@ -1,5 +1,5 @@
 import { IVec2 } from '@gglib/math'
-import { getOption, isArray, isObject, isString, Log, uuid, TypeToken } from '@gglib/utils'
+import { isArray, isObject, isString, Log, TypeToken, uuid } from '@gglib/utils'
 import {
   DataType,
   DataTypeOption,
@@ -8,29 +8,28 @@ import {
   nameOfPixelFormat,
   nameOfTextureType,
   PixelFormat,
-  pixelFormatElementCount,
   PixelFormatOption,
+  SurfaceFormat,
+  SurfaceFormatOption,
   TextureType,
   TextureTypeOption,
   valueOfDataType,
   valueOfDepthFormat,
   valueOfPixelFormat,
-  valueOfTextureType,
-  SurfaceFormatOption,
-  SurfaceFormat,
   valueOfSurfaceFormat,
+  valueOfTextureType,
 } from '../enums'
 
 import { Device } from '../Device'
 import { SamplerState, SamplerStateParams } from '../states/SamplerState'
-import { TextureSource, TextureSourceImage, TextureSourceVideo, TextureSourceData } from './TextureSource'
+import { TextureSource, TextureSourceData, TextureSourceImage, TextureSourceVideo } from './TextureSource'
 
 /**
  * Type that is accepted by the {@link Texture.setData} method
  *
  * @public
  */
-export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView
+export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView<ArrayBuffer>
 
 /**
  * @public
@@ -111,7 +110,6 @@ export interface TextureOptions {
  * @public
  */
 export abstract class Texture {
-
   /**
    * A symbol identifying the TextureOptions
    */
@@ -298,24 +296,23 @@ export abstract class Texture {
    */
   public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
 
-  public setup(options: TextureOptions= {}): this {
-
+  public setup(options: TextureOptions = {}): this {
     let width = options.width || this.width
     let height = options.height || this.height
 
-    let givenType = getOption(options, 'type', this.type)
-    let type = valueOfTextureType(getOption(options, 'type', this.type))
+    let givenType = options?.type ?? this.type
+    let type = valueOfTextureType(options?.type ?? this.type)
     if (type == null && typeof givenType === 'number') {
       type = givenType
     }
 
-    let pixelType = valueOfDataType(getOption(options, 'pixelType', this.pixelType))
-    let pixelFormat = valueOfPixelFormat(getOption(options, 'pixelFormat', this.pixelFormat))
-    let surfaceFormat = valueOfSurfaceFormat(getOption(options, 'surfaceFormat', this.surfaceFormat)) || pixelFormat
-    let depthFormat = valueOfDepthFormat(getOption(options, 'depthFormat', this.depthFormat))
-    let genMipMaps = getOption(options, 'generateMipmap', this.generateMipmap)
-    let crossOrigin = getOption(options, 'crossOrigin', this.crossOrigin)
-    let samplerParams = getOption(options, 'samplerParams', this.samplerParams)
+    let pixelType = valueOfDataType(options?.pixelType ?? this.pixelType)
+    let pixelFormat = valueOfPixelFormat(options?.pixelFormat ?? this.pixelFormat)
+    let surfaceFormat = valueOfSurfaceFormat(options?.surfaceFormat ?? this.surfaceFormat) || pixelFormat
+    let depthFormat = valueOfDepthFormat(options?.depthFormat ?? this.depthFormat)
+    let genMipMaps = options?.generateMipmap ?? this.generateMipmap
+    let crossOrigin = options?.crossOrigin ?? this.crossOrigin
+    let samplerParams = options?.samplerParams ?? this.samplerParams
 
     if (
       width !== this.width ||
@@ -344,7 +341,7 @@ export abstract class Texture {
     }
     this.create()
 
-    const faces = getOption(options, 'faces', null)
+    const faces = options?.faces ?? null
     if (faces && this.type === TextureType.TextureCube) {
       this.setFaces(faces)
       return this
@@ -366,7 +363,7 @@ export abstract class Texture {
       this.setSource(source)
     } else if (isArray(source) && isObject(source[0])) {
       this.setVideoUrls(source as any)
-    } else if (source && (source instanceof Array || source instanceof ArrayBuffer || source.buffer)) {
+    } else if (source && (source instanceof Array || source instanceof ArrayBuffer || 'buffer' in source)) {
       this.setData(source, options.width, options.height)
     } else {
       Log.warn(`[Texture] 'data' option has an unrecognized type.`)
@@ -435,7 +432,7 @@ export abstract class Texture {
   /**
    * Sets the texture source from video urls.
    */
-  public setVideoUrls(options: Array<{ src: string, type: string }>): this {
+  public setVideoUrls(options: Array<{ src: string; type: string }>): this {
     this.set('ready', false)
     const video = document.createElement('video')
     let valid = false
@@ -466,7 +463,7 @@ export abstract class Texture {
     } else if (value instanceof HTMLVideoElement) {
       source = new TextureSourceVideo(value)
     } else if (value) {
-      source = new TextureSourceData(value)
+      source = new TextureSourceData(value as any)
     }
     this.set('source', source)
     this.update()

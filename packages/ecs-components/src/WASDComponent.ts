@@ -1,8 +1,7 @@
-import { Entity, Inject, OnUpdate, Component } from '@gglib/ecs'
+import { Component, Inject, OnUpdate } from '@gglib/ecs'
 import { KeyboardKey } from '@gglib/input'
 import { Vec3 } from '@gglib/math'
 
-import { getOption } from '@gglib/utils'
 import { KeyboardComponent } from './KeyboardComponent'
 import { MouseComponent } from './MouseComponent'
 import { TransformComponent } from './TransformComponent'
@@ -25,14 +24,9 @@ export interface WASDComponentOptions {
  * @public
  */
 @Component({
-  install: [
-    MouseComponent,
-    KeyboardComponent,
-    TransformComponent,
-  ]
+  install: [MouseComponent, KeyboardComponent, TransformComponent],
 })
 export class WASDComponent implements OnUpdate {
-
   /**
    * Default movement speed in units per second
    */
@@ -91,19 +85,21 @@ export class WASDComponent implements OnUpdate {
   private keyBoost: KeyboardKey = KeyboardKey.ShiftLeft
   private mouseButton: number = 0
 
-  public constructor(options: WASDComponentOptions = {}) {
+  public constructor(options?: WASDComponentOptions) {
     this.setup(options)
   }
 
   public setup(options: WASDComponentOptions) {
-    this.keyForwad = getOption(options, 'keyForwad', this.keyForwad)
-    this.keyBackward = getOption(options, 'keyBackward', this.keyBackward)
-    this.keyLeft = getOption(options, 'keyLeft', this.keyLeft)
-    this.keyRight = getOption(options, 'keyRight', this.keyRight)
-    this.keyUp = getOption(options, 'keyUp', this.keyUp)
-    this.keyDown = getOption(options, 'keyDown', this.keyDown)
-    this.keyBoost = getOption(options, 'keyBoost', this.keyBoost)
-    this.mouseButton = getOption(options, 'mouseButton', this.mouseButton)
+    if (options) {
+      this.keyForwad = options.keyForwad ?? this.keyForwad
+      this.keyBackward = options.keyBackward ?? this.keyBackward
+      this.keyLeft = options.keyLeft ?? this.keyLeft
+      this.keyRight = options.keyRight ?? this.keyRight
+      this.keyUp = options.keyUp ?? this.keyUp
+      this.keyDown = options.keyDown ?? this.keyDown
+      this.keyBoost = options.keyBoost ?? this.keyBoost
+      this.mouseButton = options.mouseButton ?? this.mouseButton
+    }
   }
 
   /**
@@ -151,15 +147,10 @@ export class WASDComponent implements OnUpdate {
       this.temp.initFrom(this.translation)
     }
 
-    this.currentMoveSpeed +=
-      (targetSpeed - this.currentMoveSpeed) * this.moveDamping
+    this.currentMoveSpeed += (targetSpeed - this.currentMoveSpeed) * this.moveDamping
     this.currentMoveSpeed = Math.floor(this.currentMoveSpeed * 1000) / 1000
     if (this.currentMoveSpeed !== 0) {
-      Vec3.multiplyScalar(
-        this.temp,
-        this.currentMoveSpeed * dtSec,
-        this.translation,
-      )
+      Vec3.multiplyScalar(this.temp, this.currentMoveSpeed * dtSec, this.translation)
       trans.translateV(this.translation)
     }
 

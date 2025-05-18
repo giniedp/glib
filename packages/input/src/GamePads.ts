@@ -73,7 +73,7 @@ export class Gamepads extends Events {
     window.removeEventListener('gamepadconnected', this.onConnected)
     window.removeEventListener('gamepaddisconnected', this.onDisconnected)
     if (this.poll) {
-      this.poll.kill()
+      this.poll.stop()
     }
   }
 

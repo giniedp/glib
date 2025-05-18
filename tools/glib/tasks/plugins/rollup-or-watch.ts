@@ -5,12 +5,8 @@ import {
   OutputOptions,
   RollupWatcherEvent,
 } from 'rollup'
-import getLogger from 'webpack-log'
 
-const log = getLogger({
-  name: 'rollup',
-  timestamp: true,
-})
+const log = console
 
 export interface BundleWatchOptions {
   watch?: boolean

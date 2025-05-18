@@ -44,6 +44,7 @@ import { TextureUnitStateGPU } from './states/TextureUnitStateGPU'
 // TODO: dynamic import
 // import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel-onefile/glslang'
 import { toPrimitiveTopology } from './utils/primitiveTopology'
+import { Capabilities } from '../Capabilities'
 
 /**
  * Constructor options for the {@link Device}
@@ -103,6 +104,8 @@ export class DeviceGPU extends Device<any> {
    * The webgpu rendering context.
    */
   public readonly context: GPUCanvasContext
+
+  public capabilities = new Capabilities() // TODO: add webgpu capabilities
 
   private readonly initPromise: Promise<void>
 
@@ -245,9 +248,9 @@ export class DeviceGPU extends Device<any> {
     elementCount = elementCount || iBuffer.elementCount
 
     // TODO:
-    this.renderEncoder.setIndexBuffer(iBuffer.handle)
+    this.renderEncoder.setIndexBuffer(iBuffer.resource)
     for (let i = 0; i < vBuffers.length; i++) {
-      this.renderEncoder.setVertexBuffer(i, vBuffers[i].handle)
+      this.renderEncoder.setVertexBuffer(i, vBuffers[i].resource)
     }
     this.renderEncoder.setPipeline(this.device.createRenderPipeline({
       layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
@@ -315,10 +318,10 @@ export class DeviceGPU extends Device<any> {
     // this.renderEncoder.setIndexBuffer(iBuffer.handle)
     if (vBuffers) {
       for (let i = 0; i < vBuffers.length; i++) {
-        this.renderEncoder.setVertexBuffer(i, vBuffers[i].handle)
+        this.renderEncoder.setVertexBuffer(i, vBuffers[i].resource)
       }
     } else if (vBuffer) {
-      this.renderEncoder.setVertexBuffer(0, vBuffer.handle)
+      this.renderEncoder.setVertexBuffer(0, vBuffer.resource)
     }
     this.renderEncoder.setPipeline(this.device.createRenderPipeline({
       layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
@@ -398,7 +401,7 @@ export class DeviceGPU extends Device<any> {
         width: displayWidth,
         height: displayHeight,
       })
-      this.mainDepth.init({
+      this.mainDepth.reset({
         width: displayWidth,
         height: displayHeight,
       })
@@ -447,7 +450,7 @@ export class DeviceGPU extends Device<any> {
       // find a proper depth buffer
       opts.depthBuffer = this.getSharedDepthBuffer(firstTexture)
     }
-    this.frameBuffer.init(opts)
+    this.frameBuffer.reset(opts)
     this.viewportState = {
       x: 0,
       y: 0,

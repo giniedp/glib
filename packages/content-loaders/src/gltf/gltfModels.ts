@@ -1,9 +1,9 @@
 import {
   ModelOptions,
-  ModelMeshOptions,
-  ModelMeshPartOptions,
+  MeshOptions,
+  GeometryOptions,
   PrimitiveType,
-  ModelMeshPartUtil,
+  GeometryUtil,
   BufferOptions,
   nameOfDataType,
   dataTypeSize,
@@ -39,8 +39,8 @@ export async function loadGltfModel(
   return result
 }
 
-async function loadMeshes(context: PipelineContext, reader: GLTFReader): Promise<ModelMeshOptions[]> {
-  const result: Array<Promise<ModelMeshOptions>> = reader.doc.meshes.map(async (mesh, meshIndex) => {
+async function loadMeshes(context: PipelineContext, reader: GLTFReader): Promise<MeshOptions[]> {
+  const result: Array<Promise<MeshOptions>> = reader.doc.meshes.map(async (mesh, meshIndex) => {
     const parts = await loadMeshParts(reader, mesh)
 
     const materials: Material[] = []
@@ -64,7 +64,7 @@ async function loadMeshes(context: PipelineContext, reader: GLTFReader): Promise
   return Promise.all(result)
 }
 
-function analyzeMeshPart(reader: GLTFReader, part: ModelMeshPartOptions, meshIndex: number) {
+function analyzeMeshPart(reader: GLTFReader, part: GeometryOptions, meshIndex: number) {
   const features: { [key: string]: any } = {}
   const nodes = reader.doc.nodes
     .filter((it) => it.mesh === meshIndex)
@@ -89,12 +89,12 @@ function analyzeMeshPart(reader: GLTFReader, part: ModelMeshPartOptions, meshInd
   return features
 }
 
-async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<ModelMeshPartOptions[]> {
+async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<GeometryOptions[]> {
   let min = [0, 0, 0]
   let max = [0, 0, 0]
   const doc = reader.doc
   const result = mesh.primitives.map(
-    async (part): Promise<ModelMeshPartOptions> => {
+    async (part): Promise<GeometryOptions> => {
       Object.keys(part.attributes).forEach(async (semantic) => {
         const accessor = doc.accessors[part.attributes[semantic]]
         if (semantic === 'POSITION') {
@@ -106,7 +106,7 @@ async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<ModelM
       const iBufferOptions = await loadIndexBuffer(reader, part)
       const vBufferOptions = await loadVertexBuffers(reader, part)
       if (!part.mode || part.mode === PrimitiveType.TriangleList) {
-        const util = new ModelMeshPartUtil(iBufferOptions, vBufferOptions, part.mode || PrimitiveType.TriangleList)
+        const util = new GeometryUtil(iBufferOptions, vBufferOptions, part.mode || PrimitiveType.TriangleList)
         if (!util.hasChannel('normal')) {
           util.calculateNormals(true)
         }

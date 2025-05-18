@@ -3,7 +3,7 @@
 import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
 import { Device } from '../Device'
 import { ShaderProgram, Texture } from '../resources'
-import { SamplerStateParams } from '../states'
+import { SamplerState, SamplerStateParams } from '../states'
 import { ShaderUniformState } from './ShaderUniformState'
 
 /**
@@ -35,7 +35,7 @@ export interface ShaderUniformBinding<T extends ShaderUniformValue = ShaderUnifo
  * Constructor options for {@link ShaderUniform}
  * @public
  */
-export interface ShaderUniformOptions {
+export interface ShaderUniformInfo {
   /**
    * The original name of the uniform as it appears in the shader source code
    *
@@ -70,7 +70,7 @@ export interface ShaderUniformOptions {
    * uniform vec3 uLightDirection;
    * ```
    */
-  default?: any
+  default?: string | number
   /**
    * The sampler state preset name e.g. 'LinearClamp', 'LinearWrap', 'PointClamp' or 'PointWrap'
    *
@@ -82,7 +82,7 @@ export interface ShaderUniformOptions {
    * uniform sampler2d uTexture
    * ```
    */
-  filter?: string
+  filter?: 'LinearClamp' | 'LinearWrap' | 'PointClamp' | 'PointWrap'
   /**
    * This is the sampler register index
    *
@@ -112,7 +112,7 @@ export abstract class ShaderUniform {
   /**
    * Meta data and annotations of this uniform
    */
-  public abstract readonly meta: Record<string, any>
+  public abstract readonly info: Record<string, any>
   /**
    * The binding name of this uniform
    */
@@ -127,7 +127,7 @@ export abstract class ShaderUniform {
   public readonly defaultValue: unknown
 
   /**
-   * Sets a value bu using the default setter mechanism for current type
+   * Sets a value by using the default setter mechanism for current type
    */
   public set: (v: unknown, ...args: unknown[]) => void
 

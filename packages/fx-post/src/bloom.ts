@@ -1,21 +1,18 @@
 import {
   BlendState,
   Color,
-  createShaderEffect,
+  createShaderEffectSync,
   CullState,
   DepthState,
   Device,
+  ShaderEffect,
   StencilState,
   Texture,
-  ShaderEffect,
-  createShaderEffectSync,
 } from '@gglib/graphics'
 import { POST_BLOOM } from './bloom.program'
-import { getOption } from '@gglib/utils'
-
 
 function gauss(n: number, theta: number) {
-  return ((1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta)))
+  return (1.0 / Math.sqrt(2 * Math.PI * theta)) * Math.exp(-(n * n) / (2.0 * theta * theta))
 }
 
 /**
@@ -87,10 +84,10 @@ export class PostBloomEffect {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_BLOOM)
     if (options) {
-      this.glowCut = getOption(options, 'glowCut', this.glowCut)
-      this.multiplier = getOption(options, 'multiplier', this.multiplier)
-      this.gaussSigma = getOption(options, 'gaussSigma', this.gaussSigma)
-      this.iterations = getOption(options, 'iterations', this.iterations)
+      this.glowCut = options.glowCut ?? this.glowCut
+      this.multiplier = options.multiplier ?? this.multiplier
+      this.gaussSigma = options.gaussSigma ?? this.gaussSigma
+      this.iterations = options.iterations ?? this.iterations
     }
   }
 
@@ -102,26 +99,26 @@ export class PostBloomEffect {
     offWeights.length = samples
     this.offsetWeights = offWeights
     for (let i = 0; i < samples; i++) {
-        let data = offWeights[i]
-        if (!data) {
-          data = [0, 0, 0, 0]
-          offWeights[i] = data
-        }
-        let off = (i - samplesOff)
-        // Compute the offsets. We take 9 samples - 4 either side and one in the middle:
-        //     i =  0,  1,  2,  3, 4,  5,  6,  7,  8
-        // Offset = -4, -3, -2, -1, 0, +1, +2, +3, +4
-        data[0] = off * texelX
-        data[1] = off * texelY
-        if (off !== 0) {
-          // half pixel offset to get a sample between the pixels
-          data[0] += (off > 0 ? 0.5 : -0.5) * texelX
-          data[1] += (off > 0 ? 0.5 : -0.5) * texelY
-        }
-        // map to [-1:+1]
-        let norm = off / samplesOff
-        data[2] = this.multiplier * gauss(norm, this.gaussSigma)
-        data[3] = this.multiplier * gauss(norm, this.gaussSigma)
+      let data = offWeights[i]
+      if (!data) {
+        data = [0, 0, 0, 0]
+        offWeights[i] = data
+      }
+      let off = i - samplesOff
+      // Compute the offsets. We take 9 samples - 4 either side and one in the middle:
+      //     i =  0,  1,  2,  3, 4,  5,  6,  7,  8
+      // Offset = -4, -3, -2, -1, 0, +1, +2, +3, +4
+      data[0] = off * texelX
+      data[1] = off * texelY
+      if (off !== 0) {
+        // half pixel offset to get a sample between the pixels
+        data[0] += (off > 0 ? 0.5 : -0.5) * texelX
+        data[1] += (off > 0 ? 0.5 : -0.5) * texelY
+      }
+      // map to [-1:+1]
+      let norm = off / samplesOff
+      data[2] = this.multiplier * gauss(norm, this.gaussSigma)
+      data[3] = this.multiplier * gauss(norm, this.gaussSigma)
     }
   }
 
@@ -159,12 +156,11 @@ export class PostBloomEffect {
     device.program.setUniform('texture', input)
     device.program.setUniform('threshold', this.glowCut)
     device.setRenderTarget(rt1)
-    device.clear(0xFF000000, 1, 1)
+    device.clear(0xff000000, 1, 1)
     device.drawQuad(false)
     device.setRenderTarget(null)
 
     for (let n = 0; n < this.iterations; n++) {
-
       // ------------------------------------------------
       // [2] HORIZONTAL BLUR -> rt2
       //

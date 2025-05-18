@@ -14,10 +14,13 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist/bundles/particles.umd.js",
-  "module": "dist/particles/src/index.js",
-  "typings": "dist/particles/src/index.d.ts",
-  "devDependencies": {},
+  "index": "dist\\bundles\\particles.umd.js",
+  "module": "dist\\particles\\src\\index.js",
+  "typings": "dist\\particles\\src\\index.d.ts",
+  "devDependencies": {
+    "@gglib/graphics": "workspace:^0.6.2",
+    "@gglib/math": "workspace:^0.6.2"
+  },
   "peerDependencies": {
     "@gglib/graphics": "0.6.2",
     "@gglib/math": "0.6.2"

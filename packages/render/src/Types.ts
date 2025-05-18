@@ -164,7 +164,7 @@ export interface CameraData {
  *
  * @public
  */
-export interface RenderStep {
+export interface RenderPass {
   /**
    * Indicates whether the render step is ready to render
    */
@@ -192,7 +192,7 @@ export interface Scene {
   /**
    * A use defined tag object
    */
-  tag?: any
+  meta?: Record<string, any>
   /**
    * The rendering priority key.
    *
@@ -230,7 +230,7 @@ export interface Scene {
   /**
    * The rendering steps
    */
-  steps: RenderStep[]
+  steps: RenderPass[]
   /**
    *
    */

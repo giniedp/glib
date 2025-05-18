@@ -1,4 +1,4 @@
-import { ShaderEffect, Device, Texture, BlendState, ShaderProgram, createShaderEffectSync } from '@gglib/graphics'
+import { BlendState, Device, ShaderEffect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
 import { POST_KAWASE_BLOOM } from './kawase-bloom.program'
 
 /**
@@ -11,7 +11,7 @@ export interface PostKawaseBloomOptions {
   iterations?: number
 }
 
-function getOption<T, K>(options: K, option: keyof K, fallback: T): T {
+function getOption<T, K extends object>(options: K, option: keyof K, fallback: T): T {
   if (option in options) {
     return options[option] as any
   }
@@ -72,8 +72,8 @@ export class PostKawaseBloomEffect {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_KAWASE_BLOOM)
     if (options) {
-      this.glowCut = getOption(options, 'glowCut', this.glowCut)
-      this.iterations = getOption(options, 'iterations', this.iterations)
+      this.glowCut = options.glowCut ?? this.glowCut
+      this.iterations = options.iterations ?? this.iterations
     }
   }
 

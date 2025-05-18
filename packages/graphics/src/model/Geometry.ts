@@ -7,21 +7,21 @@ import { Buffer, BufferOptions } from '../resources/Buffer'
 import { ShaderProgram } from '../resources/ShaderProgram'
 
 /**
- * Constructor options for {@link ModelMeshPart}
+ * Constructor options for {@link Geometry}
  *
  * @public
  */
-export interface ModelMeshPartOptions {
+export interface GeometryOptions {
   /**
-   * A user defined name of the mesh object
+   * A user defined name for the geometry
    */
   name?: string
   /**
-   * An axis aligned bounding box containing the mesh in local space
+   * An axis aligned bounding box containing the geometry in local space
    */
   boundingBox?: number[] | BoundingBox
   /**
-   * A bounding sphere containing the mesh in local space
+   * A bounding sphere containing the geometry in local space
    */
   boundingSphere?: number[] | BoundingSphere
   /**
@@ -37,24 +37,24 @@ export interface ModelMeshPartOptions {
    */
   vertexBuffer?: Buffer | BufferOptions | Array<Buffer | BufferOptions>
   /**
-   * Offset in vertex buffer
+   * Offset in index buffer
    */
-  // vertexOffset?: number // TODOL
+  indexOffset?: number
   /**
-   * The mode of the mesh. e.g. TrinagleList, LineList etc.
+   * The mode of the geometry. e.g. TrinagleList, LineList etc.
    */
   primitiveType?: PrimitiveTypeOption
   /**
    * Number of primitives to render
    */
-  // primitiveCount?: number // TODO:
+  primitiveCount?: number
 }
 
 /**
  * @public
  */
-export class ModelMeshPart {
-  public static readonly Options = Symbol('ModelMeshPartOptions')
+export class Geometry {
+  public static readonly Options = Symbol('GeometryOptions')
 
   /**
    * A unique id
@@ -92,14 +92,20 @@ export class ModelMeshPart {
    * The vertex buffer primitive type
    */
   public primitiveType: number
+  /**
+   * The number of primitives to render
+   */
+  public primitiveCount: number | null
 
-  constructor(device: Device, params: ModelMeshPartOptions) {
+  constructor(device: Device, params: GeometryOptions) {
     this.device = device
 
     this.materialId = params.materialId || 0
     this.boundingBox = BoundingBox.convert(params.boundingBox)
     this.boundingSphere = BoundingSphere.convert(params.boundingSphere)
     this.primitiveType = valueOfPrimitiveType(params.primitiveType) || PrimitiveType.TriangleList
+    this.indexOffset = params.indexOffset || null
+    this.primitiveCount = params.primitiveCount || null
 
     if (params.indexBuffer instanceof Buffer) {
       this.indexBuffer = params.indexBuffer
@@ -123,20 +129,20 @@ export class ModelMeshPart {
   }
 
   /**
-   * Draws the mesh with the given program
+   * Draws the geometry with the given program
    *
    * @param program - the program to draw with
    */
-  public draw(program: ShaderProgram): ModelMeshPart {
+  public draw(program: ShaderProgram): Geometry {
     const device = this.device
     device.vertexBuffers = this.vertexBuffer
     device.indexBuffer = this.indexBuffer
     device.program = program
     try {
       if (device.indexBuffer) {
-        device.drawIndexedPrimitives(this.primitiveType)
+        device.drawIndexedPrimitives(this.primitiveType, this.indexOffset, this.primitiveCount)
       } else {
-        device.drawPrimitives(this.primitiveType)
+        device.drawPrimitives(this.primitiveType, this.indexOffset, this.primitiveCount)
       }
     } finally {
       device.vertexBuffers = null

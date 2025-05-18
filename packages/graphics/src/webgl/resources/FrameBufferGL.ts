@@ -8,8 +8,7 @@ import { TextureGL } from './TextureGL'
  */
 export class FrameBufferGL extends FrameBuffer {
   public readonly device: DeviceGL
-
-  public readonly handle: WebGLFramebuffer
+  public readonly resource: WebGLFramebuffer
 
   private colorAttachments: Texture[] = []
   private depthAttachment: DepthBuffer
@@ -24,14 +23,14 @@ export class FrameBufferGL extends FrameBuffer {
 
     this.drawBuffersExtension = device.capabilities.extension('WEBGL_draw_buffers')
     this.maxColorAttachments = device.capabilities.maxColorAttachments
-    this.init(options)
+    this.reset(options)
   }
 
   get colorAttachmentCount(): number {
     return this.colorAttachmentCountField
   }
 
-  public init(options: FrameBufferOptions= {}) {
+  public reset(options: FrameBufferOptions= {}) {
     let gl = this.device.context
 
     if (!FrameBufferGL.validateAttachments(options.textures, options.depthBuffer)) {
@@ -43,17 +42,22 @@ export class FrameBufferGL extends FrameBuffer {
       throw new Error(`Requested to attach ${targetCount} color attachments but only ${this.maxColorAttachments} are supported.`)
     }
 
+    if (options.resource) {
+      // if a resource is provided, use it
+      this.assign({ resource: options.resource })
+    }
+
     let needsRebind = false
     // ensure framebuffer is created
-    if (this.handle == null || !gl.isFramebuffer(this.handle)) {
-      this.assign({ handle: gl.createFramebuffer() })
+    if (this.resource == null || !gl.isFramebuffer(this.resource)) {
+      this.assign({ resource: gl.createFramebuffer() })
       needsRebind = true
     }
 
     //
     // BEGIN UPDATE
     //
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.handle)
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.resource)
 
     // replace color attachments
     let count = 0
@@ -89,11 +93,11 @@ export class FrameBufferGL extends FrameBuffer {
 
     let oldBuffer: DepthBufferGL = this.depthAttachment as DepthBufferGL
     let newBuffer: DepthBufferGL = options.depthBuffer as DepthBufferGL
-    if (oldBuffer && newBuffer && oldBuffer.handle === newBuffer.handle) {
+    if (oldBuffer && newBuffer && oldBuffer.resource === newBuffer.resource) {
       // skip binding if the new buffer is already bound
     } else if (newBuffer) {
       // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, null);
-      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, newBuffer.handle)
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, newBuffer.resource)
     } else {
       // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, null);
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, null)
@@ -109,9 +113,9 @@ export class FrameBufferGL extends FrameBuffer {
   }
 
   public destroy() {
-    if (this.handle != null && this.device.context.isFramebuffer(this.handle)) {
-      this.device.context.deleteFramebuffer(this.handle)
-      this.assign({ handle: null })
+    if (this.resource != null && this.device.context.isFramebuffer(this.resource)) {
+      this.device.context.deleteFramebuffer(this.resource)
+      this.assign({ resource: null })
     }
   }
 

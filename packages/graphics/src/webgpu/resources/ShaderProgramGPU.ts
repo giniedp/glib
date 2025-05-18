@@ -9,7 +9,7 @@ export class ShaderProgramGPU extends ShaderProgram {
   public readonly device: DeviceGPU
   public readonly vertexShader: ShaderGPU
   public readonly fragmentShader: ShaderGPU
-
+  public readonly isReady = true
   public get vertexStageDescriptor() {
     return this.vertexShader ? this.vertexShader.descriptor : null
   }
@@ -21,8 +21,8 @@ export class ShaderProgramGPU extends ShaderProgram {
   constructor(device: DeviceGPU, options: ShaderProgramOptions = {}) {
     super()
     this.device = device
-    this.vertexShader = this.getShader(ShaderType.VertexShader, options.vertexShader) as ShaderGPU
-    this.fragmentShader = this.getShader(ShaderType.FragmentShader, options.fragmentShader) as ShaderGPU
+    this.vertexShader = this.convertShaderSource(ShaderType.VertexShader, options.vertexShader) as ShaderGPU
+    this.fragmentShader = this.convertShaderSource(ShaderType.FragmentShader, options.fragmentShader) as ShaderGPU
     this.create()
   }
 

@@ -1,5 +1,4 @@
 import { Mat4 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
 import { Device } from './Device'
 import { BufferUsage, PrimitiveType } from './enums'
 import { Buffer } from './resources/Buffer'
@@ -14,7 +13,7 @@ import { StencilStateParams } from './states/StencilState'
 import { ViewportStateParams } from './states/ViewportState'
 import { VertexLayout } from './VertexLayout'
 
-const vShader = `
+const vertexShader = /* glsl */ `
   precision highp float;
   precision highp int;
 
@@ -38,7 +37,7 @@ const vShader = `
     gl_Position = uViewProjection * vec4(vPosition, 1);
   }`
 
-const fShader = `
+const fragmentShader = /* glsl */ `
   precision highp float;
   precision highp int;
 
@@ -104,7 +103,7 @@ export interface SpriteBatchBeginOptions {
   /**
    * The viewProjection matrix to use for rendering
    */
-  viewProjection?: Mat4,
+  viewProjection?: Mat4
   /**
    * A custom shader that should be used for rendering the sprites
    */
@@ -146,7 +145,7 @@ export class SpriteBatch {
     this.spriteQueue = []
     this.batchSize = options.batchSize || 512
 
-    const vertexLayout = VertexLayout.create('PositionTextureColor')
+    const vertexLayout = VertexLayout.create(['position', 'texture', 'color'])
     const sizeInBytes = VertexLayout.countBytes(vertexLayout)
 
     this.arrayBuffer = new ArrayBuffer(this.batchSize * 4 * sizeInBytes)
@@ -158,10 +157,12 @@ export class SpriteBatch {
       data: this.arrayBuffer,
       usage: BufferUsage.Dynamic,
     })
-    this.mainProgram = options.program || device.createProgram({
-      vertexShader: vShader,
-      fragmentShader: fShader,
-    })
+    this.mainProgram =
+      options.program ||
+      device.createProgram({
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+      })
     this.mainMatrix = Mat4.createIdentity()
     const indexData = new Uint16Array(this.batchSize * 6)
     let index = 0
@@ -185,15 +186,17 @@ export class SpriteBatch {
       throw new Error('end() must be called before a new batch can be started with begin()')
     }
 
-    this.sortMode = getOption(options, 'sortMode', undefined)
-    this.blendState = getOption(options, 'blendState', undefined)
-    this.cullState = getOption(options, 'cullState', undefined)
-    this.depthState = getOption(options, 'depthState', undefined)
-    this.stencilState = getOption(options, 'stencilState', undefined)
-    this.scissorState = getOption(options, 'scissorState', undefined)
-    this.viewportState = getOption(options, 'viewportState', undefined)
-    this.program = getOption(options, 'program', this.mainProgram)
-    this.matrix = getOption(options, 'viewProjection', this.mainMatrix)
+    if (options) {
+      this.sortMode = options.sortMode ?? undefined
+      this.blendState = options.blendState ?? undefined
+      this.cullState = options.cullState ?? undefined
+      this.depthState = options.depthState ?? undefined
+      this.stencilState = options.stencilState ?? undefined
+      this.scissorState = options.scissorState ?? undefined
+      this.viewportState = options.viewportState ?? undefined
+      this.program = options.program ?? this.mainProgram
+      this.matrix = options.viewProjection ?? this.mainMatrix
+    }
 
     const viewWidth = (this.viewportState || this.device.viewportState).width
     const viewHeight = (this.viewportState || this.device.viewportState).height
@@ -206,7 +209,6 @@ export class SpriteBatch {
    * @param texture - The texture to draw
    */
   public draw(texture: Texture): Sprite {
-
     if (!this.hasBegun) {
       throw new Error('begin() must be called before draw()')
     }
@@ -297,7 +299,7 @@ export class SpriteBatch {
       count = count > this.batchSize ? this.batchSize : count
 
       let offset = 0
-      for (let i = 0; i < count; i ++) {
+      for (let i = 0; i < count; i++) {
         const sprite = queue[start + i]
         // position
         this.vertexPositionView[offset++] = sprite.vertex1.x

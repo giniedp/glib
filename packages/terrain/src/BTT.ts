@@ -1,6 +1,6 @@
 
 
-import { Buffer, Device, Material, MaterialOptions, Model, ModelMeshPart, VertexLayout } from '@gglib/graphics'
+import { Buffer, Device, Material, MaterialOptions, Model, Geometry, VertexLayout } from '@gglib/graphics'
 import { IVec3, Vec3, BoundingBox } from '@gglib/math'
 import { HeightMap } from './HeightMap'
 
@@ -279,7 +279,7 @@ export class BTTPatch {
   public currentVersion: number = 0
 
   public parent: BTTRoot
-  public mesh: ModelMeshPart
+  public mesh: Geometry
   public startX: number
   public startY: number
   public patchSize: number
@@ -309,13 +309,13 @@ export class BTTPatch {
           this.startY,
           this.patchSize + 1)
 
-    this.mesh = new ModelMeshPart(device, {
+    this.mesh = new Geometry(device, {
       boundingBox: BoundingBox.createFromPointsBuffer(vertices, 0, 3 + 3 + 2),
       indexBuffer: this.parent.indexBuffers[0][0],
       vertexBuffer: device.createVertexBuffer({
         data: vertices,
         dataType: 'float',
-        layout: VertexLayout.create('PositionNormalTexture'),
+        layout: VertexLayout.create(['position', 'normal', 'texture']),
       }),
     })
   }

@@ -70,39 +70,39 @@ export class ShaderPass {
   /**
    * The graphics device
    */
-  public readonly device: Device
+  public device: Device
   /**
    * The name of the shader pass
    */
-  public readonly name: string
+  public name: string
   /**
    * Arbitrary meta data or info about the shader pass
    */
-  public readonly meta: { [key: string]: any }
+  public meta: { [key: string]: any }
   /**
    * The shader program to be activated on `commit`
    */
-  public readonly program: ShaderProgram
+  public program: ShaderProgram
   /**
    * The cull state to be enabled on `commit`
    */
-  public readonly cullState: CullStateParams
+  public cullState: CullStateParams
   /**
    * The blend state to be enabled on `commit`
    */
-  public readonly blendState: BlendStateParams
+  public blendState: BlendStateParams
   /**
    * The depth state to be enabled on `commit`
    */
-  public readonly depthState: DepthStateParams
+  public depthState: DepthStateParams
   /**
    * The offset state to be enabled on `commit`
    */
-  public readonly offsetState: OffsetStateParams
+  public offsetState: OffsetStateParams
   /**
    * The stencil state to be enabled on `commit`
    */
-  public readonly stencilState: StencilStateParams
+  public stencilState: StencilStateParams
 
   constructor(device: Device, options: ShaderPassOptions) {
     this.device = device

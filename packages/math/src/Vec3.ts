@@ -4,7 +4,7 @@ import { hermite } from './utils/hermite'
 const keyLookup = {
   0: 'x', 1: 'y', 2: 'z',
   x: 'x', y: 'y', z: 'z',
-}
+} as Record<number|string, 'x'|'y'|'z'>
 
 /**
  * A vector with three components.

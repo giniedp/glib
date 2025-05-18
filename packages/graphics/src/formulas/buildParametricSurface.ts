@@ -1,6 +1,5 @@
 import { IVec3, Vec2, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 
 /**
  * Options for the {@link buildParametricSurface} function
@@ -11,53 +10,52 @@ export interface BuildParametricSurfaceOptions {
   /**
    * Function returning xyz position for u v input
    */
-  f: (u: number, v: number) => IVec3,
+  f: (u: number, v: number) => IVec3
   /**
    * Function returning normal vector for u v input
    */
-  n?: (u: number, v: number) => IVec3,
+  n?: (u: number, v: number) => IVec3
   /**
    * Start value of `u`. Default is `0`
    */
-  u0?: number,
+  u0?: number
   /**
    * End value of `u`. Default is `1`
    */
-  u1?: number,
+  u1?: number
   /**
    * Start value of `v`. Default is `0`
    */
-  v0?: number,
+  v0?: number
   /**
    * End value of `v`. Default is `1`
    */
-  v1?: number,
+  v1?: number
   /**
    * Tesselation in `u` direction. Default is `1`
    */
-  tu?: number,
+  tu?: number
   /**
    * Tesselation in `v` direction. Default is `1`
    */
-  tv?: number,
+  tv?: number
 }
 
 /**
- * Builds a parametric surface into the {@link ModelBuilder}
+ * Builds a parametric surface into the {@link GeometryBuilder}
  * @public
  */
-export function buildParametricSurface(builder: ModelBuilder, options: BuildParametricSurfaceOptions) {
-  const f = getOption(options, 'f', (u: number, v: number) => {
-    return { x: 0, y: 0, z: 0 }
-  })
-  const n = getOption(options, 'n', null)
-  const tu = getOption(options, 'tu', 1)
-  const tv = getOption(options, 'tv', 1)
-  const u0 = getOption(options, 'u0', 0)
-  const u1 = getOption(options, 'u1', 1)
-  const v0 = getOption(options, 'v0', 0)
-  const v1 = getOption(options, 'v1', 1)
+export function buildParametricSurface(builder: GeometryBuilder, options: BuildParametricSurfaceOptions) {
+  const f = options.f ?? ((u: number, v: number) => ({ x: 0, y: 0, z: 0 }))
+  const n = options.n ?? null
+  const tu = options.tu ?? 1
+  const tv = options.tv ?? 1
+  const u0 = options.u0 ?? 0
+  const u1 = options.u1 ?? 1
+  const v0 = options.v0 ?? 0
+  const v1 = options.v1 ?? 1
 
+  console.log('tu', tu, 'tv', tv, options)
   // build indices
   const indices = []
   for (let y = 0; y < tv; y++) {
@@ -74,15 +72,16 @@ export function buildParametricSurface(builder: ModelBuilder, options: BuildPara
       indices.push(b)
       indices.push(c)
       indices.push(d)
+      console.log('indices', a, c, b, b, c, d)
     }
   }
 
   const vertices: Array<{
-    position: Vec3,
-    normal: Vec3,
-    texture: Vec2,
-    tangent: Vec3,
-    bitangent: Vec3,
+    position: Vec3
+    normal: Vec3
+    texture: Vec2
+    tangent: Vec3
+    bitangent: Vec3
   }> = []
 
   // calculate surface
@@ -139,9 +138,9 @@ export function buildParametricSurface(builder: ModelBuilder, options: BuildPara
     const r = 1.0 / (uv0.x * uv1.y - uv0.y * uv1.x)
 
     nrm.init(
-      ((edge0.x * uv1.y) - (edge1.x * uv0.y)) * r,
-      ((edge0.y * uv1.y) - (edge1.y * uv0.y)) * r,
-      ((edge0.z * uv1.y) - (edge1.z * uv0.y)) * r,
+      (edge0.x * uv1.y - edge1.x * uv0.y) * r,
+      (edge0.y * uv1.y - edge1.y * uv0.y) * r,
+      (edge0.z * uv1.y - edge1.z * uv0.y) * r,
     )
     vertices[i0].tangent.add(nrm)
     vertices[i1].tangent.add(nrm)

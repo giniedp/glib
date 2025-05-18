@@ -1,11 +1,11 @@
-import { buildPlane, ModelBuilder } from '../index'
+import { buildPlane, GeometryBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildPlane', () => {
-    let builder: ModelBuilder
+    let builder: GeometryBuilder
 
     beforeEach(() => {
-      builder = new ModelBuilder()
+      builder = new GeometryBuilder()
     })
 
     it ('builds without errors', () => {

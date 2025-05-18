@@ -14,19 +14,28 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist/bundles/ecs-components.umd.js",
-  "module": "dist/ecs-components/src/index.js",
-  "typings": "dist/ecs-components/src/index.d.ts",
-  "devDependencies": {},
+  "index": "dist\\bundles\\ecs-components.umd.js",
+  "module": "dist\\ecs-components\\src\\index.js",
+  "typings": "dist\\ecs-components\\src\\index.d.ts",
+  "devDependencies": {
+    "@gglib/utils": "workspace:^0.6.2",
+    "@gglib/ecs": "workspace:^0.6.2",
+    "@gglib/graphics": "workspace:^0.6.2",
+    "@gglib/render": "workspace:^0.6.2",
+    "@gglib/math": "workspace:^0.6.2",
+    "@gglib/input": "workspace:^0.6.2",
+    "@gglib/fx-materials": "workspace:^0.6.2",
+    "@gglib/content": "workspace:^0.6.2"
+  },
   "peerDependencies": {
-    "@gglib/ecs": "0.6.2",
-    "@gglib/math": "0.6.2",
     "@gglib/utils": "0.6.2",
-    "@gglib/content": "0.6.2",
+    "@gglib/ecs": "0.6.2",
     "@gglib/graphics": "0.6.2",
+    "@gglib/render": "0.6.2",
+    "@gglib/math": "0.6.2",
     "@gglib/input": "0.6.2",
     "@gglib/fx-materials": "0.6.2",
-    "@gglib/render": "0.6.2"
+    "@gglib/content": "0.6.2"
   },
   "files": [
     "package.json",

@@ -1,5 +1,4 @@
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -11,31 +10,30 @@ export interface BuildDiscOptions {
   /**
    * The offset along the y axis
    */
-  offset?: number,
+  offset?: number
   /**
    * The outer radius
    */
-  outerRadius?: number,
+  outerRadius?: number
   /**
    * The inner radius
    */
-  innerRadius?: number,
+  innerRadius?: number
   /**
    * The tesselation
    */
-  tesselation?: number,
+  tesselation?: number
 }
 
 /**
- * Builds a disc shape into the {@link ModelBuilder}
+ * Builds a disc shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildDisc(builder: ModelBuilder, options: BuildDiscOptions = {}) {
-
-  const h = getOption(options, 'offset', 0.0)
-  const r1 = getOption(options, 'outerRadius', 0.5)
-  const r2 = getOption(options, 'innerRadius', 0.25)
+export function buildDisc(builder: GeometryBuilder, options: BuildDiscOptions = {}) {
+  const h = options?.offset ?? 0.0
+  const r1 = options?.outerRadius ?? 0.5
+  const r2 = options?.innerRadius ?? 0.25
 
   buildParametricSurface(builder, {
     f: (u: number, v: number) => {
@@ -52,8 +50,8 @@ export function buildDisc(builder: ModelBuilder, options: BuildDiscOptions = {})
         z: 0,
       }
     },
-    tu: getOption(options, 'tesselation', 32),
-    tv: getOption(options, 'tesselation', 32),
+    tu: options?.tesselation ?? 32,
+    tv: options?.tesselation ?? 32,
     u0: 0,
     u1: Math.PI * 2,
     v0: r2,

@@ -4,7 +4,7 @@ import { LightParams } from '../lights'
 import { materialProgram, DefaultProgramDefs } from '../programs'
 import { ShadeFunction } from './AutoMaterial'
 
-const defineMap = {
+const defineMap: Record<any, any> = {
   Alpha: 'ALPHA',
   AlphaClip: 'ALPHA_CLIP',
   FogColor: 'FOG',
@@ -128,7 +128,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
         const index = i
         this.lights[index] = this.lights[index] || new Proxy(new LightParams(), {
           set: (target, key, value) => {
-            target[key] = value
+            (target as any)[key] = value
             target.assign(index, this.parameters)
             return true
           },
@@ -434,7 +434,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
   }
 
   private setParamValue(params: any, name: string | number | symbol, value: any) {
-    const def = defineMap[name]
+    const def: keyof DefaultProgramDefs = defineMap[name as unknown as string]
     const old = params[name]
     params[name] = value
 
@@ -444,7 +444,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
         return
       }
       if (value != null) {
-        this.defines[def] = true
+        this.defines[def] = true as never
       } else {
         delete this.defines[def]
       }

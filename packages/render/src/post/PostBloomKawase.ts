@@ -1,13 +1,13 @@
 
 import { DepthFormat, Device } from '@gglib/graphics'
 import { RenderManager } from '../RenderManager'
-import { RenderStep } from '../Types'
+import { RenderPass } from '../Types'
 import { PostKawaseBloomOptions, PostKawaseBloomEffect } from '@gglib/fx-post'
 
 /**
  * @public
  */
-export class PostBloomKawase implements RenderStep {
+export class PostBloomKawase implements RenderPass {
 
   public get ready() {
     return this.effect.isReady

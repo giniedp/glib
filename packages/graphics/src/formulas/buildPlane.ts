@@ -1,5 +1,4 @@
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -13,22 +12,22 @@ export interface BuildPlaneOptions {
    * @remarks
    * defaults to 1
    */
-  size?: number,
+  size?: number
   /**
    * The tesselation factor
    * @remarks
    * defaults to 1
    */
-  tesselation?: number,
+  tesselation?: number
 }
 
 /**
- * Builds a plane shape into the {@link ModelBuilder}
+ * Builds a plane shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildPlane(builder: ModelBuilder, options: BuildPlaneOptions = {}) {
-  const size = getOption(options, 'size', 1)
+export function buildPlane(builder: GeometryBuilder, options: BuildPlaneOptions = {}) {
+  const size = options?.size ?? 1
   buildParametricSurface(builder, {
     f: (u: number, v: number) => {
       return {
@@ -44,7 +43,7 @@ export function buildPlane(builder: ModelBuilder, options: BuildPlaneOptions = {
         z: 0,
       }
     },
-    tu: getOption(options, 'tesselation', 1),
-    tv: getOption(options, 'tesselation', 1),
+    tu: options?.tesselation ?? 1,
+    tv: options?.tesselation ?? 1,
   })
 }

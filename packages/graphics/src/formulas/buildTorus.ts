@@ -1,5 +1,4 @@
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -25,17 +24,17 @@ export interface BuildTorusOptions {
    * @remarks
    * defaults to `32`
    */
-  tesselation?: number,
+  tesselation?: number
 }
 
 /**
- * Builds a torus shape into the {@link ModelBuilder}
+ * Builds a torus shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildTorus(builder: ModelBuilder, options: BuildTorusOptions = {}) {
-  const ri = getOption(options, 'innerRadius', 0.25)
-  const ro = getOption(options, 'outerRadius', 0.5)
+export function buildTorus(builder: GeometryBuilder, options: BuildTorusOptions = {}) {
+  const ri = options?.innerRadius ?? 0.25
+  const ro = options?.outerRadius ?? 0.5
 
   const r1 = ri + (ro - ri) * 0.5
   const r2 = r1 - ri
@@ -44,7 +43,7 @@ export function buildTorus(builder: ModelBuilder, options: BuildTorusOptions = {
     f: (phi: number, theta: number) => {
       return {
         x: (r1 + r2 * Math.sin(theta)) * Math.sin(phi),
-        y: (r2 * Math.cos(theta)),
+        y: r2 * Math.cos(theta),
         z: (r1 + r2 * Math.sin(theta)) * Math.cos(phi),
       }
     },
@@ -55,8 +54,8 @@ export function buildTorus(builder: ModelBuilder, options: BuildTorusOptions = {
         z: Math.sin(theta) * Math.cos(phi),
       }
     },
-    tu: getOption(options, 'tesselation', 32),
-    tv: getOption(options, 'tesselation', 32),
+    tu: options?.tesselation ?? 32,
+    tv: options?.tesselation ?? 32,
     u0: 0,
     u1: Math.PI * 2,
     v0: 0,

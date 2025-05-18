@@ -1,5 +1,5 @@
 import { ContentManager, Pipeline } from '@gglib/content'
-import { DeviceGL, Model, MaterialOptions, ShaderEffectOptions, ModelMeshPartOptions } from '@gglib/graphics'
+import { DeviceGL, Model, MaterialOptions, ShaderEffectOptions, GeometryOptions } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test'
 
 import '../gglib'
@@ -130,7 +130,7 @@ endsolid cube
         }
       })
 
-      const meshPart = mesh.parts[0] as ModelMeshPartOptions
+      const meshPart = mesh.parts[0] as GeometryOptions
       expect(meshPart.materialId).toBe(0)
       expect(meshPart.name).toBe('cube')
     })

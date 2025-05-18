@@ -1,7 +1,7 @@
 import { Vec3 } from '@gglib/math'
 import { Color } from '../Color'
-import type { ModelBuilder } from '../model'
-import { ModelBuilderChannel } from '../model/ModelBuilderChannel'
+import type { GeometryBuilder } from '../model'
+import { GeometryBuilderChannel } from '../model/GeometryBuilderChannel'
 import { Buffer } from '../resources'
 
 /**
@@ -11,8 +11,8 @@ import { Buffer } from '../resources'
  * @param builder - The model builder
  * @param vertexBuffer - The vertex buffer to inspect
  */
-export function buildLines(builder: ModelBuilder, vertexBuffer: Buffer[]) {
-  const channels = ModelBuilderChannel.fromVertexBuffer(vertexBuffer)
+export function buildLines(builder: GeometryBuilder, vertexBuffer: Buffer[]) {
+  const channels = GeometryBuilderChannel.fromVertexBuffer(vertexBuffer)
   const position = channels.position
   const normal = channels.normal
   const tangent = channels.tangent

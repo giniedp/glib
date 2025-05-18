@@ -2,7 +2,6 @@ import { Log, hasOwnProperty } from '@gglib/utils'
 
 import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
 
-
 /**
  * Describes an attribute of a vertex
  *
@@ -39,45 +38,13 @@ export interface VertexAttribute {
   packed?: boolean
 }
 
-const f = Object.freeze
-
-/**
- * Provides layouts of common attributes like `position`, `color`, `texture` etc.
- */
-export const VertexLayoutCommons = {
-  position: f<VertexAttribute>({
-    type: DataType.float,
-    elements: 3,
-  }),
-  color: f<VertexAttribute>({
-    type: DataType.ubyte,
-    elements: 4,
-    normalize: true,
-    packed: true,
-  }),
-  normal: f<VertexAttribute>({
-    type: DataType.float,
-    elements: 3,
-  }),
-  tangent: f<VertexAttribute>({
-    type: DataType.float,
-    elements: 3,
-  }),
-  bitangent: f<VertexAttribute>({
-    type: DataType.float,
-    elements: 3,
-  }),
-  texture: f<VertexAttribute>({
-    type: DataType.float,
-    elements: 2,
-  }),
-}
+export type AttributeSemantic = 'position' | 'normal' | 'tangent' | 'bitangent' | 'color' | 'texture' // | 'blendindices' | 'blendweight'
 
 /**
  * Gets a vertex attribute specification for given attribute semantic
  *
  * @remarks
- * Uses {@link VertexLayoutCommons} to lookup a common specification for given semantic name.
+ * Uses {@link VertexLayout.Common} to lookup a common specification for given semantic name.
  *
  * The semantic name is stripped down to [a-z] characters. So `texture`, `texture1`, `texture_2`
  * are all treated as same semantic: `texture`
@@ -85,20 +52,20 @@ export const VertexLayoutCommons = {
  * @param semantic - the semantic name
  * @param overrides - used to enrich or override the result
  */
-export function commonVertexAttribute(semantic: string, overrides?: Partial<VertexAttribute>): VertexAttribute {
+export function vertexAttribute(semantic: string, overrides?: Partial<VertexAttribute>): VertexAttribute {
   semantic = semantic.match(/[a-z]+/)[0]
-  const preset = VertexLayoutCommons[semantic]
+  const preset = VertexLayout.Common[semantic]
   if (!preset) {
     return null
   }
   if (overrides) {
     return {
-      ...VertexLayoutCommons[semantic],
+      ...VertexLayout.Common[semantic],
       ...overrides,
     }
   }
   return {
-    ...VertexLayoutCommons[semantic],
+    ...VertexLayout.Common[semantic],
   }
 }
 
@@ -111,10 +78,42 @@ export class VertexLayout {
   [key: string]: VertexAttribute
 
   /**
-   * Calls {@link VertexLayout.create} if parameter is a string, otherwise simply returns the input value
+   * Common attribute layout definitions for `position`, `color`, `texture` etc.
    */
-  public static convert(nameOrLayout: string | VertexLayout): VertexLayout {
-    return typeof nameOrLayout === 'string' ? VertexLayout.create(nameOrLayout) : nameOrLayout
+  public static Common: Record<AttributeSemantic, VertexAttribute> = {
+    position: {
+      type: DataType.float,
+      elements: 3,
+    },
+    color: {
+      type: DataType.ubyte,
+      elements: 4,
+      normalize: true,
+      packed: true,
+    },
+    normal: {
+      type: DataType.float,
+      elements: 3,
+    },
+    tangent: {
+      type: DataType.float,
+      elements: 3,
+    },
+    bitangent: {
+      type: DataType.float,
+      elements: 3,
+    },
+    texture: {
+      type: DataType.float,
+      elements: 2,
+    },
+  }
+
+  /**
+   * Calls {@link VertexLayout.create} if parameter is an array, otherwise simply returns the input value
+   */
+  public static convert(attrOrLayout: VertexLayout | AttributeSemantic[]): VertexLayout {
+    return Array.isArray(attrOrLayout) ? VertexLayout.create(attrOrLayout) : attrOrLayout
   }
 
   /**
@@ -124,9 +123,8 @@ export class VertexLayout {
    * uses the {@link VertexLayout.preset} to lookup the attribute layout for each name
    *
    * ```ts
-   * VertexLayout.create('position', 'normal', 'texture');
-   * VertexLayout.create('PositionNormalTexture');
-   * // in both cases the following layout is returned:
+   * VertexLayout.create(['position', 'normal', 'texture']);
+   * // returned layout is:
    * // {
    * //    position: { offset: 0, type: 'float', elements: 3 }
    * //    normal: { offset: 12, type: 'float', elements: 2 }
@@ -134,17 +132,13 @@ export class VertexLayout {
    * // }
    * ```
    */
-  public static create(...names: string[]): VertexLayout {
-    if (names.length === 1) {
-      names = names[0].match(/[A-Z][a-z]+/g) || names
-    }
-
+  public static create(names: AttributeSemantic[]): VertexLayout {
     let result: VertexLayout = {}
     let offset = 0
 
     for (let name of names) {
-      name = String(name).toLowerCase()
-      const attribute = commonVertexAttribute(name, { offset: offset })
+      name = name.toLowerCase() as AttributeSemantic
+      const attribute = vertexAttribute(name, { offset: offset })
       if (attribute) {
         result[name] = attribute
         offset += dataTypeSize(attribute.type) * attribute.elements
@@ -263,7 +257,10 @@ export class VertexLayout {
    * @param data - The data array
    * @param layoutOrType - The data layout information
    */
-  public static convertArrayToBufferView(data: number[], layoutOrType: string | VertexLayout): ArrayBufferView {
+  public static convertArrayToBufferView(
+    data: number[],
+    layoutOrType: string | VertexLayout,
+  ): ArrayBufferView<ArrayBuffer> {
     let layout: VertexLayout
     if (typeof layoutOrType === 'string') {
       layout = {
@@ -300,7 +297,7 @@ export class VertexLayout {
 
     const channels = Object.keys(layout)
       .map((key) => layout[key])
-      .sort((a, b) => a.offset < b.offset ? -1 : 1)
+      .sort((a, b) => (a.offset < b.offset ? -1 : 1))
       .map((spec) => {
         const channel = {
           offset: spec.offset,
@@ -312,9 +309,15 @@ export class VertexLayout {
           setter: viewSetter[valueOfDataType(spec.type)],
         }
         if (channel.packed) {
-          if (channel.size === 1) { channel.setter = viewSetter[DataType.ubyte] }
-          if (channel.size === 2) { channel.setter = viewSetter[DataType.ushort] }
-          if (channel.size === 4) { channel.setter = viewSetter[DataType.uint] }
+          if (channel.size === 1) {
+            channel.setter = viewSetter[DataType.ubyte]
+          }
+          if (channel.size === 2) {
+            channel.setter = viewSetter[DataType.ushort]
+          }
+          if (channel.size === 4) {
+            channel.setter = viewSetter[DataType.uint]
+          }
         }
         return channel
       })

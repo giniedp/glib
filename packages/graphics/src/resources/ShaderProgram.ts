@@ -14,16 +14,16 @@ export interface ShaderProgramOptions {
    * The vertex shader to be used within the program
    *
    * @remarks
-   * If it is a string it is assumed to be the source code for the vertex shader.
-   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
+   * - If it is a string it is assumed to be the source code for the vertex shader.
+   * - If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
   vertexShader?: string|ShaderOptions|Shader,
   /**
    * The fragment shader to be used within the program
    *
    * @remarks
-   * If it is a string it is assumed to be the source code for the fragment shader.
-   * If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
+   * - If it is a string it is assumed to be the source code for the fragment shader.
+   * - If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
   fragmentShader?: string|ShaderOptions|Shader,
 }
@@ -34,8 +34,6 @@ export interface ShaderProgramOptions {
  * @public
  * @remarks
  * Combines a vertex shader and a fragment shader into a shader program.
- *
- * On creation the shader source code is inspected for
  */
 export abstract class ShaderProgram {
   /**
@@ -62,6 +60,8 @@ export abstract class ShaderProgram {
    * A map of all shader uniforms
    */
   public readonly uniforms: ReadonlyMap<string, ShaderUniform> = new Map<string, ShaderUniform>()
+
+  public readonly abstract isReady: boolean
 
   private errLogs = {}
 
@@ -96,7 +96,9 @@ export abstract class ShaderProgram {
    * Takes only known uniform names into account and ignores `null` values
    */
   public setUniforms(uniforms?: { [key: string]: ShaderUniformValue }): this {
-    if (!uniforms) { return this }
+    if (!uniforms) {
+      return this
+    }
     this.bind()
     this.uniforms.forEach((uniform, key) => {
       if (uniforms[key] != null) {
@@ -113,7 +115,9 @@ export abstract class ShaderProgram {
    * `null` values are ignored
    */
   public setUniform(name: string, value: ShaderUniformValue): this {
-    if (value == null) { return }
+    if (value == null) {
+      return
+    }
     const uniform = this.uniforms.get(name)
     if (!uniform) {
       this.reportMissingUniform(name)
@@ -148,16 +152,16 @@ export abstract class ShaderProgram {
     }
   }
 
-  protected getShader(type: ShaderType, from: string | ShaderOptions | Shader): Shader {
-    if (from instanceof Shader) {
-      return from
+  protected convertShaderSource(type: ShaderType, source: string | ShaderOptions | Shader): Shader {
+    if (source instanceof Shader) {
+      return source
     }
-    if (typeof from === 'string') {
+    if (typeof source === 'string') {
       return this.device.createShader({
         type: type,
-        source: from,
+        source: source,
       })
     }
-    return this.device.createShader(from)
+    return this.device.createShader(source)
   }
 }

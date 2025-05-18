@@ -14,17 +14,17 @@ export function isObject(value: any): value is object {
  *
  * @public
  */
-export function pick<T>(src: T, ...rest: string[]): Partial<T> {
-  let result: Partial<T> = {}
-  for (let i = 1; i < arguments.length; i += 1) {
-    const key = arguments[i]
-    const value = src[key]
-    if (value !== void 0) {
-      result[key] = value
-    }
-  }
-  return result
-}
+// export function pick<T>(src: T, ...rest: string[]): Partial<T> {
+//   let result: Partial<T> = {}
+//   for (let i = 1; i < arguments.length; i += 1) {
+//     const key = arguments[i]
+//     const value = src[key]
+//     if (value !== void 0) {
+//       result[key] = value
+//     }
+//   }
+//   return result
+// }
 
 export function copy<T>(src?: T[], dest?: T[]): T[]
 export function copy<T>(src?: T, dest?: T): T

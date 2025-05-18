@@ -17,17 +17,16 @@ import {
   StencilStateOptions,
   StencilStateParams,
 } from '@gglib/graphics'
-import { getOption } from '@gglib/utils'
 
 import { RenderManager } from './RenderManager'
-import { RenderStep, SceneItemPrimitive, SceneItemDrawable, SceneItemSprite } from './Types'
+import { RenderPass, SceneItemDrawable, SceneItemPrimitive, SceneItemSprite } from './Types'
 
 /**
- * Constructor options for {@link CommonRenderStep}
+ * Constructor options for {@link BasicRenderPass}
  *
  * @public
  */
-export interface CommonRenderStepOptions {
+export interface BasicRenderPassOptions {
   /**
    * The color to be used when clearing the screen. Defaults to solid black.
    */
@@ -63,7 +62,7 @@ export interface CommonRenderStepOptions {
  *
  * @public
  */
-export class CommonRenderStep implements RenderStep {
+export class BasicRenderPass implements RenderPass {
   public get ready() {
     return true
   }
@@ -100,14 +99,14 @@ export class CommonRenderStep implements RenderStep {
   protected spriteBatch: SpriteBatch
   protected primitiveBatch: PrimitiveBatch
 
-  public constructor(options: CommonRenderStepOptions = {}) {
-    this.clearColor = getOption(options, 'clearColor', Color.Black.rgba)
-    this.clearDepth = getOption(options, 'clearDepth', 1)
-    this.clearStencil = getOption(options, 'clearStencil', null)
-    this.blendState = BlendState.convert(getOption(options, 'blendState', BlendState.Default))
-    this.cullState = CullState.convert(getOption(options, 'cullState', CullState.Default))
-    this.depthState = DepthState.convert(getOption(options, 'depthState', DepthState.Default))
-    this.stencilState = StencilState.convert(getOption(options, 'stencilState', StencilState.Default))
+  public constructor(options: BasicRenderPassOptions = {}) {
+    this.clearColor = options?.clearColor ?? Color.Black.rgba
+    this.clearDepth = options?.clearDepth ?? 1
+    this.clearStencil = options?.clearStencil ?? null
+    this.blendState = BlendState.convert(options?.blendState ?? BlendState.Default)
+    this.cullState = CullState.convert(options?.cullState ?? CullState.Default)
+    this.depthState = DepthState.convert(options?.depthState ?? DepthState.Default)
+    this.stencilState = StencilState.convert(options?.stencilState ?? StencilState.Default)
   }
 
   public render(manager: RenderManager) {
@@ -157,9 +156,9 @@ export class CommonRenderStep implements RenderStep {
   protected renderItems(manager: RenderManager) {
     for (const item of manager.scene.items) {
       if (item.type === 'sprite') {
-        (item as SceneItemSprite).sprite.draw(this.spriteBatch)
+        ;(item as SceneItemSprite).sprite.draw(this.spriteBatch)
       } else if (item.type === 'primitive') {
-        (item as SceneItemPrimitive).primitive.draw(this.primitiveBatch)
+        ;(item as SceneItemPrimitive).primitive.draw(this.primitiveBatch)
       } else {
         this.renderItem(item as SceneItemDrawable, manager)
       }

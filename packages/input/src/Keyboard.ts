@@ -1,4 +1,4 @@
-import { documentVisibilityApi, Events, getOption } from '@gglib/utils'
+import { documentVisibilityApi, Events } from '@gglib/utils'
 
 /**
  * Options for {@link Keyboard}
@@ -9,7 +9,7 @@ export interface KeyboardOptions {
   /**
    * The element at which to listen for input events
    */
-  eventTarget?: EventTarget,
+  eventTarget?: EventTarget
   /**
    * Events that are captured and re-triggered on the {@link Keyboard} instance
    */
@@ -61,11 +61,7 @@ export class Keyboard extends Events {
   /**
    * Collection of html events that are captured and re-triggered on this instance
    */
-  protected proxiedEvents = [
-    'keypress',
-    'keydown',
-    'keyup',
-  ]
+  protected proxiedEvents = ['keypress', 'keydown', 'keyup']
 
   /**
    * Is called on the `keypress` event and marks the `event.code` as pressed
@@ -93,8 +89,8 @@ export class Keyboard extends Events {
    */
   constructor(options?: KeyboardOptions) {
     super()
-    this.eventTarget = getOption(options, 'eventTarget', this.eventTarget)
-    this.proxiedEvents = getOption(options, 'proxyEvents', this.proxiedEvents) || []
+    this.eventTarget = options?.eventTarget ?? this.eventTarget
+    this.proxiedEvents = (options?.proxyEvents ?? this.proxiedEvents) || []
     this.activate()
   }
 
@@ -141,8 +137,8 @@ export class Keyboard extends Events {
   protected setKeyPressed(e: KeyboardEvent) {
     const key = Keyboard.getKeyboardKey(e)
     if (!this.keys.has(key)) {
-      (this.keys as Set<number>).add(key);
-      (this.codes as Set<string>).add(e.code)
+      ;(this.keys as Set<number>).add(key)
+      ;(this.codes as Set<string>).add(e.code)
       this.onChanged(e)
     }
   }
@@ -152,8 +148,8 @@ export class Keyboard extends Events {
   protected setKeyReleased(e: KeyboardEvent) {
     const code = Keyboard.getKeyboardKey(e)
     if (this.keys.has(code)) {
-      (this.keys as Set<number>).delete(code);
-      (this.codes as Set<string>).delete(e.code)
+      ;(this.keys as Set<number>).delete(code)
+      ;(this.codes as Set<string>).delete(e.code)
       this.onChanged(e)
     }
   }
@@ -162,8 +158,8 @@ export class Keyboard extends Events {
    */
   public clearState(e?: Event) {
     if (this.keys.size > 0) {
-      (this.keys as Set<number>).clear();
-      (this.codes as Set<string>).clear()
+      ;(this.keys as Set<number>).clear()
+      ;(this.codes as Set<string>).clear()
       this.onChanged(e)
     }
   }
@@ -181,7 +177,7 @@ export class Keyboard extends Events {
    */
   public static getKeyboardKey(e: KeyboardEvent): KeyboardKey {
     if ('code' in e) {
-      return KeyboardKey[e.code]
+      return KeyboardKey[Number(e.code)] as unknown as KeyboardKey
     } else {
       return KeyCodeToKey[e['keyCode']]
     }
@@ -377,103 +373,103 @@ export enum KeyboardKey {
 }
 
 const KeyCodeToKey = Object.freeze({
-  8 : KeyboardKey.Backspace,
-  9 : KeyboardKey.Tab,
-  13 : KeyboardKey.Enter,
-  16 : KeyboardKey.ShiftLeft,
-  17 : KeyboardKey.ControlLeft,
-  18 : KeyboardKey.AltLeft,
-  19 : KeyboardKey.Pause,
-  20 : KeyboardKey.CapsLock,
-  27 : KeyboardKey.Escape,
-  32 : KeyboardKey.Space,
-  33 : KeyboardKey.PageUp,
-  34 : KeyboardKey.PageDown,
-  35 : KeyboardKey.End,
-  36 : KeyboardKey.Home,
-  37 : KeyboardKey.ArrowLeft,
-  38 : KeyboardKey.ArrowUp,
-  39 : KeyboardKey.ArrowRight,
-  40 : KeyboardKey.ArrowDown,
-  45 : KeyboardKey.Insert,
-  46 : KeyboardKey.Delete,
-  48 : KeyboardKey.Digit0,
-  49 : KeyboardKey.Digit1,
-  50 : KeyboardKey.Digit2,
-  51 : KeyboardKey.Digit3,
-  52 : KeyboardKey.Digit4,
-  53 : KeyboardKey.Digit5,
-  54 : KeyboardKey.Digit6,
-  55 : KeyboardKey.Digit7,
-  56 : KeyboardKey.Digit8,
-  57 : KeyboardKey.Digit9,
-  65 : KeyboardKey.KeyA,
-  66 : KeyboardKey.KeyB,
-  67 : KeyboardKey.KeyC,
-  68 : KeyboardKey.KeyD,
-  69 : KeyboardKey.KeyE,
-  70 : KeyboardKey.KeyF,
-  71 : KeyboardKey.KeyG,
-  72 : KeyboardKey.KeyH,
-  73 : KeyboardKey.KeyI,
-  74 : KeyboardKey.KeyJ,
-  75 : KeyboardKey.KeyK,
-  76 : KeyboardKey.KeyL,
-  77 : KeyboardKey.KeyM,
-  78 : KeyboardKey.KeyN,
-  79 : KeyboardKey.KeyO,
-  80 : KeyboardKey.KeyP,
-  81 : KeyboardKey.KeyQ,
-  82 : KeyboardKey.KeyR,
-  83 : KeyboardKey.KeyS,
-  84 : KeyboardKey.KeyT,
-  85 : KeyboardKey.KeyU,
-  86 : KeyboardKey.KeyV,
-  87 : KeyboardKey.KeyW,
-  88 : KeyboardKey.KeyX,
-  89 : KeyboardKey.KeyY,
-  90 : KeyboardKey.KeyZ,
-  91 : KeyboardKey.MetaLeft,
-  92 : KeyboardKey.MetaRight,
-  93 : KeyboardKey.MediaSelect,
-  96 :  KeyboardKey.Numpad0,
-  97 :  KeyboardKey.Numpad1,
-  98 :  KeyboardKey.Numpad2,
-  99 :  KeyboardKey.Numpad3,
-  100 : KeyboardKey.Numpad4,
-  101 : KeyboardKey.Numpad5,
-  102 : KeyboardKey.Numpad6,
-  103 : KeyboardKey.Numpad7,
-  104 : KeyboardKey.Numpad8,
-  105 : KeyboardKey.Numpad9,
-  106 : KeyboardKey.NumpadMultiply,
-  107 : KeyboardKey.NumpadAdd,
-  109 : KeyboardKey.NumpadSubtract,
-  110 : KeyboardKey.NumpadDecimal,
-  111 : KeyboardKey.NumpadDivide,
-  112 : KeyboardKey.F1,
-  113 : KeyboardKey.F2,
-  114 : KeyboardKey.F3,
-  115 : KeyboardKey.F4,
-  116 : KeyboardKey.F5,
-  117 : KeyboardKey.F6,
-  118 : KeyboardKey.F7,
-  119 : KeyboardKey.F8,
-  120 : KeyboardKey.F9,
-  121 : KeyboardKey.F10,
-  122 : KeyboardKey.F11,
-  123 : KeyboardKey.F12,
-  144 : KeyboardKey.NumLock,
-  145 : KeyboardKey.ScrollLock,
-  186 : KeyboardKey.Semicolon,
-  187 : KeyboardKey.Equal,
-  188 : KeyboardKey.Comma,
-  189 : KeyboardKey.Minus,
-  190 : KeyboardKey.Period,
-  191 : KeyboardKey.Slash,
-  192 : KeyboardKey.Backquote,
-  219 : KeyboardKey.BracketLeft,
-  220 : KeyboardKey.Backslash,
-  221 : KeyboardKey.BracketRight,
-  222 : KeyboardKey.IntlRo,
+  8: KeyboardKey.Backspace,
+  9: KeyboardKey.Tab,
+  13: KeyboardKey.Enter,
+  16: KeyboardKey.ShiftLeft,
+  17: KeyboardKey.ControlLeft,
+  18: KeyboardKey.AltLeft,
+  19: KeyboardKey.Pause,
+  20: KeyboardKey.CapsLock,
+  27: KeyboardKey.Escape,
+  32: KeyboardKey.Space,
+  33: KeyboardKey.PageUp,
+  34: KeyboardKey.PageDown,
+  35: KeyboardKey.End,
+  36: KeyboardKey.Home,
+  37: KeyboardKey.ArrowLeft,
+  38: KeyboardKey.ArrowUp,
+  39: KeyboardKey.ArrowRight,
+  40: KeyboardKey.ArrowDown,
+  45: KeyboardKey.Insert,
+  46: KeyboardKey.Delete,
+  48: KeyboardKey.Digit0,
+  49: KeyboardKey.Digit1,
+  50: KeyboardKey.Digit2,
+  51: KeyboardKey.Digit3,
+  52: KeyboardKey.Digit4,
+  53: KeyboardKey.Digit5,
+  54: KeyboardKey.Digit6,
+  55: KeyboardKey.Digit7,
+  56: KeyboardKey.Digit8,
+  57: KeyboardKey.Digit9,
+  65: KeyboardKey.KeyA,
+  66: KeyboardKey.KeyB,
+  67: KeyboardKey.KeyC,
+  68: KeyboardKey.KeyD,
+  69: KeyboardKey.KeyE,
+  70: KeyboardKey.KeyF,
+  71: KeyboardKey.KeyG,
+  72: KeyboardKey.KeyH,
+  73: KeyboardKey.KeyI,
+  74: KeyboardKey.KeyJ,
+  75: KeyboardKey.KeyK,
+  76: KeyboardKey.KeyL,
+  77: KeyboardKey.KeyM,
+  78: KeyboardKey.KeyN,
+  79: KeyboardKey.KeyO,
+  80: KeyboardKey.KeyP,
+  81: KeyboardKey.KeyQ,
+  82: KeyboardKey.KeyR,
+  83: KeyboardKey.KeyS,
+  84: KeyboardKey.KeyT,
+  85: KeyboardKey.KeyU,
+  86: KeyboardKey.KeyV,
+  87: KeyboardKey.KeyW,
+  88: KeyboardKey.KeyX,
+  89: KeyboardKey.KeyY,
+  90: KeyboardKey.KeyZ,
+  91: KeyboardKey.MetaLeft,
+  92: KeyboardKey.MetaRight,
+  93: KeyboardKey.MediaSelect,
+  96: KeyboardKey.Numpad0,
+  97: KeyboardKey.Numpad1,
+  98: KeyboardKey.Numpad2,
+  99: KeyboardKey.Numpad3,
+  100: KeyboardKey.Numpad4,
+  101: KeyboardKey.Numpad5,
+  102: KeyboardKey.Numpad6,
+  103: KeyboardKey.Numpad7,
+  104: KeyboardKey.Numpad8,
+  105: KeyboardKey.Numpad9,
+  106: KeyboardKey.NumpadMultiply,
+  107: KeyboardKey.NumpadAdd,
+  109: KeyboardKey.NumpadSubtract,
+  110: KeyboardKey.NumpadDecimal,
+  111: KeyboardKey.NumpadDivide,
+  112: KeyboardKey.F1,
+  113: KeyboardKey.F2,
+  114: KeyboardKey.F3,
+  115: KeyboardKey.F4,
+  116: KeyboardKey.F5,
+  117: KeyboardKey.F6,
+  118: KeyboardKey.F7,
+  119: KeyboardKey.F8,
+  120: KeyboardKey.F9,
+  121: KeyboardKey.F10,
+  122: KeyboardKey.F11,
+  123: KeyboardKey.F12,
+  144: KeyboardKey.NumLock,
+  145: KeyboardKey.ScrollLock,
+  186: KeyboardKey.Semicolon,
+  187: KeyboardKey.Equal,
+  188: KeyboardKey.Comma,
+  189: KeyboardKey.Minus,
+  190: KeyboardKey.Period,
+  191: KeyboardKey.Slash,
+  192: KeyboardKey.Backquote,
+  219: KeyboardKey.BracketLeft,
+  220: KeyboardKey.Backslash,
+  221: KeyboardKey.BracketRight,
+  222: KeyboardKey.IntlRo,
 })

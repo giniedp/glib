@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig.tsc.json",
+  "extends": "..\\tsconfig.tsc.json",
   "baseUrl": ".",
   "rootDir": ".",
   "compilerOptions": {
@@ -16,10 +16,10 @@
   ],
   "references": [
     {
-      "path": "../math/tsconfig.json"
+      "path": "..\\utils\\tsconfig.json"
     },
     {
-      "path": "../utils/tsconfig.json"
+      "path": "..\\math\\tsconfig.json"
     }
   ]
 }

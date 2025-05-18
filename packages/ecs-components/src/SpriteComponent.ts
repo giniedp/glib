@@ -1,8 +1,7 @@
-import { Inject, OnUpdate, Component, Listener } from '@gglib/ecs'
+import { Component, Inject, Listener, OnUpdate } from '@gglib/ecs'
 import { SpriteBatch, Texture } from '@gglib/graphics'
 import { BoundingSphere, IRect } from '@gglib/math'
 import { SceneItemSprite } from '@gglib/render'
-import { getOption } from '@gglib/utils'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
 import { TransformComponent } from './TransformComponent'
@@ -326,16 +325,16 @@ export class SpriteComponent implements OnUpdate {
 
   public constructor(options?: SpriteComponentOptions) {
     if (options) {
-      this.texture = getOption(options, 'texture', this.texture)
-      this.source = getOption(options, 'source', this.source)
-      this.slice = getOption(options, 'slice', this.slice)
-      this.color = getOption(options, 'color', this.color)
-      this.width = getOption(options, 'width', this.width)
-      this.height = getOption(options, 'height', this.height)
-      this.pivotX = getOption(options, 'pivotX', this.pivotX)
-      this.pivotY = getOption(options, 'pivotY', this.pivotY)
-      this.flipX = getOption(options, 'flipX', this.flipX)
-      this.flipY = getOption(options, 'flipY', this.flipY)
+      this.texture = options.texture ?? this.texture
+      this.source = options.source ?? this.source
+      this.slice = options.slice ?? this.slice
+      this.color = options.color ?? this.color
+      this.width = options.width ?? this.width
+      this.height = options.height ?? this.height
+      this.pivotX = options.pivotX ?? this.pivotX
+      this.pivotY = options.pivotY ?? this.pivotY
+      this.flipX = options.flipX ?? this.flipX
+      this.flipY = options.flipY ?? this.flipY
     }
   }
 
@@ -345,9 +344,9 @@ export class SpriteComponent implements OnUpdate {
    * @param options - sprite source options
    */
   public setSource(options: SpriteSourceOptions | null) {
-    this.texture = getOption(options, 'texture', null)
-    this.source = getOption(options, 'source', null)
-    this.slice = getOption(options, 'slice', null)
+    this.texture = options?.texture ?? null
+    this.source = options?.source ?? null
+    this.slice = options?.slice ?? null
   }
 
   /**
@@ -369,8 +368,8 @@ export class SpriteComponent implements OnUpdate {
    *
    * @param collector - the collector with a scene where to contribute
    */
-   @Listener(SceneNodeComponent.ON_VISIT)
-   public collectParts(collector: SceneNodeVisitor) {
+  @Listener(SceneNodeComponent.ON_VISIT)
+  public collectParts(collector: SceneNodeVisitor) {
     if (this.texture) {
       this.$drawable.sprite = this
       this.$drawable.transform = this.transform?.world
@@ -433,7 +432,6 @@ export class SpriteComponent implements OnUpdate {
       )
     }
   }
-
 
   private collectSlices() {
     //       sx0    sx1    sx2
@@ -573,7 +571,7 @@ class SpriteSpecPool {
     if (!this.list[i]) {
       this.list[i] = {
         src: { x: 0, y: 0, width: 0, height: 0 },
-        dst: { x: 0, y: 0, width: 0, height: 0 }
+        dst: { x: 0, y: 0, width: 0, height: 0 },
       }
     }
     return this.list[i]

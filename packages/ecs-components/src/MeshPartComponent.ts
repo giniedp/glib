@@ -1,5 +1,5 @@
 import { Inject, Component, Listener } from '@gglib/ecs'
-import { Material, ModelMeshPart } from '@gglib/graphics'
+import { Material, Geometry } from '@gglib/graphics'
 import { SceneItemDrawable } from '@gglib/render'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'
 import { SceneNodeComponent, SceneNodeVisitor } from './SceneNodeComponent'
@@ -35,7 +35,7 @@ export class MeshPartComponent {
   public get mesh() {
     return this.$mesh
   }
-  public set mesh(value: ModelMeshPart) {
+  public set mesh(value: Geometry) {
     if (this.$mesh !== value) {
       this.$mesh = value
       this.meshChanged = true
@@ -67,7 +67,7 @@ export class MeshPartComponent {
   @Inject(BoundingVolumeComponent, { optional: true })
   public readonly volume?: BoundingVolumeComponent
 
-  private $mesh: ModelMeshPart
+  private $mesh: Geometry
   private $material: Material
   private $drawable: SceneItemDrawable = {
     type: 'drawable',

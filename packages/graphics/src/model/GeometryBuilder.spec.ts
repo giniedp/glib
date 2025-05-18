@@ -1,8 +1,8 @@
-import { ModelBuilder } from './ModelBuilder'
+import { GeometryBuilder } from './GeometryBuilder'
 
-describe('Graphics.ModelBuilder', () => {
+describe('Graphics.GeometryBuilder', () => {
 
-  let builder: ModelBuilder
+  let builder: GeometryBuilder
 
   beforeEach(() => {
     //

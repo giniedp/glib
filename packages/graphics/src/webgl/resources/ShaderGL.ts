@@ -11,7 +11,6 @@ import { Glsl } from '../glsl'
  * @public
  */
 export class ShaderGL extends Shader {
-
   /**
    * The graphics device
    */
@@ -22,7 +21,7 @@ export class ShaderGL extends Shader {
    */
   public info: string
 
-  public handle: WebGLShader
+  public resource: WebGLShader
 
   /**
    *
@@ -45,9 +44,9 @@ export class ShaderGL extends Shader {
    * Releases the shader handle
    */
   public destroy(): this {
-    if (this.device.context.isShader(this.handle)) {
-      this.device.context.deleteShader(this.handle)
-      this.handle = null
+    if (this.device.context.isShader(this.resource)) {
+      this.device.context.deleteShader(this.resource)
+      this.resource = null
     }
     return this
   }
@@ -56,27 +55,33 @@ export class ShaderGL extends Shader {
    * Compiles the shader source code
    */
   public compile(): this {
-    if (!this.handle) {
-      this.handle = this.device.context.createShader(this.type)
+    if (!this.resource) {
+      this.resource = this.device.context.createShader(this.type)
     }
     if (!this.source) {
       Log.error('[Shader] can not compile shader, source is missing', this)
       return this
     }
     const gl = this.device.context
-    gl.shaderSource(this.handle, this.source)
-    gl.compileShader(this.handle)
-    this.compiled = gl.getShaderParameter(this.handle, gl.COMPILE_STATUS)
-    this.info = gl.getShaderInfoLog(this.handle)
+    gl.shaderSource(this.resource, this.source)
+    gl.compileShader(this.resource)
+    // don't check compile status immediately
+    // this will be done by the program when linking fails
+    return this
+  }
+
+  public status() {
+    const gl = this.device.context
+    this.compiled = gl.getShaderParameter(this.resource, gl.COMPILE_STATUS)
+    this.info = gl.getShaderInfoLog(this.resource)
 
     if (!this.compiled) {
       Log.error('[Shader] compilation failed', Glsl.formatError(this.info, this.source))
     }
-    return this
   }
 
   public get debug() {
-    const compiled = this.device.capabilities.extension('WEBGL_debug_shaders')?.getTranslatedShaderSource(this.handle)
+    const compiled = this.device.capabilities.extension('WEBGL_debug_shaders')?.getTranslatedShaderSource(this.resource)
     console.log(compiled)
     return compiled
   }

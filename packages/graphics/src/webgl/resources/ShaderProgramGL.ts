@@ -1,4 +1,3 @@
-import { Log } from '@gglib/utils'
 import { ShaderType, valueOfDataType } from '../../enums'
 import { Buffer, ShaderProgram, ShaderProgramOptions, ShaderUniform } from '../../resources'
 
@@ -18,34 +17,33 @@ import { ShaderUniformGL } from './ShaderUniformGL'
  * On creation the shader source code is inspected for
  */
 export class ShaderProgramGL extends ShaderProgram {
-
   /**
    * The graphics device
    */
-  public readonly device: DeviceGL
+  public device: DeviceGL
   /**
    * The vertex shader
    */
-  public readonly vertexShader: ShaderGL
+  public vertexShader: ShaderGL
   /**
    * The fragment shader
    */
-  public readonly fragmentShader: ShaderGL
+  public fragmentShader: ShaderGL
 
   /**
    * The web gl program handle
    */
-  public readonly handle: WebGLProgram
+  public resource: WebGLProgram
 
   /**
    * A map of shader attributes
    */
-  public readonly inputs: Map<string, GlslMemberInfo & { location: number }> = new Map()
+  public inputs: Map<string, GlslMemberInfo & { location: number }> = new Map()
 
   /**
    * A map of all shader uniforms
    */
-  public readonly uniforms: Map<string, ShaderUniform> = new Map()
+  public uniforms: Map<string, ShaderUniform> = new Map()
 
   /**
    * Whether the program is successfully linked
@@ -56,30 +54,35 @@ export class ShaderProgramGL extends ShaderProgram {
    */
   public info: string
 
+  public get isReady(): boolean {
+    this.readyState ||= this.checkReadyState()
+    return this.readyState
+  }
+
   /**
    * Collection of all attached shaders. Usually contains a single vertex and a single fragment shader
    */
-  protected readonly attached: ReadonlyArray<ShaderGL> = []
+  protected attached: ShaderGL[] = []
+  protected compiling: boolean
   protected inspection: GlslProgramInspection
-
+  private canParallelCompile: boolean
+  private readyState: boolean = false
   constructor(device: DeviceGL, options: ShaderProgramOptions = {}) {
     super()
     this.device = device
-    this.vertexShader = this.getShader(ShaderType.VertexShader, options.vertexShader) as ShaderGL
-    this.fragmentShader = this.getShader(ShaderType.FragmentShader, options.fragmentShader) as ShaderGL
+    this.canParallelCompile = !!device.capabilities.extension('KHR_parallel_shader_compile')
+    this.vertexShader = this.convertShaderSource(ShaderType.VertexShader, options.vertexShader) as ShaderGL
+    this.fragmentShader = this.convertShaderSource(ShaderType.FragmentShader, options.fragmentShader) as ShaderGL
     this.create()
     this.link()
   }
-
-  // protected uniformKeys: string[] = []
-  // protected inputKeys: string[] = []
 
   /**
    * Creates or recreates a `WebGLProgram` resources if needed
    */
   public create(): this {
-    if (!this.handle || !this.device.context.isProgram(this.handle)) {
-      (this as { handle: WebGLShader}).handle = this.device.context.createProgram()
+    if (!this.resource || !this.device.context.isProgram(this.resource)) {
+      this.resource = this.device.context.createProgram()
     }
     return this
   }
@@ -88,9 +91,9 @@ export class ShaderProgramGL extends ShaderProgram {
    * Releases the previously created `WebGLProgram` resource
    */
   public destroy(): this {
-    if (this.device.context.isProgram(this.handle)) {
-      this.device.context.deleteProgram(this.handle);
-      (this as { handle: WebGLShader}).handle = null
+    if (this.device.context.isProgram(this.resource)) {
+      this.device.context.deleteProgram(this.resource)
+      this.resource = null
     }
     return this
   }
@@ -99,22 +102,24 @@ export class ShaderProgramGL extends ShaderProgram {
    * Sets this program as the current program on the graphics device
    */
   public bind(): this {
-    return this.device.program = this
+    this.device.program = this
+    return this
   }
 
   /**
    * Attaches all shaders
    */
   private attach(): this {
-    const attached = this.attached as ShaderGL[]
-    attached.length = 0
+    this.attached.length = 0
+    this.readyState = false
+    this.compiling = true
     if (this.vertexShader) {
-      this.device.context.attachShader(this.handle, this.vertexShader.handle)
-      attached.push(this.vertexShader)
+      this.device.context.attachShader(this.resource, this.vertexShader.resource)
+      this.attached.push(this.vertexShader)
     }
     if (this.fragmentShader) {
-      this.device.context.attachShader(this.handle, this.fragmentShader.handle)
-      attached.push(this.fragmentShader)
+      this.device.context.attachShader(this.resource, this.fragmentShader.resource)
+      this.attached.push(this.fragmentShader)
     }
     return this
   }
@@ -124,58 +129,96 @@ export class ShaderProgramGL extends ShaderProgram {
    */
   private detach(): this {
     for (let shader of this.attached) {
-      this.device.context.detachShader(this.handle, shader.handle)
+      this.device.context.detachShader(this.resource, shader.resource)
     }
-    const attached = this.attached as ShaderGL[]
-    attached.length = 0
+    this.attached.length = 0
+    this.compiling = false
     return this
   }
 
-  private introspect() {
+  /**
+   *
+   */
+  public link(): this {
+    this.detach()
+    this.attach()
+    this.device.context.linkProgram(this.resource)
+    return this
+  }
+
+  private checkReadyState(): boolean {
+    if (this.compiling && this.canParallelCompile) {
+      const gl = this.device.context
+      const ext = this.device.capabilities.extension('KHR_parallel_shader_compile')
+      this.compiling =  !gl.getProgramParameter(this.resource, ext.COMPLETION_STATUS_KHR)
+    } else {
+      this.compiling = false
+    }
+    if (!this.readyState && !this.compiling) {
+      this.onProgramready()
+    }
+    this.readyState = !this.compiling
+    return this.readyState
+  }
+
+  private onProgramready() {
+    const gl = this.device.context
+    this.linked = gl.getProgramParameter(this.resource, gl.LINK_STATUS)
+    this.info = gl.getProgramInfoLog(this.resource)
+
+    if (!this.linked) {
+      //
+    } else {
+      this.inspectProgram()
+      this.assignRegisters()
+      this.assignDefaults()
+    }
+  }
+  private inspectProgram() {
     try {
       this.inspection = Glsl.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
     } catch (e) {
       console.error('GLSL inspection failed', e)
     }
-    this.introspectInputs()
-    this.introspecUniforms()
+    this.inspectInputs()
+    this.inspectUniforms()
   }
 
-  private introspectInputs() {
+  private inspectInputs() {
     const meta = this.inspection?.inputs
     const gl = this.device.context
-    const attributeCount = gl.getProgramParameter(this.handle, gl.ACTIVE_ATTRIBUTES);
+    const attributeCount = gl.getProgramParameter(this.resource, gl.ACTIVE_ATTRIBUTES)
     this.inputs.clear()
 
     for (let i = 0; i < attributeCount; ++i) {
-      const info = gl.getActiveAttrib(this.handle, i);
-      const location = gl.getAttribLocation(this.handle, info.name)
+      const info = gl.getActiveAttrib(this.resource, i)
+      const location = gl.getAttribLocation(this.resource, info.name)
 
       this.inputs.set(info.name, {
         ...(meta?.[info.name] || {}),
         name: info.name,
         location: location,
         type: toTypeName(gl, info.type),
-        size: info.size
+        size: info.size,
       })
     }
   }
 
-  private introspecUniforms() {
+  private inspectUniforms() {
     const gl = this.device.context
-    const uniformCount = gl.getProgramParameter(this.handle, gl.ACTIVE_UNIFORMS);
-    let blockIndices: Record<number, number> = {};
-    let offsets: Record<number, number> = {};
+    const uniformCount = gl.getProgramParameter(this.resource, gl.ACTIVE_UNIFORMS)
+    let blockIndices: Record<number, number> = {}
+    let offsets: Record<number, number> = {}
     if (isWebGL2(gl)) {
-      blockIndices = gl.getActiveUniforms(this.handle, Array.from(Array(uniformCount).keys()) , gl.UNIFORM_BLOCK_INDEX)
-      offsets = gl.getActiveUniforms(this.handle, Array.from(Array(uniformCount).keys()) , gl.UNIFORM_OFFSET)
+      blockIndices = gl.getActiveUniforms(this.resource, Array.from(Array(uniformCount).keys()), gl.UNIFORM_BLOCK_INDEX)
+      offsets = gl.getActiveUniforms(this.resource, Array.from(Array(uniformCount).keys()), gl.UNIFORM_OFFSET)
     }
     this.uniforms.clear()
     for (let i = 0; i < uniformCount; ++i) {
       // TODO:
       const block = blockIndices[i]
       const offset = offsets[i]
-      const info = gl.getActiveUniform(this.handle, i);
+      const info = gl.getActiveUniform(this.resource, i)
       const uniform = new ShaderUniformGL(this, {
         ...(this.resolveUniformMetadata(info.name) || {}),
         name: info.name,
@@ -186,12 +229,15 @@ export class ShaderProgramGL extends ShaderProgram {
       if (info.size > 1) {
         for (let i = 1; i < info.size; i++) {
           const name = info.name.replace(/\[0\]$/, `[${i}]`)
-          this.uniforms.set(name, new ShaderUniformGL(this, {
-            ...(this.resolveUniformMetadata(name) || {}),
-            name: name,
-            type: toTypeName(gl, info.type),
-            size: null,
-          }))
+          this.uniforms.set(
+            name,
+            new ShaderUniformGL(this, {
+              ...(this.resolveUniformMetadata(name) || {}),
+              name: name,
+              type: toTypeName(gl, info.type),
+              size: null,
+            }),
+          )
         }
       }
     }
@@ -232,33 +278,11 @@ export class ShaderProgramGL extends ShaderProgram {
     return this.inspection?.uniforms?.[name]
   }
 
-  /**
-   *
-   */
-  public link(): this {
-    this.detach()
-    this.attach()
-
-    Log.groupCollapsed(`[ShaderProgram] ${this.uid} link()`)
-
-    const gl = this.device.context
-    gl.linkProgram(this.handle)
-    this.linked = gl.getProgramParameter(this.handle, gl.LINK_STATUS)
-    this.info = gl.getProgramInfoLog(this.handle)
-
-    if (!this.linked) {
-      Log.error('failed', this.info)
-    } else {
-      this.introspect()
-      this.assignRegisters()
-      this.assignDefaults()
-    }
-    Log.info(this)
-    Log.groupEnd()
-    return this
-  }
-
   public bindAttribPointerAndLocation(vBuffer: Buffer | Buffer[]) {
+    if (!this.isReady) {
+      throw new Error('Program is not ready')
+    }
+
     if (Array.isArray(vBuffer)) {
       this.inputs.forEach((attribute, name) => {
         for (const buffer of vBuffer) {
@@ -279,9 +303,12 @@ export class ShaderProgramGL extends ShaderProgram {
         }
         // tslint:disable-next-line
         throw new Error(
-          `VertexBuffer is not compatible with Program. Required attributes are '${Array.from(
-            this.inputs.keys(),
-          )}' but '${name}' is missing in vertex buffer.`,
+          [
+            'VertexBuffer is not compatible with Program',
+            `Required attributes: ${Array.from(this.inputs.keys())}`,
+            `Available attributes: ${vBuffer.map((it) => Object.keys(it.layout))}`,
+            `Missing attribute: ${name}`,
+          ].join('\n'),
         )
       })
     } else {
@@ -303,9 +330,12 @@ export class ShaderProgramGL extends ShaderProgram {
 
         // tslint:disable-next-line
         throw new Error(
-          `VertexBuffer is not compatible with Program. Required attributes are '${Array.from(
-            this.inputs.keys(),
-          )}' but '${name}' is missing in vertex buffer.`,
+          [
+            'VertexBuffer is not compatible with Program',
+            `Required attributes: ${Array.from(this.inputs.keys())}`,
+            `Available attributes: ${Object.keys(vBuffer.layout)}`,
+            `Missing attribute: ${name}`,
+          ].join('\n'),
         )
       })
     }

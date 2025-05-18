@@ -11,11 +11,7 @@ export class BufferGPU extends Buffer {
    */
   public readonly device: DeviceGPU
 
-  public get handle() {
-    return this.$handle
-  }
-
-  private $handle: GPUBuffer
+  public resource: GPUBuffer
 
   /**
    * Creates a new Buffer
@@ -26,11 +22,11 @@ export class BufferGPU extends Buffer {
   constructor(device: DeviceGPU, opts?: BufferOptions) {
     super()
     this.device = device
-    this.init(opts || {})
+    this.reset(opts || {})
   }
 
   public create(): this {
-    if (!this.handle) {
+    if (!this.resource) {
 
       let usage = GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
       if (this.isIndexBuffer) {
@@ -55,7 +51,7 @@ export class BufferGPU extends Buffer {
           break
       }
 
-      this.$handle = this.device.device.createBuffer({
+      this.resource = this.device.device.createBuffer({
         size: this.sizeInBytes,
         usage: usage,
       })
@@ -67,9 +63,9 @@ export class BufferGPU extends Buffer {
    * Releases any graphics resources.
    */
   public destroy(): this {
-    if (this.handle) {
-      this.handle.destroy()
-      this.$handle = null
+    if (this.resource) {
+      this.resource.destroy()
+      this.resource = null
     }
     return this
   }
@@ -101,8 +97,8 @@ export class BufferGPU extends Buffer {
     const len = srcByteLength || (data.byteLength - off)
     if (len !== this.sizeInBytes) {
       this.destroy()
-      this.$sizeInBytes = len
-      this.$elementCount = this.sizeInBytes / this.stride
+      this.sizeInBytes = len
+      this.elementCount = this.sizeInBytes / this.stride
       this.create()
     }
     // TODO: https://github.com/gpuweb/gpuweb/blob/main/design/BufferOperations.md

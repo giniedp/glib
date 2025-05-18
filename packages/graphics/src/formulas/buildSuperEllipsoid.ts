@@ -1,29 +1,31 @@
 import { Vec2, Vec3 } from '@gglib/math'
-import { getOption } from '@gglib/utils'
-import type { ModelBuilder } from '../model/ModelBuilder'
+import type { GeometryBuilder } from '../model/GeometryBuilder'
 
 function sign(a: number) {
   return a < 0 ? -1 : 1
 }
 
 /**
- * Builds a super ellipsoid shape into the {@link ModelBuilder}
+ * Builds a super ellipsoid shape into the {@link GeometryBuilder}
  *
  * @public
  * @remarks
  * implementation is based on {@link http://paulbourke.net/geometry/superellipse/}
  */
-export function buildSuperEllipsoid(builder: ModelBuilder, options: {
-  diameter?: number
-  radius?: number
-  steps?: number
-  n1?: number
-  n2?: number,
-} = {}) {
-  let radius = getOption(options, 'radius', getOption(options, 'diameter', 1) * 0.5)
-  let steps = getOption(options, 'steps', 16)
-  let power1 = getOption(options, 'n1', 1)
-  let power2 = getOption(options, 'n2', 1)
+export function buildSuperEllipsoid(
+  builder: GeometryBuilder,
+  options: {
+    diameter?: number
+    radius?: number
+    steps?: number
+    n1?: number
+    n2?: number
+  } = {},
+) {
+  let radius = options?.radius ?? (options?.diameter ?? 1) * 0.5
+  let steps = options?.steps ?? 16
+  let power1 = options?.n1 ?? 1
+  let power2 = options?.n2 ?? 1
 
   let baseVertex = builder.vertexCount
   let stepsV = steps

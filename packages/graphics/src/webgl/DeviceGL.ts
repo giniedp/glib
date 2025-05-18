@@ -41,6 +41,7 @@ import {
 
 import { BufferGL, DepthBufferGL, FrameBufferGL, ShaderGL, ShaderProgramGL, TextureGL } from './resources'
 import { isWebGL2 } from './utils'
+import { CapabilitiesGL } from './CapabilitiesGL'
 
 /**
  * Constructor options for the {@link Device}
@@ -140,6 +141,8 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    */
   public context: WebGLRenderingContext | WebGL2RenderingContext
 
+  public capabilities: CapabilitiesGL
+
   public get isWebGL2(): boolean {
     return isWebGL2(this.context)
   }
@@ -194,7 +197,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
 
     this.canvas = getOrCreateCanvas(options.canvas)
     this.context = getOrCreateContext(this.canvas, options)
-    this.capabilities = new Capabilities(this)
+    this.capabilities = new CapabilitiesGL(this)
 
     this.$cullState = new CullStateGL(this).commit(CullStateGL.Default).resolve()
     this.$blendState = new BlendStateGL(this).commit(BlendStateGL.Default).resolve()
@@ -441,7 +444,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
 
     // Reuse cached framebuffer
     if (this.reusableFrameBuffer) {
-      this.reusableFrameBuffer.init(opts)
+      this.reusableFrameBuffer.reset(opts)
     } else {
       this.reusableFrameBuffer = new FrameBufferGL(this, opts)
     }
@@ -466,7 +469,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    */
   public set frameBuffer(buffer: FrameBufferGL) {
     if (this.currentFrameBuffer !== buffer) {
-      let handle = buffer ? buffer.handle : null
+      let handle = buffer ? buffer.resource : null
       this.context.bindFramebuffer(this.context.FRAMEBUFFER, handle)
       this.currentFrameBuffer = buffer
     }
@@ -497,7 +500,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
       if (buffer && this.$vertexBuffers && this.$vertexBuffers.indexOf(buffer as BufferGL) === -1) {
         throw new Error('vertexBuffer is not part of the vertexBuffers list')
       }
-      this.context.bindBuffer(BufferType.VertexBuffer, buffer ? (buffer as BufferGL).handle : null)
+      this.context.bindBuffer(BufferType.VertexBuffer, buffer ? (buffer as BufferGL).resource : null)
       this.$vertexBuffer = buffer as BufferGL
     }
   }
@@ -513,7 +516,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    */
   public set indexBuffer(buffer: Buffer) {
     if (this.$indexBuffer !== buffer) {
-      this.context.bindBuffer(BufferType.IndexBuffer, buffer ? (buffer as BufferGL).handle : null)
+      this.context.bindBuffer(BufferType.IndexBuffer, buffer ? (buffer as BufferGL).resource : null)
       this.$indexBuffer = buffer as BufferGL
     }
   }
@@ -529,7 +532,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    */
   public set program(program: ShaderProgram) {
     if (this.$program !== program) {
-      let handle = program ? (program as ShaderProgramGL).handle : null
+      let handle = program ? (program as ShaderProgramGL).resource : null
       this.context.useProgram(handle)
       this.$program = program as ShaderProgramGL
     }

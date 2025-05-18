@@ -56,10 +56,9 @@ export abstract class DepthBuffer {
   }
 
   /**
-   * Re-initializes the instance
-   * @param options - The setup options to initialize the instance
+   * Resets the depth buffer to the given options
    */
-  public init(options: DepthBufferOptions): DepthBuffer {
+  public reset(options: DepthBufferOptions): DepthBuffer {
     let width = options.width
     let height = options.height
     let format = valueOfDepthFormat(options.depthFormat) || this.depthFormat || DepthFormat.DepthStencil

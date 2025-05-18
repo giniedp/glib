@@ -1,11 +1,11 @@
-import { buildMobiusStrip, ModelBuilder } from '../index'
+import { buildMobiusStrip, GeometryBuilder } from '../index'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildMobiusStrip', () => {
-    let builder: ModelBuilder
+    let builder: GeometryBuilder
 
     beforeEach(() => {
-      builder = new ModelBuilder()
+      builder = new GeometryBuilder()
     })
 
     it ('builds without errors', () => {

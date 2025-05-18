@@ -1,8 +1,8 @@
 import {
   Material,
   Model,
-  ModelBuilder,
-  ModelMeshPartOptions,
+  GeometryBuilder,
+  GeometryOptions,
   ModelOptions,
   VertexLayout,
   MaterialOptions,
@@ -65,7 +65,7 @@ async function convertData(data: OBJ, context: PipelineContext) {
     return usemtls.indexOf(mtl.name) >= 0
   })
   const mtlNames = materials.map((it) => it.name)
-  const parts: ModelMeshPartOptions[] = []
+  const parts: GeometryOptions[] = []
   groups.forEach((group, g) => {
     group.forEach((faces, s) => {
       parts.push(...buildGroup(data, faces, s, mtlNames))
@@ -108,11 +108,11 @@ function readVertex<T>(data: OBJ, element: VertexTextureNormalRef, target: T) {
 }
 
 function buildGroup(data: OBJ, faces: FaceElement[], smoothingGroup: number, mtlNames: string[]) {
-  const builder = ModelBuilder.begin({
+  const builder = GeometryBuilder.begin({
     layout: [
-      VertexLayout.convert('PositionTexture'),
-      VertexLayout.convert('Normal'),
-      VertexLayout.convert('TangentBitangent'),
+      VertexLayout.create(['position', 'texture']),
+      VertexLayout.create(['normal']),
+      VertexLayout.create(['tangent', 'bitangent']),
       // we abuse an attribute channel as metadata for a material id
       // so we can later split by material
       {
@@ -164,12 +164,12 @@ function buildGroup(data: OBJ, faces: FaceElement[], smoothingGroup: number, mtl
   return splitByMaterial(builder, mtlNames)
 }
 
-function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPartOptions[] {
-  const result: ModelMeshPartOptions[] = []
+function splitByMaterial(builder: GeometryBuilder, mtlNames: string[]): GeometryOptions[] {
+  const result: GeometryOptions[] = []
   const split = new Map<
     number,
     {
-      builder: ModelBuilder
+      builder: GeometryBuilder
       indexMap: Map<number, number>
     }
   >()
@@ -181,8 +181,13 @@ function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPa
 
     if (!split.has(materialId)) {
       split.set(materialId, {
-        builder: ModelBuilder.begin({
-          layout: ['PositionTexture', 'Normal', 'TangentBitangent'],
+        builder: GeometryBuilder.begin({
+          // prettier-ignore
+          layout: [
+            ['position', 'texture'],
+            ['normal'],
+            ['tangent', 'bitangent'],
+          ],
         }),
         indexMap: new Map<number, number>(),
       })
@@ -192,7 +197,7 @@ function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPa
     if (mesh.builder.indexCount % 3 === 0 && mesh.builder.vertexCount >= 65536 - 2) {
       mesh.indexMap.clear()
       result.push(
-        mesh.builder.calculateBoundings().endMeshPart({
+        mesh.builder.calculateBoundings().endGeometry({
           materialId: mtlNames[materialId],
         }),
       )
@@ -210,7 +215,7 @@ function splitByMaterial(builder: ModelBuilder, mtlNames: string[]): ModelMeshPa
   split.forEach((entry, mtl) => {
     if (entry.builder.vertexCount > 0) {
       result.push(
-        entry.builder.calculateBoundings().endMeshPart({
+        entry.builder.calculateBoundings().endGeometry({
           materialId: mtl,
         }),
       )

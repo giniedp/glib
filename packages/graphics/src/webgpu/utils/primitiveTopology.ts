@@ -1,4 +1,3 @@
-import { getOption } from '@gglib/utils'
 import { PrimitiveType } from '../../enums'
 
 const lookup: { [k: number]: GPUPrimitiveTopology } = {
@@ -11,5 +10,5 @@ const lookup: { [k: number]: GPUPrimitiveTopology } = {
 }
 
 export function toPrimitiveTopology(v: PrimitiveType): GPUPrimitiveTopology {
-  return getOption(lookup, v, null)
+  return lookup[v] ?? null
 }

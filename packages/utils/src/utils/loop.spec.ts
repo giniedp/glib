@@ -8,7 +8,7 @@ describe('@gglib/utils/utils/time', () => {
         t += dt
       })
       setTimeout(() => {
-        looper.kill()
+        looper.stop()
         expect(t > 0).toBe(true)
         done()
       }, 1000)

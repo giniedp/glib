@@ -167,6 +167,7 @@ export class Tween extends Events {
   }
 
   public addUpdatable<T>(target: T, prop: NonFunctionPropertyNames<T>, index0 = 0) {
+    target[prop as any] = this.values[index0]
     this.whenUpdate((tween: Tween) => target[prop as any] = tween.values[index0])
   }
 

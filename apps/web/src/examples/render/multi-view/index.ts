@@ -3,10 +3,10 @@ import { LightParams } from '@gglib/fx-materials'
 import { CullState, DepthState, Model, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import {
-  CommonRenderStep,
+  BasicRenderPass,
   LightSourceData,
   RenderManager,
-  RenderStep,
+  RenderPass,
   SceneItemDrawable,
   Scene,
 } from '@gglib/render'
@@ -31,8 +31,8 @@ const lights: LightSourceData[] = [
   }),
 ]
 
-const steps: RenderStep[] = [
-  new CommonRenderStep({
+const steps: RenderPass[] = [
+  new BasicRenderPass({
     clearColor: 0xffffffff,
     depthState: DepthState.Default,
     cullState: CullState.CullClockWise,
