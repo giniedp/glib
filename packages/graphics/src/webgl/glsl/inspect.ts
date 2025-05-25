@@ -1,6 +1,5 @@
 import { getLines } from '@gglib/utils'
 import { GlslVariable } from './GlslParser'
-import { Keywords } from './keywords'
 import { GlslScanResult, scan } from './scan'
 
 /**
@@ -37,9 +36,9 @@ export interface GlslProgramInspection {
    * The vertex shader source
    */
   vertexShader: string
-   /**
-    * The fragment shader source
-    */
+  /**
+   * The fragment shader source
+   */
   fragmentShader: string
   /**
    * All attribute statements
@@ -140,7 +139,7 @@ export function inspect(source: string, skipInputs: boolean): GlslShaderInspecti
     inputs: {},
     uniforms: {},
     structs: {},
-    interfaces: {}
+    interfaces: {},
   }
 
   for (const key of Object.keys(data.variables)) {
@@ -169,7 +168,6 @@ function resolveAccessors(item: GlslVariable, data: GlslScanResult, cb: (info: G
   const meta = parseAnnotations(item.comment)
 
   if (!isStruct && !isInterface) {
-
     spread(item, (index: number | null) => {
       const suffix = index == null ? '' : `[${index}]`
       const name = item.name + suffix
@@ -207,7 +205,7 @@ function resolveAccessors(item: GlslVariable, data: GlslScanResult, cb: (info: G
     const structMeta = parseAnnotations(struct.comment)
 
     const name = struct.instance ? struct.name : ''
-    const binding = struct.instance ? (structMeta.binding || struct.name) : ''
+    const binding = struct.instance ? structMeta.binding || struct.name : ''
     for (const field of struct.members) {
       resolveAccessors(field, data, (fieldItem) => {
         cb({

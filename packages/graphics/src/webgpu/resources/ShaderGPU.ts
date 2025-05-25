@@ -39,7 +39,7 @@ export class ShaderGPU extends Shader {
     return this
   }
 
-  public destroy() {
+  public dispose() {
     this.descriptor.module = null
     this.compiled = false
     return this

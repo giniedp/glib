@@ -35,7 +35,7 @@ export class BufferGL extends Buffer {
   /**
    * Releases any graphics resources.
    */
-  public destroy(): this {
+  public dispose(): this {
     if (this.device.context.isBuffer(this.resource)) {
       this.device.context.deleteBuffer(this.resource)
       this.resource = null

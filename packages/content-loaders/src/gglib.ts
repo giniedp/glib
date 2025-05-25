@@ -10,7 +10,7 @@ import {
   Mesh,
   ShaderFxDocument,
   createShaderEffectOptions,
-  TextureSourceData,
+  ImageDataSource,
 } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { loader, resolveUri, PipelineContext } from '@gglib/content'
@@ -307,7 +307,7 @@ export const loadImageDataToTextureOptions: Loader<ImageData, TextureOptions> = 
   input: ImageData,
   output: Texture.Options,
   handle: async (input: ImageData, _): Promise<TextureOptions> => {
-    return { source: new TextureSourceData(input) }
+    return { source: new ImageDataSource(input) }
   },
 })
 

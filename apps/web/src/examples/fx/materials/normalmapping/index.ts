@@ -1,4 +1,4 @@
-import { materialProgram, LightParams } from '@gglib/fx-materials'
+import { materialProgram, LightParams } from '@gglib/materials'
 import { buildCube, buildPlane, DeviceGL, LightType, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'

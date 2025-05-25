@@ -1,7 +1,4 @@
-// https://www.opengl.org/archives/resources/faq/technical/transformations.htm
-// http://duckmaestro.com/2013/08/17/matrices-are-not-transforms/
-
-import { ArrayLike, IMat, IVec2, IVec3, IVec4, Mat4Data } from './Types'
+import type { ArrayLike, IMat, IVec2, IVec3, IVec4, Mat4Data } from './Types'
 import { Vec3 } from './Vec3'
 
 const enum M {
@@ -12,7 +9,6 @@ const enum M {
 }
 
 /* missing function
-  Decompose
   CreateReflection
   CreateShadow
   CreateBillboard
@@ -210,12 +206,6 @@ export class Mat4 {
   }
   public set m33(v: number) {
     this.m[M._33] = v
-  }
-
-  private get debug(): unknown {
-    const result = this.format(3)
-    console.log(result)
-    return result
   }
 
   /**
@@ -857,6 +847,122 @@ export class Mat4 {
     m[M._32] = 0
     m[M._33] = 1
     return this
+  }
+
+  /**
+   * Composes a matrix from given position, rotation and scale
+   */
+  public static createFromPosRotScale(pos: IVec3, rot: IVec4, scale: IVec3): Mat4 {
+    return new Mat4().initFromPosRotScale(pos, rot, scale)
+  }
+
+  /**
+   * Composes a matrix from given position, rotation and scale
+   */
+  public initFromPosRotScale(pos: IVec3, rot: IVec4, scale: IVec3): this {
+    const x = rot.x
+    const y = rot.y
+    const z = rot.z
+    const w = rot.w
+
+    const xx = x * x
+    const xy = x * y
+    const xz = x * z
+    const xw = x * w
+
+    const yy = y * y
+    const yz = y * z
+    const yw = y * w
+
+    const zz = z * z
+    const zw = z * w
+
+    const m = this.m
+    m[M._00] = (1 - 2 * (yy + zz)) * scale.x
+    m[M._01] = (    2 * (xy + zw)) * scale.x
+    m[M._02] = (    2 * (xz - yw)) * scale.x
+    m[M._03] = 0
+
+    m[M._10] = (    2 * (xy - zw)) * scale.y
+    m[M._11] = (1 - 2 * (zz + xx)) * scale.y
+    m[M._12] = (    2 * (yz + xw)) * scale.y
+    m[M._13] = 0
+
+    m[M._20] = (    2 * (xz + yw)) * scale.z
+    m[M._21] = (    2 * (yz - xw)) * scale.z
+    m[M._22] = (1 - 2 * (yy + xx)) * scale.z
+    m[M._23] = 0
+
+    m[M._30] = pos.x
+    m[M._31] = pos.y
+    m[M._32] = pos.z
+    m[M._33] = 1
+    return this
+  }
+
+  public static decompose(mat: Mat4, scale: IVec3, rot: IVec4, pos: Vec3): boolean {
+    const m = mat.m
+    pos.x = m[M._30]
+    pos.y = m[M._31]
+    pos.z = m[M._32]
+
+    // Extract scale
+    scale.x = Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2])
+    scale.y = Math.sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6])
+    scale.z = Math.sqrt(m[8] * m[8] + m[9] * m[9] + m[10] * m[10])
+
+    if (scale.x === 0 || scale.y === 0 || scale.z === 0) {
+      rot.x = 0
+      rot.y = 0
+      rot.z = 0
+      rot.w = 1
+      return false
+    }
+
+    // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+    const m00 = m[0] / scale.x;
+    const m01 = m[1] / scale.x;
+    const m02 = m[2] / scale.x;
+
+    const m10 = m[4] / scale.y;
+    const m11 = m[5] / scale.y;
+    const m12 = m[6] / scale.y;
+
+    const m20 = m[8] / scale.z;
+    const m21 = m[9] / scale.z;
+    const m22 = m[10] / scale.z;
+
+    const tr = m00 + m11 + m22
+
+    if (tr > 0) {
+      const s = Math.sqrt(tr + 1.0) * 2 // S=4*qw
+      rot.w = 0.25 * s
+      rot.x = (m12 - m21) / s
+      rot.y = (m20 - m02) / s
+      rot.z = (m01 - m10) / s
+    } else if ((m00 > m11) && (m00 > m22)) {
+      const s = Math.sqrt(1.0 + m00 - m11 - m22) * 2 // S=4*qx
+      rot.w = (m12 - m21) / s
+      rot.x = 0.25 * s
+      rot.y = (m10 + m01) / s
+      rot.z = (m20 + m02) / s
+    } else if (m11 > m22) {
+      const s = Math.sqrt(1.0 + m11 - m00 - m22) * 2 // S=4*qy
+      rot.w = (m20 - m02) / s
+      rot.x = (m10 + m01) / s
+      rot.y = 0.25 * s
+      rot.z = (m21 + m12) / s
+    } else {
+      const s = Math.sqrt(1.0 + m22 - m00 - m11) * 2 // S=4*qz
+      rot.w = (m01 - m10) / s
+      rot.x = (m20 + m02) / s
+      rot.y = (m21 + m12) / s
+      rot.z = 0.25 * s
+    }
+  }
+
+  public decompose(scale: IVec3, rot: IVec4, pos: Vec3): void {
+    Mat4.decompose(this, scale, rot, pos)
   }
 
   /**

@@ -6,6 +6,7 @@ import {
 
 import { Vec3 } from './Vec3'
 import { Vec4 } from './Vec4'
+import { describe, it, expect } from 'vitest'
 
 describe('Collision', () => {
   it('closestPointOnSegment', () => {

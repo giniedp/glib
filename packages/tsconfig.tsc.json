@@ -24,7 +24,6 @@
       "../types"
     ],
     "types": [
-      "@types/jasmine",
       "@types/webgl2",
       "gpuweb",
       "webxr"

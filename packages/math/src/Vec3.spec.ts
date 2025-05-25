@@ -1,17 +1,18 @@
 import { IVec3, Mat2, Mat3, Mat4, Quat, Vec3 } from './index'
+import { describe, beforeEach, it, expect } from 'vitest'
 
 describe('Vec3', () => {
 
   function expectComponents(v: IVec3, x: number, y: number, z: number) {
-    expect(v.x).toBeCloseTo(x, 10, 'x component of Vec3 invalid')
-    expect(v.y).toBeCloseTo(y, 10, 'y component of Vec3 invalid')
-    expect(v.z).toBeCloseTo(z, 10, 'z component of Vec3 invalid')
+    expect(v.x, 'x component of Vec3 invalid').toBeCloseTo(x, 10)
+    expect(v.y, 'y component of Vec3 invalid').toBeCloseTo(y, 10)
+    expect(v.z, 'z component of Vec3 invalid').toBeCloseTo(z, 10)
   }
 
   function expectEquality(v1: IVec3, v2: IVec3) {
-    expect(v1.x).toBeCloseTo(v2.x, 10, 'x component of Vec3 invalid')
-    expect(v1.y).toBeCloseTo(v2.y, 10, 'y component of Vec3 invalid')
-    expect(v1.z).toBeCloseTo(v2.z, 10, 'z component of Vec3 invalid')
+    expect(v1.x, 'x component of Vec3 invalid').toBeCloseTo(v2.x, 10)
+    expect(v1.y, 'y component of Vec3 invalid').toBeCloseTo(v2.y, 10)
+    expect(v1.z, 'z component of Vec3 invalid').toBeCloseTo(v2.z, 10)
   }
 
   let a = new Vec3()

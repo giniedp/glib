@@ -1,4 +1,5 @@
 import { Rect } from './Rect'
+import { describe, expect, it } from 'vitest'
 
 function printEdges(rect: Rect) {
   return [rect.y, rect.xEnd, rect.yEnd, rect.x].map((it) => it.toFixed(2)).join(' ')
@@ -6,10 +7,10 @@ function printEdges(rect: Rect) {
 
 describe('Rect', () => {
   function expectComponents(r: Rect, x: number, y: number, width: number, height: number) {
-    expect(r.x).toBeCloseTo(x, 5, 'x component')
-    expect(r.y).toBeCloseTo(y, 5, 'y component')
-    expect(r.width).toBeCloseTo(width, 5, 'width component')
-    expect(r.height).toBeCloseTo(height, 5, 'height component')
+    expect(r.x, 'x component').toBeCloseTo(x, 5)
+    expect(r.y, 'y component').toBeCloseTo(y, 5)
+    expect(r.width, 'width component').toBeCloseTo(width, 5)
+    expect(r.height, 'height component').toBeCloseTo(height, 5)
   }
 
   describe('#new', () => {
@@ -159,8 +160,8 @@ describe('Rect', () => {
         { x: 1, y: 2.9 },
         { x: 2.9, y: 2.9 },
       ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).contains(it)).toBe(true, `contains x:${it.x} y:${it.y}`)
-        expect(new Rect(1, 1, 2, 2).containsXY(it.x, it.y)).toBe(true, `containsXY x:${it.x} y:${it.y}`)
+        expect(new Rect(1, 1, 2, 2).contains(it), `contains x:${it.x} y:${it.y}`).toBe(true)
+        expect(new Rect(1, 1, 2, 2).containsXY(it.x, it.y), `containsXY x:${it.x} y:${it.y}`).toBe(true)
       });
 
       [
@@ -170,8 +171,8 @@ describe('Rect', () => {
         { x: 2.9, y: 0.9 },
         { x: 1, y: 3 },
       ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).contains(it)).toBe(false, `contains x:${it.x} y:${it.y}`)
-        expect(new Rect(1, 1, 2, 2).containsXY(it.x, it.y)).toBe(false, `containsXY x:${it.x} y:${it.y}`)
+        expect(new Rect(1, 1, 2, 2).contains(it), `contains x:${it.x} y:${it.y}`).toBe(false)
+        expect(new Rect(1, 1, 2, 2).containsXY(it.x, it.y), `containsXY x:${it.x} y:${it.y}`).toBe(false)
       })
     })
 
@@ -181,7 +182,7 @@ describe('Rect', () => {
         new Rect(1, 1, 1, 1),
         new Rect(2, 2, 1, 1),
       ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).containsRect(it)).toBe(true, `contains x:${it.x} y:${it.y} width:${it.width} height:${it.height}`)
+        expect(new Rect(1, 1, 2, 2).containsRect(it), `contains x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(true)
       });
 
       [
@@ -190,7 +191,7 @@ describe('Rect', () => {
         new Rect(2.1, 1, 1, 1),
         new Rect(1, 2.1, 1, 1),
       ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).containsRect(it)).toBe(false, `contains x:${it.x} y:${it.y} width:${it.width} height:${it.height}`)
+        expect(new Rect(1, 1, 2, 2).containsRect(it), `contains x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(false)
       })
     })
   })
@@ -207,16 +208,15 @@ describe('Rect', () => {
         new Rect(1, 2.9, 1, 1),
       ].forEach((it) => {
         const rect = new Rect(1, 1, 2, 2)
-        expect(rect.intersects(it)).toBe(true, `${printEdges(rect)} intersects ${printEdges(it)}`)
-        expect(Rect.intersects(it, rect)).toBe(true, `${printEdges(rect)} intersects ${printEdges(it)}`)
+        expect(rect.intersects(it), `${printEdges(rect)} intersects ${printEdges(it)}`).toBe(true)
+        expect(Rect.intersects(it, rect), `${printEdges(rect)} intersects ${printEdges(it)}`).toBe(true)
       });
 
       [
         new Rect(0, 0, 1, 1),
       ].forEach((it) => {
-        expect(new Rect(1, 1, 2, 2).intersects(it)).toBe(false, `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`)
-        expect(Rect.intersects(it, new Rect(1, 1, 2, 2))).toBe(false,
-          `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`)
+        expect(new Rect(1, 1, 2, 2).intersects(it), `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(false)
+        expect(Rect.intersects(it, new Rect(1, 1, 2, 2)), `intersects x:${it.x} y:${it.y} width:${it.width} height:${it.height}`).toBe(false)
       })
     })
   })

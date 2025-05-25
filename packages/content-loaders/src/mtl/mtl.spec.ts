@@ -1,10 +1,10 @@
 import { ContentManager, Pipeline } from '@gglib/content'
 import { DeviceGL, Material } from '@gglib/graphics'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { clearScripts, defineScript } from '../test'
 import { loadMtlToMaterialOptions, loadMtlToMaterialOptionsArray } from './mtl'
 
 describe('content loader mtl', () => {
-
   let device: DeviceGL
   let manager: ContentManager
 
@@ -12,19 +12,23 @@ describe('content loader mtl', () => {
   beforeAll(() => {
     device = new DeviceGL()
     manager = new ContentManager(device, {
-      pipeline: new Pipeline()
+      pipeline: new Pipeline(),
     })
     manager.pipeline.register(loadMtlToMaterialOptions)
     manager.pipeline.register(loadMtlToMaterialOptionsArray)
 
-    defineScript('material.mtl', 'application/x-mtl', `
+    defineScript(
+      'material.mtl',
+      'application/x-mtl',
+      `
 # some comment
 newmtl material name
 Ka 1 2 3
 map_Ka texture.png
 d 0.1
 Ns 16
-    `)
+    `,
+    )
   })
   describe('mtlMaterial', () => {
     it('loads .mtl to MaterialOptions', async () => {

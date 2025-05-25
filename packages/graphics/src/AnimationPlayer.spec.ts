@@ -1,5 +1,6 @@
 import { AnimationPlayer } from './AnimationPlayer'
 import { AnimationTargetPose } from './AnimationData'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('Graphics.AnimationPlayer', () => {
 

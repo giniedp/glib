@@ -1,9 +1,9 @@
-import { GLTFRootProperty } from './common'
+import { NamedProperty } from './common'
 
 /**
  * Joints and matrices defining a skin.
  */
-export interface GLTFSkin extends GLTFRootProperty {
+export interface Skin extends NamedProperty {
 
   /**
    * The index of the accessor containing the floating-point 4x4 inverse-bind matrices.

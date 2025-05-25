@@ -1,5 +1,3 @@
-
-
 import { Log, getOrCreateCanvas } from '@gglib/utils'
 
 import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
@@ -179,12 +177,18 @@ export class DeviceGPU extends Device<any> {
         throw new Error('WebGPU is not supported')
       }
       // this.set('glslang', await initGlslang())
-      this.set('adapter', await navigator.gpu.requestAdapter({
-        powerPreference: 'low-power',
-      }))
-      this.set('device', await this.adapter.requestDevice({
-        //
-      }))
+      this.set(
+        'adapter',
+        await navigator.gpu.requestAdapter({
+          powerPreference: 'low-power',
+        }),
+      )
+      this.set(
+        'device',
+        await this.adapter.requestDevice({
+          //
+        }),
+      )
       this.resize()
     })()
   }
@@ -252,15 +256,19 @@ export class DeviceGPU extends Device<any> {
     for (let i = 0; i < vBuffers.length; i++) {
       this.renderEncoder.setVertexBuffer(i, vBuffers[i].resource)
     }
-    this.renderEncoder.setPipeline(this.device.createRenderPipeline({
-      layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
-      vertexStage: program.vertexShader.descriptor,
-      fragmentStage: program.fragmentShader.descriptor,
-      primitiveTopology: 'triangle-list',
-      colorStates: [{
-        format: 'bgra8unorm' as GPUTextureFormat,
-      }],
-    }))
+    this.renderEncoder.setPipeline(
+      this.device.createRenderPipeline({
+        layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
+        vertexStage: program.vertexShader.descriptor,
+        fragmentStage: program.fragmentShader.descriptor,
+        primitiveTopology: 'triangle-list',
+        colorStates: [
+          {
+            format: 'bgra8unorm' as GPUTextureFormat,
+          },
+        ],
+      }),
+    )
     this.renderEncoder.drawIndexed(elementCount, 1, elementOffset, 0, 0)
     return this
   }
@@ -323,34 +331,42 @@ export class DeviceGPU extends Device<any> {
     } else if (vBuffer) {
       this.renderEncoder.setVertexBuffer(0, vBuffer.resource)
     }
-    this.renderEncoder.setPipeline(this.device.createRenderPipeline({
-      layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
-      vertexStage: program.vertexStageDescriptor,
-      fragmentStage: program.fragmentStageDescriptor,
-      primitiveTopology: toPrimitiveTopology(valueOfPrimitiveType(primitiveType)),
-      colorStates: [{
-        ...this.$blendState.gpuState,
-        format: 'bgra8unorm' as GPUTextureFormat,
-      }],
-      depthStencilState: {
-        ...this.$depthState.gpuState,
-        format: 'depth24plus-stencil8',
-      },
-      rasterizationState: {
-        ...this.$cullState.gpuState,
-      },
-      vertexState: {
-        vertexBuffers: [{
-          arrayStride: 4,
-          attributes: [{
-            // position
-            shaderLocation: 0,
-            offset: 0,
-            format: 'float' as GPUVertexFormat,
-          }],
-        }],
-      },
-    }))
+    this.renderEncoder.setPipeline(
+      this.device.createRenderPipeline({
+        layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
+        vertexStage: program.vertexStageDescriptor,
+        fragmentStage: program.fragmentStageDescriptor,
+        primitiveTopology: toPrimitiveTopology(valueOfPrimitiveType(primitiveType)),
+        colorStates: [
+          {
+            ...this.$blendState.gpuState,
+            format: 'bgra8unorm' as GPUTextureFormat,
+          },
+        ],
+        depthStencilState: {
+          ...this.$depthState.gpuState,
+          format: 'depth24plus-stencil8',
+        },
+        rasterizationState: {
+          ...this.$cullState.gpuState,
+        },
+        vertexState: {
+          vertexBuffers: [
+            {
+              arrayStride: 4,
+              attributes: [
+                {
+                  // position
+                  shaderLocation: 0,
+                  offset: 0,
+                  format: 'float' as GPUVertexFormat,
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    )
     this.renderEncoder.draw(count, 1, offset, 0)
     return this
   }
@@ -373,25 +389,35 @@ export class DeviceGPU extends Device<any> {
 
     this.canvas.width = displayWidth
     this.canvas.height = displayHeight
-    this.set('swapChain', this.context.configureSwapChain({
-      device: this.device,
-      format: this.mainTextureFormat,
-      usage: GPUTextureUsage.OUTPUT_ATTACHMENT | GPUTextureUsage.COPY_SRC,
-    }))
+    this.set(
+      'swapChain',
+      this.context.configureSwapChain({
+        device: this.device,
+        format: this.mainTextureFormat,
+        usage: GPUTextureUsage.OUTPUT_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+      }),
+    )
 
     if (needsCreate) {
-      this.set('mainTexture', this.createTexture2D({
-        width: displayWidth,
-        height: displayHeight,
-        generateMipmap: false,
-        pixelFormat: 'RGBA',
-        pixelType: 'byte',
-      }))
-      this.set('mainDepth', this.createDepthBuffer({
-        width: displayWidth,
-        height: displayHeight,
-        depthFormat: 'Depth24Stencil8',
-      }))
+      this.set(
+        'mainTexture',
+        this.createTexture({
+          type: 'Texture2D',
+          width: displayWidth,
+          height: displayHeight,
+          generateMipmap: false,
+          pixelFormat: 'RGBA',
+          pixelType: 'byte',
+        }),
+      )
+      this.set(
+        'mainDepth',
+        this.createDepthBuffer({
+          width: displayWidth,
+          height: displayHeight,
+          depthFormat: 'Depth24Stencil8',
+        }),
+      )
       this.frameBuffer = new FrameBufferGPU(this, {
         textures: [this.mainTexture],
         depthBuffer: this.mainDepth,
@@ -400,6 +426,7 @@ export class DeviceGPU extends Device<any> {
       this.mainTexture.setup({
         width: displayWidth,
         height: displayHeight,
+        type: 'Texture2D',
       })
       this.mainDepth.reset({
         width: displayWidth,
@@ -559,8 +586,6 @@ export class DeviceGPU extends Device<any> {
    * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
    */
   public createProgram(options: ShaderProgramOptions): ShaderProgramGPU {
-    options.vertexShader = this.convertShaderOption(options.vertexShader)
-    options.fragmentShader = this.convertShaderOption(options.fragmentShader)
     return new ShaderProgramGPU(this, options)
   }
 
@@ -580,23 +605,6 @@ export class DeviceGPU extends Device<any> {
     return new TextureGPU(this, options)
   }
 
-  /**
-   * Creates a new Texture of type Texture2D. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public createTexture2D(options: TextureOptions = {}): TextureGPU {
-    options.type = 'Texture2D'
-    return new TextureGPU(this, options)
-  }
-
-  /**
-   * Creates a new Texture of type TextureCube. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public createTextureCube(options: TextureOptions = {}): TextureGPU {
-    options.type = 'TextureCube'
-    return new TextureGPU(this, options)
-  }
   /**
    * Creates a new sampler state object
    */

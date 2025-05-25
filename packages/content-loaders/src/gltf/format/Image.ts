@@ -1,10 +1,10 @@
-import { GLTFRootProperty } from './common'
+import { NamedProperty } from './common'
 
 /**
  * Image data used to create a texture. Image can be referenced by URI or `bufferView` index.
  * `mimeType` is required in the latter case.
  */
-export interface GLTFImage extends GLTFRootProperty {
+export interface Image extends NamedProperty {
   /**
    * The uri of the image.
    *

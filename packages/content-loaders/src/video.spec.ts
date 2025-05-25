@@ -9,6 +9,7 @@ import {
 } from './index'
 
 import { DeviceGL } from '@gglib/graphics'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('content/loaders/native', () => {
 

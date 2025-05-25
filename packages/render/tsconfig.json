@@ -25,7 +25,7 @@
       "path": "..\\utils\\tsconfig.json"
     },
     {
-      "path": "..\\fx-post\\tsconfig.json"
+      "path": "..\\effects\\tsconfig.json"
     }
   ]
 }

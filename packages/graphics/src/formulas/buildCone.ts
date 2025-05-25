@@ -1,5 +1,14 @@
-import type { GeometryBuilder } from '../model/GeometryBuilder'
+import { Device } from '../Device'
+import { Geometry } from '../model/Geometry'
+import { beginGeometry, GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
+
+export const BuildConeDefaults = {
+  height: 1.0,
+  upperRadius: 0.0,
+  lowerRadius: 0.5,
+  tesselation: 32,
+}
 
 /**
  * Options for the {@link buildCone} function
@@ -31,18 +40,25 @@ export interface BuildConeOptions {
   tesselation?: number
 }
 
+export function coneGeometry(device: Device, options?: BuildConeOptions): Geometry {
+  return beginGeometry().append(buildCone, options).endGeometry(device, {
+    name: 'cone',
+  })
+}
+
 /**
  * Builds a cone shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildCone(builder: GeometryBuilder, options: BuildConeOptions = {}) {
-  const r1 = options?.lowerRadius ?? 0.5
-  const r2 = options?.upperRadius ?? 0
-  const h = options?.height ?? 1.0
+export function buildCone(builder: GeometryBuilder, options?: BuildConeOptions) {
+  const r1 = options?.lowerRadius ?? BuildConeDefaults.lowerRadius
+  const r2 = options?.upperRadius ?? BuildConeDefaults.upperRadius
+  const h = options?.height ?? BuildConeDefaults.height
+  const t = options?.tesselation ?? BuildConeDefaults.tesselation
 
   buildParametricSurface(builder, {
-    f: (u: number, v: number) => {
+    position: (u: number, v: number) => {
       u = 1 - u
       v = 1 - v
       const s = (h - v * h) / h
@@ -53,7 +69,7 @@ export function buildCone(builder: GeometryBuilder, options: BuildConeOptions = 
         z: r * Math.sin(Math.PI * 2 * u),
       }
     },
-    tu: options?.tesselation ?? 32,
-    tv: options?.tesselation ?? 32,
+    uSteps: t,
+    vSteps: t,
   })
 }

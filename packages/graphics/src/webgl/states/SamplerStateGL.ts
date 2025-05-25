@@ -1,6 +1,4 @@
-import {
-  TextureType,
-} from '../../enums'
+import { TextureType } from '../../enums'
 import { SamplerState, SamplerStateParams } from '../../states'
 import { DeviceGL } from '../DeviceGL'
 import { isWebGL2 } from '../utils'
@@ -18,7 +16,6 @@ export interface TextureLike {
  * @public
  */
 export class SamplerStateGL extends SamplerState {
-
   /**
    * The graphics device
    */
@@ -29,13 +26,13 @@ export class SamplerStateGL extends SamplerState {
   }
 
   public get textureHandle() {
-    return this.texture ? this.texture.handle : null
+    return this.texture?.resource
   }
 
   private handle: WebGLSampler = null
-  private texture: { type: number, handle: WebGLTexture } | null
+  private texture: { type: number; resource: WebGLTexture } | null
 
-  constructor(device: DeviceGL, texture?: { type: number, handle: WebGLTexture }) {
+  constructor(device: DeviceGL, texture?: { type: number; resource: WebGLTexture }) {
     super()
     this.device = device
     this.texture = texture
@@ -55,14 +52,13 @@ export class SamplerStateGL extends SamplerState {
 
   public destroy() {
     if (this.handle) {
-      (this.device.context as WebGL2RenderingContext).deleteSampler(this.handle)
+      ;(this.device.context as WebGL2RenderingContext).deleteSampler(this.handle)
       this.handle = null
     }
     return this
   }
 
   public commitChanges(changes?: SamplerStateParams): this {
-
     if (this.handle) {
       const gl = this.device.context as WebGL2RenderingContext
       if (changes.minFilter !== null) {
@@ -94,7 +90,7 @@ export class SamplerStateGL extends SamplerState {
       }
     } else if (this.texture) {
       const gl = this.device.context
-      gl.bindTexture(this.texture.type, this.texture.handle)
+      gl.bindTexture(this.texture.type, this.texture.resource)
       const type = this.texture.type
       if (changes.minFilter !== null) {
         gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, this.minFilter)
@@ -148,10 +144,10 @@ export class SamplerStateGL extends SamplerState {
       out.maxLod = gl.getSamplerParameter(handle, gl.TEXTURE_MAX_LOD)
       out.compareMode = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_MODE)
       out.compareFunc = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_FUNC)
-    } else if (this.texture?.handle) {
+    } else if (this.texture?.resource) {
       const texture = this.texture
       const gl = this.device.context
-      gl.bindTexture(texture.type, texture.handle)
+      gl.bindTexture(texture.type, texture.resource)
       out.minFilter = gl.getTexParameter(texture.type, gl.TEXTURE_MIN_FILTER)
       out.magFilter = gl.getTexParameter(texture.type, gl.TEXTURE_MAG_FILTER)
       out.wrapU = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_S)

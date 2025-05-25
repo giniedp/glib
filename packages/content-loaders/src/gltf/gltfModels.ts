@@ -15,7 +15,7 @@ import { copy, Log } from '@gglib/utils'
 import { BoundingSphere, BoundingBox } from '@gglib/math'
 import { PipelineContext } from '@gglib/content'
 
-import { GLTFScene, GLTFMesh, GLTFMeshPrimitive, GLTFAccessorType } from './format'
+import { Scene, Mesh, MeshPrimitive, AccessorType } from './format'
 
 import { loadGltfAnimations } from './gltfAnimations'
 import { loadGltfSkins } from './gltfSkins'
@@ -25,7 +25,7 @@ import { loadGltfMaterial } from './gltfMaterials'
 export async function loadGltfModel(
   context: PipelineContext,
   reader: GLTFReader,
-  scene: GLTFScene,
+  scene: Scene,
 ): Promise<ModelOptions> {
 
   const result: ModelOptions = {
@@ -89,7 +89,7 @@ function analyzeMeshPart(reader: GLTFReader, part: GeometryOptions, meshIndex: n
   return features
 }
 
-async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<GeometryOptions[]> {
+async function loadMeshParts(reader: GLTFReader, mesh: Mesh): Promise<GeometryOptions[]> {
   let min = [0, 0, 0]
   let max = [0, 0, 0]
   const doc = reader.doc
@@ -129,7 +129,7 @@ async function loadMeshParts(reader: GLTFReader, mesh: GLTFMesh): Promise<Geomet
   return Promise.all(result)
 }
 
-async function loadIndexBuffer(reader: GLTFReader, part: GLTFMeshPrimitive): Promise<BufferOptions> {
+async function loadIndexBuffer(reader: GLTFReader, part: MeshPrimitive): Promise<BufferOptions> {
   if (part.indices == null) {
     return null
   }
@@ -141,7 +141,7 @@ async function loadIndexBuffer(reader: GLTFReader, part: GLTFMeshPrimitive): Pro
   }
 }
 
-async function loadVertexBuffers(reader: GLTFReader, part: GLTFMeshPrimitive): Promise<BufferOptions[]> {
+async function loadVertexBuffers(reader: GLTFReader, part: MeshPrimitive): Promise<BufferOptions[]> {
   const vbOptions: BufferOptions[] = []
   const bufferViewGroups = new Map<number, string[]>()
   const doc = reader.doc
@@ -217,7 +217,7 @@ async function loadVertexBuffers(reader: GLTFReader, part: GLTFMeshPrimitive): P
   return vbOptions
 }
 
-function elementCount(type: GLTFAccessorType) {
+function elementCount(type: AccessorType) {
   return {
     SCALAR: 1,
     VEC2: 2,

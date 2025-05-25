@@ -6,6 +6,11 @@ import { Device } from './Device'
 import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
 import { ShaderPass } from './ShaderPass'
 
+export function effectOptions() {
+
+}
+
+
 /**
  * Constructor options for {@link ShaderEffect}
  *
@@ -16,10 +21,12 @@ export interface ShaderEffectOptions<Params extends ShaderEffectParameters = Sha
    * A user defined name of the effect
    */
   name?: string
+
   /**
    * The default set of parameters
    */
   parameters?: Params
+
   /**
    * A collection of programs of this effect
    *
@@ -27,6 +34,7 @@ export interface ShaderEffectOptions<Params extends ShaderEffectParameters = Sha
    * `techniques` option is mutually exclusive with `program` option
    */
   techniques?: ReadonlyArray<ShaderTechniqueOptions | ShaderTechnique> | ShaderTechnique
+
   /**
    * The name or index of the default technique of an effect. Defaults to `0`
    */
@@ -99,10 +107,12 @@ export class ShaderEffect<Params extends ShaderEffectParameters = ShaderEffectPa
    * The graphics device
    */
   public device: Device
+
   /**
    * A user defined name of the effect
    */
   public name: string
+
   /**
    * The effect parameters that have been specified for this effect
    *
@@ -110,10 +120,12 @@ export class ShaderEffect<Params extends ShaderEffectParameters = ShaderEffectPa
    * When using {@link ShaderEffect.draw} these parameters are used as defaults but can be overridden
    */
   public parameters: Params
+
   /**
    * The technique collection
    */
   public techniques: ShaderTechnique[] = []
+
   /**
    * The technique that is currently active
    */
@@ -259,5 +271,23 @@ export class ShaderEffect<Params extends ShaderEffectParameters = ShaderEffectPa
    */
   public getParameter<T extends ShaderUniformValue>(name: string): T | null {
     return this.parameters[name] as T
+  }
+
+  /**
+   * Checks if all techniques are ready
+   *
+   * @remarks
+   * If no techniques are defined, this will return true
+   */
+  public isReady() {
+    if (!this.techniques?.length) {
+      return true
+    }
+    for (const technique of this.techniques) {
+      if (!technique.isReady()) {
+        return false
+      }
+    }
+    return true
   }
 }

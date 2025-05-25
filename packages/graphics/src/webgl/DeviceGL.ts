@@ -1,6 +1,4 @@
-
-
-import { Log, getOrCreateCanvas } from '@gglib/utils'
+import { getOrCreateCanvas, Log, removeFromArrayUnstable } from '@gglib/utils'
 
 import { BufferType, PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
 import {
@@ -15,17 +13,14 @@ import {
   Texture,
   TextureOptions,
 } from '../resources'
-import {
-  VertexAttribArrayState,
-} from '../states'
+import { VertexAttribArrayState } from '../states'
 
-import { Capabilities } from '../Capabilities'
 import { Color, RGBA_FORMAT } from '../Color'
 import { Device } from '../Device'
 import { Model, ModelOptions } from '../model/Model'
 import { ShaderEffect, ShaderEffectOptions } from '../ShaderEffect'
 import { SpriteBatch } from '../SpriteBatch'
-import { VertexLayout } from '../VertexLayout'
+import { AttributeSemantic, VertexLayout } from '../VertexLayout'
 
 import {
   BlendStateGL,
@@ -39,9 +34,9 @@ import {
   ViewportStateGL,
 } from './states'
 
+import { CapabilitiesGL } from './CapabilitiesGL'
 import { BufferGL, DepthBufferGL, FrameBufferGL, ShaderGL, ShaderProgramGL, TextureGL } from './resources'
 import { isWebGL2 } from './utils'
-import { CapabilitiesGL } from './CapabilitiesGL'
 
 /**
  * Constructor options for the {@link Device}
@@ -180,14 +175,20 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
 
   public get driverInfo() {
     // https://developer.mozilla.org/en-US/docs/Web/API/WEBGL_debug_renderer_info
-    const debugInfo = this.capabilities.extension('WEBGL_debug_renderer_info');
+    const debugInfo = this.capabilities.extension('WEBGL_debug_renderer_info')
     if (debugInfo) {
-      const vendor = this.context.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
-      const renderer = this.context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      const vendor = this.context.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)
+      const renderer = this.context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
       return `${vendor} ${renderer}`
     }
-    return ""
+    return ''
   }
+
+  protected textureResources: TextureGL[] = []
+  protected textureResourceLookup = new Map<any, TextureGL>()
+
+  protected programResources: ShaderProgramGL[] = []
+  protected programResourceLookup = new Map<string, ShaderProgramGL>()
 
   /**
    * Constructs a {@link Device}
@@ -281,6 +282,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
 
     program.bindAttribPointerAndLocation(vBuffer || vBuffers)
     this.context.drawElements(type, elementCount, dataType, elementOffset)
+    this.stats.drawCalls++
 
     return this
   }
@@ -320,6 +322,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
       program.bindAttribPointerAndLocation(vBuffer || vBuffers)
 
       this.context.drawElementsInstanced(type, count, dataType, offset * iBuffer.stride, instanceCount)
+      this.stats.drawCalls++
     } else {
       throw new Error(`not supported`)
     }
@@ -347,6 +350,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
 
     program.bindAttribPointerAndLocation(vBuffer || vBuffers)
     this.context.drawArrays(type, offset, count)
+    this.stats.drawCalls++
     return this
   }
 
@@ -400,7 +404,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   /**
    * Sets or un sets a single render target
    */
-  public setRenderTarget(texture: Texture) {
+  public setRenderTarget(texture: Texture | null) {
     this.setRenderTargets(texture)
   }
 
@@ -623,16 +627,60 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
    */
   public createProgram(options: ShaderProgramOptions): ShaderProgramGL {
-    options.vertexShader = this.convertShaderOption(options.vertexShader)
-    options.fragmentShader = this.convertShaderOption(options.fragmentShader)
-    return new ShaderProgramGL(this, options)
+    const key = computeProgramKey(options)
+    if (key) {
+      const existing = this.programResourceLookup.get(key)
+      if (existing) {
+        existing.referenceCount++
+        return existing
+      }
+    }
+
+    const result = new ShaderProgramGL(this, options)
+    result.resourceKey = key
+    result.referenceCount = 1
+    this.programResources.push(result)
+    if (key) {
+      this.programResourceLookup.set(key, result)
+    }
+    return result
+  }
+
+  public onProgramDisposed(resource: ShaderProgramGL): void {
+    removeFromArrayUnstable(this.programResources, resource)
+    if (resource.resourceKey) {
+      this.programResourceLookup.delete(resource.resourceKey)
+    }
   }
 
   /**
    * Creates a new Texture. Calls the Texture constructor with given options.
    */
   public createTexture(options: TextureOptions): TextureGL {
-    return new TextureGL(this, options)
+    if (options.source) {
+      const existing = this.textureResourceLookup.get(options.source)
+      if (existing) {
+        existing.referenceCount++
+        return existing
+      }
+    }
+
+    // create a new texture
+    const texture = new TextureGL(this, options)
+    texture.resourceKey = options.source
+    texture.referenceCount = 1
+    this.textureResources.push(texture)
+    if (options.source) {
+      this.textureResourceLookup.set(options.source, texture)
+    }
+    return texture
+  }
+
+  public onTextureDisposed(resource: TextureGL): void {
+    removeFromArrayUnstable(this.textureResources, resource)
+    if (resource.resourceKey) {
+      this.textureResourceLookup.delete(resource.resourceKey)
+    }
   }
 
   /**
@@ -645,27 +693,10 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   }
 
   /**
-   * Creates a new Texture of type Texture2D. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public createTexture2D(options: TextureOptions = {}): TextureGL {
-    options.type = 'Texture2D'
-    return new TextureGL(this, options)
-  }
-
-  /**
-   * Creates a new Texture of type TextureCube. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public createTextureCube(options: TextureOptions = {}): TextureGL {
-    options.type = 'TextureCube'
-    return new TextureGL(this, options)
-  }
-  /**
    * Creates a new sampler state object
    */
   public createSamplerState(options?: { texture?: Texture }): SamplerStateGL {
-    return new SamplerStateGL(this, options ? options.texture as TextureGL : undefined)
+    return new SamplerStateGL(this, options ? (options.texture as TextureGL) : undefined)
   }
 
   public createDepthBuffer(options: DepthBufferOptions): DepthBufferGL {
@@ -682,8 +713,8 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   /**
    * Creates a vertex layout object from name
    */
-  public createVertexLayout(name: string): any {
-    return VertexLayout.create.apply(this, arguments)
+  public createVertexLayout(semantic: AttributeSemantic[]): any {
+    return VertexLayout.create(semantic)
   }
 
   /**
@@ -702,4 +733,34 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
       this.frameBuffer.unsetSamplersUsedAsAttachments()
     }
   }
+
+  public countTextures(): number {
+    return this.textureResources.length
+  }
+
+  public countTextureReferences(): number {
+    let count = 0
+    for (let i = 0; i < this.textureResources.length; i++) {
+      count += this.textureResources[i].referenceCount
+    }
+    return count
+  }
+
+  public countProgramReferences(): number {
+    let count = 0
+    for (let i = 0; i < this.programResources.length; i++) {
+      count += this.programResources[i].referenceCount
+    }
+    return count
+  }
+
+  public countPrograms(): number {
+    return this.programResources.length
+  }
+}
+
+function computeProgramKey(options: ShaderProgramOptions): string {
+  const vsKey = `vertex:\n${options.vertexShader}\n`
+  const fsKey = `fragment:\n${options.fragmentShader}\n`
+  return `${vsKey}${fsKey}`
 }

@@ -11,6 +11,7 @@ import {
   loadPngToImage,
   loadPngToImageData,
 } from './index'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 import { DeviceGL } from '@gglib/graphics'
 

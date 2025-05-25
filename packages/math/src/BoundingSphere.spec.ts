@@ -6,20 +6,21 @@ import { IVec3 } from './Types'
 import { Mat4 } from './Mat4'
 import { Ray } from './Ray'
 import { Plane } from './Plane'
+import { describe, it, expect } from 'vitest'
 
 describe('BoundingSphere', () => {
 
   function expectComponents(v: BoundingSphere, x: number, y: number, z: number, r: number) {
-    expect(v.center.x).toBeCloseTo(x, 10, 'center.x component')
-    expect(v.center.y).toBeCloseTo(y, 10, 'center.y component')
-    expect(v.center.z).toBeCloseTo(z, 10, 'center.z component')
-    expect(v.radius).toBeCloseTo(r, 10, 'radius component')
+    expect(v.center.x, 'center.x component').toBeCloseTo(x, 10)
+    expect(v.center.y, 'center.y component').toBeCloseTo(y, 10)
+    expect(v.center.z, 'center.z component').toBeCloseTo(z, 10)
+    expect(v.radius, 'radius component').toBeCloseTo(r, 10)
   }
 
   function expectVec3Equality(v1: IVec3, v2: IVec3) {
-    expect(v1.x).toBeCloseTo(v2.x, 10, 'x component')
-    expect(v1.y).toBeCloseTo(v2.y, 10, 'y component')
-    expect(v1.z).toBeCloseTo(v2.z, 10, 'z component')
+    expect(v1.x, 'x component').toBeCloseTo(v2.x, 10)
+    expect(v1.y, 'y component').toBeCloseTo(v2.y, 10)
+    expect(v1.z, 'z component').toBeCloseTo(v2.z, 10)
   }
 
   describe('#new', () => {
@@ -211,19 +212,19 @@ describe('BoundingSphere', () => {
   describe('#intersectsRay', () => {
     it ('tests for intersection', () => {
       const sphere = BoundingSphere.create(1, 1, 1, 1)
-      expect(sphere.intersectsRay(Ray.create(-1,  1,  1,  1,  0,  0))).toBe(true, 'from left')
-      expect(sphere.intersectsRay(Ray.create( 3,  1,  1, -1,  0,  0))).toBe(true, 'from right')
-      expect(sphere.intersectsRay(Ray.create( 1, -1,  1,  0,  1,  0))).toBe(true, 'from below')
-      expect(sphere.intersectsRay(Ray.create( 1,  3,  1,  0, -1,  0))).toBe(true, 'from above')
-      expect(sphere.intersectsRay(Ray.create( 1,  1, -1,  0,  0,  1))).toBe(true, 'from behind')
-      expect(sphere.intersectsRay(Ray.create( 1,  1,  3,  0,  0, -1))).toBe(true, 'from infront')
+      expect(sphere.intersectsRay(Ray.create(-1,  1,  1,  1,  0,  0)), 'from left').toBe(true)
+      expect(sphere.intersectsRay(Ray.create( 3,  1,  1, -1,  0,  0)), 'from right').toBe(true)
+      expect(sphere.intersectsRay(Ray.create( 1, -1,  1,  0,  1,  0)), 'from below').toBe(true)
+      expect(sphere.intersectsRay(Ray.create( 1,  3,  1,  0, -1,  0)), 'from above').toBe(true)
+      expect(sphere.intersectsRay(Ray.create( 1,  1, -1,  0,  0,  1)), 'from behind').toBe(true)
+      expect(sphere.intersectsRay(Ray.create( 1,  1,  3,  0,  0, -1)), 'from infront').toBe(true)
 
-      expect(sphere.intersectsRay(Ray.create(-1,  1,  1, -1,  0,  0))).toBe(false, 'away, left')
-      expect(sphere.intersectsRay(Ray.create( 3,  1,  1,  1,  0,  0))).toBe(false, 'away, right')
-      expect(sphere.intersectsRay(Ray.create( 1, -1,  1,  0, -1,  0))).toBe(false, 'away, below')
-      expect(sphere.intersectsRay(Ray.create( 1,  3,  1,  0,  1,  0))).toBe(false, 'away, above')
-      expect(sphere.intersectsRay(Ray.create( 1,  1, -1,  0,  0, -1))).toBe(false, 'away, behind')
-      expect(sphere.intersectsRay(Ray.create( 1,  1,  3,  0,  0,  1))).toBe(false, 'away, infront')
+      expect(sphere.intersectsRay(Ray.create(-1,  1,  1, -1,  0,  0)), 'away, left').toBe(false)
+      expect(sphere.intersectsRay(Ray.create( 3,  1,  1,  1,  0,  0)), 'away, right').toBe(false)
+      expect(sphere.intersectsRay(Ray.create( 1, -1,  1,  0, -1,  0)), 'away, below').toBe(false)
+      expect(sphere.intersectsRay(Ray.create( 1,  3,  1,  0,  1,  0)), 'away, above').toBe(false)
+      expect(sphere.intersectsRay(Ray.create( 1,  1, -1,  0,  0, -1)), 'away, behind').toBe(false)
+      expect(sphere.intersectsRay(Ray.create( 1,  1,  3,  0,  0,  1)), 'away, infront').toBe(false)
     })
   })
 
@@ -348,20 +349,20 @@ describe('BoundingSphere', () => {
       expect(sphere.containsBox(BoundingBox.create(0.25, 0.25, 0.25, 0.75, 0.75, 0.75))).toBe(true)
 
       // intersection
-      expect(sphere.containsBox(BoundingBox.create(-1,  0,  0,  0,  1,  1))).toBe(false, 'left')
-      expect(sphere.containsBox(BoundingBox.create( 1,  0,  0,  2,  1,  1))).toBe(false, 'right')
-      expect(sphere.containsBox(BoundingBox.create( 0, -1,  0,  1, -0,  1))).toBe(false, 'below')
-      expect(sphere.containsBox(BoundingBox.create( 0,  1,  0,  1,  2,  1))).toBe(false, 'above')
-      expect(sphere.containsBox(BoundingBox.create( 0,  0, -1,  1,  1, -0))).toBe(false, 'behind')
-      expect(sphere.containsBox(BoundingBox.create( 0,  0,  1,  1,  1,  2))).toBe(false, 'infront')
+      expect(sphere.containsBox(BoundingBox.create(-1,  0,  0,  0,  1,  1)), 'left').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create( 1,  0,  0,  2,  1,  1)), 'right').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create( 0, -1,  0,  1, -0,  1)), 'below').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create( 0,  1,  0,  1,  2,  1)), 'above').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create( 0,  0, -1,  1,  1, -0)), 'behind').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create( 0,  0,  1,  1,  1,  2)), 'infront').toBe(false)
 
       // outside
-      expect(sphere.containsBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1))).toBe(false, 'left')
-      expect(sphere.containsBox(BoundingBox.create( 1.001, 0, 0,  2.000, 1, 1))).toBe(false, 'right')
-      expect(sphere.containsBox(BoundingBox.create(0, -1.000, 0,  1, -0.001, 1))).toBe(false, 'below')
-      expect(sphere.containsBox(BoundingBox.create(0,  1.001, 0,  1,  2.000, 1))).toBe(false, 'above')
-      expect(sphere.containsBox(BoundingBox.create(0, 0, -1.000,  1, 1, -0.001))).toBe(false, 'behind')
-      expect(sphere.containsBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000))).toBe(false, 'infront')
+      expect(sphere.containsBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1)), 'left').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create( 1.001, 0, 0,  2.000, 1, 1)), 'right').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create(0, -1.000, 0,  1, -0.001, 1)), 'below').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create(0,  1.001, 0,  1,  2.000, 1)), 'above').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create(0, 0, -1.000,  1, 1, -0.001)), 'behind').toBe(false)
+      expect(sphere.containsBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000)), 'infront').toBe(false)
     })
   })
 
@@ -373,20 +374,20 @@ describe('BoundingSphere', () => {
       expect(sphere.containsSphere(BoundingSphere.create(0.5, 0.5, 0.5, 0.5))).toBe(true)
 
       // intersection
-      expect(sphere.containsSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  1))).toBe(false, 'left')
-      expect(sphere.containsSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  1))).toBe(false, 'right')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  1))).toBe(false, 'below')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  1))).toBe(false, 'above')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  1))).toBe(false, 'behind')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  1))).toBe(false, 'infront')
+      expect(sphere.containsSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  1)), 'left').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  1)), 'right').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  1)), 'below').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  1)), 'above').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  1)), 'behind').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  1)), 'infront').toBe(false)
 
       // outside
-      expect(sphere.containsSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  0.999))).toBe(false, 'left')
-      expect(sphere.containsSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  0.999))).toBe(false, 'right')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  0.999))).toBe(false, 'below')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  0.999))).toBe(false, 'above')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  0.999))).toBe(false, 'behind')
-      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  0.999))).toBe(false, 'infront')
+      expect(sphere.containsSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  0.999)), 'left').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  0.999)), 'right').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  0.999)), 'below').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  0.999)), 'above').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  0.999)), 'behind').toBe(false)
+      expect(sphere.containsSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  0.999)), 'infront').toBe(false)
     })
   })
 
@@ -427,20 +428,20 @@ describe('BoundingSphere', () => {
       expect(sphere.containmentOfBox(BoundingBox.create(0.25, 0.25, 0.25, 0.75, 0.75, 0.75))).toBe(2)
 
       // intersection
-      expect(sphere.containmentOfBox(BoundingBox.create(-1,  0,  0,  0,  1,  1))).toBe(1, 'left')
-      expect(sphere.containmentOfBox(BoundingBox.create( 1,  0,  0,  2,  1,  1))).toBe(1, 'right')
-      expect(sphere.containmentOfBox(BoundingBox.create( 0, -1,  0,  1, -0,  1))).toBe(1, 'below')
-      expect(sphere.containmentOfBox(BoundingBox.create( 0,  1,  0,  1,  2,  1))).toBe(1, 'above')
-      expect(sphere.containmentOfBox(BoundingBox.create( 0,  0, -1,  1,  1, -0))).toBe(1, 'behind')
-      expect(sphere.containmentOfBox(BoundingBox.create( 0,  0,  1,  1,  1,  2))).toBe(1, 'infront')
+      expect(sphere.containmentOfBox(BoundingBox.create(-1,  0,  0,  0,  1,  1)), 'left').toBe(1)
+      expect(sphere.containmentOfBox(BoundingBox.create( 1,  0,  0,  2,  1,  1)), 'right').toBe(1)
+      expect(sphere.containmentOfBox(BoundingBox.create( 0, -1,  0,  1, -0,  1)), 'below').toBe(1)
+      expect(sphere.containmentOfBox(BoundingBox.create( 0,  1,  0,  1,  2,  1)), 'above').toBe(1)
+      expect(sphere.containmentOfBox(BoundingBox.create( 0,  0, -1,  1,  1, -0)), 'behind').toBe(1)
+      expect(sphere.containmentOfBox(BoundingBox.create( 0,  0,  1,  1,  1,  2)), 'infront').toBe(1)
 
       // outside
-      expect(sphere.containmentOfBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1))).toBe(0, 'left')
-      expect(sphere.containmentOfBox(BoundingBox.create( 1.001, 0, 0,  2.000, 1, 1))).toBe(0, 'right')
-      expect(sphere.containmentOfBox(BoundingBox.create(0, -1.000, 0,  1, -0.001, 1))).toBe(0, 'below')
-      expect(sphere.containmentOfBox(BoundingBox.create(0,  1.001, 0,  1,  2.000, 1))).toBe(0, 'above')
-      expect(sphere.containmentOfBox(BoundingBox.create(0, 0, -1.000,  1, 1, -0.001))).toBe(0, 'behind')
-      expect(sphere.containmentOfBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000))).toBe(0, 'infront')
+      expect(sphere.containmentOfBox(BoundingBox.create(-1.000, 0, 0, -0.001, 1, 1)), 'left').toBe(0)
+      expect(sphere.containmentOfBox(BoundingBox.create( 1.001, 0, 0,  2.000, 1, 1)), 'right').toBe(0)
+      expect(sphere.containmentOfBox(BoundingBox.create(0, -1.000, 0,  1, -0.001, 1)), 'below').toBe(0)
+      expect(sphere.containmentOfBox(BoundingBox.create(0,  1.001, 0,  1,  2.000, 1)), 'above').toBe(0)
+      expect(sphere.containmentOfBox(BoundingBox.create(0, 0, -1.000,  1, 1, -0.001)), 'behind').toBe(0)
+      expect(sphere.containmentOfBox(BoundingBox.create(0, 0,  1.001,  1, 1,  2.000)), 'infront').toBe(0)
     })
   })
 
@@ -452,20 +453,20 @@ describe('BoundingSphere', () => {
       expect(sphere.containmentOfSphere(BoundingSphere.create(0.5, 0.5, 0.5, 0.5))).toBe(2)
 
       // intersection
-      expect(sphere.containmentOfSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  1))).toBe(1, 'left')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  1))).toBe(1, 'right')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  1))).toBe(1, 'below')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  1))).toBe(1, 'above')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  1))).toBe(1, 'behind')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  1))).toBe(1, 'infront')
+      expect(sphere.containmentOfSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  1)), 'left').toBe(1)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  1)), 'right').toBe(1)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  1)), 'below').toBe(1)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  1)), 'above').toBe(1)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  1)), 'behind').toBe(1)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  1)), 'infront').toBe(1)
 
       // outside
-      expect(sphere.containmentOfSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  0.999))).toBe(0, 'left')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  0.999))).toBe(0, 'right')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  0.999))).toBe(0, 'below')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  0.999))).toBe(0, 'above')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  0.999))).toBe(0, 'behind')
-      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  0.999))).toBe(0, 'infront')
+      expect(sphere.containmentOfSphere(BoundingSphere.create(-1.0,  0.5,  0.5,  0.999)), 'left').toBe(0)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 2.0,  0.5,  0.5,  0.999)), 'right').toBe(0)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5, -1.0,  0.5,  0.999)), 'below').toBe(0)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  2.0,  0.5,  0.999)), 'above').toBe(0)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5, -1.0,  0.999)), 'behind').toBe(0)
+      expect(sphere.containmentOfSphere(BoundingSphere.create( 0.5,  0.5,  2.0,  0.999)), 'infront').toBe(0)
     })
   })
 

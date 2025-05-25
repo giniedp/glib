@@ -2,12 +2,12 @@ import { resolveUri, PipelineContext } from '@gglib/content'
 import { MaterialOptions, Material } from '@gglib/graphics'
 
 import {
-  GLTFTextureInfo,
-  GLTFTextureTransform,
+  TextureInfo,
+  TextureTransform,
   KHR_texture_transform,
   KHR_materials_unlit,
   KHR_materials_pbrSpecularGlossiness,
-  GLTFPbrMaterialSpecularGlossiness,
+  PbrMaterialSpecularGlossiness,
 } from './format'
 import { GLTFReader } from './reader'
 
@@ -69,7 +69,7 @@ export async function loadGltfMaterial(
     if (material.extensions && material.extensions[KHR_materials_pbrSpecularGlossiness]) {
       technique = 'default'
 
-      const ext: GLTFPbrMaterialSpecularGlossiness = material.extensions[KHR_materials_pbrSpecularGlossiness]
+      const ext: PbrMaterialSpecularGlossiness = material.extensions[KHR_materials_pbrSpecularGlossiness]
       params.DiffuseColor = ext.diffuseFactor // || [1, 1, 1, 1]
       params.SpecularColor = ext.specularFactor // || [1, 1, 1]
       params.Glossiness = ext.glossinessFactor // || 1
@@ -115,9 +115,9 @@ export async function loadGltfMaterial(
   })
 }
 
-function readTextureInfo(params: { [k: string]: unknown }, name: string, info: GLTFTextureInfo) {
+function readTextureInfo(params: { [k: string]: unknown }, name: string, info: TextureInfo) {
   if (info.extensions && info.extensions[KHR_texture_transform]) {
-    const transform = info.extensions[KHR_texture_transform] as GLTFTextureTransform
+    const transform = info.extensions[KHR_texture_transform] as TextureTransform
     const offsetScale = [1, 1, 0, 0]
     if (transform.scale) {
       offsetScale[0] = transform.scale[0]

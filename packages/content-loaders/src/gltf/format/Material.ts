@@ -1,13 +1,13 @@
-import { GLTFProperty, GLTFRootProperty } from './common'
-import { GLTFTextureInfo } from './TextureInfo'
+import { Property, NamedProperty } from './common'
+import { TextureInfo } from './TextureInfo'
 
-export interface GLTFMaterial extends GLTFRootProperty {
+export interface Material extends NamedProperty {
   /**
    * A set of parameter values that are used to define the metallic-roughness material model from
    * Physically-Based Rendering (PBR) methodology.
    * When not specified, all the default values of `pbrMetallicRoughness` apply.
    */
-  pbrMetallicRoughness?: GLTFPbrMaterialMetallicRoughness
+  pbrMetallicRoughness?: PbrMaterialMetallicRoughness
 
   /**
    * The normal map texture.
@@ -25,7 +25,7 @@ export interface GLTFMaterial extends GLTFRootProperty {
    *
    * Client implementations should normalize the normal vectors before using them in lighting equations.
    */
-  normalTexture?: GLTFNormalTextureIinfo
+  normalTexture?: NormalTextureIinfo
 
   /**
    * The occlusion map texture.
@@ -36,7 +36,7 @@ export interface GLTFMaterial extends GLTFRootProperty {
    * values indicate no indirect lighting. These values are linear. If other channels are present (GBA),
    * they are ignored for occlusion calculations.
    */
-  occlusionTexture?: GLTFMaterialOcclusionTextureInfo
+  occlusionTexture?: MaterialOcclusionTextureInfo
 
   /**
    * The emissive map texture.
@@ -45,7 +45,7 @@ export interface GLTFMaterial extends GLTFRootProperty {
    * The emissive map controls the color and intensity of the light being emitted by the material.
    * This texture contains RGB components in sRGB color space. If a fourth component (A) is present, it is ignored.
    */
-  emissiveTexture?: GLTFTextureInfo
+  emissiveTexture?: TextureInfo
 
   /**
    * The emissive color of the material.
@@ -89,7 +89,7 @@ export interface GLTFMaterial extends GLTFRootProperty {
  * A set of parameter values that are used to define the metallic-roughness material model
  * from Physically-Based Rendering (PBR) methodology.
  */
-export interface GLTFPbrMaterialMetallicRoughness extends GLTFProperty {
+export interface PbrMaterialMetallicRoughness extends Property {
   /**
    * The material's base color factor.
    *
@@ -111,7 +111,7 @@ export interface GLTFPbrMaterialMetallicRoughness extends GLTFProperty {
    * Otherwise, an alpha of 1.0 is assumed. The `alphaMode` property specifies how alpha is interpreted.
    * The stored texels must not be premultiplied.
    */
-  baseColorTexture?: GLTFTextureInfo
+  baseColorTexture?: TextureInfo
 
   /**
    * The metalness of the material.
@@ -142,10 +142,10 @@ export interface GLTFPbrMaterialMetallicRoughness extends GLTFProperty {
    * The roughness values are sampled from the G channel. These values are linear.
    * If other channels are present (R or A), they are ignored for metallic-roughness calculations.
    */
-  metallicRoughnessTexture?: GLTFTextureInfo
+  metallicRoughnessTexture?: TextureInfo
 }
 
-export interface GLTFMaterialOcclusionTextureInfo extends GLTFTextureInfo {
+export interface MaterialOcclusionTextureInfo extends TextureInfo {
   /**
    * A scalar multiplier controlling the amount of occlusion applied.
    *
@@ -161,7 +161,7 @@ export interface GLTFMaterialOcclusionTextureInfo extends GLTFTextureInfo {
   strength?: number
 }
 
-export interface GLTFNormalTextureIinfo extends GLTFTextureInfo {
+export interface NormalTextureIinfo extends TextureInfo {
   /**
    * The scalar multiplier applied to each normal vector of the normal texture.
    *
@@ -186,7 +186,7 @@ export const KHR_materials_unlit = 'KHR_materials_unlit'
  */
 export const KHR_materials_pbrSpecularGlossiness = 'KHR_materials_pbrSpecularGlossiness'
 
-export interface GLTFPbrMaterialSpecularGlossiness extends GLTFProperty {
+export interface PbrMaterialSpecularGlossiness extends Property {
   /**
    * The reflected diffuse factor of the material.
    *
@@ -207,7 +207,7 @@ export interface GLTFPbrMaterialSpecularGlossiness extends GLTFProperty {
    * Otherwise, an alpha of 1.0 is assumed. The `alphaMode` property specifies how alpha is interpreted.
    * The stored texels must not be premultiplied.
    */
-  diffuseTexture?: GLTFTextureInfo
+  diffuseTexture?: TextureInfo
 
   /**
    * The specular RGB color of the material.
@@ -234,7 +234,7 @@ export interface GLTFPbrMaterialSpecularGlossiness extends GLTFProperty {
    * he specular-glossiness texture is RGBA texture, containing the specular color of the
    * material (RGB components) and its glossiness (A component). The values are in sRGB space.
    */
-  specularGlossinessTexture?: GLTFTextureInfo
+  specularGlossinessTexture?: TextureInfo
 }
 
 /**
@@ -242,7 +242,7 @@ export interface GLTFPbrMaterialSpecularGlossiness extends GLTFProperty {
  */
 export const KHR_materials_clearcoat = 'KHR_materials_clearcoat'
 
-export interface GLTFMaterialClearcoat extends GLTFProperty {
+export interface MaterialClearcoat extends Property {
   /**
    * The clearcoat layer intensity.
    */
@@ -251,7 +251,7 @@ export interface GLTFMaterialClearcoat extends GLTFProperty {
   /**
    * The clearcoat layer intensity texture.
    */
-  clearcoatTexture?: GLTFTextureInfo
+  clearcoatTexture?: TextureInfo
 
   /**
    * The clearcoat layer roughness.
@@ -269,10 +269,10 @@ export interface GLTFMaterialClearcoat extends GLTFProperty {
   /**
    * The clearcoat layer roughness texture.
    */
-  clearcoatRoughnessTexture?: GLTFTextureInfo
+  clearcoatRoughnessTexture?: TextureInfo
 
   /**
    * The clearcoat normal map texture.
    */
-  clearcoatNormalTexture?: GLTFNormalTextureIinfo
+  clearcoatNormalTexture?: NormalTextureIinfo
 }

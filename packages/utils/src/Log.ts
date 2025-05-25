@@ -2,7 +2,7 @@ function bindConsoleFn<K extends keyof Console>(key: K): Console[K] {
   if (globalThis.console && key in console) {
     return console[key].bind(console)
   }
-  return (): void => null
+  return ((): void => null) as any
 }
 
 const EnabledLogger = {

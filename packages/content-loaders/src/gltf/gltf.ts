@@ -1,5 +1,5 @@
 import { Model, ModelOptions } from '@gglib/graphics'
-import { loader, resolveUri, Loader } from '@gglib/content'
+import { loader, resolveUri, Loader, AssetLoader, AssetContainer, LoaderContext, ContentLoader } from '@gglib/content'
 
 import { GLTFDocument, GLTF } from './format'
 import { loadGltfModel } from './gltfModels'

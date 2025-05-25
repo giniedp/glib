@@ -1,0 +1,21 @@
+newmtl Leaf_DF
+Ka 0 0 0
+Kd 0.588235 0.588235 0.588235
+Ks 0 0 0
+Ni 1
+Ns 400
+Tf 1 1 1
+d 1
+map_Kd leaf_d.tga
+illum 0
+
+newmtl Tree_DF
+Ka 0 0 0
+Kd 0.588235 0.588235 0.588235
+Ks 0 0 0
+Ni 1
+Ns 400
+Tf 1 1 1
+d 1
+map_Kd tree_d.tga
+illum 0

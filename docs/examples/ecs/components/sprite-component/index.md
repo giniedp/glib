@@ -1,0 +1,5 @@
+---
+title: Sprite Component
+---
+
+<Example />

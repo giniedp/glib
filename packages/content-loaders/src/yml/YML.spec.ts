@@ -1,4 +1,5 @@
 import { YML } from './YML'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('content/parser/YML', () => {
 

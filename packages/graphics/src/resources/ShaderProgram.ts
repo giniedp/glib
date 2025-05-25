@@ -17,7 +17,7 @@ export interface ShaderProgramOptions {
    * - If it is a string it is assumed to be the source code for the vertex shader.
    * - If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
-  vertexShader?: string|ShaderOptions|Shader,
+  vertexShader?: string
   /**
    * The fragment shader to be used within the program
    *
@@ -25,7 +25,7 @@ export interface ShaderProgramOptions {
    * - If it is a string it is assumed to be the source code for the fragment shader.
    * - If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
-  fragmentShader?: string|ShaderOptions|Shader,
+  fragmentShader?: string
 }
 
 /**
@@ -40,28 +40,33 @@ export abstract class ShaderProgram {
    * A symbol identifying the `ShaderProgramOptions` type.
    */
   public static readonly OptionsSymbol = Symbol('ShaderProgramOptions')
+
   /**
    * A unique id
    */
   public readonly uid: string = uuid()
+
   /**
    * The graphics device
    */
   public abstract readonly device: Device
+
   /**
    * The vertex shader
    */
   public abstract readonly vertexShader: Shader
+
   /**
    * The fragment shader
    */
   public abstract readonly fragmentShader: Shader
+
   /**
    * A map of all shader uniforms
    */
   public readonly uniforms: ReadonlyMap<string, ShaderUniform> = new Map<string, ShaderUniform>()
 
-  public readonly abstract isReady: boolean
+  public abstract readonly isReady: boolean
 
   private errLogs = {}
 
@@ -70,22 +75,26 @@ export abstract class ShaderProgram {
   /**
    * Releases the program handle
    */
-  public abstract destroy(): this
+  public abstract dispose(): this
 
   /**
    * Sets this program as the current program on the graphics device
    */
   public bind(): this {
-    return this.device.program = this
+    return (this.device.program = this)
   }
 
   /**
    * Creates a new copy of this resource
+   *
+   * @remarks
+   * The underlying implementation may use reference counting. In that case, the returned program
+   * may be the same instance with an increased reference count.
    */
   public clone(): ShaderProgram {
     return this.device.createProgram({
-      vertexShader: this.vertexShader ? this.vertexShader.clone() : void 0,
-      fragmentShader: this.fragmentShader ? this.fragmentShader.clone() : void 0,
+      vertexShader: this.vertexShader?.source,
+      fragmentShader: this.fragmentShader?.source,
     })
   }
 
@@ -100,11 +109,11 @@ export abstract class ShaderProgram {
       return this
     }
     this.bind()
-    this.uniforms.forEach((uniform, key) => {
+    for (const [key, uniform] of this.uniforms) {
       if (uniforms[key] != null) {
         uniform.set(uniforms[key])
       }
-    })
+    }
     return this
   }
 

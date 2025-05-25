@@ -1,62 +1,58 @@
-import { BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DeviceGL  } from '../index'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { DataType } from '../enums'
+import { BufferType, BufferTypeOption, BufferUsage, BufferUsageOption, DeviceGL } from '../index'
 import { BufferGL } from '../webgl'
 
 describe('graphics/Buffer', () => {
-
   let device: DeviceGL
 
   beforeEach(() => {
     device = new DeviceGL({ context: 'webgl2' })
   })
 
-  describe('constructor', () => {
 
-    it ('sets usage', () => {
+  describe('constructor', () => {
+    it('sets usage', () => {
       if (!device.isWebGL2) {
-        pending('webgl2 is not supported, skip webgl2 test')
+        // pending('webgl2 is not supported, skip webgl2 test')
         return
       }
       // default value
-      expect(new BufferGL(device).usage).toBe(BufferUsage.Static);
+      expect(new BufferGL(device).usage).toBe(BufferUsage.Static)
 
       //
-      ['Dynamic', 'DYNAMIC_DRAW', BufferUsage.Dynamic].forEach((usage: BufferUsageOption) => {
+      ;['Dynamic', 'DYNAMIC_DRAW', BufferUsage.Dynamic].forEach((usage: BufferUsageOption) => {
         let buffer = new BufferGL(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Dynamic)
         expect(buffer.usageName).toBe('Dynamic')
-      });
-
-      ['Static', 'STATIC_DRAW', BufferUsage.Static].forEach((usage: BufferUsageOption) => {
+      })
+      ;['Static', 'STATIC_DRAW', BufferUsage.Static].forEach((usage: BufferUsageOption) => {
         let buffer = new BufferGL(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Static)
         expect(buffer.usageName).toBe('Static')
-      });
-
-      ['Stream', 'STREAM_DRAW', BufferUsage.Stream].forEach((usage: BufferUsageOption) => {
+      })
+      ;['Stream', 'STREAM_DRAW', BufferUsage.Stream].forEach((usage: BufferUsageOption) => {
         let buffer = new BufferGL(device, { usage: usage })
         expect(buffer.usage).toBe(BufferUsage.Stream)
         expect(buffer.usageName).toBe('Stream')
       })
     })
 
-    it ('sets type', () => {
-      if (!device.isWebGL2) {
-        pending('webgl2 is not supported, skip webgl2 test')
-        return
-      }
+    it('sets type', () => {
+      // if (!device.isWebGL2) {
+      //   pending('webgl2 is not supported, skip webgl2 test')
+      //   return
+      // }
       // default value
-      expect(new BufferGL(device).type).toBe(BufferType.IndexBuffer);
-
-      ['IndexBuffer', 'ELEMENT_ARRAY_BUFFER', BufferType.IndexBuffer].forEach((it: BufferTypeOption) => {
+      expect(new BufferGL(device).type).toBe(BufferType.IndexBuffer)
+      ;['IndexBuffer', 'ELEMENT_ARRAY_BUFFER', BufferType.IndexBuffer].forEach((it: BufferTypeOption) => {
         let buffer = new BufferGL(device, { type: it })
         expect(buffer.type).toBe(BufferType.IndexBuffer)
         expect(buffer.isIndexBuffer).toBe(true)
         expect(buffer.isVertexBuffer).toBe(false)
         expect(buffer.typeName).toBe('IndexBuffer')
-      });
-
-      ['VertexBuffer', 'ARRAY_BUFFER', BufferType.VertexBuffer].forEach((it: BufferTypeOption) => {
+      })
+      ;['VertexBuffer', 'ARRAY_BUFFER', BufferType.VertexBuffer].forEach((it: BufferTypeOption) => {
         let buffer = new BufferGL(device, {
           type: it,
           layout: {
@@ -77,15 +73,12 @@ describe('graphics/Buffer', () => {
 
   describe('setData', () => {
     describe('ushort', () => {
-      it ('sets the data', () => {
-        if (!device.isWebGL2) {
-          pending('webgl2 is not supported, skip webgl2 test')
-          return
-        }
-        [
-          [1, 2, 3, 4, 5, 6, 7, 8, 9],
-          Uint16Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9]),
-        ].forEach((data) => {
+      it('sets the data', () => {
+        // if (!device.isWebGL2) {
+        //   pending('webgl2 is not supported, skip webgl2 test')
+        //   return
+        // }
+        ;[[1, 2, 3, 4, 5, 6, 7, 8, 9], Uint16Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9])].forEach((data) => {
           let buffer = new BufferGL(device, {
             usage: 'Dynamic',
             type: 'IndexBuffer',

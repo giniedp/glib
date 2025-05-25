@@ -1,8 +1,28 @@
 import { Vec2, Vec3 } from '@gglib/math'
-import type { GeometryBuilder } from '../model/GeometryBuilder'
+import { Device } from '../Device'
+import { Geometry } from '../model/Geometry'
+import { beginGeometry, type GeometryBuilder } from '../model/GeometryBuilder'
 
-function sign(a: number) {
-  return a < 0 ? -1 : 1
+export const BuildSuperEllipsoidDefaults = {
+  diameter: 1,
+  radius: 0.5,
+  steps: 16,
+  n1: 1,
+  n2: 1,
+}
+
+export interface BuildSuperEllipsoidOptions {
+  diameter?: number
+  radius?: number
+  steps?: number
+  n1?: number
+  n2?: number
+}
+
+export function superEllipsoidGeometry(device: Device, options?: BuildSuperEllipsoidOptions): Geometry {
+  return beginGeometry().append(buildSuperEllipsoid, options).endGeometry(device, {
+    name: 'super ellipsoid',
+  })
 }
 
 /**
@@ -12,24 +32,16 @@ function sign(a: number) {
  * @remarks
  * implementation is based on {@link http://paulbourke.net/geometry/superellipse/}
  */
-export function buildSuperEllipsoid(
-  builder: GeometryBuilder,
-  options: {
-    diameter?: number
-    radius?: number
-    steps?: number
-    n1?: number
-    n2?: number
-  } = {},
-) {
-  let radius = options?.radius ?? (options?.diameter ?? 1) * 0.5
-  let steps = options?.steps ?? 16
-  let power1 = options?.n1 ?? 1
-  let power2 = options?.n2 ?? 1
+export function buildSuperEllipsoid(builder: GeometryBuilder, options?: BuildSuperEllipsoidOptions) {
+  const diameter = options?.diameter ?? BuildSuperEllipsoidDefaults.diameter
+  const radius = options?.radius ?? diameter * 0.5
+  const steps = options?.steps ?? BuildSuperEllipsoidDefaults.steps
+  const power1 = options?.n1 ?? BuildSuperEllipsoidDefaults.n1
+  const power2 = options?.n2 ?? BuildSuperEllipsoidDefaults.n2
 
-  let baseVertex = builder.vertexCount
-  let stepsV = steps
-  let stepsU = steps * 2
+  const baseVertex = builder.vertexCount
+  const stepsV = steps
+  const stepsU = steps * 2
 
   for (let v = 0; v <= stepsV; v += 1) {
     let dv = v / stepsV
@@ -74,4 +86,8 @@ export function buildSuperEllipsoid(
       builder.addIndex(baseVertex + d)
     }
   }
+}
+
+function sign(a: number) {
+  return a < 0 ? -1 : 1
 }

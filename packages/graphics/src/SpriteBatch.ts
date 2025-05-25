@@ -346,4 +346,8 @@ export class SpriteBatch {
       this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, count * 6)
     }
   }
+
+  public dispose() {
+    this.program.dispose()
+  }
 }

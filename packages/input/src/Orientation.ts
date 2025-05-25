@@ -1,5 +1,5 @@
 import { IVec3 } from '@gglib/math'
-import { Events, extend, Log } from '@gglib/utils'
+import { extend, Log, simpleObservable } from '@gglib/utils'
 
 /**
  * Orientation constructor options
@@ -7,7 +7,7 @@ import { Events, extend, Log } from '@gglib/utils'
  * @public
  */
 export interface IOrientationOptions {
-  eventTarget?: EventTarget,
+  eventTarget?: EventTarget
   events?: string[]
 }
 
@@ -46,20 +46,26 @@ export interface IOrientationState {
 /**
  * @public
  */
-export class Orientation extends Events {
-
+export class Orientation {
   public static readonly hasOrientationApi = 'DeviceOrientationEvent' in window
   public static readonly hasMotionApi = 'DeviceMotionEvent' in window
 
   public state: IOrientationState = {
     orientation: {
-      absolute: false, alpha: 0, beta: 0, gamma: 0,
+      absolute: false,
+      alpha: 0,
+      beta: 0,
+      gamma: 0,
     },
     acceleration: {
-      x: 0, y: 0, z: 0,
+      x: 0,
+      y: 0,
+      z: 0,
     },
     accelerationIncludingGravity: {
-      x: 0, y: 0, z: 0,
+      x: 0,
+      y: 0,
+      z: 0,
     },
     rotation: {
       alpha: 0,
@@ -77,18 +83,19 @@ export class Orientation extends Events {
    *
    */
   protected onDeviceMotion = this.handleMotionEvent.bind(this)
-  /**
-   * Triggers the Event that occurred on the element
-   */
-  protected onEvent: EventListener = (e: Event) => this.trigger(e.type, this, e)
+
+  public onChanged = simpleObservable<Orientation>()
 
   /**
    *
    */
   constructor() {
-    super()
-    if (!Orientation.hasOrientationApi) { Log.warn('[Orientation] orientation api is not supported') }
-    if (!Orientation.hasMotionApi) { Log.warn('[Orientation] motion api is not supported') }
+    if (!Orientation.hasOrientationApi) {
+      Log.warn('[Orientation] orientation api is not supported')
+    }
+    if (!Orientation.hasMotionApi) {
+      Log.warn('[Orientation] motion api is not supported')
+    }
     this.activate()
   }
 
@@ -107,42 +114,44 @@ export class Orientation extends Events {
     let state = this.state
     out.orientation = extend(out.orientation || {}, state.orientation)
     out.acceleration = extend(out.acceleration || {}, state.acceleration)
-    out.accelerationIncludingGravity = extend(out.accelerationIncludingGravity || {}, state.accelerationIncludingGravity)
+    out.accelerationIncludingGravity = extend(
+      out.accelerationIncludingGravity || {},
+      state.accelerationIncludingGravity,
+    )
     out.rotation = extend(out.rotation || {}, state.rotation)
     return out
   }
 
   protected handleOrientationEvent(e: DeviceOrientationEvent) {
-    let orientation = this.state.orientation || {} as IDeviceOrientation // tslint:disable-line
+    let orientation = this.state.orientation || ({} as IDeviceOrientation) // tslint:disable-line
     orientation.absolute = e.absolute
-    orientation.alpha    = e.alpha
-    orientation.beta     = e.beta
-    orientation.gamma    = e.gamma
+    orientation.alpha = e.alpha
+    orientation.beta = e.beta
+    orientation.gamma = e.gamma
     this.state.orientation = orientation
-    this.trigger('changed', this, e)
+    this.onChanged.notify(this)
   }
 
   protected handleMotionEvent(e: DeviceMotionEvent) {
-
-    let acceleration = this.state.acceleration || {} as IVec3 // tslint:disable-line
+    let acceleration = this.state.acceleration || ({} as IVec3) // tslint:disable-line
     acceleration.x = e.acceleration.x
     acceleration.y = e.acceleration.y
     acceleration.z = e.acceleration.z
     this.state.acceleration = acceleration
 
-    acceleration = this.state.accelerationIncludingGravity || {} as IVec3 // tslint:disable-line
+    acceleration = this.state.accelerationIncludingGravity || ({} as IVec3) // tslint:disable-line
     acceleration.x = e.accelerationIncludingGravity.x
     acceleration.y = e.accelerationIncludingGravity.y
     acceleration.z = e.accelerationIncludingGravity.z
     this.state.accelerationIncludingGravity = acceleration
 
-    let rotation = this.state.rotation || {} as IDeviceRotation // tslint:disable-line
+    let rotation = this.state.rotation || ({} as IDeviceRotation) // tslint:disable-line
     rotation.alpha = e.rotationRate.alpha
     rotation.beta = e.rotationRate.beta
     rotation.gamma = e.rotationRate.gamma
     this.state.rotation = rotation
     this.state.interval = e.interval
 
-    this.trigger('changed', this, e)
+    this.onChanged.notify(this)
   }
 }

@@ -1,11 +1,9 @@
+import { afterAll, describe, expect, it } from 'vitest'
 import { WebWorker } from './WebWorker'
 
 describe('@gglib/utils/WebWorker', () => {
-  describe('.enable', () => {
-    afterAll(() => {
-      WebWorker.disable()
-    })
-
+  afterAll(() => {
+    WebWorker.disable()
   })
 
   describe('register and execute', () => {

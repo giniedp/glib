@@ -62,7 +62,7 @@ export class BufferGPU extends Buffer {
   /**
    * Releases any graphics resources.
    */
-  public destroy(): this {
+  public dispose(): this {
     if (this.resource) {
       this.resource.destroy()
       this.resource = null
@@ -96,7 +96,7 @@ export class BufferGPU extends Buffer {
     const off = srcByteOffset || 0
     const len = srcByteLength || (data.byteLength - off)
     if (len !== this.sizeInBytes) {
-      this.destroy()
+      this.dispose()
       this.sizeInBytes = len
       this.elementCount = this.sizeInBytes / this.stride
       this.create()

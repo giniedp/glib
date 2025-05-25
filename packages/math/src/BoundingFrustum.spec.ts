@@ -4,14 +4,15 @@ import { BoundingSphere } from './BoundingSphere'
 import { BoundingFrustum } from './BoundingFrustum'
 import { IVec4 } from './Types'
 import { Mat4 } from './Mat4'
+import { describe, it, expect } from 'vitest'
 
 describe('BoundingFrustum', () => {
 
   function expectVec4Components(v: IVec4, x: number, y: number, z: number, w: number) {
-    expect(v.x).toBeCloseTo(x, 10, 'x component')
-    expect(v.y).toBeCloseTo(y, 10, 'y component')
-    expect(v.z).toBeCloseTo(z, 10, 'z component')
-    expect(v.w).toBeCloseTo(w, 10, 'w component')
+    expect(v.x, 'x component').toBeCloseTo(x, 10)
+    expect(v.y, 'y component').toBeCloseTo(y, 10)
+    expect(v.z, 'z component').toBeCloseTo(z, 10)
+    expect(v.w, 'w component').toBeCloseTo(w, 10)
   }
 
   describe('new', () => {

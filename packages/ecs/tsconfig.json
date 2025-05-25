@@ -16,6 +16,9 @@
   ],
   "references": [
     {
+      "path": "..\\math\\tsconfig.json"
+    },
+    {
       "path": "..\\utils\\tsconfig.json"
     }
   ]

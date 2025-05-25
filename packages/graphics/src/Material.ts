@@ -18,10 +18,12 @@ export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = 
    * The descriptive name of this effect
    */
   name?: string
+
   /**
    * The effect instance or constructor options for {@link ShaderEffect}
    */
   effect?: E
+
   /**
    * The uri of the effect file.
    *
@@ -30,6 +32,7 @@ export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = 
    * Intended to be used by preprocessing tools e.g. content pipeline.
    */
   effectUri?: string
+
   /**
    * The technique name of the effect
    *
@@ -38,6 +41,7 @@ export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = 
    * Intended to be used by preprocessing tools e.g. content pipeline.
    */
   technique?: string
+
   /**
    * Effect parameters to be applied before rendering
    */
@@ -150,5 +154,25 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
 
   protected onConstructWithoutEffect() {
     throw new Error(`[Material] constructor option is missing: 'options.effect'.`)
+  }
+
+  public isReady() {
+    return this.effect.isReady()
+  }
+
+  public waitForReady(timeout = 10000) {
+    const start = Date.now()
+    return new Promise<void>((resolve, reject) => {
+      const check = () => {
+        if (this.isReady()) {
+          resolve()
+        } else if (Date.now() - start > timeout) {
+          reject(new Error(`[Material] effect '${this.effect.name}' is not ready`))
+        } else {
+          setTimeout(check, 100)
+        }
+      }
+      check()
+    })
   }
 }

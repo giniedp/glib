@@ -1,4 +1,4 @@
-import { documentVisibilityApi, Events } from '@gglib/utils'
+import { documentVisibilityApi, simpleObservable } from '@gglib/utils'
 
 /**
  * TouchPane constructor options
@@ -6,7 +6,7 @@ import { documentVisibilityApi, Events } from '@gglib/utils'
  * @public
  */
 export interface ITouchPaneOptions {
-  eventTarget?: EventTarget,
+  eventTarget?: EventTarget
   events?: string[]
 }
 
@@ -21,7 +21,7 @@ export interface ITouchPaneOptions {
  *
  * @public
  */
-export class TouchPane extends Events  {
+export class TouchPane {
   /**
    * The current captured state
    */
@@ -54,28 +54,14 @@ export class TouchPane extends Events  {
    * Is called when `document` or `window` loose focus e.g. user switches to another tab or application
    */
   protected onNeedsClear = () => this.clearState()
-  /**
-   * Triggers the Event that occurred on the element
-   */
-  protected onEvent: EventListener = (e: Event) => this.trigger(e.type, this, e)
-  /**
-   * Collection of html events that are delegated (triggered) on this instance.
-   */
-  protected delegatedEvents = [
-    'touchcancel',
-    'touchstart',
-    'touchmove',
-    'touchend',
-  ]
 
+  public onChanged = simpleObservable<TouchPane>()
   /**
    * Initializes the TouchPane with given options and activates the capture listeners
    */
   constructor(options?: ITouchPaneOptions) {
-    super()
     if (options) {
-      this.eventTarget = (options.eventTarget || this.eventTarget)
-      this.delegatedEvents = (options.events || this.delegatedEvents)
+      this.eventTarget = options.eventTarget || this.eventTarget
     }
     this.activate()
   }
@@ -94,10 +80,6 @@ export class TouchPane extends Events  {
     documentVisibilityApi.onVisibilityChange(this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
     window.addEventListener('blur', this.onNeedsClear)
-    // delegated events
-    for (let name of this.delegatedEvents) {
-      this.eventTarget.addEventListener(name, this.onEvent)
-    }
   }
 
   /**
@@ -112,10 +94,6 @@ export class TouchPane extends Events  {
     documentVisibilityApi.offVisibilityChange(this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
     window.removeEventListener('blur', this.onNeedsClear)
-    // delegated events
-    for (let name of this.delegatedEvents) {
-      this.eventTarget.removeEventListener(name, this.onEvent)
-    }
   }
 
   /**
@@ -137,8 +115,10 @@ export class TouchPane extends Events  {
     for (let i = 0; i < list.length; i++) {
       this.touches.set(list[i].identifier, list[i])
     }
-    if (this.preventDefault) { e.preventDefault() }
-    this.trigger('changed', this, e)
+    if (this.preventDefault) {
+      e.preventDefault()
+    }
+    this.onChanged.notify(this)
   }
   /**
    * Updates the state from given `touchcancel` event
@@ -148,8 +128,10 @@ export class TouchPane extends Events  {
     for (let i = 0; i < list.length; i++) {
       this.touches.delete(list[i].identifier)
     }
-    if (this.preventDefault) { e.preventDefault() }
-    this.trigger('changed', this, e)
+    if (this.preventDefault) {
+      e.preventDefault()
+    }
+    this.onChanged.notify(this)
   }
   /**
    * Updates the state from given `touchmove` event
@@ -159,8 +141,10 @@ export class TouchPane extends Events  {
     for (let i = 0; i < list.length; i++) {
       this.touches.set(list[i].identifier, list[i])
     }
-    if (this.preventDefault) { e.preventDefault() }
-    this.trigger('changed', this, e)
+    if (this.preventDefault) {
+      e.preventDefault()
+    }
+    this.onChanged.notify(this)
   }
   /**
    * Updates the state from given `touchend` event
@@ -170,8 +154,10 @@ export class TouchPane extends Events  {
     for (let i = 0; i < list.length; i++) {
       this.touches.delete(list[i].identifier)
     }
-    if (this.preventDefault) { e.preventDefault() }
-    this.trigger('changed', this, e)
+    if (this.preventDefault) {
+      e.preventDefault()
+    }
+    this.onChanged.notify(this)
   }
 
   public static getX(t: Touch): number {

@@ -1,7 +1,7 @@
-import { documentVisibilityApi, Events, getTime, Log, PointerLockApi } from '@gglib/utils'
+import { getTime, PointerLockApi, simpleObservable } from '@gglib/utils'
 
 /**
- * Constructor options for {@link Mouse}
+ * Constructor options for {@link MouseListener}
  *
  * @public
  */
@@ -69,7 +69,7 @@ export interface MouseState {
  *
  * @public
  */
-export class Mouse extends Events {
+export class MouseListener {
   /**
    * The target eventTarget at which to listen for mouse events. Defaults to `document.documentElement`
    */
@@ -109,13 +109,9 @@ export class Mouse extends Events {
     'mouseover',
     'mouseup',
     'mousewheel',
+    'wheel',
   ]
 
-  /**
-   * Listener for any {@link https://developer.mozilla.org/de/docs/Web/Events | Event}
-   * see {@link Mouse.proxiedEvents}.
-   */
-  protected readonly onEvent: EventListener = (e) => this.trigger(e.type, this, e)
   /**
    * Listener that issues a clear state operation on this instance
    */
@@ -133,7 +129,6 @@ export class Mouse extends Events {
    * Initializes the Mouse with given options and activates the capture listeners
    */
   constructor(options?: MouseOptions) {
-    super()
     this.setup(options)
   }
 
@@ -142,7 +137,7 @@ export class Mouse extends Events {
    */
   public setup(options?: MouseOptions) {
     this.deactivate()
-    Object.assign<Mouse, Partial<Mouse>>(this, {
+    Object.assign<MouseListener, Partial<MouseListener>>(this, {
       eventTarget: options?.eventTarget ?? this.eventTarget,
       captureTarget: options?.captureTarget ?? this.captureTarget,
       proxiedEvents: options?.proxyEvents ?? Array.from(this.proxiedEvents),
@@ -156,21 +151,15 @@ export class Mouse extends Events {
   public activate() {
     this.deactivate()
     // update state events
-    this.eventTarget.addEventListener('mousewheel', this.onCaptureStateListener)
+    this.eventTarget.addEventListener('wheel', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mousemove', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mousedown', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mouseup', this.onCaptureStateListener)
     // visibility events
-    documentVisibilityApi.onVisibilityChange(this.onClearStateListener)
+    document.addEventListener('visibilitychange', this.onClearStateListener)
+    document.addEventListener('contextmenu', this.onClearStateListener)
     document.addEventListener('blur', this.onClearStateListener)
     window.addEventListener('blur', this.onClearStateListener)
-    // delegated events
-    for (let name of this.proxiedEvents) {
-      this.eventTarget.addEventListener(name, this.onEvent)
-    }
-    // pointerlock events
-    this.lockApi.onChange(this.onEvent)
-    this.lockApi.onError(this.onEvent)
   }
 
   /**
@@ -178,21 +167,15 @@ export class Mouse extends Events {
    */
   public deactivate() {
     // update logic events
-    this.eventTarget.removeEventListener('mousewheel', this.onCaptureStateListener)
+    this.eventTarget.removeEventListener('wheel', this.onCaptureStateListener)
     this.eventTarget.removeEventListener('mousemove', this.onCaptureStateListener)
     this.eventTarget.removeEventListener('mousedown', this.onCaptureStateListener)
     this.eventTarget.removeEventListener('mouseup', this.onCaptureStateListener)
     // visibility events
-    documentVisibilityApi.offVisibilityChange(this.onClearStateListener)
+    document.removeEventListener('visibilitychange', this.onClearStateListener)
+    document.removeEventListener('contextmenu', this.onClearStateListener)
     document.removeEventListener('blur', this.onClearStateListener)
     window.removeEventListener('blur', this.onClearStateListener)
-    // delegated events
-    for (let name of this.proxiedEvents) {
-      this.eventTarget.removeEventListener(name, this.onEvent)
-    }
-    // pointerlock events
-    this.lockApi.offChange(this.onEvent)
-    this.lockApi.offError(this.onEvent)
   }
 
   /**
@@ -232,7 +215,7 @@ export class Mouse extends Events {
    */
   public lock() {
     if (!this.lockApi.isSupported) {
-      Log.warn('[Mouse] pointerlock api is not available')
+      console.warn('[Mouse] pointerlock api is not available')
       return
     }
     if (this.eventTarget === this.lockApi.pointerLockElement) {
@@ -241,7 +224,7 @@ export class Mouse extends Events {
     if (this.eventTarget instanceof Element) {
       this.lockApi.requestLock(this.captureTarget || this.eventTarget)
     } else {
-      Log.warn('[Mouse] lock() is only available for elements of type "Element"')
+      console.warn('[Mouse] lock() is only available for elements of type "Element"')
     }
   }
   /**
@@ -264,9 +247,7 @@ export class Mouse extends Events {
    *
    * @param fn - the callback function
    */
-  public onChanged(fn: (m: Mouse, e?: Event) => void) {
-    this.on('changed', fn)
-  }
+  public onChanged = simpleObservable<MouseListener>()
 
   protected onCaptureState(e: MouseEvent) {
     this.state.event = e
@@ -274,7 +255,7 @@ export class Mouse extends Events {
     this.capturePointer(e, this.state)
     this.captureButtons(e, this.state)
     this.captureWheel(e, this.state)
-    this.trigger('changed', this, e)
+    this.onChanged.notify(this)
   }
 
   protected capturePointer(e: MouseEvent, state: MouseState) {
@@ -309,11 +290,11 @@ export class Mouse extends Events {
 
   protected captureWheel(e: MouseEvent, state: MouseState) {
     state.wheel = state.wheel || 0
-    if (e.type === 'mousewheel') {
+    if (e.type === 'wheel') {
       if (e.detail) {
         state.wheel += -1 * e.detail
-      } else if ((e as any)['wheelDelta']) {
-        state.wheel += (e as any)['wheelDelta'] / 120
+      } else if ((e as any)['deltaY']) {
+        state.wheel += (e as any)['deltaY'] / 120
       } else {
         state.wheel += 0
       }
@@ -329,7 +310,7 @@ export class Mouse extends Events {
     this.state.buttons[0] = false
     this.state.buttons[1] = false
     this.state.buttons[2] = false
-    this.trigger('changed', this, null)
+    this.onChanged.notify(this)
   }
 }
 
@@ -350,3 +331,233 @@ export const MouseButtonName = Object.freeze({
   1: 'Middle',
   2: 'Right',
 })
+
+export class Mouse {
+  /**
+   * The mouse listener
+   */
+  public readonly listener: MouseListener
+
+  /**
+   * Pressed state in current frame
+   *
+   * @remarks
+   * This is swapped with the `oldState` property each frame
+   */
+  public state: MouseState
+
+  /**
+   * Pressed state in previous frame
+   *
+   * @remarks
+   * This is swapped with the `newState` property each frame
+   */
+  public statePrev: MouseState
+
+  /**
+   * Whether x and y non-normalized client coordinates should be scaled with `window.devicePixelRatio`
+   */
+  public usePixelRatio: boolean = false
+  /**
+   * The pixel ratio to use if `usePixelRatio` is `true`
+   */
+  public customPixelRatio: number = null
+
+  constructor(options: MouseOptions = {}) {
+    this.listener = new MouseListener(options)
+    this.state = this.listener.copyState({})
+    this.statePrev = this.listener.copyState({})
+  }
+
+  /**
+   * Swaps the `oldState` and `newState` properties and updates the `newState`
+   */
+  public update() {
+    let toUpdate = this.statePrev
+    this.statePrev = this.state
+    this.state = toUpdate
+    this.listener.copyState(toUpdate)
+  }
+
+  /**
+   * X position in client coordinates in current frame
+   */
+  public get x() {
+    return this.state.clientX
+  }
+
+  /**
+   * Y position in client coordinates in current frame
+   */
+  public get y() {
+    return this.state.clientY
+  }
+
+  /**
+   * X position in normalized client coordinates in current frame
+   */
+  public get xNormalized() {
+    return this.state.normalizedX
+  }
+
+  /**
+   * Y position in normalized client coordinates in current frame
+   */
+  public get yNormalized() {
+    return this.state.normalizedY
+  }
+
+  /**
+   * Movement along x axis in client coordinates since last frame
+   */
+  public get dx() {
+    return this.state.clientX - this.statePrev.clientX
+  }
+
+  /**
+   * Movement along y axis in client coordinates since last frame
+   */
+  public get dy() {
+    return this.state.clientY - this.statePrev.clientY
+  }
+
+  /**
+   * Movement along x axis in normalized client coordinates since last frame
+   */
+  public get dxNormalized() {
+    return this.state.normalizedX - this.statePrev.normalizedX
+  }
+
+  /**
+   * Movement along y axis in normalized client coordinates since last frame
+   */
+  public get dyNormalized() {
+    return this.state.normalizedY - this.statePrev.normalizedY
+  }
+
+  /**
+   * Wheel value in current frame
+   */
+  public get wheel() {
+    return this.state.wheel
+  }
+
+  /**
+   * Wheel movement since last frame
+   */
+  public get wheelDelta() {
+    return this.state.wheel - this.statePrev.wheel
+  }
+
+  /**
+   * Indicates whether left mouse button is pressed in this frame
+   */
+  public get leftButtonIsPressed(): boolean {
+    return this.state.buttons[0]
+  }
+
+  /**
+   * Indicates whether left mouse button is pressed in this frame but was released last frame
+   */
+  public get leftButtonJustPressed(): boolean {
+    return !this.statePrev.buttons[0] && this.state.buttons[0]
+  }
+
+  /**
+   * Indicates whether left mouse button is released in this frame
+   */
+  public get leftButtonIsReleased(): boolean {
+    return this.state.buttons[0]
+  }
+
+  /**
+   * Indicates whether left mouse button is released in this frame but was pressed last frame
+   */
+  public get leftButtonJustReleased(): boolean {
+    return this.statePrev.buttons[0] && !this.state.buttons[0]
+  }
+
+  /**
+   * Indicates whether middle mouse button is pressed in this frame
+   */
+  public get middleButtonIsPressed(): boolean {
+    return this.state.buttons[1]
+  }
+
+  /**
+   * Indicates whether middle mouse button is pressed in this frame but was released last frame
+   */
+  public get middleButtonJustPressed(): boolean {
+    return !this.statePrev.buttons[1] && this.state.buttons[1]
+  }
+
+  /**
+   * Indicates whether middle mouse button is released in this frame
+   */
+  public get middleButtonIsReleased(): boolean {
+    return this.state.buttons[1]
+  }
+
+  /**
+   * Indicates whether middle mouse button is released in this frame but was pressed last frame
+   */
+  public get middleButtonJustReleased(): boolean {
+    return this.statePrev.buttons[1] && !this.state.buttons[1]
+  }
+
+  /**
+   * Indicates whether right mouse button is pressed in this frame
+   */
+  public get rightButtonIsPressed(): boolean {
+    return this.state.buttons[2]
+  }
+
+  /**
+   * Indicates whether right mouse button is pressed in this frame but was released last frame
+   */
+  public get rightButtonJustPressed(): boolean {
+    return !this.statePrev.buttons[2] && this.state.buttons[2]
+  }
+
+  /**
+   * Indicates whether right mouse button is released in this frame
+   */
+  public get rightButtonIsReleased(): boolean {
+    return this.state.buttons[2]
+  }
+
+  /**
+   * Indicates whether right mouse button is released in this frame but was pressed last frame
+   */
+  public get rightButtonJustReleased(): boolean {
+    return this.statePrev.buttons[2] && !this.state.buttons[2]
+  }
+
+  /**
+   * Indicates whether specific mouse button is pressed in this frame
+   */
+  public buttonIsPressed(button: number): boolean {
+    return this.state.buttons[button]
+  }
+
+  /**
+   * Indicates whether specific mouse button is pressed in this frame but was released last frame
+   */
+  public buttonJustPressed(button: number): boolean {
+    return !this.statePrev.buttons[button] && this.state.buttons[button]
+  }
+
+  /**
+   * Indicates whether specific mouse button is released in this frame
+   */
+  public buttonIsReleased(button: number): boolean {
+    return this.state.buttons[button]
+  }
+
+  /**
+   * Indicates whether specific mouse button is released in this frame but was pressed last frame
+   */
+  public buttonJustReleased(button: number): boolean {
+    return this.statePrev.buttons[button] && !this.state.buttons[button]
+  }
+}

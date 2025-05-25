@@ -4,7 +4,7 @@ import {
   LightComponent,
   ModelComponent,
   PerspectiveCameraComponent,
-  RendererComponent,
+  RendererSystem,
   TransformComponent,
 } from '@gglib/ecs-components'
 import * as TweakUi from 'tweak-ui'
@@ -15,15 +15,15 @@ import { Model, LightType } from '@gglib/graphics'
 
 @Component({
   install: [
-    RendererComponent
+    RendererSystem
   ]
 })
 class MyGame implements OnInit, OnUpdate {
 
   public name = 'MyGame'
 
-  @Inject(RendererComponent)
-  public readonly renderer: RendererComponent
+  @Inject(RendererSystem)
+  public readonly renderer: RendererSystem
 
   @Inject(CameraComponent, { from: '/Camera' })
   public readonly camera: PerspectiveCameraComponent
@@ -75,7 +75,7 @@ createGame({
   device: { canvas: document.getElementById('canvas') as HTMLCanvasElement },
   autorun: true,
 }, (e) => {
-  e.install(RendererComponent)
+  e.install(RendererSystem)
   e.install(MyGame)
 })
 .createChild((e) => {

@@ -1,0 +1,6 @@
+---
+title: Pixealte
+---
+<Example />
+
+## Pixelate

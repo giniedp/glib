@@ -1,39 +1,22 @@
 import { Vec2, Vec3 } from '@gglib/math'
+import { Device } from '../Device'
+import { beginGeometry, Geometry } from '../model'
 import type { GeometryBuilder } from '../model/GeometryBuilder'
 
-function normalize(v: number[]) {
-  let x = v[0]
-  let y = v[1]
-  let z = v[2]
-  let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
-  v[0] *= d
-  v[1] *= d
-  v[2] *= d
-  return v
+export const BuildPolyhedronDefaults = {
+  radius: 0.5,
+  divisions: 4,
 }
 
-function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: Vec3) => void) {
-  if (depth <= 0) {
-    block(Vec3.convert(a))
-    block(Vec3.convert(c))
-    block(Vec3.convert(b))
-    return
-  }
-  let a1 = []
-  let b1 = []
-  let c1 = []
-  for (let i = 0; i < 3; i++) {
-    a1[i] = a[i] + b[i]
-    b1[i] = b[i] + c[i]
-    c1[i] = c[i] + a[i]
-  }
-  normalize(a1)
-  normalize(b1)
-  normalize(c1)
-  subdivide(a, a1, c1, depth - 1, block)
-  subdivide(b, b1, a1, depth - 1, block)
-  subdivide(c, c1, b1, depth - 1, block)
-  subdivide(a1, b1, c1, depth - 1, block)
+export interface BuildPlyhedronOptions {
+  radius?: number
+  divisions?: number
+}
+
+export function tetrahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
+  return beginGeometry().append(buildTetrahedron, options).endGeometry(device, {
+    name: 'tetrahedron',
+  })
 }
 
 /**
@@ -41,15 +24,9 @@ function subdivide(a: number[], b: number[], c: number[], depth: number, block: 
  *
  * @public
  */
-export function buildTetrahedron(
-  builder: GeometryBuilder,
-  options: {
-    radius?: number
-    tesselation?: number
-  } = {},
-) {
-  const radius = options?.radius ?? 0.5
-  const steps = options?.tesselation ?? 0
+export function buildTetrahedron(builder: GeometryBuilder, options?: BuildPlyhedronOptions) {
+  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
+  const divisions = options?.divisions ?? BuildPolyhedronDefaults.divisions
   const vertices = [
     [+1, +1, +1],
     [+1, -1, -1],
@@ -71,8 +48,20 @@ export function buildTetrahedron(
     })
   }
   for (const face of faces) {
-    subdivide(normalize(vertices[face[0]]), normalize(vertices[face[1]]), normalize(vertices[face[2]]), steps, onVetex)
+    subdivide(
+      normalize(vertices[face[0]]),
+      normalize(vertices[face[1]]),
+      normalize(vertices[face[2]]),
+      divisions,
+      onVetex,
+    )
   }
+}
+
+export function octahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
+  return beginGeometry().append(buildOctahedron, options).endGeometry(device, {
+    name: 'octahedron',
+  })
 }
 
 /**
@@ -80,15 +69,9 @@ export function buildTetrahedron(
  *
  * @public
  */
-export function buildOctahedron(
-  builder: GeometryBuilder,
-  options: {
-    radius?: number
-    tesselation?: number
-  } = {},
-) {
-  const radius = options?.radius ?? 0.5
-  const steps = options?.tesselation ?? 0
+export function buildOctahedron(builder: GeometryBuilder, options?: BuildPlyhedronOptions) {
+  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
+  const steps = options?.divisions ?? BuildPolyhedronDefaults.divisions
   const vertices = [
     [+1, 0, 0],
     [-1, 0, 0], // left
@@ -120,6 +103,12 @@ export function buildOctahedron(
   }
 }
 
+export function icosahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
+  return beginGeometry().append(buildIcosahedron, options).endGeometry(device, {
+    name: 'icosahedron',
+  })
+}
+
 /**
  * Builds an icosahedron shape into the {@link GeometryBuilder}
  *
@@ -127,15 +116,9 @@ export function buildOctahedron(
  * @remarks
  * The implementation is based on http://www.opengl.org.ru/docs/pg/0208.html
  */
-export function buildIcosahedron(
-  builder: GeometryBuilder,
-  options: {
-    radius?: number
-    tesselation?: number
-  } = {},
-) {
-  const radius = options?.radius ?? 0.5
-  const steps = options?.tesselation ?? 0
+export function buildIcosahedron(builder: GeometryBuilder, options?: BuildPlyhedronOptions) {
+  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
+  const steps = options?.divisions ?? BuildPolyhedronDefaults.divisions
 
   const X = 0.525731112119133606
   const Z = 0.850650808352039932
@@ -186,4 +169,39 @@ export function buildIcosahedron(
   for (let face of faces) {
     subdivide(vertices[face[0]], vertices[face[1]], vertices[face[2]], steps, onVetex)
   }
+}
+
+function normalize(v: number[]) {
+  let x = v[0]
+  let y = v[1]
+  let z = v[2]
+  let d = 1.0 / Math.sqrt(x * x + y * y + z * z)
+  v[0] *= d
+  v[1] *= d
+  v[2] *= d
+  return v
+}
+
+function subdivide(a: number[], b: number[], c: number[], depth: number, block: (v: Vec3) => void) {
+  if (depth <= 0) {
+    block(Vec3.convert(a))
+    block(Vec3.convert(c))
+    block(Vec3.convert(b))
+    return
+  }
+  let a1 = []
+  let b1 = []
+  let c1 = []
+  for (let i = 0; i < 3; i++) {
+    a1[i] = a[i] + b[i]
+    b1[i] = b[i] + c[i]
+    c1[i] = c[i] + a[i]
+  }
+  normalize(a1)
+  normalize(b1)
+  normalize(c1)
+  subdivide(a, a1, c1, depth - 1, block)
+  subdivide(b, b1, a1, depth - 1, block)
+  subdivide(c, c1, b1, depth - 1, block)
+  subdivide(a1, b1, c1, depth - 1, block)
 }

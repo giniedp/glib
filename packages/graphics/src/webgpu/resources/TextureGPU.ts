@@ -65,7 +65,7 @@ export class TextureGPU extends Texture {
   /**
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
-  public destroy(): this {
+  public dispose(): this {
     this.set('source', null)
     this.set('handle', null)
     return this
@@ -114,7 +114,7 @@ export class TextureGPU extends Texture {
     }
 
     if (this.width !== width || this.height !== height) {
-      this.destroy()
+      this.dispose()
     }
     this.set('width', width)
     this.set('height', height)
@@ -153,7 +153,7 @@ export class TextureGPU extends Texture {
     }
 
     if (this.width !== this.source.width || this.height !== this.source.height) {
-      this.destroy()
+      this.dispose()
     }
     this.set('width', this.source.width)
     this.set('height', this.source.height)

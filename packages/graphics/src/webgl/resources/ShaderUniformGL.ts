@@ -1,5 +1,3 @@
-// tslint:disable:no-bitwise
-
 import { copy } from '@gglib/utils'
 
 import { ShaderUniform, ShaderUniformInfo } from '../../resources/ShaderUniform'

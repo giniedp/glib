@@ -3,6 +3,7 @@ import { BoundingSphere } from './BoundingSphere'
 import { PlaneIntersectionType } from './Collision'
 import { Plane } from './Plane'
 import { Vec3 } from './Vec3'
+import { describe, it, expect,  } from 'vitest'
 
 describe('Plane', () => {
 
@@ -198,8 +199,7 @@ describe('Plane', () => {
     }
   })
 
-  it('intersectsCapsule', () => {
-    pending('incomplete implementation of capsule')
+  it.skip('intersectsCapsule', () => {
     // for (let i = 0; i < 1; i++) {
     //   const r = 1
     //   const point = Vec3.createRandom().multiplyScalar(10)

@@ -36,7 +36,7 @@ import { Color } from './Color'
 import { Model, ModelOptions } from './model/Model'
 import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
 import { SpriteBatch } from './SpriteBatch'
-import { VertexLayout } from './VertexLayout'
+import { AttributeSemantic, VertexLayout } from './VertexLayout'
 
 /**
  * Describes the Graphics Device
@@ -91,6 +91,7 @@ export abstract class Device<T = unknown> {
   public set cullState(v: CullStateParams) {
     this.$cullState.commit(v)
   }
+
   /**
    * Gets a copy of the blend state parameters.
    * Updates the blend state parameters and commits the state to the GPU.
@@ -101,6 +102,7 @@ export abstract class Device<T = unknown> {
   public set blendState(v: BlendStateParams) {
     this.$blendState.commit(v)
   }
+
   /**
    * Gets a copy of the depth state parameters
    * Updates the depth state parameters and commits the state to the GPU
@@ -111,6 +113,7 @@ export abstract class Device<T = unknown> {
   public set depthState(v: DepthStateParams) {
     this.$depthState.commit(v)
   }
+
   /**
    * Gets a copy of the offset state parameters
    * Updates the offset state parameters and commits the state to the GPU
@@ -121,6 +124,7 @@ export abstract class Device<T = unknown> {
   public set offsetState(v: OffsetStateParams) {
     this.$offsetState.commit(v)
   }
+
   /**
    * Gets a copy of the stencil state parameters
    * Updates the stencil state parameters and commits the state to the GPU
@@ -131,6 +135,7 @@ export abstract class Device<T = unknown> {
   public set stencilState(v: StencilStateParams) {
     this.$stencilState.commit(v)
   }
+
   /**
    * Gets a copy of the scissor state parameters
    * Updates the scissor state parameters and commits the state to the GPU
@@ -141,6 +146,7 @@ export abstract class Device<T = unknown> {
   public set scissorState(v: ScissorStateParams) {
     this.$scissorState.commit(v)
   }
+
   /**
    * Gets a copy of the viewport state parameters
    * Updates the viewport state parameters and commits the state to the GPU
@@ -154,7 +160,8 @@ export abstract class Device<T = unknown> {
 
   public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
-      this.defaultTextureInstance = this.createTexture2D({
+      this.defaultTextureInstance = this.createTexture({
+        type: 'Texture2D',
         source: [0x0f, 0x0f, 0x0f, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x0f, 0x0f, 0x0f, 0xff],
         width: 2,
         height: 2,
@@ -185,6 +192,10 @@ export abstract class Device<T = unknown> {
   protected registeredDepthBuffers: DepthBuffer[] = []
 
   protected defaultTextureInstance: Texture
+
+  public readonly stats = {
+    drawCalls: 0,
+  }
 
   public get driverInfo(): string {
     return ''
@@ -230,37 +241,23 @@ export abstract class Device<T = unknown> {
    *
    */
   public drawQuad(flipY?: boolean): this {
-    let iBuffer =
-      this.quadIndexBuffer ||
-      this.createIndexBuffer({
-        data: [0, 3, 1, 0, 2, 3],
-        dataType: 'ushort',
-      })
-    this.quadIndexBuffer = iBuffer
+    this.quadIndexBuffer ||= this.createIndexBuffer({
+      data: [0, 3, 1, 0, 2, 3],
+      dataType: 'ushort',
+    })
+    this.quadVertexBufferFlipped ||= this.createVertexBuffer({
+      data: [-1, 1, 0, 0, 0, 1, 1, 0, 1, 0, -1, -1, 0, 0, 1, 1, -1, 0, 1, 1],
+      layout: this.createVertexLayout(['position', 'texture']),
+      dataType: 'float',
+    })
+    this.quadVertexBuffer ||= this.createVertexBuffer({
+      data: [-1, 1, 0, 0, 1, 1, 1, 0, 1, 1, -1, -1, 0, 0, 0, 1, -1, 0, 1, 0],
+      layout: this.createVertexLayout(['position', 'texture']),
+      dataType: 'float',
+    })
 
-    let vBuffer
-    if (flipY) {
-      vBuffer =
-        this.quadVertexBufferFlipped ||
-        this.createVertexBuffer({
-          data: [-1, 1, 0, 0, 0, 1, 1, 0, 1, 0, -1, -1, 0, 0, 1, 1, -1, 0, 1, 1],
-          layout: this.createVertexLayout('PositionTexture'),
-          dataType: 'float',
-        })
-      this.quadVertexBufferFlipped = vBuffer
-    } else {
-      vBuffer =
-        this.quadVertexBuffer ||
-        this.createVertexBuffer({
-          data: [-1, 1, 0, 0, 1, 1, 1, 0, 1, 1, -1, -1, 0, 0, 0, 1, -1, 0, 1, 0],
-          layout: this.createVertexLayout('PositionTexture'),
-          dataType: 'float',
-        })
-      this.quadVertexBuffer = vBuffer
-    }
-
-    this.indexBuffer = iBuffer
-    this.vertexBuffer = vBuffer
+    this.indexBuffer = this.quadIndexBuffer
+    this.vertexBuffer = flipY ? this.quadVertexBufferFlipped : this.quadVertexBuffer
     this.drawIndexedPrimitives()
     this.indexBuffer = null
     this.vertexBuffer = null
@@ -306,14 +303,17 @@ export abstract class Device<T = unknown> {
    * Gets the currently active vertex buffer
    */
   public abstract get vertexBuffer(): Buffer
+
   /**
    * Sets and activates a buffer as the currently active vertex buffer
    */
   public abstract set vertexBuffer(buffer: Buffer)
+
   /**
    * Gets the currently active index buffer
    */
   public abstract get indexBuffer(): Buffer
+
   /**
    * Sets and activates a buffer as the currently active index buffer
    */
@@ -323,6 +323,7 @@ export abstract class Device<T = unknown> {
    * Gets the currently active shader program
    */
   public abstract get program(): ShaderProgram
+
   /**
    * Sets and activates a program as the currently active program
    */
@@ -332,9 +333,11 @@ export abstract class Device<T = unknown> {
    * Gets the current width of the drawing buffer
    */
   public abstract get drawingBufferWidth(): number
+
   /**
    * Gets the current height of the drawing buffer
    */
+
   public abstract get drawingBufferHeight(): number
   /**
    * Gets the aspect ratio of the drawing buffer
@@ -346,15 +349,18 @@ export abstract class Device<T = unknown> {
    * before it calls the Buffer constructor with given options.
    */
   public abstract createIndexBuffer(options: BufferOptions): Buffer
+
   /**
    * Creates a new Buffer of type VertexBuffer. Overrides the type option
    * before it calls the Buffer constructor with given options.
    */
   public abstract createVertexBuffer(options: BufferOptions): Buffer
+
   /**
    * Creates a new Shader
    */
   public abstract createShader(options: ShaderOptions): Shader
+
   /**
    *
    */
@@ -364,6 +370,7 @@ export abstract class Device<T = unknown> {
       ...options,
     })
   }
+
   /**
    *
    */
@@ -377,25 +384,18 @@ export abstract class Device<T = unknown> {
    * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
    */
   public abstract createProgram(options: ShaderProgramOptions): ShaderProgram
+
   /**
-   * Creates a new Texture. Calls the Texture constructor with given options.
+   * Creates a new Texture. Calls the TextucreateRenderTargetre constructor with given options.
    */
   public abstract createTexture(options?: TextureOptions): Texture
+
   /**
    * Creates a new Texture that can be used as a render target. Ensures that
    * the depthFormat option is set and calls the Texture constructor.
    */
   public abstract createRenderTarget(options?: TextureOptions): Texture
-  /**
-   * Creates a new Texture of type Texture2D. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public abstract createTexture2D(options?: TextureOptions): Texture
-  /**
-   * Creates a new Texture of type TextureCube. Overrides the type option
-   * before it calls the Texture constructor with given options.
-   */
-  public abstract createTextureCube(options?: TextureOptions): Texture
+
   /**
    * Creates a new sampler state object
    */
@@ -414,8 +414,8 @@ export abstract class Device<T = unknown> {
   /**
    * Creates a vertex layout object from name
    */
-  public createVertexLayout(name: string): any {
-    return VertexLayout.create.apply(this, arguments)
+  public createVertexLayout(semantic: AttributeSemantic[]): any {
+    return VertexLayout.create(semantic)
   }
   /**
    * Creates a new model. Calls the model constructor with given options.
@@ -463,6 +463,7 @@ export abstract class Device<T = unknown> {
       list.length = index
     }
   }
+
   public getSharedDepthBuffer(options: DepthBufferOptions) {
     // no depthFormat no buffer
     if (!options.depthFormat) {

@@ -1,5 +1,12 @@
-import type { GeometryBuilder, GeometryBuilderFunction } from '../model/GeometryBuilder'
+import { Device } from '../Device'
+import { Geometry } from '../model/Geometry'
+import { beginGeometry, GeometryBuilder, GeometryBuilderFunction } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
+
+export const BuildSphereDefaults = {
+  radius: 0.5,
+  tesselation: 32,
+}
 
 /**
  * Options for the {@link buildSphere} function
@@ -17,8 +24,10 @@ export interface BuildSphereOptions {
   tesselation?: number
 }
 
-export function sphereBuilder(options: BuildSphereOptions = {}): GeometryBuilderFunction<void> {
-  return (builder: GeometryBuilder) => buildSphere(builder, options)
+export function sphereGeometry(device: Device, options?: BuildSphereOptions): Geometry {
+  return beginGeometry().append(buildSphere, options).endGeometry(device, {
+    name: 'sphere',
+  })
 }
 
 /**
@@ -27,28 +36,28 @@ export function sphereBuilder(options: BuildSphereOptions = {}): GeometryBuilder
  * @public
  */
 export function buildSphere(builder: GeometryBuilder, options: BuildSphereOptions = {}) {
-  const r = options?.radius ?? 0.5
-
+  const r = options?.radius ?? BuildSphereDefaults.radius
+  const t = options?.tesselation ?? BuildSphereDefaults.tesselation
   buildParametricSurface(builder, {
-    f: (phi: number, theta: number) => {
+    position: (phi: number, theta: number) => {
       return {
         x: r * Math.sin(theta) * Math.sin(phi),
         y: r * Math.cos(theta),
         z: r * Math.sin(theta) * Math.cos(phi),
       }
     },
-    n: (phi: number, theta: number) => {
+    normal: (phi: number, theta: number) => {
       return {
         x: Math.sin(theta) * Math.sin(phi),
         y: Math.cos(theta),
         z: Math.sin(theta) * Math.cos(phi),
       }
     },
-    tu: options?.tesselation ?? 32,
-    tv: options?.tesselation ?? 32,
-    u0: 0,
-    u1: Math.PI * 2,
-    v0: 0,
-    v1: Math.PI,
+    uSteps: t,
+    vSteps: t,
+    uStart: 0,
+    uEnd: Math.PI * 2,
+    vStart: 0,
+    vEnd: Math.PI,
   })
 }

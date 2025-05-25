@@ -1,0 +1,93 @@
+import { createDevice, Device } from '@gglib/graphics'
+import { loop } from '@gglib/utils'
+
+const vertexShader = /*glsl*/ `
+  precision highp float;
+  // vertex position attribute
+  attribute vec3 vPosition;
+  // vertex color attribute
+  attribute vec3 vColor;
+  // color attribute that will be passed to the fragment shader
+  varying vec3 vertexColor;
+  void main(void) {
+    vertexColor = vColor;
+    gl_Position = vec4(vPosition, 1.0);
+  }
+`
+
+const fragmentShader = /*glsl*/ `
+  precision highp float;
+  // color attribute coming from vertex shader
+  varying vec3 vertexColor;
+  void main(void) {
+    // output pixel color
+    gl_FragColor = vec4(vertexColor.rgb, 1.0);
+  }
+`
+
+export default (canvas: HTMLCanvasElement) => {
+  // Instantiate the graphics device and pass a reference to an existing canvas element
+  const device: Device = createDevice({
+    canvas,
+  })
+
+  // Create a shader program with vertex and fragment shaders.
+  // Here the shader source code is grabbed from the script tags.
+  const program = device.createProgram({
+    vertexShader,
+    fragmentShader,
+  })
+
+  // Create the vertex buffer. In this example each triangle vertex
+  // only has a position attribute.
+  // The `layout` option describes how the `data` is structured.
+  // The vertex shader expects a vertex attribute with the name `vPosition`
+  // of type `vec3` which in the end consists of `3` elements of type `float`
+  const vertices = device.createVertexBuffer({
+    // The `layout` describes that each vertex begins with a `vPosition` attribute
+    // which is a `vec3` with 3 elements.
+    layout: {
+      vPosition: {
+        type: 'float',
+        offset: 0,
+        elements: 3,
+      },
+      // It is then followed byt a `vColor` attribute which is also a `vec3` with 3 elements
+      // but has an offset of 12 bytes from the beginning of the vertex.
+      vColor: {
+        type: 'float',
+        offset: 12,
+        elements: 3,
+      },
+    },
+    // The `data` is a sequence of floats that matches the `layout` specification.
+    // Each 6 floats define a vertex where the first 3 floats are a `vPosition`
+    // and the next 3 floats are the `vColor`
+    data: [
+      /* position */ -0.5, -0.5, 0.0, /* color */ 1, 0, 0, /* position  */ 0.5, -0.5, 0.0, /* color */ 0, 1, 0,
+      /* position  */ 0.0, 0.5, 0.0, /* color */ 0, 0, 1,
+    ],
+  })
+
+  // Start a loop function.
+  return loop(() => {
+    if (!program) {
+      return
+    }
+    // If the size of the canvas is controlled by css (as it is on this page)
+    // this call will resize the drawing buffer to match the new size of the canvas.
+    device.resize()
+
+    // Clear the screen.
+    device.clear(0xff2e2620)
+
+    // Now render the vertex buffer with the program.
+    // The call to `drawPrimitives` instructs to
+    // - draw the vertex buffer as a TriangleList
+    // - starting at the beginning of the buffer (`0` offset)
+    // - and draw only 3 vertices
+    device.vertexBuffer = vertices
+    device.program = program
+    device.drawPrimitives('TriangleList', 0, 3)
+  }).stop
+}

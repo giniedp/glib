@@ -7,6 +7,7 @@ import {
 import { DeviceGL } from '../webgl'
 import { StencilStateGL } from '../webgl/states'
 import { StencilStateParams } from './StencilState'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/StencilState', () => {
 

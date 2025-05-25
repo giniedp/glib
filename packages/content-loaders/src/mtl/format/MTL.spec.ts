@@ -1,18 +1,20 @@
+import { describe, expect, it } from 'vitest'
 import { MTL } from './MTL'
 
 describe('glib/content/format/MTL', () => {
   describe('#parse', () => {
-
     it('reads newmtl', () => {
       expect(MTL.parse('newmtl the name')[0].name).toBe('the name')
     })
 
     it('reads Ka', () => {
-      expect(MTL.parse(`
+      expect(
+        MTL.parse(`
 # some comment
 newmtl name
 Ka 1 2 3
-      `)[0].Ka).toEqual([1, 2, 3])
+      `)[0].Ka,
+      ).toEqual([1, 2, 3])
     })
     it('reads Ka', () => {
       expect(MTL.parse('newmtl name\nKa 1 2')[0].Ka).toEqual([1, 2, 1])
@@ -100,17 +102,20 @@ Ka 1 2 3
       })
 
       it('reads -mm', () => {
-        expect(MTL.parse('newmtl name\nmap_Ka -mm 123 456 file.png')[0].map_Ka.options.mm).toEqual({ base: 123, gain: 456 })
+        expect(MTL.parse('newmtl name\nmap_Ka -mm 123 456 file.png')[0].map_Ka.options.mm).toEqual({
+          base: 123,
+          gain: 456,
+        })
       })
 
       it('reads -o -s -t -texres', () => {
-        const options = MTL.parse('newmtl name\nmap_Ka -o 1 2 3 -s 4 5 6 -t 7 8 9 -texres 512 file.png')[0].map_Ka.options
+        const options = MTL.parse('newmtl name\nmap_Ka -o 1 2 3 -s 4 5 6 -t 7 8 9 -texres 512 file.png')[0].map_Ka
+          .options
         expect(options.o).toEqual([1, 2, 3])
         expect(options.s).toEqual([4, 5, 6])
         expect(options.t).toEqual([7, 8, 9])
         expect(options.texres).toEqual(512)
       })
     })
-
   })
 })

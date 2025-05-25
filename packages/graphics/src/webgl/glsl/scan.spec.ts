@@ -1,7 +1,8 @@
 import { glsl } from '../../utils'
 import { GlslScanResult, scan } from './scan'
+import { describe, expect, it, beforeEach } from 'vitest'
 
-fdescribe('Glsl.scan', () => {
+describe('Glsl.scan', () => {
 
   describe('variables', () => {
     function testVariable(type: string) {
@@ -201,7 +202,7 @@ fdescribe('Glsl.scan', () => {
       it('array', () => testVariableArray('mat4x4'))
     })
 
-    fdescribe('interface', () => {
+    describe('interface', () => {
       const shader = glsl`
         #version 300 es
 

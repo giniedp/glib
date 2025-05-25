@@ -1,11 +1,11 @@
 import { ContentManager } from '@gglib/content'
-import { LightParams } from '@gglib/fx-materials'
+import { LightParams } from '@gglib/materials'
 import { CullState, DepthState, Model, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 import {
   BasicRenderPass,
   LightSourceData,
-  RenderManager,
+  Renderer,
   RenderPass,
   SceneItemDrawable,
   Scene,
@@ -18,8 +18,8 @@ const device = createDevice({
 })
 const content = new ContentManager(device)
 
-// Create an instance of the `RenderManager`.
-const renderer = new RenderManager(device)
+// Create an instance of the `Renderer`.
+const renderer = new Renderer(device)
 
 // All scenes will be referencing the same
 // data and rendering arrays.

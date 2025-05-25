@@ -2,5 +2,5 @@
 
 ---
 
-The `@gglib/fx-post` package implements a post processing api and some effects.
+The `@gglib/effects` package implements a post processing api and some effects.
 

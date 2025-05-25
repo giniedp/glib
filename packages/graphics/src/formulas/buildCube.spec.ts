@@ -1,4 +1,6 @@
-import { buildCube, GeometryBuilder } from '../index'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { GeometryBuilder } from '../model/GeometryBuilder'
+import { buildCube } from './buildCube'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCube', () => {
@@ -8,7 +10,7 @@ describe('@gglib/graphics/formulas', () => {
       builder = new GeometryBuilder()
     })
 
-    it ('builds without errors', () => {
+    it('builds without errors', () => {
       expect(builder.vertexCount).toBe(0)
       buildCube(builder)
       expect(builder.vertexCount).not.toBe(0)

@@ -1,6 +1,8 @@
 
 
 import { BinaryReader } from './BinaryReader'
+import { describe, expect, it, beforeEach } from 'vitest'
+
 describe('Glib.Core.BinaryReader', () => {
   let data
   let reader: BinaryReader

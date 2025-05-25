@@ -1,6 +1,7 @@
 import { DeviceGL } from '../webgl'
 import { OffsetStateGL } from '../webgl/states'
 import { OffsetStateParams } from './OffsetState'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/OffsetState', () => {
 

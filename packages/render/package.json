@@ -21,13 +21,13 @@
     "@gglib/graphics": "workspace:^0.6.2",
     "@gglib/math": "workspace:^0.6.2",
     "@gglib/utils": "workspace:^0.6.2",
-    "@gglib/fx-post": "workspace:^0.6.2"
+    "@gglib/effects": "workspace:^0.6.2"
   },
   "peerDependencies": {
     "@gglib/graphics": "0.6.2",
     "@gglib/math": "0.6.2",
     "@gglib/utils": "0.6.2",
-    "@gglib/fx-post": "0.6.2"
+    "@gglib/effects": "0.6.2"
   },
   "files": [
     "package.json",

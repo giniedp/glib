@@ -1,6 +1,7 @@
 import { ContentManager } from '@gglib/content'
 import { DeviceGL, Model, Material, MaterialOptions, ShaderEffect } from '@gglib/graphics'
 import { clearScripts, defineScript } from '../test'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 import '../gglib'
 import './obj'

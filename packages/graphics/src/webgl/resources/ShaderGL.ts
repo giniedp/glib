@@ -21,6 +21,9 @@ export class ShaderGL extends Shader {
    */
   public info: string
 
+  /**
+   * The native WebGL shader resource
+   */
   public resource: WebGLShader
 
   /**
@@ -43,7 +46,7 @@ export class ShaderGL extends Shader {
   /**
    * Releases the shader handle
    */
-  public destroy(): this {
+  public dispose(): this {
     if (this.device.context.isShader(this.resource)) {
       this.device.context.deleteShader(this.resource)
       this.resource = null

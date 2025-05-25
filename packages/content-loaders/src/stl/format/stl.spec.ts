@@ -1,5 +1,6 @@
 import { Http } from '@gglib/utils'
 import { STL } from './stl'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('content/formats/stl', () => {
   it('parses binary file', async () => {

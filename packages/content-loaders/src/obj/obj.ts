@@ -1,17 +1,17 @@
+import { loader, Loader, resolveUri } from '@gglib/content'
 import {
-  Material,
-  Model,
   GeometryBuilder,
   GeometryOptions,
+  Material,
+  MaterialOptions,
+  Model,
   ModelOptions,
   VertexLayout,
-  MaterialOptions,
 } from '@gglib/graphics'
-import { loader, resolveUri, Loader } from '@gglib/content'
 
-import { OBJ, FaceElement, VertexTextureNormalRef } from './format'
 import { PipelineContext } from '@gglib/content'
-import { addToArraySet, flattenArray } from '@gglib/utils'
+import { addToArraySet } from '@gglib/utils'
+import { FaceElement, OBJ, VertexTextureNormalRef } from './format'
 
 /**
  * Downloads text from source, parses it using {@link OBJ.parse} and converts into {@link ModelOptions}.
@@ -83,8 +83,9 @@ async function convertData(data: OBJ, context: PipelineContext) {
 }
 
 async function loadMtllibs(files: string[], context: PipelineContext) {
-  return Promise.all(files.map((file) => loadMtllib(file, context))).then(flattenArray)
+  return Promise.all(files.map((file) => loadMtllib(file, context))).then((it) => it.flat())
 }
+
 function loadMtllib(file: string, context: PipelineContext) {
   return context.manager.load<MaterialOptions[]>(resolveUri(file, context), Material.OptionsArray)
 }

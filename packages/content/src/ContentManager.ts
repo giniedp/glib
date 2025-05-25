@@ -274,7 +274,7 @@ export class ContentManager {
     const requested = Uri.merge(location.pathname, src)
     const remapped = this.rewriteUrl(requested)
     if (requested !== remapped) {
-      Log.debug(`[Content.Manager] remap Url ${src} => ${remapped}`)
+      // Log.debug(`[Content.Manager] remap Url ${src} => ${remapped}`)
       src = remapped
     } else {
       src = requested
@@ -303,14 +303,14 @@ export class ContentManager {
       return Promise.resolve(this.loaded.get(key))
     }
 
-    Log.group(group)
-    const loader = Log.groupEndAsync(() => Pipeline.run({
+    //Log.group(group)
+    const loader = Pipeline.run({
       manager: this,
       source: src,
       target: targetType,
       options: options,
       pipeline: this.pipeline,
-    }))
+    })
     return this.loading.set(key, loader).get(key).then((result) => {
       this.loading.delete(key)
       this.loaded.set(key, result)

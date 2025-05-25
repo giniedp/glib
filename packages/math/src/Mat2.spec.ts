@@ -3,15 +3,15 @@ import { Mat2 } from './Mat2'
 import { Vec2 } from './Vec2'
 import { Vec4 } from './Vec4'
 import { Quat } from './Quat'
-
+import { describe, it, expect, beforeEach } from 'vitest'
 
 describe('Mat2', () => {
 
   function expectComponents(v: Mat2, parts: number[], precision: number = 10) {
-    expect(v.m[0]).toBeCloseTo(parts[0], precision, `component ${0}`)
-    expect(v.m[1]).toBeCloseTo(parts[1], precision, `component ${1}`)
-    expect(v.m[2]).toBeCloseTo(parts[2], precision, `component ${2}`)
-    expect(v.m[3]).toBeCloseTo(parts[3], precision, `component ${3}`)
+    expect(v.m[0], `component ${0}`).toBeCloseTo(parts[0], precision)
+    expect(v.m[1], `component ${1}`).toBeCloseTo(parts[1], precision)
+    expect(v.m[2], `component ${2}`).toBeCloseTo(parts[2], precision)
+    expect(v.m[3], `component ${3}`).toBeCloseTo(parts[3], precision)
   }
 
   function expectEquality(v1: Mat2, v2: Mat2, precision: number = 10) {
@@ -19,32 +19,32 @@ describe('Mat2', () => {
   }
 
   function expectVec2Equality(v1: Vec2, v2: Vec2, precision: number = 10) {
-    expect(v1.x).toBeCloseTo(v2.x, precision, 'x component')
-    expect(v1.y).toBeCloseTo(v2.y, precision, 'y component')
+    expect(v1.x, 'x component').toBeCloseTo(v2.x, precision)
+    expect(v1.y, 'y component').toBeCloseTo(v2.y, precision)
   }
 
   function expectVec2Components(v: Vec2, parts: number[]) {
-    expect(v.x).toBeCloseTo(parts[0], 10, 'x component')
-    expect(v.y).toBeCloseTo(parts[1], 10, 'y component')
+    expect(v.x, 'x component').toBeCloseTo(parts[0], 10)
+    expect(v.y, 'y component').toBeCloseTo(parts[1], 10)
   }
 
   function expectVec3Equality(v1: Vec3, v2: Vec3, precision: number = 10) {
-    expect(v1.x).toBeCloseTo(v2.x, precision, 'x component')
-    expect(v1.y).toBeCloseTo(v2.y, precision, 'y component')
-    expect(v1.z).toBeCloseTo(v2.z, precision, 'z component')
+    expect(v1.x, 'x component').toBeCloseTo(v2.x, precision)
+    expect(v1.y, 'y component').toBeCloseTo(v2.y, precision)
+    expect(v1.z, 'z component').toBeCloseTo(v2.z, precision)
   }
 
   function expectVec4Equality(v1: Vec4, v2: Vec4, precision: number = 10) {
-    expect(v1.x).toBeCloseTo(v2.x, precision, 'x component')
-    expect(v1.y).toBeCloseTo(v2.y, precision, 'y component')
-    expect(v1.z).toBeCloseTo(v2.z, precision, 'z component')
-    expect(v1.w).toBeCloseTo(v2.w, precision, 'w component')
+    expect(v1.x, 'x component').toBeCloseTo(v2.x, precision)
+    expect(v1.y, 'y component').toBeCloseTo(v2.y, precision)
+    expect(v1.z, 'z component').toBeCloseTo(v2.z, precision)
+    expect(v1.w, 'w component').toBeCloseTo(v2.w, precision)
   }
 
   function expectBuffer(buf1: number[], expected: number[], precision: number = 10) {
     expect(buf1.length).toBe(expected.length)
     buf1.forEach((v, index) => {
-      expect(v).toBeCloseTo(expected[index], precision, `buffer index ${index}`)
+      expect(v, `buffer index ${index}`).toBeCloseTo(expected[index], precision)
     })
   }
 
@@ -349,7 +349,7 @@ describe('Mat2', () => {
       for (let i = 0; i < 4; i++) {
         const mat2 = mat.clone()
         mat2.m[i] = 100
-        expect(mat.equals(mat2)).toBe(false, `component ${i}`)
+        expect(mat.equals(mat2), `component ${i}`).toBe(false)
       }
     })
   })
@@ -472,7 +472,7 @@ describe('Mat2', () => {
     describe('#negate', () => {
       it ('negates components', () => {
         mat.negate().m.forEach((it: number, index: number) => {
-          expect(it).toBe(-(index + 1), `component ${index}`)
+          expect(it, `component ${index}`).toBe(-(index + 1))
         })
       })
     })
@@ -481,7 +481,7 @@ describe('Mat2', () => {
 
       it ('negates components', () => {
         Mat2.negate(mat).m.forEach((it: number, index: number) => {
-          expect(it).toBe(-(index + 1), `component ${index}`)
+          expect(it, `component ${index}`).toBe(-(index + 1))
         })
       })
     })
@@ -491,7 +491,7 @@ describe('Mat2', () => {
         const mat1 = mat.clone()
         const mat2 = mat1.clone()
         mat1.add(mat2).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) + (index + 1), `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) + (index + 1))
         })
       })
     })
@@ -501,7 +501,7 @@ describe('Mat2', () => {
         const mat1 = mat.clone()
         const mat2 = mat1.clone()
         Mat2.add(mat1, mat2).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) + (index + 1), `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) + (index + 1))
         })
       })
     })
@@ -509,7 +509,7 @@ describe('Mat2', () => {
     describe('#addScalar', () => {
       it ('adds components', () => {
         mat.addScalar(10).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) + 10, `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) + 10)
         })
       })
     })
@@ -517,7 +517,7 @@ describe('Mat2', () => {
     describe('.addScalar', () => {
       it ('adds components', () => {
         Mat2.addScalar(mat, 10).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) + 10, `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) + 10)
         })
       })
     })
@@ -527,7 +527,7 @@ describe('Mat2', () => {
         const mat1 = mat.clone()
         const mat2 = mat1.clone()
         mat1.subtract(mat2).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) - (index + 1), `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) - (index + 1))
         })
       })
     })
@@ -537,7 +537,7 @@ describe('Mat2', () => {
         const mat1 = mat.clone()
         const mat2 = mat1.clone()
         Mat2.subtract(mat1, mat2).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) - (index + 1), `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) - (index + 1))
         })
       })
     })
@@ -545,7 +545,7 @@ describe('Mat2', () => {
     describe('#subtractScalar', () => {
       it ('subtracts components', () => {
         mat.subtractScalar(10).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) - 10, `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) - 10)
         })
       })
     })
@@ -553,7 +553,7 @@ describe('Mat2', () => {
     describe('.subtractScalar', () => {
       it ('subtracts components', () => {
         Mat2.subtractScalar(mat, 10).m.forEach((it: number, index: number) => {
-          expect(it).toBe((index + 1) - 10, `component ${index}`)
+          expect(it, `component ${index}`).toBe((index + 1) - 10)
         })
       })
     })
@@ -561,7 +561,7 @@ describe('Mat2', () => {
     describe('#multiplyScalar', () => {
       it ('multiplies components', () => {
         mat.multiplyScalar(10).m.forEach((it: number, index: number) => {
-          expect(it).toBeCloseTo((index + 1) * 10, 5, `component ${index}`)
+          expect(it, `component ${index}`).toBeCloseTo((index + 1) * 10, 5)
         })
       })
     })
@@ -569,7 +569,7 @@ describe('Mat2', () => {
     describe('.multiplyScalar', () => {
       it ('multiplies components', () => {
         Mat2.multiplyScalar(mat, 10).m.forEach((it: number, index: number) => {
-          expect(it).toBeCloseTo((index + 1) * 10, 5, `component ${index}`)
+          expect(it, `component ${index}`).toBeCloseTo((index + 1) * 10, 5)
         })
       })
     })
@@ -577,7 +577,7 @@ describe('Mat2', () => {
     describe('#divide', () => {
       it ('divides components', () => {
         mat.divide(mat).m.forEach((it: number, index: number) => {
-          expect(it).toBeCloseTo(1, 5, `component ${index}`)
+          expect(it, `component ${index}`).toBeCloseTo(1, 5)
         })
       })
     })
@@ -585,7 +585,7 @@ describe('Mat2', () => {
     describe('.divide', () => {
       it ('divides components', () => {
         Mat2.divide(mat, mat).m.forEach((it: number, index: number) => {
-          expect(it).toBeCloseTo(1, 5, `component ${index}`)
+          expect(it, `component ${index}`).toBeCloseTo(1, 5)
         })
       })
     })
@@ -593,7 +593,7 @@ describe('Mat2', () => {
     describe('#divideScalar', () => {
       it ('divides components', () => {
         mat.divideScalar(10).m.forEach((it: number, index: number) => {
-          expect(it).toBeCloseTo((index + 1) / 10, 5, `component ${index}`)
+          expect(it, `component ${index}`).toBeCloseTo((index + 1) / 10, 5)
         })
       })
     })
@@ -601,7 +601,7 @@ describe('Mat2', () => {
     describe('.divideScalar', () => {
       it ('divides components', () => {
         Mat2.divideScalar(mat, 10).m.forEach((it: number, index: number) => {
-          expect(it).toBeCloseTo((index + 1) / 10, 5, `component ${index}`)
+          expect(it, `component ${index}`).toBeCloseTo((index + 1) / 10, 5)
         })
       })
     })

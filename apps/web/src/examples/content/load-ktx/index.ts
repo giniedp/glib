@@ -1,5 +1,5 @@
 import { ContentManager } from '@gglib/content'
-import { AutoMaterial } from '@gglib/fx-materials'
+import { AutoMaterial } from '@gglib/materials'
 import { BlendState, CullState, DepthState, createDevice, ModelBuilder, buildCube, Texture } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'

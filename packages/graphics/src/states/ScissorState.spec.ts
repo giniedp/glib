@@ -1,6 +1,7 @@
 import { DeviceGL } from '../webgl'
 import { ScissorStateGL } from '../webgl/states'
 import { ScissorStateParams } from './ScissorState'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/ScissorState', () => {
 

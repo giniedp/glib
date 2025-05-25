@@ -1,7 +1,7 @@
-import { documentVisibilityApi, Events } from '@gglib/utils'
+import { simpleObservable } from '@gglib/utils'
 
 /**
- * Options for {@link Keyboard}
+ * Options for {@link KeyboardListener}
  *
  * @public
  */
@@ -10,10 +10,6 @@ export interface KeyboardOptions {
    * The element at which to listen for input events
    */
   eventTarget?: EventTarget
-  /**
-   * Events that are captured and re-triggered on the {@link Keyboard} instance
-   */
-  proxyEvents?: string[]
 }
 
 /**
@@ -33,7 +29,7 @@ export type KeyboardState = Set<KeyboardKey>
  *
  * @public
  */
-export class Keyboard extends Events {
+export class KeyboardListener {
   /**
    * The target element on which to listen for keyboard events.
    */
@@ -45,7 +41,7 @@ export class Keyboard extends Events {
    * @remarks
    * Values are {@link KeyboardKey} enum values (numbers)
    */
-  public readonly keys: ReadonlySet<KeyboardKey> = new Set<KeyboardKey>()
+  public readonly keys = new Set<KeyboardKey>()
 
   /**
    * Tracked set of pressed {@link KeyboardKey} enum keys
@@ -56,17 +52,8 @@ export class Keyboard extends Events {
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code | KeyboardEvent.code}
    * thus the list may contain values which are not yet enumerated by {@link KeyboardKey} enum.
    */
-  public readonly codes: ReadonlySet<string> = new Set<string>()
+  public readonly codes = new Set<string>()
 
-  /**
-   * Collection of html events that are captured and re-triggered on this instance
-   */
-  protected proxiedEvents = ['keypress', 'keydown', 'keyup']
-
-  /**
-   * Is called on the `keypress` event and marks the `event.code` as pressed
-   */
-  protected onKeyPress = (e: KeyboardEvent) => this.setKeyPressed(e)
   /**
    * Is called on the `keydown` event and marks the `event.code` as pressed
    */
@@ -79,18 +66,14 @@ export class Keyboard extends Events {
    * Is called when `document` or `window` loose focus e.g. user switches to another tab or application
    */
   protected onNeedsClear = (e: Event) => this.clearState(e)
-  /**
-   * Triggers the Event that occurred on the element
-   */
-  protected onEvent: EventListener = (e: Event) => this.trigger(e.type, this, e)
+
+  public readonly onChanged = simpleObservable<KeyboardListener>()
 
   /**
    * Initializes the Keyboard with given options and activates the capture listeners
    */
   constructor(options?: KeyboardOptions) {
-    super()
     this.eventTarget = options?.eventTarget ?? this.eventTarget
-    this.proxiedEvents = (options?.proxyEvents ?? this.proxiedEvents) || []
     this.activate()
   }
 
@@ -100,17 +83,13 @@ export class Keyboard extends Events {
   public activate() {
     this.deactivate()
     // update state events
-    this.eventTarget.addEventListener('keypress', this.onKeyPress)
     this.eventTarget.addEventListener('keydown', this.onKeyDown)
     this.eventTarget.addEventListener('keyup', this.onKeyUp)
     // visibility events
-    documentVisibilityApi.onVisibilityChange(this.onNeedsClear)
+    document.addEventListener('visibilitychange', this.onNeedsClear)
+    document.addEventListener('contextmenu', this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
     window.addEventListener('blur', this.onNeedsClear)
-    // delegated events
-    for (let name of this.proxiedEvents) {
-      this.eventTarget.addEventListener(name, this.onEvent)
-    }
   }
 
   /**
@@ -118,39 +97,35 @@ export class Keyboard extends Events {
    */
   public deactivate() {
     // update state events
-    this.eventTarget.removeEventListener('keypress', this.onKeyPress)
     this.eventTarget.removeEventListener('keydown', this.onKeyDown)
     this.eventTarget.removeEventListener('keyup', this.onKeyUp)
     // visibility events
-    documentVisibilityApi.offVisibilityChange(this.onNeedsClear)
+    document.removeEventListener('visibilitychange', this.onNeedsClear)
+    document.removeEventListener('contextmenu', this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
     window.removeEventListener('blur', this.onNeedsClear)
-    // delegated events
-    for (let name of this.proxiedEvents) {
-      this.eventTarget.removeEventListener(name, this.onEvent)
-    }
   }
 
   /**
    * Marks the given `code` as being pressed and triggers the `changed` event
    */
   protected setKeyPressed(e: KeyboardEvent) {
-    const key = Keyboard.getKeyboardKey(e)
+    const key = KeyboardListener.getKeyboardKey(e)
     if (!this.keys.has(key)) {
-      ;(this.keys as Set<number>).add(key)
-      ;(this.codes as Set<string>).add(e.code)
-      this.onChanged(e)
+      this.keys.add(key)
+      this.codes.add(e.code)
+      this.onChanged.notify(this)
     }
   }
   /**
    * Marks the given `keyCode` as not being pressed and triggers the `changed` event
    */
   protected setKeyReleased(e: KeyboardEvent) {
-    const code = Keyboard.getKeyboardKey(e)
+    const code = KeyboardListener.getKeyboardKey(e)
     if (this.keys.has(code)) {
-      ;(this.keys as Set<number>).delete(code)
-      ;(this.codes as Set<string>).delete(e.code)
-      this.onChanged(e)
+      this.keys.delete(code)
+      this.codes.delete(e.code)
+      this.onChanged.notify(this)
     }
   }
   /**
@@ -158,9 +133,9 @@ export class Keyboard extends Events {
    */
   public clearState(e?: Event) {
     if (this.keys.size > 0) {
-      ;(this.keys as Set<number>).clear()
-      ;(this.codes as Set<string>).clear()
-      this.onChanged(e)
+      this.keys.clear()
+      this.codes.clear()
+      this.onChanged.notify(this)
     }
   }
 
@@ -177,17 +152,86 @@ export class Keyboard extends Events {
    */
   public static getKeyboardKey(e: KeyboardEvent): KeyboardKey {
     if ('code' in e) {
-      return KeyboardKey[Number(e.code)] as unknown as KeyboardKey
+      return KeyboardKey[e.code] as unknown as KeyboardKey
     } else {
       return KeyCodeToKey[e['keyCode']]
     }
   }
-
-  protected onChanged(e?: KeyboardEvent | Event) {
-    this.trigger('changed', this, e)
-  }
 }
 
+export class Keyboard {
+  /**
+   * The keyboard listener
+   */
+  public readonly listener: KeyboardListener
+
+  /**
+   * Pressed keys in current frame
+   *
+   * @remarks
+   * This is swapped with the `oldState` property each frame
+   */
+  public state = new Set<KeyboardKey>()
+
+  /**
+   * Pressed keys in last frame
+   *
+   * @remarks
+   * This is swapped with the `newState` property each frame
+   */
+  public statePrev = new Set<KeyboardKey>()
+
+  private addToNewState = (k: KeyboardKey) => this.state.add(k)
+
+  constructor(options: KeyboardOptions = {}) {
+    this.listener = new KeyboardListener(options)
+  }
+
+  /**
+   * Swaps the `oldState` and `newState` properties and updates the `newState`
+   */
+  public update() {
+    ;[this.statePrev, this.state] = [this.state, this.statePrev]
+    this.state.clear()
+    this.listener.keys.forEach(this.addToNewState)
+  }
+
+  /**
+   * Detects whether a specific key is currently pressed
+   *
+   * @param key - The key to check
+   */
+  public isPressed(key: KeyboardKey): boolean {
+    return this.state.has(key)
+  }
+
+  /**
+   * Detects whether a specific key is currently pressed but was released in in last frame
+   *
+   * @param key - The key to check
+   */
+  public justPressed(key: KeyboardKey): boolean {
+    return this.statePrev.has(key) && this.state.has(key)
+  }
+
+  /**
+   * Detects whether a specific key is currently released
+   *
+   * @param key - The key to check
+   */
+  public isReleased(key: KeyboardKey): boolean {
+    return this.state.has(key)
+  }
+
+  /**
+   * Detects whether a specific key is currently released but was pressed in in last frame
+   *
+   * @param key - The key to check
+   */
+  public justReleased(key: KeyboardKey): boolean {
+    return this.statePrev.has(key) && !this.state.has(key)
+  }
+}
 /**
  * Enumeration of keyboard keys
  *

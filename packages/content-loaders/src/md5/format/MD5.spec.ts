@@ -1,4 +1,5 @@
 import { MD5Mesh } from './MD5Mesh'
+import { describe, expect, it, beforeEach, beforeAll } from 'vitest'
 
 describe('glib/content/format/MD5', () => {
   let parsed: MD5Mesh
@@ -69,7 +70,7 @@ mesh {
   })
 
   it('parses joints', () => {
-    expect(parsed.joints.length).toBe(3, 'joint count')
+    expect(parsed.joints.length, 'joint count').toBe(3)
     expect(parsed.joints[0].name).toBe('origin')
     expect(parsed.joints[0].parentIndex).toBe(-1)
     expect(parsed.joints[0].position.x).toBeCloseTo(-0.000000)
@@ -91,7 +92,7 @@ mesh {
   })
 
   it('parses meshes', () => {
-    expect(parsed.meshes.length).toBe(2, 'mesh count')
+    expect(parsed.meshes.length, 'mesh count').toBe(2)
     expect(parsed.meshes[0].shader).toBe('mesh_shader_1')
     expect(parsed.meshes[1].shader).toBe('mesh_shader_2')
   })

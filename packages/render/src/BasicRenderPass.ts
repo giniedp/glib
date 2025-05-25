@@ -18,8 +18,8 @@ import {
   StencilStateParams,
 } from '@gglib/graphics'
 
-import { RenderManager } from './RenderManager'
-import { RenderPass, SceneItemDrawable, SceneItemPrimitive, SceneItemSprite } from './Types'
+import type { RenderContext } from './RenderContext'
+import { DrawableInfo, isDrawableItem, isDrawablePrimitive, isDrawableSpriteItem, RenderPass } from './Types'
 
 /**
  * Constructor options for {@link BasicRenderPass}
@@ -109,69 +109,76 @@ export class BasicRenderPass implements RenderPass {
     this.stencilState = StencilState.convert(options?.stencilState ?? StencilState.Default)
   }
 
-  public render(manager: RenderManager) {
-    const binder = manager.binder
-    const scene = manager.scene
-    const view = manager.view
-    const cam = view.camera || scene.camera
-    if (!cam) {
+  public render(context: RenderContext) {
+    const uniforms = context.uniforms
+    const camera = context.camera
+    if (!camera) {
       return
     }
-    if (!this.spriteBatch) {
-      this.spriteBatch = new SpriteBatch(manager.device)
-    }
-    if (!this.primitiveBatch) {
-      this.primitiveBatch = new PrimitiveBatch(manager.device)
-    }
 
-    binder.updateCamera(cam.world, cam.view, cam.projection)
-    binder.updateLights(scene.lights)
+    this.spriteBatch ||= new SpriteBatch(context.device)
+    this.primitiveBatch ||= new PrimitiveBatch(context.device)
 
-    const rt = manager.beginStep()
-    if (rt) {
-      manager.device.setRenderTarget(rt)
-    }
+    uniforms.updateCamera(camera.view, camera.projection)
+    uniforms.updateLights(context.lights)
 
-    manager.device.cullState = this.cullState
-    manager.device.depthState = this.depthState
-    manager.device.blendState = this.blendState
-    manager.device.stencilState = this.stencilState
-    manager.device.clear(this.clearColor, this.clearDepth, this.clearStencil)
+    context.channels.color ||= context.targets.require({
+      width: context.viewport.width,
+      height: context.viewport.height,
+      ...context.targetOptions,
+    })
+
+    const target = context.channels.color
+    context.channels.color = target
+    context.device.setRenderTarget(target)
+
+    context.device.cullState = this.cullState
+    context.device.depthState = this.depthState
+    context.device.blendState = this.blendState
+    context.device.stencilState = this.stencilState
+    context.device.clear(this.clearColor, this.clearDepth, this.clearStencil)
 
     this.spriteBatch.begin({
-      viewProjection: binder.ViewProjection.value,
+      viewProjection: uniforms.ViewProjection.value,
     })
     this.primitiveBatch.begin({
-      viewProjection: binder.ViewProjection.value,
+      viewProjection: uniforms.ViewProjection.value,
       primitiveType: PrimitiveType.LineList,
     })
-    this.renderItems(manager)
+    this.renderItems(context, camera.layerMask)
     this.spriteBatch.end()
     this.primitiveBatch.end()
 
-    manager.device.setRenderTarget(null)
-    manager.endStep(rt)
+    context.device.setRenderTarget(null)
   }
 
-  protected renderItems(manager: RenderManager) {
-    for (const item of manager.scene.items) {
-      if (item.type === 'sprite') {
-        ;(item as SceneItemSprite).sprite.draw(this.spriteBatch)
-      } else if (item.type === 'primitive') {
-        ;(item as SceneItemPrimitive).primitive.draw(this.primitiveBatch)
-      } else {
-        this.renderItem(item as SceneItemDrawable, manager)
+  protected renderItems(ctx: RenderContext, layerMask: number) {
+    for (const it of ctx.scene.items) {
+      if (it.hidden) {
+        continue
+      }
+
+      if (isDrawableSpriteItem(it)) {
+        it.item.drawSprite(this.spriteBatch)
+      } else if (isDrawablePrimitive(it)) {
+        it.item.drawPrimitive(this.primitiveBatch)
+      } else if (isDrawableItem(it)) {
+        this.renderItem(it, ctx)
       }
     }
   }
 
-  protected renderItem(item: SceneItemDrawable, manager: RenderManager) {
+  protected renderItem(item: DrawableInfo, ctx: RenderContext) {
     const effect = item.material.effect
-    const drawable = item.drawable
+    const drawable = item.item
     const technique: ShaderTechnique = effect.technique
     for (const pass of technique.passes) {
+      if (!pass.program.isReady) {
+        console.warn('Program not ready')
+        continue
+      }
       pass.commit(item.material.parameters)
-      manager.binder
+      ctx.uniforms
         .updateTransform(item.transform)
         .applyTransform(pass.program)
         .applyView(pass.program)

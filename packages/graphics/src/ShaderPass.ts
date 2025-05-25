@@ -187,4 +187,8 @@ export class ShaderPass {
     }
     return new ShaderPass(this.device, opts)
   }
+
+  public isReady() {
+    return this.program.isReady
+  }
 }

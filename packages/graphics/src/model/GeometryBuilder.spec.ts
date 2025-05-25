@@ -1,4 +1,5 @@
 import { GeometryBuilder } from './GeometryBuilder'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('Graphics.GeometryBuilder', () => {
 

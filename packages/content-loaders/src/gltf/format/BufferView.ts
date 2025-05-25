@@ -1,6 +1,6 @@
-import { GLTFRootProperty } from './common'
+import { NamedProperty } from './common'
 
-export enum GLTFBufferViewTarget {
+export enum BufferViewTarget {
   ARRAY_BUFFER = 34962,
   ELEMENT_ARRAY_BUFFER = 34963,
 }
@@ -8,7 +8,7 @@ export enum GLTFBufferViewTarget {
 /**
  * A view into a buffer generally representing a subset of the buffer.
  */
-export interface GLTFBufferView extends GLTFRootProperty {
+export interface BufferView extends NamedProperty {
 
   /**
    * The index of the buffer.
@@ -37,5 +37,5 @@ export interface GLTFBufferView extends GLTFRootProperty {
   /**
    * The target that the GPU buffer should be bound to.
    */
-  target?: GLTFBufferViewTarget
+  target?: BufferViewTarget
 }

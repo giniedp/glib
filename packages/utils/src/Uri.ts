@@ -126,13 +126,6 @@ export class Uri {
     return result + path
   }
 
-  public static escape(fragment: string) {
-    if (fragment.length > 1) {
-      return fragment[0] + fragment.substring(1).replace(/[!"#$%&'()*+,-.\/\\:;<=>?@\[\]^`{|}~]/gi, (token) => `\\${token}`)
-    }
-    return fragment
-  }
-
   public source: string
   public protocol: string
   public authority: string

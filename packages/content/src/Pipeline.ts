@@ -134,7 +134,7 @@ export class Pipeline {
       const node = nodes[i]
       context.pipeline = this
 
-      Log.group(`stage:${depth} (${i + 1}) ${describeSym(node.entry.input)} => ${describeSym(node.entry.output)}`)
+      // Log.group(`stage:${depth} (${i + 1}) ${describeSym(node.entry.input)} => ${describeSym(node.entry.output)}`)
       const loaded = await Log.groupEndAsync(() => node.entry.handle(input, context))
       const result: T = await this.walk(node.next, loaded, context, depth + 1)
       if (result) {

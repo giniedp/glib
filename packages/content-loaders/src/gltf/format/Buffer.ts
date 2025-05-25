@@ -1,9 +1,9 @@
-import { GLTFRootProperty } from './common'
+import { NamedProperty } from './common'
 
 /**
  * A buffer points to binary geometry, animation, or skins.
  */
-export interface GLTFBuffer extends GLTFRootProperty {
+export interface Buffer extends NamedProperty {
   /**
    * The uri of the buffer.
    *

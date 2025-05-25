@@ -1,6 +1,6 @@
 import { ShaderProgram, ShaderUniform, ShaderUniformBinding } from '@gglib/graphics'
 import { IVec2, IVec3, IVec4, Mat4, Vec2, Vec3, Vec4 } from '@gglib/math'
-import { LightSourceData } from './Types'
+import { LightInfo } from './Types'
 
 /**
  * @public
@@ -213,15 +213,11 @@ export class UniformBinder {
   /**
    * Updates camera binding values
    *
-   * @param transform - The transform matrix. If missing, inverse of `view` is used
    * @param view - The view matrix. If missing, identity is used
    * @param proj - The projection matrix. If missing, identity is used
    */
-  public updateCamera(transform?: Mat4, view?: Mat4, proj?: Mat4): UniformBinder {
-    if (transform) {
-      transform.getTranslation(this.CameraPosition.value)
-      transform.getForward(this.CameraDirection.value)
-    } else if (view) {
+  public updateCamera(view: Mat4, proj: Mat4): UniformBinder {
+    if (view) {
       Mat4.invert(view, this.View.value)
       this.View.value.getTranslation(this.CameraPosition.value)
       this.View.value.getForward(this.CameraDirection.value)
@@ -301,13 +297,13 @@ export class UniformBinder {
    *
    * @param lights - The light sources providing values to bind
    */
-  public updateLights(lights: LightSourceData[]) {
+  public updateLights(lights: LightInfo[]) {
     for (let i = 0; i < lights.length; i++) {
       this.updateLight(lights[i], i)
     }
   }
 
-  public updateLight(light: LightSourceData, index: number) {
+  public updateLight(light: LightInfo, index: number) {
     let l = this.Lights[index]
     if (!l) {
       return

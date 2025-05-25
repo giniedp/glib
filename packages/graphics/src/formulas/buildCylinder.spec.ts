@@ -1,4 +1,6 @@
-import { buildCylinder, GeometryBuilder } from '../index'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { GeometryBuilder } from '../model/GeometryBuilder'
+import { buildCylinder } from './buildCylinder'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCylinder', () => {
@@ -8,7 +10,7 @@ describe('@gglib/graphics/formulas', () => {
       builder = new GeometryBuilder()
     })
 
-    it ('builds without errors', () => {
+    it('builds without errors', () => {
       expect(builder.vertexCount).toBe(0)
       buildCylinder(builder)
       expect(builder.vertexCount).not.toBe(0)

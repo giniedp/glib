@@ -25,7 +25,8 @@ const vertexShader = /* glsl */ `
     vTexcoord = aTexture;
     vNormal = aNormal;
     gl_Position = uProjection * uView * uWorld * vec4(aPosition, 1);
-  }`
+  }
+`
 
 const fragmentShader = /* glsl */ `
   precision highp float;
@@ -43,11 +44,11 @@ const fragmentShader = /* glsl */ `
   }
 `
 
-export const basicProgramOptions = {
+export const PROGRAM_BASIC_TEXTURED = {
   vertexShader,
   fragmentShader,
 }
 
 export function basicProgram(device: Device) {
-  return device.createProgram(basicProgramOptions)
+  return device.createProgram(PROGRAM_BASIC_TEXTURED)
 }

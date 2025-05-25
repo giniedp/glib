@@ -4,9 +4,9 @@ import {
   LightComponent,
   ModelComponent,
   PerspectiveCameraComponent,
-  RendererComponent,
+  RendererSystem,
   TransformComponent,
-  TweenComponent,
+  TweenSystem,
   TweenOptions,
   Tween,
 } from '@gglib/ecs-components'
@@ -18,13 +18,13 @@ import { Model, LightType } from '@gglib/graphics'
 import { easeLinear, easeInCubic, easeOutCubic, easeInOutCubic, Vec3 } from '@gglib/math'
 
 @Component({
-  install: [RendererComponent, PerspectiveCameraComponent],
+  install: [RendererSystem, PerspectiveCameraComponent],
 })
 class MyGame implements OnAdded, OnInit, OnUpdate {
   public name = 'MyGame'
 
-  @Inject(RendererComponent)
-  public readonly renderer: RendererComponent
+  @Inject(RendererSystem)
+  public readonly renderer: RendererSystem
 
   @Inject(CameraComponent)
   public readonly camera: PerspectiveCameraComponent
@@ -51,7 +51,7 @@ class MyGame implements OnAdded, OnInit, OnUpdate {
 }
 
 @Component({
-  install: [ModelComponent, TransformComponent, TweenComponent],
+  install: [ModelComponent, TransformComponent, TweenSystem],
 })
 class CubeComponent implements OnInit {
   public name = 'Cube'
@@ -65,8 +65,8 @@ class CubeComponent implements OnInit {
   @Inject(ContentManager, { from: 'root' })
   public content: ContentManager
 
-  @Inject(TweenComponent)
-  public tween: TweenComponent
+  @Inject(TweenSystem)
+  public tween: TweenSystem
 
   public async onInit() {
     this.renderable.model = await this.content.load('/assets/models/obj/cube.obj', Model)

@@ -1,4 +1,4 @@
-import { Events, Loop, loop } from '@gglib/utils'
+import { Loop, loop, simpleObservable } from '@gglib/utils'
 
 /**
  * Constructor options for {@link Gamepads}
@@ -18,7 +18,7 @@ export interface IGamepadsOptions {
  *
  * @public
  */
-export class Gamepads extends Events {
+export class Gamepads {
   /**
    * The current captured state
    */
@@ -39,11 +39,13 @@ export class Gamepads extends Events {
    * If {@link Gamepads.autoUpdate} is `true` then this holds the polling loop which captures the state automatically
    */
   protected poll: Loop = null
+
+  public onChanged = simpleObservable<Gamepad>()
+
   /**
    * Initializes the Gamepads with given options
    */
   constructor(options?: IGamepadsOptions) {
-    super()
     if (options && options.autoUpdate != null) {
       this.autoUpdate = !!options.autoUpdate
     }
@@ -103,7 +105,7 @@ export class Gamepads extends Events {
     if (this.state[index] !== pad) {
       this.state[index] = pad
       if (!silent) {
-        this.trigger('changed', this, index)
+        this.onChanged.notify(pad)
       }
     }
   }

@@ -1,32 +1,8 @@
 /**
- * Checks whether an object is an array
- *
- * @public
- */
-export const isArray = Array.isArray
-
-/**
- *
- * @param v Checks whether an object is an ArrayBufferView
- */
-export function isArrayBufferView(v: any): v is ArrayBufferView {
-  const it = v as ArrayBufferView
-  return it != null && it.buffer != null && it.byteLength != null && it.byteOffset != null
-}
-
-const concatArray = [].concat
-
-/**
- *
- * @public
- */
-export function flattenArray<T>(value: T[][]): T[] {
-  return concatArray.apply([], value || [])
-}
-
-/**
  * Removes an item from given array
  *
+ * @remarks
+ * This will splice the array at the index of the.
  * @param list
  * @param item
  */
@@ -37,6 +13,26 @@ export function removeFromArray<T>(list: T[], item: T) {
     return true
   }
   return false
+}
+
+/**
+ * Removes an item from given array by swapping it with the last item
+ * and reducing the array size by one
+ *
+ * @remarks
+ * This is a garbage free operation but the order of the array is not preserved
+ * @returns true if the item was found and removed
+ */
+export function removeFromArrayUnstable<T>(list: T[], item: T) {
+  const index = list.indexOf(item)
+  if (index < 0) {
+    return false
+  }
+  if (index !== list.length - 1) {
+    list[index] = list[list.length - 1]
+  }
+  list.length--
+  return true
 }
 
 /**

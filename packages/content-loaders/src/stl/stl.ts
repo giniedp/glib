@@ -33,7 +33,7 @@ export function stlToModel(data: STL) {
       builder.addIndex(builder.vertexCount + 0)
       builder.addIndex(builder.vertexCount + 1)
       builder.addIndex(builder.vertexCount + 2)
-      f.vertcies.forEach((v) => {
+      f.vertices.forEach((v) => {
         builder.addVertex({
           position: [v.x, v.y, v.z],
           normal: [f.normal.x, f.normal.y, f.normal.z],

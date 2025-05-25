@@ -30,7 +30,7 @@ export class FrameBufferGL extends FrameBuffer {
     return this.colorAttachmentCountField
   }
 
-  public reset(options: FrameBufferOptions= {}) {
+  public reset(options: FrameBufferOptions = {}) {
     let gl = this.device.context
 
     if (!FrameBufferGL.validateAttachments(options.textures, options.depthBuffer)) {
@@ -39,7 +39,9 @@ export class FrameBufferGL extends FrameBuffer {
     let textures = options.textures || []
     let targetCount = Math.max(this.colorAttachments.length, textures.length)
     if (targetCount > this.maxColorAttachments) {
-      throw new Error(`Requested to attach ${targetCount} color attachments but only ${this.maxColorAttachments} are supported.`)
+      throw new Error(
+        `Requested to attach ${targetCount} color attachments but only ${this.maxColorAttachments} are supported.`,
+      )
     }
 
     if (options.resource) {
@@ -65,14 +67,14 @@ export class FrameBufferGL extends FrameBuffer {
       const oldTexture: TextureGL = this.colorAttachments[i] as TextureGL
       const newTexture: TextureGL = textures[i] as TextureGL
 
-      if (!needsRebind && newTexture && oldTexture && newTexture.handle === oldTexture.handle) {
+      if (!needsRebind && newTexture && oldTexture && newTexture.resource === oldTexture.resource) {
         // skip binding if the new texture is already bound
         count += 1
         continue
       }
       if (newTexture) {
         // bind the new texture
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, newTexture.handle, 0)
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, newTexture.resource, 0)
         this.colorAttachments[i] = newTexture
         this.colorAttachmentPoints[i] = gl.COLOR_ATTACHMENT0 + i
         count += 1

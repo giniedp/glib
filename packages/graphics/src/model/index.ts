@@ -1,4 +1,3 @@
-export * from './geometries'
 export * from './Geometry'
 export * from './GeometryBuilder'
 export * from './GeometryBuilderChannel'

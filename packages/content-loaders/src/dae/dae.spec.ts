@@ -14,6 +14,7 @@ import {
 } from '../index'
 import { DeviceGL, Model } from '@gglib/graphics'
 import { clearScripts } from '../test'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('content/loaders/dae', () => {
   afterAll(clearScripts)

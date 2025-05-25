@@ -227,7 +227,7 @@ export abstract class Buffer {
 
   public abstract create(): this
 
-  public abstract destroy(): this
+  public abstract dispose(): this
 
   public abstract bind(): this
 

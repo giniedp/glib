@@ -1,6 +1,7 @@
 import { ContentManager } from './ContentManager'
 import { Pipeline } from './Pipeline'
 import { PipelineContext } from './PipelineContext'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 const Model = Symbol('Model')
 

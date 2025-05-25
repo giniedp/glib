@@ -8,8 +8,8 @@ import {
   buildIcosahedron,
 } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
-import { materialProgram } from '@gglib/fx-materials'
-import { PostBloomEffect } from '@gglib/fx-post'
+import { materialProgram } from '@gglib/materials'
+import { PostBloomEffect } from '@gglib/effects'
 import { Mat4 } from '@gglib/math'
 import * as TweakUi from 'tweak-ui'
 

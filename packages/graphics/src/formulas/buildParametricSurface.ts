@@ -10,35 +10,35 @@ export interface BuildParametricSurfaceOptions {
   /**
    * Function returning xyz position for u v input
    */
-  f: (u: number, v: number) => IVec3
+  position: (u: number, v: number) => IVec3
   /**
    * Function returning normal vector for u v input
    */
-  n?: (u: number, v: number) => IVec3
+  normal?: (u: number, v: number) => IVec3
   /**
    * Start value of `u`. Default is `0`
    */
-  u0?: number
+  uStart?: number
   /**
    * End value of `u`. Default is `1`
    */
-  u1?: number
+  uEnd?: number
   /**
    * Start value of `v`. Default is `0`
    */
-  v0?: number
+  vStart?: number
   /**
    * End value of `v`. Default is `1`
    */
-  v1?: number
+  vEnd?: number
   /**
-   * Tesselation in `u` direction. Default is `1`
+   * Steps in `u` direction, results in `uSteps + 1` vertices. Default is `1`
    */
-  tu?: number
+  uSteps?: number
   /**
-   * Tesselation in `v` direction. Default is `1`
+   * Steps in `v` direction, results in `vSteps + 1` vertices. Default is `1`
    */
-  tv?: number
+  vSteps?: number
 }
 
 /**
@@ -46,23 +46,22 @@ export interface BuildParametricSurfaceOptions {
  * @public
  */
 export function buildParametricSurface(builder: GeometryBuilder, options: BuildParametricSurfaceOptions) {
-  const f = options.f ?? ((u: number, v: number) => ({ x: 0, y: 0, z: 0 }))
-  const n = options.n ?? null
-  const tu = options.tu ?? 1
-  const tv = options.tv ?? 1
-  const u0 = options.u0 ?? 0
-  const u1 = options.u1 ?? 1
-  const v0 = options.v0 ?? 0
-  const v1 = options.v1 ?? 1
+  const position = options.position ?? ((u: number, v: number) => ({ x: 0, y: 0, z: 0 }))
+  const normal = options.normal ?? null
+  const uSteps = options.uSteps ?? 1
+  const vSteps = options.vSteps ?? 1
+  const u0 = options.uStart ?? 0
+  const u1 = options.uEnd ?? 1
+  const v0 = options.vStart ?? 0
+  const v1 = options.vEnd ?? 1
 
-  console.log('tu', tu, 'tv', tv, options)
   // build indices
   const indices = []
-  for (let y = 0; y < tv; y++) {
-    for (let x = 0; x < tu; x++) {
-      let a = x + y * (tu + 1)
+  for (let y = 0; y < vSteps; y++) {
+    for (let x = 0; x < uSteps; x++) {
+      let a = x + y * (uSteps + 1)
       let b = a + 1
-      let c = x + (y + 1) * (tu + 1)
+      let c = x + (y + 1) * (uSteps + 1)
       let d = c + 1
 
       indices.push(a)
@@ -72,7 +71,6 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
       indices.push(b)
       indices.push(c)
       indices.push(d)
-      console.log('indices', a, c, b, b, c, d)
     }
   }
 
@@ -85,16 +83,16 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
   }> = []
 
   // calculate surface
-  for (let y = 0; y <= tv; y++) {
-    const t = y / tv
+  for (let y = 0; y <= vSteps; y++) {
+    const t = y / vSteps
     const v = v0 + (v1 - v0) * t
-    for (let x = 0; x <= tu; x++) {
-      const s = x / tu
+    for (let x = 0; x <= uSteps; x++) {
+      const s = x / uSteps
       const u = u0 + (u1 - u0) * s
 
       vertices.push({
-        position: Vec3.convert(f(u, v)),
-        normal: n ? Vec3.convert(n(u, v)) : Vec3.createZero(),
+        position: Vec3.convert(position(u, v)),
+        normal: normal ? Vec3.convert(normal(u, v)) : Vec3.createZero(),
         texture: Vec2.create(s, t),
         tangent: Vec3.createZero(),
         bitangent: Vec3.createZero(),
@@ -120,7 +118,7 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
     Vec3.subtract(p1, p0, edge0)
     Vec3.subtract(p2, p0, edge1)
 
-    if (!n) {
+    if (!normal) {
       // calculate normal only if normal function is not given
       Vec3.cross(edge0, edge1, nrm)
 

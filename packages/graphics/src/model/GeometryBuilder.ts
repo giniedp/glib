@@ -1,12 +1,10 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
-import { copy, isArray } from '@gglib/utils'
-
+import { copy } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device } from '../Device'
 import { BufferType, DataType, FrontFace, PrimitiveType } from '../enums'
 import { BufferOptions } from '../resources'
 import { AttributeSemantic, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
-
 import { Geometry, GeometryOptions } from './Geometry'
 import { GeometryUtil } from './GeometryUtil'
 import { Mesh, MeshOptions } from './Mesh'
@@ -43,6 +41,10 @@ export interface GeometryBuilderOptions {
    * The vertex buffer layout
    */
   layout?: Array<VertexLayout | AttributeSemantic[]>
+}
+
+export function beginGeometry(options?: GeometryBuilderOptions): GeometryBuilder {
+  return new GeometryBuilder(options)
 }
 
 /**
@@ -94,8 +96,8 @@ export class GeometryBuilder {
   public transformModes: Record<AttributeSemantic, TransformMode>
 
   private layout: VertexLayout[]
-  private geometries: GeometryOptions[] = []
-  private meshes: MeshOptions[] = []
+  public geometries: GeometryOptions[] = []
+  public meshes: MeshOptions[] = []
 
   private box: BoundingBox
   private sphere: BoundingSphere
@@ -111,8 +113,6 @@ export class GeometryBuilder {
    * Creates a new instance of the ModelBuilder
    *
    * @param options
-   * @example
-   * new ModelBuilder({ layout: 'PositionTexture' })
    */
   constructor(options: GeometryBuilderOptions = {}) {
     if (Array.isArray(options.layout) && options.layout.length > 0) {
@@ -265,7 +265,7 @@ export class GeometryBuilder {
       const channel = this.partUtil.getChannel(semantic)
       let item = vertex[semantic] || defaults[semantic]
 
-      if (isArray(item)) {
+      if (Array.isArray(item)) {
         // ok
       } else if (typeof item === 'number') {
         value.length = 1
@@ -372,7 +372,7 @@ export class GeometryBuilder {
    * @param options - options to start with
    * @returns Geometry or null if current state has no mesh part data
    */
-  public endGeometry(device: Device, options?: GeometryOptions): Geometry | null
+  public endGeometry(device: Device, options?: GeometryOptions): Geometry
   public endGeometry(): Geometry | GeometryOptions {
     if (this.indexCount === 0 || this.vertexCount === 0) {
       return null
@@ -399,7 +399,7 @@ export class GeometryBuilder {
 
     this.geometries.push(options)
     this.resetData()
-    console.log('endGeometry', this.geometries.length, options)
+
     if (device) {
       result = new Geometry(device, options)
     }
@@ -493,7 +493,7 @@ export class GeometryBuilder {
    * @param options - Additional {@link ModelOptions}. The {@link ModelOptions.meshes} option is ignored.
    * @returns Model or null if current state has no model data
    */
-  public endModel(device: Device, options?: ModelOptions): Model | null
+  public endModel(device: Device, options?: ModelOptions): Model
   public endModel(): Model | ModelOptions {
     this.endMesh()
     if (!this.meshes.length) {

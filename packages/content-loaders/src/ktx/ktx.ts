@@ -25,13 +25,14 @@ export const loadKtxToTexture2D: Loader<KTX, Texture> = loader({
     // TODO: check for webgl2 / extension requirement
     const level0 = ktx.levelImages[0]
     const layer0 = level0.layers[0]
-    return context.manager.device.createTexture2D({
+    return context.manager.device.createTexture({
       surfaceFormat: ktx.glInfo.glInternalFormat,
       pixelFormat: ktx.glInfo.glFormat,
       pixelType: ktx.glInfo.glType,
       source: layer0.faces[0],
       width: ktx.width,
       height: ktx.height,
+      type: 'Texture2D',
     })
   },
 })
@@ -48,13 +49,14 @@ export const loadKtxToTextureCube: Loader<KTX, Texture> = loader({
     const level0 = ktx.levelImages[0]
     const layer0 = level0.layers[0]
 
-    return context.manager.device.createTextureCube({
+    return context.manager.device.createTexture({
       surfaceFormat: ktx.glInfo.glInternalFormat,
       pixelFormat: ktx.glInfo.glFormat,
       pixelType: ktx.glInfo.glType,
       width: ktx.width,
       height: ktx.height,
-      faces: layer0.faces
+      faces: layer0.faces,
+      type: 'TextureCube'
     })
   },
 })

@@ -1,6 +1,6 @@
-import { Mat3 } from './Mat3'
-import { Mat4 } from './Mat4'
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import type { Mat3 } from './Mat3'
+import type { Mat4 } from './Mat4'
+import type { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 const keyLookup = {

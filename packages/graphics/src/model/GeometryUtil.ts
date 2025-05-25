@@ -2,7 +2,8 @@ import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { Log } from '@gglib/utils'
 
 import { BufferType, FrontFace, nameOfPrimitiveType, PrimitiveType } from '../enums'
-import { calculateNormals, calculateTangents } from '../formulas'
+import { calculateNormals } from '../formulas/calculateNormals'
+import { calculateTangents } from '../formulas/calculateTangents'
 import { BufferOptions } from '../resources'
 import { vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
 

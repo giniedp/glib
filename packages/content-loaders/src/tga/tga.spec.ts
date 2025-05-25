@@ -1,6 +1,7 @@
 import { ContentManager, Pipeline } from '@gglib/content'
 import { loadTgaToImageData, loadTgaToTGA } from '../index'
 import { DeviceGL } from '@gglib/graphics'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('content/loaders/tga', () => {
 

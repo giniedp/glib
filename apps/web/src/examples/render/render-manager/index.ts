@@ -1,10 +1,10 @@
 import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
-import { AutoMaterial, LightParams } from '@gglib/fx-materials'
+import { AutoMaterial, LightParams } from '@gglib/materials'
 import { buildPlane, buildSphere, CullState, DepthState, flipWindingOrder, Model, ModelBuilder, createDevice } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderPass, PostStepBloom, PostPixelateStep, RenderManager, SceneItemDrawable, Scene } from '@gglib/render'
+import { BasicRenderPass, PostStepBloom, PostPixelateStep, Renderer, SceneItemDrawable, Scene } from '@gglib/render'
 import { loop } from '@gglib/utils'
 
 // ### Setup the render manager
@@ -17,10 +17,10 @@ const device = createDevice({
 })
 const content = new ContentManager(device)
 
-// Create an instance of the `RenderManager`.
+// Create an instance of the `Renderer`.
 // The render manager is responsible for managing render targets
 // and rendering scenes.
-const renderer = new RenderManager(device)
+const renderer = new Renderer(device)
 
 const scene: Scene = {
   // The scene will be populated with renderable items.
@@ -43,7 +43,7 @@ const scene: Scene = {
       color: [1, 1, 1],
     }),
   ],
-  // Now the `RenderManager` can not render by itself. It just manages resources
+  // Now the `Renderer` can not render by itself. It just manages resources
   // and scenes. The actual rendering is implemented in so called `Stage`'s or
   // rendering steps.
   // Here we add a basic rendering stage and 2 post processing stages.

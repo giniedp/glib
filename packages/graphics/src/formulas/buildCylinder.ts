@@ -1,6 +1,17 @@
-import { getOption } from '@gglib/utils'
-import type { GeometryBuilder } from '../model/GeometryBuilder'
+import { Device } from '../Device'
+import { Geometry } from '../model/Geometry'
+import { beginGeometry, type GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
+
+/**
+ *
+ */
+export const CylinderDefaults = {
+  height: 1.0,
+  offset: -0.5,
+  radius: 0.5,
+  tesselation: 32,
+}
 
 /**
  * Options for the {@link buildCylinder} function
@@ -26,36 +37,42 @@ export interface BuildCylinderOptions {
   tesselation?: number
 }
 
+export function cylinderGeometry(device: Device, options?: BuildCylinderOptions): Geometry {
+  return beginGeometry().append(buildCylinder, options).endGeometry(device, {
+    name: 'cylinder',
+  })
+}
+
 /**
  * Builds a cylinder shape into the {@link GeometryBuilder}
  *
  * @public
  */
-export function buildCylinder(builder: GeometryBuilder, options: BuildCylinderOptions = {}) {
-  const r = options.radius ?? 0.5
-  const h = options.height ?? 1.0
-  const o = options.offset ?? -0.5
-  const t = options.tesselation ?? 32
+export function buildCylinder(builder: GeometryBuilder, options?: BuildCylinderOptions) {
+  const r = options?.radius ?? CylinderDefaults.radius
+  const h = options?.height ?? CylinderDefaults.height
+  const o = options?.offset ?? CylinderDefaults.offset
+  const t = options?.tesselation ?? CylinderDefaults.tesselation
   buildParametricSurface(builder, {
-    f: (u: number, v: number) => {
+    position: (u: number, v: number) => {
       return {
         x: r * Math.sin(u),
         y: v,
         z: r * Math.cos(u),
       }
     },
-    n: (u: number, v: number) => {
+    normal: (u: number, v: number) => {
       return {
         x: Math.sin(u),
         y: 0,
         z: Math.cos(u),
       }
     },
-    tu: t,
-    tv: t,
-    u0: 0,
-    u1: Math.PI * 2,
-    v0: o + h,
-    v1: o,
+    uSteps: t,
+    vSteps: t,
+    uStart: 0,
+    uEnd: Math.PI * 2,
+    vStart: o + h,
+    vEnd: o,
   })
 }

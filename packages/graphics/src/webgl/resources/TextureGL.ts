@@ -1,16 +1,9 @@
-import {
-  ArrayType,
-  TextureType,
-} from '../../enums'
-
+import { TextureSource } from 'graphics/src/resources'
 import { Device } from '../../Device'
-
+import { ArrayType, TextureType } from '../../enums'
 import { Texture, TextureDataOption, TextureOptions, TextureSourceOption } from '../../resources/Texture'
-import { isArray, isArrayBufferView } from '@gglib/utils'
-
-function isPowerOfTwo(value: number): boolean {
-  return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
-}
+import type { DeviceGL } from '../DeviceGL'
+import { SharedResource } from '../utils'
 
 const cubeFaceTypes = [
   0x8515, // TEXTURE_CUBE_MAP_POSITIVE_X
@@ -26,9 +19,26 @@ const cubeFaceTypes = [
  *
  * @public
  */
-export class TextureGL extends Texture {
+export class TextureGL extends Texture implements SharedResource<TextureSource, WebGLTexture> {
+  /**
+   * The graphics device
+   */
+  public readonly device: DeviceGL
 
-  public readonly handle: WebGLTexture
+  /**
+   * The native WebGLTexture resource.
+   */
+  public resource: WebGLTexture
+
+  /**
+   * The key being used for referenc counting
+   */
+  public resourceKey: any
+
+  /**
+   * The current reference counter
+   */
+  public referenceCount: number
 
   /**
    * Determines whether this is a cubemap face
@@ -39,33 +49,54 @@ export class TextureGL extends Texture {
    * Constructs an instance of a Texture.
    *
    * @remarks
-   * The options are passed down to {@link Texture.setup}
+   * The options are passed down to {@link TextureGL.setup}
    */
-  constructor(public readonly device: Device<WebGLRenderingContext>, options: TextureOptions = {}) {
+  constructor(device: Device<WebGLRenderingContext>, options: TextureOptions) {
     super()
+    this.device = device as DeviceGL
     this.setup(options)
   }
 
   public create(): this {
-    if (!this.device.context.isTexture(this.handle)) {
-      this.set('isFace', cubeFaceTypes.indexOf(this.type) >= 0)
-      this.set('handle', this.device.context.createTexture())
-      this.device.context.bindTexture(this.type, this.handle)
-      this.device.context.texImage2D(this.type, 0, this.pixelFormat, this.width, this.height, 0, this.pixelFormat, this.pixelType, null)
-      this.device.context.bindTexture(this.type, null)
+    if (this.resource && this.device.context.isTexture(this.resource)) {
+      console.warn(`TextureGL.create: was called, but the texture is already created.`)
+      return this
     }
+
+    this.set('isFace', cubeFaceTypes.indexOf(this.type) >= 0)
+    this.set('resource', this.device.context.createTexture())
+    this.device.context.bindTexture(this.type, this.resource)
+    this.device.context.texImage2D(
+      this.type,
+      0,
+      this.pixelFormat,
+      this.width,
+      this.height,
+      0,
+      this.pixelFormat,
+      this.pixelType,
+      null,
+    )
+    this.update()
+    this.device.context.bindTexture(this.type, null)
+
     return this
   }
 
   /**
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
-  public destroy(): this {
-    this.set('source', null)
-    if (this.handle != null && this.device.context.isTexture(this.handle)) {
-      this.device.context.deleteTexture(this.handle)
+  public dispose(): this {
+    this.referenceCount--
+    if (this.referenceCount > 0) {
+      return this
     }
-    this.set('handle', null)
+    this.referenceCount = 0
+    this.device.onTextureDisposed(this)
+    if (this.device.context.isTexture(this.resource)) {
+      this.device.context.deleteTexture(this.resource)
+      this.resource = null
+    }
     return this
   }
 
@@ -75,41 +106,55 @@ export class TextureGL extends Texture {
    * @returns the previously bound texture handle
    */
   public bind(): this {
-    this.device.context.bindTexture(this.type, this.handle)
+    this.device.context.bindTexture(this.type, this.resource)
     return this
   }
 
   /**
-   * Sets the texture source from data array or buffer
+   * Sets the texture source from plain data array or buffer, and ingores the current source.
    *
    * @remarks
-   * Sets current {@link source} property to null and uses given data as texture source.
-   * If data is a plain javascript array or an ArrayBuffer, a TypedArray is instantiated
+   * Can be used to manually update the texture data.
+   *
+   * If passed data is a plain javascript array or an ArrayBuffer, a TypedArray is instantiated
    * based on current {@link pixelType} respecting WebGL rules for array buffers types.
    *
-   * If width and height are given they are used as new texture widht and height values.
+   * If width and height are given they are used as new texture width and height values.
    *
    * Given data must match the width and heigth otherwise WebGL will complain.
+   *
+   * If the texture was created with a `source` option, this will affect all textures that share
+   * the same source, since they all share the same native WebglTexture.
+   * However, this will not affect the `source` itself.
    *
    * @param data - The texture data to be set
    * @param width - The new texture width
    * @param height - The new texture height
    */
   public setData(data: TextureDataOption, width: number = this.width, height: number = this.height): this {
-    this.set('source', null)
     // TODO: allow set mipmap level
 
     let buffer: ArrayBufferView
-    if (isArray(data) || data instanceof ArrayBuffer) {
-      buffer = new ArrayType[this.pixelType](data)
-    } else if (isArrayBufferView(data)) {
+    if (ArrayBuffer.isView(data)) {
       buffer = data
+    } else if (Array.isArray(data) || data instanceof ArrayBuffer) {
+      buffer = new ArrayType[this.pixelType](data)
     } else {
       throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
     }
 
     this.bind()
-    this.device.context.texImage2D(this.type, 0, this.pixelFormat, width, height, 0, this.pixelFormat, this.pixelType, buffer)
+    this.device.context.texImage2D(
+      this.type,
+      0,
+      this.pixelFormat,
+      width,
+      height,
+      0,
+      this.pixelFormat,
+      this.pixelType,
+      buffer,
+    )
     if (this.generateMipmap) {
       this.device.context.generateMipmap(this.type)
     }
@@ -138,15 +183,18 @@ export class TextureGL extends Texture {
     ]
 
     this.bind()
-    this.set('faces', faces.map((face, i) => {
-      return new TextureGL(this.device, {
-        type: types[i],
-        source: face,
-        width: this.width,
-        height: this.height,
-        generateMipmap: false,
-      })
-    }))
+    this.set(
+      'faces',
+      faces.map((face, i) => {
+        return new TextureGL(this.device, {
+          type: types[i],
+          source: face,
+          width: this.width,
+          height: this.height,
+          generateMipmap: false,
+        })
+      }),
+    )
     this.update()
     return this
   }
@@ -186,7 +234,28 @@ export class TextureGL extends Texture {
     if (updated && ready) {
       this.bind()
       for (const face of this.faces) {
-        this.device.context.texImage2D(face.type, 0, face.surfaceFormat, face.pixelFormat, face.pixelType, face.source.data)
+        if (ArrayBuffer.isView(face.source.data)) {
+          this.device.context.texImage2D(
+            face.type,
+            0,
+            face.pixelFormat,
+            face.source.width,
+            face.source.height,
+            0,
+            face.pixelFormat,
+            face.pixelType,
+            face.source.data,
+          )
+        } else {
+          this.device.context.texImage2D(
+            face.type,
+            0,
+            face.surfaceFormat,
+            face.pixelFormat,
+            face.pixelType,
+            face.source.data,
+          )
+        }
       }
     }
     if (ready) {
@@ -199,23 +268,50 @@ export class TextureGL extends Texture {
   }
 
   private updateSource(): boolean {
-    if (!this.source || !this.source.update()) {
-      return false
+    let changed = false
+    if (!this.source) {
+      return changed
     }
 
-    const gl = this.device.context
-    gl.bindTexture(this.type, this.handle)
-    gl.texImage2D(this.type, 0, this.surfaceFormat, this.pixelFormat, this.pixelType, this.source.data)
-    if (this.generateMipmap) {
-      gl.generateMipmap(this.type)
-    }
-    gl.bindTexture(this.type, null)
+    if (this.source.update()) {
+      changed = true
+      const data = this.source.data
+      const gl = this.device.context
+      gl.bindTexture(this.type, this.resource)
+      if (ArrayBuffer.isView(data)) {
+        this.device.context.texImage2D(
+          this.type,
+          0,
+          this.pixelFormat,
+          this.source.width,
+          this.source.height,
+          0,
+          this.pixelFormat,
+          this.pixelType,
+          data,
+        )
+      } else {
+        gl.texImage2D(this.type, 0, this.surfaceFormat, this.pixelFormat, this.pixelType, data)
+      }
 
-    this.set('ready', this.source.isReady)
-    this.set('width', this.source.width)
-    this.set('height', this.source.height)
-    this.set('isPOT', this.source.isPowerOfTwo)
-    return true
+      if (this.generateMipmap) {
+        gl.generateMipmap(this.type)
+      }
+      gl.bindTexture(this.type, null)
+    }
+
+    if (!this.ready && this.source.isReady) {
+      changed = true
+      this.set('ready', this.source.isReady)
+      this.set('width', this.source.width)
+      this.set('height', this.source.height)
+      this.set('isPOT', isPowerOfTwo(this.source.width) && isPowerOfTwo(this.source.height))
+    }
+
+    return changed
   }
+}
 
+function isPowerOfTwo(value: number): boolean {
+  return value > 0 && !(value & (value - 1)) // tslint:disable-line
 }

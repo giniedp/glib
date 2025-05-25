@@ -1,4 +1,6 @@
-import type { GeometryBuilder } from '../model/GeometryBuilder'
+import { Device } from '../Device'
+import { Geometry } from '../model'
+import { beginGeometry, type GeometryBuilder } from '../model/GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -21,6 +23,12 @@ export interface BuildPlaneOptions {
   tesselation?: number
 }
 
+export function planeGeometry(device: Device, options?: BuildPlaneOptions): Geometry {
+  return beginGeometry().append(buildPlane, options).endGeometry(device, {
+    name: 'plane',
+  })
+}
+
 /**
  * Builds a plane shape into the {@link GeometryBuilder}
  *
@@ -29,21 +37,21 @@ export interface BuildPlaneOptions {
 export function buildPlane(builder: GeometryBuilder, options: BuildPlaneOptions = {}) {
   const size = options?.size ?? 1
   buildParametricSurface(builder, {
-    f: (u: number, v: number) => {
+    position: (u: number, v: number) => {
       return {
         x: (u - 0.5) * size,
         y: 0,
         z: (v - 0.5) * size,
       }
     },
-    n: (u: number, v: number) => {
+    normal: (u: number, v: number) => {
       return {
         x: 0,
         y: 1,
         z: 0,
       }
     },
-    tu: options?.tesselation ?? 1,
-    tv: options?.tesselation ?? 1,
+    uSteps: options?.tesselation ?? 1,
+    vSteps: options?.tesselation ?? 1,
   })
 }

@@ -99,4 +99,22 @@ export class ShaderTechnique {
       passes: this.passes.map((it) => it.clone()),
     })
   }
+
+  /**
+   * Checks if all shader passes are ready
+   *
+   * @remarks
+   * If no passes are defined, this will return true
+   */
+  public isReady() {
+    if (!this.passes?.length) {
+      return true
+    }
+    for (const pass of this.passes) {
+      if (!pass.isReady()) {
+        return false
+      }
+    }
+    return true
+  }
 }

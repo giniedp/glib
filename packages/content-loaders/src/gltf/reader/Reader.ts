@@ -1,23 +1,25 @@
 import {
   GLTFDocument,
-  GLTFTexture,
-  GLTFSampler,
-  GLTFImage,
-  GLTFBuffer,
-  GLTFBufferView,
-  GLTFAccessor,
-  GLTFAccessorComponentType,
-  GLTFMaterial,
+  Texture,
+  Sampler,
+  Image,
+  Buffer,
+  BufferView,
+  Accessor,
+  AccessorComponentType,
+  Material,
 } from '../format'
 
 export class GLTFReader {
   private cache = new Map<string, Promise<any>>()
 
-  public constructor(public readonly doc: GLTFDocument, private loader: (buffer: GLTFBuffer) => Promise<ArrayBuffer>) {}
+  public constructor(public readonly doc: GLTFDocument, private loader: (buffer: Buffer) => Promise<ArrayBuffer>) {
+    //
+  }
 
   async loadTexture<T>(
     index: number,
-    loader: (texture: GLTFTexture, sampler: GLTFSampler, image: GLTFImage) => Promise<T>,
+    loader: (texture: Texture, sampler: Sampler, image: Image) => Promise<T>,
   ) {
     return this.cached(`texture-${index}`, async () => {
       if (!this.doc.textures?.[index]) {
@@ -93,7 +95,7 @@ export class GLTFReader {
     )
   }
 
-  public loadMaterial<T>(index: number, cacheToken: string, loader: (texture: GLTFMaterial) => Promise<T>) {
+  public loadMaterial<T>(index: number, cacheToken: string, loader: (texture: Material) => Promise<T>) {
     return this.cached(`material-${index}-${cacheToken}`, async () => {
       if (!this.doc.materials?.[index]) {
         throw new Error(`[glTF] material not found: ${index}`)
@@ -114,7 +116,7 @@ export abstract class GLTFAccessorBase {
   /**
    * The gltf accessor definition
    */
-  public readonly accessor: GLTFAccessor
+  public readonly accessor: Accessor
 
   /**
    * Specifies if the attribute is a scalar, vector, or matrix.
@@ -167,17 +169,17 @@ export abstract class GLTFAccessorBase {
    */
   public get componentSize(): number {
     switch (this.accessor.componentType) {
-      case GLTFAccessorComponentType.BYTE:
+      case AccessorComponentType.BYTE:
         return 1
-      case GLTFAccessorComponentType.FLOAT:
+      case AccessorComponentType.FLOAT:
         return 4
-      case GLTFAccessorComponentType.SHORT:
+      case AccessorComponentType.SHORT:
         return 2
-      case GLTFAccessorComponentType.UNSIGNED_BYTE:
+      case AccessorComponentType.UNSIGNED_BYTE:
         return 1
-      case GLTFAccessorComponentType.UNSIGNED_INT:
+      case AccessorComponentType.UNSIGNED_INT:
         return 4
-      case GLTFAccessorComponentType.UNSIGNED_SHORT:
+      case AccessorComponentType.UNSIGNED_SHORT:
         return 2
     }
   }
@@ -187,7 +189,7 @@ export abstract class GLTFAccessorBase {
 
   public abstract readonly data: AnyTypedArray
 
-  constructor(accessor: GLTFAccessor) {
+  constructor(accessor: Accessor) {
     this.accessor = accessor
     this.byteOffset = accessor.byteOffset || 0
     this.byteStride = this.componentSize * this.componentCount
@@ -235,7 +237,7 @@ export class GLTFBufferViewAccessor extends GLTFAccessorBase {
   private stride: number
   private offset: number
 
-  constructor(public readonly accessor: GLTFAccessor, buffer: ArrayBuffer, view: Omit<GLTFBufferView, 'buffer'>) {
+  constructor(public readonly accessor: Accessor, buffer: ArrayBuffer, view: Omit<BufferView, 'buffer'>) {
     super(accessor)
     this.offset = this.byteOffset / this.componentSize
     if (view.byteStride) {
@@ -262,9 +264,9 @@ export class GLTFSparseAccessor extends GLTFAccessorBase {
   public readonly data: AnyTypedArray
 
   constructor(
-    public readonly accessor: GLTFAccessor,
+    public readonly accessor: Accessor,
     public readonly indices: AnyTypedArray,
-    public readonly valuesView: Omit<GLTFBufferView, 'buffer'>,
+    public readonly valuesView: Omit<BufferView, 'buffer'>,
     public readonly valuesArray: AnyTypedArray,
   ) {
     super(accessor)

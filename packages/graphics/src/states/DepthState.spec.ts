@@ -4,6 +4,7 @@ import {
 import { DeviceGL } from '../webgl'
 import { DepthStateGL } from '../webgl/states'
 import { DepthStateParams } from './DepthState'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/DepthState', () => {
 

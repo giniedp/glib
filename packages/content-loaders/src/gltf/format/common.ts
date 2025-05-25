@@ -1,28 +1,30 @@
 /**
  * Application-specific data.
+ *
+ * @remarks
+ * Although extras MAY have any type, it is common for applications to store and access custom data as key/value pairs.
+ * Therefore, extras SHOULD be a JSON object rather than a primitive value for best portability.
  */
-export type GLTFExtras = any
+export type Extras = any
 
 /**
  * Dictionary object with extension-specific objects.
  */
-export interface GLTFExtension {
-  [key: string]: any
-}
+export type Extension = Record<string, any>
 
-export interface GLTFProperty {
+export interface Property {
   /**
    * Dictionary object with extension-specific objects.
    */
-  extensions?: GLTFExtension
+  extensions?: Extension
 
   /**
    * Application-specific data.
    */
-  extras?: GLTFExtras
+  extras?: Extras
 }
 
-export interface GLTFRootProperty extends GLTFProperty {
+export interface NamedProperty extends Property {
   /**
    * The user-defined name of this object.
    *

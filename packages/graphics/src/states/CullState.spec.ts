@@ -6,6 +6,7 @@ import {
 } from '../index'
 import { CullStateGL } from '../webgl/states'
 import { CullStateParams } from './CullState'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/CullState', () => {
 

@@ -1,10 +1,11 @@
 import { Http } from './Http'
+import { describe, expect, it, beforeEach } from 'vitest'
 
 describe('@gglib/utils/http', () => {
   describe('.request', () => {
     beforeEach(() => {
-       spyOn(XMLHttpRequest.prototype, 'open').and.callThrough()
-       spyOn(XMLHttpRequest.prototype, 'send')
+      //  spyOn(XMLHttpRequest.prototype, 'open').and.callThrough()
+      //  spyOn(XMLHttpRequest.prototype, 'send')
        Http.request({
          url: 'http://www.example.com',
          headers: {

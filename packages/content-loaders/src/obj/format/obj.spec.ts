@@ -1,4 +1,5 @@
 import { OBJ } from './obj'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('content/formats/obj', () => {
   describe('Square', () => {
@@ -412,7 +413,7 @@ describe('content/formats/obj', () => {
 
       expect(result.v.length).toBe(9)
       expect(result.vt.length).toBe(9)
-      expect(result.vn).not.toBeDefined(0)
+      expect(result.vn).not.toBeDefined()
       expect(result.surf.length).toBe(1)
       expect(result.surf[0]).toEqual({
         type: 'surf',

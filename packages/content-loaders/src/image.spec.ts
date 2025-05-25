@@ -1,5 +1,6 @@
 import { ContentManager, Pipeline } from '@gglib/content'
 import { loadJpegToHTMLImageElement, loadJpegToImage, loadPngToHTMLImageElement, loadPngToImage } from './index'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 import { DeviceGL } from '@gglib/graphics'
 

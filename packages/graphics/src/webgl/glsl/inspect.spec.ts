@@ -1,6 +1,7 @@
-import { glsl } from "../../utils"
-import { inspect, inspectProgram } from "./inspect"
-import { Keywords } from "./keywords"
+import { describe, expect, it } from 'vitest'
+import { glsl } from '../../utils'
+import { inspectProgram } from './inspect'
+import { Keywords } from './keywords'
 
 describe('ShaderInspector', () => {
   describe('uniforms', () => {
@@ -55,6 +56,7 @@ describe('ShaderInspector', () => {
         const data = inspectProgram(shader, '')
 
         expect(data.uniforms.tex1).toEqual({
+          binding: 'tex1',
           name: 'tex1',
           type: 'sampler2D',
           register: 1,
@@ -62,6 +64,7 @@ describe('ShaderInspector', () => {
         })
 
         expect(data.uniforms.tex2).toEqual({
+          binding: 'tex2',
           name: 'tex2',
           type: 'sampler2D',
           register: 2,
@@ -69,6 +72,7 @@ describe('ShaderInspector', () => {
         })
 
         expect(data.uniforms.tex3).toEqual({
+          binding: 'tex3',
           name: 'tex3',
           type: 'sampler2D',
           register: 0,
@@ -76,6 +80,7 @@ describe('ShaderInspector', () => {
         })
 
         expect(data.uniforms.tex4).toEqual({
+          binding: 'tex4',
           name: 'tex4',
           type: 'sampler2D',
           register: 3,
@@ -96,7 +101,7 @@ describe('ShaderInspector', () => {
             binding: `${type}Uniform[0]`,
             name: `u${type.toUpperCase()}[0]`,
             type: type,
-            layout: null
+            layout: null,
           },
         }
       })
@@ -124,7 +129,8 @@ describe('ShaderInspector', () => {
 
     describe('structs', () => {
       it('detects all members', () => {
-        const data = inspectProgram(`
+        const data = inspectProgram(
+          `
           struct LightParams {
             vec4 Color;
             vec4 Position;
@@ -132,14 +138,17 @@ describe('ShaderInspector', () => {
           };
           // @binding Lights
           uniform LightParams uLights;
-        `, '')
+        `,
+          '',
+        )
         expect(Object.keys(data.uniforms)).toContain('uLights.Color')
         expect(Object.keys(data.uniforms)).toContain('uLights.Position')
         expect(Object.keys(data.uniforms)).toContain('uLights.Direction')
       })
 
       it('detects struct arrays', () => {
-        const data = inspectProgram(`
+        const data = inspectProgram(
+          `
           struct LightParams {
             vec4 Color;
             vec4 Position;
@@ -147,7 +156,9 @@ describe('ShaderInspector', () => {
           };
           // @binding Lights
           uniform LightParams uLights[2];
-        `, '')
+        `,
+          '',
+        )
         expect(Object.keys(data.uniforms)).toContain('uLights[0].Color')
         expect(Object.keys(data.uniforms)).toContain('uLights[0].Position')
         expect(Object.keys(data.uniforms)).toContain('uLights[0].Direction')
@@ -238,5 +249,4 @@ describe('ShaderInspector', () => {
       })
     })
   })
-
 })

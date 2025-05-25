@@ -1,5 +1,5 @@
 import { IVec2 } from '@gglib/math'
-import { isArray, isObject, isString, Log, TypeToken, uuid } from '@gglib/utils'
+import { Log, TypeToken, Uri, uuid } from '@gglib/utils'
 import {
   DataType,
   DataTypeOption,
@@ -22,7 +22,13 @@ import {
 
 import { Device } from '../Device'
 import { SamplerState, SamplerStateParams } from '../states/SamplerState'
-import { TextureSource, TextureSourceData, TextureSourceImage, TextureSourceVideo } from './TextureSource'
+import {
+  createTextureSource,
+  ImageDataSource,
+  ImageElementSource,
+  TextureSource,
+  VideoElementSource,
+} from './TextureSource'
 
 /**
  * Type that is accepted by the {@link Texture.setData} method
@@ -46,18 +52,22 @@ export interface TextureOptions {
    * Whether or not to automatically generate mip maps
    */
   generateMipmap?: boolean
+
   /**
    * The internal surface format of the texture
    */
   surfaceFormat?: SurfaceFormatOption
+
   /**
    * The pixel format to be used
    */
   pixelFormat?: PixelFormatOption
+
   /**
    * The pixel element data type to be used
    */
   pixelType?: DataTypeOption
+
   /**
    * The texture type
    */
@@ -71,6 +81,7 @@ export interface TextureOptions {
    * This is the case when {@link source} is an ArrayBuffer or array
    */
   width?: number
+
   /**
    * The texture height
    *
@@ -79,22 +90,27 @@ export interface TextureOptions {
    * This is the case when {@link source} is an ArrayBuffer or array
    */
   height?: number
+
   /**
    * The texture source data
    */
   source?: TextureSourceOption
+
   /**
    * The faces for a Cube Texture
    */
   faces?: Array<TextureSourceOption>
+
   /**
    * The depth format of the depth stencil buffer to use when the texture is used as a render target
    */
   depthFormat?: DepthFormatOption
+
   /**
    * The sampler state to be used together with this texture
    */
   samplerParams?: SamplerStateParams
+
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
    *
@@ -103,6 +119,8 @@ export interface TextureOptions {
    */
   crossOrigin?: string
 }
+
+export type RenderTargetOptions = Omit<TextureOptions, 'source' | 'crossOrigin' | 'generateMipmap' | 'type' | 'faces'>
 
 /**
  * Describes a texture object.
@@ -124,6 +142,11 @@ export abstract class Texture {
    * A symbol identifying the TextureCube class
    */
   public static readonly TextureCube = new TypeToken<Texture>('TextureCube')
+
+  /**
+   * A symbol identifying the TextureSourceOption
+   */
+  public static readonly TextureSource = new TypeToken<TextureSource>('TextureSource')
 
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
@@ -195,7 +218,7 @@ export abstract class Texture {
   /**
    * The data source for this texture
    */
-  public readonly source: TextureSource = null
+  public readonly source: TextureSource
 
   /**
    * The faces of a cube texture
@@ -203,16 +226,19 @@ export abstract class Texture {
   public readonly faces: Texture[] = null
 
   /**
-   * Returns the video element if the {@link source} is an instance of {@link TextureSourceVideo}
+   * Returns the video element if the {@link source} is an instance of {@link VideoElementSource}
    */
   public get video(): HTMLVideoElement {
-    if (this.source instanceof TextureSourceVideo) {
+    if (this.source instanceof VideoElementSource) {
       return this.source.data
     }
   }
 
   /**
    * The sampler state of this texture. Always reflects current state of this texture.
+   *
+   * @remarks
+   * This is used for webgl1 only or when `samplerParams` are set.
    */
   public readonly sampler: SamplerState
 
@@ -296,7 +322,7 @@ export abstract class Texture {
    */
   public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
 
-  public setup(options: TextureOptions = {}): this {
+  public setup(options: TextureOptions): this {
     let width = options.width || this.width
     let height = options.height || this.height
 
@@ -322,7 +348,7 @@ export abstract class Texture {
       pixelType !== this.pixelType ||
       type !== this.type
     ) {
-      this.destroy()
+      this.dispose()
     }
 
     this.set('width', width)
@@ -339,6 +365,16 @@ export abstract class Texture {
     if (!this.sampler) {
       this.set('sampler', this.device.createSamplerState({ texture: this }))
     }
+    this.set(
+      'source',
+      createTextureSource(options.source, {
+        crossOrigin: crossOrigin,
+        videoTypes: Texture.videoTypes,
+        width: width,
+        height: height,
+        type: pixelType,
+      }),
+    )
     this.create()
 
     const faces = options?.faces ?? null
@@ -347,28 +383,6 @@ export abstract class Texture {
       return this
     }
 
-    const source = options.source
-
-    if (!source) {
-      this.set('ready', true)
-    } else if (isString(source)) {
-      this.setUrl(source)
-    } else if (source instanceof HTMLImageElement) {
-      this.setSource(source)
-    } else if (source instanceof HTMLVideoElement) {
-      this.setSource(source)
-    } else if (source instanceof TextureSource) {
-      this.setSource(source)
-    } else if ('width' in source && 'height' in source) {
-      this.setSource(source)
-    } else if (isArray(source) && isObject(source[0])) {
-      this.setVideoUrls(source as any)
-    } else if (source && (source instanceof Array || source instanceof ArrayBuffer || 'buffer' in source)) {
-      this.setData(source, options.width, options.height)
-    } else {
-      Log.warn(`[Texture] 'data' option has an unrecognized type.`)
-      this.set('ready', true)
-    }
     return this
   }
 
@@ -377,7 +391,7 @@ export abstract class Texture {
   /**
    * Releases all resources and notifies the device that the texture is being destroyed.
    */
-  public abstract destroy(): this
+  public abstract dispose(): this
 
   /**
    * Binds the texture to the gl context.
@@ -394,8 +408,8 @@ export abstract class Texture {
    * whether the url points to an image or video.
    */
   public setUrl(url: string): this {
-    let ext = url.substr(url.lastIndexOf('.'))
-    let isVideo = Texture.videoTypes.indexOf(ext) >= 0
+    const ext = Uri.ext(url)
+    const isVideo = Texture.videoTypes.indexOf(ext) >= 0
     if (isVideo) {
       this.setVideoUrl(url)
     } else {
@@ -459,11 +473,11 @@ export abstract class Texture {
     if (value instanceof TextureSource) {
       source = value
     } else if (value instanceof HTMLImageElement) {
-      source = new TextureSourceImage(value)
+      source = new ImageElementSource(value)
     } else if (value instanceof HTMLVideoElement) {
-      source = new TextureSourceVideo(value)
+      source = new VideoElementSource(value)
     } else if (value) {
-      source = new TextureSourceData(value as any)
+      source = new ImageDataSource(value as any)
     }
     this.set('source', source)
     this.update()
@@ -532,7 +546,7 @@ export abstract class Texture {
    */
   public resize(width: number, height: number): void {
     if (this.ready && (width !== this.width || height !== this.height)) {
-      this.setup({ width, height })
+      this.setup({ width, height, type: this.type })
     }
   }
 

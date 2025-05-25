@@ -1,6 +1,6 @@
-import { loader, Loader } from '@gglib/content'
+import { AssetContainer, AssetLoader, ContentLoader, loader, Loader, LoaderContext } from '@gglib/content'
+import { createTextureSource, Texture, TextureOptions } from '@gglib/graphics'
 import { TGA } from './format'
-import { Texture, TextureOptions } from '@gglib/graphics'
 
 /**
  * Downloads an array buffer from source and parses with the TGA parser
@@ -32,4 +32,34 @@ export const loadTgaToImageData: Loader<TGA, ImageData> = loader({
   input: TGA,
   output: ImageData,
   handle: async (tga: TGA): Promise<ImageData> => tga.getImageData(),
+})
+
+export class TGATextureLoader implements AssetLoader {
+  public static readonly extensions = ['.tga']
+  public static readonly mimeTypes = ['image/x-tga']
+  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+    const response = await context.content.fetch(url, {
+      responseType: 'arraybuffer',
+    })
+    const options = new TGA(response.body).getTextureOptions()
+    return {
+      source: url,
+      textures: [
+        {
+          ...options,
+          source: createTextureSource(options.source, {
+            width: options.width,
+            height: options.height,
+            type: options.pixelType,
+          }),
+        },
+      ],
+    }
+  }
+}
+
+ContentLoader.register({
+  extensions: TGATextureLoader.extensions,
+  mimeTypes: TGATextureLoader.mimeTypes,
+  loader: TGATextureLoader,
 })

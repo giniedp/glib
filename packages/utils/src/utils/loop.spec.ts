@@ -1,17 +1,18 @@
+import { describe, expect, it } from 'vitest'
 import { loop } from './loop'
 
 describe('@gglib/utils/utils/time', () => {
   describe('loop', () => {
-    it ('calls a callback', (done) => {
+    it('calls a callback', async () => {
       let t = 0
-      let looper = loop((time, dt) => {
-        t += dt
+      await new Promise<void>((resolve) => {
+        const looper = loop((time, dt) => {
+          t += dt
+          looper.stop()
+          resolve()
+        })
       })
-      setTimeout(() => {
-        looper.stop()
-        expect(t > 0).toBe(true)
-        done()
-      }, 1000)
+      expect(t > 0).toBe(true)
     })
   })
 })

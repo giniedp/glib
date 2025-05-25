@@ -1,4 +1,5 @@
 import { TextReader } from './TextReader'
+import { describe, expect, it, beforeEach } from 'vitest'
 
 describe('Glib.Core.TextReader', () => {
 

@@ -2,6 +2,7 @@ import {
   ContentManager,
   Pipeline,
 } from '@gglib/content'
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 import {
   buildCube,

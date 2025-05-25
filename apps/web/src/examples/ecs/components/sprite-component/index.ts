@@ -1,4 +1,4 @@
-import { createGame, RendererComponent, SpriteComponent } from '@gglib/ecs-components'
+import { createGame, RendererSystem, SpriteComponent } from '@gglib/ecs-components'
 import * as TweakUi from 'tweak-ui'
 
 import { ContentManager } from '@gglib/content'
@@ -8,11 +8,11 @@ import { BasicRenderPass, CameraData } from '@gglib/render'
 import { Mat4 } from '@gglib/math'
 
 @Component({
-  install: [RendererComponent, SpriteComponent],
+  install: [RendererSystem, SpriteComponent],
 })
 class MyGame implements OnInit, OnUpdate {
-  @Inject(RendererComponent)
-  public readonly renderer: RendererComponent
+  @Inject(RendererSystem)
+  public readonly renderer: RendererSystem
 
   @Inject(ContentManager)
   public readonly content: ContentManager

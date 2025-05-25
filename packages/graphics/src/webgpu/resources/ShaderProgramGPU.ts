@@ -30,7 +30,7 @@ export class ShaderProgramGPU extends ShaderProgram {
     return this
   }
 
-  public destroy(): this {
+  public dispose(): this {
     return this
   }
 }

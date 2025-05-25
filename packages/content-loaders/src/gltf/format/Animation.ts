@@ -1,9 +1,9 @@
-import { GLTFProperty, GLTFRootProperty } from './common'
+import { Property, NamedProperty } from './common'
 
 /**
  * Combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target).
  */
-export interface GLTFAnimationSampler extends GLTFProperty {
+export interface AnimationSampler extends Property {
 
   /**
    * The index of an accessor containing keyframe input values, e.g., time.
@@ -35,7 +35,7 @@ export interface GLTFAnimationSampler extends GLTFProperty {
 /**
  * The index of the node and TRS property that an animation channel targets.
  */
-export interface GLTFAnimationChannelTarget extends GLTFProperty {
+export interface AnimationChannelTarget extends Property {
   /**
    * The index of the node to target.
    */
@@ -55,7 +55,7 @@ export interface GLTFAnimationChannelTarget extends GLTFProperty {
 /**
  * Targets an animation's sampler at a node's property.
  */
-export interface GLTFAnimationChannel extends GLTFProperty {
+export interface AnimationChannel extends Property {
   /**
    * The index of a sampler in this animation used to compute the value for the target.
    *
@@ -68,22 +68,22 @@ export interface GLTFAnimationChannel extends GLTFProperty {
   /**
    * The index of the node and TRS property to target.
    */
-  target: GLTFAnimationChannelTarget
+  target: AnimationChannelTarget
 }
 
 /**
  * A keyframe animation.
  */
-export interface GLTFAnimation extends GLTFRootProperty {
+export interface Animation extends NamedProperty {
   /**
    * An array of channels, each of which targets an animation's sampler at a node's property.
    * Different channels of the same animation can't have equal targets.
    */
-  channels: GLTFAnimationChannel[]
+  channels: AnimationChannel[]
 
   /**
    * An array of samplers that combines input and output accessors with an interpolation algorithm
    * to define a keyframe graph (but not its target).
    */
-  samplers: GLTFAnimationSampler[]
+  samplers: AnimationSampler[]
 }

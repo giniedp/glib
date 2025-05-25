@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { assembleShader } from './assembleShader'
 import { glsl } from './glsl'
 
@@ -8,27 +9,31 @@ describe('@gglib/graphics/assembleShader', () => {
     #pragma block:bar
   `
 
-  const blocks = [{
-    foo: glsl`
+  const blocks = [
+    {
+      foo: glsl`
       foo1
     `,
-    bar: glsl`
+      bar: glsl`
       bar1
     `,
-  }, {
-    foo: glsl`
+    },
+    {
+      foo: glsl`
       foo2
     `,
-    bar: glsl`
+      bar: glsl`
       function bar() {
         #pragma block:baz
       }
     `,
-  }, {
-    baz: glsl`
+    },
+    {
+      baz: glsl`
       baz
     `,
-  }]
+    },
+  ]
 
   it('builds from template', () => {
     expect(assembleShader(template, blocks)).toBe(`foo1

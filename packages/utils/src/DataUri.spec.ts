@@ -1,4 +1,5 @@
 import { DataUri } from './DataUri'
+import { describe, expect, it, beforeEach } from 'vitest'
 
 describe('DataUri', () => {
   describe('parse data:text/plain,Hello World', () => {

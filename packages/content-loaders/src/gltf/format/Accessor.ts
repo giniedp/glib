@@ -1,10 +1,10 @@
-import { GLTFProperty, GLTFRootProperty } from './common'
+import { Property, NamedProperty } from './common'
 
 /**
  * Array of size `accessor.sparse.count` times number of components storing
  * the displaced accessor attributes pointed by `accessor.sparse.indices`.
  */
-export interface GLTFAccessorSparseValues extends GLTFProperty {
+export interface AccessorSparseValues extends Property {
   /**
    * The index of the bufferView with sparse values.
    * Referenced bufferView can't have ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER target.
@@ -17,7 +17,7 @@ export interface GLTFAccessorSparseValues extends GLTFProperty {
   byteOffset?: number
 }
 
-export enum GLTFAccessorSparseComponentType {
+export enum AccessorSparseComponentType {
   UNSIGNED_BYTE = 5121,
   UNSIGNED_SHORT = 5123,
   UNSIGNED_INT = 5125,
@@ -26,7 +26,7 @@ export enum GLTFAccessorSparseComponentType {
 /**
  * Indices of those attributes that deviate from their initialization value.
  */
-export interface GLTFAccessorSparseIndices extends GLTFProperty {
+export interface AccessorSparseIndices extends Property {
   /**
    * The index of the bufferView with sparse indices.
    * Referenced bufferView can't have ARRAY_BUFFER or ELEMENT_ARRAY_BUFFER target.
@@ -44,13 +44,13 @@ export interface GLTFAccessorSparseIndices extends GLTFProperty {
    * @remarks
    * The indices data type.  Valid values correspond to WebGL enums: `5121` (UNSIGNED_BYTE), `5123` (UNSIGNED_SHORT), `5125` (UNSIGNED_INT).
    */
-  componentType: GLTFAccessorSparseComponentType
+  componentType: AccessorSparseComponentType
 }
 
 /**
  * Sparse storage of attributes that deviate from their initialization value.
  */
-export interface GLTFAccessorSparse extends GLTFProperty {
+export interface AccessorSparse extends Property {
   /**
    * Number of entries stored in the sparse array.
    *
@@ -63,16 +63,16 @@ export interface GLTFAccessorSparse extends GLTFProperty {
    * Index array of size `count` that points to those accessor attributes that deviate from their initialization value.
    * Indices must strictly increase.
    */
-  indices: GLTFAccessorSparseIndices
+  indices: AccessorSparseIndices
 
   /**
    * Array of size `count` times number of components, storing the displaced accessor attributes pointed by `indices`.
    * Substituted values must have the same `componentType` and number of components as the base accessor.
    */
-  values: GLTFAccessorSparseValues
+  values: AccessorSparseValues
 }
 
-export enum GLTFAccessorComponentType {
+export enum AccessorComponentType {
   BYTE = 5120,
   UNSIGNED_BYTE = 5121,
   SHORT = 5122,
@@ -81,14 +81,14 @@ export enum GLTFAccessorComponentType {
   FLOAT = 5126,
 }
 
-export type GLTFAccessorType = 'SCALAR' | 'VEC2' | 'VEC3' | 'VEC4' | 'MAT2' | 'MAT3' | 'MAT4'
+export type AccessorType = 'SCALAR' | 'VEC2' | 'VEC3' | 'VEC4' | 'MAT2' | 'MAT3' | 'MAT4'
 
 /**
  * A typed view into a bufferView. A bufferView contains raw binary data.
  * An accessor provides a typed view into a bufferView or a subset of a bufferView
  * similar to how WebGL's `vertexAttribPointer()` defines an attribute in a buffer.
  */
-export interface GLTFAccessor extends GLTFRootProperty {
+export interface Accessor extends NamedProperty {
   /**
    * The index of the bufferView.
    *
@@ -114,7 +114,7 @@ export interface GLTFAccessor extends GLTFRootProperty {
    * `Int8Array`, `Uint8Array`, `Int16Array`, `Uint16Array`, `Uint32Array`, and `Float32Array`, respectively.
    * 5125 (UNSIGNED_INT) is only allowed when the accessor contains indices, i.e., the accessor is only referenced by `primitive.indices`.
    */
-  componentType: GLTFAccessorComponentType
+  componentType: AccessorComponentType
 
   /**
    * Specifies whether integer data values should be normalized.
@@ -137,7 +137,7 @@ export interface GLTFAccessor extends GLTFRootProperty {
   /**
    * Specifies if the attribute is a scalar, vector, or matrix.
    */
-  type: GLTFAccessorType
+  type: AccessorType
 
   /**
    * Maximum value of each component in this attribute.
@@ -168,5 +168,5 @@ export interface GLTFAccessor extends GLTFRootProperty {
   /**
    * Sparse storage of attributes that deviate from their initialization value.
    */
-  sparse?: GLTFAccessorSparse
+  sparse?: AccessorSparse
 }

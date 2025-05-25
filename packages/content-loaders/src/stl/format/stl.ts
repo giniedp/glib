@@ -7,7 +7,7 @@ export interface Solid {
 
 export interface Facet {
   normal: IVec3
-  vertcies: IVec3[]
+  vertices: IVec3[]
   attrCount: number
 }
 
@@ -101,7 +101,7 @@ export class STL {
           y: dat[1],
           z: dat[2],
         },
-        vertcies: [{
+        vertices: [{
           x: dat[3],
           y: dat[4],
           z: dat[5],
@@ -186,7 +186,7 @@ function readFacet(reader: TextReader): Facet {
       y: parseFloat(reader.readText()),
       z: parseFloat(reader.readText()),
     },
-    vertcies: [],
+    vertices: [],
     attrCount: 0,
   }
 
@@ -195,7 +195,7 @@ function readFacet(reader: TextReader): Facet {
       case 'outer':
         reader.skipWhitespace()
         readLoop(reader, (x: number, y: number, z: number) => {
-          facet.vertcies.push({
+          facet.vertices.push({
             x: x,
             y: y,
             z: z,

@@ -1,5 +1,6 @@
 import { DeviceGL } from "@gglib/graphics"
 import { ParticleChannel } from "./ParticleChannel"
+import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 describe('graphics/ParticleChannel', () => {
 

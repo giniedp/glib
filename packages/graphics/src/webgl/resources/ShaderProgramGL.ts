@@ -3,7 +3,7 @@ import { Buffer, ShaderProgram, ShaderProgramOptions, ShaderUniform } from '../.
 
 import { DeviceGL } from '../DeviceGL'
 import { Glsl, GlslMemberInfo, GlslProgramInspection } from '../glsl'
-import { isWebGL2 } from '../utils'
+import { isWebGL2, SharedResource } from '../utils'
 import { ShaderGL } from './ShaderGL'
 import { ShaderUniformGL } from './ShaderUniformGL'
 
@@ -16,15 +16,18 @@ import { ShaderUniformGL } from './ShaderUniformGL'
  *
  * On creation the shader source code is inspected for
  */
-export class ShaderProgramGL extends ShaderProgram {
+export class ShaderProgramGL extends ShaderProgram implements SharedResource<string, WebGLProgram> {
+
   /**
    * The graphics device
    */
   public device: DeviceGL
+
   /**
    * The vertex shader
    */
   public vertexShader: ShaderGL
+
   /**
    * The fragment shader
    */
@@ -34,6 +37,16 @@ export class ShaderProgramGL extends ShaderProgram {
    * The web gl program handle
    */
   public resource: WebGLProgram
+
+  /**
+   *
+   */
+  public resourceKey: string
+
+  /**
+   *
+   */
+  public referenceCount: number = 1
 
   /**
    * A map of shader attributes
@@ -49,6 +62,7 @@ export class ShaderProgramGL extends ShaderProgram {
    * Whether the program is successfully linked
    */
   public linked: boolean
+
   /**
    * The info log that is generated after linking the program
    */
@@ -90,7 +104,13 @@ export class ShaderProgramGL extends ShaderProgram {
   /**
    * Releases the previously created `WebGLProgram` resource
    */
-  public destroy(): this {
+  public dispose(): this {
+    this.referenceCount--
+    if (this.referenceCount > 0) {
+      return this
+    }
+    this.referenceCount = 0
+    this.device.onProgramDisposed(this)
     if (this.device.context.isProgram(this.resource)) {
       this.device.context.deleteProgram(this.resource)
       this.resource = null
@@ -167,7 +187,9 @@ export class ShaderProgramGL extends ShaderProgram {
     this.info = gl.getProgramInfoLog(this.resource)
 
     if (!this.linked) {
-      //
+      console.warn('Program link failed', this.info)
+      this.vertexShader?.status()
+      this.fragmentShader?.status()
     } else {
       this.inspectProgram()
       this.assignRegisters()

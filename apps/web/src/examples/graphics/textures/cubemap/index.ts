@@ -1,4 +1,4 @@
-import { buildCube, CullState, ModelBuilder, DepthState, TextureWrapMode, TextureFilter, createDevice } from '@gglib/graphics'
+import { createDevice, cubeGeometry, CullState, DepthState, TextureFilter, TextureWrapMode } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
@@ -13,13 +13,14 @@ let program = device.createProgram({
 })
 
 // Create the geometry
-let geometry = new ModelBuilder().append(buildCube).endMeshPart(device)
+let geometry = cubeGeometry(device)
 
 // Create a cubemap from 6 faces.
 // The `faces` option must contain 6 entries.
 // Each entry may be any data type that is a valid `data` option
 // like when creating a 2D texture
-let texture = device.createTextureCube({
+let texture = device.createTexture({
+  type: 'TextureCube',
   faces: [
     '/assets/textures/cubemaps/dust_rt.jpg',
     '/assets/textures/cubemaps/dust_lf.jpg',
@@ -34,7 +35,7 @@ let texture = device.createTextureCube({
     wrapU: TextureWrapMode.Clamp,
     wrapV: TextureWrapMode.Clamp,
     wrapW: TextureWrapMode.Clamp,
-  }
+  },
 })
 
 // Create world, view and projection matrices.
@@ -43,7 +44,6 @@ let view = Mat4.createIdentity()
 let proj = Mat4.createIdentity()
 
 loop((time) => {
-
   // Prepare for rendering.
   device.resize()
   device.clear(0xff2e2620, 1.0)
@@ -51,8 +51,7 @@ loop((time) => {
   device.cullState = CullState.CullCounterClockWise
 
   // Update scene.
-  world.initIdentity()
-    .rotateY((Math.PI * time) / 20000)
+  world.initIdentity().rotateY((Math.PI * time) / 20000)
   view.initTranslation(0, 0, -1)
   proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0, 100)
 
@@ -61,7 +60,6 @@ loop((time) => {
   program.setUniform('view', view)
   program.setUniform('projection', proj)
   program.setUniform('texture', texture)
-
 
   // and render geometry with program.
   geometry.draw(program)

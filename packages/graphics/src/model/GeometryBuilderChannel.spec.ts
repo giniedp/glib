@@ -1,6 +1,7 @@
 import { DataType, dataTypeSize } from '../enums'
 import { GeometryBuilderChannel, GeometryBuilderChannelMap } from './GeometryBuilderChannel'
 import { BufferOptions } from '../resources'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('Graphics.GeometryBuilderChannel', () => {
   let channels: GeometryBuilderChannelMap

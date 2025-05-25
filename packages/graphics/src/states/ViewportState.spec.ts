@@ -1,5 +1,6 @@
 import { DeviceGL } from '../webgl'
 import { ViewportStateGL } from '../webgl/states'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/ViewportState', () => {
 

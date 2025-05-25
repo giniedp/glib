@@ -5,6 +5,7 @@ import {
 } from '../index'
 import { BlendStateGL } from '../webgl/states'
 import { BlendStateParams } from './BlendState'
+import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/BlendState', () => {
 

@@ -1,25 +1,26 @@
 import { IVec3, IVec4, Quat, Vec3 } from './index'
+import { describe, beforeEach, it, expect } from 'vitest'
 
 describe('Quat', () => {
 
   function expectComponents(v: IVec4, x: number, y: number, z: number, w: number) {
-    expect(v.x).toBeCloseTo(x, 10, 'x component')
-    expect(v.y).toBeCloseTo(y, 10, 'y component')
-    expect(v.z).toBeCloseTo(z, 10, 'z component')
-    expect(v.w).toBeCloseTo(w, 10, 'w component')
+    expect(v.x, 'x component').toBeCloseTo(x, 10)
+    expect(v.y, 'y component').toBeCloseTo(y, 10)
+    expect(v.z, 'z component').toBeCloseTo(z, 10)
+    expect(v.w, 'w component').toBeCloseTo(w, 10)
   }
 
   function expectV3Components(v: IVec3, x: number, y: number, z: number) {
-    expect(v.x).toBeCloseTo(x, 10, 'x component')
-    expect(v.y).toBeCloseTo(y, 10, 'y component')
-    expect(v.z).toBeCloseTo(z, 10, 'z component')
+    expect(v.x, 'x component').toBeCloseTo(x, 10)
+    expect(v.y, 'y component').toBeCloseTo(y, 10)
+    expect(v.z, 'z component').toBeCloseTo(z, 10)
   }
 
   function expectEquality(v1: IVec4, v2: IVec4) {
-    expect(v1.x).toBeCloseTo(v2.x, 10, 'x component')
-    expect(v1.y).toBeCloseTo(v2.y, 10, 'y component')
-    expect(v1.z).toBeCloseTo(v2.z, 10, 'z component')
-    expect(v1.w).toBeCloseTo(v2.w, 10, 'w component')
+    expect(v1.x, 'x component').toBeCloseTo(v2.x, 10)
+    expect(v1.y, 'y component').toBeCloseTo(v2.y, 10)
+    expect(v1.z, 'z component').toBeCloseTo(v2.z, 10)
+    expect(v1.w, 'w component').toBeCloseTo(v2.w, 10)
   }
 
   let a = new Quat()

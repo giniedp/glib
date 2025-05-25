@@ -1,4 +1,5 @@
 import { Uri } from './Uri'
+import { describe, expect, it, beforeEach } from 'vitest'
 
 describe('@gglib/utils/Uri', () => {
   describe('.parse', () => {

@@ -60,38 +60,50 @@ export class Geometry {
    * A unique id
    */
   public uid: string = uuid()
+
   /**
    * The graphics device
    */
   public readonly device: Device
+
   /**
    * The axis aligned bounding box containing the mesh in local space
    */
   public boundingBox: BoundingBox
+
   /**
    * The bounding sphere containing the mesh in local space
    */
   public boundingSphere: BoundingSphere
+
   /**
    * The material id or name referencing the material in the models material collection
+   *
+   * @remarks
+   * usually used as index into the material list of the mesh that owns this geometry.
    */
   public materialId: number | string = 0
+
   /**
    * The index buffer
    */
   public indexBuffer: Buffer
+
   /**
    * Offset in index buffer
    */
   public indexOffset: number | null
+
   /**
    * The vertex buffers
    */
   public vertexBuffer: Buffer[]
+
   /**
    * The vertex buffer primitive type
    */
   public primitiveType: number
+
   /**
    * The number of primitives to render
    */
@@ -119,19 +131,20 @@ export class Geometry {
     if (!params.vertexBuffer) {
       throw new Error(`'vertexBuffer' option is missing`)
     }
-    const vBuffers = Array.isArray(params.vertexBuffer)
-      ? params.vertexBuffer
-      : [params.vertexBuffer]
 
-    this.vertexBuffer = vBuffers.map((buffer) => {
-      return buffer instanceof Buffer ? buffer : device.createVertexBuffer(buffer)
-    })
+    const vBuffers = Array.isArray(params.vertexBuffer) ? params.vertexBuffer : [params.vertexBuffer]
+    this.vertexBuffer = []
+    for (const buffer of vBuffers) {
+      if (buffer instanceof Buffer) {
+        this.vertexBuffer.push(buffer)
+      } else {
+        this.vertexBuffer.push(device.createVertexBuffer(buffer))
+      }
+    }
   }
 
   /**
    * Draws the geometry with the given program
-   *
-   * @param program - the program to draw with
    */
   public draw(program: ShaderProgram): Geometry {
     const device = this.device
@@ -151,8 +164,19 @@ export class Geometry {
     return this
   }
 
-  public destroy() {
-    this.indexBuffer.destroy()
-    this.vertexBuffer.forEach((it) => it.destroy())
+  /**
+   * Releases the index and vertex buffers
+   */
+  public dispose() {
+    if (this.indexBuffer) {
+      this.indexBuffer.dispose()
+    }
+    this.indexBuffer = null
+    if (this.vertexBuffer) {
+      for (const buffer of this.vertexBuffer) {
+        buffer.dispose()
+      }
+    }
+    this.vertexBuffer = null
   }
 }

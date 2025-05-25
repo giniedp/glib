@@ -1,6 +1,13 @@
-import { Material, PrimitiveBatch, ShaderProgram, SpriteBatch, Texture, ViewportStateParams } from '@gglib/graphics'
+import type {
+  Material,
+  PrimitiveBatch,
+  ShaderProgram,
+  SpriteBatch,
+  Texture,
+  ViewportStateParams,
+} from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
-import { RenderManager } from './RenderManager'
+import type { RenderContext } from './RenderContext'
 
 /**
  * An object that is drawable with a shader program
@@ -15,45 +22,70 @@ export interface Drawable {
 }
 
 /**
- * An object that is drawable with a debug batch
+ * An object that is drawable with a primtive batch, usually for debugging purposes
  *
  * @public
  */
-export interface PrimitiveBatchDrawable {
+export interface PrimitiveDrawable {
   /**
    * Is called when the object should be rendered with given primitive batch
    */
-  draw: (batch: PrimitiveBatch) => void
+  drawPrimitive: (batch: PrimitiveBatch) => void
 }
 
 /**
- * An object that is drawable with a sprite batch
+ * An object that is drawable with a sprite batch, usually for 2D UI elements or 2D games
  *
  * @public
  */
-export interface SpriteBatchDrawable {
+export interface SpriteDrawable {
   /**
    * Is called when the object should be rendered with given sprite batch
    */
-  draw: (batch: SpriteBatch) => void
+  drawSprite: (batch: SpriteBatch) => void
 }
 
 /**
  * @public
  */
-export interface SceneItem {
+export interface ItemInfo<T = unknown> {
   /**
    * The drawable type
    */
   type: string
+
   /**
    * The world transform of the drawable object. If not provided identity is assumed
    */
   transform: Mat4
+
   /**
-   * The sort order key
+   * The item being rendered
    */
-  sortkey?: number
+  item: T
+
+  /**
+   * The material to be used for rendering
+   */
+  material?: Material
+
+  /**
+   * The sort order for this item
+   */
+  order?: number
+
+  /**
+   * The layer ID on which this item should be rendered
+   */
+  layer?: number
+
+  /**
+   * Visibility flag for internal use
+   *
+   * @remarks
+   * Does not need to be set. Will be used throughout the rendering for layer culling
+   */
+  hidden?: boolean
 }
 
 /**
@@ -61,19 +93,15 @@ export interface SceneItem {
  *
  * @public
  */
-export interface SceneItemDrawable extends SceneItem {
+export interface DrawableInfo extends ItemInfo<Drawable> {
   /**
    * The drawable type
    */
   type: 'drawable'
-  /**
-   * The drawable object.
-   */
-  drawable: Drawable
-  /**
-   * The drawing material.
-   */
-  material: Material
+}
+
+export function isDrawableItem(item: ItemInfo): item is DrawableInfo {
+  return item.type === 'drawable'
 }
 
 /**
@@ -81,15 +109,15 @@ export interface SceneItemDrawable extends SceneItem {
  *
  * @public
  */
-export interface SceneItemPrimitive extends SceneItem {
+export interface DrawablePrimitiveInfo extends ItemInfo<PrimitiveDrawable> {
   /**
    * The drawable type
    */
   type: 'primitive'
-  /**
-   * The drawable object.
-   */
-  primitive: PrimitiveBatchDrawable
+}
+
+export function isDrawablePrimitive(item: ItemInfo): item is DrawablePrimitiveInfo {
+  return item.type === 'primitive'
 }
 
 /**
@@ -97,19 +125,15 @@ export interface SceneItemPrimitive extends SceneItem {
  *
  * @public
  */
-export interface SceneItemSprite extends SceneItem {
+export interface DrawableSpriteInfo extends ItemInfo<SpriteDrawable> {
   /**
    * The drawable type
    */
   type: 'sprite'
-  /**
-   * The drawable object.
-   */
-  sprite: SpriteBatchDrawable
-  /**
-   * The drawing material.
-   */
-  material: Material
+}
+
+export function isDrawableSpriteItem(item: ItemInfo): item is DrawableSpriteInfo {
+  return item.type === 'sprite'
 }
 
 /**
@@ -117,7 +141,7 @@ export interface SceneItemSprite extends SceneItem {
  *
  * @public
  */
-export interface LightSourceData {
+export interface LightInfo {
   /**
    * The light color
    */
@@ -137,26 +161,33 @@ export interface LightSourceData {
  *
  * @public
  */
-export interface CameraData {
+export interface CameraInfo {
   /**
-   * The transform matrix.
+   * The layer mask to be used for culling
    *
    * @remarks
-   * If not set, the inverse ov `view` matrix is assumed
+   * The layer mask is a bit mask that indicates which layers should be rendered.
+   * If not set, the default of `0xFFFFFFFF` is used
    */
-  world?: Mat4
+  layerMask?: number
+
+  /**
+   * Position and orientation of the camera in the world
+   *
+   * @remarks
+   * This is a convenience property for the application layer and is not used by the renderer.
+   */
+  world: Mat4
+
   /**
    * The view matrix
    */
   view: Mat4
+
   /**
    * The projection matrix
    */
   projection: Mat4
-  /**
-   * The precalculated view projection matrix
-   */
-  viewProjection?: Mat4
 }
 
 /**
@@ -172,15 +203,15 @@ export interface RenderPass {
   /**
    * Is called for each step before any step is rendered
    */
-  setup?: (manager: RenderManager) => void
+  setup?: (context: RenderContext) => void
   /**
    * Is called for each step to render its technique
    */
-  render: (manager: RenderManager) => void
+  render: (context: RenderContext) => void
   /**
    * Is called for each step after all steps have been rendered
    */
-  cleanup?: (manager: RenderManager) => void
+  cleanup?: (context: RenderContext) => void
 }
 
 /**
@@ -188,53 +219,83 @@ export interface RenderPass {
  *
  * @public
  */
-export interface Scene {
+export interface SceneComposition {
   /**
-   * A use defined tag object
+   * A user defined name for this composition
+   */
+  name?: string
+
+  /**
+   * A user defined data object
    */
   meta?: Record<string, any>
+
   /**
-   * The rendering priority key.
+   * The sort order key for this composition
    *
    * @remarks
-   * Scenes with lower sortKey value are rendered first
+   * Compositions with lower value are rendered first
    */
-  sortKey?: number
+  order?: number
+
   /**
-   * Indicates whether the scene should be skipped during rendering
+   * Indicates that the composition is disabled and should be ignored
    */
   disabled?: boolean
+
   /**
-   * Indicates whether this scene is used for off screen rendering
+   * Indicates that the output should not be presented on screen but kept in a render target
+   */
+  muted?: boolean
+
+  /**
+   * Camera to be used for view frustum culling and as a fallback camera for any subview.
    *
    * @remarks
-   * If `true` the result of this scene will not be presented on screen
+   * If not set, any subview without an own camera is not rendered even if enabled.
    */
-  offscreen?: boolean
+  camera: CameraInfo
+
   /**
-   * The camera being used for rendering for any view without an own camera object
+   * The items being rendered with this composition
+   */
+  items: ItemInfo[]
+
+  /**
+   * The lights being rendered with this composition
+   */
+  lights: LightInfo[]
+
+  /**
+   * The rendering steps for this composition.
    *
    * @remarks
-   * If this is missing, any view without camera is not rendered even if it is enabled.
-   * This object is also used for view frustum culling
+   * If not set, the default rendering steps will be used
    */
-  camera?: CameraData
+  steps?: RenderPass[]
+
   /**
-   * The items that are visible by this view
-   */
-  items: SceneItem[]
-  /**
-   * The lights that affect this view
-   */
-  lights: LightSourceData[]
-  /**
-   * The rendering steps
-   */
-  steps: RenderPass[]
-  /**
+   * Sub views to be rendered
    *
+   * @remarks
+   * This allows to render the same scene with different cameras and/or to different viewports and render targets.
+   *
+   * If not set, an array with one default view will be created on first render.
    */
-  views: SceneView[]
+  views?: SceneView[]
+}
+
+export class Scene implements SceneComposition {
+  public name = 'Scene'
+  public meta = {}
+  public order = 0
+  public disabled = false
+  public muted = false
+  public camera: CameraInfo = null
+  public items: ItemInfo<unknown>[] = []
+  public lights: LightInfo[] = []
+  public steps: RenderPass[] = null
+  public views: SceneView[] = [{}]
 }
 
 /**
@@ -242,37 +303,58 @@ export interface Scene {
  */
 export interface SceneView {
   /**
-   * Indicates whether this viewport should be skipped for rendering
+   * A user defined name for this view
+   */
+  name?: string
+
+  /**
+   * Indicates whether this view should be skipped for rendering
    */
   disabled?: boolean
+
+  /**
+   * The sort order key for this view
+   *
+   * @remarks
+   * Views with lower value are rendered first
+   */
+  order?: number
+
   /**
    * The viewport area where this view should be rendered to
+   *
+   * @remarks
+   * if not set, the whole screen or render target will be used
    */
-  viewport: SceneViewport
+  viewport?: ViewportArea
+
   /**
    * The camera to be used to render this view
    *
    * @remarks
-   * If missing, the main Scene camera will be used
+   * If not set, the main camera will be used
    */
-  camera?: CameraData
+  camera?: CameraInfo
+
+  /**
+   * The rendering steps for this view.
+   *
+   * @remarks
+   * If not set, the main composition steps vill be used
+   */
+  steps?: RenderPass[]
 }
 
 /**
+ * The viewport area where this view should be rendered to
+ *
  * @public
+ * @remarks
+ * The x, y, widh and height can be either pixels or normalized coordinates.
+ *
+ * When all values are <= 1, the coordinates are assumed to be normalized coordinates.
  */
-export interface SceneViewport {
-  /**
-   * How the  `x`, `y`, `width` and `height` parameters should be interpreted
-   *
-   * @remarks
-   * When set to `pixels`, the parameters are directly used as pixel values.
-   *
-   * When set to `normalized`, the parameters are assumed to be in range [0:1]
-   *
-   * When missing `pixels` is assumed.
-   */
-  type?: 'normalized' | 'pixels'
+export interface ViewportArea {
   /**
    * X position on screen or render target
    */
@@ -289,22 +371,26 @@ export interface SceneViewport {
    * Height on screen or render target
    */
   height: number
-  /**
-   * The aspect ratio
-   *
-   * @remarks
-   * This is calculated automatically each frame based on current canvas size (or render target).
-   * Thus this must not be provided manually when setting up the scene viewport.
-   */
-  aspect?: number
 }
+
+export type OutputSemantic = 'color' | 'depth' | 'normal' | 'position'
 
 /**
  * @public
  */
-export interface SceneOutput extends ViewportStateParams {
+export interface CompositionOutput {
   /**
-   * The render target
+   * The viewport area where this view should be rendered to
    */
-  target?: Texture
+  viewport: ViewportStateParams
+
+  /**
+   * The name of the channel to present on screen at the end of the pipeline
+   */
+  channel: string
+
+  /**
+   * The render channels used during rendering
+   */
+  channels: Partial<Record<OutputSemantic, Texture>>
 }
