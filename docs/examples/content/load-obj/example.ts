@@ -1,19 +1,21 @@
-import { ContentManager } from '@gglib/content'
-import { LightParams } from '@gglib/materials'
+import { ContentLoader } from '@gglib/content'
+import { MTLLoader, OBJLoader } from '@gglib/content-loaders'
 import { BlendState, CullState, DepthState, Model, createDevice } from '@gglib/graphics'
-import { Mat4, Vec3, BoundingSphere } from '@gglib/math'
+import { Mouse } from '@gglib/input'
+import { LightParams } from '@gglib/materials'
+import { BoundingSphere, Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import GUI from 'lil-gui'
-import { Mouse } from '@gglib/input'
-import '@gglib/content-loaders'
 
+OBJLoader.register()
+MTLLoader.register()
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   // Create the graphics device and pass the existing canvas element from the DOM.
   const device = createDevice({ canvas })
-  const content = new ContentManager(device)
+  const content = new ContentLoader(device)
 
   const models = {
-    Logo: '/assets/logo/gglib.gltf',
+    // Logo: '/assets/logo/gglib.gltf',
     Tower: '/assets/models/obj/piratekit/tower.obj',
     Cannon: '/assets/models/obj/piratekit/cannonMobile.obj',
     Chest: '/assets/models/obj/piratekit/chest.obj',
@@ -40,7 +42,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     }
     gui.add(loader, key)
   }
-  loadModel(models['Logo'])
+  loadModel(models.Tower)
 
   let model: Model | null = null
   const light1 = LightParams.createDirectionalLight({
@@ -63,9 +65,11 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     mx: 0,
     my: 0,
     reset: (bs: BoundingSphere) => {
-      cam.lookAt.initFrom(bs.center)
-      cam.radial = { phi: 0, theta: Math.PI / 2, d: bs.radius * 2 }
-      cam.clip.far = Math.max(bs.radius * 4, 10)
+      const radius = bs?.radius || 3
+      const center = bs?.center || Vec3.Zero
+      cam.lookAt.initFrom(center)
+      cam.radial = { phi: 0, theta: Math.PI / 2, d: radius * 2 }
+      cam.clip.far = Math.max(radius * 4, 10)
     },
     update: (dt: number) => {
       const mouse = cam.mouse.state
@@ -84,7 +88,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   function loadModel(url: string) {
     content
-      .load(url, Model)
+      .loadModel(url)
       .then((result) => {
         model = result
         console.log(model)

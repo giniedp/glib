@@ -1,5 +1,5 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
-import { isString, uuid, TypeToken, Log } from '@gglib/utils'
+import { TypeToken, uuid } from '@gglib/utils'
 
 import { Geometry, GeometryOptions } from './Geometry'
 
@@ -39,15 +39,15 @@ export class Mesh {
   /**
    * A symbol identifying the `ModelMesh[]` type.
    */
-  public static readonly Array = new TypeToken<Mesh[]>('ModelMesh[]', { factory: () => ([])})
+  public static readonly Array = new TypeToken<Mesh[]>('ModelMesh[]', { factory: () => [] })
   /**
    * A symbol identifying the `ModelMeshOptions` type.
    */
-  public static readonly Options = new TypeToken<MeshOptions>('ModelMeshOptions', { factory: () => ({})})
+  public static readonly Options = new TypeToken<MeshOptions>('ModelMeshOptions', { factory: () => ({}) })
   /**
    * A symbol identifying the `ModelMeshOptions[]` type.
    */
-  public static readonly OptionsArray = new TypeToken<MeshOptions[]>('ModelMeshOptions[]', { factory: () => ([])})
+  public static readonly OptionsArray = new TypeToken<MeshOptions[]>('ModelMeshOptions[]', { factory: () => [] })
   /**
    * Autmatically generated unique identifier
    */
@@ -87,42 +87,8 @@ export class Mesh {
     this.name = options.name
     this.boundingBox = BoundingBox.convert(options.boundingBox)
     this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
-
-    const parts: Geometry[] = []
-    for (const mesh of (options.parts || [])) {
-      if (mesh instanceof Geometry) {
-        parts.push(mesh)
-      } else {
-        parts.push(new Geometry(this.device, mesh))
-      }
-    }
-    this.parts = parts
-
-    const materials: Material[] = []
-    for (const material of (options.materials || [])) {
-      if (material instanceof Material) {
-        materials.push(material)
-      } else {
-        materials.push(new Material(this.device, material))
-      }
-    }
-    this.materials = materials
-
-    // convert materialIds from string name to numeric index
-    for (const meshItem of this.parts) {
-      const name = meshItem.materialId
-      if (!isString(name)) {
-        continue
-      }
-      let index = 0
-      for (const materialItem of this.materials) {
-        if (materialItem.name === name) {
-          meshItem.materialId = index
-          break
-        }
-        index += 1
-      }
-    }
+    this.parts = convertMeshParts(device, options.parts)
+    this.materials = convertMaterials(device, options.materials)
   }
 
   /**
@@ -135,7 +101,7 @@ export class Mesh {
     const parts = this.parts
     let part: Geometry
     let material: Material
-    for (let i = 0; i < parts.length; i++){
+    for (let i = 0; i < parts.length; i++) {
       part = parts[i]
       material = this.getMaterial(part.materialId || 0)
       if (material) {
@@ -153,4 +119,45 @@ export class Mesh {
   public getMaterial(indexOrName: number | string): Material {
     return this.materials[indexOrName] || this.materials.find((it) => it.name === indexOrName)
   }
+
+  public dispose() {
+    for (const part of this.parts) {
+      part.dispose()
+    }
+    for (const material of this.materials) {
+      material.dispose()
+    }
+    this.parts = []
+    this.materials = []
+  }
+}
+
+function convertMeshParts(device: Device, parts: Array<Geometry | GeometryOptions>): Geometry[] {
+  const result: Geometry[] = []
+  if (!parts || !parts.length) {
+    return result
+  }
+  for (const mesh of parts) {
+    if (mesh instanceof Geometry) {
+      result.push(mesh)
+    } else {
+      result.push(new Geometry(device, mesh))
+    }
+  }
+  return result
+}
+
+function convertMaterials(device: Device, materials: Array<Material | MaterialOptions>): Material[] {
+  const result: Material[] = []
+  if (!materials || !materials.length) {
+    return result
+  }
+  for (const material of materials) {
+    if (material instanceof Material) {
+      result.push(material)
+    } else {
+      result.push(new Material(device, material))
+    }
+  }
+  return result
 }

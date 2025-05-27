@@ -4,7 +4,7 @@ import {
   DepthFormat,
   DepthState,
   Device,
-  ShaderEffect,
+  Effect,
   StencilState,
   Texture,
   TextureFilter,
@@ -74,7 +74,7 @@ export class PostTonemapEffect {
   public readonly downsampleTextures: Texture[] = []
   public lum1: Texture
   public lum2: Texture
-  public readonly effect: ShaderEffect
+  public readonly effect: Effect
   private clear: boolean = true
   private device: Device
 

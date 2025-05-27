@@ -11,7 +11,7 @@ import {
   DepthStateParams,
   PrimitiveBatch,
   PrimitiveType,
-  ShaderTechnique,
+  EffectTechnique,
   SpriteBatch,
   StencilState,
   StencilStateOptions,
@@ -171,7 +171,7 @@ export class BasicRenderPass implements RenderPass {
   protected renderItem(item: DrawableInfo, ctx: RenderContext) {
     const effect = item.material.effect
     const drawable = item.item
-    const technique: ShaderTechnique = effect.technique
+    const technique: EffectTechnique = effect.technique
     for (const pass of technique.passes) {
       if (!pass.program.isReady) {
         console.warn('Program not ready')

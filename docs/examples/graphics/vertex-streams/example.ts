@@ -40,18 +40,18 @@ export default (canvas: HTMLCanvasElement) => {
 
   // Create an array of vertex buffers. This time each channel is extracted into
   // its own vertex buffer.
-  const vertices = [
-    device.createVertexBuffer({
+  const vertices = device.createVertexBuffer([
+    {
       layout: { vPosition: { type: 'float', offset: 0, elements: 3 } },
       dataType: 'float',
       data: [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, -0.5, 0.5, 0.0, 0.5, 0.5, 0.0],
-    }),
-    device.createVertexBuffer({
+    },
+    {
       layout: { vColor: { type: 'ubyte', offset: 0, elements: 4, packed: true, normalize: true } },
       dataType: 'uint',
       data: [0xff0000ff, 0xff00ff00, 0xffff0000, 0xffffffff],
-    }),
-  ]
+    },
+  ])
 
   // Create the index buffer.
   const indices = device.createIndexBuffer({
@@ -60,12 +60,11 @@ export default (canvas: HTMLCanvasElement) => {
   })
 
   function render() {
-
     device.resize()
     device.clear(0xff2e2620)
 
     device.program = program
-    device.vertexBuffers = vertices
+    device.vertexBuffer = vertices
 
     // Now set the index buffer and then call `drawIndexedPrimitives`.
     // This is similar to 'drawPrimitives' but utilizes the index buffer.

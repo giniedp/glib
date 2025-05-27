@@ -1,1 +1,2 @@
-export * from './obj'
+export * from './format'
+export * from './OBJLoader'

@@ -1,6 +1,6 @@
-import { glsl, ShaderFxDocument } from '@gglib/graphics'
+import { glsl, EffectDocument } from '@gglib/graphics'
 
-export const POST_BLOOM: ShaderFxDocument = {
+export const POST_BLOOM: EffectDocument = {
   name: 'bloom',
   program: glsl`
     precision highp float;

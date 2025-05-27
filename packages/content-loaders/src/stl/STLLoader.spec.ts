@@ -1,26 +1,29 @@
-import { ContentManager, Pipeline } from '@gglib/content'
-import { DeviceGL, Model, MaterialOptions, ShaderEffectOptions, GeometryOptions } from '@gglib/graphics'
+import { DeviceGL, GeometryOptions, MaterialOptions, Model } from '@gglib/graphics'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { clearScripts, defineScript } from '../test'
-import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
+import { ContentLoader } from '@gglib/content'
 import '../gglib'
-
-import { loadStlToModelOptions }  from './stl'
+import { STLLoader } from './STLLoader'
 
 describe('content loader stl', () => {
-
   let device: DeviceGL
-  let manager: ContentManager
+  let content: ContentLoader
 
   afterAll(clearScripts)
   beforeAll(() => {
     device = new DeviceGL()
-    manager = new ContentManager(device, {
-      pipeline: new Pipeline()
+    content = new ContentLoader(device)
+    content.registerLoader({
+      extensions: STLLoader.extensions,
+      mimeTypes: STLLoader.mimeTypes,
+      loader: STLLoader,
     })
-    manager.pipeline.register(loadStlToModelOptions)
 
-    defineScript('model.stl', 'text/plain', `
+    defineScript(
+      'model.stl',
+      'text/plain',
+      `
 solid cube
   facet normal 0 0 0
     outer loop
@@ -107,12 +110,13 @@ solid cube
     endloop
   endfacet
 endsolid cube
-    `.trim())
+    `.trim(),
+    )
   })
 
   describe('stlModel', () => {
     it('loads from DOM', async () => {
-      const result = await manager.load('model.stl', Model.Options)
+      const result = await content.loadAsset('model.stl', Model.Options)
       expect(result).toBeDefined()
       expect(result.meshes.length).toBe(1)
 
@@ -121,14 +125,14 @@ endsolid cube
       expect(mesh.parts.length).toBe(1)
       expect(mesh.name).toBeFalsy()
 
-      const material = mesh.materials[0] as MaterialOptions<ShaderEffectOptions>
+      const material = mesh.materials[0] as MaterialOptions
       expect(material).toEqual({
         technique: 'default',
         parameters: {
           DiffuseColor: [1, 1, 1],
           SpecularColor: [1, 1, 1],
           SpecularPower: 16,
-        }
+        },
       })
 
       const meshPart = mesh.parts[0] as GeometryOptions
@@ -137,11 +141,11 @@ endsolid cube
     })
 
     it('loads logo model', async () => {
-      await manager.load('/assets/logo/gglib.stl', Model.Options)
+      await content.loadAsset('/assets/logo/gglib.stl', Model.Options)
     })
 
     it('loads logo binary model', async () => {
-      await manager.load('/assets/logo/gglib-binary.stl', Model.Options)
+      await content.loadAsset('/assets/logo/gglib-binary.stl', Model.Options)
     })
   })
 })

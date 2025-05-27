@@ -121,6 +121,9 @@ export default (canvas: HTMLCanvasElement) => {
   const lightColor = Vec3.create(1, 1, 1)
 
   function render(time: number) {
+    if (!program.isReady) {
+      return
+    }
     // resize (if needed) and clear the screen
     device.resize()
     device.cullState = CullState.CullNone

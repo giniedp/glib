@@ -1,18 +1,25 @@
-import { Material, Model, GeometryBuilder, GeometryOptions, ModelOptions } from '@gglib/graphics'
+import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
+import { GeometryBuilder, GeometryOptions } from '@gglib/graphics'
 import { Quat, Vec4 } from '@gglib/math'
-import { loader, resolveUri, Loader } from '@gglib/content'
 
 import { MD5Mesh } from './format'
+export class MD5Loader implements AssetLoader {
+  public static extensions: ['.md5mesh']
+  public static mimeTypes: ['application/x-md5mesh']
+  public static register() {
+    ContentLoader.registerLoader({
+      extensions: MD5Loader.extensions,
+      mimeTypes: MD5Loader.mimeTypes,
+      loader: MD5Loader,
+    })
+  }
 
-/**
- * @public
- */
-export const loadMd5meshToModelOptions: Loader<string, ModelOptions> = loader({
-  input: ['.md5mesh'],
-  output: Model.Options,
-  handle: async (_, context): Promise<ModelOptions> => {
-    const content = (await context.manager.downloadText(context.source)).content
-    const data = MD5Mesh.parse(content)
+  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+    const response = await context.content.fetch(url, {
+      responseType: 'text',
+    })
+    const data = MD5Mesh.parse(response.body)
+
     const builder = new GeometryBuilder({
       layout: [['position', 'normal', 'texture']],
     })
@@ -55,14 +62,16 @@ export const loadMd5meshToModelOptions: Loader<string, ModelOptions> = loader({
     })
 
     return {
+      source: context.assetUrl,
       meshes: [
         {
           parts: parts,
-          materials: await Promise.all(
-            mtlIds.map((name: string) => context.manager.load(resolveUri(name, context), Material)),
-          ),
+          // TODO: load materials
+          // materials: await Promise.all(
+          //   mtlIds.map((name: string) => context.manager.load(resolveUri(name, context), Material)),
+          // ),
         },
       ],
     }
-  },
-})
+  }
+}

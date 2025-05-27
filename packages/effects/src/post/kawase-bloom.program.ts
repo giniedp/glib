@@ -1,6 +1,6 @@
-import { glsl, ShaderFxDocument } from '@gglib/graphics'
+import { glsl, EffectDocument } from '@gglib/graphics'
 
-export const POST_KAWASE_BLOOM: ShaderFxDocument = {
+export const POST_KAWASE_BLOOM: EffectDocument = {
   name: 'bloom kawase',
   program: glsl`
     precision highp float;

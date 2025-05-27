@@ -2,8 +2,8 @@
 
 import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
 import { Device } from '../Device'
-import { ShaderProgram, Texture } from '../resources'
-import { SamplerState, SamplerStateParams } from '../states'
+import { ShaderProgram, Texture, TextureOptions } from '../resources'
+import { ISamplerState, SamplerState, SamplerStateParams } from '../states'
 import { ShaderUniformState } from './ShaderUniformState'
 
 /**
@@ -11,7 +11,7 @@ import { ShaderUniformState } from './ShaderUniformState'
  *
  * @public
  */
-export type ShaderUniformValue = string | boolean | number | ArrayLike<number> | Texture | IVec2 | IVec3 | IVec4 | IMat
+export type ShaderUniformValue = string | boolean | number | ArrayLike<number> | Texture | TextureOptions | IVec2 | IVec3 | IVec4 | IMat
 
 /**
  * @public
@@ -105,22 +105,27 @@ export abstract class ShaderUniform {
    * The graphics device
    */
   public abstract readonly device: Device
+
   /**
    * The shader program
    */
   public abstract readonly program: ShaderProgram
+
   /**
    * Meta data and annotations of this uniform
    */
   public abstract readonly info: Record<string, any>
+
   /**
    * The binding name of this uniform
    */
   public abstract readonly name: string
+
   /**
    * The type name of the uniform in the shader
    */
   public abstract readonly type: string
+
   /**
    * The default value
    */
@@ -135,6 +140,7 @@ export abstract class ShaderUniform {
    * The texture register index
    */
   public register: number
+
   /**
    * The texture sampler parameters
    */
@@ -275,23 +281,23 @@ export abstract class ShaderUniform {
   /**
    * Binds a texture to this uniform
    */
-  public setTexture(value: Texture) {
+  public setTexture(texture: Texture, filter?: ISamplerState) {
     const device = this.device
-    const unit = device.textureUnits[this.register] || device.textureUnits[0]
-    this.setInt(unit.index)
+    const textureUnit = device.textureUnits[this.register] || device.textureUnits[0]
+    this.setInt(textureUnit.index)
 
     // perform the update
     // - for video textures this will update the playback state
     // - for image textures this will update the ready state
-    if (value) {
-      value.update()
+    if (texture) {
+      texture.update()
     }
     // as long as a texture is not ready to render use a fallback texture instead
-    if (!value || !value.ready) {
-      value = this.device.defaultTexture
+    if (!texture || !texture.ready) {
+      texture = this.device.defaultTexture
     }
 
-    unit.texture = value
-    unit.commit(this.filter)
+    textureUnit.texture = texture
+    textureUnit.commit(filter || this.filter)
   }
 }

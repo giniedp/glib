@@ -1,56 +1,81 @@
-import { materialProgram } from '@gglib/materials'
 import { PostKawaseStreaksEffect } from '@gglib/effects'
-import {
-  BlendState,
-  CullState,
-  DepthState,
-  GeometryBuilder,
-  ShaderEffect,
-  buildIcosahedron,
-  createDevice,
-} from '@gglib/graphics'
-import { Mat4 } from '@gglib/math'
+import { BlendState, CullState, DepthState, createDevice, cubeGeometry } from '@gglib/graphics'
+import { AutoMaterial } from '@gglib/materials'
+import { Mat4, Quat, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
+
+type SceneObject = {
+  world: Mat4
+  rotation: Quat
+  scale: Vec3
+  position: Vec3
+  color: Vec3
+  intensity: number
+  seed: number
+}
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({
     canvas,
   })
 
-  const effect = device.createEffect({
-    program: materialProgram({
-      DIFFUSE_COLOR: true,
-      V_NORMAL: true,
-    }),
-  })
-
-  let size = 5
-  let effects: ShaderEffect[][] = []
-  for (let y = 0; y < size; y++) {
-    effects[y] = effects[y] || []
-    for (let x = 0; x < size; x++) {
-      effects[y][x] = device.createEffect({
-        techniques: effect.techniques,
-        parameters: {
-          World: Mat4.createIdentity(),
-          View: Mat4.createIdentity(),
-          Projection: Mat4.createIdentity(),
-          DiffuseColor: [Math.random(), Math.random(), Math.random()],
-        },
-      })
+  const world = Mat4.createIdentity()
+  const view = Mat4.createIdentity()
+  const projection = Mat4.createIdentity()
+  const material = new AutoMaterial(device)
+  const geometry = cubeGeometry(device, {})
+  const objects: SceneObject[] = []
+  const count = 100
+  const bounds = 8
+  for (let i = 0; i < count; i++) {
+    objects[i] = {
+      world: Mat4.createIdentity(),
+      rotation: Quat.createIdentity(),
+      scale: Vec3.create(1, 1, 1).multiplyScalar(0.5 + Math.random() * 0.5),
+      position: Vec3.createRandom()
+        .addScalar(-0.5)
+        .multiplyScalar(2 * bounds),
+      color: Vec3.create(Math.random(), Math.random(), Math.random()),
+      seed: Math.random(),
+      intensity: 1,
     }
   }
 
-  const mesh = GeometryBuilder.begin().append(buildIcosahedron).endGeometry(device)
+  function updateView() {
+    view.initTranslation(0, 0, -bounds)
+    projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 1, 100)
+  }
+
+  function updateObject(time: number, object: SceneObject) {
+    object.intensity = 1 + Math.sin(2 * Math.PI * object.seed + time / 1000) * 0.25
+    object.rotation.initYawPitchRoll(
+      (object.seed * time) / 2000,
+      (object.seed * time) / 4000,
+      (object.seed * time) / 8000,
+    )
+    // prettier-ignore
+    object.world
+      .initFromQuat(object.rotation)
+      .scaleV(object.scale)
+      .setTranslationV(object.position)
+      .premultiply(world)
+  }
+
   const post = new PostKawaseStreaksEffect(device, {
-    threshold: 0.5,
+    threshold: 0.75,
     iterations: 3,
     attenuation: 0.9,
-    strength: 1.0,
+    strength: 0.75,
   })
 
-  const rt1 = device.createRenderTarget({ width: device.drawingBufferWidth, height: device.drawingBufferHeight })
+  device.resize()
+  const rt1 = device.createRenderTarget({
+    pixelFormat: 'RGBA',
+    width: device.drawingBufferWidth,
+    height: device.drawingBufferHeight,
+    depthFormat: 'DepthStencil',
+  })
   const rt2 = device.createRenderTarget({
     width: Math.floor(device.drawingBufferWidth / 2),
     height: Math.floor(device.drawingBufferHeight / 2),
@@ -61,6 +86,15 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   function onFrame(time: number) {
+    updateView()
+    world.initRotationY(time / 40000)
+    for (const object of objects) {
+      updateObject(time, object)
+    }
+    if (!material.isReady()) {
+      return
+    }
+
     device.resize()
     rt1.resize(device.drawingBufferWidth, device.drawingBufferHeight)
     rt2.resize(Math.floor(device.drawingBufferWidth / 2), Math.floor(device.drawingBufferHeight / 2))
@@ -69,36 +103,32 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     device.cullState = CullState.Default
     device.depthState = DepthState.Default
     device.blendState = BlendState.Default
-    device.setRenderTarget(rt1)
+    if (post.isReady) {
+      device.setRenderTarget(rt1)
+    }
     device.clear(0xff2e2620, 1.0)
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        draw(time, effects[y][x], x, y)
-      }
+    for (const object of objects) {
+      material.World = object.world
+      material.View = view
+      material.Projection = projection
+      material.DiffuseColor = Vec3.multiplyScalar(object.color, object.intensity)
+      material.draw(geometry)
     }
     device.setRenderTarget(null)
 
-    post.inputTexture = rt1
-    post.blurTexture1 = rt2
-    post.blurTexture2 = rt3
-    post.draw()
-  }
-  function draw(time: number, effect: ShaderEffect, x: number, y: number) {
-    const aspect = device.drawingBufferAspectRatio
-    effect.getParameter<Mat4>('World')?.initIdentity()
-    effect.getParameter<Mat4>('World')?.rotateYawPitchRoll(time / 2000, time / 4000, time / 8000)
-    effect.getParameter<Mat4>('World')?.setTranslation(x - (size - 1) / 2, size - y - (size + 1) / 2, -2)
-    effect.getParameter<Mat4>('View')?.initTranslation(0, 0, -2)
-    effect.getParameter<Mat4>('Projection')?.initPerspectiveFieldOfView(Math.PI / 3, aspect, 1, 10)
-    effect.parameters.time = time / 1000
-    effect.draw(mesh)
+    if (post.isReady) {
+      post.inputTexture = rt1
+      post.blurTexture1 = rt2
+      post.blurTexture2 = rt3
+      post.draw()
+    }
   }
 
   TweakUi.mount(tools, (ui) => {
     ui.collapsible('Bloom', (ui) => {
       ui.slider(post, 'threshold', { min: 0, max: 1 })
-      ui.slider(post, 'iterations', { min: 1, max: 4, step: 1 })
-      ui.slider(post, 'attenuation', { min: 0.9, max: 0.95, step: 0.001 })
+      ui.slider(post, 'iterations', { min: 1, max: 8, step: 1 })
+      ui.slider(post, 'attenuation', { min: 0.5, max: 0.95, step: 0.001 })
       ui.slider(post, 'strength', { min: 0.5, max: 1.0, step: 0.001 })
     })
   })

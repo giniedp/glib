@@ -92,7 +92,7 @@ export interface TextureOptions {
   height?: number
 
   /**
-   * The texture source data
+   * The texture data source
    */
   source?: TextureSourceOption
 

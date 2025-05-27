@@ -1,8 +1,8 @@
-import { ShaderEffect, Texture, ShaderEffectParameters, Device, createShaderEffectOptionsSync } from "@gglib/graphics"
-import { Mat4, Vec2, Vec3, Vec4 } from "@gglib/math"
-import { PARTICLE_PROGRAM } from "./particle.program"
+import { createEffectOptionsSync, Device, Material, EffectParameters, Texture } from '@gglib/graphics'
+import { Mat4, Vec2, Vec3 } from '@gglib/math'
+import { PARTICLE_PROGRAM } from './particle.program'
 
-export interface ParticleEffectParameters extends ShaderEffectParameters {
+export interface ParticleEffectParameters extends EffectParameters {
   readonly view: Mat4
   readonly projection: Mat4
   readonly viewportScale: Vec2
@@ -19,10 +19,10 @@ export interface ParticleEffectParameters extends ShaderEffectParameters {
   readonly endSize: Vec2
 }
 
-export class ParticleEffect extends ShaderEffect<ParticleEffectParameters> {
+export class ParticleEffect extends Material<ParticleEffectParameters> {
   constructor(device: Device) {
     super(device, {
-      ...createShaderEffectOptionsSync(PARTICLE_PROGRAM),
+      effect: createEffectOptionsSync(PARTICLE_PROGRAM),
       parameters: {
         view: Mat4.createIdentity(),
         projection: Mat4.createIdentity(),
@@ -38,7 +38,7 @@ export class ParticleEffect extends ShaderEffect<ParticleEffectParameters> {
         rotateSpeed: Vec2.createZero(),
         startSize: Vec2.createZero(),
         endSize: Vec2.createZero(),
-      }
+      },
     })
   }
 }

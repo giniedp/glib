@@ -1,4 +1,4 @@
-import { BlendState, Device, ShaderEffect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
+import { BlendState, Device, Effect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
 import { IVec2 } from '@gglib/math'
 import { POST_KAWASE_STREAKS } from './kawase-streaks.program'
 
@@ -30,7 +30,7 @@ export class PostKawaseStreaksEffect {
    * Determines whether the post effect is ready to render
    */
   public get isReady() {
-    return !!this.effect
+    return this.effect?.isReady()
   }
   /**
    * The graphics device
@@ -87,7 +87,7 @@ export class PostKawaseStreaksEffect {
    */
   public outputTexture: Texture
 
-  public readonly effect: ShaderEffect
+  public readonly effect: Effect
 
   constructor(device: Device, options?: PostKawaseStreaksOptions) {
     this.device = device

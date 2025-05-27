@@ -1,4 +1,4 @@
-import { createShaderEffectSync, Device, ShaderEffect, Texture } from '@gglib/graphics'
+import { createEffectOptionsSync, Device, Material, Texture } from '@gglib/graphics'
 import { IVec2, Vec2 } from '@gglib/math'
 import { POST_PIXELATE } from './pixelate.program'
 
@@ -21,7 +21,7 @@ export class PostPixelateEffect {
    * Determines whether the post effect is ready to render
    */
   public get isReady() {
-    return !!this.effect
+    return !!this.material
   }
 
   public pixelWidth: number = 10
@@ -29,7 +29,7 @@ export class PostPixelateEffect {
   public inputTexture: Texture
   public outputTexture: Texture
 
-  private effect: ShaderEffect<{
+  private material: Material<{
     texel: IVec2
     texture: Texture
   }>
@@ -39,13 +39,19 @@ export class PostPixelateEffect {
       this.pixelWidth = options.pixelWidth ?? this.pixelWidth
       this.pixelHeight = options.pixelHeight ?? this.pixelHeight
     }
-    this.effect = createShaderEffectSync(device, POST_PIXELATE) as any // TODO
+    this.material = new Material(device, {
+      effect: createEffectOptionsSync(POST_PIXELATE),
+      parameters: {
+        texel: Vec2.create(1 / this.pixelWidth, 1 / this.pixelHeight),
+        texture: null,
+      },
+    })
   }
 
   public draw() {
     let rt = this.inputTexture
     let rt2 = this.outputTexture
-    let texel = this.effect.parameters.texel || Vec2.init({}, 1, 1)
+    let texel = this.material.parameters.texel || Vec2.init({}, 1, 1)
     if (rt2) {
       texel.x = this.pixelWidth / rt2.width
       texel.y = this.pixelHeight / rt2.height
@@ -54,9 +60,9 @@ export class PostPixelateEffect {
       texel.y = this.pixelHeight / this.device.drawingBufferHeight
     }
     this.device.setRenderTarget(rt2)
-    this.effect.parameters.texture = rt
-    this.effect.parameters.texel = texel
-    this.effect.drawQuad()
+    this.material.parameters.texture = rt
+    this.material.parameters.texel = texel
+    this.material.drawQuad()
     this.device.setRenderTarget(null)
   }
 }

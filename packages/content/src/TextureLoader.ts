@@ -1,9 +1,15 @@
 import { createTextureSource } from '@gglib/graphics'
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from './ContentLoader'
+import { AssetContainer } from './AssetContainer'
+import { AssetLoader, ContentLoader, LoaderContext } from './ContentLoader'
 
 export class TextureLoader implements AssetLoader {
-  public static readonly extensions = ['.jpg', '.jpeg', '.png', '.webp']
-  public static readonly mimeTypes = ['image/jpg', 'image/jpeg', 'image/png', 'image/webp']
+  public static register() {
+    ContentLoader.registerLoader({
+      extensions: ['.jpg', '.jpeg', '.png', '.webp'],
+      mimeTypes: ['image/jpg', 'image/jpeg', 'image/png', 'image/webp'],
+      loader: TextureLoader,
+    })
+  }
 
   public get supportsImageBitmap() {
     return typeof createImageBitmap === 'function'
@@ -62,8 +68,4 @@ export class TextureLoader implements AssetLoader {
   }
 }
 
-ContentLoader.register({
-  extensions: TextureLoader.extensions,
-  mimeTypes: TextureLoader.mimeTypes,
-  loader: TextureLoader,
-})
+TextureLoader.register()

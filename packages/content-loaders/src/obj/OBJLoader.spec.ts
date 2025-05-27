@@ -1,32 +1,38 @@
-import { ContentManager } from '@gglib/content'
-import { DeviceGL, Model, Material, MaterialOptions, ShaderEffect } from '@gglib/graphics'
+import { ContentLoader } from '@gglib/content'
+import { DeviceGL, Model } from '@gglib/graphics'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { clearScripts, defineScript } from '../test'
-import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 
 import '../gglib'
 import './obj'
+import { OBJLoader } from './OBJLoader'
 
 describe('content loader obj', () => {
   let device: DeviceGL
-  let manager: ContentManager
+  let content: ContentLoader
 
   afterAll(clearScripts)
   beforeAll(() => {
     device = new DeviceGL()
-    manager = new ContentManager(device)
-    manager.pipeline.register({
-      input: Material.OptionsTechnique,
-      output: Material.Options,
-      handle: async (input: MaterialOptions, context) => {
-        if (!input?.technique) {
-          return null
-        }
-        return {
-          ...input,
-          effect: await context.manager.load('default.ggfx', ShaderEffect.Options),
-        }
-      },
+    content = new ContentLoader(device)
+    content.registerLoader({
+      extensions: OBJLoader.extensions,
+      mimeTypes: OBJLoader.mimeTypes,
+      loader: OBJLoader,
     })
+    // content.pipeline.register({
+    //   input: Material.OptionsTechnique,
+    //   output: Material.Options,
+    //   handle: async (input: MaterialOptions, context) => {
+    //     if (!input || !('technique' in input)) {
+    //       return null
+    //     }
+    //     return {
+    //       ...input,
+    //       effect: await context.manager.load('default.ggfx', Effect.Options),
+    //     }
+    //   },
+    // })
 
     defineScript(
       'default.ggfx',
@@ -107,9 +113,8 @@ f  2//1  8//1  4//1
 
   describe('objModel', () => {
     it('loads from DOM', async () => {
-      const result = await manager.load('model.obj', Model)
+      const result = await content.loadAsset('model.obj', Model)
       expect(result).toBeDefined()
-      expect(result.device).toBe(device)
       expect(result.meshes.length).toBe(1)
       expect(result.meshes[0].parts.length).toBe(1)
       expect(result.meshes[0].materials.length).toBe(1)

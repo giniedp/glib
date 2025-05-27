@@ -1,6 +1,6 @@
-import { ShaderFxDocument, glsl } from "@gglib/graphics"
+import { EffectDocument, glsl } from "@gglib/graphics"
 
-export const PARTICLE_PROGRAM: ShaderFxDocument = {
+export const PARTICLE_PROGRAM: EffectDocument = {
   name: 'particles',
   program: glsl`
     precision highp float;

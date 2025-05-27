@@ -223,6 +223,7 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
 
   private updateCubemap(): boolean {
     if (!this.faces) {
+      this.set('ready', true)
       return false
     }
     let updated = false
@@ -267,9 +268,10 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
     return updated
   }
 
-  private updateSource(): boolean {
+  private updateSource() {
     let changed = false
     if (!this.source) {
+      this.set('ready', true)
       return changed
     }
 

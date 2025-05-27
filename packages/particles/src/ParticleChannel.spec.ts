@@ -1,9 +1,8 @@
-import { DeviceGL } from "@gglib/graphics"
-import { ParticleChannel } from "./ParticleChannel"
-import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
+import { DeviceGL } from '@gglib/graphics'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { ParticleChannel } from './ParticleChannel'
 
 describe('graphics/ParticleChannel', () => {
-
   let device: DeviceGL
 
   beforeAll(() => {
@@ -11,7 +10,6 @@ describe('graphics/ParticleChannel', () => {
   })
 
   describe('constructor', () => {
-
     let channel: ParticleChannel
 
     beforeEach(() => {
@@ -20,20 +18,19 @@ describe('graphics/ParticleChannel', () => {
       })
     })
 
-    it ('creates vertexBuffer', () => {
+    it('creates vertexBuffer', () => {
       expect(channel.vertexBuffer).toBeDefined()
-      expect(channel.vertexBuffer.elementCount).toBe(100 * 4)
+      expect(channel.vertexBuffer[0].elementCount).toBe(100 * 4)
     })
 
-    it ('creates indexBuffer', () => {
+    it('creates indexBuffer', () => {
       expect(channel.indexBuffer).toBeDefined()
       expect(channel.indexBuffer.elementCount).toBe(100 * 6)
     })
 
-    it ('creates particles', () => {
+    it('creates particles', () => {
       expect(channel.vertices).toBeDefined()
       expect(channel.vertices.stride).toBe(36)
     })
-
   })
 })

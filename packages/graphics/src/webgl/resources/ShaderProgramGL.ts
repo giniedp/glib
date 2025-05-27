@@ -17,7 +17,6 @@ import { ShaderUniformGL } from './ShaderUniformGL'
  * On creation the shader source code is inspected for
  */
 export class ShaderProgramGL extends ShaderProgram implements SharedResource<string, WebGLProgram> {
-
   /**
    * The graphics device
    */
@@ -52,6 +51,14 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
    * A map of shader attributes
    */
   public inputs: Map<string, GlslMemberInfo & { location: number }> = new Map()
+
+  /**
+   * Resolved attribute layout
+   *
+   * @remarks
+   * Used to determine the order of attributes in the vertex buffer and create a vertex array object.
+   */
+  public attributeLayout: string
 
   /**
    * A map of all shader uniforms
@@ -170,18 +177,18 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
     if (this.compiling && this.canParallelCompile) {
       const gl = this.device.context
       const ext = this.device.capabilities.extension('KHR_parallel_shader_compile')
-      this.compiling =  !gl.getProgramParameter(this.resource, ext.COMPLETION_STATUS_KHR)
+      this.compiling = !gl.getProgramParameter(this.resource, ext.COMPLETION_STATUS_KHR)
     } else {
       this.compiling = false
     }
     if (!this.readyState && !this.compiling) {
-      this.onProgramready()
+      this.onProgramReady()
     }
     this.readyState = !this.compiling
     return this.readyState
   }
 
-  private onProgramready() {
+  private onProgramReady() {
     const gl = this.device.context
     this.linked = gl.getProgramParameter(this.resource, gl.LINK_STATUS)
     this.info = gl.getProgramInfoLog(this.resource)
@@ -196,6 +203,7 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
       this.assignDefaults()
     }
   }
+
   private inspectProgram() {
     try {
       this.inspection = Glsl.inspectProgram(this.vertexShader.source, this.fragmentShader.source)
@@ -224,6 +232,7 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
         size: info.size,
       })
     }
+    this.attributeLayout = Array.from(this.inputs.keys()).join(',')
   }
 
   private inspectUniforms() {
@@ -300,69 +309,38 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
     return this.inspection?.uniforms?.[name]
   }
 
-  public bindAttribPointerAndLocation(vBuffer: Buffer | Buffer[]) {
+  public bindAttribPointerAndLocation(vBuffer: Buffer[]) {
     if (!this.isReady) {
       throw new Error('Program is not ready')
     }
 
-    if (Array.isArray(vBuffer)) {
-      this.inputs.forEach((attribute, name) => {
-        for (const buffer of vBuffer) {
-          const channel = buffer.layout[attribute.binding || name]
-          if (channel) {
-            buffer.bind()
-            this.device.context.vertexAttribPointer(
-              attribute.location,
-              channel.elements,
-              valueOfDataType(channel.type),
-              !!attribute.normalize || !!channel.normalize,
-              buffer.stride,
-              channel.offset,
-            )
-            this.device.context.enableVertexAttribArray(attribute.location)
-            return
-          }
-        }
-        // tslint:disable-next-line
-        throw new Error(
-          [
-            'VertexBuffer is not compatible with Program',
-            `Required attributes: ${Array.from(this.inputs.keys())}`,
-            `Available attributes: ${vBuffer.map((it) => Object.keys(it.layout))}`,
-            `Missing attribute: ${name}`,
-          ].join('\n'),
-        )
-      })
-    } else {
-      this.inputs.forEach((attribute, name) => {
-        const channel = vBuffer.layout[attribute.binding || name]
+    outer: for (const [name, attribute] of this.inputs) {
+      for (const buffer of vBuffer) {
+        const channel = buffer.layout[attribute.binding || name]
         if (channel) {
-          vBuffer.bind()
+          buffer.bind()
           this.device.context.vertexAttribPointer(
             attribute.location,
             channel.elements,
             valueOfDataType(channel.type),
             !!attribute.normalize || !!channel.normalize,
-            vBuffer.stride,
+            buffer.stride,
             channel.offset,
           )
           this.device.context.enableVertexAttribArray(attribute.location)
-          return
+          continue outer
         }
-
-        // tslint:disable-next-line
-        throw new Error(
-          [
-            'VertexBuffer is not compatible with Program',
-            `Required attributes: ${Array.from(this.inputs.keys())}`,
-            `Available attributes: ${Object.keys(vBuffer.layout)}`,
-            `Missing attribute: ${name}`,
-          ].join('\n'),
-        )
-      })
+      }
+      // tslint:disable-next-line
+      throw new Error(
+        [
+          'VertexBuffer is not compatible with Program',
+          `Required attributes: ${Array.from(this.inputs.keys())}`,
+          `Available attributes: ${vBuffer.map((it) => Object.keys(it.layout))}`,
+          `Missing attribute: ${name}`,
+        ].join('\n'),
+      )
     }
-    // enable attributes so that the vertex shader is actually able to use them
-    // this.$vertexAttribArrayState.commit(program.attributeLocations)
   }
 }
 

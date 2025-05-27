@@ -1,7 +1,8 @@
 import { IVec3, Mat4 } from '@gglib/math'
 import { Device } from './Device'
 import { BufferUsage, nameOfPrimitiveType, PrimitiveType } from './enums'
-import { Buffer, ShaderProgram } from './resources'
+import { ShaderProgram } from './resources'
+import { VertexBuffer } from './resources/VertexBuffer'
 import {
   BlendStateParams,
   CullStateParams,
@@ -115,7 +116,7 @@ export class PrimitiveBatch {
   private arrayBuffer: ArrayBuffer
   private vertexPositionView: Float32Array
   private vertexColorView: Int32Array
-  private vertexBuffer: Buffer
+  private vertexBuffer: VertexBuffer
   private mainProgram: ShaderProgram
   private mainMatrix: Mat4
   private program: ShaderProgram
@@ -146,11 +147,13 @@ export class PrimitiveBatch {
     this.arrayBuffer = new ArrayBuffer(this.batchSize * sizeInBytes)
     this.vertexPositionView = new Float32Array(this.arrayBuffer)
     this.vertexColorView = new Int32Array(this.arrayBuffer)
-    this.vertexBuffer = device.createVertexBuffer({
-      layout: vertexLayout,
-      data: this.arrayBuffer,
-      usage: BufferUsage.Dynamic,
-    })
+    this.vertexBuffer = device.createVertexBuffer([
+      {
+        layout: vertexLayout,
+        data: this.arrayBuffer,
+        usage: BufferUsage.Dynamic,
+      },
+    ])
     this.mainProgram =
       options.program ||
       device.createProgram({

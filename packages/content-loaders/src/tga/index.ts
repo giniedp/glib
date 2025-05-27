@@ -1,2 +1,2 @@
-export * from './tga'
 export * from './format'
+export * from './TGALoader'

@@ -1,63 +1,104 @@
 import type { Device } from './Device'
-import type { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
-import type { ShaderPassOptions } from './ShaderPass'
-import type { ShaderTechniqueOptions } from './ShaderTechnique'
+import type { Effect, EffectOptions } from './Effect'
+import type { EffectPassOptions } from './EffectPass'
+import type { EffectTechniqueOptions } from './EffectTechnique'
 
 /**
  * @public
  */
-export interface ShaderFxDocument {
+export interface EffectDocument {
+  /**
+   * The name of the effect
+   */
   name: string
+
+  /**
+   * OpenGL ES version that should be baked into the program
+   */
   version?: string
+
+  /**
+   * The base shader program that is prepended to all vertex and fragment shaders
+   */
   program: string
-  technique: ShaderFxTechnique | ShaderFxTechnique[]
+
+  /**
+   * The technique documents
+   */
+  technique: EffectDocumentTechnique | EffectDocumentTechnique[]
 }
 
 /**
  * @public
  */
-export interface ShaderFxTechnique {
+export interface EffectDocumentTechnique {
+  /**
+   * The name of the technique
+   */
   name: string
-  pass: ShaderFxPass | ShaderFxPass[]
+
+  /**
+   * The shader passes of the technique
+   */
+  pass: EffectDocumentPass | EffectDocumentPass[]
 }
 
 /**
  * @public
  */
-export interface ShaderFxPass {
+export interface EffectDocumentPass {
+  /**
+   * The name of the pass
+   */
   name?: string
+
+  /**
+   * The vertex shader source code
+   */
   vertexShader: string
+
+  /**
+   * The fragment shader source code
+   */
   fragmentShader: string
 }
 
 /**
  * @public
  */
-export type ShaderFxIncludeHandler = (includePath: string) => Promise<string>
+export type EffectIncludeAsyncHandler = (includePath: string) => Promise<string>
 
 /**
  * @public
  */
-export type ShaderFxIncludeSyncHandler = (includePath: string) => string
+export type EffectIncludeSyncHandler = (includePath: string) => string
+
+export function buildEffectVertexShader(doc: EffectDocument, shader: string): string {
+  return [`#version ${doc.version || '100'}`, '#define VERTEX_SHADER', doc.program, shader].join('\n').trim()
+}
+
+export function buildEffectFragmentShader(doc: EffectDocument, shader: string): string {
+  return [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, shader].join('\n').trim()
+}
 
 /**
  * @public
  */
 export async function createShaderEffect(
   device: Device,
-  doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeHandler,
-): Promise<ShaderEffect> {
-  return device.createEffect(await createShaderEffectOptions(doc, includeHandler))
+  doc: EffectDocument,
+  includeHandler?: EffectIncludeAsyncHandler,
+): Promise<Effect> {
+  return device.createEffect(await createEffectOptions(doc, includeHandler))
 }
 
 /**
  * @public
  */
-export async function createShaderEffectOptions(
-  doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeHandler,
-): Promise<ShaderEffectOptions> {
+export async function createEffectOptions(
+  doc: EffectDocument,
+  includeHandler?: EffectIncludeAsyncHandler,
+): Promise<EffectOptions> {
   return {
     name: doc.name,
     techniques: await processTechniques(
@@ -71,9 +112,9 @@ export async function createShaderEffectOptions(
 }
 
 async function processTechniques(
-  doc: ShaderFxDocument,
-  includeHandler: ShaderFxIncludeHandler,
-): Promise<ShaderTechniqueOptions[]> {
+  doc: EffectDocument,
+  includeHandler: EffectIncludeAsyncHandler,
+): Promise<EffectTechniqueOptions[]> {
   const techniques = Array.isArray(doc.technique) ? doc.technique : [doc.technique]
   return Promise.all(
     techniques
@@ -88,20 +129,18 @@ async function processTechniques(
 }
 
 async function mapPasses(
-  doc: ShaderFxDocument,
-  passes: ShaderFxPass | ShaderFxPass[],
-  includeHandler: ShaderFxIncludeHandler,
-): Promise<ShaderPassOptions[]> {
+  doc: EffectDocument,
+  passes: EffectDocumentPass | EffectDocumentPass[],
+  includeHandler: EffectIncludeAsyncHandler,
+): Promise<EffectPassOptions[]> {
   passes = (Array.isArray(passes) ? passes : [passes]).filter((it) => !!it)
   return Promise.all(
     passes.map(async (it) => {
       return {
         name: it.name,
         program: await processProgram(
-          [`#version ${doc.version || '100'}`, '#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n').trim(),
-          [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, it.fragmentShader]
-            .join('\n')
-            .trim(),
+          buildEffectVertexShader(doc, it.vertexShader),
+          buildEffectFragmentShader(doc, it.fragmentShader),
           includeHandler,
         ),
       }
@@ -109,7 +148,7 @@ async function mapPasses(
   )
 }
 
-async function processProgram(vertexShader: string, fragmentShader: string, include: ShaderFxIncludeHandler) {
+async function processProgram(vertexShader: string, fragmentShader: string, include: EffectIncludeAsyncHandler) {
   // solve all preprocessor directives
   return Promise.all([processShader(vertexShader, include), processShader(fragmentShader, include)]).then(
     ([vSource, fSource]) => {
@@ -122,7 +161,7 @@ async function processProgram(vertexShader: string, fragmentShader: string, incl
   )
 }
 
-async function processShader(source: string, include: ShaderFxIncludeHandler): Promise<string> {
+async function processShader(source: string, include: EffectIncludeAsyncHandler): Promise<string> {
   return Promise.all(
     getLines(source).map((line) => {
       const includeMatch = line.match(regInclude)
@@ -138,19 +177,19 @@ async function processShader(source: string, include: ShaderFxIncludeHandler): P
  */
 export function createShaderEffectSync(
   device: Device,
-  doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeSyncHandler,
-): ShaderEffect {
-  return device.createEffect(createShaderEffectOptionsSync(doc, includeHandler))
+  doc: EffectDocument,
+  includeHandler?: EffectIncludeSyncHandler,
+): Effect {
+  return device.createEffect(createEffectOptionsSync(doc, includeHandler))
 }
 
 /**
  * @public
  */
-export function createShaderEffectOptionsSync(
-  doc: ShaderFxDocument,
-  includeHandler?: ShaderFxIncludeSyncHandler,
-): ShaderEffectOptions {
+export function createEffectOptionsSync(
+  doc: EffectDocument,
+  includeHandler?: EffectIncludeSyncHandler,
+): EffectOptions {
   return {
     name: doc.name,
     techniques: processTechniquesSync(
@@ -164,9 +203,9 @@ export function createShaderEffectOptionsSync(
 }
 
 function processTechniquesSync(
-  doc: ShaderFxDocument,
-  includeHandler: ShaderFxIncludeSyncHandler,
-): ShaderTechniqueOptions[] {
+  doc: EffectDocument,
+  includeHandler: EffectIncludeSyncHandler,
+): EffectTechniqueOptions[] {
   const techniques = Array.isArray(doc.technique) ? doc.technique : [doc.technique]
   return techniques
     .filter((it) => !!it)
@@ -179,24 +218,24 @@ function processTechniquesSync(
 }
 
 function mapPassesSync(
-  doc: ShaderFxDocument,
-  passes: ShaderFxPass | ShaderFxPass[],
-  includeHandler: ShaderFxIncludeSyncHandler,
-): ShaderPassOptions[] {
+  doc: EffectDocument,
+  passes: EffectDocumentPass | EffectDocumentPass[],
+  includeHandler: EffectIncludeSyncHandler,
+): EffectPassOptions[] {
   passes = (Array.isArray(passes) ? passes : [passes]).filter((it) => !!it)
   return passes.map((it) => {
     return {
       name: it.name,
       program: processProgramSync(
-        [`#version ${doc.version || '100'}`, '#define VERTEX_SHADER', doc.program, it.vertexShader].join('\n'),
-        [`#version ${doc.version || '100'}`, '#define FRAGMENT_SHADER', doc.program, it.fragmentShader].join('\n'),
+        buildEffectVertexShader(doc, it.vertexShader),
+        buildEffectFragmentShader(doc, it.fragmentShader),
         includeHandler,
       ),
     }
   })
 }
 
-function processProgramSync(vertexShader: string, fragmentShader: string, include: ShaderFxIncludeSyncHandler) {
+function processProgramSync(vertexShader: string, fragmentShader: string, include: EffectIncludeSyncHandler) {
   return {
     vertexShader: processShaderSync(vertexShader, include),
     // attribute declaration is only allowed in vertex shader
@@ -204,7 +243,7 @@ function processProgramSync(vertexShader: string, fragmentShader: string, includ
   }
 }
 
-function processShaderSync(source: string, include: ShaderFxIncludeSyncHandler): string {
+function processShaderSync(source: string, include: EffectIncludeSyncHandler): string {
   return getLines(source)
     .map((line) => {
       const includeMatch = line.match(regInclude)

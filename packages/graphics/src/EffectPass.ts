@@ -1,6 +1,5 @@
 import { copy } from '@gglib/utils'
 import { Device } from './Device'
-
 import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
 import {
   BlendState,
@@ -16,11 +15,11 @@ import {
 } from './states'
 
 /**
- * Constructor options for {@link ShaderPass}
+ * Constructor options for {@link EffectPass}
  *
  * @public
  */
-export interface ShaderPassOptions {
+export interface EffectPassOptions {
   /**
    * The name of the shader pass
    */
@@ -61,50 +60,58 @@ export interface ShaderPassOptions {
  * @public
  *
  */
-export class ShaderPass {
+export class EffectPass {
   /**
-   * A symbol identifying the `ShaderPassOptions` type.
+   * A symbol identifying the `EffectPassOptions` type.
    */
-  public static OptionsSymbol = Symbol('ShaderPassOptions')
+  public static OptionsSymbol = Symbol('EffectPassOptions')
 
   /**
    * The graphics device
    */
   public device: Device
+
   /**
    * The name of the shader pass
    */
   public name: string
+
   /**
    * Arbitrary meta data or info about the shader pass
    */
   public meta: { [key: string]: any }
+
   /**
    * The shader program to be activated on `commit`
    */
   public program: ShaderProgram
+
   /**
    * The cull state to be enabled on `commit`
    */
   public cullState: CullStateParams
+
   /**
    * The blend state to be enabled on `commit`
    */
   public blendState: BlendStateParams
+
   /**
    * The depth state to be enabled on `commit`
    */
   public depthState: DepthStateParams
+
   /**
    * The offset state to be enabled on `commit`
    */
   public offsetState: OffsetStateParams
+
   /**
    * The stencil state to be enabled on `commit`
    */
   public stencilState: StencilStateParams
 
-  constructor(device: Device, options: ShaderPassOptions) {
+  constructor(device: Device, options: EffectPassOptions) {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
@@ -164,8 +171,8 @@ export class ShaderPass {
    * @remarks
    * This will also clone the underlying program
    */
-  public clone(): ShaderPass {
-    const opts: ShaderPassOptions = {
+  public clone(): EffectPass {
+    const opts: EffectPassOptions = {
       name: this.name,
       meta: copy(true, this.meta),
       program: this.program.clone(),
@@ -185,10 +192,16 @@ export class ShaderPass {
     if (this.cullState) {
       opts.cullState = { ...this.cullState }
     }
-    return new ShaderPass(this.device, opts)
+    return new EffectPass(this.device, opts)
   }
 
   public isReady() {
     return this.program.isReady
+  }
+
+  public dispose() {
+    this.program?.dispose()
+    this.program = null
+    this.device = null
   }
 }

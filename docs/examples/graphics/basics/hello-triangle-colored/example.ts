@@ -43,31 +43,35 @@ export default (canvas: HTMLCanvasElement) => {
   // The `layout` option describes how the `data` is structured.
   // The vertex shader expects a vertex attribute with the name `vPosition`
   // of type `vec3` which in the end consists of `3` elements of type `float`
-  const vertices = device.createVertexBuffer({
-    // The `layout` describes that each vertex begins with a `vPosition` attribute
-    // which is a `vec3` with 3 elements.
-    layout: {
-      vPosition: {
-        type: 'float',
-        offset: 0,
-        elements: 3,
+  const vertices = device.createVertexBuffer([
+    {
+      // The `layout` describes that each vertex begins with a `vPosition` attribute
+      // which is a `vec3` with 3 elements.
+      layout: {
+        vPosition: {
+          type: 'float',
+          offset: 0,
+          elements: 3,
+        },
+        // It is then followed byt a `vColor` attribute which is also a `vec3` with 3 elements
+        // but has an offset of 12 bytes from the beginning of the vertex.
+        vColor: {
+          type: 'float',
+          offset: 12,
+          elements: 3,
+        },
       },
-      // It is then followed byt a `vColor` attribute which is also a `vec3` with 3 elements
-      // but has an offset of 12 bytes from the beginning of the vertex.
-      vColor: {
-        type: 'float',
-        offset: 12,
-        elements: 3,
-      },
+      // The `data` is a sequence of floats that matches the `layout` specification.
+      // Each 6 floats define a vertex where the first 3 floats are a `vPosition`
+      // and the next 3 floats are the `vColor`
+      // prettier-ignore
+      data: [
+        /* position */ -0.5, -0.5, 0.0, /* color */ 1, 0, 0,
+        /* position  */ 0.5, -0.5, 0.0, /* color */ 0, 1, 0,
+        /* position  */ 0.0, 0.5, 0.0, /* color */ 0, 0, 1,
+      ],
     },
-    // The `data` is a sequence of floats that matches the `layout` specification.
-    // Each 6 floats define a vertex where the first 3 floats are a `vPosition`
-    // and the next 3 floats are the `vColor`
-    data: [
-      /* position */ -0.5, -0.5, 0.0, /* color */ 1, 0, 0, /* position  */ 0.5, -0.5, 0.0, /* color */ 0, 1, 0,
-      /* position  */ 0.0, 0.5, 0.0, /* color */ 0, 0, 1,
-    ],
-  })
+  ])
 
   // Start a loop function.
   return loop(() => {

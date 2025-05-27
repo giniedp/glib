@@ -6,7 +6,7 @@ import {
   DepthState,
   Device,
   glsl,
-  ShaderEffect,
+  Effect,
   StencilState,
   Texture,
   TextureFilter,
@@ -74,7 +74,7 @@ export class PostTonemap implements RenderPass {
     },
   ]
 
-  private effect: ShaderEffect
+  private effect: Effect
 
   private lum1: Texture
   private lum2: Texture

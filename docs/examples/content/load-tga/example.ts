@@ -1,11 +1,12 @@
 import { ContentLoader } from '@gglib/content'
-import '@gglib/content-loaders'
+import { TGALoader } from '@gglib/content-loaders'
 import { BlendState, createDevice, cubeGeometry, CullState, DepthState } from '@gglib/graphics'
 import { AutoMaterial } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
+TGALoader.register()
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({ canvas })
   const content = new ContentLoader(device)

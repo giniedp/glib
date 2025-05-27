@@ -5,7 +5,7 @@ import {
   CullState,
   DepthState,
   Device,
-  ShaderEffect,
+  Effect,
   StencilState,
   Texture,
 } from '@gglib/graphics'
@@ -37,7 +37,7 @@ export class PostBloomEffect {
    * Determines whether the post effect is ready to render
    */
   public get isReady() {
-    return !!this.effect
+    return !!this.effect?.isReady()
   }
   /**
    * The graphics device
@@ -76,7 +76,7 @@ export class PostBloomEffect {
    */
   public output: Texture
 
-  public readonly effect: ShaderEffect
+  public readonly effect: Effect
 
   private offsetWeights: number[][]
 
@@ -152,7 +152,7 @@ export class PostBloomEffect {
     // ------------------------------------------------
     // [1] GLOW CUT -> rt1
     //
-    device.program = this.effect.getTechnique('glowCut').pass(0).program
+    device.program = this.effect.getTechnique('glowCut').program0
     device.program.setUniform('texture', input)
     device.program.setUniform('threshold', this.glowCut)
     device.setRenderTarget(rt1)
@@ -165,7 +165,7 @@ export class PostBloomEffect {
       // [2] HORIZONTAL BLUR -> rt2
       //
       // calculate filter offsets and weights
-      device.program = this.effect.getTechnique('hBlur').pass(0).program
+      device.program = this.effect.getTechnique('hBlur').program0
       device.program.setUniform('texture', rt1)
       for (let i = 0; i < this.offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i])
@@ -179,7 +179,7 @@ export class PostBloomEffect {
       // [2] VERTICAL BLUR -> rt1
       //
       // calculate filter offsets and weights
-      device.program = this.effect.getTechnique('vBlur').pass(0).program
+      device.program = this.effect.getTechnique('vBlur').program0
       device.program.setUniform('texture', rt2)
       for (let i = 0; i < this.offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i])
@@ -193,7 +193,7 @@ export class PostBloomEffect {
     // ------------------------------------------------
     // [4] COMBINE BOOM -> output
     //
-    device.program = this.effect.getTechnique('combine').pass(0).program
+    device.program = this.effect.getTechnique('combine').program0
     device.program.setUniform('texture', input)
     device.program.setUniform('bloomTexture', rt1)
 

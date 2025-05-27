@@ -4,6 +4,7 @@ import { BufferUsage, PrimitiveType } from './enums'
 import { Buffer } from './resources/Buffer'
 import { ShaderProgram } from './resources/ShaderProgram'
 import { Texture } from './resources/Texture'
+import { VertexBuffer } from './resources/VertexBuffer'
 import { Sprite } from './Sprite'
 import { BlendStateParams } from './states/BlendState'
 import { CullStateParams } from './states/CullState'
@@ -122,7 +123,7 @@ export class SpriteBatch {
   private vertexPositionView: Float32Array
   private vertexTextureView: Float32Array
   private vertexColorView: Int32Array
-  private vertexBuffer: Buffer
+  private vertexBuffer: VertexBuffer
   private indexBuffer: Buffer
   private mainProgram: ShaderProgram
   private mainMatrix: Mat4
@@ -152,11 +153,13 @@ export class SpriteBatch {
     this.vertexPositionView = new Float32Array(this.arrayBuffer)
     this.vertexTextureView = new Float32Array(this.arrayBuffer)
     this.vertexColorView = new Int32Array(this.arrayBuffer)
-    this.vertexBuffer = device.createVertexBuffer({
-      layout: vertexLayout,
-      data: this.arrayBuffer,
-      usage: BufferUsage.Dynamic,
-    })
+    this.vertexBuffer = device.createVertexBuffer([
+      {
+        layout: vertexLayout,
+        data: this.arrayBuffer,
+        usage: BufferUsage.Dynamic,
+      },
+    ])
     this.mainProgram =
       options.program ||
       device.createProgram({
@@ -342,7 +345,7 @@ export class SpriteBatch {
         this.vertexColorView[offset++] = sprite.color
       }
       start += count
-      this.vertexBuffer.setSubData(0, this.arrayBuffer)
+      this.vertexBuffer.buffers[0].setSubData(0, this.arrayBuffer)
       this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, count * 6)
     }
   }

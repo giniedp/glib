@@ -5,6 +5,7 @@ import { Device } from '../Device'
 import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from '../enums'
 import { Buffer, BufferOptions } from '../resources/Buffer'
 import { ShaderProgram } from '../resources/ShaderProgram'
+import { VertexBuffer } from '../resources/VertexBuffer'
 
 /**
  * Constructor options for {@link Geometry}
@@ -16,34 +17,42 @@ export interface GeometryOptions {
    * A user defined name for the geometry
    */
   name?: string
+
   /**
    * An axis aligned bounding box containing the geometry in local space
    */
   boundingBox?: number[] | BoundingBox
+
   /**
    * A bounding sphere containing the geometry in local space
    */
   boundingSphere?: number[] | BoundingSphere
+
   /**
    * The material identifier. Defaults to 0
    */
   materialId?: number | string
+
   /**
    * The index buffer
    */
   indexBuffer?: Buffer | BufferOptions
+
   /**
    * A single vertex buffer or an array ob vertex buffers
    */
-  vertexBuffer?: Buffer | BufferOptions | Array<Buffer | BufferOptions>
+  vertexBuffer?: VertexBuffer | BufferOptions[]
+
   /**
    * Offset in index buffer
    */
   indexOffset?: number
+
   /**
    * The mode of the geometry. e.g. TrinagleList, LineList etc.
    */
   primitiveType?: PrimitiveTypeOption
+
   /**
    * Number of primitives to render
    */
@@ -97,7 +106,7 @@ export class Geometry {
   /**
    * The vertex buffers
    */
-  public vertexBuffer: Buffer[]
+  public vertexBuffer: VertexBuffer
 
   /**
    * The vertex buffer primitive type
@@ -128,18 +137,12 @@ export class Geometry {
       // the geometry will be rendered using the gl.drawArrays() method
     }
 
-    if (!params.vertexBuffer) {
+    if (params.vertexBuffer instanceof VertexBuffer) {
+      this.vertexBuffer = params.vertexBuffer
+    } else if (params.vertexBuffer) {
+      this.vertexBuffer = device.createVertexBuffer(params.vertexBuffer)
+    } else {
       throw new Error(`'vertexBuffer' option is missing`)
-    }
-
-    const vBuffers = Array.isArray(params.vertexBuffer) ? params.vertexBuffer : [params.vertexBuffer]
-    this.vertexBuffer = []
-    for (const buffer of vBuffers) {
-      if (buffer instanceof Buffer) {
-        this.vertexBuffer.push(buffer)
-      } else {
-        this.vertexBuffer.push(device.createVertexBuffer(buffer))
-      }
     }
   }
 
@@ -148,7 +151,7 @@ export class Geometry {
    */
   public draw(program: ShaderProgram): Geometry {
     const device = this.device
-    device.vertexBuffers = this.vertexBuffer
+    device.vertexBuffer = this.vertexBuffer
     device.indexBuffer = this.indexBuffer
     device.program = program
     try {
@@ -157,8 +160,9 @@ export class Geometry {
       } else {
         device.drawPrimitives(this.primitiveType, this.indexOffset, this.primitiveCount)
       }
-    } finally {
-      device.vertexBuffers = null
+    } catch (e) {
+      console.error(e)
+      // TODO: disable the geometry from further rendering?
     }
 
     return this
@@ -168,15 +172,9 @@ export class Geometry {
    * Releases the index and vertex buffers
    */
   public dispose() {
-    if (this.indexBuffer) {
-      this.indexBuffer.dispose()
-    }
+    this.indexBuffer?.dispose()
     this.indexBuffer = null
-    if (this.vertexBuffer) {
-      for (const buffer of this.vertexBuffer) {
-        buffer.dispose()
-      }
-    }
+    this.vertexBuffer?.dispose()
     this.vertexBuffer = null
   }
 }

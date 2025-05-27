@@ -74,11 +74,11 @@ export class BufferGPU extends Buffer {
    * Sets this buffer on the graphics device as current vertex or index buffer depending on the 'type' property
    */
   public bind(): this {
-    if (this.type === BufferType.VertexBuffer) {
-      this.device.vertexBuffer = this
-    } else if (this.type === BufferType.IndexBuffer) {
+    if (this.type === BufferType.IndexBuffer) {
       this.device.indexBuffer = this
-    } else {
+    } else if (this.type === BufferType.VertexBuffer) {
+      // TODO:
+    } else  {
       throw new Error(`unknown buffer type: ${this.type}`)
     }
     return this

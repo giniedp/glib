@@ -1,16 +1,16 @@
-import { IVec3 } from '@gglib/math'
 import {
-  Color,
-  Device,
-  BufferUsage,
-  PrimitiveType,
-  Buffer,
-  Texture,
   BlendState,
   BlendStateParams,
+  Buffer,
+  BufferUsage,
+  Color,
+  Device,
+  PrimitiveType,
+  Texture,
+  VertexBuffer,
   VertexLayout,
-  ShaderProgram,
 } from '@gglib/graphics'
+import { IVec3 } from '@gglib/math'
 import { ParticleEffect } from './ParticleEffect'
 
 /**
@@ -182,7 +182,7 @@ export class ParticleChannel {
   /**
    * The vertex buffer
    */
-  public readonly vertexBuffer: Buffer
+  public readonly vertexBuffer: VertexBuffer
   /**
    * The index buffer
    */
@@ -194,7 +194,7 @@ export class ParticleChannel {
   /**
    * The effect
    */
-  public readonly effect: ParticleEffect
+  public readonly material: ParticleEffect
 
   private startActive: number = 0
   private startNew: number = 0
@@ -220,11 +220,13 @@ export class ParticleChannel {
       this.vertices.seek(i * 4 + 2).setCorner(1, 1)
       this.vertices.seek(i * 4 + 3).setCorner(-1, 1)
     }
-    this.vertexBuffer = this.device.createVertexBuffer({
-      layout: this.vertices.layout,
-      usage: BufferUsage.Dynamic,
-      data: this.vertices.buffer,
-    })
+    this.vertexBuffer = this.device.createVertexBuffer([
+      {
+        layout: this.vertices.layout,
+        usage: BufferUsage.Dynamic,
+        data: this.vertices.buffer,
+      },
+    ])
     const indices = []
     for (let i = 0; i < this.particleCount; i++) {
       indices[i * 6 + 0] = i * 4 + 0
@@ -239,11 +241,11 @@ export class ParticleChannel {
       data: indices,
     })
 
-    this.effect = new ParticleEffect(this.device)
+    this.material = new ParticleEffect(this.device)
   }
 
   private updateParameters() {
-    const params = this.effect.parameters
+    const params = this.material.parameters
     const settings = this.settings
     params.duration = settings.duration
     params.durationRandomness = settings.durationRandomness
@@ -275,7 +277,7 @@ export class ParticleChannel {
   public draw() {
     this.frame++
     // update vertex buffer
-    this.vertexBuffer.setData(this.vertices.data)
+    this.vertexBuffer.buffers[0].setData(this.vertices.data)
     // update pointer
     this.startNew = this.startFree
     // test if there are any active particles to draw
@@ -284,8 +286,8 @@ export class ParticleChannel {
     }
 
     // set device state
-    const pass = this.effect.getTechnique(0).pass(0)
-    pass.commit(this.effect.parameters)
+    const pass = this.material.effect.pass0
+    pass.commit(this.material.parameters)
     this.device.program = pass.program
     this.device.blendState = this.settings.blendState
     this.device.indexBuffer = this.indexBuffer

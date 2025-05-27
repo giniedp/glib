@@ -1,5 +1,3 @@
-
-
 import { Buffer, Device, Material, MaterialOptions, Model, Geometry, VertexLayout } from '@gglib/graphics'
 import { IVec3, Vec3, BoundingBox } from '@gglib/math'
 import { HeightMap } from './HeightMap'
@@ -36,12 +34,15 @@ export class BTTRoot {
   public patches: BTTPatch[]
   public model: Model
 
-  constructor(device: Device, options: {
-    heightMap: HeightMap,
-    patchSize?: number,
-    lodScale?: number,
-    materials?: Material[]|MaterialOptions[],
-  }) {
+  constructor(
+    device: Device,
+    options: {
+      heightMap: HeightMap
+      patchSize?: number
+      lodScale?: number
+      materials?: Material[] | MaterialOptions[]
+    },
+  ) {
     this.device = device
 
     this.heightMap = options.heightMap
@@ -49,11 +50,11 @@ export class BTTRoot {
     this.lodScale = Number(options.lodScale) | 0 || 2
 
     const maxLod = highestBit(this.patchSize) * 2
-    const iBuffers: Buffer[][] = this.indexBuffers = []
+    const iBuffers: Buffer[][] = (this.indexBuffers = [])
     for (let i = 0; i <= maxLod; i++) {
       iBuffers[i] = []
       for (let j = 0; j < 15; j++) {
-        if ((i % 2 === 0) && j > 0) {
+        if (i % 2 === 0 && j > 0) {
           iBuffers[i][j] = iBuffers[i][0]
         } else {
           iBuffers[i][j] = device.createIndexBuffer({
@@ -80,11 +81,13 @@ export class BTTRoot {
 
     this.patches = patches
     this.model = device.createModel({
-      meshes: [{
-        boundingBox: parts.reduce((box, next) => box.merge(next.boundingBox), parts[0].boundingBox.clone()),
-        materials: options.materials,
-        parts: parts,
-      }]
+      meshes: [
+        {
+          boundingBox: parts.reduce((box, next) => box.merge(next.boundingBox), parts[0].boundingBox.clone()),
+          materials: options.materials,
+          parts: parts,
+        },
+      ],
     })
   }
 
@@ -97,13 +100,11 @@ export class BTTRoot {
  * @public
  */
 export class BTTPatch {
-
   public static createVertices(heightmap: HeightMap, startX: number, startY: number, size: number): number[] {
     const normal = { x: 0, y: 0, z: 0 }
     const vertices: any = []
     for (let y = startY; y < startY + size; y++) {
       for (let x = startX; x < startX + size; x++) {
-
         // position
         vertices.push(x)
         vertices.push(heightmap.heightAt(x, y))
@@ -116,8 +117,8 @@ export class BTTPatch {
         vertices.push(normal.z)
 
         // texture
-        vertices.push(x / (heightmap.width))
-        vertices.push(y / (heightmap.height))
+        vertices.push(x / heightmap.width)
+        vertices.push(y / heightmap.height)
       }
     }
     return vertices
@@ -136,7 +137,7 @@ export class BTTPatch {
       return list
     }
 
-    const isEven = (level % 2) === 0
+    const isEven = level % 2 === 0
     const density = Math.pow(2, Math.floor(level / 2.0))
     const step = Math.ceil((size - 1) / density) | 0
     const halfStep = step / 2 || 0
@@ -148,7 +149,7 @@ export class BTTPatch {
 
         if (isEven) {
           const mod = 2 * step
-          if (((x % mod) === 0 && (z % mod) === 0) || ((x % mod) !== 0 && (z % mod) !== 0)) {
+          if ((x % mod === 0 && z % mod === 0) || (x % mod !== 0 && z % mod !== 0)) {
             // a--b---
             // |\ | /|
             // | \|/ |
@@ -164,7 +165,6 @@ export class BTTPatch {
             list.push(vIndex)
             list.push(vIndex + size * step)
             list.push(vIndex + size * step + step)
-
           } else {
             // ---a--b
             // |\ | /|
@@ -175,12 +175,12 @@ export class BTTPatch {
             // *--*---
 
             list.push(vIndex)
-            list.push((vIndex + size * step))
-            list.push((vIndex + step))
+            list.push(vIndex + size * step)
+            list.push(vIndex + step)
 
-            list.push((vIndex + step))
-            list.push((vIndex + size * step))
-            list.push((vIndex + size * step + step))
+            list.push(vIndex + step)
+            list.push(vIndex + size * step)
+            list.push(vIndex + size * step + step)
           }
         } else {
           // a--d--g
@@ -203,39 +203,39 @@ export class BTTPatch {
 
           let order: number[] = []
           const top = 0
-          const bot = (size - 1) - step
+          const bot = size - 1 - step
           const left = 0
-          const right = (size - 1) - step
+          const right = size - 1 - step
 
           let mask = 0
-          mask |= (z === top ? 1 : 0)
-          mask |= (x === right ? 2 : 0)
-          mask |= (z === bot ? 4 : 0)
-          mask |= (x === left ? 8 : 0)
+          mask |= z === top ? 1 : 0
+          mask |= x === right ? 2 : 0
+          mask |= z === bot ? 4 : 0
+          mask |= x === left ? 8 : 0
           mask &= version
 
           if (mask & 1) {
-            order = order.concat([ a, e, d, d, e, g ])
+            order = order.concat([a, e, d, d, e, g])
           } else {
-            order = order.concat([ a, e, g ])
+            order = order.concat([a, e, g])
           }
 
           if (mask & 2) {
-            order = order.concat([ g, e, h, h, e, i ])
+            order = order.concat([g, e, h, h, e, i])
           } else {
-            order = order.concat([ g, e, i ])
+            order = order.concat([g, e, i])
           }
 
           if (mask & 4) {
-            order = order.concat([ i, e, f, f, e, c ])
+            order = order.concat([i, e, f, f, e, c])
           } else {
-            order = order.concat([ i, e, c ])
+            order = order.concat([i, e, c])
           }
 
           if (mask & 8) {
-            order = order.concat([ c, e, b, b, e, a ])
+            order = order.concat([c, e, b, b, e, a])
           } else {
-            order = order.concat([ c, e, a ])
+            order = order.concat([c, e, a])
           }
 
           for (const k of order) {
@@ -285,11 +285,14 @@ export class BTTPatch {
   public patchSize: number
   public center: IVec3
 
-  constructor(device: Device, options: {
-    parent: BTTRoot,
-    startX: number,
-    startY: number,
-  }) {
+  constructor(
+    device: Device,
+    options: {
+      parent: BTTRoot
+      startX: number
+      startY: number
+    },
+  ) {
     this.device = device
 
     this.parent = options.parent
@@ -303,20 +306,18 @@ export class BTTPatch {
       z: this.startY + (this.patchSize - 1) / 2,
     }
 
-    const vertices = BTTPatch.createVertices(
-          this.parent.heightMap,
-          this.startX,
-          this.startY,
-          this.patchSize + 1)
+    const vertices = BTTPatch.createVertices(this.parent.heightMap, this.startX, this.startY, this.patchSize + 1)
 
     this.mesh = new Geometry(device, {
       boundingBox: BoundingBox.createFromPointsBuffer(vertices, 0, 3 + 3 + 2),
       indexBuffer: this.parent.indexBuffers[0][0],
-      vertexBuffer: device.createVertexBuffer({
-        data: vertices,
-        dataType: 'float',
-        layout: VertexLayout.create(['position', 'normal', 'texture']),
-      }),
+      vertexBuffer: device.createVertexBuffer([
+        {
+          data: vertices,
+          dataType: 'float',
+          layout: VertexLayout.create(['position', 'normal', 'texture']),
+        },
+      ]),
     })
   }
 
@@ -341,10 +342,10 @@ export class BTTPatch {
   public updateVersion() {
     const lod = this.currentLOD
     if (lod & 1) {
-      const t = (this.getSibling( 0, -1) || this).currentLOD
-      const r = (this.getSibling( 1,  0) || this).currentLOD
-      const b = (this.getSibling( 0,  1) || this).currentLOD
-      const l = (this.getSibling(-1,  0) || this).currentLOD
+      const t = (this.getSibling(0, -1) || this).currentLOD
+      const r = (this.getSibling(1, 0) || this).currentLOD
+      const b = (this.getSibling(0, 1) || this).currentLOD
+      const l = (this.getSibling(-1, 0) || this).currentLOD
 
       let version = 0
       version |= t > lod ? 1 : version

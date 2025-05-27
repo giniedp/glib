@@ -34,7 +34,8 @@ import {
 import { Capabilities } from './Capabilities'
 import { Color } from './Color'
 import { Model, ModelOptions } from './model/Model'
-import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
+import { VertexBuffer, VertexBufferOptions } from './resources/VertexBuffer'
+import { Effect, EffectOptions } from './Effect'
 import { SpriteBatch } from './SpriteBatch'
 import { AttributeSemantic, VertexLayout } from './VertexLayout'
 
@@ -86,10 +87,10 @@ export abstract class Device<T = unknown> {
    * Updates the cull state parameters and commits the state to the GPU
    */
   public get cullState() {
-    return this.$cullState.copy()
+    return this._cullState.copy()
   }
   public set cullState(v: CullStateParams) {
-    this.$cullState.commit(v)
+    this._cullState.commit(v)
   }
 
   /**
@@ -97,10 +98,10 @@ export abstract class Device<T = unknown> {
    * Updates the blend state parameters and commits the state to the GPU.
    */
   public get blendState() {
-    return this.$blendState.copy()
+    return this._blendState.copy()
   }
   public set blendState(v: BlendStateParams) {
-    this.$blendState.commit(v)
+    this._blendState.commit(v)
   }
 
   /**
@@ -108,10 +109,10 @@ export abstract class Device<T = unknown> {
    * Updates the depth state parameters and commits the state to the GPU
    */
   public get depthState() {
-    return this.$depthState.copy()
+    return this._depthState.copy()
   }
   public set depthState(v: DepthStateParams) {
-    this.$depthState.commit(v)
+    this._depthState.commit(v)
   }
 
   /**
@@ -119,10 +120,10 @@ export abstract class Device<T = unknown> {
    * Updates the offset state parameters and commits the state to the GPU
    */
   public get offsetState() {
-    return this.$offsetState.copy()
+    return this._offsetState.copy()
   }
   public set offsetState(v: OffsetStateParams) {
-    this.$offsetState.commit(v)
+    this._offsetState.commit(v)
   }
 
   /**
@@ -130,10 +131,10 @@ export abstract class Device<T = unknown> {
    * Updates the stencil state parameters and commits the state to the GPU
    */
   public get stencilState() {
-    return this.$stencilState.copy()
+    return this._stencilState.copy()
   }
   public set stencilState(v: StencilStateParams) {
-    this.$stencilState.commit(v)
+    this._stencilState.commit(v)
   }
 
   /**
@@ -141,10 +142,10 @@ export abstract class Device<T = unknown> {
    * Updates the scissor state parameters and commits the state to the GPU
    */
   public get scissorState() {
-    return this.$scissorState.copy()
+    return this._scissorState.copy()
   }
   public set scissorState(v: ScissorStateParams) {
-    this.$scissorState.commit(v)
+    this._scissorState.commit(v)
   }
 
   /**
@@ -152,17 +153,23 @@ export abstract class Device<T = unknown> {
    * Updates the viewport state parameters and commits the state to the GPU
    */
   public get viewportState() {
-    return this.$viewportState.copy()
+    return this._viewportState.copy()
   }
   public set viewportState(v: ViewportStateParams) {
-    this.$viewportState.commit(v)
+    this._viewportState.commit(v)
   }
 
   public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
       this.defaultTextureInstance = this.createTexture({
         type: 'Texture2D',
-        source: [0x0f, 0x0f, 0x0f, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x0f, 0x0f, 0x0f, 0xff],
+        // prettier-ignore
+        source: [
+          0x0f, 0x0f, 0x0f, 0xff,
+          0x00, 0x00, 0x00, 0xff,
+          0x00, 0x00, 0x00, 0xff,
+          0x0f, 0x0f, 0x0f, 0xff,
+        ],
         width: 2,
         height: 2,
         pixelFormat: PixelFormat.RGBA,
@@ -172,21 +179,20 @@ export abstract class Device<T = unknown> {
     return this.defaultTextureInstance
   }
 
-  protected abstract $indexBuffer: Buffer
-  protected abstract $vertexBuffer: Buffer
-  protected abstract $vertexBuffers: Buffer[]
-  protected abstract $program: ShaderProgram
-  protected abstract $cullState: CullState
-  protected abstract $blendState: BlendState
-  protected abstract $depthState: DepthState
-  protected abstract $offsetState: OffsetState
-  protected abstract $stencilState: StencilState
-  protected abstract $scissorState: ScissorState
-  protected abstract $viewportState: ViewportState
+  protected abstract _indexBuffer: Buffer
+  protected abstract _vertexBuffer: VertexBuffer
+  protected abstract _program: ShaderProgram
+  protected abstract _cullState: CullState
+  protected abstract _blendState: BlendState
+  protected abstract _depthState: DepthState
+  protected abstract _offsetState: OffsetState
+  protected abstract _stencilState: StencilState
+  protected abstract _scissorState: ScissorState
+  protected abstract _viewportState: ViewportState
 
   protected quadIndexBuffer: Buffer
-  protected quadVertexBuffer: Buffer
-  protected quadVertexBufferFlipped: Buffer
+  protected quadVertexBuffer: VertexBuffer
+  protected quadVertexBufferFlipped: VertexBuffer
 
   protected $vertexAttribArrayState: VertexAttribArrayState
   protected registeredDepthBuffers: DepthBuffer[] = []
@@ -245,16 +251,32 @@ export abstract class Device<T = unknown> {
       data: [0, 3, 1, 0, 2, 3],
       dataType: 'ushort',
     })
-    this.quadVertexBufferFlipped ||= this.createVertexBuffer({
-      data: [-1, 1, 0, 0, 0, 1, 1, 0, 1, 0, -1, -1, 0, 0, 1, 1, -1, 0, 1, 1],
-      layout: this.createVertexLayout(['position', 'texture']),
-      dataType: 'float',
-    })
-    this.quadVertexBuffer ||= this.createVertexBuffer({
-      data: [-1, 1, 0, 0, 1, 1, 1, 0, 1, 1, -1, -1, 0, 0, 0, 1, -1, 0, 1, 0],
-      layout: this.createVertexLayout(['position', 'texture']),
-      dataType: 'float',
-    })
+    this.quadVertexBufferFlipped ||= this.createVertexBuffer([
+      {
+        // prettier-ignore
+        data: [
+          -1,  1, 0, /* uv */ 0, 0,
+           1,  1, 0, /* uv */ 1, 0,
+          -1, -1, 0, /* uv */ 0, 1,
+           1, -1, 0, /* uv */ 1, 1
+        ],
+        layout: this.createVertexLayout(['position', 'texture']),
+        dataType: 'float',
+      },
+    ])
+    this.quadVertexBuffer ||= this.createVertexBuffer([
+      {
+        // prettier-ignore
+        data: [
+          -1,  1, 0, /* uv */ 0, 1,
+           1,  1, 0, /* uv */ 1, 1,
+          -1, -1, 0, /* uv */ 0, 0,
+           1, -1, 0, /* uv */ 1, 0,
+        ],
+        layout: this.createVertexLayout(['position', 'texture']),
+        dataType: 'float',
+      },
+    ])
 
     this.indexBuffer = this.quadIndexBuffer
     this.vertexBuffer = flipY ? this.quadVertexBufferFlipped : this.quadVertexBuffer
@@ -289,25 +311,14 @@ export abstract class Device<T = unknown> {
   public abstract setRenderTargets(...targets: Texture[]): this
 
   /**
-   * Sets multiple vertex buffers
-   *
-   * @remarks
-   * Restricts the `vertexBuffer` property to only this set of buffers.
-   */
-  public set vertexBuffers(buffer: Buffer[]) {
-    this.$vertexBuffers = buffer
-    this.vertexBuffer = null
-  }
-
-  /**
    * Gets the currently active vertex buffer
    */
-  public abstract get vertexBuffer(): Buffer
+  public abstract get vertexBuffer(): VertexBuffer
 
   /**
    * Sets and activates a buffer as the currently active vertex buffer
    */
-  public abstract set vertexBuffer(buffer: Buffer)
+  public abstract set vertexBuffer(buffer: VertexBuffer)
 
   /**
    * Gets the currently active index buffer
@@ -354,7 +365,7 @@ export abstract class Device<T = unknown> {
    * Creates a new Buffer of type VertexBuffer. Overrides the type option
    * before it calls the Buffer constructor with given options.
    */
-  public abstract createVertexBuffer(options: BufferOptions): Buffer
+  public abstract createVertexBuffer(options: VertexBufferOptions): VertexBuffer
 
   /**
    * Creates a new Shader
@@ -423,8 +434,8 @@ export abstract class Device<T = unknown> {
   public createModel(options: ModelOptions): Model {
     return new Model(this, options)
   }
-  public createEffect(options: ShaderEffectOptions): ShaderEffect {
-    return new ShaderEffect(this, options)
+  public createEffect(options: EffectOptions): Effect {
+    return new Effect(this, options)
   }
 
   /**

@@ -1,4 +1,4 @@
-import './loader'
+// import './loader'
 
 export * from './chunks'
 export * from './lights'

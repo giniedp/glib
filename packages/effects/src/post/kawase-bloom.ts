@@ -1,4 +1,4 @@
-import { BlendState, Device, ShaderEffect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
+import { BlendState, Device, Effect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
 import { POST_KAWASE_BLOOM } from './kawase-bloom.program'
 
 /**
@@ -26,7 +26,7 @@ export class PostKawaseBloomEffect {
    * Determines whether the post effect is ready to render
    */
   public get isReady() {
-    return !!this.effect
+    return this.effect?.isReady()
   }
   /**
    * The graphics device
@@ -66,7 +66,7 @@ export class PostKawaseBloomEffect {
    */
   public outputTexture: Texture
 
-  public readonly effect: ShaderEffect
+  public readonly effect: Effect
 
   constructor(device: Device, options: PostKawaseBloomOptions) {
     this.device = device

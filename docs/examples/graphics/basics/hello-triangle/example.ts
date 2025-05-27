@@ -36,23 +36,25 @@ export default function run(canvas: HTMLCanvasElement) {
   // The `layout` option describes how the `data` is structured.
   // The vertex shader expects a vertex attribute with the name `vPosition`
   // of type `vec3` which in the end consists of `3` elements of type `float`
-  const vertices = device.createVertexBuffer({
-    layout: {
-      vPosition: {
-        type: 'float',
-        offset: 0,
-        elements: 3,
+  const vertices = device.createVertexBuffer([
+    {
+      layout: {
+        vPosition: {
+          type: 'float',
+          offset: 0,
+          elements: 3,
+        },
       },
+      // The `data` is simply a sequence of floats.
+      // Each 3 floats define a vertex position
+      // prettier-ignore
+      data: [
+        -0.5, -0.5, 0.0, // vertex 1
+        0.5, -0.5, 0.0, // vertex 2
+        0.0,  0.5, 0.0, // vertex 3
+      ],
     },
-    // The `data` is simply a sequence of floats.
-    // Each 3 floats define a vertex position
-    // prettier-ignore
-    data: [
-      -0.5, -0.5, 0.0, // vertex 1
-       0.5, -0.5, 0.0, // vertex 2
-       0.0,  0.5, 0.0, // vertex 3
-    ],
-  })
+  ])
 
   // Start a loop function.
   return loop(() => {

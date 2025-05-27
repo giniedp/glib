@@ -1,1 +1,2 @@
-export * from './mtl'
+export * from './format'
+export * from './MTLLoader'

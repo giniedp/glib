@@ -1,6 +1,6 @@
-import { glsl, ShaderFxDocument } from '@gglib/graphics'
+import { glsl, EffectDocument } from '@gglib/graphics'
 
-export const POST_TONEMAP: ShaderFxDocument = {
+export const POST_TONEMAP: EffectDocument = {
   name: 'tonemapping',
   program: glsl`
     precision highp float;

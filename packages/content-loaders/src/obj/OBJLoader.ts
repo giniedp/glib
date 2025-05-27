@@ -1,93 +1,104 @@
-import { loader, Loader, resolveUri } from '@gglib/content'
-import {
-  GeometryBuilder,
-  GeometryOptions,
-  Material,
-  MaterialOptions,
-  Model,
-  ModelOptions,
-  VertexLayout,
-} from '@gglib/graphics'
-
-import { PipelineContext } from '@gglib/content'
+import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
+import { GeometryBuilder, GeometryOptions, MaterialOptions, VertexLayout } from '@gglib/graphics'
 import { addToArraySet } from '@gglib/utils'
 import { FaceElement, OBJ, VertexTextureNormalRef } from './format'
 
-/**
- * Downloads text from source, parses it using {@link OBJ.parse} and converts into {@link ModelOptions}.
- * @public
- * @remarks
- * This loader consults the `OBJ` -> `ModelOptions.Options` loader if available.
- */
-export const loadObjToModelOptions: Loader<string, ModelOptions> = loader({
-  input: ['.obj', 'application/x-obj'],
-  output: Model.Options,
-  handle: async (_, context): Promise<ModelOptions> => {
-    const content = (await context.manager.downloadText(context.source)).content
-    const data = OBJ.parse(content)
-    if (context.pipeline.canLoad(OBJ, Model.Options)) {
-      const result = await context.pipeline.run(OBJ, Model.Options, data, context)
-      if (result) {
-        return result
-      }
-    }
-    return convertData(data, context)
-  },
-})
-
-async function convertData(data: OBJ, context: PipelineContext) {
-  const groups = new Map<string, Map<number, FaceElement[]>>()
-  const mtllibs: string[] = []
-  const usemtls: string[] = []
-
-  for (const face of data.f) {
-    for (const mtl of face.state.mtllib || []) {
-      addToArraySet(mtllibs, mtl)
-    }
-    if (face.state.usemtl) {
-      addToArraySet(usemtls, face.state.usemtl)
-    }
-    for (const g of face.group.g) {
-      const s = face.group.s
-      if (!groups.has(g)) {
-        groups.set(g, new Map<number, FaceElement[]>())
-      }
-      const group = groups.get(g)
-      if (!group.has(s)) {
-        group.set(s, [])
-      }
-      const sGroup = group.get(s)
-      sGroup.push(face)
-    }
-  }
-
-  const materials = (await loadMtllibs(mtllibs, context)).filter((mtl) => {
-    return usemtls.indexOf(mtl.name) >= 0
-  })
-  const mtlNames = materials.map((it) => it.name)
-  const parts: GeometryOptions[] = []
-  groups.forEach((group, g) => {
-    group.forEach((faces, s) => {
-      parts.push(...buildGroup(data, faces, s, mtlNames))
+export class OBJLoader implements AssetLoader {
+  public static extensions = ['.obj']
+  public static mimeTypes = ['application/x-obj']
+  public static register() {
+    ContentLoader.registerLoader({
+      extensions: OBJLoader.extensions,
+      mimeTypes: OBJLoader.mimeTypes,
+      loader: OBJLoader,
     })
-  })
-
-  return {
-    meshes: [
-      {
-        materials: materials,
-        parts: parts,
-      },
-    ],
   }
-}
 
-async function loadMtllibs(files: string[], context: PipelineContext) {
-  return Promise.all(files.map((file) => loadMtllib(file, context))).then((it) => it.flat())
-}
+  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+    const response = await context.content.fetch(url, {
+      responseType: 'text',
+    })
+    const data = OBJ.parse(response.body)
+    return this.convert(data, context)
+  }
 
-function loadMtllib(file: string, context: PipelineContext) {
-  return context.manager.load<MaterialOptions[]>(resolveUri(file, context), Material.OptionsArray)
+  public async convert(document: OBJ, context: LoaderContext): Promise<AssetContainer> {
+    const result: AssetContainer = {
+      source: context.assetUrl,
+    }
+
+    const groups = new Map<string, Map<number, FaceElement[]>>()
+    const mtllibs: string[] = []
+    const usemtls: string[] = []
+
+    for (const face of document.f) {
+      for (const mtl of face.state.mtllib || []) {
+        addToArraySet(mtllibs, mtl)
+      }
+      if (face.state.usemtl) {
+        addToArraySet(usemtls, face.state.usemtl)
+      }
+      for (const g of face.group.g) {
+        const s = face.group.s
+        if (!groups.has(g)) {
+          groups.set(g, new Map<number, FaceElement[]>())
+        }
+        const group = groups.get(g)
+        if (!group.has(s)) {
+          group.set(s, [])
+        }
+        const sGroup = group.get(s)
+        sGroup.push(face)
+      }
+    }
+
+    const materials: MaterialOptions[] = await this.loadMaterialLibs(mtllibs, context)
+    const mtlNames = materials.map((it) => it.name)
+    const geometries: GeometryOptions[] = []
+    groups.forEach((group, g) => {
+      group.forEach((faces, s) => {
+        geometries.push(...buildGroup(document, faces, s, mtlNames))
+      })
+    })
+
+    result.materials = materials
+    result.meshes = [
+      {
+        parts: geometries,
+      },
+    ]
+    result.nodes = [
+      {
+        mesh: 0,
+      },
+    ]
+    result.scenes = [
+      {
+        nodes: [0],
+      },
+    ]
+    result.scene = 0
+    return result
+  }
+
+  public async loadMaterialLibs(libs: string[], context: LoaderContext): Promise<MaterialOptions[]> {
+    const tasks: Promise<MaterialOptions[]>[] = []
+    for (const lib of libs) {
+      const url = context.content.resolveUrl(lib, context.assetUrl)
+      tasks.push(
+        context.content
+          .loadAsset(url, {
+            baseUrl: context.assetUrl,
+            signal: context.signal,
+            type: '.mtl',
+          })
+          .then((asset) => {
+            return asset.materials || []
+          }),
+      )
+    }
+    return Promise.all(tasks).then((results) => results.flat())
+  }
 }
 
 function readVertex<T>(data: OBJ, element: VertexTextureNormalRef, target: T) {

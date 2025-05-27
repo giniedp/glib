@@ -1,6 +1,8 @@
 import { getOrCreateCanvas, Log, removeFromArrayUnstable } from '@gglib/utils'
-
-import { BufferType, PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
+import { Color, RGBA_FORMAT } from '../Color'
+import { Device } from '../Device'
+import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
+import { Model, ModelOptions } from '../model/Model'
 import {
   Buffer,
   BufferOptions,
@@ -13,15 +15,14 @@ import {
   Texture,
   TextureOptions,
 } from '../resources'
-import { VertexAttribArrayState } from '../states'
-
-import { Color, RGBA_FORMAT } from '../Color'
-import { Device } from '../Device'
-import { Model, ModelOptions } from '../model/Model'
-import { ShaderEffect, ShaderEffectOptions } from '../ShaderEffect'
+import { VertexBuffer, VertexBufferOptions } from '../resources/VertexBuffer'
+import { Effect, EffectOptions } from '../Effect'
 import { SpriteBatch } from '../SpriteBatch'
+import { VertexAttribArrayState } from '../states'
 import { AttributeSemantic, VertexLayout } from '../VertexLayout'
-
+import { CapabilitiesGL } from './CapabilitiesGL'
+import { BufferGL, DepthBufferGL, FrameBufferGL, ShaderGL, ShaderProgramGL, TextureGL } from './resources'
+import { VertexBufferGL } from './resources/VertexBufferGL'
 import {
   BlendStateGL,
   CullStateGL,
@@ -33,9 +34,6 @@ import {
   TextureUnitStateGL,
   ViewportStateGL,
 } from './states'
-
-import { CapabilitiesGL } from './CapabilitiesGL'
-import { BufferGL, DepthBufferGL, FrameBufferGL, ShaderGL, ShaderProgramGL, TextureGL } from './resources'
 import { isWebGL2 } from './utils'
 
 /**
@@ -142,17 +140,16 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     return isWebGL2(this.context)
   }
 
-  protected $program: ShaderProgramGL
-  protected $indexBuffer: BufferGL
-  protected $vertexBuffer: BufferGL
-  protected $vertexBuffers: BufferGL[]
-  protected $cullState: CullStateGL
-  protected $blendState: BlendStateGL
-  protected $depthState: DepthStateGL
-  protected $offsetState: OffsetStateGL
-  protected $stencilState: StencilStateGL
-  protected $scissorState: ScissorStateGL
-  protected $viewportState: ViewportStateGL
+  protected _program: ShaderProgramGL
+  protected _indexBuffer: BufferGL
+  protected _vertexBuffer: VertexBufferGL
+  protected _cullState: CullStateGL
+  protected _blendState: BlendStateGL
+  protected _depthState: DepthStateGL
+  protected _offsetState: OffsetStateGL
+  protected _stencilState: StencilStateGL
+  protected _scissorState: ScissorStateGL
+  protected _viewportState: ViewportStateGL
 
   protected currentFrameBuffer: FrameBufferGL
   protected reusableFrameBuffer: FrameBufferGL
@@ -200,13 +197,13 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     this.context = getOrCreateContext(this.canvas, options)
     this.capabilities = new CapabilitiesGL(this)
 
-    this.$cullState = new CullStateGL(this).commit(CullStateGL.Default).resolve()
-    this.$blendState = new BlendStateGL(this).commit(BlendStateGL.Default).resolve()
-    this.$depthState = new DepthStateGL(this).commit(DepthStateGL.Default).resolve()
-    this.$offsetState = new OffsetStateGL(this).commit(OffsetStateGL.Default).resolve()
-    this.$stencilState = new StencilStateGL(this).commit(StencilStateGL.Default).resolve()
-    this.$scissorState = new ScissorStateGL(this).commit(ScissorStateGL.Default).resolve()
-    this.$viewportState = new ViewportStateGL(this)
+    this._cullState = new CullStateGL(this).commit(CullStateGL.Default).resolve()
+    this._blendState = new BlendStateGL(this).commit(BlendStateGL.Default).resolve()
+    this._depthState = new DepthStateGL(this).commit(DepthStateGL.Default).resolve()
+    this._offsetState = new OffsetStateGL(this).commit(OffsetStateGL.Default).resolve()
+    this._stencilState = new StencilStateGL(this).commit(StencilStateGL.Default).resolve()
+    this._scissorState = new ScissorStateGL(this).commit(ScissorStateGL.Default).resolve()
+    this._viewportState = new ViewportStateGL(this)
     this.$vertexAttribArrayState = new VertexAttribArrayState(this)
 
     this.textureUnits.length = Number(this.capabilities.maxTextureUnits)
@@ -260,16 +257,17 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     elementOffset?: number,
     elementCount?: number,
   ): this {
-    const iBuffer = this.$indexBuffer
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program as ShaderProgramGL
+    const iBuffer = this._indexBuffer
     if (!iBuffer) {
       throw new Error(`device.indexBuffer must be set before calling drawIndexedPrimitives()`)
     }
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
+
+    const vBuffer = this._vertexBuffer
+    if (!vBuffer) {
       throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawIndexedPrimitives()`)
     }
+
+    const program = this._program as ShaderProgramGL
     if (!program) {
       throw new Error(`device.program must be set before calling drawIndexedPrimitives()`)
     }
@@ -280,10 +278,10 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     elementOffset = (elementOffset || 0) * iBuffer.stride
     elementCount = elementCount || iBuffer.elementCount
 
-    program.bindAttribPointerAndLocation(vBuffer || vBuffers)
+    vBuffer.bind(iBuffer, program)
     this.context.drawElements(type, elementCount, dataType, elementOffset)
     this.stats.drawCalls++
-
+    vBuffer.unbind()
     return this
   }
 
@@ -296,21 +294,23 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     offset?: number,
     count?: number,
   ): this {
-    const iBuffer = this.$indexBuffer
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program as ShaderProgramGL
+    const iBuffer = this._indexBuffer
     if (!iBuffer) {
       throw new Error(`device.indexBuffer must be set before calling drawInstancedPrimitives()`)
     }
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
+
+    const vBuffer = this._vertexBuffer
+    if (!vBuffer) {
       throw new Error(
         `device.vertexBuffer or device.vertexBuffers must be set before calling drawInstancedPrimitives()`,
       )
     }
+
+    const program = this._program as ShaderProgramGL
     if (!program) {
       throw new Error(`device.program must be set before calling drawInstancedPrimitives()`)
     }
+
     if (isWebGL2(this.context)) {
       const dataType = iBuffer.dataType
       const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
@@ -319,8 +319,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
       count = count || iBuffer.elementCount
       instanceCount = instanceCount || 1
 
-      program.bindAttribPointerAndLocation(vBuffer || vBuffers)
-
+      vBuffer.bind(iBuffer, program)
       this.context.drawElementsInstanced(type, count, dataType, offset * iBuffer.stride, instanceCount)
       this.stats.drawCalls++
     } else {
@@ -334,21 +333,21 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
   public drawPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number): this {
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program as ShaderProgramGL
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
+    const vBuffer = this._vertexBuffer
+    if (!vBuffer) {
       throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawPrimitives()`)
     }
+
+    const program = this._program as ShaderProgramGL
     if (!program) {
       throw new Error(`device.program must be set before calling drawPrimitives()`)
     }
 
     const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
-    count = count || (vBuffer || vBuffers[0]).elementCount
+    count = count || vBuffer.buffers[0].elementCount
     offset = offset || 0
 
-    program.bindAttribPointerAndLocation(vBuffer || vBuffers)
+    vBuffer.bind(null, program)
     this.context.drawArrays(type, offset, count)
     this.stats.drawCalls++
     return this
@@ -375,7 +374,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
       this.canvas.width = displayWidth
       this.canvas.height = displayHeight
 
-      let state = this.$viewportState
+      let state = this._viewportState
       state.x = 0
       state.y = 0
       state.width = this.context.drawingBufferWidth
@@ -480,79 +479,63 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   }
 
   /**
-   * Sets multiple vertex buffers
-   *
-   * @remarks
-   * Restricts the `vertexBuffer` property to only this set of buffers.
-   */
-  public set vertexBuffers(buffer: Buffer[]) {
-    this.$vertexBuffers = buffer as BufferGL[]
-    this.vertexBuffer = null
-  }
-
-  /**
    * Gets the currently active vertex buffer
    */
-  public get vertexBuffer(): Buffer {
-    return this.$vertexBuffer
+  public get vertexBuffer(): VertexBuffer {
+    return this._vertexBuffer
   }
   /**
    * Sets and activates a buffer as the currently active vertex buffer
    */
-  public set vertexBuffer(buffer: Buffer) {
-    if (this.$vertexBuffer !== buffer) {
-      if (buffer && this.$vertexBuffers && this.$vertexBuffers.indexOf(buffer as BufferGL) === -1) {
-        throw new Error('vertexBuffer is not part of the vertexBuffers list')
-      }
-      this.context.bindBuffer(BufferType.VertexBuffer, buffer ? (buffer as BufferGL).resource : null)
-      this.$vertexBuffer = buffer as BufferGL
-    }
+  public set vertexBuffer(buffer: VertexBuffer) {
+    this._vertexBuffer = buffer as VertexBufferGL
   }
 
   /**
    * Gets the currently active index buffer
    */
   public get indexBuffer(): Buffer {
-    return this.$indexBuffer
+    return this._indexBuffer
   }
   /**
    * Sets and activates a buffer as the currently active index buffer
    */
   public set indexBuffer(buffer: Buffer) {
-    if (this.$indexBuffer !== buffer) {
-      this.context.bindBuffer(BufferType.IndexBuffer, buffer ? (buffer as BufferGL).resource : null)
-      this.$indexBuffer = buffer as BufferGL
-    }
+    this._indexBuffer = buffer as BufferGL
   }
 
   /**
    * Gets the currently active shader program
    */
   public get program(): ShaderProgram {
-    return this.$program
+    return this._program
   }
+
   /**
    * Sets and activates a program as the currently active program
    */
   public set program(program: ShaderProgram) {
-    if (this.$program !== program) {
+    if (this._program !== program) {
       let handle = program ? (program as ShaderProgramGL).resource : null
       this.context.useProgram(handle)
-      this.$program = program as ShaderProgramGL
+      this._program = program as ShaderProgramGL
     }
   }
+
   /**
    * Gets the current width of the drawing buffer
    */
   public get drawingBufferWidth() {
     return this.context.drawingBufferWidth
   }
+
   /**
    * Gets the current height of the drawing buffer
    */
   public get drawingBufferHeight() {
     return this.context.drawingBufferHeight
   }
+
   /**
    * Gets the aspect ratio of the drawing buffer
    */
@@ -611,9 +594,8 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    * Creates a new Buffer of type VertexBuffer. Overrides the type option
    * before it calls the Buffer constructor with given options.
    */
-  public createVertexBuffer(options: BufferOptions): BufferGL {
-    options.type = 'VertexBuffer'
-    return new BufferGL(this, options)
+  public createVertexBuffer(options: VertexBufferOptions): VertexBufferGL {
+    return new VertexBufferGL(this, options)
   }
 
   /**
@@ -724,8 +706,8 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     return new Model(this, options)
   }
 
-  public createEffect(options: ShaderEffectOptions): ShaderEffect {
-    return new ShaderEffect(this, options)
+  public createEffect(options: EffectOptions): Effect {
+    return new Effect(this, options)
   }
 
   public unsetSamplersUsedAsAttachments() {

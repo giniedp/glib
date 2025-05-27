@@ -1,4 +1,4 @@
-import { Device, Material, ShaderEffect, Texture, MaterialParameters } from '@gglib/graphics'
+import { Device, Material, Effect, Texture, MaterialParameters } from '@gglib/graphics'
 import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
 import {
   ShadeFunctionBlinn,
@@ -590,7 +590,7 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   private defines: DefaultProgramDefs = {}
   private lights: LightParams[] = []
   private hasChanged = true
-  protected _effect: ShaderEffect
+  protected _effect: Effect
 
   constructor(device: Device) {
     super(device, {

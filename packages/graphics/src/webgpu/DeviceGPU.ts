@@ -41,8 +41,10 @@ import { TextureUnitStateGPU } from './states/TextureUnitStateGPU'
 // tslint:disable-next-line: no-submodule-imports
 // TODO: dynamic import
 // import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel-onefile/glslang'
-import { toPrimitiveTopology } from './utils/primitiveTopology'
 import { Capabilities } from '../Capabilities'
+import { VertexBuffer, VertexBufferOptions } from '../resources/VertexBuffer'
+import { VertexBufferGPU } from './resources/VertexBufferGPU'
+import { toPrimitiveTopology } from './utils/primitiveTopology'
 
 /**
  * Constructor options for the {@link Device}
@@ -117,17 +119,16 @@ export class DeviceGPU extends Device<any> {
 
   public readonly msaaSampleCount = 4
 
-  protected $indexBuffer: BufferGPU
-  protected $vertexBuffer: BufferGPU
-  protected $vertexBuffers: BufferGPU[]
-  protected $program: ShaderProgramGPU
-  protected $cullState: CullStateGPU
-  protected $blendState: BlendStateGPU
-  protected $depthState: DepthStateGPU
-  protected $offsetState: OffsetStateGPU
-  protected $stencilState: StencilStateGPU
-  protected $scissorState: ScissorStateGPU
-  protected $viewportState: ViewportStateGPU
+  protected _indexBuffer: BufferGPU
+  protected _vertexBuffer: VertexBufferGPU
+  protected _program: ShaderProgramGPU
+  protected _cullState: CullStateGPU
+  protected _blendState: BlendStateGPU
+  protected _depthState: DepthStateGPU
+  protected _offsetState: OffsetStateGPU
+  protected _stencilState: StencilStateGPU
+  protected _scissorState: ScissorStateGPU
+  protected _viewportState: ViewportStateGPU
 
   private renderCommandEncoder: GPUCommandEncoder
   private renderPassEncoder: GPURenderPassEncoder
@@ -158,13 +159,13 @@ export class DeviceGPU extends Device<any> {
     this.canvas = getOrCreateCanvas(options.canvas)
     this.context = getOrCreateContext(this.canvas, options)
 
-    this.$cullState = new CullStateGPU().commit(CullState.Default)
-    this.$blendState = new BlendStateGPU().commit(BlendState.Default)
-    this.$depthState = new DepthStateGPU().commit(DepthState.Default)
-    this.$offsetState = new OffsetStateGPU().commit(OffsetState.Default)
-    this.$stencilState = new StencilStateGPU().commit(StencilState.Default)
-    this.$scissorState = new ScissorStateGPU().commit(ScissorState.Default)
-    this.$viewportState = new ViewportStateGPU()
+    this._cullState = new CullStateGPU().commit(CullState.Default)
+    this._blendState = new BlendStateGPU().commit(BlendState.Default)
+    this._depthState = new DepthStateGPU().commit(DepthState.Default)
+    this._offsetState = new OffsetStateGPU().commit(OffsetState.Default)
+    this._stencilState = new StencilStateGPU().commit(StencilState.Default)
+    this._scissorState = new ScissorStateGPU().commit(ScissorState.Default)
+    this._viewportState = new ViewportStateGPU()
     this.$vertexAttribArrayState = new VertexAttribArrayState(this)
 
     this.textureUnits.length = Number(24) // TODO:
@@ -234,16 +235,17 @@ export class DeviceGPU extends Device<any> {
     elementOffset?: number,
     elementCount?: number,
   ): this {
-    const iBuffer = this.$indexBuffer
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program
+    const iBuffer = this._indexBuffer
     if (!iBuffer) {
       throw new Error(`device.indexBuffer must be set before calling drawIndexedPrimitives()`)
     }
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
+
+    const vBuffer = this._vertexBuffer
+    if (!vBuffer) {
       throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawIndexedPrimitives()`)
     }
+
+    const program = this._program
     if (!program) {
       throw new Error(`device.program must be set before calling drawIndexedPrimitives()`)
     }
@@ -253,6 +255,7 @@ export class DeviceGPU extends Device<any> {
 
     // TODO:
     this.renderEncoder.setIndexBuffer(iBuffer.resource)
+    const vBuffers = vBuffer.buffers as BufferGPU[]
     for (let i = 0; i < vBuffers.length; i++) {
       this.renderEncoder.setVertexBuffer(i, vBuffers[i].resource)
     }
@@ -282,18 +285,19 @@ export class DeviceGPU extends Device<any> {
     offset?: number,
     count?: number,
   ): this {
-    const iBuffer = this.$indexBuffer
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program
+    const iBuffer = this._indexBuffer
     if (!iBuffer) {
       throw new Error(`device.indexBuffer must be set before calling drawInstancedPrimitives()`)
     }
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
+
+    const vBuffer = this._vertexBuffer
+    if (!vBuffer) {
       throw new Error(
         `device.vertexBuffer or device.vertexBuffers must be set before calling drawInstancedPrimitives()`,
       )
     }
+
+    const program = this._program
     if (!program) {
       throw new Error(`device.program must be set before calling drawInstancedPrimitives()`)
     }
@@ -310,26 +314,23 @@ export class DeviceGPU extends Device<any> {
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
   public drawPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number): this {
-    const vBuffer = this.$vertexBuffer
-    const vBuffers = this.$vertexBuffers
-    const program = this.$program
-    if (!vBuffer && !vBuffers && !vBuffers.length) {
+    const vBuffer = this._vertexBuffer
+    if (!vBuffer) {
       throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawPrimitives()`)
     }
+
+    const program = this._program
     if (!program) {
       throw new Error(`device.program must be set before calling drawPrimitives()`)
     }
 
-    count = count || (vBuffer || vBuffers[0]).elementCount
+    count = count || vBuffer.buffers[0].elementCount
     offset = offset || 0
     // TODO:
     // this.renderEncoder.setIndexBuffer(iBuffer.handle)
-    if (vBuffers) {
-      for (let i = 0; i < vBuffers.length; i++) {
-        this.renderEncoder.setVertexBuffer(i, vBuffers[i].resource)
-      }
-    } else if (vBuffer) {
-      this.renderEncoder.setVertexBuffer(0, vBuffer.resource)
+    const vBuffers = vBuffer.buffers as BufferGPU[]
+    for (let i = 0; i < vBuffers.length; i++) {
+      this.renderEncoder.setVertexBuffer(i, vBuffers[i].resource)
     }
     this.renderEncoder.setPipeline(
       this.device.createRenderPipeline({
@@ -339,16 +340,16 @@ export class DeviceGPU extends Device<any> {
         primitiveTopology: toPrimitiveTopology(valueOfPrimitiveType(primitiveType)),
         colorStates: [
           {
-            ...this.$blendState.gpuState,
+            ...this._blendState.gpuState,
             format: 'bgra8unorm' as GPUTextureFormat,
           },
         ],
         depthStencilState: {
-          ...this.$depthState.gpuState,
+          ...this._depthState.gpuState,
           format: 'depth24plus-stencil8',
         },
         rasterizationState: {
-          ...this.$cullState.gpuState,
+          ...this._cullState.gpuState,
         },
         vertexState: {
           vertexBuffers: [
@@ -435,7 +436,7 @@ export class DeviceGPU extends Device<any> {
       this.setRenderTarget(null)
     }
 
-    const viewport = this.$viewportState
+    const viewport = this._viewportState
     viewport.x = 0
     viewport.y = 0
     viewport.width = displayWidth
@@ -488,53 +489,42 @@ export class DeviceGPU extends Device<any> {
   }
 
   /**
-   * Sets multiple vertex buffers
-   *
-   * @remarks
-   * Restricts the `vertexBuffer` property to only this set of buffers.
-   */
-  public set vertexBuffers(buffer: Buffer[]) {
-    this.$vertexBuffers = buffer as BufferGPU[]
-    this.vertexBuffer = null
-  }
-
-  /**
    * Gets the currently active vertex buffer
    */
-  public get vertexBuffer(): Buffer {
-    return this.$vertexBuffer as BufferGPU
+  public get vertexBuffer(): VertexBuffer {
+    return this._vertexBuffer as VertexBufferGPU
   }
   /**
    * Sets and activates a buffer as the currently active vertex buffer
    */
-  public set vertexBuffer(buffer: Buffer) {
-    this.$vertexBuffer = buffer as BufferGPU
+  public set vertexBuffer(buffer: VertexBuffer) {
+    this._vertexBuffer = buffer as VertexBufferGPU
   }
 
   /**
    * Gets the currently active index buffer
    */
   public get indexBuffer(): Buffer {
-    return this.$indexBuffer
+    return this._indexBuffer
   }
   /**
    * Sets and activates a buffer as the currently active index buffer
    */
   public set indexBuffer(buffer: Buffer) {
-    this.$indexBuffer = buffer as BufferGPU
+    this._indexBuffer = buffer as BufferGPU
   }
 
   /**
    * Gets the currently active shader program
    */
   public get program(): ShaderProgram {
-    return this.$program
+    return this._program
   }
   /**
    * Sets and activates a program as the currently active program
    */
   public set program(program: ShaderProgram) {
-    this.$program = program as ShaderProgramGPU
+    this._program = program as ShaderProgramGPU
   }
 
   /**
@@ -570,9 +560,8 @@ export class DeviceGPU extends Device<any> {
    * Creates a new Buffer of type VertexBuffer. Overrides the type option
    * before it calls the Buffer constructor with given options.
    */
-  public createVertexBuffer(options: BufferOptions): BufferGPU {
-    options.type = 'VertexBuffer'
-    return new BufferGPU(this, options)
+  public createVertexBuffer(options: VertexBufferOptions): VertexBufferGPU {
+    return new VertexBufferGPU(this, options)
   }
 
   /**

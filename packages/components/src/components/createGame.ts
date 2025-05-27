@@ -1,4 +1,4 @@
-import { ContentManager, IManagerOptions } from '@gglib/content'
+import { ContentLoader } from '@gglib/content'
 import { AbstractType, GameComponent, GameEntity, GameProvider, GameSystem, Type } from '@gglib/ecs'
 import { Device, DeviceGLOptions, DeviceGPUOptions, createDevice } from '@gglib/graphics'
 import { Renderer } from '@gglib/render'
@@ -19,7 +19,7 @@ export interface CreateGameOptions {
   /**
    * A content manager instance or options for its constructor
    */
-  content?: IManagerOptions | ContentManager
+  content?: ContentLoader
 
   /**
    * A game loop instance or options for its constructor
@@ -59,9 +59,9 @@ export function createGame(options: CreateGameOptions) {
 
   // prettier-ignore
   const content =
-    options.content instanceof ContentManager
+    options.content instanceof ContentLoader
       ? options.content
-      : new ContentManager(device, options.content)
+      : new ContentLoader(device)
 
   // prettier-ignore
   const gameLoop =

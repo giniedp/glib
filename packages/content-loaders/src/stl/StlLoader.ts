@@ -1,16 +1,13 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { PROGRAM_BASIC, beginGeometry } from '@gglib/graphics'
+import { beginGeometry } from '@gglib/graphics'
 import { STL } from './format'
 
-class STLLoader implements AssetLoader {
+export class STLLoader implements AssetLoader {
   public static extensions = ['.stl']
-
+  public static mimeTypes = []
+  public static loader = STLLoader
   public static register() {
-    ContentLoader.register({
-      extensions: STLLoader.extensions,
-      mimeTypes: [],
-      loader: STLLoader,
-    })
+    ContentLoader.registerLoader(STLLoader)
   }
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
@@ -59,14 +56,9 @@ class STLLoader implements AssetLoader {
     builder.closeMesh({
       materials: [
         {
+          effectName: 'BasicEffect',
           parameters: {
             color: [1, 1, 1, 1],
-          },
-          effect: {
-            program: {
-              vertexShader: PROGRAM_BASIC.vertexShader,
-              fragmentShader: PROGRAM_BASIC.fragmentShader,
-            },
           },
         },
       ],
@@ -78,6 +70,3 @@ class STLLoader implements AssetLoader {
     }
   }
 }
-
-STLLoader.register()
-export { STLLoader }

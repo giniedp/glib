@@ -1,7 +1,8 @@
 import { TypeToken, uuid } from '@gglib/utils'
 import { Device } from './Device'
-import { ShaderProgram, ShaderUniformValue } from './resources'
-import { ShaderEffect, ShaderEffectOptions } from './ShaderEffect'
+import { Effect, EffectOptions } from './Effect'
+import { PROGRAM_BASIC } from './programs'
+import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
 
 /**
  * @public
@@ -13,49 +14,65 @@ export type MaterialParameters = Record<string, ShaderUniformValue>
  *
  * @public
  */
-export interface MaterialOptions<E extends ShaderEffectOptions | ShaderEffect = ShaderEffectOptions | ShaderEffect> {
+export type MaterialOptions = MaterialEffectOptions | MaterialEffectNameOptions | MaterialProgramOptions
+
+export interface MaterialOptionsBase<Parameters extends MaterialParameters = MaterialParameters> {
   /**
    * The descriptive name of this effect
    */
   name?: string
 
   /**
-   * The effect instance or constructor options for {@link ShaderEffect}
-   */
-  effect?: E
-
-  /**
-   * The uri of the effect file.
-   *
-   * @remarks
-   * Can not be resolved inside the {@link Material} constructor.
-   * Intended to be used by preprocessing tools e.g. content pipeline.
-   */
-  effectUri?: string
-
-  /**
-   * The technique name of the effect
-   *
-   * @remarks
-   * Is not used inside the {@link Material} constructor.
-   * Intended to be used by preprocessing tools e.g. content pipeline.
-   */
-  technique?: string
-
-  /**
    * Effect parameters to be applied before rendering
    */
-  parameters: MaterialParameters
+  parameters: Parameters
 }
 
 /**
- * Defines a parameter set for a specific {@link ShaderEffect}
+ * Constructor options for {@link Material}
+ *
+ * @public
+ */
+export interface MaterialEffectOptions extends MaterialOptionsBase {
+  /**
+   * The effect instance or constructor options for {@link Effect}
+   */
+  effect: EffectOptions
+}
+
+/**
+ * Constructor options for {@link Material}
+ *
+ * @public
+ */
+export interface MaterialEffectNameOptions extends MaterialOptionsBase {
+  /**
+   * The effect name from which to the effect should be created.
+   */
+  effectName: string
+  technique?: string
+}
+
+/**
+ * Constructor options for {@link Material}
+ *
+ * @public
+ */
+export interface MaterialProgramOptions extends MaterialOptionsBase {
+  /**
+   * The shader program options to be used to create the effect
+   */
+  program: ShaderProgramOptions
+}
+
+/**
+ * Defines a parameter set for a specific {@link Effect}
  *
  * @public
  * @remarks
- * A material holds a reference to a {@link ShaderEffect} and a
+ * A material holds a reference to a {@link Effect} and a
  * set of parameters that should be used together when rendering.
- * This allows a {@link ShaderEffect} instance to be reused across
+ * This allows a {@link Effect} instance to be reused across
  * multiple materials each with a different set of parameters.
  */
 export class Material<Params extends MaterialParameters = MaterialParameters> {
@@ -82,7 +99,7 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    */
   public static readonly OptionsUri = new TypeToken<MaterialOptions>('OptionsUri', {
     factory: () => {
-      return { effectUri: '' } as MaterialOptions
+      return { effectName: '' } as MaterialOptions
     },
   })
 
@@ -91,7 +108,7 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    */
   public static readonly OptionsTechnique = new TypeToken<MaterialOptions>('OptionsTechnique', {
     factory: () => {
-      return { technique: 'default' } as MaterialOptions
+      return { effectName: 'default' } as MaterialOptions
     },
   })
 
@@ -122,7 +139,7 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
   /**
    * The effect to be used
    */
-  public get effect(): ShaderEffect {
+  public get effect(): Effect {
     return this._effect
   }
 
@@ -131,17 +148,26 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    */
   public parameters: Params
 
-  protected _effect: ShaderEffect
+  protected _effect: Effect
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
     this.name = options.name
     this.parameters = (options.parameters || {}) as Params
-    if (options.effect instanceof ShaderEffect) {
-      this._effect = options.effect
-    } else if (options.effect) {
-      this._effect = device.createEffect(options.effect)
+    let effect: Effect | EffectOptions
+    if ('program' in options) {
+      effect = {
+        program: options.program,
+      } satisfies EffectOptions
+    }
+    if ('effect' in options) {
+      effect = options.effect
+    }
+    if (effect instanceof Effect) {
+      this._effect = effect
+    } else if (effect) {
+      this._effect = device.createEffect(effect)
     } else {
-      this.onConstructWithoutEffect()
+      this.onConstructWithoutEffect(options)
     }
   }
 
@@ -152,27 +178,43 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
     this.effect.draw(drawable, this.parameters)
   }
 
-  protected onConstructWithoutEffect() {
-    throw new Error(`[Material] constructor option is missing: 'options.effect'.`)
+  /**
+   * Draws a full screen quad with the current effect and parameters.
+   */
+  public drawQuad(flipY = false) {
+    this.effect.drawQuad(this.parameters, flipY)
   }
 
+  /**
+   * Simply get the parameter by name.
+   *
+   * @remarks
+   * This is a convenience method ot access parameters with Type casting.
+   */
+  public parameter<T>(name: string): T {
+    return this.parameters[name] as T
+  }
+
+  protected onConstructWithoutEffect(options: MaterialOptions) {
+    console.warn(`[Material] created without explicit effect or program. Using default effect.`)
+    this._effect = this.device.createEffect({
+      program: PROGRAM_BASIC,
+    })
+  }
+
+  /**
+   * Checks if the underlying effect and it's techniques and programs are all ready
+   */
   public isReady() {
     return this.effect.isReady()
   }
 
-  public waitForReady(timeout = 10000) {
-    const start = Date.now()
-    return new Promise<void>((resolve, reject) => {
-      const check = () => {
-        if (this.isReady()) {
-          resolve()
-        } else if (Date.now() - start > timeout) {
-          reject(new Error(`[Material] effect '${this.effect.name}' is not ready`))
-        } else {
-          setTimeout(check, 100)
-        }
-      }
-      check()
-    })
+  /**
+   * Disposes the underlying effect
+   */
+  public dispose() {
+    this.effect?.dispose()
+    this._effect = null
+    this.device = null
   }
 }

@@ -1,6 +1,6 @@
-import { ShaderFxDocument, glsl } from '@gglib/graphics'
+import { EffectDocument, glsl } from '@gglib/graphics'
 
-export const POST_PIXELATE: ShaderFxDocument = {
+export const POST_PIXELATE: EffectDocument = {
   name: 'Pixelate',
   program: glsl`
     precision highp float;

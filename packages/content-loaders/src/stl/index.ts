@@ -1,2 +1,2 @@
-export * from './stl'
-export * from './StlLoader'
+export * from './format'
+export * from './STLLoader'

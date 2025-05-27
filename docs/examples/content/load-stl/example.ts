@@ -1,5 +1,6 @@
-import { ContentLoader, ContentManager } from '@gglib/content'
+import { ContentLoader } from '@gglib/content'
 import '@gglib/content-loaders'
+import { STLLoader } from '@gglib/content-loaders'
 import { BlendState, CullState, DepthState, Model, createDevice } from '@gglib/graphics'
 import { LightParams } from '@gglib/materials'
 import { Mat4, Vec3 } from '@gglib/math'
@@ -14,6 +15,7 @@ const models = {
   CubeASCII: '/assets/models/stl/cube.ascii.stl',
 }
 
+STLLoader.register()
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   // Create the graphics device and pass the existing canvas element from the DOM.
   const device = createDevice({
@@ -21,7 +23,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   // Create the content manager
-  const content = new ContentManager(device)
   const loader = new ContentLoader(device)
   const light = LightParams.createDirectionalLight({
     direction: Vec3.Forward,

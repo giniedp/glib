@@ -1,4 +1,4 @@
-import { Device, Material, ShaderEffect, Texture, MaterialParameters } from '@gglib/graphics'
+import { Device, Material, Effect, Texture, MaterialParameters } from '@gglib/graphics'
 import { IMat, IVec3, Mat4 } from '@gglib/math'
 import { LightParams } from '../lights'
 import { materialProgram, DefaultProgramDefs } from '../programs'
@@ -398,7 +398,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
   private defines: DefaultProgramDefs = {}
   private lights: LightParams[] = []
   private hasChanged = true
-  protected $effect: ShaderEffect
+  protected $effect: Effect
 
   constructor(device: Device) {
     super(device, {
