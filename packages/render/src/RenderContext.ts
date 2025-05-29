@@ -1,4 +1,4 @@
-import { Texture, ViewportStateParams } from "@gglib/graphics"
+import { Texture, TextureImage, ViewportStateParams } from "@gglib/graphics"
 import type { Renderer } from "./Renderer"
 import type { OutputSemantic, SceneComposition, SceneView } from "./Types"
 
@@ -133,7 +133,6 @@ export class RenderContext {
         pixelFormat: this.targetOptions.pixelFormat,
         pixelType: this.targetOptions.pixelType,
         surfaceFormat: this.targetOptions.surfaceFormat,
-        samplerParams: this.targetOptions.samplerParams,
       })
     }
   }

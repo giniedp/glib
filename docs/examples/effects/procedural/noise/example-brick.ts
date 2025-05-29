@@ -1,5 +1,5 @@
 import { brickProgram } from '@gglib/effects'
-import { createDevice } from '@gglib/graphics'
+import { createDevice, Material } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
@@ -8,7 +8,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     canvas,
   })
 
-  const effect = device.createEffect({
+  const effect = new Material(device,{
     program: brickProgram(),
     parameters: {
       brickWidth: 0.25,

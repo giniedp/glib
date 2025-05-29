@@ -109,7 +109,9 @@ export default (canvas: HTMLCanvasElement) => {
   // Create a texture object.
   // Simply pass an URL to the image that should be used as a texture.
   const texture = device.createTexture({
-    source: '/assets/textures/prototype/proto_red.png',
+    image: {
+      source: '/assets/textures/prototype/proto_red.png',
+    },
   })
 
   // Define some variables that will be passed to the shader.

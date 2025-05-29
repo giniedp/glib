@@ -1,14 +1,13 @@
-import { uuid, TypeToken } from '@gglib/utils'
-import { Mat4, BoundingSphere, Quat, Vec3, Vec4 } from '@gglib/math'
-import { Device } from '../Device'
+import { BoundingSphere, Mat4 } from '@gglib/math'
+import { uuid } from '@gglib/utils'
 import { AnimationData } from '../AnimationData'
 import { AnimationPlayer } from '../AnimationPlayer'
-
-import { ModelSkin } from './ModelSkin'
-import { MeshOptions, Mesh } from './Mesh'
-import { ModelNode, ModelNodePose } from './ModelNode'
-import { ModelPose } from './ModelPose'
+import { Device } from '../Device'
+import { Mesh, MeshOptions } from './Mesh'
+import { ModelNode } from './ModelNode'
 import { ModelNodeHierarchy } from './ModelNodeHierarchy'
+import { ModelPose } from './ModelPose'
+import { ModelSkin } from './ModelSkin'
 
 /**
  * @public
@@ -49,41 +48,35 @@ export interface ModelOptions {
  */
 export class Model {
   /**
-   * A symbol identifying the `Model[]` type.
-   */
-  public static readonly Array = new TypeToken<Model[]>('Model[]', { factory: () => []})
-  /**
-   * A symbol identifying the `ModelOptions` type.
-   */
-  public static readonly Options = new TypeToken<ModelOptions>('ModelOptions', { factory: () => ({})})
-  /**
-   * A symbol identifying the `ModelOptions[]` type.
-   */
-  public static readonly OptionsArray = new TypeToken<ModelOptions[]>('ModelOptions[]', { factory: () => ([])})
-  /**
    * Autmatically generated unique identifier
    */
   public readonly uid: string
+
   /**
    * The graphics device
    */
   public readonly device: Device
+
   /**
    * Collection of meshes
    */
   public readonly meshes: ReadonlyArray<Mesh>
+
   /**
    * Collection of skins
    */
   public readonly skins: ReadonlyArray<ModelSkin>
+
   /**
    * The node hierarchy
    */
   public readonly hierarchy: ModelNodeHierarchy
+
   /**
    * Model animation data
    */
   public readonly animations?: ReadonlyArray<AnimationData>
+
   /**
    * Collection of cameras to preview this model
    */
@@ -100,7 +93,7 @@ export class Model {
     const nodes = options.nodes || []
     const roots = options.roots || []
 
-    for (const mesh of (options.meshes || [])) {
+    for (const mesh of options.meshes || []) {
       if (mesh instanceof Mesh) {
         meshes.push(mesh)
       } else {

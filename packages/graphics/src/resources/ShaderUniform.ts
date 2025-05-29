@@ -2,8 +2,8 @@
 
 import { IMat, IVec2, IVec3, IVec4 } from '@gglib/math'
 import { Device } from '../Device'
-import { ShaderProgram, Texture, TextureOptions } from '../resources'
-import { ISamplerState, SamplerState, SamplerStateParams } from '../states'
+import { ShaderProgram, Texture, TextureImage, TextureImageOptions, TextureOptions } from '../resources'
+import { SamplerState } from '../states'
 import { ShaderUniformState } from './ShaderUniformState'
 
 /**
@@ -11,7 +11,19 @@ import { ShaderUniformState } from './ShaderUniformState'
  *
  * @public
  */
-export type ShaderUniformValue = string | boolean | number | ArrayLike<number> | Texture | TextureOptions | IVec2 | IVec3 | IVec4 | IMat
+export type ShaderUniformValue =
+  | string
+  | boolean
+  | number
+  | ArrayLike<number>
+  | Texture
+  | TextureOptions
+  | TextureImage
+  | TextureImageOptions
+  | IVec2
+  | IVec3
+  | IVec4
+  | IMat
 
 /**
  * @public
@@ -142,9 +154,9 @@ export abstract class ShaderUniform {
   public register: number
 
   /**
-   * The texture sampler parameters
+   * The texture sampler to use
    */
-  public filter: SamplerStateParams
+  public sampler: SamplerState | null
 
   protected state = new ShaderUniformState()
 
@@ -211,17 +223,17 @@ export abstract class ShaderUniform {
   /**
    * Sets a two component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public abstract setVec2(value: {x: number, y: number} | ArrayLike<number>): void
+  public abstract setVec2(value: { x: number; y: number } | ArrayLike<number>): void
 
   /**
    * Sets a three component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public abstract setVec3(value: {x: number, y: number, z: number} | ArrayLike<number>): void
+  public abstract setVec3(value: { x: number; y: number; z: number } | ArrayLike<number>): void
 
   /**
    * Sets a four component float value. Commits it to the uniform variable of the program if it has changed.
    */
-  public abstract setVec4(value: {x: number, y: number, z: number, w: number} | ArrayLike<number>): void
+  public abstract setVec4(value: { x: number; y: number; z: number; w: number } | ArrayLike<number>): void
 
   /**
    * Sets a float array value. Commits it to the uniform. Skips (and clears) the cache.
@@ -281,10 +293,9 @@ export abstract class ShaderUniform {
   /**
    * Binds a texture to this uniform
    */
-  public setTexture(texture: Texture, filter?: ISamplerState) {
+  public setTexture(texture: TextureImage | Texture) {
     const device = this.device
     const textureUnit = device.textureUnits[this.register] || device.textureUnits[0]
-    this.setInt(textureUnit.index)
 
     // perform the update
     // - for video textures this will update the playback state
@@ -297,7 +308,10 @@ export abstract class ShaderUniform {
       texture = this.device.defaultTexture
     }
 
-    textureUnit.texture = texture
-    textureUnit.commit(filter || this.filter)
+    textureUnit.commit(texture, this.sampler)
+    this.setInt(textureUnit.index)
+
   }
+
+  public abstract dispose(): void
 }

@@ -99,14 +99,8 @@ export class BufferGL extends Buffer {
     byteOffset = byteOffset || 0
     const off = srcByteOffset || 0
     const len = srcByteLength || (data.byteLength - off)
+    this.device.context.bufferSubData(this.type, byteOffset, data, off, len)
 
-    if (isWebGL2(this.device.context)) {
-      this.device.context.bufferSubData(this.type, byteOffset, data, off, len)
-    } else if (off === 0 && len === data.byteLength) {
-      this.device.context.bufferSubData(this.type, byteOffset, data)
-    } else {
-      throw new Error(`setSubData with srcByteOffset > 0 is not supported in WebGL1`)
-    }
     this.unbind()
     return this
   }

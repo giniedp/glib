@@ -7,7 +7,7 @@ import {
   LightType,
   Model,
   ModelNodePose,
-  Texture,
+  TextureImage,
   createDevice,
   AnimationPlayer,
   ModelPose,
@@ -29,7 +29,7 @@ type GltfIndexModel = {
   }
 }
 
-Texture.crossOrigin = 'anonymous'
+TextureImage.crossOrigin = 'anonymous'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({ canvas })
   const content = new ContentManager(device)

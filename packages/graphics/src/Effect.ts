@@ -1,4 +1,4 @@
-import { TypeToken } from '@gglib/utils'
+import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { EffectPass } from './EffectPass'
 import { EffectTechnique, EffectTechniqueOptions } from './EffectTechnique'
@@ -11,17 +11,23 @@ import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resou
  */
 export type EffectOptions = EffectOptionsWithTechnique | EffectOptionsWithProgram
 
-/**
- * Constructor options for {@link Effect}
- *
- * @public
- */
-export interface EffectOptionsWithTechnique {
+export interface EffectOptionsBase {
   /**
    * A user defined name of the effect
    */
   name?: string
 
+  /**
+   * User defined meta data and annotations
+   */
+  meta?: Record<string, any>
+}
+/**
+ * Constructor options for {@link Effect}
+ *
+ * @public
+ */
+export interface EffectOptionsWithTechnique extends EffectOptionsBase {
   /**
    * A collection of programs of this effect
    *
@@ -41,12 +47,7 @@ export interface EffectOptionsWithTechnique {
  *
  * @public
  */
-export interface EffectOptionsWithProgram {
-  /**
-   * A user defined name of the effect
-   */
-  name?: string
-
+export interface EffectOptionsWithProgram extends EffectOptionsBase {
   /**
    * The program to be used on this effect
    *
@@ -86,33 +87,6 @@ function makeArray(arg: any): any {
  */
 export class Effect {
   /**
-   * A symbol identifying the Array {@link Effect} type.
-   */
-  public static readonly Array = new TypeToken<Effect[]>('ShaderEffect[]', {
-    factory: () => {
-      return []
-    },
-  })
-
-  /**
-   * A symbol identifying the {@link EffectOptions} type.
-   */
-  public static readonly Options = new TypeToken<EffectOptions>('EffectOptions', {
-    factory: () => {
-      return {}
-    },
-  })
-
-  /**
-   * A symbol identifying the Array {@link EffectOptions} type.
-   */
-  public static readonly OptionsArray = new TypeToken<EffectOptions[]>('EffectOptions[]', {
-    factory: () => {
-      return []
-    },
-  })
-
-  /**
    * The graphics device
    */
   public device: Device
@@ -121,6 +95,11 @@ export class Effect {
    * A user defined name of the effect
    */
   public name: string
+
+  /**
+   * User defined meta data and annotations
+   */
+  public meta?: Record<string, any>
 
   /**
    * The technique collection
@@ -172,12 +151,11 @@ export class Effect {
   }
 
   /**
-   * Allows to re-initialize the shader effect
-   *
-   * @param options - The options for initialization
+   * Allows to re-create the effect
    */
   public reset(options: EffectOptions) {
     this.name = options.name || ''
+    this.meta = options.meta || {}
     this.techniques.length = 0
 
     if ('program' in options) {
@@ -266,6 +244,7 @@ export class Effect {
   public clone(): Effect {
     return new Effect(this.device, {
       name: this.name,
+      meta: { ...(this.meta || {}) },
       techniques: this.techniques.map((it) => it.clone()),
       technique: this.techniques.indexOf(this.technique),
     })

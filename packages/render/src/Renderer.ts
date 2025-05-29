@@ -8,7 +8,7 @@ import {
   SpriteBatch,
   SpriteBatchBeginOptions,
   StencilState,
-  Texture,
+  TextureImage,
 } from '@gglib/graphics'
 import { BasicRenderPass } from './BasicRenderPass'
 import { RenderContext } from './RenderContext'
@@ -222,7 +222,7 @@ export class Renderer {
    * @param target - the output render target. If missing, output goes to screen.
    * @param batchOptions - the batch options to use
    */
-  public present(scenes: SceneComposition[], target?: Texture, batchOptions?: SpriteBatchBeginOptions): void {
+  public present(scenes: SceneComposition[], target?: TextureImage, batchOptions?: SpriteBatchBeginOptions): void {
     this.device.setRenderTarget(target)
     this.spriteBatch.begin(batchOptions || this.batchOptions)
     for (const scene of scenes) {

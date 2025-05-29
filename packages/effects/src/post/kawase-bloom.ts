@@ -1,4 +1,13 @@
-import { BlendState, Device, Effect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
+import {
+  BlendState,
+  Device,
+  Effect,
+  ShaderProgram,
+  Texture,
+  TextureImage,
+  createShaderEffectSync,
+} from '@gglib/graphics'
+import { Vec2 } from '@gglib/math'
 import { POST_KAWASE_BLOOM } from './kawase-bloom.program'
 
 /**
@@ -68,6 +77,8 @@ export class PostKawaseBloomEffect {
 
   public readonly effect: Effect
 
+  private texel = Vec2.createOne()
+
   constructor(device: Device, options: PostKawaseBloomOptions) {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_KAWASE_BLOOM)
@@ -82,7 +93,9 @@ export class PostKawaseBloomEffect {
     const resultTarget = this.outputTexture
     let renderTarget1 = this.blurTexture1
     let renderTarget2 = this.blurTexture2
-    const texel = renderTarget1.texel
+    const texel = this.texel
+    texel.x = 1 / renderTarget1.width
+    texel.y = 1 / renderTarget1.height
 
     const device = this.device
     let program: ShaderProgram
@@ -96,7 +109,7 @@ export class PostKawaseBloomEffect {
     program.setUniform('texture1', baseTarget)
     device.program = program
     device.blendState = BlendState.Default
-    device.setRenderTarget(renderTarget1)
+    device.setRenderTarget(renderTarget1.image)
     device.drawQuad()
     device.setRenderTarget(null)
 
@@ -111,7 +124,7 @@ export class PostKawaseBloomEffect {
       program.setUniform('texel', texel)
       device.program = program
       device.blendState = BlendState.Default
-      device.setRenderTarget(renderTarget2)
+      device.setRenderTarget(renderTarget2.image)
       device.drawQuad()
       device.setRenderTarget(null)
       let temp = renderTarget1
@@ -127,7 +140,7 @@ export class PostKawaseBloomEffect {
     program.setUniform('texture2', renderTarget1)
     device.program = program
     device.blendState = BlendState.Default
-    device.setRenderTarget(resultTarget)
+    device.setRenderTarget(resultTarget?.image)
     device.drawQuad()
     device.setRenderTarget(null)
   }

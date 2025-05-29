@@ -1,5 +1,5 @@
-import { BlendState, Device, Effect, ShaderProgram, Texture, createShaderEffectSync } from '@gglib/graphics'
-import { IVec2 } from '@gglib/math'
+import { BlendState, Device, Effect, ShaderProgram, Texture, TextureImage, createShaderEffectSync } from '@gglib/graphics'
+import { IVec2, Vec2 } from '@gglib/math'
 import { POST_KAWASE_STREAKS } from './kawase-streaks.program'
 
 /**
@@ -89,6 +89,8 @@ export class PostKawaseStreaksEffect {
 
   public readonly effect: Effect
 
+  private texel = Vec2.createOne()
+
   constructor(device: Device, options?: PostKawaseStreaksOptions) {
     this.device = device
     this.effect = createShaderEffectSync(this.device, POST_KAWASE_STREAKS)
@@ -106,7 +108,10 @@ export class PostKawaseStreaksEffect {
     const resultTarget = this.outputTexture
     let renderTarget1 = this.blurTexture1
     let renderTarget2 = this.blurTexture2
-    const texel = renderTarget1.texel
+
+    const texel = this.texel
+    texel.x = 1 / renderTarget1.width
+    texel.y = 1 / renderTarget1.height
 
     const device = this.device
     let program: ShaderProgram
@@ -115,19 +120,19 @@ export class PostKawaseStreaksEffect {
     // GLOW CUT
     //
 
-    program = this.effect.getTechnique('glowCut').pass(0).program
+    program = this.effect.getTechnique('glowCut').program0
     program.setUniform('threshold', this.threshold)
     program.setUniform('texture1', baseTarget)
     device.program = program
     device.blendState = BlendState.Default
-    device.setRenderTarget(renderTarget1)
+    device.setRenderTarget(renderTarget1.image)
     device.drawQuad()
     device.setRenderTarget(null)
 
     // ------------------------------------------------
     // KAWASE ITERATIONS
     //
-    program = this.effect.getTechnique('kawaseIteration').pass(0).program
+    program = this.effect.getTechnique('kawaseIteration').program0
     device.blendState = BlendState.Default
     for (let i = 0; i < this.iterations; i++) {
       program.setUniform('attenuation', this.attenuation)
@@ -136,7 +141,7 @@ export class PostKawaseStreaksEffect {
       program.setUniform('texel', texel)
       device.program = program
       device.blendState = BlendState.Default
-      device.setRenderTarget(renderTarget2)
+      device.setRenderTarget(renderTarget2.image)
       device.drawQuad()
       device.setRenderTarget(null)
       let temp = renderTarget1
@@ -147,13 +152,13 @@ export class PostKawaseStreaksEffect {
     // ------------------------------------------------
     // COMBINE
     //
-    program = this.effect.getTechnique('combine').pass(0).program
+    program = this.effect.getTechnique('combine').program0
     program.setUniform('texture1', baseTarget)
     program.setUniform('texture2', renderTarget1)
     program.setUniform('strength', this.strength)
     device.program = program
     device.blendState = BlendState.Default
-    device.setRenderTarget(resultTarget)
+    device.setRenderTarget(resultTarget?.image)
     device.drawQuad()
     device.setRenderTarget(null)
   }

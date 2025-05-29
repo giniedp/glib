@@ -51,7 +51,7 @@ export class PostPixelateEffect {
   public draw() {
     let rt = this.inputTexture
     let rt2 = this.outputTexture
-    let texel = this.material.parameters.texel || Vec2.init({}, 1, 1)
+    let texel = this.material.parameters.texel
     if (rt2) {
       texel.x = this.pixelWidth / rt2.width
       texel.y = this.pixelHeight / rt2.height
@@ -59,7 +59,7 @@ export class PostPixelateEffect {
       texel.x = this.pixelWidth / this.device.drawingBufferWidth
       texel.y = this.pixelHeight / this.device.drawingBufferHeight
     }
-    this.device.setRenderTarget(rt2)
+    this.device.setRenderTarget(rt2?.image)
     this.material.parameters.texture = rt
     this.material.parameters.texel = texel
     this.material.drawQuad()

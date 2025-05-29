@@ -52,7 +52,9 @@ export default (canvas: HTMLCanvasElement) => {
 
   // Create a texture object. We simply pass an URL as `data` option.
   const texture = device.createTexture({
-    source: '/assets/textures/prototype/proto_red.png',
+    image: {
+      source: '/assets/textures/prototype/proto_red.png',
+    }
   })
 
   function render() {

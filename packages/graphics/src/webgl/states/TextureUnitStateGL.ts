@@ -1,4 +1,5 @@
-import { SamplerState, SamplerStateParams, TextureUnitState } from '../../states'
+import { Texture, TextureImage } from '../../resources'
+import { SamplerState, TextureUnitState } from '../../states'
 import { DeviceGL } from '../DeviceGL'
 import { TextureGL } from '../resources'
 import { SamplerStateGL } from './SamplerStateGL'
@@ -31,10 +32,12 @@ export class TextureUnitStateGL extends TextureUnitState {
    * The graphics device
    */
   public readonly device: DeviceGL
+
   /**
-   * The sampler state object
+   * The default sampler object
    */
   public readonly sampler: SamplerStateGL
+
   /**
    * Gets the 0-based texture unit index
    */
@@ -44,67 +47,32 @@ export class TextureUnitStateGL extends TextureUnitState {
     super()
     this.device = device
     this.index = index
-    this.sampler = device.createSamplerState()
+
+    // HINT: constructor invocation to avoid reference counting
+    // sampler state will be mutated and can not be shared
+    this.sampler = new SamplerStateGL(device, SamplerState.Default)
   }
 
   /**
-   * Activates this texture unit
-   */
-  public activate(): this {
-    this.device.context.activeTexture(this.unit)
-    return this
-  }
-
-  /**
-   * Assigns and commits the sampler state and current texture to this texture unit
+   * Binds the texture and sampler state to this texture unit.
    *
    * @remarks
-   * The given sampler state will be ignored if the current texture provides
-   * own sampler state.
-   *
-   * If current texture is not power of two the sampler state params will be
-   * automatically adjusted so webgl engine does not raise errors.
-   *
-   * @param samplerParams - The sampler state to assign
+   * The passed sampler is preferred over the sampler of the texture.
    */
-  public commit(samplerParams?: SamplerStateParams): this {
-    let sampler: SamplerStateGL = this.sampler
-    let texture: TextureGL = this.texture as TextureGL
-
-    if (!texture) {
-      //
-    } else if (texture.samplerParams) {
-      // override any sampler params
-      samplerParams = texture.samplerParams
-      // and re-use its own sampler in this case
-      sampler = texture.sampler as SamplerStateGL
-    } else if (this.device.isWebGL2) {
-      //
+  public commit(texture: Texture | TextureImage, sampler?: SamplerState): this {
+    let image: TextureImage
+    if (texture instanceof Texture) {
+      sampler ||= texture.sampler
+      image = texture.image
     } else {
-      // and re-use its own sampler in this case
-      sampler = texture.sampler as SamplerStateGL
+      image = texture
     }
-
-    if (samplerParams) {
-      sampler.assign(samplerParams)
-    }
-    if (texture && !texture.isPOT) {
-      SamplerState.fixNonPowerOfTwo(sampler)
-    }
-    sampler.commit()
+    sampler ||= this.sampler
 
     const gl = this.device.context as WebGL2RenderingContext
     gl.activeTexture(this.unit)
-
-    if (texture) {
-      gl.bindTexture(texture.type, texture.resource)
-    } else {
-      gl.bindTexture(texture.type, null)
-    }
-    if (this.device.isWebGL2) {
-      gl.bindSampler(this.index, sampler.samplerHandle)
-    }
-
+    gl.bindTexture(image.type, (image as TextureGL)?.resource || null)
+    gl.bindSampler(this.index, (sampler as SamplerStateGL).resource)
     return this
   }
 }

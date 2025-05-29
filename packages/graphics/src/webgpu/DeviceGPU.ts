@@ -10,6 +10,8 @@ import {
   ShaderProgram,
   ShaderProgramOptions,
   Texture,
+  TextureImage,
+  TextureImageOptions,
   TextureOptions,
 } from '../resources'
 import {
@@ -17,6 +19,8 @@ import {
   CullState,
   DepthState,
   OffsetState,
+  SamplerState,
+  SamplerStateParams,
   ScissorState,
   StencilState,
   VertexAttribArrayState,
@@ -402,7 +406,7 @@ export class DeviceGPU extends Device<any> {
     if (needsCreate) {
       this.set(
         'mainTexture',
-        this.createTexture({
+        this.createTextureImage({
           type: 'Texture2D',
           width: displayWidth,
           height: displayHeight,
@@ -453,15 +457,15 @@ export class DeviceGPU extends Device<any> {
   /**
    * Sets or un sets multiple render targets
    */
-  public setRenderTargets(...targets: Texture[]): this
+  public setRenderTargets(...targets: TextureImage[]): this
   public setRenderTargets(): this {
     let opts = this.frameBufferOptions
     opts.textures.length = arguments.length
-    let firstTexture: Texture = null
+    let firstTexture: TextureImage = null
     for (let i = 0; i < arguments.length; i++) {
       let argument = arguments[i]
       opts.textures[i] = argument
-      if (argument instanceof Texture) {
+      if (argument instanceof TextureImage) {
         firstTexture = firstTexture || argument
       }
     }
@@ -581,24 +585,33 @@ export class DeviceGPU extends Device<any> {
   /**
    * Creates a new Texture. Calls the Texture constructor with given options.
    */
-  public createTexture(options: TextureOptions): TextureGPU {
-    return new TextureGPU(this, options)
+  public createTexture(options: TextureOptions): Texture {
+    return new Texture(this, options)
   }
 
   /**
    * Creates a new Texture that can be used as a render target. Ensures that
    * the depthFormat option is set and calls the Texture constructor.
    */
-  public createRenderTarget(options: TextureOptions): TextureGPU {
-    options.depthFormat = options.depthFormat || 'None'
+  public createRenderTarget(options: TextureOptions): Texture {
+    options.depthFormat ||= 'None'
+    options.sampler ||= SamplerState.LinearClamp
+    return new Texture(this, options)
+  }
+
+  /**
+   * Creates a new Texture. Calls the Texture constructor with given options.
+   */
+  public createTextureImage(options: TextureImageOptions): TextureGPU {
     return new TextureGPU(this, options)
   }
 
   /**
    * Creates a new sampler state object
    */
-  public createSamplerState(options?: { texture?: Texture }): SamplerStateGPU {
-    return new SamplerStateGPU(this)
+  public createSamplerState(options?: SamplerStateParams): SamplerStateGPU {
+    options = SamplerState.fillDefaults(options)
+    return new SamplerStateGPU(this, options)
   }
 
   public createDepthBuffer(options: DepthBufferOptions): DepthBufferGPU {

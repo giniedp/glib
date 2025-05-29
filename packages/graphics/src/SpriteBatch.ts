@@ -4,6 +4,7 @@ import { BufferUsage, PrimitiveType } from './enums'
 import { Buffer } from './resources/Buffer'
 import { ShaderProgram } from './resources/ShaderProgram'
 import { Texture } from './resources/Texture'
+import { TextureImage } from './resources/TextureImage'
 import { VertexBuffer } from './resources/VertexBuffer'
 import { Sprite } from './Sprite'
 import { BlendStateParams } from './states/BlendState'
@@ -211,7 +212,7 @@ export class SpriteBatch {
   /**
    * @param texture - The texture to draw
    */
-  public draw(texture: Texture): Sprite {
+  public draw(texture: Texture | TextureImage): Sprite {
     if (!this.hasBegun) {
       throw new Error('begin() must be called before draw()')
     }

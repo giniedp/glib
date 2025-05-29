@@ -15,7 +15,6 @@ export const POST_PIXELATE: EffectDocument = {
     varying vec2 uv;
 
     // @binding texture
-    // @filter LinearClamp
     uniform sampler2D textureSampler;
 
     // @default [0.01, 0.01]

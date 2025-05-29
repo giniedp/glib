@@ -7,6 +7,7 @@ import {
   Device,
   PrimitiveType,
   Texture,
+  TextureImage,
   VertexBuffer,
   VertexLayout,
 } from '@gglib/graphics'
@@ -24,7 +25,7 @@ export interface ParticleChannelOptions {
   /**
    * The texture for the particle
    */
-  texture?: Texture
+  texture?: Texture | TextureImage
   /**
    * Duration of the particle
    */

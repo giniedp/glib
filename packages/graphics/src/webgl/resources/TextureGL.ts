@@ -1,7 +1,7 @@
 import { TextureSource } from 'graphics/src/resources'
 import { Device } from '../../Device'
 import { ArrayType, TextureType } from '../../enums'
-import { Texture, TextureDataOption, TextureOptions, TextureSourceOption } from '../../resources/Texture'
+import { TextureImage, TextureDataOption, TextureImageOptions, TextureSourceOption } from '../../resources/TextureImage'
 import type { DeviceGL } from '../DeviceGL'
 import { SharedResource } from '../utils'
 
@@ -19,7 +19,7 @@ const cubeFaceTypes = [
  *
  * @public
  */
-export class TextureGL extends Texture implements SharedResource<TextureSource, WebGLTexture> {
+export class TextureGL extends TextureImage implements SharedResource<TextureSource, WebGLTexture> {
   /**
    * The graphics device
    */
@@ -41,30 +41,24 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
   public referenceCount: number
 
   /**
-   * Determines whether this is a cubemap face
-   */
-  public readonly isFace: boolean
-
-  /**
    * Constructs an instance of a Texture.
    *
    * @remarks
-   * The options are passed down to {@link TextureGL.setup}
+   * The options are passed down to {@link TextureImage.setup}
    */
-  constructor(device: Device<WebGLRenderingContext>, options: TextureOptions) {
+  constructor(device: Device<WebGLRenderingContext>, options: TextureImageOptions) {
     super()
     this.device = device as DeviceGL
     this.setup(options)
   }
 
-  public create(): this {
+  protected createResource() {
     if (this.resource && this.device.context.isTexture(this.resource)) {
       console.warn(`TextureGL.create: was called, but the texture is already created.`)
-      return this
+      this.disposeResource()
     }
 
-    this.set('isFace', cubeFaceTypes.indexOf(this.type) >= 0)
-    this.set('resource', this.device.context.createTexture())
+    this.resource = this.device.context.createTexture()
     this.device.context.bindTexture(this.type, this.resource)
     this.device.context.texImage2D(
       this.type,
@@ -77,10 +71,15 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
       this.pixelType,
       null,
     )
-    this.update()
     this.device.context.bindTexture(this.type, null)
+    this.update()
+  }
 
-    return this
+  protected disposeResource() {
+    if (this.device.context.isTexture(this.resource)) {
+      this.device.context.deleteTexture(this.resource)
+      this.resource = null
+    }
   }
 
   /**
@@ -93,10 +92,7 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
     }
     this.referenceCount = 0
     this.device.onTextureDisposed(this)
-    if (this.device.context.isTexture(this.resource)) {
-      this.device.context.deleteTexture(this.resource)
-      this.resource = null
-    }
+    this.disposeResource()
     return this
   }
 
@@ -143,7 +139,7 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
       throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
     }
 
-    this.bind()
+    this.device.context.bindTexture(this.type, this.resource)
     this.device.context.texImage2D(
       this.type,
       0,
@@ -158,6 +154,7 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
     if (this.generateMipmap) {
       this.device.context.generateMipmap(this.type)
     }
+    this.device.context.bindTexture(this.type, null)
 
     this.set('width', width)
     this.set('height', height)
@@ -211,7 +208,7 @@ export class TextureGL extends Texture implements SharedResource<TextureSource, 
    *
    * A call to this method instructs the texture to check the
    * download state of the resources and when available to update
-   * the texture data. When data has arrived the {@link Texture.ready}
+   * the texture data. When data has arrived the {@link TextureImage.ready}
    * property will be set to `true`
    */
   public update(): boolean {

@@ -117,7 +117,7 @@ export class EffectTechnique {
   public clone(): EffectTechnique {
     return new EffectTechnique(this.device, {
       name: this.name,
-      meta: copy(true, this.meta),
+      meta: { ...(this.meta || {}) },
       passes: this.passes.map((it) => it.clone()),
     })
   }

@@ -130,7 +130,7 @@ export class BasicRenderPass implements RenderPass {
 
     const target = context.channels.color
     context.channels.color = target
-    context.device.setRenderTarget(target)
+    context.device.setRenderTarget(target.image)
 
     context.device.cullState = this.cullState
     context.device.depthState = this.depthState

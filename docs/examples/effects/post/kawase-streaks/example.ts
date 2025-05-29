@@ -104,7 +104,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     device.depthState = DepthState.Default
     device.blendState = BlendState.Default
     if (post.isReady) {
-      device.setRenderTarget(rt1)
+      device.setRenderTarget(rt1.image)
     }
     device.clear(0xff2e2620, 1.0)
     for (const object of objects) {

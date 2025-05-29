@@ -54,7 +54,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     device.cullState = CullState.Default
     device.depthState = DepthState.Default
     device.blendState = BlendState.Default
-    device.setRenderTarget(renderTarget)
+    device.setRenderTarget(renderTarget.image)
     device.clear(0xff2e2620, 1.0)
     for (const row of objects) {
       for (const object of row) {

@@ -1,4 +1,4 @@
-import { createEffectOptionsSync, Device, Material, EffectParameters, Texture } from '@gglib/graphics'
+import { createEffectOptionsSync, Device, Material, EffectParameters, Texture, TextureImage } from '@gglib/graphics'
 import { Mat4, Vec2, Vec3 } from '@gglib/math'
 import { PARTICLE_PROGRAM } from './particle.program'
 
@@ -7,7 +7,7 @@ export interface ParticleEffectParameters extends EffectParameters {
   readonly projection: Mat4
   readonly viewportScale: Vec2
   currentTime: number
-  texture: Texture
+  texture: Texture | TextureImage
   duration: number
   durationRandomness: number
   readonly gravity: Vec3

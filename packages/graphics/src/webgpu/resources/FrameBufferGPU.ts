@@ -1,5 +1,5 @@
 import { Color, RGBA_FORMAT } from '../../Color'
-import { DepthBuffer, FrameBuffer, FrameBufferOptions, Texture } from '../../resources'
+import { DepthBuffer, FrameBuffer, FrameBufferOptions, TextureImage } from '../../resources'
 import { DeviceGPU } from '../DeviceGPU'
 import { DepthBufferGPU } from './DepthBufferGPU'
 import { TextureGPU } from './TextureGPU'
@@ -7,7 +7,7 @@ import { TextureGPU } from './TextureGPU'
 export class FrameBufferGPU extends FrameBuffer {
   public readonly device: DeviceGPU
 
-  public readonly colorAttachments: ReadonlyArray<Texture>
+  public readonly colorAttachments: ReadonlyArray<TextureImage>
   public readonly depthAttachment: DepthBuffer
 
   public readonly reanderPassDescriptor: GPURenderPassDescriptor = {

@@ -1,4 +1,3 @@
-import { ContentManager, Data } from '@gglib/content'
 import { LightParams, AutoMaterial } from '@gglib/materials'
 import {
   BlendState,
@@ -6,7 +5,7 @@ import {
   DepthState,
   LightType,
   Model,
-  Texture,
+  TextureImage,
   createDevice,
   AnimationPlayer,
   ModelNodePose,
@@ -35,7 +34,7 @@ type ManifestModel = {
   }
 }
 
-Texture.crossOrigin = 'anonymous'
+TextureImage.crossOrigin = 'anonymous'
 const device = createDevice({ canvas: '#canvas' })
 const content = new ContentManager(device)
 content.downloadJSON({ url: manifest }).then((data: Data<Manifest>) => {

@@ -122,6 +122,7 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
       this.device.context.deleteProgram(this.resource)
       this.resource = null
     }
+    this.uniforms.forEach((u) => u.dispose())
     return this
   }
 

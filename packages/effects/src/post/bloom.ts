@@ -8,6 +8,7 @@ import {
   Effect,
   StencilState,
   Texture,
+  TextureImage,
 } from '@gglib/graphics'
 import { POST_BLOOM } from './bloom.program'
 
@@ -155,7 +156,7 @@ export class PostBloomEffect {
     device.program = this.effect.getTechnique('glowCut').program0
     device.program.setUniform('texture', input)
     device.program.setUniform('threshold', this.glowCut)
-    device.setRenderTarget(rt1)
+    device.setRenderTarget(rt1.image)
     device.clear(0xff000000, 1, 1)
     device.drawQuad(false)
     device.setRenderTarget(null)
@@ -170,7 +171,7 @@ export class PostBloomEffect {
       for (let i = 0; i < this.offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i])
       }
-      device.setRenderTarget(rt2)
+      device.setRenderTarget(rt2.image)
       device.clear(Color.TransparentBlack, 1)
       device.drawQuad()
       device.setRenderTarget(null)
@@ -184,7 +185,7 @@ export class PostBloomEffect {
       for (let i = 0; i < this.offsetWeights.length; i++) {
         device.program.setUniform(`offsetWeights[${i}]`, this.offsetWeights[i])
       }
-      device.setRenderTarget(rt1)
+      device.setRenderTarget(rt1.image)
       device.clear(Color.TransparentBlack, 1)
       device.drawQuad()
       device.setRenderTarget(null)
@@ -197,7 +198,7 @@ export class PostBloomEffect {
     device.program.setUniform('texture', input)
     device.program.setUniform('bloomTexture', rt1)
 
-    device.setRenderTarget(output)
+    device.setRenderTarget(output?.image)
     device.clear(Color.TransparentBlack, 1)
     device.drawQuad()
     device.setRenderTarget(null)

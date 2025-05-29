@@ -1,7 +1,7 @@
 import { TextureType } from '../../enums'
 import { SamplerState, SamplerStateParams } from '../../states'
 import { DeviceGL } from '../DeviceGL'
-import { isWebGL2 } from '../utils'
+import { SharedResource } from '../utils'
 
 /**
  * An object with a reference to a webgl texture
@@ -15,152 +15,64 @@ export interface TextureLike {
 /**
  * @public
  */
-export class SamplerStateGL extends SamplerState {
+export class SamplerStateGL extends SamplerState implements SharedResource<string, WebGLSampler> {
   /**
    * The graphics device
    */
   public readonly device: DeviceGL
 
-  public get samplerHandle() {
-    return this.handle
-  }
+  public resource: WebGLSampler
+  public resourceKey: string
+  public referenceCount: number
 
-  public get textureHandle() {
-    return this.texture?.resource
-  }
-
-  private handle: WebGLSampler = null
-  private texture: { type: number; resource: WebGLTexture } | null
-
-  constructor(device: DeviceGL, texture?: { type: number; resource: WebGLTexture }) {
+  constructor(device: DeviceGL, options: SamplerStateParams) {
     super()
     this.device = device
-    this.texture = texture
-    this.setup()
-    this.resolve()
+    this.create(options)
   }
 
   /**
-   * Recreates the underlying sampler object if necessary
+   * Recreates the underlying sampler object if necessary and applies the parameters.
    */
-  public setup() {
-    if (!this.texture && isWebGL2(this.device.context) && !this.device.context.isSampler(this.handle)) {
-      this.handle = this.device.context.createSampler()
+  public create(options: SamplerStateParams) {
+    if (options) {
+      this.minFilter = options.minFilter ?? this.minFilter
+      this.magFilter = options.magFilter ?? this.magFilter
+      this.wrapU = options.wrapU ?? this.wrapU
+      this.wrapV = options.wrapV ?? this.wrapV
+      this.wrapW = options.wrapW ?? this.wrapW
+      this.minLod = options.minLod ?? this.minLod
+      this.maxLod = options.maxLod ?? this.maxLod
+      this.compareMode = options.compareMode ?? this.compareMode
+      this.compareFunc = options.compareFunc ?? this.compareFunc
     }
+    if (!this.device.context.isSampler(this.resource)) {
+      this.resource = this.device.context.createSampler()
+    }
+    const gl = this.device.context
+    gl.samplerParameteri(this.resource, gl.TEXTURE_MIN_FILTER, this.minFilter)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_MAG_FILTER, this.magFilter)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_S, this.wrapU)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_T, this.wrapV)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_R, this.wrapW)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_MIN_LOD, this.minLod)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_MAX_LOD, this.maxLod)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_COMPARE_MODE, this.compareMode)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_COMPARE_FUNC, this.compareFunc)
     return this
   }
 
-  public destroy() {
-    if (this.handle) {
-      ;(this.device.context as WebGL2RenderingContext).deleteSampler(this.handle)
-      this.handle = null
+  public dispose(): this {
+    this.referenceCount--
+    if (this.referenceCount > 0) {
+      return this
     }
-    return this
-  }
-
-  public commitChanges(changes?: SamplerStateParams): this {
-    if (this.handle) {
-      const gl = this.device.context as WebGL2RenderingContext
-      if (changes.minFilter !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MIN_FILTER, this.minFilter)
-      }
-      if (changes.magFilter !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MAG_FILTER, this.magFilter)
-      }
-      if (changes.wrapU !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_WRAP_S, this.wrapU)
-      }
-      if (changes.wrapV !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_WRAP_T, this.wrapV)
-      }
-      if (changes.wrapW !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_WRAP_R, this.wrapW)
-      }
-      if (changes.minLod !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MIN_LOD, this.minLod)
-      }
-      if (changes.maxLod !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_MAX_LOD, this.maxLod)
-      }
-      if (changes.compareMode !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_COMPARE_MODE, this.compareMode)
-      }
-      if (changes.compareFunc !== null) {
-        gl.samplerParameteri(this.handle, gl.TEXTURE_COMPARE_FUNC, this.compareFunc)
-      }
-    } else if (this.texture) {
-      const gl = this.device.context
-      gl.bindTexture(this.texture.type, this.texture.resource)
-      const type = this.texture.type
-      if (changes.minFilter !== null) {
-        gl.texParameteri(type, gl.TEXTURE_MIN_FILTER, this.minFilter)
-      }
-      if (changes.magFilter !== null) {
-        gl.texParameteri(type, gl.TEXTURE_MAG_FILTER, this.magFilter)
-      }
-      if (changes.wrapU !== null) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_S, this.wrapU)
-      }
-      if (changes.wrapV !== null) {
-        gl.texParameteri(type, gl.TEXTURE_WRAP_T, this.wrapV)
-      }
-      if (isWebGL2(gl)) {
-        if (changes.wrapW !== null) {
-          gl.texParameteri(type, gl.TEXTURE_WRAP_R, this.wrapW)
-        }
-        if (changes.minLod !== null) {
-          gl.texParameteri(type, gl.TEXTURE_MIN_LOD, this.minLod)
-        }
-        if (changes.maxLod !== null) {
-          gl.texParameteri(type, gl.TEXTURE_MAX_LOD, this.maxLod)
-        }
-        if (changes.compareMode !== null) {
-          gl.texParameteri(type, gl.TEXTURE_COMPARE_MODE, this.compareMode)
-        }
-        if (changes.compareFunc !== null) {
-          gl.texParameteri(type, gl.TEXTURE_COMPARE_FUNC, this.compareFunc)
-        }
-      }
+    this.referenceCount = 0
+    this.device.onSamplerStateDisposed(this)
+    if (this.device.context.isSampler(this.resource)) {
+      this.device.context.deleteSampler(this.resource)
+      this.resource = null
     }
-
-    this.clearChanges()
-    return this
-  }
-
-  /**
-   * Resolves the current state from the GPU
-   */
-  public resolve(): this {
-    const out = this
-    if (this.handle) {
-      const handle = this.handle
-      const gl = this.device.context as WebGL2RenderingContext
-      out.minFilter = gl.getSamplerParameter(handle, gl.TEXTURE_MIN_FILTER)
-      out.magFilter = gl.getSamplerParameter(handle, gl.TEXTURE_MAG_FILTER)
-      out.wrapU = gl.getSamplerParameter(handle, gl.TEXTURE_WRAP_S)
-      out.wrapV = gl.getSamplerParameter(handle, gl.TEXTURE_WRAP_T)
-      out.wrapW = gl.getSamplerParameter(handle, gl.TEXTURE_WRAP_R)
-      out.minLod = gl.getSamplerParameter(handle, gl.TEXTURE_MIN_LOD)
-      out.maxLod = gl.getSamplerParameter(handle, gl.TEXTURE_MAX_LOD)
-      out.compareMode = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_MODE)
-      out.compareFunc = gl.getSamplerParameter(handle, gl.TEXTURE_COMPARE_FUNC)
-    } else if (this.texture?.resource) {
-      const texture = this.texture
-      const gl = this.device.context
-      gl.bindTexture(texture.type, texture.resource)
-      out.minFilter = gl.getTexParameter(texture.type, gl.TEXTURE_MIN_FILTER)
-      out.magFilter = gl.getTexParameter(texture.type, gl.TEXTURE_MAG_FILTER)
-      out.wrapU = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_S)
-      out.wrapV = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_T)
-      if (isWebGL2(gl)) {
-        out.wrapW = gl.getTexParameter(texture.type, gl.TEXTURE_WRAP_R)
-        out.minLod = gl.getTexParameter(texture.type, gl.TEXTURE_MIN_LOD)
-        out.maxLod = gl.getTexParameter(texture.type, gl.TEXTURE_MAX_LOD)
-        out.compareMode = gl.getTexParameter(texture.type, gl.TEXTURE_COMPARE_MODE)
-        out.compareFunc = gl.getTexParameter(texture.type, gl.TEXTURE_COMPARE_FUNC)
-      }
-    }
-    this.clearChanges()
     return this
   }
 }

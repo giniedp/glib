@@ -47,7 +47,7 @@ describe('glib/graphics/BlendState', () => {
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new DeviceGL({ context: 'webgl' })
+    device = new DeviceGL({ context: 'webgl2' })
     stateA = new BlendStateGL(device).assign(paramsA)
     stateB = new BlendStateGL(device).assign(paramsB)
     stateC = new BlendStateGL(device)

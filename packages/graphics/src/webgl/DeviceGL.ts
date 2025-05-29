@@ -1,6 +1,7 @@
 import { getOrCreateCanvas, Log, removeFromArrayUnstable } from '@gglib/utils'
 import { Color, RGBA_FORMAT } from '../Color'
 import { Device } from '../Device'
+import { Effect, EffectOptions } from '../Effect'
 import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
 import { Model, ModelOptions } from '../model/Model'
 import {
@@ -9,16 +10,18 @@ import {
   DepthBuffer,
   DepthBufferOptions,
   FrameBufferOptions,
+  RenderTargetOptions,
   ShaderOptions,
   ShaderProgram,
   ShaderProgramOptions,
   Texture,
+  TextureImage,
+  TextureImageOptions,
   TextureOptions,
 } from '../resources'
 import { VertexBuffer, VertexBufferOptions } from '../resources/VertexBuffer'
-import { Effect, EffectOptions } from '../Effect'
 import { SpriteBatch } from '../SpriteBatch'
-import { VertexAttribArrayState } from '../states'
+import { SamplerState, SamplerStateParams, VertexAttribArrayState } from '../states'
 import { AttributeSemantic, VertexLayout } from '../VertexLayout'
 import { CapabilitiesGL } from './CapabilitiesGL'
 import { BufferGL, DepthBufferGL, FrameBufferGL, ShaderGL, ShaderProgramGL, TextureGL } from './resources'
@@ -49,7 +52,7 @@ export interface DeviceGLOptions {
   /**
    * Rendering context or a context type
    */
-  context?: 'webgl' | 'webgl2' | 'experimental-webgl' | WebGLRenderingContext | WebGL2RenderingContext
+  context?: 'webgl2' | WebGL2RenderingContext
   /**
    * Context attributes
    */
@@ -68,17 +71,14 @@ export const DefaultContextAttributes = Object.freeze<WebGLContextAttributes & {
   stencil: true,
 })
 
-function getOrCreateContext(
-  canvas: HTMLCanvasElement,
-  options: DeviceGLOptions,
-): WebGLRenderingContext | WebGL2RenderingContext {
-  let context = options.context
+function getOrCreateContext(canvas: HTMLCanvasElement, options: DeviceGLOptions): WebGL2RenderingContext {
+  let context = options.context || 'webgl2'
   const attributes = {
     ...DefaultContextAttributes,
     ...(options.contextAttributes || {}),
   }
 
-  let result: WebGLRenderingContext | WebGL2RenderingContext
+  let result: WebGL2RenderingContext
   if (typeof context === 'string') {
     // specific context is requested
     result = canvas.getContext(context, attributes) as any
@@ -90,9 +90,9 @@ function getOrCreateContext(
   }
 
   // apply fallback strategy
-  for (const name of ['webgl2', 'webgl', 'experimental-webgl']) {
+  for (const name of ['webgl2', 'experimental-webgl']) {
     try {
-      result = canvas.getContext(name, attributes) as WebGLRenderingContext | WebGL2RenderingContext
+      result = canvas.getContext(name as 'webgl2', attributes)
     } catch (e) {
       Log.error('[Device]', e)
     }
@@ -116,7 +116,7 @@ function getOrCreateContext(
  *
  * @public
  */
-export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingContext> {
+export class DeviceGL extends Device<WebGL2RenderingContext> {
   /**
    * The html canvas element
    * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement | HTMLCanvasElement}
@@ -132,7 +132,7 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
    * and
    * {@link https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext | WebGL2RenderingContext}
    */
-  public context: WebGLRenderingContext | WebGL2RenderingContext
+  public context: WebGL2RenderingContext
 
   public capabilities: CapabilitiesGL
 
@@ -186,6 +186,9 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
 
   protected programResources: ShaderProgramGL[] = []
   protected programResourceLookup = new Map<string, ShaderProgramGL>()
+
+  protected samplerResources: SamplerStateGL[] = []
+  protected samplerResourceLookup = new Map<any, SamplerStateGL>()
 
   /**
    * Constructs a {@link Device}
@@ -403,22 +406,22 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   /**
    * Sets or un sets a single render target
    */
-  public setRenderTarget(texture: Texture | null) {
+  public setRenderTarget(texture: TextureImage | null) {
     this.setRenderTargets(texture)
   }
 
   /**
    * Sets or un sets multiple render targets
    */
-  public setRenderTargets(...targets: Texture[]): this
+  public setRenderTargets(...targets: TextureImage[]): this
   public setRenderTargets(): this {
     const opts = this.reusableFrameBufferOptions
     opts.textures.length = arguments.length
-    let firstTexture: Texture = null
+    let firstTexture: TextureImage = null
     for (let i = 0; i < arguments.length; i++) {
       let argument = arguments[i]
       opts.textures[i] = argument
-      if (argument instanceof Texture) {
+      if (argument instanceof TextureImage) {
         firstTexture = firstTexture || argument
       }
     }
@@ -638,7 +641,34 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
   /**
    * Creates a new Texture. Calls the Texture constructor with given options.
    */
-  public createTexture(options: TextureOptions): TextureGL {
+  public createTexture(options: TextureOptions): Texture {
+    return new Texture(this, options)
+  }
+
+  public onTextureDisposed(resource: TextureGL): void {
+    removeFromArrayUnstable(this.textureResources, resource)
+    if (resource.resourceKey) {
+      this.textureResourceLookup.delete(resource.resourceKey)
+    }
+  }
+
+  /**
+   * Creates a new Texture that can be used as a render target. Ensures that
+   * the depthFormat option and a reasonable sampler are set.
+   */
+  public createRenderTarget(options: RenderTargetOptions): Texture {
+    options.depthFormat ||= 'None'
+    options.sampler ||= SamplerState.LinearRenderTarget
+    return new Texture(this, options)
+  }
+
+  /**
+   * Creates a new TextureImage
+   *
+   * @remarks
+   * Texture images are reference counted based on object identity of the {@link TextureImageOptions.source}.
+   */
+  public createTextureImage(options: TextureImageOptions): TextureGL {
     if (options.source) {
       const existing = this.textureResourceLookup.get(options.source)
       if (existing) {
@@ -658,27 +688,38 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     return texture
   }
 
-  public onTextureDisposed(resource: TextureGL): void {
-    removeFromArrayUnstable(this.textureResources, resource)
-    if (resource.resourceKey) {
-      this.textureResourceLookup.delete(resource.resourceKey)
-    }
-  }
-
-  /**
-   * Creates a new Texture that can be used as a render target. Ensures that
-   * the depthFormat option is set and calls the Texture constructor.
-   */
-  public createRenderTarget(options: TextureOptions): TextureGL {
-    options.depthFormat = options.depthFormat || 'None'
-    return new TextureGL(this, options)
-  }
-
   /**
    * Creates a new sampler state object
+   *
+   * @remarks
+   * Samplers are reference counted based on given parameters.
    */
-  public createSamplerState(options?: { texture?: Texture }): SamplerStateGL {
-    return new SamplerStateGL(this, options ? (options.texture as TextureGL) : undefined)
+  public createSamplerState(options?: SamplerStateParams): SamplerStateGL {
+    options = SamplerState.fillDefaults(options)
+    const key = computeSamplerKey(options)
+    if (key) {
+      const existing = this.samplerResourceLookup.get(key)
+      if (existing) {
+        existing.referenceCount++
+        return existing
+      }
+    }
+
+    const result = new SamplerStateGL(this, options)
+    result.resourceKey = key
+    result.referenceCount = 1
+    this.samplerResources.push(result)
+    if (key) {
+      this.samplerResourceLookup.set(key, result)
+    }
+    return result
+  }
+
+  public onSamplerStateDisposed(resource: SamplerStateGL): void {
+    removeFromArrayUnstable(this.samplerResources, resource)
+    if (resource.resourceKey) {
+      this.samplerResourceLookup.delete(resource.resourceKey)
+    }
   }
 
   public createDepthBuffer(options: DepthBufferOptions): DepthBufferGL {
@@ -710,11 +751,11 @@ export class DeviceGL extends Device<WebGLRenderingContext | WebGL2RenderingCont
     return new Effect(this, options)
   }
 
-  public unsetSamplersUsedAsAttachments() {
-    if (this.frameBuffer) {
-      this.frameBuffer.unsetSamplersUsedAsAttachments()
-    }
-  }
+  // public unsetSamplersUsedAsAttachments() {
+  //   if (this.frameBuffer) {
+  //     this.frameBuffer.unsetSamplersUsedAsAttachments()
+  //   }
+  // }
 
   public countTextures(): number {
     return this.textureResources.length
@@ -745,4 +786,8 @@ function computeProgramKey(options: ShaderProgramOptions): string {
   const vsKey = `vertex:\n${options.vertexShader}\n`
   const fsKey = `fragment:\n${options.fragmentShader}\n`
   return `${vsKey}${fsKey}`
+}
+
+function computeSamplerKey(options: SamplerStateParams): string {
+  return JSON.stringify(options)
 }

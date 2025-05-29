@@ -46,22 +46,27 @@ export class ShaderUniformGL extends ShaderUniform {
    * The WebGL Uniform location
    */
   public readonly location: WebGLUniformLocation
+
   /**
    * Meta data and annotations of this uniform
    */
   public readonly info: ShaderUniformInfo
+
   /**
    * The binding name of this uniform
    */
   public readonly name: string
+
   /**
    * The type name of the uniform in the shader
    */
   public readonly type: string
+
   /**
    * The default value
    */
   public readonly defaultValue: unknown
+
   /**
    * The size of the array, if this uniform is an array of simple type
    */
@@ -182,7 +187,10 @@ export class ShaderUniformGL extends ShaderUniform {
         if (this.info.register) {
           this.register = Number(this.info.register) | 0
         }
-        this.filter = copy(SamplerState[this.info.filter] || SamplerState.Default)
+        const filter = SamplerState[this.info.filter]
+        if (filter) {
+          this.sampler = this.device.createSamplerState(filter)
+        }
         this.set = this.setTexture
         break
       default:
@@ -485,5 +493,10 @@ export class ShaderUniformGL extends ShaderUniform {
     this.state.clear()
     const gl = this.gl as WebGL2RenderingContext
     gl.uniformMatrix4x2fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+  }
+
+  public dispose() {
+    this.sampler?.dispose()
+    this.sampler = null
   }
 }

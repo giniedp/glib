@@ -12,7 +12,7 @@ describe('TextureGL', () => {
 
   it('counts references for same source', () => {
     const source = createTextureSource(RED10x20)
-    const t1 = device.createTexture({
+    const t1 = device.createTextureImage({
       type: 'Texture2D',
       source,
     })
@@ -20,7 +20,7 @@ describe('TextureGL', () => {
     expect(device.countTextureReferences()).toBe(1)
     expect(device.countTextures()).toBe(1)
 
-    const t2 = device.createTexture({
+    const t2 = device.createTextureImage({
       type: 'Texture2D',
       source,
     })
@@ -39,7 +39,7 @@ describe('TextureGL', () => {
     // counter reached 0, resource should be gone
     // new texture with same source should create new resource and counter
 
-    const t3 = device.createTexture({
+    const t3 = device.createTextureImage({
       type: 'Texture2D',
       source,
     })
@@ -48,12 +48,12 @@ describe('TextureGL', () => {
   })
 
   it('creates unique resources for textures without source', () => {
-    const t1 = device.createTexture({ type: 'Texture2D' })
+    const t1 = device.createTextureImage({ type: 'Texture2D' })
     expect(t1.referenceCount).toBe(1)
     expect(device.countTextureReferences()).toBe(1)
     expect(device.countTextures()).toBe(1)
 
-    const t2 = device.createTexture({ type: 'Texture2D' })
+    const t2 = device.createTextureImage({ type: 'Texture2D' })
     expect(t2.referenceCount).toBe(1)
     expect(device.countTextureReferences()).toBe(2)
     expect(device.countTextures()).toBe(2)

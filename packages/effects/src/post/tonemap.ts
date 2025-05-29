@@ -1,5 +1,6 @@
 import {
   BlendState,
+  createShaderEffectSync,
   CullState,
   DepthFormat,
   DepthState,
@@ -7,11 +8,10 @@ import {
   Effect,
   StencilState,
   Texture,
-  TextureFilter,
-  TextureWrapMode,
-  createShaderEffectSync,
+  TextureImage,
 } from '@gglib/graphics'
 
+import { Vec2 } from '@gglib/math'
 import { POST_TONEMAP } from './tonemap.program'
 
 /**
@@ -55,7 +55,7 @@ export class PostTonemapEffect {
   /**
    * Input texture
    */
-  public inputTexture: Texture
+  public inputTexture: TextureImage
   /**
    * Output texture
    *
@@ -77,6 +77,7 @@ export class PostTonemapEffect {
   public readonly effect: Effect
   private clear: boolean = true
   private device: Device
+  private texel = Vec2.createOne()
 
   constructor(device: Device, options?: PostTonemapOptions) {
     this.device = device
@@ -127,12 +128,12 @@ export class PostTonemapEffect {
    */
   public clearLuminanceTargets() {
     for (const target of this.downsampleTextures) {
-      this.device.setRenderTarget(target)
+      this.device.setRenderTarget(target.image)
       this.device.clear(0)
     }
-    this.device.setRenderTarget(this.lum1)
+    this.device.setRenderTarget(this.lum1.image)
     this.device.clear(0)
-    this.device.setRenderTarget(this.lum2)
+    this.device.setRenderTarget(this.lum2.image)
     this.device.clear(0)
   }
 
@@ -164,12 +165,13 @@ export class PostTonemapEffect {
     device.depthState = DepthState.Default
     device.stencilState = StencilState.Default
     device.cullState = CullState.CullNone
-    device.textureUnits[0].commit({
-      minFilter: TextureFilter.Point,
-      magFilter: TextureFilter.Point,
-      wrapU: TextureWrapMode.Clamp,
-      wrapV: TextureWrapMode.Clamp,
-    })
+    // TODO:
+    // device.textureUnits[0].commit({
+    //   minFilter: TextureFilter.Point,
+    //   magFilter: TextureFilter.Point,
+    //   wrapU: TextureWrapMode.Clamp,
+    //   wrapV: TextureWrapMode.Clamp,
+    // })
 
     //
     // clear intermediate and history buffers
@@ -187,9 +189,9 @@ export class PostTonemapEffect {
       const program = !i ? programLuminance : programDownsample
       const source = !i ? sourceTexture : targets[i - 1]
       program.setUniform('texture1', source)
-      program.setUniform('texture1Texel', source.texel)
+      program.setUniform('texture1Texel', this.texel.init(1 / source.width, 1 / source.height))
       device.program = program
-      device.setRenderTarget(targets[i])
+      device.setRenderTarget(targets[i].image)
       device.drawQuad(false)
       device.setRenderTarget(null)
     }
@@ -198,11 +200,14 @@ export class PostTonemapEffect {
     let thisFrameLuminance = targets[targets.length - 1]
     let lastFrameLuminance = this.lum1
     programCombine.setUniform('texture1', thisFrameLuminance)
-    programCombine.setUniform('texture1Texel', thisFrameLuminance.texel)
+    programCombine.setUniform(
+      'texture1Texel',
+      this.texel.init(1 / thisFrameLuminance.width, 1 / thisFrameLuminance.height),
+    )
     programCombine.setUniform('texture2', lastFrameLuminance)
     programCombine.setUniform('adaptSpeed', this.adaptSpeed)
     device.program = programCombine
-    device.setRenderTarget(this.lum2)
+    device.setRenderTarget(this.lum2.image)
     device.drawQuad(false)
     device.setRenderTarget(null)
 
@@ -216,10 +221,10 @@ export class PostTonemapEffect {
     programTonemap.setUniform('whitePoint', this.whitePoint)
     programTonemap.setUniform('blackPoint', this.blackPoint)
     programTonemap.setUniform('texture1', sourceTexture)
-    programTonemap.setUniform('texture1Texel', sourceTexture.texel)
+    programTonemap.setUniform('texture1Texel', this.texel.init(1 / sourceTexture.width, 1 / sourceTexture.height))
     programTonemap.setUniform('texture2', this.lum2)
     device.program = programTonemap
-    device.setRenderTarget(targetBuffer)
+    device.setRenderTarget(targetBuffer.image)
     device.drawQuad(false)
     device.setRenderTarget(null)
 

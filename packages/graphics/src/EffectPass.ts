@@ -174,7 +174,7 @@ export class EffectPass {
   public clone(): EffectPass {
     const opts: EffectPassOptions = {
       name: this.name,
-      meta: copy(true, this.meta),
+      meta: { ...(this.meta || {}) },
       program: this.program.clone(),
     }
     if (this.stencilState) {

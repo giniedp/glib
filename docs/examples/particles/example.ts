@@ -11,7 +11,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const channel = new ParticleChannel(device, {
-    texture: device.createTexture({ source: '/assets/textures/particles/star_1.png' }),
+    texture: device.createTexture({
+      source: '/assets/textures/particles/star_1.png'
+    }),
     duration: 2000,
     maxParticles: 100,
     minHorizontalVelocity: 0,
@@ -42,9 +44,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     ui.slider(channel.settings, 'maxEndSize', { min: 0.25, max: 100, step: 0.25 })
     ui.color(channel.settings, 'minColor', { format: '[n]rgba' })
     ui.color(channel.settings, 'maxColor', { format: '[n]rgba' })
-    ui.slider(channel.settings.gravity, 'x', { min: -1, max: 1, step: 0.01 })
-    ui.slider(channel.settings.gravity, 'y', { min: -1, max: 1, step: 0.01 })
-    ui.slider(channel.settings.gravity, 'z', { min: -1, max: 1, step: 0.01 })
+    ui.slider(channel.settings.gravity!, 'x', { min: -1, max: 1, step: 0.01 })
+    ui.slider(channel.settings.gravity!, 'y', { min: -1, max: 1, step: 0.01 })
+    ui.slider(channel.settings.gravity!, 'z', { min: -1, max: 1, step: 0.01 })
   })
 
   let view = Mat4.createIdentity()
@@ -69,8 +71,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       gameTime -= rate
     }
 
-    channel.effect.parameters.view.initFrom(view)
-    channel.effect.parameters.projection.initFrom(projection)
+    channel.material.parameters.view.initFrom(view)
+    channel.material.parameters.projection.initFrom(projection)
     channel.update(dt)
     channel.draw()
   }

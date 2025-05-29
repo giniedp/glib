@@ -1,5 +1,5 @@
 import { PostBloomEffect } from '@gglib/effects'
-import { BlendState, CullState, DepthState, createDevice, cubeGeometry } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, Device, createDevice, cubeGeometry } from '@gglib/graphics'
 import { AutoMaterial } from '@gglib/materials'
 import { Mat4, Quat, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -16,7 +16,7 @@ type SceneObject = {
 }
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({
+  const device: Device = createDevice({
     canvas,
   })
 
@@ -70,13 +70,22 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
   device.resize()
   const rt1 = device.createRenderTarget({
+    name: 'color',
     pixelFormat: 'RGBA',
     width: device.drawingBufferWidth,
     height: device.drawingBufferHeight,
     depthFormat: 'DepthStencil',
   })
-  const rt2 = device.createRenderTarget({ width: device.drawingBufferWidth, height: device.drawingBufferHeight })
-  const rt3 = device.createRenderTarget({ width: device.drawingBufferWidth, height: device.drawingBufferHeight })
+  const rt2 = device.createRenderTarget({
+    name: 'intermediate1',
+    width: device.drawingBufferWidth,
+    height: device.drawingBufferHeight,
+  })
+  const rt3 = device.createRenderTarget({
+    name: 'intermediate2',
+    width: device.drawingBufferWidth,
+    height: device.drawingBufferHeight,
+  })
 
   function onFrame(time: number) {
     updateView()
@@ -89,14 +98,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       return
     }
     device.resize()
-    rt1.resize(device.drawingBufferWidth, device.drawingBufferHeight)
-    rt2.resize(device.drawingBufferWidth, device.drawingBufferHeight)
-    rt3.resize(device.drawingBufferWidth, device.drawingBufferHeight)
+    rt1.image.resize(device.drawingBufferWidth, device.drawingBufferHeight)
+    rt2.image.resize(device.drawingBufferWidth, device.drawingBufferHeight)
+    rt3.image.resize(device.drawingBufferWidth, device.drawingBufferHeight)
 
     device.cullState = CullState.Default
     device.depthState = DepthState.Default
     device.blendState = BlendState.Default
-    device.setRenderTarget(rt1)
+    device.setRenderTarget(rt1.image)
     device.clear(0xff2e2620, 1.0)
     for (const object of objects) {
       material.World = object.world

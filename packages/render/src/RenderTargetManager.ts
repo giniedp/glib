@@ -1,4 +1,4 @@
-import { Device, RenderTargetOptions, Texture } from '@gglib/graphics'
+import { Device, RenderTargetOptions, Texture, TextureImage } from '@gglib/graphics'
 import { Log, removeFromArrayUnstable } from '@gglib/utils'
 
 /**
@@ -24,26 +24,26 @@ export class RenderTargetManager {
     if (a.pixelFormat !== b.pixelFormat || a.pixelType !== b.pixelType) {
       return false
     }
-    if (!a.samplerParams && !b.samplerParams) {
-      return true
-    }
-    if ((a.samplerParams && !b.samplerParams) || (!a.samplerParams && b.samplerParams)) {
-      return false
-    }
-    const aParams = a.samplerParams
-    const bParams = b.samplerParams
-    if (aParams.minFilter !== bParams.minFilter || aParams.magFilter !== bParams.magFilter) {
-      return false
-    }
-    if (aParams.minLod !== bParams.minLod || aParams.maxLod !== bParams.maxLod) {
-      return false
-    }
-    if (aParams.compareFunc !== bParams.compareFunc || aParams.compareMode !== bParams.compareMode) {
-      return false
-    }
-    if (aParams.wrapU !== bParams.wrapU || aParams.wrapV !== bParams.wrapV || aParams.wrapW !== bParams.wrapW) {
-      return false
-    }
+    // if (!a.samplerParams && !b.samplerParams) {
+    //   return true
+    // }
+    // if ((a.samplerParams && !b.samplerParams) || (!a.samplerParams && b.samplerParams)) {
+    //   return false
+    // }
+    // const aParams = a.samplerParams
+    // const bParams = b.samplerParams
+    // if (aParams.minFilter !== bParams.minFilter || aParams.magFilter !== bParams.magFilter) {
+    //   return false
+    // }
+    // if (aParams.minLod !== bParams.minLod || aParams.maxLod !== bParams.maxLod) {
+    //   return false
+    // }
+    // if (aParams.compareFunc !== bParams.compareFunc || aParams.compareMode !== bParams.compareMode) {
+    //   return false
+    // }
+    // if (aParams.wrapU !== bParams.wrapU || aParams.wrapV !== bParams.wrapV || aParams.wrapW !== bParams.wrapW) {
+    //   return false
+    // }
     return true
   }
 
@@ -107,7 +107,7 @@ export class RenderTargetManager {
       }
     }
 
-    if (opts instanceof Texture) {
+    if (opts instanceof TextureImage) {
       opts = {
         width: opts.width,
         height: opts.height,
@@ -115,11 +115,10 @@ export class RenderTargetManager {
         surfaceFormat: opts.surfaceFormat,
         pixelFormat: opts.pixelFormat,
         pixelType: opts.pixelType,
-        samplerParams: opts.samplerParams,
       }
     }
     Log.debug('[Render.Manager]', 'create render target', opts)
-    const target = this.device.createTexture(opts)
+    const target = this.device.createRenderTarget(opts)
     this.usedTargets.push({
       frames: 0,
       target: target,

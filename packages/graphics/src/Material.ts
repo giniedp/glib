@@ -1,4 +1,4 @@
-import { TypeToken, uuid } from '@gglib/utils'
+import { uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { Effect, EffectOptions } from './Effect'
 import { PROGRAM_BASIC } from './programs'
@@ -21,6 +21,11 @@ export interface MaterialOptionsBase<Parameters extends MaterialParameters = Mat
    * The descriptive name of this effect
    */
   name?: string
+
+  /**
+   * User defined meta data and annotations
+   */
+  meta?: Record<string, any>
 
   /**
    * Effect parameters to be applied before rendering
@@ -77,51 +82,6 @@ export interface MaterialProgramOptions extends MaterialOptionsBase {
  */
 export class Material<Params extends MaterialParameters = MaterialParameters> {
   /**
-   * A symbol identifying the Array {@link Material} type.
-   */
-  public static readonly Array = new TypeToken<Material[]>('Material[]', {
-    factory: () => {
-      return []
-    },
-  })
-
-  /**
-   * A symbol identifying the {@link MaterialOptions} type.
-   */
-  public static readonly Options = new TypeToken<MaterialOptions>('MaterialOptions', {
-    factory: () => {
-      return {} as MaterialOptions
-    },
-  })
-
-  /**
-   * A symbol identifying the {@link MaterialOptions} type with effectUri set.
-   */
-  public static readonly OptionsUri = new TypeToken<MaterialOptions>('OptionsUri', {
-    factory: () => {
-      return { effectName: '' } as MaterialOptions
-    },
-  })
-
-  /**
-   * A symbol identifying the {@link MaterialOptions} type with effectUri set.
-   */
-  public static readonly OptionsTechnique = new TypeToken<MaterialOptions>('OptionsTechnique', {
-    factory: () => {
-      return { effectName: 'default' } as MaterialOptions
-    },
-  })
-
-  /**
-   * A symbol identifying the Array {@link MaterialOptions} type.
-   */
-  public static readonly OptionsArray = new TypeToken<MaterialOptions[]>('MaterialOptions[]', {
-    factory: () => {
-      return []
-    },
-  })
-
-  /**
    * A unique id
    */
   public uid: string = uuid()
@@ -135,6 +95,11 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    * A user defined name of the material
    */
   public name: string
+
+  /**
+   * User defined meta data and annotations
+   */
+  public meta?: Record<string, any>
 
   /**
    * The effect to be used
@@ -152,6 +117,7 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
   public constructor(device: Device, options: MaterialOptions) {
     this.device = device
     this.name = options.name
+    this.meta = options.meta || {}
     this.parameters = (options.parameters || {}) as Params
     let effect: Effect | EffectOptions
     if ('program' in options) {
@@ -189,7 +155,7 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    * Simply get the parameter by name.
    *
    * @remarks
-   * This is a convenience method ot access parameters with Type casting.
+   * This is a convenience method to access parameters with Type casting.
    */
   public parameter<T>(name: string): T {
     return this.parameters[name] as T

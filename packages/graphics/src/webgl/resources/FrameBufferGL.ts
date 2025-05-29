@@ -1,4 +1,4 @@
-import { DepthBuffer, FrameBuffer, FrameBufferOptions, Texture } from '../../resources'
+import { DepthBuffer, FrameBuffer, FrameBufferOptions, TextureImage } from '../../resources'
 import { DeviceGL } from '../DeviceGL'
 import { DepthBufferGL } from './DepthBufferGL'
 import { TextureGL } from './TextureGL'
@@ -10,7 +10,7 @@ export class FrameBufferGL extends FrameBuffer {
   public readonly device: DeviceGL
   public readonly resource: WebGLFramebuffer
 
-  private colorAttachments: Texture[] = []
+  private colorAttachments: TextureImage[] = []
   private depthAttachment: DepthBuffer
   private colorAttachmentCountField: number = 0
   private colorAttachmentPoints: number[] = []
@@ -121,7 +121,7 @@ export class FrameBufferGL extends FrameBuffer {
     }
   }
 
-  public static validateAttachments(textures?: Texture[], depth?: DepthBuffer) {
+  public static validateAttachments(textures?: TextureImage[], depth?: DepthBuffer) {
     // treat empty attachment list as valid
     if (!textures || textures.length === 0) {
       return true
@@ -158,16 +158,16 @@ export class FrameBufferGL extends FrameBuffer {
     return true
   }
 
-  public unsetSamplersUsedAsAttachments() {
-    for (const texture of this.colorAttachments) {
-      for (const unit of this.device.textureUnits) {
-        if (texture === unit.texture) {
-          unit.texture = null
-          unit.commit()
-        }
-      }
-    }
-  }
+  // public unsetSamplersUsedAsAttachments() {
+  //   for (const texture of this.colorAttachments) {
+  //     for (const unit of this.device.textureUnits) {
+  //       if (texture === unit.texture) {
+  //         unit.texture = null
+  //         unit.commit()
+  //       }
+  //     }
+  //   }
+  // }
 
   private assign(options: Partial<FrameBufferGL>) {
     Object.assign(this, options)

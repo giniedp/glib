@@ -1,5 +1,5 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
-import { TypeToken, uuid } from '@gglib/utils'
+import { uuid } from '@gglib/utils'
 
 import { Geometry, GeometryOptions } from './Geometry'
 
@@ -37,45 +37,40 @@ export interface MeshOptions {
  */
 export class Mesh {
   /**
-   * A symbol identifying the `ModelMesh[]` type.
-   */
-  public static readonly Array = new TypeToken<Mesh[]>('ModelMesh[]', { factory: () => [] })
-  /**
-   * A symbol identifying the `ModelMeshOptions` type.
-   */
-  public static readonly Options = new TypeToken<MeshOptions>('ModelMeshOptions', { factory: () => ({}) })
-  /**
-   * A symbol identifying the `ModelMeshOptions[]` type.
-   */
-  public static readonly OptionsArray = new TypeToken<MeshOptions[]>('ModelMeshOptions[]', { factory: () => [] })
-  /**
    * Autmatically generated unique identifier
    */
   public readonly uid: string
+
   /**
    * The graphics device
    */
   public readonly device: Device
+
   /**
    * The models local bounding box
    */
   public boundingBox: BoundingBox
+
   /**
    * The models local bounign sphere
    */
   public boundingSphere: BoundingSphere
+
   /**
    * Collection of materials that are used by the model meshes
    */
   public materials: ReadonlyArray<Material>
+
   /**
    * Collection of meshes
    */
   public parts: ReadonlyArray<Geometry>
+
   /**
    * The index of the parent bone for this mesh
    */
   public boneId: number | null = null
+
   /**
    * The name of this mesh
    */

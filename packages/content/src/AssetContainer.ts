@@ -1,4 +1,4 @@
-import { MaterialOptions, MeshOptions, TextureOptions } from '@gglib/graphics'
+import { MaterialOptions, MeshOptions, TextureImageOptions, TextureOptions } from '@gglib/graphics'
 
 /**
  * An asset container holding loaded data ready to create graphics resources.

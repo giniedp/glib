@@ -31,6 +31,7 @@ for (let y = 0; y < size; y++) {
   for (let x = 0; x < size; x++) {
     effects[y][x] = device.createEffect({
       techniques: effect.techniques,
+
       parameters: {
         World: Mat4.createIdentity(),
         View: Mat4.createIdentity(),

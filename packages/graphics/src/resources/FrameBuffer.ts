@@ -1,6 +1,6 @@
 import { Device } from '../Device'
 import { DepthBuffer } from './DepthBuffer'
-import { Texture } from './Texture'
+import { TextureImage } from './TextureImage'
 
 /**
  * @public
@@ -9,11 +9,11 @@ export interface FrameBufferOptions {
   /**
    *
    */
-  textures?: Texture[],
+  textures?: TextureImage[]
   /**
    *
    */
-  depthBuffer?: DepthBuffer,
+  depthBuffer?: DepthBuffer
 
   resource?: unknown
 }

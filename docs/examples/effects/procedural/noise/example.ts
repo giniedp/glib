@@ -1,5 +1,5 @@
 import { brickProgram, fractalProgram } from '@gglib/effects'
-import { BlendState, CullState, DepthState, createDevice } from '@gglib/graphics'
+import { BlendState, CullState, DepthState, Material, createDevice } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
@@ -8,7 +8,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     canvas,
   })
 
-  const fbmEffect = device.createEffect({
+  const fbmEffect = new Material(device, {
     program: fractalProgram({
       FBM: 'fbmFractal',
       FBM_SAMPLE: 'perlinNoise3D(point.xyz)',
@@ -25,7 +25,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     },
   })
 
-  const brickEffect = device.createEffect({
+  const brickEffect = new Material(device, {
     program: brickProgram(),
     parameters: {
       brickWidth: 0.25,

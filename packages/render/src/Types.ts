@@ -3,7 +3,7 @@ import type {
   PrimitiveBatch,
   ShaderProgram,
   SpriteBatch,
-  Texture,
+  TextureImage,
   ViewportStateParams,
 } from '@gglib/graphics'
 import { IVec4, Mat4 } from '@gglib/math'
@@ -392,5 +392,5 @@ export interface CompositionOutput {
   /**
    * The render channels used during rendering
    */
-  channels: Partial<Record<OutputSemantic, Texture>>
+  channels: Partial<Record<OutputSemantic, TextureImage>>
 }

@@ -1,4 +1,5 @@
-import { SamplerStateParams, TextureUnitState } from '../../states'
+import { Texture, TextureImage } from '../../resources'
+import { SamplerState, TextureUnitState } from '../../states'
 import { DeviceGPU } from '../DeviceGPU'
 import { SamplerStateGPU } from './SamplerStateGPU'
 
@@ -6,7 +7,6 @@ import { SamplerStateGPU } from './SamplerStateGPU'
  * @public
  */
 export class TextureUnitStateGPU extends TextureUnitState {
-
   /**
    * The graphics device
    */
@@ -28,14 +28,6 @@ export class TextureUnitStateGPU extends TextureUnitState {
   }
 
   /**
-   * Activates this texture unit
-   */
-  public activate(): this {
-    // TODO:
-    return this
-  }
-
-  /**
    * Assigns and commits the sampler state and current texture to this texture unit
    *
    * @remarks
@@ -47,7 +39,7 @@ export class TextureUnitStateGPU extends TextureUnitState {
    *
    * @param samplerParams - The sampler state to assign
    */
-  public commit(samplerParams?: SamplerStateParams): this {
+  public commit(texture: TextureImage | Texture, sampler?: SamplerState): this {
     // TODO:
     return this
   }

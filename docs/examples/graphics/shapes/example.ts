@@ -15,7 +15,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const program = basicProgram(device)
   const texture = device.createTexture({
-    source: '/assets/textures/prototype/proto_red.png',
+    image: {
+      source: '/assets/textures/prototype/proto_red.png',
+    }
   })
   let geometry = cubeGeometry(device, {
     size: 1,
@@ -28,7 +30,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         tesselation: 1
       }
       function update() {
-        geometry.destroy()
+        geometry.dispose()
         geometry = cubeGeometry(device, options)
       }
       g.slider(options, 'size', { min: 0, max: 2, step: 0.1, onInput: update })
@@ -42,7 +44,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         tesselation: 8,
       }
       function update() {
-        geometry.destroy()
+        geometry.dispose()
         geometry = sphereGeometry(device, options)
       }
       g.slider(options, 'radius', { min: 0, max: 2, step: 0.1, onInput: update })
@@ -55,7 +57,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         tesselation: 8,
       }
       function update() {
-        geometry.destroy()
+        geometry.dispose()
         geometry = cylinderGeometry(device, options)
       }
       g.slider(options, 'radius', { min: 0, max: 2, step: 0.1, onInput: update })

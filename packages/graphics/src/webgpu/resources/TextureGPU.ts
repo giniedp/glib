@@ -1,15 +1,11 @@
-import {
-  ArrayType,
-  pixelFormatElementCount,
-  TextureType,
-} from '../../enums'
+import { ArrayType, pixelFormatElementCount, TextureType } from '../../enums'
+import { TextureDataOption, TextureImage, TextureImageOptions, TextureSourceOption } from '../../resources/TextureImage'
 
-import { Texture, TextureDataOption, TextureOptions, TextureSourceOption } from '../../resources/Texture'
 import { DeviceGPU } from '../DeviceGPU'
 import { toTextureFormat } from '../utils/textureFormat'
 
 function isPowerOfTwo(value: number): boolean {
-  return ((value > 0) && !(value & (value - 1))) // tslint:disable-line
+  return value > 0 && !(value & (value - 1)) // tslint:disable-line
 }
 
 /**
@@ -17,8 +13,7 @@ function isPowerOfTwo(value: number): boolean {
  *
  * @public
  */
-export class TextureGPU extends Texture {
-
+export class TextureGPU extends TextureImage {
   public readonly handle: GPUTexture
 
   private get dimensionGPU() {
@@ -36,30 +31,38 @@ export class TextureGPU extends Texture {
    * Constructs an instance of a Texture.
    *
    * @remarks
-   * The options are passed down to {@link Texture.setup}
+   * The options are passed down to {@link TextureImage.setup}
    */
-  constructor(public readonly device: DeviceGPU, options: TextureOptions = {}) {
+  constructor(public readonly device: DeviceGPU, options: TextureImageOptions = {}) {
     super()
     this.setup(options)
   }
 
-  public create(): this {
+  public createResource() {
     if (this.handle == null) {
-      this.set('handle', this.device.device.createTexture({
-        dimension: this.dimensionGPU,
-        format: toTextureFormat(this.pixelFormat, this.pixelType, true, false),
-        mipLevelCount: this.generateMipmap ? Math.floor(Math.log(Math.max(this.width, this.height)) * Math.LOG2E) + 1 : 1,
-        sampleCount: 4, // TODO:
-        size: {
-          width: this.width,
-          height: this.height,
-          depth: 1,
-        },
+      this.set(
+        'handle',
+        this.device.device.createTexture({
+          dimension: this.dimensionGPU,
+          format: toTextureFormat(this.pixelFormat, this.pixelType, true, false),
+          mipLevelCount: this.generateMipmap
+            ? Math.floor(Math.log(Math.max(this.width, this.height)) * Math.LOG2E) + 1
+            : 1,
+          sampleCount: 4, // TODO:
+          size: {
+            width: this.width,
+            height: this.height,
+            depth: 1,
+          },
 
-        usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.SAMPLED | GPUTextureUsage.OUTPUT_ATTACHMENT,
-      }))
+          usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.SAMPLED | GPUTextureUsage.OUTPUT_ATTACHMENT,
+        }),
+      )
     }
-    return this
+  }
+
+  protected disposeResource() {
+
   }
 
   /**
@@ -98,7 +101,7 @@ export class TextureGPU extends Texture {
       if (data instanceof Uint8ClampedArray) {
         buffer = new Uint8Array(data.buffer)
       } else {
-        buffer = (data as ArrayBufferView)
+        buffer = data as ArrayBufferView
       }
     }
     if (!buffer) {
@@ -119,7 +122,7 @@ export class TextureGPU extends Texture {
     this.set('width', width)
     this.set('height', height)
     this.set('isPOT', isPowerOfTwo(width) && isPowerOfTwo(height))
-    this.create()
+    // this.create()
 
     // TODO:
 
@@ -144,7 +147,7 @@ export class TextureGPU extends Texture {
    *
    * A call to this method instructs the texture to check the
    * download state of the resources and when available to update
-   * the texture data. When data has arrived the {@link Texture.ready}
+   * the texture data. When data has arrived the {@link TextureImage.ready}
    * property will be set to `true`
    */
   public update(): boolean {
@@ -158,7 +161,7 @@ export class TextureGPU extends Texture {
     this.set('width', this.source.width)
     this.set('height', this.source.height)
     this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
-    this.create()
+    // this.create()
 
     // TODO:
     return true

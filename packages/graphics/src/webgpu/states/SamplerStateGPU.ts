@@ -14,28 +14,27 @@ export class SamplerStateGPU extends SamplerState {
    */
   public readonly device: DeviceGPU
 
-  constructor(device: DeviceGPU, texture?: { type: number, handle: WebGLTexture }) {
+  constructor(device: DeviceGPU, options?: SamplerStateParams) {
     super()
     this.device = device
-    this.setup()
+    this.create()
   }
 
   /**
    * Recreates the underlying sampler object if necessary
    */
-  public setup() {
+  public create() {
     // TODO:
     return this
   }
 
-  public destroy() {
+  public dispose() {
     // TODO:
     return this
   }
 
   public commitChanges(changes?: SamplerStateParams): this {
     // TODO:
-    this.clearChanges()
     return this
   }
 }

@@ -9,6 +9,8 @@ import {
   ShaderProgram,
   ShaderProgramOptions,
   Texture,
+  TextureImage,
+  TextureImageOptions,
   TextureOptions,
 } from './resources'
 import {
@@ -21,6 +23,7 @@ import {
   OffsetState,
   OffsetStateParams,
   SamplerState,
+  SamplerStateParams,
   ScissorState,
   ScissorStateParams,
   StencilState,
@@ -33,9 +36,9 @@ import {
 
 import { Capabilities } from './Capabilities'
 import { Color } from './Color'
+import { Effect, EffectOptions } from './Effect'
 import { Model, ModelOptions } from './model/Model'
 import { VertexBuffer, VertexBufferOptions } from './resources/VertexBuffer'
-import { Effect, EffectOptions } from './Effect'
 import { SpriteBatch } from './SpriteBatch'
 import { AttributeSemantic, VertexLayout } from './VertexLayout'
 
@@ -72,7 +75,7 @@ export abstract class Device<T = unknown> {
    * @remarks
    * The number of texture units is limited by {@link Capabilities.maxTextureUnits}
    */
-  public readonly textures: Texture[]
+  public readonly textures: TextureImage[]
 
   /**
    * Collection of {@link SamplerState}.
@@ -162,6 +165,7 @@ export abstract class Device<T = unknown> {
   public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
       this.defaultTextureInstance = this.createTexture({
+        sampler: SamplerState.PointWrap,
         type: 'Texture2D',
         // prettier-ignore
         source: [
@@ -173,7 +177,6 @@ export abstract class Device<T = unknown> {
         width: 2,
         height: 2,
         pixelFormat: PixelFormat.RGBA,
-        samplerParams: SamplerState.PointWrap,
       })
     }
     return this.defaultTextureInstance
@@ -301,14 +304,14 @@ export abstract class Device<T = unknown> {
   /**
    * Sets or un sets a single render target
    */
-  public setRenderTarget(texture: Texture) {
+  public setRenderTarget(texture: TextureImage | null) {
     this.setRenderTargets(texture)
   }
 
   /**
    * Sets or un sets multiple render targets
    */
-  public abstract setRenderTargets(...targets: Texture[]): this
+  public abstract setRenderTargets(...targets: TextureImage[]): this
 
   /**
    * Gets the currently active vertex buffer
@@ -397,20 +400,25 @@ export abstract class Device<T = unknown> {
   public abstract createProgram(options: ShaderProgramOptions): ShaderProgram
 
   /**
-   * Creates a new Texture. Calls the TextucreateRenderTargetre constructor with given options.
+   * Creates a new Texture
    */
   public abstract createTexture(options?: TextureOptions): Texture
 
   /**
+   * Creates a new TextureImage
+   */
+  public abstract createTextureImage(options?: TextureImageOptions): TextureImage
+
+  /**
    * Creates a new Texture that can be used as a render target. Ensures that
-   * the depthFormat option is set and calls the Texture constructor.
+   * the depthFormat option and a reasonable sampler are set.
    */
   public abstract createRenderTarget(options?: TextureOptions): Texture
 
   /**
    * Creates a new sampler state object
    */
-  public abstract createSamplerState(options?: { texture?: Texture }): SamplerState
+  public abstract createSamplerState(options?: SamplerStateParams): SamplerState
 
   /**
    * Creates a depth buffer

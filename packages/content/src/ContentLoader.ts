@@ -133,9 +133,6 @@ export class ContentLoader {
     if (!input) {
       throw new Error(`No texture found in asset loaded from: ${url}`)
     }
-    if (!input.source) {
-      throw new Error(`Texture source is missing in asset loaded from: ${url}`)
-    }
     return this.device.createTexture(asset.textures[0])
   }
 

@@ -1,12 +1,13 @@
 import { IVec2, IVec3, Mat3, Mat4, Quat, Vec2, Vec3 } from '@gglib/math'
 import { Color } from './Color'
-import { Texture } from './resources/Texture'
+import { Texture } from './resources'
+import { TextureImage } from './resources/TextureImage'
 
 /**
  * @public
  */
 export class Sprite {
-  public texture: Texture
+  public texture: Texture | TextureImage
   public color: number = 0
   public readonly uv1: IVec2 = Vec2.init({}, 0, 0)
   public readonly uv2: IVec2 = Vec2.init({}, 0, 1)
@@ -15,7 +16,7 @@ export class Sprite {
   public readonly vertex3: IVec3 = Vec3.init({}, 0, 0, 0)
   public readonly vertex4: IVec3 = Vec3.init({}, 1, 0, 0)
 
-  public reset(texture: Texture): this {
+  public reset(texture: Texture | TextureImage): this {
     this.texture = texture
     this.color = 0xffffffff
     Vec2.init(this.uv1, 0, 0)
@@ -49,7 +50,7 @@ export class Sprite {
    * If the sprite should receive a tint color, the `color()` must be called first.
    */
   public alpha(alpha: number): this {
-    this.color = ((this.color || 0) & 0x00FFFFFF) | (((alpha * 255) & 0xFF) << 24) // tslint:disable-line
+    this.color = ((this.color || 0) & 0x00ffffff) | (((alpha * 255) & 0xff) << 24) // tslint:disable-line
     return this
   }
 
@@ -72,8 +73,8 @@ export class Sprite {
     flipY?: boolean,
   ): this {
     const tex = this.texture
-    const texelX = tex.texelX
-    const texelY = tex.texelY
+    const texelX = 1 / tex.width
+    const texelY = 1 / tex.height
     if (flipX) {
       this.uv2.x = x * texelX
       this.uv1.x = (x + width) * texelX
@@ -95,7 +96,7 @@ export class Sprite {
    * Flips x texture coordinates
    */
   public flipX() {
-    [this.uv1.x, this.uv2.x] = [this.uv2.x, this.uv1.x]
+    ;[this.uv1.x, this.uv2.x] = [this.uv2.x, this.uv1.x]
     return this
   }
 
@@ -103,7 +104,7 @@ export class Sprite {
    * Flips y texture coordinates
    */
   public flipY() {
-    [this.uv1.y, this.uv2.y] = [this.uv2.y, this.uv1.y]
+    ;[this.uv1.y, this.uv2.y] = [this.uv2.y, this.uv1.y]
     return this
   }
 
@@ -130,10 +131,10 @@ export class Sprite {
     pivotY?: number,
   ) {
     if (width == null) {
-      width = (this.uv2.x - this.uv1.x) / this.texture.texelX
+      width = (this.uv2.x - this.uv1.x) * this.texture.width
     }
     if (height == null) {
-      height = (this.uv2.y - this.uv1.y) / this.texture.texelY
+      height = (this.uv2.y - this.uv1.y) * this.texture.height
     }
     if (depth == null) {
       depth = 0
@@ -148,36 +149,16 @@ export class Sprite {
       let cY = y + dy
       let p1X = x - cX
       let p1Y = y - cY
-      let p2X = (x + width) - cX
-      let p2Y = (y + height) - cY
+      let p2X = x + width - cX
+      let p2Y = y + height - cY
 
-      Vec3.init(
-        this.vertex1,
-        cX + p1X * cos - p1Y * sin,
-        cY + p1X * sin + p1Y * cos,
-        depth,
-      )
+      Vec3.init(this.vertex1, cX + p1X * cos - p1Y * sin, cY + p1X * sin + p1Y * cos, depth)
 
-      Vec3.init(
-        this.vertex2,
-        cX + p2X * cos - p1Y * sin,
-        cY + p2X * sin + p1Y * cos,
-        depth,
-      )
+      Vec3.init(this.vertex2, cX + p2X * cos - p1Y * sin, cY + p2X * sin + p1Y * cos, depth)
 
-      Vec3.init(
-        this.vertex3,
-        cX + p1X * cos - p2Y * sin,
-        cY + p1X * sin + p2Y * cos,
-        depth,
-      )
+      Vec3.init(this.vertex3, cX + p1X * cos - p2Y * sin, cY + p1X * sin + p2Y * cos, depth)
 
-      Vec3.init(
-        this.vertex4,
-        cX + p2X * cos - p2Y * sin,
-        cY + p2X * sin + p2Y * cos,
-        depth,
-      )
+      Vec3.init(this.vertex4, cX + p2X * cos - p2Y * sin, cY + p2X * sin + p2Y * cos, depth)
     } else {
       Vec3.init(this.vertex1, x, y, depth)
       Vec3.init(this.vertex2, x + width, y, depth)

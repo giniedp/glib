@@ -1,5 +1,5 @@
 import { BinaryReader } from '@gglib/utils'
-import { GLConst, TextureOptions, DataType, PixelFormat, SurfaceFormat } from '@gglib/graphics'
+import { GLConst, TextureOptions, DataType, PixelFormat, SurfaceFormat, TextureImageOptions } from '@gglib/graphics'
 
 export interface TGAHeader {
   idLength: number
@@ -191,7 +191,7 @@ export class TGA {
     })
   }
 
-  public getTextureOptions(): TextureOptions {
+  public getTextureOptions(): TextureImageOptions {
     const pixelDepth = this.header.pixelDepth
     if (this.isGray) {
       if (pixelDepth === 8) {

@@ -8,12 +8,14 @@ import {
   glsl,
   Effect,
   StencilState,
-  Texture,
+  TextureImage,
   TextureFilter,
   TextureWrapMode,
+  Texture,
 } from '@gglib/graphics'
 import { RenderContext } from './RenderContext'
 import { RenderPass } from './Types'
+import { Vec2 } from '@gglib/math'
 
 /**
  * Constructor options for {@link PostTonemap}
@@ -83,6 +85,7 @@ export class PostTonemap implements RenderPass {
     height: 2,
     depthFormat: DepthFormat.None,
   }
+  private texel = Vec2.create()
 
   constructor(private device: Device, options?: TonemapOptions) {
     this.enabled = options?.enabled ?? this.enabled
@@ -115,11 +118,11 @@ export class PostTonemap implements RenderPass {
       return
     }
 
-    const programLuminance = this.effect.getTechnique('Luminance').pass(0).program
-    const programDownsample = this.effect.getTechnique('Downsample').pass(0).program
-    const programCombine = this.effect.getTechnique('Combine').pass(0).program
-    const programTonemap = this.effect.getTechnique('Tonemap').pass(0).program
-    const programCopy = this.effect.getTechnique('Copy').pass(0).program
+    const programLuminance = this.effect.getTechnique('Luminance').program0
+    const programDownsample = this.effect.getTechnique('Downsample').program0
+    const programCombine = this.effect.getTechnique('Combine').program0
+    const programTonemap = this.effect.getTechnique('Tonemap').program0
+    const programCopy = this.effect.getTechnique('Copy').program0
 
     // the resulting buffer
     const targetBuffer = ctx.targets.require({
@@ -138,12 +141,13 @@ export class PostTonemap implements RenderPass {
     device.depthState = DepthState.Default
     device.stencilState = StencilState.Default
     device.cullState = CullState.CullNone
-    device.textureUnits[0].commit({
-      minFilter: TextureFilter.Point,
-      magFilter: TextureFilter.Point,
-      wrapU: TextureWrapMode.Clamp,
-      wrapV: TextureWrapMode.Clamp,
-    })
+    // TODO: how do we want to set filters
+    // device.textureUnits[0].commit({
+    //   minFilter: TextureFilter.Point,
+    //   magFilter: TextureFilter.Point,
+    //   wrapU: TextureWrapMode.Clamp,
+    //   wrapV: TextureWrapMode.Clamp,
+    // })
 
     //
     // clear intermediate and history buffers
@@ -151,12 +155,12 @@ export class PostTonemap implements RenderPass {
     if (this.clearNext) {
       this.clearNext = false
       for (const target of this.targets) {
-        device.setRenderTarget(target)
+        device.setRenderTarget(target.image)
         device.clear(0)
       }
-      device.setRenderTarget(this.lum1)
+      device.setRenderTarget(this.lum1.image)
       device.clear(0)
-      device.setRenderTarget(this.lum2)
+      device.setRenderTarget(this.lum2.image)
       device.clear(0)
     }
 
@@ -172,9 +176,9 @@ export class PostTonemap implements RenderPass {
         source = this.targets[i - 1]
       }
       program.setUniform('texture1', source)
-      program.setUniform('texture1Texel', source.texel)
+      program.setUniform('texture1Texel', this.texel.init(1 / source.width, 1 / source.height))
       device.program = program
-      device.setRenderTarget(this.targets[i])
+      device.setRenderTarget(this.targets[i].image)
       device.drawQuad(false)
       device.setRenderTarget(null)
     }
@@ -183,11 +187,11 @@ export class PostTonemap implements RenderPass {
     let thisFrameLuminance = this.targets[this.targets.length - 1]
     let lastFrameLuminance = this.lum1
     programCombine.setUniform('texture1', thisFrameLuminance)
-    programCombine.setUniform('texture1Texel', thisFrameLuminance.texel)
+    programCombine.setUniform('texture1Texel', this.texel.init(1 / thisFrameLuminance.width, 1 / thisFrameLuminance.height))
     programCombine.setUniform('texture2', lastFrameLuminance)
     programCombine.setUniform('adaptSpeed', this.adaptSpeed)
     device.program = programCombine
-    device.setRenderTarget(this.lum2)
+    device.setRenderTarget(this.lum2.image)
     device.drawQuad(false)
     device.setRenderTarget(null)
 
@@ -201,10 +205,10 @@ export class PostTonemap implements RenderPass {
     programTonemap.setUniform('whitePoint', this.whitePoint)
     programTonemap.setUniform('blackPoint', this.blackPoint)
     programTonemap.setUniform('texture1', sourceTexture)
-    programTonemap.setUniform('texture1Texel', sourceTexture.texel)
+    programTonemap.setUniform('texture1Texel', this.texel.init(1 / sourceTexture.width, 1 / sourceTexture.height))
     programTonemap.setUniform('texture2', this.lum2)
     device.program = programTonemap
-    device.setRenderTarget(targetBuffer)
+    device.setRenderTarget(targetBuffer.image)
     device.drawQuad(false)
     device.setRenderTarget(null)
 
@@ -221,7 +225,7 @@ export class PostTonemap implements RenderPass {
     if (debug) {
       programCopy.setUniform('texture1', debug)
       device.program = programCopy
-      device.setRenderTarget(targetBuffer)
+      device.setRenderTarget(targetBuffer.image)
       device.drawQuad(false)
       device.setRenderTarget(null)
     }
