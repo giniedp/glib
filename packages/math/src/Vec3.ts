@@ -141,7 +141,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @returns A new vector.
    */
   public static create(x?: number, y?: number, z?: number): Vec3 {
-    return new Vec3(x || 0, y || 0, z || 0)
+    return new Vec3(x ?? 0, y ?? 0, z ?? 0)
   }
 
   /**
@@ -1165,7 +1165,7 @@ export class Vec3 implements IVec2, IVec3 {
     const y = this.y
     const z = this.z
     const w = 1
-    const d = mat.m
+    const d = mat.elements
     this.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
     this.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
     this.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
@@ -1180,7 +1180,7 @@ export class Vec3 implements IVec2, IVec3 {
     const x = this.x
     const y = this.y
     const z = this.z
-    const d = mat.m
+    const d = mat.elements
     this.x = x * d[0] + y * d[3] + z * d[6]
     this.y = x * d[1] + y * d[4] + z * d[7]
     this.z = x * d[2] + y * d[5] + z * d[8]
@@ -1194,7 +1194,7 @@ export class Vec3 implements IVec2, IVec3 {
   public transformByMat2(mat: IMat): this {
     const x = this.x
     const y = this.y
-    const d = mat.m
+    const d = mat.elements
     this.x = x * d[0] + y * d[2]
     this.y = x * d[1] + y * d[3]
     return this
@@ -1454,8 +1454,6 @@ export class Vec3 implements IVec2, IVec3 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(vec: IVec3, fractionDigits: number = 5): string {
-    return vec.x.toFixed(fractionDigits) +
-      ',' + vec.y.toFixed(fractionDigits) +
-      ',' + vec.z.toFixed(fractionDigits)
+    return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits), ', z: ', vec.z.toFixed(fractionDigits))
   }
 }

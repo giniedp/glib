@@ -5,6 +5,7 @@ import DefaultTheme from 'vitepress/theme'
 import './style.css'
 import 'tweak-ui/dist/tweak-ui.css'
 import Example from './components/example.vue'
+import ExampleCode from './components/example-code.vue'
 
 export default {
   extends: DefaultTheme,
@@ -15,5 +16,6 @@ export default {
   },
   enhanceApp({ app, router, siteData }) {
     app.component('Example', Example)
+    app.component('ExampleCode', ExampleCode)
   }
 } satisfies Theme

@@ -41,10 +41,10 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @param w - Value for the W component
    */
   constructor(x?: number, y?: number, z?: number, w?: number) {
-    this.x = x == null ? 0 : x
-    this.y = y == null ? 0 : y
-    this.z = z == null ? 0 : z
-    this.w = w == null ? 0 : w
+    this.x = x ?? 0
+    this.y = y ?? 0
+    this.z = z ?? 0
+    this.w = w ?? 0
   }
 
   /**

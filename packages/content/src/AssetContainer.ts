@@ -1,4 +1,5 @@
-import { MaterialOptions, MeshOptions, TextureImageOptions, TextureOptions } from '@gglib/graphics'
+import { MaterialOptions, MeshOptions, TextureOptions } from '@gglib/graphics'
+import { AnimationData, NodeData, SceneData, SkinData } from '@gglib/model'
 
 /**
  * An asset container holding loaded data ready to create graphics resources.
@@ -12,80 +13,22 @@ export interface AssetContainer {
    */
   source: string
 
+  name?: string
+
+
   meshes?: MeshOptions[]
 
   textures?: TextureOptions[]
 
   materials?: MaterialOptions[]
 
+  animations?: AnimationData[]
+
   scene?: number
 
-  scenes?: Scene[]
+  scenes?: SceneData[]
 
-  nodes?: Node[]
-}
+  nodes?: NodeData[]
 
-export interface Scene {
-  name?: string
-
-  extras?: any
-
-  nodes?: number[]
-}
-
-export interface Node {
-  /**
-   * Name of the node.
-   */
-  name?: string
-
-  /**
-   * Application-specific data.
-   */
-  extras?: any
-
-  /**
-   * The indices of this node's children.
-   */
-  children?: number[]
-
-  /**
-   * The index of the camera referenced by this node.
-   */
-  camera?: number
-
-  /**
-   * The index of the skin referenced by this node.
-   */
-  skin?: number
-
-  /**
-   * A floating-point 4x4 transformation matrix stored in column-major order.
-   */
-  matrix?: number[]
-
-  /**
-   * The index of the mesh in this node.
-   */
-  mesh?: number
-
-  /**
-   * The node's unit quaternion rotation in the order (x, y, z, w), where w is the scalar.
-   */
-  rotation?: number[]
-
-  /**
-   * The node's non-uniform scale, given as the scaling factors along the x, y, and z axes.
-   */
-  scale?: number[]
-
-  /**
-   * The node's translation along the x, y, and z axes.
-   */
-  translation?: number[]
-
-  /**
-   * The weights of the instantiated Morph Target. Number of elements must match number of Morph Targets of used mesh.
-   */
-  weights?: number[]
+  skins?: SkinData[]
 }

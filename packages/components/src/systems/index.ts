@@ -1,3 +1,4 @@
+export * from './BasicGame'
 export * from './GameLoop'
 export * from './KeyboardInput'
 export * from './MouseInput'

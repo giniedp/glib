@@ -8,6 +8,7 @@
       </div>
     </div>
   </div>
+
 </template>
 
 <style>
@@ -27,8 +28,12 @@
   opacity: 0;
 }
 .example-frame:hover .example-tools {
-  opacity: 0.8;
+  opacity: 0.25 !important;
 }
+.example-frame:hover .example-tools:hover {
+  opacity: 0.8 !important;
+}
+
 canvas {
   background-color: black;
 }
@@ -41,6 +46,7 @@ export type RunFn = (canvas: HTMLCanvasElement, tools: HTMLElement) => RunDispos
 export type RunDisposeFn = () => void
 
 const examples = import.meta.glob('/**/example*.ts');
+const rawExamples = import.meta.glob('/**/example*.ts', { query: '?raw' });
 
 const frame = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)

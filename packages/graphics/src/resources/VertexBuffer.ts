@@ -6,7 +6,7 @@ import { Buffer, BufferOptions } from './Buffer'
  *
  * @public
  */
-export type VertexBufferOptions = BufferOptions | BufferOptions[]
+export type VertexBufferOptions = BufferOptions[]
 
 /**
  * @public

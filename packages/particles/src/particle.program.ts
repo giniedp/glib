@@ -16,7 +16,6 @@ export const PARTICLE_PROGRAM: EffectDocument = {
     uniform float uCurrentTime;
     // @binding texture
     // @register 0
-    // @filter LinearWrap
     uniform sampler2D textureSampler;
 
     // @binding duration

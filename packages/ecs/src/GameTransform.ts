@@ -10,7 +10,7 @@ export interface GameTransform {
   /**
    * The position of the transform in local space
    */
-  readonly position: IVec3
+  readonly translation: IVec3
 
   /**
    * The rotation of the transform in local space
@@ -20,7 +20,7 @@ export interface GameTransform {
   /**
    * The local transform matrix
    */
-  readonly local: Mat4
+  readonly matrix: Mat4
 
   /**
    * The world transform matrix

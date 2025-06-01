@@ -1,5 +1,5 @@
 import { ContentManager } from '@gglib/content'
-import '@gglib/content-loaders'
+import '@gglib/loaders'
 import { LightParams } from '@gglib/materials'
 import { Color, createDevice, CullState, DepthState, Model } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'

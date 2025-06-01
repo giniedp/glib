@@ -5,13 +5,14 @@ import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   title: 'GGlib',
-  description: 'A VitePress Site',
+  description: 'Game and Graphics Library',
 
   themeConfig: {
+    logo: '/assets/logo/gglib.svg',
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' },
+      { text: 'Examples', link: '/examples' },
     ],
 
     // https://vitepress-sidebar.cdget.com/guide/getting-started
@@ -21,6 +22,9 @@ export default defineConfig({
       collapsed: true,
       collapseDepth: 2,
       debugPrint: false,
+      sortMenusByFrontmatterOrder: true,
+      frontmatterOrderDefaultValue: 1000,
+
 
       // includeRootIndexFile: true,
       // includeFolderIndexFile: true,
@@ -32,10 +36,9 @@ export default defineConfig({
       excludePattern: [],
     }),
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/vuejs/vitepress' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/giniedp/glib' }],
   },
   vite: {
-
     resolve: {
       alias: {
         '@components': fileURLToPath(new URL('./theme/components', import.meta.url)),

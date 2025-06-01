@@ -43,7 +43,7 @@ export interface MtlParallaxDefs {
  * Contributes parallax mapping to the shader. See {@link MtlParallaxDefs}
  * @public
  */
-export const FXC_MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = Object.freeze({
+export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
   defines: glsl`
     #ifdef PARALLAX_MAP
 
@@ -68,7 +68,6 @@ export const FXC_MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = Object.freeze({
   uniforms: glsl`
     #ifdef PARALLAX_MAP
     // @binding  ParallaxMap
-    // @filter   LinearWrap
     uniform sampler2D uParallaxMap;
 
     #ifdef PARALLAX_MAP_SCALE_OFFSET
@@ -148,4 +147,4 @@ export const FXC_MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = Object.freeze({
       #endif
     #endif
   `,
-})
+}

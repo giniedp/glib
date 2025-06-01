@@ -3,7 +3,7 @@ import { Color, RGBA_FORMAT } from '../Color'
 import { Device } from '../Device'
 import { Effect, EffectOptions } from '../Effect'
 import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
-import { Model, ModelOptions } from '../model/Model'
+
 import {
   Buffer,
   BufferOptions,
@@ -741,12 +741,8 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
   }
 
   /**
-   * Creates a new model. Calls the model constructor with given options.
+   * Creates an effect with given options.
    */
-  public createModel(options: ModelOptions): Model {
-    return new Model(this, options)
-  }
-
   public createEffect(options: EffectOptions): Effect {
     return new Effect(this, options)
   }

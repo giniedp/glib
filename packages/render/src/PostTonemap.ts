@@ -273,7 +273,6 @@ const SHADER = {
 
     // @binding texture2
     // @register 1
-    // @filter LinearClamp
     uniform sampler2D texture2Sampler;
     // @binding texture2Texel
     uniform vec2 texture2Texel;

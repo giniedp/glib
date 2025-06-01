@@ -1,5 +1,3 @@
-import { copy } from '@gglib/utils'
-
 import { ShaderUniform, ShaderUniformInfo } from '../../resources/ShaderUniform'
 import { SamplerState } from '../../states'
 import { DeviceGL } from '../DeviceGL'
@@ -72,7 +70,7 @@ export class ShaderUniformGL extends ShaderUniform {
    */
   public readonly size: number
 
-  private gl: WebGLRenderingContext
+  private gl: WebGL2RenderingContext
 
   /**
    * Instantiates the {@link ShaderUniform}
@@ -420,83 +418,117 @@ export class ShaderUniformGL extends ShaderUniform {
   /**
    * Sets a 2x2 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat2(value: { m: Float32List }, transpose: boolean) {
+  public setMat2(value: { elements: Float32List } | Float32Array, transpose: boolean) {
     this.state.clear()
-    this.gl.uniformMatrix2fv(this.location, !!transpose, value.m)
+    this.gl.uniformMatrix2fv(this.location, !!transpose, getMatrixData(value))
   }
 
   /**
    * Sets a 2x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat2x3(value: { m: Float32List }, transpose: boolean, srcOffset?: number, srcLength?: number) {
+  public setMat2x3(
+    value: { elements: Float32List } | Float32Array,
+    transpose: boolean,
+    srcOffset?: number,
+    srcLength?: number,
+  ) {
     this.state.clear()
-    const gl = this.gl as WebGL2RenderingContext
-    gl.uniformMatrix2x3fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+    this.gl.uniformMatrix2x3fv(this.location, !!transpose, getMatrixData(value), srcOffset, srcLength)
   }
 
   /**
    * Sets a 2x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat2x4(value: { m: Float32List }, transpose: boolean, srcOffset?: number, srcLength?: number) {
+  public setMat2x4(
+    value: { elements: Float32List } | Float32Array,
+    transpose: boolean,
+    srcOffset?: number,
+    srcLength?: number,
+  ) {
     this.state.clear()
-    const gl = this.gl as WebGL2RenderingContext
-    gl.uniformMatrix2x4fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+    this.gl.uniformMatrix2x4fv(this.location, !!transpose, getMatrixData(value), srcOffset, srcLength)
   }
 
   /**
    * Sets a 3x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat3(value: { m: Float32List }, transpose: boolean) {
+  public setMat3(value: { elements: Float32List } | Float32Array, transpose: boolean) {
     this.state.clear()
-    this.gl.uniformMatrix3fv(this.location, !!transpose, value.m)
+    this.gl.uniformMatrix3fv(this.location, !!transpose, getMatrixData(value))
   }
 
   /**
    * Sets a 3x4 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat3x4(value: { m: Float32List }, transpose: boolean, srcOffset?: number, srcLength?: number) {
+  public setMat3x4(
+    value: { elements: Float32List } | Float32Array,
+    transpose: boolean,
+    srcOffset?: number,
+    srcLength?: number,
+  ) {
     this.state.clear()
-    const gl = this.gl as WebGL2RenderingContext
-    gl.uniformMatrix3x4fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+    this.gl.uniformMatrix3x4fv(this.location, !!transpose, getMatrixData(value), srcOffset, srcLength)
   }
 
   /**
    * Sets a 3x2 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat3x2(value: { m: Float32List }, transpose: boolean, srcOffset?: number, srcLength?: number) {
+  public setMat3x2(
+    value: { elements: Float32List } | Float32Array,
+    transpose: boolean,
+    srcOffset?: number,
+    srcLength?: number,
+  ) {
     this.state.clear()
-    const gl = this.gl as WebGL2RenderingContext
-    gl.uniformMatrix3x2fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+    this.gl.uniformMatrix3x2fv(this.location, !!transpose, getMatrixData(value), srcOffset, srcLength)
   }
 
   /**
    * Sets a 4x4 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat4(value: { m: Float32List }, transpose: boolean) {
+  public setMat4(value: { elements: Float32List } | Float32Array, transpose: boolean) {
     this.state.clear()
-    this.gl.uniformMatrix4fv(this.location, !!transpose, value.m)
+    this.gl.uniformMatrix4fv(this.location, !!transpose, getMatrixData(value))
   }
 
   /**
    * Sets a 4x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat4x3(value: { m: Float32List }, transpose: boolean, srcOffset?: number, srcLength?: number) {
+  public setMat4x3(
+    value: { elements: Float32List } | Float32Array,
+    transpose: boolean,
+    srcOffset?: number,
+    srcLength?: number,
+  ) {
     this.state.clear()
-    const gl = this.gl as WebGL2RenderingContext
-    gl.uniformMatrix4x3fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+    this.gl.uniformMatrix4x3fv(this.location, !!transpose, getMatrixData(value), srcOffset, srcLength)
   }
 
   /**
    * Sets a 4x2 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public setMat4x2(value: { m: Float32List }, transpose: boolean, srcOffset?: number, srcLength?: number) {
+  public setMat4x2(
+    value: { elements: Float32List } | Float32Array,
+    transpose: boolean,
+    srcOffset?: number,
+    srcLength?: number,
+  ) {
     this.state.clear()
-    const gl = this.gl as WebGL2RenderingContext
-    gl.uniformMatrix4x2fv(this.location, !!transpose, value.m, srcOffset, srcLength)
+    this.gl.uniformMatrix4x2fv(this.location, !!transpose, getMatrixData(value), srcOffset, srcLength)
   }
 
   public dispose() {
     this.sampler?.dispose()
     this.sampler = null
   }
+}
+
+function getMatrixData(matrix: { elements: Float32List } | Float32Array): Float32List {
+  if (!matrix) {
+    return null
+  }
+  if ('elements' in matrix) {
+    return matrix.elements
+  }
+  return matrix
 }

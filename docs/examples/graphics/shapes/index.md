@@ -1,4 +1,0 @@
----
-title: Geometry Shapes
----
-<Example />

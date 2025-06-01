@@ -50,7 +50,7 @@ export interface MtlSpecularDefs {
  * Contributes specular color to the shader. See {@link MtlSpecularDefs}
  * @public
  */
-export const FXC_MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = Object.freeze({
+export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
   defines: glsl`
     #ifdef SPECULAR_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
@@ -77,7 +77,6 @@ export const FXC_MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = Object.freeze({
 
     #ifdef SPECULAR_MAP
     // @binding SpecularMap
-    // @filter  LinearWrap
     uniform sampler2D uSpecularMap;
     #endif
 
@@ -115,4 +114,4 @@ export const FXC_MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = Object.freeze({
     surface.Specular.a = uSpecularPower;
     #endif
   `,
-})
+}

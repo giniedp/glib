@@ -492,7 +492,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
     this.hasChanged = false
   }
 
-  protected onConstructWithoutEffect() {
+  protected createEffect() {
     // OK
   }
 }

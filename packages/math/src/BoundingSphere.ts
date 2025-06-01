@@ -37,16 +37,29 @@ export class BoundingSphere implements BoundingVolume {
   public radius: number
 
   /**
+   * Checks whether this sphere is empty
+   *
+   * @remarks
+   * A sphere is considered empty if its radius is less than zero
+   */
+  public get isEmpty() {
+    return this.radius < 0
+  }
+
+  /**
    * Constructs a new instance of {@link BoundingSphere}
    *
    * @param x - component of the center point
    * @param y - component of the center point
    * @param z - component of the center point
    * @param r - the radius
+   *
+   * @remarks
+   * If no radius is given, it defaults to `-1` which means the sphere is empty.
    */
   constructor(x?: number, y?: number, z?: number, r?: number) {
     this.center = Vec3.create(x, y, z)
-    this.radius = r || 0
+    this.radius = r ?? -1
   }
 
   /**
@@ -56,6 +69,9 @@ export class BoundingSphere implements BoundingVolume {
    * @param y - y coordinate of sphere center
    * @param z - z coordinate of sphere center
    * @param r - radius of the sphere
+   *
+   * @remarks
+   * If no radius is given, it defaults to `-1` which means the sphere is empty.
    */
   public static create(x?: number, y?: number, z?: number, r?: number) {
     return new BoundingSphere(x, y, z, r)
@@ -68,12 +84,15 @@ export class BoundingSphere implements BoundingVolume {
    * @param y - y coordinate of sphere center
    * @param z - z coordinate of sphere center
    * @param r - radius of the sphere
+   *
+   * @remarks
+   * If no radius is given, it defaults to `-1` which means the sphere is empty.
    */
   public init(x?: number, y?: number, z?: number, r?: number): this {
-    this.center.x = x || 0
-    this.center.y = y || 0
-    this.center.z = z || 0
-    this.radius = r || 0
+    this.center.x = x ?? 0
+    this.center.y = y ?? 0
+    this.center.z = z ?? 0
+    this.radius = r ?? -1
     return this
   }
 
@@ -231,7 +250,6 @@ export class BoundingSphere implements BoundingVolume {
    * @param offset - the offset in `array`
    */
   public initFromPoints(P: ArrayLike<IVec3>): this {
-
     // bounding box extremes
     let xmax: number
     let ymax: number
@@ -251,7 +269,6 @@ export class BoundingSphere implements BoundingVolume {
     xmin = xmax = P[0].x
     ymin = ymax = P[0].y
     zmin = zmax = P[0].z
-
 
     for (let i = 1; i < P.length; i++) {
       let Pi = P[i]
@@ -368,13 +385,15 @@ export class BoundingSphere implements BoundingVolume {
    */
   public static transform(sphere: BoundingSphere, m: Mat4, out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
-    out.radius = sphere.radius * Math.sqrt(
-      Math.max(
-        m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
-        m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
-        m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+    out.radius =
+      sphere.radius *
+      Math.sqrt(
+        Math.max(
+          m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
+          m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
+          m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+        ),
       )
-    )
     m.transformV3(sphere.center, out.center)
     return out
   }
@@ -385,13 +404,15 @@ export class BoundingSphere implements BoundingVolume {
    * @param m - the matrix to transform with
    */
   public transform(m: Mat4): this {
-    this.radius = this.radius * Math.sqrt(
-      Math.max(
-        m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
-        m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
-        m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+    this.radius =
+      this.radius *
+      Math.sqrt(
+        Math.max(
+          m.m00 * m.m00 + m.m01 * m.m01 + m.m02 * m.m02,
+          m.m10 * m.m10 + m.m11 * m.m11 + m.m12 * m.m12,
+          m.m20 * m.m20 + m.m21 * m.m21 + m.m22 * m.m22,
+        ),
       )
-    )
     m.transformV3(this.center, this.center)
     return this
   }
@@ -459,6 +480,10 @@ export class BoundingSphere implements BoundingVolume {
    * @param point - the point to merge
    */
   public mergePoint(point: IVec3): this {
+    if (this.isEmpty) {
+      this.initFromCenterRadius(point, 0)
+      return this
+    }
     const distance = Vec3.distance(this.center, point)
     if (this.radius < distance) {
       this.radius = distance
@@ -476,6 +501,14 @@ export class BoundingSphere implements BoundingVolume {
    */
   public static mergeSphere(a: BoundingSphere, b: BoundingSphere, out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
+    if (a.isEmpty) {
+      out.initFrom(b)
+      return out
+    }
+    if (b.isEmpty) {
+      out.initFrom(a)
+      return out
+    }
     const vx = a.center.x - b.center.x
     const vy = a.center.y - b.center.y
     const vz = a.center.z - b.center.z
@@ -487,22 +520,30 @@ export class BoundingSphere implements BoundingVolume {
       if (d <= r1 - r2) {
         // a contains b
         out.initFrom(a)
-        return out;
+        return out
       }
       if (d <= r2 - r1) {
         // b contains a
         out.initFrom(b)
-        return out;
+        return out
       }
     }
 
-    const rl = Math.max(r1 - d, r2);
-    const rr = Math.max(r1 + d, r2);
-    const s = ((rl - rr) / (2 * d))
+    const rl = Math.max(r1 - d, r2)
+    const rr = Math.max(r1 + d, r2)
+    const s = (rl - rr) / (2 * d)
     out.center.x = a.center.x + vx * s
     out.center.y = a.center.y + vy * s
     out.center.z = a.center.z + vz * s
     out.radius = (rl + rr) / 2
+    return out
+  }
+
+  public static mergeSpheres(...spheres: Array<BoundingSphere | number[]>) {
+    const out = new BoundingSphere()
+    for (const sphereParams of spheres) {
+      out.mergeSphere(BoundingSphere.convert(sphereParams))
+    }
     return out
   }
 
@@ -512,6 +553,10 @@ export class BoundingSphere implements BoundingVolume {
    * @param other - another sphere to merge
    */
   public mergeSphere(other: BoundingSphere): this {
+    if (this.isEmpty) {
+      this.initFrom(other)
+      return this
+    }
     const vx = this.center.x - other.center.x
     const vy = this.center.y - other.center.y
     const vz = this.center.z - other.center.z
@@ -522,23 +567,23 @@ export class BoundingSphere implements BoundingVolume {
     if (d <= r1 + r2) {
       if (d <= r1 - r2) {
         // this contains other
-        return this;
+        return this
       }
       if (d <= r2 - r1) {
         // other contains this
         this.initFrom(other)
-        return this;
+        return this
       }
     }
 
-    const rl = Math.max(r1 - d, r2);
-    const rr = Math.max(r1 + d, r2);
-    const s = ((rl - rr) / (2 * d))
+    const rl = Math.max(r1 - d, r2)
+    const rr = Math.max(r1 + d, r2)
+    const s = (rl - rr) / (2 * d)
     this.center.x += vx * s
     this.center.y += vy * s
     this.center.z += vz * s
     this.radius = (rl + rr) / 2
-    return this;
+    return this
   }
 
   /**

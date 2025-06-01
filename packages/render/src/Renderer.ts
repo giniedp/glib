@@ -4,6 +4,7 @@ import {
   DepthState,
   Device,
   RenderTargetOptions,
+  SamplerState,
   ScissorState,
   SpriteBatch,
   SpriteBatchBeginOptions,

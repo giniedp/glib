@@ -60,7 +60,7 @@ export interface IRect extends IPoint, ISize {
  * @public
  */
 export interface IMat {
-  m: ArrayLike<number>
+  elements: ArrayLike<number>
 }
 
 /**
@@ -76,7 +76,7 @@ export interface ArrayLike<T> {
 /**
  * @public
  */
-export type Mat4Data = [
+export type Mat4Elements = [
   number, number, number, number,
   number, number, number, number,
   number, number, number, number,
@@ -86,7 +86,7 @@ export type Mat4Data = [
 /**
  * @public
  */
-export type Mat3Data = [
+export type Mat3Elements = [
   number, number, number,
   number, number, number,
   number, number, number,
@@ -95,7 +95,7 @@ export type Mat3Data = [
 /**
  * @public
  */
-export type Mat2Data = [
+export type Mat2Elements = [
   number, number,
   number, number,
 ] | Float32Array | Float64Array

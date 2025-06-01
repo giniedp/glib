@@ -47,7 +47,7 @@ export interface MtlMetallicRoughness {
  * Adds Diffuse or Albedo texture / color to the shader. See {@link MtlMetallicRoughness}
  * @public
  */
-export const FXC_MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = Object.freeze({
+export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = {
   defines: glsl`
     #ifdef METALLIC_ROUGHNESS_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE)
@@ -73,7 +73,6 @@ export const FXC_MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = 
 
     #ifdef METALLIC_ROUGHNESS_MAP
     // @binding  MetallicRoughnessMap
-    // @filter   LinearWrap
     uniform sampler2D uMetallicRoughnessMap;
     #endif
 
@@ -114,4 +113,4 @@ export const FXC_MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = 
     getMetallicRoughness(surface.PBR.rg, uvOffset);
     #endif
   `,
-})
+}

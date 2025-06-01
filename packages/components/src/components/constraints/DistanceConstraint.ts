@@ -128,12 +128,12 @@ export class DistanceConstraint implements GameComponent {
     let s = (v0 = v0 || Vec3.create())
     let t = (v1 = v1 || Vec3.create())
 
-    s.initFrom(this.source.position)
+    s.initFrom(this.source.translation)
     if (this.source.parent && this.sourceSpace === 'world') {
       s.transformByMat4(this.source.parent.worldInverse)
     }
 
-    t.initFrom(this.target.position)
+    t.initFrom(this.target.translation)
     if (this.target.parent && this.targetSpace === 'world') {
       t.transformByMat4(this.target.parent.worldInverse)
     }
@@ -157,7 +157,7 @@ export class DistanceConstraint implements GameComponent {
       t.transformByMat4(this.target.parent.world)
     }
 
-    if (!t.equals(this.target.position)) {
+    if (!t.equals(this.target.translation)) {
       this.target.setPositionV(t)
       if (this.commit) {
         this.target.updateIfNeeded()

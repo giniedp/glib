@@ -1,5 +1,6 @@
-import { Buffer, Device, Material, MaterialOptions, Model, Geometry, VertexLayout } from '@gglib/graphics'
-import { IVec3, Vec3, BoundingBox } from '@gglib/math'
+import { Buffer, Device, Geometry, Material, MaterialOptions, VertexLayout } from '@gglib/graphics'
+import { BoundingBox, IVec3, Vec3 } from '@gglib/math'
+import { Model } from '@gglib/model'
 import { HeightMap } from './HeightMap'
 
 function highestBit(value: number): number {
@@ -80,7 +81,7 @@ export class BTTRoot {
     }
 
     this.patches = patches
-    this.model = device.createModel({
+    this.model = new Model(this.device,{
       meshes: [
         {
           boundingBox: parts.reduce((box, next) => box.merge(next.boundingBox), parts[0].boundingBox.clone()),

@@ -18,6 +18,10 @@ export interface MouseOptions {
    * List of events that are captured on the `eventTarget` and re-emitted on this instance
    */
   proxyEvents?: string[]
+  /**
+   * Whether the default action of any mouse event on captureTarget should be prevented. Defaults to `false`
+   */
+  preventDefault?: boolean
 }
 
 /**
@@ -81,6 +85,11 @@ export class MouseListener {
   public readonly captureTarget: HTMLElement = null
 
   /**
+   * Whether the default action of any mouse event on captureTarget should be prevented.
+   */
+  public preventDefault: boolean = false
+
+  /**
    * The current Mouse state
    */
   public readonly state: MouseState = {
@@ -141,6 +150,7 @@ export class MouseListener {
       eventTarget: options?.eventTarget ?? this.eventTarget,
       captureTarget: options?.captureTarget ?? this.captureTarget,
       proxiedEvents: options?.proxyEvents ?? Array.from(this.proxiedEvents),
+      preventDefault: options?.preventDefault ?? this.preventDefault,
     })
     this.activate()
   }
@@ -151,7 +161,7 @@ export class MouseListener {
   public activate() {
     this.deactivate()
     // update state events
-    this.eventTarget.addEventListener('wheel', this.onCaptureStateListener)
+    this.eventTarget.addEventListener('wheel', this.onCaptureStateListener, { passive: !this.preventDefault })
     this.eventTarget.addEventListener('mousemove', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mousedown', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mouseup', this.onCaptureStateListener)
@@ -250,6 +260,9 @@ export class MouseListener {
   public onChanged = simpleObservable<MouseListener>()
 
   protected onCaptureState(e: MouseEvent) {
+    if (this.preventDefault && e.target === this.captureTarget) {
+      e.preventDefault()
+    }
     this.state.event = e
     this.state.timestamp = getTime()
     this.capturePointer(e, this.state)

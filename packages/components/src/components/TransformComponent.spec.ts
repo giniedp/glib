@@ -36,8 +36,8 @@ describe('@gglib/ecs/TransformComponent', () => {
   describe('parent', () => {
     describe('when modified', () => {
       it('does not affect child local transform', () => {
-        expect(parent.position).toEqual(Vec3.createZero())
-        expect(child.position).toEqual(Vec3.createZero())
+        expect(parent.translation).toEqual(Vec3.createZero())
+        expect(child.translation).toEqual(Vec3.createZero())
 
         // parent.translateX(10)
         // eParent.updateComponents(16)

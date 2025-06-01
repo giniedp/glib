@@ -52,7 +52,7 @@ export interface MtlAlphaDefs {
  *
  * @public
  */
-export const FXC_MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = Object.freeze({
+export const MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = {
   defines: glsl`
     #ifdef ALPHA_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
@@ -85,7 +85,6 @@ export const FXC_MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = Object.freeze({
 
     #ifdef ALPHA_MAP
     // @binding  AlphaMap
-    // @filter   LinearWrap
     uniform sampler2D uAlphaMap;
     #endif
 
@@ -115,7 +114,7 @@ export const FXC_MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = Object.freeze({
     #endif
 
     #ifdef ALPHA_CLIP
-    if ((surface.Diffuse.a - uAlphaClip) <= 0.0) discard;
+    if ((surface.Diffuse.a - uAlphaClip) < 0.0) discard;
     #endif
   `,
   fs_frag_color: glsl`
@@ -123,4 +122,4 @@ export const FXC_MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = Object.freeze({
     color.rgb *= surface.Diffuse.a;
     #endif
   `,
-})
+}

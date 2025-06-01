@@ -2,7 +2,14 @@ import { uuid } from '@gglib/utils'
 import { Device } from './Device'
 import { Effect, EffectOptions } from './Effect'
 import { PROGRAM_BASIC } from './programs'
-import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
+import {
+  ShaderProgram,
+  ShaderProgramOptions,
+  ShaderUniformValue,
+  Texture,
+  TextureImage,
+  TextureOptions,
+} from './resources'
 
 /**
  * @public
@@ -14,7 +21,10 @@ export type MaterialParameters = Record<string, ShaderUniformValue>
  *
  * @public
  */
-export type MaterialOptions = MaterialEffectOptions | MaterialEffectNameOptions | MaterialProgramOptions
+export type MaterialOptions<Parameters extends MaterialParameters = MaterialParameters> =
+  | MaterialEffectOptions<Parameters>
+  | MaterialEffectNameOptions<Parameters>
+  | MaterialProgramOptions<Parameters>
 
 export interface MaterialOptionsBase<Parameters extends MaterialParameters = MaterialParameters> {
   /**
@@ -38,7 +48,8 @@ export interface MaterialOptionsBase<Parameters extends MaterialParameters = Mat
  *
  * @public
  */
-export interface MaterialEffectOptions extends MaterialOptionsBase {
+export interface MaterialEffectOptions<Parameters extends MaterialParameters = MaterialParameters>
+  extends MaterialOptionsBase<Parameters> {
   /**
    * The effect instance or constructor options for {@link Effect}
    */
@@ -50,7 +61,8 @@ export interface MaterialEffectOptions extends MaterialOptionsBase {
  *
  * @public
  */
-export interface MaterialEffectNameOptions extends MaterialOptionsBase {
+export interface MaterialEffectNameOptions<Parameters extends MaterialParameters = MaterialParameters>
+  extends MaterialOptionsBase<Parameters> {
   /**
    * The effect name from which to the effect should be created.
    */
@@ -63,7 +75,8 @@ export interface MaterialEffectNameOptions extends MaterialOptionsBase {
  *
  * @public
  */
-export interface MaterialProgramOptions extends MaterialOptionsBase {
+export interface MaterialProgramOptions<Parameters extends MaterialParameters = MaterialParameters>
+  extends MaterialOptionsBase<Parameters> {
   /**
    * The shader program options to be used to create the effect
    */
@@ -118,23 +131,8 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.parameters = (options.parameters || {}) as Params
-    let effect: Effect | EffectOptions
-    if ('program' in options) {
-      effect = {
-        program: options.program,
-      } satisfies EffectOptions
-    }
-    if ('effect' in options) {
-      effect = options.effect
-    }
-    if (effect instanceof Effect) {
-      this._effect = effect
-    } else if (effect) {
-      this._effect = device.createEffect(effect)
-    } else {
-      this.onConstructWithoutEffect(options)
-    }
+    this.createParameters(options)
+    this.createEffect(options)
   }
 
   /**
@@ -161,11 +159,34 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
     return this.parameters[name] as T
   }
 
-  protected onConstructWithoutEffect(options: MaterialOptions) {
-    console.warn(`[Material] created without explicit effect or program. Using default effect.`)
-    this._effect = this.device.createEffect({
-      program: PROGRAM_BASIC,
-    })
+  protected createParameters(options: MaterialOptions) {
+    const params: MaterialParameters = {
+      ...((options.parameters || {}) as Params),
+    }
+    instantiateMaterialTextures(this.device, params)
+    this.parameters = params as Params
+  }
+
+  protected createEffect(options: MaterialOptions) {
+    let effect: Effect | EffectOptions
+    if ('program' in options) {
+      effect = {
+        program: options.program,
+      } satisfies EffectOptions
+    }
+    if ('effect' in options) {
+      effect = options.effect
+    }
+    if (effect instanceof Effect) {
+      this._effect = effect
+    } else if (effect) {
+      this._effect = this.device.createEffect(effect)
+    } else {
+      console.warn(`[Material] created without explicit effect or program. Using default effect.`)
+      this._effect = this.device.createEffect({
+        program: PROGRAM_BASIC,
+      })
+    }
   }
 
   /**
@@ -179,8 +200,37 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    * Disposes the underlying effect
    */
   public dispose() {
+    disposeParameters(this.parameters)
     this.effect?.dispose()
     this._effect = null
     this.device = null
+  }
+}
+
+export function instantiateMaterialTextures(device: Device, params: MaterialParameters): void {
+  for (const key in params) {
+    const value = params[key]
+    if (typeof value !== 'object') {
+      continue
+    }
+    if (value instanceof Texture || value instanceof TextureImage) {
+      continue
+    }
+    if (value && ('source' in value || 'faces' in value)) {
+      params[key] = device.createTexture(value as TextureOptions)
+    }
+  }
+}
+
+function disposeParameters(params: MaterialParameters): void {
+  if (!params) {
+    return
+  }
+  for (const key in params) {
+    const value = params[key]
+    delete params[key]
+    if (value instanceof Texture || value instanceof TextureImage) {
+      value.dispose()
+    }
   }
 }

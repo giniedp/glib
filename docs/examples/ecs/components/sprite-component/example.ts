@@ -6,10 +6,10 @@ import {
   RenderQuery,
   SpriteComponent,
 } from '@gglib/components'
-import { ContentManager } from '@gglib/content'
-import '@gglib/content-loaders'
+import { ContentLoader } from '@gglib/content'
 import { GameEntityCollection, GameProvider } from '@gglib/ecs'
-import { BlendState, createDevice, Texture } from '@gglib/graphics'
+import { BlendState, createDevice } from '@gglib/graphics'
+import {} from '@gglib/loaders'
 import { BasicRenderPass, Renderer } from '@gglib/render'
 import * as TweakUi from 'tweak-ui'
 
@@ -17,7 +17,7 @@ class Game extends GameProvider {
   public loop: GameLoop
   public renderer: Renderer
   public renderQuery: RenderQuery
-  public content: ContentManager
+  public content: ContentLoader
 
   public scene = new GameEntityCollection()
   public camera: CameraComponent
@@ -30,15 +30,16 @@ class Game extends GameProvider {
 
   public constructor(canvas: HTMLCanvasElement) {
     super()
+
     const device = createDevice({ canvas })
     this.provide(this)
     this.provide(device)
     this.provide(new Renderer(device))
-    this.provide(new ContentManager(device))
+    this.provide(new ContentLoader(device))
     this.addSystem(new GameLoop({ autostart: false }))
 
     this.loop = this.get(GameLoop)
-    this.content = this.get(ContentManager)
+    this.content = this.get(ContentLoader)
     this.renderer = this.get(Renderer)
     this.renderQuery = new RenderQuery()
 
@@ -105,7 +106,7 @@ class Game extends GameProvider {
     this.sprite.height = 45
     this.sprite.pivotX = 0.5
     this.sprite.pivotY = 0.5
-    this.sprite.texture = await this.content.load('/assets/textures/puzzle/interface_sheet.png', Texture.Texture2D)
+    this.sprite.texture = await this.content.loadTexture('/assets/textures/puzzle/interface_sheet.png')
     this.sprite.source = {
       x: 528,
       y: 374,

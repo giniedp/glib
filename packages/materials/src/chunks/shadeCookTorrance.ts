@@ -8,7 +8,7 @@ export type ShadeFunctionCookTorrance = 'shadeCookTorrance'
 /**
  * @public
  */
-export const FXC_SHADE_COOK_TORRANCE: ShaderChunkSet = Object.freeze({
+export const SHADE_COOK_TORRANCE: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeCookTorrance(
       inout ShadeParams shade,

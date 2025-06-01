@@ -1,13 +1,31 @@
-import type { ArrayLike, IMat, IVec2, IVec3, IVec4, Mat4Data } from './Types'
+import type { ArrayLike, IMat, IVec2, IVec3, IVec4, Mat4Elements } from './Types'
 import { Vec3 } from './Vec3'
+import { Vec4 } from './Vec4'
 
 const enum M {
- _00 = 0, _10 = 4, _20 = 8, _30 = 12,
- _01 = 1, _11 = 5, _21 = 9, _31 = 13,
- _02 = 2, _12 = 6, _22 = 10, _32 = 14,
- _03 = 3, _13 = 7, _23 = 11, _33 = 15,
+  _00 = 0,
+  _10 = 4,
+  _20 = 8,
+  _30 = 12,
+  _01 = 1,
+  _11 = 5,
+  _21 = 9,
+  _31 = 13,
+  _02 = 2,
+  _12 = 6,
+  _22 = 10,
+  _32 = 14,
+  _03 = 3,
+  _13 = 7,
+  _23 = 11,
+  _33 = 15,
 }
 
+const _tmp1v3 = new Vec3()
+const _tmp2v3 = new Vec3()
+
+const _tmp1v4 = new Vec4()
+const _tmp2v4 = new Vec4()
 /* missing function
   CreateReflection
   CreateShadow
@@ -42,170 +60,173 @@ const enum M {
  * ```
  */
 export class Mat4 {
-
   /**
    * The matrix data array
    */
-  public readonly m: Float32Array | Float64Array
+  public readonly elements: Float32Array | Float64Array
 
   /**
    * Gets and sets value at column 0 row 0
    */
   public get m00() {
-    return this.m[M._00]
+    return this.elements[M._00]
   }
   public set m00(v: number) {
-    this.m[M._00] = v
+    this.elements[M._00] = v
   }
 
   /**
    * Gets and sets value at column 0 row 1
    */
   public get m01() {
-    return this.m[M._01]
+    return this.elements[M._01]
   }
   public set m01(v: number) {
-    this.m[M._01] = v
+    this.elements[M._01] = v
   }
 
   /**
    * Gets and sets value at column 0 row 2
    */
   public get m02() {
-    return this.m[M._02]
+    return this.elements[M._02]
   }
   public set m02(v: number) {
-    this.m[M._02] = v
+    this.elements[M._02] = v
   }
 
   /**
    * Gets and sets value at column 0 row 3
    */
   public get m03() {
-    return this.m[M._03]
+    return this.elements[M._03]
   }
   public set m03(v: number) {
-    this.m[M._03] = v
+    this.elements[M._03] = v
   }
 
   /**
    * Gets and sets value at column 1 row 0
    */
   public get m10() {
-    return this.m[M._10]
+    return this.elements[M._10]
   }
   public set m10(v: number) {
-    this.m[M._10] = v
+    this.elements[M._10] = v
   }
 
   /**
    * Gets and sets value at column 1 row 1
    */
   public get m11() {
-    return this.m[M._11]
+    return this.elements[M._11]
   }
   public set m11(v: number) {
-    this.m[M._11] = v
+    this.elements[M._11] = v
   }
 
   /**
    * Gets and sets value at column 1 row 2
    */
   public get m12() {
-    return this.m[M._12]
+    return this.elements[M._12]
   }
   public set m12(v: number) {
-    this.m[M._12] = v
+    this.elements[M._12] = v
   }
 
   /**
    * Gets and sets value at column 1 row 3
    */
   public get m13() {
-    return this.m[M._13]
+    return this.elements[M._13]
   }
   public set m13(v: number) {
-    this.m[M._13] = v
+    this.elements[M._13] = v
   }
 
   /**
    * Gets and sets value at column 2 row 0
    */
   public get m20() {
-    return this.m[M._20]
+    return this.elements[M._20]
   }
   public set m20(v: number) {
-    this.m[M._20] = v
+    this.elements[M._20] = v
   }
 
   /**
    * Gets and sets value at column 2 row 1
    */
   public get m21() {
-    return this.m[M._21]
+    return this.elements[M._21]
   }
   public set m21(v: number) {
-    this.m[M._21] = v
+    this.elements[M._21] = v
   }
 
   /**
    * Gets and sets value at column 2 row 2
    */
   public get m22() {
-    return this.m[M._22]
+    return this.elements[M._22]
   }
   public set m22(v: number) {
-    this.m[M._22] = v
+    this.elements[M._22] = v
   }
 
   /**
    * Gets and sets value at column 2 row 3
    */
   public get m23() {
-    return this.m[M._23]
+    return this.elements[M._23]
   }
   public set m23(v: number) {
-    this.m[M._23] = v
+    this.elements[M._23] = v
   }
 
   /**
    * Gets and sets value at column 3 row 0
    */
   public get m30() {
-    return this.m[M._30]
+    return this.elements[M._30]
   }
   public set m30(v: number) {
-    this.m[M._30] = v
+    this.elements[M._30] = v
   }
 
   /**
    * Gets and sets value at column 3 row 1
    */
   public get m31() {
-    return this.m[M._31]
+    return this.elements[M._31]
   }
   public set m31(v: number) {
-    this.m[M._31] = v
+    this.elements[M._31] = v
   }
 
   /**
    * Gets and sets value at column 3 row 2
    */
   public get m32() {
-    return this.m[M._32]
+    return this.elements[M._32]
   }
   public set m32(v: number) {
-    this.m[M._32] = v
+    this.elements[M._32] = v
   }
 
   /**
    * Gets and sets value at column 3 row 3
    */
   public get m33() {
-    return this.m[M._33]
+    return this.elements[M._33]
   }
   public set m33(v: number) {
-    this.m[M._33] = v
+    this.elements[M._33] = v
+  }
+
+  public get debug() {
+    return Mat4.debugComponents(this, 2)
   }
 
   /**
@@ -213,11 +234,11 @@ export class Mat4 {
    *
    * @param m - the data to initialize with
    */
-  constructor(m?: Mat4Data) {
+  constructor(m?: Mat4Elements) {
     if (Array.isArray(m)) {
-      this.m = new Float32Array(m)
+      this.elements = new Float32Array(m)
     } else {
-      this.m = m || new Float32Array(16)
+      this.elements = m || new Float32Array(16)
     }
   }
 
@@ -231,9 +252,9 @@ export class Mat4 {
   public getForward<T>(out?: T): T & IVec3
   public getForward(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = -this.m[M._20]
-    out.y = -this.m[M._21]
-    out.z = -this.m[M._22]
+    out.x = -this.elements[M._20]
+    out.y = -this.elements[M._21]
+    out.z = -this.elements[M._22]
     return out
   }
 
@@ -241,9 +262,9 @@ export class Mat4 {
    * Sets the forward vector
    */
   public setForward(vec: IVec3): this {
-    this.m[M._20] = -vec.x
-    this.m[M._21] = -vec.y
-    this.m[M._22] = -vec.z
+    this.elements[M._20] = -vec.x
+    this.elements[M._21] = -vec.y
+    this.elements[M._22] = -vec.z
     return this
   }
 
@@ -257,9 +278,9 @@ export class Mat4 {
   public getBackward<T>(out?: T): T & IVec3
   public getBackward(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.m[M._20]
-    out.y = this.m[M._21]
-    out.z = this.m[M._22]
+    out.x = this.elements[M._20]
+    out.y = this.elements[M._21]
+    out.z = this.elements[M._22]
     return out
   }
 
@@ -267,9 +288,9 @@ export class Mat4 {
    * Sets the backward vector
    */
   public setBackward(vec: IVec3): this {
-    this.m[M._20] = vec.x
-    this.m[M._21] = vec.y
-    this.m[M._22] = vec.z
+    this.elements[M._20] = vec.x
+    this.elements[M._21] = vec.y
+    this.elements[M._22] = vec.z
     return this
   }
 
@@ -283,9 +304,9 @@ export class Mat4 {
   public getRight<T>(out?: T): T & IVec3
   public getRight(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.m[M._00]
-    out.y = this.m[M._01]
-    out.z = this.m[M._02]
+    out.x = this.elements[M._00]
+    out.y = this.elements[M._01]
+    out.z = this.elements[M._02]
     return out
   }
 
@@ -293,9 +314,9 @@ export class Mat4 {
    * Sets the right vector
    */
   public setRight(vec: IVec3): this {
-    this.m[M._00] = vec.x
-    this.m[M._01] = vec.y
-    this.m[M._02] = vec.z
+    this.elements[M._00] = vec.x
+    this.elements[M._01] = vec.y
+    this.elements[M._02] = vec.z
     return this
   }
 
@@ -309,9 +330,9 @@ export class Mat4 {
   public getLeft<T>(out?: T): T & IVec3
   public getLeft(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = -this.m[M._00]
-    out.y = -this.m[M._01]
-    out.z = -this.m[M._02]
+    out.x = -this.elements[M._00]
+    out.y = -this.elements[M._01]
+    out.z = -this.elements[M._02]
     return out
   }
 
@@ -319,9 +340,9 @@ export class Mat4 {
    * Sets the left vector
    */
   public setLeft(vec: IVec3): this {
-    this.m[M._00] = -vec.x
-    this.m[M._01] = -vec.y
-    this.m[M._02] = -vec.z
+    this.elements[M._00] = -vec.x
+    this.elements[M._01] = -vec.y
+    this.elements[M._02] = -vec.z
     return this
   }
 
@@ -335,9 +356,9 @@ export class Mat4 {
   public getUp<T>(out?: T): T & IVec3
   public getUp(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.m[M._10]
-    out.y = this.m[M._11]
-    out.z = this.m[M._12]
+    out.x = this.elements[M._10]
+    out.y = this.elements[M._11]
+    out.z = this.elements[M._12]
     return out
   }
 
@@ -346,9 +367,9 @@ export class Mat4 {
    * @param vec - The vector to take values from
    */
   public setUp(vec: IVec3): this {
-    this.m[M._10] = vec.x
-    this.m[M._11] = vec.y
-    this.m[M._12] = vec.z
+    this.elements[M._10] = vec.x
+    this.elements[M._11] = vec.y
+    this.elements[M._12] = vec.z
     return this
   }
 
@@ -362,9 +383,9 @@ export class Mat4 {
   public getDown<T>(out?: T): T & IVec3
   public getDown(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = -this.m[M._10]
-    out.y = -this.m[M._11]
-    out.z = -this.m[M._12]
+    out.x = -this.elements[M._10]
+    out.y = -this.elements[M._11]
+    out.z = -this.elements[M._12]
     return out
   }
 
@@ -372,9 +393,9 @@ export class Mat4 {
    * Sets the down vector
    */
   public setDown(vec: IVec3): this {
-    this.m[M._10] = -vec.x
-    this.m[M._11] = -vec.y
-    this.m[M._12] = -vec.z
+    this.elements[M._10] = -vec.x
+    this.elements[M._11] = -vec.y
+    this.elements[M._12] = -vec.z
     return this
   }
 
@@ -388,9 +409,9 @@ export class Mat4 {
   public getScale<T>(out?: T): T & IVec3
   public getScale(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.m[M._00]
-    out.y = this.m[M._11]
-    out.z = this.m[M._22]
+    out.x = this.elements[M._00]
+    out.y = this.elements[M._11]
+    out.z = this.elements[M._22]
     return out
   }
 
@@ -398,9 +419,9 @@ export class Mat4 {
    * Sets the scale part
    */
   public setScale(vec: IVec3): this {
-    this.m[M._00] = vec.x
-    this.m[M._11] = vec.y
-    this.m[M._22] = vec.z
+    this.elements[M._00] = vec.x
+    this.elements[M._11] = vec.y
+    this.elements[M._22] = vec.z
     return this
   }
 
@@ -414,9 +435,9 @@ export class Mat4 {
   public getTranslation<T>(out?: T): T & IVec3
   public getTranslation(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.m[M._30]
-    out.y = this.m[M._31]
-    out.z = this.m[M._32]
+    out.x = this.elements[M._30]
+    out.y = this.elements[M._31]
+    out.z = this.elements[M._32]
     return out
   }
 
@@ -424,9 +445,9 @@ export class Mat4 {
    * Sets the translation part
    */
   public setTranslation(x: number, y: number, z: number): this {
-    this.m[M._30] = x
-    this.m[M._31] = y
-    this.m[M._32] = z
+    this.elements[M._30] = x
+    this.elements[M._31] = y
+    this.elements[M._32] = z
     return this
   }
 
@@ -434,9 +455,9 @@ export class Mat4 {
    * Sets the translation part from vector
    */
   public setTranslationV(vec: IVec3): this {
-    this.m[M._30] = vec.x
-    this.m[M._31] = vec.y
-    this.m[M._32] = vec.z
+    this.elements[M._30] = vec.x
+    this.elements[M._31] = vec.y
+    this.elements[M._32] = vec.z
     return this
   }
 
@@ -444,7 +465,7 @@ export class Mat4 {
    * Sets the x component of the translation part
    */
   public setTranslationX(value: number): this {
-    this.m[M._30] = value
+    this.elements[M._30] = value
     return this
   }
 
@@ -452,7 +473,7 @@ export class Mat4 {
    * Sets the y component of the translation part
    */
   public setTranslationY(value: number): this {
-    this.m[M._31] = value
+    this.elements[M._31] = value
     return this
   }
 
@@ -460,7 +481,7 @@ export class Mat4 {
    * Sets the z component of the translation part
    */
   public setTranslationZ(value: number): this {
-    this.m[M._32] = value
+    this.elements[M._32] = value
     return this
   }
 
@@ -485,13 +506,25 @@ export class Mat4 {
    * Creates a matrix by reading the arguments in column major order
    */
   public static create(
-    m00: number, m01: number, m02: number, m03: number,
-    m10: number, m11: number, m12: number, m13: number,
-    m20: number, m21: number, m22: number, m23: number,
-    m30: number, m31: number, m32: number, m33: number,
+    m00: number,
+    m01: number,
+    m02: number,
+    m03: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m13: number,
+    m20: number,
+    m21: number,
+    m22: number,
+    m23: number,
+    m30: number,
+    m31: number,
+    m32: number,
+    m33: number,
   ): Mat4 {
     const out = new Mat4()
-    const m = out.m
+    const m = out.elements
     m[M._00] = m00
     m[M._01] = m01
     m[M._02] = m02
@@ -518,12 +551,24 @@ export class Mat4 {
    * Initializes the matrix by reading the arguments in column major order
    */
   public init(
-    m00: number, m01: number, m02: number, m03: number,
-    m10: number, m11: number, m12: number, m13: number,
-    m20: number, m21: number, m22: number, m23: number,
-    m30: number, m31: number, m32: number, m33: number,
+    m00: number,
+    m01: number,
+    m02: number,
+    m03: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m13: number,
+    m20: number,
+    m21: number,
+    m22: number,
+    m23: number,
+    m30: number,
+    m31: number,
+    m32: number,
+    m33: number,
   ): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] = m00
     m[M._01] = m01
     m[M._02] = m02
@@ -555,13 +600,25 @@ export class Mat4 {
    * order
    */
   public static createRowMajor(
-    m00: number, m10: number, m20: number, m30: number,
-    m01: number, m11: number, m21: number, m31: number,
-    m02: number, m12: number, m22: number, m32: number,
-    m03: number, m13: number, m23: number, m33: number,
+    m00: number,
+    m10: number,
+    m20: number,
+    m30: number,
+    m01: number,
+    m11: number,
+    m21: number,
+    m31: number,
+    m02: number,
+    m12: number,
+    m22: number,
+    m32: number,
+    m03: number,
+    m13: number,
+    m23: number,
+    m33: number,
   ): Mat4 {
     const out = new Mat4()
-    const m = out.m
+    const m = out.elements
     m[M._00] = m00
     m[M._01] = m01
     m[M._02] = m02
@@ -593,12 +650,24 @@ export class Mat4 {
    * order
    */
   public initRowMajor(
-    m00: number, m10: number, m20: number, m30: number,
-    m01: number, m11: number, m21: number, m31: number,
-    m02: number, m12: number, m22: number, m32: number,
-    m03: number, m13: number, m23: number, m33: number,
+    m00: number,
+    m10: number,
+    m20: number,
+    m30: number,
+    m01: number,
+    m11: number,
+    m21: number,
+    m31: number,
+    m02: number,
+    m12: number,
+    m22: number,
+    m32: number,
+    m03: number,
+    m13: number,
+    m23: number,
+    m33: number,
   ): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] = m00
     m[M._01] = m01
     m[M._02] = m02
@@ -636,11 +705,23 @@ export class Mat4 {
    * @param number - The number to set all matrix components to.
    */
   public initWith(value: number): this {
-    const m = this.m
-    m[M._00] = value; m[M._10] = value; m[M._20] = value; m[M._30] = value
-    m[M._01] = value; m[M._11] = value; m[M._21] = value; m[M._31] = value
-    m[M._02] = value; m[M._12] = value; m[M._22] = value; m[M._32] = value
-    m[M._03] = value; m[M._13] = value; m[M._23] = value; m[M._33] = value
+    const m = this.elements
+    m[M._00] = value
+    m[M._10] = value
+    m[M._20] = value
+    m[M._30] = value
+    m[M._01] = value
+    m[M._11] = value
+    m[M._21] = value
+    m[M._31] = value
+    m[M._02] = value
+    m[M._12] = value
+    m[M._22] = value
+    m[M._32] = value
+    m[M._03] = value
+    m[M._13] = value
+    m[M._23] = value
+    m[M._33] = value
     return this
   }
 
@@ -666,11 +747,23 @@ export class Mat4 {
    * ```
    */
   public initIdentity(): this {
-    const m = this.m
-    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = 0
-    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = 0
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = 0
-    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    const m = this.elements
+    m[M._00] = 1
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = 1
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 1
+    m[M._32] = 0
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -703,11 +796,23 @@ export class Mat4 {
    * ```
    */
   public initZero(): this {
-    const m = this.m
-    m[M._00] = 0; m[M._10] = 0; m[M._20] = 0; m[M._30] = 0
-    m[M._01] = 0; m[M._11] = 0; m[M._21] = 0; m[M._31] = 0
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 0; m[M._32] = 0
-    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 0
+    const m = this.elements
+    m[M._00] = 0
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = 0
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 0
+    m[M._32] = 0
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 0
     return this
   }
 
@@ -722,8 +827,8 @@ export class Mat4 {
    * Initializes this matrix from another matrix.
    */
   public initFrom(other: Mat4): this {
-    const a = this.m
-    const b = other.m
+    const a = this.elements
+    const b = other.elements
     a[0] = b[0]
     a[1] = b[1]
     a[2] = b[2]
@@ -755,7 +860,7 @@ export class Mat4 {
    */
   public initFromArray(array: ArrayLike<number>, offset?: number): this {
     offset = offset || 0
-    const a = this.m
+    const a = this.elements
     a[0] = array[offset]
     a[1] = array[offset + 1]
     a[2] = array[offset + 2]
@@ -826,19 +931,19 @@ export class Mat4 {
     const zz = z * z
     const zw = z * w
 
-    const m = this.m
+    const m = this.elements
     m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] =     2 * (xy + zw)
-    m[M._02] =     2 * (xz - yw)
+    m[M._01] = 2 * (xy + zw)
+    m[M._02] = 2 * (xz - yw)
     m[M._03] = 0
 
-    m[M._10] =     2 * (xy - zw)
+    m[M._10] = 2 * (xy - zw)
     m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] =     2 * (yz + xw)
+    m[M._12] = 2 * (yz + xw)
     m[M._13] = 0
 
-    m[M._20] =     2 * (xz + yw)
-    m[M._21] =     2 * (yz - xw)
+    m[M._20] = 2 * (xz + yw)
+    m[M._21] = 2 * (yz - xw)
     m[M._22] = 1 - 2 * (yy + xx)
     m[M._23] = 0
 
@@ -850,20 +955,20 @@ export class Mat4 {
   }
 
   /**
-   * Composes a matrix from given position, rotation and scale
+   * Composes a matrix from given rotation, translation and scale components.
    */
-  public static createFromPosRotScale(pos: IVec3, rot: IVec4, scale: IVec3): Mat4 {
-    return new Mat4().initFromPosRotScale(pos, rot, scale)
+  public static createFromRTS(rotation: IVec4, translation: IVec3, scale: IVec3): Mat4 {
+    return new Mat4().initFromRTS(rotation, translation, scale)
   }
 
   /**
-   * Composes a matrix from given position, rotation and scale
+   * Composes a matrix from given rotation, translation and scale components.
    */
-  public initFromPosRotScale(pos: IVec3, rot: IVec4, scale: IVec3): this {
-    const x = rot.x
-    const y = rot.y
-    const z = rot.z
-    const w = rot.w
+  public initFromRTS(rotation: IVec4, translation: IVec3, scale: IVec3): this {
+    const x = rotation.x
+    const y = rotation.y
+    const z = rotation.z
+    const w = rotation.w
 
     const xx = x * x
     const xy = x * y
@@ -877,34 +982,36 @@ export class Mat4 {
     const zz = z * z
     const zw = z * w
 
-    const m = this.m
+    const m = this.elements
     m[M._00] = (1 - 2 * (yy + zz)) * scale.x
-    m[M._01] = (    2 * (xy + zw)) * scale.x
-    m[M._02] = (    2 * (xz - yw)) * scale.x
+    m[M._01] = 2 * (xy + zw) * scale.x
+    m[M._02] = 2 * (xz - yw) * scale.x
     m[M._03] = 0
 
-    m[M._10] = (    2 * (xy - zw)) * scale.y
+    m[M._10] = 2 * (xy - zw) * scale.y
     m[M._11] = (1 - 2 * (zz + xx)) * scale.y
-    m[M._12] = (    2 * (yz + xw)) * scale.y
+    m[M._12] = 2 * (yz + xw) * scale.y
     m[M._13] = 0
 
-    m[M._20] = (    2 * (xz + yw)) * scale.z
-    m[M._21] = (    2 * (yz - xw)) * scale.z
+    m[M._20] = 2 * (xz + yw) * scale.z
+    m[M._21] = 2 * (yz - xw) * scale.z
     m[M._22] = (1 - 2 * (yy + xx)) * scale.z
     m[M._23] = 0
 
-    m[M._30] = pos.x
-    m[M._31] = pos.y
-    m[M._32] = pos.z
+    m[M._30] = translation.x
+    m[M._31] = translation.y
+    m[M._32] = translation.z
     m[M._33] = 1
     return this
   }
 
-  public static decompose(mat: Mat4, scale: IVec3, rot: IVec4, pos: Vec3): boolean {
-    const m = mat.m
-    pos.x = m[M._30]
-    pos.y = m[M._31]
-    pos.z = m[M._32]
+  public static decompose(mat: Mat4, scale: IVec3, rot: IVec4, pos: IVec3): boolean {
+    const m = mat.elements
+    if (pos) {
+      pos.x = m[M._30]
+      pos.y = m[M._31]
+      pos.z = m[M._32]
+    }
 
     // Extract scale
     scale.x = Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2])
@@ -920,17 +1027,17 @@ export class Mat4 {
     }
 
     // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
-    const m00 = m[0] / scale.x;
-    const m01 = m[1] / scale.x;
-    const m02 = m[2] / scale.x;
+    const m00 = m[0] / scale.x
+    const m01 = m[1] / scale.x
+    const m02 = m[2] / scale.x
 
-    const m10 = m[4] / scale.y;
-    const m11 = m[5] / scale.y;
-    const m12 = m[6] / scale.y;
+    const m10 = m[4] / scale.y
+    const m11 = m[5] / scale.y
+    const m12 = m[6] / scale.y
 
-    const m20 = m[8] / scale.z;
-    const m21 = m[9] / scale.z;
-    const m22 = m[10] / scale.z;
+    const m20 = m[8] / scale.z
+    const m21 = m[9] / scale.z
+    const m22 = m[10] / scale.z
 
     const tr = m00 + m11 + m22
 
@@ -940,7 +1047,7 @@ export class Mat4 {
       rot.x = (m12 - m21) / s
       rot.y = (m20 - m02) / s
       rot.z = (m01 - m10) / s
-    } else if ((m00 > m11) && (m00 > m22)) {
+    } else if (m00 > m11 && m00 > m22) {
       const s = Math.sqrt(1.0 + m00 - m11 - m22) * 2 // S=4*qx
       rot.w = (m12 - m21) / s
       rot.x = 0.25 * s
@@ -961,7 +1068,7 @@ export class Mat4 {
     }
   }
 
-  public decompose(scale: IVec3, rot: IVec4, pos: Vec3): void {
+  public decompose(scale: IVec3, rot: IVec4, pos: IVec3): void {
     Mat4.decompose(this, scale, rot, pos)
   }
 
@@ -1026,7 +1133,7 @@ export class Mat4 {
     const r21 = 2 * (yz - xw)
     const r22 = 1 - 2 * (yy + xx)
 
-    const m = this.m
+    const m = this.elements
     const m00 = m[M._00]
     const m01 = m[M._01]
     const m02 = m[M._02]
@@ -1091,7 +1198,7 @@ export class Mat4 {
     const r21 = 2 * (yz - xw)
     const r22 = 1 - 2 * (yy + xx)
 
-    const m = this.m
+    const m = this.elements
     const m00 = m[M._00]
     const m10 = m[M._10]
     const m20 = m[M._20]
@@ -1210,19 +1317,19 @@ export class Mat4 {
     const zz = z * z
     const zw = z * w
 
-    const m = this.m
+    const m = this.elements
     m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] =     2 * (xy + zw)
-    m[M._02] =     2 * (xz - yw)
+    m[M._01] = 2 * (xy + zw)
+    m[M._02] = 2 * (xz - yw)
     m[M._03] = 0
 
-    m[M._10] =     2 * (xy - zw)
+    m[M._10] = 2 * (xy - zw)
     m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] =     2 * (yz + xw)
+    m[M._12] = 2 * (yz + xw)
     m[M._13] = 0
 
-    m[M._20] =     2 * (xz + yw)
-    m[M._21] =     2 * (yz - xw)
+    m[M._20] = 2 * (xz + yw)
+    m[M._21] = 2 * (yz - xw)
     m[M._22] = 1 - 2 * (yy + xx)
     m[M._23] = 0
 
@@ -1330,19 +1437,19 @@ export class Mat4 {
     const zz = z * z
     const zw = z * w
 
-    const m = this.m
+    const m = this.elements
     m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] =     2 * (xy + zw)
-    m[M._02] =     2 * (xz - yw)
+    m[M._01] = 2 * (xy + zw)
+    m[M._02] = 2 * (xz - yw)
     m[M._03] = 0
 
-    m[M._10] =     2 * (xy - zw)
+    m[M._10] = 2 * (xy - zw)
     m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] =     2 * (yz + xw)
+    m[M._12] = 2 * (yz + xw)
     m[M._13] = 0
 
-    m[M._20] =     2 * (xz + yw)
-    m[M._21] =     2 * (yz - xw)
+    m[M._20] = 2 * (xz + yw)
+    m[M._21] = 2 * (yz - xw)
     m[M._22] = 1 - 2 * (yy + xx)
     m[M._23] = 0
 
@@ -1452,11 +1559,23 @@ export class Mat4 {
   public initRotationX(angle: number): this {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
-    const m = this.m
-    m[M._00] = 1; m[M._10] = 0;   m[M._20] = 0;    m[M._30] = 0
-    m[M._01] = 0; m[M._11] = cos; m[M._21] = -sin; m[M._31] = 0
-    m[M._02] = 0; m[M._12] = sin; m[M._22] =  cos; m[M._32] = 0
-    m[M._03] = 0; m[M._13] = 0;   m[M._23] = 0;    m[M._33] = 1
+    const m = this.elements
+    m[M._00] = 1
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = cos
+    m[M._21] = -sin
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = sin
+    m[M._22] = cos
+    m[M._32] = 0
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -1470,7 +1589,7 @@ export class Mat4 {
    * @param angle - angle in rad
    */
   public rotateX(angle: number): this {
-    const m = this.m
+    const m = this.elements
     const m10 = m[M._10]
     const m11 = m[M._11]
     const m12 = m[M._12]
@@ -1503,7 +1622,7 @@ export class Mat4 {
    * @param angle - angle in rad
    */
   public preRotateX(angle: number): this {
-    const m = this.m
+    const m = this.elements
     const m01 = m[M._01]
     const m11 = m[M._11]
     const m21 = m[M._21]
@@ -1542,11 +1661,23 @@ export class Mat4 {
   public initRotationY(angle: number): this {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
-    const m = this.m
-    m[M._00] = cos;  m[M._10] = 0; m[M._20] = sin; m[M._30] = 0
-    m[M._01] = 0;    m[M._11] = 1; m[M._21] = 0;   m[M._31] = 0
-    m[M._02] = -sin; m[M._12] = 0; m[M._22] = cos; m[M._32] = 0
-    m[M._03] = 0;    m[M._13] = 0; m[M._23] = 0;   m[M._33] = 1
+    const m = this.elements
+    m[M._00] = cos
+    m[M._10] = 0
+    m[M._20] = sin
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = 1
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = -sin
+    m[M._12] = 0
+    m[M._22] = cos
+    m[M._32] = 0
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -1560,7 +1691,7 @@ export class Mat4 {
    * @param angle - angle in rad
    */
   public rotateY(angle: number): this {
-    const m = this.m
+    const m = this.elements
     const m00 = m[M._00]
     const m01 = m[M._01]
     const m02 = m[M._02]
@@ -1593,7 +1724,7 @@ export class Mat4 {
    * @param angle - angle in rad
    */
   public preRotateY(angle: number): this {
-    const m = this.m
+    const m = this.elements
     const m00 = m[M._00]
     const m10 = m[M._10]
     const m20 = m[M._20]
@@ -1631,11 +1762,23 @@ export class Mat4 {
   public initRotationZ(angle: number): this {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
-    const m = this.m
-    m[M._00] = cos; m[M._10] = -sin; m[M._20] = 0; m[M._30] = 0
-    m[M._01] = sin; m[M._11] =  cos; m[M._21] = 0; m[M._31] = 0
-    m[M._02] = 0;   m[M._12] = 0;    m[M._22] = 1; m[M._32] = 0
-    m[M._03] = 0;   m[M._13] = 0;    m[M._23] = 0; m[M._33] = 1
+    const m = this.elements
+    m[M._00] = cos
+    m[M._10] = -sin
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = sin
+    m[M._11] = cos
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 1
+    m[M._32] = 0
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -1649,7 +1792,7 @@ export class Mat4 {
    * @param angle - angle in rad
    */
   public rotateZ(angle: number): this {
-    const m = this.m
+    const m = this.elements
     const m00 = m[M._00]
     const m01 = m[M._01]
     const m02 = m[M._02]
@@ -1682,7 +1825,7 @@ export class Mat4 {
    * @param angle - angle in rad
    */
   public preRotateZ(angle: number): this {
-    const m = this.m
+    const m = this.elements
     const m00 = m[M._00]
     const m10 = m[M._10]
     const m20 = m[M._20]
@@ -1721,11 +1864,23 @@ export class Mat4 {
    * @param z - z scale factor
    */
   public initScale(x: number, y: number, z: number): this {
-    const m = this.m
-    m[M._00] = x; m[M._10] = 0; m[M._20] = 0; m[M._30] = 0
-    m[M._01] = 0; m[M._11] = y; m[M._21] = 0; m[M._31] = 0
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = z; m[M._32] = 0
-    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    const m = this.elements
+    m[M._00] = x
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = y
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = z
+    m[M._32] = 0
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -1737,7 +1892,7 @@ export class Mat4 {
    * @param z - z scale factor
    */
   public scale(x: number, y: number, z: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] *= x
     m[M._01] *= x
     m[M._02] *= x
@@ -1761,7 +1916,7 @@ export class Mat4 {
    * @param z - z scale factor
    */
   public preScale(x: number, y: number, z: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] *= x
     m[M._10] *= x
     m[M._20] *= x
@@ -1802,7 +1957,7 @@ export class Mat4 {
     const x = scale.x
     const y = scale.y
     const z = scale.z
-    const m = this.m
+    const m = this.elements
     m[M._00] *= x
     m[M._01] *= x
     m[M._02] *= x
@@ -1827,7 +1982,7 @@ export class Mat4 {
     const x = scale.x
     const y = scale.y
     const z = scale.z
-    const m = this.m
+    const m = this.elements
     m[M._00] *= x
     m[M._10] *= x
     m[M._20] *= x
@@ -1865,7 +2020,7 @@ export class Mat4 {
    * @param scale - the uniform scale factor
    */
   public scaleUniform(scale: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] *= scale
     m[M._01] *= scale
     m[M._02] *= scale
@@ -1887,7 +2042,7 @@ export class Mat4 {
    * @param scale - the uniform scale factor
    */
   public preScaleUniform(scale: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] *= scale
     m[M._10] *= scale
     m[M._20] *= scale
@@ -1909,7 +2064,7 @@ export class Mat4 {
    * @param x - scale factor on x axis
    */
   public scaleX(x: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] *= x
     m[M._01] *= x
     m[M._02] *= x
@@ -1923,7 +2078,7 @@ export class Mat4 {
    * @param x - scale factor on x axis
    */
   public preScaleX(x: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._00] *= x
     m[M._10] *= x
     m[M._20] *= x
@@ -1937,7 +2092,7 @@ export class Mat4 {
    * @param y - scale factor on y axis
    */
   public scaleY(y: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._10] *= y
     m[M._11] *= y
     m[M._12] *= y
@@ -1951,7 +2106,7 @@ export class Mat4 {
    * @param y - scale factor on y axis
    */
   public preScaleY(y: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._01] *= y
     m[M._11] *= y
     m[M._21] *= y
@@ -1965,7 +2120,7 @@ export class Mat4 {
    * @param z - scale factor on z axis
    */
   public scaleZ(z: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._20] *= z
     m[M._21] *= z
     m[M._22] *= z
@@ -1979,7 +2134,7 @@ export class Mat4 {
    * @param z - scale factor on z axis
    */
   public preScaleZ(z: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._02] *= z
     m[M._12] *= z
     m[M._22] *= z
@@ -2020,11 +2175,23 @@ export class Mat4 {
    * @param z - z component of the translation vector
    */
   public initTranslation(x: number, y: number, z: number): this {
-    const m = this.m
-    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = x
-    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = y
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = z
-    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    const m = this.elements
+    m[M._00] = 1
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = x
+    m[M._01] = 0
+    m[M._11] = 1
+    m[M._21] = 0
+    m[M._31] = y
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 1
+    m[M._32] = z
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -2047,7 +2214,7 @@ export class Mat4 {
    * @param z - translation in z direction
    */
   public translate(x: number, y: number, z: number): this {
-    const m = this.m
+    const m = this.elements
     m[12] = m[0] * x + m[4] * y + m[8] * z + m[12]
     m[13] = m[1] * x + m[5] * y + m[9] * z + m[13]
     m[14] = m[2] * x + m[6] * y + m[10] * z + m[14]
@@ -2074,7 +2241,7 @@ export class Mat4 {
    * @param z - translation in z direction
    */
   public preTranslate(x: number, y: number, z: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._30] += x
     m[M._31] += y
     m[M._32] += z
@@ -2114,11 +2281,23 @@ export class Mat4 {
    * @param v - the translation vector
    */
   public initTranslationV(v: IVec3): this {
-    const m = this.m
-    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0; m[M._30] = v.x
-    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0; m[M._31] = v.y
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1; m[M._32] = v.z
-    m[M._03] = 0; m[M._13] = 0; m[M._23] = 0; m[M._33] = 1
+    const m = this.elements
+    m[M._00] = 1
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = v.x
+    m[M._01] = 0
+    m[M._11] = 1
+    m[M._21] = 0
+    m[M._31] = v.y
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 1
+    m[M._32] = v.z
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -2142,7 +2321,7 @@ export class Mat4 {
     const x = v.x
     const y = v.y
     const z = v.z
-    const m = this.m
+    const m = this.elements
     m[12] = m[0] * x + m[4] * y + m[8] * z + m[12]
     m[13] = m[1] * x + m[5] * y + m[9] * z + m[13]
     m[14] = m[2] * x + m[6] * y + m[10] * z + m[14]
@@ -2167,7 +2346,7 @@ export class Mat4 {
    * @param v - the translation vector
    */
   public preTranslateV(v: IVec3): this {
-    const m = this.m
+    const m = this.elements
     m[M._30] += v.x
     m[M._31] += v.y
     m[M._32] += v.z
@@ -2191,7 +2370,7 @@ export class Mat4 {
    * @param x - translation in x direction
    */
   public translateX(x: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._30] = m[M._00] * x + m[M._30]
     m[M._31] = m[M._01] * x + m[M._31]
     m[M._32] = m[M._02] * x + m[M._32]
@@ -2216,7 +2395,7 @@ export class Mat4 {
    * @param y - translation in y direction
    */
   public translateY(y: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._30] = m[M._10] * y + m[M._30]
     m[M._31] = m[M._11] * y + m[M._31]
     m[M._32] = m[M._12] * y + m[M._32]
@@ -2241,7 +2420,7 @@ export class Mat4 {
    * @param z - translation in z direction
    */
   public translateZ(z: number): this {
-    const m = this.m
+    const m = this.elements
     m[M._30] = m[M._20] * z + m[M._30]
     m[M._31] = m[M._21] * z + m[M._31]
     m[M._32] = m[M._22] * z + m[M._32]
@@ -2258,7 +2437,7 @@ export class Mat4 {
    * @param x - translation in x direction
    */
   public preTranslateX(x: number): this {
-    this.m[M._30] += x
+    this.elements[M._30] += x
     return this
   }
 
@@ -2271,7 +2450,7 @@ export class Mat4 {
    * @param y - translation in y direction
    */
   public preTranslateY(y: number): this {
-    this.m[M._31] += y
+    this.elements[M._31] += y
     return this
   }
 
@@ -2284,7 +2463,7 @@ export class Mat4 {
    * @param z - translation in z direction
    */
   public preTranslateZ(z: number): this {
-    this.m[M._32] += z
+    this.elements[M._32] += z
     return this
   }
 
@@ -2327,10 +2506,16 @@ export class Mat4 {
     y = backZ * rightX - backX * rightZ
     z = backX * rightY - backY * rightX
 
-    const m = this.m
-    m[M._00] = rightX; m[M._10] = x; m[M._20] = backX
-    m[M._01] = rightY; m[M._11] = y; m[M._21] = backY
-    m[M._02] = rightZ; m[M._12] = z; m[M._22] = backZ
+    const m = this.elements
+    m[M._00] = rightX
+    m[M._10] = x
+    m[M._20] = backX
+    m[M._01] = rightY
+    m[M._11] = y
+    m[M._21] = backY
+    m[M._02] = rightZ
+    m[M._12] = z
+    m[M._22] = backZ
     return this
   }
 
@@ -2376,11 +2561,23 @@ export class Mat4 {
     const upY = backZ * rightX - backX * rightZ
     const upZ = backX * rightY - backY * rightX
 
-    const m = this.m
-    m[M._00] = rightX; m[M._10] = upX; m[M._20] = backX; m[M._30] = pos.x
-    m[M._01] = rightY; m[M._11] = upY; m[M._21] = backY; m[M._31] = pos.y
-    m[M._02] = rightZ; m[M._12] = upZ; m[M._22] = backZ; m[M._32] = pos.z
-    m[M._03] = 0;      m[M._13] = 0;   m[M._23] = 0;     m[M._33] = 1
+    const m = this.elements
+    m[M._00] = rightX
+    m[M._10] = upX
+    m[M._20] = backX
+    m[M._30] = pos.x
+    m[M._01] = rightY
+    m[M._11] = upY
+    m[M._21] = backY
+    m[M._31] = pos.y
+    m[M._02] = rightZ
+    m[M._12] = upZ
+    m[M._22] = backZ
+    m[M._32] = pos.z
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -2424,11 +2621,23 @@ export class Mat4 {
     y = backZ * rightX - backX * rightZ
     z = backX * rightY - backY * rightX
 
-    const m = this.m
-    m[M._00] = rightX; m[M._10] = x; m[M._20] = backX; m[M._30] = position.x
-    m[M._01] = rightY; m[M._11] = y; m[M._21] = backY; m[M._31] = position.y
-    m[M._02] = rightZ; m[M._12] = z; m[M._22] = backZ; m[M._32] = position.z
-    m[M._03] = 0;      m[M._13] = 0; m[M._23] = 0;     m[M._33] = 1
+    const m = this.elements
+    m[M._00] = rightX
+    m[M._10] = x
+    m[M._20] = backX
+    m[M._30] = position.x
+    m[M._01] = rightY
+    m[M._11] = y
+    m[M._21] = backY
+    m[M._31] = position.y
+    m[M._02] = rightZ
+    m[M._12] = z
+    m[M._22] = backZ
+    m[M._32] = position.z
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -2443,12 +2652,24 @@ export class Mat4 {
    * Initializes a perspective matrix
    */
   public initPerspective(width: number, height: number, near: number, far: number): this {
-    const m = this.m
-    const d = (far - near)
-    m[M._00] = near / width; m[M._10] = 0;             m[M._20] = 0;                 m[M._30] = 0
-    m[M._01] = 0;            m[M._11] = near / height; m[M._21] = 0;                 m[M._31] = 0
-    m[M._02] = 0;            m[M._12] = 0;             m[M._22] = -(far + near) / d; m[M._32] = -(2 * far * near) / d
-    m[M._03] = 0;            m[M._13] = 0;             m[M._23] = -1;                m[M._33] = 1
+    const m = this.elements
+    const d = far - near
+    m[M._00] = near / width
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = near / height
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = -(far + near) / d
+    m[M._32] = -(2 * far * near) / d
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = -1
+    m[M._33] = 1
     return this
   }
 
@@ -2474,34 +2695,72 @@ export class Mat4 {
    */
   public initPerspectiveFieldOfView(fov: number, aspect: number, near: number, far: number): this {
     const s = 1.0 / Math.tan(fov * 0.5)
-    const d = (far - near)
-    const m = this.m
-    m[M._00] = s / aspect; m[M._10] = 0; m[M._20] = 0;                 m[M._30] = 0
-    m[M._01] = 0;          m[M._11] = s; m[M._21] = 0;                 m[M._31] = 0
-    m[M._02] = 0;          m[M._12] = 0; m[M._22] = -(far + near) / d; m[M._32] = -(2 * far * near) / d
-    m[M._03] = 0;          m[M._13] = 0; m[M._23] = -1;                m[M._33] = 0
+    const d = far - near
+    const m = this.elements
+    m[M._00] = s / aspect
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = s
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = -(far + near) / d
+    m[M._32] = -(2 * far * near) / d
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = -1
+    m[M._33] = 0
     return this
   }
 
   /**
    * Creates a new perspective matrix
    */
-  public static createPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
+  public static createPerspectiveOffCenter(
+    left: number,
+    right: number,
+    bottom: number,
+    top: number,
+    near: number,
+    far: number,
+  ): Mat4 {
     return new Mat4().initPerspectiveOffCenter(left, right, bottom, top, near, far)
   }
 
   /**
    * Initializes a perspective matrix
    */
-  public initPerspectiveOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): this {
+  public initPerspectiveOffCenter(
+    left: number,
+    right: number,
+    bottom: number,
+    top: number,
+    near: number,
+    far: number,
+  ): this {
     const w = right - left
     const h = top - bottom
     const d = far - near
-    const m = this.m
-    m[M._00] = 2 * near / w; m[M._10] = 0;            m[M._20] = (right + left) / w; m[M._30] = 0
-    m[M._01] = 0;            m[M._11] = 2 * near / h; m[M._21] = (top + bottom) / h; m[M._31] = 0
-    m[M._02] = 0;            m[M._12] = 0;            m[M._22] = -(far + near) / d;  m[M._32] = -(2 * far * near) / d
-    m[M._03] = 0;            m[M._13] = 0;            m[M._23] = -1;                 m[M._33] = 0
+    const m = this.elements
+    m[M._00] = (2 * near) / w
+    m[M._10] = 0
+    m[M._20] = (right + left) / w
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = (2 * near) / h
+    m[M._21] = (top + bottom) / h
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = -(far + near) / d
+    m[M._32] = -(2 * far * near) / d
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = -1
+    m[M._33] = 0
     return this
   }
 
@@ -2517,33 +2776,71 @@ export class Mat4 {
    */
   public initOrthographic(width: number, height: number, near: number, far: number): this {
     const d = far - near
-    const m = this.m
-    m[M._00] = 1 / width; m[M._10] = 0;          m[M._20] = 0;                 m[M._30] = 0
-    m[M._01] = 0;         m[M._11] = 1 / height; m[M._21] = 0;                 m[M._31] = 0
-    m[M._02] = 0;         m[M._12] = 0;          m[M._22] = -2 / (far - near); m[M._32] = -(far + near) / d
-    m[M._03] = 0;         m[M._13] = 0;          m[M._23] = 0;                 m[M._33] = 1
+    const m = this.elements
+    m[M._00] = 1 / width
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = 0
+    m[M._01] = 0
+    m[M._11] = 1 / height
+    m[M._21] = 0
+    m[M._31] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = -2 / (far - near)
+    m[M._32] = -(far + near) / d
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
   /**
    * creates a new orthographic matrix
    */
-  public static createOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): Mat4 {
+  public static createOrthographicOffCenter(
+    left: number,
+    right: number,
+    bottom: number,
+    top: number,
+    near: number,
+    far: number,
+  ): Mat4 {
     return new Mat4().initOrthographicOffCenter(left, right, bottom, top, near, far)
   }
 
   /**
    * Initializes an orthographic matrix
    */
-  public initOrthographicOffCenter(left: number, right: number, bottom: number, top: number, near: number, far: number): this {
+  public initOrthographicOffCenter(
+    left: number,
+    right: number,
+    bottom: number,
+    top: number,
+    near: number,
+    far: number,
+  ): this {
     const w = right - left
     const h = top - bottom
     const d = far - near
-    const m = this.m
-    m[M._00] = 2 / w; m[M._10] = 0;     m[M._20] = 0;      m[M._30] = -(right + left) / w
-    m[M._01] = 0;     m[M._11] = 2 / h; m[M._21] = 0;      m[M._31] = -(top + bottom) / h
-    m[M._02] = 0;     m[M._12] = 0;     m[M._22] = -2 / d; m[M._32] = -(far + near) / d
-    m[M._03] = 0;     m[M._13] = 0;     m[M._23] = 0;      m[M._33] = 1
+    const m = this.elements
+    m[M._00] = 2 / w
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._30] = -(right + left) / w
+    m[M._01] = 0
+    m[M._11] = 2 / h
+    m[M._21] = 0
+    m[M._31] = -(top + bottom) / h
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = -2 / d
+    m[M._32] = -(far + near) / d
+    m[M._03] = 0
+    m[M._13] = 0
+    m[M._23] = 0
+    m[M._33] = 1
     return this
   }
 
@@ -2551,7 +2848,7 @@ export class Mat4 {
    * Calculates the determinant of this matrix
    */
   public determinant(): number {
-    const a = this.m
+    const a = this.elements
 
     const a11 = a[0]
     const a12 = a[4]
@@ -2587,7 +2884,7 @@ export class Mat4 {
     const det3 = a12 * d2 - a22 * d4 + a42 * d6
     const det4 = a12 * d3 - a22 * d5 + a32 * d6
 
-    return (a11 * det1 - a21 * det2 + a31 * det3 - a41 * det4)
+    return a11 * det1 - a21 * det2 + a31 * det3 - a41 * det4
   }
 
   /**
@@ -2597,12 +2894,24 @@ export class Mat4 {
    * @returns The given `out` parameter or a new matrix
    */
   public static transpose(mat: IMat, out?: Mat4): Mat4 {
-    const d = mat.m
+    const d = mat.elements
     return (out || new Mat4()).init(
-      d[0], d[4], d[8], d[12],
-      d[1], d[5], d[9], d[13],
-      d[2], d[6], d[10], d[14],
-      d[3], d[7], d[11], d[15],
+      d[0],
+      d[4],
+      d[8],
+      d[12],
+      d[1],
+      d[5],
+      d[9],
+      d[13],
+      d[2],
+      d[6],
+      d[10],
+      d[14],
+      d[3],
+      d[7],
+      d[11],
+      d[15],
     )
   }
 
@@ -2610,8 +2919,8 @@ export class Mat4 {
    * Transposes this matrix
    */
   public transpose(): this {
-    const m = this.m
-    let t
+    const m = this.elements
+    let t: number
 
     t = m[1]
     m[1] = m[4]
@@ -2648,8 +2957,8 @@ export class Mat4 {
    */
   public static invert(mat: IMat, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = mat.m
-    const b = out.m
+    const a = mat.elements
+    const b = out.elements
 
     const a11 = a[0]
     const a12 = a[4]
@@ -2737,12 +3046,24 @@ export class Mat4 {
    */
   public static negate(mat: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const d = mat.m
-    const o = out.m
-    o[ 0] = -d[ 0]; o[ 1] = -d[ 1]; o[ 2] = -d[ 2]; o[ 3] = -d[ 3]
-    o[ 4] = -d[ 4]; o[ 5] = -d[ 5]; o[ 6] = -d[ 6]; o[ 7] = -d[ 7]
-    o[ 8] = -d[ 8]; o[ 9] = -d[ 9]; o[10] = -d[10]; o[11] = -d[11]
-    o[12] = -d[12]; o[13] = -d[13]; o[14] = -d[14]; o[15] = -d[15]
+    const d = mat.elements
+    const o = out.elements
+    o[0] = -d[0]
+    o[1] = -d[1]
+    o[2] = -d[2]
+    o[3] = -d[3]
+    o[4] = -d[4]
+    o[5] = -d[5]
+    o[6] = -d[6]
+    o[7] = -d[7]
+    o[8] = -d[8]
+    o[9] = -d[9]
+    o[10] = -d[10]
+    o[11] = -d[11]
+    o[12] = -d[12]
+    o[13] = -d[13]
+    o[14] = -d[14]
+    o[15] = -d[15]
     return out
   }
 
@@ -2762,13 +3083,25 @@ export class Mat4 {
    */
   public static add(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
-    const b = matB.m
-    const c = out.m
-    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; c[ 2] = a[ 2] + b[ 2]; c[ 3] = a[ 3] + b[ 3]
-    c[ 4] = a[ 4] + b[ 4]; c[ 5] = a[ 5] + b[ 5]; c[ 6] = a[ 6] + b[ 6]; c[ 7] = a[ 7] + b[ 7]
-    c[ 8] = a[ 8] + b[ 8]; c[ 9] = a[ 9] + b[ 9]; c[10] = a[10] + b[10]; c[11] = a[11] + b[11]
-    c[12] = a[12] + b[12]; c[13] = a[13] + b[13]; c[14] = a[14] + b[14]; c[15] = a[15] + b[15]
+    const a = matA.elements
+    const b = matB.elements
+    const c = out.elements
+    c[0] = a[0] + b[0]
+    c[1] = a[1] + b[1]
+    c[2] = a[2] + b[2]
+    c[3] = a[3] + b[3]
+    c[4] = a[4] + b[4]
+    c[5] = a[5] + b[5]
+    c[6] = a[6] + b[6]
+    c[7] = a[7] + b[7]
+    c[8] = a[8] + b[8]
+    c[9] = a[9] + b[9]
+    c[10] = a[10] + b[10]
+    c[11] = a[11] + b[11]
+    c[12] = a[12] + b[12]
+    c[13] = a[13] + b[13]
+    c[14] = a[14] + b[14]
+    c[15] = a[15] + b[15]
     return out
   }
 
@@ -2778,12 +3111,24 @@ export class Mat4 {
    * @param other - The matrix to add
    */
   public add(other: Mat4): this {
-    const a = this.m
-    const b = other.m
-    a[ 0] += b[ 0]; a[ 1] += b[ 1]; a[ 2] += b[ 2]; a[ 3] += b[ 3]
-    a[ 4] += b[ 4]; a[ 5] += b[ 5]; a[ 6] += b[ 6]; a[ 7] += b[ 7]
-    a[ 8] += b[ 8]; a[ 9] += b[ 9]; a[10] += b[10]; a[11] += b[11]
-    a[12] += b[12]; a[13] += b[13]; a[14] += b[14]; a[15] += b[15]
+    const a = this.elements
+    const b = other.elements
+    a[0] += b[0]
+    a[1] += b[1]
+    a[2] += b[2]
+    a[3] += b[3]
+    a[4] += b[4]
+    a[5] += b[5]
+    a[6] += b[6]
+    a[7] += b[7]
+    a[8] += b[8]
+    a[9] += b[9]
+    a[10] += b[10]
+    a[11] += b[11]
+    a[12] += b[12]
+    a[13] += b[13]
+    a[14] += b[14]
+    a[15] += b[15]
     return this
   }
 
@@ -2797,12 +3142,24 @@ export class Mat4 {
    */
   public static addScalar(mat: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = mat.m
-    const c = out.m
-    c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar; c[ 2] = a[ 2] + scalar; c[ 3] = a[ 3] + scalar
-    c[ 4] = a[ 4] + scalar; c[ 5] = a[ 5] + scalar; c[ 6] = a[ 6] + scalar; c[ 7] = a[ 7] + scalar
-    c[ 8] = a[ 8] + scalar; c[ 9] = a[ 9] + scalar; c[10] = a[10] + scalar; c[11] = a[11] + scalar
-    c[12] = a[12] + scalar; c[13] = a[13] + scalar; c[14] = a[14] + scalar; c[15] = a[15] + scalar
+    const a = mat.elements
+    const c = out.elements
+    c[0] = a[0] + scalar
+    c[1] = a[1] + scalar
+    c[2] = a[2] + scalar
+    c[3] = a[3] + scalar
+    c[4] = a[4] + scalar
+    c[5] = a[5] + scalar
+    c[6] = a[6] + scalar
+    c[7] = a[7] + scalar
+    c[8] = a[8] + scalar
+    c[9] = a[9] + scalar
+    c[10] = a[10] + scalar
+    c[11] = a[11] + scalar
+    c[12] = a[12] + scalar
+    c[13] = a[13] + scalar
+    c[14] = a[14] + scalar
+    c[15] = a[15] + scalar
     return out
   }
 
@@ -2812,11 +3169,23 @@ export class Mat4 {
    * @param scalar - The scalar to add
    */
   public addScalar(s: number): this {
-    const a = this.m
-    a[ 0] += s; a[ 1] += s; a[ 2] += s; a[ 3] += s
-    a[ 4] += s; a[ 5] += s; a[ 6] += s; a[ 7] += s
-    a[ 8] += s; a[ 9] += s; a[10] += s; a[11] += s
-    a[12] += s; a[13] += s; a[14] += s; a[15] += s
+    const a = this.elements
+    a[0] += s
+    a[1] += s
+    a[2] += s
+    a[3] += s
+    a[4] += s
+    a[5] += s
+    a[6] += s
+    a[7] += s
+    a[8] += s
+    a[9] += s
+    a[10] += s
+    a[11] += s
+    a[12] += s
+    a[13] += s
+    a[14] += s
+    a[15] += s
     return this
   }
 
@@ -2830,13 +3199,25 @@ export class Mat4 {
    */
   public static subtract(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
-    const b = matB.m
-    const c = out.m
-    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; c[ 2] = a[ 2] - b[ 2]; c[ 3] = a[ 3] - b[ 3]
-    c[ 4] = a[ 4] - b[ 4]; c[ 5] = a[ 5] - b[ 5]; c[ 6] = a[ 6] - b[ 6]; c[ 7] = a[ 7] - b[ 7]
-    c[ 8] = a[ 8] - b[ 8]; c[ 9] = a[ 9] - b[ 9]; c[10] = a[10] - b[10]; c[11] = a[11] - b[11]
-    c[12] = a[12] - b[12]; c[13] = a[13] - b[13]; c[14] = a[14] - b[14]; c[15] = a[15] - b[15]
+    const a = matA.elements
+    const b = matB.elements
+    const c = out.elements
+    c[0] = a[0] - b[0]
+    c[1] = a[1] - b[1]
+    c[2] = a[2] - b[2]
+    c[3] = a[3] - b[3]
+    c[4] = a[4] - b[4]
+    c[5] = a[5] - b[5]
+    c[6] = a[6] - b[6]
+    c[7] = a[7] - b[7]
+    c[8] = a[8] - b[8]
+    c[9] = a[9] - b[9]
+    c[10] = a[10] - b[10]
+    c[11] = a[11] - b[11]
+    c[12] = a[12] - b[12]
+    c[13] = a[13] - b[13]
+    c[14] = a[14] - b[14]
+    c[15] = a[15] - b[15]
     return out
   }
 
@@ -2846,12 +3227,24 @@ export class Mat4 {
    * @param other - The matrix to subtract
    */
   public subtract(other: Mat4): this {
-    const a = this.m
-    const b = other.m
-    a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; a[ 2] -= b[ 2]; a[ 3] -= b[ 3]
-    a[ 4] -= b[ 4]; a[ 5] -= b[ 5]; a[ 6] -= b[ 6]; a[ 7] -= b[ 7]
-    a[ 8] -= b[ 8]; a[ 9] -= b[ 9]; a[10] -= b[10]; a[11] -= b[11]
-    a[12] -= b[12]; a[13] -= b[13]; a[14] -= b[14]; a[15] -= b[15]
+    const a = this.elements
+    const b = other.elements
+    a[0] -= b[0]
+    a[1] -= b[1]
+    a[2] -= b[2]
+    a[3] -= b[3]
+    a[4] -= b[4]
+    a[5] -= b[5]
+    a[6] -= b[6]
+    a[7] -= b[7]
+    a[8] -= b[8]
+    a[9] -= b[9]
+    a[10] -= b[10]
+    a[11] -= b[11]
+    a[12] -= b[12]
+    a[13] -= b[13]
+    a[14] -= b[14]
+    a[15] -= b[15]
     return this
   }
 
@@ -2865,12 +3258,24 @@ export class Mat4 {
    */
   public static subtractScalar(mat: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = mat.m
-    const c = out.m
-    c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar; c[ 2] = a[ 2] - scalar; c[ 3] = a[ 3] - scalar
-    c[ 4] = a[ 4] - scalar; c[ 5] = a[ 5] - scalar; c[ 6] = a[ 6] - scalar; c[ 7] = a[ 7] - scalar
-    c[ 8] = a[ 8] - scalar; c[ 9] = a[ 9] - scalar; c[10] = a[10] - scalar; c[11] = a[11] - scalar
-    c[12] = a[12] - scalar; c[13] = a[13] - scalar; c[14] = a[14] - scalar; c[15] = a[15] - scalar
+    const a = mat.elements
+    const c = out.elements
+    c[0] = a[0] - scalar
+    c[1] = a[1] - scalar
+    c[2] = a[2] - scalar
+    c[3] = a[3] - scalar
+    c[4] = a[4] - scalar
+    c[5] = a[5] - scalar
+    c[6] = a[6] - scalar
+    c[7] = a[7] - scalar
+    c[8] = a[8] - scalar
+    c[9] = a[9] - scalar
+    c[10] = a[10] - scalar
+    c[11] = a[11] - scalar
+    c[12] = a[12] - scalar
+    c[13] = a[13] - scalar
+    c[14] = a[14] - scalar
+    c[15] = a[15] - scalar
     return out
   }
 
@@ -2880,11 +3285,23 @@ export class Mat4 {
    * @param scalar - The scalar to subtract
    */
   public subtractScalar(s: number): this {
-    const a = this.m
-    a[ 0] -= s; a[ 1] -= s; a[ 2] -= s; a[ 3] -= s
-    a[ 4] -= s; a[ 5] -= s; a[ 6] -= s; a[ 7] -= s
-    a[ 8] -= s; a[ 9] -= s; a[10] -= s; a[11] -= s
-    a[12] -= s; a[13] -= s; a[14] -= s; a[15] -= s
+    const a = this.elements
+    a[0] -= s
+    a[1] -= s
+    a[2] -= s
+    a[3] -= s
+    a[4] -= s
+    a[5] -= s
+    a[6] -= s
+    a[7] -= s
+    a[8] -= s
+    a[9] -= s
+    a[10] -= s
+    a[11] -= s
+    a[12] -= s
+    a[13] -= s
+    a[14] -= s
+    a[15] -= s
     return this
   }
 
@@ -2898,9 +3315,9 @@ export class Mat4 {
    */
   public static multiply(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
-    const b = matB.m
-    const c = out.m
+    const a = matA.elements
+    const b = matB.elements
+    const c = out.elements
 
     const a00 = a[M._00]
     const a01 = a[M._01]
@@ -2961,9 +3378,9 @@ export class Mat4 {
    * @param other - The matrix to post-multiply
    */
   public multiply(other: Mat4): this {
-    const a = this.m
-    const b = other.m
-    const c = this.m
+    const a = this.elements
+    const b = other.elements
+    const c = this.elements
 
     const a00 = a[M._00]
     const a01 = a[M._01]
@@ -3029,9 +3446,9 @@ export class Mat4 {
    */
   public static premultiply(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matB.m
-    const b = matA.m
-    const c = out.m
+    const a = matB.elements
+    const b = matA.elements
+    const c = out.elements
 
     const a00 = a[M._00]
     const a01 = a[M._01]
@@ -3092,9 +3509,9 @@ export class Mat4 {
    * @param other - The matrix to pre-multiply
    */
   public premultiply(other: Mat4): this {
-    const a = other.m
-    const b = this.m
-    const c = this.m
+    const a = other.elements
+    const b = this.elements
+    const c = this.elements
 
     const a00 = a[M._00]
     const a01 = a[M._01]
@@ -3189,13 +3606,25 @@ export class Mat4 {
    */
   public static multiplyScalar(matA: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
+    const a = matA.elements
     const b = scalar
-    const c = out.m
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b
-    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b
-    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b
-    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b
+    const c = out.elements
+    c[0] = a[0] * b
+    c[1] = a[1] * b
+    c[2] = a[2] * b
+    c[3] = a[3] * b
+    c[4] = a[4] * b
+    c[5] = a[5] * b
+    c[6] = a[6] * b
+    c[7] = a[7] * b
+    c[8] = a[8] * b
+    c[9] = a[9] * b
+    c[10] = a[10] * b
+    c[11] = a[11] * b
+    c[12] = a[12] * b
+    c[13] = a[13] * b
+    c[14] = a[14] * b
+    c[15] = a[15] * b
     return out
   }
 
@@ -3205,11 +3634,23 @@ export class Mat4 {
    * @param s - The scalar to multiply
    */
   public multiplyScalar(s: number): this {
-    const a = this.m
-    a[ 0] *= s; a[ 1] *= s; a[ 2] *= s; a[ 3] *= s
-    a[ 4] *= s; a[ 5] *= s; a[ 6] *= s; a[ 7] *= s
-    a[ 8] *= s; a[ 9] *= s; a[10] *= s; a[11] *= s
-    a[12] *= s; a[13] *= s; a[14] *= s; a[15] *= s
+    const a = this.elements
+    a[0] *= s
+    a[1] *= s
+    a[2] *= s
+    a[3] *= s
+    a[4] *= s
+    a[5] *= s
+    a[6] *= s
+    a[7] *= s
+    a[8] *= s
+    a[9] *= s
+    a[10] *= s
+    a[11] *= s
+    a[12] *= s
+    a[13] *= s
+    a[14] *= s
+    a[15] *= s
     return this
   }
 
@@ -3223,13 +3664,25 @@ export class Mat4 {
    */
   public static divide(matA: Mat4, matB: Mat4, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
-    const b = matB.m
-    const c = out.m
-    c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1]; c[ 2] = a[ 2] / b[ 2]; c[ 3] = a[ 3] / b[ 3]
-    c[ 4] = a[ 4] / b[ 4]; c[ 5] = a[ 5] / b[ 5]; c[ 6] = a[ 6] / b[ 6]; c[ 7] = a[ 7] / b[ 7]
-    c[ 8] = a[ 8] / b[ 8]; c[ 9] = a[ 9] / b[ 9]; c[10] = a[10] / b[10]; c[11] = a[11] / b[11]
-    c[12] = a[12] / b[12]; c[13] = a[13] / b[13]; c[14] = a[14] / b[14]; c[15] = a[15] / b[15]
+    const a = matA.elements
+    const b = matB.elements
+    const c = out.elements
+    c[0] = a[0] / b[0]
+    c[1] = a[1] / b[1]
+    c[2] = a[2] / b[2]
+    c[3] = a[3] / b[3]
+    c[4] = a[4] / b[4]
+    c[5] = a[5] / b[5]
+    c[6] = a[6] / b[6]
+    c[7] = a[7] / b[7]
+    c[8] = a[8] / b[8]
+    c[9] = a[9] / b[9]
+    c[10] = a[10] / b[10]
+    c[11] = a[11] / b[11]
+    c[12] = a[12] / b[12]
+    c[13] = a[13] / b[13]
+    c[14] = a[14] / b[14]
+    c[15] = a[15] / b[15]
     return out
   }
 
@@ -3239,12 +3692,24 @@ export class Mat4 {
    * @param other - The matrix by which to divide
    */
   public divide(other: Mat4): this {
-    const a = this.m
-    const b = other.m
-    a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; a[ 2] /= b[ 2]; a[ 3] /= b[ 3]
-    a[ 4] /= b[ 4]; a[ 5] /= b[ 5]; a[ 6] /= b[ 6]; a[ 7] /= b[ 7]
-    a[ 8] /= b[ 8]; a[ 9] /= b[ 9]; a[10] /= b[10]; a[11] /= b[11]
-    a[12] /= b[12]; a[13] /= b[13]; a[14] /= b[14]; a[15] /= b[15]
+    const a = this.elements
+    const b = other.elements
+    a[0] /= b[0]
+    a[1] /= b[1]
+    a[2] /= b[2]
+    a[3] /= b[3]
+    a[4] /= b[4]
+    a[5] /= b[5]
+    a[6] /= b[6]
+    a[7] /= b[7]
+    a[8] /= b[8]
+    a[9] /= b[9]
+    a[10] /= b[10]
+    a[11] /= b[11]
+    a[12] /= b[12]
+    a[13] /= b[13]
+    a[14] /= b[14]
+    a[15] /= b[15]
     return this
   }
 
@@ -3258,13 +3723,25 @@ export class Mat4 {
    */
   public static divideScalar(matA: Mat4, scalar: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
+    const a = matA.elements
     const b = 1 / scalar
-    const c = out.m
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b; c[ 3] = a[ 3] * b
-    c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b; c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b
-    c[ 8] = a[ 8] * b; c[ 9] = a[ 9] * b; c[10] = a[10] * b; c[11] = a[11] * b
-    c[12] = a[12] * b; c[13] = a[13] * b; c[14] = a[14] * b; c[15] = a[15] * b
+    const c = out.elements
+    c[0] = a[0] * b
+    c[1] = a[1] * b
+    c[2] = a[2] * b
+    c[3] = a[3] * b
+    c[4] = a[4] * b
+    c[5] = a[5] * b
+    c[6] = a[6] * b
+    c[7] = a[7] * b
+    c[8] = a[8] * b
+    c[9] = a[9] * b
+    c[10] = a[10] * b
+    c[11] = a[11] * b
+    c[12] = a[12] * b
+    c[13] = a[13] * b
+    c[14] = a[14] * b
+    c[15] = a[15] * b
     return out
   }
 
@@ -3274,12 +3751,24 @@ export class Mat4 {
    * @param s - The scalar by which to divide
    */
   public divideScalar(s: number): this {
-    const a = this.m
+    const a = this.elements
     const b = 1.0 / s
-    a[ 0] *= b; a[ 1] *= b; a[ 2] *= b; a[ 3] *= b
-    a[ 4] *= b; a[ 5] *= b; a[ 6] *= b; a[ 7] *= b
-    a[ 8] *= b; a[ 9] *= b; a[10] *= b; a[11] *= b
-    a[12] *= b; a[13] *= b; a[14] *= b; a[15] *= b
+    a[0] *= b
+    a[1] *= b
+    a[2] *= b
+    a[3] *= b
+    a[4] *= b
+    a[5] *= b
+    a[6] *= b
+    a[7] *= b
+    a[8] *= b
+    a[9] *= b
+    a[10] *= b
+    a[11] *= b
+    a[12] *= b
+    a[13] *= b
+    a[14] *= b
+    a[15] *= b
     return this
   }
 
@@ -3309,7 +3798,7 @@ export class Mat4 {
     const x = vec.x
     const y = vec.y
     const w = 1
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[0] + y * d[4] + w * d[12]
     out.y = x * d[1] + y * d[5] + w * d[13]
@@ -3348,7 +3837,7 @@ export class Mat4 {
     const y = vec.y
     const z = vec.z
     const w = 1
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
     out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
@@ -3382,7 +3871,7 @@ export class Mat4 {
     const x = vec.x
     const y = vec.y
     const w = 1
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[0] + y * d[4] + w * d[12]
     out.y = x * d[1] + y * d[5] + w * d[13]
@@ -3410,7 +3899,7 @@ export class Mat4 {
     const y = vec.y
     const z = vec.z
     const w = 1
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
     out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
@@ -3431,7 +3920,7 @@ export class Mat4 {
     const y = vec.y
     const z = vec.z
     const w = vec.w
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
     out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
@@ -3451,7 +3940,7 @@ export class Mat4 {
   public transformV2Normal<T extends IVec2>(vec: T, out?: IVec2): T {
     const x = vec.x || 0
     const y = vec.y || 0
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[M._00] + y * d[M._10]
     out.y = x * d[M._01] + y * d[M._11]
@@ -3470,7 +3959,7 @@ export class Mat4 {
     const x = vec.x || 0
     const y = vec.y || 0
     const z = vec.z || 0
-    const d = this.m
+    const d = this.elements
     out = out || vec
     out.x = x * d[M._00] + y * d[M._10] + z * d[M._20]
     out.y = x * d[M._01] + y * d[M._11] + z * d[M._21]
@@ -3489,7 +3978,7 @@ export class Mat4 {
   public transformV2Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
     let y
-    const d = this.m
+    const d = this.elements
     offset = offset || 0
     stride = stride == null ? 2 : stride
     count = count == null ? array.length / stride : count
@@ -3516,7 +4005,7 @@ export class Mat4 {
     let x
     let y
     let z
-    const d = this.m
+    const d = this.elements
     offset = offset || 0
     stride = stride == null ? 3 : stride
     count = count == null ? array.length / stride : count
@@ -3546,7 +4035,7 @@ export class Mat4 {
     let y
     let z
     let w
-    const d = this.m
+    const d = this.elements
     offset = offset || 0
     stride = stride == null ? 4 : stride
     count = count == null ? array.length / stride : count
@@ -3576,7 +4065,7 @@ export class Mat4 {
   public transformV2NormalArray(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
     let x
     let y
-    const d = this.m
+    const d = this.elements
     offset = offset || 0
     stride = stride == null ? 2 : stride
     count = count == null ? array.length / stride : count
@@ -3603,7 +4092,7 @@ export class Mat4 {
     let x
     let y
     let z
-    const d = this.m
+    const d = this.elements
     offset = offset || 0
     stride = stride == null ? 3 : stride
     count = count == null ? array.length / stride : count
@@ -3631,9 +4120,9 @@ export class Mat4 {
    */
   public static lerp(matA: Mat4, matB: Mat4, t: number, out?: Mat4): Mat4 {
     out = out || new Mat4()
-    const a = matA.m
-    const b = matB.m
-    const c = out.m
+    const a = matA.elements
+    const b = matB.elements
+    const c = out.elements
     const t1 = 1 - t
     c[M._00] = t1 * a[M._00] + t * b[M._00]
     c[M._01] = t1 * a[M._01] + t * b[M._01]
@@ -3664,7 +4153,7 @@ export class Mat4 {
    * @returns The given `out` parameter or a new matrix.
    */
   public static smooth(matA: Mat4, matB: Mat4, t: number, out?: Mat4): Mat4 {
-    t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
+    t = t > 1 ? 1 : t < 0 ? 0 : t
     t = t * t * (3 - 2 * t)
     return Mat4.lerp(matA, matB, t, out)
   }
@@ -3674,8 +4163,8 @@ export class Mat4 {
    * @returns The cloned matrix.
    */
   public static clone(mat: Mat4, out: Mat4 = new Mat4()): Mat4 {
-    const d = mat.m
-    const o = out.m
+    const d = mat.elements
+    const o = out.elements
     o[0] = d[0]
     o[1] = d[1]
     o[2] = d[2]
@@ -3700,8 +4189,8 @@ export class Mat4 {
    * @returns The cloned matrix.
    */
   public clone(out: Mat4 = new Mat4()): Mat4 {
-    const d = this.m
-    const o = out.m
+    const d = this.elements
+    const o = out.elements
     o[0] = d[0]
     o[1] = d[1]
     o[2] = d[2]
@@ -3727,9 +4216,10 @@ export class Mat4 {
    * @param other - The matrix to compare with
    */
   public static equals(m1: Mat4, m2: Mat4): boolean {
-    const a = m1.m
-    const b = m2.m
-    return a[0] === b[0] &&
+    const a = m1.elements
+    const b = m2.elements
+    return (
+      a[0] === b[0] &&
       a[1] === b[1] &&
       a[2] === b[2] &&
       a[3] === b[3] &&
@@ -3745,6 +4235,7 @@ export class Mat4 {
       a[13] === b[13] &&
       a[14] === b[14] &&
       a[15] === b[15]
+    )
   }
 
   /**
@@ -3753,9 +4244,10 @@ export class Mat4 {
    * @param other - The matrix to compare with
    */
   public equals(other: Mat4): boolean {
-    const a = this.m
-    const b = other.m
-    return a[0] === b[0] &&
+    const a = this.elements
+    const b = other.elements
+    return (
+      a[0] === b[0] &&
       a[1] === b[1] &&
       a[2] === b[2] &&
       a[3] === b[3] &&
@@ -3771,6 +4263,7 @@ export class Mat4 {
       a[13] === b[13] &&
       a[14] === b[14] &&
       a[15] === b[15]
+    )
   }
 
   /**
@@ -3795,13 +4288,41 @@ export class Mat4 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(mat: Mat4, fractionDigits: number = 5) {
-    const m = mat.m
+    const m = mat.elements
     return [
-      [m[0].toFixed(fractionDigits), m[4].toFixed(fractionDigits), m[8].toFixed(fractionDigits), m[12].toFixed(fractionDigits)].join(','),
-      [m[1].toFixed(fractionDigits), m[5].toFixed(fractionDigits), m[9].toFixed(fractionDigits), m[13].toFixed(fractionDigits)].join(','),
-      [m[2].toFixed(fractionDigits), m[6].toFixed(fractionDigits), m[10].toFixed(fractionDigits), m[14].toFixed(fractionDigits)].join(','),
-      [m[3].toFixed(fractionDigits), m[7].toFixed(fractionDigits), m[11].toFixed(fractionDigits), m[15].toFixed(fractionDigits)].join(','),
+      [
+        m[0].toFixed(fractionDigits),
+        m[4].toFixed(fractionDigits),
+        m[8].toFixed(fractionDigits),
+        m[12].toFixed(fractionDigits),
+      ].join(','),
+      [
+        m[1].toFixed(fractionDigits),
+        m[5].toFixed(fractionDigits),
+        m[9].toFixed(fractionDigits),
+        m[13].toFixed(fractionDigits),
+      ].join(','),
+      [
+        m[2].toFixed(fractionDigits),
+        m[6].toFixed(fractionDigits),
+        m[10].toFixed(fractionDigits),
+        m[14].toFixed(fractionDigits),
+      ].join(','),
+      [
+        m[3].toFixed(fractionDigits),
+        m[7].toFixed(fractionDigits),
+        m[11].toFixed(fractionDigits),
+        m[15].toFixed(fractionDigits),
+      ].join(','),
     ].join(',\n')
+  }
+
+  public static debugComponents(mat: Mat4, fractionDigits: number = 2): string {
+    const scale = _tmp1v3
+    const rotation = _tmp1v4
+    const translation = _tmp2v3
+    Mat4.decompose(mat, scale, rotation, translation)
+    return `scale: {${scale.format(fractionDigits)}} , rotation: {${rotation.format(fractionDigits)}}, translation: {${translation.format(fractionDigits)}}`
   }
 
   /**
@@ -3818,7 +4339,7 @@ export class Mat4 {
   public static toArray(mat: Mat4, array?: number[], offset?: number): number[] {
     array = array || []
     offset = offset || 0
-    const d = mat.m
+    const d = mat.elements
     array[offset] = d[0]
     array[offset + 1] = d[1]
     array[offset + 2] = d[2]

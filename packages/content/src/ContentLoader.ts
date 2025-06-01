@@ -1,4 +1,5 @@
-import { Device, Material, MaterialOptions, Model, Texture, TextureOptions } from '@gglib/graphics'
+import { Device, Material, MaterialOptions, Texture, TextureOptions } from '@gglib/graphics'
+import { Model } from '@gglib/model'
 import { Uri } from '@gglib/utils'
 import { AssetContainer } from './AssetContainer'
 import { HttpClient, HttpOptions, HttpResponse } from './HttpClient'
@@ -99,6 +100,13 @@ export class ContentLoader {
     return Uri.merge(resourceUri, requestUri)
   }
 
+  /**
+   * Indicates whether the loaded assets should be cached per URL
+   */
+  public cache = true
+
+  protected assetCache: Map<string, AssetContainer> = new Map()
+
   public constructor(device: Device) {
     this.device = device
   }
@@ -113,15 +121,28 @@ export class ContentLoader {
 
   public async loadAsset(url: string, options?: LoadOptions): Promise<AssetContainer> {
     url = this.resolveUrl(url, options?.baseUrl || '')
+
+    if (this.cache && this.assetCache.has(url)) {
+      return this.assetCache.get(url)
+    }
+
     const loader = await this.createLoader(url, options)
     if (!loader) {
       throw new Error(`No loader found for URL: ${url}`)
     }
-    return loader.load(url, {
+
+    const request = loader.load(url, {
       ...(options || {}),
       assetUrl: url,
       content: this,
     })
+
+    if (this.cache) {
+      request.then((asset) => {
+        this.assetCache.set(url, asset)
+      })
+    }
+    return request
   }
 
   /**
@@ -201,9 +222,14 @@ export class ContentLoader {
       })
       return mesh
     })
-    // TODO: handle nodes, animations, etc.
     return new Model(this.device, {
       meshes,
+      name: options.name,
+      nodes: options.nodes,
+      scene: options.scene,
+      scenes: options.scenes,
+      skins: options.skins,
+      animations: options.animations,
     })
   }
 

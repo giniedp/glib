@@ -29,7 +29,7 @@ export interface FogDefs {
  *
  *  - `FOG` - enables fog
  */
-export const FXC_SCENE_FOG: ShaderChunkSet<FogDefs> = Object.freeze({
+export const SCENE_FOG: ShaderChunkSet<FogDefs> = {
 
   varyings: glsl`
     #ifdef FOG
@@ -95,4 +95,4 @@ export const FXC_SCENE_FOG: ShaderChunkSet<FogDefs> = Object.freeze({
     applyFog(color.rgb);
     #endif
   `,
-})
+}

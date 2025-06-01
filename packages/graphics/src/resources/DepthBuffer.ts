@@ -61,7 +61,7 @@ export abstract class DepthBuffer {
   public reset(options: DepthBufferOptions): DepthBuffer {
     let width = options.width
     let height = options.height
-    let format = valueOfDepthFormat(options.depthFormat) || this.depthFormat || DepthFormat.DepthStencil
+    let format = valueOfDepthFormat(options.depthFormat) || this.depthFormat || DepthFormat.Depth24Stencil8
 
     if (width == null) {
       width = this.width

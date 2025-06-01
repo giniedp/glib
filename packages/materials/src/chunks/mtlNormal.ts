@@ -38,7 +38,7 @@ export interface MtlNormalDefs {
  * Contributes normal lighting and mapping to the shader. See {@link MtlNormalDefs}
  * @public
  */
-export const FXC_MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = Object.freeze({
+export const MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = {
   defines: glsl`
     #ifdef NORMAL_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
@@ -53,7 +53,6 @@ export const FXC_MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = Object.freeze({
   uniforms: glsl`
     #ifdef NORMAL_MAP
     // @binding NormalMap
-    // @filter  LinearWrap
     uniform sampler2D uNormalMap;
     #endif
 
@@ -83,4 +82,4 @@ export const FXC_MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = Object.freeze({
     // surface.Normal.xyz *= gl_FrontFacing ? 1.0 : -1.0;
     // #endif
   `,
-})
+}

@@ -145,7 +145,7 @@ export class LimitPositionConstraint implements GameComponent {
       return
     }
 
-    const position = (p0 = p0 || Vec3.create()).initFrom(this.target.position)
+    const position = (p0 = p0 || Vec3.create()).initFrom(this.target.translation)
     const min = this.min
     const max = this.max
     const useWorldspace = this.space === 'world' && !!this.target.parent
@@ -169,7 +169,7 @@ export class LimitPositionConstraint implements GameComponent {
       position.transformByMat4(this.target.parent.worldInverse)
     }
 
-    if (!position.equals(this.target.position)) {
+    if (!position.equals(this.target.translation)) {
       this.target.setPositionV(position)
       if (this.commit) {
         this.target.updateIfNeeded()

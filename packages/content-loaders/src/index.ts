@@ -1,8 +1,0 @@
-// export * from './dae'
-// export * from './gltf'
-// export * from './md5'
-export * from './mtl'
-export * from './obj'
-export * from './stl'
-export * from './tga'
-// export * from './ktx'

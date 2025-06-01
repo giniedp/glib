@@ -19,11 +19,13 @@
   "typings": "dist\\terrain\\src\\index.d.ts",
   "devDependencies": {
     "@gglib/math": "workspace:^0.6.2",
-    "@gglib/graphics": "workspace:^0.6.2"
+    "@gglib/graphics": "workspace:^0.6.2",
+    "@gglib/model": "workspace:^0.6.2"
   },
   "peerDependencies": {
     "@gglib/math": "0.6.2",
-    "@gglib/graphics": "0.6.2"
+    "@gglib/graphics": "0.6.2",
+    "@gglib/model": "0.6.2"
   },
   "files": [
     "package.json",

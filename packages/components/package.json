@@ -24,6 +24,7 @@
     "@gglib/render": "workspace:^0.6.2",
     "@gglib/utils": "workspace:^0.6.2",
     "@gglib/input": "workspace:^0.6.2",
+    "@gglib/model": "workspace:^0.6.2",
     "@gglib/materials": "workspace:^0.6.2",
     "@gglib/content": "workspace:^0.6.2"
   },
@@ -34,6 +35,7 @@
     "@gglib/render": "0.6.2",
     "@gglib/utils": "0.6.2",
     "@gglib/input": "0.6.2",
+    "@gglib/model": "0.6.2",
     "@gglib/materials": "0.6.2",
     "@gglib/content": "0.6.2"
   },

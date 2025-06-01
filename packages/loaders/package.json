@@ -1,0 +1,39 @@
+{
+  "name": "@gglib/loaders",
+  "description": "Part of the [G]glib project",
+  "version": "0.6.2",
+  "repository": {
+    "type": "git",
+    "url": "github.com/giniedp/glib.git"
+  },
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
+  "author": "Alexander Graefenstein",
+  "license": "MIT",
+  "index": "dist\\bundles\\loaders.umd.js",
+  "module": "dist\\loaders\\src\\index.js",
+  "typings": "dist\\loaders\\src\\index.d.ts",
+  "devDependencies": {
+    "@gglib/utils": "workspace:^0.6.2",
+    "@gglib/content": "workspace:^0.6.2",
+    "@gglib/graphics": "workspace:^0.6.2",
+    "@gglib/math": "workspace:^0.6.2",
+    "@gglib/model": "workspace:^0.6.2"
+  },
+  "peerDependencies": {
+    "@gglib/utils": "0.6.2",
+    "@gglib/content": "0.6.2",
+    "@gglib/graphics": "0.6.2",
+    "@gglib/math": "0.6.2",
+    "@gglib/model": "0.6.2"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
+}

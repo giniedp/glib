@@ -8,7 +8,7 @@ export type ShadeFunctionSzirmay = 'shadeSzirmay'
 /**
  * @public
  */
-export const FXC_SHADE_SZIRMAY: ShaderChunkSet = Object.freeze({
+export const SHADE_SZIRMAY: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeSzirmay(
       inout ShadeParams shade,

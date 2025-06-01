@@ -1,5 +1,4 @@
 export * from './base'
-export * from './baseMain'
 export * from './common'
 export * from './gamma'
 export * from './mrt'

@@ -116,13 +116,13 @@ export class LookAtConstraint implements GameComponent {
     let v1 = (tmp1 = tmp1 || Vec3.create())
 
     // v0 = position of them in world space
-    v0.initFrom(this.source.position)
+    v0.initFrom(this.source.translation)
     if (this.source.parent && this.sourceSpace === 'world') {
       v0.transformByMat4(this.source.world)
     }
 
     // v1 = position of us in world space
-    v1.initFrom(this.target.position)
+    v1.initFrom(this.target.translation)
     if (this.target.parent && this.targetSpace === 'world') {
       v1.transformByMat4(this.target.world)
     }

@@ -1,48 +1,55 @@
 import type { Device } from '../Device'
 
 const vertexShader = /* glsl */ `
+  #version 300 es
   precision highp float;
   precision highp int;
 
   // @binding position
-  attribute vec3 aPosition;
+  in vec3 aPosition;
   // @binding texture
-  attribute vec2 aTexture;
+  in vec2 aTexture;
   // @binding normal
-  attribute vec2 aNormal;
+  in vec3 aNormal;
 
-  // @binding world
+  // @binding World
   uniform mat4 uWorld;
-  // @binding view
+  // @binding View
   uniform mat4 uView;
-  // @binding projection
+  // @binding Projection
   uniform mat4 uProjection;
 
-  varying vec2 vTexcoord;
-  varying vec2 vNormal;
+  out vec2 vTexcoord;
+  out vec3 vNormal;
 
   void main(void) {
     vTexcoord = aTexture;
     vNormal = aNormal;
     gl_Position = uProjection * uView * uWorld * vec4(aPosition, 1);
   }
-`
+`.trim()
 
 const fragmentShader = /* glsl */ `
+  #version 300 es
   precision highp float;
   precision highp int;
 
-  // @binding texture
+  // @binding Color
+  // @default [1.0, 1.0, 1.0, 1.0]
+  uniform vec4 uColor;
+
+  // @binding Texture
   // @register 0
-  // @filter LinearWrap
   uniform sampler2D uSampler;
 
-  varying vec2 vTexcoord;
+  in vec2 vTexcoord;
 
+  out vec4 outColor;
   void main(void) {
-    gl_FragColor = texture2D(uSampler, vTexcoord);
+    outColor = texture(uSampler, vTexcoord);
+    outColor.rgb *= uColor.rgb;
   }
-`
+`.trim()
 
 export const PROGRAM_BASIC_TEXTURED = {
   vertexShader,

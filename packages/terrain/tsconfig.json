@@ -20,6 +20,9 @@
     },
     {
       "path": "..\\graphics\\tsconfig.json"
+    },
+    {
+      "path": "..\\model\\tsconfig.json"
     }
   ]
 }

@@ -21,7 +21,7 @@ export interface GammaDefs {
  * Enables gamma correction on a shader. See {@link GammaDefs}
  * @public
  */
-export const FXC_GAMMA: ShaderChunkSet<GammaDefs> = Object.freeze({
+export const GAMMA: ShaderChunkSet<GammaDefs> = {
   defines: glsl`
     #ifndef GAMMA
     #define GAMMA 2.2
@@ -64,4 +64,4 @@ export const FXC_GAMMA: ShaderChunkSet<GammaDefs> = Object.freeze({
     color.rgb = pow(color.rgb, vec3(1.0/GAMMA));
     #endif
   `,
-})
+}

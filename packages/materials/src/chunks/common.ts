@@ -5,7 +5,11 @@ import { glsl, ShaderChunkSet } from '@gglib/graphics'
  *
  * @public
  */
-export const FXC_COMMON: ShaderChunkSet = Object.freeze({
+export const COMMON: ShaderChunkSet = {
+  precision: glsl`
+    precision highp float;
+    precision highp int;
+  `,
   attributes: glsl`
     // @binding position
     // @remarks The vertex position attribute
@@ -25,17 +29,21 @@ export const FXC_COMMON: ShaderChunkSet = Object.freeze({
     // @binding World
     // @remarks The objects world transform
     uniform mat4 uWorld;
+
     // @binding View
     // @remarks The camera view transform
     uniform mat4 uView;
+
     // @binding Projection
     // @remarks The camera projection
     uniform mat4 uProjection;
 
     // @binding CameraDirection
     uniform vec3 uCameraDirection;
+
     // @binding CameraPosition
     uniform vec3 uCameraPosition;
+
     // @binding ClipPlanes
     // @remarks
     //   x: near
@@ -43,6 +51,7 @@ export const FXC_COMMON: ShaderChunkSet = Object.freeze({
     //   z: logarithmic depth buffer coefficient: 2.0 / log2(farplane + 1.0)
     uniform vec3 uClipPlanes;
   `,
+
   structs: glsl`
     struct SurfaceParams {
       vec4 Normal;   // xyz = normal, w = depth
@@ -52,20 +61,24 @@ export const FXC_COMMON: ShaderChunkSet = Object.freeze({
       vec3 PBR;      // r = metallic, g = roughness, ba = unused
     };
   `,
+
   vs_position: glsl`
     #ifndef SKINNED
     vPositionInWS = uWorld * vec4(aPosition, 1.0);
     #endif
   `,
+
   vs_end: glsl`
-  gl_Position = uProjection * uView * vPositionInWS;
-  vToEyeInWS = uCameraPosition.xyz - vPositionInWS.xyz;
+    gl_Position = uProjection * uView * vPositionInWS;
+    vToEyeInWS = uCameraPosition.xyz - vPositionInWS.xyz;
   `,
+
   fs_start_before: glsl`
     SurfaceParams surface;
     vec4 color;
   `,
+
   fs_frag_color_after: glsl`
     gl_FragColor = color;
   `,
-})
+}

@@ -136,8 +136,8 @@ export class CopyPositionConstraint implements GameComponent {
       return
     }
 
-    const source = (p0 = p0 || Vec3.create()).initFrom(this.source.position)
-    const target = (p1 = p1 || Vec3.create()).initFrom(this.target.position)
+    const source = (p0 = p0 || Vec3.create()).initFrom(this.source.translation)
+    const target = (p1 = p1 || Vec3.create()).initFrom(this.target.translation)
 
     if (this.sourceSpace === 'world' && this.source.parent) {
       source.transformByMat4(this.source.parent.world)
@@ -154,16 +154,16 @@ export class CopyPositionConstraint implements GameComponent {
     }
 
     if (!this.copyX) {
-      source.x = this.target.position.x
+      source.x = this.target.translation.x
     }
 
     if (!this.copyY) {
-      source.y = this.target.position.y
+      source.y = this.target.translation.y
     }
     if (!this.copyZ) {
-      source.z = this.target.position.z
+      source.z = this.target.translation.z
     }
-    if (!source.equals(this.target.position)) {
+    if (!source.equals(this.target.translation)) {
       this.target.setPositionV(source)
       if (this.commit) {
         this.target.updateIfNeeded()

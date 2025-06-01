@@ -1,6 +1,6 @@
 import { EventEmitter } from '@gglib/utils'
 import type { GameComponent, GameComponentType } from './GameComponent'
-import { GameSystem, GameProvider, GetSystemOptions, GameSystemType } from './GameSystem'
+import { GameProvider, GameSystem } from './GameSystem'
 import { GameTransform } from './GameTransform'
 
 export const enum EntityState {
@@ -94,7 +94,6 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
     this.provider = new GameProvider(game).initialize()
     if (this.provides.length) {
       for (const system of this.provides) {
-
         this.provider.addSystem(system)
       }
     }

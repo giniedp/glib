@@ -29,8 +29,8 @@ export class Vec2 implements IVec2 {
    * @param y - value for the Y component
    */
   constructor(x?: number, y?: number) {
-    this.x = x || 0
-    this.y = y || 0
+    this.x = x ?? 0
+    this.y = y ?? 0
   }
 
   /**
@@ -68,7 +68,7 @@ export class Vec2 implements IVec2 {
    * @returns A new vector.
    */
   public static create(x?: number, y?: number): Vec2 {
-    return new Vec2(x || 0, y || 0)
+    return new Vec2(x ?? 0, y ?? 0)
   }
 
   /**
@@ -1078,7 +1078,6 @@ export class Vec2 implements IVec2 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(vec: IVec2, fractionDigits: number = 5) {
-    return vec.x.toFixed(fractionDigits) +
-      ',' + vec.y.toFixed(fractionDigits)
+    return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits))
   }
 }

@@ -35,7 +35,7 @@ function isAbsolute(path: string) {
 }
 
 function hasProtocol(path: string) {
-  return !!path && !!path.match(/^[a-zA-Z]+:\/\//i)
+  return !!path && !!path.match(/^[a-zA-Z]+:/i)
 }
 
 function collapse(path: string) {

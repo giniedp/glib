@@ -1,5 +1,5 @@
 import { GameComponent, GameEntity } from '@gglib/ecs'
-import { Model } from '@gglib/graphics'
+import { Model } from '@gglib/model'
 import { DrawableInfo } from '@gglib/render'
 import { CollectEvent, RenderQuery } from '../systems/RenderSystem'
 import { BoundingVolumeComponent } from './BoundingVolumeComponent'

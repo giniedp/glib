@@ -47,12 +47,12 @@ export class Ray {
    * @param dZ - z component of ray direction
    */
   public init(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number): Ray {
-    this.position.x = pX || 0
-    this.position.y = pY || 0
-    this.position.z = pZ || 0
-    this.direction.x = dX || 0
-    this.direction.y = dY || 0
-    this.direction.z = dZ || 0
+    this.position.x = pX ?? 0
+    this.position.y = pY ?? 0
+    this.position.z = pZ ?? 0
+    this.direction.x = dX ?? 0
+    this.direction.y = dY ?? 0
+    this.direction.z = dZ ?? 0
     return this
   }
 

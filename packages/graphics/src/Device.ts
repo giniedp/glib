@@ -37,7 +37,6 @@ import {
 import { Capabilities } from './Capabilities'
 import { Color } from './Color'
 import { Effect, EffectOptions } from './Effect'
-import { Model, ModelOptions } from './model/Model'
 import { VertexBuffer, VertexBufferOptions } from './resources/VertexBuffer'
 import { SpriteBatch } from './SpriteBatch'
 import { AttributeSemantic, VertexLayout } from './VertexLayout'
@@ -436,12 +435,10 @@ export abstract class Device<T = unknown> {
   public createVertexLayout(semantic: AttributeSemantic[]): any {
     return VertexLayout.create(semantic)
   }
+
   /**
-   * Creates a new model. Calls the model constructor with given options.
+   * Creates an Effect with given options
    */
-  public createModel(options: ModelOptions): Model {
-    return new Model(this, options)
-  }
   public createEffect(options: EffectOptions): Effect {
     return new Effect(this, options)
   }

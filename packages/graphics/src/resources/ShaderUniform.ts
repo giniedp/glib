@@ -278,17 +278,17 @@ export abstract class ShaderUniform {
   /**
    * Sets a 2x2 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public abstract setMat2(value: { m: Float32List }, transpose: boolean): void
+  public abstract setMat2(value: { elements: Float32List } | Float32Array, transpose: boolean): void
 
   /**
    * Sets a 3x3 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public abstract setMat3(value: { m: Float32List }, transpose: boolean): void
+  public abstract setMat3(value: { elements: Float32List } | Float32Array, transpose: boolean): void
 
   /**
    * Sets a 4x4 matrix value on the uniform. Skips (and clears) the cache.
    */
-  public abstract setMat4(value: { m: Float32List }, transpose: boolean): void
+  public abstract setMat4(value: { elements: Float32List } | Float32Array, transpose: boolean): void
 
   /**
    * Binds a texture to this uniform

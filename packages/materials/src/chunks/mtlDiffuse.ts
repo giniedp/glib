@@ -10,7 +10,7 @@ export interface MtlDiffuseDefs {
    * Enables diffuse color
    *
    * @remarks
-   * Adds a `uniform vec3 uDiffuseColor` (bound as `DiffuseColor`)
+   * Adds a `uniform vec4 uDiffuseColor` (bound as `DiffuseColor`)
    * that is used as surface color.
    * If a `DiffuseMap` is used, then both are multiplied.
    */
@@ -43,7 +43,7 @@ export interface MtlDiffuseDefs {
  * Contributes diffuse lighting and mapping to the shader. See {@link MtlDiffuseDefs}
  * @public
  */
-export const FXC_MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = Object.freeze({
+export const MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = {
   defines: glsl`
     #ifdef DIFFUSE_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
@@ -59,13 +59,12 @@ export const FXC_MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = Object.freeze({
     #ifdef DIFFUSE_COLOR
     // @binding DiffuseColor
     // @widget  color
-    // @default [1, 1, 1]
-    uniform vec3 uDiffuseColor;
+    // @default [1, 1, 1, 1]
+    uniform vec4 uDiffuseColor;
     #endif
 
     #ifdef DIFFUSE_MAP
     // @binding DiffuseMap
-    // @filter  LinearWrap
     uniform sampler2D uDiffuseMap;
     #endif
 
@@ -86,28 +85,19 @@ export const FXC_MTL_DIFFUSE: ShaderChunkSet<MtlDiffuseDefs> = Object.freeze({
     #endif
   `,
   fs_surface: glsl`
+    surface.Diffuse = vec4(1.0, 1.0, 1.0, 1.0);
     #if defined(DIFFUSE_MAP)
-    surface.Diffuse = texture2D(uDiffuseMap, getDiffuseMapUV() + uvOffset);
-      #ifdef DIFFUSE_COLOR
-      surface.Diffuse.rgb *= uDiffuseColor;
-      #endif
-      #ifdef V_COLOR
-      surface.Diffuse.rgb *= vColor;
-      #endif
-    #elif defined(DIFFUSE_COLOR)
-    surface.Diffuse = vec4(uDiffuseColor, 1.0);
-      #ifdef V_COLOR
-      surface.Diffuse.rgb *= vColor;
-      #endif
-    #elif defined(V_COLOR)
-    surface.Diffuse = vec4(vColor, 1.0);
+      surface.Diffuse = texture2D(uDiffuseMap, getDiffuseMapUV() + uvOffset);
+    #endif
+    #ifdef DIFFUSE_COLOR
+      surface.Diffuse *= uDiffuseColor;
+    #endif
+    #ifdef V_COLOR
+      surface.Diffuse.rgb *= vColor.rgb;
     #elif defined(V_COLOR1)
-    surface.Diffuse = vec4(vColor1, 1.0);
+      surface.Diffuse.rgb *= vColor1.rgb;
     #elif defined(V_COLOR2)
-    surface.Diffuse = vec4(vColor2, 1.0);
-    #else
-    surface.Diffuse.rgb = vec3(0.0);
-    surface.Diffuse.a = 1.0;
+      surface.Diffuse.rgb *= vColor2.rgb;
     #endif
   `,
-})
+}

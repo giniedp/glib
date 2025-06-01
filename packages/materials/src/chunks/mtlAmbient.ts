@@ -41,7 +41,7 @@ export interface MtlAmbientDefs {
  * Contributes ambient lighting and mapping to the shader. See {@link MtlAmbientDefs}
  * @public
  */
-export const FXC_MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = Object.freeze({
+export const MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = {
   defines: glsl`
     #ifdef AMBIENT_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
@@ -63,7 +63,6 @@ export const FXC_MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = Object.freeze({
 
     #ifdef AMBIENT_MAP
     // @binding AmbientMap
-    // @filter  LinearWrap
     uniform sampler2D uAmbientMap;
     #endif
 
@@ -99,5 +98,4 @@ export const FXC_MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = Object.freeze({
     color.rgb += surface.Diffuse.rgb * getAmbientColor(uvOffset);
     #endif
   `,
-
-})
+}

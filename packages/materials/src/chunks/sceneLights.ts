@@ -48,7 +48,7 @@ export interface LightDefs {
 /**
  * @public
  */
-export const FXC_SCENE_LIGHTS: ShaderChunkSet<LightDefs> = Object.freeze({
+export const SCENE_LIGHTS: ShaderChunkSet<LightDefs> = {
   defines: glsl`
     #ifndef LIGHT_COUNT
       #define LIGHT_COUNT 4
@@ -144,4 +144,4 @@ export const FXC_SCENE_LIGHTS: ShaderChunkSet<LightDefs> = Object.freeze({
       return;
     }
   `,
-})
+}

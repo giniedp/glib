@@ -77,10 +77,10 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param w - Value for the W component
    */
   constructor(x?: number, y?: number, z?: number, w?: number) {
-    this.x = x == null ? 0 : x
-    this.y = y == null ? 0 : y
-    this.z = z == null ? 0 : z
-    this.w = w == null ? 0 : w
+    this.x = x ?? 0
+    this.y = y ?? 0
+    this.z = z ?? 0
+    this.w = w ?? 0
   }
 
   /**
@@ -1059,12 +1059,12 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @remarks
    * Transforms this vector but does not perform a division by `w`
    */
-  public transformByMat4(mat: { m: ArrayLike<number> }): this {
+  public transformByMat4(mat: { elements: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const z = this.z
     const w = this.w
-    const d = mat.m
+    const d = mat.elements
     this.x = x * d[0] + y * d[4] + z * d[8] + w * d[12]
     this.y = x * d[1] + y * d[5] + z * d[9] + w * d[13]
     this.z = x * d[2] + y * d[6] + z * d[10] + w * d[14]
@@ -1078,11 +1078,11 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @remarks
    * Transforms this vector but keeps `w` component unchanged.
    */
-  public transformByMat3(mat: { m: ArrayLike<number> }): this {
+  public transformByMat3(mat: { elements: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
     const z = this.z
-    const d = mat.m
+    const d = mat.elements
     this.x = x * d[0] + y * d[3] + z * d[6]
     this.y = x * d[1] + y * d[4] + z * d[7]
     this.z = x * d[2] + y * d[5] + z * d[8]
@@ -1095,10 +1095,10 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @remarks
    * Transforms this vector but keeps `z` and `w` components unchanged.
    */
-  public transformByMat2(mat: { m: ArrayLike<number> }): this {
+  public transformByMat2(mat: { elements: ArrayLike<number> }): this {
     const x = this.x
     const y = this.y
-    const d = mat.m
+    const d = mat.elements
     this.x = x * d[0] + y * d[2]
     this.y = x * d[1] + y * d[3]
     return this
@@ -1382,9 +1382,6 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(vec: IVec4, fractionDigits: number = 5): string {
-    return vec.x.toFixed(fractionDigits) +
-      ',' + vec.y.toFixed(fractionDigits) +
-      ',' + vec.z.toFixed(fractionDigits) +
-      ',' + vec.w.toFixed(fractionDigits)
+    return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits), ', z: ', vec.z.toFixed(fractionDigits), ', w: ', vec.w.toFixed(fractionDigits))
   }
 }

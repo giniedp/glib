@@ -11,10 +11,11 @@ import {
   TweenOptions,
   TweenSystem,
 } from '@gglib/components'
-import { ContentManager } from '@gglib/content'
-import '@gglib/content-loaders'
+import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, GameEntityCollection, GameProvider } from '@gglib/ecs'
-import { Color, createDevice, Model } from '@gglib/graphics'
+import { Color, createDevice } from '@gglib/graphics'
+import { GLTF, MTL, OBJ } from '@gglib/loaders'
+import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, Vec3 } from '@gglib/math'
 import { BasicRenderPass, Renderer } from '@gglib/render'
 import * as TweakUi from 'tweak-ui'
@@ -28,25 +29,37 @@ class Game extends GameProvider {
   public camera: CameraComponent
   public scene = new GameEntityCollection()
   public cube: GameEntity<TransformComponent>
+  public content: ContentLoader
 
   public constructor(canvas: HTMLCanvasElement) {
     super()
     const device = createDevice({ canvas })
+    const content = new ContentLoader(device)
+    content.registerLoader(OBJ.Loader)
+    content.registerLoader(MTL.Loader)
+    content.registerLoader(GLTF.Loader)
+    content.registerMaterial({
+      name: 'BasicEffect',
+      type: AutoMaterial,
+    })
     this.provide(this)
     this.provide(device)
     this.provide(new Renderer(device))
-    this.provide(new ContentManager(device))
+    this.provide(content)
     this.addSystem(new TimeSystem())
     this.addSystem(new TweenSystem())
     this.addSystem(new GameLoop({ autostart: false }))
 
     this.loop = this.get(GameLoop)
     this.tween = this.get(TweenSystem)
-    this.renderer = this.get(Renderer)
+    this.content = this.get(ContentLoader)
     this.renderQuery = new RenderQuery()
-    const renderPass = new BasicRenderPass()
-    renderPass.clearColor = Color.CornflowerBlue.rgba
-    this.renderer.steps = [renderPass]
+    this.renderer = this.get(Renderer)
+    this.renderer.steps = [
+      new BasicRenderPass({
+        clearColor: Color.CornflowerBlue.rgba,
+      }),
+    ]
 
     this.createCamera()
     this.createLight()
@@ -79,6 +92,7 @@ class Game extends GameProvider {
   }
 
   public destroy(): void {
+    super.destroy()
     this.loop.onUpdate.remove(this.update)
     this.loop.onDraw.remove(this.draw)
     this.scene.deactivate()
@@ -132,8 +146,8 @@ class Game extends GameProvider {
     this.tween
       .startV3({
         ...options,
-        from: transform.position,
-        to: Vec3.create(transform.position.x > 0 ? -5 : 5, 0, -5),
+        from: transform.translation,
+        to: Vec3.create(transform.translation.x > 0 ? -5 : 5, 0, -5),
       })
       .addUpdatableWith3Args(transform, 'setPosition')
   }
@@ -157,15 +171,21 @@ class CubeComponent implements GameComponent {
     return this.entity.transform
   }
 
-  public content: ContentManager
+  public content: ContentLoader
 
   public entity: GameEntity<TransformComponent>
   public initialize(entity: GameEntity<TransformComponent>): void {
     this.entity = entity
     this.renderable = entity.component(ModelComponent)
-    this.content = entity.provider.get(ContentManager)
-
-    this.content.load('/assets/models/obj/cube.obj', Model).then((model) => {
+    this.content = entity.provider.get(ContentLoader)
+    this.content.loadModel('/assets/models/gltf/box.gltf').then((model) => {
+      model.meshes.forEach((mesh) => {
+        mesh.materials.forEach((material) => {
+          const mtl = material as AutoMaterial
+          //mtl.ShadeFunction = 'shadePbr'
+          //mtl.LightCount = 1
+        })
+      })
       this.renderable.model = model
     })
   }

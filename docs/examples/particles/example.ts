@@ -12,7 +12,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const channel = new ParticleChannel(device, {
     texture: device.createTexture({
-      source: '/assets/textures/particles/star_1.png'
+      source: '/assets/textures/particles/whitePuff00.png'
     }),
     duration: 2000,
     maxParticles: 100,
@@ -67,7 +67,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 0.001, 200)
 
     while (gameTime > rate) {
-      channel.emit({ x: 0, y: 0, z: 0 }, { x: 0, y: 0.02, z: 0 })
+      channel.emit({ x: 0, y: 0, z: 0 }, { x: 0, y: 0.0, z: 0 })
       gameTime -= rate
     }
 

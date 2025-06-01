@@ -13,7 +13,7 @@ export interface Log2Depth {
 /**
  * Adds logarithmic depth functionality to a shader
  */
-export const LOG2_DEPTH: ShaderChunkSet<Log2Depth> = Object.freeze({
+export const LOG2_DEPTH: ShaderChunkSet<Log2Depth> = {
   varyings: glsl`
     #ifdef LOG2_DEPTH
     varying float vLog2Depth;
@@ -29,4 +29,4 @@ export const LOG2_DEPTH: ShaderChunkSet<Log2Depth> = Object.freeze({
     gl_FragDepthEXT = log2(vLog2Depth) * uClipPlanes.z;
     #endif
   `,
-})
+}

@@ -249,6 +249,7 @@ export abstract class Buffer {
   ): this
 
   public getData(): ArrayBufferView {
+
     const length = VertexLayout.countElements(this.layout) * this.elementCount
     const array = ArrayType[this.dataType]
     const dst = new array(length)

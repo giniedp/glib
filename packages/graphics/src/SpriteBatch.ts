@@ -45,7 +45,6 @@ const fragmentShader = /* glsl */ `
 
   // @binding Texture
   // @register 0
-  // @filter LinearWrap
   uniform sampler2D uSampler;
 
   varying vec2 texCoord;
@@ -272,7 +271,9 @@ export class SpriteBatch {
     this.device.indexBuffer = this.indexBuffer
     this.device.vertexBuffer = this.vertexBuffer
     this.device.program = this.program
-
+    if (!this.program.isReady) {
+      return
+    }
     for (let i = 0; i < queue.length; i++) {
       if (texture !== queue[i].texture) {
         if (i > start) {

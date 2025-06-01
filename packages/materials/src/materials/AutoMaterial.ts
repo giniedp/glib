@@ -1,4 +1,16 @@
-import { Device, Material, Effect, Texture, MaterialParameters } from '@gglib/graphics'
+import { ContentLoader } from '@gglib/content'
+import {
+  BlendState,
+  CullState,
+  Device,
+  Effect,
+  Material,
+  MaterialOptions,
+  MaterialOptionsBase,
+  MaterialParameters,
+  Texture,
+  instantiateMaterialTextures,
+} from '@gglib/graphics'
 import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
 import {
   ShadeFunctionBlinn,
@@ -11,7 +23,7 @@ import {
   ShadeFunctionSzirmay,
 } from '../chunks'
 import { LightParams } from '../lights'
-import { materialProgram, DefaultProgramDefs } from '../programs'
+import { DefaultProgramDefs, materialProgram } from '../programs'
 
 const defineMap = {
   Alpha: 'ALPHA',
@@ -47,12 +59,18 @@ const defineMap = {
 
   MetallicRoughness: 'METALLIC_ROUGHNESS',
   MetallicRoughnessMap: 'METALLIC_ROUGHNESS_MAP',
+  MetallicRoughnessMapScaleOffset: 'METALLIC_ROUGHNESS_MAP_SCALE_OFFSET',
+
+  Skinning: 'SKINNING',
+  SkinningJointCount: 'SKINNING_JOINT_COUNT',
+  SkinningWeightCount: 'SKINNING_WEIGHT_COUNT',
 }
 
 /**
  * @public
  */
-export type ShadeFunction = ShadeFunctionNone
+export type ShadeFunction =
+  | ShadeFunctionNone
   | ShadeFunctionPBR
   | ShadeFunctionBlinn
   | ShadeFunctionCookTorrance
@@ -63,56 +81,84 @@ export type ShadeFunction = ShadeFunctionNone
 
 const tempMat4 = Mat4.createIdentity()
 
-
 /**
  * @public
  */
 export interface AutoMaterialParams extends MaterialParameters {
-  World: IMat,
-  View: IMat,
-  CameraPosition: IVec3,
-  Projection: IMat,
-  VertexColor: boolean,
-  FogColor: number[] | IVec3,
-  FogParams: number[],
-  Alpha: number,
-  AlphaClip: number,
-  SpecularPower: number,
-  AmbientColor: number[] | IVec3,
-  DiffuseColor: number[] | IVec3,
-  SpecularColor: number[] | IVec3,
-  EmissionColor: number[] | IVec3,
-  AmbientMap: Texture,
-  AmbientMapScaleOffset: number[] | IVec4,
-  DiffuseMap: Texture,
-  DiffuseMapScaleOffset: number[] | IVec4,
-  SpecularMap: Texture,
-  SpecularMapScaleOffset: number[] | IVec4,
-  EmissionMap: Texture,
-  EmissionMapScaleOffset: number[] | IVec4,
-  NormalMap: Texture,
-  NormalMapScaleOffset: number[] | IVec4,
-  OcclusionMap: Texture,
-  OcclusionMapScaleOffset: number[] | IVec4,
-  ParallaxMap: Texture,
-  ParallaxMapScaleOffset: number[] | IVec4,
-  ParallaxScaleBias: number[],
-  MetallicRoughnessMap: Texture,
-  MetallicRoughness: number[],
+  World: IMat
+  View: IMat
+  Projection: IMat
+  CameraPosition: IVec3
+
+  VertexColor: boolean
+  FogColor: number[] | IVec3
+  FogParams: number[]
+  Alpha: number
+  AlphaClip: number
+
+  AmbientColor: number[] | IVec3
+  AmbientMap: Texture
+  AmbientMapScaleOffset: number[] | IVec4
+
+  DiffuseColor: number[] | IVec4
+  DiffuseMap: Texture
+  DiffuseMapScaleOffset: number[] | IVec4
+  DiffuseMapCoord: number
+
+  SpecularColor: number[] | IVec3
+  SpecularPower: number
+  SpecularMap: Texture
+  SpecularMapScaleOffset: number[] | IVec4
+  SpecularMapCoord: number
+
+  EmissionColor: number[] | IVec3
+  EmissionMap: Texture
+  EmissionMapScaleOffset: number[] | IVec4
+  EmissionMapCoord: number
+
+  NormalMap: Texture
+  NormalMapScaleOffset: number[] | IVec4
+  NormalMapCoord: number
+
+  OcclusionMap: Texture
+  OcclusionMapScaleOffset: number[] | IVec4
+  OcclusionMapCoord: number
+
+  ParallaxMap: Texture
+  ParallaxMapScaleOffset: number[] | IVec4
+  ParallaxMapCoord: number
+  ParallaxScaleBias: number[]
+
+  MetallicRoughness: number[]
+  MetallicRoughnessMap: Texture
+  MetallicRoughnessMapScaleOffset: number[] | IVec4
+  MetallicRoughnessMapCoord: number
+
+  Skinning: boolean
+  SkinningJointCount: number
+  SkinningWeightCount: number
+  'Joints[0]': Float32Array
 }
 
 /**
  * @public
  */
 export class AutoMaterial extends Material<AutoMaterialParams> {
+  public static registerLoader() {
+    ContentLoader.registerMaterial({
+      name: 'AutoMaterial',
+      type: AutoMaterial,
+    })
+  }
 
+  private shadeFunction: ShadeFunction = 'shadeNone'
   public get ShadeFunction(): ShadeFunction {
-    return this.defines.SHADE_FUNCTION as any
+    return this.shadeFunction
   }
   public set ShadeFunction(name: ShadeFunction) {
-    if (this.ShadeFunction !== name) {
-      this.defines.SHADE_FUNCTION = name
-      this.hasChanged = true
+    if (this.shadeFunction !== name) {
+      this.shadeFunction = name
+      this.needsUpdate = true
     }
   }
 
@@ -161,26 +207,67 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set LightCount(v: number) {
     if (this.LightCount !== v) {
-      this.hasChanged = true
-      if (v > 0) {
-        this.defines.LIGHT = true
-        this.defines.LIGHT_COUNT = v
-      } else {
-        delete this.defines.LIGHT
-        delete this.defines.LIGHT_COUNT
-      }
+      this.needsUpdate = true
       this.lights.length = v
       for (let i = 0; i < v; i++) {
         const index = i
-        this.lights[index] = this.lights[index] || new Proxy(new LightParams(), {
-          set: (target, key, value) => {
-            target[key] = value
-            target.assign(index, this.parameters)
-            return true
-          },
-        }) as any
+        this.lights[index] =
+          this.lights[index] ||
+          (new Proxy(new LightParams(), {
+            set: (target, key, value) => {
+              target[key] = value
+              target.assign(index, this.parameters)
+              return true
+            },
+          }) as any)
       }
     }
+  }
+
+  /**
+   * Enables and disables the skinning
+   */
+  public get Skinning(): boolean {
+    return !!this.parameters.Skinning
+  }
+  public set Skinning(v: boolean) {
+    if (this.parameters.Skinning !== v) {
+      this.parameters.Skinning = v
+      this.needsUpdate = true
+    }
+  }
+
+  public get SkinningJointCount(): number {
+    return this.parameters.SkinningJointCount ?? 16
+  }
+  public set SkinningJointCount(v: number) {
+    if (this.parameters.SkinningJointCount !== v) {
+      this.parameters.SkinningJointCount = v
+      this.needsUpdate = true
+    }
+  }
+
+  public get SkinningWeightCount(): number {
+    return this.parameters.SkinningWeightCount ?? 4
+  }
+  public set SkinningWeightCount(v: number) {
+    if (this.parameters.SkinningWeightCount !== v) {
+      this.parameters.SkinningWeightCount = v
+      this.needsUpdate = true
+    }
+  }
+
+  private joints: Float32Array
+  public set Joints(v: Mat4[]) {
+    this.Skinning = true
+    this.SkinningJointCount = Math.max(v.length, this.SkinningJointCount)
+    if (!this.joints || this.joints.length > v.length * 16) {
+      this.joints = new Float32Array(v.length * 16)
+    }
+    for (let i = 0; i < v.length; i++) {
+      v[i].toArray(this.joints, i * 16)
+    }
+    this.parameters['Joints[0]'] = this.joints
   }
 
   /**
@@ -275,6 +362,26 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.FogParams = params
   }
 
+  public get Blend(): boolean {
+    return !!this.parameters.Blend
+  }
+  public set Blend(v: boolean) {
+    if (this.parameters.Blend !== v) {
+      this.parameters.Blend = v
+      this.needsUpdate = true
+    }
+  }
+
+  public get DoubleSided(): boolean {
+    return !!this.parameters.DoubleSided
+  }
+  public set DoubleSided(v: boolean) {
+    if (this.parameters.DoubleSided !== v) {
+      this.parameters.DoubleSided = v
+      this.needsUpdate = true
+    }
+  }
+
   /**
    * Gets and sets the alpha value
    *
@@ -329,10 +436,10 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
    * @remarks
    * Changing this value from or to `null` forces the shader to recompile.
    */
-  public get DiffuseColor(): number[] | IVec3 {
+  public get DiffuseColor(): number[] | IVec4 {
     return this.parameters.DiffuseColor
   }
-  public set DiffuseColor(v: number[] | IVec3) {
+  public set DiffuseColor(v: number[] | IVec4) {
     this.parameters.DiffuseColor = v
   }
 
@@ -404,6 +511,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.DiffuseMapScaleOffset = v
   }
 
+  public get DiffuseMapCoord(): number {
+    return this.parameters.DiffuseMapCoord
+  }
+  public set DiffuseMapUV(v: number) {
+    if (this.parameters.DiffuseMapCoord !== v) {
+      this.parameters.DiffuseMapCoord = v
+      this.needsUpdate = true
+    }
+  }
+
   /**
    * Gets and sets the specular texture.
    *
@@ -422,6 +539,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set SpecularMapScaleOffset(v: number[] | IVec4) {
     this.parameters.SpecularMapScaleOffset = v
+  }
+
+  public get SpecularMapCoord(): number {
+    return this.parameters.SpecularMapCoord
+  }
+  public set SpecularMapCoord(v: number) {
+    if (this.parameters.SpecularMapCoord !== v) {
+      this.parameters.SpecularMapCoord = v
+      this.needsUpdate = true
+    }
   }
 
   /**
@@ -444,6 +571,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.EmissionMapScaleOffset = v
   }
 
+  public get EmissionMapCoord(): number {
+    return this.parameters.EmissionMapCoord
+  }
+  public set EmissionMapCoord(v: number) {
+    if (this.parameters.EmissionMapCoord !== v) {
+      this.parameters.EmissionMapCoord = v
+      this.needsUpdate = true
+    }
+  }
+
   /**
    * Gets and sets the normal texture.
    *
@@ -462,6 +599,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set NormalMapScaleOffset(v: number[] | IVec4) {
     this.parameters.NormalMapScaleOffset = v
+  }
+
+  public get NormalMapCoord(): number {
+    return this.parameters.NormalMapCoord
+  }
+  public set NormalMapCoord(v: number) {
+    if (this.parameters.NormalMapCoord !== v) {
+      this.parameters.NormalMapCoord = v
+      this.needsUpdate = true
+    }
   }
 
   /**
@@ -484,6 +631,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.OcclusionMapScaleOffset = v
   }
 
+  public get OcclusionMapCoord(): number {
+    return this.parameters.OcclusionMapCoord
+  }
+  public set OcclusionMapCoord(v: number) {
+    if (this.parameters.OcclusionMapCoord !== v) {
+      this.parameters.OcclusionMapCoord = v
+      this.needsUpdate = true
+    }
+  }
+
   public get ParallaxMap(): Texture {
     return this.parameters.ParallaxMap
   }
@@ -496,6 +653,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set ParallaxMapScaleOffset(v: number[] | IVec4) {
     this.parameters.ParallaxMapScaleOffset = v
+  }
+
+  public get ParallaxMapCoord(): number {
+    return this.parameters.ParallaxMapCoord
+  }
+  public set ParallaxMapCoord(v: number) {
+    if (this.parameters.ParallaxMapCoord !== v) {
+      this.parameters.ParallaxMapCoord = v
+      this.needsUpdate = true
+    }
   }
 
   public get ParallaxScale(): number {
@@ -518,21 +685,15 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.ParallaxScaleBias = params
   }
 
+  private parallaxOcclusionSamples = 0
   public get ParallaxOcclusionSamples(): number {
-    return this.defines.PARALLAX_OCCLUSION_SAMPLES || 0
+    return this.parallaxOcclusionSamples
   }
   public set ParallaxOcclusionSamples(v: number) {
-    if (this.ParallaxOcclusionSamples === v) {
-      return
+    if (this.ParallaxOcclusionSamples !== v) {
+      this.parallaxOcclusionSamples = v
+      this.needsUpdate = true
     }
-    if (v > 0) {
-      this.defines.PARALLAX_OCCLUSION = true
-      this.defines.PARALLAX_OCCLUSION_SAMPLES = (v || 0).toFixed(0) as any
-    } else {
-      delete this.defines.PARALLAX_OCCLUSION
-      delete this.defines.PARALLAX_OCCLUSION_SAMPLES
-    }
-    this.hasChanged = true
   }
 
   /**
@@ -547,6 +708,16 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set MetallicRoughnessMap(v: Texture) {
     this.parameters.MetallicRoughnessMap = v
+  }
+
+  public get MetallicRoughnessMapCoord(): number {
+    return this.parameters.MetallicRoughnessMapCoord
+  }
+  public set MetallicRoughnessMapCoord(v: number) {
+    if (this.parameters.MetallicRoughnessMapCoord !== v) {
+      this.parameters.MetallicRoughnessMapCoord = v
+      this.needsUpdate = true
+    }
   }
 
   public get Metallic(): number {
@@ -576,12 +747,12 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   public set UseTangentPlane(v: boolean) {
     if (this.useTangentPlane !== v) {
       this.useTangentPlane = v
-      this.hasChanged = true
+      this.needsUpdate = true
     }
   }
 
   public get effect() {
-    if (this.hasChanged || this._effect == null) {
+    if (this.needsUpdate || this._effect == null) {
       this.updateEffect()
     }
     return this._effect
@@ -589,19 +760,34 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
 
   private defines: DefaultProgramDefs = {}
   private lights: LightParams[] = []
-  private hasChanged = true
+  private needsUpdate = true
   protected _effect: Effect
 
-  constructor(device: Device) {
-    super(device, {
-      effect: null,
-      parameters: new Proxy({}, {
-        set: (target, name, value): boolean => {
-          this.setParamValue(target, name, value)
-          return true
-        },
-      }),
+  public constructor(device: Device, options?: MaterialOptionsBase<AutoMaterialParams>) {
+    super(device, (options as any) || {})
+  }
+
+  protected createParameters(options: MaterialOptions): void {
+    const params = {
+      ...((options.parameters || {}) as AutoMaterialParams),
+    }
+    for (const key in params) {
+      if (!(key in this)) {
+        console.warn(`AutoMaterial: Unknown parameter "${key}"`)
+        delete params[key]
+      }
+    }
+    instantiateMaterialTextures(this.device, params)
+    this.parameters = new Proxy(params, {
+      set: (target, name, value): boolean => {
+        this.setParamValue(target, name, value)
+        return true
+      },
     })
+  }
+
+  protected createEffect(options: MaterialOptions) {
+    // nothing to create here, will be created on demand
   }
 
   /**
@@ -614,25 +800,47 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
 
   private setParamValue(params: any, name: string | number | symbol, value: any) {
-    const def = defineMap[name]
     const old = params[name]
     params[name] = value
-    if (!def) {
-      return
+    if (name in defineMap) {
+      this.needsUpdate ||= (old == null && value != null) || (value == null && old != null)
     }
-    const hasChanged = old == null && value != null || value == null && old != null
-    if (!hasChanged) {
-      return
-    }
-    if (value != null) {
-      this.defines[def] = true
-    } else {
-      delete this.defines[def]
-    }
-    this.hasChanged = true
   }
 
   private updateEffect() {
+    this._effect?.dispose()
+    this._effect = null
+    this.updateDefines()
+    // console.debug(`AutoMaterial:`, this.defines)
+    this._effect = this.device.createEffect({
+      techniques: [
+        {
+          passes: [
+            {
+              blendState: this.Blend ? BlendState.AlphaBlend : null,
+              cullState: this.DoubleSided ? CullState.CullNone : null,
+              program: materialProgram(this.defines),
+            },
+          ],
+        },
+      ],
+    })
+    this.needsUpdate = false
+  }
+
+  private updateDefines() {
+    for (const key in this.defines) {
+      delete this.defines[key]
+    }
+    for (const param in this.parameters) {
+      const defineKey = defineMap[param]
+      if (!defineKey) {
+        continue
+      }
+      if (this.parameters[param] != null) {
+        this.defines[defineKey] = true
+      }
+    }
     if (this.useTangentPlane) {
       delete this.defines.V_TANGENT
       this.defines.V_TANGENT_PLANE = true
@@ -642,23 +850,60 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     } else {
       delete this.defines.V_TANGENT
     }
+    if (this.LightCount > 0) {
+      this.defines.LIGHT = true
+      this.defines.LIGHT_COUNT = this.LightCount
+    } else {
+      delete this.defines.LIGHT
+      delete this.defines.LIGHT_COUNT
+    }
+    this.defines.SHADE_FUNCTION = this.ShadeFunction
 
-    if (this._effect) {
-      this._effect.techniques.forEach((t) => {
-        t.passes.forEach((p) => {
-          p.program.dispose()
-        })
-      })
-      this._effect = null
+    if (this.parallaxOcclusionSamples > 0) {
+      this.defines.PARALLAX_OCCLUSION = true
+      this.defines.PARALLAX_OCCLUSION_SAMPLES = this.parallaxOcclusionSamples | 0
+    } else {
+      delete this.defines.PARALLAX_OCCLUSION
+      delete this.defines.PARALLAX_OCCLUSION_SAMPLES
     }
 
-    this._effect = this.device.createEffect({
-      program: materialProgram(this.defines),
-    })
-    this.hasChanged = false
-  }
+    if (this.Skinning) {
+      this.defines.SKINNING = true
+      this.defines.SKINNING_JOINT_COUNT = this.SkinningJointCount
+      this.defines.SKINNING_WEIGHT_COUNT = this.SkinningWeightCount
+    } else {
+      delete this.defines.SKINNING
+      delete this.defines.SKINNING_JOINT_COUNT
+      delete this.defines.SKINNING_WEIGHT_COUNT
+    }
 
-  protected onConstructWithoutEffect() {
-    // ignore
+    if (this.DiffuseMapCoord > 0) {
+      this.defines.DIFFUSE_MAP_UV = `vTexture${this.DiffuseMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.DiffuseMapCoord}`] = true
+    }
+    if (this.SpecularMapCoord > 0) {
+      this.defines.SPECULAR_MAP_UV = `vTexture${this.SpecularMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.SpecularMapCoord}`] = true
+    }
+    if (this.EmissionMapCoord > 0) {
+      this.defines.EMISSION_MAP_UV = `vTexture${this.EmissionMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.EmissionMapCoord}`] = true
+    }
+    if (this.NormalMapCoord > 0) {
+      this.defines.NORMAL_MAP_UV = `vTexture${this.NormalMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.NormalMapCoord}`] = true
+    }
+    if (this.OcclusionMapCoord > 0) {
+      this.defines.OCCLUSION_MAP_UV = `vTexture${this.OcclusionMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.OcclusionMapCoord}`] = true
+    }
+    if (this.ParallaxMapCoord > 0) {
+      this.defines.PARALLAX_MAP_UV = `vTexture${this.ParallaxMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.ParallaxMapCoord}`] = true
+    }
+    if (this.MetallicRoughnessMapCoord > 0) {
+      this.defines.METALLIC_ROUGHNESS_MAP_UV = `vTexture${this.MetallicRoughnessMapCoord}.xy`
+      this.defines[`V_TEXTURE${this.MetallicRoughnessMapCoord}`] = true
+    }
   }
 }

@@ -40,10 +40,10 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param w - Value for the W component
    */
   constructor(x?: number, y?: number, z?: number, w?: number) {
-    this.x = x || 0
-    this.y = y || 0
-    this.z = z || 0
-    this.w = w || 0
+    this.x = x ?? 0
+    this.y = y ?? 0
+    this.z = z ?? 0
+    this.w = w ?? 0
   }
 
   /**
@@ -240,7 +240,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    */
   public initFromMat3(m: Mat3): this {
     // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
-    const a = m.m
+    const a = m.elements
     const m00 = a[0]
     const m01 = a[1]
     const m02 = a[2]
@@ -295,7 +295,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    */
   public initFromMat4(m: Mat4): this {
     // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
-    const a = m.m
+    const a = m.elements
     const m00 = a[0]
     const m01 = a[1]
     const m02 = a[2]

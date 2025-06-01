@@ -24,7 +24,7 @@ export interface VNormalDefs {
 /**
  * @public
  */
-export const FXC_V_NORMAL: ShaderChunkSet<VNormalDefs> = Object.freeze({
+export const V_NORMAL: ShaderChunkSet<VNormalDefs> = {
   defines: glsl`
     #if defined(V_TANGENT) || defined(V_TANGENT_PLANE)
     #define V_NORMAL
@@ -67,7 +67,7 @@ export const FXC_V_NORMAL: ShaderChunkSet<VNormalDefs> = Object.freeze({
       vTTW[2] = vWorldNormal.xyz;
       #elif defined(V_TANGENT)
       vTTW[0] = normalMatrix * aTangent;
-      vTTW[1] = normalMatrix * cross(aTangent, aNormal);
+      vTTW[1] = normalMatrix * cross(aNormal, aTangent);
       vTTW[2] = vWorldNormal.xyz;
       #endif
 
@@ -83,4 +83,4 @@ export const FXC_V_NORMAL: ShaderChunkSet<VNormalDefs> = Object.freeze({
     mat3 WTT = transposeMat3(vTTW);
     #endif
   `,
-})
+}

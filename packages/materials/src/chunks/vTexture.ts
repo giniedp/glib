@@ -34,7 +34,7 @@ export interface VTextureDefs {
 /**
  * @public
  */
-export const FXC_V_TEXTURE: ShaderChunkSet<VTextureDefs> = Object.freeze({
+export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
   attributes: glsl`
     #ifdef V_TEXTURE
     // @binding texture
@@ -99,4 +99,4 @@ export const FXC_V_TEXTURE: ShaderChunkSet<VTextureDefs> = Object.freeze({
     #endif
     #endif
   `,
-})
+}

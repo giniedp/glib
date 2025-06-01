@@ -29,7 +29,6 @@ let temp: IVec3
  * @public
  */
 export class BoundingBox implements BoundingVolume {
-
   /**
    * The minimum contained point
    */
@@ -38,6 +37,13 @@ export class BoundingBox implements BoundingVolume {
    * The maximum contained point
    */
   public readonly max: Vec3
+
+  /**
+   * Checks whether this box is empty, i.e. has no volume
+   */
+  public get isEmpty() {
+    return this.min.x > this.max.x || this.min.y > this.max.y || this.min.z > this.max.z
+  }
 
   /**
    * Constructs a new instance of {@link BoundingBox}
@@ -64,8 +70,22 @@ export class BoundingBox implements BoundingVolume {
    * @param maxY - y component of the maximum point
    * @param maxZ - z component of the maximum point
    */
-  public static create(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number): BoundingBox {
+  public static create(
+    minX?: number,
+    minY?: number,
+    minZ?: number,
+    maxX?: number,
+    maxY?: number,
+    maxZ?: number,
+  ): BoundingBox {
     return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ)
+  }
+
+  /**
+   * Creates a new empty instance of {@link BoundingBox}
+   */
+  public static createEmpty(): BoundingBox {
+    return new BoundingBox().initEmpty()
   }
 
   /**
@@ -89,19 +109,21 @@ export class BoundingBox implements BoundingVolume {
   }
 
   /**
+   * Initializes this instance to an empty box
+   */
+  public initEmpty(): this {
+    this.min.x = this.min.y = this.min.z = Number.MAX_VALUE
+    this.max.x = this.max.y = this.max.z = Number.MIN_VALUE
+    return this
+  }
+
+  /**
    * Creates a new instance and copies values from given box
    *
    * @param box - the box to initialize from
    */
   public static createFrom(box: BoundingBox): BoundingBox {
-    return new BoundingBox(
-      box.min.x,
-      box.min.y,
-      box.min.z,
-      box.max.x,
-      box.max.y,
-      box.max.z,
-    )
+    return new BoundingBox(box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z)
   }
 
   /**
@@ -126,14 +148,7 @@ export class BoundingBox implements BoundingVolume {
    * @param max - the max point
    */
   public static createFromV(min: IVec3, max: IVec3): BoundingBox {
-    return new BoundingBox(
-      min.x,
-      min.y,
-      min.z,
-      max.x,
-      max.y,
-      max.z,
-    )
+    return new BoundingBox(min.x, min.y, min.z, max.x, max.y, max.z)
   }
 
   /**
@@ -348,7 +363,7 @@ export class BoundingBox implements BoundingVolume {
    * Dumps the min and max points into an array at given offset
    */
   public toArray<T extends ArrayLike<number>>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     Vec3.toArray(this.min, array, offset)
     Vec3.toArray(this.max, array, offset + 3)
     return array
@@ -405,6 +420,24 @@ export class BoundingBox implements BoundingVolume {
     out = out || new BoundingBox()
     Vec3.min(box1.min, box2.min, out.min)
     Vec3.max(box1.max, box2.max, out.max)
+    return out
+  }
+
+  public static mergeBoxes(...boxes: Array<BoundingBox | number[]>): BoundingBox {
+    const out = new BoundingBox()
+    if (boxes.length === 0) {
+      return out
+    }
+    let first = true
+    for (const boxParams of boxes) {
+      const box = BoundingBox.convert(boxParams)
+      if (first) {
+        out.initFrom(box)
+        first = false
+      } else {
+        out.merge(box)
+      }
+    }
     return out
   }
 

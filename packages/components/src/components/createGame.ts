@@ -100,6 +100,7 @@ export function createEntity(options: CreateEntityOptions) {
   entity.id = options.id
   entity.name = options.name
   entity.transform = new TransformComponent(options.transform)
+  entity.transform.entity = entity
   entity.addComponent(entity.transform)
   if (options.parent) {
     options.parent.transform.addChild(entity.transform)

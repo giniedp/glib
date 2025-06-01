@@ -8,7 +8,7 @@ export type ShadeFunctionPhong = 'shadePhong'
 /**
  * @public
  */
-export const FXC_SHADE_PHONG: ShaderChunkSet = Object.freeze({
+export const SHADE_PHONG: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadePhong(
       inout ShadeParams shade,

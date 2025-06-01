@@ -31,7 +31,7 @@ export class MaterialTypeRegistry {
   }
 }
 
-export type MaterialType = new (device: Device, options: MaterialOptions) => Material
+export type MaterialType = new (device: Device, options: MaterialOptions<any>) => Material<any>
 
 export interface MaterialTypeDescriptor {
   name: string

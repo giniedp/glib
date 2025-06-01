@@ -1,5 +1,5 @@
 import { ContentManager } from '@gglib/content'
-import '@gglib/content-loaders'
+import '@gglib/loaders'
 import { AutoMaterial, LightParams } from '@gglib/materials'
 import {
   buildPlane,

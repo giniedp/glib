@@ -1,4 +1,0 @@
----
-title: Texture Loader
----
-<Example />

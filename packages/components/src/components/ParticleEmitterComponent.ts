@@ -39,7 +39,7 @@ export class ParticleEmitterComponent implements GameComponent {
   }
 
   public activate(): void {
-    this.lastPosition.initFrom(this.transform.position)
+    this.lastPosition.initFrom(this.transform.translation)
     this.loop.onUpdate.add(this.onUpdate)
   }
 
@@ -53,7 +53,7 @@ export class ParticleEmitterComponent implements GameComponent {
 
   public onUpdate(time: LoopTime) {
     const dt = time.delta
-    const newPosition = this.transform.position
+    const newPosition = this.transform.translation
     const velocity = Vec3.subtract(newPosition, this.lastPosition).multiplyScalar(1.0 / dt)
     const timeStep = 1.0 / this.frequency
     let timeAmount = this.timeFraction + dt
@@ -67,6 +67,6 @@ export class ParticleEmitterComponent implements GameComponent {
       this.particleSystem.emit(position, velocity, this.channel)
     }
 
-    this.lastPosition.initFrom(this.transform.position)
+    this.lastPosition.initFrom(this.transform.translation)
   }
 }

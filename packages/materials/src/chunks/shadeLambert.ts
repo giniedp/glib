@@ -8,7 +8,7 @@ export type ShadeFunctionLambert = 'shadeLambert'
 /**
  * @public
  */
-export const FXC_SHADE_LAMBERT: ShaderChunkSet = Object.freeze({
+export const SHADE_LAMBERT: ShaderChunkSet = Object.freeze({
   functions: glsl`
     highp vec3 shadeLambert(
       inout ShadeParams shade,

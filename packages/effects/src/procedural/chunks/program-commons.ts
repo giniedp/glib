@@ -1,6 +1,10 @@
 import { glsl, ShaderChunkSet } from '@gglib/graphics'
 
 export default {
+  precision: glsl`
+    precision highp float;
+    precision highp int;
+  `,
   attributes: glsl`
     // @binding position
     attribute vec3 position;

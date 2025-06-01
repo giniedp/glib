@@ -34,6 +34,9 @@
       "path": "..\\input\\tsconfig.json"
     },
     {
+      "path": "..\\model\\tsconfig.json"
+    },
+    {
       "path": "..\\materials\\tsconfig.json"
     },
     {

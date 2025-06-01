@@ -131,7 +131,7 @@ export function inspectProgram(vertexShader: string, fragmentShader: string): Gl
   return result
 }
 
-export function inspect(source: string, skipInputs: boolean): GlslShaderInspection {
+export function inspect(source: string, isFragmentShader: boolean): GlslShaderInspection {
   const data = scan(source)
 
   const result: GlslShaderInspection = {
@@ -147,7 +147,7 @@ export function inspect(source: string, skipInputs: boolean): GlslShaderInspecti
     const isUniform = v.qualifier.uniform
     const isInput = v.qualifier.attribute || v.qualifier.in
 
-    if ((skipInputs && isInput) || !(isInput || isUniform)) {
+    if ((isFragmentShader && isInput) || !(isInput || isUniform)) {
       continue
     }
     resolveAccessors(v, data, (info) => {

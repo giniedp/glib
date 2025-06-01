@@ -12,9 +12,7 @@ export type ShaderChunk = string
  *
  * @public
  */
-export interface ShaderChunkSet<T = void> {
-  [key: string]: ShaderChunk
-}
+export type ShaderChunkSet<T = void> = Record<string, ShaderChunk>
 
 /**
  * A map of `#define` statements for a shader
@@ -36,9 +34,7 @@ export interface ShaderChunkSet<T = void> {
  * #define baz 1234
  * ```
  */
-export interface ShaderDefines {
-  [key: string]: any
-}
+export type ShaderDefines = Record<string, any>
 
 /**
  * Combines a set of shader chunks into a single shader source file

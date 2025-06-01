@@ -35,78 +35,64 @@ export interface MtlSplattingDefs {
 /**
  * @public
  */
-export const FXC_MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = Object.freeze({
+export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
   uniforms: glsl`
     #ifdef SPLATTING
     // @binding  SplatMap
-    // @filter   LinearWrap
     uniform sampler2D uSplatMap;
 
     #ifdef SPLATTING_BASE
     // @binding  DiffuseMap
-    // @filter   LinearWrap
     uniform sampler2D uDiffuseMap;
     #endif
 
     // @binding  DiffuseMapR
-    // @filter   LinearWrap
     uniform sampler2D uDiffuseMapR;
 
     // @binding  DiffuseMapG
-    // @filter   LinearWrap
     uniform sampler2D uDiffuseMapG;
 
     // @binding  DiffuseMapB
-    // @filter   LinearWrap
     uniform sampler2D uDiffuseMapB;
 
     #ifdef SPLATTING_ALPHA
     // @binding  DiffuseMapA
-    // @filter   LinearWrap
     uniform sampler2D uDiffuseMapA;
     #endif
 
     #ifdef SPLATTING_SLOPE
     // @binding  DiffuseMapSlope
-    // @filter   LinearWrap
     uniform sampler2D uDiffuseMapSlope;
     #endif
 
     #ifdef SPLATTING_NORMAL
     #ifdef SPLATTING_BASE
     // @binding  NormalMap
-    // @filter   LinearWrap
     uniform sampler2D uNormalMap;
     #endif
 
     // @binding  NormalMapR
-    // @filter   LinearWrap
     uniform sampler2D uNormalMapR;
 
     // @binding  NormalMapG
-    // @filter   LinearWrap
     uniform sampler2D uNormalMapG;
 
     // @binding  NormalMapB
-    // @filter   LinearWrap
     uniform sampler2D uNormalMapB;
 
     #ifdef SPLATTING_ALPHA
     // @binding  NormalMapA
-    // @filter   LinearWrap
     uniform sampler2D uNormalMapA;
     #endif
 
     #ifdef SPLATTING_SLOPE
     // @binding  NormalMapSlope
-    // @filter   LinearWrap
     uniform sampler2D uNormalMapSlope;
     #endif
     #endif
 
     #ifdef SPLATTING_TINT
     // @binding  TintMap
-    // @filter   LinearWrap
     uniform sampler2D uTintMap;
     #endif
 
@@ -242,4 +228,4 @@ export const FXC_MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = Object.freeze
     surface.Diffuse.a = 1.0;
     #endif
   `,
-})
+}

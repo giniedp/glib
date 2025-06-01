@@ -3,26 +3,26 @@
 layout: home
 
 hero:
-  name: "GGlib"
-  text: "A VitePress Site"
-  tagline: My great project tagline
+  name: "[G]glib"
+  text: ""
+  tagline: Game and Graphics library
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: About
+      link: /about
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: API
+      link: /api
     - theme: alt
-      text: My Examples
-      link: /examples/my-examples
+      text: Examples
+      link: /examples
 
-features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+# features:
+#   - title: Feature A
+#     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+#   - title: Feature B
+#     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+#   - title: Feature C
+#     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
 

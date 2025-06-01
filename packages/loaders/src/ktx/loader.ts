@@ -1,0 +1,60 @@
+import { AssetContainer, ContentLoader, LoaderContext } from '@gglib/content'
+import { parse } from './format'
+
+export function registerLoader() {
+  ContentLoader.registerLoader(Loader)
+}
+
+export class Loader {
+  public static extensions = ['.ktx', '.ktx2']
+  public static mimeTypes = ['image/ktx', 'image/ktx2']
+  public static loader = Loader
+
+  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+    const response = await context.content.fetch(url, {
+      responseType: 'arraybuffer',
+    })
+    const ktx = parse(response.body)
+    const level0 = ktx.levelImages[0]
+    const layer0 = level0.layers[0]
+    // const isCubemap = layer0.faces?.length === 6
+    return {
+      source: url,
+      textures: [
+        {
+          surfaceFormat: ktx.glInfo.glInternalFormat,
+          pixelFormat: ktx.glInfo.glFormat,
+          pixelType: ktx.glInfo.glType,
+          source: layer0.faces[0],
+          width: ktx.width,
+          height: ktx.height,
+          type: 'Texture2D',
+        },
+      ],
+    }
+  }
+}
+
+// /**
+//  * Converts a KTX image into Texture options
+//  * @public
+//  */
+// export const loadKtxToTextureCube: Loader<KTX, Texture> = loader({
+//   input: KTX,
+//   output: Texture.TextureCube,
+//   handle: async (ktx: KTX, context): Promise<Texture> => {
+//     // TODO: check for webgl2 / extension requirement
+//     const level0 = ktx.levelImages[0]
+//     const layer0 = level0.layers[0]
+
+//     return context.manager.device.createTexture({
+//       surfaceFormat: ktx.glInfo.glInternalFormat,
+//       pixelFormat: ktx.glInfo.glFormat,
+//       pixelType: ktx.glInfo.glType,
+//       width: ktx.width,
+//       height: ktx.height,
+//       faces: layer0.faces,
+//       type: 'TextureCube',
+//     })
+//   },
+// })

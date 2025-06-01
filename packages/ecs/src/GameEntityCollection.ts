@@ -1,19 +1,41 @@
+import { removeFromArrayUnstable } from '@gglib/utils'
 import { GameEntity } from './GameEntity'
 import type { GameProvider } from './GameSystem'
 
 export class GameEntityCollection {
   public readonly entities: GameEntity[] = []
-
+  private toInitialize: GameEntity[] = []
+  private toActivate: GameEntity[] = []
+  private isInitialized = false
+  private isActive = false
+  private game: GameProvider
   public add(entity: GameEntity) {
+    if (!entity) {
+      throw new Error('Cannot add null or undefined entity to collection')
+    }
     this.entities.push(entity)
+    if (!this.isInitialized) {
+      this.toInitialize.push(entity)
+      return
+    }
+    if (!this.isActive) {
+      this.toActivate.push(entity)
+      return
+    }
+    entity.initialize(this.game)
+    entity.activate()
   }
 
   public remove(entity: GameEntity) {
-    removeFromArray(this.entities, entity)
+    removeFromArrayUnstable(this.entities, entity)
+    removeFromArray(this.toInitialize, entity)
+    removeFromArray(this.toActivate, entity)
   }
 
   public clear() {
     this.entities.length = 0
+    this.toInitialize.length = 0
+    this.toActivate.length = 0
   }
 
   public get length() {
@@ -21,21 +43,29 @@ export class GameEntityCollection {
   }
 
   public initialize(game: GameProvider) {
-    for (const entity of this.entities) {
+    this.game = game
+    while (this.toInitialize.length > 0) {
+      const entity = this.toInitialize.pop()
       entity.initialize(game)
+      this.toActivate.push(entity)
     }
+    this.isInitialized = true
   }
 
   public activate() {
-    for (const entity of this.entities) {
+    while (this.toActivate.length > 0) {
+      const entity = this.toActivate.pop()
       entity.activate()
     }
+    this.isActive = true
   }
 
   public deactivate() {
     for (const entity of this.entities) {
       entity.deactivate()
+      this.toActivate.push(entity)
     }
+    this.isActive = false
   }
 
   public destroy() {

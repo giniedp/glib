@@ -220,7 +220,7 @@ export class BoundingFrustum implements BoundingVolume {
     // 1 5 9  13
     // 2 6 10 14
     // 3 7 11 15
-    const m = this.matrix.m
+    const m = this.matrix.elements
     let plane: IVec4
 
     plane = this.planes[LEFT]
