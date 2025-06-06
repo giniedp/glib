@@ -301,7 +301,7 @@ export class Mat3 {
   /**
    * Sets the scale part
    */
-  public setScale(x: number, y: number, z: number): this {
+  public setScaleXYZ(x: number, y: number, z: number): this {
     this.elements[M._00] = x
     this.elements[M._11] = y
     this.elements[M._22] = z
@@ -311,7 +311,7 @@ export class Mat3 {
   /**
    * Sets the scale part
    */
-  public setScaleV(vec: IVec3): this {
+  public setScale(vec: IVec3): this {
     this.elements[M._00] = vec.x
     this.elements[M._11] = vec.y
     this.elements[M._22] = vec.z
@@ -565,8 +565,8 @@ export class Mat3 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public static createAxisAngleV(axis: IVec3, angle: number): Mat3 {
-    return new Mat3().initAxisAngle(axis.x, axis.y, axis.z, angle)
+  public static createAxisAngle(axis: IVec3, angle: number): Mat3 {
+    return new Mat3().initAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -575,8 +575,8 @@ export class Mat3 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public initAxisAngleV(axis: IVec3, angle: number): this {
-    return this.initAxisAngle(axis.x, axis.y, axis.z, angle)
+  public initAxisAngle(axis: IVec3, angle: number): this {
+    return this.initAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -590,8 +590,8 @@ export class Mat3 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public rotateAxisAngleV(axis: IVec3, angle: number): this {
-    return this.rotateAxisAngle(axis.x, axis.y, axis.z, angle)
+  public rotateAxisAngle(axis: IVec3, angle: number): this {
+    return this.rotateAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -605,7 +605,7 @@ export class Mat3 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public preRotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public preRotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -625,8 +625,8 @@ export class Mat3 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public static createAxisAngle(x: number, y: number, z: number, angle: number): Mat3 {
-    return new Mat3().initAxisAngle(x, y, z, angle)
+  public static createAxisXYZAngle(x: number, y: number, z: number, angle: number): Mat3 {
+    return new Mat3().initAxisXYZAngle(x, y, z, angle)
   }
 
   /**
@@ -637,7 +637,7 @@ export class Mat3 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public initAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public initAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -688,7 +688,7 @@ export class Mat3 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public rotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public rotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -1315,8 +1315,8 @@ export class Mat3 {
   /**
    * Creates a new matrix with a predefined scale
    */
-  public static createScale(x: number, y: number, z: number): Mat3 {
-    return new Mat3().initScale(x, y, z)
+  public static createScaleXYZ(x: number, y: number, z: number): Mat3 {
+    return new Mat3().initScaleXYZ(x, y, z)
   }
 
   /**
@@ -1326,7 +1326,7 @@ export class Mat3 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public initScale(x: number, y: number, z: number): this {
+  public initScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] = x; m[M._10] = 0; m[M._20] = 0
     m[M._01] = 0; m[M._11] = y; m[M._21] = 0
@@ -1341,7 +1341,7 @@ export class Mat3 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public scale(x: number, y: number, z: number): this {
+  public scaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] *= x
     m[M._01] *= x
@@ -1362,7 +1362,7 @@ export class Mat3 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public preScale(x: number, y: number, z: number): this {
+  public preScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] *= x
     m[M._10] *= x
@@ -1379,8 +1379,8 @@ export class Mat3 {
   /**
    * Creates a new matrix with a predefined scale
    */
-  public static createScaleV(vec: IVec3): Mat3 {
-    return new Mat3().initScale(vec.x, vec.y, vec.z)
+  public static createScale(vec: IVec3): Mat3 {
+    return new Mat3().initScaleXYZ(vec.x, vec.y, vec.z)
   }
 
   /**
@@ -1388,8 +1388,8 @@ export class Mat3 {
    *
    * @param vec - The scale vector
    */
-  public initScaleV(vec: IVec3): this {
-    return this.initScale(vec.x, vec.y, vec.z)
+  public initScale(vec: IVec3): this {
+    return this.initScaleXYZ(vec.x, vec.y, vec.z)
   }
 
   /**
@@ -1397,7 +1397,7 @@ export class Mat3 {
    *
    * @param scale - the scale vector
    */
-  public scaleV(scale: IVec3): this {
+  public scale(scale: IVec3): this {
     const x = scale.x
     const y = scale.y
     const z = scale.z
@@ -1419,7 +1419,7 @@ export class Mat3 {
    *
    * @param scale - the scale vector
    */
-  public preScaleV(scale: IVec3): this {
+  public preScale(scale: IVec3): this {
     const x = scale.x
     const y = scale.y
     const z = scale.z
@@ -1440,7 +1440,7 @@ export class Mat3 {
    * Creates a new matrix with a predefined scale
    */
   public static createScaleUniform(scale: number): Mat3 {
-    return new Mat3().initScale(scale, scale, scale)
+    return new Mat3().initScaleXYZ(scale, scale, scale)
   }
 
   /**
@@ -1449,7 +1449,7 @@ export class Mat3 {
    * @param scale - The uniform scale value
    */
   public initScaleUniform(scale: number): this {
-    return this.initScale(scale, scale, scale)
+    return this.initScaleXYZ(scale, scale, scale)
   }
 
   /**

@@ -170,7 +170,7 @@ class CubeComponent implements GameComponent {
     this.time = entity.provider.get(TimeSystem)
 
     const content = entity.provider.get(ContentLoader)
-    content.loadModel('/assets/models/gltf/box.gltf').then((model) => {
+    content.loadModel('/models/gltf/box.gltf').then((model) => {
       this.renderable.model = model
     })
   }

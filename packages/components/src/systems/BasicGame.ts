@@ -1,9 +1,10 @@
 import { ContentLoader } from '@gglib/content'
 import { GameEntityCollection, GameProvider } from '@gglib/ecs'
-import { createDevice } from '@gglib/graphics'
+import { createDevice, Device } from '@gglib/graphics'
 import { CameraInfo, Renderer } from '@gglib/render'
-import { GameLoop } from './GameLoop'
+import { GameLoop, LoopTime } from './GameLoop'
 import { RenderQuery } from './RenderSystem'
+import { Mat4 } from '@gglib/math'
 
 export class BasicGame extends GameProvider {
   public loop: GameLoop
@@ -11,13 +12,17 @@ export class BasicGame extends GameProvider {
   public renderQuery: RenderQuery
   public content: ContentLoader
   public scene = new GameEntityCollection()
-  public camera: CameraInfo
+  public camera: CameraInfo = {
+    world: Mat4.createIdentity(),
+    view: Mat4.createIdentity(),
+    projection: Mat4.createIdentity(),
+  }
 
   public constructor(canvas: HTMLCanvasElement) {
     super()
     const device = createDevice({ canvas })
     this.provide(this)
-    this.provide(device)
+    this.provide(device, Device)
     this.provide(new Renderer(device))
     this.provide(new ContentLoader(device))
     this.addSystem(new GameLoop({ autostart: false }))
@@ -33,8 +38,8 @@ export class BasicGame extends GameProvider {
     this.scene.initialize(this)
     this.scene.activate()
 
-    this.loop.onUpdate.add(() => this.update())
-    this.loop.onDraw.add(() => this.draw())
+    this.loop.onUpdate.add((time) => this.update(time))
+    this.loop.onDraw.add((time) => this.draw(time))
 
     this.loop.run()
   }
@@ -44,11 +49,11 @@ export class BasicGame extends GameProvider {
     this.destroy()
   }
 
-  public update() {
+  public update(time: LoopTime) {
     //
   }
 
-  public draw() {
+  public draw(time: LoopTime) {
     if (this.camera) {
       this.renderQuery.update(this.scene.entities, this.camera)
       this.renderer.render(this.renderQuery)

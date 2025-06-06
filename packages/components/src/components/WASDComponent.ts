@@ -168,7 +168,7 @@ export class WASDComponent implements GameComponent {
     this.currentMoveSpeed += (targetSpeed - this.currentMoveSpeed) * this.moveDamping
     this.currentMoveSpeed = Math.floor(this.currentMoveSpeed * 1000) / 1000
     if (this.currentMoveSpeed !== 0 && this.direction.lengthSquared() > 0) {
-      node.translateV(this.direction.multiplyScalar(this.currentMoveSpeed * (dt / 1000.0)))
+      node.translateV(this.direction.multiplyScalar(this.currentMoveSpeed * (dt)))
     }
 
     const isMouseDown =
@@ -189,6 +189,7 @@ export class WASDComponent implements GameComponent {
     this.pitch += (this.targetPitch - this.pitch) * this.turnDamping
 
     node.rotation.initYawPitchRoll(this.yaw, this.pitch, 0)
+    node.needsUpdate = true
     node.updateIfNeeded()
   }
 }

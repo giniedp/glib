@@ -30,7 +30,7 @@ export interface BuildCubeOptions {
 }
 
 export function cubeGeometry(device: Device, options?: BuildCubeOptions): Geometry {
-  return beginGeometry().append(buildCube, options).endGeometry(device, {
+  return beginGeometry().append(buildCube, options).calculateNormalsAndTangents().endGeometry(device, {
     name: 'cube',
   })
 }
@@ -49,7 +49,7 @@ export function buildCube(builder: GeometryBuilder, options?: BuildCubeOptions) 
   let tId: number
 
   // top plane
-  transform.initTranslation(0, halfSize, 0)
+  transform.initTranslationXYZ(0, halfSize, 0)
   tId = builder.beginTransform(transform)
   buildPlane(builder, { size: size, tesselation: steps })
   builder.endTransform(tId)

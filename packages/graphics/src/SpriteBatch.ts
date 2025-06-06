@@ -197,9 +197,9 @@ export class SpriteBatch {
       this.stencilState = options.stencilState ?? undefined
       this.scissorState = options.scissorState ?? undefined
       this.viewportState = options.viewportState ?? undefined
-      this.program = options.program ?? this.mainProgram
-      this.matrix = options.viewProjection ?? this.mainMatrix
     }
+    this.program = options?.program ?? this.mainProgram
+    this.matrix = options?.viewProjection ?? this.mainMatrix
 
     const viewWidth = (this.viewportState || this.device.viewportState).width
     const viewHeight = (this.viewportState || this.device.viewportState).height

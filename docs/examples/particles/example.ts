@@ -12,7 +12,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const channel = new ParticleChannel(device, {
     texture: device.createTexture({
-      source: '/assets/textures/particles/whitePuff00.png'
+      source: '/textures/particles/whitePuff00.png'
     }),
     duration: 2000,
     maxParticles: 100,
@@ -63,7 +63,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     device.depthState = DepthState.DepthRead
     device.blendState = BlendState.AlphaBlend
 
-    view.initTranslation(0, 0, -100)
+    view.initTranslationXYZ(0, 0, -100)
     projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 0.001, 200)
 
     while (gameTime > rate) {

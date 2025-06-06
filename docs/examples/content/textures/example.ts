@@ -27,7 +27,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   content
-    .loadTexture('/assets/textures/backgrounds/colored_castle.png')
+    .loadTexture('/textures/backgrounds/colored_castle.png')
     .then((result) => {
       material.DiffuseMap = result
     })

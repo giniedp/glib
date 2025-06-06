@@ -2,7 +2,7 @@ declare function importScripts(script: string): void
 declare function postMessage(data: any): void
 declare const scene: any
 // load the math library
-// importScripts('/assets/math.umd.js')
+// importScripts('/math.umd.js')
 // load our raytracing scene
 // importScripts('scene.js')
 import { scene } from  './scene'

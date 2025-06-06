@@ -167,7 +167,7 @@ export class CopyScaleConstraint implements GameComponent {
       source.z = this.target.scale.z
     }
     if (!source.equals(this.target.scale)) {
-      this.target.setScaleV(source)
+      this.target.setScale(source)
       if (this.commit) {
         this.target.updateIfNeeded()
       }

@@ -125,7 +125,7 @@ class CubeComponent implements GameComponent {
     this.content = entity.provider.get(ContentLoader)
     this.loop = entity.provider.get(GameLoop)
 
-    this.content.loadModel('/assets/models/gltf/box.gltf').then((model) => {
+    this.content.loadModel('/models/gltf/box.gltf').then((model) => {
       this.renderable.model = model
     })
   }

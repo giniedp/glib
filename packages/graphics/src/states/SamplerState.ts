@@ -126,14 +126,29 @@ export abstract class SamplerState implements ISamplerState {
   })
 
   /**
-   * A sampler state with linear filtering but clamp mode
+   *
    */
-  public static LinearRenderTarget = Object.freeze<ISamplerState>({
+  public static LinearClampNoMipMap = Object.freeze<ISamplerState>({
     minFilter: TextureFilter.Linear,
     magFilter: TextureFilter.Linear,
     wrapU: TextureWrapMode.Clamp,
     wrapV: TextureWrapMode.Clamp,
     wrapW: TextureWrapMode.Clamp,
+    minLod: -1000,
+    maxLod: 1000,
+    compareMode: 0,
+    compareFunc: CompareFunction.LessEqual,
+  })
+
+  /**
+   *
+   */
+  public static LinearWrapNoMipMap = Object.freeze<ISamplerState>({
+    minFilter: TextureFilter.Linear,
+    magFilter: TextureFilter.Linear,
+    wrapU: TextureWrapMode.Repeat,
+    wrapV: TextureWrapMode.Repeat,
+    wrapW: TextureWrapMode.Repeat,
     minLod: -1000,
     maxLod: 1000,
     compareMode: 0,

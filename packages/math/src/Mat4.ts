@@ -444,7 +444,7 @@ export class Mat4 {
   /**
    * Sets the translation part
    */
-  public setTranslation(x: number, y: number, z: number): this {
+  public setTranslationXYZ(x: number, y: number, z: number): this {
     this.elements[M._30] = x
     this.elements[M._31] = y
     this.elements[M._32] = z
@@ -454,7 +454,7 @@ export class Mat4 {
   /**
    * Sets the translation part from vector
    */
-  public setTranslationV(vec: IVec3): this {
+  public setTranslation(vec: IVec3): this {
     this.elements[M._30] = vec.x
     this.elements[M._31] = vec.y
     this.elements[M._32] = vec.z
@@ -1234,8 +1234,8 @@ export class Mat4 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public static createAxisAngleV(axis: IVec3, angle: number): Mat4 {
-    return new Mat4().initAxisAngle(axis.x, axis.y, axis.z, angle)
+  public static createAxisAngle(axis: IVec3, angle: number): Mat4 {
+    return new Mat4().initAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -1244,8 +1244,8 @@ export class Mat4 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public initAxisAngleV(axis: IVec3, angle: number): this {
-    return this.initAxisAngle(axis.x, axis.y, axis.z, angle)
+  public initAxisAngle(axis: IVec3, angle: number): this {
+    return this.initAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -1258,8 +1258,8 @@ export class Mat4 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public rotateAxisAngleV(axis: IVec3, angle: number): this {
-    return this.rotateAxisAngle(axis.x, axis.y, axis.z, angle)
+  public rotateAxisAngle(axis: IVec3, angle: number): this {
+    return this.rotateAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -1271,8 +1271,8 @@ export class Mat4 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public preRotateAxisAngleV(axis: IVec3, angle: number): this {
-    return this.preRotateAxisAngle(axis.x, axis.y, axis.z, angle)
+  public preRotateAxisAngle(axis: IVec3, angle: number): this {
+    return this.preRotateAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -1283,8 +1283,8 @@ export class Mat4 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public static createAxisAngle(x: number, y: number, z: number, angle: number): Mat4 {
-    return new Mat4().initAxisAngle(x, y, z, angle)
+  public static createAxisXYZAngle(x: number, y: number, z: number, angle: number): Mat4 {
+    return new Mat4().initAxisXYZAngle(x, y, z, angle)
   }
 
   /**
@@ -1295,7 +1295,7 @@ export class Mat4 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public initAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public initAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -1352,7 +1352,7 @@ export class Mat4 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public rotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public rotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -1375,7 +1375,7 @@ export class Mat4 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public preRotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public preRotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -1852,8 +1852,8 @@ export class Mat4 {
   /**
    * Creates a new matrix with a predefined scale
    */
-  public static createScale(x: number, y: number, z: number): Mat4 {
-    return new Mat4().initScale(x, y, z)
+  public static createScaleXYZ(x: number, y: number, z: number): Mat4 {
+    return new Mat4().initScaleXYZ(x, y, z)
   }
 
   /**
@@ -1863,7 +1863,7 @@ export class Mat4 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public initScale(x: number, y: number, z: number): this {
+  public initScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] = x
     m[M._10] = 0
@@ -1891,7 +1891,7 @@ export class Mat4 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public scale(x: number, y: number, z: number): this {
+  public scaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] *= x
     m[M._01] *= x
@@ -1915,7 +1915,7 @@ export class Mat4 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public preScale(x: number, y: number, z: number): this {
+  public preScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] *= x
     m[M._10] *= x
@@ -1935,8 +1935,8 @@ export class Mat4 {
   /**
    * Creates a new matrix with a predefined scale
    */
-  public static createScaleV(vec: IVec3): Mat4 {
-    return new Mat4().initScale(vec.x, vec.y, vec.z)
+  public static createScale(vec: IVec3): Mat4 {
+    return new Mat4().initScaleXYZ(vec.x, vec.y, vec.z)
   }
 
   /**
@@ -1944,8 +1944,8 @@ export class Mat4 {
    *
    * @param vec - The scale vector
    */
-  public initScaleV(vec: IVec3): this {
-    return this.initScale(vec.x, vec.y, vec.z)
+  public initScale(vec: IVec3): this {
+    return this.initScaleXYZ(vec.x, vec.y, vec.z)
   }
 
   /**
@@ -1953,7 +1953,7 @@ export class Mat4 {
    *
    * @param scale - the scale vector
    */
-  public scaleV(scale: IVec3): this {
+  public scale(scale: IVec3): this {
     const x = scale.x
     const y = scale.y
     const z = scale.z
@@ -1978,7 +1978,7 @@ export class Mat4 {
    *
    * @param scale - the scale vector
    */
-  public preScaleV(scale: IVec3): this {
+  public preScale(scale: IVec3): this {
     const x = scale.x
     const y = scale.y
     const z = scale.z
@@ -2002,7 +2002,7 @@ export class Mat4 {
    * Creates a new matrix with a predefined scale
    */
   public static createScaleUniform(scale: number): Mat4 {
-    return new Mat4().initScale(scale, scale, scale)
+    return new Mat4().initScaleXYZ(scale, scale, scale)
   }
 
   /**
@@ -2011,7 +2011,7 @@ export class Mat4 {
    * @param scale - The uniform scale value
    */
   public initScaleUniform(scale: number): this {
-    return this.initScale(scale, scale, scale)
+    return this.initScaleXYZ(scale, scale, scale)
   }
 
   /**
@@ -2154,8 +2154,8 @@ export class Mat4 {
    * 0 0 0 1
    * ```
    */
-  public static createTranslation(x: number, y: number, z: number): Mat4 {
-    return new Mat4().initTranslation(x, y, z)
+  public static createTranslationXYZ(x: number, y: number, z: number): Mat4 {
+    return new Mat4().initTranslationXYZ(x, y, z)
   }
 
   /**
@@ -2174,7 +2174,7 @@ export class Mat4 {
    * @param y - y component of the translation vector
    * @param z - z component of the translation vector
    */
-  public initTranslation(x: number, y: number, z: number): this {
+  public initTranslationXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._00] = 1
     m[M._10] = 0
@@ -2213,7 +2213,7 @@ export class Mat4 {
    * @param y - translation in y direction
    * @param z - translation in z direction
    */
-  public translate(x: number, y: number, z: number): this {
+  public translateXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[12] = m[0] * x + m[4] * y + m[8] * z + m[12]
     m[13] = m[1] * x + m[5] * y + m[9] * z + m[13]
@@ -2240,7 +2240,7 @@ export class Mat4 {
    * @param y - translation in y direction
    * @param z - translation in z direction
    */
-  public preTranslate(x: number, y: number, z: number): this {
+  public preTranslateXYZ(x: number, y: number, z: number): this {
     const m = this.elements
     m[M._30] += x
     m[M._31] += y
@@ -2262,8 +2262,8 @@ export class Mat4 {
    *
    * @param v - the translation vector
    */
-  public static createTranslationV(v: IVec3): Mat4 {
-    return new Mat4().initTranslationV(v)
+  public static createTranslation(v: IVec3): Mat4 {
+    return new Mat4().initTranslation(v)
   }
 
   /**
@@ -2280,7 +2280,7 @@ export class Mat4 {
    *
    * @param v - the translation vector
    */
-  public initTranslationV(v: IVec3): this {
+  public initTranslation(v: IVec3): this {
     const m = this.elements
     m[M._00] = 1
     m[M._10] = 0
@@ -2317,7 +2317,7 @@ export class Mat4 {
    *
    * @param v - the translation vector
    */
-  public translateV(v: IVec3): this {
+  public translate(v: IVec3): this {
     const x = v.x
     const y = v.y
     const z = v.z
@@ -2345,7 +2345,7 @@ export class Mat4 {
    *
    * @param v - the translation vector
    */
-  public preTranslateV(v: IVec3): this {
+  public preTranslate(v: IVec3): this {
     const m = this.elements
     m[M._30] += v.x
     m[M._31] += v.y

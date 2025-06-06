@@ -72,17 +72,17 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const cubeSize = 5
-  const model = GeometryBuilder.begin()
+  const mesh = GeometryBuilder.begin()
     .append((b) => {
       for (let x = -1; x <= 1; x++) {
         for (let y = -1; y <= 1; y++) {
           if (x === 0 && y === 0) {
-            b.withTransform(Mat4.createTranslation(x * cubeSize, 2, y * cubeSize), (b) => {
+            b.withTransform(Mat4.createTranslationXYZ(x * cubeSize, 2, y * cubeSize), (b) => {
               buildPlane(b, { size: cubeSize, tesselation: 4 })
               b.endGeometry({ materialId: 'water' })
             })
           } else {
-            b.withTransform(Mat4.createTranslation(x * cubeSize, 0, y * cubeSize), (b) => {
+            b.withTransform(Mat4.createTranslationXYZ(x * cubeSize, 0, y * cubeSize), (b) => {
               buildCube(b, { size: cubeSize, tesselation: 4 })
               b.endGeometry({ materialId: 'solid' })
             })
@@ -90,14 +90,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         }
       }
     })
-    .closeMesh({
+    .endMesh(device, {
       materials: [
         {
           name: 'solid',
           effect: normalMapEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_orange.png' }),
-            NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_gray_n.png' }),
+            DiffuseMap: device.createTexture({ source: '/textures/prototype/proto_orange.png' }),
+            NormalMap: device.createTexture({ source: '/textures/prototype/proto_gray_n.png' }),
             SpecularPower: 1024,
             SpecularColor: [1, 1, 1],
           },
@@ -106,15 +106,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
           name: 'water',
           effect: normalMapSpecularMapEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/assets/textures/prototype/proto_water.png' }),
-            NormalMap: device.createTexture({ source: '/assets/textures/prototype/proto_water_N.png' }),
-            SpecularMap: device.createTexture({ source: '/assets/textures/prototype/proto_water_S.png' }),
+            DiffuseMap: device.createTexture({ source: '/textures/prototype/proto_water.png' }),
+            NormalMap: device.createTexture({ source: '/textures/prototype/proto_water_N.png' }),
+            SpecularMap: device.createTexture({ source: '/textures/prototype/proto_water_S.png' }),
             SpecularPower: 255,
           },
         },
       ],
-    })
-    .endModel(device)
+    })!
 
   function frame(time: number, dt: number) {
     device.resize()
@@ -124,20 +123,20 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     Mat4.invert(cam, view)
     proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 
-    for (const mesh of model.meshes) {
-      for (const material of mesh.materials) {
-        material.parameters['World'] = world
-        material.parameters['View'] = view
-        material.parameters['Projection'] = proj
-        material.parameters['CameraPosition'] = cam.getTranslation()
-        material.parameters['DiffuseMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
-        material.parameters['NormalMapScaleOffset'] = [1, 1, time / 40000, time / 80000]
+    for (const material of mesh.materials) {
+      material.parameters['World'] = world
+      material.parameters['View'] = view
+      material.parameters['Projection'] = proj
+      material.parameters['CameraPosition'] = cam.getTranslation()
+      material.parameters['DiffuseMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
+      material.parameters['NormalMapScaleOffset'] = [1, 1, time / 40000, time / 80000]
 
-        light.assign(0, material.parameters)
-      }
+      light.assign(0, material.parameters)
     }
 
-    model.draw()
+    mesh.draw()
   }
-  return loop(frame).start()
+  const gameLoop = loop(frame)
+  gameLoop.start()
+  return () => gameLoop.stop()
 }

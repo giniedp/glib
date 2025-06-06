@@ -15,7 +15,7 @@ describe('content/loaders/tga', () => {
 
   describe('tgaToImageData', () => {
     it('loads ImageData', async () => {
-      const result = await content.loadAsset('/assets/testimages/tga/avatar.tga')
+      const result = await content.loadAsset('/testimages/tga/avatar.tga')
       expect(result.textures).toHaveLength(1)
       expect(result.textures[0].source).toBeInstanceOf(TextureSource)
     })

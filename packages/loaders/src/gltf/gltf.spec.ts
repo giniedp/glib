@@ -74,18 +74,18 @@
 //     })
 //   })
 
-//   describe('/assets/logo/gglib.glb', () => {
+//   describe('/logo/gglib.glb', () => {
 //     it('loads', async () => {
-//       const result = await manager.load('/assets/logo/gglib.glb', Model.Options)
+//       const result = await manager.load('/logo/gglib.glb', Model.Options)
 //       expect(result.meshes.length).toBe(1)
 //       expect(result.meshes[0].parts.length).toBe(3)
 //       expect(result.meshes[0].materials.length).toBe(3)
 //     })
 //   })
 
-//   describe('/assets/logo/gglib.gltf', () => {
+//   describe('/logo/gglib.gltf', () => {
 //     it('loads', async () => {
-//       const result = await manager.load('/assets/logo/gglib.gltf', Model.Options)
+//       const result = await manager.load('/logo/gglib.gltf', Model.Options)
 //       expect(result.meshes.length).toBe(1)
 //       expect(result.meshes[0].parts.length).toBe(3)
 //       expect(result.meshes[0].materials.length).toBe(3)

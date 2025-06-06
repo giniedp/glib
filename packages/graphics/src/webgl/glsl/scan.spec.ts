@@ -232,6 +232,8 @@ describe('Glsl.scan', () => {
         expect(Object.keys(data.interfaces)).toEqual(['perScene', 'perModel'])
         expect(Object.keys(data.variables)).not.toContain('color1')
         expect(Object.keys(data.variables)).toContain('color4')
+        expect(Object.keys(data.variables)).toContain('a_position')
+        // data.variables.a_position.
       })
     })
   })

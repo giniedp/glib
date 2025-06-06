@@ -155,7 +155,7 @@ export class LimitScaleConstraint implements GameComponent {
     }
 
     if (!scale.equals(this.target.scale)) {
-      this.target.setScaleV(scale)
+      this.target.setScale(scale)
       if (this.commit) {
         this.target.updateIfNeeded()
       }

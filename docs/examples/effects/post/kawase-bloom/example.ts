@@ -43,7 +43,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   function updateView() {
-    view.initTranslation(0, 0, -bounds)
+    view.initTranslationXYZ(0, 0, -bounds)
     projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 1, 100)
   }
 
@@ -57,8 +57,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     // prettier-ignore
     object.world
       .initFromQuat(object.rotation)
-      .scaleV(object.scale)
-      .setTranslationV(object.position)
+      .scale(object.scale)
+      .setTranslation(object.position)
       .premultiply(world)
   }
 

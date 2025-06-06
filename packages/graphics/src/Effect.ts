@@ -225,6 +225,7 @@ export class Effect {
     for (const pass of this.technique.passes) {
       pass.commit(parameters)
       drawable.draw(pass.program)
+      pass.restore()
     }
   }
 
@@ -236,6 +237,7 @@ export class Effect {
       pass.commit(parameters)
       this.device.program = pass.program
       this.device.drawQuad(flipY)
+      pass.restore()
     }
   }
 

@@ -38,7 +38,9 @@ export interface BuildCylinderOptions {
 }
 
 export function cylinderGeometry(device: Device, options?: BuildCylinderOptions): Geometry {
-  return beginGeometry().append(buildCylinder, options).endGeometry(device, {
+  return beginGeometry().append(buildCylinder, options)
+    .calculateNormalsAndTangents()
+    .endGeometry(device, {
     name: 'cylinder',
   })
 }

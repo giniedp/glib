@@ -41,7 +41,7 @@ export interface BuildConeOptions {
 }
 
 export function coneGeometry(device: Device, options?: BuildConeOptions): Geometry {
-  return beginGeometry().append(buildCone, options).endGeometry(device, {
+  return beginGeometry().append(buildCone, options).calculateNormalsAndTangents().endGeometry(device, {
     name: 'cone',
   })
 }

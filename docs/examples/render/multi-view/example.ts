@@ -73,7 +73,7 @@ export default (canvas: HTMLCanvasElement) => {
     }),
   ]
 
-  content.load('/assets/models/obj/piratekit/ship_dark.obj', Model).then((model) => {
+  content.load('/models/obj/piratekit/ship_dark.obj', Model).then((model) => {
     model.meshes.forEach((mesh) => {
       mesh.parts.forEach((part) => {
         scene.items.push({

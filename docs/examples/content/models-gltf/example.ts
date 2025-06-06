@@ -25,20 +25,20 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const models: Record<string, string> = {
-    Tower: '/assets/models/obj/piratekit/tower.obj',
-    Cannon: '/assets/models/obj/piratekit/cannonMobile.obj',
-    Chest: '/assets/models/obj/piratekit/chest.obj',
-    Boat: '/assets/models/obj/piratekit/boat_large.obj',
-    Bottle: '/assets/models/obj/piratekit/bottle.obj',
-    Paddle: '/assets/models/obj/piratekit/paddle.obj',
-    Palm: '/assets/models/obj/piratekit/palm_detailed_long.obj',
-    Pirate: '/assets/models/obj/piratekit/pirate_captain.obj',
-    Plant: '/assets/models/obj/piratekit/plant.obj',
-    Shovel: '/assets/models/obj/piratekit/shovel.obj',
-    Sword: '/assets/models/obj/piratekit/sword.obj',
-    'Ship Dark': '/assets/models/obj/piratekit/ship_dark.obj',
-    'Ship Light': '/assets/models/obj/piratekit/ship_light.obj',
-    Tree: '/assets/models/obj/medieval/tree.obj',
+    Tower: '/models/obj/piratekit/tower.obj',
+    Cannon: '/models/obj/piratekit/cannonMobile.obj',
+    Chest: '/models/obj/piratekit/chest.obj',
+    Boat: '/models/obj/piratekit/boat_large.obj',
+    Bottle: '/models/obj/piratekit/bottle.obj',
+    Paddle: '/models/obj/piratekit/paddle.obj',
+    Palm: '/models/obj/piratekit/palm_detailed_long.obj',
+    Pirate: '/models/obj/piratekit/pirate_captain.obj',
+    Plant: '/models/obj/piratekit/plant.obj',
+    Shovel: '/models/obj/piratekit/shovel.obj',
+    Sword: '/models/obj/piratekit/sword.obj',
+    'Ship Dark': '/models/obj/piratekit/ship_dark.obj',
+    'Ship Light': '/models/obj/piratekit/ship_light.obj',
+    Tree: '/models/obj/medieval/tree.obj',
   }
   TweakUi.mount(tools, (ui) => {
     loadModel(models.Tower)

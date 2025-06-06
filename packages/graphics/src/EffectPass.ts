@@ -1,4 +1,3 @@
-import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
 import {
@@ -8,6 +7,11 @@ import {
   CullStateParams,
   DepthState,
   DepthStateParams,
+  IBlendState,
+  ICullState,
+  IDepthState,
+  IOffsetState,
+  IStencilState,
   OffsetState,
   OffsetStateParams,
   StencilState,
@@ -111,6 +115,12 @@ export class EffectPass {
    */
   public stencilState: StencilStateParams
 
+  protected cullStateMemo: Partial<ICullState>
+  protected blendStateMemo: Partial<IBlendState>
+  protected depthStateMemo: Partial<IDepthState>
+  protected offsetStateMemo: Partial<IOffsetState>
+  protected stencilStateMemo: Partial<IStencilState>
+
   constructor(device: Device, options: EffectPassOptions) {
     this.device = device
     this.name = options.name
@@ -145,22 +155,54 @@ export class EffectPass {
     this.program.bind()
     const device = this.device
     if (this.stencilState) {
+      this.stencilStateMemo ||= {}
+      device.getStencilState(this.stencilStateMemo)
       device.stencilState = this.stencilState
     }
     if (this.offsetState) {
+      this.offsetStateMemo ||= {}
+      device.getOffsetState(this.offsetStateMemo)
       device.offsetState = this.offsetState
     }
     if (this.blendState) {
+      this.blendStateMemo ||= {}
+      device.getBlendState(this.blendStateMemo)
       device.blendState = this.blendState
     }
     if (this.depthState) {
+      this.depthStateMemo ||= {}
+      device.getDepthState(this.depthStateMemo)
       device.depthState = this.depthState
     }
     if (this.cullState) {
+      this.cullStateMemo ||= {}
+      device.getCullState(this.cullStateMemo)
       device.cullState = this.cullState
     }
     if (parameters) {
       this.program.setUniforms(parameters)
+    }
+    return this
+  }
+
+  /**
+   * Restores the graphics device state to the state before this shader pass was committed
+   */
+  public restore(): this {
+    if (this.stencilState) {
+      this.device.stencilState = this.stencilStateMemo
+    }
+    if (this.offsetState) {
+      this.device.offsetState = this.offsetStateMemo
+    }
+    if (this.blendState) {
+      this.device.blendState = this.blendStateMemo
+    }
+    if (this.depthState) {
+      this.device.depthState = this.depthStateMemo
+    }
+    if (this.cullState) {
+      this.device.cullState = this.cullStateMemo
     }
     return this
   }

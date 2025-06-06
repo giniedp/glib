@@ -24,7 +24,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const program = basicProgram(device)
   const texture = device.createTexture({
-    source: '/assets/textures/prototype/proto_red.png',
+    source: '/textures/prototype/proto_red.png',
   })
   let geometry = cubeGeometry(device, {
     size: 1,
@@ -80,7 +80,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     }
 
     world.rotateY((10 * DEGREE_TO_RAD * dt) / 1000)
-    view.initTranslation(0, 0, -2)
+    view.initTranslationXYZ(0, 0, -2)
     projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.canvas.width / device.canvas.height, 0.1, 100)
     Mat4.multiply(projection, view, viewProjection)
 

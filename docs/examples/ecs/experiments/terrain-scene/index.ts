@@ -129,7 +129,7 @@ class SkyComponent implements OnInit, OnUpdate {
   public camera: PerspectiveCameraComponent
 
   public onInit() {
-    this.content.load('/assets/textures/Grey_Sky.png', Texture.Texture2D).then((texture) => {
+    this.content.load('/textures/Grey_Sky.png', Texture.Texture2D).then((texture) => {
       const material = new AutoMaterial(this.device)
       material.DiffuseMap = texture
       material.ShadeFunction = 'shadeNone'
@@ -175,24 +175,24 @@ class TerrainComponent implements OnInit, OnUpdate {
 
     const device = this.device
     this.content.loadBatch({
-        heightmap: ['/assets/heightmaps/heightmap_rgb.png', Image],
+        heightmap: ['/heightmaps/heightmap_rgb.png', Image],
       }).then((res) => {
 
         const heightmap = HeightMap.fromImage(res.heightmap).rescale(0.8).smooth().calculateNormals()
         this.heightmap = heightmap
 
         const material = new TerrainMaterial(device)
-        material.SplatMap = device.createTexture({ source: '/assets/heightmaps/heightmap_flow.png' })
-        material.DiffuseMap = device.createTexture({ source: '/assets/textures/terrain/savanna_green_d.jpg' })
-        material.DiffuseMapR = device.createTexture({ source: '/assets/textures/terrain/ground_dry_d.jpg' })
-        material.DiffuseMapG = device.createTexture({ source: '/assets/textures/terrain/ground_mud_d.jpg' })
-        material.DiffuseMapB = device.createTexture({ source: '/assets/textures/terrain/savanna_green_d.jpg' })
-        /* material.DiffuseMapSlope = device.createTexture({ source: '/assets/textures/terrain/adesert_mntn4_d.jpg' }) */
+        material.SplatMap = device.createTexture({ source: '/heightmaps/heightmap_flow.png' })
+        material.DiffuseMap = device.createTexture({ source: '/textures/terrain/savanna_green_d.jpg' })
+        material.DiffuseMapR = device.createTexture({ source: '/textures/terrain/ground_dry_d.jpg' })
+        material.DiffuseMapG = device.createTexture({ source: '/textures/terrain/ground_mud_d.jpg' })
+        material.DiffuseMapB = device.createTexture({ source: '/textures/terrain/savanna_green_d.jpg' })
+        /* material.DiffuseMapSlope = device.createTexture({ source: '/textures/terrain/adesert_mntn4_d.jpg' }) */
 
-        material.NormalMap = device.createTexture({ source: '/assets/textures/terrain/savanna_green_n.jpg' })
-        material.NormalMapR = device.createTexture({ source: '/assets/textures/terrain/ground_dry_n.jpg' })
-        material.NormalMapG = device.createTexture({ source: '/assets/textures/terrain/ground_mud_n.jpg' })
-        material.NormalMapB = device.createTexture({ source: '/assets/textures/terrain/savanna_green_n.jpg' })
+        material.NormalMap = device.createTexture({ source: '/textures/terrain/savanna_green_n.jpg' })
+        material.NormalMapR = device.createTexture({ source: '/textures/terrain/ground_dry_n.jpg' })
+        material.NormalMapG = device.createTexture({ source: '/textures/terrain/ground_mud_n.jpg' })
+        material.NormalMapB = device.createTexture({ source: '/textures/terrain/savanna_green_n.jpg' })
 
         material.AmbientColor = [0.1, 0.1, 0.1]
 

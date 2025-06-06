@@ -117,7 +117,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   // ---
 
   // Load the tower model and create a game object
-  content.load('/assets/models/obj/piratekit/tower.obj', Model).then((model) => {
+  content.load('/models/obj/piratekit/tower.obj', Model).then((model) => {
     const world = Mat4.createRotationY(Math.PI)
     gameObjects.push({
       type: 'static',
@@ -128,7 +128,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   // Load the island model and create a game object
-  content.load('/assets/models/obj/piratekit/hole.obj', Model).then((model) => {
+  content.load('/models/obj/piratekit/hole.obj', Model).then((model) => {
     const world = Mat4.createScale(8, 8, 8)
     gameObjects.push({
       type: 'static',
@@ -139,7 +139,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   // Load the ship model and create a game object
-  content.load('/assets/models/obj/piratekit/ship_light.obj', Model).then((model) => {
+  content.load('/models/obj/piratekit/ship_light.obj', Model).then((model) => {
     const world = Mat4.createIdentity()
     gameObjects.push({
       type: 'ship',
@@ -150,7 +150,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   // Load the ship model and create a game object
-  content.load('/assets/models/obj/piratekit/pirate_officer.obj', Model).then((model) => {
+  content.load('/models/obj/piratekit/pirate_officer.obj', Model).then((model) => {
     const world = Mat4.createRotationY(Math.PI).translate(20, 10, 20)
     gameObjects.push({
       type: 'static',

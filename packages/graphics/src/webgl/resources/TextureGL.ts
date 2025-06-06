@@ -1,18 +1,9 @@
-import { TextureSource } from 'graphics/src/resources'
 import { Device } from '../../Device'
 import { ArrayType, TextureType } from '../../enums'
-import { TextureImage, TextureDataOption, TextureImageOptions, TextureSourceOption } from '../../resources/TextureImage'
+import { TextureDataOption, TextureImage, TextureImageOptions, TextureSourceOption } from '../../resources/TextureImage'
+import { createTextureSource, TextureSource } from '../../resources/TextureSource'
 import type { DeviceGL } from '../DeviceGL'
 import { SharedResource } from '../utils'
-
-const cubeFaceTypes = [
-  0x8515, // TEXTURE_CUBE_MAP_POSITIVE_X
-  0x8516, // TEXTURE_CUBE_MAP_NEGATIVE_X
-  0x8517, // TEXTURE_CUBE_MAP_POSITIVE_Y
-  0x8518, // TEXTURE_CUBE_MAP_NEGATIVE_Y
-  0x8519, // TEXTURE_CUBE_MAP_POSITIVE_Z
-  0x851a, // TEXTURE_CUBE_MAP_NEGATIVE_Z
-]
 
 /**
  * Describes a texture object.
@@ -59,18 +50,23 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
     }
 
     this.resource = this.device.context.createTexture()
-    this.device.context.bindTexture(this.type, this.resource)
-    this.device.context.texImage2D(
-      this.type,
-      0,
-      this.pixelFormat,
-      this.width,
-      this.height,
-      0,
-      this.pixelFormat,
-      this.pixelType,
-      null,
-    )
+    const gl = this.device.context
+    gl.bindTexture(this.type, this.resource)
+    const faceCount = this.isCube ? 6 : 1
+    const faceType = this.isCube ? gl.TEXTURE_CUBE_MAP_POSITIVE_X : this.type
+    for (let i = 0; i < faceCount; i++) {
+      this.device.context.texImage2D(
+        faceType + i,
+        0,
+        this.pixelFormat,
+        this.width,
+        this.height,
+        0,
+        this.pixelFormat,
+        this.pixelType,
+        null,
+      )
+    }
     this.device.context.bindTexture(this.type, null)
     this.update()
   }
@@ -170,29 +166,21 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
     if (faces.length !== 6) {
       throw new Error('faces must be an array of length 6')
     }
-    const types = [
-      0x8515, // TEXTURE_CUBE_MAP_POSITIVE_X
-      0x8516, // TEXTURE_CUBE_MAP_NEGATIVE_X
-      0x8517, // TEXTURE_CUBE_MAP_POSITIVE_Y
-      0x8518, // TEXTURE_CUBE_MAP_NEGATIVE_Y
-      0x8519, // TEXTURE_CUBE_MAP_POSITIVE_Z
-      0x851a, // TEXTURE_CUBE_MAP_NEGATIVE_Z
-    ]
 
-    this.bind()
     this.set(
       'faces',
-      faces.map((face, i) => {
-        return new TextureGL(this.device, {
-          type: types[i],
-          source: face,
-          width: this.width,
-          height: this.height,
-          generateMipmap: false,
-        })
-      }),
+      faces.map((face, i) => createTextureSource(face)),
     )
     this.update()
+    return this
+  }
+
+  public updateMipmaps() {
+    if (this.generateMipmap) {
+      this.device.context.bindTexture(this.type, this.resource)
+      this.device.context.generateMipmap(this.type)
+      this.device.context.bindTexture(this.type, null)
+    }
     return this
   }
 
@@ -227,31 +215,33 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
     let ready = true
     for (const face of this.faces) {
       updated = updated || face.update()
-      ready = ready && face.ready
+      ready = ready && face.isReady
     }
+    const gl = this.device.context
     if (updated && ready) {
       this.bind()
-      for (const face of this.faces) {
-        if (ArrayBuffer.isView(face.source.data)) {
-          this.device.context.texImage2D(
-            face.type,
+      for (let i = 0; i < this.faces.length; i++) {
+        const face = this.faces[i]
+        if (ArrayBuffer.isView(face.data)) {
+          gl.texImage2D(
+            gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0,
-            face.pixelFormat,
-            face.source.width,
-            face.source.height,
+            this.pixelFormat,
+            face.width,
+            face.height,
             0,
-            face.pixelFormat,
-            face.pixelType,
-            face.source.data,
+            this.pixelFormat,
+            this.pixelType,
+            face.data,
           )
         } else {
           this.device.context.texImage2D(
-            face.type,
+            gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
             0,
-            face.surfaceFormat,
-            face.pixelFormat,
-            face.pixelType,
-            face.source.data,
+            this.surfaceFormat,
+            this.pixelFormat,
+            this.pixelType,
+            face.data,
           )
         }
       }
@@ -260,7 +250,7 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
       this.set('ready', ready)
       this.set('width', this.faces[0].width)
       this.set('height', this.faces[0].height)
-      this.set('isPOT', this.faces[0].isPOT)
+      this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
     }
     return updated
   }

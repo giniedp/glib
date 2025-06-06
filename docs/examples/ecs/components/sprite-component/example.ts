@@ -106,7 +106,7 @@ class Game extends GameProvider {
     this.sprite.height = 45
     this.sprite.pivotX = 0.5
     this.sprite.pivotY = 0.5
-    this.sprite.texture = await this.content.loadTexture('/assets/textures/puzzle/interface_sheet.png')
+    this.sprite.texture = await this.content.loadTexture('/textures/puzzle/interface_sheet.png')
     this.sprite.source = {
       x: 528,
       y: 374,

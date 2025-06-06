@@ -1,12 +1,4 @@
-import {
-  buildCone,
-  buildCube,
-  buildCylinder,
-  buildSphere,
-  createDevice,
-  GeometryBuilder,
-  LightType,
-} from '@gglib/graphics'
+import { coneGeometry, createDevice, cubeGeometry, cylinderGeometry, LightType, sphereGeometry } from '@gglib/graphics'
 import { AutoMaterial } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -18,38 +10,38 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const meshes = {
-    Cube: GeometryBuilder.begin().append(buildCube).calculateNormalsAndTangents(true).endGeometry(device),
-    Sphere: GeometryBuilder.begin().append(buildSphere).calculateNormalsAndTangents(true).endGeometry(device),
-    Cylinder: GeometryBuilder.begin().append(buildCylinder).calculateNormalsAndTangents(true).endGeometry(device),
-    Cone: GeometryBuilder.begin().append(buildCone).calculateNormalsAndTangents(true).endGeometry(device),
+    Cube: cubeGeometry(device),
+    Sphere: sphereGeometry(device),
+    Cylinder: cylinderGeometry(device),
+    Cone: coneGeometry(device),
   }
   let mesh = meshes.Cube
 
   const textures = [
-    '/assets/textures/prototype/proto_red.png',
-    '/assets/textures/prototype/proto_green.png',
-    '/assets/textures/prototype/proto_blue.png',
-    '/assets/textures/prototype/proto_gray_n.png',
-    '/assets/textures/prototype/proto_gray_h.png',
-    '/assets/textures/prototype/proto_gray_s.png',
-    '/assets/textures/prototype/proto_water.png',
-    '/assets/textures/prototype/proto_water_N.png',
-    '/assets/textures/prototype/proto_water_H.png',
-    '/assets/textures/prototype/proto_water_S.png',
-    '/assets/textures/prototype/proto_alpha_d.png',
-    '/assets/textures/prototype/proto_alpha_n.png',
-    '/assets/textures/prototype/proto_alpha_h.png',
-    '/assets/textures/prototype/proto_alpha_op.png',
-    '/assets/textures/sharetextures/StoneWall_Base.png',
-    '/assets/textures/sharetextures/StoneWall_Normal.png',
-    '/assets/textures/sharetextures/StoneWall_Height.png',
-    '/assets/textures/sharetextures/StoneWall_AO.png',
-    '/assets/textures/sharetextures/StoneWall_Roughness.png',
+    '/textures/prototype/proto_red.png',
+    '/textures/prototype/proto_green.png',
+    '/textures/prototype/proto_blue.png',
+    '/textures/prototype/proto_gray_n.png',
+    '/textures/prototype/proto_gray_h.png',
+    '/textures/prototype/proto_gray_s.png',
+    '/textures/prototype/proto_water.png',
+    '/textures/prototype/proto_water_N.png',
+    '/textures/prototype/proto_water_H.png',
+    '/textures/prototype/proto_water_S.png',
+    '/textures/prototype/proto_alpha_d.png',
+    '/textures/prototype/proto_alpha_n.png',
+    '/textures/prototype/proto_alpha_h.png',
+    '/textures/prototype/proto_alpha_op.png',
+    '/textures/sharetextures/StoneWall_Base.png',
+    '/textures/sharetextures/StoneWall_Normal.png',
+    '/textures/sharetextures/StoneWall_Height.png',
+    '/textures/sharetextures/StoneWall_AO.png',
+    '/textures/sharetextures/StoneWall_Roughness.png',
   ]
   const textureOptions: TweakUi.SelectModelOptions = [{ label: '-- none --', value: null }]
   for (const source of textures) {
     textureOptions.push({
-      label: source.split('/')[4],
+      label: source.split('/')[3],
       value: device.createTexture({
         source: source,
       }),
@@ -96,7 +88,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         value: colorOn,
         onChange: (m, value: any) => {
           colorOn = value
-          material.AmbientColor = colorOn ? color : null
+          material.AmbientColor = colorOn ? color : null!
         },
       })
       ui.add({
@@ -117,7 +109,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         value: colorOn,
         onChange: (m, value: any) => {
           colorOn = value
-          material.DiffuseColor = colorOn ? color : null
+          material.DiffuseColor = colorOn ? color : null!
         },
       })
       ui.color({
@@ -136,9 +128,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       ui.checkbox({
         label: 'SpecularColor',
         value: colorOn,
-        onChange: (m, value: boolean) => {
-          colorOn = value
-          material.SpecularColor = colorOn ? color : null
+        onChange: (m, value) => {
+          colorOn = !!value
+          material.SpecularColor = colorOn ? color : null!
         },
       })
       ui.color({
@@ -156,9 +148,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       ui.checkbox({
         label: 'EmissionColor',
         value: colorOn,
-        onChange: (m, value: boolean) => {
-          colorOn = value
-          material.EmissionColor = colorOn ? color : null
+        onChange: (m, value) => {
+          colorOn = !!value
+          material.EmissionColor = colorOn ? color : null!
         },
       })
       ui.add({
@@ -202,7 +194,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     device.clear(0xff2e2620, 1)
 
     world.initRotationY(time / 4000)
-    cam.initTranslation(0, 0, 1.0)
+    cam.initTranslationXYZ(0, 0, 1.0)
     Mat4.invert(cam, view)
     proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 

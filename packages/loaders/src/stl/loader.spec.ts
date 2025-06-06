@@ -141,11 +141,11 @@
 //     })
 
 //     it('loads logo model', async () => {
-//       await content.loadAsset('/assets/logo/gglib.stl', Model.Options)
+//       await content.loadAsset('/logo/gglib.stl', Model.Options)
 //     })
 
 //     it('loads logo binary model', async () => {
-//       await content.loadAsset('/assets/logo/gglib-binary.stl', Model.Options)
+//       await content.loadAsset('/logo/gglib-binary.stl', Model.Options)
 //     })
 //   })
 // })

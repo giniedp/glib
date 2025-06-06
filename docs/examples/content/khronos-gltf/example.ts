@@ -47,7 +47,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     captureTarget: canvas,
     preventDefault: true,
   })
-
+  const stats = device.stats({})
   const camera = {
     theta: 0,
     phi: 90,
@@ -59,6 +59,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   content.fetch<GltfIndex>(indexFile, { responseType: 'json' }).then((response) => {
     TweakUi.mount(tools, (ui) => {
+      ui.object('GPU Stats', stats)
       ui.accordion(() => {
         for (const mdl of response.body!) {
           ui.group(mdl.name, () => {
@@ -187,6 +188,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   function frame(time: number, dt: number) {
     // Resize and clear the screen
+    device.drawCalls = 0
     device.resize()
     device.cullState = CullState.CullClockWise
     device.depthState = DepthState.Default
@@ -209,6 +211,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         gizmo.draw()
       }
     }
+
+    device.stats(stats)
+    TweakUi.redraw()
   }
   return loop(frame).stop
 }

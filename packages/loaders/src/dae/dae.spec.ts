@@ -43,7 +43,7 @@
 
 //   describe('assets/dae/cube.dae', () => {
 //     it('loads ModelOptions', async () => {
-//       const result = await manager.load('/assets/models/dae/cubes.dae', Model.Options)
+//       const result = await manager.load('/models/dae/cubes.dae', Model.Options)
 //       expect(result.meshes.length).toBe(1)
 //       expect(result.meshes[0].parts.length).toBe(9)
 //       expect(result.meshes[0].materials.length).toBe(3)

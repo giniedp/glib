@@ -1,0 +1,4 @@
+# Diffuse Colors
+
+<Example/>
+<ExampleCode/>

@@ -30,7 +30,9 @@ export interface BuildSphereOptions {
 }
 
 export function sphereGeometry(device: Device, options?: BuildSphereOptions): Geometry {
-  return beginGeometry().append(buildSphere, options).endGeometry(device, {
+  return beginGeometry().append(buildSphere, options)
+    .calculateNormalsAndTangents()
+    .endGeometry(device, {
     name: 'sphere',
   })
 }
@@ -45,7 +47,7 @@ export function buildSphere(builder: GeometryBuilder, options: BuildSphereOption
   const t = options?.tesselation ?? BuildSphereDefaults.tesselation
   let transformId: number = null
   if (options?.center) {
-    transformId = builder.beginTransform(Mat4.createTranslationV(options.center))
+    transformId = builder.beginTransform(Mat4.createTranslation(options.center))
   }
   buildParametricSurface(builder, {
     position: (phi: number, theta: number) => {
@@ -95,7 +97,7 @@ export function buildSphereLines(builder: GeometryBuilder, options: BuildSphereO
   const t = options?.tesselation ?? BuildSphereDefaults.tesselation
   let transformId: number = null
   if (options?.center) {
-    transformId = builder.beginTransform(Mat4.createTranslationV(options.center))
+    transformId = builder.beginTransform(Mat4.createTranslation(options.center))
   }
   buildParametricLines(builder, {
     position: (phi: number, theta: number) => {

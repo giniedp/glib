@@ -72,7 +72,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   function updateView() {
-    view.initTranslation(0, 0, -2)
+    view.initTranslationXYZ(0, 0, -2)
     projection.initPerspectiveFieldOfView(Math.PI / 3, device.drawingBufferAspectRatio, 1, 10)
   }
 
@@ -80,7 +80,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     object.world
       .initIdentity()
       .rotateYawPitchRoll(time / 2000, time / 4000, time / 8000)
-      .setTranslation(x - (size - 1) / 2, size - y - (size + 1) / 2, -2)
+      .setTranslationXYZ(x - (size - 1) / 2, size - y - (size + 1) / 2, -2)
   }
 
   TweakUi.mount(tools, (ui) => {

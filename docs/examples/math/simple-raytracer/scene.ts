@@ -101,7 +101,7 @@ class BoxShape implements Shape {
   private transform: Mat4
   private inverse: Mat4
   constructor(position: IVec3, forward: IVec3, scale: IVec3, public material: Material) {
-    this.transform = Mat4.createWorld(position, forward, Vec3.Up).scaleV(scale)
+    this.transform = Mat4.createWorld(position, forward, Vec3.Up).scale(scale)
     this.inverse = Mat4.invert(this.transform)
   }
 
@@ -142,7 +142,7 @@ class Scene {
 
   public intersect(ray: Ray, pixel: Pixel) {
     let d = Number.MAX_VALUE
-    pixel.shape = null
+    pixel.shape = null!
     for (let i = 0; i < this.objects.length; i++) {
       let d1 = this.objects[i].intersectsAt(ray, tmpVec1)
       if (!isNaN(d1) && d1 < d && d1 > 0) {
@@ -180,8 +180,8 @@ class Scene {
       color: Vec3.createZero(),
       hitPoint: Vec3.createZero(),
       hitNormal: Vec3.createZero(),
-      shape: null,
-      material: null,
+      shape: null!,
+      material: null!,
     }
     let i = 0
     for (let y = options.y1; y < options.y2; y++) {

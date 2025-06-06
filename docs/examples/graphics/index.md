@@ -1,6 +1,11 @@
 ---
-title: "@gglib/graphics"
+title: Graphics Basics
 order: 0
 ---
 
-# Graphics package
+# Graphics Device
+
+Usage examples for the following packages:
+
+- @gglib/graphics
+- @gglib/math

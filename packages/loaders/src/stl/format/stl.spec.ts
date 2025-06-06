@@ -5,7 +5,7 @@ import { expect, describe, it, beforeEach, afterAll, beforeAll } from 'vitest'
 describe('content/formats/stl', () => {
   it('parses binary file', async () => {
     const res = await Http.request({
-      url: '/assets/models/stl/cube.stl',
+      url: '/models/stl/cube.stl',
       xhr: Http.createXMLHttpRequest('arraybuffer'),
     })
     const result = STL.parse(res.response)
@@ -15,7 +15,7 @@ describe('content/formats/stl', () => {
 
   it('parses ascii file', async () => {
     const res = await Http.request({
-      url: '/assets/models/stl/cube.ascii.stl',
+      url: '/models/stl/cube.ascii.stl',
       xhr: Http.createXMLHttpRequest('arraybuffer'),
     })
     const result = STL.parse(res.response)

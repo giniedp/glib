@@ -16,6 +16,7 @@ export class FrameBufferGL extends FrameBuffer {
   private colorAttachmentPoints: number[] = []
   private maxColorAttachments: number = 1
   private drawBuffersExtension: WEBGL_draw_buffers
+  private attachedTypes: number[] = []
 
   constructor(device: DeviceGL, options?: FrameBufferOptions) {
     super()
@@ -64,28 +65,29 @@ export class FrameBufferGL extends FrameBuffer {
     // replace color attachments
     let count = 0
     for (let i = 0; i < targetCount; i++) {
-      const oldTexture: TextureGL = this.colorAttachments[i] as TextureGL
-      const newTexture: TextureGL = textures[i] as TextureGL
+      const image: TextureGL = textures[i] as TextureGL
 
-      if (!needsRebind && newTexture && oldTexture && newTexture.resource === oldTexture.resource) {
-        // skip binding if the new texture is already bound
-        count += 1
-        continue
-      }
-      if (newTexture) {
+      if (image) {
         // bind the new texture
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, newTexture.resource, 0)
-        this.colorAttachments[i] = newTexture
+        if (image.isCube) {
+          this.attachedTypes[i] = gl.TEXTURE_CUBE_MAP_POSITIVE_X + image.targetFace
+        } else {
+          this.attachedTypes[i] = image.type ?? gl.TEXTURE_2D
+        }
+        this.colorAttachments[i] = image
         this.colorAttachmentPoints[i] = gl.COLOR_ATTACHMENT0 + i
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, this.colorAttachmentPoints[i], this.attachedTypes[i], image.resource, image.targetLevel)
         count += 1
       } else {
         // unbind the old texture
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, null, 0)
-        this.colorAttachments[i] = null
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, this.attachedTypes[i] ?? gl.TEXTURE_2D, null, 0)
         this.colorAttachmentPoints[i] = 0
+        this.colorAttachments[i] = null
+        this.attachedTypes[i] = gl.TEXTURE_2D
       }
     }
     // ensure attachment array length
+    this.attachedTypes.length = textures.length
     this.colorAttachments.length = textures.length
     this.colorAttachmentPoints.length = textures.length
     this.colorAttachmentCountField = count

@@ -33,7 +33,7 @@ export interface ITransform extends ITransformBase {
 }
 
 export class Transform<T = unknown> implements ITransform {
-  public static removeFromArray = removeFromArrayUnstable
+  public static removeFromArray = removeFromArray
 
   /**
    * A user defined name of the transform
@@ -427,7 +427,7 @@ export class Transform<T = unknown> implements ITransform {
    *
    * @param scale - The scale vector to initialize from
    */
-  public setScaleV(scale: IVec3): this {
+  public setScale(scale: IVec3): this {
     this.scale.x = scale.x
     this.scale.y = scale.y
     this.scale.z = scale.z
@@ -442,7 +442,7 @@ export class Transform<T = unknown> implements ITransform {
    * @param scaleY - The new y scale factor
    * @param scaleZ - The new z scale factor
    */
-  public setScale(scaleX: number, scaleY: number, scaleZ: number): this {
+  public setScaleXYZ(scaleX: number, scaleY: number, scaleZ: number): this {
     this.scale.x = scaleX
     this.scale.y = scaleY
     this.scale.z = scaleZ
@@ -735,4 +735,13 @@ function removeFromArrayUnstable<T>(array: T[], item: T): void {
     array[index] = array[array.length - 1]
   }
   array.length--
+}
+
+
+function removeFromArray<T>(array: T[], item: T): void {
+  const index = array.indexOf(item)
+  if (index < 0) {
+    return
+  }
+  array.splice(index, 1)
 }

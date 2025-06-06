@@ -1,4 +1,4 @@
-import { createTextureSource, TextureImageOptions } from '@gglib/graphics'
+import { createTextureSource, SamplerState, TextureImageOptions } from '@gglib/graphics'
 import { AssetContainer } from './AssetContainer'
 import { AssetLoader, ContentLoader, LoaderContext } from './ContentLoader'
 
@@ -62,16 +62,30 @@ export class TextureLoader implements AssetLoader {
       responseType: 'blob',
       signal: context.signal,
     })
+    const options = await imageFromBlob(response.body)
     return {
       source: url,
-      textures: [await imageFromBlob(response.body)],
+      textures: [
+        {
+          ...options,
+          generateMipmap: true,
+          sampler: SamplerState.LinearWrap,
+        },
+      ],
     }
   }
 
   protected async loadWithimageElement(url: string, context: LoaderContext): Promise<AssetContainer> {
+    const options = await imageFromUrl(url)
     return {
       source: url,
-      textures: [await imageFromUrl(url)],
+      textures: [
+        {
+          ...options,
+          generateMipmap: true,
+          sampler: SamplerState.LinearWrap,
+        },
+      ],
     }
   }
 }

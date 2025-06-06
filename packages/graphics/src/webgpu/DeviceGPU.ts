@@ -617,4 +617,9 @@ export class DeviceGPU extends Device<any> {
   public createDepthBuffer(options: DepthBufferOptions): DepthBufferGPU {
     return new DepthBufferGPU(this, options)
   }
+
+  public stats(out?: Record<string, any>): Record<string, any> {
+    out ||= out
+    return out
+  }
 }

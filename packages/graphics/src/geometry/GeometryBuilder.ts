@@ -430,7 +430,7 @@ export class GeometryBuilder {
    * @param options - Additional {@link MeshOptions} . The {@link MeshOptions.parts} option is ignored.
    * @returns `ModelMeshOptions` or `null` if current state has no mesh data
    */
-  public endMesh(options?: MeshOptions): MeshOptions | null
+  public endMesh(options?: MeshOptions): MeshOptions
   /**
    * From current state it creates in instance of {@link Mesh} and prepares the builder for the next mesh
    *
@@ -438,7 +438,7 @@ export class GeometryBuilder {
    * @param options - Additional {@link MeshOptions} . The {@link MeshOptions.parts} option is ignored.
    * @returns `ModelMesh` or `null` if current state has no mesh data
    */
-  public endMesh(device: Device, options?: MeshOptions): Mesh | null
+  public endMesh(device: Device, options?: MeshOptions): Mesh
   public endMesh(): Mesh | MeshOptions {
     this.endGeometry()
     if (!this.geometries.length) {

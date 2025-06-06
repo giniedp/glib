@@ -93,7 +93,7 @@ export class Mat2 {
   /**
    * Sets the scale part
    */
-  public setScale(x: number, y: number): this {
+  public setScaleXYZ(x: number, y: number): this {
     this.elements[M._00] = x
     this.elements[M._11] = y
     return this
@@ -102,7 +102,7 @@ export class Mat2 {
   /**
    * Sets the scale part
    */
-  public setScaleV(vec: IVec2): this {
+  public setScale(vec: IVec2): this {
     this.elements[M._00] = vec.x
     this.elements[M._11] = vec.y
     return this
@@ -443,8 +443,8 @@ export class Mat2 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public static createAxisAngleV(axis: IVec2 | IVec3, angle: number): Mat2 {
-    return new Mat2().initAxisAngle(axis.x, axis.y, (axis as any).z || 0, angle)
+  public static createAxisAngle(axis: IVec2 | IVec3, angle: number): Mat2 {
+    return new Mat2().initAxisXYZAngle(axis.x, axis.y, (axis as any).z || 0, angle)
   }
 
   /**
@@ -453,8 +453,8 @@ export class Mat2 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public initAxisAngleV(axis: IVec2 | IVec3, angle: number): this {
-    return this.initAxisAngle(axis.x, axis.y, (axis as any).z || 0, angle)
+  public initAxisAngle(axis: IVec2 | IVec3, angle: number): this {
+    return this.initAxisXYZAngle(axis.x, axis.y, (axis as any).z || 0, angle)
   }
 
   /**
@@ -463,8 +463,8 @@ export class Mat2 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public rotateAxisAngleV(axis: IVec2 | IVec3, angle: number): this {
-    return this.rotateAxisAngle(axis.x, axis.y, (axis as any).z, angle)
+  public rotateAxisAngle(axis: IVec2 | IVec3, angle: number): this {
+    return this.rotateAxisXYZAngle(axis.x, axis.y, (axis as any).z, angle)
   }
 
   /**
@@ -476,8 +476,8 @@ export class Mat2 {
    * @param axis - normalized rotation axis vector
    * @param angle - rotation angle in rad
    */
-  public preRotateAxisAngleV(axis: IVec3, angle: number): this {
-    return this.preRotateAxisAngle(axis.x, axis.y, axis.z, angle)
+  public preRotateAxisAngle(axis: IVec3, angle: number): this {
+    return this.preRotateAxisXYZAngle(axis.x, axis.y, axis.z, angle)
   }
 
   /**
@@ -488,8 +488,8 @@ export class Mat2 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public static createAxisAngle(x: number, y: number, z: number, angle: number): Mat2 {
-    return new Mat2().initAxisAngle(x, y, z, angle)
+  public static createAxisXYZAngle(x: number, y: number, z: number, angle: number): Mat2 {
+    return new Mat2().initAxisXYZAngle(x, y, z, angle)
   }
 
   /**
@@ -500,7 +500,7 @@ export class Mat2 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public initAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public initAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -530,7 +530,7 @@ export class Mat2 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public rotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public rotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -577,7 +577,7 @@ export class Mat2 {
    * @param z - z component of the normalized rotation axis
    * @param angle - rotation angle in rad
    */
-  public preRotateAxisAngle(x: number, y: number, z: number, angle: number): this {
+  public preRotateAxisXYZAngle(x: number, y: number, z: number, angle: number): this {
     // create quaternion
     const halfAngle = angle * 0.5
     const scale = Math.sin(halfAngle)
@@ -778,8 +778,8 @@ export class Mat2 {
   /**
    * Creates a new matrix with a predefined scale
    */
-  public static createScale(x: number, y: number): Mat2 {
-    return new Mat2().initScale(x, y)
+  public static createScaleXY(x: number, y: number): Mat2 {
+    return new Mat2().initScaleXY(x, y)
   }
 
   /**
@@ -789,7 +789,7 @@ export class Mat2 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public initScale(x: number, y: number): this {
+  public initScaleXY(x: number, y: number): this {
     const m = this.elements
     m[0] = x; m[2] = 0
     m[1] = 0; m[3] = y
@@ -802,7 +802,7 @@ export class Mat2 {
    * @param x - x scale factor
    * @param y - y scale factor
    */
-  public scale(x: number, y: number): this {
+  public scaleXY(x: number, y: number): this {
     const m = this.elements
     m[M._00] *= x
     m[M._01] *= x
@@ -818,7 +818,7 @@ export class Mat2 {
    * @param y - y scale factor
    * @param z - z scale factor
    */
-  public preScale(x: number, y: number): this {
+  public preScaleXY(x: number, y: number): this {
     const m = this.elements
     m[M._00] *= x
     m[M._10] *= x
@@ -832,8 +832,8 @@ export class Mat2 {
   /**
    * Creates a new matrix with a predefined scale
    */
-  public static createScaleV(vec: IVec2): Mat2 {
-    return new Mat2().initScale(vec.x, vec.y)
+  public static createScale(vec: IVec2): Mat2 {
+    return new Mat2().initScaleXY(vec.x, vec.y)
   }
 
   /**
@@ -841,7 +841,7 @@ export class Mat2 {
    *
    * @param vec - The scale vector
    */
-  public initScaleV(vec: IVec2): this {
+  public initScale(vec: IVec2): this {
     const m = this.elements
     m[0] = vec.x; m[2] = 0
     m[1] = 0; m[3] = vec.y
@@ -853,7 +853,7 @@ export class Mat2 {
    *
    * @param scale - the scale vector
    */
-  public scaleV(scale: IVec2): this {
+  public scale(scale: IVec2): this {
     const x = scale.x
     const y = scale.y
     const m = this.elements
@@ -869,7 +869,7 @@ export class Mat2 {
    *
    * @param scale - the scale vector
    */
-  public preScaleV(scale: IVec2): this {
+  public preScale(scale: IVec2): this {
     const x = scale.x
     const y = scale.y
 
@@ -887,7 +887,7 @@ export class Mat2 {
    * Creates a new matrix with a predefined scale
    */
   public static createScaleUniform(scale: number): Mat2 {
-    return new Mat2().initScale(scale, scale)
+    return new Mat2().initScaleXY(scale, scale)
   }
 
   /**

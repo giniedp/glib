@@ -20,6 +20,7 @@ import {
   CullStateParams,
   DepthState,
   DepthStateParams,
+  ICullState,
   OffsetState,
   OffsetStateParams,
   SamplerState,
@@ -96,6 +97,16 @@ export abstract class Device<T = unknown> {
   }
 
   /**
+   * Copies the current cull state parameters to a target object.
+   *
+   * @remarks
+   * This is a garbage free way to get the current cull state parameters.
+   */
+  public getCullState(target: Partial<ICullState>): CullStateParams {
+    return this._cullState.copy(target)
+  }
+
+  /**
    * Gets a copy of the blend state parameters.
    * Updates the blend state parameters and commits the state to the GPU.
    */
@@ -104,6 +115,13 @@ export abstract class Device<T = unknown> {
   }
   public set blendState(v: BlendStateParams) {
     this._blendState.commit(v)
+  }
+
+  /**
+   * Copies the current blend state parameters to a target object.
+   */
+  public getBlendState(target: Partial<BlendStateParams>): BlendStateParams {
+    return this._blendState.copy(target)
   }
 
   /**
@@ -118,6 +136,13 @@ export abstract class Device<T = unknown> {
   }
 
   /**
+   * Copies the current depth state parameters to a target object.
+   */
+  public getDepthState(target: Partial<DepthStateParams>): DepthStateParams {
+    return this._depthState.copy(target)
+  }
+
+  /**
    * Gets a copy of the offset state parameters
    * Updates the offset state parameters and commits the state to the GPU
    */
@@ -126,6 +151,13 @@ export abstract class Device<T = unknown> {
   }
   public set offsetState(v: OffsetStateParams) {
     this._offsetState.commit(v)
+  }
+
+  /**
+   * Copies the current offset state parameters to a target object.
+   */
+  public getOffsetState(target: Partial<OffsetStateParams>): OffsetStateParams {
+    return this._offsetState.copy(target)
   }
 
   /**
@@ -140,6 +172,13 @@ export abstract class Device<T = unknown> {
   }
 
   /**
+   * Copies the current stencil state parameters to a target object.
+   */
+  public getStencilState(target: Partial<StencilStateParams>): StencilStateParams {
+    return this._stencilState.copy(target)
+  }
+
+  /**
    * Gets a copy of the scissor state parameters
    * Updates the scissor state parameters and commits the state to the GPU
    */
@@ -151,6 +190,13 @@ export abstract class Device<T = unknown> {
   }
 
   /**
+   * Copies the current scissor state parameters to a target object.
+   */
+  public getScissorState(target: Partial<ScissorStateParams>): ScissorStateParams {
+    return this._scissorState.copy(target)
+  }
+
+  /**
    * Gets a copy of the viewport state parameters
    * Updates the viewport state parameters and commits the state to the GPU
    */
@@ -159,6 +205,13 @@ export abstract class Device<T = unknown> {
   }
   public set viewportState(v: ViewportStateParams) {
     this._viewportState.commit(v)
+  }
+
+  /**
+   * Copies the current viewport state parameters to a target object.
+   */
+  public getViewportState(target: Partial<ViewportStateParams>): ViewportStateParams {
+    return this._viewportState.copy(target)
   }
 
   public get defaultTexture(): Texture {
@@ -201,10 +254,7 @@ export abstract class Device<T = unknown> {
 
   protected defaultTextureInstance: Texture
 
-  public readonly stats = {
-    drawCalls: 0,
-  }
-
+  public drawCalls = 0
   public get driverInfo(): string {
     return ''
   }
@@ -502,17 +552,9 @@ export abstract class Device<T = unknown> {
     return buffer
   }
 
-  protected convertShaderOption<S>(input: string | S): string | S {
-    if (typeof input === 'string' && input.startsWith('#') && input.indexOf('\n') < 0) {
-      const element = document.getElementById(input.substr(1))
-      if (element) {
-        return element.textContent
-      }
-    }
-    return input
+  protected set<K extends keyof this>(key: K, value: this[K]) {
+    this[key] = value
   }
 
-  protected set<K extends keyof this>(key: K, value: this[K]) {
-    ;(this as any)[key] = value
-  }
+  public abstract stats(out?: Record<string, any>): Record<string, any>
 }

@@ -47,7 +47,6 @@ export type TextureSourceOption = string | TexImageSource | TextureDataOption | 
  * @public
  */
 export interface TextureImageOptions {
-
   /**
    * Whether or not to automatically generate mip maps
    */
@@ -115,10 +114,7 @@ export interface TextureImageOptions {
   crossOrigin?: string
 }
 
-export type RenderTargetOptions = Omit<
-  TextureOptions,
-  'source' | 'crossOrigin' | 'generateMipmap' | 'type' | 'faces'
->
+export type RenderTargetOptions = Omit<TextureOptions, 'source' | 'crossOrigin' | 'generateMipmap' | 'type' | 'faces'>
 
 /**
  * Describes a texture object.
@@ -211,7 +207,17 @@ export abstract class TextureImage {
   /**
    * The faces of a cube texture
    */
-  public readonly faces: TextureImage[] = null
+  public readonly faces: TextureSource[] = null
+
+  /**
+   * If used as render target this indicates the cubemap face that is currently being rendered to.
+   */
+  public targetFace: number = 0
+
+  /**
+   * If used as render target this indicates the mipmap level that is currently being rendered to.
+   */
+  public targetLevel: number = 0
 
   /**
    * Returns the video element if the {@link source} is an instance of {@link VideoElementSource}
@@ -362,6 +368,11 @@ export abstract class TextureImage {
    * @returns the previously bound texture handle
    */
   public abstract bind(): this
+
+  /**
+   * Generates mipmaps for this texture.
+   */
+  public abstract updateMipmaps(): this
 
   /**
    * Sets the texture source from HtmlImageElement

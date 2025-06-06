@@ -32,6 +32,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const proj = Mat4.createIdentity()
   const cam = Mat4.createIdentity()
   const light = new LightParams()
+  const stats = device.stats({})
   light.color = [0.8, 0.8, 0.8]
   light.position = [0, 0, 500]
   light.direction = [0, 0, -1]
@@ -43,13 +44,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   function frame(time: number) {
     let time2pi = time * 2 * Math.PI
 
+    device.drawCalls = 0
     device.resize()
     device.cullState = CullState.CullClockWise
     device.depthState = DepthState.Default
     device.blendState = BlendState.Default
     device.clear(0xff2e2620, 1.0)
 
-    cam.initTranslation(0, 0, 30)
+    cam.initTranslationXYZ(0, 0, 30)
     view.initFrom(cam).invert()
     proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 1, 1000)
 
@@ -69,6 +71,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       })
       model.draw()
     }
+
+    device.stats(stats)
+    TweakUi.redraw()
   }
 
   let assets = ['/megaman.pixels', '/sonic.pixels', '/mario.pixels']
@@ -80,14 +85,13 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   loadModel(assets[0])
 
   TweakUi.mount(tools, (ui) => {
-    ui.collapsible('Controls', { collapsed: true }, () => {
-      ui.select({ model: assets[0] }, 'model', {
-        options: assets,
-        onChange: (ctrl) => {
-          loadModel(ctrl!.target!.model)
-        },
-      })
+    ui.select({ model: assets[0] }, 'model', {
+      options: assets,
+      onChange: (ctrl) => {
+        loadModel(ctrl!.target!.model)
+      },
     })
+    ui.object("GPU Stats", stats)
   })
 
   return loop(frame).stop
@@ -136,7 +140,7 @@ export class PixelsLoader implements AssetLoader {
         if (!(col in colorMap)) {
           return
         }
-        transform.initTranslation(
+        transform.initTranslationXYZ(
           x - cols.length / 2 + 0.5 + x * gap,
           rows.length - y - rows.length / 2 + 0.5 - y * gap,
           0,

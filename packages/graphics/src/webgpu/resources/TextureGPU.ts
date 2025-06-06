@@ -135,6 +135,11 @@ export class TextureGPU extends TextureImage {
     return this
   }
 
+  public updateMipmaps(): this {
+    // TODO:
+    return this
+  }
+
   /**
    * Updates the texture from current image or video element.
    *

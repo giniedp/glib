@@ -25,10 +25,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const models: Record<string, string> = {
-    Tower: '/assets/models/obj/tower-complete-large.obj',
-    Ship: '/assets/models/obj/ship-pirate-large.obj',
-    Tree: '/assets/models/obj/tree.obj',
-    Cube: '/assets/models/obj/cube.obj',
+    Tower: '/models/obj/tower-complete-large.obj',
+    Ship: '/models/obj/ship-pirate-large.obj',
+    Tree: '/models/obj/tree.obj',
+    Cube: '/models/obj/cube.obj',
   }
   TweakUi.mount(tools, (ui) => {
     loadModel(models.Tower)

@@ -17,17 +17,17 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const files = {
-    avatar: '/assets/testimages/tga/avatar.tga',
-    cbw8: '/assets/testimages/tga/cbw8.tga',
-    ccm8: '/assets/testimages/tga/ccm8.tga',
-    ctc16: '/assets/testimages/tga/ctc16.tga',
-    ctc24: '/assets/testimages/tga/ctc24.tga',
-    ctc32: '/assets/testimages/tga/ctc32.tga',
-    ubw8: '/assets/testimages/tga/ubw8.tga',
-    ucm8: '/assets/testimages/tga/ucm8.tga',
-    utc16: '/assets/testimages/tga/utc16.tga',
-    utc24: '/assets/testimages/tga/utc24.tga',
-    utc32: '/assets/testimages/tga/utc32.tga',
+    avatar: '/testimages/tga/avatar.tga',
+    cbw8: '/testimages/tga/cbw8.tga',
+    ccm8: '/testimages/tga/ccm8.tga',
+    ctc16: '/testimages/tga/ctc16.tga',
+    ctc24: '/testimages/tga/ctc24.tga',
+    ctc32: '/testimages/tga/ctc32.tga',
+    ubw8: '/testimages/tga/ubw8.tga',
+    ucm8: '/testimages/tga/ucm8.tga',
+    utc16: '/testimages/tga/utc16.tga',
+    utc24: '/testimages/tga/utc24.tga',
+    utc32: '/testimages/tga/utc32.tga',
   }
 
   TweakUi.mount(tools, (ui) => {

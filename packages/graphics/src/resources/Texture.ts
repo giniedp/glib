@@ -70,6 +70,10 @@ export class Texture {
     return this.image.isRenderTarget
   }
 
+  public get activeFace() {
+    return this.image.targetFace
+  }
+
   public constructor(device: Device, options: TextureOptions) {
     this.device = device
     this.setup(options)
@@ -85,13 +89,19 @@ export class Texture {
     this.image?.dispose()
     this.image = image
 
-    if (options.sampler === null) {
+    if ('sampler' in options) {
+      this.setupSampler(options.sampler)
+    }
+  }
+
+  public setupSampler(sampler: SamplerStateParams | null) {
+    if (!sampler) {
       // explicit null means to remove the sampler
       this.sampler?.dispose()
-    } else if (options.sampler) {
-      const sampler = this.device.createSamplerState(options.sampler)
+    } else {
+      const newSampler = this.device.createSamplerState(sampler)
       this.sampler?.dispose()
-      this.sampler = sampler
+      this.sampler = newSampler
     }
   }
 

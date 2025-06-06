@@ -140,7 +140,7 @@ class CubeComponent implements OnInit, OnUpdate {
   public content: ContentManager
 
   public async onInit() {
-    this.renderable.model = await this.content.load('/assets/models/obj/cube.obj', Model)
+    this.renderable.model = await this.content.load('/models/obj/cube.obj', Model)
   }
 
   public onUpdate(dt: number) {

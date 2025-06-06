@@ -283,7 +283,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
 
     vBuffer.bind(iBuffer, program)
     this.context.drawElements(type, elementCount, dataType, elementOffset)
-    this.stats.drawCalls++
+    this.drawCalls++
     vBuffer.unbind()
     return this
   }
@@ -324,7 +324,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
 
       vBuffer.bind(iBuffer, program)
       this.context.drawElementsInstanced(type, count, dataType, offset * iBuffer.stride, instanceCount)
-      this.stats.drawCalls++
+      this.drawCalls++
     } else {
       throw new Error(`not supported`)
     }
@@ -352,7 +352,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
 
     vBuffer.bind(null, program)
     this.context.drawArrays(type, offset, count)
-    this.stats.drawCalls++
+    this.drawCalls++
     return this
   }
 
@@ -430,6 +430,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
     // unset the framebuffer
     if (!firstTexture) {
       this.frameBuffer = this.customFrameBuffer
+      // TODO: avoid creating a new object
       this.viewportState = {
         x: 0,
         y: 0,
@@ -455,6 +456,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
       this.reusableFrameBuffer = new FrameBufferGL(this, opts)
     }
     this.frameBuffer = this.reusableFrameBuffer
+    // TODO: avoid creating a new object
     this.viewportState = {
       x: 0,
       y: 0,
@@ -658,7 +660,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
    */
   public createRenderTarget(options: RenderTargetOptions): Texture {
     options.depthFormat ||= 'None'
-    options.sampler ||= SamplerState.LinearRenderTarget
+    options.sampler ||= SamplerState.LinearClampNoMipMap
     return new Texture(this, options)
   }
 
@@ -775,6 +777,16 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
 
   public countPrograms(): number {
     return this.programResources.length
+  }
+
+  public stats(out?: Record<string, any>): Record<string, any> {
+    out = out || {}
+    out.textures = this.countTextures()
+    out.textureInstances = this.countTextureReferences()
+    out.programs = this.countPrograms()
+    out.programInstances = this.countProgramReferences()
+    out.drawCalls = this.drawCalls
+    return out
   }
 }
 

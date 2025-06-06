@@ -601,18 +601,18 @@ describe('Vec4', () => {
 
   describe('#transformByMat4', () => {
     it ('transforms by Mat4', () => {
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngleV({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngleV({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngleV({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createTranslation(1, 2, 3)), 2,  3,  4, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat4(Mat4.createTranslationXYZ(1, 2, 3)), 2,  3,  4, 1)
     })
   })
 
   describe('#transformByMat3', () => {
     it ('transforms by Mat3', () => {
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngleV({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngleV({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1, 1)
-      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngleV({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 1, y: 0, z: 0}, Math.PI * 0.5)),  1, -1,  1, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 1, z: 0}, Math.PI * 0.5)),  1,  1, -1, 1)
+      expectComponents(Vec4.create(1, 1, 1, 1).transformByMat3(Mat3.createAxisAngle({ x: 0, y: 0, z: 1}, Math.PI * 0.5)), -1,  1,  1, 1)
     })
   })
 

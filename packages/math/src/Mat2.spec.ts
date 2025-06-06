@@ -204,7 +204,7 @@ describe('Mat2', () => {
 
     describe('#initAxisAngle', () => {
       it('creates rotation matrix', () => {
-        const mat = new Mat2().initAxisAngle(0, 1, 0, Math.PI * 0.5)
+        const mat = new Mat2().initAxisXYZAngle(0, 1, 0, Math.PI * 0.5)
         const vec = Vec2.create(1, 1)
         const vec2 = mat.transform(vec)
         expectVec2Components(vec2, [0, 1])
@@ -213,7 +213,7 @@ describe('Mat2', () => {
 
     describe('#initAxisAngleV', () => {
       it('creates rotation matrix', () => {
-        const mat = new Mat2().initAxisAngleV({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
+        const mat = new Mat2().initAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
         const vec = Vec2.create(1, 1)
         const vec2 = mat.transform(vec)
         expectVec2Components(vec2, [0, 1])
@@ -222,7 +222,7 @@ describe('Mat2', () => {
 
     describe('.createAxisAngle', () => {
       it('creates rotation matrix', () => {
-        const mat = Mat2.createAxisAngle(0, 1, 0, Math.PI * 0.5)
+        const mat = Mat2.createAxisXYZAngle(0, 1, 0, Math.PI * 0.5)
         const vec = Vec2.create(1, 1)
         const vec2 = mat.transform(vec)
         expectVec2Components(vec2, [0, 1, -1])
@@ -231,7 +231,7 @@ describe('Mat2', () => {
 
     describe('.createAxisAngleV', () => {
       it('creates rotation matrix', () => {
-        const mat = Mat2.createAxisAngleV({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
+        const mat = Mat2.createAxisAngle({ x: 0, y: 1, z: 0 }, Math.PI * 0.5)
         const vec = Vec2.create(1, 1)
         const vec2 = mat.transform(vec)
         expectVec2Components(vec2, [0, 1, -1])
@@ -295,7 +295,7 @@ describe('Mat2', () => {
 
     describe('#initScale', () => {
       it('creates scale matrix', () => {
-        const mat = new Mat2().initScale(1, 2)
+        const mat = new Mat2().initScaleXY(1, 2)
         const vec = Vec2.create(1, 2)
         const vec2 = mat.transform(vec)
         expectVec2Components(vec2, [1, 4])
@@ -304,7 +304,7 @@ describe('Mat2', () => {
 
     describe('.createScale', () => {
       it('creates scale matrix', () => {
-        const mat = Mat2.createScale(1, 2)
+        const mat = Mat2.createScaleXY(1, 2)
         const vec = Vec2.create(1, 2)
         const vec2 = mat.transform(vec)
         expectVec2Components(vec2, [1, 4])
@@ -367,15 +367,15 @@ describe('Mat2', () => {
       expectVec2Components(mat.getScale(), [1, 4])
     })
 
-    it ('setScaleV', () => {
-      expectComponents(mat.setScaleV(Vec2.create(21, 22)).transpose(), [
+    it ('setScale', () => {
+      expectComponents(mat.setScale(Vec2.create(21, 22)).transpose(), [
         21, 2,
         3, 22,
       ])
     })
 
     it ('setScale', () => {
-      expectComponents(mat.setScale(21, 22).transpose(), [
+      expectComponents(mat.setScaleXYZ(21, 22).transpose(), [
         21, 2,
         3, 22,
       ])

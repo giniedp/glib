@@ -111,7 +111,7 @@ export default (canvas: HTMLCanvasElement) => {
   // Create a texture object.
   // Simply pass an URL to the image that should be used as a texture.
   const texture = device.createTexture({
-    source: '/assets/textures/prototype/proto_red.png',
+    source: '/textures/prototype/proto_red.png',
   })
 
   // Define some variables that will be passed to the shader.
@@ -135,7 +135,7 @@ export default (canvas: HTMLCanvasElement) => {
     // rotate the rectangle, place the camera
     // and update projection with the aspect ration of the canvas
     world.initRotationY(time! / 1000)
-    view.initIdentity().setTranslationV(camPosition).invert()
+    view.initIdentity().setTranslation(camPosition).invert()
     proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
 
     // pass variables to the shader

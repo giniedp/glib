@@ -178,7 +178,7 @@ class CubeComponent implements GameComponent {
     this.entity = entity
     this.renderable = entity.component(ModelComponent)
     this.content = entity.provider.get(ContentLoader)
-    this.content.loadModel('/assets/models/gltf/box.gltf').then((model) => {
+    this.content.loadModel('/models/gltf/box.gltf').then((model) => {
       model.meshes.forEach((mesh) => {
         mesh.materials.forEach((material) => {
           const mtl = material as AutoMaterial

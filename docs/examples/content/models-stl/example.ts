@@ -9,12 +9,12 @@ import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 const models = {
-  Logo: '/assets/logo/gglib.stl',
-  'Logo (binary)': '/assets/logo/gglib-binary.stl',
-  Bottle: '/assets/models/stl/bottle.stl',
-  Menger: '/assets/models/stl/menger-sponge.stl',
-  Cube: '/assets/models/stl/cube.stl',
-  CubeASCII: '/assets/models/stl/cube.ascii.stl',
+  Logo: '/logo/gglib.stl',
+  'Logo (binary)': '/logo/gglib-binary.stl',
+  Bottle: '/models/stl/bottle.stl',
+  Menger: '/models/stl/menger-sponge.stl',
+  Cube: '/models/stl/cube.stl',
+  CubeASCII: '/models/stl/cube.ascii.stl',
 }
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {

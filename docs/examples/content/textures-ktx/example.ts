@@ -17,7 +17,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const files = {
-    dust: '/assets/textures/cubemaps/dust.ktx2',
+    dust: '/textures/cubemaps/dust.ktx2',
   }
 
   TweakUi.mount(tools, (ui) => {

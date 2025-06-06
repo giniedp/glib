@@ -8,7 +8,7 @@ export default defineConfig({
   description: 'Game and Graphics Library',
 
   themeConfig: {
-    logo: '/assets/logo/gglib.svg',
+    logo: '/logo/gglib.svg',
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
@@ -39,6 +39,7 @@ export default defineConfig({
     socialLinks: [{ icon: 'github', link: 'https://github.com/giniedp/glib' }],
   },
   vite: {
+    publicDir: '../assets',
     resolve: {
       alias: {
         '@components': fileURLToPath(new URL('./theme/components', import.meta.url)),
