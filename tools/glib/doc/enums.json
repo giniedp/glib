@@ -286,6 +286,7 @@
     "values": {
       "Texture": "gl:TEXTURE",
       "Texture2D": "gl:TEXTURE_2D",
+      "Texture3D": "gl:TEXTURE_3D",
       "TextureCube": "gl:TEXTURE_CUBE_MAP"
     }
   },

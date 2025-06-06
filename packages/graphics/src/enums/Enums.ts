@@ -849,6 +849,7 @@ export type PrimitiveTypeOption = PrimitiveType | PrimitiveTypeName
 export enum TextureType {
   Texture = gl.TEXTURE,
   Texture2D = gl.TEXTURE_2D,
+  Texture3D = gl.TEXTURE_3D,
   TextureCube = gl.TEXTURE_CUBE_MAP,
 }
 /**
@@ -862,6 +863,9 @@ const TextureTypeValueMap = Object.freeze<any>({
   Texture2D: gl.TEXTURE_2D,
   TEXTURE_2D: gl.TEXTURE_2D,
   [gl.TEXTURE_2D]: gl.TEXTURE_2D,
+  Texture3D: gl.TEXTURE_3D,
+  TEXTURE_3D: gl.TEXTURE_3D,
+  [gl.TEXTURE_3D]: gl.TEXTURE_3D,
   TextureCube: gl.TEXTURE_CUBE_MAP,
   TEXTURE_CUBE_MAP: gl.TEXTURE_CUBE_MAP,
   [gl.TEXTURE_CUBE_MAP]: gl.TEXTURE_CUBE_MAP,
