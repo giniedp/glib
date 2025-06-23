@@ -170,7 +170,7 @@ export function parse(buffer: ArrayBuffer) {
   const images = readImages({
     width: header.Width,
     height: header.Height,
-    depth: header.Depth,
+    depth: header.Depth || 1,
     data: data,
     arraySize: isCubemap ? 6 : 1,
     mipCount: header.MipMapCount,
@@ -202,7 +202,19 @@ function readHeader(reader: BinaryReader): Header {
     PitchOrLinearSize: reader.readUInt(),
     Depth: reader.readUInt(),
     MipMapCount: reader.readUInt(),
-    Reserved: Array.from({ length: 11 }, () => reader.readUInt()),
+    Reserved: [
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt(),
+      reader.readUInt()
+    ],
     PixelFormat: {
       Size: reader.readUInt(),
       Flags: reader.readUInt(),
@@ -867,7 +879,7 @@ export function getRequiredWebGLExtension(format: DXGI_FORMAT): string | null {
   }
 }
 
-export function getWebGLInternalFormatFromDXGI(format: DXGI_FORMAT): GLenum | null {
+export function getSurfaceFormatFromDXGI(format: DXGI_FORMAT): SurfaceFormat {
   switch (format) {
     // --- UNCOMPRESSED FORMATS ---
 

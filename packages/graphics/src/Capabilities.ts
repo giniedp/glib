@@ -1,3 +1,5 @@
+import type { SurfaceFormat } from './enums'
+
 /**
  * @public
  */
@@ -23,4 +25,6 @@ export interface Capabilities {
   textureCompressionPvrtc: boolean
   textureCompressionBc: boolean
   textureCompressionBptc: boolean
+
+  isFormatSupported(format: SurfaceFormat): boolean
 }

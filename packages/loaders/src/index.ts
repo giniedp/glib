@@ -1,3 +1,4 @@
+import * as DDS from './dds'
 import * as GLTF from './gltf'
 import * as HDR from './hdr'
 import * as KTX from './ktx'
@@ -7,4 +8,4 @@ import * as OBJ from './obj'
 import * as STL from './stl'
 import * as TGA from './tga'
 import * as YML from './yml'
-export { GLTF, HDR, KTX, MD5, MTL, OBJ, STL, TGA, YML }
+export { DDS, GLTF, HDR, KTX, MD5, MTL, OBJ, STL, TGA, YML }

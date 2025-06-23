@@ -7,7 +7,7 @@ describe('transcode', () => {
     await transcoder({
       // wasmBinary,
       // @ts-ignore
-      wasmUrl: await import('/libs/basis_transcoder.wasm?url').then((m) => m.default),
+      wasmUrl: await import('/assets/basis_transcoder.wasm?url').then((m) => m.default),
     })
   })
 })

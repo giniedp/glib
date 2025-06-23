@@ -1,5 +1,6 @@
 import { Capabilities } from '../Capabilities'
 import type { Device } from '../Device'
+import { SurfaceFormat } from '../enums'
 import type { DeviceGPU } from './DeviceGPU'
 
 /**
@@ -77,4 +78,7 @@ export class CapabilitiesGPU implements Capabilities {
     return false
   }
 
+  public isFormatSupported(format: SurfaceFormat): boolean {
+    return false
+  }
 }
