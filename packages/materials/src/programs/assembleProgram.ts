@@ -6,8 +6,9 @@ import {
   LightDefs,
   MtlAlphaDefs,
   MtlAmbientDefs,
-  MtlDiffuseDefs,
+  MtlBaseDefs,
   MtlEmissionDefs,
+  MtlEnvironmentDefs,
   MtlMetallicRoughness,
   MtlNormalDefs,
   MtlOcclusionDefs,
@@ -25,17 +26,22 @@ import {
 import {
   BASE,
   COMMON,
+  DEBUG,
   GAMMA,
+  GL300ES,
   MTL_ALPHA,
   MTL_AMBIENT,
-  MTL_DIFFUSE,
+  MTL_BASE,
   MTL_EMISSION,
+  MTL_ENVIRONMENT,
+  MTL_INDEX_OF_REFRACTION,
   MTL_METALLIC_ROUGHNESS,
   MTL_NORMAL,
   MTL_OCCLUSION,
   MTL_PARALLAX,
   MTL_SPECULAR,
   MTL_SPLATTING,
+  MTL_TRANSMISSION,
   SCENE_FOG,
   SCENE_LIGHTS,
   SHADE,
@@ -54,20 +60,25 @@ import {
   V_TEXTURE,
 } from '../chunks'
 
-export const CHUNKS = {
+export const MATERIAL_CHUNKS = {
+  GL300ES,
   BASE,
   COMMON,
+  DEBUG,
   GAMMA,
   MTL_ALPHA,
   MTL_AMBIENT,
-  MTL_DIFFUSE,
+  MTL_BASE,
   MTL_EMISSION,
+  MTL_ENVIRONMENT,
+  MTL_INDEX_OF_REFRACTION,
   MTL_METALLIC_ROUGHNESS,
   MTL_NORMAL,
   MTL_OCCLUSION,
   MTL_PARALLAX,
   MTL_SPECULAR,
   MTL_SPLATTING,
+  MTL_TRANSMISSION,
   SCENE_FOG,
   SCENE_LIGHTS,
   SHADE,
@@ -89,31 +100,37 @@ export const CHUNKS = {
 /**
  * @public
  */
-export interface DefaultProgramDefs
-  extends FogDefs,
-    GammaDefs,
-    LightDefs,
-    MtlAlphaDefs,
-    MtlAmbientDefs,
-    MtlDiffuseDefs,
-    MtlEmissionDefs,
-    MtlMetallicRoughness,
-    MtlNormalDefs,
-    MtlParallaxDefs,
-    MtlOcclusionDefs,
-    MtlSpecularDefs,
-    MtlSplattingDefs,
-    ShadeDefs,
-    VBillboardDefs,
-    VColorDefs,
-    VNormalDefs,
-    VSkinningDefs,
-    VTextureDefs {}
+export type MaterialProgramDefs = FogDefs &
+  GammaDefs &
+  LightDefs &
+  MtlAlphaDefs &
+  MtlAmbientDefs &
+  MtlBaseDefs &
+  MtlEmissionDefs &
+  MtlMetallicRoughness &
+  MtlNormalDefs &
+  MtlParallaxDefs &
+  MtlOcclusionDefs &
+  MtlSpecularDefs &
+  MtlSplattingDefs &
+  MtlEnvironmentDefs &
+  ShadeDefs &
+  VBillboardDefs &
+  VColorDefs &
+  VNormalDefs &
+  VSkinningDefs &
+  VTextureDefs
 
 /**
+ * Assembles the vertex and fragment shader source code for a material program.
+ *
  * @public
  */
-export function materialProgram(defs: DefaultProgramDefs): ShaderProgramOptions {
-  const chunks = Object.values(CHUNKS).filter((it) => typeof it === 'object')
-  return assembleProgram(CHUNKS.BASE, chunks, defs)
+export function materialProgram(defines: MaterialProgramDefs): ShaderProgramOptions {
+  const chunks = Object.values(MATERIAL_CHUNKS).filter((it) => typeof it === 'object')
+  return assembleProgram({
+    template: MATERIAL_CHUNKS.BASE,
+    chunks,
+    defines,
+  })
 }

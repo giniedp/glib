@@ -69,6 +69,10 @@ export function vertexAttribute(semantic: string, overrides?: Partial<VertexAttr
   }
 }
 
+export function vertexLayout(attrOrLayout: VertexLayout | AttributeSemantic[]): VertexLayout {
+  return VertexLayout.convert(attrOrLayout)
+}
+
 /**
  * Provides vertex layout utility functions
  *

@@ -8,10 +8,12 @@ export interface VTextureDefs {
    * Enables the default vertex texture attrubute
    */
   V_TEXTURE?: boolean
+
   /**
    * Enables the vertex texture attribute with index 1
    */
   V_TEXTURE1?: boolean
+
   /**
    * Enables the vertex texture attribute with index 2
    */
@@ -21,10 +23,12 @@ export interface VTextureDefs {
    * Offsets and scales the default Texture coordinates
    */
   V_TEXTURE_SCALE_OFFSET?: boolean
+
   /**
    * Offsets and scales the Texture coordinates with index 1
    */
   V_TEXTURE1_SCALE_OFFSET?: boolean
+
   /**
    * Offsets and scales the Texture coordinates with index 2
    */
@@ -68,13 +72,30 @@ export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
     // @binding TextureScaleOffset
     uniform vec4 uTextureScaleOffset;
     #endif
+
     #ifdef V_TEXTURE1_SCALE_OFFSET
     // @binding Texture1ScaleOffset
     uniform vec4 uTexture1ScaleOffset;
     #endif
+
     #ifdef V_TEXTURE2_SCALE_OFFSET
     // @binding Texture2ScaleOffset
     uniform vec4 uTexture2ScaleOffset;
+    #endif
+
+    #ifdef V_TEXTURE_TRANSFORM
+    // @binding TextureTransform
+    uniform mat3 uTextureTransform;
+    #endif
+
+    #ifdef V_TEXTURE1_TRANSFORM
+    // @binding Texture1Transform
+    uniform mat3 uTexture1Transform;
+    #endif
+
+    #ifdef V_TEXTURE2_TRANSFORM
+    // @binding Texture2Transform
+    uniform mat3 uTexture2Transform;
     #endif
   `,
   vs_texture: glsl`
@@ -83,6 +104,9 @@ export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
     #ifdef V_TEXTURE_SCALE_OFFSET
     vTexture = vTexture * uTextureScaleOffset.xy + uTextureScaleOffset.zw;
     #endif
+    #ifdef V_TEXTURE_TRANSFORM
+    vTexture = (uTextureTransform * vec3(vTexture, 1.0)).xy;
+    #endif
     #endif
 
     #ifdef V_TEXTURE1
@@ -90,12 +114,18 @@ export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
     #ifdef V_TEXTURE1_SCALE_OFFSET
     vTexture1 = vTexture1 * uTexture1ScaleOffset.xy + uTexture1ScaleOffset.zw;
     #endif
+    #ifdef V_TEXTURE1_TRANSFORM
+    vTexture = (uTexture1Transform * vec3(vTexture1, 1.0)).xy;
+    #endif
     #endif
 
     #ifdef V_TEXTURE2
     vTexture2 = aTexture2;
     #ifdef V_TEXTURE2_SCALE_OFFSET
     vTexture2 = vTexture2 * uTexture2ScaleOffset.xy + uTexture2ScaleOffset.zw;
+    #endif
+    #ifdef V_TEXTURE2_TRANSFORM
+    vTexture = (uTexture2Transform * vec3(vTexture2, 1.0)).xy;
     #endif
     #endif
   `,

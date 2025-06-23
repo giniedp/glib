@@ -1,58 +1,60 @@
-import { Color, beginGeometry, buildCone, buildCube, buildSphere, createDevice } from '@gglib/graphics'
+import { Mesh, coneGeometry, createDevice, cubeGeometry, sphereGeometry } from '@gglib/graphics'
 import { materialProgram } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
-import { loop } from '@gglib/utils'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({ canvas })
 
-  const textureMappedEffect = device.createEffect({
+  const effect = device.createEffect({
     program: materialProgram({
-      DIFFUSE_COLOR: true,
+      BASE_COLOR: true,
     }),
   })
 
-  const mesh = beginGeometry({
-    layout: [['position']],
+  const mesh = new Mesh(device, {
+    parts: [
+      cubeGeometry(device, {
+        name: 'Cube',
+        materialId: 0,
+        transform: Mat4.createTranslationXYZ(-2.2, 0, 0),
+        size: 2,
+      }),
+      sphereGeometry(device, {
+        name: 'Sphere',
+        materialId: 1,
+        transform: Mat4.createTranslationXYZ(0, 0, 0),
+        radius: 1,
+      }),
+      coneGeometry(device, {
+        name: 'Cone',
+        materialId: 2,
+        transform: Mat4.createTranslationXYZ(2.2, -1, 0),
+        upperRadius: 0,
+        lowerRadius: 1,
+        height: 2,
+      }),
+    ],
+    materials: [
+      {
+        effect: effect,
+        parameters: {
+          BaseColor: [1, 0, 0, 1],
+        },
+      },
+      {
+        effect: effect,
+        parameters: {
+          BaseColor: [0, 1, 0, 1],
+        },
+      },
+      {
+        effect: effect,
+        parameters: {
+          BaseColor: [0, 0, 1, 1],
+        },
+      },
+    ],
   })
-    .withTransform(Mat4.createTranslationXYZ(-2.2, 0, 0), (b) => {
-      b.defaults.color = [Color.Red.rgba]
-      b.append(buildCube, { size: 2 })
-      b.closeGeometry({ materialId: 0 })
-    })
-    .withTransform(Mat4.createTranslationXYZ(0, 0, 0), (b) => {
-      b.defaults.color = [Color.Green.rgba]
-      b.append(buildSphere, { radius: 1 })
-      b.closeGeometry({ materialId: 1 })
-    })
-    .withTransform(Mat4.createTranslationXYZ(2.2, -1, 0), (b) => {
-      b.defaults.color = [Color.Blue.rgba]
-      b.append(buildCone, { upperRadius: 0, lowerRadius: 1, height: 2 })
-      b.closeGeometry({ materialId: 2 })
-    })
-
-    .endMesh(device, {
-      materials: [
-        {
-          effect: textureMappedEffect,
-          parameters: {
-            DiffuseColor: Color.Red.xyzw,
-          },
-        },
-        {
-          effect: textureMappedEffect,
-          parameters: {
-            DiffuseColor: Color.Green.xyzw,
-          },
-        },
-        {
-          effect: textureMappedEffect,
-          parameters: {
-            DiffuseColor: Color.Blue.xyzw,
-          },
-        },
-      ],
-    })!
 
   const world = Mat4.createIdentity()
   const view = Mat4.createIdentity()
@@ -76,8 +78,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     mesh.draw()
   }
 
-  const looper = loop(frame)
-  return () => {
-    looper.stop()
-  }
+  device.scheduler.add(frame)
+  return () => device.dispose()
 }

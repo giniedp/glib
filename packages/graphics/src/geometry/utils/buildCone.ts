@@ -1,6 +1,6 @@
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { beginGeometry, buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 export const BuildConeDefaults = {
@@ -40,9 +40,10 @@ export interface BuildConeOptions {
   tesselation?: number
 }
 
-export function coneGeometry(device: Device, options?: BuildConeOptions): Geometry {
-  return beginGeometry().append(buildCone, options).calculateNormalsAndTangents().endGeometry(device, {
-    name: 'cone',
+export function coneGeometry(device: Device, options?: BuildConeOptions & BuildGeometryOptions): Geometry {
+  return buildGeometry(device, buildCone, {
+    name: 'Cone',
+    ...(options || {}),
   })
 }
 

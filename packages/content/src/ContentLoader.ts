@@ -96,8 +96,11 @@ export class ContentLoader {
   /**
    * Resolves a request uri relative to the resource uri
    */
-  public resolveUrl(requestUri: string, resourceUri: string, context?: LoaderContext) {
-    return Uri.merge(resourceUri, requestUri)
+  public resolveUrl(requestUri: string, context: LoaderContext) {
+    const assetUrl = context?.assetUrl || ''
+    const baseUrl = context?.baseUrl || ''
+    const result = Uri.merge(baseUrl ? '' : assetUrl, requestUri, baseUrl)
+    return result
   }
 
   /**
@@ -120,7 +123,11 @@ export class ContentLoader {
   }
 
   public async loadAsset(url: string, options?: LoadOptions): Promise<AssetContainer> {
-    url = this.resolveUrl(url, options?.baseUrl || '')
+    url = this.resolveUrl(url, {
+      ...(options || {}),
+      assetUrl: '',
+      content: this,
+    })
 
     if (this.cache && this.assetCache.has(url)) {
       return this.assetCache.get(url)
@@ -253,8 +260,13 @@ export class ContentLoader {
       Loader = this.findLoaderType(ext)
     }
     if (!Loader) {
-      const res = await this.http.fetch(url, { method: 'HEAD' })
-      Loader = this.findLoaderType(res.contentType)
+      const res = await this.http.fetch(url, { method: 'HEAD' }).catch((err) => {
+        // ignore as it's just unable to determine the content type
+        // failed request is visible in the network tab
+      })
+      if (res) {
+        Loader = this.findLoaderType(res.contentType)
+      }
     }
     if (Loader) {
       return new Loader(this)

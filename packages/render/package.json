@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\render.umd.js",
   "module": "dist\\render\\src\\index.js",
+  "main": "dist\\render\\src\\index.js",
   "typings": "dist\\render\\src\\index.d.ts",
   "devDependencies": {
     "@gglib/graphics": "workspace:^0.6.2",

@@ -541,7 +541,7 @@ describe('Vec2', () => {
 
   describe('#format', () => {
     it ('formats components', () => {
-      expect(Vec2.create(1, 2).format()).toBe('1.00000,2.00000')
+      expect(Vec2.create(1, 2).format()).toBe('x: 1.00000, y: 2.00000')
     })
   })
 })

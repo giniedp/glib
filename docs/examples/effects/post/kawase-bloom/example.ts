@@ -109,7 +109,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       material.World = object.world
       material.View = view
       material.Projection = projection
-      material.DiffuseColor = Vec3.multiplyScalar(object.color, object.intensity)
+      material.BaseColor = Vec3.multiplyScalar(object.color, object.intensity)
       material.draw(geometry)
     }
     device.setRenderTarget(null)

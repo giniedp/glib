@@ -1,5 +1,5 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { createTextureSource } from '@gglib/graphics'
+import { createTextureSource, SamplerState } from '@gglib/graphics'
 import { File } from './format'
 
 export function registerLoader() {
@@ -21,6 +21,7 @@ export class Loader implements AssetLoader {
       textures: [
         {
           ...options,
+          sampler: options.generateMipmap ? {...SamplerState.LinearWrap} : {...SamplerState.LinearClampNoMipMap},
           source: createTextureSource(options.source, {
             width: options.width,
             height: options.height,

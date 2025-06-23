@@ -163,7 +163,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   // Generate the water surface
   function loadWater() {
     const mtl = new AutoMaterial(device)
-    mtl.DiffuseColor = [0.5, 0.77, 0.87]
+    mtl.BaseColor = [0.5, 0.77, 0.87]
     mtl.FogColor = [1, 1, 1]
     mtl.FogStart = 100
     mtl.FogEnd = 500
@@ -191,7 +191,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   // Generate the background
   function loadSky() {
     const mtl = new AutoMaterial(device)
-    mtl.DiffuseColor = [1, 1, 1]
+    mtl.BaseColor = [1, 1, 1]
     mtl.ShadeFunction = 'shadeNone'
 
     const model = GeometryBuilder.begin()

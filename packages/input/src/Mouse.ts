@@ -189,6 +189,13 @@ export class MouseListener {
   }
 
   /**
+   * Convenience method. Simply calls {@link MouseListener.deactivate}
+   */
+  public dispose() {
+    this.deactivate()
+  }
+
+  /**
    * Gets a copy of the captured state
    *
    * @param out - Where the state is written to
@@ -572,5 +579,12 @@ export class Mouse {
    */
   public buttonJustReleased(button: number): boolean {
     return this.statePrev.buttons[button] && !this.state.buttons[button]
+  }
+
+  /**
+   * Calls {@link MouseListener.dispose} on the internal listener instance
+   */
+  public dispose() {
+    this.listener.dispose()
   }
 }

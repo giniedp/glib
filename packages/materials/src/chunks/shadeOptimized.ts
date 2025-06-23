@@ -29,13 +29,13 @@ export const SHADE_OPTIMIZED: ShaderChunkSet = Object.freeze({
       float dotLH = dot(L, H);
 
       // specular BRDF (Fr)
-      float D = pow(dotNH, surface.Specular.a);
+      float D = pow(dotNH, roughnessToPower(surface.Roughness)) * dotNL;
       float Fr = D / (4.0 * dotLH * dotLH * dotLH);
 
       // diffuse BRDF (Fd)
       float Fd = dotNL;
 
-      return (Fr * surface.Specular.rgb + Fd * surface.Diffuse.rgb) * I;
+      return (Fr * surface.Specular.rgb + Fd * surface.BaseColor.rgb) * I;
     }
   `,
 })

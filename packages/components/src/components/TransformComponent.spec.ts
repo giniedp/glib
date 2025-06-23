@@ -1,7 +1,6 @@
 import { GameEntity, GameProvider } from '@gglib/ecs'
 import { Vec3 } from '@gglib/math'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { GameLoop } from '../systems'
 import { createEntity, createGame } from './createGame'
 import { TransformComponent } from './TransformComponent'
 
@@ -17,8 +16,6 @@ describe('@gglib/ecs/TransformComponent', () => {
       device: {},
       loop: { autostart: false },
     })
-      .addSystem(new GameLoop({ autostart: false }))
-      .initialize()
 
     eParent = createEntity({
       transform: { position: Vec3.create(0, 0, 0) },

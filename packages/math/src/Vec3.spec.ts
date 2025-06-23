@@ -619,7 +619,7 @@ describe('Vec3', () => {
 
   describe('#format', () => {
     it ('formats components', () => {
-      expect(Vec3.create(1, 2, 3).format()).toBe('1.00000,2.00000,3.00000')
+      expect(Vec3.create(1, 2, 3).format()).toBe('x: 1.00000, y: 2.00000, z: 3.00000')
     })
   })
 })

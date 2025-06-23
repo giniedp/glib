@@ -1,4 +1,4 @@
-import { createDevice, cubeGeometry, LightType, Mesh } from '@gglib/graphics'
+import { createDevice, cubeGeometry, LightType, Mesh, SamplerState } from '@gglib/graphics'
 import { LightParams, materialProgram } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -9,14 +9,15 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const lightingEffect = device.createEffect({
     program: materialProgram({
-      DIFFUSE_MAP: true,
+      BASE_COLOR_MAP: true,
       NORMAL_MAP: true,
-      EMISSION_MAP: true,
-      EMISSION_COLOR: true,
+      EMISSIVE_COLOR_MAP: true,
+      EMISSIVE_COLOR: true,
       V_TANGENT: true,
       LIGHT: true,
       LIGHT_COUNT: 1,
       SHADE_FUNCTION: 'shadeBlinn',
+      ROUGHNESS: true,
     }),
   })
 
@@ -37,10 +38,23 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       {
         effect: lightingEffect,
         parameters: {
-          DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/LavaColor.jpg' }),
-          NormalMap: device.createTexture({ source: '/textures/cc0textures.com/LavaNormal.jpg' }),
-          EmissionMap: device.createTexture({ source: '/textures/cc0textures.com/LavaEmission.jpg' }),
-          EmissionColor: [0.5, 0.5, 0.5],
+          BaseColorMap: device.createTexture({
+            source: '/textures/cc0textures.com/LavaColor.jpg',
+            sampler: SamplerState.LinearWrap,
+            generateMipmap: true,
+          }),
+          NormalMap: device.createTexture({
+            source: '/textures/cc0textures.com/LavaNormal.jpg',
+            sampler: SamplerState.LinearWrap,
+            generateMipmap: true,
+          }),
+          EmissiveColorMap: device.createTexture({
+            source: '/textures/cc0textures.com/LavaEmission.jpg',
+            sampler: SamplerState.LinearWrap,
+            generateMipmap: true,
+          }),
+          EmissiveColor: [0.5, 0.5, 0.5],
+          Roughness: 0.25,
         },
       },
     ],

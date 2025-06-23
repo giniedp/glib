@@ -23,6 +23,13 @@ export class BinaryReader {
   public position: number
 
   /**
+   * The number of bytes remaining to read
+   */
+  public get remaining() {
+    return this.data.byteLength - this.position
+  }
+
+  /**
    * Byte order to read. Default is `true`
    */
   public littleEndian = true
@@ -46,6 +53,20 @@ export class BinaryReader {
   }
 
   /**
+   * Reads a single character from the current position without advancing the position.
+   */
+  public get char(): string {
+    return String.fromCharCode(this.byte)
+  }
+
+  /**
+   * Reads a single byte from the current position without advancing the position.
+   */
+  public get byte(): number {
+    return this.data[this.position]
+  }
+
+  /**
    * Reads a specified number of bytes
    *
    * @param length - The number of bytes to read
@@ -66,6 +87,15 @@ export class BinaryReader {
    */
   public readByteArray(length: number): Int8Array {
     return new Int8Array(this.slice(length))
+  }
+
+  /**
+   * Reads a specified number of bytes as a byte array
+   *
+   * @param length - The number of bytes to read
+   */
+  public readUByteArray(length: number): Uint8Array {
+    return new Uint8Array(this.slice(length))
   }
 
   public readBuffer(buffer: number[]|Uint8Array, index: number, length: number) {

@@ -22,6 +22,7 @@ const vertexShader = /* glsl */ `
   void main(void) {
     vTexCoord = aPosition;
     gl_Position = uProjection * uView * uWorld * vec4(aPosition, 1);
+    gl_Position.z = gl_Position.w;
   }
 `.trim()
 
@@ -39,11 +40,11 @@ const fragmentShader = /* glsl */ `
   uniform float uIntensity;
 
   // @binding Blur
-  // @default 1
+  // @default 0
   uniform float uBlur;
 
   // @binding MipCount
-  // @default 1
+  // @default 5
   uniform int uMipCount;
 
   in vec3 vTexCoord;

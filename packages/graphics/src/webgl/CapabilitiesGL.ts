@@ -1,3 +1,4 @@
+import { Capabilities } from '../Capabilities'
 import type { Device } from '../Device'
 import { isWebGL2 } from './utils'
 
@@ -10,7 +11,7 @@ export type GlEnums = KeysOf<WebGLRenderingContext, number> | KeysOf<WebGL2Rende
 /**
  * @public
  */
-export class CapabilitiesGL {
+export class CapabilitiesGL implements Capabilities {
   public device: Device<WebGLRenderingContext | WebGL2RenderingContext>
   public gl: WebGLRenderingContext
 
@@ -61,15 +62,34 @@ export class CapabilitiesGL {
   }
 
   get textureFormatFloat() {
-    return !!this.extension('OES_texture_float')
+    return !!this.extension('OES_texture_float') || isWebGL2(this.gl)
   }
   get textureFormatHalfFloat() {
-    return !!this.extension('OES_texture_half_float')
+    return !!this.extension('OES_texture_half_float') || isWebGL2(this.gl)
   }
 
   constructor(device: Device<WebGLRenderingContext | WebGL2RenderingContext>) {
     this.device = device
     this.gl = device.context
+  }
+
+  get textureCompressionAstc(): boolean {
+    return !!this.extension('WEBGL_compressed_texture_astc')
+  }
+  get textureCompressionEtc2(): boolean {
+    return !!this.extension('WEBGL_compressed_texture_etc')
+  }
+  get textureCompressionEtc1(): boolean {
+    return !!this.extension('WEBGL_compressed_texture_etc1')
+  }
+  get textureCompressionPvrtc(): boolean {
+    return !!this.extension('WEBGL_compressed_texture_pvrtc')
+  }
+  get textureCompressionBc(): boolean {
+    return !!this.extension('WEBGL_compressed_texture_s3tc')
+  }
+  get textureCompressionBptc(): boolean {
+    return !!this.extension('EXT_texture_compression_bptc')
   }
 
   public parameter(key: GlEnums): any {
@@ -133,6 +153,7 @@ export class CapabilitiesGL {
   public extension(extensionName: 'WEBGL_compressed_texture_etc'): WEBGL_compressed_texture_etc | null
   public extension(extensionName: 'WEBGL_compressed_texture_etc1'): WEBGL_compressed_texture_etc1 | null
   public extension(extensionName: 'WEBGL_compressed_texture_pvrtc'): WEBGL_compressed_texture_pvrtc | null
+  public extension(extensionName: 'WEBGL_compressed_texture_s3tc'): WEBGL_compressed_texture_s3tc | null
   public extension(extensionName: 'WEBGL_compressed_texture_s3tc_srgb'): WEBGL_compressed_texture_s3tc_srgb | null
   public extension(extensionName: 'WEBGL_multi_draw'): WEBGL_multi_draw | null
   public extension(extensionName: 'WEBGL_polygon_mode'): unknown | null

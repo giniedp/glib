@@ -97,32 +97,35 @@ export class Uri {
     return pathSplit.exec(path)[3]
   }
 
-  public static merge(a: string, b: string) {
-    if (hasProtocol(b)) {
-      return b
+  public static merge(parentUri: string, resourceUri: string, basePath?: string) {
+    if (hasProtocol(resourceUri)) {
+      return resourceUri
     }
 
-    let aUri = Uri.parse(a)
-    let bUri = Uri.parse(b)
-    let path = isAbsolute(b) ? b : aUri.directory + bUri.path
+    let parent = Uri.parse(parentUri)
+    let resource = Uri.parse(resourceUri)
+    let path = isAbsolute(resourceUri) ? resource.path : parent.directory + resource.path
     path = collapse(path)
-    if (bUri.query) {
-      path += `?${bUri.query}`
+    if (resource.query) {
+      path += `?${resource.query}`
     }
-    if (bUri.anchor) {
-      path += `#${bUri.anchor}`
+    if (resource.anchor) {
+      path += `#${resource.anchor}`
     }
 
-    let result = ''
-    if (aUri.protocol) {
-      result = aUri.protocol + '://'
-    }
-    if (aUri.authority) {
-      result += aUri.authority
+    let result = basePath || ''
+    if (!result) {
+      if (parent.protocol) {
+        result = parent.protocol + '://'
+      }
+      if (parent.authority) {
+        result += parent.authority
+      }
     }
     if (!isAbsolute(path)) {
       result += '/'
     }
+
     return result + path
   }
 

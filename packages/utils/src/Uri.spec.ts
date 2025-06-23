@@ -35,10 +35,17 @@ describe('@gglib/utils/Uri', () => {
   })
 
   describe('.merge', () => {
-    it ('merges two paths', () => {
+    it ('merges relative path', () => {
       expect(Uri.merge('foo/bar/baz', '../lorem/ipsum.png')).toBe('/foo/lorem/ipsum.png')
       expect(Uri.merge('foo/bar/baz/', '../lorem/ipsum.png')).toBe('/foo/bar/lorem/ipsum.png')
       expect(Uri.merge('http://example.com/foo/bar/baz/', '../lorem/ipsum.png')).toBe('http://example.com/foo/bar/lorem/ipsum.png')
+    })
+
+    it ('merges with base path', () => {
+      expect(Uri.merge('foo/bar/baz', '../lorem/ipsum.png', 'http://example.com')).toBe('http://example.com/foo/lorem/ipsum.png')
+      expect(Uri.merge('foo/bar/baz/', '../lorem/ipsum.png', 'http://example.com')).toBe('http://example.com/foo/bar/lorem/ipsum.png')
+      expect(Uri.merge('http://example.com/foo/bar/baz/', '../lorem/ipsum.png', 'http://example.de')).toBe('http://example.de/foo/bar/lorem/ipsum.png')
+
     })
 
     it ('ignores first param if second is absolute', () => {

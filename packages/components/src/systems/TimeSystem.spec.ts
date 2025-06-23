@@ -1,9 +1,10 @@
-import { GameEntity } from '@gglib/ecs'
-import { TimeSystem } from './TimeSystem'
-import { describe, beforeEach, it, expect } from 'vitest'
+import { GameEntity, GameProvider } from '@gglib/ecs'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createEntity } from '../components/createGame'
 import { GameLoop } from './GameLoop'
+import { TimeSystem } from './TimeSystem'
 
-describe('@gglib/ecs/TimeSystem', () => {
+describe('TimeSystem', () => {
   let entity: GameEntity
   let time: TimeSystem
   let loop: GameLoop
@@ -11,10 +12,22 @@ describe('@gglib/ecs/TimeSystem', () => {
 
   beforeEach(() => {
     mockedRealTime = 0
-    time = new TimeSystem({ getTime: () => mockedRealTime })
-    entity = new GameEntity()
-    entity.provide(time)
-    entity.initialize(null)
+
+    const provider = new GameProvider()
+    provider.addSystem(new TimeSystem())
+    provider.provide(
+      new GameLoop({
+        getTime: () => mockedRealTime,
+      }),
+    )
+    provider.initialize()
+
+    entity = createEntity({})
+    entity.initialize(provider)
+    entity.activate()
+
+    time = provider.get(TimeSystem)
+    loop = provider.get(GameLoop)
   })
 
   it('accumulates game time', () => {

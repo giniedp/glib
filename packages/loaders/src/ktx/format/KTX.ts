@@ -2,8 +2,8 @@ import { ArrayType } from '@gglib/graphics'
 import { BinaryReader } from '@gglib/utils'
 import { VK_TO_GL1, VK_TO_GL2, VK_TO_GL2_WITH_EXT } from './VK2GL'
 
-// KTX 1 Format: https://www.khronos.org/opengles/sdk/tools/KTX/file_format_spec/
-// KTX 2 Format: https://github.khronos.org/KTX-Specification
+// KTX 1 Format: https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+// KTX 2 Format: https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html
 // Other links:
 //  - https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
 //  - https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/VkFormat.html
@@ -11,7 +11,7 @@ import { VK_TO_GL1, VK_TO_GL2, VK_TO_GL2_WITH_EXT } from './VK2GL'
 //  - https://www.khronos.org/registry/webgl/specs/latest/2.0/
 //  - https://github.com/KhronosGroup/KTX-Specification/blob/master/formats.json
 
-export interface KTXHeader {
+export interface V2Header {
   identifier: string
   vkFormat: number
   typeSize: number
@@ -24,7 +24,7 @@ export interface KTXHeader {
   supercompressionScheme: number
 }
 
-export interface KTXIndex {
+export interface V2Index {
   dfdByteOffset: number
   dfdByteLength: number
   kvdByteOffset: number
@@ -33,25 +33,27 @@ export interface KTXIndex {
   sgdByteLength: number
 }
 
-export interface KTXLevelIndex {
+export interface LevelIndex {
   byteOffset: number
   byteLength: number
   uncompressedByteLength: number
 }
 
-export interface KTXLevelImage {
+export interface LevelImage {
   width: number
   height: number
-  layers: ReadonlyArray<{ faces: Uint8ClampedArray<ArrayBuffer>[] }>
+  layers: Array<{
+    faces: Array<Uint8Array<ArrayBuffer>>
+   }>
 }
 
-export interface KTXFormatInfo {
-  glInternalFormat: GLenum
-  glFormat: GLenum
-  glType: GLenum
+export interface FormatInfo {
+  surfaceFormat: GLenum
+  format: GLenum
+  type: GLenum
 }
 
-function readHeader(reader: BinaryReader): KTXHeader {
+function readHeader(reader: BinaryReader): V2Header {
   return {
     /* Byte[12]*/ identifier: reader.readString(12),
     /* UInt32  */ vkFormat: reader.readUInt(),
@@ -66,7 +68,7 @@ function readHeader(reader: BinaryReader): KTXHeader {
   }
 }
 
-function readIndex(reader: BinaryReader): KTXIndex {
+function readIndex(reader: BinaryReader): V2Index {
   return {
     /* UInt32 */ dfdByteOffset: reader.readUInt(),
     /* UInt32 */ dfdByteLength: reader.readUInt(),
@@ -77,7 +79,7 @@ function readIndex(reader: BinaryReader): KTXIndex {
   }
 }
 
-function readLevelIndex(reader: BinaryReader): KTXLevelIndex {
+function readLevelIndex(reader: BinaryReader): LevelIndex {
   return {
     /* UInt64 */ byteOffset: reader.readLong(),
     /* UInt64 */ byteLength: reader.readLong(),
@@ -85,17 +87,17 @@ function readLevelIndex(reader: BinaryReader): KTXLevelIndex {
   }
 }
 
-function readLevelImage(buffer: ArrayBuffer, ktx: File, level: number): KTXLevelImage {
+function readLevelImage(buffer: ArrayBuffer, ktx: File, level: number): LevelImage {
   const header = ktx.header
   const index = ktx.levelIndex[level]
 
-  const layers: Array<{ faces: Uint8ClampedArray<ArrayBuffer>[] }> = []
+  const layers: Array<{ faces: Uint8Array<ArrayBuffer>[] }> = []
   for (let l = 0; l < Math.max(1, header.layerCount); l++) {
-    const faces: Uint8ClampedArray<ArrayBuffer>[] = []
+    const faces: Uint8Array<ArrayBuffer>[] = []
     for (let i = 0; i < header.faceCount; i++) {
       const faceLength = index.byteLength / header.faceCount
       const faceOffset = index.byteOffset + faceLength * i
-      const data = new ArrayType[ktx.glInfo.glType](buffer, faceOffset, faceLength / header.typeSize)
+      const data = new ArrayType[ktx.glInfo.type](buffer, faceOffset, faceLength / header.typeSize)
       faces.push(data)
     }
     layers.push({
@@ -115,11 +117,11 @@ export function parse(data: ArrayBuffer) {
 }
 
 export class File {
-  public readonly header: KTXHeader
-  public readonly index: KTXIndex
-  public readonly levelIndex: ReadonlyArray<KTXLevelIndex>
-  public readonly levelImages: ReadonlyArray<KTXLevelImage>
-  public readonly glInfo: KTXFormatInfo
+  public readonly header: V2Header
+  public readonly index: V2Index
+  public readonly levelIndex: Array<LevelIndex>
+  public readonly levelImages: Array<LevelImage>
+  public readonly glInfo: FormatInfo
   public readonly requiresWebgl2: boolean
   public readonly requiresExtension: string
 
@@ -151,13 +153,13 @@ export class File {
       this.requiresExtension = info?.glExtension
     }
 
-    const lvlIndex: KTXLevelIndex[] = (this.levelIndex = [])
-    const lvlImages: KTXLevelImage[] = (this.levelImages = [])
+    const lvlIndex: LevelIndex[] = (this.levelIndex = [])
+    const lvlImages: LevelImage[] = (this.levelImages = [])
 
-    if (this.header.supercompressionScheme !== 0) {
-      console.error(`[KTX] supercompressionScheme is not supported: ${this.header.supercompressionScheme}`)
+    if (this.header.supercompressionScheme) {
       return
     }
+
     if (!this.glInfo) {
       console.error(`[KTX] vkFormat is not supported: ${this.header.vkFormat}`)
     }

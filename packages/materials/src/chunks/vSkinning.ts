@@ -8,6 +8,7 @@ export interface VSkinningDefs {
    * Enables vertex indices and vertex weights attributes for skinning animation
    */
   SKINNING?: boolean
+
   /**
    * Defines the number of bones
    *
@@ -15,6 +16,7 @@ export interface VSkinningDefs {
    * If not set defaults to 16
    */
   SKINNING_JOINT_COUNT?: number
+
   /**
    * Defines the number bone weights
    *

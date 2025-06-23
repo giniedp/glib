@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\noise.umd.js",
   "module": "dist\\noise\\src\\index.js",
+  "main": "dist\\noise\\src\\index.js",
   "typings": "dist\\noise\\src\\index.d.ts",
   "devDependencies": {},
   "peerDependencies": {},

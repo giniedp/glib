@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\utils.umd.js",
   "module": "dist\\utils\\src\\index.js",
+  "main": "dist\\utils\\src\\index.js",
   "typings": "dist\\utils\\src\\index.d.ts",
   "devDependencies": {},
   "peerDependencies": {},

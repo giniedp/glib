@@ -3,10 +3,7 @@ import { SamplerState, SamplerStateParams } from '../states'
 import { TextureImage, TextureImageOptions } from './TextureImage'
 
 export interface TextureOptions extends TextureImageOptions {
-  /**
-   * User defined name
-   */
-  name?: string
+
 
   /**
    * User defined meta data and annotations
@@ -60,6 +57,10 @@ export class Texture {
 
   public get is2D() {
     return this.image.is2D
+  }
+
+  public get is3D() {
+    return this.image.is3D
   }
 
   public get isCube() {
@@ -117,7 +118,7 @@ export class Texture {
   }
 
   public update() {
-    return this.image?.update()
+    this.image?.update()
   }
 
   /**

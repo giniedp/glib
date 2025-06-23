@@ -1,7 +1,7 @@
 import { IVec3, Mat4 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { beginGeometry, buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
 
 export const BuildSphereDefaults = {
@@ -29,11 +29,10 @@ export interface BuildSphereOptions {
   tesselation?: number
 }
 
-export function sphereGeometry(device: Device, options?: BuildSphereOptions): Geometry {
-  return beginGeometry().append(buildSphere, options)
-    .calculateNormalsAndTangents()
-    .endGeometry(device, {
+export function sphereGeometry(device: Device, options?: BuildSphereOptions & BuildGeometryOptions): Geometry {
+  return buildGeometry(device, buildSphere, {
     name: 'sphere',
+    ...(options || {}),
   })
 }
 

@@ -23,8 +23,9 @@ describe('BoundingSphere', () => {
   }
 
   describe('#new', () => {
-    it('initializes with 0', () => {
-      expectComponents(new BoundingSphere(), 0, 0, 0, 0)
+    it('initializes as empty', () => {
+      expectComponents(new BoundingSphere(), 0, 0, 0, -1)
+      expect(new BoundingSphere().isEmpty).toBe(true)
     })
     it('initializes with values', () => {
       expectComponents(new BoundingSphere(1, 2, 3, 4), 1, 2, 3, 4)

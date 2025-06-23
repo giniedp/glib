@@ -334,8 +334,8 @@ export class GlslParser {
   }
 
   private createLog() {
-    const before = this.tokens.slice(this.index - 10, this.index).join(' ')
-    const after = this.tokens.slice(this.index, this.index + 10).join(' ')
+    const before = this.tokens.slice(this.index - 10, this.index).map((it) => it.text).join(' ')
+    const after = this.tokens.slice(this.index, this.index + 10).map((it) => it.text).join(' ')
     return '\n' + before + ' ' + after + '\n' + '_'.repeat(before.length) + '^' + '\n'
   }
 }

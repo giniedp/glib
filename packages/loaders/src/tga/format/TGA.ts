@@ -214,7 +214,7 @@ export class File {
           height: this.height,
         }
       }
-      throw new Error('whopsie') // TODO:
+      throw new Error(`unsupported pixel depth ${pixelDepth} for grayscale image`)
     }
     if (this.colorMap && pixelDepth === 8) {
       switch (this.colorMapStride) {
@@ -222,6 +222,7 @@ export class File {
           return {
             source: this.decode_cm8('i5551'),
             pixelFormat: PixelFormat.RGBA,
+            generateMipmap: true,
             pixelType: DataType.ushort_5_5_5_1,
             width: this.width,
             height: this.height,
@@ -230,6 +231,7 @@ export class File {
           return {
             source: this.decode_cm8('ui888'),
             pixelFormat: PixelFormat.RGB,
+            generateMipmap: true,
             pixelType: DataType.ubyte,
             width: this.width,
             height: this.height,
@@ -238,6 +240,7 @@ export class File {
           return {
             source: this.decode_cm8('ui8888'),
             pixelFormat: PixelFormat.RGBA,
+            generateMipmap: true,
             pixelType: DataType.ubyte,
             width: this.width,
             height: this.height,
@@ -248,6 +251,7 @@ export class File {
       return {
         source: this.decode_rgba16('i5551'),
         pixelFormat: PixelFormat.RGBA,
+        generateMipmap: true,
         pixelType: DataType.ushort_5_5_5_1,
         width: this.width,
         height: this.height,
@@ -256,6 +260,7 @@ export class File {
     if (pixelDepth === 24) {
       return {
         source: this.decode_rgb24('ui888'),
+        generateMipmap: true,
         pixelFormat: PixelFormat.RGB,
         pixelType: DataType.ubyte,
         width: this.width,
@@ -265,13 +270,14 @@ export class File {
     if (pixelDepth === 32) {
       return {
         source: this.decode_rgba32('ui8888'),
+        generateMipmap: true,
         pixelFormat: PixelFormat.RGBA,
         pixelType: DataType.ubyte,
         width: this.width,
         height: this.height,
       }
     }
-    throw new Error('whopsie') // TODO:
+    throw new Error(`unsupported pixel depth ${pixelDepth}`)
   }
 
   /**

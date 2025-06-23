@@ -19,6 +19,9 @@ export const COMMON: ShaderChunkSet = {
     // @remarks vertex position in world space after vertex shader
     varying vec4 vPositionInWS;
 
+    // @remarks vertex position in view space after vertex shader
+    varying vec4 vPositionInVS;
+
     // @remarks vector from vertex to camera in world space
     varying vec3 vToEyeInWS;
 
@@ -54,27 +57,37 @@ export const COMMON: ShaderChunkSet = {
 
   structs: glsl`
     struct SurfaceParams {
-      vec4 Normal;   // xyz = normal, w = depth
-      vec4 Diffuse;  // rgb = albedo, a = alpha
-      vec4 Specular; // rgb = specular color, a = specular power
-      vec3 Emission; // rgb = emission color, a = unused
-      vec3 PBR;      // r = metallic, g = roughness, ba = unused
+      vec4 Normal;     // xyz = normal, w = depth
+      vec4 BaseColor;  // rgb = albedo, a = alpha
+      vec3 Specular;   // rgb = specular color
+      vec3 Emission;   // rgb = emission color
+      float Metallic;  // metallic factor
+      float Roughness; // roughness factor
+      float Ior;
     };
   `,
 
   vs_position: glsl`
     #ifndef SKINNED
     vPositionInWS = uWorld * vec4(aPosition, 1.0);
+    vPositionInWS.xyz /= vPositionInWS.w;
     #endif
   `,
 
   vs_end: glsl`
-    gl_Position = uProjection * uView * vPositionInWS;
-    vToEyeInWS = uCameraPosition.xyz - vPositionInWS.xyz;
+    vPositionInVS = uView * vPositionInWS;
+    gl_Position = uProjection * vPositionInVS;
+    vToEyeInWS = normalize(uCameraPosition.xyz - vPositionInWS.xyz) ;
   `,
 
   fs_start_before: glsl`
     SurfaceParams surface;
+    surface.BaseColor = vec4(1.0, 1.0, 1.0, 1.0);
+    surface.Specular = vec3(1.0, 1.0, 1.0);
+    surface.Emission = vec3(0.0, 0.0, 0.0);
+    surface.Metallic = 1.0;
+    surface.Roughness = 1.0;
+    surface.Ior = 1.5;
     vec4 color;
   `,
 

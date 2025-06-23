@@ -1,4 +1,4 @@
-import { beginGeometry, buildCone, buildCube, buildCylinder, createDevice } from '@gglib/graphics'
+import { beginGeometry, buildCone, buildCube, buildCylinder, createDevice, SamplerState } from '@gglib/graphics'
 import { materialProgram } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -8,7 +8,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const textureMappedEffect = device.createEffect({
     program: materialProgram({
-      DIFFUSE_MAP: true,
+      BASE_COLOR_MAP: true,
     }),
   })
 
@@ -35,19 +35,31 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         {
           effect: textureMappedEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
+            BaseColorMap: device.createTexture({
+              source: '/textures/cc0textures.com/TilesColor.jpg',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
           },
         },
         {
           effect: textureMappedEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
+            BaseColorMap: device.createTexture({
+              source: '/textures/cc0textures.com/TilesColor.jpg',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
           },
         },
         {
           effect: textureMappedEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
+            BaseColorMap: device.createTexture({
+              source: '/textures/cc0textures.com/TilesColor.jpg',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
           },
         },
       ],

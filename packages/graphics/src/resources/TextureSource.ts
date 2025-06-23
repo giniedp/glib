@@ -1,32 +1,71 @@
 import { Log, Uri } from '@gglib/utils'
-import { ArrayType, DataTypeOption } from '../enums'
+import { DataTypeOption } from '../enums'
+import { toArrayBufferView } from './utils'
 
+export type TextureData = TexImageSource | ArrayBufferView
 
-export abstract class TextureSource<T extends TexImageSource | ArrayBufferView = TexImageSource | ArrayBufferView> {
+export abstract class TextureSource<T extends TextureData = TextureData> {
+  /**
+   * Indicates whether the texture source is ready to be used.
+   */
   abstract readonly isReady: boolean
-  abstract readonly width: number
-  abstract readonly height: number
-  abstract readonly data: T
 
+  /**
+   * The width of the texture source.
+   */
+  abstract readonly width: number
+
+  /**
+   * The height of the texture source.
+   */
+  abstract readonly height: number
+
+  /**
+   * The texture data for each mipmap level.
+   *
+   * @remarks
+   * Each level is an array of texture data, where each element represents a layer or face of the texture.
+   *
+   * - For cubemaps, each level will contain 6 elements (one for each face).
+   * - For 2D textures, each level will contain a single element.
+   * - For 3D textures or 2D arrays, each level will contain multiple elements (one for each layer).
+   */
+  abstract readonly levels: Array<Array<T>>
+
+  /**
+   * The original resource from which the texture source was created.
+   */
+  public abstract resource: unknown
+
+  /**
+   * Runs an update on the texture source which allows it to perform the isReady check and update its state.
+   *
+   * @remarks
+   * This is a no-op for static sources like ImageData or ArrayBufferView.
+   * For dynamic sources like HTMLImageElement or HTMLVideoElement, this method should be called to check if the source has changed.
+   */
   abstract update(): boolean
 }
 
 export class ImageElementSource extends TextureSource<HTMLImageElement> {
   public get isReady() {
-    return this.data.complete
+    return this.resource.complete
   }
   public get width() {
-    return this.data.naturalWidth
+    return this.resource.naturalWidth
   }
   public get height() {
-    return this.data.naturalHeight
+    return this.resource.naturalHeight
   }
-  public readonly data: HTMLImageElement
+  public readonly levels: HTMLImageElement[][]
 
-  public constructor(data: HTMLImageElement) {
+  public readonly resource: HTMLImageElement
+
+  public constructor(resource: HTMLImageElement) {
     super()
-    this.data = data
-    this.data.addEventListener('load', () => (this.hasChanged = true))
+    this.resource = resource
+    this.resource.addEventListener('load', () => (this.hasChanged = true))
+    this.levels = [[this.resource]]
   }
 
   public hasChanged = false
@@ -41,19 +80,21 @@ export class ImageElementSource extends TextureSource<HTMLImageElement> {
 
 export class VideoElementSource extends TextureSource<HTMLVideoElement> {
   public get isReady() {
-    return this.data.readyState >= 3
+    return this.resource.readyState >= 3
   }
   public get width() {
-    return this.data.videoWidth
+    return this.resource.videoWidth
   }
   public get height() {
-    return this.data.videoHeight
+    return this.resource.videoHeight
   }
-  public readonly data: HTMLVideoElement
+  public readonly levels: [[HTMLVideoElement]]
 
-  public constructor(data: HTMLVideoElement) {
+  public readonly resource: HTMLVideoElement
+  public constructor(resource: HTMLVideoElement) {
     super()
-    this.data = data
+    this.resource = resource
+    this.levels = [[resource]]
   }
 
   private videoTime: number = null
@@ -62,7 +103,9 @@ export class VideoElementSource extends TextureSource<HTMLVideoElement> {
     if (!this.isReady) {
       return false
     }
-    return this.data.currentTime !== this.videoTime
+    const changed = this.resource.currentTime !== this.videoTime
+    this.videoTime = this.resource.currentTime
+    return changed
   }
 }
 
@@ -75,14 +118,16 @@ export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTM
     return true
   }
   public get width() {
-    return this.data.width
+    return this.resource.width
   }
   public get height() {
-    return this.data.height
+    return this.resource.height
   }
-  public readonly data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas
+  public readonly levels: Array<Array<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas>>
 
   public hasChanged = true
+
+  public readonly resource: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas
 
   public constructor(data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas) {
     super()
@@ -92,10 +137,12 @@ export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTM
       data instanceof HTMLCanvasElement ||
       data instanceof OffscreenCanvas
     ) {
-      this.data = data
+      this.resource = data
+      this.levels = [[this.resource]]
     } else if ('data' in data && 'width' in data && 'height' in data) {
       const input = data as ImageData
-      this.data = new ImageData(input.data, input.width, input.height)
+      this.resource = new ImageData(input.data, input.width, input.height)
+      this.levels = [[this.resource]]
     } else {
       throw new Error()
     }
@@ -110,29 +157,25 @@ export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTM
   }
 }
 
-
-export class ArrayBufferSource extends TextureSource<ArrayBufferView> {
+export class ArrayBufferViewSource extends TextureSource<ArrayBufferView> {
   public get isReady() {
     return true
   }
   public readonly width: number
   public readonly height: number
-  public readonly data: ArrayBufferView
+  public readonly levels: Array<Array<ArrayBufferView>>
 
   public hasChanged = true
 
-  public constructor(data: number[] | ArrayBuffer | ArrayBufferView, width: number, height: number, type: DataTypeOption) {
+  public get resource() {
+    return this.levels
+  }
+
+  public constructor(levels: Array<Array<ArrayBufferView>>, width: number, height: number) {
     super()
+    this.levels = levels
     this.width = width
     this.height = height
-
-    if (ArrayBuffer.isView(data)) {
-      this.data = data
-    } else if (data instanceof ArrayBuffer || Array.isArray(data)) {
-      this.data = new ArrayType[type](data)
-    } else {
-      throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
-    }
   }
 
   public update(): boolean {
@@ -173,7 +216,7 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
   }
 
   if (Array.isArray(source) && typeof source[0] === 'object') {
-    this.setVideoUrls(source as any)
+    return textureSourceFromVideoUrls(source as any)
   }
 
   if (source instanceof TextureSource) {
@@ -199,7 +242,7 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
     if (!options.type) {
       throw new Error(`Invalid options for creating texture source. Type must be specified.`)
     }
-    return new ArrayBufferSource(source, options.width, options.height, options.type)
+    return new ArrayBufferViewSource([[toArrayBufferView(source, options.type)]], options.width, options.height)
   }
 
   return null

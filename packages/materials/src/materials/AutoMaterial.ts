@@ -11,8 +11,9 @@ import {
   Texture,
   instantiateMaterialTextures,
 } from '@gglib/graphics'
-import { IMat, IVec3, IVec4, Mat4 } from '@gglib/math'
+import { IMat, IVec3, IVec4, Mat4, Vec3 } from '@gglib/math'
 import {
+  DebugOutput,
   ShadeFunctionBlinn,
   ShadeFunctionCookTorrance,
   ShadeFunctionLambert,
@@ -23,43 +24,59 @@ import {
   ShadeFunctionSzirmay,
 } from '../chunks'
 import { LightParams } from '../lights'
-import { DefaultProgramDefs, materialProgram } from '../programs'
+import { MaterialProgramDefs, materialProgram } from '../programs'
 
 const defineMap = {
   Alpha: 'ALPHA',
   AlphaClip: 'ALPHA_CLIP',
   FogColor: 'FOG',
   VertexColor: 'V_COLOR',
+  IndexOfRefraction: 'INDEX_OF_REFRACTION',
+  Debug: 'DEBUG',
 
   AmbientColor: 'AMBIENT_COLOR',
-  AmbientMap: 'AMBIENT_MAP',
-  AmbientMapScaleOffset: 'AMBIENT_MAP_SCALE_OFFSET',
+  AmbientColorMap: 'AMBIENT_COLOR_MAP',
+  AmbientColorMapTransform: 'AMBIENT_COLOR_MAP_TRANSFORM',
+  AmbientColorMapScaleOffset: 'AMBIENT_COLOR_MAP_SCALE_OFFSET',
 
-  DiffuseColor: 'DIFFUSE_COLOR',
-  DiffuseMap: 'DIFFUSE_MAP',
-  DiffuseMapScaleOffset: 'DIFFUSE_MAP_SCALE_OFFSET',
+  BaseColor: 'BASE_COLOR',
+  BaseColorMap: 'BASE_COLOR_MAP',
+  BaseColorMapTransform: 'BASE_COLOR_MAP_TRANSFORM',
+  BaseColorMapScaleOffset: 'BASE_COLOR_MAP_SCALE_OFFSET',
 
-  SpecularPower: 'SPECULAR_POWER',
   SpecularColor: 'SPECULAR_COLOR',
-  SpecularMap: 'SPECULAR_MAP',
-  SpecularMapScaleOffset: 'SPECULAR_MAP_SCALE_OFFSET',
+  SpecularColorMap: 'SPECULAR_COLOR_MAP',
+  SpecularColorMapTransform: 'SPECULAR_COLOR_MAP_TRANSFORM',
+  SpecularColorMapScaleOffset: 'SPECULAR_COLOR_MAP_SCALE_OFFSET',
 
-  EmissionColor: 'EMISSION_COLOR',
-  EmissionMap: 'EMISSION_MAP',
-  EmissionMapScaleOffset: 'EMISSION_MAP_SCALE_OFFSET',
+  EmissiveColor: 'EMISSIVE_COLOR',
+  EmissiveColorMap: 'EMISSIVE_COLOR_MAP',
+  EmissiveColorMapTransform: 'EMISSIVE_COLOR_MAP_TRANSFORM',
+  EmissiveColorMapScaleOffset: 'EMISSIVE_COLOR_MAP_SCALE_OFFSET',
 
   NormalMap: 'NORMAL_MAP',
+  NormalMapTransform: 'NORMAL_MAP_TRANSFORM',
   NormalMapScaleOffset: 'NORMAL_MAP_SCALE_OFFSET',
 
   OcclusionMap: 'OCCLUSION_MAP',
+  OcclusionMapTransform: 'OCCLUSION_MAP_TRANSFORM',
   OcclusionMapScaleOffset: 'OCCLUSION_MAP_SCALE_OFFSET',
 
   ParallaxMap: 'PARALLAX_MAP',
+  ParallaxMapTransform: 'PARALLAX_MAP_TRANSFORM',
   ParallaxMapScaleOffset: 'PARALLAX_MAP_SCALE_OFFSET',
 
-  MetallicRoughness: 'METALLIC_ROUGHNESS',
+  Metallic: 'METALLIC',
+  Roughness: 'ROUGHNESS',
+
   MetallicRoughnessMap: 'METALLIC_ROUGHNESS_MAP',
+  MetallicRoughnessMapTransform: 'METALLIC_ROUGHNESS_MAP_TRANSFORM',
   MetallicRoughnessMapScaleOffset: 'METALLIC_ROUGHNESS_MAP_SCALE_OFFSET',
+
+  SmoothnessMap: 'SMOOTHNESS_MAP',
+  SmoothnessMapTransform: 'SMOOTHNESS_MAP_TRANSFORM',
+  SmoothnessMapScaleOffset: 'SMOOTHNESS_MAP_SCALE_OFFSET',
+  SmoothnessMapChannel: 'SMOOTHNESS_MAP_CHANNEL',
 
   Skinning: 'SKINNING',
   SkinningJointCount: 'SKINNING_JOINT_COUNT',
@@ -89,50 +106,73 @@ export interface AutoMaterialParams extends MaterialParameters {
   View: IMat
   Projection: IMat
   CameraPosition: IVec3
+  ViewProjectionInverse: IMat
+  Debug: DebugOutput
 
   VertexColor: boolean
   FogColor: number[] | IVec3
   FogParams: number[]
   Alpha: number
   AlphaClip: number
+  IndexOfRefraction: number
 
   AmbientColor: number[] | IVec3
-  AmbientMap: Texture
-  AmbientMapScaleOffset: number[] | IVec4
+  AmbientColorMap: Texture
+  AmbientColorMapTransform: IMat
+  AmbientColorMapScaleOffset: number[] | IVec4
 
-  DiffuseColor: number[] | IVec4
-  DiffuseMap: Texture
-  DiffuseMapScaleOffset: number[] | IVec4
-  DiffuseMapCoord: number
+  BaseColor: number[] | IVec4
+  BaseColorMap: Texture
+  BaseColorMapCoord: number
+  BaseColorMapTransform: IMat
+  BaseColorMapScaleOffset: number[] | IVec4
+
+  Metallic: number
+  Roughness: number
+
+  MetallicRoughnessMap: Texture
+  MetallicRoughnessMapCoord: number
+  MetallicRoughnessMapTransform: IMat
+  MetallicRoughnessMapScaleOffset: number[] | IVec4
+
+  SmoothnessMap: Texture
+  SmoothnessMapCoord: number
+  SmoothnessMapTransform: IMat
+  SmoothnessMapScaleOffset: number[] | IVec4
+  SmoothnessMapChannel: string
 
   SpecularColor: number[] | IVec3
-  SpecularPower: number
-  SpecularMap: Texture
-  SpecularMapScaleOffset: number[] | IVec4
-  SpecularMapCoord: number
+  SpecularColorMap: Texture
+  SpecularColorMapCoord: number
+  SpecularColorMapTransform: IMat
+  SpecularColorMapScaleOffset: number[] | IVec4
 
-  EmissionColor: number[] | IVec3
-  EmissionMap: Texture
-  EmissionMapScaleOffset: number[] | IVec4
-  EmissionMapCoord: number
+  EmissiveColor: number[] | IVec3
+  EmissiveColorMap: Texture
+  EmissiveColorMapCoord: number
+  EmissiveColorMapTransform: IMat
+  EmissiveColorMapScaleOffset: number[] | IVec4
 
   NormalMap: Texture
-  NormalMapScaleOffset: number[] | IVec4
   NormalMapCoord: number
+  NormalMapTransform: IMat
+  NormalMapScaleOffset: number[] | IVec4
 
   OcclusionMap: Texture
-  OcclusionMapScaleOffset: number[] | IVec4
   OcclusionMapCoord: number
+  OcclusionMapTransform: IMat
+  OcclusionMapScaleOffset: number[] | IVec4
 
   ParallaxMap: Texture
-  ParallaxMapScaleOffset: number[] | IVec4
   ParallaxMapCoord: number
+  ParallaxMapTransform: IMat
+  ParallaxMapScaleOffset: number[] | IVec4
   ParallaxScaleBias: number[]
 
-  MetallicRoughness: number[]
-  MetallicRoughnessMap: Texture
-  MetallicRoughnessMapScaleOffset: number[] | IVec4
-  MetallicRoughnessMapCoord: number
+  IrradianceMap: Texture
+  EnvironmentMap: Texture
+  EnvironmentLUT: Texture
+  EnvironmentIntensity: number
 
   Skinning: boolean
   SkinningJointCount: number
@@ -179,10 +219,15 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     return this.parameters.View
   }
   public set View(v: IMat) {
-    Mat4.invert(v, tempMat4)
     this.parameters.View = v
-    this.parameters.CameraPosition = tempMat4.getTranslation()
-    this.parameters.CameraDirection = tempMat4.getForward()
+    if (v) {
+      Mat4.invert(v, tempMat4)
+      this.parameters.CameraPosition = tempMat4.getTranslation(this.parameters.CameraPosition)
+      this.parameters.CameraDirection = tempMat4.getForward(this.parameters.CameraDirection)
+    } else {
+      this.parameters.CameraPosition = Vec3.clone(Vec3.Zero)
+      this.parameters.CameraDirection = Vec3.clone(Vec3.Forward)
+    }
   }
 
   /**
@@ -268,6 +313,13 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
       v[i].toArray(this.joints, i * 16)
     }
     this.parameters['Joints[0]'] = this.joints
+  }
+
+  public get Debug(): DebugOutput {
+    return this.parameters.Debug
+  }
+  public set Debug(v: DebugOutput) {
+    this.parameters.Debug = v
   }
 
   /**
@@ -410,11 +462,11 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.AlphaClip = v
   }
 
-  public get SpecularPower(): number {
-    return this.parameters.SpecularPower
+  public get IndexOfRefraction(): number {
+    return this.parameters.IndexOfRefraction
   }
-  public set SpecularPower(v: number) {
-    this.parameters.SpecularPower = v
+  public set IndexOfRefraction(v: number) {
+    this.parameters.IndexOfRefraction = v
   }
 
   /**
@@ -436,11 +488,11 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
    * @remarks
    * Changing this value from or to `null` forces the shader to recompile.
    */
-  public get DiffuseColor(): number[] | IVec4 {
-    return this.parameters.DiffuseColor
+  public get BaseColor(): number[] | IVec4 {
+    return this.parameters.BaseColor
   }
-  public set DiffuseColor(v: number[] | IVec4) {
-    this.parameters.DiffuseColor = v
+  public set BaseColor(v: number[] | IVec4) {
+    this.parameters.BaseColor = v
   }
 
   /**
@@ -456,19 +508,26 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.SpecularColor = v
   }
 
+  public get Roughness(): number {
+    return this.parameters.Roughness
+  }
+  public set Roughness(v: number) {
+    this.parameters.Roughness = v
+  }
+
   /**
    * Gets and sets the emission color.
    *
    * @remarks
    * Changing this value from or to `null` forces the shader to recompile.
-   * `EmissionColor` and `EmissionMap` are mutually exclusive. Make sure there is either
-   * `EmissionColor` OR `EmissionMap` enabled, but not both.
+   * `EmissiveColor` and `EmissiveColorMap` are mutually exclusive. Make sure there is either
+   * `EmissiveColor` OR `EmissiveColorMap` enabled, but not both.
    */
-  public get EmissionColor(): number[] | IVec3 {
-    return this.parameters.EmissionColor
+  public get EmissiveColor(): number[] | IVec3 {
+    return this.parameters.EmissiveColor
   }
-  public set EmissionColor(v: number[] | IVec3) {
-    this.parameters.EmissionColor = v
+  public set EmissiveColor(v: number[] | IVec3) {
+    this.parameters.EmissiveColor = v
   }
 
   /**
@@ -477,18 +536,25 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
    * @remarks
    * Changing this value from or to `null` forces the shader to recompile.
    */
-  public get AmbientMap(): Texture {
-    return this.parameters.AmbientMap
+  public get AmbientColorMap(): Texture {
+    return this.parameters.AmbientColorMap
   }
-  public set AmbientMap(v: Texture) {
-    this.parameters.AmbientMap = v
+  public set AmbientColorMap(v: Texture) {
+    this.parameters.AmbientColorMap = v
   }
 
-  public get AmbientMapScaleOffset(): number[] | IVec4 {
-    return this.parameters.AmbientMapScaleOffset
+  public get AmbientColorMapScaleOffset(): number[] | IVec4 {
+    return this.parameters.AmbientColorMapScaleOffset
   }
-  public set AmbientMapScaleOffset(v: number[] | IVec4) {
-    this.parameters.AmbientMapScaleOffset = v
+  public set AmbientColorMapScaleOffset(v: number[] | IVec4) {
+    this.parameters.AmbientColorMapScaleOffset = v
+  }
+
+  public get AmbientColorMapTransform(): IMat {
+    return this.parameters.AmbientColorMapTransform
+  }
+  public set AmbientColorMapTransform(v: IMat) {
+    this.parameters.AmbientColorMapTransform = v
   }
 
   /**
@@ -497,56 +563,102 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
    * @remarks
    * Changing this value from or to `null` forces the shader to recompile.
    */
-  public get DiffuseMap(): Texture {
-    return this.parameters.DiffuseMap
+  public get BaseColorMap(): Texture {
+    return this.parameters.BaseColorMap
   }
-  public set DiffuseMap(v: Texture) {
-    this.parameters.DiffuseMap = v
-  }
-
-  public get DiffuseMapScaleOffset(): number[] | IVec4 {
-    return this.parameters.DiffuseMapScaleOffset
-  }
-  public set DiffuseMapScaleOffset(v: number[] | IVec4) {
-    this.parameters.DiffuseMapScaleOffset = v
+  public set BaseColorMap(v: Texture) {
+    this.parameters.BaseColorMap = v
   }
 
-  public get DiffuseMapCoord(): number {
-    return this.parameters.DiffuseMapCoord
+  public get BaseColorMapTransform(): IMat {
+    return this.parameters.BaseColorMapTransform
   }
-  public set DiffuseMapUV(v: number) {
-    if (this.parameters.DiffuseMapCoord !== v) {
-      this.parameters.DiffuseMapCoord = v
+  public set BaseColorMapTransform(v: IMat) {
+    this.parameters.BaseColorMapTransform = v
+  }
+
+  public get BaseColorMapScaleOffset(): number[] | IVec4 {
+    return this.parameters.BaseColorMapScaleOffset
+  }
+  public set BaseColorMapScaleOffset(v: number[] | IVec4) {
+    this.parameters.BaseColorMapScaleOffset = v
+  }
+
+  public get BaseColorMapCoord(): number {
+    return this.parameters.BaseColorMapCoord
+  }
+  public set BaseColorMapUV(v: number) {
+    if (this.parameters.BaseColorMapCoord !== v) {
+      this.parameters.BaseColorMapCoord = v
       this.needsUpdate = true
     }
   }
 
-  /**
-   * Gets and sets the specular texture.
-   *
-   * @remarks
-   * Changing this value from or to `null` forces the shader to recompile.
-   */
-  public get SpecularMap(): Texture {
-    return this.parameters.SpecularMap
+  public get SpecularColorMap(): Texture {
+    return this.parameters.SpecularColorMap
   }
-  public set SpecularMap(v: Texture) {
-    this.parameters.SpecularMap = v
+  public set SpecularColorMap(v: Texture) {
+    this.parameters.SpecularColorMap = v
   }
 
-  public get SpecularMapScaleOffset(): number[] | IVec4 {
-    return this.parameters.SpecularMapScaleOffset
+  public get SpecularColorMapTransform(): IMat {
+    return this.parameters.SpecularColorMapTransform
   }
-  public set SpecularMapScaleOffset(v: number[] | IVec4) {
-    this.parameters.SpecularMapScaleOffset = v
+  public set SpecularColorMapTransform(v: IMat) {
+    this.parameters.SpecularColorMapTransform = v
   }
 
-  public get SpecularMapCoord(): number {
-    return this.parameters.SpecularMapCoord
+  public get SpecularColorMapScaleOffset(): number[] | IVec4 {
+    return this.parameters.SpecularColorMapScaleOffset
   }
-  public set SpecularMapCoord(v: number) {
-    if (this.parameters.SpecularMapCoord !== v) {
-      this.parameters.SpecularMapCoord = v
+  public set SpecularColorMapScaleOffset(v: number[] | IVec4) {
+    this.parameters.SpecularColorMapScaleOffset = v
+  }
+
+  public get SpecularColorMapCoord(): number {
+    return this.parameters.SpecularColorMapCoord
+  }
+  public set SpecularColorMapCoord(v: number) {
+    if (this.parameters.SpecularColorMapCoord !== v) {
+      this.parameters.SpecularColorMapCoord = v
+      this.needsUpdate = true
+    }
+  }
+
+  public get SmoothnessMap(): Texture {
+    return this.parameters.SmoothnessMap
+  }
+  public set SmoothnessMap(v: Texture) {
+    this.parameters.SmoothnessMap = v
+  }
+
+  public get SmoothnessMapChannel(): string {
+    return this.parameters.SmoothnessMapChannel
+  }
+  public set SmoothnessMapChannel(v: string) {
+    this.parameters.SmoothnessMapChannel = v
+  }
+
+  public get SmoothnessMapTransform(): IMat {
+    return this.parameters.SmoothnessMapTransform
+  }
+  public set SmoothnessMapTransform(v: IMat) {
+    this.parameters.SmoothnessMapTransform = v
+  }
+
+  public get SmoothnessMapScaleOffset(): number[] | IVec4 {
+    return this.parameters.SmoothnessMapScaleOffset
+  }
+  public set SmoothnessMapScaleOffset(v: number[] | IVec4) {
+    this.parameters.SmoothnessMapScaleOffset = v
+  }
+
+  public get SmoothnessMapCoord(): number {
+    return this.parameters.SmoothnessMapCoord
+  }
+  public set SmoothnessMapCoord(v: number) {
+    if (this.parameters.SmoothnessMapCoord !== v) {
+      this.parameters.SmoothnessMapCoord = v
       this.needsUpdate = true
     }
   }
@@ -557,26 +669,33 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
    * @remarks
    * Changing this value from or to `null` forces the shader to recompile.
    */
-  public get EmissionMap(): Texture {
-    return this.parameters.EmissionMap
+  public get EmissiveColorMap(): Texture {
+    return this.parameters.EmissiveColorMap
   }
-  public set EmissionMap(v: Texture) {
-    this.parameters.EmissionMap = v
-  }
-
-  public get EmissionMapScaleOffset(): number[] | IVec4 {
-    return this.parameters.EmissionMapScaleOffset
-  }
-  public set EmissionMapScaleOffset(v: number[] | IVec4) {
-    this.parameters.EmissionMapScaleOffset = v
+  public set EmissiveColorMap(v: Texture) {
+    this.parameters.EmissiveColorMap = v
   }
 
-  public get EmissionMapCoord(): number {
-    return this.parameters.EmissionMapCoord
+  public get EmissiveColorMapTransform(): IMat {
+    return this.parameters.EmissiveColorMapTransform
   }
-  public set EmissionMapCoord(v: number) {
-    if (this.parameters.EmissionMapCoord !== v) {
-      this.parameters.EmissionMapCoord = v
+  public set EmissiveColorMapTransform(v: IMat) {
+    this.parameters.EmissiveColorMapTransform = v
+  }
+
+  public get EmissiveColorMapScaleOffset(): number[] | IVec4 {
+    return this.parameters.EmissiveColorMapScaleOffset
+  }
+  public set EmissiveColorMapScaleOffset(v: number[] | IVec4) {
+    this.parameters.EmissiveColorMapScaleOffset = v
+  }
+
+  public get EmissiveColorMapCoord(): number {
+    return this.parameters.EmissiveColorMapCoord
+  }
+  public set EmissiveColorMapCoord(v: number) {
+    if (this.parameters.EmissiveColorMapCoord !== v) {
+      this.parameters.EmissiveColorMapCoord = v
       this.needsUpdate = true
     }
   }
@@ -592,6 +711,13 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set NormalMap(v: Texture) {
     this.parameters.NormalMap = v
+  }
+
+  public get NormalMapTransform(): IMat {
+    return this.parameters.NormalMapTransform
+  }
+  public set NormalMapTransform(v: IMat) {
+    this.parameters.NormalMapTransform = v
   }
 
   public get NormalMapScaleOffset(): number[] | IVec4 {
@@ -624,6 +750,13 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     this.parameters.OcclusionMap = v
   }
 
+  public get OcclusionMapTransform(): IMat {
+    return this.parameters.OcclusionMapTransform
+  }
+  public set OcclusionMapTransform(v: IMat) {
+    this.parameters.OcclusionMapTransform = v
+  }
+
   public get OcclusionMapScaleOffset(): number[] | IVec4 {
     return this.parameters.OcclusionMapScaleOffset
   }
@@ -646,6 +779,13 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
   }
   public set ParallaxMap(v: Texture) {
     this.parameters.ParallaxMap = v
+  }
+
+  public get ParallaxMapTransform(): IMat {
+    return this.parameters.ParallaxMapTransform
+  }
+  public set ParallaxMapTransform(v: IMat) {
+    this.parameters.ParallaxMapTransform = v
   }
 
   public get ParallaxMapScaleOffset(): number[] | IVec4 {
@@ -696,18 +836,25 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     }
   }
 
-  /**
-   * Gets and sets the metallic roughness texture.
-   *
-   * @remarks
-   * Changing this value from or to `null` forces the shader to recompile.
-   * This is only useful if the `ShadeFunction` is set to `shadePbr`
-   */
+  public get Metallic(): number {
+    return this.parameters.Metallic ?? 1
+  }
+  public set Metallic(v: number) {
+    this.parameters.Metallic = v
+  }
+
   public get MetallicRoughnessMap(): Texture {
     return this.parameters.MetallicRoughnessMap
   }
   public set MetallicRoughnessMap(v: Texture) {
     this.parameters.MetallicRoughnessMap = v
+  }
+
+  public get MetallicRoughnessMapTransform(): IMat {
+    return this.parameters.MetallicRoughnessMapTransform
+  }
+  public set MetallicRoughnessMapTransform(v: IMat) {
+    this.parameters.MetallicRoughnessMapTransform = v
   }
 
   public get MetallicRoughnessMapCoord(): number {
@@ -720,24 +867,36 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     }
   }
 
-  public get Metallic(): number {
-    const params = this.parameters.MetallicRoughness || [1, 1]
-    return params ? params[0] : 0
+  public get IrradianceMap(): Texture {
+    return this.parameters.IrradianceMap
   }
-  public set Metallic(v: number) {
-    const params = this.parameters.MetallicRoughness || [1, 1]
-    params[0] = v
-    this.parameters.MetallicRoughness = params
+  public set IrradianceMap(v: Texture) {
+    this.parameters.IrradianceMap = v
   }
 
-  public get Roughness(): number {
-    const params = this.parameters.MetallicRoughness || [1, 1]
-    return params ? params[1] : 0
+  public get EnvironmentMap(): Texture {
+    return this.parameters.EnvironmentMap
   }
-  public set Roughness(v: number) {
-    const params = this.parameters.MetallicRoughness || [1, 1]
-    params[1] = v
-    this.parameters.MetallicRoughness = params
+  public set EnvironmentMap(v: Texture) {
+    const hasMap = !!this.parameters.EnvironmentMap
+    this.parameters.EnvironmentMap = v
+    if (hasMap !== !!v) {
+      this.needsUpdate = true
+    }
+  }
+
+  public get EnvironmentLUT(): Texture {
+    return this.parameters.EnvironmentLUT
+  }
+  public set EnvironmentLUT(v: Texture) {
+    this.parameters.EnvironmentLUT = v
+  }
+
+  public get EnvironmentIntensity(): number {
+    return this.parameters.EnvironmentIntensity
+  }
+  public set EnvironmentIntensity(v: number) {
+    this.parameters.EnvironmentIntensity = v
   }
 
   private useTangentPlane = false
@@ -758,16 +917,21 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     return this._effect
   }
 
-  private defines: DefaultProgramDefs = {}
+  private defines: MaterialProgramDefs = {}
   private lights: LightParams[] = []
-  private needsUpdate = true
+  public needsUpdate = true
   protected _effect: Effect
 
-  public constructor(device: Device, options?: MaterialOptionsBase<AutoMaterialParams>) {
+  public constructor(device: Device, options?: MaterialOptionsBase<Partial<AutoMaterialParams>>) {
     super(device, (options as any) || {})
   }
 
-  protected createParameters(options: MaterialOptions): void {
+  public updateCamera(view: Mat4, projection: Mat4) {
+    this.View = view
+    this.Projection = projection
+  }
+
+  protected override createParameters(options: MaterialOptions): void {
     const params = {
       ...((options.parameters || {}) as AutoMaterialParams),
     }
@@ -777,7 +941,8 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
         delete params[key]
       }
     }
-    instantiateMaterialTextures(this.device, params)
+    const textures = instantiateMaterialTextures(this.device, params)
+    this.disposables.push(...textures)
     this.parameters = new Proxy(params, {
       set: (target, name, value): boolean => {
         this.setParamValue(target, name, value)
@@ -807,11 +972,11 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
     }
   }
 
-  private updateEffect() {
+  public updateEffect() {
+    this.needsUpdate = false
     this._effect?.dispose()
     this._effect = null
-    this.updateDefines()
-    // console.debug(`AutoMaterial:`, this.defines)
+    this.updateDefines(this.defines)
     this._effect = this.device.createEffect({
       techniques: [
         {
@@ -825,12 +990,11 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
         },
       ],
     })
-    this.needsUpdate = false
   }
 
-  private updateDefines() {
-    for (const key in this.defines) {
-      delete this.defines[key]
+  public updateDefines(defines: MaterialProgramDefs) {
+    for (const key in defines) {
+      delete defines[key]
     }
     for (const param in this.parameters) {
       const defineKey = defineMap[param]
@@ -838,72 +1002,79 @@ export class AutoMaterial extends Material<AutoMaterialParams> {
         continue
       }
       if (this.parameters[param] != null) {
-        this.defines[defineKey] = true
+        defines[defineKey] = true
       }
     }
     if (this.useTangentPlane) {
-      delete this.defines.V_TANGENT
-      this.defines.V_TANGENT_PLANE = true
-    } else if (this.NormalMap) {
-      this.defines.V_TANGENT = true
-      delete this.defines.V_TANGENT_PLANE
-    } else {
-      delete this.defines.V_TANGENT
+      delete defines.V_TANGENT
+      defines.V_TANGENT_PLANE = true
     }
+
+    if (this.NormalMap) {
+      //
+    }
+
     if (this.LightCount > 0) {
-      this.defines.LIGHT = true
-      this.defines.LIGHT_COUNT = this.LightCount
+      defines.LIGHT = true
+      defines.LIGHT_COUNT = this.LightCount
     } else {
-      delete this.defines.LIGHT
-      delete this.defines.LIGHT_COUNT
+      delete defines.LIGHT
+      delete defines.LIGHT_COUNT
     }
-    this.defines.SHADE_FUNCTION = this.ShadeFunction
+    defines.SHADE_FUNCTION = this.ShadeFunction
 
     if (this.parallaxOcclusionSamples > 0) {
-      this.defines.PARALLAX_OCCLUSION = true
-      this.defines.PARALLAX_OCCLUSION_SAMPLES = this.parallaxOcclusionSamples | 0
+      defines.PARALLAX_OCCLUSION = true
+      defines.PARALLAX_OCCLUSION_SAMPLES = this.parallaxOcclusionSamples | 0
     } else {
-      delete this.defines.PARALLAX_OCCLUSION
-      delete this.defines.PARALLAX_OCCLUSION_SAMPLES
+      delete defines.PARALLAX_OCCLUSION
+      delete defines.PARALLAX_OCCLUSION_SAMPLES
     }
 
     if (this.Skinning) {
-      this.defines.SKINNING = true
-      this.defines.SKINNING_JOINT_COUNT = this.SkinningJointCount
-      this.defines.SKINNING_WEIGHT_COUNT = this.SkinningWeightCount
+      defines.SKINNING = true
+      defines.SKINNING_JOINT_COUNT = this.SkinningJointCount
+      defines.SKINNING_WEIGHT_COUNT = this.SkinningWeightCount
     } else {
-      delete this.defines.SKINNING
-      delete this.defines.SKINNING_JOINT_COUNT
-      delete this.defines.SKINNING_WEIGHT_COUNT
+      delete defines.SKINNING
+      delete defines.SKINNING_JOINT_COUNT
+      delete defines.SKINNING_WEIGHT_COUNT
     }
 
-    if (this.DiffuseMapCoord > 0) {
-      this.defines.DIFFUSE_MAP_UV = `vTexture${this.DiffuseMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.DiffuseMapCoord}`] = true
+    if (this.SmoothnessMapChannel) {
+      defines.SMOOTHNESS_MAP_CHANNEL = this.SmoothnessMapChannel
     }
-    if (this.SpecularMapCoord > 0) {
-      this.defines.SPECULAR_MAP_UV = `vTexture${this.SpecularMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.SpecularMapCoord}`] = true
+
+    if (this.BaseColorMapCoord > 0) {
+      defines.BASE_COLOR_MAP_UV = `vTexture${this.BaseColorMapCoord}.xy`
+      defines[`V_TEXTURE${this.BaseColorMapCoord}`] = true
     }
-    if (this.EmissionMapCoord > 0) {
-      this.defines.EMISSION_MAP_UV = `vTexture${this.EmissionMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.EmissionMapCoord}`] = true
+    if (this.SpecularColorMapCoord > 0) {
+      defines.SPECULAR_COLOR_MAP_UV = `vTexture${this.SpecularColorMapCoord}.xy`
+      defines[`V_TEXTURE${this.SpecularColorMapCoord}`] = true
+    }
+    if (this.EmissiveColorMapCoord > 0) {
+      defines.EMISSIVE_COLOR_MAP_UV = `vTexture${this.EmissiveColorMapCoord}.xy`
+      defines[`V_TEXTURE${this.EmissiveColorMapCoord}`] = true
     }
     if (this.NormalMapCoord > 0) {
-      this.defines.NORMAL_MAP_UV = `vTexture${this.NormalMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.NormalMapCoord}`] = true
+      defines.NORMAL_MAP_UV = `vTexture${this.NormalMapCoord}.xy`
+      defines[`V_TEXTURE${this.NormalMapCoord}`] = true
     }
     if (this.OcclusionMapCoord > 0) {
-      this.defines.OCCLUSION_MAP_UV = `vTexture${this.OcclusionMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.OcclusionMapCoord}`] = true
+      defines.OCCLUSION_MAP_UV = `vTexture${this.OcclusionMapCoord}.xy`
+      defines[`V_TEXTURE${this.OcclusionMapCoord}`] = true
     }
     if (this.ParallaxMapCoord > 0) {
-      this.defines.PARALLAX_MAP_UV = `vTexture${this.ParallaxMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.ParallaxMapCoord}`] = true
+      defines.PARALLAX_MAP_UV = `vTexture${this.ParallaxMapCoord}.xy`
+      defines[`V_TEXTURE${this.ParallaxMapCoord}`] = true
     }
     if (this.MetallicRoughnessMapCoord > 0) {
-      this.defines.METALLIC_ROUGHNESS_MAP_UV = `vTexture${this.MetallicRoughnessMapCoord}.xy`
-      this.defines[`V_TEXTURE${this.MetallicRoughnessMapCoord}`] = true
+      defines.METALLIC_ROUGHNESS_MAP_UV = `vTexture${this.MetallicRoughnessMapCoord}.xy`
+      defines[`V_TEXTURE${this.MetallicRoughnessMapCoord}`] = true
+    }
+    if (this.EnvironmentMap) {
+      defines.ENVIRONMENT_MAP = true
     }
   }
 }

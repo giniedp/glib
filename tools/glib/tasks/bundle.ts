@@ -1,20 +1,37 @@
-import { RollupOptions, OutputOptions } from 'rollup'
 import alias from '@rollup/plugin-alias'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import sourcemaps from 'rollup-plugin-sourcemaps'
-import multi from '@rollup/plugin-multi-entry'
+import { OutputOptions, RollupOptions } from 'rollup'
+// import sourcemaps from 'rollup-plugin-sourcemaps'
 import visualizer from 'rollup-plugin-visualizer'
-import { build } from 'esbuild'
-import { project, GlibPackageContext } from '../context'
-import { rollupOrWatch, BundleWatchOptions, rollupIgnoreWarnings, rollupIstanbulInstrumenter } from './plugins'
+import { GlibPackageContext, project } from '../context'
+import { BundleWatchOptions, rollupIgnoreWarnings, rollupOrWatch } from './plugins'
+import { build, InlineConfig } from 'vite'
 
 export function bundle(options: { watch?: boolean } = {}) {
   return Promise.all(project.glibPackages.map((pkg) => rollupPackage(pkg, options)))
+  // return Promise.all(project.glibPackages.map((pkg) => vitePackage(pkg, options)))
 }
 
-export const bundleTests = rollupTests
+async function vitePackage(pkg: GlibPackageContext, options: BundleWatchOptions = {}) {
+  const [entries, globals] = resolveAliases(pkg.baseName !== 'gglib')
 
-const IS_COVERAGE = !!process.env.IS_COVERAGE
+  return build({
+    resolve: {
+      extensions: ['.mts', '.ts', '.js', '.json'],
+      external: Object.keys(globals),
+    },
+    build: {
+      lib: {
+        entry: pkg.tscOutDir('index.js'),
+        name: pkg.globalName,
+        fileName: (format) => `${pkg.baseName}.${format}.js`,
+        formats: ['umd'],
+      },
+      sourcemap: true,
+      outDir: pkg.rollupOutDir(),
+    }
+  })
+}
 
 async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOptions = {}) {
   const [entries, globals] = resolveAliases(pkg.baseName !== 'gglib')
@@ -26,7 +43,7 @@ async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOption
       alias({
         entries: entries,
       }),
-      sourcemaps(),
+      // sourcemaps(),
       visualizer({
         filename: pkg.distDir('stats.html'),
       }),
@@ -41,40 +58,6 @@ async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOption
     name: pkg.globalName,
     globals: globals,
     exports: 'named',
-  }
-  return rollupOrWatch(inputOptions, outputOptions, options)
-}
-
-async function rollupTests(options: BundleWatchOptions = {}) {
-  const [entries, globals] = resolveAliases(false)
-  const pkgs = project.glibPackages.filter((it) => !it.isRootModule)
-  const globSpecs = pkgs.map((pkg) => pkg.tscOutDir('**', '*.spec.js'))
-  const globSrc = pkgs.map((pkg) => pkg.tscOutDir('**', '*.js'))
-  const inputOptions: RollupOptions = {
-    input: globSpecs,
-    onwarn: rollupIgnoreWarnings(['THIS_IS_UNDEFINED']),
-    plugins: [
-      multi(),
-      nodeResolve(),
-      alias({
-        entries: entries,
-      }),
-      sourcemaps(),
-      IS_COVERAGE
-        ? rollupIstanbulInstrumenter({
-            include: globSrc,
-            exclude: globSpecs,
-          })
-        : null,
-    ].filter((it) => it != null),
-    external: Object.keys(globals),
-  }
-  const outputOptions: OutputOptions = {
-    format: 'cjs',
-    sourcemap: true,
-    file: project.toolsDir('test', 'index.spec.js'),
-    name: 'TEST',
-    globals: globals,
   }
   return rollupOrWatch(inputOptions, outputOptions, options)
 }

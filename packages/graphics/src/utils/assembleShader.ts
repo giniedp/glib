@@ -36,33 +36,58 @@ export type ShaderChunkSet<T = void> = Record<string, ShaderChunk>
  */
 export type ShaderDefines = Record<string, any>
 
-/**
- * Combines a set of shader chunks into a single shader source file
- *
- * @public
- * @param base - The initial chunk to process
- * @param chunks - A map of available shader chunks to include
- * @param defines - A map of shader defines to include
- */
-export function assembleShader(base: string, chunks: ShaderChunkSet[], defines: ShaderDefines = {}): string {
-  const defs = Object.keys(defines).sort().map((k) => {
-    const value = defines[k]
-    if (value === true) {
-      return `#define ${k}`
-    }
-    if (value != null && value !== false) {
-      return `#define ${k} ${value}`
-    }
-  }).filter((it) => it).join('\n')
-
-  return build(base, [{ defines: defs }, ...chunks])
+export interface AssembleProgramOptions {
+  template: string
+  chunks: ShaderChunkSet[]
+  defines?: ShaderDefines
 }
 
-function build(base: string, blocks: ShaderChunkSet[], prefix: string = ''): string {
+/**
+ * Combines a set of shader chunks into `vertexShader` and `fragmentShader` source files
+ *
+ * @public
+ */
+export function assembleProgram({ template, chunks, defines }: AssembleProgramOptions): ShaderProgramOptions {
+  // prettier-ignore
+  return {
+    vertexShader: build(template, [
+      { defines: '#define VERTEX_SHADER' },
+      buildDefinesChunk(defines),
+      ...chunks,
+    ]),
+    fragmentShader: build(template, [
+      { defines: '#define FRAGMENT_SHADER' },
+      buildDefinesChunk(defines),
+      ...chunks,
+    ]),
+  }
+}
+
+function define(key: string, value?: any): string {
+  if (value === true) {
+    return `#define ${key}`
+  }
+  if (value != null && value !== false) {
+    return `#define ${key} ${value}`
+  }
+  return ''
+}
+
+function buildDefinesChunk(defines: ShaderDefines): ShaderChunkSet {
+  return {
+    defines: Object.keys(defines || {})
+      .sort()
+      .map((k) => define(k, defines[k]))
+      .filter((it) => it)
+      .join('\n'),
+  }
+}
+
+function build(template: string, blocks: ShaderChunkSet[], prefix: string = ''): string {
   const result: string[] = []
 
   const blockRegx = /^(\s*)#pragma block:(\w+)(\s*)$/
-  for (const line of base.split('\n')) {
+  for (const line of template.split('\n')) {
     const match = line.match(blockRegx)
     if (match) {
       const indent = match[1]
@@ -89,19 +114,4 @@ function build(base: string, blocks: ShaderChunkSet[], prefix: string = ''): str
     }
   }
   return result.join('\n').replace(/(\s*\n)+/g, '\n') + '\n'
-}
-
-/**
- * Combines a set of shader chunks into `vertexShader` and `fragmentShader` source files
- *
- * @public
- * @param base - The initial chunk to process
- * @param chunks - A map of available shader chunks to include
- * @param defines - A map of shader defines to include
- */
-export function assembleProgram(base: string, chunks: ShaderChunkSet[], defines?: ShaderDefines): ShaderProgramOptions {
-  return {
-    vertexShader: assembleShader(base, [{ defines: '#define VERTEX_SHADER' }, ...chunks], defines),
-    fragmentShader: assembleShader(base, [{ defines: '#define FRAGMENT_SHADER' }, ...chunks], defines),
-  }
 }

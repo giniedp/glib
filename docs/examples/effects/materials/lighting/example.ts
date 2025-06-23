@@ -1,60 +1,58 @@
-import { createDevice, cubeGeometry, LightType, Mesh } from '@gglib/graphics'
+import { createDevice, cubeGeometry, Device, LightType, Material, Mesh, SamplerState } from '@gglib/graphics'
+import { Mouse } from '@gglib/input'
 import { LightParams, materialProgram } from '@gglib/materials'
-import { Mat4 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({
-    canvas,
-  })
+  const device = createDevice({ canvas })
 
-  const lightingEffect = device.createEffect({
+  const material = new Material(device, {
     program: materialProgram({
-      DIFFUSE_MAP: true,
+      AMBIENT_COLOR: true,
+      BASE_COLOR_MAP: true,
       LIGHT: true,
       LIGHT_COUNT: 1,
       SHADE_FUNCTION: 'shadeLambert',
     }),
+    parameters: {
+      AmbientColor: [0.2, 0.2, 0.2],
+      BaseColorMap: device.createTexture({
+        source: '/textures/cc0textures.com/TilesColor.jpg',
+        sampler: SamplerState.LinearWrap,
+        generateMipmap: true,
+      }),
+    },
   })
-
+  const mouse = new Mouse({
+    captureTarget: canvas,
+    preventDefault: true,
+  })
   const light = new LightParams()
   light.enabled = true
   light.type = LightType.Directional
   light.color = [1, 1, 1]
   light.direction = [0, 0, -1]
 
+  const camera = demoCamera()
   const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const proj = Mat4.createIdentity()
-  const cam = Mat4.createIdentity()
-
   const mesh = new Mesh(device, {
     parts: [cubeGeometry(device)],
-    materials: [
-      {
-        effect: lightingEffect,
-        parameters: {
-          DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
-        },
-      },
-    ],
+    materials: [material],
   })
 
   function frame(time: number) {
     device.resize()
     device.clear(0xff2e2620, 1)
 
-    cam.setTranslationXYZ(0, 0, 3)
-    Mat4.invert(cam, view)
-    proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
-    world.initRotationY(time / 4000)
+    camera.update(mouse, device)
 
     for (const mtl of mesh.materials) {
       mtl.parameters.World = world
-      mtl.parameters.View = view
-      mtl.parameters.Projection = proj
-      mtl.parameters.CameraPosition = cam.getTranslation()
+      mtl.parameters.View = camera.view
+      mtl.parameters.Projection = camera.projection
+      mtl.parameters.CameraPosition = camera.position
       light.assign(0, mtl.parameters)
     }
     mesh.draw()
@@ -78,4 +76,38 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   return () => {
     looper.stop()
   }
+}
+
+function demoCamera() {
+  const data =  {
+    theta: 0,
+    phi: 90,
+    distance: 2,
+    position: Vec3.create(),
+    view: Mat4.createIdentity(),
+    projection: Mat4.createIdentity(),
+    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device)
+  }
+  return data
+}
+
+function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, device: Device) {
+  mouse.update()
+  if (mouse.leftButtonIsPressed) {
+    camera.theta -= mouse.dx * 0.1
+    camera.phi -= mouse.dy * 0.1
+  }
+  if (mouse.middleButtonIsPressed) {
+    camera.distance += mouse.dy * 0.01
+    camera.distance = Math.max(0.1, camera.distance)
+  }
+
+  // prettier-ignore
+  camera.position.initSpherical(
+    camera.phi * DEGREE_TO_RAD,
+    camera.theta * DEGREE_TO_RAD,
+    camera.distance,
+  )
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
+  camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
 }

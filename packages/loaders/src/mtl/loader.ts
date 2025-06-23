@@ -21,7 +21,7 @@ export function registerPlugin(plugin: LoaderPlugin): void {
 
 export class Loader implements AssetLoader, LoaderPlugin {
   public static extensions = ['.mtl']
-  public static mimeTypes = ['application/x-obj']
+  public static mimeTypes = ['application/x-mtl']
   public static loader = Loader
 
   public static PLUGINS: LoaderPlugin[] = []
@@ -31,7 +31,11 @@ export class Loader implements AssetLoader, LoaderPlugin {
     const response = await context.content.fetch(url, {
       responseType: 'text',
     })
-    this.document = parse(response.body)
+    return this.loadFromText(response.body, context)
+  }
+
+  public async loadFromText(content: string, context: LoaderContext): Promise<AssetContainer> {
+    this.document = parse(content)
     return this.convert(this.document, context)
   }
 
@@ -91,7 +95,7 @@ export class Loader implements AssetLoader, LoaderPlugin {
     }
 
     if (mtl.Kd) {
-      params.DiffuseColor = mtl.Kd
+      params.BaseColor = mtl.Kd
     }
 
     if (mtl.Ks) {
@@ -109,10 +113,10 @@ export class Loader implements AssetLoader, LoaderPlugin {
     }
 
     if (mtl.Ns != null) {
-      params.SpecularPower = mtl.Ns
+      params.Roughness = Math.max(0.0, 1.0 - mtl.Ns)
       // TODO: convert to range [0:1]
-      // if (result.parameters.SpecularPower > 1) {
-      //   result.parameters.SpecularPower = Math.log(result.parameters.SpecularPower) / Math.log(2) / 10.5
+      // if (result.parameters.SpecularSmoothness > 1) {
+      //   result.parameters.SpecularSmoothness = Math.log(result.parameters.SpecularSmoothness) / Math.log(2) / 10.5
       // }
     }
 
@@ -137,13 +141,13 @@ export class Loader implements AssetLoader, LoaderPlugin {
     }
 
     if (mtl.map_Ka?.file) {
-      tasks.push(setTexture('AmbientMap', mtl.map_Ka))
+      tasks.push(setTexture('AmbientColorMap', mtl.map_Ka))
     }
     if (mtl.map_Kd?.file) {
-      tasks.push(setTexture('DiffuseMap', mtl.map_Kd))
+      tasks.push(setTexture('BaseColorMap', mtl.map_Kd))
     }
     if (mtl.map_Ks?.file) {
-      tasks.push(setTexture('SpecularMap', mtl.map_Ks))
+      tasks.push(setTexture('SpecularColorMap', mtl.map_Ks))
     }
     if (mtl.map_d?.file) {
       tasks.push(setTexture('AlphaMap', mtl.map_d))
@@ -155,7 +159,7 @@ export class Loader implements AssetLoader, LoaderPlugin {
       tasks.push(setTexture('DisplaceMap', mtl.disp))
     }
     if (mtl.refl?.file) {
-      tasks.push(setTexture('ReflectionMap', mtl.refl))
+      tasks.push(setTexture('EnvironmentMap', mtl.refl))
     }
 
     await Promise.all(tasks)
@@ -169,7 +173,7 @@ export class Loader implements AssetLoader, LoaderPlugin {
       return plugin.loadTextureOptions(map, context)
     }
 
-    const url = context.content.resolveUrl(map.file, context.assetUrl)
+    const url = context.content.resolveUrl(map.file, context)
     const asset = await context.content.loadAsset(url)
     return {
       ...asset.textures[0],

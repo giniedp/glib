@@ -21,7 +21,7 @@ export class LoaderTypeRegistry {
 }
 
 export interface AssetLoader {
-  load(url: string, context: LoaderContext): Promise<AssetContainer>
+  load(url: string | Blob, context: LoaderContext): Promise<AssetContainer>
 }
 
 export type LoaderType = new (content: ContentLoader) => AssetLoader

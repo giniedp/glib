@@ -3,7 +3,7 @@ import type { GameComponent, GameComponentType } from './GameComponent'
 import { GameProvider, GameSystem } from './GameSystem'
 import { GameTransform } from './GameTransform'
 
-export const enum EntityState {
+export enum EntityState {
   Created = 0,
   Initializing = 1,
   Initialized = 2,

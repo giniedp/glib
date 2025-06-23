@@ -1,31 +1,6 @@
 import { Property } from './common'
 
 /**
- * https://github.com/KhronosGroup/glTF/blob/master/extensions/2.0/Khronos/KHR_texture_transform/README.md
- */
-export const KHR_texture_transform = 'KHR_texture_transform'
-
-export interface TextureTransform {
-  /**
-   * The offset of the UV coordinate origin as a factor of the texture dimensions.
-   */
-  offset?: number[]
-  /**
-   * Rotate the UVs by this many radians counter-clockwise around the origin.
-   * This is equivalent to a similar rotation of the image clockwise.
-   */
-  rotation?: number
-  /**]
-   * The scale factor applied to the components of the UV coordinates.
-   */
-  scale?: number[]
-  /**
-   * Overrides the textureInfo texCoord value if supplied, and if this extension is supported.
-   */
-  texCoord?: number
-}
-
-/**
  * Reference to a texture.
  */
 export interface TextureInfo extends Property {

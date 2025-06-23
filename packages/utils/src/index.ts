@@ -1,7 +1,6 @@
 export * from './BinaryReader'
 export * from './TextReader'
 export * from './DataUri'
-export * from './Http'
 export * from './Log'
 export * from './Uri'
 export * from './utils'

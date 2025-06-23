@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\components.umd.js",
   "module": "dist\\components\\src\\index.js",
+  "main": "dist\\components\\src\\index.js",
   "typings": "dist\\components\\src\\index.d.ts",
   "devDependencies": {
     "@gglib/ecs": "workspace:^0.6.2",
@@ -24,9 +25,9 @@
     "@gglib/render": "workspace:^0.6.2",
     "@gglib/utils": "workspace:^0.6.2",
     "@gglib/input": "workspace:^0.6.2",
+    "@gglib/content": "workspace:^0.6.2",
     "@gglib/model": "workspace:^0.6.2",
-    "@gglib/materials": "workspace:^0.6.2",
-    "@gglib/content": "workspace:^0.6.2"
+    "@gglib/materials": "workspace:^0.6.2"
   },
   "peerDependencies": {
     "@gglib/ecs": "0.6.2",
@@ -35,9 +36,9 @@
     "@gglib/render": "0.6.2",
     "@gglib/utils": "0.6.2",
     "@gglib/input": "0.6.2",
+    "@gglib/content": "0.6.2",
     "@gglib/model": "0.6.2",
-    "@gglib/materials": "0.6.2",
-    "@gglib/content": "0.6.2"
+    "@gglib/materials": "0.6.2"
   },
   "files": [
     "package.json",

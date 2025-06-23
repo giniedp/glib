@@ -42,27 +42,27 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
     uniform sampler2D uSplatMap;
 
     #ifdef SPLATTING_BASE
-    // @binding  DiffuseMap
-    uniform sampler2D uDiffuseMap;
+    // @binding  BaseColorMap
+    uniform sampler2D uBaseColorMap;
     #endif
 
-    // @binding  DiffuseMapR
-    uniform sampler2D uDiffuseMapR;
+    // @binding  BaseColorMapR
+    uniform sampler2D uBaseColorMapR;
 
-    // @binding  DiffuseMapG
-    uniform sampler2D uDiffuseMapG;
+    // @binding  BaseColorMapG
+    uniform sampler2D uBaseColorMapG;
 
-    // @binding  DiffuseMapB
-    uniform sampler2D uDiffuseMapB;
+    // @binding  BaseColorMapB
+    uniform sampler2D uBaseColorMapB;
 
     #ifdef SPLATTING_ALPHA
-    // @binding  DiffuseMapA
-    uniform sampler2D uDiffuseMapA;
+    // @binding  BaseColorMapA
+    uniform sampler2D uBaseColorMapA;
     #endif
 
     #ifdef SPLATTING_SLOPE
-    // @binding  DiffuseMapSlope
-    uniform sampler2D uDiffuseMapSlope;
+    // @binding  BaseColorMapSlope
+    uniform sampler2D uBaseColorMapSlope;
     #endif
 
     #ifdef SPLATTING_NORMAL
@@ -130,7 +130,7 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
 
     float splatBlendSlope(in float slope, in vec2 uv){
       #ifdef SPLATTING_SLOPE
-      float blend = length(texture2D(uDiffuseMapSlope, uv).rgb);
+      float blend = length(texture2D(uBaseColorMapSlope, uv).rgb);
 
       if(slope < 0.5){
         blend = 2.0 * slope * blend;
@@ -151,37 +151,37 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
       float saturatuion = uSaturation;
 
       #ifdef SPLATTING_BASE
-      tempColor = texture2D(uDiffuseMap, uv0) * brightness;
+      tempColor = texture2D(uBaseColorMap, uv0) * brightness;
       adjustSaturation(tempColor, saturatuion);
-      tempColor *= texture2D(uDiffuseMap, uv1) * brightness;
+      tempColor *= texture2D(uBaseColorMap, uv1) * brightness;
       #endif
 
       vec4 color = tempColor;
 
-      tempColor = texture2D(uDiffuseMapR, uv0) * brightness;
+      tempColor = texture2D(uBaseColorMapR, uv0) * brightness;
       adjustSaturation(tempColor, saturatuion);
-      tempColor *= texture2D(uDiffuseMapR, uv1) * brightness;
+      tempColor *= texture2D(uBaseColorMapR, uv1) * brightness;
       color = mix(color.rgba, tempColor, splat.r);
 
-      tempColor = texture2D(uDiffuseMapG, uv0) * brightness;
+      tempColor = texture2D(uBaseColorMapG, uv0) * brightness;
       adjustSaturation(tempColor, saturatuion);
-      tempColor *= texture2D(uDiffuseMapG, uv1) * brightness;
+      tempColor *= texture2D(uBaseColorMapG, uv1) * brightness;
       color = mix(color.rgba, tempColor, splat.g);
 
-      tempColor = texture2D(uDiffuseMapB, uv0) * brightness;
+      tempColor = texture2D(uBaseColorMapB, uv0) * brightness;
       adjustSaturation(tempColor, saturatuion);
-      tempColor *= texture2D(uDiffuseMapB, uv1) * brightness;
+      tempColor *= texture2D(uBaseColorMapB, uv1) * brightness;
       color = mix(color.rgba, tempColor, splat.b);
 
       #ifdef SPLATTING_ALPHA
-      tempColor = texture2D(uDiffuseMapA, uv0) * brightness;
+      tempColor = texture2D(uBaseColorMapA, uv0) * brightness;
       adjustSaturation(tempColor, saturatuion);
-      tempColor *= texture2D(uDiffuseMapA, uv1) * brightness;
+      tempColor *= texture2D(uBaseColorMapA, uv1) * brightness;
       color = mix(color.rgba, tempColor, splat.a);
       #endif
 
       #ifdef SPLATTING_SLOPE
-      tempColor = texture2D(uDiffuseMapSlope, uv.xy) * brightness;
+      tempColor = texture2D(uBaseColorMapSlope, uv.xy) * brightness;
       color = mix(color.rgba, tempColor, slope);
       #endif
 
@@ -214,9 +214,9 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
     vec2 splatUV = vTexture.xy * uTiling;
     vec4 splatWeight = texture2D(uSplatMap, vTexture.xy).rgba;
     float splatSlope = splatBlendSlope((1.0 - vWorldNormal.y) * uSlopeStrength, splatUV);
-    surface.Diffuse.rgb = splatColor(splatUV, splatWeight, splatSlope).rgb;
+    surface.BaseColor.rgb = splatColor(splatUV, splatWeight, splatSlope).rgb;
     #ifdef SPLATTING_TINT
-    surface.Diffuse.rgb *= texture2D(uTintMap, vTexture.xy).rgb;
+    surface.BaseColor.rgb *= texture2D(uTintMap, vTexture.xy).rgb;
     #endif
 
     #if defined(SPLATTING_NORMAL) && defined(V_TBN)
@@ -225,7 +225,7 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
     surface.Normal.xyz = normalize(vWorldNormal.xyz);
     #endif
 
-    surface.Diffuse.a = 1.0;
+    surface.BaseColor.a = 1.0;
     #endif
   `,
 }

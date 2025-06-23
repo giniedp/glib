@@ -61,7 +61,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         material.World = object.world
         material.View = view
         material.Projection = projection
-        material.DiffuseColor = object.color
+        material.BaseColor = object.color
         material.draw(geometry)
       }
     }

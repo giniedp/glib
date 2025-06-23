@@ -19,6 +19,7 @@
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
     "target": "ES6",
+    "allowJs": true,
     "typeRoots": [
       "../node_modules",
       "../types"

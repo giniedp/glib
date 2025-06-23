@@ -10,7 +10,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const lightingEffect = device.createEffect({
     program: materialProgram({
       FOG: true,
-      DIFFUSE_MAP: true,
+      BASE_COLOR_MAP: true,
       NORMAL_MAP: true,
       V_TANGENT: true,
       LIGHT: true,
@@ -41,7 +41,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         {
           effect: lightingEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/prototype/proto_alpha_d.png' }),
+            BaseColorMap: device.createTexture({ source: '/textures/prototype/proto_alpha_d.png' }),
             NormalMap: device.createTexture({ source: '/textures/prototype/proto_alpha_n.png' }),
             FogColor: Color.fromRgba(0xff2e2620).xyzw,
             FogParams: [

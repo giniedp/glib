@@ -18,7 +18,7 @@ export const SHADE_LAMBERT: ShaderChunkSet = Object.freeze({
       vec3 L = shade.L;
       vec3 I = shade.I;
 
-      return dot(N, L) * surface.Diffuse.rgb * I;
+      return max(dot(N, L), 0.0) * surface.BaseColor.rgb * I;
     }
   `,
 })

@@ -1,16 +1,37 @@
-import { beginGeometry, buildCone, buildCube, buildCylinder, createDevice } from '@gglib/graphics'
+import {
+  beginGeometry,
+  buildCone,
+  buildCube,
+  buildCylinder,
+  createDevice,
+  Device,
+  Material,
+  SamplerState,
+} from '@gglib/graphics'
+import { Mouse } from '@gglib/input'
 import { materialProgram } from '@gglib/materials'
-import { Mat4 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat3, Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({ canvas })
+  const mouse = new Mouse({
+    captureTarget: canvas,
+    preventDefault: true,
+  })
 
-  const textureMappedEffect = device.createEffect({
+  const material = new Material(device, {
     program: materialProgram({
-      DIFFUSE_MAP: true,
-      DIFFUSE_MAP_SCALE_OFFSET: true,
+      BASE_COLOR_MAP: true,
+      BASE_COLOR_MAP_TRANSFORM: true,
     }),
+    parameters: {
+      BaseColorMap: device.createTexture({
+        source: '/textures/cc0textures.com/TilesColor.jpg',
+        sampler: SamplerState.LinearWrap,
+        generateMipmap: true,
+      }),
+    },
   })
 
   const mesh = beginGeometry({
@@ -29,53 +50,34 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       b.closeGeometry({ materialId: 2 })
     })
     .endMesh(device, {
-      materials: [
-        {
-          effect: textureMappedEffect,
-          parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
-          },
-        },
-        {
-          effect: textureMappedEffect,
-          parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
-          },
-        },
-        {
-          effect: textureMappedEffect,
-          parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/cc0textures.com/TilesColor.jpg' }),
-          },
-        },
-      ],
+      materials: [material, material, material],
     })
 
   const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const proj = Mat4.createIdentity()
-  const cam = Mat4.createIdentity()
+  const camera = demoCamera()
+  const textureTransform = Mat3.createIdentity()
 
   function frame(time: number) {
     device.resize()
     device.clear(0xff2e2620, 1)
 
-    cam.initTranslationXYZ(0, 0, 3.0)
-    Mat4.invert(cam, view)
-    proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
+    camera.update(mouse, device)
+
+    const t = Math.sin(time / 1000)
+
+    textureTransform.initIdentity()
+    textureTransform.scaleXYZ(2 + t, 2 + t, 1)
+    textureTransform.elements[6] = -t * 0.5
+    textureTransform.elements[7] = -t * 0.5
+    textureTransform.rotateZ(time / 1000)
 
     for (const mtl of mesh.materials) {
       mtl.parameters.World = world
-      mtl.parameters.View = view
-      mtl.parameters.Projection = proj
-      mtl.parameters.CameraPosition = cam.getTranslation()
-      const t = Math.sin(time / 1000)
-      mtl.parameters.DiffuseMapScaleOffset = [
-        t + 1, // scale X
-        t + 1, // scale Y
-        -t * 0.5, // offset X
-        -t * 0.5, // offset Y
-      ]
+      mtl.parameters.View = camera.view
+      mtl.parameters.Projection = camera.projection
+      mtl.parameters.CameraPosition = camera.position
+
+      mtl.parameters.BaseColorMapTransform = textureTransform
     }
     mesh.draw()
   }
@@ -84,4 +86,38 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   return () => {
     looper.stop()
   }
+}
+
+function demoCamera() {
+  const data = {
+    theta: 0,
+    phi: 90,
+    distance: 6,
+    position: Vec3.create(),
+    view: Mat4.createIdentity(),
+    projection: Mat4.createIdentity(),
+    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device),
+  }
+  return data
+}
+
+function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, device: Device) {
+  mouse.update()
+  if (mouse.leftButtonIsPressed) {
+    camera.theta -= mouse.dx * 0.1
+    camera.phi -= mouse.dy * 0.1
+  }
+  if (mouse.middleButtonIsPressed) {
+    camera.distance += mouse.dy * 0.01
+    camera.distance = Math.max(0.1, camera.distance)
+  }
+
+  // prettier-ignore
+  camera.position.initSpherical(
+    camera.phi * DEGREE_TO_RAD,
+    camera.theta * DEGREE_TO_RAD,
+    camera.distance,
+  )
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
+  camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
 }

@@ -1,4 +1,5 @@
 import { ContentLoader } from '@gglib/content'
+import { IBLSamplerEffect } from '@gglib/effects'
 import {
   BlendState,
   Color,
@@ -6,24 +7,23 @@ import {
   DepthState,
   LightType,
   Mesh,
+  SamplerState,
   TextureImage,
-  boxLinesGeometry,
   boxLinesMesh,
   createDevice,
-  cubeLinesGeometry,
-  linesProgramOptions,
-  sphereLinesMesh,
+  cubeGeometry,
+  textureSourceFromImageUrl,
 } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { GLTF } from '@gglib/loaders'
-import { AutoMaterial, LightParams } from '@gglib/materials'
+import { AutoMaterial, LightParams, SkyboxMaterial } from '@gglib/materials'
 import { BoundingSphere, DEGREE_TO_RAD, Mat4, Transform, Vec3 } from '@gglib/math'
 import { Model, NodeData } from '@gglib/model'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
-const baseUrl = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0'
-const githubUrl = 'https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0'
+const baseUrl = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets/Models'
+const githubUrl = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/master/Models'
 const indexFile = `${baseUrl}/model-index.json`
 type GltfIndex = GltfIndexModel[]
 type GltfIndexModel = {
@@ -33,10 +33,22 @@ type GltfIndexModel = {
     [key: string]: string
   }
 }
+const PANORAMA_IMAGES = {
+  foorprintCourtJPG: {
+    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.jpg',
+  },
+  foorprintCourtHDR: {
+    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.hdr',
+  },
+  gatonaParkWalkway1Panorama4Kx2K: {
+    url: 'https://playground.babylonjs.com/textures/GatonaParkWalkway1_Panorama_4Kx2K.jpg',
+  },
+}
 
 TextureImage.crossOrigin = 'anonymous'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({ canvas })
+  const stats = device.stats()
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
   content.registerMaterial({
@@ -47,7 +59,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     captureTarget: canvas,
     preventDefault: true,
   })
-  const stats = device.stats({})
+
+  const iblSampler = new IBLSamplerEffect(device)
+  content.loadTexture(PANORAMA_IMAGES.foorprintCourtJPG.url).then((texture) => {
+    console.log('Loaded panorama texture', texture)
+    iblSampler.panoramaInput = texture
+    iblSampler.needsUpdate = true
+  })
+
   const camera = {
     theta: 0,
     phi: 90,
@@ -56,6 +75,20 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
   }
+
+  const skybox = new Mesh(device, {
+    parts: [cubeGeometry(device)],
+    materials: [
+      new SkyboxMaterial(device, {
+        parameters: {
+          Intensity: 1.0,
+          Rotation: 0,
+          Blur: 0.25,
+          MipCount: iblSampler.lowestMipLevel + 1,
+        },
+      }),
+    ],
+  })
 
   content.fetch<GltfIndex>(indexFile, { responseType: 'json' }).then((response) => {
     TweakUi.mount(tools, (ui) => {
@@ -84,14 +117,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   let model: Model | null = null
-  let sphere: BoundingSphere
+  let sphere: BoundingSphere = new BoundingSphere(0, 0, 0, 1)
   const gizmos: Mesh[] = []
 
   const light = new LightParams()
-  light.enabled = true
-  light.type = LightType.Directional
-  light.color = [1, 1, 1]
-  light.direction = [-1, -1, -1]
+  // light.enabled = true
+  // light.type = LightType.Directional
+  // light.color = [1, 1, 1]
+  // light.direction = [-1, -1, -1]
 
   function loadModel(url: string) {
     content.loadModel(url).then((result) => {
@@ -100,14 +133,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       model.updateScene()
       gizmos.forEach((gizmo) => gizmo.dispose())
       gizmos.length = 0
-      gizmos.push(
-        boxLinesMesh(device, model.boundingBox, Color.Yellow),
-        // sphereLinesMesh(device, model.boundingSphere, Color.Yellow),
-      )
-      // for (const node of model.transformNodes) {
-      //   const mesh = model.meshes[node.data?.mesh!]
-      //   gizmos.push(sphereLinesMesh(device, mesh.boundingSphere.clone().transform(node.world)))
-      // }
+      gizmos.push(boxLinesMesh(device, model.boundingBox, Color.Yellow))
 
       sphere = model.boundingSphere
       console.log(`Model loaded: ${url}`, {
@@ -139,8 +165,22 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       45 * DEGREE_TO_RAD,
       device.drawingBufferAspectRatio,
       0.01,
-      sphere.radius + Vec3.distance(camera.position, sphere.center),
+      Math.max(10, sphere.radius + Vec3.distance(camera.position, sphere.center)),
     )
+  }
+
+  function updateModel(model: Model) {
+    model.updateScene()
+    for (const mesh of model.meshes) {
+      for (const mtl of mesh.materials) {
+        const material = mtl as AutoMaterial
+        if (iblSampler.isReady) {
+          material.IrradianceMap = iblSampler.lambertianCubemap
+          material.EnvironmentMap = iblSampler.ggxCubemap
+          material.EnvironmentLUT = iblSampler.ggxLutMap
+        }
+      }
+    }
   }
 
   function updateAnimation(dt: number) {
@@ -155,6 +195,20 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     //   player = null
     //   pose!.reset()
     // }
+  }
+
+  function drawSkybox() {
+    const material = skybox.materials[0] as SkyboxMaterial
+    const world = (material.World ||= Mat4.createIdentity()) as Mat4
+    world.initScaleUniform(1)
+    world.setTranslation(camera.position)
+    material.World = world
+    material.View = camera.view
+    material.Projection = camera.projection
+    material.Texture = iblSampler.ggxCubemap
+    if (material.isReady()) {
+      skybox.draw()
+    }
   }
 
   function drawMesh(transform: Transform, node: NodeData, model: Model) {
@@ -176,32 +230,29 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       params.CameraPosition = camera.position
 
       light.assign(0, params)
-      // if (joints) {
-      //   for (let i = 0; i < joints?.length; i++) {
-      //     params[`Joints${i}`] = joints[i]
-      //   }
-      // }
 
       material.draw(part)
     }
   }
 
   function frame(time: number, dt: number) {
-    // Resize and clear the screen
     device.drawCalls = 0
     device.resize()
+
+    iblSampler.update()
+    updateCamera(time)
+
+    device.blendState = BlendState.Default
     device.cullState = CullState.CullClockWise
     device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
     device.clear(0xff2e2620, 1.0)
+    drawSkybox()
 
-    if (!model) {
-      return
+    if (model) {
+      updateModel(model)
+      updateAnimation(dt)
+      model.drawScene(drawMesh)
     }
-    model.updateScene()
-    updateCamera(time)
-    updateAnimation(dt)
-    model.drawScene(drawMesh)
 
     for (const gizmo of gizmos) {
       if (gizmo.materials[0].isReady()) {

@@ -11,7 +11,7 @@ export interface AssetContainer {
   /**
    * The url where this asset was loaded from.
    */
-  source: string
+  source: string | Blob
 
   name?: string
 

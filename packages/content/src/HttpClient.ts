@@ -22,6 +22,16 @@ export class HttpClient {
    */
   public headers: Record<string, string> = {}
 
+  /**
+   * If set, the client will use this cache for requests.
+   */
+  public cacheName: string
+
+  /**
+   *
+   */
+  public cacheOptions: CacheQueryOptions
+
   private disposed = false
 
   public dispose() {
@@ -35,7 +45,8 @@ export class HttpClient {
   public async fetch(url: string, options?: HttpOptions): Promise<HttpResponse<unknown>>
   public async fetch(url: string, options: HttpOptions<any>): Promise<HttpResponse<unknown>> {
     const requestInit = this.createRequestInit(options)
-    const response = await this.sendRequest(url, requestInit)
+    const request = new Request(url, requestInit)
+    const response = await this.request(request)
     if (!this.isSuccess(response)) {
       throw new Error(`HTTP request failed: ${response.status} ${response.statusText}`)
     }
@@ -55,15 +66,31 @@ export class HttpClient {
     }
   }
 
-  protected sendRequest(url: string, requestInit: RequestInit): Promise<Response> {
-    return fetch(url, requestInit)
+  private async request(request: Request) {
+    if (!this.cacheName) {
+      return this.sendRequest(request)
+    }
+    const cache = await caches.open(this.cacheName)
+    const cachedResponse = await cache.match(request, this.cacheOptions)
+    if (cachedResponse) {
+      return cachedResponse
+    }
+    const response = await this.sendRequest(request)
+    if (this.isSuccess(response)) {
+      await cache.put(request, response.clone())
+    }
+    return response
   }
 
-  protected isSuccess(response: Response): boolean {
+  public sendRequest(request: Request): Promise<Response> {
+    return fetch(request)
+  }
+
+  public isSuccess(response: Response): boolean {
     return response.status >= 200 && response.status < 300
   }
 
-  protected createRequestInit(options: HttpOptions<any>): RequestInit {
+  public createRequestInit(options: HttpOptions<any>): RequestInit {
     const headers: Record<string, string> = {}
     if (this.headers) {
       for (const key in this.headers) {
@@ -87,7 +114,7 @@ export class HttpClient {
     }
   }
 
-  protected async read(response: Response, signal?: AbortSignal): Promise<Uint8Array> {
+  public async read(response: Response, signal?: AbortSignal): Promise<Uint8Array> {
     if (!response.body) {
       return null
     }
@@ -134,6 +161,11 @@ export class HttpClient {
         return content.buffer
     }
     return null
+  }
+
+  public installCache(name: string) {
+    caches.open(name)
+
   }
 }
 

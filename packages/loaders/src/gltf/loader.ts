@@ -1,7 +1,6 @@
 import { AssetContainer, AssetLoader, ContentLoader, imageFromBlob, LoaderContext } from '@gglib/content'
 import {
   BufferOptions,
-  DataType,
   dataTypeSize,
   GeometryOptions,
   GeometryUtil,
@@ -9,13 +8,16 @@ import {
   MeshOptions,
   nameOfDataType,
   PrimitiveType,
+  SamplerState,
+  TextureFilter,
   TextureImageOptions,
   TextureOptions,
+  TextureWrapMode,
   VertexBuffer,
   VertexBufferOptions,
   VertexLayout,
 } from '@gglib/graphics'
-import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
+import { BoundingBox, BoundingSphere, Mat3, Mat4 } from '@gglib/math'
 import { AnimationData, AnimationDataChannels, SkinData } from '@gglib/model'
 import { append, Uri } from '@gglib/utils'
 import {
@@ -24,16 +26,14 @@ import {
   AccessorType,
   BufferView,
   Document,
-  KHR_materials_pbrSpecularGlossiness,
-  KHR_texture_transform,
   Material,
   Mesh,
   MeshPrimitive,
   parseBinary,
-  PbrMaterialSpecularGlossiness,
   TextureInfo,
-  TextureTransform,
 } from './format'
+import { getKhrExtension } from './format/KHR-Extensions'
+import { getNwExtension } from './format/NW-Extensions'
 
 export function registerLoader() {
   ContentLoader.registerLoader(Loader)
@@ -58,24 +58,14 @@ export class Loader implements AssetLoader {
   public document: Document
   public content: ContentLoader
   public signal: AbortSignal
+  public context: LoaderContext
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
     this.url = url
     this.content = context.content
     this.signal = context.signal
-    if (Loader.isBinary(context.type || Uri.ext(url))) {
-      const data = await context.content.fetch(url, {
-        responseType: 'arraybuffer',
-        signal: context.signal,
-      })
-      this.document = await parseBinary(data.body)
-    } else {
-      const data = await context.content.fetch<Document>(url, {
-        responseType: 'json',
-        signal: context.signal,
-      })
-      this.document = data.body
-    }
+    this.document = await this.loadDocument(url, context)
+    this.context = context
 
     console.debug('gltf document', this.document)
     const result: AssetContainer = {
@@ -115,6 +105,21 @@ export class Loader implements AssetLoader {
 
     await Promise.all(tasks)
     return result
+  }
+
+  public async loadDocument(url: string, context: LoaderContext) {
+    if (Loader.isBinary(context.type || Uri.ext(url))) {
+      const data = await context.content.fetch(url, {
+        responseType: 'arraybuffer',
+        signal: context.signal,
+      })
+      return await parseBinary(data.body)
+    }
+    const data = await context.content.fetch<Document>(url, {
+      responseType: 'json',
+      signal: context.signal,
+    })
+    return data.body
   }
 
   public async loadAccessor(index: number): Promise<GLTFAccessorBase> {
@@ -166,7 +171,7 @@ export class Loader implements AssetLoader {
       if (!buffer.uri && this.document.chunks?.[index]) {
         return Promise.resolve(this.document.chunks[index])
       }
-      const url = this.content.resolveUrl(buffer.uri, this.url)
+      const url = this.content.resolveUrl(buffer.uri, this.context)
       const response = await this.content.fetch(url, {
         responseType: 'arraybuffer',
       })
@@ -182,7 +187,7 @@ export class Loader implements AssetLoader {
       const image = this.document.images[index]
 
       if (image.uri) {
-        const url = this.content.resolveUrl(image.uri, this.url)
+        const url = this.content.resolveUrl(image.uri, this.context)
         return this.content
           .loadAsset(url, {
             signal: this.signal,
@@ -204,23 +209,25 @@ export class Loader implements AssetLoader {
     if (!texture) {
       throw new Error(`[glTF] texture not found: ${index}`)
     }
-    const sampler = this.document.samplers?.[texture.sampler]
+
     const imageOptions = await this.loadImage(texture.source)
-    const options: TextureOptions = {
+    return {
       ...imageOptions,
+      generateMipmap: true,
       name: texture.name,
       meta: texture.extras,
+      sampler: this.loadSampler(texture.sampler),
     }
-    if (sampler) {
-      options.sampler = {
-        minFilter: sampler.minFilter,
-        magFilter: sampler.magFilter,
-        wrapU: sampler.wrapS,
-        wrapV: sampler.wrapT,
-      }
-    }
+  }
 
-    return options
+  public loadSampler(index: number): Partial<SamplerState> {
+    const sampler = this.document.samplers?.[index]
+    return {
+      minFilter: sampler?.minFilter ?? TextureFilter.Linear,
+      magFilter: sampler?.magFilter ?? TextureFilter.Linear,
+      wrapU: sampler?.wrapS ?? TextureWrapMode.Repeat,
+      wrapV: sampler?.wrapT ?? TextureWrapMode.Repeat,
+    }
   }
 
   public async loadAnimation(index: number): Promise<AnimationData> {
@@ -355,14 +362,136 @@ export class Loader implements AssetLoader {
     if (material.emissiveTexture != null) {
       tasks.push(
         this.loadTexture(material.emissiveTexture.index).then((texture) => {
-          params.EmissionMap = texture
+          params.EmissiveColorMap = texture
         }),
       )
-      readTextureInfo(params, 'EmissionMap', material.emissiveTexture)
+      readTextureInfo(params, 'EmissiveColorMap', material.emissiveTexture)
     }
     if (material.emissiveFactor != null) {
-      params.EmissionColor = material.emissiveFactor
+      params.EmissiveColor = material.emissiveFactor
     }
+
+
+    if (material.doubleSided) {
+      params.DoubleSided = true
+    }
+
+    if (hints?.vertexColor) {
+      params.VertexColor = true
+    }
+
+    let loadBaseMap: () => Promise<void>
+    if (material.pbrMetallicRoughness) {
+      result.technique = 'pbr'
+
+      const pbr = material.pbrMetallicRoughness
+
+      params.BaseColor = pbr.baseColorFactor ?? [1, 1, 1, 1]
+      params.Metallic = pbr.metallicFactor ?? 1
+      params.Roughness = pbr.roughnessFactor ?? 1
+      if (pbr.baseColorTexture != null) {
+        loadBaseMap = async () => {
+          await this.loadTexture(pbr.baseColorTexture.index).then((texture) => {
+            if (!params.BaseColorMap) {
+              params.BaseColorMap = texture
+            }
+          })
+          readTextureInfo(params, 'BaseColorMap', pbr.baseColorTexture)
+        }
+      }
+      if (pbr.metallicRoughnessTexture != null) {
+        tasks.push(
+          this.loadTexture(pbr.metallicRoughnessTexture.index).then((texture) => {
+            params.MetallicRoughnessMap = texture
+          }),
+        )
+        readTextureInfo(params, 'MetallicRoughnessMap', pbr.metallicRoughnessTexture)
+      }
+    }
+
+    const extPbrSpecGloss = getKhrExtension(material, 'KHR_materials_pbrSpecularGlossiness')
+    if (extPbrSpecGloss) {
+      result.technique = 'default'
+
+      const ext = extPbrSpecGloss
+      params.BaseColor = ext.diffuseFactor || params.BaseColor || [1, 1, 1, 1]
+      params.SpecularColor = ext.specularFactor || params.SpecularColor || [1, 1, 1]
+      params.Roughness = 1.0 - (ext.glossinessFactor ?? 1)
+
+      if (ext.diffuseTexture) {
+        loadBaseMap = async () => {
+          await this.loadTexture(ext.diffuseTexture.index).then((texture) => {
+            params.BaseColorMap = texture
+          })
+          readTextureInfo(params, 'BaseColorMap', ext.diffuseTexture)
+        }
+      } else {
+        loadBaseMap = null
+      }
+
+      if (ext.specularGlossinessTexture) {
+        tasks.push(
+          this.loadTexture(ext.specularGlossinessTexture.index).then((texture) => {
+            params.SpecularColorMap = texture
+          }),
+        )
+        readTextureInfo(params, 'SpecularColorMap', ext.specularGlossinessTexture)
+
+        tasks.push(
+          this.loadTexture(ext.specularGlossinessTexture.index).then((texture) => {
+            params.SmoothnessMapChannel = 'a'
+            params.SmoothnessMap = texture
+          }),
+        )
+        readTextureInfo(params, 'SmoothnessMap', ext.specularGlossinessTexture)
+      }
+      params.IndexOfRefraction = 0 // TODO: remove once assets use IOR extension
+    }
+
+    const extSpecular = getKhrExtension(material, 'KHR_materials_specular')
+    if (extSpecular) {
+      params.SpecularColor = extSpecular.specularColorFactor || params.SpecularColor || [1, 1, 1]
+      if (extSpecular.specularColorTexture) {
+        tasks.push(
+          this.loadTexture(extSpecular.specularColorTexture.index).then((texture) => {
+            params.SpecularColorMap = texture
+          }),
+        )
+        readTextureInfo(params, 'SpecularColorMap', extSpecular.specularColorTexture)
+      }
+
+      params.Roughness = 1.0 - (extSpecular.specularFactor ?? 1.0)
+
+      if (extSpecular.specularTexture) {
+        tasks.push(
+          this.loadTexture(extSpecular.specularTexture.index).then((texture) => {
+            params.SmoothnessMapChannel = 'a'
+            params.SmoothnessMap = texture
+          }),
+        )
+        readTextureInfo(params, 'SmoothnessMap', extSpecular.specularTexture)
+      }
+    }
+
+    const extIor = getKhrExtension(material, 'KHR_materials_ior')
+    if (extIor) {
+      params.IndexOfRefraction ??= extIor.ior ?? 1.5
+    }
+
+    const extNw = getNwExtension(material)
+    if (extNw) {
+      params.Metallic = 0
+      if (extNw.smoothTexture) {
+        tasks.push(
+          this.loadTexture(extNw.smoothTexture.index).then((texture) => {
+            params.SmoothnessMap = texture
+          }),
+        )
+        params.SmoothnessMapChannel = 'r'
+        readTextureInfo(params, 'SmoothnessMap', extNw.smoothTexture)
+      }
+    }
+
     switch (material.alphaMode) {
       case 'BLEND':
         params.Blend = true
@@ -380,68 +509,13 @@ export class Loader implements AssetLoader {
         params.Blend = false
         break
     }
-
-    if (material.doubleSided) {
-      params.DoubleSided = true
-    }
-
-    if (hints?.vertexColor) {
-      params.VertexColor = true
-    }
-
-    if (material.extensions && material.extensions[KHR_materials_pbrSpecularGlossiness]) {
-      result.technique = 'default'
-
-      const ext: PbrMaterialSpecularGlossiness = material.extensions[KHR_materials_pbrSpecularGlossiness]
-      params.DiffuseColor = ext.diffuseFactor ?? [1, 1, 1, 1]
-      params.SpecularColor = ext.specularFactor ?? [1, 1, 1]
-      params.Glossiness = ext.glossinessFactor ?? 1
-
-      if (ext.diffuseTexture) {
-        tasks.push(
-          this.loadTexture(ext.diffuseTexture.index).then((texture) => {
-            params.DiffuseMap = texture
-          }),
-        )
-        readTextureInfo(params, 'DiffuseMap', ext.diffuseTexture)
-      }
-      if (ext.specularGlossinessTexture) {
-        tasks.push(
-          this.loadTexture(ext.specularGlossinessTexture.index).then((texture) => {
-            params.SpecularMap = texture
-          }),
-        )
-        readTextureInfo(params, 'SpecularMap', ext.specularGlossinessTexture)
-      }
-    } else if (material.pbrMetallicRoughness) {
-      result.technique = 'pbr'
-
-      const pbr = material.pbrMetallicRoughness
-
-      params.DiffuseColor = pbr.baseColorFactor ?? [1, 1, 1, 1]
-      params.Metallic = pbr.metallicFactor ?? 1
-      params.Roughness = pbr.roughnessFactor ?? 1
-      if (pbr.baseColorTexture != null) {
-        tasks.push(
-          this.loadTexture(pbr.baseColorTexture.index).then((texture) => {
-            params.DiffuseMap = texture
-          }),
-        )
-        readTextureInfo(params, 'DiffuseMap', pbr.baseColorTexture)
-      }
-      if (pbr.metallicRoughnessTexture != null) {
-        tasks.push(
-          this.loadTexture(pbr.metallicRoughnessTexture.index).then((texture) => {
-            params.MetallicRoughnessMap = texture
-          }),
-        )
-        readTextureInfo(params, 'MetallicRoughnessMap', pbr.metallicRoughnessTexture)
-      }
-    }
-
     // if (material.extensions && material.extensions[KHR_materials_unlit]) {
     //   result.technique = 'unlit'
     // }
+
+    if (loadBaseMap) {
+      tasks.push(loadBaseMap())
+    }
 
     await Promise.all(tasks)
     return result
@@ -546,7 +620,7 @@ export class Loader implements AssetLoader {
         bufferOptions.stride = layoutStride
       } else if (bufferOptions.stride !== layoutStride) {
         // interlaved buffer, sparse packed
-        console.debug('interlaved', bufferOptions.stride, layoutStride)
+        // console.debug('interlaved', bufferOptions.stride, layoutStride)
       }
 
       if (!bufferOptions.data) {
@@ -603,12 +677,12 @@ export class Loader implements AssetLoader {
           })
         }
 
-        if (!hasTangents || !hasBitangents) {
-          util.calculateTangents({
-            create: true,
-            update: false,
-          })
-        }
+        // if (!hasTangents || !hasBitangents) {
+        //   util.calculateTangents({
+        //     create: true,
+        //     update: false,
+        //   })
+        // }
       }
 
       return {
@@ -905,19 +979,38 @@ function elementCount(type: AccessorType) {
 }
 
 function readTextureInfo(params: { [k: string]: unknown }, name: string, info: TextureInfo) {
-  if (info.extensions && info.extensions[KHR_texture_transform]) {
-    const transform = info.extensions[KHR_texture_transform] as TextureTransform
-    const offsetScale = [1, 1, 0, 0]
+  const transform = getKhrExtension(info, 'KHR_texture_transform')
+  if (transform) {
+    const rotation = Mat3.createIdentity()
+    const scale = Mat3.createIdentity()
+    const translation = Mat3.createIdentity()
+
+    let hasTransform = false
     if (transform.scale) {
-      offsetScale[0] = transform.scale[0]
-      offsetScale[1] = transform.scale[1]
+      hasTransform = true
+      scale.elements[0] = transform.scale[0] ?? 1
+      scale.elements[4] = transform.scale[1] ?? 1
     }
     if (transform.offset) {
-      offsetScale[2] = transform.offset[0] || 0
-      offsetScale[3] = transform.offset[1] || 0
+      hasTransform = true
+      translation.elements[6] = transform.offset[0] ?? 0
+      translation.elements[7] = transform.offset[1] ?? 0
     }
-    if (transform.offset || transform.scale) {
-      params[name + 'ScaleOffset'] = offsetScale
+    if (transform.rotation != null) {
+      hasTransform = true
+      const s = Math.sin(transform.rotation)
+      const c = Math.cos(transform.rotation)
+      rotation.elements[0] = c
+      rotation.elements[1] = -s
+      rotation.elements[3] = s
+      rotation.elements[4] = c
+    }
+
+    if (hasTransform) {
+      const matrix = translation.clone()
+      matrix.multiply(scale)
+      matrix.multiply(rotation)
+      params[name + 'Transform'] = matrix
     }
   }
   if (info.texCoord > 0) {

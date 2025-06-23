@@ -33,7 +33,7 @@ const fragmentShader = /*glsl*/ `
   uniform vec3 uLightColor;
   uniform vec3 uLightDirection;
   uniform vec3 uEyePosition;
-  uniform float uSpecularPower;
+  uniform float uSpecularSmoothness;
 
   // data from vertex stage
   varying vec3 normal;
@@ -63,7 +63,7 @@ const fragmentShader = /*glsl*/ `
   }
 
   void main(void) {
-    vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularPower);
+    vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularSmoothness);
     vec4 color = texture2D(uTexture, texCoord);
     color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb;
     color.a = 1.0;
@@ -147,7 +147,7 @@ export default (canvas: HTMLCanvasElement) => {
     program.setUniform('uLightColor', lightColor)
     program.setUniform('uLightDirection', lightDirection)
     program.setUniform('uEyePosition', camPosition)
-    program.setUniform('uSpecularPower', 16)
+    program.setUniform('uSpecularSmoothness', 16)
 
     // set drawing state
     device.program = program

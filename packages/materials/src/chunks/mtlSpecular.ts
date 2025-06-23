@@ -6,44 +6,49 @@ import { glsl, ShaderChunkSet } from '@gglib/graphics'
  * @public
  */
 export interface MtlSpecularDefs {
+
   /**
-   * Enables a uniform specular power value
+   * Adds a color uniform
    *
    * @remarks
-   * Adds a `uniform float uSpecularPower` (bound as `SpecularPower`)
-   * that is used as specular power exponent.
-   */
-  SPECULAR_POWER?: boolean
-  /**
-   * Enables a uniform specular color
-   *
-   * @remarks
-   * Adds a `uniform vec3 uSpecularColor` (bound as `SpecularColor`)
-   * that is used as specular color.
-   * If a `SpecularMap` is used, then both are multiplied.
+   * - Adds `uniform vec4 uSpecularColor`
+   * - Binds as `SpecularColor`
+   * - Default is `[1, 1, 1, 1]`
    */
   SPECULAR_COLOR?: boolean
+
   /**
-   * Enables specular color from texture
+   * Adds a texture uniform
    *
    * @remarks
-   * Adds a `uniform sampler2D uSpecularMap` that is used as surface color.
-   * If a `SpecularColor` is used, then both are multiplied.
-   * The uniform is bound as `SpecularMap`.
+   * - Adds `uniform sampler2D uSpecularColorMap`
+   * - Binds as `SpecularColorMap`
    */
-  SPECULAR_MAP?: boolean
+  SPECULAR_COLOR_MAP?: boolean
+
   /**
    * Allows to override the texture coordinates. Default is `vTexture.xy`.
    */
-  SPECULAR_MAP_UV?: string
+  SPECULAR_COLOR_MAP_UV?: string
+
   /**
-   * Allows to scale and offset the texture
+   * Adds a uniform to offset and scale the texture voordinates
    *
    * @remarks
-   * Adds a `uniform vec4 uSpecularMapScaleOffset` that is used to transform the texture coordinates.
-   * This is done in pixel shader for the SpecularMap only.
+   * - Adds `uniform vec4 uSpecularColorMapScaleOffset`.
+   * - Binds as `SpecularColorMapScaleOffset`
    */
-  SPECULAR_MAP_SCALE_OFFSET?: boolean
+  SPECULAR_COLOR_MAP_SCALE_OFFSET?: boolean
+
+  /**
+   * Adds a transform matrix for texture coordinates that is used to transform the texture coordinates.
+   *
+   * @remarks
+   * - Adds `uniform mat3 uSpecularColorMapTransform`
+   * - Binds as `SpecularColorMapTransform`
+   */
+  SPECULAR_COLOR_MAP_TRANSFORM?: boolean
+
 }
 
 /**
@@ -52,21 +57,20 @@ export interface MtlSpecularDefs {
  */
 export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
   defines: glsl`
-    #ifdef SPECULAR_MAP
+    #ifdef SPECULAR_COLOR_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE
       #endif
 
-      #ifndef SPECULAR_MAP_UV
-        #define SPECULAR_MAP_UV vTexture.xy
+      #ifndef SPECULAR_COLOR_MAP_UV
+        #define SPECULAR_COLOR_MAP_UV vTexture.xy
       #endif
     #endif
+
+
   `,
   uniforms: glsl`
-    #ifdef SPECULAR_POWER
-    // @binding SpecularPower
-    uniform float uSpecularPower;
-    #endif
+
 
     #ifdef SPECULAR_COLOR
     // @binding SpecularColor
@@ -75,43 +79,54 @@ export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
     uniform vec3 uSpecularColor;
     #endif
 
-    #ifdef SPECULAR_MAP
-    // @binding SpecularMap
-    uniform sampler2D uSpecularMap;
+    #ifdef SPECULAR_COLOR_MAP
+    // @binding SpecularColorMap
+    uniform sampler2D uSpecularColorMap;
     #endif
 
-    #ifdef SPECULAR_MAP_SCALE_OFFSET
-    // @binding SpecularMapScaleOffset
-    uniform vec4 uSpecularMapScaleOffset;
+    #ifdef SPECULAR_COLOR_MAP_SCALE_OFFSET
+    // @binding SpecularColorMapScaleOffset
+    uniform vec4 uSpecularColorMapScaleOffset;
+    #endif
+
+    #ifdef SPECULAR_COLOR_MAP_TRANSFORM
+    // @binding SpecularColorMapTransform
+    uniform mat3 uSpecularColorMapTransform;
     #endif
   `,
   functions: glsl`
-    #ifdef SPECULAR_MAP
-    vec2 getSpecularMapUV() {
-      #ifdef SPECULAR_MAP_SCALE_OFFSET
-      return SPECULAR_MAP_UV * uSpecularMapScaleOffset.xy + uSpecularMapScaleOffset.zw;
-      #else
-      return SPECULAR_MAP_UV;
+    #ifdef SPECULAR_COLOR_MAP
+    vec2 getSpecularColorMapUV() {
+      vec2 result = SPECULAR_COLOR_MAP_UV;
+
+      #ifdef SPECULAR_COLOR_MAP_SCALE_OFFSET
+      result = result * uSpecularColorMapScaleOffset.xy + uSpecularColorMapScaleOffset.zw;
       #endif
+
+      #ifdef SPECULAR_COLOR_MAP_TRANSFORM
+      result = (uSpecularColorMapTransform * vec3(result, 1.0)).xy;
+      #endif
+
+      return result;
     }
     #endif
-  `,
-  fs_surface: glsl`
-    #if defined(SPECULAR_MAP)
-    surface.Specular = texture2D(uSpecularMap, getSpecularMapUV() + uvOffset);
 
-      #ifdef SPECULAR_COLOR
-    surface.Specular.rgb *= uSpecularColor;
+    vec3 getSpecularColor(vec2 uvOffset) {
+      vec3 color = vec3(1.0, 1.0, 1.0);
+
+      #ifdef SPECULAR_COLOR_MAP
+      color *= texture2D(uSpecularColorMap, getSpecularColorMapUV() + uvOffset).rgb;
       #endif
 
-    #elif defined(SPECULAR_COLOR)
-    surface.Specular = vec4(uSpecularColor, 1.0);
-    #else
-    surface.Specular = vec4(surface.Specular.rgb, 1.0);
-    #endif
+      #ifdef SPECULAR_COLOR
+      color *= uSpecularColor;
+      #endif
 
-    #ifdef SPECULAR_POWER
-    surface.Specular.a = uSpecularPower;
-    #endif
+      return color;
+    }
+
+  `,
+  fs_surface: glsl`
+    surface.Specular.rgb = getSpecularColor(uvOffset);
   `,
 }

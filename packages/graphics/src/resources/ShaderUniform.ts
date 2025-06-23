@@ -160,6 +160,10 @@ export abstract class ShaderUniform {
 
   protected state = new ShaderUniformState()
 
+  public get isTexture() {
+    return this.set === this.setTexture
+  }
+
   /**
    * Sets an int value. Commits it to the uniform variable of the program if it has changed.
    */
@@ -296,7 +300,7 @@ export abstract class ShaderUniform {
   public setTexture(texture: TextureImage | Texture) {
     const device = this.device
     const textureUnit = device.textureUnits[this.register] || device.textureUnits[0]
-
+    // console.log('set texture', this.register, texture.name)
     // perform the update
     // - for video textures this will update the playback state
     // - for image textures this will update the ready state

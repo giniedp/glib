@@ -20,7 +20,7 @@ describe('graphics/ParticleChannel', () => {
 
     it('creates vertexBuffer', () => {
       expect(channel.vertexBuffer).toBeDefined()
-      expect(channel.vertexBuffer[0].elementCount).toBe(100 * 4)
+      expect(channel.vertexBuffer.buffers[0].elementCount).toBe(100 * 4)
     })
 
     it('creates indexBuffer', () => {

@@ -545,5 +545,22 @@ export const PRE_IBL_SAMPLER: EffectDocument = {
         `,
       },
     },
+    {
+      name: 'sampleLut',
+      pass: {
+        vertexShader: glsl`
+          void main(void) {
+            texCoord = aTexture;
+            gl_Position = vec4(aPosition, 1.0);
+          }
+        `,
+        fragmentShader: glsl`
+          out vec4 fragColor;
+          void main() {
+            fragColor = vec4(iblSample(), 1.0) ;
+          }
+        `,
+      },
+    },
   ],
 }

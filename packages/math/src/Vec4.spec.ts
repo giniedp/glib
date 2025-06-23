@@ -626,7 +626,7 @@ describe('Vec4', () => {
 
   describe('#format', () => {
     it ('formats components', () => {
-      expect(Vec4.create(1, 2, 3, 4).format()).toBe('1.00000,2.00000,3.00000,4.00000')
+      expect(Vec4.create(1, 2, 3, 4).format()).toBe('x: 1.00000, y: 2.00000, z: 3.00000, w: 4.00000')
     })
   })
 })

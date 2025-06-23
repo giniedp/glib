@@ -37,6 +37,7 @@ export class HttpClient {
   public async fetch(url: string, options: HttpRequestOptions<'text'>): Promise<HttpResponse<string>>
   public async fetch(url: string, options?: HttpRequestOptions): Promise<HttpResponse<unknown>>
   public async fetch(url: string, options: HttpRequestOptions<any>): Promise<HttpResponse<unknown>> {
+    console.log('HTTP request', url)
     const requestInit = this.createRequestInit(options)
     const response = await this.sendRequest(url, requestInit)
     if (!this.isSuccess(response)) {

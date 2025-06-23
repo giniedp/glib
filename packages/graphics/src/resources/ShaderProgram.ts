@@ -12,18 +12,11 @@ import { ShaderUniform, ShaderUniformBinding, ShaderUniformValue } from './Shade
 export interface ShaderProgramOptions {
   /**
    * The vertex shader to be used within the program
-   *
-   * @remarks
-   * - If it is a string it is assumed to be the source code for the vertex shader.
-   * - If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
   vertexShader?: string
+
   /**
    * The fragment shader to be used within the program
-   *
-   * @remarks
-   * - If it is a string it is assumed to be the source code for the fragment shader.
-   * - If it is an object it is assumed to be the shader options to be passed into the `Shader` constructor.
    */
   fragmentShader?: string
 }
@@ -65,6 +58,8 @@ export abstract class ShaderProgram {
    * A map of all shader uniforms
    */
   public readonly uniforms: ReadonlyMap<string, ShaderUniform> = new Map<string, ShaderUniform>()
+
+  public abstract readonly whenReady: Promise<boolean>
 
   public abstract readonly isReady: boolean
 
@@ -112,6 +107,13 @@ export abstract class ShaderProgram {
     for (const [key, uniform] of this.uniforms) {
       if (uniforms[key] != null) {
         uniform.set(uniforms[key])
+      } else if (uniform.isTexture) {
+        // If the uniform is a texture, we set it to null
+        // to ensure it is not bound to any texture unit
+        // this avoids the error: "Two textures of different types use the same sampler location"
+        // which may happen when a texture was bound to the texture unit by preceding program
+        // but for this program no value was set yet
+        uniform.setTexture(null)
       }
     }
     return this
@@ -121,18 +123,18 @@ export abstract class ShaderProgram {
    * Sets a value on the named uniform
    *
    * @remarks
-   * `null` values are ignored
+   * `null` values are ignored for non-texture uniforms.
    */
   public setUniform(name: string, value: ShaderUniformValue): this {
-    if (value == null) {
-      return
-    }
     const uniform = this.uniforms.get(name)
     if (!uniform) {
       this.reportMissingUniform(name)
-    } else {
+      return this
+    }
+
+    if (uniform.isTexture || value != null) {
       this.bind()
-      uniform.set(value)
+      uniform.set(value || null)
     }
     return this
   }

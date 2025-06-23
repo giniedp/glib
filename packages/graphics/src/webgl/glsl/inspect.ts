@@ -1,4 +1,3 @@
-import { getLines } from '@gglib/utils'
 import { GlslVariable } from './GlslParser'
 import { GlslScanResult, scan } from './scan'
 
@@ -237,7 +236,7 @@ function spread(item: GlslVariable, cb: (index: number) => void) {
 function parseAnnotations(source: string | string[], out: Record<string, any> = {}): Record<string, any> {
   source = source || ''
   // lines to process
-  const lines = Array.isArray(source) ? source : getLines(source)
+  const lines = Array.isArray(source) ? source : source.split('\n')
   for (const line of lines) {
     const match = line.match(/^(\s*)@(\w+)\s*(.*)(\s*)/)
     if (!match) {

@@ -1,7 +1,7 @@
 import { Device, Material, Effect, Texture, MaterialParameters } from '@gglib/graphics'
 import { IMat, IVec3, Mat4 } from '@gglib/math'
 import { LightParams } from '../lights'
-import { materialProgram, DefaultProgramDefs } from '../programs'
+import { materialProgram, MaterialProgramDefs } from '../programs'
 import { ShadeFunction } from './AutoMaterial'
 
 const defineMap: Record<any, any> = {
@@ -13,9 +13,9 @@ const defineMap: Record<any, any> = {
 
   TintMap: 'SPLATTING_TINT',
 
-  DiffuseMap: 'SPLATTING_BASE',
-  DiffuseMapA: 'SPLATTING_ALPHA',
-  DiffuseMapSlope: 'SPLATTING_SLOPE',
+  BaseColorMap: 'SPLATTING_BASE',
+  BaseColorMapA: 'SPLATTING_ALPHA',
+  BaseColorMapSlope: 'SPLATTING_SLOPE',
 }
 
 const tempMat4 = Mat4.createIdentity()
@@ -35,12 +35,12 @@ export interface TerrainMaterialParams extends MaterialParameters {
   AlphaClip: number,
   SplatMap: Texture,
   TintMap: Texture,
-  DiffuseMap: Texture,
-  DiffuseMapR: Texture,
-  DiffuseMapG: Texture,
-  DiffuseMapB: Texture,
-  DiffuseMapA: Texture,
-  DiffuseMapSlope: Texture,
+  BaseColorMap: Texture,
+  BaseColorMapR: Texture,
+  BaseColorMapG: Texture,
+  BaseColorMapB: Texture,
+  BaseColorMapA: Texture,
+  BaseColorMapSlope: Texture,
   NormalMap: Texture,
   NormalMapR: Texture,
   NormalMapG: Texture,
@@ -258,46 +258,46 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
     this.parameters.TintMap = v
   }
 
-  public get DiffuseMap(): Texture {
-    return this.parameters.DiffuseMap
+  public get BaseColorMap(): Texture {
+    return this.parameters.BaseColorMap
   }
-  public set DiffuseMap(v: Texture) {
-    this.parameters.DiffuseMap = v
-  }
-
-  public get DiffuseMapR(): Texture {
-    return this.parameters.DiffuseMapR
-  }
-  public set DiffuseMapR(v: Texture) {
-    this.parameters.DiffuseMapR = v
+  public set BaseColorMap(v: Texture) {
+    this.parameters.BaseColorMap = v
   }
 
-  public get DiffuseMapG(): Texture {
-    return this.parameters.DiffuseMapG
+  public get BaseColorMapR(): Texture {
+    return this.parameters.BaseColorMapR
   }
-  public set DiffuseMapG(v: Texture) {
-    this.parameters.DiffuseMapG = v
-  }
-
-  public get DiffuseMapB(): Texture {
-    return this.parameters.DiffuseMapB
-  }
-  public set DiffuseMapB(v: Texture) {
-    this.parameters.DiffuseMapB = v
+  public set BaseColorMapR(v: Texture) {
+    this.parameters.BaseColorMapR = v
   }
 
-  public get DiffuseMapA(): Texture {
-    return this.parameters.DiffuseMapA
+  public get BaseColorMapG(): Texture {
+    return this.parameters.BaseColorMapG
   }
-  public set DiffuseMapA(v: Texture) {
-    this.parameters.DiffuseMapA = v
+  public set BaseColorMapG(v: Texture) {
+    this.parameters.BaseColorMapG = v
   }
 
-  public get DiffuseMapSlope(): Texture {
-    return this.parameters.DiffuseMapSlope
+  public get BaseColorMapB(): Texture {
+    return this.parameters.BaseColorMapB
   }
-  public set DiffuseMapSlope(v: Texture) {
-    this.parameters.DiffuseMapSlope = v
+  public set BaseColorMapB(v: Texture) {
+    this.parameters.BaseColorMapB = v
+  }
+
+  public get BaseColorMapA(): Texture {
+    return this.parameters.BaseColorMapA
+  }
+  public set BaseColorMapA(v: Texture) {
+    this.parameters.BaseColorMapA = v
+  }
+
+  public get BaseColorMapSlope(): Texture {
+    return this.parameters.BaseColorMapSlope
+  }
+  public set BaseColorMapSlope(v: Texture) {
+    this.parameters.BaseColorMapSlope = v
   }
 
   public get NormalMap(): Texture {
@@ -395,7 +395,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
     return this.$effect
   }
 
-  private defines: DefaultProgramDefs = {}
+  private defines: MaterialProgramDefs = {}
   private lights: LightParams[] = []
   private hasChanged = true
   protected $effect: Effect
@@ -434,7 +434,7 @@ export class TerrainMaterial extends Material<TerrainMaterialParams> {
   }
 
   private setParamValue(params: any, name: string | number | symbol, value: any) {
-    const def: keyof DefaultProgramDefs = defineMap[name as unknown as string]
+    const def: keyof MaterialProgramDefs = defineMap[name as unknown as string]
     const old = params[name]
     params[name] = value
 

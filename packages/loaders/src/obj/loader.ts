@@ -115,7 +115,7 @@ export class Loader implements AssetLoader {
   public async loadMaterialLibs(libs: string[], context: LoaderContext): Promise<MaterialOptions[]> {
     const tasks: Promise<MaterialOptions[]>[] = []
     for (const lib of libs) {
-      const url = context.content.resolveUrl(lib, context.assetUrl)
+      const url = context.content.resolveUrl(lib, context)
       tasks.push(
         context.content
           .loadAsset(url, {

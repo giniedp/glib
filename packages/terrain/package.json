@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\terrain.umd.js",
   "module": "dist\\terrain\\src\\index.js",
+  "main": "dist\\terrain\\src\\index.js",
   "typings": "dist\\terrain\\src\\index.d.ts",
   "devDependencies": {
     "@gglib/math": "workspace:^0.6.2",

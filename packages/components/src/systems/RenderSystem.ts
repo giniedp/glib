@@ -1,11 +1,10 @@
-import { GameEntity, GameEntityCollection, GameProvider, GameSystem } from '@gglib/ecs'
-import { Device } from '@gglib/graphics'
+import { GameEntity } from '@gglib/ecs'
 import { BoundingFrustum } from '@gglib/math'
-import { CameraInfo, ItemInfo, LightInfo, Renderer, RenderPass, SceneComposition, SceneView } from '@gglib/render'
+import { CameraInfo, ItemInfo, LightInfo, RenderPass, SceneComposition, SceneView } from '@gglib/render'
 import { BoundingVolumeComponent } from '../components/BoundingVolumeComponent'
 
 export class RenderQuery implements SceneComposition {
-  public static collectEvent = 'renderSceneCollect'
+  public static collectEvent = 'renderQueryCollect'
   public static notifyCollectEvent(target: GameEntity, event: CollectEvent) {
     target.events.notify(RenderQuery.collectEvent, event)
   }

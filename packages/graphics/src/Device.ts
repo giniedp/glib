@@ -41,6 +41,7 @@ import { Effect, EffectOptions } from './Effect'
 import { VertexBuffer, VertexBufferOptions } from './resources/VertexBuffer'
 import { SpriteBatch } from './SpriteBatch'
 import { AttributeSemantic, VertexLayout } from './VertexLayout'
+import { Scheduler } from './Scheduler'
 
 /**
  * Describes the Graphics Device
@@ -84,6 +85,15 @@ export abstract class Device<T = unknown> {
    * The number of sampler states is limited by {@link Capabilities.maxTextureUnits}
    */
   public readonly textureUnits: TextureUnitState[] = []
+
+  /**
+   * A simple task scheduler that can be used for poll tasks or even game loops
+   *
+   * @remarks
+   * Primarily used for scheduling poll tasks for shader compilation results or texture uploads.
+   * Can be used for game loops as well, yet it's not optimized for that purpose.
+   */
+  public readonly scheduler = new Scheduler()
 
   /**
    * Gets a copy of the cull state parameters
@@ -207,6 +217,11 @@ export abstract class Device<T = unknown> {
     this._viewportState.commit(v)
   }
 
+  public abstract canRenderFloat: boolean
+  public abstract canRenderHalf: boolean
+  public abstract canFilterFloat: boolean
+  public abstract canFilterHalf: boolean
+
   /**
    * Copies the current viewport state parameters to a target object.
    */
@@ -217,6 +232,7 @@ export abstract class Device<T = unknown> {
   public get defaultTexture(): Texture {
     if (!this.defaultTextureInstance) {
       this.defaultTextureInstance = this.createTexture({
+        name: 'default2x2',
         sampler: SamplerState.PointWrap,
         type: 'Texture2D',
         // prettier-ignore
@@ -557,4 +573,8 @@ export abstract class Device<T = unknown> {
   }
 
   public abstract stats(out?: Record<string, any>): Record<string, any>
+
+  public dispose() {
+    this.scheduler.dispose()
+  }
 }

@@ -8,10 +8,12 @@ export interface VNormalDefs {
    * Enables vertex normal attribute
    */
   V_NORMAL?: boolean
+
   /**
    * Enables vertex tangent attribute
    */
   V_TANGENT?: boolean
+
   /**
    * If defined the tangent is calculated from world X coordinate and vertex normal
    *
@@ -58,8 +60,8 @@ export const V_NORMAL: ShaderChunkSet<VNormalDefs> = {
     #ifdef VERTEX_SHADER
     void writeNormal() {
       #ifdef V_NORMAL
-      mat3 normalMatrix = mat3(uWorld);
-      vWorldNormal.xyz = normalMatrix * aNormal;
+      mat3 normalMatrix = mat3(transpose(inverse(uWorld)));
+      vWorldNormal.xyz = normalize((normalMatrix * aNormal));
 
       #if defined(V_TANGENT_PLANE)
       vTTW[0] = cross(normalMatrix[0], vWorldNormal.xyz);
@@ -78,9 +80,5 @@ export const V_NORMAL: ShaderChunkSet<VNormalDefs> = {
   vs_normal: glsl`
     writeNormal();
   `,
-  fs_start_before: glsl`
-    #if defined(V_TBN)
-    mat3 WTT = transposeMat3(vTTW);
-    #endif
-  `,
+
 }

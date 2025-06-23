@@ -2,7 +2,7 @@ import { BoundingBox, Mat4 } from '@gglib/math'
 import { Color } from '../../Color'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, type GeometryBuilder } from '../GeometryBuilder'
+import { beginGeometry, buildGeometry, BuildGeometryOptions, type GeometryBuilder } from '../GeometryBuilder'
 import { buildLines } from './buildLines'
 import { buildPlane } from './buildPlane'
 
@@ -29,10 +29,8 @@ export interface BuildCubeOptions {
   tesselation?: number
 }
 
-export function cubeGeometry(device: Device, options?: BuildCubeOptions): Geometry {
-  return beginGeometry().append(buildCube, options).calculateNormalsAndTangents().endGeometry(device, {
-    name: 'cube',
-  })
+export function cubeGeometry(device: Device, options?: BuildCubeOptions & BuildGeometryOptions): Geometry {
+  return buildGeometry(device, buildCube, options)
 }
 
 /**

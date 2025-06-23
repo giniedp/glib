@@ -1,4 +1,4 @@
-import { buildCube, buildPlane, createDevice, GeometryBuilder, LightType } from '@gglib/graphics'
+import { buildCube, buildPlane, createDevice, GeometryBuilder, LightType, SamplerState } from '@gglib/graphics'
 import { LightParams, materialProgram } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -11,30 +11,28 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const normalMapEffect = device.createEffect({
     program: materialProgram({
-      DIFFUSE_MAP: true,
+      BASE_COLOR_MAP: true,
       NORMAL_MAP: true,
-      SPECULAR_POWER: true,
       SPECULAR_COLOR: true,
+      ROUGHNESS: true,
       LIGHT: true,
       LIGHT_COUNT: 1,
       SHADE_FUNCTION: 'shadeBlinn',
-      V_TANGENT: true,
     }),
   })
 
-  const normalMapSpecularMapEffect = device.createEffect({
+  const normalMapSpecularColorMapEffect = device.createEffect({
     program: materialProgram({
-      DIFFUSE_MAP: true,
+      BASE_COLOR_MAP: true,
       NORMAL_MAP: true,
-      SPECULAR_MAP: true,
-      SPECULAR_POWER: true,
       SPECULAR_COLOR: true,
+      SPECULAR_COLOR_MAP: true,
+      ROUGHNESS: true,
       LIGHT: true,
       LIGHT_COUNT: 1,
       SHADE_FUNCTION: 'shadeBlinn',
-      DIFFUSE_MAP_SCALE_OFFSET: true,
+      BASE_COLOR_MAP_SCALE_OFFSET: true,
       NORMAL_MAP_SCALE_OFFSET: true,
-      V_TANGENT: true,
     }),
   })
 
@@ -96,20 +94,40 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
           name: 'solid',
           effect: normalMapEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/prototype/proto_orange.png' }),
-            NormalMap: device.createTexture({ source: '/textures/prototype/proto_gray_n.png' }),
-            SpecularPower: 1024,
+            BaseColorMap: device.createTexture({
+              source: '/textures/prototype/proto_orange.png',
+              generateMipmap: true,
+              sampler: SamplerState.LinearWrap,
+            }),
+            NormalMap: device.createTexture({
+              source: '/textures/prototype/proto_gray_n.png',
+              generateMipmap: true,
+              sampler: SamplerState.LinearWrap,
+            }),
+            Roughness: 0.1,
             SpecularColor: [1, 1, 1],
           },
         },
         {
           name: 'water',
-          effect: normalMapSpecularMapEffect,
+          effect: normalMapSpecularColorMapEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/prototype/proto_water.png' }),
-            NormalMap: device.createTexture({ source: '/textures/prototype/proto_water_N.png' }),
-            SpecularMap: device.createTexture({ source: '/textures/prototype/proto_water_S.png' }),
-            SpecularPower: 255,
+            BaseColorMap: device.createTexture({
+              source: '/textures/prototype/proto_water.png',
+              generateMipmap: true,
+              sampler: SamplerState.LinearWrap,
+            }),
+            NormalMap: device.createTexture({
+              source: '/textures/prototype/proto_water_N.png',
+              generateMipmap: true,
+              sampler: SamplerState.LinearWrap,
+            }),
+            SpecularColorMap: device.createTexture({
+              source: '/textures/prototype/proto_water_S.png',
+              generateMipmap: true,
+              sampler: SamplerState.LinearWrap,
+            }),
+            Roughness: 0.1,
           },
         },
       ],
@@ -128,7 +146,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       material.parameters['View'] = view
       material.parameters['Projection'] = proj
       material.parameters['CameraPosition'] = cam.getTranslation()
-      material.parameters['DiffuseMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
+      material.parameters['BaseColorMapScaleOffset'] = [1, 1, time / 80000, time / 40000]
       material.parameters['NormalMapScaleOffset'] = [1, 1, time / 40000, time / 80000]
 
       light.assign(0, material.parameters)

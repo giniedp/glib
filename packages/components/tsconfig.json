@@ -8,7 +8,8 @@
   },
   "include": [
     "./index.ts",
-    "./src/**/*.ts"
+    "./src/**/*.ts",
+    "./src/**/*.js"
   ],
   "exclude": [
     "./dist/**/*",
@@ -34,13 +35,13 @@
       "path": "..\\input\\tsconfig.json"
     },
     {
+      "path": "..\\content\\tsconfig.json"
+    },
+    {
       "path": "..\\model\\tsconfig.json"
     },
     {
       "path": "..\\materials\\tsconfig.json"
-    },
-    {
-      "path": "..\\content\\tsconfig.json"
     }
   ]
 }

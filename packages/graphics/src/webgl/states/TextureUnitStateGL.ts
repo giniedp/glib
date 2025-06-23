@@ -71,8 +71,9 @@ export class TextureUnitStateGL extends TextureUnitState {
 
     const gl = this.device.context as WebGL2RenderingContext
     gl.activeTexture(this.unit)
-    gl.bindTexture(image.type, (image as TextureGL)?.resource || null)
+    gl.bindTexture(image.type, (image as TextureGL).resource || null)
     gl.bindSampler(this.index, (sampler as SamplerStateGL).resource)
+
     return this
   }
 }

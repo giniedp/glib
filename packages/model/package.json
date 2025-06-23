@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\model.umd.js",
   "module": "dist\\model\\src\\index.js",
+  "main": "dist\\model\\src\\index.js",
   "typings": "dist\\model\\src\\index.d.ts",
   "devDependencies": {
     "@gglib/math": "workspace:^0.6.2",

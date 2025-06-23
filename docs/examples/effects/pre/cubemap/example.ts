@@ -1,23 +1,26 @@
+import { ContentLoader } from '@gglib/content'
 import { IBLSamplerEffect } from '@gglib/effects'
-import {
-  DepthState,
-  Device,
-  SamplerState,
-  createDevice,
-  cubeGeometry,
-  skyboxProgram,
-  textureSourceFromImageUrl,
-} from '@gglib/graphics'
+import { DepthState, Device, createDevice, cubeGeometry, skyboxProgram, sphereGeometry } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
+import { HDR } from '@gglib/loaders'
+import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
+const PANORAMA_IMAGES = {
+  Court: '/textures/hdr/footprint_court.hdr',
+  Exterior: '/textures/hdr/cannon_exterior.hdr',
+  Overcast: '/textures/hdr/overcast_puresky.hdr',
+  Sky: '/textures/Grey_Sky.png',
+}
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device: Device = createDevice({
     canvas,
   })
 
+  const content = new ContentLoader(device)
+  content.registerLoader(HDR.Loader)
   const mouse = new Mouse({
     captureTarget: canvas,
     preventDefault: true,
@@ -26,70 +29,112 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const world = Mat4.createIdentity()
   const camera = demoCamera()
   const skyProgram = skyboxProgram(device)
-  const geometry = cubeGeometry(device, {})
-
-  const panoramaUrl = 'https://playground.babylonjs.com/textures/GatonaParkWalkway1_Panorama_4Kx2K.jpg'
-  const panoramaTexture = device.createTexture({
-    type: 'Texture2D',
-    source: textureSourceFromImageUrl(panoramaUrl, 'anonymous'),
-    sampler: SamplerState.LinearWrap,
-    generateMipmap: true,
+  const cube = cubeGeometry(device, {})
+  const sphere = sphereGeometry(device, {
+    tesselation: 32,
   })
+  const material = new AutoMaterial(device)
+  material.Roughness = 0
+  material.Metallic = 0.5
 
-  const cubeMap = device.createTexture({
-    type: 'TextureCube',
-    width: 512,
-    height: 512,
-    sampler: SamplerState.LinearClamp,
-    generateMipmap: true,
-  })
+  const iblSampler = new IBLSamplerEffect(device)
+  const params = {
+    blur: 0,
+    mipCount: iblSampler.lowestMipLevel + 1,
+    model: 'lambertian',
+  }
 
-  const iblSampler = new IBLSamplerEffect(device, {})
+  async function loadEnvFile(url: string) {
+    content.loadTexture(url).then((texture) => {
+      iblSampler.panoramaInput?.dispose()
+      iblSampler.panoramaInput = texture
+      iblSampler.needsUpdate = true
+    })
+  }
+
   const stats = device.stats()
   stats.frameTime = 0
-  stats.model = 'lambertian'
+
   function frame(time: number) {
     updateCamera(camera, mouse, device)
     device.resize()
     device.drawCalls = 0
     stats.frameTime = performance.now()
 
-    if (iblSampler.isReady) {
-      iblSampler.panoramaToCubemap(panoramaTexture, cubeMap)
-      iblSampler.draw(cubeMap)
+    if (iblSampler.panoramaInput) {
+      iblSampler.update()
     }
 
     device.clear(0xff2e2620, 1.0)
     device.depthState = DepthState.Default
     if (skyProgram.isReady) {
-      world.initScaleUniform(10).setTranslation(camera.position)
+      world.initScaleUniform(100).setTranslation(camera.position)
       skyProgram.setUniform('World', world)
       skyProgram.setUniform('View', camera.view)
       skyProgram.setUniform('Projection', camera.projection)
-
-      if (stats.model === 'lambertian') {
+      skyProgram.setUniform('Blur', params.blur)
+      skyProgram.setUniform('MipCount', params.mipCount)
+      if (params.model === 'lambertian') {
         skyProgram.setUniform('Texture', iblSampler.lambertianCubemap)
       }
-      if (stats.model === 'ggx') {
+      if (params.model === 'ggx') {
         skyProgram.setUniform('Texture', iblSampler.ggxCubemap)
       }
-      if (stats.model === 'sheen') {
+      if (params.model === 'sheen') {
         skyProgram.setUniform('Texture', iblSampler.sheenCubemap)
       }
-      geometry.draw(skyProgram)
+      cube.draw(skyProgram)
     }
+
+    material.IrradianceMap = iblSampler.lambertianCubemap
+    material.EnvironmentMap = iblSampler.ggxCubemap
+    material.EnvironmentLUT = iblSampler.ggxLutMap
+    // material.BaseColorMap = iblSampler.ggxLutMap
+    material.ShadeFunction = 'shadePbr'
+
+    if (material.isReady()) {
+      world.initScaleUniform(1)
+      material.LightCount = 1
+      material.World = world
+      material.View = camera.view
+      material.Projection = camera.projection
+      material.draw(sphere)
+    }
+
     device.stats(stats)
     stats.frameTime = (performance.now() - stats.frameTime).toFixed(2)
     TweakUi.redraw()
   }
 
   TweakUi.mount(tools, (ui) => {
-    ui.slider(iblSampler, 'scaleValue', { min: 0, max: 2, step: 0.01, label: 'Scale' })
-    ui.select(iblSampler, 'textureSize', { label: 'Size', options: [64, 128, 256, 512, 1024] })
-    ui.select(stats, 'model', {
+    loadEnvFile(PANORAMA_IMAGES.Overcast)
+    ui.select({ env: PANORAMA_IMAGES.Overcast }, 'env', {
+      options: PANORAMA_IMAGES,
+      onChange: (it, value) => loadEnvFile(value as string),
+    })
+    ui.slider(iblSampler, 'scaleValue', {
+      min: 0,
+      max: 2,
+      step: 0.01,
+      label: 'Scale',
+      onInput: () => {
+        iblSampler.needsUpdate = true
+      },
+    })
+    ui.select(iblSampler, 'textureSize', {
+      label: 'Size',
+      options: [64, 128, 256, 512, 1024],
+      onChange: () => {
+        iblSampler.needsUpdate = true
+      },
+    })
+    ui.slider(params, 'blur', { label: 'Blur', min: 0, max: 1, step: 0.01 })
+    ui.select(params, 'model', {
       label: 'Model',
       options: ['lambertian', 'ggx', 'sheen'],
     })
+    ui.slider(material, 'Metallic', { label: 'Metallic', min: 0, max: 1, step: 0.01 })
+    ui.slider(material, 'Roughness', { label: 'Roughness', min: 0, max: 1, step: 0.01 })
     ui.object('GPU Stats', stats)
   })
 

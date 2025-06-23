@@ -29,7 +29,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   content
     .loadTexture('/textures/backgrounds/colored_castle.png')
     .then((result) => {
-      material.DiffuseMap = result
+      material.ShadeFunction = 'shadeNone'
+      material.BaseColorMap = result
     })
     .catch((e) => {
       console.error(e)

@@ -80,7 +80,7 @@ export interface MaterialProgramOptions<Parameters extends MaterialParameters = 
   /**
    * The shader program options to be used to create the effect
    */
-  program: ShaderProgramOptions
+  program: ShaderProgramOptions | ShaderProgram
 }
 
 /**
@@ -145,7 +145,7 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
   /**
    * Draws a full screen quad with the current effect and parameters.
    */
-  public drawQuad(flipY = false) {
+  public drawQuad(flipY?: boolean) {
     this.effect.drawQuad(this.parameters, flipY)
   }
 
@@ -159,11 +159,13 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
     return this.parameters[name] as T
   }
 
+  protected disposables: Texture[] = []
   protected createParameters(options: MaterialOptions) {
     const params: MaterialParameters = {
       ...((options.parameters || {}) as Params),
     }
-    instantiateMaterialTextures(this.device, params)
+    const textures = instantiateMaterialTextures(this.device, params)
+    this.disposables.push(...textures)
     this.parameters = params as Params
   }
 
@@ -200,14 +202,18 @@ export class Material<Params extends MaterialParameters = MaterialParameters> {
    * Disposes the underlying effect
    */
   public dispose() {
-    disposeParameters(this.parameters)
+    for (const texture of this.disposables) {
+      texture.dispose()
+    }
+    this.disposables.length = 0
     this.effect?.dispose()
     this._effect = null
     this.device = null
   }
 }
 
-export function instantiateMaterialTextures(device: Device, params: MaterialParameters): void {
+export function instantiateMaterialTextures(device: Device, params: MaterialParameters): Texture[] {
+  const textures: Texture[] = []
   for (const key in params) {
     const value = params[key]
     if (typeof value !== 'object') {
@@ -216,10 +222,13 @@ export function instantiateMaterialTextures(device: Device, params: MaterialPara
     if (value instanceof Texture || value instanceof TextureImage) {
       continue
     }
-    if (value && ('source' in value || 'faces' in value)) {
-      params[key] = device.createTexture(value as TextureOptions)
+    if (value && 'source' in value) {
+      const texture = device.createTexture(value as TextureOptions)
+      textures.push(texture)
+      params[key] = texture
     }
   }
+  return textures
 }
 
 function disposeParameters(params: MaterialParameters): void {

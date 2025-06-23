@@ -131,7 +131,7 @@ class SkyComponent implements OnInit, OnUpdate {
   public onInit() {
     this.content.load('/textures/Grey_Sky.png', Texture.Texture2D).then((texture) => {
       const material = new AutoMaterial(this.device)
-      material.DiffuseMap = texture
+      material.BaseColorMap = texture
       material.ShadeFunction = 'shadeNone'
       material.LightCount = 0
 
@@ -183,11 +183,11 @@ class TerrainComponent implements OnInit, OnUpdate {
 
         const material = new TerrainMaterial(device)
         material.SplatMap = device.createTexture({ source: '/heightmaps/heightmap_flow.png' })
-        material.DiffuseMap = device.createTexture({ source: '/textures/terrain/savanna_green_d.jpg' })
-        material.DiffuseMapR = device.createTexture({ source: '/textures/terrain/ground_dry_d.jpg' })
-        material.DiffuseMapG = device.createTexture({ source: '/textures/terrain/ground_mud_d.jpg' })
-        material.DiffuseMapB = device.createTexture({ source: '/textures/terrain/savanna_green_d.jpg' })
-        /* material.DiffuseMapSlope = device.createTexture({ source: '/textures/terrain/adesert_mntn4_d.jpg' }) */
+        material.BaseColorMap = device.createTexture({ source: '/textures/terrain/savanna_green_d.jpg' })
+        material.BaseColorMapR = device.createTexture({ source: '/textures/terrain/ground_dry_d.jpg' })
+        material.BaseColorMapG = device.createTexture({ source: '/textures/terrain/ground_mud_d.jpg' })
+        material.BaseColorMapB = device.createTexture({ source: '/textures/terrain/savanna_green_d.jpg' })
+        /* material.BaseColorMapSlope = device.createTexture({ source: '/textures/terrain/adesert_mntn4_d.jpg' }) */
 
         material.NormalMap = device.createTexture({ source: '/textures/terrain/savanna_green_n.jpg' })
         material.NormalMapR = device.createTexture({ source: '/textures/terrain/ground_dry_n.jpg' })

@@ -57,7 +57,7 @@ export interface EffectOptionsWithProgram extends EffectOptionsBase {
    * If this is given, then `techniques` and `technique` options are ignored and
    * instead created from this single program
    */
-  program?: ShaderProgramOptions
+  program?: ShaderProgramOptions | ShaderProgram
 }
 
 /**

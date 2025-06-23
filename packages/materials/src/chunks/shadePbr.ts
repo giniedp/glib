@@ -28,19 +28,21 @@ export const SHADE_PBR: ShaderChunkSet = Object.freeze({
     {
       float rSq = r * r;
       float f = (dotNH * rSq - dotNH) * dotNH + 1.0;
-      return rSq / (M_PI * f * f);
+      return rSq / (PI * f * f);
     }
 
     highp vec3 shadePbr(
       inout ShadeParams shade,
       inout SurfaceParams surface
     ) {
-      float metallic = surface.PBR.r;
-      float roughness = surface.PBR.g;
+      float metallic = surface.Metallic;
+      float roughness = surface.Roughness;
 
-      vec3 f0 = vec3(0.04);
-      vec3 diffuseColor = mix(surface.Diffuse.rgb * (vec3(1.0) - f0), vec3(0), metallic);
-      vec3 specularColor = mix(f0, surface.Diffuse.rgb, metallic);
+      vec3 f0 = getF0Dielectric(surface);
+      vec3 f90 = getSpecularWeight(surface);
+
+      vec3 diffuseColor = mix(surface.BaseColor.rgb * (vec3(1.0) - f0), vec3(0), metallic);
+      vec3 specularColor = mix(f0, surface.BaseColor.rgb, metallic);
 
       float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
 
@@ -62,7 +64,7 @@ export const SHADE_PBR: ShaderChunkSet = Object.freeze({
 
       // The following equation models the Fresnel reflectance term of the spec equation (aka F())
       // Implementation of fresnel from [4], Equation 15
-      vec3 F = fresnelSchlickf90(R0, reflectance90, dotVH);
+      vec3 F = fresnelSchlickf90(R0, vec3(reflectance90), dotVH);
       float G = pbrGeometricOcclusion(dotNL, dotNV, roughness * roughness);
       float D = pbrMicrofacetDistribution(dotNH, roughness * roughness);
 

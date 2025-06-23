@@ -140,6 +140,22 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
     return isWebGL2(this.context)
   }
 
+  public get canFilterFloat(): boolean {
+    return !!this.capabilities.extension('OES_texture_float_linear')
+  }
+
+  public get canFilterHalf(): boolean {
+    return !!this.capabilities.extension('OES_texture_float_linear')
+  }
+
+  public get canRenderFloat(): boolean {
+    return !!this.capabilities.extension('EXT_color_buffer_float')
+  }
+
+  public get canRenderHalf(): boolean {
+    return !!this.capabilities.extension('EXT_color_buffer_float')
+  }
+
   protected _program: ShaderProgramGL
   protected _indexBuffer: BufferGL
   protected _vertexBuffer: VertexBufferGL
@@ -274,6 +290,10 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
     if (!program) {
       throw new Error(`device.program must be set before calling drawIndexedPrimitives()`)
     }
+    if (!program.isReady) {
+      console.warn('device.program is not ready, skipped drawIndexedPrimitives')
+      return
+    }
 
     const dataType = iBuffer.dataType
     const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
@@ -313,6 +333,10 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
     if (!program) {
       throw new Error(`device.program must be set before calling drawInstancedPrimitives()`)
     }
+    if (!program.isReady) {
+      console.warn('device.program is not ready, skipped drawInstancedPrimitives')
+      return
+    }
 
     if (isWebGL2(this.context)) {
       const dataType = iBuffer.dataType
@@ -344,6 +368,10 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
     const program = this._program as ShaderProgramGL
     if (!program) {
       throw new Error(`device.program must be set before calling drawPrimitives()`)
+    }
+    if (!program.isReady) {
+      console.warn('device.program is not ready, skipped drawPrimitives')
+      return
     }
 
     const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList

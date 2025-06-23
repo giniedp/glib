@@ -75,19 +75,34 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
    */
   public info: string
 
+  /**
+   * A promise that resolves when the program has finished compiling
+   *
+   * @remarks
+   * The program is considered ready when the compilation is finished. Yet the program may not be linked successfully.
+   * The promise value indicates if the program is linked successfully.
+   */
+  public whenReady: Promise<boolean>
+
+  /**
+   * Indicates that the program is finished compiling
+   *
+   * @remarks
+   * The program is considered ready when the compilation is finished. Yet the program may not be linked successfully.
+   * Check the {@link linked} property to determine if the program is ready to use for rendering.
+   */
   public get isReady(): boolean {
-    this.readyState ||= this.checkReadyState()
-    return this.readyState
+    return !this.isCompiling
   }
 
   /**
    * Collection of all attached shaders. Usually contains a single vertex and a single fragment shader
    */
   protected attached: ShaderGL[] = []
-  protected compiling: boolean
+  protected isCompiling: boolean
   protected inspection: GlslProgramInspection
   private canParallelCompile: boolean
-  private readyState: boolean = false
+
   constructor(device: DeviceGL, options: ShaderProgramOptions = {}) {
     super()
     this.device = device
@@ -139,8 +154,8 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
    */
   private attach(): this {
     this.attached.length = 0
-    this.readyState = false
-    this.compiling = true
+    this.isCompiling = true
+    this.linked = false
     if (this.vertexShader) {
       this.device.context.attachShader(this.resource, this.vertexShader.resource)
       this.attached.push(this.vertexShader)
@@ -149,6 +164,13 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
       this.device.context.attachShader(this.resource, this.fragmentShader.resource)
       this.attached.push(this.fragmentShader)
     }
+    this.whenReady = this.device.scheduler.add<boolean>((context) => {
+      if (this.hasFinishedCompiling()) {
+        this.onFinishedCompiling()
+        this.isCompiling = false
+        context.finish(this.linked)
+      }
+    })
     return this
   }
 
@@ -160,7 +182,7 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
       this.device.context.detachShader(this.resource, shader.resource)
     }
     this.attached.length = 0
-    this.compiling = false
+    this.isCompiling = false
     return this
   }
 
@@ -174,22 +196,19 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
     return this
   }
 
-  private checkReadyState(): boolean {
-    if (this.compiling && this.canParallelCompile) {
+  private hasFinishedCompiling(): boolean {
+    let isCompiling = true
+    if (this.canParallelCompile) {
       const gl = this.device.context
       const ext = this.device.capabilities.extension('KHR_parallel_shader_compile')
-      this.compiling = !gl.getProgramParameter(this.resource, ext.COMPLETION_STATUS_KHR)
+      isCompiling = !gl.getProgramParameter(this.resource, ext.COMPLETION_STATUS_KHR)
     } else {
-      this.compiling = false
+      isCompiling = false
     }
-    if (!this.readyState && !this.compiling) {
-      this.onProgramReady()
-    }
-    this.readyState = !this.compiling
-    return this.readyState
+    return !isCompiling
   }
 
-  private onProgramReady() {
+  private onFinishedCompiling() {
     const gl = this.device.context
     this.linked = gl.getProgramParameter(this.resource, gl.LINK_STATUS)
     this.info = gl.getProgramInfoLog(this.resource)
@@ -276,25 +295,25 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
   }
 
   private assignRegisters() {
-    const registers: number[] = new Array(this.device.textureUnits.length).fill(null)
-    this.uniforms.forEach((it) => {
-      if (it.set !== it.setTexture || it.register == null) {
-        return
+    const usedRegisters: number[] = new Array(this.device.textureUnits.length).fill(null)
+    for (const [_, uniform] of this.uniforms) {
+      if (uniform.set !== uniform.setTexture || uniform.register == null) {
+        usedRegisters[uniform.register] = uniform.register
       }
-      registers[it.register] = it.register
-    })
-    this.uniforms.forEach((it) => {
-      if (it.set !== it.setTexture || it.register != null) {
-        return
+    }
+    for (const [_, uniform] of this.uniforms) {
+      if (uniform.set !== uniform.setTexture || uniform.register != null) {
+        continue
       }
-      for (let i = 0; i < registers.length; i++) {
-        if (registers[i] == null) {
-          it.register = i
-          registers[i] = i
-          return
+      for (let i = 0; i < usedRegisters.length; i++) {
+        if (usedRegisters[i] != null) {
+          continue
         }
+        uniform.register = i
+        usedRegisters[i] = i
+        break
       }
-    })
+    }
   }
 
   private assignDefaults() {

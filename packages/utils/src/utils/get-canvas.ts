@@ -1,4 +1,3 @@
-import { isString } from './string'
 
 /**
  * Gets a canvas element by a CSS selector or creates a new instance of HTMLCanvasElement
@@ -9,7 +8,7 @@ export function getOrCreateCanvas(canvas?: string | HTMLCanvasElement): HTMLCanv
   if (canvas instanceof HTMLCanvasElement) {
     return canvas
   }
-  if (isString(canvas)) {
+  if (typeof canvas === "string") {
     const element = document.getElementById(canvas as string) || document.querySelector(canvas as string)
     if (element instanceof HTMLCanvasElement) {
       return element

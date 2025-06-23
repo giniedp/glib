@@ -14,10 +14,12 @@ export interface MtlParallaxDefs {
    * that is used as height map.
    */
   PARALLAX_MAP?: boolean
+
   /**
    * Allows to override the texture coordinates. Default is `vTexture.xy`.
    */
   PARALLAX_MAP_UV?: string
+
   /**
    * Allows to scale and offset the texture
    *
@@ -26,6 +28,16 @@ export interface MtlParallaxDefs {
    * This is done in pixel shader for the ParallaxMap only.
    */
   PARALLAX_MAP_SCALE_OFFSET?: boolean
+
+  /**
+   * Allows to transform the texture coordinates
+   *
+   * @remarks
+   * Adds a `uniform mat3 uParallaxMapTransform` that is used to transform the texture coordinates.
+   * This is done in pixel shader for the ParallaxMap only.
+   */
+  PARALLAX_MAP_TRANSFORM?: boolean
+
   /**
    * Enables parallax occlusion algorithm
    *
@@ -33,6 +45,7 @@ export interface MtlParallaxDefs {
    * {@link MtlParallaxDefs.PARALLAX_OCCLUSION_SAMPLES}
    */
   PARALLAX_OCCLUSION?: boolean
+
   /**
    * Defines maximum number of parallax occlusion samples
    */
@@ -75,20 +88,32 @@ export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
     uniform vec4 uParallaxMapScaleOffset;
     #endif
 
+    #ifdef PARALLAX_MAP_TRANSFORM
+    // @binding ParallaxMapTransform
+    uniform mat3 uParallaxMapTransform;
+    #endif
+
     // @default [1, 0.0]
     // @binding ParallaxScaleBias
     uniform vec2 uParallaxScaleBias;
     #endif
   `,
-  functions: glsl`
+  fs_functions: glsl`
     #ifdef PARALLAX_MAP
     vec2 getParallaxMapUV() {
+      vec2 result = PARALLAX_MAP_UV;
+
       #ifdef PARALLAX_MAP_SCALE_OFFSET
-      return PARALLAX_MAP_UV * uParallaxMapScaleOffset.xy + uParallaxMapScaleOffset.zw;
-      #else
-      return PARALLAX_MAP_UV;
+      result = result * uParallaxScaleOffset.xy + uParallaxScaleOffset.zw;
       #endif
+
+      #ifdef PARALLAX_MAP_TRANSFORM
+      result = (uParallaxTransform * vec3(result, 1.0)).xy;
+      #endif
+
+      return result;
     }
+
     vec2 getParallaxOffset(vec3 eye, vec2 uv) {
       float h = (texture2D(uParallaxMap, uv).rgb).r;
       return (eye.xy / eye.z) * ((h + uParallaxScaleBias.y) * uParallaxScaleBias.x);
@@ -113,7 +138,7 @@ export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
       float currSampledHeight = 1.0;
 
       for (int i = 0; i < PARALLAX_OCCLUSION_SAMPLES; i++) {
-        currSampledHeight =  texture2D(uParallaxMap, uv + vCurrOffset).r + uParallaxScaleBias.y;
+        currSampledHeight = texture2D(uParallaxMap, uv + vCurrOffset).r + uParallaxScaleBias.y;
 
         // Test if the view ray has intersected the surface.
         if (currSampledHeight > currRayHeight) {
@@ -136,15 +161,28 @@ export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
       return vCurrOffset;
     }
     #endif
+
+    vec2 getParallaxUvOffset() {
+      #if defined(PARALLAX_MAP)
+      vec2 uv = getParallaxMapUV();
+      mat3 tbn = transpose(getTBN(uv));
+      vec3 viewDirTS = tbn * normalize(-vToEyeInWS.xyz);
+
+      #if defined(PARALLAX_OCCLUSION)
+      return getParallaxOffsetWithOcclusion(viewDirTS, vec3(0.0, 0.0, 1.0), uv);
+      #else
+      return getParallaxOffset(viewDirTS, uv);
+      #endif
+
+      #else
+      return vec2(0.0);
+      #endif
+    }
   `,
   fs_surface_before: glsl`
     vec2 uvOffset = vec2(0.0, 0.0);
-    #if defined(V_TBN)
-      #if defined(PARALLAX_MAP) && defined(PARALLAX_OCCLUSION)
-    uvOffset = getParallaxOffsetWithOcclusion(WTT * normalize(vToEyeInWS.xyz), WTT * normalize(vWorldNormal), getParallaxMapUV());
-      #elif defined(PARALLAX_MAP)
-    uvOffset = getParallaxOffset(WTT * normalize(-vToEyeInWS.xyz), getParallaxMapUV());
-      #endif
+    #ifdef PARALLAX_MAP
+    uvOffset += getParallaxUvOffset();
     #endif
   `,
 }

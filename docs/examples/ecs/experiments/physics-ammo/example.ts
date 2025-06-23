@@ -298,8 +298,8 @@ class CubeComponent implements GameComponent {
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
         const mtl = material as AutoMaterial
-        mtl.DiffuseMap = texture
-        mtl.DiffuseColor = [1, 1, 1, 1]
+        mtl.BaseColorMap = texture
+        mtl.BaseColor = [1, 1, 1, 1]
         mtl.LightCount = 1
         mtl.ShadeFunction = 'shadePbr'
       }

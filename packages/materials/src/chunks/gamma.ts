@@ -55,7 +55,7 @@ export const GAMMA: ShaderChunkSet<GammaDefs> = {
   `,
   fs_shade_before: glsl`
     #ifdef GAMMA_CORRECTION
-    surface.Diffuse.rgb = pow(surface.Diffuse.rgb, vec3(GAMMA));
+    surface.BaseColor.rgb = pow(surface.BaseColor.rgb, vec3(GAMMA));
     surface.Specular.rgb = pow(surface.Specular.rgb, vec3(GAMMA));
     #endif
   `,

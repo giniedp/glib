@@ -45,8 +45,8 @@ import { TextureUnitStateGPU } from './states/TextureUnitStateGPU'
 // tslint:disable-next-line: no-submodule-imports
 // TODO: dynamic import
 // import initGlslang, { Glslang } from '@webgpu/glslang/dist/web-devel-onefile/glslang'
-import { Capabilities } from '../Capabilities'
 import { VertexBuffer, VertexBufferOptions } from '../resources/VertexBuffer'
+import { CapabilitiesGPU } from './CapabilitiesGPU'
 import { VertexBufferGPU } from './resources/VertexBufferGPU'
 import { toPrimitiveTopology } from './utils/primitiveTopology'
 
@@ -109,7 +109,7 @@ export class DeviceGPU extends Device<any> {
    */
   public readonly context: GPUCanvasContext
 
-  public capabilities = new Capabilities() // TODO: add webgpu capabilities
+  public capabilities = new CapabilitiesGPU(this) // TODO: add webgpu capabilities
 
   private readonly initPromise: Promise<void>
 
@@ -147,6 +147,22 @@ export class DeviceGPU extends Device<any> {
   public readonly mainTexture: TextureGPU
   public readonly mainDepthFormat: GPUTextureFormat = 'depth24plus-stencil8'
   public readonly mainDepth: DepthBufferGPU
+
+  public get canFilterFloat(): boolean {
+    return false // TODO:
+  }
+
+  public get canFilterHalf(): boolean {
+    return false // TODO:
+  }
+
+  public get canRenderFloat(): boolean {
+    return false // TODO:
+  }
+
+  public get canRenderHalf(): boolean {
+    return false // TODO:
+  }
 
   private frameBuffer: FrameBufferGPU
   private frameBufferOptions: FrameBufferOptions = {

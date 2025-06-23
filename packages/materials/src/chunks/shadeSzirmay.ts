@@ -19,6 +19,7 @@ export const SHADE_SZIRMAY: ShaderChunkSet = Object.freeze({
       vec3 L = shade.L;
       vec3 I = shade.I;
       vec3 H = normalize(V + L);
+      float roughness = surface.Roughness;
 
       float dotNL = dot(N, L);
       if (dotNL <= 0.0) {
@@ -29,14 +30,14 @@ export const SHADE_SZIRMAY: ShaderChunkSet = Object.freeze({
       float dotLH = dot(L, H);
 
       // specular BRDF (Fr)
-      float D = pow(dotNH, surface.Specular.a);
+      float D = pow(dotNH, roughnessToPower(roughness)) * dotNL;
       vec3  F = fresnelSchlick(surface.Specular.rgb, dotLH);
       vec3  Fr = (D * F) / (4.0 * dotLH * dotLH);
 
       // diffuse BRDF (Fd)
       float Fd = dotNL;
 
-      return (Fr * surface.Specular.rgb + Fd * surface.Diffuse.rgb) * I;
+      return (Fr * surface.Specular.rgb + Fd * surface.BaseColor.rgb) * I;
     }
   `,
 })

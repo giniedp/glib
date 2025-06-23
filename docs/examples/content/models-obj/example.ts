@@ -99,25 +99,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   function updateModel(model: Model) {
-    for (const mesh of model.meshes) {
-      for (const material of mesh.materials) {
-        const mtl = material as AutoMaterial
-        mtl.LightCount = 2
-        mtl.World = world
-        mtl.View = camera.view
-        mtl.Projection = camera.projection
 
-        light1.assign(0, mtl.parameters)
-        light2.assign(1, mtl.parameters)
-      }
-    }
   }
 
   function renderModel(model: Model) {
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
         const mtl = material as AutoMaterial
-        mtl.ShadeFunction = 'shadePhong'
+        mtl.ShadeFunction = 'shadeLambert'
         mtl.LightCount = 2
         mtl.World = world
         mtl.View = camera.view

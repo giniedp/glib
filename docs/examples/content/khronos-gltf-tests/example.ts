@@ -1,8 +1,21 @@
 import { ContentLoader } from '@gglib/content'
-import { BlendState, Color, CullState, DepthState, TextureImage, createDevice, planeLinesMesh } from '@gglib/graphics'
+import { IBLSamplerEffect } from '@gglib/effects'
+import {
+  BlendState,
+  Color,
+  CullState,
+  DepthState,
+  Mesh,
+  SamplerState,
+  TextureImage,
+  createDevice,
+  cubeGeometry,
+  planeLinesMesh,
+  textureSourceFromImageUrl,
+} from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { GLTF } from '@gglib/loaders'
-import { AutoMaterial, LightParams } from '@gglib/materials'
+import { AutoMaterial, LightParams, SkyboxMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Mat4, Transform, Vec3 } from '@gglib/math'
 import { AnimationPlayer, Model, NodeData } from '@gglib/model'
 import { loop } from '@gglib/utils'
@@ -10,8 +23,21 @@ import * as TweakUi from 'tweak-ui'
 
 TextureImage.crossOrigin = 'anonymous'
 
+const PANORAMA_IMAGES = {
+  foorprintCourtJPG: {
+    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.jpg',
+  },
+  foorprintCourtHDR: {
+    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.hdr',
+  },
+  gatonaParkWalkway1Panorama4Kx2K: {
+    url: 'https://playground.babylonjs.com/textures/GatonaParkWalkway1_Panorama_4Kx2K.jpg',
+  },
+}
+
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const device = createDevice({ canvas })
+  const stats = device.stats({})
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
   content.registerMaterial({
@@ -22,16 +48,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     captureTarget: canvas,
     preventDefault: true,
   })
-
-  const grid = planeLinesMesh(device, {
-    size: 10,
-    tesselation: 10,
-    color: Color.Gray,
+  const iblSampler = new IBLSamplerEffect(device)
+  content.loadTexture(PANORAMA_IMAGES.foorprintCourtJPG.url).then((texture) => {
+    console.log('Loaded panorama texture', texture)
+    iblSampler.panoramaInput = texture
+    iblSampler.needsUpdate = true
   })
-  let model: Model
-  let player: AnimationPlayer
-
-  const world = Mat4.createIdentity()
   const camera = {
     theta: 0,
     phi: 90,
@@ -42,6 +64,29 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
   }
+
+  const skybox = new Mesh(device, {
+    parts: [cubeGeometry(device)],
+    materials: [
+      new SkyboxMaterial(device, {
+        parameters: {
+          Intensity: 1.0,
+          Rotation: 0,
+          Blur: 0.25,
+          MipCount: iblSampler.lowestMipLevel + 1,
+        },
+      }),
+    ],
+  })
+
+  const grid = planeLinesMesh(device, {
+    size: 10,
+    tesselation: 10,
+    color: Color.Gray,
+  })
+  let model: Model
+  let player: AnimationPlayer
+
   const light = LightParams.createDirectionalLight({
     color: [1, 1, 1],
     direction: [-1, -1, -1],
@@ -85,6 +130,20 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
   }
 
+  function drawSkybox() {
+    const material = skybox.materials[0] as SkyboxMaterial
+    const world = (material.World ||= Mat4.createIdentity()) as Mat4
+    world.initScaleUniform(1)
+    world.setTranslation(camera.position)
+    material.World = world
+    material.View = camera.view
+    material.Projection = camera.projection
+    material.Texture = iblSampler.ggxCubemap
+    if (material.isReady()) {
+      skybox.draw()
+    }
+  }
+
   function drawModelMesh(transform: Transform, node: NodeData, model: Model) {
     const mesh = model.meshes[node.mesh!]
     if (!mesh) {
@@ -101,6 +160,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       material.View = camera.view
       material.Projection = camera.projection
       material.LightCount = 2
+      material.IrradianceMap = iblSampler.lambertianCubemap
+      material.EnvironmentMap = iblSampler.ggxCubemap
+      material.EnvironmentLUT = iblSampler.ggxLutMap
       if (skeleton) {
         material.Joints = skeleton.jointMatrices
       }
@@ -120,6 +182,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     device.blendState = BlendState.Default
     device.clear(Color.CornflowerBlue.rgba, 1.0)
 
+    iblSampler.update()
+
     updateCamera(time, dt)
     for (const mtl of grid.materials) {
       mtl.parameters.World ||= Mat4.createIdentity()
@@ -127,6 +191,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       mtl.parameters.Projection = camera.projection
     }
     grid.draw()
+    drawSkybox()
 
     if (!model) {
       return

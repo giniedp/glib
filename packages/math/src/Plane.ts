@@ -94,12 +94,12 @@ export class Plane implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Initializes the components of this vector with given values.
+   * Initializes the components of this plane with given values.
    * @param x - value for X component
    * @param y - value for Y component
    * @param z - value for Z component
    * @param w - value for W component
-   * @returns this vector for chaining
+   * @returns this instance for chaining
    */
   public init(x: number, y: number, z: number, w: number): Plane {
     this.x = x
@@ -110,15 +110,40 @@ export class Plane implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Creates a new vector.
+   * Creates a new plane.
    * @param x - The x component
    * @param y - The y component
    * @param z - The z component
    * @param w - The w component
-   * @returns A new vector.
+   * @returns A new instance.
    */
   public static create(x?: number, y?: number, z?: number, w?: number): Plane {
     return new Plane(x, y, z, w)
+  }
+
+  /**
+   * Initializes the components of this plane.
+   *
+   * @param normal - The normal vector of the plane.
+   * @param distance - The distance from the origin to the plane along the normal vector.
+   * @returns
+   */
+  public initNormalDistance(normal: IVec3, distance: number): Plane {
+    this.x = normal.x
+    this.y = normal.y
+    this.z = normal.z
+    this.w = distance
+    return this
+  }
+
+  /**
+   * Creates a new plane from a normal vector and a distance from the origin.
+   * @param normal - The normal vector of the plane.
+   * @param distance - The distance from the origin to the plane along the normal vector.
+   * @returns A new instance.
+   */
+  public static createNormalDistance(normal: IVec3, distance: number): Plane {
+    return new Plane(normal.x, normal.y, normal.z, distance)
   }
 
   /**

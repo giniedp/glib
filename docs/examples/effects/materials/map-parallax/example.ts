@@ -1,4 +1,4 @@
-import { buildCube, createDevice, GeometryBuilder, LightType } from '@gglib/graphics'
+import { buildCube, createDevice, GeometryBuilder, LightType, SamplerState } from '@gglib/graphics'
 import { LightParams, materialProgram } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { loop } from '@gglib/utils'
@@ -11,15 +11,16 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const lightingEffect = device.createEffect({
     program: materialProgram({
-      DIFFUSE_MAP: true,
+      BASE_COLOR_MAP: true,
       NORMAL_MAP: true,
       PARALLAX_MAP: true,
       PARALLAX_OCCLUSION: true,
       OCCLUSION_MAP: true,
-      V_TANGENT: true,
+      V_TANGENT: false,
       LIGHT: true,
       LIGHT_COUNT: 1,
       SHADE_FUNCTION: 'shadeBlinn',
+      ROUGHNESS: true,
     }),
   })
 
@@ -43,11 +44,28 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         {
           effect: lightingEffect,
           parameters: {
-            DiffuseMap: device.createTexture({ source: '/textures/sharetextures/StoneWall_Base.png' }),
-            NormalMap: device.createTexture({ source: '/textures/sharetextures/StoneWall_Normal.png' }),
-            OcclusionMap: device.createTexture({ source: '/textures/sharetextures/StoneWall_AO.png' }),
-            ParallaxMap: device.createTexture({ source: '/textures/sharetextures/StoneWall_Height.png' }),
+            BaseColorMap: device.createTexture({
+              source: '/textures/sharetextures/StoneWall_Base.png',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
+            NormalMap: device.createTexture({
+              source: '/textures/sharetextures/StoneWall_Normal.png',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
+            OcclusionMap: device.createTexture({
+              source: '/textures/sharetextures/StoneWall_AO.png',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
+            ParallaxMap: device.createTexture({
+              source: '/textures/sharetextures/StoneWall_Height.png',
+              sampler: SamplerState.LinearWrap,
+              generateMipmap: true,
+            }),
             ParallaxScaleBias: [0.04, 0.01],
+            Roughness: 0.25,
           },
         },
       ],

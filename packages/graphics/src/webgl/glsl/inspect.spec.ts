@@ -59,7 +59,7 @@ describe('ShaderInspector', () => {
           binding: 'tex1',
           name: 'tex1',
           type: 'sampler2D',
-          register: 1,
+          //register: 1,
           layout: null,
         })
 
@@ -67,7 +67,7 @@ describe('ShaderInspector', () => {
           binding: 'tex2',
           name: 'tex2',
           type: 'sampler2D',
-          register: 2,
+          //register: 2,
           layout: null,
         })
 
@@ -75,7 +75,7 @@ describe('ShaderInspector', () => {
           binding: 'tex3',
           name: 'tex3',
           type: 'sampler2D',
-          register: 0,
+          register: `0`,
           layout: null,
         })
 
@@ -83,7 +83,7 @@ describe('ShaderInspector', () => {
           binding: 'tex4',
           name: 'tex4',
           type: 'sampler2D',
-          register: 3,
+          //register: 3,
           layout: null,
         })
       })

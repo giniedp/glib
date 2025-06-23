@@ -206,8 +206,9 @@ export class GameLoop implements GameSystem {
   public onDraw = simpleObservable<LoopTime>()
 
   private options: GameLoopOptions
-  public constructor(params?: GameLoopOptions) {
-    this.options = params || {}
+  public constructor(options?: GameLoopOptions) {
+    this.options = options || {}
+    this.setup(this.options)
   }
 
   public initialize(container: GameProvider): void {

@@ -26,7 +26,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   const material = new AutoMaterial(device)
-  material.DiffuseColor = Color.White.xyzw
+  material.BaseColor = Color.White.xyzw
   const geometry = cubeGeometry(device, { size: 1 })
   const w = 16
   const h = 9

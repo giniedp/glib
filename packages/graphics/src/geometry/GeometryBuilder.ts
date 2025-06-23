@@ -4,12 +4,10 @@ import { Color } from '../Color'
 import { Device } from '../Device'
 import { BufferType, DataType, FrontFace, PrimitiveType } from '../enums'
 import { BufferOptions } from '../resources'
-import { AttributeSemantic, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
+import { AttributeSemantic, vertexAttribute, VertexAttribute, vertexLayout, VertexLayout } from '../VertexLayout'
 import { Geometry, GeometryOptions } from './Geometry'
 import { GeometryUtil } from './GeometryUtil'
 import { Mesh, MeshOptions } from './Mesh'
-// import { Mesh, MeshOptions } from './Mesh'
-// import type { Model, ModelData } from './Model'
 
 /**
  * A function that adds geometry into a given {@link GeometryBuilder}
@@ -51,6 +49,44 @@ export function beginGeometry(options?: GeometryBuilderOptions): GeometryBuilder
 export function beginLineGeometry(): GeometryBuilder {
   return new GeometryBuilder({
     layout: [['position', 'color']],
+  })
+}
+
+export interface BuildGeometryOptions {
+  /**
+   * A name for the geometry
+   */
+  name?: string
+  /**
+   * The geometry material id
+   */
+  materialId?: number
+  /**
+   * The vertex buffer layout
+   */
+  layout?: Array<VertexLayout | AttributeSemantic[]>
+  /**
+   * A transform matrix to apply to all vertices
+   */
+  transform?: Mat4
+}
+
+export function buildGeometry<T>(
+  device: Device,
+  builder: GeometryBuilderFunction<T>,
+  options?: T & BuildGeometryOptions,
+) {
+  const b = beginGeometry({
+    layout: options?.layout,
+  })
+  if (options?.transform) {
+    b.beginTransform(options.transform)
+  }
+  b.append(builder, options)
+  b.calculateNormalsAndTangents()
+  return b.endGeometry(device, {
+    name: options?.name || 'geometry',
+    materialId: options?.materialId ?? 0,
   })
 }
 
@@ -123,12 +159,12 @@ export class GeometryBuilder {
    */
   constructor(options: GeometryBuilderOptions = {}) {
     if (Array.isArray(options.layout) && options.layout.length > 0) {
-      this.layout = options.layout.map(VertexLayout.convert)
+      this.layout = options.layout.map(vertexLayout)
     } else {
       this.layout = [
-        VertexLayout.convert(['position', 'texture']),
-        VertexLayout.convert(['normal']),
-        VertexLayout.convert(['tangent', 'bitangent']),
+        vertexLayout(['position', 'texture']),
+        vertexLayout(['normal']),
+        vertexLayout(['tangent', 'bitangent']),
       ]
     }
 
@@ -197,15 +233,6 @@ export class GeometryBuilder {
     return this
   }
 
-  /**
-   * Gets a data channel of current state by its semantic name
-   *
-   * @param name - the data channel name e.g. 'position'
-   */
-  // public getChannel(name: string) {
-  //   return this.channels[name]
-  // }
-
   private resetData() {
     this.indexBuffer = {
       type: BufferType.IndexBuffer,
@@ -214,7 +241,7 @@ export class GeometryBuilder {
     }
     this.vertexBuffer = this.layout.map((l): BufferOptions<number[]> => {
       return {
-        layout: copy(true, l),
+        layout: JSON.parse(JSON.stringify(l)),
         type: BufferType.VertexBuffer,
         dataType: 'float',
         data: [],
@@ -225,12 +252,7 @@ export class GeometryBuilder {
     this.box = new BoundingBox()
     this.sphere = new BoundingSphere()
     this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer, PrimitiveType.TriangleList)
-    // this.makeChannels()
   }
-
-  // private makeChannels() {
-  //   this.channels = GeometryBuilderChannel.fromVertexBuffer(this.vBuffer)
-  // }
 
   /**
    * Resets the builder state.
@@ -485,51 +507,6 @@ export class GeometryBuilder {
 
     return result
   }
-
-  // /**
-  //  * From current state it creates {@link ModelData} and resets the builder
-  //  *
-  //  * @param options - Additional {@link ModelData}. The {@link ModelData.meshes} option is ignored.
-  //  * @returns ModelOptions or null if current state has no model data
-  //  */
-  // public endModel(options?: ModelData): ModelData | null
-  // /**
-  //  * From current state it creates a {@link Model} instance and resets the builder
-  //  *
-  //  * @param device - The graphics device
-  //  * @param options - Additional {@link ModelData}. The {@link ModelData.meshes} option is ignored.
-  //  * @returns Model or null if current state has no model data
-  //  */
-  // public endModel(device: Device, options?: ModelData): Model
-  // public endModel(): Model | ModelData {
-  //   this.endMesh()
-  //   if (!this.meshes.length) {
-  //     return null
-  //   }
-
-  //   let device: Device
-  //   let options: ModelData
-  //   let result: ModelData | Model
-  //   if (arguments[0] instanceof Device) {
-  //     device = arguments[0]
-  //     options = arguments[1] || {}
-  //     result = null
-  //   } else {
-  //     device = null
-  //     options = arguments[0] || {}
-  //     result = options
-  //   }
-
-  //   options.meshes = this.meshes
-  //   this.meshes = []
-  //   this.reset()
-
-  //   if (device) {
-  //     result = device.createModel(options)
-  //   }
-
-  //   return result
-  // }
 
   /**
    * Calls the given builder function to add geometry to current state

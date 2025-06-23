@@ -14,6 +14,7 @@ async function updateSrcPackageJson(pkg: GlibPackageContext) {
       license: project.packageJson.license,
       index: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.umd.js')),
       module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
+      main: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
       typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
       devDependencies: pkg.glibReferences.reduce((result, peer) => {
         result[peer] = `workspace:^${project.packageJson.version}`
@@ -45,7 +46,7 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
           composite: true,
           outDir: './dist',
         },
-        include: ['./index.ts', './src/**/*.ts'],
+        include: ['./index.ts', './src/**/*.ts', './src/**/*.js'],
         exclude: ['./dist/**/*', './node_modules/**/*'],
         references: pkg.glibReferences.map((it) => {
           const ref = project.glibPackages.find((p) => p.packageName === it)!

@@ -1,6 +1,17 @@
-import { coneGeometry, createDevice, cubeGeometry, cylinderGeometry, LightType, sphereGeometry } from '@gglib/graphics'
+import {
+  coneGeometry,
+  createDevice,
+  cubeGeometry,
+  CullState,
+  cylinderGeometry,
+  Device,
+  LightType,
+  SamplerState,
+  sphereGeometry,
+} from '@gglib/graphics'
+import { Mouse } from '@gglib/input'
 import { AutoMaterial } from '@gglib/materials'
-import { Mat4 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { loop } from '@gglib/utils'
 import * as TweakUi from 'tweak-ui'
 
@@ -12,10 +23,18 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const meshes = {
     Cube: cubeGeometry(device),
     Sphere: sphereGeometry(device),
+
     Cylinder: cylinderGeometry(device),
     Cone: coneGeometry(device),
   }
-  let mesh = meshes.Cube
+  const camera = demoCamera()
+  const mouse = new Mouse({
+    captureTarget: canvas,
+    preventDefault: true,
+  })
+
+  const world = Mat4.createIdentity()
+  let mesh = meshes.Sphere
 
   const textures = [
     '/textures/prototype/proto_red.png',
@@ -44,15 +63,15 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       label: source.split('/')[3],
       value: device.createTexture({
         source: source,
+        sampler: SamplerState.LinearWrap
       }),
     })
   }
 
   const material = new AutoMaterial(device)
 
-  material.SpecularPower = 64
   material.LightCount = 2
-  material.ShadeFunction = 'shadeOptimized'
+  material.ShadeFunction = 'shadeBlinn'
 
   TweakUi.mount(tools, (ui: TweakUi.Builder) => {
     ui.select({
@@ -79,78 +98,44 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       ],
     })
 
-    ui.collapsible('Ambient', {}, () => {
-      let colorOn = false
-      let color = [0, 0, 0]
-      ui.select(material, 'AmbientMap', { options: textureOptions })
-      ui.checkbox({
-        label: 'AmbientColor',
-        value: colorOn,
-        onChange: (m, value: any) => {
-          colorOn = value
-          material.AmbientColor = colorOn ? color : null!
-        },
-      })
-      ui.add({
+    ui.collapsible('Ambient Color', {}, () => {
+      ui.select(material, 'AmbientColorMap', { label: 'Texture', options: textureOptions })
+      ui.color(material, 'AmbientColor', {
+        label: 'Color',
         type: 'color',
         format: '[n]rgb',
-        value: color,
-        hidden: () => !colorOn,
-        onInput: (it) => (color = material.AmbientColor = it.value as number[]),
       })
     })
 
-    ui.collapsible('Diffuse', {}, () => {
-      let colorOn = false
-      let color = [0, 0, 0]
-      ui.select(material, 'DiffuseMap', { options: textureOptions })
-      ui.checkbox({
-        label: 'DiffuseColor',
-        value: colorOn,
-        onChange: (m, value: any) => {
-          colorOn = value
-          material.DiffuseColor = colorOn ? color : null!
-        },
-      })
-      ui.color({
+    ui.collapsible('Base Color', {}, () => {
+      ui.select(material, 'BaseColorMap', { label: 'Texture', options: textureOptions })
+      ui.color(material, 'BaseColor', {
+        label: 'Color',
+        type: 'color',
         format: '[n]rgb',
-        value: color,
-        hidden: () => !colorOn,
-        onInput: (it) => (color = material.DiffuseColor = it.value as number[]),
       })
     })
 
-    ui.collapsible('Specular', {}, () => {
-      let colorOn = false
-      let color = [0, 0, 0]
-      ui.slider(material, 'SpecularPower', { min: 1, max: 1024, step: 1 })
-      ui.select(material, 'SpecularMap', { options: textureOptions })
-      ui.checkbox({
-        label: 'SpecularColor',
-        value: colorOn,
-        onChange: (m, value) => {
-          colorOn = !!value
-          material.SpecularColor = colorOn ? color : null!
-        },
-      })
-      ui.color({
+    ui.collapsible('Specular Color', {}, () => {
+      ui.slider(material, 'Roughness', { label: 'Roughness', min: 0, max: 1, step: 0.001 })
+      ui.select(material, 'SpecularColorMap', { label: 'Texture', options: textureOptions })
+      ui.color(material, 'SpecularColor', {
+        label: 'Color',
+        type: 'color',
         format: '[n]rgb',
-        value: color,
-        hidden: () => !colorOn,
-        onInput: (it) => (color = material.SpecularColor = it.value as number[]),
       })
     })
 
     ui.collapsible('Emission', {}, () => {
       let colorOn = false
       let color = [0, 0, 0]
-      ui.select(material, 'EmissionMap', { options: textureOptions })
+      ui.select(material, 'EmissiveColorMap', { options: textureOptions })
       ui.checkbox({
-        label: 'EmissionColor',
+        label: 'EmissiveColor',
         value: colorOn,
         onChange: (m, value) => {
           colorOn = !!value
-          material.EmissionColor = colorOn ? color : null!
+          material.EmissiveColor = colorOn ? color : null!
         },
       })
       ui.add({
@@ -158,7 +143,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         format: '[n]rgb',
         value: color,
         hidden: () => !colorOn,
-        onInput: (it) => (color = material.EmissionColor = it.value as number[]),
+        onInput: (it) => (color = material.EmissiveColor = it.value as number[]),
       })
     })
 
@@ -184,23 +169,17 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     })
   })
 
-  const world = Mat4.createIdentity()
-  const view = Mat4.createIdentity()
-  const proj = Mat4.createIdentity()
-  const cam = Mat4.createIdentity()
 
   function frame(time: number, dt: number) {
     device.resize()
     device.clear(0xff2e2620, 1)
+    device.cullState = CullState.CullClockWise;
 
-    world.initRotationY(time / 4000)
-    cam.initTranslationXYZ(0, 0, 1.0)
-    Mat4.invert(cam, view)
-    proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
+    camera.update(mouse, device)
 
     material.World = world
-    material.View = view
-    material.Projection = proj
+    material.View = camera.view
+    material.Projection = camera.projection
 
     if (material.LightCount > 0) {
       material.getLight(0).type = LightType.Directional
@@ -222,4 +201,38 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   return loop(frame).stop
+}
+
+function demoCamera() {
+  const data = {
+    theta: 0,
+    phi: 90,
+    distance: 2,
+    position: Vec3.create(),
+    view: Mat4.createIdentity(),
+    projection: Mat4.createIdentity(),
+    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device),
+  }
+  return data
+}
+
+function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, device: Device) {
+  mouse.update()
+  if (mouse.leftButtonIsPressed) {
+    camera.theta -= mouse.dx * 0.1
+    camera.phi -= mouse.dy * 0.1
+  }
+  if (mouse.middleButtonIsPressed) {
+    camera.distance += mouse.dy * 0.01
+    camera.distance = Math.max(0.1, camera.distance)
+  }
+
+  // prettier-ignore
+  camera.position.initSpherical(
+    camera.phi * DEGREE_TO_RAD,
+    camera.theta * DEGREE_TO_RAD,
+    camera.distance,
+  )
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
+  camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
 }

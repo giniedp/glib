@@ -1,4 +1,3 @@
-import { getLines } from "@gglib/utils"
 import { GlslDirective, GlslNode, GlslTokenKind, tokenize } from "./tokenize"
 
 export function preprocess(tokens: GlslNode[]) {
@@ -95,23 +94,4 @@ function evalueateExpression(expression: string, defines: Map<string, any>): boo
   } catch (e) {
     return false
   }
-}
-
-function parseAnnotations(
-  source: string,
-  out: Record<string, any> = {},
-): Record<string, any> {
-  if (!source || !source.length) {
-    return out
-  }
-  // lines to process
-  const lines = Array.isArray(source) ? source : getLines(source)
-  for (const line of lines) {
-    const match = line.match(/^(\s*)@(\w+)\s*(.*)(\s*)/)
-    if (!match) {
-      continue
-    }
-    out[match[2]] = match[3]
-  }
-  return out
 }

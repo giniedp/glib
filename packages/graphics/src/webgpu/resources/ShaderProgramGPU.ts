@@ -10,6 +10,7 @@ export class ShaderProgramGPU extends ShaderProgram {
   public readonly vertexShader: ShaderGPU
   public readonly fragmentShader: ShaderGPU
   public readonly isReady = true
+  public readonly whenReady: Promise<boolean> = Promise.resolve(true) // TODO
   public get vertexStageDescriptor() {
     return this.vertexShader ? this.vertexShader.descriptor : null
   }

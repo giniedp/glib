@@ -8,7 +8,11 @@ export async function imageFromBlob(blob: Blob): Promise<TextureImageOptions> {
   if (!supportsImageBitmap) {
     return imageFromUrl(URL.createObjectURL(blob))
   }
-  const bitmap = await createImageBitmap(blob)
+  const bitmap = await createImageBitmap(blob, {
+    imageOrientation: 'none',
+    premultiplyAlpha: 'none',
+    colorSpaceConversion: 'none',
+  })
   return {
     source: createTextureSource(bitmap),
     width: bitmap.width,

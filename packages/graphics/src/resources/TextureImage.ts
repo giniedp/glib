@@ -5,6 +5,7 @@ import {
   DepthFormatOption,
   nameOfDataType,
   nameOfPixelFormat,
+  nameOfSurfaceFormat,
   nameOfTextureType,
   PixelFormat,
   PixelFormatOption,
@@ -28,6 +29,7 @@ import {
   VideoElementSource,
 } from './TextureSource'
 import { TextureOptions } from './Texture'
+import { SamplerStateParams } from '../states'
 
 /**
  * Type that is accepted by the {@link TextureImage.setData} method
@@ -48,9 +50,19 @@ export type TextureSourceOption = string | TexImageSource | TextureDataOption | 
  */
 export interface TextureImageOptions {
   /**
+   * User defined name
+   */
+  name?: string
+
+  /**
    * Whether or not to automatically generate mip maps
    */
   generateMipmap?: boolean
+
+  /**
+   * The sampler state to be used together with this texture e.g. for generating mip maps.
+   */
+  sampler?: SamplerStateParams
 
   /**
    * The internal surface format of the texture
@@ -76,8 +88,7 @@ export interface TextureImageOptions {
    * The texture width
    *
    * @remarks
-   * The width is only used if the widht of the {@link source} data can not be determined.
-   * This is the case when {@link source} is an ArrayBuffer or array
+   * If not specified, the value is determined from the {@link source} data.
    */
   width?: number
 
@@ -85,20 +96,28 @@ export interface TextureImageOptions {
    * The texture height
    *
    * @remarks
-   * The width is only used if the height of the {@link source} data can not be determined.
-   * This is the case when {@link source} is an ArrayBuffer or array
+   * If not specified, the value is determined from the {@link source} data.
    */
   height?: number
 
   /**
-   * The texture data source
+   * The texture depth
+   *
+   * @remarks
+   * Only used for 3D textures and 2D array textures.
+   * If not specified, the value is determined from number of attached {@link source} data.
    */
-  source?: TextureSourceOption
+  depth?: number
 
   /**
-   * The faces for a Cube Texture
+   * The texture data source
+   *
+   * @remarks
+   * - For 2D textures, this must be an array with length 1.
+   * - For Cube textures, this must be an array with length 6, one source for each face.
+   * - For 3D textures, this can ben arbitrary length, one for each depth slice.
    */
-  faces?: Array<TextureSourceOption>
+  source?: TextureSourceOption
 
   /**
    * The depth format of the depth stencil buffer to use when the texture is used as a render target
@@ -112,9 +131,14 @@ export interface TextureImageOptions {
    * {@link https://blog.chromium.org/2011/07/using-cross-domain-images-in-webgl-and.html}
    */
   crossOrigin?: string
+
+  /**
+   * Indicates whether the texture surface is compressed.
+   */
+  compressed?: boolean
 }
 
-export type RenderTargetOptions = Omit<TextureOptions, 'source' | 'crossOrigin' | 'generateMipmap' | 'type' | 'faces'>
+export type RenderTargetOptions = Omit<TextureOptions, 'source' | 'crossOrigin' | 'generateMipmap' | 'type'>
 
 /**
  * Describes a texture object.
@@ -161,6 +185,14 @@ export abstract class TextureImage {
   public readonly height: number
 
   /**
+   * The texture depth
+   *
+   * @remarks
+   * Only used for 3D textures and 2D array textures.
+   */
+  public readonly depth: number
+
+  /**
    * Indicates whether texture data has been set
    *
    * @remarks
@@ -168,11 +200,6 @@ export abstract class TextureImage {
    * as the data has not arrived. A shader should not attempt to bind this texture until the property is switched to true.
    */
   public readonly ready: boolean = false
-
-  /**
-   * Indicates whether the texture size is a power of two value.
-   */
-  public readonly isPOT: boolean
 
   /**
    * Indicates whether mip maps should be generated.
@@ -183,6 +210,13 @@ export abstract class TextureImage {
    * Indicates the used pixel format.
    */
   public readonly surfaceFormat: SurfaceFormat
+
+  /**
+   * Gets the name of {@link TextureImage.surfaceFormat}
+   */
+  public get surfaceFormatName(): string {
+    return nameOfSurfaceFormat(this.surfaceFormat)
+  }
 
   /**
    * Indicates the used pixel format.
@@ -205,9 +239,14 @@ export abstract class TextureImage {
   public readonly source: TextureSource
 
   /**
-   * The faces of a cube texture
+   * Indicates whether this texture is a 2D array texture.
    */
-  public readonly faces: TextureSource[] = null
+  public readonly isArray: boolean
+
+  /**
+   *  Indicates whether this texture is compressed.
+   */
+  public readonly isCompressed: boolean = false
 
   /**
    * If used as render target this indicates the cubemap face that is currently being rendered to.
@@ -220,15 +259,6 @@ export abstract class TextureImage {
   public targetLevel: number = 0
 
   /**
-   * Returns the video element if the {@link source} is an instance of {@link VideoElementSource}
-   */
-  public get video(): HTMLVideoElement {
-    if (this.source instanceof VideoElementSource) {
-      return this.source.data
-    }
-  }
-
-  /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
    *
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image}
@@ -237,14 +267,17 @@ export abstract class TextureImage {
   public readonly crossOrigin: string = TextureImage.crossOrigin
 
   /**
-   * The recent video playback timestamp.
+   * The sampler state parameters that should be used together with this texture e.g. for generating mip maps.
    */
-  protected videoTime = -1
+  public readonly sampler: SamplerStateParams
 
   protected depthFormatField: number
 
   /**
-   * Depth stencil format if this is a render target
+   * The depths stencil format that should be used for render target
+   *
+   * @remarks
+   * If this value is set, the texture is considered a render target.
    */
   public get depthFormat(): number {
     return this.depthFormatField
@@ -290,14 +323,19 @@ export abstract class TextureImage {
     return this.type === TextureType.Texture2D
   }
 
+  public get is3D() {
+    return this.type === TextureType.Texture3D
+  }
+
   /**
    * Collection of file extensions that are recognized as video files.
    */
   public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
 
   public setup(options: TextureImageOptions): this {
-    let width = options.width || this.width
-    let height = options.height || this.height
+    let width = options.width ?? this.width
+    let height = options.height ?? this.height
+    let depth = options.depth ?? this.depth
 
     let givenType = options?.type ?? this.type
     let type = valueOfTextureType(options?.type ?? this.type)
@@ -309,12 +347,13 @@ export abstract class TextureImage {
     let pixelFormat = valueOfPixelFormat(options?.pixelFormat ?? this.pixelFormat)
     let surfaceFormat = valueOfSurfaceFormat(options?.surfaceFormat ?? this.surfaceFormat) || pixelFormat
     let depthFormat = valueOfDepthFormat(options?.depthFormat ?? this.depthFormat)
-    let genMipMaps = options?.generateMipmap ?? this.generateMipmap
+    let generateMipmap = options?.generateMipmap ?? this.generateMipmap
     let crossOrigin = options?.crossOrigin ?? this.crossOrigin
 
     if (
       width !== this.width ||
       height !== this.height ||
+      depth !== this.depth ||
       surfaceFormat !== this.surfaceFormat ||
       pixelFormat !== this.pixelFormat ||
       pixelType !== this.pixelType ||
@@ -323,33 +362,35 @@ export abstract class TextureImage {
       this.disposeResource()
     }
 
+    this.set('isCompressed', options.compressed ?? this.isCompressed)
+    this.set('sampler', options.sampler ?? this.sampler)
+    this.set('name', options.name ?? this.name)
     this.set('width', width)
     this.set('height', height)
+    this.set('depth', depth)
     this.set('type', type)
     this.set('pixelType', pixelType)
     this.set('pixelFormat', pixelFormat)
     this.set('surfaceFormat', surfaceFormat as SurfaceFormat)
     this.set('depthFormat', depthFormat)
-    this.set('generateMipmap', genMipMaps)
+    this.set('generateMipmap', generateMipmap)
     this.set('ready', false)
     this.set('crossOrigin', crossOrigin)
-    this.set(
-      'source',
-      createTextureSource(options.source, {
-        crossOrigin: crossOrigin,
-        videoTypes: TextureImage.videoTypes,
-        width: width,
-        height: height,
-        type: pixelType,
-      }),
-    )
-    this.createResource()
 
-    const faces = options?.faces ?? null
-    if (faces && this.type === TextureType.TextureCube) {
-      this.setFaces(faces)
-      return this
+    if (options.source) {
+      this.set(
+        'source',
+        createTextureSource(options.source, {
+          crossOrigin: crossOrigin,
+          videoTypes: TextureImage.videoTypes,
+          width: width,
+          height: height,
+          type: pixelType,
+        }),
+      )
     }
+
+    this.createResource()
 
     return this
   }
@@ -375,25 +416,6 @@ export abstract class TextureImage {
   public abstract updateMipmaps(): this
 
   /**
-   * Sets the texture source from HtmlImageElement
-   */
-  public setSource(value: TexImageSource | TextureSource): this {
-    let source: TextureSource
-    if (value instanceof TextureSource) {
-      source = value
-    } else if (value instanceof HTMLImageElement) {
-      source = new ImageElementSource(value)
-    } else if (value instanceof HTMLVideoElement) {
-      source = new VideoElementSource(value)
-    } else if (value) {
-      source = new ImageDataSource(value as any)
-    }
-    this.set('source', source)
-    this.update()
-    return this
-  }
-
-  /**
    * Sets the texture source from data array or buffer
    *
    * @param data - The texture data to be set
@@ -401,13 +423,6 @@ export abstract class TextureImage {
    * @param height - The new texture height
    */
   public abstract setData(data: TextureDataOption, width?: number, height?: number): this
-
-  /**
-   * Sets the cubemap faces
-   *
-   * @param faces - The source options for each face
-   */
-  public abstract setFaces(faces: TextureSourceOption[]): this
 
   /**
    * Updates the texture from current source element.
@@ -424,7 +439,7 @@ export abstract class TextureImage {
    * the texture data. When data has arrived the {@link TextureImage.ready}
    * property will be set to `true`
    */
-  public abstract update(): boolean
+  public abstract update(): void
 
   /**
    * Resizes the render target

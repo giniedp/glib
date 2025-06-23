@@ -121,7 +121,6 @@ export class TextureGPU extends TextureImage {
     }
     this.set('width', width)
     this.set('height', height)
-    this.set('isPOT', isPowerOfTwo(width) && isPowerOfTwo(height))
     // this.create()
 
     // TODO:
@@ -165,7 +164,6 @@ export class TextureGPU extends TextureImage {
     }
     this.set('width', this.source.width)
     this.set('height', this.source.height)
-    this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
     // this.create()
 
     // TODO:

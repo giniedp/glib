@@ -1,7 +1,7 @@
 <template>
   <div class="example-frame" ref="frame">
     <canvas ref="canvas" style="width: 100%; height: 100%; z-index: 1;"></canvas>
-    <div class="example-tools">
+    <div class="example-tools" @mousedown="stopPropagation">
       <div>
         <div ref="fsTools"></div>
         <div ref="tools"></div>
@@ -82,6 +82,11 @@ onUnmounted(() => {
     toDispose = null
   }
 })
+
+function stopPropagation(event: MouseEvent) {
+  event.stopPropagation()
+}
+
 function toggleFullscreen() {
   const elem = frame.value
   if (!elem) {

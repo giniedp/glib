@@ -1,7 +1,7 @@
 import { Device } from '../../Device'
-import { ArrayType, TextureType } from '../../enums'
-import { TextureDataOption, TextureImage, TextureImageOptions, TextureSourceOption } from '../../resources/TextureImage'
-import { createTextureSource, TextureSource } from '../../resources/TextureSource'
+import { ArrayType } from '../../enums'
+import { TextureDataOption, TextureImage, TextureImageOptions } from '../../resources/TextureImage'
+import { TextureSource } from '../../resources/TextureSource'
 import type { DeviceGL } from '../DeviceGL'
 import { SharedResource } from '../utils'
 
@@ -54,18 +54,20 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
     gl.bindTexture(this.type, this.resource)
     const faceCount = this.isCube ? 6 : 1
     const faceType = this.isCube ? gl.TEXTURE_CUBE_MAP_POSITIVE_X : this.type
-    for (let i = 0; i < faceCount; i++) {
-      this.device.context.texImage2D(
-        faceType + i,
-        0,
-        this.pixelFormat,
-        this.width,
-        this.height,
-        0,
-        this.pixelFormat,
-        this.pixelType,
-        null,
-      )
+    if (!this.isCompressed) {
+      for (let i = 0; i < faceCount; i++) {
+        this.device.context.texImage2D(
+          faceType + i,
+          0,
+          this.surfaceFormat,
+          this.width,
+          this.height,
+          0,
+          this.pixelFormat,
+          this.pixelType,
+          null,
+        )
+      }
     }
     this.device.context.bindTexture(this.type, null)
     this.update()
@@ -147,39 +149,36 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
       this.pixelType,
       buffer,
     )
-    if (this.generateMipmap) {
-      this.device.context.generateMipmap(this.type)
-    }
+
+    this.updateMipmaps()
     this.device.context.bindTexture(this.type, null)
 
     this.set('width', width)
     this.set('height', height)
     this.set('ready', true)
-    this.set('isPOT', isPowerOfTwo(width) && isPowerOfTwo(height))
     return this
   }
 
-  public setFaces(faces: TextureSourceOption[]) {
-    if (this.type !== TextureType.TextureCube) {
-      throw new Error('setFaces is only allowed on cube textures')
-    }
-    if (faces.length !== 6) {
-      throw new Error('faces must be an array of length 6')
-    }
+  /**
+   * Generates mipmaps for the texture only if the texture was created with `generateMipmap` option set to `true`.
+   */
+  public updateMipmaps(force = false) {
+    if (this.generateMipmap || force) {
+      const gl = this.device.context
 
-    this.set(
-      'faces',
-      faces.map((face, i) => createTextureSource(face)),
-    )
-    this.update()
-    return this
-  }
-
-  public updateMipmaps() {
-    if (this.generateMipmap) {
-      this.device.context.bindTexture(this.type, this.resource)
-      this.device.context.generateMipmap(this.type)
-      this.device.context.bindTexture(this.type, null)
+      this.device.canFilterFloat
+      this.device.canFilterHalf
+      this.device.canRenderFloat
+      this.device.canRenderHalf
+      gl.bindTexture(this.type, this.resource)
+      if (this.sampler) {
+        gl.texParameteri(this.type, gl.TEXTURE_MIN_FILTER, this.sampler.minFilter ?? gl.LINEAR)
+        gl.texParameteri(this.type, gl.TEXTURE_MAG_FILTER, this.sampler.magFilter ?? gl.LINEAR)
+        gl.texParameteri(this.type, gl.TEXTURE_WRAP_S, this.sampler.wrapU ?? gl.CLAMP_TO_EDGE)
+        gl.texParameteri(this.type, gl.TEXTURE_WRAP_T, this.sampler.wrapW ?? gl.CLAMP_TO_EDGE)
+      }
+      gl.generateMipmap(this.type)
+      gl.bindTexture(this.type, null)
     }
     return this
   }
@@ -199,108 +198,233 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
    * the texture data. When data has arrived the {@link TextureImage.ready}
    * property will be set to `true`
    */
-  public update(): boolean {
-    if (this.isCube) {
-      return this.updateCubemap()
-    }
-    return this.updateSource()
-  }
-
-  private updateCubemap(): boolean {
-    if (!this.faces) {
+  public update(): void {
+    if (!this.source) {
       this.set('ready', true)
-      return false
+      return
     }
-    let updated = false
-    let ready = true
-    for (const face of this.faces) {
-      updated = updated || face.update()
-      ready = ready && face.isReady
+
+    const needsUpdate = this.source.update() || !this.ready
+    if (!this.source.isReady || !needsUpdate) {
+      return
     }
+
     const gl = this.device.context
-    if (updated && ready) {
+
+    // CUBEMAP
+    if (this.isCube) {
       this.bind()
-      for (let i = 0; i < this.faces.length; i++) {
-        const face = this.faces[i]
-        if (ArrayBuffer.isView(face.data)) {
-          gl.texImage2D(
-            gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
-            0,
-            this.pixelFormat,
-            face.width,
-            face.height,
-            0,
-            this.pixelFormat,
-            this.pixelType,
-            face.data,
-          )
+
+      const levels = this.source.levels
+      for (let lvl = 0; lvl < levels.length; lvl++) {
+        const faces = levels[lvl]
+        const divisor = Math.pow(2, lvl)
+        const width = this.source.width / divisor
+        const height = this.source.height / divisor
+        if (faces.length !== 6) {
+          console.warn(`TextureGL.update: cubemap level ${lvl} has ${faces.length} faces, expected 6`)
+          continue
+        }
+        for (let i = 0; i < faces.length; i++) {
+          const data = faces[i]
+          if (ArrayBuffer.isView(data)) {
+            if (this.isCompressed) {
+              this.device.context.compressedTexImage2D(
+                gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                lvl,
+                this.surfaceFormat,
+                width,
+                height,
+                0, // border
+                data, // The compressed data
+              )
+            } else {
+              gl.texImage2D(
+                gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                lvl,
+                this.surfaceFormat,
+                width,
+                height,
+                0,
+                this.pixelFormat,
+                this.pixelType,
+                data,
+              )
+            }
+          } else {
+            this.device.context.texImage2D(
+              gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+              lvl,
+              this.surfaceFormat,
+              this.pixelFormat,
+              this.pixelType,
+              data,
+            )
+          }
+        }
+      }
+    }
+
+    // 2D TEXTURE
+    if (this.is2D && !this.isArray) {
+      this.bind()
+      const levels = this.source.levels
+      const gl = this.device.context
+      for (let lvl = 0; lvl < levels.length; lvl++) {
+        const data = this.source.levels[lvl][0]
+        const divisor = Math.pow(2, lvl)
+        const width = this.source.width / divisor
+        const height = this.source.height / divisor
+        if (ArrayBuffer.isView(data)) {
+          if (this.isCompressed) {
+            this.device.context.compressedTexImage2D(
+              this.type,
+              lvl, // The mipmap level
+              this.surfaceFormat,
+              width,
+              height,
+              0, // border
+              data, // The compressed data
+            )
+          } else {
+            this.device.context.texImage2D(
+              this.type,
+              lvl, // The mipmap level
+              this.surfaceFormat,
+              width,
+              height,
+              0,
+              this.pixelFormat,
+              this.pixelType,
+              data,
+            )
+          }
         } else {
-          this.device.context.texImage2D(
-            gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
-            0,
+          gl.texImage2D(
+            this.type,
+            lvl, // The mipmap level
             this.surfaceFormat,
             this.pixelFormat,
             this.pixelType,
-            face.data,
+            data,
           )
         }
       }
     }
-    if (ready) {
-      this.set('ready', ready)
-      this.set('width', this.faces[0].width)
-      this.set('height', this.faces[0].height)
-      this.set('isPOT', isPowerOfTwo(this.width) && isPowerOfTwo(this.height))
-    }
-    return updated
-  }
 
-  private updateSource() {
-    let changed = false
-    if (!this.source) {
-      this.set('ready', true)
-      return changed
-    }
-
-    if (this.source.update()) {
-      changed = true
-      const data = this.source.data
-      const gl = this.device.context
-      gl.bindTexture(this.type, this.resource)
-      if (ArrayBuffer.isView(data)) {
-        this.device.context.texImage2D(
-          this.type,
-          0,
-          this.pixelFormat,
-          this.source.width,
-          this.source.height,
-          0,
-          this.pixelFormat,
-          this.pixelType,
-          data,
-        )
-      } else {
-        gl.texImage2D(this.type, 0, this.surfaceFormat, this.pixelFormat, this.pixelType, data)
+    // 2D TEXTURE ARRAY
+    if (this.is2D && this.isArray) {
+      this.bind()
+      for (let lvl = 0; lvl < this.source.levels.length; lvl++) {
+        const level = this.source.levels[lvl]
+        const divisor = Math.pow(2, lvl)
+        const width = this.source.width / divisor
+        const height = this.source.height / divisor
+        for (let i = 0; i < level.length; i++) {
+          const data = level[i]
+          if (ArrayBuffer.isView(data)) {
+            if (this.isCompressed) {
+              this.device.context.compressedTexSubImage3D(
+                this.type,
+                lvl, // The mipmap level
+                0,
+                0,
+                i, // x, y, z offsets
+                width,
+                height,
+                1, // depth
+                this.surfaceFormat,
+                data, // The compressed data
+              )
+            } else {
+              this.device.context.texSubImage3D(
+                this.type,
+                lvl, // The mipmap level
+                0,
+                0,
+                lvl, // x, y, z offsets
+                width,
+                height,
+                i, // The layer index
+                this.pixelFormat,
+                this.pixelType,
+                data,
+              )
+            }
+          } else {
+            gl.texImage3D(
+              this.type,
+              lvl, // The mipmap level
+              this.surfaceFormat,
+              this.pixelFormat,
+              this.pixelType,
+              i, // The layer index
+              width,
+              height,
+              1, // depth
+              data,
+            )
+          }
+        }
       }
+    }
 
-      if (this.generateMipmap) {
-        gl.generateMipmap(this.type)
+    // 3D TEXTURE
+    if (this.is3D) {
+      this.bind()
+      for (let lvl = 0; lvl < this.source.levels.length; lvl++) {
+        const level = this.source.levels[lvl]
+        const divisor = Math.pow(2, lvl)
+        const width = this.source.width / divisor
+        const height = this.source.height / divisor
+        for (let i = 0; i < level.length; i++) {
+          const data = level[i]
+          if (ArrayBuffer.isView(data)) {
+            this.device.context.texSubImage3D(
+              this.type,
+              lvl, // The mipmap level
+              0,
+              0,
+              i, // x, y, z offsets
+              width,
+              height,
+              this.depth / divisor,
+              this.pixelFormat,
+              this.pixelType,
+              data,
+            )
+          } else {
+            gl.texImage3D(
+              this.type,
+              lvl, // The mipmap level
+              this.surfaceFormat,
+              this.pixelFormat,
+              this.pixelType,
+              i, // The layer index
+              width,
+              height,
+              this.depth / divisor,
+              data,
+            )
+          }
+        }
       }
-      gl.bindTexture(this.type, null)
     }
 
-    if (!this.ready && this.source.isReady) {
-      changed = true
-      this.set('ready', this.source.isReady)
-      this.set('width', this.source.width)
-      this.set('height', this.source.height)
-      this.set('isPOT', isPowerOfTwo(this.source.width) && isPowerOfTwo(this.source.height))
-    }
-
-    return changed
+    this.set('ready', true)
+    this.set('width', this.source.width)
+    this.set('height', this.source.height)
+    this.updateMipmaps()
   }
 }
 
 function isPowerOfTwo(value: number): boolean {
-  return value > 0 && !(value & (value - 1)) // tslint:disable-line
+  return value > 0 && !(value & (value - 1))
+}
+
+function checkGLError(gl: WebGL2RenderingContext, msg: string) {
+  const error = gl.getError()
+  if (error !== gl.NO_ERROR) {
+    console.error(`${msg}: WebGL error 0x${error.toString(16)}`)
+  }
 }

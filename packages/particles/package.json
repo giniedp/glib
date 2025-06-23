@@ -16,6 +16,7 @@
   "license": "MIT",
   "index": "dist\\bundles\\particles.umd.js",
   "module": "dist\\particles\\src\\index.js",
+  "main": "dist\\particles\\src\\index.js",
   "typings": "dist\\particles\\src\\index.d.ts",
   "devDependencies": {
     "@gglib/graphics": "workspace:^0.6.2",

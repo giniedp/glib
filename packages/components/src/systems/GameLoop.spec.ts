@@ -2,7 +2,7 @@ import { GameEntity } from '@gglib/ecs'
 import { GameLoop } from './GameLoop'
 import { describe, beforeEach, it, expect, afterEach, vi } from 'vitest'
 
-describe('@gglib/ecs/LoopComponent', () => {
+describe('GameLoop', () => {
   let entity: GameEntity
   let loop: GameLoop
   let mockedRealTime = 0
@@ -72,11 +72,11 @@ describe('@gglib/ecs/LoopComponent', () => {
 
     it('schedules as many updates as they fit into time delta', () => {
       let count = 0
-      loop.onUpdate.once(() => count++)
+      loop.onUpdate.add(() => count++)
 
       mockedRealTime = 0
       mockedAnimationFrame()
-      expect(count).toBe(false)
+      expect(count).toBe(0)
 
       mockedRealTime += targetElapsedTime
       mockedAnimationFrame()
@@ -96,7 +96,7 @@ describe('@gglib/ecs/LoopComponent', () => {
 
     it('limits schedules to maxElapsedTime', () => {
       let count = 0
-      loop.onUpdate.once(() => count++)
+      loop.onUpdate.add(() => count++)
 
       mockedRealTime = 0
       mockedAnimationFrame()
