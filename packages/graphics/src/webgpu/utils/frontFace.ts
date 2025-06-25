@@ -1,8 +1,8 @@
 import { FrontFace } from '../../enums'
 
-const lookup: { [k: number]: GPUFrontFace } = {
-  [FrontFace.ClockWise]: 'cw',
-  [FrontFace.CounterClockWise]: 'ccw',
+const lookup: Record<FrontFace, GPUFrontFace> = {
+  CW: 'cw',
+  CCW: 'ccw',
 }
 
 export function toFrontFace(v: FrontFace): GPUFrontFace {

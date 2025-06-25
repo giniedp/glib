@@ -1,8 +1,5 @@
 import {
   CompareFunction,
-  CompareFunctionOption,
-  nameOfCompareFunction,
-  valueOfCompareFunction,
 } from './../enums'
 import { BlendStateParams } from './BlendState'
 import { hasOwnProperty } from '@gglib/utils'
@@ -20,7 +17,7 @@ const params: Array<keyof DepthStateParams> = [
  */
 export interface DepthStateOptions {
   enable?: boolean
-  depthFunction?: CompareFunctionOption
+  depthFunction?: CompareFunction
   depthWriteEnable?: boolean
 }
 
@@ -52,7 +49,7 @@ export class DepthState implements IDepthState {
    */
   public static Default = Object.freeze<IDepthState>({
     enable: true,
-    depthFunction: CompareFunction.LessEqual,
+    depthFunction: 'LessEqual',
     depthWriteEnable: true,
   })
 
@@ -61,7 +58,7 @@ export class DepthState implements IDepthState {
    */
   public static None = Object.freeze<IDepthState>({
     enable: false,
-    depthFunction: CompareFunction.Always,
+    depthFunction: 'Always',
     depthWriteEnable: false,
   })
 
@@ -70,7 +67,7 @@ export class DepthState implements IDepthState {
    */
   public static DepthRead = Object.freeze<IDepthState>({
     enable: true,
-    depthFunction: CompareFunction.LessEqual,
+    depthFunction: 'LessEqual',
     depthWriteEnable: false,
   })
 
@@ -94,7 +91,7 @@ export class DepthState implements IDepthState {
       }
       switch (key) {
         case 'depthFunction':
-          result[key] = valueOfCompareFunction(state[key])
+          result[key] = state[key]
           break
         default:
           result[key] = state[key]
@@ -105,7 +102,7 @@ export class DepthState implements IDepthState {
   }
 
   protected $enable: boolean = true
-  protected $depthFunction: number = CompareFunction.LessEqual
+  protected $depthFunction: CompareFunction = 'LessEqual'
   protected $depthWriteEnable: boolean = true
   protected $hasChanged: boolean
   protected $changes: DepthStateParams = {}
@@ -148,21 +145,15 @@ export class DepthState implements IDepthState {
   /**
    * Gets and sets the depth function
    */
-  public get depthFunction(): number {
+  public get depthFunction(): CompareFunction {
     return this.$depthFunction
   }
-  public set depthFunction(value: number) {
+  public set depthFunction(value: CompareFunction) {
     if (this.$depthFunction !== value) {
       this.$depthFunction = value
       this.$changes.depthFunction = value
       this.$hasChanged = true
     }
-  }
-  /**
-   * Gets the readable name of the depth function
-   */
-  public get depthFunctionName(): string {
-    return nameOfCompareFunction(this.depthFunction)
   }
 
   /**

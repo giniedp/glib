@@ -1,3 +1,4 @@
+import { compareFunctionToWebGL } from '../../enums'
 import { DepthState, DepthStateParams, IDepthState } from '../../states/DepthState'
 import { DeviceGL } from '../DeviceGL'
 
@@ -11,7 +12,7 @@ export class DepthStateGL extends DepthState {
   public commitChanges(changes: Partial<IDepthState>) {
     const gl = this.device.context
     if (changes.depthFunction != null) {
-      gl.depthFunc(changes.depthFunction)
+      gl.depthFunc(compareFunctionToWebGL(changes.depthFunction))
     }
     if (changes.depthWriteEnable != null) {
       gl.depthMask(changes.depthWriteEnable)

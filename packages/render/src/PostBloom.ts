@@ -58,8 +58,7 @@ export class PostStepBloom implements RenderPass {
     this.rtQuery.width = ctx.width
     this.rtQuery.height = ctx.height
     this.rtQuery.depthFormat = ctx.targetOptions.depthFormat
-    this.rtQuery.surfaceFormat = ctx.targetOptions.surfaceFormat
-    this.rtQuery.pixelType = ctx.targetOptions.pixelType
+    this.rtQuery.format = ctx.targetOptions.format
 
     const base = ctx.channels.color
     if (!base) {

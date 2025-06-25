@@ -1,12 +1,6 @@
 import {
   Blend,
   BlendFunction,
-  BlendFunctionOption,
-  BlendOption,
-  nameOfBlend,
-  nameOfBlendFunction,
-  valueOfBlend,
-  valueOfBlendFunction,
 } from './../enums'
 import { hasOwnProperty } from '@gglib/utils'
 
@@ -30,12 +24,12 @@ const params: Array<keyof BlendStateParams> = [
  * @public
  */
 export interface BlendStateOptions {
-  colorBlendFunction?: BlendFunctionOption
-  alphaBlendFunction?: BlendFunctionOption
-  colorSrcBlend?: BlendOption
-  alphaSrcBlend?: BlendOption
-  colorDstBlend?: BlendOption
-  alphaDstBlend?: BlendOption
+  colorBlendFunction?: BlendFunction
+  alphaBlendFunction?: BlendFunction
+  colorSrcBlend?: Blend
+  alphaSrcBlend?: Blend
+  colorDstBlend?: Blend
+  alphaDstBlend?: Blend
   constantR?: number
   constantG?: number
   constantB?: number
@@ -74,12 +68,12 @@ export type BlendStateParams = Partial<IBlendState>
  */
 export class BlendState implements IBlendState {
 
-  protected $colorBlendFunction = BlendFunction.Add
-  protected $alphaBlendFunction = BlendFunction.Add
-  protected $colorSrcBlend = Blend.One
-  protected $alphaSrcBlend = Blend.One
-  protected $colorDstBlend = Blend.Zero
-  protected $alphaDstBlend = Blend.Zero
+  protected $colorBlendFunction:BlendFunction = 'Add'
+  protected $alphaBlendFunction:BlendFunction = 'Add'
+  protected $colorSrcBlend: Blend = 'One'
+  protected $alphaSrcBlend: Blend = 'One'
+  protected $colorDstBlend: Blend = 'Zero'
+  protected $alphaDstBlend: Blend = 'Zero'
   protected $constantR: number = 0
   protected $constantG: number = 0
   protected $constantB: number = 0
@@ -96,12 +90,6 @@ export class BlendState implements IBlendState {
   }
 
   /**
-   * Gets a readable name of the color blend function
-   */
-  public get colorBlendFunctionName(): string {
-    return nameOfBlendFunction(this.$colorBlendFunction)
-  }
-  /**
    * Gets and sets the color blend function
    */
   public get colorBlendFunction(): BlendFunction {
@@ -115,12 +103,6 @@ export class BlendState implements IBlendState {
     }
   }
 
-  /**
-   * Gets a readable name of the alpha blend function
-   */
-  public get alphaBlendFunctionName(): string {
-    return nameOfBlendFunction(this.$alphaBlendFunction)
-  }
   /**
    * Gets and sets the alpha blend function
    */
@@ -136,12 +118,6 @@ export class BlendState implements IBlendState {
   }
 
   /**
-   * Gets a readable name of the blend factor for the source color
-   */
-  public get colorSrcBlendName(): string {
-    return nameOfBlend(this.$colorSrcBlend)
-  }
-  /**
    * Gets and sets the blend factor for the source color
    */
   public get colorSrcBlend(): Blend {
@@ -155,12 +131,6 @@ export class BlendState implements IBlendState {
     }
   }
 
-  /**
-   * Gets a readable name of the blend factor for the source alpha
-   */
-  public get alphaSrcBlendName(): string {
-    return nameOfBlend(this.$alphaSrcBlend)
-  }
   /**
    * Gets and sets the blend factor for the source alpha
    */
@@ -176,12 +146,6 @@ export class BlendState implements IBlendState {
   }
 
   /**
-   * Gets a readable name of the blend factor for the destination color
-   */
-  public get colorDstBlendName(): string {
-    return nameOfBlend(this.$colorDstBlend)
-  }
-  /**
    * Gets and sets the blend factor for the destination color
    */
   public get colorDstBlend(): Blend {
@@ -195,12 +159,6 @@ export class BlendState implements IBlendState {
     }
   }
 
-  /**
-   * Gets a readable name of the blend factor for the destination alpha
-   */
-  public get alphaDstBlendName(): string {
-    return nameOfBlend(this.$alphaDstBlend)
-  }
   /**
    * Gets and sets the blend factor for the destination alpha
    */
@@ -359,13 +317,13 @@ export class BlendState implements IBlendState {
       switch (key) {
         case 'colorBlendFunction':
         case 'alphaBlendFunction':
-          result[key] = valueOfBlendFunction(state[key])
+          result[key] = state[key]
           break
         case 'colorSrcBlend':
         case 'alphaSrcBlend':
         case 'colorDstBlend':
         case 'alphaDstBlend':
-          result[key] = valueOfBlend(state[key])
+          result[key] = state[key]
           break
         case 'enable':
           result[key] = state[key]
@@ -383,13 +341,13 @@ export class BlendState implements IBlendState {
    * A default blend state where blending is disabled
    */
   public static readonly Default = Object.freeze<IBlendState>({
-    colorBlendFunction: BlendFunction.Add,
-    alphaBlendFunction: BlendFunction.Add,
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
 
-    colorSrcBlend: Blend.One,
-    alphaSrcBlend: Blend.One,
-    colorDstBlend: Blend.Zero,
-    alphaDstBlend: Blend.Zero,
+    colorSrcBlend: 'One',
+    alphaSrcBlend: 'One',
+    colorDstBlend: 'Zero',
+    alphaDstBlend: 'Zero',
 
     constantR: 0,
     constantG: 0,
@@ -402,13 +360,13 @@ export class BlendState implements IBlendState {
    * A blend state with disabled blending
    */
   public static readonly None = Object.freeze<IBlendState>({
-    colorBlendFunction: BlendFunction.Add,
-    alphaBlendFunction: BlendFunction.Add,
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
 
-    colorSrcBlend: Blend.One,
-    alphaSrcBlend: Blend.One,
-    colorDstBlend: Blend.Zero,
-    alphaDstBlend: Blend.Zero,
+    colorSrcBlend: 'One',
+    alphaSrcBlend: 'One',
+    colorDstBlend: 'Zero',
+    alphaDstBlend: 'Zero',
 
     constantR: 0,
     constantG: 0,
@@ -421,13 +379,13 @@ export class BlendState implements IBlendState {
    * A blend state for additive blending
    */
   public static readonly Additive = Object.freeze<IBlendState>({
-    colorBlendFunction: BlendFunction.Add,
-    alphaBlendFunction: BlendFunction.Add,
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
 
-    colorSrcBlend: Blend.SrcAlpha,
-    alphaSrcBlend: Blend.SrcAlpha,
-    colorDstBlend: Blend.One,
-    alphaDstBlend: Blend.One,
+    colorSrcBlend: 'SrcAlpha',
+    alphaSrcBlend: 'SrcAlpha',
+    colorDstBlend: 'One',
+    alphaDstBlend: 'One',
 
     constantR: 0,
     constantG: 0,
@@ -440,14 +398,14 @@ export class BlendState implements IBlendState {
    * A blend state for pre multiplied alpha blending
    */
   public static readonly AlphaBlend = Object.freeze<IBlendState>({
-    colorBlendFunction: BlendFunction.Add,
-    alphaBlendFunction: BlendFunction.Add,
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
 
-    colorSrcBlend: Blend.One,
-    alphaSrcBlend: Blend.One,
+    colorSrcBlend: 'One',
+    alphaSrcBlend: 'One',
 
-    colorDstBlend: Blend.SrcAlphaInv,
-    alphaDstBlend: Blend.SrcAlphaInv,
+    colorDstBlend: 'OneMinusSrcAlpha',
+    alphaDstBlend: 'OneMinusSrcAlpha',
 
     constantR: 0,
     constantG: 0,
@@ -460,14 +418,14 @@ export class BlendState implements IBlendState {
    * A blend state for non pre multiplied alpha blending
    */
   public static readonly NonPremultiplied = Object.freeze<IBlendState>({
-    colorBlendFunction: BlendFunction.Add,
-    alphaBlendFunction: BlendFunction.Add,
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
 
-    colorSrcBlend: Blend.SrcAlpha,
-    alphaSrcBlend: Blend.SrcAlpha,
+    colorSrcBlend: 'SrcAlpha',
+    alphaSrcBlend: 'SrcAlpha',
 
-    colorDstBlend: Blend.SrcAlphaInv,
-    alphaDstBlend: Blend.SrcAlphaInv,
+    colorDstBlend: 'OneMinusSrcAlpha',
+    alphaDstBlend: 'OneMinusSrcAlpha',
 
     constantR: 0,
     constantG: 0,

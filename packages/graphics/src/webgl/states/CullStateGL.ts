@@ -1,8 +1,8 @@
+import { cullModeToWebGL, frontFaceToWebGL } from '../../enums'
 import { CullState, CullStateParams, ICullState } from '../../states/CullState'
 import { DeviceGL } from '../DeviceGL'
 
 export class CullStateGL extends CullState {
-
   public constructor(private device: DeviceGL) {
     super()
     this.resolve()
@@ -17,10 +17,10 @@ export class CullStateGL extends CullState {
       gl.disable(gl.CULL_FACE)
     }
     if (changes.cullMode !== null) {
-      gl.cullFace(this.cullMode)
+      gl.cullFace(cullModeToWebGL(this.cullMode))
     }
     if (changes.frontFace !== null) {
-      gl.frontFace(this.frontFace)
+      gl.frontFace(frontFaceToWebGL(this.frontFace))
     }
   }
 
@@ -41,7 +41,7 @@ export class CullStateGL extends CullState {
    * Resolves the current state from the GPU
    */
   public static resolve<T>(gl: WebGLRenderingContext | WebGL2RenderingContext, out: T): T & ICullState
-  public static resolve(gl: WebGLRenderingContext | WebGL2RenderingContext, out: CullStateParams= {}): ICullState {
+  public static resolve(gl: WebGLRenderingContext | WebGL2RenderingContext, out: CullStateParams = {}): ICullState {
     out.frontFace = gl.getParameter(gl.FRONT_FACE)
     out.enable = gl.getParameter(gl.CULL_FACE)
     out.cullMode = gl.getParameter(gl.CULL_FACE_MODE)

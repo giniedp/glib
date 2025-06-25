@@ -13,7 +13,7 @@ export function calculateNormals(
   indices: ArrayLike<number>,
   channels: GeometryBuilderChannelMap,
   vCount: number,
-  frontFace: FrontFace = FrontFace.CounterClockWise,
+  frontFace: FrontFace = 'CCW',
 ) {
   if (!channels.normal) {
     Log.warn(`[calculateNormals] buffer must have a 'normal' attribute`)
@@ -47,7 +47,7 @@ export function calculateNormals(
     const i0 = indices[i + 0]
     let i1 = indices[i + 1]
     let i2 = indices[i + 2]
-    if (frontFace === FrontFace.CounterClockWise) {
+    if (frontFace === 'CCW') {
       ;[i1, i2] = [i2, i1]
     }
 

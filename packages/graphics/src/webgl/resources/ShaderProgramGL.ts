@@ -1,4 +1,4 @@
-import { ShaderType, valueOfDataType } from '../../enums'
+import { dataTypeToWebGL } from '../../enums'
 import { Buffer, ShaderProgram, ShaderProgramOptions, ShaderUniform } from '../../resources'
 
 import { DeviceGL } from '../DeviceGL'
@@ -107,8 +107,8 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
     super()
     this.device = device
     this.canParallelCompile = !!device.capabilities.extension('KHR_parallel_shader_compile')
-    this.vertexShader = this.convertShaderSource(ShaderType.VertexShader, options.vertexShader) as ShaderGL
-    this.fragmentShader = this.convertShaderSource(ShaderType.FragmentShader, options.fragmentShader) as ShaderGL
+    this.vertexShader = this.convertShaderSource('VertexShader', options.vertexShader) as ShaderGL
+    this.fragmentShader = this.convertShaderSource('FragmentShader', options.fragmentShader) as ShaderGL
     this.create()
     this.link()
   }
@@ -342,7 +342,7 @@ export class ShaderProgramGL extends ShaderProgram implements SharedResource<str
           this.device.context.vertexAttribPointer(
             attribute.location,
             channel.elements,
-            valueOfDataType(channel.type),
+            dataTypeToWebGL(channel.type),
             !!attribute.normalize || !!channel.normalize,
             buffer.stride,
             channel.offset,

@@ -1,6 +1,6 @@
 import { Log } from '@gglib/utils'
 
-import { nameOfShaderType, valueOfShaderType } from '../../enums'
+import { shaderTypeToWebGL } from '../../enums'
 import { Shader, ShaderOptions } from '../../resources'
 import { DeviceGL } from '../DeviceGL'
 import { Glsl } from '../glsl'
@@ -26,6 +26,7 @@ export class ShaderGL extends Shader {
    */
   public resource: WebGLShader
 
+  private glType: GLenum
   /**
    *
    */
@@ -33,9 +34,9 @@ export class ShaderGL extends Shader {
     super()
     this.device = device
     this.source = options.source
-    this.type = valueOfShaderType(options.type)
-    this.typeName = nameOfShaderType(this.type)
-    if (!this.typeName) {
+    this.type = options.type
+    this.glType = shaderTypeToWebGL(this.type)
+    if (!this.glType) {
       Log.warn('[Shader] unknown "type" option', options.type, this)
     }
     if (this.source) {
@@ -59,7 +60,7 @@ export class ShaderGL extends Shader {
    */
   public compile(): this {
     if (!this.resource) {
-      this.resource = this.device.context.createShader(this.type)
+      this.resource = this.device.context.createShader(this.glType)
     }
     if (!this.source) {
       Log.error('[Shader] can not compile shader, source is missing', this)

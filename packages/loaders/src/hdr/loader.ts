@@ -16,12 +16,11 @@ export class Loader implements AssetLoader {
       responseType: 'arraybuffer',
     })
     const hdr = readHDR(response.body)
+    const data = hdr.float32()
     const options: TextureOptions = {
       name: url,
-      surfaceFormat: 'RGBA16F',
-      pixelFormat: 'RGBA',
-      pixelType: 'float',
-      source: new ArrayBufferViewSource([[hdr.data]], hdr.width, hdr.height),
+      format: 'RGBA32_FLOAT',
+      source: new ArrayBufferViewSource([[data]], hdr.width, hdr.height),
       width: hdr.width,
       height: hdr.height,
       type: 'Texture2D',

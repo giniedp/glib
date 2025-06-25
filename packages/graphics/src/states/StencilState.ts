@@ -1,12 +1,7 @@
 import {
   CompareFunction,
-  CompareFunctionOption,
   CullMode,
-  nameOfCompareFunction,
   StencilOperation,
-  StencilOperationOption,
-  valueOfCompareFunction,
-  valueOfStencilOperation,
 } from './../enums'
 
 import { Device } from './../Device'
@@ -35,18 +30,18 @@ const params: Array<keyof StencilStateParams> = [
  */
 export interface StencilStateOptions {
   enable?: boolean
-  stencilFunction?: CompareFunctionOption
+  stencilFunction?: CompareFunction
   stencilReference?: number
   stencilMask?: number
-  stencilFail?: StencilOperationOption
-  stencilDepthFail?: StencilOperationOption
-  stencilDepthPass?: StencilOperationOption
-  stencilBackFunction?: CompareFunctionOption
+  stencilFail?: StencilOperation
+  stencilDepthFail?: StencilOperation
+  stencilDepthPass?: StencilOperation
+  stencilBackFunction?: CompareFunction
   stencilBackReference?: number
   stencilBackMask?: number
-  stencilBackFail?: StencilOperationOption
-  stencilBackDepthFail?: StencilOperationOption
-  stencilBackDepthPass?: StencilOperationOption
+  stencilBackFail?: StencilOperation
+  stencilBackDepthFail?: StencilOperation
+  stencilBackDepthPass?: StencilOperation
 }
 
 /**
@@ -83,18 +78,18 @@ export type StencilStateParams = Partial<IStencilState>
 export class StencilState implements IStencilState {
 
   protected enableField: boolean = false
-  protected stencilFunctionField: number = CompareFunction.Always
+  protected stencilFunctionField: CompareFunction = 'Always'
   protected stencilReferenceField: number = 0
   protected stencilMaskField: number = 0xffffffff
-  protected stencilFailField: number = StencilOperation.Keep
-  protected stencilDepthFailField: number = StencilOperation.Keep
-  protected stencilDepthPassField: number = StencilOperation.Keep
-  protected stencilBackFunctionField: number = CompareFunction.Always
+  protected stencilFailField: StencilOperation = 'Keep'
+  protected stencilDepthFailField: StencilOperation = 'Keep'
+  protected stencilDepthPassField: StencilOperation = 'Keep'
+  protected stencilBackFunctionField: CompareFunction = 'Always'
   protected stencilBackReferenceField: number = 0
   protected stencilBackMaskField: number = 0xffffffff
-  protected stencilBackFailField: number = StencilOperation.Keep
-  protected stencilBackDepthFailField: number = StencilOperation.Keep
-  protected stencilBackDepthPassField: number = StencilOperation.Keep
+  protected stencilBackFailField: StencilOperation = 'Keep'
+  protected stencilBackDepthFailField: StencilOperation = 'Keep'
+  protected stencilBackDepthPassField: StencilOperation = 'Keep'
   protected changes: StencilStateParams = {}
   protected hasChanged: boolean = false
 
@@ -102,15 +97,11 @@ export class StencilState implements IStencilState {
     return this.hasChanged
   }
 
-  get stencilFunctionName(): string {
-    return nameOfCompareFunction(this.stencilFunctionField)
-  }
-
-  get stencilFunction(): number {
+  get stencilFunction(): CompareFunction {
     return this.stencilFunctionField
   }
 
-  set stencilFunction(value: number) {
+  set stencilFunction(value: CompareFunction) {
     if (this.stencilFunctionField !== value) {
       this.stencilFunctionField = value
       this.changes.stencilFunction = value
@@ -118,15 +109,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilBackFunctionName(): string {
-    return nameOfCompareFunction(this.stencilBackFunctionField)
-  }
-
-  get stencilBackFunction(): number {
+  get stencilBackFunction(): CompareFunction {
     return this.stencilBackFunctionField
   }
 
-  set stencilBackFunction(value: number) {
+  set stencilBackFunction(value: CompareFunction) {
     if (this.stencilBackFunctionField !== value) {
       this.stencilBackFunctionField = value
       this.changes.stencilBackFunction = value
@@ -134,15 +121,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilFailName(): string {
-    return nameOfCompareFunction(this.stencilFailField)
-  }
-
-  get stencilFail(): number {
+  get stencilFail(): StencilOperation {
     return this.stencilFailField
   }
 
-  set stencilFail(value: number) {
+  set stencilFail(value: StencilOperation) {
     if (this.stencilFailField !== value) {
       this.stencilFailField = value
       this.changes.stencilFail = value
@@ -150,15 +133,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilDepthFailName(): string {
-    return nameOfCompareFunction(this.stencilDepthFailField)
-  }
-
-  get stencilDepthFail(): number {
+  get stencilDepthFail(): StencilOperation {
     return this.stencilDepthFailField
   }
 
-  set stencilDepthFail(value: number) {
+  set stencilDepthFail(value: StencilOperation) {
     if (this.stencilDepthFailField !== value) {
       this.stencilDepthFailField = value
       this.changes.stencilDepthFail = value
@@ -166,15 +145,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilDepthPassName(): string {
-    return nameOfCompareFunction(this.stencilDepthPassField)
-  }
-
-  get stencilDepthPass(): number {
+  get stencilDepthPass(): StencilOperation {
     return this.stencilDepthPassField
   }
 
-  set stencilDepthPass(value: number) {
+  set stencilDepthPass(value: StencilOperation) {
     if (this.stencilDepthPassField !== value) {
       this.stencilDepthPassField = value
       this.changes.stencilDepthPass = value
@@ -182,15 +157,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilBackFailName(): string {
-    return nameOfCompareFunction(this.stencilBackFailField)
-  }
-
-  get stencilBackFail(): number {
+  get stencilBackFail(): StencilOperation {
     return this.stencilBackFailField
   }
 
-  set stencilBackFail(value: number) {
+  set stencilBackFail(value: StencilOperation) {
     if (this.stencilBackFailField !== value) {
       this.stencilBackFailField = value
       this.changes.stencilBackFail = value
@@ -198,15 +169,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilBackDepthFailName(): string {
-    return nameOfCompareFunction(this.stencilBackDepthFailField)
-  }
-
-  get stencilBackDepthFail(): number {
+  get stencilBackDepthFail(): StencilOperation {
     return this.stencilBackDepthFailField
   }
 
-  set stencilBackDepthFail(value: number) {
+  set stencilBackDepthFail(value: StencilOperation) {
     if (this.stencilBackDepthFailField !== value) {
       this.stencilBackDepthFailField = value
       this.changes.stencilBackDepthFail = value
@@ -214,15 +181,11 @@ export class StencilState implements IStencilState {
     }
   }
 
-  get stencilBackDepthPassName(): string {
-    return nameOfCompareFunction(this.stencilBackDepthPassField)
-  }
-
-  get stencilBackDepthPass(): number {
+  get stencilBackDepthPass(): StencilOperation {
     return this.stencilBackDepthPassField
   }
 
-  set stencilBackDepthPass(value: number) {
+  set stencilBackDepthPass(value: StencilOperation) {
     if (this.stencilBackDepthPassField !== value) {
       this.stencilBackDepthPassField = value
       this.changes.stencilBackDepthPass = value
@@ -336,7 +299,7 @@ export class StencilState implements IStencilState {
       switch (key) {
         case 'stencilFunction':
         case 'stencilBackFunction':
-          result[key] = valueOfCompareFunction(state[key])
+          result[key] = state[key]
           break
         case 'stencilFail':
         case 'stencilDepthFail':
@@ -344,7 +307,7 @@ export class StencilState implements IStencilState {
         case 'stencilBackFail':
         case 'stencilBackDepthFail':
         case 'stencilBackDepthPass':
-          result[key] = valueOfStencilOperation(state[key])
+          result[key] = state[key]
           break
         case 'enable':
           result[key] = state[key]
@@ -361,21 +324,21 @@ export class StencilState implements IStencilState {
     enable: false,
 
     // front face stencil
-    stencilFunction: CompareFunction.Always,
+    stencilFunction: 'Always',
     stencilReference: 0,
     stencilMask: 0xffffffff,
 
-    stencilFail: StencilOperation.Keep,
-    stencilDepthFail: StencilOperation.Keep,
-    stencilDepthPass: StencilOperation.Keep,
+    stencilFail: 'Keep',
+    stencilDepthFail: 'Keep',
+    stencilDepthPass: 'Keep',
 
     // back face stencil
-    stencilBackFunction: CompareFunction.Always,
+    stencilBackFunction: 'Always',
     stencilBackReference: 0,
     stencilBackMask: 0xffffffff,
 
-    stencilBackFail: StencilOperation.Keep,
-    stencilBackDepthFail: StencilOperation.Keep,
-    stencilBackDepthPass: StencilOperation.Keep,
+    stencilBackFail: 'Keep',
+    stencilBackDepthFail: 'Keep',
+    stencilBackDepthPass: 'Keep',
   })
 }

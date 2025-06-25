@@ -1,9 +1,9 @@
 import { CullMode } from '../../enums'
 
-const lookup: { [k: number]: GPUCullMode } = {
-  [CullMode.Back]: 'back',
-  [CullMode.Front]: 'front',
-  [CullMode.FrontAndBack]: 'none',
+const lookup: Record<CullMode, GPUCullMode> = {
+  Back: 'back',
+  Front: 'front',
+  None: 'none',
 }
 
 export function toCullMode(v: CullMode): GPUCullMode {

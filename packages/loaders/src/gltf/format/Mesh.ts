@@ -1,4 +1,3 @@
-import { PrimitiveType } from '@gglib/graphics'
 import { Property, NamedProperty } from './common'
 
 /**
@@ -46,7 +45,7 @@ export interface MeshPrimitive extends Property {
   /**
    * The type of primitives to render. All valid values correspond to WebGL enums.
    */
-  mode?: PrimitiveType
+  mode?: number
 
   /**
    * An array of Morph Targets, each  Morph Target is a dictionary mapping attributes

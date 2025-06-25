@@ -26,7 +26,6 @@ const fragmentShader = /*glsl*/ `
 `
 
 export default (canvas: HTMLCanvasElement) => {
-
   const device = createDevice({
     canvas,
   })
@@ -39,8 +38,8 @@ export default (canvas: HTMLCanvasElement) => {
   const vertices = device.createVertexBuffer([
     {
       layout: {
-        vPosition: { type: 'float', offset: 0, elements: 3 },
-        vColor: { type: 'float', offset: 12, elements: 3 },
+        vPosition: { type: 'float32', offset: 0, elements: 3 },
+        vColor: { type: 'float32', offset: 12, elements: 3 },
       },
       // However, the data gets an additional vertex.
       // prettier-ignore
@@ -56,7 +55,7 @@ export default (canvas: HTMLCanvasElement) => {
   // Now create an index buffer. The `dataType` must be either `ushort` or an `uint`
   // which defines the element type of the `data` array.
   const indices = device.createIndexBuffer({
-    dataType: 'ushort',
+    dataType: 'uint16',
     // The data array defines a triangle list. That means each 3 values
     // describe a triangle by indexing the vertices from the vertex buffer
     // prettier-ignore

@@ -1,25 +1,21 @@
-import {
-  CompareFunction,
-} from '../index'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { DeviceGL } from '../webgl'
 import { DepthStateGL } from '../webgl/states'
 import { DepthStateParams } from './DepthState'
-import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/DepthState', () => {
-
   let device: DeviceGL
   let stateA: DepthStateGL
   let stateB: DepthStateGL
   let stateC: DepthStateGL
   let paramsA: DepthStateParams = {
     enable: true,
-    depthFunction: CompareFunction.Always,
+    depthFunction: 'Always',
     depthWriteEnable: false,
   }
   let paramsB: DepthStateParams = {
     enable: false,
-    depthFunction: CompareFunction.Never,
+    depthFunction: 'Never',
     depthWriteEnable: true,
   }
 
@@ -38,14 +34,14 @@ describe('glib/graphics/DepthState', () => {
       stateC.resolve()
     })
     keys.forEach((key) => {
-      it (`${key} is a getter`, () => {
+      it(`${key} is a getter`, () => {
         expect(stateA[key]).toBe(paramsA[key])
       })
-      it (`${key} is a setter`, () => {
+      it(`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBe(paramsB[key])
       })
-      it (`${key} marks state as changed`, () => {
+      it(`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)

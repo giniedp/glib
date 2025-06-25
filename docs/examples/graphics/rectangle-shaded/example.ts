@@ -87,9 +87,9 @@ export default (canvas: HTMLCanvasElement) => {
   const vertices = device.createVertexBuffer([
     {
       layout: {
-        vPosition: { type: 'float', offset: 0, elements: 3 },
-        vNormal: { type: 'float', offset: 12, elements: 3 },
-        vTexture: { type: 'float', offset: 24, elements: 2 },
+        vPosition: { type: 'float32', offset: 0, elements: 3 },
+        vNormal: { type: 'float32', offset: 12, elements: 3 },
+        vTexture: { type: 'float32', offset: 24, elements: 2 },
       },
       // type: 'ushort',
       // as the layout already indicates, we add a normal data to each vertex
@@ -104,7 +104,7 @@ export default (canvas: HTMLCanvasElement) => {
 
   // Create the index buffer.
   const indices = device.createIndexBuffer({
-    dataType: 'ushort',
+    dataType: 'uint16',
     data: [0, 1, 2, 1, 2, 3],
   })
 

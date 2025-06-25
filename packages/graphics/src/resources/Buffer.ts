@@ -4,19 +4,22 @@ import { Device } from '../Device'
 import {
   ArrayType,
   BufferType,
-  BufferTypeOption,
-  BufferUsage,
-  BufferUsageOption,
+  // BufferTypeOption,
+  // BufferUsage,
+  // BufferUsageOption,
   DataType,
-  DataTypeOption,
-  dataTypeSize,
-  nameOfBufferType,
-  nameOfBufferUsage,
-  nameOfDataType,
-  valueOfBufferType,
-  valueOfBufferUsage,
-  valueOfDataType,
+  // DataTypeOption,
+  // dataTypeSize,
+  // nameOfBufferType,
+  // nameOfBufferUsage,
+  // nameOfDataType,
+  // valueOfBufferType,
+  // valueOfBufferUsage,
+  // valueOfDataType,
+  BufferUsageHint,
+  dataTypeToSize
 } from '../enums'
+
 
 /**
  * Data type that is accepted by the `setData*` methods
@@ -34,11 +37,11 @@ export interface BufferOptions<T = BufferDataOption> {
   /**
    * The buffer type e.b. `VertexBuffer` or `IndexBuffer`
    */
-  type?: BufferTypeOption
+  type?: BufferType
   /**
    * The buffer usage. Defaults to `Static`
    */
-  usage?: BufferUsageOption
+  usage?: BufferUsageHint
   /**
    * The VertexBuffer layout. Usable only for vertex buffers
    */
@@ -54,7 +57,7 @@ export interface BufferOptions<T = BufferDataOption> {
    * - For IndexBuffer defaults to `ushort`
    * - For VertexBuffer defaults to `float`
    */
-  dataType?: DataTypeOption
+  dataType?: DataType
   /**
    * Size in bytes of a single element in the buffer
    *
@@ -75,12 +78,12 @@ export abstract class Buffer {
   /**
    * The buffer type e.g. VertexBuffer or IndexBuffer
    */
-  public type: number
+  public type: BufferType
 
   /**
    * The data element type
    */
-  public dataType: number
+  public dataType: DataType
 
   /**
    * The size of the data in bytes
@@ -90,7 +93,7 @@ export abstract class Buffer {
   /**
    *
    */
-  public usage: number
+  public usage: BufferUsageHint
 
   /**
    * Size in bytes of a single element in the buffer
@@ -116,47 +119,17 @@ export abstract class Buffer {
   public layout: VertexLayout
 
   /**
-   * Translates and returns the current 'type' property to a readable name.
-   *
-   * @remarks
-   * This property exists purely for debugging
-   */
-  public get typeName(): string {
-    return nameOfBufferType(this.type)
-  }
-
-  /**
-   * Translates and returns the current 'usage' property to a readable name.
-   *
-   * @remarks
-   * This property exists purely for debugging
-   */
-  public get usageName(): string {
-    return nameOfBufferUsage(this.usage)
-  }
-
-  /**
-   * Translates and returns the current 'dataType' property to a readable name.
-   *
-   * @remarks
-   * This property exists purely for debugging
-   */
-  public get dataTypeName(): string {
-    return nameOfDataType(this.dataType)
-  }
-
-  /**
    * Indicates whether this is an IndexBuffer
    */
   public get isIndexBuffer(): boolean {
-    return this.type === BufferType.IndexBuffer
+    return this.type === 'IndexBuffer'
   }
 
   /**
    * Indicates whether this is a VertexBuffer
    */
   public get isVertexBuffer(): boolean {
-    return this.type === BufferType.VertexBuffer
+    return this.type === 'VertexBuffer'
   }
 
   /**
@@ -164,36 +137,24 @@ export abstract class Buffer {
    */
   public reset(opts: BufferOptions): this {
     // must be one of [Static|Dynamic|Stream]
-    if (opts.usage) {
-      this.usage = valueOfBufferUsage(opts.usage)
-    } else {
-      this.usage = this.usage || BufferUsage.Static
-    }
-    if (!this.usageName) {
-      throw new Error(`invalid 'usage' option: ${opts.usage}`)
-    }
+    this.usage = (opts.usage ?? this.usage) || 'Static'
+    this.type = (opts.type ?? this.type)
 
-    // must be one of [VertexBufferIndexBuffer]
-    if (opts.type) {
-      this.type = valueOfBufferType(opts.type)
-    } else {
-      this.type = this.type || BufferType.IndexBuffer
-    }
-    if (!this.typeName) {
+    if (!this.type) {
       throw new Error(`invalid or missing 'type' option: ${opts.type}`)
     }
 
     if (opts.dataType) {
       // data type has been explicitly set
-      this.dataType = valueOfDataType(opts.dataType)
+      this.dataType = opts.dataType
     } else if (this.isIndexBuffer) {
       // default to ushort for IndexBuffer
-      this.dataType = DataType.ushort
+      this.dataType = 'uint16'
     } else {
       // default to float for VertexBuffer
-      this.dataType = DataType.float
+      this.dataType = 'float32'
     }
-    if (!this.dataTypeName) {
+    if (!this.dataType) {
       throw new Error(`invalid 'dataType' option: ${opts.dataType}`)
     }
 
@@ -210,7 +171,7 @@ export abstract class Buffer {
     } else if (this.isVertexBuffer) {
       this.stride = VertexLayout.countBytes(this.layout)
     } else {
-      this.stride = dataTypeSize(this.dataType)
+      this.stride = dataTypeToSize(this.dataType)
     }
 
     if (this.sizeInBytes == null) {

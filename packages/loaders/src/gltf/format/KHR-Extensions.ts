@@ -4,9 +4,15 @@ import type { TextureInfo } from './TextureInfo'
 
 export function getKhrExtension(property: Property, name: typeof KHR_materials_anisotropy): KHR_materials_anisotropy
 export function getKhrExtension(property: Property, name: typeof KHR_materials_clearcoat): KHR_materials_clearcoat
-export function getKhrExtension(property: Property, name: typeof KHR_materials_diffuse_transmission): KHR_materials_diffuse_transmission
+export function getKhrExtension(
+  property: Property,
+  name: typeof KHR_materials_diffuse_transmission,
+): KHR_materials_diffuse_transmission
 export function getKhrExtension(property: Property, name: typeof KHR_materials_dispersion): KHR_materials_dispersion
-export function getKhrExtension(property: Property, name: typeof KHR_materials_emissive_strength): KHR_materials_emissive_strength
+export function getKhrExtension(
+  property: Property,
+  name: typeof KHR_materials_emissive_strength,
+): KHR_materials_emissive_strength
 export function getKhrExtension(property: Property, name: typeof KHR_materials_ior): KHR_materials_ior
 export function getKhrExtension(property: Property, name: typeof KHR_materials_iridescence): KHR_materials_iridescence
 export function getKhrExtension(property: Property, name: typeof KHR_materials_sheen): KHR_materials_sheen
@@ -17,8 +23,13 @@ export function getKhrExtension(property: Property, name: typeof KHR_materials_v
 export function getKhrExtension(property: Property, name: typeof KHR_materials_volume): KHR_materials_volume
 export function getKhrExtension(property: Property, name: typeof KHR_mesh_quantization): KHR_mesh_quantization
 export function getKhrExtension(property: Property, name: typeof KHR_texture_basisu): KHR_texture_basisu
+export function getKhrExtension(property: Property, name: typeof EXT_texture_webp): EXT_texture_webp
+export function getKhrExtension(property: Property, name: typeof MSFT_texture_dds): MSFT_texture_dds
 export function getKhrExtension(property: Property, name: typeof KHR_texture_transform): KHR_texture_transform
-export function getKhrExtension(property: Property, name: typeof KHR_materials_pbrSpecularGlossiness): KHR_materials_pbrSpecularGlossiness
+export function getKhrExtension(
+  property: Property,
+  name: typeof KHR_materials_pbrSpecularGlossiness,
+): KHR_materials_pbrSpecularGlossiness
 export function getKhrExtension<T>(property: Property, name: string): T {
   if (property?.extensions && property.extensions[name]) {
     return property.extensions[name] as T
@@ -352,6 +363,21 @@ export interface KHR_texture_basisu {
   source: number
 }
 
+export const MSFT_texture_dds = 'MSFT_texture_dds'
+/**
+ * @see https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Vendor/MSFT_texture_dds
+ */
+export interface MSFT_texture_dds {
+  source: number
+}
+
+export const EXT_texture_webp = 'EXT_texture_webp'
+/**
+ * @see https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_texture_webp/README.md
+ */
+export interface EXT_texture_webp {
+  source: number
+}
 export const KHR_texture_transform = 'KHR_texture_transform'
 
 /**

@@ -1,8 +1,6 @@
-import { ArrayType, pixelFormatElementCount, TextureType } from '../../enums'
 import { TextureDataOption, TextureImage, TextureImageOptions, TextureSourceOption } from '../../resources/TextureImage'
 
 import { DeviceGPU } from '../DeviceGPU'
-import { toTextureFormat } from '../utils/textureFormat'
 
 function isPowerOfTwo(value: number): boolean {
   return value > 0 && !(value & (value - 1)) // tslint:disable-line
@@ -18,9 +16,9 @@ export class TextureGPU extends TextureImage {
 
   private get dimensionGPU() {
     switch (this.type) {
-      case TextureType.Texture:
+      case 'Texture':
         return '1d'
-      case TextureType.Texture2D:
+      case 'Texture2D':
         return '2d'
       default:
         return '2d'
@@ -39,31 +37,30 @@ export class TextureGPU extends TextureImage {
   }
 
   public createResource() {
-    if (this.handle == null) {
-      this.set(
-        'handle',
-        this.device.device.createTexture({
-          dimension: this.dimensionGPU,
-          format: toTextureFormat(this.pixelFormat, this.pixelType, true, false),
-          mipLevelCount: this.generateMipmap
-            ? Math.floor(Math.log(Math.max(this.width, this.height)) * Math.LOG2E) + 1
-            : 1,
-          sampleCount: 4, // TODO:
-          size: {
-            width: this.width,
-            height: this.height,
-            depth: 1,
-          },
+    throw new Error('TextureGPU.createResource() is not implemented yet')
+    // if (this.handle == null) {
+    //   this.set(
+    //     'handle',
+    //     this.device.device.createTexture({
+    //       dimension: this.dimensionGPU,
+    //       format: toTextureFormat(this.pixelFormat, this.pixelType, true, false),
+    //       mipLevelCount: this.generateMipmap
+    //         ? Math.floor(Math.log(Math.max(this.width, this.height)) * Math.LOG2E) + 1
+    //         : 1,
+    //       sampleCount: 4, // TODO:
+    //       size: {
+    //         width: this.width,
+    //         height: this.height,
+    //         depth: 1,
+    //       },
 
-          usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.SAMPLED | GPUTextureUsage.OUTPUT_ATTACHMENT,
-        }),
-      )
-    }
+    //       usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.SAMPLED | GPUTextureUsage.OUTPUT_ATTACHMENT,
+    //     }),
+    //   )
+    // }
   }
 
-  protected disposeResource() {
-
-  }
+  protected disposeResource() {}
 
   /**
    * Releases all resources and notifies the device that the texture is being destroyed.
@@ -93,39 +90,39 @@ export class TextureGPU extends TextureImage {
    */
   public setData(data: TextureDataOption, width?: number, height?: number): this {
     this.set('source', null)
+    throw new Error('TextureGPU.setData() is not implemented yet')
+    // let buffer: ArrayBufferView
+    // if (data instanceof Array || data instanceof ArrayBuffer) {
+    //   buffer = new ArrayType[this.pixelType](data)
+    // } else if (data && (data as ArrayBufferView).buffer instanceof ArrayBuffer) {
+    //   if (data instanceof Uint8ClampedArray) {
+    //     buffer = new Uint8Array(data.buffer)
+    //   } else {
+    //     buffer = data as ArrayBufferView
+    //   }
+    // }
+    // if (!buffer) {
+    //   throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
+    // }
 
-    let buffer: ArrayBufferView
-    if (data instanceof Array || data instanceof ArrayBuffer) {
-      buffer = new ArrayType[this.pixelType](data)
-    } else if (data && (data as ArrayBufferView).buffer instanceof ArrayBuffer) {
-      if (data instanceof Uint8ClampedArray) {
-        buffer = new Uint8Array(data.buffer)
-      } else {
-        buffer = data as ArrayBufferView
-      }
-    }
-    if (!buffer) {
-      throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
-    }
+    // let pixelCount = buffer.byteLength / pixelFormatElementCount(this.pixelFormat)
+    // if (!width || !height) {
+    //   width = height = Math.floor(Math.sqrt(pixelCount))
+    // }
+    // if (width * height !== pixelCount) {
+    //   throw new Error('width and height does not match the data length')
+    // }
 
-    let pixelCount = buffer.byteLength / pixelFormatElementCount(this.pixelFormat)
-    if (!width || !height) {
-      width = height = Math.floor(Math.sqrt(pixelCount))
-    }
-    if (width * height !== pixelCount) {
-      throw new Error('width and height does not match the data length')
-    }
+    // if (this.width !== width || this.height !== height) {
+    //   this.dispose()
+    // }
+    // this.set('width', width)
+    // this.set('height', height)
+    // // this.create()
 
-    if (this.width !== width || this.height !== height) {
-      this.dispose()
-    }
-    this.set('width', width)
-    this.set('height', height)
-    // this.create()
+    // // TODO:
 
-    // TODO:
-
-    this.set('ready', true)
+    // this.set('ready', true)
     return this
   }
 

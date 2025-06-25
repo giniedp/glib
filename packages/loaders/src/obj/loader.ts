@@ -119,7 +119,7 @@ export class Loader implements AssetLoader {
       tasks.push(
         context.content
           .loadAsset(url, {
-            baseUrl: context.assetUrl,
+            baseUrl: context.baseUrl,
             signal: context.signal,
             type: '.mtl',
           })
@@ -176,7 +176,7 @@ function buildGroup(data: Document, faces: FaceElement[], smoothingGroup: number
           offset: 0, // - and this
           packed: false, // - and this
           normalize: false, // - and this
-          type: 'float', // - and this since we dont operate on this buffer
+          type: 'float32', // - and this since we dont operate on this buffer
         },
       },
     ],

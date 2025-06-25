@@ -110,12 +110,16 @@ function getTranscodeFormat(file: KTX2File, capabilities: Capabilities) {
       }
       return BasisTranscodeFormat.BC1_RGB
     }
-    if (capabilities.textureCompressionPvrtc) {
-      if (file.getHasAlpha()) {
-        return BasisTranscodeFormat.PVRTC1_4_RGBA
-      }
-      return BasisTranscodeFormat.PVRTC1_4_RGB
-    }
+    // intentionally disabled
+    // pvrtc is not supported in webgpu and our engine formats are based on webgpu
+    // even if webgl supports it, we don't have a mapping for it
+    //
+    // if (capabilities.textureCompressionPvrtc) {
+    //   if (file.getHasAlpha()) {
+    //     return BasisTranscodeFormat.PVRTC1_4_RGBA
+    //   }
+    //   return BasisTranscodeFormat.PVRTC1_4_RGB
+    // }
     return BasisTranscodeFormat.RGBA32
   }
 
@@ -138,12 +142,16 @@ function getTranscodeFormat(file: KTX2File, capabilities: Capabilities) {
       }
       return BasisTranscodeFormat.BC1_RGB
     }
-    if (capabilities.textureCompressionPvrtc) {
-      if (file.getHasAlpha()) {
-        return BasisTranscodeFormat.PVRTC1_4_RGBA
-      }
-      return BasisTranscodeFormat.PVRTC1_4_RGB
-    }
+    // intentionally disabled
+    // pvrtc is not supported in webgpu and our engine formats are based on webgpu
+    // even if webgl supports it, we don't have a mapping for it
+    //
+    // if (capabilities.textureCompressionPvrtc) {
+    //   if (file.getHasAlpha()) {
+    //     return BasisTranscodeFormat.PVRTC1_4_RGBA
+    //   }
+    //   return BasisTranscodeFormat.PVRTC1_4_RGB
+    // }
     return BasisTranscodeFormat.RGBA32
   }
 
@@ -201,12 +209,12 @@ export enum BasisTranscodeFormat {
   PVRTC1_4_RGB = 8,
   PVRTC1_4_RGBA = 9,
   ASTC_4x4_RGBA = 10,
-  ATC_RGB = 11,
-  ATC_RGBA_INTERPOLATED_ALPHA = 12,
+  // ATC_RGB = 11,
+  // ATC_RGBA_INTERPOLATED_ALPHA = 12,
   RGBA32 = 13,
-  RGB565 = 14,
-  BGR565 = 15,
-  RGBA4444 = 16,
+  // RGB565 = 14,
+  // BGR565 = 15,
+  // RGBA4444 = 16,
 }
 
 export enum BasisDecodeFlags {

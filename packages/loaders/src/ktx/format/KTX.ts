@@ -1,6 +1,5 @@
-import { ArrayType } from '@gglib/graphics'
+import { dataTypeToArrayType, SurfaceFormat, surfaceFormatDataType, surfaceFormatFromVulkan } from '@gglib/graphics'
 import { BinaryReader } from '@gglib/utils'
-import { VK_TO_GL1, VK_TO_GL2, VK_TO_GL2_WITH_EXT } from './VK2GL'
 
 // KTX 1 Format: https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
 // KTX 2 Format: https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html
@@ -11,7 +10,7 @@ import { VK_TO_GL1, VK_TO_GL2, VK_TO_GL2_WITH_EXT } from './VK2GL'
 //  - https://www.khronos.org/registry/webgl/specs/latest/2.0/
 //  - https://github.com/KhronosGroup/KTX-Specification/blob/master/formats.json
 
-export interface V2Header {
+export interface Header {
   identifier: string
   vkFormat: number
   typeSize: number
@@ -24,7 +23,7 @@ export interface V2Header {
   supercompressionScheme: number
 }
 
-export interface V2Index {
+export interface Index {
   dfdByteOffset: number
   dfdByteLength: number
   kvdByteOffset: number
@@ -44,16 +43,10 @@ export interface LevelImage {
   height: number
   layers: Array<{
     faces: Array<Uint8Array<ArrayBuffer>>
-   }>
+  }>
 }
 
-export interface FormatInfo {
-  surfaceFormat: GLenum
-  format: GLenum
-  type: GLenum
-}
-
-function readHeader(reader: BinaryReader): V2Header {
+function readHeader(reader: BinaryReader): Header {
   return {
     /* Byte[12]*/ identifier: reader.readString(12),
     /* UInt32  */ vkFormat: reader.readUInt(),
@@ -68,7 +61,7 @@ function readHeader(reader: BinaryReader): V2Header {
   }
 }
 
-function readIndex(reader: BinaryReader): V2Index {
+function readIndex(reader: BinaryReader): Index {
   return {
     /* UInt32 */ dfdByteOffset: reader.readUInt(),
     /* UInt32 */ dfdByteLength: reader.readUInt(),
@@ -90,15 +83,16 @@ function readLevelIndex(reader: BinaryReader): LevelIndex {
 function readLevelImage(buffer: ArrayBuffer, ktx: File, level: number): LevelImage {
   const header = ktx.header
   const index = ktx.levelIndex[level]
-
+  const dataType = surfaceFormatDataType(ktx.format)
+  const ArrayType = dataTypeToArrayType(dataType)
   const layers: Array<{ faces: Uint8Array<ArrayBuffer>[] }> = []
   for (let l = 0; l < Math.max(1, header.layerCount); l++) {
     const faces: Uint8Array<ArrayBuffer>[] = []
     for (let i = 0; i < header.faceCount; i++) {
       const faceLength = index.byteLength / header.faceCount
       const faceOffset = index.byteOffset + faceLength * i
-      const data = new ArrayType[ktx.glInfo.type](buffer, faceOffset, faceLength / header.typeSize)
-      faces.push(data)
+      const data = new ArrayType(buffer, faceOffset, faceLength / header.typeSize)
+      faces.push(data as any)
     }
     layers.push({
       faces: faces,
@@ -117,13 +111,12 @@ export function parse(data: ArrayBuffer) {
 }
 
 export class File {
-  public readonly header: V2Header
-  public readonly index: V2Index
+  public readonly header: Header
+  public readonly index: Index
   public readonly levelIndex: Array<LevelIndex>
   public readonly levelImages: Array<LevelImage>
-  public readonly glInfo: FormatInfo
-  public readonly requiresWebgl2: boolean
-  public readonly requiresExtension: string
+  public readonly format: SurfaceFormat
+  public readonly isCompressed: boolean
 
   public get width() {
     return this.header.pixelWidth
@@ -141,32 +134,18 @@ export class File {
     const reader = new BinaryReader(buffer)
     this.header = readHeader(reader)
     this.index = readIndex(reader)
-    this.glInfo = VK_TO_GL1[this.header.vkFormat]
-    if (!this.glInfo) {
-      this.glInfo = VK_TO_GL2[this.header.vkFormat]
-      this.requiresWebgl2 = !!this.glInfo
-    }
-    if (!this.glInfo) {
-      const info = VK_TO_GL2_WITH_EXT[this.header.vkFormat]
-      this.glInfo = info
-      this.requiresWebgl2 = !!this.glInfo
-      this.requiresExtension = info?.glExtension
-    }
+    this.format = surfaceFormatFromVulkan(this.header.vkFormat)
+    this.levelIndex = []
+    this.levelImages = []
+    this.isCompressed = !!this.header.supercompressionScheme
 
-    const lvlIndex: LevelIndex[] = (this.levelIndex = [])
-    const lvlImages: LevelImage[] = (this.levelImages = [])
-
-    if (this.header.supercompressionScheme) {
+    if (this.isCompressed) {
       return
     }
 
-    if (!this.glInfo) {
-      console.error(`[KTX] vkFormat is not supported: ${this.header.vkFormat}`)
-    }
-
     for (let i = 0; i < this.header.levelCount; i++) {
-      lvlIndex[i] = readLevelIndex(reader)
-      lvlImages[i] = readLevelImage(reader.data, this, i)
+      this.levelIndex[i] = readLevelIndex(reader)
+      this.levelImages[i] = readLevelImage(reader.data, this, i)
     }
   }
 }

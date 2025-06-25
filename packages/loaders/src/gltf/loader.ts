@@ -1,18 +1,21 @@
 import { AssetContainer, AssetLoader, ContentLoader, imageFromBlob, LoaderContext } from '@gglib/content'
 import {
   BufferOptions,
-  dataTypeSize,
+  dataTypeFromWebGL,
+  dataTypeToArrayType,
+  dataTypeToSize,
   GeometryOptions,
   GeometryUtil,
   MaterialOptions,
   MeshOptions,
-  nameOfDataType,
-  PrimitiveType,
+  primitiveTypeFromWebGL,
+  primitiveTypeToWebGL,
   SamplerState,
-  TextureFilter,
+  textureFilterFromWebGL,
   TextureImageOptions,
   TextureOptions,
-  TextureWrapMode,
+  textureWrapModeFromWebGL,
+  TypedArray,
   VertexBuffer,
   VertexBufferOptions,
   VertexLayout,
@@ -190,7 +193,8 @@ export class Loader implements AssetLoader {
         const url = this.content.resolveUrl(image.uri, this.context)
         return this.content
           .loadAsset(url, {
-            signal: this.signal,
+            baseUrl: this.context.baseUrl,
+            signal: this.context.signal,
           })
           .then((asset) => asset.textures[0])
       }
@@ -210,7 +214,26 @@ export class Loader implements AssetLoader {
       throw new Error(`[glTF] texture not found: ${index}`)
     }
 
-    const imageOptions = await this.loadImage(texture.source)
+    let image: number
+    const extKtx = getKhrExtension(texture, 'KHR_texture_basisu')
+    const extDds = getKhrExtension(texture, 'MSFT_texture_dds')
+    const extWebp = getKhrExtension(texture, 'EXT_texture_webp')
+    if (extKtx) {
+      image = extKtx.source
+    } else if (extDds) {
+      image = extDds.source
+    } else if (extWebp) {
+      image = extWebp.source
+    } else {
+      image = texture.source
+    }
+
+    if (image == null) {
+      console.warn(`[glTF] texture has no image source: ${texture.name || index}`)
+      return null
+    }
+
+    const imageOptions = await this.loadImage(image)
     return {
       ...imageOptions,
       generateMipmap: true,
@@ -223,10 +246,10 @@ export class Loader implements AssetLoader {
   public loadSampler(index: number): Partial<SamplerState> {
     const sampler = this.document.samplers?.[index]
     return {
-      minFilter: sampler?.minFilter ?? TextureFilter.Linear,
-      magFilter: sampler?.magFilter ?? TextureFilter.Linear,
-      wrapU: sampler?.wrapS ?? TextureWrapMode.Repeat,
-      wrapV: sampler?.wrapT ?? TextureWrapMode.Repeat,
+      minFilter: textureFilterFromWebGL(sampler?.minFilter) ?? 'Linear',
+      magFilter: textureFilterFromWebGL(sampler?.magFilter) ?? 'Linear',
+      wrapU: textureWrapModeFromWebGL(sampler?.wrapS) ?? 'Repeat',
+      wrapV: textureWrapModeFromWebGL(sampler?.wrapT) ?? 'Repeat',
     }
   }
 
@@ -370,7 +393,6 @@ export class Loader implements AssetLoader {
     if (material.emissiveFactor != null) {
       params.EmissiveColor = material.emissiveFactor
     }
-
 
     if (material.doubleSided) {
       params.DoubleSided = true
@@ -556,7 +578,7 @@ export class Loader implements AssetLoader {
     return {
       data: acc.getDataWithoutOffset(),
       stride: acc.byteStride,
-      dataType: acc.componentType as number,
+      dataType: dataTypeFromWebGL(acc.componentType),
     }
   }
 
@@ -593,21 +615,19 @@ export class Loader implements AssetLoader {
           .replace(/_(\d+)$/, (_, g) => String(Number(g)))
           .replace(/^texcoord/, 'texture')
 
+        const dataType = dataTypeFromWebGL(accessor.componentType)
+        const dataSize = dataTypeToSize(dataType)
         if (bufferOptions.dataType == null) {
-          bufferOptions.dataType = accessor.componentType as number
-        } else if (bufferOptions.dataType !== (accessor.componentType as number)) {
-          console.warn(
-            `interleaved buffer with different component types detected: ${nameOfDataType(
-              bufferOptions.dataType as any,
-            )}, ${nameOfDataType(accessor.componentType as any)}`,
-          )
-          if (dataTypeSize(accessor.componentType as any) > dataTypeSize(bufferOptions.dataType)) {
-            bufferOptions.dataType = accessor.componentType as number
+          bufferOptions.dataType = dataType
+        } else if (bufferOptions.dataType !== dataType) {
+          console.warn(`interleaved buffer with different component types detected: ${dataType}`)
+          if (dataSize > dataTypeToSize(bufferOptions.dataType)) {
+            bufferOptions.dataType = dataType
           }
         }
 
         bufferOptions.layout[semantic] = {
-          type: accessor.componentType as number,
+          type: dataType,
           elements: elementCount(accessor.type),
           normalize: accessor.normalized || false,
           offset: accessor.byteOffset || 0,
@@ -624,10 +644,11 @@ export class Loader implements AssetLoader {
       }
 
       if (!bufferOptions.data) {
-        bufferOptions.data = new ArrayType[bufferOptions.dataType](
+        const ArrayType = dataTypeToArrayType(bufferOptions.dataType)
+        bufferOptions.data = new ArrayType(
           buffer,
           bufferView.byteOffset || 0,
-          bufferView.byteLength / dataTypeSize(bufferOptions.dataType),
+          bufferView.byteLength / dataTypeToSize(bufferOptions.dataType),
         )
       }
 
@@ -652,7 +673,8 @@ export class Loader implements AssetLoader {
 
       const iBufferOptions = await this.loadIndexBuffer(part)
       const vBufferOptions = await this.loadVertexBuffers(part)
-      const isTriangleList = part.mode === PrimitiveType.TriangleList || !part.mode
+      const primitiveType = primitiveTypeFromWebGL(part.mode) || 'TriangleList'
+      const isTriangleList = primitiveType === 'TriangleList'
       let hasNormals = false
       let hasTangents = false
       let hasBitangents = false
@@ -669,7 +691,7 @@ export class Loader implements AssetLoader {
       }
 
       if (isTriangleList && (!hasNormals || !hasTangents || !hasBitangents)) {
-        const util = new GeometryUtil(iBufferOptions, vBufferOptions, part.mode || PrimitiveType.TriangleList)
+        const util = new GeometryUtil(iBufferOptions, vBufferOptions, primitiveType)
         if (!hasNormals) {
           util.calculateNormals({
             create: true,
@@ -689,7 +711,7 @@ export class Loader implements AssetLoader {
         boundingBox: [...min, ...max],
         boundingSphere: BoundingSphere.createFromBox(BoundingBox.create(...min, ...max)).toArray(),
         materialId: part.material,
-        primitiveType: part.mode,
+        primitiveType: primitiveType,
         indexBuffer: iBufferOptions,
         vertexBuffer: vBufferOptions,
       }
@@ -832,7 +854,7 @@ abstract class GLTFAccessorBase {
   public readonly byteOffset: number
   public readonly byteStride: number
 
-  public abstract readonly data: AnyTypedArray
+  public abstract readonly data: TypedArray
 
   constructor(accessor: Accessor) {
     this.accessor = accessor
@@ -878,7 +900,7 @@ abstract class GLTFAccessorBase {
 }
 
 class GLTFBufferViewAccessor extends GLTFAccessorBase {
-  public readonly data: AnyTypedArray
+  public readonly data: TypedArray
   private stride: number
   private offset: number
 
@@ -906,16 +928,17 @@ class GLTFBufferViewAccessor extends GLTFAccessorBase {
 }
 
 class GLTFSparseAccessor extends GLTFAccessorBase {
-  public readonly data: AnyTypedArray
+  public readonly data: TypedArray
 
   constructor(
     public readonly accessor: Accessor,
-    public readonly indices: AnyTypedArray,
+    public readonly indices: TypedArray,
     public readonly valuesView: Omit<BufferView, 'buffer'>,
-    public readonly valuesArray: AnyTypedArray,
+    public readonly valuesArray: TypedArray,
   ) {
     super(accessor)
-    this.data = new ArrayType[this.componentType](this.componentSize * this.componentCount * this.attributeCount)
+    const ArrayType = dataTypeToArrayType(dataTypeFromWebGL(this.componentType))
+    this.data = new ArrayType(this.componentSize * this.componentCount * this.attributeCount)
     for (let i = 0; i < this.indices.length; i++) {
       const index = this.indices[i]
       const value = valuesArray[i] // TODO: buteOffset etc.
@@ -935,47 +958,22 @@ class GLTFSparseAccessor extends GLTFAccessorBase {
 function createTypedArray(
   spec: { buffer: ArrayBuffer; byteOffset?: number; count: number },
   type: number,
-): AnyTypedArray {
-  const TYPE = ArrayType[type]
-  const result = new TYPE(spec.buffer, spec.byteOffset || 0, spec.count)
-  return result
+): TypedArray {
+  const ArrayType = dataTypeToArrayType(dataTypeFromWebGL(type))
+  return new ArrayType(spec.buffer, spec.byteOffset || 0, spec.count)
 }
 
-const ArrayType = Object.freeze({
-  0x1400: Int8Array,
-  0x1402: Int16Array,
-  0x1404: Int32Array,
-  0x1401: Uint8Array,
-  0x1403: Uint16Array,
-  0x1405: Uint32Array,
-  0x1406: Float32Array,
-  0x8363: Uint16Array,
-  0x8033: Uint16Array,
-  0x8034: Uint16Array,
-})
-
-type AnyTypedArray =
-  | Int8Array<ArrayBuffer>
-  | Int16Array<ArrayBuffer>
-  | Int32Array<ArrayBuffer>
-  | Uint8Array<ArrayBuffer>
-  | Uint16Array<ArrayBuffer>
-  | Uint32Array<ArrayBuffer>
-  | Float32Array<ArrayBuffer>
-  | Uint16Array<ArrayBuffer>
-  | Uint16Array<ArrayBuffer>
-  | Uint16Array<ArrayBuffer>
-
+const accesorTypeToElementCount: Record<AccessorType, number> = {
+  SCALAR: 1,
+  VEC2: 2,
+  VEC3: 3,
+  VEC4: 4,
+  MAT2: 4,
+  MAT3: 9,
+  MAT4: 16,
+}
 function elementCount(type: AccessorType) {
-  return {
-    SCALAR: 1,
-    VEC2: 2,
-    VEC3: 3,
-    VEC4: 4,
-    MAT2: 4,
-    MAT3: 9,
-    MAT4: 16,
-  }[type]
+  return accesorTypeToElementCount[type]
 }
 
 function readTextureInfo(params: { [k: string]: unknown }, name: string, info: TextureInfo) {

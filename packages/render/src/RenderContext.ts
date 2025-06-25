@@ -130,9 +130,7 @@ export class RenderContext {
         width: this.width,
         height: this.height,
         depthFormat: this.targetOptions.depthFormat,
-        pixelFormat: this.targetOptions.pixelFormat,
-        pixelType: this.targetOptions.pixelType,
-        surfaceFormat: this.targetOptions.surfaceFormat,
+        format: this.targetOptions.format,
       })
     }
   }

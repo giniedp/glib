@@ -1,6 +1,6 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { ArrayBufferViewSource, SamplerState, SurfaceFormat, TextureOptions } from '@gglib/graphics'
-import { DXGI_FORMAT, getSurfaceFormatFromDXGI, parse } from './format'
+import { ArrayBufferViewSource, SamplerState, surfaceFormatFromDXGI, TextureOptions } from '@gglib/graphics'
+import { parse } from './format'
 
 export function registerLoader() {
   ContentLoader.registerLoader(Loader)
@@ -17,11 +17,8 @@ export class Loader implements AssetLoader {
     })
 
     const dds = parse(response.body)
-    const format = getSurfaceFormatFromDXGI(dds.format)
-    console.log({
-      dxgi: DXGI_FORMAT[dds.format],
-      surfaceFormat: SurfaceFormat[format] ,
-    })
+    const format = surfaceFormatFromDXGI(dds.format)
+
     if (!context.content.device.capabilities.isFormatSupported(format)) {
       throw new Error(`Surface format ${format} is not supported by the device capabilities.`)
     }
@@ -31,8 +28,7 @@ export class Loader implements AssetLoader {
       type: 'Texture2D',
       generateMipmap: false,
       sampler: SamplerState.LinearClampNoMipMap,
-      surfaceFormat: format,
-      compressed: dds.isCompressed,
+      format: format,
     }
     if (dds.isCubemap) {
       options.type = 'TextureCube'

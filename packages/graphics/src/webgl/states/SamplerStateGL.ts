@@ -1,4 +1,4 @@
-import { TextureType } from '../../enums'
+import { compareFunctionToWebGL, textureFilterToWebGL, TextureType, textureWrapModeToWebGL } from '../../enums'
 import { SamplerState, SamplerStateParams } from '../../states'
 import { DeviceGL } from '../DeviceGL'
 import { SharedResource } from '../utils'
@@ -50,15 +50,15 @@ export class SamplerStateGL extends SamplerState implements SharedResource<strin
       this.resource = this.device.context.createSampler()
     }
     const gl = this.device.context
-    gl.samplerParameteri(this.resource, gl.TEXTURE_MIN_FILTER, this.minFilter)
-    gl.samplerParameteri(this.resource, gl.TEXTURE_MAG_FILTER, this.magFilter)
-    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_S, this.wrapU)
-    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_T, this.wrapV)
-    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_R, this.wrapW)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_MIN_FILTER, textureFilterToWebGL(this.minFilter))
+    gl.samplerParameteri(this.resource, gl.TEXTURE_MAG_FILTER, textureFilterToWebGL(this.magFilter))
+    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_S, textureWrapModeToWebGL(this.wrapU))
+    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_T, textureWrapModeToWebGL(this.wrapV))
+    gl.samplerParameteri(this.resource, gl.TEXTURE_WRAP_R, textureWrapModeToWebGL(this.wrapW))
     gl.samplerParameteri(this.resource, gl.TEXTURE_MIN_LOD, this.minLod)
     gl.samplerParameteri(this.resource, gl.TEXTURE_MAX_LOD, this.maxLod)
     gl.samplerParameteri(this.resource, gl.TEXTURE_COMPARE_MODE, this.compareMode)
-    gl.samplerParameteri(this.resource, gl.TEXTURE_COMPARE_FUNC, this.compareFunc)
+    gl.samplerParameteri(this.resource, gl.TEXTURE_COMPARE_FUNC, compareFunctionToWebGL(this.compareFunc))
     return this
   }
 

@@ -1,16 +1,9 @@
-import {
-  CompareFunction,
-  Device,
-  StencilOperation,
-} from '../index'
-
+import { beforeEach, describe, expect, it } from 'vitest'
 import { DeviceGL } from '../webgl'
 import { StencilStateGL } from '../webgl/states'
 import { StencilStateParams } from './StencilState'
-import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/StencilState', () => {
-
   let device: DeviceGL
   let stateA: StencilStateGL
   let stateB: StencilStateGL
@@ -19,49 +12,49 @@ describe('glib/graphics/StencilState', () => {
     enable: false,
 
     // front face stencil
-    stencilFunction: CompareFunction.Never,
+    stencilFunction: 'Never',
     stencilReference: 1,
     stencilMask: 0xffffff00,
 
-    stencilFail: StencilOperation.Decrement,
-    stencilDepthFail: StencilOperation.Increment,
-    stencilDepthPass: StencilOperation.Invert,
+    stencilFail: 'DecrementClamp',
+    stencilDepthFail: 'IncrementClamp',
+    stencilDepthPass: 'Invert',
 
     // back face stencil
-    stencilBackFunction: CompareFunction.Never,
+    stencilBackFunction: 'Never',
     stencilBackReference: 2,
     stencilBackMask: 0x00ffffff,
 
-    stencilBackFail: StencilOperation.Keep,
-    stencilBackDepthFail: StencilOperation.Replace,
-    stencilBackDepthPass: StencilOperation.Zero,
+    stencilBackFail: 'Keep',
+    stencilBackDepthFail: 'Replace',
+    stencilBackDepthPass: 'Zero',
   }
   let paramsB: StencilStateParams = {
     enable: true,
 
     // front face stencil
-    stencilFunction: CompareFunction.Always,
+    stencilFunction: 'Always',
     stencilReference: 3,
     stencilMask: 0xffff00ff,
 
-    stencilFail: StencilOperation.Increment,
-    stencilDepthFail: StencilOperation.Invert,
-    stencilDepthPass: StencilOperation.Decrement,
+    stencilFail: 'IncrementClamp',
+    stencilDepthFail: 'Invert',
+    stencilDepthPass: 'DecrementClamp',
 
     // back face stencil
-    stencilBackFunction: CompareFunction.Equal,
+    stencilBackFunction: 'Equal',
     stencilBackReference: 4,
     stencilBackMask: 0xff00ffff,
 
-    stencilBackFail: StencilOperation.DecrementWrap,
-    stencilBackDepthFail: StencilOperation.IncrementWrap,
-    stencilBackDepthPass: StencilOperation.Replace,
+    stencilBackFail: 'DecrementWrap',
+    stencilBackDepthFail: 'IncrementWrap',
+    stencilBackDepthPass: 'Replace',
   }
 
   let keys = Object.keys(paramsA)
 
   beforeEach(() => {
-    device = new DeviceGL({ contextAttributes: { depth: true, stencil: true} })
+    device = new DeviceGL({ contextAttributes: { depth: true, stencil: true } })
     stateA = new StencilStateGL(device).assign(paramsA)
     stateB = new StencilStateGL(device).assign(stateB)
     stateC = new StencilStateGL(device)
@@ -73,14 +66,14 @@ describe('glib/graphics/StencilState', () => {
       stateC.resolve()
     })
     keys.forEach((key) => {
-      it (`${key} is a getter`, () => {
+      it(`${key} is a getter`, () => {
         expect(stateA[key]).toBe(paramsA[key])
       })
-      it (`${key} is a setter`, () => {
+      it(`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBe(paramsB[key])
       })
-      it (`${key} marks state as changed`, () => {
+      it(`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)

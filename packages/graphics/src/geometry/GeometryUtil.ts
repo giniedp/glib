@@ -1,7 +1,7 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { Log } from '@gglib/utils'
 
-import { BufferType, FrontFace, nameOfPrimitiveType, PrimitiveType } from '../enums'
+import { FrontFace, PrimitiveType } from '../enums'
 import { BufferOptions, VertexBufferOptions } from '../resources'
 import { vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
 import { calculateNormals } from './utils/calculateNormals'
@@ -25,8 +25,8 @@ export class GeometryUtil {
     public readonly vertexBuffer: VertexBufferOptions,
     public readonly primitiveType: PrimitiveType,
   ) {
-    if (primitiveType !== PrimitiveType.TriangleList) {
-      throw new Error(`primitive type is not supporetd: '${nameOfPrimitiveType(primitiveType)}'`)
+    if (primitiveType !== 'TriangleList') {
+      throw new Error(`primitive type is not supporetd: '${primitiveType}'`)
     }
 
     for (const buffer of vertexBuffer) {
@@ -89,7 +89,7 @@ export class GeometryUtil {
           offset: 0,
         },
       },
-      type: BufferType.VertexBuffer,
+      type: 'VertexBuffer',
       dataType: attribute.type,
       data: data,
     }
@@ -206,7 +206,7 @@ export class GeometryUtil {
   public calculateNormals(options?: { create?: boolean; update?: boolean; frontFace?: FrontFace }): this {
     const create = options?.create ?? false
     let update = options?.update ?? false
-    const frontFace = options?.frontFace ?? FrontFace.CounterClockWise
+    const frontFace = options?.frontFace ?? 'CCW'
 
     const normal = 'normal'
     if (!this.hasChannel(normal) && create) {
@@ -231,7 +231,7 @@ export class GeometryUtil {
   public calculateTangents(options?: { create?: boolean; update?: boolean; frontFace?: FrontFace }): this {
     const create = options?.create ?? false
     let update = options?.update ?? false
-    const frontFace = options?.frontFace ?? FrontFace.CounterClockWise
+    const frontFace = options?.frontFace ?? 'CCW'
 
     const tangent = 'tangent'
     const bitangent = 'bitangent'

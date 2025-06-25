@@ -21,11 +21,11 @@ export class Loader implements AssetLoader {
       textures: [
         {
           ...options,
-          sampler: options.generateMipmap ? {...SamplerState.LinearWrap} : {...SamplerState.LinearClampNoMipMap},
+          sampler: options.generateMipmap ? { ...SamplerState.LinearWrap } : { ...SamplerState.LinearClampNoMipMap },
           source: createTextureSource(options.source, {
             width: options.width,
             height: options.height,
-            type: options.pixelType,
+            format: options.format,
           }),
         },
       ],

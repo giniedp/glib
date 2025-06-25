@@ -28,7 +28,7 @@ export default function run(canvas: HTMLCanvasElement) {
     {
       layout: {
         vPosition: {
-          type: 'float',
+          type: 'float32',
           offset: 0,
           elements: 3,
         },

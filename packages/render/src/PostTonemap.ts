@@ -12,6 +12,7 @@ import {
   TextureFilter,
   TextureWrapMode,
   Texture,
+  TextureOptions,
 } from '@gglib/graphics'
 import { RenderContext } from './RenderContext'
 import { RenderPass } from './Types'
@@ -48,31 +49,31 @@ export class PostTonemap implements RenderPass {
   public debugTarget: number = 0
 
   private targets: Texture[] = []
-  private targetOptions = [
+  private targetOptions: TextureOptions[] = [
     {
       width: 512,
       height: 512,
-      depthFormat: DepthFormat.None,
+      depthFormat: 'None',
     },
     {
       width: 128,
       height: 128,
-      depthFormat: DepthFormat.None,
+      depthFormat: 'None',
     },
     {
       width: 32,
       height: 32,
-      depthFormat: DepthFormat.None,
+      depthFormat: 'None',
     },
     {
       width: 8,
       height: 8,
-      depthFormat: DepthFormat.None,
+      depthFormat: 'None',
     },
     {
       width: 2,
       height: 2,
-      depthFormat: DepthFormat.None,
+      depthFormat: 'None',
     },
   ]
 
@@ -80,10 +81,10 @@ export class PostTonemap implements RenderPass {
 
   private lum1: Texture
   private lum2: Texture
-  private lumOptions = {
+  private lumOptions: TextureOptions = {
     width: 2,
     height: 2,
-    depthFormat: DepthFormat.None,
+    depthFormat: 'None',
   }
   private texel = Vec2.create()
 

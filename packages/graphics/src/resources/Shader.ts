@@ -1,7 +1,7 @@
 import { uuid } from '@gglib/utils'
 
 import { Device } from '../Device'
-import { ShaderType, ShaderTypeOption } from '../enums'
+import { ShaderType } from '../enums'
 
 /**
  * Constructor options for {@link Shader}
@@ -16,7 +16,7 @@ export interface ShaderOptions {
   /**
    * The shader type e.g. VertexShader or Fragment shader
    */
-  type: ShaderTypeOption
+  type: ShaderType
 }
 
 /**
@@ -46,11 +46,6 @@ export abstract class Shader {
    * The shader type as a  WebGL constant
    */
   public type: ShaderType
-
-  /**
-   * The shader type as readable name e.g. VertexShader or FragmentShader
-   */
-  public typeName: string
 
   /**
    * Whether compilation was successful

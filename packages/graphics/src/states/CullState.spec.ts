@@ -1,28 +1,22 @@
-import {
-  CullMode,
-  Device,
-  DeviceGL,
-  FrontFace,
-} from '../index'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { DeviceGL } from '../index'
 import { CullStateGL } from '../webgl/states'
 import { CullStateParams } from './CullState'
-import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/CullState', () => {
-
   let device: DeviceGL
   let stateA: CullStateGL
   let stateB: CullStateGL
   let stateC: CullStateGL
   let paramsA: CullStateParams = {
     enable: false,
-    cullMode: CullMode.Back,
-    frontFace: FrontFace.CounterClockWise,
+    cullMode: 'Back',
+    frontFace: 'CCW',
   }
   let paramsB: CullStateParams = {
     enable: true,
-    cullMode: CullMode.Front,
-    frontFace: FrontFace.ClockWise,
+    cullMode: 'Front',
+    frontFace: 'CW',
   }
 
   let keys = Object.keys(paramsA)
@@ -39,14 +33,14 @@ describe('glib/graphics/CullState', () => {
       stateC.resolve()
     })
     keys.forEach((key) => {
-      it (`${key} is a getter`, () => {
+      it(`${key} is a getter`, () => {
         expect(stateA[key]).toBe(paramsA[key])
       })
-      it (`${key} is a setter`, () => {
+      it(`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBe(paramsB[key])
       })
-      it (`${key} marks state as changed`, () => {
+      it(`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)

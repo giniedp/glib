@@ -1,3 +1,4 @@
+import { DepthFormat, textureTypeToWebGL } from '../../enums'
 import { DepthBuffer, FrameBuffer, FrameBufferOptions, TextureImage } from '../../resources'
 import { DeviceGL } from '../DeviceGL'
 import { DepthBufferGL } from './DepthBufferGL'
@@ -72,15 +73,27 @@ export class FrameBufferGL extends FrameBuffer {
         if (image.isCube) {
           this.attachedTypes[i] = gl.TEXTURE_CUBE_MAP_POSITIVE_X + image.targetFace
         } else {
-          this.attachedTypes[i] = image.type ?? gl.TEXTURE_2D
+          this.attachedTypes[i] = textureTypeToWebGL(image.type) ?? gl.TEXTURE_2D
         }
         this.colorAttachments[i] = image
         this.colorAttachmentPoints[i] = gl.COLOR_ATTACHMENT0 + i
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, this.colorAttachmentPoints[i], this.attachedTypes[i], image.resource, image.targetLevel)
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          this.colorAttachmentPoints[i],
+          this.attachedTypes[i],
+          image.resource,
+          image.targetLevel,
+        )
         count += 1
       } else {
         // unbind the old texture
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, this.attachedTypes[i] ?? gl.TEXTURE_2D, null, 0)
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          gl.COLOR_ATTACHMENT0 + i,
+          this.attachedTypes[i] ?? gl.TEXTURE_2D,
+          null,
+          0,
+        )
         this.colorAttachmentPoints[i] = 0
         this.colorAttachments[i] = null
         this.attachedTypes[i] = gl.TEXTURE_2D
@@ -132,7 +145,7 @@ export class FrameBufferGL extends FrameBuffer {
     let firstTexture = null
     let width = 0
     let height = 0
-    let depthFormat = 0
+    let depthFormat: DepthFormat = null
     for (const texture of textures) {
       firstTexture = texture
       if (texture) {

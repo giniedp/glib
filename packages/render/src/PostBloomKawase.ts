@@ -1,5 +1,5 @@
 import { PostKawaseBloomEffect, PostKawaseBloomOptions } from '@gglib/effects'
-import { DepthFormat, Device } from '@gglib/graphics'
+import { Device, TextureOptions } from '@gglib/graphics'
 import { RenderContext } from './RenderContext'
 import { RenderPass } from './Types'
 
@@ -27,10 +27,10 @@ export class PostBloomKawase implements RenderPass {
   }
   public halfSize: boolean = true
 
-  private targetOptions = {
+  private targetOptions: TextureOptions = {
     width: 2,
     height: 2,
-    depthFormat: DepthFormat.None,
+    depthFormat: 'None',
   }
 
   private effect: PostKawaseBloomEffect

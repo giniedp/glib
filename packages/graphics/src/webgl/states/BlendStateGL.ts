@@ -1,8 +1,8 @@
+import { blendFromWebGL, blendFunctionFromWebGL, blendFunctionToWebGL, blendToWebGL } from '../../enums'
 import { BlendState, BlendStateParams, IBlendState } from '../../states/BlendState'
 import { DeviceGL } from '../DeviceGL'
 
 export class BlendStateGL extends BlendState {
-
   public constructor(private device: DeviceGL) {
     super()
     this.resolve()
@@ -18,20 +18,30 @@ export class BlendStateGL extends BlendState {
       gl.disable(gl.BLEND)
     }
     if (changes.colorBlendFunction !== undefined || changes.alphaBlendFunction !== undefined) {
-      gl.blendEquationSeparate(this.colorBlendFunction, this.alphaBlendFunction)
+      gl.blendEquationSeparate(
+        blendFunctionToWebGL(this.colorBlendFunction),
+        blendFunctionToWebGL(this.alphaBlendFunction),
+      )
     }
     if (
       changes.colorSrcBlend !== undefined ||
       changes.colorDstBlend !== undefined ||
       changes.alphaSrcBlend !== undefined ||
-      changes.alphaDstBlend !== undefined) {
-      gl.blendFuncSeparate(this.colorSrcBlend, this.colorDstBlend, this.alphaSrcBlend, this.alphaDstBlend)
+      changes.alphaDstBlend !== undefined
+    ) {
+      gl.blendFuncSeparate(
+        blendToWebGL(this.colorSrcBlend),
+        blendToWebGL(this.colorDstBlend),
+        blendToWebGL(this.alphaSrcBlend),
+        blendToWebGL(this.alphaDstBlend),
+      )
     }
     if (
       changes.constantR !== undefined ||
       changes.constantG !== undefined ||
       changes.constantB !== undefined ||
-      changes.constantA !== undefined) {
+      changes.constantA !== undefined
+    ) {
       gl.blendColor(this.constantR, this.constantG, this.constantB, this.constantA)
     }
   }
@@ -54,19 +64,19 @@ export class BlendStateGL extends BlendState {
    */
   public static resolve<T>(gl: WebGLRenderingContext | WebGL2RenderingContext, out: T): T & IBlendState
   public static resolve(gl: WebGLRenderingContext | WebGL2RenderingContext, out: BlendStateParams = {}): IBlendState {
-    out.colorBlendFunction = gl.getParameter(gl.BLEND_EQUATION_RGB)
-    out.alphaBlendFunction = gl.getParameter(gl.BLEND_EQUATION_ALPHA)
-    out.colorSrcBlend = gl.getParameter(gl.BLEND_SRC_RGB)
-    out.alphaSrcBlend = gl.getParameter(gl.BLEND_SRC_ALPHA)
-    out.colorDstBlend = gl.getParameter(gl.BLEND_DST_RGB)
-    out.alphaDstBlend = gl.getParameter(gl.BLEND_DST_ALPHA)
+    out.colorBlendFunction = blendFunctionFromWebGL(gl.getParameter(gl.BLEND_EQUATION_RGB))
+    out.alphaBlendFunction = blendFunctionFromWebGL(gl.getParameter(gl.BLEND_EQUATION_ALPHA))
+    out.colorSrcBlend = blendFromWebGL(gl.getParameter(gl.BLEND_SRC_RGB))
+    out.alphaSrcBlend = blendFromWebGL(gl.getParameter(gl.BLEND_SRC_ALPHA))
+    out.colorDstBlend = blendFromWebGL(gl.getParameter(gl.BLEND_DST_RGB))
+    out.alphaDstBlend = blendFromWebGL(gl.getParameter(gl.BLEND_DST_ALPHA))
     const color = gl.getParameter(gl.BLEND_COLOR)
     // Linux Firefox returns null instead of an array if blend is disabled
     out.constantR = color ? color[0] : 0
     out.constantG = color ? color[1] : 0
     out.constantB = color ? color[2] : 0
     out.constantA = color ? color[3] : 0
-    out.enable = gl.getParameter(gl.BLEND)
+    out.enable = !!gl.getParameter(gl.BLEND)
     return out as IBlendState
   }
 }

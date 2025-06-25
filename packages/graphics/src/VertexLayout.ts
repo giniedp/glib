@@ -1,6 +1,6 @@
 import { Log, hasOwnProperty } from '@gglib/utils'
 
-import { DataType, DataTypeName, DataTypeOption, dataTypeSize, valueOfDataType } from './enums'
+import { DataType, dataTypeToSize } from './enums'
 
 /**
  * Describes an attribute of a vertex
@@ -19,7 +19,7 @@ export interface VertexAttribute {
   /**
    * The data type of a single element in this attribute
    */
-  type: DataTypeOption
+  type: DataType
   /**
    * The number of elements in this attribute. e.g. a vec3 has 3 elements
    */
@@ -86,29 +86,29 @@ export class VertexLayout {
    */
   public static Common: Record<AttributeSemantic, VertexAttribute> = {
     position: {
-      type: DataType.float,
+      type: 'float32',
       elements: 3,
     },
     color: {
-      type: DataType.ubyte,
+      type: 'uint8',
       elements: 4,
       normalize: true,
       packed: true,
     },
     normal: {
-      type: DataType.float,
+      type: 'float32',
       elements: 3,
     },
     tangent: {
-      type: DataType.float,
+      type: 'float32',
       elements: 3,
     },
     bitangent: {
-      type: DataType.float,
+      type: 'float32',
       elements: 3,
     },
     texture: {
-      type: DataType.float,
+      type: 'float32',
       elements: 2,
     },
   }
@@ -130,9 +130,9 @@ export class VertexLayout {
    * VertexLayout.create(['position', 'normal', 'texture']);
    * // returned layout is:
    * // {
-   * //    position: { offset: 0, type: 'float', elements: 3 }
-   * //    normal: { offset: 12, type: 'float', elements: 2 }
-   * //    texture: { offset: 24, type: 'float', elements: 2 }
+   * //    position: { offset: 0, type: 'float32', elements: 3 }
+   * //    normal: { offset: 12, type: 'float32', elements: 2 }
+   * //    texture: { offset: 24, type: 'float32', elements: 2 }
    * // }
    * ```
    */
@@ -145,7 +145,7 @@ export class VertexLayout {
       const attribute = vertexAttribute(name, { offset: offset })
       if (attribute) {
         result[name] = attribute
-        offset += dataTypeSize(attribute.type) * attribute.elements
+        offset += dataTypeToSize(attribute.type) * attribute.elements
       } else {
         Log.warn('[VertexLayout] No preset found for semantic:', name)
       }
@@ -208,7 +208,7 @@ export class VertexLayout {
   public static countBytes(layout: VertexLayout): number {
     let count = 0
     VertexLayout.forEach(layout, (_, item) => {
-      count += dataTypeSize(item.type) * item.elements
+      count += dataTypeToSize(item.type) * item.elements
     })
     return count
   }
@@ -221,7 +221,7 @@ export class VertexLayout {
     const target = layout[semantic]
     VertexLayout.forEach(layout, (_, item) => {
       if (item.offset < target.offset) {
-        count += dataTypeSize(item.type) * item.elements
+        count += dataTypeToSize(item.type) * item.elements
       }
     })
     return count
@@ -235,7 +235,7 @@ export class VertexLayout {
     let target = layout[semantic]
     VertexLayout.forEach(layout, (_, item) => {
       if (item.offset > target.offset) {
-        count += dataTypeSize(item.type) * item.elements
+        count += dataTypeToSize(item.type) * item.elements
       }
     })
     return count
@@ -263,14 +263,14 @@ export class VertexLayout {
    */
   public static convertArrayToBufferView(
     data: number[],
-    layoutOrType: string | VertexLayout,
+    layoutOrType: DataType | VertexLayout,
   ): ArrayBufferView<ArrayBuffer> {
     let layout: VertexLayout
     if (typeof layoutOrType === 'string') {
       layout = {
         element: {
           offset: 0,
-          type: valueOfDataType(layoutOrType as DataTypeName),
+          type: layoutOrType,
           elements: 1,
         },
       }
@@ -289,14 +289,15 @@ export class VertexLayout {
     const result = new ArrayBuffer(dataSize)
     const view = new DataView(result)
 
-    const viewSetter: { [k: number]: (o: number, v: number) => void } = {
-      [DataType.byte]: (o, v) => view.setInt8(o, v),
-      [DataType.ubyte]: (o, v) => view.setUint8(o, v),
-      [DataType.short]: (o, v) => view.setInt16(o, v, littleEndian),
-      [DataType.ushort]: (o, v) => view.setUint16(o, v, littleEndian),
-      [DataType.int]: (o, v) => view.setInt32(o, v, littleEndian),
-      [DataType.uint]: (o, v) => view.setUint32(o, v, littleEndian),
-      [DataType.float]: (o, v) => view.setFloat32(o, v, littleEndian),
+    const viewSetter: Record<DataType, ((o: number, v: number) => void)> = {
+      ['int8']: (o, v) => view.setInt8(o, v),
+      ['uint8']: (o, v) => view.setUint8(o, v),
+      ['int16']: (o, v) => view.setInt16(o, v, littleEndian),
+      ['uint16']: (o, v) => view.setUint16(o, v, littleEndian),
+      ['int32']: (o, v) => view.setInt32(o, v, littleEndian),
+      ['uint32']: (o, v) => view.setUint32(o, v, littleEndian),
+      ['float32']: (o, v) => view.setFloat32(o, v, littleEndian),
+      ['float16']: (o, v) => view.setUint16(o, v, littleEndian),
     }
 
     const channels = Object.keys(layout)
@@ -305,22 +306,22 @@ export class VertexLayout {
       .map((spec) => {
         const channel = {
           offset: spec.offset,
-          size: dataTypeSize(spec.type) * spec.elements,
+          size: dataTypeToSize(spec.type) * spec.elements,
           elements: spec.elements,
-          elementType: valueOfDataType(spec.type),
-          elementSize: dataTypeSize(spec.type),
+          elementType: spec.type,
+          elementSize: dataTypeToSize(spec.type),
           packed: !!spec.packed,
-          setter: viewSetter[valueOfDataType(spec.type)],
+          setter: viewSetter[spec.type],
         }
         if (channel.packed) {
           if (channel.size === 1) {
-            channel.setter = viewSetter[DataType.ubyte]
+            channel.setter = viewSetter['uint8']
           }
           if (channel.size === 2) {
-            channel.setter = viewSetter[DataType.ushort]
+            channel.setter = viewSetter['uint16']
           }
           if (channel.size === 4) {
-            channel.setter = viewSetter[DataType.uint]
+            channel.setter = viewSetter['uint32']
           }
         }
         return channel

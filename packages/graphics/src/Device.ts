@@ -1,4 +1,4 @@
-import { PixelFormat, PrimitiveType, PrimitiveTypeName, ShaderType } from './enums'
+import { PrimitiveType } from './enums'
 import {
   Buffer,
   BufferOptions,
@@ -39,9 +39,9 @@ import { Capabilities } from './Capabilities'
 import { Color } from './Color'
 import { Effect, EffectOptions } from './Effect'
 import { VertexBuffer, VertexBufferOptions } from './resources/VertexBuffer'
+import { Scheduler } from './Scheduler'
 import { SpriteBatch } from './SpriteBatch'
 import { AttributeSemantic, VertexLayout } from './VertexLayout'
-import { Scheduler } from './Scheduler'
 
 /**
  * Describes the Graphics Device
@@ -244,7 +244,7 @@ export abstract class Device<T = unknown> {
         ],
         width: 2,
         height: 2,
-        pixelFormat: PixelFormat.RGBA,
+        format: 'RGBA8_UNORM',
       })
     }
     return this.defaultTextureInstance
@@ -288,14 +288,14 @@ export abstract class Device<T = unknown> {
    * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
    */
   public abstract drawIndexedPrimitives(
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    primitiveType?: PrimitiveType,
     elementOffset?: number,
     elementCount?: number,
   ): this
 
   public abstract drawInstancedPrimitives(
     instanceCount?: number,
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    primitiveType?: PrimitiveType,
     offset?: number,
     count?: number,
   ): this
@@ -303,11 +303,7 @@ export abstract class Device<T = unknown> {
   /**
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
-  public abstract drawPrimitives(
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
-    offset?: number,
-    count?: number,
-  ): this
+  public abstract drawPrimitives(primitiveType?: PrimitiveType, offset?: number, count?: number): this
 
   /**
    * Draws a full screen quad with the [0,0] texture coordinate starting at the bottom left.
@@ -317,7 +313,7 @@ export abstract class Device<T = unknown> {
   public drawQuad(flipY?: boolean): this {
     this.quadIndexBuffer ||= this.createIndexBuffer({
       data: [0, 3, 1, 0, 2, 3],
-      dataType: 'ushort',
+      dataType: 'uint16',
     })
     this.quadVertexBufferFlipped ||= this.createVertexBuffer([
       {
@@ -329,7 +325,7 @@ export abstract class Device<T = unknown> {
            1, -1, 0, /* uv */ 1, 1
         ],
         layout: this.createVertexLayout(['position', 'texture']),
-        dataType: 'float',
+        dataType: 'float32',
       },
     ])
     this.quadVertexBuffer ||= this.createVertexBuffer([
@@ -342,7 +338,7 @@ export abstract class Device<T = unknown> {
            1, -1, 0, /* uv */ 1, 0,
         ],
         layout: this.createVertexLayout(['position', 'texture']),
-        dataType: 'float',
+        dataType: 'float32',
       },
     ])
 
@@ -445,7 +441,7 @@ export abstract class Device<T = unknown> {
    */
   public createVertexShader(options: Partial<ShaderOptions> = {}): Shader {
     return this.createShader({
-      type: ShaderType.VertexShader,
+      type: 'VertexShader',
       ...options,
     })
   }
@@ -455,7 +451,7 @@ export abstract class Device<T = unknown> {
    */
   public createFragmentShader(options: Partial<ShaderOptions> = {}): Shader {
     return this.createShader({
-      type: ShaderType.FragmentShader,
+      type: 'FragmentShader',
       ...options,
     })
   }

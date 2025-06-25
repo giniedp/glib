@@ -11,20 +11,21 @@ export interface HDRHeader {
   height: number
 }
 
-export function readHDR(data: ArrayBuffer): {
-  data: Float32Array
+export interface File {
   width: number
   height: number
-} {
+  float32: () => Float32Array
+}
+export function readHDR(data: ArrayBuffer): File {
   const reader = new BinaryReader(data)
   const header = readHeader(reader)
   const pixelData = readData(new Uint8Array(reader.data), reader.position, header.width, header.height)
   const hdrData = rgbeToFloat(pixelData)
 
   return {
-    data: hdrData,
     width: header.width,
     height: header.height,
+    float32: () => rgbeToFloat(pixelData),
   }
 }
 

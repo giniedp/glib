@@ -1,4 +1,3 @@
-import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { EffectPass, EffectPassOptions } from './EffectPass'
 
@@ -69,8 +68,6 @@ export class EffectTechnique {
   public get program0() {
     return this.pass0.program
   }
-
-
 
   private passesByName = new Map<string, EffectPass>()
 

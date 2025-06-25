@@ -2,7 +2,6 @@ import {
   BlendState,
   createShaderEffectSync,
   CullState,
-  DepthFormat,
   DepthState,
   Device,
   Effect,
@@ -99,15 +98,15 @@ export class PostTonemapEffect {
         this.downsampleTextures[i] = this.device.createRenderTarget({
           width: size,
           height: size,
-          depthFormat: DepthFormat.None,
+          depthFormat: 'None',
         })
       }
     })
     if (!this.lum1) {
-      this.lum1 = this.device.createRenderTarget({ width: 2, height: 2, depthFormat: DepthFormat.None })
+      this.lum1 = this.device.createRenderTarget({ width: 2, height: 2, depthFormat: 'None' })
     }
     if (!this.lum2) {
-      this.lum2 = this.device.createRenderTarget({ width: 2, height: 2, depthFormat: DepthFormat.None })
+      this.lum2 = this.device.createRenderTarget({ width: 2, height: 2, depthFormat: 'None' })
     }
   }
 

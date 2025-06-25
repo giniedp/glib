@@ -1,4 +1,4 @@
-import { DataType, PixelFormat, SurfaceFormat, TextureImageOptions } from '@gglib/graphics'
+import { TextureImageOptions } from '@gglib/graphics'
 import { BinaryReader } from '@gglib/utils'
 
 export interface Header {
@@ -54,10 +54,6 @@ function decodeRunLengthData(reader: BinaryReader, pixelSize: number, dataSize: 
     }
   }
   return result
-}
-
-export function parse(data: ArrayBuffer) {
-  return new File(data).getImageData()
 }
 
 export class File {
@@ -197,9 +193,7 @@ export class File {
       if (pixelDepth === 8) {
         return {
           source: this.decode_gray8('ui8'),
-          // TODO: R8 with RED is invalid in webgl 2, why?
-          pixelFormat: PixelFormat.LUMINANCE,
-          pixelType: DataType.ubyte,
+          format: 'R8_UNORM',
           width: this.width,
           height: this.height,
         }
@@ -207,9 +201,7 @@ export class File {
       if (pixelDepth === 16) {
         return {
           source: this.decode_gray16('f32'),
-          surfaceFormat: SurfaceFormat.R32F,
-          pixelFormat: PixelFormat.RED,
-          pixelType: DataType.float,
+          format: 'R32_FLOAT',
           width: this.width,
           height: this.height,
         }
@@ -220,28 +212,27 @@ export class File {
       switch (this.colorMapStride) {
         case 2:
           return {
-            source: this.decode_cm8('i5551'),
-            pixelFormat: PixelFormat.RGBA,
+            //source: this.decode_cm8('i5551'), // not supported by webgpu
+            source: this.decode_cm8('ui8888'),
+            format: 'RGBA8_UNORM',
             generateMipmap: true,
-            pixelType: DataType.ushort_5_5_5_1,
             width: this.width,
             height: this.height,
           }
         case 3:
           return {
-            source: this.decode_cm8('ui888'),
-            pixelFormat: PixelFormat.RGB,
+            // source: this.decode_cm8('ui888'), // not supported by webgpu
+            source: this.decode_cm8('ui8888'),
+            format: 'RGBA8_UNORM',
             generateMipmap: true,
-            pixelType: DataType.ubyte,
             width: this.width,
             height: this.height,
           }
         case 4:
           return {
             source: this.decode_cm8('ui8888'),
-            pixelFormat: PixelFormat.RGBA,
+            format: 'RGBA8_UNORM',
             generateMipmap: true,
-            pixelType: DataType.ubyte,
             width: this.width,
             height: this.height,
           }
@@ -249,20 +240,20 @@ export class File {
     }
     if (pixelDepth === 16) {
       return {
-        source: this.decode_rgba16('i5551'),
-        pixelFormat: PixelFormat.RGBA,
+        // source: this.decode_rgba16('i5551'), // not supported by webgpu
+        source: this.decode_rgba16('ui8888'),
+        format: 'RGBA8_UNORM',
         generateMipmap: true,
-        pixelType: DataType.ushort_5_5_5_1,
         width: this.width,
         height: this.height,
       }
     }
     if (pixelDepth === 24) {
       return {
-        source: this.decode_rgb24('ui888'),
+        // source: this.decode_rgb24('ui888'), // not supported by webgpu
+        source: this.decode_rgb24('ui8888'),
         generateMipmap: true,
-        pixelFormat: PixelFormat.RGB,
-        pixelType: DataType.ubyte,
+        format: 'RGBA8_UNORM',
         width: this.width,
         height: this.height,
       }
@@ -271,8 +262,7 @@ export class File {
       return {
         source: this.decode_rgba32('ui8888'),
         generateMipmap: true,
-        pixelFormat: PixelFormat.RGBA,
-        pixelType: DataType.ubyte,
+        format: 'RGBA8_UNORM',
         width: this.width,
         height: this.height,
       }

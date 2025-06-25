@@ -1,6 +1,6 @@
 import { Log, getOrCreateCanvas } from '@gglib/utils'
 
-import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
+import { PrimitiveType } from '../enums'
 import {
   Buffer,
   BufferOptions,
@@ -250,11 +250,7 @@ export class DeviceGPU extends Device<any> {
   /**
    * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
    */
-  public drawIndexedPrimitives(
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
-    elementOffset?: number,
-    elementCount?: number,
-  ): this {
+  public drawIndexedPrimitives(primitiveType?: PrimitiveType, elementOffset?: number, elementCount?: number): this {
     const iBuffer = this._indexBuffer
     if (!iBuffer) {
       throw new Error(`device.indexBuffer must be set before calling drawIndexedPrimitives()`)
@@ -301,7 +297,7 @@ export class DeviceGPU extends Device<any> {
    */
   public drawInstancedPrimitives(
     instanceCount?: number,
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    primitiveType?: PrimitiveType,
     offset?: number,
     count?: number,
   ): this {
@@ -333,7 +329,7 @@ export class DeviceGPU extends Device<any> {
   /**
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
-  public drawPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number): this {
+  public drawPrimitives(primitiveType?: PrimitiveType, offset?: number, count?: number): this {
     const vBuffer = this._vertexBuffer
     if (!vBuffer) {
       throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawPrimitives()`)
@@ -357,7 +353,7 @@ export class DeviceGPU extends Device<any> {
         layout: this.device.createPipelineLayout({ bindGroupLayouts: [] }),
         vertexStage: program.vertexStageDescriptor,
         fragmentStage: program.fragmentStageDescriptor,
-        primitiveTopology: toPrimitiveTopology(valueOfPrimitiveType(primitiveType)),
+        primitiveTopology: toPrimitiveTopology(primitiveType),
         colorStates: [
           {
             ...this._blendState.gpuState,
@@ -427,8 +423,7 @@ export class DeviceGPU extends Device<any> {
           width: displayWidth,
           height: displayHeight,
           generateMipmap: false,
-          pixelFormat: 'RGBA',
-          pixelType: 'byte',
+          format: 'RGBA8_UNORM',
         }),
       )
       this.set(
@@ -572,7 +567,7 @@ export class DeviceGPU extends Device<any> {
    */
   public createIndexBuffer(options: BufferOptions): BufferGPU {
     options.type = 'IndexBuffer'
-    options.dataType = options.dataType || 'ushort'
+    options.dataType = options.dataType || 'uint16'
     return new BufferGPU(this, options)
   }
 

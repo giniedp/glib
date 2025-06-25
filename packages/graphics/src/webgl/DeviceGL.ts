@@ -2,7 +2,7 @@ import { getOrCreateCanvas, Log, removeFromArrayUnstable } from '@gglib/utils'
 import { Color, RGBA_FORMAT } from '../Color'
 import { Device } from '../Device'
 import { Effect, EffectOptions } from '../Effect'
-import { PrimitiveType, PrimitiveTypeName, valueOfPrimitiveType } from '../enums'
+import { dataTypeToWebGL, PrimitiveType, primitiveTypeToWebGL } from '../enums'
 
 import {
   Buffer,
@@ -271,11 +271,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
    *
    *
    */
-  public drawIndexedPrimitives(
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
-    elementOffset?: number,
-    elementCount?: number,
-  ): this {
+  public drawIndexedPrimitives(primitiveType?: PrimitiveType, elementOffset?: number, elementCount?: number): this {
     const iBuffer = this._indexBuffer
     if (!iBuffer) {
       throw new Error(`device.indexBuffer must be set before calling drawIndexedPrimitives()`)
@@ -295,8 +291,11 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
       return
     }
 
-    const dataType = iBuffer.dataType
-    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
+    const dataType = dataTypeToWebGL(iBuffer.dataType)
+    if (primitiveType) {
+      // console.log(primitiveType)
+    }
+    const type = primitiveTypeToWebGL(primitiveType || 'TriangleList')
 
     elementOffset = (elementOffset || 0) * iBuffer.stride
     elementCount = elementCount || iBuffer.elementCount
@@ -313,7 +312,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
    */
   public drawInstancedPrimitives(
     instanceCount?: number,
-    primitiveType?: PrimitiveType | PrimitiveTypeName,
+    primitiveType?: PrimitiveType,
     offset?: number,
     count?: number,
   ): this {
@@ -339,8 +338,8 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
     }
 
     if (isWebGL2(this.context)) {
-      const dataType = iBuffer.dataType
-      const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
+      const dataType = dataTypeToWebGL(iBuffer.dataType)
+      const type = primitiveTypeToWebGL(primitiveType || 'TriangleList')
 
       offset = offset || 0
       count = count || iBuffer.elementCount
@@ -359,7 +358,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
   /**
    * Renders geometry defined by current vertex buffer and the given primitive type.
    */
-  public drawPrimitives(primitiveType?: PrimitiveType | PrimitiveTypeName, offset?: number, count?: number): this {
+  public drawPrimitives(primitiveType?: PrimitiveType, offset?: number, count?: number): this {
     const vBuffer = this._vertexBuffer
     if (!vBuffer) {
       throw new Error(`device.vertexBuffer or device.vertexBuffers must be set before calling drawPrimitives()`)
@@ -374,7 +373,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
       return
     }
 
-    const type = valueOfPrimitiveType(primitiveType) || PrimitiveType.TriangleList
+    const type = primitiveTypeToWebGL(primitiveType || 'TriangleList')
     count = count || vBuffer.buffers[0].elementCount
     offset = offset || 0
 
@@ -619,7 +618,7 @@ export class DeviceGL extends Device<WebGL2RenderingContext> {
    */
   public createIndexBuffer(options: BufferOptions): BufferGL {
     options.type = 'IndexBuffer'
-    options.dataType = options.dataType || 'ushort'
+    options.dataType ??= 'uint16'
     return new BufferGL(this, options)
   }
 

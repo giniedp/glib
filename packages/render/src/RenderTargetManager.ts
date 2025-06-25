@@ -18,10 +18,7 @@ export class RenderTargetManager {
     if (a.width !== b.width || a.height !== b.height) {
       return false
     }
-    if (a.depthFormat !== b.depthFormat || a.surfaceFormat !== b.surfaceFormat) {
-      return false
-    }
-    if (a.pixelFormat !== b.pixelFormat || a.pixelType !== b.pixelType) {
+    if (a.depthFormat !== b.depthFormat || a.format !== b.format) {
       return false
     }
     // if (!a.samplerParams && !b.samplerParams) {
@@ -112,9 +109,7 @@ export class RenderTargetManager {
         width: opts.width,
         height: opts.height,
         depthFormat: opts.depthFormat,
-        surfaceFormat: opts.surfaceFormat,
-        pixelFormat: opts.pixelFormat,
-        pixelType: opts.pixelType,
+        format: opts.format,
       }
     }
     Log.debug('[Render.Manager]', 'create render target', opts)

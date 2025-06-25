@@ -9,9 +9,8 @@ import {
   DepthState,
   DepthStateOptions,
   DepthStateParams,
-  PrimitiveBatch,
-  PrimitiveType,
   EffectTechnique,
+  PrimitiveBatch,
   SpriteBatch,
   StencilState,
   StencilStateOptions,
@@ -143,7 +142,7 @@ export class BasicRenderPass implements RenderPass {
     })
     this.primitiveBatch.begin({
       viewProjection: uniforms.ViewProjection.value,
-      primitiveType: PrimitiveType.LineList,
+      primitiveType: 'LineList',
     })
     this.renderItems(context, camera.layerMask)
     this.spriteBatch.end()

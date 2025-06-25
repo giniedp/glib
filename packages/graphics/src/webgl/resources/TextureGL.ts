@@ -1,5 +1,14 @@
 import { Device } from '../../Device'
-import { ArrayType } from '../../enums'
+import {
+  dataTypeFromWebGL,
+  dataTypeToArrayType,
+  surfaceFormatToWebGL,
+  surfaceFormatToWebGLDataType,
+  surfaceFormatToWebGLFormat,
+  textureFilterToWebGL,
+  textureTypeToWebGL,
+  textureWrapModeToWebGL,
+} from '../../enums'
 import { TextureDataOption, TextureImage, TextureImageOptions } from '../../resources/TextureImage'
 import { TextureSource } from '../../resources/TextureSource'
 import type { DeviceGL } from '../DeviceGL'
@@ -31,6 +40,11 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
    */
   public referenceCount: number
 
+  public glType: GLenum
+  public glInternalFormat: GLenum
+  public glDataFormat: GLenum
+  public glDataType: GLenum
+
   /**
    * Constructs an instance of a Texture.
    *
@@ -49,27 +63,33 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
       this.disposeResource()
     }
 
-    this.resource = this.device.context.createTexture()
     const gl = this.device.context
-    gl.bindTexture(this.type, this.resource)
+
+    this.glType = textureTypeToWebGL(this.type)
+    this.glInternalFormat = surfaceFormatToWebGL(this.format)
+    this.glDataFormat = surfaceFormatToWebGLFormat(this.format)
+    this.glDataType = surfaceFormatToWebGLDataType(this.format)
+    this.resource = this.device.context.createTexture()
+
+    gl.bindTexture(this.glType, this.resource)
     const faceCount = this.isCube ? 6 : 1
-    const faceType = this.isCube ? gl.TEXTURE_CUBE_MAP_POSITIVE_X : this.type
+    const faceType = this.isCube ? gl.TEXTURE_CUBE_MAP_POSITIVE_X : this.glType
     if (!this.isCompressed) {
       for (let i = 0; i < faceCount; i++) {
         this.device.context.texImage2D(
           faceType + i,
           0,
-          this.surfaceFormat,
+          this.glInternalFormat,
           this.width,
           this.height,
           0,
-          this.pixelFormat,
-          this.pixelType,
+          this.glDataFormat,
+          this.glDataType,
           null,
         )
       }
     }
-    this.device.context.bindTexture(this.type, null)
+    this.device.context.bindTexture(this.glType, null)
     this.update()
   }
 
@@ -100,7 +120,7 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
    * @returns the previously bound texture handle
    */
   public bind(): this {
-    this.device.context.bindTexture(this.type, this.resource)
+    this.device.context.bindTexture(this.glType, this.resource)
     return this
   }
 
@@ -132,26 +152,27 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
     if (ArrayBuffer.isView(data)) {
       buffer = data
     } else if (Array.isArray(data) || data instanceof ArrayBuffer) {
-      buffer = new ArrayType[this.pixelType](data)
+      const ArrayType = dataTypeToArrayType(dataTypeFromWebGL(this.glDataType))
+      buffer = new ArrayType(data)
     } else {
       throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
     }
 
-    this.device.context.bindTexture(this.type, this.resource)
+    this.device.context.bindTexture(this.glType, this.resource)
     this.device.context.texImage2D(
-      this.type,
+      this.glType,
       0,
-      this.pixelFormat,
+      this.glInternalFormat,
       width,
       height,
       0,
-      this.pixelFormat,
-      this.pixelType,
+      this.glDataFormat,
+      this.glDataType,
       buffer,
     )
 
     this.updateMipmaps()
-    this.device.context.bindTexture(this.type, null)
+    this.device.context.bindTexture(this.glType, null)
 
     this.set('width', width)
     this.set('height', height)
@@ -170,15 +191,15 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
       this.device.canFilterHalf
       this.device.canRenderFloat
       this.device.canRenderHalf
-      gl.bindTexture(this.type, this.resource)
+      gl.bindTexture(this.glType, this.resource)
       if (this.sampler) {
-        gl.texParameteri(this.type, gl.TEXTURE_MIN_FILTER, this.sampler.minFilter ?? gl.LINEAR)
-        gl.texParameteri(this.type, gl.TEXTURE_MAG_FILTER, this.sampler.magFilter ?? gl.LINEAR)
-        gl.texParameteri(this.type, gl.TEXTURE_WRAP_S, this.sampler.wrapU ?? gl.CLAMP_TO_EDGE)
-        gl.texParameteri(this.type, gl.TEXTURE_WRAP_T, this.sampler.wrapW ?? gl.CLAMP_TO_EDGE)
+        gl.texParameteri(this.glType, gl.TEXTURE_MIN_FILTER, textureFilterToWebGL(this.sampler.minFilter) ?? gl.LINEAR)
+        gl.texParameteri(this.glType, gl.TEXTURE_MAG_FILTER, textureFilterToWebGL(this.sampler.magFilter) ?? gl.LINEAR)
+        gl.texParameteri(this.glType, gl.TEXTURE_WRAP_S, textureWrapModeToWebGL(this.sampler.wrapU) ?? gl.CLAMP_TO_EDGE)
+        gl.texParameteri(this.glType, gl.TEXTURE_WRAP_T, textureWrapModeToWebGL(this.sampler.wrapW) ?? gl.CLAMP_TO_EDGE)
       }
-      gl.generateMipmap(this.type)
-      gl.bindTexture(this.type, null)
+      gl.generateMipmap(this.glType)
+      gl.bindTexture(this.glType, null)
     }
     return this
   }
@@ -232,7 +253,7 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
               this.device.context.compressedTexImage2D(
                 gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
                 lvl,
-                this.surfaceFormat,
+                this.glInternalFormat,
                 width,
                 height,
                 0, // border
@@ -242,12 +263,12 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
               gl.texImage2D(
                 gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
                 lvl,
-                this.surfaceFormat,
+                this.glInternalFormat,
                 width,
                 height,
                 0,
-                this.pixelFormat,
-                this.pixelType,
+                this.glDataFormat,
+                this.glDataType,
                 data,
               )
             }
@@ -255,9 +276,9 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
             this.device.context.texImage2D(
               gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
               lvl,
-              this.surfaceFormat,
-              this.pixelFormat,
-              this.pixelType,
+              this.glInternalFormat,
+              this.glDataFormat,
+              this.glDataType,
               data,
             )
           }
@@ -278,9 +299,9 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
         if (ArrayBuffer.isView(data)) {
           if (this.isCompressed) {
             this.device.context.compressedTexImage2D(
-              this.type,
+              this.glType,
               lvl, // The mipmap level
-              this.surfaceFormat,
+              this.glInternalFormat,
               width,
               height,
               0, // border
@@ -288,24 +309,24 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
             )
           } else {
             this.device.context.texImage2D(
-              this.type,
+              this.glType,
               lvl, // The mipmap level
-              this.surfaceFormat,
+              this.glInternalFormat,
               width,
               height,
               0,
-              this.pixelFormat,
-              this.pixelType,
+              this.glDataFormat,
+              this.glDataType,
               data,
             )
           }
         } else {
           gl.texImage2D(
-            this.type,
+            this.glType,
             lvl, // The mipmap level
-            this.surfaceFormat,
-            this.pixelFormat,
-            this.pixelType,
+            this.glInternalFormat,
+            this.glDataFormat,
+            this.glDataType,
             data,
           )
         }
@@ -325,7 +346,7 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
           if (ArrayBuffer.isView(data)) {
             if (this.isCompressed) {
               this.device.context.compressedTexSubImage3D(
-                this.type,
+                this.glType,
                 lvl, // The mipmap level
                 0,
                 0,
@@ -333,12 +354,12 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
                 width,
                 height,
                 1, // depth
-                this.surfaceFormat,
+                this.glInternalFormat,
                 data, // The compressed data
               )
             } else {
               this.device.context.texSubImage3D(
-                this.type,
+                this.glType,
                 lvl, // The mipmap level
                 0,
                 0,
@@ -346,18 +367,18 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
                 width,
                 height,
                 i, // The layer index
-                this.pixelFormat,
-                this.pixelType,
+                this.glDataFormat,
+                this.glDataType,
                 data,
               )
             }
           } else {
             gl.texImage3D(
-              this.type,
+              this.glType,
               lvl, // The mipmap level
-              this.surfaceFormat,
-              this.pixelFormat,
-              this.pixelType,
+              this.glInternalFormat,
+              this.glDataFormat,
+              this.glDataType,
               i, // The layer index
               width,
               height,
@@ -381,7 +402,7 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
           const data = level[i]
           if (ArrayBuffer.isView(data)) {
             this.device.context.texSubImage3D(
-              this.type,
+              this.glType,
               lvl, // The mipmap level
               0,
               0,
@@ -389,17 +410,17 @@ export class TextureGL extends TextureImage implements SharedResource<TextureSou
               width,
               height,
               this.depth / divisor,
-              this.pixelFormat,
-              this.pixelType,
+              this.glDataFormat,
+              this.glDataType,
               data,
             )
           } else {
             gl.texImage3D(
-              this.type,
+              this.glType,
               lvl, // The mipmap level
-              this.surfaceFormat,
-              this.pixelFormat,
-              this.pixelType,
+              this.glInternalFormat,
+              this.glDataFormat,
+              this.glDataType,
               i, // The layer index
               width,
               height,

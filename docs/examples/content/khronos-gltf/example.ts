@@ -15,7 +15,7 @@ import {
   textureSourceFromImageUrl,
 } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
-import { GLTF } from '@gglib/loaders'
+import { GLTF, KTX } from '@gglib/loaders'
 import { AutoMaterial, LightParams, SkyboxMaterial } from '@gglib/materials'
 import { BoundingSphere, DEGREE_TO_RAD, Mat4, Transform, Vec3 } from '@gglib/math'
 import { Model, NodeData } from '@gglib/model'
@@ -51,6 +51,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const stats = device.stats()
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
+  content.registerLoader(KTX.Loader)
   content.registerMaterial({
     name: 'BasicEffect',
     type: AutoMaterial,

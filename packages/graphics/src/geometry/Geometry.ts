@@ -1,8 +1,7 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
-
 import { Device } from '../Device'
-import { PrimitiveType, PrimitiveTypeOption, valueOfPrimitiveType } from '../enums'
+import { PrimitiveType } from '../enums'
 import { Buffer, BufferOptions } from '../resources/Buffer'
 import { ShaderProgram } from '../resources/ShaderProgram'
 import { VertexBuffer, VertexBufferOptions } from '../resources/VertexBuffer'
@@ -51,7 +50,7 @@ export interface GeometryOptions {
   /**
    * The mode of the geometry. e.g. TrinagleList, LineList etc.
    */
-  primitiveType?: PrimitiveTypeOption
+  primitiveType?: PrimitiveType
 
   /**
    * Number of primitives to render
@@ -111,7 +110,7 @@ export class Geometry {
   /**
    * The vertex buffer primitive type
    */
-  public primitiveType: number
+  public primitiveType: PrimitiveType
 
   /**
    * The number of primitives to render
@@ -132,7 +131,7 @@ export class Geometry {
       this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
     }
     if (options.primitiveType) {
-      this.primitiveType = valueOfPrimitiveType(options.primitiveType) || PrimitiveType.TriangleList
+      this.primitiveType = options.primitiveType || 'TriangleList'
     }
     if (options.indexOffset !== undefined) {
       this.indexOffset = options.indexOffset || null

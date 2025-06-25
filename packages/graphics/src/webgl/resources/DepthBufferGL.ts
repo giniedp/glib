@@ -1,3 +1,4 @@
+import { depthFormatToWebGL } from '../../enums'
 import { DepthBuffer, DepthBufferOptions } from '../../resources/DepthBuffer'
 import { DeviceGL } from '../DeviceGL'
 
@@ -7,7 +8,6 @@ import { DeviceGL } from '../DeviceGL'
  * @public
  */
 export class DepthBufferGL extends DepthBuffer {
-
   /**
    * The graphics device
    */
@@ -17,6 +17,8 @@ export class DepthBufferGL extends DepthBuffer {
    * The wrapped WebGLRenderbuffer object
    */
   public resource: WebGLRenderbuffer
+
+  private glFormat: GLenum
 
   /**
    * Initializes a new instance
@@ -33,8 +35,9 @@ export class DepthBufferGL extends DepthBuffer {
     if (this.resource == null || this.device.context.isRenderbuffer(this.resource)) {
       const gl = this.device.context
       this.resource = gl.createRenderbuffer()
+      this.glFormat = depthFormatToWebGL(this.depthFormat)
       gl.bindRenderbuffer(gl.RENDERBUFFER, this.resource)
-      gl.renderbufferStorage(gl.RENDERBUFFER, this.depthFormat, this.width, this.height)
+      gl.renderbufferStorage(gl.RENDERBUFFER, this.glFormat, this.width, this.height)
       gl.bindRenderbuffer(gl.RENDERBUFFER, null)
     }
     return this

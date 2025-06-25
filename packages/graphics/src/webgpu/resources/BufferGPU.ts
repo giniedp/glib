@@ -1,4 +1,3 @@
-import { BufferType, BufferUsage } from '../../enums'
 import { Buffer, BufferDataOption, BufferOptions } from '../../resources/Buffer'
 import { DeviceGPU } from '../DeviceGPU'
 
@@ -27,24 +26,21 @@ export class BufferGPU extends Buffer {
 
   public create(): this {
     if (!this.resource) {
-
       let usage = GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
       if (this.isIndexBuffer) {
-
         usage = usage | GPUBufferUsage.INDEX
       }
       if (this.isVertexBuffer) {
-
         usage = usage | GPUBufferUsage.VERTEX
       }
       switch (this.usage) {
-        case BufferUsage.Dynamic:
+        case 'Dynamic':
           // TODO:
           break
-        case BufferUsage.Static:
+        case 'Static':
           // TODO:
           break
-        case BufferUsage.Stream:
+        case 'Stream':
           // TODO:
           break
         default:
@@ -74,11 +70,11 @@ export class BufferGPU extends Buffer {
    * Sets this buffer on the graphics device as current vertex or index buffer depending on the 'type' property
    */
   public bind(): this {
-    if (this.type === BufferType.IndexBuffer) {
+    if (this.type === 'IndexBuffer') {
       this.device.indexBuffer = this
-    } else if (this.type === BufferType.VertexBuffer) {
+    } else if (this.type === 'VertexBuffer') {
       // TODO:
-    } else  {
+    } else {
       throw new Error(`unknown buffer type: ${this.type}`)
     }
     return this
@@ -87,14 +83,10 @@ export class BufferGPU extends Buffer {
   /**
    *
    */
-  public setData(
-    src: BufferDataOption,
-    srcByteOffset?: number,
-    srcByteLength?: number,
-  ): this {
+  public setData(src: BufferDataOption, srcByteOffset?: number, srcByteLength?: number): this {
     const data = this.convertDataOption(src)
     const off = srcByteOffset || 0
-    const len = srcByteLength || (data.byteLength - off)
+    const len = srcByteLength || data.byteLength - off
     if (len !== this.sizeInBytes) {
       this.dispose()
       this.sizeInBytes = len
@@ -109,16 +101,11 @@ export class BufferGPU extends Buffer {
   /**
    *
    */
-  public setSubData(
-    byteOffset: number,
-    src: BufferDataOption,
-    srcByteOffset?: number,
-    srcByteLength?: number,
-  ): this {
+  public setSubData(byteOffset: number, src: BufferDataOption, srcByteOffset?: number, srcByteLength?: number): this {
     const data = this.convertDataOption(src)
     byteOffset = byteOffset || 0
     const off = srcByteOffset || 0
-    const len = srcByteLength || (data.byteLength - off)
+    const len = srcByteLength || data.byteLength - off
     // TODO: https://github.com/gpuweb/gpuweb/blob/main/design/BufferOperations.md
     throw new Error('not implemented')
     return this
@@ -127,12 +114,7 @@ export class BufferGPU extends Buffer {
   /**
    *
    */
-  public getBufferSubData(
-    srcByteOffset: number,
-    dst: ArrayBufferView,
-    dstOffset: number,
-    dstLength: number,
-  ): this {
+  public getBufferSubData(srcByteOffset: number, dst: ArrayBufferView, dstOffset: number, dstLength: number): this {
     throw new Error(`not supported`)
   }
 }

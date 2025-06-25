@@ -1,4 +1,3 @@
-import { DepthFormat } from '../../enums'
 import { DepthBuffer, DepthBufferOptions } from '../../resources/DepthBuffer'
 import { DeviceGPU } from '../DeviceGPU'
 
@@ -8,7 +7,6 @@ import { DeviceGPU } from '../DeviceGPU'
  * @public
  */
 export class DepthBufferGPU extends DepthBuffer {
-
   /**
    * The graphics device
    */
@@ -21,11 +19,11 @@ export class DepthBufferGPU extends DepthBuffer {
 
   private get depthFormatGPU() {
     switch (this.depthFormat) {
-      case DepthFormat.Depth32:
+      case 'Depth32':
         return 'depth32float'
-      case DepthFormat.Depth32Stencil8:
-      case DepthFormat.Depth24Stencil8:
-      case DepthFormat.DepthStencil:
+      case 'Depth32Stencil8':
+      case 'Depth24Stencil8':
+      case 'DepthStencil':
         return 'depth24plus-stencil8'
       default:
         return 'depth24plus'

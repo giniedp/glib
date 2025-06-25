@@ -1,6 +1,6 @@
 import { Capabilities } from '../Capabilities'
 import type { Device } from '../Device'
-import { SurfaceFormat } from '../enums'
+import { SurfaceFormat, surfaceFormatToWebGLExtension } from '../enums'
 import { isWebGL2 } from './utils'
 
 export type KeysOf<T, P> = {
@@ -50,46 +50,46 @@ export class CapabilitiesGL implements Capabilities {
     return this.parameter('MAX_FRAGMENT_UNIFORM_VECTORS')
   }
 
-  get maxDrawBuffers(): number {
+  public get maxDrawBuffers(): number {
     return isWebGL2(this.gl)
       ? this.parameter('MAX_DRAW_BUFFERS')
       : this.extension('WEBGL_draw_buffers')?.MAX_DRAW_BUFFERS_WEBGL
   }
 
-  get maxColorAttachments(): number {
+  public get maxColorAttachments(): number {
     return isWebGL2(this.gl)
       ? this.parameter('MAX_COLOR_ATTACHMENTS')
       : this.extension('WEBGL_draw_buffers')?.MAX_COLOR_ATTACHMENTS_WEBGL
   }
 
-  get textureFormatFloat() {
+  public get textureFormatFloat() {
     return !!this.extension('OES_texture_float') || isWebGL2(this.gl)
   }
-  get textureFormatHalfFloat() {
+  public get textureFormatHalfFloat() {
     return !!this.extension('OES_texture_half_float') || isWebGL2(this.gl)
   }
 
-  constructor(device: Device<WebGLRenderingContext | WebGL2RenderingContext>) {
+  public constructor(device: Device<WebGLRenderingContext | WebGL2RenderingContext>) {
     this.device = device
     this.gl = device.context
   }
 
-  get textureCompressionAstc(): boolean {
+  public get textureCompressionAstc(): boolean {
     return !!this.extension('WEBGL_compressed_texture_astc')
   }
-  get textureCompressionEtc2(): boolean {
+  public get textureCompressionEtc2(): boolean {
     return !!this.extension('WEBGL_compressed_texture_etc')
   }
-  get textureCompressionEtc1(): boolean {
+  public get textureCompressionEtc1(): boolean {
     return !!this.extension('WEBGL_compressed_texture_etc1')
   }
-  get textureCompressionPvrtc(): boolean {
+  public get textureCompressionPvrtc(): boolean {
     return !!this.extension('WEBGL_compressed_texture_pvrtc')
   }
-  get textureCompressionBc(): boolean {
+  public get textureCompressionBc(): boolean {
     return !!this.extension('WEBGL_compressed_texture_s3tc')
   }
-  get textureCompressionBptc(): boolean {
+  public get textureCompressionBptc(): boolean {
     return !!this.extension('EXT_texture_compression_bptc')
   }
 
@@ -169,68 +169,10 @@ export class CapabilitiesGL implements Capabilities {
   }
 
   public isFormatSupported(format: SurfaceFormat): boolean {
-    const extension = SURFACE_TO_EXTENSION[format]
+    const extension = surfaceFormatToWebGLExtension(format)
     if (!extension) {
       return true
     }
-    return !!this.extension(extension)
+    return !!this.extension(extension as any)
   }
-}
-
-const SURFACE_TO_EXTENSION = {
-  // BC
-  [SurfaceFormat.COMPRESSED_RGBA_S3TC_DXT1_EXT]: 'WEBGL_compressed_texture_s3tc',
-  [SurfaceFormat.COMPRESSED_RGBA_S3TC_DXT3_EXT]: 'WEBGL_compressed_texture_s3tc',
-  [SurfaceFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT]: 'WEBGL_compressed_texture_s3tc',
-  [SurfaceFormat.COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT]: 'WEBGL_compressed_texture_s3tc_srgb',
-  [SurfaceFormat.COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT]: 'WEBGL_compressed_texture_s3tc_srgb',
-  [SurfaceFormat.COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT]: 'WEBGL_compressed_texture_s3tc_srgb',
-  [SurfaceFormat.COMPRESSED_RED_RGTC1_EXT]: 'EXT_texture_compression_rgtc',
-  [SurfaceFormat.COMPRESSED_SIGNED_RED_RGTC1_EXT]: 'EXT_texture_compression_rgtc',
-  [SurfaceFormat.COMPRESSED_RED_GREEN_RGTC2_EXT]: 'EXT_texture_compression_rgtc',
-  [SurfaceFormat.COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT]: 'EXT_texture_compression_rgtc',
-  [SurfaceFormat.COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT]: 'EXT_texture_compression_bptc',
-  [SurfaceFormat.COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT]: 'EXT_texture_compression_bptc',
-  [SurfaceFormat.COMPRESSED_RGBA_BPTC_UNORM_EXT]: 'EXT_texture_compression_bptc',
-  [SurfaceFormat.COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT]: 'EXT_texture_compression_bptc',
-  // ETC2
-  [SurfaceFormat.COMPRESSED_R11_EAC]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_SIGNED_R11_EAC]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_RG11_EAC]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_SIGNED_RG11_EAC]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_RGB8_ETC2]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ETC2]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_RGBA8_ETC2_EAC]: 'WEBGL_compressed_texture_etc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ETC2_EAC]: 'WEBGL_compressed_texture_etc',
-  // ASTC
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_4x4_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_5x4_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_5x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_6x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_6x6_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_8x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_8x6_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_8x8_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_10x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_10x6_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_10x8_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_10x10_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_12x10_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_RGBA_ASTC_12x12_KHR]: 'WEBGL_compressed_texture_astc',
-  [SurfaceFormat.COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR]: 'WEBGL_compressed_texture_astc',
 }

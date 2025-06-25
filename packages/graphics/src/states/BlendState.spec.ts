@@ -1,26 +1,21 @@
-import {
-  Blend,
-  BlendFunction,
-  DeviceGL,
-} from '../index'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { DeviceGL } from '../index'
 import { BlendStateGL } from '../webgl/states'
 import { BlendStateParams } from './BlendState'
-import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('glib/graphics/BlendState', () => {
-
   let device: DeviceGL
   let stateA: BlendStateGL
   let stateB: BlendStateGL
   let stateC: BlendStateGL
   let paramsA: BlendStateParams = {
-    colorBlendFunction: BlendFunction.Add,
-    alphaBlendFunction: BlendFunction.Subtract,
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Subtract',
 
-    colorSrcBlend: Blend.SrcColor,
-    alphaSrcBlend: Blend.SrcAlpha,
-    colorDstBlend: Blend.DstColor,
-    alphaDstBlend: Blend.DstAlpha,
+    colorSrcBlend: 'SrcColor',
+    alphaSrcBlend: 'SrcAlpha',
+    colorDstBlend: 'DstColor',
+    alphaDstBlend: 'DstAlpha',
 
     constantR: 0.1,
     constantG: 0.2,
@@ -29,13 +24,13 @@ describe('glib/graphics/BlendState', () => {
     enable: true,
   }
   let paramsB: BlendStateParams = {
-    colorBlendFunction: BlendFunction.Subtract,
-    alphaBlendFunction: BlendFunction.Add,
+    colorBlendFunction: 'Subtract',
+    alphaBlendFunction: 'Add',
 
-    colorSrcBlend: Blend.DstColor,
-    alphaSrcBlend: Blend.DstAlpha,
-    colorDstBlend: Blend.SrcColor,
-    alphaDstBlend: Blend.SrcAlpha,
+    colorSrcBlend: 'DstColor',
+    alphaSrcBlend: 'DstAlpha',
+    colorDstBlend: 'SrcColor',
+    alphaDstBlend: 'SrcAlpha',
 
     constantR: 0.4,
     constantG: 0.3,
@@ -59,18 +54,18 @@ describe('glib/graphics/BlendState', () => {
       stateC.resolve()
     })
     keys.forEach((key) => {
-      it (`${key} is a getter`, () => {
+      it(`${key} is a getter`, () => {
         if (key === 'enable') {
           expect(stateA[key]).toBe(paramsA[key])
         } else {
           expect(stateA[key]).toBeCloseTo(paramsA[key])
         }
       })
-      it (`${key} is a setter`, () => {
+      it(`${key} is a setter`, () => {
         stateA[key] = paramsB[key]
         expect(stateA[key]).toBeCloseTo(paramsB[key])
       })
-      it (`${key} marks state as changed`, () => {
+      it(`${key} marks state as changed`, () => {
         expect(stateC.isDirty).toBe(false)
         stateC[key] = paramsB[key]
         expect(stateC.isDirty).toBe(true)

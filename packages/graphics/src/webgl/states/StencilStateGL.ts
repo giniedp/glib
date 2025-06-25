@@ -1,9 +1,8 @@
-import { CullMode } from '../../enums'
+import { compareFunctionToWebGL, stencilOperationToWebGL } from '../../enums'
 import { IStencilState, StencilState } from '../../states/StencilState'
 import { DeviceGL } from '../DeviceGL'
 
 export class StencilStateGL extends StencilState {
-
   public constructor(private device: DeviceGL) {
     super()
     this.resolve()
@@ -20,21 +19,48 @@ export class StencilStateGL extends StencilState {
     }
 
     if (changes.stencilFunction !== null || changes.stencilReference !== null || changes.stencilMask !== null) {
-      gl.stencilFuncSeparate(CullMode.Front, this.stencilFunction, this.stencilReference, this.stencilMask)
+      gl.stencilFuncSeparate(
+        gl.FRONT,
+        compareFunctionToWebGL(this.stencilFunction),
+        this.stencilReference,
+        this.stencilMask,
+      )
     }
 
     if (changes.stencilFail !== null || changes.stencilDepthFail !== null || changes.stencilDepthPass !== null) {
-      gl.stencilOpSeparate(CullMode.Front, this.stencilFail, this.stencilDepthFail, this.stencilDepthPass)
+      gl.stencilOpSeparate(
+        gl.FRONT,
+        stencilOperationToWebGL(this.stencilFail),
+        stencilOperationToWebGL(this.stencilDepthFail),
+        stencilOperationToWebGL(this.stencilDepthPass),
+      )
     }
 
-    if (changes.stencilBackFunction !== null || changes.stencilBackReference !== null || changes.stencilBackMask !== null) {
-      gl.stencilFuncSeparate(CullMode.Back, this.stencilBackFunction, this.stencilBackReference, this.stencilBackMask)
+    if (
+      changes.stencilBackFunction !== null ||
+      changes.stencilBackReference !== null ||
+      changes.stencilBackMask !== null
+    ) {
+      gl.stencilFuncSeparate(
+        gl.BACK,
+        compareFunctionToWebGL(this.stencilBackFunction),
+        this.stencilBackReference,
+        this.stencilBackMask,
+      )
     }
 
-    if (changes.stencilBackFail !== null || changes.stencilBackDepthFail !== null || changes.stencilBackDepthPass !== null) {
-      gl.stencilOpSeparate(CullMode.Back, this.stencilBackFail, this.stencilBackDepthFail, this.stencilBackDepthPass)
+    if (
+      changes.stencilBackFail !== null ||
+      changes.stencilBackDepthFail !== null ||
+      changes.stencilBackDepthPass !== null
+    ) {
+      gl.stencilOpSeparate(
+        gl.BACK,
+        stencilOperationToWebGL(this.stencilBackFail),
+        stencilOperationToWebGL(this.stencilBackDepthFail),
+        stencilOperationToWebGL(this.stencilBackDepthPass),
+      )
     }
-
   }
 
   /**
@@ -46,7 +72,7 @@ export class StencilStateGL extends StencilState {
     return this
   }
 
-  public static resolve(gl: WebGLRenderingContext, out: any= {}): IStencilState {
+  public static resolve(gl: WebGLRenderingContext, out: any = {}): IStencilState {
     out.enable = gl.getParameter(gl.STENCIL_TEST)
 
     out.stencilFunction = gl.getParameter(gl.STENCIL_FUNC)
@@ -66,5 +92,4 @@ export class StencilStateGL extends StencilState {
     out.stencilBackDepthPass = gl.getParameter(gl.STENCIL_BACK_PASS_DEPTH_PASS)
     return out
   }
-
 }

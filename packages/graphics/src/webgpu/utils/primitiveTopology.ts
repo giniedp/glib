@@ -1,12 +1,11 @@
 import { PrimitiveType } from '../../enums'
 
-const lookup: { [k: number]: GPUPrimitiveTopology } = {
-  [PrimitiveType.PointList]: 'point-list',
-  [PrimitiveType.LineList]: 'line-list',
-  [PrimitiveType.LineStrip]: 'line-strip',
-  [PrimitiveType.TriangleList]: 'triangle-list',
-  [PrimitiveType.TriangleStrip]: 'triangle-strip',
-  [PrimitiveType.TriangleFan]: null,
+const lookup: Record<PrimitiveType, GPUPrimitiveTopology> = {
+  PointList: 'point-list',
+  LineList: 'line-list',
+  LineStrip: 'line-strip',
+  TriangleList: 'triangle-list',
+  TriangleStrip: 'triangle-strip',
 }
 
 export function toPrimitiveTopology(v: PrimitiveType): GPUPrimitiveTopology {

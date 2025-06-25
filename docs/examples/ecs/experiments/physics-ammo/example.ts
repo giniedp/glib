@@ -14,7 +14,7 @@ import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, GameProvider, GameSystem } from '@gglib/ecs'
 import { GameTransform } from '@gglib/ecs/dist/ecs/src/GameTransform'
 import { BlendState, Color, DepthState, Device } from '@gglib/graphics'
-import { Keyboard, KeyboardKey, Mouse } from '@gglib/input'
+import { KeyboardKey } from '@gglib/input'
 import { MTL, OBJ } from '@gglib/loaders'
 import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
@@ -47,12 +47,16 @@ class Game extends BasicGame {
   public constructor(canvas: HTMLCanvasElement) {
     super(canvas)
 
-    this.addSystem(new KeyboardInput({
-      //
-    }))
-    this.addSystem(new MouseInput({
-      preventDefault: true,
-    }))
+    this.addSystem(
+      new KeyboardInput({
+        //
+      }),
+    )
+    this.addSystem(
+      new MouseInput({
+        preventDefault: true,
+      }),
+    )
     this.addSystem(new PhysicsWorld())
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
@@ -84,7 +88,7 @@ class Game extends BasicGame {
           fov: 70 * DEGREE_TO_RAD,
           aspect: 16 / 9,
         }),
-        new WASDComponent()
+        new WASDComponent(),
       ],
       transform: {
         position: Vec3.create(0, 10, 25),
@@ -126,7 +130,12 @@ class Game extends BasicGame {
   }
 
   public override update() {
-    this.camera.projection.initPerspectiveFieldOfView(70 * DEGREE_TO_RAD, this.get(Device).drawingBufferAspectRatio, 0.01, 1000)
+    this.camera.projection.initPerspectiveFieldOfView(
+      70 * DEGREE_TO_RAD,
+      this.get(Device).drawingBufferAspectRatio,
+      0.01,
+      1000,
+    )
     if (this.get(KeyboardInput).justReleased(KeyboardKey.Space)) {
       this.resetCubes()
     }

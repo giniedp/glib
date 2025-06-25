@@ -1,21 +1,20 @@
 import { Blend } from '../../enums'
 
-const lookup: { [k: number]: GPUBlendFactor } = {
-  [Blend.Zero]: 'zero',
-  [Blend.One]: 'one',
-  [Blend.SrcColor]: 'src-color',
-  [Blend.SrcColorInv]: 'one-minus-src-color',
-  [Blend.SrcAlpha]: 'src-alpha',
-  [Blend.SrcAlphaInv]: 'one-minus-src-alpha',
-  [Blend.SrcAlphaSat]: 'src-alpha-saturated',
-  [Blend.DstColor]: 'dst-color',
-  [Blend.DstColorInv]: 'one-minus-dst-color',
-  [Blend.DstAlpha]: 'dst-alpha',
-  [Blend.DstAlphaInv]: 'one-minus-dst-alpha',
-  [Blend.ConstantColor]: 'blend-color',
-  [Blend.ConstantColorInv]: 'one-minus-blend-color',
-  // [Blend.ConstantAlpha]:
-  // [Blend.ConstantAlphaInv]:
+const lookup: Record<Blend, GPUBlendFactor> = {
+  Zero: 'zero',
+  One: 'one',
+  SrcColor: 'src-color',
+  OneMinusSrcColor: 'one-minus-src-color',
+  SrcAlpha: 'src-alpha',
+  OneMinusSrcAlpha: 'one-minus-src-alpha',
+  SrcAlphaSaturated: 'src-alpha-saturated',
+  DstColor: 'dst-color',
+  OneMinusDstColor: 'one-minus-dst-color',
+  DstAlpha: 'dst-alpha',
+  OneMinusDstAlpha: 'one-minus-dst-alpha',
+  BlendColor: 'blend-color',
+  OneMinusBlendColor: 'one-minus-blend-color',
+  BlendAlpha: null,
 }
 
 export function toBlendFactor(v: Blend): GPUBlendFactor {

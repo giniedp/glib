@@ -1,6 +1,6 @@
 import { Log, Uri } from '@gglib/utils'
-import { DataTypeOption } from '../enums'
 import { toArrayBufferView } from './utils'
+import { SurfaceFormat } from '../enums'
 
 export type TextureData = TexImageSource | ArrayBufferView
 
@@ -203,7 +203,7 @@ export interface CreateTextureSourceOptions {
   videoTypes?: string[]
   width?: number
   height?: number
-  type?: DataTypeOption
+  format?: SurfaceFormat
 }
 
 export function createTextureSource(source: TextureSourceInput, options?: CreateTextureSourceOptions): TextureSource {
@@ -239,10 +239,10 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
     if (!options.width || !options.height) {
       throw new Error(`Invalid options for creating texture source. Width and height must be specified.`)
     }
-    if (!options.type) {
-      throw new Error(`Invalid options for creating texture source. Type must be specified.`)
+    if (!options.format) {
+      throw new Error(`Invalid options for creating texture source. surfaceFormat must be specified.`)
     }
-    return new ArrayBufferViewSource([[toArrayBufferView(source, options.type)]], options.width, options.height)
+    return new ArrayBufferViewSource([[toArrayBufferView(source, options.format)]], options.width, options.height)
   }
 
   return null

@@ -1,14 +1,14 @@
 import { CompareFunction } from '../../enums'
 
-const lookup: { [k: number]: GPUCompareFunction } = {
-  [CompareFunction.Never]: 'never',
-  [CompareFunction.Less]: 'less',
-  [CompareFunction.Equal]: 'equal',
-  [CompareFunction.LessEqual]: 'less-equal',
-  [CompareFunction.Greater]: 'greater',
-  [CompareFunction.NotEqual]: 'not-equal',
-  [CompareFunction.GreaterEqual]: 'greater-equal',
-  [CompareFunction.Always]: 'always',
+const lookup: Record<CompareFunction, GPUCompareFunction> = {
+  Never: 'never',
+  Less: 'less',
+  Equal: 'equal',
+  LessEqual: 'less-equal',
+  Greater: 'greater',
+  NotEqual: 'not-equal',
+  GreaterEqual: 'greater-equal',
+  Always: 'always',
 }
 
 export function toCompareFunction(v: CompareFunction): GPUCompareFunction {

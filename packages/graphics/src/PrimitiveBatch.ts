@@ -1,6 +1,6 @@
 import { IVec3, Mat4 } from '@gglib/math'
 import { Device } from './Device'
-import { BufferUsage, nameOfPrimitiveType, PrimitiveType } from './enums'
+import { PrimitiveType } from './enums'
 import { ShaderProgram } from './resources'
 import { VertexBuffer } from './resources/VertexBuffer'
 import {
@@ -139,7 +139,7 @@ export class PrimitiveBatch {
     this.device = device
     this.hasBegun = false
     this.batchSize = options?.batchSize ?? 512
-    this.primitiveType = options?.primitiveType ?? PrimitiveType.TriangleList
+    this.primitiveType = options?.primitiveType ?? 'TriangleList'
 
     const vertexLayout = VertexLayout.create(['position', 'color'])
     const sizeInBytes = VertexLayout.countBytes(vertexLayout)
@@ -151,7 +151,7 @@ export class PrimitiveBatch {
       {
         layout: vertexLayout,
         data: this.arrayBuffer,
-        usage: BufferUsage.Dynamic,
+        usage: 'Dynamic',
       },
     ])
     this.mainProgram =
@@ -179,23 +179,23 @@ export class PrimitiveBatch {
       this.primitiveType = options.primitiveType ?? this.primitiveType
     }
     switch (this.primitiveType) {
-      case PrimitiveType.PointList:
+      case 'PointList':
         this.verticesPerPrimitive = 1
         break
-      case PrimitiveType.LineList:
+      case 'LineList':
         this.verticesPerPrimitive = 2
         break
-      case PrimitiveType.LineStrip:
+      case 'LineStrip':
         this.verticesPerPrimitive = 1
         break
-      case PrimitiveType.TriangleList:
+      case 'TriangleList':
         this.verticesPerPrimitive = 3
         break
-      case PrimitiveType.TriangleStrip:
+      case 'TriangleStrip':
         this.verticesPerPrimitive = 1
         break
       default:
-        throw new Error(`PrimitiveType '${nameOfPrimitiveType(this.primitiveType)}' is not supported`)
+        throw new Error(`PrimitiveType '${this.primitiveType}' is not supported`)
     }
 
     const viewWidth = (this.viewportState || this.device.viewportState).width

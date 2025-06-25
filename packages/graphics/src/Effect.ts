@@ -1,9 +1,7 @@
-import { copy } from '@gglib/utils'
 import { Device } from './Device'
 import { EffectPass } from './EffectPass'
 import { EffectTechnique, EffectTechniqueOptions } from './EffectTechnique'
 import { ShaderProgram, ShaderProgramOptions, ShaderUniformValue } from './resources'
-import { BlendState } from './states'
 
 /**
  * Constructor options for {@link Effect}

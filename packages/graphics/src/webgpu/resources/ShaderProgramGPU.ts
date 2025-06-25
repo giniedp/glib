@@ -1,11 +1,9 @@
-import { ShaderType } from '../../enums'
 import { ShaderProgram, ShaderProgramOptions } from '../../resources'
 
 import { DeviceGPU } from '../DeviceGPU'
 import { ShaderGPU } from './ShaderGPU'
 
 export class ShaderProgramGPU extends ShaderProgram {
-
   public readonly device: DeviceGPU
   public readonly vertexShader: ShaderGPU
   public readonly fragmentShader: ShaderGPU
@@ -22,8 +20,8 @@ export class ShaderProgramGPU extends ShaderProgram {
   constructor(device: DeviceGPU, options: ShaderProgramOptions = {}) {
     super()
     this.device = device
-    this.vertexShader = this.convertShaderSource(ShaderType.VertexShader, options.vertexShader) as ShaderGPU
-    this.fragmentShader = this.convertShaderSource(ShaderType.FragmentShader, options.fragmentShader) as ShaderGPU
+    this.vertexShader = this.convertShaderSource('VertexShader', options.vertexShader) as ShaderGPU
+    this.fragmentShader = this.convertShaderSource('FragmentShader', options.fragmentShader) as ShaderGPU
     this.create()
   }
 

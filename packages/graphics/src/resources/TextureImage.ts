@@ -1,35 +1,9 @@
 import { uuid } from '@gglib/utils'
-import {
-  DataType,
-  DataTypeOption,
-  DepthFormatOption,
-  nameOfDataType,
-  nameOfPixelFormat,
-  nameOfSurfaceFormat,
-  nameOfTextureType,
-  PixelFormat,
-  PixelFormatOption,
-  SurfaceFormat,
-  SurfaceFormatOption,
-  TextureType,
-  TextureTypeOption,
-  valueOfDataType,
-  valueOfDepthFormat,
-  valueOfPixelFormat,
-  valueOfSurfaceFormat,
-  valueOfTextureType,
-} from '../enums'
-
 import { Device } from '../Device'
-import {
-  createTextureSource,
-  ImageDataSource,
-  ImageElementSource,
-  TextureSource,
-  VideoElementSource,
-} from './TextureSource'
-import { TextureOptions } from './Texture'
+import { DepthFormat, SurfaceFormat, surfaceFormatIsCompressed, TextureType } from '../enums'
 import { SamplerStateParams } from '../states'
+import { TextureOptions } from './Texture'
+import { createTextureSource, TextureSource } from './TextureSource'
 
 /**
  * Type that is accepted by the {@link TextureImage.setData} method
@@ -67,22 +41,12 @@ export interface TextureImageOptions {
   /**
    * The internal surface format of the texture
    */
-  surfaceFormat?: SurfaceFormatOption
-
-  /**
-   * The pixel format to be used
-   */
-  pixelFormat?: PixelFormatOption
-
-  /**
-   * The pixel element data type to be used
-   */
-  pixelType?: DataTypeOption
+  format?: SurfaceFormat
 
   /**
    * The texture type
    */
-  type?: TextureTypeOption
+  type?: TextureType
 
   /**
    * The texture width
@@ -122,7 +86,7 @@ export interface TextureImageOptions {
   /**
    * The depth format of the depth stencil buffer to use when the texture is used as a render target
    */
-  depthFormat?: DepthFormatOption
+  depthFormat?: DepthFormat
 
   /**
    * Value for the `crossOrigin` attribute to be used when fetching image or video by url
@@ -131,11 +95,6 @@ export interface TextureImageOptions {
    * {@link https://blog.chromium.org/2011/07/using-cross-domain-images-in-webgl-and.html}
    */
   crossOrigin?: string
-
-  /**
-   * Indicates whether the texture surface is compressed.
-   */
-  compressed?: boolean
 }
 
 export type RenderTargetOptions = Omit<TextureOptions, 'source' | 'crossOrigin' | 'generateMipmap' | 'type'>
@@ -209,29 +168,20 @@ export abstract class TextureImage {
   /**
    * Indicates the used pixel format.
    */
-  public readonly surfaceFormat: SurfaceFormat
+  public readonly format: SurfaceFormat
 
   /**
-   * Gets the name of {@link TextureImage.surfaceFormat}
+   * The depths stencil format that should be used for render target
+   *
+   * @remarks
+   * If this value is set, the texture is considered a render target.
    */
-  public get surfaceFormatName(): string {
-    return nameOfSurfaceFormat(this.surfaceFormat)
-  }
-
-  /**
-   * Indicates the used pixel format.
-   */
-  public readonly pixelFormat: PixelFormat = PixelFormat.RGBA
-
-  /**
-   * Indicates the data type of the pixel elements
-   */
-  public readonly pixelType: DataType = DataType.ubyte
+  public readonly depthFormat: DepthFormat
 
   /**
    * Indicates the texture type
    */
-  public readonly type: TextureType = TextureType.Texture2D
+  public readonly type: TextureType = 'Texture2D'
 
   /**
    * The data source for this texture
@@ -271,60 +221,23 @@ export abstract class TextureImage {
    */
   public readonly sampler: SamplerStateParams
 
-  protected depthFormatField: number
-
-  /**
-   * The depths stencil format that should be used for render target
-   *
-   * @remarks
-   * If this value is set, the texture is considered a render target.
-   */
-  public get depthFormat(): number {
-    return this.depthFormatField
-  }
-
-  public set depthFormat(value: number) {
-    this.depthFormatField = value
-  }
-
   /**
    * Indicates whether this texture is intended to be used as a renter target
    */
   public get isRenderTarget(): boolean {
-    return this.depthFormatField != null
-  }
-
-  /**
-   * Gets the name of {@link TextureImage.pixelFormat}
-   */
-  public get pixelFormatName(): string {
-    return nameOfPixelFormat(this.pixelFormat)
-  }
-
-  /**
-   * Gets the name of {@link TextureImage.pixelType}
-   */
-  public get pixelTypeName(): string {
-    return nameOfDataType(this.pixelType)
-  }
-
-  /**
-   * Gets the name of {@link TextureImage."type"}
-   */
-  public get typeName(): string {
-    return nameOfTextureType(this.type)
+    return this.depthFormat != null
   }
 
   public get isCube() {
-    return this.type === TextureType.TextureCube
+    return this.type === 'TextureCube'
   }
 
   public get is2D() {
-    return this.type === TextureType.Texture2D
+    return this.type === 'Texture2D' || this.type === 'Texture2DArray'
   }
 
   public get is3D() {
-    return this.type === TextureType.Texture3D
+    return this.type === 'Texture3D'
   }
 
   /**
@@ -333,45 +246,37 @@ export abstract class TextureImage {
   public static videoTypes = ['.mp4', '.ogv', '.ogg', '.webm']
 
   public setup(options: TextureImageOptions): this {
-    let width = options.width ?? this.width
-    let height = options.height ?? this.height
-    let depth = options.depth ?? this.depth
+    const width = options.width ?? this.width
+    const height = options.height ?? this.height
+    const depth = options.depth ?? this.depth
 
-    let givenType = options?.type ?? this.type
-    let type = valueOfTextureType(options?.type ?? this.type)
-    if (type == null && typeof givenType === 'number') {
-      type = givenType
-    }
+    const type = options?.type ?? this.type
+    const format = (options?.format ?? this.format) || 'RGBA8_UNORM'
+    const compressed = surfaceFormatIsCompressed(format)
+    const depthFormat = options?.depthFormat ?? this.depthFormat
 
-    let pixelType = valueOfDataType(options?.pixelType ?? this.pixelType)
-    let pixelFormat = valueOfPixelFormat(options?.pixelFormat ?? this.pixelFormat)
-    let surfaceFormat = valueOfSurfaceFormat(options?.surfaceFormat ?? this.surfaceFormat) || pixelFormat
-    let depthFormat = valueOfDepthFormat(options?.depthFormat ?? this.depthFormat)
-    let generateMipmap = options?.generateMipmap ?? this.generateMipmap
-    let crossOrigin = options?.crossOrigin ?? this.crossOrigin
+    const generateMipmap = options?.generateMipmap ?? this.generateMipmap
+    const crossOrigin = options?.crossOrigin ?? this.crossOrigin
 
     if (
       width !== this.width ||
       height !== this.height ||
       depth !== this.depth ||
-      surfaceFormat !== this.surfaceFormat ||
-      pixelFormat !== this.pixelFormat ||
-      pixelType !== this.pixelType ||
-      type !== this.type
+      type !== this.type ||
+      format !== this.format ||
+      depthFormat !== this.depthFormat
     ) {
       this.disposeResource()
     }
 
-    this.set('isCompressed', options.compressed ?? this.isCompressed)
+    this.set('isCompressed', compressed)
     this.set('sampler', options.sampler ?? this.sampler)
     this.set('name', options.name ?? this.name)
     this.set('width', width)
     this.set('height', height)
     this.set('depth', depth)
     this.set('type', type)
-    this.set('pixelType', pixelType)
-    this.set('pixelFormat', pixelFormat)
-    this.set('surfaceFormat', surfaceFormat as SurfaceFormat)
+    this.set('format', format)
     this.set('depthFormat', depthFormat)
     this.set('generateMipmap', generateMipmap)
     this.set('ready', false)
@@ -385,7 +290,7 @@ export abstract class TextureImage {
           videoTypes: TextureImage.videoTypes,
           width: width,
           height: height,
-          type: pixelType,
+          format: format,
         }),
       )
     }

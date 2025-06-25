@@ -1,8 +1,7 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
-import { copy } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device } from '../Device'
-import { BufferType, DataType, FrontFace, PrimitiveType } from '../enums'
+import { FrontFace } from '../enums'
 import { BufferOptions } from '../resources'
 import { AttributeSemantic, vertexAttribute, VertexAttribute, vertexLayout, VertexLayout } from '../VertexLayout'
 import { Geometry, GeometryOptions } from './Geometry'
@@ -235,15 +234,15 @@ export class GeometryBuilder {
 
   private resetData() {
     this.indexBuffer = {
-      type: BufferType.IndexBuffer,
-      dataType: DataType.ushort,
+      type: 'IndexBuffer',
+      dataType: 'uint16',
       data: [],
     }
     this.vertexBuffer = this.layout.map((l): BufferOptions<number[]> => {
       return {
         layout: JSON.parse(JSON.stringify(l)),
-        type: BufferType.VertexBuffer,
-        dataType: 'float',
+        type: 'VertexBuffer',
+        dataType: 'float32',
         data: [],
       }
     })
@@ -251,7 +250,7 @@ export class GeometryBuilder {
     this.primitiveCount = 0
     this.box = new BoundingBox()
     this.sphere = new BoundingSphere()
-    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer, PrimitiveType.TriangleList)
+    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer, 'TriangleList')
   }
 
   /**

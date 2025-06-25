@@ -1,6 +1,6 @@
 import {
   createShaderEffectSync,
-  DataTypeName,
+  DataType,
   Device,
   Effect,
   SamplerState,
@@ -23,7 +23,7 @@ export interface IBLSamplerOptions {
   lodBias?: number
   lowestMipLevel?: number
   scaleValue?: number
-  format?: Extract<DataTypeName, 'byte' | 'float' | 'half'>
+  format?: Extract<DataType, 'uint8' | 'float32' | 'float16'>
 }
 
 /**
@@ -82,7 +82,7 @@ export class IBLSamplerEffect {
     this.sheenSampleCount = options?.sheenSampleCount ?? this.sheenSampleCount
     this.lowestMipLevel = options?.lowestMipLevel ?? this.lowestMipLevel
     this.scaleValue = options?.scaleValue ?? this.scaleValue
-    this.format = options?.format ?? 'half'
+    this.format = options?.format ?? 'float16'
     this.effect = createShaderEffectSync(this.device, PRE_IBL_SAMPLER)
   }
 
@@ -268,17 +268,13 @@ export class IBLSamplerEffect {
       height: this.textureSize,
       generateMipmap: true,
       sampler: SamplerState.LinearClamp,
-      surfaceFormat: 'RGBA',
+      format: 'RGBA8_UNORM',
     }
-    if (this.format === 'half' && this.device.canRenderHalf) {
-      options.surfaceFormat = 'RGBA16F'
-      options.pixelFormat = 'RGBA'
-      options.pixelType = 'half'
+    if (this.format === 'float16' && this.device.canRenderHalf) {
+      options.format = 'RGBA16_FLOAT'
     }
-    if (this.format === 'float' && this.device.canRenderFloat) {
-      options.surfaceFormat = 'RGBA32F'
-      options.pixelFormat = 'RGBA'
-      options.pixelType = 'float'
+    if (this.format === 'float32' && this.device.canRenderFloat) {
+      options.format = 'RGBA32_FLOAT'
     }
 
     current = this.device.createTexture(options)
@@ -302,16 +298,13 @@ export class IBLSamplerEffect {
       height: this.textureSize,
       generateMipmap: true,
       sampler: SamplerState.LinearClamp,
+      format: 'RGBA8_UNORM',
     }
-    if (this.format === 'half' && this.device.canRenderHalf) {
-      options.surfaceFormat = 'RGBA16F'
-      options.pixelFormat = 'RGBA'
-      options.pixelType = 'half'
+    if (this.format === 'float16' && this.device.canRenderHalf) {
+      options.format = 'RGBA16_FLOAT'
     }
-    if (this.format === 'float' && this.device.canRenderFloat) {
-      options.surfaceFormat = 'RGBA32F'
-      options.pixelFormat = 'RGBA'
-      options.pixelType = 'float'
+    if (this.format === 'float32' && this.device.canRenderFloat) {
+      options.format = 'RGBA32_FLOAT'
     }
     current = this.device.createTexture(options)
     this.resources.push(current)

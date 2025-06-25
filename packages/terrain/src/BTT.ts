@@ -60,7 +60,7 @@ export class BTTRoot {
         } else {
           iBuffers[i][j] = device.createIndexBuffer({
             data: BTTPatch.createIndices(i, j, this.patchSize + 1),
-            dataType: 'ushort',
+            dataType: 'uint16',
           })
         }
       }
@@ -81,7 +81,7 @@ export class BTTRoot {
     }
 
     this.patches = patches
-    this.model = new Model(this.device,{
+    this.model = new Model(this.device, {
       meshes: [
         {
           boundingBox: parts.reduce((box, next) => box.merge(next.boundingBox), parts[0].boundingBox.clone()),
@@ -315,7 +315,7 @@ export class BTTPatch {
       vertexBuffer: device.createVertexBuffer([
         {
           data: vertices,
-          dataType: 'float',
+          dataType: 'float32',
           layout: VertexLayout.create(['position', 'normal', 'texture']),
         },
       ]),

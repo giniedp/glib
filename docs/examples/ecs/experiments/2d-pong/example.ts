@@ -1,6 +1,6 @@
 import { BasicGame, createEntity, LoopTime, SpriteComponent, TransformComponent } from '@gglib/components'
 import { GameComponent, GameEntity } from '@gglib/ecs'
-import { Color, PixelFormat, Texture } from '@gglib/graphics'
+import { Color, Texture } from '@gglib/graphics'
 import { Keyboard, KeyboardKey } from '@gglib/input'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
@@ -12,7 +12,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 }
 
 class PongGame extends BasicGame {
-
   public width = 63
   public height = 27
 
@@ -34,7 +33,6 @@ class PongGame extends BasicGame {
       source: [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
       width: 1,
       height: 1,
-      pixelFormat: PixelFormat.RGBA,
     })
     this.provide(new Keyboard({}))
     this.createObjects()

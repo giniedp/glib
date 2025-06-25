@@ -1,6 +1,5 @@
 import { Mat4 } from '@gglib/math'
 import { Device } from './Device'
-import { BufferUsage, PrimitiveType } from './enums'
 import { Buffer } from './resources/Buffer'
 import { ShaderProgram } from './resources/ShaderProgram'
 import { Texture } from './resources/Texture'
@@ -157,7 +156,7 @@ export class SpriteBatch {
       {
         layout: vertexLayout,
         data: this.arrayBuffer,
-        usage: BufferUsage.Dynamic,
+        usage: 'Dynamic',
       },
     ])
     this.mainProgram =
@@ -348,7 +347,7 @@ export class SpriteBatch {
       }
       start += count
       this.vertexBuffer.buffers[0].setSubData(0, this.arrayBuffer)
-      this.device.drawIndexedPrimitives(PrimitiveType.TriangleList, 0, count * 6)
+      this.device.drawIndexedPrimitives('TriangleList', 0, count * 6)
     }
   }
 

@@ -1,10 +1,8 @@
 import { Log } from '@gglib/utils'
-import { nameOfShaderType, ShaderType, valueOfShaderType } from '../../enums'
 import { Shader, ShaderOptions } from '../../resources'
 import { DeviceGPU } from '../DeviceGPU'
 
 export class ShaderGPU extends Shader {
-
   public readonly device: DeviceGPU
 
   public readonly descriptor: GPUProgrammableStageDescriptor = {
@@ -19,9 +17,8 @@ export class ShaderGPU extends Shader {
     super()
     this.device = device
     this.source = options.source
-    this.type = valueOfShaderType(options.type)
-    this.typeName = nameOfShaderType(this.type)
-    if (!this.typeName) {
+    this.type = options.type
+    if (!this.type) {
       Log.warn('[Shader] unknown "type" option', options.type, this)
     }
     if (this.source) {

@@ -1,11 +1,6 @@
 import {
   CullMode,
-  CullModeOption,
   FrontFace,
-  FrontFaceOption,
-  nameOfFrontFace,
-  valueOfCullMode,
-  valueOfFrontFace,
 } from './../enums'
 import { hasOwnProperty } from '@gglib/utils'
 
@@ -21,8 +16,8 @@ const params: Array<keyof CullStateParams> = [
  * @public
  */
 export interface CullStateOptions {
-  frontFace?: FrontFaceOption
-  cullMode?: CullModeOption
+  frontFace?: FrontFace
+  cullMode?: CullMode
   enable?: boolean
 }
 
@@ -49,8 +44,8 @@ export type CullStateParams = Partial<ICullState>
  */
 export class CullState implements CullStateParams {
 
-  protected $frontFace: number = FrontFace.CounterClockWise
-  protected $cullMode: number = CullMode.Back
+  protected $frontFace: FrontFace = 'CCW'
+  protected $cullMode: CullMode = 'Back'
   protected $enable: boolean = false
   protected $hasChanged: boolean = false
   protected $changes: CullStateParams = {}
@@ -74,18 +69,12 @@ export class CullState implements CullStateParams {
   }
 
   /**
-   * Gets the readable name of the front face
-   */
-  public get frontFaceName(): string {
-    return nameOfFrontFace(this.frontFace)
-  }
-  /**
    * Gets and sets the front face
    */
-  public get frontFace(): number {
+  public get frontFace(): FrontFace {
     return this.$frontFace
   }
-  public set frontFace(value: number) {
+  public set frontFace(value: FrontFace) {
     if (this.$frontFace !== value) {
       this.$frontFace = value
       this.$changes.frontFace = value
@@ -94,18 +83,12 @@ export class CullState implements CullStateParams {
   }
 
   /**
-   * Gets the readable name of the cull mode
-   */
-  public get cullModeName(): string {
-    return nameOfFrontFace(this.cullMode)
-  }
-  /**
    * Gets and sets the cull mode
    */
-  public get cullMode(): number {
+  public get cullMode(): CullMode {
     return this.$cullMode
   }
-  public set cullMode(value: number) {
+  public set cullMode(value: CullMode) {
     if (this.$cullMode !== value) {
       this.$cullMode = value
       this.$changes.cullMode = value
@@ -180,10 +163,10 @@ export class CullState implements CullStateParams {
       }
       switch (key) {
         case 'cullMode':
-          result[key] = valueOfCullMode(state[key])
+          result[key] = state[key]
           break
         case 'frontFace':
-          result[key] = valueOfFrontFace(state[key])
+          result[key] = state[key]
           break
         default:
           result[key] = state[key]
@@ -198,8 +181,8 @@ export class CullState implements CullStateParams {
    */
   public static Default = Object.freeze<ICullState>({
     enable: false,
-    cullMode: CullMode.Back,
-    frontFace: FrontFace.ClockWise,
+    cullMode: 'Back',
+    frontFace: 'CW',
   })
 
   /**
@@ -207,8 +190,8 @@ export class CullState implements CullStateParams {
    */
   public static CullNone = Object.freeze<ICullState>({
     enable: false,
-    cullMode: CullMode.Back,
-    frontFace: FrontFace.ClockWise,
+    cullMode: 'Back',
+    frontFace: 'CW',
   })
 
   /**
@@ -216,8 +199,8 @@ export class CullState implements CullStateParams {
    */
   public static CullClockWise = Object.freeze<ICullState>({
     enable: true,
-    cullMode: CullMode.Back,
-    frontFace: FrontFace.CounterClockWise,
+    cullMode: 'Back',
+    frontFace: 'CCW',
   })
 
   /**
@@ -225,7 +208,7 @@ export class CullState implements CullStateParams {
    */
   public static CullCounterClockWise = Object.freeze<ICullState>({
     enable: true,
-    cullMode: CullMode.Back,
-    frontFace: FrontFace.ClockWise,
+    cullMode: 'Back',
+    frontFace: 'CW',
   })
 }

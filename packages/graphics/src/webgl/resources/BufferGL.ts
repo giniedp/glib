@@ -1,3 +1,4 @@
+import { bufferTypeToWebGL, bufferUsageHintToWebGL } from '../../enums'
 import { Buffer, BufferDataOption, BufferOptions } from '../../resources/Buffer'
 import { DeviceGL } from '../DeviceGL'
 import { isWebGL2 } from '../utils'
@@ -12,13 +13,17 @@ export class BufferGL extends Buffer {
   public readonly device: DeviceGL
 
   public resource: WebGLBuffer
+
+  private glType: GLenum
+  private glUsage: GLenum
+
   /**
    * Creates a new Buffer
    *
    * @param device - The graphics device
    * @param opts - The creation options
    */
-  constructor(device: DeviceGL, opts?: BufferOptions) {
+  public constructor(device: DeviceGL, opts?: BufferOptions) {
     super()
     this.device = device
     this.reset(opts || {})
@@ -28,6 +33,8 @@ export class BufferGL extends Buffer {
     if (!this.resource || !this.device.context.isBuffer(this.resource)) {
       this.resource = this.device.context.createBuffer()
     }
+    this.glType = bufferTypeToWebGL(this.type)
+    this.glUsage = bufferUsageHintToWebGL(this.usage)
     return this
   }
 
@@ -46,12 +53,12 @@ export class BufferGL extends Buffer {
    * Sets this buffer on the graphics device as current vertex or index buffer depending on the 'type' property
    */
   public bind(): this {
-    this.device.context.bindBuffer(this.type, this.resource)
+    this.device.context.bindBuffer(this.glType, this.resource)
     return this
   }
 
   public unbind(): this {
-    this.device.context.bindBuffer(this.type, null)
+    this.device.context.bindBuffer(this.glType, null)
     return this
   }
 
@@ -62,23 +69,13 @@ export class BufferGL extends Buffer {
     const data = this.convertDataOption(src)
     this.bind()
     const off = srcByteOffset || 0
-    const len = srcByteLength || (data.byteLength - off)
+    const len = srcByteLength || data.byteLength - off
 
     if (off === 0 && len === data.byteLength) {
-      this.device.context.bufferData(
-        this.type,
-        data,
-        this.usage,
-      )
+      this.device.context.bufferData(this.glType, data, this.glUsage)
       this.sizeInBytes = data.byteLength
     } else if (isWebGL2(this.device.context)) {
-      this.device.context.bufferData(
-        this.type,
-        data,
-        this.usage,
-        off,
-        len,
-      )
+      this.device.context.bufferData(this.glType, data, this.glUsage, off, len)
       this.sizeInBytes = Math.min(data.byteLength - off, len)
     } else {
       throw new Error(`setData with srcByteOffset > 0 is not supported in WebGL1`)
@@ -98,8 +95,8 @@ export class BufferGL extends Buffer {
     this.bind()
     byteOffset = byteOffset || 0
     const off = srcByteOffset || 0
-    const len = srcByteLength || (data.byteLength - off)
-    this.device.context.bufferSubData(this.type, byteOffset, data, off, len)
+    const len = srcByteLength || data.byteLength - off
+    this.device.context.bufferSubData(this.glType, byteOffset, data, off, len)
 
     this.unbind()
     return this
@@ -112,7 +109,7 @@ export class BufferGL extends Buffer {
     this.bind()
 
     if (isWebGL2(this.device.context)) {
-      this.device.context.getBufferSubData(this.type, srcByteOffset, dst, dstOffset, dstLength)
+      this.device.context.getBufferSubData(this.glType, srcByteOffset, dst, dstOffset, dstLength)
     } else {
       throw new Error(`getBufferSubData is not supported in WebGL1`)
     }

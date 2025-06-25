@@ -4,7 +4,6 @@ import {
   DepthState,
   Device,
   RenderTargetOptions,
-  SamplerState,
   ScissorState,
   SpriteBatch,
   SpriteBatchBeginOptions,
@@ -58,9 +57,8 @@ export class Renderer {
    * The intial, default render target is created with these options
    */
   public targetOptions: RenderTargetOptions = {
+    format: 'RGBA8_UNORM',
     depthFormat: 'DepthStencil',
-    pixelFormat: 'RGBA',
-    pixelType: 'ubyte',
   }
 
   /**
@@ -163,14 +161,16 @@ export class Renderer {
    */
   public renderScene(scene: SceneComposition) {
     if (!scene.views) {
-      scene.views = [{
-        viewport: {
-          x: 0,
-          y: 0,
-          width: 1,
-          height: 1,
-        }
-      }]
+      scene.views = [
+        {
+          viewport: {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+          },
+        },
+      ]
     }
 
     for (const view of scene.views) {

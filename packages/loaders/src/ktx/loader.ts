@@ -27,16 +27,13 @@ export class Loader implements AssetLoader {
       sampler: SamplerState.LinearClampNoMipMap,
     }
     let images: LevelImage[]
-    if (ktx.header.supercompressionScheme) {
+    if (ktx.isCompressed) {
       const data = await this.transcode(response.body, context)
-      images = data.levelImages
-      options.surfaceFormat = data.surfaceFormat
-      options.compressed = true
+      images = data.images
+      options.format = data.format
     } else {
       images = ktx.levelImages
-      options.surfaceFormat = ktx.glInfo.surfaceFormat
-      options.pixelFormat = ktx.glInfo.format
-      options.pixelType = ktx.glInfo.type
+      options.format = ktx.format
     }
 
     const levelCount = images.length
@@ -82,30 +79,33 @@ export class Loader implements AssetLoader {
 
     const t = await this.transcoder
     const ktx = t.transcode(new Uint8Array(data), context.content.device.capabilities)
-
+    const format = COMPRESSED_SURFACE_FORMATS[ktx.format]
+    if (!format) {
+      throw new Error(`Unsupported KTX format: ${ktx.format}`)
+    }
     return {
-      levelImages: ktx.levelImages,
-      surfaceFormat: COMPRESSED_SURFACE_FORMATS[ktx.format],
+      images: ktx.levelImages,
+      format: format,
     }
   }
 }
 
-const COMPRESSED_SURFACE_FORMATS = {
-  [BasisTranscodeFormat.ETC1_RGB]: SurfaceFormat.COMPRESSED_RGB_ETC1_WEBGL,
-  [BasisTranscodeFormat.ETC2_RGBA]: SurfaceFormat.COMPRESSED_RGBA8_ETC2_EAC,
-  [BasisTranscodeFormat.BC1_RGB]: SurfaceFormat.COMPRESSED_RGB_S3TC_DXT1_EXT,
-  [BasisTranscodeFormat.BC3_RGBA]: SurfaceFormat.COMPRESSED_RGBA_S3TC_DXT5_EXT,
-  [BasisTranscodeFormat.BC4_R]: SurfaceFormat.COMPRESSED_RED_RGTC1_EXT,
-  [BasisTranscodeFormat.BC5_RG]: SurfaceFormat.COMPRESSED_RED_GREEN_RGTC2_EXT,
-  [BasisTranscodeFormat.BC7_M6_RGB]: SurfaceFormat.COMPRESSED_RGBA_BPTC_UNORM_EXT,
-  [BasisTranscodeFormat.BC7_M5_RGBA]: SurfaceFormat.COMPRESSED_RGBA_BPTC_UNORM_EXT,
-  [BasisTranscodeFormat.PVRTC1_4_RGB]: SurfaceFormat.COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
-  [BasisTranscodeFormat.PVRTC1_4_RGBA]: SurfaceFormat.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
-  [BasisTranscodeFormat.ASTC_4x4_RGBA]: SurfaceFormat.COMPRESSED_RGBA_ASTC_4x4_KHR,
+const COMPRESSED_SURFACE_FORMATS: Partial<Record<BasisTranscodeFormat, SurfaceFormat>> = {
+  [BasisTranscodeFormat.ETC1_RGB]:  'ETC2_RGB8_UNORM',
+  [BasisTranscodeFormat.ETC2_RGBA]: 'ETC2_RGBA8_UNORM',
+  [BasisTranscodeFormat.BC1_RGB]: 'BC1_RGBA_UNORM',
+  [BasisTranscodeFormat.BC3_RGBA]: 'BC3_RGBA_UNORM',
+  [BasisTranscodeFormat.BC4_R]: 'BC4_R_UNORM',
+  [BasisTranscodeFormat.BC5_RG]: 'BC5_RG_UNORM',
+  [BasisTranscodeFormat.BC7_M6_RGB]: 'BC7_RGBA_UNORM',
+  [BasisTranscodeFormat.BC7_M5_RGBA]: 'BC7_RGBA_UNORM',
+  // [BasisTranscodeFormat.PVRTC1_4_RGB]: SurfaceFormat.COMPRESSED_RGB_PVRTC_4BPPV1_IMG,
+  // [BasisTranscodeFormat.PVRTC1_4_RGBA]: SurfaceFormat.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG,
+  [BasisTranscodeFormat.ASTC_4x4_RGBA]: 'ASTC_4x4_UNORM',
   // [BasisTranscodeFormat.ATC_RGB]: SurfaceFormat.COMPRESSED_RGB_ATC,
   // [BasisTranscodeFormat.ATC_RGBA_INTERPOLATED_ALPHA]: SurfaceFormat.COMPRESSED_RGBA_ATC_EXPLICIT_ALPHA,
-  [BasisTranscodeFormat.RGBA32]: SurfaceFormat.RGBA8,
-  [BasisTranscodeFormat.RGB565]: SurfaceFormat.RGB565,
+  [BasisTranscodeFormat.RGBA32]: 'RGBA8_UNORM',
+  // [BasisTranscodeFormat.RGB565]: SurfaceFormat.RGB565,
   // [BasisTranscodeFormat.BGR565]: SurfaceFormat.BGR565,
-  [BasisTranscodeFormat.RGBA4444]: SurfaceFormat.RGBA4,
+  // [BasisTranscodeFormat.RGBA4444]: SurfaceFormat.RGBA4,
 }

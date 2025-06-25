@@ -1,14 +1,14 @@
 import { StencilOperation } from '../../enums'
 
-const lookup: { [k: number]: GPUStencilOperation } = {
-  [StencilOperation.Zero]: 'zero',
-  [StencilOperation.Keep]: 'keep',
-  [StencilOperation.Replace]: 'replace',
-  [StencilOperation.Increment]: 'increment-clamp',
-  [StencilOperation.Decrement]: 'decrement-clamp',
-  [StencilOperation.Invert]: 'invert',
-  [StencilOperation.IncrementWrap]: 'increment-wrap',
-  [StencilOperation.DecrementWrap]: 'decrement-wrap',
+const lookup: Record<StencilOperation, GPUStencilOperation> = {
+  Zero: 'zero',
+  Keep: 'keep',
+  Replace: 'replace',
+  IncrementClamp: 'increment-clamp',
+  DecrementClamp: 'decrement-clamp',
+  Invert: 'invert',
+  IncrementWrap: 'increment-wrap',
+  DecrementWrap: 'decrement-wrap',
 }
 
 export function toStencilOperation(v: StencilOperation): GPUStencilOperation {

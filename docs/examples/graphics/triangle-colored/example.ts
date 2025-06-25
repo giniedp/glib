@@ -49,14 +49,14 @@ export default (canvas: HTMLCanvasElement) => {
       // which is a `vec3` with 3 elements.
       layout: {
         vPosition: {
-          type: 'float',
+          type: 'float32',
           offset: 0,
           elements: 3,
         },
         // It is then followed byt a `vColor` attribute which is also a `vec3` with 3 elements
         // but has an offset of 12 bytes from the beginning of the vertex.
         vColor: {
-          type: 'float',
+          type: 'float32',
           offset: 12,
           elements: 3,
         },

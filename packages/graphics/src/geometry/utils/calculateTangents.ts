@@ -13,7 +13,7 @@ export function calculateTangents(
   indices: ReadonlyArray<number>,
   channels: GeometryBuilderChannelMap,
   vCount: number,
-  frontFace: FrontFace = FrontFace.CounterClockWise,
+  frontFace: FrontFace = 'CCW',
 ) {
   if (!channels.normal) {
     Log.warn('Can not calculate tangents for buffer. Normal definition not found in layout ')
@@ -61,7 +61,7 @@ export function calculateTangents(
     let i0 = indices[i]
     let i1 = indices[i + 1]
     let i2 = indices[i + 2]
-    if (frontFace === FrontFace.CounterClockWise) {
+    if (frontFace === 'CCW') {
       ;[i1, i2] = [i2, i1]
     }
 
