@@ -1,4 +1,4 @@
-import { Capabilities } from '../Capabilities'
+import { Capabilities, TextureCompression } from '../Capabilities'
 import type { Device } from '../Device'
 import { SurfaceFormat, surfaceFormatToWebGLExtension } from '../enums'
 import { isWebGL2 } from './utils'
@@ -69,9 +69,19 @@ export class CapabilitiesGL implements Capabilities {
     return !!this.extension('OES_texture_half_float') || isWebGL2(this.gl)
   }
 
+  public textureCompression: TextureCompression[]
+
   public constructor(device: Device<WebGLRenderingContext | WebGL2RenderingContext>) {
     this.device = device
     this.gl = device.context
+    this.textureCompression = [
+      this.textureCompressionAstc ? ('Astc' as const) : null,
+      this.textureCompressionEtc2 ? ('Etc2' as const) : null,
+      this.textureCompressionEtc1 ? ('Etc1' as const) : null,
+      this.textureCompressionPvrtc ? ('Pvrtc' as const) : null,
+      this.textureCompressionBc ? ('Bc' as const) : null,
+      this.textureCompressionBptc ? ('Bptc' as const) : null,
+    ].filter((it) => !!it)
   }
 
   public get textureCompressionAstc(): boolean {

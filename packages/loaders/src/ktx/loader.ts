@@ -1,7 +1,7 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
 import { ArrayBufferViewSource, SamplerState, SurfaceFormat, TextureOptions } from '@gglib/graphics'
 import { LevelImage, parse } from './format'
-import { BasisTranscodeFormat, transcoder, Transcoder } from './transcode'
+import { BasisTranscodeFormat, Transcoder } from './transcoder'
 
 export function registerLoader() {
   ContentLoader.registerLoader(Loader)
@@ -12,6 +12,8 @@ export class Loader implements AssetLoader {
   public static mimeTypes = ['image/ktx', 'image/ktx2']
   public static loader = Loader
   public static wasmUrl = '/basis_transcoder.wasm'
+
+  public transcoder: Transcoder
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
@@ -70,15 +72,12 @@ export class Loader implements AssetLoader {
     }
   }
 
-  public transcoder: Promise<Transcoder>
-
   public async transcode(data: ArrayBuffer, context: LoaderContext) {
-    this.transcoder ||= transcoder({
+    this.transcoder ||= new Transcoder({
       wasmUrl: Loader.wasmUrl,
     })
 
-    const t = await this.transcoder
-    const ktx = t.transcode(new Uint8Array(data), context.content.device.capabilities)
+    const ktx = await this.transcoder.transcode(data, context.content.device.capabilities.textureCompression)
     const format = COMPRESSED_SURFACE_FORMATS[ktx.format]
     if (!format) {
       throw new Error(`Unsupported KTX format: ${ktx.format}`)
@@ -91,7 +90,7 @@ export class Loader implements AssetLoader {
 }
 
 const COMPRESSED_SURFACE_FORMATS: Partial<Record<BasisTranscodeFormat, SurfaceFormat>> = {
-  [BasisTranscodeFormat.ETC1_RGB]:  'ETC2_RGB8_UNORM',
+  [BasisTranscodeFormat.ETC1_RGB]: 'ETC2_RGB8_UNORM',
   [BasisTranscodeFormat.ETC2_RGBA]: 'ETC2_RGBA8_UNORM',
   [BasisTranscodeFormat.BC1_RGB]: 'BC1_RGBA_UNORM',
   [BasisTranscodeFormat.BC3_RGBA]: 'BC3_RGBA_UNORM',

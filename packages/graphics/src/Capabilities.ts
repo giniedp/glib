@@ -1,5 +1,6 @@
 import type { SurfaceFormat } from './enums'
 
+export type TextureCompression = 'Astc' | 'Etc1' | 'Etc2' | 'Pvrtc' | 'Bc' | 'Bptc'
 /**
  * @public
  */
@@ -19,6 +20,7 @@ export interface Capabilities {
   textureFormatFloat: boolean
   textureFormatHalfFloat: boolean
 
+  textureCompression: TextureCompression[]
   textureCompressionAstc: boolean
   textureCompressionEtc2: boolean
   textureCompressionEtc1: boolean

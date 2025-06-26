@@ -1,4 +1,4 @@
-import { Capabilities } from '../Capabilities'
+import { Capabilities, TextureCompression } from '../Capabilities'
 import type { Device } from '../Device'
 import { SurfaceFormat } from '../enums'
 import type { DeviceGPU } from './DeviceGPU'
@@ -77,6 +77,15 @@ export class CapabilitiesGPU implements Capabilities {
   get textureCompressionBptc(): boolean {
     return false
   }
+
+  public textureCompression: TextureCompression[] = [
+    this.textureCompressionAstc ? ('Astc' as const) : null,
+    this.textureCompressionEtc2 ? ('Etc2' as const) : null,
+    this.textureCompressionEtc1 ? ('Etc1' as const) : null,
+    this.textureCompressionPvrtc ? ('Pvrtc' as const) : null,
+    this.textureCompressionBc ? ('Bc' as const) : null,
+    this.textureCompressionBptc ? ('Bptc' as const) : null,
+  ].filter((it) => !!it)
 
   public isFormatSupported(format: SurfaceFormat): boolean {
     return false
