@@ -1,17 +1,9 @@
 import { IVec3, Mat4 } from '@gglib/math'
 import { Device } from './Device'
 import { PrimitiveType } from './enums'
-import { ShaderProgram } from './resources'
-import { VertexBuffer } from './resources/VertexBuffer'
-import {
-  BlendStateParams,
-  CullStateParams,
-  DepthStateParams,
-  ScissorStateParams,
-  StencilStateParams,
-  ViewportStateParams,
-} from './states'
-import { VertexLayout } from './VertexLayout'
+import { Program, VertexBuffer } from './resources'
+import { BlendState, CullState, DepthState, ScissorState, StencilState, ViewportState } from './states'
+import { countBytes, createVertexLayout } from './VertexLayout'
 
 const vertexShader = /* glsl */ `
   precision highp float;
@@ -58,7 +50,7 @@ export interface PrimitiveBatchOptions {
   /**
    * A custom shader that should be used for rendering the sprites
    */
-  program?: ShaderProgram
+  program?: Program
   /**
    * The primitive type to draw with this batch
    */
@@ -74,27 +66,27 @@ export interface PrimitiveBatchBeginOptions {
   /**
    * The blend state
    */
-  blendState?: BlendStateParams
+  blendState?: BlendState
   /**
    * The cull state
    */
-  cullState?: CullStateParams
+  cullState?: CullState
   /**
    * The depth state
    */
-  depthState?: DepthStateParams
+  depthState?: DepthState
   /**
    * The stencil state
    */
-  stencilState?: StencilStateParams
+  stencilState?: StencilState
   /**
    * The scissor state
    */
-  scissorState?: ScissorStateParams
+  scissorState?: ScissorState
   /**
    * The viewport state
    */
-  viewportState?: ViewportStateParams
+  viewportState?: ViewportState
   /**
    * The viewProjection matrix to use for rendering
    */
@@ -102,7 +94,7 @@ export interface PrimitiveBatchBeginOptions {
   /**
    * A custom shader that should be used for rendering the sprites
    */
-  program?: ShaderProgram
+  program?: Program
   /**
    * The primitive type to draw with this batch
    */
@@ -117,17 +109,17 @@ export class PrimitiveBatch {
   private vertexPositionView: Float32Array
   private vertexColorView: Int32Array
   private vertexBuffer: VertexBuffer
-  private mainProgram: ShaderProgram
+  private mainProgram: Program
   private mainMatrix: Mat4
-  private program: ShaderProgram
+  private program: Program
   private matrix: Mat4
 
-  private blendState: BlendStateParams
-  private cullState: CullStateParams
-  private depthState: DepthStateParams
-  private stencilState: StencilStateParams
-  private scissorState: ScissorStateParams
-  private viewportState: ViewportStateParams
+  private blendState: BlendState
+  private cullState: CullState
+  private depthState: DepthState
+  private stencilState: StencilState
+  private scissorState: ScissorState
+  private viewportState: ViewportState
 
   private batchSize: number
   private primitiveType: PrimitiveType
@@ -141,25 +133,26 @@ export class PrimitiveBatch {
     this.batchSize = options?.batchSize ?? 512
     this.primitiveType = options?.primitiveType ?? 'TriangleList'
 
-    const vertexLayout = VertexLayout.create(['position', 'color'])
-    const sizeInBytes = VertexLayout.countBytes(vertexLayout)
+    const vertexLayout = createVertexLayout(['position', 'color'])
+    const sizeInBytes = countBytes(vertexLayout)
 
     this.arrayBuffer = new ArrayBuffer(this.batchSize * sizeInBytes)
     this.vertexPositionView = new Float32Array(this.arrayBuffer)
     this.vertexColorView = new Int32Array(this.arrayBuffer)
     this.vertexBuffer = device.createVertexBuffer([
       {
-        layout: vertexLayout,
+        vertexLayout: vertexLayout,
         data: this.arrayBuffer,
-        usage: 'Dynamic',
       },
     ])
     this.mainProgram =
       options.program ||
-      device.createProgram({
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader,
-      })
+      device.acquireShaderModule({
+        glsl: {
+          vertex: vertexShader,
+          fragment: fragmentShader,
+        },
+      }).program
     this.mainMatrix = Mat4.createIdentity()
   }
   public begin(options?: PrimitiveBatchBeginOptions) {
@@ -198,9 +191,9 @@ export class PrimitiveBatch {
         throw new Error(`PrimitiveType '${this.primitiveType}' is not supported`)
     }
 
-    const viewWidth = (this.viewportState || this.device.viewportState).width
-    const viewHeight = (this.viewportState || this.device.viewportState).height
-    this.mainMatrix.initOrthographicOffCenter(0, viewWidth, viewHeight, 0, 0, 1)
+    const viewWidth = this.viewportState?.width || this.device.output.width
+    const viewHeight = this.viewportState?.height || this.device.output.height
+    this.mainMatrix.initOrthographicOffCenter(0, viewWidth, viewHeight, 0, 0, 1, this.device.ndcMinZ)
 
     this.vertexIndex = 0
     this.vertexCount = 0
@@ -236,33 +229,34 @@ export class PrimitiveBatch {
     if (this.vertexCount) {
       const device = this.device
 
-      if (this.blendState) {
-        device.blendState = this.blendState
-      }
-      if (this.cullState) {
-        device.cullState = this.cullState
-      }
-      if (this.depthState) {
-        device.depthState = this.depthState
-      }
-      if (this.stencilState) {
-        device.stencilState = this.stencilState
-      }
-      if (this.scissorState) {
-        device.scissorState = this.scissorState
-      }
-      if (this.viewportState) {
-        device.viewportState = this.viewportState
-      }
+      // TODO:
+      // if (this.blendState) {
+      //   device.blendState = this.blendState
+      // }
+      // if (this.cullState) {
+      //   device.cullState = this.cullState
+      // }
+      // if (this.depthState) {
+      //   device.depthState = this.depthState
+      // }
+      // if (this.stencilState) {
+      //   device.stencilState = this.stencilState
+      // }
+      // if (this.scissorState) {
+      //   device.scissorState = this.scissorState
+      // }
+      // if (this.viewportState) {
+      //   device.viewportState = this.viewportState
+      // }
 
-      device.indexBuffer = null
-      device.vertexBuffer = this.vertexBuffer
-      device.program = this.program
+      // device.indexBuffer = null
+      // device.vertexBuffer = this.vertexBuffer
+      // device.program = this.program
 
-      device.program.setUniform('ViewProjection', this.matrix)
-      device.drawPrimitives(this.primitiveType, 0, this.vertexCount)
-      this.vertexIndex = 0
-      this.vertexCount = 0
+      // device.program.setUniform('ViewProjection', this.matrix)
+      // device.drawPrimitives(this.primitiveType, 0, this.vertexCount)
+      // this.vertexIndex = 0
+      // this.vertexCount = 0
     }
   }
 }

@@ -1,7 +1,77 @@
-import { DeviceGL, createDevice } from '@gglib/graphics'
+import { Color, createDevice, Device, WebglDevice } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 
-const vertexShader = /*glsl*/ `
+export default async function run(canvas: HTMLCanvasElement, _: any, platform: 'webgl2' | 'webgpu' | 'auto') {
+  // Create the graphics device and pass the existing canvas element from the DOM.
+  const device: Device = await createDevice({ canvas, platform }).ready
+
+  // Create a shader program with vertex and fragment shaders.
+  // Here the shader source code is grabbed from the script tags.
+  const shader = device.createShaderModule({
+    wgsl: wgslShader,
+    glsl: {
+      vertex: glslVS,
+      fragment: glslFS,
+    },
+  })
+
+  // Create the vertex buffer
+  const vertices = device.createVertexBuffer([
+    {
+      vertexLayout: {
+        vPosition: { elementType: 'float32', byteOffset: 0, elementCount: 3 },
+        vColor: {
+          byteOffset: 12,
+          elementCount: 3,
+          elementType: 'float32',
+        },
+      },
+
+      // Each color attribute is now a 32bit color value in RGBA format.
+      // prettier-ignore
+      data: new Float32Array([
+        -1, -1, 0.0, 1.0, 0.0, 0.0,
+         1, -1, 0.0, 0.0, 1.0, 0.0,
+        -1,  1, 0.0, 0.0, 0.0, 1.0,
+         1,  1, 0.0, 1.0, 1.0, 1.0,
+      ]),
+    },
+  ])
+
+  // Create the index buffer.
+  const indices = device.createIndexBuffer({
+    indexType: 'uint16',
+    data: new Uint16Array([0, 2, 1, 1, 2, 3]),
+  })
+
+  function frame() {
+    // resize (if needed) and clear the screen
+    device.resize()
+    if (!shader.isReady) {
+      return
+    }
+    const pass = device.renderPass
+
+    pass.flush()
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
+
+    // set the drawing state
+    pass.setProgram(shader.program)
+    pass.setVertexBuffer(vertices)
+    pass.setIndexBuffer(indices)
+    // and render.
+    pass.drawIndexed(6, 1)
+    pass.submit()
+  }
+
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
+}
+
+const glslVS = /*glsl*/ `
   precision highp float;
   // vertex position attribute
   attribute vec3 vPosition;
@@ -15,7 +85,7 @@ const vertexShader = /*glsl*/ `
   }
 `
 
-const fragmentShader = /*glsl*/ `
+const glslFS = /*glsl*/ `
   precision highp float;
   // color attribute coming from vertex shader
   varying vec3 vertexColor;
@@ -24,64 +94,27 @@ const fragmentShader = /*glsl*/ `
     gl_FragColor = vec4(vertexColor.rgb, 1.0);
   }
 `
+const wgslShader = /*wgsl*/ `
+  struct VertexInput {
+    @location(0) vPosition : vec3<f32>,
+    @location(1) vColor : vec3<f32>,
+  };
 
-export default (canvas: HTMLCanvasElement) => {
-  // Create the graphics device and pass the existing canvas element from the DOM.
-  const device = createDevice({
-    canvas,
-  })
+  struct VertexOutput {
+    @builtin(position) Position : vec4<f32>,
+    @location(0) vertexColor : vec3<f32>,
+  };
 
-  // Create a shader program with vertex and fragment shaders.
-  // Here the shader source code is grabbed from the script tags.
-  const program = device.createProgram({
-    vertexShader,
-    fragmentShader,
-  })
-
-  // Create the vertex buffer
-  const vertices = device.createVertexBuffer([
-    {
-      layout: {
-        // The layout of `vPosition` stays unchanged
-        vPosition: { type: 'float32', offset: 0, elements: 3 },
-        // The `vColor` is now defined as a 4 ubyte element.
-        vColor: {
-          offset: 12,
-          elements: 4, // 4 elements
-          type: 'uint8', // of unsigned byte type
-          packed: true, // but all 4 are packed in a single 32bit value
-          // this indicates that a byte value should be normalized
-          // into [0:1] range before it is utilized in the vertex shader stage
-          normalize: true,
-        },
-      },
-
-      // Each color attribute is now a 32bit color value in RGBA format.
-      dataType: 'float32',
-      data: [
-        -0.5, -0.5, 0.0, 0xff0000ff, 0.5, -0.5, 0.0, 0xff00ff00, -0.5, 0.5, 0.0, 0xffff0000, 0.5, 0.5, 0.0, 0xffffffff,
-      ],
-    },
-  ])
-
-  // Create the index buffer.
-  const indices = device.createIndexBuffer({
-    dataType: 'uint16',
-    data: [0, 2, 1, 1, 2, 3],
-  })
-
-  function render() {
-    // resize (if needed) and clear the screen
-    device.resize()
-    device.clear(0xff222222)
-
-    // set the drawing state
-    device.program = program
-    device.vertexBuffer = vertices
-    device.indexBuffer = indices
-    // and render.
-    device.drawIndexedPrimitives('TriangleList', 0, 6)
+  @vertex
+  fn vs(input: VertexInput) -> VertexOutput {
+    var output : VertexOutput;
+    output.Position = vec4<f32>(input.vPosition, 1.0);
+    output.vertexColor = input.vColor;
+    return output;
   }
 
-  return loop(render).stop
-}
+  @fragment
+  fn fs(input: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(input.vertexColor, 1.0);
+  }
+`

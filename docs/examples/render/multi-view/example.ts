@@ -1,102 +1,158 @@
-import { ContentManager } from '@gglib/content'
-import '@gglib/loaders'
-import { LightParams } from '@gglib/materials'
-import { Color, createDevice, CullState, DepthState, Model } from '@gglib/graphics'
-import { Mat4, Vec3 } from '@gglib/math'
-import { BasicRenderPass, Renderer, Scene } from '@gglib/render'
-import { loop } from '@gglib/utils'
+import { ContentLoader } from '@gglib/content'
+import {
+  BasicMaterial,
+  createDevice,
+  cubeGeometry,
+  Device,
+  Mesh,
+  PlatformId,
+  TaskContext,
+  Texture,
+} from '@gglib/graphics'
+import { DEGREE_TO_RAD, Mat4, MT19937, Vec3 } from '@gglib/math'
+import { Random } from '@gglib/math'
+import {
+  LayerMask,
+  MeshRenderItem,
+  Renderer,
+  RenderItem,
+  RenderItemFlags,
+  RenderItemType,
+  RenderScene,
+} from '@gglib/render'
 
-export default (canvas: HTMLCanvasElement) => {
-  // Create the `Device` and `ContentManager` as usual
-  const device = createDevice({
-    canvas,
-  })
-  const content = new ContentManager(device)
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
 
+  const content = new ContentLoader(device)
   const renderer = new Renderer(device)
+  const rnd = new MT19937(0x9abcdef0)
 
-  const scene = new Scene()
-  scene.views = [
-    {
-      // on the top left of the viewport
-      viewport: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 },
-      // with camera looking from the right
-      camera: {
-        world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Right, 100), Vec3.Zero, Vec3.Up),
-        view: Mat4.createIdentity(),
-        projection: Mat4.createIdentity(),
-      },
+  const scene = createScene()
+  renderer.addView({
+    viewport: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 },
+    camera: {
+      visibilityMask: LayerMask.All,
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Right, 20), Vec3.Zero, Vec3.Up),
+      view: Mat4.createIdentity(),
+      projection: Mat4.createIdentity(),
     },
-    {
-      // on the top right of the viewport
-      viewport: { x: 0.0, y: 0.5, width: 0.5, height: 0.5 },
-      // with camera looking from the left
-      camera: {
-        world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Left, 100), Vec3.Zero, Vec3.Up),
-        view: Mat4.createIdentity(),
-        projection: Mat4.createIdentity(),
-      },
+  })
+  renderer.addView({
+    viewport: { x: 0.0, y: 0.5, width: 0.5, height: 0.5 },
+    camera: {
+      visibilityMask: LayerMask.All,
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Left, 20), Vec3.Zero, Vec3.Up),
+      view: Mat4.createIdentity(),
+      projection: Mat4.createIdentity(),
     },
-    {
-      // on the bottom left of the viewport
-      viewport: { x: 0.0, y: 0.0, width: 0.5, height: 0.5 },
-      // with camera looking from behind
-      camera: {
-        world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Backward, 100), Vec3.Zero, Vec3.Up),
-        view: Mat4.createIdentity(),
-        projection: Mat4.createIdentity(),
-      },
+  })
+  renderer.addView({
+    viewport: { x: 0.0, y: 0.0, width: 0.5, height: 0.5 },
+    camera: {
+      visibilityMask: LayerMask.All,
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Backward, 20), Vec3.Zero, Vec3.Up),
+      view: Mat4.createIdentity(),
+      projection: Mat4.createIdentity(),
     },
-    {
-      // on the bottom right of the viewport
-      viewport: { x: 0.5, y: 0.0, width: 0.5, height: 0.5 },
-      // with camera looking at the front
-      camera: {
-        world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Up, 100), Vec3.Zero, Vec3.Forward),
-        view: Mat4.createIdentity(),
-        projection: Mat4.createIdentity(),
-      },
+  })
+  renderer.addView({
+    viewport: { x: 0.5, y: 0.0, width: 0.5, height: 0.5 },
+    camera: {
+      visibilityMask: LayerMask.All,
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Up, 20), Vec3.Zero, Vec3.Forward),
+      view: Mat4.createIdentity(),
+      projection: Mat4.createIdentity(),
     },
-  ]
-  scene.items = []
-  scene.lights = [
-    LightParams.createDirectionalLight({
-      color: [1, 1, 1],
-      direction: [-1, -1, -1],
-    }),
-  ]
-  scene.steps = [
-    new BasicRenderPass({
-      clearColor: Color.CornflowerBlue.rgba,
-      depthState: DepthState.Default,
-      cullState: CullState.CullClockWise,
-    }),
-  ]
-
-  content.load('/models/obj/piratekit/ship_dark.obj', Model).then((model) => {
-    model.meshes.forEach((mesh) => {
-      mesh.parts.forEach((part) => {
-        scene.items.push({
-          type: 'drawable',
-          transform: Mat4.createIdentity(),
-          item: part,
-          material: mesh.getMaterial(part.materialId),
-        })
-      })
-    })
   })
 
-  function updateViews(t: number, dt: number) {
-    scene.views.forEach((view) => {
-      const camera = view.camera!
-      Mat4.invert(camera.world, camera.view)
-      const aspect = device.drawingBufferAspectRatio
-      camera.projection.initOrthographic(100, 100 / aspect || 1, 0.1, 1000)
-    })
+  const textures = [
+    device.createTexture({
+      source: '/textures/prototype/red/texture_02.png',
+    }),
+    device.createTexture({
+      source: '/textures/prototype/green/texture_02.png',
+    }),
+    device.createTexture({
+      source: '/textures/prototype/orange/texture_02.png',
+    }),
+    device.createTexture({
+      source: '/textures/prototype/purple/texture_02.png',
+    }),
+  ]
+  for (let i = 0; i < 100; i++) {
+    scene.items.push(createObject(device, textures[i % textures.length], rnd))
   }
 
-  return loop((time, dt) => {
-    updateViews(time, dt)
-    renderer.render([scene])
-  }).stop
+  function frame(ctx: TaskContext) {
+    device.resize()
+    for (const view of renderer.getViews()) {
+      Mat4.invert(view.camera.world, view.camera.view)
+      view.camera.projection.initPerspectiveFieldOfView(
+        45 * DEGREE_TO_RAD,
+        device.output.aspectRatio,
+        0.1,
+        100,
+        device.ndcMinZ,
+      )
+    }
+    for (const item of scene.items) {
+      item.update()
+    }
+
+    renderer.update(ctx.time)
+
+    renderer.render(scene)
+  }
+
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
+}
+
+function createObject(device: Device, texture: Texture, rnd: Random): MeshRenderItem & Updatable {
+  const material = new BasicMaterial(device)
+  const world = Mat4.createTranslation(
+    Vec3.create(rnd.nextFloat(), rnd.nextFloat(), rnd.nextFloat()).addScalar(-0.5).multiplyScalar(20),
+  )
+  const seed = Vec3.create(rnd.nextFloat(), rnd.nextFloat(), rnd.nextFloat())
+  material.Texture = texture
+  material.TextureEnabled = true
+  material.LightingEnabled = true
+  material.get('lights.color[0]')!.init(1, 1, 1, 1)
+  material.get('lights.direction[0]')!.init(0, 0, -1, 0)
+
+  return {
+    type: RenderItemType.Mesh,
+    layer: LayerMask.All,
+    flags: RenderItemFlags.Opaque,
+    transform: world,
+    mesh: new Mesh(device, {
+      materials: [material],
+      parts: [cubeGeometry(device, { materialId: 0 })],
+    }),
+    update: () => {
+      world.rotateYawPitchRoll(seed.x * 0.01, seed.y * 0.01, seed.z * 0.01)
+      material.World.initFrom(world)
+    },
+  }
+}
+
+interface Scene extends RenderScene {
+  items: Updatable[]
+}
+interface Updatable extends RenderItem {
+  update: () => void
+}
+function createScene(): Scene {
+  const scene: Scene = {
+    items: [],
+    collect: (camera, out) => {
+      for (const item of scene.items) {
+        out.push(item)
+      }
+    },
+  }
+  return scene
 }

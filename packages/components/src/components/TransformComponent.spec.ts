@@ -1,55 +1,161 @@
-import { GameEntity, GameProvider } from '@gglib/ecs'
-import { Vec3 } from '@gglib/math'
+import { GameEntity, GameEntityState, GameWorld } from '@gglib/ecs'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createEntity, createGame } from './createGame'
-import { TransformComponent } from './TransformComponent'
+import { LifeCycleFlags, TransformComponent } from './TransformComponent'
 
 describe('@gglib/ecs/TransformComponent', () => {
-  let game: GameProvider
-  let eParent: GameEntity<TransformComponent>
-  let eChild: GameEntity<TransformComponent>
-  let parent: TransformComponent
-  let child: TransformComponent
+  let world: GameWorld
 
   beforeEach(() => {
-    game = createGame({
-      device: {},
-      loop: { autostart: false },
-    })
-
-    eParent = createEntity({
-      transform: { position: Vec3.create(0, 0, 0) },
-    }).initialize(game)
-
-    eChild = createEntity({
-      parent: eParent,
-      transform: { position: Vec3.create(0, 0, 0) },
-    }).initialize(game)
-
-    parent = eParent.component(TransformComponent)
-    child = eChild.component(TransformComponent)
+    world = new GameWorld()
   })
 
-  describe('parent', () => {
-    describe('when modified', () => {
-      it('does not affect child local transform', () => {
-        expect(parent.translation).toEqual(Vec3.createZero())
-        expect(child.translation).toEqual(Vec3.createZero())
+  describe('auto cycle', () => {
+    it('should propagate state change', () => {
+      const root = world.createEntity({
+        name: 'root',
+        transform: new TransformComponent(),
+      })
+      const parent = world.createEntity({
+        name: 'parent',
+        parent: root,
+        transform: new TransformComponent(),
+      })
+      const child = world.createEntity({
+        name: 'child',
+        parent: parent,
+        transform: new TransformComponent(),
+      })
 
-        // parent.translateX(10)
-        // eParent.updateComponents(16)
-        // expect(parent.position).toEqual(Vec3.create(10, 0, 0))
-        // expect(parent.world.getTranslation()).toEqual(Vec3.create(10, 0, 0))
-        // expect(child.position).toEqual(Vec3.create(0, 0, 0))
-        // expect(child.world.getTranslation()).toEqual(Vec3.create(10, 0, 0))
+      expect(root.state).toBe(GameEntityState.Created)
+      expect(parent.state).toBe(GameEntityState.Created)
+      expect(child.state).toBe(GameEntityState.Created)
 
-        // parent.rotateAxisAngleV(Vec3.Up, Math.PI / 2)
-        // eParent.updateComponents(16)
-        // expect(parent.position).toEqual(Vec3.create(10, 0, 0))
-        // expect(parent.world.getTranslation()).toEqual(Vec3.create(10, 0, 0))
-        // console.log(child.world.format(3))
-        // expect(child.position).toEqual(Vec3.create(0, 0, 0))
-        // expect(child.world.getTranslation()).toEqual(Vec3.create(0, 0, -10))
+      root.initialize()
+
+      expect(root.state).toBe(GameEntityState.Initialized)
+      expect(parent.state).toBe(GameEntityState.Initialized)
+      expect(child.state).toBe(GameEntityState.Initialized)
+
+      root.activate()
+
+      expect(root.state).toBe(GameEntityState.Activated)
+      expect(parent.state).toBe(GameEntityState.Activated)
+      expect(child.state).toBe(GameEntityState.Activated)
+
+      root.deactivate()
+
+      expect(root.state).toBe(GameEntityState.Initialized)
+      expect(parent.state).toBe(GameEntityState.Initialized)
+      expect(child.state).toBe(GameEntityState.Initialized)
+
+      root.destroy()
+
+      expect(root.state).toBe(GameEntityState.Destroyed)
+      expect(parent.state).toBe(GameEntityState.Destroyed)
+      expect(child.state).toBe(GameEntityState.Destroyed)
+    })
+
+    describe('when parent changes', () => {
+      let root1: GameEntity
+      let root2: GameEntity
+      let parent: GameEntity
+      let child: GameEntity
+
+      beforeEach(() => {
+        root1 = world.createEntity({
+          name: 'root1',
+          transform: new TransformComponent(),
+        })
+        root2 = world.createEntity({
+          name: 'root2',
+          transform: new TransformComponent(),
+        })
+        parent = world.createEntity({
+          name: 'parent',
+          parent: null,
+          transform: new TransformComponent(),
+        })
+        child = world.createEntity({
+          name: 'child',
+          parent: parent,
+          transform: new TransformComponent(),
+        })
+
+        expect(root1.state).toBe(GameEntityState.Created)
+        expect(root2.state).toBe(GameEntityState.Created)
+        expect(parent.state).toBe(GameEntityState.Created)
+        expect(child.state).toBe(GameEntityState.Created)
+
+        root1.initialize()
+        root2.initialize()
+        root2.activate()
+
+        expect(root1.state).toBe(GameEntityState.Initialized)
+        expect(root2.state).toBe(GameEntityState.Activated)
+        expect(parent.state).toBe(GameEntityState.Created)
+        expect(child.state).toBe(GameEntityState.Created)
+      })
+
+      it('should initialize tree when new parent is initialized', () => {
+        parent.getTransform<TransformComponent>()!.setParent(root1.getTransform<TransformComponent>()!)
+        expect(root1.state).toBe(GameEntityState.Initialized)
+        expect(parent.state).toBe(GameEntityState.Initialized)
+        expect(child.state).toBe(GameEntityState.Initialized)
+      })
+
+      it('should activate tree when new parent is active', () => {
+        parent.getTransform<TransformComponent>()!.setParent(root2.getTransform<TransformComponent>()!)
+        expect(root1.state).toBe(GameEntityState.Initialized)
+        expect(root2.state).toBe(GameEntityState.Activated)
+        expect(parent.state).toBe(GameEntityState.Activated)
+        expect(child.state).toBe(GameEntityState.Activated)
+      })
+
+      it('should keep tree state when detached', () => {
+        parent.getTransform<TransformComponent>()!.setParent(root2.getTransform<TransformComponent>()!)
+        expect(parent.state).toBe(GameEntityState.Activated)
+        expect(child.state).toBe(GameEntityState.Activated)
+        parent.getTransform<TransformComponent>()!.setParent(null)
+        expect(parent.state).toBe(GameEntityState.Activated)
+        expect(child.state).toBe(GameEntityState.Activated)
+      })
+
+      it('is deactivated when was active but new parent is not', () => {
+        parent.getTransform<TransformComponent>()!.setParent(root2.getTransform<TransformComponent>()!)
+        expect(parent.state).toBe(GameEntityState.Activated)
+        expect(child.state).toBe(GameEntityState.Activated)
+        parent.getTransform<TransformComponent>()!.setParent(root1.getTransform<TransformComponent>()!)
+        expect(parent.state).toBe(GameEntityState.Initialized)
+        expect(child.state).toBe(GameEntityState.Initialized)
+      })
+    })
+
+    describe('opt out of auto cycle', () => {
+      it('should not propagate state change', () => {
+        const root = world.createEntity({
+          name: 'root',
+          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.Propagate }),
+        })
+        const parent = world.createEntity({
+          name: 'parent',
+          parent: root,
+          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.Receive }),
+        })
+        const child = world.createEntity({
+          name: 'child',
+          parent: parent,
+          transform: new TransformComponent({ lifeCycle: LifeCycleFlags.None }),
+        })
+
+        expect(root.state).toBe(GameEntityState.Created)
+        expect(parent.state).toBe(GameEntityState.Created)
+        expect(child.state).toBe(GameEntityState.Created)
+
+        root.initialize()
+
+        expect(root.state).toBe(GameEntityState.Initialized)
+        expect(parent.state).toBe(GameEntityState.Initialized)
+        expect(child.state).toBe(GameEntityState.Created)
       })
     })
   })

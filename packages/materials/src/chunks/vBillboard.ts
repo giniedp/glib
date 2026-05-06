@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -15,14 +15,14 @@ export interface VBillboardDefs {
  * @public
  */
 export const V_BILLBOARD: ShaderChunkSet<VBillboardDefs> = {
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef BILLBOARD
     // @binding BillboardSize
     // @default [1, 1]
     uniform vec2 uBillboardSize;
     #endif
   `,
-  vs_position_after: glsl`
+  vs_position_after: /* glsl */ `
     #ifdef BILLBOARD
     vec3 upVector = vec3(0, 1, 0);
     vec3 sideVector = normalize(cross(vToEyeInWS, upVector));

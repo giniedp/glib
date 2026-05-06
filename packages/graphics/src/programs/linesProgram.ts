@@ -1,5 +1,4 @@
 import type { Device } from '../Device'
-import { ShaderProgramOptions } from '../resources'
 
 const vertexShader = /* glsl */ `
   #version 300 es
@@ -39,14 +38,4 @@ const fragmentShader = /* glsl */ `
 export const PROGRAM_LINES = {
   vertexShader,
   fragmentShader,
-}
-
-export function linesProgram(device: Device) {
-  return device.createProgram(PROGRAM_LINES)
-}
-
-export function linesProgramOptions(): ShaderProgramOptions {
-  return {
-    ...PROGRAM_LINES
-  }
 }

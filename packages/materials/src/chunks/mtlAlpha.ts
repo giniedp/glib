@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 /**
  * @public
  */
@@ -36,7 +36,7 @@ export interface MtlAlphaDefs {
    * Adds a `uniform sampler2D uAlphaMap` (bound as `AlphaMap`) that is used as alpha value.
    * If uniform alpha value is used, then both are multiplied.
    */
-  ALPHA_MAP?: boolean,
+  ALPHA_MAP?: boolean
 
   /**
    * Allows to override the texture coordinates. Default is `vTexture.xy`.
@@ -68,8 +68,6 @@ export interface MtlAlphaDefs {
    * defaults to `r`
    */
   ALPHA_MAP_CHANNEL?: string
-
-
 }
 
 /**
@@ -78,7 +76,7 @@ export interface MtlAlphaDefs {
  * @public
  */
 export const MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef ALPHA_MAP
       #ifndef ALPHA
       #define ALPHA
@@ -97,7 +95,7 @@ export const MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef ALPHA
     // @binding Alpha
     // @widget  range(0, 1)
@@ -127,7 +125,7 @@ export const MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = {
     uniform mat3 uAlphaMapTransform;
     #endif
   `,
-  fs_functions: glsl`
+  fs_functions: /* glsl */ `
     #ifdef ALPHA_MAP
     vec2 getAlphaMapUV() {
       vec2 result = ALPHA_MAP_UV;
@@ -162,11 +160,11 @@ export const MTL_ALPHA: ShaderChunkSet<MtlAlphaDefs> = {
     }
   `,
 
-  fs_surface_after: glsl`
+  fs_surface_after: /* glsl */ `
     applyAlpha(surface, uvOffset);
   `,
 
-  fs_frag_color: glsl`
+  fs_frag_color: /* glsl */ `
     #if defined(ALPHA_PREMULTIPLY)
     color.rgb *= surface.BaseColor.a;
     #endif

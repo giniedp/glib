@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export interface MtlIndexOfRefractionDefs {
   /**
@@ -13,10 +13,10 @@ export interface MtlIndexOfRefractionDefs {
 }
 
 export const MTL_INDEX_OF_REFRACTION: ShaderChunkSet<MtlIndexOfRefractionDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
 
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef INDEX_OF_REFRACTION
     // @binding IndexOfRefraction
     // @default 1.5
@@ -24,7 +24,7 @@ export const MTL_INDEX_OF_REFRACTION: ShaderChunkSet<MtlIndexOfRefractionDefs> =
     #endif
   `,
 
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     #ifdef INDEX_OF_REFRACTION
     surface.Ior = uIor;
     #endif

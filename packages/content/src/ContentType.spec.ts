@@ -1,5 +1,5 @@
+import { describe, expect, it } from 'vitest'
 import { ContentType } from './ContentType'
-import { expect, describe, it, beforeEach } from 'vitest'
 
 describe('ContentType', () => {
   describe('parse', () => {

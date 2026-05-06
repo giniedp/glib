@@ -1,7 +1,7 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export default {
-  functions: glsl`
+  functions: /* glsl */ `
     // Classic Perlin noise
     float perlinNoise(in vec2 P) {
       vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
@@ -80,5 +80,5 @@ export default {
       float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
       return 2.3 * n_xy;
     }
-  `
+  `,
 } satisfies ShaderChunkSet

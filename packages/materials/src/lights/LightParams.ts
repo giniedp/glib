@@ -5,7 +5,6 @@ import { IVec3, Vec3 } from '@gglib/math'
  * @public
  */
 export class LightParams {
-
   /**
    * Color of the light source
    *
@@ -68,7 +67,7 @@ export class LightParams {
   }
   public set type(v: LightType) {
     this.$type = v
-    this.enabled = this.enabled // updates value in buffer
+    this.$color[3] = v ? this.$type : 0
   }
 
   /**
@@ -130,7 +129,7 @@ export class LightParams {
     return (Math.acos(this.$direction[3]) * 180) / Math.PI
   }
   public set angle(v: number) {
-    this.$direction[3] = Math.cos(v * Math.PI / 180)
+    this.$direction[3] = Math.cos((v * Math.PI) / 180)
   }
 
   private $type = LightType.Directional
@@ -141,11 +140,7 @@ export class LightParams {
   public readonly data: Float32Array
 
   public constructor() {
-    this.data = new Float32Array([
-      0, 0, 0, 0,
-      0, 0, 0, 0,
-      0, 0, 0, 0,
-    ])
+    this.data = new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     this.$color = this.data.subarray(0, 4)
     this.$position = this.data.subarray(4, 8)
     this.$direction = this.data.subarray(8, 12)
@@ -181,10 +176,7 @@ export class LightParams {
     toParams[`Lights[${lightIndex}].Direction`] = this.$direction
   }
 
-  public static createDirectionalLight(options: {
-    direction: IVec3 | number[],
-    color: IVec3 | number[],
-  }): LightParams {
+  public static createDirectionalLight(options: { direction: IVec3 | number[]; color: IVec3 | number[] }): LightParams {
     const result = new LightParams()
     result.enabled = true
     result.color = Vec3.convert(options.color).toArray()
@@ -194,9 +186,9 @@ export class LightParams {
   }
 
   public static createPointLight(options: {
-    position: IVec3 | number[],
-    color: IVec3 | number[],
-    range: number,
+    position: IVec3 | number[]
+    color: IVec3 | number[]
+    range: number
   }): LightParams {
     const result = new LightParams()
     result.enabled = true
@@ -208,11 +200,11 @@ export class LightParams {
   }
 
   public static createSpotLight(options: {
-    position: IVec3 | number[],
-    direction: IVec3 | number[],
-    color: IVec3 | number[],
-    range: number,
-    angle: number,
+    position: IVec3 | number[]
+    direction: IVec3 | number[]
+    color: IVec3 | number[]
+    range: number
+    angle: number
   }): LightParams {
     const result = new LightParams()
     result.enabled = true

@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -39,7 +39,7 @@ export interface VTextureDefs {
  * @public
  */
 export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
-  attributes: glsl`
+  attributes: /* glsl */ `
     #ifdef V_TEXTURE
     // @binding texture
     // @remarks The default vertex texture attribute
@@ -56,7 +56,7 @@ export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
     attribute vec2 aTexture2;
     #endif
   `,
-  varyings: glsl`
+  varyings: /* glsl */ `
     #ifdef V_TEXTURE
     varying vec2 vTexture;
     #endif
@@ -67,7 +67,7 @@ export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
     varying vec2 vTexture2;
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef V_TEXTURE_SCALE_OFFSET
     // @binding TextureScaleOffset
     uniform vec4 uTextureScaleOffset;
@@ -98,7 +98,7 @@ export const V_TEXTURE: ShaderChunkSet<VTextureDefs> = {
     uniform mat3 uTexture2Transform;
     #endif
   `,
-  vs_texture: glsl`
+  vs_texture: /* glsl */ `
     #ifdef V_TEXTURE
     vTexture = aTexture;
     #ifdef V_TEXTURE_SCALE_OFFSET

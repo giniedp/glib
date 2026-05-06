@@ -6,8 +6,13 @@ order: 300
 
 # Packed Colors
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-## Code
+# Code
 
 <ExampleCode />

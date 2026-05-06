@@ -1,262 +1,359 @@
 import {
-  BlendState,
+  CommonBindingKeys,
+  Color,
   CullState,
   DepthState,
   Device,
-  RenderTargetOptions,
-  ScissorState,
+  DeviceOutput,
+  RenderVariant,
   SpriteBatch,
-  SpriteBatchBeginOptions,
-  StencilState,
-  TextureImage,
+  surfaceFormatIsSrgb,
+  Texture,
 } from '@gglib/graphics'
-import { BasicRenderPass } from './BasicRenderPass'
-import { RenderContext } from './RenderContext'
+
+import { Mat4, Vec3 } from '@gglib/math'
+import { eventSource, removeItem } from '@gglib/utils'
+import { GeometryPass } from './passes/GeometryPass'
+import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
+import {
+  MeshPartRenderCollector,
+  MeshRenderCollector,
+  ModelRenderCollector,
+  RenderCollectorRegistry,
+  SpriteRenderCollector,
+} from './RenderCollector'
+import { RenderList, RenderListCache } from './RenderList'
+import { RenderListMode } from './RenderListMode'
+import { RenderPipeline } from './RenderPipeline'
 import { RenderTargetManager } from './RenderTargetManager'
-import { RenderPass, SceneComposition, SceneView, ViewportArea } from './Types'
-import { UniformBinder } from './UniformBinder'
+import {
+  LayerMask,
+  RenderItemType,
+  type FrameInfo,
+  type RenderContext,
+  type RenderScene,
+  type RenderView,
+} from './types'
 
-/**
- * A utility class to render compositions on screen or render targets.
- *
- * @public
- * @remarks
- * The renderer does not perform any culling or filtering of the rendered items. This is left to callers of the renderer.
- */
+export const ViewDataSymbol = Symbol('ViewData')
+export const ViewChannelsSymbol = Symbol('ViewChannels')
+
 export class Renderer {
-  public static compareOrder(a: { order?: number }, b: { order?: number }) {
-    return (a.order ?? 0) - (b.order ?? 0)
-  }
-
   /**
    * The graphics device
    */
-  public device: Device
+  public readonly device: Device
 
   /**
-   * Common uniforms (e.g. time and camera matrices) that can be updated and passed to the shaders
+   * Default rendering pipeline, being used for views without own pipeline assigned.
    */
-  public uniforms: UniformBinder
+  public pipeline: RenderPipeline
 
   /**
-   * Default rendering steps, being used for compositions without own render steps definition
+   * Preferred clear color. Some render passes may ignore this if they have their own clear color assigned.
    */
-  public steps: RenderPass[] = [new BasicRenderPass()]
+  public clearColor: Color = Color.Black
 
   /**
-   * Default viewport area, being used for compositions without own viewport definition
+   * If enabled, automatically convert linear to sRGB color space when presenting to non-sRGB surfaces.
    */
-  public viewport: ViewportArea = {
-    x: 0,
-    y: 0,
-    width: 1,
-    height: 1,
-  }
+  public autoSrgb = false
 
-  /**
-   * The intial, default render target is created with these options
-   */
-  public targetOptions: RenderTargetOptions = {
-    format: 'RGBA8_UNORM',
-    depthFormat: 'DepthStencil',
-  }
-
-  /**
-   * SpriteBatch that is used to compose the results of all views into final image
-   */
+  protected renderLists: RenderListCache
+  protected collectors: RenderCollectorRegistry
   protected spriteBatch: SpriteBatch
+  protected context: RenderContext
+  protected resources: RenderTargetManager
+  protected frameInfo: FrameInfo = {
+    id: 0,
+    time: 0,
+    delta: 0,
+  }
 
-  public targets: RenderTargetManager
+  private views: RenderView[] = []
 
   /**
-   * Indicates whether the views, subviews and items should be sorted by their order property before rendering
+   * Event emitted when the render context is ready to be used for rendering.
+   * This allows to set custom render parameters or perform other preparations before the render pipeline is executed.
    */
-  public autosort: boolean = true
+  public readonly onContextReady = eventSource<RenderContext>()
 
-  protected readonly contexts = new Map<SceneComposition, Map<SceneView, RenderContext>>()
-  protected readonly toRender: SceneComposition[] = []
-  protected readonly toPresent: SceneComposition[] = []
-  protected readonly batchOptions: SpriteBatchBeginOptions = {
-    depthState: DepthState.None,
-    blendState: BlendState.Default,
-    stencilState: StencilState.Default,
-    scissorState: ScissorState.Default,
-    cullState: CullState.CullNone,
+  public getViews(): ReadonlyArray<RenderView> {
+    return this.views
   }
 
   public constructor(device: Device) {
     this.device = device
-    this.uniforms = new UniformBinder()
-    this.spriteBatch = device.createSpriteBatch()
-    this.targets = new RenderTargetManager(this.device)
+    this.pipeline = new RenderPipeline()
+    this.pipeline.addPass(new GeometryPass())
+    this.renderLists = new RenderListCache()
+    this.collectors = new RenderCollectorRegistry()
+    this.collectors.register(RenderItemType.Mesh, new MeshRenderCollector())
+    this.collectors.register(RenderItemType.MeshPart, new MeshPartRenderCollector())
+    this.collectors.register(RenderItemType.Model, new ModelRenderCollector())
+    this.collectors.register(RenderItemType.Sprite, new SpriteRenderCollector())
+    this.resources = new RenderTargetManager(device)
+    this.context = {
+      device: this.device,
+      renderer: this,
+      resources: this.resources,
+      frame: this.frameInfo,
+      view: null,
+      viewWidth: 1,
+      viewHeight: 1,
+      channelDescriptors: createRenderChannelSchema(device),
+      renderLists: this.renderLists,
+      renderVariant: RenderVariant.Forward,
+      renderParams: {},
+    }
+  }
+
+  public addView(options: Partial<RenderView>): RenderView {
+    options.name ??= 'view'
+    options.camera ??= null
+    options.disabled ??= false
+    options.viewport ??= { x: 0, y: 0, width: 1, height: 1 }
+    options.output ??= [options.present || RenderChannel.Color]
+    options.pipeline ??= this.pipeline
+    options.exports ??= {}
+    options.items ??= []
+    options.includeMask ??= LayerMask.All
+    if (options.present === undefined) {
+      options.present = options.output[0]
+    }
+    const view = options as RenderView
+    if (!this.views.includes(view)) {
+      this.views.push(view)
+    }
+    return view
+  }
+
+  public removeView(view: RenderView): boolean {
+    const channels = view.exports
+    for (const key in channels) {
+      const texture = channels[key as RenderChannel]
+      if (texture) {
+        this.resources.release(texture)
+        channels[key as RenderChannel] = null
+      }
+    }
+    return removeItem(this.views, view)
+  }
+
+  public getView(name: string): RenderView | null {
+    for (const view of this.views) {
+      if (view.name === name) {
+        return view
+      }
+    }
+    return null
   }
 
   /**
-   * Releases resources that have been cached for the given scene
+   * Simply updates the internal frame info.
+   * Should be called once per frame before rendering.
    */
-  public release(scene: SceneComposition) {
-    const toRelease = this.contexts.get(scene)
-    this.contexts.delete(scene)
-    if (!toRelease) {
+  public update(time: number) {
+    this.frameInfo.time ||= time
+    this.frameInfo.delta = time - this.frameInfo.time
+    this.frameInfo.time = time
+    this.frameInfo.id++
+    this.resources.update()
+  }
+
+  /**
+   * Renders the given scene into all views.
+   */
+  public render(scene: RenderScene): void {
+    for (const view of this.views) {
+      this.renderSceneView(scene, view)
+    }
+    this.present()
+  }
+
+  /**
+   * Renders the given scene into the given view.
+   * Skips rendering if the view is disabled or invalid.
+   */
+  public renderSceneView(scene: RenderScene, view: RenderView): void {
+    if (!this.validateView(view)) {
       return
     }
-    toRelease.forEach((ctx) => {
-      ctx.dispose()
-    })
+    view.items ||= []
+    view.items.length = 0
+    scene.collect(view.camera, view.items)
+    this.renderView(view)
   }
 
-  private prepareContext(scene: SceneComposition, view: SceneView) {
-    if (!this.contexts.has(scene)) {
-      this.contexts.set(scene, new Map())
+  protected validateView(view: RenderView): boolean {
+    if (view.disabled) {
+      return false
     }
-    if (!this.contexts.get(scene).has(view)) {
-      this.contexts.get(scene).set(view, new RenderContext(this))
+    if (!view.camera) {
+      console.warn(`View '${view.name}' has no camera. View will be disabled to prevent further warnings.`)
+      view.disabled = true
+      return false
     }
-    const context = this.contexts.get(scene).get(view)
-    context.prepare(scene, view)
-    return context
-  }
-
-  /**
-   * Takes an array of scenes, renders which are not disabled and presents all non-offset views on screen.
-   */
-  public render(...scenes: SceneComposition[]) {
-    this.toRender.length = 0
-    this.toPresent.length = 0
-    this.device.resize()
-    this.targets.update()
-
-    for (const item of scenes) {
-      if (item.disabled) {
-        continue
-      }
-      this.toRender.push(item)
-      if (!item.muted) {
-        this.toPresent.push(item)
-      }
+    if (!view.viewport) {
+      console.warn(`View '${view.name}' has no viewport. View will be disabled to prevent further warnings.`)
+      view.disabled = true
     }
-
-    if (this.autosort) {
-      this.toRender.sort(Renderer.compareOrder)
-      this.toPresent.sort(Renderer.compareOrder)
-      for (const it of this.toRender) {
-        if (it.items) {
-          it.items.sort(Renderer.compareOrder)
-        }
-      }
+    if (!view.pipeline) {
+      console.warn(`View '${view.name}' has no render pipeline. View will be disabled to prevent further warnings.`)
+      view.disabled = true
     }
-
-    for (const it of this.toRender) {
-      this.renderScene(it)
+    if (view.includeMask == null) {
+      console.warn(`View '${view.name}' has no include mask assigned, using default`)
+      view.includeMask = LayerMask.All
     }
-    this.present(this.toPresent)
+    if (view.camera.visibilityMask == null) {
+      console.warn(`View '${view.name}' has no camera layer mask assigned, using default`)
+      view.camera.visibilityMask = LayerMask.All
+    }
+    if (!(view.includeMask & view.camera.visibilityMask)) {
+      console.warn(
+        `View '${view.name}' include mask and camera visibility mask have no common layers, view will be disabled to prevent further warnings.`,
+      )
+      view.disabled = true
+    }
+    return !view.disabled
   }
 
   /**
-   * Renders a single scene into its render target
-   *
-   * @remarks
-   * - Runs the scene through each rendering step
-   * - Does NOT present the result on screen, use `render()` for that
+   * Renders the given view. Does not perform any validation and assumes that
+   * the view data are already collected.
    */
-  public renderScene(scene: SceneComposition) {
-    if (!scene.views) {
-      scene.views = [
-        {
-          viewport: {
-            x: 0,
-            y: 0,
-            width: 1,
-            height: 1,
-          },
-        },
-      ]
+  public renderView(view: RenderView) {
+    if (!this.validateView(view)) {
+      return
     }
+    const context = this.context
+    context.frame = this.frameInfo
+    context.view = view
+    context.viewWidth = getViewWidth(view.viewport.width, this.device.output)
+    context.viewHeight = getViewHeight(view.viewport.height, this.device.output)
+    this.updateBindings(context)
+    this.onContextReady.emit(context)
 
-    for (const view of scene.views) {
-      if (view.disabled) {
-        continue
-      }
-
-      const context = this.prepareContext(scene, view)
-      const camera = context.camera
-      if (!camera) {
-        continue
-      }
-
-      const mask = camera.layerMask ?? -1 // all layers
-      for (const it of context.items) {
-        const layer = it.layer ?? 1 // default layer
-        it.hidden = (mask & layer) === 0
-      }
-
-      const steps = context.steps
-      for (let step of steps) {
-        if (typeof step.setup === 'function') {
-          step.setup(context)
-        }
-      }
-      for (let step of steps) {
-        if (typeof step.render === 'function') {
-          step.render(context)
-        }
-      }
-      for (let step of steps) {
-        if (typeof step.cleanup === 'function') {
-          step.cleanup(context)
-        }
-      }
-    }
+    this.renderLists.clear()
+    view.pipeline.execute(context)
   }
 
   /**
-   * Presents all rendered compositions on screen or given render target
    *
-   * @remarks
-   * - Rendering results of all given compositions are rendered on the given texture.
-   * - Compositions without a result are silently skipped.
-   * - No filtering is performed, meaning even disabled The scenes are processed in given order and without filtering meaning that
-   * disabled as well as offscreen scenes would also be presented
-   * if they have a rendering result.
-   *
-   * @param scenes - the rendered compositions to present
-   * @param target - the output render target. If missing, output goes to screen.
-   * @param batchOptions - the batch options to use
+   * @param mode
+   * @param ctx
+   * @returns
    */
-  public present(scenes: SceneComposition[], target?: TextureImage, batchOptions?: SpriteBatchBeginOptions): void {
-    this.device.setRenderTarget(target)
-    this.spriteBatch.begin(batchOptions || this.batchOptions)
-    for (const scene of scenes) {
-      const outputs = this.contexts.get(scene)
-      if (!outputs || !outputs.size) {
+  public getList(mode: RenderListMode, ctx: RenderContext): RenderList {
+    const list = this.renderLists.get(mode)
+    if (list.isSorted) {
+      return list
+    }
+    list.begin(mode, ctx.view, ctx.renderParams)
+    this.collectors.begin(ctx, list)
+    for (const item of ctx.view.items) {
+      if (!(item.flags & mode.mask)) {
+        continue
+      }
+      this.collectors.add(item)
+    }
+    this.collectors.end()
+    list.sort()
+    return list
+  }
+
+  /**
+   * Presents all prerendered views to screen or to the given target texture.
+   * Skips views that have no presentable channels or have {@link RenderView.present} set to false.
+   */
+  public present(views: RenderView[] = this.views, target: Texture = null): void {
+    this.spriteBatch ||= new SpriteBatch(this.device)
+
+    const isSRGB = surfaceFormatIsSrgb((target || this.device.output).format)
+    const pass = this.device.renderPass
+    pass.flush()
+    pass.setRenderTarget(0, target)
+    pass.setClearColor(0, Color.TransparentBlack)
+    pass.setClearDepth(1)
+    pass.clear()
+    pass.setCullState(CullState.Disabled)
+    pass.setDepthState(DepthState.Disabled)
+
+    this.spriteBatch.begin()
+    this.spriteBatch.linearToSrgb = this.autoSrgb && !isSRGB
+    for (const view of views) {
+      if (!view.present) {
+        continue
+      }
+      const texture = view.exports[view.present]
+      if (!texture) {
         continue
       }
 
-      for (const [_, ctx] of outputs) {
-        const target = ctx.channels[ctx.channel]
-        if (!target) {
-          continue
-        }
-        const rect = ctx.viewport
-        this.spriteBatch
-          .draw(target)
-          .source(0, 0, target.width, target.height)
-          .flipY()
-          .destination(rect.x, rect.y, rect.width, rect.height)
-      }
+      const rect = view.viewport
+      this.spriteBatch
+        .next(texture)
+        .source(0, 0, texture.width, texture.height)
+        .flipY(this.device.isWebGL2)
+        .destination(
+          getViewWidth(rect.x, target || this.device.output),
+          getViewHeight(rect.y, target || this.device.output),
+          getViewWidth(rect.width, target || this.device.output),
+          getViewHeight(rect.height, target || this.device.output),
+        )
     }
-    this.spriteBatch.end()
-    this.device.setRenderTarget(null)
+    pass.render(this.spriteBatch)
+    pass.submit()
+    pass.flush()
+  }
+
+  protected updateBindings(ctx: RenderContext) {
+    ctx.renderParams[CommonBindingKeys.Frame.Index] = ctx.frame.id
+    ctx.renderParams[CommonBindingKeys.Frame.ElapsedTime] = ctx.frame.time
+    ctx.renderParams[CommonBindingKeys.Frame.DeltaTime] = ctx.frame.delta
+
+    ctx.renderParams[CommonBindingKeys.View.InverseViewMatrix] = ctx.view.camera.world
+    ctx.renderParams[CommonBindingKeys.View.ViewMatrix] = ctx.view.camera.view
+
+    ctx.renderParams[CommonBindingKeys.View.ProjectionMatrix] = ctx.view.camera.projection
+    ctx.renderParams[CommonBindingKeys.View.InverseProjectionMatrix] = Mat4.invert(
+      ctx.view.camera.projection,
+      (ctx.renderParams[CommonBindingKeys.View.InverseProjectionMatrix] as Mat4) || Mat4.createIdentity(),
+    )
+
+    ctx.renderParams[CommonBindingKeys.View.ViewProjectionMatrix] = Mat4.multiply(
+      ctx.view.camera.projection,
+      ctx.view.camera.view,
+      (ctx.renderParams[CommonBindingKeys.View.ViewProjectionMatrix] as Mat4) || Mat4.createIdentity(),
+    )
+    ctx.renderParams[CommonBindingKeys.View.InverseViewProjectionMatrix] = Mat4.invert(
+      ctx.renderParams[CommonBindingKeys.View.ViewProjectionMatrix] as Mat4,
+      (ctx.renderParams[CommonBindingKeys.View.InverseViewProjectionMatrix] as Mat4) || Mat4.createIdentity(),
+    )
+
+    ctx.renderParams[CommonBindingKeys.View.CameraPosition] ||= Vec3.create()
+    ctx.view.camera.world.getTranslation(ctx.renderParams[CommonBindingKeys.View.CameraPosition])
+
+    ctx.renderParams[CommonBindingKeys.View.CameraDirection] ||= Vec3.create()
+    ctx.view.camera.world.getForward(ctx.renderParams[CommonBindingKeys.View.CameraDirection])
   }
 
   public dispose() {
-    for (const [_, map] of this.contexts) {
-      for (const [_, ctx] of map) {
-        ctx.dispose()
-      }
-    }
-    this.contexts.clear()
-    this.spriteBatch.dispose()
-    this.targets.dispose()
+    // TODO:
   }
+}
+
+function getViewWidth(width: number, target: Texture | DeviceOutput): number {
+  if (width > 1) {
+    return width
+  }
+  return Math.round(target.width * width)
+}
+
+function getViewHeight(height: number, target: Texture | DeviceOutput): number {
+  if (height > 1) {
+    return height
+  }
+  return Math.round(target.height * height)
 }

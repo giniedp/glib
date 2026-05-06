@@ -1,201 +1,121 @@
 import {
+  BasicGame,
   CameraComponent,
-  createEntity,
-  GameLoop,
   LightComponent,
   ModelComponent,
-  PerspectiveCameraComponent,
-  RenderQuery,
-  TimeSystem,
   TransformComponent,
   TweenOptions,
   TweenSystem,
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
-import { GameComponent, GameEntity, GameEntityCollection, GameProvider } from '@gglib/ecs'
-import { Color, createDevice } from '@gglib/graphics'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
+import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
-import { DEGREE_TO_RAD, easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, Vec3 } from '@gglib/math'
-import { BasicRenderPass, Renderer } from '@gglib/render'
-import * as TweakUi from 'tweak-ui'
+import { easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, Vec3 } from '@gglib/math'
+import { mountUi } from 'tweak-ui'
 
-class Game extends GameProvider {
-  public loop: GameLoop
-  public renderer: Renderer
-  public renderQuery: RenderQuery
-  public tween: TweenSystem
+class Game extends BasicGame {
+  public cube!: GameEntity
+  public tween!: TweenSystem
 
-  public camera: CameraComponent
-  public scene = new GameEntityCollection()
-  public cube: GameEntity<TransformComponent>
-  public content: ContentLoader
+  public constructor(canvas: HTMLCanvasElement, platform: PlatformId) {
+    super({ canvas, platform })
 
-  public constructor(canvas: HTMLCanvasElement) {
-    super()
-    const device = createDevice({ canvas })
-    const content = new ContentLoader(device)
-    content.registerLoader(OBJ.Loader)
-    content.registerLoader(MTL.Loader)
-    content.registerLoader(GLTF.Loader)
-    content.registerMaterial({
-      name: 'BasicEffect',
-      type: AutoMaterial,
-    })
-    this.provide(this)
-    this.provide(device)
-    this.provide(new Renderer(device))
-    this.provide(content)
-    this.addSystem(new TimeSystem())
-    this.addSystem(new TweenSystem())
-    this.addSystem(new GameLoop({ autostart: false }))
-
-    this.loop = this.get(GameLoop)
-    this.tween = this.get(TweenSystem)
-    this.content = this.get(ContentLoader)
-    this.renderQuery = new RenderQuery()
-    this.renderer = this.get(Renderer)
-    this.renderer.steps = [
-      new BasicRenderPass({
-        clearColor: Color.CornflowerBlue.rgba,
-      }),
-    ]
-
+    this.content.registerLoader(OBJ.Loader)
+    this.content.registerLoader(MTL.Loader)
+    this.content.registerLoader(GLTF.Loader)
+    this.content.registerMaterial(BasicMaterial, () => true)
+    this.tween = this.world.getSystem(TweenSystem)
     this.createCamera()
     this.createLight()
     this.createCube()
   }
 
-  public run() {
-    this.initialize()
-
-    this.scene.initialize(this)
+  override initialize(): void {
+    super.initialize()
     this.scene.activate()
-
-    this.loop.onUpdate.add(this.update)
-    this.loop.onDraw.add(this.draw)
-
-    this.loop.run()
-    return () => {
-      this.loop.stop()
-      this.destroy()
-    }
-  }
-
-  public update = () => {
-    //
-  }
-
-  public draw = () => {
-    this.renderQuery.update(this.scene.entities, this.camera)
-    this.renderer.render(this.renderQuery)
-  }
-
-  public destroy(): void {
-    super.destroy()
-    this.loop.onUpdate.remove(this.update)
-    this.loop.onDraw.remove(this.draw)
-    this.scene.deactivate()
-    this.scene.destroy()
-    this.scene.clear()
   }
 
   private createCamera() {
-    const entity = createEntity({
+    const entity = this.world.createEntity({
       name: 'camera',
+      parent: this.scene,
       components: [
-        new PerspectiveCameraComponent({
-          near: 0.01,
-          far: 1000,
-          fov: 70 * DEGREE_TO_RAD,
-          aspect: 16 / 9,
+        new CameraComponent({
+          type: 'perspective',
         }),
       ],
-      transform: {
-        position: Vec3.create(0, 0, 0),
-      },
+      transform: new TransformComponent({
+        position: Vec3.create(0, 10, 10),
+      }),
     })
-    this.camera = entity.component(PerspectiveCameraComponent)
-    this.scene.add(entity)
+    this.view.camera = entity.component(CameraComponent)
+    this.view.disabled = false
   }
 
   private createCube() {
-    const entity = createEntity({
+    const entity = this.world.createEntity({
       name: 'cube',
-      transform: {
-        position: Vec3.create(0, 0, -5),
-      },
+      parent: this.scene,
+      transform: new TransformComponent({
+        position: Vec3.create(0, 0, -10),
+      }),
       components: [new ModelComponent(), new CubeComponent()],
     })
-    entity.transform.lookAt(Vec3.create(0, 0, 0))
     this.cube = entity
-    this.scene.add(entity)
   }
 
   private createLight() {
-    const entity = createEntity({
+    const entity = this.createEntity({
       name: 'light',
+      parent: this.scene,
+      transform: new TransformComponent({}),
       components: [new LightComponent()],
     })
-    entity.transform.setRotationAxisAngle(1, 0, 0, -1)
-    this.scene.add(entity)
+    entity.getTransform<TransformComponent>()!.setRotationAxisAngle(1, 0, 0, -1)
   }
 
   public tweenPosition(options: TweenOptions<any>) {
-    const transform = this.cube.transform
+    const transform = this.cube.getTransform<TransformComponent>()!
+    this.tween.cancelAll()
     this.tween
       .startV3({
         ...options,
         from: transform.translation,
         to: Vec3.create(transform.translation.x > 0 ? -5 : 5, 0, -5),
       })
-      .addUpdatableWith3Args(transform, 'setPosition')
+      .bind((tween) => transform.setPositionV(tween))
   }
 
   public tweenScale(options: TweenOptions<any>) {
-    const transform = this.cube.transform
+    const transform = this.cube.getTransform<TransformComponent>()!
+    this.tween.cancelAll()
     this.tween
       .start({
         ...options,
         from: [transform.scale.x],
         to: [transform.scale.x > 1 ? 0.5 : 2],
       })
-      .addUpdatableWith1Arg(transform, 'setScaleUniform')
+      .bind((tween) => transform.setScaleUniform(tween.value))
   }
 }
 
-class CubeComponent implements GameComponent {
-  public renderable: ModelComponent
+class CubeComponent implements GameComponent, InitializableComponent {
+  public content!: ContentLoader
+  public renderable!: ModelComponent
 
   public get transform(): TransformComponent {
-    return this.entity.transform
+    return this.entity.getTransform<TransformComponent>()!
   }
 
-  public content: ContentLoader
-
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.renderable = entity.component(ModelComponent)
-    this.content = entity.provider.get(ContentLoader)
-    this.content.loadModel('/models/gltf/box.gltf').then((model) => {
-      model.meshes.forEach((mesh) => {
-        mesh.materials.forEach((material) => {
-          const mtl = material as AutoMaterial
-          //mtl.ShadeFunction = 'shadePbr'
-          //mtl.LightCount = 1
-        })
-      })
+  public readonly entity!: GameEntity
+  public initialize(): void {
+    this.renderable = this.entity.component(ModelComponent)
+    this.content = this.entity.service(ContentLoader)
+    this.content.loadModel('/models/obj/ship-pirate-large.obj').then((model) => {
       this.renderable.model = model
+      console.log('Model loaded', model)
     })
-  }
-
-  public activate(): void {
-    //
-  }
-
-  public deactivate(): void {
-    //
   }
 
   public destroy(): void {
@@ -203,10 +123,10 @@ class CubeComponent implements GameComponent {
   }
 }
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const game = new Game(canvas)
+export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const game = new Game(canvas, platform)
 
-  TweakUi.mount(tools, (ui) => {
+  mountUi(tools, (ui) => {
     const positionOptions: TweenOptions<any> = {
       from: null,
       to: null,
@@ -224,7 +144,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         { label: 'InOutCubic', value: easeInOutCubic },
       ],
     })
-    ui.button('Move', { onClick: () => game.get(Game).tweenPosition(positionOptions) })
+    ui.button('Move', { onClick: () => game.tweenPosition(positionOptions) })
     const scaleOptions: TweenOptions<any> = {
       from: null,
       to: null,
@@ -242,7 +162,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         { label: 'InOutCubic', value: easeInOutCubic },
       ],
     })
-    ui.button('Scale', { onClick: () => game.get(Game).tweenScale(scaleOptions) })
+    ui.button('Scale', { onClick: () => game.tweenScale(scaleOptions) })
   })
 
   return game.run()

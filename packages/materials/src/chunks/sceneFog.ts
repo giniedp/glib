@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -30,8 +30,7 @@ export interface FogDefs {
  *  - `FOG` - enables fog
  */
 export const SCENE_FOG: ShaderChunkSet<FogDefs> = {
-
-  varyings: glsl`
+  varyings: /* glsl */ `
     #ifdef FOG
     varying float vFogDistance;
     #define FOG_NONE    0.0
@@ -41,7 +40,7 @@ export const SCENE_FOG: ShaderChunkSet<FogDefs> = {
     #define E 2.71828
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef FOG
     // @binding FogColor
     // @widget   color
@@ -62,7 +61,7 @@ export const SCENE_FOG: ShaderChunkSet<FogDefs> = {
     uniform vec4 uFogParams;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef FOG
     void applyFog(inout vec3 color) {
       float fog = 1.0;
@@ -85,12 +84,12 @@ export const SCENE_FOG: ShaderChunkSet<FogDefs> = {
     }
     #endif
   `,
-  vs_end: glsl`
+  vs_end: /* glsl */ `
     #ifdef FOG
     vFogDistance = length(vToEyeInWS);
     #endif
   `,
-  fs_fog: glsl`
+  fs_fog: /* glsl */ `
     #ifdef FOG
     applyFog(color.rgb);
     #endif

@@ -2,24 +2,24 @@ import type { ArrayLike, IMat, IVec2, IVec3, IVec4, Mat4Elements } from './Types
 import { Vec3 } from './Vec3'
 import { Vec4 } from './Vec4'
 
-const enum M {
-  _00 = 0,
-  _10 = 4,
-  _20 = 8,
-  _30 = 12,
-  _01 = 1,
-  _11 = 5,
-  _21 = 9,
-  _31 = 13,
-  _02 = 2,
-  _12 = 6,
-  _22 = 10,
-  _32 = 14,
-  _03 = 3,
-  _13 = 7,
-  _23 = 11,
-  _33 = 15,
+export type NdcMinZ = -1 | 0
+export const NdcMinZ = {
+  MinusOne: -1 as NdcMinZ,
+  Zero: 0 as NdcMinZ,
 }
+
+export type ReversedZ = boolean
+export const ReversedZ = {
+  No: false as ReversedZ,
+  Yes: true as ReversedZ,
+}
+
+// prettier-ignore
+const
+  C0R0 = 0, C1R0 = 4, C2R0 = 8, C3R0 = 12,
+  C0R1 = 1, C1R1 = 5, C2R1 = 9, C3R1 = 13,
+  C0R2 = 2, C1R2 = 6, C2R2 = 10, C3R2 = 14,
+  C0R3 = 3, C1R3 = 7, C2R3 = 11, C3R3 = 15;
 
 const _tmp1v3 = new Vec3()
 const _tmp2v3 = new Vec3()
@@ -38,28 +38,31 @@ const _tmp2v4 = new Vec4()
  *
  * @public
  * @remarks
- * The matrix stores its values in a typed `Float32Array` array.
- * The elements are laid out in column major order meaning that
- * elements of each base vector reside next to each other.
+ * The matrix stores its values in a `Float32Array`. The memory layout
+ * is **column-major**, matching GPU shader expectations (`mat4` in GLSL/WGSL)
  *
- * For example, having a translation matrix in standard notation
- * where `x`, `y` and `z` are elements of the translation vector
- *
+ * @example
+ * Standard matrix notation:
  * ```
- * 1 0 0 x
- * 0 1 0 y
- * 0 0 1 z
- * 0 0 0 1
+ * sx 0  0  tx // row 0
+ * 0  sy 0  ty // row 1
+ * 0  0  sz tz // row 2
+ * 0  0  0  1  // row 3
  * ```
- * the index layout would be
+ * Flattened in column-major memory as:
  * ```
- * 0 4 8  12
- * 1 5 9  13
- * 2 6 10 14
- * 3 7 11 15
+ * [
+ *   sx, 0,  0,  0,  // column 0
+ *   0,  sy, 0,  0,  // column 1
+ *   0,  0,  sz, 0,  // column 2
+ *   tx, ty, tz, 1,  // column 3 (translation)
+ * ]
  * ```
  */
 export class Mat4 {
+  //[n: number]: number
+  public readonly length: number = 16
+
   /**
    * The matrix data array
    */
@@ -69,160 +72,160 @@ export class Mat4 {
    * Gets and sets value at column 0 row 0
    */
   public get m00() {
-    return this.elements[M._00]
+    return this.elements[C0R0]
   }
   public set m00(v: number) {
-    this.elements[M._00] = v
+    this.elements[C0R0] = v
   }
 
   /**
    * Gets and sets value at column 0 row 1
    */
   public get m01() {
-    return this.elements[M._01]
+    return this.elements[C0R1]
   }
   public set m01(v: number) {
-    this.elements[M._01] = v
+    this.elements[C0R1] = v
   }
 
   /**
    * Gets and sets value at column 0 row 2
    */
   public get m02() {
-    return this.elements[M._02]
+    return this.elements[C0R2]
   }
   public set m02(v: number) {
-    this.elements[M._02] = v
+    this.elements[C0R2] = v
   }
 
   /**
    * Gets and sets value at column 0 row 3
    */
   public get m03() {
-    return this.elements[M._03]
+    return this.elements[C0R3]
   }
   public set m03(v: number) {
-    this.elements[M._03] = v
+    this.elements[C0R3] = v
   }
 
   /**
    * Gets and sets value at column 1 row 0
    */
   public get m10() {
-    return this.elements[M._10]
+    return this.elements[C1R0]
   }
   public set m10(v: number) {
-    this.elements[M._10] = v
+    this.elements[C1R0] = v
   }
 
   /**
    * Gets and sets value at column 1 row 1
    */
   public get m11() {
-    return this.elements[M._11]
+    return this.elements[C1R1]
   }
   public set m11(v: number) {
-    this.elements[M._11] = v
+    this.elements[C1R1] = v
   }
 
   /**
    * Gets and sets value at column 1 row 2
    */
   public get m12() {
-    return this.elements[M._12]
+    return this.elements[C1R2]
   }
   public set m12(v: number) {
-    this.elements[M._12] = v
+    this.elements[C1R2] = v
   }
 
   /**
    * Gets and sets value at column 1 row 3
    */
   public get m13() {
-    return this.elements[M._13]
+    return this.elements[C1R3]
   }
   public set m13(v: number) {
-    this.elements[M._13] = v
+    this.elements[C1R3] = v
   }
 
   /**
    * Gets and sets value at column 2 row 0
    */
   public get m20() {
-    return this.elements[M._20]
+    return this.elements[C2R0]
   }
   public set m20(v: number) {
-    this.elements[M._20] = v
+    this.elements[C2R0] = v
   }
 
   /**
    * Gets and sets value at column 2 row 1
    */
   public get m21() {
-    return this.elements[M._21]
+    return this.elements[C2R1]
   }
   public set m21(v: number) {
-    this.elements[M._21] = v
+    this.elements[C2R1] = v
   }
 
   /**
    * Gets and sets value at column 2 row 2
    */
   public get m22() {
-    return this.elements[M._22]
+    return this.elements[C2R2]
   }
   public set m22(v: number) {
-    this.elements[M._22] = v
+    this.elements[C2R2] = v
   }
 
   /**
    * Gets and sets value at column 2 row 3
    */
   public get m23() {
-    return this.elements[M._23]
+    return this.elements[C2R3]
   }
   public set m23(v: number) {
-    this.elements[M._23] = v
+    this.elements[C2R3] = v
   }
 
   /**
    * Gets and sets value at column 3 row 0
    */
   public get m30() {
-    return this.elements[M._30]
+    return this.elements[C3R0]
   }
   public set m30(v: number) {
-    this.elements[M._30] = v
+    this.elements[C3R0] = v
   }
 
   /**
    * Gets and sets value at column 3 row 1
    */
   public get m31() {
-    return this.elements[M._31]
+    return this.elements[C3R1]
   }
   public set m31(v: number) {
-    this.elements[M._31] = v
+    this.elements[C3R1] = v
   }
 
   /**
    * Gets and sets value at column 3 row 2
    */
   public get m32() {
-    return this.elements[M._32]
+    return this.elements[C3R2]
   }
   public set m32(v: number) {
-    this.elements[M._32] = v
+    this.elements[C3R2] = v
   }
 
   /**
    * Gets and sets value at column 3 row 3
    */
   public get m33() {
-    return this.elements[M._33]
+    return this.elements[C3R3]
   }
   public set m33(v: number) {
-    this.elements[M._33] = v
+    this.elements[C3R3] = v
   }
 
   public get debug() {
@@ -252,9 +255,9 @@ export class Mat4 {
   public getForward<T>(out?: T): T & IVec3
   public getForward(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = -this.elements[M._20]
-    out.y = -this.elements[M._21]
-    out.z = -this.elements[M._22]
+    out.x = -this.elements[C2R0]
+    out.y = -this.elements[C2R1]
+    out.z = -this.elements[C2R2]
     return out
   }
 
@@ -262,9 +265,9 @@ export class Mat4 {
    * Sets the forward vector
    */
   public setForward(vec: IVec3): this {
-    this.elements[M._20] = -vec.x
-    this.elements[M._21] = -vec.y
-    this.elements[M._22] = -vec.z
+    this.elements[C2R0] = -vec.x
+    this.elements[C2R1] = -vec.y
+    this.elements[C2R2] = -vec.z
     return this
   }
 
@@ -278,9 +281,9 @@ export class Mat4 {
   public getBackward<T>(out?: T): T & IVec3
   public getBackward(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.elements[M._20]
-    out.y = this.elements[M._21]
-    out.z = this.elements[M._22]
+    out.x = this.elements[C2R0]
+    out.y = this.elements[C2R1]
+    out.z = this.elements[C2R2]
     return out
   }
 
@@ -288,9 +291,9 @@ export class Mat4 {
    * Sets the backward vector
    */
   public setBackward(vec: IVec3): this {
-    this.elements[M._20] = vec.x
-    this.elements[M._21] = vec.y
-    this.elements[M._22] = vec.z
+    this.elements[C2R0] = vec.x
+    this.elements[C2R1] = vec.y
+    this.elements[C2R2] = vec.z
     return this
   }
 
@@ -304,9 +307,9 @@ export class Mat4 {
   public getRight<T>(out?: T): T & IVec3
   public getRight(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.elements[M._00]
-    out.y = this.elements[M._01]
-    out.z = this.elements[M._02]
+    out.x = this.elements[C0R0]
+    out.y = this.elements[C0R1]
+    out.z = this.elements[C0R2]
     return out
   }
 
@@ -314,9 +317,9 @@ export class Mat4 {
    * Sets the right vector
    */
   public setRight(vec: IVec3): this {
-    this.elements[M._00] = vec.x
-    this.elements[M._01] = vec.y
-    this.elements[M._02] = vec.z
+    this.elements[C0R0] = vec.x
+    this.elements[C0R1] = vec.y
+    this.elements[C0R2] = vec.z
     return this
   }
 
@@ -330,9 +333,9 @@ export class Mat4 {
   public getLeft<T>(out?: T): T & IVec3
   public getLeft(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = -this.elements[M._00]
-    out.y = -this.elements[M._01]
-    out.z = -this.elements[M._02]
+    out.x = -this.elements[C0R0]
+    out.y = -this.elements[C0R1]
+    out.z = -this.elements[C0R2]
     return out
   }
 
@@ -340,9 +343,9 @@ export class Mat4 {
    * Sets the left vector
    */
   public setLeft(vec: IVec3): this {
-    this.elements[M._00] = -vec.x
-    this.elements[M._01] = -vec.y
-    this.elements[M._02] = -vec.z
+    this.elements[C0R0] = -vec.x
+    this.elements[C0R1] = -vec.y
+    this.elements[C0R2] = -vec.z
     return this
   }
 
@@ -356,9 +359,9 @@ export class Mat4 {
   public getUp<T>(out?: T): T & IVec3
   public getUp(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.elements[M._10]
-    out.y = this.elements[M._11]
-    out.z = this.elements[M._12]
+    out.x = this.elements[C1R0]
+    out.y = this.elements[C1R1]
+    out.z = this.elements[C1R2]
     return out
   }
 
@@ -367,9 +370,9 @@ export class Mat4 {
    * @param vec - The vector to take values from
    */
   public setUp(vec: IVec3): this {
-    this.elements[M._10] = vec.x
-    this.elements[M._11] = vec.y
-    this.elements[M._12] = vec.z
+    this.elements[C1R0] = vec.x
+    this.elements[C1R1] = vec.y
+    this.elements[C1R2] = vec.z
     return this
   }
 
@@ -383,9 +386,9 @@ export class Mat4 {
   public getDown<T>(out?: T): T & IVec3
   public getDown(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = -this.elements[M._10]
-    out.y = -this.elements[M._11]
-    out.z = -this.elements[M._12]
+    out.x = -this.elements[C1R0]
+    out.y = -this.elements[C1R1]
+    out.z = -this.elements[C1R2]
     return out
   }
 
@@ -393,9 +396,9 @@ export class Mat4 {
    * Sets the down vector
    */
   public setDown(vec: IVec3): this {
-    this.elements[M._10] = -vec.x
-    this.elements[M._11] = -vec.y
-    this.elements[M._12] = -vec.z
+    this.elements[C1R0] = -vec.x
+    this.elements[C1R1] = -vec.y
+    this.elements[C1R2] = -vec.z
     return this
   }
 
@@ -409,9 +412,9 @@ export class Mat4 {
   public getScale<T>(out?: T): T & IVec3
   public getScale(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.elements[M._00]
-    out.y = this.elements[M._11]
-    out.z = this.elements[M._22]
+    out.x = this.elements[C0R0]
+    out.y = this.elements[C1R1]
+    out.z = this.elements[C2R2]
     return out
   }
 
@@ -419,9 +422,9 @@ export class Mat4 {
    * Sets the scale part
    */
   public setScale(vec: IVec3): this {
-    this.elements[M._00] = vec.x
-    this.elements[M._11] = vec.y
-    this.elements[M._22] = vec.z
+    this.elements[C0R0] = vec.x
+    this.elements[C1R1] = vec.y
+    this.elements[C2R2] = vec.z
     return this
   }
 
@@ -435,19 +438,31 @@ export class Mat4 {
   public getTranslation<T>(out?: T): T & IVec3
   public getTranslation(out?: Vec3): Vec3 {
     out = out || new Vec3()
-    out.x = this.elements[M._30]
-    out.y = this.elements[M._31]
-    out.z = this.elements[M._32]
+    out.x = this.translationX
+    out.y = this.translationY
+    out.z = this.translationZ
     return out
+  }
+
+  public get translationX(): number {
+    return this.elements[C3R0]
+  }
+
+  public get translationY(): number {
+    return this.elements[C3R1]
+  }
+
+  public get translationZ(): number {
+    return this.elements[C3R2]
   }
 
   /**
    * Sets the translation part
    */
   public setTranslationXYZ(x: number, y: number, z: number): this {
-    this.elements[M._30] = x
-    this.elements[M._31] = y
-    this.elements[M._32] = z
+    this.elements[C3R0] = x
+    this.elements[C3R1] = y
+    this.elements[C3R2] = z
     return this
   }
 
@@ -455,9 +470,9 @@ export class Mat4 {
    * Sets the translation part from vector
    */
   public setTranslation(vec: IVec3): this {
-    this.elements[M._30] = vec.x
-    this.elements[M._31] = vec.y
-    this.elements[M._32] = vec.z
+    this.elements[C3R0] = vec.x
+    this.elements[C3R1] = vec.y
+    this.elements[C3R2] = vec.z
     return this
   }
 
@@ -465,7 +480,7 @@ export class Mat4 {
    * Sets the x component of the translation part
    */
   public setTranslationX(value: number): this {
-    this.elements[M._30] = value
+    this.elements[C3R0] = value
     return this
   }
 
@@ -473,7 +488,7 @@ export class Mat4 {
    * Sets the y component of the translation part
    */
   public setTranslationY(value: number): this {
-    this.elements[M._31] = value
+    this.elements[C3R1] = value
     return this
   }
 
@@ -481,8 +496,31 @@ export class Mat4 {
    * Sets the z component of the translation part
    */
   public setTranslationZ(value: number): this {
-    this.elements[M._32] = value
+    this.elements[C3R2] = value
     return this
+  }
+
+  public getRow<T>(index: number, out?: T): T & IVec4
+  public getRow(index: number, out?: Vec4): Vec4 {
+    out = out || new Vec4()
+    const m = this.elements
+    out.x = m[index]
+    out.y = m[index + 4]
+    out.z = m[index + 8]
+    out.w = m[index + 12]
+    return out
+  }
+
+  public getCol<T>(index: number, out?: T): T & IVec4
+  public getCol(index: number, out?: IVec4): IVec4 {
+    out = out || new Vec4()
+    const m = this.elements
+    const colStart = index * 4
+    out.x = m[colStart]
+    out.y = m[colStart + 1]
+    out.z = m[colStart + 2]
+    out.w = m[colStart + 3]
+    return out
   }
 
   /**
@@ -525,25 +563,25 @@ export class Mat4 {
   ): Mat4 {
     const out = new Mat4()
     const m = out.elements
-    m[M._00] = m00
-    m[M._01] = m01
-    m[M._02] = m02
-    m[M._03] = m03
+    m[C0R0] = m00
+    m[C0R1] = m01
+    m[C0R2] = m02
+    m[C0R3] = m03
 
-    m[M._10] = m10
-    m[M._11] = m11
-    m[M._12] = m12
-    m[M._13] = m13
+    m[C1R0] = m10
+    m[C1R1] = m11
+    m[C1R2] = m12
+    m[C1R3] = m13
 
-    m[M._20] = m20
-    m[M._21] = m21
-    m[M._22] = m22
-    m[M._23] = m23
+    m[C2R0] = m20
+    m[C2R1] = m21
+    m[C2R2] = m22
+    m[C2R3] = m23
 
-    m[M._30] = m30
-    m[M._31] = m31
-    m[M._32] = m32
-    m[M._33] = m33
+    m[C3R0] = m30
+    m[C3R1] = m31
+    m[C3R2] = m32
+    m[C3R3] = m33
     return out
   }
 
@@ -569,25 +607,25 @@ export class Mat4 {
     m33: number,
   ): this {
     const m = this.elements
-    m[M._00] = m00
-    m[M._01] = m01
-    m[M._02] = m02
-    m[M._03] = m03
+    m[C0R0] = m00
+    m[C0R1] = m01
+    m[C0R2] = m02
+    m[C0R3] = m03
 
-    m[M._10] = m10
-    m[M._11] = m11
-    m[M._12] = m12
-    m[M._13] = m13
+    m[C1R0] = m10
+    m[C1R1] = m11
+    m[C1R2] = m12
+    m[C1R3] = m13
 
-    m[M._20] = m20
-    m[M._21] = m21
-    m[M._22] = m22
-    m[M._23] = m23
+    m[C2R0] = m20
+    m[C2R1] = m21
+    m[C2R2] = m22
+    m[C2R3] = m23
 
-    m[M._30] = m30
-    m[M._31] = m31
-    m[M._32] = m32
-    m[M._33] = m33
+    m[C3R0] = m30
+    m[C3R1] = m31
+    m[C3R2] = m32
+    m[C3R3] = m33
     return this
   }
 
@@ -619,25 +657,25 @@ export class Mat4 {
   ): Mat4 {
     const out = new Mat4()
     const m = out.elements
-    m[M._00] = m00
-    m[M._01] = m01
-    m[M._02] = m02
-    m[M._03] = m03
+    m[C0R0] = m00
+    m[C0R1] = m01
+    m[C0R2] = m02
+    m[C0R3] = m03
 
-    m[M._10] = m10
-    m[M._11] = m11
-    m[M._12] = m12
-    m[M._13] = m13
+    m[C1R0] = m10
+    m[C1R1] = m11
+    m[C1R2] = m12
+    m[C1R3] = m13
 
-    m[M._20] = m20
-    m[M._21] = m21
-    m[M._22] = m22
-    m[M._23] = m23
+    m[C2R0] = m20
+    m[C2R1] = m21
+    m[C2R2] = m22
+    m[C2R3] = m23
 
-    m[M._30] = m30
-    m[M._31] = m31
-    m[M._32] = m32
-    m[M._33] = m33
+    m[C3R0] = m30
+    m[C3R1] = m31
+    m[C3R2] = m32
+    m[C3R3] = m33
     return out
   }
 
@@ -668,25 +706,25 @@ export class Mat4 {
     m33: number,
   ): this {
     const m = this.elements
-    m[M._00] = m00
-    m[M._01] = m01
-    m[M._02] = m02
-    m[M._03] = m03
+    m[C0R0] = m00
+    m[C0R1] = m01
+    m[C0R2] = m02
+    m[C0R3] = m03
 
-    m[M._10] = m10
-    m[M._11] = m11
-    m[M._12] = m12
-    m[M._13] = m13
+    m[C1R0] = m10
+    m[C1R1] = m11
+    m[C1R2] = m12
+    m[C1R3] = m13
 
-    m[M._20] = m20
-    m[M._21] = m21
-    m[M._22] = m22
-    m[M._23] = m23
+    m[C2R0] = m20
+    m[C2R1] = m21
+    m[C2R2] = m22
+    m[C2R3] = m23
 
-    m[M._30] = m30
-    m[M._31] = m31
-    m[M._32] = m32
-    m[M._33] = m33
+    m[C3R0] = m30
+    m[C3R1] = m31
+    m[C3R2] = m32
+    m[C3R3] = m33
     return this
   }
 
@@ -706,22 +744,22 @@ export class Mat4 {
    */
   public initWith(value: number): this {
     const m = this.elements
-    m[M._00] = value
-    m[M._10] = value
-    m[M._20] = value
-    m[M._30] = value
-    m[M._01] = value
-    m[M._11] = value
-    m[M._21] = value
-    m[M._31] = value
-    m[M._02] = value
-    m[M._12] = value
-    m[M._22] = value
-    m[M._32] = value
-    m[M._03] = value
-    m[M._13] = value
-    m[M._23] = value
-    m[M._33] = value
+    m[C0R0] = value
+    m[C1R0] = value
+    m[C2R0] = value
+    m[C3R0] = value
+    m[C0R1] = value
+    m[C1R1] = value
+    m[C2R1] = value
+    m[C3R1] = value
+    m[C0R2] = value
+    m[C1R2] = value
+    m[C2R2] = value
+    m[C3R2] = value
+    m[C0R3] = value
+    m[C1R3] = value
+    m[C2R3] = value
+    m[C3R3] = value
     return this
   }
 
@@ -748,22 +786,22 @@ export class Mat4 {
    */
   public initIdentity(): this {
     const m = this.elements
-    m[M._00] = 1
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = 1
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = 1
-    m[M._32] = 0
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = 1
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = 1
+    m[C2R1] = 0
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = 0
+    m[C2R2] = 1
+    m[C3R2] = 0
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -797,22 +835,22 @@ export class Mat4 {
    */
   public initZero(): this {
     const m = this.elements
-    m[M._00] = 0
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = 0
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = 0
-    m[M._32] = 0
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 0
+    m[C0R0] = 0
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = 0
+    m[C2R1] = 0
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = 0
+    m[C2R2] = 0
+    m[C3R2] = 0
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 0
     return this
   }
 
@@ -932,25 +970,25 @@ export class Mat4 {
     const zw = z * w
 
     const m = this.elements
-    m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] = 2 * (xy + zw)
-    m[M._02] = 2 * (xz - yw)
-    m[M._03] = 0
+    m[C0R0] = 1 - 2 * (yy + zz)
+    m[C0R1] = 2 * (xy + zw)
+    m[C0R2] = 2 * (xz - yw)
+    m[C0R3] = 0
 
-    m[M._10] = 2 * (xy - zw)
-    m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] = 2 * (yz + xw)
-    m[M._13] = 0
+    m[C1R0] = 2 * (xy - zw)
+    m[C1R1] = 1 - 2 * (zz + xx)
+    m[C1R2] = 2 * (yz + xw)
+    m[C1R3] = 0
 
-    m[M._20] = 2 * (xz + yw)
-    m[M._21] = 2 * (yz - xw)
-    m[M._22] = 1 - 2 * (yy + xx)
-    m[M._23] = 0
+    m[C2R0] = 2 * (xz + yw)
+    m[C2R1] = 2 * (yz - xw)
+    m[C2R2] = 1 - 2 * (yy + xx)
+    m[C2R3] = 0
 
-    m[M._30] = 0
-    m[M._31] = 0
-    m[M._32] = 0
-    m[M._33] = 1
+    m[C3R0] = 0
+    m[C3R1] = 0
+    m[C3R2] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -983,34 +1021,34 @@ export class Mat4 {
     const zw = z * w
 
     const m = this.elements
-    m[M._00] = (1 - 2 * (yy + zz)) * scale.x
-    m[M._01] = 2 * (xy + zw) * scale.x
-    m[M._02] = 2 * (xz - yw) * scale.x
-    m[M._03] = 0
+    m[C0R0] = (1 - 2 * (yy + zz)) * scale.x
+    m[C0R1] = 2 * (xy + zw) * scale.x
+    m[C0R2] = 2 * (xz - yw) * scale.x
+    m[C0R3] = 0
 
-    m[M._10] = 2 * (xy - zw) * scale.y
-    m[M._11] = (1 - 2 * (zz + xx)) * scale.y
-    m[M._12] = 2 * (yz + xw) * scale.y
-    m[M._13] = 0
+    m[C1R0] = 2 * (xy - zw) * scale.y
+    m[C1R1] = (1 - 2 * (zz + xx)) * scale.y
+    m[C1R2] = 2 * (yz + xw) * scale.y
+    m[C1R3] = 0
 
-    m[M._20] = 2 * (xz + yw) * scale.z
-    m[M._21] = 2 * (yz - xw) * scale.z
-    m[M._22] = (1 - 2 * (yy + xx)) * scale.z
-    m[M._23] = 0
+    m[C2R0] = 2 * (xz + yw) * scale.z
+    m[C2R1] = 2 * (yz - xw) * scale.z
+    m[C2R2] = (1 - 2 * (yy + xx)) * scale.z
+    m[C2R3] = 0
 
-    m[M._30] = translation.x
-    m[M._31] = translation.y
-    m[M._32] = translation.z
-    m[M._33] = 1
+    m[C3R0] = translation.x
+    m[C3R1] = translation.y
+    m[C3R2] = translation.z
+    m[C3R3] = 1
     return this
   }
 
   public static decompose(mat: Mat4, scale: IVec3, rot: IVec4, pos: IVec3): boolean {
     const m = mat.elements
     if (pos) {
-      pos.x = m[M._30]
-      pos.y = m[M._31]
-      pos.z = m[M._32]
+      pos.x = m[C3R0]
+      pos.y = m[C3R1]
+      pos.z = m[C3R2]
     }
 
     // Extract scale
@@ -1066,6 +1104,7 @@ export class Mat4 {
       rot.y = (m21 + m12) / s
       rot.z = 0.25 * s
     }
+    return true
   }
 
   public decompose(scale: IVec3, rot: IVec4, pos: IVec3): void {
@@ -1134,31 +1173,31 @@ export class Mat4 {
     const r22 = 1 - 2 * (yy + xx)
 
     const m = this.elements
-    const m00 = m[M._00]
-    const m01 = m[M._01]
-    const m02 = m[M._02]
-    const m03 = m[M._03]
-    const m10 = m[M._10]
-    const m11 = m[M._11]
-    const m12 = m[M._12]
-    const m13 = m[M._13]
-    const m20 = m[M._20]
-    const m21 = m[M._21]
-    const m22 = m[M._22]
-    const m23 = m[M._23]
+    const m00 = m[C0R0]
+    const m01 = m[C0R1]
+    const m02 = m[C0R2]
+    const m03 = m[C0R3]
+    const m10 = m[C1R0]
+    const m11 = m[C1R1]
+    const m12 = m[C1R2]
+    const m13 = m[C1R3]
+    const m20 = m[C2R0]
+    const m21 = m[C2R1]
+    const m22 = m[C2R2]
+    const m23 = m[C2R3]
 
-    m[M._00] = r00 * m00 + r01 * m10 + r02 * m20
-    m[M._01] = r00 * m01 + r01 * m11 + r02 * m21
-    m[M._02] = r00 * m02 + r01 * m12 + r02 * m22
-    m[M._03] = r00 * m03 + r01 * m13 + r02 * m23
-    m[M._10] = r10 * m00 + r11 * m10 + r12 * m20
-    m[M._11] = r10 * m01 + r11 * m11 + r12 * m21
-    m[M._12] = r10 * m02 + r11 * m12 + r12 * m22
-    m[M._13] = r10 * m03 + r11 * m13 + r12 * m23
-    m[M._20] = r20 * m00 + r21 * m10 + r22 * m20
-    m[M._21] = r20 * m01 + r21 * m11 + r22 * m21
-    m[M._22] = r20 * m02 + r21 * m12 + r22 * m22
-    m[M._23] = r20 * m03 + r21 * m13 + r22 * m23
+    m[C0R0] = r00 * m00 + r01 * m10 + r02 * m20
+    m[C0R1] = r00 * m01 + r01 * m11 + r02 * m21
+    m[C0R2] = r00 * m02 + r01 * m12 + r02 * m22
+    m[C0R3] = r00 * m03 + r01 * m13 + r02 * m23
+    m[C1R0] = r10 * m00 + r11 * m10 + r12 * m20
+    m[C1R1] = r10 * m01 + r11 * m11 + r12 * m21
+    m[C1R2] = r10 * m02 + r11 * m12 + r12 * m22
+    m[C1R3] = r10 * m03 + r11 * m13 + r12 * m23
+    m[C2R0] = r20 * m00 + r21 * m10 + r22 * m20
+    m[C2R1] = r20 * m01 + r21 * m11 + r22 * m21
+    m[C2R2] = r20 * m02 + r21 * m12 + r22 * m22
+    m[C2R3] = r20 * m03 + r21 * m13 + r22 * m23
 
     return this
   }
@@ -1199,31 +1238,31 @@ export class Mat4 {
     const r22 = 1 - 2 * (yy + xx)
 
     const m = this.elements
-    const m00 = m[M._00]
-    const m10 = m[M._10]
-    const m20 = m[M._20]
-    const m30 = m[M._30]
-    const m01 = m[M._01]
-    const m11 = m[M._11]
-    const m21 = m[M._21]
-    const m31 = m[M._31]
-    const m02 = m[M._02]
-    const m12 = m[M._12]
-    const m22 = m[M._22]
-    const m32 = m[M._32]
+    const m00 = m[C0R0]
+    const m10 = m[C1R0]
+    const m20 = m[C2R0]
+    const m30 = m[C3R0]
+    const m01 = m[C0R1]
+    const m11 = m[C1R1]
+    const m21 = m[C2R1]
+    const m31 = m[C3R1]
+    const m02 = m[C0R2]
+    const m12 = m[C1R2]
+    const m22 = m[C2R2]
+    const m32 = m[C3R2]
 
-    m[M._00] = r00 * m00 + r01 * m01 + r02 * m02
-    m[M._10] = r00 * m10 + r01 * m11 + r02 * m12
-    m[M._20] = r00 * m20 + r01 * m21 + r02 * m22
-    m[M._30] = r00 * m30 + r01 * m31 + r02 * m32
-    m[M._01] = r10 * m00 + r11 * m01 + r12 * m02
-    m[M._11] = r10 * m10 + r11 * m11 + r12 * m12
-    m[M._21] = r10 * m20 + r11 * m21 + r12 * m22
-    m[M._31] = r10 * m30 + r11 * m31 + r12 * m32
-    m[M._02] = r20 * m00 + r21 * m01 + r22 * m02
-    m[M._12] = r20 * m10 + r21 * m11 + r22 * m12
-    m[M._22] = r20 * m20 + r21 * m21 + r22 * m22
-    m[M._32] = r20 * m30 + r21 * m31 + r22 * m32
+    m[C0R0] = r00 * m00 + r01 * m01 + r02 * m02
+    m[C1R0] = r00 * m10 + r01 * m11 + r02 * m12
+    m[C2R0] = r00 * m20 + r01 * m21 + r02 * m22
+    m[C3R0] = r00 * m30 + r01 * m31 + r02 * m32
+    m[C0R1] = r10 * m00 + r11 * m01 + r12 * m02
+    m[C1R1] = r10 * m10 + r11 * m11 + r12 * m12
+    m[C2R1] = r10 * m20 + r11 * m21 + r12 * m22
+    m[C3R1] = r10 * m30 + r11 * m31 + r12 * m32
+    m[C0R2] = r20 * m00 + r21 * m01 + r22 * m02
+    m[C1R2] = r20 * m10 + r21 * m11 + r22 * m12
+    m[C2R2] = r20 * m20 + r21 * m21 + r22 * m22
+    m[C3R2] = r20 * m30 + r21 * m31 + r22 * m32
 
     return this
   }
@@ -1318,25 +1357,25 @@ export class Mat4 {
     const zw = z * w
 
     const m = this.elements
-    m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] = 2 * (xy + zw)
-    m[M._02] = 2 * (xz - yw)
-    m[M._03] = 0
+    m[C0R0] = 1 - 2 * (yy + zz)
+    m[C0R1] = 2 * (xy + zw)
+    m[C0R2] = 2 * (xz - yw)
+    m[C0R3] = 0
 
-    m[M._10] = 2 * (xy - zw)
-    m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] = 2 * (yz + xw)
-    m[M._13] = 0
+    m[C1R0] = 2 * (xy - zw)
+    m[C1R1] = 1 - 2 * (zz + xx)
+    m[C1R2] = 2 * (yz + xw)
+    m[C1R3] = 0
 
-    m[M._20] = 2 * (xz + yw)
-    m[M._21] = 2 * (yz - xw)
-    m[M._22] = 1 - 2 * (yy + xx)
-    m[M._23] = 0
+    m[C2R0] = 2 * (xz + yw)
+    m[C2R1] = 2 * (yz - xw)
+    m[C2R2] = 1 - 2 * (yy + xx)
+    m[C2R3] = 0
 
-    m[M._30] = 0
-    m[M._31] = 0
-    m[M._32] = 0
-    m[M._33] = 1
+    m[C3R0] = 0
+    m[C3R1] = 0
+    m[C3R2] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -1438,25 +1477,25 @@ export class Mat4 {
     const zw = z * w
 
     const m = this.elements
-    m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] = 2 * (xy + zw)
-    m[M._02] = 2 * (xz - yw)
-    m[M._03] = 0
+    m[C0R0] = 1 - 2 * (yy + zz)
+    m[C0R1] = 2 * (xy + zw)
+    m[C0R2] = 2 * (xz - yw)
+    m[C0R3] = 0
 
-    m[M._10] = 2 * (xy - zw)
-    m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] = 2 * (yz + xw)
-    m[M._13] = 0
+    m[C1R0] = 2 * (xy - zw)
+    m[C1R1] = 1 - 2 * (zz + xx)
+    m[C1R2] = 2 * (yz + xw)
+    m[C1R3] = 0
 
-    m[M._20] = 2 * (xz + yw)
-    m[M._21] = 2 * (yz - xw)
-    m[M._22] = 1 - 2 * (yy + xx)
-    m[M._23] = 0
+    m[C2R0] = 2 * (xz + yw)
+    m[C2R1] = 2 * (yz - xw)
+    m[C2R2] = 1 - 2 * (yy + xx)
+    m[C2R3] = 0
 
-    m[M._30] = 0
-    m[M._31] = 0
-    m[M._32] = 0
-    m[M._33] = 1
+    m[C3R0] = 0
+    m[C3R1] = 0
+    m[C3R2] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -1560,22 +1599,22 @@ export class Mat4 {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const m = this.elements
-    m[M._00] = 1
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = cos
-    m[M._21] = -sin
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = sin
-    m[M._22] = cos
-    m[M._32] = 0
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = 1
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = cos
+    m[C2R1] = -sin
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = sin
+    m[C2R2] = cos
+    m[C3R2] = 0
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -1590,25 +1629,25 @@ export class Mat4 {
    */
   public rotateX(angle: number): this {
     const m = this.elements
-    const m10 = m[M._10]
-    const m11 = m[M._11]
-    const m12 = m[M._12]
-    const m13 = m[M._13]
-    const m20 = m[M._20]
-    const m21 = m[M._21]
-    const m22 = m[M._22]
-    const m23 = m[M._23]
+    const m10 = m[C1R0]
+    const m11 = m[C1R1]
+    const m12 = m[C1R2]
+    const m13 = m[C1R3]
+    const m20 = m[C2R0]
+    const m21 = m[C2R1]
+    const m22 = m[C2R2]
+    const m23 = m[C2R3]
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._10] = c * m10 + s * m20
-    m[M._11] = c * m11 + s * m21
-    m[M._12] = c * m12 + s * m22
-    m[M._13] = c * m13 + s * m23
-    m[M._20] = c * m20 - s * m10
-    m[M._21] = c * m21 - s * m11
-    m[M._22] = c * m22 - s * m12
-    m[M._23] = c * m23 - s * m13
+    m[C1R0] = c * m10 + s * m20
+    m[C1R1] = c * m11 + s * m21
+    m[C1R2] = c * m12 + s * m22
+    m[C1R3] = c * m13 + s * m23
+    m[C2R0] = c * m20 - s * m10
+    m[C2R1] = c * m21 - s * m11
+    m[C2R2] = c * m22 - s * m12
+    m[C2R3] = c * m23 - s * m13
 
     return this
   }
@@ -1623,25 +1662,25 @@ export class Mat4 {
    */
   public preRotateX(angle: number): this {
     const m = this.elements
-    const m01 = m[M._01]
-    const m11 = m[M._11]
-    const m21 = m[M._21]
-    const m31 = m[M._31]
-    const m02 = m[M._02]
-    const m12 = m[M._12]
-    const m22 = m[M._22]
-    const m32 = m[M._32]
+    const m01 = m[C0R1]
+    const m11 = m[C1R1]
+    const m21 = m[C2R1]
+    const m31 = m[C3R1]
+    const m02 = m[C0R2]
+    const m12 = m[C1R2]
+    const m22 = m[C2R2]
+    const m32 = m[C3R2]
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._01] = c * m01 - s * m02
-    m[M._11] = c * m11 - s * m12
-    m[M._21] = c * m21 - s * m22
-    m[M._31] = c * m31 - s * m32
-    m[M._02] = c * m02 + s * m01
-    m[M._12] = c * m12 + s * m11
-    m[M._22] = c * m22 + s * m21
-    m[M._32] = c * m32 + s * m31
+    m[C0R1] = c * m01 - s * m02
+    m[C1R1] = c * m11 - s * m12
+    m[C2R1] = c * m21 - s * m22
+    m[C3R1] = c * m31 - s * m32
+    m[C0R2] = c * m02 + s * m01
+    m[C1R2] = c * m12 + s * m11
+    m[C2R2] = c * m22 + s * m21
+    m[C3R2] = c * m32 + s * m31
 
     return this
   }
@@ -1662,22 +1701,22 @@ export class Mat4 {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const m = this.elements
-    m[M._00] = cos
-    m[M._10] = 0
-    m[M._20] = sin
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = 1
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = -sin
-    m[M._12] = 0
-    m[M._22] = cos
-    m[M._32] = 0
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = cos
+    m[C1R0] = 0
+    m[C2R0] = sin
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = 1
+    m[C2R1] = 0
+    m[C3R1] = 0
+    m[C0R2] = -sin
+    m[C1R2] = 0
+    m[C2R2] = cos
+    m[C3R2] = 0
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -1692,25 +1731,25 @@ export class Mat4 {
    */
   public rotateY(angle: number): this {
     const m = this.elements
-    const m00 = m[M._00]
-    const m01 = m[M._01]
-    const m02 = m[M._02]
-    const m03 = m[M._03]
-    const m20 = m[M._20]
-    const m21 = m[M._21]
-    const m22 = m[M._22]
-    const m23 = m[M._23]
+    const m00 = m[C0R0]
+    const m01 = m[C0R1]
+    const m02 = m[C0R2]
+    const m03 = m[C0R3]
+    const m20 = m[C2R0]
+    const m21 = m[C2R1]
+    const m22 = m[C2R2]
+    const m23 = m[C2R3]
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._00] = c * m00 - s * m20
-    m[M._01] = c * m01 - s * m21
-    m[M._02] = c * m02 - s * m22
-    m[M._03] = c * m03 - s * m23
-    m[M._20] = c * m20 + s * m00
-    m[M._21] = c * m21 + s * m01
-    m[M._22] = c * m22 + s * m02
-    m[M._23] = c * m23 + s * m03
+    m[C0R0] = c * m00 - s * m20
+    m[C0R1] = c * m01 - s * m21
+    m[C0R2] = c * m02 - s * m22
+    m[C0R3] = c * m03 - s * m23
+    m[C2R0] = c * m20 + s * m00
+    m[C2R1] = c * m21 + s * m01
+    m[C2R2] = c * m22 + s * m02
+    m[C2R3] = c * m23 + s * m03
 
     return this
   }
@@ -1725,25 +1764,25 @@ export class Mat4 {
    */
   public preRotateY(angle: number): this {
     const m = this.elements
-    const m00 = m[M._00]
-    const m10 = m[M._10]
-    const m20 = m[M._20]
-    const m30 = m[M._30]
-    const m02 = m[M._02]
-    const m12 = m[M._12]
-    const m22 = m[M._22]
-    const m32 = m[M._32]
+    const m00 = m[C0R0]
+    const m10 = m[C1R0]
+    const m20 = m[C2R0]
+    const m30 = m[C3R0]
+    const m02 = m[C0R2]
+    const m12 = m[C1R2]
+    const m22 = m[C2R2]
+    const m32 = m[C3R2]
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._00] = c * m00 + s * m02
-    m[M._10] = c * m10 + s * m12
-    m[M._20] = c * m20 + s * m22
-    m[M._30] = c * m30 + s * m32
-    m[M._02] = c * m02 - s * m00
-    m[M._12] = c * m12 - s * m10
-    m[M._22] = c * m22 - s * m20
-    m[M._32] = c * m32 - s * m30
+    m[C0R0] = c * m00 + s * m02
+    m[C1R0] = c * m10 + s * m12
+    m[C2R0] = c * m20 + s * m22
+    m[C3R0] = c * m30 + s * m32
+    m[C0R2] = c * m02 - s * m00
+    m[C1R2] = c * m12 - s * m10
+    m[C2R2] = c * m22 - s * m20
+    m[C3R2] = c * m32 - s * m30
 
     return this
   }
@@ -1763,22 +1802,22 @@ export class Mat4 {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const m = this.elements
-    m[M._00] = cos
-    m[M._10] = -sin
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = sin
-    m[M._11] = cos
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = 1
-    m[M._32] = 0
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = cos
+    m[C1R0] = -sin
+    m[C2R0] = 0
+    m[C3R0] = 0
+    m[C0R1] = sin
+    m[C1R1] = cos
+    m[C2R1] = 0
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = 0
+    m[C2R2] = 1
+    m[C3R2] = 0
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -1793,25 +1832,25 @@ export class Mat4 {
    */
   public rotateZ(angle: number): this {
     const m = this.elements
-    const m00 = m[M._00]
-    const m01 = m[M._01]
-    const m02 = m[M._02]
-    const m03 = m[M._03]
-    const m10 = m[M._10]
-    const m11 = m[M._11]
-    const m12 = m[M._12]
-    const m13 = m[M._13]
+    const m00 = m[C0R0]
+    const m01 = m[C0R1]
+    const m02 = m[C0R2]
+    const m03 = m[C0R3]
+    const m10 = m[C1R0]
+    const m11 = m[C1R1]
+    const m12 = m[C1R2]
+    const m13 = m[C1R3]
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._00] = c * m00 + s * m10
-    m[M._01] = c * m01 + s * m11
-    m[M._02] = c * m02 + s * m12
-    m[M._03] = c * m03 + s * m13
-    m[M._10] = c * m10 - s * m00
-    m[M._11] = c * m11 - s * m01
-    m[M._12] = c * m12 - s * m02
-    m[M._13] = c * m13 - s * m03
+    m[C0R0] = c * m00 + s * m10
+    m[C0R1] = c * m01 + s * m11
+    m[C0R2] = c * m02 + s * m12
+    m[C0R3] = c * m03 + s * m13
+    m[C1R0] = c * m10 - s * m00
+    m[C1R1] = c * m11 - s * m01
+    m[C1R2] = c * m12 - s * m02
+    m[C1R3] = c * m13 - s * m03
 
     return this
   }
@@ -1826,25 +1865,25 @@ export class Mat4 {
    */
   public preRotateZ(angle: number): this {
     const m = this.elements
-    const m00 = m[M._00]
-    const m10 = m[M._10]
-    const m20 = m[M._20]
-    const m30 = m[M._30]
-    const m01 = m[M._01]
-    const m11 = m[M._11]
-    const m21 = m[M._21]
-    const m31 = m[M._31]
+    const m00 = m[C0R0]
+    const m10 = m[C1R0]
+    const m20 = m[C2R0]
+    const m30 = m[C3R0]
+    const m01 = m[C0R1]
+    const m11 = m[C1R1]
+    const m21 = m[C2R1]
+    const m31 = m[C3R1]
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._00] = c * m00 - s * m01
-    m[M._10] = c * m10 - s * m11
-    m[M._20] = c * m20 - s * m21
-    m[M._30] = c * m30 - s * m31
-    m[M._01] = c * m01 + s * m00
-    m[M._11] = c * m11 + s * m10
-    m[M._21] = c * m21 + s * m20
-    m[M._31] = c * m31 + s * m30
+    m[C0R0] = c * m00 - s * m01
+    m[C1R0] = c * m10 - s * m11
+    m[C2R0] = c * m20 - s * m21
+    m[C3R0] = c * m30 - s * m31
+    m[C0R1] = c * m01 + s * m00
+    m[C1R1] = c * m11 + s * m10
+    m[C2R1] = c * m21 + s * m20
+    m[C3R1] = c * m31 + s * m30
 
     return this
   }
@@ -1865,22 +1904,22 @@ export class Mat4 {
    */
   public initScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
-    m[M._00] = x
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = y
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = z
-    m[M._32] = 0
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = x
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = y
+    m[C2R1] = 0
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = 0
+    m[C2R2] = z
+    m[C3R2] = 0
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -1893,18 +1932,18 @@ export class Mat4 {
    */
   public scaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._01] *= x
-    m[M._02] *= x
-    m[M._03] *= x
-    m[M._10] *= y
-    m[M._11] *= y
-    m[M._12] *= y
-    m[M._13] *= y
-    m[M._20] *= z
-    m[M._21] *= z
-    m[M._22] *= z
-    m[M._23] *= z
+    m[C0R0] *= x
+    m[C0R1] *= x
+    m[C0R2] *= x
+    m[C0R3] *= x
+    m[C1R0] *= y
+    m[C1R1] *= y
+    m[C1R2] *= y
+    m[C1R3] *= y
+    m[C2R0] *= z
+    m[C2R1] *= z
+    m[C2R2] *= z
+    m[C2R3] *= z
     return this
   }
 
@@ -1917,18 +1956,18 @@ export class Mat4 {
    */
   public preScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._10] *= x
-    m[M._20] *= x
-    m[M._30] *= x
-    m[M._01] *= y
-    m[M._11] *= y
-    m[M._21] *= y
-    m[M._31] *= y
-    m[M._02] *= z
-    m[M._12] *= z
-    m[M._22] *= z
-    m[M._32] *= z
+    m[C0R0] *= x
+    m[C1R0] *= x
+    m[C2R0] *= x
+    m[C3R0] *= x
+    m[C0R1] *= y
+    m[C1R1] *= y
+    m[C2R1] *= y
+    m[C3R1] *= y
+    m[C0R2] *= z
+    m[C1R2] *= z
+    m[C2R2] *= z
+    m[C3R2] *= z
     return this
   }
 
@@ -1958,18 +1997,18 @@ export class Mat4 {
     const y = scale.y
     const z = scale.z
     const m = this.elements
-    m[M._00] *= x
-    m[M._01] *= x
-    m[M._02] *= x
-    m[M._03] *= x
-    m[M._10] *= y
-    m[M._11] *= y
-    m[M._12] *= y
-    m[M._13] *= y
-    m[M._20] *= z
-    m[M._21] *= z
-    m[M._22] *= z
-    m[M._23] *= z
+    m[C0R0] *= x
+    m[C0R1] *= x
+    m[C0R2] *= x
+    m[C0R3] *= x
+    m[C1R0] *= y
+    m[C1R1] *= y
+    m[C1R2] *= y
+    m[C1R3] *= y
+    m[C2R0] *= z
+    m[C2R1] *= z
+    m[C2R2] *= z
+    m[C2R3] *= z
     return this
   }
 
@@ -1983,18 +2022,18 @@ export class Mat4 {
     const y = scale.y
     const z = scale.z
     const m = this.elements
-    m[M._00] *= x
-    m[M._10] *= x
-    m[M._20] *= x
-    m[M._30] *= x
-    m[M._01] *= y
-    m[M._11] *= y
-    m[M._21] *= y
-    m[M._31] *= y
-    m[M._02] *= z
-    m[M._12] *= z
-    m[M._22] *= z
-    m[M._32] *= z
+    m[C0R0] *= x
+    m[C1R0] *= x
+    m[C2R0] *= x
+    m[C3R0] *= x
+    m[C0R1] *= y
+    m[C1R1] *= y
+    m[C2R1] *= y
+    m[C3R1] *= y
+    m[C0R2] *= z
+    m[C1R2] *= z
+    m[C2R2] *= z
+    m[C3R2] *= z
     return this
   }
 
@@ -2021,18 +2060,18 @@ export class Mat4 {
    */
   public scaleUniform(scale: number): this {
     const m = this.elements
-    m[M._00] *= scale
-    m[M._01] *= scale
-    m[M._02] *= scale
-    m[M._03] *= scale
-    m[M._10] *= scale
-    m[M._11] *= scale
-    m[M._12] *= scale
-    m[M._13] *= scale
-    m[M._20] *= scale
-    m[M._21] *= scale
-    m[M._22] *= scale
-    m[M._23] *= scale
+    m[C0R0] *= scale
+    m[C0R1] *= scale
+    m[C0R2] *= scale
+    m[C0R3] *= scale
+    m[C1R0] *= scale
+    m[C1R1] *= scale
+    m[C1R2] *= scale
+    m[C1R3] *= scale
+    m[C2R0] *= scale
+    m[C2R1] *= scale
+    m[C2R2] *= scale
+    m[C2R3] *= scale
     return this
   }
 
@@ -2043,18 +2082,18 @@ export class Mat4 {
    */
   public preScaleUniform(scale: number): this {
     const m = this.elements
-    m[M._00] *= scale
-    m[M._10] *= scale
-    m[M._20] *= scale
-    m[M._30] *= scale
-    m[M._01] *= scale
-    m[M._11] *= scale
-    m[M._21] *= scale
-    m[M._31] *= scale
-    m[M._02] *= scale
-    m[M._12] *= scale
-    m[M._22] *= scale
-    m[M._32] *= scale
+    m[C0R0] *= scale
+    m[C1R0] *= scale
+    m[C2R0] *= scale
+    m[C3R0] *= scale
+    m[C0R1] *= scale
+    m[C1R1] *= scale
+    m[C2R1] *= scale
+    m[C3R1] *= scale
+    m[C0R2] *= scale
+    m[C1R2] *= scale
+    m[C2R2] *= scale
+    m[C3R2] *= scale
     return this
   }
 
@@ -2065,10 +2104,10 @@ export class Mat4 {
    */
   public scaleX(x: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._01] *= x
-    m[M._02] *= x
-    m[M._03] *= x
+    m[C0R0] *= x
+    m[C0R1] *= x
+    m[C0R2] *= x
+    m[C0R3] *= x
     return this
   }
 
@@ -2079,10 +2118,10 @@ export class Mat4 {
    */
   public preScaleX(x: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._10] *= x
-    m[M._20] *= x
-    m[M._30] *= x
+    m[C0R0] *= x
+    m[C1R0] *= x
+    m[C2R0] *= x
+    m[C3R0] *= x
     return this
   }
 
@@ -2093,10 +2132,10 @@ export class Mat4 {
    */
   public scaleY(y: number): this {
     const m = this.elements
-    m[M._10] *= y
-    m[M._11] *= y
-    m[M._12] *= y
-    m[M._13] *= y
+    m[C1R0] *= y
+    m[C1R1] *= y
+    m[C1R2] *= y
+    m[C1R3] *= y
     return this
   }
 
@@ -2107,10 +2146,10 @@ export class Mat4 {
    */
   public preScaleY(y: number): this {
     const m = this.elements
-    m[M._01] *= y
-    m[M._11] *= y
-    m[M._21] *= y
-    m[M._31] *= y
+    m[C0R1] *= y
+    m[C1R1] *= y
+    m[C2R1] *= y
+    m[C3R1] *= y
     return this
   }
 
@@ -2121,10 +2160,10 @@ export class Mat4 {
    */
   public scaleZ(z: number): this {
     const m = this.elements
-    m[M._20] *= z
-    m[M._21] *= z
-    m[M._22] *= z
-    m[M._23] *= z
+    m[C2R0] *= z
+    m[C2R1] *= z
+    m[C2R2] *= z
+    m[C2R3] *= z
     return this
   }
 
@@ -2135,10 +2174,10 @@ export class Mat4 {
    */
   public preScaleZ(z: number): this {
     const m = this.elements
-    m[M._02] *= z
-    m[M._12] *= z
-    m[M._22] *= z
-    m[M._32] *= z
+    m[C0R2] *= z
+    m[C1R2] *= z
+    m[C2R2] *= z
+    m[C3R2] *= z
     return this
   }
 
@@ -2176,22 +2215,22 @@ export class Mat4 {
    */
   public initTranslationXYZ(x: number, y: number, z: number): this {
     const m = this.elements
-    m[M._00] = 1
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = x
-    m[M._01] = 0
-    m[M._11] = 1
-    m[M._21] = 0
-    m[M._31] = y
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = 1
-    m[M._32] = z
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = 1
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = x
+    m[C0R1] = 0
+    m[C1R1] = 1
+    m[C2R1] = 0
+    m[C3R1] = y
+    m[C0R2] = 0
+    m[C1R2] = 0
+    m[C2R2] = 1
+    m[C3R2] = z
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -2242,9 +2281,9 @@ export class Mat4 {
    */
   public preTranslateXYZ(x: number, y: number, z: number): this {
     const m = this.elements
-    m[M._30] += x
-    m[M._31] += y
-    m[M._32] += z
+    m[C3R0] += x
+    m[C3R1] += y
+    m[C3R2] += z
     return this
   }
 
@@ -2282,22 +2321,22 @@ export class Mat4 {
    */
   public initTranslation(v: IVec3): this {
     const m = this.elements
-    m[M._00] = 1
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = v.x
-    m[M._01] = 0
-    m[M._11] = 1
-    m[M._21] = 0
-    m[M._31] = v.y
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = 1
-    m[M._32] = v.z
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = 1
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = v.x
+    m[C0R1] = 0
+    m[C1R1] = 1
+    m[C2R1] = 0
+    m[C3R1] = v.y
+    m[C0R2] = 0
+    m[C1R2] = 0
+    m[C2R2] = 1
+    m[C3R2] = v.z
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -2347,9 +2386,9 @@ export class Mat4 {
    */
   public preTranslate(v: IVec3): this {
     const m = this.elements
-    m[M._30] += v.x
-    m[M._31] += v.y
-    m[M._32] += v.z
+    m[C3R0] += v.x
+    m[C3R1] += v.y
+    m[C3R2] += v.z
     return this
   }
 
@@ -2371,10 +2410,10 @@ export class Mat4 {
    */
   public translateX(x: number): this {
     const m = this.elements
-    m[M._30] = m[M._00] * x + m[M._30]
-    m[M._31] = m[M._01] * x + m[M._31]
-    m[M._32] = m[M._02] * x + m[M._32]
-    m[M._33] = m[M._03] * x + m[M._33]
+    m[C3R0] = m[C0R0] * x + m[C3R0]
+    m[C3R1] = m[C0R1] * x + m[C3R1]
+    m[C3R2] = m[C0R2] * x + m[C3R2]
+    m[C3R3] = m[C0R3] * x + m[C3R3]
     return this
   }
 
@@ -2396,10 +2435,10 @@ export class Mat4 {
    */
   public translateY(y: number): this {
     const m = this.elements
-    m[M._30] = m[M._10] * y + m[M._30]
-    m[M._31] = m[M._11] * y + m[M._31]
-    m[M._32] = m[M._12] * y + m[M._32]
-    m[M._33] = m[M._13] * y + m[M._33]
+    m[C3R0] = m[C1R0] * y + m[C3R0]
+    m[C3R1] = m[C1R1] * y + m[C3R1]
+    m[C3R2] = m[C1R2] * y + m[C3R2]
+    m[C3R3] = m[C1R3] * y + m[C3R3]
     return this
   }
 
@@ -2421,10 +2460,10 @@ export class Mat4 {
    */
   public translateZ(z: number): this {
     const m = this.elements
-    m[M._30] = m[M._20] * z + m[M._30]
-    m[M._31] = m[M._21] * z + m[M._31]
-    m[M._32] = m[M._22] * z + m[M._32]
-    m[M._33] = m[M._23] * z + m[M._33]
+    m[C3R0] = m[C2R0] * z + m[C3R0]
+    m[C3R1] = m[C2R1] * z + m[C3R1]
+    m[C3R2] = m[C2R2] * z + m[C3R2]
+    m[C3R3] = m[C2R3] * z + m[C3R3]
     return this
   }
 
@@ -2437,7 +2476,7 @@ export class Mat4 {
    * @param x - translation in x direction
    */
   public preTranslateX(x: number): this {
-    this.elements[M._30] += x
+    this.elements[C3R0] += x
     return this
   }
 
@@ -2450,7 +2489,7 @@ export class Mat4 {
    * @param y - translation in y direction
    */
   public preTranslateY(y: number): this {
-    this.elements[M._31] += y
+    this.elements[C3R1] += y
     return this
   }
 
@@ -2463,7 +2502,7 @@ export class Mat4 {
    * @param z - translation in z direction
    */
   public preTranslateZ(z: number): this {
-    this.elements[M._32] += z
+    this.elements[C3R2] += z
     return this
   }
 
@@ -2507,15 +2546,15 @@ export class Mat4 {
     z = backX * rightY - backY * rightX
 
     const m = this.elements
-    m[M._00] = rightX
-    m[M._10] = x
-    m[M._20] = backX
-    m[M._01] = rightY
-    m[M._11] = y
-    m[M._21] = backY
-    m[M._02] = rightZ
-    m[M._12] = z
-    m[M._22] = backZ
+    m[C0R0] = rightX
+    m[C1R0] = x
+    m[C2R0] = backX
+    m[C0R1] = rightY
+    m[C1R1] = y
+    m[C2R1] = backY
+    m[C0R2] = rightZ
+    m[C1R2] = z
+    m[C2R2] = backZ
     return this
   }
 
@@ -2562,22 +2601,22 @@ export class Mat4 {
     const upZ = backX * rightY - backY * rightX
 
     const m = this.elements
-    m[M._00] = rightX
-    m[M._10] = upX
-    m[M._20] = backX
-    m[M._30] = pos.x
-    m[M._01] = rightY
-    m[M._11] = upY
-    m[M._21] = backY
-    m[M._31] = pos.y
-    m[M._02] = rightZ
-    m[M._12] = upZ
-    m[M._22] = backZ
-    m[M._32] = pos.z
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = rightX
+    m[C1R0] = upX
+    m[C2R0] = backX
+    m[C3R0] = pos.x
+    m[C0R1] = rightY
+    m[C1R1] = upY
+    m[C2R1] = backY
+    m[C3R1] = pos.y
+    m[C0R2] = rightZ
+    m[C1R2] = upZ
+    m[C2R2] = backZ
+    m[C3R2] = pos.z
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
@@ -2622,54 +2661,80 @@ export class Mat4 {
     z = backX * rightY - backY * rightX
 
     const m = this.elements
-    m[M._00] = rightX
-    m[M._10] = x
-    m[M._20] = backX
-    m[M._30] = position.x
-    m[M._01] = rightY
-    m[M._11] = y
-    m[M._21] = backY
-    m[M._31] = position.y
-    m[M._02] = rightZ
-    m[M._12] = z
-    m[M._22] = backZ
-    m[M._32] = position.z
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = rightX
+    m[C1R0] = x
+    m[C2R0] = backX
+    m[C3R0] = position.x
+    m[C0R1] = rightY
+    m[C1R1] = y
+    m[C2R1] = backY
+    m[C3R1] = position.y
+    m[C0R2] = rightZ
+    m[C1R2] = z
+    m[C2R2] = backZ
+    m[C3R2] = position.z
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
     return this
   }
 
   /**
    * Creates a new perspective matrix
    */
-  public static createPerspective(width: number, height: number, near: number, far: number): Mat4 {
-    return new Mat4().initPerspective(width, height, near, far)
+  public static createPerspective(
+    width: number,
+    height: number,
+    near: number,
+    far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
+  ): Mat4 {
+    return new Mat4().initPerspective(width, height, near, far, ndcMinZ, reversedZ)
   }
 
   /**
    * Initializes a perspective matrix
    */
-  public initPerspective(width: number, height: number, near: number, far: number): this {
+  public initPerspective(
+    width: number,
+    height: number,
+    near: number,
+    far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
+  ): this {
     const m = this.elements
     const d = far - near
-    m[M._00] = near / width
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = near / height
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = -(far + near) / d
-    m[M._32] = -(2 * far * near) / d
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = -1
-    m[M._33] = 1
+    m[C0R0] = near / width
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = near / height
+    m[C2R1] = 0
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = 0
+    if (reversedZ) {
+      m[C2R2] = near / d
+      m[C3R2] = (far * near) / d
+    } else if (!ndcMinZ) {
+      m[C2R2] = far / (near - far)
+      m[C3R2] = (far * near) / (near - far)
+    } else {
+      m[C2R2] = -(far + near) / d
+      m[C3R2] = -(2 * far * near) / d
+    }
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = -1
+    m[C3R3] = 1
+    if (!ndcMinZ) {
+      m[C2R2] = m[C2R2] * 0.5
+      m[C3R2] = m[C3R2] * 0.5 + 0.5
+    }
     return this
   }
 
@@ -2681,8 +2746,15 @@ export class Mat4 {
    * @param near - The near plane distance
    * @param far - The far plane distance
    */
-  public static createPerspectiveFieldOfView(fov: number, aspect: number, near: number, far: number): Mat4 {
-    return new Mat4().initPerspectiveFieldOfView(fov, aspect, near, far)
+  public static createPerspectiveFieldOfView(
+    fov: number,
+    aspect: number,
+    near: number,
+    far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
+  ): Mat4 {
+    return new Mat4().initPerspectiveFieldOfView(fov, aspect, near, far, ndcMinZ, reversedZ)
   }
 
   /**
@@ -2693,26 +2765,46 @@ export class Mat4 {
    * @param near - The near plane distance
    * @param far - The far plane distance
    */
-  public initPerspectiveFieldOfView(fov: number, aspect: number, near: number, far: number): this {
+  public initPerspectiveFieldOfView(
+    fov: number,
+    aspect: number,
+    near: number,
+    far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
+  ): this {
     const s = 1.0 / Math.tan(fov * 0.5)
     const d = far - near
     const m = this.elements
-    m[M._00] = s / aspect
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = s
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = -(far + near) / d
-    m[M._32] = -(2 * far * near) / d
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = -1
-    m[M._33] = 0
+    m[C0R0] = s / aspect
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+
+    m[C0R1] = 0
+    m[C1R1] = s
+    m[C2R1] = 0
+    m[C3R1] = 0
+
+    m[C0R2] = 0
+    m[C1R2] = 0
+    if (reversedZ) {
+      m[C2R2] = near / d
+      m[C3R2] = (far * near) / d
+    } else if (!ndcMinZ) {
+      // WebGPU
+      m[C2R2] = -far / d
+      m[C3R2] = -(far * near) / d
+    } else {
+      // WebGL
+      m[C2R2] = -(far + near) / d
+      m[C3R2] = -(2 * far * near) / d
+    }
+
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = -1
+    m[C3R3] = 0
     return this
   }
 
@@ -2726,8 +2818,10 @@ export class Mat4 {
     top: number,
     near: number,
     far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
   ): Mat4 {
-    return new Mat4().initPerspectiveOffCenter(left, right, bottom, top, near, far)
+    return new Mat4().initPerspectiveOffCenter(left, right, bottom, top, near, far, ndcMinZ, reversedZ)
   }
 
   /**
@@ -2740,59 +2834,98 @@ export class Mat4 {
     top: number,
     near: number,
     far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
   ): this {
     const w = right - left
     const h = top - bottom
     const d = far - near
     const m = this.elements
-    m[M._00] = (2 * near) / w
-    m[M._10] = 0
-    m[M._20] = (right + left) / w
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = (2 * near) / h
-    m[M._21] = (top + bottom) / h
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = -(far + near) / d
-    m[M._32] = -(2 * far * near) / d
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = -1
-    m[M._33] = 0
+    m[C0R0] = (2 * near) / w
+    m[C1R0] = 0
+    m[C2R0] = (right + left) / w
+    m[C3R0] = 0
+    m[C0R1] = 0
+    m[C1R1] = (2 * near) / h
+    m[C2R1] = (top + bottom) / h
+    m[C3R1] = 0
+    m[C0R2] = 0
+    m[C1R2] = 0
+    if (reversedZ) {
+      m[C2R2] = near / d
+      m[C3R2] = (far * near) / d
+    } else if (!ndcMinZ) {
+      m[C2R2] = far / (near - far)
+      m[C3R2] = (far * near) / (near - far)
+    } else {
+      m[C2R2] = -(far + near) / d
+      m[C3R2] = -(2 * far * near) / d
+    }
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = -1
+    m[C3R3] = 0
+
     return this
   }
 
   /**
    * Creates a new perspective matrix
    */
-  public static createOrthographic(width: number, height: number, near: number, far: number): Mat4 {
-    return new Mat4().initOrthographic(width, height, near, far)
+  public static createOrthographic(
+    width: number,
+    height: number,
+    near: number,
+    far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
+  ): Mat4 {
+    return new Mat4().initOrthographic(width, height, near, far, ndcMinZ, reversedZ)
   }
 
   /**
    * Initializes an orthographic matrix
    */
-  public initOrthographic(width: number, height: number, near: number, far: number): this {
+  public initOrthographic(
+    width: number,
+    height: number,
+    near: number,
+    far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
+  ): this {
     const d = far - near
     const m = this.elements
-    m[M._00] = 1 / width
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = 0
-    m[M._01] = 0
-    m[M._11] = 1 / height
-    m[M._21] = 0
-    m[M._31] = 0
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = -2 / (far - near)
-    m[M._32] = -(far + near) / d
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = 1 / width
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = 0
+
+    m[C0R1] = 0
+    m[C1R1] = 1 / height
+    m[C2R1] = 0
+    m[C3R1] = 0
+
+    m[C0R2] = 0
+    m[C1R2] = 0
+    if (reversedZ) {
+      m[C2R2] = near / d
+      m[C3R2] = (far * near) / d
+    } else if (!ndcMinZ) {
+      // WebGPU
+      m[C2R2] = -1 / d
+      m[C3R2] = -near / d
+    } else {
+      // WebGL
+      m[C2R2] = -2 / d
+      m[C3R2] = -(far + near) / d
+    }
+
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
+
     return this
   }
 
@@ -2806,8 +2939,10 @@ export class Mat4 {
     top: number,
     near: number,
     far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
   ): Mat4 {
-    return new Mat4().initOrthographicOffCenter(left, right, bottom, top, near, far)
+    return new Mat4().initOrthographicOffCenter(left, right, bottom, top, near, far, ndcMinZ, reversedZ)
   }
 
   /**
@@ -2820,27 +2955,41 @@ export class Mat4 {
     top: number,
     near: number,
     far: number,
+    ndcMinZ: NdcMinZ,
+    reversedZ = false,
   ): this {
     const w = right - left
     const h = top - bottom
     const d = far - near
     const m = this.elements
-    m[M._00] = 2 / w
-    m[M._10] = 0
-    m[M._20] = 0
-    m[M._30] = -(right + left) / w
-    m[M._01] = 0
-    m[M._11] = 2 / h
-    m[M._21] = 0
-    m[M._31] = -(top + bottom) / h
-    m[M._02] = 0
-    m[M._12] = 0
-    m[M._22] = -2 / d
-    m[M._32] = -(far + near) / d
-    m[M._03] = 0
-    m[M._13] = 0
-    m[M._23] = 0
-    m[M._33] = 1
+    m[C0R0] = 2 / w
+    m[C1R0] = 0
+    m[C2R0] = 0
+    m[C3R0] = -(right + left) / w
+    m[C0R1] = 0
+    m[C1R1] = 2 / h
+    m[C2R1] = 0
+    m[C3R1] = -(top + bottom) / h
+    m[C0R2] = 0
+    m[C1R2] = 0
+    if (reversedZ) {
+      m[C2R2] = near / d
+      m[C3R2] = (far * near) / d
+    } else if (!ndcMinZ) {
+      // WebGPU
+      m[C2R2] = -1 / d
+      m[C3R2] = -near / d
+    } else {
+      // WebGL
+      m[C2R2] = -2 / d
+      m[C3R2] = -(far + near) / d
+    }
+
+    m[C0R3] = 0
+    m[C1R3] = 0
+    m[C2R3] = 0
+    m[C3R3] = 1
+
     return this
   }
 
@@ -3319,56 +3468,56 @@ export class Mat4 {
     const b = matB.elements
     const c = out.elements
 
-    const a00 = a[M._00]
-    const a01 = a[M._01]
-    const a02 = a[M._02]
-    const a03 = a[M._03]
-    const a10 = a[M._10]
-    const a11 = a[M._11]
-    const a12 = a[M._12]
-    const a13 = a[M._13]
-    const a20 = a[M._20]
-    const a21 = a[M._21]
-    const a22 = a[M._22]
-    const a23 = a[M._23]
-    const a30 = a[M._30]
-    const a31 = a[M._31]
-    const a32 = a[M._32]
-    const a33 = a[M._33]
+    const a00 = a[C0R0]
+    const a01 = a[C0R1]
+    const a02 = a[C0R2]
+    const a03 = a[C0R3]
+    const a10 = a[C1R0]
+    const a11 = a[C1R1]
+    const a12 = a[C1R2]
+    const a13 = a[C1R3]
+    const a20 = a[C2R0]
+    const a21 = a[C2R1]
+    const a22 = a[C2R2]
+    const a23 = a[C2R3]
+    const a30 = a[C3R0]
+    const a31 = a[C3R1]
+    const a32 = a[C3R2]
+    const a33 = a[C3R3]
 
-    const b00 = b[M._00]
-    const b01 = b[M._01]
-    const b02 = b[M._02]
-    const b03 = b[M._03]
-    const b10 = b[M._10]
-    const b11 = b[M._11]
-    const b12 = b[M._12]
-    const b13 = b[M._13]
-    const b20 = b[M._20]
-    const b21 = b[M._21]
-    const b22 = b[M._22]
-    const b23 = b[M._23]
-    const b30 = b[M._30]
-    const b31 = b[M._31]
-    const b32 = b[M._32]
-    const b33 = b[M._33]
+    const b00 = b[C0R0]
+    const b01 = b[C0R1]
+    const b02 = b[C0R2]
+    const b03 = b[C0R3]
+    const b10 = b[C1R0]
+    const b11 = b[C1R1]
+    const b12 = b[C1R2]
+    const b13 = b[C1R3]
+    const b20 = b[C2R0]
+    const b21 = b[C2R1]
+    const b22 = b[C2R2]
+    const b23 = b[C2R3]
+    const b30 = b[C3R0]
+    const b31 = b[C3R1]
+    const b32 = b[C3R2]
+    const b33 = b[C3R3]
 
-    c[M._00] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30
-    c[M._01] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31
-    c[M._02] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32
-    c[M._03] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33
-    c[M._10] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30
-    c[M._11] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31
-    c[M._12] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32
-    c[M._13] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33
-    c[M._20] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30
-    c[M._21] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31
-    c[M._22] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32
-    c[M._23] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33
-    c[M._30] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30
-    c[M._31] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31
-    c[M._32] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32
-    c[M._33] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
+    c[C0R0] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30
+    c[C0R1] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31
+    c[C0R2] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32
+    c[C0R3] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33
+    c[C1R0] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30
+    c[C1R1] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31
+    c[C1R2] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32
+    c[C1R3] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33
+    c[C2R0] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30
+    c[C2R1] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31
+    c[C2R2] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32
+    c[C2R3] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33
+    c[C3R0] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30
+    c[C3R1] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31
+    c[C3R2] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32
+    c[C3R3] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
     return out
   }
 
@@ -3382,56 +3531,56 @@ export class Mat4 {
     const b = other.elements
     const c = this.elements
 
-    const a00 = a[M._00]
-    const a01 = a[M._01]
-    const a02 = a[M._02]
-    const a03 = a[M._03]
-    const a10 = a[M._10]
-    const a11 = a[M._11]
-    const a12 = a[M._12]
-    const a13 = a[M._13]
-    const a20 = a[M._20]
-    const a21 = a[M._21]
-    const a22 = a[M._22]
-    const a23 = a[M._23]
-    const a30 = a[M._30]
-    const a31 = a[M._31]
-    const a32 = a[M._32]
-    const a33 = a[M._33]
+    const a00 = a[C0R0]
+    const a01 = a[C0R1]
+    const a02 = a[C0R2]
+    const a03 = a[C0R3]
+    const a10 = a[C1R0]
+    const a11 = a[C1R1]
+    const a12 = a[C1R2]
+    const a13 = a[C1R3]
+    const a20 = a[C2R0]
+    const a21 = a[C2R1]
+    const a22 = a[C2R2]
+    const a23 = a[C2R3]
+    const a30 = a[C3R0]
+    const a31 = a[C3R1]
+    const a32 = a[C3R2]
+    const a33 = a[C3R3]
 
-    const b00 = b[M._00]
-    const b01 = b[M._01]
-    const b02 = b[M._02]
-    const b03 = b[M._03]
-    const b10 = b[M._10]
-    const b11 = b[M._11]
-    const b12 = b[M._12]
-    const b13 = b[M._13]
-    const b20 = b[M._20]
-    const b21 = b[M._21]
-    const b22 = b[M._22]
-    const b23 = b[M._23]
-    const b30 = b[M._30]
-    const b31 = b[M._31]
-    const b32 = b[M._32]
-    const b33 = b[M._33]
+    const b00 = b[C0R0]
+    const b01 = b[C0R1]
+    const b02 = b[C0R2]
+    const b03 = b[C0R3]
+    const b10 = b[C1R0]
+    const b11 = b[C1R1]
+    const b12 = b[C1R2]
+    const b13 = b[C1R3]
+    const b20 = b[C2R0]
+    const b21 = b[C2R1]
+    const b22 = b[C2R2]
+    const b23 = b[C2R3]
+    const b30 = b[C3R0]
+    const b31 = b[C3R1]
+    const b32 = b[C3R2]
+    const b33 = b[C3R3]
 
-    c[M._00] = a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03
-    c[M._01] = a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03
-    c[M._02] = a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03
-    c[M._03] = a03 * b00 + a13 * b01 + a23 * b02 + a33 * b03
-    c[M._10] = a00 * b10 + a10 * b11 + a20 * b12 + a30 * b13
-    c[M._11] = a01 * b10 + a11 * b11 + a21 * b12 + a31 * b13
-    c[M._12] = a02 * b10 + a12 * b11 + a22 * b12 + a32 * b13
-    c[M._13] = a03 * b10 + a13 * b11 + a23 * b12 + a33 * b13
-    c[M._20] = a00 * b20 + a10 * b21 + a20 * b22 + a30 * b23
-    c[M._21] = a01 * b20 + a11 * b21 + a21 * b22 + a31 * b23
-    c[M._22] = a02 * b20 + a12 * b21 + a22 * b22 + a32 * b23
-    c[M._23] = a03 * b20 + a13 * b21 + a23 * b22 + a33 * b23
-    c[M._30] = a00 * b30 + a10 * b31 + a20 * b32 + a30 * b33
-    c[M._31] = a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33
-    c[M._32] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33
-    c[M._33] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33
+    c[C0R0] = a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03
+    c[C0R1] = a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03
+    c[C0R2] = a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03
+    c[C0R3] = a03 * b00 + a13 * b01 + a23 * b02 + a33 * b03
+    c[C1R0] = a00 * b10 + a10 * b11 + a20 * b12 + a30 * b13
+    c[C1R1] = a01 * b10 + a11 * b11 + a21 * b12 + a31 * b13
+    c[C1R2] = a02 * b10 + a12 * b11 + a22 * b12 + a32 * b13
+    c[C1R3] = a03 * b10 + a13 * b11 + a23 * b12 + a33 * b13
+    c[C2R0] = a00 * b20 + a10 * b21 + a20 * b22 + a30 * b23
+    c[C2R1] = a01 * b20 + a11 * b21 + a21 * b22 + a31 * b23
+    c[C2R2] = a02 * b20 + a12 * b21 + a22 * b22 + a32 * b23
+    c[C2R3] = a03 * b20 + a13 * b21 + a23 * b22 + a33 * b23
+    c[C3R0] = a00 * b30 + a10 * b31 + a20 * b32 + a30 * b33
+    c[C3R1] = a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33
+    c[C3R2] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33
+    c[C3R3] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33
     return this
   }
 
@@ -3450,56 +3599,56 @@ export class Mat4 {
     const b = matA.elements
     const c = out.elements
 
-    const a00 = a[M._00]
-    const a01 = a[M._01]
-    const a02 = a[M._02]
-    const a03 = a[M._03]
-    const a10 = a[M._10]
-    const a11 = a[M._11]
-    const a12 = a[M._12]
-    const a13 = a[M._13]
-    const a20 = a[M._20]
-    const a21 = a[M._21]
-    const a22 = a[M._22]
-    const a23 = a[M._23]
-    const a30 = a[M._30]
-    const a31 = a[M._31]
-    const a32 = a[M._32]
-    const a33 = a[M._33]
+    const a00 = a[C0R0]
+    const a01 = a[C0R1]
+    const a02 = a[C0R2]
+    const a03 = a[C0R3]
+    const a10 = a[C1R0]
+    const a11 = a[C1R1]
+    const a12 = a[C1R2]
+    const a13 = a[C1R3]
+    const a20 = a[C2R0]
+    const a21 = a[C2R1]
+    const a22 = a[C2R2]
+    const a23 = a[C2R3]
+    const a30 = a[C3R0]
+    const a31 = a[C3R1]
+    const a32 = a[C3R2]
+    const a33 = a[C3R3]
 
-    const b00 = b[M._00]
-    const b01 = b[M._01]
-    const b02 = b[M._02]
-    const b03 = b[M._03]
-    const b10 = b[M._10]
-    const b11 = b[M._11]
-    const b12 = b[M._12]
-    const b13 = b[M._13]
-    const b20 = b[M._20]
-    const b21 = b[M._21]
-    const b22 = b[M._22]
-    const b23 = b[M._23]
-    const b30 = b[M._30]
-    const b31 = b[M._31]
-    const b32 = b[M._32]
-    const b33 = b[M._33]
+    const b00 = b[C0R0]
+    const b01 = b[C0R1]
+    const b02 = b[C0R2]
+    const b03 = b[C0R3]
+    const b10 = b[C1R0]
+    const b11 = b[C1R1]
+    const b12 = b[C1R2]
+    const b13 = b[C1R3]
+    const b20 = b[C2R0]
+    const b21 = b[C2R1]
+    const b22 = b[C2R2]
+    const b23 = b[C2R3]
+    const b30 = b[C3R0]
+    const b31 = b[C3R1]
+    const b32 = b[C3R2]
+    const b33 = b[C3R3]
 
-    c[M._00] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30
-    c[M._01] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31
-    c[M._02] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32
-    c[M._03] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33
-    c[M._10] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30
-    c[M._11] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31
-    c[M._12] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32
-    c[M._13] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33
-    c[M._20] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30
-    c[M._21] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31
-    c[M._22] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32
-    c[M._23] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33
-    c[M._30] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30
-    c[M._31] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31
-    c[M._32] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32
-    c[M._33] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
+    c[C0R0] = b00 * a00 + b01 * a10 + b02 * a20 + b03 * a30
+    c[C0R1] = b00 * a01 + b01 * a11 + b02 * a21 + b03 * a31
+    c[C0R2] = b00 * a02 + b01 * a12 + b02 * a22 + b03 * a32
+    c[C0R3] = b00 * a03 + b01 * a13 + b02 * a23 + b03 * a33
+    c[C1R0] = b10 * a00 + b11 * a10 + b12 * a20 + b13 * a30
+    c[C1R1] = b10 * a01 + b11 * a11 + b12 * a21 + b13 * a31
+    c[C1R2] = b10 * a02 + b11 * a12 + b12 * a22 + b13 * a32
+    c[C1R3] = b10 * a03 + b11 * a13 + b12 * a23 + b13 * a33
+    c[C2R0] = b20 * a00 + b21 * a10 + b22 * a20 + b23 * a30
+    c[C2R1] = b20 * a01 + b21 * a11 + b22 * a21 + b23 * a31
+    c[C2R2] = b20 * a02 + b21 * a12 + b22 * a22 + b23 * a32
+    c[C2R3] = b20 * a03 + b21 * a13 + b22 * a23 + b23 * a33
+    c[C3R0] = b30 * a00 + b31 * a10 + b32 * a20 + b33 * a30
+    c[C3R1] = b30 * a01 + b31 * a11 + b32 * a21 + b33 * a31
+    c[C3R2] = b30 * a02 + b31 * a12 + b32 * a22 + b33 * a32
+    c[C3R3] = b30 * a03 + b31 * a13 + b32 * a23 + b33 * a33
     return out
   }
 
@@ -3513,56 +3662,56 @@ export class Mat4 {
     const b = this.elements
     const c = this.elements
 
-    const a00 = a[M._00]
-    const a01 = a[M._01]
-    const a02 = a[M._02]
-    const a03 = a[M._03]
-    const a10 = a[M._10]
-    const a11 = a[M._11]
-    const a12 = a[M._12]
-    const a13 = a[M._13]
-    const a20 = a[M._20]
-    const a21 = a[M._21]
-    const a22 = a[M._22]
-    const a23 = a[M._23]
-    const a30 = a[M._30]
-    const a31 = a[M._31]
-    const a32 = a[M._32]
-    const a33 = a[M._33]
+    const a00 = a[C0R0]
+    const a01 = a[C0R1]
+    const a02 = a[C0R2]
+    const a03 = a[C0R3]
+    const a10 = a[C1R0]
+    const a11 = a[C1R1]
+    const a12 = a[C1R2]
+    const a13 = a[C1R3]
+    const a20 = a[C2R0]
+    const a21 = a[C2R1]
+    const a22 = a[C2R2]
+    const a23 = a[C2R3]
+    const a30 = a[C3R0]
+    const a31 = a[C3R1]
+    const a32 = a[C3R2]
+    const a33 = a[C3R3]
 
-    const b00 = b[M._00]
-    const b01 = b[M._01]
-    const b02 = b[M._02]
-    const b03 = b[M._03]
-    const b10 = b[M._10]
-    const b11 = b[M._11]
-    const b12 = b[M._12]
-    const b13 = b[M._13]
-    const b20 = b[M._20]
-    const b21 = b[M._21]
-    const b22 = b[M._22]
-    const b23 = b[M._23]
-    const b30 = b[M._30]
-    const b31 = b[M._31]
-    const b32 = b[M._32]
-    const b33 = b[M._33]
+    const b00 = b[C0R0]
+    const b01 = b[C0R1]
+    const b02 = b[C0R2]
+    const b03 = b[C0R3]
+    const b10 = b[C1R0]
+    const b11 = b[C1R1]
+    const b12 = b[C1R2]
+    const b13 = b[C1R3]
+    const b20 = b[C2R0]
+    const b21 = b[C2R1]
+    const b22 = b[C2R2]
+    const b23 = b[C2R3]
+    const b30 = b[C3R0]
+    const b31 = b[C3R1]
+    const b32 = b[C3R2]
+    const b33 = b[C3R3]
 
-    c[M._00] = a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03
-    c[M._01] = a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03
-    c[M._02] = a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03
-    c[M._03] = a03 * b00 + a13 * b01 + a23 * b02 + a33 * b03
-    c[M._10] = a00 * b10 + a10 * b11 + a20 * b12 + a30 * b13
-    c[M._11] = a01 * b10 + a11 * b11 + a21 * b12 + a31 * b13
-    c[M._12] = a02 * b10 + a12 * b11 + a22 * b12 + a32 * b13
-    c[M._13] = a03 * b10 + a13 * b11 + a23 * b12 + a33 * b13
-    c[M._20] = a00 * b20 + a10 * b21 + a20 * b22 + a30 * b23
-    c[M._21] = a01 * b20 + a11 * b21 + a21 * b22 + a31 * b23
-    c[M._22] = a02 * b20 + a12 * b21 + a22 * b22 + a32 * b23
-    c[M._23] = a03 * b20 + a13 * b21 + a23 * b22 + a33 * b23
-    c[M._30] = a00 * b30 + a10 * b31 + a20 * b32 + a30 * b33
-    c[M._31] = a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33
-    c[M._32] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33
-    c[M._33] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33
+    c[C0R0] = a00 * b00 + a10 * b01 + a20 * b02 + a30 * b03
+    c[C0R1] = a01 * b00 + a11 * b01 + a21 * b02 + a31 * b03
+    c[C0R2] = a02 * b00 + a12 * b01 + a22 * b02 + a32 * b03
+    c[C0R3] = a03 * b00 + a13 * b01 + a23 * b02 + a33 * b03
+    c[C1R0] = a00 * b10 + a10 * b11 + a20 * b12 + a30 * b13
+    c[C1R1] = a01 * b10 + a11 * b11 + a21 * b12 + a31 * b13
+    c[C1R2] = a02 * b10 + a12 * b11 + a22 * b12 + a32 * b13
+    c[C1R3] = a03 * b10 + a13 * b11 + a23 * b12 + a33 * b13
+    c[C2R0] = a00 * b20 + a10 * b21 + a20 * b22 + a30 * b23
+    c[C2R1] = a01 * b20 + a11 * b21 + a21 * b22 + a31 * b23
+    c[C2R2] = a02 * b20 + a12 * b21 + a22 * b22 + a32 * b23
+    c[C2R3] = a03 * b20 + a13 * b21 + a23 * b22 + a33 * b23
+    c[C3R0] = a00 * b30 + a10 * b31 + a20 * b32 + a30 * b33
+    c[C3R1] = a01 * b30 + a11 * b31 + a21 * b32 + a31 * b33
+    c[C3R2] = a02 * b30 + a12 * b31 + a22 * b32 + a32 * b33
+    c[C3R3] = a03 * b30 + a13 * b31 + a23 * b32 + a33 * b33
     return this
   }
 
@@ -3839,10 +3988,10 @@ export class Mat4 {
     const w = 1
     const d = this.elements
     out = out || vec
-    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
-    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
-    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22] + w * d[M._32]
-    let wp = x * d[M._03] + y * d[M._13] + z * d[M._23] + w * d[M._33]
+    out.x = x * d[C0R0] + y * d[C1R0] + z * d[C2R0] + w * d[C3R0]
+    out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1] + w * d[C3R1]
+    out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2] + w * d[C3R2]
+    let wp = x * d[C0R3] + y * d[C1R3] + z * d[C2R3] + w * d[C3R3]
     if (wp !== 1) {
       out.x /= wp
       out.y /= wp
@@ -3901,9 +4050,9 @@ export class Mat4 {
     const w = 1
     const d = this.elements
     out = out || vec
-    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
-    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
-    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22] + w * d[M._32]
+    out.x = x * d[C0R0] + y * d[C1R0] + z * d[C2R0] + w * d[C3R0]
+    out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1] + w * d[C3R1]
+    out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2] + w * d[C3R2]
     return vec
   }
 
@@ -3922,10 +4071,10 @@ export class Mat4 {
     const w = vec.w
     const d = this.elements
     out = out || vec
-    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20] + w * d[M._30]
-    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21] + w * d[M._31]
-    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22] + w * d[M._32]
-    out.w = x * d[M._03] + y * d[M._13] + z * d[M._23] + w * d[M._33]
+    out.x = x * d[C0R0] + y * d[C1R0] + z * d[C2R0] + w * d[C3R0]
+    out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1] + w * d[C3R1]
+    out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2] + w * d[C3R2]
+    out.w = x * d[C0R3] + y * d[C1R3] + z * d[C2R3] + w * d[C3R3]
     return vec
   }
 
@@ -3942,8 +4091,8 @@ export class Mat4 {
     const y = vec.y || 0
     const d = this.elements
     out = out || vec
-    out.x = x * d[M._00] + y * d[M._10]
-    out.y = x * d[M._01] + y * d[M._11]
+    out.x = x * d[C0R0] + y * d[C1R0]
+    out.y = x * d[C0R1] + y * d[C1R1]
     return vec
   }
 
@@ -3961,9 +4110,9 @@ export class Mat4 {
     const z = vec.z || 0
     const d = this.elements
     out = out || vec
-    out.x = x * d[M._00] + y * d[M._10] + z * d[M._20]
-    out.y = x * d[M._01] + y * d[M._11] + z * d[M._21]
-    out.z = x * d[M._02] + y * d[M._12] + z * d[M._22]
+    out.x = x * d[C0R0] + y * d[C1R0] + z * d[C2R0]
+    out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1]
+    out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2]
     return vec
   }
 
@@ -4124,22 +4273,22 @@ export class Mat4 {
     const b = matB.elements
     const c = out.elements
     const t1 = 1 - t
-    c[M._00] = t1 * a[M._00] + t * b[M._00]
-    c[M._01] = t1 * a[M._01] + t * b[M._01]
-    c[M._02] = t1 * a[M._02] + t * b[M._02]
-    c[M._03] = t1 * a[M._03] + t * b[M._03]
-    c[M._10] = t1 * a[M._10] + t * b[M._10]
-    c[M._11] = t1 * a[M._11] + t * b[M._11]
-    c[M._12] = t1 * a[M._12] + t * b[M._12]
-    c[M._13] = t1 * a[M._13] + t * b[M._13]
-    c[M._20] = t1 * a[M._20] + t * b[M._20]
-    c[M._21] = t1 * a[M._21] + t * b[M._21]
-    c[M._22] = t1 * a[M._22] + t * b[M._22]
-    c[M._23] = t1 * a[M._23] + t * b[M._23]
-    c[M._30] = t1 * a[M._30] + t * b[M._30]
-    c[M._31] = t1 * a[M._31] + t * b[M._31]
-    c[M._32] = t1 * a[M._32] + t * b[M._32]
-    c[M._33] = t1 * a[M._33] + t * b[M._33]
+    c[C0R0] = t1 * a[C0R0] + t * b[C0R0]
+    c[C0R1] = t1 * a[C0R1] + t * b[C0R1]
+    c[C0R2] = t1 * a[C0R2] + t * b[C0R2]
+    c[C0R3] = t1 * a[C0R3] + t * b[C0R3]
+    c[C1R0] = t1 * a[C1R0] + t * b[C1R0]
+    c[C1R1] = t1 * a[C1R1] + t * b[C1R1]
+    c[C1R2] = t1 * a[C1R2] + t * b[C1R2]
+    c[C1R3] = t1 * a[C1R3] + t * b[C1R3]
+    c[C2R0] = t1 * a[C2R0] + t * b[C2R0]
+    c[C2R1] = t1 * a[C2R1] + t * b[C2R1]
+    c[C2R2] = t1 * a[C2R2] + t * b[C2R2]
+    c[C2R3] = t1 * a[C2R3] + t * b[C2R3]
+    c[C3R0] = t1 * a[C3R0] + t * b[C3R0]
+    c[C3R1] = t1 * a[C3R1] + t * b[C3R1]
+    c[C3R2] = t1 * a[C3R2] + t * b[C3R2]
+    c[C3R3] = t1 * a[C3R3] + t * b[C3R3]
     return out
   }
 

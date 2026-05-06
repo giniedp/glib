@@ -8,6 +8,12 @@ const mapToWebGL: Record<CullMode, number> = {
   None: gl.NONE,
 }
 
+const mapFromWebGL = {
+  [gl.FRONT]: 'Front' as CullMode,
+  [gl.BACK]: 'Back' as CullMode,
+  [gl.NONE]: 'None' as CullMode,
+}
+
 const mapToWebGPU: Record<CullMode, GPUCullMode> = {
   Front: 'front',
   Back: 'back',
@@ -16,6 +22,10 @@ const mapToWebGPU: Record<CullMode, GPUCullMode> = {
 
 export function cullModeToWebGL(mode: CullMode): number {
   return mapToWebGL[mode]
+}
+
+export function cullModeFromWebGL(mode: number): CullMode {
+  return mapFromWebGL[mode]
 }
 
 export function cullModeToWebGPU(mode: CullMode): GPUCullMode {

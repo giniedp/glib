@@ -1,20 +1,9 @@
-
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 import { Permutation } from './utils'
 
 const grad3 = [
-  1, 1, 0,
-  -1, 1, 0,
-  1, -1, 0,
-  -1, -1, 0,
-  1, 0, 1,
-  -1, 0, 1,
-  1, 0, -1,
-  -1, 0, -1,
-  0, 1, 1,
-  0, -1, 1,
-  0, 1, -1,
-  0, -1, -1,
+  1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0, 1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1, 0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1,
+  -1,
 ]
 
 /**
@@ -37,6 +26,7 @@ export function simplexNoise(): Sampler {
     if (x.length === 3) {
       return simplexNoise3D(x[0], x[1], x[2])
     }
+    return null
   }
 }
 
@@ -158,30 +148,64 @@ function simplexNoise3D(x: number, y: number, z: number) {
 
   // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
   // Determine which simplex we are in.
-  let i1; let j1; let k1 // Offsets for second corner of simplex in (interpolation,j,k) coords
-  let i2; let j2; let k2 // Offsets for third corner of simplex in (interpolation,j,k) coords
+  let i1
+  let j1
+  let k1 // Offsets for second corner of simplex in (interpolation,j,k) coords
+  let i2
+  let j2
+  let k2 // Offsets for third corner of simplex in (interpolation,j,k) coords
 
   if (x0 >= y0) {
     if (y0 >= z0) {
       // X Y Z order
-      i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0
+      i1 = 1
+      j1 = 0
+      k1 = 0
+      i2 = 1
+      j2 = 1
+      k2 = 0
     } else if (x0 >= z0) {
       // X Z Y order
-      i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1
+      i1 = 1
+      j1 = 0
+      k1 = 0
+      i2 = 1
+      j2 = 0
+      k2 = 1
     } else {
       // Z X Y order
-      i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1
+      i1 = 0
+      j1 = 0
+      k1 = 1
+      i2 = 1
+      j2 = 0
+      k2 = 1
     }
   } else {
     if (y0 < z0) {
       // Z Y X order
-      i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1
+      i1 = 0
+      j1 = 0
+      k1 = 1
+      i2 = 0
+      j2 = 1
+      k2 = 1
     } else if (x0 < z0) {
       // Y Z X order
-      i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1
+      i1 = 0
+      j1 = 1
+      k1 = 0
+      i2 = 0
+      j2 = 1
+      k2 = 1
     } else {
       // Y X Z order
-      i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0
+      i1 = 0
+      j1 = 1
+      k1 = 0
+      i2 = 1
+      j2 = 1
+      k2 = 0
     }
   }
 
@@ -208,7 +232,10 @@ function simplexNoise3D(x: number, y: number, z: number) {
   let gi1 = Permutation[ii + i1 + Permutation[jj + j1 + Permutation[kk + k1]]] % 12
   let gi2 = Permutation[ii + i2 + Permutation[jj + j2 + Permutation[kk + k2]]] % 12
   let gi3 = Permutation[ii + 1 + Permutation[jj + 1 + Permutation[kk + 1]]] % 12
-  gi0 *= 3; gi1 *= 3; gi2 *= 3; gi3 *= 3
+  gi0 *= 3
+  gi1 *= 3
+  gi2 *= 3
+  gi3 *= 3
 
   // Calculate the contribution from the four corners
   let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0

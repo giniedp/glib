@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Adds common attributes uniforms varying and structs
@@ -6,16 +6,16 @@ import { glsl, ShaderChunkSet } from '@gglib/graphics'
  * @public
  */
 export const COMMON: ShaderChunkSet = {
-  precision: glsl`
+  precision: /* glsl */ `
     precision highp float;
     precision highp int;
   `,
-  attributes: glsl`
+  attributes: /* glsl */ `
     // @binding position
     // @remarks The vertex position attribute
     attribute vec3 aPosition;
   `,
-  varyings: glsl`
+  varyings: /* glsl */ `
     // @remarks vertex position in world space after vertex shader
     varying vec4 vPositionInWS;
 
@@ -28,7 +28,7 @@ export const COMMON: ShaderChunkSet = {
     // @remarks the eye vector to pixel in tangent space
     varying vec3 vEyeTangent;
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     // @binding World
     // @remarks The objects world transform
     uniform mat4 uWorld;
@@ -55,7 +55,7 @@ export const COMMON: ShaderChunkSet = {
     uniform vec3 uClipPlanes;
   `,
 
-  structs: glsl`
+  structs: /* glsl */ `
     struct SurfaceParams {
       vec4 Normal;     // xyz = normal, w = depth
       vec4 BaseColor;  // rgb = albedo, a = alpha
@@ -67,20 +67,28 @@ export const COMMON: ShaderChunkSet = {
     };
   `,
 
-  vs_position: glsl`
+  vs_functions: /* glsl */ `
+    vec4 readVertexPosition() {
+      vec4 position = vec4(aPosition, 1.0);
+      #pragma block:read_vertex_position
+      return position;
+    }
+  `,
+
+  vs_position: /* glsl */ `
     #ifndef SKINNED
-    vPositionInWS = uWorld * vec4(aPosition, 1.0);
+    vPositionInWS = uWorld * readVertexPosition();
     vPositionInWS.xyz /= vPositionInWS.w;
     #endif
   `,
 
-  vs_end: glsl`
+  vs_end: /* glsl */ `
     vPositionInVS = uView * vPositionInWS;
     gl_Position = uProjection * vPositionInVS;
     vToEyeInWS = normalize(uCameraPosition.xyz - vPositionInWS.xyz) ;
   `,
 
-  fs_start_before: glsl`
+  fs_start_before: /* glsl */ `
     SurfaceParams surface;
     surface.BaseColor = vec4(1.0, 1.0, 1.0, 1.0);
     surface.Specular = vec3(1.0, 1.0, 1.0);
@@ -91,7 +99,7 @@ export const COMMON: ShaderChunkSet = {
     vec4 color;
   `,
 
-  fs_frag_color_after: glsl`
+  fs_frag_color_after: /* glsl */ `
     gl_FragColor = color;
   `,
 }

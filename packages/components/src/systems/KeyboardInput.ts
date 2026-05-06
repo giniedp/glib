@@ -1,13 +1,12 @@
-import { GameSystem, GameProvider } from '@gglib/ecs'
-import { KeyboardKey, KeyboardListener, KeyboardOptions } from '@gglib/input'
-import { GameLoop } from './GameLoop'
+import { GameSystem, GameWorld } from '@gglib/ecs'
+import { KeyboardKey, KeyboardListener, type KeyboardOptions } from '@gglib/input'
 
 /**
  * A component that listens for keyboard events
  *
  * @public
  */
-export class KeyboardInput implements GameSystem {
+export class KeyboardInputSystem extends GameSystem {
   /**
    * The keyboard listener
    */
@@ -30,24 +29,24 @@ export class KeyboardInput implements GameSystem {
   public oldState = new Set<KeyboardKey>()
 
   private addToNewState = (k: KeyboardKey) => this.newState.add(k)
-  private loop: GameLoop
+
   constructor(options: KeyboardOptions = {}) {
+    super()
     this.listener = new KeyboardListener(options)
   }
 
-  public initialize(host: GameProvider): void {
-    this.loop = host.get(GameLoop)
-    this.loop.onUpdate.add(this.onUpdate)
+  public initialize(world: GameWorld): void {
+    //
   }
 
   public destroy(): void {
-    this.loop.onUpdate.remove(this.onUpdate)
+    //
   }
 
   /**
    * Swaps the `oldState` and `newState` properties and updates the `newState`
    */
-  public onUpdate = () => {
+  public override update() {
     ;[this.oldState, this.newState] = [this.newState, this.oldState]
     this.newState.clear()
     this.listener.keys.forEach(this.addToNewState)
@@ -68,7 +67,7 @@ export class KeyboardInput implements GameSystem {
    * @param key - The key to check
    */
   public justPressed(key: KeyboardKey): boolean {
-    return this.oldState.has(key) && this.newState.has(key)
+    return !this.oldState.has(key) && this.newState.has(key)
   }
 
   /**

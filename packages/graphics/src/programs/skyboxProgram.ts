@@ -61,7 +61,3 @@ export const PROGRAM_SKYBOX = {
   vertexShader,
   fragmentShader,
 }
-
-export function skyboxProgram(device: Device) {
-  return device.createProgram(PROGRAM_SKYBOX)
-}

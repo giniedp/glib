@@ -1,41 +1,48 @@
 import { ContentLoader } from '@gglib/content'
-import { BlendState, CullState, DepthState, createDevice } from '@gglib/graphics'
+import { BasicMaterial, BlendState, Color, CullState, DepthState, PlatformId, createDevice } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { MTL, OBJ, TGA } from '@gglib/loaders'
-import { AutoMaterial, LightParams } from '@gglib/materials'
+import { LightParams } from '@gglib/materials'
 import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { mountUi, redrawUi } from 'tweak-ui'
+import { Pane } from 'tweakpane'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  // Create the graphics device and pass the existing canvas element from the DOM.
-  const device = createDevice({ canvas })
+const models = {
+  Tower: '/models/obj/tower-complete-large.obj',
+  Ship: '/models/obj/ship-pirate-large.obj',
+  Tree: '/models/obj/tree.obj',
+  Cube: '/models/obj/cube.obj',
+}
+const params = {
+  model: models.Tower,
+  fov: 45,
+  phi: 90,
+  theta: 0,
+  distance: 2,
+}
+
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
   const content = new ContentLoader(device)
   content.registerLoader(OBJ.Loader)
   content.registerLoader(MTL.Loader)
   content.registerLoader(TGA.Loader)
-  content.registerMaterial({
-    name: 'BasicEffect',
-    type: AutoMaterial,
-  })
+  content.registerMaterial(BasicMaterial, () => true)
   const mouse = new Mouse({
     captureTarget: canvas,
     preventDefault: true,
   })
 
-  const models: Record<string, string> = {
-    Tower: '/models/obj/tower-complete-large.obj',
-    Ship: '/models/obj/ship-pirate-large.obj',
-    Tree: '/models/obj/tree.obj',
-    Cube: '/models/obj/cube.obj',
-  }
-  TweakUi.mount(tools, (ui) => {
-    loadModel(models.Tower)
-    ui.select({ model: models.Tower }, 'model', {
-      options: models,
-      onChange: (it, value) => loadModel(value as string),
-    })
+  const stats = device.stats()
+  mountUi(tools, (ui) => {
+    loadModel(params.model)
+
+    ui.select(params, 'model', { options: models, onchange: () => loadModel(params.model) })
+    ui.number(params, 'fov', { slider: true, min: 10, max: 120, step: 1 })
+    ui.number(params, 'phi', { slider: true, min: 0, max: 180, step: 1 })
+    ui.number(params, 'theta', { slider: true, min: 0, max: 360, step: 1 })
+    ui.number(params, 'distance', { slider: true, min: 0.1, max: 10, step: 0.1 })
   })
 
   let model: Model | null = null
@@ -43,9 +50,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   const world = Mat4.createIdentity()
   const camera = {
-    theta: 0,
-    phi: 90,
-    distance: 2,
     position: Vec3.create(),
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
@@ -68,7 +72,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         model = result
         model.updateScene()
         sphere = model.boundingSphere.clone()
-        console.log(`Model loaded: ${url}`, model)
       })
       .catch((e) => {
         model = null!
@@ -79,64 +82,93 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   function updateCamera() {
     mouse.update()
     if (mouse.leftButtonIsPressed) {
-      camera.theta -= mouse.dxNormalized * 360
-      camera.phi -= mouse.dyNormalized * 180
+      params.theta -= mouse.dxNormalized * 360
+      params.phi -= mouse.dyNormalized * 180
     }
     if (mouse.middleButtonIsPressed) {
-      camera.distance += mouse.dyNormalized * 2
-      camera.distance = Math.max(0.1, camera.distance)
+      params.distance += mouse.dyNormalized * 2
+      params.distance = Math.max(0.1, params.distance)
     }
 
     // prettier-ignore
     camera.position.initSpherical(
-      camera.phi * DEGREE_TO_RAD,
-      camera.theta * DEGREE_TO_RAD,
-      camera.distance * sphere.radius * 2,
+      params.phi * DEGREE_TO_RAD,
+      params.theta * DEGREE_TO_RAD,
+      params.distance * sphere.radius * 2,
     ).add(sphere.center)
 
     camera.view.initLookAt(camera.position, sphere.center, Vec3.Up).invert()
-    camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
+    camera.projection.initPerspectiveFieldOfView(
+      params.fov * DEGREE_TO_RAD,
+      device.output.aspectRatio,
+      0.01,
+      1000,
+      device.ndcMinZ,
+    )
   }
 
   function updateModel(model: Model) {
-
+    //
   }
 
   function renderModel(model: Model) {
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
-        const mtl = material as AutoMaterial
-        mtl.ShadeFunction = 'shadeLambert'
-        mtl.LightCount = 2
+        const mtl = material as BasicMaterial
         mtl.World = world
         mtl.View = camera.view
         mtl.Projection = camera.projection
-
-        light1.assign(0, mtl.parameters)
-        light2.assign(1, mtl.parameters)
+        mtl.TextureEnabled = true
       }
     }
 
     model.draw()
   }
 
-  function frame(time: number, dt: number) {
+  const pass = device.renderPass
+  const rt = device.createRenderTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: device.output.format,
+    sampleCount: 4,
+  })
+  const dt = device.createDepthTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: 'DEPTH24_PLUS',
+    sampleCount: 4,
+  })
+  function frame() {
     device.resize()
-    device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
-    device.clear(0xff2e2620, 1.0)
+    rt.resizeToMatch(device.output)
+    dt.resizeToMatch(device.output)
 
     if (model) {
       updateCamera()
       updateModel(model)
+    }
+
+    pass.setRenderTarget(0, rt, 0, 0, device.output)
+    pass.setDepthTarget(dt)
+    pass.setCullState(CullState.CullBack)
+    pass.setRenderBlend(0, BlendState.Opaque)
+    pass.setDepthState(DepthState.LessEqual)
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
+
+    if (model) {
       renderModel(model)
     }
+    pass.resolve()
+    pass.submit()
+    pass.flush()
+
+    device.stats(stats)
+    redrawUi()
   }
 
-  const looper = loop(frame)
+  device.scheduler.schedule(frame)
   return () => {
-    looper.stop()
-    model?.dispose()
+    device.dispose()
   }
 }

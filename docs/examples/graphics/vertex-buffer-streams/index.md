@@ -6,8 +6,13 @@ order: 301
 
 # Vertex Buffer Streams
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-## Code
+# Code
 
 <ExampleCode />

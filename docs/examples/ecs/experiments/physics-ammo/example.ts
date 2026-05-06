@@ -1,38 +1,35 @@
 import {
   BasicGame,
-  createEntity,
+  CameraComponent,
   KeyboardInput,
   LightComponent,
-  LoopTime,
   ModelComponent,
   MouseInput,
-  PerspectiveCameraComponent,
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
+import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
 import { ContentLoader } from '@gglib/content'
-import { GameComponent, GameEntity, GameProvider, GameSystem } from '@gglib/ecs'
-import { GameTransform } from '@gglib/ecs/dist/ecs/src/GameTransform'
-import { BlendState, Color, DepthState, Device } from '@gglib/graphics'
+import { GameComponent, GameEntity, GameSystem } from '@gglib/ecs'
+import { BasicMaterial, Color, Device, PlatformId } from '@gglib/graphics'
 import { KeyboardKey } from '@gglib/input'
 import { MTL, OBJ } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
-import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
-import { BasicRenderPass } from '@gglib/render'
+import { DEGREE_TO_RAD, Vec3, Vec4 } from '@gglib/math'
 import Ammo from 'ammojs-typed'
-import * as TweakUi from 'tweak-ui'
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
+import { mountUi } from 'tweak-ui'
+
+export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   let game: Game
   Ammo.bind(Ammo)(Ammo).then(() => {
-    game = new Game(canvas)
+    game = new Game(canvas, platform)
     game.run()
 
-    TweakUi.mount(tools, (ui) => {
-      ui.checkbox(game.loop, 'useFixedTimeStep', {
+    mountUi(tools, (ui) => {
+      ui.boolean(game.loop, 'useFixedTimeStep', {
         label: 'Fixed Time Step',
       })
       ui.button('Reset Cubes', {
-        onClick: () => game?.resetCubes(),
+        onclick: () => game?.resetCubes(),
       })
     })
   })
@@ -43,100 +40,92 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 }
 
 class Game extends BasicGame {
-  private cubes: GameEntity<TransformComponent>[] = []
-  public constructor(canvas: HTMLCanvasElement) {
-    super(canvas)
+  private cubes: GameEntity[] = []
+  public constructor(canvas: HTMLCanvasElement, platform: PlatformId = 'auto') {
+    super({ canvas, platform })
 
-    this.addSystem(
-      new KeyboardInput({
-        //
-      }),
-    )
-    this.addSystem(
+    this.content.registerLoader(OBJ.Loader)
+    this.content.registerLoader(MTL.Loader)
+    this.content.registerMaterial(BasicMaterial, () => true)
+    this.world.addSystem(new KeyboardInput({}))
+    this.world.addSystem(
       new MouseInput({
         preventDefault: true,
       }),
     )
-    this.addSystem(new PhysicsWorld())
-    this.content.registerLoader(OBJ.Loader)
-    this.content.registerLoader(MTL.Loader)
-    this.content.registerMaterial({
-      name: 'BasicEffect',
-      type: AutoMaterial,
-    })
-    this.renderer.steps = [
-      new BasicRenderPass({
-        blendState: BlendState.Default,
-        depthState: DepthState.Default,
-        clearColor: Color.CornflowerBlue.rgba,
-      }),
-    ]
+    this.world.addSystem(new PhysicsWorld())
     this.loop.useFixedTimeStep = false
+  }
+
+  public override initialize(): void {
     this.createCamera()
     this.createLight()
     this.createObjects()
     this.resetCubes()
+    this.world.initilize()
+    this.scene.activate()
   }
 
   private createCamera() {
-    const entity = createEntity({
+    const entity = this.createEntity({
       name: 'camera',
+      parent: this.scene,
+      transform: new TransformComponent({
+        position: Vec3.create(0, 10, 25),
+      }),
       components: [
-        new PerspectiveCameraComponent({
-          near: 0.01,
-          far: 1000,
-          fov: 70 * DEGREE_TO_RAD,
-          aspect: 16 / 9,
+        new CameraComponent({
+          type: 'perspective',
         }),
         new WASDComponent(),
       ],
-      transform: {
-        position: Vec3.create(0, 10, 25),
-      },
     })
-    this.camera = entity.component(PerspectiveCameraComponent)
-    this.scene.add(entity)
+    this.view.camera = entity.component(CameraComponent)
   }
 
   private createLight() {
-    const entity = createEntity({
+    const entity = this.createEntity({
       name: 'light',
+      parent: this.scene,
+      transform: new TransformComponent({}),
       components: [new LightComponent()],
     })
-    entity.transform.setRotationAxisAngle(1, 0, 0, -1)
-    this.scene.add(entity)
+    entity.getTransform<TransformComponent>()!.setRotationAxisAngle(1, 0, 0, -1)
   }
 
   public createObjects() {
-    const ground = createEntity({
+    const ground = this.createEntity({
       name: 'Ground',
-      transform: {
+      parent: this.scene,
+      transform: new TransformComponent({
         scale: Vec3.create(50, 50, 50),
-      },
+      }),
       components: [new ModelComponent(), new PhysicsProxy(0, 100), new CubeComponent()],
     })
     ground.component(PhysicsProxy).resetPosition(0, -50, 0)
-    this.scene.add(ground)
 
     const boxCount = 100
     for (let i = 0; i < boxCount; i++) {
-      const cube = createEntity({
+      const cube = this.createEntity({
         name: `Cube ${i}`,
+        parent: this.scene,
+        transform: new TransformComponent({}),
         components: [new ModelComponent(), new PhysicsProxy(1, 2), new CubeComponent()],
       })
-      this.scene.add(cube)
       this.cubes.push(cube)
     }
   }
 
-  public override update() {
-    this.camera.projection.initPerspectiveFieldOfView(
+  public override update(time: number, dt: number) {
+    super.update(time, dt)
+    this.view.camera.projection.initPerspectiveFieldOfView(
       70 * DEGREE_TO_RAD,
-      this.get(Device).drawingBufferAspectRatio,
+      this.world.getSystem(Device).output.aspectRatio,
       0.01,
-      1000,
+      100,
+      this.device.ndcMinZ,
     )
-    if (this.get(KeyboardInput).justReleased(KeyboardKey.Space)) {
+    if (this.world.getSystem(KeyboardInput).justReleased(KeyboardKey.Space)) {
       this.resetCubes()
     }
   }
@@ -153,7 +142,7 @@ class Game extends BasicGame {
             return
           }
           cubes[i++]
-            .component(PhysicsProxy)
+            .component(PhysicsProxy)!
             .resetPosition(
               (x - side / 2 + 0.5) * (2.2 + Math.random()),
               25 + y * (3 + Math.random()),
@@ -165,8 +154,7 @@ class Game extends BasicGame {
   }
 }
 
-class PhysicsWorld implements GameSystem {
-  public game: Game
+class PhysicsWorld extends GameSystem {
   public readonly config = new Ammo.btDefaultCollisionConfiguration()
   public readonly dispatcher = new Ammo.btCollisionDispatcher(this.config)
   public readonly pairCache = new Ammo.btDbvtBroadphase()
@@ -178,13 +166,11 @@ class PhysicsWorld implements GameSystem {
     this.config,
   )
 
-  public initialize(container: GameProvider): void {
-    this.game = container.get(Game)
-    this.game.loop.onUpdate.add(this.update)
+  public initialize(): void {
+    //
   }
 
   public destroy(): void {
-    this.game.loop.onUpdate.remove(this.update)
     Ammo.destroy(this.world)
     Ammo.destroy(this.solver)
     Ammo.destroy(this.pairCache)
@@ -192,42 +178,35 @@ class PhysicsWorld implements GameSystem {
     Ammo.destroy(this.config)
   }
 
-  public update = (time: LoopTime) => {
-    this.world.stepSimulation(time.deltaMs)
+  public update(time: number, dt: number) {
+    this.world.stepSimulation(dt)
   }
 }
 
-class PhysicsProxy implements GameComponent {
-  public physics: PhysicsWorld
-  public game: Game
+class PhysicsProxy implements GameComponent, BehaviorComponent {
+  public physics!: PhysicsWorld
 
   public get transform() {
-    return this.entity.transform
+    return this.entity.getTransform<TransformComponent>()
   }
 
-  private shape: Ammo.btBoxShape
-  private body: Ammo.btRigidBody
+  private shape!: Ammo.btBoxShape
+  private body!: Ammo.btRigidBody
   private reset = Vec3.create()
   private needsReset = false
 
-  public constructor(private mass: number, private size: number) {
+  public constructor(
+    private mass: number,
+    private size: number,
+  ) {
     //
   }
 
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.physics = this.entity.provider.get(PhysicsWorld)
-    this.game = this.entity.provider.get(Game)
+  public readonly entity!: GameEntity
+  public initialize(): void {
+    this.physics = this.entity.service(PhysicsWorld)
+
     this.initBoxShape(this.mass, this.size)
-  }
-
-  public activate(): void {
-    this.game.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.game.loop.onUpdate.remove(this.update)
   }
 
   public destroy(): void {
@@ -260,7 +239,7 @@ class PhysicsProxy implements GameComponent {
     this.physics.world.addRigidBody(this.body)
   }
 
-  public update = (time: LoopTime) => {
+  public updateBehavior() {
     if (this.body && this.needsReset) {
       const origin = this.body.getWorldTransform().getOrigin()
       origin.setX(this.reset.x)
@@ -281,7 +260,7 @@ class PhysicsProxy implements GameComponent {
       const r = t.getRotation()
       this.transform.rotation.init(r.x(), r.y(), r.z(), r.w())
       this.transform.translation.init(o.x(), o.y(), o.z())
-      this.transform.needsUpdate = true
+      this.transform.markAsChanged()
     }
   }
 
@@ -293,35 +272,29 @@ class PhysicsProxy implements GameComponent {
 
 const protoNames = ['dark', 'green', 'light', 'orange', 'purple', 'red']
 class CubeComponent implements GameComponent {
-  public renderable: ModelComponent
-  public entity: GameEntity<GameTransform>
+  public renderable!: ModelComponent
+  public entity!: GameEntity
 
-  public async initialize(entity: GameEntity<GameTransform>) {
-    this.entity = entity
-    this.renderable = entity.component(ModelComponent)
-    const content = entity.provider.get(ContentLoader)
+  public async initialize() {
+    this.renderable = this.entity.component(ModelComponent)
+    const content = this.entity.service(ContentLoader)
 
     const protoName = protoNames[Math.floor(Math.random() * protoNames.length)]
     const texture = await content.loadTexture(`/textures/prototype/${protoName}/texture_01.png`)
     const model = await content.loadModel('/models/obj/cube1.obj')
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
-        const mtl = material as AutoMaterial
-        mtl.BaseColorMap = texture
-        mtl.BaseColor = [1, 1, 1, 1]
-        mtl.LightCount = 1
-        mtl.ShadeFunction = 'shadePbr'
+        const mtl = material as BasicMaterial
+        mtl.Texture = texture
+        mtl.TextureEnabled = true
+        mtl.LightingEnabled = true
+        mtl.set('lights.color[0]', Vec4.createFrom(Color.White))
+        mtl.set('lights.direction[0]', Vec4.create(-1, -1, -1, 1))
+        mtl.set('lights.color[1]', Vec4.createFrom(Color.White))
+        mtl.set('lights.direction[1]', Vec4.create(1, -1, -1, 1))
       }
     }
     this.renderable.model = model
-  }
-
-  public activate(): void {
-    //
-  }
-
-  public deactivate(): void {
-    //
   }
 
   public destroy(): void {

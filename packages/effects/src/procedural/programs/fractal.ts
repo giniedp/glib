@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 import { proceduralProgram } from './base'
 
 /**
@@ -17,7 +17,7 @@ export interface FbmDefs {
 }
 
 export const CHUNK_FBM: ShaderChunkSet<FbmDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #if !defined(MAX_FBM_OCTAVES)
       #define MAX_FBM_OCTAVES 10
     #endif
@@ -28,7 +28,7 @@ export const CHUNK_FBM: ShaderChunkSet<FbmDefs> = {
       #define FBM fbmFractal
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     // @range [1, 10]
     // @default 8
     // @remarks The number of frequencies
@@ -49,7 +49,7 @@ export const CHUNK_FBM: ShaderChunkSet<FbmDefs> = {
     // @binding normalize
     uniform bool uNormalize;
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     float fbmFractal(in vec4 point) {
       float sample = 0.0;
       point *= frequency;
@@ -124,7 +124,7 @@ export const CHUNK_FBM: ShaderChunkSet<FbmDefs> = {
       return sample;
     }
   `,
-  fs_main_noise: glsl`
+  fs_main_noise: /* glsl */ `
     #if defined(FBM)
     sample = FBM(point);
     if (uNormalize) {

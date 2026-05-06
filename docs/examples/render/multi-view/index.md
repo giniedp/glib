@@ -1,10 +1,16 @@
 ---
-title: Multiple Viewports
+title: Multiple Views
 ---
-<Example />
 
-## Multiple Viewports
+# Basics
 
-To enable multiple viewports multiple scenes must be added to the `RenderManager`.
-Each scene must be given viewport parameters to layout its rendering
-in the viewport.
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
+
+# Code
+
+<ExampleCode />

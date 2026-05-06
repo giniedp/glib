@@ -1,5 +1,5 @@
 import { IVec3 } from '@gglib/math'
-import { extend, Log, simpleObservable } from '@gglib/utils'
+import { eventSource } from '@gglib/utils'
 
 /**
  * Orientation constructor options
@@ -84,17 +84,17 @@ export class Orientation {
    */
   protected onDeviceMotion = this.handleMotionEvent.bind(this)
 
-  public onChanged = simpleObservable<Orientation>()
+  public onChanged = eventSource<Orientation>()
 
   /**
    *
    */
   constructor() {
     if (!Orientation.hasOrientationApi) {
-      Log.warn('[Orientation] orientation api is not supported')
+      console.warn('[Orientation] orientation api is not supported')
     }
     if (!Orientation.hasMotionApi) {
-      Log.warn('[Orientation] motion api is not supported')
+      console.warn('[Orientation] motion api is not supported')
     }
     this.activate()
   }
@@ -112,13 +112,13 @@ export class Orientation {
 
   public copyState(out: any = {}): any {
     let state = this.state
-    out.orientation = extend(out.orientation || {}, state.orientation)
-    out.acceleration = extend(out.acceleration || {}, state.acceleration)
-    out.accelerationIncludingGravity = extend(
+    out.orientation = Object.assign(out.orientation || {}, state.orientation)
+    out.acceleration = Object.assign(out.acceleration || {}, state.acceleration)
+    out.accelerationIncludingGravity = Object.assign(
       out.accelerationIncludingGravity || {},
       state.accelerationIncludingGravity,
     )
-    out.rotation = extend(out.rotation || {}, state.rotation)
+    out.rotation = Object.assign(out.rotation || {}, state.rotation)
     return out
   }
 
@@ -129,7 +129,7 @@ export class Orientation {
     orientation.beta = e.beta
     orientation.gamma = e.gamma
     this.state.orientation = orientation
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
 
   protected handleMotionEvent(e: DeviceMotionEvent) {
@@ -152,6 +152,6 @@ export class Orientation {
     this.state.rotation = rotation
     this.state.interval = e.interval
 
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
 }

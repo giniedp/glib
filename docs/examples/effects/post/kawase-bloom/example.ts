@@ -98,9 +98,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     post.blurTexture1.resize(device.drawingBufferWidth, device.drawingBufferHeight)
     post.blurTexture2.resize(device.drawingBufferWidth, device.drawingBufferHeight)
 
-    device.cullState = CullState.Default
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
+    device.cullState = CullState.Disabled
+    device.depthState = DepthState.Disabled
+    device.blendState = BlendState.Disabled
     if (post.isReady) {
       device.setRenderTarget(post.inputTexture.image)
     }

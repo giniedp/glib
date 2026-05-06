@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 import { sampler, smoothStep as s } from '../utils'
 
 /**

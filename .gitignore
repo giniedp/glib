@@ -11,3 +11,4 @@ npm-debug.log
 /api
 docs/.vitepress/dist
 docs/.vitepress/cache
+/experiments

@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 import { samplerArray } from '../utils'
 
 /**
@@ -7,7 +7,7 @@ import { samplerArray } from '../utils'
  * @public
  * @param src - The source sampler
  */
-export function add(...src: Array<Sampler| number>): Sampler {
+export function add(...src: Array<Sampler | number>): Sampler {
   const smpSrc = samplerArray(...src)
   return (...x: number[]) => {
     let result = 0

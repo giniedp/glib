@@ -1,113 +1,56 @@
-import { GameComponent, GameEntity } from '@gglib/ecs'
+import { type GameComponent, GameEntity, GetComponent, InitializableComponent } from '@gglib/ecs'
 import { Geometry, Material } from '@gglib/graphics'
-import { DrawableInfo } from '@gglib/render'
-import { CollectEvent, RenderQuery } from '../systems/RenderSystem'
-import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { TransformComponent } from './TransformComponent'
+import { BoundsComponent } from './BoundsComponent'
+import { IVec4 } from '@gglib/math'
 
 /**
- * A component that knows how to render a mesh part
+ * @public
  */
-export class MeshPartComponent implements GameComponent {
+export class MeshPartComponent implements GameComponent, InitializableComponent {
   /**
-   * Gets and sets the mesh
+   * The entity that owns this component
    */
-  public get mesh() {
-    return this._mesh
-  }
-  public set mesh(value: Geometry) {
-    if (this._mesh !== value) {
-      this._mesh = value
-      this.meshChanged = true
-    }
-  }
+  public readonly entity: GameEntity
 
   /**
    * Gets and sets the mesh material
    */
-  public get material() {
-    return this._material
-  }
-  public set material(value: Material) {
-    if (this._material !== value) {
-      this._material = value
-      this.materialChanged = true
-    }
-  }
+  public material: Material
 
   /**
-   * The transform component of the entity
+   * Gets and sets the mesh to render
    */
-  public get transform(): TransformComponent {
-    return this.entity.transform
+  public get mesh(): Geometry {
+    return this.value
+  }
+  public set mesh(value: Geometry) {
+    this.value = value
+    this.handleMeshChanged()
   }
 
-  /**
-   * The bounding volume component of the entity
-   */
-  public volume?: BoundingVolumeComponent
+  public instanced: boolean
 
-  private _mesh: Geometry
-  private _material: Material
-  private _drawable: DrawableInfo = {
-    type: 'drawable',
-    item: null,
-    material: null,
-    transform: null,
-  }
+  public instanceData1: IVec4
+  public instanceData2: IVec4
 
-  private meshChanged = true
-  private materialChanged = true
+  protected value: Geometry
+  protected bounds: BoundsComponent
 
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.volume = entity.component(BoundingVolumeComponent, true)
-  }
-
-  public activate(): void {
-    RenderQuery.addCollectListener(this.entity, this.collect)
-  }
-
-  public deactivate(): void {
-    RenderQuery.removeCollectListener(this.entity, this.collect)
+  public initialize(): void {
+    this.bounds = this.entity.component(BoundsComponent, GetComponent.Optional)
+    this.handleMeshChanged()
   }
 
   public destroy(): void {
     //
   }
 
-  public update = () => {
-    if (this.meshChanged && this.volume && this._mesh) {
-      if (this.mesh) {
-        const volume = this._mesh.boundingSphere || this._mesh.boundingBox
-        if (!volume) {
-          console.warn('mesh has no bounding volume and can not provide a volume to the BoundingVolume component', this)
-        }
-        this.volume.linkVolume(volume)
-      } else {
-        this.volume.linkVolume(null)
-      }
+  private handleMeshChanged() {
+    if (!this.bounds) {
+      // not initialized yet, or does not have a bounds component
+      return
     }
-
-    if (this.meshChanged || this.materialChanged) {
-      this._drawable.material = this._material
-      this._drawable.item = this._mesh
-      this.meshChanged = false
-      this.materialChanged = false
-    }
-
-    if (!this.transform) {
-      this._drawable.transform = null
-    } else {
-      this._drawable.transform = this.transform.world
-    }
-  }
-
-  public collect = (collector: CollectEvent) => {
-    const drawable = this._drawable
-    if (drawable.material && drawable.item) {
-      collector.addItem(drawable)
-    }
+    const mesh = this.value
+    this.bounds.setLocalBounds(mesh?.boundingSphere, mesh?.boundingBox)
   }
 }

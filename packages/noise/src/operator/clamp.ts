@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 import { clamp as c, sampler } from '../utils'
 
 /**
@@ -9,11 +9,7 @@ import { clamp as c, sampler } from '../utils'
  * @param min - The minimum value sampler
  * @param max - The maximum value sampler
  */
-export function clamp(
-  src: Sampler | number,
-  min: Sampler | number = 0,
-  max: Sampler | number = 1,
-): Sampler {
+export function clamp(src: Sampler | number, min: Sampler | number = 0, max: Sampler | number = 1): Sampler {
   const smpSrc = sampler(src)
   const smpMin = sampler(min)
   const smpMax = sampler(max)

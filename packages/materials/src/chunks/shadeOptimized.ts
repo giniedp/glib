@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -9,7 +9,7 @@ export type ShadeFunctionOptimized = 'shadeOptimized'
  * @public
  */
 export const SHADE_OPTIMIZED: ShaderChunkSet = Object.freeze({
-  functions: glsl`
+  functions: /* glsl */ `
     highp vec3 shadeOptimized(
       inout ShadeParams shade,
       inout SurfaceParams surface
@@ -29,8 +29,9 @@ export const SHADE_OPTIMIZED: ShaderChunkSet = Object.freeze({
       float dotLH = dot(L, H);
 
       // specular BRDF (Fr)
-      float D = pow(dotNH, roughnessToPower(surface.Roughness)) * dotNL;
-      float Fr = D / (4.0 * dotLH * dotLH * dotLH);
+      float D = pow(dotNH, roughnessToPower(surface.Roughness));
+      float F = dotNL;
+      float Fr = (D * F) / (4.0 * dotLH * dotLH * dotLH);
 
       // diffuse BRDF (Fd)
       float Fd = dotNL;

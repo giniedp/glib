@@ -1,7 +1,6 @@
-import * as TweakUi from 'tweak-ui'
+import { mountUi } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-
   class RaytracerClient {
     /**
      * The image width to sample
@@ -46,16 +45,16 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     }
 
     private queryCount = 0
-    private buffer: Float32Array
-    private imageData: ImageData
+    private buffer!: Float32Array
+    private imageData!: ImageData
     private sampleCount = 0
     constructor(canvas: HTMLCanvasElement) {
       this.canvas = canvas
-      this.context = canvas.getContext('2d')
+      this.context = canvas.getContext('2d')!
       this.worker = []
       for (let i = 0; i < navigator.hardwareConcurrency; i++) {
         const worker = new Worker('./worker.ts', {
-          type: 'module'
+          type: 'module',
         })
         worker.onmessage = this.onmessage.bind(this)
         this.worker.push(worker)
@@ -84,9 +83,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       this.worker.forEach((worker, i) => {
         worker.postMessage({
           id: this.queryCount,
-          x1: 0, y1: 0,
-          x2: w, y2: h,
-          dx: 1 / w, dy: 1 / h,
+          x1: 0,
+          y1: 0,
+          x2: w,
+          y2: h,
+          dx: 1 / w,
+          dy: 1 / h,
           samples: samplesPerWorker,
           depth: this.depth,
         })
@@ -120,9 +122,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
           this.buffer[index3 + 0] += img[i++]
           this.buffer[index3 + 1] += img[i++]
           this.buffer[index3 + 2] += img[i++]
-          imageData.data[index4 + 0] = Math.min(Math.sqrt((this.buffer[index3 + 0] / s)) * 255, 255)
-          imageData.data[index4 + 1] = Math.min(Math.sqrt((this.buffer[index3 + 1] / s)) * 255, 255)
-          imageData.data[index4 + 2] = Math.min(Math.sqrt((this.buffer[index3 + 2] / s)) * 255, 255)
+          imageData.data[index4 + 0] = Math.min(Math.sqrt(this.buffer[index3 + 0] / s) * 255, 255)
+          imageData.data[index4 + 1] = Math.min(Math.sqrt(this.buffer[index3 + 1] / s) * 255, 255)
+          imageData.data[index4 + 2] = Math.min(Math.sqrt(this.buffer[index3 + 2] / s) * 255, 255)
           imageData.data[index4 + 3] = 255
         }
       }
@@ -133,12 +135,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const client = new RaytracerClient(canvas)
   client.update()
 
-  TweakUi.mount(tools, (ui) => {
-    ui.slider(client, 'samples', { min: 1, max: 1000, step: 1, label: 'Num Samples' })
-    ui.slider(client, 'depth', { min: 0, max: 1000, step: 1, label: 'Max Depth' })
-    ui.slider(client, 'width', { min: 300, max: 1200, step: 1, label: 'Width' })
+  mountUi(tools, (ui) => {
+    ui.number(client, 'samples', { slider: true, min: 1, max: 1000, step: 1, label: 'Num Samples' })
+    ui.number(client, 'depth', { slider: true, min: 0, max: 1000, step: 1, label: 'Max Depth' })
+    ui.number(client, 'width', { slider: true, min: 300, max: 1200, step: 1, label: 'Width' })
     ui.button('Render', {
-      onClick: () => {
+      onclick: () => {
         client.height = client.width / 2
         client.update()
       },

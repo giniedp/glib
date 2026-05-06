@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export interface MtlTransmissionDefs {
   TRANSMISSION?: boolean
@@ -9,10 +9,10 @@ export interface MtlTransmissionDefs {
 }
 
 export const MTL_TRANSMISSION: ShaderChunkSet<MtlTransmissionDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
 
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef TRANSMISSION
     // @binding Transmission
     // @default 0.0
@@ -34,7 +34,7 @@ export const MTL_TRANSMISSION: ShaderChunkSet<MtlTransmissionDefs> = {
     uniform mat3 uTransmissionMapTransform;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef TRANSMISSION_MAP
     vec2 getTransmissionMapUV() {
       vec2 result = TRANSMISSION_MAP_UV;
@@ -63,7 +63,7 @@ export const MTL_TRANSMISSION: ShaderChunkSet<MtlTransmissionDefs> = {
       return value;
     }
   `,
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
 
   `,
 }

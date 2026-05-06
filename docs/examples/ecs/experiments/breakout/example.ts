@@ -1,26 +1,24 @@
 import {
   BasicGame,
-  createEntity,
-  LoopTime,
+  BehaviorComponent,
+  MouseInputSystem,
   SpriteComponent,
-  TimeSystem,
   TransformComponent,
   TweenSystem,
 } from '@gglib/components'
-import { GameComponent, GameEntity, GameProvider, GameSystem } from '@gglib/ecs'
+import { GameComponent, GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
+import { PlatformId, Texture } from '@gglib/graphics'
+import { Keyboard } from '@gglib/input'
+import { clamp, easeInCubic, IRect, Mat4, Rect } from '@gglib/math'
+import { BloomPass, LayerMask, PixelatePass, VignettePass } from '@gglib/render'
+import { mountUi } from 'tweak-ui'
 
-import { BlendState, Color, SamplerState, Texture } from '@gglib/graphics'
-import { Keyboard, Mouse } from '@gglib/input'
-import { clamp, easeInCubic, Mat4, Rect } from '@gglib/math'
-import { BasicRenderPass } from '@gglib/render'
-import * as TweakUi from 'tweak-ui'
-
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const game = new Game(canvas)
+export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const game = new Game(canvas, platform)
   game.run()
 
-  TweakUi.mount(tools, (ui) => {
-    ui.checkbox(game.loop, 'useFixedTimeStep', {
+  mountUi(tools, (ui) => {
+    ui.boolean(game.loop, 'useFixedTimeStep', {
       label: 'Fixed time step',
     })
   })
@@ -35,45 +33,57 @@ class Game extends BasicGame {
   public readonly width = 48
   public readonly height = 27
 
-  public state: 'started' | 'reset' | 'running' | 'win' | 'died' = 'started'
-  public background: Texture
-  public sprites: Map<string, any> = new Map()
+  public state: 'started' | 'reset' | 'running' | 'win' | 'loose' = 'started'
+  public background!: Texture
+  public sprites: Map<string, { texture: Texture; source: IRect }> = new Map()
 
-  public ball: GameEntity
-  public paddle: GameEntity
-  public field: GameEntity
+  public ball!: GameEntity
+  public paddle!: GameEntity
+  public field!: GameEntity
 
-  public constructor(canvas: HTMLCanvasElement) {
-    super(canvas)
+  public constructor(canvas: HTMLCanvasElement, platform: PlatformId = 'auto') {
+    super({ canvas, platform })
     this.loop.useFixedTimeStep = false
-    this.addSystem(new TweenSystem())
-    this.addSystem(new TimeSystem())
-    this.addSystem(new LogicComponent())
-    this.provide(new Keyboard({}))
-    this.provide(
-      new Mouse({
+    this.world.addSystem(new LogicComponent())
+    this.world.addSystem(new Keyboard({}))
+    this.world.addSystem(
+      new MouseInputSystem({
         captureTarget: canvas,
         eventTarget: canvas,
         preventDefault: true,
       }),
     )
-    this.camera.projection = Mat4.createOrthographicOffCenter(0, this.width, 0, this.height, 0, 100)
-    this.renderer.steps = [
-      new BasicRenderPass({
-        blendState: BlendState.AlphaBlend,
-      }),
-    ]
-    this.loadAssets()
+    this.view.camera = {
+      projection: Mat4.createOrthographicOffCenter(0, this.width, 0, this.height, 0, 100, this.device.ndcMinZ),
+      view: Mat4.createIdentity(),
+      world: Mat4.createIdentity(),
+      visibilityMask: LayerMask.All,
+      reversedZ: false,
+    }
     this.createObjects()
+  }
+
+  public override async run() {
+    await super.run()
+    await this.loadAssets()
+    this.renderer.pipeline.addPass(
+      new PixelatePass(this.device, {
+        enabled: false,
+        corner: 1,
+      }),
+      new BloomPass(this.device, {
+        enabled: false,
+      }),
+      new VignettePass(this.device, {
+        enabled: true,
+      }),
+    )
+    this.scene.activate()
   }
 
   private async loadAssets() {
     this.background = await this.content.loadTexture('/textures/backgrounds/colored_castle.png')
-    this.background.setupSampler(SamplerState.LinearClamp)
-
     const spritesheet = await this.content.loadTexture('/textures/puzzle/sheet.png')
-    spritesheet.setupSampler(SamplerState.LinearWrap)
-
     const sprites = await this.content.fetch('/textures/puzzle/sheet.json', {
       responseType: 'json',
     })
@@ -86,27 +96,30 @@ class Game extends BasicGame {
   }
 
   private createObjects() {
-    this.field = createEntity({
+    this.field = this.createEntity({
+      name: 'Field',
+      parent: this.scene,
+      transform: new TransformComponent(),
       components: [new SpriteComponent(), new FieldComponent()],
     })
-    this.scene.add(this.field)
 
-    this.ball = createEntity({
+    this.ball = this.createEntity({
       name: 'Ball',
+      parent: this.scene,
+      transform: new TransformComponent(),
       components: [new SpriteComponent(), new GameObjectComponent({ width: 1, height: 1, sprite: 'ballGrey' })],
     })
-    this.scene.add(this.ball)
 
-    this.paddle = createEntity({
+    this.paddle = this.createEntity({
       name: 'Paddle',
+      parent: this.scene,
+      transform: new TransformComponent(),
       components: [new SpriteComponent(), new GameObjectComponent({ width: 5, height: 1, sprite: 'paddleBlue' })],
     })
-    this.scene.add(this.paddle)
   }
 
-  public override update() {
-    this.get(Keyboard).update()
-    this.get(Mouse).update()
+  public override update(time: number, dt: number) {
+    super.update(time, dt)
     // console.log('Game state:', this.state)
     switch (this.state) {
       case 'started':
@@ -118,7 +131,7 @@ class Game extends BasicGame {
       case 'running':
         //
         break
-      case 'died':
+      case 'loose':
         this.state = 'reset'
         break
       default:
@@ -128,25 +141,24 @@ class Game extends BasicGame {
   }
 }
 
-class LogicComponent implements GameSystem {
-  public game: Game
-  public ball: GameObjectComponent
-  public paddle: GameObjectComponent
-  public field: FieldComponent
+class LogicComponent extends GameSystem {
+  public game!: Game
+  public ball!: GameObjectComponent
+  public paddle!: GameObjectComponent
+  public field!: FieldComponent
 
-  public initialize(container: GameProvider): void {
-    this.game = container.get(Game)
+  public initialize(world: GameWorld): void {
+    this.game = world.getSystem(Game)
     this.ball = this.game.ball.component(GameObjectComponent)
     this.paddle = this.game.paddle.component(GameObjectComponent)
     this.field = this.game.field.component(FieldComponent)
-    this.game.loop.onUpdate.add(this.update)
   }
 
   public destroy(): void {
-    this.game.loop.onUpdate.remove(this.update)
+    //
   }
 
-  public update = () => {
+  public update() {
     if (this.game.state === 'reset') {
       this.resetField()
       this.resetBall()
@@ -162,7 +174,7 @@ class LogicComponent implements GameSystem {
   }
 
   private resetField() {
-    for (const child of this.field.entity.transform.children) {
+    for (const child of this.field.entity.getTransform()!.children) {
       child.entity.component(GameObjectComponent).isVisible = true
     }
   }
@@ -173,7 +185,7 @@ class LogicComponent implements GameSystem {
   }
 
   private updatePlayerInput() {
-    const mouse = this.game.get(Mouse)
+    const mouse = this.game.world.getSystem(MouseInputSystem)
     this.paddle.speed = mouse.dxNormalized * this.game.width
     this.paddle.rect.x += this.paddle.speed
     this.paddle.rect.x = clamp(this.paddle.rect.x, 0, this.game.width - this.paddle.rect.width)
@@ -213,7 +225,7 @@ class LogicComponent implements GameSystem {
       ball.dx = paddle.speed - (paddle.rect.centerX - ball.rect.centerX) / paddle.rect.width
       ball.dx = clamp(ball.dx, -3, 3)
     }
-    for (const child of this.field.entity.transform.children) {
+    for (const child of this.field.entity.getTransform()!.children) {
       const block = child.entity.component(GameObjectComponent)
       if (!block.isVisible || !block.rect.intersects(ball.rect)) {
         continue
@@ -240,7 +252,7 @@ class LogicComponent implements GameSystem {
 
   private checkWinOrLooseCondition() {
     let isCleared = true
-    for (const child of this.field.entity.transform.children) {
+    for (const child of this.field.entity.getTransform()!.children) {
       if (child.entity.component(GameObjectComponent).isActive) {
         isCleared = false
         continue
@@ -250,15 +262,15 @@ class LogicComponent implements GameSystem {
     if (isCleared) {
       this.game.state = 'win'
     } else if (this.ball.rect.yEnd < 0) {
-      this.game.state = 'died'
+      this.game.state = 'loose'
     }
   }
 }
 
-class GameObjectComponent implements GameComponent {
-  private sprite: SpriteComponent
-  private game: Game
-  private tween: TweenSystem
+class GameObjectComponent implements GameComponent, BehaviorComponent {
+  private sprite!: SpriteComponent
+  private game!: Game
+  private tween!: TweenSystem
 
   public rect = new Rect(0, 0, 1, 1)
   public z: number = 0
@@ -279,28 +291,14 @@ class GameObjectComponent implements GameComponent {
     this.spriteName = options.sprite
   }
 
-  public entity: GameEntity<TransformComponent>
-
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.game = entity.provider.get(Game)
-    this.tween = entity.provider.get(TweenSystem)
-    this.sprite = entity.component(SpriteComponent)
+  public readonly entity!: GameEntity
+  public initialize(): void {
+    this.game = this.entity.service(Game)
+    this.tween = this.entity.service(TweenSystem)
+    this.sprite = this.entity.component(SpriteComponent)
   }
 
-  public activate(): void {
-    this.game.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    //
-  }
-
-  public destroy(): void {
-    //
-  }
-
-  public update = (time: LoopTime) => {
+  public updateBehavior(time: number, dt: number) {
     if (this.game.state === 'reset') {
       this.tween.cancelAll()
       this.isVisible = true
@@ -308,21 +306,23 @@ class GameObjectComponent implements GameComponent {
       this.killProgress = 0
     }
     if (this.game.state === 'running') {
-      this.rect.x += this.dx * 20 * time.delta
-      this.rect.y += this.dy * 20 * time.delta
+      this.rect.x += (this.dx * 20 * dt) / 1000
+      this.rect.y += (this.dy * 20 * dt) / 1000
     }
-    if (this.isVisible) {
-      this.sprite.setSource(this.game.sprites.get(this.spriteName))
-      this.sprite.pivotX = 0.5
-      this.sprite.pivotY = 0.5
-      this.sprite.width = (1 - this.killProgress) * this.rect.width
-      this.sprite.height = (1 - this.killProgress) * this.rect.height
-      this.sprite.color = Color.xyzw(1, 1, 1, 1 - this.killProgress)
+    const sprite = this.game.sprites.get(this.spriteName)!
+    if (this.isVisible && sprite) {
+      this.sprite.setTexture(sprite.texture)
+      this.sprite.setSource(sprite.source.x, sprite.source.y, sprite.source.width, sprite.source.height)
+      this.sprite.setPivot(0.5, 0.5)
+      this.sprite.setSize((1 - this.killProgress) * this.rect.width, (1 - this.killProgress) * this.rect.height)
+      //this.sprite.setColor(Color.xyzw(1, 1, 1, 1 - this.killProgress))
     } else {
-      this.sprite.setSource(null)
+      this.sprite.setTexture(null!)
     }
 
-    this.entity.transform.setPosition(this.rect.getX(0.5), this.rect.getY(0.5) + this.killProgress, this.z)
+    this.entity
+      .getTransform<TransformComponent>()!
+      .setPosition(this.rect.getX(0.5), this.rect.getY(0.5) + this.killProgress, this.z)
   }
 
   public kill() {
@@ -337,30 +337,31 @@ class GameObjectComponent implements GameComponent {
         durationInMs: 300,
         ease: easeInCubic,
       })
-      .onUpdate.add((tween) => {
-        this.killProgress = tween.values[0]
+      .bind((tween) => {
+        this.killProgress = tween.value
         this.isVisible = tween.progress < 1
       })
   }
 }
 
-class FieldComponent implements GameComponent {
-  public game: Game
-  public sprite: SpriteComponent
+class FieldComponent implements GameComponent, BehaviorComponent {
+  public game!: Game
+  public sprite!: SpriteComponent
 
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.game = entity.provider.get(Game)
-    this.sprite = entity.component(SpriteComponent)
+  public readonly entity!: GameEntity
+  public initialize(): void {
+    this.game = this.entity.service(Game)
+    this.sprite = this.entity.component(SpriteComponent)
     const cols = 10
     const rows = 5
     const width = 4
     const pad = Math.floor((this.game.width - cols * width) / 2)
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
-        const child = createEntity({
+        this.game.createEntity({
           name: 'block',
+          parent: this.entity,
+          transform: new TransformComponent(),
           components: [
             new SpriteComponent(),
             new GameObjectComponent({
@@ -372,29 +373,14 @@ class FieldComponent implements GameComponent {
             }),
           ],
         })
-        this.entity.transform.addChild(child.transform)
-        child.initialize(entity.provider)
       }
     }
   }
 
-  public activate(): void {
-    this.game.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.game.loop.onUpdate.remove(this.update)
-  }
-  public destroy(): void {
-    //
-  }
-
-  private update = () => {
-    if (!this.sprite.texture) {
-      this.sprite.texture = this.game.background
-      this.sprite.width = this.game.width
-      this.sprite.height = this.game.width
-      this.sprite.pivotY = 0.25
-    }
+  public updateBehavior(time: number, delta: number): void {
+    this.sprite.setTexture(this.game.background)
+    this.sprite.setSize(this.game.width, this.game.height)
+    this.sprite.setPivot(0, 0)
+    this.entity.getTransform<TransformComponent>()!.setPosition(0, 0, -0.1)
   }
 }

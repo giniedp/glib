@@ -1,4 +1,4 @@
-import { IVec3, Vec2, Vec3 } from '@gglib/math'
+import { IVec2, IVec3, Vec2, Vec3 } from '@gglib/math'
 import { Color } from '../../Color'
 import type { GeometryBuilder } from '../GeometryBuilder'
 
@@ -20,6 +20,10 @@ export interface BuildParametricSurfaceOptions {
    * Function returning color for u v input
    */
   color?: (u: number, v: number) => number
+  /**
+   * Function returning texture coordinates for u v input
+   */
+  texture?: (u: number, v: number) => IVec2
   /**
    * Start value of `u`. Default is `0`
    */
@@ -53,6 +57,7 @@ export interface BuildParametricSurfaceOptions {
 export function buildParametricSurface(builder: GeometryBuilder, options: BuildParametricSurfaceOptions) {
   const position = options.position ?? ((u: number, v: number) => ({ x: 0, y: 0, z: 0 }))
   const normal = options.normal ?? null
+  const texture = options.texture ?? null
   const uSteps = options.uSteps ?? 1
   const vSteps = options.vSteps ?? 1
   const u0 = options.uStart ?? 0
@@ -98,7 +103,7 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
       vertices.push({
         position: Vec3.convert(position(u, v)),
         normal: normal ? Vec3.convert(normal(u, v)) : Vec3.createZero(),
-        texture: Vec2.create(s, t),
+        texture: texture ? Vec2.convert(texture(s, t)) : Vec2.create(s, t),
         tangent: Vec3.createZero(),
         bitangent: Vec3.createZero(),
       })
@@ -173,6 +178,7 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
   const position = options.position ?? ((u: number, v: number) => ({ x: 0, y: 0, z: 0 }))
   const normal = options.normal ?? null
   const color = options.color ?? null
+  const texture = options.texture ?? null
   const uSteps = options.uSteps ?? 1
   const vSteps = options.vSteps ?? 1
   const u0 = options.uStart ?? 0
@@ -227,8 +233,8 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
       vertices.push({
         position: Vec3.convert(position(u, v)),
         normal: normal ? Vec3.convert(normal(u, v)) : Vec3.createZero(),
-        color: color ? color(u, v) : Color.White.rgba,
-        texture: Vec2.create(s, t),
+        color: color ? color(u, v) : Color.packToRGBA(Color.White),
+        texture: texture ? Vec2.convert(texture(s, t)) : Vec2.create(s, t),
         tangent: Vec3.createZero(),
         bitangent: Vec3.createZero(),
       })

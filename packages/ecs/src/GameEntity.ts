@@ -1,20 +1,54 @@
-import { EventEmitter } from '@gglib/utils'
-import type { GameComponent, GameComponentType } from './GameComponent'
-import { GameProvider, GameSystem } from './GameSystem'
-import { GameTransform } from './GameTransform'
+import { addItemIfAbsent, append, Brand, EventEmitter, type AbstractType, type Type } from '@gglib/utils'
+import {
+  ComponentIds,
+  ComponentTypeIds,
+  type GameComponent,
+  type GameComponentId,
+  type GameComponentType,
+  type GameComponentTypeId,
+} from './GameComponent'
+import { describeEntityState, GameEntityState } from './GameEntityState'
+import { GameTransformToken, type GameTransform } from './GameTransform'
+import type { GameWorld } from './GameWorld'
+import { idProvider } from './utils/idProvider'
 
-export enum EntityState {
-  Created = 0,
-  Initializing = 1,
-  Initialized = 2,
-  Activating = 3,
-  Activated = 4,
-  Deactivating = 5,
-  Destroying = 6,
-  Destroyed = 7,
+export type GameEntityId = Brand<number, 'GameEntityId'>
+
+const EntityIds = idProvider<GameEntityId, GameEntity>(Symbol('GameEntityId'))
+export interface GetComponentOptions {
+  /**
+   * If true, keeps looking up the entity hierarchy
+   */
+  readonly followParent?: boolean
+  /**
+   * If true, skips to the parent container. Only viable if `followParent` is true.
+   */
+  readonly skipSelf?: boolean
+  /**
+   * If true, does not throw an error if the system is not found.
+   */
+  readonly optional?: boolean
 }
 
-export class GameEntity<Transform extends GameTransform = GameTransform> {
+export const GetComponent = {
+  Optional: { optional: true } as const,
+  OptionalFollowParent: { optional: true, followParent: true } as const,
+  OptionalSkipSelf: { optional: true, followParent: true, skipSelf: true } as const,
+  SkipSelf: { followParent: true, skipSelf: true } as const,
+}
+
+export type NotGameEntity<T> = T & (T extends GameEntity ? never : T)
+export class GameEntity {
+  /**
+   * The unique runtime ID of this entity.
+   *
+   * @remarks
+   * In traditional ECS this would be the actual `entity`
+   */
+  public get refId() {
+    return EntityIds.getOrCreate(this)
+  }
+
   /**
    * A user defined ID of this entity
    *
@@ -30,32 +64,66 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
   public name: string
 
   /**
-   * The container that provides access to global (or local) game systems or services.
+   * The world this entity has been initialized in
    */
-  public provider: GameProvider
+  public readonly world: GameWorld
 
   /**
    * Current state of the entity
    */
-  public state: EntityState = EntityState.Created
+  public readonly state: GameEntityState = GameEntityState.Created
+
+  /**
+   * A helper property for debugging that describes the current state of the entity
+   */
+  public get stateName() {
+    return describeEntityState(this.state)
+  }
 
   /**
    * An opaque event emmitter that can be used by components as one way of cummunication
    */
-  public events = new EventEmitter()
+  public readonly events = new EventEmitter()
+
+  public readonly onInitialized = this.events.channel<GameEntity>('initialized')
+  public readonly onDestroyed = this.events.channel<GameEntity>('destroyed')
+  public readonly onActivating = this.events.channel<GameEntity>('beforeActivate')
+  public readonly onActivated = this.events.channel<GameEntity>('activated')
+  public readonly onDeactivating = this.events.channel<GameEntity>('beforeDeactivate')
+  public readonly onDeactivated = this.events.channel<GameEntity>('deactivated')
+  public readonly onComponentAdded = this.events.channel<[GameEntity, GameComponent]>('componentAdded')
+  public readonly onComponentRemoved = this.events.channel<[GameEntity, GameComponent]>('componentRemoved')
 
   /**
-   * The transform component of this entity.
-   *
-   * @remarks
-   * The entity does not create or set this property. This must be set by the Transform component implementation during initialization phase.
-   *
-   * The application should always provide a transform component when creating an entity and it should be the first one added.
+   * Gets the transform component of this entity
    */
-  public transform: Transform
+  public getTransform<T extends GameTransform = GameTransform>(): T | null {
+    return this.component<T>(GameTransformToken, { optional: true })
+  }
 
-  private componentByType = new Map<any, GameComponent>()
-  private typeByComponent = new Map<GameComponent, any>()
+  /**
+   * Sets the parent of this entity by setting the parent of its transform component.
+   */
+  public setParent(entity: GameEntity | null): void {
+    this.getTransform().setParent(entity?.getTransform() || null)
+  }
+
+  /**
+   * Gets the entity of the parent transform if it exists
+   */
+  public get parent(): GameEntity | null {
+    return this.getTransform()?.parent?.entity || null
+  }
+
+  public constructor(world: GameWorld) {
+    this.world = world
+    world.attachEntity(this)
+  }
+
+  private componentByType: Record<GameComponentTypeId, GameComponent> = {}
+  private typesByComponentId: Record<GameComponentId, GameComponentTypeId[]> = {}
+  private types: GameComponentTypeId[] = []
+
   // all known components that are controlled by this entity
   private components: GameComponent[] = []
   // components that are not initialized yet
@@ -64,19 +132,37 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
   private toActivate: GameComponent[] = []
   // components that are initialized and enabled and ready for action
   private activated: GameComponent[] = []
-  // systems that are provided by this entity
-  private provides: GameSystem[] = []
 
-  public get componentCount() {
-    return this.components.length
+  public get activeComponents(): ReadonlyArray<GameComponent> {
+    return this.activated
   }
 
-  public get active() {
-    return this.state === EntityState.Activated
+  public get canInitialize() {
+    return this.state === GameEntityState.Created
   }
 
-  public get destroyed() {
-    return this.state === EntityState.Destroyed
+  public get canActivate() {
+    return this.state === GameEntityState.Initialized
+  }
+
+  public get canDeactivate() {
+    return this.state === GameEntityState.Activated
+  }
+
+  public get canDestroy() {
+    return this.state !== GameEntityState.Destroyed
+  }
+
+  public get isInitialized() {
+    return this.state >= GameEntityState.Initialized && this.state <= GameEntityState.Activated
+  }
+
+  public get isActive() {
+    return this.state === GameEntityState.Activated
+  }
+
+  public get isDestroyed() {
+    return this.state === GameEntityState.Destroyed
   }
 
   /**
@@ -85,18 +171,14 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
    *
    * @throws Error if the entity is already initialized.
    */
-  public initialize(game: GameProvider): this {
-    if (this.state != EntityState.Created) {
-      throw new Error('Entity is already initialized')
+  public initialize(): void {
+    if (this.state != GameEntityState.Created) {
+      throw new Error(
+        `Entity must have state ${describeEntityState(GameEntityState.Created)} to initialize but was ${describeEntityState(this.state)}`,
+      )
     }
 
-    this.state = EntityState.Initializing
-    this.provider = new GameProvider(game).initialize()
-    if (this.provides.length) {
-      for (const system of this.provides) {
-        this.provider.addSystem(system)
-      }
-    }
+    this.setState(GameEntityState.Initializing)
 
     while (this.toInitialize.length > 0) {
       const component = this.toInitialize.shift()
@@ -105,13 +187,11 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
       }
     }
 
-    this.state = EntityState.Initialized
-
-    if (!this.transform) {
+    this.setState(GameEntityState.Initialized)
+    if (!this.getTransform()) {
       console.warn('Entity was initialized without a transform component')
     }
-
-    return this
+    this.onInitialized.emit(this)
   }
 
   /**
@@ -121,18 +201,17 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
    * - Can be called multiple times during the lifetime of the entity.
    * - Can be called only when the entity is in the initialized state.
    */
-  public activate(): this {
-    if (this.state != EntityState.Initialized) {
-      throw new Error('Entity must be in initialized state to be activated')
-    }
-    this.state = EntityState.Activating
+  public activate(): void {
+    this.assertState(GameEntityState.Initialized)
+    this.setState(GameEntityState.Activating)
+    this.onActivating.emit(this)
     while (this.toActivate.length > 0) {
       const component = this.toActivate.shift()
       activateComponent(component)
       this.activated.push(component)
     }
-    this.state = EntityState.Activated
-    return this
+    this.setState(GameEntityState.Activated)
+    this.onActivated.emit(this)
   }
 
   /**
@@ -142,34 +221,33 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
    * - Can be called multiple times during the lifetime of the entity.
    * - Can be called only when the entity is in the activated state.
    */
-  public deactivate(): this {
-    if (this.state === EntityState.Initialized) {
-      return this
-    }
-    if (this.state != EntityState.Activated) {
-      throw new Error('Entity must be in activated state to be deactivated')
-    }
-    this.state = EntityState.Deactivating
+  public deactivate(): void {
+    this.assertState(GameEntityState.Activated)
+    this.setState(GameEntityState.Deactivating)
+    this.onDeactivating.emit(this)
     while (this.activated.length > 0) {
       const component = this.activated.shift()
       deactivateComponent(component)
       this.toActivate.push(component)
     }
-    this.state = EntityState.Initialized
-    return this
+    this.setState(GameEntityState.Initialized)
+    this.onDeactivated.emit(this)
   }
 
   /**
    * Deactivates this entity and destroys all components.
    */
-  public destroy(): this {
-    this.deactivate()
-    this.state = EntityState.Destroying
+  public destroy(): void {
+    if (this.state === GameEntityState.Activated) {
+      this.deactivate()
+    }
+    this.assertNotState(GameEntityState.Destroyed)
+    this.setState(GameEntityState.Destroying)
     for (const component of this.components) {
       destroyComponent(component)
     }
-    this.state = EntityState.Destroyed
-    return this
+    this.setState(GameEntityState.Destroyed)
+    this.onDestroyed.emit(this)
   }
 
   /**
@@ -183,7 +261,7 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
    * Checks whether the entity has a component of the given type.
    */
   public has<T extends GameComponent>(type: GameComponentType<T>): boolean {
-    return this.componentByType.has(type)
+    return ComponentTypeIds.get(type) in this.componentByType
   }
 
   /**
@@ -211,36 +289,49 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
    * @throws Error if the component is already added to the entity
    * @throws Error if the component type is already registered
    */
-  public addComponent<T extends GameComponent>(component: GameComponent, type?: GameComponentType<T> | null): this {
-    if (type === undefined && component.constructor) {
+  public addComponent<T extends GameComponent>(component: GameComponent, ...types: Array<GameComponentType<T>>): this {
+    if (!types.length && component.constructor) {
       if (component.constructor === Object) {
         throw new Error('Plain objects must have an explicit type provided when added as components')
       }
-      type = component.constructor as GameComponentType<T>
+      types = [component.constructor as GameComponentType<T>]
     }
 
-    if (this.state >= EntityState.Activated) {
-      throw new Error('Cannot add component while entity is active')
+    if (this.state >= GameEntityState.Activated) {
+      throw new Error('Cannot add component while entity is active or destroyed')
     }
+
     if (this.components.includes(component)) {
       console.warn('Component already added to entity', component)
       return this
     }
-    if (type != null) {
-      if (this.componentByType.has(type)) {
+
+    for (const type of types) {
+      if (this.has(type)) {
         throw new Error(`Component of type ${getTypeName(type)} already exists`)
       }
-      this.componentByType.set(type, component)
-      this.typeByComponent.set(component, type)
     }
+
+    const id = ComponentIds.getOrCreate(component)
+    for (const type of types) {
+      const typeId = ComponentTypeIds.getOrCreate(type)
+      this.componentByType[typeId] = component
+      this.typesByComponentId[id] ||= []
+      addItemIfAbsent(this.typesByComponentId[id], typeId)
+      addItemIfAbsent(this.types, typeId)
+    }
+
     this.components.push(component)
+    component.entity = this
+    this.onComponentAdded.emit([this, component])
+
     switch (this.state) {
-      case EntityState.Created:
-      case EntityState.Initializing:
+      case GameEntityState.Created:
+      case GameEntityState.Initializing:
         this.toInitialize.push(component)
         break
-      case EntityState.Initialized:
-      case EntityState.Activating:
+      case GameEntityState.Initialized:
+      case GameEntityState.Activating:
         if (initializeComponent(component, this)) {
           this.toActivate.push(component)
         }
@@ -249,36 +340,74 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
     return this
   }
 
+  public removeComponentByType<T extends GameComponent>(type: GameComponentType<T>): void {
+    const component = this.component(type, GetComponent.Optional)
+    if (component) {
+      this.removeComponent(component)
+    }
+  }
+
   /**
-   * Removes a component from the entity. Removes its reference from the 'by type' lookup registry.
+   * Removes a component from the entity
    */
-  public removeComponent(component: GameComponent) {
-    if (this.state >= EntityState.Activated) {
-      throw new Error('Cannot remove component while entity is active')
+  public removeComponent(component: GameComponent): void {
+    if (this.state >= GameEntityState.Activated) {
+      throw new Error('Cannot remove component while entity is active or destroyed')
     }
-    removeFromArray(this.components, component)
-    removeFromArray(this.toInitialize, component)
-    removeFromArray(this.toActivate, component)
-    const type = this.typeByComponent.get(component)
-    if (type) {
-      this.componentByType.delete(type)
-      this.typeByComponent.delete(component)
+    removeItem(this.components, component)
+    removeItem(this.toInitialize, component)
+    removeItem(this.toActivate, component)
+    const id = ComponentIds.get(component)
+    const types = this.typesByComponentId[id]
+    delete this.typesByComponentId[id]
+    if (types) {
+      for (const typeId of types) {
+        removeItem(this.types, typeId)
+        delete this.componentByType[typeId]
+      }
     }
-    component.entity = null
+    this.onComponentRemoved.emit([this, component])
   }
 
   /**
    * Looks up a component by type on the entity
-   * @throws Error if the component is not found in the entity
    */
-  public component<T extends GameComponent>(type: GameComponentType<T>, optional?: boolean): T {
-    if (this.componentByType.has(type)) {
-      return this.componentByType.get(type) as T
+  public component<T extends GameComponent>(type: GameComponentType<T>, options?: GetComponentOptions): T {
+    const id = ComponentTypeIds.get(type)
+    let result = this.componentByType[id]
+    if (!options?.followParent) {
+      if (result) {
+        return result as T
+      }
+      if (options?.optional) {
+        return null
+      }
+      throw new Error(`Component of type ${getTypeName(type)} not found`)
     }
-    if (optional) {
+    if (options.skipSelf || !result) {
+      result = this.getTransform()?.parent?.entity?.component(type, {
+        ...options,
+        skipSelf: false,
+      })
+    }
+    if (result) {
+      return result as T
+    }
+    if (options?.optional) {
       return null
     }
     throw new Error(`Component of type ${getTypeName(type)} not found`)
+  }
+
+  /**
+   * Looks up a game system in the world registry. If not found, tries to look up
+   * a game component of the given type up the entity hierarchy and returns it if found.
+   */
+  public service<T>(type: Type<T> | AbstractType<T>, options?: GetComponentOptions): T {
+    if (this.world.hasSystem(type)) {
+      return this.world.getSystem(type)
+    }
+    return this.component<any>(type, options)
   }
 
   /**
@@ -295,36 +424,56 @@ export class GameEntity<Transform extends GameTransform = GameTransform> {
   }
 
   /**
-   * Before initialization, sets the game systems that should be provided directly by this entity.
-   *
-   * @param systems
-   * @returns
+   * Gets all component types currently registered on this entity
    */
-  public provide(...systems: GameSystem[]): this {
-    if (this.state != EntityState.Created) {
-      throw new Error('Cannot set systems after entity is created')
+  public componentTypes(): Array<GameComponentTypeId> {
+    return this.types
+  }
+
+  /**
+   * Gets the names of all component types currently registered on this entity
+   * @remarks This is a helper method for debugging and should not be used in performance critical code.
+   */
+  public get componentTypeNames(): string[] {
+    return this.componentTypes().map((typeId) => {
+      const type = this.componentByType[typeId]
+      return getTypeName(type.constructor)
+    })
+  }
+
+  private assertState(expected: GameEntityState): void {
+    if (this.state !== expected) {
+      throw new Error(
+        `Expected Entity (${this.name || this.refId}) to be in ${describeEntityState(expected)} state but was ${describeEntityState(this.state)}`,
+      )
     }
-    this.provides = this.provides || []
-    for (const system of systems) {
-      if (this.provides.includes(system)) {
-        throw new Error(`System ${getTypeName(system)} already provided by this entity`)
-      }
-      this.provides.push(system)
+  }
+
+  private assertNotState(state: GameEntityState): void {
+    if (this.state === state) {
+      throw new Error(`Expected Entity (${this.name || this.refId}) to not be in ${describeEntityState(state)} state`)
     }
-    return this
+  }
+
+  private setState(state: GameEntityState) {
+    ;(this as Mutable<this>).state = state
   }
 }
 
-function removeFromArray<T>(array: T[], item: T) {
+type Mutable<T> = {
+  -readonly [P in keyof T]: T[P]
+}
+
+function removeItem<T>(array: T[], item: T) {
   const index = array.indexOf(item)
   if (index > -1) {
     array.splice(index, 1)
   }
 }
 
-function initializeComponent(component: GameComponent, entity: GameEntity) {
+function initializeComponent(component: GameComponent, entity: GameEntity): boolean {
   try {
-    component.initialize(entity)
+    component.initialize?.()
   } catch (e) {
     console.error('Error initializing component', component, e)
     return false
@@ -332,9 +481,9 @@ function initializeComponent(component: GameComponent, entity: GameEntity) {
   return true
 }
 
-function activateComponent(component: GameComponent) {
+function activateComponent(component: GameComponent): boolean {
   try {
-    component.activate()
+    component.activate?.()
   } catch (e) {
     console.error('Error enabling component', component, e)
     return false
@@ -342,9 +491,9 @@ function activateComponent(component: GameComponent) {
   return true
 }
 
-function deactivateComponent(component: GameComponent) {
+function deactivateComponent(component: GameComponent): boolean {
   try {
-    component.deactivate()
+    component.deactivate?.()
   } catch (e) {
     console.error('Error disabling component', component, e)
     return false
@@ -352,9 +501,9 @@ function deactivateComponent(component: GameComponent) {
   return true
 }
 
-function destroyComponent(component: GameComponent) {
+function destroyComponent(component: GameComponent): boolean {
   try {
-    component.destroy()
+    component.destroy?.()
   } catch (e) {
     console.error('Error destroying component', component, e)
     return false
@@ -364,7 +513,7 @@ function destroyComponent(component: GameComponent) {
 
 function getTypeName(type: any): string {
   if (typeof type === 'function') {
-    return type.name
+    return type.name || '(anonymous)'
   } else if (typeof type === 'string') {
     return type
   } else {

@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 import { samplerArray } from '../utils'
 
 /**
@@ -7,7 +7,7 @@ import { samplerArray } from '../utils'
  * @public
  * @param src - The source sampler
  */
-export function max(...src: Array<Sampler| number>): Sampler {
+export function max(...src: Array<Sampler | number>): Sampler {
   const smpSrc = samplerArray(...src)
-  return (...x: number[]) => Math.max(...(smpSrc.map((it) => it(...x))))
+  return (...x: number[]) => Math.max(...smpSrc.map((it) => it(...x)))
 }

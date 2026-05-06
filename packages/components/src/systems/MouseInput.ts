@@ -1,13 +1,12 @@
-import { GameSystem, GameProvider } from '@gglib/ecs'
-import { MouseListener, MouseOptions, MouseState } from '@gglib/input'
-import { GameLoop } from './GameLoop'
+import { GameSystem, GameWorld } from '@gglib/ecs'
+import { MouseListener, type MouseOptions, type MouseState } from '@gglib/input'
 
 /**
- * Constructor options for {@link MouseInput}
+ * Constructor options for {@link MouseInputSystem}
  *
  * @public
  */
-export type MouseComponentOptions = MouseOptions
+export type MouseInputSystemOptions = MouseOptions
 
 /**
  * A component that listens for mouse events and tracks mouse state
@@ -15,12 +14,11 @@ export type MouseComponentOptions = MouseOptions
  * @public
  */
 
-export class MouseInput implements GameSystem {
-
+export class MouseInputSystem extends GameSystem {
   /**
    * The mouse listener
    */
-  public mouse: MouseListener
+  public listener: MouseListener
 
   /**
    * Pressed state in current frame
@@ -47,31 +45,29 @@ export class MouseInput implements GameSystem {
    */
   public customPixelRatio: number = null
 
-  private loop: GameLoop
-
-  public constructor(options: MouseComponentOptions = {}) {
-    this.mouse = new MouseListener(options)
-    this.newState = this.mouse.copyState({})
-    this.oldState = this.mouse.copyState({})
+  public constructor(options: MouseInputSystemOptions = {}) {
+    super()
+    this.listener = new MouseListener(options)
+    this.newState = this.listener.copyState({})
+    this.oldState = this.listener.copyState({})
   }
 
-  public initialize(container: GameProvider): void {
-    this.loop = container.get(GameLoop)
-    this.loop.onUpdate.add(this.onUpdate)
+  public initialize(world: GameWorld): void {
+    //
   }
 
   public destroy(): void {
-    this.loop.onUpdate.remove(this.onUpdate)
+    //
   }
 
   /**
    * Swaps the `oldState` and `newState` properties and updates the `newState`
    */
-  private onUpdate = () => {
+  public override update() {
     let toUpdate = this.oldState
     this.oldState = this.newState
     this.newState = toUpdate
-    this.mouse.copyState(toUpdate)
+    this.listener.copyState(toUpdate)
   }
 
   /**

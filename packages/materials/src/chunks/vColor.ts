@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -22,7 +22,7 @@ export interface VColorDefs {
  */
 
 export const V_COLOR: ShaderChunkSet<VColorDefs> = {
-  attributes: glsl`
+  attributes: /* glsl */ `
     #ifdef V_COLOR
     // @binding color
     // @remarks The vertex color
@@ -39,7 +39,7 @@ export const V_COLOR: ShaderChunkSet<VColorDefs> = {
     attribute vec3 aColor2;
     #endif
   `,
-  varyings: glsl`
+  varyings: /* glsl */ `
     #ifdef V_COLOR
     varying vec3 vColor;
     #endif
@@ -50,7 +50,7 @@ export const V_COLOR: ShaderChunkSet<VColorDefs> = {
     varying vec3 vColor2;
     #endif
   `,
-  vs_texture: glsl`
+  vs_texture: /* glsl */ `
     #ifdef V_COLOR
     vColor = aColor;
     #endif

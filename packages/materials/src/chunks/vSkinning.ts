@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -30,7 +30,7 @@ export interface VSkinningDefs {
  * @public
  */
 export const V_SKINNING: ShaderChunkSet<VSkinningDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #if defined(SKINNING_JOINT_COUNT) || defined(SKINNING_WEIGHT_COUNT)
       #define SKINNING
     #endif
@@ -43,7 +43,7 @@ export const V_SKINNING: ShaderChunkSet<VSkinningDefs> = {
       #define SKINNING_WEIGHT_COUNT 2
     #endif
   `,
-  attributes: glsl`
+  attributes: /* glsl */ `
     #ifdef SKINNING
     // @binding joints
     // @remarks The vertex weight indices
@@ -53,13 +53,13 @@ export const V_SKINNING: ShaderChunkSet<VSkinningDefs> = {
     attribute vec4 aWeights;
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef SKINNING
     // @binding Joints
     uniform mat4 uJoints[SKINNING_JOINT_COUNT];
     #endif
   `,
-  vs_position: glsl`
+  vs_position: /* glsl */ `
     #ifdef SKINNING
     mat4 skin = uJoints[int(aJoints.x)] * aWeights.x;
     #if SKINNING_WEIGHT_COUNT > 1

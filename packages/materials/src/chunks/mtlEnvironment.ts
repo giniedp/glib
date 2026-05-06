@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control environment color contribution.
@@ -10,7 +10,6 @@ export interface MtlEnvironmentDefs {
    * Enables environment color from texture
    */
   ENVIRONMENT_MAP?: boolean
-
 }
 
 /**
@@ -18,7 +17,7 @@ export interface MtlEnvironmentDefs {
  * @public
  */
 export const MTL_ENVIRONMENT: ShaderChunkSet<MtlEnvironmentDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #if defined(ENVIRONMENT_MAP)
       #ifndef ENVIRONMENT_MAP_MAX_LOD
       #define ENVIRONMENT_MAP_MAX_LOD 4.0 // 5 levels of detail
@@ -30,7 +29,7 @@ export const MTL_ENVIRONMENT: ShaderChunkSet<MtlEnvironmentDefs> = {
     #endif
   `,
 
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef ENVIRONMENT_MAP
     // @binding IrradianceMap
     uniform samplerCube uIrradianceMap;
@@ -44,7 +43,7 @@ export const MTL_ENVIRONMENT: ShaderChunkSet<MtlEnvironmentDefs> = {
     #endif
   `,
 
-  functions: glsl`
+  functions: /* glsl */ `
     vec3 getEnvDiffuseBRDF(vec3 n)
     {
       #ifdef ENVIRONMENT_MAP

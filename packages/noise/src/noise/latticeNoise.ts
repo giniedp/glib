@@ -1,5 +1,4 @@
-
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 
 /**
  * Options for the {@link latticeNoise} sampler
@@ -48,7 +47,7 @@ export function latticeNoise({
     // however, we need 32bit integer operations in that formula, so we change it
     // for javascript like this
 
-    let r = s * prime1 | 0
+    let r = (s * prime1) | 0
     r = (r * s + prime2) | 0
     r = (r * s + prime3) & MAX_INT
     return 1.0 - r * TWO_OVER_MAX_INT
@@ -63,5 +62,6 @@ export function latticeNoise({
     if (x.length === 3) {
       return noise(x[0] * primeX + x[1] * primeY + x[2] * primeZ)
     }
+    return 0
   }
 }

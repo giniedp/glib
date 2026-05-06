@@ -1,7 +1,6 @@
-import { GameSystem, GameProvider } from '@gglib/ecs'
-import { IVec2, IVec3, IVec4, Vec2, Vec3, Vec4, clamp, easeLinear } from '@gglib/math'
-import { FunctionPropertyNames, NonFunctionPropertyNames, simpleObservable } from '@gglib/utils'
-import { GameLoop } from './GameLoop'
+import { GameSystem, GameWorld } from '@gglib/ecs'
+import { type IVec2, type IVec3, type IVec4, Vec2, Vec3, Vec4, clamp, easeLinear } from '@gglib/math'
+import { eventSource } from '@gglib/utils'
 import { TimeSystem } from './TimeSystem'
 
 /**
@@ -46,7 +45,7 @@ export interface TweenOptions<T> {
  */
 export type TweenEventName = 'update' | 'end' | 'start'
 
-export class Tween {
+export class Tween implements IVec4 {
   /**
    * The name of the clock to use.
    * If not set, the default game time will be used.
@@ -93,9 +92,44 @@ export class Tween {
     return this.progressValue
   }
 
-  public onStart = simpleObservable<Tween>()
-  public onUpdate = simpleObservable<Tween>()
-  public onEnd = simpleObservable<Tween>()
+  /**
+   * The current value of this tween (same as x for 1D tweens)
+   */
+  public get value() {
+    return this.values[0]
+  }
+
+  /**
+   * The current x value of this tween
+   */
+  public get x() {
+    return this.values[0]
+  }
+
+  /**
+   * The current y value of this tween
+   */
+  public get y() {
+    return this.values[1]
+  }
+
+  /**
+   * The current z value of this tween
+   */
+  public get z() {
+    return this.values[2]
+  }
+
+  /**
+   * The current w value of this tween
+   */
+  public get w() {
+    return this.values[3]
+  }
+
+  public onStart = eventSource<Tween>()
+  public onUpdate = eventSource<Tween>()
+  public onEnd = eventSource<Tween>()
 
   private activeValue = false
   private progressValue = 0
@@ -133,7 +167,7 @@ export class Tween {
     if (!this.active && !this.progressValue) {
       this.activeValue = true
       this.progressValue = 0
-      this.onStart.notify(this)
+      this.onStart.emit(this)
     }
     if (!this.active) {
       return
@@ -145,49 +179,26 @@ export class Tween {
     for (let i = 0; i < this.from.length; i++) {
       this.values[i] = (1 - t) * this.from[i] + t * this.to[i]
     }
-    this.onUpdate.notify(this)
+    this.onUpdate.emit(this)
     if (!this.active) {
-      this.onEnd.notify(this)
+      this.onEnd.emit(this)
     }
   }
 
-  public addUpdatable<T>(target: T, prop: NonFunctionPropertyNames<T>, index0 = 0) {
-    target[prop as any] = this.values[index0]
-    this.onUpdate.add((tween: Tween) => {
-      target[prop as any] = tween.values[index0]
-    })
+  public bind(fn: (tween: Tween) => void) {
+    this.onUpdate.add(fn)
   }
 
-  public addUpdatableWith1Arg<T>(target: T, fun: FunctionPropertyNames<T>, index0 = 0) {
-    this.onUpdate.add((tween: Tween) => {
-      ;(target[fun] as any)(tween.values[index0])
-    })
-  }
-
-  public addUpdatableWith2Args<T>(target: T, fun: FunctionPropertyNames<T>, index0 = 0, index1 = index0 + 1) {
-    this.onUpdate.add((tween: Tween) => {
-      ;(target[fun] as any)(tween.values[index0], tween.values[index1])
-    })
-  }
-
-  public addUpdatableWith3Args<T>(
-    target: T,
-    fun: FunctionPropertyNames<T>,
-    index0 = 0,
-    index1 = index0 + 1,
-    index2 = index0 + 2,
-  ) {
-    this.onUpdate.add((tween: Tween) => {
-      ;(target[fun] as any)(tween.values[index0], tween.values[index1], tween.values[index2])
-    })
+  public cancel() {
+    this.onEnd.emit(this)
   }
 }
 
 /**
  * Component that works off tween animations
  */
-export class TweenSystem implements GameSystem {
-  public static removeFromArraySplice<T>(array: T[], item: T): void {
+export class TweenSystem extends GameSystem {
+  public static removeItemSplice<T>(array: T[], item: T): void {
     const index = array.indexOf(item)
     if (index < 0) {
       return
@@ -195,7 +206,7 @@ export class TweenSystem implements GameSystem {
     array.splice(index, 1)
   }
 
-  public static removeFromArrayRemap<T>(array: T[], item: T): void {
+  public static removeItemRemap<T>(array: T[], item: T): void {
     const index = array.indexOf(item)
     if (index < 0) {
       return
@@ -206,27 +217,24 @@ export class TweenSystem implements GameSystem {
     array.length--
   }
 
-  public static removeFromArray = TweenSystem.removeFromArrayRemap
+  public static removeItem = TweenSystem.removeItemRemap
 
   protected tweens: Tween[] = []
   protected time: TimeSystem
-  protected loop: GameLoop
 
-  public initialize(host: GameProvider): void {
-    this.time = host.get(TimeSystem)
-    this.loop = host.get(GameLoop)
-    this.loop.onUpdate.add(this.update)
+  public initialize(game: GameWorld): void {
+    this.time = game.getSystem(TimeSystem)
   }
 
-  public destroy(): void {
-    this.loop.onUpdate.remove(this.update)
-  }
-
-  public update = () => {
+  public override update() {
     for (const tween of this.tweens) {
       const clock = tween.clockName ? this.time.getOrCreate(tween.clockName) : this.time.game
       tween.update(clock.totalMs)
     }
+  }
+
+  public destroy(): void {
+    //
   }
 
   public cancelAll(): this {
@@ -235,15 +243,25 @@ export class TweenSystem implements GameSystem {
   }
 
   public start(options: TweenOptions<number[]>) {
-    return this.push({
-      startTime: this.getClock(options.clockName).totalMs,
+    options.startTime = this.getClock(options.clockName).totalMs
+    const tween = new Tween(options)
+    this.tweens.push(tween)
+    tween.onEnd.add(() => {
+      TweenSystem.removeItem(this.tweens, tween)
+    })
+    return tween
+  }
+
+  public startScalar(options: TweenOptions<number>) {
+    return this.start({
       ...options,
+      from: [options.from],
+      to: [options.to],
     })
   }
 
   public startV2(options: TweenOptions<IVec2>) {
-    return this.push({
-      startTime: this.getClock(options.clockName).totalMs,
+    return this.start({
       ...options,
       from: Vec2.toArray(options.from),
       to: Vec2.toArray(options.to),
@@ -251,8 +269,7 @@ export class TweenSystem implements GameSystem {
   }
 
   public startV3(options: TweenOptions<IVec3>) {
-    return this.push({
-      startTime: this.getClock(options.clockName).totalMs,
+    return this.start({
       ...options,
       from: Vec3.toArray(options.from),
       to: Vec3.toArray(options.to),
@@ -260,21 +277,11 @@ export class TweenSystem implements GameSystem {
   }
 
   public startV4(options: TweenOptions<IVec4>) {
-    return this.push({
-      startTime: this.getClock(options.clockName).totalMs,
+    return this.start({
       ...options,
       from: Vec4.toArray(options.from),
       to: Vec4.toArray(options.to),
     })
-  }
-
-  private push(options: TweenOptions<number[]>) {
-    const tween = new Tween(options)
-    this.tweens.push(tween)
-    tween.onEnd.add(() => {
-      TweenSystem.removeFromArray(this.tweens, tween)
-    })
-    return tween
   }
 
   private getClock(name: string) {

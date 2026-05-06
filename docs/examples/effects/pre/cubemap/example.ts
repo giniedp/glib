@@ -66,7 +66,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     }
 
     device.clear(0xff2e2620, 1.0)
-    device.depthState = DepthState.Default
+    device.depthState = DepthState.Disabled
     if (skyProgram.isReady) {
       world.initScaleUniform(100).setTranslation(camera.position)
       skyProgram.setUniform('World', world)
@@ -117,7 +117,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       max: 2,
       step: 0.01,
       label: 'Scale',
-      onInput: () => {
+      oninput: () => {
         iblSampler.needsUpdate = true
       },
     })

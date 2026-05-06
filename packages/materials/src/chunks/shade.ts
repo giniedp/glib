@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -16,19 +16,19 @@ export type ShadeFunctionNone = 'shadeNone'
  * @public
  */
 export const SHADE: ShaderChunkSet<ShadeDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifndef SHADE_FUNCTION
     #define SHADE_FUNCTION shadeNone
     #endif
   `,
-  structs: glsl`
+  structs: /* glsl */ `
     struct ShadeParams {
       vec3 V; // Vector to eye (camPos - worldPos)
       vec3 L; // Vector to light
       vec3 I; // Light intensity
     };
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     highp vec3 shadeNone(
       inout ShadeParams shade,
       inout SurfaceParams surface
@@ -36,7 +36,7 @@ export const SHADE: ShaderChunkSet<ShadeDefs> = {
       return surface.BaseColor.rgb;
     }
   `,
-  functions_after: glsl`
+  functions_after: /* glsl */ `
     highp vec4 shade(in SurfaceParams surface) {
       vec4 color = vec4(0.0, 0.0, 0.0, surface.BaseColor.a);
       vec3 toEye = normalize(vToEyeInWS);
@@ -65,7 +65,7 @@ export const SHADE: ShaderChunkSet<ShadeDefs> = {
       return color;
     }
   `,
-  fs_shade: glsl`
+  fs_shade: /* glsl */ `
     color = shade(surface);
   `,
 }

@@ -1,11 +1,11 @@
 import type { TextureCompression } from '@gglib/graphics'
-import type { JsonRPCRequest, JsonRPCResponse } from '@gglib/utils'
+import type { JsonRpcRequest, JsonRpcResponse } from '@gglib/utils'
 import { transcodeKtx, transcoderModule } from './transcode'
 import type { TranscoderModule, TranscoderOptions } from './types'
 
 let module: TranscoderModule
 
-self.onmessage = async (event: MessageEvent<JsonRPCRequest>) => {
+self.onmessage = async (event: MessageEvent<JsonRpcRequest>) => {
   const request = event.data
   try {
     const result = await handleRequest(request)
@@ -13,17 +13,20 @@ self.onmessage = async (event: MessageEvent<JsonRPCRequest>) => {
       id: request.id,
       error: null,
       result: result,
-    } satisfies JsonRPCResponse)
+    } satisfies JsonRpcResponse)
   } catch (error) {
     self.postMessage({
       id: request.id,
-      error,
+      error: {
+        code: -32000,
+        message: (error as Error)?.message ?? String(error),
+      },
       result: null,
-    } satisfies JsonRPCResponse)
+    } satisfies JsonRpcResponse)
   }
 }
 
-async function handleRequest(request: JsonRPCRequest): Promise<any> {
+async function handleRequest(request: JsonRpcRequest): Promise<any> {
   if (request.method === 'init') {
     module = await transcoderModule(request.params[0] as TranscoderOptions)
     return

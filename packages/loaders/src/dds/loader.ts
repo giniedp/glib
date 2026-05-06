@@ -1,15 +1,19 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { ArrayBufferViewSource, SamplerState, surfaceFormatFromDXGI, TextureOptions } from '@gglib/graphics'
+import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, TextureAssetContainer } from '@gglib/content'
+import {
+  AcquireTextureOptions,
+  CompressedBufferSource,
+  CompressedFaceData,
+  surfaceFormatFromDXGI,
+} from '@gglib/graphics'
 import { parse } from './format'
-
-export function registerLoader() {
-  ContentLoader.registerLoader(Loader)
-}
 
 export class Loader implements AssetLoader {
   public static extensions = ['.dds']
   public static mimeTypes = ['image/vnd.ms-dds']
-  public static loader = Loader
+  public static create = () => new Loader()
+  public static register(registry = ContentLoader.loaders) {
+    registry.register(Loader)
+  }
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
@@ -18,23 +22,26 @@ export class Loader implements AssetLoader {
 
     const dds = parse(response.body)
     const format = surfaceFormatFromDXGI(dds.format)
-
+    // console.log(url, format, dds)
     if (!context.content.device.capabilities.isFormatSupported(format)) {
       throw new Error(`Surface format ${format} is not supported by the device capabilities.`)
     }
-    const options: TextureOptions = {
+
+    const options: AcquireTextureOptions = {
+      key: url,
+      name: url,
+      type: 'Texture2D',
       width: dds.width,
       height: dds.height,
-      type: 'Texture2D',
       generateMipmap: false,
-      sampler: SamplerState.LinearClampNoMipMap,
+      mipLevelCount: dds.images.length,
       format: format,
     }
     if (dds.isCubemap) {
       options.type = 'TextureCube'
     }
 
-    const levels: Array<Array<ArrayBufferView>> = []
+    const levels: Array<Array<CompressedFaceData>> = []
     for (let lvl = 0; lvl < dds.images.length; lvl++) {
       const level = dds.images[lvl]
       levels[lvl] = []
@@ -42,11 +49,7 @@ export class Loader implements AssetLoader {
         levels[lvl].push(face)
       }
     }
-    options.source = new ArrayBufferViewSource(levels, dds.width, dds.height)
-    console.log(options)
-    return {
-      source: url,
-      textures: [options],
-    }
+    options.source = new CompressedBufferSource(levels, dds.width, dds.height)
+    return new TextureAssetContainer([options])
   }
 }

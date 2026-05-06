@@ -1,16 +1,16 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingSphere } from './BoundingSphere'
 import {
-  rayIntersectsBox,
-  rayIntersectsBoxAt,
-  rayIntersectsPlane,
-  rayIntersectsPlaneAt,
-  rayIntersectsSphere,
-  rayIntersectsSphereAt,
-  rayIntersectsTriangle,
-  rayIntersectsTriangleAt,
+  rayBoxIntersects,
+  rayBoxIntersectsAt,
+  rayPlaneIntersects,
+  rayPlaneIntersectsAt,
+  raySphereIntersects,
+  raySphereIntersectsAt,
+  rayTriangleIntersects,
+  rayTriangleIntersectsAt,
 } from './Collision'
-import { IVec3, IVec4 } from './Types'
+import type { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
@@ -93,14 +93,7 @@ export class Ray {
    * @param direction - the ray direction to copy
    */
   public static createV(position: IVec3, direction: IVec3): Ray {
-    return new Ray(
-      position.x,
-      position.y,
-      position.z,
-      direction.x,
-      direction.y,
-      direction.z,
-    )
+    return new Ray(position.x, position.y, position.z, direction.x, direction.y, direction.z)
   }
 
   /**
@@ -179,7 +172,7 @@ export class Ray {
    */
   public positionAt<T>(distance: number, out?: T): T & IVec3
   public positionAt(distance: number, out?: IVec3): IVec3 {
-    out = out || new Vec3() as any
+    out = out || (new Vec3() as any)
     out.x = this.direction.x * distance + this.position.x
     out.y = this.direction.y * distance + this.position.y
     out.z = this.direction.z * distance + this.position.z
@@ -204,7 +197,7 @@ export class Ray {
    */
   public static positionAt<T>(ray: Ray, distance: number, out?: T): T & IVec3
   public static positionAt(ray: Ray, distance: number, out?: IVec3): IVec3 {
-    out = out || new Vec3() as any
+    out = out || (new Vec3() as any)
     out.x = ray.direction.x * distance + ray.position.x
     out.y = ray.direction.y * distance + ray.position.y
     out.z = ray.direction.z * distance + ray.position.z
@@ -212,28 +205,28 @@ export class Ray {
   }
 
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return rayIntersectsSphere(this.position, this.direction, sphere.center, sphere.radius)
+    return raySphereIntersects(this.position, this.direction, sphere.center, sphere.radius)
   }
   public intersectsBox(box: BoundingBox): boolean {
-    return rayIntersectsBox(this.position, this.direction, box.min, box.max)
+    return rayBoxIntersects(this.position, this.direction, box.min, box.max)
   }
   public intersectsPlane(plane: IVec4): boolean {
-    return rayIntersectsPlane(this.position, this.direction, plane)
+    return rayPlaneIntersects(this.position, this.direction, plane)
   }
   public intersectsTriangle(a: IVec3, b: IVec3, c: IVec3): boolean {
-    return rayIntersectsTriangle(this.position, this.direction, a, b, c)
+    return rayTriangleIntersects(this.position, this.direction, a, b, c)
   }
 
   public intersectsSphereAt(sphere: BoundingSphere): number {
-    return rayIntersectsSphereAt(this.position, this.direction, sphere.center, sphere.radius)
+    return raySphereIntersectsAt(this.position, this.direction, sphere.center, sphere.radius)
   }
   public intersectsBoxAt(box: BoundingBox): number {
-    return rayIntersectsBoxAt(this.position, this.direction, box.min, box.max)
+    return rayBoxIntersectsAt(this.position, this.direction, box.min, box.max)
   }
   public intersectsPlaneAt(plane: IVec4): number {
-    return rayIntersectsPlaneAt(this.position, this.direction, plane)
+    return rayPlaneIntersectsAt(this.position, this.direction, plane)
   }
   public intersectsTriangleAt(a: IVec3, b: IVec3, c: IVec3): number {
-    return rayIntersectsTriangleAt(this.position, this.direction, a, b, c)
+    return rayTriangleIntersectsAt(this.position, this.direction, a, b, c)
   }
 }

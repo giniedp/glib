@@ -1,23 +1,38 @@
-import { Device, Material, MaterialOptions, Texture, TextureOptions } from '@gglib/graphics'
-import { Model } from '@gglib/model'
-import { Uri } from '@gglib/utils'
+import {
+  Device,
+  isAquirableTextureOptions,
+  Material,
+  MaterialEffectOptions,
+  MaterialOptions,
+  Texture,
+  TextureOptions,
+} from '@gglib/graphics'
+import { Model, ModelOptions } from '@gglib/model'
+import { extname, mergeUri } from '@gglib/utils'
 import { AssetContainer } from './AssetContainer'
+import { AssetLoader, AssetLoaderRegistry, LoaderByExtension, LoaderEntry, LoaderFactory } from './AssetLoaderRegistry'
+import { AsyncExecutor, NaiveAsyncExecutor } from './AsyncExecutor'
 import { HttpClient, HttpOptions, HttpResponse } from './HttpClient'
-import { AssetLoader, LoaderType, LoaderTypeDescriptor, LoaderTypeRegistry } from './LoaderTypeRegistry'
-import { MaterialType, MaterialTypeDescriptor, MaterialTypeRegistry } from './MaterialTypeRegistry'
+import { MaterialFactory, MaterialMatcher, MaterialRegistry, MaterialType } from './MaterialRegistry'
 
-export interface LoadOptions {
+export interface LoaderContext {
   /**
-   * The base URL to be prepended to the request URL.
+   * The content loader instance that initiated the load request
+   */
+  content: ContentLoader
+
+  /**
+   * The base URL to resolve asset URLs against.
    */
   baseUrl?: string
 
   /**
-   * The loader to use for this request. If not provided,
-   * the loader will be determined based on the URL and registered loaders.
+   * Abort signal to cancel the load request.
    */
-  loader?: AssetLoader
+  signal?: AbortSignal
+}
 
+export type LoadOptions = Omit<LoaderContext, 'content'> & {
   /**
    * The type hint of the asset to load. Can be a file extension or a MIME type.
    *
@@ -25,38 +40,46 @@ export interface LoadOptions {
    * Useful if the type cannot be determined from the URL
    */
   type?: string
+}
 
+export type TransformLoadOptions<T, R> = LoadOptions & {
   /**
-   * Abort signal to cancel the load request.
+   * Optional function to transform the loaded asset
    */
-  signal?: AbortSignal
+  transform: (data: T) => R
+}
 
-  [key: string]: any
+export interface ContentLoaderOptions {
+  http?: HttpClient
+  executor?: AsyncExecutor
+  registry?: AssetLoaderRegistry
 }
 
 export class ContentLoader {
   /**
    * Registry for loader types
    */
-  public static loaders = new LoaderTypeRegistry()
+  public static loaders = new AssetLoaderRegistry()
 
   /**
    * Registers a loader type
    */
-  public static registerLoader(descriptor: LoaderTypeDescriptor): void {
+  public static registerLoader(descriptor: LoaderEntry | LoaderByExtension): void {
     this.loaders.register(descriptor)
   }
 
   /**
    * Registry for material types
    */
-  public static materials = new MaterialTypeRegistry()
+  public static materials = new MaterialRegistry()
 
   /**
    * Registers a material type
    */
-  public static registerMaterial(descriptor: MaterialTypeDescriptor): void {
-    this.materials.register(descriptor)
+  public static registerMaterial(type: MaterialType, match: MaterialMatcher): void
+  public static registerMaterial(spec: MaterialFactory): void
+  public static registerMaterial(spec: MaterialFactory | MaterialType, match?: MaterialMatcher): void {
+    this.materials.register(spec as any, match)
   }
 
   /**
@@ -67,40 +90,60 @@ export class ContentLoader {
   /**
    * The http client instance
    */
-  public http = new HttpClient()
+  public http: HttpClient
 
   /**
    * Loader registry that take precedence over the static {@link ContentLoader.loaders}
    */
-  public loaders = new LoaderTypeRegistry()
+  public registry: AssetLoaderRegistry
+
+  /**
+   * Async executor used exclusively for leaf I/O tasks.
+   *
+   * @remarks
+   * Default implementation is {@link NaiveAsyncExecutor}, which executes all tasks immediately
+   * without concurrency limiting.
+   *
+   * This executor is intended only for *leaf-level operations*, such as:
+   * - network requests
+   * - texture decoding / uploading
+   * - GPU upload operations
+   *
+   * Orchestration tasks (e.g. model loading, material composition, dependency resolution)
+   * must NOT be executed through this executor otherwise it can introduce deadlocks due to
+   * nested dependency chains.
+   */
+  public executor: AsyncExecutor
 
   /**
    * Registers a loader type
    */
-  public registerLoader(descriptor: LoaderTypeDescriptor): void {
-    this.loaders.register(descriptor)
+  public registerLoader(descriptor: LoaderEntry | LoaderByExtension): void {
+    this.registry.register(descriptor)
   }
 
   /**
    * Material registry that take precedence over the static {@link ContentLoader.materials}
    */
-  public materials = new MaterialTypeRegistry()
+  public materials = new MaterialRegistry()
 
   /**
    * Registers a material type
    */
-  public registerMaterial(descriptor: MaterialTypeDescriptor): void {
-    this.materials.register(descriptor)
+  public registerMaterial(type: MaterialType, match: MaterialMatcher): void
+  public registerMaterial(spec: MaterialFactory): void
+  public registerMaterial(spec: MaterialFactory | MaterialType, match?: MaterialMatcher): void {
+    this.materials.register(spec as any, match)
   }
 
   /**
    * Resolves a request uri relative to the resource uri
    */
-  public resolveUrl(requestUri: string, context: LoaderContext) {
-    const assetUrl = context?.assetUrl || ''
-    const baseUrl = context?.baseUrl || ''
-    const result = Uri.merge(baseUrl ? '' : assetUrl, requestUri, baseUrl)
-    return result
+  public resolveUrl(requestUri: string, assetUri: string, baseUri?: string) {
+    if (baseUri) {
+      return mergeUri('', requestUri, baseUri)
+    }
+    return mergeUri(assetUri || '', requestUri)
   }
 
   /**
@@ -108,10 +151,13 @@ export class ContentLoader {
    */
   public cache = true
 
-  protected assetCache: Map<string, AssetContainer> = new Map()
+  protected assetCache: Map<string, Promise<AssetContainer>> = new Map()
 
-  public constructor(device: Device) {
+  public constructor(device: Device, options?: ContentLoaderOptions) {
     this.device = device
+    this.http = options?.http || new HttpClient()
+    this.registry = options?.registry || new AssetLoaderRegistry()
+    this.executor = options?.executor || new NaiveAsyncExecutor()
   }
 
   public async fetch(url: string, options: HttpOptions<'blob'>): Promise<HttpResponse<Blob>>
@@ -119,127 +165,103 @@ export class ContentLoader {
   public async fetch<T = any>(url: string, options: HttpOptions<'json'>): Promise<HttpResponse<T>>
   public async fetch(url: string, options: HttpOptions<'text'>): Promise<HttpResponse<string>>
   public async fetch(url: string, options: HttpOptions<any>): Promise<unknown> {
-    return this.http.fetch(url, options)
+    return this.executor.run(() => this.http.fetch(url, options), options?.signal)
   }
 
-  public async loadAsset(url: string, options?: LoadOptions): Promise<AssetContainer> {
-    url = this.resolveUrl(url, {
-      ...(options || {}),
-      assetUrl: '',
-      content: this,
-    })
+  /**
+   * Loads an asset container from the given URL
+   */
+  public async load(url: string, options?: LoadOptions): Promise<AssetContainer> {
+    url = this.resolveUrl(url, options?.baseUrl)
 
     if (this.cache && this.assetCache.has(url)) {
       return this.assetCache.get(url)
     }
 
-    const loader = await this.createLoader(url, options)
-    if (!loader) {
-      throw new Error(`No loader found for URL: ${url}`)
-    }
+    const context = this.createContext(options)
+    const promise = this.resolveLoader(url, options?.type).then((loader) => {
+      if (!loader) {
+        throw new Error(`No loader found for URL: ${url}`)
+      }
 
-    const request = loader.load(url, {
-      ...(options || {}),
-      assetUrl: url,
-      content: this,
+      return loader.load(url, context)
     })
 
     if (this.cache) {
-      request.then((asset) => {
-        this.assetCache.set(url, asset)
-      })
+      this.assetCache.set(url, promise)
     }
-    return request
+
+    return promise
   }
 
-  /**
-   * Loads the asset from the given URL and creates a texture from the first texture entry
-   */
-  public async loadTexture(url: string, options?: LoadOptions): Promise<Texture> {
-    const asset = await this.loadAsset(url, options)
-    const input = asset.textures?.[0]
-    if (!input) {
-      throw new Error(`No texture found in asset loaded from: ${url}`)
+  public async loadTexture(url: string, options?: LoadOptions): Promise<Texture>
+  public async loadTexture<R>(url: string, options?: TransformLoadOptions<TextureOptions, R>): Promise<R>
+  public async loadTexture<R>(url: string, options?: TransformLoadOptions<TextureOptions, R>): Promise<R> {
+    const container = await this.load(url, options)
+    const data = await container.loadTexture(0, this.createContext(options))
+    if (options?.transform) {
+      return options?.transform(data)
     }
-    return this.device.createTexture(asset.textures[0])
+    return this.transformTexture(data) as R
   }
-
-  /**
-   * Loads the asset from the given URL and assembles a model instance
-   */
-  public async loadModel(url: string, options?: LoadOptions): Promise<Model> {
-    const asset = await this.loadAsset(url, options)
-    return this.createModel(asset)
-  }
-
-  /**
-   * Loads the asset from the given URL and creates a material from the first material entry
-   */
+  public async loadMaterial(url: string, options?: LoadOptions): Promise<Material>
+  public async loadMaterial<T extends Material = Material>(url: string, options?: LoadOptions): Promise<T>
   public async loadMaterial(url: string, options?: LoadOptions): Promise<Material> {
-    const asset = await this.loadAsset(url, options)
-    if (!asset.materials?.length) {
-      throw new Error(`No materials found in asset loaded from: ${url}`)
+    const container = await this.load(url, options)
+    const data = await container.loadMaterial(0, this.createContext(options))
+    return this.createMaterial(data)
+  }
+
+  public async loadModel(url: string, options?: LoadOptions): Promise<Model>
+  public async loadModel<R>(url: string, options?: TransformLoadOptions<ModelOptions, R>): Promise<R>
+  public async loadModel<R>(url: string, options?: TransformLoadOptions<ModelOptions, R>): Promise<R> {
+    const container = await this.load(url, options)
+    const data = await container.loadModel(0, this.createContext(options))
+    if (options?.transform) {
+      return options?.transform(data)
     }
-    return this.createMaterial(asset.materials[0])
+    return this.transformModel(data) as R
   }
 
-  public createTexture(options: TextureOptions): Texture {
-    return this.device.createTexture(options)
-  }
-
-  /**
-   * Creates a material from given options
-   *
-   * @remarks
-   * This detects the material type based on the `effectName` property in the options.
-   * If the `effectName` is not provided, it defaults to the base `Material` type.
-   * In this case the options must contain a technique and source code for the shader.
-   */
-  public createMaterial(options: MaterialOptions): Material {
-    let type: MaterialType = Material
-
-    if ('effectName' in options) {
-      const descriptor = this.findMaterialDescriptor(options.effectName)
-      if (!descriptor || !descriptor.type) {
-        if (options.effectName === 'BasicEffect') {
-          // special case, will fallback to a minimalistic shader
-        } else {
-          throw new Error(`No material type found for effect: ${options.effectName}`)
-        }
-      } else {
-        type = descriptor.type
-        if (descriptor.convert) {
-          options = descriptor.convert(options)
-        }
-        return new type(this.device, options)
-      }
-    }
-
-    return new type(this.device, options)
-  }
-
-  /**
-   * Creates a model from the given asset container
-   */
-  public createModel(options: AssetContainer): Model {
-    const meshes = (options.meshes || []).map((mesh) => {
+  public transformModel = (data: ModelOptions): Model => {
+    data = { ...data }
+    data.meshes = data.meshes.map((mesh) => {
       mesh = { ...mesh }
-      mesh.materials = (mesh.materials || []).map((options) => {
-        return this.createMaterial(options)
+      mesh.materials = mesh.materials.map((it) => {
+        return this.createMaterial(it)
       })
       return mesh
     })
-    return new Model(this.device, {
-      meshes,
-      name: options.name,
-      nodes: options.nodes,
-      scene: options.scene,
-      scenes: options.scenes,
-      skins: options.skins,
-      animations: options.animations,
-    })
+    return new Model(this.device, data)
   }
 
+  public createMaterial(options: Material | MaterialEffectOptions | MaterialOptions): Material {
+    if (!options) {
+      throw new Error('Material options are required')
+    }
+    if (options instanceof Material) {
+      return options
+    }
+    if ('effect' in options) {
+      return new Material<any>(null as any, options)
+    }
+
+    const entry = this.findMaterial(options)
+    if (entry) {
+      return entry.create(this.device, options)
+    }
+    if (options.factory) {
+      return options.factory(this.device, options)
+    }
+    throw new Error(`No material type found for asset: ${options.name || 'unknown'}`)
+  }
+
+  public transformTexture = (data: TextureOptions): Texture => {
+    if (isAquirableTextureOptions(data)) {
+      return this.device.acquireTexture(data)
+    }
+    return this.device.createTexture(data)
+  }
   /**
    * Creates a loader for the given URL
    *
@@ -247,57 +269,55 @@ export class ContentLoader {
    * If no loader can be determined from the URL or options,
    * it will perform a HEAD request to the URL to determine the content type.
    */
-  public async createLoader(url: string, options?: LoadOptions): Promise<AssetLoader> {
-    if (options?.loader) {
-      return options.loader
+  public async resolveLoader(url: string, type?: string): Promise<AssetLoader> {
+    let factory: LoaderFactory = null
+
+    if (type) {
+      factory = this.findLoader(type)
     }
-    let Loader: LoaderType = null
-    if (options?.type) {
-      Loader = this.findLoaderType(options.type)
+
+    if (!factory) {
+      const ext = extname(url).toLowerCase()
+      factory = this.findLoader(ext)
     }
-    if (!Loader) {
-      const ext = Uri.ext(url).toLowerCase()
-      Loader = this.findLoaderType(ext)
-    }
-    if (!Loader) {
+
+    if (!factory) {
       const res = await this.http.fetch(url, { method: 'HEAD' }).catch((err) => {
         // ignore as it's just unable to determine the content type
         // failed request is visible in the network tab
       })
       if (res) {
-        Loader = this.findLoaderType(res.contentType)
+        factory = this.findLoader(res.contentType)
       }
     }
-    if (Loader) {
-      return new Loader(this)
+
+    if (factory) {
+      return await factory(this)
     }
-    throw new Error(`No loader found for URL: ${url} with type: ${options?.type || 'unknown'}`)
+
+    throw new Error(`No loader found for URL: ${url} with type: ${type || 'unknown'}`)
   }
 
-  protected findLoaderType(type: string) {
+  public createContext(options?: LoadOptions | TransformLoadOptions<any, any>): LoaderContext {
+    const result = {
+      ...(options || {}),
+      content: this,
+    }
+    delete (result as any as TransformLoadOptions<any, any>).transform
+    return result
+  }
+
+  protected findLoader(type: string) {
     if (!type) {
       return null
     }
-    return this.loaders.findLoaderType(type) || ContentLoader.loaders.findLoaderType(type)
+    return this.registry.find(type) || ContentLoader.loaders.find(type)
   }
 
-  protected findMaterialDescriptor(effectName: string) {
-    if (!effectName) {
+  protected findMaterial(asset: MaterialOptions) {
+    if (!asset) {
       return null
     }
-    return this.materials.findDescriptor(effectName) || ContentLoader.materials.findDescriptor(effectName)
+    return this.materials.find(asset) || ContentLoader.materials.find(asset)
   }
 }
-
-export interface LoaderContext extends LoadOptions {
-  /**
-   * URL of the asset being loaded
-   */
-  assetUrl: string
-
-  /**
-   * The content loader instance that initiated the load request
-   */
-  content: ContentLoader
-}
-export { AssetLoader }

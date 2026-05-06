@@ -88,35 +88,35 @@ export interface Document {
    * @remarks
    * During rendering, the "map_Ka" value is multiplied by the "Ka" value.
    */
-  map_Ka?: MtlTextureData
+  map_Ka?: TextureData
   /**
    * Diffuse texture
    *
    * @remarks
    * During rendering, the "map_Kd" value is multiplied by the "Kd" value.
    */
-  map_Kd?: MtlTextureData
+  map_Kd?: TextureData
   /**
    * Specular texture
    *
    * @remarks
    * During rendering, the "map_Ks" value is multiplied by the "Ks" value.
    */
-  map_Ks?: MtlTextureData
+  map_Ks?: TextureData
   /**
    * Specular exponent texture
    *
    * @remarks
    * During rendering, the "map_Ns" value is multiplied by the "Ns" value.
    */
-  map_Ns?: MtlTextureData
+  map_Ns?: TextureData
   /**
    * Dissolve texture
    *
    * @remarks
    * During rendering, the "map_d" value is multiplied by the "d" value.
    */
-  map_d?: MtlTextureData
+  map_d?: TextureData
   /**
    * Turns on anti-aliasing of textures in this material without anti-aliasing all textures in the scene.
    */
@@ -124,15 +124,15 @@ export interface Document {
   /**
    * Bump texture
    */
-  bump?: MtlTextureData
+  bump?: TextureData
   /**
    * Displacement texture
    */
-  disp?: MtlTextureData
+  disp?: TextureData
   /**
    * Reflection texture
    */
-  refl?: MtlTextureData
+  refl?: TextureData
   /**
    * Decal mask texture
    *
@@ -142,10 +142,10 @@ export interface Document {
    *
    * `result_color=tex_color(tv)*decal(tv)+mtl_color*(1.0-decal(tv))`
    */
-  decal?: MtlTextureData
+  decal?: TextureData
 }
 
-export interface MtlTextureData {
+export interface TextureData {
   /**
    * The file name
    */
@@ -153,10 +153,10 @@ export interface MtlTextureData {
   /**
    * The texture options
    */
-  options?: MtlTextureOptions
+  options?: TextureOptions
 }
 
-export interface MtlTextureOptions {
+export interface TextureOptions {
   /**
    * Specifies a bump multiplier.
    *
@@ -299,7 +299,7 @@ function readTexture(data: string): any {
 }
 
 function readTextureOptions(data: string) {
-  const result: MtlTextureOptions = {
+  const result: TextureOptions = {
     blendu: true,
     blendv: true,
     clamp: false,

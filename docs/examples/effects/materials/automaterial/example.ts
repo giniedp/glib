@@ -63,7 +63,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       label: source.split('/')[3],
       value: device.createTexture({
         source: source,
-        sampler: SamplerState.LinearWrap
+        sampler: SamplerState.LinearWrap,
       }),
     })
   }
@@ -143,7 +143,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         format: '[n]rgb',
         value: color,
         hidden: () => !colorOn,
-        onInput: (it) => (color = material.EmissiveColor = it.value as number[]),
+        oninput: (it) => (color = material.EmissiveColor = it.value as number[]),
       })
     })
 
@@ -169,11 +169,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     })
   })
 
-
   function frame(time: number, dt: number) {
     device.resize()
     device.clear(0xff2e2620, 1)
-    device.cullState = CullState.CullClockWise;
+    device.cullState = CullState.CullClockWise
 
     camera.update(mouse, device)
 

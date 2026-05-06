@@ -1,7 +1,7 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export default {
-  utils: glsl`
+  utils: /* glsl */ `
     vec4 mod289(vec4 x) {
       return x - floor(x * (1.0 / 289.0)) * 289.0;
     }

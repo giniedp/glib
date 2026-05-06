@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 
 /**
  * Generates a sampler that always returns a constant value

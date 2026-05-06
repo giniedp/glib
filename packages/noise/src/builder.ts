@@ -1,10 +1,10 @@
-import { Sampler } from './types'
+import type { Sampler } from './types'
 
-import { fractal, FractalParams, hybridMultifractal, multifractal, ridgedMultifractal } from './fractal'
+import { fractal, type FractalParams, hybridMultifractal, multifractal, ridgedMultifractal } from './fractal'
 import { scale, shift } from './modifier'
 
-import { DistanceFunc, manhattanDistance } from './distance'
-import { cellNoise, latticeNoise, LatticeNoiseOptions, perlinNoise, simplexNoise, valueNoise } from './noise'
+import { type DistanceFunc, manhattanDistance } from './distance'
+import { cellNoise, latticeNoise, type LatticeNoiseOptions, perlinNoise, simplexNoise, valueNoise } from './noise'
 import { abs, add, clamp, max, min, multiply, negate, sinus, subtract } from './operator'
 
 /**
@@ -13,7 +13,6 @@ import { abs, add, clamp, max, min, multiply, negate, sinus, subtract } from './
  * @public
  */
 export class Noise {
-
   public static lattice(options: LatticeNoiseOptions = {}): Noise {
     return new Noise(latticeNoise(options))
   }
@@ -34,8 +33,9 @@ export class Noise {
     return new Noise(cellNoise(distance))
   }
 
-  constructor(public sampler: Sampler) {
-    //
+  public sampler: Sampler
+  constructor(sampler: Sampler) {
+    this.sampler = sampler
   }
 
   //

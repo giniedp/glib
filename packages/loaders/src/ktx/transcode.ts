@@ -72,10 +72,10 @@ function transcodeKtx(file: KTX2File, capabilities: Capabilities): TextureData {
         facesList.push(target)
       }
       layerList.push({
-        faces: facesList
+        faces: facesList,
       })
     }
-    const info = file.getImageLevelInfo( level, 0, 0 );
+    const info = file.getImageLevelInfo(level, 0, 0)
     levelImages.push({
       width: info.width,
       height: info.height,
@@ -94,10 +94,11 @@ function transcodeKtx(file: KTX2File, capabilities: Capabilities): TextureData {
 function getTranscodeFormat(file: KTX2File, capabilities: Capabilities) {
   // https://github.com/KhronosGroup/3D-Formats-Guidelines/blob/main/KTXDeveloperGuide.md
   if (file.isETC1S()) {
-    if (file.getHasAlpha() && capabilities.textureCompressionEtc2) {
+    if (capabilities.textureCompressionEtc2) {
       return BasisTranscodeFormat.ETC2_RGBA
     }
     if (capabilities.textureCompressionEtc1) {
+      // should never fall into this for webgpu and webgl2
       return BasisTranscodeFormat.ETC1_RGB
     }
     if (capabilities.textureCompressionBptc) {

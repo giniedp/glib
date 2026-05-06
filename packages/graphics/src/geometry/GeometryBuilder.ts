@@ -2,8 +2,8 @@ import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Color } from '../Color'
 import { Device } from '../Device'
 import { FrontFace } from '../enums'
-import { BufferOptions } from '../resources'
-import { AttributeSemantic, vertexAttribute, VertexAttribute, vertexLayout, VertexLayout } from '../VertexLayout'
+import { BufferOptions, PlainBufferData } from '../resources'
+import { AttributeSemantic, createVertexLayout, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
 import { Geometry, GeometryOptions } from './Geometry'
 import { GeometryUtil } from './GeometryUtil'
 import { Mesh, MeshOptions } from './Mesh'
@@ -83,6 +83,7 @@ export function buildGeometry<T>(
   }
   b.append(builder, options)
   b.calculateNormalsAndTangents()
+  b.calculateBoundings()
   return b.endGeometry(device, {
     name: options?.name || 'geometry',
     materialId: options?.materialId ?? 0,
@@ -110,14 +111,14 @@ export class GeometryBuilder {
    * Gets the indices in current state
    */
   public get indices(): ReadonlyArray<number> {
-    return this.indexBuffer.data
+    return this.indexBuffer.data.elements
   }
 
   /**
    * The index count in current state
    */
   public get indexCount(): number {
-    return this.indexBuffer.data.length
+    return this.indexBuffer.data.elements.length
   }
 
   /**
@@ -143,8 +144,8 @@ export class GeometryBuilder {
 
   private box: BoundingBox
   private sphere: BoundingSphere
-  private indexBuffer: BufferOptions<number[]>
-  private vertexBuffer: Array<BufferOptions<number[]>>
+  private indexBuffer: BufferOptions<PlainBufferData>
+  private vertexBuffer: Array<BufferOptions<PlainBufferData>>
   private primitiveCount: number
   private partUtil: GeometryUtil
 
@@ -158,12 +159,18 @@ export class GeometryBuilder {
    */
   constructor(options: GeometryBuilderOptions = {}) {
     if (Array.isArray(options.layout) && options.layout.length > 0) {
-      this.layout = options.layout.map(vertexLayout)
+      this.layout = options.layout.map((it) => {
+        if (Array.isArray(it)) {
+          return createVertexLayout(it)
+        } else {
+          return it as VertexLayout
+        }
+      })
     } else {
       this.layout = [
-        vertexLayout(['position', 'texture']),
-        vertexLayout(['normal']),
-        vertexLayout(['tangent', 'bitangent']),
+        createVertexLayout(['position', 'texture']),
+        createVertexLayout(['normal']),
+        createVertexLayout(['tangent', 'bitangent']),
       ]
     }
 
@@ -174,8 +181,10 @@ export class GeometryBuilder {
       normal: [0, 1, 0],
       tangent: [1, 0, 0],
       bitangent: [0, 0, 1],
-      color: [Color.Black.rgba],
+      color: [Color.packToRGBA(Color.Black)],
       texture: [0, 0],
+      blendindices: [0, 0, 0, 0],
+      blendweight: [0, 0, 0, 0],
       ...(options.defaults || {}),
     }
 
@@ -186,6 +195,8 @@ export class GeometryBuilder {
       bitangent: TransformMode.Normal,
       color: TransformMode.None,
       texture: TransformMode.None,
+      blendindices: TransformMode.None,
+      blendweight: TransformMode.None,
       ...(options.transformModes || {}),
     }
 
@@ -206,6 +217,16 @@ export class GeometryBuilder {
       this.transformStack[id] = transform.clone()
     }
     return id
+  }
+
+  public pushTransform(transform: Mat4): this {
+    this.beginTransform(transform)
+    return this
+  }
+
+  public popTransform(): this {
+    this.endTransform(this.transformStack.length - 1)
+    return this
   }
 
   /**
@@ -235,15 +256,20 @@ export class GeometryBuilder {
   private resetData() {
     this.indexBuffer = {
       type: 'IndexBuffer',
-      dataType: 'uint16',
-      data: [],
+      indexType: 'uint16',
+      data: {
+        type: 'uint16',
+        elements: [],
+      },
     }
-    this.vertexBuffer = this.layout.map((l): BufferOptions<number[]> => {
+    this.vertexBuffer = this.layout.map((l): BufferOptions<PlainBufferData> => {
       return {
-        layout: JSON.parse(JSON.stringify(l)),
+        vertexLayout: JSON.parse(JSON.stringify(l)),
         type: 'VertexBuffer',
-        dataType: 'float32',
-        data: [],
+        data: {
+          type: 'float32', // TODO: this should be derived from the vertex layout
+          elements: [],
+        },
       }
     })
 
@@ -271,7 +297,7 @@ export class GeometryBuilder {
    * Pushes a single index into current state.
    */
   public addIndex(index: number): this {
-    this.indexBuffer.data.push(index)
+    this.indexBuffer.data.elements.push(index)
     return this
   }
 
@@ -419,11 +445,23 @@ export class GeometryBuilder {
       result = options
     }
 
+    const isUint16 = this.indexBuffer.data.type === 'uint16'
+    const isAligned = !isUint16 || this.indexBuffer.data.elements.length % 2 === 0
+    const needsUint32 = !isAligned || this.indexBuffer.data.elements.length >= Math.pow(2, 16)
+    if (needsUint32) {
+      this.indexBuffer.indexType = 'uint32'
+      this.indexBuffer.data.type = 'uint32'
+    }
     options.materialId = options.materialId || 0
     options.indexBuffer = this.indexBuffer
     options.vertexBuffer = this.vertexBuffer
     options.boundingBox = this.box
     options.boundingSphere = this.sphere
+
+    options.indexBuffer.name = `${options.name || 'geometry'}_index`
+    options.vertexBuffer.forEach((vb, i) => {
+      vb.name = `${options.name || 'geometry'}_vertex_${i}`
+    })
 
     this.geometries.push(options)
     this.resetData()

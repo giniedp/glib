@@ -1,14 +1,26 @@
 import { BoundingBox } from './BoundingBox'
 import { BoundingCapsule } from './BoundingCapsule'
 import { BoundingSphere } from './BoundingSphere'
-import { PlaneIntersectionType, planeIntersectsBox, planeIntersectsCapsule, planeIntersectsPoint, planeIntersectsSphere } from './Collision'
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import {
+  PlaneIntersectionType,
+  planeBoxIntersection,
+  planeCapsuleIntersection,
+  planePointIntersection,
+  planeSphereIntersection,
+} from './Collision'
+import type { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 const keyLookup = {
-  0: 'x', 1: 'y', 2: 'z', 3: 'w',
-  x: 'x', y: 'y', z: 'z', w: 'w',
-} as Record<number|string, 'x'|'y'|'z'|'w'>
+  0: 'x',
+  1: 'y',
+  2: 'z',
+  3: 'w',
+  x: 'x',
+  y: 'y',
+  z: 'z',
+  w: 'w',
+} as Record<number | string, 'x' | 'y' | 'z' | 'w'>
 
 /**
  * An infinite plane
@@ -82,14 +94,14 @@ export class Plane implements IVec2, IVec3, IVec4 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, value: number): this {
+  public set(key: number | string, value: number): this {
     this[keyLookup[key]] = value
     return this
   }
   /**
    * Gets the component by using an index (or name)
    */
-  public get(key: number|string): number {
+  public get(key: number | string): number {
     return this[keyLookup[key]]
   }
 
@@ -185,12 +197,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @returns this vector for chaining
    */
   public static createFrom(other: IVec4): Plane {
-    return new Plane(
-      other.x,
-      other.y,
-      other.z,
-      other.w,
-    )
+    return new Plane(other.x, other.y, other.z, other.w)
   }
 
   /**
@@ -199,7 +206,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @param offset - The zero based index at which start reading the values
    * @returns this vector for chaining
    */
-  public initFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Plane {
+  public initFromBuffer(buffer: ArrayLike<number>, offset: number = 0): Plane {
     this.x = buffer[offset]
     this.y = buffer[offset + 1]
     this.z = buffer[offset + 2]
@@ -213,13 +220,8 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @param offset - The zero based index at which start reading the values
    * @returns this vector for chaining
    */
-  public static createFromBuffer(buffer: ArrayLike<number>, offset: number= 0): Plane {
-    return new Plane(
-      buffer[offset],
-      buffer[offset + 1],
-      buffer[offset + 2],
-      buffer[offset + 3],
-    )
+  public static createFromBuffer(buffer: ArrayLike<number>, offset: number = 0): Plane {
+    return new Plane(buffer[offset], buffer[offset + 1], buffer[offset + 2], buffer[offset + 3])
   }
 
   /**
@@ -261,7 +263,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
    */
   public toArray(): number[]
   public toArray<T>(buffer: T, offset: number): T
-  public toArray(buffer: number[] = [], offset: number= 0): number[] {
+  public toArray(buffer: number[] = [], offset: number = 0): number[] {
     buffer[offset] = this.x
     buffer[offset + 1] = this.y
     buffer[offset + 2] = this.z
@@ -277,7 +279,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
    */
   public static toArray(src: IVec4): number[]
   public static toArray<T>(src: IVec4, buffer: T, offset: number): T
-  public static toArray(src: IVec4, buffer: number[] = [], offset: number= 0): number[] {
+  public static toArray(src: IVec4, buffer: number[] = [], offset: number = 0): number[] {
     buffer[offset] = src.x
     buffer[offset + 1] = src.y
     buffer[offset + 2] = src.z
@@ -290,7 +292,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @returns true if components are equal, false otherwise
    */
   public equals(other: IVec4): boolean {
-    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
+    return this.x === other.x && this.y === other.y && this.z === other.z && this.w === other.w
   }
 
   /**
@@ -298,7 +300,7 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * @returns true if components are equal, false otherwise
    */
   public static equals(a: IVec4, b: IVec4): boolean {
-    return ((a.x === b.x) && (a.y === b.y) && (a.z === b.z) && (a.w === b.w))
+    return a.x === b.x && a.y === b.y && a.z === b.z && a.w === b.w
   }
 
   /**
@@ -325,18 +327,18 @@ export class Plane implements IVec2, IVec3, IVec4 {
   }
 
   public intersectsPoint(point: IVec3): PlaneIntersectionType {
-    return planeIntersectsPoint(this, point)
+    return planePointIntersection(this, point)
   }
 
   public intersectsSphere(sphere: BoundingSphere): PlaneIntersectionType {
-    return planeIntersectsSphere(this, sphere.center, sphere.radius)
+    return planeSphereIntersection(this, sphere.center, sphere.radius)
   }
 
   public intersectsBox(box: BoundingBox): PlaneIntersectionType {
-    return planeIntersectsBox(this, box.min, box.max)
+    return planeBoxIntersection(this, box.min, box.max)
   }
 
   public intersectsCapsule(capsule: BoundingCapsule): PlaneIntersectionType {
-    return planeIntersectsCapsule(this, capsule.start, capsule.end, capsule.radius)
+    return planeCapsuleIntersection(this, capsule.start, capsule.end, capsule.radius)
   }
 }

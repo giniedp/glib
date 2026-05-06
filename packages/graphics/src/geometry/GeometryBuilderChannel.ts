@@ -1,6 +1,6 @@
-import { Buffer, BufferOptions } from '../resources'
-import { VertexLayout } from '../VertexLayout'
 import { ArrayLike } from '@gglib/math'
+import { Buffer, BufferOptions, isPlainBufferData, PlainBufferData } from '../resources'
+import { countElements, countElementsBefore } from '../VertexLayout'
 
 /**
  * @public
@@ -33,6 +33,8 @@ export class GeometryBuilderChannel {
    */
   public readonly elements: number
 
+  public readonly packed: boolean
+
   /**
    * The semantic name of this channel
    */
@@ -53,18 +55,29 @@ export class GeometryBuilderChannel {
       throw new Error('"name" must not be empty')
     }
     if (buffer instanceof Buffer) {
-      this.data = Array.from(buffer.getData() as any)
+      throw new Error('Buffer instances are not supported yet')
+    }
+    if (!buffer.data) {
+      throw new Error('buffer data is required')
+    }
+    if (isPlainBufferData(buffer.data)) {
+      this.data = buffer.data.elements
     } else if (Array.isArray(buffer.data) || ArrayBuffer.isView(buffer.data)) {
       this.data = buffer.data as any
     } else {
-      throw new Error('not supported')
+      throw new Error(`unsupported buffer data type: ${typeof buffer.data}`)
     }
     this.name = name
     this.buffer = buffer
-    this.stride = VertexLayout.countElements(this.buffer.layout)
-    this.offset = VertexLayout.countElementsBefore(this.buffer.layout, name)
-    const attr = this.buffer.layout[name]
-    this.elements = attr.packed ? 1 : attr.elements
+    this.stride = countElements(this.buffer.vertexLayout)
+    this.offset = countElementsBefore(this.buffer.vertexLayout, name)
+    const attr = this.buffer.vertexLayout[name]
+    this.packed = !!attr.packed
+    if (attr.packed) {
+      this.elements = 1
+    } else {
+      this.elements = attr.elementCount
+    }
   }
 
   /**
@@ -141,10 +154,10 @@ export class GeometryBuilderChannel {
     }
   }
 
-  public static fromVertexBuffer(vBuffers: Array<BufferOptions | Buffer>): GeometryBuilderChannelMap {
+  public static fromVertexBuffer(vBuffers: Array<BufferOptions<PlainBufferData>>): GeometryBuilderChannelMap {
     const channels = {}
     for (let buffer of vBuffers) {
-      Object.keys(buffer.layout).forEach((name) => {
+      Object.keys(buffer.vertexLayout).forEach((name) => {
         channels[name] = new GeometryBuilderChannel(buffer, name)
       })
     }

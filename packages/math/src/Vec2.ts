@@ -1,9 +1,27 @@
-import { IVec2 } from './Types'
+import type { IVec2 } from './Types'
 
 const keyLookup = {
-  0: 'x', 1: 'y',
-  x: 'x', y: 'y',
-} as Record<number|string, 'x'|'y'>
+  0: 'x',
+  1: 'y',
+  x: 'x',
+  y: 'y',
+} as Record<number | string, 'x' | 'y'>
+
+export function vec2(data: number | IVec2 | number[] | null): IVec2 {
+  if (data == null) {
+    return { x: 0, y: 0 }
+  }
+  if (typeof data === 'number') {
+    return { x: data ?? 0, y: data ?? 0 }
+  }
+  if (Array.isArray(data)) {
+    return { x: data[0] ?? 0, y: data[1] ?? 0 }
+  }
+  return {
+    x: data.x ?? 0,
+    y: data.y ?? 0,
+  }
+}
 
 /**
  * A vector with two components.
@@ -11,7 +29,6 @@ const keyLookup = {
  * @public
  */
 export class Vec2 implements IVec2 {
-
   /**
    * The X component
    */
@@ -218,10 +235,7 @@ export class Vec2 implements IVec2 {
    * Initializes the components of this vector by taking the components from the given vector.
    */
   public static createFrom(other: IVec2): Vec2 {
-    return new Vec2(
-      other.x,
-      other.y,
-    )
+    return new Vec2(other.x, other.y)
   }
 
   /**
@@ -239,11 +253,8 @@ export class Vec2 implements IVec2 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public static createFromArray(buffer: { [key: number]: number }, offset: number= 0): Vec2 {
-    return new Vec2(
-      buffer[offset],
-      buffer[offset + 1],
-    )
+  public static createFromArray(buffer: { [key: number]: number }, offset: number = 0): Vec2 {
+    return new Vec2(buffer[offset], buffer[offset + 1])
   }
 
   /**
@@ -252,7 +263,7 @@ export class Vec2 implements IVec2 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public initFromArray(buffer: { [key: number]: number }, offset: number= 0): this {
+  public initFromArray(buffer: { [key: number]: number }, offset: number = 0): this {
     this.x = buffer[offset]
     this.y = buffer[offset + 1]
     return this
@@ -310,7 +321,7 @@ export class Vec2 implements IVec2 {
    */
   public toArray(): number[]
   public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     array[offset] = this.x
     array[offset + 1] = this.y
     return array
@@ -321,7 +332,7 @@ export class Vec2 implements IVec2 {
    * @returns true if components are equal, false otherwise
    */
   public static equals(a: IVec2, b: IVec2): boolean {
-    return ((a.x === b.x) && (a.y === b.y))
+    return a.x === b.x && a.y === b.y
   }
 
   /**
@@ -330,7 +341,7 @@ export class Vec2 implements IVec2 {
    * @returns true if components are equal, false otherwise
    */
   public equals(other: IVec2): boolean {
-    return ((this.x === other.x) && (this.y === other.y))
+    return this.x === other.x && this.y === other.y
   }
 
   /**
@@ -452,7 +463,7 @@ export class Vec2 implements IVec2 {
     const x = vec.x
     const y = vec.y
     const d = 1.0 / Math.sqrt(x * x + y * y)
-    out = (out || new Vec2())
+    out = out || new Vec2()
     out.x = x * d
     out.y = y * d
     return out
@@ -480,7 +491,7 @@ export class Vec2 implements IVec2 {
   public static invert(vec: IVec2): Vec2
   public static invert<T>(vec: IVec2, out: T): T & IVec2
   public static invert(vec: IVec2, out?: IVec2): IVec2 {
-    out = (out || new Vec2())
+    out = out || new Vec2()
     out.x = 1.0 / vec.x
     out.y = 1.0 / vec.y
     return out
@@ -880,8 +891,8 @@ export class Vec2 implements IVec2 {
     const maxX = max.x
     const maxY = max.y
     out = out || new Vec2()
-    out.x = x < minX ? minX : (x > maxX ? maxX : x)
-    out.y = y < minY ? minY : (y > maxY ? maxY : y)
+    out.x = x < minX ? minX : x > maxX ? maxX : x
+    out.y = y < minY ? minY : y > maxY ? maxY : y
     return out
   }
 
@@ -899,8 +910,8 @@ export class Vec2 implements IVec2 {
     const x = a.x
     const y = a.y
     out = out || new Vec2()
-    out.x = x < min ? min : (x > max ? max : x)
-    out.y = y < min ? min : (y > max ? max : y)
+    out.x = x < min ? min : x > max ? max : x
+    out.y = y < min ? min : y > max ? max : y
     return out
   }
 
@@ -1031,7 +1042,7 @@ export class Vec2 implements IVec2 {
   public static smooth(a: IVec2, b: IVec2, t: number): Vec2
   public static smooth<T>(a: IVec2, b: IVec2, t: number, out?: T): T & IVec2
   public static smooth(a: IVec2, b: IVec2, t: number, out?: IVec2): IVec2 {
-    t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
+    t = t > 1 ? 1 : t < 0 ? 0 : t
     t = t * t * (3 - 2 * t)
     const x = a.x
     const y = a.y

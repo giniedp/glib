@@ -1,12 +1,10 @@
 import { ContentLoader } from '@gglib/content'
-import { BlendState, CullState, DepthState, createDevice } from '@gglib/graphics'
+import { BasicMaterial, BlendState, Color, CullState, PlatformId, createDevice } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { STL } from '@gglib/loaders'
-import { LightParams } from '@gglib/materials'
-import { BoundingSphere, DEGREE_TO_RAD, Mat4, Transform, Vec3 } from '@gglib/math'
+import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { mountUi } from 'tweak-ui'
 
 const models = {
   Logo: '/logo/gglib.stl',
@@ -17,11 +15,13 @@ const models = {
   CubeASCII: '/models/stl/cube.ascii.stl',
 }
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({ canvas })
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
 
   const content = new ContentLoader(device)
   content.registerLoader(STL.Loader)
+  content.registerMaterial(BasicMaterial, () => true)
+
   const mouse = new Mouse({
     captureTarget: canvas,
     preventDefault: true,
@@ -48,10 +48,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         model = result
         model.update()
         sphere = model.boundingSphere.clone()
-        console.log(`Model loaded: ${url}`, {
-          model,
-          sphere,
-        })
       })
       .catch((e) => {
         model = null
@@ -78,7 +74,13 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     ).add(sphere.center)
 
     camera.view.initLookAt(camera.position, sphere.center, Vec3.Up).invert()
-    camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
+    camera.projection.initPerspectiveFieldOfView(
+      45 * DEGREE_TO_RAD,
+      device.output.aspectRatio,
+      0.01,
+      1000,
+      device.ndcMinZ,
+    )
   }
 
   function updateMaterials() {
@@ -87,46 +89,60 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     }
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
-        const params = material.parameters
-        params.World = world
-        params.View = camera.view
-        params.Projection = camera.projection
+        const mtl = material as BasicMaterial
+        mtl.World = world
+        mtl.View = camera.view
+        mtl.Projection = camera.projection
+        mtl.CameraPosition = camera.position
       }
     }
   }
 
-  function renderModel() {
+  const pass = device.renderPass
+  const rt = device.createRenderTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: device.output.format,
+    sampleCount: 4,
+  })
+  const dt = device.createDepthTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: 'DEPTH24_PLUS',
+    sampleCount: 4,
+  })
+  function frame() {
+    device.resize()
+    rt.resizeToMatch(device.output)
+    dt.resizeToMatch(device.output)
+
+    pass.flush()
+    pass.setRenderTarget(0, rt, 0, 0, device.output)
+    pass.setDepthTarget(dt)
+    pass.setCullState(CullState.CullBack)
+    pass.setRenderBlend(0, BlendState.Alpha)
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
+
     if (model) {
+      updateCamera()
+      updateMaterials()
       model.draw()
     }
+    pass.resolve()
+    pass.submit()
   }
 
-  function frame(time: number, dt: number) {
-    device.resize()
-    device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
-    device.clear(0xff2e2620, 1.0)
-
-    if (!model) {
-      return
-    }
-    updateCamera()
-    updateMaterials()
-    renderModel()
-  }
-
-  TweakUi.mount(tools, (ui) => {
+  mountUi(tools, (ui) => {
     loadModel(models.Bottle)
     ui.select({ model: models.Bottle }, 'model', {
       options: models,
-      onChange: (it, value) => loadModel(value as string),
+      onchange: (_, value) => loadModel(value as string),
     })
   })
 
-  const looper = loop(frame)
+  device.scheduler.schedule(frame)
   return () => {
-    looper.stop()
-    model?.dispose()
+    device.dispose()
   }
 }

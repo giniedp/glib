@@ -408,6 +408,7 @@ export interface Group {
 }
 
 export interface Document {
+  source?: string
   v?: Vertex[]
   vp?: VertexPoint[]
   vt?: VertexTexture[]
@@ -488,11 +489,12 @@ export function parse(input: string): Document {
         data[key] = append(data[key], readFloatArray(value) as any)
         break
       // FREE FORM DATA
-      case 'cstype':
+      case 'cstype': {
         const [rat, cstype] = value.split(' ')
         freeForm.cstype = (cstype == null ? rat : cstype) as any
         freeForm.rat = rat === 'rat'
         break
+      }
       case 'deg':
         ;[freeForm.degU, freeForm.degV] = readFloatArray(value, 2, 2)
         break
@@ -584,7 +586,7 @@ export function parse(input: string): Document {
         )
         break
       // FREE FORM ELEMENTS
-      case 'curv':
+      case 'curv': {
         const curvData = readFloatArray(value)
         body = []
         data.curv = append<CurveElement>(data.curv, {
@@ -606,7 +608,8 @@ export function parse(input: string): Document {
           }) as [VertexRef, ...VertexRef[]],
         })
         break
-      case 'curv2':
+      }
+      case 'curv2': {
         const curv2Data = readFloatArray(value)
         body = []
         data.curv2 = append<Curve2DElement>(data.curv2, {
@@ -626,7 +629,8 @@ export function parse(input: string): Document {
           }) as [PointRef, ...PointRef[]],
         })
         break
-      case 'surf':
+      }
+      case 'surf': {
         const surfData = value.split(' ')
         body = []
         data.surf = append<SurfaceElement>(data.surf, {
@@ -660,6 +664,7 @@ export function parse(input: string): Document {
           }) as [VertexTextureNormalRef, ...VertexTextureNormalRef[]],
         })
         break
+      }
       // FREE FORM BODY STATEMENTS
       case 'parm':
         appendIfExists(body, {

@@ -18,6 +18,7 @@ export function valueNoise(src: Sampler = latticeNoise()): Sampler {
     if (x.length === 3) {
       return valueNoise3D(src, x[0], x[1], x[2])
     }
+    return null
   }
 }
 
@@ -33,25 +34,24 @@ function valueNoise1D(noise: Sampler, x: number) {
 }
 
 function valueNoise2D(noise: Sampler, x: number, y: number) {
-    const ix = Math.floor(x)
-    const iy = Math.floor(y)
+  const ix = Math.floor(x)
+  const iy = Math.floor(y)
 
-    const fx = x - ix
-    const fy = y - iy
+  const fx = x - ix
+  const fy = y - iy
 
-    const xknots = []
-    const yknots = []
-    for (let j = -1; j <= 2; j++) {
-        for (let i = -1; i <= 2; i++) {
-            xknots[i + 1] = noise(ix + i, iy + j)
-        }
-        yknots[j + 1] = Spline(fx, xknots[0], xknots[1], xknots[2], xknots[3])
+  const xknots = []
+  const yknots = []
+  for (let j = -1; j <= 2; j++) {
+    for (let i = -1; i <= 2; i++) {
+      xknots[i + 1] = noise(ix + i, iy + j)
     }
-    return Spline(fy, yknots[0], yknots[1], yknots[2], yknots[3])
+    yknots[j + 1] = Spline(fx, xknots[0], xknots[1], xknots[2], xknots[3])
+  }
+  return Spline(fy, yknots[0], yknots[1], yknots[2], yknots[3])
 }
 
 function valueNoise3D(noise: Sampler, x: number, y: number, z: number) {
-
   const ix = Math.floor(x)
   const iy = Math.floor(y)
   const iz = Math.floor(z)

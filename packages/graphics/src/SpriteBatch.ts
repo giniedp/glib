@@ -1,57 +1,37 @@
-import { Mat4 } from '@gglib/math'
+import { Mat4, type IRect } from '@gglib/math'
+import { PooledList } from '@gglib/utils'
 import { Device } from './Device'
+import type { RenderEncoder } from './RenderEncoder'
+import { RingBuffer, ShaderModule } from './resources'
 import { Buffer } from './resources/Buffer'
-import { ShaderProgram } from './resources/ShaderProgram'
 import { Texture } from './resources/Texture'
-import { TextureImage } from './resources/TextureImage'
 import { VertexBuffer } from './resources/VertexBuffer'
-import { Sprite } from './Sprite'
-import { BlendStateParams } from './states/BlendState'
-import { CullStateParams } from './states/CullState'
-import { DepthStateParams } from './states/DepthState'
-import { ScissorStateParams } from './states/ScissorState'
-import { StencilStateParams } from './states/StencilState'
-import { ViewportStateParams } from './states/ViewportState'
-import { VertexLayout } from './VertexLayout'
+import { SpriteBuilder } from './Sprite'
+import { spriteBatchShader } from './SpriteBatch.shader'
+import { Renderable } from './types'
 
-const vertexShader = /* glsl */ `
-  precision highp float;
-  precision highp int;
+export enum SpriteMode {
+  Deferred = 0,
+  BackToFront = 1,
+  FrontToBack = 2,
+  Texture = 3,
+  // Immediate = 4,
+}
 
-  // @binding position
-  attribute vec3 vPosition;
-  // @binding texture
-  attribute vec2 vTexture;
-  // @binding color
-  // @default [1,0,0,1]
-  attribute vec4 vColor;
+function compareBackToFront(a: SpriteBuilder, b: SpriteBuilder): number {
+  return b.transform.elements[14] - a.transform.elements[14]
+}
 
-  // @binding ViewProjection
-  uniform mat4 uViewProjection;
+function compareFrontToBack(a: SpriteBuilder, b: SpriteBuilder): number {
+  return a.transform.elements[14] - b.transform.elements[14]
+}
 
-  varying vec2 texCoord;
-  varying vec4 texColor;
-
-  void main(void) {
-    texColor = vColor;
-    texCoord = vTexture;
-    gl_Position = uViewProjection * vec4(vPosition, 1);
-  }`
-
-const fragmentShader = /* glsl */ `
-  precision highp float;
-  precision highp int;
-
-  // @binding Texture
-  // @register 0
-  uniform sampler2D uSampler;
-
-  varying vec2 texCoord;
-  varying vec4 texColor;
-
-  void main(void) {
-    gl_FragColor = texture2D(uSampler, texCoord) * texColor;
-  }`
+function compareTexture(a: SpriteBuilder, b: SpriteBuilder): number {
+  if (a.texture === b.texture) {
+    return 0
+  }
+  return a.texture.uid < b.texture.uid ? -1 : 1
+}
 
 /**
  * Constructor options for {@link SpriteBatch}
@@ -66,292 +46,281 @@ export interface SpriteBatchOptions {
   /**
    * A custom shader that should be used for rendering the sprites
    */
-  program?: ShaderProgram
-}
-
-/**
- * Options for {@link SpriteBatch.begin}
- *
- * @public
- */
-export interface SpriteBatchBeginOptions {
-  sortMode?: any
-  /**
-   * The blend state
-   */
-  blendState?: BlendStateParams
-  /**
-   * The cull state
-   */
-  cullState?: CullStateParams
-  /**
-   * The depth state
-   */
-  depthState?: DepthStateParams
-  /**
-   * The stencil state
-   */
-  stencilState?: StencilStateParams
-  /**
-   * The scissor state
-   */
-  scissorState?: ScissorStateParams
-  /**
-   * The viewport state
-   */
-  viewportState?: ViewportStateParams
-  /**
-   * The viewProjection matrix to use for rendering
-   */
-  viewProjection?: Mat4
-  /**
-   * A custom shader that should be used for rendering the sprites
-   */
-  program?: ShaderProgram
+  program?: ShaderModule
 }
 
 /**
  * @public
  */
-export class SpriteBatch {
+export class SpriteBatch implements Renderable {
   private device: Device
-  private hasBegun: boolean
-  private spriteQueue: Sprite[]
+  private mode: SpriteMode
 
-  private arrayBuffer: ArrayBuffer
-  private vertexPositionView: Float32Array
-  private vertexTextureView: Float32Array
-  private vertexColorView: Int32Array
   private vertexBuffer: VertexBuffer
   private indexBuffer: Buffer
-  private mainProgram: ShaderProgram
-  private mainMatrix: Mat4
-  private program: ShaderProgram
+  private shader: ShaderModule
   private matrix: Mat4
 
-  private blendState: BlendStateParams
-  private cullState: CullStateParams
-  private depthState: DepthStateParams
-  private stencilState: StencilStateParams
-  private scissorState: ScissorStateParams
-  private viewportState: ViewportStateParams
-  private sortMode: any
-  private batchSize: number
-  private spritePool: Sprite[] = []
+  private pool = new PooledList<SpriteBuilder>(() => new SpriteBuilder())
+  private sprites: SpriteBuilder[] = []
 
-  constructor(device: Device, options: SpriteBatchOptions = {}) {
-    this.device = device
-    this.hasBegun = false
-    this.spriteQueue = []
-    this.batchSize = options.batchSize || 512
+  private batch: SpriteBuffer
 
-    const vertexLayout = VertexLayout.create(['position', 'texture', 'color'])
-    const sizeInBytes = VertexLayout.countBytes(vertexLayout)
-
-    this.arrayBuffer = new ArrayBuffer(this.batchSize * 4 * sizeInBytes)
-    this.vertexPositionView = new Float32Array(this.arrayBuffer)
-    this.vertexTextureView = new Float32Array(this.arrayBuffer)
-    this.vertexColorView = new Int32Array(this.arrayBuffer)
-    this.vertexBuffer = device.createVertexBuffer([
-      {
-        layout: vertexLayout,
-        data: this.arrayBuffer,
-        usage: 'Dynamic',
-      },
-    ])
-    this.mainProgram =
-      options.program ||
-      device.createProgram({
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader,
-      })
-    this.mainMatrix = Mat4.createIdentity()
-    const indexData = new Uint16Array(this.batchSize * 6)
-    let index = 0
-    for (let i = 0; i < indexData.length; i += 6, index += 4) {
-      indexData[i] = index
-      indexData[i + 1] = index + 1
-      indexData[i + 2] = index + 2
-
-      indexData[i + 3] = index + 1
-      indexData[i + 4] = index + 3
-      indexData[i + 5] = index + 2
-    }
-
-    this.indexBuffer = device.createIndexBuffer({
-      data: indexData,
-    })
+  public get size() {
+    return this.sprites.length
   }
 
-  public begin(options?: SpriteBatchBeginOptions) {
-    if (this.hasBegun) {
-      throw new Error('end() must be called before a new batch can be started with begin()')
-    }
+  public linearToSrgb: boolean = false
 
-    if (options) {
-      this.sortMode = options.sortMode ?? undefined
-      this.blendState = options.blendState ?? undefined
-      this.cullState = options.cullState ?? undefined
-      this.depthState = options.depthState ?? undefined
-      this.stencilState = options.stencilState ?? undefined
-      this.scissorState = options.scissorState ?? undefined
-      this.viewportState = options.viewportState ?? undefined
-    }
-    this.program = options?.program ?? this.mainProgram
-    this.matrix = options?.viewProjection ?? this.mainMatrix
+  public constructor(device: Device, options: SpriteBatchOptions = {}) {
+    this.device = device
+    this.batch = new SpriteBuffer({
+      capacity: options.batchSize || 512,
+    })
 
-    const viewWidth = (this.viewportState || this.device.viewportState).width
-    const viewHeight = (this.viewportState || this.device.viewportState).height
-    this.mainMatrix.initOrthographicOffCenter(0, viewWidth, viewHeight, 0, 0, 1)
+    this.vertexBuffer = this.batch.createVertexBuffer(device)
+    this.indexBuffer = device.createIndexBuffer({
+      data: new Uint16Array([0, 1, 2, 3]),
+    })
 
-    this.hasBegun = true
+    this.matrix = Mat4.createIdentity()
+    this.shader = options.program || device.createShaderModule(spriteBatchShader())
   }
 
   /**
+   * Prepares the batch for a new set of sprites.
+   * Call {@link SpriteBatch.next} to add sprites to the batch and {@link SpriteBatch.render} to draw them.
+   *
+   * @param mode
+   * @param matrix
+   */
+  public begin(mode?: SpriteMode, matrix?: Mat4) {
+    this.mode = mode ?? SpriteMode.Deferred
+    if (matrix) {
+      this.matrix.initFrom(matrix)
+    } else {
+      this.matrix.initOrthographicOffCenter(
+        0,
+        this.device.output.width,
+        this.device.output.height,
+        0,
+        0,
+        1,
+        this.device.ndcMinZ,
+      )
+    }
+    this.pool.clear()
+  }
+
+  public end() {
+    // TODO: sort
+    // this.sprites.sort()
+  }
+
+  /**
+   * Starts a new sprite with the given texture and returns it for configuration.
+   *
    * @param texture - The texture to draw
    */
-  public draw(texture: Texture | TextureImage): Sprite {
-    if (!this.hasBegun) {
-      throw new Error('begin() must be called before draw()')
-    }
+  public next(
+    texture: Texture,
+    source?: IRect,
+    dst?: IRect,
+    depth?: number,
+    angle?: number,
+    pivotX?: number,
+    pivotY?: number,
+  ): SpriteBuilder {
     if (!texture) {
       throw new Error('no texture given')
     }
 
-    const sprite = this.spritePool.pop() || new Sprite()
+    const sprite = this.pool.next()
     sprite.reset(texture)
-    this.spriteQueue.push(sprite)
+    if (source) {
+      sprite.source(source.x, source.y, source.width, source.height)
+    }
+    if (dst) {
+      sprite.destination(dst.x, dst.y, dst.width, dst.height, depth, angle, pivotX, pivotY)
+    }
     return sprite
   }
 
-  public end() {
-    if (!this.hasBegun) {
-      throw new Error('begin() must be called before end()')
-    }
-
-    this.commitRenderState()
-    this.drawBatch()
-
-    for (let sprite of this.spriteQueue) {
-      this.spritePool.push(sprite)
-    }
-    this.spriteQueue.length = 0
-    this.hasBegun = false
+  public draw() {
+    this.render(this.device.renderPass)
   }
 
-  private commitRenderState() {
-    let device = this.device
+  public render(pass: RenderEncoder) {
+    this.sprites.length = 0
+    this.pool.toArray(this.sprites)
+    const queue = this.sprites
 
-    if (this.blendState) {
-      device.blendState = this.blendState
+    switch (this.mode) {
+      case SpriteMode.BackToFront:
+        queue.sort(compareBackToFront)
+        break
+      case SpriteMode.FrontToBack:
+        queue.sort(compareFrontToBack)
+        break
+      case SpriteMode.Texture:
+        queue.sort(compareTexture)
+        break
     }
-    if (this.cullState) {
-      device.cullState = this.cullState
-    }
-    if (this.depthState) {
-      device.depthState = this.depthState
-    }
-    if (this.stencilState) {
-      device.stencilState = this.stencilState
-    }
-    if (this.scissorState) {
-      device.scissorState = this.scissorState
-    }
-    if (this.viewportState) {
-      device.viewportState = this.viewportState
-    }
-  }
 
-  private drawBatch() {
     let start = 0
-    let texture = null
-    let queue = this.spriteQueue
-
-    this.device.indexBuffer = this.indexBuffer
-    this.device.vertexBuffer = this.vertexBuffer
-    this.device.program = this.program
-    if (!this.program.isReady) {
-      return
-    }
+    let count = 0
+    let texture = queue[0]?.texture
     for (let i = 0; i < queue.length; i++) {
       if (texture !== queue[i].texture) {
-        if (i > start) {
-          this.device.program.setUniform('Texture', texture)
-          this.device.program.setUniform('ViewProjection', this.matrix)
-          this.drawSlice(start, i - start)
-        }
+        this.drawSlice(pass, queue, start, count, texture)
         texture = queue[i].texture
         start = i
+        count = 0
       }
+      count++
     }
-    if (queue.length > 0 && texture) {
-      this.device.program.setUniform('Texture', texture)
-      this.device.program.setUniform('ViewProjection', this.matrix)
-      this.drawSlice(start, queue.length - start)
+    if (count > 0 && texture) {
+      this.drawSlice(pass, queue, start, count, texture)
     }
   }
 
-  private drawSlice(start: number, length: number) {
-    if (length === 0) {
+  private drawSlice(
+    pass: RenderEncoder,
+    sprites: SpriteBuilder[],
+    spriteOffset: number,
+    spriteCount: number,
+    texture: Texture,
+  ) {
+    if (spriteCount <= 0 || !this.shader.isReady) {
       return
     }
 
-    const queue = this.spriteQueue
-    const end = start + length
-    while (start < end) {
-      let count = end - start
-      count = count > this.batchSize ? this.batchSize : count
+    this.shader.program.get('textureMap').setTexture(texture)
+    this.shader.program.get('uniforms.viewProjection').setMat4x4(this.matrix.elements)
+    this.shader.program.get('uniforms.toSrgb').setScalar(this.linearToSrgb ? 1 : 0)
+    this.shader.program.commit()
 
-      let offset = 0
-      for (let i = 0; i < count; i++) {
-        const sprite = queue[start + i]
-        // position
-        this.vertexPositionView[offset++] = sprite.vertex1.x
-        this.vertexPositionView[offset++] = sprite.vertex1.y
-        this.vertexPositionView[offset++] = sprite.vertex1.z
-        // texture
-        this.vertexTextureView[offset++] = sprite.uv1.x
-        this.vertexTextureView[offset++] = sprite.uv1.y
-        // color
-        this.vertexColorView[offset++] = sprite.color
-
-        // position
-        this.vertexPositionView[offset++] = sprite.vertex2.x
-        this.vertexPositionView[offset++] = sprite.vertex2.y
-        this.vertexPositionView[offset++] = sprite.vertex2.z
-        // texture
-        this.vertexTextureView[offset++] = sprite.uv2.x
-        this.vertexTextureView[offset++] = sprite.uv1.y
-        // color
-        this.vertexColorView[offset++] = sprite.color
-
-        // position
-        this.vertexPositionView[offset++] = sprite.vertex3.x
-        this.vertexPositionView[offset++] = sprite.vertex3.y
-        this.vertexPositionView[offset++] = sprite.vertex3.z
-        // texture
-        this.vertexTextureView[offset++] = sprite.uv1.x
-        this.vertexTextureView[offset++] = sprite.uv2.y
-        // color
-        this.vertexColorView[offset++] = sprite.color
-
-        // position
-        this.vertexPositionView[offset++] = sprite.vertex4.x
-        this.vertexPositionView[offset++] = sprite.vertex4.y
-        this.vertexPositionView[offset++] = sprite.vertex4.z
-        // texture
-        this.vertexTextureView[offset++] = sprite.uv2.x
-        this.vertexTextureView[offset++] = sprite.uv2.y
-        // color
-        this.vertexColorView[offset++] = sprite.color
+    const spriteEnd = spriteOffset + spriteCount
+    const batch = this.batch
+    while (spriteOffset < spriteEnd) {
+      if (batch.instanceOffset >= batch.capacity) {
+        batch.reset()
       }
-      start += count
-      this.vertexBuffer.buffers[0].setSubData(0, this.arrayBuffer)
-      this.device.drawIndexedPrimitives('TriangleList', 0, count * 6)
+
+      const instanceCount = batch.remainingContiguous(spriteEnd - spriteOffset)
+      const byteOffset = batch.byteOffset
+      const byteSize = instanceCount * batch.strideInBytes
+
+      for (let i = 0; i < instanceCount; i++) {
+        batch.push(sprites[spriteOffset++])
+      }
+
+      this.vertexBuffer.buffers[1].setSubData(0, batch.data.buffer, byteOffset, byteSize)
+      pass.setProgram(this.shader.program)
+      pass.setIndexBuffer(this.indexBuffer)
+      pass.setVertexBuffer(this.vertexBuffer)
+      pass.setPrimitiveType('TriangleStrip')
+      pass.draw(4, instanceCount, 0, 0)
+      pass.submit()
     }
   }
 
   public dispose() {
-    this.program.dispose()
+    this.shader.dispose()
+    this.sprites.length = 0
+  }
+}
+
+export class SpriteBuffer extends RingBuffer<SpriteBuilder, Float32Array<ArrayBuffer>> {
+  public readonly data: Float32Array<ArrayBuffer>
+  public readonly capacity: number
+  public readonly strideInBytes: number = 96
+  public readonly strideElements: number = this.strideInBytes / Float32Array.BYTES_PER_ELEMENT
+
+  public constructor({ capacity }: { capacity: number }) {
+    super()
+    if (capacity <= 0) {
+      throw new Error('capacity must be greater than 0')
+    }
+
+    this.capacity = capacity
+    this.data = new Float32Array(this.capacity * this.strideElements)
+  }
+
+  protected write(value: SpriteBuilder): void {
+    let offset = this.instanceOffset * this.strideElements
+
+    value.transform.toArray(this.data, offset)
+    offset += 16
+
+    this.data[offset++] = value.uv.x
+    this.data[offset++] = value.uv.y
+    this.data[offset++] = value.uv.z
+    this.data[offset++] = value.uv.w
+
+    this.data[offset++] = value.color.x
+    this.data[offset++] = value.color.y
+    this.data[offset++] = value.color.z
+    this.data[offset++] = value.color.w
+  }
+
+  public createVertexBuffer(device: Device): VertexBuffer {
+    return device.createVertexBuffer([
+      {
+        name: 'SpriteBatch Positions',
+        vertexLayout: {
+          position: {
+            elementType: 'float32',
+            elementCount: 3,
+            byteOffset: 0,
+          },
+        },
+        // prettier-ignore
+        data: new Float32Array([
+          -0.5, -0.5, 0,
+           0.5, -0.5, 0,
+          -0.5,  0.5, 0,
+           0.5,  0.5, 0
+        ]),
+      },
+      {
+        name: 'SpriteBatch Data',
+        vertexLayout: {
+          aTransform0: {
+            elementType: 'float32',
+            elementCount: 4,
+            byteOffset: 0,
+          },
+          aTransform1: {
+            elementType: 'float32',
+            elementCount: 4,
+            byteOffset: 16,
+          },
+          aTransform2: {
+            elementType: 'float32',
+            elementCount: 4,
+            byteOffset: 32,
+          },
+          aTransform3: {
+            elementType: 'float32',
+            elementCount: 4,
+            byteOffset: 48,
+          },
+          aTexcoord: {
+            elementType: 'float32',
+            elementCount: 4,
+            byteOffset: 64,
+          },
+          aColor: {
+            elementType: 'float32',
+            elementCount: 4,
+            byteOffset: 80,
+          },
+        },
+        instanced: true,
+        stride: this.strideInBytes,
+        size: this.sizeInBytes,
+      },
+    ])
   }
 }

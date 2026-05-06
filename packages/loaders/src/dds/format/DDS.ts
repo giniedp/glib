@@ -35,6 +35,12 @@ export interface PixelFormat {
   ABitMask: number // uint32
 }
 
+export interface ImageFace {
+  data: Uint8Array
+  rows: number
+  bytesPerRow: number
+}
+
 export enum DXGI_FORMAT {
   DXGI_FORMAT_UNKNOWN = 0,
   DXGI_FORMAT_R32G32B32A32_TYPELESS = 1,
@@ -211,7 +217,7 @@ function readHeader(reader: BinaryReader): Header {
       reader.readUInt(),
       reader.readUInt(),
       reader.readUInt(),
-      reader.readUInt()
+      reader.readUInt(),
     ],
     PixelFormat: {
       Size: reader.readUInt(),
@@ -779,17 +785,21 @@ function readImages({
   data: ArrayBuffer
 }) {
   let position = 0
-  const mipmaps: Array<{ faces: Array<Uint8Array<ArrayBuffer>> }> = []
+  const mipmaps: Array<{ faces: Array<ImageFace> }> = []
 
   for (let j = 0; j < arraySize; j++) {
     let w = width
     let h = height
     let d = depth
     for (let i = 0; i < mipCount; i++) {
-      const numBytes = getSurfaceInfo(w, h, format).numBytes
-      const size = numBytes * d
+      const info = getSurfaceInfo(w, h, format)
+      const size = info.numBytes * d
       mipmaps[i] ||= { faces: [] }
-      mipmaps[i].faces.push(new Uint8Array(data, position, size))
+      mipmaps[i].faces.push({
+        data: new Uint8Array(data, position, size),
+        rows: info.numRows,
+        bytesPerRow: info.rowBytes,
+      })
       position += size
 
       w = w >> 1

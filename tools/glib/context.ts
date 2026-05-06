@@ -23,7 +23,7 @@ export class GlibBuildContext extends WorkspacesRootContext {
     return this.cashedPackages
   }
 
-  private cashedPackages: GlibPackageContext[]
+  private cashedPackages?: GlibPackageContext[]
 
   public packagesDir(...subPath: string[]) {
     return this.subPath('packages', ...subPath)
@@ -54,7 +54,7 @@ export class GlibPackageContext extends WorkspacePackageContext {
       prefix +
       '.' +
       this.baseName
-        .split(/[\/\\-]/)
+        .split(/[/\\-]/)
         .map((it) => it[0].toUpperCase() + it.substr(1))
         .join('')
     )
@@ -68,7 +68,14 @@ export class GlibPackageContext extends WorkspacePackageContext {
     return this.subPath('tsconfig.json')
   }
 
-  constructor(private context: GlibBuildContext, public readonly pkgDir: string) {
+  public get tsconfigBuildPath() {
+    return this.subPath('tsconfig.build.json')
+  }
+
+  constructor(
+    private context: GlibBuildContext,
+    public readonly pkgDir: string,
+  ) {
     super(context, pkgDir)
   }
 
@@ -87,4 +94,4 @@ export class GlibPackageContext extends WorkspacePackageContext {
   }
 }
 
-export const project = new GlibBuildContext(path.join(__dirname, "../../"))
+export const project = new GlibBuildContext(path.join(__dirname, '../../'))

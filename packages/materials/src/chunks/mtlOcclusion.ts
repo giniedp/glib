@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control occlusion mapping.
@@ -18,7 +18,7 @@ export interface MtlOcclusionDefs {
  * @public
  */
 export const MTL_OCCLUSION: ShaderChunkSet<MtlOcclusionDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef OCCLUSION_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE)
         #define V_TEXTURE
@@ -33,7 +33,7 @@ export const MTL_OCCLUSION: ShaderChunkSet<MtlOcclusionDefs> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef OCCLUSION_MAP
     // @binding  OcclusionMap
     uniform sampler2D uOcclusionMap;
@@ -49,7 +49,7 @@ export const MTL_OCCLUSION: ShaderChunkSet<MtlOcclusionDefs> = {
     uniform mat3 uOcclusionMapTransform;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef OCCLUSION_MAP
     vec2 getOcclusionMapUV() {
       vec2 result = OCCLUSION_MAP_UV;
@@ -76,7 +76,7 @@ export const MTL_OCCLUSION: ShaderChunkSet<MtlOcclusionDefs> = {
       return color;
     }
   `,
-  fs_shade_after: glsl`
+  fs_shade_after: /* glsl */ `
     #ifdef OCCLUSION_MAP
     color.rgb *= getOcclusionColor(uvOffset);
     #endif

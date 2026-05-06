@@ -1,4 +1,4 @@
-import { assembleProgram, ShaderProgramOptions } from '@gglib/graphics'
+import { assembleProgram, ShaderDefines, ShaderModuleOptions } from '@gglib/graphics'
 
 import {
   FogDefs,
@@ -121,16 +121,45 @@ export type MaterialProgramDefs = FogDefs &
   VSkinningDefs &
   VTextureDefs
 
+export const MATERIAL_CACHE = new Map<string, ShaderModuleOptions>()
+
 /**
  * Assembles the vertex and fragment shader source code for a material program.
  *
  * @public
  */
-export function materialProgram(defines: MaterialProgramDefs): ShaderProgramOptions {
+export function materialProgram(defines: MaterialProgramDefs, cache?: boolean): ShaderModuleOptions {
+  // const cacheKey = cache ? createCacheKey(defines) : null
+  // if (cacheKey && MATERIAL_CACHE.has(cacheKey)) {
+  //   const cached = MATERIAL_CACHE.get(cacheKey)
+  //   return {
+  //     glsl: {
+  //       vertex: cached['glsl'].vertex,
+  //       fragment: cached['glsl'].fragment,
+  //     },
+  //   }
+  // }
+
   const chunks = Object.values(MATERIAL_CHUNKS).filter((it) => typeof it === 'object')
-  return assembleProgram({
+  const result = assembleProgram({
     template: MATERIAL_CHUNKS.BASE,
     chunks,
     defines,
   })
+
+  // if (cacheKey) {
+  //   MATERIAL_CACHE.set(cacheKey, {
+  //     vertexShader: result.vertexShader,
+  //     fragmentShader: result.fragmentShader,
+  //   })
+  // }
+  return result
+}
+
+function createCacheKey(defines: ShaderDefines) {
+  return ''.concat(
+    ...Object.keys(defines)
+      .sort()
+      .map((key) => `${key}:${defines[key]}`),
+  )
 }

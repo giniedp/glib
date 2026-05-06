@@ -1,30 +1,56 @@
-import { IVec2, IVec3, Mat3, Mat4, Quat, Vec2, Vec3 } from '@gglib/math'
-import { Color } from './Color'
-import { Texture } from './resources'
-import { TextureImage } from './resources/TextureImage'
+import { IRect, type IVec4, Mat4, Quat, Vec4 } from '@gglib/math'
+import { type Texture } from './resources'
+
+export interface Sprite {
+  texture: Texture
+  color?: IVec4
+
+  source: IRect
+  flipX?: boolean
+  flipY?: boolean
+
+  destination: IRect
+  depth?: number
+  angle?: number
+  pivotX?: number
+  pivotY?: number
+
+  transform?: Mat4
+}
 
 /**
  * @public
  */
-export class Sprite {
-  public texture: Texture | TextureImage
-  public color: number = 0
-  public readonly uv1: IVec2 = Vec2.init({}, 0, 0)
-  public readonly uv2: IVec2 = Vec2.init({}, 0, 1)
-  public readonly vertex1: IVec3 = Vec3.init({}, 0, 1, 0)
-  public readonly vertex2: IVec3 = Vec3.init({}, 1, 1, 0)
-  public readonly vertex3: IVec3 = Vec3.init({}, 0, 0, 0)
-  public readonly vertex4: IVec3 = Vec3.init({}, 1, 0, 0)
+export class SpriteBuilder {
+  public texture: Texture
+  public readonly color: IVec4 = Vec4.init({}, 1, 1, 1, 1)
+  public readonly transform = Mat4.createIdentity()
+  public readonly uv: IVec4 = Vec4.init({}, 0, 0, 1, 1)
 
-  public reset(texture: Texture | TextureImage): this {
+  public reset(texture: Texture): this {
     this.texture = texture
-    this.color = 0xffffffff
-    Vec2.init(this.uv1, 0, 0)
-    Vec2.init(this.uv2, 1, 1)
-    Vec3.init(this.vertex1, -0.5, 0.5, 0)
-    Vec3.init(this.vertex2, 0.5, 0.5, 0)
-    Vec3.init(this.vertex3, -0.5, -0.5, 0)
-    Vec3.init(this.vertex4, 0.5, -0.5, 0)
+    Vec4.init(this.color, 1, 1, 1, 1)
+    Vec4.init(this.uv, 0, 0, 1, 1)
+    this.transform.initIdentity()
+    return this
+  }
+
+  public set(data: Sprite): this {
+    this.texture = data.texture
+    if (data.color) {
+      Vec4.initFrom(this.color, data.color)
+    } else {
+      Vec4.init(this.color, 1, 1, 1, 1)
+    }
+    this.source(data.source.x, data.source.y, data.source.width, data.source.height, data.flipX, data.flipY)
+    this.destination(
+      data.destination.x,
+      data.destination.y,
+      data.destination.width,
+      data.destination.height,
+      data.depth,
+    )
+    this.rotate(data.angle, data.pivotX, data.pivotY)
     return this
   }
 
@@ -34,12 +60,8 @@ export class Sprite {
    * @remarks
    * This will override any previously set alpha value
    */
-  public tint(color: number | Color): this {
-    if (color instanceof Color) {
-      this.color = color.abgr
-    } else {
-      this.color = color
-    }
+  public tint(color: IVec4): this {
+    Vec4.initFrom(this.color, color)
     return this
   }
 
@@ -50,7 +72,7 @@ export class Sprite {
    * If the sprite should receive a tint color, the `color()` must be called first.
    */
   public alpha(alpha: number): this {
-    this.color = ((this.color || 0) & 0x00ffffff) | (((alpha * 255) & 0xff) << 24) // tslint:disable-line
+    this.color.w = alpha
     return this
   }
 
@@ -76,18 +98,18 @@ export class Sprite {
     const texelX = 1 / tex.width
     const texelY = 1 / tex.height
     if (flipX) {
-      this.uv2.x = x * texelX
-      this.uv1.x = (x + width) * texelX
+      this.uv.z = x * texelX
+      this.uv.x = (x + width) * texelX
     } else {
-      this.uv1.x = x * texelX
-      this.uv2.x = (x + width) * texelX
+      this.uv.x = x * texelX
+      this.uv.z = (x + width) * texelX
     }
     if (flipY) {
-      this.uv2.y = y * texelY
-      this.uv1.y = (y + height) * texelY
+      this.uv.w = y * texelY
+      this.uv.y = (y + height) * texelY
     } else {
-      this.uv1.y = y * texelY
-      this.uv2.y = (y + height) * texelY
+      this.uv.y = y * texelY
+      this.uv.w = (y + height) * texelY
     }
     return this
   }
@@ -95,16 +117,20 @@ export class Sprite {
   /**
    * Flips x texture coordinates
    */
-  public flipX() {
-    ;[this.uv1.x, this.uv2.x] = [this.uv2.x, this.uv1.x]
+  public flipX(flip: boolean = true) {
+    if (flip) {
+      ;[this.uv.x, this.uv.z] = [this.uv.z, this.uv.x]
+    }
     return this
   }
 
   /**
    * Flips y texture coordinates
    */
-  public flipY() {
-    ;[this.uv1.y, this.uv2.y] = [this.uv2.y, this.uv1.y]
+  public flipY(flip: boolean = true) {
+    if (flip) {
+      ;[this.uv.y, this.uv.w] = [this.uv.w, this.uv.y]
+    }
     return this
   }
 
@@ -131,64 +157,58 @@ export class Sprite {
     pivotY?: number,
   ) {
     if (width == null) {
-      width = (this.uv2.x - this.uv1.x) * this.texture.width
+      width = (this.uv.z - this.uv.x) * this.texture.width
     }
     if (height == null) {
-      height = (this.uv2.y - this.uv1.y) * this.texture.height
+      height = (this.uv.w - this.uv.y) * this.texture.height
     }
     if (depth == null) {
       depth = 0
     }
+
+    this.transform.initScaleXYZ(width, height, 1)
+    this.transform.setTranslationXYZ(x + width * 0.5, y + height * 0.5, -depth)
+
     if (angle) {
-      const cos = Math.cos(angle)
-      const sin = Math.sin(angle)
-      const dx = pivotX || 0
-      const dy = pivotY || 0
-
-      let cX = x + dx
-      let cY = y + dy
-      let p1X = x - cX
-      let p1Y = y - cY
-      let p2X = x + width - cX
-      let p2Y = y + height - cY
-
-      Vec3.init(this.vertex1, cX + p1X * cos - p1Y * sin, cY + p1X * sin + p1Y * cos, depth)
-
-      Vec3.init(this.vertex2, cX + p2X * cos - p1Y * sin, cY + p2X * sin + p1Y * cos, depth)
-
-      Vec3.init(this.vertex3, cX + p1X * cos - p2Y * sin, cY + p1X * sin + p2Y * cos, depth)
-
-      Vec3.init(this.vertex4, cX + p2X * cos - p2Y * sin, cY + p2X * sin + p2Y * cos, depth)
-    } else {
-      Vec3.init(this.vertex1, x, y, depth)
-      Vec3.init(this.vertex2, x + width, y, depth)
-      Vec3.init(this.vertex3, x, y + height, depth)
-      Vec3.init(this.vertex4, x + width, y + height, depth)
+      this.rotate(angle, pivotX, pivotY)
     }
     return this
   }
 
-  public transformMat4(m: Mat4): this {
-    m.transformV3(this.vertex1)
-    m.transformV3(this.vertex2)
-    m.transformV3(this.vertex3)
-    m.transformV3(this.vertex4)
+  public rotate(angle: number, pivotX?: number, pivotY?: number): this {
+    pivotX = (pivotX ?? 0.5) - 0.5
+    pivotY = (pivotY ?? 0.5) - 0.5
+    this.transform.translateXYZ(pivotX || 0, pivotY || 0, 0)
+    this.transform.rotateZ(angle || 0)
+    this.transform.translateXYZ(-pivotX || 0, -pivotY || 0, 0)
     return this
   }
 
-  public transformMat3(m: Mat3): this {
-    m.transform(this.vertex1)
-    m.transform(this.vertex2)
-    m.transform(this.vertex3)
-    m.transform(this.vertex4)
+  public transformMat4(m: Mat4): this {
+    this.transform.premultiply(m)
     return this
   }
 
   public transformQuat(q: Quat): this {
-    q.transform(this.vertex1)
-    q.transform(this.vertex2)
-    q.transform(this.vertex3)
-    q.transform(this.vertex4)
+    this.transform.rotateQuaternion(q.x, q.y, q.z, q.w)
+    return this
+  }
+
+  public rotateX(angle: number, pivotX?: number, pivotY?: number): this {
+    pivotX = (pivotX ?? 0.5) - 0.5
+    pivotY = (pivotY ?? 0.5) - 0.5
+    this.transform.translateXYZ(pivotX || 0, pivotY || 0, 0)
+    this.transform.rotateX(angle)
+    this.transform.translateXYZ(-pivotX || 0, -pivotY || 0, 0)
+    return this
+  }
+
+  public rotateY(angle: number, pivotX?: number, pivotY?: number): this {
+    pivotX = (pivotX ?? 0.5) - 0.5
+    pivotY = (pivotY ?? 0.5) - 0.5
+    this.transform.translateXYZ(pivotX || 0, pivotY || 0, 0)
+    this.transform.rotateY(angle)
+    this.transform.translateXYZ(-pivotX || 0, -pivotY || 0, 0)
     return this
   }
 }

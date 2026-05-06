@@ -1,34 +1,51 @@
-import { MaterialOptions, MeshOptions, TextureOptions } from '@gglib/graphics'
-import { AnimationData, NodeData, SceneData, SkinData } from '@gglib/model'
+import { MaterialOptions, TextureOptions } from '@gglib/graphics'
+import { ModelOptions } from '@gglib/model'
+import { LoaderContext } from './ContentLoader'
+
+export abstract class AssetContainer {
+  public abstract readonly modelCount: number
+  public abstract readonly materialCount: number
+  public abstract readonly textureCount: number
+
+  public abstract loadModel(index: number, context: LoaderContext): Promise<ModelOptions>
+
+  public abstract loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions>
+
+  public abstract loadTexture(index: number, context: LoaderContext): Promise<TextureOptions>
+}
 
 /**
- * An asset container holding loaded data ready to create graphics resources.
- *
- * @remarks
- * Modeled after glTF 2.0 asset container.
+ * An asset container that wraps one or more textures. This is a common case for texture only loaders, and allows them to implement
+ * the AssetLoader interface without having to create a custom container class for each loader.
  */
-export interface AssetContainer {
-  /**
-   * The url where this asset was loaded from.
-   */
-  source: string | Blob
+export class TextureAssetContainer extends AssetContainer {
+  private readonly textures: TextureOptions[]
 
-  name?: string
+  public override modelCount: number
+  public override materialCount: number
+  public override textureCount: number
 
+  public constructor(textures: TextureOptions[]) {
+    super()
+    this.textures = textures
+    this.textureCount = textures.length
+    this.modelCount = 0
+    this.materialCount = 0
+  }
 
-  meshes?: MeshOptions[]
+  public override async loadTexture(index: number): Promise<TextureOptions> {
+    const texture = this.textures[index]
+    if (!texture) {
+      throw new Error(`Texture index ${index} out of bounds for container with 1 texture`)
+    }
+    return texture
+  }
 
-  textures?: TextureOptions[]
+  public override loadModel(index: number, context: LoaderContext): Promise<ModelOptions> {
+    throw new Error('Method not implemented.')
+  }
 
-  materials?: MaterialOptions[]
-
-  animations?: AnimationData[]
-
-  scene?: number
-
-  scenes?: SceneData[]
-
-  nodes?: NodeData[]
-
-  skins?: SkinData[]
+  public override loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions> {
+    throw new Error('Method not implemented.')
+  }
 }

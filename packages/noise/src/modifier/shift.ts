@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 
 /**
  * Generates a sampler that shifts the input values

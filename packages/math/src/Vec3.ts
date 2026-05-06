@@ -1,10 +1,27 @@
-import { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
+import type { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
 import { hermite } from './utils/hermite'
 
 const keyLookup = {
-  0: 'x', 1: 'y', 2: 'z',
-  x: 'x', y: 'y', z: 'z',
-} as Record<number|string, 'x'|'y'|'z'>
+  0: 'x',
+  1: 'y',
+  2: 'z',
+  x: 'x',
+  y: 'y',
+  z: 'z',
+} as Record<number | string, 'x' | 'y' | 'z'>
+
+export function vec3(data: number | IVec3 | number[] | null): IVec3 {
+  if (data == null) {
+    return { x: 0, y: 0, z: 0 }
+  }
+  if (typeof data === 'number') {
+    return { x: data ?? 0, y: data ?? 0, z: data ?? 0 }
+  }
+  if (Array.isArray(data)) {
+    return { x: data[0] ?? 0, y: data[1] ?? 0, z: data[2] ?? 0 }
+  }
+  return { x: data.x ?? 0, y: data.y ?? 0, z: data.z ?? 0 }
+}
 
 /**
  * A vector with three components.
@@ -12,7 +29,6 @@ const keyLookup = {
  * @public
  */
 export class Vec3 implements IVec2, IVec3 {
-
   /**
    * Readonly vector with all components set to zero
    */
@@ -121,14 +137,14 @@ export class Vec3 implements IVec2, IVec3 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, value: number): this {
+  public set(key: number | string, value: number): this {
     this[keyLookup[key]] = value
     return this
   }
   /**
    * Gets the component by using an index (or name)
    */
-  public get(key: number|string): number {
+  public get(key: number | string): number {
     return this[keyLookup[key]]
   }
 
@@ -308,11 +324,7 @@ export class Vec3 implements IVec2, IVec3 {
    *
    */
   public static createFrom(other: IVec3): Vec3 {
-    return new Vec3(
-      other.x,
-      other.y,
-      other.z,
-    )
+    return new Vec3(other.x, other.y, other.z)
   }
 
   /**
@@ -320,10 +332,10 @@ export class Vec3 implements IVec2, IVec3 {
    * @param other - The vector to read from
    *
    */
-  public initFrom(other: IVec3): this {
+  public initFrom(other: IVec3 | IVec2): this {
     this.x = other.x
     this.y = other.y
-    this.z = other.z
+    this.z = (other as IVec3).z ?? 0
     return this
   }
 
@@ -333,12 +345,8 @@ export class Vec3 implements IVec2, IVec3 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public static createFromArray(array: ArrayLike<number>, offset: number= 0): Vec3 {
-    return new Vec3(
-      array[offset],
-      array[offset + 1],
-      array[offset + 2],
-    )
+  public static createFromArray(array: ArrayLike<number>, offset: number = 0): Vec3 {
+    return new Vec3(array[offset], array[offset + 1], array[offset + 2])
   }
 
   /**
@@ -347,7 +355,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @param offset - The zero based index at which start reading the values
    *
    */
-  public initFromArray(array: ArrayLike<number>, offset: number= 0): this {
+  public initFromArray(array: ArrayLike<number>, offset: number = 0): this {
     this.x = array[offset]
     this.y = array[offset + 1]
     this.z = array[offset + 2]
@@ -382,7 +390,6 @@ export class Vec3 implements IVec2, IVec3 {
     this.z = radius * Math.sin(theta) * Math.cos(phi)
     return this
   }
-
 
   /**
    * Copies the source vector to the destination vector
@@ -440,7 +447,7 @@ export class Vec3 implements IVec2, IVec3 {
    */
   public toArray(): number[]
   public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     array[offset] = this.x
     array[offset + 1] = this.y
     array[offset + 2] = this.z
@@ -453,7 +460,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @returns true if components are equal, false otherwise
    */
   public static equals(v1: IVec3, v2: IVec3): boolean {
-    return ((v1.x === v2.x) && (v1.y === v2.y) && (v1.z === v2.z))
+    return v1.x === v2.x && v1.y === v2.y && v1.z === v2.z
   }
 
   /**
@@ -462,7 +469,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @returns true if components are equal, false otherwise
    */
   public equals(other: IVec3): boolean {
-    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z))
+    return this.x === other.x && this.y === other.y && this.z === other.z
   }
 
   /**
@@ -1034,9 +1041,9 @@ export class Vec3 implements IVec2, IVec3 {
    */
   public reflect(normal: IVec3): this {
     const dot = this.x * normal.x + this.y * normal.y + this.z * normal.z
-    this.x = this.x - (2.0 * dot * normal.x)
-    this.y = this.y - (2.0 * dot * normal.y)
-    this.z = this.z - (2.0 * dot * normal.z)
+    this.x = this.x - 2.0 * dot * normal.x
+    this.y = this.y - 2.0 * dot * normal.y
+    this.z = this.z - 2.0 * dot * normal.z
     return this
   }
 
@@ -1058,9 +1065,9 @@ export class Vec3 implements IVec2, IVec3 {
   public static reflect(vec: IVec3, normal: IVec3, out?: IVec3): IVec3 {
     out = out || new Vec3()
     const dot = vec.x * normal.x + vec.y * normal.y + vec.z * normal.z
-    out.x = vec.x - (2.0  * dot * normal.x)
-    out.y = vec.y - (2.0  * dot * normal.y)
-    out.z = vec.z - (2.0  * dot * normal.z)
+    out.x = vec.x - 2.0 * dot * normal.x
+    out.y = vec.y - 2.0 * dot * normal.y
+    out.z = vec.z - 2.0 * dot * normal.z
     return out
   }
 
@@ -1208,7 +1215,7 @@ export class Vec3 implements IVec2, IVec3 {
    * @param out - The vector to write to.
    * @returns The given `out` parameter or a new vector.
    */
-  public static clamp<T extends IVec3 = Vec3>(a: IVec3, min: IVec3, max: IVec3, out?: T|Vec3): T|Vec3 {
+  public static clamp<T extends IVec3 = Vec3>(a: IVec3, min: IVec3, max: IVec3, out?: T | Vec3): T | Vec3 {
     out = out || new Vec3()
     const x = a.x
     const y = a.y
@@ -1219,9 +1226,9 @@ export class Vec3 implements IVec2, IVec3 {
     const maxX = max.x
     const maxY = max.y
     const maxZ = max.z
-    out.x = x < minX ? minX : (x > maxX ? maxX : x)
-    out.y = y < minY ? minY : (y > maxY ? maxY : y)
-    out.z = z < minZ ? minZ : (z > maxZ ? maxZ : z)
+    out.x = x < minX ? minX : x > maxX ? maxX : x
+    out.y = y < minY ? minY : y > maxY ? maxY : y
+    out.z = z < minZ ? minZ : z > maxZ ? maxZ : z
     return out
   }
 
@@ -1240,9 +1247,9 @@ export class Vec3 implements IVec2, IVec3 {
     const x = a.x
     const y = a.y
     const z = a.z
-    out.x = x < min ? min : (x > max ? max : x)
-    out.y = y < min ? min : (y > max ? max : y)
-    out.z = z < min ? min : (z > max ? max : z)
+    out.x = x < min ? min : x > max ? max : x
+    out.y = y < min ? min : y > max ? max : y
+    out.z = z < min ? min : z > max ? max : z
     return out
   }
 
@@ -1408,7 +1415,7 @@ export class Vec3 implements IVec2, IVec3 {
   public static smooth<T>(a: IVec3, b: IVec3, t: number, out?: T): T & IVec3
   public static smooth(a: IVec3, b: IVec3, t: number, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
+    t = t > 1 ? 1 : t < 0 ? 0 : t
     t = t * t * (3 - 2 * t)
     const x = a.x
     const y = a.y
@@ -1454,6 +1461,12 @@ export class Vec3 implements IVec2, IVec3 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(vec: IVec3, fractionDigits: number = 5): string {
-    return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits), ', z: ', vec.z.toFixed(fractionDigits))
+    return 'x: '.concat(
+      vec.x.toFixed(fractionDigits),
+      ', y: ',
+      vec.y.toFixed(fractionDigits),
+      ', z: ',
+      vec.z.toFixed(fractionDigits),
+    )
   }
 }

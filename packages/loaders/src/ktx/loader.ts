@@ -1,16 +1,15 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { ArrayBufferViewSource, SamplerState, SurfaceFormat, TextureOptions } from '@gglib/graphics'
+import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, TextureAssetContainer } from '@gglib/content'
+import { AcquireTextureOptions, ArrayBufferViewSource, SurfaceFormat } from '@gglib/graphics'
 import { LevelImage, parse } from './format'
 import { BasisTranscodeFormat, Transcoder } from './transcoder'
-
-export function registerLoader() {
-  ContentLoader.registerLoader(Loader)
-}
 
 export class Loader implements AssetLoader {
   public static extensions = ['.ktx', '.ktx2']
   public static mimeTypes = ['image/ktx', 'image/ktx2']
-  public static loader = Loader
+  public static create = () => new Loader()
+  public static register(registry = ContentLoader.loaders) {
+    registry.register(Loader)
+  }
   public static wasmUrl = '/basis_transcoder.wasm'
 
   public transcoder: Transcoder
@@ -21,12 +20,14 @@ export class Loader implements AssetLoader {
     })
 
     const ktx = parse(response.body)
-    const options: TextureOptions = {
+
+    const options: AcquireTextureOptions = {
+      key: url,
+      type: 'Texture2D',
       width: ktx.width,
       height: ktx.height,
-      type: 'Texture2D',
       generateMipmap: false,
-      sampler: SamplerState.LinearClampNoMipMap,
+      mipLevelCount: ktx.levelImages.length,
     }
     let images: LevelImage[]
     if (ktx.isCompressed) {
@@ -66,10 +67,7 @@ export class Loader implements AssetLoader {
       // options.sampler = SamplerState.LinearWrap
     }
 
-    return {
-      source: url,
-      textures: [options],
-    }
+    return new TextureAssetContainer([options])
   }
 
   public async transcode(data: ArrayBuffer, context: LoaderContext) {

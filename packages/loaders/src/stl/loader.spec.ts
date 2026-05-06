@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { DeviceGL } from '@gglib/graphics'
+import { BasicMaterial, WebglDevice } from '@gglib/graphics'
 import { beforeEach, describe, it } from 'vitest'
 
 import { server } from '@vitest/browser/context'
@@ -7,13 +7,14 @@ import { server } from '@vitest/browser/context'
 import { Loader } from './loader'
 
 describe('STL Loader', () => {
-  let device: DeviceGL
+  let device: WebglDevice
   let content: ContentLoader
 
   beforeEach(async () => {
-    device = new DeviceGL()
+    device = new WebglDevice({})
     content = new ContentLoader(device)
     content.registerLoader(Loader)
+    content.registerMaterial(BasicMaterial, () => true)
 
     const cache = await caches.open(content.http.cacheName)
     const data = await server.commands.readFile(server.config.root + '/assets/logo/gglib.stl', {

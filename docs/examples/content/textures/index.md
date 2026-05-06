@@ -5,10 +5,13 @@ order: 100
 
 # Loading Textures
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-This example loads common texture formats: png, jpg
-
-## Code
+# Code
 
 <ExampleCode />

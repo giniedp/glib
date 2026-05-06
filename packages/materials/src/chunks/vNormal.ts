@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -27,13 +27,13 @@ export interface VNormalDefs {
  * @public
  */
 export const V_NORMAL: ShaderChunkSet<VNormalDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #if defined(V_TANGENT) || defined(V_TANGENT_PLANE)
     #define V_NORMAL
     #define V_TBN
     #endif
   `,
-  attributes: glsl`
+  attributes: /* glsl */ `
     #ifdef V_NORMAL
     // @binding normal
     // @remarks The vertex normal attribute
@@ -46,7 +46,7 @@ export const V_NORMAL: ShaderChunkSet<VNormalDefs> = {
     attribute vec3 aTangent;
     #endif
   `,
-  varyings: glsl`
+  varyings: /* glsl */ `
     #ifdef V_NORMAL
     // @remarks Surface normal in world space
     varying vec3 vWorldNormal;
@@ -56,29 +56,50 @@ export const V_NORMAL: ShaderChunkSet<VNormalDefs> = {
     varying mat3 vTTW;
     #endif
   `,
-  functions: glsl`
-    #ifdef VERTEX_SHADER
+  vs_functions: /* glsl */ `
+    vec3 readNormal() {
+      #ifdef V_NORMAL
+        vec3 normal = aNormal;
+      #else
+        vec3 normal = vec3(0.0, 1.0, 0.0);
+      #endif
+
+      #pragma block:read_vertex_normal
+
+      return normal;
+    }
+
+    vec3 readTangent() {
+      #ifdef V_TANGENT
+        vec3 tangent = aTangent
+      #else
+        vec3 tangent = vec3(1.0, 0.0, 0.0);
+      #endif
+
+      #pragma block:read_vertex_tangent
+
+      return tangent;
+    }
+
     void writeNormal() {
       #ifdef V_NORMAL
       mat3 normalMatrix = mat3(transpose(inverse(uWorld)));
-      vWorldNormal.xyz = normalize((normalMatrix * aNormal));
+      vWorldNormal.xyz = normalize((normalMatrix * readNormal()));
 
       #if defined(V_TANGENT_PLANE)
       vTTW[0] = cross(normalMatrix[0], vWorldNormal.xyz);
       vTTW[1] = cross(vWorldNormal.xyz, vTTW[0]);
       vTTW[2] = vWorldNormal.xyz;
       #elif defined(V_TANGENT)
-      vTTW[0] = normalMatrix * aTangent;
-      vTTW[1] = normalMatrix * cross(aNormal, aTangent);
+      vTTW[0] = normalMatrix * readTangent();
+      vTTW[1] = normalMatrix * cross(readNormal(), readTangent());
       vTTW[2] = vWorldNormal.xyz;
       #endif
 
       #endif
     }
-    #endif
   `,
-  vs_normal: glsl`
+  vs_normal: /* glsl */ `
     writeNormal();
   `,
-
 }

@@ -1,35 +1,29 @@
+export type TextureFilter = 'Nearest' | 'Linear'
+export type MipmapFilter = 'None' | 'Nearest' | 'Linear'
 import { GLConst as gl } from './GLConst'
 
-export type TextureFilter =
-  | 'Nearest'
-  | 'Linear'
-  | 'NearestMipmapNearest'
-  | 'LinearMipmapNearest'
-  | 'NearestMipmapLinear'
-  | 'LinearMipmapLinear'
-
-const mapToWebGL: Record<TextureFilter, number> = {
-  Nearest: gl.NEAREST,
-  Linear: gl.LINEAR,
-  NearestMipmapNearest: gl.NEAREST_MIPMAP_NEAREST,
-  LinearMipmapNearest: gl.LINEAR_MIPMAP_NEAREST,
-  NearestMipmapLinear: gl.NEAREST_MIPMAP_LINEAR,
-  LinearMipmapLinear: gl.LINEAR_MIPMAP_LINEAR,
+const minMipFromWebgl: Record<number, { minFilter: TextureFilter; mipFilter: MipmapFilter }> = {
+  [gl.NEAREST]: { minFilter: 'Nearest', mipFilter: 'None' },
+  [gl.LINEAR]: { minFilter: 'Linear', mipFilter: 'None' },
+  [gl.NEAREST_MIPMAP_NEAREST]: { minFilter: 'Nearest', mipFilter: 'Nearest' },
+  [gl.LINEAR_MIPMAP_NEAREST]: { minFilter: 'Linear', mipFilter: 'Nearest' },
+  [gl.NEAREST_MIPMAP_LINEAR]: { minFilter: 'Nearest', mipFilter: 'Linear' },
+  [gl.LINEAR_MIPMAP_LINEAR]: { minFilter: 'Linear', mipFilter: 'Linear' },
 }
 
-const mapFromWebGL: Record<number, TextureFilter> = {
+const filterFromWebgl: Record<number, TextureFilter> = {
   [gl.NEAREST]: 'Nearest',
   [gl.LINEAR]: 'Linear',
-  [gl.NEAREST_MIPMAP_NEAREST]: 'NearestMipmapNearest',
-  [gl.LINEAR_MIPMAP_NEAREST]: 'LinearMipmapNearest',
-  [gl.NEAREST_MIPMAP_LINEAR]: 'NearestMipmapLinear',
-  [gl.LINEAR_MIPMAP_LINEAR]: 'LinearMipmapLinear',
 }
 
-export function textureFilterToWebGL(filter: TextureFilter): number {
-  return mapToWebGL[filter]
+export function magFilterFromWebGL(filter: number): TextureFilter {
+  return filterFromWebgl[filter] || null
 }
 
-export function textureFilterFromWebGL(filter: number): TextureFilter {
-  return mapFromWebGL[filter]
+export function minFilterFromWebGL(filter: number): TextureFilter {
+  return minMipFromWebgl[filter]?.minFilter || null
+}
+
+export function mipFilterFromWebGL(filter: number): MipmapFilter {
+  return minMipFromWebgl[filter]?.mipFilter || null
 }

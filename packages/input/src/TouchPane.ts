@@ -1,4 +1,4 @@
-import { documentVisibilityApi, simpleObservable } from '@gglib/utils'
+import { documentVisibilityApi, eventSource } from '@gglib/utils'
 
 /**
  * TouchPane constructor options
@@ -55,7 +55,7 @@ export class TouchPane {
    */
   protected onNeedsClear = () => this.clearState()
 
-  public onChanged = simpleObservable<TouchPane>()
+  public onChanged = eventSource<TouchPane>()
   /**
    * Initializes the TouchPane with given options and activates the capture listeners
    */
@@ -72,10 +72,10 @@ export class TouchPane {
   public activate() {
     this.deactivate()
     // update events
-    this.eventTarget.addEventListener('touchcancel', this.onTouchCancel)
-    this.eventTarget.addEventListener('touchstart', this.onTouchStart)
-    this.eventTarget.addEventListener('touchmove', this.onTouchMove)
-    this.eventTarget.addEventListener('touchend', this.onTouchEnd)
+    this.eventTarget.addEventListener('touchcancel', this.onTouchCancel as any)
+    this.eventTarget.addEventListener('touchstart', this.onTouchStart as any)
+    this.eventTarget.addEventListener('touchmove', this.onTouchMove as any)
+    this.eventTarget.addEventListener('touchend', this.onTouchEnd as any)
     // visibility events
     documentVisibilityApi.onVisibilityChange(this.onNeedsClear)
     document.addEventListener('blur', this.onNeedsClear)
@@ -86,10 +86,10 @@ export class TouchPane {
    * Deactivates the capture listeners
    */
   public deactivate() {
-    this.eventTarget.removeEventListener('touchcancel', this.onTouchCancel)
-    this.eventTarget.removeEventListener('touchstart', this.onTouchStart)
-    this.eventTarget.removeEventListener('touchmove', this.onTouchMove)
-    this.eventTarget.removeEventListener('touchend', this.onTouchEnd)
+    this.eventTarget.removeEventListener('touchcancel', this.onTouchCancel as any)
+    this.eventTarget.removeEventListener('touchstart', this.onTouchStart as any)
+    this.eventTarget.removeEventListener('touchmove', this.onTouchMove as any)
+    this.eventTarget.removeEventListener('touchend', this.onTouchEnd as any)
     // visibility events
     documentVisibilityApi.offVisibilityChange(this.onNeedsClear)
     document.removeEventListener('blur', this.onNeedsClear)
@@ -118,7 +118,7 @@ export class TouchPane {
     if (this.preventDefault) {
       e.preventDefault()
     }
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
   /**
    * Updates the state from given `touchcancel` event
@@ -131,7 +131,7 @@ export class TouchPane {
     if (this.preventDefault) {
       e.preventDefault()
     }
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
   /**
    * Updates the state from given `touchmove` event
@@ -144,7 +144,7 @@ export class TouchPane {
     if (this.preventDefault) {
       e.preventDefault()
     }
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
   /**
    * Updates the state from given `touchend` event
@@ -157,7 +157,7 @@ export class TouchPane {
     if (this.preventDefault) {
       e.preventDefault()
     }
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
 
   public static getX(t: Touch): number {

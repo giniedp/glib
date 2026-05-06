@@ -1,24 +1,29 @@
-import type { SurfaceFormat } from './enums'
+import type { SurfaceFormat, TextureCompression } from './enums'
 
-export type TextureCompression = 'Astc' | 'Etc1' | 'Etc2' | 'Pvrtc' | 'Bc' | 'Bptc'
 /**
  * @public
  */
 export interface Capabilities {
-  maxViewportWidth: number
-  maxViewportHeight: number
-  maxRenderBufferSize: number
-  maxTextureUnits: number
+  maxTextureCount: number
   maxTextureSize: number
   maxVertexAttributes: number
-  maxVertexTextureUnits: number
-  maxVertexUniformVectors: number
-  maxVaryingVectors: number
-  maxFragmentUniformVectors: number
-  maxDrawBuffers: number
-  maxColorAttachments: number
-  textureFormatFloat: boolean
-  textureFormatHalfFloat: boolean
+  maxVertexTextureCount: number
+  maxRenderTargets: number
+  maxRenderTargetSize: number
+
+  canRenderR32F: boolean
+  canRenderRG32F: boolean
+  canRenderRGBA32F: boolean
+  canFilterR32F: boolean
+  canFilterRG32F: boolean
+  canFilterRGBA32F: boolean
+
+  canRenderR16F: boolean
+  canRenderRG16F: boolean
+  canRenderRGBA16F: boolean
+  canFilterR16F: boolean
+  canFilterRG16F: boolean
+  canFilterRGBA16F: boolean
 
   textureCompression: TextureCompression[]
   textureCompressionAstc: boolean

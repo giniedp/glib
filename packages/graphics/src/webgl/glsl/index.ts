@@ -1,3 +1,1 @@
-export * from './GlslParser'
-export * from './Glsl'
-
+export * from './glsl-reflect'

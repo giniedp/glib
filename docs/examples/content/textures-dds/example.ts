@@ -1,24 +1,21 @@
 import { ContentLoader } from '@gglib/content'
-import {
-  BlendState,
-  CullState,
-  DepthState,
-  Device,
-  Material,
-  Texture,
-  createDevice,
-  cubeGeometry,
-  skyboxProgram,
-} from '@gglib/graphics'
+import { BasicMaterial, Color, Device, PlatformId, Texture, createDevice, cubeGeometry } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { DDS } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { mountUi } from 'tweak-ui'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({ canvas })
+const files = {
+  bobcat_diff: '/textures/dds/bobcat_diff.dds',
+  bobcat_ddna: '/textures/dds/bobcat_ddna.dds',
+  bobcat_ddnaa: '/textures/dds/bobcat_ddna.a.dds',
+}
+const params = {
+  texture: files.bobcat_diff,
+}
+
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
   const content = new ContentLoader(device)
   content.registerLoader(DDS.Loader)
   const mouse = new Mouse({
@@ -26,26 +23,21 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     preventDefault: true,
   })
 
-  const files = {
-    bobcat_diff: '/textures/dds/bobcat_diff.dds',
-    bobcat_ddna: '/textures/dds/bobcat_ddna.dds',
-    bobcat_ddnaa: '/textures/dds/bobcat_ddna.a.dds'
-  }
-
-  TweakUi.mount(tools, (ui) => {
-    loadTexture(files.bobcat_diff)
-    Object.entries(files).forEach(([name, url]) => {
-      ui.button(name, { onClick: () => loadTexture(url) })
+  mountUi(tools, (ui) => {
+    loadTexture(params.texture)
+    ui.select(params, 'texture', {
+      options: files,
+      onchange: () => loadTexture(params.texture),
     })
   })
 
   let texture: Texture
-  const material = new AutoMaterial(device)
+  const material = new BasicMaterial(device)
   const geometry = cubeGeometry(device)
-  const skyMaterial = new Material(device, {
-    program: skyboxProgram(device),
-    parameters: {},
-  })
+  // const skyMaterial = new Material(device, {
+  //   program: skyboxProgram(device),
+  //   parameters: {},
+  // })
 
   const world = Mat4.createScaleUniform(10)
   const camera = demoCamera()
@@ -55,39 +47,35 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       .loadTexture(url)
       .then((result) => {
         texture = result
-        material.BaseColorMap = result
-        material.ShadeFunction = 'shadeNone'
-        skyMaterial.parameters.Texture = result
+        material.Texture = result
+        material.TextureEnabled = true
       })
       .catch((e) => {
         console.error(e)
       })
   }
 
-  function frame(time: number, dt: number) {
+  const pass = device.renderPass
+  function frame() {
     device.resize()
+
     updateCamera(mouse, camera, device)
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
 
-    device.cullState = CullState.CullNone
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.None
-    device.clear(0xff2e2620, 1.0)
+    material.World = world
+    material.View = camera.view
+    material.Projection = camera.projection
+    material.effect.draw(pass, geometry, material.parameters)
 
-    world.setTranslation(camera.position)
-    if (texture?.isCube) {
-      skyMaterial.parameters.World = world
-      skyMaterial.parameters.View = camera.view
-      skyMaterial.parameters.Projection = camera.projection
-      skyMaterial.draw(geometry!)
-    } else {
-      material.parameters.World = world
-      material.parameters.View = camera.view
-      material.parameters.Projection = camera.projection
-      material.draw(geometry!)
-    }
+    pass.submit()
+    pass.flush()
   }
 
-  return loop(frame).stop
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
 }
 
 function demoCamera() {
@@ -120,5 +108,11 @@ function updateCamera(mouse: Mouse, camera: ReturnType<typeof demoCamera>, devic
     )
 
   camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
-  camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
+  camera.projection.initPerspectiveFieldOfView(
+    45 * DEGREE_TO_RAD,
+    device.output.aspectRatio,
+    0.01,
+    1000,
+    device.ndcMinZ,
+  )
 }

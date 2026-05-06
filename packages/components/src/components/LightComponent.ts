@@ -1,11 +1,9 @@
-import { GameComponent, GameEntity } from '@gglib/ecs'
-import { LightParams } from '@gglib/materials'
+import type { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { LightType } from '@gglib/graphics'
+import { LightParams } from '@gglib/materials'
 import { BoundingSphere, Vec3 } from '@gglib/math'
-
-import { CollectEvent, RenderQuery } from '../systems/RenderSystem'
-import { BoundingVolumeComponent } from './BoundingVolumeComponent'
-import { TransformComponent } from './TransformComponent'
+import { BoundsComponent } from './BoundsComponent'
+import type { TransformComponent } from './TransformComponent'
 
 /**
  * Constructor options for {@link LightComponent }
@@ -29,18 +27,16 @@ export interface LightComponentOptions {
  *
  * @public
  */
-export class LightComponent implements GameComponent {
+export class LightComponent implements GameComponent, InitializableComponent {
   /**
    * The transform component of the entity
    */
-  public get transform(): TransformComponent {
-    return this.entity.transform
-  }
+  public transform: TransformComponent
 
   /**
    * The bounding volume component of the entity
    */
-  public volume?: BoundingVolumeComponent
+  public volume?: BoundsComponent
 
   /**
    * Enables and disables the light source
@@ -82,7 +78,7 @@ export class LightComponent implements GameComponent {
   public readonly params: LightParams = new LightParams()
   private localVolume = new BoundingSphere(0, 0, 0, Number.MAX_SAFE_INTEGER)
 
-  public entity: GameEntity<TransformComponent>
+  public readonly entity: GameEntity
   public constructor(options?: LightComponentOptions) {
     this.reset(options)
   }
@@ -101,27 +97,17 @@ export class LightComponent implements GameComponent {
     }
   }
 
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.volume = entity.component(BoundingVolumeComponent, true)
-    this.volume?.linkVolume(this.localVolume)
-  }
-
-  public activate(): void {
-    this.entity.transform.onUpdated.add(this.update)
-    RenderQuery.addCollectListener(this.entity, this.collect)
-  }
-
-  public deactivate(): void {
-    this.entity.transform.onUpdated.remove(this.update)
-    RenderQuery.removeCollectListener(this.entity, this.collect)
+  public initialize(): void {
+    this.transform = this.entity.getTransform<TransformComponent>()
+    this.volume = this.entity.component(BoundsComponent, { optional: true })
+    this.volume?.setLocalBounds(this.localVolume, null)
   }
 
   public destroy(): void {
     //
   }
 
-  public update = () => {
+  public update() {
     if (this.transform) {
       this.transform.world.getForward(this.direction)
       this.transform.world.getTranslation(this.position)
@@ -138,9 +124,5 @@ export class LightComponent implements GameComponent {
     data.angle = this.spotAngle
     data.enabled = this.enabled
     data.type = this.type
-  }
-
-  public collect = (e: CollectEvent): void => {
-    e.addLight(this.params)
   }
 }

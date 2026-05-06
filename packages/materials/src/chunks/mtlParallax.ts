@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control parallax mapping.
@@ -57,7 +57,7 @@ export interface MtlParallaxDefs {
  * @public
  */
 export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef PARALLAX_MAP
 
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
@@ -78,7 +78,7 @@ export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
       #define PARALLAX_OCCLUSION_SAMPLES 16
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef PARALLAX_MAP
     // @binding  ParallaxMap
     uniform sampler2D uParallaxMap;
@@ -98,7 +98,7 @@ export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
     uniform vec2 uParallaxScaleBias;
     #endif
   `,
-  fs_functions: glsl`
+  fs_functions: /* glsl */ `
     #ifdef PARALLAX_MAP
     vec2 getParallaxMapUV() {
       vec2 result = PARALLAX_MAP_UV;
@@ -179,7 +179,7 @@ export const MTL_PARALLAX: ShaderChunkSet<MtlParallaxDefs> = {
       #endif
     }
   `,
-  fs_surface_before: glsl`
+  fs_surface_before: /* glsl */ `
     vec2 uvOffset = vec2(0.0, 0.0);
     #ifdef PARALLAX_MAP
     uvOffset += getParallaxUvOffset();

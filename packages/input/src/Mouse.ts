@@ -1,4 +1,4 @@
-import { getTime, PointerLockApi, simpleObservable } from '@gglib/utils'
+import { PointerLockApi, eventSource } from '@gglib/utils'
 
 /**
  * Constructor options for {@link MouseListener}
@@ -264,18 +264,19 @@ export class MouseListener {
    *
    * @param fn - the callback function
    */
-  public onChanged = simpleObservable<MouseListener>()
+  public onChanged = eventSource<MouseListener>()
 
-  protected onCaptureState(e: MouseEvent) {
+  protected onCaptureState(event: Event) {
+    const e = event as MouseEvent
     if (this.preventDefault && e.target === this.captureTarget) {
       e.preventDefault()
     }
     this.state.event = e
-    this.state.timestamp = getTime()
+    this.state.timestamp = performance.now()
     this.capturePointer(e, this.state)
     this.captureButtons(e, this.state)
     this.captureWheel(e, this.state)
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
 
   protected capturePointer(e: MouseEvent, state: MouseState) {
@@ -330,7 +331,7 @@ export class MouseListener {
     this.state.buttons[0] = false
     this.state.buttons[1] = false
     this.state.buttons[2] = false
-    this.onChanged.notify(this)
+    this.onChanged.emit(this)
   }
 }
 

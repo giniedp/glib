@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { DeviceGL } from '@gglib/graphics'
+import { BasicMaterial, WebglDevice } from '@gglib/graphics'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Loader as MTLLoader } from '../mtl/loader'
 import { Loader as OBJLoader } from './loader'
@@ -49,14 +49,15 @@ f  2//1  8//1  4//1
 `
 
 describe('OBJ', () => {
-  let device: DeviceGL
+  let device: WebglDevice
   let content: ContentLoader
 
   beforeAll(async () => {
-    device = new DeviceGL()
+    device = new WebglDevice({})
     content = new ContentLoader(device)
     content.registerLoader(OBJLoader)
     content.registerLoader(MTLLoader)
+    content.registerMaterial(BasicMaterial, () => true)
 
     content.http.cacheName = 'test-cache'
     const cache = await caches.open(content.http.cacheName)

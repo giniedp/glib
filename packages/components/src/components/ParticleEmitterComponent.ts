@@ -1,58 +1,53 @@
-import { GameComponent, GameEntity } from '@gglib/ecs'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { Vec3 } from '@gglib/math'
-import { GameTransform } from 'ecs/src/GameTransform'
-import { GameLoop, LoopTime } from '../systems'
-import { ParticleSystemComponent } from './ParticleSystemComponent'
+import { BehaviorComponent } from '../systems/BehaviorSystem'
+import { TransformComponent } from './TransformComponent'
 
-export class ParticleEmitterComponent implements GameComponent {
+export class ParticleEmitterComponent implements GameComponent, InitializableComponent, BehaviorComponent {
   /**
    * Number of particles per second
    */
   public frequency: number = 100
+
   /**
    * The particle channel to emit
    */
   public channel: string
+
   /**
    * The last position of last emitted particle
    */
   private lastPosition: Vec3 = Vec3.create()
+
   /**
    * Time that has been left over from previous emit cycle
    */
   private timeFraction: number = 0
 
-  private particleSystem: ParticleSystemComponent
+  // private particleSystem: ParticleSystemComponent
 
-  private get transform() {
-    return this.entity.transform
-  }
+  private transform: TransformComponent
 
-  public entity: GameEntity<GameTransform>
+  public readonly entity: GameEntity
 
-  private loop: GameLoop
-
-  public initialize(entity: GameEntity<GameTransform>): void {
-    this.entity = entity
-    this.loop = entity.provider.get(GameLoop)
-    this.particleSystem = entity.provider.get(ParticleSystemComponent)
+  public initialize(): void {
+    this.transform = this.entity.component(TransformComponent)
+    // this.particleSystem = this.entity.service(ParticleSystemComponent)
   }
 
   public activate(): void {
     this.lastPosition.initFrom(this.transform.translation)
-    this.loop.onUpdate.add(this.onUpdate)
   }
 
   public deactivate(): void {
-    this.loop.onUpdate.remove(this.onUpdate)
+    //
   }
 
   public destroy(): void {
     //
   }
 
-  public onUpdate(time: LoopTime) {
-    const dt = time.delta
+  public updateBehavior(time: number, dt: number): void {
     const newPosition = this.transform.translation
     const velocity = Vec3.subtract(newPosition, this.lastPosition).multiplyScalar(1.0 / dt)
     const timeStep = 1.0 / this.frequency
@@ -64,7 +59,7 @@ export class ParticleEmitterComponent implements GameComponent {
       timePoint += timeStep
 
       const position = Vec3.lerp(this.lastPosition, newPosition, timePoint / dt)
-      this.particleSystem.emit(position, velocity, this.channel)
+      // this.particleSystem.emit(position, velocity, this.channel)
     }
 
     this.lastPosition.initFrom(this.transform.translation)

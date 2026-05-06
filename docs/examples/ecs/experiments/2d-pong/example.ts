@@ -1,10 +1,13 @@
-import { BasicGame, createEntity, LoopTime, SpriteComponent, TransformComponent } from '@gglib/components'
-import { GameComponent, GameEntity } from '@gglib/ecs'
-import { Color, Texture } from '@gglib/graphics'
-import { Keyboard, KeyboardKey } from '@gglib/input'
+import { BasicGame, GamePadInput, KeyboardInputSystem, SpriteComponent, TransformComponent } from '@gglib/components'
+import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
+import { Color, PlatformId, Texture } from '@gglib/graphics'
+import { GamepadAxes, KeyboardKey } from '@gglib/input'
+import { Mat4, Vec4 } from '@gglib/math'
+import { BloomPass, LayerMask, PixelatePass } from '@gglib/render'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const game = new PongGame(canvas)
+export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const game = new PongGame({ canvas, platform })
   game.run()
   return () => {
     game.stop()
@@ -16,30 +19,52 @@ class PongGame extends BasicGame {
   public height = 27
 
   public state: 'started' | 'reset' | 'running' | 'scored' = 'started'
-  public whitePixel: Texture
+  public whitePixel!: Texture
   public scoreLeft = 0
   public scoreRight = 0
 
-  private paddle1: PaddleComponent
-  private paddle2: PaddleComponent
-  private ball: BallComponent
+  private paddle1!: PaddleComponent
+  private paddle2!: PaddleComponent
+  private ball!: BallComponent
+  private pixelate!: PixelatePass
+  private bloom!: BloomPass
 
-  public constructor(canvas: HTMLCanvasElement) {
-    super(canvas)
-    this.camera.projection.initOrthographicOffCenter(0, this.width, 0, this.height, 0, 100)
+  override initialize(): void {
+    this.world.addSystem(new KeyboardInputSystem({}))
+    this.world.addSystem(new GamePadInput())
 
-    // All components will render this white pixel texture as a sprite
     this.whitePixel = this.renderer.device.createTexture({
       source: [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
       width: 1,
       height: 1,
     })
-    this.provide(new Keyboard({}))
+    this.view.camera = {
+      visibilityMask: LayerMask.All,
+      projection: Mat4.createIdentity(),
+      view: Mat4.createIdentity(),
+      world: Mat4.createIdentity(),
+      reversedZ: false,
+    }
+    this.pixelate = new PixelatePass(this.device, { enabled: true })
+    this.bloom = new BloomPass(this.device, { enabled: true })
+    this.renderer.pipeline.addPass(this.pixelate)
+    this.renderer.pipeline.addPass(this.bloom)
     this.createObjects()
+    this.world.initilize()
+    this.scene.activate()
   }
 
-  public override update() {
-    this.get(Keyboard).update()
+  public override update(t: number, dt: number) {
+    super.update(t, dt)
+    this.pixelate.enabled = true
+    this.pixelate.size = this.device.output.width / this.width / 4
+    this.pixelate.aspect = 1
+    this.pixelate.corner = 1
+    this.pixelate.gap = 8 / this.width
+    this.bloom.enabled = true
+    this.bloom.glowCut = 0.9
+
+    this.view.camera.projection.initOrthographicOffCenter(0, this.width, 0, this.height, 0, 1, this.device.ndcMinZ)
     switch (this.state) {
       case 'started':
         this.state = 'reset'
@@ -57,7 +82,7 @@ class PongGame extends BasicGame {
         this.state = 'started'
         break
     }
-    this.updateLogic()
+    this.updateLogic(t, dt)
   }
 
   public onScoreLeft() {
@@ -71,26 +96,29 @@ class PongGame extends BasicGame {
   }
 
   private createObjects() {
-    const paddle1 = createEntity({
+    const paddle1 = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent(),
       components: [new SpriteComponent(), new PaddleComponent({ isLeft: true })],
     })
     this.paddle1 = paddle1.component(PaddleComponent)
-    this.scene.add(paddle1)
 
-    const paddle2 = createEntity({
+    const paddle2 = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent(),
       components: [new SpriteComponent(), new PaddleComponent({ isLeft: false })],
     })
     this.paddle2 = paddle2.component(PaddleComponent)
-    this.scene.add(paddle2)
 
-    const ball = createEntity({
+    const ball = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent(),
       components: [new SpriteComponent(), new BallComponent()],
     })
     this.ball = ball.component(BallComponent)
-    this.scene.add(ball)
   }
 
-  private updateLogic() {
+  private updateLogic(time: number, dt: number) {
     if (this.state !== 'running') {
       return
     }
@@ -103,13 +131,17 @@ class PongGame extends BasicGame {
     }
     if (this.paddle1.intersects(this.ball.x, this.ball.y, this.ball.w, this.ball.w)) {
       this.ball.x = this.paddle1.x + this.paddle1.w
-      this.ball.dy = -(this.paddle1.y - this.ball.y) / this.paddle1.h - 0.5
+      this.ball.dy = -(this.paddle1.cy - this.ball.cy) / this.paddle1.h
       this.ball.dx = 1
+      this.paddle1.touchedAt = time
+      this.ball.touchedAt = time
     }
     if (this.paddle2.intersects(this.ball.x, this.ball.y, this.ball.w, this.ball.w)) {
       this.ball.x = this.paddle2.x - this.ball.w
-      this.ball.dy = -(this.paddle2.y - this.ball.y) / this.paddle2.h - 0.5
+      this.ball.dy = -(this.paddle2.cy - this.ball.cy) / this.paddle1.h
       this.ball.dx = -1
+      this.paddle2.touchedAt = time
+      this.ball.touchedAt = time
     }
     if (this.ball.y + this.ball.h > this.height) {
       this.ball.y = this.height - this.ball.h
@@ -122,92 +154,104 @@ class PongGame extends BasicGame {
   }
 }
 
-class PaddleComponent implements GameComponent {
+class PaddleComponent implements GameComponent, InitializableComponent, BehaviorComponent {
   public name = 'Paddle'
 
-  public game: PongGame
-  public sprite: SpriteComponent
-  public keyboard: Keyboard
+  public game!: PongGame
+  public entity!: GameEntity
+  public transform!: TransformComponent
+  public sprite!: SpriteComponent
+  public keyboard!: KeyboardInputSystem
+  public pads!: GamePadInput
+  public touchedAt = 0
 
   public x = 0
   public y = 0
   public w = 1
   public h = 5
+  public speed = 20
+  private isLeft!: boolean
+  private color: Vec4 = Vec4.create(1, 1, 1, 1)
 
-  private isLeft: boolean
+  public get cy() {
+    return this.y - this.h / 2
+  }
 
   public constructor(options: { isLeft: boolean }) {
     this.isLeft = options?.isLeft ?? this.isLeft
   }
 
-  public entity: GameEntity<TransformComponent>
-
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.game = entity.provider.get(PongGame)
-    this.keyboard = entity.provider.get(Keyboard)
-    this.sprite = entity.component(SpriteComponent)
-    this.sprite.texture = this.game.whitePixel
-    this.sprite.width = this.w
-    this.sprite.height = this.h
-    this.sprite.color = Color.White.rgba
+  public initialize(): void {
+    this.game = this.entity.service(PongGame)
+    this.transform = this.entity.component(TransformComponent)
+    this.keyboard = this.entity.service(KeyboardInputSystem)
+    this.pads = this.entity.service(GamePadInput)
+    this.sprite = this.entity.component(SpriteComponent)
+    this.sprite.setTexture(this.game.whitePixel)
+    this.sprite.setSource(0, 0, this.game.whitePixel.width, this.game.whitePixel.height)
+    this.sprite.setPivot(0, 0)
+    this.sprite.setSize(this.w, this.h)
+    this.sprite.setColor(this.color)
   }
 
-  public activate(): void {
-    this.game.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.game.loop.onUpdate.remove(this.update)
-  }
-
-  public destroy(): void {
-    //
-  }
-
-  private update = () => {
+  public updateBehavior(time: number, dt: number): void {
     if (this.game.state === 'reset') {
-      this.y = (this.game.height - this.h) / 2
+      this.y = (this.game.height + this.h) / 2
       this.x = this.isLeft ? 1 : this.game.width - 1 - this.w
     }
 
     if (this.game.state === 'running') {
       const upKey = this.isLeft ? KeyboardKey.KeyW : KeyboardKey.KeyI
       const downKey = this.isLeft ? KeyboardKey.KeyS : KeyboardKey.KeyK
-      this.y += this.keyboard.isPressed(upKey) ? 1 : 0
-      this.y -= this.keyboard.isPressed(downKey) ? 1 : 0
-      if (this.y < 0) {
-        this.y = 0
+      const player = this.isLeft ? 0 : 1
+
+      let direction = 0
+      if (this.keyboard.isPressed(upKey)) {
+        direction += 1
       }
-      if (this.y + this.h > this.game.height) {
-        this.y = this.game.height - this.h
+      if (this.keyboard.isPressed(downKey)) {
+        direction -= 1
       }
+      let axisValue = this.pads.axisValue(player, GamepadAxes.LeftVertical)
+      if (Math.abs(axisValue) < 0.1) {
+        axisValue = 0
+      }
+
+      direction += -Math.sign(axisValue)
+      this.y += direction * this.speed * (dt / 1000)
+      this.y = Math.min(Math.max(0, this.y), this.game.height - this.h)
     }
 
-    this.entity.transform.setPosition(this.x, this.y, 0)
-    this.entity.transform.update()
+    this.transform.setPosition(this.x, this.y, 0)
+    const t = Math.min(1, (time - this.touchedAt) / 1000)
+    this.color.x = 1
+    this.color.y = t
+    this.color.z = t
+    this.sprite.setColor(this.color)
   }
 
   public intersects(x: number, y: number, w: number, h: number) {
-    if (this.y > y + h) {
-      return false
-    }
-    if (y > this.y + this.h) {
-      return false
-    }
     if (this.x > x + w) {
       return false
     }
     if (x > this.x + this.w) {
       return false
     }
+    if (this.y < y - h) {
+      return false
+    }
+    if (y < this.y - this.h) {
+      return false
+    }
     return true
   }
 }
 
-class BallComponent implements GameComponent {
-  public game: PongGame
-  public sprite: SpriteComponent
+class BallComponent implements GameComponent, InitializableComponent, BehaviorComponent {
+  public game!: PongGame
+  public sprite!: SpriteComponent
+  public entity!: GameEntity
+  public transform!: TransformComponent
 
   public x = 0
   public y = 0
@@ -215,44 +259,36 @@ class BallComponent implements GameComponent {
   public h = 1
   public dx = 0
   public dy = 0
-  public unitPerSec = 40
+  public speed = 40
+  public touchedAt = 0
 
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.game = entity.provider.get(PongGame)
-    this.sprite = entity.component(SpriteComponent)
-    this.sprite.texture = this.game.whitePixel
-    this.sprite.width = 1
-    this.sprite.height = 1
-    this.sprite.color = Color.White.rgba
+  public get cy() {
+    return this.y - this.h / 2
   }
 
-  public activate(): void {
-    this.game.loop.onUpdate.add(this.update)
+  public initialize(): void {
+    this.game = this.entity.service(PongGame)
+    this.transform = this.entity.component(TransformComponent)
+    this.sprite = this.entity.component(SpriteComponent)
+    this.sprite.setTexture(this.game.whitePixel)
+    this.sprite.setSource(0, 0, this.game.whitePixel.width, this.game.whitePixel.height)
+    this.sprite.setSize(1, 1)
+    this.sprite.setColor(Color.White)
   }
 
-  public deactivate(): void {
-    this.game.loop.onUpdate.remove(this.update)
-  }
-
-  public destroy(): void {
-    //
-  }
-
-  private update = (time: LoopTime) => {
+  public updateBehavior(t: number, dt: number) {
     if (this.game.state === 'reset') {
       this.dx = Math.random() > 0.5 ? 1 : -1
       this.dy = 0
       this.x = this.game.width / 2
-      this.y = this.game.height / 2
+      this.y = (this.game.height + this.h) / 2
     }
 
     if (this.game.state === 'running') {
-      this.x += this.dx * this.unitPerSec * time.delta
-      this.y += this.dy * this.unitPerSec * time.delta
+      this.x += (this.dx * this.speed * dt) / 1000
+      this.y += (this.dy * this.speed * dt) / 1000
     }
 
-    this.entity.transform.setPosition(this.x, this.y, 0)
+    this.transform.setPosition(this.x, this.y, 0)
   }
 }

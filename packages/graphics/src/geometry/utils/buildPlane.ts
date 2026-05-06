@@ -1,7 +1,8 @@
+import { Mat4 } from '@gglib/math'
 import { Color } from '../../Color'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { beginGeometry, GeometryBuilder, GeometryBuilderOptions } from '../GeometryBuilder'
 import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
 
 /**
@@ -10,6 +11,8 @@ import { buildParametricLines, buildParametricSurface } from './buildParametricS
  * @public
  */
 export interface BuildPlaneOptions {
+  layout?: GeometryBuilderOptions['layout']
+
   /**
    * The uniform size (width, height) of the plane
    * @remarks
@@ -22,12 +25,20 @@ export interface BuildPlaneOptions {
    * defaults to 1
    */
   tesselation?: number
+  transform?: Mat4
 }
 
 export function planeGeometry(device: Device, options?: BuildPlaneOptions): Geometry {
-  return beginGeometry().append(buildPlane, options).endGeometry(device, {
-    name: 'plane',
+  return beginGeometry({
+    layout: options?.layout,
   })
+    .pushTransform(options?.transform ?? Mat4.createIdentity())
+    .append(buildPlane, options)
+    .popTransform()
+    .calculateBoundings()
+    .endGeometry(device, {
+      name: 'plane',
+    })
 }
 
 /**
@@ -83,9 +94,12 @@ export interface BuildPlaneLinesOptions {
   color?: Color
 }
 
-export function planeLinesGeometry(device: Device, options?: BuildPlaneLinesOptions): Geometry {
+export function planeLinesGeometry(
+  device: Device,
+  options?: BuildPlaneLinesOptions & GeometryBuilderOptions,
+): Geometry {
   return beginGeometry({
-    layout: [['position', 'color']],
+    layout: options?.layout ?? [['position', 'color']],
   })
     .append(buildPlaneLines, options)
     .endGeometry(device, {
@@ -117,7 +131,7 @@ export function buildPlaneLines(builder: GeometryBuilder, options?: BuildPlaneLi
         z: 0,
       }
     },
-    color: () => color.rgba,
+    color: () => Color.packToRGBA(color),
     uSteps: options?.tesselation ?? 1,
     vSteps: options?.tesselation ?? 1,
   })

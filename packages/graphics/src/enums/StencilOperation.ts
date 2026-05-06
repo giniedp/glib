@@ -21,6 +21,10 @@ const mapToWebGL: Record<StencilOperation, number> = {
   DecrementWrap: gl.DECR_WRAP,
 }
 
+const mapFromWebGl = Object.fromEntries(
+  Object.entries(mapToWebGL).map(([key, value]) => [value, key as StencilOperation]),
+)
+
 const mapToWebGPU: Record<StencilOperation, GPUStencilOperation> = {
   Keep: 'keep',
   Zero: 'zero',
@@ -34,6 +38,10 @@ const mapToWebGPU: Record<StencilOperation, GPUStencilOperation> = {
 
 export function stencilOperationToWebGL(op: StencilOperation): number {
   return mapToWebGL[op]
+}
+
+export function stencilOperationFromWebGL(op: number): StencilOperation {
+  return mapFromWebGl[op]
 }
 
 export function stencilOperationToWebGPU(op: StencilOperation): GPUStencilOperation {

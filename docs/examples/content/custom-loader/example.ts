@@ -1,38 +1,32 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
 import {
+  BasicMaterial,
   beginGeometry,
-  BlendState,
   buildCube,
   Color,
   createDevice,
-  CullState,
-  DepthState,
   LightType,
   MaterialOptions,
+  PlatformId,
+  TaskContext,
 } from '@gglib/graphics'
-import { AutoMaterial, LightParams } from '@gglib/materials'
+import { LightParams } from '@gglib/materials'
 import { Mat4 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { mountUi, redrawUi } from 'tweak-ui'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({
-    canvas,
-  })
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
   const content = new ContentLoader(device)
   content.registerLoader(PixelsLoader)
-  content.registerMaterial({
-    name: 'BasicEffect',
-    type: AutoMaterial,
-  })
+  content.registerMaterial(BasicMaterial, () => true)
 
   const world = Mat4.createIdentity()
   const view = Mat4.createIdentity()
   const proj = Mat4.createIdentity()
   const cam = Mat4.createIdentity()
   const light = new LightParams()
-  const stats = device.stats({})
+
   light.color = [0.8, 0.8, 0.8]
   light.position = [0, 0, 500]
   light.direction = [0, 0, -1]
@@ -41,39 +35,38 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   let model: Model
 
-  function frame(time: number) {
-    let time2pi = time * 2 * Math.PI
-
-    device.drawCalls = 0
+  const pass = device.renderPass
+  function frame(ctx: TaskContext) {
     device.resize()
-    device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
-    device.clear(0xff2e2620, 1.0)
+    let time2pi = ctx.time * 2 * Math.PI
 
     cam.initTranslationXYZ(0, 0, 30)
     view.initFrom(cam).invert()
-    proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 1, 1000)
+    proj.initPerspectiveFieldOfView(Math.PI / 2, device.output.aspectRatio, 1, 1000, device.ndcMinZ)
 
     if (model) {
       world.initRotationY(time2pi / 5000)
-
-      model.meshes.forEach((mesh) => {
-        mesh.materials.forEach((material) => {
-          let params = material.parameters
-
-          params.World = world
-          params.View = view
-          params.Projection = proj
-          params.CameraPosition = cam.getTranslation()
-          light.assign(0, params)
-        })
-      })
-      model.draw()
+      for (const mesh of model.meshes) {
+        for (const material of mesh.materials) {
+          const mtl = material as BasicMaterial
+          mtl.World = world
+          mtl.View = view
+          mtl.Projection = proj
+          mtl.CameraPosition = cam.getTranslation()
+        }
+      }
     }
 
-    device.stats(stats)
-    TweakUi.redraw()
+    redrawUi()
+
+    pass.flush()
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
+
+    if (model) {
+      model.draw()
+    }
+    pass.submit()
   }
 
   let assets = ['/megaman.pixels', '/sonic.pixels', '/mario.pixels']
@@ -84,23 +77,26 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
   loadModel(assets[0])
 
-  TweakUi.mount(tools, (ui) => {
+  mountUi(tools, (ui) => {
     ui.select({ model: assets[0] }, 'model', {
       options: assets,
-      onChange: (ctrl) => {
-        loadModel(ctrl!.target!.model)
+      onchange: (ctrl: any) => {
+        loadModel(ctrl.model)
       },
     })
-    ui.object("GPU Stats", stats)
+    // ui.object("GPU Stats", stats)
   })
 
-  return loop(frame).stop
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
 }
 
 export class PixelsLoader implements AssetLoader {
   public static extensions = ['.pixels']
   public static mimeTypes = []
-  public static loader = PixelsLoader
+  public static create = () => new PixelsLoader()
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
     // Usually we would fetch the file from the network like this:
@@ -119,18 +115,18 @@ export class PixelsLoader implements AssetLoader {
 
     // lookup map for colors
     const colorMap = {
-      0: Color.rgba(0, 0, 0, 255),
-      1: Color.rgba(255, 0, 0, 255),
-      2: Color.rgba(0, 255, 0, 255),
-      3: Color.rgba(255, 255, 0, 255),
-      4: Color.rgba(0, 0, 255, 255),
-      5: Color.rgba(255, 0, 255, 255),
-      6: Color.rgba(0, 255, 255, 255),
-      7: Color.rgba(255, 255, 255, 255),
+      0: Color.fromBytes(0, 0, 0, 255),
+      1: Color.fromBytes(255, 0, 0, 255),
+      2: Color.fromBytes(0, 255, 0, 255),
+      3: Color.fromBytes(255, 255, 0, 255),
+      4: Color.fromBytes(0, 0, 255, 255),
+      5: Color.fromBytes(255, 0, 255, 255),
+      6: Color.fromBytes(0, 255, 255, 255),
+      7: Color.fromBytes(255, 255, 255, 255),
     }
     const gap = 0.1
 
-    const builder = beginGeometry({ layout: [['position', 'normal', 'color']] })
+    const builder = beginGeometry({ layout: [['position', 'normal', 'texture']] })
     const transform = Mat4.createIdentity()
 
     const rows = input.split('\n')
@@ -146,20 +142,17 @@ export class PixelsLoader implements AssetLoader {
           0,
         )
         builder.withTransform(transform, () => {
-          builder.defaults.color = colorMap[col]
+          // builder.defaults.color = Color.to colorMap[col]
           buildCube(builder, { size: 1 })
         })
       })
     })
 
     const material: MaterialOptions = {
-      name: 'PixelsMaterial',
-      parameters: {
-        VertexColor: true,
-        LightCount: 1,
+      properties: {
+        // VertexColor: true,
+        // LightCount: 1,
       },
-      effectName: 'BasicEffect',
-      technique: 'default',
     }
 
     const geometry = builder.calculateNormals().calculateBoundings().endGeometry({})!

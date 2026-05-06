@@ -1,42 +1,45 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { dataTypeToSize } from '../enums'
-import { BufferOptions } from '../resources'
+import { BufferOptions, PlainBufferData } from '../resources'
 import { GeometryBuilderChannel, GeometryBuilderChannelMap } from './GeometryBuilderChannel'
 
 describe('Graphics.GeometryBuilderChannel', () => {
   let channels: GeometryBuilderChannelMap
-  let buffers: Array<BufferOptions<number[]>>
+  let buffers: Array<BufferOptions<PlainBufferData>>
 
   beforeEach(() => {
     buffers = [
       {
-        data: [11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
-        layout: {
+        data: {
+          type: 'float32',
+          elements: [11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+        },
+        vertexLayout: {
           position: {
-            elements: 3,
-            normalize: false,
-            offset: 0,
-            packed: false,
-            type: 'float32',
+            elementCount: 3,
+            normalized: false,
+            byteOffset: 0,
+            elementType: 'float32',
           },
           normal: {
-            elements: 3,
-            normalize: false,
-            offset: 3 * dataTypeToSize('float32'),
-            packed: false,
-            type: 'float32',
+            elementCount: 3,
+            normalized: false,
+            byteOffset: 3 * dataTypeToSize('float32'),
+            elementType: 'float32',
           },
         },
       },
       {
-        data: [17, 18, 27, 28, 37, 38],
-        layout: {
+        data: {
+          type: 'float32',
+          elements: [17, 18, 27, 28, 37, 38],
+        },
+        vertexLayout: {
           texture: {
-            elements: 2,
-            normalize: false,
-            offset: 0,
-            packed: false,
-            type: 'float32',
+            elementCount: 2,
+            normalized: false,
+            byteOffset: 0,
+            elementType: 'float32',
           },
         },
       },
@@ -111,19 +114,28 @@ describe('Graphics.GeometryBuilderChannel', () => {
       channels.position.write(0, 1, 42)
       channels.position.write(0, 2, 43)
 
-      expect(buffers[0].data).toEqual([41, 42, 43, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [41, 42, 43, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.position.write(1, 0, 51)
       channels.position.write(1, 1, 52)
       channels.position.write(1, 2, 53)
 
-      expect(buffers[0].data).toEqual([41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.position.write(2, 0, 61)
       channels.position.write(2, 1, 62)
       channels.position.write(2, 2, 63)
 
-      expect(buffers[0].data).toEqual([41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 61, 62, 63, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 61, 62, 63, 34, 35, 36],
+      })
     })
 
     it('normal', () => {
@@ -131,71 +143,116 @@ describe('Graphics.GeometryBuilderChannel', () => {
       channels.normal.write(0, 1, 45)
       channels.normal.write(0, 2, 46)
 
-      expect(buffers[0].data).toEqual([11, 12, 13, 44, 45, 46, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [11, 12, 13, 44, 45, 46, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.normal.write(1, 0, 54)
       channels.normal.write(1, 1, 55)
       channels.normal.write(1, 2, 56)
 
-      expect(buffers[0].data).toEqual([11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.normal.write(2, 0, 64)
       channels.normal.write(2, 1, 65)
       channels.normal.write(2, 2, 66)
 
-      expect(buffers[0].data).toEqual([11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 64, 65, 66])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 64, 65, 66],
+      })
     })
 
     it('texture', () => {
       channels.texture.write(0, 0, 47)
       channels.texture.write(0, 1, 48)
 
-      expect(buffers[1].data).toEqual([47, 48, 27, 28, 37, 38])
+      expect(buffers[1].data).toEqual({
+        type: 'float32',
+        elements: [47, 48, 27, 28, 37, 38],
+      })
 
       channels.texture.write(1, 0, 57)
       channels.texture.write(1, 1, 58)
 
-      expect(buffers[1].data).toEqual([47, 48, 57, 58, 37, 38])
+      expect(buffers[1].data).toEqual({
+        type: 'float32',
+        elements: [47, 48, 57, 58, 37, 38],
+      })
 
       channels.texture.write(2, 0, 67)
       channels.texture.write(2, 1, 68)
 
-      expect(buffers[1].data).toEqual([47, 48, 57, 58, 67, 68])
+      expect(buffers[1].data).toEqual({
+        type: 'float32',
+        elements: [47, 48, 57, 58, 67, 68],
+      })
     })
   })
 
   describe('#writeAttribute', () => {
     it('position', () => {
       channels.position.writeAttribute(0, [41, 42, 43])
-      expect(buffers[0].data).toEqual([41, 42, 43, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [41, 42, 43, 14, 15, 16, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.position.writeAttribute(1, [51, 52, 53])
-      expect(buffers[0].data).toEqual([41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.position.writeAttribute(2, [61, 62, 63])
-      expect(buffers[0].data).toEqual([41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 61, 62, 63, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [41, 42, 43, 14, 15, 16, 51, 52, 53, 24, 25, 26, 61, 62, 63, 34, 35, 36],
+      })
     })
 
     it('normal', () => {
       channels.normal.writeAttribute(0, [44, 45, 46])
-      expect(buffers[0].data).toEqual([11, 12, 13, 44, 45, 46, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [11, 12, 13, 44, 45, 46, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.normal.writeAttribute(1, [54, 55, 56])
-      expect(buffers[0].data).toEqual([11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 34, 35, 36])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 34, 35, 36],
+      })
 
       channels.normal.writeAttribute(2, [64, 65, 66])
-      expect(buffers[0].data).toEqual([11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 64, 65, 66])
+      expect(buffers[0].data).toEqual({
+        type: 'float32',
+        elements: [11, 12, 13, 44, 45, 46, 21, 22, 23, 54, 55, 56, 31, 32, 33, 64, 65, 66],
+      })
     })
 
     it('texture', () => {
       channels.texture.writeAttribute(0, [47, 48])
-      expect(buffers[1].data).toEqual([47, 48, 27, 28, 37, 38])
+      expect(buffers[1].data).toEqual({
+        type: 'float32',
+        elements: [47, 48, 27, 28, 37, 38],
+      })
 
       channels.texture.writeAttribute(1, [57, 58])
-      expect(buffers[1].data).toEqual([47, 48, 57, 58, 37, 38])
+      expect(buffers[1].data).toEqual({
+        type: 'float32',
+        elements: [47, 48, 57, 58, 37, 38],
+      })
 
       channels.texture.writeAttribute(2, [67, 68])
-      expect(buffers[1].data).toEqual([47, 48, 57, 58, 67, 68])
+      expect(buffers[1].data).toEqual({
+        type: 'float32',
+        elements: [47, 48, 57, 58, 67, 68],
+      })
     })
   })
 })

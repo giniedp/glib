@@ -1,7 +1,7 @@
 {
   "name": "@gglib/render",
   "description": "Part of the [G]glib project",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -19,16 +19,18 @@
   "main": "dist\\render\\src\\index.js",
   "typings": "dist\\render\\src\\index.d.ts",
   "devDependencies": {
-    "@gglib/graphics": "workspace:^0.6.2",
-    "@gglib/math": "workspace:^0.6.2",
-    "@gglib/utils": "workspace:^0.6.2",
-    "@gglib/effects": "workspace:^0.6.2"
+    "@gglib/graphics": "workspace:^0.7.0",
+    "@gglib/math": "workspace:^0.7.0",
+    "@gglib/model": "workspace:^0.7.0",
+    "@gglib/utils": "workspace:^0.7.0",
+    "@gglib/effects": "workspace:^0.7.0"
   },
   "peerDependencies": {
-    "@gglib/graphics": "0.6.2",
-    "@gglib/math": "0.6.2",
-    "@gglib/utils": "0.6.2",
-    "@gglib/effects": "0.6.2"
+    "@gglib/graphics": "0.7.0",
+    "@gglib/math": "0.7.0",
+    "@gglib/model": "0.7.0",
+    "@gglib/utils": "0.7.0",
+    "@gglib/effects": "0.7.0"
   },
   "files": [
     "package.json",

@@ -19,6 +19,20 @@ const mapToWebGL: Record<DepthFormat, number> = {
   Depth32Stencil8: gl.DEPTH32F_STENCIL8,
 }
 
+const mapToWebGPU: Record<DepthFormat, GPUTextureFormat> = {
+  None: 'stencil8',
+  DepthStencil: 'depth24plus-stencil8',
+  Depth16: 'depth16unorm',
+  Depth24: 'depth24plus',
+  Depth32: 'depth32float',
+  Depth24Stencil8: 'depth24plus-stencil8',
+  Depth32Stencil8: 'depth32float-stencil8',
+}
+
 export function depthFormatToWebGL(format: DepthFormat): number {
   return mapToWebGL[format]
+}
+
+export function depthFormatToWebGPU(format: DepthFormat): GPUTextureFormat {
+  return mapToWebGPU[format]
 }

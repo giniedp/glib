@@ -100,9 +100,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     rt2.resize(Math.floor(device.drawingBufferWidth / 2), Math.floor(device.drawingBufferHeight / 2))
     rt3.resize(Math.floor(device.drawingBufferWidth / 2), Math.floor(device.drawingBufferHeight / 2))
 
-    device.cullState = CullState.Default
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
+    device.cullState = CullState.Disabled
+    device.depthState = DepthState.Disabled
+    device.blendState = BlendState.Disabled
     if (post.isReady) {
       device.setRenderTarget(rt1.image)
     }

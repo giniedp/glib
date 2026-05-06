@@ -1,7 +1,7 @@
-import { BoundingBox } from './BoundingBox'
-import { BoundingSphere } from './BoundingSphere'
-import { boxIntersectsCapsule, PlaneIntersectionType, planeIntersectsCapsule, sphereIntersectsCapsule } from './Collision'
-import { IVec3, IVec4 } from './Types'
+import type { BoundingBox } from './BoundingBox'
+import type { BoundingSphere } from './BoundingSphere'
+import { Intersects, planeCapsuleIntersection, PlaneIntersectionType } from './Collision'
+import type { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 /**
@@ -66,15 +66,7 @@ export class BoundingCapsule {
     endZ?: number,
     radius?: number,
   ) {
-    return new BoundingCapsule(
-      startX,
-      startY,
-      startZ,
-      endX,
-      endY,
-      endZ,
-      radius,
-    )
+    return new BoundingCapsule(startX, startY, startZ, endX, endY, endZ, radius)
   }
 
   /**
@@ -115,15 +107,7 @@ export class BoundingCapsule {
    * @param radius - the radius
    */
   public static createV(start: IVec3, end: IVec3, radius: number): BoundingCapsule {
-    return new BoundingCapsule(
-      start.x,
-      start.y,
-      start.z,
-      end.x,
-      end.y,
-      end.z,
-      radius,
-    )
+    return new BoundingCapsule(start.x, start.y, start.z, end.x, end.y, end.z, radius)
   }
 
   /**
@@ -345,20 +329,20 @@ export class BoundingCapsule {
    * Checks whether the given plane intersects this volume
    */
   public intersectsPlane(plane: IVec4): boolean {
-    return planeIntersectsCapsule(plane, this.start, this.end, this.radius) === PlaneIntersectionType.Intersects
+    return planeCapsuleIntersection(plane, this.start, this.end, this.radius) === PlaneIntersectionType.Intersects
   }
 
   /**
    * Checks whether the given box intersects this volume
    */
   public intersectsBox(box: BoundingBox): boolean {
-    return boxIntersectsCapsule(box.min, box.max, this.start, this.end, this.radius)
+    return Intersects.boxCapsule(box, this)
   }
   /**
    * Checks whether the given sphere intersects this volume
    */
   public intersectsSphere(sphere: BoundingSphere): boolean {
-    return sphereIntersectsCapsule(sphere.center, sphere.radius, this.start, this.end, this.radius)
+    return Intersects.sphereCapsule(sphere, this)
   }
 
   // /**

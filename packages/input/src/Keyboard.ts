@@ -1,4 +1,4 @@
-import { simpleObservable } from '@gglib/utils'
+import { eventSource } from '@gglib/utils'
 
 /**
  * Options for {@link KeyboardListener}
@@ -57,17 +57,17 @@ export class KeyboardListener {
   /**
    * Is called on the `keydown` event and marks the `event.code` as pressed
    */
-  protected onKeyDown = (e: KeyboardEvent) => this.setKeyPressed(e)
+  protected onKeyDown = (e: Event) => this.setKeyPressed(e as KeyboardEvent)
   /**
    * Is called on the `keyup` event and marks the `event.code` as released
    */
-  protected onKeyUp = (e: KeyboardEvent) => this.setKeyReleased(e)
+  protected onKeyUp = (e: Event) => this.setKeyReleased(e as KeyboardEvent)
   /**
    * Is called when `document` or `window` loose focus e.g. user switches to another tab or application
    */
   protected onNeedsClear = (e: Event) => this.clearState(e)
 
-  public readonly onChanged = simpleObservable<KeyboardListener>()
+  public readonly onChanged = eventSource<KeyboardListener>()
 
   /**
    * Initializes the Keyboard with given options and activates the capture listeners
@@ -114,7 +114,7 @@ export class KeyboardListener {
     if (!this.keys.has(key)) {
       this.keys.add(key)
       this.codes.add(e.code)
-      this.onChanged.notify(this)
+      this.onChanged.emit(this)
     }
   }
   /**
@@ -125,7 +125,7 @@ export class KeyboardListener {
     if (this.keys.has(code)) {
       this.keys.delete(code)
       this.codes.delete(e.code)
-      this.onChanged.notify(this)
+      this.onChanged.emit(this)
     }
   }
   /**
@@ -135,7 +135,7 @@ export class KeyboardListener {
     if (this.keys.size > 0) {
       this.keys.clear()
       this.codes.clear()
-      this.onChanged.notify(this)
+      this.onChanged.emit(this)
     }
   }
 

@@ -1,5 +1,10 @@
-import { ITransformBase, IVec3, IVec4, Quat, Vec3, Vec4 } from '@gglib/math'
-import { AnimationData, AnimationDataChannel, AnimationDataChannels, AnimationDataChannelSample } from './AnimationData'
+import { type ITransformBase, type IVec3, type IVec4, Quat, Vec3, Vec4 } from '@gglib/math'
+import type {
+  AnimationData,
+  AnimationDataChannel,
+  AnimationDataChannels,
+  AnimationDataChannelSample,
+} from './AnimationData'
 
 /**
  * @public

@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -49,7 +49,7 @@ export interface LightDefs {
  * @public
  */
 export const SCENE_LIGHTS: ShaderChunkSet<LightDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifndef LIGHT_COUNT
       #define LIGHT_COUNT 4
     #endif
@@ -71,7 +71,7 @@ export const SCENE_LIGHTS: ShaderChunkSet<LightDefs> = {
     #endif
     #endif
   `,
-  structs: glsl`
+  structs: /* glsl */ `
     struct LightParams {
       vec4 Color;
       vec4 Position;
@@ -97,7 +97,7 @@ export const SCENE_LIGHTS: ShaderChunkSet<LightDefs> = {
     // @binding Lights
     uniform LightParams uLights[LIGHT_COUNT];
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     void getLight(in LightParams light, int type, in vec3 position, out vec3 lightDir, out vec3 lightColor) {
       #ifdef LIGHT_TYPE_DIRECTIONAL
       // directional light (constant attenuation)

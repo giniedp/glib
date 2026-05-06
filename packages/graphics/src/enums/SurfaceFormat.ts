@@ -1,5 +1,6 @@
-import { DataType, dataTypeToWebGL } from './DataType'
+import { type DataType, dataTypeToWebGL } from './DataType'
 import { GLConst as gl } from './GLConst'
+export type TextureCompression = 'astc' | 'etc1' | 'etc2' | 'pvrtc' | 'bptc' | 'bc'
 
 export type SurfaceFormat =
   // 8-bit formats
@@ -114,16 +115,235 @@ export type SurfaceFormat =
   | 'ASTC_12x12_UNORM'
   | 'ASTC_12x12_UNORM_SRGB'
 
+export type DepthStencilFormat = Extract<
+  SurfaceFormat,
+  'STENCIL8' | 'DEPTH16_UNORM' | 'DEPTH24_PLUS' | 'DEPTH24_PLUS_STENCIL8' | 'DEPTH32_FLOAT' | 'DEPTH32_FLOAT_STENCIL8'
+>
+
+export function surfaceIsDepthStencilFormat(format: SurfaceFormat): format is DepthStencilFormat {
+  return surfaceIsDepthFormat(format) || surfaceIsStencilFormat(format)
+}
+
+export function surfaceIsDepthFormat(format: SurfaceFormat): boolean {
+  switch (format) {
+    case 'DEPTH16_UNORM':
+    case 'DEPTH24_PLUS':
+    case 'DEPTH24_PLUS_STENCIL8':
+    case 'DEPTH32_FLOAT':
+    case 'DEPTH32_FLOAT_STENCIL8':
+      return true
+    default:
+      return false
+  }
+}
+
+export function surfaceIsStencilFormat(format: SurfaceFormat): boolean {
+  switch (format) {
+    case 'STENCIL8':
+    case 'DEPTH24_PLUS_STENCIL8':
+    case 'DEPTH32_FLOAT_STENCIL8':
+      return true
+    default:
+      return false
+  }
+}
+
+export type SurfaceFormatInfo = {
+  srgb: boolean
+  compression: TextureCompression | null
+  components: number
+  bytesPerPixel: number | null // null for compressed formats
+  bytesPerBlock: number
+  blockWidth: number
+  blockHeight: number
+  type: DataType | null // null for compressed or packed formats
+}
+
+function formatInfo(bpp: number, type: DataType, components: number, srgb?: boolean): SurfaceFormatInfo {
+  return Object.freeze({
+    srgb: !!srgb,
+    compression: null,
+    components,
+    blockWidth: 1,
+    blockHeight: 1,
+    bytesPerBlock: bpp,
+    bytesPerPixel: bpp,
+    type,
+  })
+}
+
+function compressedInfo(
+  compression: TextureCompression,
+  components: number,
+  block: readonly [number, number, number],
+  srgb?: boolean,
+): SurfaceFormatInfo {
+  const [blockWidth, blockHeight, bytesPerBlock] = block
+  return Object.freeze({
+    srgb: !!srgb,
+    compression: compression,
+    components,
+    bytesPerPixel: null,
+    blockWidth,
+    blockHeight,
+    bytesPerBlock,
+    type: null,
+  })
+}
+
+const block = {
+  bc1: [4, 4, 8],
+  bc2: [4, 4, 16],
+  bc3: [4, 4, 16],
+  bc4: [4, 4, 8],
+  bc5: [4, 4, 16],
+  bc6h: [4, 4, 16],
+  bc7: [4, 4, 16],
+  astc4x4: [4, 4, 16],
+  astc5x4: [5, 4, 16],
+  astc5x5: [5, 5, 16],
+  astc6x5: [6, 5, 16],
+  astc6x6: [6, 6, 16],
+  astc8x5: [8, 5, 16],
+  astc8x6: [8, 6, 16],
+  astc8x8: [8, 8, 16],
+  astc10x5: [10, 5, 16],
+  astc10x6: [10, 6, 16],
+  astc10x8: [10, 8, 16],
+  astc10x10: [10, 10, 16],
+  astc12x10: [12, 10, 16],
+  astc12x12: [12, 12, 16],
+} as const
+
+const surfaceInfoMap: Record<SurfaceFormat, SurfaceFormatInfo> = {
+  // 8-bit formats
+  R8_UNORM: formatInfo(1, 'uint8', 1),
+  R8_SNORM: formatInfo(1, 'uint8', 1),
+  R8_UINT: formatInfo(1, 'uint8', 1),
+  R8_SINT: formatInfo(1, 'uint8', 1),
+  // 16-bit formats
+  R16_UNORM: formatInfo(2, 'uint16', 1),
+  R16_SNORM: formatInfo(2, 'uint16', 1),
+  R16_UINT: formatInfo(2, 'uint16', 1),
+  R16_SINT: formatInfo(2, 'uint16', 1),
+  R16_FLOAT: formatInfo(2, 'float16', 1),
+  RG8_UNORM: formatInfo(2, 'uint8', 2),
+  RG8_SNORM: formatInfo(2, 'uint8', 2),
+  RG8_UINT: formatInfo(2, 'uint8', 2),
+  RG8_SINT: formatInfo(2, 'uint8', 2),
+  // 32-bit formats
+  R32_UINT: formatInfo(4, 'uint32', 1),
+  R32_SINT: formatInfo(4, 'uint32', 1),
+  R32_FLOAT: formatInfo(4, 'float32', 1),
+  RG16_UNORM: formatInfo(4, 'uint16', 2),
+  RG16_SNORM: formatInfo(4, 'uint16', 2),
+  RG16_UINT: formatInfo(4, 'uint16', 2),
+  RG16_SINT: formatInfo(4, 'uint16', 2),
+  RG16_FLOAT: formatInfo(4, 'float16', 2),
+  RGBA8_UNORM: formatInfo(4, 'uint8', 4),
+  RGBA8_UNORM_SRGB: formatInfo(4, 'uint8', 4, true),
+  RGBA8_SNORM: formatInfo(4, 'uint8', 4),
+  RGBA8_UINT: formatInfo(4, 'uint8', 4),
+  RGBA8_SINT: formatInfo(4, 'uint8', 4),
+  BGRA8_UNORM: formatInfo(4, 'uint8', 4),
+  BGRA8_UNORM_SRGB: formatInfo(4, 'uint8', 4, true),
+  // Packed 32-bit formats
+  RGB9_E5_UFLOAT: formatInfo(4, null, 3),
+  RGB10_A2_UINT: formatInfo(4, null, 4),
+  RGB10_A2_UNORM: formatInfo(4, null, 4),
+  RG11_B10_UFLOAT: formatInfo(4, null, 3),
+  // 64-bit formats
+  RG32_UINT: formatInfo(8, 'uint32', 2),
+  RG32_SINT: formatInfo(8, 'uint32', 2),
+  RG32_FLOAT: formatInfo(8, 'float32', 2),
+  RGBA16_UNORM: formatInfo(8, 'uint16', 4),
+  RGBA16_SNORM: formatInfo(8, 'uint16', 4),
+  RGBA16_UINT: formatInfo(8, 'uint16', 4),
+  RGBA16_SINT: formatInfo(8, 'uint16', 4),
+  RGBA16_FLOAT: formatInfo(8, 'float16', 4),
+  // 128-bit formats
+  RGBA32_UINT: formatInfo(16, 'uint32', 4),
+  RGBA32_SINT: formatInfo(16, 'uint32', 4),
+  RGBA32_FLOAT: formatInfo(16, 'float32', 4),
+  // Depth/stencil formats
+  STENCIL8: formatInfo(1, null, 1),
+  DEPTH16_UNORM: formatInfo(2, null, 1),
+  DEPTH24_PLUS: formatInfo(4, null, 1),
+  DEPTH24_PLUS_STENCIL8: formatInfo(4, null, 2),
+  DEPTH32_FLOAT: formatInfo(4, null, 1),
+  DEPTH32_FLOAT_STENCIL8: formatInfo(8, null, 2),
+  // BC
+  BC1_RGBA_UNORM: compressedInfo('bc', 4, block.bc1),
+  BC2_RGBA_UNORM: compressedInfo('bc', 4, block.bc2),
+  BC3_RGBA_UNORM: compressedInfo('bc', 4, block.bc3),
+  BC1_RGBA_UNORM_SRGB: compressedInfo('bc', 4, block.bc1, true),
+  BC2_RGBA_UNORM_SRGB: compressedInfo('bc', 4, block.bc2, true),
+  BC3_RGBA_UNORM_SRGB: compressedInfo('bc', 4, block.bc3, true),
+  BC4_R_UNORM: compressedInfo('bc', 1, block.bc4),
+  BC4_R_SNORM: compressedInfo('bc', 1, block.bc4),
+  BC5_RG_UNORM: compressedInfo('bc', 2, block.bc5),
+  BC5_RG_SNORM: compressedInfo('bc', 2, block.bc5),
+  BC6H_RGB_UFLOAT: compressedInfo('bc', 3, block.bc6h),
+  BC6H_RGB_FLOAT: compressedInfo('bc', 3, block.bc6h),
+  BC7_RGBA_UNORM: compressedInfo('bc', 4, block.bc7),
+  BC7_RGBA_UNORM_SRGB: compressedInfo('bc', 4, block.bc7, true),
+  // ETC2
+  EAC_R11_UNORM: compressedInfo('etc2', 1, [4, 4, 8]),
+  EAC_R11_SNORM: compressedInfo('etc2', 1, [4, 4, 8]),
+  EAC_RG11_UNORM: compressedInfo('etc2', 2, [4, 4, 16]),
+  EAC_RG11_SNORM: compressedInfo('etc2', 2, [4, 4, 16]),
+  ETC2_RGB8_UNORM: compressedInfo('etc2', 3, [4, 4, 8]),
+  ETC2_RGB8_A1_UNORM: compressedInfo('etc2', 4, [4, 4, 8]),
+  ETC2_RGBA8_UNORM: compressedInfo('etc2', 4, [4, 4, 16]),
+  ETC2_RGB8_UNORM_SRGB: compressedInfo('etc2', 3, [4, 4, 8], true),
+  ETC2_RGB8_A1_UNORM_SRGB: compressedInfo('etc2', 4, [4, 4, 8], true),
+  ETC2_RGBA8_UNORM_SRGB: compressedInfo('etc2', 4, [4, 4, 16], true),
+  // ASTC
+  ASTC_4x4_UNORM: compressedInfo('astc', 4, block.astc4x4),
+  ASTC_5x4_UNORM: compressedInfo('astc', 4, block.astc5x4),
+  ASTC_5x5_UNORM: compressedInfo('astc', 4, block.astc5x5),
+  ASTC_6x5_UNORM: compressedInfo('astc', 4, block.astc6x5),
+  ASTC_6x6_UNORM: compressedInfo('astc', 4, block.astc6x6),
+  ASTC_8x5_UNORM: compressedInfo('astc', 4, block.astc8x5),
+  ASTC_8x6_UNORM: compressedInfo('astc', 4, block.astc8x6),
+  ASTC_8x8_UNORM: compressedInfo('astc', 4, block.astc8x8),
+  ASTC_10x5_UNORM: compressedInfo('astc', 4, block.astc10x5),
+  ASTC_10x6_UNORM: compressedInfo('astc', 4, block.astc10x6),
+  ASTC_10x8_UNORM: compressedInfo('astc', 4, block.astc10x8),
+  ASTC_10x10_UNORM: compressedInfo('astc', 4, block.astc10x10),
+  ASTC_12x10_UNORM: compressedInfo('astc', 4, block.astc12x10),
+  ASTC_12x12_UNORM: compressedInfo('astc', 4, block.astc12x12),
+
+  ASTC_4x4_UNORM_SRGB: compressedInfo('astc', 4, block.astc4x4, true),
+  ASTC_5x4_UNORM_SRGB: compressedInfo('astc', 4, block.astc5x4, true),
+  ASTC_5x5_UNORM_SRGB: compressedInfo('astc', 4, block.astc5x5, true),
+  ASTC_6x5_UNORM_SRGB: compressedInfo('astc', 4, block.astc6x5, true),
+  ASTC_6x6_UNORM_SRGB: compressedInfo('astc', 4, block.astc6x6, true),
+  ASTC_8x5_UNORM_SRGB: compressedInfo('astc', 4, block.astc8x5, true),
+  ASTC_8x6_UNORM_SRGB: compressedInfo('astc', 4, block.astc8x6, true),
+  ASTC_8x8_UNORM_SRGB: compressedInfo('astc', 4, block.astc8x8, true),
+  ASTC_10x5_UNORM_SRGB: compressedInfo('astc', 4, block.astc10x5, true),
+  ASTC_10x6_UNORM_SRGB: compressedInfo('astc', 4, block.astc10x6, true),
+  ASTC_10x8_UNORM_SRGB: compressedInfo('astc', 4, block.astc10x8, true),
+  ASTC_10x10_UNORM_SRGB: compressedInfo('astc', 4, block.astc10x10, true),
+  ASTC_12x10_UNORM_SRGB: compressedInfo('astc', 4, block.astc12x10, true),
+  ASTC_12x12_UNORM_SRGB: compressedInfo('astc', 4, block.astc12x12, true),
+}
+
+export function surfaceFormatInfo(format: SurfaceFormat): SurfaceFormatInfo {
+  return surfaceInfoMap[format]
+}
+
 export function surfaceFormatIsCompressed(format: SurfaceFormat): boolean {
-  return mapToCompressed[format]
+  return !!surfaceFormatInfo(format)?.compression
 }
 
 export function surfaceFormatIsSrgb(format: SurfaceFormat): boolean {
-  return mapToSRGB[format]
+  return !!surfaceFormatInfo(format)?.srgb
 }
 
 export function surfaceFormatDataType(format: SurfaceFormat): DataType | null {
-  return mapToDataType[format] || null
+  return surfaceFormatInfo(format)?.type || null
 }
 
 export function surfaceFormatToWebGL(format: SurfaceFormat): number {
@@ -141,6 +361,14 @@ export function surfaceFormatToWebGLFormat(format: SurfaceFormat): GLenum | null
 
 export function surfaceFormatToWebGPU(format: SurfaceFormat): GPUTextureFormat {
   return mapToWebGPU[format]
+}
+
+export function surfaceFormatFromWebGPU(format: GPUTextureFormat): SurfaceFormat {
+  return mapFromGPU[format]
+}
+
+export function surfaceFormatFromWebGL(format: number): SurfaceFormat {
+  return mapFromWebGL[format]
 }
 
 export function surfaceFormatFromDXGI(format: number): SurfaceFormat | null {
@@ -381,6 +609,10 @@ const mapToWebGL: Record<SurfaceFormat, number> = {
   ASTC_12x12_UNORM_SRGB: WEBGL_compressed_texture_astc.COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR,
 }
 
+const mapFromWebGL: Record<number, SurfaceFormat> = Object.fromEntries(
+  Object.entries(mapToWebGL).map(([format, glFormat]) => [glFormat, format as SurfaceFormat]),
+)
+
 const mapToWebGLFormat: Record<SurfaceFormat, number> = {
   // 8-bit formats
   R8_UNORM: gl.RED,
@@ -502,8 +734,8 @@ const mapToWebGPU: Record<SurfaceFormat, GPUTextureFormat> = {
   R8_UINT: 'r8uint',
   R8_SINT: 'r8sint',
   // 16-bit formats
-  R16_UNORM: 'r16unorm' as any, // not standardized in WebGPU yet
-  R16_SNORM: 'r16snorm' as any, // not standardized in WebGPU yet
+  R16_UNORM: 'r16unorm',
+  R16_SNORM: 'r16snorm',
   R16_UINT: 'r16uint',
   R16_SINT: 'r16sint',
   R16_FLOAT: 'r16float',
@@ -515,8 +747,8 @@ const mapToWebGPU: Record<SurfaceFormat, GPUTextureFormat> = {
   R32_UINT: 'r32uint',
   R32_SINT: 'r32sint',
   R32_FLOAT: 'r32float',
-  RG16_UNORM: 'rg16unorm' as any, // not standardized in WebGPU yet
-  RG16_SNORM: 'rg16snorm' as any, // not standardized in WebGPU yet
+  RG16_UNORM: 'rg16unorm',
+  RG16_SNORM: 'rg16snorm',
   RG16_UINT: 'rg16uint',
   RG16_SINT: 'rg16sint',
   RG16_FLOAT: 'rg16float',
@@ -528,16 +760,16 @@ const mapToWebGPU: Record<SurfaceFormat, GPUTextureFormat> = {
   BGRA8_UNORM: 'bgra8unorm',
   BGRA8_UNORM_SRGB: 'bgra8unorm-srgb',
   // Packed 32-bit formats
-  RGB9_E5_UFLOAT: 'rgb9e5ufloat' as any, // not standardized in WebGPU yet
-  RGB10_A2_UINT: 'rgb10a2uint' as any, // not standardized in WebGPU yet
+  RGB9_E5_UFLOAT: 'rgb9e5ufloat',
+  RGB10_A2_UINT: 'rgb10a2uint',
   RGB10_A2_UNORM: 'rgb10a2unorm',
-  RG11_B10_UFLOAT: 'rg11b10ufloat' as any,
+  RG11_B10_UFLOAT: 'rg11b10ufloat',
   // 64-bit formats
   RG32_UINT: 'rg32uint',
   RG32_SINT: 'rg32sint',
   RG32_FLOAT: 'rg32float',
-  RGBA16_UNORM: 'rgba16unorm' as any, // not standardized in WebGPU yet
-  RGBA16_SNORM: 'rgba16snorm' as any, // not standardized in WebGPU yet
+  RGBA16_UNORM: 'rgba16unorm',
+  RGBA16_SNORM: 'rgba16snorm',
   RGBA16_UINT: 'rgba16uint',
   RGBA16_SINT: 'rgba16sint',
   RGBA16_FLOAT: 'rgba16float',
@@ -546,12 +778,12 @@ const mapToWebGPU: Record<SurfaceFormat, GPUTextureFormat> = {
   RGBA32_SINT: 'rgba32sint',
   RGBA32_FLOAT: 'rgba32float',
   // Depth/stencil formats
-  STENCIL8: 'stencil8' as any,
-  DEPTH16_UNORM: 'depth16unorm' as any,
+  STENCIL8: 'stencil8',
+  DEPTH16_UNORM: 'depth16unorm',
   DEPTH24_PLUS: 'depth24plus',
   DEPTH24_PLUS_STENCIL8: 'depth24plus-stencil8',
   DEPTH32_FLOAT: 'depth32float',
-  DEPTH32_FLOAT_STENCIL8: 'depth32float-stencil8' as any,
+  DEPTH32_FLOAT_STENCIL8: 'depth32float-stencil8',
   // BC
   BC1_RGBA_UNORM: 'bc1-rgba-unorm',
   BC2_RGBA_UNORM: 'bc2-rgba-unorm',
@@ -564,392 +796,54 @@ const mapToWebGPU: Record<SurfaceFormat, GPUTextureFormat> = {
   BC5_RG_UNORM: 'bc5-rg-unorm',
   BC5_RG_SNORM: 'bc5-rg-snorm',
   BC6H_RGB_UFLOAT: 'bc6h-rgb-ufloat',
-  BC6H_RGB_FLOAT: 'bc6h-rgb-float' as any,
+  BC6H_RGB_FLOAT: 'bc6h-rgb-float',
   BC7_RGBA_UNORM: 'bc7-rgba-unorm',
   BC7_RGBA_UNORM_SRGB: 'bc7-rgba-unorm-srgb',
   // ETC2
-  EAC_R11_UNORM: 'eac-r11-unorm' as any,
-  EAC_R11_SNORM: 'eac-r11-snorm' as any,
-  EAC_RG11_UNORM: 'eac-rg11-unorm' as any,
-  EAC_RG11_SNORM: 'eac-rg11-snorm' as any,
-  ETC2_RGB8_UNORM: 'etc2-rgb8unorm' as any,
-  ETC2_RGB8_UNORM_SRGB: 'etc2-rgb8unorm-srgb' as any,
-  ETC2_RGB8_A1_UNORM: 'etc2-rgb8a1unorm' as any,
-  ETC2_RGB8_A1_UNORM_SRGB: 'etc2-rgb8a1unorm-srgb' as any,
-  ETC2_RGBA8_UNORM: 'etc2-rgba8unorm' as any,
-  ETC2_RGBA8_UNORM_SRGB: 'etc2-rgba8unorm-srgb' as any,
+  EAC_R11_UNORM: 'eac-r11unorm',
+  EAC_R11_SNORM: 'eac-r11snorm',
+  EAC_RG11_UNORM: 'eac-rg11unorm',
+  EAC_RG11_SNORM: 'eac-rg11snorm',
+  ETC2_RGB8_UNORM: 'etc2-rgb8unorm',
+  ETC2_RGB8_UNORM_SRGB: 'etc2-rgb8unorm-srgb',
+  ETC2_RGB8_A1_UNORM: 'etc2-rgb8a1unorm',
+  ETC2_RGB8_A1_UNORM_SRGB: 'etc2-rgb8a1unorm-srgb',
+  ETC2_RGBA8_UNORM: 'etc2-rgba8unorm',
+  ETC2_RGBA8_UNORM_SRGB: 'etc2-rgba8unorm-srgb',
   // ASTC
-  ASTC_4x4_UNORM: 'astc-4x4-unorm' as any,
-  ASTC_4x4_UNORM_SRGB: 'astc-4x4-unorm-srgb' as any,
-  ASTC_5x4_UNORM: 'astc-5x4-unorm' as any,
-  ASTC_5x4_UNORM_SRGB: 'astc-5x4-unorm-srgb' as any,
-  ASTC_5x5_UNORM: 'astc-5x5-unorm' as any,
-  ASTC_5x5_UNORM_SRGB: 'astc-5x5-unorm-srgb' as any,
-  ASTC_6x5_UNORM: 'astc-6x5-unorm' as any,
-  ASTC_6x5_UNORM_SRGB: 'astc-6x5-unorm-srgb' as any,
-  ASTC_6x6_UNORM: 'astc-6x6-unorm' as any,
-  ASTC_6x6_UNORM_SRGB: 'astc-6x6-unorm-srgb' as any,
-  ASTC_8x5_UNORM: 'astc-8x5-unorm' as any,
-  ASTC_8x5_UNORM_SRGB: 'astc-8x5-unorm-srgb' as any,
-  ASTC_8x6_UNORM: 'astc-8x6-unorm' as any,
-  ASTC_8x6_UNORM_SRGB: 'astc-8x6-unorm-srgb' as any,
-  ASTC_8x8_UNORM: 'astc-8x8-unorm' as any,
-  ASTC_8x8_UNORM_SRGB: 'astc-8x8-unorm-srgb' as any,
-  ASTC_10x5_UNORM: 'astc-10x5-unorm' as any,
-  ASTC_10x5_UNORM_SRGB: 'astc-10x5-unorm-srgb' as any,
-  ASTC_10x6_UNORM: 'astc-10x6-unorm' as any,
-  ASTC_10x6_UNORM_SRGB: 'astc-10x6-unorm-srgb' as any,
-  ASTC_10x8_UNORM: 'astc-10x8-unorm' as any,
-  ASTC_10x8_UNORM_SRGB: 'astc-10x8-unorm-srgb' as any,
-  ASTC_10x10_UNORM: 'astc-10x10-unorm' as any,
-  ASTC_10x10_UNORM_SRGB: 'astc-10x10-unorm-srgb' as any,
-  ASTC_12x10_UNORM: 'astc-12x10-unorm' as any,
-  ASTC_12x10_UNORM_SRGB: 'astc-12x10-unorm-srgb' as any,
-  ASTC_12x12_UNORM: 'astc-12x12-unorm' as any,
-  ASTC_12x12_UNORM_SRGB: 'astc-12x12-unorm-srgb' as any,
+  ASTC_4x4_UNORM: 'astc-4x4-unorm',
+  ASTC_4x4_UNORM_SRGB: 'astc-4x4-unorm-srgb',
+  ASTC_5x4_UNORM: 'astc-5x4-unorm',
+  ASTC_5x4_UNORM_SRGB: 'astc-5x4-unorm-srgb',
+  ASTC_5x5_UNORM: 'astc-5x5-unorm',
+  ASTC_5x5_UNORM_SRGB: 'astc-5x5-unorm-srgb',
+  ASTC_6x5_UNORM: 'astc-6x5-unorm',
+  ASTC_6x5_UNORM_SRGB: 'astc-6x5-unorm-srgb',
+  ASTC_6x6_UNORM: 'astc-6x6-unorm',
+  ASTC_6x6_UNORM_SRGB: 'astc-6x6-unorm-srgb',
+  ASTC_8x5_UNORM: 'astc-8x5-unorm',
+  ASTC_8x5_UNORM_SRGB: 'astc-8x5-unorm-srgb',
+  ASTC_8x6_UNORM: 'astc-8x6-unorm',
+  ASTC_8x6_UNORM_SRGB: 'astc-8x6-unorm-srgb',
+  ASTC_8x8_UNORM: 'astc-8x8-unorm',
+  ASTC_8x8_UNORM_SRGB: 'astc-8x8-unorm-srgb',
+  ASTC_10x5_UNORM: 'astc-10x5-unorm',
+  ASTC_10x5_UNORM_SRGB: 'astc-10x5-unorm-srgb',
+  ASTC_10x6_UNORM: 'astc-10x6-unorm',
+  ASTC_10x6_UNORM_SRGB: 'astc-10x6-unorm-srgb',
+  ASTC_10x8_UNORM: 'astc-10x8-unorm',
+  ASTC_10x8_UNORM_SRGB: 'astc-10x8-unorm-srgb',
+  ASTC_10x10_UNORM: 'astc-10x10-unorm',
+  ASTC_10x10_UNORM_SRGB: 'astc-10x10-unorm-srgb',
+  ASTC_12x10_UNORM: 'astc-12x10-unorm',
+  ASTC_12x10_UNORM_SRGB: 'astc-12x10-unorm-srgb',
+  ASTC_12x12_UNORM: 'astc-12x12-unorm',
+  ASTC_12x12_UNORM_SRGB: 'astc-12x12-unorm-srgb',
 }
 
-const mapToSRGB: Record<SurfaceFormat, boolean> = {
-  // 8-bit formats
-  R8_UNORM: false,
-  R8_SNORM: false,
-  R8_UINT: false,
-  R8_SINT: false,
-  // 16-bit formats
-  R16_UNORM: false,
-  R16_SNORM: false,
-  R16_UINT: false,
-  R16_SINT: false,
-  R16_FLOAT: false,
-  RG8_UNORM: false,
-  RG8_SNORM: false,
-  RG8_UINT: false,
-  RG8_SINT: false,
-  // 32-bit formats
-  R32_UINT: false,
-  R32_SINT: false,
-  R32_FLOAT: false,
-  RG16_UNORM: false,
-  RG16_SNORM: false,
-  RG16_UINT: false,
-  RG16_SINT: false,
-  RG16_FLOAT: false,
-  RGBA8_UNORM: false,
-  RGBA8_UNORM_SRGB: true,
-  RGBA8_SNORM: false,
-  RGBA8_UINT: false,
-  RGBA8_SINT: false,
-  BGRA8_UNORM: false,
-  BGRA8_UNORM_SRGB: true,
-  // Packed 32-bit formats
-  RGB9_E5_UFLOAT: false,
-  RGB10_A2_UINT: false,
-  RGB10_A2_UNORM: false,
-  RG11_B10_UFLOAT: false,
-  // 64-bit formats
-  RG32_UINT: false,
-  RG32_SINT: false,
-  RG32_FLOAT: false,
-  RGBA16_UNORM: false,
-  RGBA16_SNORM: false,
-  RGBA16_UINT: false,
-  RGBA16_SINT: false,
-  RGBA16_FLOAT: false,
-  // 128-bit formats
-  RGBA32_UINT: false,
-  RGBA32_SINT: false,
-  RGBA32_FLOAT: false,
-  // Depth/stencil formats
-  STENCIL8: false,
-  DEPTH16_UNORM: false,
-  DEPTH24_PLUS: false,
-  DEPTH24_PLUS_STENCIL8: false,
-  DEPTH32_FLOAT: false,
-  DEPTH32_FLOAT_STENCIL8: false,
-  // BC
-  BC1_RGBA_UNORM: false,
-  BC2_RGBA_UNORM: false,
-  BC3_RGBA_UNORM: false,
-  BC1_RGBA_UNORM_SRGB: true,
-  BC2_RGBA_UNORM_SRGB: true,
-  BC3_RGBA_UNORM_SRGB: true,
-  BC4_R_UNORM: false,
-  BC4_R_SNORM: false,
-  BC5_RG_UNORM: false,
-  BC5_RG_SNORM: false,
-  BC6H_RGB_UFLOAT: false,
-  BC6H_RGB_FLOAT: false,
-  BC7_RGBA_UNORM: false,
-  BC7_RGBA_UNORM_SRGB: true,
-  // ETC2
-  EAC_R11_UNORM: false,
-  EAC_R11_SNORM: false,
-  EAC_RG11_UNORM: false,
-  EAC_RG11_SNORM: false,
-  ETC2_RGB8_UNORM: false,
-  ETC2_RGB8_UNORM_SRGB: true,
-  ETC2_RGB8_A1_UNORM: false,
-  ETC2_RGB8_A1_UNORM_SRGB: true,
-  ETC2_RGBA8_UNORM: false,
-  ETC2_RGBA8_UNORM_SRGB: true,
-  // ASTC
-  ASTC_4x4_UNORM: false,
-  ASTC_4x4_UNORM_SRGB: true,
-  ASTC_5x4_UNORM: false,
-  ASTC_5x4_UNORM_SRGB: true,
-  ASTC_5x5_UNORM: false,
-  ASTC_5x5_UNORM_SRGB: true,
-  ASTC_6x5_UNORM: false,
-  ASTC_6x5_UNORM_SRGB: true,
-  ASTC_6x6_UNORM: false,
-  ASTC_6x6_UNORM_SRGB: true,
-  ASTC_8x5_UNORM: false,
-  ASTC_8x5_UNORM_SRGB: true,
-  ASTC_8x6_UNORM: false,
-  ASTC_8x6_UNORM_SRGB: true,
-  ASTC_8x8_UNORM: false,
-  ASTC_8x8_UNORM_SRGB: true,
-  ASTC_10x5_UNORM: false,
-  ASTC_10x5_UNORM_SRGB: true,
-  ASTC_10x6_UNORM: false,
-  ASTC_10x6_UNORM_SRGB: true,
-  ASTC_10x8_UNORM: false,
-  ASTC_10x8_UNORM_SRGB: true,
-  ASTC_10x10_UNORM: false,
-  ASTC_10x10_UNORM_SRGB: true,
-  ASTC_12x10_UNORM: false,
-  ASTC_12x10_UNORM_SRGB: true,
-  ASTC_12x12_UNORM: false,
-  ASTC_12x12_UNORM_SRGB: true,
-}
-
-const mapToDataType: Record<SurfaceFormat, DataType> = {
-  // 8-bit formats
-  R8_UNORM: 'uint8',
-  R8_SNORM: 'uint8',
-  R8_UINT: 'uint8',
-  R8_SINT: 'uint8',
-  // 16-bit formats
-  R16_UNORM: 'uint16',
-  R16_SNORM: 'uint16',
-  R16_UINT: 'uint16',
-  R16_SINT: 'uint16',
-  R16_FLOAT: 'float16',
-  RG8_UNORM: 'uint8',
-  RG8_SNORM: 'uint8',
-  RG8_UINT: 'uint8',
-  RG8_SINT: 'uint8',
-  // 32-bit formats
-  R32_UINT: 'uint32',
-  R32_SINT: 'uint32',
-  R32_FLOAT: 'float32',
-  RG16_UNORM: 'uint16',
-  RG16_SNORM: 'uint16',
-  RG16_UINT: 'uint16',
-  RG16_SINT: 'uint16',
-  RG16_FLOAT: 'float16',
-  RGBA8_UNORM: 'uint8',
-  RGBA8_UNORM_SRGB: 'uint8',
-  RGBA8_SNORM: 'uint8',
-  RGBA8_UINT: 'uint8',
-  RGBA8_SINT: 'uint8',
-  BGRA8_UNORM: 'uint8',
-  BGRA8_UNORM_SRGB: 'uint8',
-  // Packed 32-bit formats
-  RGB9_E5_UFLOAT: null, // not supported
-  RGB10_A2_UINT: null, // not supported
-  RGB10_A2_UNORM: null, // not supported
-  RG11_B10_UFLOAT: null, // not supported
-  // 64-bit formats
-  RG32_UINT: 'uint32',
-  RG32_SINT: 'uint32',
-  RG32_FLOAT: 'float32',
-  RGBA16_UNORM: 'uint16',
-  RGBA16_SNORM: 'uint16',
-  RGBA16_UINT: 'uint16',
-  RGBA16_SINT: 'uint16',
-  RGBA16_FLOAT: 'float16',
-  // 128-bit formats
-  RGBA32_UINT: 'uint32',
-  RGBA32_SINT: 'uint32',
-  RGBA32_FLOAT: 'float32',
-  // Depth/stencil formats
-  STENCIL8: null, // not needed
-  DEPTH16_UNORM: null, // not needed
-  DEPTH24_PLUS: null, // not needed
-  DEPTH24_PLUS_STENCIL8: null, // not needed
-  DEPTH32_FLOAT: null, // not needed
-  DEPTH32_FLOAT_STENCIL8: null, // not needed
-  // BC
-  BC1_RGBA_UNORM: null,
-  BC2_RGBA_UNORM: null,
-  BC3_RGBA_UNORM: null,
-  BC1_RGBA_UNORM_SRGB: null,
-  BC2_RGBA_UNORM_SRGB: null,
-  BC3_RGBA_UNORM_SRGB: null,
-  BC4_R_UNORM: null,
-  BC4_R_SNORM: null,
-  BC5_RG_UNORM: null,
-  BC5_RG_SNORM: null,
-  BC6H_RGB_UFLOAT: null,
-  BC6H_RGB_FLOAT: null,
-  BC7_RGBA_UNORM: null,
-  BC7_RGBA_UNORM_SRGB: null,
-  // ETC2
-  EAC_R11_UNORM: null,
-  EAC_R11_SNORM: null,
-  EAC_RG11_UNORM: null,
-  EAC_RG11_SNORM: null,
-  ETC2_RGB8_UNORM: null,
-  ETC2_RGB8_UNORM_SRGB: null,
-  ETC2_RGB8_A1_UNORM: null,
-  ETC2_RGB8_A1_UNORM_SRGB: null,
-  ETC2_RGBA8_UNORM: null,
-  ETC2_RGBA8_UNORM_SRGB: null,
-  // ASTC
-  ASTC_4x4_UNORM: null,
-  ASTC_4x4_UNORM_SRGB: null,
-  ASTC_5x4_UNORM: null,
-  ASTC_5x4_UNORM_SRGB: null,
-  ASTC_5x5_UNORM: null,
-  ASTC_5x5_UNORM_SRGB: null,
-  ASTC_6x5_UNORM: null,
-  ASTC_6x5_UNORM_SRGB: null,
-  ASTC_6x6_UNORM: null,
-  ASTC_6x6_UNORM_SRGB: null,
-  ASTC_8x5_UNORM: null,
-  ASTC_8x5_UNORM_SRGB: null,
-  ASTC_8x6_UNORM: null,
-  ASTC_8x6_UNORM_SRGB: null,
-  ASTC_8x8_UNORM: null,
-  ASTC_8x8_UNORM_SRGB: null,
-  ASTC_10x5_UNORM: null,
-  ASTC_10x5_UNORM_SRGB: null,
-  ASTC_10x6_UNORM: null,
-  ASTC_10x6_UNORM_SRGB: null,
-  ASTC_10x8_UNORM: null,
-  ASTC_10x8_UNORM_SRGB: null,
-  ASTC_10x10_UNORM: null,
-  ASTC_10x10_UNORM_SRGB: null,
-  ASTC_12x10_UNORM: null,
-  ASTC_12x10_UNORM_SRGB: null,
-  ASTC_12x12_UNORM: null,
-  ASTC_12x12_UNORM_SRGB: null,
-}
-
-const mapToCompressed: Record<SurfaceFormat, boolean> = {
-  // 8-bit formats
-  R8_UNORM: false,
-  R8_SNORM: false,
-  R8_UINT: false,
-  R8_SINT: false,
-  // 16-bit formats
-  R16_UNORM: false,
-  R16_SNORM: false,
-  R16_UINT: false,
-  R16_SINT: false,
-  R16_FLOAT: false,
-  RG8_UNORM: false,
-  RG8_SNORM: false,
-  RG8_UINT: false,
-  RG8_SINT: false,
-  // 32-bit formats
-  R32_UINT: false,
-  R32_SINT: false,
-  R32_FLOAT: false,
-  RG16_UNORM: false,
-  RG16_SNORM: false,
-  RG16_UINT: false,
-  RG16_SINT: false,
-  RG16_FLOAT: false,
-  RGBA8_UNORM: false,
-  RGBA8_UNORM_SRGB: false,
-  RGBA8_SNORM: false,
-  RGBA8_UINT: false,
-  RGBA8_SINT: false,
-  BGRA8_UNORM: false,
-  BGRA8_UNORM_SRGB: false,
-  // Packed 32-bit formats
-  RGB9_E5_UFLOAT: false,
-  RGB10_A2_UINT: false,
-  RGB10_A2_UNORM: false,
-  RG11_B10_UFLOAT: false,
-  // 64-bit formats
-  RG32_UINT: false,
-  RG32_SINT: false,
-  RG32_FLOAT: false,
-  RGBA16_UNORM: false,
-  RGBA16_SNORM: false,
-  RGBA16_UINT: false,
-  RGBA16_SINT: false,
-  RGBA16_FLOAT: false,
-  // 128-bit formats
-  RGBA32_UINT: false,
-  RGBA32_SINT: false,
-  RGBA32_FLOAT: false,
-  // Depth/stencil formats
-  STENCIL8: false,
-  DEPTH16_UNORM: false,
-  DEPTH24_PLUS: false,
-  DEPTH24_PLUS_STENCIL8: false,
-  DEPTH32_FLOAT: false,
-  DEPTH32_FLOAT_STENCIL8: false,
-  // BC
-  BC1_RGBA_UNORM: true,
-  BC2_RGBA_UNORM: true,
-  BC3_RGBA_UNORM: true,
-  BC1_RGBA_UNORM_SRGB: true,
-  BC2_RGBA_UNORM_SRGB: true,
-  BC3_RGBA_UNORM_SRGB: true,
-  BC4_R_UNORM: true,
-  BC4_R_SNORM: true,
-  BC5_RG_UNORM: true,
-  BC5_RG_SNORM: true,
-  BC6H_RGB_UFLOAT: true,
-  BC6H_RGB_FLOAT: true,
-  BC7_RGBA_UNORM: true,
-  BC7_RGBA_UNORM_SRGB: true,
-  // ETC2
-  EAC_R11_UNORM: true,
-  EAC_R11_SNORM: true,
-  EAC_RG11_UNORM: true,
-  EAC_RG11_SNORM: true,
-  ETC2_RGB8_UNORM: true,
-  ETC2_RGB8_UNORM_SRGB: true,
-  ETC2_RGB8_A1_UNORM: true,
-  ETC2_RGB8_A1_UNORM_SRGB: true,
-  ETC2_RGBA8_UNORM: true,
-  ETC2_RGBA8_UNORM_SRGB: true,
-  // ASTC
-  ASTC_4x4_UNORM: true,
-  ASTC_4x4_UNORM_SRGB: true,
-  ASTC_5x4_UNORM: true,
-  ASTC_5x4_UNORM_SRGB: true,
-  ASTC_5x5_UNORM: true,
-  ASTC_5x5_UNORM_SRGB: true,
-  ASTC_6x5_UNORM: true,
-  ASTC_6x5_UNORM_SRGB: true,
-  ASTC_6x6_UNORM: true,
-  ASTC_6x6_UNORM_SRGB: true,
-  ASTC_8x5_UNORM: true,
-  ASTC_8x5_UNORM_SRGB: true,
-  ASTC_8x6_UNORM: true,
-  ASTC_8x6_UNORM_SRGB: true,
-  ASTC_8x8_UNORM: true,
-  ASTC_8x8_UNORM_SRGB: true,
-  ASTC_10x5_UNORM: true,
-  ASTC_10x5_UNORM_SRGB: true,
-  ASTC_10x6_UNORM: true,
-  ASTC_10x6_UNORM_SRGB: true,
-  ASTC_10x8_UNORM: true,
-  ASTC_10x8_UNORM_SRGB: true,
-  ASTC_10x10_UNORM: true,
-  ASTC_10x10_UNORM_SRGB: true,
-  ASTC_12x10_UNORM: true,
-  ASTC_12x10_UNORM_SRGB: true,
-  ASTC_12x12_UNORM: true,
-  ASTC_12x12_UNORM_SRGB: true,
-}
+const mapFromGPU: Record<GPUTextureFormat, SurfaceFormat> = Object.fromEntries(
+  Object.entries(mapToWebGPU).map(([k, v]) => [v, k as SurfaceFormat]),
+) as any
 
 const mapToWebGLExtension: Record<number, string | null> = {
   [WEBGL_compressed_texture_s3tc.COMPRESSED_RGB_S3TC_DXT1_EXT]: 'WEBGL_compressed_texture_s3tc',
@@ -1034,126 +928,247 @@ const mapToWebGLExtension: Record<number, string | null> = {
 
 // https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format
 
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32A32_TYPELESS = 1
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32A32_FLOAT = 2
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32A32_UINT = 3
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32A32_SINT = 4
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32_TYPELESS = 5
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32_FLOAT = 6
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32_UINT = 7
+// @ts-ignore
 const DXGI_FORMAT_R32G32B32_SINT = 8
+// @ts-ignore
 const DXGI_FORMAT_R16G16B16A16_TYPELESS = 9
+// @ts-ignore
 const DXGI_FORMAT_R16G16B16A16_FLOAT = 10
+// @ts-ignore
 const DXGI_FORMAT_R16G16B16A16_UNORM = 11
+// @ts-ignore
 const DXGI_FORMAT_R16G16B16A16_UINT = 12
+// @ts-ignore
 const DXGI_FORMAT_R16G16B16A16_SNORM = 13
+// @ts-ignore
 const DXGI_FORMAT_R16G16B16A16_SINT = 14
+// @ts-ignore
 const DXGI_FORMAT_R32G32_TYPELESS = 15
+// @ts-ignore
 const DXGI_FORMAT_R32G32_FLOAT = 16
+// @ts-ignore
 const DXGI_FORMAT_R32G32_UINT = 17
+// @ts-ignore
 const DXGI_FORMAT_R32G32_SINT = 18
+// @ts-ignore
 const DXGI_FORMAT_R32G8X24_TYPELESS = 19
+// @ts-ignore
 const DXGI_FORMAT_D32_FLOAT_S8X24_UINT = 20
+// @ts-ignore
 const DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS = 21
+// @ts-ignore
 const DXGI_FORMAT_X32_TYPELESS_G8X24_UINT = 22
+// @ts-ignore
 const DXGI_FORMAT_R10G10B10A2_TYPELESS = 23
+// @ts-ignore
 const DXGI_FORMAT_R10G10B10A2_UNORM = 24
+// @ts-ignore
 const DXGI_FORMAT_R10G10B10A2_UINT = 25
+// @ts-ignore
 const DXGI_FORMAT_R11G11B10_FLOAT = 26
+// @ts-ignore
 const DXGI_FORMAT_R8G8B8A8_TYPELESS = 27
+// @ts-ignore
 const DXGI_FORMAT_R8G8B8A8_UNORM = 28
+// @ts-ignore
 const DXGI_FORMAT_R8G8B8A8_UNORM_SRGB = 29
+// @ts-ignore
 const DXGI_FORMAT_R8G8B8A8_UINT = 30
+// @ts-ignore
 const DXGI_FORMAT_R8G8B8A8_SNORM = 31
+// @ts-ignore
 const DXGI_FORMAT_R8G8B8A8_SINT = 32
+// @ts-ignore
 const DXGI_FORMAT_R16G16_TYPELESS = 33
+// @ts-ignore
 const DXGI_FORMAT_R16G16_FLOAT = 34
+// @ts-ignore
 const DXGI_FORMAT_R16G16_UNORM = 35
+// @ts-ignore
 const DXGI_FORMAT_R16G16_UINT = 36
+// @ts-ignore
 const DXGI_FORMAT_R16G16_SNORM = 37
+// @ts-ignore
 const DXGI_FORMAT_R16G16_SINT = 38
+// @ts-ignore
 const DXGI_FORMAT_R32_TYPELESS = 39
+// @ts-ignore
 const DXGI_FORMAT_D32_FLOAT = 40
+// @ts-ignore
 const DXGI_FORMAT_R32_FLOAT = 41
+// @ts-ignore
 const DXGI_FORMAT_R32_UINT = 42
+// @ts-ignore
 const DXGI_FORMAT_R32_SINT = 43
+// @ts-ignore
 const DXGI_FORMAT_R24G8_TYPELESS = 44
+// @ts-ignore
 const DXGI_FORMAT_D24_UNORM_S8_UINT = 45
+// @ts-ignore
 const DXGI_FORMAT_R24_UNORM_X8_TYPELESS = 46
+// @ts-ignore
 const DXGI_FORMAT_X24_TYPELESS_G8_UINT = 47
+// @ts-ignore
 const DXGI_FORMAT_R8G8_TYPELESS = 48
+// @ts-ignore
 const DXGI_FORMAT_R8G8_UNORM = 49
+// @ts-ignore
 const DXGI_FORMAT_R8G8_UINT = 50
+// @ts-ignore
 const DXGI_FORMAT_R8G8_SNORM = 51
+// @ts-ignore
 const DXGI_FORMAT_R8G8_SINT = 52
+// @ts-ignore
 const DXGI_FORMAT_R16_TYPELESS = 53
+// @ts-ignore
 const DXGI_FORMAT_R16_FLOAT = 54
+// @ts-ignore
 const DXGI_FORMAT_D16_UNORM = 55
+// @ts-ignore
 const DXGI_FORMAT_R16_UNORM = 56
+// @ts-ignore
 const DXGI_FORMAT_R16_UINT = 57
+// @ts-ignore
 const DXGI_FORMAT_R16_SNORM = 58
+// @ts-ignore
 const DXGI_FORMAT_R16_SINT = 59
+// @ts-ignore
 const DXGI_FORMAT_R8_TYPELESS = 60
+// @ts-ignore
 const DXGI_FORMAT_R8_UNORM = 61
+// @ts-ignore
 const DXGI_FORMAT_R8_UINT = 62
+// @ts-ignore
 const DXGI_FORMAT_R8_SNORM = 63
+// @ts-ignore
 const DXGI_FORMAT_R8_SINT = 64
+// @ts-ignore
 const DXGI_FORMAT_A8_UNORM = 65
+// @ts-ignore
 const DXGI_FORMAT_R1_UNORM = 66
+// @ts-ignore
 const DXGI_FORMAT_R9G9B9E5_SHAREDEXP = 67
+// @ts-ignore
 const DXGI_FORMAT_R8G8_B8G8_UNORM = 68
+// @ts-ignore
 const DXGI_FORMAT_G8R8_G8B8_UNORM = 69
+// @ts-ignore
 const DXGI_FORMAT_BC1_TYPELESS = 70
+// @ts-ignore
 const DXGI_FORMAT_BC1_UNORM = 71
+// @ts-ignore
 const DXGI_FORMAT_BC1_UNORM_SRGB = 72
+// @ts-ignore
 const DXGI_FORMAT_BC2_TYPELESS = 73
+// @ts-ignore
 const DXGI_FORMAT_BC2_UNORM = 74
+// @ts-ignore
 const DXGI_FORMAT_BC2_UNORM_SRGB = 75
+// @ts-ignore
 const DXGI_FORMAT_BC3_TYPELESS = 76
+// @ts-ignore
 const DXGI_FORMAT_BC3_UNORM = 77
+// @ts-ignore
 const DXGI_FORMAT_BC3_UNORM_SRGB = 78
+// @ts-ignore
 const DXGI_FORMAT_BC4_TYPELESS = 79
+// @ts-ignore
 const DXGI_FORMAT_BC4_UNORM = 80
+// @ts-ignore
 const DXGI_FORMAT_BC4_SNORM = 81
+// @ts-ignore
 const DXGI_FORMAT_BC5_TYPELESS = 82
+// @ts-ignore
 const DXGI_FORMAT_BC5_UNORM = 83
+// @ts-ignore
 const DXGI_FORMAT_BC5_SNORM = 84
+// @ts-ignore
 const DXGI_FORMAT_B5G6R5_UNORM = 85
+// @ts-ignore
 const DXGI_FORMAT_B5G5R5A1_UNORM = 86
+// @ts-ignore
 const DXGI_FORMAT_B8G8R8A8_UNORM = 87
+// @ts-ignore
 const DXGI_FORMAT_B8G8R8X8_UNORM = 88
+// @ts-ignore
 const DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM = 89
+// @ts-ignore
 const DXGI_FORMAT_B8G8R8A8_TYPELESS = 90
+// @ts-ignore
 const DXGI_FORMAT_B8G8R8A8_UNORM_SRGB = 91
+// @ts-ignore
 const DXGI_FORMAT_B8G8R8X8_TYPELESS = 92
+// @ts-ignore
 const DXGI_FORMAT_B8G8R8X8_UNORM_SRGB = 93
+// @ts-ignore
 const DXGI_FORMAT_BC6H_TYPELESS = 94
+// @ts-ignore
 const DXGI_FORMAT_BC6H_UF16 = 95
+// @ts-ignore
 const DXGI_FORMAT_BC6H_SF16 = 96
+// @ts-ignore
 const DXGI_FORMAT_BC7_TYPELESS = 97
+// @ts-ignore
 const DXGI_FORMAT_BC7_UNORM = 98
+// @ts-ignore
 const DXGI_FORMAT_BC7_UNORM_SRGB = 99
+// @ts-ignore
 const DXGI_FORMAT_AYUV = 100
+// @ts-ignore
 const DXGI_FORMAT_Y410 = 101
+// @ts-ignore
 const DXGI_FORMAT_Y416 = 102
+// @ts-ignore
 const DXGI_FORMAT_NV12 = 103
+// @ts-ignore
 const DXGI_FORMAT_P010 = 104
+// @ts-ignore
 const DXGI_FORMAT_P016 = 105
+// @ts-ignore
 const DXGI_FORMAT_420_OPAQUE = 106
+// @ts-ignore
 const DXGI_FORMAT_YUY2 = 107
+// @ts-ignore
 const DXGI_FORMAT_Y210 = 108
+// @ts-ignore
 const DXGI_FORMAT_Y216 = 109
+// @ts-ignore
 const DXGI_FORMAT_NV11 = 110
+// @ts-ignore
 const DXGI_FORMAT_AI44 = 111
+// @ts-ignore
 const DXGI_FORMAT_IA44 = 112
+// @ts-ignore
 const DXGI_FORMAT_P8 = 113
+// @ts-ignore
 const DXGI_FORMAT_A8P8 = 114
+// @ts-ignore
 const DXGI_FORMAT_B4G4R4A4_UNORM = 115
+// @ts-ignore
 const DXGI_FORMAT_P208 = 130
+// @ts-ignore
 const DXGI_FORMAT_V208 = 131
+// @ts-ignore
 const DXGI_FORMAT_V408 = 132
+// @ts-ignore
 const DXGI_FORMAT_SAMPLER_FEEDBACK_MIN_MIP_OPAQUE = 189
+// @ts-ignore
 const DXGI_FORMAT_SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE = 190
+// @ts-ignore
 const DXGI_FORMAT_FORCE_UINT = 0xffffffff
 
 const mapFromDXGI = {
@@ -1225,189 +1240,373 @@ const mapFromDXGI = {
   // ASTC - none existing in DXGI
 }
 
+// @ts-ignore
 const VK_FORMAT_R4G4_UNORM_PACK8 = 1
+// @ts-ignore
 const VK_FORMAT_R4G4B4A4_UNORM_PACK16 = 2
+// @ts-ignore
 const VK_FORMAT_B4G4R4A4_UNORM_PACK16 = 3
+// @ts-ignore
 const VK_FORMAT_R5G6B5_UNORM_PACK16 = 4
+// @ts-ignore
 const VK_FORMAT_B5G6R5_UNORM_PACK16 = 5
+// @ts-ignore
 const VK_FORMAT_R5G5B5A1_UNORM_PACK16 = 6
+// @ts-ignore
 const VK_FORMAT_B5G5R5A1_UNORM_PACK16 = 7
+// @ts-ignore
 const VK_FORMAT_A1R5G5B5_UNORM_PACK16 = 8
+// @ts-ignore
 const VK_FORMAT_R8_UNORM = 9
+// @ts-ignore
 const VK_FORMAT_R8_SNORM = 10
+// @ts-ignore
 const VK_FORMAT_R8_USCALED = 11
+// @ts-ignore
 const VK_FORMAT_R8_SSCALED = 12
+// @ts-ignore
 const VK_FORMAT_R8_UINT = 13
+// @ts-ignore
 const VK_FORMAT_R8_SINT = 14
+// @ts-ignore
 const VK_FORMAT_R8_SRGB = 15
+// @ts-ignore
 const VK_FORMAT_R8G8_UNORM = 16
+// @ts-ignore
 const VK_FORMAT_R8G8_SNORM = 17
+// @ts-ignore
 const VK_FORMAT_R8G8_USCALED = 18
+// @ts-ignore
 const VK_FORMAT_R8G8_SSCALED = 19
+// @ts-ignore
 const VK_FORMAT_R8G8_UINT = 20
+// @ts-ignore
 const VK_FORMAT_R8G8_SINT = 21
+// @ts-ignore
 const VK_FORMAT_R8G8_SRGB = 22
+// @ts-ignore
 const VK_FORMAT_R8G8B8_UNORM = 23
+// @ts-ignore
 const VK_FORMAT_R8G8B8_SNORM = 24
+// @ts-ignore
 const VK_FORMAT_R8G8B8_USCALED = 25
+// @ts-ignore
 const VK_FORMAT_R8G8B8_SSCALED = 26
+// @ts-ignore
 const VK_FORMAT_R8G8B8_UINT = 27
+// @ts-ignore
 const VK_FORMAT_R8G8B8_SINT = 28
+// @ts-ignore
 const VK_FORMAT_R8G8B8_SRGB = 29
+// @ts-ignore
 const VK_FORMAT_B8G8R8_UNORM = 30
+// @ts-ignore
 const VK_FORMAT_B8G8R8_SNORM = 31
+// @ts-ignore
 const VK_FORMAT_B8G8R8_USCALED = 32
+// @ts-ignore
 const VK_FORMAT_B8G8R8_SSCALED = 33
+// @ts-ignore
 const VK_FORMAT_B8G8R8_UINT = 34
+// @ts-ignore
 const VK_FORMAT_B8G8R8_SINT = 35
+// @ts-ignore
 const VK_FORMAT_B8G8R8_SRGB = 36
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_UNORM = 37
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_SNORM = 38
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_USCALED = 39
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_SSCALED = 40
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_UINT = 41
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_SINT = 42
+// @ts-ignore
 const VK_FORMAT_R8G8B8A8_SRGB = 43
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_UNORM = 44
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_SNORM = 45
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_USCALED = 46
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_SSCALED = 47
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_UINT = 48
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_SINT = 49
+// @ts-ignore
 const VK_FORMAT_B8G8R8A8_SRGB = 50
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_UNORM_PACK32 = 51
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_SNORM_PACK32 = 52
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_USCALED_PACK32 = 53
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_SSCALED_PACK32 = 54
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_UINT_PACK32 = 55
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_SINT_PACK32 = 56
+// @ts-ignore
 const VK_FORMAT_A8B8G8R8_SRGB_PACK32 = 57
+// @ts-ignore
 const VK_FORMAT_A2R10G10B10_UNORM_PACK32 = 58
+// @ts-ignore
 const VK_FORMAT_A2R10G10B10_SNORM_PACK32 = 59
+// @ts-ignore
 const VK_FORMAT_A2R10G10B10_USCALED_PACK32 = 60
+// @ts-ignore
 const VK_FORMAT_A2R10G10B10_SSCALED_PACK32 = 61
+// @ts-ignore
 const VK_FORMAT_A2R10G10B10_UINT_PACK32 = 62
+// @ts-ignore
 const VK_FORMAT_A2R10G10B10_SINT_PACK32 = 63
+// @ts-ignore
 const VK_FORMAT_A2B10G10R10_UNORM_PACK32 = 64
+// @ts-ignore
 const VK_FORMAT_A2B10G10R10_SNORM_PACK32 = 65
+// @ts-ignore
 const VK_FORMAT_A2B10G10R10_USCALED_PACK32 = 66
+// @ts-ignore
 const VK_FORMAT_A2B10G10R10_SSCALED_PACK32 = 67
+// @ts-ignore
 const VK_FORMAT_A2B10G10R10_UINT_PACK32 = 68
+// @ts-ignore
 const VK_FORMAT_A2B10G10R10_SINT_PACK32 = 69
+// @ts-ignore
 const VK_FORMAT_R16_UNORM = 70
+// @ts-ignore
 const VK_FORMAT_R16_SNORM = 71
+// @ts-ignore
 const VK_FORMAT_R16_USCALED = 72
+// @ts-ignore
 const VK_FORMAT_R16_SSCALED = 73
+// @ts-ignore
 const VK_FORMAT_R16_UINT = 74
+// @ts-ignore
 const VK_FORMAT_R16_SINT = 75
+// @ts-ignore
 const VK_FORMAT_R16_SFLOAT = 76
+// @ts-ignore
 const VK_FORMAT_R16G16_UNORM = 77
+// @ts-ignore
 const VK_FORMAT_R16G16_SNORM = 78
+// @ts-ignore
 const VK_FORMAT_R16G16_USCALED = 79
+// @ts-ignore
 const VK_FORMAT_R16G16_SSCALED = 80
+// @ts-ignore
 const VK_FORMAT_R16G16_UINT = 81
+// @ts-ignore
 const VK_FORMAT_R16G16_SINT = 82
+// @ts-ignore
 const VK_FORMAT_R16G16_SFLOAT = 83
+// @ts-ignore
 const VK_FORMAT_R16G16B16_UNORM = 84
+// @ts-ignore
 const VK_FORMAT_R16G16B16_SNORM = 85
+// @ts-ignore
 const VK_FORMAT_R16G16B16_USCALED = 86
+// @ts-ignore
 const VK_FORMAT_R16G16B16_SSCALED = 87
+// @ts-ignore
 const VK_FORMAT_R16G16B16_UINT = 88
+// @ts-ignore
 const VK_FORMAT_R16G16B16_SINT = 89
+// @ts-ignore
 const VK_FORMAT_R16G16B16_SFLOAT = 90
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_UNORM = 91
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_SNORM = 92
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_USCALED = 93
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_SSCALED = 94
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_UINT = 95
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_SINT = 96
+// @ts-ignore
 const VK_FORMAT_R16G16B16A16_SFLOAT = 97
+// @ts-ignore
 const VK_FORMAT_R32_UINT = 98
+// @ts-ignore
 const VK_FORMAT_R32_SINT = 99
+// @ts-ignore
 const VK_FORMAT_R32_SFLOAT = 100
+// @ts-ignore
 const VK_FORMAT_R32G32_UINT = 101
+// @ts-ignore
 const VK_FORMAT_R32G32_SINT = 102
+// @ts-ignore
 const VK_FORMAT_R32G32_SFLOAT = 103
+// @ts-ignore
 const VK_FORMAT_R32G32B32_UINT = 104
+// @ts-ignore
 const VK_FORMAT_R32G32B32_SINT = 105
+// @ts-ignore
 const VK_FORMAT_R32G32B32_SFLOAT = 106
+// @ts-ignore
 const VK_FORMAT_R32G32B32A32_UINT = 107
+// @ts-ignore
 const VK_FORMAT_R32G32B32A32_SINT = 108
+// @ts-ignore
 const VK_FORMAT_R32G32B32A32_SFLOAT = 109
+// @ts-ignore
 const VK_FORMAT_R64_UINT = 110
+// @ts-ignore
 const VK_FORMAT_R64_SINT = 111
+// @ts-ignore
 const VK_FORMAT_R64_SFLOAT = 112
+// @ts-ignore
 const VK_FORMAT_R64G64_UINT = 113
+// @ts-ignore
 const VK_FORMAT_R64G64_SINT = 114
+// @ts-ignore
 const VK_FORMAT_R64G64_SFLOAT = 115
+// @ts-ignore
 const VK_FORMAT_R64G64B64_UINT = 116
+// @ts-ignore
 const VK_FORMAT_R64G64B64_SINT = 117
+// @ts-ignore
 const VK_FORMAT_R64G64B64_SFLOAT = 118
+// @ts-ignore
 const VK_FORMAT_R64G64B64A64_UINT = 119
+// @ts-ignore
 const VK_FORMAT_R64G64B64A64_SINT = 120
+// @ts-ignore
 const VK_FORMAT_R64G64B64A64_SFLOAT = 121
+// @ts-ignore
 const VK_FORMAT_B10G11R11_UFLOAT_PACK32 = 122
+// @ts-ignore
 const VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 = 123
+// @ts-ignore
 const VK_FORMAT_D16_UNORM = 124
+// @ts-ignore
 const VK_FORMAT_X8_D24_UNORM_PACK32 = 125
+// @ts-ignore
 const VK_FORMAT_D32_SFLOAT = 126
+// @ts-ignore
 const VK_FORMAT_S8_UINT = 127
+// @ts-ignore
 const VK_FORMAT_D16_UNORM_S8_UINT = 128
+// @ts-ignore
 const VK_FORMAT_D24_UNORM_S8_UINT = 129
+// @ts-ignore
 const VK_FORMAT_D32_SFLOAT_S8_UINT = 130
+// @ts-ignore
 const VK_FORMAT_BC1_RGB_UNORM_BLOCK = 131
+// @ts-ignore
 const VK_FORMAT_BC1_RGB_SRGB_BLOCK = 132
+// @ts-ignore
 const VK_FORMAT_BC1_RGBA_UNORM_BLOCK = 133
+// @ts-ignore
 const VK_FORMAT_BC1_RGBA_SRGB_BLOCK = 134
+// @ts-ignore
 const VK_FORMAT_BC2_UNORM_BLOCK = 135
+// @ts-ignore
 const VK_FORMAT_BC2_SRGB_BLOCK = 136
+// @ts-ignore
 const VK_FORMAT_BC3_UNORM_BLOCK = 137
+// @ts-ignore
 const VK_FORMAT_BC3_SRGB_BLOCK = 138
+// @ts-ignore
 const VK_FORMAT_BC4_UNORM_BLOCK = 139
+// @ts-ignore
 const VK_FORMAT_BC4_SNORM_BLOCK = 140
+// @ts-ignore
 const VK_FORMAT_BC5_UNORM_BLOCK = 141
+// @ts-ignore
 const VK_FORMAT_BC5_SNORM_BLOCK = 142
+// @ts-ignore
 const VK_FORMAT_BC6H_UFLOAT_BLOCK = 143
+// @ts-ignore
 const VK_FORMAT_BC6H_SFLOAT_BLOCK = 144
+// @ts-ignore
 const VK_FORMAT_BC7_UNORM_BLOCK = 145
+// @ts-ignore
 const VK_FORMAT_BC7_SRGB_BLOCK = 146
+// @ts-ignore
 const VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK = 147
+// @ts-ignore
 const VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK = 148
+// @ts-ignore
 const VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK = 149
+// @ts-ignore
 const VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK = 150
+// @ts-ignore
 const VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK = 151
+// @ts-ignore
 const VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK = 152
+// @ts-ignore
 const VK_FORMAT_EAC_R11_UNORM_BLOCK = 153
+// @ts-ignore
 const VK_FORMAT_EAC_R11_SNORM_BLOCK = 154
+// @ts-ignore
 const VK_FORMAT_EAC_R11G11_UNORM_BLOCK = 155
+// @ts-ignore
 const VK_FORMAT_EAC_R11G11_SNORM_BLOCK = 156
+// @ts-ignore
 const VK_FORMAT_ASTC_4x4_UNORM_BLOCK = 157
+// @ts-ignore
 const VK_FORMAT_ASTC_4x4_SRGB_BLOCK = 158
+// @ts-ignore
 const VK_FORMAT_ASTC_5x4_UNORM_BLOCK = 159
+// @ts-ignore
 const VK_FORMAT_ASTC_5x4_SRGB_BLOCK = 160
+// @ts-ignore
 const VK_FORMAT_ASTC_5x5_UNORM_BLOCK = 161
+// @ts-ignore
 const VK_FORMAT_ASTC_5x5_SRGB_BLOCK = 162
+// @ts-ignore
 const VK_FORMAT_ASTC_6x5_UNORM_BLOCK = 163
+// @ts-ignore
 const VK_FORMAT_ASTC_6x5_SRGB_BLOCK = 164
+// @ts-ignore
 const VK_FORMAT_ASTC_6x6_UNORM_BLOCK = 165
+// @ts-ignore
 const VK_FORMAT_ASTC_6x6_SRGB_BLOCK = 166
+// @ts-ignore
 const VK_FORMAT_ASTC_8x5_UNORM_BLOCK = 167
+// @ts-ignore
 const VK_FORMAT_ASTC_8x5_SRGB_BLOCK = 168
+// @ts-ignore
 const VK_FORMAT_ASTC_8x6_UNORM_BLOCK = 169
+// @ts-ignore
 const VK_FORMAT_ASTC_8x6_SRGB_BLOCK = 170
+// @ts-ignore
 const VK_FORMAT_ASTC_8x8_UNORM_BLOCK = 171
+// @ts-ignore
 const VK_FORMAT_ASTC_8x8_SRGB_BLOCK = 172
+// @ts-ignore
 const VK_FORMAT_ASTC_10x5_UNORM_BLOCK = 173
+// @ts-ignore
 const VK_FORMAT_ASTC_10x5_SRGB_BLOCK = 174
+// @ts-ignore
 const VK_FORMAT_ASTC_10x6_UNORM_BLOCK = 175
+// @ts-ignore
 const VK_FORMAT_ASTC_10x6_SRGB_BLOCK = 176
+// @ts-ignore
 const VK_FORMAT_ASTC_10x8_UNORM_BLOCK = 177
+// @ts-ignore
 const VK_FORMAT_ASTC_10x8_SRGB_BLOCK = 178
+// @ts-ignore
 const VK_FORMAT_ASTC_10x10_UNORM_BLOCK = 179
+// @ts-ignore
 const VK_FORMAT_ASTC_10x10_SRGB_BLOCK = 180
+// @ts-ignore
 const VK_FORMAT_ASTC_12x10_UNORM_BLOCK = 181
+// @ts-ignore
 const VK_FORMAT_ASTC_12x10_SRGB_BLOCK = 182
+// @ts-ignore
 const VK_FORMAT_ASTC_12x12_UNORM_BLOCK = 183
+// @ts-ignore
 const VK_FORMAT_ASTC_12x12_SRGB_BLOCK = 184
 
 const mapFromVulkan: Record<number, SurfaceFormat> = {

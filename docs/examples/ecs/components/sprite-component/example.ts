@@ -1,140 +1,102 @@
-import {
-  CameraComponent,
-  createEntity,
-  GameLoop,
-  OrthographicCameraComponent,
-  RenderQuery,
-  SpriteComponent,
-} from '@gglib/components'
-import { ContentLoader } from '@gglib/content'
-import { GameEntityCollection, GameProvider } from '@gglib/ecs'
-import { BlendState, createDevice } from '@gglib/graphics'
+import { BasicGame, CameraComponent, SpriteComponent } from '@gglib/components'
+import { PlatformId } from '@gglib/graphics'
 import {} from '@gglib/loaders'
-import { BasicRenderPass, Renderer } from '@gglib/render'
-import * as TweakUi from 'tweak-ui'
+import { mountUi } from 'tweak-ui'
 
-class Game extends GameProvider {
-  public loop: GameLoop
-  public renderer: Renderer
-  public renderQuery: RenderQuery
-  public content: ContentLoader
+export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const game = new Game(canvas, platform)
 
-  public scene = new GameEntityCollection()
-  public camera: CameraComponent
-  public sprite: SpriteComponent
-
-  // 21/9 aspect ratio with 160 units in width
-  // and 90 units in height
-  public width = 160
-  public height = 90
-
-  public constructor(canvas: HTMLCanvasElement) {
-    super()
-
-    const device = createDevice({ canvas })
-    this.provide(this)
-    this.provide(device)
-    this.provide(new Renderer(device))
-    this.provide(new ContentLoader(device))
-    this.addSystem(new GameLoop({ autostart: false }))
-
-    this.loop = this.get(GameLoop)
-    this.content = this.get(ContentLoader)
-    this.renderer = this.get(Renderer)
-    this.renderQuery = new RenderQuery()
-
-    this.createEntity()
-    this.createCamera()
-  }
-
-  private createEntity() {
-    this.sprite = new SpriteComponent()
-    const entity = createEntity({
-      components: [this.sprite],
+  mountUi(tools, (ui) => {
+    ui.number(game, 'sizeX', { slider: true, min: 0.1, max: 20, step: 0.01 })
+    ui.number(game, 'sizeY', { slider: true, min: 0.1, max: 20, step: 0.01 })
+    ui.number(game, 'angle', { slider: true, min: 0, max: Math.PI * 2, step: 0.01 })
+    ui.number(game, 'pivotX', { slider: true, min: 0, max: 1, step: 0.01 })
+    ui.number(game, 'pivotY', { slider: true, min: 0, max: 1, step: 0.01 })
+    ui.number(game, 'tilesX', { slider: true, min: 1, max: 10, step: 1 })
+    ui.number(game, 'tilesY', { slider: true, min: 1, max: 10, step: 1 })
+    ui.boolean(game, 'flipX')
+    ui.boolean(game, 'flipY')
+    ui.boolean(game, 'enableSlicing')
+    ui.group('Transform', (ui) => {
+      ui.number(game, 'scale', { slider: true, min: 0, max: 10, step: 0.01 })
+      ui.number(game, 'rotate', { slider: true, min: 0, max: Math.PI * 2, step: 0.01 })
     })
-    this.scene.add(entity)
-  }
+  })
 
-  private createCamera() {
-    const entity = createEntity({
-      name: 'camera',
-      components: [
-        new OrthographicCameraComponent({
-          width: this.width / 2,
-          height: this.height / 2,
-          near: 0,
-          far: 100,
-        }),
-      ],
-    })
-    this.camera = entity.component(OrthographicCameraComponent)
-    this.scene.add(entity)
-  }
-
-  public run() {
-    this.initialize()
-
-    this.scene.initialize(this)
-    this.scene.activate()
-
-    this.loop.onUpdate.add(this.update)
-    this.loop.onDraw.add(this.draw)
-
-    this.load()
-    this.loop.run()
-    return () => {
-      this.loop.stop()
-      this.destroy()
-    }
-  }
-
-  public update = () => {
-    this.sprite.unitPixels = this.renderer.device.drawingBufferHeight / this.height
-  }
-
-  public draw = () => {
-    this.renderQuery.update(this.scene.entities, this.camera)
-    this.renderer.render(this.renderQuery)
-  }
-
-  public async load() {
-    const renderStep = this.renderer.steps[0] as BasicRenderPass
-    renderStep.blendState = BlendState.AlphaBlend
-    renderStep.clearColor = 0xff2e2620
-
-    this.sprite.width = 45
-    this.sprite.height = 45
-    this.sprite.pivotX = 0.5
-    this.sprite.pivotY = 0.5
-    this.sprite.texture = await this.content.loadTexture('/textures/puzzle/interface_sheet.png')
-    this.sprite.source = {
-      x: 528,
-      y: 374,
-      width: 128,
-      height: 128,
-    }
-    this.sprite.slice = {
-      top: 24,
-      right: 24,
-      bottom: 24,
-      left: 24,
-    }
+  game.run()
+  return () => {
+    game.stop()
   }
 }
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const game = new Game(canvas)
+class Game extends BasicGame {
+  public sprite!: SpriteComponent
 
-  TweakUi.mount(tools, (ui) => {
-    ui.slider(game.sprite, 'width', { min: 1, max: 90, step: 1 })
-    ui.slider(game.sprite, 'height', { min: 1, max: 90, step: 1 })
-    ui.slider(game.sprite, 'pivotX', { min: 0, max: 1, step: 0.1 })
-    ui.slider(game.sprite, 'pivotY', { min: 0, max: 1, step: 0.1 })
-    ui.checkbox(game.sprite, 'flipX')
-    ui.checkbox(game.sprite, 'flipY')
-    ui.checkbox(game.sprite, 'enableSlicing')
-    ui.checkbox(game.sprite, 'enableTiling')
-  })
+  public sizeX = 4
+  public sizeY = 4
+  public angle = 0
+  public pivotX = 0.5
+  public pivotY = 0.5
+  public tilesX = 1
+  public tilesY = 1
+  public flipX = false
+  public flipY = false
+  public enableSlicing = false
 
-  return game.run()
+  public scale = 1
+  public rotate = 0
+  public constructor(canvas: HTMLCanvasElement, platform: PlatformId) {
+    super({ canvas, platform })
+  }
+
+  public override initialize(): void {
+    this.createObject()
+    this.createCamera()
+    this.world.initilize()
+    this.scene.activate()
+  }
+
+  private createObject() {
+    const entity = this.createEntity({
+      parent: this.scene,
+      components: [new SpriteComponent()],
+    })
+    this.sprite = entity.component(SpriteComponent)
+    this.sprite.setSize(500, 500)
+
+    this.content.loadTexture('/textures/puzzle/interface_sheet.png').then((texture) => {
+      this.sprite.setTexture(texture)
+      this.sprite.setSource(528, 374, 128, 128)
+      this.sprite.setSlice(24, 24, 24, 24)
+    })
+  }
+
+  private createCamera() {
+    const entity = this.createEntity({
+      name: 'camera',
+      parent: this.scene,
+      components: [
+        new CameraComponent({
+          type: 'orthographic',
+          orthographicScale: 20,
+          aspect: this.device.output.aspectRatio,
+          near: 0,
+          far: 1,
+        }),
+      ],
+    })
+    this.view.camera = entity.component(CameraComponent)
+  }
+
+  override update(time: number, deltaTime: number): void {
+    super.update(time, deltaTime)
+    this.sprite.setSize(this.sizeX, this.sizeY)
+    this.sprite.setAngle(this.angle)
+    this.sprite.setPivot(this.pivotX, this.pivotY)
+    this.sprite.setFlip(this.flipX, this.flipY)
+    this.sprite.setSlicing(this.enableSlicing)
+    this.sprite.setTiles(this.tilesX, this.tilesY)
+    this.sprite.transform.setScaleXYZ(this.scale, this.scale, 1)
+    this.sprite.transform.setRotationYawPitchRoll(0, 0, this.rotate)
+  }
 }

@@ -1,6 +1,5 @@
-import { GameSystem, GameProvider } from '@gglib/ecs'
-import { ITouchPaneOptions, TouchPane } from '@gglib/input'
-import { GameLoop } from './GameLoop'
+import { GameSystem, GameWorld } from '@gglib/ecs'
+import { type ITouchPaneOptions, TouchPane } from '@gglib/input'
 
 /**
  * Constructor options for the {@link TouchInput}
@@ -12,28 +11,28 @@ export type TouchComponentOptions = ITouchPaneOptions
 /**
  * @public
  */
-export class TouchInput implements GameSystem {
+export class TouchInput extends GameSystem {
   public readonly touch: TouchPane
   public readonly touchIds: ReadonlyArray<number>
 
   public oldStates = new Map<number, Touch>()
   public newStates = new Map<number, Touch>()
-  private loop: GameLoop
+
   public constructor(options: TouchComponentOptions) {
+    super()
     this.touch = new TouchPane(options)
     this.touchIds = []
   }
 
-  public initialize(container: GameProvider): void {
-    this.loop = container.get(GameLoop)
-    this.loop.onUpdate.add(this.onUpdate)
+  public initialize(game: GameWorld): void {
+    //
   }
 
   public destroy(): void {
-    this.loop.onUpdate.remove(this.onUpdate)
+    //
   }
 
-  public onUpdate = () => {
+  public override update() {
     const ids = this.touchIds as number[]
     ids.length = 0
 

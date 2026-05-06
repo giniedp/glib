@@ -40,7 +40,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       materials: [
         {
           effect: lightingEffect,
-          parameters: {
+          properties: {
             BaseColorMap: device.createTexture({ source: '/textures/prototype/proto_alpha_d.png' }),
             NormalMap: device.createTexture({ source: '/textures/prototype/proto_alpha_n.png' }),
             FogColor: Color.fromRgba(0xff2e2620).xyzw,

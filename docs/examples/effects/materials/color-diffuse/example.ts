@@ -37,19 +37,19 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     materials: [
       {
         effect: effect,
-        parameters: {
+        properties: {
           BaseColor: [1, 0, 0, 1],
         },
       },
       {
         effect: effect,
-        parameters: {
+        properties: {
           BaseColor: [0, 1, 0, 1],
         },
       },
       {
         effect: effect,
-        parameters: {
+        properties: {
           BaseColor: [0, 0, 1, 1],
         },
       },

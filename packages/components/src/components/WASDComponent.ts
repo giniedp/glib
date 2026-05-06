@@ -1,10 +1,10 @@
-import { GameComponent, GameEntity } from '@gglib/ecs'
+import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { KeyboardKey } from '@gglib/input'
 import { Vec3 } from '@gglib/math'
-import { KeyboardInput } from '../systems/KeyboardInput'
-import { GameLoop, LoopTime } from '../systems/GameLoop'
-import { MouseInput } from '../systems/MouseInput'
-import { TransformComponent } from './TransformComponent'
+import { BehaviorComponent } from '../systems/BehaviorSystem'
+import { KeyboardInputSystem } from '../systems/KeyboardInput'
+import { MouseInputSystem } from '../systems/MouseInput'
+import type { TransformComponent } from './TransformComponent'
 
 /**
  * @public
@@ -27,15 +27,14 @@ const RIGHT = new Vec3(1, 0, 0)
 const UP = new Vec3(0, 1, 0)
 const DOWN = new Vec3(0, -1, 0)
 
-export class WASDComponent implements GameComponent {
-
+export class WASDComponent implements GameComponent, InitializableComponent, BehaviorComponent {
   /**
    * Default movement speed in units per second
    */
   public moveSpeed: number = 5
   public moveSpeedStep: number = 1
-  public moveSpeedMin: number = 0
-  public moveSpeedMax: number = 100
+  public moveSpeedMin: number = 1
+  public moveSpeedMax: number = 20
   /**
    * Movement speed multiplier when `SHIFT` is pressed
    */
@@ -64,7 +63,7 @@ export class WASDComponent implements GameComponent {
   private startPitch: number = 0
   private isMouseDown: boolean = false
 
-  private currentMoveSpeed: number = 0
+  private currentSpeed: number = 0
   private direction = new Vec3(0, 0, 0)
   private translation = new Vec3(0, 0, 0)
 
@@ -77,24 +76,13 @@ export class WASDComponent implements GameComponent {
   private keyBoost: KeyboardKey = KeyboardKey.ShiftLeft
   private mouseButton: number = 0
 
-  private loop: GameLoop
-  private mouse: MouseInput
-  private keyboard: KeyboardInput
-  public entity: GameEntity<TransformComponent>
+  private mouse: MouseInputSystem
+  private keyboard: KeyboardInputSystem
+  public readonly entity: GameEntity
 
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.loop = entity.provider.get(GameLoop)
-    this.mouse = entity.provider.get(MouseInput)
-    this.keyboard = entity.provider.get(KeyboardInput)
-  }
-
-  public activate(): void {
-    this.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.loop.onUpdate.remove(this.update)
+  public initialize(): void {
+    this.mouse = this.entity.service(MouseInputSystem)
+    this.keyboard = this.entity.service(KeyboardInputSystem)
   }
 
   public destroy(): void {
@@ -106,18 +94,15 @@ export class WASDComponent implements GameComponent {
    *
    * @param dt - Elapsed time since last frame
    */
-  public update = (time: LoopTime) => {
-    const dt = time.delta
+  public updateBehavior(time: number, dt: number) {
+    if (!this.entity.isActive) {
+      return
+    }
     const keyboard = this.keyboard
     const mouse = this.mouse
-    const node = this.entity.transform
+    const node = this.entity.getTransform<TransformComponent>()
 
-    if (
-      keyboard.isPressed(KeyboardKey.ControlLeft) ||
-      keyboard.isPressed(KeyboardKey.ControlRight) ||
-      keyboard.isPressed(KeyboardKey.MetaLeft) ||
-      keyboard.isPressed(KeyboardKey.MetaRight)
-    ) {
+    if (keyboard.isPressed(KeyboardKey.AltLeft) || keyboard.isPressed(KeyboardKey.AltRight)) {
       if (mouse.wheelDelta < 0) {
         this.moveSpeed += this.moveSpeedStep
       }
@@ -155,20 +140,20 @@ export class WASDComponent implements GameComponent {
     }
     if (this.translation.lengthSquared() > 0) {
       node.world.transformV3Normal(this.translation, this.direction)
-      this.direction.normalize()
-    }
-    let targetSpeed = this.moveSpeed
-    if (keyboard.isPressed(this.keyBoost)) {
-      targetSpeed *= this.moveSpeedMultiplier
-    }
-    if (!isMoving) {
-      targetSpeed = 0
     }
 
-    this.currentMoveSpeed += (targetSpeed - this.currentMoveSpeed) * this.moveDamping
-    this.currentMoveSpeed = Math.floor(this.currentMoveSpeed * 1000) / 1000
-    if (this.currentMoveSpeed !== 0 && this.direction.lengthSquared() > 0) {
-      node.translateV(this.direction.multiplyScalar(this.currentMoveSpeed * (dt)))
+    const boost = keyboard.isPressed(this.keyBoost) ? this.moveSpeedMultiplier : 1
+    const targetSpeed = isMoving ? this.moveSpeed * boost : 0
+
+    this.currentSpeed += (targetSpeed - this.currentSpeed) * this.moveDamping
+    if (Math.abs(this.currentSpeed) > Number.EPSILON) {
+      node.translate(
+        this.direction.x * this.currentSpeed * (dt / 1000),
+        this.direction.y * this.currentSpeed * (dt / 1000),
+        this.direction.z * this.currentSpeed * (dt / 1000),
+      )
+    } else {
+      this.currentSpeed = 0
     }
 
     const isMouseDown =
@@ -189,7 +174,7 @@ export class WASDComponent implements GameComponent {
     this.pitch += (this.targetPitch - this.pitch) * this.turnDamping
 
     node.rotation.initYawPitchRoll(this.yaw, this.pitch, 0)
-    node.needsUpdate = true
+    node.markAsChanged()
     node.updateIfNeeded()
   }
 }

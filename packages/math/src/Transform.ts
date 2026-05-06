@@ -1,6 +1,6 @@
 import { Mat4 } from './Mat4'
 import { Quat } from './Quat'
-import { IVec3, IVec4 } from './Types'
+import type { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 const tempQuat = Quat.createIdentity()
@@ -33,7 +33,11 @@ export interface ITransform extends ITransformBase {
 }
 
 export class Transform<T = unknown> implements ITransform {
-  public static removeFromArray = removeFromArray
+  /**
+   * Removes the given item from the array.
+   * This is an unstable operation, meaning that it does not preserve the order of the array.
+   */
+  public static remove = removeItemUnordered
 
   /**
    * A user defined name of the transform
@@ -48,7 +52,7 @@ export class Transform<T = unknown> implements ITransform {
   /**
    * The parent transform component
    */
-  public parent: Transform
+  public parent: this
 
   /**
    * The child transform components
@@ -56,7 +60,15 @@ export class Transform<T = unknown> implements ITransform {
    * @remarks
    * Manipulating this array directly is not recommended. Use the `add*` methods instead.
    */
-  public readonly children: Transform[] = []
+  public readonly children: this[] = []
+
+  public version: number = 1
+
+  protected lastVersion: number = 0
+
+  public get hasChanged(): boolean {
+    return this.version !== this.lastVersion
+  }
 
   /**
    * The scale vector in local space
@@ -172,7 +184,7 @@ export class Transform<T = unknown> implements ITransform {
    * t.changed = true
    * ```
    */
-  public needsUpdate: boolean = true
+  //public needsUpdate: boolean = true
 
   protected worldInvChanged: boolean
   protected worldInv = Mat4.createIdentity()
@@ -187,7 +199,7 @@ export class Transform<T = unknown> implements ITransform {
    * Adds a child transform. Depending on the `keepWorld` flag, the operation is performed
    * in world or local space.
    */
-  public addChild(child: Transform): void {
+  public addChild(child: this): void {
     child.setParent(this)
   }
 
@@ -195,7 +207,7 @@ export class Transform<T = unknown> implements ITransform {
    * Adds a child transform. The operation is performed in world space, meaning
    * that the world transform of the child keeps the same.
    */
-  public addChildInWorld(child: Transform): void {
+  public addChildInWorld(child: this): void {
     child.setParentInWorld(this)
   }
 
@@ -203,15 +215,36 @@ export class Transform<T = unknown> implements ITransform {
    * Adds a child transform by moving it to the parents local space.
    * This will change the current world transform of the child.
    */
-  public addChildInLocal(child: Transform): void {
+  public addChildInLocal(child: this): void {
     child.setParentInLocal(this)
+  }
+
+  /**
+   * Shorthand for `setParent(null)`
+   */
+  public detach() {
+    this.setParent(null)
+  }
+
+  /**
+   * Shorthand for `setParentInWorld(null)`
+   */
+  public detachInWorld() {
+    this.setParentInWorld(null)
+  }
+
+  /**
+   * Shorthand for `setParentInLocal(null)`
+   */
+  public detachInLocal() {
+    this.setParentInLocal(null)
   }
 
   /**
    * Sets the new parent. Depending on the `keepWorld` flag, the operation is performed
    * in world or local space.
    */
-  public setParent(parent: Transform): void {
+  public setParent(parent: this): void {
     if (this.keepWorld) {
       this.setParentInWorld(parent)
     } else {
@@ -223,7 +256,7 @@ export class Transform<T = unknown> implements ITransform {
    * Sets the new parent. The operation is performed in world space, meaning
    * that our world transform stays unchanged.
    */
-  public setParentInWorld(parent: Transform): void {
+  public setParentInWorld(parent: this): void {
     if (this.parent === parent) {
       return
     }
@@ -236,9 +269,10 @@ export class Transform<T = unknown> implements ITransform {
     this.updateIfNeeded()
     parent?.updateIfNeeded()
 
+    const oldParent = this.parent
     if (this.parent) {
       this.parent.updateIfNeeded()
-      Transform.removeFromArray(this.parent.children, this)
+      Transform.remove(this.parent.children, this)
       this.parent = null
     }
 
@@ -251,28 +285,35 @@ export class Transform<T = unknown> implements ITransform {
     }
 
     Mat4.decompose(this.matrix, this.scale, this.rotation, this.translation)
+    this.handleParentChange(parent, oldParent)
   }
 
   /**
    * Sets the new parent by moving it into the parents local space.
    * This will change the current world transform.
    */
-  public setParentInLocal(parent: Transform): void {
+  public setParentInLocal(parent: this): void {
     if (this.parent === parent) {
       return
     }
     if (parent == this) {
       throw new Error('Cannot set self as parent')
     }
+    const oldParent = this.parent
     if (this.parent) {
-      Transform.removeFromArray(this.parent.children, this)
+      Transform.remove(this.parent.children, this)
       this.parent = null
     }
     if (parent) {
       this.parent = parent
       this.parent.children.push(this)
     }
-    this.needsUpdate = true
+    this.version++
+    this.handleParentChange(parent, oldParent)
+  }
+
+  protected handleParentChange(parent: this, oldParent: this) {
+    //
   }
 
   /**
@@ -281,14 +322,14 @@ export class Transform<T = unknown> implements ITransform {
    * @param up updates the parents first
    * @param down calls update on all children
    */
-  public update(up?: boolean, down?: boolean): void {
+  public propagateUpdates(up?: boolean, down?: boolean): void {
     if (up && this.parent) {
-      this.parent.update(up, false)
+      this.parent.propagateUpdates(up, false)
     }
     this.updateIfNeeded()
     if (down) {
       for (const child of this.children) {
-        child.update(false, down)
+        child.propagateUpdates(false, down)
       }
     }
   }
@@ -297,9 +338,23 @@ export class Transform<T = unknown> implements ITransform {
    * If the `needsUpdate` flag is set to true, updates the world transform and emits the `onUpdated` event
    */
   public updateIfNeeded = () => {
-    if (this.needsUpdate) {
+    if (this.hasChanged) {
       this.updateWorldTransform()
     }
+  }
+
+  /**
+   * Bumps the `version` property to indicate that the state has changed and the transform needs to be updated.
+   */
+  public markAsChanged() {
+    this.version++
+  }
+
+  /**
+   * Marks the current state as updated by setting the `lastVersion` to the current `version`.
+   */
+  public markAsUpdated() {
+    this.lastVersion = this.version
   }
 
   /**
@@ -307,15 +362,11 @@ export class Transform<T = unknown> implements ITransform {
    */
   public updateLocalTransform(): void {
     this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
-    this.needsUpdate = true
+    this.version++
   }
 
   /**
    * Updates the local and world transforms.
-   *
-   * @remarks
-   * - Ignores the `needsUpdate` flag, but sets it to false after the update.
-   * - Emits the `onUpdated` event.
    */
   public updateWorldTransform(): void {
     this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
@@ -326,12 +377,12 @@ export class Transform<T = unknown> implements ITransform {
       this.world.initFrom(this.matrix)
     }
 
-    this.needsUpdate = false
+    this.lastVersion = this.version
     this.worldInvChanged = true
     this.worldRotChanged = true
     this.worldRotInvChanged = true
     for (const child of this.children) {
-      child.needsUpdate = true
+      child.version++
     }
   }
 
@@ -342,7 +393,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotation(quaternion: IVec4): this {
     this.rotation.initFrom(quaternion)
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -354,7 +405,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotationAxisAngleV(axis: IVec3, angle: number): this {
     this.rotation.initAxisAngle(axis, angle)
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -368,7 +419,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotationAxisAngle(x: number, y: number, z: number, angle: number): this {
     this.rotation.initAxisAngle(tempVec.init(x, y, z).normalize(), angle)
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -381,7 +432,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     this.rotation.initYawPitchRoll(yaw, pitch, roll)
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -393,7 +444,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public rotateAxisAngleV(axis: IVec3, angle: number): this {
     this.rotation.preMultiply(tempQuat.initAxisAngle(axis, angle))
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -418,7 +469,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     this.rotation.preMultiply(tempQuat.initYawPitchRoll(yaw, pitch, roll))
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -431,7 +482,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x = scale.x
     this.scale.y = scale.y
     this.scale.z = scale.z
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -446,7 +497,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x = scaleX
     this.scale.y = scaleY
     this.scale.z = scaleZ
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -457,7 +508,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setScaleX(scale: number): this {
     this.scale.x = scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -468,7 +519,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setScaleY(scale: number): this {
     this.scale.y = scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -479,7 +530,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setScaleZ(scale: number): this {
     this.scale.z = scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -492,7 +543,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x = value
     this.scale.y = value
     this.scale.z = value
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -505,7 +556,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x *= scale.x
     this.scale.y *= scale.y
     this.scale.z *= scale.z
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -516,7 +567,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public scaleX(scale: number): this {
     this.scale.x *= scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -527,7 +578,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public scaleY(scale: number): this {
     this.scale.y *= scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -538,7 +589,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public scaleZ(scale: number): this {
     this.scale.z *= scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -553,7 +604,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x *= scaleX
     this.scale.y *= scaleY
     this.scale.z *= scaleZ
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -566,7 +617,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x *= scale
     this.scale.y *= scale
     this.scale.z *= scale
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -579,7 +630,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x = position.x
     this.translation.y = position.y
     this.translation.z = position.z
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -594,7 +645,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x = x
     this.translation.y = y
     this.translation.z = z
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -605,7 +656,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setPositionX(x: number): this {
     this.translation.x = x
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -616,7 +667,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setPositionY(y: number): this {
     this.translation.y = y
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -627,7 +678,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setPositionZ(z: number): this {
     this.translation.z = z
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -640,7 +691,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x += delta.x
     this.translation.y += delta.y
     this.translation.z += delta.z
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -655,7 +706,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x += dx
     this.translation.y += dy
     this.translation.z += dz
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -666,7 +717,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public translateX(dx: number): this {
     this.translation.x += dx
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -677,7 +728,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public translateY(dy: number): this {
     this.translation.y += dy
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -688,13 +739,13 @@ export class Transform<T = unknown> implements ITransform {
    */
   public translateZ(dz: number): this {
     this.translation.z += dz
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
   public lookAt(v: IVec3, up?: IVec3): this {
     this.rotation.initFromMat4(tempMat.initLookAt(this.translation, v, up || Vec3.Up))
-    this.needsUpdate = true
+    this.version++
     return this
   }
 
@@ -726,7 +777,7 @@ export class Transform<T = unknown> implements ITransform {
   }
 }
 
-function removeFromArrayUnstable<T>(array: T[], item: T): void {
+function removeItemUnordered<T>(array: T[], item: T): void {
   const index = array.indexOf(item)
   if (index < 0) {
     return
@@ -737,8 +788,7 @@ function removeFromArrayUnstable<T>(array: T[], item: T): void {
   array.length--
 }
 
-
-function removeFromArray<T>(array: T[], item: T): void {
+function removeItem<T>(array: T[], item: T): void {
   const index = array.indexOf(item)
   if (index < 0) {
     return

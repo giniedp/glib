@@ -1,5 +1,4 @@
 import { ArrayLike, Vec3 } from '@gglib/math'
-import { Log } from '@gglib/utils'
 import { FrontFace } from '../../enums'
 import { GeometryBuilderChannelMap } from '../GeometryBuilderChannel'
 
@@ -16,11 +15,11 @@ export function calculateNormals(
   frontFace: FrontFace = 'CCW',
 ) {
   if (!channels.normal) {
-    Log.warn(`[calculateNormals] buffer must have a 'normal' attribute`)
+    console.warn(`[calculateNormals] buffer must have a 'normal' attribute`)
     return
   }
   if (!channels.position) {
-    Log.warn(`[calculateNormals] buffer must have a 'position' attribute`)
+    console.warn(`[calculateNormals] buffer must have a 'position' attribute`)
     return
   }
 

@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control emissive color contribution.
@@ -18,7 +18,7 @@ export interface MtlEmissionDefs {
  * @public
  */
 export const MTL_EMISSION: ShaderChunkSet<MtlEmissionDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef EMISSIVE_COLOR_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE
@@ -29,7 +29,7 @@ export const MTL_EMISSION: ShaderChunkSet<MtlEmissionDefs> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef EMISSIVE_COLOR
     // @binding EmissiveColor
     // @widget  color
@@ -52,7 +52,7 @@ export const MTL_EMISSION: ShaderChunkSet<MtlEmissionDefs> = {
     uniform mat3 uEmissiveColorMapTransform;
     #endif
   `,
-  fs_functions: glsl`
+  fs_functions: /* glsl */ `
     #ifdef EMISSIVE_COLOR_MAP
     vec2 getEmissiveColorMapUV() {
       vec2 result = EMISSIVE_COLOR_MAP_UV;
@@ -85,7 +85,7 @@ export const MTL_EMISSION: ShaderChunkSet<MtlEmissionDefs> = {
     }
   `,
 
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     surface.Emission.rgb = getEmissiveColor(uvOffset);
   `,
 }

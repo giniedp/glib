@@ -1,4 +1,4 @@
-import { ITransformBase, IVec3, IVec4 } from '@gglib/math'
+import type { ITransformBase, IVec3, IVec4 } from '@gglib/math'
 
 export interface AnimationData {
   /**

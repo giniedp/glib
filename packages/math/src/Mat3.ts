@@ -1,10 +1,16 @@
-import { ArrayLike, IVec2, IVec3, IVec4, Mat3Elements } from './Types'
+import type { ArrayLike, IVec2, IVec3, IVec4, Mat3Elements } from './Types'
 import { Vec3 } from './Vec3'
 
 const enum M {
- _00 = 0, _10 = 3, _20 = 6,
- _01 = 1, _11 = 4, _21 = 7,
- _02 = 2, _12 = 5, _22 = 8,
+  _00 = 0,
+  _10 = 3,
+  _20 = 6,
+  _01 = 1,
+  _11 = 4,
+  _21 = 7,
+  _02 = 2,
+  _12 = 5,
+  _22 = 8,
 }
 
 /**
@@ -346,9 +352,15 @@ export class Mat3 {
    * Creates a matrix by reading the arguments in column major order
    */
   public static create(
-    m00: number, m01: number, m02: number,
-    m10: number, m11: number, m12: number,
-    m20: number, m21: number, m22: number,
+    m00: number,
+    m01: number,
+    m02: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m20: number,
+    m21: number,
+    m22: number,
   ): Mat3 {
     const out = new Mat3()
     const m = out.elements
@@ -370,9 +382,15 @@ export class Mat3 {
    * Initializes the matrix by reading the arguments in column major order
    */
   public init(
-    m00: number, m01: number, m02: number,
-    m10: number, m11: number, m12: number,
-    m20: number, m21: number, m22: number,
+    m00: number,
+    m01: number,
+    m02: number,
+    m10: number,
+    m11: number,
+    m12: number,
+    m20: number,
+    m21: number,
+    m22: number,
   ): this {
     const m = this.elements
     m[M._00] = m00
@@ -399,9 +417,15 @@ export class Mat3 {
    * order
    */
   public static createRowMajor(
-    m00: number, m10: number, m20: number,
-    m01: number, m11: number, m21: number,
-    m02: number, m12: number, m22: number,
+    m00: number,
+    m10: number,
+    m20: number,
+    m01: number,
+    m11: number,
+    m21: number,
+    m02: number,
+    m12: number,
+    m22: number,
   ): Mat3 {
     const out = new Mat3()
     const m = out.elements
@@ -429,9 +453,15 @@ export class Mat3 {
    * order
    */
   public initRowMajor(
-    m00: number, m10: number, m20: number,
-    m01: number, m11: number, m21: number,
-    m02: number, m12: number, m22: number,
+    m00: number,
+    m10: number,
+    m20: number,
+    m01: number,
+    m11: number,
+    m21: number,
+    m02: number,
+    m12: number,
+    m22: number,
   ): this {
     const m = this.elements
     m[M._00] = m00
@@ -465,9 +495,15 @@ export class Mat3 {
    */
   public initWith(value: number): this {
     const m = this.elements
-    m[M._00] = value; m[M._10] = value; m[M._20] = value
-    m[M._01] = value; m[M._11] = value; m[M._21] = value
-    m[M._02] = value; m[M._12] = value; m[M._22] = value
+    m[M._00] = value
+    m[M._10] = value
+    m[M._20] = value
+    m[M._01] = value
+    m[M._11] = value
+    m[M._21] = value
+    m[M._02] = value
+    m[M._12] = value
+    m[M._22] = value
     return this
   }
 
@@ -485,9 +521,15 @@ export class Mat3 {
    */
   public initIdentity(): this {
     const m = this.elements
-    m[M._00] = 1; m[M._10] = 0; m[M._20] = 0
-    m[M._01] = 0; m[M._11] = 1; m[M._21] = 0
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 1
+    m[M._00] = 1
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._01] = 0
+    m[M._11] = 1
+    m[M._21] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 1
     return this
   }
 
@@ -503,9 +545,15 @@ export class Mat3 {
    */
   public initZero(): this {
     const m = this.elements
-    m[M._00] = 0; m[M._10] = 0; m[M._20] = 0
-    m[M._01] = 0; m[M._11] = 0; m[M._21] = 0
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = 0
+    m[M._00] = 0
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._01] = 0
+    m[M._11] = 0
+    m[M._21] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 0
     return this
   }
 
@@ -661,15 +709,15 @@ export class Mat3 {
 
     const m = this.elements
     m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] =     2 * (xy + zw)
-    m[M._02] =     2 * (xz - yw)
+    m[M._01] = 2 * (xy + zw)
+    m[M._02] = 2 * (xz - yw)
 
-    m[M._10] =     2 * (xy - zw)
+    m[M._10] = 2 * (xy - zw)
     m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] =     2 * (yz + xw)
+    m[M._12] = 2 * (yz + xw)
 
-    m[M._20] =     2 * (xz + yw)
-    m[M._21] =     2 * (yz - xw)
+    m[M._20] = 2 * (xz + yw)
+    m[M._21] = 2 * (yz - xw)
     m[M._22] = 1 - 2 * (yy + xx)
 
     return this
@@ -796,15 +844,15 @@ export class Mat3 {
 
     const m = this.elements
     m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] =     2 * (xy + zw)
-    m[M._02] =     2 * (xz - yw)
+    m[M._01] = 2 * (xy + zw)
+    m[M._02] = 2 * (xz - yw)
 
-    m[M._10] =     2 * (xy - zw)
+    m[M._10] = 2 * (xy - zw)
     m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] =     2 * (yz + xw)
+    m[M._12] = 2 * (yz + xw)
 
-    m[M._20] =     2 * (xz + yw)
-    m[M._21] =     2 * (yz - xw)
+    m[M._20] = 2 * (xz + yw)
+    m[M._21] = 2 * (yz - xw)
     m[M._22] = 1 - 2 * (yy + xx)
 
     return this
@@ -944,15 +992,15 @@ export class Mat3 {
 
     const m = this.elements
     m[M._00] = 1 - 2 * (yy + zz)
-    m[M._01] =     2 * (xy + zw)
-    m[M._02] =     2 * (xz - yw)
+    m[M._01] = 2 * (xy + zw)
+    m[M._02] = 2 * (xz - yw)
 
-    m[M._10] =     2 * (xy - zw)
+    m[M._10] = 2 * (xy - zw)
     m[M._11] = 1 - 2 * (zz + xx)
-    m[M._12] =     2 * (yz + xw)
+    m[M._12] = 2 * (yz + xw)
 
-    m[M._20] =     2 * (xz + yw)
-    m[M._21] =     2 * (yz - xw)
+    m[M._20] = 2 * (xz + yw)
+    m[M._21] = 2 * (yz - xw)
     m[M._22] = 1 - 2 * (yy + xx)
 
     return this
@@ -1089,9 +1137,15 @@ export class Mat3 {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const m = this.elements
-    m[M._00] = 1; m[M._10] = 0;   m[M._20] = 0
-    m[M._01] = 0; m[M._11] = cos; m[M._21] = -sin
-    m[M._02] = 0; m[M._12] = sin; m[M._22] =  cos
+    m[M._00] = 1
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._01] = 0
+    m[M._11] = cos
+    m[M._21] = -sin
+    m[M._02] = 0
+    m[M._12] = sin
+    m[M._22] = cos
     return this
   }
 
@@ -1169,9 +1223,15 @@ export class Mat3 {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const m = this.elements
-    m[M._00] = cos;  m[M._10] = 0; m[M._20] = sin
-    m[M._01] = 0;    m[M._11] = 1; m[M._21] = 0
-    m[M._02] = -sin; m[M._12] = 0; m[M._22] = cos
+    m[M._00] = cos
+    m[M._10] = 0
+    m[M._20] = sin
+    m[M._01] = 0
+    m[M._11] = 1
+    m[M._21] = 0
+    m[M._02] = -sin
+    m[M._12] = 0
+    m[M._22] = cos
     return this
   }
 
@@ -1249,9 +1309,15 @@ export class Mat3 {
     const cos = Math.cos(angle)
     const sin = Math.sin(angle)
     const m = this.elements
-    m[M._00] = cos; m[M._10] = -sin; m[M._20] = 0
-    m[M._01] = sin; m[M._11] =  cos; m[M._21] = 0
-    m[M._02] = 0;   m[M._12] = 0;    m[M._22] = 1
+    m[M._00] = cos
+    m[M._10] = -sin
+    m[M._20] = 0
+    m[M._01] = sin
+    m[M._11] = cos
+    m[M._21] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = 1
     return this
   }
 
@@ -1328,9 +1394,15 @@ export class Mat3 {
    */
   public initScaleXYZ(x: number, y: number, z: number): this {
     const m = this.elements
-    m[M._00] = x; m[M._10] = 0; m[M._20] = 0
-    m[M._01] = 0; m[M._11] = y; m[M._21] = 0
-    m[M._02] = 0; m[M._12] = 0; m[M._22] = z
+    m[M._00] = x
+    m[M._10] = 0
+    m[M._20] = 0
+    m[M._01] = 0
+    m[M._11] = y
+    m[M._21] = 0
+    m[M._02] = 0
+    m[M._12] = 0
+    m[M._22] = z
     return this
   }
 
@@ -1591,11 +1663,7 @@ export class Mat3 {
     y = backZ * rightX - backX * rightZ
     z = backX * rightY - backY * rightX
 
-    return this.initRowMajor(
-      rightX, x, backX,
-      rightY, y, backY,
-      rightZ, z, backZ,
-    )
+    return this.initRowMajor(rightX, x, backX, rightY, y, backY, rightZ, z, backZ)
   }
 
   /**
@@ -1631,11 +1699,7 @@ export class Mat3 {
    */
   public static transpose(mat: Mat3, out?: Mat3): Mat3 {
     const d = mat.elements
-    return (out || new Mat3()).init(
-      d[0], d[3], d[6],
-      d[1], d[4], d[7],
-      d[2], d[5], d[8],
-    )
+    return (out || new Mat3()).init(d[0], d[3], d[6], d[1], d[4], d[7], d[2], d[5], d[8])
   }
 
   /**
@@ -1753,9 +1817,15 @@ export class Mat3 {
     const d = mat.elements
     const o = out.elements
     // tslint:disable
-    o[ 0] = -d[ 0]; o[ 1] = -d[ 1]; o[ 2] = -d[ 2];
-    o[ 3] = -d[ 3]; o[ 4] = -d[ 4]; o[ 5] = -d[ 5];
-    o[ 6] = -d[ 6]; o[ 7] = -d[ 7]; o[ 8] = -d[ 8];
+    o[0] = -d[0]
+    o[1] = -d[1]
+    o[2] = -d[2]
+    o[3] = -d[3]
+    o[4] = -d[4]
+    o[5] = -d[5]
+    o[6] = -d[6]
+    o[7] = -d[7]
+    o[8] = -d[8]
     // tslint:enable
     return out
   }
@@ -1768,9 +1838,15 @@ export class Mat3 {
     const a = this.elements
     const b = this.elements
     // tslint:disable
-    a[ 0] = -b[ 0]; a[ 1] = -b[ 1]; a[ 2] = -b[ 2];
-    a[ 3] = -b[ 3]; a[ 4] = -b[ 4]; a[ 5] = -b[ 5];
-    a[ 6] = -b[ 6]; a[ 7] = -b[ 7]; a[ 8] = -b[ 8];
+    a[0] = -b[0]
+    a[1] = -b[1]
+    a[2] = -b[2]
+    a[3] = -b[3]
+    a[4] = -b[4]
+    a[5] = -b[5]
+    a[6] = -b[6]
+    a[7] = -b[7]
+    a[8] = -b[8]
     // tslint:enable
     return this
   }
@@ -1788,9 +1864,15 @@ export class Mat3 {
     const b = matB.elements
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] + b[ 0]; c[ 1] = a[ 1] + b[ 1]; c[ 2] = a[ 2] + b[ 2];
-    c[ 3] = a[ 3] + b[ 3]; c[ 4] = a[ 4] + b[ 4]; c[ 5] = a[ 5] + b[ 5];
-    c[ 6] = a[ 6] + b[ 6]; c[ 7] = a[ 7] + b[ 7]; c[ 8] = a[ 8] + b[ 8];
+    c[0] = a[0] + b[0]
+    c[1] = a[1] + b[1]
+    c[2] = a[2] + b[2]
+    c[3] = a[3] + b[3]
+    c[4] = a[4] + b[4]
+    c[5] = a[5] + b[5]
+    c[6] = a[6] + b[6]
+    c[7] = a[7] + b[7]
+    c[8] = a[8] + b[8]
     // tslint:enable
     return out
   }
@@ -1804,9 +1886,15 @@ export class Mat3 {
     const a = this.elements
     const b = other.elements
     // tslint:disable
-    a[ 0] += b[ 0]; a[ 1] += b[ 1]; a[ 2] += b[ 2];
-    a[ 3] += b[ 3]; a[ 4] += b[ 4]; a[ 5] += b[ 5];
-    a[ 6] += b[ 6]; a[ 7] += b[ 7]; a[ 8] += b[ 8];
+    a[0] += b[0]
+    a[1] += b[1]
+    a[2] += b[2]
+    a[3] += b[3]
+    a[4] += b[4]
+    a[5] += b[5]
+    a[6] += b[6]
+    a[7] += b[7]
+    a[8] += b[8]
     // tslint:enable
     return this
   }
@@ -1823,9 +1911,15 @@ export class Mat3 {
     const a = mat.elements
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] + scalar; c[ 1] = a[ 1] + scalar; c[ 2] = a[ 2] + scalar;
-    c[ 3] = a[ 3] + scalar; c[ 4] = a[ 4] + scalar; c[ 5] = a[ 5] + scalar;
-    c[ 6] = a[ 6] + scalar; c[ 7] = a[ 7] + scalar; c[ 8] = a[ 8] + scalar;
+    c[0] = a[0] + scalar
+    c[1] = a[1] + scalar
+    c[2] = a[2] + scalar
+    c[3] = a[3] + scalar
+    c[4] = a[4] + scalar
+    c[5] = a[5] + scalar
+    c[6] = a[6] + scalar
+    c[7] = a[7] + scalar
+    c[8] = a[8] + scalar
     // tslint:enable
     return out
   }
@@ -1838,9 +1932,15 @@ export class Mat3 {
   public addScalar(s: number): Mat3 {
     const a = this.elements
     // tslint:disable
-    a[ 0] += s; a[ 1] += s; a[ 2] += s;
-    a[ 3] += s; a[ 4] += s; a[ 5] += s;
-    a[ 6] += s; a[ 7] += s; a[ 8] += s;
+    a[0] += s
+    a[1] += s
+    a[2] += s
+    a[3] += s
+    a[4] += s
+    a[5] += s
+    a[6] += s
+    a[7] += s
+    a[8] += s
     // tslint:enable
     return this
   }
@@ -1858,9 +1958,15 @@ export class Mat3 {
     const b = matB.elements
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] - b[ 0]; c[ 1] = a[ 1] - b[ 1]; c[ 2] = a[ 2] - b[ 2];
-    c[ 3] = a[ 3] - b[ 3]; c[ 4] = a[ 4] - b[ 4]; c[ 5] = a[ 5] - b[ 5];
-    c[ 6] = a[ 6] - b[ 6]; c[ 7] = a[ 7] - b[ 7]; c[ 8] = a[ 8] - b[ 8];
+    c[0] = a[0] - b[0]
+    c[1] = a[1] - b[1]
+    c[2] = a[2] - b[2]
+    c[3] = a[3] - b[3]
+    c[4] = a[4] - b[4]
+    c[5] = a[5] - b[5]
+    c[6] = a[6] - b[6]
+    c[7] = a[7] - b[7]
+    c[8] = a[8] - b[8]
     // tslint:enable
     return out
   }
@@ -1874,9 +1980,15 @@ export class Mat3 {
     const a = this.elements
     const b = other.elements
     // tslint:disable
-    a[ 0] -= b[ 0]; a[ 1] -= b[ 1]; a[ 2] -= b[ 2];
-    a[ 3] -= b[ 3]; a[ 4] -= b[ 4]; a[ 5] -= b[ 5];
-    a[ 6] -= b[ 6]; a[ 7] -= b[ 7]; a[ 8] -= b[ 8];
+    a[0] -= b[0]
+    a[1] -= b[1]
+    a[2] -= b[2]
+    a[3] -= b[3]
+    a[4] -= b[4]
+    a[5] -= b[5]
+    a[6] -= b[6]
+    a[7] -= b[7]
+    a[8] -= b[8]
     // tslint:enable
     return this
   }
@@ -1893,9 +2005,15 @@ export class Mat3 {
     const a = mat.elements
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] - scalar; c[ 1] = a[ 1] - scalar; c[ 2] = a[ 2] - scalar;
-    c[ 3] = a[ 3] - scalar; c[ 4] = a[ 4] - scalar; c[ 5] = a[ 5] - scalar;
-    c[ 6] = a[ 6] - scalar; c[ 7] = a[ 7] - scalar; c[ 8] = a[ 8] - scalar;
+    c[0] = a[0] - scalar
+    c[1] = a[1] - scalar
+    c[2] = a[2] - scalar
+    c[3] = a[3] - scalar
+    c[4] = a[4] - scalar
+    c[5] = a[5] - scalar
+    c[6] = a[6] - scalar
+    c[7] = a[7] - scalar
+    c[8] = a[8] - scalar
     // tslint:enable
     return out
   }
@@ -1908,9 +2026,15 @@ export class Mat3 {
   public subtractScalar(s: number): Mat3 {
     const a = this.elements
     // tslint:disable
-    a[ 0] -= s; a[ 1] -= s; a[ 2] -= s;
-    a[ 3] -= s; a[ 4] -= s; a[ 5] -= s;
-    a[ 6] -= s; a[ 7] -= s; a[ 8] -= s;
+    a[0] -= s
+    a[1] -= s
+    a[2] -= s
+    a[3] -= s
+    a[4] -= s
+    a[5] -= s
+    a[6] -= s
+    a[7] -= s
+    a[8] -= s
     // tslint:enable
     return this
   }
@@ -1930,12 +2054,24 @@ export class Mat3 {
     const b = matB.elements
     const c = out.elements
     // tslint:disable
-    const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+    const a_0 = a[0],
+      a_1 = a[1],
+      a_2 = a[2],
+      a_3 = a[3],
+      a_4 = a[4],
+      a_5 = a[5],
+      a_6 = a[6],
+      a_7 = a[7],
+      a_8 = a[8]
+    const b_0 = b[0],
+      b_1 = b[1],
+      b_2 = b[2],
+      b_3 = b[3],
+      b_4 = b[4],
+      b_5 = b[5],
+      b_6 = b[6],
+      b_7 = b[7],
+      b_8 = b[8]
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -1959,12 +2095,24 @@ export class Mat3 {
     const b = other.elements
     const c = this.elements
     // tslint:disable
-    const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+    const a_0 = a[0],
+      a_1 = a[1],
+      a_2 = a[2],
+      a_3 = a[3],
+      a_4 = a[4],
+      a_5 = a[5],
+      a_6 = a[6],
+      a_7 = a[7],
+      a_8 = a[8]
+    const b_0 = b[0],
+      b_1 = b[1],
+      b_2 = b[2],
+      b_3 = b[3],
+      b_4 = b[4],
+      b_5 = b[5],
+      b_6 = b[6],
+      b_7 = b[7],
+      b_8 = b[8]
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -1993,12 +2141,24 @@ export class Mat3 {
     const b = matA.elements
     const c = out.elements
     // tslint:disable
-    const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+    const a_0 = a[0],
+      a_1 = a[1],
+      a_2 = a[2],
+      a_3 = a[3],
+      a_4 = a[4],
+      a_5 = a[5],
+      a_6 = a[6],
+      a_7 = a[7],
+      a_8 = a[8]
+    const b_0 = b[0],
+      b_1 = b[1],
+      b_2 = b[2],
+      b_3 = b[3],
+      b_4 = b[4],
+      b_5 = b[5],
+      b_6 = b[6],
+      b_7 = b[7],
+      b_8 = b[8]
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -2048,12 +2208,24 @@ export class Mat3 {
     const b = this.elements
     const c = this.elements
     // tslint:disable
-    const a_0 = a[ 0], a_1 = a[ 1], a_2 = a[ 2],
-          a_3 = a[ 3], a_4 = a[ 4], a_5 = a[ 5],
-          a_6 = a[ 6], a_7 = a[ 7], a_8 = a[ 8];
-    const b_0 = b[ 0], b_1 = b[ 1], b_2 = b[ 2],
-          b_3 = b[ 3], b_4 = b[ 4], b_5 = b[ 5],
-          b_6 = b[ 6], b_7 = b[ 7], b_8 = b[ 8];
+    const a_0 = a[0],
+      a_1 = a[1],
+      a_2 = a[2],
+      a_3 = a[3],
+      a_4 = a[4],
+      a_5 = a[5],
+      a_6 = a[6],
+      a_7 = a[7],
+      a_8 = a[8]
+    const b_0 = b[0],
+      b_1 = b[1],
+      b_2 = b[2],
+      b_3 = b[3],
+      b_4 = b[4],
+      b_5 = b[5],
+      b_6 = b[6],
+      b_7 = b[7],
+      b_8 = b[8]
     // tslint:enable
     c[0] = b_0 * a_0 + b_1 * a_3 + b_2 * a_6
     c[1] = b_0 * a_1 + b_1 * a_4 + b_2 * a_7
@@ -2080,9 +2252,15 @@ export class Mat3 {
     const b = scalar
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b;
-    c[ 3] = a[ 3] * b; c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b;
-    c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b; c[ 8] = a[ 8] * b;
+    c[0] = a[0] * b
+    c[1] = a[1] * b
+    c[2] = a[2] * b
+    c[3] = a[3] * b
+    c[4] = a[4] * b
+    c[5] = a[5] * b
+    c[6] = a[6] * b
+    c[7] = a[7] * b
+    c[8] = a[8] * b
     // tslint:enable
     return out
   }
@@ -2095,9 +2273,15 @@ export class Mat3 {
   public multiplyScalar(s: number): Mat3 {
     const a = this.elements
     // tslint:disable
-    a[ 0] *= s; a[ 1] *= s; a[ 2] *= s;
-    a[ 3] *= s; a[ 4] *= s; a[ 5] *= s;
-    a[ 6] *= s; a[ 7] *= s; a[ 8] *= s;
+    a[0] *= s
+    a[1] *= s
+    a[2] *= s
+    a[3] *= s
+    a[4] *= s
+    a[5] *= s
+    a[6] *= s
+    a[7] *= s
+    a[8] *= s
     // tslint:enable
     return this
   }
@@ -2115,9 +2299,15 @@ export class Mat3 {
     const b = matB.elements
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] / b[ 0]; c[ 1] = a[ 1] / b[ 1]; c[ 2] = a[ 2] / b[ 2];
-    c[ 3] = a[ 3] / b[ 3]; c[ 4] = a[ 4] / b[ 4]; c[ 5] = a[ 5] / b[ 5];
-    c[ 6] = a[ 6] / b[ 6]; c[ 7] = a[ 7] / b[ 7]; c[ 8] = a[ 8] / b[ 8];
+    c[0] = a[0] / b[0]
+    c[1] = a[1] / b[1]
+    c[2] = a[2] / b[2]
+    c[3] = a[3] / b[3]
+    c[4] = a[4] / b[4]
+    c[5] = a[5] / b[5]
+    c[6] = a[6] / b[6]
+    c[7] = a[7] / b[7]
+    c[8] = a[8] / b[8]
     // tslint:enable
     return out
   }
@@ -2131,9 +2321,15 @@ export class Mat3 {
     const a = this.elements
     const b = other.elements
     // tslint:disable
-    a[ 0] /= b[ 0]; a[ 1] /= b[ 1]; a[ 2] /= b[ 2];
-    a[ 3] /= b[ 3]; a[ 4] /= b[ 4]; a[ 5] /= b[ 5];
-    a[ 6] /= b[ 6]; a[ 7] /= b[ 7]; a[ 8] /= b[ 8];
+    a[0] /= b[0]
+    a[1] /= b[1]
+    a[2] /= b[2]
+    a[3] /= b[3]
+    a[4] /= b[4]
+    a[5] /= b[5]
+    a[6] /= b[6]
+    a[7] /= b[7]
+    a[8] /= b[8]
     // tslint:enable
     return this
   }
@@ -2151,9 +2347,15 @@ export class Mat3 {
     const b = 1 / scalar
     const c = out.elements
     // tslint:disable
-    c[ 0] = a[ 0] * b; c[ 1] = a[ 1] * b; c[ 2] = a[ 2] * b;
-    c[ 3] = a[ 3] * b; c[ 4] = a[ 4] * b; c[ 5] = a[ 5] * b;
-    c[ 6] = a[ 6] * b; c[ 7] = a[ 7] * b; c[ 8] = a[ 8] * b;
+    c[0] = a[0] * b
+    c[1] = a[1] * b
+    c[2] = a[2] * b
+    c[3] = a[3] * b
+    c[4] = a[4] * b
+    c[5] = a[5] * b
+    c[6] = a[6] * b
+    c[7] = a[7] * b
+    c[8] = a[8] * b
     // tslint:enable
     return out
   }
@@ -2167,9 +2369,15 @@ export class Mat3 {
     const a = this.elements
     const b = 1.0 / s
     // tslint:disable
-    a[ 0] *= b; a[ 1] *= b; a[ 2] *= b;
-    a[ 3] *= b; a[ 4] *= b; a[ 5] *= b;
-    a[ 6] *= b; a[ 7] *= b; a[ 8] *= b;
+    a[0] *= b
+    a[1] *= b
+    a[2] *= b
+    a[3] *= b
+    a[4] *= b
+    a[5] *= b
+    a[6] *= b
+    a[7] *= b
+    a[8] *= b
     // tslint:enable
     return this
   }
@@ -2179,7 +2387,7 @@ export class Mat3 {
    *
    * @returns the given vector
    */
-  public transform<T extends IVec2|IVec3>(vec: T): T {
+  public transform<T extends IVec2 | IVec3>(vec: T): T {
     const x = vec.x || 0
     const y = vec.y || 0
     const z = (vec as IVec3).z || 0
@@ -2187,7 +2395,7 @@ export class Mat3 {
     vec.x = x * d[0] + y * d[3] + z * d[6]
     vec.y = x * d[1] + y * d[4] + z * d[7]
     if ((vec as IVec3).z != null) {
-      (vec as IVec3).z = x * d[2] + y * d[5] + z * d[8]
+      ;(vec as IVec3).z = x * d[2] + y * d[5] + z * d[8]
     }
     return vec
   }
@@ -2208,7 +2416,7 @@ export class Mat3 {
       count--
       x = array[offset]
       y = array[offset + 1]
-      array[offset    ] = x * d[0] + y * d[3] + d[6]
+      array[offset] = x * d[0] + y * d[3] + d[6]
       array[offset + 1] = x * d[1] + y * d[4] + d[7]
       offset += stride
     }
@@ -2235,7 +2443,7 @@ export class Mat3 {
       x = array[offset]
       y = array[offset + 1]
       z = array[offset + 2]
-      array[offset    ] = x * d[0] + y * d[3] + z * d[6]
+      array[offset] = x * d[0] + y * d[3] + z * d[6]
       array[offset + 1] = x * d[1] + y * d[4] + z * d[7]
       array[offset + 2] = x * d[2] + y * d[5] + z * d[8]
       offset += stride
@@ -2277,7 +2485,7 @@ export class Mat3 {
    * @returns The given `out` parameter or a new matrix.
    */
   public static smooth(matA: Mat3, matB: Mat3, t: number, out?: Mat3): Mat3 {
-    t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
+    t = t > 1 ? 1 : t < 0 ? 0 : t
     t = t * t * (3 - 2 * t)
     return Mat3.lerp(matA, matB, t, out)
   }
@@ -2328,7 +2536,8 @@ export class Mat3 {
   public equals(other: Mat3): boolean {
     const a = this.elements
     const b = other.elements
-    return a[0] === b[0] &&
+    return (
+      a[0] === b[0] &&
       a[1] === b[1] &&
       a[2] === b[2] &&
       a[3] === b[3] &&
@@ -2337,6 +2546,7 @@ export class Mat3 {
       a[6] === b[6] &&
       a[7] === b[7] &&
       a[8] === b[8]
+    )
   }
 
   /**
@@ -2347,7 +2557,8 @@ export class Mat3 {
   public static equals(m1: Mat3, m2: Mat3): boolean {
     const a = m1.elements
     const b = m2.elements
-    return a[0] === b[0] &&
+    return (
+      a[0] === b[0] &&
       a[1] === b[1] &&
       a[2] === b[2] &&
       a[3] === b[3] &&
@@ -2356,6 +2567,7 @@ export class Mat3 {
       a[6] === b[6] &&
       a[7] === b[7] &&
       a[8] === b[8]
+    )
   }
 
   /**

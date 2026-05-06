@@ -1,12 +1,12 @@
 import { GLConst as gl } from './GLConst'
 
 export type Blend =
-  | 'BlendAlpha'
-  | 'BlendColor'
+  | 'ConstantAlpha'
+  | 'ConstantColor'
   | 'DstAlpha'
   | 'DstColor'
   | 'One'
-  | 'OneMinusBlendColor'
+  | 'OneMinusConstant'
   | 'OneMinusDstAlpha'
   | 'OneMinusDstColor'
   | 'OneMinusSrcAlpha'
@@ -17,12 +17,12 @@ export type Blend =
   | 'Zero'
 
 const blendMapToWebGL: Record<Blend, number> = {
-  BlendAlpha: gl.CONSTANT_ALPHA,
-  BlendColor: gl.CONSTANT_COLOR,
+  ConstantAlpha: gl.CONSTANT_ALPHA,
+  ConstantColor: gl.CONSTANT_COLOR,
   DstAlpha: gl.DST_ALPHA,
   DstColor: gl.DST_COLOR,
   One: gl.ONE,
-  OneMinusBlendColor: gl.ONE_MINUS_CONSTANT_COLOR,
+  OneMinusConstant: gl.ONE_MINUS_CONSTANT_COLOR,
   OneMinusDstAlpha: gl.ONE_MINUS_DST_ALPHA,
   OneMinusDstColor: gl.ONE_MINUS_DST_COLOR,
   OneMinusSrcAlpha: gl.ONE_MINUS_SRC_ALPHA,
@@ -34,12 +34,12 @@ const blendMapToWebGL: Record<Blend, number> = {
 }
 
 const blendMapFromWebGL: Record<number, Blend> = {
-  [gl.CONSTANT_ALPHA]: 'BlendAlpha',
-  [gl.CONSTANT_COLOR]: 'BlendColor',
+  [gl.CONSTANT_ALPHA]: 'ConstantAlpha',
+  [gl.CONSTANT_COLOR]: 'ConstantColor',
   [gl.DST_ALPHA]: 'DstAlpha',
   [gl.DST_COLOR]: 'DstColor',
   [gl.ONE]: 'One',
-  [gl.ONE_MINUS_CONSTANT_COLOR]: 'OneMinusBlendColor',
+  [gl.ONE_MINUS_CONSTANT_COLOR]: 'OneMinusConstant',
   [gl.ONE_MINUS_DST_ALPHA]: 'OneMinusDstAlpha',
   [gl.ONE_MINUS_DST_COLOR]: 'OneMinusDstColor',
   [gl.ONE_MINUS_SRC_ALPHA]: 'OneMinusSrcAlpha',
@@ -51,19 +51,19 @@ const blendMapFromWebGL: Record<number, Blend> = {
 }
 
 const blendMapToWebGPU: Record<Blend, GPUBlendFactor> = {
-  BlendAlpha: 'blend-color',
-  BlendColor: 'blend-color',
+  ConstantAlpha: 'constant',
+  ConstantColor: 'constant',
   DstAlpha: 'dst-alpha',
-  DstColor: 'dst-color',
+  DstColor: 'dst',
   One: 'one',
-  OneMinusBlendColor: 'one-minus-blend-color',
+  OneMinusConstant: 'one-minus-constant',
   OneMinusDstAlpha: 'one-minus-dst-alpha',
-  OneMinusDstColor: 'one-minus-dst-color',
+  OneMinusDstColor: 'one-minus-dst',
   OneMinusSrcAlpha: 'one-minus-src-alpha',
-  OneMinusSrcColor: 'one-minus-src-color',
+  OneMinusSrcColor: 'one-minus-src',
   SrcAlpha: 'src-alpha',
   SrcAlphaSaturated: 'src-alpha-saturated',
-  SrcColor: 'src-color',
+  SrcColor: 'src',
   Zero: 'zero',
 }
 

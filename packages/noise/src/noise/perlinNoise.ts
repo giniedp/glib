@@ -1,7 +1,5 @@
-
-
 import { easeCubic, easeLinear } from '../easing'
-import { Ease, Sampler } from '../types'
+import type { Ease, Sampler } from '../types'
 import { lerp } from '../utils'
 import { grad1D, grad2D, grad3D, Permutation } from './utils'
 
@@ -22,6 +20,7 @@ export function perlinNoise(ease: Ease = easeCubic): Sampler {
     if (x.length === 3) {
       return p.sample3D(x[0], x[1], x[2])
     }
+    return null
   }
 }
 
@@ -30,9 +29,9 @@ export function perlinNoise(ease: Ease = easeCubic): Sampler {
  * http://mrl.nyu.edu/~perlin/noise/
  */
 class PerlinNoise {
-
-  constructor(private ease: Ease = easeLinear) {
-
+  private ease: Ease
+  constructor(ease: Ease = easeLinear) {
+    this.ease = ease
   }
 
   public sample1D(x: number): number {
@@ -98,12 +97,12 @@ class PerlinNoise {
     const wf = this.ease(z)
 
     // hash coordinates of the 8 cube corners
-    const A  = Permutation[xi    ] + yi
-    const AA = Permutation[A     ] + zi
-    const AB = Permutation[A  + 1] + zi
-    const B  = Permutation[xi + 1] + yi
-    const BA = Permutation[B     ] + zi
-    const BB = Permutation[B  + 1] + zi
+    const A = Permutation[xi] + yi
+    const AA = Permutation[A] + zi
+    const AB = Permutation[A + 1] + zi
+    const B = Permutation[xi + 1] + yi
+    const BA = Permutation[B] + zi
+    const BB = Permutation[B + 1] + zi
 
     // add and blend results from 8 corners of cube
     let vx0 = grad3D(AA, x, y, z)

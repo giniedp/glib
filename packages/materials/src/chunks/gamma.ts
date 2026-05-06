@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -22,13 +22,13 @@ export interface GammaDefs {
  * @public
  */
 export const GAMMA: ShaderChunkSet<GammaDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifndef GAMMA
     #define GAMMA 2.2
     #endif
     const float INV_GAMMA = 1.0 / GAMMA;
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     vec3 linearTosRGB(vec3 color) {
       #ifdef GAMMA_CORRECTION
       // see http://chilliant.blogspot.com/2012/08/srgb-approximations-for-hlsl.html
@@ -53,13 +53,13 @@ export const GAMMA: ShaderChunkSet<GammaDefs> = {
       return srgbIn;
     }
   `,
-  fs_shade_before: glsl`
+  fs_shade_before: /* glsl */ `
     #ifdef GAMMA_CORRECTION
     surface.BaseColor.rgb = pow(surface.BaseColor.rgb, vec3(GAMMA));
     surface.Specular.rgb = pow(surface.Specular.rgb, vec3(GAMMA));
     #endif
   `,
-  fs_post_before: glsl`
+  fs_post_before: /* glsl */ `
     #ifdef GAMMA_CORRECTION
     color.rgb = pow(color.rgb, vec3(1.0/GAMMA));
     #endif

@@ -1,5 +1,5 @@
 import { TextureCompression } from '@gglib/graphics'
-import { JsonRPCRequest, JsonRPCResponse, RpcTaskManager } from '@gglib/utils'
+import { JsonRpcClient, JsonRpcResponse } from '@gglib/utils'
 import { TextureData } from './transcode'
 import { TranscoderOptions } from './types'
 
@@ -7,15 +7,16 @@ export class Transcoder {
   private worker = new Worker(new URL('./transcoder.worker.js', import.meta.url), {
     type: 'module',
   })
-  private scheduler = new RpcTaskManager({
-    schedule: this.schedule.bind(this),
+  private client = new JsonRpcClient((rpc, transfer) => {
+    this.worker.postMessage(rpc, transfer || [])
   })
 
   private isInitialized: Promise<void>
 
   public constructor(options: TranscoderOptions) {
     this.worker.onmessage = this.onMessage.bind(this)
-    this.isInitialized = this.scheduler.request({
+    this.isInitialized = this.client.sendRequest({
+      id: this.client.nextId(),
       method: 'init',
       params: [options],
     })
@@ -23,8 +24,9 @@ export class Transcoder {
 
   public async transcode(data: ArrayBuffer, compression: TextureCompression[]): Promise<TextureData> {
     await this.isInitialized
-    return await this.scheduler.request<TextureData>(
+    return await this.client.sendRequest<TextureData>(
       {
+        id: this.client.nextId(),
         method: 'transcode',
         params: [data, compression],
       },
@@ -32,12 +34,8 @@ export class Transcoder {
     )
   }
 
-  private schedule(rpc: JsonRPCRequest, transfer: Transferable[]) {
-    this.worker.postMessage(rpc, transfer || [])
-  }
-
-  private onMessage(event: MessageEvent<JsonRPCResponse>) {
+  private onMessage(event: MessageEvent<JsonRpcResponse>) {
     const response = event.data
-    this.scheduler.response(response)
+    this.client.handleResponse(response)
   }
 }

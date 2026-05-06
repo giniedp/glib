@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control metallic roughness material.
@@ -111,7 +111,7 @@ export interface MtlMetallicRoughness {
  * @public
  */
 export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef METALLIC_ROUGHNESS_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE)
         #define V_TEXTURE
@@ -140,7 +140,7 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef METALLIC
     // @binding Metallic
     // @widget  slider;min=0;max=1
@@ -186,7 +186,7 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = {
     #endif
   `,
 
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef METALLIC_ROUGHNESS_MAP
     vec2 getMetallicRoughnessUV() {
       vec2 result = METALLIC_ROUGHNESS_MAP_UV;
@@ -254,7 +254,7 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = {
       roughness = clamp(roughness, 0.04, 1.0);
     }
   `,
-  functions_before: glsl`
+  functions_before: /* glsl */ `
 
     float getRoughness(in SurfaceParams surface) {
       float roughness = surface.Roughness;
@@ -283,7 +283,7 @@ export const MTL_METALLIC_ROUGHNESS: ShaderChunkSet<MtlMetallicRoughness> = {
       #endif
     }
   `,
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     getMetallicRoughness(surface.Metallic, surface.Roughness, uvOffset);
   `,
 }

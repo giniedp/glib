@@ -8,7 +8,13 @@ order: 100
 
 Everything starts with a triangle
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-## Code
+# Code
+
 <ExampleCode />

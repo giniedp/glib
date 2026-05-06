@@ -1,15 +1,20 @@
-import { Log, Uri } from '@gglib/utils'
+import { extname } from '@gglib/utils'
+import type { SurfaceFormat } from '../enums'
 import { toArrayBufferView } from './utils'
-import { SurfaceFormat } from '../enums'
 
-export type TextureData = TexImageSource | ArrayBufferView
+export type TextureFaceData = TexImageSource | ArrayBufferView | CompressedFaceData
 
-export abstract class TextureSource<T extends TextureData = TextureData> {
-  /**
-   * Indicates whether the texture source is ready to be used.
-   */
-  abstract readonly isReady: boolean
+export interface CompressedFaceData {
+  data: ArrayBufferView
+  rows: number
+  bytesPerRow: number
+}
 
+export function isCompressedFaceData(data: any): data is CompressedFaceData {
+  return data && 'data' in data && 'rows' in data && 'bytesPerRow' in data
+}
+
+export abstract class TextureSource<T extends TextureFaceData = TextureFaceData> {
   /**
    * The width of the texture source.
    */
@@ -36,18 +41,49 @@ export abstract class TextureSource<T extends TextureData = TextureData> {
    * The original resource from which the texture source was created.
    */
   public abstract resource: unknown
-
-  /**
-   * Runs an update on the texture source which allows it to perform the isReady check and update its state.
-   *
-   * @remarks
-   * This is a no-op for static sources like ImageData or ArrayBufferView.
-   * For dynamic sources like HTMLImageElement or HTMLVideoElement, this method should be called to check if the source has changed.
-   */
-  abstract update(): boolean
 }
 
-export class ImageElementSource extends TextureSource<HTMLImageElement> {
+export abstract class DynamicTextureSource<T extends TextureFaceData = TextureFaceData> extends TextureSource<T> {
+  /**
+   * Indicates whether the texture source is ready to be used.
+   */
+  abstract readonly isReady: boolean
+
+  private listeners: Record<'ready' | 'change', Array<(source: this) => void>> = {
+    ready: [],
+    change: [],
+  }
+
+  /**
+   *
+   */
+  public on(event: 'ready' | 'change', listener: (source: this) => void): void {
+    this.off(event, listener)
+    this.listeners[event].push(listener)
+  }
+
+  /**
+   *
+   */
+  public off(event: 'ready' | 'change', listener: (source: this) => void): void {
+    const index = this.listeners[event].indexOf(listener)
+    if (index >= 0) {
+      this.listeners[event].splice(index, 1)
+    }
+  }
+
+  protected trigger(event: 'ready' | 'change'): void {
+    for (const listener of this.listeners[event]) {
+      try {
+        listener(this)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
+}
+
+export class ImageElementSource extends DynamicTextureSource<HTMLImageElement> {
   public get isReady() {
     return this.resource.complete
   }
@@ -63,22 +99,16 @@ export class ImageElementSource extends TextureSource<HTMLImageElement> {
 
   public constructor(resource: HTMLImageElement) {
     super()
+    this.levels = [[resource]]
     this.resource = resource
-    this.resource.addEventListener('load', () => (this.hasChanged = true))
-    this.levels = [[this.resource]]
-  }
-
-  public hasChanged = false
-  public update(): boolean {
-    if (this.hasChanged) {
-      this.hasChanged = false
-      return true
-    }
-    return false
+    this.resource.addEventListener('load', () => {
+      this.trigger('ready')
+      this.trigger('change')
+    })
   }
 }
 
-export class VideoElementSource extends TextureSource<HTMLVideoElement> {
+export class VideoElementSource extends DynamicTextureSource<HTMLVideoElement> {
   public get isReady() {
     return this.resource.readyState >= 3
   }
@@ -93,19 +123,27 @@ export class VideoElementSource extends TextureSource<HTMLVideoElement> {
   public readonly resource: HTMLVideoElement
   public constructor(resource: HTMLVideoElement) {
     super()
-    this.resource = resource
     this.levels = [[resource]]
+    this.resource = resource
+    this.resource.requestVideoFrameCallback(this.handleVideoFrame)
   }
 
   private videoTime: number = null
-
-  public update(): boolean {
-    if (!this.isReady) {
-      return false
-    }
+  private videoState: number = null
+  private handleVideoFrame = () => {
+    const wasReady = this.videoState >= 3
+    const isReady = this.resource.readyState >= 3
     const changed = this.resource.currentTime !== this.videoTime
     this.videoTime = this.resource.currentTime
-    return changed
+    if (isReady) {
+      if (!wasReady) {
+        this.trigger('ready')
+      }
+      if (changed) {
+        this.trigger('change')
+      }
+    }
+    this.resource.requestVideoFrameCallback(this.handleVideoFrame)
   }
 }
 
@@ -114,9 +152,6 @@ function isImageBitmap(it: any): it is ImageBitmap {
 }
 
 export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas> {
-  public get isReady() {
-    return true
-  }
   public get width() {
     return this.resource.width
   }
@@ -124,8 +159,6 @@ export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTM
     return this.resource.height
   }
   public readonly levels: Array<Array<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas>>
-
-  public hasChanged = true
 
   public readonly resource: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas
 
@@ -147,25 +180,12 @@ export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTM
       throw new Error()
     }
   }
-
-  public update(): boolean {
-    if (this.hasChanged) {
-      this.hasChanged = false
-      return true
-    }
-    return false
-  }
 }
 
 export class ArrayBufferViewSource extends TextureSource<ArrayBufferView> {
-  public get isReady() {
-    return true
-  }
   public readonly width: number
   public readonly height: number
   public readonly levels: Array<Array<ArrayBufferView>>
-
-  public hasChanged = true
 
   public get resource() {
     return this.levels
@@ -177,13 +197,22 @@ export class ArrayBufferViewSource extends TextureSource<ArrayBufferView> {
     this.width = width
     this.height = height
   }
+}
 
-  public update(): boolean {
-    if (this.hasChanged) {
-      this.hasChanged = false
-      return true
-    }
-    return false
+export class CompressedBufferSource extends TextureSource<CompressedFaceData> {
+  public readonly width: number
+  public readonly height: number
+  public readonly levels: Array<Array<CompressedFaceData>>
+
+  public get resource() {
+    return this.levels
+  }
+
+  public constructor(levels: Array<Array<CompressedFaceData>>, width: number, height: number) {
+    super()
+    this.levels = levels
+    this.width = width
+    this.height = height
   }
 }
 
@@ -216,7 +245,7 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
   }
 
   if (Array.isArray(source) && typeof source[0] === 'object') {
-    return textureSourceFromVideoUrls(source as any)
+    return textureSourceFromVideoUrls(source as any, options?.crossOrigin)
   }
 
   if (source instanceof TextureSource) {
@@ -249,7 +278,7 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
 }
 
 export function textureSourceFromUrl(url: string, options?: CreateTextureSourceOptions) {
-  const ext = Uri.ext(url)
+  const ext = extname(url)
   const isVideo = options?.videoTypes && options.videoTypes.indexOf(ext) >= 0
   if (isVideo) {
     return textureSourceFromVideoUrl(url, options?.crossOrigin)
@@ -272,20 +301,20 @@ export function textureSourceFromVideoUrl(url: string, crossOrigin: string) {
   return new VideoElementSource(video)
 }
 
-export function textureSourceFromVideoUrls(options: Array<{ src: string; type: string }>) {
-  this.set('ready', false)
+export function textureSourceFromVideoUrls(options: Array<{ src: string; type: string }>, crossOrigin: string) {
+  // this.set('ready', false)
   const video = document.createElement('video')
   let valid = false
   for (let option of options) {
     if (video.canPlayType(option.type)) {
       video.src = option.src
-      video.crossOrigin = this.crossOrigin
+      video.crossOrigin = crossOrigin
       valid = true
       break
     }
   }
   if (!valid) {
-    Log.warn("[Texture] no supported format found. Video won't play.", options)
+    console.warn("[Texture] no supported format found. Video won't play.", options)
   }
   return new VideoElementSource(video)
 }

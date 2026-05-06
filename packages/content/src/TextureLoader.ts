@@ -1,10 +1,11 @@
-import { createTextureSource, SamplerState, TextureImageOptions } from '@gglib/graphics'
-import { AssetContainer } from './AssetContainer'
-import { AssetLoader, ContentLoader, LoaderContext } from './ContentLoader'
+import { AcquireTextureOptions, createTextureSource, TextureOptions } from '@gglib/graphics'
+import { AssetContainer, TextureAssetContainer } from './AssetContainer'
+import { AssetLoader } from './AssetLoaderRegistry'
+import { ContentLoader, LoaderContext } from './ContentLoader'
 
 const supportsImageBitmap = typeof createImageBitmap === 'function'
 
-export async function imageFromBlob(blob: Blob): Promise<TextureImageOptions> {
+export async function imageFromBlob(blob: Blob): Promise<TextureOptions> {
   if (!supportsImageBitmap) {
     return imageFromUrl(URL.createObjectURL(blob))
   }
@@ -20,7 +21,7 @@ export async function imageFromBlob(blob: Blob): Promise<TextureImageOptions> {
   }
 }
 
-export async function imageFromUrl(url: string): Promise<TextureImageOptions> {
+export async function imageFromUrl(url: string): Promise<AcquireTextureOptions> {
   const image = document.createElement('img')
   await new Promise((resolve, reject) => {
     image.onload = () => {
@@ -36,18 +37,21 @@ export async function imageFromUrl(url: string): Promise<TextureImageOptions> {
     image.src = url
   }).then(() => image)
   return {
+    key: url,
     source: createTextureSource(image),
+    type: 'Texture2D',
     width: image.naturalWidth,
     height: image.naturalHeight,
+    generateMipmap: true,
   }
 }
 
 export class TextureLoader implements AssetLoader {
   public static extensions = ['.jpg', '.jpeg', '.png', '.webp']
   public static mimeTypes = ['image/jpg', 'image/jpeg', 'image/png', 'image/webp']
-  public static loader = TextureLoader
-  public static register() {
-    ContentLoader.registerLoader(TextureLoader)
+  public static create = () => new TextureLoader()
+  public static register(registry = ContentLoader.loaders) {
+    registry.register(TextureLoader)
   }
 
   public get supportsImageBitmap() {
@@ -58,7 +62,7 @@ export class TextureLoader implements AssetLoader {
     if (this.supportsImageBitmap) {
       return this.loadWithImageBitmap(url, context)
     }
-    return this.loadWithimageElement(url, context)
+    return this.loadWithImageElement(url, context)
   }
 
   protected async loadWithImageBitmap(url: string, context: LoaderContext): Promise<AssetContainer> {
@@ -67,30 +71,21 @@ export class TextureLoader implements AssetLoader {
       signal: context.signal,
     })
     const options = await imageFromBlob(response.body)
-    return {
-      source: url,
-      textures: [
-        {
-          ...options,
-          generateMipmap: true,
-          sampler: SamplerState.LinearWrap,
-        },
-      ],
+    const texture: AcquireTextureOptions = {
+      key: url,
+      ...options,
     }
+    return new TextureAssetContainer([texture])
   }
 
-  protected async loadWithimageElement(url: string, context: LoaderContext): Promise<AssetContainer> {
+  protected async loadWithImageElement(url: string, context: LoaderContext): Promise<AssetContainer> {
     const options = await imageFromUrl(url)
-    return {
-      source: url,
-      textures: [
-        {
-          ...options,
-          generateMipmap: true,
-          sampler: SamplerState.LinearWrap,
-        },
-      ],
-    }
+    return new TextureAssetContainer([
+      {
+        ...options,
+        generateMipmap: true,
+      },
+    ])
   }
 }
 

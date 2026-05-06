@@ -102,9 +102,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     rt2.image.resize(device.drawingBufferWidth, device.drawingBufferHeight)
     rt3.image.resize(device.drawingBufferWidth, device.drawingBufferHeight)
 
-    device.cullState = CullState.Default
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
+    device.cullState = CullState.Disabled
+    device.depthState = DepthState.Disabled
+    device.blendState = BlendState.Disabled
     device.setRenderTarget(rt1.image)
     device.clear(0xff2e2620, 1.0)
     for (const object of objects) {

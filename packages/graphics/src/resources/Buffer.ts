@@ -1,63 +1,34 @@
-import { VertexLayout } from '../VertexLayout'
-
-import { Device } from '../Device'
-import {
-  ArrayType,
-  BufferType,
-  // BufferTypeOption,
-  // BufferUsage,
-  // BufferUsageOption,
-  DataType,
-  // DataTypeOption,
-  // dataTypeSize,
-  // nameOfBufferType,
-  // nameOfBufferUsage,
-  // nameOfDataType,
-  // valueOfBufferType,
-  // valueOfBufferUsage,
-  // valueOfDataType,
-  BufferUsageHint,
-  dataTypeToSize
-} from '../enums'
-
-
-/**
- * Data type that is accepted by the `setData*` methods
- *
- * @public
- */
-export type BufferDataOption = number[] | ArrayBuffer | ArrayBufferView<ArrayBuffer>
+import type { Device } from '../Device'
+import { type BufferType, type DataType, dataTypeToSize, type TypedArray } from '../enums'
+import { countBytes, type VertexLayout } from '../VertexLayout'
 
 /**
  * Constructor options for {@link Buffer}
  *
  * @public
  */
-export interface BufferOptions<T = BufferDataOption> {
+export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
   /**
-   * The buffer type e.b. `VertexBuffer` or `IndexBuffer`
+   *
+   */
+  name?: string
+  /**
+   * The buffer type e.g. `VertexBuffer` or `IndexBuffer`
    */
   type?: BufferType
+
   /**
-   * The buffer usage. Defaults to `Static`
+   * The element type of index buffer. Usable only for index buffers.
    */
-  usage?: BufferUsageHint
+  indexType?: Extract<DataType, 'uint16' | 'uint32'>
   /**
    * The VertexBuffer layout. Usable only for vertex buffers
    */
-  layout?: VertexLayout
+  vertexLayout?: VertexLayout
   /**
    * The actual data to set on the buffer.
    */
   data?: T
-  /**
-   * The data type of a single element `data`
-   *
-   * @remarks
-   * - For IndexBuffer defaults to `ushort`
-   * - For VertexBuffer defaults to `float`
-   */
-  dataType?: DataType
   /**
    * Size in bytes of a single element in the buffer
    *
@@ -66,34 +37,37 @@ export interface BufferOptions<T = BufferDataOption> {
    * - For IndexBuffer this is the size in bytes of a single index element.
    */
   stride?: number
+
+  /**
+   * The total size of the buffer in bytes. If not provided, it will be inferred from the data length and data type.
+   */
+  size?: number
+
+  /**
+   * Indicates whether this buffer is used for instanced rendering (vertex buffer with divisor > 0)
+   */
+  instanced?: boolean
 }
 
 /**
  * @public
  */
 export abstract class Buffer {
-
   public abstract readonly device: Device
-
-  /**
-   * The buffer type e.g. VertexBuffer or IndexBuffer
-   */
-  public type: BufferType
-
-  /**
-   * The data element type
-   */
-  public dataType: DataType
-
-  /**
-   * The size of the data in bytes
-   */
-  public sizeInBytes: number
 
   /**
    *
    */
-  public usage: BufferUsageHint
+  public readonly name: string
+  /**
+   * The buffer type e.g. VertexBuffer or IndexBuffer
+   */
+  public readonly type: BufferType
+
+  /**
+   * The size of the data in bytes
+   */
+  public readonly size: number
 
   /**
    * Size in bytes of a single element in the buffer
@@ -102,7 +76,12 @@ export abstract class Buffer {
    * - For VertexBuffer this is the size in bytes of a whole vertex.
    * - For IndexBuffer this is the size in bytes of a single index value.
    */
-  public stride: number
+  public readonly stride: number
+
+  /**
+   * Indicates whether this buffer is used for instanced rendering (vertex buffer with divisor > 0)
+   */
+  public readonly instanced: boolean
 
   /**
    * The total number of elements in this buffer
@@ -111,12 +90,17 @@ export abstract class Buffer {
    * - For VertexBuffer this is the count of all vertices.
    * - For IndexBuffer this is the count of all indices.
    */
-  public elementCount: number
+  public readonly elementCount: number
 
   /**
    *
    */
-  public layout: VertexLayout
+  public readonly vertexLayout: VertexLayout
+
+  /**
+   *
+   */
+  public readonly indexType: Extract<DataType, 'uint16' | 'uint32'>
 
   /**
    * Indicates whether this is an IndexBuffer
@@ -133,104 +117,107 @@ export abstract class Buffer {
   }
 
   /**
+   * Indicates whether this is a UniformBuffer
+   */
+  public get isUniformBuffer(): boolean {
+    return this.type === 'UniformBuffer'
+  }
+
+  /**
    * Resets the buffer to the given options
    */
-  public reset(opts: BufferOptions): this {
-    // must be one of [Static|Dynamic|Stream]
-    this.usage = (opts.usage ?? this.usage) || 'Static'
-    this.type = (opts.type ?? this.type)
+  public reset(opts: BufferOptions): void {
+    const self = this as Mutable<this>
+    self.name = opts.name ?? self.name
+    self.type = opts.type ?? self.type
+    self.instanced = !!opts.instanced
+    self.indexType = opts.indexType ?? self.indexType
 
-    if (!this.type) {
+    if (!self.type) {
       throw new Error(`invalid or missing 'type' option: ${opts.type}`)
     }
 
-    if (opts.dataType) {
-      // data type has been explicitly set
-      this.dataType = opts.dataType
-    } else if (this.isIndexBuffer) {
-      // default to ushort for IndexBuffer
-      this.dataType = 'uint16'
-    } else {
-      // default to float for VertexBuffer
-      this.dataType = 'float32'
-    }
-    if (!this.dataType) {
-      throw new Error(`invalid 'dataType' option: ${opts.dataType}`)
-    }
-
-    if (opts.layout) {
-      this.layout = opts.layout
-    } else if (this.isVertexBuffer) {
+    if (opts.vertexLayout) {
+      self.vertexLayout = opts.vertexLayout
+    } else if (self.isVertexBuffer) {
       throw new Error(`missing 'layout' option for VertexBuffer`)
     } else {
-      this.layout = {}
+      self.vertexLayout = {}
     }
 
     if (opts.stride != null) {
-      this.stride = opts.stride
-    } else if (this.isVertexBuffer) {
-      this.stride = VertexLayout.countBytes(this.layout)
+      self.stride = opts.stride
+    } else if (self.isVertexBuffer) {
+      self.stride = countBytes(self.vertexLayout)
+    } else if (self.isIndexBuffer) {
+      self.stride = dataTypeToSize(self.indexType)
     } else {
-      this.stride = dataTypeToSize(this.dataType)
+      self.stride = 1
     }
 
-    if (this.sizeInBytes == null) {
-      this.sizeInBytes = 0
-    }
+    self.size = opts.size ?? 0
+    self.elementCount = self.size / self.stride
 
-    this.create()
-
+    self.create()
     if (opts.data) {
-      this.setData(opts.data)
+      self.setData(opts.data)
     }
-    return this
   }
 
-  public abstract create(): this
+  public abstract create(): void
 
-  public abstract dispose(): this
+  public abstract dispose(): void
 
-  public abstract bind(): this
+  /**
+   * Sets the buffer data to exactly the given data (portion).
+   * The buffer will be re-created if the given data size differs from the current buffer size.
+   *
+   * @param src - The source data to set on the buffer
+   * @param srcOffset - Offset in {@link src} where data starts. Given in elements if {@link src} is a TypedArray, in bytes otherwise. Defaults to 0.
+   * @param srcLength - The length of the data to set. Given in elements if {@link src} is a TypedArray, in bytes otherwise. Defaults to the rest of the src after srcOffset.
+   */
+  public abstract setData(src: TypedArray | ArrayBuffer | PlainBufferData, srcOffset?: number, srcLength?: number): void
 
-  public abstract setData(src: BufferDataOption, srcByteOffset?: number, srcByteLength?: number): this
-  public abstract setSubData(byteOffset: number, src: BufferDataOption, srcByteOffset?: number, srcByteLength?: number): this
+  /**
+   * Sets a sub-region of the buffer to the given data.
+   * Buffer is expected to be already created and large enough to fit the given data at the given offset.
+   *
+   * @param byteOffset - The byte offset in the buffer where the data should be placed
+   * @param src - The source data to set on the buffer
+   * @param srcOffset - Offset in {@link src} where data starts. Given in elements if {@link src} is a TypedArray, in bytes otherwise. Defaults to 0.
+   * @param srcLength - The length of the data to set. Given in elements if {@link src} is a TypedArray, in bytes otherwise. Defaults to the rest of the src after srcOffset.
+   */
+  public abstract setSubData(
+    byteOffset: number,
+    src: TypedArray | ArrayBuffer,
+    srcOffset?: number,
+    srcLength?: number,
+  ): void
 
-  public setDataElementOffset(data: BufferDataOption, srcElementOffset: number, srcElementCount: number): this {
-    return this.setSubDataElementOffset(0, data, srcElementOffset, srcElementCount)
-  }
-  public setSubDataElementOffset(elementOffset: number, src: BufferDataOption, srcElementOffset: number, srcElementCount: number): this {
-    return this.setSubData(elementOffset * this.stride, src, srcElementOffset * this.stride, srcElementCount * this.stride)
-  }
-
-  public abstract getBufferSubData(
-    srcByteOffset: number,
-    dst: ArrayBufferView,
-    dstOffset: number,
-    dstLength: number,
-  ): this
-
-  public getData(): ArrayBufferView {
-
-    const length = VertexLayout.countElements(this.layout) * this.elementCount
-    const array = ArrayType[this.dataType]
-    const dst = new array(length)
-    this.getBufferSubData(0, dst, 0, length)
-    return dst
-  }
-
-  protected convertDataOption(src: BufferDataOption): ArrayBufferView<ArrayBuffer> {
-    if (src && 'buffer' in src) {
-      return src as ArrayBufferView<ArrayBuffer>
+  public findLayout(nameOrSemantic: string) {
+    let result = this.vertexLayout[nameOrSemantic]
+    if (result) {
+      return result
     }
-    if (src instanceof Array) {
-      if (this.isIndexBuffer) {
-        return new ArrayType[this.dataType](src)
+    nameOrSemantic = nameOrSemantic.toLowerCase()
+    for (const key in this.vertexLayout) {
+      if (nameOrSemantic.endsWith(key)) {
+        return this.vertexLayout[key]
       }
-      return VertexLayout.convertArrayToBufferView(src, this.layout)
     }
-    if (src instanceof ArrayBuffer) {
-      return new DataView(src)
-    }
-    throw new Error(`invalid argument 'src'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
+    return null
   }
+}
+
+type Mutable<T> = {
+  -readonly [K in keyof T]: T[K]
+}
+
+export type PlainBufferData = {
+  type: DataType
+  elements: number[]
+}
+
+export function isPlainBufferData(data: any): data is PlainBufferData {
+  return data && typeof data === 'object' && 'type' in data && 'elements' in data
 }

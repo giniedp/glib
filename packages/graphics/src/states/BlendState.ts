@@ -1,346 +1,33 @@
-import {
-  Blend,
-  BlendFunction,
-} from './../enums'
-import { hasOwnProperty } from '@gglib/utils'
+import type { Blend, BlendFunction } from '../enums'
+import type { StateNames } from './utils'
 
-const params: Array<keyof BlendStateParams> = [
-  'alphaBlendFunction',
-  'alphaDstBlend',
-  'alphaSrcBlend',
-  'colorBlendFunction',
-  'colorDstBlend',
-  'colorSrcBlend',
-  'constantA',
-  'constantB',
-  'constantG',
-  'constantR',
-  'enable',
-]
+export type BlendStateName = StateNames<typeof BlendState, BlendState>
 
-/**
- * Options to be converted into {@link IBlendState} via {@link BlendState.convert}
- *
- * @public
- */
 export interface BlendStateOptions {
-  colorBlendFunction?: BlendFunction
-  alphaBlendFunction?: BlendFunction
-  colorSrcBlend?: Blend
-  alphaSrcBlend?: Blend
-  colorDstBlend?: Blend
-  alphaDstBlend?: Blend
-  constantR?: number
-  constantG?: number
-  constantB?: number
-  constantA?: number
-  enable?: boolean
-}
-
-/**
- * An object with all blend state parameters
- *
- * @public
- */
-export interface IBlendState {
-  colorBlendFunction: BlendFunction
-  alphaBlendFunction: BlendFunction
-  colorSrcBlend: Blend
-  alphaSrcBlend: Blend
-  colorDstBlend: Blend
-  alphaDstBlend: Blend
-  constantR: number
-  constantG: number
-  constantB: number
-  constantA: number
   enable: boolean
+  colorBlendFunction: BlendFunction
+  colorSrcBlend: Blend
+  colorDstBlend: Blend
+  alphaBlendFunction: BlendFunction
+  alphaSrcBlend: Blend
+  alphaDstBlend: Blend
 }
 
-/**
- * Represents a sub set of {@link IBlendState}
- *
- * @public
- */
-export type BlendStateParams = Partial<IBlendState>
+export type BlendConstant = [number, number, number, number]
 
+const STATE = Symbol('Blend State')
+const STATE_CACHE: Record<string, BlendState> = {}
+let idCounter = 1
 /**
  * @public
  */
-export class BlendState implements IBlendState {
-
-  protected $colorBlendFunction:BlendFunction = 'Add'
-  protected $alphaBlendFunction:BlendFunction = 'Add'
-  protected $colorSrcBlend: Blend = 'One'
-  protected $alphaSrcBlend: Blend = 'One'
-  protected $colorDstBlend: Blend = 'Zero'
-  protected $alphaDstBlend: Blend = 'Zero'
-  protected $constantR: number = 0
-  protected $constantG: number = 0
-  protected $constantB: number = 0
-  protected $constantA: number = 0
-  protected $enable: boolean = false
-  protected $hasChanged: boolean = false
-  protected $changes: BlendStateParams = {}
-
+export class BlendState implements BlendStateOptions {
   /**
-   * Indicates whether the state has changes which are not committed to the GPU
+   * Blending disabled. Source fully overwrites destination.
    */
-  public get isDirty() {
-    return this.$hasChanged
-  }
+  public static readonly Disabled = BlendState.cached({
+    enable: false,
 
-  /**
-   * Gets and sets the color blend function
-   */
-  public get colorBlendFunction(): BlendFunction {
-    return this.$colorBlendFunction
-  }
-  public set colorBlendFunction(value: BlendFunction) {
-    if (this.$colorBlendFunction !== value) {
-      this.$colorBlendFunction = value
-      this.$changes.colorBlendFunction = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the alpha blend function
-   */
-  public get alphaBlendFunction(): BlendFunction {
-    return this.$alphaBlendFunction
-  }
-  public set alphaBlendFunction(value: BlendFunction) {
-    if (this.$alphaBlendFunction !== value) {
-      this.$alphaBlendFunction = value
-      this.$changes.alphaBlendFunction = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the blend factor for the source color
-   */
-  public get colorSrcBlend(): Blend {
-    return this.$colorSrcBlend
-  }
-  public set colorSrcBlend(value: Blend) {
-    if (this.$colorSrcBlend !== value) {
-      this.$colorSrcBlend = value
-      this.$changes.colorSrcBlend = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the blend factor for the source alpha
-   */
-  public get alphaSrcBlend(): Blend {
-    return this.$alphaSrcBlend
-  }
-  public set alphaSrcBlend(value: Blend) {
-    if (this.$alphaSrcBlend !== value) {
-      this.$alphaSrcBlend = value
-      this.$changes.alphaSrcBlend = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the blend factor for the destination color
-   */
-  public get colorDstBlend(): Blend {
-    return this.$colorDstBlend
-  }
-  public set colorDstBlend(value: Blend) {
-    if (this.$colorDstBlend !== value) {
-      this.$colorDstBlend = value
-      this.$changes.colorDstBlend = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the blend factor for the destination alpha
-   */
-  public get alphaDstBlend(): Blend {
-    return this.$alphaDstBlend
-  }
-  public set alphaDstBlend(value: Blend) {
-    if (this.$alphaDstBlend !== value) {
-      this.$alphaDstBlend = value
-      this.$changes.alphaDstBlend = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the red component of the blend color
-   */
-  public get constantR(): number {
-    return this.$constantR
-  }
-  public set constantR(value: number) {
-    if (this.$constantR !== value) {
-      this.$constantR = value
-      this.$changes.constantR = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the green component of the blend color
-   */
-  public get constantG(): number {
-    return this.$constantG
-  }
-  public set constantG(value: number) {
-    if (this.$constantG !== value) {
-      this.$constantG = value
-      this.$changes.constantG = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the blue component of the blend color
-   */
-  public get constantB(): number {
-    return this.$constantB
-  }
-  public set constantB(value: number) {
-    if (this.$constantB !== value) {
-      this.$constantB = value
-      this.$changes.constantB = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the alpha component of the blend color
-   */
-  public get constantA(): number {
-    return this.$constantA
-  }
-  public set constantA(value: number) {
-    if (this.$constantA !== value) {
-      this.$constantA = value
-      this.$changes.constantA = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Enables or disables blending functionality
-   */
-  public get enable(): boolean {
-    return this.$enable
-  }
-  public set enable(value: boolean) {
-    if (this.$enable !== value) {
-      this.$enable = value
-      this.$changes.enable = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Assigns multiple parameters to the current state
-   */
-  public assign(state: BlendStateParams): this {
-    for (let key of params) {
-      if (hasOwnProperty(state, key)) {
-        this[key as any] = state[key]
-      }
-    }
-    return this
-  }
-
-  /**
-   * Uploads all changes to the GPU
-   *
-   * @param state - State changes to be assigned before committing
-   */
-  public commit(state?: BlendStateParams): this {
-    if (state) { this.assign(state) }
-    if (!this.$hasChanged) { return this }
-    this.commitChanges(this.$changes)
-    this.clearChanges()
-    return this
-  }
-
-  /**
-   * Creates a copy of this state state
-   */
-  public copy(): IBlendState
-  /**
-   * Creates a copy of this state and writes it into the target object
-   *
-   * @param target - Where the state should be written to
-   */
-  public copy<T>(target: T): T & IBlendState
-  public copy(out: any = {}): IBlendState {
-    for (let key of params) {
-      out[key] = this[key]
-    }
-    return out
-  }
-
-  protected commitChanges(changes: Partial<IBlendState>) {
-    //
-  }
-
-  protected clearChanges() {
-    this.$hasChanged = false
-    for (let key of params) { this.$changes[key as any] = undefined }
-  }
-
-  /**
-   * Converts a state name or options into {@link BlendStateParams}
-   *
-   * @param state - The state name or state options to convert
-   */
-  public static convert(state: string | BlendStateOptions): BlendStateParams {
-    if (typeof state === 'string') {
-      return BlendState[state] ? { ...BlendState[state] } : null
-    }
-
-    if (!state) {
-      return null
-    }
-
-    const result: BlendStateParams = {}
-
-    for (const key of params) {
-      if (!(key in state)) {
-        continue
-      }
-      switch (key) {
-        case 'colorBlendFunction':
-        case 'alphaBlendFunction':
-          result[key] = state[key]
-          break
-        case 'colorSrcBlend':
-        case 'alphaSrcBlend':
-        case 'colorDstBlend':
-        case 'alphaDstBlend':
-          result[key] = state[key]
-          break
-        case 'enable':
-          result[key] = state[key]
-          break
-        default:
-          result[key] = state[key]
-          break
-      }
-    }
-
-    return result
-  }
-
-  /**
-   * A default blend state where blending is disabled
-   */
-  public static readonly Default = Object.freeze<IBlendState>({
     colorBlendFunction: 'Add',
     alphaBlendFunction: 'Add',
 
@@ -348,18 +35,15 @@ export class BlendState implements IBlendState {
     alphaSrcBlend: 'One',
     colorDstBlend: 'Zero',
     alphaDstBlend: 'Zero',
-
-    constantR: 0,
-    constantG: 0,
-    constantB: 0,
-    constantA: 0,
-    enable: false,
   })
 
   /**
-   * A blend state with disabled blending
+   * Opaque rendering with blending enabled.
+   * Functionally identical to Disabled, but keeps the blend stage active.
    */
-  public static readonly None = Object.freeze<IBlendState>({
+  public static readonly Opaque = BlendState.cached({
+    enable: true,
+
     colorBlendFunction: 'Add',
     alphaBlendFunction: 'Add',
 
@@ -367,18 +51,66 @@ export class BlendState implements IBlendState {
     alphaSrcBlend: 'One',
     colorDstBlend: 'Zero',
     alphaDstBlend: 'Zero',
-
-    constantR: 0,
-    constantG: 0,
-    constantB: 0,
-    constantA: 0,
-    enable: false,
   })
 
   /**
-   * A blend state for additive blending
+   * Standard alpha compositing for straight (non-premultiplied) alpha inputs.
+   * Shader outputs RGB independent of alpha.
    */
-  public static readonly Additive = Object.freeze<IBlendState>({
+  public static readonly Alpha = BlendState.cached({
+    enable: true,
+
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
+
+    colorSrcBlend: 'SrcAlpha',
+    alphaSrcBlend: 'SrcAlpha',
+
+    colorDstBlend: 'OneMinusSrcAlpha',
+    alphaDstBlend: 'OneMinusSrcAlpha',
+  })
+
+  /**
+   * Standard alpha compositing for premultiplied alpha inputs.
+   * Expects RGB pre-multiplied by A (RGB = color * alpha).
+   */
+  public static readonly AlphaPremultiplied = BlendState.cached({
+    enable: true,
+
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
+
+    colorSrcBlend: 'One',
+    alphaSrcBlend: 'One',
+
+    colorDstBlend: 'OneMinusSrcAlpha',
+    alphaDstBlend: 'OneMinusSrcAlpha',
+  })
+
+  /**
+   * Pure additive blending.
+   * Source color is added directly to the destination without alpha modulation.
+   * Alpha channel is accumulated additively.
+   */
+  public static readonly AdditivePure = BlendState.cached({
+    enable: true,
+
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
+
+    colorSrcBlend: 'One',
+    alphaSrcBlend: 'One',
+    colorDstBlend: 'One',
+    alphaDstBlend: 'One',
+  })
+
+  /**
+   * Additive blending with alpha modulation.
+   * Contribution is scaled by source alpha (common for particles, glow).
+   */
+  public static readonly Additive = BlendState.cached({
+    enable: true,
+
     colorBlendFunction: 'Add',
     alphaBlendFunction: 'Add',
 
@@ -386,51 +118,161 @@ export class BlendState implements IBlendState {
     alphaSrcBlend: 'SrcAlpha',
     colorDstBlend: 'One',
     alphaDstBlend: 'One',
-
-    constantR: 0,
-    constantG: 0,
-    constantB: 0,
-    constantA: 0,
-    enable: true,
   })
 
   /**
-   * A blend state for pre multiplied alpha blending
+   * Additive blending with separate alpha accumulation.
+   * Color is alpha-weighted, alpha accumulates independently.
    */
-  public static readonly AlphaBlend = Object.freeze<IBlendState>({
-    colorBlendFunction: 'Add',
-    alphaBlendFunction: 'Add',
-
-    colorSrcBlend: 'One',
-    alphaSrcBlend: 'One',
-
-    colorDstBlend: 'OneMinusSrcAlpha',
-    alphaDstBlend: 'OneMinusSrcAlpha',
-
-    constantR: 0,
-    constantG: 0,
-    constantB: 0,
-    constantA: 0,
+  public static readonly AdditiveAlpha = BlendState.cached({
     enable: true,
-  })
 
-  /**
-   * A blend state for non pre multiplied alpha blending
-   */
-  public static readonly NonPremultiplied = Object.freeze<IBlendState>({
     colorBlendFunction: 'Add',
     alphaBlendFunction: 'Add',
 
     colorSrcBlend: 'SrcAlpha',
-    alphaSrcBlend: 'SrcAlpha',
+    alphaSrcBlend: 'One',
 
-    colorDstBlend: 'OneMinusSrcAlpha',
-    alphaDstBlend: 'OneMinusSrcAlpha',
-
-    constantR: 0,
-    constantG: 0,
-    constantB: 0,
-    constantA: 0,
-    enable: true,
+    colorDstBlend: 'One',
+    alphaDstBlend: 'One',
   })
+
+  /**
+   * Subtractive blending.
+   * Removes light/energy from the destination (stylized effects, darkening).
+   */
+  public static readonly Subtractive = BlendState.cached({
+    enable: true,
+
+    colorBlendFunction: 'ReverseSubtract',
+    alphaBlendFunction: 'Add',
+
+    colorSrcBlend: 'SrcAlpha',
+    alphaSrcBlend: 'One',
+
+    colorDstBlend: 'One',
+    alphaDstBlend: 'One',
+  })
+
+  /**
+   * Multiplicative blending.
+   * Multiplies destination by source color (lightmaps, shadows, decals).
+   */
+  public static readonly Multiply = BlendState.cached({
+    enable: true,
+
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
+
+    colorSrcBlend: 'DstColor',
+    alphaSrcBlend: 'Zero',
+
+    colorDstBlend: 'Zero',
+    alphaDstBlend: 'One',
+  })
+
+  /**
+   * Inverse multiplicative blending.
+   * Lightens the image by multiplying inverse colors (similar to "screen").
+   */
+  public static readonly MultiplyInverse = BlendState.cached({
+    enable: true,
+
+    colorBlendFunction: 'Add',
+    alphaBlendFunction: 'Add',
+
+    colorSrcBlend: 'OneMinusDstColor',
+    alphaSrcBlend: 'One',
+
+    colorDstBlend: 'One',
+    alphaDstBlend: 'One',
+  })
+
+  /**
+   * Converts a state name or options into {@link BlendStateParams}
+   *
+   * @param state - The state name or state options to convert
+   */
+  public static get(state: BlendStateName | Partial<BlendStateOptions>): BlendState {
+    if (!state) {
+      return null
+    }
+
+    if (typeof state === 'string') {
+      return BlendState[state] ?? null
+    }
+
+    return BlendState.cached(createOptions(state))
+  }
+
+  private static cached(options: BlendStateOptions): BlendState {
+    const key = createKey(options)
+    let state = STATE_CACHE[key]
+    if (!state) {
+      state = new BlendState(options)
+      STATE_CACHE[key] = state
+    }
+    return state
+  }
+
+  private [STATE]: BlendStateOptions
+
+  public readonly id = idCounter++
+  public get enable(): boolean {
+    return this[STATE].enable
+  }
+
+  public get colorBlendFunction(): BlendFunction {
+    return this[STATE].colorBlendFunction
+  }
+
+  public get colorSrcBlend(): Blend {
+    return this[STATE].colorSrcBlend
+  }
+
+  public get colorDstBlend(): Blend {
+    return this[STATE].colorDstBlend
+  }
+
+  public get alphaBlendFunction(): BlendFunction {
+    return this[STATE].alphaBlendFunction
+  }
+
+  public get alphaSrcBlend(): Blend {
+    return this[STATE].alphaSrcBlend
+  }
+
+  public get alphaDstBlend(): Blend {
+    return this[STATE].alphaDstBlend
+  }
+
+  private constructor(options: BlendStateOptions) {
+    this[STATE] = options
+  }
+}
+
+function createOptions(options: Partial<BlendStateOptions>): BlendStateOptions {
+  return {
+    enable: options.enable ?? false,
+
+    colorBlendFunction: options.colorBlendFunction ?? 'Add',
+    alphaBlendFunction: options.alphaBlendFunction ?? 'Add',
+
+    colorSrcBlend: options.colorSrcBlend ?? 'One',
+    alphaSrcBlend: options.alphaSrcBlend ?? 'One',
+    colorDstBlend: options.colorDstBlend ?? 'Zero',
+    alphaDstBlend: options.alphaDstBlend ?? 'Zero',
+  }
+}
+
+function createKey(options: BlendStateOptions): string {
+  return [
+    options.enable,
+    options.colorBlendFunction,
+    options.colorSrcBlend,
+    options.colorDstBlend,
+    options.alphaBlendFunction,
+    options.alphaSrcBlend,
+    options.alphaDstBlend,
+  ].join(',')
 }

@@ -1,5 +1,3 @@
-import { getOption } from './get-option'
-
 const vendors = ['', 'moz', 'webkit', 'ms', 'o']
 
 /**
@@ -63,8 +61,8 @@ export const documentVisibilityApi = {
    *
    * @public
    */
-  get isHidden() {
-    return getOption(document, docHidden as 'hidden', false)
+  get isHidden(): boolean {
+    return document[docHidden] ?? false
   },
   /**
    * Checks whether the current document is hidden.
@@ -72,8 +70,8 @@ export const documentVisibilityApi = {
    *
    * @public
    */
-  get isVisible() {
-    return getOption(document, docHidden as 'hidden', true)
+  get isVisible(): boolean {
+    return !(document[docHidden] ?? false)
   },
   /**
    * Gets the visibility state of current document.
@@ -82,7 +80,7 @@ export const documentVisibilityApi = {
    * @public
    */
   get visibilityState(): DocumentVisibilityState {
-    return getOption(document, docVisibilityState as 'visibilityState', 'visible')
+    return document[docVisibilityState as 'visibilityState'] ?? 'visible'
   },
   /**
    * Adds a listener to the
@@ -114,7 +112,6 @@ export const documentVisibilityApi = {
  * @public
  */
 export class PointerLockApi {
-
   private pointerlockchange = vendorEvent(document as any, 'pointerlockchange')
   private pointerlockerror = vendorEvent(document as any, 'pointerlockerror')
   private requestPointerLockName = vendorProperty(document as any, 'requestPointerLock')
@@ -125,8 +122,8 @@ export class PointerLockApi {
     return !!this.exitPointerLockName
   }
 
-  public get pointerLockElement() {
-    return getOption(document, this.pointerLockElementName as any, null)
+  public get pointerLockElement(): Element {
+    return document[this.pointerLockElementName as 'pointerLockElement'] ?? null
   }
 
   public onChange(callback: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) {
@@ -163,4 +160,14 @@ export class PointerLockApi {
       document[this.exitPointerLockName as 'exitPointerLock']()
     }
   }
+}
+
+export function withResolvers<T>() {
+  let resolve: (value: T | PromiseLike<T>) => void
+  let reject: (reason?: any) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
 }

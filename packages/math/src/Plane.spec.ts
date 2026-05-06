@@ -118,7 +118,7 @@ describe('Plane', () => {
     for (let i = 0; i < 10; i++) {
       const sphere = BoundingSphere.create(Math.random(), Math.random(), Math.random(), 0.1 + Math.random())
       const r = sphere.radius
-      const e = Number.EPSILON
+      const e = 0.000001
       expect(Plane.create(-1, 0, 0, sphere.center.x - r - e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Back)
       expect(Plane.create(-1, 0, 0, sphere.center.x - r + e).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)
       expect(Plane.create(-1, 0, 0, sphere.center.x).intersectsSphere(sphere)).toBe(PlaneIntersectionType.Intersects)

@@ -1,3 +1,4 @@
 export * from './resources'
-export * from './states'
-export * from './DeviceGPU'
+export * from './WebGpuCapabilities'
+export * from './WebGpuDevice'
+export * from './WebGpuRenderEncoder'

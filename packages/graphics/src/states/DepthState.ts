@@ -1,14 +1,7 @@
-import {
-  CompareFunction,
-} from './../enums'
-import { BlendStateParams } from './BlendState'
-import { hasOwnProperty } from '@gglib/utils'
+import type { CompareFunction } from '../enums'
+import type { StateNames } from './utils'
 
-const params: Array<keyof DepthStateParams> = [
-  'depthFunction',
-  'depthWriteEnable',
-  'enable',
-]
+export type DepthStateName = StateNames<typeof DepthState, DepthState>
 
 /**
  * Options to be converted into {@link IDepthState} via {@link DepthState.convert}
@@ -16,200 +9,173 @@ const params: Array<keyof DepthStateParams> = [
  * @public
  */
 export interface DepthStateOptions {
-  enable?: boolean
-  depthFunction?: CompareFunction
-  depthWriteEnable?: boolean
-}
-
-/**
- * An object with all depth state parameters
- *
- * @public
- */
-export interface IDepthState {
-  enable: boolean
+  enabled: boolean
   depthFunction: CompareFunction
-  depthWriteEnable: boolean
+  depthWriteEnabled: boolean
 }
 
-/**
- * Represents a sub set of {@link IDepthState}
- *
- * @public
- */
-export type DepthStateParams = Partial<IDepthState>
+const STATE = Symbol('Depth State')
+const STATE_CACHE: Record<string, DepthState> = {}
+let idCounter = 1
 
 /**
  * @public
  */
-export class DepthState implements IDepthState {
-
+export class DepthState implements DepthStateOptions {
   /**
-   * A default state with depth buffer read and write enabled
+   * Default clear value for depth buffer (1 by default)
    */
-  public static Default = Object.freeze<IDepthState>({
-    enable: true,
+  public static DefaultClear = 1
+
+  public static Disabled = new DepthState({
+    enabled: false,
     depthFunction: 'LessEqual',
-    depthWriteEnable: true,
+    depthWriteEnabled: false,
   })
 
-  /**
-   * A state with depth buffer read and write both disabled
-   */
-  public static None = Object.freeze<IDepthState>({
-    enable: false,
+  public static Less = new DepthState({
+    enabled: true,
+    depthFunction: 'Less',
+    depthWriteEnabled: true,
+  })
+
+  public static LessNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'Less',
+    depthWriteEnabled: false,
+  })
+
+  public static LessEqual = new DepthState({
+    enabled: true,
+    depthFunction: 'LessEqual',
+    depthWriteEnabled: true,
+  })
+
+  public static LessEqualNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'LessEqual',
+    depthWriteEnabled: false,
+  })
+
+  public static Greater = new DepthState({
+    enabled: true,
+    depthFunction: 'Greater',
+    depthWriteEnabled: true,
+  })
+
+  public static GreaterNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'Greater',
+    depthWriteEnabled: false,
+  })
+
+  public static GreaterEqual = new DepthState({
+    enabled: true,
+    depthFunction: 'GreaterEqual',
+    depthWriteEnabled: true,
+  })
+
+  public static GreaterEqualNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'GreaterEqual',
+    depthWriteEnabled: false,
+  })
+
+  public static Equal = new DepthState({
+    enabled: true,
+    depthFunction: 'Equal',
+    depthWriteEnabled: true,
+  })
+
+  public static EqualNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'Equal',
+    depthWriteEnabled: false,
+  })
+
+  public static NotEqual = new DepthState({
+    enabled: true,
+    depthFunction: 'NotEqual',
+    depthWriteEnabled: true,
+  })
+
+  public static NotEqualNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'NotEqual',
+    depthWriteEnabled: false,
+  })
+
+  public static Never = new DepthState({
+    enabled: true,
+    depthFunction: 'Never',
+    depthWriteEnabled: true,
+  })
+
+  public static NeverNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'Never',
+    depthWriteEnabled: false,
+  })
+
+  public static Always = new DepthState({
+    enabled: true,
     depthFunction: 'Always',
-    depthWriteEnable: false,
+    depthWriteEnabled: true,
   })
 
-  /**
-   * A state with depth buffer enabled for read only
-   */
-  public static DepthRead = Object.freeze<IDepthState>({
-    enable: true,
-    depthFunction: 'LessEqual',
-    depthWriteEnable: false,
+  public static AlwaysNoWrite = new DepthState({
+    enabled: true,
+    depthFunction: 'Always',
+    depthWriteEnabled: false,
   })
 
-  /**
-   * Converts a state name or options into {@link IDepthState}
-   *
-   * @param state - The state name or state options to convert
-   */
-  public static convert(state: string | DepthStateOptions): BlendStateParams {
+  public static get(state: DepthStateName | Partial<DepthStateOptions>): DepthState {
     if (typeof state === 'string') {
-      return DepthState[state] ? {...DepthState[state]} : null
+      return DepthState[state] ?? null
     }
+
+    return DepthState.cached(createOptions(state))
+  }
+
+  private static cached(options: DepthStateOptions): DepthState {
+    const key = createKey(options)
+    let state = STATE_CACHE[key]
     if (!state) {
-      return null
+      state = new DepthState(options)
+      STATE_CACHE[key] = state
     }
-
-    const result: DepthStateParams = {}
-    for (const key of params) {
-      if (!(key in state)) {
-        continue
-      }
-      switch (key) {
-        case 'depthFunction':
-          result[key] = state[key]
-          break
-        default:
-          result[key] = state[key]
-          break
-      }
-    }
-    return result
+    return state
   }
 
-  protected $enable: boolean = true
-  protected $depthFunction: CompareFunction = 'LessEqual'
-  protected $depthWriteEnable: boolean = true
-  protected $hasChanged: boolean
-  protected $changes: DepthStateParams = {}
+  private readonly [STATE]: DepthStateOptions
 
-  /**
-   * Indicates whether the state has changes which are not committed to the GPU
-   */
-  public get isDirty() {
-    return this.$hasChanged
+  public readonly id = idCounter++
+
+  public get enabled(): boolean {
+    return this[STATE].enabled
   }
 
-  /**
-   * Enables or disables the depth buffer
-   */
-  public get enable(): boolean {
-    return this.$enable
-  }
-  public set enable(value: boolean) {
-    if (this.$enable !== value) {
-      this.$enable = value
-      this.$changes.enable = value
-      this.$hasChanged = true
-    }
+  public get depthWriteEnabled(): boolean {
+    return this[STATE].depthWriteEnabled
   }
 
-  /**
-   * Enables or disables write to depth buffer
-   */
-  public get depthWriteEnable(): boolean {
-    return this.$depthWriteEnable
-  }
-  public set depthWriteEnable(value: boolean) {
-    if (this.$depthWriteEnable !== value) {
-      this.$depthWriteEnable = value
-      this.$changes.depthWriteEnable = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the depth function
-   */
   public get depthFunction(): CompareFunction {
-    return this.$depthFunction
-  }
-  public set depthFunction(value: CompareFunction) {
-    if (this.$depthFunction !== value) {
-      this.$depthFunction = value
-      this.$changes.depthFunction = value
-      this.$hasChanged = true
-    }
+    return this[STATE].depthFunction
   }
 
-  /**
-   * Assigns multiple parameters to the current state
-   */
-  public assign(state: DepthStateParams): this {
-    for (const key of params) {
-      if (hasOwnProperty(state, key)) {
-        this[key as any] = state[key]
-      }
-    }
-    return this
+  private constructor(options: DepthStateOptions) {
+    this[STATE] = options
   }
+}
 
-  /**
-   * Uploads all changes to the GPU
-   *
-   * @param state - State changes to be assigned before committing
-   */
-  public commit(state?: DepthStateParams): this {
-    if (state) {
-      this.assign(state)
-    }
-    if (!this.$hasChanged) {
-      return this
-    }
-    this.commitChanges(this.$changes)
-    this.clearChanges()
-    return this
+function createOptions(options: Partial<DepthStateOptions>): DepthStateOptions {
+  return {
+    enabled: options?.enabled ?? true,
+    depthFunction: options?.depthFunction ?? 'LessEqual',
+    depthWriteEnabled: options?.depthWriteEnabled ?? true,
   }
+}
 
-  /**
-   * Creates a copy of this state state
-   */
-  public copy(): IDepthState
-  /**
-   * Creates a copy of this state and writes it into the target object
-   *
-   * @param target - Where the state should be written to
-   */
-  public copy<T>(target: T): T & IDepthState
-  public copy(out: any= {}): IDepthState {
-    for (const key of params) {
-      out[key] = this[key]
-    }
-    return out
-  }
-
-  protected commitChanges(changes: Partial<IDepthState>) {
-    //
-  }
-
-  protected clearChanges() {
-    this.$hasChanged = false
-    for (const key of params) {
-      this.$changes[key as any] = undefined
-    }
-  }
+function createKey(options: DepthStateOptions): string {
+  return [options.enabled, options.depthFunction, options.depthWriteEnabled].join(',')
 }

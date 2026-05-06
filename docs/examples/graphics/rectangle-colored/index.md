@@ -6,8 +6,13 @@ order: 200
 
 # Colored Rectangle
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-## Code
+# Code
 
 <ExampleCode />

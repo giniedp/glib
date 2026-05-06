@@ -5,8 +5,13 @@ order: 200
 
 # OBJ Model Loader
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-## Code
+# Code
 
 <ExampleCode />

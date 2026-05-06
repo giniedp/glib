@@ -1,10 +1,34 @@
-import { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
+import type { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { hermite } from './utils/hermite'
 
 const keyLookup = {
-  0: 'x', 1: 'y', 2: 'z', 3: 'w',
-  x: 'x', y: 'y', z: 'z', w: 'w',
-} as Record<number|string, 'x'|'y'|'z'|'w'>
+  0: 'x',
+  1: 'y',
+  2: 'z',
+  3: 'w',
+  x: 'x',
+  y: 'y',
+  z: 'z',
+  w: 'w',
+} as Record<number | string, 'x' | 'y' | 'z' | 'w'>
+
+export function vec4(data: number | IVec2 | IVec3 | IVec4 | number[] | null): IVec4 {
+  if (data == null) {
+    return { x: 0, y: 0, z: 0, w: 0 }
+  }
+  if (typeof data === 'number') {
+    return { x: data ?? 0, y: data ?? 0, z: data ?? 0, w: data ?? 0 }
+  }
+  if (Array.isArray(data)) {
+    return { x: data[0] ?? 0, y: data[1] ?? 0, z: data[2] ?? 0, w: data[3] ?? 0 }
+  }
+  return {
+    x: data.x ?? 0,
+    y: data.y ?? 0,
+    z: (data as IVec4).z ?? 0,
+    w: (data as IVec4).w ?? 0,
+  }
+}
 
 /**
  * A vector with four components.
@@ -12,31 +36,30 @@ const keyLookup = {
  * @public
  */
 export class Vec4 implements IVec2, IVec3, IVec4 {
-
   /**
    * Readonly vector with all components set to one
    */
-  public static One = Object.freeze<IVec4>({ x: 1, y: 1, z: 1, w: 1})
+  public static One = Object.freeze<IVec4>({ x: 1, y: 1, z: 1, w: 1 })
   /**
    * Readonly vector with all components set to zero
    */
-  public static Zero = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 0})
+  public static Zero = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 0 })
   /**
    * Readonly vector x component set to one
    */
-  public static UnitX = Object.freeze<IVec4>({ x: 1, y: 0, z: 0, w: 0})
+  public static UnitX = Object.freeze<IVec4>({ x: 1, y: 0, z: 0, w: 0 })
   /**
    * Readonly vector y component set to one
    */
-  public static UnitY = Object.freeze<IVec4>({ x: 0, y: 1, z: 0, w: 0})
+  public static UnitY = Object.freeze<IVec4>({ x: 0, y: 1, z: 0, w: 0 })
   /**
    * Readonly vector z component set to one
    */
-  public static UnitZ = Object.freeze<IVec4>({ x: 0, y: 0, z: 1, w: 0})
+  public static UnitZ = Object.freeze<IVec4>({ x: 0, y: 0, z: 1, w: 0 })
   /**
    * Readonly vector w component set to one
    */
-  public static UnitW = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 1})
+  public static UnitW = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 1 })
 
   /**
    * A temporary variable
@@ -118,14 +141,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   /**
    * Sets the component by using an index (or name)
    */
-  public set(key: number|string, value: number): this {
+  public set(key: number | string, value: number): this {
     this[keyLookup[key]] = value
     return this
   }
   /**
    * Gets the component by using an index (or name)
    */
-  public get(key: number|string): number {
+  public get(key: number | string): number {
     return this[keyLookup[key]]
   }
 
@@ -309,23 +332,34 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param other - The value to read from
    */
   public static createFrom(other: IVec4): Vec4 {
-    return new Vec4(
-      other.x,
-      other.y,
-      other.z,
-      other.w,
-    )
+    return new Vec4(other.x, other.y, other.z, other.w)
+  }
+
+  /**
+   * Initializes an object from a given vector value.
+   *
+   * @param out - the value to initialize
+   * @param other - The value to read from
+   */
+  public static initFrom<T>(out: T, other: IVec4 | IVec3 | IVec2): T & IVec4
+  public static initFrom<T extends IVec4>(out: T, other: IVec4 | IVec3 | IVec2): T
+  public static initFrom(out: IVec4, other: IVec4): IVec4 {
+    out.x = (other as IVec4).x ?? 0
+    out.y = (other as IVec4).y ?? 0
+    out.z = (other as IVec4).z ?? 0
+    out.w = (other as IVec4).w ?? 0
+    return out
   }
 
   /**
    * Initializes the components of this value by taking the components from the given value.
    * @param other - The value to read from
    */
-  public initFrom(other: IVec4): this {
-    this.x = other.x
-    this.y = other.y
-    this.z = other.z
-    this.w = other.w
+  public initFrom(other: IVec2 | IVec3 | IVec4): this {
+    this.x = (other as IVec4).x ?? 0
+    this.y = (other as IVec4).y ?? 0
+    this.z = (other as IVec4).z ?? 0
+    this.w = (other as IVec4).w ?? 0
     return this
   }
 
@@ -408,7 +442,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    */
   public toArray(): number[]
   public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     array[offset] = this.x
     array[offset + 1] = this.y
     array[offset + 2] = this.z
@@ -439,7 +473,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @returns true if components are equal, false otherwise
    */
   public static equals(a: IVec4, b: IVec4): boolean {
-    return ((a.x === b.x) && (a.y === b.y) && (a.z === b.z) && (a.w === b.w))
+    return a.x === b.x && a.y === b.y && a.z === b.z && a.w === b.w
   }
 
   /**
@@ -447,7 +481,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @returns true if components are equal, false otherwise
    */
   public equals(other: IVec4): boolean {
-    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
+    return this.x === other.x && this.y === other.y && this.z === other.z && this.w === other.w
   }
 
   /**
@@ -1128,10 +1162,10 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     const maxY = max.y
     const maxZ = max.z
     const maxW = max.w
-    out.x = x < minX ? minX : (x > maxX ? maxX : x)
-    out.y = y < minY ? minY : (y > maxY ? maxY : y)
-    out.z = z < minZ ? minZ : (z > maxZ ? maxZ : z)
-    out.w = w < minW ? minW : (w > maxW ? maxW : w)
+    out.x = x < minX ? minX : x > maxX ? maxX : x
+    out.y = y < minY ? minY : y > maxY ? maxY : y
+    out.z = z < minZ ? minZ : z > maxZ ? maxZ : z
+    out.w = w < minW ? minW : w > maxW ? maxW : w
     return out
   }
 
@@ -1151,10 +1185,10 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
     const y = a.y
     const z = a.z
     const w = a.w
-    out.x = x < min ? min : (x > max ? max : x)
-    out.y = y < min ? min : (y > max ? max : y)
-    out.z = z < min ? min : (z > max ? max : z)
-    out.w = w < min ? min : (w > max ? max : w)
+    out.x = x < min ? min : x > max ? max : x
+    out.y = y < min ? min : y > max ? max : y
+    out.z = z < min ? min : z > max ? max : z
+    out.w = w < min ? min : w > max ? max : w
     return out
   }
 
@@ -1334,7 +1368,7 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   public static smooth<T>(a: IVec4, b: IVec4, t: number, out?: T): T & IVec4
   public static smooth(a: IVec4, b: IVec4, t: number, out?: IVec4): IVec4 {
     out = out || new Vec4()
-    t = ((t > 1) ? 1 : ((t < 0) ? 0 : t))
+    t = t > 1 ? 1 : t < 0 ? 0 : t
     t = t * t * (3 - 2 * t)
     const x = a.x
     const y = a.y
@@ -1382,6 +1416,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(vec: IVec4, fractionDigits: number = 5): string {
-    return 'x: '.concat(vec.x.toFixed(fractionDigits), ', y: ', vec.y.toFixed(fractionDigits), ', z: ', vec.z.toFixed(fractionDigits), ', w: ', vec.w.toFixed(fractionDigits))
+    return 'x: '.concat(
+      vec.x.toFixed(fractionDigits),
+      ', y: ',
+      vec.y.toFixed(fractionDigits),
+      ', z: ',
+      vec.z.toFixed(fractionDigits),
+      ', w: ',
+      vec.w.toFixed(fractionDigits),
+    )
   }
 }

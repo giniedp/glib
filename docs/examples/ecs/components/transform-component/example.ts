@@ -1,24 +1,13 @@
-import {
-  BasicGame,
-  createEntity,
-  GameLoop,
-  LightComponent,
-  LoopTime,
-  ModelComponent,
-  PerspectiveCameraComponent,
-  TransformComponent,
-} from '@gglib/components'
-
+import { BasicGame, CameraComponent, LightComponent, ModelComponent, TransformComponent } from '@gglib/components'
+import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
 import { ContentLoader } from '@gglib/content'
-import { GameComponent, GameEntity } from '@gglib/ecs'
-import { Color } from '@gglib/graphics'
-import { GLTF } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
+import { BasicMaterial, PlatformId } from '@gglib/graphics'
+import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
-import { BasicRenderPass } from '@gglib/render'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const game = new Game(canvas)
+export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const game = new Game(canvas, platform)
   game.run()
   return () => {
     game.stop()
@@ -26,123 +15,97 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 }
 
 class Game extends BasicGame {
-  public constructor(canvas: HTMLCanvasElement) {
-    super(canvas)
-    this.renderer.steps = [
-      new BasicRenderPass({
-        clearColor: Color.CornflowerBlue.rgba,
-      }),
-    ]
+  public constructor(canvas: HTMLCanvasElement, platform: PlatformId) {
+    super({ canvas, platform })
+
+    this.content.registerLoader(OBJ.Loader)
+    this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
-    this.content.registerMaterial({
-      name: 'BasicEffect',
-      type: AutoMaterial,
-    })
+    this.content.registerMaterial(BasicMaterial, () => true)
     this.createLight()
     this.createCamera()
     this.createObjects()
   }
 
+  public override initialize(): void {
+    super.initialize()
+    this.scene.activate()
+  }
+
   private createLight() {
-    const entity = createEntity({
+    this.createEntity({
       name: 'light',
+      parent: this.scene,
       components: [new LightComponent()],
-      transform: {
+      transform: new TransformComponent({
         rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
-      },
+      }),
     })
-    this.scene.add(entity)
   }
 
   private createCamera() {
-    const entity = createEntity({
+    const entity = this.createEntity({
       name: 'camera',
+      parent: this.scene,
       components: [
-        new PerspectiveCameraComponent({
-          near: 0.01,
-          far: 1000,
-          fov: 70 * DEGREE_TO_RAD,
-          aspect: 16 / 9,
+        new CameraComponent({
+          type: 'perspective',
         }),
       ],
-      transform: {
-        position: Vec3.create(0, 0, 0),
-      },
+      transform: new TransformComponent({
+        position: Vec3.create(0, 2, 0),
+      }),
     })
-    this.camera = entity.component(PerspectiveCameraComponent)
-    this.scene.add(entity)
+    this.view.camera = entity.component(CameraComponent)
   }
 
   private createObjects() {
-    let parent: GameEntity<TransformComponent> = null!
+    let parent = this.scene
     const count = 5
     for (let i = 0; i < count; i++) {
-      const child = createEntity({
+      const child = this.createEntity({
+        parent: parent,
         components: [new ModelComponent(), new CubeComponent()],
-        transform: {
-          position: Vec3.create(i * 1.2, 0, -5),
-        },
+        transform: new TransformComponent({
+          position: Vec3.create(i * 2.2, 0, -10),
+          keepWorld: true,
+        }),
       })
-      if (i == 0) {
-        this.scene.add(child)
-      } else {
-        parent.transform.addChildInWorld(child.transform)
-      }
       parent = child
     }
 
+    parent = this.scene
     for (let i = 0; i < count; i++) {
-      const child = createEntity({
+      const child = this.createEntity({
+        parent: parent,
         components: [new ModelComponent(), new CubeComponent()],
-        transform: {
-          position: Vec3.create(-i * 1.2, 0, -5),
-        },
+        transform: new TransformComponent({
+          position: Vec3.create(-i * 2.2, 0, -10),
+          keepWorld: true,
+        }),
       })
-      if (i == 0) {
-        this.scene.add(child)
-      } else {
-        parent.transform.addChildInWorld(child.transform)
-      }
       parent = child
     }
   }
 }
 
-class CubeComponent implements GameComponent {
-  public renderable: ModelComponent
+class CubeComponent implements GameComponent, InitializableComponent, BehaviorComponent {
+  public readonly entity!: GameEntity
+  public renderable!: ModelComponent
+  public content!: ContentLoader
 
-  public get transform(): TransformComponent {
-    return this.entity.transform
-  }
+  public initialize(): void {
+    this.renderable = this.entity.component(ModelComponent)
+    this.content = this.entity.service(ContentLoader)
 
-  public content: ContentLoader
-  public loop: GameLoop
-
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.renderable = entity.component(ModelComponent)
-    this.content = entity.provider.get(ContentLoader)
-    this.loop = entity.provider.get(GameLoop)
-
-    this.content.loadModel('/models/gltf/box.gltf').then((model) => {
+    this.content.loadModel('/models/obj/cube.obj').then((model) => {
       this.renderable.model = model
     })
   }
 
-  public activate(): void {
-    this.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.loop.onUpdate.remove(this.update)
-  }
-
-  public destroy(): void {
-    //
-  }
-
-  private update = (time: LoopTime) => {
-    this.entity.transform.setRotationAxisAngle(0, 0, 1, 10 * Math.sin(time.total) * DEGREE_TO_RAD)
+  public updateBehavior(time: number) {
+    this.entity
+      .getTransform<TransformComponent>()!
+      .setRotationAxisAngle(0, 0, 1, 10 * Math.sin(time / 1000) * DEGREE_TO_RAD)
   }
 }

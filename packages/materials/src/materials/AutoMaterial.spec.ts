@@ -10,7 +10,7 @@ describe('AutoMaterial', () => {
   beforeEach(() => {
     device = createDevice({})
     material = new AutoMaterial(device, {
-      parameters: {},
+      properties: {},
     })
     expect(material.needsUpdate).toBe(true)
     material.needsUpdate = false
@@ -207,7 +207,7 @@ describe('AutoMaterial', () => {
       ],
       defines: [
         { value: null, expect: ['SHADE_FUNCTION'] },
-        { value: [0, 0, 0], expect: ['SHADE_FUNCTION', 'NORMAL_MAP', 'V_TANGENT'] },
+        { value: [0, 0, 0], expect: ['SHADE_FUNCTION', 'NORMAL_MAP'] },
       ],
     },
 

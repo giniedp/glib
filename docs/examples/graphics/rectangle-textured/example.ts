@@ -1,55 +1,56 @@
-import { createDevice } from '@gglib/graphics'
+import { Color, createDevice, Device } from '@gglib/graphics'
 import { loop } from '@gglib/utils'
 
-const vertexShader = /*glsl*/ `
-  precision highp float;
-  attribute vec3 vPosition;
-  attribute vec2 vTexture;
-  varying vec2 texCoord;
-  void main(void) {
-    texCoord = vTexture;
-    gl_Position = vec4(vPosition, 1.0);
-  }
-`
-const fragmentShader = /* glsl*/ `
-  precision highp float;
-  uniform sampler2D uTexture;
-  varying vec2 texCoord;
-  void main(void) {
-    // Read the color from texture and render the pixel with that color.
-    gl_FragColor = vec4(texture2D(uTexture, texCoord).rgb, 1.0);
-  }
-`
-export default (canvas: HTMLCanvasElement) => {
+export default async function run(canvas: HTMLCanvasElement, _: any, platform: 'webgl2' | 'webgpu' | 'auto') {
   // Create the graphics device and pass the existing canvas element from the DOM.
-  const device = createDevice({
-    canvas,
-  })
+  const device: Device = await createDevice({ canvas, platform }).ready
 
   // Create a shader program with vertex and fragment shaders.
   // Here the shader source code is grabbed from the script tags.
-  const program = device.createProgram({
-    vertexShader,
-    fragmentShader,
+  const shader = device.createShaderModule({
+    wgsl: wgslShader,
+    glsl: {
+      vertex: glslVS,
+      fragment: glslFS,
+    },
   })
 
   // Create the vertex buffer
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        // The layout of `vPosition` stays unchanged
-        vPosition: { type: 'float32', offset: 0, elements: 3 },
-        // The `vTexture` specifies the layout of the texture coordinates
-        vTexture: { type: 'float32', offset: 12, elements: 2 },
+      vertexLayout: {
+        vPosition: {
+          byteOffset: 0,
+          elementCount: 3,
+          elementType: 'float32',
+        },
+        vTexture: {
+          byteOffset: 12,
+          elementCount: 2,
+          elementType: 'float32',
+        },
       },
-      data: [-0.5, -0.5, 0.0, 0, 1, 0.5, -0.5, 0.0, 1, 1, -0.5, 0.5, 0.0, 0, 0, 0.5, 0.5, 0.0, 1, 0],
+      // However, the data gets an additional vertex.
+      // prettier-ignore
+      data: new Float32Array([
+        -0.5, -0.5, 0.0,   0,  1,
+         0.5, -0.5, 0.0,   1,  1,
+        -0.5,  0.5, 0.0,   0,  0,
+         0.5,  0.5, 0.0,   1,  0,
+      ]),
     },
   ])
 
   // Create the index buffer.
   const indices = device.createIndexBuffer({
-    dataType: 'uint16',
-    data: [0, 1, 2, 1, 2, 3],
+    indexType: 'uint16',
+    // The data array defines a triangle list. That means each 3 values
+    // describe a triangle by indexing the vertices from the vertex buffer
+    // prettier-ignore
+    data: new Uint16Array([
+      0, 2, 1, // first triangle
+      1, 2, 3, // second triangle
+    ]),
   })
 
   // Create a texture object. We simply pass an URL as `data` option.
@@ -57,22 +58,92 @@ export default (canvas: HTMLCanvasElement) => {
     source: '/textures/prototype/proto_red.png',
   })
 
-  function render() {
+  function frame() {
+    device.resize()
+    if (!shader.isReady) {
+      return
+    }
+    const pass = device.renderPass
+
     // And assign the texture to the shader
-    program.setUniform('uTexture', texture)
+    shader.program.set('uTexture', texture)
 
     // resize (if needed) and clear the screen
-    device.resize()
-    device.clear(0xff2e2620)
+    pass.flush()
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
 
     // set the drawing state
-    device.program = program
-    device.indexBuffer = indices
-    device.vertexBuffer = vertices
+    pass.setProgram(shader.program)
+    pass.setVertexBuffer(vertices)
+    pass.setIndexBuffer(indices)
 
     // and render.
-    device.drawIndexedPrimitives('TriangleList', 0, 6)
+    pass.drawIndexed(6)
+    pass.submit()
   }
   // Begin render loop
-  return loop(render).stop
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
 }
+
+const glslVS = /*glsl*/ `
+  precision highp float;
+
+  attribute vec3 vPosition;
+
+  attribute vec2 vTexture;
+
+  varying vec2 uv;
+
+  void main(void) {
+    uv = vTexture;
+    gl_Position = vec4(vPosition, 1.0);
+  }
+`
+
+const glslFS = /*glsl*/ `
+  precision highp float;
+
+  varying vec2 uv;
+  uniform sampler2D uTexture;
+
+  void main(void) {
+    gl_FragColor = texture2D(uTexture, uv);
+  }
+`
+
+const wgslShader = /*wgsl*/ `
+  struct VertexInput {
+    @location(0) vPosition : vec3<f32>,
+    @location(1) vTexture : vec2<f32>,
+  };
+
+  struct VertexOutput {
+    @builtin(position) Position : vec4<f32>,
+    @location(0) uv : vec2<f32>,
+  };
+
+  @group(0)
+  @binding(0)
+  var uTexture : texture_2d<f32>;
+
+  @group(0)
+  @binding(1)
+  var defaultSampler : sampler;
+
+  @vertex
+  fn vs(input: VertexInput) -> VertexOutput {
+    var output : VertexOutput;
+    output.Position = vec4<f32>(input.vPosition, 1.0);
+    output.uv = input.vTexture;
+    return output;
+  }
+
+  @fragment
+  fn fs(input: VertexOutput) -> @location(0) vec4<f32> {
+    return textureSample(uTexture, defaultSampler, input.uv);
+  }
+`

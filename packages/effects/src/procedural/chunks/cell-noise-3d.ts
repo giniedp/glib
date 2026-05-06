@@ -1,8 +1,7 @@
-
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export default {
-  functions: glsl`
+  functions: /* glsl */ `
   // Cellular noise, returning F1 and F2 in a vec2.
   // 3x3x3 search region for good F2 everywhere, but a lot
   // slower than the 2x2x2 version.
@@ -167,5 +166,5 @@ export default {
       return sqrt(d11.xy); // F1, F2
     #endif
     }
-  `
+  `,
 } satisfies ShaderChunkSet

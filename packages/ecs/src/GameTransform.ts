@@ -1,7 +1,11 @@
-import { IVec3, IVec4, Mat4} from '@gglib/math'
+import { type IVec3, type IVec4, Mat4 } from '@gglib/math'
+import type { GameComponent } from './GameComponent'
 import { GameEntity } from './GameEntity'
+import { GameTypeToken } from './types'
 
-export interface GameTransform {
+export const GameTransformToken = new GameTypeToken<GameTransform>('GameTransform')
+
+export interface GameTransform extends GameComponent {
   /**
    * The scale of the transform in local space
    */
@@ -28,11 +32,6 @@ export interface GameTransform {
   readonly world: Mat4
 
   /**
-   * Indicates that a state has changed and the transform needs to be updated
-   */
-  needsUpdate: boolean
-
-  /**
    * The entity of this transform
    */
   readonly entity: GameEntity
@@ -46,4 +45,9 @@ export interface GameTransform {
    * The child transforms
    */
   readonly children: GameTransform[]
+
+  /**
+   * Sets the parent transform of this transform
+   */
+  setParent(parent: GameTransform | null): void
 }

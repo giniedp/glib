@@ -1,95 +1,189 @@
 import {
-  basicProgram,
+  BasicMaterial,
   BuildCubeOptions,
   BuildCylinderOptions,
   BuildSphereOptions,
+  BuildTorusOptions,
+  Color,
   createDevice,
   cubeGeometry,
+  CullState,
   cylinderGeometry,
+  DepthState,
+  Device,
+  FALSE,
+  Geometry,
+  PlatformId,
   sphereGeometry,
+  TaskContext,
+  torusGeometry,
+  TRUE,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4 } from '@gglib/math'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import { mountUi } from 'tweak-ui'
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({
-    canvas,
+export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+  const device: Device = await createDevice({ canvas, platform }).ready
+
+  const msaaTarget = device.createRenderTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: device.output.format,
+    sampleCount: 4,
+  })
+  const depthTarget = device.createDepthTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: 'DEPTH24_PLUS',
+    sampleCount: 4,
   })
 
   const world = Mat4.createIdentity()
   const view = Mat4.createIdentity()
+  const cameraPosition = Vec3.create(0, 0, 2)
   const projection = Mat4.createIdentity()
   const viewProjection = Mat4.createIdentity()
 
-  const program = basicProgram(device)
+  const material = new BasicMaterial(device)
   const texture = device.createTexture({
     source: '/textures/prototype/proto_red.png',
   })
+  material.Texture = texture
+  material.World = world
+  material.View = view
+  material.Projection = projection
+  material.TextureEnabled = TRUE
+  material.CameraPosition = cameraPosition
+  material.LightingEnabled = FALSE
+  material.SpecularColor = Vec3.create(0.5, 0.5, 0.5)
+
+  material.setDirectionalLight(0, vec3(1, 1, 1), vec3(0, 0, -1))
+  material.setDirectionalLight(1, vec3(1, 0, 1), vec3(-1, 1, 0))
+
   let geometry = cubeGeometry(device, {
     size: 1,
   })
 
-  TweakUi.mount(tools, (ui) => {
-    ui.collapsible('Cube', (g) => {
+  createUi(tools, device, material, (g) => {
+    geometry.dispose()
+    geometry = g
+  })
+
+  function update(dt: number) {
+    world.rotateX((15 * DEGREE_TO_RAD * dt) / 1000)
+    world.rotateY((10 * DEGREE_TO_RAD * dt) / 1000)
+    world.rotateZ((5 * DEGREE_TO_RAD * dt) / 1000)
+
+    view.initTranslation(cameraPosition).invert()
+    projection.initPerspectiveFieldOfView(
+      60 * DEGREE_TO_RAD,
+      device.output.width / device.output.height,
+      0.1,
+      100,
+      device.ndcMinZ,
+    )
+    Mat4.multiply(projection, view, viewProjection)
+  }
+
+  const pass = device.renderPass
+  function frame(ctx: TaskContext) {
+    update(ctx.dt)
+    device.resize()
+    msaaTarget.resizeToMatch(device.output)
+    depthTarget.resizeToMatch(device.output)
+
+    pass.setRenderTarget(0, msaaTarget, 0, 0, device.output)
+    pass.setViewportState(0, 0, msaaTarget.width, msaaTarget.height)
+    pass.setDepthTarget(depthTarget)
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.setDepthState(DepthState.Disabled)
+    pass.setCullState(CullState.CullBack)
+    pass.setClearDepth(1)
+    pass.clear()
+
+    material.effect.draw(pass, geometry, material.inputs)
+    pass.submit()
+    pass.resolve()
+    pass.flush()
+  }
+
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
+}
+
+function createUi(
+  tools: HTMLElement,
+  device: Device,
+  material: BasicMaterial,
+  spawnGeometry: (geometry: Geometry) => void,
+) {
+  mountUi(tools, (ui) => {
+    ui.group('Cube', { collapsible: true }, () => {
       const options: BuildCubeOptions = {
         size: 1,
         tesselation: 1,
       }
       function update() {
-        geometry.dispose()
-        geometry = cubeGeometry(device, options)
+        spawnGeometry(cubeGeometry(device, options))
       }
-      g.slider(options, 'size', { min: 0, max: 2, step: 0.1, onInput: update })
-      g.slider(options, 'tesselation', { min: 1, max: 64, step: 1, onInput: update })
+      ui.number(options, 'size', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
     })
 
-    ui.collapsible('Sphere', (g) => {
+    ui.group('Sphere', { collapsible: true }, () => {
       const options: BuildSphereOptions = {
         radius: 0.5,
         tesselation: 8,
       }
       function update() {
-        geometry.dispose()
-        geometry = sphereGeometry(device, options)
+        spawnGeometry(sphereGeometry(device, options))
       }
-      g.slider(options, 'radius', { min: 0, max: 2, step: 0.1, onInput: update })
-      g.slider(options, 'tesselation', { min: 1, max: 64, step: 1, onInput: update })
+      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
     })
 
-    ui.collapsible('Cylinder', (g) => {
+    ui.group('Cylinder', { collapsible: true }, () => {
       const options: BuildCylinderOptions = {
         radius: 0.5,
         tesselation: 8,
       }
       function update() {
-        geometry.dispose()
-        geometry = cylinderGeometry(device, options)
+        spawnGeometry(cylinderGeometry(device, options))
       }
-      g.slider(options, 'radius', { min: 0, max: 2, step: 0.1, onInput: update })
-      g.slider(options, 'tesselation', { min: 1, max: 64, step: 1, onInput: update })
+      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+    })
+
+    ui.group('Torus', { collapsible: true }, () => {
+      const options: BuildTorusOptions = {
+        innerRadius: 0.25,
+        outerRadius: 0.5,
+        tesselation: 8,
+      }
+      function update() {
+        spawnGeometry(torusGeometry(device, options))
+      }
+      ui.number(options, 'innerRadius', { slider: true, min: 0, max: 1, step: 0.01, oninput: update })
+      ui.number(options, 'outerRadius', { slider: true, min: 0, max: 1, step: 0.01, oninput: update })
+      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+    })
+
+    ui.group('Material', { collapsible: true }, () => {
+      ui.number(material, 'Roughness', { slider: true, min: 0, max: 1, step: 0.001 })
+      ui.boolean(material, 'TextureEnabled')
+      ui.color(material, 'BaseColor', { format: '[n]rgb' })
+      ui.color(material, 'SpecularColor', { format: '[n]rgb' })
+      ui.boolean(material, 'LightingEnabled')
+      ui.spherical(material.inputs, 'lights.direction[0]')
+      ui.color(material.inputs, 'lights.color[0]', {
+        format: '[n]rgb',
+      })
+      //g.color(material, 'FogColor', { codec: })
+      // ui.number(material, 'FogStart', { slider: true, min: 0, max: 10, step: 0.1 })
+      // ui.number(material, 'FogEnd', { slider: true, min: 0, max: 20, step: 0.1 })
+      // ui.boolean(material, 'FogEnabled')
     })
   })
-
-  function render(_, dt: number) {
-    device.resize()
-    device.clear(0xff2e2620, 1)
-    if (!program.isReady) {
-      // wait for shader compilation
-      return
-    }
-
-    world.rotateY((10 * DEGREE_TO_RAD * dt) / 1000)
-    view.initTranslationXYZ(0, 0, -2)
-    projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.canvas.width / device.canvas.height, 0.1, 100)
-    Mat4.multiply(projection, view, viewProjection)
-
-    program.setUniform('Texture', texture)
-    program.setUniform('World', world)
-    program.setUniform('View', view)
-    program.setUniform('Projection', projection)
-    geometry.draw(program)
-  }
-
-  return loop(render).stop
 }

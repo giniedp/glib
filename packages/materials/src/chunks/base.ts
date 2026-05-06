@@ -1,11 +1,11 @@
-import { glsl, ShaderChunk } from '@gglib/graphics'
+import { ShaderChunk } from '@gglib/graphics'
 
 /**
  * The base template
  *
  * @public
  */
-export const BASE: ShaderChunk = glsl`
+export const BASE: ShaderChunk = /* glsl */ `
 #pragma block:version
 
 #pragma block:extensions

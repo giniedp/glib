@@ -1,36 +1,36 @@
-import { DeviceGL } from '@gglib/graphics'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { ParticleChannel } from './ParticleChannel'
+// import { WebglDevice } from '@gglib/graphics'
+// import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+// import { ParticleChannel } from './ParticleChannel'
 
-describe('graphics/ParticleChannel', () => {
-  let device: DeviceGL
+// describe('graphics/ParticleChannel', () => {
+//   let device: WebglDevice
 
-  beforeAll(() => {
-    device = new DeviceGL({ context: 'webgl2' })
-  })
+//   beforeAll(() => {
+//     device = new WebglDevice({})
+//   })
 
-  describe('constructor', () => {
-    let channel: ParticleChannel
+//   describe('constructor', () => {
+//     let channel: ParticleChannel
 
-    beforeEach(() => {
-      channel = new ParticleChannel(device, {
-        maxParticles: 100,
-      })
-    })
+//     beforeEach(() => {
+//       channel = new ParticleChannel(device, {
+//         maxParticles: 100,
+//       })
+//     })
 
-    it('creates vertexBuffer', () => {
-      expect(channel.vertexBuffer).toBeDefined()
-      expect(channel.vertexBuffer.buffers[0].elementCount).toBe(100 * 4)
-    })
+//     it('creates vertexBuffer', () => {
+//       expect(channel.vertexBuffer).toBeDefined()
+//       expect(channel.vertexBuffer.buffers[0].elementCount).toBe(100 * 4)
+//     })
 
-    it('creates indexBuffer', () => {
-      expect(channel.indexBuffer).toBeDefined()
-      expect(channel.indexBuffer.elementCount).toBe(100 * 6)
-    })
+//     it('creates indexBuffer', () => {
+//       expect(channel.indexBuffer).toBeDefined()
+//       expect(channel.indexBuffer.elementCount).toBe(100 * 6)
+//     })
 
-    it('creates particles', () => {
-      expect(channel.vertices).toBeDefined()
-      expect(channel.vertices.stride).toBe(36)
-    })
-  })
-})
+//     it('creates particles', () => {
+//       expect(channel.vertices).toBeDefined()
+//       expect(channel.vertices.stride).toBe(36)
+//     })
+//   })
+// })

@@ -1,7 +1,7 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export default {
-  functions: glsl`
+  functions: /* glsl */ `
     float noiseSimplex(in vec2 v) {
       const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
                           0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)

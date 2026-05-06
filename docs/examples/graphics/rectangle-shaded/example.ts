@@ -1,22 +1,23 @@
-import { CullState, DepthState, createDevice } from '@gglib/graphics'
+import { Color, CullState, DepthState, Device, WebglDevice } from '@gglib/graphics'
+import { TaskContext } from '@gglib/graphics/dist/graphics/src/Scheduler'
 import { Mat4, Vec3 } from '@gglib/math'
-import { loop } from '@gglib/utils'
 
 const vertexShader = /*glsl*/ `
+  #version 300 es
   precision highp float;
 
-  attribute vec3 vPosition;
-  attribute vec3 vNormal;
-  attribute vec2 vTexture;
+  in vec3 vPosition;
+  in vec3 vNormal;
+  in vec2 vTexture;
 
   uniform mat4 uWorld;
   uniform mat4 uView;
   uniform mat4 uProjection;
 
   // data for fragment stage
-  varying vec3 normal;
-  varying vec3 position;
-  varying vec2 texCoord;
+  out vec3 normal;
+  out vec3 position;
+  out vec2 texCoord;
 
   void main(void) {
     vec4 pos = uWorld * vec4(vPosition, 1.0);
@@ -28,6 +29,7 @@ const vertexShader = /*glsl*/ `
 `
 
 const fragmentShader = /*glsl*/ `
+  #version 300 es
   precision highp float;
   uniform sampler2D uTexture;
   uniform vec3 uLightColor;
@@ -36,9 +38,9 @@ const fragmentShader = /*glsl*/ `
   uniform float uSpecularSmoothness;
 
   // data from vertex stage
-  varying vec3 normal;
-  varying vec3 position;
-  varying vec2 texCoord;
+  in vec3 normal;
+  in vec3 position;
+  in vec2 texCoord;
 
   vec4 CalculateLightTerm(
     in vec3 E,   // Vector To Eye
@@ -62,50 +64,54 @@ const fragmentShader = /*glsl*/ `
     return result;
   }
 
+  out vec4 fragColor;
   void main(void) {
     vec4 term = CalculateLightTerm(uEyePosition - position, normal, -uLightDirection, uLightColor, uSpecularSmoothness);
-    vec4 color = texture2D(uTexture, texCoord);
+    vec4 color = texture(uTexture, texCoord);
     color.rgb = uLightColor * term.rgb * color.rgb + term.a * color.rgb;
     color.a = 1.0;
-    gl_FragColor = color;
+    fragColor = color;
   }
 `
-export default (canvas: HTMLCanvasElement) => {
+export default async (canvas: HTMLCanvasElement) => {
   // Create the graphics device and pass the existing canvas element from the DOM.
-  const device = createDevice({
-    canvas,
-  })
+  const device: Device = await new WebglDevice({ canvas }).ready
 
   // Create a shader program with vertex and fragment shaders.
   // Here the shader source code is grabbed from the script tags.
-  const program = device.createProgram({
-    vertexShader,
-    fragmentShader,
+  const shader = device.createShaderModule({
+    glsl: {
+      vertex: vertexShader,
+      fragment: fragmentShader,
+    },
   })
 
   // Create the vertex buffer.
   const vertices = device.createVertexBuffer([
     {
-      layout: {
-        vPosition: { type: 'float32', offset: 0, elements: 3 },
-        vNormal: { type: 'float32', offset: 12, elements: 3 },
-        vTexture: { type: 'float32', offset: 24, elements: 2 },
+      vertexLayout: {
+        vPosition: { elementType: 'float32', byteOffset: 0, elementCount: 3 },
+        vNormal: { elementType: 'float32', byteOffset: 12, elementCount: 3 },
+        vTexture: { elementType: 'float32', byteOffset: 24, elementCount: 2 },
       },
       // type: 'ushort',
       // as the layout already indicates, we add a normal data to each vertex
-      data: [
-        ///   POSITION      NORMAL  TEXTURE
-        /// X     Y    Z    X|Y|Z      U  V
-        -0.5, -0.5, 0.0, 0, 0, 1, 0, 1, 0.5, -0.5, 0.0, 0, 0, 1, 1, 1, -0.5, 0.5, 0.0, 0, 0, 1, 0, 0, 0.5, 0.5, 0.0, 0,
-        0, 1, 1, 0,
-      ],
+      // prettier-ignore
+      data: new Float32Array([
+        //   POSITION      NORMAL  TEXTURE
+        // X     Y    Z    X|Y|Z  U  V
+        -0.5, -0.5, 0.0, 0, 0, 1, 0, 1, // Vertex 1
+        0.5, -0.5, 0.0, 0, 0, 1, 1, 1, // Vertex 2
+        -0.5, 0.5, 0.0, 0, 0, 1, 0, 0, // Vertex 3
+        0.5, 0.5, 0.0, 0, 0, 1, 1, 0, // Vertex 4
+      ]),
     },
   ])
 
   // Create the index buffer.
   const indices = device.createIndexBuffer({
-    dataType: 'uint16',
-    data: [0, 1, 2, 1, 2, 3],
+    indexType: 'uint16',
+    data: new Uint16Array([0, 1, 2, 1, 2, 3]),
   })
 
   // Create a texture object.
@@ -122,40 +128,49 @@ export default (canvas: HTMLCanvasElement) => {
   const lightDirection = Vec3.create(0, 0, -1)
   const lightColor = Vec3.create(1, 1, 1)
 
-  function render(time: number) {
-    if (!program.isReady) {
+  function frame(ctx: TaskContext) {
+    if (!shader.isReady) {
       return
     }
     // resize (if needed) and clear the screen
     device.resize()
-    device.cullState = CullState.CullNone
-    device.depthState = DepthState.Default
-    device.clear(0xff2e2620, 1)
 
     // rotate the rectangle, place the camera
     // and update projection with the aspect ration of the canvas
-    world.initRotationY(time! / 1000)
+    world.initRotationY(ctx.time / 1000)
     view.initIdentity().setTranslation(camPosition).invert()
-    proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 10)
-
+    proj.initPerspectiveFieldOfView(Math.PI / 2, device.output.aspectRatio, 0.1, 10, device.ndcMinZ)
     // pass variables to the shader
-    program.setUniform('uTexture', texture)
-    program.setUniform('uWorld', world)
-    program.setUniform('uView', view)
-    program.setUniform('uProjection', proj)
+    const program = shader.program
+    program.set('uTexture', texture)
+    program.set('uWorld', world)
+    program.set('uView', view)
+    program.set('uProjection', proj)
 
-    program.setUniform('uLightColor', lightColor)
-    program.setUniform('uLightDirection', lightDirection)
-    program.setUniform('uEyePosition', camPosition)
-    program.setUniform('uSpecularSmoothness', 16)
+    program.set('uLightColor', lightColor)
+    program.set('uLightDirection', lightDirection)
+    program.set('uEyePosition', camPosition)
+    program.set('uSpecularSmoothness', 16)
+    program.commit()
+
+    const pass = device.renderPass
+    pass.flush()
+    pass.setCullState(CullState.Disabled)
+    pass.setDepthState(DepthState.Disabled)
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
 
     // set drawing state
-    device.program = program
-    device.indexBuffer = indices
-    device.vertexBuffer = vertices
+    pass.setProgram(program)
+    pass.setVertexBuffer(vertices)
+    pass.setIndexBuffer(indices)
     // and render
-    device.drawIndexedPrimitives('TriangleList', 0, 6)
+    pass.setPrimitiveType('TriangleList')
+    pass.drawIndexed(6)
   }
 
-  return loop(render).stop
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
 }

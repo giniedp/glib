@@ -1,4 +1,4 @@
-import { Sampler } from '../types'
+import type { Sampler } from '../types'
 import { sampler } from '../utils'
 
 /**
@@ -20,5 +20,5 @@ export function step(
   const smpTresh = sampler(threshold)
   const smpMin = sampler(min)
   const smpMax = sampler(max)
-  return (...x: number[]) => smpSrc(...x) < smpTresh(...x) ? smpMin(...x) : smpMax(...x)
+  return (...x: number[]) => (smpSrc(...x) < smpTresh(...x) ? smpMin(...x) : smpMax(...x))
 }

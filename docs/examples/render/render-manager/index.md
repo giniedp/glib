@@ -1,6 +1,14 @@
 ---
 title: RenderManager
 ---
-<Example />
 
-## RenderManager - Scenes
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
+
+# Code
+
+<ExampleCode />

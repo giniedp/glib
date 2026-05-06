@@ -1,194 +1,121 @@
 import {
+  BasicGame,
   CameraComponent,
-  createEntity,
-  GameLoop,
+  GameTime,
   LightComponent,
   ModelComponent,
-  PerspectiveCameraComponent,
-  RenderQuery,
   TimeSystem,
   TransformComponent,
 } from '@gglib/components'
-
+import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
 import { ContentLoader } from '@gglib/content'
-import { GameComponent, GameEntity, GameEntityCollection, GameProvider } from '@gglib/ecs'
-import { Color, createDevice } from '@gglib/graphics'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
+import { BasicMaterial } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
-import { BasicRenderPass, Renderer } from '@gglib/render'
-import * as TweakUi from 'tweak-ui'
+import { mountUi } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
-  const time = game.get(TimeSystem).getOrCreate('customTime')
-  TweakUi.mount(tools, (ui) => {
+  const time = game.world.getSystem(TimeSystem).getOrCreate('customTime')
+  mountUi(tools, (ui) => {
     ui.slider(time, 'factor', { min: -2, max: 2, step: 0.1, label: 'Time Factor' })
   })
   return game.run()
 }
 
-class Game extends GameProvider {
-  public loop: GameLoop
-  public renderer: Renderer
-  public renderQuery: RenderQuery
-
-  public camera: CameraComponent
-  public scene = new GameEntityCollection()
-
+class Game extends BasicGame {
   public constructor(canvas: HTMLCanvasElement) {
-    super()
-    const device = createDevice({ canvas })
-    const content = new ContentLoader(device)
-    content.registerLoader(OBJ.Loader)
-    content.registerLoader(MTL.Loader)
-    content.registerLoader(GLTF.Loader)
-    content.registerMaterial({
-      name: 'BasicEffect',
-      type: AutoMaterial,
-    })
-    this.provide(this)
-    this.provide(device)
-    this.provide(new Renderer(device))
-    this.provide(content)
-    this.addSystem(new GameLoop({ autostart: false }))
-    this.addSystem(new TimeSystem())
+    super({ canvas, platform: 'webgl2' })
 
-    this.loop = this.get(GameLoop)
-    this.renderQuery = new RenderQuery()
-    this.renderer = this.get(Renderer)
-    this.renderer.steps = [
-      new BasicRenderPass({
-        clearColor: Color.CornflowerBlue.rgba,
-      }),
-    ]
-  }
-
-  private createLight() {
-    const entity = createEntity({
-      name: 'light',
-      components: [new LightComponent()],
-      transform: {
-        rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
-      },
-    })
-    this.scene.add(entity)
-  }
-
-  private createCamera() {
-    const entity = createEntity({
-      name: 'camera',
-      components: [
-        new PerspectiveCameraComponent({
-          near: 0.01,
-          far: 1000,
-          fov: 70 * DEGREE_TO_RAD,
-          aspect: 16 / 9,
-        }),
-      ],
-      transform: {
-        position: Vec3.create(0, 0, 0),
-      },
-    })
-    this.camera = entity.component(PerspectiveCameraComponent)
-    this.scene.add(entity)
-  }
-
-  private createObjects() {
-    let parent: GameEntity<TransformComponent> = null!
-    const count = 5
-    for (let i = 0; i < count; i++) {
-      const child = createEntity({
-        components: [new ModelComponent(), new CubeComponent()],
-        transform: {
-          position: Vec3.create(i * 1.2, 0, -5),
-        },
-      })
-      if (i == 0) {
-        this.scene.add(child)
-      } else {
-        parent.transform.addChildInWorld(child.transform)
-      }
-      parent = child
-    }
-
-    for (let i = 0; i < count; i++) {
-      const child = createEntity({
-        components: [new ModelComponent(), new CubeComponent()],
-        transform: {
-          position: Vec3.create(-i * 1.2, 0, -5),
-        },
-      })
-      if (i == 0) {
-        this.scene.add(child)
-      } else {
-        parent.transform.addChildInWorld(child.transform)
-      }
-      parent = child
-    }
-  }
-
-  public run() {
+    this.content.registerLoader(OBJ.Loader)
+    this.content.registerLoader(MTL.Loader)
+    this.content.registerLoader(GLTF.Loader)
+    this.content.registerMaterial(BasicMaterial, () => true)
     this.createLight()
     this.createCamera()
     this.createObjects()
+  }
 
-    this.initialize()
-    this.scene.initialize(this)
+  public override initialize(): void {
+    super.initialize()
     this.scene.activate()
+  }
 
-    this.loop.onUpdate.add(this.update)
-    this.loop.onDraw.add(this.draw)
+  private createLight() {
+    this.createEntity({
+      name: 'light',
+      parent: this.scene,
+      components: [new LightComponent()],
+      transform: new TransformComponent({
+        rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
+      }),
+    })
+  }
 
-    this.loop.run()
-    return () => {
-      this.loop.stop()
-      this.destroy()
+  private createCamera() {
+    const entity = this.createEntity({
+      name: 'camera',
+      parent: this.scene,
+      transform: new TransformComponent(),
+      components: [
+        new CameraComponent({
+          type: 'perspective',
+        }),
+      ],
+    })
+    this.view.camera = entity.component(CameraComponent)
+  }
+
+  private createObjects() {
+    let parent = this.scene
+    const count = 5
+    for (let i = 0; i < count; i++) {
+      const child = this.createEntity({
+        parent: parent,
+        components: [new ModelComponent(), new CubeComponent()],
+        transform: new TransformComponent({
+          scale: Vec3.createOne().multiplyScalar(0.5),
+          position: Vec3.create(i * 2.5, 0, -5),
+          keepWorld: true,
+        }),
+      })
+      parent = child
     }
-  }
 
-  public update = () => {
-    //
-  }
-
-  public draw = () => {
-    this.renderQuery.update(this.scene.entities, this.camera)
-    this.renderer.render(this.renderQuery)
+    parent = this.scene
+    for (let i = 0; i < count; i++) {
+      const child = this.world.createEntity({
+        parent: parent,
+        components: [new ModelComponent(), new CubeComponent()],
+        transform: new TransformComponent({
+          scale: Vec3.createOne().multiplyScalar(0.5),
+          position: Vec3.create(-i * 2.5, 0, -5),
+          keepWorld: true,
+        }),
+      })
+      parent = child
+    }
   }
 }
 
-class CubeComponent implements GameComponent {
-  public renderable: ModelComponent
-  public loop: GameLoop
-  public time: TimeSystem
+class CubeComponent implements GameComponent, InitializableComponent, BehaviorComponent {
+  public readonly entity!: GameEntity
+  public renderable!: ModelComponent
+  public time!: GameTime
 
-  public entity: GameEntity<TransformComponent>
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.renderable = entity.component(ModelComponent)
-    this.loop = entity.provider.get(GameLoop)
-    this.time = entity.provider.get(TimeSystem)
+  public initialize(): void {
+    this.renderable = this.entity.component(ModelComponent)
+    this.time = this.entity.service(TimeSystem).getOrCreate('customTime')
 
-    const content = entity.provider.get(ContentLoader)
-    content.loadModel('/models/gltf/box.gltf').then((model) => {
+    const content = this.entity.service(ContentLoader)
+    content.loadModel('/models/obj/cube.obj').then((model) => {
       this.renderable.model = model
     })
   }
 
-  public activate(): void {
-    this.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.loop.onUpdate.remove(this.update)
-  }
-
-  public destroy(): void {
-    //
-  }
-
-  private update = () => {
-    const time = this.time.getOrCreate('customTime')
-    this.entity.transform.setRotationAxisAngle(0, 0, 1, 10 * Math.sin(time.total) * DEGREE_TO_RAD)
+  public updateBehavior(): void {
+    const time = this.time.total
+    this.entity.getTransform<TransformComponent>()!.setRotationAxisAngle(0, 0, 1, 10 * Math.sin(time) * DEGREE_TO_RAD)
   }
 }

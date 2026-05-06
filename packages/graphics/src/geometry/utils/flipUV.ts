@@ -1,4 +1,4 @@
-import { VertexLayout } from '../../VertexLayout'
+import { countElements, countElementsBefore, VertexLayout } from '../../VertexLayout'
 
 /**
  * @public
@@ -8,10 +8,10 @@ export function flipUV(layout: VertexLayout, vertices: number[]) {
     if (!key.match('texture|uv|texcoord')) {
       return
     }
-    let stride = VertexLayout.countElements(layout)
-    let offTex = VertexLayout.countElementsBefore(layout, key)
+    let stride = countElements(layout)
+    let offTex = countElementsBefore(layout, key)
 
-    if (layout[key].elements < 2) {
+    if (layout[key].elementCount < 2) {
       return
     }
     offTex++ // offset to Y element

@@ -1,14 +1,14 @@
 import { ContentLoader } from '@gglib/content'
-import { DeviceGL, TextureSource } from '@gglib/graphics'
+import { WebglDevice, TextureSource, Texture } from '@gglib/graphics'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Loader } from './loader'
 
 describe('DDS Loader', () => {
-  let device: DeviceGL
+  let device: WebglDevice
   let content: ContentLoader
 
   beforeEach(async () => {
-    device = new DeviceGL()
+    device = new WebglDevice({})
     content = new ContentLoader(device)
     content.registerLoader(Loader)
     content.http.cacheName = 'test-cache'
@@ -21,7 +21,7 @@ describe('DDS Loader', () => {
     expect(result.textures).toHaveLength(1)
     expect(result.textures[0].source).toBeInstanceOf(TextureSource)
     const texture = device.createTexture(result.textures[0])
-    expect(texture.ready).toBe(true)
+    expect(texture).instanceOf(Texture)
   })
 
   it('/assets/textures/dds/bobcat_ddna.a.dds?.url', async () => {
@@ -31,7 +31,7 @@ describe('DDS Loader', () => {
     expect(result.textures).toHaveLength(1)
     expect(result.textures[0].source).toBeInstanceOf(TextureSource)
     const texture = device.createTexture(result.textures[0])
-    expect(texture.ready).toBe(true)
+    expect(texture).instanceOf(Texture)
   })
 
   it('/assets/textures/dds/bobcat_ddna.dds?.url', async () => {
@@ -41,6 +41,6 @@ describe('DDS Loader', () => {
     expect(result.textures).toHaveLength(1)
     expect(result.textures[0].source).toBeInstanceOf(TextureSource)
     const texture = device.createTexture(result.textures[0])
-    expect(texture.ready).toBe(true)
+    expect(texture).instanceOf(Texture)
   })
 })

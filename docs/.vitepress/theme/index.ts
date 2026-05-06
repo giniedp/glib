@@ -3,9 +3,10 @@ import { h } from 'vue'
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import './style.css'
-import 'tweak-ui/dist/tweak-ui.css'
+import 'tweak-ui/style.css'
 import Example from './components/example.vue'
 import ExampleCode from './components/example-code.vue'
+import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client'
 
 export default {
   extends: DefaultTheme,
@@ -17,5 +18,6 @@ export default {
   enhanceApp({ app, router, siteData }) {
     app.component('Example', Example)
     app.component('ExampleCode', ExampleCode)
-  }
+    enhanceAppWithTabs(app)
+  },
 } satisfies Theme

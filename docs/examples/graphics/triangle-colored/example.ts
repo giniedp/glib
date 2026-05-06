@@ -1,7 +1,6 @@
-import { createDevice, Device } from '@gglib/graphics'
-import { loop } from '@gglib/utils'
+import { Color, createDevice, Device } from '@gglib/graphics'
 
-const vertexShader = /*glsl*/ `
+const glslVS = /*glsl*/ `
   precision highp float;
   // vertex position attribute
   attribute vec3 vPosition;
@@ -15,7 +14,7 @@ const vertexShader = /*glsl*/ `
   }
 `
 
-const fragmentShader = /*glsl*/ `
+const glslFS = /*glsl*/ `
   precision highp float;
   // color attribute coming from vertex shader
   varying vec3 vertexColor;
@@ -25,17 +24,41 @@ const fragmentShader = /*glsl*/ `
   }
 `
 
-export default (canvas: HTMLCanvasElement) => {
-  // Instantiate the graphics device and pass a reference to an existing canvas element
-  const device: Device = createDevice({
-    canvas,
-  })
+const wgslShader = /*wgsl*/ `
+  struct VertexInput {
+    @location(0) vPosition : vec3<f32>,
+    @location(1) vColor : vec3<f32>,
+  };
+
+  struct VertexOutput {
+    @builtin(position) Position : vec4<f32>,
+    @location(0) vertexColor : vec3<f32>,
+  };
+
+  @vertex
+  fn vs_main(input: VertexInput) -> VertexOutput {
+    var output : VertexOutput;
+    output.Position = vec4<f32>(input.vPosition, 1.0);
+    output.vertexColor = input.vColor;
+    return output;
+  }
+
+  @fragment
+  fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4<f32>(input.vertexColor, 1.0);
+  }
+`
+export default async function run(canvas: HTMLCanvasElement, _: any, platform: 'webgl2' | 'webgpu' | 'auto') {
+  const device: Device = await createDevice({ canvas, platform }).ready
 
   // Create a shader program with vertex and fragment shaders.
   // Here the shader source code is grabbed from the script tags.
-  const program = device.createProgram({
-    vertexShader,
-    fragmentShader,
+  const shader = device.createShaderModule({
+    wgsl: wgslShader,
+    glsl: {
+      vertex: glslVS,
+      fragment: glslFS,
+    },
   })
 
   // Create the vertex buffer. In this example each triangle vertex
@@ -47,35 +70,34 @@ export default (canvas: HTMLCanvasElement) => {
     {
       // The `layout` describes that each vertex begins with a `vPosition` attribute
       // which is a `vec3` with 3 elements.
-      layout: {
+      vertexLayout: {
         vPosition: {
-          type: 'float32',
-          offset: 0,
-          elements: 3,
+          byteOffset: 0,
+          elementCount: 3,
+          elementType: 'float32',
         },
         // It is then followed byt a `vColor` attribute which is also a `vec3` with 3 elements
         // but has an offset of 12 bytes from the beginning of the vertex.
         vColor: {
-          type: 'float32',
-          offset: 12,
-          elements: 3,
+          byteOffset: 12,
+          elementCount: 3,
+          elementType: 'float32',
         },
       },
       // The `data` is a sequence of floats that matches the `layout` specification.
       // Each 6 floats define a vertex where the first 3 floats are a `vPosition`
       // and the next 3 floats are the `vColor`
       // prettier-ignore
-      data: [
+      data: new Float32Array([
         /* position */ -0.5, -0.5, 0.0, /* color */ 1, 0, 0,
         /* position  */ 0.5, -0.5, 0.0, /* color */ 0, 1, 0,
         /* position  */ 0.0, 0.5, 0.0, /* color */ 0, 0, 1,
-      ],
+      ]),
     },
   ])
 
-  // Start a loop function.
-  return loop(() => {
-    if (!program) {
+  function frame() {
+    if (!shader.isReady) {
       return
     }
     // If the size of the canvas is controlled by css (as it is on this page)
@@ -83,15 +105,25 @@ export default (canvas: HTMLCanvasElement) => {
     device.resize()
 
     // Clear the screen.
-    device.clear(0xff2e2620)
+    const pass = device.renderPass
+
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
 
     // Now render the vertex buffer with the program.
     // The call to `drawPrimitives` instructs to
     // - draw the vertex buffer as a TriangleList
     // - starting at the beginning of the buffer (`0` offset)
     // - and draw only 3 vertices
-    device.vertexBuffer = vertices
-    device.program = program
-    device.drawPrimitives('TriangleList', 0, 3)
-  }).stop
+    pass.setVertexBuffer(vertices)
+    pass.setProgram(shader.program)
+    pass.draw(3)
+    pass.flush()
+  }
+
+  // Start a loop function.
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
 }

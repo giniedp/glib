@@ -24,7 +24,11 @@ export async function transcoderModule(options: TranscoderOptions): Promise<Tran
   return module
 }
 
-export function transcodeKtx(module: TranscoderModule, data: Uint8Array | ArrayBuffer, compression: TextureCompression[]) {
+export function transcodeKtx(
+  module: TranscoderModule,
+  data: Uint8Array | ArrayBuffer,
+  compression: TextureCompression[],
+) {
   if (data instanceof ArrayBuffer) {
     data = new Uint8Array(data)
   }
@@ -91,16 +95,16 @@ export function transcodeKtxFile(file: KTX2File, compression: TextureCompression
 function getTranscodeFormat(file: KTX2File, compression: TextureCompression[]) {
   // https://github.com/KhronosGroup/3D-Formats-Guidelines/blob/main/KTXDeveloperGuide.md
   if (file.isETC1S()) {
-    if (file.getHasAlpha() && compression.includes('Etc2')) {
+    if (file.getHasAlpha() && compression.includes('etc2')) {
       return BasisTranscodeFormat.ETC2_RGBA
     }
-    if (compression.includes('Etc1')) {
+    if (compression.includes('etc1')) {
       return BasisTranscodeFormat.ETC1_RGB
     }
-    if (compression.includes('Bptc')) {
+    if (compression.includes('bptc')) {
       return BasisTranscodeFormat.BC7_M5_RGBA
     }
-    if (compression.includes('Bc')) {
+    if (compression.includes('bc')) {
       if (file.getHasAlpha()) {
         return BasisTranscodeFormat.BC3_RGBA
       }
@@ -120,19 +124,19 @@ function getTranscodeFormat(file: KTX2File, compression: TextureCompression[]) {
   }
 
   if (file.isUASTC()) {
-    if (compression.includes('Astc')) {
+    if (compression.includes('astc')) {
       return BasisTranscodeFormat.ASTC_4x4_RGBA
     }
-    if (compression.includes('Bptc')) {
+    if (compression.includes('bptc')) {
       return BasisTranscodeFormat.BC7_M5_RGBA
     }
-    if (compression.includes('Etc2') && file.getHasAlpha()) {
+    if (compression.includes('etc2') && file.getHasAlpha()) {
       return BasisTranscodeFormat.ETC2_RGBA
     }
-    if (compression.includes('Etc1')) {
+    if (compression.includes('etc1')) {
       return BasisTranscodeFormat.ETC1_RGB
     }
-    if (compression.includes('Bc')) {
+    if (compression.includes('bc')) {
       if (file.getHasAlpha()) {
         return BasisTranscodeFormat.BC3_RGBA
       }

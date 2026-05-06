@@ -1,4 +1,4 @@
-import { dataTypeToArrayType, SurfaceFormat, surfaceFormatDataType } from '../enums'
+import { dataTypeToArrayType, type SurfaceFormat, surfaceFormatDataType } from '../enums'
 
 export function toArrayBufferView(
   data: number[] | ArrayBuffer | ArrayBufferView,
@@ -6,14 +6,14 @@ export function toArrayBufferView(
 ): ArrayBufferView {
   if (ArrayBuffer.isView(data)) {
     return data
-  } else if (data instanceof ArrayBuffer || Array.isArray(data)) {
-    const ArrayType = surfaceFormatDataType(format)
-    if (!ArrayType) {
+  }
+  if (data instanceof ArrayBuffer || Array.isArray(data)) {
+    const dataType = surfaceFormatDataType(format)
+    if (!dataType) {
       throw new Error(`invalid argument 'format'. must be one of [SurfaceFormat]`)
     }
-    const TypedArray = dataTypeToArrayType(ArrayType)
+    const TypedArray = dataTypeToArrayType(dataType)
     return new TypedArray(data)
-  } else {
-    throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
   }
+  throw new Error(`invalid argument 'data'. must be one of [number[] | ArrayBuffer | ArrayBufferView]`)
 }

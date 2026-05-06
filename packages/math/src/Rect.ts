@@ -1,4 +1,4 @@
-import { IRect, IVec2 } from './Types'
+import type { IRect, IVec2 } from './Types'
 import { Vec2 } from './Vec2'
 
 /**
@@ -228,7 +228,7 @@ export class Rect {
   public static intersection(rect1: IRect, rect2: IRect): Rect
   public static intersection<T>(rect1: IRect, rect2: IRect, out?: T): T & IRect
   public static intersection(rect1: IRect, rect2: IRect, out?: IRect): IRect {
-    out = out || new Rect() as any
+    out = out || (new Rect() as any)
 
     let t1 = rect1.x + rect1.width
     let t2 = rect2.x + rect2.width
@@ -259,14 +259,14 @@ export class Rect {
    * Calculates the union of two rectangles
    */
   public static union<T extends IRect = IRect>(rect1: IRect, rect2: IRect, out?: T): T {
-    out = out || new Rect() as any
+    out = out || (new Rect() as any)
 
     let t1 = rect1.x + rect1.width
     let t2 = rect2.x + rect2.width
     const rightMax = t1 > t2 ? t1 : t2
     t1 = rect1.y + rect1.height
     t2 = rect2.y + rect2.height
-    const bottomMax = (t1 > t2) ? t1 : t2
+    const bottomMax = t1 > t2 ? t1 : t2
 
     const xMin = rect1.x < rect2.x ? rect1.x : rect2.x
     const yMin = rect1.y < rect2.y ? rect1.y : rect2.y

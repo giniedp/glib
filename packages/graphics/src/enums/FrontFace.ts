@@ -7,6 +7,11 @@ const mapToWebGL: Record<FrontFace, number> = {
   CCW: gl.CCW,
 }
 
+const mapFromWebGL: Record<number, FrontFace> = {
+  [gl.CW]: 'CW',
+  [gl.CCW]: 'CCW',
+}
+
 const mapToWebGPU: Record<FrontFace, GPUFrontFace> = {
   CW: 'cw',
   CCW: 'ccw',
@@ -14,6 +19,10 @@ const mapToWebGPU: Record<FrontFace, GPUFrontFace> = {
 
 export function frontFaceToWebGL(face: FrontFace): number {
   return mapToWebGL[face]
+}
+
+export function frontFaceFromWebGL(face: number): FrontFace {
+  return mapFromWebGL[face]
 }
 
 export function frontFaceToWebGPU(face: FrontFace): GPUFrontFace {

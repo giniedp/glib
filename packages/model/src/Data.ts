@@ -1,11 +1,11 @@
-import { Mesh, MeshOptions } from '@gglib/graphics'
+import { Mesh, type MeshOptions } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
-import { AnimationData } from './AnimationData'
+import type { AnimationData } from './AnimationData'
 
 /**
  * @public
  */
-export interface ModelData {
+export interface ModelOptions {
   /**
    * The user defined name of the model
    */

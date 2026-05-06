@@ -1,20 +1,22 @@
 import { ContentLoader } from '@gglib/content'
-import { BlendState, createDevice, cubeGeometry, CullState, DepthState, Device } from '@gglib/graphics'
+import { BasicMaterial, Color, createDevice, cubeGeometry, Device, PlatformId, TaskContext } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { HDR } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { mountUi } from 'tweak-ui'
 
-const PANORAMA_IMAGES = {
+const files = {
   Court: '/textures/hdr/footprint_court.hdr',
   Exterior: '/textures/hdr/cannon_exterior.hdr',
   Overcast: '/textures/hdr/overcast_puresky.hdr',
 }
+const params = {
+  texture: files.Court,
+}
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  const device = createDevice({ canvas })
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
+  const stats = device.stats()
   const content = new ContentLoader(device)
   content.registerLoader(HDR.Loader)
   const mouse = new Mouse({
@@ -22,16 +24,27 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     preventDefault: true,
   })
 
-  const files = PANORAMA_IMAGES
-
-  TweakUi.mount(tools, (ui) => {
-    loadTexture(files.Court)
-    Object.entries(files).forEach(([name, url]) => {
-      ui.button(name, { onClick: () => loadTexture(url) })
+  let dt = 0
+  mountUi(tools, (ui) => {
+    loadTexture(params.texture)
+    ui.select(params, 'texture', {
+      options: files,
+      onChange: () => loadTexture(params.texture),
+    })
+    ui.graph({
+      rows: [
+        {
+          name: 'fps',
+          sample: () => (dt ? 1000 / dt : 0),
+          min: 0,
+          max: 200,
+          smoothing: 0.5,
+        },
+      ],
     })
   })
 
-  const material = new AutoMaterial(device)
+  const material = new BasicMaterial(device)
   const geometry = cubeGeometry(device)
 
   const world = Mat4.createIdentity()
@@ -48,8 +61,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     content
       .loadTexture(url)
       .then((result) => {
-        material.BaseColorMap = result
-        material.ShadeFunction = 'shadeBlinn'
+        material.Texture = result
+        material.TextureEnabled = true
       })
       .catch((e) => {
         console.error(e)
@@ -74,35 +87,48 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       camera.distance,
     )
     camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
-    camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
+    camera.projection.initPerspectiveFieldOfView(
+      45 * DEGREE_TO_RAD,
+      device.output.aspectRatio,
+      0.01,
+      1000,
+      device.ndcMinZ,
+    )
   }
 
-  function frame(time: number, dt: number) {
-    updateCamera()
+  const pass = device.renderPass
+
+  function frame(ctx: TaskContext) {
+    dt = ctx.dt
     device.resize()
-    device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.AlphaBlend
-    device.clear(0xff2e2620, 1.0)
+    updateCamera()
+    pass.flush()
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
 
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.draw(geometry!)
+    material.effect.draw(pass, geometry, material.parameters)
+    pass.submit()
+    device.stats(stats)
   }
 
-  return loop(frame).stop
+  device.scheduler.schedule(frame)
+  return () => {
+    device.dispose()
+  }
 }
 
 function demoCamera() {
-  const data =  {
+  const data = {
     theta: 0,
     phi: 90,
     distance: 2,
     position: Vec3.create(),
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
-    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device)
+    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device),
   }
   return data
 }
@@ -125,5 +151,11 @@ function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, devic
     camera.distance,
   )
   camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
-  camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
+  camera.projection.initPerspectiveFieldOfView(
+    45 * DEGREE_TO_RAD,
+    device.output.aspectRatio,
+    0.01,
+    1000,
+    device.ndcMinZ,
+  )
 }

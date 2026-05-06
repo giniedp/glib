@@ -38,8 +38,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   function frame() {
     device.cullState = CullState.CullNone
-    device.blendState = BlendState.Default
-    device.depthState = DepthState.Default
+    device.blendState = BlendState.Disabled
+    device.depthState = DepthState.Disabled
     device.resize()
     device.clear(0xff2e2620, 1)
 
@@ -49,7 +49,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   TweakUi.mount(tools, (ui) => {
-    ui.collapsible('Fractal', () => {
+    ;(ui.collapsible('Fractal', () => {
       ui.slider(fbmEffect.parameters, 'octaves', { min: 1, max: 8, step: 1 })
       ui.slider(fbmEffect.parameters, 'frequency', { min: 0, max: 4 })
       ui.slider(fbmEffect.parameters, 'lacunarity', { min: 0, max: 4 })
@@ -65,7 +65,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         ui.slider(brickEffect.parameters, 'mortarThickness', { min: 0, max: 1 })
         ui.color(brickEffect.parameters, 'colorMortar', { format: '[n]rgb' })
         ui.color(brickEffect.parameters, 'colorBrick', { format: '[n]rgb' })
-      })
+      }))
   })
 
   return loop(frame).stop

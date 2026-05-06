@@ -2,4 +2,14 @@
 title: Geometry Shapes
 layput: page
 ---
-<Example />
+
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
+
+# Code
+
+<ExampleCode />

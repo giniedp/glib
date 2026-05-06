@@ -7,7 +7,6 @@ import { Mat4 } from './Mat4'
 import { describe, it, expect } from 'vitest'
 
 describe('BoundingFrustum', () => {
-
   function expectVec4Components(v: IVec4, x: number, y: number, z: number, w: number) {
     expect(v.x, 'x component').toBeCloseTo(x, 10)
     expect(v.y, 'y component').toBeCloseTo(y, 10)
@@ -19,18 +18,18 @@ describe('BoundingFrustum', () => {
     it('initializes with identity matrix', () => {
       const frustum = new BoundingFrustum()
       expect(frustum.matrix.equals(Mat4.createIdentity())).toBe(true)
-      expectVec4Components(frustum.left,  -1,  0,  0, -1)
-      expectVec4Components(frustum.right,  1,  0,  0, -1)
-      expectVec4Components(frustum.bottom, 0, -1,  0, -1)
-      expectVec4Components(frustum.top,    0,  1,  0, -1)
-      expectVec4Components(frustum.far,    0,  0, -1, -1)
-      expectVec4Components(frustum.near,   0,  0,  1, -1)
-      expectVec4Components(frustum.getLeftPlane(),  -1,  0,  0, -1)
-      expectVec4Components(frustum.getRightPlane(),  1,  0,  0, -1)
-      expectVec4Components(frustum.getBottomPlane(), 0, -1,  0, -1)
-      expectVec4Components(frustum.getTopPlane(),    0,  1,  0, -1)
-      expectVec4Components(frustum.getFarPlane(),    0,  0, -1, -1)
-      expectVec4Components(frustum.getNearPlane(),   0,  0,  1, -1)
+      expectVec4Components(frustum.left, -1, 0, 0, -1)
+      expectVec4Components(frustum.right, 1, 0, 0, -1)
+      expectVec4Components(frustum.bottom, 0, -1, 0, -1)
+      expectVec4Components(frustum.top, 0, 1, 0, -1)
+      expectVec4Components(frustum.far, 0, 0, -1, -1)
+      expectVec4Components(frustum.near, 0, 0, 1, -1)
+      expectVec4Components(frustum.getLeftPlane(), -1, 0, 0, -1)
+      expectVec4Components(frustum.getRightPlane(), 1, 0, 0, -1)
+      expectVec4Components(frustum.getBottomPlane(), 0, -1, 0, -1)
+      expectVec4Components(frustum.getTopPlane(), 0, 1, 0, -1)
+      expectVec4Components(frustum.getFarPlane(), 0, 0, -1, -1)
+      expectVec4Components(frustum.getNearPlane(), 0, 0, 1, -1)
     })
   })
 
@@ -91,23 +90,23 @@ describe('BoundingFrustum', () => {
 
       // containment
       const s = 1 - 0.0001
-      expect(frustum.containmentOfBox(BoundingBox.create(-s, -s, -s, s, s, s))).toBe(2)
+      expect(frustum.intersectionBox(BoundingBox.create(-s, -s, -s, s, s, s))).toBe(2)
 
       // intersection
-      expect(frustum.containmentOfBox(BoundingBox.create(-2, -1, -1, -1, 1, 1))).toBe(1)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, -2, -1, 1, -1, 1))).toBe(1)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, -1, -2, 1, 1, -1))).toBe(1)
-      expect(frustum.containmentOfBox(BoundingBox.create(1, -1, -1, 2, 1, 1))).toBe(1)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, 1, -1, 1, 2, 1))).toBe(1)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, -1, 1, 1, 1, 2))).toBe(1)
+      expect(frustum.intersectionBox(BoundingBox.create(-2, -1, -1, -1, 1, 1))).toBe(1)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, -2, -1, 1, -1, 1))).toBe(1)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, -1, -2, 1, 1, -1))).toBe(1)
+      expect(frustum.intersectionBox(BoundingBox.create(1, -1, -1, 2, 1, 1))).toBe(1)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, 1, -1, 1, 2, 1))).toBe(1)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, -1, 1, 1, 1, 2))).toBe(1)
 
       // outside
-      expect(frustum.containmentOfBox(BoundingBox.create(-2, -1, -1, -1.001, 1, 1))).toBe(0)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, -2, -1, 1, -1.001, 1))).toBe(0)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, -1, -2, 1, 1, -1.001))).toBe(0)
-      expect(frustum.containmentOfBox(BoundingBox.create(1.001, -1, -1, 2, 1, 1))).toBe(0)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, 1.001, -1, 1, 2, 1))).toBe(0)
-      expect(frustum.containmentOfBox(BoundingBox.create(-1, -1, 1.001, 1, 1, 2))).toBe(0)
+      expect(frustum.intersectionBox(BoundingBox.create(-2, -1, -1, -1.001, 1, 1))).toBe(0)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, -2, -1, 1, -1.001, 1))).toBe(0)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, -1, -2, 1, 1, -1.001))).toBe(0)
+      expect(frustum.intersectionBox(BoundingBox.create(1.001, -1, -1, 2, 1, 1))).toBe(0)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, 1.001, -1, 1, 2, 1))).toBe(0)
+      expect(frustum.intersectionBox(BoundingBox.create(-1, -1, 1.001, 1, 1, 2))).toBe(0)
     })
   })
 
@@ -116,23 +115,23 @@ describe('BoundingFrustum', () => {
       const frustum = new BoundingFrustum()
 
       // containment
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 0, 0, 1))).toBe(2)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 0, 0, 1))).toBe(2)
 
       // intersection
-      expect(frustum.containmentOfSphere(BoundingSphere.create(-2, 0, 0, 1))).toBe(1)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(2, 0, 0, 1))).toBe(1)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, -2, 0, 1))).toBe(1)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 2, 0, 1))).toBe(1)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 0, -2, 1))).toBe(1)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 0, 2, 1))).toBe(1)
+      expect(frustum.intersectionSphere(BoundingSphere.create(-2, 0, 0, 1))).toBe(1)
+      expect(frustum.intersectionSphere(BoundingSphere.create(2, 0, 0, 1))).toBe(1)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, -2, 0, 1))).toBe(1)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 2, 0, 1))).toBe(1)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 0, -2, 1))).toBe(1)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 0, 2, 1))).toBe(1)
 
       // outside
-      expect(frustum.containmentOfSphere(BoundingSphere.create(-2, 0, 0, 1 - Number.EPSILON))).toBe(0)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(2, 0, 0, 1 - Number.EPSILON))).toBe(0)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, -2, 0, 1 - Number.EPSILON))).toBe(0)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 2, 0, 1 - Number.EPSILON))).toBe(0)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 0, -2, 1 - Number.EPSILON))).toBe(0)
-      expect(frustum.containmentOfSphere(BoundingSphere.create(0, 0, 2, 1 - Number.EPSILON))).toBe(0)
+      expect(frustum.intersectionSphere(BoundingSphere.create(-2, 0, 0, 1 - Number.EPSILON))).toBe(0)
+      expect(frustum.intersectionSphere(BoundingSphere.create(2, 0, 0, 1 - Number.EPSILON))).toBe(0)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, -2, 0, 1 - Number.EPSILON))).toBe(0)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 2, 0, 1 - Number.EPSILON))).toBe(0)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 0, -2, 1 - Number.EPSILON))).toBe(0)
+      expect(frustum.intersectionSphere(BoundingSphere.create(0, 0, 2, 1 - Number.EPSILON))).toBe(0)
     })
   })
 

@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -28,7 +28,7 @@ export enum DebugOutput {
  * @public
  */
 export const DEBUG: ShaderChunkSet<DebugDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef DEBUG
     // @binding Debug
     uniform int uDebug;
@@ -50,7 +50,7 @@ export const DEBUG: ShaderChunkSet<DebugDefs> = {
 
   `,
 
-  fs_frag_color: glsl`
+  fs_frag_color: /* glsl */ `
     #ifdef DEBUG
 
     if (uDebug == DEBUG_UV0) {

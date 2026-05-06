@@ -1,8 +1,9 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
-import { Material, MaterialOptions } from '../Material'
-import { Geometry, GeometryOptions } from './Geometry'
 import { Device } from '../Device'
+import { createMaterials, Material, MaterialOptions, MaterialEffectOptions } from '../effects'
+import { RenderEncoder } from '../RenderEncoder'
+import { Geometry, GeometryOptions } from './Geometry'
 
 /**
  * @public
@@ -31,7 +32,7 @@ export interface MeshOptions {
   /**
    * Collection of materials that are used by the mesh
    */
-  materials?: Array<Material | MaterialOptions>
+  materials?: Array<Material | MaterialEffectOptions | MaterialOptions>
 
   /**
    * Collection of mesh parts
@@ -88,15 +89,32 @@ export class Mesh {
    */
   public boneId: number | null = null
 
-  constructor(device: Device, options: MeshOptions) {
+  public constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.boundingBox = BoundingBox.convert(options.boundingBox)
-    this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
     this.parts = convertMeshParts(device, options.parts)
-    this.materials = convertMaterials(device, options.materials)
+    this.materials = createMaterials(device, options.materials)
+    if (options.boundingBox) {
+      this.boundingBox = BoundingBox.convert(options.boundingBox)
+    }
+    if (options.boundingSphere) {
+      this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
+    }
+    if (!this.boundingBox) {
+      this.boundingBox = BoundingBox.mergeBoxes(...this.parts.map((it) => it.boundingBox))
+    }
+    if (!this.boundingSphere) {
+      this.boundingSphere = BoundingSphere.mergeSpheres(...this.parts.map((it) => it.boundingSphere))
+    }
+  }
+
+  /**
+   * Calls render with default render pass of the device
+   */
+  public draw() {
+    this.render(this.device.renderPass)
   }
 
   /**
@@ -105,16 +123,23 @@ export class Mesh {
    * @remarks
    * If a mesh points to a missing material it is silently ignored.
    */
-  public draw(): this {
+  public render(pass: RenderEncoder): this {
     const parts = this.parts
     let part: Geometry
     let material: Material
     for (let i = 0; i < parts.length; i++) {
       part = parts[i]
       material = this.getMaterial(part.materialId || 0)
-      if (material) {
-        material.draw(part)
+      if (!material) {
+        console.warn(`Skipped Mesh rendering because material with id ${part.materialId} is missing`)
+        continue
       }
+      const effect = material.effect
+      if (!effect) {
+        console.warn(`Skipped Mesh rendering because material '${material.name}' has no effect`)
+        continue
+      }
+      effect.draw(pass, part, material.inputs)
     }
     return this
   }
@@ -150,21 +175,6 @@ function convertMeshParts(device: Device, parts: Array<Geometry | GeometryOption
       result.push(mesh)
     } else {
       result.push(new Geometry(device, mesh))
-    }
-  }
-  return result
-}
-
-function convertMaterials(device: Device, materials: Array<Material | MaterialOptions>): Material[] {
-  const result: Material[] = []
-  if (!materials || !materials.length) {
-    return result
-  }
-  for (const material of materials) {
-    if (material instanceof Material) {
-      result.push(material)
-    } else {
-      result.push(new Material(device, material))
     }
   }
   return result

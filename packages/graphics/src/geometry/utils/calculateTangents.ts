@@ -1,5 +1,4 @@
 import { Vec2, Vec3 } from '@gglib/math'
-import { Log } from '@gglib/utils'
 import { FrontFace } from '../../enums'
 import { GeometryBuilderChannelMap } from '../GeometryBuilderChannel'
 
@@ -16,15 +15,15 @@ export function calculateTangents(
   frontFace: FrontFace = 'CCW',
 ) {
   if (!channels.normal) {
-    Log.warn('Can not calculate tangents for buffer. Normal definition not found in layout ')
+    console.warn('Can not calculate tangents for buffer. Normal definition not found in layout ')
     return
   }
   if (!channels.texture && !channels.texcoord) {
-    Log.warn('Can not calculate tangents for buffer. Texture definition not found in layout ')
+    console.warn('Can not calculate tangents for buffer. Texture definition not found in layout ')
     return
   }
   if (!channels.tangent) {
-    Log.warn('Can not calculate tangents for buffer. Tangent definition not found in layout ')
+    console.warn('Can not calculate tangents for buffer. Tangent definition not found in layout ')
     return
   }
 
@@ -76,7 +75,6 @@ export function calculateTangents(
     p3.x = positions.read(i2, 0)
     p3.y = positions.read(i2, 1)
     p3.z = positions.read(i2, 2)
-
 
     t1.x = textures.read(i0, 0)
     t1.y = textures.read(i0, 1)

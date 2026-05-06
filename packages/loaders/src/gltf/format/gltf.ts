@@ -5,7 +5,7 @@ export function parse(content: string): Document {
   return JSON.parse(content) as Document
 }
 
-export async function parseBinary(content: ArrayBuffer): Promise<Document> {
+export function parseBinary(content: ArrayBuffer): Promise<Document> {
   const reader = new BinaryReader(content)
 
   const magic = reader.readString(4)

@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { DeviceGL } from '@gglib/graphics'
+import { WebglDevice } from '@gglib/graphics'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { Loader } from './loader'
 
@@ -12,11 +12,11 @@ Ns 16
 `
 
 describe('content loader mtl', () => {
-  let device: DeviceGL
+  let device: WebglDevice
   let content: ContentLoader
 
   beforeAll(async () => {
-    device = new DeviceGL()
+    device = new WebglDevice({})
     content = new ContentLoader(device)
     content.registerLoader(Loader)
     content.http.cacheName = 'test-cache'
@@ -32,8 +32,7 @@ describe('content loader mtl', () => {
       const material = result.materials[0]
       expect(material.name).toBe('material name')
       expect(material.parameters.AmbientColor).toEqual([1, 2, 3])
-      expect(material.parameters.Blend).toBe(true)
-      expect(material.parameters.Alpha).toBe(0.1)
+      expect(material.parameters.Opacity).toBe(0.1)
     })
   })
 })

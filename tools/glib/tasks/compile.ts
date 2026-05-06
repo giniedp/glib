@@ -6,7 +6,7 @@ export function compile(options: { watch?: boolean } = {}) {
     cmd: `tsc`,
     args: [
       '-b',
-      ...project.glibPackages.map((pkg) => pkg.tsconfigPath),
+      ...project.glibPackages.map((pkg) => pkg.tsconfigBuildPath),
       options.watch ? '-w' : null,
       '-preserveWatchOutput', // do not clear screen
     ],

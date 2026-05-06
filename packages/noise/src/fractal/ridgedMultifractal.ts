@@ -1,5 +1,5 @@
-import { Sampler } from '../types'
-import { FractalParams } from './options'
+import type { Sampler } from '../types'
+import type { FractalParams } from './options'
 
 /**
  * Generates a ridged multi fractal sampler
@@ -7,14 +7,10 @@ import { FractalParams } from './options'
  * @public
  * @param src - The source sampler
  */
-export function ridgedMultifractal(src: Sampler, {
-  octaves = 8,
-  frequency = 1,
-  lacunarity = 2,
-  persistence = 1,
-  offset = 1,
-  gain = 2,
-}: FractalParams = {}): Sampler {
+export function ridgedMultifractal(
+  src: Sampler,
+  { octaves = 8, frequency = 1, lacunarity = 2, persistence = 1, offset = 1, gain = 2 }: FractalParams = {},
+): Sampler {
   const exponents: number[] = []
   for (let i = 0; i <= octaves; i++) {
     exponents.push(Math.pow(lacunarity, -i * persistence))
@@ -45,7 +41,7 @@ export function ridgedMultifractal(src: Sampler, {
       }
 
       weight = signal * gain
-      weight = weight > 1 ? 1 : (weight < 0 ? 0 : weight)
+      weight = weight > 1 ? 1 : weight < 0 ? 0 : weight
 
       signal = src(...x)
       signal = signal < 0 ? -signal : signal

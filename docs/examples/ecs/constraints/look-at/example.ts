@@ -1,22 +1,16 @@
 import {
   BasicGame,
-  CopyPositionConstraint,
-  createEntity,
-  DistanceConstraint,
+  CameraComponent,
   LightComponent,
   LookAtConstraint,
-  LoopTime,
   ModelComponent,
-  PerspectiveCameraComponent,
   TransformComponent,
 } from '@gglib/components'
 
 import { GameEntity } from '@gglib/ecs'
-import { Color } from '@gglib/graphics'
+import { BasicMaterial } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
-import { AutoMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
-import { BasicRenderPass } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
@@ -27,125 +21,124 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 }
 
 class Game extends BasicGame {
-  private entity1: GameEntity<TransformComponent>
-  private entity2: GameEntity<TransformComponent>
-  private entity3: GameEntity<TransformComponent>
-  private entity4: GameEntity<TransformComponent>
+  private entity1!: GameEntity
 
   public constructor(canvas: HTMLCanvasElement) {
-    super(canvas)
-    this.renderer.steps = [
-      new BasicRenderPass({
-        clearColor: Color.CornflowerBlue.rgba,
-      }),
-    ]
+    super({ canvas, platform: 'webgl2' })
+
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
-    this.content.registerMaterial({
-      name: 'BasicEffect',
-      type: AutoMaterial,
-    })
+    this.content.registerMaterial(BasicMaterial, () => true)
     this.createLight()
     this.createCamera()
     this.createObjects()
 
-    this.content.loadModel('/models/obj/cube.obj').then((model) => {
-      this.entity1.component(ModelComponent).model = model
-      this.entity2.component(ModelComponent).model = model
-      this.entity3.component(ModelComponent).model = model
-      this.entity4.component(ModelComponent).model = model
+    //ship-pirate-large
+    this.content.loadAsset('/models/obj/cube.obj').then((asset) => {
+      this.world
+        .query({
+          required: [ModelComponent],
+        })
+        .forEach((entity) => {
+          entity.component(ModelComponent)!.model = this.content.createModel(asset)
+        })
     })
+  }
+
+  override async run() {
+    await super.run()
+    this.scene.activate()
   }
 
   private createLight() {
-    const entity = createEntity({
+    this.createEntity({
       name: 'light',
+      parent: this.scene,
       components: [new LightComponent()],
-      transform: {
+      transform: new TransformComponent({
         rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
-      },
+      }),
     })
-    this.scene.add(entity)
   }
 
   private createCamera() {
-    const entity = createEntity({
+    const entity = this.createEntity({
       name: 'camera',
+      parent: this.scene,
+      transform: new TransformComponent({
+        position: Vec3.create(0, 0, 0),
+        keepWorld: true,
+      }),
       components: [
-        new PerspectiveCameraComponent({
-          near: 0.01,
-          far: 1000,
-          fov: 70 * DEGREE_TO_RAD,
-          aspect: 16 / 9,
+        new CameraComponent({
+          type: 'perspective',
         }),
       ],
-      transform: {
-        position: Vec3.create(0, 0, 0),
-      },
     })
-    this.camera = entity.component(PerspectiveCameraComponent)
-    this.scene.add(entity)
+    this.view.camera = entity.component(CameraComponent)
   }
 
   private createObjects() {
-    this.entity1 = createEntity({
-      transform: {
+    this.entity1 = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent({
         position: Vec3.create(0, 0, -10),
-      },
+      }),
       components: [new ModelComponent()],
     })
-    this.entity2 = createEntity({
-      transform: {
+    this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent({
         position: Vec3.create(0, 5, -10),
-      },
+      }),
       components: [
         new ModelComponent(),
         new LookAtConstraint({
-          source: this.entity1.transform,
+          source: this.entity1.getTransform<TransformComponent>()!,
           sourceSpace: 'world',
           targetSpace: 'world',
-          weight: 0.1,
+          weight: 1,
         }),
       ],
     })
-    this.entity3 = createEntity({
-      transform: {
+    this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent({
         position: Vec3.create(-10, 0, -10),
-      },
+      }),
       components: [
         new ModelComponent(),
         new LookAtConstraint({
-          source: this.entity1.transform,
+          source: this.entity1.getTransform<TransformComponent>()!,
           sourceSpace: 'world',
           targetSpace: 'world',
-          weight: 0.1,
+          weight: 1,
         }),
       ],
     })
-    this.entity4 = createEntity({
-      transform: {
+    this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent({
         position: Vec3.create(10, 0, -10),
-      },
+      }),
       components: [
         new ModelComponent(),
         new LookAtConstraint({
-          source: this.entity1.transform,
+          source: this.entity1.getTransform<TransformComponent>()!,
           sourceSpace: 'world',
           targetSpace: 'world',
-          weight: 0.1,
+          weight: 1,
         }),
       ],
     })
-    this.scene.add(this.entity1)
-    this.scene.add(this.entity2)
-    this.scene.add(this.entity3)
-    this.scene.add(this.entity4)
   }
 
-  override update(time: LoopTime) {
-    this.entity1.transform
-      .setPositionX(Math.sin(time.total) * 8)
-      .setPositionY(Math.cos(time.total) * 3)
-      .setPositionZ(Math.cos(time.total) * 5 - 15)
+  override update(time: number, dt: number) {
+    super.update(time, dt)
+    this.entity1
+      .getTransform<TransformComponent>()!
+      .setPositionX(Math.sin(time / 1000) * 8)
+      .setPositionY(Math.cos(time / 1000) * 3)
+      .setPositionZ(Math.cos(time / 1000) * 5 - 15)
   }
 }

@@ -1,6 +1,6 @@
-import { glsl, ShaderChunk } from '@gglib/graphics'
+import { ShaderChunk } from '@gglib/graphics'
 
-export default glsl`
+export default /* glsl */ `
 #pragma block:version
 
 #pragma block:extensions

@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -9,7 +9,7 @@ export type ShadeFunctionPBR = 'shadePbr'
  * @public
  */
 export const SHADE_PBR: ShaderChunkSet = Object.freeze({
-  functions: glsl`
+  functions: /* glsl */ `
     // This calculates the specular geometric attenuation (aka G()),
     // where rougher material will reflect less light back to the viewer.
     // This implementation is based on [1] Equation 4, and we adopt their modifications to

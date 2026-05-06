@@ -1,7 +1,7 @@
 {
   "name": "@gglib/components",
   "description": "Part of the [G]glib project",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "repository": {
     "type": "git",
     "url": "github.com/giniedp/glib.git"
@@ -19,26 +19,26 @@
   "main": "dist\\components\\src\\index.js",
   "typings": "dist\\components\\src\\index.d.ts",
   "devDependencies": {
-    "@gglib/ecs": "workspace:^0.6.2",
-    "@gglib/graphics": "workspace:^0.6.2",
-    "@gglib/math": "workspace:^0.6.2",
-    "@gglib/render": "workspace:^0.6.2",
-    "@gglib/utils": "workspace:^0.6.2",
-    "@gglib/input": "workspace:^0.6.2",
-    "@gglib/content": "workspace:^0.6.2",
-    "@gglib/model": "workspace:^0.6.2",
-    "@gglib/materials": "workspace:^0.6.2"
+    "@gglib/ecs": "workspace:^0.7.0",
+    "@gglib/graphics": "workspace:^0.7.0",
+    "@gglib/math": "workspace:^0.7.0",
+    "@gglib/render": "workspace:^0.7.0",
+    "@gglib/utils": "workspace:^0.7.0",
+    "@gglib/input": "workspace:^0.7.0",
+    "@gglib/content": "workspace:^0.7.0",
+    "@gglib/model": "workspace:^0.7.0",
+    "@gglib/materials": "workspace:^0.7.0"
   },
   "peerDependencies": {
-    "@gglib/ecs": "0.6.2",
-    "@gglib/graphics": "0.6.2",
-    "@gglib/math": "0.6.2",
-    "@gglib/render": "0.6.2",
-    "@gglib/utils": "0.6.2",
-    "@gglib/input": "0.6.2",
-    "@gglib/content": "0.6.2",
-    "@gglib/model": "0.6.2",
-    "@gglib/materials": "0.6.2"
+    "@gglib/ecs": "0.7.0",
+    "@gglib/graphics": "0.7.0",
+    "@gglib/math": "0.7.0",
+    "@gglib/render": "0.7.0",
+    "@gglib/utils": "0.7.0",
+    "@gglib/input": "0.7.0",
+    "@gglib/content": "0.7.0",
+    "@gglib/model": "0.7.0",
+    "@gglib/materials": "0.7.0"
   },
   "files": [
     "package.json",

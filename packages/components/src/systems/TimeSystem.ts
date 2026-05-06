@@ -1,5 +1,4 @@
-import { GameSystem, GameProvider } from '@gglib/ecs'
-import { GameLoop, LoopTime } from './GameLoop'
+import { GameSystem, GameWorld } from '@gglib/ecs'
 
 /**
  * A timer object holding elapsed and accumulated time values
@@ -58,15 +57,6 @@ function resetClock(clock: Clock) {
 }
 
 /**
- * Constructor options for {@link TimeSystem}
- *
- * @public
- */
-export interface TimeComponentOptions {
-  //
-}
-
-/**
  * A component that tracks the elapsed game and real time between frames.
  *
  * @public
@@ -90,7 +80,7 @@ export interface TimeComponentOptions {
  *
  */
 
-export class TimeSystem implements GameSystem {
+export class TimeSystem extends GameSystem {
   /**
    * The real time clock
    */
@@ -118,28 +108,22 @@ export class TimeSystem implements GameSystem {
   }
 
   protected clocks: Record<string, GameTime> = {}
-  protected loop: GameLoop
-  protected resetAt: number
+  protected time: number = 0
+  protected resetAt: number = 0
 
-  constructor(options: TimeComponentOptions = {}) {}
-
-  public initialize(game: GameProvider): void {
-    this.loop = game.get(GameLoop)
-    this.loop.onUpdate.add(this.onUpdate)
-    this.loop.onDraw.add(this.onDraw)
+  public initialize(world: GameWorld): void {
     this.reset()
   }
 
   public destroy(): void {
-    this.loop.onUpdate.remove(this.onUpdate)
-    this.loop.onDraw.remove(this.onDraw)
+    //
   }
 
   /**
    * Resets the accumulated time values to `0`
    */
   public reset() {
-    this.resetAt = this.loop.getTime()
+    this.resetAt = this.time
     resetClock(this.wall)
     resetClock(this.game)
     for (const key in this.clocks) {
@@ -181,40 +165,39 @@ export class TimeSystem implements GameSystem {
   /**
    * Updates all clocks
    */
-  public onUpdate = (time: LoopTime) => {
-    const realTime = this.loop.getTime()
+  public override update(time: number, dt: number) {
+    this.time = time
+    const realTime = time
 
     this.wall.elapsedMs = realTime - this.wall.updatedAt
     this.wall.totalMs = realTime - this.resetAt
     this.wall.updatedAt = realTime
 
-    const ms = time.deltaMs
-    this.onUpdateClock(this.game, ms * this.game.factor)
+    this.tickUpdateClick(this.game, dt * this.game.factor)
     for (const key in this.clocks) {
       const clock = this.clocks[key]
-      this.onUpdateClock(clock, ms * clock.factor)
+      this.tickUpdateClick(clock, dt * clock.factor)
     }
   }
 
   /**
    * Updates all clocks
    */
-  public onDraw = (time: LoopTime) => {
-    const realTime = this.loop.getTime()
+  public override render(time: number, dt: number) {
+    const realTime = time
 
     this.wall.elapsedMs = realTime - this.wall.renderedAt
     this.wall.totalMs = realTime - this.resetAt
     this.wall.renderedAt = realTime
 
-    const ms = time.deltaMs
-    this.onDrawClock(this.game, ms * this.game.factor)
+    this.tickRenderClock(this.game, dt * this.game.factor)
     for (const key in this.clocks) {
       const clock = this.clocks[key]
-      this.onDrawClock(clock, ms * clock.factor)
+      this.tickRenderClock(clock, dt * clock.factor)
     }
   }
 
-  private onUpdateClock(clock: Clock, ms: number) {
+  private tickUpdateClick(clock: Clock, ms: number) {
     clock.elapsedMs = ms
     clock.totalMs = clock.updatedAt + ms
     clock.elapsed = clock.elapsedMs * 0.001
@@ -222,7 +205,7 @@ export class TimeSystem implements GameSystem {
     clock.updatedAt = clock.totalMs
   }
 
-  private onDrawClock(clock: Clock, ms: number) {
+  private tickRenderClock(clock: Clock, ms: number) {
     clock.elapsedMs = ms
     clock.totalMs = clock.renderedAt + ms
     clock.elapsed = clock.elapsedMs * 0.001

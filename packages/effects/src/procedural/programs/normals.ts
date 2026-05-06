@@ -1,9 +1,9 @@
-import { proceduralProgram } from './base';
-import { glsl } from '@gglib/graphics';
+import { proceduralProgram } from './base'
 
 export function normalsFromHeightProgram() {
-  return proceduralProgram({}, [{
-    uniforms: glsl`
+  return proceduralProgram({}, [
+    {
+      uniforms: /* glsl */ `
       // @binding texture
       uniform sampler2D inputTexture;
       // @binding texel
@@ -11,7 +11,7 @@ export function normalsFromHeightProgram() {
       // @binding strength 1.0
       uniform vec2 strength;
     `,
-    fs_main_color: glsl`
+      fs_main_color: /* glsl */ `
       float tl = texture2D(inputTexture, vec2(texCoord.x - texel.x, texCoord.y + texel.y)).r;
       float cl = texture2D(inputTexture, vec2(texCoord.x - texel.x, texCoord.y 		      )).r;
       float bl = texture2D(inputTexture, vec2(texCoord.x - texel.x, texCoord.y - texel.y)).r;
@@ -29,5 +29,6 @@ export function normalsFromHeightProgram() {
       vec3 normal = normalize(vec3(dx, dy, strength));
       gl_FragColor = vec4(normal * 0.5 + 0.5, 1.0);
     `,
-  }])
+    },
+  ])
 }

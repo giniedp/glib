@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -36,7 +36,7 @@ export interface MtlSplattingDefs {
  * @public
  */
 export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef SPLATTING
     // @binding  SplatMap
     uniform sampler2D uSplatMap;
@@ -117,7 +117,7 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
     uniform float uSlopeStrength;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef SPLATTING
 
     void adjustSaturation(inout vec4 color, float saturation)
@@ -209,7 +209,7 @@ export const MTL_SPLATTING: ShaderChunkSet<MtlSplattingDefs> = {
 
     #endif
   `,
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     #ifdef SPLATTING
     vec2 splatUV = vTexture.xy * uTiling;
     vec4 splatWeight = texture2D(uSplatMap, vTexture.xy).rgba;

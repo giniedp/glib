@@ -1,6 +1,6 @@
-import * as path from 'path'
-import { project, GlibPackageContext } from '../context'
+import path from 'node:path'
 import { writeFile } from '../../utils'
+import { GlibPackageContext, project } from '../context'
 
 async function updateSrcPackageJson(pkg: GlibPackageContext) {
   const newPkgJson = JSON.stringify(
@@ -33,13 +33,25 @@ async function updateSrcPackageJson(pkg: GlibPackageContext) {
   )
   return writeFile(pkg.subPath('package.json'), newPkgJson)
 }
-
-function updateSrcTsconfig(pkg: GlibPackageContext) {
+function updateTsconfig(pkg: GlibPackageContext) {
   return writeFile(
     pkg.subPath('tsconfig.json'),
     JSON.stringify(
       {
-        extends: path.relative(pkg.pkgDir, project.packagesDir('tsconfig.tsc.json')),
+        references: [{ path: './tsconfig.build.json' }, { path: './tsconfig.spec.json' }],
+      },
+      null,
+      2,
+    ),
+  )
+}
+
+function updateTsconfigBuild(pkg: GlibPackageContext) {
+  return writeFile(
+    pkg.subPath('tsconfig.build.json'),
+    JSON.stringify(
+      {
+        extends: path.posix.relative(pkg.pkgDir, project.packagesDir('tsconfig.tsc.json')),
         baseUrl: '.',
         rootDir: '.',
         compilerOptions: {
@@ -47,11 +59,20 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
           outDir: './dist',
         },
         include: ['./index.ts', './src/**/*.ts', './src/**/*.js'],
-        exclude: ['./dist/**/*', './node_modules/**/*'],
+        exclude: [
+          './dist/**/*',
+          './node_modules/**/*',
+          './**/*.spec.ts',
+          './**/*.spec.js',
+          './**/*.test.ts',
+          './**/*.test.js',
+          './**/*.bench.ts',
+          './**/*.bench.js',
+        ],
         references: pkg.glibReferences.map((it) => {
           const ref = project.glibPackages.find((p) => p.packageName === it)!
           return {
-            path: path.relative(pkg.pkgDir, path.join(ref.pkgDir, 'tsconfig.json'))
+            path: path.posix.relative(pkg.pkgDir, path.posix.join(ref.pkgDir, 'tsconfig.build.json')),
           }
         }),
       },
@@ -61,25 +82,39 @@ function updateSrcTsconfig(pkg: GlibPackageContext) {
   )
 }
 
-function updateSpecTsconfig() {
+function updateTsconfigSpec(pkg: GlibPackageContext) {
   return writeFile(
-    project.packagesDir('tsconfig.cjs.json'),
+    pkg.subPath('tsconfig.spec.json'),
     JSON.stringify(
       {
-        extends: './tsconfig.tsc.json',
-        compilerOptions: {
-          outDir: '../dist/cjs',
-          module: 'commonjs',
-          paths: {
-            '@gglib/*': ['./*'],
-          },
-        },
+        extends: './tsconfig.build.json',
+        include: ['./index.ts', './src/**/*.ts', './src/**/*.js'],
+        exclude: ['./dist/**/*', './node_modules/**/*'],
       },
       null,
       2,
     ),
   )
 }
+// function updateTsconfigSpec() {
+//   return writeFile(
+//     project.packagesDir('tsconfig.cjs.json'),
+//     JSON.stringify(
+//       {
+//         extends: './tsconfig.tsc.json',
+//         compilerOptions: {
+//           outDir: '../dist/cjs',
+//           module: 'commonjs',
+//           paths: {
+//             '@gglib/*': ['./*'],
+//           },
+//         },
+//       },
+//       null,
+//       2,
+//     ),
+//   )
+// }
 
 function updateSrcReadme(pkg: GlibPackageContext) {
   const pj = project.packageJson
@@ -160,9 +195,11 @@ function updateSrcApiExtractor(pkg: GlibPackageContext) {
 
 async function updateSrcPackage(pkg: GlibPackageContext) {
   await updateSrcPackageJson(pkg)
+  // prettier-ignore
   return Promise.all([
-    updateSrcTsconfig(pkg),
-    updateSpecTsconfig(),
+    updateTsconfig(pkg),
+    updateTsconfigBuild(pkg),
+    updateTsconfigSpec(pkg),
     updateSrcApiExtractor(pkg),
     updateSrcReadme(pkg),
   ])

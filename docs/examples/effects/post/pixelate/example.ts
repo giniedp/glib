@@ -51,9 +51,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       }
     }
 
-    device.cullState = CullState.Default
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
+    device.cullState = CullState.Disabled
+    device.depthState = DepthState.Disabled
+    device.blendState = BlendState.Disabled
     device.setRenderTarget(renderTarget.image)
     device.clear(0xff2e2620, 1.0)
     for (const row of objects) {
@@ -90,7 +90,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       min: 1,
       max: 100,
       step: 1,
-      onInput: (_, v: any) => {
+      oninput: (_, v: any) => {
         postEffect.pixelWidth = v
         postEffect.pixelHeight = v
       },

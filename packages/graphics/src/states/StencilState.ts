@@ -1,344 +1,148 @@
-import {
-  CompareFunction,
-  CullMode,
-  StencilOperation,
-} from './../enums'
+import type { CompareFunction, StencilOperation } from './../enums'
+import type { StateNames } from './utils'
 
-import { Device } from './../Device'
-import { hasOwnProperty } from '@gglib/utils'
+export type StencilStateName = StateNames<typeof StencilState, StencilState>
 
-const params: Array<keyof StencilStateParams> = [
-  'enable',
-  'stencilFunction',
-  'stencilReference',
-  'stencilMask',
-  'stencilFail',
-  'stencilDepthFail',
-  'stencilDepthPass',
-  'stencilBackFunction',
-  'stencilBackReference',
-  'stencilBackMask',
-  'stencilBackFail',
-  'stencilBackDepthFail',
-  'stencilBackDepthPass',
-]
-
-/**
- * Options to be converted into {@link IStencilState} via {@link StencilState.convert}
- *
- * @public
- */
 export interface StencilStateOptions {
-  enable?: boolean
-  stencilFunction?: CompareFunction
-  stencilReference?: number
-  stencilMask?: number
-  stencilFail?: StencilOperation
-  stencilDepthFail?: StencilOperation
-  stencilDepthPass?: StencilOperation
-  stencilBackFunction?: CompareFunction
-  stencilBackReference?: number
-  stencilBackMask?: number
-  stencilBackFail?: StencilOperation
-  stencilBackDepthFail?: StencilOperation
-  stencilBackDepthPass?: StencilOperation
-}
-
-/**
- * An object with all depth state parameters
- *
- * @public
- */
-export interface IStencilState {
   enable: boolean
-  stencilFunction: CompareFunction
-  stencilReference: number
-  stencilMask: number
-  stencilFail: StencilOperation
-  stencilDepthFail: StencilOperation
-  stencilDepthPass: StencilOperation
-  stencilBackFunction: CompareFunction
-  stencilBackReference: number
-  stencilBackMask: number
-  stencilBackFail: StencilOperation
-  stencilBackDepthFail: StencilOperation
-  stencilBackDepthPass: StencilOperation
+  readMask: number
+  writeMask: number
+
+  frontFunction: CompareFunction
+  frontFail: StencilOperation
+  frontDepthFail: StencilOperation
+  frontDepthPass: StencilOperation
+
+  backFunction: CompareFunction
+  backFail: StencilOperation
+  backDepthFail: StencilOperation
+  backDepthPass: StencilOperation
 }
 
-/**
- * Represents a sub set of {@link IStencilState}
- *
- * @public
- */
-export type StencilStateParams = Partial<IStencilState>
+const STATE = Symbol('Stencil State')
+const STATE_CACHE: Record<string, StencilState> = {}
+let idCounter = 1
 
-/**
- * @public
- */
-export class StencilState implements IStencilState {
+export class StencilState implements StencilStateOptions {
+  private [STATE]: StencilStateOptions
 
-  protected enableField: boolean = false
-  protected stencilFunctionField: CompareFunction = 'Always'
-  protected stencilReferenceField: number = 0
-  protected stencilMaskField: number = 0xffffffff
-  protected stencilFailField: StencilOperation = 'Keep'
-  protected stencilDepthFailField: StencilOperation = 'Keep'
-  protected stencilDepthPassField: StencilOperation = 'Keep'
-  protected stencilBackFunctionField: CompareFunction = 'Always'
-  protected stencilBackReferenceField: number = 0
-  protected stencilBackMaskField: number = 0xffffffff
-  protected stencilBackFailField: StencilOperation = 'Keep'
-  protected stencilBackDepthFailField: StencilOperation = 'Keep'
-  protected stencilBackDepthPassField: StencilOperation = 'Keep'
-  protected changes: StencilStateParams = {}
-  protected hasChanged: boolean = false
+  public readonly id = idCounter++
 
-  public get isDirty() {
-    return this.hasChanged
+  public get enable(): boolean {
+    return this[STATE].enable
+  }
+  public get readMask(): number {
+    return this[STATE].readMask
+  }
+  public get writeMask(): number {
+    return this[STATE].writeMask
   }
 
-  get stencilFunction(): CompareFunction {
-    return this.stencilFunctionField
+  public get frontFunction(): CompareFunction {
+    return this[STATE].frontFunction
+  }
+  public get frontFail(): StencilOperation {
+    return this[STATE].frontFail
+  }
+  public get frontDepthFail(): StencilOperation {
+    return this[STATE].frontDepthFail
+  }
+  public get frontDepthPass(): StencilOperation {
+    return this[STATE].frontDepthPass
   }
 
-  set stencilFunction(value: CompareFunction) {
-    if (this.stencilFunctionField !== value) {
-      this.stencilFunctionField = value
-      this.changes.stencilFunction = value
-      this.hasChanged = true
-    }
+  public get backFunction(): CompareFunction {
+    return this[STATE].backFunction
+  }
+  public get backFail(): StencilOperation {
+    return this[STATE].backFail
+  }
+  public get backDepthFail(): StencilOperation {
+    return this[STATE].backDepthFail
+  }
+  public get backDepthPass(): StencilOperation {
+    return this[STATE].backDepthPass
   }
 
-  get stencilBackFunction(): CompareFunction {
-    return this.stencilBackFunctionField
+  private constructor(options: StencilStateOptions) {
+    this[STATE] = options
   }
 
-  set stencilBackFunction(value: CompareFunction) {
-    if (this.stencilBackFunctionField !== value) {
-      this.stencilBackFunctionField = value
-      this.changes.stencilBackFunction = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilFail(): StencilOperation {
-    return this.stencilFailField
-  }
-
-  set stencilFail(value: StencilOperation) {
-    if (this.stencilFailField !== value) {
-      this.stencilFailField = value
-      this.changes.stencilFail = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilDepthFail(): StencilOperation {
-    return this.stencilDepthFailField
-  }
-
-  set stencilDepthFail(value: StencilOperation) {
-    if (this.stencilDepthFailField !== value) {
-      this.stencilDepthFailField = value
-      this.changes.stencilDepthFail = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilDepthPass(): StencilOperation {
-    return this.stencilDepthPassField
-  }
-
-  set stencilDepthPass(value: StencilOperation) {
-    if (this.stencilDepthPassField !== value) {
-      this.stencilDepthPassField = value
-      this.changes.stencilDepthPass = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilBackFail(): StencilOperation {
-    return this.stencilBackFailField
-  }
-
-  set stencilBackFail(value: StencilOperation) {
-    if (this.stencilBackFailField !== value) {
-      this.stencilBackFailField = value
-      this.changes.stencilBackFail = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilBackDepthFail(): StencilOperation {
-    return this.stencilBackDepthFailField
-  }
-
-  set stencilBackDepthFail(value: StencilOperation) {
-    if (this.stencilBackDepthFailField !== value) {
-      this.stencilBackDepthFailField = value
-      this.changes.stencilBackDepthFail = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilBackDepthPass(): StencilOperation {
-    return this.stencilBackDepthPassField
-  }
-
-  set stencilBackDepthPass(value: StencilOperation) {
-    if (this.stencilBackDepthPassField !== value) {
-      this.stencilBackDepthPassField = value
-      this.changes.stencilBackDepthPass = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilReference(): number {
-    return this.stencilReferenceField
-  }
-
-  set stencilReference(value: number) {
-    if (this.stencilReferenceField !== value) {
-      this.stencilReferenceField = value
-      this.changes.stencilReference = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilMask(): number {
-    return this.stencilMaskField
-  }
-
-  set stencilMask(value: number) {
-    if (this.stencilMaskField !== value) {
-      this.stencilMaskField = value
-      this.changes.stencilMask = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilBackReference(): number {
-    return this.stencilBackReferenceField
-  }
-
-  set stencilBackReference(value: number) {
-    if (this.stencilBackReferenceField !== value) {
-      this.stencilBackReferenceField = value
-      this.changes.stencilBackReference = value
-      this.hasChanged = true
-    }
-  }
-
-  get stencilBackMask(): number {
-    return this.stencilBackMaskField
-  }
-
-  set stencilBackMask(value: number) {
-    if (this.stencilBackMaskField !== value) {
-      this.stencilBackMaskField = value
-      this.changes.stencilBackMask = value
-      this.hasChanged = true
-    }
-  }
-
-  get enable(): boolean {
-    return this.enableField
-  }
-
-  set enable(value: boolean) {
-    if (this.enableField !== value) {
-      this.enableField = value
-      this.changes.enable = value
-      this.hasChanged = true
-    }
-  }
-
-  public assign(state: StencilStateParams= {}): this {
-    for (let key of params) {
-      if (hasOwnProperty(state, key)) { this[key as any] = state[key] }
-    }
-    return this
-  }
-
-  public commit(state?: StencilStateParams): this {
-    if (state) { this.assign(state) }
-    if (!this.hasChanged) { return this }
-    this.commitChanges(this.changes)
-    this.clearChanges()
-    return this
-  }
-
-  public copy(out: any= {}): StencilStateParams {
-    for (let key of params) { out[key] = this[key] }
-    return out
-  }
-
-  protected commitChanges(changes: Partial<IStencilState>) {
-    //
-  }
-
-  protected clearChanges() {
-    this.hasChanged = false
-    for (let key of params) { this.changes[key as any] = undefined }
-  }
-
-  public static convert(state: string | StencilStateOptions): StencilStateParams {
+  public static get(state: StencilStateName | Partial<StencilStateOptions>): StencilState {
     if (typeof state === 'string') {
-      return StencilState[state] ? {...StencilState[state]} : null
+      return StencilState[state] ?? null
     }
 
-    if (!state) {
-      return null
-    }
-
-    const result: StencilStateParams = {}
-    for (const key of params) {
-      if (!(key in state)) {
-        continue
-      }
-      switch (key) {
-        case 'stencilFunction':
-        case 'stencilBackFunction':
-          result[key] = state[key]
-          break
-        case 'stencilFail':
-        case 'stencilDepthFail':
-        case 'stencilDepthPass':
-        case 'stencilBackFail':
-        case 'stencilBackDepthFail':
-        case 'stencilBackDepthPass':
-          result[key] = state[key]
-          break
-        case 'enable':
-          result[key] = state[key]
-          break
-        default:
-          result[key] = state[key]
-          break
-      }
-    }
-    return result
+    return StencilState.cached(createOptions(state))
   }
 
-  public static Default = Object.freeze<IStencilState>({
+  private static cached(options: StencilStateOptions): StencilState {
+    const key = createKey(options)
+    let state = STATE_CACHE[key]
+    if (!state) {
+      state = new StencilState(options)
+      STATE_CACHE[key] = state
+    }
+    return state
+  }
+
+  /**
+   * Default clear value for stencil buffer (0 by default)
+   */
+  public static DefaultClear = 0
+
+  /**
+   * Default stencil state with stencil test disabled and read/write masks set to 0xffffffff
+   */
+  public static Default = StencilState.cached({
     enable: false,
+    readMask: 0xffffffff,
+    writeMask: 0xffffffff,
 
     // front face stencil
-    stencilFunction: 'Always',
-    stencilReference: 0,
-    stencilMask: 0xffffffff,
-
-    stencilFail: 'Keep',
-    stencilDepthFail: 'Keep',
-    stencilDepthPass: 'Keep',
+    frontFunction: 'Always',
+    frontFail: 'Keep',
+    frontDepthFail: 'Keep',
+    frontDepthPass: 'Keep',
 
     // back face stencil
-    stencilBackFunction: 'Always',
-    stencilBackReference: 0,
-    stencilBackMask: 0xffffffff,
-
-    stencilBackFail: 'Keep',
-    stencilBackDepthFail: 'Keep',
-    stencilBackDepthPass: 'Keep',
+    backFunction: 'Always',
+    backFail: 'Keep',
+    backDepthFail: 'Keep',
+    backDepthPass: 'Keep',
   })
+}
+
+function createOptions(options?: Partial<StencilStateOptions>): StencilStateOptions {
+  return {
+    enable: options?.enable ?? false,
+    readMask: options?.readMask ?? 0xffffffff,
+    writeMask: options?.writeMask ?? 0xffffffff,
+
+    frontFunction: options?.frontFunction ?? 'Always',
+    frontFail: options?.frontFail ?? 'Keep',
+    frontDepthFail: options?.frontDepthFail ?? 'Keep',
+    frontDepthPass: options?.frontDepthPass ?? 'Keep',
+
+    backFunction: options?.backFunction ?? 'Always',
+    backFail: options?.backFail ?? 'Keep',
+    backDepthFail: options?.backDepthFail ?? 'Keep',
+    backDepthPass: options?.backDepthPass ?? 'Keep',
+  }
+}
+
+function createKey(options: StencilStateOptions): string {
+  return [
+    options.enable,
+    options.readMask,
+    options.writeMask,
+    options.frontFunction,
+    options.frontFail,
+    options.frontDepthFail,
+    options.frontDepthPass,
+    options.backFunction,
+    options.backFail,
+    options.backDepthFail,
+    options.backDepthPass,
+  ].join(',')
 }

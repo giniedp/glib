@@ -1,9 +1,9 @@
-import { proceduralProgram } from './base';
-import { glsl } from '@gglib/graphics';
+import { proceduralProgram } from './base'
 
 export function brickProgram() {
-  return proceduralProgram({}, [{
-    uniforms: glsl`
+  return proceduralProgram({}, [
+    {
+      uniforms: /* glsl */ `
       // @default 0.25
       uniform float brickWidth;
       // @default 0.08
@@ -15,7 +15,7 @@ export function brickProgram() {
       // @default [0.5, 0.15, 0.14]
       uniform vec3 colorBrick;
     `,
-    fs_main_color: glsl`
+      fs_main_color: /* glsl */ `
       float scoord = point.x;
       float tcoord = point.y;
       float ss = scoord / (brickWidth + mortarThickness);
@@ -30,6 +30,7 @@ export function brickProgram() {
       float w = step(mortarThickness * 0.5 / (brickWidth + mortarThickness), ss);
       float h = step(mortarThickness * 0.5 / (brickHeight + mortarThickness), tt);
       color.rgb = mix(colorMortar, colorBrick, w * h);
-    `
-  }])
+    `,
+    },
+  ])
 }

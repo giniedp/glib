@@ -1,4 +1,5 @@
-import { Property, NamedProperty } from './common'
+import type { GLConst } from '@gglib/graphics'
+import { NamedProperty, Property } from './common'
 
 /**
  * A dictionary object specifying attributes displacements in a Morph Target,
@@ -11,6 +12,15 @@ export interface MorphTarget {
   NORMAL: number
   TANGENT: number
 }
+
+export type MeshPrimitiveMode =
+  | GLConst.POINTS // 0
+  | GLConst.LINES // 1
+  | GLConst.LINE_LOOP // 2
+  | GLConst.LINE_STRIP // 3
+  | GLConst.TRIANGLES // 4
+  | GLConst.TRIANGLE_STRIP // 5
+  | GLConst.TRIANGLE_FAN // 6
 
 /**
  * Geometry to be rendered with the given material.
@@ -45,7 +55,7 @@ export interface MeshPrimitive extends Property {
   /**
    * The type of primitives to render. All valid values correspond to WebGL enums.
    */
-  mode?: number
+  mode?: MeshPrimitiveMode
 
   /**
    * An array of Morph Targets, each  Morph Target is a dictionary mapping attributes

@@ -1,11 +1,11 @@
 import { Device, Mesh } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere, Mat4, Transform } from '@gglib/math'
 import { uuid } from '@gglib/utils'
-import { AnimationData } from './AnimationData'
-import { ModelData, NodeData, SceneData, SkinData } from './Data'
-import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
+import type { AnimationData } from './AnimationData'
 import { AnimationPlayer } from './AnimationPlayer'
+import type { ModelOptions, NodeData, SceneData, SkinData } from './Data'
 import { Skeleton } from './Skeleton'
+import { createSkeletons, createTransformNodes, flattenNodes } from './utils'
 
 /**
  * @public
@@ -91,10 +91,10 @@ export class Model {
    */
   public skeletons: Skeleton[] = []
 
-  private _sceneRoot = new Transform<void>()
+  private _sceneRoot = new Transform<NodeData>()
   private _sceneNodes: Transform<NodeData>[] = []
 
-  constructor(device: Device, options: ModelData) {
+  constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
     this.device = device
     this.name = options.name || null
@@ -195,8 +195,8 @@ export class Model {
       root.translation.initZero()
     }
 
-    root.needsUpdate = true
-    root.update(true, true)
+    root.markAsChanged()
+    root.propagateUpdates(true, true)
   }
 
   public updateSkeletons(world?: Mat4 | null) {
@@ -215,8 +215,12 @@ export class Model {
       if (!mesh) {
         continue
       }
-      BoundingBox.transform(mesh.boundingBox, node.world, tmpBox)
-      box.merge(tmpBox)
+      if (mesh.boundingBox) {
+        BoundingBox.transform(mesh.boundingBox, node.world, tmpBox)
+        box.merge(tmpBox)
+      } else {
+        console.warn('mesh has no bounding box')
+      }
 
       // TODO: review, this yields seemingly wrong results
       // BoundingSphere.transform(mesh.boundingSphere, node.world, tmpSphere)

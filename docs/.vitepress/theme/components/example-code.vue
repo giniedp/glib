@@ -10,15 +10,15 @@ pre {
 </style>
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import hljs from 'highlight.js';
-import ts from 'highlight.js/lib/languages/typescript';
+import hljs from 'highlight.js'
+import ts from 'highlight.js/lib/languages/typescript'
 import 'highlight.js/styles/github-dark.css'
-hljs.registerLanguage('typescript', ts);
+hljs.registerLanguage('typescript', ts)
 
-const rawExamples = import.meta.glob('/**/example*.ts', { query: '?raw' });
+const rawExamples = import.meta.glob('/**/example*.ts', { query: '?raw' })
 
 const props = defineProps({
-  name: String
+  name: String,
 })
 
 const code = ref('')
@@ -28,6 +28,9 @@ onMounted(async () => {
   try {
     const exampleName = location.pathname + (props.name || 'example.ts')
     const exampleLoader = rawExamples[exampleName]
+    if (!exampleLoader) {
+      throw new Error(`example does not exist: ${exampleName}`)
+    }
     const module = await exampleLoader()
     const raw = module.default
     code.value = raw
@@ -35,7 +38,5 @@ onMounted(async () => {
   } catch (e) {
     console.error(e)
   }
-
 })
-
 </script>

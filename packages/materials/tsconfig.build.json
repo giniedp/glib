@@ -1,0 +1,35 @@
+{
+  "extends": "../tsconfig.tsc.json",
+  "baseUrl": ".",
+  "rootDir": ".",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist"
+  },
+  "include": [
+    "./index.ts",
+    "./src/**/*.ts",
+    "./src/**/*.js"
+  ],
+  "exclude": [
+    "./dist/**/*",
+    "./node_modules/**/*",
+    "./**/*.spec.ts",
+    "./**/*.spec.js",
+    "./**/*.test.ts",
+    "./**/*.test.js",
+    "./**/*.bench.ts",
+    "./**/*.bench.js"
+  ],
+  "references": [
+    {
+      "path": "../graphics/tsconfig.build.json"
+    },
+    {
+      "path": "../math/tsconfig.build.json"
+    },
+    {
+      "path": "../content/tsconfig.build.json"
+    }
+  ]
+}

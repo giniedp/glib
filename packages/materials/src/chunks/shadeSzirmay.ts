@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
@@ -9,7 +9,7 @@ export type ShadeFunctionSzirmay = 'shadeSzirmay'
  * @public
  */
 export const SHADE_SZIRMAY: ShaderChunkSet = Object.freeze({
-  functions: glsl`
+  functions: /* glsl */ `
     highp vec3 shadeSzirmay(
       inout ShadeParams shade,
       inout SurfaceParams surface

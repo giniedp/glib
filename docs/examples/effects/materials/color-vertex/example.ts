@@ -34,7 +34,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       materials: [
         {
           effect: vertexColorEffect,
-          parameters: {},
+          properties: {},
         },
       ],
     })!
@@ -53,10 +53,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     proj.initPerspectiveFieldOfView(Math.PI / 2, device.drawingBufferAspectRatio, 0.1, 100)
 
     mesh.materials.forEach((mtl) => {
-      mtl.parameters.World = world
-      mtl.parameters.View = view
-      mtl.parameters.Projection = proj
-      mtl.parameters.CameraPosition = cam.getTranslation()
+      mtl.properties.World = world
+      mtl.properties.View = view
+      mtl.properties.Projection = proj
+      mtl.properties.CameraPosition = cam.getTranslation()
     })
     mesh.draw()
   }

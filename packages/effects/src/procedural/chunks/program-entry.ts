@@ -1,16 +1,16 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export default {
-  precision: glsl`
+  precision: /* glsl */ `
     precision highp float;
     precision highp int;
   `,
-  vs: glsl`
+  vs: /* glsl */ `
     void main() {
       #pragma block:vs_main
     }
   `,
-  fs: glsl`
+  fs: /* glsl */ `
     void main() {
       #pragma block:fs_main_init
       #pragma block:fs_main_point

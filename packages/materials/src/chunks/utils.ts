@@ -1,16 +1,16 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * @public
  */
 export const UTILS: ShaderChunkSet = Object.freeze({
-  defines: glsl`
+  defines: /* glsl */ `
     const float PI = 3.1415926535897932384626433832795;
     const float TWO_PI = 6.283185307179586;
     const float HALF_PI = 1.5707963267948966;
     const float RECIPROCAL_PI = 0.3183098861837907;
   `,
-  functions_before: glsl`
+  functions_before: /* glsl */ `
     highp vec3 fresnelSchlick(vec3 R, float dotLH) {
       return R + (1.0 - R) * pow(1.0 - dotLH, 5.0);
     }

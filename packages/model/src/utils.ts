@@ -1,5 +1,5 @@
 import { Transform } from '@gglib/math'
-import { NodeData, SkinData } from './Data'
+import type { NodeData, SkinData } from './Data'
 import { Skeleton } from './Skeleton'
 
 export function initTransformNode<T extends Transform>(node: NodeData, transform: T) {
@@ -16,7 +16,7 @@ export function initTransformNode<T extends Transform>(node: NodeData, transform
     transform.matrix.initFromArray(node.matrix)
     transform.matrix.decompose(transform.scale, transform.rotation, transform.translation)
   }
-  transform.needsUpdate = true
+  transform.markAsChanged()
 }
 
 export function initTransformNodes<T extends Transform>(nodes: NodeData[], transforms: T[]) {

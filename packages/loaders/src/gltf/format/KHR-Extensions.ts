@@ -453,7 +453,7 @@ export interface KHR_materials_pbrSpecularGlossiness {
    * The specular-glossiness texture.
    *
    * @remarks
-   * he specular-glossiness texture is RGBA texture, containing the specular color of the
+   * The specular-glossiness texture is RGBA texture, containing the specular color of the
    * material (RGB components) and its glossiness (A component). The values are in sRGB space.
    */
   specularGlossinessTexture?: TextureInfo

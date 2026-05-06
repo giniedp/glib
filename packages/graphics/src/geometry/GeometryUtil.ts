@@ -1,9 +1,8 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
-import { Log } from '@gglib/utils'
 
-import { FrontFace, PrimitiveType } from '../enums'
-import { BufferOptions, VertexBufferOptions } from '../resources'
-import { vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
+import { arrayTypeToDataType, DataType, FrontFace, PrimitiveType } from '../enums'
+import { BufferOptions, isPlainBufferData, PlainBufferData } from '../resources'
+import { vertexAttribute, VertexAttribute } from '../VertexLayout'
 import { calculateNormals } from './utils/calculateNormals'
 import { calculateTangents } from './utils/calculateTangents'
 
@@ -22,7 +21,7 @@ export class GeometryUtil {
 
   public constructor(
     public readonly indexBuffer: BufferOptions,
-    public readonly vertexBuffer: VertexBufferOptions,
+    public readonly vertexBuffer: Array<BufferOptions>,
     public readonly primitiveType: PrimitiveType,
   ) {
     if (primitiveType !== 'TriangleList') {
@@ -30,10 +29,10 @@ export class GeometryUtil {
     }
 
     for (const buffer of vertexBuffer) {
-      VertexLayout.forEach(buffer.layout, (semantic) => {
+      for (const semantic in buffer.vertexLayout) {
         this.channelNames.push(semantic)
         this.channels.set(semantic, new GeometryBuilderChannel(buffer, semantic))
-      })
+      }
     }
   }
 
@@ -70,27 +69,31 @@ export class GeometryUtil {
       throw new Error(`attribute parameter is missing`)
     }
 
-    const data = []
+    const data: PlainBufferData = {
+      type: attribute.elementType,
+      elements: [],
+    }
     const vCount = this.getVertexCount()
     for (let i = 0; i < vCount; i++) {
-      if (defaults?.length === attribute.elements) {
-        data.push(...defaults)
+      if (defaults?.length === attribute.elementCount) {
+        data.elements.push(...defaults)
       } else {
-        for (let j = 0; j < attribute.elements; j++) {
-          data.push(0)
+        for (let j = 0; j < attribute.elementCount; j++) {
+          data.elements.push(0)
         }
       }
     }
 
-    const vBuffer: BufferOptions = {
-      layout: {
+    const vBuffer: BufferOptions<PlainBufferData> = {
+      vertexLayout: {
         [semantic]: {
           ...attribute,
-          offset: 0,
+          byteOffset: 0,
         },
       },
       type: 'VertexBuffer',
-      dataType: attribute.type,
+
+      //dataType: attribute.type,
       data: data,
     }
     this.vertexBuffer.push(vBuffer)
@@ -124,9 +127,20 @@ export class GeometryUtil {
     const hashMap = new Map<string, number>()
     // the new vertex buffer
     const vBuffer = this.vertexBuffer.map((buf) => {
+      let type: DataType
+      if (isPlainBufferData(buf.data)) {
+        type = buf.data.type
+      } else if (ArrayBuffer.isView(buf.data)) {
+        type = arrayTypeToDataType(buf.data)
+      } else {
+        throw new Error(`unknown buffer data type`)
+      }
       return {
         ...buf,
-        data: [],
+        data: {
+          elements: [],
+          type,
+        },
       }
     })
     // accessor to new vertex buffer
@@ -169,7 +183,6 @@ export class GeometryUtil {
 
     const oldVCount = this.getVertexCount()
     if (oldVCount !== vCount) {
-      Log.debug(`[ModelBuilder] Mesh size reduced from ${oldVCount} to ${vCount} vertices.`)
       vBuffer.forEach((buf, i) => {
         this.vertexBuffer[i].data = buf.data
       })

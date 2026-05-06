@@ -55,7 +55,3 @@ export const PROGRAM_BASIC_TEXTURED = {
   vertexShader,
   fragmentShader,
 }
-
-export function basicProgram(device: Device) {
-  return device.createProgram(PROGRAM_BASIC_TEXTURED)
-}

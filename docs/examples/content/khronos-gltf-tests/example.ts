@@ -6,15 +6,13 @@ import {
   CullState,
   DepthState,
   Mesh,
-  SamplerState,
   TextureImage,
   createDevice,
   cubeGeometry,
   planeLinesMesh,
-  textureSourceFromImageUrl,
 } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
-import { GLTF } from '@gglib/loaders'
+import { GLTF, HDR } from '@gglib/loaders'
 import { AutoMaterial, LightParams, SkyboxMaterial } from '@gglib/materials'
 import { DEGREE_TO_RAD, Mat4, Transform, Vec3 } from '@gglib/math'
 import { AnimationPlayer, Model, NodeData } from '@gglib/model'
@@ -24,15 +22,10 @@ import * as TweakUi from 'tweak-ui'
 TextureImage.crossOrigin = 'anonymous'
 
 const PANORAMA_IMAGES = {
-  foorprintCourtJPG: {
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.jpg',
-  },
-  foorprintCourtHDR: {
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.hdr',
-  },
-  gatonaParkWalkway1Panorama4Kx2K: {
-    url: 'https://playground.babylonjs.com/textures/GatonaParkWalkway1_Panorama_4Kx2K.jpg',
-  },
+  Court: '/textures/hdr/footprint_court.hdr',
+  Exterior: '/textures/hdr/cannon_exterior.hdr',
+  Overcast: '/textures/hdr/overcast_puresky.hdr',
+  Sky: '/textures/Grey_Sky.png',
 }
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
@@ -40,6 +33,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const stats = device.stats({})
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
+  content.registerLoader(HDR.Loader)
   content.registerMaterial({
     name: 'BasicEffect',
     type: AutoMaterial,
@@ -49,7 +43,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     preventDefault: true,
   })
   const iblSampler = new IBLSamplerEffect(device)
-  content.loadTexture(PANORAMA_IMAGES.foorprintCourtJPG.url).then((texture) => {
+  content.loadTexture(PANORAMA_IMAGES.Overcast).then((texture) => {
     console.log('Loaded panorama texture', texture)
     iblSampler.panoramaInput = texture
     iblSampler.needsUpdate = true
@@ -69,10 +63,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     parts: [cubeGeometry(device)],
     materials: [
       new SkyboxMaterial(device, {
-        parameters: {
+        properties: {
           Intensity: 1.0,
           Rotation: 0,
-          Blur: 0.25,
+          Blur: 1,
           MipCount: iblSampler.lowestMipLevel + 1,
         },
       }),
@@ -178,8 +172,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   function frame(time: number, dt: number) {
     device.resize()
     device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
+    device.depthState = DepthState.Disabled
+    device.blendState = BlendState.Disabled
     device.clear(Color.CornflowerBlue.rgba, 1.0)
 
     iblSampler.update()
@@ -223,29 +217,44 @@ type ManifestModel = {
 
 function createSamplerBrowser(content: ContentLoader, tools: HTMLElement, loadModel: (url: string) => void) {
   content.fetch<Manifest>(manifest, { responseType: 'json' }).then(({ body }) => {
+    const models: Record<string, string> = {}
     TweakUi.mount(tools, (ui) => {
       ui.collapsible('Controls', { collapsed: false }, () => {
         ui.accordion(() => {
           const list = body!.sort((a, b) => a.id - b.id)
-          list.forEach((folder) => {
+          for (const folder of list) {
             ui.group(folder.folder, () => {
-              folder.models.forEach((model, modelId) => {
+              for (const [modelId, model] of folder.models.entries()) {
                 if (!model.loadable) {
-                  return
+                  continue
                 }
+                const modelKey = `${folder.id}-${modelId}`
+                const modelUrl = `${baseUrl}/${folder.folder}/${model.fileName}`
+                models[modelKey] = modelUrl
+
                 ui.container({ horizontal: true }, () => {
                   if (model.sampleImageName) {
                     ui.container({ style: { flex: 'none' } }, () => {
                       ui.image({
                         width: 70,
                         src: `${baseUrl}/${folder.folder}/${model.sampleImageName}`,
-                        onClick: () => loadModel(`${baseUrl}/${folder.folder}/${model.fileName}`),
+                        onClick: () => {
+                          const route = new URL(location.href)
+                          route.searchParams.set('model', modelKey)
+                          history.pushState({}, '', route.toString())
+                          loadModel(modelUrl)
+                        },
                       })
                     })
                   }
                   ui.container(() => {
                     ui.button('show', {
-                      onClick: () => loadModel(`${baseUrl}/${folder.folder}/${model.fileName}`),
+                      onClick: () => {
+                        const route = new URL(location.href)
+                        route.searchParams.set('model', modelKey)
+                        history.pushState({}, '', route.toString())
+                        loadModel(modelUrl)
+                      },
                     })
                     ui.button('open in github', {
                       onClick: () => window.open(`${githubUrl}/${folder.folder}`, '_blank'),
@@ -259,11 +268,17 @@ function createSamplerBrowser(content: ContentLoader, tools: HTMLElement, loadMo
                     })
                   })
                 })
-              })
+              }
             })
-          })
+          }
         })
       })
     })
+
+    const url = new URL(location.href)
+    const model = url.searchParams.get('model')
+    if (model && model in models) {
+      loadModel(models[model])
+    }
   })
 }

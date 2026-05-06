@@ -7,7 +7,3 @@ const mapToWebGL: Record<BufferUsageHint, number> = {
   Dynamic: gl.DYNAMIC_DRAW,
   Stream: gl.STREAM_DRAW,
 }
-
-export function bufferUsageHintToWebGL(hint: BufferUsageHint): number {
-  return mapToWebGL[hint]
-}

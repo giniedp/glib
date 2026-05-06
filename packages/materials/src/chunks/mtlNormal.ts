@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control normal mapping.
@@ -51,7 +51,7 @@ export interface MtlNormalDefs {
  * @public
  */
 export const MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef NORMAL_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE
@@ -62,7 +62,7 @@ export const MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef NORMAL_MAP
     // @binding NormalMap
     uniform sampler2D uNormalMap;
@@ -78,7 +78,7 @@ export const MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = {
     uniform mat3 uNormalMapTransform;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     vec2 getNormalMapUV() {
       #ifdef NORMAL_MAP
         #ifdef NORMAL_MAP_SCALE_OFFSET
@@ -146,7 +146,7 @@ export const MTL_NORMAL: ShaderChunkSet<MtlNormalDefs> = {
 
     #endif
   `,
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     surface.Normal.xyz = getNormal(uvOffset);
   `,
 }

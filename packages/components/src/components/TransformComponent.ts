@@ -1,8 +1,12 @@
-import { EntityState, GameComponent, GameEntity } from '@gglib/ecs'
-import { IVec3, IVec4, Mat4, Transform } from '@gglib/math'
-import { simpleObservable } from '@gglib/utils'
-import { GameTransform } from 'ecs/src/GameTransform'
-import { GameLoop } from '../systems/GameLoop'
+import {
+  ActivatableComponent,
+  GameEntity,
+  GameEntityState,
+  InitializableComponent,
+  type GameComponent,
+  type GameTransform,
+} from '@gglib/ecs'
+import { Transform, type IVec3, type IVec4, type Mat4 } from '@gglib/math'
 
 /**
  * Constructor options for {@link TransformComponent}
@@ -47,12 +51,17 @@ export interface TransformComponentOptions {
   /**
    * If true, the transform will propagate the entity life cycle calls (initialize, activate etc.) to child entities
    */
-  enityLifeCycle?: boolean
+  lifeCycle?: LifeCycleFlags
+}
 
-  /**
-   * If true, the componetn will install update hooks to the game loop
-   */
-  autoUpdate?: boolean
+export type LifeCycleFlags = number
+export const LifeCycleReceive = 1 << 0
+export const LifeCyclePropagate = 1 << 1
+export const LifeCycleFlags = {
+  None: 0,
+  Receive: LifeCycleReceive,
+  Propagate: LifeCyclePropagate,
+  Full: LifeCycleReceive | LifeCyclePropagate,
 }
 
 /**
@@ -63,11 +72,14 @@ export interface TransformComponentOptions {
  * Calculates the final world transform matrix once position, rotation or scale properties have changed.
  * Takes the transform of the parent entity into account if the parent also owns a `TransformComponent`
  */
-export class TransformComponent extends Transform implements GameComponent, GameTransform {
+export class TransformComponent
+  extends Transform
+  implements GameTransform, GameComponent, InitializableComponent, ActivatableComponent
+{
   /**
-   * Default value for {@link TransformComponentOptions.enityLifeCycle}
+   * Default value for {@link TransformComponentOptions.lifeCycle}
    */
-  public static enityLifeCycle = true
+  public static lifeCycle: LifeCycleFlags = LifeCycleFlags.Full
 
   /**
    * Default value for {@link TransformComponentOptions.keepWorld}
@@ -75,33 +87,11 @@ export class TransformComponent extends Transform implements GameComponent, Game
   public static keepWorld = false
 
   /**
-   * Default value for {@link TransformComponentOptions.autoUpdate}
-   */
-  public static autoUpdate = true
-
-  /**
    * The entity that owns this component instance
    */
-  public entity: GameEntity<TransformComponent>
+  public readonly entity: GameEntity
 
-  /**
-   * The parent transform component
-   */
-  public parent: TransformComponent
-
-  /**
-   * The child transform components
-   *
-   * @remarks
-   * Manipulating this array directly is not recommended. Use the `add*` methods instead.
-   */
-  public readonly children: TransformComponent[] = []
-
-  protected loop: GameLoop
-  protected autoUpdate: boolean
-  protected entityLifeCycle: boolean
-
-  public onUpdated = simpleObservable<void>()
+  protected lifeCycle: LifeCycleFlags
 
   constructor(options: TransformComponentOptions = {}) {
     super()
@@ -120,70 +110,121 @@ export class TransformComponent extends Transform implements GameComponent, Game
     }
     if (options.world) {
       this.world.initFrom(options.world)
+      if (!options.local && !options.scale && !options.position && !options.rotation) {
+        this.world.decompose(this.scale, this.rotation, this.translation)
+      }
     }
 
     this.keepWorld = options.keepWorld ?? TransformComponent.keepWorld
-    this.entityLifeCycle = options.enityLifeCycle ?? TransformComponent.enityLifeCycle
-    this.autoUpdate = options.autoUpdate ?? TransformComponent.autoUpdate
-    this.needsUpdate = true
+    this.lifeCycle = options.lifeCycle ?? TransformComponent.lifeCycle
   }
 
-  public initialize(entity: GameEntity<TransformComponent>): void {
-    this.entity = entity
-    this.entity.transform = this
-    this.loop = entity.provider.get(GameLoop)
-    this.needsUpdate = true
-    if (this.entityLifeCycle) {
-      for (const child of this.children) {
-        if (child.entity && child.entity.state === EntityState.Created) {
-          child.entity.initialize(entity.provider)
-        }
+  public initialize(): void {
+    this.name ||= `${this.entity.name} Transform`
+    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+      return
+    }
+    for (const child of this.children) {
+      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+        continue
+      }
+      if (child.entity?.canInitialize) {
+        child.entity.initialize()
       }
     }
   }
 
   public activate(): void {
-    if (this.autoUpdate) {
-      this.loop.onUpdate.add(this.updateIfNeeded)
+    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+      return
     }
-    if (this.entityLifeCycle) {
-      for (const child of this.children) {
-        if (child.entity.state === EntityState.Initialized) {
-          child.entity.activate()
-        }
+    for (const child of this.children) {
+      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+        continue
+      }
+      if (child.entity?.canInitialize) {
+        child.entity.initialize()
+      }
+      if (child.entity?.canActivate) {
+        child.entity.activate()
       }
     }
   }
 
   public deactivate(): void {
-    this.loop.onUpdate.remove(this.updateIfNeeded)
-    if (this.entityLifeCycle) {
-      for (const child of this.children) {
-        if (child.entity.state === EntityState.Activated) {
-          child.entity.deactivate()
-        }
+    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+      return
+    }
+    for (const child of this.children) {
+      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+        continue
+      }
+      if (child.entity?.canDeactivate) {
+        child.entity.deactivate()
       }
     }
   }
 
   public destroy(): void {
-    if (this.entityLifeCycle) {
-      for (const child of this.children) {
-        child.entity.destroy()
-      }
+    if (!(this.lifeCycle & LifeCycleFlags.Propagate)) {
+      return
     }
-    this.entity.transform = null
+    for (const child of this.children) {
+      if (!(child.lifeCycle & LifeCycleFlags.Receive)) {
+        continue
+      }
+      child.entity.destroy()
+    }
   }
 
-  /**
-   * Updates the local and world transforms.
-   *
-   * @remarks
-   * - Ignores the `needsUpdate` flag, but sets it to false after the update.
-   * - Emits the `onUpdated` event.
-   */
-  public updateWorldTransform(): void {
-    super.updateWorldTransform()
-    this.onUpdated.notify()
+  protected override handleParentChange(parent: this, oldParent: this): void {
+    if (!(this.lifeCycle & LifeCycleFlags.Receive)) {
+      return
+    }
+    if (!this.entity) {
+      // not initialized, no state to sync
+      return
+    }
+    if (!parent) {
+      // Detaching from parent, keep current state
+      return
+    }
+    if (!parent.entity) {
+      // The new parent doesn't have an entity, so it's not initialized yet
+      return
+    }
+
+    switch (parent.entity.state) {
+      case GameEntityState.Created: {
+        // No need to do anything, the entity will be initialized and activated by the parent when it's ready
+        break
+      }
+      case GameEntityState.Initialized: {
+        // The parent is initialized but not activated,
+        // initialize the entity but don't activate it
+        // or deactivate it if it was already active to bring it to the correct state
+        if (this.entity.canInitialize) {
+          this.entity.initialize()
+        }
+        if (this.entity.canDeactivate) {
+          this.entity.deactivate()
+        }
+        break
+      }
+      case GameEntityState.Activated: {
+        // The parent is active, activate the entity as well
+        if (this.entity.canInitialize) {
+          this.entity.initialize()
+        }
+        if (this.entity.canActivate) {
+          this.entity.activate()
+        }
+        break
+      }
+      case GameEntityState.Destroyed: {
+        // The parent is destroyed
+        throw new Error('Cannot set parent to an entity that is already destroyed')
+      }
+    }
   }
 }

@@ -1,15 +1,14 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { ArrayBufferViewSource, SamplerState, TextureOptions } from '@gglib/graphics'
+import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, TextureAssetContainer } from '@gglib/content'
+import { AcquireTextureOptions, ArrayBufferViewSource } from '@gglib/graphics'
 import { readHDR } from './format'
-
-export function registerLoader() {
-  ContentLoader.registerLoader(Loader)
-}
 
 export class Loader implements AssetLoader {
   public static extensions = ['.hdr']
   public static mimeTypes = ['image/hdr']
-  public static loader = Loader
+  public static create = () => new Loader()
+  public static register(registry = ContentLoader.loaders) {
+    registry.register(Loader)
+  }
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
@@ -17,7 +16,8 @@ export class Loader implements AssetLoader {
     })
     const hdr = readHDR(response.body)
     const data = hdr.float32()
-    const options: TextureOptions = {
+    const options: AcquireTextureOptions = {
+      key: url,
       name: url,
       format: 'RGBA32_FLOAT',
       source: new ArrayBufferViewSource([[data]], hdr.width, hdr.height),
@@ -25,12 +25,8 @@ export class Loader implements AssetLoader {
       height: hdr.height,
       type: 'Texture2D',
       generateMipmap: true,
-      sampler: SamplerState.LinearClampNoMipMap,
     }
 
-    return {
-      source: url,
-      textures: [options],
-    }
+    return new TextureAssetContainer([options])
   }
 }

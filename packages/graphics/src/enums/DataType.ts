@@ -1,18 +1,8 @@
 import { GLConst as gl } from './GLConst'
 
 export type DataType = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32' | 'float16'
-export type DataTypeAlias = 'byte' | 'ubyte' | 'short' | 'ushort' | 'int' | 'uint' | 'float' | 'half'
 
-const dataTypeMap: Record<DataTypeAlias | DataType, DataType> = {
-  byte: 'int8',
-  ubyte: 'uint8',
-  short: 'int16',
-  ushort: 'uint16',
-  int: 'int32',
-  uint: 'uint32',
-  float: 'float32',
-  half: 'float16',
-  //
+const dataTypeMap: Record<DataType, DataType> = {
   int8: 'int8',
   uint8: 'uint8',
   int16: 'int16',
@@ -91,7 +81,6 @@ export type TypedArrayConstructor =
   | Int32ArrayConstructor
   | Uint32ArrayConstructor
   | Float32ArrayConstructor
-  | Uint16ArrayConstructor
 
 export type TypedArray =
   | Int8Array<ArrayBuffer>
@@ -102,6 +91,7 @@ export type TypedArray =
   | Uint32Array<ArrayBuffer>
   | Float32Array<ArrayBuffer>
   | Uint16Array<ArrayBuffer>
+  | Float16Array<ArrayBuffer>
 
 export function dataTypeToArrayType(type: 'int8'): Int8ArrayConstructor
 export function dataTypeToArrayType(type: 'uint8'): Uint8ArrayConstructor
@@ -113,5 +103,18 @@ export function dataTypeToArrayType(type: 'float32'): Float32ArrayConstructor
 export function dataTypeToArrayType(type: 'float16'): Uint16ArrayConstructor
 export function dataTypeToArrayType(type: DataType): TypedArrayConstructor
 export function dataTypeToArrayType(type: DataType): TypedArrayConstructor {
-  return ArrayType[type]
+  const result = ArrayType[type]
+  if (!result) {
+    throw new Error(`Unsupported data type: ${type}`)
+  }
+  return result
+}
+
+export function arrayTypeToDataType(array: TypedArray): DataType {
+  for (const key in ArrayType) {
+    if (ArrayType[key as DataType] === array.constructor) {
+      return key as DataType
+    }
+  }
+  throw new Error(`Unsupported array type: ${array.constructor.name}`)
 }

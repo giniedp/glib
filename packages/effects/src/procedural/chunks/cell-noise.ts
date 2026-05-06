@@ -1,7 +1,7 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 export default {
-  functions: glsl`
+  functions: /* glsl */ `
     // Cellular noise, returning F1 and F2 in a vec2.
     // Standard 3x3 search window for good F1 and F2 values
     vec2 noiseCell(in vec2 P) {
@@ -44,5 +44,5 @@ export default {
       d1.y = min(d1.y, d2.x); // F2 is in d1.y, we're done.
       return sqrt(d1.xy);
     }
-  `
+  `,
 } satisfies ShaderChunkSet

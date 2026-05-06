@@ -114,7 +114,7 @@ export class HttpClient {
     }
   }
 
-  public async read(response: Response, signal?: AbortSignal): Promise<Uint8Array> {
+  public async read(response: Response, signal?: AbortSignal): Promise<Uint8Array<ArrayBuffer>> {
     if (!response.body) {
       return null
     }
@@ -123,8 +123,8 @@ export class HttpClient {
 
     let receivedLength = 0
     let canceled = false
-
-    while (true) {
+    let done = false
+    while (!done && !canceled) {
       if (this.disposed || signal?.aborted) {
         await reader.cancel()
         canceled = true
@@ -133,6 +133,7 @@ export class HttpClient {
 
       const chunk = await reader.read()
       if (chunk.done) {
+        done = true
         break
       }
 
@@ -146,13 +147,14 @@ export class HttpClient {
 
   public decode(
     type: ResponseType,
-    content: Uint8Array,
+    content: Uint8Array<ArrayBuffer>,
     contentType: string,
   ): string | ArrayBuffer | Blob | object | null {
     switch (type) {
-      case 'json':
+      case 'json': {
         const text = new TextDecoder().decode(content)
         return text === '' ? null : (JSON.parse(text) as object)
+      }
       case 'text':
         return new TextDecoder().decode(content)
       case 'blob':
@@ -165,7 +167,6 @@ export class HttpClient {
 
   public installCache(name: string) {
     caches.open(name)
-
   }
 }
 
@@ -173,7 +174,7 @@ export interface HttpResponse<T> {
   body: T | null
 }
 
-function concatChunks(chunks: Uint8Array[], totalLength: number): Uint8Array {
+function concatChunks(chunks: Uint8Array[], totalLength: number) {
   const chunksAll = new Uint8Array(totalLength)
   let position = 0
   for (const chunk of chunks) {

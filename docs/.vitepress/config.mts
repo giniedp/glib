@@ -1,6 +1,8 @@
-import { defineConfig } from 'vitepress'
-import { generateSidebar } from 'vitepress-sidebar'
 import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vitepress'
+import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
+import { generateSidebar } from 'vitepress-sidebar'
+
 // https://vitepress.dev/reference/site-config
 
 export default defineConfig({
@@ -12,7 +14,7 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/examples' },
+      { text: 'Examples', link: '/examples/' },
     ],
 
     // https://vitepress-sidebar.cdget.com/guide/getting-started
@@ -24,7 +26,6 @@ export default defineConfig({
       debugPrint: false,
       sortMenusByFrontmatterOrder: true,
       frontmatterOrderDefaultValue: 1000,
-
 
       // includeRootIndexFile: true,
       // includeFolderIndexFile: true,
@@ -44,6 +45,11 @@ export default defineConfig({
       alias: {
         '@components': fileURLToPath(new URL('./theme/components', import.meta.url)),
       },
+    },
+  },
+  markdown: {
+    config(md) {
+      md.use(tabsMarkdownPlugin)
     },
   },
 })

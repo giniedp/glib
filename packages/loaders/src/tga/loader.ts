@@ -1,34 +1,30 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
-import { createTextureSource, SamplerState } from '@gglib/graphics'
+import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, TextureAssetContainer } from '@gglib/content'
+import { AcquireTextureOptions, createTextureSource } from '@gglib/graphics'
 import { File } from './format'
-
-export function registerLoader() {
-  ContentLoader.registerLoader(Loader)
-}
 
 export class Loader implements AssetLoader {
   public static extensions = ['.tga']
   public static mimeTypes = ['image/x-tga']
-  public static loader = Loader
+  public static create = () => new Loader()
+  public static register(registry = ContentLoader.loaders) {
+    registry.register(Loader)
+  }
 
   public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'arraybuffer',
     })
     const options = new File(response.body).getTextureOptions()
-    return {
-      source: url,
-      textures: [
-        {
-          ...options,
-          sampler: options.generateMipmap ? { ...SamplerState.LinearWrap } : { ...SamplerState.LinearClampNoMipMap },
-          source: createTextureSource(options.source, {
-            width: options.width,
-            height: options.height,
-            format: options.format,
-          }),
-        },
-      ],
+    const texture: AcquireTextureOptions = {
+      key: url,
+      ...options,
+      source: createTextureSource(options.source, {
+        width: options.width,
+        height: options.height,
+        format: options.format,
+      }),
     }
+
+    return new TextureAssetContainer([texture])
   }
 }

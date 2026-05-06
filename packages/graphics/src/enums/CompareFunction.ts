@@ -20,6 +20,7 @@ const mapToWebGL: Record<CompareFunction, number> = {
   GreaterEqual: gl.GEQUAL,
   Always: gl.ALWAYS,
 }
+const mapFromWebGL = Object.fromEntries(Object.entries(mapToWebGL).map(([key, value]) => [value, key] as [number, CompareFunction]))
 
 const mapToWebGPU: Record<CompareFunction, GPUCompareFunction> = {
   Never: 'never',
@@ -34,6 +35,10 @@ const mapToWebGPU: Record<CompareFunction, GPUCompareFunction> = {
 
 export function compareFunctionToWebGL(func: CompareFunction): number {
   return mapToWebGL[func]
+}
+
+export function compareFunctionFromWebGL(func: number): CompareFunction {
+  return mapFromWebGL[func]
 }
 
 export function compareFunctionToWebGPU(func: CompareFunction): GPUCompareFunction {

@@ -9,8 +9,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "incremental": true,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": true,
+
     "importHelpers": true,
     "sourceMap": true,
     "inlineSourceMap": false,
@@ -20,14 +19,21 @@
     "skipLibCheck": true,
     "target": "ES6",
     "allowJs": true,
-    "typeRoots": [
-      "../node_modules",
-      "../types"
-    ],
-    "types": [
-      "@types/webgl2",
-      "gpuweb",
-      "webxr"
-    ]
+    "typeRoots": ["../node_modules", "../types"],
+    "types": ["@types/webgl2", "@webgpu/types", "@types/webxr"],
+
+    "erasableSyntaxOnly": false,
+    "verbatimModuleSyntax": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "strictNullChecks": false
   }
 }

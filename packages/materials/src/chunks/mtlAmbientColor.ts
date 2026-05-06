@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Preprocessor definitions to enable ambient lighting
@@ -56,7 +56,7 @@ export interface MtlAmbientDefs {
  * @public
  */
 export const MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef AMBIENT_COLOR_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE
@@ -67,7 +67,7 @@ export const MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef AMBIENT_COLOR
     // @binding AmbientColor
     // @widget  color
@@ -90,7 +90,7 @@ export const MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = {
     uniform mat3 uAmbientColorMapTransform;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef AMBIENT_COLOR_MAP
     vec2 getAmbientColorMapUV() {
       vec2 result = AMBIENT_COLOR_MAP_UV;
@@ -120,7 +120,7 @@ export const MTL_AMBIENT: ShaderChunkSet<MtlAmbientDefs> = {
     }
   `,
 
-  fs_shade_after: glsl`
+  fs_shade_after: /* glsl */ `
     #if defined(AMBIENT_COLOR_MAP) || defined(AMBIENT_COLOR)
     color.rgb += surface.BaseColor.rgb * getAmbientColor(uvOffset);
     #endif

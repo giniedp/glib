@@ -1,24 +1,22 @@
 import { ContentLoader } from '@gglib/content'
-import { DeviceGL, TextureSource } from '@gglib/graphics'
+import { WebglDevice, TextureSource } from '@gglib/graphics'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Loader } from './loader'
 
 import { server } from '@vitest/browser/context'
 
 describe('HDR Loader', () => {
-  let device: DeviceGL
+  let device: WebglDevice
   let content: ContentLoader
 
   beforeEach(async () => {
-    device = new DeviceGL()
+    device = new WebglDevice({})
     content = new ContentLoader(device)
     content.registerLoader(Loader)
     content.http.cacheName = 'test-cache'
   })
 
-  const tests = [
-    { asset: '/assets/Cannon_Exterior.hdr' }
-  ]
+  const tests = [{ asset: '/assets/textures/hdr/Cannon_Exterior.hdr' }]
   describe.each(tests)('$asset', ({ asset }) => {
     it('loads', async () => {
       const cache = await caches.open(content.http.cacheName)

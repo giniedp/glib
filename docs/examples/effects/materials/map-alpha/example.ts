@@ -75,8 +75,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   function frame(time: number) {
     device.cullState = CullState.CullNone
-    device.blendState = BlendState.Default
-    device.depthState = DepthState.Default
+    device.blendState = BlendState.Disabled
+    device.depthState = DepthState.Disabled
     device.resize()
     device.clear(0xff2e2620, 1)
 

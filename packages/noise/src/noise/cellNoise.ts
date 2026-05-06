@@ -1,30 +1,28 @@
-import { DistanceFunc, euclideanDistance } from '../distance'
-import { Sampler } from '../types'
+import { type DistanceFunc, euclideanDistance } from '../distance'
+import { type Sampler } from '../types'
 import { floor } from '../utils'
-
 
 // tslint:disable one-variable-per-declaration
 const poissonCount: number[] = [
-  4, 3, 1, 1, 1, 2, 4, 2, 2, 2, 5, 1, 0, 2, 1, 2,
-  2, 0, 4, 3, 2, 1, 2, 1, 3, 2, 2, 4, 2, 2, 5, 1,
-  2, 3, 2, 2, 2, 2, 2, 3, 2, 4, 2, 5, 3, 2, 2, 2,
-  5, 3, 3, 5, 2, 1, 3, 3, 4, 4, 2, 3, 0, 4, 2, 2,
-  2, 1, 3, 2, 2, 2, 3, 3, 3, 1, 2, 0, 2, 1, 1, 2,
-  2, 2, 2, 5, 3, 2, 3, 2, 3, 2, 2, 1, 0, 2, 1, 1,
-  2, 1, 2, 2, 1, 3, 4, 2, 2, 2, 5, 4, 2, 4, 2, 2,
-  5, 4, 3, 2, 2, 5, 4, 3, 3, 3, 5, 2, 2, 2, 2, 2,
-  3, 1, 1, 4, 2, 1, 3, 3, 4, 3, 2, 4, 3, 3, 3, 4,
-  5, 1, 4, 2, 4, 3, 1, 2, 3, 5, 3, 2, 1, 3, 1, 3,
-  3, 3, 2, 3, 1, 5, 5, 4, 2, 2, 4, 1, 3, 4, 1, 5,
-  3, 3, 5, 3, 4, 3, 2, 2, 1, 1, 1, 1, 1, 2, 4, 5,
-  4, 5, 4, 2, 1, 5, 1, 1, 2, 3, 3, 3, 2, 5, 2, 3,
-  3, 2, 0, 2, 1, 1, 4, 2, 1, 3, 2, 1, 2, 2, 3, 2,
-  5, 5, 3, 4, 5, 5, 2, 4, 4, 5, 3, 2, 2, 2, 1, 4,
-  2, 3, 3, 4, 2, 5, 4, 2, 4, 2, 2, 2, 4, 5, 3, 2,
+  4, 3, 1, 1, 1, 2, 4, 2, 2, 2, 5, 1, 0, 2, 1, 2, 2, 0, 4, 3, 2, 1, 2, 1, 3, 2, 2, 4, 2, 2, 5, 1, 2, 3, 2, 2, 2, 2, 2,
+  3, 2, 4, 2, 5, 3, 2, 2, 2, 5, 3, 3, 5, 2, 1, 3, 3, 4, 4, 2, 3, 0, 4, 2, 2, 2, 1, 3, 2, 2, 2, 3, 3, 3, 1, 2, 0, 2, 1,
+  1, 2, 2, 2, 2, 5, 3, 2, 3, 2, 3, 2, 2, 1, 0, 2, 1, 1, 2, 1, 2, 2, 1, 3, 4, 2, 2, 2, 5, 4, 2, 4, 2, 2, 5, 4, 3, 2, 2,
+  5, 4, 3, 3, 3, 5, 2, 2, 2, 2, 2, 3, 1, 1, 4, 2, 1, 3, 3, 4, 3, 2, 4, 3, 3, 3, 4, 5, 1, 4, 2, 4, 3, 1, 2, 3, 5, 3, 2,
+  1, 3, 1, 3, 3, 3, 2, 3, 1, 5, 5, 4, 2, 2, 4, 1, 3, 4, 1, 5, 3, 3, 5, 3, 4, 3, 2, 2, 1, 1, 1, 1, 1, 2, 4, 5, 4, 5, 4,
+  2, 1, 5, 1, 1, 2, 3, 3, 3, 2, 5, 2, 3, 3, 2, 0, 2, 1, 1, 4, 2, 1, 3, 2, 1, 2, 2, 3, 2, 5, 5, 3, 4, 5, 5, 2, 4, 4, 5,
+  3, 2, 2, 2, 1, 4, 2, 3, 3, 4, 2, 5, 4, 2, 4, 2, 2, 2, 4, 5, 3, 2,
 ]
 
-function AddSamples(ix: number, iy: number, iz: number, x: number, y: number, z: number, f: number[], distance: DistanceFunc) {
-
+function AddSamples(
+  ix: number,
+  iy: number,
+  iz: number,
+  x: number,
+  y: number,
+  z: number,
+  f: number[],
+  distance: DistanceFunc,
+) {
   ix = ix | 0
   iy = iy | 0
   iz = iz | 0
@@ -100,7 +98,7 @@ function AddSamples(ix: number, iy: number, iz: number, x: number, y: number, z:
 
       // Bump down more distant information to make room for this new point.
       for (i = f.length - 1; i > index; i--) {
-          f[i] = f[i - 1]
+        f[i] = f[i - 1]
       }
       // Insert the new point's information into the list.
       f[index] = d2
@@ -165,151 +163,151 @@ function Worley2D(x: number, y: number, F: number[], d: DistanceFunc) {
 }
 
 function Worley3D(x: number, y: number, z: number, F: number[], distance: DistanceFunc) {
-    let x2, y2, z2, mx2, my2, mz2
-    let ix, iy, iz
-    let last = F.length - 1
+  let x2, y2, z2, mx2, my2, mz2
+  let ix, iy, iz
+  let last = F.length - 1
 
-    // Initialize the F values to "huge" so they will be replaced by the
-    // first real sample tests. Note we'll be storing and comparing the
-    // SQUARED d2 from the feature points to avoid lots of slow
-    // sqrt() calls. We'll use sqrt() only on the final answer.
-    for (let i = 0; i < F.length; i++) {
-      F[i] = Number.MAX_VALUE
-    }
+  // Initialize the F values to "huge" so they will be replaced by the
+  // first real sample tests. Note we'll be storing and comparing the
+  // SQUARED d2 from the feature points to avoid lots of slow
+  // sqrt() calls. We'll use sqrt() only on the final answer.
+  for (let i = 0; i < F.length; i++) {
+    F[i] = Number.MAX_VALUE
+  }
 
-    // Find the integer cube holding the hit point
-    ix = floor(x)
-    iy = floor(y)
-    iz = floor(z)
+  // Find the integer cube holding the hit point
+  ix = floor(x)
+  iy = floor(y)
+  iz = floor(z)
 
-    // A simple way to compute the closest neighbors would be to test all
-    // boundary cubes exhaustively. This is simple with code like:
+  // A simple way to compute the closest neighbors would be to test all
+  // boundary cubes exhaustively. This is simple with code like:
 
-    // int ii, jj, kk;
-    // for (ii = -1; ii <= 1; ii++)
-    //     for (jj = -1; jj <= 1; jj++)
-    //         for (kk = -1; kk <= 1; kk++)
+  // int ii, jj, kk;
+  // for (ii = -1; ii <= 1; ii++)
+  //     for (jj = -1; jj <= 1; jj++)
+  //         for (kk = -1; kk <= 1; kk++)
   //             AddSamples(ix + ii, iy + jj, iz + kk, x, y, z, F, distance);
 
-    // for (int interpolation = 0; interpolation < F.length; interpolation++)
-    // {
-    //     F[interpolation] = (float)Math.Sqrt(F[interpolation]);
-    // }
-    // return;
+  // for (int interpolation = 0; interpolation < F.length; interpolation++)
+  // {
+  //     F[interpolation] = (float)Math.Sqrt(F[interpolation]);
+  // }
+  // return;
 
-    // But this wastes a lot of time working on cubes which are known to be
-    // too far away to matter! So we can use a more complex testing method
-    // that avoids this needless testing of distant cubes. This doubles the
-    // speed of the algorithm.
+  // But this wastes a lot of time working on cubes which are known to be
+  // too far away to matter! So we can use a more complex testing method
+  // that avoids this needless testing of distant cubes. This doubles the
+  // speed of the algorithm.
 
-    // Test the central cube for closest point(s).
-    AddSamples(ix, iy, iz, x, y, z, F, distance)
+  // Test the central cube for closest point(s).
+  AddSamples(ix, iy, iz, x, y, z, F, distance)
 
-    // We test if neighbor cubes are even POSSIBLE contributors by examining the
-    // combinations of the sum of the squared distances from the cube's lower
-    // or upper corners.
-    x2 = x - ix
-    y2 = y - iy
-    z2 = z - iz
-    mx2 = (1 - x2) * (1 - x2)
-    my2 = (1 - y2) * (1 - y2)
-    mz2 = (1 - z2) * (1 - z2)
-    x2 *= x2
-    y2 *= y2
-    z2 *= z2
+  // We test if neighbor cubes are even POSSIBLE contributors by examining the
+  // combinations of the sum of the squared distances from the cube's lower
+  // or upper corners.
+  x2 = x - ix
+  y2 = y - iy
+  z2 = z - iz
+  mx2 = (1 - x2) * (1 - x2)
+  my2 = (1 - y2) * (1 - y2)
+  mz2 = (1 - z2) * (1 - z2)
+  x2 *= x2
+  y2 *= y2
+  z2 *= z2
 
-    // Test 6 facing neighbors of center cube. These are closest and most
-    // likely to have a close feature point.
-    if (x2 < F[last]) {
-      AddSamples(ix - 1, iy, iz, x, y, z, F, distance)
-    }
-    if (y2 < F[last]) {
-      AddSamples(ix, iy - 1, iz, x, y, z, F, distance)
-    }
-    if (z2 < F[last]) {
-      AddSamples(ix, iy, iz - 1, x, y, z, F, distance)
-    }
+  // Test 6 facing neighbors of center cube. These are closest and most
+  // likely to have a close feature point.
+  if (x2 < F[last]) {
+    AddSamples(ix - 1, iy, iz, x, y, z, F, distance)
+  }
+  if (y2 < F[last]) {
+    AddSamples(ix, iy - 1, iz, x, y, z, F, distance)
+  }
+  if (z2 < F[last]) {
+    AddSamples(ix, iy, iz - 1, x, y, z, F, distance)
+  }
 
-    if (mx2 < F[last]) {
-      AddSamples(ix + 1, iy, iz, x, y, z, F, distance)
-    }
-    if (my2 < F[last]) {
-      AddSamples(ix, iy + 1, iz, x, y, z, F, distance)
-    }
-    if (mz2 < F[last]) {
-      AddSamples(ix, iy, iz + 1, x, y, z, F, distance)
-    }
+  if (mx2 < F[last]) {
+    AddSamples(ix + 1, iy, iz, x, y, z, F, distance)
+  }
+  if (my2 < F[last]) {
+    AddSamples(ix, iy + 1, iz, x, y, z, F, distance)
+  }
+  if (mz2 < F[last]) {
+    AddSamples(ix, iy, iz + 1, x, y, z, F, distance)
+  }
 
-    /* Test 12 "edge cube" neighbors if necessary. They're next closest. */
-    if (x2 + y2 < F[last]) {
-      AddSamples(ix - 1, iy - 1, iz, x, y, z, F, distance)
-    }
-    if (x2 + z2 < F[last]) {
-      AddSamples(ix - 1, iy, iz - 1, x, y, z, F, distance)
-    }
-    if (y2 + z2 < F[last]) {
-      AddSamples(ix, iy - 1, iz - 1, x, y, z, F, distance)
-    }
-    if (mx2 + my2 < F[last]) {
-      AddSamples(ix + 1, iy + 1, iz, x, y, z, F, distance)
-    }
-    if (mx2 + mz2 < F[last]) {
-      AddSamples(ix + 1, iy, iz + 1, x, y, z, F, distance)
-    }
-    if (my2 + mz2 < F[last]) {
-      AddSamples(ix, iy + 1, iz + 1, x, y, z, F, distance)
-    }
-    if (x2 + my2 < F[last]) {
-      AddSamples(ix - 1, iy + 1, iz, x, y, z, F, distance)
-    }
-    if (x2 + mz2 < F[last]) {
-      AddSamples(ix - 1, iy, iz + 1, x, y, z, F, distance)
-    }
-    if (y2 + mz2 < F[last]) {
-      AddSamples(ix, iy - 1, iz + 1, x, y, z, F, distance)
-    }
-    if (mx2 + y2 < F[last]) {
-      AddSamples(ix + 1, iy - 1, iz, x, y, z, F, distance)
-    }
-    if (mx2 + z2 < F[last]) {
-      AddSamples(ix + 1, iy, iz - 1, x, y, z, F, distance)
-    }
-    if (my2 + z2 < F[last]) {
-      AddSamples(ix, iy + 1, iz - 1, x, y, z, F, distance)
-    }
+  /* Test 12 "edge cube" neighbors if necessary. They're next closest. */
+  if (x2 + y2 < F[last]) {
+    AddSamples(ix - 1, iy - 1, iz, x, y, z, F, distance)
+  }
+  if (x2 + z2 < F[last]) {
+    AddSamples(ix - 1, iy, iz - 1, x, y, z, F, distance)
+  }
+  if (y2 + z2 < F[last]) {
+    AddSamples(ix, iy - 1, iz - 1, x, y, z, F, distance)
+  }
+  if (mx2 + my2 < F[last]) {
+    AddSamples(ix + 1, iy + 1, iz, x, y, z, F, distance)
+  }
+  if (mx2 + mz2 < F[last]) {
+    AddSamples(ix + 1, iy, iz + 1, x, y, z, F, distance)
+  }
+  if (my2 + mz2 < F[last]) {
+    AddSamples(ix, iy + 1, iz + 1, x, y, z, F, distance)
+  }
+  if (x2 + my2 < F[last]) {
+    AddSamples(ix - 1, iy + 1, iz, x, y, z, F, distance)
+  }
+  if (x2 + mz2 < F[last]) {
+    AddSamples(ix - 1, iy, iz + 1, x, y, z, F, distance)
+  }
+  if (y2 + mz2 < F[last]) {
+    AddSamples(ix, iy - 1, iz + 1, x, y, z, F, distance)
+  }
+  if (mx2 + y2 < F[last]) {
+    AddSamples(ix + 1, iy - 1, iz, x, y, z, F, distance)
+  }
+  if (mx2 + z2 < F[last]) {
+    AddSamples(ix + 1, iy, iz - 1, x, y, z, F, distance)
+  }
+  if (my2 + z2 < F[last]) {
+    AddSamples(ix, iy + 1, iz - 1, x, y, z, F, distance)
+  }
 
-    /* Final 8 "corner" cubes */
-    if (x2 + y2 + z2 < F[last]) {
-      AddSamples(ix - 1, iy - 1, iz - 1, x, y, z, F, distance)
-    }
-    if (x2 + y2 + mz2 < F[last]) {
-      AddSamples(ix - 1, iy - 1, iz + 1, x, y, z, F, distance)
-    }
-    if (x2 + my2 + z2 < F[last]) {
-      AddSamples(ix - 1, iy + 1, iz - 1, x, y, z, F, distance)
-    }
-    if (x2 + my2 + mz2 < F[last]) {
-      AddSamples(ix - 1, iy + 1, iz + 1, x, y, z, F, distance)
-    }
-    if (mx2 + y2 + z2 < F[last]) {
-      AddSamples(ix + 1, iy - 1, iz - 1, x, y, z, F, distance)
-    }
-    if (mx2 + y2 + mz2 < F[last]) {
-      AddSamples(ix + 1, iy - 1, iz + 1, x, y, z, F, distance)
-    }
-    if (mx2 + my2 + z2 < F[last]) {
-      AddSamples(ix + 1, iy + 1, iz - 1, x, y, z, F, distance)
-    }
-    if (mx2 + my2 + mz2 < F[last]) {
-      AddSamples(ix + 1, iy + 1, iz + 1, x, y, z, F, distance)
-    }
+  /* Final 8 "corner" cubes */
+  if (x2 + y2 + z2 < F[last]) {
+    AddSamples(ix - 1, iy - 1, iz - 1, x, y, z, F, distance)
+  }
+  if (x2 + y2 + mz2 < F[last]) {
+    AddSamples(ix - 1, iy - 1, iz + 1, x, y, z, F, distance)
+  }
+  if (x2 + my2 + z2 < F[last]) {
+    AddSamples(ix - 1, iy + 1, iz - 1, x, y, z, F, distance)
+  }
+  if (x2 + my2 + mz2 < F[last]) {
+    AddSamples(ix - 1, iy + 1, iz + 1, x, y, z, F, distance)
+  }
+  if (mx2 + y2 + z2 < F[last]) {
+    AddSamples(ix + 1, iy - 1, iz - 1, x, y, z, F, distance)
+  }
+  if (mx2 + y2 + mz2 < F[last]) {
+    AddSamples(ix + 1, iy - 1, iz + 1, x, y, z, F, distance)
+  }
+  if (mx2 + my2 + z2 < F[last]) {
+    AddSamples(ix + 1, iy + 1, iz - 1, x, y, z, F, distance)
+  }
+  if (mx2 + my2 + mz2 < F[last]) {
+    AddSamples(ix + 1, iy + 1, iz + 1, x, y, z, F, distance)
+  }
 
-    // We're done! Convert everything to right size scale
-    for (let i = 0; i < F.length; i++) {
-      F[i] = Math.sqrt(F[i])
-    }
+  // We're done! Convert everything to right size scale
+  for (let i = 0; i < F.length; i++) {
+    F[i] = Math.sqrt(F[i])
+  }
 
-    return
+  return
 }
 
 /**
@@ -319,7 +317,6 @@ function Worley3D(x: number, y: number, z: number, F: number[], distance: Distan
  * @param distance - The distance function to be used
  */
 export function cellNoise(distance: DistanceFunc = euclideanDistance): Sampler {
-
   return (...x: number[]) => {
     if (x.length === 1) {
       const d = [0, 0, 0]
@@ -336,5 +333,6 @@ export function cellNoise(distance: DistanceFunc = euclideanDistance): Sampler {
       Worley3D(x[0], x[1], x[2], d, distance)
       return d[0]
     }
+    return 0
   }
 }

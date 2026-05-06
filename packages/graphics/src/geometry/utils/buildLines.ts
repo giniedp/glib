@@ -4,7 +4,7 @@ import { Buffer } from '../../resources/Buffer'
 import type { GeometryBuilder } from '../GeometryBuilder'
 import { GeometryBuilderChannel } from '../GeometryBuilderChannel'
 
-export type LinePoint = [number, number, number] | ({ toArray: (buf: number[]) => void })
+export type LinePoint = [number, number, number] | { toArray: (buf: number[]) => void }
 export type Line = [LinePoint, LinePoint]
 
 export interface BuildLinesOptions {
@@ -27,13 +27,13 @@ export function buildLines(builder: GeometryBuilder, options: BuildLinesOptions)
     builder.addIndex(builder.indexCount)
     builder.addVertex({
       position: line[0],
-      color: [color.rgba],
+      color: [Color.packToRGBA(color)],
     })
 
     builder.addIndex(builder.indexCount)
     builder.addVertex({
       position: line[1],
-      color: [color.rgba],
+      color: [Color.packToRGBA(color)],
     })
   }
 }
@@ -70,12 +70,12 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
     builder.addIndex(builder.indexCount)
     builder.addVertex({
       position: p0,
-      color: [Color.Blue.rgba],
+      color: [Color.packToRGBA(Color.Blue)],
     })
     builder.addIndex(builder.indexCount)
     builder.addVertex({
       position: p1,
-      color: [Color.Blue.rgba],
+      color: [Color.packToRGBA(Color.Blue)],
     })
 
     if (tangent) {
@@ -87,12 +87,12 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
       builder.addIndex(builder.indexCount)
       builder.addVertex({
         position: p0,
-        color: [Color.Red.rgba],
+        color: [Color.packToRGBA(Color.Red)],
       })
       builder.addIndex(builder.indexCount)
       builder.addVertex({
         position: p1,
-        color: [Color.Red.rgba],
+        color: [Color.packToRGBA(Color.Red)],
       })
     }
 
@@ -105,12 +105,12 @@ export function buildVertexNormals(builder: GeometryBuilder, vertexBuffer: Buffe
       builder.addIndex(builder.indexCount)
       builder.addVertex({
         position: p0,
-        color: [Color.Green.rgba],
+        color: [Color.packToRGBA(Color.Green)],
       })
       builder.addIndex(builder.indexCount)
       builder.addVertex({
         position: p1,
-        color: [Color.Green.rgba],
+        color: [Color.packToRGBA(Color.Green)],
       })
     }
   }

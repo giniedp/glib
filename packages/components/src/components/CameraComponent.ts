@@ -1,30 +1,76 @@
 import { GameComponent, GameEntity } from '@gglib/ecs'
-import { Mat4, RAD_TO_DEGREE } from '@gglib/math'
-import { GameTransform } from 'ecs/src/GameTransform'
-import { GameLoop } from '../systems/GameLoop'
+import { Device } from '@gglib/graphics'
+import { DEGREE_TO_RAD, Mat4 } from '@gglib/math'
+import { LayerMask, type CameraData } from '@gglib/render'
+import { BehaviorComponent } from '../systems/BehaviorSystem'
+import { TransformComponent } from './TransformComponent'
+
+export type CameraType = 'perspective' | 'orthographic' | 'custom'
 
 /**
- * An abstract component that describes a camera
+ * Constructor options for {@link CameraComponent}
  *
  * @public
- * @remarks
- * ## What it does
- * Provides access to the `view` and `projection` matrices.
- *
- * ## Required Services
- * Services implementing this class usually require the `TransformComponent`
- * in order to update the `view` matrix
  */
-export abstract class CameraComponent {
+export interface CameraOptions {
   /**
-   * The component name (`'Camera'`)
+   * The camera type
+   *
+   * @remarks
+   * Defines how the projection matrix is updated
    */
-  public readonly name = 'Camera'
+  type: CameraType
 
   /**
-   * The world transform
+   * The near plane distance
    */
-  public abstract get world(): Mat4
+  near: number
+
+  /**
+   * The far plane distance
+   */
+  far: number
+
+  /**
+   * The aspect ratio
+   */
+  aspect: number
+
+  /**
+   * If enabled, the depth buffer will use reversed Z (far plane at 0, near plane at 1) to improve precision.
+   */
+  reversedZ: boolean
+
+  /**
+   * The field of view in radians
+   *
+   * @remarks
+   * Only for perspective camera type
+   */
+  perspectiveFov: number
+
+  /**
+   * The orthographic scale
+   *
+   * @remarks
+   * Only for orthographic camera type
+   */
+  orthographicScale: number
+
+  /**
+   * Custom projectin matrix
+   *
+   * @remarks
+   * Only for custom camera type
+   */
+  customProjection: Mat4
+}
+
+export class CameraComponent implements CameraData, GameComponent, BehaviorComponent {
+  /**
+   *
+   */
+  public visibilityMask: number = LayerMask.All
 
   /**
    * The view matrix that is the inverse of the world transform
@@ -40,46 +86,15 @@ export abstract class CameraComponent {
    * The premultiplied view and projection matrix
    */
   public viewProjection: Mat4 = Mat4.createIdentity()
-}
 
-/**
- * Constructor options for {@link PerspectiveCameraComponent}
- *
- * @public
- */
-export interface PerspectiveCameraOptions {
   /**
-   * The near plane distance
+   * The camera type
+   *
+   * @remarks
+   * Defines how the projection matrix is updated
    */
-  near?: number
-  /**
-   * The far plane distance
-   */
-  far?: number
-  /**
-   * The field of view in radians
-   */
-  fov?: number
-  /**
-   * The aspect ratio
-   */
-  aspect?: number
-}
+  public type: CameraType = 'perspective'
 
-/**
- * Adds perspective camera capability to an entity
- *
- * @public
- * @remarks
- * ## What it does
- * Provides access to the `view` and `projection` matrices.
- * Updates the `view` matrix according to the current state of the `TransformComponent`.
- * Updates the `projection` matrix according to the component settings.
- *
- * ## Required Services
- * - `TransformComponent`
- */
-export class PerspectiveCameraComponent extends CameraComponent implements GameComponent {
   /**
    * The near plane distance
    */
@@ -91,9 +106,9 @@ export class PerspectiveCameraComponent extends CameraComponent implements GameC
   public far: number = 1000
 
   /**
-   * The field of view in radians
+   * If enabled, the depth buffer will use reversed Z (far plane at 0, near plane at 1) to improve precision.
    */
-  public fov: number = 70 * RAD_TO_DEGREE
+  public reversedZ: boolean = false
 
   /**
    * The aspect ratio
@@ -101,9 +116,25 @@ export class PerspectiveCameraComponent extends CameraComponent implements GameC
   public aspect: number = 16 / 9
 
   /**
+   * The perspective field of view in radians
+   *
+   * @remarks
+   * Only for perspective camera type
+   */
+  public perspectiveFov: number = 70 * DEGREE_TO_RAD
+
+  /**
+   * The orthographic scale in world units
+   *
+   * @remarls
+   * Only for orthographic camera type
+   */
+  public orthographicScale: number = 1
+
+  /**
    * The entity that owns this component instance
    */
-  public entity: GameEntity
+  public readonly entity: GameEntity
 
   /**
    * The world transform of this camera.
@@ -114,145 +145,33 @@ export class PerspectiveCameraComponent extends CameraComponent implements GameC
    * use the `transform` property.
    */
   public get world() {
-    return this.entity.transform.world
+    return this.transform.world
   }
 
-  private loop: GameLoop
-  constructor(options?: PerspectiveCameraOptions) {
-    super()
-    this.setup(options)
+  private transform: TransformComponent
+  private device: Device
+
+  constructor(options?: Partial<CameraOptions>) {
+    this.configure(options)
   }
 
-  public setup(options: PerspectiveCameraOptions) {
+  public configure(options: Partial<CameraOptions>) {
+    this.type = options?.type ?? this.type
+    this.aspect = options?.aspect ?? this.aspect
     this.near = options?.near ?? this.near
     this.far = options?.far ?? this.far
-    this.fov = options?.fov ?? this.fov
-    this.aspect = options?.aspect ?? this.aspect
-  }
+    this.perspectiveFov = options?.perspectiveFov ?? this.perspectiveFov
+    this.orthographicScale = options?.orthographicScale ?? this.orthographicScale
+    this.reversedZ = options?.reversedZ ?? this.reversedZ
 
-  public initialize(entity: GameEntity): void {
-    this.entity = entity
-    this.loop = entity.provider.get(GameLoop)
-  }
-
-  public activate(): void {
-    this.loop.onUpdate.add(this.udpate)
-  }
-
-  public deactivate(): void {
-    this.loop.onUpdate.remove(this.udpate)
-  }
-
-  public destroy(): void {
-    //
-  }
-
-  /**
-   * Updates the `view`, `projection` and `viewProjection` matrices
-   */
-  public udpate = () => {
-    this.projection.initPerspectiveFieldOfView(this.fov, this.aspect, this.near, this.far)
-    Mat4.invert(this.world, this.view)
-    Mat4.premultiply(this.view, this.projection, this.viewProjection)
-  }
-}
-
-/**
- * Constructor options for {@link OrthographicCameraComponent}
- *
- * @public
- * @remarks
- * ## What it does
- * Provides access to the `view` and `projection` matrices.
- * Updates the `view` matrix according to the current state of the `TransformComponent`.
- * Updates the `projection` matrix according to the component settings.
- *
- * ## Required Services
- * - `TransformComponent`
- */
-export interface OrthographicCameraOptions {
-  /**
-   * The near plane distance
-   */
-  near?: number
-
-  /**
-   * The far plane distance
-   */
-  far?: number
-  /**
-   * The orthographic width
-   */
-  width?: number
-  /**
-   * The orthographic height
-   */
-  height?: number
-}
-
-/**
- * Adds orthographic camera capability to an entity
- *
- * @public
- */
-export class OrthographicCameraComponent extends CameraComponent implements GameComponent {
-  /**
-   * The near plane distance
-   */
-  public near: number = 0.1
-
-  /**
-   * The far plane distance
-   */
-  public far: number = 1000
-  /**
-   * The orthographic width
-   */
-  public width: number = 10
-  /**
-   * The orthographic height
-   */
-  public height: number = 10
-
-  /**
-   * The entity that owns this component instance
-   */
-  public entity: GameEntity
-
-  /**
-   * The world transform of this camera.
-   *
-   * @remarks
-   * This returns tha matrix of the `transform` property
-   * and is meat to be read only. To change the camera transform
-   * use the `transform` property.
-   */
-  public get world() {
-    return this.entity.transform.world
-  }
-
-  private loop: GameLoop
-  constructor(options?: OrthographicCameraOptions) {
-    super()
-    if (options) {
-      this.near = options.near ?? this.near
-      this.far = options.far ?? this.far
-      this.width = options.width ?? this.width
-      this.height = options.height ?? this.height
+    if (this.type === 'custom' && options.customProjection) {
+      this.projection.initFrom(options.customProjection)
     }
   }
 
-  public initialize(entity: GameEntity<GameTransform>): void {
-    this.entity = entity
-    this.loop = entity.provider.get(GameLoop)
-  }
-
-  public activate(): void {
-    this.loop.onUpdate.add(this.update)
-  }
-
-  public deactivate(): void {
-    this.loop.onUpdate.remove(this.update)
+  public initialize(): void {
+    this.transform = this.entity.component(TransformComponent)
+    this.device = this.entity.world.getSystem(Device)
   }
 
   public destroy(): void {
@@ -262,8 +181,27 @@ export class OrthographicCameraComponent extends CameraComponent implements Game
   /**
    * Updates the `view`, `projection` and `viewProjection` matrices
    */
-  public update = () => {
-    this.projection.initOrthographic(this.width, this.height, this.near, this.far)
+  public updateBehavior(): void {
+    if (this.type === 'perspective') {
+      this.projection.initPerspectiveFieldOfView(
+        this.perspectiveFov,
+        this.aspect,
+        this.near,
+        this.far,
+        this.device.ndcMinZ,
+        this.reversedZ,
+      )
+    }
+    if (this.type === 'orthographic') {
+      this.projection.initOrthographic(
+        this.orthographicScale,
+        this.orthographicScale / this.aspect,
+        this.near,
+        this.far,
+        this.device.ndcMinZ,
+        this.reversedZ,
+      )
+    }
     Mat4.invert(this.world, this.view)
     Mat4.premultiply(this.view, this.projection, this.viewProjection)
   }

@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control diffuse color contribution.
@@ -54,7 +54,7 @@ export interface MtlBaseDefs {
  * @public
  */
 export const MTL_BASE: ShaderChunkSet<MtlBaseDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef BASE_COLOR_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE
@@ -65,7 +65,7 @@ export const MTL_BASE: ShaderChunkSet<MtlBaseDefs> = {
       #endif
     #endif
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
     #ifdef BASE_COLOR
     // @binding BaseColor
     // @widget  color
@@ -89,7 +89,7 @@ export const MTL_BASE: ShaderChunkSet<MtlBaseDefs> = {
     #endif
 
   `,
-  fs_functions: glsl`
+  fs_functions: /* glsl */ `
     #ifdef BASE_COLOR_MAP
     vec2 getBaseColorMapUV() {
       vec2 result = BASE_COLOR_MAP_UV;
@@ -127,7 +127,7 @@ export const MTL_BASE: ShaderChunkSet<MtlBaseDefs> = {
       return color;
     }
   `,
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     surface.BaseColor = getBaseColor(uvOffset);
   `,
 }

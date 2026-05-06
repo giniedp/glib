@@ -5,8 +5,13 @@ order: 101
 
 # Loading Textures
 
-<Example />
+:::tabs
+== WebGL
+<Example platform="webgl2" />
+== WebGPU
+<Example platform="webgpu" />
+:::
 
-## Code
+# Code
 
 <ExampleCode />

@@ -1,214 +1,125 @@
-import {
-  CullMode,
-  FrontFace,
-} from './../enums'
-import { hasOwnProperty } from '@gglib/utils'
+import type { CullMode, FrontFace } from '../enums'
+import type { StateNames } from './utils'
 
-const params: Array<keyof CullStateParams> = [
-  'cullMode',
-  'enable',
-  'frontFace',
-]
+export type CullStateName = StateNames<typeof CullState, CullState>
 
-/**
- * Options to be converted into {@link ICullState} via {@link CullState.convert}
- *
- * @public
- */
 export interface CullStateOptions {
-  frontFace?: FrontFace
-  cullMode?: CullMode
-  enable?: boolean
-}
-
-/**
- * An object with all cull state parameters
- *
- * @public
- */
-export interface ICullState {
   frontFace: FrontFace
   cullMode: CullMode
   enable: boolean
 }
 
-/**
- * An object with all cull state parameters
- *
- * @public
- */
-export type CullStateParams = Partial<ICullState>
+const STATE = Symbol('Cull State')
+const STATE_CACHE: Record<string, CullState> = {}
+let idCounter = 1
 
 /**
  * @public
  */
-export class CullState implements CullStateParams {
-
-  protected $frontFace: FrontFace = 'CCW'
-  protected $cullMode: CullMode = 'Back'
-  protected $enable: boolean = false
-  protected $hasChanged: boolean = false
-  protected $changes: CullStateParams = {}
-
-  public get isDirty() {
-    return this.$hasChanged
-  }
-
+export class CullState implements CullStateOptions {
   /**
-   * Enables or disables the culling
+   * Face culling disabled. Both front and back faces are rendered.
    */
-  public get enable(): boolean {
-    return this.$enable
-  }
-  public set enable(value: boolean) {
-    if (this.$enable !== value) {
-      this.$enable = value
-      this.$changes.enable = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the front face
-   */
-  public get frontFace(): FrontFace {
-    return this.$frontFace
-  }
-  public set frontFace(value: FrontFace) {
-    if (this.$frontFace !== value) {
-      this.$frontFace = value
-      this.$changes.frontFace = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Gets and sets the cull mode
-   */
-  public get cullMode(): CullMode {
-    return this.$cullMode
-  }
-  public set cullMode(value: CullMode) {
-    if (this.$cullMode !== value) {
-      this.$cullMode = value
-      this.$changes.cullMode = value
-      this.$hasChanged = true
-    }
-  }
-
-  /**
-   * Assigns multiple parameters to the current state
-   */
-  public assign(state: CullStateParams): this {
-    for (let key of params) {
-      if (hasOwnProperty(state, key)) { this[key as any] = state[key] }
-    }
-    return this
-  }
-
-  /**
-   * Uploads all changes to the GPU
-   *
-   * @param state - State changes to be assigned before committing
-   */
-  public commit(state?: CullStateParams): this {
-    if (state) { this.assign(state) }
-    if (!this.$hasChanged) { return this }
-    this.commitChanges(this.$changes)
-    this.clearChanges()
-    return this
-  }
-
-  /**
-   * Creates a copy of this state state
-   */
-  public copy(): ICullState
-  /**
-   * Creates a copy of this state and writes it into the target object
-   *
-   * @param target - Where the state should be written to
-   */
-  public copy<T>(target: T): T & ICullState
-  public copy(out: any= {}): ICullState {
-    for (let key of params) { out[key] = this[key] }
-    return out
-  }
-
-  protected commitChanges(changes: Partial<ICullState>) {
-    //
-  }
-
-  protected clearChanges() {
-    this.$hasChanged = false
-    for (let key of params) { this.$changes[key as any] = undefined }
-  }
-
-  /**
-   * Converts a state name or options into {@link ICullState}
-   *
-   * @param state - The state name or state options to convert
-   */
-  public static convert(state: string | CullStateOptions): CullStateParams {
-    if (typeof state === 'string') {
-      return CullState[state] ? {...CullState[state]} : null
-    }
-    if (!state) {
-      return null
-    }
-
-    const result: CullStateParams = {}
-    for (const key of params) {
-      if (!(key in state)) {
-        continue
-      }
-      switch (key) {
-        case 'cullMode':
-          result[key] = state[key]
-          break
-        case 'frontFace':
-          result[key] = state[key]
-          break
-        default:
-          result[key] = state[key]
-          break
-      }
-    }
-    return result
-  }
-
-  /**
-   * A default state with culling disabled
-   */
-  public static Default = Object.freeze<ICullState>({
+  public static Disabled = CullState.cached({
     enable: false,
     cullMode: 'Back',
-    frontFace: 'CW',
+    frontFace: 'CCW',
   })
 
   /**
-   * A state with culling disabled
+   * Face culling disabled. Both front and back faces are rendered.
    */
-  public static CullNone = Object.freeze<ICullState>({
+  public static None = CullState.cached({
     enable: false,
     cullMode: 'Back',
-    frontFace: 'CW',
+    frontFace: 'CCW',
   })
 
   /**
-   * A state with culling clock wise faces enabled
+   * Back-face culling enabled.
+   * Triangles with clockwise winding are culled (front faces are CCW).
    */
-  public static CullClockWise = Object.freeze<ICullState>({
+  public static CullBack = CullState.cached({
     enable: true,
     cullMode: 'Back',
     frontFace: 'CCW',
   })
 
   /**
-   * A state with culling counter clock wise faces enabled
+   * Front-face culling enabled.
+   * Triangles with counter-clockwise winding are culled (front faces are CCW).
    */
-  public static CullCounterClockWise = Object.freeze<ICullState>({
+  public static CullFront = CullState.cached({
+    enable: true,
+    cullMode: 'Front',
+    frontFace: 'CCW',
+  })
+
+  /**
+   * Back-face culling with clockwise winding as front faces.
+   */
+  public static readonly CullBackCW = CullState.cached({
     enable: true,
     cullMode: 'Back',
     frontFace: 'CW',
   })
+
+  /**
+   * Front-face culling with clockwise winding as front faces.
+   */
+  public static readonly CullFrontCW = CullState.cached({
+    enable: true,
+    cullMode: 'Front',
+    frontFace: 'CW',
+  })
+
+  private [STATE]: CullStateOptions
+
+  public get enable(): boolean {
+    return this[STATE].enable
+  }
+
+  public readonly id = idCounter++
+
+  public get frontFace(): FrontFace {
+    return this[STATE].frontFace
+  }
+
+  public get cullMode(): CullMode {
+    return this[STATE].cullMode
+  }
+
+  private constructor(options: CullStateOptions) {
+    this[STATE] = options
+  }
+
+  public static get(state: CullStateName | Partial<CullStateOptions>): CullState {
+    if (typeof state === 'string') {
+      return CullState[state] ?? null
+    }
+
+    return CullState.cached(createOptions(state))
+  }
+
+  private static cached(options: CullStateOptions): CullState {
+    const key = createKey(options)
+    let state = STATE_CACHE[key]
+    if (!state) {
+      state = new CullState(options)
+      STATE_CACHE[key] = state
+    }
+    return state
+  }
+}
+
+function createOptions(options: Partial<CullStateOptions>): CullStateOptions {
+  return {
+    enable: options?.enable ?? false,
+    cullMode: options?.cullMode ?? 'Back',
+    frontFace: options?.frontFace ?? 'CCW',
+  }
+}
+
+function createKey(options: CullStateOptions): string {
+  return [options.enable, options.cullMode, options.frontFace].join(',')
 }

@@ -1,4 +1,4 @@
-import { TextureImageOptions } from '@gglib/graphics'
+import { TextureOptions } from '@gglib/graphics'
 import { BinaryReader } from '@gglib/utils'
 
 export interface Header {
@@ -153,7 +153,7 @@ export class File {
    * Reads TGA data and converts to RGBA ImageData (8bit per channel)
    */
   public getImageData(): ImageData {
-    let data: Uint8ClampedArray
+    let data: Uint8ClampedArray<ArrayBuffer>
     const format = 'ui8888'
     switch (this.header.pixelDepth) {
       case 8:
@@ -187,7 +187,7 @@ export class File {
     })
   }
 
-  public getTextureOptions(): TextureImageOptions {
+  public getTextureOptions(): TextureOptions {
     const pixelDepth = this.header.pixelDepth
     if (this.isGray) {
       if (pixelDepth === 8) {
@@ -330,7 +330,7 @@ export class File {
   /**
    * Decodes 16bit grayscale {@link imageData} into given format
    */
-  public decode_gray16(format: 'ui8888' | 'ui888'): Uint8ClampedArray
+  public decode_gray16(format: 'ui8888' | 'ui888'): Uint8ClampedArray<ArrayBuffer>
   public decode_gray16(format: 'ui8888' | 'ui888' | 'f16' | 'f32' | 'ui16'): any {
     const input = this.imageData
     switch (format) {

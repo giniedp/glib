@@ -5,17 +5,14 @@ import {
   Color,
   CullState,
   DepthState,
-  LightType,
   Mesh,
-  SamplerState,
   TextureImage,
   boxLinesMesh,
   createDevice,
   cubeGeometry,
-  textureSourceFromImageUrl,
 } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
-import { GLTF, KTX } from '@gglib/loaders'
+import { GLTF, HDR, KTX } from '@gglib/loaders'
 import { AutoMaterial, LightParams, SkyboxMaterial } from '@gglib/materials'
 import { BoundingSphere, DEGREE_TO_RAD, Mat4, Transform, Vec3 } from '@gglib/math'
 import { Model, NodeData } from '@gglib/model'
@@ -34,15 +31,10 @@ type GltfIndexModel = {
   }
 }
 const PANORAMA_IMAGES = {
-  foorprintCourtJPG: {
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.jpg',
-  },
-  foorprintCourtHDR: {
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Environments/footprint_court.hdr',
-  },
-  gatonaParkWalkway1Panorama4Kx2K: {
-    url: 'https://playground.babylonjs.com/textures/GatonaParkWalkway1_Panorama_4Kx2K.jpg',
-  },
+  Court: '/textures/hdr/footprint_court.hdr',
+  Exterior: '/textures/hdr/cannon_exterior.hdr',
+  Overcast: '/textures/hdr/overcast_puresky.hdr',
+  Sky: '/textures/Grey_Sky.png',
 }
 
 TextureImage.crossOrigin = 'anonymous'
@@ -52,6 +44,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
   content.registerLoader(KTX.Loader)
+  content.registerLoader(HDR.Loader)
   content.registerMaterial({
     name: 'BasicEffect',
     type: AutoMaterial,
@@ -62,7 +55,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   const iblSampler = new IBLSamplerEffect(device)
-  content.loadTexture(PANORAMA_IMAGES.foorprintCourtJPG.url).then((texture) => {
+  content.loadTexture(PANORAMA_IMAGES.Exterior).then((texture) => {
     console.log('Loaded panorama texture', texture)
     iblSampler.panoramaInput = texture
     iblSampler.needsUpdate = true
@@ -81,10 +74,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     parts: [cubeGeometry(device)],
     materials: [
       new SkyboxMaterial(device, {
-        parameters: {
+        properies: {
           Intensity: 1.0,
           Rotation: 0,
-          Blur: 0.25,
+          Blur: 1,
           MipCount: iblSampler.lowestMipLevel + 1,
         },
       }),
@@ -92,6 +85,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   })
 
   content.fetch<GltfIndex>(indexFile, { responseType: 'json' }).then((response) => {
+    const models: Record<string, string> = {}
     TweakUi.mount(tools, (ui) => {
       ui.object('GPU Stats', stats)
       ui.accordion(() => {
@@ -105,9 +99,19 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
                 })
               })
               ui.container(() => {
-                Object.entries(mdl.variants).forEach(([name, path]) => {
-                  ui.button(name, { onClick: () => loadModel(`${baseUrl}/${mdl.name}/${name}/${path}`) })
-                })
+                for (const [name, path] of Object.entries(mdl.variants)) {
+                  const key = `${mdl.name}_${name}`
+                  const url = `${baseUrl}/${mdl.name}/${name}/${path}`
+                  models[key] = url
+                  ui.button(name, {
+                    onClick: () => {
+                      const route = new URL(location.href)
+                      route.searchParams.set('model', key)
+                      history.pushState({}, '', route.toString())
+                      loadModel(models[key])
+                    },
+                  })
+                }
                 ui.button('open in github', { onClick: () => window.open(`${githubUrl}/${mdl.name}`, '_blank') })
               })
             })
@@ -115,6 +119,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         }
       })
     })
+
+    const url = new URL(location.href)
+    const model = url.searchParams.get('model')
+    if (model && model in models) {
+      loadModel(models[model])
+    }
   })
 
   let model: Model | null = null
@@ -243,9 +253,9 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     iblSampler.update()
     updateCamera(time)
 
-    device.blendState = BlendState.Default
+    device.blendState = BlendState.Disabled
     device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
+    device.depthState = DepthState.Disabled
     device.clear(0xff2e2620, 1.0)
     drawSkybox()
 

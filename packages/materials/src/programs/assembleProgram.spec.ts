@@ -1,4 +1,4 @@
-import { Device, DeviceGL } from '@gglib/graphics'
+import { Device, WebglDevice } from '@gglib/graphics'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { materialProgram } from './assembleProgram'
 
@@ -6,29 +6,29 @@ describe('@gglib/materials/assembleProgram', () => {
   let device: Device
 
   beforeEach(() => {
-    device = new DeviceGL()
+    device = new WebglDevice({})
   })
 
   it('default is valid', async () => {
-    const program = device.createProgram(materialProgram({}))
-    const linked = await program.whenReady
+    const program = device.createShaderModule(materialProgram({}))
+    const linked = await program.ready
     expect(program.isReady).toBe(true)
     expect(linked).toBe(true)
   })
 
   it('ALPHA_CLIP is valid', async () => {
-    const program = device.createProgram(
+    const program = device.createShaderModule(
       materialProgram({
         ALPHA_CLIP: true,
       }),
     )
-    const linked = await program.whenReady
+    const linked = await program.ready
     expect(program.isReady).toBe(true)
     expect(linked).toBe(true)
   })
 
   it('pbr is valid', async () => {
-    const program = device.createProgram(
+    const program = device.createShaderModule(
       materialProgram({
         // ALPHA_CLIP: false,
         // BASE_COLOR: false,
@@ -45,7 +45,7 @@ describe('@gglib/materials/assembleProgram', () => {
         // SPECULAR_COLOR_MAP: false,
       }),
     )
-    const linked = await program.whenReady
+    const linked = await program.ready
     expect(program.isReady).toBe(true)
     expect(linked).toBe(true)
   })

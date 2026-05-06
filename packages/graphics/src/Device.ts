@@ -1,576 +1,231 @@
-import { PrimitiveType } from './enums'
-import {
+import type { NdcMinZ } from '@gglib/math'
+import type { EventChannel } from '@gglib/utils'
+import type { Capabilities } from './Capabilities'
+import { RenderEncoder } from './RenderEncoder'
+import type {
+  AcquireTextureOptions,
   Buffer,
   BufferOptions,
-  DepthBuffer,
   DepthBufferOptions,
-  Shader,
-  ShaderOptions,
-  ShaderProgram,
-  ShaderProgramOptions,
+  DeviceOutput,
+  ShaderModule,
+  ShaderModuleOptions,
   Texture,
-  TextureImage,
-  TextureImageOptions,
   TextureOptions,
+  VertexBuffer,
+  VertexBufferOptions,
 } from './resources'
-import {
-  BlendState,
-  BlendStateParams,
-  CullState,
-  CullStateParams,
-  DepthState,
-  DepthStateParams,
-  ICullState,
-  OffsetState,
-  OffsetStateParams,
-  SamplerState,
-  SamplerStateParams,
-  ScissorState,
-  ScissorStateParams,
-  StencilState,
-  StencilStateParams,
-  TextureUnitState,
-  VertexAttribArrayState,
-  ViewportState,
-  ViewportStateParams,
-} from './states'
-
-import { Capabilities } from './Capabilities'
-import { Color } from './Color'
-import { Effect, EffectOptions } from './Effect'
-import { VertexBuffer, VertexBufferOptions } from './resources/VertexBuffer'
 import { Scheduler } from './Scheduler'
-import { SpriteBatch } from './SpriteBatch'
-import { AttributeSemantic, VertexLayout } from './VertexLayout'
 
 /**
- * Describes the Graphics Device
- *
- * @remarks
- * The {@link Device} class ties all concepts of the Graphics package together.
- * It's a central component for rendering geometries. It holds system state variables and
- * is able to create resources such as buffers, shaders, textures and render targets.
- *
+ * Abstract graphics device providing a unified API over WebGPU/WebGL2 for resource management,
+ * command encoding, and presentation.
  * @public
  */
-export abstract class Device<T = unknown> {
+export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext | unknown = unknown> {
   /**
-   * The html canvas element
-   * see {@link https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement | HTMLCanvasElement}
+   * Minimum normalized device coordinate (NDC) Z value used by the backend
+   * @public
    */
-  public readonly canvas: HTMLCanvasElement
+  public abstract readonly ndcMinZ: NdcMinZ
 
   /**
-   * The rendering context.
+   * Rendering target canvas
+   * @public
    */
-  public readonly context: T
+  public abstract readonly canvas: HTMLCanvasElement | OffscreenCanvas
 
   /**
-   * A collection of capabilities of the currently running graphics unit.
+   * Underlying graphics context (WebGPU or WebGL2)
+   * @public
    */
-  public abstract capabilities: Capabilities
+  public abstract readonly context: C
 
   /**
-   * Collection of assigned textures
-   *
-   * @remarks
-   * The number of texture units is limited by {@link Capabilities.maxTextureUnits}
+   * Task scheduler for deferred GPU work and resource lifecycle
+   * @public
    */
-  public readonly textures: TextureImage[]
+  public abstract readonly scheduler: Scheduler
 
   /**
-   * Collection of {@link SamplerState}.
-   *
-   * @remarks
-   * The number of sampler states is limited by {@link Capabilities.maxTextureUnits}
+   * Indicates a WebGL2 backend
+   * @public
    */
-  public readonly textureUnits: TextureUnitState[] = []
+  public abstract readonly isWebGL2: boolean
 
   /**
-   * A simple task scheduler that can be used for poll tasks or even game loops
-   *
-   * @remarks
-   * Primarily used for scheduling poll tasks for shader compilation results or texture uploads.
-   * Can be used for game loops as well, yet it's not optimized for that purpose.
+   * Indicates a WebGPU backend
+   * @public
    */
-  public readonly scheduler = new Scheduler()
+  public abstract readonly isWebGPU: boolean
 
   /**
-   * Gets a copy of the cull state parameters
-   * Updates the cull state parameters and commits the state to the GPU
+   * True when the device is fully initialized and usable
+   * @public
    */
-  public get cullState() {
-    return this._cullState.copy()
-  }
-  public set cullState(v: CullStateParams) {
-    this._cullState.commit(v)
-  }
+  public abstract readonly isReady: boolean
 
   /**
-   * Copies the current cull state parameters to a target object.
-   *
-   * @remarks
-   * This is a garbage free way to get the current cull state parameters.
+   * Resolves when the first device initialization completes
+   * @public
    */
-  public getCullState(target: Partial<ICullState>): CullStateParams {
-    return this._cullState.copy(target)
-  }
+  public abstract readonly ready: Promise<this>
 
   /**
-   * Gets a copy of the blend state parameters.
-   * Updates the blend state parameters and commits the state to the GPU.
+   * Fired when the graphics context is lost
+   * @public
    */
-  public get blendState() {
-    return this._blendState.copy()
-  }
-  public set blendState(v: BlendStateParams) {
-    this._blendState.commit(v)
-  }
+  public abstract readonly onContextLost: EventChannel<void>
 
   /**
-   * Copies the current blend state parameters to a target object.
+   * Fired when the graphics context is restored
+   * @public
    */
-  public getBlendState(target: Partial<BlendStateParams>): BlendStateParams {
-    return this._blendState.copy(target)
-  }
+  public abstract readonly onContextRestored: EventChannel<void>
 
   /**
-   * Gets a copy of the depth state parameters
-   * Updates the depth state parameters and commits the state to the GPU
+   * Reported device and feature capabilities
+   * @public
    */
-  public get depthState() {
-    return this._depthState.copy()
-  }
-  public set depthState(v: DepthStateParams) {
-    this._depthState.commit(v)
-  }
+  public abstract readonly capabilities: Capabilities
 
   /**
-   * Copies the current depth state parameters to a target object.
+   * Fallback texture used when no texture is bound
+   * @public
    */
-  public getDepthState(target: Partial<DepthStateParams>): DepthStateParams {
-    return this._depthState.copy(target)
-  }
+  public abstract readonly defaultTexture: Texture
 
   /**
-   * Gets a copy of the offset state parameters
-   * Updates the offset state parameters and commits the state to the GPU
+   * Default render pass encoder targeting the current output
+   * @public
    */
-  public get offsetState() {
-    return this._offsetState.copy()
-  }
-  public set offsetState(v: OffsetStateParams) {
-    this._offsetState.commit(v)
-  }
+  public abstract readonly renderPass: RenderEncoder
 
   /**
-   * Copies the current offset state parameters to a target object.
+   * Presentation output (swap chain / framebuffer abstraction)
+   * @public
    */
-  public getOffsetState(target: Partial<OffsetStateParams>): OffsetStateParams {
-    return this._offsetState.copy(target)
-  }
+  public abstract readonly output: DeviceOutput
 
   /**
-   * Gets a copy of the stencil state parameters
-   * Updates the stencil state parameters and commits the state to the GPU
+   * Resets render state, executes the callback with a render encoder, and submits pending commands
+   * @public
    */
-  public get stencilState() {
-    return this._stencilState.copy()
-  }
-  public set stencilState(v: StencilStateParams) {
-    this._stencilState.commit(v)
-  }
+  public abstract render(renderFn: (pass: RenderEncoder) => void): void
 
   /**
-   * Copies the current stencil state parameters to a target object.
+   * Resets compute state, executes the callback with a compute encoder, and submits pending commands
+   * @public
    */
-  public getStencilState(target: Partial<StencilStateParams>): StencilStateParams {
-    return this._stencilState.copy(target)
-  }
+  public abstract compute(computeFn: (pass: unknown) => void): void
 
   /**
-   * Gets a copy of the scissor state parameters
-   * Updates the scissor state parameters and commits the state to the GPU
-   */
-  public get scissorState() {
-    return this._scissorState.copy()
-  }
-  public set scissorState(v: ScissorStateParams) {
-    this._scissorState.commit(v)
-  }
-
-  /**
-   * Copies the current scissor state parameters to a target object.
-   */
-  public getScissorState(target: Partial<ScissorStateParams>): ScissorStateParams {
-    return this._scissorState.copy(target)
-  }
-
-  /**
-   * Gets a copy of the viewport state parameters
-   * Updates the viewport state parameters and commits the state to the GPU
-   */
-  public get viewportState() {
-    return this._viewportState.copy()
-  }
-  public set viewportState(v: ViewportStateParams) {
-    this._viewportState.commit(v)
-  }
-
-  public abstract canRenderFloat: boolean
-  public abstract canRenderHalf: boolean
-  public abstract canFilterFloat: boolean
-  public abstract canFilterHalf: boolean
-
-  /**
-   * Copies the current viewport state parameters to a target object.
-   */
-  public getViewportState(target: Partial<ViewportStateParams>): ViewportStateParams {
-    return this._viewportState.copy(target)
-  }
-
-  public get defaultTexture(): Texture {
-    if (!this.defaultTextureInstance) {
-      this.defaultTextureInstance = this.createTexture({
-        name: 'default2x2',
-        sampler: SamplerState.PointWrap,
-        type: 'Texture2D',
-        // prettier-ignore
-        source: [
-          0x0f, 0x0f, 0x0f, 0xff,
-          0x00, 0x00, 0x00, 0xff,
-          0x00, 0x00, 0x00, 0xff,
-          0x0f, 0x0f, 0x0f, 0xff,
-        ],
-        width: 2,
-        height: 2,
-        format: 'RGBA8_UNORM',
-      })
-    }
-    return this.defaultTextureInstance
-  }
-
-  protected abstract _indexBuffer: Buffer
-  protected abstract _vertexBuffer: VertexBuffer
-  protected abstract _program: ShaderProgram
-  protected abstract _cullState: CullState
-  protected abstract _blendState: BlendState
-  protected abstract _depthState: DepthState
-  protected abstract _offsetState: OffsetState
-  protected abstract _stencilState: StencilState
-  protected abstract _scissorState: ScissorState
-  protected abstract _viewportState: ViewportState
-
-  protected quadIndexBuffer: Buffer
-  protected quadVertexBuffer: VertexBuffer
-  protected quadVertexBufferFlipped: VertexBuffer
-
-  protected $vertexAttribArrayState: VertexAttribArrayState
-  protected registeredDepthBuffers: DepthBuffer[] = []
-
-  protected defaultTextureInstance: Texture
-
-  public drawCalls = 0
-  public get driverInfo(): string {
-    return ''
-  }
-
-  public init(): Promise<void> {
-    return Promise.resolve()
-  }
-
-  /**
-   * Clears the color, depth and stencil buffers
-   */
-  public abstract clear(color?: number | number[] | Color, depth?: number, stencil?: number): this
-
-  /**
-   * Renders geometry using the current index buffer, indexing vertices of current vertex buffer.
-   */
-  public abstract drawIndexedPrimitives(
-    primitiveType?: PrimitiveType,
-    elementOffset?: number,
-    elementCount?: number,
-  ): this
-
-  public abstract drawInstancedPrimitives(
-    instanceCount?: number,
-    primitiveType?: PrimitiveType,
-    offset?: number,
-    count?: number,
-  ): this
-
-  /**
-   * Renders geometry defined by current vertex buffer and the given primitive type.
-   */
-  public abstract drawPrimitives(primitiveType?: PrimitiveType, offset?: number, count?: number): this
-
-  /**
-   * Draws a full screen quad with the [0,0] texture coordinate starting at the bottom left.
-   * @param flipY - if true, then the [0,0] texture coordinate starts in the top left.
-   *
-   */
-  public drawQuad(flipY?: boolean): this {
-    this.quadIndexBuffer ||= this.createIndexBuffer({
-      data: [0, 3, 1, 0, 2, 3],
-      dataType: 'uint16',
-    })
-    this.quadVertexBufferFlipped ||= this.createVertexBuffer([
-      {
-        // prettier-ignore
-        data: [
-          -1,  1, 0, /* uv */ 0, 0,
-           1,  1, 0, /* uv */ 1, 0,
-          -1, -1, 0, /* uv */ 0, 1,
-           1, -1, 0, /* uv */ 1, 1
-        ],
-        layout: this.createVertexLayout(['position', 'texture']),
-        dataType: 'float32',
-      },
-    ])
-    this.quadVertexBuffer ||= this.createVertexBuffer([
-      {
-        // prettier-ignore
-        data: [
-          -1,  1, 0, /* uv */ 0, 1,
-           1,  1, 0, /* uv */ 1, 1,
-          -1, -1, 0, /* uv */ 0, 0,
-           1, -1, 0, /* uv */ 1, 0,
-        ],
-        layout: this.createVertexLayout(['position', 'texture']),
-        dataType: 'float32',
-      },
-    ])
-
-    this.indexBuffer = this.quadIndexBuffer
-    this.vertexBuffer = flipY ? this.quadVertexBufferFlipped : this.quadVertexBuffer
-    this.drawIndexedPrimitives()
-    this.indexBuffer = null
-    this.vertexBuffer = null
-    return this
-  }
-
-  /**
-   * If the display size of the canvas is controlled with CSS this will resize the
-   * canvas to match the CSS dimensions in order to avoid stretched and blurry image.
-   *
-   * @param ratio - The pixel ratio for retina displays
-   */
-  public abstract resize(pixelRatio?: number): this
-  /**
-   *
-   */
-  public abstract reset(): this
-
-  /**
-   * Sets or un sets a single render target
-   */
-  public setRenderTarget(texture: TextureImage | null) {
-    this.setRenderTargets(texture)
-  }
-
-  /**
-   * Sets or un sets multiple render targets
-   */
-  public abstract setRenderTargets(...targets: TextureImage[]): this
-
-  /**
-   * Gets the currently active vertex buffer
-   */
-  public abstract get vertexBuffer(): VertexBuffer
-
-  /**
-   * Sets and activates a buffer as the currently active vertex buffer
-   */
-  public abstract set vertexBuffer(buffer: VertexBuffer)
-
-  /**
-   * Gets the currently active index buffer
-   */
-  public abstract get indexBuffer(): Buffer
-
-  /**
-   * Sets and activates a buffer as the currently active index buffer
-   */
-  public abstract set indexBuffer(buffer: Buffer)
-
-  /**
-   * Gets the currently active shader program
-   */
-  public abstract get program(): ShaderProgram
-
-  /**
-   * Sets and activates a program as the currently active program
-   */
-  public abstract set program(program: ShaderProgram)
-
-  /**
-   * Gets the current width of the drawing buffer
-   */
-  public abstract get drawingBufferWidth(): number
-
-  /**
-   * Gets the current height of the drawing buffer
-   */
-
-  public abstract get drawingBufferHeight(): number
-  /**
-   * Gets the aspect ratio of the drawing buffer
-   */
-  public abstract get drawingBufferAspectRatio(): number
-
-  /**
-   * Creates a new Buffer of type IndexBuffer. Overrides the type option
-   * before it calls the Buffer constructor with given options.
+   * Creates an index buffer resource
+   * @public
    */
   public abstract createIndexBuffer(options: BufferOptions): Buffer
 
   /**
-   * Creates a new Buffer of type VertexBuffer. Overrides the type option
-   * before it calls the Buffer constructor with given options.
+   * Creates a vertex buffer resource
+   * @public
    */
   public abstract createVertexBuffer(options: VertexBufferOptions): VertexBuffer
 
   /**
-   * Creates a new Shader
+   * Creates a shader module resource
+   * @public
    */
-  public abstract createShader(options: ShaderOptions): Shader
+  public abstract createShaderModule(options: ShaderModuleOptions): ShaderModule
 
   /**
-   *
+   * Creates a standalone texture resource
+   * @public
    */
-  public createVertexShader(options: Partial<ShaderOptions> = {}): Shader {
-    return this.createShader({
-      type: 'VertexShader',
-      ...options,
-    })
-  }
+  public abstract createTexture(options: TextureOptions): Texture
 
   /**
-   *
+   * Creates a render target texture
+   * @public
    */
-  public createFragmentShader(options: Partial<ShaderOptions> = {}): Shader {
-    return this.createShader({
-      type: 'FragmentShader',
-      ...options,
-    })
-  }
-  /**
-   * Creates a new ShaderProgram. Calls the ShaderProgram constructor with given options.
-   */
-  public abstract createProgram(options: ShaderProgramOptions): ShaderProgram
+  public abstract createRenderTarget(options: TextureOptions): Texture
 
   /**
-   * Creates a new Texture
+   * Creates a depth/stencil render target texture
+   * @public
    */
-  public abstract createTexture(options?: TextureOptions): Texture
+  public abstract createDepthTarget(options: DepthBufferOptions): Texture
 
   /**
-   * Creates a new TextureImage
+   * Acquires a pooled shader module identified by the source code and compilation options.
+   * Use `createShaderModule` for exclusive ownership.
+   * @public
    */
-  public abstract createTextureImage(options?: TextureImageOptions): TextureImage
+  public abstract acquireShaderModule(options: ShaderModuleOptions): ShaderModule
 
   /**
-   * Creates a new Texture that can be used as a render target. Ensures that
-   * the depthFormat option and a reasonable sampler are set.
+   * Acquires a pooled texture identified by `options.key`.
+   * Use `createTexture`/`createRenderTarget` for exclusive ownership.
+   * @public
    */
-  public abstract createRenderTarget(options?: TextureOptions): Texture
+  public abstract acquireTexture(options: AcquireTextureOptions): Texture
 
   /**
-   * Creates a new sampler state object
+   * Releases all GPU resources owned by this device
+   * @public
    */
-  public abstract createSamplerState(options?: SamplerStateParams): SamplerState
+  public abstract dispose(): void
+
+  public abstract stats<T>(out?: T): T & DeviceStats
 
   /**
-   * Creates a depth buffer
+   * Resizes the output to the given size or derives it from canvas dimensions and device pixel ratio
+   * @public
    */
-  public abstract createDepthBuffer(options: DepthBufferOptions): DepthBuffer
-  /**
-   * Creates a new sprite batch.
-   */
-  public createSpriteBatch(): SpriteBatch {
-    return new SpriteBatch(this)
-  }
-  /**
-   * Creates a vertex layout object from name
-   */
-  public createVertexLayout(semantic: AttributeSemantic[]): any {
-    return VertexLayout.create(semantic)
-  }
-
-  /**
-   * Creates an Effect with given options
-   */
-  public createEffect(options: EffectOptions): Effect {
-    return new Effect(this, options)
-  }
-
-  /**
-   * used internally when a depth buffer is created
-   *
-   * @internal
-   */
-  public registerDepthBuffer(buffer: DepthBuffer) {
-    let list = this.registeredDepthBuffers
-    let index = list.indexOf(buffer)
-    if (index >= 0) {
-      return
-    }
-    for (let i in list) {
-      if (list[i] == null) {
-        list[i] = buffer
-        return
+  public resize(width?: number, height?: number): void {
+    if (width == null || height == null) {
+      // autoszie
+      if (!('clientWidth' in this.canvas)) {
+        // offscreen canvas does not support auto resizing
+        width = this.canvas.width
+        height = this.canvas.height
+      } else if (this.canvas.clientWidth === 0 || this.canvas.clientHeight === 0) {
+        // canvas is not visible, keep current size
+        width = this.canvas.width
+        height = this.canvas.height
+      } else {
+        width = this.canvas.clientWidth * devicePixelRatio
+        height = this.canvas.clientHeight * devicePixelRatio
       }
     }
-    list.push(buffer)
+
+    this.output.resize(width, height)
   }
 
   /**
-   * used internally when a depth buffer is destroyed
-   *
-   * @internal
+   * ResizeObserver callback that updates output size using device-pixel-accurate metrics when available
    */
-  public unregisterDepthBuffer(buffer: DepthBuffer) {
-    let list = this.registeredDepthBuffers
-    let index = list.indexOf(buffer)
-    if (index < 0) {
-      return
-    }
-    list[index] = null
-    if (list.length === index + 1) {
-      list.length = index
+  protected readonly resizeFromObserver = (entries: ResizeObserverEntry[]) => {
+    const entry = entries[0]
+    if (entry.devicePixelContentBoxSize) {
+      const width = entry.devicePixelContentBoxSize[0].inlineSize
+      const height = entry.devicePixelContentBoxSize[0].blockSize
+      this.resize(width, height)
+    } else if (entry.contentBoxSize) {
+      // fallback for Safari that will not always be correct
+      const width = Math.round(entry.contentBoxSize[0].inlineSize * devicePixelRatio)
+      const height = Math.round(entry.contentBoxSize[0].blockSize * devicePixelRatio)
+      this.resize(width, height)
+    } else {
+      this.resize()
     }
   }
+}
 
-  public getSharedDepthBuffer(options: DepthBufferOptions) {
-    // no depthFormat no buffer
-    if (!options.depthFormat) {
-      return null
-    }
-    // search by matching width, height and depthFormat
-    for (let item of this.registeredDepthBuffers) {
-      if (item.width === options.width && item.height === options.height && item.depthFormat === options.depthFormat) {
-        return item
-      }
-    }
-    // create and register a new depth buffer
-    let buffer = this.createDepthBuffer({
-      width: options.width,
-      height: options.height,
-      depthFormat: options.depthFormat,
-    })
+export interface DeviceStats {
+  textureCount: number
+  textureStaleCount: number
+  textureByteCount: number
 
-    this.registerDepthBuffer(buffer)
-    return buffer
-  }
-
-  protected set<K extends keyof this>(key: K, value: this[K]) {
-    this[key] = value
-  }
-
-  public abstract stats(out?: Record<string, any>): Record<string, any>
-
-  public dispose() {
-    this.scheduler.dispose()
-  }
+  shaderCount: number
+  shaderStaleCount: number
 }

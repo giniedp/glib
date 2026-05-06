@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Adds common attributes uniforms varying and structs
@@ -7,7 +7,7 @@ import { glsl, ShaderChunkSet } from '@gglib/graphics'
  */
 export const GL300ES: ShaderChunkSet = {
   version: `#version 300 es`,
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef VERTEX_SHADER
     #define attribute in
     #define varying out

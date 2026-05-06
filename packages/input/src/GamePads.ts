@@ -1,4 +1,4 @@
-import { Loop, loop, simpleObservable } from '@gglib/utils'
+import { eventSource, Loop, loop } from '@gglib/utils'
 
 /**
  * Constructor options for {@link Gamepads}
@@ -40,7 +40,7 @@ export class Gamepads {
    */
   protected poll: Loop = null
 
-  public onChanged = simpleObservable<Gamepad>()
+  public onChanged = eventSource<Gamepad>()
 
   /**
    * Initializes the Gamepads with given options
@@ -105,99 +105,62 @@ export class Gamepads {
     if (this.state[index] !== pad) {
       this.state[index] = pad
       if (!silent) {
-        this.onChanged.notify(pad)
+        this.onChanged.emit(pad)
       }
     }
   }
 }
 
+export type GamepadButton = number & { __brand: 'GamepadButton' }
+
 /**
  * @public
  */
-export const GamepadButton = Object.freeze({
+export const GamepadButton = {
   // Face (main) buttons
-  A: 0,
-  B: 1,
-  X: 2,
-  Y: 3,
+  A: 0 as GamepadButton,
+  B: 1 as GamepadButton,
+  X: 2 as GamepadButton,
+  Y: 3 as GamepadButton,
   // Top shoulder buttons
-  LeftShoulder: 4,
-  RightShoulder: 5,
+  LeftShoulder: 4 as GamepadButton,
+  RightShoulder: 5 as GamepadButton,
   // Bottom shoulder buttons
-  LeftTrigger: 6,
-  RightTrigger: 7,
+  LeftTrigger: 6 as GamepadButton,
+  RightTrigger: 7 as GamepadButton,
   // The back or select button
-  Back: 8,
+  Back: 8 as GamepadButton,
   // The start button
-  Start: 9,
+  Start: 9 as GamepadButton,
   // Analogue sticks (if depressible)
-  LeftStick: 10,
-  RightStick: 11,
+  LeftStick: 10 as GamepadButton,
+  RightStick: 11 as GamepadButton,
   // Directional (discrete) pad
-  DPadUp: 12,
-  DPadDown: 13,
-  DPadLeft: 14,
-  DPadRight: 15,
+  DPadUp: 12 as GamepadButton,
+  DPadDown: 13 as GamepadButton,
+  DPadLeft: 14 as GamepadButton,
+  DPadRight: 15 as GamepadButton,
 
   // any extra buttons
-  Extra1: 16,
-  Extra2: 17,
-  Extra3: 18,
-  Extra4: 19,
-  Extra5: 20,
-  Extra6: 21,
-  Extra7: 22,
-  Extra8: 23,
-  Extra9: 24,
-})
+  Extra1: 16 as GamepadButton,
+  Extra2: 17 as GamepadButton,
+  Extra3: 18 as GamepadButton,
+  Extra4: 19 as GamepadButton,
+  Extra5: 20 as GamepadButton,
+  Extra6: 21 as GamepadButton,
+  Extra7: 22 as GamepadButton,
+  Extra8: 23 as GamepadButton,
+  Extra9: 24 as GamepadButton,
+}
+
+export type GamepadAxes = number & { __brand: 'GamepadAxes' }
 
 /**
  * @public
  */
-export const GamepadButtonNames = Object.freeze({
-  0: 'A',
-  1: 'B',
-  2: 'X',
-  3: 'Y',
-  4: 'LeftShoulder',
-  5: 'RightShoulder',
-  6: 'LeftTrigger',
-  7: 'RightTrigger',
-  8: 'Back',
-  9: 'Start',
-  10: 'LeftStick',
-  11: 'RightStick',
-  12: 'DPadUp',
-  13: 'DPadDown',
-  14: 'DPadLeft',
-  15: 'DPadRight',
-  16: 'Extra1',
-  17: 'Extra2',
-  18: 'Extra3',
-  19: 'Extra4',
-  20: 'Extra5',
-  21: 'Extra6',
-  22: 'Extra7',
-  23: 'Extra8',
-  24: 'Extra9',
-})
-
-/**
- * @public
- */
-export const GamepadAxes = Object.freeze({
-  LeftHorizontal: 0,
-  LeftVertical: 1,
-  RightHorizontal: 2,
-  RightVertical: 3,
-})
-
-/**
- * @public
- */
-export const GamepadAxesNames = Object.freeze({
-  0: 'LeftHorizontal',
-  1: 'LeftVertical',
-  2: 'RightHorizontal',
-  3: 'RightVertical',
-})
+export const GamepadAxes = {
+  LeftHorizontal: 0 as GamepadAxes,
+  LeftVertical: 1 as GamepadAxes,
+  RightHorizontal: 2 as GamepadAxes,
+  RightVertical: 3 as GamepadAxes,
+}

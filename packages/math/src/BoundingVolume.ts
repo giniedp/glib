@@ -3,7 +3,7 @@ import { BoundingFrustum } from './BoundingFrustum'
 import { BoundingSphere } from './BoundingSphere'
 import { IntersectionType } from './Collision'
 import { Ray } from './Ray'
-import { IVec3, IVec4 } from './Types'
+import type { IVec3, IVec4 } from './Types'
 
 /**
  * @public
@@ -62,45 +62,15 @@ export interface BoundingVolume {
   /**
    * Checks for collision with another box and returns the intersection type
    */
-  containmentOfBox(box: BoundingBox): IntersectionType
+  intersectionBox(box: BoundingBox): IntersectionType
 
   /**
    * Checks for collision with another sphere and returns the intersection type
    */
-  containmentOfSphere(sphere: BoundingSphere): IntersectionType
+  intersectionSphere(sphere: BoundingSphere): IntersectionType
 
   /**
    * Checks for collision with another frustum and returns the intersection type
    */
-  containmentOfFrustum(frustum: BoundingFrustum): IntersectionType
-
-  /**
-   * Checks whether the given box contains this volume
-   */
-  containedByBox(box: BoundingBox): boolean
-
-  /**
-   * Checks whether the given sphere contains this volume
-   */
-  containedBySphere(sphere: BoundingSphere): boolean
-
-  /**
-   * Checks whether the given frustum contains this volume
-   */
-  containedByFrustum(frustum: BoundingFrustum): boolean
-
-  /**
-   * Checks for collision with another box and returns the intersection type
-   */
-  containmentByBox(box: BoundingBox): IntersectionType
-
-  /**
-   * Checks for collision with another sphere and returns the intersection type
-   */
-  containmentBySphere(sphere: BoundingSphere): IntersectionType
-
-  /**
-   * Checks for collision with another frustum and returns the intersection type
-   */
-  containmentByFrustum(frustum: BoundingFrustum): IntersectionType
+  intersectionFrustum(frustum: BoundingFrustum): IntersectionType
 }

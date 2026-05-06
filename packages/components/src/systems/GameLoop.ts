@@ -1,5 +1,5 @@
-import { GameSystem, GameProvider } from '@gglib/ecs'
-import { cancelAnimationFrame, getTime, requestAnimationFrame, simpleObservable } from '@gglib/utils'
+import { GameSystem, GameWorld } from '@gglib/ecs'
+import { eventSource } from '@gglib/utils'
 
 /**
  * Constructor options for the {@link GameLoop}
@@ -64,24 +64,14 @@ export interface LoopTimeParams {
   frame: number
 
   /**
-   * Time since last frame in seconds
+   * Total time since the start of the loop in milliseconds
    */
-  delta: number
+  timeMs: number
 
   /**
    * Time since last frame in milliseconds
    */
   deltaMs: number
-
-  /**
-   * Total time since the start of the loop in seconds
-   */
-  total: number
-
-  /**
-   * Total time since the start of the loop in milliseconds
-   */
-  totalMs: number
 
   /**
    * Indicates that the loop is running slower than the target elapsed time
@@ -94,7 +84,7 @@ export type LoopTime = Readonly<LoopTimeParams>
 /**
  * @public
  */
-export class GameLoop implements GameSystem {
+export class GameLoop extends GameSystem {
   /**
    * Indicates whether fixed time step should be used. Default is `true`.
    */
@@ -133,7 +123,8 @@ export class GameLoop implements GameSystem {
    * a VR headset rendering mode. Make sure to also replace the `cancelAnimationFrame` method
    * to an according implementation.
    */
-  public requestAnimationFrame: (fn: FrameRequestCallback) => number = requestAnimationFrame
+  public requestAnimationFrame: (fn: FrameRequestCallback) => number = (fn: FrameRequestCallback) =>
+    requestAnimationFrame(fn)
 
   /**
    * The method being used to cancel an animation frame.
@@ -144,12 +135,12 @@ export class GameLoop implements GameSystem {
    * a VR headset rendering mode. Make sure to also replace the `requestAnimationFrame` method
    * to an according implementation.
    */
-  public cancelAnimationFrame: (id: number) => void = cancelAnimationFrame
+  public cancelAnimationFrame: (id: number) => void = (id: number) => cancelAnimationFrame(id)
 
   /**
    * Function returning a high precision timestamp
    */
-  public getTime: () => number = getTime
+  public getTime: () => number = () => performance.now()
 
   /**
    * If set to true, skips the next execution of the draw routine.
@@ -195,33 +186,32 @@ export class GameLoop implements GameSystem {
 
   protected gameTime: LoopTimeParams = {
     frame: 0,
-    delta: 0,
     deltaMs: 0,
-    total: 0,
-    totalMs: 0,
+    timeMs: 0,
     isRunningSlowly: false,
   }
 
-  public onUpdate = simpleObservable<LoopTime>()
-  public onDraw = simpleObservable<LoopTime>()
+  public onUpdate = eventSource<LoopTime>()
+  public onDraw = eventSource<LoopTime>()
 
   private options: GameLoopOptions
   public constructor(options?: GameLoopOptions) {
+    super()
     this.options = options || {}
-    this.setup(this.options)
+    this.configure(this.options)
   }
 
-  public initialize(container: GameProvider): void {
-    this.setup(this.options)
+  public initialize(world: GameWorld): void {
+    this.configure(this.options)
   }
 
   public destroy(): void {
     this.stop()
-    this.onDraw.dispose()
-    this.onUpdate.dispose()
+    this.onDraw.clear()
+    this.onUpdate.clear()
   }
 
-  public setup(options: GameLoopOptions) {
+  private configure(options: GameLoopOptions) {
     if (!options) {
       return
     }
@@ -254,7 +244,9 @@ export class GameLoop implements GameSystem {
    */
   public stop() {
     const wasRunning = this.isRunning
-    this.cancelAnimationFrame(this.frameId)
+    if (this.frameId != null) {
+      this.cancelAnimationFrame(this.frameId)
+    }
     this.frameId = null
     return wasRunning
   }
@@ -289,7 +281,9 @@ export class GameLoop implements GameSystem {
   }
 
   private schedule() {
-    this.cancelAnimationFrame(this.frameId)
+    if (this.frameId != null) {
+      this.cancelAnimationFrame(this.frameId)
+    }
     this.frameId = this.requestAnimationFrame(this.tick)
   }
 
@@ -335,23 +329,19 @@ export class GameLoop implements GameSystem {
   }
 
   protected scheduleUpdate(dt: number) {
-    this.gameTime.total = this.timeCurrent / 1000
-    this.gameTime.totalMs = this.timeCurrent
-    this.gameTime.delta = dt / 1000
+    this.gameTime.timeMs = this.timeCurrent
     this.gameTime.deltaMs = dt
     this.gameTime.isRunningSlowly = this.isRunningSlowly
     this.gameTime.frame = this.frameCount
-    this.onUpdate.notify(this.gameTime)
+    this.onUpdate.emit(this.gameTime)
   }
 
   protected scheduleDraw(dt: number) {
-    this.gameTime.total = this.timeCurrent / 1000
-    this.gameTime.totalMs = this.timeCurrent
-    this.gameTime.delta = dt / 1000
+    this.gameTime.timeMs = this.timeCurrent
     this.gameTime.deltaMs = dt
     this.gameTime.isRunningSlowly = this.isRunningSlowly
     this.gameTime.frame = this.frameCount
-    this.onDraw.notify(this.gameTime)
+    this.onDraw.emit(this.gameTime)
   }
 
   protected detectSlowLoop(scheduleCount: number) {

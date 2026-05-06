@@ -1,13 +1,11 @@
 import { ContentLoader } from '@gglib/content'
-import { IBLSamplerEffect } from '@gglib/effects'
-import { BlendState, CullState, DepthState, Mesh, createDevice, cubeGeometry } from '@gglib/graphics'
+import { BasicMaterial, BlendState, Color, CullState, DepthState, PlatformId, createDevice } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
-import { GLTF, HDR, KTX, MTL, OBJ, TGA } from '@gglib/loaders'
-import { AutoMaterial, DebugOutput, LightParams, SkyboxMaterial } from '@gglib/materials'
-import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3, Vec4 } from '@gglib/math'
+import { GLTF, HDR, KTX } from '@gglib/loaders'
+import { DebugOutput, LightParams } from '@gglib/materials'
+import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { loop } from '@gglib/utils'
-import * as TweakUi from 'tweak-ui'
+import { mountUi, redrawUi } from 'tweak-ui'
 
 // https://cdn.nw-buddy.de/models/weaponappearances/1hstraightwaterloggedsirens-meshoverride.glb
 
@@ -15,49 +13,58 @@ const PANORAMA_IMAGES = {
   Court: '/textures/hdr/footprint_court.hdr',
   Exterior: '/textures/hdr/cannon_exterior.hdr',
   Overcast: '/textures/hdr/overcast_puresky.hdr',
-  Sky: '/Grey_Sky.png',
+  Sky: '/textures/Grey_Sky.png',
 }
 
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
+  const device = await createDevice({ canvas, platform }).ready
+  const pass = device.renderPass
+  const rt = device.createRenderTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: device.output.format,
+    sampleCount: 4,
+  })
+  const dt = device.createDepthTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: 'DEPTH24_PLUS',
+    sampleCount: 4,
+  })
 
-export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
-  // Create the graphics device and pass the existing canvas element from the DOM.
-  const device = createDevice({ canvas })
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
   content.registerLoader(KTX.Loader)
   content.registerLoader(HDR.Loader)
-  content.registerMaterial({
-    name: 'BasicEffect',
-    type: AutoMaterial,
-  })
+  content.registerMaterial(BasicMaterial, () => true)
 
   const mouse = new Mouse({
     captureTarget: canvas,
     preventDefault: true,
   })
-  const iblSampler = new IBLSamplerEffect(device)
 
-  async function loadEnvFile(url: string) {
-    content.loadTexture(url).then((texture) => {
-      iblSampler.panoramaInput?.dispose()
-      iblSampler.panoramaInput = texture
-      iblSampler.needsUpdate = true
-    })
-  }
+  // const iblSampler = new IBLSamplerEffect(device)
+  // async function loadEnvFile(url: string) {
+  //   content.loadTexture(url).then((texture) => {
+  //     iblSampler.panoramaInput?.dispose()
+  //     iblSampler.panoramaInput = texture
+  //     iblSampler.needsUpdate = true
+  //   })
+  // }
 
-  const skybox = new Mesh(device, {
-    parts: [cubeGeometry(device)],
-    materials: [
-      new SkyboxMaterial(device, {
-        parameters: {
-          Intensity: 1.0,
-          Rotation: 0,
-          Blur: 0.25,
-          MipCount: iblSampler.lowestMipLevel + 1,
-        },
-      }),
-    ],
-  })
+  // const skybox = new Mesh(device, {
+  //   parts: [cubeGeometry(device)],
+  //   materials: [
+  //     new SkyboxMaterial(device, {
+  //       parameters: {
+  //         Intensity: 1.0,
+  //         Rotation: 0,
+  //         Blur: 0.25,
+  //         MipCount: iblSampler.lowestMipLevel + 1,
+  //       },
+  //     }),
+  //   ],
+  // })
 
   const models: Record<string, string> = {
     Bobcat: '/cdn/bobcat/bobcat.gltf',
@@ -67,11 +74,15 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     mount_mtx_3_lion: 'https://cdn.nw-buddy.de/models/mounts/mount_mtx_3_lion.glb',
     Oro: 'https://cdn.nw-buddy.de/models/vitals/6e959eb9fce4a69469d774acc7def5db.glb',
     Chardis: 'https://cdn.nw-buddy.de/models/vitals/430f79381a14f3869264b9dd673d671c.glb',
-    wpn1hrapiercrystallinepvpp2t5: 'https://cdn.nw-buddy.de/models/weaponappearances/1hrapiercrystallinepvpp2t5-meshoverride.glb',
-    Shield1htowershieldisabellat5:'https://cdn.nw-buddy.de/models/weaponappearances/1htowershieldisabellat5-meshoverride.glb',
-    Shield1htowershieldwraithhunterovergrownt5: 'https://cdn.nw-buddy.de/models/weaponappearances/1htowershieldwraithhunterovergrownt5-meshoverride.glb',
+    wpn1hrapiercrystallinepvpp2t5:
+      'https://cdn.nw-buddy.de/models/weaponappearances/1hrapiercrystallinepvpp2t5-meshoverride.glb',
+    Shield1htowershieldisabellat5:
+      'https://cdn.nw-buddy.de/models/weaponappearances/1htowershieldisabellat5-meshoverride.glb',
+    Shield1htowershieldwraithhunterovergrownt5:
+      'https://cdn.nw-buddy.de/models/weaponappearances/1htowershieldwraithhunterovergrownt5-meshoverride.glb',
     Chestm_nagacorrupted_chest: 'https://cdn.nw-buddy.de/models/armorappearances/m_nagacorrupted_chest-skin1.glb',
-    Chestm_specialcorruptedvar1_chest: 'https://cdn.nw-buddy.de/models/armorappearances/m_specialcorruptedvar1_chest-skin1.glb'
+    Chestm_specialcorruptedvar1_chest:
+      'https://cdn.nw-buddy.de/models/armorappearances/m_specialcorruptedvar1_chest-skin1.glb',
   }
   const params = {
     Metallic: 1.0,
@@ -80,28 +91,31 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     SpecularColor: [1, 1, 1],
     Debug: null! as DebugOutput,
   }
-  TweakUi.mount(tools, (ui) => {
+  mountUi(tools, (ui) => {
     loadModel(models.Scarab)
     ui.select({ model: models.Scarab }, 'model', {
       options: models,
-      onChange: (it, value) => loadModel(value as string),
+      onchange: (it, value) => loadModel(value as string),
     })
-    loadEnvFile(PANORAMA_IMAGES.Overcast)
-    ui.select({ env: PANORAMA_IMAGES.Overcast }, 'env', {
-      options: PANORAMA_IMAGES,
-      onChange: (it, value) => loadEnvFile(value as string),
-    })
-    ui.slider(params, 'Metallic', {
+    // loadEnvFile(PANORAMA_IMAGES.Overcast)
+    // ui.select({ env: PANORAMA_IMAGES.Overcast }, 'env', {
+    //   options: PANORAMA_IMAGES,
+    //   onChange: (it, value) => loadEnvFile(value as string),
+    // })
+    ui.number(params, 'Metallic', {
+      slider: true,
       min: 0,
       max: 1,
       step: 0.01,
     })
-    ui.slider(params, 'Roughness', {
+    ui.number(params, 'Roughness', {
+      slider: true,
       min: 0,
       max: 1,
       step: 0.01,
     })
-    ui.slider(params, 'IndexOfRefraction', {
+    ui.number(params, 'IndexOfRefraction', {
+      slider: true,
       min: 0,
       max: 2,
       step: 0.01,
@@ -109,8 +123,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     ui.select(params, 'Debug', {
       options: {
         None: null,
-        ...Object.fromEntries(Object.entries(DebugOutput).filter(([key, value]) => typeof value === 'number'))
-      } ,
+        ...Object.fromEntries(Object.entries(DebugOutput).filter(([key, value]) => typeof value === 'number')),
+      },
     })
   })
 
@@ -144,7 +158,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     }
     content
       .loadModel(url, {
-        baseUrl
+        baseUrl,
       })
       .then((result) => {
         model?.dispose()
@@ -152,12 +166,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
         model.updateScene()
         sphere = model.boundingSphere.clone()
         console.log(`Model loaded: ${url}`, model)
-        const mtl = model.meshes[0].materials[0] as AutoMaterial
-        params.Metallic = mtl.Metallic
+        const mtl = model.meshes[0].materials[0] as BasicMaterial
+        //params.Metallic = mtl.Metallic
         params.Roughness = mtl.Roughness
-        params.IndexOfRefraction = mtl.IndexOfRefraction
+        //params.IndexOfRefraction = mtl.IndexOfRefraction
         params.SpecularColor = Vec3.convert(mtl.SpecularColor || [1, 1, 1]).toArray()
-        TweakUi.redraw()
+        redrawUi()
       })
       .catch((e) => {
         model = null!
@@ -184,7 +198,13 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
     ).add(sphere.center)
 
     camera.view.initLookAt(camera.position, sphere.center, Vec3.Up).invert()
-    camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
+    camera.projection.initPerspectiveFieldOfView(
+      45 * DEGREE_TO_RAD,
+      device.output.aspectRatio,
+      0.01,
+      1000,
+      device.ndcMinZ,
+    )
   }
 
   function updateModel(model: Model) {}
@@ -192,23 +212,23 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   function renderModel(model: Model) {
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
-        const mtl = material as AutoMaterial
-        mtl.ShadeFunction = 'shadePbr'
-        mtl.LightCount = 2
+        const mtl = material as BasicMaterial
+        //mtl.ShadeFunction = 'shadePbr'
+        //mtl.LightCount = 2
         mtl.World = world
         mtl.View = camera.view
         mtl.Projection = camera.projection
         // mtl.Metallic = params.Metallic
         // mtl.Roughness = params.Roughness
         // mtl.IndexOfRefraction = params.IndexOfRefraction
-        mtl.Debug = params.Debug
+        // mtl.Debug = params.Debug
         // mtl.SpecularColor = params.SpecularColor
         // mtl.BaseColor = Vec4.create(1, 1, 1, 1)
-        if (iblSampler.isReady) {
-          mtl.IrradianceMap = iblSampler.lambertianCubemap
-          mtl.EnvironmentMap = iblSampler.ggxCubemap
-          mtl.EnvironmentLUT = iblSampler.ggxLutMap
-        }
+        // if (iblSampler.isReady) {
+        //   mtl.IrradianceMap = iblSampler.lambertianCubemap
+        //   mtl.EnvironmentMap = iblSampler.ggxCubemap
+        //   mtl.EnvironmentLUT = iblSampler.ggxLutMap
+        // }
         // light1.assign(0, mtl.parameters)
         // light2.assign(1, mtl.parameters)
       }
@@ -218,27 +238,32 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 
   function drawSkybox() {
-    const material = skybox.materials[0] as SkyboxMaterial
-    const world = (material.World ||= Mat4.createIdentity()) as Mat4
-    world.initScaleUniform(1)
-    world.setTranslation(camera.position)
-    material.World = world
-    material.View = camera.view
-    material.Projection = camera.projection
-    material.Texture = iblSampler.ggxCubemap
-    if (material.isReady() && iblSampler.isReady) {
-      skybox.draw()
-    }
+    // const material = skybox.materials[0] as SkyboxMaterial
+    // const world = (material.World ||= Mat4.createIdentity()) as Mat4
+    // world.initScaleUniform(1)
+    // world.setTranslation(camera.position)
+    // material.World = world
+    // material.View = camera.view
+    // material.Projection = camera.projection
+    // material.Texture = iblSampler.ggxCubemap
+    // if (material.isReady() && iblSampler.isReady) {
+    //   skybox.draw()
+    // }
   }
 
-  function frame(time: number, dt: number) {
+  function frame() {
     device.resize()
-    iblSampler.update()
+    // iblSampler.update()
+    rt.resizeToMatch(device.output)
+    dt.resizeToMatch(device.output)
 
-    device.cullState = CullState.CullClockWise
-    device.depthState = DepthState.Default
-    device.blendState = BlendState.Default
-    device.clear(0xff2e2620, 1.0)
+    pass.setRenderTarget(0, rt, 0, 0, device.output)
+    pass.setDepthTarget(dt)
+    pass.setCullState(CullState.CullBack)
+    pass.setDepthState(DepthState.LessEqual)
+    pass.setRenderBlend(0, BlendState.Alpha)
+    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.clear()
 
     if (model) {
       updateCamera()
@@ -246,11 +271,13 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       updateModel(model)
       renderModel(model)
     }
+    pass.submit()
+    pass.resolve()
+    pass.flush()
   }
 
-  const looper = loop(frame)
+  device.scheduler.schedule(frame)
   return () => {
-    looper.stop()
-    model?.dispose()
+    device.dispose()
   }
 }

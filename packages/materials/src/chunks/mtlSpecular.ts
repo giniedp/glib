@@ -1,4 +1,4 @@
-import { glsl, ShaderChunkSet } from '@gglib/graphics'
+import { ShaderChunkSet } from '@gglib/graphics'
 
 /**
  * Describes preprocessor definitions which control specular color contribution.
@@ -6,7 +6,6 @@ import { glsl, ShaderChunkSet } from '@gglib/graphics'
  * @public
  */
 export interface MtlSpecularDefs {
-
   /**
    * Adds a color uniform
    *
@@ -48,7 +47,6 @@ export interface MtlSpecularDefs {
    * - Binds as `SpecularColorMapTransform`
    */
   SPECULAR_COLOR_MAP_TRANSFORM?: boolean
-
 }
 
 /**
@@ -56,7 +54,7 @@ export interface MtlSpecularDefs {
  * @public
  */
 export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
-  defines: glsl`
+  defines: /* glsl */ `
     #ifdef SPECULAR_COLOR_MAP
       #if !defined(V_TEXTURE) && !defined(V_TEXTURE1) && !defined(V_TEXTURE2)
         #define V_TEXTURE
@@ -69,7 +67,7 @@ export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
 
 
   `,
-  uniforms: glsl`
+  uniforms: /* glsl */ `
 
 
     #ifdef SPECULAR_COLOR
@@ -94,7 +92,7 @@ export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
     uniform mat3 uSpecularColorMapTransform;
     #endif
   `,
-  functions: glsl`
+  functions: /* glsl */ `
     #ifdef SPECULAR_COLOR_MAP
     vec2 getSpecularColorMapUV() {
       vec2 result = SPECULAR_COLOR_MAP_UV;
@@ -126,7 +124,7 @@ export const MTL_SPECULAR: ShaderChunkSet<MtlSpecularDefs> = {
     }
 
   `,
-  fs_surface: glsl`
+  fs_surface: /* glsl */ `
     surface.Specular.rgb = getSpecularColor(uvOffset);
   `,
 }

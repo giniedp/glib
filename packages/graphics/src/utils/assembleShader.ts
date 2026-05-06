@@ -1,4 +1,4 @@
-import { ShaderProgramOptions } from '../resources'
+import { ShaderModuleOptions } from '../resources'
 
 /**
  * A shader code snippet
@@ -47,19 +47,21 @@ export interface AssembleProgramOptions {
  *
  * @public
  */
-export function assembleProgram({ template, chunks, defines }: AssembleProgramOptions): ShaderProgramOptions {
+export function assembleProgram({ template, chunks, defines }: AssembleProgramOptions): ShaderModuleOptions {
   // prettier-ignore
   return {
-    vertexShader: build(template, [
-      { defines: '#define VERTEX_SHADER' },
-      buildDefinesChunk(defines),
-      ...chunks,
-    ]),
-    fragmentShader: build(template, [
-      { defines: '#define FRAGMENT_SHADER' },
-      buildDefinesChunk(defines),
-      ...chunks,
-    ]),
+    glsl: {
+      vertex: build(template, [
+        { defines: '#define VERTEX_SHADER' },
+        buildDefinesChunk(defines),
+        ...chunks,
+      ]),
+      fragment: build(template, [
+        { defines: '#define FRAGMENT_SHADER' },
+        buildDefinesChunk(defines),
+        ...chunks,
+      ]),
+    }
   }
 }
 
