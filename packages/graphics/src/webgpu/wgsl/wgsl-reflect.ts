@@ -16,13 +16,14 @@ import type {
 } from './wgsl-ast'
 import { getWgslTemplateParameter, isWgslInt, parseWgslInt, readWgslTypeReference } from './wgsl-parse'
 
+export type WgslShaderStage = 'vertex' | 'fragment' | 'compute'
 export class WgslProgramInfo {
   entryPoints: WgslEntryPointInfo[]
   resources: WgslResourceInfo[]
 }
 
 export class WgslEntryPointInfo {
-  stage: 'vertex' | 'fragment' | 'compute'
+  stage: WgslShaderStage
   name: string
   inputs: WgslInputInfo[]
   outputs: WgslOutputInfo[]

@@ -1,0 +1,65 @@
+@import '/tweak-ui/dist/style.css';
+body,
+#app,
+canvas {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+.thin-scrollbar {
+  overflow: auto;
+
+  /* Firefox + newer spec implementations */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 120, 0.6) transparent;
+}
+
+/* Chromium / WebKit */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 120, 120, 0.6);
+  border-radius: 3px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.twui {
+  max-height: calc(100vh);
+  overflow: hidden;
+
+  --twui-size: 1.25rem;
+  --twui-gap: 0.125rem;
+  --twui-inset: 0rem;
+  --twui-radius: 0rem;
+}
+.twui-tree {
+  height: calc(75vh);
+}
+.twui-tree + .twui-group,
+.twui-tree + .nw-node-view {
+  height: calc(25vh);
+}
+.twui-tree-toggle {
+  width: 32px;
+}
+.twui-tree-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+}
+.twui-tree-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.twui-tree {
+  max-height: calc(75vh);
+}

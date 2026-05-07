@@ -354,7 +354,7 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
     }
 
     const centerX = (this.bounds.min.x + this.bounds.max.x) * 0.5
-    const centerY = (this.bounds.min.y + this.bounds.max.y) * 0.5
+    const centerY = (this.bounds.min.z + this.bounds.max.z) * 0.5
     const dx = cameraX - centerX
     const dy = cameraZ - centerY
     const dist = Math.sqrt(dx * dx + dy * dy)
@@ -365,31 +365,8 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
       visit(this)
     } else {
       for (const child of this.children) {
-        child.traverseLOD(cameraX, cameraZ, baseFactor, visit)
+        child.traverseLODSphere(cameraX, cameraZ, baseFactor, visit)
       }
     }
-
-    // const centerX = (this.bounds.min.x + this.bounds.max.x) * 0.5
-    // const centerY = (this.bounds.min.y + this.bounds.max.y) * 0.5
-    // const dx = cameraX - centerX
-    // const dz = cameraZ - centerY
-    // const distanceSq = dx * dx + dz * dz
-
-    // // The threshold at which we want to refine this node further.
-    // // node.size halves with each level, so the threshold naturally scales with geometry.
-    // const threshold = this.size * baseFactor
-
-    // if (distanceSq >= threshold * threshold) {
-    //   // Camera is far enough, this node's resolution is sufficient.
-    //   // Select it, do not descend.
-    //   visit(this)
-    //   return
-    // }
-
-    // // Camera is too close, we need finer detail. Recurse into children.
-    // // No node is added here, so there is no overlap with children.
-    // for (const child of this.children) {
-    //   child.traverseLOD(cameraX, cameraZ, baseFactor, visit)
-    // }
   }
 }

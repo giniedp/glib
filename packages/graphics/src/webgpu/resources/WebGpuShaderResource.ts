@@ -3,6 +3,7 @@ import type { WebGpuDevice } from '../WebGpuDevice'
 import type { WgslResourceInfo, WgslTextureInfo } from '../wgsl'
 
 const COMMON_VISIBILITY = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE
+
 export class WebGpuShaderResource {
   public readonly device: WebGpuDevice
   public readonly arrayBuffer: ArrayBuffer
