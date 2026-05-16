@@ -1,4 +1,3 @@
-import { SchedulerSystem, type ScheduledTask } from '@gglib/components'
 import { BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import { Color, Device, Material, Texture } from '@gglib/graphics'
@@ -10,7 +9,6 @@ export class ContentService extends GameSystem {
   public device: Device
 
   private modelCache = new Map<string, Promise<Model>>()
-  public scheduler: SchedulerSystem
 
   public nwbtUrl: string = 'http://localhost:8000'
 
@@ -20,6 +18,8 @@ export class ContentService extends GameSystem {
 
   public whitePixel: Texture
   public blackPixel: Texture
+  public nullHeightmap: Texture
+  public nullHeightmapArray: Texture
   public nullBaseMap: Texture
   public nullNormalMap: Texture
   public nullSpecularMap: Texture
@@ -31,7 +31,6 @@ export class ContentService extends GameSystem {
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
     this.loader = world.getSystem(ContentLoader)
-    this.scheduler = world.getSystem(SchedulerSystem)
     this.loader.executor = new BoundedAsyncExecutor(10)
 
     const device = world.getSystem(Device)
@@ -81,19 +80,32 @@ export class ContentService extends GameSystem {
       format: 'RGBA8_UNORM',
       source: Color.toByteArray(Color.fromBytes(0, 0, 0, 0)),
     })
+    this.nullHeightmap = device.createTexture({
+      name: 'nullHeightmap',
+      width: 1,
+      height: 1,
+      format: 'R16_FLOAT',
+    })
+    this.nullHeightmapArray = device.createTexture({
+      name: 'nullHeightmap',
+      width: 1,
+      height: 1,
+      depth: 4,
+      type: 'Texture2DArray',
+      format: 'R16_FLOAT',
+      mipLevelCount: 1,
+    })
   }
 
-  public loadModel(model: string, material: string, entity?: GameEntity) {
+  public loadModel(model: string, material: string) {
     const source = modelSource(model, material, this.nwbtFileUrl)
     if (this.modelCache.has(source.url)) {
       return this.modelCache.get(source.url)
     }
-    const result = this.scheduler.scheduleAsync(entity, () => {
-      return this.loader.loadModel(source.url, {
-        baseUrl: source.rootUrl,
-      })
+    const result = this.loader.loadModel(source.url, {
+      baseUrl: source.rootUrl,
     })
-    this.modelCache.set(source.url, result)
+    //this.modelCache.set(source.url, result)
     return result
   }
 
@@ -107,19 +119,11 @@ export class ContentService extends GameSystem {
     return this.loader.loadMaterial(url, {
       baseUrl: this.nwbtFileUrl,
     })
-    // return this.scheduler.scheduleAsync(entity, () => {
-    // })
   }
   public loadAsset(url: string, entity?: GameEntity) {
     return this.loader.load(url, {
       baseUrl: this.nwbtFileUrl,
     })
-    // return this.scheduler.scheduleAsync(entity, () => {
-    // })
-  }
-
-  public schedule<T extends ScheduledTask>(task: T): T {
-    return this.scheduler.schedule(task)
   }
 
   public destroy(): void {

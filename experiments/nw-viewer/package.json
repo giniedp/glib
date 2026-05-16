@@ -8,8 +8,14 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
+  "peerDependencies": {
+    "vite": ">=5"
+  },
   "devDependencies": {
     "typescript": "~5.9.3",
-    "vite": "^7.1.2"
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "@gglib/vite-plugin": "workspace:^"
   }
 }

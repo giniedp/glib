@@ -7,341 +7,394 @@ struct MaterialBlock {
   heightMapUvTransform : vec4<f32>,
   heightMapSize        : f32,
   mountainHeight       : f32,
-  amplitude            : f32,
-  wavelength           : f32,
-  direction            : vec2<f32>,
-  speed                : f32,
+  waterHeight          : f32,
+
+  // Water column
+  shallowColor    : vec3f,
+  deepColor       : vec3f,
+  waterLevel      : f32,   // world-space Y of the water surface in metres
+  depthScale      : f32,   // metres below waterLevel for full deep-colour blend
+
+  // Surface
+  roughness       : f32,
+  reflectStrength : f32,
+  refractStrength : f32,
+
+  // Shore
+  shoreFade       : f32,   // transition width in metres at the waterline
+
+  // Foam
+  foamDepth       : f32,   // metres below waterLevel where shore foam appears
+  foamStrength    : f32,
+  foamSpeed       : f32,   // scroll speed in metres per second
+
+  // Waves
+  waveSpeed       : f32,   // propagation speed in metres per second
+  waveScale       : f32,   // spatial frequency in radians per metre
+  waveHeight      : f32,   // peak displacement in metres
 };
 
-struct SettingsBlock {
-  debug:           u32,
+
+struct InstanceBlock {
+  transform:               mat4x4<f32>,
+
+  // x: patch size (32, 64 etc.),
+  // y: base factor (e.g. 2)
+  // z: morphLod
+  params1:                 vec4f,
+
+  // x: fine layer color map index
+  // y: coarse layer color map index
+  // z: 1 = fine ready
+  // w: 1 = coarse ready
+  params2:                 vec4f,
+
+  // x: this region's heightmap layer
+  // y: +X neighbour, -1 if none
+  // z: +Z neighbour, -1 if none
+  // w: +X+Z neighbour, -1 if none
+  params3:                 vec4f,
+
+  colorUvTransform:        vec4f,
+  colorUvTransformCoarse:  vec4f,
+  heightUvTransform:       vec4f,
+  heightUvTransformCoarse: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> object   : ObjectBlock;
 @group(0) @binding(1) var<uniform> view     : ViewBlock;
 @group(0) @binding(2) var<uniform> material : MaterialBlock;
 @group(0) @binding(3) var<uniform> frame    : FrameBlock;
-@group(0) @binding(4) var<uniform> settings : SettingsBlock;
-@group(0) @binding(5) var<uniform> lights   : LightBlock;
-@group(0) @binding(6) var<uniform> env      : EnvBlock;
+@group(0) @binding(4) var<uniform> env      : EnvBlock;
 
-@group(1) @binding(0) var heightMap : texture_2d<f32>;
-@group(1) @binding(1) var heightMapSampler : sampler;
+@group(1) @binding(0) var heightMapSampler : sampler;
+@group(1) @binding(1) var heightMap : texture_2d_array<f32>;
 
-struct VertexInput {
-  // @alias position
-  @location(0) aPosition : vec3<f32>,
-  // @alias normal
-  @location(1) aNormal : vec3<f32>,
-  // @alias texture
-  @location(2) aTexture : vec2<f32>,
+@group(2) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
+
+struct Varyings {
+  @builtin(position) position : vec4f,
+  @location(0) worldPos       : vec3f,
+  @location(1) uv             : vec2f,
+  @location(2) groundHeight: f32,
+  @location(3) @interpolate(flat) iid:  u32,
 };
 
-struct VertexOutput {
-  @builtin(position) clipPos: vec4<f32>,
-  @location(0) worldPos: vec3<f32>,
-  @location(1) normal: vec3<f32>,
-  @location(2) height: f32,
+
+struct VertexIn {
+  @builtin(instance_index) instanceIndex: u32,
+  @location(0) position:     vec3f,
+  @location(1) texture:      vec2f,
 };
+
 
 @vertex
-fn vs_main(input: VertexInput) -> VertexOutput {
-  var out: VertexOutput;
+fn vsMain(input: VertexIn) -> Varyings {
+  let instance = instances[input.instanceIndex];
 
-  var uv = input.aTexture;
-  var tileUV = input.aTexture * material.heightMapUvTransform.xy + material.heightMapUvTransform.zw;
-  let height = readHegiht(tileUV);
+  var worldPos = (instance.transform * object.modelMatrix * vec4f(input.position, 1.0));
 
-  let position = object.modelMatrix * vec4<f32>(input.aPosition.x, height, input.aPosition.z, 1.0);
-  let wave  = water_deform(position.xz, frame.elapsedTime / 1000.0);
-  let worldPos = vec4f(
-    position.x + wave.offset.x,
-    WATER_LEVEL + wave.offset.y ,
-    position.z + wave.offset.z,
-    1.0,
+  let patchSize = f32(instance.params1.x);
+  let baseFactor = f32(instance.params1.y);
+  let morphLod = f32(instance.params1.z);
+  let morph = lod_morph(
+    input.position.xz,          // raw grid position 0..64
+    worldPos.xz,                // world space position
+    view.cameraPosition.xz,
+    patchSize,
+    baseFactor,
+    morphLod,
   );
+  worldPos.x += morph.offset.x;
+  worldPos.z += morph.offset.y;
 
-  let viewPos = view.viewMatrix * worldPos;
-  let viewPosWrap = paniniWarpCommon(viewPos);
+  let patchWorldSize = patchSize * exp2(morphLod);
+  let uvDelta = -morph.offset / patchWorldSize;
 
-  out.worldPos = worldPos.xyz;
-  out.normal = normalize(wave.normal);
-  out.clipPos = view.projectionMatrix * viewPosWrap;
-  out.height = height;
+  let uv = uvScaleOffset(input.texture + uvDelta, instance.heightUvTransform);
+  let data     = readMapData(uv, instance.params3);
+  let waterHeight = data.x;
+  let groundHeight = data.y + data.x;
 
+  worldPos.y   = data.x;
+
+  let timeSec      = frame.elapsedTime * 0.001;
+  let mat          = material;
+
+  // Derive base spatial frequency from waveHeight so the two stay coupled:
+  // a 0.4 m swell at ~420 m wavelength → freq ≈ 0.015 rad/m.
+  let baseFreq = 0.015;
+  let dispY    = waveSumY(worldPos.xz, baseFreq, mat.waveHeight, mat.waveSpeed, timeSec);
+  worldPos.y   = waterHeight + dispY;
+
+  var out : Varyings;
+  out.position     = view.projectionMatrix * view.viewMatrix * worldPos;
+  out.worldPos     = worldPos.xyz;
+  out.groundHeight = groundHeight;
+  out.uv           = uv;
+  out.iid          = input.instanceIndex;
   return out;
 }
 
+
+// ── Fragment ──────────────────────────────────────────────────
+
 @fragment
-fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+fn fsMain(in: Varyings) -> @location(0) vec4f {
+  let instance = instances[in.iid];
+  let timeSec = frame.elapsedTime * 0.001;
+  let mat     = material;
+  let sun     = normalize(env.sunDirection);
 
-  let shading = water_shade(
-    input.worldPos,
-    normalize(input.normal),
-    input.height,
-    view.cameraPosition,
-    env.sunDirection,
-    env.sunColor,
-  );
+  let baseFreq = 0.015;
 
-  if (settings.debug > 0u) {
-    if (settings.debug == DEBUG_MATERIAL) {
-      return vec4<f32>(shading.fresnel, shading.fresnel, shading.fresnel, 1.0);
+  // ── Depth ─────────────────────────────────────────────────
+  let waterDepth = mat.waterLevel - in.groundHeight;
+  let shoreAlpha = smoothstep(0.0, mat.shoreFade, waterDepth);
+  let depthT     = clamp(waterDepth / mat.depthScale, 0.0, 1.0);
+  let subsurface = mix(mat.shallowColor, mat.deepColor, depthT);
+
+  // ── Surface geometry ──────────────────────────────────────
+  let viewDir = normalize(view.cameraPosition - in.worldPos);
+  let normal  = waveNormal(in.worldPos.xz, baseFreq, mat.waveHeight, mat.waveSpeed, timeSec);
+
+  // ── Refraction tint ───────────────────────────────────────
+  let refrBend   = normal.xz * mat.refractStrength * (1.0 - depthT) * 0.01;
+  let data = readMapData(in.uv+ refrBend, instance.params3);
+  let refrGround = data.x + data.y;// in.groundHeight; //textureSample(heightMap, heightMapSampler, in.uv + refrBend).r;
+  let refrDepthT = clamp((mat.waterLevel - refrGround) / mat.depthScale, 0.0, 1.0);
+  let refrColor  = mix(mat.shallowColor, mat.deepColor, refrDepthT);
+
+  // ── Fresnel ───────────────────────────────────────────────
+  let nDotV      = max(dot(normal, viewDir), 0.0);
+  let fresnelVal = fresnel(nDotV, 0.04);
+
+  // ── Reflection ────────────────────────────────────────────
+  let reflDir    = reflect(-viewDir, normal);
+  let skyHorizon = pow(max(reflDir.y, 0.0), 0.3);
+  let skyColor   = mix(vec3f(0.05, 0.12, 0.25), vec3f(0.4, 0.65, 0.9), skyHorizon);
+  let sunDot     = max(dot(reflDir, sun), 0.0);
+  let sunRefl    = env.sunColor * pow(sunDot, 64.0);
+  let reflection = (skyColor + sunRefl) * mat.reflectStrength;
+
+  // ── Specular ──────────────────────────────────────────────
+  let specColor = env.sunColor * ggxSpecular(normal, viewDir, sun, mat.roughness);
+
+
+  // ── Foam ──────────────────────────────────────────────────
+  // Foam lives only in the shore band [0, foamDepth] metres below waterLevel.
+  // A scrolling noise mask breaks it into clumps so it reads as surf, not
+  // a flat ring. The band itself is a smooth ramp so there is no hard edge.
+  let shoreBand  = 1.0 - smoothstep(0.0, mat.foamDepth, waterDepth);
+  let foamUV     = in.worldPos.xz * 0.04 + timeSec * mat.foamSpeed * vec2f(0.6, 0.35);
+  let foamMask   = smoothstep(0.0, 1.0, fbm(foamUV));
+  let foamAmount = clamp(shoreBand * foamMask * mat.foamStrength, 0.0, 1.0);
+
+  // ── Combine ───────────────────────────────────────────────
+  let underwater = mix(refrColor, subsurface, 0.5);
+  var color      = mix(underwater, reflection, fresnelVal);
+  color         += specColor;
+  color          = mix(color, vec3f(0.92, 0.96, 1.0), foamAmount);
+
+  let alpha = shoreAlpha * mix(0.75, 1.0, depthT);
+
+  return applyFog(color, alpha, in.worldPos, view.cameraPosition);
+}
+
+const WAVE_COUNT : i32 = 6;
+
+// Column layout: dirX, dirZ, freqScale, ampScale
+const waveTable = array<vec4f, 6>(
+    vec4f( 0.831,  0.556, 1.00, 1.00),   // 0 — primary swell
+    vec4f(-0.371,  0.928, 1.30, 0.60),   // 1 — secondary swell
+    vec4f( 0.500,  0.866, 2.70, 0.25),   // 2 — mid chop
+    vec4f(-0.866,  0.500, 3.10, 0.18),   // 3 — mid chop cross
+    vec4f( 0.940, -0.342, 6.00, 0.08),   // 4 — fine ripple
+    vec4f( 0.174,  0.985, 7.20, 0.06),   // 5 — fine ripple angled
+);
+
+// Speed scaling per band — fine ripples move slower relative to their freq.
+const speedScale = array<f32, 6>(1.00, 0.80, 0.65, 0.60, 0.45, 0.40);
+
+
+// ── Wave helpers ──────────────────────────────────────────────
+
+// Y-only sine wave. freq = radians/metre, speed = m/s, time = seconds.
+fn waveY(pos: vec2f, dir: vec2f, freq: f32, amp: f32, speed: f32, timeSec: f32) -> f32 {
+    let phase = freq * dot(normalize(dir), pos) - speed * freq * timeSec;
+    return amp * sin(phase);
+}
+
+// Sum all bands into a single vertical displacement.
+fn waveSumY(pos: vec2f, baseFreq: f32, baseAmp: f32, baseSpeed: f32, timeSec: f32) -> f32 {
+    var y = 0.0;
+    for (var i = 0; i < WAVE_COUNT; i++) {
+        let w     = waveTable[i];
+        let spdSc = speedScale[i];
+        y += waveY(pos,
+                   w.xy,
+                   baseFreq  * w.z,
+                   baseAmp   * w.w,
+                   baseSpeed * spdSc,
+                   timeSec);
     }
-    if (settings.debug == DEBUG_NORMALS) {
-      return vec4<f32>(normalize(input.normal).xyz * 0.5 + 0.5, 1.0);
-    }
-    // if (settings.debug == DEBUG_UVS) {
-    //   return vec4<f32>(input.vTileUV, 0.0, 1.0);
-    // }
-  }
-
-  return applyFog(shading.color.rgb, shading.color.a, input.worldPos, view.cameraPosition);
+    return y;
 }
 
-fn readHegiht(uv: vec2<f32>) -> f32 {
-  return unpackHeight(textureSampleLevel(heightMap, heightMapSampler, uv, 0), material.mountainHeight);
+// Finite-difference surface normal from the summed wave field.
+fn waveNormal(pos: vec2f, baseFreq: f32, baseAmp: f32, baseSpeed: f32, timeSec: f32) -> vec3f {
+    let eps = 0.05;
+    let h   = waveSumY(pos,                   baseFreq, baseAmp, baseSpeed, timeSec);
+    let hx  = waveSumY(pos + vec2f(eps, 0.0), baseFreq, baseAmp, baseSpeed, timeSec);
+    let hz  = waveSumY(pos + vec2f(0.0, eps), baseFreq, baseAmp, baseSpeed, timeSec);
+    return normalize(vec3f(-(hx - h) / eps, 1.0, -(hz - h) / eps));
 }
 
-fn unpackHeight(c: vec4<f32>, height: f32 ) -> f32 {
-  // Convert normalized [0,1] → [0,255]
-  let r: f32 = c.r * 255.0;
-  let g: f32 = c.g * 255.0;
-  let b: f32 = c.b * 255.0;
+// ── Noise helpers ─────────────────────────────────────────────
 
-  // Reconstruct 24-bit integer
-  let value: f32 = r * 65536.0 + g * 256.0 + b;
-
-  // Map back to original range [0, 65535]
-  return (value * (height / 16777215.0));
+fn hash(p: vec2f) -> f32 {
+    var q = fract(p * vec2f(127.1, 311.7));
+    q += dot(q, q + 19.19);
+    return fract(q.x * q.y);
 }
 
-// ── TWEAKABLE CONSTANTS ──────────────────────────────────────
-// (promote to uniforms when ready)
-
-// --- Geometry / Waves ---
-const WATER_LEVEL: f32       = 40.0;    // world-space Y of the undisturbed surface
-
-// Layer A — dominant swell (long, slow, high amplitude)
-const WAVE_A_DIR:   vec2f = vec2f(1.0, 0.6);
-const WAVE_A_AMP:   f32   = 0.35;
-const WAVE_A_LEN:   f32   = 31.0;
-const WAVE_A_SPD:   f32   = 2.5;
-const WAVE_A_STEEP: f32   = 0.4;
-
-// Layer B — mid chop (cross-wind, shorter)
-const WAVE_B_DIR:   vec2f = vec2f(-0.5, 1.0);
-const WAVE_B_AMP:   f32   = 0.12;
-const WAVE_B_LEN:   f32   = 17.0;
-const WAVE_B_SPD:   f32   = 1.6;
-const WAVE_B_STEEP: f32   = 0.35;
-
-// Layer C — small surface ripple
-const WAVE_C_DIR:   vec2f = vec2f(0.8, -0.7);
-const WAVE_C_AMP:   f32   = 0.04;
-const WAVE_C_LEN:   f32   = 7.0;
-const WAVE_C_SPD:   f32   = 1.1;
-const WAVE_C_STEEP: f32   = 0.2;
-
-// --- Optical ---
-const IOR_WATER:   f32       = 1.333;  // index of refraction
-const FRESNEL_BIAS:f32       = 0.04;   // F0 for Schlick (air/water ≈ 0.02–0.04)
-
-// --- Depth / colour ---
-const DEPTH_MAX:   f32       = 10.0;    // depth (m) at which water is fully opaque
-const SHALLOW_COL: vec3f     = vec3f(0.05, 0.45, 0.40);  // teal-green shallows
-const DEEP_COL:    vec3f     = vec3f(0.01, 0.08, 0.22);  // dark-blue abyss
-const EXTINCTION:  vec3f     = vec3f(0.60, 0.15, 0.08);  // per-channel absorption
-
-// --- Reflection ---
-const SKY_HORIZON: vec3f     = vec3f(0.55, 0.75, 0.95);  // horizon sky colour
-const SKY_ZENITH:  vec3f     = vec3f(0.10, 0.35, 0.80);  // zenith sky colour
-const SUN_GLARE:   f32       = 1.0;  // specular shininess (sun highlight)
-
-// --- Foam ---
-const FOAM_DEPTH:  f32       = 3.0;   // depth threshold for shoreline foam
-const FOAM_COL:    vec3f     = vec3f(0.95, 0.97, 1.00);
-
-// --- Refraction ---
-const REFR_SCALE:  f32       = 0.04;   // how much the normal perturbs the refracted UV
-//   (background buffer not wired yet; colour is computed analytically)
-
-
-
-// ── HELPERS ─────────────────────────────────────────────────
-
-/// Schlick Fresnel approximation
-fn fresnel_schlick(dotLH: f32, f0: f32) -> f32 {
-  return f0 + (1.0 - f0) * pow(1.0 - dotLH, 5.0);
+fn noise(p: vec2f) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let u = f * f * (3.0 - 2.0 * f);
+    return mix(
+        mix(hash(i + vec2f(0.0, 0.0)), hash(i + vec2f(1.0, 0.0)), u.x),
+        mix(hash(i + vec2f(0.0, 1.0)), hash(i + vec2f(1.0, 1.0)), u.x),
+        u.y
+    );
 }
 
-/// Simple procedural sky: interpolate zenith→horizon by the reflected ray's Y
-fn sky_colour(reflect_dir: vec3f) -> vec3f {
-    let t = clamp(reflect_dir.y, 0.0, 1.0);
-    return mix(SKY_HORIZON, SKY_ZENITH, t);
+fn fbm(p: vec2f) -> f32 {
+    return noise(p) * 0.65 + noise(p * 2.1 + vec2f(5.3, 1.7)) * 0.35;
 }
 
-/// Beer–Lambert extinction over a given depth
-fn water_extinction(depth: f32) -> vec3f {
-    return exp(-EXTINCTION * depth);
+// Single Gerstner wave — returns (dx, dy, dz) displacement.
+// All spatial units metres, time in seconds.
+fn gerstner(
+    pos     : vec2f,
+    dir     : vec2f,
+    freq    : f32,
+    amp     : f32,
+    speed   : f32,
+    timeSec : f32,
+) -> vec3f {
+    let phase = freq * dot(dir, pos) - speed * freq * timeSec;
+    return vec3f(dir.x * amp * cos(phase),
+                       amp * sin(phase),
+                 dir.y * amp * cos(phase));
 }
 
 
-// ── WAVE DEFORMATION ────────────────────────────────────────
-//
-// Returns a WaveResult with:
-//   offset   — world-space displacement  (x, y, z)
-//   normal   — analytic surface normal   (unnormalised, caller normalises)
-//
-struct WaveResult {
-    offset: vec3f,
-    normal: vec3f,
+fn fresnel(cosTheta: f32, f0: f32) -> f32 {
+    return f0 + (1.0 - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-fn gerstner_wave(
-    dir:    vec2f, // wave travel direction
-    amp:    f32,   // wave amplitude (m)
-    length: f32,   // wavelength (m)
-    speed:  f32,   // phase speed (m/s)
-    steep:  f32,   // steepness [0,1]
-    p:      vec2f, // XZ world position
-    time:   f32,   // current time (s)
-) -> WaveResult {
-  let k     = 2.0 * 3.14159265 / length;
-  let omega = speed * k;
-  let d     = normalize(dir);
-  let phase = k * dot(d, p) - omega * time;
-  let s     = sin(phase);
-  let c     = cos(phase);
-  let ka    = k * amp;
-  let qka   = steep * ka;   // Q·k·a  (steepness factor)
+fn ggxSpecular(normal: vec3f, viewDir: vec3f, lightDir: vec3f, roughness: f32) -> f32 {
+    let h     = normalize(viewDir + lightDir);
+    let nDotH = max(dot(normal, h), 0.0);
+    let r2    = roughness * roughness;
+    let denom = nDotH * nDotH * (r2 - 1.0) + 1.0;
+    return r2 / (3.14159 * denom * denom + 1e-5);
+}
 
-  let disp = vec3f(
-      steep * amp * d.x * c,
-      amp * s,
-      steep * amp * d.y * c,
-  );
 
-  // Tangent along px-axis
-  let tx = vec3f(
-      1.0 - qka * d.x * d.x * s,
-      ka  * d.x * c,
-      -qka * d.x * d.y * s,
-  );
-  // Tangent along pz-axis
-  let tz = vec3f(
-      -qka * d.x * d.y * s,
-      ka  * d.y * c,
-      1.0 - qka * d.y * d.y * s,
-  );
 
-  // Normal = cross(tz, tx) so it points upward
-  let normal_contrib = cross(tz, tx);
 
-  var result: WaveResult;
-  result.offset = disp;
-  result.normal = normal_contrib;
+
+
+
+
+
+
+struct MorphInfo {
+  offset:   vec2f, // world space offset to apply to the vertex position for morphing
+  t:        f32,
+}
+
+// gridPos is the raw vertex position in grid space, e.g. 0..64
+// worldPos is the vertex position in world space
+fn lod_morph(
+  gridPos: vec2f,
+  worldPos: vec2f,
+  cameraPos: vec2f,
+  patchSize: f32,
+  baseFactor: f32, // e.g. 2, used on CPU for LOD selection (AABB nearest distance check)
+  morphLod: f32,
+) -> MorphInfo {
+
+  //
+  // in world units
+  //
+  let spacing     = exp2(morphLod);      // e.g. 1, 2, 4, 8 etc
+  let sizeInWorld = patchSize * spacing; // e.g. 64, 128, 256 etc
+
+  // HINT: rangeFactor of 1.0 is too tight
+  //
+  // constants for tweaking, maybe should be material parameters
+  let morphEnd     = sizeInWorld * baseFactor * 2.0;  // 2.0 hits right at the end of the patch
+  let morphRange   = sizeInWorld * baseFactor * 0.3;
+
+  let distance   = (distance(worldPos, cameraPos));
+  let morphLerpK = 1.0 - clamp((morphEnd - distance)/morphRange, 0.0, 1.0);
+  let morphLerp = fract(vec2f(gridPos.x, gridPos.y) * 0.5) * 2.0 * morphLerpK;
+
+  var result: MorphInfo;
+  result.offset   = morphLerp * spacing;
+  result.t        = morphLerpK;
+
   return result;
 }
 
-/// Composite wave deformation — call this from your vertex shader.
-/// Returns displaced world position and surface normal.
-fn water_deform(world_xz: vec2f, time: f32) -> WaveResult {
-    var total_offset = vec3f(0.0);
-    var total_normal = vec3f(0.0, 1.0, 0.0);   // start with flat normal
-
-    let wa = gerstner_wave(WAVE_A_DIR, WAVE_A_AMP, WAVE_A_LEN, WAVE_A_SPD, WAVE_A_STEEP, world_xz, time);
-    let wb = gerstner_wave(WAVE_B_DIR, WAVE_B_AMP, WAVE_B_LEN, WAVE_B_SPD, WAVE_B_STEEP, world_xz, time);
-    let wc = gerstner_wave(WAVE_C_DIR, WAVE_C_AMP, WAVE_C_LEN, WAVE_C_SPD, WAVE_C_STEEP, world_xz, time);
-
-    total_offset += wa.offset + wb.offset + wc.offset;
-
-    // Sum the XZ perturbations only, leave Y=1 as the base
-    total_normal = normalize(wa.normal + wb.normal + wc.normal);
-
-    var result: WaveResult;
-    result.offset = total_offset;
-    result.normal = total_normal;
-    return result;
+// UV → texel, accounting for 2049 vertices over 2048 texels
+fn uvToTexel(uv: vec2f, dims: vec2i) -> vec2i {
+  return vec2i(uv * vec2f(dims - vec2i(1)));
 }
 
+fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
+  let crossX = uv.x >= 1.0;
+  let crossZ = uv.y <= 0.0;
 
-struct WaterShading {
-  fresnel: f32,
-  color: vec4f,
-  sun_spec: f32,
+  var layer    : i32;
+  var sampleUV : vec2f;
+
+  if crossX && crossZ {
+    // corner
+    layer    = i32(params3.w);
+    sampleUV = vec2f(uv.x - 1.0, 1.0);
+  } else if crossX {
+    // right
+    layer    = i32(params3.y);
+    sampleUV = vec2f(uv.x - 1.0, uv.y);
+  } else if crossZ {
+    // bottom
+    layer    = i32(params3.z);
+    sampleUV = vec2f(uv.x, 1.0);
+  } else {
+    // this region
+    layer    = i32(params3.x);
+    sampleUV = uv;
+  }
+
+  if layer < 0 {
+    layer    = i32(params3.x);
+    sampleUV = clamp(uv, vec2f(0.0), vec2f(1.0));
+  }
+
+  return vec3f(sampleUV, f32(layer));
 }
 
-fn water_shade(
-    world_pos:  vec3f,
-    normal:     vec3f,
-    terrain_h:  f32,
-    camera_pos: vec3f,
-    sun_dir:    vec3f,
-    sun_color:  vec3f,
-) -> WaterShading {
+fn readMapData(uv: vec2f, params3: vec4f) -> vec2f {
+  let remapped = remapaUV(params3, uv);
 
-    let V = normalize(camera_pos - world_pos);  // view vector
-    let N = normal;
-    let L = normalize(sun_dir);
-    let H = normalize(V + L);                   // half-vector
+  let groundHeight = textureSampleLevel(heightMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r / 65535.0 * material.mountainHeight;
+  let waterHeight = material.waterHeight;// textureSampleLevel(waterMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r;
 
-
-    // ── 1. Depth ─────────────────────────────────────────────
-    let surface_y = world_pos.y;
-    let depth     = clamp(surface_y - terrain_h, 0.0, DEPTH_MAX);
-    let depth01   = depth / DEPTH_MAX;          // 0 = shore, 1 = deep
-
-    // ── 2. Base water colour (depth-driven) ───────────────────
-    let water_base = mix(SHALLOW_COL, DEEP_COL, smoothstep(0.0, 1.0, depth01));
-
-    // Beer–Lambert tint (light travels down and back up through water column)
-    let extinct    = water_extinction(depth * 2.0);
-    let refr_tint  = water_base * extinct;
-
-    // ── 3. Fresnel ────────────────────────────────────────────
-    let cos_v   = max(dot(N, V), 0.0);
-    let fresnel = fresnel_schlick(cos_v, FRESNEL_BIAS);
-
-    // ── 4. Reflection ─────────────────────────────────────────
-    let R           = reflect(V, N);
-    var refl_color  = sky_colour(R);
-
-    // Sun specular on the reflection (Blinn-Phong on the reflected direction)
-    let sun_spec    = pow(max(dot(R, L), 0.0), SUN_GLARE);
-    refl_color     += sun_color * sun_spec;
-
-    // ── 5. Refraction (analytic, no background buffer yet) ────
-    //   Perturb the conceptual "bottom" lookup with the normal.
-    //   For now we just tint the water body colour by the normal offset —
-    //   swap refr_color for an actual background sample once available.
-    let refr_offset = vec2f(N.x, N.z) * REFR_SCALE;
-    // placeholder: we encode the offset into a subtle hue shift on the tint
-    let refr_color  = refr_tint + vec3f(refr_offset.x, 0.0, refr_offset.y) * 0.05;
-
-    // ── 6. Combine reflection + refraction via Fresnel ────────
-    var surface_color = mix(refr_color, refl_color, fresnel);
-
-    // ── 7. Sun diffuse scatter (subsurface-ish rim) ───────────
-    let NdotL    = max(dot(N, L), 0.0);
-    let scatter  = NdotL * 0.15 * sun_color * SHALLOW_COL * (1.0 - depth01);
-    surface_color += scatter;
-
-    // ── 8. Foam at the shoreline ──────────────────────────────
-    let foam_t   = 1.0 - smoothstep(0.0, FOAM_DEPTH, depth);
-    surface_color = mix(surface_color, FOAM_COL, foam_t * 0.85);
-
-    // ── 9. Opacity ───────────────────────────────────────────
-    //   Shallow water is more transparent, deep water is opaque.
-    //   Fresnel also pushes opacity up at grazing angles.
-    let base_alpha  = smoothstep(0.0, 1.0, depth01);              // depth opacity
-    let total_alpha = clamp(mix(base_alpha, 1.0, fresnel) + foam_t * 0.25, 0.0, 1.0);
-
-    let shore_fade  = smoothstep(0.0, 0.1, depth);
-
-    var result: WaterShading;
-    result.fresnel = fresnel;
-    result.color = vec4f(surface_color, total_alpha * shore_fade);
-    return result;
+  return vec2f(waterHeight, groundHeight - waterHeight);
 }
+
 `

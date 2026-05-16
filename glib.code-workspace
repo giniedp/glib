@@ -12,6 +12,12 @@
     {
       "path": "../tweak-ui",
     },
+    {
+      "path": "../nw-formats",
+    },
+    {
+      "path": "../nw-extract",
+    },
   ],
   "settings": {
     "typescript.tsdk": "node_modules\\typescript\\lib",

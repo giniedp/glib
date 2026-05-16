@@ -3,23 +3,34 @@ import { COMMON_WGSL } from './common.wgsl'
 export const TERRAIN_PATCH_SHADER = /* wgsl */ `
 
 struct MaterialBlock {
-  baseColor:        vec3f,
-  specularColor:    vec3f,
-  roughness:        f32,
-
-  heightMapUvTransform:       vec4f,
-  heightMapUvTransformCoarse: vec4f,
-  colorMapUvTransform:        vec4f,
-  colorMapUvTransformCoarse:  vec4f,
-
   mountainHeight:  f32,
-  normalScale:     f32,
-  heightMapSize:   f32,
-  morphLod:        f32,
-
-  patchSize:       f32, // world size of the patch, e.g. 32, 64 etc
-  baseFactor:      f32, // distance factor for LOD, e.g. 2
   lines:           f32,
+};
+
+struct InstanceBlock {
+  transform:               mat4x4<f32>,
+
+  // x: patch size (32, 64 etc.),
+  // y: base factor (e.g. 2)
+  // z: morphLod
+  params1:                 vec4f,
+
+  // x: fine layer color map index
+  // y: coarse layer color map index
+  // z: 1 = fine ready
+  // w: 1 = coarse ready
+  params2:                 vec4f,
+
+  // x: this region's heightmap layer
+  // y: +X neighbour, -1 if none
+  // z: +Z neighbour, -1 if none
+  // w: +X+Z neighbour, -1 if none
+  params3:                 vec4f,
+
+  colorUvTransform:        vec4f,
+  colorUvTransformCoarse:  vec4f,
+  heightUvTransform:       vec4f,
+  heightUvTransformCoarse: vec4f,
 };
 
 struct SettingsBlock {
@@ -36,68 +47,66 @@ struct SettingsBlock {
 @group(1) @binding(0) var heightMapSampler: sampler;
 @group(1) @binding(1) var colorMapSampler:  sampler;
 
-@group(2) @binding(0) var heightMap: texture_2d<f32>;
-@group(2) @binding(1) var colorMap1: texture_2d<f32>;
-@group(2) @binding(2) var colorMap2: texture_2d<f32>;
+@group(2) @binding(0) var heightMap: texture_2d_array<f32>;
+@group(2) @binding(1) var colorMap1: texture_2d_array<f32>;
+@group(2) @binding(2) var colorMap2: texture_2d_array<f32>;
 
-@group(3) @binding(0) var heightMapCoarse: texture_2d<f32>;
-@group(3) @binding(1) var colorMap1Coarse: texture_2d<f32>;
-@group(3) @binding(2) var colorMap2Coarse: texture_2d<f32>;
+@group(3) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
 
 
 struct VertexInput {
-   @builtin(vertex_index) vertexIndex : u32,
+  @builtin(instance_index) instanceIndex: u32,
   // @alias position
-  @location(0) aPosition : vec3f,
+  @location(0) aPosition: vec3f,
   // @alias normal
-  @location(1) aNormal : vec3f,
+  @location(1) aNormal:   vec3f,
   // @alias texture
-  @location(2) aTexture : vec2f,
+  @location(2) aTexture:  vec2f,
 };
 
 struct VertexOutput {
-  @builtin(position) Position : vec4f,
+  @builtin(position) Position: vec4f,
 
-  @location(0) vNormal    : vec3f,
-  @location(1) vWorldPos  : vec3f,
-  @location(2) vToEyeInWS : vec3f,
-  @location(3) vTexCoord  : vec4f,
-  @location(4) vTileUV    : vec4f,
-  @location(5) vMorph     : f32,
+  @location(0) vNormal:    vec3f,
+  @location(1) vWorldPos:  vec3f,
+  @location(2) vToEyeInWS: vec3f,
+  @location(3) vTexCoord:  vec4f,
+  @location(4) vMorph:     f32,
+  @location(5) @interpolate(flat) iid:  u32,
+  @location(6) vHmLayer: vec3f,
 };
 
 @vertex
 fn vs_main(input : VertexInput) -> VertexOutput {
+
+  let instance = instances[input.instanceIndex];
+
   var output : VertexOutput;
 
-  var worldPos = (object.modelMatrix * vec4f(input.aPosition, 1.0));
+  var worldPos = (instance.transform * object.modelMatrix * vec4f(input.aPosition, 1.0));
 
+  let patchSize = f32(instance.params1.x);
+  let baseFactor = f32(instance.params1.y);
+  let morphLod = f32(instance.params1.z);
   let morph = lod_morph(
     input.aPosition.xz,         // raw grid position 0..64
     worldPos.xz,                // world space position
-    view.cameraPosition.xz
+    view.cameraPosition.xz,
+    patchSize,
+    baseFactor,
+    morphLod,
   );
   worldPos.x += morph.offset.x;
   worldPos.z += morph.offset.y;
 
-  let patchWorldSize = material.patchSize * exp2(material.morphLod);
+  let patchWorldSize = patchSize * exp2(morphLod);
   let uvDelta = -morph.offset / patchWorldSize;
 
-  let heightMapUv       = uvScaleOffset(input.aTexture + uvDelta, material.heightMapUvTransform);
-  let heightMapUvCoarse = uvScaleOffset(input.aTexture + uvDelta, material.heightMapUvTransformCoarse);
-
-  let dataFine     = readMapData(heightMapUv);
-  let dataCoarse   = readMapDataCoarse(heightMapUvCoarse);
-
-  var height       = dataFine.a;
-  let heightCoarse = height; // dataCoarse.a;
-
-  var normal       = dataFine.xyz;
-  let normalCoarse = dataCoarse.xyz;
-
-  let blend = morph.t;
-  normal = normalize(mix(normal, normalCoarse, blend));
-  worldPos.y += mix(height, heightCoarse, blend);
+  let heightMapUv = uvScaleOffset(input.aTexture + uvDelta, instance.heightUvTransform);
+  let data        = readMapData(heightMapUv, instance.params3);
+  var height      = data.a;
+  var normal      = data.xyz;
+  worldPos.y += height;
 
   let viewPos = view.viewMatrix * worldPos;
   let viewPosWrap = paniniWarpCommon(viewPos);
@@ -107,100 +116,141 @@ fn vs_main(input : VertexInput) -> VertexOutput {
 
   output.vTexCoord = vec4f(input.aTexture, input.aTexture + uvDelta);
   output.vToEyeInWS = view.cameraPosition - worldPos.xyz;
-  output.vTileUV = vec4f(heightMapUv, heightMapUvCoarse);
-  output.vMorph = blend;
+  output.vMorph = morph.t;
   output.Position = view.projectionMatrix * viewPosWrap;
+  output.iid = input.instanceIndex;
+
+  let crossX = heightMapUv.x >= 1.0;
+  let crossZ = heightMapUv.y <= 0.0;
+
+
+  var debugColor: vec3f;
+  var debugLayer: i32;
+  if !crossX && !crossZ {
+    debugLayer = i32(instance.params3.x);
+  } else if crossX {
+    debugLayer = i32(instance.params3.y);
+  } else if crossZ {
+    debugLayer = i32(instance.params3.z);
+  } else {
+    debugLayer = i32(instance.params3.w);
+  }
+  if (debugLayer == 0) {
+    debugColor = vec3f(1.0, 1.0, 1.0);
+  }
+  if (debugLayer == 1) {
+    debugColor = vec3f(1.0, 0.0, 0.0);
+  }
+  if (debugLayer == 2) {
+    debugColor = vec3f(0.0, 1.0, 0.0);
+  }
+  if (debugLayer == 3) {
+    debugColor = vec3f(0.0, 0.0, 1.0);
+  }
+
+
+  output.vHmLayer = debugColor;
+
   return output;
 }
 
 @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
-  if (material.lines > 0.5) {
-    if (material.morphLod < 1.0) {
-      return vec4f(1.0, 0.0, 0.0, 1.0);
-    }
-    if (material.morphLod < 2.0) {
-      return vec4f(1.0, 1.0, 0.0, 1.0);
-    }
-    if (material.morphLod < 3.0) {
-      return vec4f(0.0, 1.0, 1.0, 1.0);
-    }
-    if (material.morphLod < 4.0) {
-      return vec4f(1.0, 0.0, 1.0, 1.0);
-    }
-    if (material.morphLod < 5.0) {
-      return vec4f(1.0, 1.0, 1.0, 1.0);
-    }
-    return vec4f(1.0, 1.0, 1.0, 1.0);
-  }
+  let instance = instances[input.iid];
+
+  let morphLod = f32(instance.params1.z);
   let toEye = normalize(view.cameraPosition - input.vWorldPos);
-  var baseColor = vec4f(srgbToLinear(material.baseColor), 1.0);
 
-  let patchUv       = uvScaleOffset(input.vTexCoord.zw, material.colorMapUvTransform);
-  let patchUvCoarse = uvScaleOffset(input.vTexCoord.zw, material.colorMapUvTransformCoarse);
+  let patchUv          = uvScaleOffset(input.vTexCoord.zw, instance.colorUvTransform);
+  let patchUvCoarse    = uvScaleOffset(input.vTexCoord.zw, instance.colorUvTransformCoarse);
+  let patchLayer       = i32(instance.params2.x);
+  let patchLayerCoarse = i32(instance.params2.y);
 
-  var sample1 = textureSample(colorMap1, colorMapSampler, patchUv); // base.rgb + normal.a
-  var sample2 = textureSample(colorMap2, colorMapSampler, patchUv); // spec, smooth, height in rgb + normal.a
-
-  let coarseSample1 = textureSample(colorMap1Coarse, colorMapSampler, patchUvCoarse);
-  let coarseSample2 = textureSample(colorMap2Coarse, colorMapSampler, patchUvCoarse);
-
-  // unpack fine normals
-  let fineNormalXY   = vec2f(sample1.a, sample2.a) * 2.0 - 1.0;
-  let fineNormalZ    = sqrt(max(0.0, 1.0 - dot(fineNormalXY, fineNormalXY)));
-  let fineNormal     = normalize(vec3f(fineNormalXY, fineNormalZ));
-
-  // unpack coarse normals
-  let coarseNormalXY = vec2f(coarseSample1.a, coarseSample2.a) * 2.0 - 1.0;
-  let coarseNormalZ  = sqrt(max(0.0, 1.0 - dot(coarseNormalXY, coarseNormalXY)));
-  let coarseNormal   = normalize(vec3f(coarseNormalXY, coarseNormalZ));
-
-  let blend = input.vMorph;
-  sample1 = mix(sample1, coarseSample1, blend);
-  sample2 = mix(sample2, coarseSample2, blend);
-  let blendedNormal = normalize(mix(fineNormal, coarseNormal, blend));
+  // tangent space view direction for POM
   let tbn = getCotangentFrame(input.vWorldPos, normalize(input.vNormal), patchUv);
+  let viewTS = normalize(tbn * toEye);
+  let pomUV = parallaxOcclusionMap(patchUv, patchLayer, viewTS, 8, 0.0078, 0.0);
+
+  var sample1       = textureSampleLevel(colorMap1, colorMapSampler, pomUV,         patchLayer,       0.0);
+  var sample2       = textureSampleLevel(colorMap2, colorMapSampler, pomUV,         patchLayer,       0.0);
+  var coarseSample1 = textureSampleLevel(colorMap1, colorMapSampler, patchUvCoarse, patchLayerCoarse, 0.0);
+  var coarseSample2 = textureSampleLevel(colorMap2, colorMapSampler, patchUvCoarse, patchLayerCoarse, 0.0);
+
+  let fineParams = unpackParams(sample1, sample2);
+  let coarseParams = unpackParams(coarseSample1, coarseSample2);
+
+  // only blend when both fine and coarse are real distinct tiles
+  let blend  = input.vMorph;
+  let normal = normalize(mix(fineParams.normal, coarseParams.normal, blend));
 
   var surface: SurfaceParams;
-  surface.BaseColor = vec4f(sample1.rgb, 1.0) * baseColor;
-  surface.Specular  = vec3f(sample2.x); // TODO:
-  surface.Roughness = smoothnessToRoughness(sample2.y);
+  surface.BaseColor = vec4f(mix(fineParams.color, coarseParams.color, blend), 1.0);
+  surface.Specular  = vec3f(mix(fineParams.specular, coarseParams.specular, blend)) ;
+  surface.Roughness = mix(fineParams.roughness, coarseParams.roughness, blend);
   surface.Metallic  = 0.0;
   surface.Ior       = 0.0;
-  surface.Normal    = vec4(normalize(tbn * blendedNormal), 1.0);
-
-  if (settings.debug == DEBUG_COLOR) {
-    if (material.morphLod < 1.0) {
-      surface.BaseColor = vec4f(1.0, 0.0, 0.0, 1.0);
-    } else if (material.morphLod < 2.0) {
-      surface.BaseColor = vec4f(1.0, 1.0, 0.0, 1.0);
-    } else if (material.morphLod < 3.0) {
-      surface.BaseColor = vec4f(0.0, 1.0, 1.0, 1.0);
-    } else if (material.morphLod < 4.0) {
-      surface.BaseColor = vec4f(1.0, 0.0, 1.0, 1.0);
-    } else if (material.morphLod < 5.0) {
-      surface.BaseColor = vec4f(1.0, 1.0, 1.0, 1.0);
-    }
-  }
+  surface.Normal    = vec4(normalize(tbn * normal), 1.0);
 
   var color = accumulateLight(lights, env, surface, toEye, input.vWorldPos);
 
   if (settings.debug > 0u) {
-    if (settings.debug == DEBUG_MATERIAL) {
+    if (settings.debug == DEBUG_MTL_BASE) {
+      return vec4f(surface.BaseColor.rgb, 1.0);
+    }
+    if (settings.debug == DEBUG_MTL_SPEC) {
+      return vec4f(surface.Specular.rgb, 1.0);
+    }
+    if (settings.debug == DEBUG_MTL_PBR) {
       return vec4f(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
     }
+
     if (settings.debug == DEBUG_NORMALS) {
       return vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
     }
-    if (settings.debug == DEBUG_UVS) {
-      return vec4f(patchUv, input.vMorph, 1.0);
+    if (settings.debug == DEBUG_TANGENTS) {
+      return vec4f(0.0, 0.0, 0.0, 1.0);
+    }
+    if (settings.debug == DEBUG_BINORMALS) {
+      return vec4f(0.0, 0.0, 0.0, 1.0);
     }
 
+    if (settings.debug == DEBUG_COLOR1) {
+      return vec4f(0.0, 0.0, 0.0, 1.0);
+    }
+    if (settings.debug == DEBUG_COLOR2) {
+      return vec4f(0.0, 0.0, 0.0, 1.0);
+    }
+
+    if (settings.debug == DEBUG_UV1) {
+      return vec4f(pomUV, 0.0, 1.0);
+    }
+    if (settings.debug == DEBUG_UV2) {
+      return vec4f(patchUvCoarse, 0.0, 1.0);
+    }
   }
 
-  // return vec4f(coarseSample1.rgb - sample1.rgb, 1.0); // debug: show coarse vs fine detail
-
   return applyFog(color, 1.0, input.vWorldPos, view.cameraPosition);
+}
+
+struct MtlParams {
+  color: vec3f,
+  normal: vec3f,
+  roughness: f32,
+  specular: f32,
+  height: f32,
+}
+
+fn unpackParams(sample1: vec4f, sample2: vec4f) -> MtlParams {
+  var params: MtlParams;
+
+  let normalXY   = vec2f(sample1.a, sample2.b) * 2.0 - 1.0;
+  let normalZ    = sqrt(max(0.0, 1.0 - dot(normalXY, normalXY)));
+  params.normal    = normalize(vec3f(normalXY, normalZ));
+  params.color     = sample1.rgb / 8.0; // BC3_BASE_COLOR_SCALE, applied in shader for better precision
+  params.roughness = smoothnessToRoughness(sample2.r);
+  params.specular  = sample2.g;
+  params.height    = sample2.a;
+  return params;
 }
 
 struct MorphInfo {
@@ -208,16 +258,22 @@ struct MorphInfo {
   t:        f32,
 }
 
-fn lod_morph(gridPos: vec2f, worldPos: vec2f, cameraPos: vec2f) -> MorphInfo {
-  // - gridPos is the raw vertex position in grid space, e.g. 0..64
-  // - worldPos is the vertex position in world space
+// gridPos is the raw vertex position in grid space, e.g. 0..64
+// worldPos is the vertex position in world space
+fn lod_morph(
+  gridPos: vec2f,
+  worldPos: vec2f,
+  cameraPos: vec2f,
+  patchSize: f32,
+  baseFactor: f32, // e.g. 2, used on CPU for LOD selection (AABB nearest distance check)
+  morphLod: f32,
+) -> MorphInfo {
 
   //
   // in world units
   //
-  let spacing     = exp2(material.morphLod);      // e.g. 1, 2, 4, 8 etc
-  let sizeInWorld = material.patchSize * spacing; // e.g. 64, 128, 256 etc
-  let baseFactor  = material.baseFactor;          // e.g. 2, used on CPU for LOD selection (AABB nearest distance check)
+  let spacing     = exp2(morphLod);      // e.g. 1, 2, 4, 8 etc
+  let sizeInWorld = patchSize * spacing; // e.g. 64, 128, 256 etc
 
   // HINT: rangeFactor of 1.0 is too tight
   //
@@ -236,79 +292,137 @@ fn lod_morph(gridPos: vec2f, worldPos: vec2f, cameraPos: vec2f) -> MorphInfo {
   return result;
 }
 
-fn readMapData(uv: vec2f) -> vec4f {
-  let sample = textureSampleLevel(heightMap, heightMapSampler, uv, 0);
-  return unpackHeightNormal(sample, material.mountainHeight);
+// UV → texel, accounting for 2049 vertices over 2048 texels
+fn uvToTexel(uv: vec2f, dims: vec2i) -> vec2i {
+  return vec2i(uv * vec2f(dims - vec2i(1)));
 }
 
-fn readMapDataCoarse(uv: vec2f) -> vec4f {
-  let sample = textureSampleLevel(heightMapCoarse, heightMapSampler, uv, 0);
-  return unpackHeightNormal(sample, material.mountainHeight);
+fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
+  let crossX = uv.x >= 1.0;
+  let crossZ = uv.y <= 0.0;
+
+  var layer    : i32;
+  var sampleUV : vec2f;
+
+  if crossX && crossZ {
+    // corner
+    layer    = i32(params3.w);
+    sampleUV = vec2f(uv.x - 1.0, 1.0);
+  } else if crossX {
+    // right
+    layer    = i32(params3.y);
+    sampleUV = vec2f(uv.x - 1.0, uv.y);
+  } else if crossZ {
+    // bottom
+    layer    = i32(params3.z);
+    sampleUV = vec2f(uv.x, 1.0);
+  } else {
+    // this region
+    layer    = i32(params3.x);
+    sampleUV = uv;
+  }
+
+  if layer < 0 {
+    layer    = i32(params3.x);
+    sampleUV = clamp(uv, vec2f(0.0), vec2f(1.0));
+  }
+
+  return vec3f(sampleUV, f32(layer));
 }
 
-fn unpackHeightNormal(c: vec4f, mountainHeight: f32) -> vec4f {
+fn sampleHeight(params3: vec4f, uv: vec2f) -> f32 {
+  let remapped = remapaUV(params3, uv);
+  return textureSampleLevel(heightMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r / 65535.0 * material.mountainHeight;
+}
 
-  let r: f32 = c.r * 255.0;
-  let g: f32 = c.g * 255.0;
-  let h: f32 = ((r * 256.0 + g) / 65535.0) * mountainHeight;
+fn readMapData(uv: vec2f, params3: vec4f) -> vec4f {
+  let dims = vec2i(textureDimensions(heightMap));
+  let texelSize = 1.0 / vec2f(dims);
 
-  let nx: f32 = c.b * 2.0 - 1.0;
-  let nz: f32 = c.a * 2.0 - 1.0;
+  let hpx = sampleHeight(params3, uv + vec2f( texelSize.x, 0.0));
+  let hnx = sampleHeight(params3, uv + vec2f(-texelSize.x, 0.0));
+  let hpy = sampleHeight(params3, uv + vec2f(0.0,  texelSize.y));
+  let hny = sampleHeight(params3, uv + vec2f(0.0, -texelSize.y));
 
-  let normal = normalize(vec3f(nx, mountainHeight, -nz));
-
+  let normal = normalize(vec3f(hpx - hnx, 1.0, hpy - hny));
+  let h      = sampleHeight(params3, uv);
   return vec4f(normal, h);
 }
 
-fn getProceduralOffset(
-  worldXZ: vec2f,
-  lod: f32,
-) -> f32 {
-
-  let maxLod = 10.0;
-  let amplitude = 0.5;
-  let frequency = 1.0;
-  let seed = vec2f(0.0, 0.0);
-
-  let w = lodWeight(lod, maxLod);
-  let n = fbmCentered(worldXZ * frequency + seed);
-  return n * amplitude * w;
+fn samplePOMHeight(uv: vec2f, layer: i32) -> f32 {
+  let clampedUV = clamp(uv, vec2f(0.0), vec2f(1.0));
+  return textureSampleLevel(colorMap2, colorMapSampler, clampedUV, layer, 0.0).a;
 }
 
-fn lodWeight(lod: f32, maxLod: f32) -> f32 {
-  let t = lod / maxLod;
-  return 1.0 - t * t * (3.0 - 2.0 * t);
-}
+// Parallax Occlusion Mapping
+// uv         : base tile UV
+// layer      : tile array layer
+// viewTS     : view direction in tangent space (tbn * toEye)
+// numSteps   : ray march steps, 8-16 is typical
+// displacement: max height displacement in UV space, e.g. 0.03
+// bias       : height bias, 0.5-0.7 typical
+fn parallaxOcclusionMap(
+  uv:           vec2f,
+  layer:        i32,
+  viewTS:       vec3f,
+  numSteps:     i32,
+  displacement: f32,
+  bias:         f32,
+) -> vec2f {
 
-fn fbmCentered(xy: vec2f) -> f32 {
-  return fbm(xy) * 2.0 - 1.0; // approx [-1, 1]
-}
+  // UV step per ray march iteration
+  // xy of viewTS is the tangent space direction, z is depth
+  // divide by z to get correct perspective-correct step
+  let stepSize = 1.0 / f32(numSteps);
+  // let uvDelta  = (viewTS.xy / viewTS.z) * displacement / f32(numSteps);
+  let uvDelta  = (viewTS.xy) * displacement / f32(numSteps);
 
-fn fbm(xy: vec2f) -> f32 {
-  return
-      noise(xy) * 0.5 +
-      noise(xy * 2.0) * 0.25 +
-      noise(xy * 4.0) * 0.125;
-}
+  // start position — offset by bias to reduce self-intersection
+  var currentUV     = uv - (1.0 - bias) * f32(numSteps) * uvDelta;
+  var currentHeight = 1.0 - stepSize;
 
-fn hash2(p: vec2f) -> f32 {
-  let p3 = fract(vec3f(p.xyx) * vec3f(0.1031, 0.1030, 0.0973));
-  let p3_dot = dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
-}
+  var prevSample = samplePOMHeight(currentUV, layer);
+  currentUV     += uvDelta;
+  var currSample = samplePOMHeight(currentUV, layer);
 
-fn noise(xy: vec2f) -> f32 {
-  let i = floor(xy);
-  let f = fract(xy);
+  // coarse ray march — find approximate intersection
+  for (var i = 0; i < numSteps; i++) {
+    if currSample >= currentHeight { break; }
 
-  let a = hash2(i);
-  let b = hash2(i + vec2f(1.0, 0.0));
-  let c = hash2(i + vec2f(0.0, 1.0));
-  let d = hash2(i + vec2f(1.0, 1.0));
+    prevSample     = currSample;
+    currentHeight -= stepSize;
+    currentUV     += uvDelta;
+    currSample     = samplePOMHeight(currentUV, layer);
+  }
 
-  let u = f * f * (3.0 - 2.0 * f);
+  // binary search refinement — narrow down exact intersection
+  var t0     = currentHeight + stepSize;   // before intersection
+  var t1     = currentHeight;              // after intersection
+  var delta0 = t0 - prevSample;
+  var delta1 = t1 - currSample;
 
-  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  for (var i = 0; i < 10; i++) {
+    let denom = delta1 - delta0;
+    if abs(denom) < 0.0001 { break; }
+
+    let t      = (t0 * delta1 - t1 * delta0) / denom;
+    let uvBest = currentUV - (currentHeight - t) / stepSize * uvDelta;
+    let hBest  = samplePOMHeight(uvBest, layer);
+    let error  = t - hBest;
+
+    if abs(error) <= 0.01 {
+      currentUV = uvBest;
+      break;
+    }
+
+    if (error < 0.0) {
+      delta1 = error; t1 = t;
+    } else {
+      delta0 = error; t0 = t;
+    }
+  }
+
+  return currentUV;
 }
 
 ${COMMON_WGSL}

@@ -1,8 +1,8 @@
 import { type GameComponent, type GameEntity } from '@gglib/ecs'
 import { BoundingBox, Vec3 } from '@gglib/math'
-import type { EntityData, LevelData, RegionReference, TerrainData } from '../api'
-import { cryToGltfV3, gameCoordinate2D } from '../math'
-import { levelRegion } from './LevelRegionComponent'
+import type { EntityData, LevelData, RegionReference, TerrainData } from '../../api'
+import { cryToGltfV3, gameCoordinate2D } from '../../math'
+import { levelRegion, RegionComponent } from '../region/RegionComponent'
 
 export interface LevelOptions {
   level: LevelData
@@ -11,12 +11,18 @@ export interface LevelOptions {
   mission: EntityData[]
 }
 
+export interface LevelRegionLink {
+  entity: GameEntity
+  component: RegionComponent
+}
+
 export class LevelComponent implements GameComponent {
   private data: LevelOptions
   private bounds: [number, number, number, number]
   private boundingBox: BoundingBox
 
   public readonly entity: GameEntity
+  public readonly regions: LevelRegionLink[] = []
 
   public constructor(data: LevelOptions) {
     this.data = data
@@ -60,7 +66,12 @@ export class LevelComponent implements GameComponent {
       center: gameCoordinate2D(centerX, centerY),
       worldBounds: this.boundingBox,
     })
-    this.entity.world.createEntity(options)
+    const entity = this.entity.world.createEntity(options)
+
+    this.regions.push({
+      entity,
+      component: entity.component(RegionComponent),
+    })
   }
 
   private createWorldBounds() {

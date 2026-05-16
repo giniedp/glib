@@ -4,6 +4,7 @@ import { DistanceCloudsMaterial } from './DistanceCloudsMaterial'
 import { NewWorldMaterial } from './NewWorldMaterial'
 import { TerrainCompositeMaterial } from './TerrainCompositeMaterial'
 import type { TexMod } from './TexMod'
+import { VegetationMaterial } from './VegetationMaterial'
 
 export interface NwMaterialExtensionData {
   attrs: NwMaterialAttrs
@@ -54,7 +55,7 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
       ...(data.params || {}),
     }
 
-    data.textures.forEach((tex) => {
+    data.textures?.forEach((tex) => {
       const texNode = container.textureNode(tex.index)
       const texData = tex.extensions[EXT_nw_tex] as NwTextureExtensionData
       container.graph.assign(node, texNode, (material, texture) => {
@@ -71,9 +72,12 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
         node.data.factory = (device, asset) => new TerrainCompositeMaterial(device, asset)
         break
       }
-      case 'Illum':
-      case 'Vegetation': {
+      case 'Illum': {
         node.data.factory = (device, asset) => new NewWorldMaterial(device, asset)
+        break
+      }
+      case 'Vegetation': {
+        node.data.factory = (device, asset) => new VegetationMaterial(device, asset)
         break
       }
       case 'Distanceclouds': {

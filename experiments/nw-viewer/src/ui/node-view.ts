@@ -1,7 +1,7 @@
 import { CameraComponent, GameLoop, TransformComponent } from '@gglib/components'
 import { GameEntity } from '@gglib/ecs'
 import type { FactoryComponent } from 'mithril'
-import { h, uiAngle, uiBoolean, uiGroup, uiNumber, uiSelect, uiString, uiVector } from 'tweak-ui'
+import { h, uiAngle, uiBoolean, uiGroup, uiNumber, uiSelect, uiString, uiVector, redrawUi } from 'tweak-ui'
 
 export type NwNodeViewProps = {
   data: any
@@ -52,6 +52,21 @@ const GameEntityView: FactoryComponent<{ component: GameEntity }> = () => {
           disabled: true,
           get value() {
             return component.stateName
+          },
+        }),
+        uiBoolean({
+          label: 'Active',
+          get value() {
+            return component.isActive
+          },
+          set value(active: boolean) {
+            if (active && component.canActivate) {
+              component.activate()
+            }
+            if (!active && component.canDeactivate) {
+              component.deactivate()
+            }
+            setTimeout(redrawUi)
           },
         }),
         uiNumber({

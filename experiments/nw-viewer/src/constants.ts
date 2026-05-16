@@ -5,7 +5,17 @@ export const HEIGHTMAP_TILE_SIZE = 256
 export const QUAD_LEAF_SIZE = 32
 export const MATERIAL_TEXTURE_SIZE = 512
 export const LOD_RANGE_FACTOR = 2
-export const SHOW_TERRAIN_LINES = false
+export const SHOW_TERRAIN_LINES = true
+
+export const POM_DISPLACEMENT = 0.25 // in world units -> 0.25 / QUAD_LEAF_SIZE
+export const POM_BIAS = 0.0
+export const POM_SELF_SHADOW_STRENGTH = 2.0
+export const MACRO_VIEW_DISTANCE = 1000
+export const MACRO_BLEND_DISTANCE = 100
+export const MACRO_WORLD_SIZE = REGION_SIZE
+export const ALBEDO_MULTIPLIER = 8.0
+export const MAX_ANISOTROPY = 4.0
+export const MAX_MIP_LEVELS = 8.0
 
 export const ENABLE_IMPOSTORS = true
 export const ENABLE_CAPITAL_INDICATOR = false
@@ -28,13 +38,13 @@ export const LOD_SPANS = {
   },
   impostor: {
     start: 0,
-    visibleFor: 4,
-    keepAliveFor: 1,
+    visibleFor: 8,
+    keepAliveFor: 4,
   },
   impostorPoi: {
     start: 0,
-    visibleFor: 6,
-    keepAliveFor: 1,
+    visibleFor: 8,
+    keepAliveFor: 4,
   },
 }
 

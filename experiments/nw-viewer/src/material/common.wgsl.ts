@@ -12,11 +12,17 @@ const LIGHT_TYPE_POINT:       u32 = 2u;
 const LIGHT_TYPE_SPOT:        u32 = 3u;
 const LIGHT_TYPE_AREA:        u32 = 4u;
 
-const DEBUG_NONE:     u32 = 0u;
-const DEBUG_MATERIAL: u32 = 1u;
-const DEBUG_NORMALS:  u32 = 2u;
-const DEBUG_UVS:      u32 = 3u;
-const DEBUG_COLOR:    u32 = 4u;
+const DEBUG_OFF:       u32 = 0u;
+const DEBUG_MTL_BASE:  u32 = 1u;
+const DEBUG_MTL_SPEC:  u32 = 2u;
+const DEBUG_MTL_PBR:   u32 = 3u; // metallic, roughness, ior
+const DEBUG_NORMALS:   u32 = 4u;
+const DEBUG_TANGENTS:  u32 = 5u;
+const DEBUG_BINORMALS: u32 = 6u;
+const DEBUG_COLOR1:    u32 = 7u;
+const DEBUG_COLOR2:    u32 = 8u;
+const DEBUG_UV1:       u32 = 9u;
+const DEBUG_UV2:       u32 = 10u;
 
 struct ObjectBlock {
   modelMatrix: mat4x4<f32>,

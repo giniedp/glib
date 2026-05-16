@@ -1,19 +1,19 @@
-import { QuadTree as QTree, type ScheduledTask } from '@gglib/components'
+import { QuadTree, QuadTreeNode, type ScheduledTask } from '@gglib/components'
 import type { GameEntity } from '@gglib/ecs'
-import type { Texture } from '@gglib/graphics'
-import { Vec3, type IVec2 } from '@gglib/math'
+import { BoundingBox, BoundingFrustum, Vec3, type IVec2 } from '@gglib/math'
+import type { CameraData } from '@gglib/render'
 import { brand, type Brand } from '@gglib/utils'
-import { REGION_SIZE } from '../constants'
 import type { TerrainTile } from './TerrainTileManager'
 
 export type TerraPayload = {
-  id: string // thie tile ID
   state: TerraQuadState
   lastSeen: number
+
   /**
    * visible in this frame
    */
   visible: boolean
+
   /**
    * required by a visible child
    */
@@ -22,12 +22,7 @@ export type TerraPayload = {
   region: TerrainRegion
   entity: GameEntity
 
-  heightmap: Texture
-  heightmapAncestor: TerraQuad
-  heightmapTask: ScheduledTask
-
   tile: TerrainTile
-  materialAncestor: TerraQuad
   materialRenderTask: ScheduledTask
 }
 
@@ -45,9 +40,11 @@ export const TerraQuadState = {
   Ready: brand<TerraQuadState>(7),
 }
 
-export type TerraQuad = QTree<TerraPayload>
+export type TerraRoot = QuadTree<TerraPayload>
+export type TerraQuad = QuadTreeNode<TerraPayload>
 
 export interface TerrainRegionOptions {
+  name: string
   origin: IVec2
   size: number
   leafSize: number
@@ -60,42 +57,57 @@ export class TerrainRegion {
   public get yIndex() {
     return this.origin.y / this.size
   }
+
+  public readonly name: string
   public readonly origin: IVec2
   public readonly size: number
-  public readonly root: TerraQuad
+  public readonly tree: TerraRoot
   public readonly leafSize: number
   public readonly maxLevel: number
   public entity: GameEntity
 
+  private frustum: BoundingFrustum = new BoundingFrustum()
+  private bounds: BoundingBox = new BoundingBox()
   private requiredQuads = new Set<TerraQuad>()
 
   public constructor(options: TerrainRegionOptions) {
+    this.name = options.name
     this.size = options.size
     this.origin = options.origin
     this.leafSize = options.leafSize
-    this.root = QTree.create({
+    this.tree = QuadTree.create({
       min: new Vec3(this.origin.x, 0, this.origin.y),
-      max: new Vec3(this.origin.x + this.size, REGION_SIZE, this.origin.y + this.size),
-      looseFactor: 1,
+      max: new Vec3(this.origin.x + this.size, this.size, this.origin.y + this.size),
     })
 
-    this.root.subdivideTosize(this.leafSize)
+    this.tree.subdivideTosize(this.leafSize)
     this.maxLevel = Math.log2(this.size / this.leafSize)
   }
 
-  public traverseRequiredSet(
-    cameraX: number,
-    cameraY: number,
-    baseFactor: number,
-    fn: (node: TerraQuad) => void,
-  ): void {
+  public traverseRequiredSet(camera: CameraData, baseFactor: number, fn: (node: TerraQuad) => void): void {
     // clear helper collections
     this.requiredQuads.clear()
-    clearVisibility(this.root)
+    clearVisibility(this.tree)
 
     // list of non overlapping quads
 
-    this.root.traverseLOD(cameraX, cameraY, baseFactor, (it) => {
+    const camX = -camera.world.translationX
+    const camY = camera.world.translationZ
+    this.frustum.updateFromViewProjection(camera.view, camera.projection)
+    this.tree.traverseLOD(camX, camY, baseFactor, (it) => {
+      // prettier-ignore
+      this.bounds.init(
+        -it.bounds.max.x,
+         it.bounds.min.y,
+         it.bounds.min.z,
+        -it.bounds.min.x,
+         it.bounds.max.y,
+         it.bounds.max.z,
+      )
+      if (!this.frustum.intersectsBox(this.bounds)) {
+        return
+      }
+
       it.data.visible = true
       it.data.required = true
 
@@ -112,7 +124,7 @@ export class TerrainRegion {
       }
     })
 
-    traverseRequired(this.root, fn)
+    traverseRequired(this.tree, fn)
   }
 }
 

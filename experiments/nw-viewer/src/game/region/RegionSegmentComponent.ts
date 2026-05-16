@@ -1,20 +1,14 @@
-import type { CapitalData, ChunkData, EntityData, ImpostorData } from '../api'
+import type { CapitalData, ChunkData, EntityData, ImpostorData } from '../../api'
 
-import {
-  BoundsComponent,
-  LifeCyclePropagate,
-  MeshComponent,
-  SpatialComponent,
-  TransformComponent,
-} from '@gglib/components'
+import { LifeCyclePropagate, TransformComponent } from '@gglib/components'
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
-import { BasicMaterial, createVertexLayout, Device, Mesh, planeGeometry } from '@gglib/graphics'
 
-import { Mat4, Vec3, Vec4 } from '@gglib/math'
+import { Mat4, Vec4 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
-import { gameToRenderCoordinate, type GameCoordinate2D } from '../math'
-import { ENABLE_IMPOSTORS, LOD_SPANS, lodSpanEnd, lodSpanStart, lodSpanVisibleEnd, SEGMENT_SIZE } from '../constants'
-import { levelImpostor } from './LevelImpostorComponent'
+import { ENABLE_IMPOSTORS, LOD_SPANS, lodSpanEnd, lodSpanStart, lodSpanVisibleEnd, SEGMENT_SIZE } from '../../constants'
+import { gameToRenderCoordinate, type GameCoordinate2D } from '../../math'
+import { DebugShapeComponent } from '../debug/DebugShapeComponent'
+import { levelImpostor } from '../region/ImpostorComponent'
 
 const IMPOSTOR_SHOW_AT = Math.pow(lodSpanStart(LOD_SPANS.impostor), 2)
 const IMPOSTOR_HIDE_AT = Math.pow(lodSpanVisibleEnd(LOD_SPANS.impostor), 2)
@@ -48,10 +42,6 @@ export interface SegmentComponentOptions {
   region: string
   center: GameCoordinate2D
   impostors: ImpostorData[]
-  capitals: CapitalWithEntities[]
-  chunks: ChunkWithEntities[]
-  entities: EntityInfoWithPosition[]
-  distribution?: EntityData[]
 }
 
 export function levelSegment(parent: GameEntity, options: SegmentComponentOptions): CreateEntityOptions {
@@ -62,17 +52,11 @@ export function levelSegment(parent: GameEntity, options: SegmentComponentOption
       world: Mat4.createTranslation(gameToRenderCoordinate(options.center, 0)),
       keepWorld: true,
     }),
-    components: [
-      new BoundsComponent(),
-      new MeshComponent(),
-      new SpatialComponent(),
-      new LevelSegmentComponent(options),
-    ],
+    components: [new RegionSegmentComponent(options)],
   }
 }
 
-const colTmp = new Vec3()
-export class LevelSegmentComponent implements GameComponent {
+export class RegionSegmentComponent implements GameComponent {
   private capitals: GameEntity
   private capitalsLoaded: boolean = false
   private capitalsShown: boolean = false
@@ -85,9 +69,8 @@ export class LevelSegmentComponent implements GameComponent {
   private poiImpostorsLoaded: boolean = false
   private poiImpostorsShown: boolean = false
 
-  private indicator: MeshComponent
+  private shape: DebugShapeComponent
   private color = new Vec4(0.25, 0.15, 0.15, 1)
-  private alpha = 0.1
 
   private data: SegmentComponentOptions
 
@@ -104,21 +87,11 @@ export class LevelSegmentComponent implements GameComponent {
   }
 
   public initialize(): void {
-    const device = this.entity.service(Device)
-
-    const material = new BasicMaterial(device)
-
-    this.indicator = this.entity.component(MeshComponent)
-    this.indicator.mesh = new Mesh(device, {
-      materials: [material],
-      parts: [
-        planeGeometry(device, {
-          layout: [createVertexLayout(['position', 'texture', 'normal', 'color'])],
-          size: SEGMENT_SIZE - 1,
-          transform: Mat4.createTranslationXYZ(0, -0.01, 0),
-        }),
-      ],
+    this.shape = this.entity.getOrCreateComponent(DebugShapeComponent, () => {
+      return new DebugShapeComponent({ type: 'plane', solid: true })
     })
+    this.shape.scale = { x: SEGMENT_SIZE - 1, y: 1, z: SEGMENT_SIZE - 1, w: 0 }
+    this.shape.color = this.color
 
     this.capitals = this.entity.world.createEntity({
       name: `capitals`,
@@ -150,23 +123,6 @@ export class LevelSegmentComponent implements GameComponent {
     })
 
     this.createImpostors(this.data.impostors)
-    this.createCapitals(this.data.capitals)
-    this.createChunks(this.data.chunks)
-    this.createEntities(this.data.entities)
-
-    if (this.data.entities?.length) {
-      this.color.x = 0.5
-      this.color.x = 0.5
-    }
-    if (this.impostors.getTransform().children.length > 0) {
-      this.color.y = 0.5
-      this.color.y = 0.5
-    }
-    if (this.data.capitals?.length) {
-      this.color.z = 0.5
-      this.color.z = 0.5
-    }
-    material.BaseColor.initFrom(this.color)
   }
 
   public activate(): void {
@@ -215,7 +171,7 @@ export class LevelSegmentComponent implements GameComponent {
     const capitalShouldLoad = d2 <= CAPITAL_UNLOAD_AT
     const capitalShouldShow = CAPITAL_SHOW_AT <= d2 && d2 <= CAPITAL_HIDE_AT
 
-    let alpha = this.alpha
+    let alpha = this.color.w
 
     if (!segmentShouldLoad) {
       this.impostorsLoaded = false
@@ -320,21 +276,7 @@ export class LevelSegmentComponent implements GameComponent {
     if (this.capitalsShown) {
       alpha = 1.0
     }
-    if (alpha != this.alpha) {
-      colTmp.init(this.color.x, this.color.y, this.color.z)
-      if (alpha == 0.2) {
-        const gray = getGrayscale(colTmp.x, colTmp.y, colTmp.z)
-        colTmp.init(gray, gray, gray)
-      } else {
-        colTmp.multiplyScalar(alpha)
-      }
-      this.alpha = alpha
-
-      if (this.indicator.mesh) {
-        const material = this.indicator.mesh.materials[0] as BasicMaterial
-        material.Alpha = alpha
-      }
-    }
+    this.color.w = alpha
   }
 
   private createImpostors(impostor: ImpostorData[]) {
@@ -352,70 +294,4 @@ export class LevelSegmentComponent implements GameComponent {
       }
     }
   }
-
-  private createCapitals(items: Array<CapitalWithEntities | ChunkWithEntities>) {
-    if (!items?.length) {
-      return
-    }
-    for (const item of items) {
-      this.createCapital(item, `capital ${item.id}`)
-    }
-  }
-
-  private createChunks(items: Array<CapitalWithEntities | ChunkWithEntities>) {
-    if (!items?.length) {
-      return
-    }
-    for (const item of items) {
-      this.createCapital(item, `chunk ${item.id}`)
-    }
-  }
-
-  private createCapital(capital: CapitalWithEntities | ChunkWithEntities, entityName: string) {
-    console.log('createCapital', { capital, entityName })
-    // this.capitals.create(entityName).addComponents(
-    //   new TransformComponent({
-    //     transform: createChildTransform(this.capitalsLayer, entityName, {
-    //       matrix: capital.matrix,
-    //     }),
-    //   }),
-    //   new CapitalComponent(capital),
-    // )
-    // if (ENABLE_CAPITAL_INDICATOR) {
-    //   let size = 1
-    //   let color = new Color4(1, 0.5, 1, 1)
-    //   let shape: 'sphere' | 'box' = 'sphere'
-    //   if ('radius' in capital) {
-    //     size = capital.radius || 1
-    //   }
-    //   if ('size' in capital) {
-    //     size = capital.size || 1
-    //     shape = 'box'
-    //   }
-    //   this.capitalIndicators.create().addComponents(
-    //     new TransformComponent({
-    //       transform: createChildTransform(this.capitalsLayer, entityName, {
-    //         matrix: capital.matrix,
-    //       }),
-    //     }),
-    //     new DebugMeshComponent({
-    //       name: entityName,
-    //       type: shape,
-    //       size: size,
-    //       color: color,
-    //     }),
-    //   )
-    // }
-  }
-
-  private createEntities(entities: EntityInfoWithPosition[]) {
-    if (!entities?.length) {
-      return
-    }
-    // instantiateObjects(entities, this.capitals)
-  }
-}
-
-function getGrayscale(r: number, g: number, b: number) {
-  return r * 0.3 + g * 0.59 + b * 0.11
 }

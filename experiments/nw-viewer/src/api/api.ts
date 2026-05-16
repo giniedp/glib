@@ -1,4 +1,13 @@
-import type { CatalogAssetData, DistributionData, EntityData, LevelData, RegionData, TerrainData } from './types'
+import type {
+  AssetReference,
+  CatalogAssetData,
+  DistributionData,
+  EntityData,
+  LevelData,
+  RegionData,
+  TerrainData,
+  ViewerSlice,
+} from './types'
 
 export type TypedRequest<T> = {
   url: string
@@ -34,6 +43,14 @@ export class NwbtApiClient {
 
 export async function fetchTypedRequest<T>(baseUrl: string, url: TypedRequest<T>): Promise<T> {
   return fetch((baseUrl || '') + url.url).then((it) => it.json())
+}
+
+export function getRegionName(x: number, y: number): string {
+  return `r_+${y.toString().padStart(2, '0')}_+${x.toString().padStart(2, '0')}`
+}
+
+export function getSliceUrl(ref: AssetReference): TypedRequest<ViewerSlice> {
+  return { url: `/level/slice/${ref.guid}_${ref.subId}.json` }
 }
 
 export function getLevelsUrl(): TypedRequest<LevelData[]> {

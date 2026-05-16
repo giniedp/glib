@@ -9,7 +9,7 @@ import {
   type Texture,
 } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4 } from '@gglib/math'
-import { HEIGHTMAP_TILE_SIZE, LOD_RANGE_FACTOR, MOUNTAIN_HEIGHT, QUAD_LEAF_SIZE } from '../constants'
+import { LOD_RANGE_FACTOR, MOUNTAIN_HEIGHT, QUAD_LEAF_SIZE } from '../constants'
 import { TERRAIN_PATCH_SHADER } from './TerrainPatchShader.wgsl'
 
 export function terrainPatchShaderOptions(): ShaderModuleOptions {
@@ -24,6 +24,7 @@ export function terrainPatchEffectOptions(): EffectOptions {
   return {
     name: 'Terrain Patch Effect',
     meta: {},
+    instanceBufferKey: 'instances',
     program: {
       shader: terrainPatchShaderOptions(),
       shared: [],
@@ -37,9 +38,6 @@ export type TerrainPatchEffectInputs = {
   [CommonBindingKeys.View.ProjectionMatrix]: Mat4
   [CommonBindingKeys.View.CameraPosition]: Vec3
 
-  'material.baseColor': Vec3
-  'material.specularColor': Vec3
-  'material.roughness': number
   'material.normalScale': number
   'material.mountainHeight': number
   'material.lines': number
@@ -47,13 +45,14 @@ export type TerrainPatchEffectInputs = {
   'material.patchSize': number
   'material.baseFactor': number
   'material.morphLod': number
-  'material.heightMapSize': number
 
   'material.heightMapUvTransform': Vec4
   'material.heightMapUvTransformCoarse': Vec4
 
   'material.colorMapUvTransform': Vec4
   'material.colorMapUvTransformCoarse': Vec4
+  'material.colorLayer': number
+  'material.colorLayerCoarse': number
 
   'lights.color[0]': Vec4
   'lights.position[0]': Vec4
@@ -69,13 +68,8 @@ export type TerrainPatchEffectInputs = {
   'lights.direction[3]': Vec4
 
   heightMap: Texture
-  heightMapCoarse: Texture
-
   colorMap1: Texture
-  colorMap1Coarse: Texture
-
   colorMap2: Texture
-  colorMap2Coarse: Texture
 }
 
 export function terrainPatchEffectInputs(): TerrainPatchEffectInputs {
@@ -84,9 +78,7 @@ export function terrainPatchEffectInputs(): TerrainPatchEffectInputs {
     [CommonBindingKeys.View.ViewMatrix]: Mat4.createIdentity(),
     [CommonBindingKeys.View.ProjectionMatrix]: Mat4.createIdentity(),
     [CommonBindingKeys.View.CameraPosition]: Vec3.create(),
-    'material.baseColor': Vec3.create(1, 1, 1),
-    'material.specularColor': Vec3.create(1, 1, 1),
-    'material.roughness': 0.5,
+
     'material.normalScale': 1,
     'material.mountainHeight': MOUNTAIN_HEIGHT,
     'material.lines': 0,
@@ -94,13 +86,14 @@ export function terrainPatchEffectInputs(): TerrainPatchEffectInputs {
     'material.patchSize': QUAD_LEAF_SIZE,
     'material.baseFactor': LOD_RANGE_FACTOR,
     'material.morphLod': 0,
-    'material.heightMapSize': HEIGHTMAP_TILE_SIZE,
 
     'material.heightMapUvTransform': Vec4.create(1, 1, 0, 0),
     'material.heightMapUvTransformCoarse': Vec4.create(1, 1, 0, 0),
 
     'material.colorMapUvTransform': Vec4.create(1, 1, 0, 0),
     'material.colorMapUvTransformCoarse': Vec4.create(1, 1, 0, 0),
+    'material.colorLayer': 0,
+    'material.colorLayerCoarse': 0,
 
     'lights.color[0]': Vec4.create(),
     'lights.position[0]': Vec4.create(),
@@ -116,13 +109,8 @@ export function terrainPatchEffectInputs(): TerrainPatchEffectInputs {
     'lights.direction[3]': Vec4.create(),
 
     heightMap: null,
-    heightMapCoarse: null,
-
     colorMap1: null,
-    colorMap1Coarse: null,
-
     colorMap2: null,
-    colorMap2Coarse: null,
   }
 }
 
@@ -131,6 +119,7 @@ export const TerrainPatchMaterialSchema = materialSchema<TerrainPatchEffectInput
   View: CommonBindingKeys.View.ViewMatrix,
   Projection: CommonBindingKeys.View.ProjectionMatrix,
   CameraPosition: CommonBindingKeys.View.CameraPosition,
+
   Lines: 'material.lines',
   BaseFactor: 'material.baseFactor',
   PatchSize: 'material.patchSize',
@@ -138,22 +127,18 @@ export const TerrainPatchMaterialSchema = materialSchema<TerrainPatchEffectInput
   MorphLod: 'material.morphLod',
   MountainHeight: 'material.mountainHeight',
   NormalScale: 'material.normalScale',
-  HeightMapSize: 'material.heightMapSize',
 
   HeightMapUvTransform: 'material.heightMapUvTransform',
   HeightMapUvTransformCoarse: 'material.heightMapUvTransformCoarse',
 
   ColorMapUvTransform: 'material.colorMapUvTransform',
   ColorMapUvTransformCoarse: 'material.colorMapUvTransformCoarse',
+  ColorLayer: 'material.colorLayer',
+  ColorLayerCoarse: 'material.colorLayerCoarse',
 
   HeightMap: 'heightMap',
-  HeightMapCoarse: 'heightMapCoarse',
-
   ColorMap1: 'colorMap1',
-  ColorMap1Coarse: 'colorMap1Coarse',
-
   ColorMap2: 'colorMap2',
-  ColorMap2Coarse: 'colorMap2Coarse',
 })
 
 export class TerrainPatchMaterial extends materialSchemaClass(TerrainPatchMaterialSchema) {
@@ -166,6 +151,7 @@ export class TerrainPatchMaterial extends materialSchemaClass(TerrainPatchMateri
     })
 
     this.set('heightMapSampler' as any, SamplerState.LinearClamp)
+    this.set('colorMapSampler' as any, SamplerState.LinearClamp)
   }
 
   public setDirectionalLight(index: 0 | 1 | 2 | 3, color: Vec3, direction: Vec3) {

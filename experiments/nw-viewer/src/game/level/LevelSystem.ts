@@ -4,6 +4,7 @@ import { Device } from '@gglib/graphics'
 import { vec3, Vec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import { Renderer, type RenderContext } from '@gglib/render'
+import { uiColor, uiGroup, uiNumber } from 'tweak-ui'
 import {
   fetchTypedRequest,
   getHeightmapInfoUrl,
@@ -11,14 +12,13 @@ import {
   getLevelMissionUrl,
   type EntityData,
   type TerrainData,
-} from '../api'
-import { SkyComponent } from '../environment/SkyComponent'
-import { NwBindingKeys, SkyMaterial } from '../material'
-import { ContentService } from '../services/content-service'
-import { TerrainComponent } from '../terrain/TerrainComponent'
+} from '../../api'
+import { ContentService } from '../../content'
+import { SkyComponent } from '../../environment/SkyComponent'
+import { NwBindingKeys, SkyMaterial } from '../../material'
+import { RegionComponent } from '../region/RegionComponent'
+import { TerrainComponent, terrainEntity } from '../terrain/TerrainComponent'
 import { LevelComponent, type LevelOptions } from './LevelComponent'
-import { LevelRegionComponent } from './LevelRegionComponent'
-import { uiColor, uiColorPicker, uiGroup, uiNumber, type Builder } from 'tweak-ui'
 
 const SKY_DOME_CGF = 'objects/sky/skydome_a.cgf'
 const SKY_MATERIAL = 'objects/sky/sky_cutlass_b.mtl'
@@ -27,11 +27,7 @@ export function levelEntity(scene: GameEntity, options: LevelOptions): CreateEnt
   return {
     name: `Level ${options.level.name}`,
     parent: scene,
-    components: [
-      new LevelComponent(options),
-      new TerrainComponent(options.heightmap),
-      // new OceanComponent(options.heightmap),
-    ],
+    components: [new LevelComponent(options)],
   }
 }
 
@@ -50,10 +46,10 @@ export class LevelSystem extends GameSystem {
   public entity: GameEntity
   public terrainEnabled = true
 
-  private levels: GameQuery
-  private terrains: GameQuery
-  private regions: GameQuery
-  private sky: GameQuery
+  private qrLevels: GameQuery
+  private qrTerrain: GameQuery
+  private qrRegions: GameQuery
+  private qrSky: GameQuery
 
   private skyModel: Model
   private skyMaterial: SkyMaterial
@@ -70,12 +66,12 @@ export class LevelSystem extends GameSystem {
   public bottomFogColor = Vec3.create(0.21678638, 0.41612425, 0.79515541)
   public bottomFogMultiplier = 0.97500086
   public bottomFogHeight = 0
-  public bottomFogDensity = 0 // 0.050000004
+  public bottomFogDensity = 0.050000004
 
   public topFogColor = Vec3.create(0.17437994, 0.42185885, 0.76625574)
   public topFogMultiplier = 0.97500086
   public topFogHeight = 400
-  public topFogDensity = 0 //0.020000001
+  public topFogDensity = 0.020000001
 
   public fogHeightOffset = 0.5
 
@@ -84,10 +80,10 @@ export class LevelSystem extends GameSystem {
     this.content = game.getSystem(ContentService)
     this.renderer = game.getSystem(Renderer)
 
-    this.levels = game.query({ required: [LevelComponent] })
-    this.terrains = game.query({ required: [TerrainComponent] })
-    this.regions = game.query({ required: [LevelRegionComponent] })
-    this.sky = game.query({ required: [SkyComponent] })
+    this.qrLevels = game.query({ required: [LevelComponent] })
+    this.qrTerrain = game.query({ required: [TerrainComponent] })
+    this.qrRegions = game.query({ required: [RegionComponent] })
+    this.qrSky = game.query({ required: [SkyComponent] })
 
     const device = game.getSystem(Device)
     this.skyMaterial = new SkyMaterial(device)
@@ -111,12 +107,23 @@ export class LevelSystem extends GameSystem {
   }
 
   public override update(): void {
-    this.regions.forEach(this.updateRegions)
-    this.sky.forEach(this.updateSky)
+    // for (const level of this.qrLevels) {
+    //   for (const region of level.component(LevelComponent).regions) {
+    //     // TODO: activate/decativate regions
+    //   }
+    // }
+
+    for (const entity of this.qrRegions) {
+      this.updateRegion(entity)
+    }
+
+    for (const entity of this.qrSky) {
+      this.updateSky(entity)
+    }
   }
 
-  private updateRegions = (entity: GameEntity) => {
-    const region = entity.component(LevelRegionComponent)
+  private updateRegion(entity: GameEntity) {
+    const region = entity.component(RegionComponent)
     region.update(this.game.view.camera)
   }
 
@@ -138,7 +145,8 @@ export class LevelSystem extends GameSystem {
     const missionUrl = getLevelMissionUrl(name)
 
     const levelInfo = await fetchTypedRequest(baseUrl, levelUrl)
-    console.log('level info', levelInfo, mapName)
+    const hasOcean = levelInfo.oceanLevel > 0
+    const hasTerrain = levelInfo.mountainHeight > 256
 
     const heightmapInfo = await fetchTypedRequest(baseUrl, heightmapUrl).catch((err) => {
       console.error('failed to load heightmap', err)
@@ -148,6 +156,9 @@ export class LevelSystem extends GameSystem {
       console.error('failed to load mission', err)
       return []
     })
+    console.log('level info', levelInfo)
+    console.log('heightmap info', heightmapInfo)
+    console.log('mission info', missionInfo)
 
     this.entity = this.game.createEntity(
       levelEntity(this.game.scene, {
@@ -157,21 +168,23 @@ export class LevelSystem extends GameSystem {
         mission: missionInfo,
       }),
     )
-    this.game.createEntity(skyEntity(this.entity))
 
-    console.log('Level entity created', this.entity)
+    if (hasOcean || hasTerrain) {
+      this.game.createEntity(terrainEntity(this.entity, heightmapInfo))
+    }
+
+    this.game.createEntity(skyEntity(this.entity))
   }
 
   private unloadLevel() {
     if (this.entity) {
-      this.entity.getTransform().setParent(null)
-      this.entity.destroy()
+      this.entity.setParent(null)
       this.entity.destroy()
       this.entity = null
     }
   }
 
-  private updateSky = (entity: GameEntity) => {
+  private updateSky(entity: GameEntity) {
     const modelComp = entity.component(ModelComponent)
     if (!modelComp.model && this.skyModel) {
       modelComp.model = this.skyModel

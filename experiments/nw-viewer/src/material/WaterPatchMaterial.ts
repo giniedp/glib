@@ -23,6 +23,7 @@ export function waterPatchEffectOptions(): EffectOptions {
   return {
     name: 'Water Patch Effect',
     meta: {},
+    instanceBufferKey: 'instances',
     program: {
       shader: waterPatchShaderOptions(),
       shared: [],
@@ -39,11 +40,11 @@ export type WaterPatchEffectInputs = {
 
   'material.shallowColor': Vec3
   'material.deepColor': Vec3
+  'material.waterLevel': number
   'material.depthScale': number
   'material.roughness': number
   'material.reflectStrength': number
   'material.refractStrength': number
-  'material.shoreDepth': number
   'material.shoreFade': number
   'material.foamDepth': number
   'material.foamStrength': number
@@ -51,10 +52,8 @@ export type WaterPatchEffectInputs = {
   'material.waveSpeed': number
   'material.waveScale': number
   'material.waveHeight': number
-
-  'material.heightMapUvTransform': Vec4
   'material.MountainHeight': number
-  'material.HeightMapSize': number
+  'material.waterHeight': 40
 
   'lights.color[0]': Vec4
   'lights.position[0]': Vec4
@@ -74,8 +73,7 @@ export type WaterPatchEffectInputs = {
   'fog.end': number
 
   heightMap: Texture
-  // texture1Map: Texture
-  // texture2Map: Texture
+  waterMap: Texture
 }
 
 export function waterPatchEffectParameters(): WaterPatchEffectInputs {
@@ -86,24 +84,22 @@ export function waterPatchEffectParameters(): WaterPatchEffectInputs {
     [CommonBindingKeys.View.CameraPosition]: Vec3.create(),
     [CommonBindingKeys.Frame.ElapsedTime]: 0,
 
-    'material.shallowColor': Vec3.create(0.05, 0.45, 0.4), // murky teal-green
-    'material.deepColor': Vec3.create(0.01, 0.08, 0.25), // dark navy
-    'material.depthScale': 15.0, // 15 m of water column for full deep blend
-    'material.roughness': 0.15, // fairly glassy
+    'material.shallowColor': Vec3.create(0.05, 0.45, 0.4),
+    'material.deepColor': Vec3.create(0.01, 0.08, 0.25),
+    'material.waterLevel': 40.0,
+    'material.depthScale': 15.0, // 15 m for full deep blend
+    'material.roughness': 0.15,
     'material.reflectStrength': 0.9,
     'material.refractStrength': 0.25,
-    'material.shoreDepth': 35.0, // heightmap value where water begins
-    'material.shoreFade': 1.5, // ~1.5 m fade width at the waterline
-    'material.foamDepth': 2.0, // foam in first 2 m of water
-    'material.foamStrength': 0.75,
-    'material.foamSpeed': 0.04,
-    'material.waveSpeed': 0.6,
-    'material.waveScale': 0.015, // ~400 m wavelength on a 2048 m map
-    'material.waveHeight': 0.4, // 40 cm peak displacement
-
-    'material.heightMapUvTransform': Vec4.create(1, 1, 0, 0),
+    'material.shoreFade': 5, // 1.5 m transition
+    'material.foamDepth': 2.0, // foam within 2 m of shore
+    'material.foamStrength': 2.5,
+    'material.foamSpeed': 0.3, // m/s scroll
+    'material.waveSpeed': 10.6, // m/s propagation
+    'material.waveScale': 0.5, // ~420 m wavelength
+    'material.waveHeight': 0.15,
     'material.MountainHeight': 2048,
-    'material.HeightMapSize': 256,
+    'material.waterHeight': 40,
 
     'lights.color[0]': Vec4.create(),
     'lights.position[0]': Vec4.create(),
@@ -122,8 +118,7 @@ export function waterPatchEffectParameters(): WaterPatchEffectInputs {
     'fog.start': 0,
     'fog.end': 100,
     heightMap: null,
-    // texture1Map: null,
-    // texture2Map: null,
+    waterMap: null,
   }
 }
 
@@ -134,24 +129,22 @@ export const WaterPatchMaterialSchema = materialSchema<WaterPatchEffectInputs>()
   CameraPosition: CommonBindingKeys.View.CameraPosition,
   ElapsedTime: CommonBindingKeys.Frame.ElapsedTime,
 
-  ShallowColor: 'material.shallowColor',
-  DeepColor: 'material.deepColor',
-  DepthScale: 'material.depthScale',
-  Roughness: 'material.roughness',
-  ReflectStrength: 'material.reflectStrength',
-  RefractStrength: 'material.refractStrength',
-  ShoreDepth: 'material.shoreDepth',
-  ShoreFade: 'material.shoreFade',
-  FoamDepth: 'material.foamDepth',
-  FoamStrength: 'material.foamStrength',
-  FoamSpeed: 'material.foamSpeed',
-  WaveSpeed: 'material.waveSpeed',
-  WaveScale: 'material.waveScale',
-  WaveHeight: 'material.waveHeight',
+  // ShallowColor: 'material.shallowColor',
+  // DeepColor: 'material.deepColor',
+  // DepthScale: 'material.depthScale',
+  // Roughness: 'material.roughness',
+  // ReflectStrength: 'material.reflectStrength',
+  // RefractStrength: 'material.refractStrength',
+  // ShoreDepth: 'material.shoreDepth',
+  // ShoreFade: 'material.shoreFade',
+  // FoamDepth: 'material.foamDepth',
+  // FoamStrength: 'material.foamStrength',
+  // FoamSpeed: 'material.foamSpeed',
+  // WaveSpeed: 'material.waveSpeed',
+  // WaveScale: 'material.waveScale',
+  // WaveHeight: 'material.waveHeight',
 
-  HeightMapUvTransform: 'material.heightMapUvTransform',
   MountainHeight: 'material.MountainHeight',
-  HeightMapSize: 'material.HeightMapSize',
 
   HeightMap: 'heightMap',
 })

@@ -16,10 +16,15 @@ import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { DEGREE_TO_RAD } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 import { REGION_SIZE, REGION_VISIBILITY } from './constants'
-import { LevelSystem } from './level/LevelSystem'
+import { ContentService } from './content'
+import { CapitalSystem } from './game/capital/CapitalSystem'
+import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
+import { LevelSystem } from './game/level/LevelSystem'
+import { RegionSystem } from './game/region/RegionSystem'
+import { SliceSystem } from './game/slice/SliceSystem'
+import { TerrainSystem } from './game/terrain/TerrainSystem'
 import { DebugOptions, NwBindingKeys, NwMaterialExtension } from './material'
-import { ContentService } from './services/content-service'
-import { TerrainSystem } from './terrain/TerrainSystem'
+import { gameCoordinate2D, gameToRenderCoordinate } from './math'
 import { NwSceneBrowser } from './ui'
 
 export interface NwViewerOptions {
@@ -39,10 +44,19 @@ export class NwViewer extends BasicGame {
   private sceneStats: SceneStats
   private scheduler: SchedulerSystem
 
-  public debug: number = DebugOptions._None
+  public debug: number = 0
   public constructor(options: NwViewerOptions) {
     super({
       canvas: options.canvas,
+      webgpu: {
+        deviceOptions: () => {
+          return {
+            requiredLimits: {
+              maxTextureArrayLayers: 512,
+            },
+          }
+        },
+      },
       platform: 'webgpu',
     })
 
@@ -50,9 +64,13 @@ export class NwViewer extends BasicGame {
     this.world.addSystem(new KeyboardInputSystem())
     this.world.addSystem(new MouseInputSystem({ eventTarget: options.canvas }))
     this.world.addSystem(new TerrainSystem())
+    this.world.addSystem(new RegionSystem())
+    this.world.addSystem(new CapitalSystem())
+    this.world.addSystem(new SliceSystem())
     this.world.addSystem(new LevelSystem())
+    this.world.addSystem(new DebugShapeSystem())
     this.world.addSystem(new SpatialSystem(this.world))
-    this.world.addSystem(new SchedulerSystem())
+    this.world.addSystem(new SchedulerSystem({}))
 
     this.renderer.autoSrgb = true
     this.renderer.clearColor = Color.Black.srgbToLinear()
@@ -60,6 +78,7 @@ export class NwViewer extends BasicGame {
 
     GLTF.Loader.registerExtension(NwMaterialExtension)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
+
     this.content.registerLoader(GLTF.Loader)
     this.content.registerLoader(KTX.Loader)
     this.content.registerLoader(DDS.Loader)
@@ -69,15 +88,6 @@ export class NwViewer extends BasicGame {
       name: 'Camera',
       parent: this.scene,
       transform: new TransformComponent({
-        // position: { x: -7483, y: 350, z: 9014 },
-        // position: { x: -11933, y: 1024, z: 7472 },
-        // position: { x: -9352, y: 250, z: 2772 },
-        // position: { x: -7645, y: 300, z: 6633 },
-        // position: { x: -12640, y: 500, z: 6088 },
-        // position: { x: -7250, y: 250, z: 7250 }, // [3:3] brimstone south east
-        // position: { x: -1024 - 2048 - 2048, y: 250, z: 1024 },
-        // position: { x: -1024, y: 250, z: 1024 },
-        position: { x: -1024, y: 250, z: 1024 },
         keepWorld: true,
       }),
       components: [
@@ -127,6 +137,11 @@ export class NwViewer extends BasicGame {
 
   public loadLevel(name: string) {
     this.world.getSystem(LevelSystem).loadLevel(name, null)
+  }
+
+  public teleport(x: number, y: number, z: number) {
+    const position = gameToRenderCoordinate(gameCoordinate2D(x, z), y)
+    this.camera.entity.component(TransformComponent).setPositionV(position)
   }
 
   public dispose() {

@@ -1,7 +1,7 @@
 export const TERRAIN_COMPOSITE_SHADER = /* wgsl */ `
 
 struct VSOutput {
-  @builtin(position) position : vec4<f32>,
+  @builtin(position) position : vec4f,
   @location(0) uvBase : vec2<f32>,
   @location(1) uvRegion : vec2<f32>,
   @location(2) uvMaterial : vec2<f32>,
@@ -16,7 +16,7 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> VSOutput {
   let uv = pos * 0.5 + vec2<f32>(0.5);
 
   var out : VSOutput;
-  out.position = vec4<f32>(pos, 0.0, 1.0);
+  out.position = vec4f(pos, 0.0, 1.0);
   out.uvBase = uv;
   out.uvRegion = uv * params.regionScaleOffset.xy + params.regionScaleOffset.zw;
   out.uvMaterial = uv * params.tilingScaleOffset.xy + params.tilingScaleOffset.zw;
@@ -26,13 +26,13 @@ fn vs(@builtin(vertex_index) vertexIndex : u32) -> VSOutput {
 
 struct Uniforms {
   // transform into region space
-  regionScaleOffset : vec4<f32>,
+  regionScaleOffset : vec4f,
   // tiling scale and offset for all material maps
-  tilingScaleOffset: vec4<f32>,
+  tilingScaleOffset: vec4f,
 
-  baseColor: vec4<f32>,
-  specularColor: vec4<f32>,
-  debugColor: vec4<f32>, // debug color for visualization, alpha is used as a flag to indicate debug mode
+  baseColor: vec4f,
+  specularColor: vec4f,
+  debugColor: vec4f, // debug color for visualization, alpha is used as a flag to indicate debug mode
   roughness: f32,
 
   // Scales the saturation of the macro texture before an Overlay Blend with the material's diffuse texture
@@ -71,20 +71,28 @@ var<uniform> params : Uniforms;
 
 
 struct FSOutput {
-  @location(0) map1 : vec4<f32>,
-  @location(1) map2 : vec4<f32>,
-  @location(2) map3 : vec4<f32>,
+  @location(0) map1 : vec4f,
+  @location(1) map2 : vec4f,
+  @location(2) map3 : vec4f,
 };
 
 @fragment
 fn fs(in: VSOutput) -> FSOutput {
 
+  // with GPU mip selection, tiles dip to black
+  // thisis expected and the tile should be instructed to render macro only (no splat)
+  // but when splat is used, only options are
+  // 1) textureSampleLoad(..., 0) to force mip 0, but this causes aliasing when the tile is minified
+  // 2) textureSampleBias(..., -bias) also causes aliasing
+  // TODO: review this
+
+  let mipBias = -4.0;
   // Material input
-  var matNormal     : vec3<f32> = textureSample(normalMap, materialSampler, in.uvMaterial).rgb;
-  var matColor      : vec3<f32> = textureSample(baseMap, materialSampler, in.uvMaterial).rgb * params.baseColor.rgb;
-  var matSpecular   : vec3<f32> = textureSample(specularMap, materialSampler, in.uvMaterial).rgb * params.specularColor.rgb;
-  var matSmoothness : f32       = textureSample(smoothnessMap, materialSampler, in.uvMaterial).r * params.roughness;
-  var matHeight     : f32       = textureSample(heightMap, materialSampler, in.uvMaterial).r * params.materialHeightScale + params.materialHeightOffset;
+  var matNormal     : vec3f = textureSampleBias(normalMap, materialSampler, in.uvMaterial, mipBias).rgb;
+  var matColor      : vec3f = textureSampleBias(baseMap, materialSampler, in.uvMaterial, mipBias).rgb * params.baseColor.rgb;
+  var matSpecular   : vec3f = textureSampleBias(specularMap, materialSampler, in.uvMaterial, mipBias).rgb * params.specularColor.rgb;
+  var matSmoothness : f32   = textureSampleBias(smoothnessMap, materialSampler, in.uvMaterial, mipBias).r * params.roughness;
+  var matHeight     : f32   = textureSampleBias(heightMap, materialSampler, in.uvMaterial, mipBias).r * params.materialHeightScale + params.materialHeightOffset;
 
   // Splat / blend input
   let splatValue  = textureSample(splatMap, macroSampler, in.uvRegion).r;
@@ -93,12 +101,12 @@ fn fs(in: VSOutput) -> FSOutput {
   // Macro input
   let macroBase         = textureSample(macroBaseMap, macroSampler, in.uvRegion).rgb;
   let macroNormalSample = textureSample(macroNormalMap, macroSampler, in.uvRegion).rgb;
-  let macroNormal       = normalize(vec3<f32>(macroNormalSample.xy, 1.0 / params.macroNormalScale));
+  let macroNormal       = normalize(vec3f(macroNormalSample.xy, 1.0 / params.macroNormalScale));
   let macroGloss        = textureSample(macroGlossMap, macroSampler, in.uvRegion).r * params.macroGlossScale;
 
   // macro saturation
   let macroLuminance = luminance(macroBase);
-  let macroBaseMod = mix(vec3<f32>(macroLuminance), macroBase, params.macroSaturation);
+  let macroBaseMod = mix(vec3f(macroLuminance), macroBase, params.macroSaturation);
   let macroBaseResult = overlayBlendV3(macroBaseMod, matColor.rgb);
 
   matColor = mix(matColor, macroBaseResult, params.macroBlendStrength);
@@ -112,17 +120,19 @@ fn fs(in: VSOutput) -> FSOutput {
   matNormal = normalize(vec3(macroNormal.xy * params.macroNormalScale + matNormal.xy, macroNormal.z));
 
   //
+  let normal = matNormal * 0.5 + 0.5;
+  let color1 = matColor;
+  let color2 = vec3f(matSmoothness, matSpecular.x, normal.y);
+  let color3 = vec3f(normal.x, matHeight, 0.0);
+
   var out : FSOutput;
-  out.map1 = vec4<f32>(matColor * blendWeight, blendWeight);
-  out.map2 = vec4<f32>(vec3<f32>(matSpecular.x, matSmoothness, matHeight) * blendWeight, blendWeight);
-  out.map3 = vec4<f32>(
-    (macroNormal * 0.5 + 0.5) * blendWeight,
-    blendWeight
-  );
+  out.map1 = vec4f(color1 * blendWeight, blendWeight);
+  out.map2 = vec4f(color2 * blendWeight, blendWeight);
+  out.map3 = vec4f(color3 * blendWeight, blendWeight);
   return out;
 }
 
-fn luminance(color: vec3<f32>) -> f32 {
+fn luminance(color: vec3f) -> f32 {
 	return dot( color, vec3( 0.2126, 0.7152, 0.0722 ) );
 }
 
@@ -133,10 +143,10 @@ fn overlayBlend(base: f32, top: f32) -> f32 {
   return 1.0 - (2.0 * (1.0 - base) * (1.0 - top));
 }
 
-fn overlayBlendV3(base: vec3<f32>, top: vec3<f32>) -> vec3<f32> {
+fn overlayBlendV3(base: vec3f, top: vec3f) -> vec3f {
   let out0 = 2.0 * base * top;
   let out1 = 1.0 - (2.0 * (1.0 - base) * (1.0 - top));
-  return mix(out0, out1, step(vec3<f32>(0.5), base));
+  return mix(out0, out1, step(vec3f(0.5), base));
 }
 
 fn materialBlend(heightMapSample: f32, splatWeight: f32, blendFactor: f32, blendFalloff: f32) -> f32 {
@@ -145,9 +155,9 @@ fn materialBlend(heightMapSample: f32, splatWeight: f32, blendFactor: f32, blend
   return saturate(pow(finalBlendFactor, blendFalloff));
 }
 
-fn decodeNormal(encoded: vec2<f32>) -> vec3<f32> {
+fn decodeNormal(encoded: vec2<f32>) -> vec3f {
   let xy = encoded;
   let z = sqrt(clamp(1.0 - dot(xy, xy), 0.0, 1.0));
-  return normalize(vec3<f32>(xy, z));
+  return normalize(vec3f(xy, z));
 }
 `

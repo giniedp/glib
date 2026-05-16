@@ -41,7 +41,8 @@ export interface RegionData {
   cellResolution: number
   poiImpostors: ImpostorData[]
   impostors: ImpostorData[]
-  capitals: CapitalLayerData[]
+  capitals: Record<string, CapitalData[]>
+  chunks: Record<string, ChunkData[]>
 }
 
 export interface ImpostorData {
@@ -69,14 +70,14 @@ export interface CapitalData {
   id: string
   transform: number[]
   radius: number
-  slice: string
+  slice: AssetReference
 }
 
 export interface ChunkData {
   id: string
   transform: number[]
   size: number
-  slice: string
+  slice: AssetReference
 }
 
 export interface EntityData {
@@ -156,4 +157,99 @@ export interface TerrainMaterialLayerData {
   splatMap: string
   affectedTiles: string
   priority: number
+}
+
+export const ComponentTypes = {
+  MeshComponentName: 'Mesh',
+  SpawnerComponentName: 'Spawner',
+  PointSpawnerComponentName: 'PointSpawner',
+  PrefabSpawnerComponentName: 'PrefabSpawner',
+  AreaSpawnerComponentName: 'AreaSpawner',
+}
+
+export interface ViewerEntity {
+  id: string
+  name: string
+  transform: number[]
+  components: any[]
+}
+
+export interface ViewerComponent {
+  type: string
+}
+
+export interface ViewerSlice {
+  entities: ViewerEntity[]
+  spawnRadius: number
+  isStaticSlice: boolean
+}
+
+export interface ViewerMeshComponent {
+  type: 'Mesh'
+  mesh: string
+  material: string
+  maxViewDistance: number
+  viewDistanceMultiplier: number
+  castShadow: boolean
+  shouldInstance: boolean
+  shouldMerge: boolean
+  forceMerge: boolean
+  fadeEnabled: boolean
+  opacity: number
+  loadOnActivate: boolean
+  instances: number[]
+}
+
+export function isViewerMeshComponent(component: any): component is ViewerMeshComponent {
+  return component.type === ComponentTypes.MeshComponentName
+}
+
+export interface ViewerSpawnerComponent {
+  type: 'Spawner'
+  slice: AssetReference
+  autoSpawn: boolean
+}
+
+export function isViewerSpawnerComponent(component: any): component is ViewerSpawnerComponent {
+  return component.type === ComponentTypes.SpawnerComponentName
+}
+
+export interface ViewerPointSpawnerComponent {
+  type: 'PointSpawner'
+  slice: AssetReference
+  autoSpawn: boolean
+}
+
+export function isViewerPointSpawnerComponent(component: any): component is ViewerPointSpawnerComponent {
+  return component.type === ComponentTypes.PointSpawnerComponentName
+}
+
+export interface ViewerPrefabSpawnerComponent {
+  type: 'PrefabSpawner'
+  slice: AssetReference
+}
+
+export function isViewerPrefabSpawnerComponent(component: any): component is ViewerPrefabSpawnerComponent {
+  return component.type === ComponentTypes.PrefabSpawnerComponentName
+}
+
+export interface ViewerAreaSpawnerComponent {
+  type: 'AreaSpawner'
+  slice: AssetReference
+  locations: number[]
+  liveCount: number
+  minRespawnRange: number
+  maxRespawnRange: number
+  spawnOnEnable: boolean
+  spawnOnTrigger: boolean
+}
+
+export function isViewerAreaSpawnerComponent(component: any): component is ViewerAreaSpawnerComponent {
+  return component.type === ComponentTypes.AreaSpawnerComponentName
+}
+
+export interface AssetReference {
+  guid: string
+  subId: number
+  hint: string
 }
