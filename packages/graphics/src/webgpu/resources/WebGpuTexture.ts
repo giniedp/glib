@@ -149,7 +149,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   private createResource(): void {
     const self = this as Mutable<this>
     self.gpuObject?.destroy()
-    self.gpuObject = this.device.gpu.createTexture({
+    const descriptor: GPUTextureDescriptor = {
       label: this.name || `Texture_${this.uid}`,
       format: this.gpuFormat,
       sampleCount: this.sampleCount,
@@ -166,8 +166,9 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
         (this.generateMipmap ? GPUTextureUsage.RENDER_ATTACHMENT : 0),
       dimension: this.gpuDimension,
       mipLevelCount: this.mipLevelCount,
-      textureBindingViewDimension: textureTypeToWebGPU(this.type),
-    })
+      textureBindingViewDimension: this.gpuViewDimension,
+    }
+    self.gpuObject = this.device.gpu.createTexture(descriptor)
     self.sizeInBytes = this.estimateSize()
   }
 
@@ -409,9 +410,10 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
   }
 }
 
-function getMipmapCount(width: number, height: number, depth: number): number {
+export function getMipmapCount(width: number, height: number, depth: number): number {
   return 1 + Math.floor(Math.log2(Math.max(1, width || 1, height || 1, depth || 1)))
 }
+
 function align(value: number, alignment: number): number {
   return (value + alignment - 1) & ~(alignment - 1)
 }

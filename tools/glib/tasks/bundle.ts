@@ -29,7 +29,7 @@ async function vitePackage(pkg: GlibPackageContext, options: BundleWatchOptions 
       },
       sourcemap: true,
       outDir: pkg.rollupOutDir(),
-    }
+    },
   })
 }
 
@@ -51,12 +51,10 @@ async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOption
     external: Object.keys(globals),
   }
   const outputOptions: OutputOptions = {
-    amd: { id: pkg.globalName },
-    format: 'umd',
+    format: 'esm',
     sourcemap: true,
-    file: pkg.rollupOutDir(pkg.baseName + '.umd.js'),
-    name: pkg.globalName,
-    globals: globals,
+    file: pkg.rollupOutDir(pkg.baseName + '.esm.js'),
+    // name: pkg.globalName, // just for logging
     exports: 'named',
   }
   return rollupOrWatch(inputOptions, outputOptions, options)

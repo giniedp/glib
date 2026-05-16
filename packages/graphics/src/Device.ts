@@ -132,6 +132,12 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
   public abstract createVertexBuffer(options: VertexBufferOptions): VertexBuffer
 
   /**
+   * Creates a buffer resource
+   * @public
+   */
+  public abstract createBuffer(options: BufferOptions): Buffer
+
+  /**
    * Creates a shader module resource
    * @public
    */

@@ -14,10 +14,15 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist\\bundles\\particles.umd.js",
-  "module": "dist\\particles\\src\\index.js",
-  "main": "dist\\particles\\src\\index.js",
+  "main": "dist\\bundles\\particles.esm.js",
+  "module": "dist\\bundles\\particles.esm.js",
   "typings": "dist\\particles\\src\\index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/particles.esm.js",
+      "types": "./dist/particles/src/index.d.ts"
+    }
+  },
   "devDependencies": {
     "@gglib/graphics": "workspace:^0.7.0",
     "@gglib/math": "workspace:^0.7.0"

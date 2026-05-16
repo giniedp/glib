@@ -14,23 +14,28 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist\\bundles\\loaders.umd.js",
-  "module": "dist\\loaders\\src\\index.js",
-  "main": "dist\\loaders\\src\\index.js",
+  "main": "dist\\bundles\\loaders.esm.js",
+  "module": "dist\\bundles\\loaders.esm.js",
   "typings": "dist\\loaders\\src\\index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/loaders.esm.js",
+      "types": "./dist/loaders/src/index.d.ts"
+    }
+  },
   "devDependencies": {
-    "@gglib/utils": "workspace:^0.7.0",
     "@gglib/content": "workspace:^0.7.0",
     "@gglib/graphics": "workspace:^0.7.0",
-    "@gglib/math": "workspace:^0.7.0",
-    "@gglib/model": "workspace:^0.7.0"
+    "@gglib/utils": "workspace:^0.7.0",
+    "@gglib/model": "workspace:^0.7.0",
+    "@gglib/math": "workspace:^0.7.0"
   },
   "peerDependencies": {
-    "@gglib/utils": "0.7.0",
     "@gglib/content": "0.7.0",
     "@gglib/graphics": "0.7.0",
-    "@gglib/math": "0.7.0",
-    "@gglib/model": "0.7.0"
+    "@gglib/utils": "0.7.0",
+    "@gglib/model": "0.7.0",
+    "@gglib/math": "0.7.0"
   },
   "files": [
     "package.json",

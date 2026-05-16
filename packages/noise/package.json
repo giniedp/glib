@@ -14,10 +14,15 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist\\bundles\\noise.umd.js",
-  "module": "dist\\noise\\src\\index.js",
-  "main": "dist\\noise\\src\\index.js",
+  "main": "dist\\bundles\\noise.esm.js",
+  "module": "dist\\bundles\\noise.esm.js",
   "typings": "dist\\noise\\src\\index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/noise.esm.js",
+      "types": "./dist/noise/src/index.d.ts"
+    }
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "files": [

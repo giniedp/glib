@@ -1,4 +1,4 @@
-import type { ProgramInputType, Texture } from '../../resources'
+import type { Buffer, ProgramInputType, Texture } from '../../resources'
 import type { SamplerState } from '../../states'
 
 export interface WebglUniform {
@@ -20,12 +20,16 @@ export interface WebglUniform {
    * Jumps to the specified array index for this uniform.
    * For non-array uniforms, this should be called with index 0.
    */
-  setIndex(index: number): void
+  beginWrite(index: number): void
   /**
    * Writes the given value to this uniform at the current position.
-   * For array uniforms, this will write to the current array index as set by {@link setIndex}.
+   * For array uniforms, this will write to the current array index as set by {@link beginWrite}.
    */
   write(value: number): void
+  /**
+   * Signals that all writes for the current update have been completed and the uniform can be committed to the GPU.
+   */
+  endWrite(): void
   /**
    * Sets the texture for this uniform
    */
@@ -34,4 +38,6 @@ export interface WebglUniform {
    * Sets the sampler for this uniform
    */
   setSampler(value: SamplerState): void
+
+  setBuffer(value: Buffer): void
 }

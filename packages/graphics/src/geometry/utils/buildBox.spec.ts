@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { GeometryBuilder } from '../GeometryBuilder'
-import { buildCone } from './buildCone'
+import { buildBox } from './buildCube'
 
 describe('@gglib/graphics/formulas', () => {
-  describe('buildCone', () => {
+  describe('buildCube', () => {
     let builder: GeometryBuilder
 
     beforeEach(() => {
@@ -12,7 +12,7 @@ describe('@gglib/graphics/formulas', () => {
 
     it('builds without errors', () => {
       expect(builder.vertexCount).toBe(0)
-      buildCone(builder)
+      buildBox(builder)
       expect(builder.vertexCount).not.toBe(0)
     })
   })

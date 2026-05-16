@@ -353,19 +353,13 @@ export class WebglRenderEncoder extends RenderEncoder {
     this.scissorState.height = height
   }
 
-  public draw(vertexCount?: number, instanceCount?: number, vertexOffset?: number, instanceOffset?: number) {
+  public draw(vertexCount: number, instanceCount?: number, vertexOffset?: number, instanceOffset?: number) {
     this.commitChanges()
 
-    if (instanceOffset) {
+    if (instanceOffset > 0) {
       throw new Error('instanceOffset is not supported in WebGL')
     }
 
-    if (vertexCount == null) {
-      if (!this.vertexBuffer) {
-        throw new Error('No vertex buffer set for draw call')
-      }
-      vertexCount = this.vertexBuffer[0].elementCount
-    }
     const gl = this.gl
     if (instanceCount > 1) {
       gl.drawArraysInstanced(primitiveTypeToWebGL(this.primitiveType), vertexOffset ?? 0, vertexCount, instanceCount)
@@ -374,7 +368,7 @@ export class WebglRenderEncoder extends RenderEncoder {
     }
   }
 
-  public drawIndexed(indexCount?: number, instanceCount?: number, indexOffset?: number, baseVertex?: number): void {
+  public drawIndexed(indexCount: number, instanceCount?: number, indexOffset?: number, baseVertex?: number): void {
     this.commitChanges()
 
     if (!this.indexBuffer) {
@@ -388,7 +382,7 @@ export class WebglRenderEncoder extends RenderEncoder {
     if (instanceCount > 1) {
       gl.drawElementsInstanced(
         primitiveTypeToWebGL(this.primitiveType),
-        indexCount ?? this.indexBuffer.elementCount,
+        indexCount,
         this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT,
         (indexOffset ?? 0) + this.indexBufferOffset,
         instanceCount,
@@ -396,7 +390,7 @@ export class WebglRenderEncoder extends RenderEncoder {
     } else {
       gl.drawElements(
         primitiveTypeToWebGL(this.primitiveType),
-        indexCount ?? this.indexBuffer.elementCount,
+        indexCount,
         this.indexBuffer.indexType === 'uint16' ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT,
         (indexOffset ?? 0) + this.indexBufferOffset,
       )

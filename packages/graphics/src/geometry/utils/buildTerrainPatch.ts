@@ -1,4 +1,4 @@
-import { PrimitiveType } from 'graphics/src/enums'
+import { PrimitiveType } from '../../enums'
 import type { Device } from '../../Device'
 import { Geometry } from '../Geometry'
 import { beginGeometry, type GeometryBuilder } from '../GeometryBuilder'

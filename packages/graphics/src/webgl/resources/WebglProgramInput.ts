@@ -1,5 +1,12 @@
 import type { IVec2, IVec3, IVec4 } from '@gglib/math'
-import { ProgramInput, Texture, type MatrixLike, type ProgramInputType, type ProgramInputValue } from '../../resources'
+import {
+  Buffer,
+  ProgramInput,
+  Texture,
+  type MatrixLike,
+  type ProgramInputType,
+  type ProgramInputValue,
+} from '../../resources'
 import { SamplerState } from '../../states'
 import { WebglShaderModule } from './WebglShaderModule'
 import type { WebglUniform } from './WebglUniform'
@@ -63,45 +70,55 @@ export class WebglProgramInput extends ProgramInput {
     throw new Error('Method not implemented.')
   }
   public setScalar(value: number): void {
-    this.uniform.setIndex(this.index)
+    this.uniform.beginWrite(this.index)
     this.uniform.write(value)
+    this.uniform.endWrite()
   }
+
   public setArray(value: ArrayLike<number>, offset: number = 0): void {
-    this.uniform.setIndex(this.index + offset)
+    this.uniform.beginWrite(this.index + offset)
     for (let i = 0; i < value.length; i++) {
       this.uniform.write(value[i])
     }
+    this.uniform.endWrite()
   }
+
   public setVec2(value: IVec2 | ArrayLike<number>): void {
-    this.uniform.setIndex(this.index)
     if ('x' in value) {
+      this.uniform.beginWrite(this.index)
       this.uniform.write(value.x)
       this.uniform.write(value.y)
+      this.uniform.endWrite()
     } else {
       this.setArray(value)
     }
   }
+
   public setVec3(value: IVec3 | ArrayLike<number>): void {
-    this.uniform.setIndex(this.index)
     if ('x' in value) {
+      this.uniform.beginWrite(this.index)
       this.uniform.write(value.x)
       this.uniform.write(value.y)
       this.uniform.write(value.z)
+      this.uniform.endWrite()
     } else {
       this.setArray(value)
     }
   }
+
   public setVec4(value: IVec4 | ArrayLike<number>): void {
-    this.uniform.setIndex(this.index)
     if ('x' in value) {
+      this.uniform.beginWrite(this.index)
       this.uniform.write(value.x)
       this.uniform.write(value.y)
       this.uniform.write(value.z)
       this.uniform.write(value.w)
+      this.uniform.endWrite()
     } else {
       this.setArray(value)
     }
   }
+
   public setMat2x2(value: MatrixLike): void {
     if ('elements' in value) {
       this.setArray(value.elements)
@@ -123,11 +140,17 @@ export class WebglProgramInput extends ProgramInput {
       this.setArray(value)
     }
   }
+
   public setTexture(value: Texture): void {
     this.uniform.setTexture(value)
   }
+
   public setSampler(value: SamplerState): void {
     this.uniform.setSampler(value)
+  }
+
+  public setBuffer(value: Buffer): void {
+    this.uniform.setBuffer(value)
   }
 }
 
@@ -188,6 +211,13 @@ export class WebglPendingInput extends ProgramInput {
   public setSampler(value: SamplerState): void {
     this.value = value
     this.method = 'setSampler'
+  }
+  public setBuffer(value: Buffer): void {
+    throw new Error('Method not implemented.')
+  }
+
+  public markAsChanged(): void {
+    // noop
   }
 
   public apply(target: WebglProgramInput): void {

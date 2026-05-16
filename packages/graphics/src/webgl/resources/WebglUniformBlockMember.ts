@@ -1,10 +1,11 @@
 import type { TypedArray } from '../../enums'
-import type { ProgramInputType, Texture } from '../../resources'
+import type { Buffer, ProgramInputType, Texture } from '../../resources'
 import type { SamplerState } from '../../states'
 import { type GlslValueType } from '../glsl'
-import type { WebglUniformBlock } from './WebglUniformBlock'
+import { WebglBuffer } from './WebglBuffer'
 import type { WebglReflectUniform } from './WebglReflection'
 import type { WebglUniform } from './WebglUniform'
+import type { WebglUniformBlock } from './WebglUniformBlock'
 
 export class WebglUniformBlockMember implements WebglUniform {
   public readonly name: string
@@ -15,6 +16,8 @@ export class WebglUniformBlockMember implements WebglUniform {
   private blockOffset: number
 
   private position: number
+  private startPosition: number
+
   private component: number
   private componentCount: number
   private vectorStride: number
@@ -59,17 +62,25 @@ export class WebglUniformBlockMember implements WebglUniform {
         this.vectorStride = info.matrixStride / this.data.BYTES_PER_ELEMENT
         break
     }
+
+    this.position = 0
+    this.startPosition = 0
+    this.component = 0
   }
 
-  public setIndex(index: number) {
+  /**
+   * Sets the index from where next write will occur.
+   * For non-array types, this should always be set to 0.
+   */
+  public beginWrite(index: number) {
     this.position = index * this.elementStride
+    this.startPosition = this.position
     this.component = 0
   }
 
   public write(value: number) {
     if (this.data[this.position] !== value) {
       this.data[this.position] = value
-      this.block.markAsChanged()
     }
     this.component++
     this.position++
@@ -79,11 +90,32 @@ export class WebglUniformBlockMember implements WebglUniform {
     }
   }
 
+  public endWrite(): void {
+    const start = this.startPosition
+    const end = this.position // position advanced by writes
+    const byteOffset = this.blockOffset + start * this.data.BYTES_PER_ELEMENT
+    const byteLength = (end - start) * this.data.BYTES_PER_ELEMENT
+    this.block.markAsChanged(byteOffset, byteLength)
+  }
+
   public setTexture(_value: Texture): void {
     throw new Error('Cannot set texture on a uniform block parameter.')
   }
 
   public setSampler(_value: SamplerState): void {
     throw new Error('Cannot set sampler on a uniform block parameter.')
+  }
+
+  public setBuffer(value: Buffer): void {
+    if (this.blockOffset !== 0) {
+      throw new Error(
+        `setBuffer must be called on the block root ('${this.block.name}'), not on a member field ('${this.name}'). ` +
+          `Use the unindexed name to get the block binding.`,
+      )
+    }
+    if (!(value instanceof WebglBuffer)) {
+      throw new Error('Invalid buffer type for WebglUniformBlockMember')
+    }
+    this.block.setBuffer(value)
   }
 }

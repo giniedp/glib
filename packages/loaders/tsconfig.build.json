@@ -23,19 +23,19 @@
   ],
   "references": [
     {
-      "path": "../utils/tsconfig.build.json"
-    },
-    {
       "path": "../content/tsconfig.build.json"
     },
     {
       "path": "../graphics/tsconfig.build.json"
     },
     {
-      "path": "../math/tsconfig.build.json"
+      "path": "../utils/tsconfig.build.json"
     },
     {
       "path": "../model/tsconfig.build.json"
+    },
+    {
+      "path": "../math/tsconfig.build.json"
     }
   ]
 }

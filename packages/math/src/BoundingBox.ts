@@ -137,6 +137,17 @@ export class BoundingBox implements BoundingVolume {
     return new BoundingBox(min.x, min.y, min.z, max.x, max.y, max.z)
   }
 
+  public static createFromCenterExtent(center: IVec3, extent: IVec3): BoundingBox {
+    return new BoundingBox(
+      center.x - extent.x,
+      center.y - extent.y,
+      center.z - extent.z,
+      center.x + extent.x,
+      center.y + extent.y,
+      center.z + extent.z,
+    )
+  }
+
   /**
    * Initializes this instance by copying the given min and max points
    *

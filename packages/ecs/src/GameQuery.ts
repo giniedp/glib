@@ -2,6 +2,7 @@ import { archetypeKey, type GameArchetype, type GameArchetypeKey } from './GameA
 import type { GameComponentTypeId } from './GameComponent'
 import type { GameEntity, GameEntityId } from './GameEntity'
 import { GameWorld } from './GameWorld'
+import { createStaticIterator, DONE } from './utils/staticIterator'
 
 export interface GameQueryDescriptor {
   required?: GameComponentTypeId[]
@@ -90,6 +91,41 @@ export class GameQuery {
     this.forEach((it) => result.push(it))
     return result
   }
+
+  public [Symbol.iterator]: () => Iterator<GameEntity> = createStaticIterator({
+    state: () => ({
+      types: this.archetypes,
+      arch: this.archetypes[0] ?? null,
+      archIndex: 0,
+      entIndex: 0,
+    }),
+    start: (state) => {
+      state.types = this.archetypes
+      state.arch = this.archetypes[0] ?? null
+      state.archIndex = 0
+      state.entIndex = 0
+    },
+    next: (state) => {
+      if (state.arch && state.entIndex < state.arch.size) {
+        const id = state.arch.entities[state.entIndex++]
+        return this.world.getEntity(id)
+      }
+
+      // advance to next non-empty archetype
+      while (++state.archIndex < state.types.length) {
+        const arch = state.types[state.archIndex]
+        if (arch.size > 0) {
+          state.arch = arch
+          state.entIndex = 0
+          // inline first entity
+          const id = arch.entities[state.entIndex++]
+          return this.world.getEntity(id)
+        }
+      }
+
+      return DONE
+    },
+  })
 }
 
 function isSuperset<T extends number>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): boolean {

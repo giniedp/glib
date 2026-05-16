@@ -35,7 +35,7 @@ export interface ScheduledTask<T = unknown> {
   /**
    * The result of the task, if applicable
    */
-  result?: T
+  result?: T | null
 
   /**
    * The entity this task is associated with. Can be used for auto priority updates based on spatial data

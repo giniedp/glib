@@ -70,13 +70,13 @@ export interface WebGpuDeviceOptions {
    * Options used when requesting the GPU adapter
    * @public
    */
-  adapterOptions?: GPURequestAdapterOptions
+  adapterOptions?: GPURequestAdapterOptions | (() => GPURequestAdapterOptions)
 
   /**
    * Options used when requesting the GPU device
    * @public
    */
-  deviceOptions?: GPUDeviceDescriptor
+  deviceOptions?: GPUDeviceDescriptor | ((adapter: GPUAdapter) => GPUDeviceDescriptor)
 }
 
 export class WebGpuDevice extends Device<GPUCanvasContext> {
@@ -112,13 +112,15 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     return this.gpu.queue
   }
 
-  private adapterOptions: GPURequestAdapterOptions = null
-  private deviceOptions: GPUDeviceDescriptor = null
+  private getAdapterOptions: () => GPURequestAdapterOptions = null
+  private getDeviceOptions: (adapter: GPUAdapter) => GPUDeviceDescriptor = null
   private mipmapPass: WebGpuRenderEncoder
   public constructor(options: WebGpuDeviceOptions) {
     super()
-    this.adapterOptions = options.adapterOptions
-    this.deviceOptions = options.deviceOptions
+
+    this.getAdapterOptions = adapterOptionsGetter(options)
+    this.getDeviceOptions = deviceOptionsGetter(options)
+
     this.canvas = getOrCreateCanvas(options)
     this.context = getOrCreateContext(this.canvas, options)
     this.output = new WebGpuDeviceOutput(this, {
@@ -134,7 +136,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   }
 
   private async initialize() {
-    const adapterOptions = this.adapterOptions || {}
+    const adapterOptions = this.getAdapterOptions() || {}
     const adapter = await navigator.gpu.requestAdapter(adapterOptions).catch((err) => {
       throw new Error('Failed to request WebGPU adapter with options: ' + JSON.stringify(adapterOptions), {
         cause: err,
@@ -144,13 +146,16 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       throw new Error('No suitable WebGPU adapter found with options: ' + JSON.stringify(adapterOptions))
     }
 
-    const deviceOptions = this.deviceOptions || {
+    const deviceOptions = {
       label: 'GGLib WebGPU Device',
       defaultQueue: {
         label: 'GGLib WebGPU Queue',
       },
       requiredFeatures: Array.from(adapter.features) as GPUFeatureName[],
+      requiredLimits: {},
+      ...(this.getDeviceOptions(adapter) || {}),
     }
+
     const device = await adapter.requestDevice(deviceOptions).catch((err) => {
       throw new Error('Failed to request WebGPU device with options: ' + JSON.stringify(deviceOptions), {
         cause: err,
@@ -219,6 +224,10 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
   public createVertexBuffer(options: VertexBufferOptions): WebGpuVertexBuffer {
     return new WebGpuVertexBuffer(this, options)
+  }
+
+  public createBuffer(options: BufferOptions): WebGpuBuffer {
+    return new WebGpuBuffer(this, options)
   }
 
   public createWgslModule(options: WebGpuShaderOptions): WebGpuShaderModule {
@@ -320,19 +329,21 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   private mipmap2dArrayProgram: WebGpuShaderModule
   private mipmapCubeProgram: WebGpuShaderModule
   private mipmapCubeArrayProgram: WebGpuShaderModule
-  public async generateMipmap(texture: WebGpuTexture) {
-    this.mipmap2dProgram ||= this.createWgslModule({ code: MIPMAPS_2D })
-    this.mipmap2dArrayProgram ||= this.createWgslModule({ code: MIPMAPS_2D_ARRAY })
-    this.mipmapCubeProgram ||= this.createWgslModule({ code: MIPMAPS_CUBE })
-    this.mipmapCubeArrayProgram ||= this.createWgslModule({ code: MIPMAPS_CUBE_ARRAY })
+  public async generateMipmap(texture: WebGpuTexture, startLayer = 0, endLayer = texture.depth) {
+    this.mipmap2dProgram ||= this.createWgslModule({ name: 'MIPMAPS_2D', code: MIPMAPS_2D })
+    this.mipmap2dArrayProgram ||= this.createWgslModule({ name: 'MIPMAPS_2D_ARRAY', code: MIPMAPS_2D_ARRAY })
+    this.mipmapCubeProgram ||= this.createWgslModule({ name: 'MIPMAPS_CUBE', code: MIPMAPS_CUBE })
+    this.mipmapCubeArrayProgram ||= this.createWgslModule({ name: 'MIPMAPS_CUBE_ARRAY', code: MIPMAPS_CUBE_ARRAY })
 
     let program: WebGpuShaderModule
+    let dimension: GPUTextureViewDimension = '2d'
     switch (texture.gpuViewDimension) {
       case '2d':
         program = this.mipmap2dProgram
         break
       case '2d-array':
         program = this.mipmap2dArrayProgram
+        dimension = '2d-array'
         break
       case 'cube':
         program = this.mipmapCubeProgram
@@ -349,14 +360,14 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       program.program.get('textureMapSampler').set(SamplerState.LinearClampNoMipMap)
       program.program.get('textureMap').set(
         texture.gpuObject.createView({
-          dimension: '2d',
+          dimension,
           baseMipLevel: level - 1,
           mipLevelCount: 1,
           usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
         }),
       )
 
-      for (let layer = 0; layer < texture.depth; layer++) {
+      for (let layer = startLayer; layer < endLayer; layer++) {
         pass.setRenderTarget(0, texture, level, layer)
         pass.setViewportState(0, 0, Math.max(1, texture.width >> level), Math.max(1, texture.height >> level))
         pass.setProgram(program.program)
@@ -419,4 +430,22 @@ function createRefCounter() {
   const ref = referenceCounter()
   ref.onZero(() => ref.finalize())
   return ref
+}
+
+function adapterOptionsGetter(options: WebGpuDeviceOptions): () => GPURequestAdapterOptions {
+  const adapterOptions = options.adapterOptions
+  if (typeof adapterOptions === 'function') {
+    return adapterOptions
+  } else {
+    return () => adapterOptions || {}
+  }
+}
+
+function deviceOptionsGetter(options: WebGpuDeviceOptions): (adapter: GPUAdapter) => GPUDeviceDescriptor {
+  const deviceOptions = options.deviceOptions
+  if (typeof deviceOptions === 'function') {
+    return deviceOptions
+  } else {
+    return () => deviceOptions || {}
+  }
 }

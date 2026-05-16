@@ -202,6 +202,10 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     return new WebglVertexBuffer(this, options)
   }
 
+  public createBuffer(options: BufferOptions): WebglBuffer {
+    return new WebglBuffer(this, options)
+  }
+
   public getSampler(state: SamplerState): WebglSampler {
     if (!this.samplers.has(state)) {
       this.samplers.set(state, new WebglSampler(this, state))

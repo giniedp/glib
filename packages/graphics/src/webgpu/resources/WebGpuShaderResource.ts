@@ -2,120 +2,183 @@ import { SamplerState } from '../../states'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import type { WgslResourceInfo, WgslTextureInfo } from '../wgsl'
 
-const COMMON_VISIBILITY = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE
+const RENDER_VISIBILITY = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
+const COMPUTE_VISIBILITY = GPUShaderStage.COMPUTE
 
+export type WebGpuShaderResourceHandler = (resource: WebGpuShaderResource) => void
 export class WebGpuShaderResource {
   public readonly device: WebGpuDevice
-  public readonly arrayBuffer: ArrayBuffer
 
-  public hasChanged: boolean
-  public readonly buffer: GPUBuffer = null
-  public readonly resource: GPUBindingResource
+  /**
+   * The data that will be uploaded to the managed GPUBuffer when commit() is called
+   */
+  public readonly managedData: ArrayBuffer | null = null
+
+  /**
+   * Indicates whether the buffer is currently managed by this class or has been
+   * replaced by an externally provided GPUBuffer.
+   */
+  public readonly isManaged: boolean
+
+  public readonly bindingResource: GPUBindingResource
   public readonly layoutEntry: GPUBindGroupLayoutEntry
-  public readonly resourceEntry: GPUBindGroupEntry
   public readonly info: WgslResourceInfo
 
-  private changeHandler: Function[] = []
+  public get isDirty(): boolean {
+    return this.dirtyMin < this.dirtyMax
+  }
 
-  public constructor(device: WebGpuDevice, info: WgslResourceInfo) {
+  public get isBuffer(): boolean {
+    return !!this.managedBuffer
+  }
+
+  private dirtyMin: number = Infinity
+  private dirtyMax: number = -Infinity
+  private managedBuffer: GPUBuffer | null = null
+  private changeHandler: WebGpuShaderResourceHandler[] = []
+
+  public constructor(device: WebGpuDevice, info: WgslResourceInfo, isCompute: boolean) {
     this.device = device
     this.info = info
 
-    this.layoutEntry = getLayoutEntry(info)
-    if (!info.texture && !info.sampler) {
-      this.arrayBuffer = new ArrayBuffer(info.size)
-      this.buffer = this.device.gpu.createBuffer({
-        label: `ShaderResource: ${info.name}`,
-        size: this.arrayBuffer.byteLength,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      })
-      this.resource = {
-        buffer: this.buffer,
-        offset: 0,
-        size: this.arrayBuffer.byteLength,
-      }
-    } else if (info.texture) {
-      this.resource = this.device.defaultTexture.gpuObject
+    this.layoutEntry = getLayoutEntry(info, isCompute ? COMPUTE_VISIBILITY : RENDER_VISIBILITY)
+    if (info.texture) {
+      this.bindingResource = this.device.defaultTexture.gpuObject
     } else if (info.sampler) {
-      this.resource = this.device.getSampler(SamplerState.Default).resource
-    }
+      this.bindingResource = this.device.getSampler(SamplerState.Default).resource
+    } else {
+      const alignTo = info.isStorage ? 256 : 4
+      const size = Math.ceil(info.size / alignTo) * alignTo
 
-    this.resourceEntry = {
-      binding: info.binding,
-      resource: this.resource,
+      this.isManaged = true
+      this.managedData = new ArrayBuffer(size)
+      this.managedBuffer = this.device.gpu.createBuffer({
+        label: getBufferLabel(info),
+        usage: getBufferUsage(info),
+        size: this.managedData.byteLength,
+      })
+      this.setResource(this.managedBuffer)
     }
-    this.hasChanged = false
   }
 
-  public markAsChanged() {
-    this.hasChanged = true
+  public markAsChanged(byteOffset: number = 0, byteLength: number = this.managedData?.byteLength ?? 0): void {
+    this.dirtyMin = Math.min(this.dirtyMin, byteOffset)
+    this.dirtyMax = Math.max(this.dirtyMax, byteOffset + byteLength)
   }
 
-  public setResource(resource: GPUBindingResource) {
-    const didChange = this.resource !== resource
-    this.assign('resource', resource)
+  public setTexture(resource: GPUTexture | GPUTextureView | GPUExternalTexture) {
+    if (!this.info.texture) {
+      throw new Error(`Cannot set texture on non-texture parameter '${this.info.name}'`)
+    }
+    this.setResource(resource)
+  }
+
+  public setSampler(resource: GPUSampler) {
+    if (!this.info.sampler) {
+      throw new Error(`Cannot set sampler on non-sampler parameter '${this.info.name}'`)
+    }
+    this.setResource(resource)
+  }
+
+  public setBuffer(resource: GPUBuffer | GPUBufferBinding) {
+    if (!this.managedBuffer) {
+      throw new Error(`Cannot set buffer on non-buffer parameter '${this.info.name}'`)
+    }
+    const self = this as Mutable<this>
+    resource ||= this.managedBuffer
+    self.isManaged = this.managedBuffer === resource
+    this.setResource(resource)
+  }
+
+  private setResource(resource: GPUBindingResource) {
+    const didChange = this.bindingResource !== resource
+    const self = this as Mutable<this>
+    self.bindingResource = resource
     if (didChange) {
+      // updates the GPUBindGroupEntry in the parent WebGpuProgram when this resource is changed
       for (const handler of this.changeHandler) {
         handler(this)
       }
     }
   }
 
+  private resetDirty(): void {
+    this.dirtyMin = Infinity
+    this.dirtyMax = -Infinity
+  }
+
   public commit() {
-    this.resourceEntry.resource = this.resource
-    if (this.buffer) {
-      this.device.queue.writeBuffer(this.buffer, 0, this.arrayBuffer)
+    if (!this.isManaged || !this.isDirty) {
+      return
     }
+    // writeBuffer requires 4-byte alignment on offset and size
+    const alignedMin = this.dirtyMin & ~3
+    const alignedMax = (this.dirtyMax + 3) & ~3
+    this.device.queue.writeBuffer(
+      this.managedBuffer,
+      alignedMin,
+      this.managedData!,
+      alignedMin,
+      alignedMax - alignedMin,
+    )
+    this.resetDirty()
   }
 
   public dispose() {
-    this.buffer?.destroy()
+    this.managedBuffer?.destroy()
     this.changeHandler.length = 0
   }
 
-  public onResourceChanged(handler: Function) {
+  public onResourceChanged(handler: WebGpuShaderResourceHandler) {
     this.changeHandler.push(handler)
   }
 
-  public offResourceChanged(handler: Function) {
+  public offResourceChanged(handler: WebGpuShaderResourceHandler) {
     const index = this.changeHandler.indexOf(handler)
     if (index >= 0) {
       this.changeHandler.splice(index, 1)
     }
   }
-
-  protected assign<K extends keyof this>(key: K, value: this[K]) {
-    this[key] = value
-  }
 }
 
-function getLayoutEntry(info: WgslResourceInfo): GPUBindGroupLayoutEntry {
+function getLayoutEntry(info: WgslResourceInfo, visibility: number): GPUBindGroupLayoutEntry {
   const result: GPUBindGroupLayoutEntry = {
-    visibility: COMMON_VISIBILITY,
+    visibility,
     binding: info.binding,
   }
+
   if (info.texture && info.texture.external) {
     result.externalTexture = {}
-  } else if (info.texture && info.texture.storage) {
+    return result
+  }
+
+  if (info.texture && info.texture.storage) {
     result.storageTexture = {
       format: 'rgba8unorm', // TODO
       access: 'read-only', // TODO
       viewDimension: getViewDimension(info.texture),
     }
-  } else if (info.texture) {
+    return result
+  }
+
+  if (info.texture) {
     result.texture = {
       multisampled: info.texture.multisample,
       viewDimension: getViewDimension(info.texture),
       sampleType: getSampleType(info),
     }
-  } else if (info.sampler) {
+    return result
+  }
+
+  if (info.sampler) {
     result.sampler = {
       type: info.sampler.comparison ? 'comparison' : 'filtering',
     }
-  } else {
-    result.buffer = {
-      type: info.isUniform ? 'uniform' : info.isReadWrite ? 'storage' : 'read-only-storage',
-    }
+    return result
+  }
+
+  result.buffer = {
+    type: info.isUniform ? 'uniform' : info.isReadWrite ? 'storage' : 'read-only-storage',
   }
 
   return result
@@ -149,4 +212,28 @@ function getSampleType(info: WgslResourceInfo): GPUTextureSampleType {
     case 'int8':
       return 'sint'
   }
+}
+
+function getBufferLabel(info: WgslResourceInfo) {
+  let label = `ShaderResource: ${info.name}|COPY_DST`
+  if (info.isStorage) {
+    label += '|STORAGE'
+  } else {
+    label += '|UNIFORM'
+  }
+  return label
+}
+
+function getBufferUsage(info: WgslResourceInfo) {
+  let usage = GPUBufferUsage.COPY_DST
+  if (info.isStorage) {
+    usage = usage | GPUBufferUsage.STORAGE
+  } else {
+    usage = usage | GPUBufferUsage.UNIFORM
+  }
+  return usage
+}
+
+type Mutable<T> = {
+  -readonly [P in keyof T]: T[P]
 }

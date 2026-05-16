@@ -72,7 +72,7 @@ export class GameWorld {
       }
       const child = entity.getTransform()
       if (!child) {
-        throw new Error('Transform component is required to set parent')
+        throw new Error(`${options.name || 'Entity'} does not have a transform component, but a parent was provided`)
       }
       child.setParent(options.parent.getTransform())
     }

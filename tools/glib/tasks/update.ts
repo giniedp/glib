@@ -1,8 +1,21 @@
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { writeFile } from '../../utils'
 import { GlibPackageContext, project } from '../context'
 
 async function updateSrcPackageJson(pkg: GlibPackageContext) {
+  const oldPkgJsonFile = readFileSync(pkg.subPath('package.json'), { encoding: 'utf8' })
+  const oldPkgJson = JSON.parse(oldPkgJsonFile)
+  for (const key in oldPkgJson.devDependencies) {
+    if (key.startsWith('@gglib/')) {
+      delete oldPkgJson.devDependencies[key]
+    }
+  }
+  for (const key in oldPkgJson.peerDependencies) {
+    if (key.startsWith('@gglib/')) {
+      delete oldPkgJson.peerDependencies[key]
+    }
+  }
   const newPkgJson = JSON.stringify(
     {
       name: pkg.packageName,
@@ -12,20 +25,39 @@ async function updateSrcPackageJson(pkg: GlibPackageContext) {
       keywords: project.packageJson.keywords,
       author: project.packageJson.author,
       license: project.packageJson.license,
-      index: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.umd.js')),
-      module: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
-      main: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.js')),
+      main: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.esm.js')),
+      module: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.esm.js')),
       typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
-      devDependencies: pkg.glibReferences.reduce((result, peer) => {
-        result[peer] = `workspace:^${project.packageJson.version}`
-        return result
-      }, {}),
-      peerDependencies: pkg.glibReferences.reduce((result, peer) => {
-        if (pkg.packageName !== '@gglib/gglib') {
-          result[peer] = project.packageJson.version
-        }
-        return result
-      }, {}),
+      exports: {
+        ...(oldPkgJson.exports || {}),
+        '.': {
+          import:
+            './' + path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.esm.js')).replace(/\\/g, '/'),
+          types: './' + path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')).replace(/\\/g, '/'),
+        },
+      },
+      devDependencies: {
+        ...oldPkgJson.devDependencies,
+        ...pkg.glibReferences.reduce(
+          (result, peer) => {
+            result[peer] = `workspace:^${project.packageJson.version}`
+            return result
+          },
+          {} as Record<string, string>,
+        ),
+      },
+      peerDependencies: {
+        ...oldPkgJson.peerDependencies,
+        ...pkg.glibReferences.reduce(
+          (result, peer) => {
+            if (pkg.packageName !== '@gglib/gglib') {
+              result[peer] = project.packageJson.version
+            }
+            return result
+          },
+          {} as Record<string, string>,
+        ),
+      },
       files: ['package.json', 'dist', 'Readme.md'],
     },
     null,

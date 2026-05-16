@@ -220,7 +220,7 @@ export class GltfAssetContainer extends AssetContainer {
 
     const node = this.graph.node<TextureOptions>(key, {})
     const imageRef = this.graph.dependency(node, this.imageNode(gltf.source))
-    node.build = async (ctx, n, get) => {
+    node.buildAsync = async (ctx, n, get) => {
       const image = get(imageRef)
       return {
         ...image,
@@ -249,7 +249,7 @@ export class GltfAssetContainer extends AssetContainer {
 
     if (gltf.uri) {
       const node = this.graph.node<TextureOptions>(key, { name: gltf.name })
-      node.build = async (ctx) => {
+      node.buildAsync = async (ctx) => {
         const url = ctx.content.resolveUrl(gltf.uri, this.url, ctx.baseUrl)
         const container = await ctx.content.load(url, ctx)
         return container.loadTexture(0, ctx)
@@ -261,7 +261,7 @@ export class GltfAssetContainer extends AssetContainer {
       const node = this.graph.node<TextureOptions>(key, { name: gltf.name })
       const view = this.document.bufferViews[gltf.bufferView]
       const bufferKey = this.graph.dependency(node, this.bufferNode(view.buffer))
-      node.build = (_, n, get): Promise<TextureOptions> => {
+      node.buildAsync = (_, n, get): Promise<TextureOptions> => {
         const buffer = get(bufferKey)
         const array = new Uint8Array(buffer, view.byteOffset, view.byteLength)
         const blob = new Blob([array], { type: gltf.mimeType })
@@ -298,7 +298,7 @@ export class GltfAssetContainer extends AssetContainer {
     }
 
     // external buffer
-    node.build = async (ctx): Promise<ArrayBuffer> => {
+    node.buildAsync = async (ctx): Promise<ArrayBuffer> => {
       const url = ctx.content.resolveUrl(gltf.uri, this.url, ctx.baseUrl)
       const response = await ctx.content.fetch(url, {
         responseType: 'arraybuffer',
@@ -401,10 +401,17 @@ export class GltfAssetContainer extends AssetContainer {
 
     const gltf = this.document.meshes?.[index]
     if (!gltf) {
-      throw new Error(`[glTF] mesh not found: ${index}`)
+      throw new Error(`[glTF] mesh not found: ${index} (${this.url})`)
     }
 
-    const node = this.graph.node<MeshOptions>(key, null)
+    const node = this.graph.node<MeshOptions>(key, {
+      meta: {},
+    })
+
+    const partMtlKeys = gltf.primitives.map((part) => {
+      return this.graph.dependency(node, this.materialNode(part.material))
+    })
+
     const partKeys = gltf.primitives.map((part, partIndex): ResourceRef<GeometryOptions> => {
       // index buffer
 
@@ -439,24 +446,19 @@ export class GltfAssetContainer extends AssetContainer {
       return partRef
     })
 
-    const mats: Record<number, ResourceRef<MaterialOptions>> = {}
-    for (const part of gltf.primitives) {
-      if (part.material != null) {
-        mats[part.material] = this.graph.dependency(node, this.materialNode(part.material))
-      }
-    }
-
-    node.build = async (ctx, n, get) => {
+    node.buildAsync = async (ctx, n, get) => {
       const materials: MaterialOptions[] = []
-      const mtlMap = new Map<number | string, number>()
-      for (const part of gltf.primitives) {
-        if (!mtlMap.has(part.material)) {
-          mtlMap.set(part.material, materials.length)
-          materials.push(get(mats[part.material]))
+
+      const parts = partKeys.map((partKey, index) => {
+        const partMtl = get(partMtlKeys[index])
+        const part = get(partKey)
+        if (!materials.includes(partMtl)) {
+          materials.push(partMtl)
         }
-        part.material = mtlMap.get(part.material)
-      }
-      const parts = partKeys.map((partKey) => get(partKey))
+        part.materialId = materials.indexOf(partMtl)
+        return part
+      })
+
       return {
         name: gltf.name,
         meta: { ...(gltf.extras || {}) },
@@ -823,6 +825,7 @@ function createVertexBuffer(
         normalized: accessor.normalized || false,
         byteOffset: accessor.byteOffset || 0,
         elementType: elementType,
+        packed: false,
       }
     }
 

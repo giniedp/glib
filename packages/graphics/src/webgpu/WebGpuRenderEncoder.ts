@@ -56,7 +56,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     depthBiasState: DepthBiasState.Default,
     depthState: DepthState.Disabled,
     stencilState: StencilState.Default,
-    program: null,
+    shader: null,
     primitiveType: 'TriangleList',
     vertexLayout: [],
     targets: [],
@@ -92,13 +92,13 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     return this.colorTargetParam(index).blendState
   }
 
-  public setProgram(bindings: Program) {
-    if (this.pipelineParams.program !== bindings?.module) {
+  public setProgram(program: Program) {
+    if (this.pipelineParams.shader !== program?.module) {
       this.pipelineParamsChanged = true
-      this.pipelineParams.program = bindings?.module as WebGpuShaderModule
+      this.pipelineParams.shader = program?.module as WebGpuShaderModule
     }
-    if (this.programParams !== bindings) {
-      this.programParams = bindings as WebGpuProgram
+    if (this.programParams !== program) {
+      this.programParams = program as WebGpuProgram
       this.programParamsChanged = true
     }
   }
@@ -479,7 +479,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   private applyBindGroups() {
-    const params = this.programParams || this.pipelineParams.program?.program
+    const params = this.programParams || this.pipelineParams.shader?.program
     if (!this.pass || !params) {
       return
     }
@@ -598,14 +598,14 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   private getVertexLayout() {
-    if (!this.pipelineParams.program || !this.vertexBuffer) {
+    if (!this.pipelineParams.shader || !this.vertexBuffer) {
       return null
     }
-    return this.pipelineParams.program.getVertexLayout(this.vertexBuffer)
+    return this.pipelineParams.shader.getVertexLayout(this.vertexBuffer)
   }
 
   private getColorTargetState() {
-    const program = this.pipelineParams.program
+    const program = this.pipelineParams.shader
     const count = (program ? program.getMaxOutputLocation() : 0) + 1
     return this.device.colorTargetListCache.get(this.colorTargetStates, count)
   }
@@ -692,7 +692,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.pipelineParams.depthBiasState = DepthBiasState.Default
     this.pipelineParams.depthState = DepthState.Disabled
     this.pipelineParams.stencilState = StencilState.Default
-    this.pipelineParams.program = null
+    this.pipelineParams.shader = null
     this.pipelineParams.primitiveType = 'TriangleList'
     this.pipelineParams.vertexLayout = null
     this.pipelineParams.targets = null

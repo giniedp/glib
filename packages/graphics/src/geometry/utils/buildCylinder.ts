@@ -1,16 +1,19 @@
+import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, type GeometryBuilder } from '../GeometryBuilder'
-import { buildParametricSurface } from './buildParametricSurface'
+import { buildGeometry, type GeometryBuilder } from '../GeometryBuilder'
+import { buildDisc } from './buildDisc'
+import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
 
-/**
- *
- */
-export const CylinderDefaults = {
-  height: 1.0,
-  offset: -0.5,
-  radius: 0.5,
-  tesselation: 32,
+export const BuildCylinderDefaults = {
+  height: 1,
+  radius: 1,
+  radialSegments: 32,
+  heightSegments: 1,
+  startAngle: 0,
+  endAngle: Math.PI * 2,
+  closeTop: false,
+  closeBottom: false,
 }
 
 /**
@@ -20,28 +23,87 @@ export const CylinderDefaults = {
  */
 export interface BuildCylinderOptions {
   /**
-   * The height of the cylinder. Defaults to `1.0`.
+   * Height of the cylinder along the Y axis.
+   * @default 1
    */
   height?: number
+
   /**
-   * The offset along the y axis. Defaults to `-0.5`.
+   * Offset applied to all vertices.
    */
-  offset?: number
+  offset?: IVec3
+
   /**
-   * Radius of the cylinder. Defaults to `0.5`.
+   * Radius applied to both top and bottom.
+   * Overridden per-cap by `topRadius` and `bottomRadius`.
+   * @default 1
    */
   radius?: number
+
   /**
-   * The tesselation. Defaults to `32`.
+   * Radius of the top cap. Overrides `radius` when set.
+   * Set to `0` for a cone.
+   * @default radius
    */
-  tesselation?: number
+  topRadius?: number
+
+  /**
+   * Radius of the bottom cap. Overrides `radius` when set.
+   * Set to `0` for an inverted cone.
+   * @default radius
+   */
+  bottomRadius?: number
+
+  /**
+   * Number of subdivisions along the height.
+   * @default 1
+   */
+  heightSegments?: number
+
+  /**
+   * Number of subdivisions around the circumference.
+   * @default 32
+   */
+  radialSegments?: number
+
+  /**
+   * Start angle in radians.
+   * @default 0
+   */
+  startAngle?: number
+
+  /**
+   * End angle in radians.
+   * @default Math.PI * 2
+   */
+  endAngle?: number
+
+  /**
+   * When `true`, closes the top of the cylinder with a disc.
+   * Has no effect when `topRadius` is `0`.
+   * @default false
+   */
+  closeTop?: boolean
+
+  /**
+   * When `true`, closes the bottom of the cylinder with a disc.
+   * Has no effect when `bottomRadius` is `0`.
+   * @default false
+   */
+  closeBottom?: boolean
 }
 
-export function cylinderGeometry(device: Device, options?: BuildCylinderOptions): Geometry {
-  return beginGeometry().append(buildCylinder, options)
-    .calculateNormalsAndTangents()
-    .endGeometry(device, {
-    name: 'cylinder',
+export function cylinderGeometry(device: Device, options: BuildCylinderOptions): Geometry {
+  return buildGeometry(device, buildCylinder, {
+    name: 'Cylinder',
+    ...options,
+  })
+}
+
+export function cylinderGeometryLines(device: Device, options: BuildCylinderOptions): Geometry {
+  return buildGeometry(device, buildCylinderLines, {
+    name: 'Cylinder',
+    ...options,
   })
 }
 
@@ -51,30 +113,106 @@ export function cylinderGeometry(device: Device, options?: BuildCylinderOptions)
  * @public
  */
 export function buildCylinder(builder: GeometryBuilder, options?: BuildCylinderOptions) {
-  const r = options?.radius ?? CylinderDefaults.radius
-  const h = options?.height ?? CylinderDefaults.height
-  const o = options?.offset ?? CylinderDefaults.offset
-  const t = options?.tesselation ?? CylinderDefaults.tesselation
+  const radius = options?.radius ?? BuildCylinderDefaults.radius
+  const topRadius = options?.topRadius ?? radius
+  const bottomRadius = options?.bottomRadius ?? radius
+  const height = options?.height ?? BuildCylinderDefaults.height
+  const ox = options?.offset?.x ?? 0
+  const oy = options?.offset?.y ?? 0
+  const oz = options?.offset?.z ?? 0
+  const radialSegments = options?.radialSegments ?? BuildCylinderDefaults.radialSegments
+  const heightSegments = options?.heightSegments ?? BuildCylinderDefaults.heightSegments
+  const startAngle = options?.startAngle ?? BuildCylinderDefaults.startAngle
+  const endAngle = options?.endAngle ?? BuildCylinderDefaults.endAngle
+
   buildParametricSurface(builder, {
-    position: (u: number, v: number) => {
+    position: (u, v) => {
+      const r = bottomRadius * (1 - v) + topRadius * v
       return {
-        x: r * Math.sin(u),
-        y: v,
-        z: r * Math.cos(u),
+        x: ox + r * Math.cos(u),
+        y: oy + v * height - height * 0.5,
+        z: oz + r * Math.sin(u),
       }
     },
-    normal: (u: number, v: number) => {
-      return {
-        x: Math.sin(u),
-        y: 0,
-        z: Math.cos(u),
-      }
-    },
-    uSteps: t,
-    vSteps: t,
-    uStart: 0,
-    uEnd: Math.PI * 2,
-    vStart: o + h,
-    vEnd: o,
+    uStart: startAngle,
+    uEnd: endAngle,
+    uSegments: radialSegments,
+    vSegments: heightSegments,
   })
+
+  if (options?.closeTop && topRadius > 0) {
+    buildDisc(builder, {
+      radius: topRadius,
+      offset: { x: ox, y: oy + height * 0.5, z: oz },
+      radialSegments,
+      startAngle,
+      endAngle,
+    })
+  }
+
+  if (options?.closeBottom && bottomRadius > 0) {
+    buildDisc(builder, {
+      radius: bottomRadius,
+      offset: { x: ox, y: oy - height * 0.5, z: oz },
+      radialSegments,
+      startAngle,
+      endAngle,
+      invert: true,
+    })
+  }
+}
+
+/**
+ * Builds a cylinder shape into the {@link GeometryBuilder}
+ *
+ * @public
+ */
+export function buildCylinderLines(builder: GeometryBuilder, options?: BuildCylinderOptions) {
+  const radius = options?.radius ?? BuildCylinderDefaults.radius
+  const topRadius = options?.topRadius ?? radius
+  const bottomRadius = options?.bottomRadius ?? radius
+  const height = options?.height ?? BuildCylinderDefaults.height
+  const ox = options?.offset?.x ?? 0
+  const oy = options?.offset?.y ?? 0
+  const oz = options?.offset?.z ?? 0
+  const radialSegments = options?.radialSegments ?? BuildCylinderDefaults.radialSegments
+  const heightSegments = options?.heightSegments ?? BuildCylinderDefaults.heightSegments
+  const startAngle = options?.startAngle ?? BuildCylinderDefaults.startAngle
+  const endAngle = options?.endAngle ?? BuildCylinderDefaults.endAngle
+
+  buildParametricLines(builder, {
+    position: (u, v) => {
+      const r = bottomRadius * (1 - v) + topRadius * v
+      return {
+        x: ox + r * Math.cos(u),
+        y: oy + v * height - height * 0.5,
+        z: oz + r * Math.sin(u),
+      }
+    },
+    uStart: startAngle,
+    uEnd: endAngle,
+    uSegments: radialSegments,
+    vSegments: heightSegments,
+  })
+
+  // if (options?.closeTop && topRadius > 0) {
+  //   buildDiscLines(builder, {
+  //     radius: topRadius,
+  //     offset: { x: ox, y: oy + height * 0.5, z: oz },
+  //     radialSegments,
+  //     startAngle,
+  //     endAngle,
+  //   })
+  // }
+
+  // if (options?.closeBottom && bottomRadius > 0) {
+  //   buildDiscLines(builder, {
+  //     radius: bottomRadius,
+  //     offset: { x: ox, y: oy - height * 0.5, z: oz },
+  //     radialSegments,
+  //     startAngle,
+  //     endAngle,
+  //     invert: true,
+  //   })
+  // }
 }

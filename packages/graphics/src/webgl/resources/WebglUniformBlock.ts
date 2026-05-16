@@ -7,12 +7,19 @@ import { WebglShaderModule } from './WebglShaderModule'
 export class WebglUniformBlock {
   public readonly device: WebglDevice
   public readonly program: WebglShaderModule
-  public readonly buffer: WebglBuffer
   public readonly index: number
   public readonly size: number
   public readonly array: ArrayBuffer
-  public readonly changed: boolean = false
   public readonly name: string
+  public readonly boundBuffer: WebglBuffer
+  public readonly isManaged: boolean = true
+  public get isDirty(): boolean {
+    return this.dirtyMin < this.dirtyMax
+  }
+
+  private managedBuffer: WebglBuffer
+  private dirtyMin: number = Infinity
+  private dirtyMax: number = -Infinity
 
   public constructor(program: WebglShaderModule, name: string, index: number, size: number) {
     this.program = program
@@ -21,11 +28,12 @@ export class WebglUniformBlock {
     this.index = index
     this.size = size
     this.array = new ArrayBuffer(size)
-    this.buffer = this.device.createUniformBuffer({
-      name: `${program.name} block:${index} {name}`,
+    this.managedBuffer = this.device.createUniformBuffer({
+      name: `${program.name} block:${index} ${name}`,
       size: size,
       data: this.array,
     })
+    this.boundBuffer = this.managedBuffer
 
     this.device.onContextRestored.add(this.handleContextRestored)
     this.restore()
@@ -37,18 +45,35 @@ export class WebglUniformBlock {
 
   private restore() {
     this.device.context.uniformBlockBinding(this.program.glHandle, this.index, this.index)
-    this.markAsChanged()
+    this.invalidate()
   }
 
-  public markAsChanged() {
-    ;(this as Mutable<this>).changed = true
+  public markAsChanged(byteOffset: number, byteLength: number): void {
+    this.dirtyMin = Math.min(this.dirtyMin, byteOffset)
+    this.dirtyMax = Math.max(this.dirtyMax, byteOffset + byteLength)
+  }
+
+  public invalidate() {
+    this.markAsChanged(0, this.array.byteLength)
+  }
+
+  public setBuffer(value: WebglBuffer): void {
+    const self = this as Mutable<this>
+    self.boundBuffer = value
+    self.isManaged = this.boundBuffer === this.managedBuffer
   }
 
   public commit() {
-    if (this.changed) {
-      this.buffer.setData(this.array)
-      ;(this as Mutable<this>).changed = false
+    if (!this.isDirty || !this.isManaged || !this.managedBuffer) {
+      return
     }
+    this.managedBuffer.setData(this.array, this.dirtyMin, this.dirtyMax - this.dirtyMin)
+    this.resetDirty()
+  }
+
+  private resetDirty(): void {
+    this.dirtyMin = Infinity
+    this.dirtyMax = -Infinity
   }
 
   public getView(type: GlslValueType, offsetInBytes: number, arraySize: number): TypedArray {
@@ -64,7 +89,7 @@ export class WebglUniformBlock {
   }
 
   public dispose(): void {
-    this.buffer.dispose()
+    this.managedBuffer.dispose()
     this.device.onContextRestored.remove(this.handleContextRestored)
   }
 }

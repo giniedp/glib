@@ -6,13 +6,16 @@ export type ResourceRef<T> = ResourceKey & { __type__: T }
 
 export type ResourceGetter = <R>(key: ResourceRef<R>) => R
 
-export type ResourceBuilder<T> = (context: LoaderContext, node: ResourceNode<T>, get: ResourceGetter) => T | Promise<T>
+export type NotPromise<T> = T extends Promise<any> ? never : T
+export type ResourceBuilder<T> = (context: LoaderContext, node: ResourceNode<T>, get: ResourceGetter) => NotPromise<T>
+export type ResourceAsyncBuilder<T> = (context: LoaderContext, node: ResourceNode<T>, get: ResourceGetter) => Promise<T>
 
-export type ResourceNode<T = unknown> = {
+export type ResourceNode<T extends NotPromise<any> = {}> = {
   key: ResourceKey
   data: T
   deps: ResourceDependency<T, any>[]
   build?: ResourceBuilder<T>
+  buildAsync?: ResourceAsyncBuilder<T>
 }
 
 export type ResourceDependency<V = unknown, R = unknown> = {
@@ -139,15 +142,27 @@ export class ResourceGraph {
         }
       }
 
-      const result = node.build ? node.build(context, node, getResult) : node.data
-      if (!isThenable(result)) {
-        // sync result - assign and continue
+      if (!node.build && !node.buildAsync) {
+        const result = node.data
+        finalize(node, result)
+        continue
+      }
+
+      if (node.build) {
+        const result = node.build(context, node, getResult)
+        if (isThenable(result)) {
+          throw new Error(`build function for node ${node.key} returned a Promise, but should return synchronously`)
+        }
         finalize(node, result)
         continue
       }
 
       // async result - defer assignment until resolution
-      const promise = executor.run(() => result.then((value) => finalize(node, value)), context.signal)
+      const promise = executor.run(async () => {
+        const result = await node.buildAsync(context, node, getResult)
+        finalize(node, result)
+      }, context.signal)
+
       inflight.set(node.key, promise)
 
       try {

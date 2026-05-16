@@ -66,7 +66,7 @@ export class Container extends AssetContainer {
     }
 
     const node = this.graph.node<MaterialOptions[]>(key, null)
-    node.build = async (context) => {
+    node.buildAsync = async (context) => {
       const url = context.content.resolveUrl(lib, this.document.source)
       const asset = await context.content.load(url)
       const materials: MaterialOptions[] = await Promise.all(
@@ -206,6 +206,7 @@ function buildGroup(data: Document, faces: FaceElement[], smoothingGroup: number
           byteOffset: 0, // - and this
           normalized: false, // - and this
           elementType: 'float32', // - and this since we dont operate on this buffer
+          packed: false,
         },
       },
     ],

@@ -101,7 +101,7 @@ export function readWgslProgram(reader: WgslTokenReader): WgslProgram {
         continue
       }
     }
-    console.warn('unknown wgsl sequence', reader.createLog())
+    console.warn('unknown wgsl sequence\n', reader.createLog())
     result.push({
       kind: 'unknown',
       token: reader.token,
@@ -191,7 +191,7 @@ function readWgslFunctionParams(reader: WgslTokenReader) {
       continue
     }
 
-    throw new Error(`Unexpected token in function parameters: ${reader.createLog()}`)
+    throw new Error(`Unexpected token in function parameters:\n${reader.createLog()}`)
   }
   reader.skipComments = skipComments
   return result
@@ -274,7 +274,7 @@ function readWgslStructBody(reader: WgslTokenReader) {
       comments = []
       continue
     }
-    throw new Error(`Invalid struct syntax at: ${reader.createLog()}`)
+    throw new Error(`Invalid struct syntax at:\n${reader.createLog()}`)
   }
   return member
 }

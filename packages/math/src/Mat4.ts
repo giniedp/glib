@@ -232,6 +232,21 @@ export class Mat4 {
     return Mat4.debugComponents(this, 2)
   }
 
+  public translation: IVec3 = new Proxy(this, {
+    get(target, prop: string) {
+      switch (prop) {
+        case 'x':
+          return target.translationX
+        case 'y':
+          return target.translationY
+        case 'z':
+          return target.translationZ
+        default:
+          return undefined
+      }
+    },
+  }) as unknown as IVec3
+
   /**
    * Constructs a new instance of {@link Mat4}
    *

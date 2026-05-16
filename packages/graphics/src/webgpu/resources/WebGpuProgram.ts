@@ -40,7 +40,9 @@ export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends
     this.device = shader.device
     this.info = info
     this.resources = createResources(this.device, info, options?.resources)
-    this.bindGroupLayouts = options?.layouts || createBindGroupLayouts(this.device, this.resources)
+
+    this.bindGroupLayouts =
+      options?.layouts || createBindGroupLayouts(this.device, shader.gpuObject.label, this.resources)
     this.createBindGroupDescriptors()
   }
   public apply(parameters: Partial<Params>): void {
@@ -125,9 +127,7 @@ export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends
 
   public commit() {
     for (const resource of this.resources) {
-      if (resource.hasChanged) {
-        resource.commit()
-      }
+      resource.commit()
     }
   }
 
@@ -151,11 +151,11 @@ export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends
       resources.forEach((resource, index) => {
         const entry: GPUBindGroupEntry = {
           binding: resource.info.binding,
-          resource: resource.resource,
+          resource: resource.bindingResource,
         }
         group.entries[index] = entry
         resource.onResourceChanged(() => {
-          entry.resource = resource.resource
+          entry.resource = resource.bindingResource
           if (this.gpuBindGroups) {
             this.gpuBindGroups[groupId] = undefined
           }
@@ -183,6 +183,7 @@ function createResources(
   sharedResources?: ReadonlyArray<WebGpuShaderResource>,
 ) {
   const resources: WebGpuShaderResource[] = []
+  const isCompute = info.entryPoints.some((it) => it.stage === 'compute')
   for (const param of info.resources) {
     if (param.binding == null) {
       continue
@@ -192,18 +193,19 @@ function createResources(
       // TODO: refcount shared resources to know when to dispose them
       resources.push(shared)
     } else {
-      resources.push(new WebGpuShaderResource(device, param))
+      resources.push(new WebGpuShaderResource(device, param, isCompute))
     }
   }
   return resources
 }
 
-function createBindGroupLayouts(device: WebGpuDevice, resources: WebGpuShaderResource[]) {
+function createBindGroupLayouts(device: WebGpuDevice, label: string, resources: WebGpuShaderResource[]) {
   const result: GPUBindGroupLayout[] = []
   const groupIds = Array.from(new Set<number>(resources.map((it) => it.info.group)))
   for (const groupId of groupIds) {
     const groupResources = resources.filter((it) => it.info.group === groupId)
     result[groupId] = device.gpu.createBindGroupLayout({
+      label: `${label || ''} BindGroupLayout${groupId}`,
       entries: groupResources.map((it) => it.layoutEntry),
     })
   }

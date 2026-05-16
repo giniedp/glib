@@ -152,7 +152,7 @@ export class MtlAsset extends AssetContainer {
 
   public textureNode(map: TextureData): ResourceNode<TextureOptions> {
     const key = `texture:${map.file}`
-    const node = this.graph.node(key, {})
+    const node = this.graph.node<TextureOptions>(key, {})
 
     for (const plugin of this.plugins) {
       if (!plugin.applyTexture) {
@@ -166,7 +166,7 @@ export class MtlAsset extends AssetContainer {
       return node
     }
 
-    node.build = async (context: LoaderContext) => {
+    node.buildAsync = async (context: LoaderContext): Promise<any> => {
       const url = context.content.resolveUrl(map.file, this.url)
       const asset = await context.content.load(url, context)
       return asset.loadTexture(0, context)

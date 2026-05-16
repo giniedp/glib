@@ -1,17 +1,16 @@
 import type {
   Device,
-  Geometry,
   Mesh,
-  MeshPart,
+  ProgramInputValue,
   RenderVariant,
+  ResolvedMeshPart,
   Sprite,
   Texture,
   TextureDescriptor,
-  ProgramInputValue,
 } from '@gglib/graphics'
 import type { IRect, Mat4 } from '@gglib/math'
+import { Model } from '@gglib/model'
 import { brand, Brand } from '@gglib/utils'
-import { Model } from 'model/src'
 import type { FrameGraph } from './FrameGraph'
 import type { RenderChannel } from './RenderChannel'
 import type { Renderer } from './Renderer'
@@ -53,28 +52,20 @@ export interface CameraData {
 export type RenderItemType<K extends string, T> = Brand<K, T>
 export const RenderItemType = {
   Light: brand<'light', unknown>('light'),
-  Mesh: brand<'mesh', Mesh>('mesh'),
-  MeshPart: brand<'meshPart', MeshPart>('meshPart'),
   Model: brand<'model', Model>('model'),
-  Primitive: brand<'primitive', Geometry>('primitive'),
+  Mesh: brand<'mesh', Mesh>('mesh'),
+  MeshPart: brand<'meshPart', ResolvedMeshPart>('meshPart'),
   Sprite: brand<'sprite', Sprite>('sprite'),
 }
 
-export type LightRenderItem = KeyedRenderItem<'light', unknown>
-export type MeshRenderItem = KeyedRenderItem<'mesh', Mesh>
-export type MeshPartRenderItem = KeyedRenderItem<'meshPart', MeshPart>
-export type ModelRenderItem = KeyedRenderItem<'model', Model>
-export type PrimitiveRenderItem = KeyedRenderItem<'primitive', Geometry>
-export type SpriteRenderItem = KeyedRenderItem<'sprite', Sprite>
+export type LightRenderItem = RenderItem<unknown>
+export type MeshRenderItem = RenderItem<Mesh>
+export type ModelRenderItem = RenderItem<Model>
+export type MeshPartRenderItem = RenderItem<ResolvedMeshPart>
+export type SpriteRenderItem = RenderItem<Sprite>
 
-export type KeyedRenderItem<K extends string = string, T = unknown> = RenderItem & {
-  type: K
-} & {
-  [P in K]: T
-}
-
-export type RenderItem = {
-  type: RenderItemType<string, any>
+export type RenderItem<T = unknown> = {
+  type: RenderItemType<string, T>
   /**
    * The render layer of this item, used for sorting.
    */
@@ -87,9 +78,13 @@ export type RenderItem = {
    * The world transform of this render item, used for sorting.
    */
   transform: Mat4
+  /**
+   * The actual data of this render item, e.g. a mesh, sprite, light, etc.
+   */
+  data: T
 }
 
-export function isRenderItem<K extends string, T>(item: RenderItem, type: Brand<K, T>): item is KeyedRenderItem<K, T> {
+export function isRenderItem<K extends string, T>(item: RenderItem, type: Brand<K, T>): item is RenderItem<T> {
   return item.type === type
 }
 

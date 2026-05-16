@@ -78,7 +78,7 @@ export function readGlslProgram(reader: GlslTokenReader): GlslProgram {
       }
       continue
     }
-    console.warn('unknown glsl sequence', reader.token, reader.createLog())
+    console.warn('unknown glsl sequence\n', reader.token, reader.createLog())
     reader.next()
   }
   return result
@@ -202,7 +202,7 @@ function readGlslTypeSpecifier(reader: GlslTokenReader) {
   } else {
     result.name = reader.read('keyword')
     if (!isGlslType(result.name)) {
-      throw new Error(`Invalid GLSL type: ${reader.createLog()}`)
+      throw new Error(`Invalid GLSL type:\n${reader.createLog()}`)
     }
   }
   const arraySize = readArraySize(reader)

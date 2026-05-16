@@ -82,7 +82,7 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
     }
     for (const block of this.blocks) {
       const unit = this.device.uniformBlockUnits[block.index]
-      unit?.update(block.buffer)
+      unit?.update(block.boundBuffer)
     }
   }
 

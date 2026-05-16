@@ -1,7 +1,7 @@
-import { Device } from 'graphics/src/Device'
+import { Device } from '../../Device'
+import { Geometry } from '../Geometry'
 import { beginGeometry, type GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
-import { Geometry } from '../Geometry'
 
 export const BuildTorusDefaults = {
   outerRadius: 0.5,
@@ -68,8 +68,8 @@ export function buildTorus(builder: GeometryBuilder, options?: BuildTorusOptions
         z: Math.sin(theta) * Math.cos(phi),
       }
     },
-    uSteps: t,
-    vSteps: t,
+    uSegments: t,
+    vSegments: t,
     uStart: 0,
     uEnd: Math.PI * 2,
     vStart: 0,

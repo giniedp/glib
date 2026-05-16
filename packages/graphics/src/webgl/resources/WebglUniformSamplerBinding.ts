@@ -1,8 +1,8 @@
-import type { ProgramInputType, Texture } from '../../resources'
+import type { Buffer, ProgramInputType, Texture } from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebglDevice } from '../WebglDevice'
-import type { WebglShaderModule } from './WebglShaderModule'
 import type { WebglReflectUniform } from './WebglReflection'
+import type { WebglShaderModule } from './WebglShaderModule'
 import type { WebglTexture } from './WebglTexture'
 import type { WebglUniform } from './WebglUniform'
 
@@ -25,11 +25,19 @@ export class WebglUniformSamplerBinding implements WebglUniform {
     this.type = info.type.container
   }
 
-  public setIndex(_index: number) {
+  public setBuffer(_value: Buffer): void {
+    throw new Error('Can not set buffer on sampler parameter.')
+  }
+
+  public beginWrite(_index: number) {
     throw new Error('Cannot seek on sampler parameter.')
   }
 
-  public write(_value: number) {
+  public write(_value: number): void {
+    throw new Error('Cannot write numeric value to sampler parameter.')
+  }
+
+  public endWrite(): void {
     throw new Error('Cannot write numeric value to sampler parameter.')
   }
 

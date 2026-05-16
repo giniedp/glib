@@ -1,26 +1,10 @@
 import { BoundingBox, Intersection, IntersectionType, type IVec3, Vec3 } from '@gglib/math'
 import type { SpatialIndex, SpatialNode } from './SpatialIndex'
 
-export interface CreateQuadTreeOptions {
-  min: IVec3
-  max: IVec3
-  leafLevel?: number
-  looseFactor?: number
-}
-
 /**
  * @public
  */
-export class QuadTree<T extends object = {}> implements SpatialIndex<T>, SpatialNode<T> {
-  /**
-   * Creates a wuad tree with given dimensions
-   * @param min - the minimum point in 3D space
-   * @param max - the maximum point in 3D space
-   */
-  public static create<T extends object = {}>({ min, max, looseFactor }: CreateQuadTreeOptions) {
-    return new QuadTree<T>(min, max, 0, looseFactor || 1)
-  }
-
+export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, SpatialNode<T> {
   /**
    * Depth level of this node where 0 is the root
    */
@@ -35,19 +19,19 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
   public readonly size: number
 
   /**
-   * The loose factor determines how much bigger the loose bounds are compared to the regular bounds.
+   * The root node
    */
-  public readonly looseFactor: number
+  public readonly root: QuadTree<T> | null
 
   /**
-   * The parent quad
+   * The parent node
    */
-  public readonly parent: QuadTree<T> | null
+  public readonly parent: QuadTreeNode<T> | null
 
   /**
-   * Child quads
+   * Child nodes
    */
-  public readonly children: ReadonlyArray<QuadTree<T>> = [] // empty -> leaf node
+  public readonly children: ReadonlyArray<QuadTreeNode<T>> = [] // empty -> leaf node
 
   /**
    * The volume of this node
@@ -91,10 +75,16 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
   public readonly centerX: number
   public readonly centerZ: number
 
-  private constructor(min: IVec3, max: IVec3, level: number, looseFactor?: number, parent?: QuadTree<T>) {
+  protected constructor(root: QuadTree<T>, parent: QuadTreeNode<T>, min: IVec3, max: IVec3, level: number) {
+    if (root == null) {
+      root = this as any
+    }
+    if (!(root instanceof QuadTree)) {
+      throw new Error('QuadTreeNode must be created with a root of type QuadTree')
+    }
+    this.root = root
     this.parent = parent
     this.level = level
-    this.looseFactor = Math.max(1, looseFactor || 1)
     this.bounds = BoundingBox.createFromV(min, max)
     const sizeX = this.bounds.max.x - this.bounds.min.x
     const sizeZ = this.bounds.max.z - this.bounds.min.z
@@ -102,27 +92,33 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
       throw new Error(`QuadTree requires square bounds. Got ${sizeX}x${sizeZ}`)
     }
     this.size = sizeX
-    this.looseBounds = this.bounds.clone()
-    this.looseBounds.min.subtractScalar((this.size * (this.looseFactor - 1)) / 2)
-    this.looseBounds.max.addScalar((this.size * (this.looseFactor - 1)) / 2)
 
-    const root = this.getRoot()?.bounds
+    const rootBounds = root.bounds
     const bounds = this.bounds
     this.parentGridX = parent ? (parent.bounds.min.x - this.bounds.min.x ? 1 : 0) : 0
     this.parentGridZ = parent ? (parent.bounds.min.z - this.bounds.min.z ? 1 : 0) : 0
-    this.rootGridX = (bounds.min.x - root.min.x) / this.size
-    this.rootGridZ = (bounds.min.z - root.min.z) / this.size
+    this.rootGridX = (bounds.min.x - rootBounds.min.x) / this.size
+    this.rootGridZ = (bounds.min.z - rootBounds.min.z) / this.size
     this.worldGridX = bounds.min.x / this.size
     this.worldGridZ = bounds.min.z / this.size
     this.centerX = bounds.min.x + (bounds.max.x - bounds.min.x) / 2
     this.centerZ = bounds.min.z + (bounds.max.z - bounds.min.z) / 2
+    this.looseBounds = this.bounds.clone()
+
+    this.updateLooseBounds(root ? root.looseFactor : 1)
+  }
+
+  protected updateLooseBounds(factor: number) {
+    this.looseBounds.initFrom(this.bounds)
+    this.looseBounds.min.subtractScalar((this.size * factor) / 2)
+    this.looseBounds.max.addScalar((this.size * factor) / 2)
   }
 
   /**
    * Gets the root of this tree
    */
   public getRoot() {
-    let node: QuadTree<T> = this
+    let node: QuadTreeNode<T> = this
     while (node.parent) {
       node = node.parent
     }
@@ -139,7 +135,7 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
 
     const { min, max } = this.bounds
     const halfSize = (max.x - min.x) / 2
-    const children: QuadTree<T>[] = this.children as any
+    const children: QuadTreeNode<T>[] = this.children as any
     for (let i = 0; i < 4; i++) {
       const min = Vec3.create(
         this.bounds.min.x + (i & 1 ? halfSize : 0),
@@ -147,8 +143,10 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
         this.bounds.min.z + (i & 2 ? halfSize : 0),
       )
       const max = Vec3.create(min.x + halfSize, this.bounds.max.y, min.z + halfSize)
-      children.push(new QuadTree(min, max, this.level + 1, this.looseFactor, this))
+      children.push(new QuadTreeNode(this.root, this, min, max, this.level + 1))
     }
+
+    this.root.markAsChanged()
   }
 
   /**
@@ -179,66 +177,10 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
     }
   }
 
-  /**
-   * Traverses the tree top down starting from this node
-   *
-   * @remarks
-   * Visits this node first then its children
-   */
-  public traverseTopDown(visit: (node: QuadTree<T>) => void): void {
-    visit(this)
-    for (const child of this.children) {
-      child.traverseTopDown(visit)
-    }
-  }
-
-  public visitTopDown(visitor: { visit: (node: QuadTree<T>) => void }): void {
-    visitor.visit(this)
-    for (const child of this.children) {
-      child.visitTopDown(visitor)
-    }
-  }
-
-  public collectTopDown(output: Array<QuadTree<T>>): Array<QuadTree<T>> {
-    output.push(this)
-    for (const child of this.children) {
-      child.collectTopDown(output)
-    }
-    return output
-  }
-
-  /**
-   * Traverses the tree bottom up
-   *
-   * @remarks
-   * Viists children first then this node
-   */
-  public traverseBottomUp(visit: (node: QuadTree<T>) => void): void {
-    for (const child of this.children) {
-      child.traverseBottomUp(visit)
-    }
-    visit(this)
-  }
-
-  public visitBottomUp(visitor: { visit: (node: QuadTree<T>) => void }): void {
-    for (const child of this.children) {
-      child.visitBottomUp(visitor)
-    }
-    visitor.visit(this)
-  }
-
-  public collectBottomUp(output: Array<QuadTree<T>>): Array<QuadTree<T>> {
-    for (const child of this.children) {
-      child.collectBottomUp(output)
-    }
-    output.push(this)
-    return output
-  }
-
   public traverseIntersection<V>(
     volume: V,
     method: (a: V, b: BoundingBox) => IntersectionType,
-    visit: (node: QuadTree<T>, intersection: IntersectionType) => void,
+    visit: (node: QuadTreeNode<T>, intersection: IntersectionType) => void,
   ): void {
     const intersection = method(volume, this.looseBounds)
     if (intersection === IntersectionType.Disjoint) {
@@ -264,7 +206,7 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
     }
   }
 
-  private traverseContained(visit: (node: QuadTree<T>, intersection: IntersectionType) => void): void {
+  private traverseContained(visit: (node: QuadTreeNode<T>, intersection: IntersectionType) => void): void {
     visit(this, IntersectionType.Contains)
     for (const child of this.children) {
       child.traverseContained(visit)
@@ -276,14 +218,14 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
    *
    * @param volume - the volume to fit
    */
-  public findFittingNode(volume: BoundingBox): QuadTree<T> {
+  public findFittingNode(volume: BoundingBox): QuadTreeNode<T> {
     if (Intersection.boxBox(this.looseBounds, volume) === IntersectionType.Contains) {
       return this.testDown(volume)
     }
     return this.testUp(volume)
   }
 
-  private testUp(volume: BoundingBox): QuadTree<T> {
+  private testUp(volume: BoundingBox): QuadTreeNode<T> {
     if (!this.parent) {
       return this // root reached
     }
@@ -293,7 +235,7 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
     return this.parent.testUp(volume)
   }
 
-  private testDown(volume: BoundingBox): QuadTree<T> {
+  private testDown(volume: BoundingBox): QuadTreeNode<T> {
     if (this.isLeaf) {
       return this // leaf reached
     }
@@ -306,7 +248,12 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
     return this
   }
 
-  public traverseLOD(cameraX: number, cameraZ: number, baseFactor: number, visit: (node: QuadTree<T>) => void): void {
+  public traverseLOD(
+    cameraX: number,
+    cameraZ: number,
+    baseFactor: number,
+    visit: (node: QuadTreeNode<T>) => void,
+  ): void {
     // Leaf nodes are always selected
     if (this.isLeaf) {
       visit(this)
@@ -345,7 +292,7 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
     cameraX: number,
     cameraZ: number,
     baseFactor: number,
-    visit: (node: QuadTree<T>) => void,
+    visit: (node: QuadTreeNode<T>) => void,
   ): void {
     // Leaf nodes are always selected
     if (this.isLeaf) {
@@ -368,5 +315,98 @@ export class QuadTree<T extends object = {}> implements SpatialIndex<T>, Spatial
         child.traverseLODSphere(cameraX, cameraZ, baseFactor, visit)
       }
     }
+  }
+}
+
+export interface CreateQuadTreeOptions {
+  min: IVec3
+  max: IVec3
+  leafLevel?: number
+  looseFactor?: number
+}
+
+export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
+  /**
+   * Creates a wuad tree with given dimensions
+   * @param min - the minimum point in 3D space
+   * @param max - the maximum point in 3D space
+   */
+  public static create<T extends object = {}>({ min, max, looseFactor }: CreateQuadTreeOptions) {
+    return new QuadTree<T>(min, max, 0, looseFactor || 1)
+  }
+
+  /**
+   * The loose factor determines how much bigger the loose bounds are compared to the regular bounds.
+   */
+  public readonly looseFactor: number
+
+  public get flatPreOrdered(): ReadonlyArray<QuadTreeNode<T>> {
+    if (this.listPreOrderVersion !== this.version) {
+      this.toPreOrderedList(this.listPreOrder)
+      this.listPreOrderVersion = this.version
+    }
+    return this.listPreOrder
+  }
+
+  public get flatPostOrdered(): ReadonlyArray<QuadTreeNode<T>> {
+    if (this.listPostOrderVersion !== this.version) {
+      this.listPostOrder.length = 0
+      this.toPostOrderedList(this.listPostOrder)
+      this.listPostOrderVersion = this.version
+    }
+    return this.listPostOrder
+  }
+
+  private version = -1
+  private listPreOrder: QuadTreeNode<T>[] = []
+  private listPreOrderVersion = -1
+  private listPostOrder: QuadTreeNode<T>[] = []
+  private listPostOrderVersion = -1
+
+  protected constructor(min: IVec3, max: IVec3, level: number, looseFactor?: number) {
+    super(null, null, min, max, level)
+    this.looseFactor = Math.max(1, looseFactor || 1)
+    this.updateLooseBounds(this.looseFactor)
+  }
+
+  public markAsChanged() {
+    this.version++
+  }
+
+  public toPreOrderedList<R>(result: QuadTreeNode<T>[]): QuadTreeNode<T>[]
+  public toPreOrderedList<R>(result: R[], transform?: (node: QuadTreeNode<T>) => R): R[]
+  public toPreOrderedList<R>(result: any[] = [], transform?: (node: QuadTreeNode<T>) => R): any[] {
+    result.length = 0
+    const stack: Array<QuadTreeNode<T>> = [this]
+    while (stack.length) {
+      const node = stack.pop()!
+      const value = transform ? transform(node) : node
+      if (value != null) {
+        result.push(value)
+      }
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        stack.push(node.children[i])
+      }
+    }
+    return result
+  }
+
+  public toPostOrderedList(result: QuadTreeNode<T>[]): QuadTreeNode<T>[]
+  public toPostOrderedList<R>(result: R[], transform: (node: QuadTreeNode<T>) => R): R[]
+  public toPostOrderedList<R>(result: any[] = [], transform?: (node: QuadTreeNode<T>) => R): any[] {
+    result.length = 0
+    const stack: Array<QuadTreeNode<T>> = [this]
+    while (stack.length) {
+      const node = stack.pop()!
+      const value = transform ? transform(node) : node
+      if (value != null) {
+        result.push(value)
+      }
+      for (const child of node.children) {
+        stack.push(child)
+      }
+    }
+    result.reverse()
+    return result
   }
 }

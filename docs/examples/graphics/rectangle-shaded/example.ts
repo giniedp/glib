@@ -1,5 +1,5 @@
 import { Color, CullState, DepthState, Device, WebglDevice } from '@gglib/graphics'
-import { TaskContext } from '@gglib/graphics/dist/graphics/src/Scheduler'
+import { TaskContext } from '@gglib/graphics'
 import { Mat4, Vec3 } from '@gglib/math'
 
 const vertexShader = /*glsl*/ `

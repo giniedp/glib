@@ -14,10 +14,15 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist\\bundles\\content.umd.js",
-  "module": "dist\\content\\src\\index.js",
-  "main": "dist\\content\\src\\index.js",
+  "main": "dist\\bundles\\content.esm.js",
+  "module": "dist\\bundles\\content.esm.js",
   "typings": "dist\\content\\src\\index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/content.esm.js",
+      "types": "./dist/content/src/index.d.ts"
+    }
+  },
   "devDependencies": {
     "@gglib/graphics": "workspace:^0.7.0",
     "@gglib/model": "workspace:^0.7.0",

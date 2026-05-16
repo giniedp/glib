@@ -62,7 +62,7 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   protected meshes = new PooledList<MeshRenderItem>(() => {
     const item: MeshRenderItem = {
       type: RenderItemType.Mesh,
-      mesh: null,
+      data: null,
       flags: RenderItemFlags.Opaque,
       layer: LayerMask.All,
       transform: null,
@@ -73,7 +73,7 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   protected meshParts = new PooledList<MeshPartRenderItem>(() => {
     const item: MeshPartRenderItem = {
       type: RenderItemType.MeshPart,
-      meshPart: { geometry: null, material: null },
+      data: { geometry: null, material: null },
       flags: RenderItemFlags.Opaque,
       layer: LayerMask.All,
       transform: null,
@@ -84,7 +84,7 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   protected sprites = new PooledList<SpriteRenderItem>(() => {
     const item: SpriteRenderItem = {
       type: RenderItemType.Sprite,
-      sprite: null,
+      data: null,
       flags: RenderItemFlags.Opaque,
       layer: LayerMask.All,
       transform: null,
@@ -172,8 +172,9 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
     for (const part of mesh.parts) {
       const item = this.meshParts.next()
       const material = mesh.getMaterial(part.materialId)
-      item.meshPart.geometry = part
-      item.meshPart.material = material
+      item.data.geometry = part
+      item.data.material = material
+      item.data.instances = mesh.instances
       item.transform = entity.getTransform().world
       item.layer = LayerMask.All
       if (material.effect.blendState?.enable) {
@@ -193,8 +194,9 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
     }
     const item = this.meshParts.next()
     const material = component.material
-    item.meshPart.geometry = geometry
-    item.meshPart.material = material
+    item.data.geometry = geometry
+    item.data.material = material
+    item.data.instances = null
     item.transform = entity.getTransform().world
     item.layer = LayerMask.All
     if (material.effect.blendState?.enable) {
@@ -216,8 +218,9 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
       for (const part of mesh.parts) {
         const item = this.meshParts.next()
         const material = mesh.getMaterial(part.materialId)
-        item.meshPart.geometry = part
-        item.meshPart.material = material
+        item.data.geometry = part
+        item.data.material = material
+        item.data.instances = mesh.instances
         item.transform = transform
         item.layer = LayerMask.All
         if (material.effect.blendState?.enable) {
@@ -238,7 +241,7 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
 
     for (const sprite of sprites) {
       const item = this.sprites.next()
-      item.sprite = sprite
+      item.data = sprite
       item.transform = entity.getTransform().world
       item.layer = LayerMask.All
       item.flags = RenderItemFlags.Opaque

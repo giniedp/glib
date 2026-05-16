@@ -12,6 +12,7 @@ export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
    *
    */
   name?: string
+
   /**
    * The buffer type e.g. `VertexBuffer` or `IndexBuffer`
    */
@@ -21,14 +22,17 @@ export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
    * The element type of index buffer. Usable only for index buffers.
    */
   indexType?: Extract<DataType, 'uint16' | 'uint32'>
+
   /**
    * The VertexBuffer layout. Usable only for vertex buffers
    */
   vertexLayout?: VertexLayout
+
   /**
    * The actual data to set on the buffer.
    */
   data?: T
+
   /**
    * Size in bytes of a single element in the buffer
    *
@@ -44,9 +48,23 @@ export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
   size?: number
 
   /**
+   * The total number of valid elements in this buffer.
+   *
+   * @remarks
+   * - For VertexBuffer this is the count of all vertices.
+   * - For IndexBuffer this is the count of all indices.
+   */
+  elementCount?: number
+
+  /**
    * Indicates whether this buffer is used for instanced rendering (vertex buffer with divisor > 0)
    */
   instanced?: boolean
+
+  /**
+   * WebGPU only. Indicates whether this is a StorageBuffer that can be read and written in shaders. Ignored in WebGL.
+   */
+  readWrite?: boolean
 }
 
 /**
@@ -123,6 +141,12 @@ export abstract class Buffer {
     return this.type === 'UniformBuffer'
   }
 
+  /**
+   * WebGPU only. Indicates whether this is a StorageBuffer
+   */
+  public get isStorageBuffer(): boolean {
+    return this.type === 'StorageBuffer'
+  }
   /**
    * Resets the buffer to the given options
    */

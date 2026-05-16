@@ -5,7 +5,7 @@ import { BoundsComponent } from './BoundsComponent'
 /**
  * @public
  */
-export class MeshComponent implements GameComponent, InitializableComponent {
+export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, InitializableComponent {
   /**
    * The entity that owns this component
    */
@@ -14,15 +14,15 @@ export class MeshComponent implements GameComponent, InitializableComponent {
   /**
    * Gets and sets the mesh to render
    */
-  public get mesh(): Mesh {
+  public get mesh(): MESH {
     return this.value
   }
-  public set mesh(value: Mesh) {
+  public set mesh(value: MESH) {
     this.value = value
     this.handleMeshChanged()
   }
 
-  protected value: Mesh
+  protected value: MESH
   protected bounds: BoundsComponent
 
   public initialize(): void {

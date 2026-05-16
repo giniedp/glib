@@ -1,9 +1,17 @@
 import type { IVec2, IVec3, IVec4 } from '@gglib/math'
 import { dataTypeToArrayType, dataTypeToSize, type TypedArray } from '../../enums'
-import { ProgramInput, Texture, type MatrixLike, type ProgramInputType, type ProgramInputValue } from '../../resources'
+import {
+  Buffer,
+  ProgramInput,
+  Texture,
+  type MatrixLike,
+  type ProgramInputType,
+  type ProgramInputValue,
+} from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import type { WgslResourceInfo } from '../wgsl'
+import { WebGpuBuffer } from './WebGpuBuffer'
 import { WebGpuShaderResource } from './WebGpuShaderResource'
 import type { WebGpuTexture } from './WebGpuTexture'
 
@@ -45,7 +53,7 @@ export class WebGpuProgramInput extends ProgramInput {
       this.setMat4x4 = invalidSetter
     } else {
       const ArrayType = dataTypeToArrayType(info.elementType)
-      this.array = new ArrayType(resource.arrayBuffer, info.offset, size / dataTypeToSize(info.elementType))
+      this.array = new ArrayType(resource.managedData, info.offset, size / dataTypeToSize(info.elementType))
     }
 
     switch (container) {
@@ -89,43 +97,36 @@ export class WebGpuProgramInput extends ProgramInput {
   }
 
   public setScalar(value: number) {
-    if (this.array[0] !== value) {
-      this.array[0] = value
-      this.resource.markAsChanged()
-    }
+    this.array[0] = value
+    this.resource.markAsChanged(this.array.byteOffset, 4)
   }
 
   public setValue2(x: number, y: number) {
-    if (this.array[0] !== x || this.array[1] !== y) {
-      this.array[0] = x
-      this.array[1] = y
-
-      this.resource.markAsChanged()
-    }
+    this.array[0] = x
+    this.array[1] = y
+    this.resource.markAsChanged(this.array.byteOffset, 8)
   }
 
   public setValue3(x: number, y: number, z: number) {
-    if (this.array[0] !== x || this.array[1] !== y || this.array[2] !== z) {
-      this.array[0] = x
-      this.array[1] = y
-      this.array[2] = z
-      this.resource.markAsChanged()
-    }
+    this.array[0] = x
+    this.array[1] = y
+    this.array[2] = z
+    this.resource.markAsChanged(this.array.byteOffset, 12)
   }
 
   public setValue4(x: number, y: number, z: number, w: number) {
-    if (this.array[0] !== x || this.array[1] !== y || this.array[2] !== z || this.array[3] !== w) {
-      this.array[0] = x
-      this.array[1] = y
-      this.array[2] = z
-      this.array[3] = w
-      this.resource.markAsChanged()
-    }
+    this.array[0] = x
+    this.array[1] = y
+    this.array[2] = z
+    this.array[3] = w
+    this.resource.markAsChanged(this.array.byteOffset, 16)
   }
 
   public setArray(value: ArrayLike<number>, offset?: number) {
     this.array.set(value, offset)
-    this.resource.markAsChanged()
+    const byteOffset = this.array.byteOffset + (offset ?? 0) * this.array.BYTES_PER_ELEMENT
+    const byteLength = value.length * this.array.BYTES_PER_ELEMENT
+    this.resource.markAsChanged(byteOffset, byteLength)
   }
 
   public setVec2(value: IVec2 | ArrayLike<number>) {
@@ -155,19 +156,13 @@ export class WebGpuProgramInput extends ProgramInput {
   public setMat2x2(matrix: MatrixLike): void {
     const value = 'elements' in matrix ? matrix.elements : matrix
     let index = 0
-    let changed = false
     for (let i = 0; i < 2; i++) {
       for (let j = 0; j < 2; j++) {
-        if (this.array[index] !== value[index]) {
-          this.array[index] = value[index]
-          changed = true
-        }
+        this.array[index] = value[index]
         index++
       }
     }
-    if (changed) {
-      this.resource.markAsChanged()
-    }
+    this.resource.markAsChanged(this.array.byteOffset, 4 * 4)
   }
 
   public setMat3x3(matrix: MatrixLike): void {
@@ -177,10 +172,7 @@ export class WebGpuProgramInput extends ProgramInput {
     let changed = false
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
-        if (this.array[di] !== value[si]) {
-          this.array[di] = value[si]
-          changed = true
-        }
+        this.array[di] = value[si]
         si++
         di++
       }
@@ -191,47 +183,40 @@ export class WebGpuProgramInput extends ProgramInput {
       }
       di++ // pad to 4
     }
-    if (changed) {
-      this.resource.markAsChanged()
-    }
+    this.resource.markAsChanged(this.array.byteOffset, 4 * 12)
   }
 
   public setMat4x4(matrix: MatrixLike): void {
     const value = 'elements' in matrix ? matrix.elements : matrix
     let index = 0
-    let changed = false
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
-        if (this.array[index] !== value[index]) {
-          this.array[index] = value[index]
-          changed = true
-        }
+        this.array[index] = value[index]
         index++
       }
     }
-    if (changed) {
-      this.resource.markAsChanged()
-    }
+    this.resource.markAsChanged(this.array.byteOffset, 4 * 16)
   }
 
   public setTexture(value: Texture | GPUTexture | GPUTextureView | GPUExternalTexture): void {
-    if (this.type !== 'texture') {
-      throw new Error(`Cannot set texture on non-texture parameter '${this.name}'`)
-    }
     value ||= this.device.defaultTexture
     if (value instanceof Texture) {
-      this.resource.setResource((value as WebGpuTexture).gpuObject)
+      this.resource.setTexture((value as WebGpuTexture).gpuObject)
     } else {
-      this.resource.setResource(value)
+      this.resource.setTexture(value)
     }
   }
 
   public setSampler(value: SamplerState): void {
-    if (this.type !== 'sampler') {
-      throw new Error(`Cannot set sampler on non-sampler parameter '${this.name}'`)
-    }
-
     value ||= SamplerState.Default
-    this.resource.setResource(this.device.getSampler(value).resource)
+    this.resource.setSampler(this.device.getSampler(value).resource)
+  }
+
+  public setBuffer(value: Buffer | GPUBuffer | GPUBufferBinding): void {
+    if (value instanceof Buffer) {
+      this.resource.setBuffer((value as WebGpuBuffer).resource)
+    } else {
+      this.resource.setBuffer(value)
+    }
   }
 }

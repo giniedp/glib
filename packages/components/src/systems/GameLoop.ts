@@ -88,7 +88,7 @@ export class GameLoop extends GameSystem {
   /**
    * Indicates whether fixed time step should be used. Default is `true`.
    */
-  public useFixedTimeStep: boolean = true
+  public useFixedTimeStep: boolean = false
 
   /**
    * The fixed time step to use for update logic

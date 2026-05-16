@@ -14,10 +14,15 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist\\bundles\\input.umd.js",
-  "module": "dist\\input\\src\\index.js",
-  "main": "dist\\input\\src\\index.js",
+  "main": "dist\\bundles\\input.esm.js",
+  "module": "dist\\bundles\\input.esm.js",
   "typings": "dist\\input\\src\\index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/input.esm.js",
+      "types": "./dist/input/src/index.d.ts"
+    }
+  },
   "devDependencies": {
     "@gglib/utils": "workspace:^0.7.0",
     "@gglib/math": "workspace:^0.7.0"

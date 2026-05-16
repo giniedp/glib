@@ -5,10 +5,11 @@ import type { WebGpuDevice } from '../WebGpuDevice'
 export class WebGpuBuffer extends Buffer {
   public readonly device: WebGpuDevice
   public readonly resource: GPUBuffer
-
+  private readWrite: boolean
   public constructor(device: WebGpuDevice, options?: BufferOptions) {
     super()
     this.device = device
+    this.readWrite = options?.readWrite ?? false
     this.reset(options)
   }
 
@@ -25,7 +26,15 @@ export class WebGpuBuffer extends Buffer {
       if (this.isUniformBuffer) {
         usage = usage | GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
       }
+      if (this.isStorageBuffer) {
+        usage = usage | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+      }
+      if (this.readWrite) {
+        usage = usage | GPUBufferUsage.COPY_SRC
+      }
+
       self.resource = this.device.gpu.createBuffer({
+        label: this.name,
         size: this.size,
         usage: usage,
       })

@@ -45,29 +45,32 @@ export function beginGeometry(options?: GeometryBuilderOptions): GeometryBuilder
   return new GeometryBuilder(options)
 }
 
-export function beginLineGeometry(): GeometryBuilder {
-  return new GeometryBuilder({
-    layout: [['position', 'color']],
-  })
-}
-
 export interface BuildGeometryOptions {
   /**
    * A name for the geometry
    */
   name?: string
+
   /**
    * The geometry material id
    */
   materialId?: number
+
   /**
    * The vertex buffer layout
    */
-  layout?: Array<VertexLayout | AttributeSemantic[]>
+  vertexLayout?: Array<VertexLayout | AttributeSemantic[]>
+
   /**
    * A transform matrix to apply to all vertices
    */
-  transform?: Mat4
+  vertexTransform?: Mat4
+
+  /**
+   * Default attribute values to use during the build process. If any vertex is pushed into the builder
+   * with missing attributes they are resolved from here.
+   */
+  vertexDefaults?: Record<AttributeSemantic, number[]>
 }
 
 export function buildGeometry<T>(
@@ -76,10 +79,11 @@ export function buildGeometry<T>(
   options?: T & BuildGeometryOptions,
 ) {
   const b = beginGeometry({
-    layout: options?.layout,
+    layout: options?.vertexLayout,
+    defaults: options?.vertexDefaults,
   })
-  if (options?.transform) {
-    b.beginTransform(options.transform)
+  if (options?.vertexTransform) {
+    b.beginTransform(options.vertexTransform)
   }
   b.append(builder, options)
   b.calculateNormalsAndTangents()
@@ -87,6 +91,27 @@ export function buildGeometry<T>(
   return b.endGeometry(device, {
     name: options?.name || 'geometry',
     materialId: options?.materialId ?? 0,
+  })
+}
+
+export function buildLinesGeometry<T>(
+  device: Device,
+  builder: GeometryBuilderFunction<T>,
+  options?: T & BuildGeometryOptions,
+) {
+  const b = beginGeometry({
+    layout: options?.vertexLayout,
+  })
+  if (options?.vertexTransform) {
+    b.beginTransform(options.vertexTransform)
+  }
+  b.append(builder, options)
+  b.calculateNormalsAndTangents()
+  b.calculateBoundings()
+  return b.endGeometry(device, {
+    name: options?.name || 'geometry',
+    materialId: options?.materialId ?? 0,
+    primitiveType: 'LineList',
   })
 }
 

@@ -1,5 +1,5 @@
 import { dataTypeToArrayType, type TypedArray } from '../../enums'
-import { type Texture, type ProgramInputType } from '../../resources'
+import { type Texture, type ProgramInputType, Buffer } from '../../resources'
 import { SamplerState } from '../../states'
 import { glslComponentCount, glslUploadFunction, type GlslTypeSampler, type GlslValueType } from '../glsl'
 import type { WebglDevice } from '../WebglDevice'
@@ -43,6 +43,9 @@ export class WebglUniformLocation implements WebglUniform {
       this.write(info.textureIndex)
     }
   }
+  endWrite(): void {
+    throw new Error('Method not implemented.')
+  }
 
   public commit(): void {
     if (!this.program.isReady) {
@@ -57,7 +60,7 @@ export class WebglUniformLocation implements WebglUniform {
     this.upload(this.location, this.data as any)
   }
 
-  public setIndex(index: number) {
+  public beginWrite(index: number) {
     this.position = index * this.componentCount
   }
 
@@ -75,6 +78,10 @@ export class WebglUniformLocation implements WebglUniform {
 
   public setSampler(_value: SamplerState): void {
     throw new Error(`Cannot set texture on non-sampler parameter '${this.name}'`)
+  }
+
+  public setBuffer(buffer: Buffer): void {
+    throw new Error(`Cannot set buffer on non-buffer parameter '${this.name}'`)
   }
 }
 

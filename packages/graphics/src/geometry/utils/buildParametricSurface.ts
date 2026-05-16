@@ -6,81 +6,134 @@ import type { GeometryBuilder } from '../GeometryBuilder'
  * Options for the {@link buildParametricSurface} function
  *
  * @public
+ *
+ * @remarks
+ * Callbacks receive both the remapped parameters (`u`, `v`) scaled to the
+ * configured `uStart`/`uEnd` and `vStart`/`vEnd` ranges, and the normalized
+ * parameters (`s`, `t`) in the `[0, 1]` range, which are useful for texture
+ * coordinates and interpolation.
  */
 export interface BuildParametricSurfaceOptions {
   /**
-   * Function returning xyz position for u v input
+   * Returns the xyz position for the given surface parameters.
+   *
+   * @param u - Remapped U parameter (`uStart` to `uEnd`)
+   * @param v - Remapped V parameter (`vStart` to `vEnd`)
+   * @param s - Normalized U parameter (`0` to `1`)
+   * @param t - Normalized V parameter (`0` to `1`)
    */
-  position: (u: number, v: number) => IVec3
+  position: (u: number, v: number, s: number, t: number) => IVec3
   /**
-   * Function returning normal vector for u v input
+   * Returns the surface normal for the given surface parameters.
+   * When omitted, normals are computed from the triangle geometry.
+   *
+   * @param u - Remapped U parameter (`uStart` to `uEnd`)
+   * @param v - Remapped V parameter (`vStart` to `vEnd`)
+   * @param s - Normalized U parameter (`0` to `1`)
+   * @param t - Normalized V parameter (`0` to `1`)
    */
-  normal?: (u: number, v: number) => IVec3
+  normal?: (u: number, v: number, s: number, t: number) => IVec3
   /**
-   * Function returning color for u v input
+   * Returns a packed color value for the given surface parameters.
+   *
+   * @param u - Remapped U parameter (`uStart` to `uEnd`)
+   * @param v - Remapped V parameter (`vStart` to `vEnd`)
+   * @param s - Normalized U parameter (`0` to `1`)
+   * @param t - Normalized V parameter (`0` to `1`)
+   * @returns Color packed as RGBA (0xRRGGBBAA)
    */
-  color?: (u: number, v: number) => number
+  color?: (u: number, v: number, s: number, t: number) => number
   /**
-   * Function returning texture coordinates for u v input
+   * Returns the texture coordinates for the given surface parameters.
+   * When omitted, defaults to `(s, t)`.
+   *
+   * @param u - Remapped U parameter (`uStart` to `uEnd`)
+   * @param v - Remapped V parameter (`vStart` to `vEnd`)
+   * @param s - Normalized U parameter (`0` to `1`)
+   * @param t - Normalized V parameter (`0` to `1`)
    */
-  texture?: (u: number, v: number) => IVec2
+  texture?: (u: number, v: number, s: number, t: number) => IVec2
   /**
-   * Start value of `u`. Default is `0`
+   * Start value of `u`.
+   * @default 0
    */
   uStart?: number
   /**
-   * End value of `u`. Default is `1`
+   * End value of `u`.
+   * @default 1
    */
   uEnd?: number
   /**
-   * Start value of `v`. Default is `0`
+   * Start value of `v`.
+   * @default 0
    */
   vStart?: number
   /**
-   * End value of `v`. Default is `1`
+   * End value of `v`.
+   * @default 1
    */
   vEnd?: number
   /**
-   * Steps in `u` direction, results in `uSteps + 1` vertices. Default is `1`
+   * Subdivisions in the U direction, resulting in `uSegments + 1` vertices.
+   * @default 1
    */
-  uSteps?: number
+  uSegments?: number
   /**
-   * Steps in `v` direction, results in `vSteps + 1` vertices. Default is `1`
+   * Subdivisions in the V direction, resulting in `vSegments + 1` vertices.
+   * @default 1
    */
-  vSteps?: number
+  vSegments?: number
+  /**
+   * If true, the triangle winding order is inverted, flipping face normals.
+   * Useful for inside-facing surfaces or when composing multi-face meshes.
+   * @default false
+   */
+  invert?: boolean
 }
 
 /**
  * Builds a parametric surface into the {@link GeometryBuilder}
+ *
  * @public
  */
 export function buildParametricSurface(builder: GeometryBuilder, options: BuildParametricSurfaceOptions) {
-  const position = options.position ?? ((u: number, v: number) => ({ x: 0, y: 0, z: 0 }))
+  const position = options.position
   const normal = options.normal ?? null
   const texture = options.texture ?? null
-  const uSteps = options.uSteps ?? 1
-  const vSteps = options.vSteps ?? 1
+  const uSegments = options.uSegments ?? 1
+  const vSegments = options.vSegments ?? 1
   const u0 = options.uStart ?? 0
   const u1 = options.uEnd ?? 1
   const v0 = options.vStart ?? 0
   const v1 = options.vEnd ?? 1
+  const invert = options.invert ?? false
 
   // build indices
   const indices = []
-  for (let y = 0; y < vSteps; y++) {
-    for (let x = 0; x < uSteps; x++) {
-      let a = x + y * (uSteps + 1)
+  for (let y = 0; y < vSegments; y++) {
+    for (let x = 0; x < uSegments; x++) {
+      let a = x + y * (uSegments + 1)
       let b = a + 1
-      let c = x + (y + 1) * (uSteps + 1)
+      let c = x + (y + 1) * (uSegments + 1)
       let d = c + 1
 
-      indices.push(a)
-      indices.push(c)
-      indices.push(b)
+      if (invert) {
+        indices.push(a)
+        indices.push(b)
+        indices.push(c)
 
-      indices.push(b)
-      indices.push(c)
-      indices.push(d)
+        indices.push(b)
+        indices.push(d)
+        indices.push(c)
+      } else {
+        indices.push(a)
+        indices.push(c)
+        indices.push(b)
+
+        indices.push(b)
+        indices.push(c)
+        indices.push(d)
+      }
     }
   }
 
@@ -93,17 +146,17 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
   }> = []
 
   // calculate surface
-  for (let y = 0; y <= vSteps; y++) {
-    const t = y / vSteps
+  for (let y = 0; y <= vSegments; y++) {
+    const t = y / vSegments
     const v = v0 + (v1 - v0) * t
-    for (let x = 0; x <= uSteps; x++) {
-      const s = x / uSteps
+    for (let x = 0; x <= uSegments; x++) {
+      const s = x / uSegments
       const u = u0 + (u1 - u0) * s
 
       vertices.push({
-        position: Vec3.convert(position(u, v)),
-        normal: normal ? Vec3.convert(normal(u, v)) : Vec3.createZero(),
-        texture: texture ? Vec2.convert(texture(s, t)) : Vec2.create(s, t),
+        position: Vec3.convert(position(u, v, s, t)),
+        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.createZero(),
+        texture: texture ? Vec2.convert(texture(s, t, s, t)) : Vec2.create(s, t),
         tangent: Vec3.createZero(),
         bitangent: Vec3.createZero(),
       })
@@ -172,6 +225,7 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
 
 /**
  * Builds a parametric line shape into the {@link GeometryBuilder}
+ *
  * @public
  */
 export function buildParametricLines(builder: GeometryBuilder, options: BuildParametricSurfaceOptions) {
@@ -179,8 +233,8 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
   const normal = options.normal ?? null
   const color = options.color ?? null
   const texture = options.texture ?? null
-  const uSteps = options.uSteps ?? 1
-  const vSteps = options.vSteps ?? 1
+  const uSteps = options.uSegments ?? 1
+  const vSteps = options.vSegments ?? 1
   const u0 = options.uStart ?? 0
   const u1 = options.uEnd ?? 1
   const v0 = options.vStart ?? 0
@@ -231,10 +285,10 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
       const u = u0 + (u1 - u0) * s
 
       vertices.push({
-        position: Vec3.convert(position(u, v)),
-        normal: normal ? Vec3.convert(normal(u, v)) : Vec3.createZero(),
-        color: color ? color(u, v) : Color.packToRGBA(Color.White),
-        texture: texture ? Vec2.convert(texture(s, t)) : Vec2.create(s, t),
+        position: Vec3.convert(position(u, v, s, t)),
+        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.createZero(),
+        color: color ? color(u, v, s, t) : Color.packToRGBA(Color.White),
+        texture: texture ? Vec2.convert(texture(s, t, s, t)) : Vec2.create(s, t),
         tangent: Vec3.createZero(),
         bitangent: Vec3.createZero(),
       })

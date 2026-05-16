@@ -1,9 +1,11 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
+import { BufferLayout } from '../BufferLayout'
 import { Device } from '../Device'
-import { createMaterials, Material, MaterialOptions, MaterialEffectOptions } from '../effects'
+import { createMaterials, Material, MaterialEffectOptions, MaterialOptions } from '../effects'
 import { RenderEncoder } from '../RenderEncoder'
 import { Geometry, GeometryOptions } from './Geometry'
+import { MeshInstances, MeshInstancesOptions } from './MeshInstances'
 
 /**
  * @public
@@ -15,7 +17,7 @@ export interface MeshOptions {
   name?: string
 
   /**
-   *
+   * Custom meta data
    */
   meta?: Record<string, any>
 
@@ -89,12 +91,18 @@ export class Mesh {
    */
   public boneId: number | null = null
 
+  /**
+   * Optional instance data for this mesh. If set, the mesh will be rendered with instancing and the instance
+   * data will be passed to the material as a vertex buffer with the same layout as specified in the material input.
+   */
+  public instances: MeshInstances | null = null
+
   public constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.parts = convertMeshParts(device, options.parts)
+    this.parts = convertGeometries(device, options.parts)
     this.materials = createMaterials(device, options.materials)
     if (options.boundingBox) {
       this.boundingBox = BoundingBox.convert(options.boundingBox)
@@ -163,9 +171,22 @@ export class Mesh {
     this.parts = []
     this.materials = []
   }
+
+  /**
+   * Adds an `instances` property that enables instanced rendering for this mesh
+   *
+   * @returns this instance but typed as `InstancedMesh` with an `instances` property
+   */
+  public enableInstancing<T extends BufferLayout>(options: MeshInstancesOptions<T>): InstancedMesh<T> {
+    const result = this as unknown as InstancedMesh<T>
+    result.instances = new MeshInstances<T>(options)
+    return result
+  }
 }
 
-function convertMeshParts(device: Device, parts: Array<Geometry | GeometryOptions>): Geometry[] {
+export type InstancedMesh<T extends BufferLayout> = Mesh & { instances: MeshInstances<T> }
+
+function convertGeometries(device: Device, parts: Array<Geometry | GeometryOptions>): Geometry[] {
   const result: Geometry[] = []
   if (!parts || !parts.length) {
     return result
@@ -178,4 +199,15 @@ function convertMeshParts(device: Device, parts: Array<Geometry | GeometryOption
     }
   }
   return result
+}
+
+export type MeshPart = {
+  geometryId: number
+  materialId: number
+}
+
+export type ResolvedMeshPart = {
+  geometry: Geometry
+  material: Material
+  instances?: MeshInstances
 }

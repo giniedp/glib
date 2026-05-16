@@ -48,7 +48,7 @@ export function buildMobiusStrip(builder: GeometryBuilder, options?: BuildMobius
     },
     uStart: 0,
     uEnd: Math.PI * 2,
-    uSteps: options?.tesselation ?? 16,
-    vSteps: options?.tesselation ?? 16,
+    uSegments: options?.tesselation ?? 16,
+    vSegments: options?.tesselation ?? 16,
   })
 }

@@ -3,9 +3,9 @@ import type { RenderEncoder } from '../RenderEncoder'
 import {
   ShaderModule,
   type Program,
+  type ProgramInputValue,
   type ProgramOptions,
   type ShaderModuleOptions,
-  type ProgramInputValue,
 } from '../resources'
 import {
   BlendState,
@@ -58,6 +58,11 @@ export interface EffectOptions {
    * The offset state to be used for this effect
    */
   offsetState?: DepthBiasState
+  /**
+   * The name of the instance buffer field in the shader.
+   * This is not used by this class but can be used from outside to prepare the effect for instanced rendering
+   */
+  instanceBufferKey?: string
 }
 
 /**
@@ -112,6 +117,12 @@ export class Effect implements Disposable {
    */
   public offsetState: DepthBiasState | null
 
+  /**
+   * The name of the instance buffer field in the shader.
+   * This is not used by this class but can be used from outside to prepare the effect for instanced rendering
+   */
+  public instanceBufferKey: string | null
+
   public get isReady() {
     return this.program.module.isReady
   }
@@ -133,6 +144,7 @@ export class Effect implements Disposable {
     this.blendState = options.blendState ? BlendState.get(options.blendState) : null
     this.depthState = options.depthState ? DepthState.get(options.depthState) : null
     this.offsetState = options.offsetState || null
+    this.instanceBufferKey = options.instanceBufferKey || null
     this.program = this.createProgram(options.program)
   }
 

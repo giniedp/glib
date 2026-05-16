@@ -14,7 +14,7 @@ export interface VertexLayout {
   [key: string]: VertexAttribute
 }
 
-export const VertexLayoutPresets: Record<AttributeSemantic, VertexAttribute> = {
+export const VertexLayoutPresets: Record<AttributeSemantic, VertexAttributeDescriptor> = {
   position: {
     elementType: 'float32',
     elementCount: 3,
@@ -99,12 +99,19 @@ export function vertexAttribute(semantic: string, overrides?: Partial<VertexAttr
   }
 }
 
-export interface VertexAttribute {
-  byteOffset?: number
+export interface VertexAttributeDescriptor {
   elementType: DataType
   elementCount: number
   normalized?: boolean
   packed?: boolean // hint for geometry builder
+}
+
+export interface VertexAttribute {
+  byteOffset: number
+  elementType: DataType
+  elementCount: number
+  normalized: boolean
+  packed: boolean // hint for geometry builder
 }
 
 /**
@@ -163,100 +170,4 @@ export function countBytes(layout: VertexLayout): number {
     count += dataTypeToSize(layout[key].elementType) * layout[key].elementCount
   }
   return count
-}
-
-/**
- * Counts the number of bytes in a single vertex until the given attribute.
- */
-export function countBytesBefore(layout: VertexLayout, semantic: string): number {
-  let count = 0
-  const target = layout[semantic]
-  for (const key in layout) {
-    if (layout[key].byteOffset < target.byteOffset) {
-      count += dataTypeToSize(layout[key].elementType) * layout[key].elementCount
-    }
-  }
-  return count
-}
-
-/**
- * Counts the number of bytes in a single vertex after the given attribute.
- */
-export function countBytesAfter(layout: VertexLayout, semantic: string): number {
-  let count = 0
-  let target = layout[semantic]
-  for (const key in layout) {
-    if (layout[key].byteOffset > target.byteOffset) {
-      count += dataTypeToSize(layout[key].elementType) * layout[key].elementCount
-    }
-  }
-  return count
-}
-
-export function convertArrayToBufferView(
-  data: number[],
-  layoutOrType: DataType | VertexLayout,
-): ArrayBufferView<ArrayBuffer> {
-  let layout: VertexLayout
-  if (typeof layoutOrType === 'string') {
-    layout = {
-      element: {
-        byteOffset: 0,
-        elementType: layoutOrType,
-        elementCount: 1,
-      },
-    }
-  } else {
-    layout = layoutOrType as VertexLayout
-  }
-
-  // const elementCount = VertexLayout.countElements(layout)
-  const vertexCount = data.length / countElements(layout)
-  if (vertexCount !== Math.floor(vertexCount)) {
-    throw new Error('given data does not match the layout')
-  }
-  const littleEndian = true
-  const vertexSize = countBytes(layout)
-  const dataSize = vertexCount * vertexSize
-  const result = new ArrayBuffer(dataSize)
-  const view = new DataView(result)
-
-  const viewSetter: Record<DataType, (o: number, v: number) => void> = {
-    int8: (o, v) => view.setInt8(o, v),
-    uint8: (o, v) => view.setUint8(o, v),
-    int16: (o, v) => view.setInt16(o, v, littleEndian),
-    uint16: (o, v) => view.setUint16(o, v, littleEndian),
-    int32: (o, v) => view.setInt32(o, v, littleEndian),
-    uint32: (o, v) => view.setUint32(o, v, littleEndian),
-    float32: (o, v) => view.setFloat32(o, v, littleEndian),
-    float16: (o, v) => view.setUint16(o, v, littleEndian),
-  }
-
-  const channels = Object.keys(layout)
-    .map((key) => layout[key])
-    .sort((a, b) => (a.byteOffset < b.byteOffset ? -1 : 1))
-    .map((spec) => {
-      const channel = {
-        offset: spec.byteOffset,
-        size: dataTypeToSize(spec.elementType) * spec.elementCount,
-        elements: spec.elementCount,
-        elementType: spec.elementType,
-        elementSize: dataTypeToSize(spec.elementType),
-        setter: viewSetter[spec.elementType],
-      }
-      return channel
-    })
-
-  let dataIndex = 0
-  for (let pos = 0; pos < dataSize; pos += vertexSize) {
-    for (let channel of channels) {
-      let offset = pos + channel.offset
-      for (let i = 0; i < channel.elements; i++) {
-        channel.setter(offset, data[dataIndex++])
-        offset += channel.elementSize
-      }
-    }
-  }
-
-  return view
 }

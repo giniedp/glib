@@ -14,10 +14,15 @@
   ],
   "author": "Alexander Graefenstein",
   "license": "MIT",
-  "index": "dist\\bundles\\math.umd.js",
-  "module": "dist\\math\\src\\index.js",
-  "main": "dist\\math\\src\\index.js",
+  "main": "dist\\bundles\\math.esm.js",
+  "module": "dist\\bundles\\math.esm.js",
   "typings": "dist\\math\\src\\index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/math.esm.js",
+      "types": "./dist/math/src/index.d.ts"
+    }
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "files": [

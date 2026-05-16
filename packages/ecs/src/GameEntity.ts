@@ -369,6 +369,15 @@ export class GameEntity {
     this.onComponentRemoved.emit([this, component])
   }
 
+  public getOrCreateComponent<T extends GameComponent>(type: GameComponentType<T>, factory: () => T): T {
+    if (this.has(type)) {
+      return this.component(type)
+    }
+    const component = factory()
+    this.addComponent(component, type)
+    return component
+  }
+
   /**
    * Looks up a component by type on the entity
    */

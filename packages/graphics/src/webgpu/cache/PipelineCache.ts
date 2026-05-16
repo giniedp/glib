@@ -9,12 +9,15 @@ import {
   type SurfaceFormat,
 } from '../../enums'
 import type { CullState, DepthBiasState, DepthState, StencilState } from '../../states'
+import { ShaderConstants } from '../../states'
 import { WebGpuShaderModule } from '../resources'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { structureCache, type StructureCache } from './StructureCache'
 
 export interface PipelineParams {
-  program: WebGpuShaderModule
+  shader: WebGpuShaderModule
+  // vertexConstants: ShaderConstants
+  // fragmentConstants: ShaderConstants
   vertexLayout: ReadonlyArray<GPUVertexBufferLayout | null | undefined>
   targets: ReadonlyArray<GPUColorTargetState>
   depthFormat: SurfaceFormat
@@ -33,8 +36,10 @@ export type PipelineCache = StructureCache<PipelineParams, GPURenderPipeline>
 export function pipelineCache(device: WebGpuDevice): PipelineCache {
   return structureCache<PipelineParams, GPURenderPipeline>({
     shape: {
-      program: 'weak',
+      shader: 'weak',
       vertexLayout: 'map',
+      // vertexConstants: 'map',
+      // fragmentConstants: 'map',
       targets: 'map',
       depthFormat: 'map',
       cullState: 'map',
@@ -47,7 +52,7 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
       multisampleAlphaCoverage: 'map',
     },
     create: (params: PipelineParams) => {
-      const program = params.program
+      const program = params.shader
       const descriptor: GPURenderPipelineDescriptor = {
         // label: program.name, // TODO:
         layout: program.pipelineLayout,
@@ -69,6 +74,12 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
       if (params.vertexLayout) {
         descriptor.vertex.buffers = params.vertexLayout
       }
+      // if (params.vertexConstants) {
+      //   descriptor.vertex.constants = params.vertexConstants.state
+      // }
+      // if (params.fragmentConstants) {
+      //   descriptor.fragment.constants = params.fragmentConstants.state
+      // }
       if (params.multisampleCount > 1) {
         descriptor.multisample = {
           count: params.multisampleCount,

@@ -5,7 +5,7 @@ import {
   type ReferenceCounter,
   type VertexBuffer,
 } from '../../resources'
-import { countBytesBefore, type VertexAttribute } from '../../VertexLayout'
+import { type VertexAttribute } from '../../VertexLayout'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { parseWgsl, reflectWgsl, WgslEntryPointInfo, WgslProgramInfo, type WgslInputInfo } from '../wgsl'
@@ -74,6 +74,9 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     if (!this.source) {
       throw new Error('shader code is required')
     }
+    if (!options.name) {
+      debugger
+    }
     this.gpuObject = device.gpu.createShaderModule({
       label: options.name,
       code: options.code,
@@ -137,9 +140,10 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
         if (!input) {
           continue
         }
+        const layout = buffer.vertexLayout[semantic]
         attributes.push({
-          format: getGPUVertexFormat(buffer.vertexLayout[semantic]),
-          offset: countBytesBefore(buffer.vertexLayout, semantic),
+          format: getGPUVertexFormat(layout),
+          offset: layout.byteOffset,
           shaderLocation: input.location,
         })
         delete inputs[input.alias || input.name]
