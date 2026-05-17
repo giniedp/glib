@@ -13,7 +13,6 @@ export * from './buildMobiusStrip'
 export * from './buildParametricSurface'
 export * from './buildSphericalHarmonics'
 export * from './buildSuperEllipsoid'
-export * from './buildTerrainPatch'
 export * from './buildTorus'
 
 export * from './calculateNormals'
