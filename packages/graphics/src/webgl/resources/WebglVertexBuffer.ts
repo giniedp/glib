@@ -13,7 +13,7 @@ export class WebglVertexBuffer extends VertexBuffer {
     this.device = device
     this.buffers = []
     if (!Array.isArray(options)) {
-      options = [options]
+      throw new Error('Vertex buffer options must be an array')
     }
     if (!options.length) {
       throw new Error('At least one vertex buffer option must be provided')
