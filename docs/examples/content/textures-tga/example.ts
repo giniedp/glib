@@ -2,9 +2,9 @@ import { ContentLoader } from '@gglib/content'
 import {
   BasicMaterial,
   BlendState,
+  boxGeometry,
   Color,
   createDevice,
-  cubeGeometry,
   CullState,
   Device,
   PlatformId,
@@ -46,12 +46,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     loadTexture(params.texture)
     ui.select(params, 'texture', {
       options: files,
-      onChange: () => loadTexture(params.texture),
+      onchange: () => loadTexture(params.texture),
     })
   })
 
   const material = new BasicMaterial(device)
-  const geometry = cubeGeometry(device)
+  const geometry = boxGeometry(device)
   let texture: Texture
   const world = Mat4.createIdentity()
   const camera = {
@@ -117,9 +117,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.TextureEnabled = true
+    material.TextureEnabled = 1
     material.Texture = texture
-    material.effect.draw(pass, geometry, material.parameters)
+    material.effect.draw(pass, geometry, material.inputs)
 
     pass.flush()
   }

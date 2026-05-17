@@ -123,6 +123,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
       z: oz + (v - 0.5) * depth,
     }),
     normal: () => ({ x: 0, y: 1, z: 0 }),
+    texture: (u, v) => ({ x: u, y: 1 - v }),
     uSegments: widthSegments,
     vSegments: depthSegments,
   })
@@ -136,6 +137,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
       z: oz + (v - 0.5) * depth,
     }),
     normal: () => ({ x: 0, y: -1, z: 0 }),
+    texture: (u, v) => ({ x: u, y: 1 - v }),
     uSegments: widthSegments,
     vSegments: depthSegments,
   })
@@ -149,6 +151,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
       z: oz + depth * 0.5,
     }),
     normal: () => ({ x: 0, y: 0, z: 1 }),
+    texture: (u, v) => ({ x: u, y: 1 - v }),
     uSegments: widthSegments,
     vSegments: heightSegments,
   })
@@ -162,6 +165,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
       z: oz + -depth * 0.5,
     }),
     normal: () => ({ x: 0, y: 0, z: -1 }),
+    texture: (u, v) => ({ x: u, y: 1 - v }),
     uSegments: widthSegments,
     vSegments: heightSegments,
   })
@@ -175,6 +179,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
       z: oz + (u - 0.5) * depth, // u → Z
     }),
     normal: () => ({ x: -1, y: 0, z: 0 }),
+    texture: (u, v) => ({ x: u, y: 1 - v }),
     uSegments: depthSegments,
     vSegments: heightSegments,
   })
@@ -188,6 +193,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
       z: oz + (u - 0.5) * depth, // u → Z
     }),
     normal: () => ({ x: 1, y: 0, z: 0 }),
+    texture: (u, v) => ({ x: u, y: 1 - v }),
     uSegments: depthSegments,
     vSegments: heightSegments,
   })

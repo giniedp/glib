@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { BasicMaterial, Color, createDevice, cubeGeometry, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import { BasicMaterial, boxGeometry, Color, createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { HDR } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
@@ -29,7 +29,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     loadTexture(params.texture)
     ui.select(params, 'texture', {
       options: files,
-      onChange: () => loadTexture(params.texture),
+      onchange: () => loadTexture(params.texture),
     })
     ui.graph({
       rows: [
@@ -45,7 +45,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const material = new BasicMaterial(device)
-  const geometry = cubeGeometry(device)
+  const geometry = boxGeometry(device)
 
   const world = Mat4.createIdentity()
   const camera = {
@@ -62,7 +62,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       .loadTexture(url)
       .then((result) => {
         material.Texture = result
-        material.TextureEnabled = true
+        material.TextureEnabled = 1
       })
       .catch((e) => {
         console.error(e)
@@ -109,7 +109,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.effect.draw(pass, geometry, material.parameters)
+    material.effect.draw(pass, geometry, material.inputs)
     pass.submit()
     device.stats(stats)
   }

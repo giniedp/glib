@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { BasicMaterial, Color, Device, PlatformId, Texture, createDevice, cubeGeometry } from '@gglib/graphics'
+import { BasicMaterial, Color, Device, PlatformId, Texture, boxGeometry, createDevice } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { DDS } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
@@ -33,7 +33,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   let texture: Texture
   const material = new BasicMaterial(device)
-  const geometry = cubeGeometry(device)
+  const geometry = boxGeometry(device)
   // const skyMaterial = new Material(device, {
   //   program: skyboxProgram(device),
   //   parameters: {},
@@ -48,7 +48,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       .then((result) => {
         texture = result
         material.Texture = result
-        material.TextureEnabled = true
+        material.TextureEnabled = 1
       })
       .catch((e) => {
         console.error(e)
@@ -66,7 +66,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.effect.draw(pass, geometry, material.parameters)
+    material.effect.draw(pass, geometry, material.inputs)
 
     pass.submit()
     pass.flush()

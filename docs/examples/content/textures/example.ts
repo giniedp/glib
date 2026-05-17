@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { BasicMaterial, Color, createDevice, cubeGeometry, CullState, DepthState, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, createDevice, boxGeometry, CullState, DepthState, PlatformId } from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 
@@ -12,7 +12,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const material = new BasicMaterial(device)
-  const geometry = cubeGeometry(device)
+  const geometry = boxGeometry(device)
 
   const world = Mat4.createIdentity()
   const camera = {
@@ -28,7 +28,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     .loadTexture('/textures/backgrounds/colored_castle.png')
     .then((result) => {
       material.Texture = result
-      material.TextureEnabled = true
+      material.TextureEnabled = 1
     })
     .catch((e) => {
       console.error(e)
@@ -93,7 +93,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.effect.draw(pass, geometry, material.parameters)
+    material.effect.draw(pass, geometry, material.inputs)
 
     pass.submit()
     pass.resolve()
