@@ -104,6 +104,7 @@ export class Container extends AssetContainer {
         for (const mesh of model.meshes) {
           const meshMaterials: MaterialOptions[] = []
           mesh.materials = meshMaterials
+          mesh.parts ||= []
 
           for (let geometryIndex = 0; geometryIndex < mesh.geometries.length; geometryIndex++) {
             const geometry = mesh.geometries[geometryIndex]
