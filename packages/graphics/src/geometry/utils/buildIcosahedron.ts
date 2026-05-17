@@ -1,22 +1,70 @@
-import { Vec2, Vec3 } from '@gglib/math'
+import { IVec3, Vec2, Vec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { trianglesToLines } from './indices'
+import { resolveLines } from './buildParametricSurface'
 
 export const BuildPolyhedronDefaults = {
-  radius: 0.5,
-  divisions: 4,
+  radius: 1,
+  subdivisions: 4,
+  invert: false,
 }
 
-export interface BuildPlyhedronOptions {
+/**
+ * Options for polyhedron builders such as {@link buildTetrahedron},
+ * {@link buildOctahedron}, and {@link buildIcosahedron}.
+ *
+ * @public
+ */
+export interface BuildPolyhedronOptions {
+  /**
+   * Radius of the circumscribed sphere.
+   * @default 1
+   */
   radius?: number
-  divisions?: number
+
+  /**
+   * Number of times each face is recursively subdivided.
+   * Higher values produce a smoother sphere-like surface.
+   * @default 4
+   */
+  subdivisions?: number
+
+  /**
+   * Offset applied to all vertices.
+   */
+  offset?: IVec3
+
+  /**
+   * Inverts winding order and normals.
+   * @default false
+   */
+  invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
+
+  /**
+   * Vertex positions as `[x, y, z]` tuples on the unit sphere.
+   * Required — must be provided alongside `faces`.
+   */
+  vertices?: number[][]
+
+  /**
+   * Face definitions as index triples into `vertices`.
+   * Required — must be provided alongside `vertices`.
+   */
+  faces?: number[][]
 }
 
-export function tetrahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
+export function tetrahedronGeometry(device: Device, options?: BuildPolyhedronOptions): Geometry {
   return buildGeometry(device, buildTetrahedron, {
-    name: 'tetrahedron',
-    ...(options || {}),
+    name: 'Tetrahedron',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -25,9 +73,7 @@ export function tetrahedronGeometry(device: Device, options?: BuildPlyhedronOpti
  *
  * @public
  */
-export function buildTetrahedron(builder: GeometryBuilder, options?: BuildPlyhedronOptions) {
-  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
-  const divisions = options?.divisions ?? BuildPolyhedronDefaults.divisions
+export function buildTetrahedron(builder: GeometryBuilder, options?: BuildPolyhedronOptions) {
   const vertices = [
     [+1, +1, +1],
     [+1, -1, -1],
@@ -40,29 +86,18 @@ export function buildTetrahedron(builder: GeometryBuilder, options?: BuildPlyhed
     [2, 1, 0],
     [2, 3, 1],
   ]
-  function onVetex(v: Vec3) {
-    builder.addIndex(builder.vertexCount)
-    builder.addVertex({
-      position: Vec3.multiplyScalar(v, radius),
-      normal: v,
-      texture: Vec2.create(v.x, v.z),
-    })
-  }
-  for (const face of faces) {
-    subdivide(
-      normalize(vertices[face[0]]),
-      normalize(vertices[face[1]]),
-      normalize(vertices[face[2]]),
-      divisions,
-      onVetex,
-    )
-  }
+
+  buildPolyhedron(builder, {
+    ...(options || {}),
+    vertices,
+    faces,
+  })
 }
 
-export function octahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
+export function octahedronGeometry(device: Device, options?: BuildPolyhedronOptions): Geometry {
   return buildGeometry(device, buildOctahedron, {
-    name: 'octahedron',
-    ...(options || {}),
+    name: 'Octahedron',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -71,9 +106,7 @@ export function octahedronGeometry(device: Device, options?: BuildPlyhedronOptio
  *
  * @public
  */
-export function buildOctahedron(builder: GeometryBuilder, options?: BuildPlyhedronOptions) {
-  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
-  const steps = options?.divisions ?? BuildPolyhedronDefaults.divisions
+export function buildOctahedron(builder: GeometryBuilder, options?: BuildPolyhedronOptions) {
   const vertices = [
     [+1, 0, 0],
     [-1, 0, 0], // left
@@ -92,23 +125,18 @@ export function buildOctahedron(builder: GeometryBuilder, options?: BuildPlyhedr
     [1, 4, 3],
     [1, 2, 4],
   ]
-  function onVetex(v: Vec3) {
-    builder.addIndex(builder.vertexCount)
-    builder.addVertex({
-      position: Vec3.multiplyScalar(v, radius),
-      normal: v,
-      texture: Vec2.create(v.x, v.z),
-    })
-  }
-  for (let face of faces) {
-    subdivide(normalize(vertices[face[0]]), normalize(vertices[face[1]]), normalize(vertices[face[2]]), steps, onVetex)
-  }
+
+  buildPolyhedron(builder, {
+    ...(options || {}),
+    vertices,
+    faces,
+  })
 }
 
-export function icosahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
+export function icosahedronGeometry(device: Device, options?: BuildPolyhedronOptions): Geometry {
   return buildGeometry(device, buildIcosahedron, {
-    name: 'icosahedron',
-    ...(options || {}),
+    name: 'Icosahedron',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -119,10 +147,7 @@ export function icosahedronGeometry(device: Device, options?: BuildPlyhedronOpti
  * @remarks
  * The implementation is based on http://www.opengl.org.ru/docs/pg/0208.html
  */
-export function buildIcosahedron(builder: GeometryBuilder, options?: BuildPlyhedronOptions) {
-  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
-  const steps = options?.divisions ?? BuildPolyhedronDefaults.divisions
-
+export function buildIcosahedron(builder: GeometryBuilder, options?: BuildPolyhedronOptions) {
   const X = 0.525731112119133606
   const Z = 0.850650808352039932
   const vertices = [
@@ -161,20 +186,72 @@ export function buildIcosahedron(builder: GeometryBuilder, options?: BuildPlyhed
     [9, 2, 5],
     [7, 2, 11],
   ]
-  function onVetex(v: Vec3) {
-    builder.addIndex(builder.vertexCount)
+
+  buildPolyhedron(builder, {
+    ...(options || {}),
+    vertices,
+    faces,
+  })
+}
+
+export function buildPolyhedron(builder: GeometryBuilder, options?: BuildPolyhedronOptions) {
+  const radius = options?.radius ?? BuildPolyhedronDefaults.radius
+  const subdivisions = options?.subdivisions ?? BuildPolyhedronDefaults.subdivisions
+  const invert = options?.invert ?? BuildPolyhedronDefaults.invert
+  const ox = options?.offset?.x ?? 0
+  const oy = options?.offset?.y ?? 0
+  const oz = options?.offset?.z ?? 0
+  const vertices = options?.vertices
+  const faces = options?.faces
+  const lines = !!options?.lines
+
+  if (!vertices || !faces) {
+    throw new Error('buildPolyhedron requires vertices and faces to be specified in options')
+  }
+
+  const indices: number[] = []
+  const baseVertex = builder.vertexCount
+  function onVertex(v: Vec3) {
+    // Equirectangular (longitude/latitude) UV projection.
+    // Note: triangles straddling the 180° meridian seam may exhibit
+    // texture stretching.
+    // TODO: implement split seam
+    const u = 0.5 + Math.atan2(v.z, v.x) / (Math.PI * 2)
+    const t = 0.5 - Math.asin(v.y) / Math.PI
+
+    if (lines) {
+      indices.push(baseVertex + indices.length)
+    } else {
+      builder.addIndex(builder.vertexCount)
+    }
+
     builder.addVertex({
-      position: Vec3.multiplyScalar(v, radius),
-      normal: v,
-      texture: Vec2.create(v.x, v.z),
+      position: Vec3.createFrom({
+        x: v.x * radius + ox,
+        y: v.y * radius + oy,
+        z: v.z * radius + oz,
+      }),
+      normal: invert ? Vec3.createFrom(v).negate() : v,
+      texture: Vec2.create(u, t),
     })
   }
-  for (let face of faces) {
-    subdivide(vertices[face[0]], vertices[face[1]], vertices[face[2]], steps, onVetex)
+
+  for (const face of faces) {
+    const a = normalize(vertices[face[invert ? 2 : 0]])
+    const b = normalize(vertices[face[1]])
+    const c = normalize(vertices[face[invert ? 0 : 2]])
+    subdivide(a, b, c, subdivisions, onVertex)
+  }
+
+  if (lines) {
+    const lineIndices = trianglesToLines(indices)
+    for (const index of lineIndices) {
+      builder.addIndex(index)
+    }
   }
 }
 
-function normalize(v: number[]) {
+function normalize(v: number[]): number[] {
   let x = v[0]
   let y = v[1]
   let z = v[2]

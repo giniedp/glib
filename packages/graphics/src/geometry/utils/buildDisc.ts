@@ -2,16 +2,15 @@ import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
-import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
+import { buildParametricLines, buildParametricSurface, resolveLines } from './buildParametricSurface'
 
 export const BuildDiscDefaults = {
   radius: 1,
   innerRadius: 0,
   radialSegments: 32,
   ringSegments: 1,
-  startAngle: 0,
-  endAngle: Math.PI * 2,
-  invert: false,
+  angleStart: 0,
+  angleSweep: Math.PI * 2,
 }
 
 /**
@@ -53,33 +52,31 @@ export interface BuildDiscOptions {
    * Start angle in radians.
    * @default 0
    */
-  startAngle?: number
+  angleStart?: number
 
   /**
    * End angle in radians.
    * @default Math.PI * 2
    */
-  endAngle?: number
+  angleSweep?: number
 
   /**
    * Inverts winding order and normals, creating a disc facing downwards.
    * @default false
    */
   invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
 }
 
 export function discGeometry(device: Device, options?: BuildDiscOptions & BuildGeometryOptions): Geometry {
-  const fn = options?.primitiveType === 'LineList' ? buildDiscLines : buildDisc
-  return buildGeometry(device, fn, {
-    name: 'disc',
-    ...(options || {}),
-  })
-}
-export function discGeometryLines(device: Device, options?: BuildDiscOptions & BuildGeometryOptions): Geometry {
-  return buildGeometry(device, buildDiscLines, {
-    name: 'disc',
-    ...(options || {}),
-    primitiveType: 'LineList',
+  return buildGeometry(device, buildDisc, {
+    name: 'Disc',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -93,58 +90,28 @@ export function buildDisc(builder: GeometryBuilder, options?: BuildDiscOptions) 
   const innerRadius = options?.innerRadius ?? BuildDiscDefaults.innerRadius
   const radialSegments = options?.radialSegments ?? BuildDiscDefaults.radialSegments
   const ringSegments = options?.ringSegments ?? BuildDiscDefaults.ringSegments
-  const startAngle = options?.startAngle ?? BuildDiscDefaults.startAngle
-  const endAngle = options?.endAngle ?? BuildDiscDefaults.endAngle
+  const angleStart = options?.angleStart ?? BuildDiscDefaults.angleStart
+  const angleSweep = options?.angleSweep ?? BuildDiscDefaults.angleSweep
+  const angleEnd = angleStart + angleSweep
   const ox = options?.offset?.x ?? 0
   const oy = options?.offset?.y ?? 0
   const oz = options?.offset?.z ?? 0
 
-  buildParametricSurface(builder, {
+  const surface = options?.lines ? buildParametricLines : buildParametricSurface
+
+  surface(builder, {
     position: (u, v) => ({
       x: v * Math.cos(u) + ox,
       y: oy,
       z: v * Math.sin(u) + oz,
     }),
     normal: () => ({ x: 0, y: 1, z: 0 }),
-    uStart: startAngle,
-    uEnd: endAngle,
+    uStart: angleEnd,
+    uEnd: angleStart,
     uSegments: radialSegments,
     vStart: innerRadius,
     vEnd: radius,
     vSegments: ringSegments,
-    invert: options?.invert ?? BuildDiscDefaults.invert,
-  })
-}
-
-/**
- * Builds a disc or ring shape into the {@link GeometryBuilder}
- *
- * @public
- */
-export function buildDiscLines(builder: GeometryBuilder, options?: BuildDiscOptions) {
-  const radius = options?.radius ?? BuildDiscDefaults.radius
-  const innerRadius = options?.innerRadius ?? BuildDiscDefaults.innerRadius
-  const radialSegments = options?.radialSegments ?? BuildDiscDefaults.radialSegments
-  const ringSegments = options?.ringSegments ?? BuildDiscDefaults.ringSegments
-  const startAngle = options?.startAngle ?? BuildDiscDefaults.startAngle
-  const endAngle = options?.endAngle ?? BuildDiscDefaults.endAngle
-  const ox = options?.offset?.x ?? 0
-  const oy = options?.offset?.y ?? 0
-  const oz = options?.offset?.z ?? 0
-
-  buildParametricLines(builder, {
-    position: (u, v) => ({
-      x: v * Math.cos(u) + ox,
-      y: oy,
-      z: v * Math.sin(u) + oz,
-    }),
-    normal: () => ({ x: 0, y: 1, z: 0 }),
-    uStart: startAngle,
-    uEnd: endAngle,
-    uSegments: radialSegments,
-    vStart: innerRadius,
-    vEnd: radius,
-    vSegments: ringSegments,
-    invert: options?.invert ?? BuildDiscDefaults.invert,
+    invert: !!options?.invert,
   })
 }

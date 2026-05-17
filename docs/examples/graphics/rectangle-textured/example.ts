@@ -23,11 +23,15 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
           byteOffset: 0,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
         vTexture: {
           byteOffset: 12,
           elementCount: 2,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
       },
       // However, the data gets an additional vertex.

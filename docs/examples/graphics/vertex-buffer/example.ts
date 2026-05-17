@@ -19,11 +19,19 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
   const vertices = device.createVertexBuffer([
     {
       vertexLayout: {
-        vPosition: { elementType: 'float32', byteOffset: 0, elementCount: 3 },
+        vPosition: {
+          elementType: 'float32',
+          byteOffset: 0,
+          elementCount: 3,
+          normalized: false,
+          packed: false,
+        },
         vColor: {
           byteOffset: 12,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
       },
 

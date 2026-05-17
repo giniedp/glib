@@ -1,6 +1,25 @@
 import { IVec2, IVec3, Vec2, Vec3 } from '@gglib/math'
+import { PrimitiveType } from 'graphics/src/enums'
 import { Color } from '../../Color'
 import type { GeometryBuilder } from '../GeometryBuilder'
+
+export function resolveLines(options?: { lines?: boolean; primitiveType?: PrimitiveType }) {
+  const lines = !!options?.lines
+  if (options && !options.primitiveType) {
+    options = { ...options }
+    options.primitiveType = lines ? 'LineList' : 'TriangleList'
+  }
+
+  if (lines && options?.primitiveType !== 'LineList') {
+    console.warn(`'lines' option is true but primitiveType is '${options?.primitiveType}'`)
+  }
+
+  if (!lines && options?.primitiveType === 'LineList') {
+    console.warn(`primitiveType is 'LineList' but 'lines' option is false`)
+  }
+
+  return options
+}
 
 /**
  * Options for the {@link buildParametricSurface} function

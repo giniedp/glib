@@ -262,11 +262,12 @@ export class Effect implements Disposable {
     if (!this.isReady) {
       return
     }
+
     if (params) {
-      this.commit(params)
-    } else {
-      this.program.commit()
+      this.program.apply(params)
     }
+    this.program.commit()
+
     this.apply(pass)
     object.render(pass)
     this.restore(pass)

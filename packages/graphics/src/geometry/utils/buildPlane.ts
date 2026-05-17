@@ -2,7 +2,7 @@ import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
-import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
+import { buildParametricLines, buildParametricSurface, resolveLines } from './buildParametricSurface'
 
 export const BuildPlaneDefaults = {
   size: 1,
@@ -63,21 +63,18 @@ export interface BuildPlaneOptions {
    * @default false
    */
   invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
 }
 
 export function planeGeometry(device: Device, options?: BuildPlaneOptions & BuildGeometryOptions): Geometry {
-  const fn = options?.primitiveType === 'LineList' ? buildPlaneLines : buildPlane
-  return buildGeometry(device, fn, {
+  return buildGeometry(device, buildPlane, {
     name: 'Plane',
-    ...options,
-  })
-}
-
-export function planeLinesGeometry(device: Device, options?: BuildPlaneOptions & BuildGeometryOptions): Geometry {
-  return buildGeometry(device, buildPlaneLines, {
-    name: 'Plane Lines',
-    ...options,
-    primitiveType: 'LineList',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -96,37 +93,9 @@ export function buildPlane(builder: GeometryBuilder, options?: BuildPlaneOptions
   const ox = options?.offset?.x ?? 0
   const oy = options?.offset?.y ?? 0
   const oz = options?.offset?.z ?? 0
+  const surface = options?.lines ? buildParametricLines : buildParametricSurface
 
-  buildParametricSurface(builder, {
-    position: (u, v) => ({
-      x: ox + (u - 0.5) * width,
-      y: oy,
-      z: oz + (v - 0.5) * depth,
-    }),
-    normal: () => ({ x: 0, y: 1, z: 0 }),
-    uSegments: widthSegments,
-    vSegments: depthSegments,
-    invert: !!options?.invert,
-  })
-}
-
-/**
- * Builds a cube lines shape into the {@link GeometryBuilder}
- *
- * @public
- */
-export function buildPlaneLines(builder: GeometryBuilder, options?: BuildPlaneOptions) {
-  const size = options?.size ?? BuildPlaneDefaults.size
-  const segments = options?.segments ?? BuildPlaneDefaults.segments
-  const width = options?.width ?? size
-  const depth = options?.depth ?? size
-  const widthSegments = options?.widthSegments ?? segments
-  const depthSegments = options?.depthSegments ?? segments
-  const ox = options?.offset?.x ?? 0
-  const oy = options?.offset?.y ?? 0
-  const oz = options?.offset?.z ?? 0
-
-  buildParametricLines(builder, {
+  surface(builder, {
     position: (u, v) => ({
       x: ox + (u - 0.5) * width,
       y: oy,

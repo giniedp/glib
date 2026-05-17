@@ -90,9 +90,9 @@ export default async (canvas: HTMLCanvasElement) => {
   const vertices = device.createVertexBuffer([
     {
       vertexLayout: {
-        vPosition: { elementType: 'float32', byteOffset: 0, elementCount: 3 },
-        vNormal: { elementType: 'float32', byteOffset: 12, elementCount: 3 },
-        vTexture: { elementType: 'float32', byteOffset: 24, elementCount: 2 },
+        vPosition: { elementType: 'float32', byteOffset: 0, elementCount: 3, normalized: false, packed: false },
+        vNormal: { elementType: 'float32', byteOffset: 12, elementCount: 3, normalized: false, packed: false },
+        vTexture: { elementType: 'float32', byteOffset: 24, elementCount: 2, normalized: false, packed: false },
       },
       // type: 'ushort',
       // as the layout already indicates, we add a normal data to each vertex

@@ -1,12 +1,19 @@
+import { IVec3 } from '@gglib/math'
 import { Device } from '../../Device'
 import { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
-import { buildParametricSurface } from './buildParametricSurface'
+import { buildParametricLines, buildParametricSurface, resolveLines } from './buildParametricSurface'
 
 export const BuildTorusDefaults = {
-  outerRadius: 0.5,
-  innerRadius: 0.25,
-  tesselation: 32,
+  radius: 1,
+  tubeRadius: 0.4,
+  radialSegments: 32,
+  tubularSegments: 32,
+  angleStart: 0,
+  angleSweep: Math.PI * 2,
+  tubeAngleStart: 0,
+  tubeAngleSweep: Math.PI * 2,
+  invert: false,
 }
 
 /**
@@ -16,28 +23,75 @@ export const BuildTorusDefaults = {
  */
 export interface BuildTorusOptions {
   /**
-   * The outerRadius
-   * @remarks
-   * defaults to `0.5`
+   * Distance from the center of the torus to the center of the tube.
+   * @default 1
    */
-  outerRadius?: number
+  radius?: number
+
   /**
-   * The innerRadius
-   * @remarks
-   * defaults to `0.25`
+   * Radius of the tube.
+   * @default 0.4
    */
-  innerRadius?: number
+  tubeRadius?: number
+
   /**
-   * The tesselation factor
-   * @remarks
-   * defaults to `32`
+   * Number of subdivisions around the torus ring.
+   * @default 32
    */
-  tesselation?: number
+  radialSegments?: number
+
+  /**
+   * Number of subdivisions around the tube cross-section.
+   * @default 32
+   */
+  tubularSegments?: number
+
+  /**
+   * Offset applied to all vertices.
+   */
+  offset?: IVec3
+
+  /**
+   * Start angle in radians.
+   * @default 0
+   */
+  angleStart?: number
+
+  /**
+   * Angular sweep in radians.
+   * @default Math.PI * 2
+   */
+  angleSweep?: number
+
+  /**
+   * Start angle in radians around the tube cross-section.
+   * @default 0
+   */
+  tubeAngleStart?: number
+
+  /**
+   * Angular sweep in radians around the tube cross-section.
+   * @default Math.PI * 2
+   */
+  tubeAngleSweep?: number
+
+  /**
+   * Inverts winding order and normals.
+   * @default false
+   */
+  invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
 }
+
 export function torusGeometry(device: Device, options?: BuildTorusOptions & BuildGeometryOptions): Geometry {
   return buildGeometry(device, buildTorus, {
-    name: 'torus',
-    ...(options || {}),
+    name: 'Torus',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -47,33 +101,37 @@ export function torusGeometry(device: Device, options?: BuildTorusOptions & Buil
  * @public
  */
 export function buildTorus(builder: GeometryBuilder, options?: BuildTorusOptions) {
-  const t = options?.tesselation ?? BuildTorusDefaults.tesselation
-  const ri = options?.innerRadius ?? BuildTorusDefaults.innerRadius
-  const ro = options?.outerRadius ?? BuildTorusDefaults.outerRadius
+  const radius = options?.radius ?? BuildTorusDefaults.radius
+  const tubeRadius = options?.tubeRadius ?? BuildTorusDefaults.tubeRadius
+  const radialSegments = options?.radialSegments ?? BuildTorusDefaults.radialSegments
+  const tubularSegments = options?.tubularSegments ?? BuildTorusDefaults.tubularSegments
+  const angleStart = options?.angleStart ?? BuildTorusDefaults.angleStart
+  const angleEnd = angleStart + (options?.angleSweep ?? BuildTorusDefaults.angleSweep)
+  const tubeAngleStart = options?.tubeAngleStart ?? BuildTorusDefaults.tubeAngleStart
+  const tubeAngleEnd = tubeAngleStart + (options?.tubeAngleSweep ?? BuildTorusDefaults.tubeAngleSweep)
 
-  const r1 = ri + (ro - ri) * 0.5
-  const r2 = r1 - ri
+  const ox = options?.offset?.x ?? 0
+  const oy = options?.offset?.y ?? 0
+  const oz = options?.offset?.z ?? 0
+  const surface = options?.lines ? buildParametricLines : buildParametricSurface
 
-  buildParametricSurface(builder, {
-    position: (phi: number, theta: number) => {
-      return {
-        x: (r1 + r2 * Math.sin(theta)) * Math.sin(phi),
-        y: r2 * Math.cos(theta),
-        z: (r1 + r2 * Math.sin(theta)) * Math.cos(phi),
-      }
-    },
-    normal: (phi: number, theta: number) => {
-      return {
-        x: Math.sin(theta) * Math.sin(phi),
-        y: Math.cos(theta),
-        z: Math.sin(theta) * Math.cos(phi),
-      }
-    },
-    uSegments: t,
-    vSegments: t,
-    uStart: 0,
-    uEnd: Math.PI * 2,
-    vStart: 0,
-    vEnd: Math.PI * 2,
+  surface(builder, {
+    position: (phi, theta) => ({
+      x: ox + (radius + tubeRadius * Math.cos(theta)) * Math.cos(phi),
+      y: oy + tubeRadius * Math.sin(theta),
+      z: oz + (radius + tubeRadius * Math.cos(theta)) * Math.sin(phi),
+    }),
+    normal: (phi, theta) => ({
+      x: Math.cos(theta) * Math.cos(phi),
+      y: Math.sin(theta),
+      z: Math.cos(theta) * Math.sin(phi),
+    }),
+    uStart: angleStart,
+    uEnd: angleEnd,
+    uSegments: radialSegments,
+    vStart: tubeAngleStart,
+    vEnd: tubeAngleEnd,
+    vSegments: tubularSegments,
+    invert: options?.invert ?? BuildTorusDefaults.invert,
   })
 }

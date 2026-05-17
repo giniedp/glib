@@ -3,6 +3,10 @@ import {
   boxGeometry,
   BuildBoxOptions,
   BuildCylinderOptions,
+  BuildGeometryOptions,
+  BuildPatchOptions,
+  BuildPlaneOptions,
+  BuildPolyhedronOptions,
   BuildSphereOptions,
   BuildTorusOptions,
   Color,
@@ -13,9 +17,14 @@ import {
   Device,
   FALSE,
   Geometry,
+  icosahedronGeometry,
+  octahedronGeometry,
+  patchGeometry,
+  planeGeometry,
   PlatformId,
   sphereGeometry,
   TaskContext,
+  tetrahedronGeometry,
   torusGeometry,
   TRUE,
 } from '@gglib/graphics'
@@ -96,7 +105,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.setViewportState(0, 0, msaaTarget.width, msaaTarget.height)
     pass.setDepthTarget(depthTarget)
     pass.setClearColor(0, Color.CornflowerBlue)
-    pass.setDepthState(DepthState.Disabled)
+    pass.setDepthState(DepthState.LessEqual)
     pass.setCullState(CullState.CullBack)
     pass.setClearDepth(1)
     pass.clear()
@@ -120,60 +129,125 @@ function createUi(
   spawnGeometry: (geometry: Geometry) => void,
 ) {
   mountUi(tools, (ui) => {
+    ui.group('Plane', { collapsible: true }, () => {
+      const options: BuildPlaneOptions & BuildGeometryOptions = {
+        size: 1,
+        segments: 1,
+      }
+      function update() {
+        spawnGeometry(planeGeometry(device, options))
+      }
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.number(options, 'size', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'segments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+    })
+
+    ui.group('Patch', { collapsible: true }, () => {
+      const options: BuildPatchOptions & BuildGeometryOptions = {
+        size: 1,
+        segments: 1,
+      }
+      function update() {
+        spawnGeometry(patchGeometry(device, options))
+      }
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.select(options, 'diagonal', {
+        options: ['forward', 'backward', 'alternating'],
+        onchange: update,
+      })
+      ui.number(options, 'size', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'segments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+    })
+
     ui.group('Cube', { collapsible: true }, () => {
-      const options: BuildBoxOptions = {
+      const options: BuildBoxOptions & BuildGeometryOptions = {
         size: 1,
         segments: 1,
       }
       function update() {
         spawnGeometry(boxGeometry(device, options))
       }
+      ui.boolean(options, 'lines', { onchange: update })
       ui.number(options, 'size', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
       ui.number(options, 'segments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
     })
 
     ui.group('Sphere', { collapsible: true }, () => {
-      const options: BuildSphereOptions = {
+      const options: BuildSphereOptions & BuildGeometryOptions = {
         radius: 0.5,
         slices: 8,
         stacks: 8,
+        angleStart: 0,
+        angleSweep: Math.PI * 2,
+        latitudeStart: 0,
+        latitudeSweep: Math.PI,
       }
       function update() {
         spawnGeometry(sphereGeometry(device, options))
       }
+      ui.boolean(options, 'lines', { onchange: update })
       ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
       ui.number(options, 'slices', { slider: true, min: 1, max: 64, step: 1, oninput: update })
       ui.number(options, 'stacks', { slider: true, min: 1, max: 64, step: 1, oninput: update })
-    })
-
-    ui.group('Cylinder', { collapsible: true }, () => {
-      const options: BuildCylinderOptions = {
-        topRadius: 0.5,
-        bottomRadius: 0.5,
-        heightSegments: 8,
-        radialSegments: 32,
-        startAngle: 0,
-        endAngle: Math.PI * 2,
-        closeTop: true,
-        closeBottom: true,
-      }
-      function update() {
-        spawnGeometry(cylinderGeometry(device, options))
-      }
-      ui.boolean(options, 'closeTop', { oninput: update })
-      ui.boolean(options, 'closeBottom', { oninput: update })
-      ui.number(options, 'topRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
-      ui.number(options, 'bottomRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
-      ui.number(options, 'heightSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
-      ui.number(options, 'radialSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
-      ui.number(options, 'startAngle', {
+      ui.number(options, 'angleStart', {
         slider: true,
         min: 0,
         max: Math.PI * 2,
         step: 0.01,
         oninput: update,
       })
-      ui.number(options, 'endAngle', {
+      ui.number(options, 'angleSweep', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'latitudeStart', {
+        slider: true,
+        min: 0,
+        max: Math.PI,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'latitudeSweep', {
+        slider: true,
+        min: 0,
+        max: Math.PI,
+        step: 0.01,
+        oninput: update,
+      })
+    })
+
+    ui.group('Cylinder', { collapsible: true }, () => {
+      const options: BuildCylinderOptions & BuildGeometryOptions = {
+        topRadius: 0.5,
+        bottomRadius: 0.5,
+        heightSegments: 8,
+        radialSegments: 32,
+        angleStart: 0,
+        angleSweep: Math.PI * 2,
+        closeTop: true,
+        closeBottom: true,
+      }
+      function update() {
+        spawnGeometry(cylinderGeometry(device, options))
+      }
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.boolean(options, 'closeTop', { oninput: update })
+      ui.boolean(options, 'closeBottom', { oninput: update })
+      ui.number(options, 'topRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'bottomRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'heightSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'radialSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'angleStart', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'angleSweep', {
         slider: true,
         min: 0,
         max: Math.PI * 2,
@@ -183,19 +257,92 @@ function createUi(
     })
 
     ui.group('Torus', { collapsible: true }, () => {
-      const options: BuildTorusOptions = {
-        innerRadius: 0.25,
-        outerRadius: 0.5,
-        tesselation: 8,
+      const options: BuildTorusOptions & BuildGeometryOptions = {
+        tubeRadius: 0.2,
+        radius: 0.5,
+        radialSegments: 16,
+        tubularSegments: 32,
+        angleStart: 0,
+        angleSweep: Math.PI * 2,
+        tubeAngleStart: 0,
+        tubeAngleSweep: Math.PI * 2,
       }
       function update() {
         spawnGeometry(torusGeometry(device, options))
       }
-      ui.number(options, 'innerRadius', { slider: true, min: 0, max: 1, step: 0.01, oninput: update })
-      ui.number(options, 'outerRadius', { slider: true, min: 0, max: 1, step: 0.01, oninput: update })
-      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'tubeRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'radialSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'tubularSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'angleStart', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'angleSweep', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'tubeAngleStart', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'tubeAngleSweep', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
     })
 
+    ui.group('Icosahedron', { collapsible: true }, () => {
+      const options: BuildPolyhedronOptions & BuildGeometryOptions = {
+        radius: 0.5,
+        subdivisions: 0,
+      }
+      function update() {
+        spawnGeometry(icosahedronGeometry(device, options))
+      }
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'subdivisions', { slider: true, min: 0, max: 5, step: 1, oninput: update })
+    })
+
+    ui.group('Tetrahedron', { collapsible: true }, () => {
+      const options: BuildPolyhedronOptions & BuildGeometryOptions = {
+        radius: 0.5,
+        subdivisions: 0,
+      }
+      function update() {
+        spawnGeometry(tetrahedronGeometry(device, options))
+      }
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'subdivisions', { slider: true, min: 0, max: 5, step: 1, oninput: update })
+    })
+
+    ui.group('Octahedron', { collapsible: true }, () => {
+      const options: BuildPolyhedronOptions & BuildGeometryOptions = {
+        radius: 0.5,
+        subdivisions: 0,
+      }
+      function update() {
+        spawnGeometry(octahedronGeometry(device, options))
+      }
+      ui.boolean(options, 'lines', { onchange: update })
+      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'subdivisions', { slider: true, min: 0, max: 5, step: 1, oninput: update })
+    })
     ui.group('Material', { collapsible: true }, () => {
       ui.number(material, 'Roughness', { slider: true, min: 0, max: 1, step: 0.001 })
       ui.boolean(material, 'TextureEnabled')
@@ -206,10 +353,6 @@ function createUi(
       ui.color(material.inputs, 'lights.color[0]', {
         format: '[n]rgb',
       })
-      //g.color(material, 'FogColor', { codec: })
-      // ui.number(material, 'FogStart', { slider: true, min: 0, max: 10, step: 0.1 })
-      // ui.number(material, 'FogEnd', { slider: true, min: 0, max: 20, step: 0.1 })
-      // ui.boolean(material, 'FogEnabled')
     })
   })
 }

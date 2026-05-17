@@ -22,12 +22,15 @@ export default async function run(canvas: HTMLCanvasElement, tools: any, platfor
           byteOffset: 0,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
         vColor: {
           byteOffset: 3 * 4,
           elementCount: 3,
           elementType: 'float32',
           normalized: true,
+          packed: false,
         },
       },
       // prettier-ignore

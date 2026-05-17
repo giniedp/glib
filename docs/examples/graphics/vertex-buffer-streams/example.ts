@@ -19,7 +19,15 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
   // its own vertex buffer.
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: { vPosition: { elementType: 'float32', byteOffset: 0, elementCount: 3 } },
+      vertexLayout: {
+        vPosition: {
+          elementType: 'float32',
+          elementCount: 3,
+          byteOffset: 0,
+          normalized: false,
+          packed: false,
+        },
+      },
       // prettier-ignore
       data: new Float32Array([
         -1, -1, 0.0,
@@ -29,7 +37,15 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
       ]),
     },
     {
-      vertexLayout: { vColor: { elementType: 'uint8', byteOffset: 0, elementCount: 4, normalized: true } },
+      vertexLayout: {
+        vColor: {
+          elementType: 'uint8',
+          elementCount: 4,
+          byteOffset: 0,
+          normalized: true,
+          packed: true,
+        },
+      },
       // prettier-ignore
       data: new Uint32Array([
         Color.packToRGBA(Color.Red),

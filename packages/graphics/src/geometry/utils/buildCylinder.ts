@@ -2,16 +2,16 @@ import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, type GeometryBuilder } from '../GeometryBuilder'
-import { buildDisc, buildDiscLines } from './buildDisc'
-import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
+import { buildDisc } from './buildDisc'
+import { buildParametricLines, buildParametricSurface, resolveLines } from './buildParametricSurface'
 
 export const BuildCylinderDefaults = {
   height: 1,
   radius: 1,
   radialSegments: 32,
   heightSegments: 1,
-  startAngle: 0,
-  endAngle: Math.PI * 2,
+  angleStart: 0,
+  angleSweep: Math.PI * 2,
   closeTop: false,
   closeBottom: false,
 }
@@ -70,13 +70,13 @@ export interface BuildCylinderOptions {
    * Start angle in radians.
    * @default 0
    */
-  startAngle?: number
+  angleStart?: number
 
   /**
    * End angle in radians.
    * @default Math.PI * 2
    */
-  endAngle?: number
+  angleSweep?: number
 
   /**
    * When `true`, closes the top of the cylinder with a disc.
@@ -91,21 +91,24 @@ export interface BuildCylinderOptions {
    * @default false
    */
   closeBottom?: boolean
+
+  /**
+   * Inverts winding order and normals, creating a box facing inwards.
+   * @default false
+   */
+  invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
 }
 
 export function cylinderGeometry(device: Device, options: BuildCylinderOptions & BuildGeometryOptions): Geometry {
-  const fn = options?.primitiveType === 'LineList' ? buildCylinderLines : buildCylinder
-  return buildGeometry(device, fn, {
+  return buildGeometry(device, buildCylinder, {
     name: 'Cylinder',
-    ...options,
-  })
-}
-
-export function cylinderGeometryLines(device: Device, options: BuildCylinderOptions & BuildGeometryOptions): Geometry {
-  return buildGeometry(device, buildCylinderLines, {
-    name: 'Cylinder',
-    ...options,
-    primitiveType: 'LineList',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -124,10 +127,15 @@ export function buildCylinder(builder: GeometryBuilder, options?: BuildCylinderO
   const oz = options?.offset?.z ?? 0
   const radialSegments = options?.radialSegments ?? BuildCylinderDefaults.radialSegments
   const heightSegments = options?.heightSegments ?? BuildCylinderDefaults.heightSegments
-  const startAngle = options?.startAngle ?? BuildCylinderDefaults.startAngle
-  const endAngle = options?.endAngle ?? BuildCylinderDefaults.endAngle
+  const startAngle = options?.angleStart ?? BuildCylinderDefaults.angleStart
+  const angleSweep = options?.angleSweep ?? BuildCylinderDefaults.angleSweep
+  const endAngle = startAngle + angleSweep
+  const invert = !!options?.invert
+  const lines = !!options?.lines
 
-  buildParametricSurface(builder, {
+  const surface = lines ? buildParametricLines : buildParametricSurface
+
+  surface(builder, {
     position: (u, v) => {
       const r = bottomRadius * (1 - v) + topRadius * v
       return {
@@ -140,6 +148,7 @@ export function buildCylinder(builder: GeometryBuilder, options?: BuildCylinderO
     uEnd: endAngle,
     uSegments: radialSegments,
     vSegments: heightSegments,
+    invert,
   })
 
   if (options?.closeTop && topRadius > 0) {
@@ -147,8 +156,10 @@ export function buildCylinder(builder: GeometryBuilder, options?: BuildCylinderO
       radius: topRadius,
       offset: { x: ox, y: oy + height * 0.5, z: oz },
       radialSegments,
-      startAngle,
-      endAngle,
+      angleStart: startAngle,
+      angleSweep: angleSweep,
+      invert,
+      lines,
     })
   }
 
@@ -157,64 +168,10 @@ export function buildCylinder(builder: GeometryBuilder, options?: BuildCylinderO
       radius: bottomRadius,
       offset: { x: ox, y: oy - height * 0.5, z: oz },
       radialSegments,
-      startAngle,
-      endAngle,
-      invert: true,
-    })
-  }
-}
-
-/**
- * Builds a cylinder shape into the {@link GeometryBuilder}
- *
- * @public
- */
-export function buildCylinderLines(builder: GeometryBuilder, options?: BuildCylinderOptions) {
-  const radius = options?.radius ?? BuildCylinderDefaults.radius
-  const topRadius = options?.topRadius ?? radius
-  const bottomRadius = options?.bottomRadius ?? radius
-  const height = options?.height ?? BuildCylinderDefaults.height
-  const ox = options?.offset?.x ?? 0
-  const oy = options?.offset?.y ?? 0
-  const oz = options?.offset?.z ?? 0
-  const radialSegments = options?.radialSegments ?? BuildCylinderDefaults.radialSegments
-  const heightSegments = options?.heightSegments ?? BuildCylinderDefaults.heightSegments
-  const startAngle = options?.startAngle ?? BuildCylinderDefaults.startAngle
-  const endAngle = options?.endAngle ?? BuildCylinderDefaults.endAngle
-
-  buildParametricLines(builder, {
-    position: (u, v) => {
-      const r = bottomRadius * (1 - v) + topRadius * v
-      return {
-        x: ox + r * Math.cos(u),
-        y: oy + v * height - height * 0.5,
-        z: oz + r * Math.sin(u),
-      }
-    },
-    uStart: startAngle,
-    uEnd: endAngle,
-    uSegments: radialSegments,
-    vSegments: heightSegments,
-  })
-
-  if (options?.closeTop && topRadius > 0) {
-    buildDiscLines(builder, {
-      radius: topRadius,
-      offset: { x: ox, y: oy + height * 0.5, z: oz },
-      radialSegments,
-      startAngle,
-      endAngle,
-    })
-  }
-
-  if (options?.closeBottom && bottomRadius > 0) {
-    buildDiscLines(builder, {
-      radius: bottomRadius,
-      offset: { x: ox, y: oy - height * 0.5, z: oz },
-      radialSegments,
-      startAngle,
-      endAngle,
-      invert: true,
+      angleStart: startAngle,
+      angleSweep: angleSweep,
+      invert: !invert,
+      lines,
     })
   }
 }

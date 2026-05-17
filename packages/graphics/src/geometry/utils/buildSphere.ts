@@ -2,16 +2,16 @@ import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
-import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
+import { buildParametricLines, buildParametricSurface, resolveLines } from './buildParametricSurface'
 
 export const BuildSphereDefaults = {
   radius: 1,
   stacks: 16,
   slices: 32,
-  startAngle: 0,
-  endAngle: Math.PI * 2,
-  startLatitude: 0,
-  endLatitude: Math.PI,
+  angleStart: 0,
+  angleSweep: Math.PI * 2,
+  latitudeStart: 0,
+  latitudeSweep: Math.PI,
   invert: false,
 }
 
@@ -50,47 +50,44 @@ export interface BuildSphereOptions {
    * Start angle in radians around the Y axis (longitude).
    * @default 0
    */
-  startAngle?: number
+  angleStart?: number
 
   /**
    * End angle in radians around the Y axis (longitude).
    * @default Math.PI * 2
    */
-  endAngle?: number
+  angleSweep?: number
 
   /**
    * Start latitude in radians, measured from the north pole.
    * @default 0
    */
-  startLatitude?: number
+  latitudeStart?: number
 
   /**
    * End latitude in radians, measured from the north pole.
    * Use `Math.PI * 0.5` for a hemisphere, `Math.PI` for a full sphere.
    * @default Math.PI
    */
-  endLatitude?: number
+  latitudeSweep?: number
 
   /**
    * Inverts winding order and normals, creating a sphere facing inwards.
    * @default false
    */
   invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
 }
 
 export function sphereGeometry(device: Device, options?: BuildSphereOptions & BuildGeometryOptions): Geometry {
-  const fn = options?.primitiveType === 'LineList' ? buildSphereLines : buildSphere
-  return buildGeometry(device, fn, {
-    name: 'sphere',
-    ...(options || {}),
-  })
-}
-
-export function sphereLinesGeometry(device: Device, options?: BuildSphereOptions & BuildGeometryOptions): Geometry {
-  return buildGeometry(device, buildSphereLines, {
-    name: 'sphere',
-    ...(options || {}),
-    primitiveType: 'LineList',
+  return buildGeometry(device, buildSphere, {
+    name: 'Sphere',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -106,12 +103,16 @@ export function buildSphere(builder: GeometryBuilder, options: BuildSphereOption
   const ox = options?.offset?.x ?? 0
   const oy = options?.offset?.y ?? 0
   const oz = options?.offset?.z ?? 0
-  const startAngle = options?.startAngle ?? BuildSphereDefaults.startAngle
-  const endAngle = options?.endAngle ?? BuildSphereDefaults.endAngle
-  const startLatitude = options?.startLatitude ?? BuildSphereDefaults.startLatitude
-  const endLatitude = options?.endLatitude ?? BuildSphereDefaults.endLatitude
 
-  buildParametricSurface(builder, {
+  const angleStart = options?.angleStart ?? BuildSphereDefaults.angleStart
+  const angleSweep = options?.angleSweep ?? BuildSphereDefaults.angleSweep
+  const angleEnd = angleStart + angleSweep
+
+  const latitudeStart = options?.latitudeStart ?? BuildSphereDefaults.latitudeStart
+  const latitudeSweep = options?.latitudeSweep ?? BuildSphereDefaults.latitudeSweep
+  const latitudeEnd = latitudeStart + latitudeSweep
+  const surface = options?.lines ? buildParametricLines : buildParametricSurface
+  surface(builder, {
     position: (phi, theta) => ({
       x: ox + radius * Math.sin(theta) * Math.sin(phi),
       y: oy + radius * Math.cos(theta),
@@ -122,49 +123,11 @@ export function buildSphere(builder: GeometryBuilder, options: BuildSphereOption
       y: Math.cos(theta),
       z: Math.sin(theta) * Math.cos(phi),
     }),
-    uStart: startAngle,
-    uEnd: endAngle,
+    uStart: angleStart,
+    uEnd: angleEnd,
     uSegments: slices,
-    vStart: startLatitude,
-    vEnd: endLatitude,
-    vSegments: stacks,
-    invert: options?.invert ?? BuildSphereDefaults.invert,
-  })
-}
-
-/**
- * Builds a sphere shape into the {@link GeometryBuilder}
- *
- * @public
- */
-export function buildSphereLines(builder: GeometryBuilder, options: BuildSphereOptions = {}) {
-  const radius = options?.radius ?? BuildSphereDefaults.radius
-  const stacks = options?.stacks ?? BuildSphereDefaults.stacks
-  const slices = options?.slices ?? BuildSphereDefaults.slices
-  const ox = options?.offset?.x ?? 0
-  const oy = options?.offset?.y ?? 0
-  const oz = options?.offset?.z ?? 0
-  const startAngle = options?.startAngle ?? BuildSphereDefaults.startAngle
-  const endAngle = options?.endAngle ?? BuildSphereDefaults.endAngle
-  const startLatitude = options?.startLatitude ?? BuildSphereDefaults.startLatitude
-  const endLatitude = options?.endLatitude ?? BuildSphereDefaults.endLatitude
-
-  buildParametricLines(builder, {
-    position: (phi, theta) => ({
-      x: ox + radius * Math.sin(theta) * Math.sin(phi),
-      y: oy + radius * Math.cos(theta),
-      z: oz + radius * Math.sin(theta) * Math.cos(phi),
-    }),
-    normal: (phi, theta) => ({
-      x: Math.sin(theta) * Math.sin(phi),
-      y: Math.cos(theta),
-      z: Math.sin(theta) * Math.cos(phi),
-    }),
-    uStart: startAngle,
-    uEnd: endAngle,
-    uSegments: slices,
-    vStart: startLatitude,
-    vEnd: endLatitude,
+    vStart: latitudeStart,
+    vEnd: latitudeEnd,
     vSegments: stacks,
     invert: options?.invert ?? BuildSphereDefaults.invert,
   })

@@ -18,6 +18,8 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
           byteOffset: 0,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
       },
       // prettier-ignore

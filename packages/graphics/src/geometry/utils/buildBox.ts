@@ -2,7 +2,7 @@ import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, type GeometryBuilder } from '../GeometryBuilder'
-import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
+import { buildParametricLines, buildParametricSurface, resolveLines } from './buildParametricSurface'
 
 export const BuildBoxDefaults = {
   size: 1,
@@ -75,20 +75,18 @@ export interface BuildBoxOptions {
    * @default false
    */
   invert?: boolean
+
+  /**
+   * When `true`, builds a wireframe line mesh instead of a solid surface.
+   * @default false
+   */
+  lines?: boolean
 }
 
 export function boxGeometry(device: Device, options?: BuildBoxOptions & BuildGeometryOptions): Geometry {
-  const fn = options?.primitiveType === 'LineList' ? buildBoxLines : buildBox
-  return buildGeometry(device, fn, {
-    name: 'box',
-    ...(options || {}),
-  })
-}
-
-export function boxLinesGeometry(device: Device, options?: BuildBoxOptions & BuildGeometryOptions): Geometry {
-  return boxGeometry(device, {
-    ...options,
-    primitiveType: 'LineList',
+  return buildGeometry(device, buildBox, {
+    name: 'Box',
+    ...(resolveLines(options) || {}),
   })
 }
 
@@ -114,9 +112,10 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
   const oz = options?.offset?.z ?? 0
 
   const invert = !!options?.invert
+  const surface = options?.lines ? buildParametricLines : buildParametricSurface
 
   // top plane
-  buildParametricSurface(builder, {
+  surface(builder, {
     invert,
     position: (u, v) => ({
       x: ox + (u - 0.5) * width,
@@ -129,7 +128,7 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
   })
 
   // bottom plane
-  buildParametricSurface(builder, {
+  surface(builder, {
     invert: !invert,
     position: (u, v) => ({
       x: ox + (u - 0.5) * width,
@@ -142,8 +141,8 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
   })
 
   // front
-  buildParametricSurface(builder, {
-    invert,
+  surface(builder, {
+    invert: !invert,
     position: (u, v) => ({
       x: ox + (u - 0.5) * width,
       y: oy + (v - 0.5) * height,
@@ -155,8 +154,8 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
   })
 
   // back
-  buildParametricSurface(builder, {
-    invert: !invert,
+  surface(builder, {
+    invert: invert,
     position: (u, v) => ({
       x: ox + (u - 0.5) * width,
       y: oy + (v - 0.5) * height,
@@ -168,8 +167,8 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
   })
 
   // left
-  buildParametricSurface(builder, {
-    invert,
+  surface(builder, {
+    invert: !invert,
     position: (u, v) => ({
       x: ox + -width * 0.5,
       y: oy + (v - 0.5) * height, // v → Y
@@ -181,110 +180,8 @@ export function buildBox(builder: GeometryBuilder, options?: BuildBoxOptions) {
   })
 
   // right
-  buildParametricSurface(builder, {
-    invert: !invert,
-    position: (u, v) => ({
-      x: ox + width * 0.5,
-      y: oy + (v - 0.5) * height, // v → Y
-      z: oz + (u - 0.5) * depth, // u → Z
-    }),
-    normal: () => ({ x: 1, y: 0, z: 0 }),
-    uSegments: depthSegments,
-    vSegments: heightSegments,
-  })
-}
-
-/**
- * Builds a cube lines shape into the {@link GeometryBuilder}
- *
- * @public
- */
-export function buildBoxLines(builder: GeometryBuilder, options?: BuildBoxOptions) {
-  const size = options?.size ?? BuildBoxDefaults.size
-  const segments = options?.segments ?? BuildBoxDefaults.segments
-
-  const width = options?.width ?? size
-  const height = options?.height ?? size
-  const depth = options?.depth ?? size
-
-  const widthSegments = options?.widthSegments ?? segments
-  const heightSegments = options?.heightSegments ?? segments
-  const depthSegments = options?.depthSegments ?? segments
-
-  const ox = options?.offset?.x ?? 0
-  const oy = options?.offset?.y ?? 0
-  const oz = options?.offset?.z ?? 0
-
-  const invert = !!options?.invert
-
-  // top plane
-  buildParametricLines(builder, {
-    invert,
-    position: (u, v) => ({
-      x: ox + (u - 0.5) * width,
-      y: oy + height * 0.5,
-      z: oz + (v - 0.5) * depth,
-    }),
-    normal: () => ({ x: 0, y: 1, z: 0 }),
-    uSegments: widthSegments,
-    vSegments: depthSegments,
-  })
-
-  // bottom plane
-  buildParametricLines(builder, {
-    invert: !invert,
-    position: (u, v) => ({
-      x: ox + (u - 0.5) * width,
-      y: oy + -height * 0.5,
-      z: oz + (v - 0.5) * depth,
-    }),
-    normal: () => ({ x: 0, y: -1, z: 0 }),
-    uSegments: widthSegments,
-    vSegments: depthSegments,
-  })
-
-  // front
-  buildParametricLines(builder, {
-    invert,
-    position: (u, v) => ({
-      x: ox + (u - 0.5) * width,
-      y: oy + (v - 0.5) * height,
-      z: oz + depth * 0.5,
-    }),
-    normal: () => ({ x: 0, y: 0, z: 1 }),
-    uSegments: widthSegments,
-    vSegments: heightSegments,
-  })
-
-  // back
-  buildParametricLines(builder, {
-    invert: !invert,
-    position: (u, v) => ({
-      x: ox + (u - 0.5) * width,
-      y: oy + (v - 0.5) * height,
-      z: oz + -depth * 0.5,
-    }),
-    normal: () => ({ x: 0, y: 0, z: -1 }),
-    uSegments: widthSegments,
-    vSegments: heightSegments,
-  })
-
-  // left
-  buildParametricLines(builder, {
-    invert,
-    position: (u, v) => ({
-      x: ox + -width * 0.5,
-      y: oy + (v - 0.5) * height, // v → Y
-      z: oz + (u - 0.5) * depth, // u → Z
-    }),
-    normal: () => ({ x: -1, y: 0, z: 0 }),
-    uSegments: depthSegments,
-    vSegments: heightSegments,
-  })
-
-  // right
-  buildParametricLines(builder, {
-    invert: !invert,
+  surface(builder, {
+    invert: invert,
     position: (u, v) => ({
       x: ox + width * 0.5,
       y: oy + (v - 0.5) * height, // v → Y

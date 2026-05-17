@@ -75,6 +75,8 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
           byteOffset: 0,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
         // It is then followed byt a `vColor` attribute which is also a `vec3` with 3 elements
         // but has an offset of 12 bytes from the beginning of the vertex.
@@ -82,6 +84,8 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
           byteOffset: 12,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
       },
       // The `data` is a sequence of floats that matches the `layout` specification.

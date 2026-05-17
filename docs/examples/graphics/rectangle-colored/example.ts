@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, WebglDevice } from '@gglib/graphics'
+import { Color, createDevice, Device } from '@gglib/graphics'
 
 const glslVS = /*glsl*/ `
   precision highp float;
@@ -68,11 +68,15 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: '
           byteOffset: 0,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
         vColor: {
           byteOffset: 12,
           elementCount: 3,
           elementType: 'float32',
+          normalized: false,
+          packed: false,
         },
       },
       // However, the data gets an additional vertex.
