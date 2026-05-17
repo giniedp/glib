@@ -123,6 +123,13 @@ export class Effect implements Disposable {
    */
   public instanceBufferKey: string | null
 
+  /**
+   * Indicates whether this effect requires an instance buffer to be set for rendering. This is true if `instanceBufferKey` is set.
+   */
+  public get needsInstanceBuffer() {
+    return !!this.instanceBufferKey
+  }
+
   public get isReady() {
     return this.program.module.isReady
   }

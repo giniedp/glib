@@ -1,7 +1,6 @@
-import { PrimitiveType } from '../../enums'
 import type { Device } from '../../Device'
 import { Geometry } from '../Geometry'
-import { beginGeometry, type GeometryBuilder } from '../GeometryBuilder'
+import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 
 export const BuildTerrainPatchDefaults: BuildTerranPatchOptions = {
   size: 32,
@@ -49,21 +48,15 @@ export interface BuildTerranPatchOptions {
    * Gets transformed position
    */
   getPosition?: (x: number, y: number, z: number) => readonly [number, number, number]
-  /**
-   *
-   */
-  materialId?: number
-  /**
-   *
-   */
-  primitiveType?: PrimitiveType
 }
 
-export function terrainPatchGeometry(device: Device, options?: BuildTerranPatchOptions): Geometry {
-  return beginGeometry().append(buildTerrainPatch, options).calculateBoundings().endGeometry(device, {
+export function terrainPatchGeometry(
+  device: Device,
+  options?: BuildTerranPatchOptions & BuildGeometryOptions,
+): Geometry {
+  return buildGeometry(device, buildTerrainPatch, {
     name: 'terrain patch',
-    materialId: options?.materialId,
-    primitiveType: options?.primitiveType,
+    ...(options || {}),
   })
 }
 

@@ -1,6 +1,6 @@
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 export const BuildMobiusStripDefaults = {
@@ -20,8 +20,9 @@ export interface BuildMobiusStripOptions {
 }
 
 export function mobiusStripGeometry(device: Device, options?: BuildMobiusStripOptions): Geometry {
-  return beginGeometry().append(buildMobiusStrip, options).endGeometry(device, {
+  return buildGeometry(device, buildMobiusStrip, {
     name: 'mobius strip',
+    ...(options || {}),
   })
 }
 

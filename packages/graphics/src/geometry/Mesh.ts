@@ -8,92 +8,130 @@ import { Geometry, GeometryOptions } from './Geometry'
 import { MeshInstances, MeshInstancesOptions } from './MeshInstances'
 
 /**
+ * Constructor options for {@link Mesh}
+ *
  * @public
  */
 export interface MeshOptions {
   /**
-   * The identifying name of the mesh
+   * A user defined name for this mesh
    */
   name?: string
 
   /**
-   * Custom meta data
+   * Arbitrary user defined metadata attached to this mesh
    */
   meta?: Record<string, any>
 
   /**
-   * The axis aligned bounding box containing all mesh parts
+   * The axis aligned bounding box containing the mesh in local space.
+   * If omitted, it is computed from the bounding boxes of all geometries.
    */
   boundingBox?: number[] | BoundingBox
 
   /**
-   * The bounding sphere containing all mesh parts
+   * The axis aligned bounding box containing the mesh in local space.
+   * If omitted, it is computed from the bounding boxes of all geometries.
    */
   boundingSphere?: number[] | BoundingSphere
 
   /**
-   * Collection of materials that are used by the mesh
+   * The materials available to this mesh, referenced by index from each {@link MeshPart}.
+   * Accepts already constructed {@link Material} instances or material option objects.
    */
   materials?: Array<Material | MaterialEffectOptions | MaterialOptions>
 
   /**
-   * Collection of mesh parts
+   * The geometries available to this mesh, referenced by index from each {@link MeshPart}.
+   * Accepts already constructed {@link Geometry} instances or geometry option objects.
    */
-  parts?: Array<Geometry | GeometryOptions>
+  geometries?: Array<Geometry | GeometryOptions>
+
+  /**
+   * The parts that make up this mesh, each pairing a geometry with a material by index.
+   * See {@link MeshPart}.
+   */
+  parts?: Array<MeshPart>
+
+  /**
+   * An alternative to providing `geometries` and `parts` separately.
+   * Each entry carries geometry data and a material index, which the mesh assembles
+   * into `geometries` and `parts` internally.
+   * Cannot be used together with `geometries` or `parts`.
+   */
+  partImports?: Array<MeshPartImport>
 }
 
 /**
+ * A renderable mesh consisting of geometries, materials, and parts that bind them together.
+ *
+ * @remarks
+ * A mesh owns a collection of {@link Geometry} objects and {@link Material} objects,
+ * which are combined into {@link MeshPart} entries that pair them by index.
+ * This allows multiple parts to share geometries or materials within the same mesh.
+ *
+ * For simple use cases, {@link Mesh.draw} renders all parts directly using the device's
+ * current render pass. For more advanced rendering, {@link Mesh.render} accepts an
+ * explicit {@link RenderEncoder}, and parts can be resolved into {@link ResolvedMeshPart}
+ * objects for use in external render pipelines.
+ *
  * @public
  */
 export class Mesh {
   /**
-   * Autmatically generated unique identifier
+   * Automatically generated unique identifier
    */
   public readonly uid: string
 
   /**
-   * The graphics device
+   * The graphics device that owns this mesh
    */
   public readonly device: Device
 
   /**
-   * The name of this mesh
+   * A user defined name for this mesh
    */
   public name: string | null
 
   /**
-   *
+   * Arbitrary user defined metadata attached to this mesh
    */
-  public meta?: Record<string, any>
+  public meta: Record<string, any>
 
   /**
-   * The models local bounding box
+   * The axis aligned bounding box containing the mesh in local space
    */
   public boundingBox: BoundingBox
 
   /**
-   * The models local bounign sphere
+   * The bounding sphere containing the mesh in local space
    */
   public boundingSphere: BoundingSphere
 
   /**
-   * Collection of materials that are used by the model meshes
+   * The materials available to this mesh, referenced by index from each {@link MeshPart}
    */
   public materials: Material[]
 
   /**
-   * Collection of meshes
+   * The geometries available to this mesh, referenced by index from each {@link MeshPart}
    */
-  public parts: Geometry[]
+  public geometries: Geometry[]
 
   /**
-   * The index of the parent bone for this mesh
+   * The parts that make up this mesh, each pairing a geometry with a material by index
+   */
+  public parts: MeshPart[]
+
+  /**
+   * The index of the parent bone for this mesh, if used in a skinned model
    */
   public boneId: number | null = null
 
   /**
-   * Optional instance data for this mesh. If set, the mesh will be rendered with instancing and the instance
-   * data will be passed to the material as a vertex buffer with the same layout as specified in the material input.
+   * Optional instance data for instanced rendering.
+   * If set, all parts of this mesh will be rendered with instancing.
+   * See {@link Mesh.enableInstancing}.
    */
   public instances: MeshInstances | null = null
 
@@ -102,80 +140,112 @@ export class Mesh {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.parts = convertGeometries(device, options.parts)
+
+    const hasExplicit = options.geometries != null || options.parts != null
+    const hasImports = options.partImports != null
+
+    if (hasExplicit && hasImports) {
+      throw new Error(`MeshOptions: 'partImports' cannot be combined with 'geometries' or 'parts'`)
+    }
+
+    if (hasImports) {
+      this.geometries = options.partImports.map((it) => {
+        return convertGeometry(device, it.geometry)
+      })
+      this.parts = options.partImports.map((it, index) => {
+        return {
+          geometryIndex: index,
+          materialIndex: it.materialIndex,
+        }
+      })
+    } else {
+      this.geometries = convertGeometries(device, options.geometries)
+      this.parts = options.parts.map((part) => ({ ...part }))
+    }
+
     this.materials = createMaterials(device, options.materials)
+
     if (options.boundingBox) {
       this.boundingBox = BoundingBox.convert(options.boundingBox)
     }
+
     if (options.boundingSphere) {
       this.boundingSphere = BoundingSphere.convert(options.boundingSphere)
     }
+
     if (!this.boundingBox) {
-      this.boundingBox = BoundingBox.mergeBoxes(...this.parts.map((it) => it.boundingBox))
+      this.boundingBox = BoundingBox.mergeBoxes(...this.geometries.map((it) => it.boundingBox))
     }
+
     if (!this.boundingSphere) {
-      this.boundingSphere = BoundingSphere.mergeSpheres(...this.parts.map((it) => it.boundingSphere))
+      this.boundingSphere = BoundingSphere.mergeSpheres(...this.geometries.map((it) => it.boundingSphere))
     }
   }
 
   /**
-   * Calls render with default render pass of the device
+   * Renders all parts using the device's current render pass.
+   * Equivalent to calling {@link Mesh.render} with {@link Device.renderPass}.
    */
-  public draw() {
+  public draw(): void {
     this.render(this.device.renderPass)
   }
 
   /**
-   * Iterates over all meshes and renders each with its assigned material
+   * Renders all parts using the given {@link RenderEncoder}.
    *
    * @remarks
-   * If a mesh points to a missing material it is silently ignored.
+   * Iterates over all {@link MeshPart} entries, resolves each to its geometry and material,
+   * and issues a draw call. Parts referencing missing geometries, materials, or materials
+   * without an effect are silently skipped with a console warning.
    */
-  public render(pass: RenderEncoder): this {
+  public render(pass: RenderEncoder): void {
     const parts = this.parts
-    let part: Geometry
+    let geometry: Geometry
     let material: Material
-    for (let i = 0; i < parts.length; i++) {
-      part = parts[i]
-      material = this.getMaterial(part.materialId || 0)
+
+    for (const part of parts) {
+      geometry = this.geometries[part.geometryIndex]
+      material = this.materials[part.materialIndex]
+
+      if (!geometry) {
+        console.warn(`Mesh part references missing geometry with index ${part.geometryIndex}`)
+        continue
+      }
+
       if (!material) {
-        console.warn(`Skipped Mesh rendering because material with id ${part.materialId} is missing`)
+        console.warn(`Mesh part references missing material with index ${part.materialIndex}`)
         continue
       }
-      const effect = material.effect
-      if (!effect) {
-        console.warn(`Skipped Mesh rendering because material '${material.name}' has no effect`)
+
+      if (!material.effect) {
+        console.warn(`Mesh part references material '${material.name}' that has no effect`)
         continue
       }
-      effect.draw(pass, part, material.inputs)
+
+      material.effect.draw(pass, geometry, material.inputs)
     }
-    return this
   }
 
   /**
-   * Gets a material of this mesh by index or name
-   *
-   * @param indexOrName - The index or name of the material
+   * Releases all geometries and materials owned by this mesh.
    */
-  public getMaterial(indexOrName: number | string): Material {
-    return this.materials[indexOrName] || this.materials.find((it) => it.name === indexOrName)
-  }
-
-  public dispose() {
-    for (const part of this.parts) {
-      part.dispose()
+  public dispose(): void {
+    for (const geometry of this.geometries) {
+      geometry.dispose()
     }
     for (const material of this.materials) {
       material.dispose()
     }
-    this.parts = []
+    this.geometries = []
     this.materials = []
   }
 
   /**
-   * Adds an `instances` property that enables instanced rendering for this mesh
+   * Enables instanced rendering for this mesh.
    *
-   * @returns this instance but typed as `InstancedMesh` with an `instances` property
+   * @remarks
+   * Attaches instance data to the mesh and returns it typed as {@link InstancedMesh},
+   * which guarantees the {@link Mesh.instances} property is non-null.
    */
   public enableInstancing<T extends BufferLayout>(options: MeshInstancesOptions<T>): InstancedMesh<T> {
     const result = this as unknown as InstancedMesh<T>
@@ -187,27 +257,80 @@ export class Mesh {
 export type InstancedMesh<T extends BufferLayout> = Mesh & { instances: MeshInstances<T> }
 
 function convertGeometries(device: Device, parts: Array<Geometry | GeometryOptions>): Geometry[] {
-  const result: Geometry[] = []
   if (!parts || !parts.length) {
-    return result
+    return []
   }
-  for (const mesh of parts) {
-    if (mesh instanceof Geometry) {
-      result.push(mesh)
-    } else {
-      result.push(new Geometry(device, mesh))
-    }
-  }
-  return result
+  return parts.map((part) => convertGeometry(device, part))
 }
 
+function convertGeometry(device: Device, part: Geometry | GeometryOptions): Geometry {
+  if (part instanceof Geometry) {
+    return part
+  } else {
+    return new Geometry(device, part)
+  }
+}
+
+/**
+ * Pairs a geometry with a material within a {@link Mesh}.
+ *
+ * Both indices refer to the respective arrays on the owning {@link Mesh}.
+ *
+ * @public
+ */
 export type MeshPart = {
-  geometryId: number
-  materialId: number
+  /**
+   * Index into {@link Mesh.geometries}
+   */
+  geometryIndex: number
+
+  /**
+   * Index into {@link Mesh.materials}
+   */
+  materialIndex: number
 }
 
+/**
+ * A resolved {@link MeshPart} where indices have been replaced with the actual objects.
+ *
+ * Useful when the geometry and material need to be accessed together without
+ * the context of the owning {@link Mesh}.
+ *
+ * @public
+ */
 export type ResolvedMeshPart = {
+  /**
+   * The geometry to render
+   */
   geometry: Geometry
+
+  /**
+   * The material to render with
+   */
   material: Material
+
+  /**
+   * Optional instance data. If set, the part will be rendered with instancing.
+   */
   instances?: MeshInstances
+}
+
+/**
+ * Transient type used when importing geometry through a loader.
+ *
+ * Carries cpu-side geometry data and a material index together across the loader boundary,
+ * before being assembled into a {@link Mesh} with proper {@link MeshPart} entries.
+ *
+ * @public
+ */
+export type MeshPartImport = {
+  /**
+   * The geometry data or an already constructed {@link Geometry}
+   */
+  geometry: GeometryOptions | Geometry
+
+  /**
+   * Index into the target {@link Mesh.materials} array
+   */
+  materialIndex: number
 }

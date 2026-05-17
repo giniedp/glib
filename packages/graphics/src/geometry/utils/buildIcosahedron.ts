@@ -1,7 +1,7 @@
 import { Vec2, Vec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
 
 export const BuildPolyhedronDefaults = {
   radius: 0.5,
@@ -14,8 +14,9 @@ export interface BuildPlyhedronOptions {
 }
 
 export function tetrahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
-  return beginGeometry().append(buildTetrahedron, options).endGeometry(device, {
+  return buildGeometry(device, buildTetrahedron, {
     name: 'tetrahedron',
+    ...(options || {}),
   })
 }
 
@@ -59,8 +60,9 @@ export function buildTetrahedron(builder: GeometryBuilder, options?: BuildPlyhed
 }
 
 export function octahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
-  return beginGeometry().append(buildOctahedron, options).endGeometry(device, {
+  return buildGeometry(device, buildOctahedron, {
     name: 'octahedron',
+    ...(options || {}),
   })
 }
 
@@ -104,8 +106,9 @@ export function buildOctahedron(builder: GeometryBuilder, options?: BuildPlyhedr
 }
 
 export function icosahedronGeometry(device: Device, options?: BuildPlyhedronOptions): Geometry {
-  return beginGeometry().append(buildIcosahedron, options).endGeometry(device, {
+  return buildGeometry(device, buildIcosahedron, {
     name: 'icosahedron',
+    ...(options || {}),
   })
 }
 

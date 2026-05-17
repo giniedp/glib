@@ -69,15 +69,17 @@ export interface BuildDiscOptions {
 }
 
 export function discGeometry(device: Device, options?: BuildDiscOptions & BuildGeometryOptions): Geometry {
-  return buildGeometry(device, buildDisc, {
+  const fn = options?.primitiveType === 'LineList' ? buildDiscLines : buildDisc
+  return buildGeometry(device, fn, {
     name: 'disc',
     ...(options || {}),
   })
 }
-export function discGeometryLines(device: Device, options?: BuildDiscOptions): Geometry {
+export function discGeometryLines(device: Device, options?: BuildDiscOptions & BuildGeometryOptions): Geometry {
   return buildGeometry(device, buildDiscLines, {
     name: 'disc',
     ...(options || {}),
+    primitiveType: 'LineList',
   })
 }
 

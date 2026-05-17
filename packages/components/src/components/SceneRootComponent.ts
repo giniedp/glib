@@ -7,12 +7,12 @@ import {
   InitializableComponent,
   Type,
 } from '@gglib/ecs'
-import { BoundingFrustum, Intersection } from '@gglib/math'
+import { Mesh } from '@gglib/graphics'
+import { BoundingFrustum, Intersection, Mat4 } from '@gglib/math'
 import {
   CameraData,
   LayerMask,
   MeshPartRenderItem,
-  MeshRenderItem,
   PooledList,
   RenderItem,
   RenderItemFlags,
@@ -23,7 +23,6 @@ import {
 import { getSpatialEntries, SpatialNode } from '../spatial'
 import { SpatialSystem } from '../systems/SpatialSystem'
 import { MeshComponent } from './MeshComponent'
-import { MeshPartComponent } from './MeshPartComponent'
 import { ModelComponent } from './ModelComponent'
 import { SpatialComponent } from './SpatialComponent'
 import { SpatialRootComponent } from './SpatialRootComponent'
@@ -59,16 +58,6 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   protected qSprites: GameQuery
 
   protected world: GameWorld
-  protected meshes = new PooledList<MeshRenderItem>(() => {
-    const item: MeshRenderItem = {
-      type: RenderItemType.Mesh,
-      data: null,
-      flags: RenderItemFlags.Opaque,
-      layer: LayerMask.All,
-      transform: null,
-    }
-    return item
-  })
 
   protected meshParts = new PooledList<MeshPartRenderItem>(() => {
     const item: MeshPartRenderItem = {
@@ -106,7 +95,6 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
 
     this.qSpatial = this.world.query({ required: [this.Tag, SpatialRootComponent] })
     this.qMeshes = this.world.query({ required: [this.Tag, MeshComponent], rejected: [...rejected] })
-    this.qMeshParts = this.world.query({ required: [this.Tag, MeshPartComponent], rejected: [...rejected] })
     this.qModels = this.world.query({ required: [this.Tag, ModelComponent], rejected: [...rejected] })
     this.qSprites = this.world.query({ required: [this.Tag, SpriteComponent], rejected: [...rejected] })
 
@@ -125,14 +113,12 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
     this.frustum.updateFromViewProjection(camera.view, camera.projection)
 
     // clear pools
-    this.meshes.clear()
     this.sprites.clear()
     this.meshParts.clear()
 
     // traverse all entities that are not baked into the spatial index
     this.qModels.forEach(this.collectModel)
     this.qMeshes.forEach(this.collectMesh)
-    this.qMeshParts.forEach(this.collectMeshPart)
     this.qSprites.forEach(this.collectSprite)
 
     // traverse spatial index for entities
@@ -141,7 +127,6 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
 
   public stats(result?: SceneStats): SceneStats {
     result ||= {} as SceneStats
-    result.meshes = this.meshes.size
     result.meshParts = this.meshParts.size
     result.sprites = this.sprites.size
     result.visible = this.collectResult?.length ?? 0
@@ -157,7 +142,6 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
     for (const item of getSpatialEntries(node).values) {
       if (item.entity.isActive) {
         this.collectMesh(item.entity)
-        this.collectMeshPart(item.entity)
         this.collectModel(item.entity)
         this.collectSprite(item.entity)
       }
@@ -165,46 +149,12 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   }
 
   private collectMesh = (entity: GameEntity) => {
-    const mesh = entity.component(MeshComponent, GetComponent.Optional)?.mesh
+    const mesh: Mesh = entity.component(MeshComponent, GetComponent.Optional)?.mesh
     if (!mesh) {
       return
     }
-    for (const part of mesh.parts) {
-      const item = this.meshParts.next()
-      const material = mesh.getMaterial(part.materialId)
-      item.data.geometry = part
-      item.data.material = material
-      item.data.instances = mesh.instances
-      item.transform = entity.getTransform().world
-      item.layer = LayerMask.All
-      if (material.effect.blendState?.enable) {
-        item.flags = RenderItemFlags.Transparent
-      } else {
-        item.flags = RenderItemFlags.Opaque
-      }
-      this.collectResult.push(item)
-    }
-  }
 
-  private collectMeshPart = (entity: GameEntity) => {
-    const component = entity.component(MeshPartComponent, GetComponent.Optional)
-    const geometry = component?.mesh
-    if (!geometry) {
-      return
-    }
-    const item = this.meshParts.next()
-    const material = component.material
-    item.data.geometry = geometry
-    item.data.material = material
-    item.data.instances = null
-    item.transform = entity.getTransform().world
-    item.layer = LayerMask.All
-    if (material.effect.blendState?.enable) {
-      item.flags = RenderItemFlags.Transparent
-    } else {
-      item.flags = RenderItemFlags.Opaque
-    }
-    this.collectResult.push(item)
+    this.pushMesh(mesh, entity.getTransform().world)
   }
 
   private collectModel = (entity: GameEntity) => {
@@ -215,21 +165,27 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
 
     const transform = entity.getTransform().world
     for (const mesh of model.meshes) {
-      for (const part of mesh.parts) {
-        const item = this.meshParts.next()
-        const material = mesh.getMaterial(part.materialId)
-        item.data.geometry = part
-        item.data.material = material
-        item.data.instances = mesh.instances
-        item.transform = transform
-        item.layer = LayerMask.All
-        if (material.effect.blendState?.enable) {
-          item.flags = RenderItemFlags.Transparent
-        } else {
-          item.flags = RenderItemFlags.Opaque
-        }
-        this.collectResult.push(item)
+      this.pushMesh(mesh, transform)
+    }
+  }
+
+  private pushMesh(mesh: Mesh, transform: Mat4) {
+    for (const part of mesh.parts) {
+      const item = this.meshParts.next()
+
+      item.data.geometry = mesh.geometries[part.geometryIndex]
+      item.data.material = mesh.materials[part.materialIndex]
+      item.data.instances = mesh.instances
+      item.transform = transform
+      item.layer = LayerMask.All
+
+      if (item.data.material.effect.blendState?.enable) {
+        item.flags = RenderItemFlags.Transparent
+      } else {
+        item.flags = RenderItemFlags.Opaque
       }
+
+      this.collectResult.push(item)
     }
   }
 

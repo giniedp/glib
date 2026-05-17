@@ -7,11 +7,11 @@ import {
   dataTypeFromWebGL,
   dataTypeToArrayType,
   dataTypeToSize,
-  GeometryOptions,
   GeometryUtil,
   magFilterFromWebGL,
   MaterialOptions,
   MeshOptions,
+  MeshPartImport,
   minFilterFromWebGL,
   mipFilterFromWebGL,
   primitiveTypeFromWebGL,
@@ -406,13 +406,16 @@ export class GltfAssetContainer extends AssetContainer {
 
     const node = this.graph.node<MeshOptions>(key, {
       meta: {},
+      geometries: [],
+      materials: [],
+      parts: [],
     })
 
-    const partMtlKeys = gltf.primitives.map((part) => {
+    const partMtlRefs = gltf.primitives.map((part) => {
       return this.graph.dependency(node, this.materialNode(part.material))
     })
 
-    const partKeys = gltf.primitives.map((part, partIndex): ResourceRef<GeometryOptions> => {
+    const partRefs = gltf.primitives.map((part, partIndex): ResourceRef<MeshPartImport> => {
       // index buffer
 
       let iAccKey: ResourceRef<GLTFAccessorBase> = null
@@ -423,7 +426,7 @@ export class GltfAssetContainer extends AssetContainer {
       // vertex buffers
 
       const partKey = `${key}:part:${partIndex}`
-      const partNode = this.graph.node<GeometryOptions>(partKey, null)
+      const partNode = this.graph.node<MeshPartImport>(partKey, null)
       const partRef = this.graph.dependency(node, partNode)
 
       const vAccKeys: Record<string, ResourceRef<GLTFAccessorBase>> = {}
@@ -449,13 +452,13 @@ export class GltfAssetContainer extends AssetContainer {
     node.buildAsync = async (ctx, n, get) => {
       const materials: MaterialOptions[] = []
 
-      const parts = partKeys.map((partKey, index) => {
-        const partMtl = get(partMtlKeys[index])
+      const parts = partRefs.map((partKey, index) => {
+        const partMtl = get(partMtlRefs[index])
         const part = get(partKey)
         if (!materials.includes(partMtl)) {
           materials.push(partMtl)
         }
-        part.materialId = materials.indexOf(partMtl)
+        part.materialIndex = materials.indexOf(partMtl)
         return part
       })
 
@@ -463,9 +466,9 @@ export class GltfAssetContainer extends AssetContainer {
         name: gltf.name,
         meta: { ...(gltf.extras || {}) },
         materials: materials,
-        parts: parts,
-        boundingBox: BoundingBox.mergeBoxes(...parts.map((it) => it.boundingBox)),
-        boundingSphere: BoundingSphere.mergeSpheres(...parts.map((it) => it.boundingSphere)),
+        partImports: parts,
+        boundingBox: BoundingBox.mergeBoxes(...parts.map((it) => it.geometry.boundingBox)),
+        boundingSphere: BoundingSphere.mergeSpheres(...parts.map((it) => it.geometry.boundingSphere)),
       }
     }
 
@@ -714,7 +717,7 @@ function createMeshPart(
   doc: Document,
   part: MeshPrimitive,
   accessors: Record<string, GLTFAccessorBase>,
-): GeometryOptions {
+): MeshPartImport {
   let min = [0, 0, 0]
   let max = [0, 0, 0]
   Object.keys(part.attributes).forEach((semantic) => {
@@ -746,7 +749,7 @@ function createMeshPart(
   }
 
   if (isTriangleList && (!hasNormals || !hasTangents || !hasBitangents)) {
-    const util = new GeometryUtil(iBufferOptions, vBufferOptions, primitiveType)
+    const util = new GeometryUtil(iBufferOptions, vBufferOptions)
     if (!hasNormals) {
       util.calculateNormals({
         create: true,
@@ -756,12 +759,14 @@ function createMeshPart(
   }
 
   return {
-    boundingBox: [...min, ...max],
-    boundingSphere: BoundingSphere.createFromBox(BoundingBox.create(...min, ...max)).toArray(),
-    materialId: part.material,
-    primitiveType: primitiveType,
-    indexBuffer: iBufferOptions,
-    vertexBuffer: vBufferOptions,
+    materialIndex: part.material,
+    geometry: {
+      boundingBox: [...min, ...max],
+      boundingSphere: BoundingSphere.createFromBox(BoundingBox.create(...min, ...max)).toArray(),
+      primitiveType: primitiveType,
+      indexBuffer: iBufferOptions,
+      vertexBuffer: vBufferOptions,
+    },
   }
 }
 

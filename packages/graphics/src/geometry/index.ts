@@ -1,5 +1,4 @@
 export * from './Geometry'
-export * from './GeometryBatch'
 export * from './GeometryBuilder'
 export * from './GeometryBuilderChannel'
 export * from './GeometryUtil'

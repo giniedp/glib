@@ -155,7 +155,7 @@ export class PixelsLoader implements AssetLoader {
       },
     }
 
-    const geometry = builder.calculateNormals().calculateBoundings().endGeometry({})!
+    const geometry = builder.calculateNormals().calculateBounds().endGeometry({})!
 
     return {
       source: url,

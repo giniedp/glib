@@ -1,5 +1,5 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, ResourceGraph } from '@gglib/content'
-import { GeometryBuilder, GeometryOptions, MaterialOptions, TextureOptions } from '@gglib/graphics'
+import { GeometryBuilder, MaterialOptions, MeshPartImport, TextureOptions } from '@gglib/graphics'
 import { Quat, Vec4 } from '@gglib/math'
 import { ModelOptions } from '@gglib/model'
 import { Document, parse } from './format'
@@ -50,12 +50,12 @@ export class Container extends AssetContainer {
     return this.graph.load(node, context)
   }
 
+  // TODO: implement material loader
   public modelNode() {
-    const { parts } = buildMeshes(this.document)
     const node = this.graph.node<ModelOptions>('model', {
       meshes: [
         {
-          parts,
+          partImports: buildMeshParts(this.document),
         },
       ],
     })
@@ -63,13 +63,13 @@ export class Container extends AssetContainer {
   }
 }
 
-function buildMeshes(data: Document) {
+function buildMeshParts(data: Document): MeshPartImport[] {
   const builder = new GeometryBuilder({
     layout: [['position', 'normal', 'texture']],
   })
 
   const mtlIds: string[] = []
-  const parts = data.meshes.map((mesh): GeometryOptions => {
+  return data.meshes.map((mesh): MeshPartImport => {
     mesh.tri.forEach((tri, index) => {
       for (const i of [tri.v1, tri.v2, tri.v3]) {
         const vert = mesh.vert[i]
@@ -99,10 +99,11 @@ function buildMeshes(data: Document) {
     if (mtlIds.indexOf(mesh.shader) === -1) {
       mtlIds.push(mesh.shader)
     }
-    return builder.endGeometry({
-      name: mesh.name,
-      materialId: mtlIds.indexOf(mesh.shader),
-    })
+    return {
+      materialIndex: mtlIds.indexOf(mesh.shader),
+      geometry: builder.toGeometryOptions({
+        name: mesh.name,
+      }),
+    }
   })
-  return { parts, mtlIds }
 }

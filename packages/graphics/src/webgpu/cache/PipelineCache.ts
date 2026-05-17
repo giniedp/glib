@@ -132,7 +132,7 @@ function getDepthStencilState(
     format: surfaceFormatToWebGPU(format),
   }
   if (state.enabled) {
-    result.depthWriteEnabled = state.depthWriteEnabled
+    result.depthWriteEnabled = !!state.depthWriteEnabled
     result.depthCompare = compareFunctionToWebGPU(state.depthFunction)
   }
   if (stencil.enable) {

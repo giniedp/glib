@@ -1,6 +1,6 @@
 import { Device } from '../../Device'
 import { Geometry } from '../Geometry'
-import { beginGeometry, type GeometryBuilder } from '../GeometryBuilder'
+import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricSurface } from './buildParametricSurface'
 
 export const BuildTorusDefaults = {
@@ -34,9 +34,10 @@ export interface BuildTorusOptions {
    */
   tesselation?: number
 }
-export function torusGeometry(device: Device, options?: BuildTorusOptions): Geometry {
-  return beginGeometry().append(buildTorus, options).calculateNormalsAndTangents().endGeometry(device, {
+export function torusGeometry(device: Device, options?: BuildTorusOptions & BuildGeometryOptions): Geometry {
+  return buildGeometry(device, buildTorus, {
     name: 'torus',
+    ...(options || {}),
   })
 }
 

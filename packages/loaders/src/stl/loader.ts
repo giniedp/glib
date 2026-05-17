@@ -1,5 +1,5 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, ResourceGraph } from '@gglib/content'
-import { beginGeometry, MaterialOptions, TextureOptions } from '@gglib/graphics'
+import { GeometryBuilder, MaterialOptions, MeshPartImport, TextureOptions } from '@gglib/graphics'
 import { ModelOptions } from '@gglib/model'
 import { STL } from './format'
 
@@ -55,19 +55,19 @@ export class Container extends AssetContainer {
     }
 
     const data = this.document
-    const builder = beginGeometry({
+    const builder = new GeometryBuilder({
       layout: [['position', 'normal', 'texture']],
     })
+    const parts: MeshPartImport[] = []
     for (const solid of data.solids) {
       for (const f of solid.facets) {
         if (builder.vertexCount > 65536 - 2) {
           // prettier-ignore
           builder
             .calculateTangents()
-            .calculateBoundings()
-            .closeGeometry({
+            .calculateBounds()
+            .toGeometryOptions({
               name: solid.name,
-              materialId: 0,
             })
         }
 
@@ -84,27 +84,28 @@ export class Container extends AssetContainer {
       }
 
       // prettier-ignore
-      builder
-        .calculateTangents()
-        .calculateBoundings()
-        .closeGeometry({
+
+      parts.push({
+        materialIndex: 0,
+        geometry: builder.calculateTangents().calculateBounds().toGeometryOptions({
           name: solid.name,
-          materialId: 0,
-        })
+        }),
+      })
     }
 
-    builder.closeMesh({
-      materials: [
+    return this.graph.node<ModelOptions>(key, {
+      meshes: [
         {
-          properties: {
-            BaseColor: [1, 1, 1, 1],
-          },
+          partImports: parts,
+          materials: [
+            {
+              properties: {
+                BaseColor: [1, 1, 1, 1],
+              },
+            },
+          ],
         },
       ],
-    })
-
-    return this.graph.node<ModelOptions>(key, {
-      meshes: builder.meshes,
     })
   }
 }

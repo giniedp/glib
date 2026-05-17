@@ -1,6 +1,6 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 
-import { arrayTypeToDataType, DataType, FrontFace, PrimitiveType } from '../enums'
+import { arrayTypeToDataType, DataType, FrontFace } from '../enums'
 import { BufferOptions, isPlainBufferData, PlainBufferData } from '../resources'
 import { vertexAttribute, VertexAttribute } from '../VertexLayout'
 import { calculateNormals } from './utils/calculateNormals'
@@ -22,12 +22,7 @@ export class GeometryUtil {
   public constructor(
     public readonly indexBuffer: BufferOptions,
     public readonly vertexBuffer: Array<BufferOptions>,
-    public readonly primitiveType: PrimitiveType,
   ) {
-    if (primitiveType !== 'TriangleList') {
-      throw new Error(`primitive type is not supporetd: '${primitiveType}'`)
-    }
-
     for (const buffer of vertexBuffer) {
       for (const semantic in buffer.vertexLayout) {
         this.channelNames.push(semantic)
@@ -191,7 +186,7 @@ export class GeometryUtil {
     return this
   }
 
-  public calculateBoundings() {
+  public calculateBounds() {
     const box = this.boundingBox
     const sphere = this.boundingSphere
 

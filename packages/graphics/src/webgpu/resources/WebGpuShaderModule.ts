@@ -74,9 +74,6 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     if (!this.source) {
       throw new Error('shader code is required')
     }
-    if (!options.name) {
-      debugger
-    }
     this.gpuObject = device.gpu.createShaderModule({
       label: options.name,
       code: options.code,

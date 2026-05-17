@@ -1,7 +1,7 @@
 import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { buildGeometry, BuildGeometryOptions, buildLinesGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
 
 export const BuildSphereDefaults = {
@@ -79,16 +79,18 @@ export interface BuildSphereOptions {
 }
 
 export function sphereGeometry(device: Device, options?: BuildSphereOptions & BuildGeometryOptions): Geometry {
-  return buildGeometry(device, buildSphere, {
+  const fn = options?.primitiveType === 'LineList' ? buildSphereLines : buildSphere
+  return buildGeometry(device, fn, {
     name: 'sphere',
     ...(options || {}),
   })
 }
 
 export function sphereLinesGeometry(device: Device, options?: BuildSphereOptions & BuildGeometryOptions): Geometry {
-  return buildLinesGeometry(device, buildSphereLines, {
+  return buildGeometry(device, buildSphereLines, {
     name: 'sphere',
     ...(options || {}),
+    primitiveType: 'LineList',
   })
 }
 

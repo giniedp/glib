@@ -1,7 +1,7 @@
 import { Vec2, Vec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { beginGeometry, GeometryBuilder } from '../GeometryBuilder'
+import { buildGeometry, GeometryBuilder } from '../GeometryBuilder'
 
 export const BuildSuperEllipsoidDefaults = {
   diameter: 1,
@@ -20,8 +20,9 @@ export interface BuildSuperEllipsoidOptions {
 }
 
 export function superEllipsoidGeometry(device: Device, options?: BuildSuperEllipsoidOptions): Geometry {
-  return beginGeometry().append(buildSuperEllipsoid, options).endGeometry(device, {
+  return buildGeometry(device, buildSuperEllipsoid, {
     name: 'super ellipsoid',
+    ...(options || {}),
   })
 }
 

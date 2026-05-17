@@ -18,6 +18,11 @@ export interface GeometryOptions {
   name?: string
 
   /**
+   * Arbitrary user defined metadata attached to the geometry
+   */
+  meta?: Record<string, any>
+
+  /**
    * An axis aligned bounding box containing the geometry in local space
    */
   boundingBox?: number[] | BoundingBox
@@ -26,11 +31,6 @@ export interface GeometryOptions {
    * A bounding sphere containing the geometry in local space
    */
   boundingSphere?: number[] | BoundingSphere
-
-  /**
-   * The material identifier. Defaults to 0
-   */
-  materialId?: number | string
 
   /**
    * The mode of the geometry. e.g. TrinagleList, LineList etc.
@@ -98,6 +98,16 @@ export class Geometry implements Renderable, Disposable {
   public readonly device: Device
 
   /**
+   * A user defined name for the geometry
+   */
+  public name: string | null = null
+
+  /**
+   * Arbitrary user defined metadata attached to the geometry
+   */
+  public meta: Record<string, any> = {}
+
+  /**
    * The axis aligned bounding box containing the mesh in local space
    */
   public boundingBox: BoundingBox | null
@@ -106,14 +116,6 @@ export class Geometry implements Renderable, Disposable {
    * The bounding sphere containing the mesh in local space
    */
   public boundingSphere: BoundingSphere | null
-
-  /**
-   * The material id or name referencing the material in the models material collection
-   *
-   * @remarks
-   * usually used as index into the material list of the mesh that owns this geometry.
-   */
-  public materialId: number | string = 0
 
   /**
    * The vertex buffer primitive type
@@ -167,11 +169,10 @@ export class Geometry implements Renderable, Disposable {
 
   constructor(device: Device, options: GeometryOptions) {
     this.device = device
-    this.configure(options)
-  }
 
-  public configure(options: GeometryOptions) {
-    this.materialId = options.materialId ?? this.materialId
+    this.name = options.name
+    this.meta = options.meta || {}
+
     if (options.boundingBox) {
       this.boundingBox = BoundingBox.convert(options.boundingBox)
     }

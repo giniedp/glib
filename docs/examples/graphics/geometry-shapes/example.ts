@@ -1,12 +1,12 @@
 import {
   BasicMaterial,
-  BuildCubeOptions,
+  boxGeometry,
+  BuildBoxOptions,
   BuildCylinderOptions,
   BuildSphereOptions,
   BuildTorusOptions,
   Color,
   createDevice,
-  cubeGeometry,
   CullState,
   cylinderGeometry,
   DepthState,
@@ -57,10 +57,10 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   material.LightingEnabled = FALSE
   material.SpecularColor = Vec3.create(0.5, 0.5, 0.5)
 
-  material.setDirectionalLight(0, vec3(1, 1, 1), vec3(0, 0, -1))
-  material.setDirectionalLight(1, vec3(1, 0, 1), vec3(-1, 1, 0))
+  material.setDirectionalLight(0, vec3([1, 1, 1]), vec3([0, 0, -1]))
+  material.setDirectionalLight(1, vec3([1, 0, 1]), vec3([-1, 1, 0]))
 
-  let geometry = cubeGeometry(device, {
+  let geometry = boxGeometry(device, {
     size: 1,
   })
 
@@ -121,39 +121,65 @@ function createUi(
 ) {
   mountUi(tools, (ui) => {
     ui.group('Cube', { collapsible: true }, () => {
-      const options: BuildCubeOptions = {
+      const options: BuildBoxOptions = {
         size: 1,
-        tesselation: 1,
+        segments: 1,
       }
       function update() {
-        spawnGeometry(cubeGeometry(device, options))
+        spawnGeometry(boxGeometry(device, options))
       }
       ui.number(options, 'size', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
-      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'segments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
     })
 
     ui.group('Sphere', { collapsible: true }, () => {
       const options: BuildSphereOptions = {
         radius: 0.5,
-        tesselation: 8,
+        slices: 8,
+        stacks: 8,
       }
       function update() {
         spawnGeometry(sphereGeometry(device, options))
       }
       ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
-      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'slices', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'stacks', { slider: true, min: 1, max: 64, step: 1, oninput: update })
     })
 
     ui.group('Cylinder', { collapsible: true }, () => {
       const options: BuildCylinderOptions = {
-        radius: 0.5,
-        tesselation: 8,
+        topRadius: 0.5,
+        bottomRadius: 0.5,
+        heightSegments: 8,
+        radialSegments: 32,
+        startAngle: 0,
+        endAngle: Math.PI * 2,
+        closeTop: true,
+        closeBottom: true,
       }
       function update() {
         spawnGeometry(cylinderGeometry(device, options))
       }
-      ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
-      ui.number(options, 'tesselation', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.boolean(options, 'closeTop', { oninput: update })
+      ui.boolean(options, 'closeBottom', { oninput: update })
+      ui.number(options, 'topRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'bottomRadius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
+      ui.number(options, 'heightSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'radialSegments', { slider: true, min: 1, max: 64, step: 1, oninput: update })
+      ui.number(options, 'startAngle', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
+      ui.number(options, 'endAngle', {
+        slider: true,
+        min: 0,
+        max: Math.PI * 2,
+        step: 0.01,
+        oninput: update,
+      })
     })
 
     ui.group('Torus', { collapsible: true }, () => {

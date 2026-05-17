@@ -43,8 +43,8 @@ export class WebglUniformLocation implements WebglUniform {
       this.write(info.textureIndex)
     }
   }
-  endWrite(): void {
-    throw new Error('Method not implemented.')
+  public endWrite(): void {
+    // no-op
   }
 
   public commit(): void {

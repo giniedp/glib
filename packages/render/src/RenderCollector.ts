@@ -2,7 +2,7 @@ import {
   CommonBindingKeys,
   Effect,
   Geometry,
-  GeometryBatch,
+  Material,
   MeshInstances,
   RenderVariant,
   SpriteBatch,
@@ -60,19 +60,35 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
 
   public add(item: ModelRenderItem): void {
     const depth = this.list.getDepth(item.transform)
+
+    let material: Material
+    let geometry: Geometry
+    let effect: Effect
+
     for (const mesh of item.data.meshes) {
       for (const part of mesh.parts) {
-        const material = mesh.getMaterial(part.materialId)
+        material = mesh.materials[part.materialIndex]
         if (!material) {
           continue
         }
-        const effect = material.getEffect(this.variant)
+
+        geometry = mesh.geometries[part.geometryIndex]
+        if (!geometry) {
+          continue
+        }
+
+        effect = material.getEffect(this.variant)
         if (!effect) {
           continue
         }
+
+        if (!handleMeshInstances(geometry, mesh.instances, effect)) {
+          continue
+        }
+
         material.inputs[CommonBindingKeys.Object.ModelMatrix] = item.transform
         const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-        this.list.add(part, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
+        this.list.add(geometry, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
       }
     }
   }
@@ -93,24 +109,33 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
   public add(item: MeshRenderItem): void {
     const depth = this.list.getDepth(item.transform)
     const mesh = item.data
+
+    let material: Material
+    let geometry: Geometry
+    let effect: Effect
     for (const part of mesh.parts) {
-      const material = mesh.getMaterial(part.materialId)
+      material = mesh.materials[part.materialIndex]
       if (!material) {
         continue
       }
-      const effect = material.getEffect(this.variant)
+
+      geometry = mesh.geometries[part.geometryIndex]
+      if (!geometry) {
+        continue
+      }
+
+      effect = material.getEffect(this.variant)
       if (!effect) {
         continue
       }
-      if (effect.instanceBufferKey) {
-        if (mesh.instances) {
-          mesh.instances.commit()
-          effect.program.get(effect.instanceBufferKey).setBuffer(mesh.instances.buffer)
-        }
+
+      if (!handleMeshInstances(geometry, mesh.instances, effect)) {
+        continue
       }
+
       material.inputs[CommonBindingKeys.Object.ModelMatrix] = item.transform
       const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-      this.list.add(part, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
+      this.list.add(geometry, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
     }
   }
 
@@ -122,51 +147,49 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
 export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderItem> {
   private list: RenderList
   private variant: RenderVariant
-  private batches = idMap<string, GeometryBatch>()
-
   public begin(context: RenderContext, list: RenderList): void {
     this.list = list
     this.variant = context.renderVariant
-
-    // reset all batches
-    for (const batch of this.batches.values) {
-      batch.begin()
-    }
   }
 
   public add(item: MeshPartRenderItem): void {
     const depth = this.list.getDepth(item.transform)
-    const part = item.data
+    const mesh = item.data
 
-    console.assert(!!part.geometry, 'MeshPartRenderItem is missing geometry')
-    console.assert(!!part.material, 'MeshPartRenderItem is missing material')
+    let material: Material
+    let geometry: Geometry
+    let effect: Effect
 
-    // select required effect variant, e.g. depth only, or MRT etc
-    const material = part.material
-    const effect = material.getEffect(this.variant)
+    material = mesh.material
+    if (!material) {
+      return
+    }
+
+    geometry = mesh.geometry
+    if (!geometry) {
+      return
+    }
+
+    effect = material.getEffect(this.variant)
     if (!effect) {
       return
     }
 
-    handleMeshInstances(part.geometry, part.instances, effect)
+    if (!handleMeshInstances(geometry, mesh.instances, effect)) {
+      return
+    }
 
-    // autowire per object parameters
     material.inputs[CommonBindingKeys.Object.ModelMatrix] = item.transform
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-
-    const key = this.list.getKey(depth, item.layer, 0, state, 0)
-    this.list.add(part.geometry, effect, material.inputs, key)
+    this.list.add(geometry, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
   }
 
   public end(): void {
-    // commit batches to render list
-    for (const batch of this.batches.values) {
-      this.list.add(batch, null, null, this.list.getKey(0, 0, 0, 0, 0))
-    }
+    //
   }
 }
 
-function handleMeshInstances(geometry: Geometry, instances: MeshInstances, effect: Effect) {
+function handleMeshInstances(geometry: Geometry, instances: MeshInstances, effect: Effect): boolean {
   // Resolve instancing before the item enters the render list.
   // MeshInstances is one strategy for instancing, others may set these directly.
   // The contract with the low level renderer is:
@@ -174,14 +197,25 @@ function handleMeshInstances(geometry: Geometry, instances: MeshInstances, effec
   //   2. the instance buffer is bound to the program input declared by the effect
   // Everything below this point is instance-strategy agnostic.
 
-  if (effect.instanceBufferKey) {
-    if (instances) {
-      // Safe to call multiple times per frame, upload only occurs if dirty.
-      instances.commit()
-      geometry.instanceCount = instances.count // contract with low level
-      effect.program.get(effect.instanceBufferKey).setBuffer(instances.buffer)
-    }
+  if (!effect.needsInstanceBuffer) {
+    return true
   }
+
+  if (!instances) {
+    console.warn(`Effect '${effect.name}' requires instancing but no instance data was provided.`, effect)
+    return true
+  }
+
+  if (instances.count === 0) {
+    return false
+  }
+
+  // Safe to call multiple times per frame, upload only occurs if dirty.
+  instances.commit()
+  geometry.instanceCount = instances.count // contract with low level
+  effect.program.get(effect.instanceBufferKey).setBuffer(instances.buffer)
+
+  return true
 }
 
 export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem> {

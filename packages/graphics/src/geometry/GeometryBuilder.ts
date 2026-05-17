@@ -1,12 +1,11 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Color } from '../Color'
 import { Device } from '../Device'
-import { FrontFace } from '../enums'
+import { FrontFace, PrimitiveType } from '../enums'
 import { BufferOptions, PlainBufferData } from '../resources'
 import { AttributeSemantic, createVertexLayout, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
 import { Geometry, GeometryOptions } from './Geometry'
 import { GeometryUtil } from './GeometryUtil'
-import { Mesh, MeshOptions } from './Mesh'
 
 /**
  * A function that adds geometry into a given {@link GeometryBuilder}
@@ -41,10 +40,6 @@ export interface GeometryBuilderOptions {
   layout?: Array<VertexLayout | AttributeSemantic[]>
 }
 
-export function beginGeometry(options?: GeometryBuilderOptions): GeometryBuilder {
-  return new GeometryBuilder(options)
-}
-
 export interface BuildGeometryOptions {
   /**
    * A name for the geometry
@@ -54,7 +49,7 @@ export interface BuildGeometryOptions {
   /**
    * The geometry material id
    */
-  materialId?: number
+  materialIndex?: number
 
   /**
    * The vertex buffer layout
@@ -71,47 +66,36 @@ export interface BuildGeometryOptions {
    * with missing attributes they are resolved from here.
    */
   vertexDefaults?: Record<AttributeSemantic, number[]>
+
+  /**
+   * Primitive topology.  Defaults to `'TriangleList'`.
+   */
+  primitiveType?: PrimitiveType
 }
 
+/**
+ * Convenience helper: creates a builder, runs `fn`, computes normals /
+ * tangents / bounds, and uploads the result to the GPU in one call.
+ */
 export function buildGeometry<T>(
   device: Device,
   builder: GeometryBuilderFunction<T>,
   options?: T & BuildGeometryOptions,
-) {
-  const b = beginGeometry({
+): Geometry {
+  const b = new GeometryBuilder({
     layout: options?.vertexLayout,
     defaults: options?.vertexDefaults,
   })
   if (options?.vertexTransform) {
-    b.beginTransform(options.vertexTransform)
+    b.pushTransform(options.vertexTransform)
   }
   b.append(builder, options)
   b.calculateNormalsAndTangents()
-  b.calculateBoundings()
-  return b.endGeometry(device, {
-    name: options?.name || 'geometry',
-    materialId: options?.materialId ?? 0,
-  })
-}
-
-export function buildLinesGeometry<T>(
-  device: Device,
-  builder: GeometryBuilderFunction<T>,
-  options?: T & BuildGeometryOptions,
-) {
-  const b = beginGeometry({
-    layout: options?.vertexLayout,
-  })
-  if (options?.vertexTransform) {
-    b.beginTransform(options.vertexTransform)
-  }
-  b.append(builder, options)
-  b.calculateNormalsAndTangents()
-  b.calculateBoundings()
-  return b.endGeometry(device, {
-    name: options?.name || 'geometry',
-    materialId: options?.materialId ?? 0,
-    primitiveType: 'LineList',
+  b.calculateBounds()
+  return b.buildGeometry(device, {
+    name: options?.name ?? 'geometry',
+    materialIndex: options?.materialIndex ?? 0,
+    primitiveType: options?.primitiveType,
   })
 }
 
@@ -121,17 +105,6 @@ export function buildLinesGeometry<T>(
  * @public
  */
 export class GeometryBuilder {
-  /**
-   * Creates a new model builder
-   *
-   * @remarks simply calls the constructor with given options
-   *
-   * @param options - the constructor options
-   */
-  public static begin(options?: GeometryBuilderOptions): GeometryBuilder {
-    return new GeometryBuilder(options)
-  }
-
   /**
    * Gets the indices in current state
    */
@@ -164,9 +137,6 @@ export class GeometryBuilder {
   public transformModes: Record<AttributeSemantic, TransformMode>
 
   private layout: VertexLayout[]
-  public geometries: GeometryOptions[] = []
-  public meshes: MeshOptions[] = []
-
   private box: BoundingBox
   private sphere: BoundingSphere
   private indexBuffer: BufferOptions<PlainBufferData>
@@ -228,41 +198,15 @@ export class GeometryBuilder {
     this.reset()
   }
 
-  /**
-   * Pushes a transform matrix to transform all subsequent vertices (positions and normals)
-   *
-   * @param transform - the transform matrix
-   */
-  public beginTransform(transform: Mat4): number {
-    let id = this.transformStack.length
-    let last = this.transformStack[id - 1]
-    if (last) {
-      this.transformStack[id] = Mat4.premultiply(transform, last)
-    } else {
-      this.transformStack[id] = transform.clone()
-    }
-    return id
-  }
-
   public pushTransform(transform: Mat4): this {
-    this.beginTransform(transform)
+    const top = this.transformStack[this.transformStack.length - 1]
+    this.transformStack.push(top ? Mat4.premultiply(transform, top) : transform.clone())
     return this
   }
 
   public popTransform(): this {
-    this.endTransform(this.transformStack.length - 1)
+    this.transformStack.pop()
     return this
-  }
-
-  /**
-   * Pops transform matrices from stack up until the given id
-   *
-   * @param id - the id that has been returned byt a call to `beginTransform`
-   */
-  public endTransform(id: number) {
-    if (id < this.transformStack.length) {
-      this.transformStack.length = id
-    }
   }
 
   /**
@@ -272,9 +216,9 @@ export class GeometryBuilder {
    * @param callback - the callback
    */
   public withTransform(transform: Mat4, callback: (builder: GeometryBuilder) => void): this {
-    const id = this.beginTransform(transform)
+    this.pushTransform(transform)
     callback(this)
-    this.endTransform(id)
+    this.popTransform()
     return this
   }
 
@@ -301,7 +245,7 @@ export class GeometryBuilder {
     this.primitiveCount = 0
     this.box = new BoundingBox()
     this.sphere = new BoundingSphere()
-    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer, 'TriangleList')
+    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer)
   }
 
   /**
@@ -312,9 +256,7 @@ export class GeometryBuilder {
    */
   public reset() {
     this.resetData()
-    this.transformStack.length = 0
-    this.geometries.length = 0
-    this.meshes.length = 0
+    this.transformStack = []
     return this
   }
 
@@ -385,8 +327,8 @@ export class GeometryBuilder {
     return result
   }
 
-  public calculateBoundings() {
-    this.partUtil.calculateBoundings()
+  public calculateBounds() {
+    this.partUtil.calculateBounds()
     this.box.initFrom(this.partUtil.boundingBox)
     this.sphere.initFrom(this.partUtil.boundingSphere)
     return this
@@ -428,146 +370,106 @@ export class GeometryBuilder {
   }
 
   /**
-   * Same as {@link endGeometry} but returns the builder for chaining
+   * Packages the current index and vertex buffers into a {@link GeometryOptions}
+   * object and resets the working state for the next geometry.
    *
-   * @param options - options for `endMeshPart`
+   * Returns `null` when there is no data to package.
    */
-  public closeGeometry(options?: GeometryOptions): this {
-    this.endGeometry(options)
-    return this
-  }
-
-  /**
-   * Creates new {@link GeometryOptions} with current index and vertex buffer and saves them in the geometries array.
-   *
-   * @param options - options to start with
-   * @returns GeometryOptions or null if current state has no mesh part data
-   */
-  public endGeometry(options?: GeometryOptions): GeometryOptions | null
-  /**
-   * Creates new mesh with current index and vertex buffer and saves them in the geometries array.
-   *
-   * @param device - the graphics device
-   * @param options - options to start with
-   * @returns Geometry or null if current state has no mesh part data
-   */
-  public endGeometry(device: Device, options?: GeometryOptions): Geometry
-  public endGeometry(): Geometry | GeometryOptions {
+  public toGeometryOptions(
+    options: {
+      name?: string
+      meta?: Record<string, any>
+      primitiveType?: PrimitiveType
+    } = {},
+  ): GeometryOptions | null {
     if (this.indexCount === 0 || this.vertexCount === 0) {
       return null
     }
 
-    let device: Device
-    let options: GeometryOptions
-    let result: GeometryOptions | Geometry
-    if (arguments[0] instanceof Device) {
-      device = arguments[0]
-      options = arguments[1] || {}
-      result = null
-    } else {
-      device = null
-      options = arguments[0] || {}
-      result = options
+    this.upgradeIndexBufferIfNeeded()
+
+    const baseName = options.name ?? 'geometry'
+    const primitiveType = options.primitiveType ?? 'TriangleList'
+
+    const indexBuffer = this.indexBuffer
+    indexBuffer.name = `${baseName}_index`
+
+    const vertexBuffer = this.vertexBuffer
+    vertexBuffer.forEach((vb, i) => {
+      vb.name = `${baseName}_vertex_${i}`
+    })
+
+    const result: GeometryOptions = {
+      name: baseName,
+      meta: options.meta || {},
+      indexBuffer: indexBuffer,
+      vertexBuffer: vertexBuffer,
+
+      boundingBox: this.box,
+      boundingSphere: this.sphere,
+      primitiveType: primitiveType,
     }
 
+    this.initBuffers()
+
+    return result
+  }
+
+  /**
+   * Creates a {@link Geometry} GPU resource from the current state.
+   *
+   * Calls {@link toGeometryOptions} internally; the options object is also
+   * recorded in {@link geometries} for later mesh assembly.
+   */
+  public buildGeometry(
+    device: Device,
+    options: {
+      name?: string
+      materialIndex?: number
+      primitiveType?: PrimitiveType
+    },
+  ): Geometry {
+    const resolved = this.toGeometryOptions(options ?? {})
+    if (!resolved) {
+      throw new Error('buildGeometry: no vertices or indices in current state.')
+    }
+    return new Geometry(device, resolved)
+  }
+
+  /**
+   * Initialises (or re-initialises) the working index and vertex buffers.
+   */
+  private initBuffers(): void {
+    this.indexBuffer = {
+      type: 'IndexBuffer',
+      indexType: 'uint16',
+      data: { type: 'uint16', elements: [] },
+    }
+    this.vertexBuffer = this.layout.map(
+      (layout): BufferOptions<PlainBufferData> => ({
+        vertexLayout: JSON.parse(JSON.stringify(layout)),
+        type: 'VertexBuffer',
+        data: { type: 'float32', elements: [] },
+      }),
+    )
+    this.primitiveCount = 0
+    this.box = new BoundingBox()
+    this.sphere = new BoundingSphere()
+    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer)
+  }
+
+  /**
+   * Upgrades the index buffer to uint32 when the vertex count or alignment
+   * requires it.
+   */
+  private upgradeIndexBufferIfNeeded(): void {
     const isUint16 = this.indexBuffer.data.type === 'uint16'
     const isAligned = !isUint16 || this.indexBuffer.data.elements.length % 2 === 0
-    const needsUint32 = !isAligned || this.indexBuffer.data.elements.length >= Math.pow(2, 16)
-    if (needsUint32) {
+    const exceedsUint16 = this.indexBuffer.data.elements.length >= 2 ** 16
+    if (!isAligned || exceedsUint16) {
       this.indexBuffer.indexType = 'uint32'
       this.indexBuffer.data.type = 'uint32'
     }
-    options.materialId = options.materialId || 0
-    options.indexBuffer = this.indexBuffer
-    options.vertexBuffer = this.vertexBuffer
-    options.boundingBox = this.box
-    options.boundingSphere = this.sphere
-
-    options.indexBuffer.name = `${options.name || 'geometry'}_index`
-    options.vertexBuffer.forEach((vb, i) => {
-      vb.name = `${options.name || 'geometry'}_vertex_${i}`
-    })
-
-    this.geometries.push(options)
-    this.resetData()
-
-    if (device) {
-      result = new Geometry(device, options)
-    }
-
-    return result
-  }
-
-  /**
-   * Same as {@link endMesh} but returns the builder for chaining
-   *
-   * @param options - options for `endMesh`
-   */
-  public closeMesh(options?: MeshOptions): this {
-    this.endMesh(options)
-    return this
-  }
-
-  /**
-   * From current state it creates {@link MeshOptions} and prepares the builder for the next mesh
-   *
-   * @param options - Additional {@link MeshOptions} . The {@link MeshOptions.parts} option is ignored.
-   * @returns `ModelMeshOptions` or `null` if current state has no mesh data
-   */
-  public endMesh(options?: MeshOptions): MeshOptions
-  /**
-   * From current state it creates in instance of {@link Mesh} and prepares the builder for the next mesh
-   *
-   * @param device - The graphics device
-   * @param options - Additional {@link MeshOptions} . The {@link MeshOptions.parts} option is ignored.
-   * @returns `ModelMesh` or `null` if current state has no mesh data
-   */
-  public endMesh(device: Device, options?: MeshOptions): Mesh
-  public endMesh(): Mesh | MeshOptions {
-    this.endGeometry()
-    if (!this.geometries.length) {
-      return null
-    }
-
-    let device: Device
-    let options: MeshOptions
-    let result: MeshOptions | Mesh
-    if (arguments[0] instanceof Device) {
-      device = arguments[0]
-      options = arguments[1] || {}
-      result = null
-    } else {
-      device = null
-      options = arguments[0] || {}
-      result = options
-    }
-
-    let materials = options.materials || []
-    if (!Array.isArray(materials)) {
-      materials = [materials]
-    }
-    options.materials = materials
-    options.parts = this.geometries
-
-    if (!options.boundingBox && this.geometries.every((mesh) => !!mesh.boundingBox)) {
-      options.boundingBox = this.geometries.reduce((box, mesh) => {
-        const meshBox = BoundingBox.convert(mesh.boundingBox)
-        return box ? box.merge(meshBox) : BoundingBox.createFrom(meshBox)
-      }, null as BoundingBox)
-    }
-    if (!options.boundingSphere && options.boundingBox) {
-      options.boundingSphere = BoundingSphere.createFromBox(BoundingBox.convert(options.boundingBox)).toArray()
-    }
-
-    this.meshes.push(options)
-    this.geometries = []
-    this.resetData()
-
-    if (device) {
-      result = new Mesh(device, options)
-    }
-
-    return result
   }
 
   /**

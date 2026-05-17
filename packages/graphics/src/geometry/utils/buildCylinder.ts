@@ -1,8 +1,8 @@
 import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { buildGeometry, type GeometryBuilder } from '../GeometryBuilder'
-import { buildDisc } from './buildDisc'
+import { buildGeometry, BuildGeometryOptions, type GeometryBuilder } from '../GeometryBuilder'
+import { buildDisc, buildDiscLines } from './buildDisc'
 import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
 
 export const BuildCylinderDefaults = {
@@ -93,17 +93,19 @@ export interface BuildCylinderOptions {
   closeBottom?: boolean
 }
 
-export function cylinderGeometry(device: Device, options: BuildCylinderOptions): Geometry {
-  return buildGeometry(device, buildCylinder, {
+export function cylinderGeometry(device: Device, options: BuildCylinderOptions & BuildGeometryOptions): Geometry {
+  const fn = options?.primitiveType === 'LineList' ? buildCylinderLines : buildCylinder
+  return buildGeometry(device, fn, {
     name: 'Cylinder',
     ...options,
   })
 }
 
-export function cylinderGeometryLines(device: Device, options: BuildCylinderOptions): Geometry {
+export function cylinderGeometryLines(device: Device, options: BuildCylinderOptions & BuildGeometryOptions): Geometry {
   return buildGeometry(device, buildCylinderLines, {
     name: 'Cylinder',
     ...options,
+    primitiveType: 'LineList',
   })
 }
 
@@ -195,24 +197,24 @@ export function buildCylinderLines(builder: GeometryBuilder, options?: BuildCyli
     vSegments: heightSegments,
   })
 
-  // if (options?.closeTop && topRadius > 0) {
-  //   buildDiscLines(builder, {
-  //     radius: topRadius,
-  //     offset: { x: ox, y: oy + height * 0.5, z: oz },
-  //     radialSegments,
-  //     startAngle,
-  //     endAngle,
-  //   })
-  // }
+  if (options?.closeTop && topRadius > 0) {
+    buildDiscLines(builder, {
+      radius: topRadius,
+      offset: { x: ox, y: oy + height * 0.5, z: oz },
+      radialSegments,
+      startAngle,
+      endAngle,
+    })
+  }
 
-  // if (options?.closeBottom && bottomRadius > 0) {
-  //   buildDiscLines(builder, {
-  //     radius: bottomRadius,
-  //     offset: { x: ox, y: oy - height * 0.5, z: oz },
-  //     radialSegments,
-  //     startAngle,
-  //     endAngle,
-  //     invert: true,
-  //   })
-  // }
+  if (options?.closeBottom && bottomRadius > 0) {
+    buildDiscLines(builder, {
+      radius: bottomRadius,
+      offset: { x: ox, y: oy - height * 0.5, z: oz },
+      radialSegments,
+      startAngle,
+      endAngle,
+      invert: true,
+    })
+  }
 }

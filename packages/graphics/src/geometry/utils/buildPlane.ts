@@ -1,7 +1,7 @@
 import { IVec3 } from '@gglib/math'
 import type { Device } from '../../Device'
 import type { Geometry } from '../Geometry'
-import { buildGeometry, buildLinesGeometry, GeometryBuilder, GeometryBuilderOptions } from '../GeometryBuilder'
+import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 import { buildParametricLines, buildParametricSurface } from './buildParametricSurface'
 
 export const BuildPlaneDefaults = {
@@ -65,17 +65,19 @@ export interface BuildPlaneOptions {
   invert?: boolean
 }
 
-export function planeGeometry(device: Device, options?: BuildPlaneOptions): Geometry {
-  return buildGeometry(device, buildPlane, {
+export function planeGeometry(device: Device, options?: BuildPlaneOptions & BuildGeometryOptions): Geometry {
+  const fn = options?.primitiveType === 'LineList' ? buildPlaneLines : buildPlane
+  return buildGeometry(device, fn, {
     name: 'Plane',
     ...options,
   })
 }
 
-export function planeLinesGeometry(device: Device, options?: BuildPlaneOptions & GeometryBuilderOptions): Geometry {
-  return buildLinesGeometry(device, buildPlaneLines, {
+export function planeLinesGeometry(device: Device, options?: BuildPlaneOptions & BuildGeometryOptions): Geometry {
+  return buildGeometry(device, buildPlaneLines, {
     name: 'Plane Lines',
     ...options,
+    primitiveType: 'LineList',
   })
 }
 
