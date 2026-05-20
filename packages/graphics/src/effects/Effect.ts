@@ -1,9 +1,9 @@
 import type { Device } from '../Device'
 import type { RenderEncoder } from '../RenderEncoder'
 import {
+  ProgramInputBlock,
   ShaderModule,
   type Program,
-  type ProgramInputValue,
   type ProgramOptions,
   type ShaderModuleOptions,
 } from '../resources'
@@ -169,14 +169,6 @@ export class Effect implements Disposable {
   }
 
   /**
-   * Applies the given parameters to the shader program of this pass and commits them.
-   */
-  public commit(params: Record<string, ProgramInputValue>) {
-    this.program.apply(params)
-    this.program.commit()
-  }
-
-  /**
    * Applies the states of the pass to the given render pass and sets the shader program active.
    */
   public apply(pass: RenderEncoder): void {
@@ -251,21 +243,26 @@ export class Effect implements Disposable {
     }
   }
 
+  public applyInputs(blocks: Record<string, ProgramInputBlock>): boolean {
+    let changed = false
+    for (const blockName in blocks) {
+      const source = blocks[blockName]
+      if (source && this.program.applyBlock(source)) {
+        changed = true
+      }
+    }
+    return changed
+  }
+
   /**
-   * Draws an object with this shader pass and given parameters
-   *
-   * @remarks
-   * This is a convenience method that combines `apply`, `commit` and `restore` in a single call.
-   * Skips rendering silently if the program is not ready.
+   * Draws an object with this shader pass.
+   * Program inputs must be applied before calling this method.
    */
-  public draw(pass: RenderEncoder, object: Renderable, params?: Record<string, ProgramInputValue>) {
+  public draw(pass: RenderEncoder, object: Renderable) {
     if (!this.isReady) {
       return
     }
 
-    if (params) {
-      this.program.apply(params)
-    }
     this.program.commit()
 
     this.apply(pass)
@@ -292,7 +289,7 @@ export class Effect implements Disposable {
       meta: { ...(this.meta || {}) },
       program: {
         shader: this.program.module,
-        shared: this.program.shared,
+        sharedBlocks: this.program.sharedBlocks,
       },
       offsetState: this.offsetState,
       blendState: this.blendState,

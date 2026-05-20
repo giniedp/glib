@@ -1,7 +1,6 @@
 import type { Device } from '../Device'
-import { ProgramInputs } from '../resources'
 import { BasicMaterial } from './BasicMaterial'
-import { Material, MaterialOptions, MaterialEffectOptions } from './Material'
+import { Material, MaterialEffectOptions, MaterialOptions } from './Material'
 
 export function createMaterials(
   device: Device,
@@ -28,7 +27,7 @@ export function createMaterialInstance(
     return options
   }
   if ('effect' in options) {
-    return new Material<any>(null as any, options)
+    return new Material(null as any, options)
   }
   if (options.factory) {
     return options.factory(device, options)

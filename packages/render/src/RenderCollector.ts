@@ -1,5 +1,5 @@
 import {
-  CommonBindingKeys,
+  CommonInputs,
   Effect,
   Geometry,
   Material,
@@ -86,9 +86,9 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
           continue
         }
 
-        material.inputs[CommonBindingKeys.Object.ModelMatrix] = item.transform
+        material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
         const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-        this.list.add(geometry, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
+        this.list.add(geometry, effect, material.inputBlocks, this.list.getKey(depth, item.layer, 0, state, 0))
       }
     }
   }
@@ -133,9 +133,9 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
         continue
       }
 
-      material.inputs[CommonBindingKeys.Object.ModelMatrix] = item.transform
+      material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
       const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-      this.list.add(geometry, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
+      this.list.add(geometry, effect, material.inputBlocks, this.list.getKey(depth, item.layer, 0, state, 0))
     }
   }
 
@@ -179,9 +179,9 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
       return
     }
 
-    material.inputs[CommonBindingKeys.Object.ModelMatrix] = item.transform
+    material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-    this.list.add(geometry, effect, material.inputs, this.list.getKey(depth, item.layer, 0, state, 0))
+    this.list.add(geometry, effect, material.inputBlocks, this.list.getKey(depth, item.layer, 0, state, 0))
   }
 
   public end(): void {

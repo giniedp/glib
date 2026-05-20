@@ -1,17 +1,26 @@
-import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { TransformComponent } from '../components'
 import { SceneRootComponent } from '../components/SceneRootComponent'
 
 export class SceneSystem extends GameSystem {
   protected world: GameWorld
+  protected qSceneRoots: GameQuery
 
   public constructor(world: GameWorld) {
     super()
     this.world = world
+    this.qSceneRoots = world.query({ required: [SceneRootComponent] })
   }
 
   public override initialize(): void {
     this.world.onEntityActivating.add(this.addSceneTag)
     this.world.onEntityDeactivated.add(this.removeSceneTag)
+  }
+
+  public override update(): void {
+    for (const entity of this.qSceneRoots) {
+      entity.getTransform<TransformComponent>().propagateUpdates(false, true)
+    }
   }
 
   public override destroy(): void {

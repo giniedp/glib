@@ -5,7 +5,9 @@ const localRay = Ray.create() // temporary ray
 const EPSILON = 0.001
 
 function randV3(out: IVec3) {
-  do { Vec3.initRandomUnit(out) } while (Vec3.lengthSquared(out) > 1)
+  do {
+    Vec3.initRandomUnit(out)
+  } while (Vec3.lengthSquared(out) > 1)
   return out
 }
 
@@ -16,11 +18,11 @@ interface Shape {
 }
 
 interface Pixel {
-  hitPoint: Vec3     // current hit point in world space
-  hitNormal: Vec3    // normal at current hit point
-  shape: Shape       // shape that has been hit
+  hitPoint: Vec3 // current hit point in world space
+  hitNormal: Vec3 // normal at current hit point
+  shape: Shape // shape that has been hit
   material: Material // material of shape
-  color: Vec3        // accumulated pixel color
+  color: Vec3 // accumulated pixel color
 }
 
 class Material {
@@ -32,17 +34,13 @@ class Material {
   public scatter(r: Ray, p: Pixel) {
     if (Math.random() <= this.metallic) {
       r.position.initFrom(p.hitPoint)
-      r.direction
-        .reflect(p.hitNormal)
-        .addScaled(randV3(tmpVec1), this.roughness)
-        .normalize()
+      r.direction.reflect(p.hitNormal).addScaled(randV3(tmpVec1), this.roughness).normalize()
       return r.direction.dot(p.hitNormal) > 0
     } else {
       r.position.initFrom(p.hitPoint)
       randV3(r.direction)
       r.direction.add(p.hitNormal).normalize()
       return true
-
     }
   }
 }
@@ -50,7 +48,11 @@ class Material {
 class SphereShape implements Shape {
   private volume = BoundingSphere.create(0, 0, 0, 1)
 
-  constructor(center: IVec3, radius: number, public material: Material) {
+  constructor(
+    center: IVec3,
+    radius: number,
+    public material: Material,
+  ) {
     this.volume.initFromCenterRadius(center, radius)
   }
 
@@ -73,7 +75,12 @@ class SphereShape implements Shape {
 class PlaneShape implements Shape {
   private volume = Plane.create(0, 1, 0, 0)
 
-  constructor(public position: IVec3, public normal: IVec3, public size: number, public material: Material) {
+  constructor(
+    public position: IVec3,
+    public normal: IVec3,
+    public size: number,
+    public material: Material,
+  ) {
     this.volume.init(normal.x, normal.y, normal.z, 0)
   }
 
@@ -100,8 +107,13 @@ class BoxShape implements Shape {
   private volume = BoundingBox.create(-1, -1, -1, 1, 1, 1)
   private transform: Mat4
   private inverse: Mat4
-  constructor(position: IVec3, forward: IVec3, scale: IVec3, public material: Material) {
-    this.transform = Mat4.createWorld(position, forward, Vec3.Up).scale(scale)
+  constructor(
+    position: IVec3,
+    forward: IVec3,
+    scale: IVec3,
+    public material: Material,
+  ) {
+    this.transform = Mat4.createWorld(position, forward, Vec3.UnitY).scale(scale)
     this.inverse = Mat4.invert(this.transform)
   }
 
@@ -128,7 +140,6 @@ class BoxShape implements Shape {
 }
 
 class Scene {
-
   public camera = {
     world: Mat4.createIdentity(),
     view: Mat4.createIdentity(),
@@ -172,7 +183,10 @@ class Scene {
     Mat4.invert(this.viewProj, this.viewProjInv)
   }
 
-  public render(options: { x1: number, y1: number, x2: number, y2: number, dx: number, dy: number, depth: number }, data: Float32Array) {
+  public render(
+    options: { x1: number; y1: number; x2: number; y2: number; dx: number; dy: number; depth: number },
+    data: Float32Array,
+  ) {
     this.update()
 
     const ray = Ray.create(0, 0, 0, 0, 0, 1)
@@ -217,7 +231,7 @@ class Scene {
 
 export const scene = new Scene()
 scene.objects.push(
-  new PlaneShape(Vec3.create(0, 0, 0), Vec3.Up, 80, new Material(Vec3.create(0.9, 0.9, 0.9), 0, 0)),
+  new PlaneShape(Vec3.create(0, 0, 0), Vec3.UnitY, 80, new Material(Vec3.create(0.9, 0.9, 0.9), 0, 0)),
 
   new SphereShape(Vec3.create(-45, 24, -10), 20, new Material(Vec3.create(1, 1, 1), 1, 0)),
   new SphereShape(Vec3.create(0, 24, -10), 20, new Material(Vec3.create(1, 1, 1), 0.5, 0.5)),
@@ -227,16 +241,35 @@ scene.objects.push(
   new SphereShape(Vec3.create(0, 14, 15), 10, new Material(Vec3.create(0, 1, 0), 0, 0)),
   new SphereShape(Vec3.create(45, 14, 15), 10, new Material(Vec3.create(0, 0, 1), 0, 0)),
 
-  new BoxShape(Vec3.create(-45, 3, -5), Vec3.Forward, Vec3.create(15, 1, 30), new Material(Vec3.create(1, 1, 1), 0, 0)),
-  new BoxShape(Vec3.create(0, 3, -5), Vec3.Forward, Vec3.create(15, 1, 30), new Material(Vec3.create(1, 1, 1), 0, 0)),
-  new BoxShape(Vec3.create(45, 3, -5), Vec3.Forward, Vec3.create(15, 1, 30), new Material(Vec3.create(1, 1, 1), 0, 0)),
+  new BoxShape(
+    Vec3.create(-45, 3, -5),
+    Vec3.NegativeUnitZ,
+    Vec3.create(15, 1, 30),
+    new Material(Vec3.create(1, 1, 1), 0, 0),
+  ),
+  new BoxShape(
+    Vec3.create(0, 3, -5),
+    Vec3.NegativeUnitZ,
+    Vec3.create(15, 1, 30),
+    new Material(Vec3.create(1, 1, 1), 0, 0),
+  ),
+  new BoxShape(
+    Vec3.create(45, 3, -5),
+    Vec3.NegativeUnitZ,
+    Vec3.create(15, 1, 30),
+    new Material(Vec3.create(1, 1, 1), 0, 0),
+  ),
 )
 
 for (let i = 0; i <= 10; i++) {
-  scene.objects.push(new SphereShape(Vec3.create(-1 * (i - 5) * 11, 2, 28), 2, new Material(Vec3.create(1, 1, 1), 1, i / 10)))
+  scene.objects.push(
+    new SphereShape(Vec3.create(-1 * (i - 5) * 11, 2, 28), 2, new Material(Vec3.create(1, 1, 1), 1, i / 10)),
+  )
 }
 for (let i = 0; i <= 10; i++) {
-  scene.objects.push(new SphereShape(Vec3.create(-1 * (i - 5) * 11, 2, 32), 2, new Material(Vec3.create(1, 1, 1), 1 - i / 10, 0)))
+  scene.objects.push(
+    new SphereShape(Vec3.create(-1 * (i - 5) * 11, 2, 32), 2, new Material(Vec3.create(1, 1, 1), 1 - i / 10, 0)),
+  )
 }
-scene.camera.view = Mat4.createLookAt({ x: 0, y: 50, z: 75 }, { x: 0, y: 20, z: 0 }, Vec3.Up).invert()
+scene.camera.view = Mat4.createLookAt({ x: 0, y: 50, z: 75 }, { x: 0, y: 20, z: 0 }, Vec3.UnitY).invert()
 scene.camera.projection = Mat4.createPerspectiveFieldOfView(Math.PI / 3, 300 / 150, 0.1, 10)

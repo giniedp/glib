@@ -1,107 +1,160 @@
 import { ContentLoader } from '@gglib/content'
-import { BasicMaterial, Color, createDevice, boxGeometry, CullState, DepthState, PlatformId } from '@gglib/graphics'
+import {
+  BasicMaterial,
+  Color,
+  createDevice,
+  Device,
+  planeGeometry,
+  PlatformId,
+  TaskContext,
+  Texture,
+} from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
+import { mountUi, redrawUi } from 'tweak-ui'
+
+const files = {
+  Castle: '/textures/backgrounds/colored_castle.png',
+}
+const params = {
+  texture: files.Castle,
+}
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device = await createDevice({ canvas, platform }).ready
+  const stats = device.stats()
   const content = new ContentLoader(device)
   const mouse = new Mouse({
     captureTarget: canvas,
     preventDefault: true,
   })
 
+  let timeDelta = 0
+  let texture: Texture
+  mountUi(tools, (ui) => {
+    loadTexture(params.texture)
+    ui.select(params, 'texture', {
+      options: files,
+      onchange: () => loadTexture(params.texture),
+    })
+    ui.group('Texture', () => {
+      ui.string({
+        label: 'Size',
+        disabled: true,
+        get value() {
+          return `${texture ? texture.width : 0} x ${texture ? texture.height : 0}`
+        },
+      })
+      ui.string({
+        label: 'Format',
+        disabled: true,
+        get value() {
+          return texture?.format
+        },
+      })
+      ui.string({
+        label: 'Mip levels',
+        disabled: true,
+        get value() {
+          return texture?.mipLevelCount
+        },
+      })
+      ui.string({
+        label: 'Size in bytes',
+        disabled: true,
+        get value() {
+          return texture?.sizeInBytes
+        },
+      })
+    })
+  })
+
   const material = new BasicMaterial(device)
-  const geometry = boxGeometry(device)
+  const geometry = planeGeometry(device, {
+    vertexTransform: Mat4.createAxisAngle(Vec3.UnitX, 90 * DEGREE_TO_RAD),
+  })
 
-  const world = Mat4.createIdentity()
-  const camera = {
-    theta: 0,
-    phi: 90,
-    distance: 2,
-    position: Vec3.create(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
+  const world = Mat4.createScaleUniform(3)
+  const camera = demoCamera()
+
+  function loadTexture(url: string) {
+    content
+      .loadTexture(url)
+      .then((result) => {
+        texture = result
+        redrawUi()
+        material.Texture = result
+        material.TextureEnabled = 1
+      })
+      .catch((e) => {
+        console.error(e)
+      })
   }
 
-  content
-    .loadTexture('/textures/backgrounds/colored_castle.png')
-    .then((result) => {
-      material.Texture = result
-      material.TextureEnabled = 1
-    })
-    .catch((e) => {
-      console.error(e)
-    })
-
-  function updateCamera() {
-    mouse.update()
-    if (mouse.leftButtonIsPressed) {
-      camera.theta -= mouse.dx * 0.1
-      camera.phi -= mouse.dy * 0.1
-    }
-    if (mouse.middleButtonIsPressed) {
-      camera.distance += mouse.dy * 0.01
-      camera.distance = Math.max(0.1, camera.distance)
-    }
-
-    // prettier-ignore
-    camera.position.initSpherical(
-      camera.phi * DEGREE_TO_RAD,
-      camera.theta * DEGREE_TO_RAD,
-      camera.distance,
-    )
-    camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
-    camera.projection.initPerspectiveFieldOfView(
-      45 * DEGREE_TO_RAD,
-      device.output.aspectRatio,
-      0.01,
-      1000,
-      device.ndcMinZ,
-    )
-  }
-
-  const rt = device.createRenderTarget({
-    name: 'Main Render Target',
-    width: device.output.width,
-    height: device.output.height,
-    format: device.output.format,
-    sampleCount: 4,
-  })
-  const dt = device.createDepthTarget({
-    name: 'Main Depth Target',
-    width: device.output.width,
-    height: device.output.height,
-    format: 'DEPTH24_PLUS',
-    sampleCount: 4,
-  })
   const pass = device.renderPass
-  function frame() {
-    device.resize()
-    rt.resizeToMatch(device.output)
-    dt.resizeToMatch(device.output)
 
-    updateCamera()
+  function frame(ctx: TaskContext) {
+    timeDelta = ctx.dt
+    device.resize()
+    camera.update(mouse, device)
+
     pass.flush()
-    pass.setRenderTarget(0, rt, 0, 0, device.output)
-    pass.setDepthTarget(dt)
     pass.setClearColor(0, Color.CornflowerBlue)
-    pass.setDepthState(DepthState.LessEqual)
-    pass.setCullState(CullState.CullBack)
     pass.clear()
 
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.effect.draw(pass, geometry, material.inputs)
+    material.effect.applyInputs(material.inputBlocks)
+    material.effect.draw(pass, geometry)
+    pass.submit()
+    pass.flush()
 
-    pass.submit()
-    pass.resolve()
-    pass.submit()
+    device.stats(stats)
   }
 
   device.scheduler.schedule(frame)
   return () => {
     device.dispose()
   }
+}
+
+function demoCamera() {
+  const data = {
+    theta: 0,
+    phi: 90,
+    distance: 2,
+    position: Vec3.create(),
+    view: Mat4.createIdentity(),
+    projection: Mat4.createIdentity(),
+    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device),
+  }
+  return data
+}
+
+function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, device: Device) {
+  mouse.update()
+  if (mouse.leftButtonIsPressed) {
+    camera.theta -= mouse.dx * 0.1
+    camera.phi -= mouse.dy * 0.1
+  }
+  if (mouse.middleButtonIsPressed) {
+    camera.distance += mouse.dy * 0.01
+    camera.distance = Math.max(0.1, camera.distance)
+  }
+
+  // prettier-ignore
+  camera.position.initSpherical(
+    camera.phi * DEGREE_TO_RAD,
+    camera.theta * DEGREE_TO_RAD,
+    camera.distance,
+  )
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.UnitY).invert()
+  camera.projection.initPerspectiveFieldOfView(
+    45 * DEGREE_TO_RAD,
+    device.output.aspectRatio,
+    0.01,
+    1000,
+    device.ndcMinZ,
+  )
 }

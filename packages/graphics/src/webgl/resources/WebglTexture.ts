@@ -79,30 +79,33 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
       options.sampleCount = 1
     }
 
-    const mutable = this as Mutable<this>
-    mutable.name = options.name ?? this.name
-    mutable.width = options.width ?? this.width
-    mutable.height = options.height ?? this.height
-    mutable.depth = options.depth ?? this.depth
-    mutable.type = options.type ?? this.type
-    mutable.format = options.format ?? this.format
-    mutable.generateMipmap = !isRenderBuffer && (options.generateMipmap ?? false)
-    mutable.crossOrigin = options.crossOrigin ?? this.crossOrigin
-    mutable.sampleCount = options.sampleCount ?? 1
-    mutable.isCompressed = surfaceFormatIsCompressed(this.format)
-    mutable.isMultisampled = options.sampleCount > 1
-    mutable.isRenderTarget = isRenderTarget
-    mutable.isSampled = isSampled
-    mutable.isRenderBuffer = isRenderBuffer
+    const self = this as Mutable<this>
+    self.name = options.name ?? this.name
+    self.width = options.width ?? this.width
+    self.height = options.height ?? this.height
+    self.depth = options.depth ?? this.depth
+
+    self.type = options.type ?? this.type
+    self.format = options.format ?? this.format
+    self.generateMipmap = !isRenderBuffer && (options.generateMipmap ?? false)
+    self.crossOrigin = options.crossOrigin ?? this.crossOrigin
+
+    self.isSampled = isSampled
+    self.isRenderTarget = isRenderTarget
+    self.isRenderBuffer = isRenderBuffer
+    self.isMultisampled = options.sampleCount > 1
+    self.isCompressed = surfaceFormatIsCompressed(this.format)
+    self.mipLevelCount = options.mipLevelCount ?? getMipmapCount(this.width, this.height, this.depth)
+    self.sampleCount = options.sampleCount ?? 1
 
     if (this.isRenderBuffer) {
-      mutable.glType = this.device.context.RENDERBUFFER
+      self.glType = this.device.context.RENDERBUFFER
     } else {
-      mutable.glType = textureTypeToWebGL(this.type)
+      self.glType = textureTypeToWebGL(this.type)
     }
-    mutable.glInternalFormat = surfaceFormatToWebGL(this.format)
-    mutable.glDataFormat = surfaceFormatToWebGLFormat(this.format)
-    mutable.glDataType = surfaceFormatToWebGLDataType(this.format)
+    self.glInternalFormat = surfaceFormatToWebGL(this.format)
+    self.glDataFormat = surfaceFormatToWebGLFormat(this.format)
+    self.glDataType = surfaceFormatToWebGLDataType(this.format)
     this.createResource()
 
     const source = createTextureSource(options.source, {
@@ -169,7 +172,7 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
       //   this.device.textureUnits[0].activate(this, SamplerState.PointClamp)
       // } else {
       // }
-      const mipmapCount = this.generateMipmap ? getMipmapCount(this.width, this.height, this.depth) : 1
+      const mipmapCount = this.mipLevelCount
       if (this.type === 'Texture2D') {
         gl.texStorage2D(this.glType, mipmapCount, this.glInternalFormat, this.width, this.height)
         if (this.format === 'DEPTH32_FLOAT' || this.format === 'DEPTH32_FLOAT_STENCIL8') {
@@ -351,6 +354,7 @@ function setData2D(unit: WebglTextureUnit, source: TextureSource, image: WebglTe
   const mipLevels = source.levels
   const mipCount = getMipmapCount(source.width, source.height, 1)
   unit.activate(image, SamplerState.Default)
+
   for (let lvl = 0; lvl < Math.min(mipCount, mipLevels.length); lvl++) {
     const data = mipLevels[lvl][0]
     const divisor = Math.pow(2, lvl)

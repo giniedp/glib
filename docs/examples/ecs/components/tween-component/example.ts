@@ -165,5 +165,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
     ui.button('Scale', { onClick: () => game.tweenScale(scaleOptions) })
   })
 
-  return game.run()
+  game.run()
+  return () => game.stop()
 }

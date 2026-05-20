@@ -7,108 +7,107 @@ const LIGHT_TYPE_POINT: u32 = 2u;
 const LIGHT_TYPE_SPOT: u32 = 3u;
 const LIGHT_TYPE_AREA: u32 = 4u;
 
-struct ObjectBlock {
-  modelMatrix : mat4x4<f32>,
+struct GlobalBlock {
+  fogColor:  vec3f,
+  fogNear:   f32,
+  fogFar:    f32,
 };
 
 struct ViewBlock {
-  viewMatrix:       mat4x4<f32>,
-  projectionMatrix: mat4x4<f32>,
-  cameraPosition:   vec3<f32>,
+  viewMatrix:       mat4x4f,
+  projectionMatrix: mat4x4f,
+  cameraPosition:   vec3f,
+};
+
+struct ObjectBlock {
+  modelMatrix : mat4x4f,
 };
 
 struct MaterialBlock {
-  baseColor:     vec3<f32>,
-  alpha:         f32,
-  emissiveColor: vec3<f32>,
-  roughness:     f32,
-  specularColor: vec3<f32>,
-  alphaClip:     f32,
-  textureScaleOffset: vec4<f32>,
+  baseColor:          vec3f,
+  alpha:              f32,
+  emissiveColor:      vec3f,
+  roughness:          f32,
+  specularColor:      vec3f,
+  alphaClip:          f32,
+  textureScaleOffset: vec4f,
+  textureEnabled:     u32,
+  lightingEnabled:    u32,
+  fogEnabled:         u32,
 };
 
 struct LightBlock {
-  color:     array<vec4<f32>, LIGHT_COUNT>,
-  position:  array<vec4<f32>, LIGHT_COUNT>,
-  direction: array<vec4<f32>, LIGHT_COUNT>,
+  color:              array<vec4f, LIGHT_COUNT>,
+  position:           array<vec4f, LIGHT_COUNT>,
+  direction:          array<vec4f, LIGHT_COUNT>,
 };
 
-struct SettingsBlock {
-  textureEnabled:  u32,
-  lightingEnabled: u32,
-  fogEnabled:      u32,
-};
 
-struct FogBlock {
-  color:  vec3<f32>,
-  start:  f32,
-  end:    f32,
-};
+@group(0) @binding(0) var<uniform> global: GlobalBlock;
+@group(0) @binding(1) var<uniform> view: ViewBlock;
+@group(0) @binding(2) var<uniform> object: ObjectBlock;
+@group(0) @binding(3) var<uniform> material: MaterialBlock;
+@group(0) @binding(4) var<uniform> lights: LightBlock;
 
-@group(0) @binding(0) var<uniform> object : ObjectBlock;
-@group(0) @binding(1) var<uniform> view : ViewBlock;
-@group(0) @binding(2) var<uniform> material : MaterialBlock;
-@group(0) @binding(3) var<uniform> lights : LightBlock;
-@group(0) @binding(4) var<uniform> settings : SettingsBlock;
-@group(0) @binding(5) var<uniform> fog : FogBlock;
-
-@group(0) @binding(6) var baseColorMap : texture_2d<f32>;
-@group(0) @binding(7) var baseColorSampler : sampler;
+// @block material
+@group(0) @binding(5) var baseColorMap : texture_2d<f32>;
+// @block material
+@group(0) @binding(6) var baseColorSampler : sampler;
 
 struct VertexInput {
   // @alias position
-  @location(0) aPosition : vec3<f32>,
+  @location(0) aPosition : vec3f,
   // @alias normal
-  @location(1) aNormal : vec3<f32>,
+  @location(1) aNormal : vec3f,
   // @alias texture
   @location(2) aTexture : vec2<f32>,
 };
 
 struct VertexOutput {
-  @builtin(position) Position : vec4<f32>,
-  @location(0) vNormal : vec3<f32>,
-  @location(1) vWorldPos : vec3<f32>,
+  @builtin(position) Position : vec4f,
+  @location(0) vNormal : vec3f,
+  @location(1) vWorldPos : vec3f,
   @location(2) vTexCoord : vec2<f32>,
-  @location(3) vToEyeInWS : vec3<f32>,
+  @location(3) vToEyeInWS : vec3f,
   @location(4) vFogFactor : f32,
 };
 
 @vertex
 fn vs_main(input : VertexInput) -> VertexOutput {
   var output : VertexOutput;
-  let worldPos = object.modelMatrix * vec4<f32>(input.aPosition, 1.0);
+  let worldPos = object.modelMatrix * vec4f(input.aPosition, 1.0);
   let viewPos = view.viewMatrix * worldPos;
 
   output.vWorldPos = worldPos.xyz;
-  output.vNormal = normalize((object.modelMatrix * vec4<f32>(input.aNormal, 0.0)).xyz);
+  output.vNormal = normalize((object.modelMatrix * vec4f(input.aNormal, 0.0)).xyz);
   output.vTexCoord = input.aTexture;
   output.vToEyeInWS = view.cameraPosition - worldPos.xyz;
   output.Position = view.projectionMatrix * viewPos;
   output.vFogFactor = 1.0;
 
-  if (settings.fogEnabled == 1u) {
+  if (material.fogEnabled == 1u) {
     let dist = length(viewPos.xyz);
-    output.vFogFactor = clamp((fog.end - dist) / (fog.end - fog.start), 0.0, 1.0);
+    output.vFogFactor = clamp((global.fogFar - dist) / (global.fogFar - global.fogNear) , 0.0, 1.0);
   }
   return output;
 }
 
 struct LightParams {
-  Color : vec4<f32>,
-  Position : vec4<f32>,
-  Direction : vec4<f32>,
+  Color : vec4f,
+  Position : vec4f,
+  Direction : vec4f,
 };
 
 struct ShadeParams {
-  V : vec3<f32>,
-  L : vec3<f32>,
-  I : vec3<f32>,
+  V : vec3f,
+  L : vec3f,
+  I : vec3f,
 };
 
 struct SurfaceParams {
-  Normal : vec4<f32>,
-  BaseColor : vec4<f32>,
-  Specular : vec3<f32>,
+  Normal : vec4f,
+  BaseColor : vec4f,
+  Specular : vec3f,
   Roughness : f32,
 };
 
@@ -117,15 +116,15 @@ fn roughnessToPower(r: f32) -> f32 {
   return 2.0 / (rr * rr) - 2.0;
 }
 
-fn fresnelSchlick(R: vec3<f32>, dotLH: f32) -> vec3<f32> {
+fn fresnelSchlick(R: vec3f, dotLH: f32) -> vec3f {
   return R + (1.0 - R) * pow(1.0 - dotLH, 5.0);
 }
 
 struct LightResult {
-  lightDir: vec3<f32>,
-  lightColor: vec3<f32>,
+  lightDir: vec3f,
+  lightColor: vec3f,
 };
-fn getLight(light: LightParams, lightType: u32, position: vec3<f32>) -> LightResult {
+fn getLight(light: LightParams, lightType: u32, position: vec3f) -> LightResult {
   var result: LightResult;
   if (lightType == LIGHT_TYPE_DIRECTIONAL) {
     result.lightDir = normalize(-light.Direction.xyz);
@@ -155,7 +154,7 @@ fn getLight(light: LightParams, lightType: u32, position: vec3<f32>) -> LightRes
   return result;
 }
 
-fn shadeLight(shade: ShadeParams, surface: SurfaceParams) -> vec3<f32> {
+fn shadeLight(shade: ShadeParams, surface: SurfaceParams) -> vec3f {
   let V = shade.V;
   let N = surface.Normal.xyz;
   let L = normalize(shade.L);
@@ -163,7 +162,7 @@ fn shadeLight(shade: ShadeParams, surface: SurfaceParams) -> vec3<f32> {
   let H = normalize(V + L);
   let dotNL = max(dot(N, L), 0.0);
   if (dotNL <= 0.0) {
-    return vec3<f32>(0.0);
+    return vec3f(0.0);
   }
   let dotNH = max(dot(N, H), 0.0);
   let dotLH = max(dot(L, H), 0.0);
@@ -175,11 +174,11 @@ fn shadeLight(shade: ShadeParams, surface: SurfaceParams) -> vec3<f32> {
 }
 
 @fragment
-fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+fn fs_main(input: VertexOutput) -> @location(0) vec4f {
   let toEye = normalize(view.cameraPosition - input.vWorldPos);
-  var baseColor = vec4<f32>(1.0);
+  var baseColor = vec4f(1.0);
 
-  if (settings.textureEnabled == 1u) {
+  if (material.textureEnabled == 1u) {
     let uv = input.vTexCoord * material.textureScaleOffset.xy + material.textureScaleOffset.zw;
     baseColor = textureSample(baseColorMap, baseColorSampler, uv);
   }
@@ -189,13 +188,13 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   }
 
   var surface : SurfaceParams;
-  surface.Normal = vec4<f32>(normalize(input.vNormal), 1.0);
-  surface.BaseColor = vec4<f32>(baseColor.rgb * srgbToLinear(material.baseColor), baseColor.a);
+  surface.Normal = vec4f(normalize(input.vNormal), 1.0);
+  surface.BaseColor = vec4f(baseColor.rgb * srgbToLinear(material.baseColor), baseColor.a);
   surface.Specular = srgbToLinear(material.specularColor);
   surface.Roughness = material.roughness;
 
-  var color = vec3<f32>(0.0, 0.0, 0.0);
-  if (settings.lightingEnabled == 1u) {
+  var color = vec3f(0.0, 0.0, 0.0);
+  if (material.lightingEnabled == 1u) {
     var i : u32 = 0u;
     loop {
       if (i >= LIGHT_COUNT) { break; }
@@ -218,22 +217,22 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   } else {
     color = surface.BaseColor.rgb;
   }
-  color = mix(fog.color, color, input.vFogFactor);
-  // return vec4<f32>(input.vNormal.xyz, alpha);
-  // return vec4<f32>(input.Position.z, input.Position.z, input.Position.z, 1.0);
-  return vec4<f32>(color, alpha);
+  color = mix(global.fogColor, color, input.vFogFactor);
+  // return vec4f(input.vNormal.xyz, alpha);
+  // return vec4f(input.Position.z, input.Position.z, input.Position.z, 1.0);
+  return vec4f(color, alpha);
 }
 
 
 // sRGB → Linear
-fn srgbToLinear(c: vec3<f32>) -> vec3<f32> {
-  let cutoff = vec3<f32>(0.04045);
-  return select( c / 12.92, pow((c + 0.055) / 1.055, vec3<f32>(2.4)), c > cutoff );
+fn srgbToLinear(c: vec3f) -> vec3f {
+  let cutoff = vec3f(0.04045);
+  return select( c / 12.92, pow((c + 0.055) / 1.055, vec3f(2.4)), c > cutoff );
 }
 
 // Linear → sRGB
-fn linearToSrgb(c: vec3<f32>) -> vec3<f32> {
-  let cutoff = vec3<f32>(0.0031308);
-  return select( 12.92 * c, 1.055 * pow(c, vec3<f32>(1.0 / 2.4)) - 0.055, c > cutoff );
+fn linearToSrgb(c: vec3f) -> vec3f {
+  let cutoff = vec3f(0.0031308);
+  return select( 12.92 * c, 1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c > cutoff );
 }
 `

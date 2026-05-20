@@ -66,7 +66,7 @@ export class VignetteShader implements Renderable {
   public color: Vec3 = Vec3.create(0, 0, 0)
   public texture: Texture
 
-  private program: Program<VignetteShaderParams>
+  private program: Program
   private params: TypedInputAccessor<VignetteShaderParams>
   public constructor(device: Device) {
     this.params = typedInputAccessor(vignetteShaderParams())
@@ -85,7 +85,7 @@ export class VignetteShader implements Renderable {
     params.set('params.aspect', this.aspect)
     params.set('params.color', this.color)
 
-    this.program.apply(params)
+    this.program.applyInputs(params)
     this.program.commit()
     pass.setRenderTarget(0, this.textureOuput)
     pass.setViewportState(0, 0, this.textureOuput.width, this.textureOuput.height)

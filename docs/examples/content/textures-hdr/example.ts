@@ -1,9 +1,19 @@
 import { ContentLoader } from '@gglib/content'
-import { BasicMaterial, boxGeometry, Color, createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import {
+  BasicMaterial,
+  Color,
+  createDevice,
+  CullState,
+  Device,
+  planeGeometry,
+  PlatformId,
+  TaskContext,
+  Texture,
+} from '@gglib/graphics'
 import { Mouse } from '@gglib/input'
 import { HDR } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
+import { mountUi, redrawUi } from 'tweak-ui'
 
 const files = {
   Court: '/textures/hdr/footprint_court.hdr',
@@ -24,43 +34,60 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     preventDefault: true,
   })
 
-  let dt = 0
+  let timeDelta = 0
+  let texture: Texture
   mountUi(tools, (ui) => {
     loadTexture(params.texture)
     ui.select(params, 'texture', {
       options: files,
       onchange: () => loadTexture(params.texture),
     })
-    ui.graph({
-      rows: [
-        {
-          name: 'fps',
-          sample: () => (dt ? 1000 / dt : 0),
-          min: 0,
-          max: 200,
-          smoothing: 0.5,
+    ui.group('Texture', () => {
+      ui.string({
+        label: 'Size',
+        disabled: true,
+        get value() {
+          return `${texture ? texture.width : 0} x ${texture ? texture.height : 0}`
         },
-      ],
+      })
+      ui.string({
+        label: 'Format',
+        disabled: true,
+        get value() {
+          return texture?.format
+        },
+      })
+      ui.string({
+        label: 'Mip levels',
+        disabled: true,
+        get value() {
+          return texture?.mipLevelCount
+        },
+      })
+      ui.string({
+        label: 'Size in bytes',
+        disabled: true,
+        get value() {
+          return texture?.sizeInBytes
+        },
+      })
     })
   })
 
   const material = new BasicMaterial(device)
-  const geometry = boxGeometry(device)
+  const geometry = planeGeometry(device, {
+    vertexTransform: Mat4.createAxisAngle(Vec3.UnitX, 90 * DEGREE_TO_RAD),
+  })
 
-  const world = Mat4.createIdentity()
-  const camera = {
-    theta: 0,
-    phi: 90,
-    distance: 2,
-    position: Vec3.create(),
-    view: Mat4.createIdentity(),
-    projection: Mat4.createIdentity(),
-  }
+  const world = Mat4.createScaleUniform(3)
+  const camera = demoCamera()
 
   function loadTexture(url: string) {
     content
       .loadTexture(url)
       .then((result) => {
+        texture = result
+        redrawUi()
         material.Texture = result
         material.TextureEnabled = 1
       })
@@ -69,39 +96,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       })
   }
 
-  function updateCamera() {
-    mouse.update()
-    if (mouse.leftButtonIsPressed) {
-      camera.theta -= mouse.dx * 0.1
-      camera.phi -= mouse.dy * 0.1
-    }
-    if (mouse.middleButtonIsPressed) {
-      camera.distance += mouse.dy * 0.01
-      camera.distance = Math.max(0.1, camera.distance)
-    }
-
-    // prettier-ignore
-    camera.position.initSpherical(
-      camera.phi * DEGREE_TO_RAD,
-      camera.theta * DEGREE_TO_RAD,
-      camera.distance,
-    )
-    camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
-    camera.projection.initPerspectiveFieldOfView(
-      45 * DEGREE_TO_RAD,
-      device.output.aspectRatio,
-      0.01,
-      1000,
-      device.ndcMinZ,
-    )
-  }
-
   const pass = device.renderPass
 
   function frame(ctx: TaskContext) {
-    dt = ctx.dt
+    timeDelta = ctx.dt
     device.resize()
-    updateCamera()
+    camera.update(mouse, device)
+
     pass.flush()
     pass.setClearColor(0, Color.CornflowerBlue)
     pass.clear()
@@ -109,8 +110,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     material.World = world
     material.View = camera.view
     material.Projection = camera.projection
-    material.effect.draw(pass, geometry, material.inputs)
+    material.effect.applyInputs(material.inputBlocks)
+    material.effect.draw(pass, geometry)
     pass.submit()
+    pass.flush()
+
     device.stats(stats)
   }
 
@@ -150,7 +154,7 @@ function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, devic
     camera.theta * DEGREE_TO_RAD,
     camera.distance,
   )
-  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.UnitY).invert()
   camera.projection.initPerspectiveFieldOfView(
     45 * DEGREE_TO_RAD,
     device.output.aspectRatio,

@@ -90,12 +90,14 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     self.format = options?.format ?? this.format
     self.generateMipmap = options?.generateMipmap ?? this.generateMipmap
     self.crossOrigin = options?.crossOrigin ?? this.crossOrigin
+
     self.isSampled = isSampled
     self.isRenderTarget = isRenderTarget
     self.isMultisampled = options.sampleCount > 1
     self.isCompressed = surfaceFormatIsCompressed(this.format)
     self.mipLevelCount = options.mipLevelCount ?? getMipmapCount(this.width, this.height, this.depth)
     self.sampleCount = options.sampleCount ?? 1
+
     self.gpuDimension = textureTypeToWebGPUDimension(this.type)
     self.gpuViewDimension = textureTypeToWebGPU(this.type)
     self.gpuFormat = surfaceFormatToWebGPU(this.format)

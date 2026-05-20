@@ -54,7 +54,7 @@ export class LookAtConstraint implements GameComponent {
   /**
    * The up vector
    */
-  public up: IVec3 = Vec3.Up
+  public up: IVec3 = Vec3.UnitY
   /**
    *
    */

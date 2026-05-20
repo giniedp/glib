@@ -1,5 +1,12 @@
-import { BasicGame, GamePadInput, KeyboardInputSystem, SpriteComponent, TransformComponent } from '@gglib/components'
-import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
+import {
+  BasicGame,
+  BehaviorComponent,
+  GamePadInput,
+  KeyboardInputSystem,
+  SpriteComponent,
+  TransformComponent,
+} from '@gglib/components'
+
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { Color, PlatformId, Texture } from '@gglib/graphics'
 import { GamepadAxes, KeyboardKey } from '@gglib/input'

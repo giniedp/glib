@@ -1,5 +1,6 @@
 import {
   BasicGame,
+  BehaviorComponent,
   CameraComponent,
   GameTime,
   LightComponent,
@@ -7,7 +8,6 @@ import {
   TimeSystem,
   TransformComponent,
 } from '@gglib/components'
-import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial } from '@gglib/graphics'
@@ -19,9 +19,10 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
   const time = game.world.getSystem(TimeSystem).getOrCreate('customTime')
   mountUi(tools, (ui) => {
-    ui.slider(time, 'factor', { min: -2, max: 2, step: 0.1, label: 'Time Factor' })
+    ui.number(time, 'factor', { slider: true, min: -2, max: 2, step: 0.1, label: 'Time Factor' })
   })
-  return game.run()
+  game.run()
+  return () => game.stop()
 }
 
 class Game extends BasicGame {
@@ -48,7 +49,7 @@ class Game extends BasicGame {
       parent: this.scene,
       components: [new LightComponent()],
       transform: new TransformComponent({
-        rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
+        rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
       }),
     })
   }
@@ -69,7 +70,7 @@ class Game extends BasicGame {
 
   private createObjects() {
     let parent = this.scene
-    const count = 5
+    const count = 10
     for (let i = 0; i < count; i++) {
       const child = this.createEntity({
         parent: parent,

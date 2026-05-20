@@ -5,8 +5,8 @@ import {
   ProgramInput,
   Texture,
   type MatrixLike,
-  type ProgramInputType,
-  type ProgramInputValue,
+  type InputTypeName,
+  type InputValueType,
 } from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebGpuDevice } from '../WebGpuDevice'
@@ -19,21 +19,27 @@ function invalidSetter(): void {
   throw new Error('Cannot set value on texture or sampler parameter.')
 }
 
-export type WebGpuParameterValue = ProgramInputValue | GPUTexture | GPUTextureView | GPUExternalTexture
+export type WebGpuParameterValue = InputValueType | GPUTexture | GPUTextureView | GPUExternalTexture
 
 export class WebGpuProgramInput extends ProgramInput {
-  public name: string
-  public type: ProgramInputType
-  public device: WebGpuDevice
+  public readonly name: string
+  public readonly type: InputTypeName
+  public readonly device: WebGpuDevice
+
+  public readonly group: number
+  public readonly binding: number
 
   private array: TypedArray
   private resource: WebGpuShaderResource
-  public constructor(resource: WebGpuShaderResource, info: WgslResourceInfo) {
+
+  public constructor(name: string, resource: WebGpuShaderResource, info: WgslResourceInfo) {
     super()
     this.resource = resource
     this.device = resource.device
-    this.name = info.alias || info.name
+    this.name = name
     this.type = info.container
+    this.binding = resource.info.binding
+    this.group = resource.info.group
 
     const isArray = info.container === 'array'
     const container = isArray ? info.elementContainer : info.container
@@ -87,7 +93,6 @@ export class WebGpuProgramInput extends ProgramInput {
       default:
         this.set = () => {
           console.warn(`Unsupported parameter type '${this.type}' for '${this.name}'`)
-          // throw new Error(`Unsupported parameter type for '${this.name}'`)
         }
     }
   }
@@ -218,5 +223,9 @@ export class WebGpuProgramInput extends ProgramInput {
     } else {
       this.resource.setBuffer(value)
     }
+  }
+
+  public get rawValue(): unknown {
+    return this.array
   }
 }

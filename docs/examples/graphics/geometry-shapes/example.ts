@@ -58,12 +58,12 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     source: '/textures/prototype/proto_red.png',
   })
   material.Texture = texture
-  material.World = world
   material.View = view
   material.Projection = projection
   material.TextureEnabled = TRUE
   material.CameraPosition = cameraPosition
   material.LightingEnabled = FALSE
+  material.BaseColor = Vec3.create(1, 1, 1)
   material.SpecularColor = Vec3.create(0.5, 0.5, 0.5)
 
   material.setDirectionalLight(0, vec3([1, 1, 1]), vec3([0, 0, -1]))
@@ -92,6 +92,10 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       device.ndcMinZ,
     )
     Mat4.multiply(projection, view, viewProjection)
+
+    material.World = world
+    material.View = view
+    material.Projection = projection
   }
 
   const pass = device.renderPass
@@ -110,7 +114,9 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.setClearDepth(1)
     pass.clear()
 
-    material.effect.draw(pass, geometry, material.inputs)
+    material.effect.applyInputs(material.inputBlocks)
+    material.effect.draw(pass, geometry)
+
     pass.submit()
     pass.resolve()
     pass.flush()
@@ -348,11 +354,6 @@ function createUi(
       ui.boolean(material, 'TextureEnabled')
       ui.color(material, 'BaseColor', { format: '[n]rgb' })
       ui.color(material, 'SpecularColor', { format: '[n]rgb' })
-      ui.boolean(material, 'LightingEnabled')
-      ui.spherical(material.inputs, 'lights.direction[0]')
-      ui.color(material.inputs, 'lights.color[0]', {
-        format: '[n]rgb',
-      })
     })
   })
 }

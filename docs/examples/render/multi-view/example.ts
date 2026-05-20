@@ -33,7 +33,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     viewport: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 },
     camera: {
       visibilityMask: LayerMask.All,
-      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Right, 20), Vec3.Zero, Vec3.Up),
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.UnitX, 20), Vec3.Zero, Vec3.UnitY),
       view: Mat4.createIdentity(),
       projection: Mat4.createIdentity(),
     },
@@ -42,7 +42,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     viewport: { x: 0.0, y: 0.5, width: 0.5, height: 0.5 },
     camera: {
       visibilityMask: LayerMask.All,
-      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Left, 20), Vec3.Zero, Vec3.Up),
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Left, 20), Vec3.Zero, Vec3.UnitY),
       view: Mat4.createIdentity(),
       projection: Mat4.createIdentity(),
     },
@@ -51,7 +51,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     viewport: { x: 0.0, y: 0.0, width: 0.5, height: 0.5 },
     camera: {
       visibilityMask: LayerMask.All,
-      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Backward, 20), Vec3.Zero, Vec3.Up),
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.UnitZ, 20), Vec3.Zero, Vec3.UnitY),
       view: Mat4.createIdentity(),
       projection: Mat4.createIdentity(),
     },
@@ -60,7 +60,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     viewport: { x: 0.5, y: 0.0, width: 0.5, height: 0.5 },
     camera: {
       visibilityMask: LayerMask.All,
-      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.Up, 20), Vec3.Zero, Vec3.Forward),
+      world: Mat4.createLookAt(Vec3.multiplyScalar(Vec3.UnitY, 20), Vec3.Zero, Vec3.NegativeUnitZ),
       view: Mat4.createIdentity(),
       projection: Mat4.createIdentity(),
     },

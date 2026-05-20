@@ -42,7 +42,6 @@ export function readWgslProgram(reader: WgslTokenReader): WgslProgram {
   let comments: string[] = []
   let attributes: WgslAttribute[] = []
   while (reader.canRead) {
-    reader.skipComments = false
     if (reader.is('symbol', ';')) {
       reader.next()
       continue
@@ -60,31 +59,26 @@ export function readWgslProgram(reader: WgslTokenReader): WgslProgram {
       case 'enable':
       case 'requires':
       case 'diagnostic': {
-        reader.skipComments = true
         result.push(readWgslDirective(reader))
         continue
       }
       case 'const_assert': {
-        reader.skipComments = true
         result.push(readWgslAssert(reader))
         continue
       }
       case 'fn': {
-        reader.skipComments = true
         result.push(readWgslFunction(reader, comments, attributes))
         comments = []
         attributes = []
         continue
       }
       case 'struct': {
-        reader.skipComments = true
         result.push(readWgslStruct(reader, comments, attributes))
         comments = []
         attributes = []
         continue
       }
       case 'alias': {
-        reader.skipComments = true
         result.push(readWgslTypeAlias(reader, comments))
         comments = []
         attributes = []
@@ -94,7 +88,6 @@ export function readWgslProgram(reader: WgslTokenReader): WgslProgram {
       case 'let':
       case 'const':
       case 'override': {
-        reader.skipComments = true
         result.push(readVarOrValueDeclaration(reader, comments, attributes))
         comments = []
         attributes = []
@@ -143,8 +136,14 @@ export function readWgslFunction(
   attributes: WgslAttribute[],
 ): WgslFunction {
   reader.read('keyword', 'fn')
+  reader.skipType('comment')
+
   const identifier = reader.read('identifier')
+  reader.skipType('comment')
+
   const params = readWgslFunctionParams(reader)
+  reader.skipType('comment')
+
   const returns = reader.is('symbol', '-') ? readWgslFunctionReturnType(reader) : null
   reader.readUntil('symbol', '{')
   const body = reader.readBlock('{', '}')
@@ -153,12 +152,9 @@ export function readWgslFunction(
 
 function readWgslFunctionParams(reader: WgslTokenReader) {
   const result: WgslFunctionParam[] = []
-  const skipComments = reader.skipComments
-  reader.skipComments = false
   let attributes: WgslAttribute[] = []
   let comments: string[] = []
 
-  reader.readUntil('symbol', '(')
   reader.read('symbol', '(')
   while (reader.canRead) {
     if (reader.is('comment')) {
@@ -193,7 +189,6 @@ function readWgslFunctionParams(reader: WgslTokenReader) {
 
     throw new Error(`Unexpected token in function parameters:\n${reader.createLog()}`)
   }
-  reader.skipComments = skipComments
   return result
 }
 
@@ -219,25 +214,38 @@ function readWgslFunctionReturnType(reader: WgslTokenReader) {
 
 export function readWgslTypeAlias(reader: WgslTokenReader, comments: string[]): WgslTypeAlias {
   reader.read('keyword', 'alias')
+  reader.skipType('comment')
+
   const identifier = reader.read('identifier')
+  reader.skipType('comment')
+
   reader.read('symbol', '=')
+  reader.skipType('comment')
+
   const type = readWgslTypeReference(reader)
   return wgslTypeAlias(comments, identifier, type)
 }
 
 export function readWgslTypeReference(reader: WgslTokenReader): WgslTypeReference {
   const identifier = reader.read('identifier')
+  reader.skipType('comment')
+
   let template: TemplateList = null
   if (reader.is('templatelist')) {
     template = reader.token as TemplateList
     reader.next()
   }
+
   return wgslTypeRefence(identifier, template)
 }
 
 export function readWgslStruct(reader: WgslTokenReader, comments: string[], attributes: WgslAttribute[]): WgslStruct {
   reader.read('keyword', 'struct')
+  reader.skipType('comment')
+
   const identifier = reader.read('identifier')
+  reader.skipType('comment')
+
   const tokens = reader.readBlock('{', '}')
   const member = readWgslStructBody(new TokenReader(tokens))
   return wgslStruct(comments, attributes, identifier, member)
@@ -257,15 +265,12 @@ function readWgslStructBody(reader: WgslTokenReader) {
       continue
     }
     if (reader.is('identifier')) {
-      const skipComments = reader.skipComments
-      reader.skipComments = true
       const identifier = reader.read('identifier')
       reader.read('symbol', ':')
       const type = readWgslTypeReference(reader)
       member.push(wgslStructMember(comments, attributes, identifier, type))
       attributes = []
       comments = []
-      reader.skipComments = skipComments
       continue
     }
     if (reader.is('symbol', ',')) {
@@ -296,6 +301,8 @@ function readVarOrValueDeclaration(
     initializer: null,
   }
   result.kind = reader.read('keyword') as any
+  reader.skipType('comment')
+
   if (reader.is('templatelist')) {
     for (const token of (reader.token as TemplateList).tokens) {
       if (token.type === 'identifier') {
@@ -303,17 +310,24 @@ function readVarOrValueDeclaration(
       }
     }
     reader.next()
+    reader.skipType('comment')
   }
+
   result.name = reader.read('identifier')
+  reader.skipType('comment')
 
   if (reader.is('symbol', ':')) {
     reader.next()
+    reader.skipType('comment')
     result.type = readWgslTypeReference(reader)
   }
+
   if (reader.is('symbol', '=')) {
     reader.next()
+    reader.skipType('comment')
     result.initializer = reader.readUntil('symbol', ';')
   }
+
   reader.read('symbol', ';')
   return result
 }

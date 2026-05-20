@@ -1,6 +1,6 @@
 import { Device, Material, MaterialOptions } from '@gglib/graphics'
 
-export type MaterialType = new (device: Device, options: MaterialOptions) => Material<any>
+export type MaterialType = new (device: Device, options: MaterialOptions) => Material
 export type MaterialMatcher = (asset: MaterialOptions) => boolean
 export class MaterialRegistry {
   private index: MaterialFactory[] = []
@@ -30,5 +30,5 @@ export class MaterialRegistry {
 
 export interface MaterialFactory {
   match: MaterialMatcher
-  create: (device: Device, asset: MaterialOptions) => Material<any>
+  create: (device: Device, asset: MaterialOptions) => Material
 }

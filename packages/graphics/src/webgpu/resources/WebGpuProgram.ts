@@ -1,7 +1,6 @@
-import type { IVec2, IVec3, IVec4 } from '@gglib/math'
-import type { ProgramOptions, ProgramInputs, Texture } from '../../resources'
+import type { InputValueType, ProgramInputBlock, ProgramOptions } from '../../resources'
 import { Program } from '../../resources'
-import type { SamplerState } from '../../states'
+import { ShaderAnnotations } from '../../shader'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import type { WgslProgramInfo, WgslResourceInfo } from '../wgsl'
 import { WebGpuProgramInput } from './WebGpuProgramInput'
@@ -10,17 +9,19 @@ import { WebGpuShaderResource } from './WebGpuShaderResource'
 
 export interface WebGpuParameterSetOptions {
   layouts?: ReadonlyArray<GPUBindGroupLayout>
-  resources?: ReadonlyArray<WebGpuShaderResource>
+  sharedBlocks?: ReadonlyArray<string>
 }
 
-export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends Program<Params> {
-  public shared: readonly string[]
-
+export class WebGpuProgram extends Program {
   public readonly module: WebGpuShaderModule
+  public readonly sharedBlocks: ReadonlyArray<string>
   private device: WebGpuDevice
+
   private info: WgslProgramInfo
-  private params: Record<string, WebGpuProgramInput> = {}
+  private inputMap: Record<string, WebGpuProgramInput> = {}
+  private sourceState: Record<string, { source: ProgramInputBlock; version: number }> = {}
   private resources: WebGpuShaderResource[]
+  private ownedResources: WebGpuShaderResource[]
 
   public readonly bindGroupLayouts: ReadonlyArray<GPUBindGroupLayout>
   public get bindGroups(): ReadonlyArray<GPUBindGroup> {
@@ -39,26 +40,50 @@ export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends
     this.module = shader
     this.device = shader.device
     this.info = info
-    this.resources = createResources(this.device, info, options?.resources)
+    this.sharedBlocks = [...(options?.sharedBlocks || [])]
+
+    // module.program is null when this is the default module
+    const sharedResources = this.module.program?.getResourceBlocks(this.sharedBlocks) || []
+    const resources = createResources(this.device, info, sharedResources)
+    this.resources = [...resources.shared, ...resources.owned]
+    this.ownedResources = resources.owned
 
     this.bindGroupLayouts =
       options?.layouts || createBindGroupLayouts(this.device, shader.gpuObject.label, this.resources)
     this.createBindGroupDescriptors()
   }
-  public apply(parameters: Partial<Params>): void {
-    for (const key in parameters) {
-      this.set(key, parameters[key])
+
+  public applyBlock(block: ProgramInputBlock, force?: boolean): boolean {
+    const state = this.sharedBlocks.includes(block.name) ? this.module.program.sourceState : this.sourceState
+    state[block.name] ||= { source: block, version: -1 }
+    const record = state[block.name]
+
+    if (!force && record.source === block && record.version === block.version) {
+      return false
     }
-  }
-  public get(path: string): WebGpuProgramInput | null {
-    if (path in this.params) {
-      return this.params[path as string]
-    }
-    this.params[path as string] = resolveParameter(this.resources, path as string) || null
-    return this.params[path as string]
+
+    record.source = block
+    record.version = block.version
+    this.applyInputs(block.values)
+
+    return true
   }
 
-  public set<K extends keyof Params>(path: K, value: Params[K]): boolean {
+  public applyInputs(inputs: Record<string, InputValueType>): void {
+    for (const key in inputs) {
+      this.set(key, inputs[key])
+    }
+  }
+
+  public get(path: string): WebGpuProgramInput | null {
+    if (path in this.inputMap) {
+      return this.inputMap[path as string]
+    }
+    this.inputMap[path as string] = resolveInput(this.resources, path as string) || null
+    return this.inputMap[path as string]
+  }
+
+  public set(path: string, value: InputValueType): boolean {
     const parameter = this.get(path as string)
     if (!parameter) {
       return false
@@ -67,62 +92,28 @@ export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends
     return true
   }
 
-  public mustSet<K extends keyof Params>(path: K, value: Params[K]) {
-    const parameter = this.get(path as string)
-    if (!parameter) {
-      throw new Error(`Parameter ${path as string} not found in program`)
-    }
-    parameter.set(value)
-  }
-
-  public setScalar(path: string, value: number) {
-    this.get(path).setScalar(value)
-  }
-
-  public setArray(path: string, value: ArrayLike<number>, offset?: number) {
-    this.get(path).setArray(value, offset)
-  }
-
-  public setVec2(path: string, value: IVec2 | ArrayLike<number>) {
-    this.get(path).setVec2(value)
-  }
-
-  public setVec3(path: string, value: IVec3 | ArrayLike<number>) {
-    this.get(path).setVec3(value)
-  }
-
-  public setVec4(path: string, value: IVec4 | ArrayLike<number>) {
-    this.get(path).setVec4(value)
-  }
-
-  public setMat2x2(path: string, value: ArrayLike<number>): void {
-    this.get(path).setMat2x2(value)
-  }
-
-  public setMat3x3(path: string, value: ArrayLike<number>): void {
-    this.get(path).setMat3x3(value)
-  }
-
-  public setMat4x4(path: string, value: ArrayLike<number>): void {
-    this.get(path).setMat4x4(value)
-  }
-
-  public setTexture(path: string, value: Texture | GPUTexture | GPUTextureView | GPUExternalTexture): void {
-    this.get(path).setTexture(value as any)
-  }
-
-  public setSampler(path: string, value: SamplerState): void {
-    this.get(path).setSampler(value)
-  }
-
   public clone(options?: ProgramOptions): WebGpuProgram {
     return new WebGpuProgram(this.module, this.info, {
       layouts: this.bindGroupLayouts,
-      resources:
-        options?.shared?.map((name) => {
-          return this.module.program.resources.find((it) => it.info.name === name)
-        }) || [],
+      sharedBlocks: options?.sharedBlocks || this.sharedBlocks,
     })
+  }
+
+  private getResourceBlocks(names: readonly string[]) {
+    if (!names?.length) {
+      return []
+    }
+
+    const result: WebGpuShaderResource[] = []
+    for (const name of names) {
+      for (const resource of this.module.program.resources) {
+        if (resource.block === name) {
+          result.push(resource)
+        }
+      }
+    }
+
+    return result
   }
 
   public commit() {
@@ -132,11 +123,12 @@ export class WebGpuProgram<Params extends ProgramInputs = ProgramInputs> extends
   }
 
   public dispose(): void {
-    for (const resource of this.resources) {
+    for (const resource of this.ownedResources) {
       resource.dispose()
     }
+    this.ownedResources = []
     this.resources = []
-    this.params = {}
+    this.inputMap = {}
   }
 
   private createBindGroupDescriptors() {
@@ -182,21 +174,25 @@ function createResources(
   info: WgslProgramInfo,
   sharedResources?: ReadonlyArray<WebGpuShaderResource>,
 ) {
-  const resources: WebGpuShaderResource[] = []
+  const shared: WebGpuShaderResource[] = []
+  const owned: WebGpuShaderResource[] = []
   const isCompute = info.entryPoints.some((it) => it.stage === 'compute')
   for (const param of info.resources) {
     if (param.binding == null) {
       continue
     }
-    const shared = sharedResources?.find((it) => it.info.name === param.name)
-    if (shared) {
-      // TODO: refcount shared resources to know when to dispose them
-      resources.push(shared)
+
+    const resource = sharedResources?.find((it) => it.info.name === param.name)
+    if (resource) {
+      shared.push(resource)
     } else {
-      resources.push(new WebGpuShaderResource(device, param, isCompute))
+      owned.push(new WebGpuShaderResource(device, param, isCompute))
     }
   }
-  return resources
+  return {
+    owned,
+    shared,
+  }
 }
 
 function createBindGroupLayouts(device: WebGpuDevice, label: string, resources: WebGpuShaderResource[]) {
@@ -212,8 +208,57 @@ function createBindGroupLayouts(device: WebGpuDevice, label: string, resources: 
   return result
 }
 
-function resolveParameter(resources: ReadonlyArray<WebGpuShaderResource>, path: string) {
+/**
+ * Resolves a dot-separated input path to a concrete {@link WebGpuProgramInput},
+ * walking the reflected shader resource tree to find the matching buffer offset
+ * or texture/sampler binding.
+ *
+ * Path format: `"<block>.<member>[<index>]"`
+ *
+ * - The first segment identifies the resource (uniform block, texture, or sampler)
+ *   by its WGSL variable name or its `@block` annotation value.
+ * - Subsequent segments walk struct members, each resolved by field name or
+ *   `@alias` annotation value.
+ * - Array indices (`[n]`) are supported on both resources and struct members.
+ *
+ * Examples:
+ * ```
+ * "view.viewMatrix"            // struct member in a uniform block
+ * "object.bones[2]"            // indexed array member
+ * "baseColorMap"               // top-level texture (no block prefix)
+ * "material.baseColorMap"      // texture declared under a `@block` annotation
+ * ```
+ *
+ * Returns `null` if any segment fails to resolve.
+ */
+function resolveInput(resources: ReadonlyArray<WebGpuShaderResource>, path: string): WebGpuProgramInput | null {
+  const isIndexed = path.includes('[')
   const parts = path.split('.')
+
+  if (!parts.length) {
+    return null
+  }
+
+  if (!isIndexed && parts.length === 1) {
+    let resource = findUniformBlock(resources, parts[0])
+    resource ||= findNonUniformByShaderName(resources, parts[0])
+
+    if (!resource) {
+      return null
+    }
+
+    return new WebGpuProgramInput(path, resource, resource.info)
+  }
+
+  if (!isIndexed && parts.length === 2) {
+    const resource = findTextureOrSamplerInBlock(resources, parts[0], parts[1])
+    if (resource) {
+      return new WebGpuProgramInput(path, resource, resource.info)
+    }
+
+    // fall through to uniform block member walk
+  }
+
   let resource: WebGpuShaderResource
   let info: WgslResourceInfo
   let offset = 0
@@ -221,9 +266,10 @@ function resolveParameter(resources: ReadonlyArray<WebGpuShaderResource>, path: 
     const part = parts[i]
     const [key, index] = part.split(/[[\]]/)
 
-    // base resource path
     if (i === 0) {
-      resource = findResource(resources, key)
+      // first segment: find the uniform block by name
+      resource = findUniformBlock(resources, key)
+
       if (!resource) {
         return null
       }
@@ -236,7 +282,9 @@ function resolveParameter(resources: ReadonlyArray<WebGpuShaderResource>, path: 
       continue
     }
 
-    // member access
+    // Subsequent segments: walk struct members.
+    // Each member is matched by field name or @alias annotation value.
+
     info = findMember(info.members, key)
     if (!info) {
       return null
@@ -248,34 +296,93 @@ function resolveParameter(resources: ReadonlyArray<WebGpuShaderResource>, path: 
       console.warn(`Trying to index non-array resource ${key} in path ${path}`)
     }
   }
-  return new WebGpuProgramInput(resource, {
+
+  return new WebGpuProgramInput(path, resource, {
     ...info,
     offset,
   })
 }
 
-function findResource(list: ReadonlyArray<WebGpuShaderResource>, name: string) {
+function findUniformBlock(list: ReadonlyArray<WebGpuShaderResource>, name: string): WebGpuShaderResource | null {
   name = name.toLowerCase()
   if (!list) {
     return null
   }
   for (const item of list) {
-    if ((item.info.alias || item.info.name).toLowerCase() === name) {
+    if (item.isBuffer && isBlockOrName(item.info, name)) {
       return item
     }
   }
   return null
 }
 
-function findMember(list: ReadonlyArray<WgslResourceInfo>, name: string) {
+function findNonUniformByShaderName(
+  list: ReadonlyArray<WebGpuShaderResource>,
+  name: string,
+): WebGpuShaderResource | null {
+  name = name.toLowerCase()
+  if (!list) {
+    return null
+  }
+  for (const item of list) {
+    if (!item.isBuffer && isShaderName(item.info, name)) {
+      return item
+    }
+  }
+  return null
+}
+
+function findTextureOrSamplerInBlock(
+  list: ReadonlyArray<WebGpuShaderResource>,
+  block: string,
+  name: string,
+): WebGpuShaderResource | null {
+  block = block.toLowerCase()
+  name = name.toLowerCase()
+  if (!list) {
+    return null
+  }
+  for (const item of list) {
+    if ((item.isTexture || item.isSampler) && isBlockOrName(item.info, block) && isAliasOrName(item.info, name)) {
+      return item
+    }
+  }
+  return null
+}
+
+/**
+ * Finds a top-level shader resource by name or `@block` annotation value.
+ * Matching is case-insensitive.
+ */
+function findMember(list: ReadonlyArray<WgslResourceInfo>, name: string): WgslResourceInfo | null {
   if (!list) {
     return null
   }
   name = name.toLowerCase()
   for (const member of list) {
-    if ((member.alias || member.name).toLowerCase() === name) {
+    if (isAliasOrName(member, name)) {
       return member
     }
   }
   return null
+}
+
+function isBlockOrName(info: WgslResourceInfo, name: string) {
+  const block = info.annotations[ShaderAnnotations.Block]
+  if (block != null) {
+    return block.toLowerCase() === name
+  }
+  return info.name.toLowerCase() === name
+}
+
+function isAliasOrName(info: WgslResourceInfo, name: string) {
+  const alias = info.annotations[ShaderAnnotations.Alias]
+  if (alias != null) {
+    return alias.toLowerCase() === name
+  }
+  return info.name.toLowerCase() === name
+}
+
+function isShaderName(info: WgslResourceInfo, name: string) {
+  return info.name.toLowerCase() === name
 }

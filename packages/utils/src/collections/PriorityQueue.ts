@@ -10,7 +10,7 @@ export class PriorityQueue<K, T> {
   private indexMap = new Map<K, number>()
   private orderCounter = 0
 
-  public get entries(): ReadonlyArray<Readonly<HeapNode<K, T>>> {
+  public get entries(): ReadonlyArray<NegativeUnitY<HeapNode<K, T>>> {
     return this.heap
   }
 

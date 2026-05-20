@@ -4,8 +4,8 @@ import {
   ProgramInput,
   Texture,
   type MatrixLike,
-  type ProgramInputType,
-  type ProgramInputValue,
+  type InputTypeName,
+  type InputValueType,
 } from '../../resources'
 import { SamplerState } from '../../states'
 import { WebglShaderModule } from './WebglShaderModule'
@@ -13,10 +13,11 @@ import type { WebglUniform } from './WebglUniform'
 
 export class WebglProgramInput extends ProgramInput {
   public readonly name: string
-  public readonly type: ProgramInputType
+  public readonly type: InputTypeName
 
   private uniform: WebglUniform
   private index: number
+  private size: number
   public constructor(uniform: WebglUniform, name: string, arrayIndex: number) {
     super()
     this.name = name
@@ -27,26 +28,34 @@ export class WebglProgramInput extends ProgramInput {
     switch (this.type) {
       case 'scalar':
         this.set = this.setScalar
+        this.size = 1
         break
       case 'vec2':
         this.set = this.setVec2
+        this.size = 2
         break
       case 'vec3':
         this.set = this.setVec3
+        this.size = 3
         break
       case 'vec4':
         this.set = this.setVec4
+        this.size = 4
         break
       case 'mat2x2':
         this.set = this.setMat2x2
+        this.size = 4
         break
       case 'mat3x3':
         this.set = this.setMat3x3
+        this.size = 9
         break
       case 'mat4x4':
         this.set = this.setMat4x4
+        this.size = 16
         break
       case 'sampler':
+        this.size = 1
         this.set = (value) => {
           if (value == null) {
             this.setTexture(null)
@@ -66,7 +75,7 @@ export class WebglProgramInput extends ProgramInput {
     }
   }
 
-  public set(_value: ProgramInputValue): void {
+  public set(_value: InputValueType): void {
     throw new Error('Method not implemented.')
   }
   public setScalar(value: number): void {
@@ -152,13 +161,17 @@ export class WebglProgramInput extends ProgramInput {
   public setBuffer(value: Buffer): void {
     this.uniform.setBuffer(value)
   }
+
+  public get rawValue(): unknown {
+    return this.uniform.readValue(this.index, this.size)
+  }
 }
 
 export class WebglPendingInput extends ProgramInput {
   public readonly name: string
-  public readonly type: ProgramInputType
+  public readonly type: InputTypeName
 
-  private value: ProgramInputValue
+  private value: InputValueType
   private offset: number
   private method: keyof ProgramInput
   public constructor(name: string, module: WebglShaderModule) {
@@ -167,7 +180,7 @@ export class WebglPendingInput extends ProgramInput {
     this.type = null // not used atm
   }
 
-  public set(value: ProgramInputValue): void {
+  public set(value: InputValueType): void {
     this.value = value
     this.method = 'set'
   }
@@ -222,5 +235,9 @@ export class WebglPendingInput extends ProgramInput {
 
   public apply(target: WebglProgramInput): void {
     target[this.method as any](this.value, this.offset)
+  }
+
+  public get rawValue(): unknown {
+    return this.value
   }
 }

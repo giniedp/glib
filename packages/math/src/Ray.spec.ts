@@ -2,7 +2,6 @@ import { BoundingBox, BoundingSphere, IVec3, Ray, Vec3, Vec4 } from './index'
 import { describe, it, expect } from 'vitest'
 
 describe('Ray', () => {
-
   function expectVec3Components(v: IVec3, parts: number[]) {
     expect(v.x, 'x component').toBeCloseTo(parts[0], 10)
     expect(v.y, 'y component').toBeCloseTo(parts[1], 10)
@@ -10,7 +9,7 @@ describe('Ray', () => {
   }
 
   describe('new', () => {
-    it ('initializes with components', () => {
+    it('initializes with components', () => {
       expectVec3Components(new Ray().position, [0, 0, 0])
       expectVec3Components(new Ray().direction, [0, 0, 0])
 
@@ -23,7 +22,7 @@ describe('Ray', () => {
   })
 
   describe('#init', () => {
-    it ('initializes the components', () => {
+    it('initializes the components', () => {
       expectVec3Components(new Ray().init(1, 2, 3, 4, 5, 6).position, [1, 2, 3])
       expectVec3Components(new Ray().init(1, 2, 3, 4, 5, 6).direction, [4, 5, 6])
       expectVec3Components(new Ray(1, 2, 3, 4, 5, 6).init().position, [0, 0, 0])
@@ -32,7 +31,7 @@ describe('Ray', () => {
   })
 
   describe('.create', () => {
-    it ('initializes the components', () => {
+    it('initializes the components', () => {
       expectVec3Components(Ray.create().position, [0, 0, 0])
       expectVec3Components(Ray.create().direction, [0, 0, 0])
 
@@ -42,35 +41,35 @@ describe('Ray', () => {
   })
 
   describe('#initFrom', () => {
-    it ('takes components from other ray', () => {
+    it('takes components from other ray', () => {
       expectVec3Components(new Ray().initFrom(new Ray(1, 2, 3, 4, 5, 6)).position, [1, 2, 3])
       expectVec3Components(new Ray().initFrom(new Ray(1, 2, 3, 4, 5, 6)).direction, [4, 5, 6])
     })
   })
 
   describe('.createFrom', () => {
-    it ('takes components from other ray', () => {
+    it('takes components from other ray', () => {
       expectVec3Components(Ray.createFrom(new Ray(1, 2, 3, 4, 5, 6)).position, [1, 2, 3])
       expectVec3Components(Ray.createFrom(new Ray(1, 2, 3, 4, 5, 6)).direction, [4, 5, 6])
     })
   })
 
   describe('#initFromVectors', () => {
-    it ('takes components from other ray', () => {
+    it('takes components from other ray', () => {
       expectVec3Components(new Ray().initV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
       expectVec3Components(new Ray().initV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
     })
   })
 
   describe('.createFromVectors', () => {
-    it ('takes components from other ray', () => {
+    it('takes components from other ray', () => {
       expectVec3Components(Ray.createV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).position, [1, 2, 3])
       expectVec3Components(Ray.createV(Vec3.create(1, 2, 3), Vec3.create(4, 5, 6)).direction, [4, 5, 6])
     })
   })
 
   describe('#equals', () => {
-    it ('compares all components', () => {
+    it('compares all components', () => {
       expect(Ray.create(0, 0, 0, 0, 0, 0).equals(Ray.create(0, 0, 0, 0, 0, 0))).toBe(true)
       expect(Ray.create(1, 0, 0, 0, 0, 0).equals(Ray.create(1, 0, 0, 0, 0, 0))).toBe(true)
       expect(Ray.create(0, 1, 0, 0, 0, 0).equals(Ray.create(0, 1, 0, 0, 0, 0))).toBe(true)
@@ -89,7 +88,7 @@ describe('Ray', () => {
   })
 
   describe('.equals', () => {
-    it ('compares all components', () => {
+    it('compares all components', () => {
       expect(Ray.equals(Ray.create(0, 0, 0, 0, 0, 0), Ray.create(0, 0, 0, 0, 0, 0))).toBe(true)
       expect(Ray.equals(Ray.create(1, 0, 0, 0, 0, 0), Ray.create(1, 0, 0, 0, 0, 0))).toBe(true)
       expect(Ray.equals(Ray.create(0, 1, 0, 0, 0, 0), Ray.create(0, 1, 0, 0, 0, 0))).toBe(true)
@@ -147,34 +146,34 @@ describe('Ray', () => {
 
       expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsSphere(sphere), 'inside').toBe(true)
 
-      expect(Ray.create(-2, 0, 0,  1, 0, 0).intersectsSphere(sphere), 'left to right').toBe(true)
-      expect(Ray.create( 2, 0, 0, -1, 0, 0).intersectsSphere(sphere), 'right to left').toBe(true)
+      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsSphere(sphere), 'left to right').toBe(true)
+      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsSphere(sphere), 'right to left').toBe(true)
 
-      expect(Ray.create(0, -2, 0, 0,  1, 0).intersectsSphere(sphere), 'top to bottom').toBe(true)
-      expect(Ray.create(0,  2, 0, 0, -1, 0).intersectsSphere(sphere), 'bottom to top').toBe(true)
+      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsSphere(sphere), 'top to bottom').toBe(true)
+      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsSphere(sphere), 'bottom to top').toBe(true)
 
-      expect(Ray.create(0, 0, -2, 0, 0,  1).intersectsSphere(sphere), 'back to front').toBe(true)
-      expect(Ray.create(0, 0,  2, 0, 0, -1).intersectsSphere(sphere), 'front to back').toBe(true)
+      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsSphere(sphere), 'back to front').toBe(true)
+      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsSphere(sphere), 'front to back').toBe(true)
 
       // away from sphere
       expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create( 2, 0, 0,  1, 0, 0).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsSphere(sphere)).toEqual(false)
 
       expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(0,  2, 0, 0,  1, 0).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsSphere(sphere)).toEqual(false)
 
       expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(0, 0,  2, 0, 0,  1).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsSphere(sphere)).toEqual(false)
 
       // along the spherer
-      expect(Ray.create(-2, 1, 1,  1, 0, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create( 2, 1, 1, -1, 0, 0).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsSphere(sphere)).toEqual(false)
 
-      expect(Ray.create(1, -2, 1, 0,  1, 0).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(1,  2, 1, 0, -1, 0).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsSphere(sphere)).toEqual(false)
 
-      expect(Ray.create(1, 1, -2, 0, 0,  1).intersectsSphere(sphere)).toEqual(false)
-      expect(Ray.create(1, 1,  2, 0, 0, -1).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsSphere(sphere)).toEqual(false)
+      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsSphere(sphere)).toEqual(false)
     })
 
     it('#intersectsSphereAt', () => {
@@ -183,34 +182,34 @@ describe('Ray', () => {
       expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsSphereAt(sphere), 'inside').toBe(1)
       expect(Ray.create(0.5, 0, 0, 1, 0, 0).intersectsSphereAt(sphere), 'inside').toBe(0.5)
 
-      expect(Ray.create(-2, 0, 0,  1, 0, 0).intersectsSphereAt(sphere), 'left to right').toBe(1)
-      expect(Ray.create( 2, 0, 0, -1, 0, 0).intersectsSphereAt(sphere), 'right to left').toBe(1)
+      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsSphereAt(sphere), 'left to right').toBe(1)
+      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsSphereAt(sphere), 'right to left').toBe(1)
 
-      expect(Ray.create(0, -2, 0, 0,  1, 0).intersectsSphereAt(sphere), 'top to bottom').toBe(1)
-      expect(Ray.create(0,  2, 0, 0, -1, 0).intersectsSphereAt(sphere), 'bottom to top').toBe(1)
+      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsSphereAt(sphere), 'top to bottom').toBe(1)
+      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsSphereAt(sphere), 'bottom to top').toBe(1)
 
-      expect(Ray.create(0, 0, -2, 0, 0,  1).intersectsSphereAt(sphere), 'back to front').toBe(1)
-      expect(Ray.create(0, 0,  2, 0, 0, -1).intersectsSphereAt(sphere), 'front to back').toBe(1)
+      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsSphereAt(sphere), 'back to front').toBe(1)
+      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsSphereAt(sphere), 'front to back').toBe(1)
 
       // away from sphere
       expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create( 2, 0, 0,  1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
 
       expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(0,  2, 0, 0,  1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
 
       expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(0, 0,  2, 0, 0,  1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
 
       // along the spherer
-      expect(Ray.create(-2, 1, 1,  1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create( 2, 1, 1, -1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
 
-      expect(Ray.create(1, -2, 1, 0,  1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(1,  2, 1, 0, -1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsSphereAt(sphere)).toEqual(Number.NaN)
 
-      expect(Ray.create(1, 1, -2, 0, 0,  1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
-      expect(Ray.create(1, 1,  2, 0, 0, -1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
+      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsSphereAt(sphere)).toEqual(Number.NaN)
     })
 
     it('#intersectsBox', () => {
@@ -218,35 +217,34 @@ describe('Ray', () => {
 
       expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsBox(box)).toBe(true)
 
-      expect(Ray.create(-2, 0, 0,  1, 0, 0).intersectsBox(box), 'left to right').toBe(true)
-      expect(Ray.create( 2, 0, 0, -1, 0, 0).intersectsBox(box), 'right to left').toBe(true)
+      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsBox(box), 'left to right').toBe(true)
+      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsBox(box), 'right to left').toBe(true)
 
-      expect(Ray.create(0, -2, 0, 0,  1, 0).intersectsBox(box), 'top to bottom').toBe(true)
-      expect(Ray.create(0,  2, 0, 0, -1, 0).intersectsBox(box), 'bottom to top').toBe(true)
+      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsBox(box), 'top to bottom').toBe(true)
+      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsBox(box), 'bottom to top').toBe(true)
 
-      expect(Ray.create(0, 0, -2, 0, 0,  1).intersectsBox(box), 'back to front').toBe(true)
-      expect(Ray.create(0, 0,  2, 0, 0, -1).intersectsBox(box), 'front to back').toBe(true)
+      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsBox(box), 'back to front').toBe(true)
+      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsBox(box), 'front to back').toBe(true)
 
       // away from sphere
       expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create( 2, 0, 0,  1, 0, 0).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsBox(box)).toEqual(false)
 
       expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(0,  2, 0, 0,  1, 0).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsBox(box)).toEqual(false)
 
       expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(0, 0,  2, 0, 0,  1).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsBox(box)).toEqual(false)
 
       // along the spherer
-      expect(Ray.create(-2, 1, 1,  1, 0, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create( 2, 1, 1, -1, 0, 0).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsBox(box)).toEqual(false)
 
-      expect(Ray.create(1, -2, 1, 0,  1, 0).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(1,  2, 1, 0, -1, 0).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsBox(box)).toEqual(false)
 
-      expect(Ray.create(1, 1, -2, 0, 0,  1).intersectsBox(box)).toEqual(false)
-      expect(Ray.create(1, 1,  2, 0, 0, -1).intersectsBox(box)).toEqual(false)
-
+      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsBox(box)).toEqual(false)
+      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsBox(box)).toEqual(false)
     })
 
     it('#intersectsBoxAt', () => {
@@ -254,35 +252,34 @@ describe('Ray', () => {
 
       expect(Ray.create(0, 0, 0, 1, 0, 0).intersectsBoxAt(box)).toBeCloseTo(0)
 
-      expect(Ray.create(-2, 0, 0,  1, 0, 0).intersectsBoxAt(box), 'left to right').toBe(1.1)
-      expect(Ray.create( 2, 0, 0, -1, 0, 0).intersectsBoxAt(box), 'right to left').toBe(1.1)
+      expect(Ray.create(-2, 0, 0, 1, 0, 0).intersectsBoxAt(box), 'left to right').toBe(1.1)
+      expect(Ray.create(2, 0, 0, -1, 0, 0).intersectsBoxAt(box), 'right to left').toBe(1.1)
 
-      expect(Ray.create(0, -2, 0, 0,  1, 0).intersectsBoxAt(box), 'top to bottom').toBe(1.1)
-      expect(Ray.create(0,  2, 0, 0, -1, 0).intersectsBoxAt(box), 'bottom to top').toBe(1.1)
+      expect(Ray.create(0, -2, 0, 0, 1, 0).intersectsBoxAt(box), 'top to bottom').toBe(1.1)
+      expect(Ray.create(0, 2, 0, 0, -1, 0).intersectsBoxAt(box), 'bottom to top').toBe(1.1)
 
-      expect(Ray.create(0, 0, -2, 0, 0,  1).intersectsBoxAt(box), 'back to front').toBe(1.1)
-      expect(Ray.create(0, 0,  2, 0, 0, -1).intersectsBoxAt(box), 'front to back').toBe(1.1)
+      expect(Ray.create(0, 0, -2, 0, 0, 1).intersectsBoxAt(box), 'back to front').toBe(1.1)
+      expect(Ray.create(0, 0, 2, 0, 0, -1).intersectsBoxAt(box), 'front to back').toBe(1.1)
 
       // away from sphere
       expect(Ray.create(-2, 0, 0, -1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create( 2, 0, 0,  1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(2, 0, 0, 1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
 
       expect(Ray.create(0, -2, 0, 0, -1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(0,  2, 0, 0,  1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(0, 2, 0, 0, 1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
 
       expect(Ray.create(0, 0, -2, 0, 0, -1).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(0, 0,  2, 0, 0,  1).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(0, 0, 2, 0, 0, 1).intersectsBoxAt(box)).toEqual(Number.NaN)
 
       // along the spherer
-      expect(Ray.create(-2, 1, 1,  1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create( 2, 1, 1, -1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(-2, 1, 1, 1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(2, 1, 1, -1, 0, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
 
-      expect(Ray.create(1, -2, 1, 0,  1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(1,  2, 1, 0, -1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(1, -2, 1, 0, 1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(1, 2, 1, 0, -1, 0).intersectsBoxAt(box)).toEqual(Number.NaN)
 
-      expect(Ray.create(1, 1, -2, 0, 0,  1).intersectsBoxAt(box)).toEqual(Number.NaN)
-      expect(Ray.create(1, 1,  2, 0, 0, -1).intersectsBoxAt(box)).toEqual(Number.NaN)
-
+      expect(Ray.create(1, 1, -2, 0, 0, 1).intersectsBoxAt(box)).toEqual(Number.NaN)
+      expect(Ray.create(1, 1, 2, 0, 0, -1).intersectsBoxAt(box)).toEqual(Number.NaN)
     })
 
     it('#intersectsPlane', () => {
@@ -293,7 +290,7 @@ describe('Ray', () => {
     })
 
     // it('#intersectsTriangle', () => {
-    //   const R = Ray.createFromVectors(Vec3.Zero, Vec3.Forward)
+    //   const R = Ray.createFromVectors(Vec3.Zero, Vec3.NegativeUnitZ)
     //   const T1 = Vec3.create(-1, -1, -1)
     //   const T2 = Vec3.create( 0,  1, -1)
     //   const T3 = Vec3.create( 1, -1, -1)

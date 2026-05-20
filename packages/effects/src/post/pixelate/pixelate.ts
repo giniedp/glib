@@ -47,7 +47,7 @@ export function pixelateShaderParams(): PixelateShaderParams {
 }
 
 export class PixelateShader implements Renderable, Disposable {
-  private program: Program<PixelateShaderParams>
+  private program: Program
   private params: TypedInputAccessor<PixelateShaderParams>
   public get isReady(): boolean {
     return this.program.isReady
@@ -78,7 +78,7 @@ export class PixelateShader implements Renderable, Disposable {
 
     params.set('params.corner', this.corner)
     params.set('params.dither', this.dither)
-    this.program.apply(params)
+    this.program.applyInputs(params)
     this.program.commit()
     pass.setProgram(this.program)
     pass.draw(3)

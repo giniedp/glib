@@ -1,5 +1,6 @@
 import {
   BasicGame,
+  BehaviorComponent,
   BoundsComponent,
   CameraComponent,
   GameTime,
@@ -16,7 +17,7 @@ import {
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
-import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
+
 import { ContentLoader } from '@gglib/content'
 import { CreateEntityOptions, GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial, DeviceStats } from '@gglib/graphics'
@@ -108,7 +109,7 @@ class Game extends BasicGame {
       parent: this.scene,
       components: [new LightComponent()],
       transform: new TransformComponent({
-        rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
+        rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
       }),
     })
     this.light = entity.component(LightComponent)

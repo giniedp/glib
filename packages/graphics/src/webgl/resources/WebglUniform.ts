@@ -1,4 +1,4 @@
-import type { Buffer, ProgramInputType, Texture } from '../../resources'
+import type { Buffer, InputTypeName, Texture } from '../../resources'
 import type { SamplerState } from '../../states'
 
 export interface WebglUniform {
@@ -15,7 +15,7 @@ export interface WebglUniform {
   /**
    * The type of this uniform (e.g. 'vec3', 'mat4x4', 'sampler', etc.)
    */
-  type: ProgramInputType
+  type: InputTypeName
   /**
    * Jumps to the specified array index for this uniform.
    * For non-array uniforms, this should be called with index 0.
@@ -40,4 +40,6 @@ export interface WebglUniform {
   setSampler(value: SamplerState): void
 
   setBuffer(value: Buffer): void
+
+  readValue(index: number, size: number): unknown
 }

@@ -2,12 +2,13 @@ import {
   type GameComponent,
   GameEntity,
   GameQuery,
+  GameTransform,
   GameWorld,
   GetComponent,
   InitializableComponent,
   Type,
 } from '@gglib/ecs'
-import { Mesh } from '@gglib/graphics'
+import { DeviceOutput, Mesh, Texture } from '@gglib/graphics'
 import { BoundingFrustum, Intersection, Mat4 } from '@gglib/math'
 import {
   CameraData,
@@ -18,6 +19,7 @@ import {
   RenderItemFlags,
   RenderItemType,
   RenderScene,
+  RenderView,
   SpriteRenderItem,
 } from '@gglib/render'
 import { getSpatialEntries, SpatialNode } from '../spatial'
@@ -27,6 +29,7 @@ import { ModelComponent } from './ModelComponent'
 import { SpatialComponent } from './SpatialComponent'
 import { SpatialRootComponent } from './SpatialRootComponent'
 import { SpriteComponent } from './SpriteComponent'
+import { TransformComponent } from './TransformComponent'
 
 export class SceneTagComponent implements GameComponent {
   public scene: SceneRootComponent
@@ -50,6 +53,8 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   public static readonly Tag = SceneTagComponent
   public readonly Tag: Type<SceneTagComponent>
   public readonly entity: GameEntity
+  public output: Texture | null
+  public views: RenderView[]
 
   protected qSpatial: GameQuery
   protected qMeshes: GameQuery
@@ -163,7 +168,10 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
       return
     }
 
+    const t = entity.getTransform<TransformComponent>()
+    t.updateIfNeeded()
     const transform = entity.getTransform().world
+    // console.log((entity.getTransform() as any).version)
     for (const mesh of model.meshes) {
       this.pushMesh(mesh, transform)
     }

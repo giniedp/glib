@@ -1,14 +1,19 @@
 import { uuid } from '@gglib/utils'
 import type { Device } from '../Device'
 import {
+  InputSlot,
+  InputTypeMap,
+  InputTypeName,
+  InputValueType,
   isAquirableTextureOptions,
   isTextureSourceOption,
-  ProgramInputs,
+  ProgramInputBlock,
+  ProgramInputBlockCollection,
   Texture,
   type AcquireTextureOptions,
   type TextureOptions,
 } from '../resources'
-import { isDisposable, type Mutable } from '../types'
+import { isDisposable } from '../types'
 import { Effect, type EffectOptions } from './Effect'
 import { MaterialProperties, RenderVariant } from './types'
 
@@ -42,7 +47,7 @@ export interface MaterialOptions {
  *
  * @public
  */
-export interface MaterialEffectOptions<Inputs extends ProgramInputs = ProgramInputs> {
+export interface MaterialEffectOptions {
   /**
    * The descriptive name of this effect
    */
@@ -57,11 +62,6 @@ export interface MaterialEffectOptions<Inputs extends ProgramInputs = ProgramInp
    * The effect to be used
    */
   effect: EffectOptions
-
-  /**
-   * The input values for the effect
-   */
-  inputs: Inputs
 }
 
 /**
@@ -74,7 +74,7 @@ export interface MaterialEffectOptions<Inputs extends ProgramInputs = ProgramInp
  * This allows a {@link Effect} instance to be reused across
  * multiple materials each with a different set of parameters.
  */
-export class Material<Inputs extends ProgramInputs = ProgramInputs> {
+export class Material {
   /**
    * A unique id
    */
@@ -107,50 +107,67 @@ export class Material<Inputs extends ProgramInputs = ProgramInputs> {
   }
 
   /**
-   * Effect input values
+   * Collection of managed input blocks
    */
-  public readonly inputs: Inputs
+  protected readonly inputs = new ProgramInputBlockCollection()
+
+  /**
+   * Exposes the input blocks of this material for external management.
+   */
+  public get inputBlocks(): Readonly<Record<string, ProgramInputBlock>> {
+    return this.inputs.blocks
+  }
 
   protected effects: Record<RenderVariant, Effect> = Object.create(null)
 
-  public constructor(device: Device, options: MaterialEffectOptions<Inputs>) {
+  public constructor(device: Device, options: MaterialEffectOptions) {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.createInputs(options.inputs)
     this.createEffect(options)
+  }
+
+  public getInput<T extends InputTypeName>(input: InputSlot<T>): InputTypeMap[T] | null {
+    return this.inputs.get(input)
+  }
+
+  public setInput<T extends InputTypeName>(
+    input: InputSlot<T>,
+    value: InputTypeMap[T] | AcquireTextureOptions | TextureOptions,
+  ) {
+    const old = this.inputs.get(input)
+    if (value !== old) {
+      if (isAquirableTextureOptions(value)) {
+        value = this.device.acquireTexture(value)
+      } else if (isTextureSourceOption(value)) {
+        value = this.device.createTexture(value)
+      } else if (value instanceof Texture) {
+        value.ref.retain()
+      } else if (value == null) {
+        console.warn(
+          `Setting material parameter ${input.key} to null or undefined is not recommended and may cause unintended consequences.`,
+        )
+      }
+      if (old instanceof Texture) {
+        old.ref.release()
+      }
+    }
+
+    this.inputs.set(input, value as any)
   }
 
   /**
    * Gets an effect parameter value by name
    */
-  public get<K extends keyof Inputs, V = Inputs[K]>(name: K): V | null {
-    return (this.inputs[name] as V) ?? null
+  public get(block: string, input: string): InputValueType | null {
+    return this.getInput(this.inputs.lookupSlot(block, input, 'unknown' as any))
   }
 
   /**
    * Sets an effect parameter value by name
    */
-  public set<K extends keyof Inputs>(name: K, value: Inputs[K] | AcquireTextureOptions | TextureOptions) {
-    const old = this.inputs[name]
-    if (value === old) {
-      return
-    }
-    if (isAquirableTextureOptions(value)) {
-      value = this.device.acquireTexture(value)
-    } else if (isTextureSourceOption(value)) {
-      value = this.device.createTexture(value)
-    } else if (value instanceof Texture) {
-      value.ref.retain()
-    } else if (value == null) {
-      console.warn(
-        `Setting material parameter ${name as any} to null or undefined is not recommended and may cause unintended consequences.`,
-      )
-    }
-    if (old instanceof Texture) {
-      old.ref.release()
-    }
-    this.inputs[name] = value as any
+  public set(block: string, input: string, value: InputValueType | AcquireTextureOptions | TextureOptions) {
+    this.setInput(this.inputs.lookupSlot(block, input, 'unknown' as any), value)
   }
 
   /**
@@ -160,7 +177,7 @@ export class Material<Inputs extends ProgramInputs = ProgramInputs> {
     return this.effects[variant] || null
   }
 
-  protected createEffect(options: MaterialEffectOptions<Inputs>) {
+  protected createEffect(options: MaterialEffectOptions) {
     if (options.effect) {
       this.effects[RenderVariant.Forward] = new Effect(this.device, options.effect)
     } else {
@@ -168,33 +185,17 @@ export class Material<Inputs extends ProgramInputs = ProgramInputs> {
     }
   }
 
-  protected createInputs(values: Inputs) {
-    const params = {
-      ...(values || ({} as Inputs)),
-    }
-
-    for (const key in params) {
-      const value: any = params[key]
-      if (isAquirableTextureOptions(value)) {
-        params[key] = this.device.acquireTexture(value) as any
-      } else if (isTextureSourceOption(value)) {
-        params[key] = this.device.createTexture(value) as any
-      } else if (value instanceof Texture) {
-        value.ref.retain()
-      }
-    }
-    const self = this as Mutable<this>
-    self.inputs = params
-  }
-
   /**
    * Disposes the underlying effect
    */
   public dispose() {
-    for (const key in this.inputs) {
-      const value = this.inputs[key]
-      if (isDisposable(value)) {
-        value.dispose()
+    for (const blockName in this.inputs) {
+      const block = this.inputs[blockName]
+      for (const key in block) {
+        const value = block[key]
+        if (isDisposable(value)) {
+          value.dispose()
+        }
       }
     }
     for (const variant in this.effects) {

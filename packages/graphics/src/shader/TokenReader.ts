@@ -25,11 +25,6 @@ export class TokenReader<T extends TypedToken<string> = Token> {
     return this.index
   }
 
-  /**
-   * Indicates that calling `next()` should skip comments
-   */
-  public skipComments = false
-
   public constructor(tokens: T[]) {
     this.tokens = tokens
     this.index = 0
@@ -37,9 +32,6 @@ export class TokenReader<T extends TypedToken<string> = Token> {
 
   public next() {
     this.index++
-    while (this.canRead && this.skipComments && this.tokenType === ('comment' satisfies CommentToken['type'])) {
-      this.index++
-    }
     return this.token
   }
 
@@ -121,11 +113,23 @@ export class TokenReader<T extends TypedToken<string> = Token> {
     }
   }
 
+  /**
+   * Reads a block of tokens between matching open and close symbols, and returns the tokens inside the block.
+   *
+   * The open and close symbols must be balanced, and can be nested.
+   *
+   * If `includeParen` is true, the returned tokens will include the open and close symbols.
+   */
   public readBlock(open: string, close: string, includeParen = false) {
     this.assert('symbol', open)
+
     const start = this.index + (includeParen ? 0 : open.length)
     let depth = 0
     while (this.canRead) {
+      if (this.tokenType !== 'symbol') {
+        this.next()
+        continue
+      }
       if (this.tokenValue === open) {
         depth++
       } else if (this.tokenValue === close) {

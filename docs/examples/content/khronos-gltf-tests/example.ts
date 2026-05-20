@@ -120,7 +120,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       camera.distance * camera.radius * 2,
     ).add(camera.lookat)
 
-    camera.view.initLookAt(camera.position, camera.lookat, Vec3.Up).invert()
+    camera.view.initLookAt(camera.position, camera.lookat, Vec3.UnitY).invert()
     camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
   }
 

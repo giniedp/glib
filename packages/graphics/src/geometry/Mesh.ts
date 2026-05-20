@@ -222,7 +222,8 @@ export class Mesh {
         continue
       }
 
-      material.effect.draw(pass, geometry, material.inputs)
+      material.effect.applyInputs(material.inputBlocks)
+      material.effect.draw(pass, geometry)
     }
   }
 

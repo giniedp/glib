@@ -15,9 +15,7 @@ import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
   game.run()
-  return () => {
-    game.stop()
-  }
+  return () => game.stop()
 }
 
 class Game extends BasicGame {
@@ -34,13 +32,13 @@ class Game extends BasicGame {
     this.createObjects()
 
     //ship-pirate-large
-    this.content.loadAsset('/models/obj/cube.obj').then((asset) => {
+    this.content.loadModel('/models/obj/cube.obj').then((model) => {
       this.world
         .query({
           required: [ModelComponent],
         })
         .forEach((entity) => {
-          entity.component(ModelComponent)!.model = this.content.createModel(asset)
+          entity.component(ModelComponent)!.model = model
         })
     })
   }
@@ -56,7 +54,7 @@ class Game extends BasicGame {
       parent: this.scene,
       components: [new LightComponent()],
       transform: new TransformComponent({
-        rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
+        rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
       }),
     })
   }

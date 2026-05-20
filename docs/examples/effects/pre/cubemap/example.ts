@@ -169,6 +169,6 @@ function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, devic
     camera.theta * DEGREE_TO_RAD,
     camera.distance,
   )
-  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.UnitY).invert()
   camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
 }

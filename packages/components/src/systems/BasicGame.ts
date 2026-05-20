@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { CreateEntityOptions, GameEntity, GameWorld, GetComponent } from '@gglib/ecs'
+import { CreateEntityOptions, GameEntity, GameQuery, GameWorld } from '@gglib/ecs'
 import { createDevice, type CreateDeviceOptions, Device } from '@gglib/graphics'
 import { RenderChannel, Renderer, RenderView } from '@gglib/render'
 import { SceneRootComponent, TransformComponent } from '../components'
@@ -11,16 +11,18 @@ import { TimeSystem } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
 
 export class BasicGame {
-  public loop: GameLoop
   public device: Device
   public renderer: Renderer
   public content: ContentLoader
   public world: GameWorld
   public scene: GameEntity
   public view: RenderView
+  public loop: GameLoop
 
+  public sceneQuery: GameQuery
   public constructor(options: CreateDeviceOptions) {
     this.device = createDevice(options)
+
     this.world = new GameWorld()
     this.world.addSystem(this, BasicGame)
     this.world.addSystem(this.device, Device)
@@ -33,18 +35,20 @@ export class BasicGame {
     this.world.addSystem(new SceneSystem(this.world))
     this.world.addSystem(new Renderer(this.device))
 
+    this.renderer = this.world.getSystem(Renderer)
+    this.content = this.world.getSystem(ContentLoader)
+    this.sceneQuery = this.world.query({ required: [SceneRootComponent] })
+
     this.loop = this.world.getSystem(GameLoop)
     this.loop.onUpdate.add((time) => this.update(time.timeMs, time.deltaMs))
     this.loop.onDraw.add((time) => this.render(time.timeMs, time.deltaMs))
 
-    this.renderer = this.world.getSystem(Renderer)
-    this.content = this.world.getSystem(ContentLoader)
-
     this.scene = this.createScene({ name: 'Scene' })
-    this.view = this.renderer.addView({
+    this.view = this.renderer.createView({
       name: 'Main View',
       present: RenderChannel.Color,
     })
+    this.scene.component(SceneRootComponent).views.push(this.view)
   }
 
   public async run() {
@@ -59,14 +63,13 @@ export class BasicGame {
 
   public update(time: number, dt: number) {
     this.world.update(time, dt)
-    this.renderer.update(time)
-    // this.scene.getTransform<TransformComponent>().propagateUpdates(false, true)
   }
 
   public render(time: number, dt: number) {
-    const scene = this.scene?.component(SceneRootComponent, GetComponent.Optional)
-    if (scene) {
-      this.renderer.render(scene)
+    this.world.render(time, dt)
+    this.renderer.update(time)
+    for (const entity of this.sceneQuery) {
+      this.renderer.render(entity.component(SceneRootComponent))
     }
   }
 

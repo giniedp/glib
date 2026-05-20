@@ -15,7 +15,7 @@ describe('BasicRenderList', () => {
         canvas: document.createElement('canvas'),
       })
       renderer = new Renderer(device)
-      const view = renderer.addView({
+      const view = renderer.createView({
         camera: {
           world: Mat4.createIdentity(),
           view: Mat4.createIdentity(),

@@ -29,6 +29,20 @@ describe('tokenizeWgsl', () => {
       },
       {
         input: /*wgsl*/ `
+        // line 1
+        // line 2
+        `,
+        expected: [comment$('line 1\nline 2')],
+      },
+      {
+        input: /*wgsl*/ `
+        /* line 1 */
+        /* line 2 */
+        `,
+        expected: [comment$('line 1'), comment$('line 2')],
+      },
+      {
+        input: /*wgsl*/ `
           code before
           line before // This is line-ending comment.
           code after

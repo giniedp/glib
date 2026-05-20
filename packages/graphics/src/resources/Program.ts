@@ -1,11 +1,13 @@
-import type { ProgramInput, ProgramInputValue, ProgramInputs } from './ProgramInput'
-
+import { IVec2, IVec3, IVec4 } from '@gglib/math'
+import type { InputValueType, ProgramInput } from './ProgramInput'
+import { ProgramInputBlock } from './ProgramInputSource'
 import type { ShaderModule } from './ShaderModule'
 import { Texture } from './Texture'
+import { SamplerState } from '../states'
 
 export interface ProgramOptions {
   /**
-   * Names for resources that should be shared with the default program.
+   * Names for resources (or input blocks) that should be shared with the default program.
    *
    * @remarks
    * Resources are shared with the default program of the shader module.
@@ -15,26 +17,26 @@ export interface ProgramOptions {
    *
    * For WebGPU, any uniform can be shared.
    */
-  shared: ReadonlyArray<string>
+  sharedBlocks: ReadonlyArray<string>
 }
 
 let idCounter = 1
 
-export abstract class Program<Values extends ProgramInputs = ProgramInputs> {
+export abstract class Program {
   /**
    * The unique runtime identifier for this program instance.
    */
   public readonly id = idCounter++
 
   /**
-   * The shared shader module
+   * The shader module that this program is based on.
    */
   public abstract readonly module: ShaderModule
 
   /**
-   * The names of resources that should be shared with the default program.
+   * The input block names that are shared with the default program of the shader module.
    */
-  public abstract readonly shared: ReadonlyArray<string>
+  public abstract readonly sharedBlocks: ReadonlyArray<string>
 
   /**
    * Indicates whether the underlying shader module is ready to be used.
@@ -44,40 +46,58 @@ export abstract class Program<Values extends ProgramInputs = ProgramInputs> {
   }
 
   /**
-   * Applies a set of parameter values to this program.
+   *
+   * @param source
+   * @param force
+   */
+  public abstract applyBlock(source: ProgramInputBlock, force?: boolean): boolean
+
+  /**
+   * Applies a set of input values to this program.
    *
    * @remarks
-   * This should update the values of the parameters but not necessarily commit them to the GPU.
+   * This should update the CPU resource buffers but not necessarily commit them to the GPU.
    * The {@link Program.commit} method should be called to ensure that all changes are applied before rendering.
    *
    * Does not check for the existence of the parameters, implementations do ignore any parameters that do not exist.
    */
-  public abstract apply(values: Record<string, ProgramInputValue>): void
+  public abstract applyInputs(values: Record<string, InputValueType>): void
 
   /**
-   * Retrieves the parameter at the specified path.
+   * Retrieves the input at the specified path.
    *
-   * @returns The parameter object or `null` if the parameter does not exist or has been optimized out by the shader compiler.
+   * @returns The input object or `null` if the input does not exist or has been optimized out by the shader compiler.
    */
   public abstract get(key: string): ProgramInput | null
 
   /**
-   * Sets the value of the parameter at the specified path.
+   * Sets the value of the input at the specified path.
    *
    * @remarks
-   * Implementations should return true if the parameter was successfully set,
-   * or false if the parameter does not exist or the value is of an incorrect type.
+   * Implementations should return true if the input was successfully set,
+   * or false if the input does not exist or the value is of an incorrect type.
    */
-  public abstract set<K extends keyof Values>(key: K, value: Values[K]): boolean
+  public abstract set(key: string, value: InputValueType): boolean
+
+  /**
+   *
+   * @param path
+   * @param value
+   */
+  public mustSet(path: string, value: InputValueType) {
+    if (!this.set(path, value)) {
+      throw new Error(`Input ${path as string} not found in program`)
+    }
+  }
 
   /**
    * Commits any pending changes to the underlying GPU resources.
-   * This should be called before rendering with this parameter set.
+   * This should be called before rendering after inputs were set.
    */
   public abstract commit(): void
 
   /**
-   * Releases any GPU resources associated with this parameter set.
+   * Releases any GPU resources.
    */
   public abstract dispose(): void
 
@@ -85,4 +105,44 @@ export abstract class Program<Values extends ProgramInputs = ProgramInputs> {
    * Creates a new program instance that may share resources with the default program.
    */
   public abstract clone(options?: ProgramOptions): Program
+
+  public setScalar(path: string, value: number) {
+    this.get(path).setScalar(value)
+  }
+
+  public setArray(path: string, value: ArrayLike<number>, offset?: number) {
+    this.get(path).setArray(value, offset)
+  }
+
+  public setVec2(path: string, value: IVec2 | ArrayLike<number>) {
+    this.get(path).setVec2(value)
+  }
+
+  public setVec3(path: string, value: IVec3 | ArrayLike<number>) {
+    this.get(path).setVec3(value)
+  }
+
+  public setVec4(path: string, value: IVec4 | ArrayLike<number>) {
+    this.get(path).setVec4(value)
+  }
+
+  public setMat2x2(path: string, value: ArrayLike<number>): void {
+    this.get(path).setMat2x2(value)
+  }
+
+  public setMat3x3(path: string, value: ArrayLike<number>): void {
+    this.get(path).setMat3x3(value)
+  }
+
+  public setMat4x4(path: string, value: ArrayLike<number>): void {
+    this.get(path).setMat4x4(value)
+  }
+
+  public setTexture(path: string, value: Texture): void {
+    this.get(path).setTexture(value as any)
+  }
+
+  public setSampler(path: string, value: SamplerState): void {
+    this.get(path).setSampler(value)
+  }
 }

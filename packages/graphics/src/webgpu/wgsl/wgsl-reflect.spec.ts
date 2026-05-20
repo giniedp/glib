@@ -12,7 +12,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -41,7 +41,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -70,7 +70,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -99,7 +99,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -128,7 +128,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -157,7 +157,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -196,7 +196,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -225,7 +225,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -254,7 +254,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -283,7 +283,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -312,7 +312,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -341,7 +341,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -370,7 +370,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -399,7 +399,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -428,7 +428,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -466,7 +466,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -495,7 +495,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -524,7 +524,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -553,7 +553,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -582,7 +582,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -620,7 +620,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -649,7 +649,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -678,7 +678,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -707,7 +707,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -736,7 +736,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -765,7 +765,7 @@ describe('wgslReflect', () => {
           resources: [
             {
               name: 'param',
-              alias: null,
+              annotations: {},
               binding: null,
               group: null,
               location: null,
@@ -805,7 +805,7 @@ describe('wgslReflect', () => {
         expected: {
           resources: [
             {
-              alias: null,
+              annotations: {},
               align: 16,
               binding: null,
               container: 'array',
@@ -825,7 +825,7 @@ describe('wgslReflect', () => {
               texture: null,
               members: [
                 {
-                  alias: null,
+                  annotations: {},
                   align: 16,
                   binding: null,
                   container: 'vec3',
@@ -846,7 +846,7 @@ describe('wgslReflect', () => {
                   texture: null,
                 },
                 {
-                  alias: null,
+                  annotations: {},
                   align: 4,
                   binding: null,
                   container: 'scalar',
@@ -946,7 +946,7 @@ describe('wgslReflect', () => {
         resources: [
           {
             name: 'foo',
-            alias: null,
+            annotations: {},
             binding: 0,
             group: 0,
             location: null,
@@ -975,7 +975,7 @@ describe('wgslReflect', () => {
         resources: [
           {
             name: 'foo',
-            alias: null,
+            annotations: {},
             binding: 0,
             group: 1,
             location: null,
@@ -1004,7 +1004,7 @@ describe('wgslReflect', () => {
         resources: [
           {
             name: 'foo',
-            alias: null,
+            annotations: {},
             binding: 2,
             group: 1,
             location: null,
@@ -1033,7 +1033,7 @@ describe('wgslReflect', () => {
         resources: [
           {
             name: 'foo',
-            alias: 'bar',
+            annotations: { alias: 'bar' },
             binding: 2,
             group: 1,
             location: null,
@@ -1062,7 +1062,7 @@ describe('wgslReflect', () => {
         resources: [
           {
             name: 'foo',
-            alias: 'bar',
+            annotations: { alias: 'bar' },
             binding: 2,
             group: 1,
             location: null,
@@ -1080,6 +1080,106 @@ describe('wgslReflect', () => {
             members: null,
             sampler: null,
             texture: null,
+          },
+        ],
+        entryPoints: [],
+      } satisfies WgslProgramInfo,
+    },
+    {
+      input: /* wgsl */ `
+      // @block myBlock
+      // @alias renamed
+      @group(1) @binding(2) var<uniform> foo: vec2f;`,
+      expected: {
+        resources: [
+          {
+            name: 'foo',
+            annotations: { block: 'myBlock', alias: 'renamed' },
+            binding: 2,
+            group: 1,
+            location: null,
+            container: 'vec2',
+            elementType: 'float32',
+            elementCount: 2,
+            elementContainer: null,
+            elementStride: null,
+            offset: 0,
+            align: 8,
+            size: 8,
+            isUniform: true,
+            isStorage: false,
+            isReadWrite: false,
+            members: null,
+            sampler: null,
+            texture: null,
+          },
+        ],
+        entryPoints: [],
+      } satisfies WgslProgramInfo,
+    },
+    {
+      input: /* wgsl */ `
+        struct S {
+          // @block blockName
+          // @alias fieldName
+          a: f32,
+        }
+
+        // @block aBlock
+        // @alias renamed
+        @group(1) @binding(2)
+        var<uniform> params: S;
+        `,
+      expected: {
+        resources: [
+          {
+            annotations: {
+              block: 'aBlock',
+              alias: 'renamed',
+            },
+            align: 4,
+            binding: 2,
+            container: 'array',
+            elementContainer: null,
+            elementCount: 4,
+            elementStride: null,
+            elementType: 'uint8',
+            group: 1,
+            isReadWrite: false,
+            isStorage: false,
+            isUniform: true,
+            location: null,
+            name: 'params',
+            offset: 0,
+            sampler: null,
+            size: 4,
+            texture: null,
+            members: [
+              {
+                annotations: {
+                  block: 'blockName',
+                  alias: 'fieldName',
+                },
+                align: 4,
+                binding: null,
+                container: 'scalar',
+                elementContainer: null,
+                elementCount: 1,
+                elementStride: null,
+                elementType: 'float32',
+                group: null,
+                isReadWrite: false,
+                isStorage: false,
+                isUniform: false,
+                location: null,
+                members: null,
+                name: 'a',
+                offset: 0,
+                sampler: null,
+                size: 4,
+                texture: null,
+              },
+            ],
           },
         ],
         entryPoints: [],

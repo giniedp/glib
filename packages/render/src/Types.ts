@@ -1,7 +1,9 @@
 import type {
   Device,
+  DeviceOutput,
   Mesh,
-  ProgramInputValue,
+  ProgramInputBlock,
+  ProgramInputBlockCollection,
   RenderVariant,
   ResolvedMeshPart,
   Sprite,
@@ -94,6 +96,17 @@ export function isRenderItem<K extends string, T>(item: RenderItem, type: Brand<
  * provide items that are visible for the given camera in the current frame.
  */
 export interface RenderScene {
+  /**
+   * Collection of views that should be rendered for this scene
+   */
+  views: RenderView[]
+
+  /**
+   * The output render target where this scene should be rendered to.
+   * Will be rendered to the screen if null.
+   */
+  output: Texture | null
+
   /**
    * Collects renderable items for the given camera and adds them to the provided output array.
    * @remarks
@@ -222,9 +235,10 @@ export interface RenderContext {
    */
   renderLists: RenderListCache
   /**
-   * Uniform values that are set globally for the current render pass and can be used by materials and effects.
+   * Global input block that will override material and object inputs,
+   * useful for engine level effects like fog, tone mapping, etc.
    */
-  renderParams: Record<string, ProgramInputValue>
+  renderInputs: ProgramInputBlockCollection
   /**
    * The render variant that is currently being rendered, e.g. 'depth', 'forward', etc.
    * This can be used by materials and effects to determine which shader variant to use.

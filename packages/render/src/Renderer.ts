@@ -1,10 +1,12 @@
 import {
-  CommonBindingKeys,
   Color,
+  CommonBlocks,
+  CommonInputs,
   CullState,
   DepthState,
   Device,
   DeviceOutput,
+  ProgramInputBlockCollection,
   RenderVariant,
   SpriteBatch,
   surfaceFormatIsSrgb,
@@ -12,7 +14,7 @@ import {
 } from '@gglib/graphics'
 
 import { Mat4, Vec3 } from '@gglib/math'
-import { eventSource, removeItem } from '@gglib/utils'
+import { eventSource } from '@gglib/utils'
 import { GeometryPass } from './passes/GeometryPass'
 import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
 import {
@@ -70,17 +72,11 @@ export class Renderer {
     delta: 0,
   }
 
-  private views: RenderView[] = []
-
   /**
    * Event emitted when the render context is ready to be used for rendering.
    * This allows to set custom render parameters or perform other preparations before the render pipeline is executed.
    */
   public readonly onContextReady = eventSource<RenderContext>()
-
-  public getViews(): ReadonlyArray<RenderView> {
-    return this.views
-  }
 
   public constructor(device: Device) {
     this.device = device
@@ -104,11 +100,14 @@ export class Renderer {
       channelDescriptors: createRenderChannelSchema(device),
       renderLists: this.renderLists,
       renderVariant: RenderVariant.Forward,
-      renderParams: {},
+      renderInputs: new ProgramInputBlockCollection({
+        createIfMissing: false,
+        initialBlocks: [CommonBlocks.Global, CommonBlocks.Frame, CommonBlocks.View],
+      }),
     }
   }
 
-  public addView(options: Partial<RenderView>): RenderView {
+  public createView(options: Partial<RenderView>): RenderView {
     options.name ??= 'view'
     options.camera ??= null
     options.disabled ??= false
@@ -121,14 +120,10 @@ export class Renderer {
     if (options.present === undefined) {
       options.present = options.output[0]
     }
-    const view = options as RenderView
-    if (!this.views.includes(view)) {
-      this.views.push(view)
-    }
-    return view
+    return options as RenderView
   }
 
-  public removeView(view: RenderView): boolean {
+  public releaseView(view: RenderView): void {
     const channels = view.exports
     for (const key in channels) {
       const texture = channels[key as RenderChannel]
@@ -137,16 +132,6 @@ export class Renderer {
         channels[key as RenderChannel] = null
       }
     }
-    return removeItem(this.views, view)
-  }
-
-  public getView(name: string): RenderView | null {
-    for (const view of this.views) {
-      if (view.name === name) {
-        return view
-      }
-    }
-    return null
   }
 
   /**
@@ -165,10 +150,10 @@ export class Renderer {
    * Renders the given scene into all views.
    */
   public render(scene: RenderScene): void {
-    for (const view of this.views) {
+    for (const view of scene.views) {
       this.renderSceneView(scene, view)
     }
-    this.present()
+    this.present(scene.views, scene.output)
   }
 
   /**
@@ -232,7 +217,7 @@ export class Renderer {
     context.view = view
     context.viewWidth = getViewWidth(view.viewport.width, this.device.output)
     context.viewHeight = getViewHeight(view.viewport.height, this.device.output)
-    this.updateBindings(context)
+    this.updateInputs(context)
     this.onContextReady.emit(context)
 
     this.renderLists.clear()
@@ -250,7 +235,7 @@ export class Renderer {
     if (list.isSorted) {
       return list
     }
-    list.begin(mode, ctx.view, ctx.renderParams)
+    list.begin(mode, ctx.view, ctx.renderInputs.blocks)
     this.collectors.begin(ctx, list)
     for (const item of ctx.view.items) {
       if (!(item.flags & mode.mask)) {
@@ -267,7 +252,7 @@ export class Renderer {
    * Presents all prerendered views to screen or to the given target texture.
    * Skips views that have no presentable channels or have {@link RenderView.present} set to false.
    */
-  public present(views: RenderView[] = this.views, target: Texture = null): void {
+  public present(views: RenderView[], target: Texture = null): void {
     this.spriteBatch ||= new SpriteBatch(this.device)
 
     const isSRGB = surfaceFormatIsSrgb((target || this.device.output).format)
@@ -308,35 +293,37 @@ export class Renderer {
     pass.flush()
   }
 
-  protected updateBindings(ctx: RenderContext) {
-    ctx.renderParams[CommonBindingKeys.Frame.Index] = ctx.frame.id
-    ctx.renderParams[CommonBindingKeys.Frame.ElapsedTime] = ctx.frame.time
-    ctx.renderParams[CommonBindingKeys.Frame.DeltaTime] = ctx.frame.delta
+  protected updateInputs(ctx: RenderContext) {
+    ctx.renderInputs.set(CommonInputs.Frame.FrameIndex, ctx.frame.id)
+    ctx.renderInputs.set(CommonInputs.Frame.FrameElapsedTime, ctx.frame.time)
+    ctx.renderInputs.set(CommonInputs.Frame.FrameDeltaTime, ctx.frame.delta)
 
-    ctx.renderParams[CommonBindingKeys.View.InverseViewMatrix] = ctx.view.camera.world
-    ctx.renderParams[CommonBindingKeys.View.ViewMatrix] = ctx.view.camera.view
+    ctx.renderInputs.set(CommonInputs.View.ViewMatrix, ctx.view.camera.view)
+    ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)
 
-    ctx.renderParams[CommonBindingKeys.View.ProjectionMatrix] = ctx.view.camera.projection
-    ctx.renderParams[CommonBindingKeys.View.InverseProjectionMatrix] = Mat4.invert(
-      ctx.view.camera.projection,
-      (ctx.renderParams[CommonBindingKeys.View.InverseProjectionMatrix] as Mat4) || Mat4.createIdentity(),
-    )
+    const inverseViewMatrix: Mat4 = (ctx['__inverseViewMatrix'] ||= Mat4.createIdentity())
+    Mat4.invert(ctx.view.camera.view, inverseViewMatrix)
+    ctx.renderInputs.set(CommonInputs.View.InverseViewMatrix, inverseViewMatrix)
 
-    ctx.renderParams[CommonBindingKeys.View.ViewProjectionMatrix] = Mat4.multiply(
-      ctx.view.camera.projection,
-      ctx.view.camera.view,
-      (ctx.renderParams[CommonBindingKeys.View.ViewProjectionMatrix] as Mat4) || Mat4.createIdentity(),
-    )
-    ctx.renderParams[CommonBindingKeys.View.InverseViewProjectionMatrix] = Mat4.invert(
-      ctx.renderParams[CommonBindingKeys.View.ViewProjectionMatrix] as Mat4,
-      (ctx.renderParams[CommonBindingKeys.View.InverseViewProjectionMatrix] as Mat4) || Mat4.createIdentity(),
-    )
+    const inverseProjectionMatrix: Mat4 = (ctx['__inverseProjectionMatrix'] ||= Mat4.createIdentity())
+    Mat4.invert(ctx.view.camera.projection, inverseProjectionMatrix)
+    ctx.renderInputs.set(CommonInputs.View.InverseProjectionMatrix, inverseProjectionMatrix)
 
-    ctx.renderParams[CommonBindingKeys.View.CameraPosition] ||= Vec3.create()
-    ctx.view.camera.world.getTranslation(ctx.renderParams[CommonBindingKeys.View.CameraPosition])
+    const viewProjectionMatrix: Mat4 = (ctx['__viewProjectionMatrix'] ||= Mat4.createIdentity())
+    Mat4.multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProjectionMatrix)
+    ctx.renderInputs.set(CommonInputs.View.ViewProjectionMatrix, viewProjectionMatrix)
 
-    ctx.renderParams[CommonBindingKeys.View.CameraDirection] ||= Vec3.create()
-    ctx.view.camera.world.getForward(ctx.renderParams[CommonBindingKeys.View.CameraDirection])
+    const inverseViewProjectionMatrix: Mat4 = (ctx['__inverseViewProjectionMatrix'] ||= Mat4.createIdentity())
+    Mat4.invert(viewProjectionMatrix, inverseViewProjectionMatrix)
+    ctx.renderInputs.set(CommonInputs.View.InverseViewProjectionMatrix, inverseViewProjectionMatrix)
+
+    const cameraPosition: Vec3 = (ctx['__cameraPosition'] ||= Vec3.create())
+    ctx.view.camera.world.getTranslation(cameraPosition)
+    ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
+
+    const cameraDirection: Vec3 = (ctx['__cameraDirection'] ||= Vec3.create())
+    ctx.view.camera.world.getForward(cameraDirection)
+    ctx.renderInputs.set(CommonInputs.View.CameraDirection, cameraDirection)
   }
 
   public dispose() {

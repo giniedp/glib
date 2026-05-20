@@ -1,4 +1,4 @@
-import type { Buffer, ProgramInputType, Texture } from '../../resources'
+import type { Buffer, InputTypeName, Texture } from '../../resources'
 import { SamplerState } from '../../states'
 import type { WebglDevice } from '../WebglDevice'
 import type { WebglReflectUniform } from './WebglReflection'
@@ -10,7 +10,7 @@ export class WebglUniformSamplerBinding implements WebglUniform {
   public readonly device: WebglDevice
   public readonly name: string
   public readonly alias: string
-  public readonly type: ProgramInputType
+  public readonly type: InputTypeName
   public readonly sampler: SamplerState
   public readonly texture: WebglTexture
   public readonly unit: number
@@ -49,6 +49,10 @@ export class WebglUniformSamplerBinding implements WebglUniform {
   public setSampler(value: SamplerState): void {
     value ||= SamplerState.Default
     ;(this as Mutable<this>).sampler = value
+  }
+
+  public readValue(index: number, size: number): unknown {
+    return this.texture || this.sampler
   }
 }
 

@@ -7,19 +7,26 @@ const BLOCKS = /* glsl */ `
 #define LIGHT_TYPE_SPOT 3
 #define LIGHT_TYPE_AREA 4
 
-// @alias object
-layout(std140) uniform ObjectBlock {
-  mat4 modelMatrix;
-} object;
+// @block global
+layout(std140) uniform GlobalBlock {
+  vec3 fogColor;
+  float fogNear;
+  float fogFar;
+} global;
 
-// @alias view
+// @block view
 layout(std140) uniform ViewBlock {
   mat4 viewMatrix;
   mat4 projectionMatrix;
   vec3 cameraPosition;
 } view;
 
-// @alias material
+// @block object
+layout(std140) uniform ObjectBlock {
+  mat4 modelMatrix;
+} object;
+
+// @block material
 layout(std140) uniform MaterialBlock {
   vec3 baseColor;
   float alpha;
@@ -28,9 +35,12 @@ layout(std140) uniform MaterialBlock {
   vec3 specularColor;
   float alphaClip;
   vec4 textureScaleOffset;
+  uint textureEnabled;
+  uint lightingEnabled;
+  uint fogEnabled;
 } material;
 
-// @alias lights
+// @block lights
 layout(std140) uniform LightBlock {
   vec4 color[LIGHT_COUNT];
   vec4 position[LIGHT_COUNT];
@@ -51,20 +61,6 @@ layout(std140) uniform LightBlock {
 // direction B  | direction     | -           | direction  | direction
 // direction A  | -             | -           | angle      | height
 } lights;
-
-// @alias settings
-layout(std140) uniform SettingsBlock {
-  uint textureEnabled;
-  uint lightingEnabled;
-  uint fogEnabled;
-} settings;
-
-// @alias fog
-layout(std140) uniform FogBlock {
-  vec3 color;
-  float start;
-  float end;
-} fog;
 
 `
 
@@ -99,9 +95,9 @@ void main() {
   vFogFactor = 1.0;
   gl_Position = view.projectionMatrix * viewPos;
 
-  if (settings.fogEnabled == 1u) {
+  if (material.fogEnabled == 1u) {
     float dist = length(viewPos.xyz);
-    vFogFactor = clamp((fog.end - dist) / (fog.end - fog.start), 0.0, 1.0);
+    vFogFactor = clamp((global.fogFar - dist) / (global.fogFar - global.fogNear), 0.0, 1.0);
   }
 }
 `
@@ -113,6 +109,7 @@ precision highp int;
 
 ${BLOCKS}
 
+// @block material
 uniform sampler2D baseColorMap;
 
 in vec3 vNormal;
@@ -121,7 +118,6 @@ in vec2 vTexCoord;
 in vec3 vToEyeInWS;
 in float vFogFactor;
 out vec4 fragColor;
-
 
 struct LightParams {
   vec4 Color;
@@ -240,7 +236,7 @@ void main() {
   vec3 toEye = normalize(view.cameraPosition - vWorldPos);
   vec4 baseColor = vec4(1.0);
 
-  if (settings.textureEnabled == 1u) {
+  if (material.textureEnabled == 1u) {
     baseColor = texture(baseColorMap, vTexCoord * material.textureScaleOffset.xy + material.textureScaleOffset.zw);
   }
   float alpha = baseColor.a * material.alpha;
@@ -255,7 +251,7 @@ void main() {
   surface.Roughness = material.roughness;
 
   vec3 color = vec3(0.0, 0.0, 0.0);
-  if (settings.lightingEnabled == 1u) {
+  if (material.lightingEnabled == 1u) {
     for(int i = 0; i < LIGHT_COUNT; i++) {
       LightParams lightParams;
       lightParams.Color = lights.color[i];
@@ -277,7 +273,7 @@ void main() {
     color = surface.BaseColor.rgb;
   }
 
-  fragColor.rgb = mix(fog.color, color.rgb, vFogFactor);
+  fragColor.rgb = mix(global.fogColor, color.rgb, vFogFactor);
   fragColor.a = surface.BaseColor.a * material.alpha;
   // fragColor.rgb = vNormal.xyz * 0.5 + 0.5; // normal visualization
   // fragColor.rg = vTexCoord.xy;

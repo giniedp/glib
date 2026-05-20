@@ -1,4 +1,5 @@
 import { SamplerState } from '../../states'
+import { ShaderAnnotations } from '../../shader'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import type { WgslResourceInfo, WgslTextureInfo } from '../wgsl'
 
@@ -22,6 +23,10 @@ export class WebGpuShaderResource {
 
   public readonly bindingResource: GPUBindingResource
   public readonly layoutEntry: GPUBindGroupLayoutEntry
+  public readonly isTexture: boolean
+  public readonly isSampler: boolean
+  public readonly block: string
+  public readonly nameInShader: string
   public readonly info: WgslResourceInfo
 
   public get isDirty(): boolean {
@@ -40,11 +45,15 @@ export class WebGpuShaderResource {
   public constructor(device: WebGpuDevice, info: WgslResourceInfo, isCompute: boolean) {
     this.device = device
     this.info = info
+    this.block = info.annotations[ShaderAnnotations.Block] || info.name
+    this.nameInShader = info.name
 
     this.layoutEntry = getLayoutEntry(info, isCompute ? COMPUTE_VISIBILITY : RENDER_VISIBILITY)
     if (info.texture) {
+      this.isTexture = true
       this.bindingResource = this.device.defaultTexture.gpuObject
     } else if (info.sampler) {
+      this.isSampler = true
       this.bindingResource = this.device.getSampler(SamplerState.Default).resource
     } else {
       const alignTo = info.isStorage ? 256 : 4
@@ -67,22 +76,22 @@ export class WebGpuShaderResource {
   }
 
   public setTexture(resource: GPUTexture | GPUTextureView | GPUExternalTexture) {
-    if (!this.info.texture) {
-      throw new Error(`Cannot set texture on non-texture parameter '${this.info.name}'`)
+    if (!this.isTexture) {
+      throw new Error(`Cannot set texture on non-texture parameter '${this.nameInShader}'`)
     }
     this.setResource(resource)
   }
 
   public setSampler(resource: GPUSampler) {
-    if (!this.info.sampler) {
-      throw new Error(`Cannot set sampler on non-sampler parameter '${this.info.name}'`)
+    if (!this.isSampler) {
+      throw new Error(`Cannot set sampler on non-sampler parameter '${this.nameInShader}'`)
     }
     this.setResource(resource)
   }
 
   public setBuffer(resource: GPUBuffer | GPUBufferBinding) {
     if (!this.managedBuffer) {
-      throw new Error(`Cannot set buffer on non-buffer parameter '${this.info.name}'`)
+      throw new Error(`Cannot set buffer on non-buffer parameter '${this.nameInShader}'`)
     }
     const self = this as Mutable<this>
     resource ||= this.managedBuffer

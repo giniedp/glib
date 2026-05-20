@@ -243,7 +243,7 @@ export class ContentLoader {
       return options
     }
     if ('effect' in options) {
-      return new Material<any>(null as any, options)
+      return new Material(null as any, options)
     }
 
     const entry = this.findMaterial(options)

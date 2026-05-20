@@ -189,6 +189,7 @@ export function detectTemplateLists(tokens: Token[]): WgslToken[] {
   if (stack.length) {
     rollback(0)
   }
+
   return result
 }
 

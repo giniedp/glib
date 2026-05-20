@@ -79,14 +79,14 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 }
 
 function demoCamera() {
-  const data =  {
+  const data = {
     theta: 0,
     phi: 90,
     distance: 2,
     position: Vec3.create(),
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
-    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device)
+    update: (mouse: Mouse, device: Device) => updateCamera(data, mouse, device),
   }
   return data
 }
@@ -108,6 +108,6 @@ function updateCamera(camera: ReturnType<typeof demoCamera>, mouse: Mouse, devic
     camera.theta * DEGREE_TO_RAD,
     camera.distance,
   )
-  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.Up).invert()
+  camera.view.initLookAt(camera.position, Vec3.Zero, Vec3.UnitY).invert()
   camera.projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, device.drawingBufferAspectRatio, 0.01, 1000)
 }

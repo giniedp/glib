@@ -1,17 +1,18 @@
 import {
   BasicGame,
+  BehaviorComponent,
   CameraComponent,
-  KeyboardInput,
+  KeyboardInputSystem,
   LightComponent,
   ModelComponent,
-  MouseInput,
+  MouseInputSystem,
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
-import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
+
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, GameSystem } from '@gglib/ecs'
-import { BasicMaterial, Color, Device, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, Device, PlatformId, TRUE } from '@gglib/graphics'
 import { KeyboardKey } from '@gglib/input'
 import { MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Vec3, Vec4 } from '@gglib/math'
@@ -47,9 +48,9 @@ class Game extends BasicGame {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-    this.world.addSystem(new KeyboardInput({}))
+    this.world.addSystem(new KeyboardInputSystem({}))
     this.world.addSystem(
-      new MouseInput({
+      new MouseInputSystem({
         preventDefault: true,
       }),
     )
@@ -125,7 +126,7 @@ class Game extends BasicGame {
       100,
       this.device.ndcMinZ,
     )
-    if (this.world.getSystem(KeyboardInput).justReleased(KeyboardKey.Space)) {
+    if (this.world.getSystem(KeyboardInputSystem).justReleased(KeyboardKey.Space)) {
       this.resetCubes()
     }
   }
@@ -286,12 +287,12 @@ class CubeComponent implements GameComponent {
       for (const material of mesh.materials) {
         const mtl = material as BasicMaterial
         mtl.Texture = texture
-        mtl.TextureEnabled = true
-        mtl.LightingEnabled = true
-        mtl.set('lights.color[0]', Vec4.createFrom(Color.White))
-        mtl.set('lights.direction[0]', Vec4.create(-1, -1, -1, 1))
-        mtl.set('lights.color[1]', Vec4.createFrom(Color.White))
-        mtl.set('lights.direction[1]', Vec4.create(1, -1, -1, 1))
+        mtl.TextureEnabled = TRUE
+        mtl.LightingEnabled = TRUE
+        // mtl.set('lights.color[0]', Vec4.createFrom(Color.White))
+        // mtl.set('lights.direction[0]', Vec4.create(-1, -1, -1, 1))
+        // mtl.set('lights.color[1]', Vec4.createFrom(Color.White))
+        // mtl.set('lights.direction[1]', Vec4.create(1, -1, -1, 1))
       }
     }
     this.renderable.model = model

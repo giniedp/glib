@@ -1,5 +1,5 @@
 import { dataTypeToArrayType, type TypedArray } from '../../enums'
-import { type Texture, type ProgramInputType, Buffer } from '../../resources'
+import { type Texture, type InputTypeName, Buffer } from '../../resources'
 import { SamplerState } from '../../states'
 import { glslComponentCount, glslUploadFunction, type GlslTypeSampler, type GlslValueType } from '../glsl'
 import type { WebglDevice } from '../WebglDevice'
@@ -12,7 +12,7 @@ export class WebglUniformLocation implements WebglUniform {
   public readonly program: WebglShaderModule
   public readonly name: string
   public readonly alias: string
-  public readonly type: ProgramInputType
+  public readonly type: InputTypeName
 
   private data: TypedArray
   private location: WebGLUniformLocation
@@ -43,6 +43,11 @@ export class WebglUniformLocation implements WebglUniform {
       this.write(info.textureIndex)
     }
   }
+
+  public readValue(index: number, size: number): unknown {
+    return this.data.slice(index, index + size)
+  }
+
   public endWrite(): void {
     // no-op
   }

@@ -1,5 +1,5 @@
 import type { TypedArray } from '../../enums'
-import type { Buffer, ProgramInputType, Texture } from '../../resources'
+import type { Buffer, InputTypeName, Texture } from '../../resources'
 import type { SamplerState } from '../../states'
 import { type GlslValueType } from '../glsl'
 import { WebglBuffer } from './WebglBuffer'
@@ -10,7 +10,7 @@ import type { WebglUniformBlock } from './WebglUniformBlock'
 export class WebglUniformBlockMember implements WebglUniform {
   public readonly name: string
   public readonly alias: string
-  public readonly type: ProgramInputType
+  public readonly type: InputTypeName
 
   private block: WebglUniformBlock
   private blockOffset: number
@@ -117,5 +117,9 @@ export class WebglUniformBlockMember implements WebglUniform {
       throw new Error('Invalid buffer type for WebglUniformBlockMember')
     }
     this.block.setBuffer(value)
+  }
+
+  public readValue(index: number, size: number): TypedArray {
+    return this.data.slice(index, index + size)
   }
 }

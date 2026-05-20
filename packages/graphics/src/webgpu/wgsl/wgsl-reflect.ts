@@ -1,5 +1,5 @@
 import type { DataType } from '../../enums'
-import type { ProgramInputType } from '../../resources'
+import type { InputTypeName } from '../../resources'
 
 import { parseAnnotations, TokenReader } from '../../shader'
 
@@ -48,11 +48,11 @@ export interface WgslResourceTypeInfo {
   /**
    * The container type of the uniform e.g. `scalar`, `array`, `vec3`, `mat4
    */
-  container: ProgramInputType
+  container: InputTypeName
   /**
    * The container type of the leaf element if the uniform is an array
    */
-  elementContainer: ProgramInputType
+  elementContainer: InputTypeName
   elementStride: number
 
   /**
@@ -84,25 +84,7 @@ export interface WgslResourceInfo extends WgslResourceTypeInfo, WgslResourceFoot
    * The original name as it appears in the shader source code
    */
   name: string
-  /**
-   * An alias name by which this resource should be accessible in the javascript world
-   *
-   * @remarks
-   * Semantics can be added via comments in the shader source code, for example:
-   *
-   * glsl
-   * ```
-   * // @ semantic lightDirection
-   * uniform vec3 uLightDirection;
-   * ```
-   *
-   * wgsl
-   * ```
-   * // @ semantic lightDirection
-   * var<uniform> uLightDirection: vec3<f32>;
-   * ```
-   */
-  alias: string
+  annotations: Record<string, string>
   /**
    * The binding group index of the uniform (wgsl only)
    */
@@ -135,7 +117,7 @@ export interface WgslInputInfo extends WgslResourceTypeInfo {
    */
   name: string
   /**
-   * An alias name by which the uniform will be accessible in the javascript world
+   * An alias or semantic name by which the uniform will be accessible in the javascript world
    */
   alias: string
   /**
@@ -145,10 +127,6 @@ export interface WgslInputInfo extends WgslResourceTypeInfo {
 }
 
 export interface WgslOutputInfo extends WgslResourceTypeInfo {
-  /**
-   * An alias name by which the uniform will be accessible in the javascript world
-   */
-  alias: string
   /**
    * The unique ID of the vertex attribute location
    */
@@ -194,7 +172,7 @@ function resolveInputs(program: WgslProgram, params: WgslFunctionParam[]) {
     if (typeof info.location === 'number') {
       result.push({
         name: info.name,
-        alias: info.alias,
+        alias: info.annotations['alias'],
         location: info.location,
         container: info.container,
         elementContainer: info.elementContainer,
@@ -224,7 +202,6 @@ function resolveOutputs(program: WgslProgram, token: WgslFunctionReturnType) {
   function collectLocations(info: WgslResourceInfo) {
     if (typeof info.location === 'number') {
       result.push({
-        alias: info.alias,
         location: info.location,
         container: info.container,
         elementContainer: info.elementContainer,
@@ -337,7 +314,7 @@ const FOOTPRINTS = {
 }
 
 function resourceInfo(
-  container: ProgramInputType,
+  container: InputTypeName,
   type: DataType,
   elements: number,
   align: number,
@@ -424,7 +401,7 @@ function resolveResourceInfo(
     isStorage: 'options' in token && token.options?.some((it) => it === 'storage'),
     isReadWrite: 'options' in token && token.options?.some((it) => it === 'read_write'),
     name: 'name' in token ? token.name : null,
-    alias: parseAnnotations(token.comments)?.alias || null,
+    annotations: parseAnnotations(token.comments) || {},
     location: resolveAttribute(program, 'location', token.attributes),
     binding: resolveAttribute(program, 'binding', token.attributes),
     group: resolveAttribute(program, 'group', token.attributes),

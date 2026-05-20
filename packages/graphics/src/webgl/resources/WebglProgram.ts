@@ -1,4 +1,4 @@
-import { Program, ProgramInput, ProgramInputs, type ProgramOptions, type ProgramInputValue } from '../../resources'
+import { InputValueType, Program, ProgramInput, ProgramInputBlock, type ProgramOptions } from '../../resources'
 import { Mutable } from '../types'
 import type { WebglDevice } from '../WebglDevice'
 import { WebglPendingInput, WebglProgramInput } from './WebglProgramInput'
@@ -10,9 +10,9 @@ import { WebglUniformBlockMember } from './WebglUniformBlockMember'
 import { WebglUniformLocation } from './WebglUniformLocation'
 import { WebglUniformSamplerBinding } from './WebglUniformSamplerBinding'
 
-export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends Program<Values> {
+export class WebglProgram extends Program {
   public readonly module: WebglShaderModule
-  public readonly shared: ReadonlyArray<string>
+  public readonly sharedBlocks: ReadonlyArray<string>
   private device: WebglDevice
 
   // resources
@@ -23,12 +23,13 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
 
   // input lookup table, created on the fly
   private inputs: Record<string, ProgramInput> = {}
+  private sourceState: Record<string, { source: ProgramInputBlock; version: number }> = {}
 
   public constructor(program: WebglShaderModule, options?: ProgramOptions) {
     super()
     this.module = program
     this.device = program.device
-    this.shared = [...(options?.shared || [])]
+    this.sharedBlocks = [...(options?.sharedBlocks || [])]
     this.module.onCompiled.add(this.createResources)
     this.module.onDisposed.add(() => this.dispose())
     if (this.module.isReady) {
@@ -36,7 +37,23 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
     }
   }
 
-  public apply(values: ProgramInputs): void {
+  public applyBlock(block: ProgramInputBlock, force?: boolean): boolean {
+    const state = this.sharedBlocks.includes(block.name) ? this.module.program.sourceState : this.sourceState
+    state[block.name] ||= { source: block, version: -1 }
+    const record = state[block.name]
+
+    if (!force && record.source === block && record.version === block.version) {
+      return false
+    }
+
+    record.source = block
+    record.version = block.version
+    this.applyInputs(block.values)
+
+    return true
+  }
+
+  public applyInputs(values: Record<string, InputValueType>): void {
     for (const key in values) {
       this.set(key, values[key] as any)
     }
@@ -57,7 +74,7 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
     return this.inputs[input]
   }
 
-  public set<K extends keyof Values>(path: K, value: Values[K]): boolean {
+  public set(path: string, value: InputValueType): boolean {
     const parameter = this.get(path as string)
     if (!parameter) {
       return false
@@ -89,7 +106,7 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
   public dispose(): void {
     this.module.onCompiled.remove(this.createResources)
     for (const block of this.blocks) {
-      if (!this.shared.includes(block.name)) {
+      if (!this.sharedBlocks.includes(block.name)) {
         block.dispose()
       }
     }
@@ -101,11 +118,13 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
 
   private createResources = () => {
     const self = this as Mutable<this>
-    self.blocks = createBlocks(this.module, this.shared)
+    // blocks are the only ones that can be shared
+    self.blocks = createBlocks(this.module, this.sharedBlocks)
+    // legacy locations are always part of the program
     self.locations = createLocations(this.module)
     self.uniforms = createUniforms({
       module: this.module,
-      shared: this.shared,
+      shared: this.sharedBlocks,
       blocks: this.blocks,
       locations: this.locations,
     })
@@ -121,7 +140,7 @@ export class WebglProgram<Values extends ProgramInputs = ProgramInputs> extends 
 function createBlocks(module: WebglShaderModule, shared: ReadonlyArray<string>): WebglUniformBlock[] {
   const root = module.program
   return module.reflection.blocks.map((info) => {
-    const isShared = shared.includes(info.name)
+    const isShared = shared.includes((info.block || info.name).toLowerCase())
     const instance = root?.blocks?.find((b) => b.name === info.name)
     if (instance && isShared) {
       return instance

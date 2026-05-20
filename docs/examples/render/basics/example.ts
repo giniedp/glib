@@ -1,7 +1,7 @@
 import {
   BasicMaterial,
+  boxGeometry,
   createDevice,
-  cubeGeometry,
   Device,
   Mesh,
   PlatformId,
@@ -154,7 +154,7 @@ function createObject(device: Device, textures: Texture[], rnd: Random): MeshRen
     transform: world,
     mesh: new Mesh(device, {
       materials: [material],
-      parts: [cubeGeometry(device, { materialId: 0 })],
+      parts: [boxGeometry(device, { materialId: 0 })],
     }),
     update: () => {
       world.rotateYawPitchRoll(seed.x * 0.01, seed.y * 0.01, seed.z * 0.01)

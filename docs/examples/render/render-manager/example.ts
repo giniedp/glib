@@ -46,7 +46,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const view = renderer.addView({
     camera: {
       visibilityMask: LayerMask.All,
-      world: Mat4.createLookAt({ x: 0, y: 25, z: 75 }, Vec3.Zero, Vec3.Up),
+      world: Mat4.createLookAt({ x: 0, y: 25, z: 75 }, Vec3.Zero, Vec3.UnitY),
       view: Mat4.createIdentity(),
       projection: Mat4.createIdentity(),
       reversedZ: false,
@@ -74,7 +74,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     const ship = objects.find((it) => it.tag === 'ship')
 
     if (ship) {
-      camera.world.initLookAt(camera.world.getTranslation(), ship.transform.getTranslation(), Vec3.Up)
+      camera.world.initLookAt(camera.world.getTranslation(), ship.transform.getTranslation(), Vec3.UnitY)
     }
     Mat4.invert(camera.world, camera.view)
     camera.projection.initPerspectiveFieldOfView(Math.PI / 2.4, device.output.aspectRatio, 0.1, 1500, device.ndcMinZ)

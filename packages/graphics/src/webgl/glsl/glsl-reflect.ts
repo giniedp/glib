@@ -20,7 +20,7 @@ export interface GlslShaderInfo {
 
 export type GlslMember = GlslType & {
   name: string
-  alias: string | null
+  annotations: Record<string, string>
 }
 
 export type GlslType =
@@ -99,7 +99,8 @@ export function reflectGlslShader(tokens: GlslProgram): GlslShaderInfo {
       case 'interface': {
         uniforms.push({
           name: token.name,
-          alias: parseAnnotations(token.comments)?.alias || token.instanceName || null,
+          annotations: parseAnnotations(token.comments) || {},
+          // alias: parseAnnotations(token.comments)?.alias || token.instanceName || null,
           container: `interface`,
           member: token.member.map((member) => resolveMember(tokens, member)),
         })
@@ -121,7 +122,7 @@ function resolveMember(program: GlslProgram, token: GlslVariableDeclaration | Gl
   }
   return {
     name: token.name,
-    alias: parseAnnotations(token.comments)?.alias || null,
+    annotations: parseAnnotations(token.comments) || {},
     ...component,
   }
 }

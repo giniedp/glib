@@ -1,6 +1,19 @@
 import { IVec3 } from '@gglib/math'
 import { brand, Brand } from '@gglib/utils'
-import { AcquireTextureOptions, Texture, TextureOptions, ProgramInputValue } from '../resources'
+import {
+  AcquireTextureOptions,
+  inputSlotMat3,
+  inputSlotMat4,
+  inputSlotSampler,
+  inputSlotScalar,
+  inputSlotTexture,
+  inputSlotVec2,
+  inputSlotVec3,
+  inputSlotVec4,
+  InputValueType,
+  Texture,
+  TextureOptions,
+} from '../resources'
 
 export type TextureAsset = TextureOptions | AcquireTextureOptions
 
@@ -14,39 +27,87 @@ export const RenderVariant = {
 export const TRUE = 1
 export const FALSE = 0
 
-export type MaterialProperties = Record<string, ProgramInputValue | TextureAsset>
+export type MaterialProperties = Record<string, InputValueType | TextureAsset>
 
-export const CommonBindingKeys = {
-  Object: {
-    ModelMatrix: 'object.modelMatrix' as const,
-    NormalMatrix: 'object.normalMatrix' as const,
-    PreviousModelMatrix: 'object.previousModelMatrix' as const,
-  },
-  View: {
-    ViewMatrix: 'view.viewMatrix' as const,
-    InverseViewMatrix: 'view.inverseViewMatrix' as const,
+const Global = 'global'
+const Frame = 'frame'
+const View = 'view'
+const Object = 'object'
+const Material = 'material'
+const Settings = 'settings'
+export const CommonBlocks = {
+  Global,
+  Frame,
+  View,
+  Object,
+  Material,
+  Settings,
+} as const
 
-    ProjectionMatrix: 'view.projectionMatrix' as const,
-    InverseProjectionMatrix: 'view.inverseProjectionMatrix' as const,
-
-    ViewProjectionMatrix: 'view.viewProjectionMatrix' as const,
-    InverseViewProjectionMatrix: 'view.inverseViewProjectionMatrix' as const,
-
-    CameraPosition: 'view.cameraPosition' as const,
-    CameraDirection: 'view.cameraDirection' as const,
-
-    ViewportSize: 'view.viewportSize' as const,
-    ViewportInverseSize: 'view.viewportInverseSize' as const,
-
-    Jitter: 'view.jitter' as const,
-    Near: 'view.near' as const,
-    Far: 'view.far' as const,
+export const CommonInputs = {
+  Global: {
+    AmbientColor: inputSlotVec3(Global, 'ambientColor'),
+    FogColor: inputSlotVec3(Global, 'fogColor'),
+    FogDensity: inputSlotScalar(Global, 'fogDensity'),
+    FogNear: inputSlotScalar(Global, 'fogNear'),
+    FogFar: inputSlotScalar(Global, 'fogFar'),
+    IrradianceMap: inputSlotTexture(Global, 'irradianceMap'),
   },
 
   Frame: {
-    Index: 'frame.index' as const,
-    ElapsedTime: 'frame.elapsedTime' as const,
-    DeltaTime: 'frame.deltaTime' as const,
+    /**
+     * @binding frame.index
+     */
+    FrameIndex: inputSlotScalar(Frame, 'index'),
+    /**
+     * @binding frame.elapsedTime
+     */
+    FrameElapsedTime: inputSlotScalar(Frame, 'elapsedTime'),
+    /**
+     * @binding frame.deltaTime
+     */
+    FrameDeltaTime: inputSlotScalar(Frame, 'deltaTime'),
+    /**
+     * @binding frame.randomSeed
+     */
+    FrameRandomSeed: inputSlotScalar(Frame, 'randomSeed'),
+  },
+
+  View: {
+    ViewMatrix: inputSlotMat4(View, 'viewMatrix'),
+    InverseViewMatrix: inputSlotMat4(View, 'inverseViewMatrix'),
+    ProjectionMatrix: inputSlotMat4(View, 'projectionMatrix'),
+    InverseProjectionMatrix: inputSlotMat4(View, 'inverseProjectionMatrix'),
+    ViewProjectionMatrix: inputSlotMat4(View, 'viewProjectionMatrix'),
+    InverseViewProjectionMatrix: inputSlotMat4(View, 'inverseViewProjectionMatrix'),
+    CameraPosition: inputSlotVec3(View, 'cameraPosition'),
+    CameraDirection: inputSlotVec3(View, 'cameraDirection'),
+    ViewportSize: inputSlotVec2(View, 'viewportSize'),
+    ViewportInverseSize: inputSlotVec2(View, 'viewportInverseSize'),
+    Near: inputSlotScalar(View, 'near'),
+    Far: inputSlotScalar(View, 'far'),
+  },
+
+  Object: {
+    ModelMatrix: inputSlotMat4(Object, 'modelMatrix'),
+    NormalMatrix: inputSlotMat3(Object, 'normalMatrix'),
+    PreviousModelMatrix: inputSlotMat4(Object, 'previousModelMatrix'),
+    ObjectId: inputSlotScalar(Object, 'objectId'),
+    ReceivesShadows: inputSlotScalar(Object, 'receivesShadows'),
+  },
+
+  Material: {
+    BaseColor: inputSlotVec4(Material, 'baseColor'),
+    Roughness: inputSlotScalar(Material, 'roughness'),
+    Metallic: inputSlotScalar(Material, 'metallic'),
+    Emissive: inputSlotVec3(Material, 'emissive'),
+    Opacity: inputSlotScalar(Material, 'opacity'),
+    AlphaCutoff: inputSlotScalar(Material, 'alphaCutoff'),
+    BaseColorMap: inputSlotTexture(Material, 'baseColorMap'),
+    NormalMap: inputSlotTexture(Material, 'normalMap'),
+    MetallicRoughnessMap: inputSlotTexture(Material, 'metallicRoughnessMap'),
+    EmissiveMap: inputSlotTexture(Material, 'emissiveMap'),
+    DefaultSampler: inputSlotSampler(Material, 'defaultSampler'),
   },
 }
 
@@ -72,12 +133,4 @@ export interface CommonMaterialProps {
   EnvironmentMap?: Texture | AcquireTextureOptions | TextureOptions
   DisplacementMap?: Texture | AcquireTextureOptions | TextureOptions
   SmoothnessMap?: Texture | AcquireTextureOptions | TextureOptions
-}
-
-export type IndexedInputs<M extends Record<string, any>, N extends number> = {
-  [P in keyof M & string as `${P}[${N}]`]: M[P]
-}
-
-export type InputBlock<Base extends string, M extends Record<string, any>> = {
-  [P in keyof M & string as `${Base}.${P}`]: M[P]
 }

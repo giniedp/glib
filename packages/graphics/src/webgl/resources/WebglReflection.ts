@@ -1,12 +1,11 @@
+import { ShaderAnnotations } from '../../shader'
 import {
   GlslMember,
   reflectGlslComponent,
-  reflectGlslShader,
   type GlslShaderInfo,
   type GlslTypeSampler,
   type GlslValueType,
 } from '../glsl'
-import { parseGlsl } from '../glsl/glsl-parse'
 import type { WebglShaderModule } from './WebglShaderModule'
 
 export interface WebglReflection {
@@ -41,6 +40,7 @@ export interface WebglReflectUniform<T = GlslValueType | GlslTypeSampler> {
 
 export interface WebglReflectBlock {
   readonly name: string
+  readonly block: string
   readonly index: number
   readonly size: number
 }
@@ -58,7 +58,7 @@ export function reflectProgram(program: WebglShaderModule): WebglReflection {
   return {
     inputs: reflectInputs(gl, resource, vertexInfo),
     outputs: reflectOutputs(gl, resource, fragmentInfo),
-    blocks: reflectBlocks(gl, resource),
+    blocks: reflectBlocks(gl, resource, uniforms),
     uniforms: reflectUniforms(gl, resource, uniforms),
   }
 }
@@ -76,10 +76,7 @@ function reflectInputs(gl: WebGL2RenderingContext, resource: WebGLProgram, shade
     result.push({
       name: info.name,
       location,
-      alias: reflect.alias,
-      // elementType: dataTypeFromWebGL(gl.getVertexAttrib(location, gl.VERTEX_ATTRIB_ARRAY_TYPE)),
-      // elementCount: gl.getVertexAttrib(location, gl.VERTEX_ATTRIB_ARRAY_SIZE),
-      // normalized: gl.getVertexAttrib(location, gl.VERTEX_ATTRIB_ARRAY_NORMALIZED),
+      alias: reflect.annotations[ShaderAnnotations.Alias],
     })
   }
   return result
@@ -102,27 +99,27 @@ function reflectOutputs(
 
 function reflectUniforms(
   gl: WebGL2RenderingContext,
-  resource: WebGLProgram,
+  program: WebGLProgram,
   uniforms: GlslMember[],
 ): WebglReflectUniform[] {
-  const uniformCount = gl.getProgramParameter(resource, gl.ACTIVE_UNIFORMS)
+  const uniformCount = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS)
   const blockIndices: number[] = gl.getActiveUniforms(
-    resource,
+    program,
     Array.from(Array(uniformCount).keys()),
     gl.UNIFORM_BLOCK_INDEX,
   )
   const blockOffsets: number[] = gl.getActiveUniforms(
-    resource,
+    program,
     Array.from(Array(uniformCount).keys()),
     gl.UNIFORM_OFFSET,
   )
   const arrayStrides: number[] = gl.getActiveUniforms(
-    resource,
+    program,
     Array.from(Array(uniformCount).keys()),
     gl.UNIFORM_ARRAY_STRIDE,
   )
   const matrixStrides: number[] = gl.getActiveUniforms(
-    resource,
+    program,
     Array.from(Array(uniformCount).keys()),
     gl.UNIFORM_MATRIX_STRIDE,
   )
@@ -130,7 +127,7 @@ function reflectUniforms(
   let textureUnitIndex = 1 // program.textureUnitBase
   const result: WebglReflectUniform[] = []
   for (let i = 0; i < uniformCount; ++i) {
-    const info = gl.getActiveUniform(resource, i)
+    const info = gl.getActiveUniform(program, i)
     const type = reflectGlslComponent(info.type)
     const isSampler = type.container === 'sampler'
     result.push({
@@ -148,7 +145,11 @@ function reflectUniforms(
   return result
 }
 
-function reflectBlocks(gl: WebGL2RenderingContext, resource: WebGLProgram): WebglReflectBlock[] {
+function reflectBlocks(
+  gl: WebGL2RenderingContext,
+  resource: WebGLProgram,
+  uniforms: GlslMember[],
+): WebglReflectBlock[] {
   const uniformCount = gl.getProgramParameter(resource, gl.ACTIVE_UNIFORMS)
   const blockIndices: number[] = gl.getActiveUniforms(
     resource,
@@ -158,35 +159,87 @@ function reflectBlocks(gl: WebGL2RenderingContext, resource: WebGLProgram): Webg
   return Array.from(new Set(blockIndices))
     .filter((index) => index >= 0)
     .map((index): WebglReflectBlock => {
+      const blockName = gl.getActiveUniformBlockName(resource, index)
+      const member = uniforms.find((it) => it.name === blockName)
+      const aliasName = member?.annotations[ShaderAnnotations.Block]
       return {
-        name: gl.getActiveUniformBlockName(resource, index),
+        name: blockName,
+        block: aliasName || blockName,
         index,
         size: gl.getActiveUniformBlockParameter(resource, index, gl.UNIFORM_BLOCK_DATA_SIZE),
       }
     })
 }
 
-function resolveAliasName(name: string, glsl: GlslMember[]): string {
+function resolveAliasName(namePath: string, glsl: GlslMember[]): string {
   const result: string[] = []
-  for (const token of name.split(/[.[\]]/)) {
+  const tokens = namePath.split(/[.[\]]/)
+  for (let i = 0; i < tokens.length; ++i) {
+    const token = tokens[i]
     if (token === '') {
       continue
     }
+
     if (token.match(/^\d+$/)) {
       const index = parseInt(token, 10)
       result.push(`[${index}]`)
       continue
     }
 
-    let member = glsl.find((it) => it.name === token)
+    const member = glsl.find((it) => it.name === token)
     if (!member) {
-      console.warn(`Failed to resolve uniform ${name} in GLSL reflection`)
-      return name
+      console.warn(`Failed to resolve uniform ${namePath} (${token}) in GLSL reflection\n`)
+      console.log(glsl.map((it) => it.name))
+      return namePath
     }
     if (result.length && !result[result.length - 1].endsWith(']')) {
       result.push('.')
     }
-    result.push(member.alias || member.name)
+
+    const alias = member.annotations[ShaderAnnotations.Alias]
+
+    if (i === 0) {
+      // @block annotation is only applied to root level members
+
+      const block = member.annotations[ShaderAnnotations.Block]
+
+      switch (member.container) {
+        // samplers are guaranteed not nested
+        // artificially placed int oa block with @block annotation
+        case 'sampler': {
+          if (block) {
+            return `${block}.${alias || token}`
+          }
+          return alias || token
+        }
+
+        // root level structs and buffers only support @block annotation
+        case 'interface':
+        case 'struct': {
+          result.push(block || member.name)
+          break
+        }
+
+        //
+        // @block foo
+        // uniform vec4 u_color; -> foo.u_color
+        //
+        // @block foo
+        // @alias color
+        // uniform vec4 u_color; -> foo.color
+        //
+        default: {
+          if (block) {
+            result.push(`${block}.${alias || member.name}`)
+          } else {
+            result.push(alias || member.name)
+          }
+          break
+        }
+      }
+    } else {
+      result.push(alias || member.name)
+    }
 
     if (member.container === 'struct' || member.container === 'interface') {
       glsl = member.member

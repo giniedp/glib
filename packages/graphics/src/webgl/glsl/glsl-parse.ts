@@ -32,7 +32,6 @@ export function readGlslProgram(reader: GlslTokenReader): GlslProgram {
   let decl = glslPredeclaration()
 
   while (reader.canRead) {
-    reader.skipComments = false
     if (reader.is('symbol', ';')) {
       decl = glslPredeclaration()
       reader.next()
@@ -101,14 +100,11 @@ function glslPredeclaration(): GlslPredeclaration {
 
 function readLayoutQualifier(reader: GlslTokenReader): GlslLayoutQualifier {
   const layout: GlslLayoutQualifier = {}
-  const skipComments = reader.skipComments
-  reader.skipComments = true
   reader.read('keyword', 'layout')
   for (const item of reader.readBlockText('(', ')').split(',')) {
     const [key, value] = item.trim().split('=')
     layout[key.trim()] = value ? Number(value.trim()) : undefined
   }
-  reader.skipComments = skipComments
   return layout
 }
 
@@ -145,10 +141,8 @@ function readGlslStruct(
 }
 
 function readGlslStructMember(reader: GlslTokenReader): GlslStructMember[] {
-  const skipComments = reader.skipComments
   const result: GlslStructMember[] = []
 
-  reader.skipComments = false
   const decl = glslPredeclaration()
   while (reader.is('comment')) {
     decl.comments.push(reader.read('comment'))
@@ -156,7 +150,6 @@ function readGlslStructMember(reader: GlslTokenReader): GlslStructMember[] {
   if (!reader.canRead) {
     return result
   }
-  reader.skipComments = true
 
   while (isGlslQualifier(reader.tokenValue)) {
     decl.qualifier.push(reader.read('keyword'))
@@ -175,10 +168,7 @@ function readGlslStructMember(reader: GlslTokenReader): GlslStructMember[] {
     result.push(glslStructMember(decl.comments, decl.qualifier, name, decl.type))
   }
 
-  reader.skipComments = skipComments
-  while (reader.is('comment')) {
-    reader.next()
-  }
+  reader.skipType('comment')
   reader.read('symbol', ';')
   return result
 }
@@ -213,10 +203,13 @@ function readGlslTypeSpecifier(reader: GlslTokenReader) {
 }
 
 function readGlslDeclaration(reader: GlslTokenReader, decl: GlslPredeclaration) {
-  const skipComments = reader.skipComments
-  reader.skipComments = true
   const result: Array<GlslVariableDeclaration | GlslInterfaceDeclaration> = []
   while (reader.canRead) {
+    if (reader.is('comment')) {
+      reader.next()
+      continue
+    }
+
     const name = reader.read('identifier')
     if (reader.is('symbol', '(')) {
       // Function declaration
@@ -253,7 +246,6 @@ function readGlslDeclaration(reader: GlslTokenReader, decl: GlslPredeclaration) 
     }
   }
 
-  reader.skipComments = skipComments
   return result
 }
 

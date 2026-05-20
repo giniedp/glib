@@ -1,5 +1,11 @@
-import { BasicGame, CameraComponent, LightComponent, ModelComponent, TransformComponent } from '@gglib/components'
-import { BehaviorComponent } from '@gglib/components/dist/components/src/systems/BehaviorSystem'
+import {
+  BasicGame,
+  BehaviorComponent,
+  CameraComponent,
+  LightComponent,
+  ModelComponent,
+  TransformComponent,
+} from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial, PlatformId } from '@gglib/graphics'
@@ -9,9 +15,7 @@ import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game(canvas, platform)
   game.run()
-  return () => {
-    game.stop()
-  }
+  return () => game.stop()
 }
 
 class Game extends BasicGame {
@@ -38,7 +42,7 @@ class Game extends BasicGame {
       parent: this.scene,
       components: [new LightComponent()],
       transform: new TransformComponent({
-        rotation: Quat.create().initAxisAngle(Vec3.Right, 45 * DEGREE_TO_RAD),
+        rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
       }),
     })
   }

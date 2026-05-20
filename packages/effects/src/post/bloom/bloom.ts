@@ -108,10 +108,10 @@ export class BloomShader implements Renderable {
   public iterations: number = 5
 
   private offsetWeights: Array<Vec4>
-  private passGlowCut: Program<BloomShaderParams>
-  private passHBlur: Program<BloomShaderParams>
-  private passVBlur: Program<BloomShaderParams>
-  private passCombine: Program<BloomShaderParams>
+  private passGlowCut: Program
+  private passHBlur: Program
+  private passVBlur: Program
+  private passCombine: Program
   private params: TypedInputAccessor<BloomShaderParams>
 
   public get isReady(): boolean {
@@ -172,7 +172,7 @@ export class BloomShader implements Renderable {
     params.set('texture', this.textureInput)
     params.set('textureBloom', null)
 
-    this.passGlowCut.apply(params)
+    this.passGlowCut.applyInputs(params)
     this.passGlowCut.commit()
     pass.setRenderTarget(0, this.textureTemp1)
     pass.setViewportState(0, 0, this.textureTemp1.width, this.textureTemp1.height)
@@ -182,7 +182,7 @@ export class BloomShader implements Renderable {
 
     for (let n = 0; n < this.iterations; n++) {
       params.set('texture', this.textureTemp1)
-      this.passHBlur.apply(params)
+      this.passHBlur.applyInputs(params)
       this.passHBlur.commit()
       pass.setRenderTarget(0, this.textureTemp2)
       pass.setViewportState(0, 0, this.textureTemp2.width, this.textureTemp2.height)
@@ -191,7 +191,7 @@ export class BloomShader implements Renderable {
       pass.submit()
 
       params.set('texture', this.textureTemp2)
-      this.passVBlur.apply(params)
+      this.passVBlur.applyInputs(params)
       this.passVBlur.commit()
       pass.setRenderTarget(0, this.textureTemp1)
       pass.setViewportState(0, 0, this.textureTemp1.width, this.textureTemp1.height)
@@ -202,7 +202,7 @@ export class BloomShader implements Renderable {
 
     params.set('texture', this.textureInput)
     params.set('textureBloom', this.textureTemp1)
-    this.passCombine.apply(params)
+    this.passCombine.applyInputs(params)
     this.passCombine.commit()
     pass.setRenderTarget(0, this.textureOuput)
     pass.setViewportState(0, 0, this.textureOuput.width, this.textureOuput.height)

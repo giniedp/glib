@@ -4,9 +4,9 @@ import {
   DepthBiasState,
   DepthState,
   Effect,
+  ProgramInputBlock,
   Renderable,
   RenderEncoder,
-  ProgramInputValue,
 } from '@gglib/graphics'
 import { Mat4, Vec4 } from '@gglib/math'
 import { RenderListMode, Sortable } from './RenderListMode'
@@ -45,7 +45,7 @@ export class RenderList {
   protected indices: number[] = []
   protected items: Renderable[] = []
   protected effect: Effect[] = []
-  protected params: Array<Record<string, ProgramInputValue>> = []
+  protected inputs: Array<Record<string, ProgramInputBlock>> = []
   protected item: Sortable = {
     depth: 0,
     material: 0,
@@ -53,12 +53,13 @@ export class RenderList {
     state: 0,
     geometry: 0,
   }
+
   protected viewForward: Vec4
-  protected viewParams: Record<string, ProgramInputValue>
-  public begin(mode: RenderListMode, view: RenderView, viewParams: Record<string, ProgramInputValue>): void {
+  protected viewInputs: Record<string, ProgramInputBlock>
+  public begin(mode: RenderListMode, view: RenderView, viewInputs: Record<string, ProgramInputBlock>): void {
     this.mode = mode
     this.viewForward = view.camera.view.getRow(2, this.viewForward)
-    this.viewParams = viewParams
+    this.viewInputs = viewInputs
     this.clear()
   }
 
@@ -108,18 +109,13 @@ export class RenderList {
     return this.mode.getKey(this.item)
   }
 
-  public add(item: Renderable, effect: Effect | null, params: Record<string, ProgramInputValue>, key: bigint): void {
+  public add(item: Renderable, effect: Effect | null, inputs: Record<string, ProgramInputBlock>, key: bigint): void {
     const index = this.size++
     this.items[index] = item
     this.effect[index] = effect
-    this.params[index] = params
+    this.inputs[index] = inputs
     this.keys[index] = key
     this.indices[index] = index
-    if (params) {
-      for (const key in this.viewParams) {
-        params[key] = this.viewParams[key]
-      }
-    }
   }
 
   public sort(): void {
@@ -136,25 +132,33 @@ export class RenderList {
     let index = 0
     let item: Renderable
     let effect: Effect
-    let params: Record<string, ProgramInputValue>
+    let inputs: Record<string, ProgramInputBlock>
 
     for (let i = 0; i < this.size; i++) {
       index = this.indices[i]
       item = this.items[index]
       effect = this.effect[index]
-      params = this.params[index]
-      if (!this.effect[index]) {
+      inputs = this.inputs[index]
+      if (!effect) {
         // item is self-renderable, so we just call render without applying any effect
         item.render(pass)
         continue
       }
-      if (!this.effect[index].isReady) {
+      if (!effect.isReady) {
         // waiting for compilation
         continue
       }
-      if (params) {
-        // TODO: should not apply params every frame
-        effect.program.apply(params)
+      if (inputs) {
+        for (const key in inputs) {
+          if (!(key in this.viewInputs)) {
+            effect.program.applyBlock(inputs[key])
+          }
+        }
+      }
+      if (this.viewInputs) {
+        for (const key in this.viewInputs) {
+          effect.program.applyBlock(this.viewInputs[key])
+        }
       }
       effect.program.commit()
       effect.apply(pass)

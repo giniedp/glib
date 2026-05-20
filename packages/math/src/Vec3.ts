@@ -38,29 +38,17 @@ export class Vec3 implements IVec2, IVec3 {
    */
   public static One: Readonly<IVec3> = Object.freeze<IVec3>({ x: 1, y: 1, z: 1 })
   /**
-   * Readonly vector x component set to one
-   */
-  public static Right: Readonly<IVec3> = Object.freeze<IVec3>({ x: 1, y: 0, z: 0 })
-  /**
    * Readonly vector x component set to minus one
    */
-  public static Left: Readonly<IVec3> = Object.freeze<IVec3>({ x: -1, y: 0, z: 0 })
-  /**
-   * Readonly vector y component set to one
-   */
-  public static Up: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 1, z: 0 })
+  public static NegativeUnitX: Readonly<IVec3> = Object.freeze<IVec3>({ x: -1, y: 0, z: 0 })
   /**
    * Readonly vector y component set to minus one
    */
-  public static Down: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: -1, z: 0 })
-  /**
-   * Readonly vector z component set to one
-   */
-  public static Backward: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
+  public static NegativeUnitY: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: -1, z: 0 })
   /**
    * Readonly vector z component set to minus one
    */
-  public static Forward: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: -1 })
+  public static NegativeUnitZ: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: -1 })
   /**
    * Readonly vector x component set to one
    */
@@ -418,6 +406,20 @@ export class Vec3 implements IVec2, IVec3 {
     out.x = this.x
     out.y = this.y
     out.z = this.z
+    return out
+  }
+
+  /**
+   * Copies the source vector to the destination vector
+   *
+   *
+   * @returns the destination vector.
+   */
+  public static copy<T>(out: T, src: IVec3): T & IVec3
+  public static copy(out: any, src: IVec3): IVec3 {
+    out.x = src.x
+    out.y = src.y
+    out.z = src.z
     return out
   }
 

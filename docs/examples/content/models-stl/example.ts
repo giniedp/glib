@@ -73,7 +73,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       camera.distance * sphere.radius * 2,
     ).add(sphere.center)
 
-    camera.view.initLookAt(camera.position, sphere.center, Vec3.Up).invert()
+    camera.view.initLookAt(camera.position, sphere.center, Vec3.UnitY).invert()
     camera.projection.initPerspectiveFieldOfView(
       45 * DEGREE_TO_RAD,
       device.output.aspectRatio,

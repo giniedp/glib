@@ -397,7 +397,7 @@ export function runContract(createDevice: () => Device) {
 
     it('is applied for draw operations', async () => {
       pass.setScissorState(0, 0, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.Red,
         uDepth: 0.5,
       })
@@ -406,7 +406,7 @@ export function runContract(createDevice: () => Device) {
       pass.submit()
 
       pass.setScissorState(1, 0, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.Green,
         uDepth: 0.5,
       })
@@ -415,7 +415,7 @@ export function runContract(createDevice: () => Device) {
       pass.submit()
 
       pass.setScissorState(0, 1, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.Blue,
         uDepth: 0.5,
       })
@@ -424,7 +424,7 @@ export function runContract(createDevice: () => Device) {
       pass.submit()
 
       pass.setScissorState(1, 1, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.White,
         uDepth: 0.5,
       })
@@ -487,7 +487,7 @@ export function runContract(createDevice: () => Device) {
 
     it('is applied for draw operations', async () => {
       pass.setViewportState(0, 0, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.Red,
         uDepth: 0.5,
       })
@@ -496,7 +496,7 @@ export function runContract(createDevice: () => Device) {
       pass.submit()
 
       pass.setViewportState(1, 0, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.Green,
         uDepth: 0.5,
       })
@@ -505,7 +505,7 @@ export function runContract(createDevice: () => Device) {
       pass.submit()
 
       pass.setViewportState(0, 1, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.Blue,
         uDepth: 0.5,
       })
@@ -514,7 +514,7 @@ export function runContract(createDevice: () => Device) {
       pass.submit()
 
       pass.setViewportState(1, 1, 1, 1)
-      shader.program.apply({
+      shader.program.applyInputs({
         uColor: Color.White,
         uDepth: 0.5,
       })
