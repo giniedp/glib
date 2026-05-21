@@ -23,7 +23,7 @@ export interface LookAtConstraintOptions {
   /**
    * The up vector
    */
-  up?: IVec3
+  up: Readonly<IVec3>
   /**
    * If true, the transform world matrix is updated after constraint is applied
    */
@@ -54,7 +54,7 @@ export class LookAtConstraint implements GameComponent {
   /**
    * The up vector
    */
-  public up: IVec3 = Vec3.UnitY
+  public up: IVec3
   /**
    *
    */
@@ -80,7 +80,7 @@ export class LookAtConstraint implements GameComponent {
 
   public setup(options: LookAtConstraintOptions) {
     if (options) {
-      this.up = options?.up ?? this.up
+      this.up = options.up ?? this.up
       this.source = options?.source ?? this.source
       this.weight = options?.weight ?? this.weight
       this.commit = options?.commit ?? this.commit

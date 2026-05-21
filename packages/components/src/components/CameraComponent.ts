@@ -1,6 +1,6 @@
 import { GameComponent, GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4 } from '@gglib/math'
+import { SpaceBasis, DEGREE_TO_RAD, Mat4 } from '@gglib/math'
 import { LayerMask, type CameraData } from '@gglib/render'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { TransformComponent } from './TransformComponent'
@@ -148,6 +148,7 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
     return this.transform.world
   }
 
+  private space: SpaceBasis
   private transform: TransformComponent
   private device: Device
 
@@ -170,6 +171,7 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
   }
 
   public initialize(): void {
+    this.space = this.entity.service(SpaceBasis)
     this.transform = this.entity.component(TransformComponent)
     this.device = this.entity.world.getSystem(Device)
   }
@@ -203,6 +205,7 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
       )
     }
     Mat4.invert(this.world, this.view)
+    Mat4.premultiply(this.view, this.space.toViewSpace, this.view)
     Mat4.premultiply(this.view, this.projection, this.viewProjection)
   }
 }

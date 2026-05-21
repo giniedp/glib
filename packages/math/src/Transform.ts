@@ -743,8 +743,8 @@ export class Transform<T = unknown> implements ITransform {
     return this
   }
 
-  public lookAt(v: IVec3, up?: IVec3): this {
-    this.rotation.initFromMat4(tempMat.initLookAt(this.translation, v, up || Vec3.UnitY))
+  public lookAt(v: IVec3, up: IVec3): this {
+    this.rotation.initFromMat4(tempMat.initLookAt(this.translation, v, up))
     this.version++
     return this
   }

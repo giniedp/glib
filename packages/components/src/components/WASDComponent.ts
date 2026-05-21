@@ -1,6 +1,6 @@
 import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { KeyboardKey } from '@gglib/input'
-import { Vec3 } from '@gglib/math'
+import { Quat, SpaceBasis, Vec3 } from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { KeyboardInputSystem } from '../systems/KeyboardInput'
 import { MouseInputSystem } from '../systems/MouseInput'
@@ -19,13 +19,6 @@ export interface WASDComponentOptions {
   keyBoost?: KeyboardKey
   mouseButton?: number
 }
-
-const FORWARD = new Vec3(0, 0, -1)
-const BACKWARD = new Vec3(0, 0, 1)
-const LEFT = new Vec3(-1, 0, 0)
-const RIGHT = new Vec3(1, 0, 0)
-const UP = new Vec3(0, 1, 0)
-const DOWN = new Vec3(0, -1, 0)
 
 export class WASDComponent implements GameComponent, InitializableComponent, BehaviorComponent {
   /**
@@ -53,14 +46,14 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
    */
   public moveDamping: number = 0.1
 
-  private yaw: number = 0
-  private pitch: number = 0
-  private targetYaw: number = 0
-  private targetPitch: number = 0
+  private horizontal: number = 0
+  private vertical: number = 0
+  private targetHorizontal: number = 0
+  private targetVertical: number = 0
   private startX: number = 0
   private startY: number = 0
-  private startYaw: number = 0
-  private startPitch: number = 0
+  private startHorizontal: number = 0
+  private startVertical: number = 0
   private isMouseDown: boolean = false
 
   private currentSpeed: number = 0
@@ -76,11 +69,13 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   private keyBoost: KeyboardKey = KeyboardKey.ShiftLeft
   private mouseButton: number = 0
 
+  private space: SpaceBasis
   private mouse: MouseInputSystem
   private keyboard: KeyboardInputSystem
   public readonly entity: GameEntity
 
   public initialize(): void {
+    this.space = this.entity.service(SpaceBasis)
     this.mouse = this.entity.service(MouseInputSystem)
     this.keyboard = this.entity.service(KeyboardInputSystem)
   }
@@ -115,27 +110,27 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     let isMoving = false
     this.translation.init(0, 0, 0)
     if (keyboard.isPressed(this.keyForwad)) {
-      this.translation.add(FORWARD)
+      this.translation.add(this.space.forward)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyBackward)) {
-      this.translation.add(BACKWARD)
-      isMoving = true
-    }
-    if (keyboard.isPressed(this.keyLeft)) {
-      this.translation.add(LEFT)
+      this.translation.add(this.space.backward)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyRight)) {
-      this.translation.add(RIGHT)
+      this.translation.add(this.space.right)
       isMoving = true
     }
-    if (keyboard.isPressed(this.keyDown)) {
-      this.translation.add(DOWN)
+    if (keyboard.isPressed(this.keyLeft)) {
+      this.translation.add(this.space.left)
       isMoving = true
     }
     if (keyboard.isPressed(this.keyUp)) {
-      this.translation.add(UP)
+      this.translation.add(this.space.up)
+      isMoving = true
+    }
+    if (keyboard.isPressed(this.keyDown)) {
+      this.translation.add(this.space.down)
       isMoving = true
     }
     if (this.translation.lengthSquared() > 0) {
@@ -161,19 +156,23 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     if (!this.isMouseDown && isMouseDown) {
       this.startX = mouse.xNormalized
       this.startY = mouse.yNormalized
-      this.startYaw = this.yaw
-      this.startPitch = this.pitch
+      this.startHorizontal = this.horizontal
+      this.startVertical = this.vertical
     }
     if (isMouseDown) {
-      this.targetYaw = this.startYaw + (this.startX - mouse.xNormalized) * this.sensitivity * Math.PI * 2
-      this.targetPitch = this.startPitch + (this.startY - mouse.yNormalized) * this.sensitivity * Math.PI * 2
+      this.targetHorizontal = this.startHorizontal + (this.startX - mouse.xNormalized) * this.sensitivity * Math.PI * 2
+      this.targetVertical = this.startVertical + (this.startY - mouse.yNormalized) * this.sensitivity * Math.PI * 2
     }
     this.isMouseDown = isMouseDown
 
-    this.yaw += (this.targetYaw - this.yaw) * this.turnDamping
-    this.pitch += (this.targetPitch - this.pitch) * this.turnDamping
+    this.horizontal += (this.targetHorizontal - this.horizontal) * this.turnDamping
+    this.vertical += (this.targetVertical - this.vertical) * this.turnDamping
 
-    node.rotation.initYawPitchRoll(this.yaw, this.pitch, 0)
+    node.rotation
+      .initIdentity()
+      .multiply(Quat.$1.initAxisAngle(this.space.up, this.horizontal))
+      .multiply(Quat.$1.initAxisAngle(this.space.right, this.vertical))
+
     node.markAsChanged()
     node.updateIfNeeded()
   }

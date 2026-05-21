@@ -238,9 +238,13 @@ export class GameEntity {
    * Deactivates this entity and destroys all components.
    */
   public destroy(): void {
-    if (this.state === GameEntityState.Activated) {
+    if (this.canDeactivate) {
       this.deactivate()
     }
+    if (this.isDestroyed) {
+      return
+    }
+
     this.assertNotState(GameEntityState.Destroyed)
     this.setState(GameEntityState.Destroying)
     for (const component of this.components) {

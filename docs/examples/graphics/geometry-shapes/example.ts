@@ -17,6 +17,7 @@ import {
   Device,
   FALSE,
   Geometry,
+  gizmoGeometry,
   icosahedronGeometry,
   octahedronGeometry,
   patchGeometry,
@@ -348,6 +349,14 @@ function createUi(
       ui.boolean(options, 'lines', { onchange: update })
       ui.number(options, 'radius', { slider: true, min: 0, max: 2, step: 0.1, oninput: update })
       ui.number(options, 'subdivisions', { slider: true, min: 0, max: 5, step: 1, oninput: update })
+    })
+
+    ui.group('Gizmo', { collapsible: true }, () => {
+      const options: BuildPolyhedronOptions & BuildGeometryOptions = {}
+      function update() {
+        spawnGeometry(gizmoGeometry(device, options))
+      }
+      ui.button('Spawn', { onclick: update })
     })
     ui.group('Material', { collapsible: true }, () => {
       ui.number(material, 'Roughness', { slider: true, min: 0, max: 1, step: 0.001 })

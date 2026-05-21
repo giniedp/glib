@@ -4,9 +4,15 @@ import type { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 
 const keyLookup = {
-  0: 'x', 1: 'y', 2: 'z', 3: 'w',
-  x: 'x', y: 'y', z: 'z', w: 'w',
-} as Record<number|string, 'x'|'y'|'z'|'w'>
+  0: 'x',
+  1: 'y',
+  2: 'z',
+  3: 'w',
+  x: 'x',
+  y: 'y',
+  z: 'z',
+  w: 'w',
+} as Record<number | string, 'x' | 'y' | 'z' | 'w'>
 
 /**
  * A quaternion.
@@ -14,6 +20,26 @@ const keyLookup = {
  * @public
  */
 export class Quat implements IVec2, IVec3, IVec4 {
+  /**
+   * Quaternion for one shot operations to avoid creating new instances.
+   */
+  public static $0 = Quat.createIdentity()
+
+  /**
+   * Quaternion for one shot operations to avoid creating new instances.
+   */
+  public static $1 = Quat.createIdentity()
+
+  /**
+   * Quaternion for one shot operations to avoid creating new instances.
+   */
+  public static $2 = Quat.createIdentity()
+
+  /**
+   * Quaternion for one shot operations to avoid creating new instances.
+   */
+  public static $3 = Quat.createIdentity()
+
   /**
    * The X component
    */
@@ -208,12 +234,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @returns a new quaternion
    */
   public static createFrom(other: IVec4): Quat {
-    return new Quat(
-      other.x,
-      other.y,
-      other.z,
-      other.w,
-    )
+    return new Quat(other.x, other.y, other.z, other.w)
   }
 
   /**
@@ -261,7 +282,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
       this.x = (m12 - m21) / s
       this.y = (m20 - m02) / s
       this.z = (m01 - m10) / s
-    } else if ((m00 > m11) && (m00 > m22)) {
+    } else if (m00 > m11 && m00 > m22) {
       const s = Math.sqrt(1.0 + m00 - m11 - m22) * 2 // S=4*qx
       this.w = (m12 - m21) / s
       this.x = 0.25 * s
@@ -316,7 +337,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
       this.x = (m12 - m21) / s
       this.y = (m20 - m02) / s
       this.z = (m01 - m10) / s
-    } else if ((m00 > m11) && (m00 > m22)) {
+    } else if (m00 > m11 && m00 > m22) {
       const s = Math.sqrt(1.0 + m00 - m11 - m22) * 2 // S=4*qx
       this.w = (m12 - m21) / s
       this.x = 0.25 * s
@@ -344,13 +365,8 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param array - The array to read from
    * @param offset - The zero based index at which to start reading
    */
-  public static createFromArray(array: ArrayLike<number>, offset: number= 0): Quat {
-    return new Quat(
-      array[offset],
-      array[offset + 1],
-      array[offset + 2],
-      array[offset + 3],
-    )
+  public static createFromArray(array: ArrayLike<number>, offset: number = 0): Quat {
+    return new Quat(array[offset], array[offset + 1], array[offset + 2], array[offset + 3])
   }
 
   /**
@@ -359,7 +375,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param array - The array to read from
    * @param offset - The zero based index at which to start reading
    */
-  public initFromArray(array: ArrayLike<number>, offset: number= 0): this {
+  public initFromArray(array: ArrayLike<number>, offset: number = 0): this {
     this.x = array[offset]
     this.y = array[offset + 1]
     this.z = array[offset + 2]
@@ -482,7 +498,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    */
   public toArray(): number[]
   public toArray<T>(array: T, offset?: number): T
-  public toArray(array: number[] = [], offset: number= 0): number[] {
+  public toArray(array: number[] = [], offset: number = 0): number[] {
     array[offset] = this.x
     array[offset + 1] = this.y
     array[offset + 2] = this.z
@@ -513,7 +529,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param other - The quaternion to compare with
    */
   public equals(other: IVec4): boolean {
-    return ((this.x === other.x) && (this.y === other.y) && (this.z === other.z) && (this.w === other.w))
+    return this.x === other.x && this.y === other.y && this.z === other.z && this.w === other.w
   }
 
   /**
@@ -523,7 +539,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param q2 - Second value to compare with
    */
   public static equals(q1: IVec4, q2: IVec4): boolean {
-    return ((q1.x === q2.x) && (q1.y === q2.y) && (q1.z === q2.z) && (q1.w === q2.w))
+    return q1.x === q2.x && q1.y === q2.y && q1.z === q2.z && q1.w === q2.w
   }
 
   /**
@@ -1057,7 +1073,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
     const vy = v.y
     const vz = v.z
 
-    out = out || new Vec3() as any
+    out = out || (new Vec3() as any)
     out.x = vx * (1 - yy2 - zz2) + vy * (xy2 - wz2) + vz * (xz2 + wy2)
     out.y = vx * (xy2 + wz2) + vy * (1 - xx2 - zz2) + vz * (yz2 - wx2)
     out.z = vx * (xz2 - wy2) + vy * (yz2 + wx2) + vz * (1 - xx2 - yy2)
@@ -1077,7 +1093,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
   public static slerp(a: IVec4, b: IVec4, t: number): Quat
   public static slerp<T>(a: IVec4, b: IVec4, t: number, out?: T): T & IVec4
   public static slerp(a: IVec4, b: IVec4, t: number, out?: IVec4): IVec4 {
-
     out = out || new Quat()
 
     let bx = b.x
@@ -1105,12 +1120,12 @@ export class Quat implements IVec2, IVec3, IVec4 {
     }
 
     // Since dot is in range [0, DOT_THRESHOLD], acos is safe
-    let theta0 = Math.acos(dot)        // theta_0 = angle between input vectors
-    let theta = theta0 * t             // theta = angle between v0 and result
+    let theta0 = Math.acos(dot) // theta_0 = angle between input vectors
+    let theta = theta0 * t // theta = angle between v0 and result
     let sinTheta0 = Math.sin(theta0)
     let sinTheta = Math.sin(theta)
 
-    let s0 = Math.cos(theta) - dot * sinTheta / sinTheta0  // == sin(theta_0 - theta) / sin(theta_0)
+    let s0 = Math.cos(theta) - (dot * sinTheta) / sinTheta0 // == sin(theta_0 - theta) / sin(theta_0)
     let s1 = sinTheta / sinTheta0
 
     out.x = a.x * s0 + bx * s1
@@ -1126,7 +1141,7 @@ export class Quat implements IVec2, IVec3, IVec4 {
    *
    * @returns The created quaternion.
    */
-  public static convert(data: number|number[]|IVec4): Quat {
+  public static convert(data: number | number[] | IVec4): Quat {
     if (Array.isArray(data)) {
       return new Quat(data[0], data[1], data[2], data[3])
     }
@@ -1158,9 +1173,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
    * @param fractionDigits - Number of digits after decimal point
    */
   public static format(vec: IVec4, fractionDigits: number = 5): string {
-    return vec.x.toFixed(fractionDigits) +
-      ',' + vec.y.toFixed(fractionDigits) +
-      ',' + vec.z.toFixed(fractionDigits) +
-      ',' + vec.w.toFixed(fractionDigits)
+    return (
+      vec.x.toFixed(fractionDigits) +
+      ',' +
+      vec.y.toFixed(fractionDigits) +
+      ',' +
+      vec.z.toFixed(fractionDigits) +
+      ',' +
+      vec.w.toFixed(fractionDigits)
+    )
   }
 }

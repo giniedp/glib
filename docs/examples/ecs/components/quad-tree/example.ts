@@ -27,7 +27,7 @@ import { mountUi } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
-  console.log('Game created', game)
+
   mountUi(tools, (ui) => {
     // ui.number(time, 'factor', { slider: true, min: -2, max: 2, step: 0.1, label: 'Time Factor' })
     // ui.spherical(game.light, 'direction', { label: 'Light Direction' })
@@ -48,7 +48,8 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       ],
     })
   })
-  return game.run()
+  game.run()
+  return () => game.destroy()
 }
 
 const WORLD_SIZE = 32
@@ -74,6 +75,10 @@ class Game extends BasicGame {
     this.createObjects()
 
     this.deviceStats = this.device.stats()
+  }
+
+  public override createSystems(): void {
+    // this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
   }
 
   public override createScene(options: CreateEntityOptions) {

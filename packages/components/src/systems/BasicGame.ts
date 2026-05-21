@@ -1,6 +1,7 @@
 import { ContentLoader } from '@gglib/content'
 import { CreateEntityOptions, GameEntity, GameQuery, GameWorld } from '@gglib/ecs'
 import { createDevice, type CreateDeviceOptions, Device } from '@gglib/graphics'
+import { SpaceBasis } from '@gglib/math'
 import { RenderChannel, Renderer, RenderView } from '@gglib/render'
 import { SceneRootComponent, TransformComponent } from '../components'
 import { BehaviorSystem } from './BehaviorSystem'
@@ -26,14 +27,36 @@ export class BasicGame {
     this.world = new GameWorld()
     this.world.addSystem(this, BasicGame)
     this.world.addSystem(this.device, Device)
-    this.world.addSystem(new GameLoop({ autostart: false }))
-    this.world.addSystem(new ContentLoader(this.device))
-    this.world.addSystem(new TimeSystem())
-    this.world.addSystem(new TweenSystem())
-    this.world.addSystem(new BehaviorSystem())
-    this.world.addSystem(new BoundsUpdateSystem())
-    this.world.addSystem(new SceneSystem(this.world))
-    this.world.addSystem(new Renderer(this.device))
+
+    this.createSystems()
+
+    if (!this.world.hasSystem(SpaceBasis)) {
+      this.world.addSystem(SpaceBasis.Y_UP_NEG_Z)
+    }
+    if (!this.world.hasSystem(GameLoop)) {
+      this.world.addSystem(new GameLoop({ autostart: false }))
+    }
+    if (!this.world.hasSystem(ContentLoader)) {
+      this.world.addSystem(new ContentLoader(this.device))
+    }
+    if (!this.world.hasSystem(TimeSystem)) {
+      this.world.addSystem(new TimeSystem())
+    }
+    if (!this.world.hasSystem(TweenSystem)) {
+      this.world.addSystem(new TweenSystem())
+    }
+    if (!this.world.hasSystem(BehaviorSystem)) {
+      this.world.addSystem(new BehaviorSystem())
+    }
+    if (!this.world.hasSystem(BoundsUpdateSystem)) {
+      this.world.addSystem(new BoundsUpdateSystem())
+    }
+    if (!this.world.hasSystem(SceneSystem)) {
+      this.world.addSystem(new SceneSystem(this.world))
+    }
+    if (!this.world.hasSystem(Renderer)) {
+      this.world.addSystem(new Renderer(this.device))
+    }
 
     this.renderer = this.world.getSystem(Renderer)
     this.content = this.world.getSystem(ContentLoader)
@@ -49,6 +72,10 @@ export class BasicGame {
       present: RenderChannel.Color,
     })
     this.scene.component(SceneRootComponent).views.push(this.view)
+  }
+
+  protected createSystems() {
+    // override to add custom systems
   }
 
   public async run() {

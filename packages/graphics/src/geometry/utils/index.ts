@@ -8,6 +8,7 @@ export * from './buildPlane'
 export * from './buildSphere'
 
 export * from './buildBezierSurface'
+export * from './buildGizmo'
 export * from './buildIcosahedron'
 export * from './buildMobiusStrip'
 export * from './buildParametricSurface'
