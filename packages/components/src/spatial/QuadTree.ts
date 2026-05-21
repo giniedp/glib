@@ -67,12 +67,19 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
   public readonly data: T = {} as T
 
   public readonly parentGridX: number
+  public readonly parentGridY: number
   public readonly parentGridZ: number
+
   public readonly rootGridX: number
+  public readonly rootGridY: number
   public readonly rootGridZ: number
+
   public readonly worldGridX: number
+  public readonly worldGridY: number
   public readonly worldGridZ: number
+
   public readonly centerX: number
+  public readonly centerY: number
   public readonly centerZ: number
 
   protected constructor(root: QuadTree<T>, parent: QuadTreeNode<T>, min: IVec3, max: IVec3, level: number) {
@@ -86,23 +93,27 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     this.parent = parent
     this.level = level
     this.bounds = BoundingBox.createFromV(min, max)
-    const sizeX = this.bounds.max.x - this.bounds.min.x
-    const sizeZ = this.bounds.max.z - this.bounds.min.z
-    if (sizeX !== sizeZ) {
-      throw new Error(`QuadTree requires square bounds. Got ${sizeX}x${sizeZ}`)
-    }
-    this.size = sizeX
+    this.size = this.bounds.max.x - this.bounds.min.x
 
     const rootBounds = root.bounds
     const bounds = this.bounds
+
     this.parentGridX = parent ? (parent.bounds.min.x - this.bounds.min.x ? 1 : 0) : 0
+    this.parentGridY = parent ? (parent.bounds.min.y - this.bounds.min.y ? 1 : 0) : 0
     this.parentGridZ = parent ? (parent.bounds.min.z - this.bounds.min.z ? 1 : 0) : 0
+
     this.rootGridX = (bounds.min.x - rootBounds.min.x) / this.size
+    this.rootGridY = (bounds.min.y - rootBounds.min.y) / this.size
     this.rootGridZ = (bounds.min.z - rootBounds.min.z) / this.size
+
     this.worldGridX = bounds.min.x / this.size
+    this.worldGridY = bounds.min.y / this.size
     this.worldGridZ = bounds.min.z / this.size
+
     this.centerX = bounds.min.x + (bounds.max.x - bounds.min.x) / 2
+    this.centerY = bounds.min.y + (bounds.max.y - bounds.min.y) / 2
     this.centerZ = bounds.min.z + (bounds.max.z - bounds.min.z) / 2
+
     this.looseBounds = this.bounds.clone()
 
     this.updateLooseBounds(root ? root.looseFactor : 1)
@@ -136,13 +147,24 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     const { min, max } = this.bounds
     const halfSize = (max.x - min.x) / 2
     const children: QuadTreeNode<T>[] = this.children as any
+
     for (let i = 0; i < 4; i++) {
-      const min = Vec3.create(
-        this.bounds.min.x + (i & 1 ? halfSize : 0),
-        this.bounds.min.y,
-        this.bounds.min.z + (i & 2 ? halfSize : 0),
-      )
-      const max = Vec3.create(min.x + halfSize, this.bounds.max.y, min.z + halfSize)
+      const min = this.root.yUp
+        ? Vec3.create(
+            this.bounds.min.x + (i & 1 ? halfSize : 0),
+            this.bounds.min.y,
+            this.bounds.min.z + (i & 2 ? halfSize : 0),
+          )
+        : Vec3.create(
+            this.bounds.min.x + (i & 1 ? halfSize : 0),
+            this.bounds.min.y + (i & 2 ? halfSize : 0),
+            this.bounds.min.z,
+          )
+
+      const max = this.root.yUp
+        ? Vec3.create(min.x + halfSize, this.bounds.max.y, min.z + halfSize)
+        : Vec3.create(min.x + halfSize, min.y + halfSize, this.bounds.max.z)
+
       children.push(new QuadTreeNode(this.root, this, min, max, this.level + 1))
     }
 
@@ -227,7 +249,7 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
 
   private testUp(volume: BoundingBox): QuadTreeNode<T> {
     if (!this.parent) {
-      return this // root reached
+      return this
     }
     if (Intersection.boxBox(this.parent.looseBounds, volume) === IntersectionType.Contains) {
       return this.parent
@@ -237,7 +259,7 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
 
   private testDown(volume: BoundingBox): QuadTreeNode<T> {
     if (this.isLeaf) {
-      return this // leaf reached
+      return this
     }
     for (const child of this.children) {
       if (Intersection.boxBox(child.looseBounds, volume) === IntersectionType.Contains) {
@@ -248,12 +270,7 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     return this
   }
 
-  public traverseLOD(
-    cameraX: number,
-    cameraZ: number,
-    baseFactor: number,
-    visit: (node: QuadTreeNode<T>) => void,
-  ): void {
+  public traverseLOD(camera: IVec3, baseFactor: number, visit: (node: QuadTreeNode<T>) => void): void {
     // Leaf nodes are always selected
     if (this.isLeaf) {
       visit(this)
@@ -264,11 +281,11 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     // Using AABB distance (vs. center distance) avoids over-refining large nodes
     // that the camera is standing inside, and under-refining nodes whose center
     // is far but whose edge is close.
-    const nearX = Math.max(this.bounds.min.x, Math.min(cameraX, this.bounds.max.x))
-    const nearZ = Math.max(this.bounds.min.z, Math.min(cameraZ, this.bounds.max.z))
-    const dx = cameraX - nearX
-    const dz = cameraZ - nearZ
-    const distanceSq = dx * dx + dz * dz
+    const d1 = camera.x - Math.max(this.bounds.min.x, Math.min(camera.x, this.bounds.max.x))
+    const d2 = this.root.yUp
+      ? camera.z - Math.max(this.bounds.min.z, Math.min(camera.z, this.bounds.max.z))
+      : camera.y - Math.max(this.bounds.min.y, Math.min(camera.y, this.bounds.max.y))
+    const distanceSq = d1 * d1 + d2 * d2
 
     // The threshold at which we want to refine this node further.
     // node.size halves with each level, so the threshold naturally scales with geometry.
@@ -284,27 +301,23 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     // Camera is too close, we need finer detail. Recurse into children.
     // No node is added here, so there is no overlap with children.
     for (const child of this.children) {
-      child.traverseLOD(cameraX, cameraZ, baseFactor, visit)
+      child.traverseLOD(camera, baseFactor, visit)
     }
   }
 
-  public traverseLODSphere(
-    cameraX: number,
-    cameraZ: number,
-    baseFactor: number,
-    visit: (node: QuadTreeNode<T>) => void,
-  ): void {
+  public traverseLODSphere(camera: IVec3, baseFactor: number, visit: (node: QuadTreeNode<T>) => void): void {
     // Leaf nodes are always selected
     if (this.isLeaf) {
       visit(this)
       return
     }
-
     const centerX = (this.bounds.min.x + this.bounds.max.x) * 0.5
-    const centerY = (this.bounds.min.z + this.bounds.max.z) * 0.5
-    const dx = cameraX - centerX
-    const dy = cameraZ - centerY
-    const dist = Math.sqrt(dx * dx + dy * dy)
+    const centerY = (this.bounds.min.y + this.bounds.max.y) * 0.5
+    const centerZ = (this.bounds.min.z + this.bounds.max.z) * 0.5
+    const dx = camera.x - centerX
+    const dy = camera.y - centerY
+    const dz = camera.z - centerZ
+    const dist = this.root.yUp ? Math.sqrt(dx * dx + dz * dz) : Math.sqrt(dx * dx + dy * dy)
 
     const threshold = this.size * baseFactor
 
@@ -312,7 +325,7 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
       visit(this)
     } else {
       for (const child of this.children) {
-        child.traverseLODSphere(cameraX, cameraZ, baseFactor, visit)
+        child.traverseLODSphere(camera, baseFactor, visit)
       }
     }
   }
@@ -323,6 +336,7 @@ export interface CreateQuadTreeOptions {
   max: IVec3
   leafLevel?: number
   looseFactor?: number
+  verticalAxis: 'y' | 'z'
 }
 
 export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
@@ -331,8 +345,8 @@ export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
    * @param min - the minimum point in 3D space
    * @param max - the maximum point in 3D space
    */
-  public static create<T extends object = {}>({ min, max, looseFactor }: CreateQuadTreeOptions) {
-    return new QuadTree<T>(min, max, 0, looseFactor || 1)
+  public static create<T extends object = {}>({ min, max, looseFactor, verticalAxis }: CreateQuadTreeOptions) {
+    return new QuadTree<T>(min, max, 0, looseFactor || 1, verticalAxis)
   }
 
   /**
@@ -357,15 +371,24 @@ export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
     return this.listPostOrder
   }
 
-  private version = -1
+  private version = 0
   private listPreOrder: QuadTreeNode<T>[] = []
   private listPreOrderVersion = -1
   private listPostOrder: QuadTreeNode<T>[] = []
   private listPostOrderVersion = -1
+  public readonly yUp: boolean
 
-  protected constructor(min: IVec3, max: IVec3, level: number, looseFactor?: number) {
+  protected constructor(min: IVec3, max: IVec3, level: number, looseFactor: number, verticalAxis: 'y' | 'z') {
     super(null, null, min, max, level)
     this.looseFactor = Math.max(1, looseFactor || 1)
+    this.yUp = !verticalAxis || verticalAxis === 'y'
+    const sizeX = this.bounds.max.x - this.bounds.min.x
+    const sizeY = this.bounds.max.y - this.bounds.min.y
+    const sizeZ = this.bounds.max.z - this.bounds.min.z
+    const sizeYZ = this.root.yUp ? sizeZ : sizeY
+    if (sizeX !== sizeYZ) {
+      throw new Error(`QuadTree requires square bounds. Got X=${sizeX} Y=${sizeY} Z=${sizeZ} (${this.root.yUp}) `)
+    }
     this.updateLooseBounds(this.looseFactor)
   }
 
