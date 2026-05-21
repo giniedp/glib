@@ -6,8 +6,8 @@ import {
   ModelComponent,
   TransformComponent,
 } from '@gglib/components'
-
-import { GameEntity } from '@gglib/ecs'
+import { ContentLoader } from '@gglib/content'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
@@ -15,11 +15,11 @@ import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
   game.run()
-  return () => game.stop()
+  return () => game.destroy()
 }
 
 class Game extends BasicGame {
-  private entity1!: GameEntity
+  private leader!: GameEntity
 
   public constructor(canvas: HTMLCanvasElement) {
     super({ canvas, platform: 'webgl2' })
@@ -30,16 +30,6 @@ class Game extends BasicGame {
     this.createLight()
     this.createCamera()
     this.createObjects()
-
-    this.content.loadModel('/models/obj/cube.obj').then((model) => {
-      this.world
-        .query({
-          required: [ModelComponent],
-        })
-        .forEach((entity) => {
-          entity.component(ModelComponent)!.model = model
-        })
-    })
   }
 
   override async run() {
@@ -62,89 +52,114 @@ class Game extends BasicGame {
     const entity = this.createEntity({
       name: 'camera',
       parent: this.scene,
+      components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, 0),
-        keepWorld: true,
+        position: Vec3.create(0, 0, 5),
       }),
-      components: [
-        new CameraComponent({
-          type: 'perspective',
-        }),
-      ],
     })
     this.view.camera = entity.component(CameraComponent)
   }
 
   private createObjects() {
-    this.entity1 = this.createEntity({
+    // Leader — X and Y scale oscillate on different phases, making each axis readable
+    this.leader = this.createEntity({
+      name: 'leader',
       parent: this.scene,
+      components: [new ModelComponent(), new CubeLoader()],
       transform: new TransformComponent({
-        position: Vec3.create(0, 5, -10),
+        position: Vec3.create(0, 2, -8),
       }),
-      components: [new ModelComponent()],
     })
+
+    const source = this.leader.getTransform<TransformComponent>()!
+
+    // Copies X only — pulses horizontally (sin phase), height stays fixed
     this.createEntity({
+      name: 'x-follower',
       parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(-5, 0, -10),
-      }),
       components: [
         new ModelComponent(),
+        new CubeLoader(),
         new CopyScaleConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
-          sourceSpace: 'world',
-          targetSpace: 'world',
+          source,
           copyX: true,
           copyY: false,
           copyZ: false,
-          weight: 0.1,
-        }),
-      ],
-    })
-    this.createEntity({
-      parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(0, 0, -10),
-      }),
-      components: [
-        new ModelComponent(),
-        new CopyScaleConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
           sourceSpace: 'world',
           targetSpace: 'world',
-          copyX: false,
-          copyY: true,
-          copyZ: false,
-          weight: 0.5,
-        }),
-      ],
-    })
-    this.createEntity({
-      parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(5, 0, -10),
-      }),
-      components: [
-        new ModelComponent(),
-        new CopyScaleConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
-          sourceSpace: 'world',
-          targetSpace: 'world',
-          copyX: false,
-          copyY: false,
-          copyZ: true,
           weight: 1,
         }),
       ],
+      transform: new TransformComponent({
+        position: Vec3.create(-4, -1, -8),
+      }),
+    })
+
+    // Copies Y only — pulses vertically (cos phase), width stays fixed
+    this.createEntity({
+      name: 'y-follower',
+      parent: this.scene,
+      components: [
+        new ModelComponent(),
+        new CubeLoader(),
+        new CopyScaleConstraint({
+          source,
+          copyX: false,
+          copyY: true,
+          copyZ: false,
+          sourceSpace: 'world',
+          targetSpace: 'world',
+          weight: 1,
+        }),
+      ],
+      transform: new TransformComponent({
+        position: Vec3.create(0, -1, -8),
+      }),
+    })
+
+    // Copies all axes — full mirror of the leader
+    this.createEntity({
+      name: 'full-follower',
+      parent: this.scene,
+      components: [
+        new ModelComponent(),
+        new CubeLoader(),
+        new CopyScaleConstraint({
+          source,
+          copyX: true,
+          copyY: true,
+          copyZ: true,
+          sourceSpace: 'world',
+          targetSpace: 'world',
+          weight: 1,
+        }),
+      ],
+      transform: new TransformComponent({
+        position: Vec3.create(4, -1, -8),
+      }),
     })
   }
 
-  override update(time: number, dt: number) {
+  public override update(time: number, dt: number): void {
     super.update(time, dt)
-    this.entity1
+    const t = time / 1000
+    this.leader
       .getTransform<TransformComponent>()!
-      .setScaleX(1.5 + Math.sin(time / 1000))
-      .setScaleY(1.5 + Math.cos(time / 1000))
-      .setScaleZ(1.5 + Math.cos(time / 1000))
+      .setScaleX(1 + 0.8 * Math.abs(Math.sin(t)))
+      .setScaleY(1 + 0.8 * Math.abs(Math.cos(t)))
+      .setScaleZ(1)
+  }
+}
+
+// Loads the cube mesh on initialize — no other behaviour
+class CubeLoader implements GameComponent, InitializableComponent {
+  public readonly entity!: GameEntity
+
+  public initialize(): void {
+    const renderable = this.entity.component(ModelComponent)
+    const content = this.entity.service(ContentLoader)
+    content.loadModel('/models/obj/cube.obj').then((model) => {
+      renderable.model = model
+    })
   }
 }

@@ -6,8 +6,8 @@ import {
   ModelComponent,
   TransformComponent,
 } from '@gglib/components'
-
-import { GameEntity } from '@gglib/ecs'
+import { ContentLoader } from '@gglib/content'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
@@ -15,11 +15,11 @@ import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
   game.run()
-  return () => game.stop()
+  return () => game.destroy()
 }
 
 class Game extends BasicGame {
-  private entity1!: GameEntity
+  private leader!: GameEntity
 
   public constructor(canvas: HTMLCanvasElement) {
     super({ canvas, platform: 'webgl2' })
@@ -30,16 +30,6 @@ class Game extends BasicGame {
     this.createLight()
     this.createCamera()
     this.createObjects()
-
-    this.content.loadModel('/models/obj/cube.obj').then((model) => {
-      this.world
-        .query({
-          required: [ModelComponent],
-        })
-        .forEach((entity) => {
-          entity.component(ModelComponent)!.model = model
-        })
-    })
   }
 
   override async run() {
@@ -62,76 +52,73 @@ class Game extends BasicGame {
     const entity = this.createEntity({
       name: 'camera',
       parent: this.scene,
+      components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, 0),
-        keepWorld: true,
+        position: Vec3.create(0, 0, 5),
       }),
-      components: [
-        new CameraComponent({
-          type: 'perspective',
-        }),
-      ],
     })
     this.view.camera = entity.component(CameraComponent)
   }
 
   private createObjects() {
-    this.entity1 = this.createEntity({
+    // Leader — spins freely, drives all followers
+    this.leader = this.createEntity({
+      name: 'leader',
       parent: this.scene,
+      components: [new ModelComponent(), new CubeLoader()],
       transform: new TransformComponent({
-        position: Vec3.create(0, 3, -10),
+        position: Vec3.create(0, 2, -8),
       }),
-      components: [new ModelComponent()],
     })
-    this.createEntity({
-      parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(-3, 0, -10),
-      }),
-      components: [
-        new ModelComponent(),
-        new CopyRotationConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
-          sourceSpace: 'world',
-          targetSpace: 'world',
-          weight: 0.1,
+
+    const source = this.leader.getTransform<TransformComponent>()!
+
+    // Four followers in a row — same source, increasing weight left to right.
+    // At steady state each follower lags by a phase offset that shrinks as weight rises.
+    const followers: Array<{ x: number; weight: number }> = [
+      { x: -6, weight: 0.02 },
+      { x: -2, weight: 0.08 },
+      { x: 2, weight: 0.3 },
+      { x: 6, weight: 1.0 },
+    ]
+
+    for (const { x, weight } of followers) {
+      this.createEntity({
+        parent: this.scene,
+        components: [
+          new ModelComponent(),
+          new CubeLoader(),
+          new CopyRotationConstraint({
+            source,
+            sourceSpace: 'world',
+            targetSpace: 'world',
+            weight,
+          }),
+        ],
+        transform: new TransformComponent({
+          position: Vec3.create(x, 0, -8),
         }),
-      ],
-    })
-    this.createEntity({
-      parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(0, 0, -10),
-      }),
-      components: [
-        new ModelComponent(),
-        new CopyRotationConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
-          sourceSpace: 'world',
-          targetSpace: 'world',
-          weight: 0.5,
-        }),
-      ],
-    })
-    this.createEntity({
-      parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(3, 0, -10),
-      }),
-      components: [
-        new ModelComponent(),
-        new CopyRotationConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
-          sourceSpace: 'world',
-          targetSpace: 'world',
-          weight: 1,
-        }),
-      ],
-    })
+      })
+    }
   }
 
-  override update(time: number, dt: number) {
+  public override update(time: number, dt: number): void {
     super.update(time, dt)
-    this.entity1.getTransform<TransformComponent>()!.rotateYawPitchRoll(dt / 1000, dt / 1000, dt / 1000)
+    this.leader
+      .getTransform<TransformComponent>()!
+      .rotateAxisAngle(0, 1, 0, 120 * (dt / 1000) * DEGREE_TO_RAD)
+  }
+}
+
+// Loads the cube mesh on initialize — no other behaviour
+class CubeLoader implements GameComponent, InitializableComponent {
+  public readonly entity!: GameEntity
+
+  public initialize(): void {
+    const renderable = this.entity.component(ModelComponent)
+    const content = this.entity.service(ContentLoader)
+    content.loadModel('/models/obj/cube.obj').then((model) => {
+      renderable.model = model
+    })
   }
 }

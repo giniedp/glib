@@ -6,8 +6,8 @@ import {
   ModelComponent,
   TransformComponent,
 } from '@gglib/components'
-
-import { GameEntity } from '@gglib/ecs'
+import { ContentLoader } from '@gglib/content'
+import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
@@ -15,11 +15,11 @@ import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const game = new Game(canvas)
   game.run()
-  return () => game.stop()
+  return () => game.destroy()
 }
 
 class Game extends BasicGame {
-  private entity1!: GameEntity
+  private leader!: GameEntity
 
   public constructor(canvas: HTMLCanvasElement) {
     super({ canvas, platform: 'webgl2' })
@@ -30,16 +30,6 @@ class Game extends BasicGame {
     this.createLight()
     this.createCamera()
     this.createObjects()
-
-    this.content.loadModel('/models/obj/cube.obj').then((model) => {
-      this.world
-        .query({
-          required: [ModelComponent],
-        })
-        .forEach((entity) => {
-          entity.component(ModelComponent)!.model = model
-        })
-    })
   }
 
   override async run() {
@@ -62,86 +52,112 @@ class Game extends BasicGame {
     const entity = this.createEntity({
       name: 'camera',
       parent: this.scene,
+      components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, 0),
-        keepWorld: true,
+        position: Vec3.create(0, 0, 7),
       }),
-      components: [
-        new CameraComponent({
-          type: 'perspective',
-        }),
-      ],
     })
     this.view.camera = entity.component(CameraComponent)
   }
 
   private createObjects() {
-    this.entity1 = this.createEntity({
+    // Leader — sweeps left and right along X, drives all followers
+    this.leader = this.createEntity({
+      name: 'leader',
       parent: this.scene,
+      components: [new ModelComponent(), new CubeLoader()],
       transform: new TransformComponent({
-        position: Vec3.create(0, 0, -10),
+        position: Vec3.create(0, 0, -8),
       }),
-      components: [new ModelComponent()],
     })
+
+    const source = this.leader.getTransform<TransformComponent>()!
+
+    // Rigid leash — weight=1 snaps the target to exactly maxDistance every frame
     this.createEntity({
+      name: 'rigid-leash',
       parent: this.scene,
-      transform: new TransformComponent({
-        position: Vec3.create(0, 5, -10),
-      }),
       components: [
         new ModelComponent(),
+        new CubeLoader(),
         new DistanceConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
+          source,
           minDistance: 0,
-          maxDistance: 2,
+          maxDistance: 3,
           sourceSpace: 'world',
           targetSpace: 'world',
           weight: 1,
         }),
       ],
-    })
-    this.createEntity({
-      parent: this.scene,
       transform: new TransformComponent({
-        position: Vec3.create(-10, 0, -10),
+        position: Vec3.create(0, -3, -8),
       }),
+    })
+
+    // Elastic leash — low weight means the correction is applied gradually each frame,
+    // so the target stretches and trails behind the source before settling at maxDistance
+    this.createEntity({
+      name: 'elastic-leash',
+      parent: this.scene,
       components: [
         new ModelComponent(),
+        new CubeLoader(),
         new DistanceConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
+          source,
           minDistance: 0,
-          maxDistance: 2,
+          maxDistance: 3,
+          sourceSpace: 'world',
+          targetSpace: 'world',
+          weight: 0.1,
+        }),
+      ],
+      transform: new TransformComponent({
+        position: Vec3.create(0, 3, -8),
+      }),
+    })
+
+    // Repulsion — minDistance pushes the target away when source comes too close.
+    // Starts slightly off the source path so the push direction is always well-defined.
+    this.createEntity({
+      name: 'repulsion',
+      parent: this.scene,
+      components: [
+        new ModelComponent(),
+        new CubeLoader(),
+        new DistanceConstraint({
+          source,
+          minDistance: 3,
+          maxDistance: 100,
           sourceSpace: 'world',
           targetSpace: 'world',
           weight: 0.5,
         }),
       ],
-    })
-    this.createEntity({
-      parent: this.scene,
       transform: new TransformComponent({
-        position: Vec3.create(10, 0, -10),
+        position: Vec3.create(0, 1, -8),
       }),
-      components: [
-        new ModelComponent(),
-        new DistanceConstraint({
-          source: this.entity1.getTransform<TransformComponent>()!,
-          minDistance: 0,
-          maxDistance: 2,
-          sourceSpace: 'world',
-          targetSpace: 'world',
-          weight: 0.75,
-        }),
-      ],
     })
   }
 
-  override update(time: number, dt: number) {
+  public override update(time: number, dt: number): void {
     super.update(time, dt)
-    this.entity1
+    this.leader
       .getTransform<TransformComponent>()!
-      .setPositionX(Math.sin(time / 1000) * 8)
-      .setPositionY(Math.cos(time / 1000) * 3)
-      .setPositionZ(Math.cos(time / 1000) * 5 - 15)
+      .setPositionX(8 * Math.sin(time / 1500))
+      .setPositionY(0)
+      .setPositionZ(-8)
+  }
+}
+
+// Loads the cube mesh on initialize — no other behaviour
+class CubeLoader implements GameComponent, InitializableComponent {
+  public readonly entity!: GameEntity
+
+  public initialize(): void {
+    const renderable = this.entity.component(ModelComponent)
+    const content = this.entity.service(ContentLoader)
+    content.loadModel('/models/obj/cube.obj').then((model) => {
+      renderable.model = model
+    })
   }
 }

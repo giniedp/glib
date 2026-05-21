@@ -28,7 +28,7 @@ class Game extends BasicGame {
     this.content.registerMaterial(BasicMaterial, () => true)
     this.createLight()
     this.createCamera()
-    this.createObjects()
+    this.createSolarSystem()
   }
 
   public override initialize(): void {
@@ -57,59 +57,99 @@ class Game extends BasicGame {
         }),
       ],
       transform: new TransformComponent({
-        position: Vec3.create(0, 2, 0),
+        position: Vec3.create(0, 12, 8),
+        rotation: Quat.create().initAxisAngle(Vec3.NegativeUnitX, 56 * DEGREE_TO_RAD),
       }),
     })
     this.view.camera = entity.component(CameraComponent)
   }
 
-  private createObjects() {
-    let parent = this.scene
-    const count = 5
-    for (let i = 0; i < count; i++) {
-      const child = this.createEntity({
-        parent: parent,
-        components: [new ModelComponent(), new CubeComponent()],
-        transform: new TransformComponent({
-          position: Vec3.create(i * 2.2, 0, -10),
-          keepWorld: true,
-        }),
-      })
-      parent = child
-    }
+  private createSolarSystem() {
+    // Sun — at origin, slowly self-spins
+    this.createEntity({
+      name: 'sun',
+      parent: this.scene,
+      components: [new ModelComponent(), new BodyComponent(20)],
+      transform: new TransformComponent({
+        scale: Vec3.create(1.5, 1.5, 1.5),
+      }),
+    })
 
-    parent = this.scene
-    for (let i = 0; i < count; i++) {
-      const child = this.createEntity({
-        parent: parent,
-        components: [new ModelComponent(), new CubeComponent()],
-        transform: new TransformComponent({
-          position: Vec3.create(-i * 2.2, 0, -10),
-          keepWorld: true,
-        }),
-      })
-      parent = child
-    }
+    // Invisible pivot at origin — rotates to drive earth's orbit around the sun
+    const earthOrbit = this.createEntity({
+      name: 'earthOrbit',
+      parent: this.scene,
+      components: [new PivotComponent(15)],
+      transform: new TransformComponent(),
+    })
+
+    // Earth — child of orbit pivot, offset to orbital radius
+    this.createEntity({
+      name: 'earth',
+      parent: earthOrbit,
+      components: [new ModelComponent(), new BodyComponent(60)],
+      transform: new TransformComponent({
+        position: Vec3.create(5, 0, 0),
+        scale: Vec3.create(0.7, 0.7, 0.7),
+      }),
+    })
+
+    // Moon orbit pivot — sibling of earth (both children of earthOrbit) so it does not
+    // inherit earth's scale, but still follows earth's world position
+    const moonOrbit = this.createEntity({
+      name: 'moonOrbit',
+      parent: earthOrbit,
+      components: [new PivotComponent(45)],
+      transform: new TransformComponent({
+        position: Vec3.create(5, 0, 0),
+      }),
+    })
+
+    // Moon — child of moon orbit pivot, offset to orbital radius
+    this.createEntity({
+      name: 'moon',
+      parent: moonOrbit,
+      components: [new ModelComponent(), new BodyComponent(120)],
+      transform: new TransformComponent({
+        position: Vec3.create(1.8, 0, 0),
+        scale: Vec3.create(0.3, 0.3, 0.3),
+      }),
+    })
   }
 }
 
-class CubeComponent implements GameComponent, InitializableComponent, BehaviorComponent {
+// Invisible pivot — rotates around Y to carry its children in an orbit
+class PivotComponent implements GameComponent, BehaviorComponent {
   public readonly entity!: GameEntity
-  public renderable!: ModelComponent
-  public content!: ContentLoader
+
+  public constructor(private degreesPerSecond: number) {}
+
+  public updateBehavior(time: number): void {
+    this.entity
+      .getTransform<TransformComponent>()!
+      .setRotationAxisAngle(0, 1, 0, this.degreesPerSecond * (time / 1000) * DEGREE_TO_RAD)
+  }
+}
+
+// Loads a cube mesh and self-spins around Y at a fixed angular speed
+class BodyComponent implements GameComponent, InitializableComponent, BehaviorComponent {
+  public readonly entity!: GameEntity
+  private renderable!: ModelComponent
+  private content!: ContentLoader
+
+  public constructor(private degreesPerSecond: number) {}
 
   public initialize(): void {
     this.renderable = this.entity.component(ModelComponent)
     this.content = this.entity.service(ContentLoader)
-
     this.content.loadModel('/models/obj/cube.obj').then((model) => {
       this.renderable.model = model
     })
   }
 
-  public updateBehavior(time: number) {
+  public updateBehavior(time: number): void {
     this.entity
       .getTransform<TransformComponent>()!
-      .setRotationAxisAngle(0, 0, 1, 10 * Math.sin(time / 1000) * DEGREE_TO_RAD)
+      .setRotationAxisAngle(0, 1, 0, this.degreesPerSecond * (time / 1000) * DEGREE_TO_RAD)
   }
 }
