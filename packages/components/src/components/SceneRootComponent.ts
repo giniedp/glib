@@ -54,7 +54,7 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   public readonly Tag: Type<SceneTagComponent>
   public readonly entity: GameEntity
   public output: Texture | null
-  public views: RenderView[]
+  public views: RenderView[] = []
 
   protected qSpatial: GameQuery
   protected qMeshes: GameQuery
