@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\math.esm.js",
   "module": "dist\\bundles\\math.esm.js",
   "typings": "dist\\math\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/math.esm.js",

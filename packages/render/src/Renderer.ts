@@ -295,8 +295,8 @@ export class Renderer {
 
   protected updateInputs(ctx: RenderContext) {
     ctx.renderInputs.set(CommonInputs.Frame.FrameIndex, ctx.frame.id)
-    ctx.renderInputs.set(CommonInputs.Frame.FrameElapsedTime, ctx.frame.time)
-    ctx.renderInputs.set(CommonInputs.Frame.FrameDeltaTime, ctx.frame.delta)
+    ctx.renderInputs.set(CommonInputs.Frame.ElapsedTime, ctx.frame.time)
+    ctx.renderInputs.set(CommonInputs.Frame.DeltaTime, ctx.frame.delta)
 
     ctx.renderInputs.set(CommonInputs.View.ViewMatrix, ctx.view.camera.view)
     ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)

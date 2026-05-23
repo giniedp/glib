@@ -34,14 +34,14 @@ const Frame = 'frame'
 const View = 'view'
 const Object = 'object'
 const Material = 'material'
-const Settings = 'settings'
+
 export const CommonBlocks = {
   Global,
   Frame,
   View,
+
   Object,
   Material,
-  Settings,
 } as const
 
 export const CommonInputs = {
@@ -62,15 +62,15 @@ export const CommonInputs = {
     /**
      * @binding frame.elapsedTime
      */
-    FrameElapsedTime: inputSlotScalar(Frame, 'elapsedTime'),
+    ElapsedTime: inputSlotScalar(Frame, 'elapsedTime'),
     /**
      * @binding frame.deltaTime
      */
-    FrameDeltaTime: inputSlotScalar(Frame, 'deltaTime'),
+    DeltaTime: inputSlotScalar(Frame, 'deltaTime'),
     /**
      * @binding frame.randomSeed
      */
-    FrameRandomSeed: inputSlotScalar(Frame, 'randomSeed'),
+    RandomSeed: inputSlotScalar(Frame, 'randomSeed'),
   },
 
   View: {

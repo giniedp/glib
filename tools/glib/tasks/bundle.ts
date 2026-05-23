@@ -48,7 +48,7 @@ async function rollupPackage(pkg: GlibPackageContext, options: BundleWatchOption
         filename: pkg.distDir('stats.html'),
       }),
     ],
-    external: Object.keys(globals),
+    external: [...Object.keys(globals), 'vite'],
   }
   const outputOptions: OutputOptions = {
     format: 'esm',

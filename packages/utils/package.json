@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\utils.esm.js",
   "module": "dist\\bundles\\utils.esm.js",
   "typings": "dist\\utils\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/utils.esm.js",

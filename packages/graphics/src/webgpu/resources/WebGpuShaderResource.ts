@@ -3,9 +3,6 @@ import { ShaderAnnotations } from '../../shader'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import type { WgslResourceInfo, WgslTextureInfo } from '../wgsl'
 
-const RENDER_VISIBILITY = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT
-const COMPUTE_VISIBILITY = GPUShaderStage.COMPUTE
-
 export type WebGpuShaderResourceHandler = (resource: WebGpuShaderResource) => void
 export class WebGpuShaderResource {
   public readonly device: WebGpuDevice
@@ -48,7 +45,10 @@ export class WebGpuShaderResource {
     this.block = info.annotations[ShaderAnnotations.Block] || info.name
     this.nameInShader = info.name
 
-    this.layoutEntry = getLayoutEntry(info, isCompute ? COMPUTE_VISIBILITY : RENDER_VISIBILITY)
+    this.layoutEntry = getLayoutEntry(
+      info,
+      isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+    )
     if (info.texture) {
       this.isTexture = true
       this.bindingResource = this.device.defaultTexture.gpuObject

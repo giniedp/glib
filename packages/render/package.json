@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\render.esm.js",
   "module": "dist\\bundles\\render.esm.js",
   "typings": "dist\\render\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/render.esm.js",

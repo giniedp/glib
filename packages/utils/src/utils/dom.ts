@@ -7,6 +7,9 @@ const vendors = ['', 'moz', 'webkit', 'ms', 'o']
  * @param variants
  */
 export function vendorProperty<T extends Element | Document>(el: T, name: keyof T, ...variants: string[]): string {
+  if (!el) {
+    return null
+  }
   for (const prefix of vendors) {
     if (prefix) {
       const vendorName = prefix + String(name)[0].toUpperCase() + String(name).substr(1)
@@ -32,6 +35,9 @@ export function vendorProperty<T extends Element | Document>(el: T, name: keyof 
  * @param variants
  */
 export function vendorEvent<T extends Element | Document>(el: T, name: keyof T, ...variants: string[]): string {
+  if (!el) {
+    return null
+  }
   const suffix = name.toString().replace(/^on/, '')
   for (const prefix of vendors) {
     const event = 'on' + prefix + suffix
@@ -47,9 +53,9 @@ export function vendorEvent<T extends Element | Document>(el: T, name: keyof T, 
   return null
 }
 
-const docHidden = vendorProperty(document, 'hidden')
-const docVisibilityState = vendorProperty(document, 'visibilityState')
-const docVisibilityChange = vendorEvent(document, 'onvisibilitychange')
+const docHidden = vendorProperty(globalThis.document, 'hidden')
+const docVisibilityState = vendorProperty(globalThis.document, 'visibilityState')
+const docVisibilityChange = vendorEvent(globalThis.document, 'onvisibilitychange')
 
 /**
  * @public

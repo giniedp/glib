@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\effects.esm.js",
   "module": "dist\\bundles\\effects.esm.js",
   "typings": "dist\\effects\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/effects.esm.js",

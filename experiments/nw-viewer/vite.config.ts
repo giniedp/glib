@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite'
-// import { ggPlugin } from '@gglib/vite-plugin'
+import { ggPlugin } from '@gglib/vite-plugin'
 
 export default defineConfig({
   plugins: [
-    // ggPlugin()
+    ggPlugin({
+      files: ['src/**/*.wgsl.ts'],
+    }),
   ],
 })

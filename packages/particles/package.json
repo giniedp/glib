@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\particles.esm.js",
   "module": "dist\\bundles\\particles.esm.js",
   "typings": "dist\\particles\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/particles.esm.js",

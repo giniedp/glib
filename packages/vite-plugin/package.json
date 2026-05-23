@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\vite-plugin.esm.js",
   "module": "dist\\bundles\\vite-plugin.esm.js",
   "typings": "dist\\vite-plugin\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/vite-plugin.esm.js",

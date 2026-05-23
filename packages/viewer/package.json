@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\viewer.esm.js",
   "module": "dist\\bundles\\viewer.esm.js",
   "typings": "dist\\viewer\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/viewer.esm.js",

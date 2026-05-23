@@ -28,6 +28,7 @@ async function updateSrcPackageJson(pkg: GlibPackageContext) {
       main: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.esm.js')),
       module: path.relative(pkg.pkgDir, pkg.distDir('bundles', pkg.baseName + '.esm.js')),
       typings: path.relative(pkg.pkgDir, pkg.distDir(pkg.baseName, 'src', 'index.d.ts')),
+      type: 'module',
       exports: {
         ...(oldPkgJson.exports || {}),
         '.': {

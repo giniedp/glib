@@ -1,3 +1,4 @@
+export * from './glsl'
 export * from './resources'
 export * from './WebglCapabilities'
 export * from './WebglDevice'

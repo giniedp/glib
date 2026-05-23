@@ -13,7 +13,7 @@ import {
 } from '@gglib/components'
 import { Color, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
-import { DEGREE_TO_RAD } from '@gglib/math'
+import { DEGREE_TO_RAD, SpaceBasis } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 import { REGION_SIZE, REGION_VISIBILITY } from './constants'
 import { ContentService } from './content'
@@ -23,8 +23,7 @@ import { LevelSystem } from './game/level/LevelSystem'
 import { RegionSystem } from './game/region/RegionSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
-import { DebugOptions, NwBindingKeys, NwMaterialExtension } from './material'
-import { gameCoordinate2D, gameToRenderCoordinate } from './math'
+import { DebugOptions, InputSlots, NwMaterialExtension } from './material'
 import { NwSceneBrowser } from './ui'
 
 export interface NwViewerOptions {
@@ -60,18 +59,6 @@ export class NwViewer extends BasicGame {
       platform: 'webgpu',
     })
 
-    this.world.addSystem(new ContentService())
-    this.world.addSystem(new KeyboardInputSystem())
-    this.world.addSystem(new MouseInputSystem({ eventTarget: options.canvas }))
-    this.world.addSystem(new TerrainSystem())
-    this.world.addSystem(new RegionSystem())
-    this.world.addSystem(new CapitalSystem())
-    this.world.addSystem(new SliceSystem())
-    this.world.addSystem(new LevelSystem())
-    this.world.addSystem(new DebugShapeSystem())
-    this.world.addSystem(new SpatialSystem(this.world))
-    this.world.addSystem(new SchedulerSystem({}))
-
     this.renderer.autoSrgb = true
     this.renderer.clearColor = Color.Black.srgbToLinear()
     this.scheduler = this.world.getSystem(SchedulerSystem)
@@ -105,14 +92,28 @@ export class NwViewer extends BasicGame {
 
     this.view.camera = camera.component(CameraComponent)
     this.renderer.onContextReady.add((ctx) => {
-      ctx.renderParams['view.paniniBlend'] = this.paniniBlend
-      ctx.renderParams['view.paniniDistance'] = this.paniniDistance
-      ctx.renderParams['view.paniniScale'] = this.paniniScale
-
-      ctx.renderParams[NwBindingKeys.Settings.Debug] = this.debug
+      ctx.renderInputs.set(InputSlots.View.PaniniBlend, this.paniniBlend)
+      ctx.renderInputs.set(InputSlots.View.PaniniDistance, this.paniniDistance)
+      ctx.renderInputs.set(InputSlots.View.PaniniScale, this.paniniScale)
+      ctx.renderInputs.set(InputSlots.Global.Debug, this.debug)
     })
 
     this.attachUi(options.element)
+  }
+
+  protected override createSystems(): void {
+    this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
+    this.world.addSystem(new ContentService())
+    this.world.addSystem(new KeyboardInputSystem())
+    this.world.addSystem(new MouseInputSystem({ eventTarget: this.device.canvas }))
+    this.world.addSystem(new TerrainSystem())
+    this.world.addSystem(new RegionSystem())
+    this.world.addSystem(new CapitalSystem())
+    this.world.addSystem(new SliceSystem())
+    this.world.addSystem(new LevelSystem())
+    this.world.addSystem(new DebugShapeSystem())
+    this.world.addSystem(new SpatialSystem(this.world))
+    this.world.addSystem(new SchedulerSystem({}))
   }
 
   override initialize(): void {
@@ -140,8 +141,7 @@ export class NwViewer extends BasicGame {
   }
 
   public teleport(x: number, y: number, z: number) {
-    const position = gameToRenderCoordinate(gameCoordinate2D(x, z), y)
-    this.camera.entity.component(TransformComponent).setPositionV(position)
+    this.camera.entity.component(TransformComponent).setPosition(x, y, z)
   }
 
   public dispose() {

@@ -193,9 +193,16 @@ export function loop(frame: (timestamp: number, dt: number) => any, autostart = 
   }
 }
 
+declare const process: any
 export const getTime: () => number = (() => {
-  if (window.performance && typeof window.performance.now === 'function') {
-    return () => window.performance.now()
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return () => performance.now()
   }
+
+  if (typeof process !== 'undefined' && typeof process.hrtime?.bigint === 'function') {
+    const start = process.hrtime.bigint()
+    return () => Number(process.hrtime.bigint() - start) / 1_000_000
+  }
+
   return () => Date.now()
 })()

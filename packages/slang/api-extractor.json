@@ -1,19 +1,19 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
   "projectFolder": ".",
-  "mainEntryPointFilePath": "<projectFolder>/dist\\graphics\\src\\index.d.ts",
+  "mainEntryPointFilePath": "<projectFolder>/dist\\slang\\src\\index.d.ts",
   "compiler": {
     "tsconfigFilePath": "<projectFolder>/tsconfig.json"
   },
   "apiReport": {
     "enabled": false,
-    "reportFileName": "graphics.api.md",
+    "reportFileName": "slang.api.md",
     "reportFolder": "<projectFolder>/..\\..\\etc",
     "reportTempFolder": "<projectFolder>/..\\..\\temp"
   },
   "docModel": {
     "enabled": true,
-    "apiJsonFilePath": "<projectFolder>/..\\..\\api\\graphics.api.json"
+    "apiJsonFilePath": "<projectFolder>/..\\..\\api\\slang.api.json"
   },
   "dtsRollup": {
     "enabled": false

@@ -17,6 +17,7 @@
   "main": "dist\\bundles\\graphics.esm.js",
   "module": "dist\\bundles\\graphics.esm.js",
   "typings": "dist\\graphics\\src\\index.d.ts",
+  "type": "module",
   "exports": {
     ".": {
       "import": "./dist/bundles/graphics.esm.js",

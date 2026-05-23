@@ -21,12 +21,5 @@
     "./**/*.bench.ts",
     "./**/*.bench.js"
   ],
-  "references": [
-    {
-      "path": "../math/tsconfig.build.json"
-    },
-    {
-      "path": "../utils/tsconfig.build.json"
-    }
-  ]
+  "references": []
 }
