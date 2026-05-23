@@ -1,13 +1,12 @@
 import {
-  CommonBindingKeys,
+  CommonBlocks,
   Device,
-  materialSchema,
   materialSchemaClass,
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Mat4, Vec3 } from '@gglib/math'
-import { SHAPE_SHADER } from './ShapeEffect.wgsl'
+import Schema from './ShapeMaterial.meta'
+import SHAPE_SHADER from './ShapeMaterial.wgsl'
 
 export function shapeShaderOptions(): ShaderModuleOptions {
   return {
@@ -24,40 +23,16 @@ export function shapeEffectOptions(): EffectOptions {
     instanceBufferKey: 'instances',
     program: {
       shader: shapeShaderOptions(),
-      shared: [],
+      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
     },
   }
 }
 
-export type ShapeEffectInputs = {
-  [CommonBindingKeys.Object.ModelMatrix]: Mat4
-  [CommonBindingKeys.View.ViewMatrix]: Mat4
-  [CommonBindingKeys.View.ProjectionMatrix]: Mat4
-  [CommonBindingKeys.View.CameraPosition]: Vec3
-}
-
-export function shapeEffectParameters(): ShapeEffectInputs {
-  return {
-    [CommonBindingKeys.Object.ModelMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.ViewMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.ProjectionMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.CameraPosition]: Vec3.create(),
-  }
-}
-
-export const ShapeMaterialSchema = materialSchema<ShapeEffectInputs>()({
-  World: CommonBindingKeys.Object.ModelMatrix,
-  View: CommonBindingKeys.View.ViewMatrix,
-  Projection: CommonBindingKeys.View.ProjectionMatrix,
-  CameraPosition: CommonBindingKeys.View.CameraPosition,
-})
-
-export class ShapeMaterial extends materialSchemaClass(ShapeMaterialSchema) {
+export class ShapeMaterial extends materialSchemaClass(Schema) {
   public constructor(device: Device) {
     super(device, {
       name: 'Shape Material',
       effect: shapeEffectOptions(),
-      inputs: shapeEffectParameters(),
       meta: {},
     })
   }

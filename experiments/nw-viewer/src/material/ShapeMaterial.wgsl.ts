@@ -1,6 +1,6 @@
 import { COMMON_WGSL } from './common.wgsl'
 
-export const SHAPE_SHADER = /* wgsl */ `
+export default /* wgsl */ `
 
 struct InstanceBlock {
   position: vec4<f32>,
@@ -8,10 +8,10 @@ struct InstanceBlock {
   color:    vec4<f32>,
 };
 
-@group(0) @binding(0) var<uniform> object: ObjectBlock;
+@group(0) @binding(0) var<uniform> global: GlobalBlock;
 @group(0) @binding(1) var<uniform> view: ViewBlock;
-@group(0) @binding(2) var<storage, read> instances: array<InstanceBlock, 1>; // default size, will be dynamically resized by the material
-@group(0) @binding(3) var<uniform> env: EnvBlock;
+@group(0) @binding(2) var<uniform> object: ObjectBlock;
+@group(0) @binding(3) var<storage, read> instances: array<InstanceBlock, 1>; // default size, will be dynamically resized by the material
 
 struct VertexInput {
   // @alias position

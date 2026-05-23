@@ -1,4 +1,4 @@
-export const DISTANCE_CLOUDS_SHADER = /* wgsl */ `
+export default /* wgsl */ `
 
 const IS_LOCAL_WEATHER : bool = false;
 const IS_REVERSE_DEPTH : bool = true;
@@ -26,7 +26,7 @@ struct FrameBlock {
   elapsedTime : f32,
 };
 
-struct EnvBlock {
+struct GlobalBlock {
   sunColor: vec3<f32>,
   sunDirection: vec3<f32>,
   fogColor: vec3<f32>,
@@ -37,11 +37,11 @@ struct EnvBlock {
 };
 
 struct PerFrameUniforms {
-  sun_direction         : vec4<f32>,   // PerFrame_SunDirection
+  sunDirection         : vec4<f32>,   // PerFrame_SunDirection
   cloud_color_sky       : vec4<f32>,   // PerFrame_CloudShadingColorSky
   cloud_color_sun       : vec4<f32>,   // PerFrame_CloudShadingColorSun
   time                  : vec4<f32>,   // PerFrame_Time  (.x = current time)
-  world_view_pos        : vec4<f32>,   // PerView_WorldViewPos
+  worldViewPos        : vec4<f32>,   // PerView_WorldViewPos
 };
 
 @group(0) @binding(0) var<uniform> view : ViewBlock;
@@ -131,7 +131,7 @@ fn getCloudTexture(uv: vec2<f32>) -> vec4<f32> {
 //     let horizon_factor = saturate(lp.z / max(0.0001, mat.horizon_bending_height));
 //     let sky_height_scaled = mat.sky_height * horizon_factor;
 
-//     let world_pos = per_frame.world_view_pos.xyz
+//     let world_pos = per_frame.worldViewPos.xyz
 //                   + lp * sky_height_scaled / max(0.0001, lp.z);
 
 //     let dist   = length(weather_center.xy - world_pos.xy);
@@ -313,10 +313,10 @@ fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
 // fn distance_clouds_shadow_ps(in: FragmentInput) -> @location(0) vec4<f32> {
 //     // --- world position of scene pixel ---
 //     let scene_depth = get_linear_depth(in.base_tc);
-//     let world_pos   = per_frame.world_view_pos.xyz + in.ws_view_vect * scene_depth;
+//     let world_pos   = per_frame.worldViewPos.xyz + in.ws_view_vect * scene_depth;
 
 //     // --- project onto cloud plane along sun direction ---
-//     let sun_dir = per_frame.sun_direction.xyz;
+//     let sun_dir = per_frame.sunDirection.xyz;
 //     let pos_in_cloud = world_pos
 //                      + sun_dir * mat.sky_height / max(0.0001, sun_dir.z);
 

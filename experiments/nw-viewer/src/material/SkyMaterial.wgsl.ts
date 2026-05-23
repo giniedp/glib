@@ -1,23 +1,14 @@
-import { COMMON_ENV_WGSL } from './shader/common_env.wgsl'
+import { COMMON_WGSL } from './common.wgsl'
 
-export const SKY_SHADER = /* wgsl */ `
+export default /* wgsl */ `
 
-${COMMON_ENV_WGSL}
+${COMMON_WGSL}
 
 const ENABLE_DAY_GRADIENT   : bool = true;
 const ENABLE_MOON           : bool = false;
 const ENABLE_NIGHT_GRADIENT : bool = false;
 const RT_FOG                : bool = false;
 const RT_VOLUMETRIC_FOG     : bool = false;
-
-struct ViewBlock {
-  viewMatrix:       mat4x4<f32>,
-  projectionMatrix: mat4x4<f32>,
-  cameraPosition:   vec3<f32>,
-  paniniBlend:      f32,
-  paniniDistance:   f32,
-  paniniScale:      f32,
-};
 
 
 // ============================================================
@@ -62,8 +53,8 @@ struct SkyDomeConstants {
 //   view_proj_zero_matr  : mat4x4<f32>, // PerView_ViewProjZeroMatr
 // };
 
-@group(0) @binding(0) var<uniform> view : ViewBlock;
-@group(0) @binding(1) var<uniform> env : EnvBlock;
+@group(0) @binding(0) var<uniform> global : GlobalBlock;
+@group(0) @binding(1) var<uniform> view : ViewBlock;
 @group(0) @binding(2) var<uniform> sky : SkyDomeConstants;
 
 @group(1) @binding(0) var moon_tex     : texture_2d<f32>;
@@ -156,14 +147,14 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 
     // ---- day sky scattering ----
     // if ENABLE_DAY_GRADIENT {
-        let cos_view_zenith = skyDir.y;   // skyDir is normalised; z = cos(angle to zenith)
+        let cos_view_zenith = skyDir.z;   // skyDir is normalised; z = cos(angle to zenith)
         let color_mie       = vec4<f32>(sample_mie(cos_view_zenith),      1.0);
         let color_rayleigh  = vec4<f32>(sample_rayleigh(cos_view_zenith), 1.0);
 
         let mie_part_g_2  = sky.phase_function_constants.x;  // pow(miePart,-2/3) * (-2g)
         let mie_part_g2_1 = sky.phase_function_constants.y;  // pow(miePart,-2/3) * (1+g²)
 
-        let cosine  = -dot(env.sunDirection, skyDir);
+        let cosine  = -dot(global.sunDirection, skyDir);
         let cosine2 = cosine * cosine;
 
         let mie_phase      = (1.0 + cosine2)
@@ -184,7 +175,7 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
 
     // ---- night sky horizontal gradient ----
     if ENABLE_NIGHT_GRADIENT {
-        var gr = saturate(skyDir.y * sky.night_sky_zenith_col_shift.x
+        var gr = saturate(skyDir.z * sky.night_sky_zenith_col_shift.x
                         + sky.night_sky_zenith_col_shift.y);
         gr = gr * (2.0 - gr);   // smooth Hermite-like remap
         color = vec4<f32>(color.rgb + sky.night_sky_col_base + sky.night_sky_col_delta * gr, color.a);
@@ -231,11 +222,11 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
     let exposed = color.rgb * 0.02;
     color = vec4<f32>(exposed / (exposed + vec3<f32>(1.0)), 1.0);
 
-    let horizon = 1.0 - saturate(skyDir.y);  // 0 at zenith, 1 at horizon
+    let horizon = 1.0 - saturate(skyDir.z);  // 0 at zenith, 1 at horizon
     let fog_blend = pow(horizon, 4.0);        // sharpen the falloff, tweak exponent
 
     color = vec4<f32>(
-        mix(color.rgb, env.bottomFogColor.rgb, fog_blend),
+        mix(color.rgb, global.bottomFogColor.rgb, fog_blend),
         1.0,
     );
 

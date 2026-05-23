@@ -1,6 +1,5 @@
 import {
   Device,
-  materialSchema,
   materialSchemaClass,
   SamplerState,
   type EffectOptions,
@@ -11,7 +10,8 @@ import {
 import { Vec4 } from '@gglib/math'
 import { parseColorParam, parseNumberParam, smoothnessToRoughness } from './common.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
-import { TERRAIN_COMPOSITE_SHADER } from './TerrainCompositeShader.wgsl'
+import Schema from './TerrainCompositeMaterial.meta'
+import TERRAIN_COMPOSITE_SHADER from './TerrainCompositeMaterial.wgsl'
 
 export function splatComposeShaderOptions(): ShaderModuleOptions {
   return {
@@ -27,111 +27,10 @@ export function splatComposeEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: splatComposeShaderOptions(),
-      shared: [],
+      sharedBlocks: [],
     },
   }
 }
-
-export type SplatComposeEffectInputs = {
-  'params.regionScaleOffset': Vec4
-  'params.tilingScaleOffset': Vec4
-  'params.tiling': number
-
-  'params.baseColor': Vec4
-  'params.specularColor': Vec4
-  'params.debugColor': Vec4
-  'params.roughness': number
-
-  'params.macroSaturation': number
-  'params.macroBlendStrength': number
-  'params.macroGlossBlendStrength': number
-  'params.macroGlossScale': number
-  'params.macroNormalScale': number
-
-  'params.materialBlendFactor': number
-  'params.materialBlendFalloff': number
-  'params.materialHeightScale': number
-  'params.materialHeightOffset': number
-
-  macroSampler: SamplerState
-  macroBaseMap: Texture
-  macroNormalMap: Texture
-  macroGlossMap: Texture
-  materialSampler: SamplerState
-  splatMap: Texture
-  baseMap: Texture
-  normalMap: Texture
-  heightMap: Texture
-  specularMap: Texture
-  smoothnessMap: Texture
-}
-
-export function splatComposeEffectInputs(): SplatComposeEffectInputs {
-  return {
-    'params.regionScaleOffset': Vec4.create(1, 1, 0, 0),
-    'params.tilingScaleOffset': Vec4.create(1, 1, 0, 0),
-    'params.tiling': 1,
-
-    'params.baseColor': Vec4.create(1, 1, 1, 1),
-    'params.specularColor': Vec4.create(1, 1, 1, 1),
-    'params.debugColor': Vec4.create(0, 0, 0, 0),
-    'params.roughness': 1,
-
-    'params.macroSaturation': 1,
-    'params.macroBlendStrength': 1,
-    'params.macroGlossBlendStrength': 1,
-    'params.macroGlossScale': 1,
-    'params.macroNormalScale': 1,
-
-    'params.materialBlendFactor': 1,
-    'params.materialBlendFalloff': 1,
-    'params.materialHeightScale': 1,
-    'params.materialHeightOffset': 0,
-
-    macroSampler: SamplerState.LinearWrap,
-    macroBaseMap: null,
-    macroNormalMap: null,
-    macroGlossMap: null,
-    materialSampler: SamplerState.LinearWrap,
-    splatMap: null,
-    baseMap: null,
-    normalMap: null,
-    heightMap: null,
-    specularMap: null,
-    smoothnessMap: null,
-  }
-}
-
-export const SplatComposeSchema = materialSchema<SplatComposeEffectInputs>()({
-  RegionScaleOffset: 'params.regionScaleOffset',
-  TilingScaleOffset: 'params.tilingScaleOffset',
-  Tiling: 'params.tiling',
-
-  BaseColor: 'params.baseColor',
-  SpecularColor: 'params.specularColor',
-  MacroBaseMap: 'macroBaseMap',
-  MacroNormalMap: 'macroNormalMap',
-  MacroGlossMap: 'macroGlossMap',
-  SplatMap: 'splatMap',
-  BaseMap: 'baseMap',
-  NormalMap: 'normalMap',
-  HeightMap: 'heightMap',
-  SpecularMap: 'specularMap',
-  SmoothnessMap: 'smoothnessMap',
-
-  Roughness: 'params.roughness',
-
-  MacroSaturation: 'params.macroSaturation',
-  MacroBlendStrength: 'params.macroBlendStrength',
-  MacroGlossBlendStrength: 'params.macroGlossBlendStrength',
-  MacroGlossScale: 'params.macroGlossScale',
-  MacroNormalScale: 'params.macroNormalScale',
-
-  MaterialBlendFactor: 'params.materialBlendFactor',
-  MaterialBlendFalloff: 'params.materialBlendFalloff',
-  MaterialHeightScale: 'params.materialHeightScale',
-  MaterialHeightOffset: 'params.materialHeightOffset',
-})
 
 type CompositeParams = {
   g_macroBlendStrength: string
@@ -155,12 +54,11 @@ type CompositeAttrs = {
   Specular: string
 }
 
-export class TerrainCompositeMaterial extends materialSchemaClass(SplatComposeSchema) {
+export class TerrainCompositeMaterial extends materialSchemaClass(Schema) {
   public constructor(device: Device, options?: MaterialOptions) {
     super(device, {
       name: 'Terrain Composite Material',
       effect: splatComposeEffectOptions(),
-      inputs: splatComposeEffectInputs(),
       meta: {},
     })
     if (options?.properties) {
@@ -183,25 +81,26 @@ export class TerrainCompositeMaterial extends materialSchemaClass(SplatComposeSc
     this.MaterialBlendFalloff = parseNumberParam(para?.g_materialLayerBlendFalloff) ?? 0
     this.MaterialHeightOffset = parseNumberParam(para?.g_materialLayerHeightOffset) ?? 0
     this.MaterialHeightScale = parseNumberParam(para?.g_materialLayerHeightScale) ?? 1
+    this.MaterialSampler = SamplerState.LinearWrap
 
     if (tex?.Diffuse) {
-      this.set('baseMap', tex.Diffuse)
+      this.BaseMap = tex.Diffuse as Texture
     }
     if (tex?.Bumpmap) {
-      this.set('normalMap', tex.Bumpmap)
+      this.NormalMap = tex.Bumpmap as Texture
     }
     if (tex?.Specular) {
-      this.set('specularMap', tex.Specular)
+      this.SpecularMap = tex.Specular as Texture
     }
     if (tex?.Smoothness) {
-      this.set('smoothnessMap', tex.Smoothness)
+      this.SmoothnessMap = tex.Smoothness as Texture
     }
     if (tex?.Heightmap) {
-      this.set('heightMap', tex.Heightmap)
+      this.HeightMap = tex.Heightmap as Texture
     }
 
-    this.BaseColor.initFrom(parseColorParam(attr?.Diffuse) ?? Vec4.createOne())
-    this.SpecularColor.initFrom(parseColorParam(attr?.Specular) ?? Vec4.createOne())
+    this.BaseColor = parseColorParam(attr?.Diffuse) ?? Vec4.createOne()
+    this.SpecularColor = parseColorParam(attr?.Specular) ?? Vec4.createOne()
     if (attr?.Emittance) {
       // console.log('Emittance', attr.Emittance)
       // this.EmissiveColor.initFrom(parseColor(attr.Emittance))

@@ -1,5 +1,5 @@
 import { type CreateEntityOptions, type GameComponent, type GameEntity } from '@gglib/ecs'
-import { fetchTypedRequest, getRegionInfoUrl, type ImpostorData, type RegionData } from '../../api'
+import { fetchTypedRequest, getRegionInfoUrl, type RegionData } from '../../api'
 
 import {
   BoundsComponent,
@@ -13,36 +13,33 @@ import {
 } from '@gglib/components'
 import { Device } from '@gglib/graphics'
 
-import { BoundingBox, Mat4, Vec3 } from '@gglib/math'
+import { Mat4, Vec3, type IVec3 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { SEGMENT_SIZE } from '../../constants'
 import { ContentService } from '../../content'
-import { cryToGltfMat4, gameCoordinate2D, gameToRenderCoordinate, type GameCoordinate2D } from '../../math'
 import { SliceSpawnerComponent } from '../slice/SliceSpawnerComponent'
-import { levelSegment, RegionSegmentComponent } from './RegionSegmentComponent'
+import { RegionSegmentComponent } from './RegionSegmentComponent'
 
 export interface RegionComponentOptions {
   levelName: string
   regionName: string
   regionSize: number
-  origin: GameCoordinate2D
-  center: GameCoordinate2D
-  worldBounds: BoundingBox
+  origin: IVec3
+  size: number
 }
 
 export function levelRegion(parent: GameEntity, options: RegionComponentOptions): CreateEntityOptions {
-  const gMin = options.origin
-  const gMax = { X: options.origin.X + options.regionSize, Y: options.origin.Y + options.regionSize }
-  const rMin = gameToRenderCoordinate(gMin, 0)
-  const rMax = gameToRenderCoordinate(gMax, options.regionSize)
-  const min = Vec3.min(rMin, rMax)
-  const max = Vec3.max(rMin, rMax)
+  const min = Vec3.createFrom(options.origin)
+  const max = Vec3.createFrom(options.origin)
+  max.x += options.size
+  max.y += options.size
+  max.z += options.size
 
   return {
     name: `Region [${options.regionName}]`,
     parent,
     transform: new TransformComponent({
-      world: Mat4.createTranslation(gameToRenderCoordinate(options.center, 0)),
+      world: Mat4.createTranslation(options.origin),
       keepWorld: true,
     }),
     components: [
@@ -73,8 +70,8 @@ export class RegionComponent implements GameComponent {
   private isLoaded: boolean
 
   public entity: GameEntity
-  public center: GameCoordinate2D
-  public origin: GameCoordinate2D
+  public center: IVec3
+  public origin: IVec3
   public levelName: string
   public regionName: string
   public regionSize: number
@@ -83,8 +80,10 @@ export class RegionComponent implements GameComponent {
     this.levelName = data.levelName
     this.regionName = data.regionName
     this.regionSize = data.regionSize
-    this.center = data.center
-    this.origin = gameCoordinate2D(data.center.X - 0.5 * data.regionSize, data.center.Y - 0.5 * data.regionSize)
+    this.origin = Vec3.createFrom(data.origin)
+    this.center = Vec3.createFrom(data.origin)
+    this.center.x += data.regionSize * 0.5
+    this.center.y += data.regionSize * 0.5
   }
 
   public initialize(): void {
@@ -128,10 +127,10 @@ export class RegionComponent implements GameComponent {
     const py = camera.world.translationZ
 
     const regionSize = this.regionSize
-    const minX = -this.center.X - regionSize * 0.5
-    const maxX = -this.center.X + regionSize * 0.5
-    const minY = this.center.Y - regionSize * 0.5
-    const maxY = this.center.Y + regionSize * 0.5
+    const minX = -this.center.y - regionSize * 0.5
+    const maxX = -this.center.y + regionSize * 0.5
+    const minY = this.center.y - regionSize * 0.5
+    const maxY = this.center.y + regionSize * 0.5
 
     const dx = Math.max(minX - px, 0, px - maxX)
     const dy = Math.max(minY - py, 0, py - maxY)
@@ -213,7 +212,7 @@ export class RegionComponent implements GameComponent {
         this.entity.world.createEntity({
           parent: layerEntity,
           transform: new TransformComponent({
-            world: Mat4.createFromArray(cryToGltfMat4(capital.transform)),
+            world: Mat4.createFromArray(capital.transform),
             keepWorld: true,
           }),
           components: [
@@ -247,51 +246,46 @@ export class RegionComponent implements GameComponent {
   }
 
   private createSegment(x: number, y: number, data: RegionData) {
-    const impostors: ImpostorData[] = []
-
-    const originX = this.origin.X + x * SEGMENT_SIZE
-    const originY = this.origin.Y + y * SEGMENT_SIZE
-
-    for (const impostor of data.impostors || []) {
-      const position = impostor?.position
-      if (!position) {
-        continue
-      }
-      if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
-        continue
-      }
-      if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
-        continue
-      }
-      impostors.push(impostor)
-    }
-
-    for (const impostor of data.poiImpostors || []) {
-      const position = impostor?.position
-      if (!position) {
-        continue
-      }
-      if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
-        continue
-      }
-      if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
-        continue
-      }
-      impostors.push(impostor)
-    }
-
-    const centerX = originX + 0.5 * SEGMENT_SIZE
-    const centerY = originY + 0.5 * SEGMENT_SIZE
-
-    const segmentName = `segment ${x} ${y}`
-    this.entity.world.createEntity(
-      levelSegment(this.segments, {
-        name: segmentName,
-        level: this.levelName,
-        region: this.regionName,
-        impostors: impostors,
-        center: gameCoordinate2D(centerX, centerY),
-      }),
-    )
+    // const impostors: ImpostorData[] = []
+    // const originX = this.origin.X + x * SEGMENT_SIZE
+    // const originY = this.origin.Y + y * SEGMENT_SIZE
+    // for (const impostor of data.impostors || []) {
+    //   const position = impostor?.position
+    //   if (!position) {
+    //     continue
+    //   }
+    //   if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
+    //     continue
+    //   }
+    //   if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
+    //     continue
+    //   }
+    //   impostors.push(impostor)
+    // }
+    // for (const impostor of data.poiImpostors || []) {
+    //   const position = impostor?.position
+    //   if (!position) {
+    //     continue
+    //   }
+    //   if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
+    //     continue
+    //   }
+    //   if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
+    //     continue
+    //   }
+    //   impostors.push(impostor)
+    // }
+    // const centerX = originX + 0.5 * SEGMENT_SIZE
+    // const centerY = originY + 0.5 * SEGMENT_SIZE
+    // const segmentName = `segment ${x} ${y}`
+    // this.entity.world.createEntity(
+    //   levelSegment(this.segments, {
+    //     name: segmentName,
+    //     level: this.levelName,
+    //     region: this.regionName,
+    //     impostors: impostors,
+    //     center: gameCoordinate2D(centerX, centerY),
+    //   }),
+    // )
   }
 }

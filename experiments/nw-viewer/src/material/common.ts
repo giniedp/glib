@@ -1,21 +1,38 @@
-export const NwBindingKeys = {
-  Environment: {
-    SunDirection: 'env.sunDirection',
-    SunColor: 'env.sunColor',
-    BottomFogColor: 'env.bottomFogColor',
-    BottomFogHeight: 'env.bottomFogHeight',
-    BottomFogDensity: 'env.bottomFogDensity',
-    TopFogColor: 'env.topFogColor',
-    TopFogHeight: 'env.topFogHeight',
-    TopFogDensity: 'env.topFogDensity',
-    FogHeightOffset: 'env.fogHeightOffset',
-    FogNear: 'env.fog_near',
-    FogFar: 'env.fog_far',
+import { CommonInputs, inputSlotScalar, inputSlotVec3 } from '@gglib/graphics'
+
+export const InputBlocks = {
+  Global: 'global',
+  View: 'view',
+  Frame: 'frame',
+  Object: 'object',
+  Material: 'material',
+}
+
+export const InputSlots = {
+  View: {
+    ViewMatrix: CommonInputs.View.ViewMatrix,
+    ProjectionMatrix: CommonInputs.View.ProjectionMatrix,
+    CameraPosition: CommonInputs.View.CameraPosition,
+
+    PaniniBlend: inputSlotScalar('view', 'paniniBlend'),
+    PaniniDistance: inputSlotScalar('view', 'paniniDistance'),
+    PaniniScale: inputSlotScalar('view', 'paniniScale'),
   },
-  Settings: {
-    Debug: 'settings.debug',
+  Global: {
+    SunDirection: inputSlotVec3('global', 'sunDirection'),
+    SunColor: inputSlotVec3('global', 'sunColor'),
+    BottomFogColor: inputSlotVec3('global', 'bottomFogColor'),
+    BottomFogHeight: inputSlotScalar('global', 'bottomFogHeight'),
+    BottomFogDensity: inputSlotScalar('global', 'bottomFogDensity'),
+    TopFogColor: inputSlotVec3('global', 'topFogColor'),
+    TopFogHeight: inputSlotScalar('global', 'topFogHeight'),
+    TopFogDensity: inputSlotScalar('global', 'topFogDensity'),
+    FogHeightOffset: inputSlotScalar('global', 'fogHeightOffset'),
+    FogNear: inputSlotScalar('global', 'fog_near'),
+    FogFar: inputSlotScalar('global', 'fog_far'),
+    Debug: inputSlotScalar('global', 'debug'),
   },
-} as const
+}
 
 export const DebugOptions = {
   DEBUG_OFF: 0,

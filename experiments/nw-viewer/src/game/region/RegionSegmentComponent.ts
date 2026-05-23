@@ -3,10 +3,9 @@ import type { CapitalData, ChunkData, EntityData, ImpostorData } from '../../api
 import { LifeCyclePropagate, TransformComponent } from '@gglib/components'
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
 
-import { Mat4, Vec4 } from '@gglib/math'
+import { Mat4, Vec4, type IVec3 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { ENABLE_IMPOSTORS, LOD_SPANS, lodSpanEnd, lodSpanStart, lodSpanVisibleEnd, SEGMENT_SIZE } from '../../constants'
-import { gameToRenderCoordinate, type GameCoordinate2D } from '../../math'
 import { DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { levelImpostor } from '../region/ImpostorComponent'
 
@@ -40,7 +39,7 @@ export interface SegmentComponentOptions {
   name: string
   level: string
   region: string
-  center: GameCoordinate2D
+  origin: IVec3
   impostors: ImpostorData[]
 }
 
@@ -49,7 +48,7 @@ export function levelSegment(parent: GameEntity, options: SegmentComponentOption
     name: options.name,
     parent,
     transform: new TransformComponent({
-      world: Mat4.createTranslation(gameToRenderCoordinate(options.center, 0)),
+      world: Mat4.createTranslation(options.origin),
       keepWorld: true,
     }),
     components: [new RegionSegmentComponent(options)],
@@ -77,12 +76,18 @@ export class RegionSegmentComponent implements GameComponent {
   public entity: GameEntity
   public level: string
   public region: string
-  public center: GameCoordinate2D
+  public origin: IVec3
+  public center: IVec3
 
   public constructor(data: SegmentComponentOptions) {
     this.level = data.level
     this.region = data.region
-    this.center = data.center
+    this.origin = data.origin
+    this.center = {
+      x: data.origin.x + SEGMENT_SIZE / 2,
+      y: data.origin.y + SEGMENT_SIZE / 2,
+      z: data.origin.z,
+    }
     this.data = data
   }
 
@@ -153,9 +158,9 @@ export class RegionSegmentComponent implements GameComponent {
 
   public update(camera: CameraData) {
     const cx = camera.world.translationX
-    const cy = camera.world.translationZ
-    const dx = Math.abs(-this.center.X - cx)
-    const dy = Math.abs(this.center.Y - cy)
+    const cy = camera.world.translationY
+    const dx = Math.abs(this.center.x - cx)
+    const dy = Math.abs(this.center.y - cy)
     const d2 = dx * dx + dy * dy
 
     const segmentUnloadAt = Math.pow(Math.max(IMPOSTOR_UNLOAD_AT, POI_UNLOAD_AT, CAPITAL_UNLOAD_AT), 2)

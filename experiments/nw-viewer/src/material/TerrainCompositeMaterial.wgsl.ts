@@ -1,4 +1,4 @@
-export const TERRAIN_COMPOSITE_SHADER = /* wgsl */ `
+export default /* wgsl */ `
 
 struct VSOutput {
   @builtin(position) position : vec4f,

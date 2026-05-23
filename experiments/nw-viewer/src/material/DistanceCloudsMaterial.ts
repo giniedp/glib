@@ -1,11 +1,10 @@
 import {
   BlendState,
+  CommonBlocks,
   CullState,
   DepthState,
   Device,
-  materialSchema,
   materialSchemaClass,
-  SamplerState,
   type AcquireTextureOptions,
   type EffectOptions,
   type MaterialOptions,
@@ -13,7 +12,8 @@ import {
   type Texture,
   type TextureOptions,
 } from '@gglib/graphics'
-import { DISTANCE_CLOUDS_SHADER } from './DistanceCloudsShader.wgsl'
+import Schema from './DistanceCloudsMaterial.meta'
+import DISTANCE_CLOUDS_SHADER from './DistanceCloudsMaterial.wgsl'
 import type { NwMaterialAttrs, TexMapName } from './GltfExtension'
 import type { TexMod } from './TexMod'
 
@@ -31,26 +31,10 @@ export function distanceCloudsEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: distanceCloudsOptions(),
-      shared: [],
+      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
     },
   }
 }
-
-export type DistanceCloudsEffectInputs = {
-  baseColorSampler: SamplerState
-  baseColorMap: Texture
-}
-
-export function distanceCloudsEffectInputs(): DistanceCloudsEffectInputs {
-  return {
-    baseColorSampler: SamplerState.LinearClamp,
-    baseColorMap: null,
-  }
-}
-
-export const DistanceCloudsMaterialSchema = materialSchema<DistanceCloudsEffectInputs>()({
-  BaseColorMap: 'baseColorMap',
-})
 
 export type DistanceCloudsProps = {
   attrs: NwMaterialAttrs
@@ -71,18 +55,16 @@ export type DistanceCloudsProps = {
   }
 }
 
-export class DistanceCloudsMaterial extends materialSchemaClass(DistanceCloudsMaterialSchema) {
+export class DistanceCloudsMaterial extends materialSchemaClass(Schema) {
   public constructor(device: Device, options?: MaterialOptions) {
     super(device, {
       name: 'Distance Clouds Material',
       effect: distanceCloudsEffectOptions(),
-      inputs: distanceCloudsEffectInputs(),
       meta: {},
     })
     this.effect.cullState = CullState.None
     this.effect.depthState = DepthState.GreaterEqualNoWrite
     this.effect.blendState = BlendState.Alpha
-    console.log('Distance Clouds Options', options)
     this.assignNwProps(options?.properties as any)
   }
 
@@ -121,7 +103,7 @@ export class DistanceCloudsMaterial extends materialSchemaClass(DistanceCloudsMa
     // }
 
     if (tex.Diffuse) {
-      this.set('baseColorMap', tex.Diffuse)
+      this.BaseColorMap = tex.Diffuse as any
     }
   }
 }

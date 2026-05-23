@@ -3,7 +3,6 @@ import type { CreateEntityOptions, GameComponent, GameEntity } from '@gglib/ecs'
 import type { RegionMaterial } from '../../api'
 import { ContentService } from '../../content'
 import { TerrainCompositeMaterial } from '../../material'
-import { gameCoordinate2D, gameToRenderCoordinate } from '../../math'
 import type { TerrainRegion, TerraQuad } from './TerrainRegion'
 import { loadBaseMaterial, loadHeightmap, loadLayerMaterials } from './loaders'
 
@@ -16,13 +15,15 @@ export interface TerrainRegionComponentOptions {
 }
 
 export function terrainRegion(parent: GameEntity, options: TerrainRegionComponentOptions): CreateEntityOptions {
-  const origin = gameCoordinate2D(options.region.origin.x, options.region.origin.y)
-  const position = gameToRenderCoordinate(origin, 0)
   return {
     name: `Terrain Region [${options.region.xIndex};${options.region.yIndex}]`,
     parent,
     transform: new TransformComponent({
-      position,
+      position: {
+        x: options.region.origin.x,
+        y: options.region.origin.y,
+        z: 0,
+      },
       keepWorld: true,
       lifeCycle: LifeCyclePropagate,
     }),
@@ -31,15 +32,15 @@ export function terrainRegion(parent: GameEntity, options: TerrainRegionComponen
 }
 
 export function terrainPatchEntity(parent: GameEntity, quad: TerraQuad): CreateEntityOptions {
-  const { min } = quad.bounds
-
-  const origin = gameCoordinate2D(min.x, min.z)
-  const position = gameToRenderCoordinate(origin, 0)
   return {
     name: `Terrain Patch [${quad.rootGridX};${quad.rootGridZ}]`,
     parent: parent,
     transform: new TransformComponent({
-      position: position,
+      position: {
+        x: quad.bounds.min.x,
+        y: quad.bounds.min.y,
+        z: 0,
+      },
       keepWorld: true,
     }),
   }

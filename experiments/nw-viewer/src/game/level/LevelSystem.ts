@@ -1,7 +1,7 @@
 import { BasicGame, ModelComponent } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, type CreateEntityOptions } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { vec3, Vec3 } from '@gglib/math'
+import { Vec3 } from '@gglib/math'
 import type { Model } from '@gglib/model'
 import { Renderer, type RenderContext } from '@gglib/render'
 import { uiColor, uiGroup, uiNumber } from 'tweak-ui'
@@ -15,7 +15,7 @@ import {
 } from '../../api'
 import { ContentService } from '../../content'
 import { SkyComponent } from '../../environment/SkyComponent'
-import { NwBindingKeys, SkyMaterial } from '../../material'
+import { InputSlots, SkyMaterial } from '../../material'
 import { RegionComponent } from '../region/RegionComponent'
 import { TerrainComponent, terrainEntity } from '../terrain/TerrainComponent'
 import { LevelComponent, type LevelOptions } from './LevelComponent'
@@ -191,27 +191,31 @@ export class LevelSystem extends GameSystem {
     }
   }
 
+  private scaledBottomFogColor = Vec3.create()
+  private scaledTopFogColor = Vec3.create()
   private updateRenderContext(ctx: RenderContext) {
-    ctx.renderParams[NwBindingKeys.Environment.SunDirection] = this.sunDirection
-    ctx.renderParams[NwBindingKeys.Environment.SunColor] = this.sunColor
+    ctx.renderInputs.set(InputSlots.Global.SunDirection, this.sunDirection)
+    ctx.renderInputs.set(InputSlots.Global.SunColor, this.sunColor)
 
-    Vec3.init(
-      (ctx.renderParams[NwBindingKeys.Environment.BottomFogColor] ||= vec3(0)),
+    this.scaledBottomFogColor.init(
       this.bottomFogColor.x * this.bottomFogMultiplier,
       this.bottomFogColor.y * this.bottomFogMultiplier,
       this.bottomFogColor.z * this.bottomFogMultiplier,
     )
-    Vec3.init(
-      (ctx.renderParams[NwBindingKeys.Environment.TopFogColor] ||= vec3(0)),
+    ctx.renderInputs.set(InputSlots.Global.BottomFogColor, this.scaledBottomFogColor)
+
+    this.scaledTopFogColor.init(
       this.topFogColor.x * this.topFogMultiplier,
       this.topFogColor.y * this.topFogMultiplier,
       this.topFogColor.z * this.topFogMultiplier,
     )
-    ctx.renderParams[NwBindingKeys.Environment.TopFogDensity] = this.topFogDensity
-    ctx.renderParams[NwBindingKeys.Environment.BottomFogDensity] = this.bottomFogDensity
-    ctx.renderParams[NwBindingKeys.Environment.TopFogHeight] = this.topFogHeight
-    ctx.renderParams[NwBindingKeys.Environment.BottomFogHeight] = this.bottomFogHeight
-    ctx.renderParams[NwBindingKeys.Environment.FogHeightOffset] = this.fogHeightOffset
+    ctx.renderInputs.set(InputSlots.Global.TopFogColor, this.scaledTopFogColor)
+
+    ctx.renderInputs.set(InputSlots.Global.TopFogDensity, this.topFogDensity)
+    ctx.renderInputs.set(InputSlots.Global.BottomFogDensity, this.bottomFogDensity)
+    ctx.renderInputs.set(InputSlots.Global.TopFogHeight, this.topFogHeight)
+    ctx.renderInputs.set(InputSlots.Global.BottomFogHeight, this.bottomFogHeight)
+    ctx.renderInputs.set(InputSlots.Global.FogHeightOffset, this.fogHeightOffset)
   }
 
   public tweakUi() {

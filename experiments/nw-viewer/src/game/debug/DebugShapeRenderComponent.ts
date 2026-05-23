@@ -1,16 +1,6 @@
 import { MeshComponent } from '@gglib/components'
 import { GameEntity, type GameComponent } from '@gglib/ecs'
-import {
-  boxGeometry,
-  boxLinesGeometry,
-  bufferLayout,
-  Device,
-  planeGeometry,
-  planeLinesGeometry,
-  sphereGeometry,
-  sphereLinesGeometry,
-  type InstancedMesh,
-} from '@gglib/graphics'
+import { boxGeometry, bufferLayout, Device, planeGeometry, sphereGeometry, type InstancedMesh } from '@gglib/graphics'
 import type { DebugShapeType } from './DebugShapeComponent'
 
 export type DebugShapeBufferLayout = typeof DebugShapeBufferLayout
@@ -30,43 +20,25 @@ export class DebugShapeRenderComponent implements GameComponent {
 export function createShapeGeometry(device: Device, type: DebugShapeType, solid: boolean) {
   switch (type) {
     case 'sphere': {
-      if (solid) {
-        return sphereGeometry(device, {
-          materialId: 0,
-          radius: 1,
-          stacks: 4,
-          slices: 8,
-        })
-      }
-      return sphereLinesGeometry(device, {
-        materialId: 0,
+      return sphereGeometry(device, {
         radius: 1,
         stacks: 4,
         slices: 8,
+        lines: !solid,
       })
     }
     case 'box': {
-      if (solid) {
-        return boxGeometry(device, {
-          materialId: 0,
-          size: 1,
-        })
-      }
-      return boxLinesGeometry(device, {
-        materialId: 0,
+      return boxGeometry(device, {
         size: 1,
+        lines: !solid,
       })
     }
     case 'plane': {
-      if (solid) {
-        return planeGeometry(device, {
-          size: 1,
-        })
-      }
-      return planeLinesGeometry(device, {
+      return planeGeometry(device, {
         size: 1,
         depthSegments: 2,
         widthSegments: 2,
+        lines: !solid,
       })
     }
     default: {

@@ -1,18 +1,15 @@
 import {
   BlendState,
-  CommonBindingKeys,
   CullState,
   DepthState,
   Device,
-  materialSchema,
   materialSchemaClass,
-  SamplerState,
   type EffectOptions,
   type ShaderModuleOptions,
-  type Texture,
 } from '@gglib/graphics'
-import { Mat4, Vec2, Vec3 } from '@gglib/math'
-import { SKY_SHADER } from './SkyShader.wgsl'
+import { Vec2, Vec3 } from '@gglib/math'
+import SkyMaterialSchema from './SkyMaterial.meta'
+import SKY_SHADER from './SkyMaterial.wgsl'
 
 export function skyShaderOptions(): ShaderModuleOptions {
   return {
@@ -28,38 +25,28 @@ export function skyEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: skyShaderOptions(),
-      shared: [],
+      sharedBlocks: [],
     },
   }
 }
 
-export type SkyEffectInputs = {
-  [CommonBindingKeys.View.ViewMatrix]: Mat4
-  [CommonBindingKeys.View.ProjectionMatrix]: Mat4
+export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
+  public constructor(device: Device) {
+    super(device, {
+      name: 'Sky Material',
+      effect: skyEffectOptions(),
+      meta: {},
+    })
+    this.effect.cullState = CullState.None
+    this.effect.depthState = DepthState.GreaterEqualNoWrite
+    this.effect.blendState = BlendState.Alpha
 
-  'sky.partial_mie_in_scattering': Vec3
-  'sky.partial_rayleigh_in_scattering': Vec3
-  'sky.phase_function_constants': Vec3 // x = miePart_g_2, y = miePart_g2_1, z = (unused)
-
-  'sky.night_sky_col_base': Vec3
-  'sky.night_sky_col_delta': Vec3
-  'sky.night_sky_zenith_col_shift': Vec2
-
-  moon_sampler: SamplerState
-  moon_tex: Texture
-}
-
-export function skyEffectInputs(): SkyEffectInputs {
-  return {
-    [CommonBindingKeys.View.ViewMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.ProjectionMatrix]: Mat4.createIdentity(),
-
-    'sky.partial_rayleigh_in_scattering': Vec3.create(
+    this.PartialRayleighInScattering = Vec3.create(
       5.8 * 0.40909049, // R
       13.5 * 0.40909049, // G
       33.1 * 0.40909049, // B
-    ),
-    'sky.partial_mie_in_scattering': Vec3.create(21.0 * 4.8000002, 21.0 * 4.8000002, 21.0 * 4.8000002),
+    )
+    this.PartialMieInScattering = Vec3.create(21.0 * 4.8000002, 21.0 * 4.8000002, 21.0 * 4.8000002)
 
     // Phase function constants derived from asymmetry factor g = 0.76
     // (0 = isotropic, 1 = full forward scattering; haze is ~0.76-0.8)
@@ -72,42 +59,16 @@ export function skyEffectInputs(): SkyEffectInputs {
     //   pow(0.07958, -2/3) ≈ 5.17
     //   miePart_g_2        ≈ 5.17 * (-1.52) ≈ -7.86
     //   miePart_g2_1       ≈ 5.17 * (1.578) ≈  8.16
-    'sky.phase_function_constants': Vec3.create(-7.86, 8.16, 0.0),
+    this.PhaseFunctionConstants = Vec3.create(-7.86, 8.16, 0.0)
 
     // Night sky base: deep blue-black at the horizon
-    'sky.night_sky_col_base': Vec3.create(0.308 * 0.3, 0.427 * 0.3, 0.555 * 0.3),
-
-    // Night sky delta: added on top of base toward the zenith
-    // gives a slightly lighter/bluer zenith vs horizon
-    'sky.night_sky_col_delta': Vec3.create(0.0, 0.0, 0.0),
+    this.NightSkyColBase = Vec3.create(0.308 * 0.3, 0.427 * 0.3, 0.555 * 0.3)
+    this.NightSkyColDelta = Vec3.create(0.0, 0.0, 0.0)
 
     // Zenith gradient shift: maps sky_dir.z → [0,1] gradient parameter
     // sky_dir.z * x + y = 0 at horizon (z=0), = 1 at zenith (z=1)
     // x = 1.0, y = 0.0 is the simplest linear mapping
-    'sky.night_sky_zenith_col_shift': Vec2.create(42.9, 0.0),
-
-    moon_sampler: SamplerState.LinearClamp,
-    moon_tex: null,
-  }
-}
-
-export const SkyMaterialSchema = materialSchema<SkyEffectInputs>()({
-  View: CommonBindingKeys.View.ViewMatrix,
-  Projection: CommonBindingKeys.View.ProjectionMatrix,
-  MoonTexture: 'moon_tex',
-})
-
-export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
-  public constructor(device: Device) {
-    super(device, {
-      name: 'Sky Material',
-      effect: skyEffectOptions(),
-      inputs: skyEffectInputs(),
-      meta: {},
-    })
-    this.effect.cullState = CullState.None
-    this.effect.depthState = DepthState.GreaterEqualNoWrite
-    this.effect.blendState = BlendState.Alpha
+    this.NightSkyZenithColShift = Vec2.create(42.9, 0.0)
   }
 }
 
@@ -133,5 +94,3 @@ function computeMieCoefficients(mieMultiplier: number): [number, number, number]
   const base = 21.0
   return [base * mieMultiplier, base * mieMultiplier, base * mieMultiplier]
 }
-
-phaseFunctionConstants(-0.99)

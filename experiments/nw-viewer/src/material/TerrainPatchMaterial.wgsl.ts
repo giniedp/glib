@@ -33,22 +33,22 @@ struct InstanceBlock {
   heightUvTransformCoarse: vec4f,
 };
 
-struct SettingsBlock {
-  debug:           u32,
-};
-
-@group(0) @binding(0) var<uniform> object:   ObjectBlock;
+@group(0) @binding(0) var<uniform> global:   GlobalBlock;
 @group(0) @binding(1) var<uniform> view:     ViewBlock;
-@group(0) @binding(2) var<uniform> material: MaterialBlock;
-@group(0) @binding(3) var<uniform> lights:   LightBlock;
-@group(0) @binding(4) var<uniform> settings: SettingsBlock;
-@group(0) @binding(5) var<uniform> env:      EnvBlock;
+@group(0) @binding(2) var<uniform> object:   ObjectBlock;
+@group(0) @binding(3) var<uniform> material: MaterialBlock;
+@group(0) @binding(4) var<uniform> lights:   LightBlock;
 
+// @block material
 @group(1) @binding(0) var heightMapSampler: sampler;
+// @block material
 @group(1) @binding(1) var colorMapSampler:  sampler;
 
+// @block material
 @group(2) @binding(0) var heightMap: texture_2d_array<f32>;
+// @block material
 @group(2) @binding(1) var colorMap1: texture_2d_array<f32>;
+// @block material
 @group(2) @binding(2) var colorMap2: texture_2d_array<f32>;
 
 @group(3) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
@@ -79,6 +79,7 @@ struct VertexOutput {
 @vertex
 fn vs_main(input : VertexInput) -> VertexOutput {
 
+  let uv = vec2f(input.aTexture.x, 1.0 - input.aTexture.y);
   let instance = instances[input.instanceIndex];
 
   var output : VertexOutput;
@@ -89,48 +90,46 @@ fn vs_main(input : VertexInput) -> VertexOutput {
   let baseFactor = f32(instance.params1.y);
   let morphLod = f32(instance.params1.z);
   let morph = lod_morph(
-    input.aPosition.xz,         // raw grid position 0..64
-    worldPos.xz,                // world space position
-    view.cameraPosition.xz,
+    input.aPosition.xy,         // raw grid position 0..64
+    worldPos.xy,                // world space position
+    view.cameraPosition.xy,
     patchSize,
     baseFactor,
     morphLod,
   );
-  worldPos.x += morph.offset.x;
-  worldPos.z += morph.offset.y;
+  worldPos.x -= morph.offset.x;
+  worldPos.y += morph.offset.y;
 
   let patchWorldSize = patchSize * exp2(morphLod);
   let uvDelta = -morph.offset / patchWorldSize;
 
-  let heightMapUv = uvScaleOffset(input.aTexture + uvDelta, instance.heightUvTransform);
+  let heightMapUv = uvScaleOffset(uv + uvDelta, instance.heightUvTransform);
   let data        = readMapData(heightMapUv, instance.params3);
   var height      = data.a;
   var normal      = data.xyz;
-  worldPos.y += height;
+  worldPos.z += height;
 
-  let viewPos = view.viewMatrix * worldPos;
-  let viewPosWrap = paniniWarpCommon(viewPos);
+  let viewPos = paniniWarpCommon(view.viewMatrix * worldPos);
 
   output.vWorldPos = worldPos.xyz;
   output.vNormal = normalize((object.modelMatrix * vec4f(normal, 0.0)).xyz);
 
-  output.vTexCoord = vec4f(input.aTexture, input.aTexture + uvDelta);
+  output.vTexCoord = vec4f(uv, uv + uvDelta);
   output.vToEyeInWS = view.cameraPosition - worldPos.xyz;
   output.vMorph = morph.t;
-  output.Position = view.projectionMatrix * viewPosWrap;
+  output.Position = view.projectionMatrix * viewPos;
   output.iid = input.instanceIndex;
 
   let crossX = heightMapUv.x >= 1.0;
-  let crossZ = heightMapUv.y <= 0.0;
-
+  let crossY = heightMapUv.y <= 0.0;
 
   var debugColor: vec3f;
   var debugLayer: i32;
-  if !crossX && !crossZ {
+  if !crossX && !crossY {
     debugLayer = i32(instance.params3.x);
   } else if crossX {
     debugLayer = i32(instance.params3.y);
-  } else if crossZ {
+  } else if crossY {
     debugLayer = i32(instance.params3.z);
   } else {
     debugLayer = i32(instance.params3.w);
@@ -191,41 +190,42 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4f {
   surface.Ior       = 0.0;
   surface.Normal    = vec4(normalize(tbn * normal), 1.0);
 
-  var color = accumulateLight(lights, env, surface, toEye, input.vWorldPos);
+  var color = accumulateLight(lights, global, surface, toEye, input.vWorldPos);
 
-  if (settings.debug > 0u) {
-    if (settings.debug == DEBUG_MTL_BASE) {
+  let debug = global.debug;
+  if (debug > 0u) {
+    if (debug == DEBUG_MTL_BASE) {
       return vec4f(surface.BaseColor.rgb, 1.0);
     }
-    if (settings.debug == DEBUG_MTL_SPEC) {
+    if (debug == DEBUG_MTL_SPEC) {
       return vec4f(surface.Specular.rgb, 1.0);
     }
-    if (settings.debug == DEBUG_MTL_PBR) {
+    if (debug == DEBUG_MTL_PBR) {
       return vec4f(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
     }
 
-    if (settings.debug == DEBUG_NORMALS) {
+    if (debug == DEBUG_NORMALS) {
       return vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
     }
-    if (settings.debug == DEBUG_TANGENTS) {
+    if (debug == DEBUG_TANGENTS) {
       return vec4f(0.0, 0.0, 0.0, 1.0);
     }
-    if (settings.debug == DEBUG_BINORMALS) {
-      return vec4f(0.0, 0.0, 0.0, 1.0);
-    }
-
-    if (settings.debug == DEBUG_COLOR1) {
-      return vec4f(0.0, 0.0, 0.0, 1.0);
-    }
-    if (settings.debug == DEBUG_COLOR2) {
+    if (debug == DEBUG_BINORMALS) {
       return vec4f(0.0, 0.0, 0.0, 1.0);
     }
 
-    if (settings.debug == DEBUG_UV1) {
+    if (debug == DEBUG_COLOR1) {
+      return vec4f(0.0, 0.0, 0.0, 1.0);
+    }
+    if (debug == DEBUG_COLOR2) {
+      return vec4f(0.0, 0.0, 0.0, 1.0);
+    }
+
+    if (debug == DEBUG_UV1) {
       return vec4f(pomUV, 0.0, 1.0);
     }
-    if (settings.debug == DEBUG_UV2) {
-      return vec4f(patchUvCoarse, 0.0, 1.0);
+    if (debug == DEBUG_UV2) {
+      return vec4f(input.vMorph, input.vMorph, input.vMorph, 1.0);
     }
   }
 
@@ -297,14 +297,14 @@ fn uvToTexel(uv: vec2f, dims: vec2i) -> vec2i {
   return vec2i(uv * vec2f(dims - vec2i(1)));
 }
 
-fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
+fn remapUV(params3: vec4f, uv: vec2f) -> vec3f {
   let crossX = uv.x >= 1.0;
-  let crossZ = uv.y <= 0.0;
+  let crossY = uv.y <= 0.0;
 
   var layer    : i32;
   var sampleUV : vec2f;
 
-  if crossX && crossZ {
+  if crossX && crossY {
     // corner
     layer    = i32(params3.w);
     sampleUV = vec2f(uv.x - 1.0, 1.0);
@@ -312,7 +312,7 @@ fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
     // right
     layer    = i32(params3.y);
     sampleUV = vec2f(uv.x - 1.0, uv.y);
-  } else if crossZ {
+  } else if crossY {
     // bottom
     layer    = i32(params3.z);
     sampleUV = vec2f(uv.x, 1.0);
@@ -331,7 +331,7 @@ fn remapaUV(params3: vec4f, uv: vec2f) -> vec3f {
 }
 
 fn sampleHeight(params3: vec4f, uv: vec2f) -> f32 {
-  let remapped = remapaUV(params3, uv);
+  let remapped = remapUV(params3, uv);
   return textureSampleLevel(heightMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r / 65535.0 * material.mountainHeight;
 }
 

@@ -1,22 +1,12 @@
 import { BasicGame, PriorityLane, SchedulerSystem, TransformComponent } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
-import {
-  beginGeometry,
-  BlendState,
-  buildParametricLines,
-  buildParametricSurface,
-  CullState,
-  DepthState,
-  Device,
-  Geometry,
-  Mesh,
-} from '@gglib/graphics'
+import { BlendState, CullState, DepthState, Device, Geometry, Mesh, patchGeometry } from '@gglib/graphics'
 import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE, SEGMENT_SIZE, SHOW_TERRAIN_LINES } from '../../constants'
 import { ContentService } from '../../content'
 import { TerrainPatchMaterial, WaterPatchMaterial } from '../../material'
 import { TerrainBufferLayout, TerrainComponent } from './TerrainComponent'
 
-import { Vec4 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat4, Vec3, Vec4, type IVec4 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { TerraQuadState, type TerraQuad } from './TerrainRegion'
 import { TerrainRegionComponent } from './TerrainRegionComponent'
@@ -37,7 +27,6 @@ export class TerrainSystem extends GameSystem {
   private tiles: TerrainTileManager
   private renderList: TerraQuad[] = []
 
-  private tmpV3 = Vec4.create()
   private frame = 0
   private terrainCount = 0
 
@@ -166,21 +155,21 @@ export class TerrainSystem extends GameSystem {
       mesh.instances.writeFieldVec4(actualCount, 'params3', {
         x: terrain.getNeighbourLayer(p.region, 0, 0),
         y: terrain.getNeighbourLayer(p.region, 1, 0), // +X,
-        z: terrain.getNeighbourLayer(p.region, 0, 1), // +Z,
-        w: terrain.getNeighbourLayer(p.region, 1, 1), // +X+Z corner,
+        z: terrain.getNeighbourLayer(p.region, 0, 1), // +Y,
+        w: terrain.getNeighbourLayer(p.region, 1, 1), // +X+Y corner,
       })
 
-      computeUvTransform(renderNode, fineNode, this.tmpV3)
-      mesh.instances.writeFieldVec4(actualCount, 'colorUvTransform', this.tmpV3)
+      computeUvTransform(renderNode, fineNode, Vec4.$0)
+      mesh.instances.writeFieldVec4(actualCount, 'colorUvTransform', Vec4.$0)
 
-      computeUvTransform(renderNode, coarseNode, this.tmpV3)
-      mesh.instances.writeFieldVec4(actualCount, 'colorUvTransformCoarse', this.tmpV3)
+      computeUvTransform(renderNode, coarseNode, Vec4.$0)
+      mesh.instances.writeFieldVec4(actualCount, 'colorUvTransformCoarse', Vec4.$0)
 
-      computeUvTransform(renderNode, renderNode.root, this.tmpV3)
-      mesh.instances.writeFieldVec4(actualCount, 'heightUvTransform', this.tmpV3)
+      computeUvTransform(renderNode, renderNode.root, Vec4.$0)
+      mesh.instances.writeFieldVec4(actualCount, 'heightUvTransform', Vec4.$0)
 
-      computeUvTransform(coarseNode, renderNode.root, this.tmpV3)
-      mesh.instances.writeFieldVec4(actualCount, 'heightUvTransformCoarse', this.tmpV3)
+      computeUvTransform(coarseNode, renderNode.root, Vec4.$0)
+      mesh.instances.writeFieldVec4(actualCount, 'heightUvTransformCoarse', Vec4.$0)
 
       actualCount++
     }
@@ -193,14 +182,14 @@ export class TerrainSystem extends GameSystem {
   private updateRegionState(entity: GameEntity, camera: CameraData) {
     const component = entity.component(TerrainRegionComponent)
 
-    const pX = -camera.world.translationX
-    const pY = camera.world.translationZ
+    const pX = camera.world.translationX
+    const pY = camera.world.translationY
 
     const regionSize = component.regionSize
     const minX = component.region.tree.bounds.min.x
     const maxX = component.region.tree.bounds.max.x
-    const minY = component.region.tree.bounds.min.z
-    const maxY = component.region.tree.bounds.max.z
+    const minY = component.region.tree.bounds.min.y
+    const maxY = component.region.tree.bounds.max.y
 
     const dx = Math.max(minX - pX, 0, pX - maxX)
     const dy = Math.max(minY - pY, 0, pY - maxY)
@@ -333,7 +322,7 @@ export class TerrainSystem extends GameSystem {
     const nodeSize = node.size
     const leafSize = p.region.leafSize
     const transform = entity.getTransform<TransformComponent>()
-    transform.setScaleXYZ(nodeSize / leafSize, 1, nodeSize / leafSize)
+    transform.setScaleUniform(nodeSize / leafSize)
     transform.updateIfNeeded()
   }
   // #endregion
@@ -349,7 +338,7 @@ export class TerrainSystem extends GameSystem {
     this.geometryLines = createQuadGeometry(this.device, {
       size: QUAD_LEAF_SIZE,
       vertexPerUnit: 1,
-      yOffset: 0.5,
+      offset: 0.5,
       lines: true,
     })
 
@@ -358,10 +347,6 @@ export class TerrainSystem extends GameSystem {
       vertexPerUnit: 1,
       lines: false,
     })
-
-    this.geometry.materialId = 0
-    this.geometryLines.materialId = 1
-    this.geometryWater.materialId = 1
   }
 
   private createMesh() {
@@ -370,7 +355,7 @@ export class TerrainSystem extends GameSystem {
     const linesMaterial = new TerrainPatchMaterial(this.device)
 
     patchMaterial.effect.cullState = CullState.CullFront
-    patchMaterial.HeightMap = this.content.nullHeightmapArray
+    // patchMaterial.HeightMap = this.content.nullHeightmapArray
     patchMaterial.ColorMap1 = this.tiles.colorMap1
     patchMaterial.ColorMap2 = this.tiles.colorMap2
 
@@ -390,15 +375,11 @@ export class TerrainSystem extends GameSystem {
     }
 
     return new Mesh(this.device, {
+      geometries: [this.geometry, this.geometryWater],
+      materials: [patchMaterial, waterMaterial],
       parts: [
-        this.geometry,
-        // this.geometryLines,
-        this.geometryWater,
-      ],
-      materials: [
-        patchMaterial,
-        // linesMaterial,
-        waterMaterial,
+        { geometryIndex: 0, materialIndex: 0 },
+        { geometryIndex: 1, materialIndex: 1 },
       ],
     })
   }
@@ -425,7 +406,7 @@ export class TerrainSystem extends GameSystem {
           macroScale,
           -macroScale,
           node.rootGridX * macroScale,
-          1.0 - node.rootGridZ * macroScale,
+          1.0 - node.rootGridY * macroScale,
         )
 
         const textureWorldSize = 1.0
@@ -434,7 +415,7 @@ export class TerrainSystem extends GameSystem {
           colorScale, // scale UV down as patch grows
           colorScale,
           (node.bounds.min.x / node.size) * colorScale, // offset follows same scale
-          (node.bounds.min.z / node.size) * colorScale,
+          (node.bounds.min.y / node.size) * colorScale,
         )
 
         const isMacro = node.size >= 512
@@ -473,35 +454,25 @@ export class TerrainSystem extends GameSystem {
 
 export interface QuadGeomOptions {
   size: number
-  yOffset?: number
+  offset?: number
   vertexPerUnit?: number
   lines?: boolean
 }
 
-function createQuadGeometry(device: Device, { size, yOffset = 0, vertexPerUnit = 1, lines = false }: QuadGeomOptions) {
-  return beginGeometry({
-    layout: [['position', 'normal', 'texture']],
+function createQuadGeometry(device: Device, { size, offset = 0, vertexPerUnit = 1, lines = false }: QuadGeomOptions) {
+  return patchGeometry(device, {
+    vertexTransform: Mat4.createAxisAngle(Vec3.UnitX, -90 * DEGREE_TO_RAD),
+    width: size,
+    depth: size,
+    widthSegments: size * vertexPerUnit,
+    depthSegments: size * vertexPerUnit,
+    offset: {
+      x: size / 2,
+      y: offset || 0,
+      z: size / 2,
+    },
+    lines,
   })
-    .append(lines ? buildParametricLines : buildParametricSurface, {
-      uSegments: size * vertexPerUnit,
-      vSegments: size * vertexPerUnit,
-      position: (u: number, v: number) => {
-        return {
-          x: -u * size,
-          y: yOffset,
-          z: v * size,
-        }
-      },
-      texture: (u: number, v: number) => {
-        return {
-          x: u,
-          y: 1 - v,
-        }
-      },
-    })
-    .endGeometry(device, {
-      primitiveType: lines ? 'LineList' : 'TriangleList',
-    })
 }
 
 function resolveReadyAncestor(node: TerraQuad): TerraQuad | null {
@@ -515,19 +486,22 @@ function resolveReadyAncestor(node: TerraQuad): TerraQuad | null {
   return null
 }
 
-export function computeUvTransform(childNode: TerraQuad, ancestorNode: TerraQuad, output: Vec4) {
+export function computeUvTransform(childNode: TerraQuad, ancestorNode: TerraQuad, output: IVec4) {
   const child = childNode.bounds
   const ancestor = ancestorNode.bounds
 
-  const invW = 1 / (ancestor.max.x - ancestor.min.x)
-  const invH = 1 / (ancestor.max.z - ancestor.min.z)
+  const rangeW = 1 / (ancestor.max.x - ancestor.min.x)
+  const rangeH = 1 / (ancestor.max.y - ancestor.min.y)
 
-  const scaleX = (child.max.x - child.min.x) * invW
-  const offsetX = (child.min.x - ancestor.min.x) * invW
+  const scaleX = (child.max.x - child.min.x) * rangeW
+  const offsetX = (child.min.x - ancestor.min.x) * rangeW
 
-  // HINT: y is flipped in UV space, so we use max.z for offset and scale based on height
-  const scaleZ = (child.max.z - child.min.z) * invH
-  const offsetZ = (ancestor.max.z - child.max.z) * invH
+  // HINT: y is flipped in UV space, so we use max.y for offset and scale based on height
+  const scaleY = (child.max.y - child.min.y) * rangeH
+  const offsetY = (ancestor.max.y - child.max.y) * rangeH
 
-  output.init(scaleX, scaleZ, offsetX, offsetZ)
+  output.x = scaleX
+  output.y = scaleY
+  output.z = offsetX
+  output.w = offsetY
 }

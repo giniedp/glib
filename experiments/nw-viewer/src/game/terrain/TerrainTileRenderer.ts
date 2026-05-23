@@ -80,9 +80,10 @@ export class TerrainTileRenderer {
     pass.clear()
 
     if (baseMaterial) {
-      baseMaterial.RegionScaleOffset.initFrom(tile.macroUvTransform)
-      baseMaterial.TilingScaleOffset.initFrom(tile.colorUvTransform)
-      baseMaterial.effect.commit(baseMaterial.inputs)
+      baseMaterial.RegionScaleOffset = tile.macroUvTransform
+      baseMaterial.TilingScaleOffset = tile.colorUvTransform
+      baseMaterial.effect.applyInputs(baseMaterial.inputBlocks)
+      baseMaterial.effect.program.commit()
       pass.setProgram(baseMaterial.effect.program)
       pass.draw(3)
     }
@@ -90,9 +91,10 @@ export class TerrainTileRenderer {
     if (layerMaterials) {
       for (const material of layerMaterials) {
         material.BaseMap.width
-        material.RegionScaleOffset.initFrom(tile.macroUvTransform)
-        material.TilingScaleOffset.initFrom(tile.colorUvTransform)
-        material.effect.commit(material.inputs)
+        material.RegionScaleOffset = tile.macroUvTransform
+        material.TilingScaleOffset = tile.colorUvTransform
+        material.effect.applyInputs(material.inputBlocks)
+        material.effect.program.commit()
         pass.setProgram(material.effect.program)
         pass.draw(3)
       }

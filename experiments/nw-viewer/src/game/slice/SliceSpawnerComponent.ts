@@ -18,7 +18,6 @@ import {
   type ViewerSlice,
 } from '../../api'
 import { ContentService } from '../../content'
-import { cryToGltfMat4 } from '../../math'
 import { DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { MeshLoaderComponent } from './MeshLoaderComponent'
 
@@ -142,7 +141,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
 
       options.transform = new TransformComponent({
         keepWorld: true,
-        world: Mat4.createFromArray(cryToGltfMat4(item.transform)).premultiply(parentWorld),
+        world: Mat4.createFromArray(item.transform).premultiply(parentWorld),
         lifeCycle: range ? LifeCycleFlags.Propagate : LifeCycleFlags.Full,
       })
 

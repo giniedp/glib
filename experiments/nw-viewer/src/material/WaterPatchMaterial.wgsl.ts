@@ -1,6 +1,6 @@
 import { COMMON_WGSL } from './common.wgsl'
 
-export const WATER_PATCH_SHADER = /* wgsl */ `
+export default /* wgsl */ `
 ${COMMON_WGSL}
 
 struct MaterialBlock {
@@ -61,13 +61,16 @@ struct InstanceBlock {
   heightUvTransformCoarse: vec4f,
 };
 
-@group(0) @binding(0) var<uniform> object   : ObjectBlock;
-@group(0) @binding(1) var<uniform> view     : ViewBlock;
-@group(0) @binding(2) var<uniform> material : MaterialBlock;
-@group(0) @binding(3) var<uniform> frame    : FrameBlock;
-@group(0) @binding(4) var<uniform> env      : EnvBlock;
+@group(0) @binding(0) var<uniform> global: GlobalBlock;
+@group(0) @binding(1) var<uniform> frame: FrameBlock;
+@group(0) @binding(2) var<uniform> view: ViewBlock;
+@group(0) @binding(3) var<uniform> object: ObjectBlock;
+@group(0) @binding(4) var<uniform> material: MaterialBlock;
 
+// @block material
 @group(1) @binding(0) var heightMapSampler : sampler;
+
+// @block material
 @group(1) @binding(1) var heightMap : texture_2d_array<f32>;
 
 @group(2) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
@@ -144,7 +147,7 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
   let instance = instances[in.iid];
   let timeSec = frame.elapsedTime * 0.001;
   let mat     = material;
-  let sun     = normalize(env.sunDirection);
+  let sun     = normalize(global.sunDirection);
 
   let baseFreq = 0.015;
 
@@ -174,11 +177,11 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
   let skyHorizon = pow(max(reflDir.y, 0.0), 0.3);
   let skyColor   = mix(vec3f(0.05, 0.12, 0.25), vec3f(0.4, 0.65, 0.9), skyHorizon);
   let sunDot     = max(dot(reflDir, sun), 0.0);
-  let sunRefl    = env.sunColor * pow(sunDot, 64.0);
+  let sunRefl    = global.sunColor * pow(sunDot, 64.0);
   let reflection = (skyColor + sunRefl) * mat.reflectStrength;
 
   // ── Specular ──────────────────────────────────────────────
-  let specColor = env.sunColor * ggxSpecular(normal, viewDir, sun, mat.roughness);
+  let specColor = global.sunColor * ggxSpecular(normal, viewDir, sun, mat.roughness);
 
 
   // ── Foam ──────────────────────────────────────────────────

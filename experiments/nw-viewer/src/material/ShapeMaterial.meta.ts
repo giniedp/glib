@@ -1,0 +1,23 @@
+import { inputSlot } from '@gglib/graphics'
+export default {
+  SunColor: inputSlot('global', 'suncolor', 'vec3'),
+  SunDirection: inputSlot('global', 'sundirection', 'vec3'),
+  BottomFogColor: inputSlot('global', 'bottomfogcolor', 'vec4'),
+  BottomFogHeight: inputSlot('global', 'bottomfogheight', 'scalar'),
+  BottomFogDensity: inputSlot('global', 'bottomfogdensity', 'scalar'),
+  TopFogColor: inputSlot('global', 'topfogcolor', 'vec4'),
+  TopFogHeight: inputSlot('global', 'topfogheight', 'scalar'),
+  TopFogDensity: inputSlot('global', 'topfogdensity', 'scalar'),
+  FogHeightOffset: inputSlot('global', 'fogheightoffset', 'scalar'),
+  Debug: inputSlot('global', 'debug', 'scalar'),
+  ViewMatrix: inputSlot('view', 'viewmatrix', 'mat4x4'),
+  ProjectionMatrix: inputSlot('view', 'projectionmatrix', 'mat4x4'),
+  CameraPosition: inputSlot('view', 'cameraposition', 'vec3'),
+  PaniniBlend: inputSlot('view', 'paniniblend', 'scalar'),
+  PaniniDistance: inputSlot('view', 'paninidistance', 'scalar'),
+  PaniniScale: inputSlot('view', 'paniniscale', 'scalar'),
+  ModelMatrix: inputSlot('object', 'modelmatrix', 'mat4x4'),
+  Position: inputSlot('instances', 'position', 'vec4'),
+  Scale: inputSlot('instances', 'scale', 'vec4'),
+  Color: inputSlot('instances', 'color', 'vec4'),
+}

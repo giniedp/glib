@@ -89,7 +89,8 @@ export class DebugShapeSystem extends GameSystem {
     const geometry = createShapeGeometry(device, type, solid)
     const material = new ShapeMaterial(device)
     component.mesh = new Mesh(device, {
-      parts: [geometry],
+      geometries: [geometry],
+      parts: [{ geometryIndex: 0, materialIndex: 0 }],
       materials: [material],
     }).enableInstancing({
       layout: DebugShapeBufferLayout,

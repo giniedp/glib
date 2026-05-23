@@ -1,18 +1,11 @@
-import {
-  Device,
-  materialSchema,
-  materialSchemaClass,
-  SamplerState,
-  type EffectOptions,
-  type ShaderModuleOptions,
-  type Texture,
-} from '@gglib/graphics'
-import { TERRAIN_PACK_SHADER } from './TerrainPackShader.wgsl'
+import { Device, materialSchemaClass, type EffectOptions, type ShaderModuleOptions } from '@gglib/graphics'
+import SCHEMA from './TerrainPackMaterial.meta'
+import WGSL from './TerrainPackMaterial.wgsl'
 
 export function terrainPackShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Terrain Pack Shader',
-    wgsl: TERRAIN_PACK_SHADER,
+    wgsl: WGSL,
     glsl: null,
   }
 }
@@ -23,39 +16,16 @@ export function terrainPackEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: terrainPackShaderOptions(),
-      shared: [],
+      sharedBlocks: [],
     },
   }
 }
 
-export type SplatPackEffectInputs = {
-  tileSampler: SamplerState
-  tile1Map: Texture
-  tile2Map: Texture
-  tile3Map: Texture
-}
-
-export function terrainPackEffectInputs(): SplatPackEffectInputs {
-  return {
-    tileSampler: SamplerState.LinearClamp,
-    tile1Map: null,
-    tile2Map: null,
-    tile3Map: null,
-  }
-}
-
-export const TerrainPackMaterialSchema = materialSchema<SplatPackEffectInputs>()({
-  Tile1Map: 'tile1Map',
-  Tile2Map: 'tile2Map',
-  Tile3Map: 'tile3Map',
-})
-
-export class SplatPackMaterial extends materialSchemaClass(TerrainPackMaterialSchema) {
+export class SplatPackMaterial extends materialSchemaClass(SCHEMA) {
   public constructor(device: Device) {
     super(device, {
       name: 'Terrain Pack Material',
       effect: terrainPackEffectOptions(),
-      inputs: terrainPackEffectInputs(),
       meta: {},
     })
   }

@@ -1,6 +1,6 @@
 import { QuadTree, QuadTreeNode, type ScheduledTask } from '@gglib/components'
 import type { GameEntity } from '@gglib/ecs'
-import { BoundingBox, BoundingFrustum, Vec3, type IVec2 } from '@gglib/math'
+import { BoundingFrustum, Vec3, type IVec2 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { brand, type Brand } from '@gglib/utils'
 import type { TerrainTile } from './TerrainTileManager'
@@ -67,7 +67,6 @@ export class TerrainRegion {
   public entity: GameEntity
 
   private frustum: BoundingFrustum = new BoundingFrustum()
-  private bounds: BoundingBox = new BoundingBox()
   private requiredQuads = new Set<TerraQuad>()
 
   public constructor(options: TerrainRegionOptions) {
@@ -76,8 +75,9 @@ export class TerrainRegion {
     this.origin = options.origin
     this.leafSize = options.leafSize
     this.tree = QuadTree.create({
-      min: new Vec3(this.origin.x, 0, this.origin.y),
-      max: new Vec3(this.origin.x + this.size, this.size, this.origin.y + this.size),
+      min: new Vec3(this.origin.x, this.origin.y, 0),
+      max: new Vec3(this.origin.x + this.size, this.origin.y + this.size, this.size),
+      verticalAxis: 'z',
     })
 
     this.tree.subdivideTosize(this.leafSize)
@@ -91,20 +91,10 @@ export class TerrainRegion {
 
     // list of non overlapping quads
 
-    const camX = -camera.world.translationX
-    const camY = camera.world.translationZ
+    const cam = camera.world.getTranslation({})
     this.frustum.updateFromViewProjection(camera.view, camera.projection)
-    this.tree.traverseLOD(camX, camY, baseFactor, (it) => {
-      // prettier-ignore
-      this.bounds.init(
-        -it.bounds.max.x,
-         it.bounds.min.y,
-         it.bounds.min.z,
-        -it.bounds.min.x,
-         it.bounds.max.y,
-         it.bounds.max.z,
-      )
-      if (!this.frustum.intersectsBox(this.bounds)) {
+    this.tree.traverseLOD(cam, baseFactor, (it) => {
+      if (!this.frustum.intersectsBox(it.bounds)) {
         return
       }
 

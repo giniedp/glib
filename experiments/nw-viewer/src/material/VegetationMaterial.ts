@@ -1,24 +1,28 @@
 import {
   BlendState,
-  CommonBindingKeys,
+  CommonBlocks,
+  CommonInputs,
   CullState,
   Device,
   type EffectOptions,
   type MaterialOptions,
   type ShaderModuleOptions,
-  type Texture,
-  materialSchema,
+  TRUE,
+  inputSlotScalar,
+  inputSlotTexture,
+  inputSlotVec3,
   materialSchemaClass,
 } from '@gglib/graphics'
-import { Mat4, Vec3, Vec4 } from '@gglib/math'
+import { Vec3 } from '@gglib/math'
 import type { NwMaterialProps } from './GltfExtension'
-import { VEGETATION_SHADER } from './VegetationShader.wgsl'
+import WGSL from './VegetationMaterial.wgsl'
+import SCHEMA from './VegetationMaterial.meta'
 import { parseColorParam, smoothnessToRoughness } from './common.wgsl'
 
 export function vegetationShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Vegetation Shader',
-    wgsl: VEGETATION_SHADER,
+    wgsl: WGSL,
     glsl: null,
   }
 }
@@ -29,119 +33,28 @@ export function vegetationEffectOptions(): EffectOptions {
     meta: {},
     program: {
       shader: vegetationShaderOptions(),
-      shared: [],
+      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
     },
   }
 }
 
-export type VegetationEffectInputs = {
-  [CommonBindingKeys.Object.ModelMatrix]: Mat4
-  [CommonBindingKeys.View.ViewMatrix]: Mat4
-  [CommonBindingKeys.View.ProjectionMatrix]: Mat4
-  [CommonBindingKeys.View.CameraPosition]: Vec3
-
-  'material.BaseColor': Vec3
-  'material.EmissiveColor': Vec3
-  'material.SpecularColor': Vec3
-  'material.Metallic': number
-  'material.Roughness': number
-  'material.Alpha': number
-  'material.AlphaClip': number
-  'material.Ior': number
-
-  'settings.smoothnessMapEnabled': number
-
-  'lights.color[0]': Vec4
-  'lights.position[0]': Vec4
-  'lights.direction[0]': Vec4
-  'lights.color[1]': Vec4
-  'lights.position[1]': Vec4
-  'lights.direction[1]': Vec4
-  'lights.color[2]': Vec4
-  'lights.position[2]': Vec4
-  'lights.direction[2]': Vec4
-  'lights.color[3]': Vec4
-  'lights.position[3]': Vec4
-  'lights.direction[3]': Vec4
-
-  baseColorMap: Texture
-  specularColorMap: Texture
-  normalMap: Texture
-  smoothnessMap: Texture
-  opacityMap: Texture
-}
-
-export function vegetationEffectInputs(): VegetationEffectInputs {
-  return {
-    [CommonBindingKeys.Object.ModelMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.ViewMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.ProjectionMatrix]: Mat4.createIdentity(),
-    [CommonBindingKeys.View.CameraPosition]: Vec3.create(),
-
-    'material.BaseColor': Vec3.create(1, 1, 1),
-    'material.EmissiveColor': Vec3.create(),
-    'material.SpecularColor': Vec3.create(),
-    'material.Metallic': 0,
-    'material.Roughness': 0.5,
-    'material.Alpha': 1,
-    'material.AlphaClip': 0,
-    'material.Ior': 0,
-
-    'settings.smoothnessMapEnabled': 0,
-
-    'lights.color[0]': Vec4.create(),
-    'lights.position[0]': Vec4.create(),
-    'lights.direction[0]': Vec4.create(),
-    'lights.color[1]': Vec4.create(),
-    'lights.position[1]': Vec4.create(),
-    'lights.direction[1]': Vec4.create(),
-    'lights.color[2]': Vec4.create(),
-    'lights.position[2]': Vec4.create(),
-    'lights.direction[2]': Vec4.create(),
-    'lights.color[3]': Vec4.create(),
-    'lights.position[3]': Vec4.create(),
-    'lights.direction[3]': Vec4.create(),
-
-    baseColorMap: null,
-    specularColorMap: null,
-    normalMap: null,
-    smoothnessMap: null,
-    opacityMap: null,
-  }
-}
-
-export const VegetationEffectSchema = materialSchema<VegetationEffectInputs>()({
-  World: CommonBindingKeys.Object.ModelMatrix,
-  View: CommonBindingKeys.View.ViewMatrix,
-  Projection: CommonBindingKeys.View.ProjectionMatrix,
-  CameraPosition: CommonBindingKeys.View.CameraPosition,
-
-  BaseColor: 'material.BaseColor',
-  EmissiveColor: 'material.EmissiveColor',
-  SpecularColor: 'material.SpecularColor',
-  Metallic: 'material.Metallic',
-  Roughness: 'material.Roughness',
-  Alpha: 'material.Alpha',
-  AlphaClip: 'material.AlphaClip',
-  Ior: 'material.Ior',
-
-  SmoothnessMapEnabled: 'settings.smoothnessMapEnabled',
-
-  BaseColorMap: 'baseColorMap',
-  SpecularColorMap: 'specularColorMap',
-  NormalMap: 'normalMap',
-  SmoothnessMap: 'smoothnessMap',
-  OpacityMap: 'opacityMap',
-})
-
-export class VegetationMaterial extends materialSchemaClass(VegetationEffectSchema) {
+export class VegetationMaterial extends materialSchemaClass(SCHEMA) {
   public constructor(device: Device, options?: MaterialOptions) {
     super(device, {
       name: 'Vegetation Material',
       effect: vegetationEffectOptions(),
-      inputs: vegetationEffectInputs(),
       meta: {},
     })
+
+    this.BaseColor = Vec3.create(1, 1, 1)
+    this.EmissiveColor = Vec3.create()
+    this.SpecularColor = Vec3.create()
+    // this.Metallic = 0
+    this.Roughness = 0.5
+    this.Alpha = 1
+    this.AlphaClip = 0
+    this.Ior = 0
+
     this.assignNwProps(options?.properties as any)
   }
 
@@ -163,33 +76,33 @@ export class VegetationMaterial extends materialSchemaClass(VegetationEffectSche
     }
 
     if (tex.Diffuse) {
-      this.set('baseColorMap', tex.Diffuse)
+      this.BaseColorMap = tex.Diffuse as any
     }
     if (tex.Bumpmap) {
-      this.set('normalMap', tex.Bumpmap)
+      this.NormalMap = tex.Bumpmap as any
     }
     if (tex.Specular) {
-      this.set('specularColorMap', tex.Specular)
+      this.SpecularColorMap = tex.Specular as any
     }
     if (tex.Smoothness) {
-      this.set('smoothnessMap', tex.Smoothness)
-      this.SmoothnessMapEnabled = 1
+      this.SmoothnessMap = tex.Smoothness as any
+      this.SmoothnessMapEnabled = TRUE
     }
     if (tex.Opacity) {
-      this.set('opacityMap', tex.Opacity)
+      this.OpacityMap = tex.Opacity as any
     }
 
     if (attr.Diffuse) {
-      this.BaseColor.initFrom(parseColorParam(attr.Diffuse))
+      this.BaseColor = parseColorParam(attr.Diffuse)
     }
     if (attr.Specular) {
-      this.SpecularColor.initFrom(parseColorParam(attr.Specular))
+      this.SpecularColor = parseColorParam(attr.Specular)
     }
     if (attr.Emissive) {
-      this.EmissiveColor.initFrom(parseColorParam(attr.Emissive))
+      this.EmissiveColor = parseColorParam(attr.Emissive)
     }
     if (attr.Emittance) {
-      this.EmissiveColor.initFrom(parseColorParam(attr.Emittance))
+      this.EmissiveColor = parseColorParam(attr.Emittance)
     }
     if (attr.Shininess) {
       this.Roughness = smoothnessToRoughness(attr.Shininess / 255)

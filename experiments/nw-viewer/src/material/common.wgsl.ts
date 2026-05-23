@@ -24,6 +24,22 @@ const DEBUG_COLOR2:    u32 = 8u;
 const DEBUG_UV1:       u32 = 9u;
 const DEBUG_UV2:       u32 = 10u;
 
+struct GlobalBlock {
+  sunColor:        vec3<f32>,
+  sunDirection:    vec3<f32>,
+
+  bottomFogColor:   vec4<f32>,
+  bottomFogHeight:  f32,
+  bottomFogDensity: f32,
+
+  topFogColor:      vec4<f32>,
+  topFogHeight:     f32,
+  topFogDensity:    f32,
+
+  fogHeightOffset:  f32,
+  debug:            u32,
+};
+
 struct ObjectBlock {
   modelMatrix: mat4x4<f32>,
 };
@@ -39,11 +55,16 @@ struct ViewBlock {
 
 struct FrameBlock {
   elapsedTime: f32,
+  // deltaTime: f32,
+  // index: f32,
 };
 
 struct LightBlock {
+  // @alias lightColor
   color:     array<vec4f, LIGHT_COUNT>,
+  // @alias lightPosition
   position:  array<vec4f, LIGHT_COUNT>,
+  // @alias lightDirection
   direction: array<vec4f, LIGHT_COUNT>,
 };
 
@@ -103,7 +124,7 @@ fn getLight(light: LightParams, lightType: u32, position: vec3f) -> LightResult 
   return result;
 }
 
-fn accumulateLight(lights: LightBlock, env: EnvBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> vec3f {
+fn accumulateLight(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> vec3f {
   var color = vec3f(0.0, 0.0, 0.0);
   var i : i32 = -1;
   loop {
