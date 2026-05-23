@@ -101,25 +101,27 @@ fn vsMain(input: VertexIn) -> Varyings {
   let baseFactor = f32(instance.params1.y);
   let morphLod = f32(instance.params1.z);
   let morph = lod_morph(
-    input.position.xz,          // raw grid position 0..64
-    worldPos.xz,                // world space position
-    view.cameraPosition.xz,
+    input.position.xy,         // raw grid position 0..64
+    worldPos.xy,                // world space position
+    view.cameraPosition.xy,
     patchSize,
     baseFactor,
     morphLod,
   );
-  worldPos.x += morph.offset.x;
-  worldPos.z += morph.offset.y;
+  worldPos.x -= morph.offset.x;
+  worldPos.y += morph.offset.y;
 
   let patchWorldSize = patchSize * exp2(morphLod);
   let uvDelta = -morph.offset / patchWorldSize;
 
-  let uv = uvScaleOffset(input.texture + uvDelta, instance.heightUvTransform);
+
+  var uv = vec2f(input.texture.x, 1.0 - input.texture.y);
+  uv = uvScaleOffset(uv + uvDelta, instance.heightUvTransform);
   let data     = readMapData(uv, instance.params3);
   let waterHeight = data.x;
   let groundHeight = data.y + data.x;
 
-  worldPos.y   = data.x;
+  worldPos.z   = data.x;
 
   let timeSec      = frame.elapsedTime * 0.001;
   let mat          = material;
@@ -127,8 +129,8 @@ fn vsMain(input: VertexIn) -> Varyings {
   // Derive base spatial frequency from waveHeight so the two stay coupled:
   // a 0.4 m swell at ~420 m wavelength → freq ≈ 0.015 rad/m.
   let baseFreq = 0.015;
-  let dispY    = waveSumY(worldPos.xz, baseFreq, mat.waveHeight, mat.waveSpeed, timeSec);
-  worldPos.y   = waterHeight + dispY;
+  let dispY    = waveSumY(worldPos.xy, baseFreq, mat.waveHeight, mat.waveSpeed, timeSec);
+  worldPos.z   = waterHeight + dispY;
 
   var out : Varyings;
   out.position     = view.projectionMatrix * view.viewMatrix * worldPos;
@@ -159,11 +161,11 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
 
   // ── Surface geometry ──────────────────────────────────────
   let viewDir = normalize(view.cameraPosition - in.worldPos);
-  let normal  = waveNormal(in.worldPos.xz, baseFreq, mat.waveHeight, mat.waveSpeed, timeSec);
+  let normal  = waveNormal(in.worldPos.xy, baseFreq, mat.waveHeight, mat.waveSpeed, timeSec);
 
   // ── Refraction tint ───────────────────────────────────────
-  let refrBend   = normal.xz * mat.refractStrength * (1.0 - depthT) * 0.01;
-  let data = readMapData(in.uv+ refrBend, instance.params3);
+  let refrBend   = normal.xy * mat.refractStrength * (1.0 - depthT) * 0.01;
+  let data = readMapData(in.uv + refrBend, instance.params3);
   let refrGround = data.x + data.y;// in.groundHeight; //textureSample(heightMap, heightMapSampler, in.uv + refrBend).r;
   let refrDepthT = clamp((mat.waterLevel - refrGround) / mat.depthScale, 0.0, 1.0);
   let refrColor  = mix(mat.shallowColor, mat.deepColor, refrDepthT);
@@ -174,7 +176,7 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
 
   // ── Reflection ────────────────────────────────────────────
   let reflDir    = reflect(-viewDir, normal);
-  let skyHorizon = pow(max(reflDir.y, 0.0), 0.3);
+  let skyHorizon = pow(max(reflDir.z, 0.0), 0.3);
   let skyColor   = mix(vec3f(0.05, 0.12, 0.25), vec3f(0.4, 0.65, 0.9), skyHorizon);
   let sunDot     = max(dot(reflDir, sun), 0.0);
   let sunRefl    = global.sunColor * pow(sunDot, 64.0);
@@ -189,7 +191,7 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
   // A scrolling noise mask breaks it into clumps so it reads as surf, not
   // a flat ring. The band itself is a smooth ramp so there is no hard edge.
   let shoreBand  = 1.0 - smoothstep(0.0, mat.foamDepth, waterDepth);
-  let foamUV     = in.worldPos.xz * 0.04 + timeSec * mat.foamSpeed * vec2f(0.6, 0.35);
+  let foamUV     = in.worldPos.xy * 0.04 + timeSec * mat.foamSpeed * vec2f(0.6, 0.35);
   let foamMask   = smoothstep(0.0, 1.0, fbm(foamUV));
   let foamAmount = clamp(shoreBand * foamMask * mat.foamStrength, 0.0, 1.0);
 
@@ -201,6 +203,43 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
 
   let alpha = shoreAlpha * mix(0.75, 1.0, depthT);
 
+
+  let debug = global.debug;
+  if (debug > 0u) {
+    // if (debug == DEBUG_MTL_BASE) {
+    //   return vec4<f32>(surface.BaseColor.rgb, 1.0);
+    // }
+    // if (debug == DEBUG_MTL_SPEC) {
+    //   return vec4<f32>(surface.Specular.rgb, 1.0);
+    // }
+    // if (debug == DEBUG_MTL_PBR) {
+    //   return vec4<f32>(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
+    // }
+
+    if (debug == DEBUG_NORMALS) {
+      return vec4<f32>(normal.xyz * 0.5 + 0.5, 1.0);
+    }
+    // if (debug == DEBUG_TANGENTS) {
+    //   return vec4<f32>(input.vTangent.xyz * 0.5 + 0.5, 1.0);
+    // }
+    // if (debug == DEBUG_BINORMALS) {
+    //   return vec4<f32>(input.vBinormal.xyz * 0.5 + 0.5, 1.0);
+    // }
+
+    // if (debug == DEBUG_COLOR1) {
+    //   return input.vColor;
+    // }
+    // if (debug == DEBUG_COLOR2) {
+    //   return input.vColor;
+    // }
+
+    // if (debug == DEBUG_UV1) {
+    //   return vec4<f32>(texCoord, 0.0, 1.0);
+    // }
+    // if (debug == DEBUG_UV2) {
+    //   return vec4<f32>(texCoord, 0.0, 1.0);
+    // }
+  }
   return applyFog(color, alpha, in.worldPos, view.cameraPosition);
 }
 
@@ -250,7 +289,7 @@ fn waveNormal(pos: vec2f, baseFreq: f32, baseAmp: f32, baseSpeed: f32, timeSec: 
     let h   = waveSumY(pos,                   baseFreq, baseAmp, baseSpeed, timeSec);
     let hx  = waveSumY(pos + vec2f(eps, 0.0), baseFreq, baseAmp, baseSpeed, timeSec);
     let hz  = waveSumY(pos + vec2f(0.0, eps), baseFreq, baseAmp, baseSpeed, timeSec);
-    return normalize(vec3f(-(hx - h) / eps, 1.0, -(hz - h) / eps));
+    return normalize(vec3f(-(hx - h) / eps, -(hz - h) / eps, 1.0));
 }
 
 // ── Noise helpers ─────────────────────────────────────────────
@@ -288,8 +327,8 @@ fn gerstner(
 ) -> vec3f {
     let phase = freq * dot(dir, pos) - speed * freq * timeSec;
     return vec3f(dir.x * amp * cos(phase),
-                       amp * sin(phase),
-                 dir.y * amp * cos(phase));
+                 dir.y * amp * cos(phase),
+                 amp * sin(phase));
 }
 
 

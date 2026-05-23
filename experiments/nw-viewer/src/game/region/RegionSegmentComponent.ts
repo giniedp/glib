@@ -95,7 +95,7 @@ export class RegionSegmentComponent implements GameComponent {
     this.shape = this.entity.getOrCreateComponent(DebugShapeComponent, () => {
       return new DebugShapeComponent({ type: 'plane', solid: true })
     })
-    this.shape.scale = { x: SEGMENT_SIZE - 1, y: 1, z: SEGMENT_SIZE - 1, w: 0 }
+    this.shape.scale = { x: SEGMENT_SIZE - 1, y: SEGMENT_SIZE - 1, z: 1, w: 0 }
     this.shape.color = this.color
 
     this.capitals = this.entity.world.createEntity({

@@ -17,7 +17,7 @@ export function levelImpostor(parent: GameEntity, data: ImpostorData): CreateEnt
     name: data.model,
     parent,
     transform: new TransformComponent({
-      world: Mat4.createTranslationXYZ(-data.position[0], 0, data.position[1]),
+      world: Mat4.createTranslationXYZ(data.position[0], data.position[1], 0),
       keepWorld: true,
     }),
     components: [new ModelComponent(), new BoundsComponent(), new ImpostorComponent(data), new SpatialComponent()],

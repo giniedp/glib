@@ -1,5 +1,5 @@
 import { type CreateEntityOptions, type GameComponent, type GameEntity } from '@gglib/ecs'
-import { fetchTypedRequest, getRegionInfoUrl, type RegionData } from '../../api'
+import { fetchTypedRequest, getRegionInfoUrl, type ImpostorData, type RegionData } from '../../api'
 
 import {
   BoundsComponent,
@@ -18,7 +18,7 @@ import type { CameraData } from '@gglib/render'
 import { SEGMENT_SIZE } from '../../constants'
 import { ContentService } from '../../content'
 import { SliceSpawnerComponent } from '../slice/SliceSpawnerComponent'
-import { RegionSegmentComponent } from './RegionSegmentComponent'
+import { levelSegment, RegionSegmentComponent } from './RegionSegmentComponent'
 
 export interface RegionComponentOptions {
   levelName: string
@@ -124,13 +124,13 @@ export class RegionComponent implements GameComponent {
 
   public update(camera: CameraData) {
     const px = camera.world.translationX
-    const py = camera.world.translationZ
+    const py = camera.world.translationY
 
     const regionSize = this.regionSize
-    const minX = -this.center.y - regionSize * 0.5
-    const maxX = -this.center.y + regionSize * 0.5
-    const minY = this.center.y - regionSize * 0.5
-    const maxY = this.center.y + regionSize * 0.5
+    const minX = this.origin.x
+    const maxX = this.origin.x + regionSize
+    const minY = this.center.y
+    const maxY = this.center.y + regionSize
 
     const dx = Math.max(minX - px, 0, px - maxX)
     const dy = Math.max(minY - py, 0, py - maxY)
@@ -246,46 +246,45 @@ export class RegionComponent implements GameComponent {
   }
 
   private createSegment(x: number, y: number, data: RegionData) {
-    // const impostors: ImpostorData[] = []
-    // const originX = this.origin.X + x * SEGMENT_SIZE
-    // const originY = this.origin.Y + y * SEGMENT_SIZE
-    // for (const impostor of data.impostors || []) {
-    //   const position = impostor?.position
-    //   if (!position) {
-    //     continue
-    //   }
-    //   if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
-    //     continue
-    //   }
-    //   if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
-    //     continue
-    //   }
-    //   impostors.push(impostor)
-    // }
-    // for (const impostor of data.poiImpostors || []) {
-    //   const position = impostor?.position
-    //   if (!position) {
-    //     continue
-    //   }
-    //   if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
-    //     continue
-    //   }
-    //   if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
-    //     continue
-    //   }
-    //   impostors.push(impostor)
-    // }
-    // const centerX = originX + 0.5 * SEGMENT_SIZE
-    // const centerY = originY + 0.5 * SEGMENT_SIZE
-    // const segmentName = `segment ${x} ${y}`
-    // this.entity.world.createEntity(
-    //   levelSegment(this.segments, {
-    //     name: segmentName,
-    //     level: this.levelName,
-    //     region: this.regionName,
-    //     impostors: impostors,
-    //     center: gameCoordinate2D(centerX, centerY),
-    //   }),
-    // )
+    const impostors: ImpostorData[] = []
+    const originX = this.origin.x + x * SEGMENT_SIZE
+    const originY = this.origin.y + y * SEGMENT_SIZE
+    for (const impostor of data.impostors || []) {
+      const position = impostor?.position
+      if (!position) {
+        continue
+      }
+      if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
+        continue
+      }
+      if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
+        continue
+      }
+      impostors.push(impostor)
+    }
+    for (const impostor of data.poiImpostors || []) {
+      const position = impostor?.position
+      if (!position) {
+        continue
+      }
+      if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
+        continue
+      }
+      if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
+        continue
+      }
+      impostors.push(impostor)
+    }
+
+    const segmentName = `segment ${x} ${y}`
+    this.entity.world.createEntity(
+      levelSegment(this.segments, {
+        name: segmentName,
+        level: this.levelName,
+        region: this.regionName,
+        impostors: impostors,
+        origin: Vec3.create(originX, originY, 0),
+      }),
+    )
   }
 }

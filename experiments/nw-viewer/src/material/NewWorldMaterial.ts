@@ -1,26 +1,24 @@
 import {
   BlendState,
   CommonBlocks,
-  CommonInputs,
   CullState,
   Device,
   type EffectOptions,
   type MaterialOptions,
   type ShaderModuleOptions,
   TRUE,
-  inputSlotScalar,
-  inputSlotTexture,
-  inputSlotVec3,
   materialSchemaClass,
 } from '@gglib/graphics'
 import type { NwMaterialProps } from './GltfExtension'
-import NW_EFFECT_WGSL from './NewWorldMaterial.wgsl'
+import SCHEMA from './NewWorldMaterial.meta'
+import WGSL from './NewWorldMaterial.wgsl'
 import { parseColorParam, smoothnessToRoughness } from './common.wgsl'
+import { Vec3 } from '@gglib/math'
 
 export function newWorldShaderOptions(): ShaderModuleOptions {
   return {
     name: 'New World Shader',
-    wgsl: NW_EFFECT_WGSL,
+    wgsl: WGSL,
     glsl: null,
   }
 }
@@ -36,54 +34,23 @@ export function newWorldEffectOptions(): EffectOptions {
   }
 }
 
-export const NewWorldEffectSchema = {
-  World: CommonInputs.Object.ModelMatrix,
-
-  View: CommonInputs.View.ViewMatrix,
-  Projection: CommonInputs.View.ProjectionMatrix,
-  CameraPosition: CommonInputs.View.CameraPosition,
-
-  BaseColor: inputSlotVec3('material', 'basecolor'),
-  EmissiveColor: inputSlotVec3('material', 'emissivecolor'),
-  SpecularColor: inputSlotVec3('material', 'specularcolor'),
-  Metallic: inputSlotScalar('material', 'metallic'),
-  Roughness: inputSlotScalar('material', 'roughness'),
-  Alpha: inputSlotScalar('material', 'alpha'),
-  AlphaClip: inputSlotScalar('material', 'alphaclip'),
-  Ior: inputSlotScalar('material', 'ior'),
-
-  BaseColorMap: inputSlotTexture('material', 'basecolormap'),
-  SpecularColorMap: inputSlotTexture('material', 'specularcolormap'),
-  NormalMap: inputSlotTexture('material', 'normalmap'),
-  SmoothnessMap: inputSlotTexture('material', 'smoothnessmap'),
-
-  TextureEnabled: inputSlotScalar('settings', 'textureEnabled'),
-  SpecularMapEnabled: inputSlotScalar('settings', 'specularEnabled'),
-  NormalMapEnabled: inputSlotScalar('settings', 'normalMapEnabled'),
-  SmoothnessMapEnabled: inputSlotScalar('settings', 'smoothnessMapEnabled'),
-  LightingEnabled: inputSlotScalar('settings', 'lightingEnabled'),
-  FogEnabled: inputSlotScalar('settings', 'fogEnabled'),
-}
-
-export class NewWorldMaterial extends materialSchemaClass(NewWorldEffectSchema) {
+export class NewWorldMaterial extends materialSchemaClass(SCHEMA) {
   public constructor(device: Device, options?: MaterialOptions) {
     super(device, {
       name: 'New World Material',
       effect: newWorldEffectOptions(),
       meta: {},
     })
+    this.BaseColor = Vec3.create(1, 1, 1)
+    this.EmissiveColor = Vec3.create()
+    this.SpecularColor = Vec3.create()
+    // this.Metallic = 0
+    this.Roughness = 0.5
+    this.Alpha = 1
+    this.AlphaClip = 0
+    this.Ior = 0
     this.assignNwProps(options?.properties as any)
   }
-
-  // public setDirectionalLight(index: 0 | 1 | 2 | 3, color: Vec3, direction: Vec3) {
-  //   this.get(`lights.color[${index}]`).init(color.x, color.y, color.z, 1)
-  //   this.get(`lights.direction[${index}]`).init(direction.x, direction.y, direction.z, 1)
-  // }
-
-  // public setPointLight(index: 0 | 1 | 2 | 3, color: Vec3, position: Vec3) {
-  //   this.get(`lights.color[${index}]`).init(color.x, color.y, color.z, 2)
-  //   this.get(`lights.position[${index}]`).init(position.x, position.y, position.z, 1)
-  // }
 
   public assignNwProps(props: NwMaterialProps) {
     if (!props) {
@@ -95,9 +62,6 @@ export class NewWorldMaterial extends materialSchemaClass(NewWorldEffectSchema) 
     const mod = props.mods
     // console.log(attr, para)
 
-    if (attr.Shader === 'Vegetation') {
-      console.log(attr.Shader, attr.StringGenMask)
-    }
     if (attr.AlphaTest) {
       this.AlphaClip = attr.AlphaTest
     }
@@ -131,11 +95,11 @@ export class NewWorldMaterial extends materialSchemaClass(NewWorldEffectSchema) 
     }
     if (tex.Bumpmap) {
       this.NormalMap = tex.Bumpmap as any
-      this.NormalMapEnabled = TRUE
+      this.NormalEnabled = TRUE
     }
     if (tex.Specular) {
       this.SpecularColorMap = tex.Specular as any
-      this.SpecularMapEnabled = TRUE
+      this.SpecularEnabled = TRUE
     }
     if (tex.Smoothness) {
       this.SmoothnessMap = tex.Smoothness as any

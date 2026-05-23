@@ -14,7 +14,6 @@ struct MaterialBlock {
 
 struct SettingsBlock {
   smoothnessMapEnabled: u32,
-  debug:                u32,
 };
 
 @group(0) @binding(0) var<uniform> object : ObjectBlock;
@@ -130,38 +129,39 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   let backLight     = transmittance * global.sunColor * opacity * backDiffuseMultiplier;
   color            += backLight * surface.BaseColor.rgb;
 
-  if (settings.debug > 0u) {
-    if (settings.debug == DEBUG_MTL_BASE) {
+  let debug = global.debug;
+  if (debug > 0u) {
+    if (debug == DEBUG_MTL_BASE) {
       return vec4<f32>(surface.BaseColor.rgb, 1.0);
     }
-    if (settings.debug == DEBUG_MTL_SPEC) {
+    if (debug == DEBUG_MTL_SPEC) {
       return vec4<f32>(surface.Specular.rgb, 1.0);
     }
-    if (settings.debug == DEBUG_MTL_PBR) {
+    if (debug == DEBUG_MTL_PBR) {
       return vec4<f32>(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
     }
 
-    if (settings.debug == DEBUG_NORMALS) {
+    if (debug == DEBUG_NORMALS) {
       return vec4<f32>(surface.Normal.xyz * 0.5 + 0.5, 1.0);
     }
-    if (settings.debug == DEBUG_TANGENTS) {
+    if (debug == DEBUG_TANGENTS) {
       return vec4<f32>(input.vTangent.xyz * 0.5 + 0.5, 1.0);
     }
-    if (settings.debug == DEBUG_BINORMALS) {
+    if (debug == DEBUG_BINORMALS) {
       return vec4<f32>(input.vBinormal.xyz * 0.5 + 0.5, 1.0);
     }
 
-    if (settings.debug == DEBUG_COLOR1) {
+    if (debug == DEBUG_COLOR1) {
       return input.vColor;
     }
-    if (settings.debug == DEBUG_COLOR2) {
+    if (debug == DEBUG_COLOR2) {
       return input.vColor;
     }
 
-    if (settings.debug == DEBUG_UV1) {
+    if (debug == DEBUG_UV1) {
       return vec4<f32>(texCoord, 0.0, 1.0);
     }
-    if (settings.debug == DEBUG_UV2) {
+    if (debug == DEBUG_UV2) {
       return vec4<f32>(texCoord, 0.0, 1.0);
     }
   }

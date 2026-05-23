@@ -56,7 +56,7 @@ export class LevelSystem extends GameSystem {
   private renderer: Renderer
 
   public sunColor = Vec3.create(1, 0.71085715, 0.5335781)
-  public sunDirection = Vec3.create(0, -1, 1).normalize()
+  public sunDirection = Vec3.create(-1, -1, -10).normalize()
 
   public nightHorizonColor = Vec3.create(0.30822289, 0.42747056, 0.55529737)
   public nightHorizonColorMul = 0.3

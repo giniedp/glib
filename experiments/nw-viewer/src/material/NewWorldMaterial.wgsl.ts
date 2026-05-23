@@ -10,35 +10,37 @@ struct MaterialBlock {
   specularColor: vec3<f32>,
   alphaClip:     f32,
   ior:           f32,
-};
-
-struct SettingsBlock {
-  lightingEnabled:      u32,
   textureEnabled:       u32,
   normalEnabled:        u32,
   specularEnabled:      u32,
-  normalMapEnabled:     u32,
   smoothnessMapEnabled: u32,
-  debug:                u32,
 };
+
 
 @group(0) @binding(0) var<uniform> global : GlobalBlock;
 @group(0) @binding(1) var<uniform> object : ObjectBlock;
 @group(0) @binding(2) var<uniform> view : ViewBlock;
-@group(0) @binding(3) var<uniform> material : MaterialBlock;
-@group(0) @binding(4) var<uniform> lights : LightBlock;
-@group(0) @binding(5) var<uniform> settings : SettingsBlock;
+@group(0) @binding(3) var<uniform> lights : LightBlock;
+@group(0) @binding(4) var<uniform> material : MaterialBlock;
 
+// @block material
 @group(1) @binding(0) var baseColorMap : texture_2d<f32>;
+// @block material
 @group(1) @binding(1) var baseColorSampler : sampler;
 
+// @block material
 @group(1) @binding(2) var specularColorMap : texture_2d<f32>;
+// @block material
 @group(1) @binding(3) var specularColorSampler : sampler;
 
+// @block material
 @group(1) @binding(4) var normalMap : texture_2d<f32>;
+// @block material
 @group(1) @binding(5) var normalSampler : sampler;
 
+// @block material
 @group(1) @binding(6) var smoothnessMap : texture_2d<f32>;
+// @block material
 @group(1) @binding(7) var smoothnessSampler : sampler;
 
 struct VertexInput {
@@ -96,7 +98,7 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
 
   var baseColor = vec4<f32>(1.0);
 
-  if (settings.textureEnabled == 1u) {
+  if (material.textureEnabled == 1u) {
     baseColor = textureSampleLevel(baseColorMap, baseColorSampler, texCoord, 0);
   }
 
@@ -124,11 +126,11 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   );
   surface.Normal = vec4f(normalize(tbn * normal), 1.0);
 
-  if (settings.specularEnabled == 1u) {
+  if (material.specularEnabled == 1u) {
     surface.Specular *= textureSampleLevel(specularColorMap, specularColorSampler, texCoord, 0).rgb;
   }
 
-  if (settings.smoothnessMapEnabled == 1u) {
+  if (material.smoothnessMapEnabled == 1u) {
     let glossSample = textureSample(smoothnessMap, smoothnessSampler, texCoord).r;
     surface.Roughness = smoothnessToRoughness(glossSample);
   }

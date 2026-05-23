@@ -1,22 +1,18 @@
 import {
   BlendState,
   CommonBlocks,
-  CommonInputs,
   CullState,
   Device,
   type EffectOptions,
   type MaterialOptions,
   type ShaderModuleOptions,
   TRUE,
-  inputSlotScalar,
-  inputSlotTexture,
-  inputSlotVec3,
   materialSchemaClass,
 } from '@gglib/graphics'
 import { Vec3 } from '@gglib/math'
 import type { NwMaterialProps } from './GltfExtension'
-import WGSL from './VegetationMaterial.wgsl'
 import SCHEMA from './VegetationMaterial.meta'
+import WGSL from './VegetationMaterial.wgsl'
 import { parseColorParam, smoothnessToRoughness } from './common.wgsl'
 
 export function vegetationShaderOptions(): ShaderModuleOptions {

@@ -344,7 +344,7 @@ fn readMapData(uv: vec2f, params3: vec4f) -> vec4f {
   let hpy = sampleHeight(params3, uv + vec2f(0.0,  texelSize.y));
   let hny = sampleHeight(params3, uv + vec2f(0.0, -texelSize.y));
 
-  let normal = normalize(vec3f(hpx - hnx, 1.0, hpy - hny));
+  let normal = normalize(vec3f(hnx - hpx, hpy - hny, 1.0));
   let h      = sampleHeight(params3, uv);
   return vec4f(normal, h);
 }
