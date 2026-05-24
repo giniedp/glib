@@ -511,9 +511,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     instanceCount?: number,
     indexOffset?: number,
     baseVertex?: number,
-    /* instanceOffset: number */
+    instanceOffset?: number,
   ) {
-    this.getPass().drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, 0)
+    this.getPass().drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, instanceOffset ?? 0)
   }
 
   private getClearPassDescriptor(): GPURenderPassDescriptor {

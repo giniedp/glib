@@ -766,6 +766,23 @@ export class Vec3 implements IVec2, IVec3 {
     return this
   }
 
+  public static addXYZ(vec: IVec3, x: number, y: number, z: number): Vec3
+  public static addXYZ<T>(vec: IVec3, x: number, y: number, z: number, out: T): T & IVec3
+  public static addXYZ(vec: IVec3, x: number, y: number, z: number, out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    out.x = vec.x + x
+    out.y = vec.y + y
+    out.z = vec.z + z
+    return out
+  }
+
+  public addXYZ(x: number, y: number, z: number): this {
+    this.x += x
+    this.y += y
+    this.z += z
+    return this
+  }
+
   /**
    * Performs the calculation `v1 + v2 * scale`
    * @returns The given `out` parameter or a new instance.

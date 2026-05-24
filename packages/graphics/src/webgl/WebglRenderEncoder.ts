@@ -368,7 +368,13 @@ export class WebglRenderEncoder extends RenderEncoder {
     }
   }
 
-  public drawIndexed(indexCount: number, instanceCount?: number, indexOffset?: number, baseVertex?: number): void {
+  public drawIndexed(
+    indexCount: number,
+    instanceCount?: number,
+    indexOffset?: number,
+    baseVertex?: number,
+    instanceOffset?: number,
+  ): void {
     this.commitChanges()
 
     if (!this.indexBuffer) {
@@ -376,6 +382,9 @@ export class WebglRenderEncoder extends RenderEncoder {
     }
     if (baseVertex) {
       throw new Error('baseVertex is not supported in WebGL')
+    }
+    if (instanceOffset > 0) {
+      throw new Error('instanceOffset is not supported in WebGL')
     }
 
     const gl = this.gl

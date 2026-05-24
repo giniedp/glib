@@ -18,6 +18,16 @@ export interface ProgramOptions {
    * For WebGPU, any uniform can be shared.
    */
   sharedBlocks: ReadonlyArray<string>
+
+  /**
+   * The block name for per-instance transform data
+   */
+  perInstanceTransformBlock?: string
+
+  /**
+   * The block name for per-instance custom data
+   */
+  perInstanceDataBlock?: string
 }
 
 let idCounter = 1
@@ -37,6 +47,16 @@ export abstract class Program {
    * The input block names that are shared with the default program of the shader module.
    */
   public abstract readonly sharedBlocks: ReadonlyArray<string>
+
+  /**
+   * The block name for per-instance transform data
+   */
+  public abstract readonly perInstanceTransformBlock?: string
+
+  /**
+   * The block name for per-instance custom data
+   */
+  public abstract readonly perInstanceDataBlock?: string
 
   /**
    * Indicates whether the underlying shader module is ready to be used.
@@ -88,6 +108,14 @@ export abstract class Program {
     if (!this.set(path, value)) {
       throw new Error(`Input ${path as string} not found in program`)
     }
+  }
+
+  public mustGet(path: string): ProgramInput {
+    const input = this.get(path)
+    if (!input) {
+      throw new Error(`Input ${path as string} not found in program`)
+    }
+    return input
   }
 
   /**

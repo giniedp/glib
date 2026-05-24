@@ -1,6 +1,7 @@
 import { BasicGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { SliceSpawnerComponent } from './SliceSpawnerComponent'
+import { spherePointIntersects } from '@gglib/math'
 
 export class SliceSystem extends GameSystem {
   private qrSlices: GameQuery
@@ -12,29 +13,29 @@ export class SliceSystem extends GameSystem {
   }
 
   public update() {
-    // const camera = this.game.view.camera.world.translation
-    // for (const entity of this.qrSlices) {
-    //   const component = entity.component(SliceSpawnerComponent)
-    //   if (component.isInstantiated) {
-    //     component.updateRanges(this.game.view.camera)
-    //     continue
-    //   }
-    //   if (!component.data) {
-    //     component.load()
-    //     continue
-    //   }
-    //   // if (!component.data.isStaticSlice) {
-    //   //   continue
-    //   // }
-    //   const intersects = spherePointIntersects(
-    //     entity.getTransform().world.translation,
-    //     component.data.spawnRadius,
-    //     camera,
-    //   )
-    //   if (intersects) {
-    //     component.instantiate()
-    //   }
-    // }
+    const camera = this.game.view.camera.world.translation
+    for (const entity of this.qrSlices) {
+      const component = entity.component(SliceSpawnerComponent)
+      if (component.isInstantiated) {
+        component.updateRanges(this.game.view.camera)
+        continue
+      }
+      if (!component.data) {
+        component.load()
+        continue
+      }
+      if (!component.data.isStaticSlice) {
+        continue
+      }
+      const intersects = spherePointIntersects(
+        entity.getTransform().world.translation,
+        component.data.spawnRadius,
+        camera,
+      )
+      if (intersects) {
+        component.instantiate()
+      }
+    }
   }
 
   public destroy(): void {

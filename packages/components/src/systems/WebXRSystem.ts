@@ -103,6 +103,8 @@ export class WebXRSystem extends GameSystem {
           view: Mat4.createIdentity(),
           projection: Mat4.createIdentity(),
           reversedZ: false,
+          near: 0.1,
+          far: 1000,
         }
       }
 

@@ -39,6 +39,9 @@ export class WebglCapabilities implements Capabilities {
   public get maxUniformBlockCount(): number {
     return this.parameter('MAX_UNIFORM_BUFFER_BINDINGS')
   }
+  public get maxUniformBlockSize(): number {
+    return this.parameter('MAX_UNIFORM_BLOCK_SIZE')
+  }
   public get maxSampleCount() {
     return this.parameter('MAX_SAMPLES')
   }

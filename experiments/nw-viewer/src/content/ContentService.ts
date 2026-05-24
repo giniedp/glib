@@ -105,7 +105,7 @@ export class ContentService extends GameSystem {
     const result = this.loader.loadModel(source.url, {
       baseUrl: source.rootUrl,
     })
-    //this.modelCache.set(source.url, result)
+    this.modelCache.set(source.url, result)
     return result
   }
 

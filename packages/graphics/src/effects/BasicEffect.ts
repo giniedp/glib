@@ -21,8 +21,10 @@ export function basicEffectOptions(): EffectOptions {
     name: 'Basic Effect',
     meta: {},
     program: {
-      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
       shader: basicEffectShaderOptions(),
+      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      perInstanceDataBlock: null,
+      perInstanceTransformBlock: null,
     },
   }
 }

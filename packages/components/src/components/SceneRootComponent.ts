@@ -2,13 +2,12 @@ import {
   type GameComponent,
   GameEntity,
   GameQuery,
-  GameTransform,
   GameWorld,
   GetComponent,
   InitializableComponent,
   Type,
 } from '@gglib/ecs'
-import { DeviceOutput, Mesh, Texture } from '@gglib/graphics'
+import { Mesh, Texture } from '@gglib/graphics'
 import { BoundingFrustum, Intersection, Mat4 } from '@gglib/math'
 import {
   CameraData,
@@ -183,7 +182,6 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
 
       item.data.geometry = mesh.geometries[part.geometryIndex]
       item.data.material = mesh.materials[part.materialIndex]
-      item.data.instances = mesh.instances
       item.transform = transform
       item.layer = LayerMask.All
 

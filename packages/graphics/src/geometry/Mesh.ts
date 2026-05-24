@@ -1,11 +1,9 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { uuid } from '@gglib/utils'
-import { BufferLayout } from '../BufferLayout'
 import { Device } from '../Device'
 import { createMaterials, Material, MaterialEffectOptions, MaterialOptions } from '../effects'
 import { RenderEncoder } from '../RenderEncoder'
 import { Geometry, GeometryOptions } from './Geometry'
-import { MeshInstances, MeshInstancesOptions } from './MeshInstances'
 
 /**
  * Constructor options for {@link Mesh}
@@ -128,13 +126,6 @@ export class Mesh {
    */
   public boneId: number | null = null
 
-  /**
-   * Optional instance data for instanced rendering.
-   * If set, all parts of this mesh will be rendered with instancing.
-   * See {@link Mesh.enableInstancing}.
-   */
-  public instances: MeshInstances | null = null
-
   public constructor(device: Device, options: MeshOptions) {
     this.uid = uuid()
     this.device = device
@@ -240,22 +231,7 @@ export class Mesh {
     this.geometries = []
     this.materials = []
   }
-
-  /**
-   * Enables instanced rendering for this mesh.
-   *
-   * @remarks
-   * Attaches instance data to the mesh and returns it typed as {@link InstancedMesh},
-   * which guarantees the {@link Mesh.instances} property is non-null.
-   */
-  public enableInstancing<T extends BufferLayout>(options: MeshInstancesOptions<T>): InstancedMesh<T> {
-    const result = this as unknown as InstancedMesh<T>
-    result.instances = new MeshInstances<T>(options)
-    return result
-  }
 }
-
-export type InstancedMesh<T extends BufferLayout> = Mesh & { instances: MeshInstances<T> }
 
 function convertGeometries(device: Device, parts: Array<Geometry | GeometryOptions>): Geometry[] {
   if (!parts || !parts.length) {
@@ -309,11 +285,6 @@ export type ResolvedMeshPart = {
    * The material to render with
    */
   material: Material
-
-  /**
-   * Optional instance data. If set, the part will be rendered with instancing.
-   */
-  instances?: MeshInstances
 }
 
 /**

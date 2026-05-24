@@ -58,11 +58,6 @@ export interface EffectOptions {
    * The offset state to be used for this effect
    */
   offsetState?: DepthBiasState
-  /**
-   * The name of the instance buffer field in the shader.
-   * This is not used by this class but can be used from outside to prepare the effect for instanced rendering
-   */
-  instanceBufferKey?: string
 }
 
 /**
@@ -117,19 +112,6 @@ export class Effect implements Disposable {
    */
   public offsetState: DepthBiasState | null
 
-  /**
-   * The name of the instance buffer field in the shader.
-   * This is not used by this class but can be used from outside to prepare the effect for instanced rendering
-   */
-  public instanceBufferKey: string | null
-
-  /**
-   * Indicates whether this effect requires an instance buffer to be set for rendering. This is true if `instanceBufferKey` is set.
-   */
-  public get needsInstanceBuffer() {
-    return !!this.instanceBufferKey
-  }
-
   public get isReady() {
     return this.program.module.isReady
   }
@@ -151,7 +133,6 @@ export class Effect implements Disposable {
     this.blendState = options.blendState ? BlendState.get(options.blendState) : null
     this.depthState = options.depthState ? DepthState.get(options.depthState) : null
     this.offsetState = options.offsetState || null
-    this.instanceBufferKey = options.instanceBufferKey || null
     this.program = this.createProgram(options.program)
   }
 
@@ -290,6 +271,8 @@ export class Effect implements Disposable {
       program: {
         shader: this.program.module,
         sharedBlocks: this.program.sharedBlocks,
+        perInstanceDataBlock: this.program.perInstanceDataBlock,
+        perInstanceTransformBlock: this.program.perInstanceTransformBlock,
       },
       offsetState: this.offsetState,
       blendState: this.blendState,

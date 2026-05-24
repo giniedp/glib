@@ -2,6 +2,7 @@ import type { BoundingBox } from './BoundingBox'
 import type { BoundingCapsule } from './BoundingCapsule'
 import type { BoundingFrustum } from './BoundingFrustum'
 import type { BoundingSphere } from './BoundingSphere'
+import { Mat4 } from './Mat4'
 import type { Ray } from './Ray'
 import type { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
@@ -791,6 +792,33 @@ export function boxPointIntersects(min: IVec3, max: IVec3, point: IVec3): boolea
 }
 
 /**
+ * Calculates the squared distance between a box and a point
+ *
+ * @param min - the min point of box volume
+ * @param max - the max point of box volume
+ * @param point - the point
+ * @returns
+ */
+export function boxPointDistanceSquared(min: IVec3, max: IVec3, point: IVec3): number {
+  Vec3.clamp(point, min, max, Vec3.$0)
+  return Vec3.distanceSquared(point, Vec3.$0)
+}
+
+/**
+ * Calculates the squared distance between a box and translation part of a matrix
+ *
+ * @param min - the min point of box volume
+ * @param max - the max point of box volume
+ * @param mat
+ * @returns
+ */
+export function boxMat4DistanceSquared(min: IVec3, max: IVec3, mat: Mat4): number {
+  const p0 = mat.getTranslation(Vec3.$0)
+  const p1 = Vec3.clamp(p0, min, max, Vec3.$1)
+  return Vec3.distanceSquared(p0, p1)
+}
+
+/**
  * Checks whether a box intersects a plane
  *
  * @public
@@ -828,7 +856,7 @@ export function boxPlaneIntersects(min: IVec3, max: IVec3, plane: IVec4): boolea
  * @param radius - the sphere radius
  */
 export function boxSphereIntersects(min: IVec3, max: IVec3, center: IVec3, radius: number): boolean {
-  const c = Vec3.clamp(center, min, max, v3temp1)
+  const c = Vec3.clamp(center, min, max, Vec3.$0)
   const d = Vec3.distanceSquared(center, c)
   return d <= radius * radius
 }

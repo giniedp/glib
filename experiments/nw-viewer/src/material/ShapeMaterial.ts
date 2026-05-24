@@ -20,7 +20,6 @@ export function shapeEffectOptions(): EffectOptions {
   return {
     name: 'Shape Effect',
     meta: {},
-    instanceBufferKey: 'instances',
     program: {
       shader: shapeShaderOptions(),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],

@@ -1,13 +1,4 @@
-import {
-  CommonInputs,
-  Effect,
-  Geometry,
-  Material,
-  MeshInstances,
-  RenderVariant,
-  SpriteBatch,
-  SpriteMode,
-} from '@gglib/graphics'
+import { CommonInputs, Effect, Geometry, Material, RenderVariant, SpriteBatch, SpriteMode } from '@gglib/graphics'
 import { idMap } from '@gglib/utils'
 import { RenderList } from './RenderList'
 import {
@@ -82,13 +73,10 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
           continue
         }
 
-        if (!handleMeshInstances(geometry, mesh.instances, effect)) {
-          continue
-        }
-
         material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
         const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-        this.list.add(geometry, effect, material.inputBlocks, this.list.getKey(depth, item.layer, 0, state, 0))
+        const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
+        this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
       }
     }
   }
@@ -129,13 +117,10 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
         continue
       }
 
-      if (!handleMeshInstances(geometry, mesh.instances, effect)) {
-        continue
-      }
-
       material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
       const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-      this.list.add(geometry, effect, material.inputBlocks, this.list.getKey(depth, item.layer, 0, state, 0))
+      const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
+      this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
     }
   }
 
@@ -175,47 +160,15 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
       return
     }
 
-    if (!handleMeshInstances(geometry, mesh.instances, effect)) {
-      return
-    }
-
     material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-    this.list.add(geometry, effect, material.inputBlocks, this.list.getKey(depth, item.layer, 0, state, 0))
+    const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
+    this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
   }
 
   public end(): void {
     //
   }
-}
-
-function handleMeshInstances(geometry: Geometry, instances: MeshInstances, effect: Effect): boolean {
-  // Resolve instancing before the item enters the render list.
-  // MeshInstances is one strategy for instancing, others may set these directly.
-  // The contract with the low level renderer is:
-  //   1. geometry.instanceCount reflects the number of instances to draw
-  //   2. the instance buffer is bound to the program input declared by the effect
-  // Everything below this point is instance-strategy agnostic.
-
-  if (!effect.needsInstanceBuffer) {
-    return true
-  }
-
-  if (!instances) {
-    console.warn(`Effect '${effect.name}' requires instancing but no instance data was provided.`, effect)
-    return true
-  }
-
-  if (instances.count === 0) {
-    return false
-  }
-
-  // Safe to call multiple times per frame, upload only occurs if dirty.
-  instances.commit()
-  geometry.instanceCount = instances.count // contract with low level
-  effect.program.get(effect.instanceBufferKey).setBuffer(instances.buffer)
-
-  return true
 }
 
 export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem> {
@@ -253,7 +206,7 @@ export class SpriteRenderCollector implements RenderCollector<SpriteRenderItem> 
   }
 
   public end(): void {
-    this.list.add(this.spriteBatch, null, null, this.list.getKey(0, 0, 0, 0, 0))
+    this.list.add(this.list.getKey(0, 0, 0, 0, 0), this.spriteBatch, null, null, null, null)
   }
 }
 

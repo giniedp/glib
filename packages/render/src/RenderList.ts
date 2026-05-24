@@ -1,9 +1,12 @@
 import {
   BlendState,
+  BufferWriter,
   CullState,
   DepthBiasState,
   DepthState,
   Effect,
+  Geometry,
+  Program,
   ProgramInputBlock,
   Renderable,
   RenderEncoder,
@@ -38,6 +41,7 @@ export class RenderListCache {
 export class RenderList {
   public size: number = 0
   public isSorted: boolean
+  public isBatched: boolean
 
   protected mode: RenderListMode
 
@@ -45,7 +49,10 @@ export class RenderList {
   protected indices: number[] = []
   protected items: Renderable[] = []
   protected effect: Effect[] = []
+  protected transforms: Mat4[] = []
+  protected instances: Array<Float32Array<ArrayBuffer>> = []
   protected inputs: Array<Record<string, ProgramInputBlock>> = []
+
   protected item: Sortable = {
     depth: 0,
     material: 0,
@@ -54,12 +61,31 @@ export class RenderList {
     geometry: 0,
   }
 
+  protected drawIndices: number[] = []
+  protected drawCount = 0
+  protected drawInstanceOffset: number[] = []
+  protected drawInstanceCount: number[] = []
+
   protected viewForward: Vec4
   protected viewInputs: Record<string, ProgramInputBlock>
-  public begin(mode: RenderListMode, view: RenderView, viewInputs: Record<string, ProgramInputBlock>): void {
+  protected viewRange: number
+
+  protected perInstanceTransforms: BufferWriter
+  protected perInstanceData: BufferWriter
+
+  public begin(
+    mode: RenderListMode,
+    view: RenderView,
+    viewInputs: Record<string, ProgramInputBlock>,
+    transformBuffer: BufferWriter,
+    instanceBuffer: BufferWriter,
+  ): void {
     this.mode = mode
     this.viewForward = view.camera.view.getRow(2, this.viewForward)
     this.viewInputs = viewInputs
+    this.viewRange = view.camera.far - view.camera.near
+    this.perInstanceTransforms = transformBuffer
+    this.perInstanceData = instanceBuffer
     this.clear()
   }
 
@@ -72,7 +98,7 @@ export class RenderList {
     )
 
     // normalize to [0,1]
-    const d = depth / 4000 // TODO: get far plane from view
+    const d = depth / this.viewRange
 
     return d < 0 ? 0 : d > 1 ? 1 : d
   }
@@ -109,70 +135,210 @@ export class RenderList {
     return this.mode.getKey(this.item)
   }
 
-  public add(item: Renderable, effect: Effect | null, inputs: Record<string, ProgramInputBlock>, key: bigint): void {
+  public add(
+    key: bigint,
+    item: Renderable,
+    effect: Effect | null,
+    inputs: Record<string, ProgramInputBlock>,
+    transform: Mat4,
+    instance: Float32Array<ArrayBuffer>,
+  ): void {
+    if (effect && !effect.isReady) {
+      // effect is not ready, skip this item for now. It will be added in the next frame when the effect is ready.
+      return
+    }
     const index = this.size++
     this.items[index] = item
     this.effect[index] = effect
     this.inputs[index] = inputs
     this.keys[index] = key
     this.indices[index] = index
+    this.transforms[index] = transform
+    this.instances[index] = instance
   }
 
-  public sort(): void {
-    this.isSorted = true
-    // TODO: fix sorting, background items flicker when camera moves
-    // this.indices.sort(this.sortBy)
+  public end(): void {
+    if (!this.isSorted) {
+      // FIXME: sorting jumps around
+      // this.indices.sort(this.sortBy)
+      this.isSorted = true
+    }
+    if (!this.isBatched) {
+      this.batch()
+      this.isBatched = true
+    }
   }
 
   private sortBy = (a: number, b: number) => {
     return compare(this.keys[a], this.keys[b])
   }
 
-  public render(pass: RenderEncoder): void {
+  private batch() {
     let index = 0
     let item: Renderable
     let effect: Effect
     let inputs: Record<string, ProgramInputBlock>
+    let transform: Mat4
+    let instance: Float32Array<ArrayBuffer>
+    let program: Program
+
+    // current geometry that will receive instancing parameters
+    let instanceItem: Geometry
+    let instanceEffect: Effect
+
+    let instanceOffset = this.perInstanceTransforms.recordIndex
+    this.drawCount = 0
 
     for (let i = 0; i < this.size; i++) {
       index = this.indices[i]
       item = this.items[index]
       effect = this.effect[index]
       inputs = this.inputs[index]
+      transform = this.transforms[index]
+      instance = this.instances[index]
+      if (!effect) {
+        // item is self-renderable and does not participate in batching
+        instanceItem = null
+        instanceEffect = null
+        this.drawIndices[this.drawCount] = index
+        this.drawInstanceCount[this.drawCount] = 0
+        this.drawInstanceOffset[this.drawCount] = 0
+        this.drawCount++
+        continue
+      }
+      program = effect.program
+
+      // apply inputs to effect early in the loop for simplicity
+      // inputs are versioned and won't cause redundant state changes
+
+      if (inputs) {
+        for (const key in inputs) {
+          if (key in this.viewInputs) {
+            // view inputs always have precedence
+          } else {
+            program.applyBlock(inputs[key])
+          }
+        }
+      }
+
+      // TODO: this needs profiling
+      // we don't know whether view input blocks are shared or not so we can't apply them only once.
+      // we have to apply them here and rely on the version checks to skip redundant updates
+      // despite being cheap, this still can accumulate in thousands no-op calls
+      if (this.viewInputs) {
+        for (const key in this.viewInputs) {
+          program.applyBlock(this.viewInputs[key])
+        }
+      }
+
+      if (!program.perInstanceTransformBlock || !(item instanceof Geometry)) {
+        // custom renderables or not opted for instancing
+        instanceItem = null
+        instanceEffect = null
+        this.drawIndices[this.drawCount] = index
+        this.drawInstanceCount[this.drawCount] = 0
+        this.drawInstanceOffset[this.drawCount] = 0
+        this.drawCount++
+        continue
+      }
+
+      if (instanceItem !== item || instanceEffect !== effect) {
+        instanceItem = item
+        instanceEffect = effect
+        this.drawIndices[this.drawCount] = index
+        this.drawInstanceCount[this.drawCount] = 0
+        this.drawInstanceOffset[this.drawCount] = instanceOffset
+        this.drawCount++
+
+        program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceTransforms.buffer)
+        if (program.perInstanceDataBlock) {
+          effect.program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceData.buffer)
+        }
+      }
+
+      this.drawInstanceCount[this.drawCount - 1] += 1
+      this.writeInstance(instanceOffset, transform, instance)
+      instanceOffset += 1
+    }
+
+    this.perInstanceData.commit()
+    this.perInstanceTransforms.commit()
+  }
+
+  private writeInstance(index: number, transform: Mat4, instance: Float32Array<ArrayBuffer>) {
+    this.perInstanceTransforms.seek(index)
+    this.perInstanceTransforms.writeMat4(transform)
+
+    if (instance) {
+      this.perInstanceData.seek(index)
+      this.perInstanceData.writeData(instance)
+    } else {
+      this.perInstanceData.seek(index)
+      this.perInstanceData.clearRecord(index)
+    }
+  }
+
+  public render(pass: RenderEncoder): void {
+    let itemIndex = 0
+    let item: Renderable
+    let effect: Effect
+
+    let instanceCount: number
+    let instanceOffset: number
+    let maxInstanceCount = 0
+    let maxInstanceOffset = 0
+    for (let drawIndex = 0; drawIndex < this.drawCount; drawIndex++) {
+      itemIndex = this.drawIndices[drawIndex]
+      item = this.items[itemIndex]
+      effect = this.effect[itemIndex]
+
       if (!effect) {
         // item is self-renderable, so we just call render without applying any effect
         item.render(pass)
         continue
       }
-      if (!effect.isReady) {
-        // waiting for compilation
+
+      instanceCount = this.drawInstanceCount[drawIndex]
+      instanceOffset = this.drawInstanceOffset[drawIndex]
+
+      if (instanceCount == 0 || !(item instanceof Geometry)) {
+        // no instances recorded, so this is a non batched item
+        effect.program.commit()
+        effect.apply(pass)
+        item.render(pass)
+        effect.restore(pass)
         continue
       }
-      if (inputs) {
-        for (const key in inputs) {
-          if (!(key in this.viewInputs)) {
-            effect.program.applyBlock(inputs[key])
-          }
-        }
-      }
-      if (this.viewInputs) {
-        for (const key in this.viewInputs) {
-          effect.program.applyBlock(this.viewInputs[key])
-        }
-      }
+
       effect.program.commit()
       effect.apply(pass)
-      item.render(pass)
+
+      pass.setIndexBuffer(item.indexBuffer)
+      pass.setVertexBuffer(item.vertexBuffer)
+      pass.setPrimitiveType(item.primitiveType)
+      if (item.indexBuffer) {
+        pass.drawIndexed(item.indexCount, instanceCount, item.indexOffset, item.baseVertex, instanceOffset)
+      } else {
+        pass.draw(item.vertexCount, instanceCount, item.vertexOffset, instanceOffset)
+      }
+
       effect.restore(pass)
+      maxInstanceCount = Math.max(maxInstanceCount, instanceCount)
+      maxInstanceOffset = Math.max(maxInstanceOffset, instanceOffset)
     }
+    // if (maxInstanceCount) {
+    //   console.log(maxInstanceCount, maxInstanceOffset)
+    // }
   }
 
   public clear(): void {
     this.isSorted = false
+    this.isBatched = false
     this.size = 0
+    this.drawCount = 0
   }
 
-  public get keysAarray() {
+  public get keysArray() {
     const result = new Array<string>(this.size)
     for (let i = 0; i < this.size; i++) {
       const index = this.indices[i]

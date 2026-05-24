@@ -1,5 +1,7 @@
 import {
+  BlendState,
   CommonBlocks,
+  CullState,
   Device,
   materialSchemaClass,
   SamplerState,
@@ -22,7 +24,6 @@ export function waterPatchEffectOptions(): EffectOptions {
   return {
     name: 'Water Patch Effect',
     meta: {},
-    instanceBufferKey: 'instances',
     program: {
       shader: waterPatchShaderOptions(),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
@@ -55,5 +56,8 @@ export class WaterPatchMaterial extends materialSchemaClass(SCHEMA) {
     this.WaveHeight = 0.15
     this.MountainHeight = 2048
     this.WaterHeight = 40
+
+    this.effect.cullState = CullState.None
+    this.effect.blendState = BlendState.Alpha
   }
 }

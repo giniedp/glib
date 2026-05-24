@@ -30,7 +30,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   public capitalId: string
   public entity: GameEntity
   public slice: AssetReference
-  public debug: DebugShapeComponent
+  // public debug: DebugShapeComponent
   private content: ContentService
   private scheduler: SchedulerSystem
   private loadTask: ScheduledTask
@@ -47,12 +47,12 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
   public initialize(): void {
     this.scheduler = this.entity.service(SchedulerSystem)
     this.content = this.entity.service(ContentService)
-    this.debug = this.entity.getOrCreateComponent(DebugShapeComponent, () => {
-      return new DebugShapeComponent({
-        type: 'sphere',
-        solid: false,
-      })
-    })
+    // this.debug = this.entity.getOrCreateComponent(DebugShapeComponent, () => {
+    //   return new DebugShapeComponent({
+    //     type: 'sphere',
+    //     solid: false,
+    //   })
+    // })
   }
 
   public activate(): void {
@@ -63,23 +63,17 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
     if (this.loadTask || this.data) {
       return
     }
-    this.debug.color = Color.Yellow
+    // this.debug.color = Color.Yellow
     this.loadTask = this.scheduler.schedule({
       lane: PriorityLane.Low,
       entity: this.entity,
       load: async () => {
         this.data = await fetchTypedRequest(this.content.nwbtUrl, getSliceUrl(this.slice))
         this.data.entities ||= []
-        this.debug.color = Color.Green
-        this.debug.scale.x = this.data.spawnRadius
-        this.debug.scale.y = this.data.spawnRadius
-        this.debug.scale.z = this.data.spawnRadius
-
-        if (this.capitalId === '2a3ad663-ffcf-c6a1-7aa8-cbefb7a76f09') {
-          this.debug.color = Color.Red
-          this.debug.solid = true
-          console.log('Loaded slice data', this.data, this.entity.getTransform().world.getTranslation())
-        }
+        // this.debug.color = Color.Green
+        // this.debug.scale.x = this.data.spawnRadius
+        // this.debug.scale.y = this.data.spawnRadius
+        // this.debug.scale.z = this.data.spawnRadius
       },
       onCancel: () => {
         this.loadTask = null
@@ -100,15 +94,16 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
     }
     this.isInstantiated = true
     if (!this.data.entities?.length) {
-      this.debug.color = Color.Red
+      // this.debug.color = Color.Red
       return
     }
 
-    this.debug.color = Color.White
+    // this.debug.color = Color.White
     const parent = this.entity
     const parentWorld = parent.getTransform().world
-    let range: number = 0
+
     for (const item of this.data.entities) {
+      let range = 0
       const options: CreateEntityOptions = {
         parent: this.entity,
         name: item.name,
@@ -147,7 +142,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
 
       const entity = this.entity.world.createEntity(options)
       if (range) {
-        range = 500
         this.rangeActivatable.push({ entity, range })
       }
     }
@@ -172,6 +166,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
 
       if (!shouldActivate && item.entity.isActive) {
         if (item.entity.canDeactivate) {
+          console.log('deactivate', item.entity.name)
           item.entity.deactivate()
         }
       }

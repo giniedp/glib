@@ -78,11 +78,13 @@ export abstract class RenderEncoder {
     vertexOffset?: number,
     instanceOffset?: number,
   ): void
+
   public abstract drawIndexed(
     indexCount: number,
     instanceCount?: number,
     indexOffset?: number,
     baseVertex?: number,
+    instanceOffset?: number,
   ): void
 
   /**

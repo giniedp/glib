@@ -1,4 +1,6 @@
 export * from './Buffer'
+export * from './BufferLayout'
+export * from './BufferWriter'
 export * from './DepthBuffer'
 export * from './DeviceOutput'
 export * from './Program'

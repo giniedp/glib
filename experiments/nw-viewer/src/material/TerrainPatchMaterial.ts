@@ -1,5 +1,6 @@
 import {
   CommonInputs,
+  CullState,
   Device,
   inputSlotSampler,
   inputSlotScalar,
@@ -26,7 +27,6 @@ export function terrainPatchEffectOptions(): EffectOptions {
   return {
     name: 'Terrain Patch Effect',
     meta: {},
-    instanceBufferKey: 'instances',
     program: {
       shader: terrainPatchShaderOptions(),
       sharedBlocks: [InputBlocks.Global, InputBlocks.View, InputBlocks.Frame],
@@ -77,5 +77,7 @@ export class TerrainPatchMaterial extends materialSchemaClass(TerrainPatchMateri
     this.HeightMapUvTransformCoarse = Vec4.create(1, 1, 0, 0)
     this.ColorMapUvTransform = Vec4.create(1, 1, 0, 0)
     this.ColorMapUvTransformCoarse = Vec4.create(1, 1, 0, 0)
+
+    this.effect.cullState = CullState.None
   }
 }

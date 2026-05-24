@@ -13,6 +13,9 @@ import { WebglUniformSamplerBinding } from './WebglUniformSamplerBinding'
 export class WebglProgram extends Program {
   public readonly module: WebglShaderModule
   public readonly sharedBlocks: ReadonlyArray<string>
+  public readonly instanceBlocks: ReadonlyArray<string>
+  public readonly perInstanceDataBlock: string | null
+  public readonly perInstanceTransformBlock: string | null
   private device: WebglDevice
 
   // resources
@@ -30,6 +33,8 @@ export class WebglProgram extends Program {
     this.module = program
     this.device = program.device
     this.sharedBlocks = [...(options?.sharedBlocks || [])]
+    this.perInstanceDataBlock = options?.perInstanceDataBlock ?? null
+    this.perInstanceTransformBlock = options?.perInstanceTransformBlock ?? null
     this.module.onCompiled.add(this.createResources)
     this.module.onDisposed.add(() => this.dispose())
     if (this.module.isReady) {
@@ -133,7 +138,11 @@ export class WebglProgram extends Program {
   }
 
   public clone(options?: ProgramOptions): WebglProgram {
-    return new WebglProgram(this.module, options)
+    return new WebglProgram(this.module, {
+      sharedBlocks: options?.sharedBlocks ?? this.sharedBlocks,
+      perInstanceDataBlock: options?.perInstanceDataBlock ?? this.perInstanceDataBlock,
+      perInstanceTransformBlock: options?.perInstanceTransformBlock ?? this.perInstanceTransformBlock,
+    })
   }
 }
 

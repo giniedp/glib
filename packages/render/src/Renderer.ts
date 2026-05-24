@@ -6,11 +6,13 @@ import {
   DepthState,
   Device,
   DeviceOutput,
+  BufferWriter,
   ProgramInputBlockCollection,
   RenderVariant,
   SpriteBatch,
   surfaceFormatIsSrgb,
   Texture,
+  WebglDevice,
 } from '@gglib/graphics'
 
 import { Mat4, Vec3 } from '@gglib/math'
@@ -61,6 +63,9 @@ export class Renderer {
    */
   public autoSrgb = false
 
+  public perInstanceTransforms: BufferWriter
+  public perInstanceData: BufferWriter
+
   protected renderLists: RenderListCache
   protected collectors: RenderCollectorRegistry
   protected spriteBatch: SpriteBatch
@@ -89,6 +94,13 @@ export class Renderer {
     this.collectors.register(RenderItemType.Model, new ModelRenderCollector())
     this.collectors.register(RenderItemType.Sprite, new SpriteRenderCollector())
     this.resources = new RenderTargetManager(device)
+
+    if (device.isReady) {
+      this.createInstanceBuffers()
+    } else {
+      device.ready.then(() => this.createInstanceBuffers())
+    }
+
     this.context = {
       device: this.device,
       renderer: this,
@@ -105,6 +117,62 @@ export class Renderer {
         initialBlocks: [CommonBlocks.Global, CommonBlocks.Frame, CommonBlocks.View],
       }),
     }
+  }
+
+  protected createInstanceBuffers() {
+    if (this.device.isWebGPU) {
+      this.createInstanceBuffersWebGpu()
+    } else {
+      this.createInstanceBuffersWebGL()
+    }
+  }
+
+  protected createInstanceBuffersWebGpu() {
+    const device = this.device
+    const capacity = 512 // arbitrary initial capacity, will be automatically resized if needed
+    const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4 or 4 vec4s for unknown data
+    this.perInstanceTransforms = new BufferWriter({
+      capacity,
+      autosize: true,
+      recordByteSize: strideInBytes,
+      buffer: device.createBuffer({
+        size: capacity * strideInBytes,
+        type: 'StorageBuffer',
+      }),
+    })
+    this.perInstanceData = new BufferWriter({
+      capacity,
+      autosize: true,
+      recordByteSize: strideInBytes, // unknown data, using 4 vec4s just in case
+      buffer: device.createBuffer({
+        size: capacity * strideInBytes,
+        type: 'StorageBuffer',
+      }),
+    })
+  }
+
+  protected createInstanceBuffersWebGL() {
+    const device = this.device as WebglDevice
+    const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4
+    const instanceCount = device.capabilities.maxUniformBlockSize / strideInBytes
+    this.perInstanceTransforms = new BufferWriter({
+      autosize: false,
+      capacity: instanceCount,
+      recordByteSize: strideInBytes,
+      buffer: device.createBuffer({
+        size: instanceCount * strideInBytes,
+        type: 'UniformBuffer',
+      }),
+    })
+    this.perInstanceData = new BufferWriter({
+      autosize: false,
+      capacity: instanceCount,
+      recordByteSize: strideInBytes,
+      buffer: device.createBuffer({
+        size: instanceCount * strideInBytes,
+        type: 'UniformBuffer',
+      }),
+    })
   }
 
   public createView(options: Partial<RenderView>): RenderView {
@@ -144,6 +212,8 @@ export class Renderer {
     this.frameInfo.time = time
     this.frameInfo.id++
     this.resources.update()
+    this.perInstanceData.reset()
+    this.perInstanceTransforms.reset()
   }
 
   /**
@@ -235,7 +305,7 @@ export class Renderer {
     if (list.isSorted) {
       return list
     }
-    list.begin(mode, ctx.view, ctx.renderInputs.blocks)
+    list.begin(mode, ctx.view, ctx.renderInputs.blocks, this.perInstanceTransforms, this.perInstanceData)
     this.collectors.begin(ctx, list)
     for (const item of ctx.view.items) {
       if (!(item.flags & mode.mask)) {
@@ -244,7 +314,7 @@ export class Renderer {
       this.collectors.add(item)
     }
     this.collectors.end()
-    list.sort()
+    list.end()
     return list
   }
 

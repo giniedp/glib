@@ -30,6 +30,7 @@ export function newWorldEffectOptions(): EffectOptions {
     program: {
       shader: newWorldShaderOptions(),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      perInstanceTransformBlock: 'object',
     },
   }
 }

@@ -1,6 +1,6 @@
 import { MeshComponent } from '@gglib/components'
 import { type CreateEntityOptions, type GameComponent, type GameEntity } from '@gglib/ecs'
-import { bufferLayout, Device, Texture, WebGpuDevice, WebGpuTexture, type InstancedMesh } from '@gglib/graphics'
+import { Device, Texture, WebGpuDevice, WebGpuTexture } from '@gglib/graphics'
 import { getRegionName, type TerrainData } from '../../api'
 import { QUAD_LEAF_SIZE } from '../../constants'
 import { TerrainRegion } from './TerrainRegion'
@@ -14,26 +14,12 @@ export function terrainEntity(parent: GameEntity, options: TerrainData): CreateE
   }
 }
 
-export type TerrainBufferLayout = typeof TerrainBufferLayout
-export const TerrainBufferLayout = bufferLayout([
-  { name: 'transform', type: 'mat4' },
-  { name: 'params1', type: 'vec4' },
-  { name: 'params2', type: 'vec4' },
-  { name: 'params3', type: 'vec4' },
-  { name: 'colorUvTransform', type: 'vec4' },
-  { name: 'colorUvTransformCoarse', type: 'vec4' },
-  { name: 'heightUvTransform', type: 'vec4' },
-  { name: 'heightUvTransformCoarse', type: 'vec4' },
-])
-
-export type TerrainMesh = InstancedMesh<TerrainBufferLayout>
-
 export class TerrainComponent implements GameComponent {
   private data: TerrainData
   public readonly entity: GameEntity
   public readonly regions: TerrainRegionComponent[] = []
 
-  public meshComponent: MeshComponent<TerrainMesh>
+  public meshComponent: MeshComponent
   public heightmap: TerrainHeightmapArray
   public renderRegions: TerrainRegionComponent[] = []
 

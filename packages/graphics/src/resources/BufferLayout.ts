@@ -1,3 +1,5 @@
+import { IVec4, Mat4 } from '@gglib/math'
+
 export type BufferFieldType = 'vec4' | 'mat4'
 
 export const BufferFieldSizes: Record<BufferFieldType, number> = {
@@ -31,7 +33,7 @@ export type BufferLayout<T extends Record<string, BufferField> = {}> = {
 
 export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T) {
   const result = {
-    stride: 0,
+    recordByteSize: 0,
     fields: {} as BufferFields<T[number]>,
   }
 
@@ -45,7 +47,7 @@ export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T)
     offset += BufferFieldSizes[field.type]
   }
 
-  result.stride = offset
+  result.recordByteSize = offset
 
   return result
 }

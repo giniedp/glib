@@ -20,20 +20,46 @@ await viewer.run()
 //   },
 // })
 
-// const level = 'nw_dungeon_everfall_00'
-// const level = 'nw_ori_er_questliang'
-// const level = 'nw_ctf_003_long'
-// const level = 'nw_ctf_002_wide'
+// viewer.loadLevel('nw_dungeon_everfall_00')
+// viewer.teleport(1020, 930, 140)
+
+// viewer.loadLevel('nw_ori_er_questliang')
+// viewer.teleport(1020, 930, 140)
+
+// viewer.loadLevel('nw_opr_004_trench')
+// viewer.teleport(0, 0, 250)
+
+// viewer.loadLevel('nw_raid_monarchbluff_00')
+// viewer.teleport(1024, 1024, 250)
+
+// viewer.loadLevel('nw_raid_cutlasskeys_00')
+// viewer.teleport(1024, 1024, 250)
+
+// viewer.loadLevel('nw_ctf_002_wide')
+// viewer.teleport(1024, 1024, 250)
+
+// viewer.loadLevel('nw_ctf_003_long')
+// viewer.teleport(1024, 1024, 250)
+
+// viewer.loadLevel('nw_dungeon_brimstonesands_00')
+// viewer.teleport(1024, 1024, 1024)
+
+// viewer.loadLevel('nw_trial_season_04_deviceroom')
+// viewer.teleport(256, 256, 300)
+
+// viewer.loadLevel('nw_trial_season_04_daichidojo')
+// viewer.teleport(300, 400, 80)
+
+viewer.loadLevel('nw_trial_season_02_q13')
+viewer.teleport(970, 935, 137)
+
 // const level = 'newworld_vitaeeterna'
-// const level = 'nw_raid_cutlasskeys_00'
-// const level = 'nw_raid_monarchbluff_00'
+
 // const level = 'climaxftue_02'
-const level = 'nw_opr_004_trench'
 // const level = 'ftue_v2'
 // const level = 'frontendv2'
 
-viewer.loadLevel(level)
-viewer.teleport(1024, 1024, 250)
+// viewer.teleport(1024, 1024, 250)
 // viewer.teleport(7250, 250, 7250)
 // viewer.teleport(12640, 500, 6088)
 // viewer.teleport(1024 + 2048 + 2048, 250, 1024) // PvP Island

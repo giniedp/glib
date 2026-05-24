@@ -1,13 +1,13 @@
 import { BasicGame, PriorityLane, SchedulerSystem, TransformComponent } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
-import { BlendState, CullState, DepthState, Device, Geometry, Mesh, patchGeometry } from '@gglib/graphics'
-import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE, SEGMENT_SIZE, SHOW_TERRAIN_LINES } from '../../constants'
+import { Device } from '@gglib/graphics'
+import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE, SEGMENT_SIZE } from '../../constants'
 import { ContentService } from '../../content'
-import { TerrainPatchMaterial, WaterPatchMaterial } from '../../material'
-import { TerrainBufferLayout, TerrainComponent } from './TerrainComponent'
+import { TerrainComponent } from './TerrainComponent'
 
-import { DEGREE_TO_RAD, Mat4, Vec3, Vec4, type IVec4 } from '@gglib/math'
+import { Mat4, Vec4, type IVec4 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
+import { TerrainMesh } from './TerrainMesh'
 import { TerraQuadState, type TerraQuad } from './TerrainRegion'
 import { TerrainRegionComponent } from './TerrainRegionComponent'
 import { TerrainTileManager } from './TerrainTileManager'
@@ -19,10 +19,6 @@ export class TerrainSystem extends GameSystem {
   private device: Device
   private content: ContentService
   private scheduler: SchedulerSystem
-
-  private geometry: Geometry
-  private geometryWater: Geometry
-  private geometryLines: Geometry
 
   private tiles: TerrainTileManager
   private renderList: TerraQuad[] = []
@@ -36,8 +32,6 @@ export class TerrainSystem extends GameSystem {
     this.content = world.getSystem(ContentService)
     this.scheduler = world.getSystem(SchedulerSystem)
     this.terrainQuery = world.query({ required: [TerrainComponent] })
-
-    this.initializeResources()
   }
 
   public update(): void {
@@ -56,9 +50,6 @@ export class TerrainSystem extends GameSystem {
 
   public destroy(): void {
     this.tiles?.dispose()
-    this.geometry?.dispose()
-    this.geometryWater?.dispose()
-    this.geometryLines?.dispose()
   }
 
   // #region Update Terrain Entity
@@ -66,16 +57,12 @@ export class TerrainSystem extends GameSystem {
   private updateTerrain(ent: GameEntity) {
     const terrain = ent.component(TerrainComponent)
     if (!terrain.meshComponent.mesh) {
-      const mesh = this.createMesh().enableInstancing({
-        capacity: 1000,
-        layout: TerrainBufferLayout,
-        buffer: this.device.createBuffer({
-          name: 'Terrain Instance Buffer',
-          type: 'StorageBuffer',
-        }),
-      })
-      mesh.instances.setCount(1)
-      mesh.instances.commit(true)
+      const mesh = new TerrainMesh(this.device, { size: QUAD_LEAF_SIZE })
+      mesh.TerrainMaterial.ColorMap1 = this.tiles.colorMap1
+      mesh.TerrainMaterial.ColorMap2 = this.tiles.colorMap2
+      mesh.TerrainMaterial.HeightMap = this.content.nullHeightmapArray
+      mesh.WaterMaterial.HeightMap = this.content.nullHeightmapArray
+
       terrain.meshComponent.mesh = mesh
     }
 
@@ -114,15 +101,14 @@ export class TerrainSystem extends GameSystem {
 
     terrain.syncHeightmaps()
 
-    const mesh = terrain.meshComponent.mesh
-    const hmMaterial = mesh.materials[0] as TerrainPatchMaterial
-    const wmMaterial = mesh.materials[1] as WaterPatchMaterial
+    const mesh = terrain.meshComponent.mesh as TerrainMesh
+    const hmMaterial = mesh.TerrainMaterial
+    const wmMaterial = mesh.WaterMaterial
     hmMaterial.HeightMap = terrain.heightmap.texture
     wmMaterial.HeightMap = terrain.heightmap.texture
 
-    mesh.instances.setCount(this.renderList.length)
-
-    let actualCount = 0
+    mesh.resetInstanceCount()
+    let instanceCount = 0
     for (const renderNode of this.renderList) {
       const p = renderNode.data
 
@@ -135,24 +121,25 @@ export class TerrainSystem extends GameSystem {
       const fineReady = fineNode === renderNode
       const coarseReady = coarseNode !== fineNode
 
-      mesh.instances.writeFieldMat4(actualCount, 'transform', p.entity.getTransform().world)
+      mesh.startInstance(instanceCount)
+      mesh.writeTransform(p.entity.getTransform().world)
 
       const morphLod = Math.log2(renderNode.size / p.region.leafSize)
-      mesh.instances.writeFieldVec4(actualCount, 'params1', {
+      mesh.writeParams1({
         x: QUAD_LEAF_SIZE,
         y: LOD_RANGE_FACTOR,
         z: morphLod,
         w: 0,
       })
 
-      mesh.instances.writeFieldVec4(actualCount, 'params2', {
+      mesh.writeParams2({
         x: fineNode.data.tile.slot.layer,
         y: coarseNode.data.tile.slot.layer,
         z: fineReady ? 1 : 0,
         w: coarseReady ? 1 : 0,
       })
 
-      mesh.instances.writeFieldVec4(actualCount, 'params3', {
+      mesh.writeParams3({
         x: terrain.getNeighbourLayer(p.region, 0, 0),
         y: terrain.getNeighbourLayer(p.region, 1, 0), // +X,
         z: terrain.getNeighbourLayer(p.region, 0, 1), // +Y,
@@ -160,20 +147,20 @@ export class TerrainSystem extends GameSystem {
       })
 
       computeUvTransform(renderNode, fineNode, Vec4.$0)
-      mesh.instances.writeFieldVec4(actualCount, 'colorUvTransform', Vec4.$0)
+      mesh.writeColorUvTransform(Vec4.$0)
 
       computeUvTransform(renderNode, coarseNode, Vec4.$0)
-      mesh.instances.writeFieldVec4(actualCount, 'colorUvTransformCoarse', Vec4.$0)
+      mesh.writeColorUvTransformCoarse(Vec4.$0)
 
       computeUvTransform(renderNode, renderNode.root, Vec4.$0)
-      mesh.instances.writeFieldVec4(actualCount, 'heightUvTransform', Vec4.$0)
+      mesh.writeHeightUvTransform(Vec4.$0)
 
       computeUvTransform(coarseNode, renderNode.root, Vec4.$0)
-      mesh.instances.writeFieldVec4(actualCount, 'heightUvTransformCoarse', Vec4.$0)
+      mesh.writeHeightUvTransformCoarse(Vec4.$0)
 
-      actualCount++
+      instanceCount++
     }
-    mesh.instances.setCount(actualCount)
+    mesh.commitInstanceData()
   }
 
   // #endregion
@@ -327,65 +314,6 @@ export class TerrainSystem extends GameSystem {
   }
   // #endregion
 
-  // #region create assets
-  private initializeResources() {
-    this.geometry = createQuadGeometry(this.device, {
-      size: QUAD_LEAF_SIZE,
-      vertexPerUnit: 1,
-      lines: false,
-    })
-
-    this.geometryLines = createQuadGeometry(this.device, {
-      size: QUAD_LEAF_SIZE,
-      vertexPerUnit: 1,
-      offset: 0.5,
-      lines: true,
-    })
-
-    this.geometryWater = createQuadGeometry(this.device, {
-      size: QUAD_LEAF_SIZE,
-      vertexPerUnit: 1,
-      lines: false,
-    })
-  }
-
-  private createMesh() {
-    const waterMaterial = new WaterPatchMaterial(this.device)
-    const patchMaterial = new TerrainPatchMaterial(this.device)
-    const linesMaterial = new TerrainPatchMaterial(this.device)
-
-    patchMaterial.effect.cullState = CullState.CullFront
-    // patchMaterial.HeightMap = this.content.nullHeightmapArray
-    patchMaterial.ColorMap1 = this.tiles.colorMap1
-    patchMaterial.ColorMap2 = this.tiles.colorMap2
-
-    linesMaterial.HeightMap = this.content.nullHeightmapArray
-    linesMaterial.ColorMap1 = this.tiles.colorMap1
-    linesMaterial.ColorMap2 = this.tiles.colorMap2
-    linesMaterial.Lines = 1
-
-    waterMaterial.effect.cullState = CullState.None
-    waterMaterial.effect.blendState = BlendState.Alpha
-    waterMaterial.HeightMap = this.content.nullHeightmapArray
-
-    linesMaterial.effect.cullState = CullState.CullFront
-    linesMaterial.effect.blendState = BlendState.Alpha
-    if (!SHOW_TERRAIN_LINES) {
-      linesMaterial.effect.depthState = DepthState.Never
-    }
-
-    return new Mesh(this.device, {
-      geometries: [this.geometry, this.geometryWater],
-      materials: [patchMaterial, waterMaterial],
-      parts: [
-        { geometryIndex: 0, materialIndex: 0 },
-        { geometryIndex: 1, materialIndex: 1 },
-      ],
-    })
-  }
-
-  // #endregion
-
   private requestRender(node: TerraQuad, region: TerrainRegionComponent) {
     const p = node.data
 
@@ -450,29 +378,6 @@ export class TerrainSystem extends GameSystem {
   }
 
   // #endregion
-}
-
-export interface QuadGeomOptions {
-  size: number
-  offset?: number
-  vertexPerUnit?: number
-  lines?: boolean
-}
-
-function createQuadGeometry(device: Device, { size, offset = 0, vertexPerUnit = 1, lines = false }: QuadGeomOptions) {
-  return patchGeometry(device, {
-    vertexTransform: Mat4.createAxisAngle(Vec3.UnitX, -90 * DEGREE_TO_RAD),
-    width: size,
-    depth: size,
-    widthSegments: size * vertexPerUnit,
-    depthSegments: size * vertexPerUnit,
-    offset: {
-      x: size / 2,
-      y: offset || 0,
-      z: size / 2,
-    },
-    lines,
-  })
 }
 
 function resolveReadyAncestor(node: TerraQuad): TerraQuad | null {

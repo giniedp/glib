@@ -225,7 +225,7 @@ export class Geometry implements Renderable, Disposable {
     encoder.setVertexBuffer(this.vertexBuffer)
     encoder.setPrimitiveType(this.primitiveType)
     if (this.indexBuffer) {
-      encoder.drawIndexed(this.indexCount, this.instanceCount, this.indexOffset, this.baseVertex)
+      encoder.drawIndexed(this.indexCount, this.instanceCount, this.indexOffset, this.baseVertex, this.instanceOffset)
     } else {
       encoder.draw(this.vertexCount, this.instanceCount, this.vertexOffset, this.instanceOffset)
     }

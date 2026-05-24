@@ -7,14 +7,16 @@ import { WebGpuProgramInput } from './WebGpuProgramInput'
 import type { WebGpuShaderModule } from './WebGpuShaderModule'
 import { WebGpuShaderResource } from './WebGpuShaderResource'
 
-export interface WebGpuParameterSetOptions {
+export interface WebGpuParameterSetOptions extends ProgramOptions {
   layouts?: ReadonlyArray<GPUBindGroupLayout>
-  sharedBlocks?: ReadonlyArray<string>
 }
 
 export class WebGpuProgram extends Program {
   public readonly module: WebGpuShaderModule
   public readonly sharedBlocks: ReadonlyArray<string>
+  public readonly perInstanceTransformBlock: string | null
+  public readonly perInstanceDataBlock: string | null
+
   private device: WebGpuDevice
 
   private info: WgslProgramInfo
@@ -41,6 +43,8 @@ export class WebGpuProgram extends Program {
     this.device = shader.device
     this.info = info
     this.sharedBlocks = [...(options?.sharedBlocks || [])]
+    this.perInstanceDataBlock = options?.perInstanceDataBlock ?? null
+    this.perInstanceTransformBlock = options?.perInstanceTransformBlock ?? null
 
     // module.program is null when this is the default module
     const sharedResources = this.module.program?.getResourceBlocks(this.sharedBlocks) || []
@@ -95,7 +99,9 @@ export class WebGpuProgram extends Program {
   public clone(options?: ProgramOptions): WebGpuProgram {
     return new WebGpuProgram(this.module, this.info, {
       layouts: this.bindGroupLayouts,
-      sharedBlocks: options?.sharedBlocks || this.sharedBlocks,
+      sharedBlocks: options?.sharedBlocks ?? this.sharedBlocks,
+      perInstanceDataBlock: options?.perInstanceDataBlock ?? this.perInstanceDataBlock,
+      perInstanceTransformBlock: options?.perInstanceTransformBlock ?? this.perInstanceTransformBlock,
     })
   }
 

@@ -18,7 +18,7 @@ struct MaterialBlock {
 
 
 @group(0) @binding(0) var<uniform> global : GlobalBlock;
-@group(0) @binding(1) var<uniform> object : ObjectBlock;
+@group(0) @binding(1) var<storage, read> object : array<ObjectBlock, 1>;
 @group(0) @binding(2) var<uniform> view : ViewBlock;
 @group(0) @binding(3) var<uniform> lights : LightBlock;
 @group(0) @binding(4) var<uniform> material : MaterialBlock;
@@ -44,6 +44,7 @@ struct MaterialBlock {
 @group(1) @binding(7) var smoothnessSampler : sampler;
 
 struct VertexInput {
+  @builtin(instance_index) id: u32,
   // @alias position
   @location(0) aPosition : vec3<f32>,
   // @alias normal
@@ -70,13 +71,14 @@ struct VertexOutput {
 @vertex
 fn vs_main(input : VertexInput) -> VertexOutput {
   var output : VertexOutput;
+  let modelMatrix = object[input.id].modelMatrix;
 
-  let worldPos = object.modelMatrix * vec4<f32>(input.aPosition, 1.0);
+  let worldPos = modelMatrix * vec4<f32>(input.aPosition, 1.0);
   let viewPos = view.viewMatrix * worldPos;
   let viewPosWrap = paniniWarpCommon(viewPos);
 
-  let N = normalize((object.modelMatrix * vec4f(input.aNormal,          0.0)).xyz);
-  let T = normalize((object.modelMatrix * vec4f(input.aTangent.xyz,     0.0)).xyz);
+  let N = normalize((modelMatrix * vec4f(input.aNormal,          0.0)).xyz);
+  let T = normalize((modelMatrix * vec4f(input.aTangent.xyz,     0.0)).xyz);
   let B = cross(N, T) * input.aTangent.w;
 
   output.vWorldPos = worldPos.xyz;

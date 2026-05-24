@@ -3,7 +3,7 @@ import { fetchTypedRequest, getRegionInfoUrl, type ImpostorData, type RegionData
 
 import {
   BoundsComponent,
-  LifeCyclePropagate,
+  LifeCycleFlags,
   MeshComponent,
   OccTree,
   PriorityLane,
@@ -11,9 +11,8 @@ import {
   SpatialRootComponent,
   TransformComponent,
 } from '@gglib/components'
-import { Device } from '@gglib/graphics'
 
-import { Mat4, Vec3, type IVec3 } from '@gglib/math'
+import { boxBoxIntersects, boxMat4DistanceSquared, Mat4, Vec3, type IVec3 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import { SEGMENT_SIZE } from '../../constants'
 import { ContentService } from '../../content'
@@ -29,11 +28,8 @@ export interface RegionComponentOptions {
 }
 
 export function levelRegion(parent: GameEntity, options: RegionComponentOptions): CreateEntityOptions {
-  const min = Vec3.createFrom(options.origin)
-  const max = Vec3.createFrom(options.origin)
-  max.x += options.size
-  max.y += options.size
-  max.z += options.size
+  const min = Vec3.clone(options.origin)
+  const max = Vec3.clone(options.origin).addScalar(options.size)
 
   return {
     name: `Region [${options.regionName}]`,
@@ -70,32 +66,29 @@ export class RegionComponent implements GameComponent {
   private isLoaded: boolean
 
   public entity: GameEntity
-  public center: IVec3
-  public origin: IVec3
   public levelName: string
   public regionName: string
   public regionSize: number
+
+  private min: IVec3
+  private max: IVec3
 
   public constructor(data: RegionComponentOptions) {
     this.levelName = data.levelName
     this.regionName = data.regionName
     this.regionSize = data.regionSize
-    this.origin = Vec3.createFrom(data.origin)
-    this.center = Vec3.createFrom(data.origin)
-    this.center.x += data.regionSize * 0.5
-    this.center.y += data.regionSize * 0.5
+    this.min = Vec3.clone(data.origin)
+    this.max = Vec3.clone(data.origin).addScalar(data.regionSize)
   }
 
   public initialize(): void {
-    const device = this.entity.service(Device)
-
     this.scheduler = this.entity.service(SchedulerSystem)
     this.content = this.entity.service(ContentService)
     this.segments = this.entity.world.createEntity({
       name: 'Segments',
       parent: this.entity,
       transform: new TransformComponent({
-        lifeCycle: LifeCyclePropagate,
+        lifeCycle: LifeCycleFlags.Propagate,
         keepWorld: true,
       }),
     })
@@ -103,7 +96,7 @@ export class RegionComponent implements GameComponent {
       name: 'Capitals',
       parent: this.entity,
       transform: new TransformComponent({
-        lifeCycle: LifeCyclePropagate,
+        lifeCycle: LifeCycleFlags.Propagate,
         keepWorld: true,
       }),
     })
@@ -123,21 +116,10 @@ export class RegionComponent implements GameComponent {
   }
 
   public update(camera: CameraData) {
-    const px = camera.world.translationX
-    const py = camera.world.translationY
+    const distance = Math.sqrt(boxMat4DistanceSquared(this.min, this.max, camera.world))
 
-    const regionSize = this.regionSize
-    const minX = this.origin.x
-    const maxX = this.origin.x + regionSize
-    const minY = this.center.y
-    const maxY = this.center.y + regionSize
-
-    const dx = Math.max(minX - px, 0, px - maxX)
-    const dy = Math.max(minY - py, 0, py - maxY)
-    const distance = Math.sqrt(dx * dx + dy * dy)
-
-    const visibleAt = regionSize * 0.5 - SEGMENT_SIZE
-    const invisibleAt = regionSize * 0.5
+    const visibleAt = this.regionSize * 0.5 - SEGMENT_SIZE
+    const invisibleAt = this.regionSize * 0.5
 
     if (this.isVisible && distance >= invisibleAt) {
       this.isVisible = false
@@ -247,33 +229,30 @@ export class RegionComponent implements GameComponent {
 
   private createSegment(x: number, y: number, data: RegionData) {
     const impostors: ImpostorData[] = []
-    const originX = this.origin.x + x * SEGMENT_SIZE
-    const originY = this.origin.y + y * SEGMENT_SIZE
+    const segmentMin = Vec3.clone(this.min).addXYZ(x * SEGMENT_SIZE, y * SEGMENT_SIZE, 0)
+    const segmentMax = Vec3.clone(segmentMin).addScalar(SEGMENT_SIZE)
+
     for (const impostor of data.impostors || []) {
       const position = impostor?.position
       if (!position) {
         continue
       }
-      if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
-        continue
+      const min = Vec3.$0.init(position[0], position[1], 0)
+      const max = Vec3.$1.initFrom(Vec3.$0).addScalar(SEGMENT_SIZE)
+      if (boxBoxIntersects(segmentMin, segmentMax, min, max)) {
+        impostors.push(impostor)
       }
-      if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
-        continue
-      }
-      impostors.push(impostor)
     }
     for (const impostor of data.poiImpostors || []) {
       const position = impostor?.position
       if (!position) {
         continue
       }
-      if (position[0] < originX || position[0] >= originX + SEGMENT_SIZE) {
-        continue
+      const min = Vec3.$0.init(position[0], position[1], 0)
+      const max = Vec3.$1.initFrom(Vec3.$0).addScalar(SEGMENT_SIZE)
+      if (boxBoxIntersects(segmentMin, segmentMax, min, max)) {
+        impostors.push(impostor)
       }
-      if (position[1] < originY || position[1] >= originY + SEGMENT_SIZE) {
-        continue
-      }
-      impostors.push(impostor)
     }
 
     const segmentName = `segment ${x} ${y}`
@@ -283,7 +262,7 @@ export class RegionComponent implements GameComponent {
         level: this.levelName,
         region: this.regionName,
         impostors: impostors,
-        origin: Vec3.create(originX, originY, 0),
+        origin: segmentMin,
       }),
     )
   }

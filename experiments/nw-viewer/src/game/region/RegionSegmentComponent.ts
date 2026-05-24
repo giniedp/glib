@@ -3,9 +3,17 @@ import type { CapitalData, ChunkData, EntityData, ImpostorData } from '../../api
 import { LifeCyclePropagate, TransformComponent } from '@gglib/components'
 import { GameEntity, type CreateEntityOptions, type GameComponent } from '@gglib/ecs'
 
-import { Mat4, Vec4, type IVec3 } from '@gglib/math'
+import { boxMat4DistanceSquared, Mat4, Vec3, Vec4, type IVec3 } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
-import { ENABLE_IMPOSTORS, LOD_SPANS, lodSpanEnd, lodSpanStart, lodSpanVisibleEnd, SEGMENT_SIZE } from '../../constants'
+import {
+  ENABLE_IMPOSTORS,
+  LOD_SPANS,
+  lodSpanEnd,
+  lodSpanStart,
+  lodSpanVisibleEnd,
+  REGION_SIZE,
+  SEGMENT_SIZE,
+} from '../../constants'
 import { DebugShapeComponent } from '../debug/DebugShapeComponent'
 import { levelImpostor } from '../region/ImpostorComponent'
 
@@ -76,18 +84,14 @@ export class RegionSegmentComponent implements GameComponent {
   public entity: GameEntity
   public level: string
   public region: string
-  public origin: IVec3
-  public center: IVec3
+  public min: IVec3
+  public max: IVec3
 
   public constructor(data: SegmentComponentOptions) {
     this.level = data.level
     this.region = data.region
-    this.origin = data.origin
-    this.center = {
-      x: data.origin.x + SEGMENT_SIZE / 2,
-      y: data.origin.y + SEGMENT_SIZE / 2,
-      z: data.origin.z,
-    }
+    this.min = data.origin
+    this.max = Vec3.clone(data.origin).addXYZ(SEGMENT_SIZE, SEGMENT_SIZE, REGION_SIZE)
     this.data = data
   }
 
@@ -157,11 +161,7 @@ export class RegionSegmentComponent implements GameComponent {
   }
 
   public update(camera: CameraData) {
-    const cx = camera.world.translationX
-    const cy = camera.world.translationY
-    const dx = Math.abs(this.center.x - cx)
-    const dy = Math.abs(this.center.y - cy)
-    const d2 = dx * dx + dy * dy
+    const d2 = boxMat4DistanceSquared(this.min, this.max, camera.world)
 
     const segmentUnloadAt = Math.pow(Math.max(IMPOSTOR_UNLOAD_AT, POI_UNLOAD_AT, CAPITAL_UNLOAD_AT), 2)
 

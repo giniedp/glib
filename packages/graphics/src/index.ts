@@ -1,4 +1,3 @@
-export * from './BufferLayout'
 export * from './Capabilities'
 export * from './Color'
 export * from './createDevice'

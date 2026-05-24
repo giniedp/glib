@@ -1,8 +1,6 @@
 import type {
   Device,
-  DeviceOutput,
   Mesh,
-  ProgramInputBlock,
   ProgramInputBlockCollection,
   RenderVariant,
   ResolvedMeshPart,
@@ -49,6 +47,16 @@ export interface CameraData {
    * If true, the depth range is reversed, so that the near plane is mapped to 1 and the far plane is mapped to 0.
    */
   reversedZ: boolean
+
+  /**
+   * The near plane distance
+   */
+  near: number
+
+  /**
+   * The far plane distance
+   */
+  far: number
 }
 
 export type RenderItemType<K extends string, T> = Brand<K, T>
@@ -80,6 +88,10 @@ export type RenderItem<T = unknown> = {
    * The world transform of this render item, used for sorting.
    */
   transform: Mat4
+  /**
+   * Optional instance data for this render item, used for instanced rendering.
+   */
+  instance?: Float32Array<ArrayBuffer>
   /**
    * The actual data of this render item, e.g. a mesh, sprite, light, etc.
    */
