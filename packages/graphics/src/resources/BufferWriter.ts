@@ -208,7 +208,7 @@ export class BufferWriter {
     } else {
       const offset = this.dirtyMin * this.recordByteSize
       const length = (this.dirtyMax - this.dirtyMin) * this.recordByteSize
-      this.buffer.setSubData(0, this.data.buffer, offset, length)
+      this.buffer.setSubData(offset, this.data.buffer, offset, length)
     }
     this.resetDirty()
   }
