@@ -186,6 +186,15 @@ export class Material {
   }
 
   /**
+   * Implementations can override this method to update material parameters on each frame, for example to implement animated materials.
+   *
+   * @param time
+   * @param delta
+   * @param frame
+   */
+  public update?(time: number, delta: number, frame: number): void
+
+  /**
    * Disposes the underlying effect
    */
   public dispose() {

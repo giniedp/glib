@@ -127,7 +127,7 @@ export interface RenderScene {
    * @param camera The camera for which the items should be collected.
    * @param out The output array where the collected items should be added to. Does not need to be cleared as it will be cleared by the renderer before collection.
    */
-  collect(camera: CameraData, out: RenderItem[]): void
+  collect(frame: FrameInfo, camera: CameraData, out: RenderItem[]): void
 }
 
 export interface RenderCollector<T extends RenderItem> {

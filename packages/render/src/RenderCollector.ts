@@ -1,4 +1,4 @@
-import { CommonInputs, Effect, Geometry, Material, RenderVariant, SpriteBatch, SpriteMode } from '@gglib/graphics'
+import { Effect, Geometry, Material, RenderVariant, SpriteBatch, SpriteMode } from '@gglib/graphics'
 import { idMap } from '@gglib/utils'
 import { RenderList } from './RenderList'
 import {
@@ -73,7 +73,6 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
           continue
         }
 
-        material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
         const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
         const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
         this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
@@ -117,7 +116,6 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
         continue
       }
 
-      material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
       const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
       const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
       this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
@@ -160,7 +158,6 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
       return
     }
 
-    material.setInput(CommonInputs.Object.ModelMatrix, item.transform)
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
     const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
     this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)

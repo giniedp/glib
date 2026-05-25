@@ -7,10 +7,11 @@ import {
   InitializableComponent,
   Type,
 } from '@gglib/ecs'
-import { Mesh, Texture } from '@gglib/graphics'
+import { CommonInputs, Mesh, Texture } from '@gglib/graphics'
 import { BoundingFrustum, Intersection, Mat4 } from '@gglib/math'
 import {
   CameraData,
+  FrameInfo,
   LayerMask,
   MeshPartRenderItem,
   PooledList,
@@ -28,7 +29,6 @@ import { ModelComponent } from './ModelComponent'
 import { SpatialComponent } from './SpatialComponent'
 import { SpatialRootComponent } from './SpatialRootComponent'
 import { SpriteComponent } from './SpriteComponent'
-import { TransformComponent } from './TransformComponent'
 
 export class SceneTagComponent implements GameComponent {
   public scene: SceneRootComponent
@@ -107,12 +107,14 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
 
   private collectResult: RenderItem[]
   private frustum = new BoundingFrustum()
-  public collect(camera: CameraData, result: RenderItem[]): void {
+  private frame: FrameInfo
+  public collect(frame: FrameInfo, camera: CameraData, result: RenderItem[]): void {
     if (!this.initialized) {
       console.warn('SceneComponent is not initialized yet. Call collect() after the world has been initialized.')
       return
     }
 
+    this.frame = frame
     this.collectResult = result
     this.frustum.updateFromViewProjection(camera.view, camera.projection)
 
@@ -167,10 +169,7 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
       return
     }
 
-    const t = entity.getTransform<TransformComponent>()
-    t.updateIfNeeded()
     const transform = entity.getTransform().world
-    // console.log((entity.getTransform() as any).version)
     for (const mesh of model.meshes) {
       this.pushMesh(mesh, transform)
     }
@@ -179,9 +178,16 @@ export class SceneRootComponent implements GameComponent, InitializableComponent
   private pushMesh(mesh: Mesh, transform: Mat4) {
     for (const part of mesh.parts) {
       const item = this.meshParts.next()
+      const geometry = mesh.geometries[part.geometryIndex]
+      const material = mesh.materials[part.materialIndex]
 
-      item.data.geometry = mesh.geometries[part.geometryIndex]
-      item.data.material = mesh.materials[part.materialIndex]
+      material.setInput(CommonInputs.Object.ModelMatrix, transform)
+      if (material.update) {
+        material.update(this.frame.time, this.frame.delta, this.frame.id)
+      }
+
+      item.data.geometry = geometry
+      item.data.material = material
       item.transform = transform
       item.layer = LayerMask.All
 

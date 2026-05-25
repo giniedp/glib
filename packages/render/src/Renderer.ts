@@ -234,9 +234,10 @@ export class Renderer {
     if (!this.validateView(view)) {
       return
     }
+
     view.items ||= []
     view.items.length = 0
-    scene.collect(view.camera, view.items)
+    scene.collect(this.frameInfo, view.camera, view.items)
     this.renderView(view)
   }
 

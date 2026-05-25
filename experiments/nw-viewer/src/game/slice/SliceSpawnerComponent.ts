@@ -6,7 +6,6 @@ import {
   type ScheduledTask,
 } from '@gglib/components'
 import type { ActivatableComponent, CreateEntityOptions, GameComponent, GameEntity } from '@gglib/ecs'
-import { Color } from '@gglib/graphics'
 import { Mat4, spherePointIntersects } from '@gglib/math'
 import type { CameraData } from '@gglib/render'
 import {
@@ -107,14 +106,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
       const options: CreateEntityOptions = {
         parent: this.entity,
         name: item.name,
-
-        components: [
-          new DebugShapeComponent({
-            type: 'box',
-            solid: false,
-            color: { x: 1, y: 0, z: 1, w: 1 },
-          }),
-        ],
+        components: [],
       }
       for (const comp of item.components) {
         if (isViewerMeshComponent(comp)) {
@@ -166,7 +158,6 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
 
       if (!shouldActivate && item.entity.isActive) {
         if (item.entity.canDeactivate) {
-          console.log('deactivate', item.entity.name)
           item.entity.deactivate()
         }
       }

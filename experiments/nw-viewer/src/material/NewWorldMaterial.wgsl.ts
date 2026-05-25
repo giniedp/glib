@@ -3,17 +3,21 @@ import { COMMON_WGSL } from './common.wgsl'
 export default /* wgsl */ `
 
 struct MaterialBlock {
-  baseColor:     vec3<f32>,
-  alpha:         f32,
-  emissiveColor: vec3<f32>,
-  roughness:     f32,
-  specularColor: vec3<f32>,
-  alphaClip:     f32,
-  ior:           f32,
+  baseColor:            vec3f,
+  alpha:                f32,
+  emissiveColor:        vec3f,
+  roughness:            f32,
+  specularColor:        vec3f,
+  alphaClip:            f32,
+  uvTransform1:         mat4x4f,
+  uvTransform2:         mat4x4f,
+  ior:                  f32,
   textureEnabled:       u32,
   normalEnabled:        u32,
   specularEnabled:      u32,
   smoothnessMapEnabled: u32,
+  uvTransform1Enabled:  u32,
+  uvTransform2Enabled:  u32,
 };
 
 
@@ -24,31 +28,23 @@ struct MaterialBlock {
 @group(0) @binding(4) var<uniform> material : MaterialBlock;
 
 // @block material
-@group(1) @binding(0) var baseColorMap : texture_2d<f32>;
+@group(1) @binding(0) var textureSampler : sampler;
 // @block material
-@group(1) @binding(1) var baseColorSampler : sampler;
-
+@group(1) @binding(1) var baseColorMap : texture_2d<f32>;
 // @block material
 @group(1) @binding(2) var specularColorMap : texture_2d<f32>;
 // @block material
-@group(1) @binding(3) var specularColorSampler : sampler;
-
-// @block material
 @group(1) @binding(4) var normalMap : texture_2d<f32>;
 // @block material
-@group(1) @binding(5) var normalSampler : sampler;
-
-// @block material
 @group(1) @binding(6) var smoothnessMap : texture_2d<f32>;
-// @block material
-@group(1) @binding(7) var smoothnessSampler : sampler;
+
 
 struct VertexInput {
   @builtin(instance_index) id: u32,
   // @alias position
-  @location(0) aPosition : vec3<f32>,
+  @location(0) aPosition : vec3f,
   // @alias normal
-  @location(1) aNormal : vec3<f32>,
+  @location(1) aNormal : vec3f,
   // @alias texture
   @location(2) aTexture : vec2<f32>,
   // @alias tangent
@@ -59,11 +55,11 @@ struct VertexInput {
 
 struct VertexOutput {
   @builtin(position) Position : vec4<f32>,
-  @location(0) vNormal : vec3<f32>,
+  @location(0) vNormal : vec3f,
   @location(1) vColor : vec4<f32>,
-  @location(2) vWorldPos : vec3<f32>,
+  @location(2) vWorldPos : vec3f,
   @location(3) vTexCoord : vec2<f32>,
-  @location(4) vToEyeInWS : vec3<f32>,
+  @location(4) vToEyeInWS : vec3f,
   @location(5) vTangent   : vec3f,
   @location(6) vBinormal  : vec3f,
 };
@@ -81,11 +77,19 @@ fn vs_main(input : VertexInput) -> VertexOutput {
   let T = normalize((modelMatrix * vec4f(input.aTangent.xyz,     0.0)).xyz);
   let B = cross(N, T) * input.aTangent.w;
 
+  var uv = vec4f(input.aTexture, 0.0, 1.0);
+  if (material.uvTransform1Enabled == 1u) {
+    uv = material.uvTransform1 * uv;
+  }
+  var uv2 = vec4f(input.aTexture, 0.0, 1.0);
+  if (material.uvTransform2Enabled == 1u) {
+    uv2 = material.uvTransform2 * uv;
+  }
   output.vWorldPos = worldPos.xyz;
   output.vNormal    = N;
   output.vTangent   = T;
   output.vBinormal  = B;
-  output.vTexCoord = input.aTexture;
+  output.vTexCoord = uv.xy;
   //output.vColor = input.aColor;
   output.vToEyeInWS = view.cameraPosition - worldPos.xyz;
   output.Position = view.projectionMatrix * viewPosWrap;
@@ -101,14 +105,14 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   var baseColor = vec4<f32>(1.0);
 
   if (material.textureEnabled == 1u) {
-    baseColor = textureSampleLevel(baseColorMap, baseColorSampler, texCoord, 0);
+    baseColor = textureSampleLevel(baseColorMap, textureSampler, texCoord, 0);
   }
 
   var alpha = baseColor.a * material.alpha;
   if (alpha < material.alphaClip) {
     discard;
   }
-  alpha = 1.0;
+
 
   var surface : SurfaceParams;
 
@@ -119,7 +123,7 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   surface.Metallic = 0.0;
   surface.Ior = material.ior;
 
-  let normalSample = textureSample(normalMap, normalSampler, texCoord).rgb;
+  let normalSample = textureSample(normalMap, textureSampler, texCoord).rgb;
   let normal       = decodeNormal(normalSample.xy);
   let tbn          = mat3x3f(
       normalize(input.vTangent),
@@ -129,11 +133,11 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
   surface.Normal = vec4f(normalize(tbn * normal), 1.0);
 
   if (material.specularEnabled == 1u) {
-    surface.Specular *= textureSampleLevel(specularColorMap, specularColorSampler, texCoord, 0).rgb;
+    surface.Specular *= textureSampleLevel(specularColorMap, textureSampler, texCoord, 0).rgb;
   }
 
   if (material.smoothnessMapEnabled == 1u) {
-    let glossSample = textureSample(smoothnessMap, smoothnessSampler, texCoord).r;
+    let glossSample = textureSample(smoothnessMap, textureSampler, texCoord).r;
     surface.Roughness = smoothnessToRoughness(glossSample);
   }
 
