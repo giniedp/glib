@@ -159,8 +159,8 @@ export class RenderList {
 
   public end(): void {
     if (!this.isSorted) {
-      // FIXME: sorting jumps around
-      // this.indices.sort(this.sortBy)
+      this.indices.length = this.size
+      this.indices.sort(this.sortBy)
       this.isSorted = true
     }
     if (!this.isBatched) {
@@ -252,7 +252,7 @@ export class RenderList {
 
         program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceTransforms.buffer)
         if (program.perInstanceDataBlock) {
-          effect.program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceData.buffer)
+          effect.program.mustGet(program.perInstanceDataBlock).setBuffer(this.perInstanceData.buffer)
         }
       }
 
@@ -285,8 +285,6 @@ export class RenderList {
 
     let instanceCount: number
     let instanceOffset: number
-    let maxInstanceCount = 0
-    let maxInstanceOffset = 0
     for (let drawIndex = 0; drawIndex < this.drawCount; drawIndex++) {
       itemIndex = this.drawIndices[drawIndex]
       item = this.items[itemIndex]
@@ -301,34 +299,24 @@ export class RenderList {
       instanceCount = this.drawInstanceCount[drawIndex]
       instanceOffset = this.drawInstanceOffset[drawIndex]
 
-      if (instanceCount == 0 || !(item instanceof Geometry)) {
-        // no instances recorded, so this is a non batched item
-        effect.program.commit()
-        effect.apply(pass)
-        item.render(pass)
-        effect.restore(pass)
-        continue
-      }
-
       effect.program.commit()
       effect.apply(pass)
 
-      pass.setIndexBuffer(item.indexBuffer)
-      pass.setVertexBuffer(item.vertexBuffer)
-      pass.setPrimitiveType(item.primitiveType)
-      if (item.indexBuffer) {
-        pass.drawIndexed(item.indexCount, instanceCount, item.indexOffset, item.baseVertex, instanceOffset)
+      if (instanceCount == 0 || !(item instanceof Geometry)) {
+        item.render(pass)
       } else {
-        pass.draw(item.vertexCount, instanceCount, item.vertexOffset, instanceOffset)
+        pass.setIndexBuffer(item.indexBuffer)
+        pass.setVertexBuffer(item.vertexBuffer)
+        pass.setPrimitiveType(item.primitiveType)
+        if (item.indexBuffer) {
+          pass.drawIndexed(item.indexCount, instanceCount, item.indexOffset, item.baseVertex, instanceOffset)
+        } else {
+          pass.draw(item.vertexCount, instanceCount, item.vertexOffset, instanceOffset)
+        }
       }
 
       effect.restore(pass)
-      maxInstanceCount = Math.max(maxInstanceCount, instanceCount)
-      maxInstanceOffset = Math.max(maxInstanceOffset, instanceOffset)
     }
-    // if (maxInstanceCount) {
-    //   console.log(maxInstanceCount, maxInstanceOffset)
-    // }
   }
 
   public clear(): void {
