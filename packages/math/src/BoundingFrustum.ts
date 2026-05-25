@@ -4,18 +4,17 @@ import { BoundingSphere } from './BoundingSphere'
 import type { BoundingVolume } from './BoundingVolume'
 import { Intersection, IntersectionType, Intersects, planePlanePlaneIntersection } from './Collision'
 import { Mat4 } from './Mat4'
-import { Plane } from './Plane'
 import { Ray } from './Ray'
 import type { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 import { Vec4 } from './Vec4'
 
-const LEFT: BoundingFrustumPlane = 0
-const RIGHT: BoundingFrustumPlane = 1
-const BOTTOM: BoundingFrustumPlane = 2
-const TOP: BoundingFrustumPlane = 3
-const FAR: BoundingFrustumPlane = 4
-const NEAR: BoundingFrustumPlane = 5
+const X_NEG: BoundingFrustumPlane = 0
+const X_POS: BoundingFrustumPlane = 1
+const Y_NEG: BoundingFrustumPlane = 2
+const Y_POS: BoundingFrustumPlane = 3
+const Z_NEG: BoundingFrustumPlane = 4
+const Z_POS: BoundingFrustumPlane = 5
 
 export type BoundingFrustumPlane = number
 /**
@@ -24,12 +23,12 @@ export type BoundingFrustumPlane = number
  * @public
  */
 export const BoundingFrustumPlane = {
-  Left: LEFT,
-  Right: RIGHT,
-  Bottom: BOTTOM,
-  Top: TOP,
-  Far: FAR,
-  Near: NEAR,
+  X_NEG,
+  X_POS,
+  Y_NEG,
+  Y_POS,
+  Z_NEG,
+  Z_POS,
 }
 
 /**
@@ -53,44 +52,46 @@ export class BoundingFrustum implements BoundingVolume {
   }
 
   /**
-   * Gets a vector describing the near plane
+   * Gets a vector describing the near plane (in Y-UP coordinate system)
    */
-  public get near(): Readonly<IVec4> {
-    return this.planes[NEAR]
+  public get planePosZ(): Readonly<IVec4> {
+    return this.planes[Z_POS]
   }
   /**
-   * Gets a vector describing the far plane
+   * Gets a vector describing the far plane (in Y-UP coordinate system)
    */
-  public get far(): Readonly<IVec4> {
-    return this.planes[FAR]
+  public get planeNegZ(): Readonly<IVec4> {
+    return this.planes[Z_NEG]
   }
   /**
-   * Gets a vector describing the left plane
+   * Gets a vector describing the left plane (in Y-UP coordinate system)
    */
-  public get left(): Readonly<IVec4> {
-    return this.planes[LEFT]
+  public get planeNegX(): Readonly<IVec4> {
+    return this.planes[X_NEG]
   }
   /**
-   * Gets a vector describing the right plane
+   * Gets a vector describing the right plane (in Y-UP coordinate system)
    */
-  public get right(): Readonly<IVec4> {
-    return this.planes[RIGHT]
+  public get planePosX(): Readonly<IVec4> {
+    return this.planes[X_POS]
   }
   /**
-   * Gets a vector describing the top plane
+   * Gets a vector describing the top plane (in Y-UP coordinate system)
    */
-  public get top(): Readonly<IVec4> {
-    return this.planes[TOP]
+  public get planePosY(): Readonly<IVec4> {
+    return this.planes[Y_POS]
   }
   /**
-   * Gets a vector describing the bottom plane
+   * Gets a vector describing the bottom plane (in Y-UP coordinate system)
    */
-  public get bottom(): Readonly<IVec4> {
-    return this.planes[BOTTOM]
+  public get planeNegY(): Readonly<IVec4> {
+    return this.planes[Y_NEG]
   }
 
   /**
-   * 6 planes of the bounding frustum
+   * 6 planes of the bounding frustum. Normals point OUTWARD
+   *
+   * A point P is inside the frustum if `(dot(plane, P) + plane.w) <= 0` for all six planes.
    */
   public readonly planes: IVec4[]
 
@@ -121,76 +122,8 @@ export class BoundingFrustum implements BoundingVolume {
     this.matrix = matrix || Mat4.createIdentity()
   }
 
-  /**
-   * Gets a copy of the near plane
-   */
-  public getNearPlane(): Plane
-  /**
-   * Gets a copy of the near plane
-   */
-  public getNearPlane<T>(out: IVec4): T & IVec4
-  public getNearPlane(out?: IVec4): IVec4 {
-    return Vec4.clone(this.planes[NEAR], out || new Plane())
-  }
-  /**
-   * Gets a copy of the far plane
-   */
-  public getFarPlane(): Plane
-  /**
-   * Gets a copy of the far plane
-   */
-  public getFarPlane<T>(out: IVec4): T & IVec4
-  public getFarPlane(out?: IVec4): IVec4 {
-    return Vec4.clone(this.planes[FAR], out || new Plane())
-  }
-  /**
-   * Gets a copy of the left plane
-   */
-  public getLeftPlane(): Plane
-  /**
-   * Gets a copy of the left plane
-   */
-  public getLeftPlane<T>(out: IVec4): T & IVec4
-  public getLeftPlane(out?: IVec4): IVec4 {
-    return Vec4.clone(this.planes[LEFT], out || new Plane())
-  }
-  /**
-   * Gets a copy of the right plane
-   */
-  public getRightPlane(): Plane
-  /**
-   * Gets a copy of the right plane
-   */
-  public getRightPlane<T>(out: IVec4): T & IVec4
-  public getRightPlane(out?: IVec4): IVec4 {
-    return Vec4.clone(this.planes[RIGHT], out || new Plane())
-  }
-  /**
-   * Gets a copy of the top plane
-   */
-  public getTopPlane(): Plane
-  /**
-   * Gets a copy of the top plane
-   */
-  public getTopPlane<T>(out: IVec4): T & IVec4
-  public getTopPlane(out?: IVec4): IVec4 {
-    return Vec4.clone(this.planes[TOP], out || new Plane())
-  }
-  /**
-   * Gets a copy of the bottom plane
-   */
-  public getBottomPlane(): Plane
-  /**
-   * Gets a copy of the bottom plane
-   */
-  public getBottomPlane<T>(out: IVec4): T & IVec4
-  public getBottomPlane(out?: IVec4): IVec4 {
-    return Vec4.clone(this.planes[BOTTOM], out || new Plane())
-  }
-
   public updateFromViewProjection(view: Mat4, projection: Mat4) {
-    this.matrix.initFrom(view)
-    this.matrix.premultiply(projection)
+    Mat4.premultiply(view, projection, this.matrix)
     this.update()
   }
 
@@ -219,37 +152,37 @@ export class BoundingFrustum implements BoundingVolume {
     const m = this.matrix.elements
     let plane: IVec4
 
-    plane = this.planes[LEFT]
+    plane = this.planes[X_NEG]
     plane.x = -m[3] - m[0]
     plane.y = -m[7] - m[4]
     plane.z = -m[11] - m[8]
     plane.w = -m[15] - m[12]
 
-    plane = this.planes[RIGHT]
+    plane = this.planes[X_POS]
     plane.x = -m[3] + m[0]
     plane.y = -m[7] + m[4]
     plane.z = -m[11] + m[8]
     plane.w = -m[15] + m[12]
 
-    plane = this.planes[BOTTOM]
+    plane = this.planes[Y_NEG]
     plane.x = -m[3] - m[1]
     plane.y = -m[7] - m[5]
     plane.z = -m[11] - m[9]
     plane.w = -m[15] - m[13]
 
-    plane = this.planes[TOP]
+    plane = this.planes[Y_POS]
     plane.x = -m[3] + m[1]
     plane.y = -m[7] + m[5]
     plane.z = -m[11] + m[9]
     plane.w = -m[15] + m[13]
 
-    plane = this.planes[FAR]
+    plane = this.planes[Z_NEG]
     plane.x = -m[3] - m[2]
     plane.y = -m[7] - m[6]
     plane.z = -m[11] - m[10]
     plane.w = -m[15] - m[14]
 
-    plane = this.planes[NEAR]
+    plane = this.planes[Z_POS]
     plane.x = -m[3] + m[2]
     plane.y = -m[7] + m[6]
     plane.z = -m[11] + m[10]
@@ -266,15 +199,15 @@ export class BoundingFrustum implements BoundingVolume {
   }
 
   private updateCorners() {
-    planePlanePlaneIntersection(this.near, this.top, this.left, this.corners[0])
-    planePlanePlaneIntersection(this.near, this.top, this.right, this.corners[1])
-    planePlanePlaneIntersection(this.near, this.bottom, this.left, this.corners[2])
-    planePlanePlaneIntersection(this.near, this.bottom, this.right, this.corners[3])
+    planePlanePlaneIntersection(this.planePosZ, this.planePosY, this.planeNegX, this.corners[0])
+    planePlanePlaneIntersection(this.planePosZ, this.planePosY, this.planePosX, this.corners[1])
+    planePlanePlaneIntersection(this.planePosZ, this.planeNegY, this.planeNegX, this.corners[2])
+    planePlanePlaneIntersection(this.planePosZ, this.planeNegY, this.planePosX, this.corners[3])
 
-    planePlanePlaneIntersection(this.far, this.top, this.left, this.corners[4])
-    planePlanePlaneIntersection(this.far, this.top, this.right, this.corners[5])
-    planePlanePlaneIntersection(this.far, this.bottom, this.left, this.corners[6])
-    planePlanePlaneIntersection(this.far, this.bottom, this.right, this.corners[7])
+    planePlanePlaneIntersection(this.planeNegZ, this.planePosY, this.planeNegX, this.corners[4])
+    planePlanePlaneIntersection(this.planeNegZ, this.planePosY, this.planePosX, this.corners[5])
+    planePlanePlaneIntersection(this.planeNegZ, this.planeNegY, this.planeNegX, this.corners[6])
+    planePlanePlaneIntersection(this.planeNegZ, this.planeNegY, this.planePosX, this.corners[7])
   }
 
   /**
