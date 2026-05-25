@@ -259,7 +259,10 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
 
   private testDown(volume: BoundingBox): QuadTreeNode<T> {
     if (this.isLeaf) {
-      return this
+      if (!this.root.canSubdivide(this.level)) {
+        return this // leaf reached
+      }
+      this.subdivide()
     }
     for (const child of this.children) {
       if (Intersection.boxBox(child.looseBounds, volume) === IntersectionType.Contains) {
@@ -341,12 +344,18 @@ export interface CreateQuadTreeOptions {
 
 export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
   /**
-   * Creates a wuad tree with given dimensions
+   * Creates a quad tree with given dimensions
    * @param min - the minimum point in 3D space
    * @param max - the maximum point in 3D space
    */
-  public static create<T extends object = {}>({ min, max, looseFactor, verticalAxis }: CreateQuadTreeOptions) {
-    return new QuadTree<T>(min, max, 0, looseFactor || 1, verticalAxis)
+  public static create<T extends object = {}>({
+    min,
+    max,
+    looseFactor,
+    leafLevel,
+    verticalAxis,
+  }: CreateQuadTreeOptions) {
+    return new QuadTree<T>(min, max, 0, looseFactor || 1, leafLevel, verticalAxis)
   }
 
   /**
@@ -376,11 +385,21 @@ export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
   private listPreOrderVersion = -1
   private listPostOrder: QuadTreeNode<T>[] = []
   private listPostOrderVersion = -1
+  private leafLevel: number
+
   public readonly yUp: boolean
 
-  protected constructor(min: IVec3, max: IVec3, level: number, looseFactor: number, verticalAxis: 'y' | 'z') {
+  protected constructor(
+    min: IVec3,
+    max: IVec3,
+    level: number,
+    looseFactor: number,
+    leafLevel: number,
+    verticalAxis: 'y' | 'z',
+  ) {
     super(null, null, min, max, level)
-    this.looseFactor = Math.max(1, looseFactor || 1)
+    this.looseFactor = Math.max(1, looseFactor ?? 1)
+    this.leafLevel = leafLevel ?? -1
     this.yUp = !verticalAxis || verticalAxis === 'y'
     const sizeX = this.bounds.max.x - this.bounds.min.x
     const sizeY = this.bounds.max.y - this.bounds.min.y
@@ -431,5 +450,9 @@ export class QuadTree<T extends object = {}> extends QuadTreeNode<T> {
     }
     result.reverse()
     return result
+  }
+
+  public canSubdivide(level: number) {
+    return this.leafLevel >= 0 ? level < this.leafLevel : true
   }
 }

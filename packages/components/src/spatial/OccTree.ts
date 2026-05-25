@@ -1,31 +1,17 @@
 import { BoundingBox, Intersection, IntersectionType, type IVec3, Vec3 } from '@gglib/math'
 import type { SpatialIndex, SpatialNode } from './SpatialIndex'
 
-export interface OccTreeOptions extends OccTreeConfig {
+export interface OccTreeOptions {
   min: IVec3
   max: IVec3
-}
-
-export interface OccTreeConfig {
-  maxLevel: number
-  factor: number
+  leafLevel?: number
+  looseFactor?: number
 }
 
 /**
  * @public
  */
-export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialNode<T> {
-  /**
-   * Creates an occ tree with given dimensions
-   */
-  public static create<T extends object = {}>({ min, max, factor, maxLevel }: OccTreeOptions) {
-    return new OccTree<T>(null, 0, min, max, {
-      factor: factor || 1,
-      maxLevel,
-    })
-  }
-
-  public readonly config: OccTreeConfig
+export class OccTreeNode<T extends object = {}> implements SpatialIndex<T>, SpatialNode<T> {
   /**
    * Depth level of this node where 0 is the root
    */
@@ -40,14 +26,19 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
   public readonly size: number
 
   /**
-   * The parent quad
+   * The root node
    */
-  public readonly parent: OccTree<T> | null
+  public readonly root: OccTree<T> | null
 
   /**
-   * Child quads
+   * The parent node
    */
-  public readonly children: ReadonlyArray<OccTree<T>> = [] // empty -> leaf node
+  public readonly parent: OccTreeNode<T> | null
+
+  /**
+   * Child nodes
+   */
+  public readonly children: ReadonlyArray<OccTreeNode<T>> = [] // empty -> leaf node
 
   /**
    * The volume of this node
@@ -78,56 +69,41 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
    */
   public readonly data: T = {} as T
 
-  // public readonly parentGridX: number
-  // public readonly parentGridY: number
-  // public readonly parentGridZ: number
-  // public readonly rootGridX: number
-  // public readonly rootGridY: number
-  // public readonly rootGridZ: number
-  // public readonly worldGridX: number
-  // public readonly worldGridY: number
-  // public readonly worldGridZ: number
-  // public readonly centerX: number
-  // public readonly centerY: number
-  // public readonly centerZ: number
+  protected constructor(root: OccTree<T>, parent: OccTreeNode<T>, min: IVec3, max: IVec3, level: number) {
+    if (root == null) {
+      root = this as any
+    }
+    if (!(root instanceof OccTree)) {
+      throw new Error('OccTreeNode must be created with a root of type OccTree')
+    }
 
-  private constructor(parent: OccTree<T>, level: number, min: IVec3, max: IVec3, config: OccTreeConfig) {
+    this.root = root
     this.parent = parent
     this.level = level
-    this.config = config
-    this.bounds = BoundingBox.createFromV(Vec3.min(min, max), Vec3.max(min, max))
-    const sizeX = this.bounds.max.x - this.bounds.min.x
-    const sizeY = this.bounds.max.y - this.bounds.min.y
-    const sizeZ = this.bounds.max.z - this.bounds.min.z
-    if (sizeX !== sizeZ || sizeY !== sizeZ) {
-      throw new Error(`OccTree requires square bounds. Got ${sizeX}x${sizeY}x${sizeZ}`)
-    }
-    this.size = sizeX
-    this.looseBounds = this.bounds.clone()
-    this.looseBounds.min.subtractScalar((this.size * (this.config.factor - 1)) / 2)
-    this.looseBounds.max.addScalar((this.size * (this.config.factor - 1)) / 2)
 
-    // const root = this.getRoot()?.bounds
-    // const bounds = this.bounds
-    // this.parentGridX = parent ? (parent.bounds.min.x - this.bounds.min.x ? 1 : 0) : 0
-    // this.parentGridY = parent ? (parent.bounds.min.y - this.bounds.min.y ? 1 : 0) : 0
-    // this.parentGridZ = parent ? (parent.bounds.min.z - this.bounds.min.z ? 1 : 0) : 0
-    // this.rootGridX = (bounds.min.x - root.min.x) / this.size
-    // this.rootGridY = (bounds.min.y - root.min.y) / this.size
-    // this.rootGridZ = (bounds.min.z - root.min.z) / this.size
-    // this.worldGridX = bounds.min.x / this.size
-    // this.worldGridY = bounds.min.y / this.size
-    // this.worldGridZ = bounds.min.z / this.size
-    // this.centerX = bounds.min.x + (bounds.max.x - bounds.min.x) / 2
-    // this.centerY = bounds.min.y + (bounds.max.y - bounds.min.y) / 2
-    // this.centerZ = bounds.min.z + (bounds.max.z - bounds.min.z) / 2
+    this.bounds = BoundingBox.createFromV(min, max)
+    this.size = this.bounds.max.x - this.bounds.min.x
+
+    this.looseBounds = this.bounds.clone()
+    this.updateLooseBounds(root?.looseFactor ?? 1)
+  }
+
+  protected updateLooseBounds(factor: number) {
+    this.looseBounds.initFrom(this.bounds)
+    const extend = (this.size * factor - this.size) / 2
+    this.looseBounds.min.x -= extend
+    this.looseBounds.min.y -= extend
+    this.looseBounds.min.z -= extend
+    this.looseBounds.max.x += extend
+    this.looseBounds.max.y += extend
+    this.looseBounds.max.z += extend
   }
 
   /**
    * Gets the root of this tree
    */
   public getRoot() {
-    let node: OccTree<T> = this
+    let node: OccTreeNode<T> = this
     while (node.parent) {
       node = node.parent
     }
@@ -144,7 +120,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
 
     const { min, max } = this.bounds
     const halfSize = (max.x - min.x) / 2
-    const children: OccTree<T>[] = this.children as any
+    const children: OccTreeNode<T>[] = this.children as any
     for (let i = 0; i < 4; i++) {
       const min = Vec3.create(
         this.bounds.min.x + (i & 1 ? halfSize : 0),
@@ -152,7 +128,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
         this.bounds.min.z + (i & 2 ? halfSize : 0),
       )
       const max = Vec3.create(min.x + halfSize, min.y + halfSize, min.z + halfSize)
-      children.push(new OccTree<T>(this, this.level + 1, min, max, this.config))
+      children.push(new OccTreeNode(this.root, this, min, max, this.level + 1))
     }
     for (let i = 0; i < 4; i++) {
       const min = Vec3.create(
@@ -161,8 +137,10 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
         this.bounds.min.z + (i & 2 ? halfSize : 0),
       )
       const max = Vec3.create(min.x + halfSize, min.y + halfSize, min.z + halfSize)
-      children.push(new OccTree<T>(this, this.level + 1, min, max, this.config))
+      children.push(new OccTreeNode(this.root, this, min, max, this.level + 1))
     }
+
+    this.root.markAsChanged()
   }
 
   /**
@@ -199,7 +177,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
    * @remarks
    * Visits this node first then its children
    */
-  public traverseTopDown(visit: (node: OccTree<T>) => void): void {
+  public traverseTopDown(visit: (node: OccTreeNode<T>) => void): void {
     visit(this)
     for (const child of this.children) {
       child.traverseTopDown(visit)
@@ -212,7 +190,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
    * @remarks
    * Viists children first then this node
    */
-  public traverseBottomUp(visit: (node: OccTree<T>) => void): void {
+  public traverseBottomUp(visit: (node: OccTreeNode<T>) => void): void {
     for (const child of this.children) {
       child.traverseBottomUp(visit)
     }
@@ -222,9 +200,9 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
   public traverseIntersection<V>(
     volume: V,
     method: (a: V, b: BoundingBox) => IntersectionType,
-    visit: (node: OccTree<T>, intersection: IntersectionType) => void,
+    visit: (node: OccTreeNode<T>, intersection: IntersectionType) => void,
   ): void {
-    const intersection = method(volume, this.bounds)
+    const intersection = method(volume, this.looseBounds)
     if (intersection === IntersectionType.Disjoint) {
       return
     }
@@ -248,7 +226,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
     }
   }
 
-  private traverseContained(visit: (node: OccTree<T>, intersection: IntersectionType) => void): void {
+  private traverseContained(visit: (node: OccTreeNode<T>, intersection: IntersectionType) => void): void {
     visit(this, IntersectionType.Contains)
     for (const child of this.children) {
       child.traverseContained(visit)
@@ -260,33 +238,33 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
    *
    * @param volume - the volume to fit
    */
-  public findFittingNode(volume: BoundingBox): OccTree<T> {
-    if (Intersection.boxBox(this.bounds, volume) === IntersectionType.Contains) {
+  public findFittingNode(volume: BoundingBox): OccTreeNode<T> {
+    if (Intersection.boxBox(this.looseBounds, volume) === IntersectionType.Contains) {
       return this.testDown(volume)
     }
     return this.testUp(volume)
   }
 
-  private testUp(volume: BoundingBox): OccTree<T> {
+  private testUp(volume: BoundingBox): OccTreeNode<T> {
     if (!this.parent) {
       return this // root reached
     }
-    if (Intersection.boxBox(this.parent.bounds, volume) === IntersectionType.Contains) {
+    if (Intersection.boxBox(this.parent.looseBounds, volume) === IntersectionType.Contains) {
       return this.parent
     }
     return this.parent.testUp(volume)
   }
 
-  private testDown(volume: BoundingBox): OccTree<T> {
+  private testDown(volume: BoundingBox): OccTreeNode<T> {
     if (this.isLeaf) {
-      if (!!this.config.maxLevel && this.level >= this.config.maxLevel) {
+      if (!this.root.canSubdivide(this.level)) {
         return this // leaf reached
       }
       this.subdivide()
     }
 
     for (const child of this.children) {
-      if (Intersection.boxBox(child.bounds, volume) === IntersectionType.Contains) {
+      if (Intersection.boxBox(child.looseBounds, volume) === IntersectionType.Contains) {
         return child.testDown(volume)
       }
     }
@@ -297,7 +275,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
   /**
    * Traverses the tree and visits nodes that are close enough to the given position based on the given factor.
    */
-  public traverseLOD(x: number, y: number, z: number, baseFactor: number, visit: (node: OccTree<T>) => void): void {
+  public traverseLOD(x: number, y: number, z: number, baseFactor: number, visit: (node: OccTreeNode<T>) => void): void {
     // Leaf nodes are always selected
     if (this.isLeaf) {
       visit(this)
@@ -312,7 +290,7 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
     const nearY = Math.max(this.bounds.min.y, Math.min(y, this.bounds.max.y))
     const nearZ = Math.max(this.bounds.min.z, Math.min(z, this.bounds.max.z))
     const dx = x - nearX
-    const dy = z - nearY
+    const dy = y - nearY
     const dz = z - nearZ
     const distanceSq = dx * dx + dy * dy + dz * dz
 
@@ -332,5 +310,104 @@ export class OccTree<T extends object = {}> implements SpatialIndex<T>, SpatialN
     for (const child of this.children) {
       child.traverseLOD(x, y, z, baseFactor, visit)
     }
+  }
+}
+
+export class OccTree<T extends object = {}> extends OccTreeNode<T> {
+  /**
+   * Creates an occ tree with given dimensions
+   * @param min - the minimum point in 3D space
+   * @param max - the maximum point in 3D space
+   */
+  public static create<T extends object = {}>({ min, max, looseFactor, leafLevel }: OccTreeOptions) {
+    return new OccTree<T>(min, max, 0, looseFactor ?? 1, leafLevel ?? -1)
+  }
+
+  /**
+   * The loose factor determines how much bigger the loose bounds are compared to the regular bounds.
+   */
+  public readonly looseFactor: number
+
+  public get flatPreOrdered(): ReadonlyArray<OccTreeNode<T>> {
+    if (this.listPreOrderVersion !== this.version) {
+      this.toPreOrderedList(this.listPreOrder)
+      this.listPreOrderVersion = this.version
+    }
+    return this.listPreOrder
+  }
+
+  public get flatPostOrdered(): ReadonlyArray<OccTreeNode<T>> {
+    if (this.listPostOrderVersion !== this.version) {
+      this.listPostOrder.length = 0
+      this.toPostOrderedList(this.listPostOrder)
+      this.listPostOrderVersion = this.version
+    }
+    return this.listPostOrder
+  }
+
+  private version = 0
+  private listPreOrder: OccTreeNode<T>[] = []
+  private listPreOrderVersion = -1
+  private listPostOrder: OccTreeNode<T>[] = []
+  private listPostOrderVersion = -1
+  private leafLevel: number
+
+  protected constructor(min: IVec3, max: IVec3, level: number, looseFactor: number, leafLevel: number) {
+    super(null, null, min, max, level)
+    this.looseFactor = Math.max(1, looseFactor ?? 1)
+    this.leafLevel = leafLevel ?? -1
+    const sizeX = this.bounds.max.x - this.bounds.min.x
+    const sizeY = this.bounds.max.y - this.bounds.min.y
+    const sizeZ = this.bounds.max.z - this.bounds.min.z
+
+    if (sizeX !== sizeY || sizeX !== sizeZ) {
+      throw new Error(`OccTree requires cubic bounds. Got X=${sizeX} Y=${sizeY} Z=${sizeZ}`)
+    }
+    this.updateLooseBounds(this.looseFactor)
+  }
+
+  public markAsChanged() {
+    this.version++
+  }
+
+  public toPreOrderedList<R>(result: OccTreeNode<T>[]): OccTreeNode<T>[]
+  public toPreOrderedList<R>(result: R[], transform?: (node: OccTreeNode<T>) => R): R[]
+  public toPreOrderedList<R>(result: any[] = [], transform?: (node: OccTreeNode<T>) => R): any[] {
+    result.length = 0
+    const stack: Array<OccTreeNode<T>> = [this]
+    while (stack.length) {
+      const node = stack.pop()!
+      const value = transform ? transform(node) : node
+      if (value != null) {
+        result.push(value)
+      }
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        stack.push(node.children[i])
+      }
+    }
+    return result
+  }
+
+  public toPostOrderedList(result: OccTreeNode<T>[]): OccTreeNode<T>[]
+  public toPostOrderedList<R>(result: R[], transform: (node: OccTreeNode<T>) => R): R[]
+  public toPostOrderedList<R>(result: any[] = [], transform?: (node: OccTreeNode<T>) => R): any[] {
+    result.length = 0
+    const stack: Array<OccTreeNode<T>> = [this]
+    while (stack.length) {
+      const node = stack.pop()!
+      const value = transform ? transform(node) : node
+      if (value != null) {
+        result.push(value)
+      }
+      for (const child of node.children) {
+        stack.push(child)
+      }
+    }
+    result.reverse()
+    return result
+  }
+
+  public canSubdivide(level: number) {
+    return this.leafLevel >= 0 ? level < this.leafLevel : true
   }
 }
