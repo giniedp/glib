@@ -30,6 +30,19 @@ export function vec2(data: number | IVec2 | number[] | null): IVec2 {
  */
 export class Vec2 implements IVec2 {
   /**
+   * Temporary variable for short lived calculations. Do not store references to this variable.
+   */
+  public static readonly $0 = Vec2.create()
+  /**
+   * Temporary variable for short lived calculations. Do not store references to this variable.
+   */
+  public static readonly $1 = Vec2.create()
+  /**
+   * Temporary variable for short lived calculations. Do not store references to this variable.
+   */
+  public static readonly $2 = Vec2.create()
+
+  /**
    * The X component
    */
   public x: number

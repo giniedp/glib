@@ -60,6 +60,19 @@ const _tmp2v4 = new Vec4()
  * ```
  */
 export class Mat4 {
+  /**
+   * Temporary variable for short lived calculations. Do not store references to this variable.
+   */
+  public static readonly $0 = Mat4.createIdentity()
+  /**
+   * Temporary variable for short lived calculations. Do not store references to this variable.
+   */
+  public static readonly $1 = Mat4.createIdentity()
+  /**
+   * Temporary variable for short lived calculations. Do not store references to this variable.
+   */
+  public static readonly $2 = Mat4.createIdentity()
+
   //[n: number]: number
   public readonly length: number = 16
 
@@ -3971,7 +3984,7 @@ export class Mat4 {
       out.x /= wp
       out.y /= wp
     }
-    return vec
+    return out
   }
 
   /**
@@ -4012,7 +4025,7 @@ export class Mat4 {
       out.y /= wp
       out.z /= wp
     }
-    return vec
+    return out
   }
 
   /**
@@ -4039,7 +4052,7 @@ export class Mat4 {
     out = out || vec
     out.x = x * d[0] + y * d[4] + w * d[12]
     out.y = x * d[1] + y * d[5] + w * d[13]
-    return vec
+    return out
   }
 
   /**
@@ -4068,7 +4081,7 @@ export class Mat4 {
     out.x = x * d[C0R0] + y * d[C1R0] + z * d[C2R0] + w * d[C3R0]
     out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1] + w * d[C3R1]
     out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2] + w * d[C3R2]
-    return vec
+    return out
   }
 
   /**
@@ -4090,7 +4103,7 @@ export class Mat4 {
     out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1] + w * d[C3R1]
     out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2] + w * d[C3R2]
     out.w = x * d[C0R3] + y * d[C1R3] + z * d[C2R3] + w * d[C3R3]
-    return vec
+    return out
   }
 
   /**
@@ -4101,14 +4114,14 @@ export class Mat4 {
    * Transforms the given vector ignoring the translation. Writes the result to `out` parameter
    */
   public transformV2Normal<T extends IVec2, O>(vec: T, out: O): O & IVec2
-  public transformV2Normal<T extends IVec2>(vec: T, out?: IVec2): T {
+  public transformV2Normal<T extends IVec2>(vec: T, out?: IVec2): any {
     const x = vec.x || 0
     const y = vec.y || 0
     const d = this.elements
     out = out || vec
     out.x = x * d[C0R0] + y * d[C1R0]
     out.y = x * d[C0R1] + y * d[C1R1]
-    return vec
+    return out
   }
 
   /**
@@ -4119,7 +4132,7 @@ export class Mat4 {
    * Transforms the given vector ignoring the translation. Writes the result to `out` parameter
    */
   public transformV3Normal<T extends IVec3, O>(vec: T, out: O): O & IVec3
-  public transformV3Normal<T extends IVec3>(vec: T, out?: IVec3): T {
+  public transformV3Normal<T extends IVec3>(vec: T, out?: IVec3): any {
     const x = vec.x || 0
     const y = vec.y || 0
     const z = vec.z || 0
@@ -4128,7 +4141,30 @@ export class Mat4 {
     out.x = x * d[C0R0] + y * d[C1R0] + z * d[C2R0]
     out.y = x * d[C0R1] + y * d[C1R1] + z * d[C2R1]
     out.z = x * d[C0R2] + y * d[C1R2] + z * d[C2R2]
-    return vec
+    return out
+  }
+
+  /**
+   * Transforms the given vector ignoring the translation.
+   * Uses absolute values of the matrix components.
+   */
+  public transformV3NormalAbs<T extends IVec3>(vec: T): T
+  /**
+   * Transforms the given vector ignoring the translation.
+   * Uses absolute values of the matrix components.
+   * Writes the result to `out` parameter
+   */
+  public transformV3NormalAbs<T extends IVec3, O>(vec: T, out: O): O & IVec3
+  public transformV3NormalAbs<T extends IVec3>(vec: T, out?: IVec3): any {
+    const x = vec.x || 0
+    const y = vec.y || 0
+    const z = vec.z || 0
+    const d = this.elements
+    out = out || vec
+    out.x = x * Math.abs(d[C0R0]) + y * Math.abs(d[C1R0]) + z * Math.abs(d[C2R0])
+    out.y = x * Math.abs(d[C0R1]) + y * Math.abs(d[C1R1]) + z * Math.abs(d[C2R1])
+    out.z = x * Math.abs(d[C0R2]) + y * Math.abs(d[C1R2]) + z * Math.abs(d[C2R2])
+    return out
   }
 
   /**
@@ -4140,8 +4176,8 @@ export class Mat4 {
    * @param count - Number of vector elements to transform
    */
   public transformV2Array(array: ArrayLike<number>, offset?: number, stride?: number, count?: number) {
-    let x
-    let y
+    let x: number
+    let y: number
     const d = this.elements
     offset = offset || 0
     stride = stride == null ? 2 : stride

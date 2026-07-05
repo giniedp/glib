@@ -63,15 +63,15 @@ export class Vec3 implements IVec2, IVec3 {
   public static UnitZ: Readonly<IVec3> = Object.freeze<IVec3>({ x: 0, y: 0, z: 1 })
 
   /**
-   * A temporary variable
+   * Temporary variable for short lived calculations. Do not store references to this variable.
    */
   public static readonly $0 = Vec3.create()
   /**
-   * A temporary variable
+   * Temporary variable for short lived calculations. Do not store references to this variable.
    */
   public static readonly $1 = Vec3.create()
   /**
-   * A temporary variable
+   * Temporary variable for short lived calculations. Do not store references to this variable.
    */
   public static readonly $2 = Vec3.create()
 
@@ -316,6 +316,20 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Initializes the given vector
+   *
+   * @param out - the vector to initialize
+   * @param other - The vector to read from
+   */
+  public static initFrom<T>(out: T, other: IVec3): T & IVec3
+  public static initFrom(out: IVec3, other: IVec3): IVec3 {
+    out.x = other.x
+    out.y = other.y
+    out.z = other.z
+    return out
+  }
+
+  /**
    * Initializes the components of this vector by taking the components from the given vector.
    * @param other - The vector to read from
    *
@@ -385,9 +399,9 @@ export class Vec3 implements IVec2, IVec3 {
    *
    * @returns the destination vector.
    */
-  public static clone(src: IVec3): Vec3
-  public static clone<T>(src: IVec3, dst: T): T & IVec3
-  public static clone(src: IVec3, dst?: IVec3): IVec3 {
+  public static copy(src: IVec3): Vec3
+  public static copy<T>(src: IVec3, dst: T): T & IVec3
+  public static copy(src: IVec3, dst?: IVec3): IVec3 {
     dst = dst || new Vec3()
     dst.x = src.x
     dst.y = src.y
@@ -406,20 +420,6 @@ export class Vec3 implements IVec2, IVec3 {
     out.x = this.x
     out.y = this.y
     out.z = this.z
-    return out
-  }
-
-  /**
-   * Copies the source vector to the destination vector
-   *
-   *
-   * @returns the destination vector.
-   */
-  public static copy<T>(out: T, src: IVec3): T & IVec3
-  public static copy(out: any, src: IVec3): IVec3 {
-    out.x = src.x
-    out.y = src.y
-    out.z = src.z
     return out
   }
 

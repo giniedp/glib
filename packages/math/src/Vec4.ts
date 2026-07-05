@@ -62,17 +62,17 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
   public static UnitW = Object.freeze<IVec4>({ x: 0, y: 0, z: 0, w: 1 })
 
   /**
-   * A temporary variable
+   * Temporary variable for short lived calculations. Do not store references to this variable.
    */
-  public static readonly $0: IVec4 = { x: 0, y: 0, z: 0, w: 0 }
+  public static readonly $0 = Vec4.create()
   /**
-   * A temporary variable
+   * Temporary variable for short lived calculations. Do not store references to this variable.
    */
-  public static readonly $1: IVec4 = { x: 0, y: 0, z: 0, w: 0 }
+  public static readonly $1 = Vec4.create()
   /**
-   * A temporary variable
+   * Temporary variable for short lived calculations. Do not store references to this variable.
    */
-  public static readonly $2: IVec4 = { x: 0, y: 0, z: 0, w: 0 }
+  public static readonly $2 = Vec4.create()
 
   /**
    * The X component
