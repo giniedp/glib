@@ -62,12 +62,16 @@ export class Transform<T = unknown> implements ITransform {
    */
   public readonly children: this[] = []
 
-  public version: number = 1
+  public get version() {
+    return this.lastVersion
+  }
 
   protected lastVersion: number = 0
+  protected nextVersion: number = 0
+  protected subtreeChanged = true
 
   public get hasChanged(): boolean {
-    return this.version !== this.lastVersion
+    return this.nextVersion !== this.lastVersion
   }
 
   /**
@@ -308,7 +312,7 @@ export class Transform<T = unknown> implements ITransform {
       this.parent = parent
       this.parent.children.push(this)
     }
-    this.version++
+    this.markAsChanged()
     this.handleParentChange(parent, oldParent)
   }
 
@@ -323,14 +327,33 @@ export class Transform<T = unknown> implements ITransform {
    * @param down calls update on all children
    */
   public propagateUpdates(up?: boolean, down?: boolean): void {
-    if (up && this.parent) {
-      this.parent.propagateUpdates(up, false)
+    if (up) {
+      this.propagateUpdatesUp()
     }
-    this.updateIfNeeded()
     if (down) {
-      for (const child of this.children) {
-        child.propagateUpdates(false, down)
-      }
+      this.propagateUpdatesDown()
+    }
+  }
+
+  private propagateUpdatesUp(): void {
+    if (this.parent) {
+      this.parent.propagateUpdatesUp()
+    }
+    if (this.hasChanged) {
+      this.updateWorldTransform()
+    }
+  }
+
+  private propagateUpdatesDown(): void {
+    if (this.hasChanged) {
+      this.updateWorldTransform()
+    }
+    if (!this.subtreeChanged) {
+      return
+    }
+    this.subtreeChanged = false
+    for (const child of this.children) {
+      child.propagateUpdatesDown()
     }
   }
 
@@ -347,14 +370,27 @@ export class Transform<T = unknown> implements ITransform {
    * Bumps the `version` property to indicate that the state has changed and the transform needs to be updated.
    */
   public markAsChanged() {
-    this.version++
+    this.nextVersion++
+    this.subtreeChanged = true
+    let parent: this = this.parent
+    while (parent) {
+      parent.subtreeChanged = true
+      parent = parent.parent
+    }
   }
 
   /**
    * Marks the current state as updated by setting the `lastVersion` to the current `version`.
    */
   public markAsUpdated() {
-    this.lastVersion = this.version
+    this.lastVersion = this.nextVersion
+  }
+
+  public handleWorldUpdated() {
+    this.lastVersion = this.nextVersion
+    this.worldInvChanged = true
+    this.worldRotChanged = true
+    this.worldRotInvChanged = true
   }
 
   /**
@@ -362,7 +398,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public updateLocalTransform(): void {
     this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
-    this.version++
+    this.nextVersion++
   }
 
   /**
@@ -370,19 +406,17 @@ export class Transform<T = unknown> implements ITransform {
    */
   public updateWorldTransform(): void {
     this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
-
+    this.subtreeChanged = true
     if (this.parent) {
       Mat4.premultiply(this.matrix, this.parent.world, this.world)
     } else {
       this.world.initFrom(this.matrix)
     }
 
-    this.lastVersion = this.version
-    this.worldInvChanged = true
-    this.worldRotChanged = true
-    this.worldRotInvChanged = true
+    this.handleWorldUpdated()
+
     for (const child of this.children) {
-      child.version++
+      child.nextVersion++
     }
   }
 
@@ -393,7 +427,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotation(quaternion: IVec4): this {
     this.rotation.initFrom(quaternion)
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -405,7 +439,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotationAxisAngleV(axis: IVec3, angle: number): this {
     this.rotation.initAxisAngle(axis, angle)
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -419,7 +453,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotationAxisAngle(x: number, y: number, z: number, angle: number): this {
     this.rotation.initAxisAngle(tempVec.init(x, y, z).normalize(), angle)
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -432,7 +466,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setRotationYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     this.rotation.initYawPitchRoll(yaw, pitch, roll)
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -444,7 +478,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public rotateAxisAngleV(axis: IVec3, angle: number): this {
     this.rotation.preMultiply(tempQuat.initAxisAngle(axis, angle))
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -469,7 +503,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public rotateYawPitchRoll(yaw: number, pitch: number, roll: number): this {
     this.rotation.preMultiply(tempQuat.initYawPitchRoll(yaw, pitch, roll))
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -482,7 +516,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x = scale.x
     this.scale.y = scale.y
     this.scale.z = scale.z
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -497,7 +531,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x = scaleX
     this.scale.y = scaleY
     this.scale.z = scaleZ
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -508,7 +542,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setScaleX(scale: number): this {
     this.scale.x = scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -519,7 +553,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setScaleY(scale: number): this {
     this.scale.y = scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -530,7 +564,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setScaleZ(scale: number): this {
     this.scale.z = scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -543,7 +577,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x = value
     this.scale.y = value
     this.scale.z = value
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -556,7 +590,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x *= scale.x
     this.scale.y *= scale.y
     this.scale.z *= scale.z
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -567,7 +601,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public scaleX(scale: number): this {
     this.scale.x *= scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -578,7 +612,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public scaleY(scale: number): this {
     this.scale.y *= scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -589,7 +623,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public scaleZ(scale: number): this {
     this.scale.z *= scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -604,7 +638,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x *= scaleX
     this.scale.y *= scaleY
     this.scale.z *= scaleZ
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -617,7 +651,7 @@ export class Transform<T = unknown> implements ITransform {
     this.scale.x *= scale
     this.scale.y *= scale
     this.scale.z *= scale
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -630,7 +664,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x = position.x
     this.translation.y = position.y
     this.translation.z = position.z
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -645,7 +679,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x = x
     this.translation.y = y
     this.translation.z = z
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -656,7 +690,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setPositionX(x: number): this {
     this.translation.x = x
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -667,7 +701,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setPositionY(y: number): this {
     this.translation.y = y
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -678,7 +712,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public setPositionZ(z: number): this {
     this.translation.z = z
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -691,7 +725,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x += delta.x
     this.translation.y += delta.y
     this.translation.z += delta.z
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -706,7 +740,7 @@ export class Transform<T = unknown> implements ITransform {
     this.translation.x += dx
     this.translation.y += dy
     this.translation.z += dz
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -717,7 +751,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public translateX(dx: number): this {
     this.translation.x += dx
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -728,7 +762,7 @@ export class Transform<T = unknown> implements ITransform {
    */
   public translateY(dy: number): this {
     this.translation.y += dy
-    this.version++
+    this.markAsChanged()
     return this
   }
 
@@ -739,13 +773,13 @@ export class Transform<T = unknown> implements ITransform {
    */
   public translateZ(dz: number): this {
     this.translation.z += dz
-    this.version++
+    this.markAsChanged()
     return this
   }
 
   public lookAt(v: IVec3, up: IVec3): this {
     this.rotation.initFromMat4(tempMat.initLookAt(this.translation, v, up))
-    this.version++
+    this.markAsChanged()
     return this
   }
 

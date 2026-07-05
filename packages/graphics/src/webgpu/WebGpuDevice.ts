@@ -1,5 +1,5 @@
 import { NdcMinZ } from '@gglib/math'
-import { eventSource, type EventChannel } from '@gglib/utils'
+import { brand, eventSource, EventType, type EventChannel } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import { Scheduler } from '../Scheduler'
@@ -11,6 +11,7 @@ import {
   referenceCounter,
   ShaderModule,
   TextureUsage,
+  WgslModuleSource,
   type AcquireTextureOptions,
   type BufferOptions,
   type DepthBufferOptions,
@@ -80,6 +81,9 @@ export interface WebGpuDeviceOptions {
 }
 
 export class WebGpuDevice extends Device<GPUCanvasContext> {
+  public static onContextLost = brand<EventType<void>>('WebGpuDevice contextlost')
+  public static onContextRestored = brand<EventType<void>>('WebGpuDevice contextrestored')
+
   public readonly ndcMinZ: NdcMinZ = NdcMinZ.Zero
   public readonly canvas: HTMLCanvasElement | OffscreenCanvas
   public readonly context: GPUCanvasContext
@@ -89,8 +93,8 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public readonly isReady: boolean = false
   public readonly ready: Promise<this>
 
-  public readonly onContextLost: EventChannel<void> = eventSource<void>('contextLost')
-  public readonly onContextRestored: EventChannel<void> = eventSource<void>('contextLost')
+  public readonly onContextLost: EventChannel<void> = eventSource<void>(WebGpuDevice.onContextLost)
+  public readonly onContextRestored: EventChannel<void> = eventSource<void>(WebGpuDevice.onContextRestored)
 
   public readonly capabilities: WebGpuCapabilities
   public readonly defaultTexture: WebGpuTexture
@@ -241,9 +245,14 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     if (!options || !('wgsl' in options)) {
       throw new Error('Only WGSL shader code is supported in WebGPU')
     }
+    const code = typeof options.wgsl === 'string' ? options.wgsl : options.wgsl.source
+    const fConst = typeof options.wgsl === 'string' ? null : options.wgsl.fragmentConstants
+    const vConst = typeof options.wgsl === 'string' ? null : options.wgsl.vertexConstants
     const result = this.createWgslModule({
       name: options.name,
-      code: options.wgsl,
+      code,
+      fragmentConstants: fConst,
+      vertexConstants: vConst,
       ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
     })
     this.shaders.track(result)
@@ -289,13 +298,20 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       throw new Error('Only GLSL shader source is supported in WebGL')
     }
 
-    const key = options.wgsl
+    const key = this.createWgslModuleKey(options.wgsl)
     return this.shaders.retainOrCreate(key, (ref) => {
       return this.createShaderModule({
         ...options,
         ...{ [RefCounterKey]: ref },
       })
     })
+  }
+
+  public createWgslModuleKey(wgsl: WgslModuleSource | string) {
+    if (typeof wgsl === 'string') {
+      return wgsl
+    }
+    return [wgsl.source, wgsl.vertexConstants?.key, wgsl.fragmentConstants?.key].join('|')
   }
 
   public acquireTexture(options: AcquireTextureOptions): WebGpuTexture {

@@ -12,7 +12,6 @@ export class SchedulerSystem extends GameSystem {
     this.instance = new AsyncScheduler({
       frameBudgetMs: 4,
       maxConcurrent: 10,
-      readyBudgetRatio: 1,
       maxReadyTasksPerTick: 10,
       lanes: {
         [PriorityLane.Critical]: {
@@ -53,24 +52,24 @@ export class SchedulerSystem extends GameSystem {
 
   public scheduleAsync<T>(entity: GameEntity, fn: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      let result: T
-      this.instance.enqueue({
+      this.instance.enqueue<T>({
         lane: PriorityLane.Medium,
         entity: entity,
-        load: async () => {
-          result = await fn()
+        load: async (task) => {
+          task.context = await fn()
         },
-        onDone() {
-          resolve(result)
-        },
-        onCancel() {
-          reject(new Error('Task cancelled'))
+        finalize: (task, err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(task.context)
+          }
         },
       })
     })
   }
 
-  public schedule<T extends ScheduledTask>(task: T): T {
+  public schedule<T>(task: ScheduledTask<T>): ScheduledTask<T> {
     this.instance.enqueue(task)
     return task
   }
@@ -95,6 +94,7 @@ export class SchedulerSystem extends GameSystem {
     const dist = Math.sqrt(distSq)
     const alignment = toObj.normalize().dot(camera.world.getForward(camPos)) // [-1, 1]
 
+    // TODO: add visibility test
     const visible = false // intersectsFrustum(spatial.position, spatial.boundingRadius, camera.frustumPlanes)
 
     // --- Scoring ---

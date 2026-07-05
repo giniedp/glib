@@ -43,7 +43,7 @@ export class SpatialRootComponent implements GameComponent, InitializableCompone
 
   public initialize(): void {
     this.world = this.entity.world
-    this.query = this.world.query({ required: [this.Tag] })
+    this.query = this.world.query({ scope: 'active', required: [this.Tag] })
     this.initialized = true
   }
 

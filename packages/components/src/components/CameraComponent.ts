@@ -1,6 +1,6 @@
 import { GameComponent, GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { SpaceBasis, DEGREE_TO_RAD, Mat4 } from '@gglib/math'
+import { SpaceBasis, DEGREE_TO_RAD, Mat4, IVec3, Vec4, Ray, Vec3 } from '@gglib/math'
 import { LayerMask, type CameraData } from '@gglib/render'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { TransformComponent } from './TransformComponent'
@@ -207,5 +207,17 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
     Mat4.invert(this.world, this.view)
     Mat4.premultiply(this.view, this.space.toViewSpace, this.view)
     Mat4.premultiply(this.view, this.projection, this.viewProjection)
+  }
+
+  public createRay(xNormalized: number, yNormalized: number): Ray {
+    const ndcX = xNormalized * 2.0 - 1.0
+    const ndcY = 1.0 - yNormalized * 2.0
+    const invViewProj = Mat4.invert(this.viewProjection)
+    const nearZ = this.reversedZ ? 1.0 : this.device.ndcMinZ
+    const farZ = this.reversedZ ? 0.0 : 1.0
+    const near = invViewProj.transformP3(Vec4.create(ndcX, ndcY, nearZ, 1))
+    const far = invViewProj.transformP3(Vec4.create(ndcX, ndcY, farZ, 1))
+
+    return Ray.createV(near, Vec3.subtract(far, near).normalize())
   }
 }

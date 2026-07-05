@@ -8,7 +8,9 @@ import { CommonBlocks, CommonInputs } from './types'
 export function basicEffectShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Basic Effect Shader',
-    wgsl: BASIC_EFFECT_WGSL,
+    wgsl: {
+      source: BASIC_EFFECT_WGSL,
+    },
     glsl: {
       vertex: BASIC_EFFECT_GLSL_VS,
       fragment: BASIC_EFFECT_GLSL_FS,

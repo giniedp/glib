@@ -112,13 +112,13 @@ export class BoundedAsyncExecutor implements AsyncExecutor {
 
     if (this.activeCount >= this.maxConcurrent) {
       await this.enqueue(signal)
+    } else {
+      this.activeCount++
     }
 
     if (signal?.aborted) {
       throw abortError(signal)
     }
-
-    this.activeCount++
 
     // create a linked controller so we always pass a signal
     const controller = new AbortController()

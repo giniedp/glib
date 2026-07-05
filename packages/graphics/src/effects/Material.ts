@@ -96,6 +96,25 @@ export class Material {
   public meta: Record<string, any>
 
   /**
+   * Hint to high level systems that this material should be skipped for rendering
+   */
+  public noRender: boolean
+
+  /**
+   * Hint to high level systems that this material should be rendered in a transparency pass
+   */
+  public isTransparent: boolean
+
+  /**
+   * User defined rendering layer mask for this material
+   *
+   * @remarks
+   * The interpretation of this value is up to the user or rendering system.
+   * Usually this would be used in combination with the entity layer for filtering and sorting of render items.
+   */
+  public layer: number
+
+  /**
    * The default effect to be used when rendering with this material
    *
    * @remarks
@@ -124,7 +143,15 @@ export class Material {
     this.device = device
     this.name = options.name
     this.meta = options.meta || {}
-    this.createEffect(options)
+    if (options.effect) {
+      this.effects[RenderVariant.Forward] = new Effect(this.device, options.effect)
+    } else if (options.effect === null) {
+      // no effect specified, this is a valid case, no error
+      // creation of the effect is deferred to the subclass
+    } else {
+      // option is missing, this is a programming error
+      console.warn('No effect specified for material', this)
+    }
   }
 
   public getInput<T extends InputTypeName>(input: InputSlot<T>): InputTypeMap[T] | null {
@@ -175,14 +202,6 @@ export class Material {
    */
   public getEffect(variant: RenderVariant): Effect | null {
     return this.effects[variant] || null
-  }
-
-  protected createEffect(options: MaterialEffectOptions) {
-    if (options.effect) {
-      this.effects[RenderVariant.Forward] = new Effect(this.device, options.effect)
-    } else {
-      console.warn('No effect specified for material', this)
-    }
   }
 
   /**

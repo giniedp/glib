@@ -1,32 +1,30 @@
-import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { GameEntity, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
+import { idMap } from '@gglib/utils'
 import { SpatialComponent } from '../components/SpatialComponent'
 import { SpatialRootComponent } from '../components/SpatialRootComponent'
-import { addSpatialEntry, QuadTree, removeSpatialEntry } from '../spatial'
 
 export class SpatialSystem extends GameSystem {
   protected world: GameWorld
-  protected query: GameQuery
+  protected dirtySet = idMap<number, SpatialComponent>()
 
-  public constructor(world: GameWorld) {
-    super()
+  public override initialize(world: GameWorld): void {
     this.world = world
-  }
-
-  public override initialize(): void {
-    this.query = this.world.query({ required: [SpatialRootComponent.Tag] })
-    this.world.onEntityActivating.add(this.addSpatialTag)
-    this.world.onEntityDeactivated.add(this.removeSpatialTag)
+    this.world.eventBus.on(GameEntity.onActivating, this.addSpatialTag)
+    this.world.eventBus.on(SpatialComponent.onDirty, this.onNodeDirty)
+    this.world.eventBus.on(GameEntity.onDeactivated, this.removeSpatialTag)
   }
 
   public override destroy(): void {
-    this.world.onEntityActivating.remove(this.addSpatialTag)
-    this.world.onEntityDeactivated.remove(this.removeSpatialTag)
+    this.world.eventBus.off(GameEntity.onActivating, this.addSpatialTag)
+    this.world.eventBus.off(SpatialComponent.onDirty, this.onNodeDirty)
+    this.world.eventBus.off(GameEntity.onDeactivated, this.removeSpatialTag)
   }
 
   private addSpatialTag = (entity: GameEntity) => {
     if (!entity.has(SpatialComponent)) {
       return
     }
+
     const root = entity.component(SpatialRootComponent, GetComponent.OptionalFollowParent)
     if (root && !entity.has(root.Tag)) {
       // prettier-ignore
@@ -46,43 +44,13 @@ export class SpatialSystem extends GameSystem {
   }
 
   public override update(): void {
-    this.query.forEach(updateSpatialIndex)
-  }
-}
-
-function updateSpatialIndex(entity: GameEntity) {
-  const index = entity.component(SpatialRootComponent.Tag).root.index
-  const component = entity.component(SpatialComponent)
-
-  if (component.version === component.bounds.version) {
-    // bounds unchanged, skip update
-    return
-  }
-
-  const entry = component.entry
-  entry.bounds = component.bounds.world.box
-  component.version = component.bounds.version
-
-  if (!entry.bounds) {
-    // vanished bounds, remove from spatial index
-    if (entry.node) {
-      removeSpatialEntry(entry.node, entry)
+    for (const component of this.dirtySet.values) {
+      component.updateFitting()
     }
-    entry.node = null
-    return
+    this.dirtySet.clear()
   }
 
-  const node = index.findFittingNode(entry.bounds)
-  if (entry.node === node) {
-    // unchanged fit
-    return
+  private onNodeDirty = (component: SpatialComponent) => {
+    this.dirtySet.set(component.entity.refId, component)
   }
-
-  // remove from old, insert into new node
-  if (entry.node) {
-    removeSpatialEntry(entry.node, entry)
-  }
-
-  addSpatialEntry(node, entry)
-  entry.node = node
 }

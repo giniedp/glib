@@ -1,6 +1,7 @@
-import { EventEmitter, idMap } from '@gglib/utils'
+import { EventBus, idMap } from '@gglib/utils'
 import { ComponentTypeIds, type GameComponent, type GameComponentType, getComponentType } from './GameComponent'
 import { GameEntity, type GameEntityId, type NotGameEntity } from './GameEntity'
+import { GameQueryDescriptor } from './GameQuery'
 import { GameQueryCache } from './GameQueryCache'
 import { GameSystemCollection } from './GameSystem'
 import { type GameTransform, GameTransformToken } from './GameTransform'
@@ -16,17 +17,21 @@ export interface CreateEntityOptions {
 export class GameWorld {
   protected entities = idMap<GameEntityId, GameEntity>()
   protected queries = new GameQueryCache(this)
-  protected events = new EventEmitter()
+  protected queriesActive = new GameQueryCache(this)
+  protected queriesInitialized = new GameQueryCache(this)
 
   public readonly systems = new GameSystemCollection(this)
-  public readonly onEntityInitialized = this.events.channel<GameEntity>('entityInitialized')
-  public readonly onEntityActivating = this.events.channel<GameEntity>('entityActivating')
-  public readonly onEntityActivated = this.events.channel<GameEntity>('entityActivated')
-  public readonly onEntityDeactivating = this.events.channel<GameEntity>('entityDeactivating')
-  public readonly onEntityDeactivated = this.events.channel<GameEntity>('entityDeactivated')
-  public readonly onEntityDestroyed = this.events.channel<GameEntity>('entityDestroyed')
+  public readonly eventBus = new EventBus()
 
-  //public onEntityActivating =
+  public constructor() {
+    this.eventBus.on(GameEntity.onInitialized, this.handleEntityInitialized)
+    this.eventBus.on(GameEntity.onActivating, this.handleEntityActivating)
+    this.eventBus.on(GameEntity.onActivated, this.handleEntityActivated)
+    this.eventBus.on(GameEntity.onDeactivating, this.handleEntityDeactivating)
+    this.eventBus.on(GameEntity.onDeactivated, this.handleEntityDeactivated)
+    this.eventBus.on(GameEntity.onDestroyed, this.handleEntityDestroyed)
+  }
+
   /**
    * Checks if a system of given type is registered or provided in the container
    */
@@ -99,43 +104,44 @@ export class GameWorld {
     const entityId = entity.refId
     if (!this.entities.has(entityId)) {
       this.entities.set(entityId, entity)
+      queueMicrotask(() => {
+        // component list is empty on creation, so we push delay the initial query addition
+        this.queries.addEntity(entity.refId, entity.componentTypes())
+      })
     } else {
       throw new Error('Entity is already connected to the world')
     }
 
-    entity.onInitialized.add(this.handleEntityInitialized)
-    entity.onActivating.add(this.handleEntityActivating)
-    entity.onActivated.add(this.handleEntityActivated)
-    entity.onDeactivating.add(this.handleEntityDeactivating)
-    entity.onDeactivated.add(this.handleEntityDeactivated)
-    entity.onDestroyed.add(this.handleEntityDestroyed)
+    this.eventBus.register(entity.events)
   }
 
   private handleEntityInitialized = (entity: GameEntity) => {
-    this.onEntityInitialized.emit(entity)
+    this.queries.addEntity(entity.refId, entity.componentTypes()) // re-add to update the archetype
+    this.queriesInitialized.addEntity(entity.refId, entity.componentTypes())
   }
 
   private handleEntityActivating = (entity: GameEntity) => {
-    this.onEntityActivating.emit(entity)
+    this.queriesInitialized.removeEntity(entity.refId)
   }
 
   private handleEntityActivated = (entity: GameEntity) => {
-    this.queries.addEntity(entity.refId, entity.componentTypes())
-    this.onEntityActivated.emit(entity)
+    this.queriesActive.addEntity(entity.refId, entity.componentTypes())
   }
 
   private handleEntityDeactivating = (entity: GameEntity) => {
-    this.queries.removeEntity(entity.refId)
-    this.onEntityDeactivating.emit(entity)
+    this.queriesActive.removeEntity(entity.refId)
   }
 
   private handleEntityDeactivated = (entity: GameEntity) => {
-    this.onEntityDeactivated.emit(entity)
+    this.queriesInitialized.addEntity(entity.refId, entity.componentTypes())
   }
 
   private handleEntityDestroyed = (entity: GameEntity) => {
+    this.queries.removeEntity(entity.refId)
+    this.queriesActive.removeEntity(entity.refId)
+    this.queriesInitialized.removeEntity(entity.refId)
     this.entities.delete(entity.refId)
-    this.onEntityDestroyed.emit(entity)
+    this.eventBus.unregister(entity.events)
   }
 
   /**
@@ -228,15 +234,24 @@ export class GameWorld {
    * Gets a query for the given descriptor.
    */
   public query(descriptor: WorldQueryDescriptor) {
-    return this.queries.getQuery({
+    const scope = descriptor.scope
+    const query: GameQueryDescriptor = {
       required: descriptor.required?.map((it) => ComponentTypeIds.getOrCreate(it)),
       optional: descriptor.optional?.map((it) => ComponentTypeIds.getOrCreate(it)),
       rejected: descriptor.rejected?.map((it) => ComponentTypeIds.getOrCreate(it)),
-    })
+    }
+    if (scope === 'active') {
+      return this.queriesActive.getQuery(query)
+    }
+    if (scope === 'initialized') {
+      return this.queriesInitialized.getQuery(query)
+    }
+    return this.queries.getQuery(query)
   }
 }
 
 export interface WorldQueryDescriptor {
+  scope: 'active' | 'initialized' | 'all'
   required?: GameComponentType[]
   optional?: GameComponentType[]
   rejected?: GameComponentType[]

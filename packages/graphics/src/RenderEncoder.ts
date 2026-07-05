@@ -72,6 +72,12 @@ export abstract class RenderEncoder {
    */
   public abstract setScissorState(state: ScissorState | null): void
 
+  /**
+   * WebGPU only. Allows the pipeline to be created asynchronously.
+   * Skips draw commands if configured pipeline is not created.
+   */
+  public abstract setAsync(value: boolean): void
+
   public abstract draw(
     vertexCount: number,
     instanceCount?: number,

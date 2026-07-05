@@ -15,7 +15,7 @@ import { VIGNETTE_WGSL } from './vignette.wgsl'
 export function vignetteShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Vignette Shader',
-    wgsl: VIGNETTE_WGSL,
+    wgsl: { source: VIGNETTE_WGSL },
     glsl: {
       vertex: VIGNETTE_GLSL_VERTEX,
       fragment: VIGNETTE_GLSL_FRAGMENT,

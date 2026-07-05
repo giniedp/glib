@@ -36,12 +36,21 @@ export class RenderListCache {
     }
     return list
   }
+
+  public sumDrawCount(): number {
+    let size = 0
+    for (const list of this.lists.values()) {
+      size += list.drawCount
+    }
+    return size
+  }
 }
 
 export class RenderList {
   public size: number = 0
   public isSorted: boolean
   public isBatched: boolean
+  public drawCount = 0
 
   protected mode: RenderListMode
 
@@ -62,7 +71,7 @@ export class RenderList {
   }
 
   protected drawIndices: number[] = []
-  protected drawCount = 0
+
   protected drawInstanceOffset: number[] = []
   protected drawInstanceCount: number[] = []
 

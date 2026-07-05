@@ -86,6 +86,8 @@ export const CommonInputs = {
     ViewportInverseSize: inputSlotVec2(View, 'viewportInverseSize'),
     Near: inputSlotScalar(View, 'near'),
     Far: inputSlotScalar(View, 'far'),
+    SceneColorMap: inputSlotTexture(View, 'sceneColorMap'),
+    SceneDepthMap: inputSlotTexture(View, 'sceneDepthMap'),
   },
 
   Object: {

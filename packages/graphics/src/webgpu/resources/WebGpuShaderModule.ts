@@ -1,14 +1,16 @@
+import { ShaderConstants } from 'graphics/src/states'
 import {
   getRefCounter,
   ShaderModule,
+  VertexBuffer,
   type ReferenceCounted,
   type ReferenceCounter,
-  type VertexBuffer,
 } from '../../resources'
 import { type VertexAttribute } from '../../VertexLayout'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { parseWgsl, reflectWgsl, WgslEntryPointInfo, WgslProgramInfo, type WgslInputInfo } from '../wgsl'
+import { WebGpuBuffer } from './WebGpuBuffer'
 import { WebGpuProgram } from './WebGpuProgram'
 
 export interface WebGpuShaderOptions {
@@ -20,6 +22,14 @@ export interface WebGpuShaderOptions {
    * The shader source code.
    */
   code: string
+  /**
+   * The constants used to configure the vertex shader stage of this shader module.
+   */
+  vertexConstants?: ShaderConstants
+  /**
+   * The constants used to configure the fragment shader stage of this shader module.
+   */
+  fragmentConstants?: ShaderConstants
 }
 
 export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUShaderModule>, ReferenceCounted {
@@ -47,6 +57,14 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
    * Indicates whether the program is compiled and ready to use.
    */
   public readonly isReady: boolean = false
+  /**
+   * The constants used to configure the vertex shader stage of this shader module.
+   */
+  public readonly vertexConstants: ShaderConstants | null
+  /**
+   * The constants used to configure the fragment shader stage of this shader module.
+   */
+  public readonly fragmentConstants: ShaderConstants | null
 
   public readonly ref: ReferenceCounter
 
@@ -74,6 +92,8 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     if (!this.source) {
       throw new Error('shader code is required')
     }
+    this.vertexConstants = options.vertexConstants
+    this.fragmentConstants = options.fragmentConstants
     this.gpuObject = device.gpu.createShaderModule({
       label: options.name,
       code: options.code,
@@ -125,9 +145,48 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     if (!this.vertexEntry) {
       return result
     }
+
     const inputs: Record<string, WgslInputInfo> = {}
     for (const input of this.vertexEntry.inputs) {
       inputs[input.alias || input.name] = input
+    }
+
+    const vertexCount = vertexBuffer.getMaxVertexCount()
+    const available: string[] = []
+    for (const buffer of vertexBuffer.buffers) {
+      for (const semantic in buffer.vertexLayout) {
+        available.push(semantic)
+        const input = getInputBySemanticOrName(this.vertexEntry, semantic)
+        if (input) {
+          delete inputs[input.alias || input.name]
+        }
+      }
+    }
+
+    if (Object.keys(inputs).length > 0) {
+      for (const semantic in inputs) {
+        const input = inputs[semantic]
+        console.warn(
+          `Shader input '${semantic}' is not provided by any vertex buffer. Creating a temporary vertex buffer with default values.`,
+          available,
+        )
+        // there are still inputs that don't have corresponding vertex buffer attributes
+        const buffer = new WebGpuBuffer(this.device, {
+          type: 'VertexBuffer',
+          name: `auto-generated vertex buffer for shader input '${semantic}'`,
+          vertexLayout: {
+            [semantic]: {
+              byteOffset: 0,
+              elementType: input.elementType,
+              elementCount: input.elementCount,
+              normalized: false,
+              packed: false,
+            },
+          },
+          data: new Float32Array(vertexCount * 4),
+        })
+        vertexBuffer.buffers.push(buffer)
+      }
     }
 
     for (const buffer of vertexBuffer.buffers) {
@@ -151,9 +210,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
         stepMode: buffer.instanced ? 'instance' : 'vertex',
       })
     }
-    for (const key in inputs) {
-      console.warn(`vertex buffer does not satisfy shader input`, inputs[key], vertexBuffer)
-    }
+
     return result
   }
 

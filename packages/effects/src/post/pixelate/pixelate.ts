@@ -16,7 +16,7 @@ import { PIXELATE_WGSL } from './pixelate.wgsl'
 export function pixelateShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Pixelate Shader',
-    wgsl: PIXELATE_WGSL,
+    wgsl: { source: PIXELATE_WGSL },
     glsl: {
       vertex: PIXELATE_GLSL_VERTEX,
       fragment: PIXELATE_GLSL_FRAGMENT,

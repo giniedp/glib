@@ -1,17 +1,23 @@
 import type { Device } from '../Device'
+import { ShaderConstants } from '../states'
 import type { Program } from './Program'
 
 export type ShaderModuleOptions = WgslModuleOptions | GlslModuleOptions
 export interface WgslModuleOptions {
   name?: string
-  wgsl: WgslModuleSource
+  wgsl: string | WgslModuleSource
 }
 export interface GlslModuleOptions {
   name?: string
   glsl: GlslModuleSource
 }
 
-export type WgslModuleSource = string
+export type WgslModuleSource = {
+  source: string
+  vertexConstants?: ShaderConstants
+  fragmentConstants?: ShaderConstants
+}
+
 export type GlslModuleSource = {
   vertex: string
   fragment: string

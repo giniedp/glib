@@ -32,69 +32,101 @@ export class Model {
   public meta: Record<string, any>
 
   /**
-   * Collection of meshes
+   * All meshes belonging to this model
+   *
+   * @remarks
+   * Referenced by index from {@link NodeData.mesh}. Meshes may be shared
+   * between models.
    */
   public meshes: Mesh[]
 
   /**
-   * Collection of skins
+   * Skinning data, mapping skeleton joints to mesh vertices
    */
   public skins: SkinData[] = []
 
   /**
-   * The scene nodes
+   * The raw scene node definitions
+   *
+   * @remarks
+   * Serializable description of the node hierarchy. The live, traversable
+   * counterpart is {@link transformNodes}.
    */
   public nodes: NodeData[] = []
 
   /**
-   * Model animation data
+   * Animation clips that can be played back via {@link createAnimationPlayer}
    */
   public animations?: AnimationData[]
 
   /**
-   * The selected scene
+   * Index of the currently selected scene within {@link scenes}
    */
   public scene: number = 0
 
   /**
-   * All scenes of this model
+   * All scenes defined by this model
+   *
+   * @remarks
+   * A scene selects which of the {@link nodes} act as roots. The active scene
+   * is chosen with {@link selectScene}.
    */
   public scenes: SceneData[] = []
 
   /**
-   * All transform node instances
+   * Live transform node instances
    *
    * @remarks
-   * Nodes are a flat list in same order as passed to constructor.
-   * Nodes also contain references to their children, making it a tree structure.
+   * A flat list in the same order as {@link nodes}. Each node also references
+   * its children, so the list doubles as a tree.
    */
   public transformNodes: Transform<NodeData>[]
 
   /**
-   * Combined bounding sphere for all meshes in the current scene
+   * Combined bounding sphere of all meshes in the current scene
    *
    * @remarks
-   * Is updated on every call to {@link Model.update}.
+   * Recomputed on every call to {@link update}.
    */
   public boundingSphere = new BoundingSphere()
 
   /**
-   * Combined bounding box for all meshes in the current scene
+   * Combined bounding box of all meshes in the current scene
    *
    * @remarks
-   * Is updated on every call to {@link Model.update}.
+   * Recomputed on every call to {@link update}.
    */
   public boundingBox = new BoundingBox()
 
   /**
-   *
+   * Skeletons built from {@link skins}, used to drive skinned meshes
    */
   public skeletons: Skeleton[] = []
 
   private _sceneRoot = new Transform<NodeData>()
   private _sceneNodes: Transform<NodeData>[] = []
 
-  constructor(device: Device, options: ModelOptions) {
+  /**
+   * The nodes belonging to the currently selected scene, flattened into a
+   * traversal-ordered list.
+   */
+  public get sceneNodes(): ReadonlyArray<Transform<NodeData>> {
+    return this._sceneNodes
+  }
+
+  /**
+   * Creates a new model.
+   *
+   * @remarks
+   * Meshes given as plain options are constructed on the device. If no
+   * {@link NodeData | nodes} are supplied, a default scene is generated with
+   * one node per mesh. The initial scene is selected and {@link update} is
+   * called once.
+   *
+   * @param device - Graphics device that owns the model's GPU resources
+   * @param options - Model definition (meshes, nodes, scenes, skins, animations)
+   */
+  public constructor(device: Device, options: ModelOptions) {
     this.uid = uuid()
     this.device = device
     this.name = options.name || null
@@ -130,10 +162,14 @@ export class Model {
   }
 
   /**
-   * Simply iterates over all meshes and renders each with its assigned material
+   * Draws every mesh with its assigned material.
    *
    * @remarks
-   * This ignores the model nodes and just calls `draw()` for each mesh.
+   * Ignores the node hierarchy entirely and simply calls `draw()` on each
+   * mesh. Node transforms are not applied here; use {@link update} to compute
+   * them and bind them at draw time as your renderer requires.
+   *
+   * @returns This model, for chaining.
    */
   public draw(): Model {
     for (const mesh of this.meshes) {
@@ -143,7 +179,15 @@ export class Model {
   }
 
   /**
-   * Selects a scene by index and prepares state for update and rendering
+   * Selects a scene by index and rebuilds the traversal state.
+   *
+   * @remarks
+   * Re-parents the scene's root nodes under the internal scene root and
+   * refreshes {@link sceneNodes}. Does not recompute transforms or bounds —
+   * call {@link update} afterwards.
+   *
+   * @param index - Index into {@link scenes}
+   * @throws If no scene exists at the given index.
    */
   public selectScene(index: number) {
     this.scene = index
@@ -151,12 +195,16 @@ export class Model {
     if (!scene) {
       throw new Error(`Scene with index ${index} does not exist in model ${this.name}`)
     }
+    if (!scene.nodes) {
+      console.warn(`Scene has no nodes`, this)
+    }
     const root = this._sceneRoot
     root.children.length = 0
     for (const index of scene.nodes) {
       const node = this.transformNodes[index]
       if (node) {
         root.children.push(node)
+        node.parent = root
       }
     }
 
@@ -164,13 +212,29 @@ export class Model {
     flattenNodes(root.children, this._sceneNodes)
   }
 
-  public getAnimationPlayer() {
-    if (!this.animations) {
+  /**
+   * Creates an animation player for this model's clips.
+   *
+   * @returns A new {@link AnimationPlayer}, or `null` if the model has no
+   * animations.
+   */
+  public createAnimationPlayer() {
+    if (!this.animations?.length) {
       return null
     }
     return new AnimationPlayer(this.animations)
   }
 
+  /**
+   * Recomputes world transforms, skeletons, and bounds for the current scene.
+   *
+   * @remarks
+   * Should be called whenever the model's transform or pose changes, typically
+   * once per frame.
+   *
+   * @param world - Absolute transform for the scene root, or `null` to use
+   * identity.
+   */
   public update(world?: Mat4 | null) {
     this.updateScene(world)
     this.updateSkeletons(world)
@@ -178,12 +242,14 @@ export class Model {
   }
 
   /**
-   * Updates the transforms of all nodes in the current scene
+   * Updates the world transforms of all nodes in the current scene.
    *
    * @remarks
-   * The given world matrix is used for all root nodes in the scene.
-   * It is up to the application to ensure, that the provided root nods of the scene
-   * are identity transforms, so that no transform is lost.
+   * The given matrix is used as the absolute transform of the scene root.
+   * When omitted, the root is reset to identity.
+   *
+   * @param world - Absolute transform for the scene root, or `null` to reset
+   * to identity.
    */
   public updateScene(world?: Mat4 | null) {
     const root = this._sceneRoot
@@ -199,6 +265,12 @@ export class Model {
     root.propagateUpdates(true, true)
   }
 
+  /**
+   * Updates all skeletons for the current pose.
+   *
+   * @param world - Absolute transform applied to each skeleton, matching the
+   * value passed to {@link updateScene}.
+   */
   public updateSkeletons(world?: Mat4 | null) {
     if (this.skeletons) {
       for (const skeleton of this.skeletons) {
@@ -207,36 +279,38 @@ export class Model {
     }
   }
 
+  private tmpBox = new BoundingBox()
+  /**
+   * Recomputes {@link boundingBox} and {@link boundingSphere} from the current
+   * scene's mesh nodes.
+   *
+   * @remarks
+   * Each mesh's local bounding box is transformed by its node's world matrix
+   * and merged into the combined box; the sphere is then fit to that box.
+   */
   public updateBounds() {
     const box = this.boundingBox.initEmpty()
     const sphere = this.boundingSphere.init()
+
+    this.tmpBox.initEmpty()
     for (const node of this._sceneNodes) {
       const mesh = this.meshes[node.data.mesh]
       if (!mesh) {
         continue
       }
-      if (mesh.boundingBox) {
-        BoundingBox.transform(mesh.boundingBox, node.world, tmpBox)
-        box.merge(tmpBox)
-      } else {
-        console.warn('mesh has no bounding box')
-      }
-
-      // TODO: review, this yields seemingly wrong results
-      // BoundingSphere.transform(mesh.boundingSphere, node.world, tmpSphere)
-      // sphere.mergeSphere(tmpSphere)
+      BoundingBox.transform(mesh.boundingBox, node.world, this.tmpBox)
+      box.merge(this.tmpBox)
     }
+
     sphere.initFromBox(box)
   }
 
-  public drawScene(drawFn: (node: Transform, data: NodeData, model: Model) => void) {
-    for (const node of this._sceneNodes) {
-      if (node.data.mesh != null) {
-        drawFn(node, node.data, this)
-      }
-    }
-  }
-
+  /**
+   * Releases GPU resources held by this model's meshes.
+   *
+   * @remarks
+   * Only meshes are disposed; node, skeleton, and scene state are left intact.
+   */
   public dispose() {
     for (const mesh of this.meshes) {
       mesh.dispose()
@@ -252,7 +326,27 @@ export class Model {
     //   this.player = null
     // }
   }
-}
 
-const tmpBox = new BoundingBox()
-const tmpSphere = new BoundingSphere()
+  /**
+   * Serializes this model back into a plain {@link ModelOptions} object.
+   *
+   * @remarks
+   * Meshes are copied by reference (geometry may be shared); skins, nodes,
+   * animations, and scenes are deep-cloned via JSON round-trip, so any
+   * non-JSON-safe values (functions, typed arrays, cyclic refs) will be lost.
+   *
+   * @returns Options that can recreate an equivalent model.
+   */
+  public toOptions(): ModelOptions {
+    return {
+      name: this.name || undefined,
+      meta: { ...this.meta }, // flat list
+      meshes: [...this.meshes], // mesh geometry can be shared
+      skins: this.skins ? JSON.parse(JSON.stringify(this.skins)) : undefined,
+      nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
+      animations: this.animations ? JSON.parse(JSON.stringify(this.animations)) : undefined,
+      scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,
+      scene: this.scene,
+    }
+  }
+}

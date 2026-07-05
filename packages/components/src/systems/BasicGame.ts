@@ -10,6 +10,7 @@ import { GameLoop } from './GameLoop'
 import { SceneSystem } from './SceneSystem'
 import { TimeSystem } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
+import { EventEmitter } from '@gglib/utils'
 
 export class BasicGame {
   public device: Device
@@ -19,6 +20,7 @@ export class BasicGame {
   public scene: GameEntity
   public view: RenderView
   public loop: GameLoop
+  public events = new EventEmitter()
 
   public sceneQuery: GameQuery
   public constructor(options: CreateDeviceOptions) {
@@ -48,11 +50,11 @@ export class BasicGame {
     if (!this.world.hasSystem(BehaviorSystem)) {
       this.world.addSystem(new BehaviorSystem())
     }
-    if (!this.world.hasSystem(BoundsUpdateSystem)) {
-      this.world.addSystem(new BoundsUpdateSystem())
-    }
     if (!this.world.hasSystem(SceneSystem)) {
       this.world.addSystem(new SceneSystem(this.world))
+    }
+    if (!this.world.hasSystem(BoundsUpdateSystem)) {
+      this.world.addSystem(new BoundsUpdateSystem())
     }
     if (!this.world.hasSystem(Renderer)) {
       this.world.addSystem(new Renderer(this.device))
@@ -60,7 +62,7 @@ export class BasicGame {
 
     this.renderer = this.world.getSystem(Renderer)
     this.content = this.world.getSystem(ContentLoader)
-    this.sceneQuery = this.world.query({ required: [SceneRootComponent] })
+    this.sceneQuery = this.world.query({ scope: 'active', required: [SceneRootComponent] })
 
     this.loop = this.world.getSystem(GameLoop)
     this.loop.onUpdate.add((time) => this.update(time.timeMs, time.deltaMs))

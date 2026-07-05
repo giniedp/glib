@@ -47,6 +47,15 @@ export class WebGpuBuffer extends Buffer {
     self.resource = null
   }
 
+  private pushDispose() {
+    const self = this as Mutable<this>
+    const resource = this.resource
+    self.resource = null
+    if (resource) {
+      queueMicrotask(() => resource.destroy())
+    }
+  }
+
   public setData(src: TypedArray | ArrayBuffer | PlainBufferData, srcOffset?: number, srcLength?: number): void {
     if (isPlainBufferData(src)) {
       const ArrayType = dataTypeToArrayType(src.type)
@@ -80,7 +89,7 @@ export class WebGpuBuffer extends Buffer {
     }
 
     if (self.size !== srcByteSize) {
-      self.dispose()
+      this.pushDispose()
       self.size = srcByteSize
       self.elementCount = self.size / self.stride
       self.create()

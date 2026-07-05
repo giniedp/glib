@@ -9,6 +9,7 @@ export type MaterialSchemaType<S extends Record<Key, InputSlot>> = {
 
 export function materialSchemaClass<S extends Record<Key, InputSlot>>(schema: S) {
   return class extends Material {
+    public readonly schema: S = schema
     constructor(...args: ConstructorParameters<typeof Material>) {
       super(...args)
 

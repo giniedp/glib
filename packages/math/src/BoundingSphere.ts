@@ -370,7 +370,7 @@ export class BoundingSphere implements BoundingVolume {
    */
   public clone(out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
-    Vec3.clone(this.center, out.center)
+    Vec3.copy(this.center, out.center)
     out.radius = this.radius
     return out
   }

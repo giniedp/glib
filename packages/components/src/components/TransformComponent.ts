@@ -7,6 +7,7 @@ import {
   type GameTransform,
 } from '@gglib/ecs'
 import { Transform, type IVec3, type IVec4, type Mat4 } from '@gglib/math'
+import { brand, EventType } from '@gglib/utils'
 
 /**
  * Constructor options for {@link TransformComponent}
@@ -76,6 +77,7 @@ export class TransformComponent
   extends Transform
   implements GameTransform, GameComponent, InitializableComponent, ActivatableComponent
 {
+  public static onUpdated = brand<EventType<TransformComponent>>(Symbol('TransformComponent.onUpdated'))
   /**
    * Default value for {@link TransformComponentOptions.lifeCycle}
    */
@@ -91,7 +93,7 @@ export class TransformComponent
    */
   public readonly entity: GameEntity
 
-  protected lifeCycle: LifeCycleFlags
+  public lifeCycle: LifeCycleFlags
 
   constructor(options: TransformComponentOptions = {}) {
     super()
@@ -226,5 +228,10 @@ export class TransformComponent
         throw new Error('Cannot set parent to an entity that is already destroyed')
       }
     }
+  }
+
+  public override handleWorldUpdated(): void {
+    super.handleWorldUpdated()
+    this.entity.events.emit(TransformComponent.onUpdated, this)
   }
 }

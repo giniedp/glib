@@ -6,6 +6,7 @@ import { Ray } from './Ray'
 import { Plane } from './Plane'
 import { BoundingFrustum } from './BoundingFrustum'
 import { describe, it, expect } from 'vitest'
+import { Mat4 } from './Mat4'
 
 describe('BoundingBox', () => {
   function expectVec3Components(v: IVec3, x: number, y: number, z: number) {
@@ -635,6 +636,21 @@ describe('BoundingBox', () => {
       expect(BoundingBox.create(1.001, -1, -1, 2, 1, 1).intersectionFrustum(frustum)).toBe(0)
       expect(BoundingBox.create(-1, 1.001, -1, 1, 2, 1).intersectionFrustum(frustum)).toBe(0)
       expect(BoundingBox.create(-1, -1, 1.001, 1, 1, 2).intersectionFrustum(frustum)).toBe(0)
+    })
+  })
+
+  describe('.transformFast', () => {
+    it('transforms the box with a translation matrix', () => {
+      // A unit box centered at origin, extent = (1, 1, 1)
+      const box = BoundingBox.create(-1, -1, -1, 1, 1, 1)
+
+      // Pure translation: center (0,0,0) → (2,3,4), extent unchanged
+      const mat = Mat4.createTranslationXYZ(2, 3, 4)
+      const out = BoundingBox.transform(box, mat)
+
+      // center moves to (2,3,4), extent stays (1,1,1) → min=(1,2,3), max=(3,4,5)
+      expectVec3Components(out.min, 1, 2, 3)
+      expectVec3Components(out.max, 3, 4, 5)
     })
   })
 })

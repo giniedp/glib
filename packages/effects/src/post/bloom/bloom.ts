@@ -21,7 +21,7 @@ import { BLOOM_WGSL_COMBINE, BLOOM_WGSL_GLOW, BLOOM_WGSL_HBLUR, BLOOM_WGSL_VBLUR
 export function bloomGlowCutShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Bloom GlowCut',
-    wgsl: BLOOM_WGSL_GLOW,
+    wgsl: { source: BLOOM_WGSL_GLOW },
     glsl: {
       vertex: BLOOM_GLSL_VERTEX,
       fragment: BLOOM_GLSL_GLOW_FRAGMENT,
@@ -32,7 +32,7 @@ export function bloomGlowCutShaderOptions(): ShaderModuleOptions {
 export function bloomHBlurShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Bloom HBlur',
-    wgsl: BLOOM_WGSL_HBLUR,
+    wgsl: { source: BLOOM_WGSL_HBLUR },
     glsl: {
       vertex: BLOOM_GLSL_VERTEX,
       fragment: BLOOM_GLSL_HBLUR_FRAGMENT,
@@ -43,7 +43,7 @@ export function bloomHBlurShaderOptions(): ShaderModuleOptions {
 export function bloomVBlurShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Bloom VBlur',
-    wgsl: BLOOM_WGSL_VBLUR,
+    wgsl: { source: BLOOM_WGSL_VBLUR },
     glsl: {
       vertex: BLOOM_GLSL_VERTEX,
       fragment: BLOOM_GLSL_VBLUR_FRAGMENT,
@@ -54,7 +54,7 @@ export function bloomVBlurShaderOptions(): ShaderModuleOptions {
 export function bloomCombineShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Bloom Combine',
-    wgsl: BLOOM_WGSL_COMBINE,
+    wgsl: { source: BLOOM_WGSL_COMBINE },
     glsl: {
       vertex: BLOOM_GLSL_VERTEX,
       fragment: BLOOM_GLSL_COMBINE_FRAGMENT,
@@ -74,8 +74,8 @@ export type BloomShaderParams = {
   'params.offsetWeights[6]': Vec4
   'params.offsetWeights[7]': Vec4
   'params.offsetWeights[8]': Vec4
-  texture: Texture
-  textureBloom: Texture
+  texture1: Texture
+  texture2: Texture
 }
 
 export function bloomShaderParams(): BloomShaderParams {
@@ -91,8 +91,8 @@ export function bloomShaderParams(): BloomShaderParams {
     'params.offsetWeights[6]': Vec4.create(0, 0, 0, 0),
     'params.offsetWeights[7]': Vec4.create(0, 0, 0, 0),
     'params.offsetWeights[8]': Vec4.create(0, 0, 0, 0),
-    texture: null,
-    textureBloom: null,
+    texture1: null,
+    texture2: null,
   }
 }
 
@@ -169,8 +169,8 @@ export class BloomShader implements Renderable {
     params.set('params.offsetWeights[8]', this.offsetWeights[8])
     params.set('params.multiplier', this.multiplier)
     params.set('params.threshold', this.glowCut)
-    params.set('texture', this.textureInput)
-    params.set('textureBloom', null)
+    params.set('texture1', this.textureInput)
+    params.set('texture2', null)
 
     this.passGlowCut.applyInputs(params)
     this.passGlowCut.commit()
@@ -181,7 +181,7 @@ export class BloomShader implements Renderable {
     pass.submit()
 
     for (let n = 0; n < this.iterations; n++) {
-      params.set('texture', this.textureTemp1)
+      params.set('texture1', this.textureTemp1)
       this.passHBlur.applyInputs(params)
       this.passHBlur.commit()
       pass.setRenderTarget(0, this.textureTemp2)
@@ -190,7 +190,7 @@ export class BloomShader implements Renderable {
       pass.draw(3)
       pass.submit()
 
-      params.set('texture', this.textureTemp2)
+      params.set('texture1', this.textureTemp2)
       this.passVBlur.applyInputs(params)
       this.passVBlur.commit()
       pass.setRenderTarget(0, this.textureTemp1)
@@ -200,8 +200,8 @@ export class BloomShader implements Renderable {
       pass.submit()
     }
 
-    params.set('texture', this.textureInput)
-    params.set('textureBloom', this.textureTemp1)
+    params.set('texture1', this.textureInput)
+    params.set('texture2', this.textureTemp1)
     this.passCombine.applyInputs(params)
     this.passCombine.commit()
     pass.setRenderTarget(0, this.textureOuput)

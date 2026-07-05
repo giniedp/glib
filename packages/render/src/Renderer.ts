@@ -42,6 +42,10 @@ import {
 export const ViewDataSymbol = Symbol('ViewData')
 export const ViewChannelsSymbol = Symbol('ViewChannels')
 
+export interface RendererStats {
+  drawCount: number
+}
+
 export class Renderer {
   /**
    * The graphics device
@@ -66,6 +70,7 @@ export class Renderer {
   public perInstanceTransforms: BufferWriter
   public perInstanceData: BufferWriter
 
+  public lastInstanceCount = 0
   protected renderLists: RenderListCache
   protected collectors: RenderCollectorRegistry
   protected spriteBatch: SpriteBatch
@@ -117,6 +122,13 @@ export class Renderer {
         initialBlocks: [CommonBlocks.Global, CommonBlocks.Frame, CommonBlocks.View],
       }),
     }
+  }
+
+  public stats<T extends RendererStats>(out?: T): T
+  public stats(out?: RendererStats): RendererStats {
+    out ||= { drawCount: 0 } as RendererStats
+    out.drawCount = this.renderLists.sumDrawCount()
+    return out
   }
 
   protected createInstanceBuffers() {
@@ -207,6 +219,7 @@ export class Renderer {
    * Should be called once per frame before rendering.
    */
   public update(time: number) {
+    this.lastInstanceCount = this.perInstanceTransforms.count
     this.frameInfo.time ||= time
     this.frameInfo.delta = time - this.frameInfo.time
     this.frameInfo.time = time
@@ -369,6 +382,8 @@ export class Renderer {
     ctx.renderInputs.set(CommonInputs.Frame.ElapsedTime, ctx.frame.time)
     ctx.renderInputs.set(CommonInputs.Frame.DeltaTime, ctx.frame.delta)
 
+    ctx.renderInputs.set(CommonInputs.View.Far, ctx.view.camera.far)
+    ctx.renderInputs.set(CommonInputs.View.Near, ctx.view.camera.near)
     ctx.renderInputs.set(CommonInputs.View.ViewMatrix, ctx.view.camera.view)
     ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)
 

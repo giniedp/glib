@@ -44,6 +44,18 @@ export class GameQuery {
     }
   }
 
+  /**
+   * Returns the total number of entities in this query.
+   * Note that this method iterates over all archetypes and counts their entities.
+   */
+  public count() {
+    let count = 0
+    for (let i = 0; i < this.archetypes.length; i++) {
+      count += this.archetypes[i].size
+    }
+    return count
+  }
+
   public forEachId(fn: (entityId: GameEntityId, index: number) => void): void {
     let i = 0
     for (let aIndex = 0; aIndex < this.archetypes.length; aIndex++) {

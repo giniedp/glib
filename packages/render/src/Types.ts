@@ -24,6 +24,21 @@ export const LayerMask = {
   All: Number.MAX_SAFE_INTEGER,
 }
 
+export function mergeLayerMask(...masks: (LayerMask | null | undefined)[]): LayerMask | null
+/**
+ * Merges multiple layer masks into a single mask by performing a bitwise OR operation.
+ * If all masks are null or undefined, null is returned.
+ */
+export function mergeLayerMask(): LayerMask | null {
+  let result: LayerMask = null
+  for (const mask of arguments) {
+    if (mask != null) {
+      result = result == null ? mask : result | mask
+    }
+  }
+  return result
+}
+
 export interface CameraData {
   /**
    * The layer mask that this camera renders.
@@ -77,7 +92,7 @@ export type SpriteRenderItem = RenderItem<Sprite>
 export type RenderItem<T = unknown> = {
   type: RenderItemType<string, T>
   /**
-   * The render layer of this item, used for sorting.
+   * The render layer of this item, used for culling and sorting.
    */
   layer: LayerMask
   /**

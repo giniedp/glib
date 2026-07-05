@@ -1,5 +1,5 @@
 import { GameEntity, idProvider } from '@gglib/ecs'
-import { BoundingBox, IntersectionType } from '@gglib/math'
+import { BoundingBox, BoundingSphere, IntersectionType } from '@gglib/math'
 import { idMap, IdMap } from '@gglib/utils'
 
 /**
@@ -36,7 +36,8 @@ export type EntriesPayload = {
 export interface SpatialEntry<T extends EntriesPayload = EntriesPayload> {
   node: SpatialNode<T>
   entity: GameEntity
-  bounds: BoundingBox
+  box: BoundingBox
+  sphere: BoundingSphere
 }
 
 const entryIds = idProvider(Symbol('SpatialEntry'))

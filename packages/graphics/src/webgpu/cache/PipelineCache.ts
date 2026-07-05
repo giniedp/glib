@@ -15,9 +15,10 @@ import type { WebGpuDevice } from '../WebGpuDevice'
 import { structureCache, type StructureCache } from './StructureCache'
 
 export interface PipelineParams {
+  async?: boolean
   shader: WebGpuShaderModule
-  // vertexConstants: ShaderConstants
-  // fragmentConstants: ShaderConstants
+  vertexConstants: ShaderConstants
+  fragmentConstants: ShaderConstants
   vertexLayout: ReadonlyArray<GPUVertexBufferLayout | null | undefined>
   targets: ReadonlyArray<GPUColorTargetState>
   depthFormat: SurfaceFormat
@@ -38,8 +39,8 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
     shape: {
       shader: 'weak',
       vertexLayout: 'map',
-      // vertexConstants: 'map',
-      // fragmentConstants: 'map',
+      vertexConstants: 'map',
+      fragmentConstants: 'map',
       targets: 'map',
       depthFormat: 'map',
       cullState: 'map',
@@ -60,13 +61,13 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
           module: program.gpuObject,
           entryPoint: program.vertexFn,
           // buffers: see below
-          // constants: not used
+          // constants: see below
         },
         fragment: {
           module: program.gpuObject,
           entryPoint: program.fragmentFn,
           targets: params.targets,
-          // constants: not used
+          // constants: see below
         },
         // multisample: see below
         primitive: getPrimitiveState(params.primitiveType, params.cullState),
@@ -74,12 +75,12 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
       if (params.vertexLayout) {
         descriptor.vertex.buffers = params.vertexLayout
       }
-      // if (params.vertexConstants) {
-      //   descriptor.vertex.constants = params.vertexConstants.state
-      // }
-      // if (params.fragmentConstants) {
-      //   descriptor.fragment.constants = params.fragmentConstants.state
-      // }
+      if (params.vertexConstants) {
+        descriptor.vertex.constants = params.vertexConstants.state
+      }
+      if (params.fragmentConstants) {
+        descriptor.fragment.constants = params.fragmentConstants.state
+      }
       if (params.multisampleCount > 1) {
         descriptor.multisample = {
           count: params.multisampleCount,
@@ -100,6 +101,9 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
         )
       }
 
+      if (params.async) {
+        return device.gpu.createRenderPipelineAsync(descriptor)
+      }
       return device.gpu.createRenderPipeline(descriptor)
     },
   })

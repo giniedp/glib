@@ -129,6 +129,9 @@ export class WebglRenderEncoder extends RenderEncoder {
     return this.renderBlendParam(index)?.state
   }
 
+  public setAsync(value: boolean) {
+    //
+  }
   public setProgram(bindings: Program): void {
     this.shaderPending = bindings?.module as WebglShaderModule
     this.shaderChanged = this.shader !== this.shaderPending

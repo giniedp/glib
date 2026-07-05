@@ -74,7 +74,7 @@ export class ModelRenderCollector implements RenderCollector<ModelRenderItem> {
         }
 
         const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-        const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
+        const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry))
         this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
       }
     }
@@ -117,7 +117,7 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
       }
 
       const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-      const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
+      const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry))
       this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
     }
   }
@@ -125,6 +125,25 @@ export class MeshRenderCollector implements RenderCollector<MeshRenderItem> {
   public end(): void {
     //
   }
+}
+
+let materialIds = 1
+let geometryIds = 1
+
+const mtlIdKey = Symbol('materialId')
+function getMaterialId(material: Material): number {
+  if (!material[mtlIdKey]) {
+    material[mtlIdKey] = materialIds++
+  }
+  return material[mtlIdKey]
+}
+
+const geoIdKey = Symbol('geometryId')
+function getGeometryId(geometry: Geometry): number {
+  if (!geometry[geoIdKey]) {
+    geometry[geoIdKey] = geometryIds++
+  }
+  return geometry[geoIdKey]
 }
 
 export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderItem> {
@@ -159,7 +178,7 @@ export class MeshPartRenderCollector implements RenderCollector<MeshPartRenderIt
     }
 
     const state = this.list.getState(effect.blendState, effect.depthState, effect.offsetState, effect.cullState)
-    const sortKey = this.list.getKey(depth, item.layer, 0, state, 0)
+    const sortKey = this.list.getKey(depth, item.layer, getMaterialId(material), state, getGeometryId(geometry))
     this.list.add(sortKey, geometry, effect, material.inputBlocks, item.transform, item.instance)
   }
 

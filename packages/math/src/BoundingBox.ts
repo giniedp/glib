@@ -329,27 +329,34 @@ export class BoundingBox implements BoundingVolume {
    *
    * @param box - the box to transform
    * @param transform - the transform matrix
-   * @param out - where to write the result. Must not be the same instance as `box`
+   * @param out - where to write the result
    */
   public static transform(box: BoundingBox, transform: Mat4, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
-    temp = temp || new Vec3()
-    if (box === out) {
-      throw new Error('can not transform the box into the same instance')
-    }
 
-    transform.transformV3(box.getCorner(0, temp))
-    out.init(temp.x, temp.y, temp.z, temp.x, temp.y, temp.z)
+    const center = Vec3.$0
+    const extent = Vec3.$1
 
-    out.mergePoint(transform.transformV3(box.getCorner(1, temp)))
-    out.mergePoint(transform.transformV3(box.getCorner(2, temp)))
-    out.mergePoint(transform.transformV3(box.getCorner(3, temp)))
-    out.mergePoint(transform.transformV3(box.getCorner(4, temp)))
-    out.mergePoint(transform.transformV3(box.getCorner(5, temp)))
-    out.mergePoint(transform.transformV3(box.getCorner(6, temp)))
-    out.mergePoint(transform.transformV3(box.getCorner(7, temp)))
+    center.x = (box.min.x + box.max.x) * 0.5
+    center.y = (box.min.y + box.max.y) * 0.5
+    center.z = (box.min.z + box.max.z) * 0.5
 
-    return null
+    extent.x = (box.max.x - box.min.x) * 0.5
+    extent.y = (box.max.y - box.min.y) * 0.5
+    extent.z = (box.max.z - box.min.z) * 0.5
+
+    transform.transformV3(center, center)
+    transform.transformV3NormalAbs(extent, extent)
+
+    out.min.x = center.x - extent.x
+    out.min.y = center.y - extent.y
+    out.min.z = center.z - extent.z
+
+    out.max.x = center.x + extent.x
+    out.max.y = center.y + extent.y
+    out.max.z = center.z + extent.z
+
+    return out
   }
 
   /**

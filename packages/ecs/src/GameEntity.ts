@@ -1,4 +1,4 @@
-import { addItemIfAbsent, append, Brand, EventEmitter, type AbstractType, type Type } from '@gglib/utils'
+import { addItemIfAbsent, brand, Brand, EventEmitter, EventType, type AbstractType, type Type } from '@gglib/utils'
 import {
   ComponentIds,
   ComponentTypeIds,
@@ -39,6 +39,15 @@ export const GetComponent = {
 
 export type NotGameEntity<T> = T & (T extends GameEntity ? never : T)
 export class GameEntity {
+  public static defaultLayer: number | null = null
+  public static readonly onInitialized = brand<EventType<GameEntity>>(Symbol('initialized'))
+  public static readonly onDestroyed = brand<EventType<GameEntity>>(Symbol('destroyed'))
+  public static readonly onActivating = brand<EventType<GameEntity>>(Symbol('beforeActivate'))
+  public static readonly onActivated = brand<EventType<GameEntity>>(Symbol('activated'))
+  public static readonly onDeactivating = brand<EventType<GameEntity>>(Symbol('beforeDeactivate'))
+  public static readonly onDeactivated = brand<EventType<GameEntity>>(Symbol('deactivated'))
+  public static readonly onArchetypeChanged = brand<EventType<GameEntity>>(Symbol('archetypeChanged'))
+
   /**
    * The unique runtime ID of this entity.
    *
@@ -60,8 +69,20 @@ export class GameEntity {
 
   /**
    * A user defined name of this entity
+   *
+   * @remarks
+   * Useful for debugging and editor purposes.
    */
   public name: string
+
+  /**
+   * A user defined layer of this entity that can be used for filtering and culling
+   *
+   * @remarks
+   * The interpretation is up to the host system.
+   * Initialized to `GameEntity.defaultLayer` which is `null` by default.
+   */
+  public layer: number | null = GameEntity.defaultLayer
 
   /**
    * The world this entity has been initialized in
@@ -85,14 +106,15 @@ export class GameEntity {
    */
   public readonly events = new EventEmitter()
 
-  public readonly onInitialized = this.events.channel<GameEntity>('initialized')
-  public readonly onDestroyed = this.events.channel<GameEntity>('destroyed')
-  public readonly onActivating = this.events.channel<GameEntity>('beforeActivate')
-  public readonly onActivated = this.events.channel<GameEntity>('activated')
-  public readonly onDeactivating = this.events.channel<GameEntity>('beforeDeactivate')
-  public readonly onDeactivated = this.events.channel<GameEntity>('deactivated')
-  public readonly onComponentAdded = this.events.channel<[GameEntity, GameComponent]>('componentAdded')
-  public readonly onComponentRemoved = this.events.channel<[GameEntity, GameComponent]>('componentRemoved')
+  public readonly onInitialized = this.events.channel(GameEntity.onInitialized)
+  public readonly onDestroyed = this.events.channel(GameEntity.onDestroyed)
+  public readonly onActivating = this.events.channel(GameEntity.onActivating)
+  public readonly onActivated = this.events.channel(GameEntity.onActivated)
+  public readonly onDeactivating = this.events.channel(GameEntity.onDeactivating)
+  public readonly onDeactivated = this.events.channel(GameEntity.onDeactivated)
+  public readonly onArchetypeChanged = this.events.channel(GameEntity.onArchetypeChanged)
+
+  private archetypeChanged = true
 
   /**
    * Gets the transform component of this entity
@@ -276,6 +298,10 @@ export class GameEntity {
     for (const component of components) {
       this.addComponent(component)
     }
+    if (this.archetypeChanged) {
+      this.archetypeChanged = false
+      this.onArchetypeChanged.emit(this)
+    }
     return this
   }
 
@@ -294,6 +320,18 @@ export class GameEntity {
    * @throws Error if the component type is already registered
    */
   public addComponent<T extends GameComponent>(component: GameComponent, ...types: Array<GameComponentType<T>>): this {
+    this.addComponentIntern(component, ...types)
+    if (this.archetypeChanged) {
+      this.archetypeChanged = false
+      this.onArchetypeChanged.emit(this)
+    }
+    return this
+  }
+
+  private addComponentIntern<T extends GameComponent>(
+    component: GameComponent,
+    ...types: Array<GameComponentType<T>>
+  ): boolean {
     if (!types.length && component.constructor) {
       if (component.constructor === Object) {
         throw new Error('Plain objects must have an explicit type provided when added as components')
@@ -307,7 +345,7 @@ export class GameEntity {
 
     if (this.components.includes(component)) {
       console.warn('Component already added to entity', component)
-      return this
+      return false
     }
 
     for (const type of types) {
@@ -327,7 +365,6 @@ export class GameEntity {
 
     this.components.push(component)
     component.entity = this
-    this.onComponentAdded.emit([this, component])
 
     switch (this.state) {
       case GameEntityState.Created:
@@ -341,13 +378,30 @@ export class GameEntity {
         }
         break
     }
-    return this
+    return true
   }
 
   public removeComponentByType<T extends GameComponent>(type: GameComponentType<T>): void {
     const component = this.component(type, GetComponent.Optional)
     if (component) {
-      this.removeComponent(component)
+      this.removeComponentIntern(component)
+    }
+    if (this.archetypeChanged) {
+      this.archetypeChanged = false
+      this.onArchetypeChanged.emit(this)
+    }
+  }
+
+  public removeComponentsByType<T extends GameComponent>(types: Array<GameComponentType<T>>): void {
+    for (const type of types) {
+      const component = this.component(type, GetComponent.Optional)
+      if (component) {
+        this.removeComponentIntern(component)
+      }
+    }
+    if (this.archetypeChanged) {
+      this.archetypeChanged = false
+      this.onArchetypeChanged.emit(this)
     }
   }
 
@@ -355,6 +409,14 @@ export class GameEntity {
    * Removes a component from the entity
    */
   public removeComponent(component: GameComponent): void {
+    this.removeComponentIntern(component)
+    if (this.archetypeChanged) {
+      this.archetypeChanged = false
+      this.onArchetypeChanged.emit(this)
+    }
+  }
+
+  private removeComponentIntern(component: GameComponent): void {
     if (this.state >= GameEntityState.Activated) {
       throw new Error('Cannot remove component while entity is active or destroyed')
     }
@@ -370,7 +432,7 @@ export class GameEntity {
         delete this.componentByType[typeId]
       }
     }
-    this.onComponentRemoved.emit([this, component])
+    this.archetypeChanged = true
   }
 
   public getOrCreateComponent<T extends GameComponent>(type: GameComponentType<T>, factory: () => T): T {

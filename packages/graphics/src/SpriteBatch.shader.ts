@@ -3,7 +3,7 @@ import type { ShaderModuleOptions } from './resources'
 export function spriteBatchShader(): ShaderModuleOptions {
   return {
     name: 'SPRITE_BATCH',
-    wgsl: SPRITE_BATCH_WGSL,
+    wgsl: { source: SPRITE_BATCH_WGSL },
     glsl: {
       vertex: vertexShader,
       fragment: fragmentShader,

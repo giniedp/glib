@@ -58,7 +58,7 @@ export class SpriteBatch implements Renderable {
 
   private vertexBuffer: VertexBuffer
   private indexBuffer: Buffer
-  private shader: ShaderModule
+  public readonly shader: ShaderModule
   private matrix: Mat4
 
   private pool = new PooledList<SpriteBuilder>(() => new SpriteBuilder())

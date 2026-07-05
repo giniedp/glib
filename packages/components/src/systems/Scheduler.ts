@@ -20,85 +20,90 @@ export const PriorityLane = {
   Medium: brand<PriorityLane>(2),
   Low: brand<PriorityLane>(3),
 } as const
+export class TaskCancelledError extends Error {
+  public constructor() {
+    super('Task cancelled')
+    this.name = 'TaskCancelledError'
+  }
+}
 
-export interface ScheduledTask<T = unknown> {
+export interface ScheduledTask<T = any> {
   lane: PriorityLane
-
+  label?: string
   basePriority?: number
-
   dynamicPriority?: number
-
   phase?: TaskPhase
-
   cancelled?: boolean
 
   /**
-   * The result of the task, if applicable
-   */
-  result?: T | null
-
-  /**
-   * The entity this task is associated with. Can be used for auto priority updates based on spatial data
+   * The entity this task is associated with. Can be used for auto priority
+   * updates based on spatial data.
    */
   entity?: GameEntity
 
   /**
-   * The async loading function for the task.
+   * Shared mutable context for the task. May be set on construction and
+   * read/written by load, work, and finalize.
    */
-  load?: (signal: AbortSignal) => Promise<void>
+  context?: T
 
   /**
-   * The main work function for the task. Should return true if the task is complete, or false if it needs more time and should be rescheduled for another tick.
+   * Async loading function. Write results into `task.context`.
+   * If omitted the task moves straight to Ready.
    */
-  work?: (budgetMs: number) => boolean
+  load?: (task: ScheduledTask<T>, signal: AbortSignal) => Promise<void>
 
   /**
-   * Called when the task is cancelled, either by user action or due to an error.
+   * Main work function. Read/write `task.context` as needed.
+   * Return `true` when complete, `false` to be rescheduled for the next tick.
    */
-  onCancel?: () => void
-  /**
-   * Called when the task is completed successfully.
-   */
-  onDone?: () => void
+  work?: (task: ScheduledTask<T>, budgetMs: number) => boolean
 
   /**
-   * @internal
+   * Called when the task reaches any terminal state.
+   *
+   * - `error` is `undefined`          → completed successfully
+   * - `error` is `TaskCancelledError` → cancelled by user or superseded
+   * - `error` is any other `Error`    → load or work threw
+   *
+   * `task.context` is accessible here for cleanup.
    */
+  finalize?: (task: ScheduledTask<T>, error?: TaskCancelledError | Error) => void
+
+  /** @internal */
   _abortController?: AbortController
 }
 
+// ---------------------------------------------------------------------------
+// Config / Stats
+// ---------------------------------------------------------------------------
+
 export interface LaneConfig {
   /**
-   * Frame budget ratio for this lane
+   * Frame budget ratio for this lane (0–1).
    */
   budgetRatio: number
 }
 
 export interface SchedulerConfig {
   /**
-   * Async concurrency cap. Tasks beyond this will wait in the pending queue until a slot is available.
+   * Maximum number of concurrently in-flight async loads.
    */
   maxConcurrent: number
 
   /**
-   * Total frame budget in milliseconds. The scheduler will try to keep within this budget by deferring ready tasks to future ticks as needed.
+   * Total frame budget in milliseconds across all lanes.
    */
   frameBudgetMs: number
 
   /**
-   * Fraction for finalization (default 1.0)
-   */
-  readyBudgetRatio?: number
-
-  /**
-   * Safety cap for number of ready tasks to process per tick (default Infinity).
-   * This is to prevent pathological cases where too many ready tasks cause frame drops, even if they are individually cheap.
+   * Safety cap on ready tasks processed per tick (default: `Infinity`).
+   * Prevents frame drops when many cheap tasks are ready simultaneously.
    */
   maxReadyTasksPerTick?: number
 
   /**
-   * Configuration for each lane. Tasks in different lanes can have different budget ratios,
-   * which allows prioritizing certain types of work over others.
+   * Per-lane configuration.
    */
   lanes: Record<PriorityLane, LaneConfig>
 }
@@ -111,22 +116,25 @@ export interface SchedulerStats {
 
 const taskIds = idProvider(Symbol('SchedulerTask'))
 
-export class AsyncScheduler {
-  private pending = new PriorityQueue<number, ScheduledTask>()
-  private readyQueues = new Map<PriorityLane, PriorityQueue<number, ScheduledTask>>()
-  private inFlight = new Map<number, ScheduledTask>()
-  private tasks = new Map<number, ScheduledTask>()
+function effectivePriority(task: ScheduledTask): number {
+  return (task.basePriority ?? 0) + (task.dynamicPriority ?? 0)
+}
 
-  private config: SchedulerConfig
-  private laneOrder: PriorityLane[]
+export class AsyncScheduler {
+  private readonly pending = new PriorityQueue<number, ScheduledTask<any>>()
+  private readonly readyQueues = new Map<PriorityLane, PriorityQueue<number, ScheduledTask<any>>>()
+  private readonly inFlight = new Map<number, ScheduledTask<any>>()
+  private readonly tasks = new Map<number, ScheduledTask<any>>()
+
+  private readonly config: Required<SchedulerConfig>
+  private readonly laneOrder: PriorityLane[]
 
   public constructor(config: SchedulerConfig) {
     this.config = {
-      readyBudgetRatio: 1.0,
       maxReadyTasksPerTick: Infinity,
       ...config,
     }
-    this.laneOrder = Object.keys(config.lanes)
+    this.laneOrder = (Object.keys(config.lanes) as unknown as PriorityLane[])
       .map((k) => Number(k) as PriorityLane)
       .sort((a, b) => a - b)
 
@@ -139,90 +147,120 @@ export class AsyncScheduler {
     return this.pending.entries
   }
 
-  public enqueue(task: ScheduledTask) {
+  public enqueue<T = unknown>(task: ScheduledTask<T>): void {
+    task.lane ??= PriorityLane.Medium
+    task.basePriority ??= 0
+    task.dynamicPriority ??= 0
     task.phase = TaskPhase.Idle
     task.cancelled = false
-    task.dynamicPriority ??= 0
-    task.basePriority ??= 0
-    task.lane ??= PriorityLane.Medium
-    const id = taskIds.getOrCreate(task)
 
-    if (this.tasks.has(id)) {
-      throw new Error(`Task with id ${id} already exists`)
+    if (!this.laneOrder.includes(task.lane)) {
+      throw new Error(`Unknown lane ${task.lane}. Add it to SchedulerConfig.lanes.`)
     }
+
+    const id = taskIds.getOrCreate(task)
+    if (this.tasks.has(id)) {
+      throw new Error(`Task ${id} is already queued. Cancel it before re-enqueueing.`)
+    }
+
     this.tasks.set(id, task)
-    this.pending.push(id, task.dynamicPriority, task)
+    this.pending.push(id, effectivePriority(task), task)
   }
 
-  public cancel(task: ScheduledTask) {
+  public cancel(task: ScheduledTask<any>): void {
     if (!task) {
       return
     }
+
     const id = taskIds.get(task)
+    if (id == null) {
+      return
+    }
+
+    if (!this.tasks.has(id)) {
+      return
+    }
 
     task.cancelled = true
     task.phase = TaskPhase.Cancelled
 
+    this.pending.remove(id)
+    this.inFlight.delete(id)
     for (const queue of this.readyQueues.values()) {
       queue.remove(id)
     }
-    this.pending.remove(id)
-    this.inFlight.delete(id)
     this.tasks.delete(id)
 
-    try {
-      task._abortController?.abort()
-      task.onCancel?.()
-    } catch (e) {
-      console.error('Error in task onCancel callback', e)
-    }
+    task._abortController?.abort()
+    task._abortController = undefined
+
+    this.invokeFinalize(task, new TaskCancelledError())
   }
 
-  public cancelAll() {
-    for (const task of this.tasks.values()) {
+  public cancelAll(): void {
+    for (const task of [...this.tasks.values()]) {
       this.cancel(task)
     }
   }
 
-  public reprioritize(task: ScheduledTask, newPriority: number, newLane?: PriorityLane) {
+  /**
+   * Update the priority (and optionally the lane) of a queued or ready task.
+   * No-op if the task is not tracked (already done / cancelled).
+   */
+  public reprioritize(task: ScheduledTask, newPriority: number, newLane?: PriorityLane): void {
     if (!task) {
       return
     }
+
     const id = taskIds.get(task)
-
-    const oldLane = task.lane
-    task.dynamicPriority = newPriority
-
-    if (newLane != null && newLane != oldLane) {
-      task.lane = newLane
-
-      // move between ready queues if necessary
-      const oldQueue = this.readyQueues.get(oldLane)
-      const newQueue = this.readyQueues.get(newLane)
-
-      if (oldQueue?.remove(id)) {
-        newQueue?.push(id, newPriority, task)
-      }
+    if (id == null || !this.tasks.has(id)) {
+      return
     }
 
-    // update whichever queue it is in
+    if (newLane != null && newLane !== task.lane) {
+      if (!this.laneOrder.includes(newLane)) {
+        throw new Error(`Unknown lane ${newLane}. Add it to SchedulerConfig.lanes.`)
+      }
+
+      const oldQueue = this.readyQueues.get(task.lane)
+      const newQueue = this.readyQueues.get(newLane)!
+
+      if (oldQueue?.remove(id)) {
+        newQueue.push(id, newPriority, task)
+      }
+
+      task.lane = newLane
+    }
+
+    task.dynamicPriority = newPriority
+    const priority = effectivePriority(task)
+
     if (this.pending.has(id)) {
-      this.pending.updatePriority(id, newPriority)
+      this.pending.updatePriority(id, priority)
     } else {
-      const queue = this.readyQueues.get(task.lane)
-      queue?.updatePriority(id, newPriority)
+      this.readyQueues.get(task.lane)?.updatePriority(id, priority)
     }
   }
 
-  public tick() {
+  /**
+   * Drive one scheduler tick: pump async loads then process ready work.
+   */
+  public tick(): void {
     this.pumpAsync()
     this.runReady()
   }
 
-  protected pumpAsync() {
+  public getStats(stats?: SchedulerStats): SchedulerStats {
+    stats ??= {} as SchedulerStats
+    stats.pending = this.pending.size()
+    stats.inFlight = this.inFlight.size
+    stats.total = this.tasks.size
+    return stats
+  }
+
+  protected pumpAsync(): void {
     while (this.inFlight.size < this.config.maxConcurrent && this.pending.size() > 0) {
       const task = this.pending.pop()
-
       if (!task) {
         break
       }
@@ -231,94 +269,95 @@ export class AsyncScheduler {
         continue
       }
 
+      const id = taskIds.get(task)
+
       if (!task.load) {
         task.phase = TaskPhase.Ready
-
-        this.readyQueues.get(task.lane)!.push(taskIds.get(task), task.dynamicPriority, task)
+        this.getReadyQueue(task.lane).push(id, effectivePriority(task), task)
         continue
       }
 
       const controller = new AbortController()
       task._abortController = controller
-
       task.phase = TaskPhase.Loading
-      this.inFlight.set(taskIds.get(task), task)
+      this.inFlight.set(id, task)
 
-      task
-        .load(controller.signal)
+      Promise.resolve(task.load(task, controller.signal))
         .then(() => {
-          this.inFlight.delete(taskIds.get(task))
+          this.inFlight.delete(id)
+          task._abortController = undefined
+
           if (task.cancelled) {
             return
           }
 
           task.phase = TaskPhase.Ready
-          this.readyQueues.get(task.lane)!.push(taskIds.get(task), task.dynamicPriority, task)
+          this.getReadyQueue(task.lane).push(id, effectivePriority(task), task)
         })
         .catch((err) => {
-          console.error('Error in task load function', err)
+          this.inFlight.delete(id)
+          task._abortController = undefined
 
-          this.inFlight.delete(taskIds.get(task))
           if (task.cancelled) {
             return
           }
 
-          task.phase = TaskPhase.Cancelled
-          this.tasks.delete(taskIds.get(task))
+          console.error('[AsyncScheduler] Error in task load function', err)
+          this.finaliseTask(task, id, err instanceof Error ? err : new Error(String(err)))
         })
     }
   }
 
-  protected runReady() {
-    const frameBudget = this.config.frameBudgetMs
+  protected runReady(): void {
+    const { frameBudgetMs, maxReadyTasksPerTick, lanes } = this.config
     let totalSteps = 0
 
     for (const lane of this.laneOrder) {
+      if (totalSteps >= maxReadyTasksPerTick) {
+        break
+      }
+
       const queue = this.readyQueues.get(lane)!
-      const laneBudget = frameBudget * this.config.lanes[lane].budgetRatio
+      const laneBudget = frameBudgetMs * lanes[lane].budgetRatio
+      const laneStart = performance.now()
 
-      const start = performance.now()
-
-      while (performance.now() - start < laneBudget && totalSteps < (this.config.maxReadyTasksPerTick ?? Infinity)) {
+      while (performance.now() - laneStart < laneBudget && totalSteps < maxReadyTasksPerTick) {
         const task = queue.pop()
         if (!task) {
           break
         }
+
         if (task.cancelled) {
           continue
         }
 
+        const id = taskIds.get(task)
         task.phase = TaskPhase.Finalizing
-        const taskId = taskIds.get(task)
 
+        const remaining = laneBudget - (performance.now() - laneStart)
         let done = true
-        let error: any = null
+        let error: Error | undefined
 
         if (task.work) {
-          const remaining = laneBudget - (performance.now() - start)
-
           try {
-            done = task.work(Math.max(0, remaining))
+            const result = task.work(task, Math.max(0, remaining))
+            done = result ?? true
+            if (result == null) {
+              console.warn('[AsyncScheduler] task.work returned null/undefined — treating as done', task)
+            }
           } catch (err) {
-            error = err
+            error = err instanceof Error ? err : new Error(String(err))
           }
         }
 
         if (error) {
-          task.phase = TaskPhase.Done
-          this.tasks.delete(taskId)
-          console.error('Error in task work function', error)
+          console.error('[AsyncScheduler] Error in task work function', error)
+          this.finaliseTask(task, id, error)
         } else if (done) {
-          task.phase = TaskPhase.Done
-          this.tasks.delete(taskId)
-          try {
-            task.onDone?.()
-          } catch (e) {
-            console.error('Error in task onDone callback', e)
-          }
+          this.finaliseTask(task, id, undefined)
         } else {
           task.phase = TaskPhase.Ready
-          queue.push(taskId, task.dynamicPriority, task)
+          queue.push(id, effectivePriority(task), task)
         }
 
         totalSteps++
@@ -326,11 +365,30 @@ export class AsyncScheduler {
     }
   }
 
-  public getStats(stats?: SchedulerStats): SchedulerStats {
-    stats ||= {} as SchedulerStats
-    stats.pending = this.pending.size()
-    stats.inFlight = this.inFlight.size
-    stats.total = this.tasks.size
-    return stats
+  private getReadyQueue(lane: PriorityLane): PriorityQueue<number, ScheduledTask> {
+    const queue = this.readyQueues.get(lane)
+    if (!queue) {
+      throw new Error(
+        `[AsyncScheduler] No ready queue for lane ${lane}. ` + `Ensure the lane is declared in SchedulerConfig.lanes.`,
+      )
+    }
+    return queue
+  }
+
+  private finaliseTask(task: ScheduledTask, id: number, error: Error | undefined): void {
+    task.phase = error ? TaskPhase.Cancelled : TaskPhase.Done
+    if (error) {
+      task.cancelled = true
+    }
+    this.tasks.delete(id)
+    this.invokeFinalize(task, error)
+  }
+
+  private invokeFinalize(task: ScheduledTask, error: Error | undefined): void {
+    try {
+      task.finalize?.(task, error)
+    } catch (e) {
+      console.error('[AsyncScheduler] Error in task finalize callback', e)
+    }
   }
 }

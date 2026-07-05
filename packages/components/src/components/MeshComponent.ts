@@ -2,6 +2,10 @@ import { type GameComponent, GameEntity, GetComponent, InitializableComponent } 
 import { Mesh } from '@gglib/graphics'
 import { BoundsComponent } from './BoundsComponent'
 
+export interface MeshComponentOptions<MESH extends Mesh = Mesh> {
+  mesh?: MESH
+}
+
 /**
  * @public
  */
@@ -22,8 +26,15 @@ export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, I
     this.handleMeshChanged()
   }
 
+  public version: number = 0
   protected value: MESH
   protected bounds: BoundsComponent
+
+  public constructor(options?: MeshComponentOptions<MESH>) {
+    if (options?.mesh) {
+      this.mesh = options.mesh
+    }
+  }
 
   public initialize(): void {
     this.bounds = this.entity.component(BoundsComponent, GetComponent.Optional)
@@ -35,6 +46,7 @@ export class MeshComponent<MESH extends Mesh = Mesh> implements GameComponent, I
   }
 
   private handleMeshChanged() {
+    this.version++
     if (!this.bounds) {
       // not initialized yet, or does not have a bounds component
       return

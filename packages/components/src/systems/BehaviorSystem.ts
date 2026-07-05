@@ -27,8 +27,8 @@ export class BehaviorSystem extends GameSystem {
   override initialize(world: GameWorld): void {
     this.world = world
 
-    world.onEntityActivated.add(this.addComponents)
-    world.onEntityDeactivating.add(this.removeComponents)
+    world.eventBus.on(GameEntity.onActivated, this.addComponents)
+    world.eventBus.on(GameEntity.onDeactivating, this.removeComponents)
   }
 
   override update(time: number, delta: number): void {
@@ -43,8 +43,8 @@ export class BehaviorSystem extends GameSystem {
   }
 
   override destroy(): void {
-    this.world.onEntityActivated.remove(this.addComponents)
-    this.world.onEntityDeactivating.remove(this.removeComponents)
+    this.world.eventBus.off(GameEntity.onActivated, this.addComponents)
+    this.world.eventBus.off(GameEntity.onDeactivating, this.removeComponents)
   }
 
   private addComponents = (entity: GameEntity) => {

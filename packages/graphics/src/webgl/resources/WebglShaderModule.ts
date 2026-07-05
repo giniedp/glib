@@ -1,8 +1,7 @@
-import { eventSource } from '@gglib/utils'
+import { brand, eventSource, EventType } from '@gglib/utils'
 import type { Task } from '../../Scheduler'
 import { getRefCounter, ShaderModule, type ProgramOptions, type ReferenceCounter } from '../../resources'
 import { WebglDevice } from '../WebglDevice'
-import { GlslShaderInfo } from '../glsl'
 import type { WebglResource } from '../types'
 import { WebglProgram } from './WebglProgram'
 import { reflectProgram, type WebglReflection } from './WebglReflection'
@@ -32,6 +31,9 @@ export interface WebglShaderModuleOptions {
  * @public
  */
 export class WebglShaderModule extends ShaderModule implements WebglResource<WebGLProgram> {
+  public static onCompiled = brand<EventType<WebglShaderModule>>('WebglShaderModule compiled')
+  public static onDisposed = brand<EventType<WebglShaderModule>>('WebglShaderModule disposed')
+
   /**
    *
    */
@@ -78,11 +80,11 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
   /**
    * Event that is emitted when the program is disposed
    */
-  public readonly onDisposed = eventSource<this>('WebglShaderModule disposed')
+  public readonly onDisposed = eventSource(WebglShaderModule.onDisposed)
   /**
    * Event that is emitted when the program has finished compiling
    */
-  public readonly onCompiled = eventSource<this>('WebglShaderModule compiled')
+  public readonly onCompiled = eventSource(WebglShaderModule.onCompiled)
   /**
    * Resolves when the program has finished compiling
    */

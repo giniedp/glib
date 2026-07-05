@@ -24,7 +24,8 @@ describe('RenderEncoder', () => {
 })
 
 const SHADER: ShaderModuleOptions = {
-  wgsl: /* wgsl */ `
+  wgsl: {
+    source: /* wgsl */ `
 
     @group(0) @binding(0)
     var<uniform> uDepth: f32;
@@ -67,6 +68,7 @@ const SHADER: ShaderModuleOptions = {
       return out;
     }
   `,
+  },
   glsl: {
     vertex: /*glsl */ `
       #version 300 es

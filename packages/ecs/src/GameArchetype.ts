@@ -15,7 +15,7 @@ export class GameArchetype {
   public types: GameArchetypeKey
   public entities: GameEntityId[] = []
   public size = 0
-  private entityToIndex: Record<GameEntityId, number> = {}
+  private entityToIndex: Record<GameEntityId, number> = Object.create(null)
 
   public constructor(types: GameArchetypeKey) {
     this.types = types

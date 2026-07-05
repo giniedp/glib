@@ -1,4 +1,5 @@
 const STATE = Symbol('Shader Constants State')
+const STATE_KEY = Symbol('Shader Constants Key')
 const STATE_CACHE: Record<string, ShaderConstants> = {}
 
 export class ShaderConstants {
@@ -10,8 +11,13 @@ export class ShaderConstants {
     return this[STATE]
   }
 
-  private constructor(options: Record<string, number>) {
+  public get key(): string {
+    return this[STATE_KEY]
+  }
+
+  private constructor(options: Record<string, number>, key: string) {
     this[STATE] = Object.freeze(options)
+    this[STATE_KEY] = key
   }
 
   public static get(options: Record<string, number>): ShaderConstants {
@@ -22,14 +28,14 @@ export class ShaderConstants {
     const key = createKey(options)
     let state = STATE_CACHE[key]
     if (!state) {
-      state = new ShaderConstants(options)
+      state = new ShaderConstants(options, key)
       STATE_CACHE[key] = state
     }
     return state
   }
 }
 
-function createKey(state: Record<string, number | string>): string {
+function createKey(state: Record<string, number>): string {
   if (!state) {
     return ''
   }

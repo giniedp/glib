@@ -165,11 +165,6 @@ export class MouseListener {
     this.eventTarget.addEventListener('mousemove', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mousedown', this.onCaptureStateListener)
     this.eventTarget.addEventListener('mouseup', this.onCaptureStateListener)
-    // visibility events
-    document.addEventListener('visibilitychange', this.onClearStateListener)
-    document.addEventListener('contextmenu', this.onClearStateListener)
-    document.addEventListener('blur', this.onClearStateListener)
-    window.addEventListener('blur', this.onClearStateListener)
   }
 
   /**
@@ -181,11 +176,6 @@ export class MouseListener {
     this.eventTarget.removeEventListener('mousemove', this.onCaptureStateListener)
     this.eventTarget.removeEventListener('mousedown', this.onCaptureStateListener)
     this.eventTarget.removeEventListener('mouseup', this.onCaptureStateListener)
-    // visibility events
-    document.removeEventListener('visibilitychange', this.onClearStateListener)
-    document.removeEventListener('contextmenu', this.onClearStateListener)
-    document.removeEventListener('blur', this.onClearStateListener)
-    window.removeEventListener('blur', this.onClearStateListener)
   }
 
   /**

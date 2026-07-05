@@ -57,6 +57,8 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     depthState: DepthState.Disabled,
     stencilState: StencilState.Default,
     shader: null,
+    fragmentConstants: null,
+    vertexConstants: null,
     primitiveType: 'TriangleList',
     vertexLayout: [],
     targets: [],
@@ -92,10 +94,17 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     return this.colorTargetParam(index).blendState
   }
 
+  public setAsync(value: boolean) {
+    this.pipelineParams.async = value
+  }
+
   public setProgram(program: Program) {
     if (this.pipelineParams.shader !== program?.module) {
+      const module = program?.module as WebGpuShaderModule
       this.pipelineParamsChanged = true
-      this.pipelineParams.shader = program?.module as WebGpuShaderModule
+      this.pipelineParams.shader = module
+      this.pipelineParams.vertexConstants = module?.vertexConstants
+      this.pipelineParams.fragmentConstants = module?.fragmentConstants
     }
     if (this.programParams !== program) {
       this.programParams = program as WebGpuProgram
@@ -503,7 +512,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   }
 
   public draw(vertexCount: number, instanceCount?: number, vertexOffset?: number, instanceOffset?: number) {
-    this.getPass().draw(vertexCount, instanceCount ?? 1, vertexOffset ?? 0, instanceOffset ?? 0)
+    this.getPass()?.draw(vertexCount, instanceCount ?? 1, vertexOffset ?? 0, instanceOffset ?? 0)
   }
 
   public drawIndexed(
@@ -513,7 +522,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     baseVertex?: number,
     instanceOffset?: number,
   ) {
-    this.getPass().drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, instanceOffset ?? 0)
+    this.getPass()?.drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, instanceOffset ?? 0)
   }
 
   private getClearPassDescriptor(): GPURenderPassDescriptor {
@@ -626,7 +635,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       const descriptor = this.getColorPassDescriptor()
       this.pass = this.getEncoder('draw').beginRenderPass(descriptor)
 
-      this.pass.setPipeline(this.getPipeline())
+      if (!this.applyPipeline(this.pass)) {
+        // still loading
+        return null
+      }
       this.applyBindGroups()
       this.applyVertexBuffer()
       this.applyIndexBuffer()
@@ -637,7 +649,10 @@ export class WebGpuRenderEncoder extends RenderEncoder {
       this.applyScissorState(this.pass)
     }
     if (this.pipelineParamsChanged) {
-      this.pass.setPipeline(this.getPipeline())
+      if (!this.applyPipeline(this.pass)) {
+        // still loading
+        return null
+      }
       this.applyBindGroups()
       this.applyVertexBuffer()
     }
@@ -646,6 +661,15 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
 
     return this.pass
+  }
+
+  private applyPipeline(pass: GPURenderPassEncoder) {
+    const pipeline = this.getPipeline()
+    if (pipeline) {
+      pass.setPipeline(pipeline)
+      return true
+    }
+    return false
   }
 
   private endPass() {
@@ -688,6 +712,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.programParams = null
 
     this.pipelineParamsChanged = true
+    this.pipelineParams.async = false
     this.pipelineParams.cullState = CullState.Disabled
     this.pipelineParams.depthBiasState = DepthBiasState.Default
     this.pipelineParams.depthState = DepthState.Disabled

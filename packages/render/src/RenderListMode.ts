@@ -70,7 +70,7 @@ export interface Sortable {
  * Defines the sorting andfilter behavior for render items in a render pass.
  */
 export class RenderListMode {
-  public static Opaque = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Opaque)
+  public static Opaque = new RenderListMode(RenderSortPriority.State, RenderItemFlags.Opaque)
   public static Transparent = new RenderListMode(RenderSortPriority.Depth, RenderItemFlags.Transparent)
   public static Shadow = new RenderListMode(RenderSortPriority.State, RenderItemFlags.ShadowCaster)
 

@@ -1,4 +1,4 @@
-import { linearToSrgb, srgbToLinear, type IVec4 } from '@gglib/math'
+import { IVec3, linearToSrgb, srgbToLinear, type IVec4 } from '@gglib/math'
 
 function denormalize(value: number): number {
   return Math.round(value * 255) & 0xff
@@ -286,5 +286,30 @@ export class Color implements Readonly<IVec4> {
 
   public linearToSrgb(): Color {
     return new Color(linearToSrgb(this.r), linearToSrgb(this.g), linearToSrgb(this.b), linearToSrgb(this.a))
+  }
+
+  public toVec3(out?: IVec3): IVec3 {
+    out ||= { x: 0, y: 0, z: 0 }
+    out.x = this.r
+    out.y = this.g
+    out.z = this.b
+    return out
+  }
+
+  public toVec4(out?: IVec4): IVec4 {
+    out ||= { x: 0, y: 0, z: 0, w: 0 }
+    out.x = this.r
+    out.y = this.g
+    out.z = this.b
+    out.w = this.a
+    return out
+  }
+
+  public toBytes(): [number, number, number, number] {
+    return [this.R, this.G, this.B, this.A]
+  }
+
+  public toPackedRGBA(): number {
+    return Color.packToRGBA(this)
   }
 }

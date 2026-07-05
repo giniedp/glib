@@ -1,6 +1,6 @@
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import { TransformComponent } from '../components'
 import { SceneRootComponent } from '../components/SceneRootComponent'
+import { TransformComponent } from '../components/TransformComponent'
 
 export class SceneSystem extends GameSystem {
   protected world: GameWorld
@@ -9,12 +9,12 @@ export class SceneSystem extends GameSystem {
   public constructor(world: GameWorld) {
     super()
     this.world = world
-    this.qSceneRoots = world.query({ required: [SceneRootComponent] })
+    this.qSceneRoots = world.query({ scope: 'active', required: [SceneRootComponent] })
   }
 
   public override initialize(): void {
-    this.world.onEntityActivating.add(this.addSceneTag)
-    this.world.onEntityDeactivated.add(this.removeSceneTag)
+    this.world.eventBus.on(GameEntity.onActivating, this.addSceneTag)
+    this.world.eventBus.on(GameEntity.onDeactivated, this.removeSceneTag)
   }
 
   public override update(): void {
@@ -24,8 +24,8 @@ export class SceneSystem extends GameSystem {
   }
 
   public override destroy(): void {
-    this.world.onEntityActivating.remove(this.addSceneTag)
-    this.world.onEntityDeactivated.remove(this.removeSceneTag)
+    this.world.eventBus.off(GameEntity.onActivating, this.addSceneTag)
+    this.world.eventBus.off(GameEntity.onDeactivated, this.removeSceneTag)
   }
 
   private addSceneTag = (entity: GameEntity) => {
