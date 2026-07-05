@@ -64,7 +64,7 @@ export function createSkeletons(skins: SkinData[], transforms: Transform<NodeDat
   }
   for (const skin of skins) {
     const bones = skin.joints.map((index) => transforms[index])
-    const inverse = skin.inverseBindMatrices.map((it) => it.clone())
+    const inverse = skin.inverseBindMatrices.map((it) => it.copy())
     skeletons.push(new Skeleton(bones, inverse))
   }
   return skeletons

@@ -6,7 +6,6 @@ import { Quat } from './Quat'
 import { describe, it, expect, beforeEach } from 'vitest'
 
 describe('Mat2', () => {
-
   function expectComponents(v: Mat2, parts: number[], precision: number = 10) {
     expect(v.elements[0], `component ${0}`).toBeCloseTo(parts[0], precision)
     expect(v.elements[1], `component ${1}`).toBeCloseTo(parts[1], precision)
@@ -50,145 +49,81 @@ describe('Mat2', () => {
 
   describe('initialization', () => {
     describe('#new', () => {
-      it ('sets all components to 0', () => {
-        expectComponents(new Mat2(), [
-          0, 0,
-          0, 0,
-        ])
+      it('sets all components to 0', () => {
+        expectComponents(new Mat2(), [0, 0, 0, 0])
       })
     })
 
     describe('#initZero', () => {
-      it ('sets all components to 0', () => {
-        expectComponents(new Mat2().init(
-          1, 2,
-          3, 4,
-        ).initZero(), [
-          0, 0,
-          0, 0,
-        ])
+      it('sets all components to 0', () => {
+        expectComponents(new Mat2().init(1, 2, 3, 4).initZero(), [0, 0, 0, 0])
         expect(Mat2.createZero()).not.toBe(Mat2.createZero())
       })
     })
 
     describe('.zero', () => {
-      it ('sets all components to 0', () => {
-        expectComponents(Mat2.createZero(), [
-          0, 0,
-          0, 0,
-        ])
+      it('sets all components to 0', () => {
+        expectComponents(Mat2.createZero(), [0, 0, 0, 0])
         expect(Mat2.createZero()).not.toBe(Mat2.createZero())
       })
     })
 
     describe('#init', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat2().init(
-          1, 2,
-          3, 4,
-        ), [
-          1, 2,
-          3, 4,
-        ])
+      it('sets all components', () => {
+        expectComponents(new Mat2().init(1, 2, 3, 4), [1, 2, 3, 4])
       })
     })
 
     describe('.create', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat2.create(
-          1, 2,
-          3, 4,
-        ), [
-          1, 2,
-          3, 4,
-        ])
+      it('sets all components', () => {
+        expectComponents(Mat2.create(1, 2, 3, 4), [1, 2, 3, 4])
       })
     })
 
     describe('#initRowMajor', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat2().initRowMajor(
-          1, 2,
-          3, 4,
-        ), [
-          1, 3,
-          2, 4,
-        ])
+      it('sets all components', () => {
+        expectComponents(new Mat2().initRowMajor(1, 2, 3, 4), [1, 3, 2, 4])
       })
     })
 
     describe('.createRowMajor', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat2.createRowMajor(
-          1, 2,
-          3, 4,
-        ), [
-          1, 3,
-          2, 4,
-        ])
+      it('sets all components', () => {
+        expectComponents(Mat2.createRowMajor(1, 2, 3, 4), [1, 3, 2, 4])
       })
     })
 
     describe('#initWith', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat2().initWith(1), [
-          1, 1,
-          1, 1,
-        ])
+      it('sets all components', () => {
+        expectComponents(new Mat2().initWith(1), [1, 1, 1, 1])
       })
     })
 
     describe('#initIdentity', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat2().initWith(1).initIdentity(), [
-          1, 0,
-          0, 1,
-        ])
+      it('sets all components', () => {
+        expectComponents(new Mat2().initWith(1).initIdentity(), [1, 0, 0, 1])
       })
     })
 
     describe('.identity', () => {
-      it ('sets all components', () => {
-        expectComponents(Mat2.createIdentity(), [
-          1, 0,
-          0, 1,
-        ])
+      it('sets all components', () => {
+        expectComponents(Mat2.createIdentity(), [1, 0, 0, 1])
         expect(Mat2.createIdentity()).not.toBe(Mat2.createIdentity())
       })
     })
 
     describe('#initFrom', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat2().initFrom(new Mat2().init(
-          1, 2,
-          3, 4,
-        )), [
-          1, 2,
-          3, 4,
-        ])
+      it('sets all components', () => {
+        expectComponents(new Mat2().initFrom(new Mat2().init(1, 2, 3, 4)), [1, 2, 3, 4])
       })
     })
 
     describe('#initFromBuffer', () => {
-      it ('sets all components', () => {
-        expectComponents(new Mat2().initFromArray([
-          1, 2,
-          3, 4,
-        ]), [
-          1, 2,
-          3, 4,
-        ])
+      it('sets all components', () => {
+        expectComponents(new Mat2().initFromArray([1, 2, 3, 4]), [1, 2, 3, 4])
       })
 
-      it ('reads from offset', () => {
-        expectComponents(new Mat2().initFromArray([
-          2, 1,
-          1, 2,
-          3, 4,
-        ], 2), [
-          1, 2,
-          3, 4,
-        ])
+      it('reads from offset', () => {
+        expectComponents(new Mat2().initFromArray([2, 1, 1, 2, 3, 4], 2), [1, 2, 3, 4])
       })
     })
 
@@ -314,40 +249,24 @@ describe('Mat2', () => {
 
   describe('toArray', () => {
     it('creates an array', () => {
-      const result = new Mat2().init(
-        1, 2,
-        3, 4,
-      ).toArray()
-      expect(result).toEqual([
-        1, 2,
-        3, 4,
-      ])
+      const result = new Mat2().init(1, 2, 3, 4).toArray()
+      expect(result).toEqual([1, 2, 3, 4])
     })
     it('copies with offset', () => {
-      const result = new Mat2().init(
-        1, 2,
-        3, 4,
-      ).toArray([], 2)
-      expect(result).toEqual([
-        undefined, undefined,
-        1, 2,
-        3, 4,
-      ])
+      const result = new Mat2().init(1, 2, 3, 4).toArray([], 2)
+      expect(result).toEqual([undefined, undefined, 1, 2, 3, 4])
     })
   })
 
   describe('equals', () => {
     let mat: Mat2
     beforeEach(() => {
-      mat = Mat2.create(
-        1, 2,
-        3, 4,
-      )
+      mat = Mat2.create(1, 2, 3, 4)
     })
     it('compares components', () => {
-      expect(mat.equals(mat.clone())).toBe(true)
+      expect(mat.equals(mat.copy())).toBe(true)
       for (let i = 0; i < 4; i++) {
-        const mat2 = mat.clone()
+        const mat2 = mat.copy()
         mat2.elements[i] = 100
         expect(mat.equals(mat2), `component ${i}`).toBe(false)
       }
@@ -357,120 +276,78 @@ describe('Mat2', () => {
   describe('getter/setter', () => {
     let mat: Mat2
     beforeEach(() => {
-      mat = Mat2.createRowMajor(
-        1, 2,
-        3, 4,
-      )
+      mat = Mat2.createRowMajor(1, 2, 3, 4)
     })
 
-    it ('getScale', () => {
+    it('getScale', () => {
       expectVec2Components(mat.getScale(), [1, 4])
     })
 
-    it ('setScale', () => {
-      expectComponents(mat.setScale(Vec2.create(21, 22)).transpose(), [
-        21, 2,
-        3, 22,
-      ])
+    it('setScale', () => {
+      expectComponents(mat.setScale(Vec2.create(21, 22)).transpose(), [21, 2, 3, 22])
     })
 
-    it ('setScale', () => {
-      expectComponents(mat.setScaleXYZ(21, 22).transpose(), [
-        21, 2,
-        3, 22,
-      ])
+    it('setScale', () => {
+      expectComponents(mat.setScaleXYZ(21, 22).transpose(), [21, 2, 3, 22])
     })
 
-    it ('setScaleX', () => {
-      expectComponents(mat.setScaleX(21).transpose(), [
-        21, 2,
-        3,  4,
-      ])
+    it('setScaleX', () => {
+      expectComponents(mat.setScaleX(21).transpose(), [21, 2, 3, 4])
     })
 
-    it ('setScaleY', () => {
-      expectComponents(mat.setScaleY(22).transpose(), [
-        1, 2,
-        3, 22,
-      ])
+    it('setScaleY', () => {
+      expectComponents(mat.setScaleY(22).transpose(), [1, 2, 3, 22])
     })
   })
 
   describe('operations', () => {
     let mat: Mat2
     beforeEach(() => {
-      mat = Mat2.create(
-        1, 2,
-        3, 4,
-      )
+      mat = Mat2.create(1, 2, 3, 4)
     })
 
     describe('#determinant', () => {
       it('calculates the determinant', () => {
-        expect(Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        ).determinant()).toBeCloseTo(-20)
+        expect(Mat2.createRowMajor(8, -10, -2, 0).determinant()).toBeCloseTo(-20)
       })
     })
 
     describe('.determinant', () => {
       it('calculates the determinant', () => {
-        expect(Mat2.determinant(Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        ))).toBeCloseTo(-20)
+        expect(Mat2.determinant(Mat2.createRowMajor(8, -10, -2, 0))).toBeCloseTo(-20)
       })
     })
 
     describe('#invert', () => {
-      it ('inverts the matrix', () => {
-        const mat1 = Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        )
-        expectEquality(mat1, mat1.clone().invert().invert(), 5)
-        expectComponents(mat1.clone().invert().transpose(), [
-           0  ,  -0.5,
-          -0.1,  -0.4,
-        ], 5)
+      it('inverts the matrix', () => {
+        const mat1 = Mat2.createRowMajor(8, -10, -2, 0)
+        expectEquality(mat1, mat1.copy().invert().invert(), 5)
+        expectComponents(mat1.copy().invert().transpose(), [0, -0.5, -0.1, -0.4], 5)
       })
     })
 
     describe('.invert', () => {
-      it ('inverts the matrix', () => {
-        const mat1 = Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        )
+      it('inverts the matrix', () => {
+        const mat1 = Mat2.createRowMajor(8, -10, -2, 0)
         expectEquality(mat1, Mat2.invert(Mat2.invert(mat1)), 5)
-        expectComponents(Mat2.invert(mat1).transpose(), [
-           0  ,  -0.5,
-          -0.1,  -0.4,
-        ], 5)
+        expectComponents(Mat2.invert(mat1).transpose(), [0, -0.5, -0.1, -0.4], 5)
       })
     })
 
     describe('#transpose', () => {
-      it ('transposes components', () => {
-        expectComponents(mat.transpose(), [
-          1, 3,
-          2, 4,
-        ])
+      it('transposes components', () => {
+        expectComponents(mat.transpose(), [1, 3, 2, 4])
       })
     })
 
     describe('.transpose', () => {
-      it ('transposes components', () => {
-        expectComponents(Mat2.transpose(mat), [
-          1, 3,
-          2, 4,
-        ])
+      it('transposes components', () => {
+        expectComponents(Mat2.transpose(mat), [1, 3, 2, 4])
       })
     })
 
     describe('#negate', () => {
-      it ('negates components', () => {
+      it('negates components', () => {
         mat.negate().elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(-(index + 1))
         })
@@ -478,8 +355,7 @@ describe('Mat2', () => {
     })
 
     describe('.negate', () => {
-
-      it ('negates components', () => {
+      it('negates components', () => {
         Mat2.negate(mat).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(-(index + 1))
         })
@@ -487,79 +363,79 @@ describe('Mat2', () => {
     })
 
     describe('#add', () => {
-      it ('adds components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+      it('adds components', () => {
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         mat1.add(mat2).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) + (index + 1))
+          expect(it, `component ${index}`).toBe(index + 1 + (index + 1))
         })
       })
     })
 
     describe('.add', () => {
-      it ('adds components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+      it('adds components', () => {
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         Mat2.add(mat1, mat2).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) + (index + 1))
+          expect(it, `component ${index}`).toBe(index + 1 + (index + 1))
         })
       })
     })
 
     describe('#addScalar', () => {
-      it ('adds components', () => {
+      it('adds components', () => {
         mat.addScalar(10).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) + 10)
+          expect(it, `component ${index}`).toBe(index + 1 + 10)
         })
       })
     })
 
     describe('.addScalar', () => {
-      it ('adds components', () => {
+      it('adds components', () => {
         Mat2.addScalar(mat, 10).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) + 10)
+          expect(it, `component ${index}`).toBe(index + 1 + 10)
         })
       })
     })
 
     describe('#subtract', () => {
-      it ('subtracts components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+      it('subtracts components', () => {
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         mat1.subtract(mat2).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) - (index + 1))
+          expect(it, `component ${index}`).toBe(index + 1 - (index + 1))
         })
       })
     })
 
     describe('.subtract', () => {
-      it ('subtracts components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+      it('subtracts components', () => {
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         Mat2.subtract(mat1, mat2).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) - (index + 1))
+          expect(it, `component ${index}`).toBe(index + 1 - (index + 1))
         })
       })
     })
 
     describe('#subtractScalar', () => {
-      it ('subtracts components', () => {
+      it('subtracts components', () => {
         mat.subtractScalar(10).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) - 10)
+          expect(it, `component ${index}`).toBe(index + 1 - 10)
         })
       })
     })
 
     describe('.subtractScalar', () => {
-      it ('subtracts components', () => {
+      it('subtracts components', () => {
         Mat2.subtractScalar(mat, 10).elements.forEach((it: number, index: number) => {
-          expect(it, `component ${index}`).toBe((index + 1) - 10)
+          expect(it, `component ${index}`).toBe(index + 1 - 10)
         })
       })
     })
 
     describe('#multiplyScalar', () => {
-      it ('multiplies components', () => {
+      it('multiplies components', () => {
         mat.multiplyScalar(10).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBeCloseTo((index + 1) * 10, 5)
         })
@@ -567,7 +443,7 @@ describe('Mat2', () => {
     })
 
     describe('.multiplyScalar', () => {
-      it ('multiplies components', () => {
+      it('multiplies components', () => {
         Mat2.multiplyScalar(mat, 10).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBeCloseTo((index + 1) * 10, 5)
         })
@@ -575,7 +451,7 @@ describe('Mat2', () => {
     })
 
     describe('#divide', () => {
-      it ('divides components', () => {
+      it('divides components', () => {
         mat.divide(mat).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBeCloseTo(1, 5)
         })
@@ -583,7 +459,7 @@ describe('Mat2', () => {
     })
 
     describe('.divide', () => {
-      it ('divides components', () => {
+      it('divides components', () => {
         Mat2.divide(mat, mat).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBeCloseTo(1, 5)
         })
@@ -591,7 +467,7 @@ describe('Mat2', () => {
     })
 
     describe('#divideScalar', () => {
-      it ('divides components', () => {
+      it('divides components', () => {
         mat.divideScalar(10).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBeCloseTo((index + 1) / 10, 5)
         })
@@ -599,7 +475,7 @@ describe('Mat2', () => {
     })
 
     describe('.divideScalar', () => {
-      it ('divides components', () => {
+      it('divides components', () => {
         Mat2.divideScalar(mat, 10).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBeCloseTo((index + 1) / 10, 5)
         })
@@ -607,49 +483,33 @@ describe('Mat2', () => {
     })
 
     describe('#multiply', () => {
-      it ('A * inv(A) == identity', () => {
-        const A = Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        )
-        expectEquality(A.clone().invert().multiply(A), Mat2.createIdentity(), 5)
+      it('A * inv(A) == identity', () => {
+        const A = Mat2.createRowMajor(8, -10, -2, 0)
+        expectEquality(A.copy().invert().multiply(A), Mat2.createIdentity(), 5)
       })
-      it ('a.multiply(b) is mathematically: A*B', () => {
+      it('a.multiply(b) is mathematically: A*B', () => {
         const A = Mat2.createRotationX(Math.PI)
         const B = Mat2.createRotationY(Math.PI)
         const C = Mat2.createRotationZ(Math.PI)
-        const E = A.clone().multiply(B).multiply(C)
+        const E = A.copy().multiply(B).multiply(C)
         const vec = E.transform(Vec4.create(1, 1, 1, 1))
-        const expect =
-          A.transform(
-            B.transform(
-              C.transform(Vec4.create(1, 1, 1, 1)),
-            ),
-          )
+        const expect = A.transform(B.transform(C.transform(Vec4.create(1, 1, 1, 1))))
         expectVec4Equality(vec, expect)
       })
     })
 
     describe('.multiply', () => {
-      it ('A * inv(A) == identity', () => {
-        const A = Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        )
+      it('A * inv(A) == identity', () => {
+        const A = Mat2.createRowMajor(8, -10, -2, 0)
         expectEquality(Mat2.multiply(Mat2.invert(A), A), Mat2.createIdentity(), 5)
       })
-      it ('multiply(a, b) is mathematically: A*B', () => {
+      it('multiply(a, b) is mathematically: A*B', () => {
         const A = Mat2.createRotationX(Math.PI)
         const B = Mat2.createRotationY(Math.PI)
         const C = Mat2.createRotationZ(Math.PI)
         const E = Mat2.multiply(Mat2.multiply(A, B), C)
         const vec = E.transform(Vec4.create(1, 1, 1, 1))
-        const expect =
-          A.transform(
-            B.transform(
-              C.transform(Vec4.create(1, 1, 1, 1)),
-            ),
-          )
+        const expect = A.transform(B.transform(C.transform(Vec4.create(1, 1, 1, 1))))
         expectVec4Equality(vec, expect)
       })
     })
@@ -672,49 +532,33 @@ describe('Mat2', () => {
     // })
 
     describe('#premultiply', () => {
-      it ('A * inv(A) == identity', () => {
-        const A = Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        )
-        expectEquality(A.clone().invert().premultiply(A), Mat2.createIdentity(), 5)
+      it('A * inv(A) == identity', () => {
+        const A = Mat2.createRowMajor(8, -10, -2, 0)
+        expectEquality(A.copy().invert().premultiply(A), Mat2.createIdentity(), 5)
       })
-      it ('a.premultiply(b) is mathematically: B*A', () => {
+      it('a.premultiply(b) is mathematically: B*A', () => {
         const A = Mat2.createRotationX(Math.PI)
         const B = Mat2.createRotationY(Math.PI)
         const C = Mat2.createRotationZ(Math.PI)
-        const E = A.clone().premultiply(B).premultiply(C)
+        const E = A.copy().premultiply(B).premultiply(C)
         const vec = E.transform(Vec4.create(1, 1, 1, 1))
-        const expect =
-          C.transform(
-            B.transform(
-              A.transform(Vec4.create(1, 1, 1, 1)),
-            ),
-          )
+        const expect = C.transform(B.transform(A.transform(Vec4.create(1, 1, 1, 1))))
         expectVec4Equality(vec, expect)
       })
     })
 
     describe('.premultiply', () => {
-      it ('A * inv(A) == identity', () => {
-        const A = Mat2.createRowMajor(
-           8, -10,
-          -2,   0,
-        )
+      it('A * inv(A) == identity', () => {
+        const A = Mat2.createRowMajor(8, -10, -2, 0)
         expectEquality(Mat2.premultiply(Mat2.invert(A), A), Mat2.createIdentity(), 5)
       })
-      it ('premultiply(a, b) is mathematically: B*A', () => {
+      it('premultiply(a, b) is mathematically: B*A', () => {
         const A = Mat2.createRotationX(Math.PI)
         const B = Mat2.createRotationY(Math.PI)
         const C = Mat2.createRotationZ(Math.PI)
         const E = Mat2.premultiply(Mat2.premultiply(A, B), C)
         const vec = E.transform(Vec4.create(1, 1, 1, 1))
-        const expect =
-          C.transform(
-            B.transform(
-              A.transform(Vec4.create(1, 1, 1, 1)),
-            ),
-          )
+        const expect = C.transform(B.transform(A.transform(Vec4.create(1, 1, 1, 1))))
         expectVec4Equality(vec, expect)
       })
     })
@@ -737,18 +581,14 @@ describe('Mat2', () => {
     // })
 
     describe('.lerp', () => {
-      it ('interpolates components', () => {
-        const result = Mat2.lerp(
-          Mat2.create(1, 2, 3, 4),
-          Mat2.create(3, 4, 5, 6),
-          0.5,
-        )
+      it('interpolates components', () => {
+        const result = Mat2.lerp(Mat2.create(1, 2, 3, 4), Mat2.create(3, 4, 5, 6), 0.5)
         expectComponents(result, [2, 3, 4, 5])
       })
     })
 
     describe('#format', () => {
-      it ('prints the component', () => {
+      it('prints the component', () => {
         expect(Mat2.create(1, 2, 3, 4).format()).toBe('1.00000,3.00000\n2.00000,4.00000')
       })
     })
@@ -758,17 +598,9 @@ describe('Mat2', () => {
     describe('#transformV2Buffer', () => {
       it('transforms all vectors in buffer', () => {
         const mat = Mat2.createRotationZ(Math.PI * 0.5)
-        const buf = [
-          1, 0,
-          1, 0,
-          1, 0,
-        ]
+        const buf = [1, 0, 1, 0, 1, 0]
         mat.transformV2Array(buf)
-        expectBuffer(buf, [
-          0, 1,
-          0, 1,
-          0, 1,
-        ], 5)
+        expectBuffer(buf, [0, 1, 0, 1, 0, 1], 5)
       })
     })
   })

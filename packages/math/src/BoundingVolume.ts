@@ -12,7 +12,7 @@ export interface BoundingVolume {
   /**
    * Clones the volume
    */
-  clone(): BoundingVolume
+  copy(): BoundingVolume
 
   /**
    * Checks whether the given point intersects this volume

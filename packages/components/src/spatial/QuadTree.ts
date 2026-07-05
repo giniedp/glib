@@ -114,7 +114,7 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
     this.centerY = bounds.min.y + (bounds.max.y - bounds.min.y) / 2
     this.centerZ = bounds.min.z + (bounds.max.z - bounds.min.z) / 2
 
-    this.looseBounds = this.bounds.clone()
+    this.looseBounds = this.bounds.copy()
 
     this.updateLooseBounds(root ? root.looseFactor : 1)
   }

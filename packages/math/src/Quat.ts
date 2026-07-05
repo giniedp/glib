@@ -453,14 +453,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
    *
    * @returns a new instance
    */
-  public clone(): Quat
+  public copy(): Quat
   /**
    * Copies this into the given `out` parameter
    *
    * @returns the given `out` parameter
    */
-  public clone<T>(out: T): T & IVec4
-  public clone(out?: IVec4): IVec4 {
+  public copy<T>(out: T): T & IVec4
+  public copy(out?: IVec4): IVec4 {
     out = out || new Quat()
     out.x = this.x
     out.y = this.y
@@ -474,14 +474,14 @@ export class Quat implements IVec2, IVec3, IVec4 {
    *
    * @returns a new instance
    */
-  public static clone(src: IVec4): Quat
+  public static copy(src: IVec4): Quat
   /**
    * Creates a copy of the given `src` value but writes into `out`
    *
    * @returns the given `out` parameter
    */
-  public static clone<T>(src: IVec4, out: T): T & IVec4
-  public static clone(src: IVec4, out?: IVec4): IVec4 {
+  public static copy<T>(src: IVec4, out: T): T & IVec4
+  public static copy(src: IVec4, out?: IVec4): IVec4 {
     out = out || new Quat()
     out.x = src.x
     out.y = src.y

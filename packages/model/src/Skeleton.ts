@@ -19,7 +19,6 @@ export interface SkeletonOptions {
 }
 
 export class Skeleton {
-
   /**
    * Bone transforms of this skeletn
    *
@@ -57,7 +56,7 @@ export class Skeleton {
     // this.inverseBindMatrices.map((it) => console.log(it.debug))
 
     for (let i = 0; i < this.boneCount; i++) {
-      this.inverseBindMatrices[i] = this.bones[i].world.clone().invert()
+      this.inverseBindMatrices[i] = this.bones[i].world.copy().invert()
     }
     // this.inverseBindMatrices.map((it) => console.log(it.debug))
     this.jointMatrices = []
@@ -66,7 +65,7 @@ export class Skeleton {
 
   public reset() {
     for (let i = 0; i < this.boneCount; i++) {
-      this.jointMatrices[i] = this.inverseBindMatrices[i].clone().invert()
+      this.jointMatrices[i] = this.inverseBindMatrices[i].copy().invert()
     }
   }
 

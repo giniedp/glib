@@ -1,4 +1,4 @@
-import type { IVec2 } from './Types'
+import type { IVec2, IVec3, IVec4 } from './Types'
 
 const keyLookup = {
   0: 'x',
@@ -7,22 +7,33 @@ const keyLookup = {
   y: 'y',
 } as Record<number | string, 'x' | 'y'>
 
-export function vec2(data: number | IVec2 | number[] | null): IVec2 {
-  if (data == null) {
-    return { x: 0, y: 0 }
-  }
-  if (typeof data === 'number') {
-    return { x: data ?? 0, y: data ?? 0 }
-  }
-  if (Array.isArray(data)) {
-    return { x: data[0] ?? 0, y: data[1] ?? 0 }
-  }
-  return {
-    x: data.x ?? 0,
-    y: data.y ?? 0,
-  }
-}
+export function vec2(): IVec2
+export function vec2(xyz: number | IVec2 | IVec3 | IVec4 | number[] | null): IVec2
+export function vec2(x: number | IVec2 | IVec3 | IVec4 | number[] | null, y: number): IVec2
+export function vec2(a?: number | IVec2 | IVec3 | IVec4 | number[] | null, b?: number): IVec2 {
+  let x = 0
+  let y = 0
 
+  if (a != null) {
+    if (typeof a === 'number') {
+      x = y = a
+    } else if (Array.isArray(a)) {
+      x = a[0] || 0
+      y = a[1] || 0
+    } else {
+      x = a.x || 0
+      y = a.y || 0
+    }
+  }
+
+  // trailing explicit args always take precedence over whatever `a` provided
+  if (b !== undefined) {
+    // vec2(x, y)
+    y = b as number
+  }
+
+  return { x, y }
+}
 /**
  * A vector with two components.
  *
@@ -288,9 +299,9 @@ export class Vec2 implements IVec2 {
    *
    * @returns the destination vector.
    */
-  public static clone(src: IVec2): Vec2
-  public static clone<T>(src: IVec2, dst: T): T & IVec2
-  public static clone(src: IVec2, dst?: IVec2): IVec2 {
+  public static copy(src: IVec2): Vec2
+  public static copy<T>(src: IVec2, dst: T): T & IVec2
+  public static copy(src: IVec2, dst?: IVec2): IVec2 {
     dst = dst || new Vec2()
     dst.x = src.x
     dst.y = src.y
@@ -301,9 +312,9 @@ export class Vec2 implements IVec2 {
    * Creates a copy of this vector
    * @returns The cloned vector
    */
-  public clone(): Vec2
-  public clone<T>(out: T): T & IVec2
-  public clone(out?: IVec2): IVec2 {
+  public copy(): Vec2
+  public copy<T>(out: T): T & IVec2
+  public copy(out?: IVec2): IVec2 {
     out = out || new Vec2()
     out.x = this.x
     out.y = this.y

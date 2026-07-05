@@ -120,7 +120,7 @@ export class Ray {
    * @param out - where the result should be written to
    * @returns - the given `out` parameter or a new vector
    */
-  public clone(out?: Ray): Ray {
+  public copy(out?: Ray): Ray {
     out = out || new Ray()
     return out.initFrom(this)
   }
@@ -132,7 +132,7 @@ export class Ray {
    * @param out - where the result should be written to
    * @returns - the given `out` parameter or a new ray
    */
-  public static clone(ray: Ray, out?: Ray): Ray {
+  public static copy(ray: Ray, out?: Ray): Ray {
     out = out || new Ray()
     return out.initFrom(ray)
   }

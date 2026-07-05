@@ -114,15 +114,15 @@ describe('Quat', () => {
     beforeEach(() => {
       a = new Quat(1, 2, 3, 4)
     })
-    it('clones all components', () => expectComponents(a.clone(), 1, 2, 3, 4))
-    it('returns new instance', () => expect(a.clone()).not.toBe(a))
+    it('clones all components', () => expectComponents(a.copy(), 1, 2, 3, 4))
+    it('returns new instance', () => expect(a.copy()).not.toBe(a))
   })
   describe('.clone', () => {
     beforeEach(() => {
       a = new Quat(1, 2, 3, 4)
     })
-    it('clones all components', () => expectComponents(Quat.clone(a), 1, 2, 3, 4))
-    it('returns new instance', () => expect(Quat.clone(a)).not.toBe(a))
+    it('clones all components', () => expectComponents(Quat.copy(a), 1, 2, 3, 4))
+    it('returns new instance', () => expect(Quat.copy(a)).not.toBe(a))
   })
   describe('#toArray', () => {
     beforeEach(() => {
@@ -221,7 +221,7 @@ describe('Quat', () => {
   describe('#invert', () => {
     it('inverts', () => {
       const q1 = new Quat(2, 4, 8, 16).normalize()
-      expectComponents(Quat.multiply(q1, q1.clone().invert()), 0, 0, 0, 1)
+      expectComponents(Quat.multiply(q1, q1.copy().invert()), 0, 0, 0, 1)
     })
     it('return instance', () => expect(a.init(2, 4, 8, 16).invert()).toBe(a))
   })

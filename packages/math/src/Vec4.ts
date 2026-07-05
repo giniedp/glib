@@ -12,22 +12,49 @@ const keyLookup = {
   w: 'w',
 } as Record<number | string, 'x' | 'y' | 'z' | 'w'>
 
-export function vec4(data: number | IVec2 | IVec3 | IVec4 | number[] | null): IVec4 {
-  if (data == null) {
-    return { x: 0, y: 0, z: 0, w: 0 }
+export function vec4(): IVec4
+export function vec4(xyzw: number | IVec2 | IVec3 | IVec4 | number[] | null): IVec4
+export function vec4(xyz: number | IVec2 | IVec3 | IVec4 | number[] | null, w: number): IVec4
+export function vec4(xy: number | IVec2 | IVec3 | IVec4 | number[] | null, z: number, w: number): IVec4
+export function vec4(x: number | IVec2 | IVec3 | IVec4 | number[] | null, y: number, z: number, w: number): IVec4
+export function vec4(a?: number | IVec2 | IVec3 | IVec4 | number[] | null, b?: number, c?: number, d?: number): IVec4 {
+  let x = 0
+  let y = 0
+  let z = 0
+  let w = 0
+
+  if (a != null) {
+    if (typeof a === 'number') {
+      x = y = z = w = a
+    } else if (Array.isArray(a)) {
+      x = a[0] || 0
+      y = a[1] || 0
+      z = a[2] || 0
+      w = a[3] || 0
+    } else {
+      x = a.x || 0
+      y = a.y || 0
+      z = (a as IVec3).z || 0
+      w = (a as IVec4).w || 0
+    }
   }
-  if (typeof data === 'number') {
-    return { x: data ?? 0, y: data ?? 0, z: data ?? 0, w: data ?? 0 }
+
+  // trailing explicit args always take precedence over whatever `a` provided
+  if (d !== undefined) {
+    // vec4(x, y, z, w)
+    y = b as number
+    z = c as number
+    w = d
+  } else if (c !== undefined) {
+    // vec4(xy, z, w)
+    z = b as number
+    w = c
+  } else if (b !== undefined) {
+    // vec4(xyz, w)
+    w = b
   }
-  if (Array.isArray(data)) {
-    return { x: data[0] ?? 0, y: data[1] ?? 0, z: data[2] ?? 0, w: data[3] ?? 0 }
-  }
-  return {
-    x: data.x ?? 0,
-    y: data.y ?? 0,
-    z: (data as IVec4).z ?? 0,
-    w: (data as IVec4).w ?? 0,
-  }
+
+  return { x, y, z, w }
 }
 
 /**
@@ -397,14 +424,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns a new instance
    */
-  public clone(): Vec4
+  public copy(): Vec4
   /**
    * Copies this into the given `out` parameter
    *
    * @returns the given `out` parameter
    */
-  public clone<T>(out: T): T & IVec4
-  public clone(out?: IVec4): IVec4 {
+  public copy<T>(out: T): T & IVec4
+  public copy(out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = this.x
     out.y = this.y
@@ -418,14 +445,14 @@ export class Vec4 implements IVec2, IVec3, IVec4 {
    *
    * @returns a new instance
    */
-  public static clone(src: IVec4): Vec4
+  public static copy(src: IVec4): Vec4
   /**
    * Creates a copy of the given `src` value but writes into `out`
    *
    * @returns the given `out` parameter
    */
-  public static clone<T>(src: IVec4, out: T): T & IVec4
-  public static clone(src: IVec4, out?: IVec4): IVec4 {
+  public static copy<T>(src: IVec4, out: T): T & IVec4
+  public static copy(src: IVec4, out?: IVec4): IVec4 {
     out = out || new Vec4()
     out.x = src.x
     out.y = src.y

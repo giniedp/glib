@@ -455,9 +455,9 @@ describe('Mat4', () => {
       mat = Mat4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
     })
     it('compares components', () => {
-      expect(mat.equals(mat.clone())).toBe(true)
+      expect(mat.equals(mat.copy())).toBe(true)
       for (let i = 0; i < 16; i++) {
-        const mat2 = mat.clone()
+        const mat2 = mat.copy()
         mat2.elements[i] = 100
         expect(mat.equals(mat2), `component ${i}`).toBe(false)
       }
@@ -576,7 +576,7 @@ describe('Mat4', () => {
     describe('#invert', () => {
       it('inverts the matrix', () => {
         const mat1 = Mat4.createRowMajor(4, 7, -2, -1, 4, -4, -1, 3, 2, 0, 5, 4, 7, 3, 1, -2)
-        const mat2 = mat1.clone().invert().invert()
+        const mat2 = mat1.copy().invert().invert()
         expectEquality(mat1, mat2, 5)
       })
     })
@@ -607,8 +607,8 @@ describe('Mat4', () => {
 
     describe('#add', () => {
       it('adds components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         mat1.add(mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 + (index + 1))
         })
@@ -617,8 +617,8 @@ describe('Mat4', () => {
 
     describe('.add', () => {
       it('adds components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         Mat4.add(mat1, mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 + (index + 1))
         })
@@ -643,8 +643,8 @@ describe('Mat4', () => {
 
     describe('#subtract', () => {
       it('subtracts components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         mat1.subtract(mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 - (index + 1))
         })
@@ -653,8 +653,8 @@ describe('Mat4', () => {
 
     describe('.subtract', () => {
       it('subtracts components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         Mat4.subtract(mat1, mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 - (index + 1))
         })
@@ -728,14 +728,14 @@ describe('Mat4', () => {
     describe('#multiply', () => {
       it('A * inv(A) == identity', () => {
         const A = Mat4.createRowMajor(4, 1, 2, -4, 4, 1, 2, -3, -8, -4, -5, 3, -4, -2, -5, -4)
-        expectEquality(A.clone().invert().multiply(A), Mat4.createIdentity(), 5)
+        expectEquality(A.copy().invert().multiply(A), Mat4.createIdentity(), 5)
       })
       it('a.multiply(b) is mathematically: A*B', () => {
         const A = Mat4.createRotationX(Math.PI)
         const B = Mat4.createRotationY(Math.PI)
         const C = Mat4.createRotationZ(Math.PI)
         const D = Mat4.createTranslationXYZ(1, 2, 3)
-        const E = A.clone().multiply(B).multiply(C).multiply(D)
+        const E = A.copy().multiply(B).multiply(C).multiply(D)
         const vec = E.transformV4(Vec4.create(1, 1, 1, 1))
         const expect = A.transformV4(B.transformV4(C.transformV4(D.transformV4(Vec4.create(1, 1, 1, 1)))))
         expectVec4Equality(vec, expect)
@@ -782,14 +782,14 @@ describe('Mat4', () => {
     describe('#premultiply', () => {
       it('A * inv(A) == identity', () => {
         const A = Mat4.createRowMajor(4, 1, 2, -4, 4, 1, 2, -3, -8, -4, -5, 3, -4, -2, -5, -4)
-        expectEquality(A.clone().invert().premultiply(A), Mat4.createIdentity(), 5)
+        expectEquality(A.copy().invert().premultiply(A), Mat4.createIdentity(), 5)
       })
       it('a.premultiply(b) is mathematically: B*A', () => {
         const A = Mat4.createRotationX(Math.PI)
         const B = Mat4.createRotationY(Math.PI)
         const C = Mat4.createRotationZ(Math.PI)
         const D = Mat4.createTranslationXYZ(1, 2, 3)
-        const E = A.clone().premultiply(B).premultiply(C).premultiply(D)
+        const E = A.copy().premultiply(B).premultiply(C).premultiply(D)
         const vec = E.transformV4(Vec4.create(1, 1, 1, 1))
         const expect = D.transformV4(C.transformV4(B.transformV4(A.transformV4(Vec4.create(1, 1, 1, 1)))))
         expectVec4Equality(vec, expect)
@@ -1265,7 +1265,7 @@ describe('Mat4', () => {
   describe('#clone', () => {
     it('copies a matrix', () => {
       const M1 = Mat4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
-      const M2 = M1.clone()
+      const M2 = M1.copy()
       expectComponents(M2, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
       expect(M1 === M2).toBe(false)
     })
@@ -1273,7 +1273,7 @@ describe('Mat4', () => {
     it('copies to another instance', () => {
       const M1 = Mat4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
       const M2 = new Mat4()
-      const M3 = M1.clone(M2)
+      const M3 = M1.copy(M2)
       expectComponents(M3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
       expect(M1 === M2).toBe(false)
       expect(M2 === M3).toBe(true)
@@ -1283,7 +1283,7 @@ describe('Mat4', () => {
   describe('.clone', () => {
     it('copies a matrix', () => {
       const M1 = Mat4.create(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
-      const M2 = Mat4.clone(M1)
+      const M2 = Mat4.copy(M1)
       expectComponents(M2, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
       expect(M1 === M2).toBe(false)
     })

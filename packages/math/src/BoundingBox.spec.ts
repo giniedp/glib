@@ -147,7 +147,7 @@ describe('BoundingBox', () => {
   describe('#clone', () => {
     it('creates a cloned instance', () => {
       const box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      const box2 = box1.clone()
+      const box2 = box1.copy()
       expect(box1).not.toBe(box2)
       expectVec3Equality(box2.min, box1.min)
       expectVec3Equality(box2.max, box1.max)
@@ -155,7 +155,7 @@ describe('BoundingBox', () => {
     it('clones into another instance', () => {
       const box1 = new BoundingBox(1, 2, 34, 5, 6)
       const box2 = new BoundingBox()
-      const box3 = box1.clone(box2)
+      const box3 = box1.copy(box2)
       expect(box1).not.toBe(box2)
       expect(box2).toBe(box3)
       expectVec3Equality(box2.min, box1.min)
@@ -166,7 +166,7 @@ describe('BoundingBox', () => {
   describe('.clone', () => {
     it('creates a cloned instance', () => {
       const box1 = new BoundingBox(1, 2, 3, 4, 5, 6)
-      const box2 = BoundingBox.clone(box1)
+      const box2 = BoundingBox.copy(box1)
       expect(box1).not.toBe(box2)
       expectVec3Equality(box2.min, box1.min)
       expectVec3Equality(box2.max, box1.max)
@@ -174,7 +174,7 @@ describe('BoundingBox', () => {
     it('clones into another instance', () => {
       const box1 = new BoundingBox(1, 2, 34, 5, 6)
       const box2 = new BoundingBox()
-      const box3 = BoundingBox.clone(box1, box2)
+      const box3 = BoundingBox.copy(box1, box2)
       expect(box1).not.toBe(box2)
       expect(box2).toBe(box3)
       expectVec3Equality(box2.min, box1.min)

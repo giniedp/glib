@@ -10,17 +10,40 @@ const keyLookup = {
   z: 'z',
 } as Record<number | string, 'x' | 'y' | 'z'>
 
-export function vec3(data: number | IVec3 | number[] | null): IVec3 {
-  if (data == null) {
-    return { x: 0, y: 0, z: 0 }
+export function vec3(): IVec3
+export function vec3(xyz: number | IVec2 | IVec3 | IVec4 | number[] | null): IVec3
+export function vec3(xy: number | IVec2 | IVec3 | IVec4 | number[] | null, z: number): IVec3
+export function vec3(x: number | IVec2 | IVec3 | IVec4 | number[] | null, y: number, z: number): IVec3
+export function vec3(a?: number | IVec2 | IVec3 | IVec4 | number[] | null, b?: number, c?: number): IVec3 {
+  let x = 0
+  let y = 0
+  let z = 0
+
+  if (a != null) {
+    if (typeof a === 'number') {
+      x = y = z = a
+    } else if (Array.isArray(a)) {
+      x = a[0] || 0
+      y = a[1] || 0
+      z = a[2] || 0
+    } else {
+      x = a.x || 0
+      y = a.y || 0
+      z = (a as IVec3).z || 0
+    }
   }
-  if (typeof data === 'number') {
-    return { x: data ?? 0, y: data ?? 0, z: data ?? 0 }
+
+  // trailing explicit args always take precedence over whatever `a` provided
+  if (c !== undefined) {
+    // vec3(x, y, z)
+    y = b as number
+    z = c as number
+  } else if (b !== undefined) {
+    // vec3(xy, z)
+    z = b as number
   }
-  if (Array.isArray(data)) {
-    return { x: data[0] ?? 0, y: data[1] ?? 0, z: data[2] ?? 0 }
-  }
-  return { x: data.x ?? 0, y: data.y ?? 0, z: data.z ?? 0 }
+
+  return { x, y, z }
 }
 
 /**
@@ -413,9 +436,9 @@ export class Vec3 implements IVec2, IVec3 {
    * Creates a copy of this vector
    * @returns The cloned vector
    */
-  public clone(): Vec3
-  public clone<T>(out: T): T & IVec3
-  public clone(out?: IVec3): IVec3 {
+  public copy(): Vec3
+  public copy<T>(out: T): T & IVec3
+  public copy(out?: IVec3): IVec3 {
     out = out || new Vec3()
     out.x = this.x
     out.y = this.y

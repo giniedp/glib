@@ -1,13 +1,10 @@
 import type { ArrayLike, IVec2, IVec3, IVec4 } from './Types'
 import { Vec2 } from './Vec2'
 
-//
-const enum M {
-  _00 = 0,
-  _10 = 2,
-  _01 = 1,
-  _11 = 3,
-}
+// prettier-ignore
+const
+  C0R0 = 0, C1R0 = 2,
+  C0R1 = 1, C1R1 = 3
 
 /**
  * A 2x2 matrix using column major layout
@@ -87,8 +84,8 @@ export class Mat2 {
   public getScale<T>(out?: T): T & IVec2
   public getScale(out?: Vec2): Vec2 {
     out = out || new Vec2()
-    out.x = this.elements[M._00]
-    out.y = this.elements[M._11]
+    out.x = this.elements[C0R0]
+    out.y = this.elements[C1R1]
     return out
   }
 
@@ -96,8 +93,8 @@ export class Mat2 {
    * Sets the scale part
    */
   public setScaleXYZ(x: number, y: number): this {
-    this.elements[M._00] = x
-    this.elements[M._11] = y
+    this.elements[C0R0] = x
+    this.elements[C1R1] = y
     return this
   }
 
@@ -105,8 +102,8 @@ export class Mat2 {
    * Sets the scale part
    */
   public setScale(vec: IVec2): this {
-    this.elements[M._00] = vec.x
-    this.elements[M._11] = vec.y
+    this.elements[C0R0] = vec.x
+    this.elements[C1R1] = vec.y
     return this
   }
 
@@ -114,7 +111,7 @@ export class Mat2 {
    * Sets the x component of the scale part
    */
   public setScaleX(v: number): this {
-    this.elements[M._00] = v
+    this.elements[C0R0] = v
     return this
   }
 
@@ -122,7 +119,7 @@ export class Mat2 {
    * Sets the y component of the scale part
    */
   public setScaleY(v: number): this {
-    this.elements[M._11] = v
+    this.elements[C1R1] = v
     return this
   }
 
@@ -422,15 +419,15 @@ export class Mat2 {
     const r11 = 1 - 2 * (zz + xx)
 
     const m = this.elements
-    const m00 = m[M._00]
-    const m10 = m[M._10]
-    const m01 = m[M._01]
-    const m11 = m[M._11]
+    const m00 = m[C0R0]
+    const m10 = m[C1R0]
+    const m01 = m[C0R1]
+    const m11 = m[C1R1]
 
-    m[M._00] = r00 * m00 + r01 * m01
-    m[M._10] = r00 * m10 + r01 * m11
-    m[M._01] = r10 * m00 + r11 * m01
-    m[M._11] = r10 * m10 + r11 * m11
+    m[C0R0] = r00 * m00 + r01 * m01
+    m[C1R0] = r00 * m10 + r01 * m11
+    m[C0R1] = r10 * m00 + r11 * m01
+    m[C1R1] = r10 * m10 + r11 * m11
 
     return this
   }
@@ -632,13 +629,13 @@ export class Mat2 {
    */
   public preRotateX(angle: number): this {
     const m = this.elements
-    const m01 = m[M._01]
-    const m11 = m[M._11]
+    const m01 = m[C0R1]
+    const m11 = m[C1R1]
 
     const c = Math.cos(angle)
 
-    m[M._01] = c * m01
-    m[M._11] = c * m11
+    m[C0R1] = c * m01
+    m[C1R1] = c * m11
 
     return this
   }
@@ -692,13 +689,13 @@ export class Mat2 {
    */
   public preRotateY(angle: number): this {
     const m = this.elements
-    const m00 = m[M._00]
-    const m10 = m[M._10]
+    const m00 = m[C0R0]
+    const m10 = m[C1R0]
 
     const c = Math.cos(angle)
 
-    m[M._00] = c * m00
-    m[M._10] = c * m10
+    m[C0R0] = c * m00
+    m[C1R0] = c * m10
 
     return this
   }
@@ -758,20 +755,20 @@ export class Mat2 {
    */
   public preRotateZ(angle: number): this {
     const m = this.elements
-    const m00 = m[M._00]
-    const m10 = m[M._10]
+    const m00 = m[C0R0]
+    const m10 = m[C1R0]
 
-    const m01 = m[M._01]
-    const m11 = m[M._11]
+    const m01 = m[C0R1]
+    const m11 = m[C1R1]
 
     const c = Math.cos(angle)
     const s = Math.sin(angle)
 
-    m[M._00] = c * m00 - s * m01
-    m[M._10] = c * m10 - s * m11
+    m[C0R0] = c * m00 - s * m01
+    m[C1R0] = c * m10 - s * m11
 
-    m[M._01] = c * m01 + s * m00
-    m[M._11] = c * m11 + s * m10
+    m[C0R1] = c * m01 + s * m00
+    m[C1R1] = c * m11 + s * m10
 
     return this
   }
@@ -807,10 +804,10 @@ export class Mat2 {
    */
   public scaleXY(x: number, y: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._01] *= x
-    m[M._10] *= y
-    m[M._11] *= y
+    m[C0R0] *= x
+    m[C0R1] *= x
+    m[C1R0] *= y
+    m[C1R1] *= y
     return this
   }
 
@@ -823,11 +820,11 @@ export class Mat2 {
    */
   public preScaleXY(x: number, y: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._10] *= x
+    m[C0R0] *= x
+    m[C1R0] *= x
 
-    m[M._01] *= y
-    m[M._11] *= y
+    m[C0R1] *= y
+    m[C1R1] *= y
 
     return this
   }
@@ -862,10 +859,10 @@ export class Mat2 {
     const x = scale.x
     const y = scale.y
     const m = this.elements
-    m[M._00] *= x
-    m[M._01] *= x
-    m[M._10] *= y
-    m[M._11] *= y
+    m[C0R0] *= x
+    m[C0R1] *= x
+    m[C1R0] *= y
+    m[C1R1] *= y
     return this
   }
 
@@ -879,11 +876,11 @@ export class Mat2 {
     const y = scale.y
 
     const m = this.elements
-    m[M._00] *= x
-    m[M._10] *= x
+    m[C0R0] *= x
+    m[C1R0] *= x
 
-    m[M._01] *= y
-    m[M._11] *= y
+    m[C0R1] *= y
+    m[C1R1] *= y
 
     return this
   }
@@ -935,8 +932,8 @@ export class Mat2 {
    */
   public scaleX(x: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._01] *= x
+    m[C0R0] *= x
+    m[C0R1] *= x
     return this
   }
 
@@ -947,8 +944,8 @@ export class Mat2 {
    */
   public preScaleX(x: number): this {
     const m = this.elements
-    m[M._00] *= x
-    m[M._10] *= x
+    m[C0R0] *= x
+    m[C1R0] *= x
     return this
   }
 
@@ -959,8 +956,8 @@ export class Mat2 {
    */
   public scaleY(y: number): this {
     const m = this.elements
-    m[M._10] *= y
-    m[M._11] *= y
+    m[C1R0] *= y
+    m[C1R1] *= y
     return this
   }
 
@@ -971,8 +968,8 @@ export class Mat2 {
    */
   public preScaleY(y: number): this {
     const m = this.elements
-    m[M._01] *= y
-    m[M._11] *= y
+    m[C0R1] *= y
+    m[C1R1] *= y
     return this
   }
 
@@ -980,7 +977,7 @@ export class Mat2 {
    * Creates a copy of this matrix
    * @returns The cloned matrix.
    */
-  public clone(): Mat2 {
+  public copy(): Mat2 {
     const d = this.elements
     return new Mat2().init(d[0], d[1], d[2], d[3])
   }
@@ -1308,7 +1305,7 @@ export class Mat2 {
   //  */
   // public static multiplyChain(...rest: Mat2[]) {
   //   // ((((a, b), c), d), e)
-  //   const result = arguments[0].clone()
+  //   const result = arguments[0].copy()
   //   for (let i = 1; i < arguments.length; i += 1) {
   //     Mat2.multiply(result, arguments[i], result)
   //   }
@@ -1378,7 +1375,7 @@ export class Mat2 {
   //  */
   // public static concatChain(...rest: Mat2[]) {
   //   // (a, (b, (c, (d, e))))
-  //   const result = arguments[arguments.length - 1].clone()
+  //   const result = arguments[arguments.length - 1].copy()
   //   for (let i = arguments.length - 2; i >= 0; i--) {
   //     Mat2.concat(arguments[i], result, result)
   //   }
@@ -1558,7 +1555,7 @@ export class Mat2 {
    * Creates a copy of this matrix
    * @returns The cloned matrix.
    */
-  public static clone(mat: Mat2, out: Mat2 = new Mat2()): Mat2 {
+  public static copy(mat: Mat2, out: Mat2 = new Mat2()): Mat2 {
     const d = mat.elements
     const o = out.elements
     o[0] = d[0]

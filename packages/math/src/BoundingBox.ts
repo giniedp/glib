@@ -306,7 +306,7 @@ export class BoundingBox implements BoundingVolume {
    * @param out - where the result is written to
    * @returns the given `out` parameter or a new instance
    */
-  public static clone(box: BoundingBox, out?: BoundingBox): BoundingBox {
+  public static copy(box: BoundingBox, out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
     out.initFrom(box)
     return out
@@ -318,7 +318,7 @@ export class BoundingBox implements BoundingVolume {
    * @param out - where the result is written to
    * @returns the given `out` parameter or a new instance
    */
-  public clone(out?: BoundingBox): BoundingBox {
+  public copy(out?: BoundingBox): BoundingBox {
     out = out || new BoundingBox()
     out.initFrom(this)
     return out

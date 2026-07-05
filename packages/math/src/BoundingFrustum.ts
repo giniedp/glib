@@ -213,7 +213,7 @@ export class BoundingFrustum implements BoundingVolume {
   /**
    * Creates a clone of this frustum
    */
-  public clone(): BoundingFrustum {
+  public copy(): BoundingFrustum {
     return new BoundingFrustum(this.matrix)
   }
 

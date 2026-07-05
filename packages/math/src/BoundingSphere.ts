@@ -356,7 +356,7 @@ export class BoundingSphere implements BoundingVolume {
    * @param out - where the result is written to
    * @returns the given `out` parameter or a new instance
    */
-  public static clone(sphere: BoundingSphere, out?: BoundingSphere): BoundingSphere {
+  public static copy(sphere: BoundingSphere, out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
     out.initFrom(sphere)
     return out
@@ -368,7 +368,7 @@ export class BoundingSphere implements BoundingVolume {
    * @param out - where the result is written to
    * @returns the given `out` parameter or a new instance
    */
-  public clone(out?: BoundingSphere): BoundingSphere {
+  public copy(out?: BoundingSphere): BoundingSphere {
     out = out || new BoundingSphere()
     Vec3.copy(this.center, out.center)
     out.radius = this.radius

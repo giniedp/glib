@@ -109,22 +109,22 @@ describe('Ray', () => {
   describe('#clone', () => {
     it('clones', () => {
       const R = new Ray(1, 2, 3, 4, 5, 6)
-      expect(R.clone()).not.toBe(R)
-      expect(R.clone().position).not.toBe(R.position)
-      expect(R.clone().direction).not.toBe(R.direction)
-      expectVec3Components(R.clone().position, [1, 2, 3])
-      expectVec3Components(R.clone().direction, [4, 5, 6])
+      expect(R.copy()).not.toBe(R)
+      expect(R.copy().position).not.toBe(R.position)
+      expect(R.copy().direction).not.toBe(R.direction)
+      expectVec3Components(R.copy().position, [1, 2, 3])
+      expectVec3Components(R.copy().direction, [4, 5, 6])
     })
   })
 
   describe('.clone', () => {
     it('clones', () => {
       const R = new Ray(1, 2, 3, 4, 5, 6)
-      expect(Ray.clone(R)).not.toBe(R)
-      expect(Ray.clone(R).position).not.toBe(R.position)
-      expect(Ray.clone(R).direction).not.toBe(R.direction)
-      expectVec3Components(Ray.clone(R).position, [1, 2, 3])
-      expectVec3Components(Ray.clone(R).direction, [4, 5, 6])
+      expect(Ray.copy(R)).not.toBe(R)
+      expect(Ray.copy(R).position).not.toBe(R.position)
+      expect(Ray.copy(R).direction).not.toBe(R.direction)
+      expectVec3Components(Ray.copy(R).position, [1, 2, 3])
+      expectVec3Components(Ray.copy(R).direction, [4, 5, 6])
     })
   })
 

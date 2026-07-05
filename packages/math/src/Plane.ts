@@ -228,9 +228,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
    * Creates a copy of this vector
    * @returns The cloned vector
    */
-  public clone(): Plane
-  public clone<T>(out?: T): T & Plane
-  public clone(out?: IVec4): IVec4 {
+  public copy(): Plane
+  public copy<T>(out?: T): T & Plane
+  public copy(out?: IVec4): IVec4 {
     out = out || new Plane()
     out.x = this.x
     out.y = this.y
@@ -244,9 +244,9 @@ export class Plane implements IVec2, IVec3, IVec4 {
    *
    * @returns the destination vector.
    */
-  public static clone(src: IVec4): Plane
-  public static clone<T>(src: IVec4, out?: T): T & IVec4
-  public static clone(src: IVec4, out?: IVec4): IVec4 {
+  public static copy(src: IVec4): Plane
+  public static copy<T>(src: IVec4, out?: T): T & IVec4
+  public static copy(src: IVec4, out?: IVec4): IVec4 {
     out = out || new Plane()
     out.x = src.x
     out.y = src.y

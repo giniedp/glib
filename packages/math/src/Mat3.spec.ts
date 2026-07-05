@@ -310,9 +310,9 @@ describe('Mat3', () => {
       mat = Mat3.create(1, 2, 3, 4, 5, 6, 7, 8, 9)
     })
     it('compares components', () => {
-      expect(mat.equals(mat.clone())).toBe(true)
+      expect(mat.equals(mat.copy())).toBe(true)
       for (let i = 0; i < 9; i++) {
-        const mat2 = mat.clone()
+        const mat2 = mat.copy()
         mat2.elements[i] = 100
         expect(mat.equals(mat2), `component ${i}`).toBe(false)
       }
@@ -415,7 +415,7 @@ describe('Mat3', () => {
     describe('#invert', () => {
       it('inverts the matrix', () => {
         const mat1 = Mat3.createRowMajor(-1, 5, -2, -5, 0, 1, -2, 2, 0)
-        const mat2 = mat1.clone().invert().invert()
+        const mat2 = mat1.copy().invert().invert()
         expectEquality(mat1, mat2, 5)
       })
     })
@@ -458,8 +458,8 @@ describe('Mat3', () => {
 
     describe('#add', () => {
       it('adds components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         mat1.add(mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 + (index + 1))
         })
@@ -468,8 +468,8 @@ describe('Mat3', () => {
 
     describe('.add', () => {
       it('adds components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         Mat3.add(mat1, mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 + (index + 1))
         })
@@ -494,8 +494,8 @@ describe('Mat3', () => {
 
     describe('#subtract', () => {
       it('subtracts components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         mat1.subtract(mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 - (index + 1))
         })
@@ -504,8 +504,8 @@ describe('Mat3', () => {
 
     describe('.subtract', () => {
       it('subtracts components', () => {
-        const mat1 = mat.clone()
-        const mat2 = mat1.clone()
+        const mat1 = mat.copy()
+        const mat2 = mat1.copy()
         Mat3.subtract(mat1, mat2).elements.forEach((it: number, index: number) => {
           expect(it, `component ${index}`).toBe(index + 1 - (index + 1))
         })
@@ -579,13 +579,13 @@ describe('Mat3', () => {
     describe('#multiply', () => {
       it('A * inv(A) == identity', () => {
         const A = Mat3.createRowMajor(-1, 5, -2, -5, 0, 1, -2, 2, 0)
-        expectEquality(A.clone().invert().multiply(A), Mat3.createIdentity(), 5)
+        expectEquality(A.copy().invert().multiply(A), Mat3.createIdentity(), 5)
       })
       it('a.multiply(b) is mathematically: A*B', () => {
         const A = Mat3.createRotationX(Math.PI)
         const B = Mat3.createRotationY(Math.PI)
         const C = Mat3.createRotationZ(Math.PI)
-        const E = A.clone().multiply(B).multiply(C)
+        const E = A.copy().multiply(B).multiply(C)
         const vec = E.transform(Vec4.create(1, 1, 1, 1))
         const expect = A.transform(B.transform(C.transform(Vec4.create(1, 1, 1, 1))))
         expectVec4Equality(vec, expect)
@@ -628,13 +628,13 @@ describe('Mat3', () => {
     describe('#premultiply', () => {
       it('A * inv(A) == identity', () => {
         const A = Mat3.createRowMajor(-1, 5, -2, -5, 0, 1, -2, 2, 0)
-        expectEquality(A.clone().invert().premultiply(A), Mat3.createIdentity(), 5)
+        expectEquality(A.copy().invert().premultiply(A), Mat3.createIdentity(), 5)
       })
       it('a.premultiply(b) is mathematically: B*A', () => {
         const A = Mat3.createRotationX(Math.PI)
         const B = Mat3.createRotationY(Math.PI)
         const C = Mat3.createRotationZ(Math.PI)
-        const E = A.clone().premultiply(B).premultiply(C)
+        const E = A.copy().premultiply(B).premultiply(C)
         const vec = E.transform(Vec4.create(1, 1, 1, 1))
         const expect = C.transform(B.transform(A.transform(Vec4.create(1, 1, 1, 1))))
         expectVec4Equality(vec, expect)

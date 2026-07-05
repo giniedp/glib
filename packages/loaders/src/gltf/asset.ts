@@ -702,7 +702,7 @@ function readTextureInfo(params: { [k: string]: unknown }, name: string, info: T
     }
 
     if (hasTransform) {
-      const matrix = translation.clone()
+      const matrix = translation.copy()
       matrix.multiply(scale)
       matrix.multiply(rotation)
       params[name + 'Transform'] = matrix

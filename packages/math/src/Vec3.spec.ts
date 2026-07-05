@@ -1,4 +1,4 @@
-import { IVec3, Mat2, Mat3, Mat4, Quat, Vec3 } from './index'
+import { IVec3, Mat2, Mat3, Mat4, Quat, vec3, Vec3 } from './index'
 import { describe, beforeEach, it, expect } from 'vitest'
 
 describe('Vec3', () => {
@@ -118,8 +118,8 @@ describe('Vec3', () => {
     beforeEach(() => {
       a = new Vec3(1, 2, 3)
     })
-    it('clones all components', () => expectComponents(a.clone(), 1, 2, 3))
-    it('returns new instance', () => expect(a.clone()).not.toBe(a))
+    it('clones all components', () => expectComponents(a.copy(), 1, 2, 3))
+    it('returns new instance', () => expect(a.copy()).not.toBe(a))
   })
   describe('.clone', () => {
     beforeEach(() => {
@@ -664,6 +664,39 @@ describe('Vec3', () => {
   describe('#format', () => {
     it('formats components', () => {
       expect(Vec3.create(1, 2, 3).format()).toBe('x: 1.00000, y: 2.00000, z: 3.00000')
+    })
+  })
+
+  describe('vec3 helper', () => {
+    it('vec3()', () => {
+      expect(vec3()).toEqual({ x: 0, y: 0, z: 0 })
+    })
+
+    it('vec3(xyz)', () => {
+      expect(vec3(1)).toEqual({ x: 1, y: 1, z: 1 })
+      expect(vec3({ x: 1, y: 2 })).toEqual({ x: 1, y: 2, z: 0 })
+      expect(vec3({ x: 1, y: 2, z: 3 })).toEqual({ x: 1, y: 2, z: 3 })
+      expect(vec3([1])).toEqual({ x: 1, y: 0, z: 0 })
+      expect(vec3([1, 2])).toEqual({ x: 1, y: 2, z: 0 })
+      expect(vec3([1, 2, 3])).toEqual({ x: 1, y: 2, z: 3 })
+    })
+
+    it('vec3(xy, z)', () => {
+      expect(vec3(1, 2)).toEqual({ x: 1, y: 1, z: 2 })
+      expect(vec3({ x: 1, y: 2 }, 3)).toEqual({ x: 1, y: 2, z: 3 })
+      expect(vec3({ x: 1, y: 2, z: 3 }, 4)).toEqual({ x: 1, y: 2, z: 4 })
+      expect(vec3([1], 2)).toEqual({ x: 1, y: 0, z: 2 })
+      expect(vec3([1, 2], 3)).toEqual({ x: 1, y: 2, z: 3 })
+      expect(vec3([1, 2, 3], 4)).toEqual({ x: 1, y: 2, z: 4 })
+    })
+
+    it('vec3(x, y, z)', () => {
+      expect(vec3(1, 2, 3)).toEqual({ x: 1, y: 2, z: 3 })
+      expect(vec3({ x: 1, y: 2 }, 3, 4)).toEqual({ x: 1, y: 3, z: 4 })
+      expect(vec3({ x: 1, y: 2, z: 3 }, 4, 5)).toEqual({ x: 1, y: 4, z: 5 })
+      expect(vec3([1], 2, 3)).toEqual({ x: 1, y: 2, z: 3 })
+      expect(vec3([1, 2], 3, 4)).toEqual({ x: 1, y: 3, z: 4 })
+      expect(vec3([1, 2, 3], 4, 5)).toEqual({ x: 1, y: 4, z: 5 })
     })
   })
 })

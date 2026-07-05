@@ -164,7 +164,7 @@ describe('BoundingSphere', () => {
   describe('#clone', () => {
     it('creates a cloned instance', () => {
       const sphere1 = new BoundingSphere(1, 2, 3, 4)
-      const sphere2 = sphere1.clone()
+      const sphere2 = sphere1.copy()
       expect(sphere1).not.toBe(sphere2)
       expectVec3Equality(sphere2.center, sphere1.center)
       expect(sphere2.radius).toEqual(sphere1.radius)
@@ -172,7 +172,7 @@ describe('BoundingSphere', () => {
     it('clones into another instance', () => {
       const sphere1 = new BoundingSphere(1, 2, 3, 4)
       const sphere2 = new BoundingSphere()
-      const sphere3 = sphere1.clone(sphere2)
+      const sphere3 = sphere1.copy(sphere2)
       expect(sphere1).not.toBe(sphere2)
       expect(sphere2).toBe(sphere3)
       expectVec3Equality(sphere2.center, sphere1.center)
@@ -183,7 +183,7 @@ describe('BoundingSphere', () => {
   describe('.clone', () => {
     it('creates a cloned instance', () => {
       const sphere1 = new BoundingSphere(1, 2, 3, 4)
-      const sphere2 = BoundingSphere.clone(sphere1)
+      const sphere2 = BoundingSphere.copy(sphere1)
       expect(sphere1).not.toBe(sphere2)
       expectVec3Equality(sphere2.center, sphere1.center)
       expect(sphere2.radius).toEqual(sphere1.radius)
@@ -191,7 +191,7 @@ describe('BoundingSphere', () => {
     it('clones into another instance', () => {
       const sphere1 = new BoundingSphere(1, 2, 3, 4)
       const sphere2 = new BoundingSphere()
-      const sphere3 = BoundingSphere.clone(sphere1, sphere2)
+      const sphere3 = BoundingSphere.copy(sphere1, sphere2)
       expect(sphere1).not.toBe(sphere2)
       expect(sphere2).toBe(sphere3)
       expectVec3Equality(sphere2.center, sphere1.center)

@@ -200,7 +200,7 @@ export class GeometryBuilder {
 
   public pushTransform(transform: Mat4): this {
     const top = this.transformStack[this.transformStack.length - 1]
-    this.transformStack.push(top ? Mat4.premultiply(transform, top) : transform.clone())
+    this.transformStack.push(top ? Mat4.premultiply(transform, top) : transform.copy())
     return this
   }
 

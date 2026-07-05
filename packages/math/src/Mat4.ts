@@ -3751,7 +3751,7 @@ export class Mat4 {
   // public static multiplyChain(...rest: Mat4[]): Mat4
   // public static multiplyChain() {
   //   // (a, (b, (c, (d, e))))
-  //   const result: Mat4 = arguments[arguments.length - 1].clone()
+  //   const result: Mat4 = arguments[arguments.length - 1].copy()
   //   for (let i = arguments.length - 2; i >= 0; i--) {
   //     Mat4.multiply(arguments[i], result, result)
   //   }
@@ -3766,7 +3766,7 @@ export class Mat4 {
   // public static premultiplyChain(...rest: Mat4[]): Mat4
   // public static premultiplyChain() {
   //   // ((((a, b), c), d), e)
-  //   const result: Mat4 = arguments[0].clone()
+  //   const result: Mat4 = arguments[0].copy()
   //   for (let i = 1; i < arguments.length; i += 1) {
   //     Mat4.premultiply(result, arguments[i], result)
   //   }
@@ -4362,7 +4362,7 @@ export class Mat4 {
    * Creates a copy of this matrix
    * @returns The cloned matrix.
    */
-  public static clone(mat: Mat4, out: Mat4 = new Mat4()): Mat4 {
+  public static copy(mat: Mat4, out: Mat4 = new Mat4()): Mat4 {
     const d = mat.elements
     const o = out.elements
     o[0] = d[0]
@@ -4388,7 +4388,7 @@ export class Mat4 {
    * Creates a copy of this matrix
    * @returns The cloned matrix.
    */
-  public clone(out: Mat4 = new Mat4()): Mat4 {
+  public copy(out: Mat4 = new Mat4()): Mat4 {
     const d = this.elements
     const o = out.elements
     o[0] = d[0]

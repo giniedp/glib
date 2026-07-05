@@ -236,7 +236,7 @@ export class AnimationChannelSampler {
         return
       }
     }
-    Vec4.clone(sample0.value, out)
+    Vec4.copy(sample0.value, out)
   }
 }
 

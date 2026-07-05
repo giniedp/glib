@@ -100,7 +100,7 @@ export class MeshLoaderComponent implements GameComponent {
             const boxScale = Vec3.subtract(box.max, box.min)
             const boxCenter = Vec3.add(box.min, box.max).multiplyScalar(0.5)
             const boxTransform = Mat4.createFromRTS(Vec4.create(0, 0, 0, 1), boxCenter, boxScale)
-            boxTransforms.push(node.world.clone().premultiply(boxTransform))
+            boxTransforms.push(node.world.copy().premultiply(boxTransform))
           }
 
           this.entity.world.createEntity({

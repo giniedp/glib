@@ -230,7 +230,7 @@ export class BoundingCapsule {
    * @param out - where the result is written to
    * @returns the given `out` parameter or a new instance
    */
-  public static clone(capsule: BoundingCapsule, out?: BoundingCapsule): BoundingCapsule {
+  public static copy(capsule: BoundingCapsule, out?: BoundingCapsule): BoundingCapsule {
     out = out || new BoundingCapsule()
     out.initFrom(capsule)
     return out
@@ -242,7 +242,7 @@ export class BoundingCapsule {
    * @param out - where the result is written to
    * @returns the given `out` parameter or a new instance
    */
-  public clone(out?: BoundingCapsule): BoundingCapsule {
+  public copy(out?: BoundingCapsule): BoundingCapsule {
     out = out || new BoundingCapsule()
     out.initFrom(this)
     return out

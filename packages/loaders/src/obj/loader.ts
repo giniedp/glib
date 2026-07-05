@@ -162,7 +162,7 @@ function buildMesh(document: Document): MeshOptions {
       return
     }
     if (!box) {
-      box = BoundingBox.convert(o.boundingBox).clone()
+      box = BoundingBox.convert(o.boundingBox).copy()
     } else {
       box.merge(BoundingBox.convert(o.boundingBox))
     }
@@ -174,7 +174,7 @@ function buildMesh(document: Document): MeshOptions {
       return
     }
     if (!sphere) {
-      sphere = BoundingSphere.convert(o.boundingSphere).clone()
+      sphere = BoundingSphere.convert(o.boundingSphere).copy()
     } else {
       sphere.mergeSphere(BoundingSphere.convert(o.boundingSphere))
     }
