@@ -1,51 +1,74 @@
-import { TransformComponent } from '@gglib/components'
-import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
+import type { GameEntity } from '@gglib/ecs'
 import type { Child } from 'mithril'
-import { type TreeDataAdapter, h } from 'tweak-ui'
+import { redrawUi, type TreeController, type TreeDataAdapter } from 'tweak-ui'
+import { uiIcon } from './icon'
 import svgBlockQuestion from './icons/block-question.svg?raw'
-import svgCube from './icons/cube.svg?raw'
-import svgDolly from './icons/dolly.svg?raw'
-import svgNetwork from './icons/network-wired.svg?raw'
+import type { UiRegistry } from './registry'
 
-export function nwViewerTreAdapter(): TreeDataAdapter<any> {
+let nodeId = 0
+export interface NWTreeAdapter extends TreeDataAdapter<any> {
+  collapseAll(): void
+  scrollToEntity(entity: GameEntity): void
+}
+
+export function nwViewerTreAdapter(registry: UiRegistry): NWTreeAdapter {
   let nodeMap = new WeakMap<any, VirtualNode>()
-  let nodeId = 0
+  let expandMap = new WeakMap<any, boolean>()
+  let version = 0
+  let controller: TreeController<any> | null = null
+
   function getNode(node: any): VirtualNode {
     let vNode = nodeMap.get(node)
     if (vNode) {
       return vNode
     }
-
-    if ('tweakUi' in node) {
-    }
-    if (node instanceof GameEntity) {
-      vNode = createEntityNode(String(++nodeId), node)
-    } else if (node instanceof GameWorld) {
-      vNode = createGameWorldNode(String(++nodeId), node)
-    } else if (node instanceof GameSystem) {
-      vNode = createGameSystemNode(String(++nodeId), node)
-    } else {
-      vNode = createDefaultNode(String(++nodeId), node)
-    }
+    vNode = createNode(node, registry)
     nodeMap.set(node, vNode)
     return vNode
   }
 
   return {
-    getId(node: any): string {
+    get version() {
+      return version
+    },
+    nodeId(node: any): string {
       return getNode(node).id
     },
-    getLabel(node: any): Child {
+    nodeLabel(node: any): Child {
       return getNode(node).label
     },
-    getIcon(node: any): Child {
+    nodeIcon(node: any): Child {
       return getNode(node).icon
     },
-    getChildren(node: any): Iterable<any> {
-      return getNode(node).children || []
+    nodeChildren(node: any): Iterable<any> {
+      const n = getNode(node)
+      return n.expandable ? n.children : null
     },
-    isExpandable(node: any): boolean {
-      return !!getNode(node).expandable
+    isExpanded(node: any): boolean {
+      return expandMap.get(node) ?? false
+    },
+    setExpanded(node: any, expanded: boolean): void {
+      expandMap.set(node, expanded)
+      version++
+    },
+    connect(ctrl) {
+      controller = ctrl
+    },
+    collapseAll(): void {
+      expandMap = new WeakMap<any, boolean>()
+      version++
+    },
+    scrollToEntity(entity: GameEntity): void {
+      let e = entity
+      while (e) {
+        expandMap.set(e, true)
+        e = e.parent
+      }
+      version++
+      redrawUi()
+      setTimeout(() => {
+        controller.scrollTo(entity)
+      }, 50)
     },
   }
 }
@@ -59,88 +82,20 @@ interface VirtualNode {
   expandable: boolean
 }
 
-function createEntityNode(id: string, entity: GameEntity): VirtualNode {
+function createNode(node: any, registry: UiRegistry): VirtualNode {
+  const meta = registry.get(node.constructor)
+  const icon = meta?.icon?.(node) ?? svgBlockQuestion
+  const label = meta?.label?.(node) ?? node.constructor.name ?? ''
   return {
-    id: id,
-    label: entity.name || `(unnamed entity)`,
-    icon: h(iconComponent, { icon: svgCube }),
-    data: entity,
+    id: String(++nodeId),
+    label: label,
+    icon: uiIcon({ icon }),
+    data: node,
     get expandable() {
-      return true
+      return meta?.expandable?.(node)
     },
     get children() {
-      return (function* () {
-        for (const comp of entity.activeComponents) {
-          yield comp
-        }
-        for (const child of entity.getTransform().children) {
-          yield child.entity
-        }
-      })()
-    },
-  }
-}
-
-function createGameSystemNode(id: string, system: GameSystem): VirtualNode {
-  return {
-    id,
-    label: system.constructor.name || '(anonymous system)',
-    icon: h(iconComponent, { icon: svgNetwork }),
-    data: system,
-    get expandable() {
-      return false
-    },
-    get children() {
-      return []
-    },
-  }
-}
-
-function createGameWorldNode(id: string, world: GameWorld): VirtualNode {
-  return {
-    id,
-    label: 'Systems',
-    icon: h(iconComponent, { icon: svgNetwork }),
-    data: world,
-    get expandable() {
-      return true
-    },
-    get children() {
-      return (function* () {
-        for (const comp of world.systems) {
-          yield comp
-        }
-      })()
-    },
-  }
-}
-
-function createDefaultNode(id: string, data: any): VirtualNode {
-  return {
-    id,
-    label: data.constructor.name || '(anonymous component)',
-    icon: h.trust(getDefaultIcon(data)),
-    data: data,
-    get expandable() {
-      return false
-    },
-    get children() {
-      return []
-    },
-  }
-}
-
-function getDefaultIcon(data: any): string {
-  if (data instanceof TransformComponent) {
-    return svgDolly
-  }
-  return svgBlockQuestion
-}
-
-const iconComponent = () => {
-  return {
-    view(node: any) {
-      return h.trust(node.attrs.icon)
+      return meta?.children?.(node)
     },
   }
 }

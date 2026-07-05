@@ -1,17 +1,23 @@
 import {
+  BlendState,
   CommonBlocks,
+  CullState,
+  DepthState,
   Device,
   materialSchemaClass,
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import Schema from './ShapeMaterial.meta'
-import SHAPE_SHADER from './ShapeMaterial.wgsl'
+import WGSL from './ShapeMaterial.wgsl'
+import { MaterialLayerMasks } from './common'
 
 export function shapeShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Shape Shader',
-    wgsl: SHAPE_SHADER,
+    wgsl: {
+      source: WGSL,
+    },
     glsl: null,
   }
 }
@@ -34,6 +40,11 @@ export class ShapeMaterial extends materialSchemaClass(Schema) {
       effect: shapeEffectOptions(),
       meta: {},
     })
+    this.layer = MaterialLayerMasks.Common
+    this.isTransparent = true
+    this.effect.blendState = BlendState.Alpha
+    this.effect.cullState = CullState.None
+    this.effect.depthState = DepthState.GreaterNoWrite
   }
 
   public instances() {

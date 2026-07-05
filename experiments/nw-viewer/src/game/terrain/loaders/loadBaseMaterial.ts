@@ -1,8 +1,8 @@
 import { PriorityLane, SchedulerSystem, type ScheduledTask } from '@gglib/components'
 import type { Texture } from '@gglib/graphics'
 import type { RegionMaterial } from '../../../api'
-import type { TerrainCompositeMaterial } from '../../../material'
 import type { ContentService } from '../../../content'
+import type { TerrainCompositeMaterial } from '../../../material'
 
 export function loadBaseMaterial(
   content: ContentService,
@@ -17,7 +17,7 @@ export function loadBaseMaterial(
 
   return scheduler.schedule({
     lane: PriorityLane.High,
-    load: async (signal) => {
+    load: async (_, signal) => {
       if (signal.aborted) {
         return
       }
@@ -68,22 +68,7 @@ export function loadBaseMaterial(
         specularMap = null
       }
     },
-    onCancel: () => {
-      normalMap?.dispose()
-      normalMap = null
-
-      colorMap?.dispose()
-      colorMap = null
-
-      specularMap?.dispose()
-      specularMap = null
-
-      material?.dispose()
-      material = null
-
-      done(null)
-    },
-    onDone: () => {
+    finalize: (_, err) => {
       if (material) {
         if (colorMap) {
           material.MacroBaseMap = colorMap
@@ -107,7 +92,12 @@ export function loadBaseMaterial(
       specularMap?.dispose()
       specularMap = null
 
-      done(material)
+      if (err) {
+        material.dispose()
+        done(null)
+      } else {
+        done(material)
+      }
       material = null
     },
   })

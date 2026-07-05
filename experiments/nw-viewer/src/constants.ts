@@ -18,8 +18,7 @@ export const MAX_ANISOTROPY = 4.0
 export const MAX_MIP_LEVELS = 8.0
 
 export const ENABLE_IMPOSTORS = true
-export const ENABLE_CAPITAL_INDICATOR = false
-export const ENABLE_ENTITY_INDICATOR = false
+export const ENABLE_CAPITALS = true
 
 export const REGION_VISIBILITY = 4 * SEGMENT_SIZE
 export const SEGMENT_VISIBILITY = 4 * SEGMENT_SIZE
@@ -37,12 +36,12 @@ export const LOD_SPANS = {
     keepAliveFor: 1,
   },
   impostor: {
-    start: 0,
+    start: 2,
     visibleFor: 8,
     keepAliveFor: 4,
   },
   impostorPoi: {
-    start: 0,
+    start: 2,
     visibleFor: 8,
     keepAliveFor: 4,
   },

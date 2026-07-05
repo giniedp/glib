@@ -1,215 +1,187 @@
-import { LifeCyclePropagate, SchedulerSystem, TransformComponent, type ScheduledTask } from '@gglib/components'
-import type { CreateEntityOptions, GameComponent, GameEntity } from '@gglib/ecs'
+import { QuadTree, QuadTreeNode, type ScheduledTask } from '@gglib/components'
+import type { GameComponent, GameEntity } from '@gglib/ecs'
+import { BoundingFrustum, Vec3, type IVec2 } from '@gglib/math'
+import type { CameraData } from '@gglib/render'
+import { brand, lfmt, type Brand } from '@gglib/utils'
+import type { TerrainCompositeMaterial } from '../../material'
+import type { TerrainTile } from './TerrainTileManager'
+import { QUAD_LEAF_SIZE } from '../../constants'
 import type { RegionMaterial } from '../../api'
-import { ContentService } from '../../content'
-import { TerrainCompositeMaterial } from '../../material'
-import type { TerrainRegion, TerraQuad } from './TerrainRegion'
-import { loadBaseMaterial, loadHeightmap, loadLayerMaterials } from './loaders'
 
-export interface TerrainRegionComponentOptions {
-  level: string
-  region: TerrainRegion
+export type TerraPayload = {
+  state: TerraQuadState
+  lastSeen: number
+
+  /**
+   * visible in this frame
+   */
+  visible: boolean
+
+  /**
+   * required by a visible child
+   */
+  required: boolean
+
+  region: TerrainRegionComponent
+
+  tile: TerrainTile
+  materialRenderTask: ScheduledTask
+}
+
+export type TerraQuadState = Brand<number, 'TerraQuadState'>
+export const TerraQuadState = {
+  Unloaded: brand<TerraQuadState>(0),
+
+  HeightLoading: brand<TerraQuadState>(1),
+  HeightReady: brand<TerraQuadState>(2),
+
+  MaterialStale: brand<TerraQuadState>(4),
+  MaterialLoading: brand<TerraQuadState>(5),
+  MaterialReady: brand<TerraQuadState>(6),
+
+  Ready: brand<TerraQuadState>(7),
+}
+
+export type TerraRoot = QuadTree<TerraPayload>
+export type TerraQuad = QuadTreeNode<TerraPayload>
+
+export interface TerrainRegionOptions {
   regionName: string
-  materialData: RegionMaterial
+  coatlicueName: string
+  origin: IVec2
+  regionSize: number
   mountainHeight: number
-}
-
-export function terrainRegion(parent: GameEntity, options: TerrainRegionComponentOptions): CreateEntityOptions {
-  return {
-    name: `Terrain Region [${options.region.xIndex};${options.region.yIndex}]`,
-    parent,
-    transform: new TransformComponent({
-      position: {
-        x: options.region.origin.x,
-        y: options.region.origin.y,
-        z: 0,
-      },
-      keepWorld: true,
-      lifeCycle: LifeCyclePropagate,
-    }),
-    components: [new TerrainRegionComponent(options)],
-  }
-}
-
-export function terrainPatchEntity(parent: GameEntity, quad: TerraQuad): CreateEntityOptions {
-  return {
-    name: `Terrain Patch [${quad.rootGridX};${quad.rootGridZ}]`,
-    parent: parent,
-    transform: new TransformComponent({
-      position: {
-        x: quad.bounds.min.x,
-        y: quad.bounds.min.y,
-        z: 0,
-      },
-      keepWorld: true,
-    }),
-  }
+  regionMaterial: RegionMaterial
 }
 
 export class TerrainRegionComponent implements GameComponent {
-  public entity: GameEntity
-
-  private content: ContentService
-  private scheduler: SchedulerSystem
-
-  private mountainHeight: number
-  private materialData: RegionMaterial
+  public get xIndex() {
+    return this.origin.x / this.size
+  }
+  public get yIndex() {
+    return this.origin.y / this.size
+  }
 
   public heightmap: Float16Array
-  private heightmapTask: ScheduledTask
+  public heightmapTask: ScheduledTask | null
 
-  // public watermap: Float16Array
-  // private watermapTask: ScheduledTask
-
-  public layerMaterials: TerrainCompositeMaterial[] | null = null
-  private layerMaterialsTask: ScheduledTask
+  public watermap: Float16Array
+  public watermapTask: ScheduledTask | null
 
   public baseMaterial: TerrainCompositeMaterial
-  private baseMaterialTask: ScheduledTask
+  public baseMaterialTask: ScheduledTask | null
 
-  public materialVersion = 0
+  public layerMaterials: TerrainCompositeMaterial[]
+  public layerMaterialsTask: ScheduledTask | null
 
-  public readonly region: TerrainRegion
-  public get regionSize(): number {
-    return this.region.size
-  }
+  public materialVersion: number = 0
+  public materialData: RegionMaterial
 
-  public readonly level: string
-  public readonly name: string
-  public constructor(options: TerrainRegionComponentOptions) {
-    this.level = options.level
-    this.region = options.region
-    this.name = options.regionName
-    this.materialData = options.materialData
+  public readonly coatlicueName: string
+  public readonly regionName: string
+  public readonly origin: IVec2
+  public readonly size: number
+  public readonly tree: TerraRoot
+  public readonly leafSize: number
+  public readonly maxLevel: number
+  public readonly mountainHeight: number
+
+  private frustum: BoundingFrustum = new BoundingFrustum()
+  private requiredQuads = new Set<TerraQuad>()
+  private logTag = lfmt.badge('#4E79A7', '⛰️ TerrainRegionComponent')
+  public constructor(options: TerrainRegionOptions) {
+    this.logTag = lfmt.merge(this.logTag, lfmt.badge('#BAB0AC', `${options.regionName}`))
+    this.regionName = options.regionName
+    this.coatlicueName = options.coatlicueName
+    this.size = options.regionSize
+    this.origin = options.origin
+    this.leafSize = QUAD_LEAF_SIZE
     this.mountainHeight = options.mountainHeight
+    this.materialData = options.regionMaterial
+
+    console.assert(!!this.regionName, 'RegionComponent: regionName is required')
+    console.assert(!!this.coatlicueName, 'RegionComponent: coatlicueName is required')
+    console.assert(this.size > 0, 'RegionComponent: size must be greater than 0')
+    console.assert(this.leafSize > 0, 'RegionComponent: leafSize must be greater than 0')
+    console.assert(this.size % this.leafSize === 0, 'RegionComponent: size must be a multiple of leafSize')
+
+    this.tree = QuadTree.create({
+      min: new Vec3(this.origin.x, this.origin.y, 0),
+      max: new Vec3(this.origin.x + this.size, this.origin.y + this.size, this.size),
+      verticalAxis: 'z',
+    })
+
+    this.tree.subdivideTosize(this.leafSize)
+    this.maxLevel = Math.log2(this.size / this.leafSize)
+    for (const node of this.tree.flatPreOrdered) {
+      node.data.region = this
+      node.data.visible = false
+    }
   }
 
+  // #region GameComponent interface
+  public readonly entity: GameEntity
   public initialize(): void {
-    this.content = this.entity.service(ContentService)
-    this.scheduler = this.entity.service(SchedulerSystem)
-
-    for (const node of this.region.tree.flatPreOrdered) {
-      node.data.entity = this.entity.world.createEntity(terrainPatchEntity(this.entity, node))
-      node.data.region = this.region
-    }
+    //
   }
-
-  public activate() {
-    this.loadHeightmap()
-    // this.loadWatermap()
-    this.loadBaseMaterial()
-    this.loadLayerMaterials()
+  public activate(): void {
+    console.log(...lfmt.merge(this.logTag, lfmt.green('Activated')))
   }
-
-  public deactivate() {
-    this.disposeLayerMaterials()
-    this.disposeMacroMaterial()
-    this.disposeHeightmap()
-
-    if (this.layerMaterialsTask) {
-      this.layerMaterialsTask.cancelled = true
-      this.layerMaterialsTask = null
-    }
-
-    if (this.baseMaterialTask) {
-      this.baseMaterialTask.cancelled = true
-      this.baseMaterialTask = null
-    }
-
-    if (this.heightmapTask) {
-      this.heightmapTask.cancelled = true
-      this.heightmapTask = null
-    }
-
-    // if (this.watermapTask) {
-    //   this.watermapTask.cancelled = true
-    //   this.watermapTask = null
-    // }
+  public deactivate(): void {
+    console.log(...lfmt.merge(this.logTag, lfmt.red('Deactivated')))
   }
-
   public destroy(): void {
-    this.deactivate()
+    //
   }
+  // #endregion
 
-  private disposeMacroMaterial() {
-    this.baseMaterial?.dispose()
-    this.baseMaterial = null
-  }
+  public traverseRequiredSet(camera: CameraData, baseFactor: number, fn: (node: TerraQuad) => void): void {
+    // clear helper collections
+    this.requiredQuads.clear()
+    clearVisibility(this.tree)
 
-  private disposeLayerMaterials() {
-    const toDispose = this.layerMaterials
-    this.layerMaterials = null
-    if (toDispose) {
-      for (const material of toDispose) {
-        material.dispose()
+    // list of non overlapping quads
+
+    const cam = camera.world.getTranslation({})
+    this.frustum.updateFromViewProjection(camera.view, camera.projection)
+    this.tree.traverseLOD(cam, baseFactor, (it) => {
+      if (!this.frustum.intersectsBox(it.bounds)) {
+        return
       }
-    }
-  }
 
-  private disposeHeightmap() {
-    this.heightmap = null
-  }
+      it.data.visible = true
+      it.data.required = true
 
-  private loadBaseMaterial() {
-    if (this.baseMaterial || this.baseMaterialTask) {
-      return
-    }
-    this.baseMaterialTask = loadBaseMaterial(this.content, this.scheduler, this.materialData, (result) => {
-      this.baseMaterialTask = null
-      this.baseMaterial = result
-      this.syncMacroTextures()
-      this.materialVersion++
+      // union with all ancestors
+      let next = it
+      while (next) {
+        if (this.requiredQuads.has(next)) {
+          // already tracked
+          break
+        }
+        this.requiredQuads.add(next)
+        next.data.required = true
+        next = next.parent
+      }
     })
+
+    traverseRequired(this.tree, fn)
   }
+}
 
-  private loadLayerMaterials() {
-    if (this.layerMaterials || this.layerMaterialsTask) {
-      return
-    }
-    this.layerMaterialsTask = loadLayerMaterials(this.content, this.scheduler, this.materialData, (result) => {
-      this.layerMaterialsTask = null
-      this.layerMaterials = result || []
-      this.syncMacroTextures()
-      this.materialVersion++
-    })
+function clearVisibility(node: TerraQuad) {
+  node.data.visible = false
+  node.data.required = false
+  for (const child of node.children) {
+    clearVisibility(child)
   }
+}
 
-  private syncMacroTextures() {
-    if (this.baseMaterial) {
-      this.baseMaterial.MacroNormalScale = 1 / this.mountainHeight
-    } else {
-      return
-    }
-
-    if (!this.layerMaterials?.length) {
-      return
-    }
-
-    for (const material of this.layerMaterials) {
-      material.MacroBaseMap = this.baseMaterial.MacroBaseMap
-      material.MacroNormalMap = this.baseMaterial.MacroNormalMap
-      material.MacroGlossMap = this.baseMaterial.MacroGlossMap
-      material.MacroNormalScale = 1 / this.mountainHeight
-    }
+function traverseRequired(node: TerraQuad, fn: (node: TerraQuad) => void) {
+  if (node.data.required) {
+    fn(node)
   }
-
-  private loadHeightmap() {
-    if (this.heightmap || this.heightmapTask) {
-      return
-    }
-    this.heightmapTask = loadHeightmap(this.content, this.scheduler, this.level, this.name, (result) => {
-      this.heightmapTask = null
-      this.heightmap = result
-    })
+  for (const child of node.children) {
+    traverseRequired(child, fn)
   }
-
-  // private loadWatermap() {
-  //   if (this.watermap || this.watermapTask) {
-  //     return
-  //   }
-  //   this.watermapTask = loadWatermap(this.content, this.level, this.name, (result) => {
-  //     this.watermapTask = null
-  //     this.watermap = result
-  //   })
-  // }
 }

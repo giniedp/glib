@@ -10,79 +10,48 @@ const ENABLE_NIGHT_GRADIENT : bool = false;
 const RT_FOG                : bool = false;
 const RT_VOLUMETRIC_FOG     : bool = false;
 
+struct MaterialBlock {
 
-// ============================================================
-// Bind group 0 — sky dome shader constants
-// (all passed as uniforms; mirrors the scalar/vector globals
-//  declared in the original .cfx)
-// ============================================================
+  partialMieInScattering      : vec3f,
+  partialRayleighInScattering : vec3f,
+  phaseFunctionConstants      : vec3f, // x = miePart_g_2, y = miePart_g2_1, z = (unused)
+  scatteringScales            : vec3f, // x = sunIntensity, y = g
 
-struct SkyDomeConstants {
 
-    partial_mie_in_scattering       : vec3<f32>,
-    _pad0                           : f32,      // pad to vec4 alignment
-    partial_rayleigh_in_scattering  : vec3<f32>,
-    _pad1                           : f32,      // pad to vec4 alignment
-    phase_function_constants        : vec3<f32>, // x = miePart_g_2, y = miePart_g2_1, z = (unused)
-    _pad2                           : f32,      // pad to vec4 alignment
+  nightSkyColBase             : vec3f,
+  nightSkyColDelta            : vec3f,
+  nightSkyZenithColShift      : vec2f,
 
-    night_sky_col_base              : vec3<f32>,
-    _pad3                           : f32,      // pad to vec4 alignment
-    night_sky_col_delta             : vec3<f32>,
-    _pad4                           : f32,      // pad to vec4 alignment
-    night_sky_zenith_col_shift      : vec2<f32>,
-    _pad5                           : f32,      // pad to vec4 alignment
-
-    // Moon
-    // night_moon_dir_size             : vec4<f32>,  // xyz = dir, w = size
-    // night_moon_tex_gen_right        : vec3<f32>,
-    // night_moon_tex_gen_up           : vec3<f32>,
-    // night_moon_color                : vec3<f32>,
-    // night_moon_inner_corona         : vec4<f32>,  // xyz = color, w = scale
-    // night_moon_outer_corona         : vec4<f32>,  // xyz = color, w = scale
+  // Moon
+  nightMoonDirSize            : vec4f, // xyz = dir, w = size
+  nightMoonTexGenRight        : vec3f,
+  nightMoonTexGenUp           : vec3f,
+  nightMoonColor              : vec3f,
+  nightMoonInnerCorona        : vec4f, // xyz = color, w = scale
+  nightMoonOuterCorona        : vec4f, // xyz = color, w = scale
 };
 
-// ============================================================
-// Bind group 0 — per-view / per-frame uniforms
-// ============================================================
 
-// struct PerViewUniforms {
-//   world_view_pos       : vec4<f32>,   // PerView_WorldViewPos
-//   view_basis_z         : vec4<f32>,   // PerView_ViewBasisZ
-//   near_far_clip_dist   : vec4<f32>,   // PerView_NearFarClipDist
-//   view_proj_zero_matr  : mat4x4<f32>, // PerView_ViewProjZeroMatr
-// };
+@group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+@group(0) @binding(1) var<uniform>       view    : ViewBlock;
+@group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+@group(2) @binding(0) var<uniform>       material: MaterialBlock;
 
-@group(0) @binding(0) var<uniform> global : GlobalBlock;
-@group(0) @binding(1) var<uniform> view : ViewBlock;
-@group(0) @binding(2) var<uniform> sky : SkyDomeConstants;
+@group(2) @binding(1) var samplerLinear      : sampler;
+@group(2) @binding(2) var samplerPoint       : sampler;
 
-@group(1) @binding(0) var moon_tex     : texture_2d<f32>;
-@group(1) @binding(1) var moon_sampler : sampler;
-// Moon uses Border address mode with (0,0,0,0) border — configure on the
-// WebGPU sampler descriptor: addressModeU/V = "clamp-to-edge" + set
-// border via the GPUSamplerDescriptor if the extension is available,
-// or clamp-to-edge as the closest fallback.
-
+@group(3) @binding(0) var moonMap         : texture_2d<f32>;
 
 struct VertexInput {
-  @location(0) position : vec4<f32>,
-  @location(2) texture  : vec2<f32>,
+  @location(0) position : vec4f,
+  @location(2) texture  : vec2f,
 };
 
 struct FragmentInput {
-  @builtin(position) position : vec4<f32>,
-
-  // Packed sky/moon UVs.
-  // - xy = uvBase
-  // - zw = uvMoon
-  @location(0) uvPacked : vec4<f32>,
-
-  // direction to sky (normalized, in world space)
-  @location(1) skyDir : vec3<f32>,
-
-  // Fog: xyz = color, w = blend factor
-  @location(2) fogColor: vec4<f32>,
+  @builtin(position) position : vec4f,
+  @location(0)       uvPacked : vec4f, // xy = baseTC, zw = moonTC
+  @location(1)       skyDir   : vec3f, // to sky, normalized, in world space
+  @location(2)       fogColor : vec4f, // xyz = color, w = blend factor
 };
 
 
@@ -91,32 +60,27 @@ fn vs_main(in: VertexInput) -> FragmentInput {
     var output : FragmentInput;
 
     // create rotation matrix by stripping translation from view matrix
-    var view_rot = view.viewMatrix;
-    view_rot[3]  = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+    var vPos = vec4f(in.position.xyz, 1.0);
+    var viewRot = view.viewMatrix;
+    viewRot[3]  = vec4f(0.0, 0.0, 0.0, 1.0);
 
-    output.position   = view.projectionMatrix * view_rot * vec4<f32>(in.position.xyz, 1.0);
+    output.position   = view.projectionMatrix * viewRot * vPos;
     output.position.z = 0;// output.position.w; // push to far plane
 
-    // ----- base (day sky) UV -----
-    var uvBase = in.texture;
+    var uvBase = in.texture.xy;
+    var uvMoon = vec2f(
+      dot(material.nightMoonTexGenRight.xyz, vPos.xyz),
+      dot(material.nightMoonTexGenUp.xyz,    vPos.xyz),
+    ) * (1.0 / material.nightMoonDirSize.w) + 0.5;
 
-    // ----- moon UV -----
-    var uvMoon = vec2<f32>(0.0);
-    // if ENABLE_MOON {
-    //     uvMoon = vec2<f32>(
-    //         dot(sky.night_moon_tex_gen_right, vpos.xyz),
-    //         dot(sky.night_moon_tex_gen_up,    vpos.xyz),
-    //     ) * sky.night_moon_dir_size.w + 0.5;
-
-    //     // Suppress duplicate moon on the opposite hemisphere
-    //     let moon_cross = cross(sky.night_moon_tex_gen_right, sky.night_moon_tex_gen_up);
-    //     if dot(moon_cross, vpos.xyz) < 0.0 {
-    //         uvMoon *= 1.0e11;
-    //     }
-    // }
+    // Suppress duplicate moon on the opposite hemisphere
+    let moonCross = cross(material.nightMoonTexGenRight, material.nightMoonTexGenUp);
+    if (dot(moonCross, vPos.xyz) < 0.0) {
+      uvMoon *= 1.0e11;
+    }
 
     // Pack both UV pairs: xy = baseTC, zw = moonTC
-    output.uvPacked = vec4<f32>(uvBase, uvMoon.x, uvMoon.y);
+    output.uvPacked = vec4f(uvBase, uvMoon.x, uvMoon.y);
     output.skyDir = normalize(in.position.xyz) ;
 
     // ----- fog -----
@@ -127,168 +91,114 @@ fn vs_main(in: VertexInput) -> FragmentInput {
     //                       + per_view.near_far_clip_dist.y * view_dir_norm * view_dir_corr;
     //     // TODO: replace with your fog implementation
     //     // output.fogColor = get_volumetric_fog_color(world_pos);
-    //     output.fogColor = vec4<f32>(0.0);
+    //     output.fogColor = vec4f(0.0);
     // }
 
     return output;
 }
 
-// ============================================================
-// Fragment shaders
-// ============================================================
 
 @fragment
-fn fs_main(in: FragmentInput) -> @location(0) vec4<f32> {
-    var color = vec4<f32>(0.0);
+fn fs_main(in: FragmentInput) -> FragmentOutput {
+
 
     let uvBase = in.uvPacked.xy;
     let uvMoon = in.uvPacked.zw;
     let skyDir = normalize(in.skyDir);
+    let cosViewZenith = max(0.0, skyDir.z);    // skyDir is normalised; z = cos(angle to zenith)
 
-    // ---- day sky scattering ----
-    // if ENABLE_DAY_GRADIENT {
-        let cos_view_zenith = skyDir.z;   // skyDir is normalised; z = cos(angle to zenith)
-        let color_mie       = vec4<f32>(sample_mie(cos_view_zenith),      1.0);
-        let color_rayleigh  = vec4<f32>(sample_rayleigh(cos_view_zenith), 1.0);
+    let betaR        = material.partialRayleighInScattering;
+    let betaM        = material.partialMieInScattering;
+    let sunIntensity = material.scatteringScales.x;
+    let miePartG2    = material.phaseFunctionConstants.x;
+    let miePartG21   = material.phaseFunctionConstants.y;
 
-        let mie_part_g_2  = sky.phase_function_constants.x;  // pow(miePart,-2/3) * (-2g)
-        let mie_part_g2_1 = sky.phase_function_constants.y;  // pow(miePart,-2/3) * (1+g²)
+    // 1. Analytical Transmittance (Light scattering/loss through atmosphere)
+    let thicknessR = getAtmosphericThickness(cosViewZenith, 8.0); // Rayleigh scale height
+    let thicknessM = getAtmosphericThickness(cosViewZenith, 1.2); // Mie scale height
 
-        let cosine  = -dot(global.sunDirection, skyDir);
-        let cosine2 = cosine * cosine;
+    let extinctionR = exp(-betaR * thicknessR);
+    let extinctionM = exp(-betaM * thicknessM);
 
-        let mie_phase      = (1.0 + cosine2)
-                           * pow(mie_part_g2_1 + mie_part_g_2 * cosine, -1.5);
-        let rayleigh_phase = 0.75 * (1.0 + cosine2);
+    // 2. Exact Angular Phase Math matching your game's formula
+    // Since global.sunDirection is normalized, simple dot product works flawlessly
+    let cosine = dot(global.sunDirection, skyDir);
+    let cosine2 = cosine * cosine;
 
-        color.x += dot(color_mie.rgb, sky.partial_mie_in_scattering) * mie_phase;
-        color.y += dot(color_mie.rgb, sky.partial_mie_in_scattering) * mie_phase;
-        color.z += dot(color_mie.rgb, sky.partial_mie_in_scattering) * mie_phase;
+    let rayleighPhase = 0.75 * (1.0 + cosine2);
+    let miePhase      = (1.0 + cosine2) * pow(miePartG21 + miePartG2 * cosine, -1.5);
 
-        // Correct vectorised form (matches original component-wise multiply):
-        color = vec4<f32>(
-            color_mie.rgb      * sky.partial_mie_in_scattering      * mie_phase
-          + color_rayleigh.rgb * sky.partial_rayleigh_in_scattering * rayleigh_phase,
-            1.0,
-        );
-    // }
+    // 3. In-Scattering calculation combining Extinction and Phase
+    // Light generated by scattering = (1 - Attenuation) * Color Modification * Angular Intensity
+    let rayleighInScatter = (vec3f(1.0) - extinctionR) * betaR * rayleighPhase;
+    let mieInScatter      = (vec3f(1.0) - extinctionM) * betaM * miePhase;
+
+    var color = (rayleighInScatter + mieInScatter) * sunIntensity;
+    var alpha = 1.0;
 
     // ---- night sky horizontal gradient ----
-    if ENABLE_NIGHT_GRADIENT {
-        var gr = saturate(skyDir.z * sky.night_sky_zenith_col_shift.x
-                        + sky.night_sky_zenith_col_shift.y);
-        gr = gr * (2.0 - gr);   // smooth Hermite-like remap
-        color = vec4<f32>(color.rgb + sky.night_sky_col_base + sky.night_sky_col_delta * gr, color.a);
-    }
+    var gr = saturate(skyDir.z * material.nightSkyZenithColShift.x + material.nightSkyZenithColShift.y);
+        gr = gr * (2.0 - gr);
+    color += material.nightSkyColBase.rgb;
+    color += material.nightSkyColDelta.rgb * gr;
+
 
     // ---- moon ----
-    // if ENABLE_MOON {
-    //     let moon_albedo = textureSample(moon_tex, moon_sampler, uvMoon);
-    //     color = vec4<f32>(
-    //         color.rgb + sky.night_moon_color * moon_albedo.rgb * moon_albedo.a,
-    //         color.a,
-    //     );
+    var moonAlbedo = textureSample(moonMap, samplerLinear, uvMoon);
+    if (uvMoon.x < 0.0 || uvMoon.x > 1.0 || uvMoon.y < 0.0 || uvMoon.y > 1.0) {
+      moonAlbedo.a = 0.0;
+    }
+    color += material.nightMoonColor * moonAlbedo.rgb * moonAlbedo.a;
 
-    //     // Inner and outer corona
-    //     let m = 1.0 - dot(skyDir, sky.night_moon_dir_size.xyz);
-    //     color = vec4<f32>(
-    //         color.rgb
-    //       + sky.night_moon_inner_corona.rgb * (1.0 / (1.05 + m * sky.night_moon_inner_corona.w))
-    //       + sky.night_moon_outer_corona.rgb * (1.0 / (1.05 + m * sky.night_moon_outer_corona.w)),
-    //         color.a,
-    //     );
-    // }
+    // Inner and outer corona
+    let m = 1.0 - dot(skyDir, material.nightMoonDirSize.xyz);
+    color += material.nightMoonInnerCorona.rgb * (1.0 / (1.05 + m * material.nightMoonInnerCorona.w));
+    color += material.nightMoonOuterCorona.rgb * (1.0 / (1.05 + m * material.nightMoonOuterCorona.w));
 
     // ---- HDR clamp ----
-    color = vec4<f32>(min(color.rgb, vec3<f32>(16384.0)), color.a);
+    color = min(color.rgb, vec3f(16384.0));
 
     // ---- fog ----
-    // if RT_FOG {
-    //     if !RT_VOLUMETRIC_FOG {
-    //         // Simple analytical fog blend
-    //         color = vec4<f32>(
-    //             mix(in.fogColor.rgb, color.rgb, in.fogColor.w),
-    //             color.a,
-    //         );
-    //     } else {
-    //         // TODO: replace with your volumetric fog lookup + apply
-    //         // let vtc = get_volumetric_fog_texcoord(in.position);
-    //         // let vf  = get_volumetric_fog_value(vtc);
-    //         // color.rgb = apply_volumetric_fog(vf, in.fogColor, vtc, color.rgb);
-    //     }
-    // }
-
-
-    let exposed = color.rgb * 0.02;
-    color = vec4<f32>(exposed / (exposed + vec3<f32>(1.0)), 1.0);
-
     let horizon = 1.0 - saturate(skyDir.z);  // 0 at zenith, 1 at horizon
-    let fog_blend = pow(horizon, 4.0);        // sharpen the falloff, tweak exponent
-
-    color = vec4<f32>(
-        mix(color.rgb, global.bottomFogColor.rgb, fog_blend),
-        1.0,
-    );
-
-    return color;
-    // return color;
-}
+    let fogBlend = pow(horizon, 4.0);        // sharpen the falloff, tweak exponent
+    color = mix(color.rgb, global.bottomFogColor.rgb, fogBlend);
 
 
+    // simple reinhard tonemap
+    color = color / (color + vec3f(1.0));
 
 
+    var out: FragmentOutput;
+    out.color = vec4f(color, alpha);
+    out.depth = view.far;
 
+    switch (global.debug) {
+      case DEBUG_V_COLOR0: {
+        out.color = vec4f(material.nightSkyColBase.rgb, 1.0);
+      }
+      case DEBUG_V_COLOR1: {
+        // out.color = vec4f(material.nightMoonColor * moonAlbedo.rgb * moonAlbedo.a, 1.0);
+        // out.color = vec4f(material.nightMoonColor.rgb, 1.0);
+      }
+      case DEBUG_V_UV0: {
+        out.color = vec4f(fract(uvBase.xy), 0.0, 1.0);
+      }
+      case DEBUG_V_UV1: {
+        out.color = vec4f(saturate(uvMoon.xy), 0.0, 1.0);
+      }
+      default {
 
-// ============================================================
-// Atmospheric scattering
-// ============================================================
-
-const R_EARTH    : f32 = 6371000.0; // Earth radius, standard geodetic value
-const R_ATMOS    : f32 = 6471000.0; //  Earth radius + 100km atmosphere thickness
-const H_RAYLEIGH : f32 = 8000.0; // Rayleigh scale height, from Nishita
-const H_MIE      : f32 = 1200.0; // Mie scale height, from Nishita
-// standard sea-level Rayleigh scattering coefficients for red, green, blue wavelengths
-const BETA_R     : vec3<f32> = vec3<f32>(
-  5.8e-6,
-  13.5e-6,
-  33.1e-6
-);
-const BETA_M     : f32 = 21e-6; // guessed
-const NUM_STEPS  : i32 = 16;   // raise for quality, lower for performance
-
-fn optical_depth(cos_zenith: f32, scale_height: f32) -> f32 {
-    // clamp to upper hemisphere — no atmosphere below the horizon
-    let cz = max(0.0, cos_zenith);
-
-    let sin_zenith = sqrt(1.0 - cz * cz);
-    let b          = R_EARTH * cz;
-    let c          = R_EARTH * R_EARTH - R_ATMOS * R_ATMOS;
-    let ray_len    = -b + sqrt(max(0.0, b * b - c));
-
-    let dt = ray_len / f32(NUM_STEPS);
-    var t  = 0.0;
-
-    for (var i = 0; i < NUM_STEPS; i++) {
-        let s      = (f32(i) + 0.5) * dt;
-        let height = sqrt(
-            pow(R_EARTH + s * cz, 2.0) +
-            pow(s * sin_zenith, 2.0)
-        ) - R_EARTH;
-
-        t += exp(-max(0.0, height) / scale_height) * dt;
+      }
     }
 
-    return t;
+    return out;
 }
 
-fn sample_rayleigh(cos_view_zenith: f32) -> vec3<f32> {
-    let od = optical_depth(cos_view_zenith, H_RAYLEIGH);
-    return exp(-BETA_R * od);
+fn getAtmosphericThickness(cosZenith: f32, scaleHeight: f32) -> f32 {
+  let cz = max(0.01, cosZenith);
+  // Analytical path length estimation through a spherical planetary atmosphere layer
+  let thickness = 1.0 / (cz + 0.15 * pow(93.885 - (acos(cz) * 57.2957), -1.253));
+  return thickness * scaleHeight;
 }
 
-fn sample_mie(cos_view_zenith: f32) -> vec3<f32> {
-    let od = optical_depth(cos_view_zenith, H_MIE);
-    let t  = exp(-BETA_M * od);
-    return vec3<f32>(t);
-}
 `

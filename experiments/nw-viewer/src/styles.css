@@ -31,35 +31,38 @@ canvas {
   background: transparent;
 }
 
-.twui {
+.tweak-ui {
   max-height: calc(100vh);
+  height: 100%;
   overflow: hidden;
+  background: transparent;
 
-  --twui-size: 1.25rem;
-  --twui-gap: 0.125rem;
-  --twui-inset: 0rem;
-  --twui-radius: 0rem;
+  --twk-size: 1.25rem;
+  --twk-gap: 0.125rem;
+  --twk-inset: 0rem;
+  --twk-radius: 0.125rem;
+  --twk-width: 100%;
 }
-.twui-tree {
-  height: calc(75vh);
-}
-.twui-tree + .twui-group,
-.twui-tree + .nw-node-view {
+
+.twk-tree + .twk-group,
+.twk-tree + .nw-node-view {
   height: calc(25vh);
 }
-.twui-tree-toggle {
-  width: 32px;
+.twk-tree + .twk-group > .twk-group-content {
+  max-height: 100%;
+  overflow: auto;
 }
-.twui-tree-icon {
+
+.twk-tree-label {
+  padding-left: 0.25rem;
+}
+.twk-tree-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
+  width: 16px;
 }
-.twui-tree-icon svg {
-  width: 20px;
-  height: 20px;
-}
-.twui-tree {
-  max-height: calc(75vh);
+.twk-tree-icon svg {
+  width: 16px;
+  height: 16px;
 }

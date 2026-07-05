@@ -9,11 +9,10 @@ export function loadLayerMaterials(
   data: RegionMaterial,
   done: (result: TerrainCompositeMaterial[]) => void,
 ): ScheduledTask {
-  const result: TerrainCompositeMaterial[] = []
-
-  return scheduler.schedule({
+  return scheduler.schedule<TerrainCompositeMaterial[]>({
     lane: PriorityLane.Medium,
-    load: async (signal) => {
+    context: [],
+    load: async (task, signal) => {
       for (const layer of data.layers || []) {
         if (layer.affectedTiles === '0') {
           // skip layers that are marked as not affecting anything
@@ -26,7 +25,8 @@ export function loadLayerMaterials(
           baseUrl: content.nwbtFileUrl,
         })
         material.SplatMap = splat
-        result.push(material)
+
+        task.context.push(material)
         splat.dispose()
 
         if (signal.aborted) {
@@ -34,11 +34,16 @@ export function loadLayerMaterials(
         }
       }
     },
-    onCancel: () => {
-      done([])
-    },
-    onDone: () => {
-      done(result)
+    finalize: (task, err) => {
+      if (err) {
+        done([])
+        return
+      }
+      if (!task.context) {
+        done([])
+        return
+      }
+      done(task.context)
     },
   })
   return

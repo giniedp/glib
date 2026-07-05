@@ -68,8 +68,8 @@ export type TexMod = {
   RotateV?: number
   RotateW?: number
   TexMod_bTexGenProjected?: number
-  TexMod_RotateType?: number
-  TexMod_TexGenType?: number
+  TexMod_RotateType?: RotateType
+  TexMod_TexGenType?: TexGenType
   TexMod_UOscillatorAmplitude?: number
   TexMod_UOscillatorPhase?: number
   TexMod_UOscillatorRate?: number
@@ -105,7 +105,7 @@ function hasValues(mod: TexMod): boolean {
 
 export class TextureModifier {
   public static isModified(mod: TexMod): boolean {
-    return (!!mod && hasMods(mod)) || hasValues(mod)
+    return !!mod && (hasMods(mod) || hasValues(mod))
   }
 
   private jitterU: number = Math.random()
@@ -113,6 +113,7 @@ export class TextureModifier {
   private jitterTimeU: number = 0
   private jitterTimeV: number = 0
 
+  private time = null
   private mat: Mat4 = Mat4.createIdentity()
   private mod: TexMod
 
@@ -137,6 +138,10 @@ export class TextureModifier {
   }
 
   public update(time: number): void {
+    if (this.time === time) {
+      return
+    }
+    this.time = time
     const mod = this.mod
 
     const hasMods = this.hasMods
@@ -185,7 +190,7 @@ export class TextureModifier {
         break
 
       case RotateType.Fixed:
-        m.initIdentity().setTranslationXYZ(-centerU, -centerV, 0)
+        m.initTranslationXYZ(-centerU, -centerV, 0)
         if (mod.TexMod_URotateAmplitude) {
           m.premultiply(tmp.initRotationX(mod.TexMod_URotateAmplitude))
         }
@@ -195,14 +200,14 @@ export class TextureModifier {
         if (mod.TexMod_WRotateAmplitude) {
           m.premultiply(tmp.initRotationZ(mod.TexMod_WRotateAmplitude))
         }
-        m.premultiply(tmp.initIdentity().setTranslationXYZ(centerU, centerV, 0))
+        m.premultiply(tmp.initTranslationXYZ(centerU, centerV, 0))
         break
 
       case RotateType.Constant:
         const fxAmp = ((mod.TexMod_URotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_URotatePhase || 0)
         const fyAmp = ((mod.TexMod_VRotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_VRotatePhase || 0)
         const fzAmp = ((mod.TexMod_WRotateAmplitude || 0) * time * Math.PI) / 180 + (mod.TexMod_WRotatePhase || 0)
-        m.initIdentity().setTranslationXYZ(-centerU, -centerV, 0)
+        m.initTranslationXYZ(-centerU, -centerV, 0)
         if (fxAmp) {
           m.premultiply(tmp.initRotationX(fxAmp).transpose())
         }
@@ -212,11 +217,11 @@ export class TextureModifier {
         if (fzAmp) {
           m.premultiply(tmp.initRotationZ(fzAmp).transpose())
         }
-        m.premultiply(tmp.initIdentity().setTranslationXYZ(centerU, centerV, 0))
+        m.premultiply(tmp.initTranslationXYZ(centerU, centerV, 0))
         break
 
       case RotateType.Oscilated:
-        m.initIdentity().setTranslationXYZ(-centerU, -centerV, 0)
+        m.initTranslationXYZ(-centerU, -centerV, 0)
         const sx = time * (mod.TexMod_UOscillatorRate || 0)
         const sy = time * (mod.TexMod_VOscillatorRate || 0)
         const dx =
@@ -235,7 +240,7 @@ export class TextureModifier {
         if (dz) {
           m.premultiply(tmp.initRotationZ(dz))
         }
-        m.premultiply(tmp.initIdentity().setTranslationXYZ(centerU, centerV, 0))
+        m.premultiply(tmp.initTranslationXYZ(centerU, centerV, 0))
         break
     }
   }

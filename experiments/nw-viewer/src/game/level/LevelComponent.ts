@@ -1,47 +1,68 @@
-import { type GameComponent, type GameEntity } from '@gglib/ecs'
-import { vec3 } from '@gglib/math'
-import type { EntityData, LevelData, RegionReference, TerrainData } from '../../api'
+import { type CreateEntityOptions, type GameComponent, type GameEntity } from '@gglib/ecs'
+import { Vec3 } from '@gglib/math'
 
-import { levelRegion, RegionComponent } from '../region/RegionComponent'
-
-export interface LevelOptions {
-  level: LevelData
-  mapName: string
-  heightmap: TerrainData
-  mission: EntityData[]
-}
+import { TransformComponent } from '@gglib/components'
+import type { LevelInfo, RegionLocation } from '../../api'
+import { RegionComponent, regionEntityOptions } from '../region/RegionComponent'
+import { TerrainComponent } from '../terrain/TerrainComponent'
 
 export interface LevelRegionLink {
   entity: GameEntity
   component: RegionComponent
 }
 
+export function levelEntityOptions(parent: GameEntity, options: LevelInfo): CreateEntityOptions {
+  return {
+    parent,
+    name: `Level ${options.name}`,
+    transform: new TransformComponent({}),
+    components: [new LevelComponent(options)],
+  }
+}
+
 export class LevelComponent implements GameComponent {
-  private data: LevelOptions
-  private bounds: [number, number, number, number]
-
+  public readonly data: LevelInfo
   public readonly entity: GameEntity
-  public readonly regions: LevelRegionLink[] = []
 
-  public constructor(data: LevelOptions) {
+  public sky: GameEntity
+  public terrain: GameEntity
+
+  public constructor(data: LevelInfo) {
     this.data = data
   }
 
   public initialize(): void {
-    this.bounds = getMapWorldBounds(this.data.level, this.data.mapName)
-    this.createRegions(this.data.level.regions)
+    this.createTerrain()
+    this.createRegions(this.data.regions)
   }
 
   public activate(): void {
-    console.log('activate level', this)
+    //
   }
 
   public destroy(): void {
     //
   }
 
-  private createRegions(regions: RegionReference[]) {
-    if (!regions) {
+  private createTerrain() {
+    const hasTerrain = this.data.mountainHeight > 256
+    if (!hasTerrain) {
+      return
+    }
+    this.entity.world.createEntity({
+      name: 'Terrain',
+      parent: this.entity,
+      transform: new TransformComponent(),
+      components: [
+        new TerrainComponent({
+          regionSize: this.data.regionSize,
+        }),
+      ],
+    })
+  }
+
+  private createRegions(regions: RegionLocation[]) {
+    if (!regions?.length) {
       return
     }
     for (const region of regions) {
@@ -49,44 +70,19 @@ export class LevelComponent implements GameComponent {
     }
   }
 
-  private createRegion(region: RegionReference) {
-    const level = this.data.level
+  private createRegion(region: RegionLocation) {
     const location = region.location
-    const regionSize = level.regionSize
-
-    const options = levelRegion(this.entity, {
-      levelName: level.name,
+    const regionSize = this.data.regionSize
+    const cellSize = this.data.regionCellSize
+    const options = regionEntityOptions(this.entity, {
+      coatlicueName: this.data.name,
       regionName: region.name,
-      regionSize: regionSize,
-      origin: vec3([location[0] * regionSize, location[1] * regionSize, 0]),
-      size: regionSize,
+      regionSize,
+      cellSize,
+      origin: new Vec3(location[0] * regionSize, location[1] * regionSize, 0),
+      mountainHeight: this.data.mountainHeight,
+      oceanLevel: this.data.oceanLevel,
     })
-    const entity = this.entity.world.createEntity(options)
-
-    this.regions.push({
-      entity,
-      component: entity.component(RegionComponent),
-    })
+    this.entity.world.createEntity(options)
   }
-}
-
-function getMapWorldBounds(info: LevelData, map: string): [number, number, number, number] {
-  if (!info || !info.maps || !map) {
-    return null
-  }
-  const mapInfo = info.maps.find((it) => it.gameModeMapId.toLowerCase() === map.toLowerCase())
-  if (!mapInfo || !mapInfo.worldBounds) {
-    console.warn('map not found ', map)
-    return null
-  }
-  const bounds = mapInfo.worldBounds.split(',').map(Number)
-  if (bounds.length !== 4) {
-    console.warn('Invalid world bounds', mapInfo.worldBounds)
-    return null
-  }
-  if (bounds.some((it) => !Number.isFinite(it) || Number.isNaN(it))) {
-    console.warn('Invalid world bounds', mapInfo.worldBounds)
-    return null
-  }
-  return bounds as [number, number, number, number]
 }

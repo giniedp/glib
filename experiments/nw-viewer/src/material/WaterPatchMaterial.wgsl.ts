@@ -72,6 +72,8 @@ struct InstanceBlock {
 
 // @block material
 @group(1) @binding(1) var heightMap : texture_2d_array<f32>;
+// @block material
+@group(1) @binding(2) var waterMap : texture_2d_array<f32>;
 
 @group(2) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
 
@@ -145,7 +147,7 @@ fn vsMain(input: VertexIn) -> Varyings {
 // ── Fragment ──────────────────────────────────────────────────
 
 @fragment
-fn fsMain(in: Varyings) -> @location(0) vec4f {
+fn fsMain(in: Varyings) -> FragmentOutput {
   let instance = instances[in.iid];
   let timeSec = frame.elapsedTime * 0.001;
   let mat     = material;
@@ -203,44 +205,48 @@ fn fsMain(in: Varyings) -> @location(0) vec4f {
 
   let alpha = shoreAlpha * mix(0.75, 1.0, depthT);
 
+  var out: FragmentOutput;
+  out.color = applyFog(color, alpha, in.worldPos, view.cameraPosition);
 
-  let debug = global.debug;
-  if (debug > 0u) {
-    // if (debug == DEBUG_MTL_BASE) {
-    //   return vec4<f32>(surface.BaseColor.rgb, 1.0);
-    // }
-    // if (debug == DEBUG_MTL_SPEC) {
-    //   return vec4<f32>(surface.Specular.rgb, 1.0);
-    // }
-    // if (debug == DEBUG_MTL_PBR) {
-    //   return vec4<f32>(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
-    // }
+  // let debug = global.debug;
+  // if (debug > 0u) {
+  //   // if (debug == DEBUG_MTL_BASE) {
+  //   //   return vec4<f32>(surface.BaseColor.rgb, 1.0);
+  //   // }
+  //   // if (debug == DEBUG_MTL_SPEC) {
+  //   //   return vec4<f32>(surface.Specular.rgb, 1.0);
+  //   // }
+  //   // if (debug == DEBUG_MTL_PBR) {
+  //   //   return vec4<f32>(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
+  //   // }
 
-    if (debug == DEBUG_NORMALS) {
-      return vec4<f32>(normal.xyz * 0.5 + 0.5, 1.0);
-    }
-    // if (debug == DEBUG_TANGENTS) {
-    //   return vec4<f32>(input.vTangent.xyz * 0.5 + 0.5, 1.0);
-    // }
-    // if (debug == DEBUG_BINORMALS) {
-    //   return vec4<f32>(input.vBinormal.xyz * 0.5 + 0.5, 1.0);
-    // }
+  //   if (debug == DEBUG_NORMALS) {
+  //     out.color = vec4<f32>(normal.xyz * 0.5 + 0.5, 1.0);
+  //     return out;
+  //   }
+  //   // if (debug == DEBUG_TANGENTS) {
+  //   //   return vec4<f32>(input.vTangent.xyz * 0.5 + 0.5, 1.0);
+  //   // }
+  //   // if (debug == DEBUG_BINORMALS) {
+  //   //   return vec4<f32>(input.vBinormal.xyz * 0.5 + 0.5, 1.0);
+  //   // }
 
-    // if (debug == DEBUG_COLOR1) {
-    //   return input.vColor;
-    // }
-    // if (debug == DEBUG_COLOR2) {
-    //   return input.vColor;
-    // }
+  //   // if (debug == DEBUG_COLOR1) {
+  //   //   return input.vColor;
+  //   // }
+  //   // if (debug == DEBUG_COLOR2) {
+  //   //   return input.vColor;
+  //   // }
 
-    // if (debug == DEBUG_UV1) {
-    //   return vec4<f32>(texCoord, 0.0, 1.0);
-    // }
-    // if (debug == DEBUG_UV2) {
-    //   return vec4<f32>(texCoord, 0.0, 1.0);
-    // }
-  }
-  return applyFog(color, alpha, in.worldPos, view.cameraPosition);
+  //   // if (debug == DEBUG_UV1) {
+  //   //   return vec4<f32>(texCoord, 0.0, 1.0);
+  //   // }
+  //   // if (debug == DEBUG_UV2) {
+  //   //   return vec4<f32>(texCoord, 0.0, 1.0);
+  //   // }
+  // }
+
+  return out;
 }
 
 const WAVE_COUNT : i32 = 6;
@@ -434,7 +440,8 @@ fn readMapData(uv: vec2f, params3: vec4f) -> vec2f {
   let remapped = remapaUV(params3, uv);
 
   let groundHeight = textureSampleLevel(heightMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r / 65535.0 * material.mountainHeight;
-  let waterHeight = material.waterHeight;// textureSampleLevel(waterMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r;
+  // let waterHeight = material.waterHeight;// textureSampleLevel(waterMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r;
+  let waterHeight = textureSampleLevel(waterMap, heightMapSampler, remapped.xy, i32(remapped.z), 0.0).r;
 
   return vec2f(waterHeight, groundHeight - waterHeight);
 }

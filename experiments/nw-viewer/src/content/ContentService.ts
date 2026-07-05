@@ -3,6 +3,10 @@ import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import { Color, Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
 import type { Type } from '@gglib/utils'
+import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
+
+export const Noise3DKey = Symbol('noise3d')
+export const Noise2DKey = Symbol('noise2d')
 
 export class ContentService extends GameSystem {
   public loader: ContentLoader
@@ -13,9 +17,10 @@ export class ContentService extends GameSystem {
   public nwbtUrl: string = 'http://localhost:8000'
 
   public get nwbtFileUrl() {
-    return `${this.nwbtUrl}/file/`
+    return `${this.nwbtUrl}/files/`
   }
 
+  public slices = new Map<string, ViewerSlice>()
   public whitePixel: Texture
   public blackPixel: Texture
   public nullHeightmap: Texture
@@ -27,6 +32,8 @@ export class ContentService extends GameSystem {
 
   public nullPathMap1: Texture
   public nullPathMap2: Texture
+  public noise3d: Texture
+  public noise2d: Texture
 
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
@@ -95,6 +102,34 @@ export class ContentService extends GameSystem {
       format: 'R16_FLOAT',
       mipLevelCount: 1,
     })
+
+    this.noise3d = device.createTexture({
+      name: 'noise3d',
+      width: 4,
+      height: 4,
+      depth: 4,
+      format: 'RGBA8_UNORM',
+    })
+    this.device[Noise3DKey] = this.noise3d
+    this.loadTexture(`engineassets/textures/noise3d.dds`).then((texture) => {
+      this.noise3d = texture
+      this.device[Noise3DKey] = this.noise3d
+      console.log('Loaded noise3d texture', texture)
+    })
+
+    this.noise2d = device.createTexture({
+      name: 'noise2d',
+      width: 4,
+      height: 4,
+      depth: 1,
+      format: 'RGBA8_UNORM',
+    })
+    this.device[Noise2DKey] = this.noise2d
+    this.loadTexture(`engineassets/textures/perlinnoise2d.dds`).then((texture) => {
+      this.noise2d = texture
+      this.device[Noise2DKey] = this.noise2d
+      console.log('Loaded noise2d texture', texture)
+    })
   }
 
   public loadModel(model: string, material: string) {
@@ -126,8 +161,20 @@ export class ContentService extends GameSystem {
     })
   }
 
+  public fetchTypedRequest<T>(url: TypedRequest<T>): Promise<T> {
+    return fetchTypedRequest(this.nwbtUrl, url)
+  }
+
   public destroy(): void {
     //
+  }
+
+  public updateSlices(sliceSet: Record<string, ViewerSlice>) {
+    for (const key in sliceSet) {
+      if (!this.slices.has(key)) {
+        this.slices.set(key, sliceSet[key])
+      }
+    }
   }
 }
 

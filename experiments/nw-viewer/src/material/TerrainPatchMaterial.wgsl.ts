@@ -109,15 +109,13 @@ fn vs_main(input : VertexInput) -> VertexOutput {
   var normal      = data.xyz;
   worldPos.z += height;
 
-  let viewPos = paniniWarpCommon(view.viewMatrix * worldPos);
-
   output.vWorldPos = worldPos.xyz;
   output.vNormal = normalize((object.modelMatrix * vec4f(normal, 0.0)).xyz);
 
   output.vTexCoord = vec4f(uv, uv + uvDelta);
   output.vToEyeInWS = view.cameraPosition - worldPos.xyz;
   output.vMorph = morph.t;
-  output.Position = view.projectionMatrix * viewPos;
+  output.Position = view.projectionMatrix * view.viewMatrix * worldPos;
   output.iid = input.instanceIndex;
 
   let crossX = heightMapUv.x >= 1.0;
@@ -154,7 +152,7 @@ fn vs_main(input : VertexInput) -> VertexOutput {
 }
 
 @fragment
-fn fs_main(input: VertexOutput) -> @location(0) vec4f {
+fn fs_main(input: VertexOutput) -> FragmentOutput {
   let instance = instances[input.iid];
 
   let morphLod = f32(instance.params1.z);
@@ -191,45 +189,58 @@ fn fs_main(input: VertexOutput) -> @location(0) vec4f {
   surface.Normal    = vec4(normalize(tbn * normal), 1.0);
 
   var color = accumulateLight(lights, global, surface, toEye, input.vWorldPos);
+  var out: FragmentOutput;
+  out.color = applyFog(color, 1.0, input.vWorldPos, view.cameraPosition);
+  out.depth = linearizeDepthReversedZ(input.Position.z, view.near, view.far);
 
-  let debug = global.debug;
-  if (debug > 0u) {
-    if (debug == DEBUG_MTL_BASE) {
-      return vec4f(surface.BaseColor.rgb, 1.0);
-    }
-    if (debug == DEBUG_MTL_SPEC) {
-      return vec4f(surface.Specular.rgb, 1.0);
-    }
-    if (debug == DEBUG_MTL_PBR) {
-      return vec4f(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
-    }
+  // let debug = global.debug;
+  // if (debug > 0u) {
+  //   if (debug == DEBUG_MTL_BASE) {
+  //     out.color = vec4f(surface.BaseColor.rgb, 1.0);
+  //     return out;
+  //   }
+  //   if (debug == DEBUG_MTL_SPEC) {
+  //     out.color = vec4f(surface.Specular.rgb, 1.0);
+  //     return out;
+  //   }
+  //   if (debug == DEBUG_MTL_PBR) {
+  //     out.color = vec4f(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
+  //     return out;
+  //   }
 
-    if (debug == DEBUG_NORMALS) {
-      return vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
-    }
-    if (debug == DEBUG_TANGENTS) {
-      return vec4f(0.0, 0.0, 0.0, 1.0);
-    }
-    if (debug == DEBUG_BINORMALS) {
-      return vec4f(0.0, 0.0, 0.0, 1.0);
-    }
+  //   if (debug == DEBUG_NORMALS) {
+  //     out.color = vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
+  //     return out;
+  //   }
+  //   if (debug == DEBUG_TANGENTS) {
+  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
+  //     return out;
+  //   }
+  //   if (debug == DEBUG_BINORMALS) {
+  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
+  //     return out;
+  //   }
 
-    if (debug == DEBUG_COLOR1) {
-      return vec4f(0.0, 0.0, 0.0, 1.0);
-    }
-    if (debug == DEBUG_COLOR2) {
-      return vec4f(0.0, 0.0, 0.0, 1.0);
-    }
+  //   if (debug == DEBUG_COLOR1) {
+  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
+  //     return out;
+  //   }
+  //   if (debug == DEBUG_COLOR2) {
+  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
+  //     return out;
+  //   }
 
-    if (debug == DEBUG_UV1) {
-      return vec4f(pomUV, 0.0, 1.0);
-    }
-    if (debug == DEBUG_UV2) {
-      return vec4f(input.vMorph, input.vMorph, input.vMorph, 1.0);
-    }
-  }
+  //   if (debug == DEBUG_UV1) {
+  //     out.color = vec4f(pomUV, 0.0, 1.0);
+  //     return out;
+  //   }
+  //   if (debug == DEBUG_UV2) {
+  //     out.color = vec4f(input.vMorph, input.vMorph, input.vMorph, 1.0);
+  //     return out;
+  //   }
+  // }
 
-  return applyFog(color, 1.0, input.vWorldPos, view.cameraPosition);
+  return out;
 }
 
 struct MtlParams {

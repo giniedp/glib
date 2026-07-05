@@ -15,7 +15,9 @@ import WGSL from './WaterPatchMaterial.wgsl'
 export function waterPatchShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Water Patch Shader',
-    wgsl: WGSL,
+    wgsl: {
+      source: WGSL,
+    },
     glsl: null,
   }
 }

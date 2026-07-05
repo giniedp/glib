@@ -8,15 +8,19 @@ import {
   type Texture,
 } from '@gglib/graphics'
 import { Vec4 } from '@gglib/math'
-import { parseColorParam, parseNumberParam, smoothnessToRoughness } from './common.wgsl'
+import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
+import { smoothnessToRoughness } from './common.wgsl'
 import type { NwMaterialProps } from './GltfExtension'
 import Schema from './TerrainCompositeMaterial.meta'
-import TERRAIN_COMPOSITE_SHADER from './TerrainCompositeMaterial.wgsl'
+import WGSL from './TerrainCompositeMaterial.wgsl'
+import { MtlUtil, paramVec4, paramValue } from './utils'
 
 export function splatComposeShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Terrain Composite Shader',
-    wgsl: TERRAIN_COMPOSITE_SHADER,
+    wgsl: {
+      source: WGSL,
+    },
     glsl: null,
   }
 }
@@ -32,7 +36,7 @@ export function splatComposeEffectOptions(): EffectOptions {
   }
 }
 
-type CompositeParams = {
+type PublicParams = {
   g_macroBlendStrength: string
   g_macroDiffuseSaturation: string
   g_macroGlossBlendStrength: string
@@ -42,72 +46,82 @@ type CompositeParams = {
   g_materialLayerHeightScale: string
 }
 
-type CompositeAttrs = {
-  AlphaTest: 0
-  Diffuse: string
-  Emittance: string
-  GenMask: string
-  MtlFlags: number
-  Opacity: number
-  Shader: 'Terraintilecomposite'
-  Shininess: number
-  Specular: string
-}
-
+const util = new MtlUtil('TerrainComposite', {
+  knownMaps: ['Diffuse'],
+  knownMods: [],
+  knownFlags: [],
+})
 export class TerrainCompositeMaterial extends materialSchemaClass(Schema) {
   public constructor(device: Device, options?: MaterialOptions) {
     super(device, {
       name: 'Terrain Composite Material',
       effect: splatComposeEffectOptions(),
-      meta: {},
+      meta: options,
     })
-    if (options?.properties) {
-      this.assignNwProps(options?.properties as any)
+
+    const { attrs, params, texMaps, texMods, deform, shaderFlags } = util.resolve<PublicParams>(options?.properties)
+    const shaderConst = getShaderConstants(shaderFlags)
+
+    this.layer = MaterialLayerMasks.Terrain
+    this.setDefaults()
+    this.setTextures(texMaps)
+    this.setModifiers(texMods)
+    this.setAttributes(attrs, shaderFlags)
+    this.setPublicParams(params)
+  }
+
+  private setDefaults() {
+    this.MaterialSampler = SamplerState.LinearWrap
+    this.MacroSaturation = 1.0
+    this.MacroBlendStrength = 1.0
+    this.MacroGlossBlendStrength = 1.0
+    this.MaterialBlendFactor = 1.0
+    this.MaterialBlendFalloff = 1.0
+    this.MaterialHeightOffset = 0
+    this.MaterialHeightScale = 1.0
+  }
+
+  private setTextures(maps: NwMaterialProps['textures']) {
+    if (maps.Diffuse) {
+      this.BaseMap = maps.Diffuse as Texture
+    }
+    if (maps.Bumpmap) {
+      this.NormalMap = maps.Bumpmap as Texture
+    }
+    if (maps.Specular) {
+      this.SpecularMap = maps.Specular as Texture
+    }
+    if (maps.Smoothness) {
+      this.SmoothnessMap = maps.Smoothness as Texture
+    }
+    if (maps.Heightmap) {
+      this.HeightMap = maps.Heightmap as Texture
     }
   }
 
-  public assignNwProps(props: NwMaterialProps) {
-    if (!props) {
-      return
-    }
-    const attr = props.attrs as CompositeAttrs
-    const para = props.params as CompositeParams
-    const tex = props.textures
+  private setModifiers(mods: NwMaterialProps['mods']) {
+    this.Tiling = mods.Diffuse?.TileU ?? 1
+  }
 
-    this.MacroSaturation = parseNumberParam(para?.g_macroDiffuseSaturation) ?? 0
-    this.MacroBlendStrength = parseNumberParam(para?.g_macroBlendStrength) ?? 0
-    this.MacroGlossBlendStrength = parseNumberParam(para?.g_macroGlossBlendStrength) ?? 0
-    this.MaterialBlendFactor = parseNumberParam(para?.g_materialLayerBlendFactor) ?? 1
-    this.MaterialBlendFalloff = parseNumberParam(para?.g_materialLayerBlendFalloff) ?? 0
-    this.MaterialHeightOffset = parseNumberParam(para?.g_materialLayerHeightOffset) ?? 0
-    this.MaterialHeightScale = parseNumberParam(para?.g_materialLayerHeightScale) ?? 1
-    this.MaterialSampler = SamplerState.LinearWrap
-
-    if (tex?.Diffuse) {
-      this.BaseMap = tex.Diffuse as Texture
-    }
-    if (tex?.Bumpmap) {
-      this.NormalMap = tex.Bumpmap as Texture
-    }
-    if (tex?.Specular) {
-      this.SpecularMap = tex.Specular as Texture
-    }
-    if (tex?.Smoothness) {
-      this.SmoothnessMap = tex.Smoothness as Texture
-    }
-    if (tex?.Heightmap) {
-      this.HeightMap = tex.Heightmap as Texture
-    }
-
-    this.BaseColor = parseColorParam(attr?.Diffuse) ?? Vec4.createOne()
-    this.SpecularColor = parseColorParam(attr?.Specular) ?? Vec4.createOne()
-    if (attr?.Emittance) {
+  private setAttributes(attr: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
+    this.BaseColor = paramVec4(attr.Diffuse, Vec4.One)
+    this.SpecularColor = paramVec4(attr.Specular, Vec4.One)
+    if (attr.Emittance) {
       // console.log('Emittance', attr.Emittance)
       // this.EmissiveColor.initFrom(parseColor(attr.Emittance))
     }
-    if (attr?.Shininess >= 0) {
+    if (attr.Shininess >= 0) {
       this.Roughness = smoothnessToRoughness(attr.Shininess / 255)
     }
-    this.Tiling = props.mods.Diffuse?.TileU ?? 1
+  }
+
+  private setPublicParams(params: PublicParams) {
+    this.MacroSaturation = paramValue(params.g_macroDiffuseSaturation, this.MacroSaturation)
+    this.MacroBlendStrength = paramValue(params.g_macroBlendStrength, this.MacroBlendStrength)
+    this.MacroGlossBlendStrength = paramValue(params.g_macroGlossBlendStrength, this.MacroGlossBlendStrength)
+    this.MaterialBlendFactor = paramValue(params.g_materialLayerBlendFactor, this.MaterialBlendFactor)
+    this.MaterialBlendFalloff = paramValue(params.g_materialLayerBlendFalloff, this.MaterialBlendFalloff)
+    this.MaterialHeightOffset = paramValue(params.g_materialLayerHeightOffset, this.MaterialHeightOffset)
+    this.MaterialHeightScale = paramValue(params.g_materialLayerHeightScale, this.MaterialHeightScale)
   }
 }

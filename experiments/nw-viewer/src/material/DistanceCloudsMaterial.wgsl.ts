@@ -1,362 +1,375 @@
+import { COMMON_WGSL } from './common.wgsl'
+
 export default /* wgsl */ `
 
-const IS_LOCAL_WEATHER : bool = false;
-const IS_REVERSE_DEPTH : bool = true;
-const IS_HIGH_QUALITY  : bool = true;   // used by DistanceCloudsAdvancedPS
+const LOCAL_WEATHER : bool = true;
+const NUM_SAMPLES : i32 = 32;
 
-// ============================================================
-// Bind group 0 — per-frame / per-view uniforms
-// (mirrors PerFrame_* and PerView_* registers)
-// ============================================================
+struct MaterialBlock {
 
-struct ObjectBlock {
-  modelMatrix : mat4x4<f32>,
+  alphaMultiplier               : f32, // default 1.0
+  alphaSaturation               : f32, // default 2.0
+  attenuation                   : f32, // default 0.6
+  cloudHeight                   : f32, // default 0.3
+  densitySky                    : f32, // default 4.5
+  densitySun                    : f32, // default 1.5
+  fadingNoiseOffset             : f32, // default 0.0
+  fadingNoiseTilingSize         : f32, // default 1000.0
+  horizonBendingHeight          : f32, // default 0.2
+  skyHeight                     : f32, // default 1000.0
+  exposure                      : f32, // default 1.0
+  maxShadowDensity              : f32, // default 1.0
+  minShadowDensity              : f32, // default 0.0
+  opacity                       : f32, // default 1.0
+  shadowFadingInclinationFactor : f32, // default 10
+  shadowFadingRadiusFactor      : f32, // default 10
+  shadowPower                   : f32, // default 1.0
+  shadowSkydomeSize             : f32, // default 1000.0
+  skyColorMultiplier            : f32, // default 1.5
+  spriteSheetColumns            : f32, // default 1.0
+  spriteSheetDuration           : f32, // default 1.0
+  spriteSheetNumFrames          : f32, // default 1.0
+  spriteSheetRows               : f32, // default 1.0
+  stepSize                      : f32, // default 0.004
+  sunColorMultiplier            : f32, // default 4.0
+  weatherRadius                 : f32, // default 2500.0
+  weatherSmoothRadius           : f32, // default -1500.0
+
+  // -- Texture modifier matrices
+  uvModDiffuse                   : mat4x4f,
+  enabledUvModDiffuse            : u32,     // _ModifyUV_1
 };
 
-struct ViewBlock {
-  viewMatrix:       mat4x4<f32>,
-  projectionMatrix: mat4x4<f32>,
-  cameraPosition:   vec3<f32>,
-  paniniBlend:      f32,
-  paniniDistance:   f32,
-  paniniScale:      f32,
-};
+@group(0) @binding(0) var<uniform> global  : GlobalBlock;
+@group(0) @binding(1) var<uniform> view    : ViewBlock;
+@group(0) @binding(2) var<uniform> frame   : FrameBlock;
+@group(0) @binding(3) var<uniform> lights  : LightBlock;
+@group(1) @binding(0) var<uniform> object  : ObjectBlock;
+@group(2) @binding(0) var<uniform> material: MaterialBlock;
 
-struct FrameBlock {
-  elapsedTime : f32,
-};
+@group(2) @binding(1) var samplerLinear  : sampler;
+@group(2) @binding(2) var samplerPoint   : sampler;
 
-struct GlobalBlock {
-  sunColor: vec3<f32>,
-  sunDirection: vec3<f32>,
-  fogColor: vec3<f32>,
-  fogDensity: f32,
-
-  cloudColorSky: vec3<f32>,
-  cloudColorSun: vec3<f32>,
-};
-
-struct PerFrameUniforms {
-  sunDirection         : vec4<f32>,   // PerFrame_SunDirection
-  cloud_color_sky       : vec4<f32>,   // PerFrame_CloudShadingColorSky
-  cloud_color_sun       : vec4<f32>,   // PerFrame_CloudShadingColorSun
-  time                  : vec4<f32>,   // PerFrame_Time  (.x = current time)
-  worldViewPos        : vec4<f32>,   // PerView_WorldViewPos
-};
-
-@group(0) @binding(0) var<uniform> view : ViewBlock;
-// @group(0) @binding(0) var<uniform> per_frame : PerFrameUniforms;
-
-// ============================================================
-// Bind group 1 — per-material uniforms
-// Registers are kept as comments for traceability.
-// Which fields are active depends on the IS_* constants above.
-// ============================================================
-
-struct PerMaterialUniforms {
-    // --- ADVANCED variant (PER_MATERIAL_0/1) ---
-    alpha_multiplier   : f32,   // PER_MATERIAL_0.x
-    alpha_saturation_a : f32,   // PER_MATERIAL_0.y  (ADVANCED)
-    cloud_height       : f32,   // PER_MATERIAL_0.z
-    density_sun        : f32,   // PER_MATERIAL_0.w
-    density_sky        : f32,   // PER_MATERIAL_1.x
-
-    // --- default (non-ADVANCED, non-SIMPLE) variant ---
-    attenuation           : f32,   // PER_MATERIAL_0.x
-    step_size             : f32,   // PER_MATERIAL_0.y
-    alpha_saturation_b    : f32,   // PER_MATERIAL_0.z
-    sun_color_multiplier  : f32,   // PER_MATERIAL_0.w
-    sky_color_multiplier  : f32,   // PER_MATERIAL_1.x
-
-    // --- SIMPLE variant ---
-    opacity  : f32,   // PER_MATERIAL_0.x
-    exposure : f32,   // PER_MATERIAL_0.y
-
-    // --- shared / shadow ---
-    diffuse_color         : vec4<f32>,   // PerMaterial_DiffuseColor
-    instance_opacity      : f32,         // GetInstance_Opacity()
-
-    shadow_skydome_size   : f32,   // PER_MATERIAL_5.z
-    min_shadow_density    : f32,   // PER_MATERIAL_6.x
-    max_shadow_density    : f32,   // PER_MATERIAL_6.y
-    shadow_power          : f32,   // PER_MATERIAL_6.z
-    shadow_fading_radius_factor      : f32,   // PER_MATERIAL_6.w
-    shadow_fading_inclination_factor : f32,   // PER_MATERIAL_7.x
-
-    // --- LOCAL_WEATHER variant ---
-    sky_height              : f32,   // PER_MATERIAL_4.x
-    weather_radius          : f32,   // PER_MATERIAL_4.y
-    weather_smooth_radius   : f32,   // PER_MATERIAL_4.z
-    horizon_bending_height  : f32,   // PER_MATERIAL_4.w
-    fading_noise_tiling_size: f32,   // PER_MATERIAL_5.x
-    fading_noise_offset     : f32,   // PER_MATERIAL_5.y
-};
-
-@group(0) @binding(1) var<uniform> mat : PerMaterialUniforms;
-
-@group(1) @binding(0) var baseColorMap     : texture_2d<f32>;
-@group(1) @binding(1) var baseColorSampler : sampler;
-
+// --- Texture bindings
+@group(3) @binding(0) var diffuseMap         : texture_2d<f32>; // $Diffuse      (diffuseMap, diffuseMap_Decal)
+@group(3) @binding(1) var normalMap          : texture_2d<f32>; // $Normal       (normalMap)
+// @group(3) @binding(2) var specularMap     : texture_2d<f32>; // $Specular     (specularMap)
+// @group(3) @binding(3) var envMap          : texture_2d<f32>; // $Env          (envMap)
+// @group(3) @binding(4) var detailMap       : texture_2d<f32>; // $Detail       (detailMap) .ag=detail normal, .r=diffuse/gloss tint
+// @group(3) @binding(5) var translucencyMap : texture_2d<f32>; // $SecondSmoothness, $Translucency (translucencyMap)
+// @group(3) @binding(6) var heightMap       : texture_2d<f32>; // $Heightmap    (heightMap) Height for offset bump, POM, silhouette POM, and displacement mapping defined by a Grayscale texture
+@group(3) @binding(7) var decalEmissiveMap   : texture_2d<f32>; // $DecalOverlay (decalMap, emissiveIntensity) emittance multiplier or decal
+// @group(3) @binding(8) var subsurfaceMap   : texture_2d<f32>; // $Subsurface   (subsurfaceMap, HeightMap2)
+// @group(3) @binding(9) var diffuseMap2     : texture_2d<f32>; // $Custom       (DiffuseMap2, MaskTex)
+// @group(3) @binding(10)var normalMap2      : texture_2d<f32>; // $CustomSecondaryMap  (BumpMap2)
+@group(3) @binding(11) var opacityMap        : texture_2d<f32>; // $Opacity      (opacityMap, BlendMap, DecalOpacityMap)
+@group(3) @binding(12) var smoothnessMap     : texture_2d<f32>; // $Smoothness   (smoothnessMap)
+@group(3) @binding(13) var emittanceMap      : texture_2d<f32>; // $Emittance    (emittanceMap)
+// @group(3) @binding(14) var occlusionMap   : texture_2d<f32>; // $Occlusion    (OcclusionMap)
+// @group(3) @binding(15) var specularMap2   : texture_2d<f32>; // $Specular2    (SpecularMap2)
+@group(3) @binding(4) var noise2DTex         : texture_2d<f32>;
 
 struct VertexInput {
-  @location(0) position : vec4<f32>,
-  @location(1) texture  : vec2<f32>,
-  @location(2) tangent  : vec4<f32>,
-  //@location(4) binormal : vec4<f32>,
+  @location(0) position : vec3f,
+  @location(1) normal   : vec3f,
+  @location(2) texture  : vec2f,
+  @location(3) tangent  : vec4f,
+  @location(4) binormal : vec3f,
+  @location(5) color    : vec4f,
 };
 
 struct FragmentInput {
-    @builtin(position) position : vec4<f32>,
-
-    @location(0) vTexture : vec2<f32>,
-
-    @location(1) vToSun : vec3<f32>,
-    // LOCAL_WEATHER extras — always present in the struct;
-    // only populated / used when IS_LOCAL_WEATHER == true
-    // @location(3) local_pos       : vec3<f32>,
-    // @location(4) weather_center  : vec3<f32>,
+  @builtin(position) position      : vec4f,
+  @location(0)       uvBase        : vec2f,
+  @location(1)       toSun         : vec3f,
+  @location(2)       color         : vec4f,
+  @location(3)       localPos      : vec3f,
+  @location(4)       weatherCenter : vec3f,
+  @location(5)       localNrm      : vec3f,
+  @location(6)       localTan      : vec3f,
 };
 
-fn getCloudTexture(uv: vec2<f32>) -> vec4<f32> {
-    return textureSample(baseColorMap, baseColorSampler, uv);
-}
-
-// fn get_local_weather_alpha_v2f(
-//     local_pos      : vec3<f32>,
-//     weather_center : vec3<f32>,
-// ) -> f32 {
-//     var lp = normalize(local_pos);
-//     lp.z = abs(lp.z);
-
-//     let horizon_factor = saturate(lp.z / max(0.0001, mat.horizon_bending_height));
-//     let sky_height_scaled = mat.sky_height * horizon_factor;
-
-//     let world_pos = per_frame.worldViewPos.xyz
-//                   + lp * sky_height_scaled / max(0.0001, lp.z);
-
-//     let dist   = length(weather_center.xy - world_pos.xy);
-//     let out_r  = max(0.0, mat.weather_smooth_radius);
-//     var alpha  = saturate(
-//         (out_r - dist + mat.weather_radius) / abs(mat.weather_smooth_radius)
-//     );
-
-//     let bent_pos  = world_pos + lp * (1.0 - horizon_factor) * mat.fading_noise_tiling_size;
-//     let noise_uv  = (bent_pos.xy + mat.fading_noise_offset) / mat.fading_noise_tiling_size;
-//     let noise_val = textureSampleLevel(pnoise_tex, pnoise_sampler, noise_uv, 0.0).r;
-//     let noise_mod = noise_val * saturate((horizon_factor - 0.5) / 0.5);
-
-//     alpha = pow(alpha, 1.0 + noise_mod * 5.0);
-//     return alpha;
-// }
 
 @vertex
 fn vs_main(input: VertexInput) -> FragmentInput {
+
+  let modelMatrix = object.modelMatrix;
+  var vPos = vec4f(input.position.xyz, 1.0);
+  var viewRot = view.viewMatrix;
+  viewRot[3]  = vec4f(0.0, 0.0, 0.0, 1.0);
+
+  var clipPos   = view.projectionMatrix * viewRot * vPos;
+      clipPos.z = 0;// output.position.w; // push to far plane
+
+  let n = normalize(input.normal.xyz);
+  let t = normalize(input.tangent.xyz - n * dot(n, input.tangent.xyz));
+  let b = cross(n, t) * input.tangent.w;
+  let toSun = normalize(vec3f(
+    dot(t, global.sunDirection),
+    dot(b, global.sunDirection),
+    dot(n, global.sunDirection),
+  ));
+
+  var uvBase = vec4f(input.texture.xy, 0.0, 1.0);
+  if (material.enabledUvModDiffuse == TRUE) {
+    uvBase = material.uvModDiffuse * uvBase;
+  }
+
   var output : FragmentInput;
-
-  var view_rot = view.viewMatrix;
-  view_rot[3]  = vec4<f32>(0.0, 0.0, 0.0, 1.0);
-
-  output.position   = view.projectionMatrix * view_rot * vec4<f32>(input.position.xyz, 1.0);
-  output.position.z = 0;// output.position.w; // push to far plane
-  // output.skyDir = normalize(in.position.xyz) ;
-
-  // TODO:
-  // let t  = in.tangent.xyz;
-  // let b  = in.binormal.xyz;
-  // let n  = normalize(cross(t, b)) * in.tangent.w;
-  // // objToTangentSpace rows: t, b, n
-  // let to_sun_obj = env.sunDirection.xyz;
-  // out.to_sun = vec3<f32>(
-  //     dot(t, to_sun_obj),
-  //     dot(b, to_sun_obj),
-  //     dot(n, to_sun_obj),
+  output.position      = clipPos;
+  output.uvBase        = uvBase.xy;
+  output.toSun         = toSun;
+  output.color         = input.color;
+  output.localPos      = input.position.xyz;
+  output.localNrm      = input.normal.xyz;
+  output.localTan      = input.tangent.xyz;
+  // TODO: use model matrix as weather
+  output.weatherCenter = view.cameraPosition.xyz;// input.position.xyz;
+  // output.weatherCenter = vec3f(
+  //   modelMatrix[0].w,
+  //   modelMatrix[1].w,
+  //   modelMatrix[2].w,
   // );
 
-  output.vTexture = input.texture;
-
-  // if IS_LOCAL_WEATHER {
-  //     out.local_pos = in.position.xyz;
-  //     out.weather_center = vec3<f32>(
-  //         inst_matrix[0].w,
-  //         inst_matrix[1].w,
-  //         inst_matrix[2].w,
-  //     );
-  // }
 
   return output;
 }
 
-// ============================================================
-// Fragment shaders
-// ============================================================
-
-// ---------- non-SIMPLE, non-ADVANCED ("default") ----------
-
 @fragment
-fn fs_main(input: FragmentInput) -> @location(0) vec4<f32> {
-    const NUM_SAMPLES : i32 = 8;
-
-    let color = getCloudTexture(input.vTexture);
-    return color;
-
-    // let to_sun   = normalize(env.sunDirection.xyz);
-    // let sample_dir = to_sun.xy * mat.step_size;
-
-    // var opacity = getCloudTexture(input.vTexture).x;
-
-    // if IS_LOCAL_WEATHER {
-    //     opacity *= get_local_weather_alpha_v2f(in.local_pos, in.weather_center);
-    // }
-
-    // if opacity < 0.001 {
-    //   discard;
-    // }
-
-    // var density : f32 = 0.0;
-    // for (var i = 0; i < NUM_SAMPLES; i++) {
-    //   let t = getCloudTexture(in.base_tc + f32(i) * sample_dir).x;
-    //   density += t;
-    // }
-
-    // let c   = exp2(-mat.attenuation * density);
-    // var a   = pow(opacity, mat.alpha_saturation_b);
-    // let col = mix(
-    //     mat.sky_color_multiplier  * env.cloudColorSky.xyz,
-    //     mat.sun_color_multiplier  * env.cloudColorSun.xyz,
-    //     c,
-    // );
-
-    // let mo = mat.instance_opacity;
-    // a = pow(a, 1.0 / (mo + 0.01)) * sqrt(mo) - (1.0 - mo) * 0.01;
-    // a = saturate(a);
-
-    // return vec4<f32>(col * in.color.rgb, a);
+fn fs_main(input: FragmentInput) -> FragmentOutput {
+  return psBasic(input);
 }
 
-// ---------- ADVANCED ----------
+fn psBasic(input: FragmentInput) -> FragmentOutput {
+  // ---- Sprite Sheet OFfset
+  var scaleOffset = getSpriteScaleOffset();
 
-// fn get_num_samples() -> i32 {
-//     if IS_HIGH_QUALITY { return 32; }
-//     return 24;
-// }
+	const c_numSamples = 8;
 
-// @fragment
-// fn distance_clouds_advanced_ps(in: FragmentInput) -> @location(0) vec4<f32> {
-//     let num_samples = get_num_samples();
+	let toSun = normalize(input.toSun.xyz);
+	let sampleDir = toSun.xy * material.stepSize;
+	let uv = input.uvBase.xy;
 
-//     var height = getCloudTexture(in.base_tc).x;
+  var opacity = textureSample(diffuseMap, samplerLinear, uv).r * input.color.a;
+  if (LOCAL_WEATHER) {
+    opacity *= getLocalWeatherAlpha(input);
+  }
 
-//     // if IS_LOCAL_WEATHER {
-//     //     height *= get_local_weather_alpha_v2f(in.local_pos, in.weather_center);
-//     // }
+	if (opacity < 0.001) {
+		discard;
+	}
 
-//     if height < 0.0001 { discard; }
+  var density = 0.0;
+  for(var i = 0; i < c_numSamples; i++) {
+    let suv = (uv + f32(i) * sampleDir) * scaleOffset.xy + scaleOffset.zw;
+		let t = textureSample(diffuseMap, samplerLinear, suv).r;
+		density += t;
+	}
 
-//     var cur_trace_pos = vec3<f32>(in.base_tc, height * mat.cloud_height);
-//     let to_sun        = normalize(in.to_sun);
+	let c = exp2( -material.attenuation * density );
+	var a = pow( opacity, material.alphaSaturation );
+	let col = mix(
+    material.skyColorMultiplier * global.cloudShadingCustomSkyColor.xyz,
+    material.sunColorMultiplier * global.cloudShadingCustomSunColor.xyz,
+    c
+  );
 
-//     // Ray-AABB intersection (slabs) against [0,1] x [0,1] x [-ch,+ch]
-//     let safe_to_sun = select(to_sun, vec3<f32>(0.00001, 0.00001, 0.00001), to_sun == vec3<f32>(0.0));
-//     let inv_to_sun  = 1.0 / safe_to_sun;
+	let materialOpacity = 1.0;// GetInstance_Opacity(); //AmbientOp.a * PerMaterial_DiffuseColor.a;
+	a = pow(a, 1.0f / (materialOpacity + 0.01f)) * sqrt(materialOpacity) - (1 - materialOpacity) * 0.01;
+	a = saturate(a);
 
-//     let tbottom = (vec3<f32>(0.0, 0.0, -mat.cloud_height) - cur_trace_pos) * inv_to_sun;
-//     let ttop    = (vec3<f32>(1.0, 1.0,  mat.cloud_height) - cur_trace_pos) * inv_to_sun;
-//     let tmax    = max(ttop, tbottom);
-//     let t0      = min(tmax.xx, tmax.yz);
-//     let dist_aabb = min(t0.x, t0.y);
+  var out: FragmentOutput;
+  out.color = vec4f(col * input.color.rgb, a);
+  return out;
+}
 
-//     let sample_dir = to_sun * dist_aabb / f32(num_samples);
+fn psAdvanced(input: FragmentInput) -> FragmentOutput {
 
-//     var density : f32 = 0.0;
-//     for (var i = 0; i < num_samples; i++) {
-//         cur_trace_pos += sample_dir;
-//         let h2 = getCloudTexture(cur_trace_pos.xy).x * mat.cloud_height;
-//         density += select(0.0, h2, abs(cur_trace_pos.z) < h2);
-//     }
-//     density *= 64.0 / f32(num_samples);
+  // ---- Sprite Sheet OFfset
+  var scaleOffset = getSpriteScaleOffset();
 
-//     let scattering_sky = exp(-height * mat.cloud_height * mat.density_sky);
-//     let scattering_sun = exp(-mat.density_sun * density);
+  // ---- Clouds Texture
+  var uvBase = input.uvBase * scaleOffset.xy + scaleOffset.zw;
+  var height = textureSample(diffuseMap, samplerLinear, uvBase).r;
 
-//     let col   = env.cloudColorSky.xyz * scattering_sky
-//               + env.cloudColorSun.xyz * scattering_sun;
-//     let alpha = pow(saturate(height * mat.alpha_multiplier), mat.alpha_saturation_a);
+  // ---- Local Weather
+  if (LOCAL_WEATHER) {
+    height *= getLocalWeatherAlpha(input);
+  }
 
-//     return vec4<f32>(col, alpha) * in.color;
-// }
+  if (height - 0.0001 < 0.0) {
+    discard;
+  }
 
-// // ---------- SIMPLE ----------
+  var curTracePos = vec3f(input.uvBase.xy, height * material.cloudHeight);
+	let toSun = normalize(input.toSun.xyz);
 
-// @fragment
-// fn distance_clouds_simple_ps(in: FragmentInput) -> @location(0) vec4<f32> {
-//     var col = getCloudTexture(in.base_tc);
+	// Intersection of sun vector with cloud AABB using slabs
+  let zeroMask  = toSun == vec3f(0.0);
+	let invToSun  = 1.0 / select(toSun, vec3f(0.00001), zeroMask);
+	let tbottom   = (vec3f(0.0, 0.0, -material.cloudHeight ) - curTracePos) * invToSun;
+	let ttop      = (vec3f(1.0, 1.0, material.cloudHeight ) - curTracePos) * invToSun;
+	let tmax      = max( ttop, tbottom );
+	let t0        = min( tmax.xx, tmax.yz );
+	let distAABB  = min( t0.x, t0.y );
+	let sampleDir = toSun * distAABB / f32(NUM_SAMPLES);
 
-//     // if IS_LOCAL_WEATHER {
-//     //     col *= get_local_weather_alpha_v2f(in.local_pos, in.weather_center);
-//     // }
+	// Accumulate cloud density along sun vector
+	var density = 0.0;
 
-//     var result = vec4<f32>(
-//         mat.diffuse_color.xyz * col.xyz,
-//         col.w * mat.opacity,
-//     ) * in.color;
+	for(var i = 0; i < NUM_SAMPLES; i++) {
+		curTracePos += sampleDir;
+    let uv = fract(curTracePos.xy) * scaleOffset.xy + scaleOffset.zw;
+    let height2 = textureSample(diffuseMap, samplerLinear, uv).r * material.cloudHeight;
+    if (abs( curTracePos.z ) < height2) {
+      density += height2;
+    }
+	}
 
-//     result = vec4<f32>(result.rgb * mat.exposure, result.a);
-//     return result;
-// }
+	density *= 64.0 / f32(NUM_SAMPLES);
 
-// // GetLinearDepth helper stub — implement with your depth reconstruction
-// fn get_linear_depth(uv: vec2<f32>) -> f32 {
-//     return textureSample(scene_depth_tex, baseColorSampler, uv).r;
-// }
+	// Sky light scattering
+	let scatteringSky = exp( -height * material.cloudHeight * material.densitySky );
 
-// @fragment
-// fn distance_clouds_shadow_ps(in: FragmentInput) -> @location(0) vec4<f32> {
-//     // --- world position of scene pixel ---
-//     let scene_depth = get_linear_depth(in.base_tc);
-//     let world_pos   = per_frame.worldViewPos.xyz + in.ws_view_vect * scene_depth;
+	// Sun light forward scattering
+	let scatteringSun = exp( -material.densitySun * density );
 
-//     // --- project onto cloud plane along sun direction ---
-//     let sun_dir = per_frame.sunDirection.xyz;
-//     let pos_in_cloud = world_pos
-//                      + sun_dir * mat.sky_height / max(0.0001, sun_dir.z);
+	// Full shading
+	var color = vec3f(0.0);
+  color += global.cloudShadingCustomSkyColor.xyz * scatteringSky;
+  color += global.cloudShadingCustomSunColor.xyz * scatteringSun;
 
-//     // --- cloud UV (skydome projection) ---
-//     // _TCMMatrixDiffuse1 transform omitted; supply your own UV matrix here
-//     let skydome_uv = pos_in_cloud.xy / mat.shadow_skydome_size;
+	// Opacity
+	var alpha = pow(saturate( height * material.alphaMultiplier ), material.alphaSaturation);
 
-//     let thickness_raw = getCloudTexture(skydome_uv).x * mat.diffuse_color.a;
+  var out: FragmentOutput;
+  out.color = vec4f(color, alpha) * input.color;
 
-//     // --- density remap ---
-//     var thickness = mix(
-//         mat.min_shadow_density,
-//         mat.max_shadow_density,
-//         pow(thickness_raw, mat.shadow_power),
-//     );
-//     thickness = pow(thickness, 1.0 / 2.2);   // gamma correction
+  switch (global.debug) {
+    // #region Debug Material
+    case DEBUG_MTL_ALBEDO: {
+      out.color = vec4f(vec3f(scatteringSky), 1.0);
+    }
+    case DEBUG_MTL_SPECULAR: {
+      out.color = vec4f(vec3f(scatteringSun), 1.0);
+    }
+    case DEBUG_MTL_METALLIC: {
 
-//     // --- radial fading from weather center ---
-//     let shadow_fading_radius = mat.weather_smooth_radius * mat.shadow_fading_radius_factor;
-//     let dist_cloud = length(in.weather_center.xy - pos_in_cloud.xy);
-//     let out_r      = max(0.0, shadow_fading_radius);
-//     var alpha      = saturate(
-//         (out_r - dist_cloud + mat.weather_radius) / abs(shadow_fading_radius)
-//     );
+    }
+    case DEBUG_MTL_ROUGHNESS: {
 
-//     // --- sun-inclination fading (avoids long low-sun shadows) ---
-//     let min_radius = min(mat.weather_radius, mat.weather_radius + mat.weather_smooth_radius);
-//     let dist_world = length(in.weather_center.xy - world_pos.xy);
-//     let incl_edge0 = min_radius + abs(mat.weather_smooth_radius * mat.shadow_fading_inclination_factor);
-//     alpha *= saturate(smoothstep(incl_edge0, min_radius, dist_world));
+    }
+    case DEBUG_MTL_IOR: {
 
-//     // --- noise-distorted fading ---
-//     let noise_uv  = (pos_in_cloud.xy + mat.fading_noise_offset) / mat.fading_noise_tiling_size;
-//     let noise_val = textureSampleLevel(pnoise_tex, pnoise_sampler, noise_uv, 0.0).r;
+    }
+    case DEBUG_MTL_EMISSIVE: {
 
-//     alpha = saturate(pow(alpha, 1.0 + noise_val * 5.0));
-//     alpha *= thickness;
-//     alpha = smoothstep(0.0, 1.0, alpha);
+    }
+    case DEBUG_MTL_AO: {
 
-//     return vec4<f32>(alpha, 0.0, 0.0, 1.0);
-// }
+    }
+    case DEBUG_MTL_OPACITY: {
 
+    }
+    case DEBUG_MTL_HEIGHT: {
+
+    }
+    case DEBUG_MTL_NOISE: {
+      //
+    }
+    // #endregion
+
+
+    // #region Debug Geometry / Vectors
+    case DEBUG_GV_NORMAL: {
+      out.color = vec4f(input.localNrm.xyz * 0.5 + 0.5, 1.5);
+    }
+    case DEBUG_GV_TANGENT: {
+      out.color = vec4f(input.localTan.xyz * 0.5 + 0.5, 1.5);
+    }
+    case DEBUG_GV_BITANGENT: {
+
+    }
+    case DEBUG_GV_SHADE_NORMAL: {
+
+    }
+    case DEBUG_GV_POSITION_WS: {
+
+    }
+    case DEBUG_GV_DEPTH: {
+
+    }
+    // #endregion
+
+    // #region Debug Vertex attributes
+    case DEBUG_V_COLOR0: {
+
+    }
+    case DEBUG_V_COLOR1: {
+
+    }
+    case DEBUG_V_UV0: {
+
+    }
+    case DEBUG_V_UV1: {
+
+    }
+    // #endregion
+    default: {
+
+    }
+  }
+  return out;
+}
+
+fn fmod(x: f32, y: f32) -> f32 {
+  return x - y * trunc(x / y);
+}
+
+fn getLocalWeatherAlpha(input: FragmentInput) -> f32 {
+  var localPos = normalize(input.localPos);
+
+  // Bend the clouds in the lower part of the skydome to simulate the weather going into the horizon because of the planet curvature
+  localPos.z = abs(localPos.z); // Allow the clouds not only going to the horizon but a bit lower in case that part of the mesh is visible
+  let horizonFactor = saturate(localPos.z / max(0.0001, material.horizonBendingHeight));
+  let skyHeight     = material.skyHeight * horizonFactor;
+
+  // Project skydome into a world sky plane
+  var worldPos = view.cameraPosition.xyz + localPos * skyHeight / max(0.0001, localPos.z);
+
+  // Fade the cloud based on the Weather Position and Radius
+  let distance  = length(input.weatherCenter.xy - worldPos.xy);
+  let outRadius = max(0, material.weatherSmoothRadius);
+  var alpha    = saturate((outRadius - distance + material.weatherRadius) / abs(material.weatherSmoothRadius));
+
+  // Increase the tiling distance near the horizon to avoid tiling as the dome angle gets more vertical
+  worldPos += localPos * (1.0 - horizonFactor) * material.fadingNoiseTilingSize;
+
+  // Distord the alpha using the noise pattern to avoid a perfect circular fading
+  let noiseUV = (worldPos.xy + material.fadingNoiseOffset) / material.fadingNoiseTilingSize;
+  var noise = textureSampleLevel(noise2DTex, samplerLinear, noiseUV, 0.0).r;
+  noise      *= saturate((horizonFactor - 0.5) / 0.5);	// Make noise go toward 0 near the horizon to avoid visible tiling as the dome angle gets more vertical
+  alpha       = pow(alpha, 1 + noise * 5);
+
+  return alpha;
+}
+
+fn getSpriteScaleOffset() -> vec4f {
+  var tileSize = vec2f(1.0);
+  var spriteOffset = vec2f(0.0);
+
+  if (SPRITESHEET_MATERIAL) {
+    tileSize = 1.0 / vec2f(material.spriteSheetColumns, material.spriteSheetRows);
+
+    let numFrames    = material.spriteSheetNumFrames;
+    let initialFrame = 0.0;
+    let animTime     = fract(frame.elapsedTime / material.spriteSheetDuration);
+    let curFrame     = fmod(floor(initialFrame + animTime * numFrames), numFrames) ;
+    let tileX        = curFrame * tileSize.x;
+    spriteOffset = vec2f(fract(tileX), floor(tileX) * tileSize.y);
+  }
+  return vec4f(tileSize.x, tileSize.y, spriteOffset.x, spriteOffset.y);
+}
+
+${COMMON_WGSL}
 `

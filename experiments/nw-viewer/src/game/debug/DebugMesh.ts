@@ -1,12 +1,20 @@
-import { boxGeometry, bufferLayout, BufferWriter, Device, Mesh, planeGeometry, sphereGeometry } from '@gglib/graphics'
+import {
+  boxGeometry,
+  bufferLayout,
+  BufferWriter,
+  cylinderGeometry,
+  Device,
+  discGeometry,
+  Mesh,
+  planeGeometry,
+  sphereGeometry,
+} from '@gglib/graphics'
 import { Mat4, type IVec3, type IVec4 } from '@gglib/math'
 import { ShapeMaterial } from '../../material/ShapeMaterial'
-
-export type DebugShapeType = 'box' | 'sphere' | 'plane'
+import type { DebugShapeType } from './DebugShapeComponent'
 
 export const instanceLayout = bufferLayout([
-  { name: 'position', type: 'vec4' },
-  { name: 'scale', type: 'vec4' },
+  { name: 'transform', type: 'mat4' },
   { name: 'color', type: 'vec4' },
 ])
 
@@ -47,12 +55,8 @@ export class DebugMesh extends Mesh {
     this.writer.seek(index)
   }
 
-  public writePosition(value: IVec4 | IVec3) {
-    this.writer.writeField(instanceLayout.fields.position, value)
-  }
-
-  public writeScale(value: IVec4 | IVec3) {
-    this.writer.writeField(instanceLayout.fields.scale, value)
+  public writeTransform(value: Mat4) {
+    this.writer.writeField(instanceLayout.fields.transform, value)
   }
 
   public writeColor(value: IVec4 | IVec3) {
@@ -68,7 +72,8 @@ export class DebugMesh extends Mesh {
 
 export function createShapeGeometry(device: Device, type: DebugShapeType, solid: boolean) {
   switch (type) {
-    case 'sphere': {
+    case 'sphere':
+    case 'bounds-sphere': {
       return sphereGeometry(device, {
         vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
         radius: 1,
@@ -77,7 +82,8 @@ export function createShapeGeometry(device: Device, type: DebugShapeType, solid:
         lines: !solid,
       })
     }
-    case 'box': {
+    case 'box':
+    case 'bounds-box': {
       return boxGeometry(device, {
         vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
         size: 1,
@@ -90,6 +96,30 @@ export function createShapeGeometry(device: Device, type: DebugShapeType, solid:
         size: 1,
         depthSegments: 2,
         widthSegments: 2,
+        lines: !solid,
+      })
+    }
+    case 'disc': {
+      return discGeometry(device, {
+        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        radius: 1,
+        lines: !solid,
+      })
+    }
+    case 'cylinder': {
+      return cylinderGeometry(device, {
+        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        height: 1,
+        radius: 1,
+        lines: !solid,
+      })
+    }
+    case 'cone': {
+      return cylinderGeometry(device, {
+        vertexTransform: Mat4.createRotationX(Math.PI / 2), // rotate to z up
+        height: 1,
+        radius: 1,
+        topRadius: 0,
         lines: !solid,
       })
     }

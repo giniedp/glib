@@ -1,19 +1,20 @@
-import { BasicGame, PriorityLane, SchedulerSystem, TransformComponent } from '@gglib/components'
-import { GameEntity, GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
+import { BasicGame, PriorityLane, SchedulerSystem } from '@gglib/components'
+import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE, SEGMENT_SIZE } from '../../constants'
+import { Mat4, Vec3, Vec4, type IVec4 } from '@gglib/math'
+import { removeItemUnordered } from '@gglib/utils'
+
+import { LOD_RANGE_FACTOR, QUAD_LEAF_SIZE } from '../../constants'
 import { ContentService } from '../../content'
 import { TerrainComponent } from './TerrainComponent'
-
-import { Mat4, Vec4, type IVec4 } from '@gglib/math'
-import type { CameraData } from '@gglib/render'
 import { TerrainMesh } from './TerrainMesh'
-import { TerraQuadState, type TerraQuad } from './TerrainRegion'
-import { TerrainRegionComponent } from './TerrainRegionComponent'
+import { TerrainRegionComponent, TerraQuadState, type TerraQuad } from './TerrainRegionComponent'
 import { TerrainTileManager } from './TerrainTileManager'
+import { loadBaseMaterial, loadHeightmap, loadLayerMaterials, loadWatermap } from './loaders'
 
 export class TerrainSystem extends GameSystem {
-  private terrainQuery: GameQuery
+  private allTerrains: GameQuery
+  private allRegions: GameQuery
 
   private game: BasicGame
   private device: Device
@@ -22,77 +23,212 @@ export class TerrainSystem extends GameSystem {
 
   private tiles: TerrainTileManager
   private renderList: TerraQuad[] = []
+  private loadedRegions: TerrainRegionComponent[] = []
 
   private frame = 0
-  private terrainCount = 0
+
+  public mountainHeight = 2048
+  public oceanLevel = 40
 
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
     this.game = world.getSystem(BasicGame)
     this.content = world.getSystem(ContentService)
     this.scheduler = world.getSystem(SchedulerSystem)
-    this.terrainQuery = world.query({ required: [TerrainComponent] })
+    this.allTerrains = world.query({ scope: 'all', required: [TerrainComponent] })
+    this.allRegions = world.query({ scope: 'all', required: [TerrainRegionComponent] })
   }
 
   public update(): void {
     this.frame++
-    this.terrainCount = 0
-    for (const entity of this.terrainQuery) {
-      this.terrainCount++
+
+    let count = 0
+    for (const entity of this.allTerrains) {
+      count++
       this.tiles ||= new TerrainTileManager(this.device)
-      this.updateTerrain(entity)
+      if (count === 1) {
+        this.updateTerrain(entity.component(TerrainComponent))
+      } else {
+        console.warn('Multiple terrain entities found, only the first one will be updated')
+      }
     }
-    if (this.terrainCount === 0) {
+
+    if (!count) {
       this.tiles?.dispose()
-      this.tiles = undefined
+      this.tiles = null
     }
   }
 
   public destroy(): void {
     this.tiles?.dispose()
+    this.tiles = null
   }
 
   // #region Update Terrain Entity
 
-  private updateTerrain(ent: GameEntity) {
-    const terrain = ent.component(TerrainComponent)
+  private updateTerrain(terrain: TerrainComponent) {
     if (!terrain.meshComponent.mesh) {
       const mesh = new TerrainMesh(this.device, { size: QUAD_LEAF_SIZE })
       mesh.TerrainMaterial.ColorMap1 = this.tiles.colorMap1
       mesh.TerrainMaterial.ColorMap2 = this.tiles.colorMap2
       mesh.TerrainMaterial.HeightMap = this.content.nullHeightmapArray
+      mesh.TerrainMaterial.MountainHeight = this.mountainHeight
+
       mesh.WaterMaterial.HeightMap = this.content.nullHeightmapArray
+      mesh.WaterMaterial.MountainHeight = this.mountainHeight
+      mesh.WaterMaterial.WaterLevel = this.oceanLevel
+      mesh.WaterMaterial.WaterHeight = this.oceanLevel
 
       terrain.meshComponent.mesh = mesh
     }
 
-    const camera = this.game.view.camera
-
-    for (const region of terrain.regions) {
-      if (region.entity) {
-        this.updateRegionState(region.entity, camera)
+    for (const entity of this.allRegions) {
+      const region = entity.component(TerrainRegionComponent)
+      if (!entity.isActive) {
+        this.unloadRegion(region)
+      } else {
+        this.updateRegionResources(region)
+        this.updateRegion(region)
       }
     }
 
     this.updateRenderList(terrain)
   }
 
+  private unloadRegion(region: TerrainRegionComponent) {
+    if (!this.loadedRegions.includes(region)) {
+      return
+    }
+
+    removeItemUnordered(this.loadedRegions, region)
+    for (const node of region.tree.flatPreOrdered) {
+      this.unloadQuad(node)
+    }
+  }
+
+  private updateRegion(region: TerrainRegionComponent) {
+    console.assert(region.entity.isActive, 'Region should be active')
+
+    if (!this.loadedRegions.includes(region)) {
+      this.loadedRegions.push(region)
+    }
+
+    const camera = this.game.view.camera
+    region.traverseRequiredSet(camera, LOD_RANGE_FACTOR, (node) => {
+      this.updateQuadState(node, region)
+    })
+
+    for (const node of region.tree.flatPreOrdered) {
+      this.updateQuadEntity(node)
+    }
+  }
+
+  private updateRegionResources(region: TerrainRegionComponent) {
+    this.loadHeightmap(region)
+    this.loadBaseMaterial(region)
+    this.loadLayerMaterials(region)
+    this.loadWatermap(region)
+  }
+
+  private loadBaseMaterial(region: TerrainRegionComponent) {
+    if (region.baseMaterial || region.baseMaterialTask) {
+      return
+    }
+    const material = region.materialData
+    if (!material) {
+      return
+    }
+    region.baseMaterialTask = loadBaseMaterial(this.content, this.scheduler, material, (result) => {
+      region.baseMaterialTask = null
+      region.baseMaterial = result
+      this.syncMacroTextures(region)
+      region.materialVersion++
+    })
+  }
+
+  private loadLayerMaterials(region: TerrainRegionComponent) {
+    if (region.layerMaterials || region.layerMaterialsTask) {
+      return
+    }
+    const material = region.materialData
+    if (!material) {
+      return
+    }
+    region.layerMaterialsTask = loadLayerMaterials(this.content, this.scheduler, material, (result) => {
+      region.layerMaterialsTask = null
+      region.layerMaterials = result || []
+      this.syncMacroTextures(region)
+      region.materialVersion++
+    })
+  }
+
+  private syncMacroTextures(region: TerrainRegionComponent) {
+    if (region.baseMaterial) {
+      region.baseMaterial.MacroNormalScale = 1 / region.mountainHeight
+    } else {
+      return
+    }
+
+    if (!region.layerMaterials?.length) {
+      return
+    }
+
+    for (const material of region.layerMaterials) {
+      material.MacroBaseMap = region.baseMaterial.MacroBaseMap
+      material.MacroNormalMap = region.baseMaterial.MacroNormalMap
+      material.MacroGlossMap = region.baseMaterial.MacroGlossMap
+      material.MacroNormalScale = 1 / region.mountainHeight
+    }
+  }
+
+  private loadHeightmap(region: TerrainRegionComponent) {
+    if (region.heightmap || region.heightmapTask) {
+      return
+    }
+    region.heightmapTask = loadHeightmap(
+      this.content,
+      this.scheduler,
+      region.coatlicueName,
+      region.regionName,
+      (result) => {
+        region.heightmapTask = null
+        region.heightmap = result || new Float16Array(region.size * region.size)
+      },
+    )
+  }
+
+  private loadWatermap(region: TerrainRegionComponent) {
+    if (region.watermap || region.watermapTask) {
+      return
+    }
+    region.watermapTask = loadWatermap(
+      this.content,
+      this.scheduler,
+      region.coatlicueName,
+      region.regionName,
+      (result) => {
+        region.watermapTask = null
+        region.watermap = result || new Float16Array(region.size * region.size)
+      },
+    )
+  }
+
   private updateRenderList(terrain: TerrainComponent) {
     this.renderList.length = 0
     terrain.renderRegions.length = 0
 
-    for (const region of terrain.regions) {
+    for (const region of this.loadedRegions) {
       if (!region.entity || !region.entity.isActive) {
         continue
       }
 
-      if (!region.heightmap) {
+      if (!region.heightmap || !region.watermap) {
         continue
       }
 
       terrain.renderRegions.push(region)
 
-      for (const node of region.region.tree.flatPreOrdered) {
+      for (const node of region.tree.flatPreOrdered) {
         if (node.data.visible) {
           this.renderList.push(node)
         }
@@ -106,6 +242,7 @@ export class TerrainSystem extends GameSystem {
     const wmMaterial = mesh.WaterMaterial
     hmMaterial.HeightMap = terrain.heightmap.texture
     wmMaterial.HeightMap = terrain.heightmap.texture
+    wmMaterial.WaterMap = terrain.heightmap.texture2
 
     mesh.resetInstanceCount()
     let instanceCount = 0
@@ -122,7 +259,17 @@ export class TerrainSystem extends GameSystem {
       const coarseReady = coarseNode !== fineNode
 
       mesh.startInstance(instanceCount)
-      mesh.writeTransform(p.entity.getTransform().world)
+
+      // TODO: optimize this
+
+      const position = Vec3.$1.initFrom(renderNode.bounds.min)
+      const mat = Mat4.createTranslation(position)
+      mat.setScale({
+        x: renderNode.size / p.region.leafSize,
+        y: renderNode.size / p.region.leafSize,
+        z: 1,
+      })
+      mesh.writeTransform(mat)
 
       const morphLod = Math.log2(renderNode.size / p.region.leafSize)
       mesh.writeParams1({
@@ -163,64 +310,6 @@ export class TerrainSystem extends GameSystem {
     mesh.commitInstanceData()
   }
 
-  // #endregion
-
-  // #region Update Region State
-  private updateRegionState(entity: GameEntity, camera: CameraData) {
-    const component = entity.component(TerrainRegionComponent)
-
-    const pX = camera.world.translationX
-    const pY = camera.world.translationY
-
-    const regionSize = component.regionSize
-    const minX = component.region.tree.bounds.min.x
-    const maxX = component.region.tree.bounds.max.x
-    const minY = component.region.tree.bounds.min.y
-    const maxY = component.region.tree.bounds.max.y
-
-    const dx = Math.max(minX - pX, 0, pX - maxX)
-    const dy = Math.max(minY - pY, 0, pY - maxY)
-    const distance = Math.sqrt(dx * dx + dy * dy)
-    const visibleAt = regionSize * 0.5 - SEGMENT_SIZE
-    const invisibleAt = regionSize * 0.5
-
-    if (entity.isActive && distance >= invisibleAt) {
-      this.tearDownRegion(component)
-      if (entity.canDeactivate) {
-        entity.deactivate()
-      }
-
-      console.assert(!entity.isActive, 'Region should be deactivated')
-      console.debug('Deactivated region', component.region.entity.name)
-    } else if (!entity.isActive && distance <= visibleAt) {
-      if (entity.canInitialize) {
-        entity.initialize()
-      }
-      if (entity.canActivate) {
-        entity.activate()
-      }
-      console.assert(entity.isActive, 'Region should be active')
-      console.debug('Activated region', component.region.entity.name)
-    }
-
-    if (!entity.isActive) {
-      return
-    }
-
-    component.region.traverseRequiredSet(camera, LOD_RANGE_FACTOR, (node) => {
-      this.updateQuadState(node, component)
-    })
-
-    for (const node of component.region.tree.flatPreOrdered) {
-      this.updateQuadEntity(node)
-    }
-  }
-
-  private tearDownRegion(component: TerrainRegionComponent) {
-    for (const node of component.region.tree.flatPreOrdered) {
-      this.unloadQuad(node)
-    }
-  }
   // #endregion
 
   // #region Update Quad State
@@ -281,36 +370,37 @@ export class TerrainSystem extends GameSystem {
 
   private updateQuadEntity(node: TerraQuad) {
     const p = node.data
-    const entity = p.entity
-
-    if (entity.canInitialize) {
-      entity.initialize()
+    if (p.lastSeen && this.frame - p.lastSeen > 60) {
+      this.unloadQuad(node)
     }
 
-    const canRender = p.visible
+    // const entity = p.entity
 
-    if (entity.isActive && !canRender) {
-      entity.deactivate()
-      console.assert(!p.entity.isActive, 'Node should be deactivated')
-    }
+    // if (entity.canInitialize) {
+    //   entity.initialize()
+    // }
 
-    if (!entity.isActive && canRender) {
-      entity.activate()
-      console.assert(p.entity.isActive, 'Node should be active')
-    }
+    // const canRender = p.visible
 
-    if (!entity.isActive) {
-      if (p.lastSeen && this.frame - p.lastSeen > 60) {
-        this.unloadQuad(node)
-      }
-      return
-    }
+    // if (entity.isActive && !canRender) {
+    //   entity.deactivate()
+    //   console.assert(!p.entity.isActive, 'Node should be deactivated')
+    // }
 
-    const nodeSize = node.size
-    const leafSize = p.region.leafSize
-    const transform = entity.getTransform<TransformComponent>()
-    transform.setScaleUniform(nodeSize / leafSize)
-    transform.updateIfNeeded()
+    // if (!entity.isActive && canRender) {
+    //   entity.activate()
+    //   console.assert(p.entity.isActive, 'Node should be active')
+    // }
+
+    // if (!entity.isActive) {
+    //   return
+    // }
+
+    // const nodeSize = node.size
+    // const leafSize = p.region.leafSize
+    // const transform = entity.getTransform<TransformComponent>()
+    // transform.setScaleUniform(nodeSize / leafSize)
+    // transform.updateIfNeeded()
   }
   // #endregion
 
@@ -324,7 +414,7 @@ export class TerrainSystem extends GameSystem {
 
     p.materialRenderTask = this.scheduler.schedule({
       lane: PriorityLane.Medium,
-      entity: p.entity,
+      // entity: p.entity,
       work: () => {
         const tile = node.data.tile
 
@@ -352,14 +442,15 @@ export class TerrainSystem extends GameSystem {
         this.tiles.renderTile(tile, baseMaterial, layerMaterials)
         return true
       },
-      onDone: () => {
+      finalize: (_, err) => {
+        // TODO: handle error case
         p.state = TerraQuadState.MaterialReady
         p.materialRenderTask = null
       },
     })
   }
 
-  private unloadQuad = (node: TerraQuad) => {
+  private unloadQuad(node: TerraQuad) {
     const p = node.data
     if (p.state === TerraQuadState.Unloaded) {
       return

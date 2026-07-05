@@ -12,13 +12,15 @@ import {
   type ShaderModuleOptions,
 } from '@gglib/graphics'
 import { Vec4 } from '@gglib/math'
-import { TERRAIN_PATCH_SHADER } from './TerrainPatchMaterial.wgsl'
-import { InputBlocks } from './common'
+import { TERRAIN_PATCH_SHADER as WGSL } from './TerrainPatchMaterial.wgsl'
+import { InputBlocks, MaterialLayerMasks } from './common'
 
 export function terrainPatchShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Terrain Patch Shader',
-    wgsl: TERRAIN_PATCH_SHADER,
+    wgsl: {
+      source: WGSL,
+    },
     glsl: null,
   }
 }
@@ -69,6 +71,7 @@ export class TerrainPatchMaterial extends materialSchemaClass(TerrainPatchMateri
       meta: {},
     })
 
+    this.layer = MaterialLayerMasks.Terrain
     this.HeightMapSampler = SamplerState.LinearClamp
     this.ColorMapSampler = SamplerState.LinearClamp
     this.MountainHeight = 2048

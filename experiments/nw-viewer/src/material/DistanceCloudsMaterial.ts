@@ -4,106 +4,205 @@ import {
   CullState,
   DepthState,
   Device,
+  Effect,
   materialSchemaClass,
-  type AcquireTextureOptions,
+  RenderVariant,
+  SamplerState,
+  ShaderConstants,
+  TRUE,
   type EffectOptions,
   type MaterialOptions,
   type ShaderModuleOptions,
-  type Texture,
-  type TextureOptions,
 } from '@gglib/graphics'
+import { Noise2DKey } from '../content'
+import { getShaderConstants, MaterialLayerMasks, type FeatureFlag } from './common'
 import Schema from './DistanceCloudsMaterial.meta'
 import DISTANCE_CLOUDS_SHADER from './DistanceCloudsMaterial.wgsl'
-import type { NwMaterialAttrs, TexMapName } from './GltfExtension'
-import type { TexMod } from './TexMod'
+import type { NwMaterialProps } from './GltfExtension'
+import { TextureModifier } from './TexMod'
+import { MtlUtil, paramValue } from './utils'
 
-export function distanceCloudsOptions(): ShaderModuleOptions {
+export function distanceCloudsOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
     name: 'Distance Clouds Shader',
-    wgsl: DISTANCE_CLOUDS_SHADER,
+    wgsl: {
+      source: DISTANCE_CLOUDS_SHADER,
+      fragmentConstants: ShaderConstants.get(constants),
+      vertexConstants: ShaderConstants.get(constants),
+    },
     glsl: null,
   }
 }
 
-export function distanceCloudsEffectOptions(): EffectOptions {
+export function distanceCloudsEffectOptions(constants: Record<string, number>): EffectOptions {
   return {
     name: 'Distance Clouds Effect',
     meta: {},
     program: {
-      shader: distanceCloudsOptions(),
+      shader: distanceCloudsOptions(constants),
       sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
     },
   }
 }
 
-export type DistanceCloudsProps = {
-  attrs: NwMaterialAttrs
-  textures: Partial<Record<TexMapName, Texture | TextureOptions | AcquireTextureOptions>>
-  mods: Partial<Record<TexMapName, TexMod>>
-  params: {
-    AlphaSaturation: '1'
-    Attenuation: '0.60000002'
-    MaxShadowDensity: '1'
-    MinShadowDensity: '0'
-    ShadowFadingInclinationFactor: '10'
-    ShadowFadingRadiusFactor: '10'
-    ShadowPower: '1'
-    ShadowSkydomeSize: '1000'
-    SkyColorMultiplier: '8'
-    StepSize: '0.0099999998'
-    SunColorMultiplier: '2'
-  }
+type PublicParams = {
+  SkyColorMultiplier: string
+  StepSize: string
+  SunColorMultiplier: string
+  Attenuation: string
+  AlphaSaturation: string
+  ShadowSkydomeSize: string
+  ShadowFadingInclinationFactor: string
+  ShadowPower: string
+  MaxShadowDensity: string
+  MinShadowDensity: string
+  ShadowFadingRadiusFactor: string
+  Exposure: string
+  Opacity: string
+  SpriteSheet_Columns: string
+  SpriteSheet_NumFrames: string
+  SpriteSheet_Rows: string
+  SpriteSheet_Duration: string
 }
+
+const util = new MtlUtil('DistanceClouds', {
+  knownMaps: ['Diffuse'],
+  knownMods: ['Diffuse'],
+  knownFlags: [],
+})
 
 export class DistanceCloudsMaterial extends materialSchemaClass(Schema) {
   public constructor(device: Device, options?: MaterialOptions) {
     super(device, {
       name: 'Distance Clouds Material',
-      effect: distanceCloudsEffectOptions(),
-      meta: {},
+      effect: null,
+      meta: options,
     })
-    this.effect.cullState = CullState.None
+
+    const { attrs, params, texMaps, texMods, shaderFlags } = util.resolve<PublicParams>(options?.properties)
+    this.name = `${attrs.Shader} (${attrs.Name})`
+    const shaderConst = getShaderConstants(shaderFlags)
+
+    this.effects[RenderVariant.Forward] = new Effect(device, distanceCloudsEffectOptions(shaderConst))
     this.effect.depthState = DepthState.GreaterEqualNoWrite
-    this.effect.blendState = BlendState.Alpha
-    this.assignNwProps(options?.properties as any)
+    this.effect.cullState = CullState.None
+    this.effect.blendState = BlendState.AdditiveAlpha
+    this.isTransparent = true
+
+    this.layer = MaterialLayerMasks.DistanceClouds
+    this.setDefaults()
+    this.setTextures(texMaps)
+    this.setModifiers(texMods)
+    this.setAttributes(attrs, shaderFlags)
+    this.setPublicParams(params)
   }
 
-  public assignNwProps(props: DistanceCloudsProps) {
-    if (!props) {
+  private setDefaults() {
+    this.Noise2DTex =
+      this.device[Noise2DKey] ||
+      this.device.createTexture({
+        name: 'noise2D',
+        type: 'Texture2D',
+        width: 16,
+        height: 16,
+        format: 'RGBA8_UNORM',
+      })
+
+    this.SamplerLinear = SamplerState.LinearWrap
+
+    // EngineAssets/Textures/perlinNoise2D.dds
+    this.AlphaMultiplier = 1.0
+    this.AlphaSaturation = 2.0
+    this.Attenuation = 0.6
+    this.CloudHeight = 0.3
+    this.DensitySky = 4.5
+    this.DensitySun = 1.5
+    this.FadingNoiseOffset = 0.0
+    this.FadingNoiseTilingSize = 1000.0
+    this.HorizonBendingHeight = 0.2
+    this.SkyHeight = 1000.0
+    this.Exposure = 1.0
+    this.MaxShadowDensity = 1.0
+    this.MinShadowDensity = 0.0
+    this.Opacity = 1.0
+    this.ShadowFadingInclinationFactor = 10
+    this.ShadowFadingRadiusFactor = 10
+    this.ShadowPower = 1.0
+    this.ShadowSkydomeSize = 1000.0
+    this.SkyColorMultiplier = 1.5
+    this.SpriteSheetColumns = 1.0
+    this.SpriteSheetDuration = 1.0
+    this.SpriteSheetNumFrames = 1.0
+    this.SpriteSheetRows = 1.0
+    this.StepSize = 0.004
+    this.SunColorMultiplier = 4.0
+    this.WeatherRadius = 2500.0
+    this.WeatherSmoothRadius = -1500.0
+  }
+
+  private setTextures(maps: NwMaterialProps['textures']) {
+    // NAME       count modCount
+    // Diffuse     61    6
+    // Bumpmap     2     0
+    // Decal       1     1
+    // Opacity     2     0
+    // Smoothness  2     0
+    // Emittance   3     2
+    if (maps.Diffuse) {
+      this.DiffuseMap = maps.Diffuse as any
+    }
+  }
+
+  private modDiffuse: TextureModifier | null = null
+  private setModifiers(mods: NwMaterialProps['mods']) {
+    if (TextureModifier.isModified(mods.Diffuse)) {
+      this.modDiffuse = new TextureModifier(mods.Diffuse)
+      this.EnabledUvModDiffuse = TRUE
+      this.updateModDiffuse(0)
+    }
+  }
+
+  private setAttributes(attrs: NwMaterialProps['attrs'], flags: Set<FeatureFlag>) {
+    //
+  }
+
+  private setPublicParams(params: PublicParams) {
+    this.SkyColorMultiplier = paramValue(params.SkyColorMultiplier, this.SkyColorMultiplier)
+    this.StepSize = paramValue(params.StepSize, this.StepSize)
+    this.SunColorMultiplier = paramValue(params.SunColorMultiplier, this.SunColorMultiplier)
+    this.Attenuation = paramValue(params.Attenuation, this.Attenuation)
+    this.AlphaSaturation = paramValue(params.AlphaSaturation, this.AlphaSaturation)
+    this.ShadowSkydomeSize = paramValue(params.ShadowSkydomeSize, this.ShadowSkydomeSize)
+    this.ShadowFadingInclinationFactor = paramValue(
+      params.ShadowFadingInclinationFactor,
+      this.ShadowFadingInclinationFactor,
+    )
+    this.ShadowPower = paramValue(params.ShadowPower, this.ShadowPower)
+    this.MaxShadowDensity = paramValue(params.MaxShadowDensity, this.MaxShadowDensity)
+    this.MinShadowDensity = paramValue(params.MinShadowDensity, this.MinShadowDensity)
+    this.ShadowFadingRadiusFactor = paramValue(params.ShadowFadingRadiusFactor, this.ShadowFadingRadiusFactor)
+    this.Exposure = paramValue(params.Exposure, this.Exposure)
+    this.Opacity = paramValue(params.Opacity, this.Opacity)
+    this.SpriteSheetColumns = paramValue(params.SpriteSheet_Columns, this.SpriteSheetColumns)
+    this.SpriteSheetNumFrames = paramValue(params.SpriteSheet_NumFrames, this.SpriteSheetNumFrames)
+    this.SpriteSheetRows = paramValue(params.SpriteSheet_Rows, this.SpriteSheetRows)
+    this.SpriteSheetDuration = paramValue(params.SpriteSheet_Duration, this.SpriteSheetDuration)
+  }
+
+  private frame: number
+  public update(time: number, delta: number, frame: number) {
+    if (this.frame === frame) {
       return
     }
-    const attr = props.attrs
-    const para = props.params
-    const tex = props.textures
-    const mod = props.mods
-    console.log({ mod })
+    this.frame = frame
 
-    // console.log(props)
-    // if (params['g_macroDiffuseSaturation']) {
-    //   this.MacroSaturation = Number(params['g_macroDiffuseSaturation'])
-    // }
-    // if (params['g_macroBlendStrength']) {
-    //   this.MacroBlendStrength = Number(params['g_macroBlendStrength'])
-    // }
-    // if (params['g_macroGlossBlendStrength']) {
-    //   this.MacroGlossBlendStrength = Number(params['g_macroGlossBlendStrength'])
-    // }
-
-    // if (params['g_materialLayerBlendFactor']) {
-    //   this.MaterialBlendFactor = Number(params['g_materialLayerBlendFactor'])
-    // }
-    // if (params['g_materialLayerBlendFalloff']) {
-    //   this.MaterialBlendFalloff = Number(params['g_materialLayerBlendFalloff'])
-    // }
-    // if (params['g_materialLayerHeightOffset']) {
-    //   this.MaterialHeightOffset = Number(params['g_materialLayerHeightOffset'])
-    // }
-    // if (params['g_materialLayerHeightScale']) {
-    //   this.MaterialHeightScale = Number(params['g_materialLayerHeightScale'])
-    // }
-
-    if (tex.Diffuse) {
-      this.BaseColorMap = tex.Diffuse as any
+    if (this.modDiffuse && this.modDiffuse.isAnimated) {
+      this.updateModDiffuse(time)
     }
+  }
+
+  private updateModDiffuse(time: number) {
+    this.modDiffuse.update(time)
+    this.UvModDiffuse = this.modDiffuse.matrix
   }
 }

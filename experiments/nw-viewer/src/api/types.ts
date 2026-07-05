@@ -1,181 +1,225 @@
-export interface LevelData {
+import type { IVec2 } from '@gglib/math'
+
+export interface LevelListEntry {
   name: string
-  oceanLevel: number
-  mountainHeight: number
-  groundMaterial: string
+  coatlicueNames: string[]
+}
+
+export interface CoatlicueListEntry {
+  name: string
+  level: string
+  maps: GameModeMap[]
+}
+
+export interface LevelIndex {
+  levels: LevelListEntry[]
+  coatlicues: CoatlicueListEntry[]
+}
+
+// ---------------------------------------------------------------------------
+// Coatlicue / world info
+// ---------------------------------------------------------------------------
+
+export interface LevelInfo {
+  level: string
+  name: string
   regionSize: number
-  regions: RegionReference[]
-  maps: MapData[]
+  regionCellSize: number
+  enableChunks: boolean
+  enableVegetation: boolean
+  enableDistribution: boolean
+  mountainHeight: number
+  mountainRoughness: number
+  oceanLevel: number
+  valleyIntensity: number
+  tracts: unknown
+  regions: RegionLocation[]
+  gameModeMaps: GameModeMap[]
+  mission: MissionInfo | null
+  missionEntities: ViewerEntity[]
+}
+
+export interface GameModeMap {
+  gameModeMapId: string
+  gameModeId: string
+  slicePath: string
+  coatlicueName: string
+  worldBounds: string[]
+  teamTeleportData: string
+  uiMapId: string
+  sliceExclusionList: string[]
+}
+
+export interface RegionLocation {
+  /**
+   * Folder base name in the format "r_+xx_+yy" e.g. "r_+00_+00", "r_+00_+01"
+   * The order is different from the location array
+   */
+  name: string
+  /**
+   * Grid tile location [X, Y], e.g. [0,0], [0,1], [0,1].
+   * The order is different from the name
+   */
+  location: [number, number]
+  playable: boolean
+}
+
+export interface MissionInfo {
+  environment: EnvironmentInfo
   timeOfDay: TimeOfDay
 }
+
+export interface EnvironmentInfo {
+  // fog: Fog
+  // terrain: Terrain
+  // envState: EnvState
+  // volFogShadows: VolFogShadows
+  // cloudShadows: CloudShadows
+  // particleLighting: ParticleLighting
+  // skyBox: SkyBox
+  // ocean: Ocean
+  // oceanAnimation: OceanAnimation
+  moon: Moon
+  // dynTexSource: DynTexSource
+  // totalIllumination: TotalIllumination
+  lighting: Lighting
+}
+
+export interface Moon {
+  latitude: number
+  longitude: number
+  size: number
+  texture: string
+}
+
+export interface Lighting {
+  sunRotation: number
+  sunHeight: number
+  lighting: number
+  hemiSamplQuality: number
+  longitude: number
+  dawnTime: number
+  dawnDuration: number
+  duskTime: number
+  duskDuration: number
+  sunVector: number[]
+}
+
+// ---------------------------------------------------------------------------
+// Time of day
+// ---------------------------------------------------------------------------
 
 export interface TimeOfDay {
   time: number
   timeStart: number
   timeEnd: number
   timeAnimSpeed: number
-  variables: TimeOfDayVariable[]
+  variable: TimeOfDayVariable[]
 }
+
 export interface TimeOfDayVariable {
   name: string
-  color: string
-  value: string
-}
-export interface MapData {
-  gameModeMapId: string
-  gameModeId: string
-  slicePath: string
-  coatlicueName: string
-  worldBounds: string
-  teamTeleportData: string
+  color: number[]
+  value: number
 }
 
-export interface RegionReference {
+// ---------------------------------------------------------------------------
+// Region info
+// ---------------------------------------------------------------------------
+
+export interface RegionInfo {
   name: string
-  location: [number, number]
+  poiImpostors: RegionImpostor[]
+  impostors: RegionImpostor[]
+  terrainMaterial: RegionMaterial | null
 }
 
-export interface RegionData {
-  name: string
-  size: number
-  cellResolution: number
-  poiImpostors: ImpostorData[]
-  impostors: ImpostorData[]
-  capitals: Record<string, CapitalData[]>
-  chunks: Record<string, ChunkData[]>
-}
-
-export interface ImpostorData {
-  position: [number, number]
+export interface RegionImpostor {
+  position: IVec2
   model: string
-}
-
-export interface DistributionData {
-  slices: Record<string, EntityData[]>
-  segments: Record<string, DistributionSlice[]>
-}
-
-export interface DistributionSlice {
-  slice: string
-  positions: number[][]
-}
-
-export interface CapitalLayerData {
-  name: string
-  capitals: CapitalData[]
-  chunks: ChunkData[]
-}
-
-export interface CapitalData {
-  id: string
-  transform: number[]
-  radius: number
-  slice: AssetReference
-}
-
-export interface ChunkData {
-  id: string
-  transform: number[]
-  size: number
-  slice: AssetReference
-}
-
-export interface EntityData {
-  id: string
-  name: string
-  file: string
-  transform: number[]
-  model: string
-  material: string
-  instances: number[][]
-  light: LightData
-  vital: VitalSpawnData
-  encounter: string
-  encounterName: string
-  maxViewDistance: number
-  layer: string
-}
-
-export interface VitalSpawnData {
-  vitalsId: string
-  categoryId: string
-  level: number
-  adbFile: string
-  statusEffects: string[]
-  tags: string[]
-  damageTable: string
-}
-
-export interface LightData {
-  type: number
-  color: [number, number, number, number]
-  diffuseIntensity: number
-  specularIntensity: number
-  pointDistance: number
-  pointAttenuation: number
-}
-
-export interface TerrainData {
-  level: string
-  tileSize: number
-  mipCount: number
-  width: number
-  height: number
-  regionsX: number
-  regionsY: number
-  regionSize: number
-  oceanLevel: number
-  mountainHeight: number
-  materials: RegionMaterial[]
-}
-
-export interface CatalogAssetData {
-  asset: AssetData
-  assets: AssetData[]
-}
-
-export interface AssetData {
-  guid: string
-  subId: number
-  type: string
-  file: string
-  size: number
 }
 
 export interface RegionMaterial {
-  regionX: number
-  regionY: number
+  tileX: number
+  tileY: number
+  defaultMaterial: string // nwfs.File — use string path or replace with concrete type
   normalMap: string
   colorMap: string
   specularMap: string
-  defaultMaterial: string
-  layers: TerrainMaterialLayerData[]
+  layers: RegionMaterialLayer[]
   pertinentLayersMipChain: string[]
 }
-export interface TerrainMaterialLayerData {
-  material: string
-  splatMap: string
+
+export interface RegionMaterialLayer {
+  material: string // nwfs.File
+  splatMap: string // nwfs.File
   affectedTiles: string
   priority: number
 }
 
-export const ComponentTypes = {
-  MeshComponentName: 'Mesh',
-  SpawnerComponentName: 'Spawner',
-  PointSpawnerComponentName: 'PointSpawner',
-  PrefabSpawnerComponentName: 'PrefabSpawner',
-  AreaSpawnerComponentName: 'AreaSpawner',
+// ---------------------------------------------------------------------------
+// Runtime data
+// ---------------------------------------------------------------------------
+
+/** Column-major 4×4 matrix, stored as a flat array of 16 numbers. */
+export type Mat4Data = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+]
+
+export interface AssetReference {
+  guid: string
+  subId: number
+  hint?: string
 }
+
+export interface CapitalRuntimeData {
+  id: string
+  transform: Mat4Data
+  radius: number
+  slice: AssetReference
+}
+
+export interface ChunkRuntimeData {
+  id: string
+  transform: Mat4Data
+  size: number
+  slice: AssetReference
+}
+
+export interface RegionCapitalsData {
+  /** Keyed by layer name. */
+  capitals: Record<string, CapitalRuntimeData[]>
+  /** Keyed by layer name. */
+  chunks: Record<string, ChunkRuntimeData[]>
+  /** Keyed by asset UUID_SUBID. */
+  slices: Record<string, ViewerSlice>
+}
+
+// ---------------------------------------------------------------------------
+// Viewer / slice types
+// ---------------------------------------------------------------------------
 
 export interface ViewerEntity {
   id: string
   name: string
-  transform: number[]
-  components: any[]
-}
-
-export interface ViewerComponent {
-  type: string
+  parentId?: string
+  transform: Mat4Data
+  components: ViewerComponent[]
 }
 
 export interface ViewerSlice {
@@ -184,72 +228,176 @@ export interface ViewerSlice {
   isStaticSlice: boolean
 }
 
-export interface ViewerMeshComponent {
-  type: 'Mesh'
-  mesh: string
-  material: string
-  maxViewDistance: number
-  viewDistanceMultiplier: number
-  castShadow: boolean
-  shouldInstance: boolean
-  shouldMerge: boolean
-  forceMerge: boolean
-  fadeEnabled: boolean
-  opacity: number
-  loadOnActivate: boolean
-  instances: number[]
+// ---------------------------------------------------------------------------
+// Component types
+// ---------------------------------------------------------------------------
+
+export const MeshComponentName = 'Mesh' as const
+export const SpawnerComponentName = 'Spawner' as const
+export const PointSpawnerComponentName = 'PointSpawner' as const
+export const PrefabSpawnerComponentName = 'PrefabSpawner' as const
+export const AreaSpawnerComponentName = 'AreaSpawner' as const
+export const LightComponentName = 'Light' as const
+export const TimeOfDayComponentName = 'TimeOfDay' as const
+
+export const ComponentTypes = {
+  MeshComponentName,
+  SpawnerComponentName,
+  PointSpawnerComponentName,
+  PrefabSpawnerComponentName,
+  AreaSpawnerComponentName,
+  LightComponentName,
+  TimeOfDayComponentName,
 }
+
+export type ComponentType =
+  | typeof MeshComponentName
+  | typeof SpawnerComponentName
+  | typeof PointSpawnerComponentName
+  | typeof PrefabSpawnerComponentName
+  | typeof AreaSpawnerComponentName
+
+export interface ViewerBaseComponent {
+  type: ComponentType
+}
+
+export interface ViewerMeshComponent extends ViewerBaseComponent {
+  type: typeof MeshComponentName
+  mesh: string
+  material?: string
+  instances?: Mat4Data[]
+  maxViewDistance?: number
+  viewDistanceMultiplier?: number
+  opacity?: number
+  crossFadeTime?: number
+  castShadow?: boolean
+  shouldInstance?: boolean
+  shouldMerge?: boolean
+  forceMerge?: boolean
+  fadeEnabled?: boolean
+  loadOnActivate?: boolean
+  acceptDecals?: boolean
+  acceptSand?: boolean
+  acceptSilhouette?: boolean
+  acceptSnow?: boolean
+  alwaysRender?: boolean
+  sortType?: number
+  visibilityOccluder?: boolean
+  useVisAreas?: boolean
+  useManualViewDistance?: boolean
+}
+
+export interface ViewerSpawnerComponent extends ViewerBaseComponent {
+  type: typeof SpawnerComponentName
+  slice: AssetReference
+  autoSpawn: boolean
+}
+
+export interface ViewerPointSpawnerComponent extends ViewerBaseComponent {
+  type: typeof PointSpawnerComponentName
+  slice: AssetReference
+  autoSpawn: boolean
+}
+
+export interface ViewerPrefabSpawnerComponent extends ViewerBaseComponent {
+  type: typeof PrefabSpawnerComponentName
+  slice: AssetReference
+}
+
+export interface ViewerAreaSpawnerComponent extends ViewerBaseComponent {
+  type: typeof AreaSpawnerComponentName
+  slice: AssetReference
+  locations: Mat4Data[]
+  liveCount?: number
+  minRespawnRange?: number
+  maxRespawnRange?: number
+  spawnOnEnable?: boolean
+  spawnOnTrigger?: boolean
+}
+
+export interface ViewerLightComponent {
+  type: typeof LightComponentName
+  light: ViewerLightConfig
+}
+
+export interface ViewerLightConfig {
+  type: string
+  color: [number, number, number, number]
+  specMultiplier: number
+  diffuseMultiplier: number
+  attenuation: number
+  range: number
+  // type 0: point light
+
+  // type 1: area light
+  areaWidth: number
+  areaHeight: number
+  areaFOV: number
+
+  // type 2: projector light
+  projectorDistance: number
+  projectorFOV: number
+  projectorNearPlane: number
+  // ProjectorTexture          AssetReference
+
+  // type 4: environment probe
+  boxWidth: number
+  boxHeight: number
+  boxDepth: number
+
+  maxViewDistance: number
+  viewDistanceEnabled: boolean
+  viewDistanceMultiplier: number
+}
+
+export interface ViewerTimeOfDayComponent {
+  type: string
+  shape: string
+  width: number
+  height: number
+  depth: number
+  radius: number
+  blendDistance: number
+  blendTime: number
+  priority: number
+  override: number
+  file: string
+  preset: TimeOfDay
+}
+
+export type ViewerComponent =
+  | ViewerMeshComponent
+  | ViewerSpawnerComponent
+  | ViewerPointSpawnerComponent
+  | ViewerPrefabSpawnerComponent
+  | ViewerAreaSpawnerComponent
+  | ViewerLightComponent
+  | ViewerTimeOfDayComponent
 
 export function isViewerMeshComponent(component: any): component is ViewerMeshComponent {
   return component.type === ComponentTypes.MeshComponentName
-}
-
-export interface ViewerSpawnerComponent {
-  type: 'Spawner'
-  slice: AssetReference
-  autoSpawn: boolean
 }
 
 export function isViewerSpawnerComponent(component: any): component is ViewerSpawnerComponent {
   return component.type === ComponentTypes.SpawnerComponentName
 }
 
-export interface ViewerPointSpawnerComponent {
-  type: 'PointSpawner'
-  slice: AssetReference
-  autoSpawn: boolean
-}
-
 export function isViewerPointSpawnerComponent(component: any): component is ViewerPointSpawnerComponent {
   return component.type === ComponentTypes.PointSpawnerComponentName
-}
-
-export interface ViewerPrefabSpawnerComponent {
-  type: 'PrefabSpawner'
-  slice: AssetReference
 }
 
 export function isViewerPrefabSpawnerComponent(component: any): component is ViewerPrefabSpawnerComponent {
   return component.type === ComponentTypes.PrefabSpawnerComponentName
 }
 
-export interface ViewerAreaSpawnerComponent {
-  type: 'AreaSpawner'
-  slice: AssetReference
-  locations: number[]
-  liveCount: number
-  minRespawnRange: number
-  maxRespawnRange: number
-  spawnOnEnable: boolean
-  spawnOnTrigger: boolean
-}
-
 export function isViewerAreaSpawnerComponent(component: any): component is ViewerAreaSpawnerComponent {
   return component.type === ComponentTypes.AreaSpawnerComponentName
 }
 
-export interface AssetReference {
-  guid: string
-  subId: number
-  hint: string
+export function isViewerLightComponent(component: any): component is ViewerLightComponent {
+  return component.type === ComponentTypes.LightComponentName
+}
+
+export function isTimeOfDayComponent(component: any): component is ViewerTimeOfDayComponent {
+  return component.type === ComponentTypes.TimeOfDayComponentName
 }

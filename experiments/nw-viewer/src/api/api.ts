@@ -1,16 +1,9 @@
-import type {
-  AssetReference,
-  CatalogAssetData,
-  DistributionData,
-  EntityData,
-  LevelData,
-  RegionData,
-  TerrainData,
-  ViewerSlice,
-} from './types'
+import type { LevelIndex, LevelInfo, RegionCapitalsData, RegionInfo } from './types'
 
 export type TypedRequest<T> = {
   url: string
+  type: 'json' | 'arraybuffer'
+  __type?: T
 }
 
 export class NwbtApiClient {
@@ -20,20 +13,20 @@ export class NwbtApiClient {
     this.baseUrl = baseUrl || ''
   }
 
-  public async getLevelInfo(levelName: string): Promise<LevelData> {
+  public async getLevelList() {
+    return this.fetch(getLevelListUrl())
+  }
+
+  public async getLevelInfo(levelName: string) {
     return this.fetch(getLevelInfoUrl(levelName))
   }
 
-  public async getRegionInfo(levelName: string, regionName: string): Promise<RegionData> {
+  public async getRegionInfo(levelName: string, regionName: string) {
     return this.fetch(getRegionInfoUrl(levelName, regionName))
   }
 
-  public async getCapitalEntities(levelName: string, regionName: string, capitalId: string): Promise<EntityData[]> {
-    return this.fetch(getCapitalEntities(levelName, regionName, capitalId))
-  }
-
-  public async getHeightmapInfo(levelName: string): Promise<TerrainData> {
-    return this.fetch(getHeightmapInfoUrl(levelName))
+  public async getRegionCapitals(levelName: string, regionName: string) {
+    return this.fetch(getRegionCapitalsUrl(levelName, regionName))
   }
 
   public async fetch<T>(request: TypedRequest<T>): Promise<T> {
@@ -41,57 +34,49 @@ export class NwbtApiClient {
   }
 }
 
-export async function fetchTypedRequest<T>(baseUrl: string, url: TypedRequest<T>): Promise<T> {
-  return fetch((baseUrl || '') + url.url).then((it) => it.json())
+export async function fetchTypedRequest<T>(baseUrl: string, request: TypedRequest<T>): Promise<T> {
+  return fetch((baseUrl || '') + request.url).then(async (it) => {
+    if (!it.ok) {
+      throw new Error(`Failed to fetch ${request.url}: ${it.status} ${it.statusText}`)
+    }
+
+    if (request.type === 'json') {
+      return it.json() as Promise<T>
+    }
+
+    if (request.type === 'arraybuffer') {
+      const buffer = await it.arrayBuffer()
+      return buffer as any as T
+    }
+
+    throw new Error(`Unsupported request type: ${request.type}`)
+  })
 }
 
 export function getRegionName(x: number, y: number): string {
-  return `r_+${y.toString().padStart(2, '0')}_+${x.toString().padStart(2, '0')}`
+  return `r_+${x.toString().padStart(2, '0')}_+${y.toString().padStart(2, '0')}`
 }
 
-export function getSliceUrl(ref: AssetReference): TypedRequest<ViewerSlice> {
-  return { url: `/level/slice/${ref.guid}_${ref.subId}.json` }
+export function getLevelListUrl(): TypedRequest<LevelIndex> {
+  return { url: `/levels/list.json`, type: 'json' }
 }
 
-export function getLevelsUrl(): TypedRequest<LevelData[]> {
-  return { url: `/level` }
+export function getLevelInfoUrl(levelName: string): TypedRequest<LevelInfo> {
+  return { url: `/levels/${levelName}/info.json`, type: 'json' }
 }
 
-export function getLevelInfoUrl(levelName: string): TypedRequest<LevelData> {
-  return { url: `/level/${levelName}` }
+export function getRegionInfoUrl(levelName: string, regionName: string): TypedRequest<RegionInfo> {
+  return { url: `/levels/${levelName}/${regionName}/info.json`, type: 'json' }
 }
 
-export function getLevelMissionUrl(levelName: string): TypedRequest<EntityData[]> {
-  return { url: `/level/${levelName}/mission` }
+export function getRegionCapitalsUrl(levelName: string, regionName: string): TypedRequest<RegionCapitalsData> {
+  return { url: `/levels/${levelName}/${regionName}/capitals.json`, type: 'json' }
 }
 
-export function getRegionInfoUrl(levelName: string, regionName: string): TypedRequest<RegionData> {
-  return { url: `/level/${levelName}/region/${regionName}` }
+export function getRegionHeightmapUrl(levelName: string, regionName: string): TypedRequest<Float16Array> {
+  return { url: `/levels/${levelName}/${regionName}/heightmap.r16`, type: 'arraybuffer' }
 }
 
-export function getHeightmapInfoUrl(levelName: string): TypedRequest<TerrainData> {
-  return { url: `/level/${levelName}/heightmap` }
-}
-
-export function getRegionEntitiesUrl(
-  levelName: string,
-  regionName: string,
-): TypedRequest<Record<string, Record<string, EntityData[]>>> {
-  return { url: `/level/${levelName}/region/${regionName}/entities` }
-}
-
-export function getRegionDistributionUrl(levelName: string, regionName: string): TypedRequest<DistributionData> {
-  return { url: `/level/${levelName}/region/${regionName}/distribution` }
-}
-
-export function getCatalogAssetInfo(assetId: string): TypedRequest<CatalogAssetData> {
-  return { url: `/catalog/${encodeURIComponent(assetId)}` }
-}
-
-export function getCapitalEntities(
-  levelName: string,
-  regionName: string,
-  capitalId: string,
-): TypedRequest<EntityData[]> {
-  return { url: `/level/${levelName}/region/${regionName}/capital/${capitalId}` }
+export function getRegionWatermapUrl(levelName: string, regionName: string): TypedRequest<Float16Array> {
+  return { url: `/levels/${levelName}/${regionName}/watermap.r16`, type: 'arraybuffer' }
 }

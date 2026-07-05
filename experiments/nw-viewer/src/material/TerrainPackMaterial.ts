@@ -5,7 +5,9 @@ import WGSL from './TerrainPackMaterial.wgsl'
 export function terrainPackShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Terrain Pack Shader',
-    wgsl: WGSL,
+    wgsl: {
+      source: WGSL,
+    },
     glsl: null,
   }
 }

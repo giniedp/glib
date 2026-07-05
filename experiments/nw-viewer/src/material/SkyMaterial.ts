@@ -1,20 +1,22 @@
 import {
-  BlendState,
   CullState,
   DepthState,
   Device,
   materialSchemaClass,
+  SamplerState,
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { Vec2, Vec3 } from '@gglib/math'
+import { clamp, Vec2, vec3, Vec3, Vec4 } from '@gglib/math'
 import SkyMaterialSchema from './SkyMaterial.meta'
-import SKY_SHADER from './SkyMaterial.wgsl'
+import WGSL from './SkyMaterial.wgsl'
 
 export function skyShaderOptions(): ShaderModuleOptions {
   return {
     name: 'Sky Shader',
-    wgsl: SKY_SHADER,
+    wgsl: {
+      source: WGSL,
+    },
     glsl: null,
   }
 }
@@ -37,16 +39,22 @@ export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
       effect: skyEffectOptions(),
       meta: {},
     })
+    this.SamplerLinear = SamplerState.LinearClamp
+    this.SamplerPoint = SamplerState.PointClamp
+
     this.effect.cullState = CullState.None
     this.effect.depthState = DepthState.GreaterEqualNoWrite
-    this.effect.blendState = BlendState.Alpha
 
     this.PartialRayleighInScattering = Vec3.create(
       5.8 * 0.40909049, // R
       13.5 * 0.40909049, // G
       33.1 * 0.40909049, // B
     )
-    this.PartialMieInScattering = Vec3.create(21.0 * 4.8000002, 21.0 * 4.8000002, 21.0 * 4.8000002)
+    this.PartialMieInScattering = Vec3.create(
+      21.0 * 4.8000002, // R
+      21.0 * 4.8000002, // G
+      21.0 * 4.8000002, // B
+    )
 
     // Phase function constants derived from asymmetry factor g = 0.76
     // (0 = isotropic, 1 = full forward scattering; haze is ~0.76-0.8)
@@ -70,27 +78,70 @@ export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
     // x = 1.0, y = 0.0 is the simplest linear mapping
     this.NightSkyZenithColShift = Vec2.create(42.9, 0.0)
   }
-}
 
-function phaseFunctionConstants(g: number): [number, number, number] {
-  const miePart = 1 / (4 * Math.PI)
-  const miePartPow = Math.pow(miePart, -2 / 3)
-  return [miePartPow * (-2 * g), miePartPow * (1 + g * g), 0.0]
-}
+  public setMoonParams(latitude: number, longitude: number, size: number, direction: Vec3) {
+    const moonLati = -Math.PI + (Math.PI * latitude) / 180.0
+    const moonLong = 0.5 * Math.PI - (Math.PI * longitude) / 180.0
 
-// Rayleigh scattering scales with 1/λ⁴ (shorter wavelength = more scattering)
-function computeRayleighCoefficients(
-  wavelengths: [number, number, number], // nm
-  rayleighMultiplier: number,
-): [number, number, number] {
-  // reference wavelength 680nm, coefficient 5.8 at that wavelength
-  const ref = 680
-  const base = 5.8
-  return wavelengths.map((labda) => base * Math.pow(ref / labda, 4) * rayleighMultiplier) as [number, number, number]
-}
+    const sinLonR = Math.sin(-0.5 * Math.PI)
+    const cosLonR = Math.cos(-0.5 * Math.PI)
+    const sinLatR = Math.sin(moonLati + 0.5 * Math.PI)
+    const cosLatR = Math.cos(moonLati + 0.5 * Math.PI)
+    const right = this.NightMoonTexGenRight || Vec3.create()
+    Vec3.init(right, sinLonR * cosLatR, sinLonR * sinLatR, cosLonR)
+    Vec3.normalize(right, right)
+    this.NightMoonTexGenRight = right
 
-// Mie is wavelength-independent, just a scalar multiplier
-function computeMieCoefficients(mieMultiplier: number): [number, number, number] {
-  const base = 21.0
-  return [base * mieMultiplier, base * mieMultiplier, base * mieMultiplier]
+    const sinLonU = Math.sin(moonLong + 0.5 * Math.PI)
+    const cosLonU = Math.cos(moonLong + 0.5 * Math.PI)
+    const sinLatU = Math.sin(moonLati)
+    const cosLatU = Math.cos(moonLati)
+    const up = this.NightMoonTexGenUp || Vec3.create()
+    Vec3.init(up, sinLonU * cosLatU, sinLonU * sinLatU, cosLonU)
+    Vec3.normalize(up, up)
+    this.NightMoonTexGenUp = up
+
+    const dirSize = this.NightMoonDirSize || Vec4.create()
+    Vec4.init(dirSize, direction.x, direction.y, direction.z, 25 - clamp(24 * size, 0, 1))
+    Vec3.normalize(dirSize, dirSize)
+    this.NightMoonDirSize = dirSize
+  }
+
+  public setSkylightParams(
+    km: number,
+    kr: number,
+    g: number,
+    waveR: number,
+    waveG: number,
+    waveB: number,
+    sunIntensity: number,
+  ) {
+    const rInv4 = Math.pow(waveR * 0.001, -4)
+    const gInv4 = Math.pow(waveG * 0.001, -4)
+    const bInv4 = Math.pow(waveB * 0.001, -4)
+
+    const mie = this.PartialMieInScattering || vec3(0)
+    mie.x = km * rInv4 * 0.001 // sunIntensity
+    mie.y = km * gInv4 * 0.001 // sunIntensity
+    mie.z = km * bInv4 * 0.001 // sunIntensity
+    this.PartialMieInScattering = mie
+
+    const rayleigh = this.PartialRayleighInScattering || vec3(0)
+    rayleigh.x = kr * 0.005 // * sunIntensity
+    rayleigh.y = kr * 0.005 // * sunIntensity
+    rayleigh.z = kr * 0.005 // * sunIntensity
+    this.PartialRayleighInScattering = rayleigh
+
+    const phase = this.PhaseFunctionConstants || vec3(0)
+    const miePart = 1 / (4 * Math.PI)
+    const miePartPow = Math.pow(miePart, -2 / 3)
+    phase.x = miePartPow * (-2 * g)
+    phase.y = miePartPow * (1 + g * g)
+    this.PhaseFunctionConstants = phase
+
+    const scales = this.ScatteringScales || vec3(0)
+    scales.x = sunIntensity
+    scales.y = g
+    this.ScatteringScales = scales
+  }
 }

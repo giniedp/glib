@@ -1,15 +1,27 @@
 import type { AcquireTextureOptions, Texture, TextureOptions } from '@gglib/graphics'
 import type { GLTF } from '@gglib/loaders'
 import { DistanceCloudsMaterial } from './DistanceCloudsMaterial'
-import { NewWorldMaterial } from './NewWorldMaterial'
+import { FxMeshAdvancedMaterial } from './FxMeshAdvancedMaterial'
+import { FxMeshAdvancedTranspMaterial } from './FxMeshAdvancedTranspMaterial'
+import { GeometryBeamMaterial } from './GeometryBeamMaterial'
+import { GeometryBeamSimpleMaterial } from './GeometryBeamSimpleMaterial'
+import { GeometryFogMaterial } from './GeometryfogMaterial'
+import { GlassMaterial } from './GlassMaterial'
+import { IllumMaterial } from './IllumMaterial'
+import { MeshparticleMaterial } from './MeshparticleMaterial'
+import { NowDrawMaterial } from './NoDrawMaterial'
+import { ParticleImposterMaterial } from './ParticleImposterMaterial'
 import { TerrainCompositeMaterial } from './TerrainCompositeMaterial'
 import type { TexMod } from './TexMod'
+import { UnknownMaterial } from './UnknownMaterial'
 import { VegetationMaterial } from './VegetationMaterial'
+import { Vec4, type IVec4 } from '@gglib/math'
 
 export interface NwMaterialExtensionData {
   attrs: NwMaterialAttrs
   params: Record<string, number | string>
   textures: GLTF.TextureInfo[]
+  vertexDeform: VertexDeform
 }
 
 export interface NwTextureExtensionData {
@@ -28,10 +40,26 @@ export interface NwMaterialAttrs {
   CloakAmount?: number
   Opacity?: number
   Shininess?: number
-  Diffuse?: string // r,g,b string
-  Emissive?: string // r,g,b string
-  Emittance?: string // r,g,b string
-  Specular?: string // r,g,b string
+  Diffuse?: number[] // r,g,b string
+  Emissive?: number[] // r,g,b string
+  Emittance?: number[] // r,g,b string
+  Specular?: number[] // r,g,b string
+}
+
+export interface VertexDeform {
+  Type: number
+  DividerX: number
+  DividerY: number
+  NoiseScale: string
+  WaveX: WaveX
+}
+
+export interface WaveX {
+  Type: number
+  Amp: number
+  Level: number
+  Phase: number
+  Freq: number
 }
 
 export const EXT_nw_mtl = 'EXT_nw_mtl'
@@ -54,8 +82,15 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
     props.params = {
       ...(data.params || {}),
     }
+    if (data.vertexDeform) {
+      props.vertexDeform = JSON.parse(JSON.stringify(data.vertexDeform))
+    }
 
     data.textures?.forEach((tex) => {
+      if (tex.index < 0) {
+        console.warn('Invalid texture index', tex.index, tex)
+        return
+      }
       const texNode = container.textureNode(tex.index)
       const texData = tex.extensions[EXT_nw_tex] as NwTextureExtensionData
       container.graph.assign(node, texNode, (material, texture) => {
@@ -66,31 +101,69 @@ export const NwMaterialExtension: GLTF.GltfMaterialExtension = {
         }
       })
     })
-
-    switch (data.attrs.Shader) {
-      case 'Terraintilecomposite': {
+    const shaderName = data.attrs.Shader?.toLocaleLowerCase()
+    // console.count(shaderName)
+    switch (shaderName) {
+      case 'terraintilecomposite': {
         node.data.factory = (device, asset) => new TerrainCompositeMaterial(device, asset)
         break
       }
-      case 'Illum': {
-        node.data.factory = (device, asset) => new NewWorldMaterial(device, asset)
+      case 'illum': {
+        node.data.factory = (device, asset) => new IllumMaterial(device, asset)
         break
       }
-      case 'Vegetation': {
+      case 'glass': {
+        node.data.factory = (device, asset) => new GlassMaterial(device, asset)
+        break
+      }
+      case 'nodraw': {
+        node.data.factory = (device) => new NowDrawMaterial(device)
+        break
+      }
+      case 'fxmeshadvanced': {
+        node.data.factory = (device, asset) => new FxMeshAdvancedMaterial(device, asset)
+        break
+      }
+      case 'fxmeshadvancedtransp': {
+        node.data.factory = (device, asset) => new FxMeshAdvancedTranspMaterial(device, asset)
+        break
+      }
+      case 'geometrybeam': {
+        node.data.factory = (device, asset) => new GeometryBeamMaterial(device, asset)
+        break
+      }
+      case 'geometrybeamsimple': {
+        node.data.factory = (device, asset) => new GeometryBeamSimpleMaterial(device, asset)
+        break
+      }
+      case 'geometryfog': {
+        node.data.factory = (device, asset) => new GeometryFogMaterial(device, asset)
+        break
+      }
+      case 'vegetation': {
         node.data.factory = (device, asset) => new VegetationMaterial(device, asset)
         break
       }
-      case 'Distanceclouds': {
+      case 'distanceclouds': {
         node.data.factory = (device, options) => new DistanceCloudsMaterial(device, options)
         break
       }
+      case 'meshparticle': {
+        node.data.factory = (device, options) => new MeshparticleMaterial(device, options)
+        break
+      }
+      case 'particleimposter': {
+        node.data.factory = (device, options) => new ParticleImposterMaterial(device, options)
+        break
+      }
       default: {
-        console.log('Unknown shader', data.attrs.Shader)
+        console.warn('Unknown shader', data.attrs.Shader, data.attrs.StringGenMask)
+        node.data.factory = (device, asset) => new UnknownMaterial(device)
       }
     }
 
     if (!node.data.factory) {
-      node.data.factory = (device, asset) => new NewWorldMaterial(device, asset)
+      node.data.factory = (device, asset) => new IllumMaterial(device, asset)
     }
   },
 }
@@ -100,6 +173,7 @@ export type NwMaterialProps = {
   textures: Partial<Record<TexMapName, Texture | TextureOptions | AcquireTextureOptions>>
   mods: Partial<Record<TexMapName, TexMod>>
   params: Record<string, number | string>
+  vertexDeform: VertexDeform
 }
 
 export type TexMapName =
