@@ -1,5 +1,5 @@
 import { NdcMinZ } from '@gglib/math'
-import { eventSource } from '@gglib/utils'
+import { brand, eventSource, EventType } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import type { TypedArray } from '../enums'
@@ -85,6 +85,9 @@ export const DefaultContextAttributes = Object.freeze<WebGLContextAttributes & {
 })
 
 export class WebglDevice extends Device<WebGL2RenderingContext> {
+  public static onContextLost = brand<EventType<void>>('WebglDevice contextlost')
+  public static onContextRestored = brand<EventType<void>>('WebglDevice contextrestored')
+
   public readonly ndcMinZ: NdcMinZ = NdcMinZ.MinusOne
   public readonly canvas: HTMLCanvasElement | OffscreenCanvas
   public readonly context: WebGL2RenderingContext
@@ -94,8 +97,8 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   public readonly isReady: boolean = false
   public readonly ready: Promise<this>
 
-  public readonly onContextLost = eventSource<void>('[WebglDevice] contextlost')
-  public readonly onContextRestored = eventSource<void>('[WebglDevice] contextrestored')
+  public readonly onContextLost = eventSource<void>(WebglDevice.onContextLost)
+  public readonly onContextRestored = eventSource<void>(WebglDevice.onContextRestored)
 
   public readonly capabilities: WebglCapabilities
   public readonly defaultTexture: WebglTexture
@@ -321,7 +324,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     y: number = 0,
     width: number = texture.width,
     height: number = texture.height,
-  ): TypedArray {
+  ): Uint8ClampedArray<ArrayBuffer> {
     if (texture.sampleCount > 1) {
       throw new Error('Reading pixels from multisampled textures is not supported in WebGL')
     }
@@ -336,7 +339,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     this.readBackBuffer.setRenderTarget(0, texture, 0, 0)
     this.readBackBuffer.activate()
 
-    const data = new Uint8Array(width * height * 4)
+    const data = new Uint8ClampedArray(width * height * 4)
     gl.readPixels(x, y, width, height, this.context.RGBA, this.context.UNSIGNED_BYTE, data)
 
     this.framebuffer.restore(restoreRead, restoreDraw)

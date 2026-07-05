@@ -217,6 +217,9 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     if (!source) {
       return
     }
+    if (!source.levels.length) {
+      throw new Error('Texture source has no data levels to upload')
+    }
     this.resize(source.width, source.height, this.type === 'TextureCube' ? 6 : source.levels[0].length)
     switch (this.type) {
       case 'TextureCube': {
@@ -261,6 +264,23 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     const gpuFormat = gpuObject.format
     const format = surfaceFormatFromWebGPU(gpuFormat)
     const info = surfaceFormatInfo(format)
+
+    return this.readPixelData(x, y, width, height).then((data) => {
+      const typedArray = dataTypeToArrayType(info.type)
+      return new typedArray(data.buffer)
+    })
+  }
+
+  public async readPixelData(
+    x?: number,
+    y?: number,
+    width?: number,
+    height?: number,
+  ): Promise<Uint8ClampedArray<ArrayBuffer>> {
+    const gpuObject = this.gpuObject
+    const gpuFormat = gpuObject.format
+    const format = surfaceFormatFromWebGPU(gpuFormat)
+    const info = surfaceFormatInfo(format)
     if (!info || info.compression || !info.type) {
       throw new Error(`Unsupported texture format for reading: ${format}`)
     }
@@ -296,17 +316,15 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     gpu.queue.submit([encoder.finish()])
     await buffer.mapAsync(GPUMapMode.READ)
 
-    const mapped = new Uint8Array(buffer.getMappedRange())
-    const compact = new Uint8Array(height * bytesPerRow)
+    const mapped = new Uint8ClampedArray(buffer.getMappedRange())
+    const compact = new Uint8ClampedArray(height * bytesPerRow)
     for (let row = 0; row < height; row++) {
       const srcOffset = row * bytesPerRowPadded
       const dstOffset = row * bytesPerRow
       compact.set(mapped.subarray(srcOffset, srcOffset + bytesPerRow), dstOffset)
     }
     buffer.unmap()
-
-    const typedArray = dataTypeToArrayType(info.type)
-    return new typedArray(compact.buffer)
+    return compact
   }
 }
 
@@ -316,19 +334,17 @@ type Mutable<T> = {
 function setData(source: TextureSource, image: WebGpuTexture, faceCount: number | null) {
   const gpu = image.device.gpu
   const queue = gpu.queue
-  const encoder = image.isCompressed ? gpu.createCommandEncoder() : null
-  const buffers: GPUBuffer[] = []
-  for (let mipIndex = 0; mipIndex < Math.min(6, source.levels.length); mipIndex++) {
+
+  for (let mipIndex = 0; mipIndex < source.levels.length; mipIndex++) {
     const level = source.levels[mipIndex]
-    const divisor = Math.pow(2, mipIndex)
-    const width = source.width / divisor
-    const height = source.height / divisor
+    const width = Math.max(1, source.width >> mipIndex)
+    const height = Math.max(1, source.height >> mipIndex)
     for (let faceIndex = 0; faceIndex < Math.min(level.length, faceCount ?? level.length); faceIndex++) {
       const data = level[faceIndex]
       if (ArrayBuffer.isView(data)) {
         if (image.isCompressed) {
           console.warn(
-            `Compressed texture expects data in the form of CompressedFaceData, but received ArrayBufferView. Attempting to upload as uncompressed texture data.`,
+            `Compressed texture expects data in the form of CompressedFaceData, but received ArrayBufferView. Attempting to upload as given.`,
           )
         }
 
@@ -356,26 +372,18 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
             `Uncompressed texture expects data in the form of ArrayBufferView, but received CompressedFaceData. Attempting to upload as compressed texture data.`,
           )
         }
-        const aligned = ensure256RowAlignment(data)
-        const buffer = gpu.createBuffer({
-          size: aligned.data.byteLength,
-          usage: GPUBufferUsage.COPY_SRC,
-          mappedAtCreation: true,
-        })
-        new Uint8Array(buffer.getMappedRange()).set(
-          new Uint8Array(aligned.data.buffer, aligned.data.byteOffset, aligned.data.byteLength),
-        )
-        buffer.unmap()
-        encoder.copyBufferToTexture(
-          {
-            buffer,
-            bytesPerRow: aligned.bytesPerRow,
-            rowsPerImage: aligned.rows,
-          },
+
+        queue.writeTexture(
           {
             texture: image.gpuObject,
             mipLevel: mipIndex,
             origin: { x: 0, y: 0, z: faceIndex },
+          },
+          data.data.buffer,
+          {
+            offset: data.data.byteOffset,
+            bytesPerRow: data.bytesPerRow,
+            rowsPerImage: data.rows,
           },
           {
             width,
@@ -383,8 +391,6 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
             depthOrArrayLayers: 1,
           },
         )
-
-        buffers.push(buffer)
       } else {
         queue.copyExternalImageToTexture(
           {
@@ -405,11 +411,6 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
       }
     }
   }
-  if (encoder) {
-    const commandBuffer = encoder.finish()
-    gpu.queue.submit([commandBuffer])
-    buffers.forEach((buffer) => buffer.destroy())
-  }
 }
 
 export function getMipmapCount(width: number, height: number, depth: number): number {
@@ -419,13 +420,8 @@ export function getMipmapCount(width: number, height: number, depth: number): nu
 function align(value: number, alignment: number): number {
   return (value + alignment - 1) & ~(alignment - 1)
 }
-
 export function ensure256RowAlignment(face: CompressedFaceData): CompressedFaceData {
   const { data, rows, bytesPerRow } = face
-
-  if (rows <= 1 && bytesPerRow <= 256) {
-    return face
-  }
 
   const aligned = align(bytesPerRow, 256)
   if (aligned === bytesPerRow) {
@@ -436,15 +432,8 @@ export function ensure256RowAlignment(face: CompressedFaceData): CompressedFaceD
   const dst = new Uint8Array(aligned * rows)
 
   for (let r = 0; r < rows; r++) {
-    const srcOffset = r * bytesPerRow
-    const dstOffset = r * aligned
-
-    dst.set(src.subarray(srcOffset, srcOffset + bytesPerRow), dstOffset)
+    dst.set(src.subarray(r * bytesPerRow, (r + 1) * bytesPerRow), r * aligned)
   }
 
-  return {
-    data: dst,
-    rows,
-    bytesPerRow: aligned,
-  }
+  return { data: dst, rows, bytesPerRow: aligned }
 }

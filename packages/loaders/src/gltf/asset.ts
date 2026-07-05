@@ -133,7 +133,7 @@ export class GltfAssetContainer extends AssetContainer {
     }
 
     // get raw material data from gltf document
-    const gltf = this.document.materials[index]
+    const gltf = this.document.materials?.[index]
     if (!gltf) {
       throw new Error(`Material with index ${index} not found in document`)
     }

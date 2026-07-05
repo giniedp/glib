@@ -228,8 +228,8 @@ export function closestPointsOfSegments(
   // check if either or both segments degenerate into points
   if (a <= EPSILON && e <= EPSILON) {
     // both segments degenerate into points
-    Vec3.clone(segment1Start, outP1)
-    Vec3.clone(segment2Start, outP2)
+    Vec3.copy(segment1Start, outP1)
+    Vec3.copy(segment2Start, outP2)
     return Vec3.distanceSquared(outP1, outP2)
   }
   if (a <= EPSILON) {
@@ -1495,6 +1495,11 @@ export const Intersects = {
 }
 
 export const Intersection = {
+  rayBox: (ray: Ray, box: BoundingBox): IntersectionType => {
+    return rayBoxIntersects(ray.position, ray.direction, box.min, box.max)
+      ? IntersectionType.Intersects
+      : IntersectionType.Disjoint
+  },
   boxBox: (a: BoundingBox, b: BoundingBox): IntersectionType => {
     return boxBoxIntersection(a.min, a.max, b.min, b.max)
   },

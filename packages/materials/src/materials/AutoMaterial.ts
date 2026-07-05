@@ -229,8 +229,8 @@
 //       this.parameters.CameraPosition = tempMat4.getTranslation(this.parameters.CameraPosition)
 //       this.parameters.CameraDirection = tempMat4.getForward(this.parameters.CameraDirection)
 //     } else {
-//       this.parameters.CameraPosition = Vec3.clone(Vec3.Zero)
-//       this.parameters.CameraDirection = Vec3.clone(Vec3.NegativeUnitZ)
+//       this.parameters.CameraPosition = Vec3.copy(Vec3.Zero)
+//       this.parameters.CameraDirection = Vec3.copy(Vec3.NegativeUnitZ)
 //     }
 //   }
 

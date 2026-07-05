@@ -22,23 +22,28 @@ export class Loader implements AssetLoader {
 
     const dds = parse(response.body)
     const format = surfaceFormatFromDXGI(dds.format)
-    // console.log(url, format, dds)
-    if (!context.content.device.capabilities.isFormatSupported(format)) {
-      throw new Error(`Surface format ${format} is not supported by the device capabilities.`)
+
+    if (format == null || !context.content.device.capabilities.isFormatSupported(format)) {
+      throw new Error(`Surface format ${format} (${dds.format}) is not supported by the device capabilities.`)
+    }
+
+    if (!dds.images?.length) {
+      throw new Error(`DDS file contains no image data.`)
+    }
+
+    if (dds.isCubemap && dds.images.some((level) => level.faces.length !== 6)) {
+      throw new Error(`DDS cubemap file contains a mip level with less than 6 faces.`)
     }
 
     const options: AcquireTextureOptions = {
       key: url,
       name: url,
-      type: 'Texture2D',
+      type: dds.isCubemap ? 'TextureCube' : dds.isVolume ? 'Texture3D' : 'Texture2D',
       width: dds.width,
       height: dds.height,
       generateMipmap: false,
       mipLevelCount: dds.images.length,
       format: format,
-    }
-    if (dds.isCubemap) {
-      options.type = 'TextureCube'
     }
 
     const levels: Array<Array<CompressedFaceData>> = []

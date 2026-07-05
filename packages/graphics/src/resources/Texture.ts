@@ -253,7 +253,30 @@ export abstract class Texture implements ReferenceCounted {
    */
   public abstract setDataFromSource(source: TextureSourceOption): void
 
+  /**
+   * Reads the texture data as a typed array. The type of the array is determined by the texture format.
+   *
+   * @param x
+   * @param y
+   * @param width
+   * @param height
+   */
   public abstract readPixels(x?: number, y?: number, width?: number, height?: number): Promise<TypedArray>
+
+  /**
+   * Reads the texture as uint8clamped array. This is useful for creating an ImageData object from the texture data.
+   *
+   * @param x
+   * @param y
+   * @param width
+   * @param height
+   */
+  public abstract readPixelData(
+    x?: number,
+    y?: number,
+    width?: number,
+    height?: number,
+  ): Promise<Uint8ClampedArray<ArrayBuffer>>
 
   protected bindSource(source: TextureSource) {
     this.unbindSource()

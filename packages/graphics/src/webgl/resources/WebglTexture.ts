@@ -137,6 +137,15 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
     width: number = this.width,
     height: number = this.height,
   ): Promise<TypedArray> {
+    return this.device.readPixels(this, x, y, width, height) as any
+  }
+
+  public async readPixelData(
+    x: number = 0,
+    y: number = 0,
+    width: number = this.width,
+    height: number = this.height,
+  ): Promise<Uint8ClampedArray<ArrayBuffer>> {
     return this.device.readPixels(this, x, y, width, height)
   }
 

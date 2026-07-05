@@ -217,7 +217,7 @@ export class AnimationChannelSampler {
         return
       }
     }
-    Vec3.clone(sample0.value, out)
+    Vec3.copy(sample0.value, out)
   }
 
   private sampleVec4(time: number, channel: AnimationChannel<IVec4>, out: IVec4) {

@@ -170,16 +170,32 @@ export function parse(buffer: ArrayBuffer) {
   const reader = new BinaryReader(buffer)
   const header = readHeader(reader)
   const data = reader.slice(reader.remaining)
-  const isCubemap = !!(header.Caps2 & DDS_CUBEMAP)
+
   const isDx10 = header.PixelFormat.FourCC === 'DX10'
   const format = isDx10 ? header.DxgiFormat : getDXGIFormat(header.PixelFormat)
+  if (format === DXGI_FORMAT.DXGI_FORMAT_UNKNOWN) {
+    throw new Error('Unsupported DDS format')
+  }
+
+  let isVolume = false
+  let isCubemap = false
+  let is1D = false
+  if (isDx10) {
+    is1D = header.ResourceDimension === D3D10_RESOURCE_DIMENSION_TEXTURE1D
+    isVolume = header.ResourceDimension === D3D10_RESOURCE_DIMENSION_TEXTURE3D
+    isCubemap = (header.MiscFlag & D3D11_RESOURCE_MISC_TEXTURECUBE) !== 0
+  } else {
+    isVolume = (header.Caps2 & DDSCAPS2_VOLUME) !== 0
+    isCubemap = (header.Caps2 & DDSCAPS2_CUBEMAP) !== 0
+  }
+
   const images = readImages({
     width: header.Width,
     height: header.Height,
-    depth: header.Depth || 1,
+    depth: Math.max(1, header.Depth),
     data: data,
     arraySize: isCubemap ? 6 : 1,
-    mipCount: header.MipMapCount,
+    mipCount: Math.max(1, header.MipMapCount),
     format: format,
   })
   return {
@@ -188,7 +204,9 @@ export function parse(buffer: ArrayBuffer) {
     height: header.Height,
     depth: header.Depth,
     format,
+    isVolume,
     isCubemap,
+    is1D,
     images,
   }
 }
@@ -521,19 +539,58 @@ function getBitsPerPixel(fmt: DXGI_FORMAT) {
   }
 }
 
-const DDS_CUBEMAP = 0x00000200 // DDSCAPS2_CUBEMAP
-const DDS_FOURCC = 0x00000004 // DDPF_FOURCC
-const DDS_RGB = 0x00000040 // DDPF_RGB
-const DDS_LUMINANCE = 0x00020000 // DDPF_LUMINANCE
-const DDS_ALPHA = 0x00000002 // DDPF_ALPHA
-const DDS_BUMPDUDV = 0x00080000 // DDPF_BUMPDUDV
+const DDSD_CAPS = 0x00000001 // required — Caps field valid
+const DDSD_HEIGHT = 0x00000002 // required — Height valid
+const DDSD_WIDTH = 0x00000004 // required — Width valid
+const DDSD_PITCH = 0x00000008 // PitchOrLinearSize is pitch (uncompressed)
+const DDSD_PIXELFORMAT = 0x00001000 // required — PixelFormat valid
+const DDSD_MIPMAPCOUNT = 0x00020000 // MipMapCount valid
+const DDSD_LINEARSIZE = 0x00080000 // PitchOrLinearSize is total size (compressed)
+const DDSD_DEPTH = 0x00800000 // Depth valid (volume texture)
+
+// pixel format flags
+const DDPF_ALPHAPIXELS = 0x00000001 // RGB data has alpha channel (ABitMask valid)
+const DDPF_ALPHA = 0x00000002 // alpha-only data; RGBBitCount = alpha bits
+const DDPF_FOURCC = 0x00000004 // FourCC valid (compressed or DX10 extension)
+const DDPF_PALETTEINDEXED4 = 0x00000008 // legacy 4-bit palette
+const DDPF_PALETTEINDEXED8 = 0x00000020 // legacy 8-bit palette
+const DDPF_RGB = 0x00000040 // uncompressed RGB; bit masks valid
+const DDPF_YUV = 0x00000200 // YUV uncompressed; masks map to YUV channels
+const DDPF_LUMINANCE = 0x00020000 // single-channel luminance; RBitMask = lum bits
+const DDPF_BUMPDUDV = 0x00080000 // signed (du, dv) bump format
+const DDPF_BUMPLUMINANCE = 0x00040000 // bump with luminance (rare, legacy)
+
+//
+const DDSCAPS_COMPLEX = 0x00000008 // has more than one surface (mips/cube/volume)
+const DDSCAPS_TEXTURE = 0x00001000 // required
+const DDSCAPS_MIPMAP = 0x00400000 // mip chain present
+
+//
+const DDSCAPS2_CUBEMAP = 0x00000200
+const DDSCAPS2_CUBEMAP_POSITIVEX = 0x00000400
+const DDSCAPS2_CUBEMAP_NEGATIVEX = 0x00000800
+const DDSCAPS2_CUBEMAP_POSITIVEY = 0x00001000
+const DDSCAPS2_CUBEMAP_NEGATIVEY = 0x00002000
+const DDSCAPS2_CUBEMAP_POSITIVEZ = 0x00004000
+const DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x00008000
+const DDSCAPS2_CUBEMAP_ALLFACES = 0x0000fc00 // OR of all six face bits
+const DDSCAPS2_VOLUME = 0x00200000 // 3D texture
+
+// resource dimension
+const D3D10_RESOURCE_DIMENSION_UNKNOWN = 0
+const D3D10_RESOURCE_DIMENSION_BUFFER = 1
+const D3D10_RESOURCE_DIMENSION_TEXTURE1D = 2
+const D3D10_RESOURCE_DIMENSION_TEXTURE2D = 3
+const D3D10_RESOURCE_DIMENSION_TEXTURE3D = 4
+
+const D3D11_RESOURCE_MISC_TEXTURECUBE = 0x00000004 // arraySize is N cubes; total faces = ArraySize * 6
 
 function isBitmask(ddpf: PixelFormat, r: number, g: number, b: number, a: number) {
   return ddpf.RBitMask === r && ddpf.GBitMask === g && ddpf.BBitMask === b && ddpf.ABitMask === a
 }
 
 function getDXGIFormat(ddpf: PixelFormat): DXGI_FORMAT {
-  if (ddpf.Flags & DDS_RGB) {
+  if (ddpf.Flags & DDPF_RGB) {
     // Note that sRGB formats are written using the "DX10" extended header
 
     switch (ddpf.RGBBitCount) {
@@ -618,7 +675,7 @@ function getDXGIFormat(ddpf: PixelFormat): DXGI_FORMAT {
       default:
         return DXGI_FORMAT.DXGI_FORMAT_UNKNOWN
     }
-  } else if (ddpf.Flags & DDS_LUMINANCE) {
+  } else if (ddpf.Flags & DDPF_LUMINANCE) {
     switch (ddpf.RGBBitCount) {
       case 16:
         if (isBitmask(ddpf, 0xffff, 0, 0, 0)) {
@@ -644,11 +701,11 @@ function getDXGIFormat(ddpf: PixelFormat): DXGI_FORMAT {
       default:
         return DXGI_FORMAT.DXGI_FORMAT_UNKNOWN
     }
-  } else if (ddpf.Flags & DDS_ALPHA) {
+  } else if (ddpf.Flags & DDPF_ALPHA) {
     if (8 == ddpf.RGBBitCount) {
       return DXGI_FORMAT.DXGI_FORMAT_A8_UNORM
     }
-  } else if (ddpf.Flags & DDS_BUMPDUDV) {
+  } else if (ddpf.Flags & DDPF_BUMPDUDV) {
     switch (ddpf.RGBBitCount) {
       case 32:
         if (isBitmask(ddpf, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000)) {
@@ -672,7 +729,7 @@ function getDXGIFormat(ddpf: PixelFormat): DXGI_FORMAT {
     }
 
     // No DXGI format maps to DDPF_BUMPLUMINANCE aka D3DFMT_L6V5U5, D3DFMT_X8L8V8U8
-  } else if (ddpf.Flags & DDS_FOURCC) {
+  } else if (ddpf.Flags & DDPF_FOURCC) {
     if ('DXT1' == ddpf.FourCC) {
       return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM
     }

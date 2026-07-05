@@ -116,9 +116,9 @@ export class SpaceBasis {
   public readonly toViewSpace: Mat4
 
   public constructor(definition: SpaceDefinition) {
-    this.up = Vec3.clone(definition.up)
-    this.right = Vec3.clone(definition.right)
-    this.forward = Vec3.clone(definition.forward)
+    this.up = Vec3.copy(definition.up)
+    this.right = Vec3.copy(definition.right)
+    this.forward = Vec3.copy(definition.forward)
 
     this.down = Vec3.negate(this.up)
     this.left = Vec3.negate(this.right)

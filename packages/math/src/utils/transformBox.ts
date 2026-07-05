@@ -35,6 +35,6 @@ export function transformBox(box: BoundingBox, transform: Mat4, out: BoundingBox
   Vec3.min(min, corner, outMin)
   Vec3.max(max, corner, outMax)
 
-  Vec3.clone(outMin, out.min)
-  Vec3.clone(outMax, out.max)
+  Vec3.copy(outMin, out.min)
+  Vec3.copy(outMax, out.max)
 }
