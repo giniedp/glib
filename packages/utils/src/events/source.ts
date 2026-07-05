@@ -1,13 +1,14 @@
-import { EventChannel } from './channel'
+import { EventChannel, EventType } from './channel'
 
-export function eventSource<T>(name?: string) {
-  return new EventSource<T>(name)
+export function eventSource<T>(name?: EventType<T>, capture?: (type: EventType<any>, arg: any) => void) {
+  return new EventSource<T>(name, capture)
 }
 
 export class EventSource<T> extends EventChannel<T> {
-  public constructor(name?: string) {
+  public constructor(type?: EventType<T>, capture?: (type: EventType<any>, arg: any) => void) {
     super()
-    this.name = name || 'EventSource'
+    this.type = type ?? ('EventSource' as any)
+    this.capture = capture
   }
 
   protected processPending(): void {
@@ -30,9 +31,9 @@ export class ValueSource<T> extends EventChannel<T> {
   private value: T | undefined
   private hasValue = false
 
-  public constructor(name?: string, options?: { initialValue: T }) {
+  public constructor(type?: EventType<T>, options?: { initialValue: T }) {
     super()
-    this.name = name ?? 'ValueSource'
+    this.type = type ?? ('ValueSource' as any)
     if (options) {
       this.value = options.initialValue
       this.hasValue = true

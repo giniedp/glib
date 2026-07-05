@@ -1,3 +1,4 @@
+export * from './bus'
 export * from './channel'
 export * from './emitter'
 export * from './source'
