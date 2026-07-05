@@ -22,13 +22,18 @@ export class PixelatePass implements RenderPass {
   public aspect = 1
   public gap = 0
 
+  private device: Device
   private pixelate: PixelateShader
   private source: FrameResource
   private target: FrameResource
   private active = false
 
   public constructor(device: Device, options: PixelatePassOptions = {}) {
-    this.pixelate = new PixelateShader(device)
+    this.device = device
+    if (device.isReady) {
+      this.pixelate = new PixelateShader(device)
+    }
+
     this.enabled = options.enabled ?? this.enabled
     this.size = options.size ?? this.size
     this.corner = options.corner ?? this.corner
@@ -36,7 +41,9 @@ export class PixelatePass implements RenderPass {
     this.aspect = options.aspect ?? this.aspect
     this.gap = options.gap ?? this.gap
   }
+
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
+    this.pixelate ||= new PixelateShader(this.device)
     this.active = this.enabled && this.pixelate.isReady
 
     if (this.active) {

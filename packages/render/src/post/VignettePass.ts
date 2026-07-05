@@ -30,13 +30,17 @@ export class VignettePass implements RenderPass {
   public color = Vec3.create(0, 0, 0)
   public enabled = true
 
+  private device: Device
   private shader: VignetteShader
   private source: FrameResource
   private target: FrameResource
   private active = false
 
   public constructor(device: Device, options: VignettePassOptions = {}) {
-    this.shader = new VignetteShader(device)
+    this.device = device
+    if (device.isReady) {
+      this.shader = new VignetteShader(device)
+    }
     this.enabled = options.enabled ?? this.enabled
     this.centerX = options.centerX ?? this.centerX
     this.centerY = options.centerY ?? this.centerY
@@ -49,7 +53,9 @@ export class VignettePass implements RenderPass {
       this.color.initFrom(options.color)
     }
   }
+
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
+    this.shader ||= new VignetteShader(this.device)
     this.active = this.enabled && this.shader.isReady
 
     if (this.active) {

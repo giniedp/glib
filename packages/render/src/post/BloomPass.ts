@@ -23,6 +23,7 @@ export class BloomPass implements RenderPass {
   public iterations = 5
   public resolutionScale = 0.25
 
+  private device: Device
   private effect: BloomShader
   private source: FrameResource
   private target: FrameResource
@@ -33,7 +34,11 @@ export class BloomPass implements RenderPass {
   private active = false
 
   public constructor(device: Device, options: BloomPassOptions = {}) {
-    this.effect = new BloomShader(device)
+    this.device = device
+    if (device.isReady) {
+      this.effect = new BloomShader(device)
+    }
+
     this.enabled = options.enabled ?? this.enabled
     this.gaussSigma = options.gaussSigma ?? this.gaussSigma
     this.glowCut = options.glowCut ?? this.glowCut
@@ -43,6 +48,7 @@ export class BloomPass implements RenderPass {
   }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
+    this.effect ||= new BloomShader(this.device)
     this.active = this.enabled && this.effect.isReady
     if (!this.active) {
       this.source = null
