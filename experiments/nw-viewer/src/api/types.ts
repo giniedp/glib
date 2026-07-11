@@ -365,6 +365,11 @@ export interface ViewerTimeOfDayComponent {
   preset: TimeOfDay
 }
 
+export interface ViewerUnknownComponent {
+  type: string
+  data: any
+}
+
 export type ViewerComponent =
   | ViewerMeshComponent
   | ViewerSpawnerComponent
@@ -373,6 +378,7 @@ export type ViewerComponent =
   | ViewerAreaSpawnerComponent
   | ViewerLightComponent
   | ViewerTimeOfDayComponent
+  | ViewerUnknownComponent
 
 export function isViewerMeshComponent(component: any): component is ViewerMeshComponent {
   return component.type === ComponentTypes.MeshComponentName

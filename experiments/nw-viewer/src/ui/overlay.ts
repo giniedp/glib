@@ -49,13 +49,13 @@ type OverlayComponentAttrs = {
 const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
   let left = false
   let right = false
-  let levelOptions: LevelLoadOption[] = []
+  let levelOptions: Record<string, LevelLoadOption[]> = {}
   const registry = uiRegistry()
   return {
     oninit: ({ attrs: { viewer } }) => {
-      levelOptions = viewer.levelOptions || []
+      levelOptions = viewer.levelOptions || {}
       viewer.onLevelOptionsLoaded.add(() => {
-        levelOptions = viewer.levelOptions || []
+        levelOptions = viewer.levelOptions || {}
         redrawUi()
       })
     },
@@ -244,10 +244,13 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
   }
 }
 
-const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: LevelLoadOption[] }> = () => {
+const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: Record<string, LevelLoadOption[]> }> = () => {
   let dialogRef: HTMLDialogElement
   return {
     view: ({ attrs: { viewer, options } }) => {
+      if (viewer.mode === 'model' || !options || !Object.keys(options).length) {
+        return null
+      }
       return [
         uiButton(
           {
@@ -259,7 +262,15 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: LevelLoadOp
         ),
         uiDialog(
           {
-            oncreate: ({ dom }) => (dialogRef = dom as HTMLDialogElement),
+            oncreate: ({ dom }) => {
+              dialogRef = dom as HTMLDialogElement
+              setTimeout(() => {
+                if (!viewer.mode) {
+                  dialogRef.showModal()
+                  redrawUi()
+                }
+              }, 1000)
+            },
             onremove: () => (dialogRef = null),
           },
           [
@@ -272,7 +283,7 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: LevelLoadOp
                   },
                   [
                     uiBarEnd({}, uiButton({ large: true, square: true, onclick: () => dialogRef?.close() }, '×')),
-                    h('div.twk-px-2', {}, 'Texture'),
+                    h('div.twk-px-2', {}, 'Levels'),
                   ],
                 ),
                 footer: uiBar({}, [
@@ -286,15 +297,27 @@ const LoadLevelButton: ClosureComponent<{ viewer: NwViewer; options: LevelLoadOp
                   'div.twk-p-4.twk-gap-1.twk-flex',
                   { style: { minHeight: '10rem', maxHeight: '50vh', overflow: 'auto' } },
                   [
-                    options.map((option) => {
-                      return uiButton(
-                        {
-                          onclick: () => {
-                            dialogRef.close()
-                            viewer.onLevelSelected(option.value)
-                          },
-                        },
-                        [option.label],
+                    Object.entries(options).map(([title, options]) => {
+                      return uiGroup(
+                        { title, collapsible: true, collapsed: true },
+                        options.map((option) => {
+                          return uiButton(
+                            {
+                              class: 'twk-text-start twk-bar',
+                              onclick: () => {
+                                dialogRef.close()
+                                viewer.onLevelSelected(option.value)
+                              },
+                            },
+                            [
+                              option.label,
+                              h('span.twk-bar-end.twk-color-muted', {}, [
+                                option.isOpenWorld ? 'Open World' : '',
+                                option.isOpenWorld || title === 'raid' || title.match(/battle/) ? '⚠️' : '',
+                              ]),
+                            ],
+                          )
+                        }),
                       )
                     }),
                   ],

@@ -14,7 +14,7 @@ export class ContentService extends GameSystem {
 
   private modelCache = new Map<string, Promise<Model>>()
 
-  public nwbtUrl: string = 'http://localhost:8000'
+  public nwbtUrl: string = '' // window.location.origin
 
   public get nwbtFileUrl() {
     return `${this.nwbtUrl}/files/`
@@ -200,7 +200,12 @@ function modelSource(modelFile: string, materialFile: string, rootUrl: string): 
     case '.cgf':
     case '.cdf':
     case '.caf':
+    case '.dynamicslice':
       modelFile = modelFile + '.glb'
+      break
+    case '.gtlf':
+    case '.glb':
+      // ok
       break
     default:
       console.warn('Unknown model type', modelFile)
@@ -222,9 +227,10 @@ function modelSource(modelFile: string, materialFile: string, rootUrl: string): 
 }
 
 function extName(url: string) {
-  const index = url.lastIndexOf('.')
+  const path = new URL(url, location.origin).pathname
+  const index = path.lastIndexOf('.')
   if (index === -1) {
     return null
   }
-  return url.substring(index)
+  return path.substring(index)
 }

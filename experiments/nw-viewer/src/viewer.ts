@@ -42,6 +42,8 @@ export interface NwViewerOptions {
 export interface LevelLoadOption {
   value: string
   label: string
+  isOpenWorld: boolean
+  category: string
 }
 
 export class NwViewer extends BasicGame {
@@ -49,6 +51,7 @@ export class NwViewer extends BasicGame {
   public static readonly onLevelOptionsLoaded = brand<EventType<NwViewer>>(Symbol('levelOptions'))
 
   public camera: CameraComponent
+  public mode?: 'level' | 'model' | 'image' | 'material' | 'slice' = null
 
   public deviceStats: DeviceStats
   public schedulerStats: SchedulerStats
@@ -56,7 +59,8 @@ export class NwViewer extends BasicGame {
   public renderStats: RendererStats
   public scheduler: SchedulerSystem
   public levelSelection: string
-  public levelOptions: LevelLoadOption[] = []
+  public levelOptions: Record<string, LevelLoadOption[]> = {}
+
   public logTag = lfmt.badge('#4E79A7', 'NwViewer')
 
   public onRaySelection = this.events.channel(NwViewer.onRaySelection)
@@ -143,6 +147,7 @@ export class NwViewer extends BasicGame {
           type: 'box',
           color: Color.DarkMagenta.toVec3(),
           layer: DebugLayer.Selection,
+          instances: [],
         }),
       ],
     })
@@ -225,6 +230,7 @@ export class NwViewer extends BasicGame {
   }
 
   public loadLevel(name: string) {
+    this.mode = 'level'
     this.levelSelection = name
     this.world.getSystem(LevelSystem).loadLevel(name)
     redrawUi()
@@ -242,26 +248,63 @@ export class NwViewer extends BasicGame {
 
   private async loadLevelLoadOptions() {
     const levels = await this.world.getSystem(ContentService).fetchTypedRequest(getLevelListUrl())
-    const options: LevelLoadOption[] = []
-    for (const level of levels.coatlicues) {
-      if (!level.maps.length) {
-        options.push({
-          value: `${level.name}?position=1024,1024,256,0`,
-          label: level.name,
-        })
+    const params = new URLSearchParams()
+    const options: Record<string, LevelLoadOption[]> = {}
+
+    const openWorld = 'newworld_vitaeeterna'
+    function categorize(nameOrId: string, subName?: string) {
+      let result = nameOrId.match(/_(arena|battleroyale|ctf|dungeon|opr|raid|trial|quest)/)?.[1]
+      result ||= nameOrId.match(/^(arena|battleroyale|dungeon|capturetheflag|outpostrush|raid|trial|quest)/i)?.[1]
+      result ||= subName?.match(/(ctf)/i)?.[1]
+      result ||= 'other'
+      result = result.toLowerCase()
+      if (result === 'capturetheflag') {
+        result = 'ctf'
       }
+      if (result === 'outpostrush') {
+        result = 'opr'
+      }
+      return result
+    }
+
+    for (const level of levels.coatlicues) {
+      if (!!level.maps.length) {
+        continue
+      }
+
+      params.set('level', level.name)
+      params.set('x', '1024')
+      params.set('y', '1024')
+      params.set('z', '256')
+      params.set('w', '0')
+      const category = categorize(level.name)
+      options[category] ||= []
+      options[category].push({
+        value: params.toString(),
+        label: level.name,
+        isOpenWorld: level.level === openWorld,
+        category,
+      })
     }
 
     for (const level of levels.coatlicues) {
       if (!level.maps.length) {
         continue
       }
-      const mapCount = level.maps.length
       for (const map of level.maps) {
-        const position = map.teamTeleportData.split('+')[0] || '1024,1024,256,0'
-        options.push({
-          value: `${level.name}?position=${position}`,
-          label: mapCount > 1 ? `${level.name}: ${map.gameModeMapId}` : map.gameModeMapId,
+        const position = (map.teamTeleportData.split('+')[0] || '1024,1024,256,0').split(',').map(Number)
+        params.set('level', level.name)
+        params.set('x', String(position[0] || 0))
+        params.set('y', String(position[1] || 0))
+        params.set('z', String(position[2] || 0))
+        params.set('w', String(position[3] || 0))
+        const category = categorize(map.gameModeMapId, level.name)
+        options[category] ||= []
+        options[category].push({
+          value: params.toString(),
+          label: map.gameModeMapId,
+          isOpenWorld: level.level === openWorld,
+          category: category,
         })
       }
     }
@@ -279,43 +322,59 @@ export class NwViewer extends BasicGame {
     setInterval(() => {
       const t = camera.world.getTranslation(Vec3.$0)
       const r = camera.entity.component(WASDComponent).getRotationHorizontal()
-
-      const position = [t.x, t.y, t.z, r * RAD_TO_DEGREE].map((it) => it.toFixed(1)).join(',')
       const params = new URLSearchParams(window.location.search)
-      params.delete('position')
-      const existing = params.toString()
-      const query = (existing ? existing + '&' : '') + 'position=' + position
+      params.set('x', t.x.toFixed(1))
+      params.set('y', t.y.toFixed(1))
+      params.set('z', t.z.toFixed(1))
+      params.set('w', (r * RAD_TO_DEGREE).toFixed(1))
+      const query = params.toString()
       window.history.replaceState({}, '', window.location.pathname + '?' + query)
     }, 1000)
   }
 
   public onLevelSelected(value: string) {
-    window.location.href = value
+    const url = new URL(window.location.href)
+    const params = new URLSearchParams(value)
+    params.forEach((value, key) => {
+      url.searchParams.set(key, value)
+    })
+    window.location.href = url.toString()
   }
 
   public loadLevelFromUrl(value: string) {
-    const url = new URL(value, window.location.href)
-    const level = url.pathname.split('/').filter((it) => !!it)[0]
-    const positionParam = new URLSearchParams(url.search).get('position') || '1024,1024,256,0'
-    const position = positionParam.split(',').map((it) => parseFloat(it))
-    if (level) {
-      this.loadLevel(level)
+    const params = new URL(value, window.location.href).searchParams
+    if (params.has('level')) {
+      this.loadLevel(params.get('level'))
     }
-    if (position.length >= 3) {
-      this.teleport(position[0] || 0, position[1] || 0, position[2] || 0, (position[3] || 0) * DEGREE_TO_RAD)
-    }
+    this.teleport(
+      Number(params.get('x') ?? 1024) || 0,
+      Number(params.get('y') ?? 1024) || 0,
+      Number(params.get('z') ?? 256) || 0,
+      (Number(params.get('w') ?? 0) || 0) * DEGREE_TO_RAD,
+    )
   }
 
   public loadModel(model: string, material?: string, transform?: number[]) {
+    this.mode = 'model'
     this.world.getSystem(LevelSystem).loadModel(model, material, transform)
     this.teleport(0, 0, 0)
+    redrawUi()
+  }
+
+  public loadMaterial(asset: string) {
+    this.mode = 'material'
+    this.world.getSystem(LevelSystem).loadMaterial(asset)
+    this.teleport(0, 0, 0)
+    redrawUi()
   }
 
   public loadImage(image: string) {
-    //
+    this.mode = 'model'
+    redrawUi()
   }
 
   public loadSlice(slice: string) {
-    //
+    this.mode = 'model'
+    redrawUi()
   }
 }

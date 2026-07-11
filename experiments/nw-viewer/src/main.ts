@@ -1,3 +1,5 @@
+import { NwImageViewer } from './image-viewer'
+import { NwMaterialViewer } from './material-viewer'
 import { NwViewer } from './viewer'
 
 const element = document.querySelector<HTMLDivElement>('#app')
@@ -6,19 +8,47 @@ const uiElement = document.createElement('div')
 
 element.append(canvas)
 element.append(uiElement)
-const viewer = new NwViewer({
-  element: uiElement,
-  canvas,
-})
-await viewer.run()
 
 const params = new URLSearchParams(location.search)
-if (params.has('model')) {
+
+if (params.has('image')) {
+  await bootImageViewer(params.get('image'))
+} else if (params.has('material')) {
+  const viewer = await bootViewer()
+  viewer.loadMaterial(params.get('material'))
+} else if (params.has('model')) {
+  const viewer = await bootViewer()
   viewer.loadModel(params.get('model'))
 } else if (params.has('level')) {
+  const viewer = await bootViewer()
   viewer.loadLevel(params.get('level'))
-} else if (params.has('image')) {
-  viewer.loadImage(params.get('image'))
-} else if (params.has('slice')) {
-  viewer.loadSlice(params.get('slice'))
+} else {
+  bootViewer()
+}
+
+async function bootImageViewer(image: string) {
+  const viewer = new NwImageViewer({
+    element: uiElement,
+    canvas,
+  })
+  await viewer.run()
+  viewer.load(image)
+}
+
+async function bootMaterialviewer(asset: string) {
+  const viewer = new NwMaterialViewer({
+    element: uiElement,
+    canvas,
+  })
+  await viewer.run()
+  viewer.load(asset)
+}
+
+async function bootViewer() {
+  const viewer = new NwViewer({
+    element: uiElement,
+    canvas,
+  })
+  await viewer.run()
+  return viewer
 }

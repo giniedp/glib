@@ -59,7 +59,7 @@ export class TerrainCompositeMaterial extends materialSchemaClass(Schema) {
       meta: options,
     })
 
-    const { attrs, params, texMaps, texMods, deform, shaderFlags } = util.resolve<PublicParams>(options?.properties)
+    const { attrs, params, texMaps, texMods, shaderFlags } = util.resolve<PublicParams>(options?.properties)
     const shaderConst = getShaderConstants(shaderFlags)
 
     this.layer = MaterialLayerMasks.Terrain

@@ -3,14 +3,26 @@ import {
   BoundsComponent,
   CameraComponent,
   MeshComponent,
+  ModelComponent,
   OccTree,
   SpatialRootComponent,
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent, type CreateEntityOptions } from '@gglib/ecs'
-import { Color, Mesh, planeGeometry, sphereGeometry, type Device } from '@gglib/graphics'
-import { BoundingSphere, Mat4, Vec3 } from '@gglib/math'
+import {
+  boxGeometry,
+  Color,
+  cylinderGeometry,
+  Geometry,
+  Material,
+  Mesh,
+  planeGeometry,
+  sphereGeometry,
+  type Device,
+  type MeshOptions,
+} from '@gglib/graphics'
+import { BoundingBox, BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { Renderer, type RenderContext } from '@gglib/render'
 import { lfmt } from '@gglib/utils'
 import { fetchTypedRequest, getLevelInfoUrl } from '../../api'
@@ -22,6 +34,7 @@ import { TerrainSystem } from '../terrain/TerrainSystem'
 import { levelEntityOptions } from './LevelComponent'
 import { TimeOfDay } from './TimeOfDay'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
+import { Model } from '@gglib/model'
 
 export class LevelSystem extends GameSystem {
   private content: ContentService
@@ -169,6 +182,110 @@ export class LevelSystem extends GameSystem {
         // must be next frame, when bounds are updated
         this.handleModelLoadeed(e, wasd)
       })
+    })
+
+    this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
+    // this.skyEntity = this.game.createEntity(skyEntity(this.entity))
+    this.gizmoEntity = this.game.createEntity(createGizmoGrid(this.entity, this.renderer.device))
+  }
+
+  public async loadMaterial(assetUrl: string) {
+    this.unload()
+    if (!assetUrl) {
+      return
+    }
+
+    const camera = this.game.view.camera as CameraComponent
+    const wasd = camera.entity.component(WASDComponent)
+    wasd.orbitMode = true
+    wasd.radiusMax = 1000
+    wasd.targetRadius = 3
+    wasd.targetVertical = 45 * DEGREE_TO_RAD
+
+    const content = this.content
+    const asset = await content.loadAsset(assetUrl)
+    const materials: Material[] = []
+    for (let i = 0; i < asset.materialCount; i++) {
+      const options = await asset.loadMaterial(i, {
+        content: content.loader,
+        baseUrl: content.nwbtFileUrl,
+      })
+      const material = content.loader.createMaterial(options)
+      materials.push(material)
+    }
+
+    const shapes = ['sphere', 'box', 'cylinder'] as const
+    const box = new BoundingBox()
+    const sphere = new BoundingSphere()
+    const meshOptions: MeshOptions = {
+      boundingBox: box,
+      boundingSphere: sphere,
+      materials,
+      partImports: [],
+    }
+    for (let y = 0; y < shapes.length; y++) {
+      for (let x = 0; x < materials.length; x++) {
+        const scale = 2
+        const transform = Mat4.createTranslationXYZ((x - Math.max(0, materials.length - 1) / 2) * scale, y * scale, 0)
+        let geometry: Geometry
+        switch (shapes[y]) {
+          case 'box': {
+            geometry = boxGeometry(this.renderer.device, {
+              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture']],
+              vertexTransform: transform,
+              size: 2,
+            })
+            break
+          }
+          case 'sphere': {
+            geometry = sphereGeometry(this.renderer.device, {
+              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture']],
+              vertexTransform: transform,
+            })
+            break
+          }
+          case 'cylinder': {
+            geometry = cylinderGeometry(this.renderer.device, {
+              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture']],
+              vertexTransform: transform,
+              closeTop: true,
+              closeBottom: true,
+            })
+            break
+          }
+        }
+        box.merge(geometry.boundingBox)
+        sphere.mergeSphere(geometry.boundingSphere)
+        meshOptions.partImports.push({
+          geometry,
+          materialIndex: x,
+        })
+      }
+    }
+
+    const mesh = new Mesh(this.renderer.device, meshOptions)
+    this.entity = this.game.createEntity({
+      components: [
+        new SpatialRootComponent({
+          instance: OccTree.create({
+            min: Vec3.create(-2048, -2048, -2048),
+            max: Vec3.create(2048, 2048, 2048),
+            leafLevel: 5,
+            looseFactor: 2,
+          }),
+        }),
+        new BoundsComponent(),
+        new ModelComponent({
+          model: new Model(this.renderer.device, {
+            meshes: [mesh],
+          }),
+        }),
+      ],
+      parent: this.game.scene,
+      transform: new TransformComponent({
+        keepWorld: true,
+        world: Mat4.createIdentity(),
+      }),
     })
 
     this.skyEntity = this.game.createEntity(createSkySphere(this.entity, this.renderer.device))
