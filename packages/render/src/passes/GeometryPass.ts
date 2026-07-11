@@ -65,11 +65,15 @@ export class GeometryPass implements RenderPass {
 
     // Resolve intermediate results for next pass
     pass.setRenderTarget(0, this.msaaColor.texture, 0, 0, this.outColor.texture)
-    pass.setRenderTarget(1, this.linearDepthMsaa.texture, 0, 0, this.linearDepthRes.texture)
+    if (this.enableLinearDepthMrt) {
+      pass.setRenderTarget(1, this.linearDepthMsaa.texture, 0, 0, this.linearDepthRes.texture)
+    }
     pass.setDepthTarget(null)
     pass.resolve()
     pass.setRenderTarget(0, this.msaaColor.texture)
-    pass.setRenderTarget(1, this.linearDepthMsaa.texture)
+    if (this.enableLinearDepthMrt) {
+      pass.setRenderTarget(1, this.linearDepthMsaa.texture)
+    }
     pass.setDepthTarget(this.msaaDepth.texture)
 
     ctx.renderInputs.set(CommonInputs.View.SceneColorMap, this.outColor.texture)
@@ -85,7 +89,9 @@ export class GeometryPass implements RenderPass {
 
     // Resolve MSAA and copy to output
     pass.setRenderTarget(0, this.msaaColor.texture, 0, 0, this.outColor.texture)
-    pass.setRenderTarget(1, this.linearDepthMsaa.texture, 0, 0, this.linearDepthRes.texture)
+    if (this.enableLinearDepthMrt) {
+      pass.setRenderTarget(1, this.linearDepthMsaa.texture, 0, 0, this.linearDepthRes.texture)
+    }
     pass.setDepthTarget(null)
     pass.resolve()
     pass.flush()
