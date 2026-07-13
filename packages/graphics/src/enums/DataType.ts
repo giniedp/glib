@@ -1,6 +1,7 @@
 import { GLConst as gl } from './GLConst'
 
 export type DataType = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32' | 'float16'
+export type DataTypeViewWriter = (view: DataView, byteOffset: number, value: number) => void
 
 const dataTypeMap: Record<DataType, DataType> = {
   int8: 'int8',
@@ -11,6 +12,17 @@ const dataTypeMap: Record<DataType, DataType> = {
   uint32: 'uint32',
   float32: 'float32',
   float16: 'float16',
+}
+
+const dataTypeViewWriterMap: Record<DataType, DataTypeViewWriter> = {
+  int8: (view, bo, v) => view.setInt8(bo, v),
+  uint8: (view, bo, v) => view.setUint8(bo, v),
+  int16: (view, bo, v) => view.setInt16(bo, v, true),
+  uint16: (view, bo, v) => view.setUint16(bo, v, true),
+  int32: (view, bo, v) => view.setInt32(bo, v, true),
+  uint32: (view, bo, v) => view.setUint16(bo, v, true),
+  float32: (view, bo, v) => view.setFloat32(bo, v, true),
+  float16: (view, bo, v) => view.setFloat16(bo, v, true),
 }
 
 export function dataType(type: DataType): DataType {
@@ -117,4 +129,8 @@ export function arrayTypeToDataType(array: TypedArray): DataType {
     }
   }
   throw new Error(`Unsupported array type: ${array.constructor.name}`)
+}
+
+export function dataTypeViewWriter(type: DataType): DataTypeViewWriter {
+  return dataTypeViewWriterMap[type]
 }

@@ -16,16 +16,14 @@ describe('Graphics.GeometryBuilderChannel', () => {
         },
         vertexLayout: {
           position: {
-            elementCount: 3,
-            normalized: false,
             byteOffset: 0,
             elementType: 'float32',
+            elementCount: 3,
           },
           normal: {
-            elementCount: 3,
-            normalized: false,
             byteOffset: 3 * dataTypeToSize('float32'),
             elementType: 'float32',
+            elementCount: 3,
           },
         },
       },
@@ -36,10 +34,9 @@ describe('Graphics.GeometryBuilderChannel', () => {
         },
         vertexLayout: {
           texture: {
-            elementCount: 2,
-            normalized: false,
             byteOffset: 0,
             elementType: 'float32',
+            elementCount: 2,
           },
         },
       },

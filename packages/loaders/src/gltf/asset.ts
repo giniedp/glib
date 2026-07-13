@@ -96,9 +96,9 @@ export class GltfAssetContainer extends AssetContainer {
       meshes: [],
       animations: [],
       skins: [],
-      nodes: this.document.nodes.map((it) => JSON.parse(JSON.stringify(it))),
+      nodes: (this.document.nodes || []).map((it) => JSON.parse(JSON.stringify(it))),
       scene: this.document.scene,
-      scenes: this.document.scenes.map((it) => JSON.parse(JSON.stringify(it))),
+      scenes: (this.document.scenes || []).map((it) => JSON.parse(JSON.stringify(it))),
     })
 
     this.graph.assign(node, this.meshNode(this.document.scene), (model, mesh) => {
@@ -830,7 +830,6 @@ function createVertexBuffer(
         normalized: accessor.normalized || false,
         byteOffset: accessor.byteOffset || 0,
         elementType: elementType,
-        packed: false,
       }
     }
 

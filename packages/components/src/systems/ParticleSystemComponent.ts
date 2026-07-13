@@ -190,7 +190,13 @@ export class ParticlesWriter {
     corner: { type: 'uint16', offset: 0, elements: 2 },
     position: { type: 'float32', offset: 4, elements: 3 },
     velocity: { type: 'float32', offset: 16, elements: 3 },
-    random: { type: 'uint8', offset: 28, elements: 4, normalize: true, packed: true },
+    random: {
+      type: 'uint8',
+      offset: 28,
+      elements: 4,
+      normalize: true,
+      cpu: {},
+    },
     time: { type: 'float32', offset: 32, elements: 1 },
   }
 

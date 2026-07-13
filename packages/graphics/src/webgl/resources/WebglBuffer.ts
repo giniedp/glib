@@ -1,6 +1,6 @@
 import { eventSource } from '@gglib/utils'
-import { bufferTypeToWebGL, dataTypeToArrayType, type TypedArray } from '../../enums'
-import { Buffer, isPlainBufferData, PlainBufferData, type BufferOptions } from '../../resources'
+import { bufferTypeToWebGL, type TypedArray } from '../../enums'
+import { Buffer, isPlainBufferData, materializePlainBuffer, PlainBufferData, type BufferOptions } from '../../resources'
 import { WebglDevice } from '../WebglDevice'
 import type { WebglResource } from '../types'
 
@@ -61,8 +61,7 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     if (src instanceof ArrayBuffer) {
       src = new Uint8Array(src)
     } else if (isPlainBufferData(src)) {
-      const ArrayType = dataTypeToArrayType(src.type)
-      src = new ArrayType(src.elements)
+      src = materializePlainBuffer(src, this.vertexLayout)
     }
 
     const srcElementSize = ArrayBuffer.isView(src) ? src.BYTES_PER_ELEMENT : 1
@@ -91,8 +90,7 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     if (src instanceof ArrayBuffer) {
       src = new Uint8Array(src)
     } else if (isPlainBufferData(src)) {
-      const ArrayType = dataTypeToArrayType(src.type)
-      src = new ArrayType(src.elements)
+      src = materializePlainBuffer(src, this.vertexLayout)
     }
 
     const srcElementSize = ArrayBuffer.isView(src) ? src.BYTES_PER_ELEMENT : 1

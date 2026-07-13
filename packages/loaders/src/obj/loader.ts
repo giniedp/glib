@@ -1,11 +1,11 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, ResourceGraph, ResourceNode } from '@gglib/content'
 import {
-  createVertexLayout,
   GeometryBuilder,
   GeometryOptions,
   MaterialOptions,
   MeshOptions,
   TextureOptions,
+  vertexLayout,
 } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { ModelOptions } from '@gglib/model'
@@ -206,9 +206,9 @@ function buildGeometries(
 ): GeometryOptions[] {
   const builder = new GeometryBuilder({
     layout: [
-      createVertexLayout(['position', 'texture']),
-      createVertexLayout(['normal']),
-      createVertexLayout(['tangent', 'bitangent']),
+      vertexLayout(['position', 'texture']),
+      vertexLayout(['normal']),
+      vertexLayout(['tangent', 'bitangent']),
       // we abuse an attribute channel as metadata for a material id
       // so we can later split by material
       {
@@ -217,7 +217,6 @@ function buildGeometries(
           byteOffset: 0, // - and this
           normalized: false, // - and this
           elementType: 'float32', // - and this since we dont operate on this buffer
-          packed: false,
         },
       },
     ],

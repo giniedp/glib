@@ -179,8 +179,6 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
               byteOffset: 0,
               elementType: input.elementType,
               elementCount: input.elementCount,
-              normalized: false,
-              packed: false,
             },
           },
           data: new Float32Array(vertexCount * 4),

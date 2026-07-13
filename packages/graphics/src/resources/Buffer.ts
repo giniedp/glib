@@ -1,6 +1,13 @@
 import type { Device } from '../Device'
-import { type BufferType, type DataType, dataTypeToSize, type TypedArray } from '../enums'
-import { countBytes, type VertexLayout } from '../VertexLayout'
+import {
+  type BufferType,
+  type DataType,
+  dataTypeToArrayType,
+  dataTypeToSize,
+  dataTypeViewWriter,
+  type TypedArray,
+} from '../enums'
+import { countBytes, countElements, countElementsBefore, elementCpuFormat, type VertexLayout } from '../VertexLayout'
 
 /**
  * Constructor options for {@link Buffer}
@@ -244,4 +251,53 @@ export type PlainBufferData = {
 
 export function isPlainBufferData(data: any): data is PlainBufferData {
   return data && typeof data === 'object' && 'type' in data && 'elements' in data
+}
+
+export function materializePlainBuffer(src: PlainBufferData, layout?: VertexLayout) {
+  let matchesType = true
+
+  if (layout) {
+    for (const key in layout) {
+      if (src.type !== layout[key].elementType) {
+        matchesType = false
+        break
+      }
+    }
+  }
+
+  if (matchesType) {
+    const ArrayType = dataTypeToArrayType(src.type)
+    return new ArrayType(src.elements)
+  }
+
+  const elementStride = countElements(layout, 'cpu')
+  if (src.elements.length % elementStride != 0) {
+    throw new Error(`source data does not match the given layout`)
+  }
+
+  const vertexCount = src.elements.length / elementStride
+  const byteStride = countBytes(layout)
+  const data = new Uint8Array(vertexCount * byteStride)
+  const view = new DataView(data.buffer)
+  const elementOffsets: Record<string, number> = {}
+  for (const channel in layout) {
+    elementOffsets[channel] = countElementsBefore(layout, channel)
+  }
+
+  let byteOffset = 0
+  let elementOffset = 0
+  for (let i = 0; i < vertexCount; i++) {
+    for (const channel in layout) {
+      const off = elementOffsets[channel]
+      const cpu = elementCpuFormat(layout[channel])
+      const writer = dataTypeViewWriter(cpu.elementType)
+      const size = dataTypeToSize(cpu.elementType)
+      for (let j = off; j < off + cpu.elementCount; j++) {
+        writer(view, byteOffset + j * size, src.elements[elementOffset + j])
+      }
+    }
+    byteOffset += byteStride
+    elementOffset += elementStride
+  }
+  return data
 }

@@ -3,7 +3,7 @@ import { Color } from '../Color'
 import { Device } from '../Device'
 import { FrontFace, PrimitiveType } from '../enums'
 import { BufferOptions, PlainBufferData } from '../resources'
-import { AttributeSemantic, createVertexLayout, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
+import { VertexSemantic, vertexLayout, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
 import { Geometry, GeometryOptions } from './Geometry'
 import { GeometryUtil } from './GeometryUtil'
 
@@ -29,15 +29,15 @@ export interface GeometryBuilderOptions {
   /**
    * Mapping of attribute name to its default value
    */
-  defaults?: Record<AttributeSemantic, number[]>
+  defaults?: Record<VertexSemantic, number[]>
   /**
    * The transform modes for each attribute
    */
-  transformModes?: Record<AttributeSemantic, TransformMode>
+  transformModes?: Record<VertexSemantic, TransformMode>
   /**
    * The vertex buffer layout
    */
-  layout?: Array<VertexLayout | AttributeSemantic[]>
+  layout?: Array<VertexLayout | VertexSemantic[]>
 }
 
 export interface BuildGeometryOptions {
@@ -54,7 +54,7 @@ export interface BuildGeometryOptions {
   /**
    * The vertex buffer layout
    */
-  vertexLayout?: Array<VertexLayout | AttributeSemantic[]>
+  vertexLayout?: Array<VertexLayout | VertexSemantic[]>
 
   /**
    * A transform matrix to apply to all vertices
@@ -65,7 +65,7 @@ export interface BuildGeometryOptions {
    * Default attribute values to use during the build process. If any vertex is pushed into the builder
    * with missing attributes they are resolved from here.
    */
-  vertexDefaults?: Record<AttributeSemantic, number[]>
+  vertexDefaults?: Record<VertexSemantic, number[]>
 
   /**
    * Primitive topology.  Defaults to `'TriangleList'`.
@@ -109,14 +109,14 @@ export class GeometryBuilder {
    * Gets the indices in current state
    */
   public get indices(): ReadonlyArray<number> {
-    return this.indexBuffer.data.elements
+    return this.idxBuffer.data.elements
   }
 
   /**
    * The index count in current state
    */
   public get indexCount(): number {
-    return this.indexBuffer.data.elements.length
+    return this.idxBuffer.data.elements.length
   }
 
   /**
@@ -133,14 +133,22 @@ export class GeometryBuilder {
    * If {@link addVertex} is called with missing attributes, this is where
    * the default values are resolved from
    */
-  public defaults: Record<AttributeSemantic, number[]>
-  public transformModes: Record<AttributeSemantic, TransformMode>
+  public defaults: Record<VertexSemantic, number[]>
+  public transformModes: Record<VertexSemantic, TransformMode>
+
+  public get indexBuffer() {
+    return this.idxBuffer
+  }
+
+  public get vertexBuffer() {
+    return this.vtxBuffer
+  }
 
   private layout: VertexLayout[]
   private box: BoundingBox
   private sphere: BoundingSphere
-  private indexBuffer: BufferOptions<PlainBufferData>
-  private vertexBuffer: Array<BufferOptions<PlainBufferData>>
+  private idxBuffer: BufferOptions<PlainBufferData>
+  private vtxBuffer: Array<BufferOptions<PlainBufferData>>
   private primitiveCount: number
   private partUtil: GeometryUtil
 
@@ -156,16 +164,16 @@ export class GeometryBuilder {
     if (Array.isArray(options.layout) && options.layout.length > 0) {
       this.layout = options.layout.map((it) => {
         if (Array.isArray(it)) {
-          return createVertexLayout(it)
+          return vertexLayout(it)
         } else {
           return it as VertexLayout
         }
       })
     } else {
       this.layout = [
-        createVertexLayout(['position', 'texture']),
-        createVertexLayout(['normal']),
-        createVertexLayout(['tangent', 'bitangent']),
+        vertexLayout(['position', 'texture']),
+        vertexLayout(['normal']),
+        vertexLayout(['tangent', 'bitangent']),
       ]
     }
 
@@ -223,7 +231,7 @@ export class GeometryBuilder {
   }
 
   private resetData() {
-    this.indexBuffer = {
+    this.idxBuffer = {
       type: 'IndexBuffer',
       indexType: 'uint16',
       data: {
@@ -231,7 +239,7 @@ export class GeometryBuilder {
         elements: [],
       },
     }
-    this.vertexBuffer = this.layout.map((l): BufferOptions<PlainBufferData> => {
+    this.vtxBuffer = this.layout.map((l): BufferOptions<PlainBufferData> => {
       return {
         vertexLayout: JSON.parse(JSON.stringify(l)),
         type: 'VertexBuffer',
@@ -245,7 +253,7 @@ export class GeometryBuilder {
     this.primitiveCount = 0
     this.box = new BoundingBox()
     this.sphere = new BoundingSphere()
-    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer)
+    this.partUtil = new GeometryUtil(this.idxBuffer, this.vtxBuffer)
   }
 
   /**
@@ -264,7 +272,7 @@ export class GeometryBuilder {
    * Pushes a single index into current state.
    */
   public addIndex(index: number): this {
-    this.indexBuffer.data.elements.push(index)
+    this.idxBuffer.data.elements.push(index)
     return this
   }
 
@@ -293,7 +301,7 @@ export class GeometryBuilder {
         value[0] = item
         item = value
       } else if ('toArray' in item && typeof item.toArray === 'function') {
-        value.length = channel.elements
+        value.length = channel.elementCount
         item.toArray(value)
         item = value
       } else {
@@ -391,10 +399,10 @@ export class GeometryBuilder {
     const baseName = options.name ?? 'geometry'
     const primitiveType = options.primitiveType ?? 'TriangleList'
 
-    const indexBuffer = this.indexBuffer
+    const indexBuffer = this.idxBuffer
     indexBuffer.name = `${baseName}_index`
 
-    const vertexBuffer = this.vertexBuffer
+    const vertexBuffer = this.vtxBuffer
     vertexBuffer.forEach((vb, i) => {
       vb.name = `${baseName}_vertex_${i}`
     })
@@ -440,12 +448,12 @@ export class GeometryBuilder {
    * Initialises (or re-initialises) the working index and vertex buffers.
    */
   private initBuffers(): void {
-    this.indexBuffer = {
+    this.idxBuffer = {
       type: 'IndexBuffer',
       indexType: 'uint16',
       data: { type: 'uint16', elements: [] },
     }
-    this.vertexBuffer = this.layout.map(
+    this.vtxBuffer = this.layout.map(
       (layout): BufferOptions<PlainBufferData> => ({
         vertexLayout: JSON.parse(JSON.stringify(layout)),
         type: 'VertexBuffer',
@@ -455,7 +463,7 @@ export class GeometryBuilder {
     this.primitiveCount = 0
     this.box = new BoundingBox()
     this.sphere = new BoundingSphere()
-    this.partUtil = new GeometryUtil(this.indexBuffer, this.vertexBuffer)
+    this.partUtil = new GeometryUtil(this.idxBuffer, this.vtxBuffer)
   }
 
   /**
@@ -463,12 +471,12 @@ export class GeometryBuilder {
    * requires it.
    */
   private upgradeIndexBufferIfNeeded(): void {
-    const isUint16 = this.indexBuffer.data.type === 'uint16'
-    const isAligned = !isUint16 || this.indexBuffer.data.elements.length % 2 === 0
-    const exceedsUint16 = this.indexBuffer.data.elements.length >= 2 ** 16
+    const isUint16 = this.idxBuffer.data.type === 'uint16'
+    const isAligned = !isUint16 || this.idxBuffer.data.elements.length % 2 === 0
+    const exceedsUint16 = this.idxBuffer.data.elements.length >= 2 ** 16
     if (!isAligned || exceedsUint16) {
-      this.indexBuffer.indexType = 'uint32'
-      this.indexBuffer.data.type = 'uint32'
+      this.idxBuffer.indexType = 'uint32'
+      this.idxBuffer.data.type = 'uint32'
     }
   }
 

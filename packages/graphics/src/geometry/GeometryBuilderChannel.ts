@@ -1,6 +1,6 @@
 import { ArrayLike } from '@gglib/math'
 import { Buffer, BufferOptions, isPlainBufferData, PlainBufferData } from '../resources'
-import { countElements, countElementsBefore } from '../VertexLayout'
+import { countElements, countElementsBefore, elementCpuFormat } from '../VertexLayout'
 
 /**
  * @public
@@ -12,40 +12,44 @@ export type GeometryBuilderChannelMap = Record<string, GeometryBuilderChannel>
  */
 export class GeometryBuilderChannel {
   /**
-   * The vertex stride of the current buffer
+   * Total number of elements in a vertex
    *
    * @remarks
    * For example if a vertex has a `position` and a `normal`
    * (both with three elements) it has a stride of 6 elements.
    */
-  public readonly stride: number
+  public readonly elementStride: number
+
   /**
-   * Offset to the first attribute element from beginning of vertex
+   * Offset in number of elements from beginning of vertex
    *
    * @remarks
    * For example if a vertex consists of a `position` followed by a `normal`
    * (both with three elements)
    * the `position` has an offset of 0 and the `normal` an offset of 3
    */
-  public readonly offset: number
+  public readonly elementOffset: number
+
   /**
    * Number of elements in a single attribute. e.g. a Vec3 has 3 elements
    */
-  public readonly elements: number
-
-  public readonly packed: boolean
+  public readonly elementCount: number
 
   /**
    * The semantic name of this channel
    */
   public readonly name: string
+
+  /**
+   * The buffer to operate on
+   */
   public readonly buffer: BufferOptions
 
   /**
    * Returns the number of attributes
    */
   public get count() {
-    return this.data.length / this.stride
+    return this.data.length / this.elementStride
   }
 
   private data: ArrayLike<number>
@@ -67,17 +71,20 @@ export class GeometryBuilderChannel {
     } else {
       throw new Error(`unsupported buffer data type: ${typeof buffer.data}`)
     }
+    const vertexLayout = buffer.vertexLayout
+    if (!vertexLayout) {
+      throw new Error('missing vertexLayout on buffer')
+    }
+    const channelLayout = vertexLayout?.[name]
+    if (!channelLayout) {
+      throw new Error('missing channelLayout on buffer')
+    }
+
     this.name = name
     this.buffer = buffer
-    this.stride = countElements(this.buffer.vertexLayout)
-    this.offset = countElementsBefore(this.buffer.vertexLayout, name)
-    const attr = this.buffer.vertexLayout[name]
-    this.packed = !!attr.packed
-    if (attr.packed) {
-      this.elements = 1
-    } else {
-      this.elements = attr.elementCount
-    }
+    this.elementStride = countElements(this.buffer.vertexLayout, 'cpu')
+    this.elementOffset = countElementsBefore(this.buffer.vertexLayout, name)
+    this.elementCount = elementCpuFormat(channelLayout).elementCount
   }
 
   /**
@@ -87,7 +94,7 @@ export class GeometryBuilderChannel {
    * @param elementIndex - The element index to read. e.g. `0` is usually the `x` coordinate, `1` is `y` etc.
    */
   public read(vIndex: number, elementIndex: number): number {
-    return this.data[this.stride * vIndex + this.offset + elementIndex]
+    return this.data[this.elementStride * vIndex + this.elementOffset + elementIndex]
   }
 
   /**
@@ -98,8 +105,8 @@ export class GeometryBuilderChannel {
    * @param targetOffset - The offset in target array where to start writing
    */
   public readAttribute(vIndex: number, target: number[] = [], targetOffset: number = 0): number[] {
-    const index = this.stride * vIndex + this.offset
-    for (let j = 0; j < this.elements; j++) {
+    const index = this.elementStride * vIndex + this.elementOffset
+    for (let j = 0; j < this.elementCount; j++) {
       target[targetOffset + j] = this.data[index + j]
     }
     return target
@@ -113,7 +120,7 @@ export class GeometryBuilderChannel {
    * @param value - The value
    */
   public write(vIndex: number, elementIndex: number, value: number): void {
-    this.data[this.stride * vIndex + this.offset + elementIndex] = value
+    this.data[this.elementStride * vIndex + this.elementOffset + elementIndex] = value
   }
 
   /**
@@ -124,8 +131,8 @@ export class GeometryBuilderChannel {
    * @param sourceOffset - The offset in source array where to start reading
    */
   public writeAttribute(vIndex: number, source: ReadonlyArray<number>, sourceOffset: number = 0) {
-    const index = this.stride * vIndex + this.offset
-    for (let j = 0; j < Math.min(this.elements, source.length - sourceOffset); j++) {
+    const index = this.elementStride * vIndex + this.elementOffset
+    for (let j = 0; j < Math.min(this.elementCount, source.length - sourceOffset); j++) {
       this.data[index + j] = source[sourceOffset + j]
     }
   }
@@ -140,17 +147,19 @@ export class GeometryBuilderChannel {
   public forEach(
     emitter: (attr: number[], index: number) => void,
     startVertex: number = 0,
-    endVertex: number = this.buffer instanceof Buffer ? this.buffer.elementCount : this.data.length / this.stride,
+    endVertex: number = this.buffer instanceof Buffer
+      ? this.buffer.elementCount
+      : this.data.length / this.elementStride,
   ) {
     let data = this.data
     let vertex: number[] = []
-    let index = this.offset + startVertex * this.stride
+    let index = this.elementOffset + startVertex * this.elementStride
     for (let i = startVertex; i < endVertex; i++) {
-      for (let j = 0; j < this.elements; j++) {
+      for (let j = 0; j < this.elementCount; j++) {
         vertex[j] = data[index + j]
       }
       emitter(vertex, i)
-      index += this.stride
+      index += this.elementStride
     }
   }
 

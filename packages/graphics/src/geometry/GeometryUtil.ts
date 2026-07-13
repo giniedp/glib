@@ -164,7 +164,7 @@ export class GeometryUtil {
         // write back new vertex
         for (const name of channelNames) {
           const channel = vChannels[name]
-          const elements = channel.elements
+          const elements = channel.elementCount
           for (let i = 0; i < elements; i++) {
             channel.write(vCount, i, vertex.shift())
           }

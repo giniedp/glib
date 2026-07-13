@@ -1,5 +1,5 @@
-import { dataTypeToArrayType, type TypedArray } from '../../enums'
-import { Buffer, isPlainBufferData, PlainBufferData, type BufferOptions } from '../../resources'
+import { type TypedArray } from '../../enums'
+import { Buffer, isPlainBufferData, materializePlainBuffer, PlainBufferData, type BufferOptions } from '../../resources'
 import type { WebGpuDevice } from '../WebGpuDevice'
 
 export class WebGpuBuffer extends Buffer {
@@ -58,8 +58,7 @@ export class WebGpuBuffer extends Buffer {
 
   public setData(src: TypedArray | ArrayBuffer | PlainBufferData, srcOffset?: number, srcLength?: number): void {
     if (isPlainBufferData(src)) {
-      const ArrayType = dataTypeToArrayType(src.type)
-      src = new ArrayType(src.elements)
+      src = materializePlainBuffer(src, this.vertexLayout)
     }
 
     const self = this as Mutable<this>
@@ -104,8 +103,7 @@ export class WebGpuBuffer extends Buffer {
     srcLength?: number,
   ) {
     if (isPlainBufferData(src)) {
-      const ArrayType = dataTypeToArrayType(src.type)
-      src = new ArrayType(src.elements)
+      src = materializePlainBuffer(src, this.vertexLayout)
     }
 
     const srcElementSize = ArrayBuffer.isView(src) ? src.BYTES_PER_ELEMENT : 1
