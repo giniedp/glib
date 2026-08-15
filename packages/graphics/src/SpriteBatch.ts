@@ -2,7 +2,7 @@ import { Mat4, type IRect } from '@gglib/math'
 import { PooledList } from '@gglib/utils'
 import { Device } from './Device'
 import type { RenderEncoder } from './RenderEncoder'
-import { RingBuffer, ShaderModule } from './resources'
+import { RingBuffer, ShaderModule, vertexAttribute, vertexLayout } from './resources'
 import { Buffer } from './resources/Buffer'
 import { Texture } from './resources/Texture'
 import { VertexBuffer } from './resources/VertexBuffer'
@@ -65,6 +65,10 @@ export class SpriteBatch implements Renderable {
   private sprites: SpriteBuilder[] = []
 
   private batch: SpriteBuffer
+
+  public get isReady() {
+    return this.shader.isCompiled
+  }
 
   public get size() {
     return this.sprites.length
@@ -191,7 +195,7 @@ export class SpriteBatch implements Renderable {
     spriteCount: number,
     texture: Texture,
   ) {
-    if (spriteCount <= 0 || !this.shader.isReady) {
+    if (spriteCount <= 0 || !this.shader.isCompiled) {
       return
     }
 

@@ -1,4 +1,4 @@
-export * from './BasicGame'
+export * from './EcsGame'
 export * from './BehaviorSystem'
 export * from './GameLoop'
 export * from './GamePadInput'

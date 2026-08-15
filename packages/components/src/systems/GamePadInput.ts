@@ -1,41 +1,28 @@
-import { GameSystem, GameWorld } from '@gglib/ecs'
-import { GamepadAxes, GamepadButton, Gamepads } from '@gglib/input'
+import { GameSystem, GameSystemToken, GameWorld } from '@gglib/ecs'
+import { Gamepad } from '@gglib/game'
 
-export class GamePadInput extends GameSystem {
-  protected pads: Gamepads
+export class GamePadInput extends Gamepad implements GameSystem {
+  public get [GameSystemToken]() {
+    return true
+  }
 
   public constructor() {
     super()
-    this.pads = new Gamepads({
-      autoUpdate: false,
-    })
   }
 
-  override initialize(world: GameWorld): void {
-    this.pads.activate()
+  public initialize(world: GameWorld): void {
+    //
   }
 
   override update(): void {
-    this.pads.update(true)
+    super.update()
   }
 
-  override destroy(): void {
-    this.pads.deactivate()
+  public render(time: number, dt: number): void {
+    //
   }
 
-  public buttonPressed(player: number, button: GamepadButton): boolean {
-    return this.pads.state[player]?.buttons[button]?.pressed ?? false
-  }
-
-  public buttonTouched(player: number, button: GamepadButton): boolean {
-    return this.pads.state[player]?.buttons[button]?.touched ?? false
-  }
-
-  public buttonValue(player: number, button: GamepadButton): number {
-    return this.pads.state[player]?.buttons[button]?.value ?? 0
-  }
-
-  public axisValue(player: number, axis: GamepadAxes): number {
-    return this.pads.state[player]?.axes[axis] ?? 0
+  public destroy(): void {
+    this.dispose()
   }
 }

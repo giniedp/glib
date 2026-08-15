@@ -6,7 +6,7 @@ import {
   type GameComponent,
   type GameTransform,
 } from '@gglib/ecs'
-import { Transform, type IVec3, type IVec4, type Mat4 } from '@gglib/math'
+import { Mat4, Transform, type IVec3, type IVec4 } from '@gglib/math'
 import { brand, EventType } from '@gglib/utils'
 
 /**
@@ -109,11 +109,19 @@ export class TransformComponent
     if (options.local) {
       this.matrix.initFrom(options.local)
       this.matrix.decompose(this.scale, this.rotation, this.translation)
+    } else {
+      this.matrix.initFromRTS(this.rotation, this.translation, this.scale)
     }
     if (options.world) {
       this.world.initFrom(options.world)
       if (!options.local && !options.scale && !options.position && !options.rotation) {
         this.world.decompose(this.scale, this.rotation, this.translation)
+      }
+    } else {
+      if (this.parent) {
+        Mat4.premultiply(this.matrix, this.parent.world, this.world)
+      } else {
+        this.world.initFrom(this.matrix)
       }
     }
 

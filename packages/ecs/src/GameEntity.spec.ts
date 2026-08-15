@@ -9,8 +9,8 @@ class TestComponent implements GameComponent {
   public isInitialized = false
   public isActivated = false
   public isDestroyed = false
-  initialize(entity: GameEntity): void {
-    this.entity = entity
+
+  initialize(): void {
     this.isInitialized = true
   }
   activate(): void {
@@ -44,18 +44,18 @@ describe('GameEntity', () => {
         const entity = world.createEntity()
         const component = new TestComponent()
         entity.addComponent(component)
-        expect(component.entity).toBeUndefined()
+        expect(component.entity).toBe(entity)
         expect(component.isInitialized).toBe(false)
         expect(component.isActivated).toBe(false)
         expect(component.isDestroyed).toBe(false)
       })
       it('throws if tried to activate', () => {
         const entity = world.createEntity()
-        expect(() => entity.activate()).toThrowError('Entity is not initialized')
+        expect(() => entity.activate()).toThrow(/Expected.*to be in Initialized/)
       })
       it('throws if tried to deactivate', () => {
         const entity = world.createEntity()
-        expect(() => entity.deactivate()).toThrowError('Entity is not activated')
+        expect(() => entity.deactivate()).toThrow(/Expected.*to be in Activated/)
       })
       it('can be destroyed', () => {
         const entity = world.createEntity()
@@ -89,12 +89,12 @@ describe('GameEntity', () => {
       it('throws if already initialized', () => {
         const entity = world.createEntity()
         entity.initialize()
-        expect(() => entity.initialize()).toThrowError('Entity is already initialized')
+        expect(() => entity.initialize()).toThrow(/must have state Created/)
       })
       it('throws if tried to deactivate', () => {
         const entity = world.createEntity()
         entity.initialize()
-        expect(() => entity.deactivate()).toThrowError('Entity is not activated')
+        expect(() => entity.deactivate()).toThrow(/expected.*to be in Activated/i)
       })
       it('can be destroyed', () => {
         const entity = world.createEntity()
@@ -132,7 +132,7 @@ describe('GameEntity', () => {
         const entity = world.createEntity()
         entity.initialize()
         entity.activate()
-        expect(() => entity.activate()).toThrowError('Entity is not initialized')
+        expect(() => entity.activate()).toThrow(/expected.*to be in initialized/i)
       })
       it('can be deactivated', () => {
         const entity = world.createEntity()

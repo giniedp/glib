@@ -1,4 +1,0 @@
-# Normal Mapping
-
-<Example/>
-<ExampleCode/>

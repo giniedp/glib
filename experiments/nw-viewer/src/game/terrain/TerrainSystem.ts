@@ -1,4 +1,4 @@
-import { BasicGame, PriorityLane, SchedulerSystem } from '@gglib/components'
+import { EcsGame, PriorityLane, SchedulerSystem } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { Mat4, Vec3, Vec4, type IVec4 } from '@gglib/math'
@@ -16,7 +16,7 @@ export class TerrainSystem extends GameSystem {
   private allTerrains: GameQuery
   private allRegions: GameQuery
 
-  private game: BasicGame
+  private game: EcsGame
   private device: Device
   private content: ContentService
   private scheduler: SchedulerSystem
@@ -32,7 +32,7 @@ export class TerrainSystem extends GameSystem {
 
   public initialize(world: GameWorld): void {
     this.device = world.getSystem(Device)
-    this.game = world.getSystem(BasicGame)
+    this.game = world.getSystem(EcsGame)
     this.content = world.getSystem(ContentService)
     this.scheduler = world.getSystem(SchedulerSystem)
     this.allTerrains = world.query({ scope: 'all', required: [TerrainComponent] })

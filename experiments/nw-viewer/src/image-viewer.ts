@@ -1,9 +1,9 @@
 import {
-  BasicGame,
+  EcsGame,
   CameraComponent,
   KeyboardInputSystem,
   MouseInputSystem,
-  SceneRootComponent,
+  SceneComponent,
   SpriteComponent,
   TransformComponent,
   type SceneStats,
@@ -23,7 +23,7 @@ export interface NwViewerOptions {
   canvas: HTMLCanvasElement
 }
 
-export class NwImageViewer extends BasicGame {
+export class NwImageViewer extends EcsGame {
   public camera: CameraComponent
 
   public deviceStats: DeviceStats
@@ -59,7 +59,7 @@ export class NwImageViewer extends BasicGame {
     })
 
     this.renderer.autoSrgb = true
-    this.renderer.clearColor = Color.Black.srgbToLinear()
+    this.renderer.clearColor = Color.Black.toLinear()
 
     GLTF.Loader.registerExtension(NwMaterialExtension)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
@@ -125,7 +125,7 @@ export class NwImageViewer extends BasicGame {
   override render(time: number, dt: number): void {
     super.render(time, dt)
     this.deviceStats = this.device.stats(this.deviceStats)
-    this.sceneStats = this.scene.component(SceneRootComponent).stats(this.sceneStats)
+    this.sceneStats = this.scene.component(SceneComponent).stats(this.sceneStats)
     this.renderStats = this.renderer.stats(this.renderStats)
   }
 

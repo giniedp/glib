@@ -1,9 +1,9 @@
-import { clamp, lerp, Mat4, Vec2, Vec3, Vec4, type IVec3 } from '@gglib/math'
+import type { Texture } from '@gglib/graphics'
+import { clamp, lerp, Mat4, Vec2, vec3, Vec3, Vec4, type IVec3 } from '@gglib/math'
 import { removeItemUnordered } from '@gglib/utils'
 import type { Lighting, TimeOfDay as TimeOfDayData } from '../../api'
 import { TodParams, type TodParam } from './TimeOfDayParams'
 import { TimeOfDayPreset } from './TimeOfDayPreset'
-import type { Texture } from '@gglib/graphics'
 
 export type TimeOfDayLayer = {
   priority: number
@@ -14,15 +14,15 @@ export type TimeOfDayLayer = {
 }
 const MAX_TIME = (24 * 60 - 1) / 60.0
 export class TimeOfDay {
-  public sunColor = new Vec3(1, 0.71085715, 0.5335781)
-  public sunDirection = new Vec3(-1, -1, -10).normalize()
+  public sunColor = vec3(1, 0.71085715, 0.5335781)
+  public sunDirection = Vec3.normalize(vec3(-1, -1, -10))
   public sunIntensity = 1.0
   public sunMultiplier = 1.0
   public sunIsMoon = false
 
-  public cloudshadingCustomSkyColor = new Vec3(0)
-  public cloudshadingCustomSunColor = new Vec3(0)
-  public cloudshadingCustomColor = new Vec3(0)
+  public cloudshadingCustomSkyColor = vec3(0)
+  public cloudshadingCustomSunColor = vec3(0)
+  public cloudshadingCustomColor = vec3(0)
 
   public skyKM = 0.0025
   public skyKR = 0.0025
@@ -31,21 +31,21 @@ export class TimeOfDay {
   public skyWaveG = 0.57
   public skyWaveB = 0.475
 
-  public nightSkyHorizonColor = new Vec3()
-  public nightSkyZenithColor = new Vec3()
+  public nightSkyHorizonColor = vec3()
+  public nightSkyZenithColor = vec3()
   public nightSkyZenithColorShift = new Vec2()
-  public nightSkyColorDelta = new Vec3()
+  public nightSkyColorDelta = vec3()
 
-  public nightSkyMoonColor = new Vec3()
+  public nightSkyMoonColor = vec3()
   public nightSkyMoonInnerCorona = new Vec4()
   public nightSkyMoonOuterCorona = new Vec4()
-  public moonDirection = new Vec3(-1, -1, -10).normalize()
+  public moonDirection = Vec3.normalize(vec3(-1, -1, -10))
 
-  public bottomFogColor = new Vec3(0.21678638, 0.41612425, 0.79515541)
+  public bottomFogColor = vec3(0.21678638, 0.41612425, 0.79515541)
   public bottomFogMultiplier = 0.97500086
   public bottomFogHeight = 0
   public bottomFogDensity = 0.050000004
-  public topFogColor = new Vec3(0.17437994, 0.42185885, 0.76625574)
+  public topFogColor = vec3(0.17437994, 0.42185885, 0.76625574)
   public topFogMultiplier = 0.97500086
   public topFogHeight = 400
   public topFogDensity = 0.020000001
@@ -344,10 +344,18 @@ export class TimeOfDay {
     this.topFogDensity = this.getParamValue(TodParams.VOLFOG_DENSITY2)
 
     this.getParamColor(TodParams.NIGHSKY_HORIZON_COLOR, this.nightSkyHorizonColor)
-    this.nightSkyHorizonColor.multiplyScalar(this.getParamValue(TodParams.NIGHSKY_HORIZON_COLOR_MULTIPLIER))
+    Vec3.multiplyScalar(
+      this.nightSkyHorizonColor,
+      this.getParamValue(TodParams.NIGHSKY_HORIZON_COLOR_MULTIPLIER),
+      this.nightSkyHorizonColor,
+    )
 
     this.getParamColor(TodParams.NIGHSKY_ZENITH_COLOR, this.nightSkyZenithColor)
-    this.nightSkyZenithColor.multiplyScalar(this.getParamValue(TodParams.NIGHSKY_ZENITH_COLOR_MULTIPLIER))
+    Vec3.multiplyScalar(
+      this.nightSkyZenithColor,
+      this.getParamValue(TodParams.NIGHSKY_ZENITH_COLOR_MULTIPLIER),
+      this.nightSkyZenithColor,
+    )
 
     this.nightSkyColorDelta.x = this.nightSkyHorizonColor.x - this.nightSkyZenithColor.x
     this.nightSkyColorDelta.y = this.nightSkyHorizonColor.y - this.nightSkyZenithColor.y
@@ -359,7 +367,11 @@ export class TimeOfDay {
     this.nightSkyZenithColorShift.y = -nightSkyZenithGradient / (nightSkyZenithColorShift - nightSkyZenithGradient)
 
     this.getParamColor(TodParams.NIGHSKY_MOON_COLOR, this.nightSkyMoonColor)
-    this.nightSkyMoonColor.multiplyScalar(this.getParamValue(TodParams.NIGHSKY_MOON_COLOR_MULTIPLIER))
+    Vec3.multiplyScalar(
+      this.nightSkyMoonColor,
+      this.getParamValue(TodParams.NIGHSKY_MOON_COLOR_MULTIPLIER),
+      this.nightSkyMoonColor,
+    )
 
     this.getParamColor(TodParams.NIGHSKY_MOON_INNERCORONA_COLOR, this.nightSkyMoonInnerCorona)
     this.nightSkyMoonInnerCorona.w = 1.0 + 1000.0 * this.getParamValue(TodParams.NIGHSKY_MOON_INNERCORONA_SCALE)
@@ -377,11 +389,10 @@ export class TimeOfDay {
     this.getParamColor(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR, this.cloudshadingCustomColor)
     const csSunlightMultiplier = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_MULTIPLIER)
     const csCustomSunColorMult = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_MULTIPLIER)
-    this.cloudshadingCustomColor.multiplyScalar(csCustomSunColorMult)
+    Vec3.multiplyScalar(this.cloudshadingCustomColor, csCustomSunColorMult, this.cloudshadingCustomColor)
     const csCustomSunColorInfluence = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_INFLUENCE)
 
-    this.cloudshadingCustomSunColor.initFrom(this.sunColor)
-    this.cloudshadingCustomSunColor.multiplyScalar(csSunlightMultiplier)
+    Vec3.multiplyScalar(this.sunColor, csSunlightMultiplier, this.cloudshadingCustomSunColor)
 
     Vec3.lerp(
       this.cloudshadingCustomSunColor,

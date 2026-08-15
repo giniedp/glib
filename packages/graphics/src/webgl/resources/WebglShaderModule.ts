@@ -64,20 +64,6 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
   public readonly program: WebglProgram
 
   /**
-   * Whether the program is successfully linked
-   */
-  public readonly isLinked: boolean
-
-  /**
-   * Whether the program has finished compiling.
-   *
-   * @remarks
-   * The program is considered ready when the compilation is finished. Yet the program may not be linked successfully.
-   * Check the {@link isLinked} property to determine if the program is ready to use for rendering.
-   */
-  public readonly isReady: boolean
-
-  /**
    * Event that is emitted when the program is disposed
    */
   public readonly onDisposed = eventSource(WebglShaderModule.onDisposed)
@@ -85,16 +71,18 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
    * Event that is emitted when the program has finished compiling
    */
   public readonly onCompiled = eventSource(WebglShaderModule.onCompiled)
-  /**
-   * Resolves when the program has finished compiling
-   */
-  public readonly ready = new Promise<this>((resolve) => {
+
+  public readonly compiled = new Promise<this>((resolve) => {
     return this.onCompiled.once(() => {
-      // resources are created onCompiled, so we have to delay the resolve to next microtask
-      // to ensure that the program is fully ready to use when the promise resolves
+      // The programs resources will be created during the same `onCompiled` event.
+      // To ensure that the program is fully ready along with it's resources
+      // we delay the resolve to next microtask
       queueMicrotask(() => resolve(this))
     })
   })
+
+  public readonly isCompiled: boolean
+  public readonly isValid: boolean
 
   public readonly reflection: WebglReflection
   public readonly textureUnitBase: number = 1
@@ -178,8 +166,8 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
   private detach(): void {
     const gl = this.device.context
     const self = this as Mutable<this>
-    self.isReady = false
-    self.isLinked = false
+    self.isCompiled = false
+    self.isValid = false
     this.compileTask?.cancel(new Error('Program has been disposed'))
     this.compileTask = null
     for (const shader of this.attached) {
@@ -194,7 +182,7 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
     this.detach()
     const gl = this.device.context
     const self = this as Mutable<this>
-    self.isReady = false
+    self.isCompiled = false
 
     if (this.vertexShader) {
       gl.attachShader(this.glHandle, this.vertexShader.glHandle)
@@ -231,12 +219,12 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
   private compileFinished() {
     const gl = this.device.context
     const self = this as Mutable<this>
-    self.isReady = true
-    self.isLinked = gl.getProgramParameter(this.glHandle, gl.LINK_STATUS)
+    self.isCompiled = true
+    self.isValid = gl.getProgramParameter(this.glHandle, gl.LINK_STATUS)
     this.info = gl.getProgramInfoLog(this.glHandle)
     const vertex = this.vertexShader?.getStatus()
     const fragment = this.fragmentShader?.getStatus()
-    if (!this.isLinked) {
+    if (!this.isValid) {
       console.error('Program link failed', this.info)
       if (vertex?.error) {
         console.error('Vertex shader error', vertex.error)

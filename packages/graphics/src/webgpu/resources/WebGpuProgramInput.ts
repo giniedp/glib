@@ -206,7 +206,7 @@ export class WebGpuProgramInput extends ProgramInput {
   public setTexture(value: Texture | GPUTexture | GPUTextureView | GPUExternalTexture): void {
     value ||= this.device.defaultTexture
     if (value instanceof Texture) {
-      this.resource.setTexture((value as WebGpuTexture).gpuObject)
+      this.resource.setTexture((value as WebGpuTexture).gpuView)
     } else {
       this.resource.setTexture(value)
     }

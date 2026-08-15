@@ -1,4 +1,0 @@
-# Animated Texture
-
-<Example/>
-<ExampleCode/>

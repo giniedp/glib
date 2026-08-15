@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { FrameGraph } from './FrameGraph'
-import { renderChannel } from './RenderChannel'
+import { createRenderChannelSchema, renderChannel } from './RenderChannel'
 
 const channels = {
   Depth: renderChannel('depth'),
@@ -12,6 +12,7 @@ describe('FrameGraph', () => {
   let graph: FrameGraph<string>
   beforeEach(() => {
     graph = new FrameGraph<string>()
+    graph.setDescriptors(createRenderChannelSchema(null))
   })
 
   it('accepts read/write before end and trhows after', () => {

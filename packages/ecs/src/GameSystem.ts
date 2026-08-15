@@ -10,7 +10,12 @@ export type GameSystemId<T> = Brand<number, 'GameSystemId'>
 
 const SystemIds = idProvider<GameSystemId<any>, Type<any> | AbstractType<any>>(Symbol('GameSystemId'))
 
+export const GameSystemToken = Symbol('GameSystem')
 export abstract class GameSystem {
+  public get [GameSystemToken]() {
+    return true
+  }
+
   abstract initialize(world: GameWorld): void
   abstract destroy(): void
   update(time: number, dt: number): void {
@@ -19,6 +24,16 @@ export abstract class GameSystem {
   render(time: number, dt: number): void {
     //
   }
+}
+
+export function isGameSystem(value: any): value is GameSystem {
+  if (value instanceof GameSystem) {
+    return true
+  }
+  if ((value as GameSystem)[GameSystemToken]) {
+    return true
+  }
+  return false
 }
 
 export interface RenderableSystem extends GameSystem {
@@ -74,7 +89,7 @@ export class GameSystemCollection {
       this.byTypeId[typeId] = value
     }
 
-    if (value instanceof GameSystem) {
+    if (isGameSystem(value)) {
       if (!this.isInitialized) {
         this.toInitialize.push(value)
       } else if (initializeSystem(value, this.world)) {
@@ -121,7 +136,7 @@ export class GameSystemCollection {
   public destroy(): void {
     for (const typeId in this.byTypeId) {
       const system = this.byTypeId[typeId]
-      if (system instanceof GameSystem) {
+      if (isGameSystem(system)) {
         destroySystem(system)
       }
     }
@@ -141,6 +156,7 @@ function destroySystem(system: GameSystem) {
 
 function initializeSystem(system: GameSystem, world: GameWorld): boolean {
   try {
+    console.log('INIT', system)
     system.initialize(world)
     return true
   } catch (e) {

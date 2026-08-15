@@ -1,10 +1,22 @@
-import { BasicGame, CameraComponent, ModelComponent } from '@gglib/components'
+import {
+  CameraComponent,
+  EcsGame,
+  KeyboardInputSystem,
+  ModelComponent,
+  MouseInputSystem,
+  TransformComponent,
+  WASDComponent,
+} from '@gglib/components'
 import { GameEntity } from '@gglib/ecs'
-// import { IBLSamplerEffect } from '@gglib/effects'
+import { CommonMaterial, IblSampler, SkyboxMaterial, TonemapOperator } from '@gglib/effects'
+import { MouseListener } from '@gglib/game'
+import { boxGeometry, Color, FALSE, ProgramInputBlock, Texture, TRUE } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
-// import { AutoMaterial, SkyboxMaterial } from '@gglib/materials'
+import { Mat3 } from '@gglib/math'
+import { Model } from '@gglib/model'
+import { BloomPass, TonemapPass } from '@gglib/render'
 
-export interface GlibViewerOptions {
+export interface ModelViewerOptions {
   canvas: HTMLCanvasElement
 }
 
@@ -16,114 +28,184 @@ export interface LoadModelOptions {
 }
 
 export interface EnvironmentOptions {
-  panoramaUrl?: string
-  cubemapUrl?: string
+  panoramaUrl: string
   showSkybox?: boolean
 }
 
-export class GlibViewer extends BasicGame {
-  // private iblSampler: IBLSamplerEffect
+export class ModelViewer extends EcsGame {
+  private stage: GameEntity
+  private cam: GameEntity
+  private sky: GameEntity
 
-  private root: GameEntity
-  private modelEntity: GameEntity
-  private skyEntity: GameEntity
-  private cameraEntity: GameEntity
+  private panoramaUrl: string
+  private panoramaMap: Texture
+  private iblSampler: IblSampler
+  private iblRotation: Mat3 = Mat3.createIdentity()
 
-  public constructor(options: GlibViewerOptions) {
+  public bloomPass: BloomPass
+  public tonemapPass: TonemapPass
+  public iblIntensity = 1
+  public iblBlur = 0.5
+
+  public constructor(options: ModelViewerOptions) {
     super({
       canvas: options.canvas,
+      autosize: true,
+      platform: 'webgl2',
     })
+  }
+
+  protected override onCreate(): void {
+    this.world.addSystem(
+      new MouseInputSystem({
+        provider: new MouseListener({
+          captureTarget: this.device.canvas as any,
+          eventTarget: this.device.canvas,
+        }),
+      }),
+    )
+    this.world.addSystem(new KeyboardInputSystem())
+  }
+
+  protected override onInitialize(): void {
+    GLTF.Loader.registerExtension(GLTF.KhrMaterialsIor)
+    GLTF.Loader.registerExtension(GLTF.KhrMaterialsPbrSpecularGlossinessHandler)
+    GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
+    GLTF.Loader.registerExtension(GLTF.KhrMaterialsEmissiveStrength)
+
     this.content.registerLoader(GLTF.Loader)
     this.content.registerLoader(KTX.Loader)
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
-    // this.content.registerMaterial(AutoMaterial, () => true)
-    // this.root = createEntity({
-    //   name: 'Root',
-    //   components: [],
-    // })
-    // this.modelEntity = createEntity({
-    //   name: 'Model',
-    //   components: [new ModelComponent()],
-    //   parent: this.root,
-    // })
-    // this.skyEntity = createEntity({
-    //   name: 'Sky',
-    //   components: [new ModelComponent()],
-    //   parent: this.root,
-    // })
-    // this.cameraEntity = createEntity({
-    //   name: 'Camera',
-    //   parent: this.root,
-    //   components: [
-    //     new CameraComponent({
-    //       type: 'perspective',
-    //     }),
-    //   ],
-    // })
-    //this.camera.activate(this.cameraEntity.component(CameraComponent))
+    this.content.registerMaterial({
+      match: () => true,
+      create: (device, options) => {
+        const material = new CommonMaterial(device, options)
+        material.UseIBL = this.panoramaUrl ? TRUE : FALSE
+        return material
+      },
+    })
 
-    // const device = this.get(Device)
-    // this.skyEntity.component(ModelComponent).model = new Model(device, {
-    //   name: 'Skybox',
-    //   meshes: [
-    //     {
-    //       parts: [cubeGeometry(device)],
-    //       materials: [
-    //         new SkyboxMaterial(device, {
-    //           parameters: {},
-    //         }),
-    //       ],
-    //     },
-    //   ],
-    // })
-    // this.scene.add(this.root)
-    // this.run()
+    this.renderer.clearColor = Color.CornflowerBlue
+    this.renderer.onContextReady.add((ctx) => {
+      if (!ctx.renderInputs.blocks['ibl']) {
+        ctx.renderInputs.blocks['ibl'] = new ProgramInputBlock('ibl')
+      }
+      ctx.renderInputs.setByBlockAndName('ibl', 'intensity', this.iblIntensity)
+      ctx.renderInputs.setByBlockAndName('ibl', 'rotation', this.iblRotation)
+      ctx.renderInputs.setByBlockAndName('ibl', 'brdfMap', this.iblSampler.lutMapGGX)
+      ctx.renderInputs.setByBlockAndName('ibl', 'radianceMap', this.iblSampler.envMapGGX)
+      ctx.renderInputs.setByBlockAndName('ibl', 'irradianceMap', this.iblSampler.envMapLambert)
+      ctx.renderInputs.setByBlockAndName('ibl', 'mipCount', this.iblSampler.envMapGGX.mipLevelCount)
+    })
+    this.bloomPass = new BloomPass(this.device, {
+      enabled: true,
+      threshold: 0.75,
+      intensity: 0.75,
+    })
+    this.renderer.pipeline.passes.push(this.bloomPass)
+
+    this.tonemapPass = new TonemapPass(this.device, {
+      enabled: true,
+      operator: TonemapOperator.PBR_NEUTRAL,
+      srgb: true,
+    })
+    this.renderer.pipeline.passes.push(this.tonemapPass)
+
+    this.sky = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent(),
+      components: [new ModelComponent()],
+    })
+    this.stage = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent(),
+      components: [new ModelComponent()],
+    })
+    this.cam = this.createEntity({
+      parent: this.scene,
+      transform: new TransformComponent(),
+      components: [new CameraComponent(), new WASDComponent()],
+    })
+    this.view.camera = this.cam.component(CameraComponent)
   }
 
-  // public override update(time: LoopTime): void {
-  //   super.update(time)
-  //   const device = this.get(Device)
-  //   const camera = this.cameraEntity.component(CameraComponent)
-  //   camera.aspect = device.output.aspectRatio
-  // }
+  protected override async onLoadContent(): Promise<void> {
+    this.iblSampler = new IblSampler(this.device, {})
+    await this.iblSampler.ready
 
-  // public async load(options: LoadModelOptions) {
-  //   if (options.environment) {
-  //     this.updateEnvironment(options.environment)
-  //   }
-  //   const model = await this.content.loadModel(options.url, {
-  //     baseUrl: options.baseUrl,
-  //     signal: options.signal,
-  //   })
-  //   const component = this.modelEntity.component(ModelComponent)
-  //   if (component.model) {
-  //     component.model.dispose()
-  //     component.model = null
-  //   }
-  //   component.model = model
-  // }
+    const skybox = boxGeometry(this.device, { name: 'Skybox', invert: true })
+    const skymat = new SkyboxMaterial(this.device, {
+      cubemap: this.iblSampler.envMapGGX,
+      blur: 0.5,
+      intensity: 1,
+    })
 
-  // public async updateEnvironment(options: EnvironmentOptions) {
-  //   if (!this.iblSampler) {
-  //     this.iblSampler = new IBLSamplerEffect(this.get(Device))
-  //   }
-  //   if (options.panoramaUrl) {
-  //     this.iblSampler.panoramaInput?.dispose()
-  //     this.iblSampler.panoramaInput = null
-  //     this.iblSampler.panoramaInput = await this.content.loadTexture(options.panoramaUrl)
-  //     this.iblSampler.needsUpdate = true
-  //   }
-  //   if (options.cubemapUrl) {
-  //     this.iblSampler.cubemapInput?.dispose()
-  //     this.iblSampler.panoramaInput = null
-  //     this.iblSampler.cubemapInput = await this.content.loadTexture(options.cubemapUrl)
-  //     this.iblSampler.needsUpdate = true
-  //   }
-  // }
+    this.sky.component(ModelComponent).model = new Model(this.device, {
+      meshes: [
+        {
+          geometries: [skybox],
+          materials: [skymat],
+          parts: [{ geometryIndex: 0, materialIndex: 0 }],
+        },
+      ],
+    })
+  }
 
-  // public dispose() {
-  //   this.stop()
-  //   // this.content.dispose()
-  // }
+  private abort: AbortController
+  public async loadModel(options: LoadModelOptions) {
+    await this.ready
+
+    this.abort?.abort('reload')
+    this.abort = new AbortController()
+    if (options.environment?.panoramaUrl) {
+      this.loadEnvironment(options.environment?.panoramaUrl)
+    }
+    const model = await this.content.loadModel(options.url, {
+      baseUrl: options.baseUrl,
+      signal: options.signal || this.abort.signal,
+    })
+
+    this.abort = null
+    model.selectScene(0)
+
+    const component = this.stage.component(ModelComponent)
+    if (component.model) {
+      component.model.dispose()
+      component.model = null
+    }
+    component.model = model
+    console.log(component)
+
+    const radius = model.boundingSphere.radius
+    let scale = 1
+    if (radius > 0 && radius < 1) {
+      scale = 1 / radius
+    }
+    this.stage.getTransform<TransformComponent>().setScaleUniform(scale)
+
+    const wasd = this.cam.component(WASDComponent)
+    wasd.orbitMode = true
+    wasd.targetRadius = radius * scale * 2
+    wasd.orbitCenter.initFrom(model.boundingSphere.center)
+    return model
+  }
+
+  public async loadEnvironment(panoramaUrl: string) {
+    if (this.panoramaUrl === panoramaUrl) {
+      return
+    }
+    this.panoramaUrl = panoramaUrl
+    this.panoramaMap = await this.content.loadTexture(this.panoramaUrl)
+    this.iblSampler.update(this.panoramaMap)
+  }
+
+  protected override onBeginUpdate(time: number, dt: number) {
+    const camera = this.cam.component(CameraComponent)
+    camera.aspect = this.device.output.aspectRatio
+
+    const sky = this.sky.component(ModelComponent).model.meshes[0].materials[0] as SkyboxMaterial
+    sky.Blur = this.iblBlur
+    sky.Intensity = this.iblIntensity
+  }
 }

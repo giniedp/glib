@@ -1,4 +1,0 @@
-# Scale
-
-<Example />
-<ExampleCode />

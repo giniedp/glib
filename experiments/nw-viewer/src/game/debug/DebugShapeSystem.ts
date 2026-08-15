@@ -1,4 +1,4 @@
-import { BasicGame, BoundsComponent, MeshComponent, TransformComponent } from '@gglib/components'
+import { EcsGame, BoundsComponent, MeshComponent, TransformComponent } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
@@ -9,7 +9,7 @@ import { DebugShapeRenderComponent } from './DebugShapeRenderComponent'
 const tmp1 = Mat4.createIdentity()
 
 export class DebugShapeSystem extends GameSystem {
-  private game: BasicGame
+  private game: EcsGame
   private world: GameWorld
   private activeShapes: GameQuery
   private root: DebugShapeRenderComponent
@@ -18,7 +18,7 @@ export class DebugShapeSystem extends GameSystem {
 
   public initialize(world: GameWorld): void {
     this.world = world
-    this.game = world.getSystem(BasicGame)
+    this.game = world.getSystem(EcsGame)
     this.activeShapes = world.query({ scope: 'active', required: [DebugShapeComponent] })
   }
 

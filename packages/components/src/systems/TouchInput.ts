@@ -1,5 +1,5 @@
 import { GameSystem, GameWorld } from '@gglib/ecs'
-import { type ITouchPaneOptions, TouchPane } from '@gglib/input'
+import { type ITouchPaneOptions, TouchPane } from '@gglib/game'
 
 /**
  * Constructor options for the {@link TouchInput}

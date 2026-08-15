@@ -1,8 +1,7 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 
 import { arrayTypeToDataType, DataType, FrontFace } from '../enums'
-import { BufferOptions, isPlainBufferData, PlainBufferData } from '../resources'
-import { vertexAttribute, VertexAttribute } from '../VertexLayout'
+import { BufferOptions, isPlainBufferData, PlainBufferData, vertexAttribute, VertexAttribute } from '../resources'
 import { calculateNormals } from './utils/calculateNormals'
 import { calculateTangents } from './utils/calculateTangents'
 

@@ -43,6 +43,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   public readonly gpuFormat: GPUTextureFormat
   public readonly gpuDimension: GPUTextureDimension
   public readonly gpuViewDimension: GPUTextureViewDimension
+  public readonly gpuView: GPUTextureView
 
   /**
    * Constructs an instance of a Texture.
@@ -62,13 +63,13 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
 
     options.sampleCount ??= 1
     options.generateMipmap ??= !!options.source
-    options.usage ??= TextureUsage.Sampled
+    options.usage ??= TextureUsage.TextureBinding
     if (options.sampleCount > 1) {
       options.usage |= TextureUsage.RenderTarget
     }
 
     const usage = options.usage
-    const isSampled = !!(usage & TextureUsage.Sampled)
+    const isSampled = !!(usage & TextureUsage.TextureBinding)
     const isRenderTarget = !!(usage & TextureUsage.RenderTarget)
     const isRenderBuffer = isRenderTarget && !isSampled
     if (isRenderBuffer && options.generateMipmap) {
@@ -146,6 +147,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
     const self = this as Mutable<this>
     self.gpuObject?.destroy()
     self.gpuObject = null
+    self.gpuView = null
   }
 
   private createResource(): void {
@@ -155,11 +157,7 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
       label: this.name || `Texture_${this.uid}`,
       format: this.gpuFormat,
       sampleCount: this.sampleCount,
-      size: {
-        width: this.width,
-        height: this.height,
-        depthOrArrayLayers: this.depth,
-      },
+      size: [this.width, this.height, this.depth],
       usage:
         GPUTextureUsage.COPY_DST |
         GPUTextureUsage.COPY_SRC |
@@ -171,6 +169,11 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
       textureBindingViewDimension: this.gpuViewDimension,
     }
     self.gpuObject = this.device.gpu.createTexture(descriptor)
+    self.gpuView = self.gpuObject.createView({
+      label: this.name || `Texture_${this.uid}`,
+      dimension: this.gpuViewDimension,
+    })
+
     self.sizeInBytes = this.estimateSize()
   }
 
@@ -245,10 +248,11 @@ export class WebGpuTexture extends Texture implements GpuResource<GPUTexture>, R
   }
 
   /**
-   * Generates mipmaps for the texture only if the texture was created with `generateMipmap` option set to `true`.
+   * Generates mipmaps for the texture.
    */
-  public updateMipmaps(force = false): void {
-    if (!this.generateMipmap && !force) {
+  public updateMipmaps(): void {
+    if (this.isCompressed) {
+      console.warn('updateMipmaps is not supported for compressed texture', new Error().stack)
       return
     }
     this.device.generateMipmap(this)

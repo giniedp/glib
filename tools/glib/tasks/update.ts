@@ -104,6 +104,9 @@ function updateTsconfigBuild(pkg: GlibPackageContext) {
         ],
         references: pkg.glibReferences.map((it) => {
           const ref = project.glibPackages.find((p) => p.packageName === it)!
+          if (!ref) {
+            throw new Error(`reference not found: ${it}`)
+          }
           return {
             path: path.posix.relative(pkg.pkgDir, path.posix.join(ref.pkgDir, 'tsconfig.build.json')),
           }

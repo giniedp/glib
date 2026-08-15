@@ -30,10 +30,9 @@
     "@gglib/math": "workspace:^0.7.0",
     "@gglib/render": "workspace:^0.7.0",
     "@gglib/utils": "workspace:^0.7.0",
-    "@gglib/input": "workspace:^0.7.0",
+    "@gglib/game": "workspace:^0.7.0",
     "@gglib/content": "workspace:^0.7.0",
-    "@gglib/model": "workspace:^0.7.0",
-    "@gglib/materials": "workspace:^0.7.0"
+    "@gglib/model": "workspace:^0.7.0"
   },
   "peerDependencies": {
     "@gglib/ecs": "0.7.0",
@@ -41,10 +40,9 @@
     "@gglib/math": "0.7.0",
     "@gglib/render": "0.7.0",
     "@gglib/utils": "0.7.0",
-    "@gglib/input": "0.7.0",
+    "@gglib/game": "0.7.0",
     "@gglib/content": "0.7.0",
-    "@gglib/model": "0.7.0",
-    "@gglib/materials": "0.7.0"
+    "@gglib/model": "0.7.0"
   },
   "files": [
     "package.json",

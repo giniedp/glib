@@ -113,7 +113,11 @@ export class Effect implements Disposable {
   public offsetState: DepthBiasState | null
 
   public get isReady() {
-    return this.program.module.isReady
+    return this.program.isCompiled
+  }
+
+  public get isValid() {
+    return this.program.isValid
   }
 
   protected restoreStates: {
@@ -150,9 +154,25 @@ export class Effect implements Disposable {
   }
 
   /**
+   * Applies the given input blocks to the underlying program
+   *
+   * @returns true if any program input has changed
+   */
+  public applyInputs(blocks: Record<string, ProgramInputBlock>): boolean {
+    let changed = false
+    for (const blockName in blocks) {
+      const source = blocks[blockName]
+      if (source && this.program.applyBlock(source)) {
+        changed = true
+      }
+    }
+    return changed
+  }
+
+  /**
    * Applies the states of the pass to the given render pass and sets the shader program active.
    */
-  public apply(pass: RenderEncoder): void {
+  public applyState(pass: RenderEncoder): void {
     this.restoreStates ||= {}
     const restore = this.restoreStates
 
@@ -196,7 +216,7 @@ export class Effect implements Disposable {
   }
 
   /**
-   * Restores the states that were changed by `apply` to their previous values.
+   * Restores the states that were changed by `applyState` to their previous values.
    *
    * @remarks
    * Restores only these previously captured states
@@ -205,7 +225,7 @@ export class Effect implements Disposable {
    * - {@link Effect.depthState}
    * - {@link Effect.offsetState}
    */
-  public restore(pass: RenderEncoder): void {
+  public restoreState(pass: RenderEncoder): void {
     const restore = this.restoreStates
     if (!restore) {
       return
@@ -224,31 +244,20 @@ export class Effect implements Disposable {
     }
   }
 
-  public applyInputs(blocks: Record<string, ProgramInputBlock>): boolean {
-    let changed = false
-    for (const blockName in blocks) {
-      const source = blocks[blockName]
-      if (source && this.program.applyBlock(source)) {
-        changed = true
-      }
-    }
-    return changed
-  }
-
   /**
    * Draws an object with this shader pass.
    * Program inputs must be applied before calling this method.
    */
   public draw(pass: RenderEncoder, object: Renderable) {
-    if (!this.isReady) {
+    if (!this.program.isCompiled) {
       return
     }
 
     this.program.commit()
 
-    this.apply(pass)
+    this.applyState(pass)
     object.render(pass)
-    this.restore(pass)
+    this.restoreState(pass)
   }
 
   /**

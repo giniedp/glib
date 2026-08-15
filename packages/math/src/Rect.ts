@@ -7,6 +7,22 @@ import { Vec2 } from './Vec2'
  * @public
  */
 export class Rect {
+  public static centerX(r: IRect) {
+    return r.x + r.width * 0.5
+  }
+
+  public static centerY(r: IRect) {
+    return r.y + r.height * 0.5
+  }
+
+  public static endX(r: IRect) {
+    return r.x + r.width
+  }
+
+  public static endY(r: IRect) {
+    return r.y + r.height
+  }
+
   public x: number
   public y: number
   public width: number
@@ -175,15 +191,15 @@ export class Rect {
   /**
    * Checks whether the given rectangle intersects this rectangle
    */
-  public intersects(r: Rect): boolean {
-    return r.x < this.xEnd && this.x < r.xEnd && r.y < this.yEnd && this.y < r.yEnd
+  public intersects(r: IRect): boolean {
+    return r.x < this.xEnd && this.x < r.x + r.width && r.y < this.yEnd && this.y < r.y + r.height
   }
 
   /**
    * Checks whether two rectangles do intersect
    */
-  public static intersects(r1: Rect, r2: Rect): boolean {
-    return r2.x < r1.xEnd && r1.x < r2.xEnd && r2.y < r1.yEnd && r1.y < r2.yEnd
+  public static intersects(r1: IRect, r2: IRect): boolean {
+    return r2.x < r1.x + r1.width && r1.x < r2.x + r2.width && r2.y < r1.y + r1.height && r1.y < r2.y + r2.height
   }
 
   /**

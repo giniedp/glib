@@ -61,13 +61,13 @@ export class WebglTexture extends Texture implements WebglResource<WebGLTexture 
 
     options.sampleCount ??= 1
     options.generateMipmap ??= !!options.source
-    options.usage ??= TextureUsage.Sampled
+    options.usage ??= TextureUsage.TextureBinding
     if (options.sampleCount > 1) {
       options.usage |= TextureUsage.RenderTarget
     }
 
     const usage = options.usage
-    const isSampled = !!(usage & TextureUsage.Sampled)
+    const isSampled = !!(usage & TextureUsage.TextureBinding)
     const isRenderTarget = !!(usage & TextureUsage.RenderTarget)
     const isRenderBuffer = isRenderTarget && !isSampled
     if (isRenderBuffer && options.generateMipmap) {

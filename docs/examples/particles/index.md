@@ -1,6 +1,0 @@
----
-title: Particles
----
-<Example />
-
-## Particles

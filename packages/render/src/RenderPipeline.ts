@@ -7,30 +7,18 @@ export class RenderPipeline {
    */
   public name: string
 
-  private list: RenderPass[] = []
-  private graph = new FrameGraph<RenderPass>()
-  private active: RenderPass[] = []
-  private exports: FrameResource<RenderPass>[] = []
+  public passes: RenderPass[] = []
 
-  public get passes(): ReadonlyArray<RenderPass> {
-    return this.list
-  }
+  private graph = new FrameGraph<RenderPass>()
+  private exports: FrameResource<RenderPass>[] = []
 
   /**
    * Removes all passes from this pipeline
    */
   public clear(): void {
+    this.passes = []
     this.graph.begin([], 1, 1)
     this.graph.compile()
-    this.list.length = 0
-    this.active.length = 0
-  }
-
-  /**
-   * Adds a render pass to this pipeline. The passes will be executed in the order they were added.
-   */
-  public addPass(...pass: RenderPass[]): void {
-    this.list.push(...pass)
   }
 
   /**
@@ -39,7 +27,8 @@ export class RenderPipeline {
   public execute(ctx: RenderContext): void {
     this.graph.setDescriptors(ctx.channelDescriptors)
     this.graph.begin(ctx.view.output, ctx.viewWidth, ctx.viewHeight)
-    for (const pass of this.list) {
+    this.passes.sort(byOrder)
+    for (const pass of this.passes) {
       pass.setup(this.graph, ctx)
     }
     this.exports.length = 0
@@ -64,7 +53,7 @@ export class RenderPipeline {
         }
       }
     }
-    for (const step of this.list) {
+    for (const step of this.passes) {
       step.cleanup(ctx)
     }
 
@@ -77,8 +66,8 @@ export class RenderPipeline {
       ctx.view.exports[resource.channel] = newTexture
     }
   }
+}
 
-  public dispose(): void {
-    //
-  }
+function byOrder(a: RenderPass, b: RenderPass) {
+  return a.order - b.order
 }

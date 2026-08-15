@@ -83,6 +83,48 @@ export enum AccessorComponentType {
 
 export type AccessorType = 'SCALAR' | 'VEC2' | 'VEC3' | 'VEC4' | 'MAT2' | 'MAT3' | 'MAT4'
 
+export function accessorComponentByteSize(type: AccessorComponentType) {
+  switch (type) {
+    case AccessorComponentType.BYTE:
+      return 1
+    case AccessorComponentType.FLOAT:
+      return 4
+    case AccessorComponentType.SHORT:
+      return 2
+    case AccessorComponentType.UNSIGNED_BYTE:
+      return 1
+    case AccessorComponentType.UNSIGNED_INT:
+      return 4
+    case AccessorComponentType.UNSIGNED_SHORT:
+      return 2
+  }
+  throw new Error(`unknown accessor component type: ${type}`)
+}
+
+export function accessorComponentCount(type: AccessorType) {
+  switch (type) {
+    case 'SCALAR':
+      return 1
+    case 'VEC2':
+      return 2
+    case 'VEC3':
+      return 3
+    case 'VEC4':
+      return 4
+    case 'MAT2':
+      return 4
+    case 'MAT3':
+      return 9
+    case 'MAT4':
+      return 16
+  }
+  throw new Error(`unknown accessor type: ${type}`)
+}
+
+export function accessorByteStride(accessor: Accessor) {
+  return accessorComponentCount(accessor.type) * accessorComponentByteSize(accessor.componentType)
+}
+
 /**
  * A typed view into a bufferView. A bufferView contains raw binary data.
  * An accessor provides a typed view into a bufferView or a subset of a bufferView

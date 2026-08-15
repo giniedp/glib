@@ -2,7 +2,6 @@ import { NdcMinZ } from '@gglib/math'
 import { brand, eventSource, EventType } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
-import type { TypedArray } from '../enums'
 import {
   createResourceTracker,
   getRefCounter,
@@ -102,6 +101,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
 
   public readonly capabilities: WebglCapabilities
   public readonly defaultTexture: WebglTexture
+  public readonly defaultTextureCube: WebglTexture
   public readonly renderPass: WebglRenderEncoder
   public readonly output: DeviceOutput
 
@@ -139,6 +139,13 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
       height: 2,
       format: 'RGBA8_UNORM',
     })
+    this.defaultTextureCube = this.createTexture({
+      type: 'TextureCube',
+      width: 2,
+      height: 2,
+      // depth: 6,
+      format: 'RGBA8_UNORM',
+    })
     this.renderPass = new WebglRenderEncoder(this)
 
     this.resize()
@@ -156,6 +163,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     // TODO: dispose resources
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost, false)
     this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored, false)
+    this.capabilities.extension('WEBGL_lose_context')?.loseContext()
   }
 
   private handleContextLost = (e: Event) => {

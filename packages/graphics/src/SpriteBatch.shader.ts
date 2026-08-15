@@ -5,36 +5,36 @@ export function spriteBatchShader(): ShaderModuleOptions {
     name: 'SPRITE_BATCH',
     wgsl: { source: SPRITE_BATCH_WGSL },
     glsl: {
-      vertex: vertexShader,
-      fragment: fragmentShader,
+      vertex: SPRITE_BATCH_GLSL_VS,
+      fragment: SPRITE_BATCH_GLSL_FS,
     },
   }
 }
 
 export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
 
-  struct VSInput {
-    @location(0) position: vec3<f32>,
-    @location(1) aTransform0: vec4<f32>,
-    @location(2) aTransform1: vec4<f32>,
-    @location(3) aTransform2: vec4<f32>,
-    @location(4) aTransform3: vec4<f32>,
-    @location(5) aTexcoord: vec4<f32>,
-    @location(6) aColor: vec4<f32>,
+  struct VertexInput {
+    @location(0) position: vec3f,
+    @location(1) aTransform0: vec4f,
+    @location(2) aTransform1: vec4f,
+    @location(3) aTransform2: vec4f,
+    @location(4) aTransform3: vec4f,
+    @location(5) aTexcoord: vec4f,
+    @location(6) aColor: vec4f,
   };
 
-  struct VSOutput {
-    @builtin(position) position: vec4<f32>,
-    @location(0) uv: vec2<f32>,
-    @location(1) color: vec4<f32>,
+  struct FragmentInput {
+    @builtin(position) position: vec4f,
+    @location(0) uv: vec2f,
+    @location(1) color: vec4f,
   };
 
-  struct FSOutput {
-    @location(0) color: vec4<f32>,
+  struct FragmentOutput {
+    @location(0) color: vec4f,
   }
 
   struct Uniforms {
-    viewProjection: mat4x4<f32>,
+    viewProjection: mat4x4f,
     toSrgb: u32,
   }
 
@@ -44,16 +44,16 @@ export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
 
 
   @vertex
-  fn vsMain(input: VSInput) -> VSOutput {
+  fn vsMain(input: VertexInput) -> FragmentInput {
 
     let position = vec4(input.position, 1);
-    let world = mat4x4<f32>(
+    let world = mat4x4f(
       input.aTransform0,
       input.aTransform1,
       input.aTransform2,
       input.aTransform3,
     );
-    var out: VSOutput;
+    var out: FragmentInput;
     out.uv = mix(input.aTexcoord.xy, input.aTexcoord.zw, position.xy + vec2(0.5));
     out.color = input.aColor;
     out.position = uniforms.viewProjection * world * position;
@@ -61,8 +61,8 @@ export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
   }
 
   @fragment
-  fn fsMain(input: VSOutput) -> FSOutput {
-    var out: FSOutput;
+  fn fsMain(input: FragmentInput) -> FragmentOutput {
+    var out: FragmentOutput;
     out.color = textureSample(textureMap, textureSampler, input.uv) * input.color;
     if (uniforms.toSrgb == 1) {
       out.color = vec4(linearToSrgb(out.color.rgb), out.color.a);
@@ -70,13 +70,18 @@ export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
     return out;
   }
 
-  fn linearToSrgb(c: vec3<f32>) -> vec3<f32> {
-    let cutoff = vec3<f32>(0.0031308);
-    return select( 12.92 * c, 1.055 * pow(c, vec3<f32>(1.0 / 2.4)) - 0.055, c > cutoff);
-}
+  fn srgbToLinear(c: vec3f) -> vec3f {
+    let cutoff = vec3f(0.04045);
+    return select( c / 12.92, pow((c + 0.055) / 1.055, vec3f(2.4)), c > cutoff );
+  }
+
+  fn linearToSrgb(c: vec3f) -> vec3f {
+    let cutoff = vec3f(0.0031308);
+    return select( 12.92 * c, 1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c > cutoff );
+  }
 `
 
-const vertexShader = /* glsl */ `
+const SPRITE_BATCH_GLSL_VS = /* glsl */ `
   #version 300 es
   precision highp float;
   precision highp int;
@@ -101,12 +106,6 @@ const vertexShader = /* glsl */ `
   out vec4 v_color;
 
   void main(void) {
-    // vec4 position = vec4(
-    //   float(gl_VertexID & 1) - 0.5,
-    //   float((gl_VertexID >> 1) & 1) - 0.5,
-    //   0.0,
-    //   1.0
-    // );
 
     vec4 position = vec4(aPosition, 1.0);
     mat4 world = mat4(
@@ -122,10 +121,20 @@ const vertexShader = /* glsl */ `
   }
 `
 
-const fragmentShader = /* glsl */ `
+const SPRITE_BATCH_GLSL_FS = /* glsl */ `
   #version 300 es
   precision highp float;
   precision highp int;
+
+  vec3 srgbToLinear(vec3 c) {
+    vec3 cutoff = vec3(0.04045);
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(cutoff, c));
+  }
+
+  vec3 linearToSrgb(vec3 c) {
+    vec3 cutoff = vec3(0.0031308);
+    return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(cutoff, c));
+  }
 
   layout(std140) uniform Uniforms {
     mat4 viewProjection;
@@ -139,11 +148,10 @@ const fragmentShader = /* glsl */ `
 
   out vec4 fragColor;
 
-  void main()
-  {
+  void main() {
     fragColor = texture(textureMap, v_uv) * v_color;
     if (uniforms.toSrgb == 1u) {
-      fragColor = vec4(pow(fragColor.rgb, vec3(1.0 / 2.2)), fragColor.a);
+      fragColor.rgb = linearToSrgb(fragColor.rgb);
     }
   }
 `

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { GeometryBuilder } from '../GeometryBuilder'
-import { buildBox } from './buildCube'
+import { buildBox } from './buildBox'
 
 describe('@gglib/graphics/formulas', () => {
   describe('buildCube', () => {

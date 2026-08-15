@@ -20,7 +20,6 @@
     },
   ],
   "settings": {
-    "typescript.tsdk": "node_modules\\typescript\\lib",
     "vue.server.includeLanguages": ["vue"],
     "js/ts.tsdk.path": "glib\\node_modules\\typescript\\lib",
   },

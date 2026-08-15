@@ -1,5 +1,4 @@
 import { NwImageViewer } from './image-viewer'
-import { NwMaterialViewer } from './material-viewer'
 import { NwViewer } from './viewer'
 
 const element = document.querySelector<HTMLDivElement>('#app')
@@ -33,15 +32,6 @@ async function bootImageViewer(image: string) {
   })
   await viewer.run()
   viewer.load(image)
-}
-
-async function bootMaterialviewer(asset: string) {
-  const viewer = new NwMaterialViewer({
-    element: uiElement,
-    canvas,
-  })
-  await viewer.run()
-  viewer.load(asset)
 }
 
 async function bootViewer() {

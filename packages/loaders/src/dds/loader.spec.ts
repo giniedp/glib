@@ -17,30 +17,21 @@ describe('DDS Loader', () => {
   it('/assets/textures/dds/bobcat_diff.dds?.url', async () => {
     // @ts-ignore
     const url = await import('/assets/textures/dds/bobcat_diff.dds?url').then((it) => it.default)
-    const result = await content.loadAsset(url)
-    expect(result.textures).toHaveLength(1)
-    expect(result.textures[0].source).toBeInstanceOf(TextureSource)
-    const texture = device.createTexture(result.textures[0])
-    expect(texture).instanceOf(Texture)
+    const result = await content.loadTexture(url)
+    expect(result).instanceOf(Texture)
   })
 
   it('/assets/textures/dds/bobcat_ddna.a.dds?.url', async () => {
     // @ts-ignore
     const url = await import('/assets/textures/dds/bobcat_ddna.a.dds?url').then((it) => it.default)
-    const result = await content.loadAsset(url)
-    expect(result.textures).toHaveLength(1)
-    expect(result.textures[0].source).toBeInstanceOf(TextureSource)
-    const texture = device.createTexture(result.textures[0])
-    expect(texture).instanceOf(Texture)
+    const result = await content.loadTexture(url)
+    expect(result).instanceOf(Texture)
   })
 
   it('/assets/textures/dds/bobcat_ddna.dds?.url', async () => {
     // @ts-ignore
     const url = await import('/assets/textures/dds/bobcat_ddna.dds?url').then((it) => it.default)
-    const result = await content.loadAsset(url)
-    expect(result.textures).toHaveLength(1)
-    expect(result.textures[0].source).toBeInstanceOf(TextureSource)
-    const texture = device.createTexture(result.textures[0])
-    expect(texture).instanceOf(Texture)
+    const result = await content.loadTexture(url)
+    expect(result).instanceOf(Texture)
   })
 })

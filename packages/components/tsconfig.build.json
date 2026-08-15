@@ -38,16 +38,13 @@
       "path": "../utils/tsconfig.build.json"
     },
     {
-      "path": "../input/tsconfig.build.json"
+      "path": "../game/tsconfig.build.json"
     },
     {
       "path": "../content/tsconfig.build.json"
     },
     {
       "path": "../model/tsconfig.build.json"
-    },
-    {
-      "path": "../materials/tsconfig.build.json"
     }
   ]
 }

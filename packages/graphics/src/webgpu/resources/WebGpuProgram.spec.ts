@@ -39,7 +39,7 @@ describe('WebGpuProgram', () => {
           @group(0) @binding(0) var<uniform> material: MaterialBlock;
         `,
       })
-      await shader.ready
+      await shader.compiled
     })
 
     it('returns null for an unknown block', () => {
@@ -72,7 +72,7 @@ describe('WebGpuProgram', () => {
             @group(0) @binding(0) var<uniform> material: MaterialBlock;
           `,
         })
-        await shader.ready
+        await shader.compiled
       })
 
       it('resolves the block itself', () => {
@@ -113,7 +113,7 @@ describe('WebGpuProgram', () => {
             @group(0) @binding(0) var<uniform> p_material: MaterialBlock;
           `,
         })
-        await shader.ready
+        await shader.compiled
       })
 
       it('resolves block by @block annotation, not variable name', () => {
@@ -157,7 +157,7 @@ describe('WebGpuProgram', () => {
           @group(0) @binding(1) var<uniform> p_object: ObjectBlock;
         `,
       })
-      await shader.ready
+      await shader.compiled
     })
 
     it('resolves each block independently', () => {
@@ -194,7 +194,7 @@ describe('WebGpuProgram', () => {
             @group(0) @binding(1) var defaultSampler: sampler;
           `,
         })
-        await shader.ready
+        await shader.compiled
       })
 
       it('resolves a bare texture by variable name', () => {
@@ -223,7 +223,7 @@ describe('WebGpuProgram', () => {
             @group(0) @binding(1) var s_base: sampler;
           `,
         })
-        await shader.ready
+        await shader.compiled
       })
 
       it('resolves texture by block.alias', () => {
@@ -263,7 +263,7 @@ describe('WebGpuProgram', () => {
           @group(0) @binding(1) var<uniform> transforms: array<mat4x4<f32>, 8>;
         `,
       })
-      await shader.ready
+      await shader.compiled
     })
 
     it('resolves an indexed array member', () => {
@@ -303,7 +303,7 @@ describe('WebGpuProgram', () => {
           @group(0) @binding(2) var defaultSampler: sampler;
         `,
       })
-      await shader.ready
+      await shader.compiled
     })
 
     it('reports correct type for a vec4 member', () => {

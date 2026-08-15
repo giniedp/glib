@@ -1,4 +1,0 @@
-# Rotation
-
-<Example />
-<ExampleCode />

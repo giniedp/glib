@@ -1,4 +1,0 @@
----
-title: Bloom (Oldschool)
----
-<Example />

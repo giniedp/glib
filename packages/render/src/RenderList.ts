@@ -1,6 +1,6 @@
 import {
   BlendState,
-  BufferWriter,
+  BufferRecorder,
   CullState,
   DepthBiasState,
   DepthState,
@@ -79,15 +79,15 @@ export class RenderList {
   protected viewInputs: Record<string, ProgramInputBlock>
   protected viewRange: number
 
-  protected perInstanceTransforms: BufferWriter
-  protected perInstanceData: BufferWriter
+  protected perInstanceTransforms: BufferRecorder
+  protected perInstanceData: BufferRecorder
 
   public begin(
     mode: RenderListMode,
     view: RenderView,
     viewInputs: Record<string, ProgramInputBlock>,
-    transformBuffer: BufferWriter,
-    instanceBuffer: BufferWriter,
+    transformBuffer: BufferRecorder,
+    instanceBuffer: BufferRecorder,
   ): void {
     this.mode = mode
     this.viewForward = view.camera.view.getRow(2, this.viewForward)
@@ -259,9 +259,9 @@ export class RenderList {
         this.drawInstanceOffset[this.drawCount] = instanceOffset
         this.drawCount++
 
-        program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceTransforms.buffer)
+        program.mustGet(program.perInstanceTransformBlock).setBuffer(this.perInstanceTransforms.gpuBuffer)
         if (program.perInstanceDataBlock) {
-          effect.program.mustGet(program.perInstanceDataBlock).setBuffer(this.perInstanceData.buffer)
+          effect.program.mustGet(program.perInstanceDataBlock).setBuffer(this.perInstanceData.gpuBuffer)
         }
       }
 
@@ -280,7 +280,7 @@ export class RenderList {
 
     if (instance) {
       this.perInstanceData.seek(index)
-      this.perInstanceData.writeData(instance)
+      this.perInstanceData.writeFloat32Array(instance)
     } else {
       this.perInstanceData.seek(index)
       this.perInstanceData.clearRecord(index)
@@ -309,7 +309,7 @@ export class RenderList {
       instanceOffset = this.drawInstanceOffset[drawIndex]
 
       effect.program.commit()
-      effect.apply(pass)
+      effect.applyState(pass)
 
       if (instanceCount == 0 || !(item instanceof Geometry)) {
         item.render(pass)
@@ -324,7 +324,7 @@ export class RenderList {
         }
       }
 
-      effect.restore(pass)
+      effect.restoreState(pass)
     }
   }
 

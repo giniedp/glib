@@ -1,5 +1,0 @@
-# IBL Sampler
-
-<Example />
-
-<ExampleCode />

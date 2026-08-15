@@ -5,7 +5,7 @@ import {
   OccTree,
   PriorityLane,
   SchedulerSystem,
-  SpatialRootComponent,
+  SpatialComponent,
   TaskCancelledError,
   TransformComponent,
   type ScheduledTask,
@@ -57,8 +57,8 @@ export function regionEntityOptions(parent: GameEntity, options: RegionComponent
     components: [
       new BoundsComponent(),
       new MeshComponent(),
-      new SpatialRootComponent({
-        instance: OccTree.create({
+      new SpatialComponent({
+        index: OccTree.create({
           min,
           max,
           leafLevel: 5,

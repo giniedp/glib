@@ -305,7 +305,7 @@ export class FrameGraph<T = RenderPass> {
         depth: 1,
         sampleCount: 1,
         mipLevelCount: 1,
-        usage: TextureUsage.RenderTarget | TextureUsage.Sampled,
+        usage: TextureUsage.RenderTarget | TextureUsage.TextureBinding,
       },
       firstUse: Infinity,
       lastUse: -Infinity,

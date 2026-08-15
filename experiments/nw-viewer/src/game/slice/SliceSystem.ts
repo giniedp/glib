@@ -1,4 +1,4 @@
-import { BasicGame } from '@gglib/components'
+import { EcsGame } from '@gglib/components'
 import { GameQuery, GameSystem, GameWorld } from '@gglib/ecs'
 import { spherePointIntersects, Vec3, type IVec3 } from '@gglib/math'
 import { RegionComponent } from '../region/RegionComponent'
@@ -7,10 +7,10 @@ import { SliceSpawnerComponent } from './SliceSpawnerComponent'
 export class SliceSystem extends GameSystem {
   private activeSlices: GameQuery
   private activeRegions: GameQuery
-  private game: BasicGame
+  private game: EcsGame
 
   public initialize(world: GameWorld): void {
-    this.game = world.getSystem(BasicGame)
+    this.game = world.getSystem(EcsGame)
 
     this.activeRegions = world.query({ scope: 'active', required: [RegionComponent] })
     this.activeSlices = world.query({ scope: 'active', required: [SliceSpawnerComponent] })

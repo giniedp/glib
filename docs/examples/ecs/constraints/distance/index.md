@@ -1,4 +1,0 @@
-# Distance
-
-<Example />
-<ExampleCode />

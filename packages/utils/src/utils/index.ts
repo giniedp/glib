@@ -1,5 +1,4 @@
 export * from './dom'
 export * from './loop'
 export * from './uuid'
-export * from './assert'
 export * from './logfmt'

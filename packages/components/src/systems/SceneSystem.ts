@@ -1,5 +1,5 @@
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
-import { SceneRootComponent } from '../components/SceneRootComponent'
+import { SceneComponent } from '../components/SceneComponent'
 import { TransformComponent } from '../components/TransformComponent'
 
 export class SceneSystem extends GameSystem {
@@ -9,7 +9,7 @@ export class SceneSystem extends GameSystem {
   public constructor(world: GameWorld) {
     super()
     this.world = world
-    this.qSceneRoots = world.query({ scope: 'active', required: [SceneRootComponent] })
+    this.qSceneRoots = world.query({ scope: 'active', required: [SceneComponent] })
   }
 
   public override initialize(): void {
@@ -29,18 +29,18 @@ export class SceneSystem extends GameSystem {
   }
 
   private addSceneTag = (entity: GameEntity) => {
-    const root = entity.component(SceneRootComponent, GetComponent.OptionalFollowParent)
-    if (root && !entity.has(root.Tag)) {
+    const root = entity.component(SceneComponent, GetComponent.OptionalFollowParent)
+    if (root && !entity.has(root.Member)) {
       // prettier-ignore
       entity.addComponent(
-        new root.Tag(),         // instance
-        root.Tag,               // instance type
-        SceneRootComponent.Tag, // alias type, so it can be found without knowing the instance type
+        new root.Member(),         // instance
+        root.Member,               // instance type
+        SceneComponent.Member, // alias type, so it can be found without knowing the instance type
       )
     }
   }
 
   private removeSceneTag = (entity: GameEntity) => {
-    entity.removeComponentByType(SceneRootComponent.Tag)
+    entity.removeComponentByType(SceneComponent.Member)
   }
 }

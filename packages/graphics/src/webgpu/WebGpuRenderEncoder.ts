@@ -1,3 +1,4 @@
+import { IVec4 } from '@gglib/math'
 import { Color } from '../Color'
 import { RenderEncoder } from '../RenderEncoder'
 import { surfaceIsStencilFormat, type PrimitiveType } from '../enums'
@@ -326,15 +327,20 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   public setDepthTarget(buffer: Texture) {
     this.endPass()
     if (!buffer) {
-      this.pipelineParamsChanged = !!this.depthBufferAttachment.view
+      this.pipelineParamsChanged ||= !!this.depthBufferAttachment.view
       this.pipelineParams.depthFormat = null
       this.depthClearAttachment.view = null
       this.depthBufferAttachment.view = null
+      if (this.pipelineParams.depthState != DepthState.Disabled) {
+        this.pipelineParams.depthState = DepthState.Disabled
+        this.pipelineParamsChanged = true
+      }
     } else {
       const format = buffer?.format
       const surface = (buffer as WebGpuTexture)?.gpuObject
 
-      this.pipelineParamsChanged = this.pipelineParams.depthFormat !== format
+      this.pipelineParamsChanged ||= this.pipelineParams.depthFormat !== format
+
       this.pipelineParams.depthFormat = format
       this.depthClearAttachment.view = surface
       this.depthBufferAttachment.view = surface
@@ -355,11 +361,34 @@ export class WebGpuRenderEncoder extends RenderEncoder {
         delete this.depthBufferAttachment.stencilStoreOp
         delete this.depthBufferAttachment.stencilReadOnly
       }
+
+      if (this.pipelineParams.depthState == DepthState.Disabled) {
+        this.pipelineParams.depthState = DepthState.LessEqual
+        this.pipelineParamsChanged = true
+      }
     }
   }
 
-  public setClearColor(index: number, color: GPUColor) {
-    this.clearPassAttachment(index).clearValue = color
+  private clearColor = [0, 0, 0, 1]
+  public setClearColor(index: number, color: GPUColor | IVec4) {
+    if (Array.isArray(color)) {
+      this.clearColor[0] = color[0]
+      this.clearColor[1] = color[1]
+      this.clearColor[2] = color[2]
+      this.clearColor[3] = color[3]
+    } else if ('r' in color) {
+      this.clearColor[0] = color.r
+      this.clearColor[1] = color.g
+      this.clearColor[2] = color.b
+      this.clearColor[3] = color.a
+    } else if ('x' in color) {
+      this.clearColor[0] = color.x
+      this.clearColor[1] = color.y
+      this.clearColor[2] = color.z
+      this.clearColor[3] = color.w
+    }
+
+    this.clearPassAttachment(index).clearValue = this.clearColor
   }
 
   public setClearDepth(depth: number) {
@@ -597,8 +626,9 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   public resolve() {
     this.endPass()
     const descriptor = this.getColorPassDescriptor()
-    const pass = this.getEncoder('resolve').beginRenderPass(descriptor)
-    pass.end()
+
+    const encoder = this.getEncoder('resolve')
+    encoder.beginRenderPass(descriptor).end()
   }
 
   private getEncoder(label: string) {

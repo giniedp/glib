@@ -1,4 +1,4 @@
-import { bufferLayout, BufferWriter, Device, Mesh, patchGeometry } from '@gglib/graphics'
+import { bufferField, bufferLayout, Buffer, BufferRecorder, Device, Mesh, patchGeometry } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3, type IVec4 } from '@gglib/math'
 import { TerrainPatchMaterial, WaterPatchMaterial } from '../../material'
 
@@ -7,18 +7,19 @@ export interface TerrainMeshOptions {
 }
 
 const instanceLayout = bufferLayout([
-  { name: 'transform', type: 'mat4' },
-  { name: 'params1', type: 'vec4' },
-  { name: 'params2', type: 'vec4' },
-  { name: 'params3', type: 'vec4' },
-  { name: 'colorUvTransform', type: 'vec4' },
-  { name: 'colorUvTransformCoarse', type: 'vec4' },
-  { name: 'heightUvTransform', type: 'vec4' },
-  { name: 'heightUvTransformCoarse', type: 'vec4' },
+  bufferField('transform', 'mat4x4f'),
+  bufferField('params1', 'vec4f'),
+  bufferField('params2', 'vec4f'),
+  bufferField('params3', 'vec4f'),
+  bufferField('colorUvTransform', 'vec4f'),
+  bufferField('colorUvTransformCoarse', 'vec4f'),
+  bufferField('heightUvTransform', 'vec4f'),
+  bufferField('heightUvTransformCoarse', 'vec4f'),
 ])
 
 export class TerrainMesh extends Mesh {
-  public readonly writer: BufferWriter
+  public readonly writer: BufferRecorder
+  public readonly buffer: Buffer
 
   public get TerrainMaterial() {
     return this.materials[0] as TerrainPatchMaterial
@@ -37,15 +38,15 @@ export class TerrainMesh extends Mesh {
         { geometryIndex: 0, materialIndex: 1 },
       ],
     })
-    this.writer = new BufferWriter({
+    this.writer = new BufferRecorder({
       autosize: true,
       capacity: 1024,
-      recordByteSize: instanceLayout.recordByteSize,
-      buffer: device.createBuffer({
-        type: 'StorageBuffer',
-        size: 1024 * instanceLayout.recordByteSize,
-        readWrite: true,
-      }),
+      recordByteSize: instanceLayout.byteSize,
+    })
+    this.buffer = device.createBuffer({
+      type: 'StorageBuffer',
+      size: this.writer.capacity * instanceLayout.byteSize,
+      readWrite: true,
     })
   }
 
@@ -58,41 +59,41 @@ export class TerrainMesh extends Mesh {
   }
 
   public writeTransform(value: Mat4) {
-    this.writer.writeField(instanceLayout.fields.transform, value)
+    this.writer.writeField(instanceLayout.schema.transform, value)
   }
 
   public writeParams1(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.params1, value)
+    this.writer.writeField(instanceLayout.schema.params1, value)
   }
 
   public writeParams2(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.params2, value)
+    this.writer.writeField(instanceLayout.schema.params2, value)
   }
 
   public writeParams3(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.params3, value)
+    this.writer.writeField(instanceLayout.schema.params3, value)
   }
 
   public writeColorUvTransform(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.colorUvTransform, value)
+    this.writer.writeField(instanceLayout.schema.colorUvTransform, value)
   }
 
   public writeColorUvTransformCoarse(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.colorUvTransformCoarse, value)
+    this.writer.writeField(instanceLayout.schema.colorUvTransformCoarse, value)
   }
 
   public writeHeightUvTransform(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.heightUvTransform, value)
+    this.writer.writeField(instanceLayout.schema.heightUvTransform, value)
   }
 
   public writeHeightUvTransformCoarse(value: IVec4) {
-    this.writer.writeField(instanceLayout.fields.heightUvTransformCoarse, value)
+    this.writer.writeField(instanceLayout.schema.heightUvTransformCoarse, value)
   }
 
   public commitInstanceData() {
-    this.writer.commit()
-    this.TerrainMaterial.effect.program.mustGet('instances').setBuffer(this.writer.buffer)
-    this.WaterMaterial.effect.program.mustGet('instances').setBuffer(this.writer.buffer)
+    this.writer.upload(this.buffer)
+    this.TerrainMaterial.effect.program.mustGet('instances').setBuffer(this.buffer)
+    this.WaterMaterial.effect.program.mustGet('instances').setBuffer(this.buffer)
     for (const geometry of this.geometries) {
       geometry.instanceCount = this.writer.count
     }

@@ -1,11 +1,11 @@
 import {
-  BasicGame,
+  EcsGame,
   BoundsComponent,
   CameraComponent,
   MeshComponent,
   ModelComponent,
   OccTree,
-  SpatialRootComponent,
+  SpatialComponent,
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
@@ -22,7 +22,8 @@ import {
   type Device,
   type MeshOptions,
 } from '@gglib/graphics'
-import { BoundingBox, BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
+import { BoundingSphere, DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import { Model } from '@gglib/model'
 import { Renderer, type RenderContext } from '@gglib/render'
 import { lfmt } from '@gglib/utils'
 import { fetchTypedRequest, getLevelInfoUrl } from '../../api'
@@ -34,13 +35,12 @@ import { TerrainSystem } from '../terrain/TerrainSystem'
 import { levelEntityOptions } from './LevelComponent'
 import { TimeOfDay } from './TimeOfDay'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
-import { Model } from '@gglib/model'
 
 export class LevelSystem extends GameSystem {
   private content: ContentService
   private todQuery: GameQuery
 
-  public game: BasicGame
+  public game: EcsGame
   public entity: GameEntity
   public timeOfDay = new TimeOfDay()
   public camera: CameraComponent
@@ -51,7 +51,7 @@ export class LevelSystem extends GameSystem {
 
   private logTag = lfmt.badge('#FF9DA7', 'LevelSystem')
   public initialize(game: GameWorld): void {
-    this.game = game.getSystem(BasicGame)
+    this.game = game.getSystem(EcsGame)
     this.content = game.getSystem(ContentService)
     this.renderer = game.getSystem(Renderer)
     this.todQuery = game.query({ scope: 'active', required: [TimeOfDayComponent] })
@@ -156,8 +156,8 @@ export class LevelSystem extends GameSystem {
     this.entity = this.game.createEntity({
       name: `Model: ${model}`,
       components: [
-        new SpatialRootComponent({
-          instance: OccTree.create({
+        new SpatialComponent({
+          index: OccTree.create({
             min: Vec3.create(-2048, -2048, -2048),
             max: Vec3.create(2048, 2048, 2048),
             leafLevel: 5,
@@ -199,8 +199,9 @@ export class LevelSystem extends GameSystem {
     const wasd = camera.entity.component(WASDComponent)
     wasd.orbitMode = true
     wasd.radiusMax = 1000
-    wasd.targetRadius = 3
+    wasd.targetRadius = 5
     wasd.targetVertical = 45 * DEGREE_TO_RAD
+    wasd.orbitCenter.z = 4
 
     const content = this.content
     const asset = await content.loadAsset(assetUrl)
@@ -214,39 +215,38 @@ export class LevelSystem extends GameSystem {
       materials.push(material)
     }
 
-    const shapes = ['sphere', 'box', 'cylinder'] as const
-    const box = new BoundingBox()
-    const sphere = new BoundingSphere()
+    const shapes = ['cylinder', 'box', 'sphere'] as const
     const meshOptions: MeshOptions = {
-      boundingBox: box,
-      boundingSphere: sphere,
       materials,
       partImports: [],
     }
-    for (let y = 0; y < shapes.length; y++) {
+    for (let z = 0; z < shapes.length; z++) {
       for (let x = 0; x < materials.length; x++) {
-        const scale = 2
-        const transform = Mat4.createTranslationXYZ((x - Math.max(0, materials.length - 1) / 2) * scale, y * scale, 0)
+        const transform = Mat4.createRotationX(Math.PI / 2)
+          .preTranslateX((x - Math.max(0, materials.length - 1) / 2) * 2)
+          .preTranslateZ((z + 0.5) * 2)
+
         let geometry: Geometry
-        switch (shapes[y]) {
+        switch (shapes[z]) {
           case 'box': {
             geometry = boxGeometry(this.renderer.device, {
-              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture']],
+              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture', 'color']],
               vertexTransform: transform,
-              size: 2,
+              size: 1.8,
             })
             break
           }
           case 'sphere': {
             geometry = sphereGeometry(this.renderer.device, {
-              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture']],
+              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture', 'color']],
               vertexTransform: transform,
+              radius: 0.9,
             })
             break
           }
           case 'cylinder': {
             geometry = cylinderGeometry(this.renderer.device, {
-              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture']],
+              vertexLayout: [['position', 'normal', 'tangent', 'bitangent', 'texture', 'color']],
               vertexTransform: transform,
               closeTop: true,
               closeBottom: true,
@@ -254,8 +254,6 @@ export class LevelSystem extends GameSystem {
             break
           }
         }
-        box.merge(geometry.boundingBox)
-        sphere.mergeSphere(geometry.boundingSphere)
         meshOptions.partImports.push({
           geometry,
           materialIndex: x,
@@ -266,10 +264,10 @@ export class LevelSystem extends GameSystem {
     const mesh = new Mesh(this.renderer.device, meshOptions)
     this.entity = this.game.createEntity({
       components: [
-        new SpatialRootComponent({
-          instance: OccTree.create({
-            min: Vec3.create(-2048, -2048, -2048),
-            max: Vec3.create(2048, 2048, 2048),
+        new SpatialComponent({
+          index: OccTree.create({
+            min: vec3(-2048),
+            max: vec3(2048),
             leafLevel: 5,
             looseFactor: 2,
           }),

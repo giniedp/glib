@@ -1,5 +1,5 @@
 import { GameSystem, GameWorld } from '@gglib/ecs'
-import { KeyboardKey, KeyboardListener, type KeyboardOptions } from '@gglib/input'
+import { copyKeyboardState, KeyboardListener, KeyboardState, type KeyboardOptions } from '@gglib/game'
 
 /**
  * A component that listens for keyboard events
@@ -18,7 +18,7 @@ export class KeyboardInputSystem extends GameSystem {
    * @remarks
    * This is swapped with the `oldState` property each frame
    */
-  public newState = new Set<KeyboardKey>()
+  public newState: KeyboardState
 
   /**
    * Pressed keys in last frame
@@ -26,13 +26,13 @@ export class KeyboardInputSystem extends GameSystem {
    * @remarks
    * This is swapped with the `newState` property each frame
    */
-  public oldState = new Set<KeyboardKey>()
-
-  private addToNewState = (k: KeyboardKey) => this.newState.add(k)
+  public oldState: KeyboardState
 
   constructor(options: KeyboardOptions = {}) {
     super()
-    this.listener = new KeyboardListener(options)
+    this.listener = new KeyboardListener()
+    this.newState = this.listener.getState()
+    this.oldState = this.listener.getState()
   }
 
   public initialize(world: GameWorld): void {
@@ -47,9 +47,8 @@ export class KeyboardInputSystem extends GameSystem {
    * Swaps the `oldState` and `newState` properties and updates the `newState`
    */
   public override update() {
-    ;[this.oldState, this.newState] = [this.newState, this.oldState]
-    this.newState.clear()
-    this.listener.keys.forEach(this.addToNewState)
+    copyKeyboardState(this.newState, this.oldState)
+    this.listener.getState(this.newState)
   }
 
   /**
@@ -57,8 +56,8 @@ export class KeyboardInputSystem extends GameSystem {
    *
    * @param key - The key to check
    */
-  public isPressed(key: KeyboardKey): boolean {
-    return this.newState.has(key)
+  public isPressed(key: string): boolean {
+    return this.newState.pressedKeys.includes(key)
   }
 
   /**
@@ -66,8 +65,8 @@ export class KeyboardInputSystem extends GameSystem {
    *
    * @param key - The key to check
    */
-  public justPressed(key: KeyboardKey): boolean {
-    return !this.oldState.has(key) && this.newState.has(key)
+  public justPressed(key: string): boolean {
+    return !this.oldState.pressedKeys.includes(key) && this.newState.pressedKeys.includes(key)
   }
 
   /**
@@ -75,8 +74,8 @@ export class KeyboardInputSystem extends GameSystem {
    *
    * @param key - The key to check
    */
-  public isReleased(key: KeyboardKey): boolean {
-    return this.newState.has(key)
+  public isReleased(key: string): boolean {
+    return this.newState.pressedKeys.includes(key)
   }
 
   /**
@@ -84,7 +83,7 @@ export class KeyboardInputSystem extends GameSystem {
    *
    * @param key - The key to check
    */
-  public justReleased(key: KeyboardKey): boolean {
-    return this.oldState.has(key) && !this.newState.has(key)
+  public justReleased(key: string): boolean {
+    return this.oldState.pressedKeys.includes(key) && !this.newState.pressedKeys.includes(key)
   }
 }

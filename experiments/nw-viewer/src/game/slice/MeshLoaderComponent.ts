@@ -3,7 +3,7 @@ import {
   ModelComponent,
   PriorityLane,
   SchedulerSystem,
-  SpatialComponent,
+  SpatialNodeComponent,
   TransformComponent,
   type ScheduledTask,
 } from '@gglib/components'
@@ -68,7 +68,7 @@ export class MeshLoaderComponent implements GameComponent {
               }),
               components: [
                 new BoundsComponent(),
-                this.data.alwaysRender ? null : new SpatialComponent(),
+                this.data.alwaysRender ? null : new SpatialNodeComponent(),
                 new DebugShapeComponent({
                   type: 'bounds-box',
                   color: Color.LimeGreen,
@@ -110,7 +110,7 @@ export class MeshLoaderComponent implements GameComponent {
             }),
             components: [
               new BoundsComponent(),
-              this.data.alwaysRender ? null : new SpatialComponent(),
+              this.data.alwaysRender ? null : new SpatialNodeComponent(),
               new DebugShapeComponent({
                 type: 'box',
                 color: color,

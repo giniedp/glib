@@ -274,7 +274,7 @@ function lookupInterface(program: GlslProgram, typeName: string): GlslInterfaceD
   return null
 }
 
-const COMPONENTS: Record<number, GlslValueType | GlslTypeSampler> = {
+const VALUE_COMPONENTS: Record<number, GlslValueType> = {
   [gl.FLOAT]: scalar('float32'),
   [gl.BOOL]: scalar('int32'),
   [gl.INT]: scalar('int32'),
@@ -302,7 +302,9 @@ const COMPONENTS: Record<number, GlslValueType | GlslTypeSampler> = {
   [gl.FLOAT_MAT3x4]: matrix('float32', 3, 4),
   [gl.FLOAT_MAT4x2]: matrix('float32', 4, 2),
   [gl.FLOAT_MAT4x3]: matrix('float32', 4, 3),
+}
 
+const SAMPLER_COMPONENTS: Record<number, GlslTypeSampler> = {
   [gl.SAMPLER_2D]: sampler('sampler2D'),
   [gl.SAMPLER_CUBE]: sampler('samplerCube'),
   [gl.SAMPLER_3D]: sampler('sampler3D'),
@@ -320,9 +322,19 @@ const COMPONENTS: Record<number, GlslValueType | GlslTypeSampler> = {
   [gl.UNSIGNED_INT_SAMPLER_2D_ARRAY]: sampler('usampler2DArray'),
 }
 
+export function reflectGlslValueComponent(glType: number): GlslValueType {
+  if (glType in VALUE_COMPONENTS) {
+    return VALUE_COMPONENTS[glType]
+  }
+  return null
+}
+
 export function reflectGlslComponent(glType: number): GlslValueType | GlslTypeSampler {
-  if (glType in COMPONENTS) {
-    return COMPONENTS[glType]
+  if (glType in VALUE_COMPONENTS) {
+    return VALUE_COMPONENTS[glType]
+  }
+  if (glType in SAMPLER_COMPONENTS) {
+    return SAMPLER_COMPONENTS[glType]
   }
   return null
 }

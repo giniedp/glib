@@ -1,0 +1,42 @@
+{
+  "name": "@gglib/game",
+  "description": "Part of the [G]glib project",
+  "version": "0.7.0",
+  "repository": {
+    "type": "git",
+    "url": "github.com/giniedp/glib.git"
+  },
+  "keywords": [
+    "webgl",
+    "2d",
+    "3d",
+    "graphics"
+  ],
+  "author": "Alexander Graefenstein",
+  "license": "MIT",
+  "main": "dist\\bundles\\game.esm.js",
+  "module": "dist\\bundles\\game.esm.js",
+  "typings": "dist\\game\\src\\index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/bundles/game.esm.js",
+      "types": "./dist/game/src/index.d.ts"
+    }
+  },
+  "devDependencies": {
+    "@gglib/utils": "workspace:^0.7.0",
+    "@gglib/graphics": "workspace:^0.7.0",
+    "@gglib/math": "workspace:^0.7.0"
+  },
+  "peerDependencies": {
+    "@gglib/utils": "0.7.0",
+    "@gglib/graphics": "0.7.0",
+    "@gglib/math": "0.7.0"
+  },
+  "files": [
+    "package.json",
+    "dist",
+    "Readme.md"
+  ]
+}

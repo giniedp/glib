@@ -1,4 +1,0 @@
-# Fog
-
-<Example/>
-<ExampleCode/>

@@ -1,0 +1,26 @@
+<Material MtlFlags="557312" vertModifType="0">
+	<SubMaterials>
+		<Material Name="fur" MtlFlags="557216" Shader="Hair" GenMask="61" StringGenMask="%NORMAL_MAP%HAIR_PASS%ANISO_SPECULAR" SurfaceType="mat_default" Diffuse="0.485150,0.485150,0.485150" Specular="1.000000,1.000000,1.000000" Opacity="0.680000" Shininess="189.050003" AlphaTest="0.590000" vertModifType="0" LayerAct="0" Emittance="0.000000,0.000000,0.000000">
+			<Textures>
+				<Texture Map="Specular" File="objects/characters/npc/natural/bobcat/textures/bobcat_fur_spec.dds" AssetId="{BFBE506D-59C1-5456-9FD4-0CDC1665F7C6}:0"/>
+				<Texture Map="Smoothness" File="objects/characters/npc/natural/bobcat/textures/bobcat_fur_ddna.dds" AssetId="{642BCDE9-9CDD-53A7-AD5E-191690B61A58}:0"/>
+				<Texture Map="Bumpmap" File="objects/characters/npc/natural/bobcat/textures/bobcat_fur_ddna.dds" AssetId="{642BCDE9-9CDD-53A7-AD5E-191690B61A58}:0"/>
+				<Texture Map="Diffuse" File="objects/characters/npc/natural/bobcat/textures/bobcat_fur_diff.dds" AssetId="{58E99CE3-24D4-5BEB-A708-391C5A9ADFAA}:100000"/>
+			</Textures>
+			<PublicParams SecondaryHighlightShiftAmount="28.99" SoftIntersection="0" ShiftVariation="0.23999999" DiffuseWrap="0" SecondaryHighlightColor="0.69999999,0.69999999,0.69999999,1" SecondaryHighlightWidth="15.46" AlphaBlendMultiplier="1" IndirectColor="1,1,1,0.25"/>
+		</Material>
+		<Material Name="body" MtlFlags="524416" Shader="Illum" GenMask="2000C8031" StringGenMask="%NORMAL_MAP%SPECULAR_MAP%FX_DISSOLVE%ALLOW_SILHOUETTE_POM%SUBSURFACE_SCATTERING%OVERLAY_MASK%ALLOW_SPECULAR_ANTIALIASING" SurfaceType="mat_default" Diffuse="0.491021,0.491021,0.491021" Specular="1.000000,1.000000,1.000000" Opacity="1.000000" Shininess="188.330002" vertModifType="0" LayerAct="1" Emittance="0.000000,0.000000,0.000000" AlphaTest="0.000000">
+			<Textures>
+				<Texture Map="Smoothness" File="objects/characters/npc/natural/bobcat/textures/bobcat_ddna.dds" AssetId="{02EE1C6D-8F64-5632-9BEE-20BE1077F8F4}:0"/>
+				<Texture Map="Specular" File="objects/characters/npc/natural/bobcat/textures/bobcat_spec.dds" AssetId="{2DDB3E32-5096-550B-A031-AA8A95671CAA}:0"/>
+				<Texture Map="Bumpmap" File="objects/characters/npc/natural/bobcat/textures/bobcat_ddna.dds" AssetId="{02EE1C6D-8F64-5632-9BEE-20BE1077F8F4}:0"/>
+				<Texture Map="Diffuse" File="objects/characters/npc/natural/bobcat/textures/bobcat_diff.dds" AssetId="{2DBDB258-4332-57A6-81B4-CEB5EFBEBFEE}:100000">
+					<TexMod TexMod_RotateType="0" TexMod_TexGenType="0" TexMod_bTexGenProjected="0"/>
+				</Texture>
+				<Texture Map="Custom" File="objects/characters/npc/natural/bobcat/textures/bobcatstrange_mask.dds" AssetId="{B0AE6380-0BE9-5CD1-BF1E-F815EDFF2A28}:0"/>
+			</Textures>
+			<PublicParams Mask_A_Gloss="0" DissolveColor="1,1,1,1" Mask_G_Color="0.068478175,0.30946895,0.64447981,0" Mask_R="1" Mask_R_Color="0.34191445,0.50888133,0.64447981,0" EmittanceMapGamma="1" Mask_B="0.5" DissolveEdgeThickness="0" Mask_B_Color="0.80695242,0.47353151,0.1169707,0" Mask_R_Override="0.2" Mask_G="0.80000001" Mask_B_Override="0.2" Mask_G_Override="0.1" Mask_A_SpecColor="0,0,0,0" Mask_A_GlossShift="0.5" SSSIndex="0" DissolvePercentage="0" Mask_A_SpecColor_Override="0" IndirectColor="0.25,0.25,0.25,0.25"/>
+		</Material>
+	</SubMaterials>
+</Material>
+

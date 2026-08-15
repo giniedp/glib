@@ -34,7 +34,7 @@ export class TerrainTileRenderer {
       format: 'RGBA8_UNORM',
       width: width,
       height: height,
-      usage: TextureUsage.Sampled | TextureUsage.RenderTarget,
+      usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
       generateMipmap: false,
       mipLevelCount: 1,
     })
@@ -42,7 +42,7 @@ export class TerrainTileRenderer {
       format: 'RGBA8_UNORM',
       width: width,
       height: height,
-      usage: TextureUsage.Sampled | TextureUsage.RenderTarget,
+      usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
       generateMipmap: false,
       mipLevelCount: 1,
     })
@@ -50,7 +50,7 @@ export class TerrainTileRenderer {
       format: 'RGBA8_UNORM',
       width: width,
       height: height,
-      usage: TextureUsage.Sampled | TextureUsage.RenderTarget,
+      usage: TextureUsage.TextureBinding | TextureUsage.RenderTarget,
       generateMipmap: false,
       mipLevelCount: 1,
     })

@@ -96,12 +96,15 @@ export class WebGpuDeviceOutput extends DeviceOutput {
   }
 
   private configure() {
+    if (!this.device.gpu) {
+      return
+    }
     this.configured = true
     this.currentTexture = null
     this.device.context.configure({
       device: this.device.gpu,
       format: surfaceFormatToWebGPU(this.surfaceFormat),
-      alphaMode: 'opaque',
+      alphaMode: 'premultiplied',
       usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
     })
   }

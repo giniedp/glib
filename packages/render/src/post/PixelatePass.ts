@@ -5,6 +5,7 @@ import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../types'
 
 export interface PixelatePassOptions {
+  order?: number
   enabled?: boolean
   size?: number
   corner?: number
@@ -13,6 +14,7 @@ export interface PixelatePassOptions {
   gap?: number
 }
 export class PixelatePass implements RenderPass {
+  public order = 100
   public name: string = 'Pixelate Pass'
 
   public enabled = false
@@ -34,6 +36,7 @@ export class PixelatePass implements RenderPass {
       this.pixelate = new PixelateShader(device)
     }
 
+    this.order = options.order ?? this.order
     this.enabled = options.enabled ?? this.enabled
     this.size = options.size ?? this.size
     this.corner = options.corner ?? this.corner
@@ -69,7 +72,6 @@ export class PixelatePass implements RenderPass {
     effect.texture = this.source.texture
 
     const pass = ctx.device.renderPass
-    //pass.flush()
     pass.setRenderTarget(0, this.target.texture)
     pass.render(effect)
     pass.flush()

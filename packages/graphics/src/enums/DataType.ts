@@ -2,17 +2,7 @@ import { GLConst as gl } from './GLConst'
 
 export type DataType = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32' | 'float16'
 export type DataTypeViewWriter = (view: DataView, byteOffset: number, value: number) => void
-
-const dataTypeMap: Record<DataType, DataType> = {
-  int8: 'int8',
-  uint8: 'uint8',
-  int16: 'int16',
-  uint16: 'uint16',
-  int32: 'int32',
-  uint32: 'uint32',
-  float32: 'float32',
-  float16: 'float16',
-}
+export type DataTypeViewReader = (view: DataView, byteOffset: number) => number
 
 const dataTypeViewWriterMap: Record<DataType, DataTypeViewWriter> = {
   int8: (view, bo, v) => view.setInt8(bo, v),
@@ -25,8 +15,15 @@ const dataTypeViewWriterMap: Record<DataType, DataTypeViewWriter> = {
   float16: (view, bo, v) => view.setFloat16(bo, v, true),
 }
 
-export function dataType(type: DataType): DataType {
-  return dataTypeMap[type]
+const dataTypeViewReaderMap: Record<DataType, DataTypeViewReader> = {
+  int8: (view, bo) => view.getInt8(bo),
+  uint8: (view, bo) => view.getUint8(bo),
+  int16: (view, bo) => view.getInt16(bo, true),
+  uint16: (view, bo) => view.getUint16(bo, true),
+  int32: (view, bo) => view.getInt32(bo, true),
+  uint32: (view, bo) => view.getUint16(bo, true),
+  float32: (view, bo) => view.getFloat32(bo, true),
+  float16: (view, bo) => view.getFloat16(bo, true),
 }
 
 const mapToSize: Record<DataType, number> = {
@@ -134,3 +131,103 @@ export function arrayTypeToDataType(array: TypedArray): DataType {
 export function dataTypeViewWriter(type: DataType): DataTypeViewWriter {
   return dataTypeViewWriterMap[type]
 }
+
+export function dataTypeViewReader(type: DataType): DataTypeViewReader {
+  return dataTypeViewReaderMap[type]
+}
+
+export function dataTypeArray(type: DataType): TypedArray
+export function dataTypeArray(type: DataType, length: number): TypedArray
+export function dataTypeArray(type: DataType, values: ArrayLike<number>): TypedArray
+export function dataTypeArray(type: DataType, buffer: ArrayBuffer, byteOffset: number, elementCount: number): TypedArray
+export function dataTypeArray(
+  type: DataType,
+  buffer?: ArrayBuffer | number | ArrayLike<number>,
+  byteOffset?: number,
+  elementCount?: number,
+): TypedArray {
+  const ArrayType = dataTypeToArrayType(type)
+  if (buffer instanceof ArrayBuffer) {
+    return new ArrayType(buffer, byteOffset || 0, elementCount)
+  }
+  if (typeof buffer === 'number') {
+    return new ArrayType(buffer)
+  }
+  return new ArrayType(buffer)
+}
+
+export interface DataElementFormat {
+  elementType: DataType
+  elementCount: number
+}
+
+export function dataElementSize(type: DataElementFormat): number {
+  console.assert(!!type, 'type must be defined')
+  return mapToSize[type.elementType] * type.elementCount
+}
+
+export function gpuTypeSize(gpu: GpuDataType): number {
+  return dataElementSize(gpuDataFormats[gpu])
+}
+
+export function gpuTypeFormat(gpu: GpuDataType): Readonly<DataElementFormat> {
+  return gpuDataFormats[gpu]
+}
+
+export type GpuDataType =
+  | 'i32'
+  | 'u32'
+  | 'f32'
+  | 'h32'
+  | `vec${2 | 3 | 4}i`
+  | `vec${2 | 3 | 4}u`
+  | `vec${2 | 3 | 4}f`
+  | `vec${2 | 3 | 4}h`
+  | `mat${2 | 3 | 4}x${2 | 3 | 4}f`
+  | `mat${2 | 3 | 4}x${2 | 3 | 4}h`
+
+const gpuDataFormats: Record<GpuDataType, Readonly<DataElementFormat>> = {
+  i32: Object.freeze({ elementType: 'int32', elementCount: 1 }),
+  u32: Object.freeze({ elementType: 'uint32', elementCount: 1 }),
+  f32: Object.freeze({ elementType: 'float32', elementCount: 1 }),
+  h32: Object.freeze({ elementType: 'float16', elementCount: 1 }),
+
+  vec2i: Object.freeze({ elementType: 'int32', elementCount: 2 }),
+  vec2u: Object.freeze({ elementType: 'uint32', elementCount: 2 }),
+  vec2f: Object.freeze({ elementType: 'float32', elementCount: 2 }),
+  vec2h: Object.freeze({ elementType: 'float16', elementCount: 2 }),
+
+  vec3i: Object.freeze({ elementType: 'int32', elementCount: 3 }),
+  vec3u: Object.freeze({ elementType: 'uint32', elementCount: 3 }),
+  vec3f: Object.freeze({ elementType: 'float32', elementCount: 3 }),
+  vec3h: Object.freeze({ elementType: 'float16', elementCount: 3 }),
+
+  vec4i: Object.freeze({ elementType: 'int32', elementCount: 4 }),
+  vec4u: Object.freeze({ elementType: 'uint32', elementCount: 4 }),
+  vec4f: Object.freeze({ elementType: 'float32', elementCount: 4 }),
+  vec4h: Object.freeze({ elementType: 'float16', elementCount: 4 }),
+
+  mat2x2f: Object.freeze({ elementType: 'float32', elementCount: 2 * 2 }),
+  mat2x3f: Object.freeze({ elementType: 'float32', elementCount: 2 * 3 }),
+  mat2x4f: Object.freeze({ elementType: 'float32', elementCount: 2 * 4 }),
+
+  mat3x2f: Object.freeze({ elementType: 'float32', elementCount: 3 * 2 }),
+  mat3x3f: Object.freeze({ elementType: 'float32', elementCount: 3 * 3 }),
+  mat3x4f: Object.freeze({ elementType: 'float32', elementCount: 3 * 4 }),
+
+  mat4x2f: Object.freeze({ elementType: 'float32', elementCount: 4 * 2 }),
+  mat4x3f: Object.freeze({ elementType: 'float32', elementCount: 4 * 3 }),
+  mat4x4f: Object.freeze({ elementType: 'float32', elementCount: 4 * 4 }),
+
+  mat2x2h: Object.freeze({ elementType: 'float16', elementCount: 2 * 2 }),
+  mat2x3h: Object.freeze({ elementType: 'float16', elementCount: 2 * 3 }),
+  mat2x4h: Object.freeze({ elementType: 'float16', elementCount: 2 * 4 }),
+
+  mat3x2h: Object.freeze({ elementType: 'float16', elementCount: 3 * 2 }),
+  mat3x3h: Object.freeze({ elementType: 'float16', elementCount: 3 * 3 }),
+  mat3x4h: Object.freeze({ elementType: 'float16', elementCount: 3 * 4 }),
+
+  mat4x2h: Object.freeze({ elementType: 'float16', elementCount: 4 * 2 }),
+  mat4x3h: Object.freeze({ elementType: 'float16', elementCount: 4 * 3 }),
+  mat4x4h: Object.freeze({ elementType: 'float16', elementCount: 4 * 4 }),
+} satisfies Record<string, DataElementFormat>

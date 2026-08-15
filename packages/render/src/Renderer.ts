@@ -1,4 +1,5 @@
 import {
+  BufferRecorder,
   Color,
   CommonBlocks,
   CommonInputs,
@@ -6,7 +7,6 @@ import {
   DepthState,
   Device,
   DeviceOutput,
-  BufferWriter,
   ProgramInputBlockCollection,
   RenderVariant,
   SpriteBatch,
@@ -67,8 +67,8 @@ export class Renderer {
    */
   public autoSrgb = false
 
-  public perInstanceTransforms: BufferWriter
-  public perInstanceData: BufferWriter
+  public perInstanceTransforms: BufferRecorder
+  public perInstanceData: BufferRecorder
 
   public lastInstanceCount = 0
   protected renderLists: RenderListCache
@@ -91,7 +91,7 @@ export class Renderer {
   public constructor(device: Device) {
     this.device = device
     this.pipeline = new RenderPipeline()
-    this.pipeline.addPass(new GeometryPass())
+    this.pipeline.passes.push(new GeometryPass())
     this.renderLists = new RenderListCache()
     this.collectors = new RenderCollectorRegistry()
     this.collectors.register(RenderItemType.Mesh, new MeshRenderCollector())
@@ -143,20 +143,20 @@ export class Renderer {
     const device = this.device
     const capacity = 512 // arbitrary initial capacity, will be automatically resized if needed
     const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4 or 4 vec4s for unknown data
-    this.perInstanceTransforms = new BufferWriter({
+    this.perInstanceTransforms = new BufferRecorder({
       capacity,
       autosize: true,
       recordByteSize: strideInBytes,
-      buffer: device.createBuffer({
+      gpuBuffer: device.createBuffer({
         size: capacity * strideInBytes,
         type: 'StorageBuffer',
       }),
     })
-    this.perInstanceData = new BufferWriter({
+    this.perInstanceData = new BufferRecorder({
       capacity,
       autosize: true,
       recordByteSize: strideInBytes, // unknown data, using 4 vec4s just in case
-      buffer: device.createBuffer({
+      gpuBuffer: device.createBuffer({
         size: capacity * strideInBytes,
         type: 'StorageBuffer',
       }),
@@ -167,20 +167,20 @@ export class Renderer {
     const device = this.device as WebglDevice
     const strideInBytes = 16 * Float32Array.BYTES_PER_ELEMENT // Mat4
     const instanceCount = device.capabilities.maxUniformBlockSize / strideInBytes
-    this.perInstanceTransforms = new BufferWriter({
+    this.perInstanceTransforms = new BufferRecorder({
       autosize: false,
       capacity: instanceCount,
       recordByteSize: strideInBytes,
-      buffer: device.createBuffer({
+      gpuBuffer: device.createBuffer({
         size: instanceCount * strideInBytes,
         type: 'UniformBuffer',
       }),
     })
-    this.perInstanceData = new BufferWriter({
+    this.perInstanceData = new BufferRecorder({
       autosize: false,
       capacity: instanceCount,
       recordByteSize: strideInBytes,
-      buffer: device.createBuffer({
+      gpuBuffer: device.createBuffer({
         size: instanceCount * strideInBytes,
         type: 'UniformBuffer',
       }),

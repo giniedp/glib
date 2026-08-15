@@ -1,4 +1,0 @@
-# Texture Mapping
-
-<Example/>
-<ExampleCode/>

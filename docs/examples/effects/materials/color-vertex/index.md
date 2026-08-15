@@ -1,4 +1,0 @@
-# Vertex Colors
-
-<Example/>
-<ExampleCode/>

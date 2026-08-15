@@ -84,24 +84,38 @@ export abstract class DynamicTextureSource<T extends TextureFaceData = TextureFa
 }
 
 export class ImageElementSource extends DynamicTextureSource<HTMLImageElement> {
-  public get isReady() {
-    return this.resource.complete
-  }
-  public get width() {
-    return this.resource.naturalWidth
-  }
-  public get height() {
-    return this.resource.naturalHeight
-  }
+  public isReady: boolean
+  public width: number
+  public height: number
+
   public readonly levels: HTMLImageElement[][]
 
-  public readonly resource: HTMLImageElement
+  public readonly resource: HTMLImageElement[]
 
-  public constructor(resource: HTMLImageElement) {
+  public constructor(resource: HTMLImageElement | Array<HTMLImageElement>) {
     super()
-    this.levels = [[resource]]
-    this.resource = resource
-    this.resource.addEventListener('load', () => {
+    const list = Array.isArray(resource) ? resource : [resource]
+    this.levels = [list]
+    this.resource = list
+    Promise.all(
+      list.map((it) => {
+        const { promise, resolve, reject } = Promise.withResolvers<HTMLImageElement>()
+        if (it.complete) {
+          resolve(it)
+        } else {
+          it.addEventListener('load', () => resolve(it))
+          it.addEventListener('error', (err) => reject(err))
+        }
+        return promise
+      }),
+    ).then((res) => {
+      this.isReady = true
+      this.width = res[0].naturalWidth
+      this.height = res[0].naturalHeight
+      if (!res.every((it) => it.naturalWidth === res[0].naturalWidth && it.naturalHeight === res[0].naturalHeight)) {
+        throw new Error(`All image source must have same dimensions`)
+      }
+
       this.trigger('ready')
       this.trigger('change')
     })
@@ -221,6 +235,7 @@ export type TextureSourceInput =
   | ArrayBuffer
   | ArrayBufferView<ArrayBuffer>
   | string
+  | string[]
   | TexImageSource
   | ImageBitmap
   | ImageData
@@ -242,6 +257,10 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
 
   if (typeof source === 'string') {
     return textureSourceFromUrl(source, options)
+  }
+
+  if (Array.isArray(source) && source.every((it) => typeof it === 'string')) {
+    return textureSourceFromImageUrl(source, options?.crossOrigin)
   }
 
   if (Array.isArray(source) && typeof source[0] === 'object') {
@@ -286,11 +305,15 @@ export function textureSourceFromUrl(url: string, options?: CreateTextureSourceO
   return textureSourceFromImageUrl(url, options?.crossOrigin)
 }
 
-export function textureSourceFromImageUrl(url: string, crossOrigin?: string) {
-  const image = new Image()
-  image.crossOrigin = crossOrigin
-  image.src = url
-  return new ImageElementSource(image)
+export function textureSourceFromImageUrl(url: string | string[], crossOrigin?: string) {
+  const urls = Array.isArray(url) ? url : [url]
+  const images = urls.map((it) => {
+    const image = new Image()
+    image.crossOrigin = crossOrigin
+    image.src = it
+    return image
+  })
+  return new ImageElementSource(images)
 }
 
 export function textureSourceFromVideoUrl(url: string, crossOrigin: string) {

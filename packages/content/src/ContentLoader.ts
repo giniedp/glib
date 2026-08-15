@@ -253,7 +253,7 @@ export class ContentLoader {
     if (options.factory) {
       return options.factory(this.device, options)
     }
-    throw new Error(`No material type found for asset: ${options.name || 'unknown'}`)
+    throw new Error(`No registered material found for asset: ${options.name || 'unknown'}`)
   }
 
   public transformTexture = (data: TextureOptions): Texture => {

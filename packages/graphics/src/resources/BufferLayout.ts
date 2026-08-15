@@ -1,62 +1,51 @@
-import { IVec4, Mat4 } from '@gglib/math'
+import { GpuDataType, gpuTypeSize } from '../enums'
 
-export type BufferFieldType = 'vec4' | 'mat4'
-
-export const BufferFieldSizes: Record<BufferFieldType, number> = {
-  vec4: 16,
-  mat4: 64,
-}
-
-export interface BufferFieldDescriptor<T extends BufferFieldType = BufferFieldType> {
+export interface BufferFieldDescriptor<T extends GpuDataType = GpuDataType> {
   name: string
   type: T
 }
 
-export interface BufferField<T extends BufferFieldType = BufferFieldType> {
+export interface BufferField<T extends GpuDataType = GpuDataType> {
   byteOffset: number
-  name: string
   type: T
 }
 
-export type BufferFields<T extends BufferFieldDescriptor = any> = {
+export type BufferSchema<T extends BufferFieldDescriptor = any> = {
   [K in T['name']]: {
-    name: K
     type: Extract<T, { name: K }>['type']
     byteOffset: number
   }
 }
 
-export type BufferLayout<T extends Record<string, BufferField> = {}> = {
-  stride: number
-  fields: T
+export function bufferField<N extends string, T extends GpuDataType>(name: N, type: T) {
+  return { name, type } //satisfies BufferFieldDescriptor<T>
 }
 
 export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T) {
   const result = {
-    recordByteSize: 0,
-    fields: {} as BufferFields<T[number]>,
+    byteSize: 0,
+    schema: {} as BufferSchema<T[number]>,
   }
 
   let offset = 0
   for (const field of fields) {
-    result.fields[field.name] = {
-      name: field.name,
+    result.schema[field.name] = {
       type: field.type,
       byteOffset: offset,
     }
-    offset += BufferFieldSizes[field.type]
+    offset += gpuTypeSize(field.type)
   }
 
-  result.recordByteSize = offset
+  result.byteSize = offset
 
   return result
 }
 
 export type TransformBufferLayout = typeof TransformBufferLayout
-export const TransformBufferLayout = bufferLayout([{ name: 'transform', type: 'mat4' }])
+export const TransformBufferLayout = bufferLayout([bufferField('transform', 'mat4x4f')])
 
 export type TransformColorBufferLayout = typeof TransformColorBufferLayout
 export const TransformColorBufferLayout = bufferLayout([
-  { name: 'transform', type: 'mat4' },
-  { name: 'color', type: 'vec4' },
+  bufferField('transform', 'mat4x4f'),
+  bufferField('color', 'vec4f'),
 ])

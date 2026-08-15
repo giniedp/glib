@@ -1,9 +1,9 @@
 import { IVec2, IVec3, IVec4 } from '@gglib/math'
+import { SamplerState } from '../states'
 import type { InputValueType, ProgramInput } from './ProgramInput'
 import { ProgramInputBlock } from './ProgramInputSource'
 import type { ShaderModule } from './ShaderModule'
 import { Texture } from './Texture'
-import { SamplerState } from '../states'
 
 export interface ProgramOptions {
   /**
@@ -59,10 +59,40 @@ export abstract class Program {
   public abstract readonly perInstanceDataBlock?: string
 
   /**
-   * Indicates whether the underlying shader module is ready to be used.
+   * Promise that resolves when the underlying shader compilation is complete
    */
-  public get isReady(): boolean {
-    return this.module.isReady
+  public get compiled() {
+    return this.module.compiled
+  }
+
+  /**
+   * Indicates whether the underlying shader compilation is complete
+   */
+  public get isCompiled(): boolean {
+    return this.module.isCompiled
+  }
+
+  /**
+   * Indicates whether the underlying shader compilation is complete and shader is valid
+   */
+  public get isValid(): boolean {
+    return this.module.isValid
+  }
+
+  /**
+   *
+   * @param source
+   * @param force
+   */
+  public applyBlocks(blocks: Record<string, ProgramInputBlock>, force?: boolean): boolean {
+    let changed = false
+    for (const blockName in blocks) {
+      const source = blocks[blockName]
+      if ((source && this.applyBlock(source), force)) {
+        changed = true
+      }
+    }
+    return changed
   }
 
   /**

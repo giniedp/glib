@@ -2,8 +2,15 @@ import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Color } from '../Color'
 import { Device } from '../Device'
 import { FrontFace, PrimitiveType } from '../enums'
-import { BufferOptions, PlainBufferData } from '../resources'
-import { VertexSemantic, vertexLayout, vertexAttribute, VertexAttribute, VertexLayout } from '../VertexLayout'
+import {
+  BufferOptions,
+  PlainBufferData,
+  vertexAttribute,
+  VertexAttribute,
+  vertexLayout,
+  VertexLayout,
+  VertexSemantic,
+} from '../resources'
 import { Geometry, GeometryOptions } from './Geometry'
 import { GeometryUtil } from './GeometryUtil'
 
@@ -29,7 +36,7 @@ export interface GeometryBuilderOptions {
   /**
    * Mapping of attribute name to its default value
    */
-  defaults?: Record<VertexSemantic, number[]>
+  defaults?: Partial<Record<VertexSemantic, number[]>>
   /**
    * The transform modes for each attribute
    */
@@ -47,11 +54,6 @@ export interface BuildGeometryOptions {
   name?: string
 
   /**
-   * The geometry material id
-   */
-  materialIndex?: number
-
-  /**
    * The vertex buffer layout
    */
   vertexLayout?: Array<VertexLayout | VertexSemantic[]>
@@ -65,7 +67,7 @@ export interface BuildGeometryOptions {
    * Default attribute values to use during the build process. If any vertex is pushed into the builder
    * with missing attributes they are resolved from here.
    */
-  vertexDefaults?: Record<VertexSemantic, number[]>
+  vertexDefaults?: Partial<Record<VertexSemantic, number[]>>
 
   /**
    * Primitive topology.  Defaults to `'TriangleList'`.
@@ -94,7 +96,6 @@ export function buildGeometry<T>(
   b.calculateBounds()
   return b.buildGeometry(device, {
     name: options?.name ?? 'geometry',
-    materialIndex: options?.materialIndex ?? 0,
     primitiveType: options?.primitiveType,
   })
 }
@@ -277,6 +278,14 @@ export class GeometryBuilder {
   }
 
   /**
+   * Pushes a single index into current state.
+   */
+  public addIndices(...index: number[]): this {
+    this.idxBuffer.data.elements.push(...index)
+    return this
+  }
+
+  /**
    * Pushes a single vertex definition into current state
    *
    * @remarks
@@ -433,7 +442,6 @@ export class GeometryBuilder {
     device: Device,
     options: {
       name?: string
-      materialIndex?: number
       primitiveType?: PrimitiveType
     },
   ): Geometry {

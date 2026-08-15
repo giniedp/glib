@@ -1,19 +1,18 @@
-import { IVec3 } from '@gglib/math'
+import { Mat4, vec3 } from '@gglib/math'
 import { brand, Brand } from '@gglib/utils'
 import {
   AcquireTextureOptions,
   inputSlotMat3,
   inputSlotMat4,
-  inputSlotSampler,
   inputSlotScalar,
   inputSlotTexture,
   inputSlotVec2,
   inputSlotVec3,
-  inputSlotVec4,
   InputValueType,
   Texture,
   TextureOptions,
 } from '../resources'
+import { SamplerState } from '../states'
 
 export type TextureAsset = TextureOptions | AcquireTextureOptions
 
@@ -45,8 +44,14 @@ export const CommonBlocks = {
 } as const
 
 export const CommonInputs = {
+  /**
+   * Inputs that are commonly set once per frame or globally
+   */
   Global: {
     AmbientColor: inputSlotVec3(Global, 'ambientColor'),
+    SkyColor: inputSlotVec3(Global, 'skyColor'),
+    SkyDirection: inputSlotVec3(Global, 'skyDirection'),
+    GroundColor: inputSlotVec3(Global, 'groundColor'),
     FogColor: inputSlotVec3(Global, 'fogColor'),
     FogDensity: inputSlotScalar(Global, 'fogDensity'),
     FogNear: inputSlotScalar(Global, 'fogNear'),
@@ -54,25 +59,31 @@ export const CommonInputs = {
     IrradianceMap: inputSlotTexture(Global, 'irradianceMap'),
   },
 
+  /**
+   * Inputs that are commonly set once per frame
+   */
   Frame: {
     /**
-     * @binding frame.index
+     * @binding `frame.index`
      */
     FrameIndex: inputSlotScalar(Frame, 'index'),
     /**
-     * @binding frame.elapsedTime
+     * @binding `frame.elapsedTime`
      */
     ElapsedTime: inputSlotScalar(Frame, 'elapsedTime'),
     /**
-     * @binding frame.deltaTime
+     * @binding `frame.deltaTime`
      */
     DeltaTime: inputSlotScalar(Frame, 'deltaTime'),
     /**
-     * @binding frame.randomSeed
+     * @binding `frame.randomSeed`
      */
     RandomSeed: inputSlotScalar(Frame, 'randomSeed'),
   },
 
+  /**
+   * Inputs that are commonly set once per render view
+   */
   View: {
     ViewMatrix: inputSlotMat4(View, 'viewMatrix'),
     InverseViewMatrix: inputSlotMat4(View, 'inverseViewMatrix'),
@@ -97,42 +108,85 @@ export const CommonInputs = {
     ObjectId: inputSlotScalar(Object, 'objectId'),
     ReceivesShadows: inputSlotScalar(Object, 'receivesShadows'),
   },
-
-  Material: {
-    BaseColor: inputSlotVec4(Material, 'baseColor'),
-    Roughness: inputSlotScalar(Material, 'roughness'),
-    Metallic: inputSlotScalar(Material, 'metallic'),
-    Emissive: inputSlotVec3(Material, 'emissive'),
-    Opacity: inputSlotScalar(Material, 'opacity'),
-    AlphaCutoff: inputSlotScalar(Material, 'alphaCutoff'),
-    BaseColorMap: inputSlotTexture(Material, 'baseColorMap'),
-    NormalMap: inputSlotTexture(Material, 'normalMap'),
-    MetallicRoughnessMap: inputSlotTexture(Material, 'metallicRoughnessMap'),
-    EmissiveMap: inputSlotTexture(Material, 'emissiveMap'),
-    DefaultSampler: inputSlotSampler(Material, 'defaultSampler'),
-  },
 }
 
 export interface CommonMaterialProps {
-  AmbientColor?: IVec3 | number[]
-  BaseColor?: IVec3 | number[]
-  SpecularColor?: IVec3 | number[]
-  SpecularFactor?: number
-  EmissiveColor?: IVec3 | number[]
-  EmissiveFactor?: number
+  AmbientColor?: number[]
+  BaseColor?: number[]
+  SpecularColor?: number[]
+  SpecularWeight?: number
+  EmissiveColor?: number[]
+  EmissiveStrength?: number
   Metallic?: number
   Roughness?: number
   Opacity?: number
   IOR?: number
   AlphaClip?: number
+  AlphaBlend?: boolean
+  DoubleSided?: boolean
+
+  BaseMap?: Texture | AcquireTextureOptions | TextureOptions
+  BaseMapSampler?: SamplerState
+  BaseMapUv?: CommonUvInfo
 
   NormalMap?: Texture | AcquireTextureOptions | TextureOptions
-  BaseColorMap?: Texture | AcquireTextureOptions | TextureOptions
-  SpecularColorMap?: Texture | AcquireTextureOptions | TextureOptions
+  NormalMapSampler?: SamplerState
+  NormalMapUv?: CommonUvInfo
+
+  SpecularMap?: Texture | AcquireTextureOptions | TextureOptions
+  SpecularMapSampler?: SamplerState
+  SpecularMapUv?: CommonUvInfo
+
   OcclusionMap?: Texture | AcquireTextureOptions | TextureOptions
+  OcclusionMapSampler?: SamplerState
+  OcclusionMapUv?: CommonUvInfo
+
   OpacityMap?: Texture | AcquireTextureOptions | TextureOptions
+  OpacityMapSampler?: SamplerState
+  OpacityMapUv?: CommonUvInfo
+
   EmissiveMap?: Texture | AcquireTextureOptions | TextureOptions
+  EmissiveMapSampler?: SamplerState
+  EmissiveMapUv?: CommonUvInfo
+
   EnvironmentMap?: Texture | AcquireTextureOptions | TextureOptions
+  EnvironmentMapSampler?: SamplerState
+  EnvironmentMapUv?: CommonUvInfo
+
   DisplacementMap?: Texture | AcquireTextureOptions | TextureOptions
+  DisplacementMapSampler?: SamplerState
+  DisplacementMapUv?: CommonUvInfo
+
   SmoothnessMap?: Texture | AcquireTextureOptions | TextureOptions
+  SmoothnessMapSampler?: SamplerState
+  SmoothnessMapUv?: CommonUvInfo
+
+  MetallicRoughnessMap?: Texture | AcquireTextureOptions | TextureOptions
+  MetallicRoughnessMapSampler?: SamplerState
+  MetallicRoughnessMapUv?: CommonUvInfo
+}
+
+export interface CommonUvInfo {
+  /**
+   * UV index. Default is 0
+   */
+  index?: number
+  /**
+   * UV offset. Default is [0, 0]
+   */
+  offset?: number[]
+  /**
+   * UV rotation. Default is 0
+   */
+  rotation?: number
+  /**
+   * UV scale, Default is [1, 1]
+   */
+  scale: number[]
+}
+
+export function uvInfoToMat4(info: CommonUvInfo): Mat4 {
+  return Mat4.createTranslation(vec3(info.offset ?? [0, 0], 0))
+    .multiply(Mat4.createRotationZ(-(info.rotation ?? 0)))
+    .multiply(Mat4.createScale(vec3(info.scale ?? [1, 1], 1)))
 }

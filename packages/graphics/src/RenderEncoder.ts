@@ -1,3 +1,4 @@
+import { IVec4 } from '@gglib/math'
 import type { Device } from './Device'
 import type { PrimitiveType } from './enums'
 import type { Buffer, DeviceOutput, Program, Texture, VertexBuffer } from './resources'
@@ -40,7 +41,7 @@ export abstract class RenderEncoder {
     resolve?: Texture | DeviceOutput,
   ): void
   public abstract setDepthTarget(target: Texture): void
-  public abstract setClearColor(index: number, color: GPUColor): void
+  public abstract setClearColor(index: number, color: GPUColor | IVec4): void
   public abstract setClearDepth(depth: number): void
   public abstract setClearStencil(stencil: number): void
   public abstract setBlendConstants(r: number, g: number, b: number, a: number): void

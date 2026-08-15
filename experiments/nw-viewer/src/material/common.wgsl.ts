@@ -376,11 +376,11 @@ fn shadePbrOut( shade: ShadeParams, surface: SurfaceParams ) -> ShadeOutput {
 
   let R0: vec3f = specularColor;
 
+  let I: vec3f = shade.I;
   let V: vec3f = shade.V;
-  let N: vec3f = surface.Normal.xyz;
   let L: vec3f = shade.L;
   let H: vec3f = normalize(V + L);
-  let I: vec3f = shade.I;
+  let N: vec3f = surface.Normal.xyz;
 
   let dotNL: f32 = clamp(dot(N, L), 0.001, 1.0);
   let dotNH: f32 = clamp(dot(N, H), 0.0, 1.0);
@@ -467,13 +467,11 @@ fn uvScaleOffset(uv: vec2f, scaleOffset: vec4f) -> vec2f {
   return uv * scaleOffset.xy + scaleOffset.zw;
 }
 
-// sRGB → Linear
 fn srgbToLinear(c: vec3f) -> vec3f {
   let cutoff = vec3f(0.04045);
   return select( c / 12.92, pow((c + 0.055) / 1.055, vec3f(2.4)), c > cutoff );
 }
 
-// Linear → sRGB
 fn linearToSrgb(c: vec3f) -> vec3f {
   let cutoff = vec3f(0.0031308);
   return select( 12.92 * c, 1.055 * pow(c, vec3f(1.0 / 2.4)) - 0.055, c > cutoff );

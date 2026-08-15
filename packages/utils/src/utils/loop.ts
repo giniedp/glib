@@ -19,14 +19,12 @@ export interface Loop {
 }
 
 /**
- * Spins the given `update` function in a loop by utilizing `requestAnimationFrame`
+ * A primitive loop scheduler with no fixed time support or any optimizations.
+ * Simply schedules the given `frame` function with `requestAnimationFrame`.
  *
  * @public
- * @remarks
- * A primitive loop scheduler with no fixed time support or any optimizations.
- * Simply schedules the given `update` function with `requestAnimationFrame`.
  */
-export function loop(frame: (timestamp: number, dt: number) => any, autostart = true): Loop {
+export function loop(frame: (timeInMs: number, deltaInMs: number) => any, autostart = true): Loop {
   let requestId: number = null
   let timestamp: number = performance.now()
 

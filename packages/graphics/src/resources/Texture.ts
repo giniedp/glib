@@ -6,8 +6,9 @@ import type { ReferenceCounted } from './ResourceTracker'
 import { DynamicTextureSource, type TextureSource } from './TextureSource'
 
 export const TextureUsage = {
-  RenderTarget: 16,
-  Sampled: 4,
+  TextureBinding: 0x04,
+  StorageBinding: 0x08,
+  RenderTarget: 0x10,
 }
 
 /**
@@ -19,7 +20,7 @@ export type TextureDataOption = number[] | ArrayBuffer | ArrayBufferView<ArrayBu
 /**
  * @public
  */
-export type TextureSourceOption = string | TexImageSource | TextureDataOption | TextureSource
+export type TextureSourceOption = string | string[] | TexImageSource | TextureDataOption | TextureSource
 
 export type TextyreUsage = number
 
@@ -99,7 +100,7 @@ export interface TextureOptions extends Partial<TextureDescriptor> {
   sampleCount?: number
 
   /**
-   * Indicates intended usage of the texture. Defaults to {@link TextureUsage.Sampled}.
+   * Indicates intended usage of the texture. Defaults to {@link TextureUsage.TextureBinding}.
    */
   usage?: number
 

@@ -1,6 +1,13 @@
 import { ArrayLike } from '@gglib/math'
-import { Buffer, BufferOptions, isPlainBufferData, PlainBufferData } from '../resources'
-import { countElements, countElementsBefore, elementCpuFormat } from '../VertexLayout'
+import {
+  Buffer,
+  BufferOptions,
+  countElements,
+  countElementsBefore,
+  elementCpuFormat,
+  isPlainBufferData,
+  PlainBufferData,
+} from '../resources'
 
 /**
  * @public

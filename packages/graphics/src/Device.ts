@@ -96,6 +96,12 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
   public abstract readonly defaultTexture: Texture
 
   /**
+   * Fallback texture used when no texture is bound
+   * @public
+   */
+  public abstract readonly defaultTextureCube: Texture
+
+  /**
    * Default render pass encoder targeting the current output
    * @public
    */

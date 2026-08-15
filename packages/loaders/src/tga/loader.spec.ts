@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { WebglDevice, TextureSource } from '@gglib/graphics'
+import { WebglDevice, TextureSource, Texture } from '@gglib/graphics'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Loader } from './loader'
 
@@ -25,9 +25,8 @@ describe('TGA Loader', () => {
       })
       await cache.put(new Request(asset), new Response(data))
 
-      const result = await content.loadAsset(asset)
-      expect(result.textures).toHaveLength(1)
-      expect(result.textures[0].source).toBeInstanceOf(TextureSource)
+      const result = await content.loadTexture(asset)
+      expect(result).toBeInstanceOf(Texture)
     })
   })
 })

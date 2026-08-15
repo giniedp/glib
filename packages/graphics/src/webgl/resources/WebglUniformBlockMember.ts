@@ -79,12 +79,16 @@ export class WebglUniformBlockMember implements WebglUniform {
   }
 
   public write(value: number) {
-    if (this.data[this.position] !== value) {
-      this.data[this.position] = value
-    }
+    this.data[this.position] = value
     this.component++
     this.position++
     if (this.component >= this.componentCount) {
+      if (!this.vectorStride) {
+        // TODO: remove this workaround and cover with tests
+        // when vectorStride is not set, the position and component resets to 0
+        // which makes endWrite not to detect any changes
+        this.endWrite()
+      }
       this.position = this.position - this.componentCount + this.vectorStride
       this.component = 0
     }

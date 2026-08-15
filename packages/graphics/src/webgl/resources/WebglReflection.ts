@@ -2,6 +2,7 @@ import { ShaderAnnotations } from '../../shader'
 import {
   GlslMember,
   reflectGlslComponent,
+  reflectGlslValueComponent,
   type GlslShaderInfo,
   type GlslTypeSampler,
   type GlslValueType,
@@ -9,19 +10,20 @@ import {
 import type { WebglShaderModule } from './WebglShaderModule'
 
 export interface WebglReflection {
-  readonly inputs: ReadonlyArray<WeblReflectInput>
-  readonly outputs: ReadonlyArray<WeblReflectOutput>
+  readonly inputs: ReadonlyArray<WebglReflectInput>
+  readonly outputs: ReadonlyArray<WebglReflectOutput>
   readonly blocks: ReadonlyArray<WebglReflectBlock>
   readonly uniforms: ReadonlyArray<WebglReflectUniform>
 }
 
-export interface WeblReflectInput {
+export interface WebglReflectInput {
   readonly name: string
   readonly location: number
   readonly alias?: string
+  readonly type: GlslValueType
 }
 
-export interface WeblReflectOutput {
+export interface WebglReflectOutput {
   readonly name: string
   readonly location: number
 }
@@ -63,9 +65,13 @@ export function reflectProgram(program: WebglShaderModule): WebglReflection {
   }
 }
 
-function reflectInputs(gl: WebGL2RenderingContext, resource: WebGLProgram, shader: GlslShaderInfo): WeblReflectInput[] {
+function reflectInputs(
+  gl: WebGL2RenderingContext,
+  resource: WebGLProgram,
+  shader: GlslShaderInfo,
+): WebglReflectInput[] {
   const count: number = gl.getProgramParameter(resource, gl.ACTIVE_ATTRIBUTES)
-  const result: WeblReflectInput[] = []
+  const result: WebglReflectInput[] = []
   for (let i = 0; i < count; ++i) {
     const info = gl.getActiveAttrib(resource, i)
     const location = gl.getAttribLocation(resource, info.name)
@@ -73,10 +79,12 @@ function reflectInputs(gl: WebGL2RenderingContext, resource: WebGLProgram, shade
     if (!reflect) {
       continue
     }
+    info.type
     result.push({
       name: info.name,
       location,
       alias: reflect.annotations[ShaderAnnotations.Alias],
+      type: reflectGlslValueComponent(info.type),
     })
   }
   return result
@@ -86,8 +94,8 @@ function reflectOutputs(
   gl: WebGL2RenderingContext,
   resource: WebGLProgram,
   shader: GlslShaderInfo,
-): WeblReflectOutput[] {
-  const result: WeblReflectOutput[] = []
+): WebglReflectOutput[] {
+  const result: WebglReflectOutput[] = []
   for (const item of shader.outputs) {
     result.push({
       name: item.name,

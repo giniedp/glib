@@ -37,7 +37,7 @@ export class WebglProgram extends Program {
     this.perInstanceTransformBlock = options?.perInstanceTransformBlock ?? null
     this.module.onCompiled.add(this.createResources)
     this.module.onDisposed.add(() => this.dispose())
-    if (this.module.isReady) {
+    if (this.module.isCompiled) {
       this.createResources()
     }
   }
@@ -68,7 +68,7 @@ export class WebglProgram extends Program {
     if (input in this.inputs) {
       return this.inputs[input]
     }
-    if (this.module.isReady) {
+    if (this.module.isCompiled) {
       this.inputs[input] = createInput(input, this.uniforms) || null
     } else {
       this.inputs[input] = createPendingInput(input, this.module)
@@ -219,20 +219,34 @@ function addUniform(uniforms: Record<string, WebglUniform>, uniform: WebglUnifor
   // prefer aliases over names, since they are explicitly defined by the user
   // as access names for the uniforms
   const alias = (uniform.alias || uniform.name).toLowerCase()
+
   if (alias in uniforms) {
     console.warn(`Duplicate uniform alias ${alias} for uniform ${uniform.name}`)
   } else {
     uniforms[alias] = uniform
   }
-  const name = uniform.name.toLowerCase()
-  if (name === alias) {
+  if (uniform.type !== 'sampler') {
     return
   }
-  if (name in uniforms) {
-    console.warn(`Duplicate uniform name ${name} for uniform ${uniform.name}`)
-  } else {
-    uniforms[name] = uniform
+
+  // Since we don't have separation of textures and samplers in glsl as we do in wgsl,
+  // we just expose the same uniform under it's original uniform name.
+  // This allows users to create separate setters at API level and finally mimic the
+  // same behavior as in WebGPU platform
+
+  // plain uniform name. Sampler variables are never nested.
+  const name = uniform.name.toLowerCase()
+
+  // the alias name may be artificially nested if annotated with '@block'
+  const tokens = alias.split('.')
+  // swap last token
+  tokens.pop()
+  tokens.push(name)
+  const samplerAlias = tokens.join('.')
+  if (alias === samplerAlias) {
+    return
   }
+  uniforms[samplerAlias] = uniform
 }
 
 function createInput(name: string, uniforms: Record<string, WebglUniform>): WebglProgramInput | null {

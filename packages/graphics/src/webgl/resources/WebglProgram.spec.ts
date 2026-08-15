@@ -69,8 +69,8 @@ describe('WebglProgram', () => {
       const program = device.createShaderModule({
         glsl: { vertex: COMMON_VS, fragment: FS_UNIFORM },
       })
-      await program.ready
-      expect(program.isLinked).toBe(true)
+      await program.compiled
+      expect(program.isValid).toBe(true)
 
       expect(program.program.get('u_color')).not.toBe(null)
       expect(program.program.get('u_color').name).toBe('u_color')
@@ -83,8 +83,8 @@ describe('WebglProgram', () => {
       const program = device.createShaderModule({
         glsl: { vertex: COMMON_VS, fragment: FS_UNIFORM_ARRAY },
       })
-      await program.ready
-      expect(program.isLinked).toBe(true)
+      await program.compiled
+      expect(program.isValid).toBe(true)
 
       expect(program.program.get('u_color')).not.toBe(null)
       expect(program.program.get('u_color').name).toBe('u_color[0]')
@@ -103,8 +103,8 @@ describe('WebglProgram', () => {
       const program = device.createShaderModule({
         glsl: { vertex: COMMON_VS, fragment: FS_UNIFORM_STRUCT },
       })
-      await program.ready
-      expect(program.isLinked).toBe(true)
+      await program.compiled
+      expect(program.isValid).toBe(true)
 
       expect(program.program.get('u_color')).toBe(null)
 
@@ -117,8 +117,8 @@ describe('WebglProgram', () => {
       const program = device.createShaderModule({
         glsl: { vertex: COMMON_VS, fragment: FS_UNIFORM_STRUCT_ARRAY },
       })
-      await program.ready
-      expect(program.isLinked).toBe(true)
+      await program.compiled
+      expect(program.isValid).toBe(true)
 
       expect(program.program.get('u_color')).toBe(null)
       expect(program.program.get('u_color[0]')).toBe(null)

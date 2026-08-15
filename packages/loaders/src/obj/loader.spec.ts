@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { BasicMaterial, WebglDevice } from '@gglib/graphics'
+import { CommonMaterial, WebglDevice } from '@gglib/graphics'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Loader as MTLLoader } from '../mtl/loader'
 import { Loader as OBJLoader } from './loader'
@@ -57,7 +57,7 @@ describe('OBJ', () => {
     content = new ContentLoader(device)
     content.registerLoader(OBJLoader)
     content.registerLoader(MTLLoader)
-    content.registerMaterial(BasicMaterial, () => true)
+    content.registerMaterial(CommonMaterial, () => true)
 
     content.http.cacheName = 'test-cache'
     const cache = await caches.open(content.http.cacheName)
@@ -72,7 +72,7 @@ describe('OBJ', () => {
       expect(result.meshes.length).toBe(1)
       expect(result.meshes[0].parts.length).toBe(1)
       expect(result.meshes[0].materials.length).toBe(1)
-      expect(result.meshes[0].parts[0].vertexBuffer.buffers[0].elementCount).toBe(6 * 4) // 4 vertices for each side of the cube
+      expect(result.meshes[0].geometries[0].vertexBuffer.buffers[0].elementCount).toBe(6 * 4) // 4 vertices for each side of the cube
     })
   })
 })

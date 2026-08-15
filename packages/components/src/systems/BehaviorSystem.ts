@@ -43,8 +43,10 @@ export class BehaviorSystem extends GameSystem {
   }
 
   override destroy(): void {
-    this.world.eventBus.off(GameEntity.onActivated, this.addComponents)
-    this.world.eventBus.off(GameEntity.onDeactivating, this.removeComponents)
+    if (this.world) {
+      this.world.eventBus.off(GameEntity.onActivated, this.addComponents)
+      this.world.eventBus.off(GameEntity.onDeactivating, this.removeComponents)
+    }
   }
 
   private addComponents = (entity: GameEntity) => {

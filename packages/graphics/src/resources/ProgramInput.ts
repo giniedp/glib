@@ -94,6 +94,10 @@ export function inputSlotMat4(block: string, input: string): InputSlot<'mat4x4'>
   return inputSlot(block, input, 'mat4x4')
 }
 
+export function inputSlotArray(block: string, input: string): InputSlot<'array'> {
+  return inputSlot(block, input, 'array')
+}
+
 export function inputSlot<T extends InputTypeName>(block: string, input: string, type: T): InputSlot<T> {
   return {
     key: inputKey(block || '', input),

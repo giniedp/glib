@@ -1,4 +1,4 @@
-import { IRect, type IVec4, Mat4, Quat, Vec4 } from '@gglib/math'
+import { IRect, type IVec4, Mat4, Quat, vec4, Vec4 } from '@gglib/math'
 import { type Texture } from './resources'
 
 export interface Sprite {
@@ -23,9 +23,9 @@ export interface Sprite {
  */
 export class SpriteBuilder {
   public texture: Texture
-  public readonly color: IVec4 = Vec4.init({}, 1, 1, 1, 1)
+  public readonly color: IVec4 = vec4(1)
   public readonly transform = Mat4.createIdentity()
-  public readonly uv: IVec4 = Vec4.init({}, 0, 0, 1, 1)
+  public readonly uv: IVec4 = vec4(0, 0, 1, 1)
 
   public reset(texture: Texture): this {
     this.texture = texture
@@ -93,6 +93,7 @@ export class SpriteBuilder {
     height: number = this.texture.height,
     flipX?: boolean,
     flipY?: boolean,
+    originBottomLeft?: boolean,
   ): this {
     const tex = this.texture
     const texelX = 1 / tex.width

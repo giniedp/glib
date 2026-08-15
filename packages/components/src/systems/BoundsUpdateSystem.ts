@@ -12,7 +12,9 @@ export class BoundsUpdateSystem extends GameSystem {
   }
 
   public destroy(): void {
-    this.world.eventBus.off(BoundsComponent.onDirty, this.onBoundsDirty)
+    if (this.world) {
+      this.world.eventBus.off(BoundsComponent.onDirty, this.onBoundsDirty)
+    }
   }
 
   public override update(): void {

@@ -86,7 +86,7 @@ export type LoopTime = Readonly<LoopTimeParams>
  */
 export class GameLoop extends GameSystem {
   /**
-   * Indicates whether fixed time step should be used. Default is `true`.
+   * Indicates whether fixed time step should be used. Default is `false`.
    */
   public useFixedTimeStep: boolean = false
 

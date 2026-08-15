@@ -22,5 +22,5 @@ export function materialSchemaClass<S extends Record<Key, InputSlot>>(schema: S)
         })
       }
     }
-  } as new (...args: ConstructorParameters<typeof Material>) => Material & MaterialSchemaType<S>
+  } as new (...args: ConstructorParameters<typeof Material>) => Material & MaterialSchemaType<S> & { schema: S }
 }

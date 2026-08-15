@@ -6,6 +6,7 @@ import { RenderChannel } from '../RenderChannel'
 import { RenderContext, RenderPass } from '../types'
 
 export interface VignettePassOptions {
+  order?: number
   enabled?: boolean
   centerX?: number
   centerY?: number
@@ -18,6 +19,7 @@ export interface VignettePassOptions {
 }
 
 export class VignettePass implements RenderPass {
+  public order = 100
   public name: string = 'Vignette Pass'
 
   public centerX = 0.5
@@ -41,6 +43,7 @@ export class VignettePass implements RenderPass {
     if (device.isReady) {
       this.shader = new VignetteShader(device)
     }
+    this.order = options.order ?? this.order
     this.enabled = options.enabled ?? this.enabled
     this.centerX = options.centerX ?? this.centerX
     this.centerY = options.centerY ?? this.centerY
@@ -85,7 +88,6 @@ export class VignettePass implements RenderPass {
     shader.textureOuput = this.target.texture
 
     const pass = ctx.device.renderPass
-    pass.flush()
     pass.render(shader)
     pass.flush()
   }

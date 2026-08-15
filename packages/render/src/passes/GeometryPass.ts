@@ -5,6 +5,7 @@ import { RenderListMode } from '../RenderListMode'
 import { RenderContext, RenderPass } from '../types'
 
 export class GeometryPass implements RenderPass {
+  public order = 0
   public name: string = 'GeometryPass'
 
   private msaaColor: FrameResource

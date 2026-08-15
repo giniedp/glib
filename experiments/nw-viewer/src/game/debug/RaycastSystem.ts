@@ -4,11 +4,11 @@ import {
   KeyboardInputSystem,
   ModelComponent,
   MouseInputSystem,
-  SpatialRootComponent,
+  SpatialComponent,
 } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import type { Mesh } from '@gglib/graphics'
-import { KeyboardKey } from '@gglib/input'
+import { KeyboardKey } from '@gglib/game'
 import { Intersection, Mat4, Ray, Vec3, type BoundingBox, type Transform } from '@gglib/math'
 import { brand, EventEmitter, type EventType } from '@gglib/utils'
 
@@ -43,7 +43,7 @@ export class RaycastSystem extends GameSystem {
   public initialize(world: GameWorld): void {
     this.mouse = world.getSystem(MouseInputSystem)
     this.keyboard = world.getSystem(KeyboardInputSystem)
-    this.spatialQuery = world.query({ scope: 'active', required: [SpatialRootComponent] })
+    this.spatialQuery = world.query({ scope: 'active', required: [SpatialComponent] })
   }
 
   public override update() {
@@ -83,7 +83,7 @@ export class RaycastSystem extends GameSystem {
   private raycast(output: RaySelection[]) {
     const ray = this.camera.createRay(this.mouse.xNormalized, this.mouse.yNormalized)
     for (const entity of this.spatialQuery) {
-      entity.component(SpatialRootComponent).index.traverseIntersection(ray, Intersection.rayBox, (node) => {
+      entity.component(SpatialComponent).index.traverseIntersection(ray, Intersection.rayBox, (node) => {
         for (const item of getSpatialEntries(node).values) {
           const model = item.entity.component(ModelComponent, GetComponent.Optional)?.model
           if (!model) {

@@ -147,7 +147,7 @@ export class GameWorld {
   /**
    * Initializes the world by initializing all systems and entities
    */
-  public initilize() {
+  public initialize() {
     this.initializeSystems()
     this.initializeEntities()
   }

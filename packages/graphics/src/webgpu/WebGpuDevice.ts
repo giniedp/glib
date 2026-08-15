@@ -3,7 +3,7 @@ import { brand, eventSource, EventType, type EventChannel } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import { Scheduler } from '../Scheduler'
-import { surfaceFormatFromWebGPU, type SurfaceFormat } from '../enums'
+import { type SurfaceFormat } from '../enums'
 import {
   createResourceTracker,
   getRefCounter,
@@ -98,6 +98,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
   public readonly capabilities: WebGpuCapabilities
   public readonly defaultTexture: WebGpuTexture
+  public readonly defaultTextureCube: WebGpuTexture
   public readonly renderPass: WebGpuRenderEncoder
   public readonly output: WebGpuDeviceOutput
 
@@ -189,6 +190,16 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       format: 'RGBA8_UNORM',
       generateMipmap: false,
     })
+    self.defaultTextureCube ||= this.createTexture({
+      type: 'TextureCube',
+      name: 'GGLib Default Texture Cube',
+      width: 2,
+      height: 2,
+      depth: 6,
+      format: 'RGBA8_UNORM',
+      generateMipmap: false,
+      mipLevelCount: 1,
+    })
 
     await this.capabilities.ready
     self.isReady = true
@@ -214,10 +225,6 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
 
   public compute(_computeFn: (pass: unknown) => void) {
     throw new Error('Method not implemented.')
-  }
-
-  public backbufferFormat() {
-    return surfaceFormatFromWebGPU(this.context.getConfiguration().format)
   }
 
   public createIndexBuffer(options: BufferOptions): WebGpuBuffer {
@@ -345,7 +352,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   private mipmap2dArrayProgram: WebGpuShaderModule
   private mipmapCubeProgram: WebGpuShaderModule
   private mipmapCubeArrayProgram: WebGpuShaderModule
-  public async generateMipmap(texture: WebGpuTexture, startLayer = 0, endLayer = texture.depth) {
+  public generateMipmap(texture: WebGpuTexture, startLayer = 0, endLayer = texture.depth) {
     this.mipmap2dProgram ||= this.createWgslModule({ name: 'MIPMAPS_2D', code: MIPMAPS_2D })
     this.mipmap2dArrayProgram ||= this.createWgslModule({ name: 'MIPMAPS_2D_ARRAY', code: MIPMAPS_2D_ARRAY })
     this.mipmapCubeProgram ||= this.createWgslModule({ name: 'MIPMAPS_CUBE', code: MIPMAPS_CUBE })
@@ -363,6 +370,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
         break
       case 'cube':
         program = this.mipmapCubeProgram
+        dimension = 'cube'
         break
       case 'cube-array':
         program = this.mipmapCubeArrayProgram
@@ -370,7 +378,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       default:
         throw new Error(`Unsupported texture dimension: ${texture.gpuViewDimension}`)
     }
-    await program.ready
+
     const pass = this.mipmapPass
     for (let level = 1; level < texture.mipLevelCount; level++) {
       program.program.get('textureMapSampler').set(SamplerState.LinearClampNoMipMap)
@@ -397,6 +405,8 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public dispose() {
     this.scheduler.dispose()
     this.resizeObserver?.disconnect()
+    this.context.unconfigure()
+    this.gpu.destroy()
   }
 }
 
@@ -429,7 +439,7 @@ function getOrCreateContext(
   canvas: HTMLCanvasElement | OffscreenCanvas,
   options: WebGpuDeviceOptions,
 ): GPUCanvasContext {
-  if (options.context instanceof WebGL2RenderingContext) {
+  if (options.context instanceof GPUCanvasContext) {
     return options.context
   }
 

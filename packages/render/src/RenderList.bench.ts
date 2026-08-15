@@ -1,4 +1,4 @@
-import { BasicMaterial, createDevice, cubeGeometry, Device, Mesh } from '@gglib/graphics'
+import { CommonMaterial, createDevice, cubeGeometry, Device, Mesh } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { bench, describe } from 'vitest'
 import { Renderer } from './Renderer'
@@ -29,7 +29,7 @@ describe('BasicRenderList', () => {
       })
       for (let i = 0; i < 1000; i++) {
         new Mesh(device, {
-          materials: [new BasicMaterial(device)],
+          materials: [new CommonMaterial(device)],
           parts: [cube],
         })
       }

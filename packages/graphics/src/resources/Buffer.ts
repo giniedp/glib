@@ -7,7 +7,13 @@ import {
   dataTypeViewWriter,
   type TypedArray,
 } from '../enums'
-import { countBytes, countElements, countElementsBefore, elementCpuFormat, type VertexLayout } from '../VertexLayout'
+import {
+  countElements,
+  countElementsBefore,
+  countLayoutBytes,
+  elementCpuFormat,
+  type VertexLayout,
+} from './VertexLayout'
 
 /**
  * Constructor options for {@link Buffer}
@@ -179,7 +185,7 @@ export abstract class Buffer {
     if (opts.stride != null) {
       self.stride = opts.stride
     } else if (self.isVertexBuffer) {
-      self.stride = countBytes(self.vertexLayout)
+      self.stride = countLayoutBytes(self.vertexLayout)
     } else if (self.isIndexBuffer) {
       self.stride = dataTypeToSize(self.indexType)
     } else {
@@ -276,7 +282,7 @@ export function materializePlainBuffer(src: PlainBufferData, layout?: VertexLayo
   }
 
   const vertexCount = src.elements.length / elementStride
-  const byteStride = countBytes(layout)
+  const byteStride = countLayoutBytes(layout)
   const data = new Uint8Array(vertexCount * byteStride)
   const view = new DataView(data.buffer)
   const elementOffsets: Record<string, number> = {}

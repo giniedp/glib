@@ -20,6 +20,15 @@ export class Color implements Readonly<IVec4> {
     return new Color(normalize(r), normalize(g), normalize(b), normalize(a))
   }
 
+  public static fromHex(rgb: string): Color {
+    let hex = rgb.replace('#', '')
+    if (hex.length === 3) {
+      hex = [...hex].map((c) => c + c).join('')
+    }
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16))
+    return new Color(normalize(r), normalize(g), normalize(b), 1)
+  }
+
   /**
    * Packs the color to an uint32, suitable for rgba8unorm vertex buffers.
    * Produces little-endian memory layout: [R, G, B, A].
@@ -280,14 +289,23 @@ export class Color implements Readonly<IVec4> {
     this.a = a
   }
 
-  public srgbToLinear(): Color {
-    return new Color(srgbToLinear(this.r), srgbToLinear(this.g), srgbToLinear(this.b), srgbToLinear(this.a))
+  /**
+   * Returns a new color value with RGB components converted from SRGB to Linear
+   */
+  public toLinear(): Color {
+    return new Color(srgbToLinear(this.r), srgbToLinear(this.g), srgbToLinear(this.b), this.a)
   }
 
-  public linearToSrgb(): Color {
-    return new Color(linearToSrgb(this.r), linearToSrgb(this.g), linearToSrgb(this.b), linearToSrgb(this.a))
+  /**
+   * Returns a new color value with RGB components converted from Linear to SRGB
+   */
+  public toSrgb(): Color {
+    return new Color(linearToSrgb(this.r), linearToSrgb(this.g), linearToSrgb(this.b), this.a)
   }
 
+  /**
+   * Returns this color as `IVec3`
+   */
   public toVec3(out?: IVec3): IVec3 {
     out ||= { x: 0, y: 0, z: 0 }
     out.x = this.r
@@ -296,6 +314,9 @@ export class Color implements Readonly<IVec4> {
     return out
   }
 
+  /**
+   * Returns this color as `IVec4`
+   */
   public toVec4(out?: IVec4): IVec4 {
     out ||= { x: 0, y: 0, z: 0, w: 0 }
     out.x = this.r

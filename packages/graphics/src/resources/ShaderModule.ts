@@ -40,12 +40,19 @@ export abstract class ShaderModule {
   public abstract dispose(): void
 
   /**
-   * A promise that resolves when the program is compiled and ready to use.
+   * A promise that resolves when the program compilation did run.
+   * A compiled program/shader can still be invalid and have compilation errors.
    */
-  public abstract readonly ready: Promise<this>
+  public abstract readonly compiled: Promise<this>
 
   /**
-   * Indicates whether the program is compiled and ready to use.
+   * Indicates that the program compilation is complete.
+   * A compiled program/shader can still be invalid and have compilation errors.
    */
-  public abstract readonly isReady: boolean
+  public abstract readonly isCompiled: boolean
+
+  /**
+   * Indicates that program compilation did run without errors.
+   */
+  public abstract readonly isValid: boolean
 }

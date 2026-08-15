@@ -453,7 +453,7 @@ describe('WebGpuProgramParameter', () => {
         }
       `
 
-      const shader = await device.createWgslModule({ code: code }).ready
+      const shader = await device.createWgslModule({ code: code }).compiled
       // prettier-ignore
       shader.program.mustSet('value.a', { x: 2, y: 3, z: 4 })
       shader.program.mustSet('value.b', 1)
@@ -496,7 +496,7 @@ describe('WebGpuProgramParameter', () => {
         }
       `
 
-      const shader = await device.createWgslModule({ code: code }).ready
+      const shader = await device.createWgslModule({ code: code }).compiled
       // prettier-ignore
       shader.program.mustSet('value.a', 1)
       shader.program.mustSet('value.b', { x: 2, y: 3, z: 4 })

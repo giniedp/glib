@@ -1,7 +1,9 @@
 import {
   boxGeometry,
+  Buffer,
+  bufferField,
   bufferLayout,
-  BufferWriter,
+  BufferRecorder,
   cylinderGeometry,
   Device,
   discGeometry,
@@ -14,12 +16,13 @@ import { ShapeMaterial } from '../../material/ShapeMaterial'
 import type { DebugShapeType } from './DebugShapeComponent'
 
 export const instanceLayout = bufferLayout([
-  { name: 'transform', type: 'mat4' },
-  { name: 'color', type: 'vec4' },
+  { name: 'transform', type: 'mat4x4f' },
+  { name: 'color', type: 'vec4f' },
 ])
 
 export class DebugMesh extends Mesh {
-  private writer: BufferWriter
+  private writer: BufferRecorder
+  private buffer: Buffer
 
   public get material() {
     return this.materials[0] as ShapeMaterial
@@ -31,15 +34,15 @@ export class DebugMesh extends Mesh {
       materials: [new ShapeMaterial(device)],
       parts: [{ geometryIndex: 0, materialIndex: 0 }],
     })
-    this.writer = new BufferWriter({
+    this.writer = new BufferRecorder({
       autosize: true,
       capacity: 1024,
-      recordByteSize: instanceLayout.recordByteSize,
-      buffer: device.createBuffer({
-        type: 'StorageBuffer',
-        size: 1024 * instanceLayout.recordByteSize,
-        readWrite: true,
-      }),
+      recordByteSize: instanceLayout.byteSize,
+    })
+    this.buffer = device.createBuffer({
+      type: 'StorageBuffer',
+      size: this.writer.capacity * this.writer.strideInBytes,
+      readWrite: true,
     })
   }
 
@@ -56,16 +59,16 @@ export class DebugMesh extends Mesh {
   }
 
   public writeTransform(value: Mat4) {
-    this.writer.writeField(instanceLayout.fields.transform, value)
+    this.writer.writeField(instanceLayout.schema.transform, value)
   }
 
   public writeColor(value: IVec4 | IVec3) {
-    this.writer.writeField(instanceLayout.fields.color, value)
+    this.writer.writeField(instanceLayout.schema.color, value)
   }
 
   public commitInstanceData() {
-    this.writer.commit()
-    this.material.effect.program.mustGet('instances').setBuffer(this.writer.buffer)
+    this.writer.upload(this.buffer)
+    this.material.effect.program.mustGet('instances').setBuffer(this.buffer)
     this.geometries[0].instanceCount = this.writer.count
   }
 }

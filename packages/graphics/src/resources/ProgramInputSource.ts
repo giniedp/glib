@@ -116,3 +116,22 @@ export class ProgramInputBlockCollection {
     return (map2[type] ||= inputSlot(block, input, type))
   }
 }
+
+export type ProgramInputKey = string | number | symbol
+export type ProgramInputSchema<S extends Record<ProgramInputKey, InputSlot>> = S
+export type ProgramInputs<S extends Record<ProgramInputKey, InputSlot>> = {
+  -readonly [K in keyof S]: S[K] extends InputSlot<infer T> ? InputTypeMap[T] : never
+}
+
+export function typedProgramInputs<S extends Record<ProgramInputKey, InputSlot>>(schema: S) {
+  const inputs = new ProgramInputBlockCollection()
+  for (const key in schema) {
+    const slot = schema[key]
+
+    Object.defineProperty(inputs, key, {
+      get: () => inputs.get(slot),
+      set: (v) => inputs.set(slot, v),
+    })
+  }
+  return inputs as ProgramInputBlockCollection & ProgramInputs<S>
+}

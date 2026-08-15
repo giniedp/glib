@@ -53,7 +53,7 @@ export class WebglUniformLocation implements WebglUniform {
   }
 
   public commit(): void {
-    if (!this.program.isReady) {
+    if (!this.program.isCompiled) {
       console.warn(`Cannot commit uniform '${this.name}' because program is not ready`)
       return
     }

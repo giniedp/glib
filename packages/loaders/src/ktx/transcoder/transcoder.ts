@@ -4,7 +4,8 @@ import { TextureData } from './transcode'
 import { TranscoderOptions } from './types'
 
 export class Transcoder {
-  private worker = new Worker(new URL('./transcoder.worker.js', import.meta.url), {
+  public static workerUrl = new URL('./transcoder.worker.js', import.meta.url)
+  private worker = new Worker(Transcoder.workerUrl, {
     type: 'module',
   })
   private client = new JsonRpcClient((rpc, transfer) => {

@@ -1,14 +1,78 @@
-import { IVec3, vec3, Vec3, vec4 } from '@gglib/math'
+import { Mat4, vec3 } from '@gglib/math'
 import type { Device } from '../Device'
-import { basicEffectOptions, BasicMaterialSchema } from './BasicEffect'
+
+import { inputSlot, type ShaderModuleOptions } from '../resources'
+import { CullState, SamplerState } from '../states'
+import { BASIC_EFFECT_GLSL_FS, BASIC_EFFECT_GLSL_VS } from './BasicMaterial.glsl'
+import { BASIC_EFFECT_WGSL } from './BasicMaterial.wgsl'
 import { MaterialOptions } from './Material'
 import { materialSchemaClass } from './MaterialSchema'
-import { CommonMaterialProps } from './types'
+import { CommonMaterialProps, FALSE, TRUE, uvInfoToMat4 } from './types'
+
+import type { EffectOptions } from './Effect'
+import { CommonBlocks, CommonInputs } from './types'
+
+export function basicShaderOptions(): ShaderModuleOptions {
+  return {
+    name: 'Basic Shader',
+    wgsl: {
+      source: BASIC_EFFECT_WGSL,
+    },
+    glsl: {
+      vertex: BASIC_EFFECT_GLSL_VS,
+      fragment: BASIC_EFFECT_GLSL_FS,
+    },
+  }
+}
+
+export function basicEffectOptions(): EffectOptions {
+  return {
+    name: 'Basic Effect',
+    meta: {},
+    program: {
+      shader: basicShaderOptions(),
+      sharedBlocks: [CommonBlocks.Global, CommonBlocks.View, CommonBlocks.Frame],
+      perInstanceDataBlock: null,
+      perInstanceTransformBlock: null,
+    },
+  }
+}
+
+export const BasicMaterialSchema = {
+  // global
+  GroundColor: CommonInputs.Global.GroundColor,
+  SkyColor: CommonInputs.Global.SkyColor,
+  SkyDirection: CommonInputs.Global.SkyDirection,
+
+  // per view
+  View: CommonInputs.View.ViewMatrix,
+  Projection: CommonInputs.View.ProjectionMatrix,
+
+  // per object
+  World: CommonInputs.Object.ModelMatrix,
+
+  // material
+  BaseColor: inputSlot('material', 'baseColor', 'vec3'),
+  Alpha: inputSlot('material', 'alpha', 'scalar'),
+  AlphaClip: inputSlot('material', 'alphaClip', 'scalar'),
+  TextureMod: inputSlot('material', 'textureMod', 'mat4x4'),
+
+  // settings
+  UseFog: inputSlot('settings', 'useFog', 'scalar'),
+  UseSun: inputSlot('settings', 'useSun', 'scalar'),
+  UseBaseMap: inputSlot('settings', 'useBaseMap', 'scalar'),
+  UseVertexColor: inputSlot('settings', 'useVertexColor', 'scalar'),
+  UseBlend: inputSlot('settings', 'useBlend', 'scalar'),
+
+  // textures
+  BaseMap: inputSlot('texture', 'baseMap', 'texture'),
+  BaseMapSampler: inputSlot('texture', 'baseMapSampler', 'sampler'),
+} as const
 
 export class BasicMaterial extends materialSchemaClass(BasicMaterialSchema) {
   public constructor(device: Device, options?: Partial<MaterialOptions>) {
     super(device, {
-      name: options?.name ?? 'Basic Effect Material',
+      name: options?.name ?? 'Basic Material',
       effect: basicEffectOptions(),
       meta: options?.meta ?? {},
     })
@@ -19,14 +83,16 @@ export class BasicMaterial extends materialSchemaClass(BasicMaterialSchema) {
   }
 
   public setDefaults() {
-    this.BaseColor = vec3([1, 1, 1])
-    this.EmissiveColor = vec3([0, 0, 0])
-    this.SpecularColor = vec3([1, 1, 1])
-    this.Roughness = 0.5
+    this.BaseColor = vec3(1)
+
+    this.TextureMod = Mat4.createIdentity()
+    this.BaseMapSampler = SamplerState.LinearWrap
+
     this.Alpha = 1
     this.AlphaClip = 0
-    this.TextureEnabled = 0
-    this.TextureScaleOffset = vec4([1, 1, 0, 0])
+    this.GroundColor = vec3(1)
+    this.SkyColor = vec3(1)
+    this.SkyDirection = vec3(0, 1, 0)
   }
 
   public setProperties(props: CommonMaterialProps) {
@@ -34,60 +100,34 @@ export class BasicMaterial extends materialSchemaClass(BasicMaterialSchema) {
       return
     }
 
+    this.UseVertexColor = TRUE
+
     if (props.BaseColor) {
       this.BaseColor = vec3(props.BaseColor)
     }
-
-    if (props.EmissiveColor) {
-      this.EmissiveColor = vec3(props.EmissiveColor)
+    if (props.BaseMap) {
+      this.BaseMap = props.BaseMap as any
+      this.UseBaseMap = TRUE
     }
-
-    if (props.SpecularColor) {
-      this.SpecularColor = vec3(props.SpecularColor)
+    if (props.BaseMapSampler) {
+      this.BaseMapSampler = props.BaseMapSampler
     }
-
-    if (props.Roughness != null) {
-      this.Roughness = props.Roughness
+    if (props.BaseMapUv) {
+      this.TextureMod = uvInfoToMat4(props.BaseMapUv)
     }
 
     if (props.Opacity != null) {
       this.Alpha = props.Opacity
     }
 
-    if (props.BaseColorMap) {
-      this.Texture = props.BaseColorMap as any
-      this.TextureEnabled = 1
-    }
-
     if (props.AlphaClip != null) {
       this.AlphaClip = props.AlphaClip
     }
-  }
+    this.isTransparent = !!props.AlphaBlend
+    this.UseBlend = this.isTransparent ? TRUE : FALSE
 
-  public setDirectionalLight(index: 0 | 1 | 2 | 3, color: IVec3, direction: IVec3) {
-    this.set('lights', `color[${index}]`, { x: color.x, y: color.y, z: color.z, w: 1 })
-    this.set('lights', `direction[${index}]`, { x: direction.x, y: direction.y, z: direction.z, w: 1 })
-  }
-
-  public setPointLight(index: 0 | 1 | 2 | 3, color: Vec3, position: Vec3, range: number) {
-    this.set('lights', `color[${index}]`, { x: color.x, y: color.y, z: color.z, w: 2 })
-    this.set('lights', `position[${index}]`, { x: position.x, y: position.y, z: position.z, w: range })
-  }
-
-  public setSpotLight(
-    index: 0 | 1 | 2 | 3,
-    color: Vec3,
-    position: Vec3,
-    direction: Vec3,
-    range: number,
-    angle: number,
-  ) {
-    // this.get(`lights.color[${index}]`).initFrom(color).setW
-    // this.get(`lights.position[${index}]`).initFrom(position).setW(range)
-    // this.get(`lights.direction[${index}]`).initFrom(direction).setW(angle)
-  }
-
-  public setLightDisabled(index: 0 | 1 | 2 | 3) {
-    // this.get(`lights.color[${index}]`).setW(0)
+    if (props.DoubleSided) {
+      this.effect.cullState = CullState.Disabled
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { IVec4 } from '@gglib/math'
 import type { SurfaceFormat } from '../../enums'
 import type { WebglResource } from '../types'
 import type { WebglDevice } from '../WebglDevice'
@@ -122,7 +123,7 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
     this.clearStencil[0] = stencil
   }
 
-  public setClearColor(index: number, color: GPUColor) {
+  public setClearColor(index: number, color: GPUColor | IVec4) {
     const slot = this.attachments[index]
     if (!slot) {
       throw new Error(`Render target index ${index} is out of bounds. Max render targets: ${this.maxRenderTargets}`)
@@ -144,6 +145,11 @@ export class WebglFrameBuffer implements WebglResource<WebGLFramebuffer> {
       slot.clearColor[1] = color.g
       slot.clearColor[2] = color.b
       slot.clearColor[3] = color.a
+    } else if ('x' in color) {
+      slot.clearColor[0] = color.x
+      slot.clearColor[1] = color.y
+      slot.clearColor[2] = color.z
+      slot.clearColor[3] = color.w
     }
   }
 

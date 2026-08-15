@@ -5,8 +5,8 @@ import {
   VertexBuffer,
   type ReferenceCounted,
   type ReferenceCounter,
+  type VertexAttribute,
 } from '../../resources'
-import { type VertexAttribute } from '../../VertexLayout'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { parseWgsl, reflectWgsl, WgslEntryPointInfo, WgslProgramInfo, type WgslInputInfo } from '../wgsl'
@@ -49,14 +49,11 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
    * The default program bindings for this shader module.
    */
   public readonly program: WebGpuProgram
-  /**
-   * A promise that resolves when the program is compiled and ready to use.
-   */
-  public readonly ready: Promise<this>
-  /**
-   * Indicates whether the program is compiled and ready to use.
-   */
-  public readonly isReady: boolean = false
+
+  public readonly compiled: Promise<this>
+  public readonly isCompiled: boolean = false
+  public readonly isValid: boolean = false
+
   /**
    * The constants used to configure the vertex shader stage of this shader module.
    */
@@ -90,7 +87,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     this.device = device
     this.source = options.code
     if (!this.source) {
-      throw new Error('shader code is required')
+      throw new Error(`Wgsl source code missing: ${options.name}`)
     }
     this.vertexConstants = options.vertexConstants
     this.fragmentConstants = options.fragmentConstants
@@ -105,10 +102,12 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
       this.ref.onFinalize(() => this.finalize())
     }
 
-    this.isReady = false
-    this.ready = this.gpuObject.getCompilationInfo().then((info) => {
+    this.isCompiled = false
+    this.compiled = this.gpuObject.getCompilationInfo().then((info) => {
       logCompilationInfo(info, this.source)
-      ;(this as Mutable<this>).isReady = true
+      const self = this as Mutable<this>
+      self.isCompiled = true
+      self.isValid = !info.messages.some((it) => it.type === 'error')
       return this
     })
 
@@ -166,11 +165,8 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     if (Object.keys(inputs).length > 0) {
       for (const semantic in inputs) {
         const input = inputs[semantic]
-        console.warn(
-          `Shader input '${semantic}' is not provided by any vertex buffer. Creating a temporary vertex buffer with default values.`,
-          available,
-        )
-        // there are still inputs that don't have corresponding vertex buffer attributes
+        const isColor = semantic.match(/color/i)
+        const data = isColor ? [1, 1, 1, 1] : [0, 0, 0, 0]
         const buffer = new WebGpuBuffer(this.device, {
           type: 'VertexBuffer',
           name: `auto-generated vertex buffer for shader input '${semantic}'`,
@@ -181,7 +177,12 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
               elementCount: input.elementCount,
             },
           },
-          data: new Float32Array(vertexCount * 4),
+          data: new Float32Array(data),
+          // to make this default vertex be used even in instanced mode
+          // we mark it as instanced, so it works for single draw single instance
+          // we set explicitly stride=0, so with instancing, it should always read from the same location
+          instanced: true,
+          stride: 0,
         })
         vertexBuffer.buffers.push(buffer)
       }

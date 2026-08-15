@@ -124,7 +124,7 @@ export function runContract(createDevice: () => Device) {
 
   beforeEach(async () => {
     shader = device.createShaderModule(SHADER)
-    await shader.ready
+    await shader.compiled
     pass = device.renderPass
   })
 

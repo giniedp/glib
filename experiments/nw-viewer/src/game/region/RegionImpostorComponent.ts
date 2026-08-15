@@ -4,7 +4,7 @@ import {
   ModelComponent,
   PriorityLane,
   SchedulerSystem,
-  SpatialComponent,
+  SpatialNodeComponent,
   TransformComponent,
   type ScheduledTask,
 } from '@gglib/components'
@@ -39,7 +39,7 @@ export function impostorEntityOptions(parent: GameEntity, options: ImpostorCompo
         layer: DebugLayer.BoundsImpostor,
         color: Color.Red,
       }),
-      new SpatialComponent(),
+      new SpatialNodeComponent(),
       new BoundsComponent(),
       new ModelComponent(),
       new RegionImpostorComponent(options),

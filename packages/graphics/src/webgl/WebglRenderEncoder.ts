@@ -1,3 +1,4 @@
+import { IVec4 } from '@gglib/math'
 import {
   blendFunctionToWebGL,
   blendToWebGL,
@@ -243,7 +244,7 @@ export class WebglRenderEncoder extends RenderEncoder {
     this.frameBuffer.setDepthTarget(buffer as WebglTexture)
   }
 
-  public setClearColor(index: number, color: GPUColor): void {
+  public setClearColor(index: number, color: GPUColor | IVec4): void {
     color ||= this.defaultClearColor
     this.frameBuffer.setClearColor(index, color)
     if (index !== 0) {
@@ -259,6 +260,11 @@ export class WebglRenderEncoder extends RenderEncoder {
       this.clearColor[1] = color.g
       this.clearColor[2] = color.b
       this.clearColor[3] = color.a
+    } else if ('x' in color) {
+      this.clearColor[0] = color.x
+      this.clearColor[1] = color.y
+      this.clearColor[2] = color.z
+      this.clearColor[3] = color.w
     }
   }
 
@@ -610,7 +616,7 @@ export class WebglRenderEncoder extends RenderEncoder {
       this.device.context.bindVertexArray(this.vao.glHandle)
       return
     }
-    if (this.shader && !this.shader.isReady) {
+    if (this.shader && !this.shader.isCompiled) {
       throw new Error('Shader program is not ready')
     }
 

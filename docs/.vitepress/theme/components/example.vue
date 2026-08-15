@@ -1,7 +1,7 @@
 <template>
   <div class="example-frame" ref="frame">
     <canvas ref="canvas" style="width: 100%; height: 100%; z-index: 1"></canvas>
-    <div class="example-tools twui-dark" @mousedown="stopPropagation">
+    <div class="example-tools twk-dark" @mousedown="stopPropagation" @wheel="stopPropagation">
       <div>
         <div ref="fsTools"></div>
         <div ref="tools"></div>
@@ -25,14 +25,14 @@
   overflow: auto;
   z-index: 1;
   opacity: 0;
-  --twui-radius: 0;
-  --twui-gap: 0;
+  --twk-radius: 0;
+  --twk-gap: 0;
 }
 .example-frame:hover .example-tools {
   opacity: 0.25 !important;
 }
 .example-frame:hover .example-tools:hover {
-  opacity: 0.9 !important;
+  opacity: 1 !important;
 }
 
 canvas {
@@ -40,13 +40,33 @@ canvas {
 }
 </style>
 <script setup lang="ts">
+/// <reference types="vite/client" />
 import { mountUi } from 'tweak-ui'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vitepress'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 export type RunFn = (canvas: HTMLCanvasElement, tools: HTMLElement) => RunDisposeFn
 export type RunDisposeFn = () => void
 
-const examples = import.meta.glob('/**/example*.ts')
-const rawExamples = import.meta.glob('/**/example*.ts', { query: '?raw' })
+const examples = import.meta.glob('/**/*.ts')
+function getExamplePath() {
+  let pathname = location.pathname
+  if (pathname.endsWith('.html')) {
+    pathname = pathname.replace('.html', '')
+  }
+  const name1 = pathname + (props.name || 'example.ts')
+  const name2 = pathname + (props.name || '.example.ts')
+  if (name1 in examples) {
+    return name1
+  }
+  if (name2 in examples) {
+    return name2
+  }
+  throw new Error(`example does not exist: ${name1} (${name2})`)
+}
+
+function getExample() {
+  return examples[getExamplePath()]
+}
 
 const frame = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -58,15 +78,15 @@ const props = defineProps({
 })
 let toDispose: RunDisposeFn | null = null
 let isMounted = false
+
+const route = useRoute()
+const showCapture = computed(() => import.meta.env.DEV && route.path.includes('/examples/'))
+
 onMounted(async () => {
   isMounted = true
   try {
-    const exampleName = location.pathname + (props.name || 'example.ts')
-    const exampleLoader = examples[exampleName]
-    if (!exampleLoader) {
-      throw new Error(`example does not exist: ${exampleName}`)
-    }
-    const module = await exampleLoader()
+    const exampleLoader = getExample()
+    const module: any = await exampleLoader()
     if (isMounted) {
       toDispose = module.default(canvas.value, tools.value, props.platform) || null
     }
@@ -75,6 +95,9 @@ onMounted(async () => {
   }
 
   mountUi(fsTools.value!, (ui) => {
+    if (showCapture.value) {
+      ui.button('CAPTRUE', { onclick: captureCanvas })
+    }
     ui.button('Fullscreen', { onclick: toggleFullscreen })
   })
 })
@@ -101,5 +124,20 @@ function toggleFullscreen() {
     return
   }
   elem.requestFullscreen()
+}
+
+async function captureCanvas() {
+  const blob = await new Promise<Blob | null>((resolve) => {
+    ;(canvas.value as HTMLCanvasElement).toBlob(resolve, 'image/png')
+  })
+
+  if (!blob) {
+    return
+  }
+
+  const query = new URLSearchParams()
+  query.set('file', getExamplePath().replace(/\.ts$/, '.png'))
+  const url = `/__capture?${query.toString()}`
+  await fetch(url, { method: 'POST', body: blob })
 }
 </script>

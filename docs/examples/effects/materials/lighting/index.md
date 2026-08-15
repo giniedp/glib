@@ -1,4 +1,0 @@
-# Lighting
-
-<Example/>
-<ExampleCode/>

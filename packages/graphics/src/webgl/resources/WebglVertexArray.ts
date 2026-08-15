@@ -1,9 +1,10 @@
 import { eventSource } from '@gglib/utils'
 import { dataTypeToWebGL } from '../../enums'
-import type { VertexAttribute } from '../../VertexLayout'
+import type { VertexAttribute } from '../../resources'
 import type { WebglResource } from '../types'
 import type { WebglDevice } from '../WebglDevice'
 import type { WebglBuffer } from './WebglBuffer'
+import { WebglReflectInput } from './WebglReflection'
 import type { WebglShaderModule } from './WebglShaderModule'
 import type { WebglVertexBuffer } from './WebglVertexBuffer'
 
@@ -74,6 +75,7 @@ function createVao(
     layout: VertexAttribute
     location: number
   }> = []
+  const missing: Array<WebglReflectInput> = []
 
   if (!program) {
     throw new Error('Program is required to create a VertexArray')
@@ -97,14 +99,7 @@ function createVao(
       })
       continue outer
     }
-    throw new Error(
-      [
-        'VertexBuffer is not compatible with Program',
-        `Required attributes: ${program.reflection.inputs.map((it) => it.alias || it.name)}`,
-        `Available attributes: ${vertexBuffer.map((it) => Object.keys(it.vertexLayout)).flat()}`,
-        `Missing attribute: ${attribute.alias || attribute.name}`,
-      ].join('\n'),
-    )
+    missing.push(attribute)
   }
 
   const vao = gl.createVertexArray()
@@ -122,6 +117,31 @@ function createVao(
     gl.vertexAttribDivisor(location, buffer.instanced ? 1 : 0)
     gl.enableVertexAttribArray(location)
   }
+
+  for (const { location, name, alias, type } of missing) {
+    let value = [0, 0, 0, 0]
+    if ((alias || name).match(/color/i)) {
+      value = [1, 1, 1, 1]
+    }
+    gl.disableVertexAttribArray(location)
+    switch (type.componentType) {
+      case 'float16':
+      case 'float32':
+        gl.vertexAttrib4fv(location, value)
+        break
+      case 'int8':
+      case 'int16':
+      case 'int32':
+        gl.vertexAttribI4iv(location, value)
+        break
+      case 'uint8':
+      case 'uint16':
+      case 'uint32':
+        gl.vertexAttribI4uiv(location, value)
+        break
+    }
+  }
+
   if (indexBuffer) {
     gl.bindBuffer(indexBuffer.glType, indexBuffer.glHandle)
   }

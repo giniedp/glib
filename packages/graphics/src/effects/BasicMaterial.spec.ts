@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Device } from '../Device'
+import { InputSlot } from '../resources'
 import { WebglDevice } from '../webgl'
 import { WebGpuDevice } from '../webgpu'
 import { BasicMaterial } from './BasicMaterial'
 import { CommonInputs } from './types'
+import { vec3 } from '@gglib/math'
 
 describe('BasicMaterial', () => {
   describe('WebGPU', () => {
@@ -25,7 +27,12 @@ function runContract(createDevice: () => WebGpuDevice | WebglDevice) {
   beforeEach(async () => {
     device = await createDevice().ready
     material = new BasicMaterial(device)
-    await material.effect.program.module.ready
+    await material.effect.program.compiled
+  })
+
+  it('compiles', async () => {
+    await material.effect.program.compiled
+    expect(material.effect.isValid).toBe(true)
   })
 
   describe('get/set', () => {
@@ -75,7 +82,7 @@ function runContract(createDevice: () => WebGpuDevice | WebglDevice) {
       expect(material.effect.program.module).toBe(material2.effect.program.module)
 
       expect(material.View).toEqual(data)
-      expect(material2.View).toBeUndefined() // the blocks are shared but the inputs are not
+      expect(material2.View).toBeNullable() // the blocks are shared but the inputs are not
 
       expect(material.effect.program.get(CommonInputs.View.ViewMatrix.key).rawValue).toEqual(zero)
       expect(material2.effect.program.get(CommonInputs.View.ViewMatrix.key).rawValue).toEqual(zero)
@@ -87,37 +94,16 @@ function runContract(createDevice: () => WebGpuDevice | WebglDevice) {
       expect(material2.effect.program.get(CommonInputs.View.ViewMatrix.key).rawValue).toEqual(new Float32Array(data))
     })
 
-    it('shares global block (fog)', () => {
-      const zero = new Float32Array(3)
-      const data = [1, 2, 3]
-      const color = { x: 1, y: 2, z: 3 }
-
-      material.FogColor = color
-      expect(material.effect.program.module).toBe(material2.effect.program.module)
-
-      expect(material.FogColor).toEqual(color)
-      expect(material2.FogColor).toBeUndefined() // the blocks are shared but the inputs are not
-
-      expect(material.effect.program.get(CommonInputs.Global.FogColor.key).rawValue).toEqual(zero)
-      expect(material2.effect.program.get(CommonInputs.Global.FogColor.key).rawValue).toEqual(zero)
-
-      expect(material.effect.applyInputs(material.inputBlocks)).toBe(true)
-
-      // both programs received the update
-      expect(material.effect.program.get(CommonInputs.Global.FogColor.key).rawValue).toEqual(new Float32Array(data))
-      expect(material2.effect.program.get(CommonInputs.Global.FogColor.key).rawValue).toEqual(new Float32Array(data))
-    })
-
     it('doesnt share material block', () => {
       const zero = new Float32Array(3)
       const data = [1, 2, 3]
-      const color = { x: 1, y: 2, z: 3 }
+      const color = vec3(1, 2, 3)
 
       material.BaseColor = color
       expect(material.effect.program.module).toBe(material2.effect.program.module)
 
       expect(material.BaseColor).toEqual(color)
-      expect(material2.BaseColor).toBeUndefined() // the blocks are shared but the inputs are not
+      expect(material2.BaseColor).not.toEqual(color) // the blocks are shared but the inputs are not
 
       expect(material.effect.program.get('material.baseColor').rawValue).toEqual(zero)
       expect(material2.effect.program.get('material.baseColor').rawValue).toEqual(zero)
@@ -126,6 +112,15 @@ function runContract(createDevice: () => WebGpuDevice | WebglDevice) {
 
       expect(material.effect.program.get('material.baseColor').rawValue).toEqual(new Float32Array(data))
       expect(material2.effect.program.get('material.baseColor').rawValue).toEqual(zero)
+    })
+  })
+
+  describe('schema validation', () => {
+    it('has all inputs', () => {
+      for (const key in material.schema) {
+        const slot: InputSlot = material.schema[key]
+        expect(material.effect.program.get(slot.key), slot.key).not.toBeNullable()
+      }
     })
   })
 }

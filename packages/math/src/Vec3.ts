@@ -266,6 +266,38 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Creates a new vector with all components set to given value
+   *
+   * @returns A new vector.
+   */
+  public static createUniform(value: number): Vec3 {
+    return new Vec3(value, value, value)
+  }
+
+  /**
+   * Initializes all components of given vector to given value
+   *
+   * @param out - the vector to initialize
+   */
+  public static initUniform<T>(value: number, out: T): T & IVec3
+  public static initUniform(value: number, out: IVec3): IVec3 {
+    out.x = value
+    out.y = value
+    out.z = value
+    return out
+  }
+
+  /**
+   * Initializes all components of this vector to given value
+   */
+  public initUniform(value: number): this {
+    this.x = value
+    this.y = value
+    this.z = value
+    return this
+  }
+
+  /**
    * Creates a new vector with all components set to `0`
    *
    * @returns A new vector.

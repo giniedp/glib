@@ -1,4 +1,4 @@
-import { BasicGame } from '@gglib/components'
+import { EcsGame } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import { boxMat4DistanceSquared } from '@gglib/math'
 import { LOD_SPANS, lodSpanEnd, lodSpanStart, lodSpanVisibleEnd } from '../../constants'
@@ -13,14 +13,14 @@ const IMPOSTOR_UNLOAD_AT = Math.pow(lodSpanEnd(LOD_SPANS.impostor), 2)
 export class RegionSystem extends GameSystem {
   private allRegions: GameQuery
 
-  private game: BasicGame
+  private game: EcsGame
   private content: ContentService
   private world: GameWorld
 
   public initialize(world: GameWorld): void {
     this.world = world
     this.allRegions = world.query({ scope: 'all', required: [RegionComponent] })
-    this.game = world.getSystem(BasicGame)
+    this.game = world.getSystem(EcsGame)
 
     this.world.eventBus.on(GameEntity.onInitialized, this.addRegionTag)
     this.world.eventBus.on(GameEntity.onDestroyed, this.removeRegionTag)

@@ -76,18 +76,15 @@ function readHeader(reader: BinaryReader): HDRHeader {
     width: 0,
     height: 0,
   }
-  // first line always contains magic
-  // either #?RADIANCE or #?RGBE
-  const magic = readLine(reader)
-  if (magic !== MAGIC_RADIANCE && magic !== MAGIC_RGBE) {
-    throw new Error('Invalid HDR file magic: ' + magic)
-  }
-  header.magic = magic
 
   // multiple lines can contain comments or metadata
   // until a blank line is encountered
   while (reader.canRead) {
     const line = readLine(reader)
+    // magic
+    if (line.startsWith('#?')) {
+      header.magic = line
+    }
     // comments
     if (line.startsWith('#')) {
       header.comments.push(line.substring(1))
@@ -106,6 +103,9 @@ function readHeader(reader: BinaryReader): HDRHeader {
     } else {
       console.warn(`Unexpected line in HDR header: ${line}`)
     }
+  }
+  if (header.magic !== MAGIC_RADIANCE && header.magic !== MAGIC_RGBE) {
+    throw new Error('Invalid HDR file magic: ' + header.magic)
   }
 
   // last line, after the blank line, contains resolution

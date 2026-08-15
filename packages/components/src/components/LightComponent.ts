@@ -1,6 +1,5 @@
 import type { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { LightType } from '@gglib/graphics'
-import { LightParams } from '@gglib/materials'
 import { BoundingSphere, Vec3 } from '@gglib/math'
 import { BoundsComponent } from './BoundsComponent'
 import type { TransformComponent } from './TransformComponent'
@@ -75,7 +74,7 @@ export class LightComponent implements GameComponent, InitializableComponent {
    */
   public type: LightType = LightType.Directional
 
-  public readonly params: LightParams = new LightParams()
+  // public readonly params: LightParams = new LightParams()
   private localVolume = new BoundingSphere(0, 0, 0, Number.MAX_SAFE_INTEGER)
 
   public readonly entity: GameEntity
@@ -116,13 +115,13 @@ export class LightComponent implements GameComponent, InitializableComponent {
   }
 
   public updateParams() {
-    const data = this.params
-    data.setPosition(this.position)
-    data.setDirection(this.direction)
-    data.setColor(this.color, this.intensity)
-    data.range = this.range
-    data.angle = this.spotAngle
-    data.enabled = this.enabled
-    data.type = this.type
+    // const data = this.params
+    // data.setPosition(this.position)
+    // data.setDirection(this.direction)
+    // data.setColor(this.color, this.intensity)
+    // data.range = this.range
+    // data.angle = this.spotAngle
+    // data.enabled = this.enabled
+    // data.type = this.type
   }
 }

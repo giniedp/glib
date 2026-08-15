@@ -13,7 +13,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'scalar',
               componentType: 'float32',
               componentCount: 1,
@@ -29,7 +29,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'scalar',
               componentType: 'int32',
               componentCount: 1,
@@ -45,7 +45,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'scalar',
               componentType: 'uint32',
               componentCount: 1,
@@ -61,7 +61,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'scalar',
               componentType: 'int32',
               componentCount: 1,
@@ -87,7 +87,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'vec2',
               componentType: 'float32',
               componentCount: 2,
@@ -103,7 +103,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'vec3',
               componentType: 'float32',
               componentCount: 3,
@@ -119,7 +119,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'vec4',
               componentType: 'float32',
               componentCount: 4,
@@ -135,7 +135,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'vec3',
               componentType: 'uint32',
               componentCount: 3,
@@ -151,7 +151,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'vec3',
               componentType: 'int32',
               componentCount: 3,
@@ -167,7 +167,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'vec3',
               componentType: 'int32',
               componentCount: 3,
@@ -193,7 +193,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'mat2x2',
               componentType: 'float32',
               componentCount: 4,
@@ -209,7 +209,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'mat2x2',
               componentType: 'float32',
               componentCount: 4,
@@ -225,7 +225,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'mat3x3',
               componentType: 'float32',
               componentCount: 9,
@@ -241,7 +241,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'mat3x3',
               componentType: 'float32',
               componentCount: 9,
@@ -257,7 +257,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'mat4x4',
               componentType: 'float32',
               componentCount: 16,
@@ -273,7 +273,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'mat4x4',
               componentType: 'float32',
               componentCount: 16,
@@ -299,7 +299,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'array',
               elementCount: 10,
               element: {
@@ -319,7 +319,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'array',
               elementCount: 10,
               element: {
@@ -339,7 +339,7 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'value',
-              alias: null,
+              annotations: {},
               container: 'array',
               elementCount: 10,
               element: {
@@ -378,12 +378,12 @@ describe('glslReflect', () => {
           uniforms: [
             {
               name: 'instance',
-              alias: null,
+              annotations: {},
               container: 'struct',
               member: [
                 {
                   name: 'field1',
-                  alias: null,
+                  annotations: {},
                   container: 'scalar',
                   componentType: 'float32',
                   componentCount: 1,

@@ -1,11 +1,11 @@
 import {
-  BasicGame,
+  EcsGame,
   CameraComponent,
   KeyboardInputSystem,
   MouseInputSystem,
-  SceneRootComponent,
+  SceneComponent,
   SchedulerSystem,
-  SpatialRootComponent,
+  SpatialComponent,
   SpatialSystem,
   TransformComponent,
   WASDComponent,
@@ -46,7 +46,7 @@ export interface LevelLoadOption {
   category: string
 }
 
-export class NwViewer extends BasicGame {
+export class NwViewer extends EcsGame {
   public static readonly onRaySelection = brand<EventType<GameEntity>>(Symbol('raySelection'))
   public static readonly onLevelOptionsLoaded = brand<EventType<NwViewer>>(Symbol('levelOptions'))
 
@@ -83,10 +83,11 @@ export class NwViewer extends BasicGame {
         },
       },
       platform: 'webgpu',
+      autosize: true,
     })
 
     this.renderer.autoSrgb = true
-    this.renderer.clearColor = Color.Black.srgbToLinear()
+    this.renderer.clearColor = Color.Black.toLinear()
     const geometryPass = this.renderer.pipeline.passes[0] as GeometryPass
     geometryPass.enableLinearDepthMrt = true
     this.renderer.pipeline.addPass(
@@ -135,7 +136,7 @@ export class NwViewer extends BasicGame {
       ctx.renderInputs.set(InputSlots.Global.Debug, this.debug)
     })
 
-    this.spatialQuery = this.world.query({ scope: 'active', required: [SpatialRootComponent] })
+    this.spatialQuery = this.world.query({ scope: 'active', required: [SpatialComponent] })
     this.selection = this.world.createEntity({
       name: 'Selection',
       parent: this.scene,
@@ -163,7 +164,7 @@ export class NwViewer extends BasicGame {
     attachOverlay(options.element, this)
   }
 
-  protected override createSystems(): void {
+  protected override onCreate(): void {
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
     this.world.addSystem(new ContentService())
     this.world.addSystem(new KeyboardInputSystem())
@@ -179,17 +180,13 @@ export class NwViewer extends BasicGame {
     this.world.addSystem(new SchedulerSystem({}))
   }
 
-  override async initialize() {
-    super.initialize()
-    this.scene.activate()
-    console.log(...this.logTag, 'initialized', this)
+  override onBeginRun() {
+    super.onBeginRun()
     this.loadLevelLoadOptions()
     this.attachRoutes()
   }
 
-  override update(time: number, dt: number): void {
-    super.update(time, dt)
-    this.device.resize()
+  override onBeginUpdate(time: number, dt: number): void {
     this.camera.aspect = this.device.output.aspectRatio
     this.scheduler.updatePriorities(this.view.camera, time)
   }
@@ -216,12 +213,12 @@ export class NwViewer extends BasicGame {
   }
 
   public frameTime = 0
-  override render(time: number, dt: number): void {
-    super.render(time, dt)
+  override onEndDraw(time: number, dt: number): void {
+    super.onEndDraw(time, dt)
     this.frameTime = dt
     this.deviceStats = this.device.stats(this.deviceStats)
     this.schedulerStats = this.scheduler.instance.getStats(this.schedulerStats)
-    this.sceneStats = this.scene.component(SceneRootComponent).stats(this.sceneStats)
+    this.sceneStats = this.scene.component(SceneComponent).stats(this.sceneStats)
     this.renderStats = this.renderer.stats(this.renderStats)
   }
 

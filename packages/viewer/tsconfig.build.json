@@ -32,10 +32,19 @@
       "path": "../effects/tsconfig.build.json"
     },
     {
+      "path": "../graphics/tsconfig.build.json"
+    },
+    {
       "path": "../loaders/tsconfig.build.json"
     },
     {
-      "path": "../materials/tsconfig.build.json"
+      "path": "../math/tsconfig.build.json"
+    },
+    {
+      "path": "../model/tsconfig.build.json"
+    },
+    {
+      "path": "../render/tsconfig.build.json"
     }
   ]
 }

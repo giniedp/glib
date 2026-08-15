@@ -154,3 +154,41 @@
 h1 + .example-frame {
   margin-top: 1rem;
 }
+
+.hljs-comment--doc,
+.hljs-comment--inline,
+.hljs-comment--marker {
+  display: inline-block;
+
+  box-sizing: border-box;
+  vertical-align: top;
+
+  overflow: hidden;
+  padding: 0 0.5rem;
+  margin: 0;
+  color: var(--vp-c-text-2);
+  font-style: italic;
+  background: color-mix(in srgb, var(--vp-c-brand-1) 8%, transparent);
+  border-radius: 0.25rem;
+  line-height: 1.75;
+}
+.hljs-comment--doc {
+  min-width: var(--comment-w, 80ch);
+  border-left: 3px solid color-mix(in srgb, var(--vp-c-brand-1) 50%, transparent);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.hljs-comment--doc + .hljs-comment--doc {
+  margin-top: 0;
+  border-top-right-radius: 0;
+}
+
+.hljs-comment--doc:has(+ .hljs-comment--doc) {
+  margin-bottom: 0;
+  border-bottom-right-radius: 0;
+}
+
+.hljs-cdelim,
+.hljs-comment--pragma {
+  font-size: 0;
+}

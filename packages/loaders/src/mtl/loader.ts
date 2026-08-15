@@ -213,13 +213,13 @@ export class MtlAsset extends AssetContainer {
 
     if (data.map_Kd?.file) {
       this.graph.assign(node, this.textureNode(data.map_Kd), (material, texture) => {
-        params.BaseColorMap = texture
+        params.BaseMap = texture
       })
     }
 
     if (data.map_Ks?.file) {
       this.graph.assign(node, this.textureNode(data.map_Ks), (material, texture) => {
-        params.SpecularColorMap = texture
+        params.SpecularMap = texture
       })
     }
 

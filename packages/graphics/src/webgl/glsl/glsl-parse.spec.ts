@@ -63,7 +63,7 @@ describe('parseGlsl', () => {
       {
         input: /*glsl*/ `
           // comment for Camera
-          layout(std40, binding=2)
+          layout(std140, binding=2)
           uniform Camera {
             // comment for View
             mat4 View;
@@ -75,7 +75,7 @@ describe('parseGlsl', () => {
         expected: [
           glslInterface(
             ['comment for Camera'],
-            { std40: void 0, binding: 2 },
+            { std140: void 0, binding: 2 },
             'Camera',
             [
               glslStructMember(['comment for View'], [], 'View', glslTypeRefence('mat4', null)),

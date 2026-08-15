@@ -1,22 +1,22 @@
 import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { KeyboardKey } from '@gglib/input'
 import { Quat, SpaceBasis, Vec3 } from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { KeyboardInputSystem } from '../systems/KeyboardInput'
 import { MouseInputSystem } from '../systems/MouseInput'
 import type { TransformComponent } from './TransformComponent'
+import { KeyboardKeys } from '@gglib/game'
 
 /**
  * @public
  */
 export interface WASDComponentOptions {
-  keyForwad?: KeyboardKey
-  keyBackward?: KeyboardKey
-  keyLeft?: KeyboardKey
-  keyRight?: KeyboardKey
-  keyUp?: KeyboardKey
-  keyDown?: KeyboardKey
-  keyBoost?: KeyboardKey
+  keyForwad?: string
+  keyBackward?: string
+  keyLeft?: string
+  keyRight?: string
+  keyUp?: string
+  keyDown?: string
+  keyBoost?: string
   mouseButton?: number
 }
 
@@ -68,13 +68,13 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
   private direction = new Vec3(0, 0, 0)
   private translation = new Vec3(0, 0, 0)
 
-  private keyForwad: KeyboardKey = KeyboardKey.KeyW
-  private keyBackward: KeyboardKey = KeyboardKey.KeyS
-  private keyLeft: KeyboardKey = KeyboardKey.KeyA
-  private keyRight: KeyboardKey = KeyboardKey.KeyD
-  private keyUp: KeyboardKey = KeyboardKey.KeyE
-  private keyDown: KeyboardKey = KeyboardKey.KeyQ
-  private keyBoost: KeyboardKey = KeyboardKey.ShiftLeft
+  private keyForwad = KeyboardKeys.KeyW
+  private keyBackward = KeyboardKeys.KeyS
+  private keyLeft = KeyboardKeys.KeyA
+  private keyRight = KeyboardKeys.KeyD
+  private keyUp = KeyboardKeys.KeyE
+  private keyDown = KeyboardKeys.KeyQ
+  private keyBoost = KeyboardKeys.ShiftLeft
   private mouseButton: number = 0
 
   private space: SpaceBasis
@@ -111,7 +111,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     const keyboard = this.keyboard
     const mouse = this.mouse
 
-    if (keyboard.isPressed(KeyboardKey.AltLeft) || keyboard.isPressed(KeyboardKey.AltRight)) {
+    if (keyboard.isPressed(KeyboardKeys.AltLeft) || keyboard.isPressed(KeyboardKeys.AltRight)) {
       if (mouse.wheelDelta < 0) {
         this.moveSpeed += this.moveSpeedStep
       }
@@ -119,7 +119,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
         this.moveSpeed -= this.moveSpeedStep
       }
     }
-    if (!keyboard.isPressed(KeyboardKey.AltLeft) && !keyboard.isPressed(KeyboardKey.AltRight)) {
+    if (!keyboard.isPressed(KeyboardKeys.AltLeft) && !keyboard.isPressed(KeyboardKeys.AltRight)) {
       if (mouse.wheelDelta != 0) {
         this.targetRadius *= Math.pow(0.95, -mouse.wheelDelta)
       }
@@ -152,7 +152,7 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     const mouse = this.mouse
     const node = this.entity.getTransform<TransformComponent>()
 
-    if (keyboard.isPressed(KeyboardKey.AltLeft) || keyboard.isPressed(KeyboardKey.AltRight)) {
+    if (keyboard.isPressed(KeyboardKeys.AltLeft) || keyboard.isPressed(KeyboardKeys.AltRight)) {
       if (mouse.wheelDelta < 0) {
         this.moveSpeed += this.moveSpeedStep
       }
