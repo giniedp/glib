@@ -19,8 +19,8 @@ export interface PipelineParams {
   shader: WebGpuShaderModule
   vertexConstants: ShaderConstants
   fragmentConstants: ShaderConstants
-  vertexLayout: ReadonlyArray<GPUVertexBufferLayout | null | undefined>
-  targets: ReadonlyArray<GPUColorTargetState>
+  vertexLayout: Array<GPUVertexBufferLayout | null | undefined>
+  targets: GPUColorTargetState[]
   depthFormat: SurfaceFormat
   cullState: CullState
   depthBiasState: DepthBiasState

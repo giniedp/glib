@@ -1,6 +1,5 @@
 {
   "extends": "../tsconfig.tsc.json",
-  "baseUrl": ".",
   "rootDir": ".",
   "compilerOptions": {
     "composite": true,
@@ -30,6 +29,9 @@
     },
     {
       "path": "../effects/tsconfig.build.json"
+    },
+    {
+      "path": "../game/tsconfig.build.json"
     },
     {
       "path": "../graphics/tsconfig.build.json"

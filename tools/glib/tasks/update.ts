@@ -85,7 +85,6 @@ function updateTsconfigBuild(pkg: GlibPackageContext) {
     JSON.stringify(
       {
         extends: path.posix.relative(pkg.pkgDir, project.packagesDir('tsconfig.tsc.json')),
-        baseUrl: '.',
         rootDir: '.',
         compilerOptions: {
           composite: true,

@@ -8,7 +8,7 @@ import type { WebGpuShaderModule } from './WebGpuShaderModule'
 import { WebGpuShaderResource } from './WebGpuShaderResource'
 
 export interface WebGpuParameterSetOptions extends ProgramOptions {
-  layouts?: ReadonlyArray<GPUBindGroupLayout>
+  layouts?: GPUBindGroupLayout[]
 }
 
 export class WebGpuProgram extends Program {
@@ -25,8 +25,8 @@ export class WebGpuProgram extends Program {
   private resources: WebGpuShaderResource[]
   private ownedResources: WebGpuShaderResource[]
 
-  public readonly bindGroupLayouts: ReadonlyArray<GPUBindGroupLayout>
-  public get bindGroups(): ReadonlyArray<GPUBindGroup> {
+  public bindGroupLayouts: GPUBindGroupLayout[]
+  public get bindGroups(): GPUBindGroup[] {
     if (this.changed || !this.gpuBindGroups) {
       this.updateBindGroups()
     }

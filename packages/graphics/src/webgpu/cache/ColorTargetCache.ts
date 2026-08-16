@@ -42,14 +42,14 @@ function getBlendState(state: BlendState): GPUBlendState {
 }
 
 export function colorTargetListCache() {
-  const cache: Record<number, Array<ReadonlyArray<GPUColorTargetState>>> = {}
+  const cache: Record<number, Array<GPUColorTargetState[]>> = {}
   return {
     clear() {
       for (const key in cache) {
         delete cache[key]
       }
     },
-    get(list: GPUColorTargetState[], length: number): ReadonlyArray<GPUColorTargetState> {
+    get(list: GPUColorTargetState[], length: number): GPUColorTargetState[] {
       if (list.length < length) {
         throw new Error('List length does not match the specified length.')
       }

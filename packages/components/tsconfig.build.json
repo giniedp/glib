@@ -1,6 +1,5 @@
 {
   "extends": "../tsconfig.tsc.json",
-  "baseUrl": ".",
   "rootDir": ".",
   "compilerOptions": {
     "composite": true,

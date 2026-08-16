@@ -1,5 +1,5 @@
+import { PrimitiveType } from '@gglib/graphics'
 import { IVec2, IVec3, Vec2, Vec3 } from '@gglib/math'
-import { PrimitiveType } from 'graphics/src/enums'
 import { Color } from '../../Color'
 import type { GeometryBuilder } from '../GeometryBuilder'
 

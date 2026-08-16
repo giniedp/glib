@@ -1,5 +1,5 @@
+import { Device } from '@gglib/graphics'
 import { IVec3, Vec2, Vec3 } from '@gglib/math'
-import { Device } from 'graphics/src/Device'
 import { Geometry } from '../Geometry'
 import { buildGeometry, BuildGeometryOptions, GeometryBuilder } from '../GeometryBuilder'
 import { resolveLines } from './buildParametricSurface'

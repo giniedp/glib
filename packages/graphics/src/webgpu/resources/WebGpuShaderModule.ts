@@ -1,4 +1,4 @@
-import { ShaderConstants } from 'graphics/src/states'
+import { ShaderConstants } from '@gglib/graphics'
 import {
   getRefCounter,
   ShaderModule,
@@ -134,7 +134,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
   }
 
   private vertexLayoutCache = new WeakMap<VertexBuffer, GPUVertexBufferLayout[]>()
-  public getVertexLayout(vertexBuffer: VertexBuffer): readonly GPUVertexBufferLayout[] {
+  public getVertexLayout(vertexBuffer: VertexBuffer): GPUVertexBufferLayout[] {
     if (this.vertexLayoutCache.has(vertexBuffer)) {
       return this.vertexLayoutCache.get(vertexBuffer)
     }
