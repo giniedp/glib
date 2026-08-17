@@ -1,5 +1,6 @@
 ---
-title: Basics
+title: Multiple Views
+aside: false
 ---
 
 # Basics

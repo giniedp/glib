@@ -1,5 +1,6 @@
 ---
-title: Multiple Views
+title: Basics
+aside: false
 ---
 
 # Basics
@@ -13,4 +14,9 @@ title: Multiple Views
 
 ## Source
 
+:::tabs
+== example.ts
 <ExampleCode />
+== basic-scene.ts
+<ExampleCode name="./basics-scene.ts" />
+:::

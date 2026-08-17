@@ -33,10 +33,6 @@ class Game extends EcsGame {
 
   override onInitialize(): void {
     this.renderer.clearColor = Color.TransparentBlack
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(CommonInputs.Global.SkyColor, Color.White)
-      ctx.renderInputs.set(CommonInputs.Global.GroundColor, Color.White)
-    })
   }
 
   private createCamera() {

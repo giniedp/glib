@@ -8,16 +8,18 @@ import {
   Device,
   DeviceOutput,
   ProgramInputBlockCollection,
+  ProgramInputBlockOptions,
   RenderVariant,
   SpriteBatch,
   surfaceFormatIsSrgb,
   Texture,
+  TextureDescriptor,
   WebglDevice,
 } from '@gglib/graphics'
 
-import { Mat4, Vec3 } from '@gglib/math'
+import { Mat4, vec3, Vec3 } from '@gglib/math'
 import { eventSource } from '@gglib/utils'
-import { GeometryPass } from './passes/GeometryPass'
+import { GeometryPass } from './passes'
 import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
 import {
   MeshPartRenderCollector,
@@ -28,7 +30,7 @@ import {
 } from './RenderCollector'
 import { RenderList, RenderListCache } from './RenderList'
 import { RenderListMode } from './RenderListMode'
-import { RenderPipeline } from './RenderPipeline'
+import { RenderPipeline, RenderPipelineOptions } from './RenderPipeline'
 import { RenderTargetManager } from './RenderTargetManager'
 import {
   LayerMask,
@@ -44,6 +46,11 @@ export const ViewChannelsSymbol = Symbol('ViewChannels')
 
 export interface RendererStats {
   drawCount: number
+}
+
+export interface RendererOptions {
+  pipeline?: RenderPipeline | RenderPipelineOptions
+  inputs?: ProgramInputBlockCollection | ProgramInputBlockOptions
 }
 
 export class Renderer {
@@ -67,14 +74,20 @@ export class Renderer {
    */
   public autoSrgb = false
 
+  /**
+   * Render inputs that are always propagated to each rendered view
+   */
+  public inputs: ProgramInputBlockCollection
+
   public perInstanceTransforms: BufferRecorder
   public perInstanceData: BufferRecorder
+  public channelDescriptors: Record<string, TextureDescriptor>
 
   public lastInstanceCount = 0
+  protected context: RenderContext
   protected renderLists: RenderListCache
   protected collectors: RenderCollectorRegistry
   protected spriteBatch: SpriteBatch
-  protected context: RenderContext
   protected resources: RenderTargetManager
   protected frameInfo: FrameInfo = {
     id: 0,
@@ -88,10 +101,34 @@ export class Renderer {
    */
   public readonly onContextReady = eventSource<RenderContext>()
 
-  public constructor(device: Device) {
+  public constructor(device: Device, options?: RendererOptions) {
     this.device = device
-    this.pipeline = new RenderPipeline()
-    this.pipeline.passes.push(new GeometryPass())
+    if (options?.pipeline instanceof RenderPipeline) {
+      this.pipeline = options?.pipeline
+    } else {
+      this.pipeline = new RenderPipeline(
+        options?.pipeline || {
+          passes: [new GeometryPass()],
+        },
+      )
+    }
+
+    if (options?.inputs instanceof ProgramInputBlockCollection) {
+      this.inputs = options.inputs
+    } else {
+      this.inputs = new ProgramInputBlockCollection(
+        options?.inputs || {
+          createIfMissing: false,
+          initialBlocks: [CommonBlocks.Global, CommonBlocks.Frame, CommonBlocks.View],
+        },
+      )
+    }
+    this.inputs.set(CommonInputs.Global.AmbientColor, vec3(1))
+    this.inputs.set(CommonInputs.Global.AmbientColorTop, vec3(1))
+    this.inputs.set(CommonInputs.Global.AmbientDirection, vec3(0, 1, 0))
+    this.inputs.set(CommonInputs.Global.FogNear, 0)
+    this.inputs.set(CommonInputs.Global.FogFar, 1000)
+
     this.renderLists = new RenderListCache()
     this.collectors = new RenderCollectorRegistry()
     this.collectors.register(RenderItemType.Mesh, new MeshRenderCollector())
@@ -99,6 +136,7 @@ export class Renderer {
     this.collectors.register(RenderItemType.Model, new ModelRenderCollector())
     this.collectors.register(RenderItemType.Sprite, new SpriteRenderCollector())
     this.resources = new RenderTargetManager(device)
+    this.channelDescriptors = createRenderChannelSchema(device)
 
     if (device.isReady) {
       this.createInstanceBuffers()
@@ -114,13 +152,10 @@ export class Renderer {
       view: null,
       viewWidth: 1,
       viewHeight: 1,
-      channelDescriptors: createRenderChannelSchema(device),
+      channelDescriptors: this.channelDescriptors,
       renderLists: this.renderLists,
       renderVariant: RenderVariant.Forward,
-      renderInputs: new ProgramInputBlockCollection({
-        createIfMissing: false,
-        initialBlocks: [CommonBlocks.Global, CommonBlocks.Frame, CommonBlocks.View],
-      }),
+      renderInputs: this.inputs,
     }
   }
 
@@ -339,10 +374,12 @@ export class Renderer {
   public present(views: RenderView[], target: Texture = null): void {
     this.spriteBatch ||= new SpriteBatch(this.device)
 
-    const isSRGB = surfaceFormatIsSrgb((target || this.device.output).format)
+    const output = target || this.device.output
+    const isSRGB = surfaceFormatIsSrgb(output.format)
     const pass = this.device.renderPass
     pass.flush()
     pass.setRenderTarget(0, target)
+    pass.setViewportState(0, 0, output.width, output.height)
     pass.setClearColor(0, Color.TransparentBlack)
     pass.setClearDepth(1)
     pass.clear()
@@ -366,10 +403,10 @@ export class Renderer {
         .source(0, 0, texture.width, texture.height)
         .flipY(this.device.isWebGL2)
         .destination(
-          getViewWidth(rect.x, target || this.device.output),
-          getViewHeight(rect.y, target || this.device.output),
-          getViewWidth(rect.width, target || this.device.output),
-          getViewHeight(rect.height, target || this.device.output),
+          getViewWidth(rect.x, output),
+          getViewHeight(rect.y, output),
+          getViewWidth(rect.width, output),
+          getViewHeight(rect.height, output),
         )
     }
     pass.render(this.spriteBatch)
@@ -378,38 +415,42 @@ export class Renderer {
   }
 
   protected updateInputs(ctx: RenderContext) {
-    ctx.renderInputs.set(CommonInputs.Frame.FrameIndex, ctx.frame.id)
-    ctx.renderInputs.set(CommonInputs.Frame.ElapsedTime, ctx.frame.time)
-    ctx.renderInputs.set(CommonInputs.Frame.DeltaTime, ctx.frame.delta)
+    if (ctx.renderInputs.hasBlock(CommonBlocks.Frame)) {
+      ctx.renderInputs.set(CommonInputs.Frame.FrameIndex, ctx.frame.id)
+      ctx.renderInputs.set(CommonInputs.Frame.ElapsedTime, ctx.frame.time)
+      ctx.renderInputs.set(CommonInputs.Frame.DeltaTime, ctx.frame.delta)
+    }
 
-    ctx.renderInputs.set(CommonInputs.View.Far, ctx.view.camera.far)
-    ctx.renderInputs.set(CommonInputs.View.Near, ctx.view.camera.near)
-    ctx.renderInputs.set(CommonInputs.View.ViewMatrix, ctx.view.camera.view)
-    ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)
+    if (ctx.renderInputs.hasBlock(CommonBlocks.View)) {
+      ctx.renderInputs.set(CommonInputs.View.Far, ctx.view.camera.far)
+      ctx.renderInputs.set(CommonInputs.View.Near, ctx.view.camera.near)
+      ctx.renderInputs.set(CommonInputs.View.ViewMatrix, ctx.view.camera.view)
+      ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)
 
-    const inverseViewMatrix: Mat4 = (ctx['__inverseViewMatrix'] ||= Mat4.createIdentity())
-    Mat4.invert(ctx.view.camera.view, inverseViewMatrix)
-    ctx.renderInputs.set(CommonInputs.View.InverseViewMatrix, inverseViewMatrix)
+      const inverseViewMatrix: Mat4 = (ctx['__inverseViewMatrix'] ||= Mat4.createIdentity())
+      Mat4.invert(ctx.view.camera.view, inverseViewMatrix)
+      ctx.renderInputs.set(CommonInputs.View.InverseViewMatrix, inverseViewMatrix)
 
-    const inverseProjectionMatrix: Mat4 = (ctx['__inverseProjectionMatrix'] ||= Mat4.createIdentity())
-    Mat4.invert(ctx.view.camera.projection, inverseProjectionMatrix)
-    ctx.renderInputs.set(CommonInputs.View.InverseProjectionMatrix, inverseProjectionMatrix)
+      const inverseProjectionMatrix: Mat4 = (ctx['__inverseProjectionMatrix'] ||= Mat4.createIdentity())
+      Mat4.invert(ctx.view.camera.projection, inverseProjectionMatrix)
+      ctx.renderInputs.set(CommonInputs.View.InverseProjectionMatrix, inverseProjectionMatrix)
 
-    const viewProjectionMatrix: Mat4 = (ctx['__viewProjectionMatrix'] ||= Mat4.createIdentity())
-    Mat4.multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProjectionMatrix)
-    ctx.renderInputs.set(CommonInputs.View.ViewProjectionMatrix, viewProjectionMatrix)
+      const viewProjectionMatrix: Mat4 = (ctx['__viewProjectionMatrix'] ||= Mat4.createIdentity())
+      Mat4.multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProjectionMatrix)
+      ctx.renderInputs.set(CommonInputs.View.ViewProjectionMatrix, viewProjectionMatrix)
 
-    const inverseViewProjectionMatrix: Mat4 = (ctx['__inverseViewProjectionMatrix'] ||= Mat4.createIdentity())
-    Mat4.invert(viewProjectionMatrix, inverseViewProjectionMatrix)
-    ctx.renderInputs.set(CommonInputs.View.InverseViewProjectionMatrix, inverseViewProjectionMatrix)
+      const inverseViewProjectionMatrix: Mat4 = (ctx['__inverseViewProjectionMatrix'] ||= Mat4.createIdentity())
+      Mat4.invert(viewProjectionMatrix, inverseViewProjectionMatrix)
+      ctx.renderInputs.set(CommonInputs.View.InverseViewProjectionMatrix, inverseViewProjectionMatrix)
 
-    const cameraPosition: Vec3 = (ctx['__cameraPosition'] ||= Vec3.create())
-    ctx.view.camera.world.getTranslation(cameraPosition)
-    ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
+      const cameraPosition: Vec3 = (ctx['__cameraPosition'] ||= Vec3.create())
+      ctx.view.camera.world.getTranslation(cameraPosition)
+      ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
 
-    const cameraDirection: Vec3 = (ctx['__cameraDirection'] ||= Vec3.create())
-    ctx.view.camera.world.getForward(cameraDirection)
-    ctx.renderInputs.set(CommonInputs.View.CameraDirection, cameraDirection)
+      const cameraDirection: Vec3 = (ctx['__cameraDirection'] ||= Vec3.create())
+      ctx.view.camera.world.getForward(cameraDirection)
+      ctx.renderInputs.set(CommonInputs.View.CameraDirection, cameraDirection)
+    }
   }
 
   public dispose() {

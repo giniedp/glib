@@ -73,6 +73,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private encoder: GPUCommandEncoder
   private pipeline: GPURenderPipeline
   private pass: GPURenderPassEncoder
+  private passNeedsPipeline = false
 
   private outputWidth: number
   private outputHeight: number
@@ -615,7 +616,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.endPass()
     const descriptor = this.getClearPassDescriptor()
 
-    const pass = this.getEncoder('clear').beginRenderPass(descriptor)
+    const pass = this.getEncoder().beginRenderPass(descriptor)
     this.applyStencilReference(pass)
     this.applyBlendConstants(pass)
     this.applyViewportState(pass)
@@ -627,12 +628,12 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.endPass()
     const descriptor = this.getColorPassDescriptor()
 
-    const encoder = this.getEncoder('resolve')
+    const encoder = this.getEncoder()
     encoder.beginRenderPass(descriptor).end()
   }
 
-  private getEncoder(label: string) {
-    this.encoder ||= this.device.gpu.createCommandEncoder({ label })
+  private getEncoder() {
+    this.encoder ||= this.device.gpu.createCommandEncoder({ label: 'gglib' })
     return this.encoder
   }
 
@@ -657,13 +658,16 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.pipelineParams.vertexLayout = this.getVertexLayout()
     this.pipelineParams.targets = this.getColorTargetState()
     this.pipeline = this.device.pipelineCache.get(this.pipelineParams)
+    if (!this.pipeline) {
+      this.pipelineParamsChanged = true
+    }
     return this.pipeline
   }
 
-  private getPass(): GPURenderPassEncoder {
+  private getPass(): GPURenderPassEncoder | null {
     if (!this.pass) {
       const descriptor = this.getColorPassDescriptor()
-      this.pass = this.getEncoder('draw').beginRenderPass(descriptor)
+      this.pass = this.getEncoder().beginRenderPass(descriptor)
 
       if (!this.applyPipeline(this.pass)) {
         // still loading
@@ -688,6 +692,12 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     }
     if (this.programParamsChanged) {
       this.applyBindGroups()
+    }
+
+    if (!this.pipeline) {
+      // still loading
+      this.pipelineParamsChanged = true
+      return null
     }
 
     return this.pass

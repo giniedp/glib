@@ -48,10 +48,13 @@ export const CommonInputs = {
    * Inputs that are commonly set once per frame or globally
    */
   Global: {
+    /** Ambient color term */
     AmbientColor: inputSlotVec3(Global, 'ambientColor'),
-    SkyColor: inputSlotVec3(Global, 'skyColor'),
-    SkyDirection: inputSlotVec3(Global, 'skyDirection'),
-    GroundColor: inputSlotVec3(Global, 'groundColor'),
+    /** Second ambiend color term for sky or gradient color */
+    AmbientColorTop: inputSlotVec3(Global, 'ambientColorTop'),
+    /** Direction of the ambient gradient, usually UP for sky */
+    AmbientDirection: inputSlotVec3(Global, 'ambientDirection'),
+
     FogColor: inputSlotVec3(Global, 'fogColor'),
     FogDensity: inputSlotScalar(Global, 'fogDensity'),
     FogNear: inputSlotScalar(Global, 'fogNear'),

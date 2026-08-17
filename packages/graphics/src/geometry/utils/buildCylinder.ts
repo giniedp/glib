@@ -105,7 +105,7 @@ export interface BuildCylinderOptions {
   lines?: boolean
 }
 
-export function cylinderGeometry(device: Device, options: BuildCylinderOptions & BuildGeometryOptions): Geometry {
+export function cylinderGeometry(device: Device, options?: BuildCylinderOptions & BuildGeometryOptions): Geometry {
   return buildGeometry(device, buildCylinder, {
     name: 'Cylinder',
     ...(resolveLines(options) || {}),

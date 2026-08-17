@@ -15,7 +15,7 @@ import { GameComponent, GameEntity, GameSystem } from '@gglib/ecs'
 import { KeyboardKeys } from '@gglib/game'
 import { BasicMaterial, Color, CommonInputs, Device, PlatformId, TRUE } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, vec3, Vec3 } from '@gglib/math'
 import Ammo from 'ammojs-typed'
 import { mountUi } from 'tweak-ui'
 
@@ -60,10 +60,12 @@ class Game extends EcsGame {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(CommonInputs.Global.SkyColor, Color.White)
-      ctx.renderInputs.set(CommonInputs.Global.GroundColor, Color.Black)
-    })
+    this.renderer.clearColor = Color.CornflowerBlue
+    this.renderer.autoSrgb = false
+    this.renderer.inputs.set(CommonInputs.Global.AmbientColor, Color.Black)
+    this.renderer.inputs.set(CommonInputs.Global.AmbientColorTop, Color.White)
+    this.renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1, 1, 1)))
+
     this.createCamera()
     this.createLight()
     this.createObjects()
@@ -75,7 +77,7 @@ class Game extends EcsGame {
       name: 'camera',
       parent: this.scene,
       transform: new TransformComponent({
-        position: Vec3.create(0, 10, 25),
+        position: vec3(0, 10, 25),
       }),
       components: [
         new CameraComponent({
@@ -102,7 +104,7 @@ class Game extends EcsGame {
       name: 'Ground',
       parent: this.scene,
       transform: new TransformComponent({
-        scale: Vec3.create(50, 50, 50),
+        scale: vec3(50, 50, 50),
       }),
       components: [new ModelComponent(), new PhysicsProxy(0, 100), new CubeComponent()],
     })

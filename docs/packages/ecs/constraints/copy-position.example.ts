@@ -28,14 +28,10 @@ class Game extends EcsGame {
   private leader!: GameEntity
 
   protected override onInitialize() {
-    console.assert(this.scene, 'scene must exist')
-    console.assert(this.view, 'view must exist')
+    console.assert(!!this.scene, 'scene must exist')
+    console.assert(!!this.view, 'view must exist')
 
     this.renderer.clearColor = Color.TransparentBlack
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(CommonInputs.Global.SkyColor, Color.White)
-      ctx.renderInputs.set(CommonInputs.Global.GroundColor, Color.White)
-    })
 
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)

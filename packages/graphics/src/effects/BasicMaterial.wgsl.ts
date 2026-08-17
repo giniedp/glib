@@ -1,9 +1,9 @@
 export const BASIC_EFFECT_WGSL: string = /* wgsl */ `
 
 struct GlobalBlock {
-  skyColor      : vec3f,   // default 1.0,1.0,1.0
-  groundColor   : vec3f,   // default 1.0,1.0,1.0
-  skyDirection  : vec3f,   // default 0.0,1.0,0.0
+  ambientColor     : vec3f, // default 1.0,1.0,1.0
+  ambientColorTop  : vec3f, // default 1.0,1.0,1.0
+  ambientDirection : vec3f, // default 0.0,1.0,0.0
 };
 
 struct ViewBlock {
@@ -105,7 +105,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     baseColor.a = 1.0;
   }
 
-  let light = mix(global.groundColor, global.skyColor, dot(global.skyDirection, normal) * 0.5 + 0.5);
+  let light = mix(global.ambientColor, global.ambientColorTop, dot(global.ambientDirection, normal) * 0.5 + 0.5);
 
   return vec4f(baseColor.rgb * light, baseColor.a);
 }

@@ -1,4 +1,5 @@
 import { ContentLoader } from '@gglib/content'
+import { MouseInput } from '@gglib/game'
 import {
   BasicMaterial,
   BlendState,
@@ -9,7 +10,6 @@ import {
   DepthState,
   TaskContext,
 } from '@gglib/graphics'
-import { MouseInput } from '@gglib/game'
 import { GLTF } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
 import { Model } from '@gglib/model'
@@ -42,9 +42,9 @@ export default async (canvas: HTMLCanvasElement) => {
     create: (device, asset) => {
       const material = new BasicMaterial(device, asset)
 
-      material.SkyColor = Color.fromHex('#47caff')
-      material.GroundColor = Color.fromHex('#bd34fe')
-      material.SkyDirection = Vec3.normalize(vec3(-1, 1, 0))
+      material.AmbientColor = Color.fromHex('#bd34fe')
+      material.AmbientColorTop = Color.fromHex('#47caff')
+      material.AmbientDirection = Vec3.normalize(vec3(-1, 1, 0))
 
       return material
     },

@@ -40,9 +40,9 @@ export function basicEffectOptions(): EffectOptions {
 
 export const BasicMaterialSchema = {
   // global
-  GroundColor: CommonInputs.Global.GroundColor,
-  SkyColor: CommonInputs.Global.SkyColor,
-  SkyDirection: CommonInputs.Global.SkyDirection,
+  AmbientColor: CommonInputs.Global.AmbientColor,
+  AmbientColorTop: CommonInputs.Global.AmbientColorTop,
+  AmbientDirection: CommonInputs.Global.AmbientDirection,
 
   // per view
   View: CommonInputs.View.ViewMatrix,
@@ -90,9 +90,9 @@ export class BasicMaterial extends materialSchemaClass(BasicMaterialSchema) {
 
     this.Alpha = 1
     this.AlphaClip = 0
-    this.GroundColor = vec3(1)
-    this.SkyColor = vec3(1)
-    this.SkyDirection = vec3(0, 1, 0)
+    this.AmbientColor = vec3(1)
+    this.AmbientColorTop = vec3(1)
+    this.AmbientDirection = vec3(0, 1, 0)
   }
 
   public setProperties(props: CommonMaterialProps) {

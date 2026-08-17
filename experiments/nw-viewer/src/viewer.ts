@@ -1,6 +1,6 @@
 import {
-  EcsGame,
   CameraComponent,
+  EcsGame,
   KeyboardInputSystem,
   MouseInputSystem,
   SceneComponent,
@@ -90,13 +90,13 @@ export class NwViewer extends EcsGame {
     this.renderer.clearColor = Color.Black.toLinear()
     const geometryPass = this.renderer.pipeline.passes[0] as GeometryPass
     geometryPass.enableLinearDepthMrt = true
-    this.renderer.pipeline.addPass(
+    this.renderer.pipeline.passes.push(
       new BloomPass(this.device, {
         enabled: true,
-        glowCut: 1,
-        multiplier: 0.65,
-        iterations: 4,
-        resolutionScale: 0.25,
+        threshold: 1,
+        knee: 0.5,
+        intensity: 0.65,
+        steps: 4,
       }),
       new VignettePass(this.device, {}),
     )
@@ -132,9 +132,6 @@ export class NwViewer extends EcsGame {
     this.camera = camera.component(CameraComponent)
 
     this.view.camera = camera.component(CameraComponent)
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(InputSlots.Global.Debug, this.debug)
-    })
 
     this.spatialQuery = this.world.query({ scope: 'active', required: [SpatialComponent] })
     this.selection = this.world.createEntity({
@@ -189,6 +186,7 @@ export class NwViewer extends EcsGame {
   override onBeginUpdate(time: number, dt: number): void {
     this.camera.aspect = this.device.output.aspectRatio
     this.scheduler.updatePriorities(this.view.camera, time)
+    this.renderer.inputs.set(InputSlots.Global.Debug, this.debug)
   }
 
   private updateSelection(selection: RaySelection) {

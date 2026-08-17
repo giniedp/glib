@@ -40,10 +40,7 @@ class Game extends EcsGame {
     this.content.registerMaterial(BasicMaterial, () => true)
 
     this.renderer.clearColor = Color.TransparentBlack
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(CommonInputs.Global.SkyColor, Color.White)
-      ctx.renderInputs.set(CommonInputs.Global.GroundColor, Color.White)
-    })
+
     this.createCamera()
     this.createPendulums()
   }

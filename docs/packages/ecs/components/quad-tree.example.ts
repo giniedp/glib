@@ -70,10 +70,13 @@ class Game extends EcsGame {
     this.deviceStats = this.device.stats()
   }
 
-  protected override setupEssentialSystems(): void {
-    super.setupEssentialSystems()
-    const renderer = this.world.getSystem(Renderer)
-    this.view = renderer.createView({
+  protected override createEssentialSystems(): void {
+    super.createEssentialSystems()
+
+    this.renderer.inputs.set(CommonInputs.Global.AmbientColor, vec3(0.5))
+    this.renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1)))
+
+    this.view = this.renderer.createView({
       name: 'Main View',
       present: RenderChannel.Color,
     })
@@ -100,10 +103,7 @@ class Game extends EcsGame {
     this.content.registerMaterial(BasicMaterial, () => true)
 
     this.renderer.clearColor = Color.TransparentBlack
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(CommonInputs.Global.SkyColor, Color.White)
-      ctx.renderInputs.set(CommonInputs.Global.GroundColor, Color.White)
-    })
+
     this.createCamera()
     this.createObjects()
   }

@@ -1,16 +1,26 @@
 import { FrameGraph, FrameResource } from './FrameGraph'
 import { type RenderContext, type RenderPass } from './types'
 
+export interface RenderPipelineOptions {
+  name?: string
+  passes?: RenderPass[]
+}
+
 export class RenderPipeline {
   /**
    * Name of this pipeline
    */
   public name: string
 
-  public passes: RenderPass[] = []
+  public passes: RenderPass[]
 
   private graph = new FrameGraph<RenderPass>()
   private exports: FrameResource<RenderPass>[] = []
+
+  public constructor(options?: RenderPipelineOptions) {
+    this.name = options?.name ?? 'Render Pipeline'
+    this.passes = options?.passes || []
+  }
 
   /**
    * Removes all passes from this pipeline

@@ -156,7 +156,6 @@ function destroySystem(system: GameSystem) {
 
 function initializeSystem(system: GameSystem, world: GameWorld): boolean {
   try {
-    console.log('INIT', system)
     system.initialize(world)
     return true
   } catch (e) {

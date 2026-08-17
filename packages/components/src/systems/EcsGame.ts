@@ -2,7 +2,7 @@ import { ContentLoader } from '@gglib/content'
 import { CreateEntityOptions, GameEntity, GameQuery, GameWorld } from '@gglib/ecs'
 import { createDevice, type CreateDeviceOptions, Device } from '@gglib/graphics'
 import { SpaceBasis } from '@gglib/math'
-import { RenderChannel, Renderer, RenderView } from '@gglib/render'
+import { GeometryPass, RenderChannel, Renderer, RenderView } from '@gglib/render'
 import { EventEmitter } from '@gglib/utils'
 import { SceneComponent, TransformComponent } from '../components'
 import { BehaviorSystem } from './BehaviorSystem'
@@ -76,11 +76,7 @@ export class EcsGame {
     this.world.addSystem(this.device, Device)
 
     this.onCreate()
-    this.setupEssentialSystems()
-
-    this.renderer ||= this.world.getSystem(Renderer)
-    this.content ||= this.world.getSystem(ContentLoader)
-    this.loop ||= this.world.getSystem(GameLoop)
+    this.createEssentialSystems()
 
     this.sceneQuery ||= this.world.query({ scope: 'active', required: [SceneComponent] })
 
@@ -104,7 +100,7 @@ export class EcsGame {
     //
   }
 
-  protected setupEssentialSystems() {
+  protected createEssentialSystems() {
     if (!this.world.hasSystem(SpaceBasis)) {
       this.world.addSystem(SpaceBasis.Y_UP_NEG_Z)
     }
@@ -138,8 +134,16 @@ export class EcsGame {
     }
 
     if (!this.world.hasSystem(Renderer)) {
-      this.world.addSystem(new Renderer(this.device))
+      this.world.addSystem(
+        new Renderer(this.device, {
+          pipeline: { passes: [new GeometryPass()] },
+        }),
+      )
     }
+
+    this.renderer ||= this.world.getSystem(Renderer)
+    this.content ||= this.world.getSystem(ContentLoader)
+    this.loop ||= this.world.getSystem(GameLoop)
   }
 
   /**

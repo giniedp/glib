@@ -24,7 +24,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     match: () => true,
     create: (device, options) => {
       const material = new BasicMaterial(device, options)
-      material.GroundColor = Color.Black
+      material.AmbientColor = Color.Black
       return material
     },
   })

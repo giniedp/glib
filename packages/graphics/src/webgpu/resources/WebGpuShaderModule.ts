@@ -1,4 +1,3 @@
-import { ShaderConstants } from '@gglib/graphics'
 import {
   getRefCounter,
   ShaderModule,
@@ -7,6 +6,7 @@ import {
   type ReferenceCounter,
   type VertexAttribute,
 } from '../../resources'
+import { ShaderConstants } from '../../states'
 import type { GpuResource, Mutable } from '../types'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { parseWgsl, reflectWgsl, WgslEntryPointInfo, WgslProgramInfo, type WgslInputInfo } from '../wgsl'

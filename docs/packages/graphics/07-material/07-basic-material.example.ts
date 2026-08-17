@@ -15,9 +15,9 @@ import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const params = {
-  skyColor: vec3(1),
-  groundColor: vec3(0.25),
-  skyDirection: vec3(0, 0, 1),
+  ambientColorTop: vec3(1),
+  ambientColor: vec3(0.25),
+  ambientDirection: vec3(0, 0, 1),
   baseColor: vec3(1),
   alpha: 1,
   textured: true,
@@ -28,9 +28,9 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
 
   mountUi(tools, (ui) => {
     ui.color(params, 'baseColor', { format: '{n}xyz' })
-    ui.color(params, 'skyColor', { format: '{n}xyz' })
-    ui.color(params, 'groundColor', { format: '{n}xyz' })
-    ui.spherical(params, 'skyDirection')
+    ui.color(params, 'ambientColorTop', { format: '{n}xyz' })
+    ui.color(params, 'ambientColor', { format: '{n}xyz' })
+    ui.spherical(params, 'ambientDirection')
     ui.scalar(params, 'alpha', { range: true, min: 0, max: 1, decimals: 2 })
     ui.bool(params, 'textured')
   })
@@ -81,9 +81,9 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     material.View = view
     material.Projection = projection
 
-    material.SkyColor = params.skyColor
-    material.GroundColor = params.groundColor
-    material.SkyDirection = params.skyDirection
+    material.AmbientColor = params.ambientColor
+    material.AmbientColorTop = params.ambientColorTop
+    material.AmbientDirection = params.ambientDirection
     material.BaseColor = params.baseColor
     material.Alpha = params.alpha
     material.UseBlend = params.alpha < 1 ? TRUE : FALSE

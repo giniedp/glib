@@ -13,6 +13,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import hljs from 'highlight.js'
 import ts from 'highlight.js/lib/languages/typescript'
 import 'highlight.js/styles/github-dark.css'
+import { mergeUri, withResolvers } from '@gglib/utils'
 hljs.registerLanguage('typescript', ts)
 
 const rawExamples = import.meta.glob('/**/*.ts', { query: '?raw' })
@@ -25,12 +26,23 @@ function getExample() {
   if (pathname.endsWith('.html')) {
     pathname = pathname.replace('.html', '')
   }
-  const name1 = pathname + (props.name || 'example.ts')
-  const name2 = pathname + (props.name || '.example.ts')
-  const result = rawExamples[name1] || rawExamples[name2]
-  if (!result) {
-    throw new Error(`example does not exist: ${name1} (${name2})`)
+
+  let result: string = null!
+  if (!props.name) {
+    const name1 = pathname + 'example.ts'
+    const name2 = pathname + '.example.ts'
+    result = rawExamples[name1] || rawExamples[name2]
+    if (!result) {
+      throw new Error(`example does not exist: ${name1} (${name2})`)
+    }
+  } else {
+    const name = mergeUri(pathname, props.name)
+    result = rawExamples[name]
+    if (!result) {
+      throw new Error(`example does not exist: ${name}`)
+    }
   }
+
   return result
 }
 

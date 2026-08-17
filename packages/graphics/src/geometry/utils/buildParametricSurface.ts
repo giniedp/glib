@@ -1,6 +1,6 @@
-import { PrimitiveType } from '@gglib/graphics'
 import { IVec2, IVec3, Vec2, Vec3 } from '@gglib/math'
 import { Color } from '../../Color'
+import { PrimitiveType } from '../../enums'
 import type { GeometryBuilder } from '../GeometryBuilder'
 
 export function resolveLines(options?: { lines?: boolean; primitiveType?: PrimitiveType }) {

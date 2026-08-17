@@ -5,9 +5,9 @@ const BASE = /* glsl */ `
 
 // @block global
 layout(std140) uniform GlobalBlock {
-  vec3 skyColor;      // default 1.0,1.0,1.0
-  vec3 groundColor;   // default 1.0,1.0,1.0
-  vec3 skyDirection;  // default 0.0,1.0,0.0
+  vec3 ambientColor;     // default 1.0,1.0,1.0
+  vec3 ambientColorTop;  // default 1.0,1.0,1.0
+  vec3 ambientDirection; // default 0.0,1.0,0.0
 } global;
 
 // @block view
@@ -124,8 +124,8 @@ void main() {
     baseColor.a = 1.0;
   }
 
-  vec3 light = mix(global.groundColor, global.skyColor, dot(global.skyDirection, normal) * 0.5 + 0.5);
 
+  vec3 light = mix(global.ambientColor, global.ambientColorTop, dot(global.ambientDirection, normal) * 0.5 + 0.5);
   fragColor.rgb = baseColor.rgb * light;
   fragColor.a = baseColor.a;
 }

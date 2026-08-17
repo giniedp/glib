@@ -39,6 +39,7 @@ export class GeometryPass implements RenderPass {
     // Render Target 0 - color + resolve target
     pass.setRenderTarget(0, this.msaaColor.texture)
     pass.setClearColor(0, ctx.renderer.clearColor)
+    pass.setViewportState(0, 0, this.msaaColor.texture.width, this.msaaColor.texture.height)
 
     // Render Target 1 - depth + resolve target
     if (this.enableLinearDepthMrt) {

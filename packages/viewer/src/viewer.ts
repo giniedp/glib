@@ -10,7 +10,15 @@ import {
 import { GameEntity } from '@gglib/ecs'
 import { CommonMaterial, IblSampler, SkyboxMaterial, TonemapOperator } from '@gglib/effects'
 import { MouseListener } from '@gglib/game'
-import { boxGeometry, Color, FALSE, ProgramInputBlock, Texture, TRUE } from '@gglib/graphics'
+import {
+  boxGeometry,
+  Color,
+  FALSE,
+  ProgramInputBlock,
+  ProgramInputBlockCollection,
+  Texture,
+  TRUE,
+} from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { Mat3 } from '@gglib/math'
 import { Model } from '@gglib/model'
@@ -87,22 +95,13 @@ export class ModelViewer extends EcsGame {
     })
 
     this.renderer.clearColor = Color.CornflowerBlue
-    this.renderer.onContextReady.add((ctx) => {
-      if (!ctx.renderInputs.blocks['ibl']) {
-        ctx.renderInputs.blocks['ibl'] = new ProgramInputBlock('ibl')
-      }
-      ctx.renderInputs.setByBlockAndName('ibl', 'intensity', this.iblIntensity)
-      ctx.renderInputs.setByBlockAndName('ibl', 'rotation', this.iblRotation)
-      ctx.renderInputs.setByBlockAndName('ibl', 'brdfMap', this.iblSampler.lutMapGGX)
-      ctx.renderInputs.setByBlockAndName('ibl', 'radianceMap', this.iblSampler.envMapGGX)
-      ctx.renderInputs.setByBlockAndName('ibl', 'irradianceMap', this.iblSampler.envMapLambert)
-      ctx.renderInputs.setByBlockAndName('ibl', 'mipCount', this.iblSampler.envMapGGX.mipLevelCount)
-    })
+
     this.bloomPass = new BloomPass(this.device, {
       enabled: true,
       threshold: 0.75,
       intensity: 0.75,
     })
+
     this.renderer.pipeline.passes.push(this.bloomPass)
 
     this.tonemapPass = new TonemapPass(this.device, {
@@ -207,5 +206,14 @@ export class ModelViewer extends EcsGame {
     const sky = this.sky.component(ModelComponent).model.meshes[0].materials[0] as SkyboxMaterial
     sky.Blur = this.iblBlur
     sky.Intensity = this.iblIntensity
+
+    const inputs = this.renderer.inputs
+    inputs.createBlock('ibl')
+    inputs.setByBlockAndName('ibl', 'intensity', this.iblIntensity)
+    inputs.setByBlockAndName('ibl', 'rotation', this.iblRotation)
+    inputs.setByBlockAndName('ibl', 'brdfMap', this.iblSampler.lutMapGGX)
+    inputs.setByBlockAndName('ibl', 'radianceMap', this.iblSampler.envMapGGX)
+    inputs.setByBlockAndName('ibl', 'irradianceMap', this.iblSampler.envMapLambert)
+    inputs.setByBlockAndName('ibl', 'mipCount', this.iblSampler.envMapGGX.mipLevelCount)
   }
 }

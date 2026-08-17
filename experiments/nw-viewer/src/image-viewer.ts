@@ -97,12 +97,9 @@ export class NwImageViewer extends EcsGame {
     this.camera = camera.component(CameraComponent)
 
     this.view.camera = camera.component(CameraComponent)
-    this.renderer.onContextReady.add((ctx) => {
-      ctx.renderInputs.set(InputSlots.Global.Debug, this.debug)
-    })
   }
 
-  protected override createSystems(): void {
+  protected override onCreate(): void {
     this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
     this.world.addSystem(new ContentService())
     this.world.addSystem(new KeyboardInputSystem())
@@ -110,20 +107,16 @@ export class NwImageViewer extends EcsGame {
     this.world.addSystem(new DebugShapeSystem())
   }
 
-  override async initialize() {
-    super.initialize()
-    this.scene.activate()
-  }
-
-  override update(time: number, dt: number): void {
-    super.update(time, dt)
+  override onUpdate(time: number, dt: number): void {
+    super.onUpdate(time, dt)
     this.device.resize()
     this.camera.aspect = this.device.output.aspectRatio
     this.camera.orthographicScale = this.scale
+    this.renderer.inputs.set(InputSlots.Global.Debug, this.debug)
   }
 
-  override render(time: number, dt: number): void {
-    super.render(time, dt)
+  override onDraw(time: number, dt: number): void {
+    super.onDraw(time, dt)
     this.deviceStats = this.device.stats(this.deviceStats)
     this.sceneStats = this.scene.component(SceneComponent).stats(this.sceneStats)
     this.renderStats = this.renderer.stats(this.renderStats)

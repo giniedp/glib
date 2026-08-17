@@ -67,7 +67,7 @@ export class ProgramInputBlock {
   }
 }
 
-export interface ProgramInputBlockMapOptions {
+export interface ProgramInputBlockOptions {
   initialBlocks?: string[]
   createIfMissing?: boolean
 }
@@ -78,7 +78,7 @@ export class ProgramInputBlockCollection {
   private createIfMissing: boolean
   private cachedSlots: Record<string, Record<string, Record<string, InputSlot>>> = {}
 
-  public constructor(options: ProgramInputBlockMapOptions = {}) {
+  public constructor(options: ProgramInputBlockOptions = {}) {
     this.createIfMissing = options.createIfMissing ?? true
     if (options.initialBlocks) {
       for (const block of options.initialBlocks) {
@@ -87,14 +87,22 @@ export class ProgramInputBlockCollection {
     }
   }
 
+  public hasBlock(name: string) {
+    return name in this.blocks
+  }
+
+  public createBlock(name: string) {
+    this.blocks[name] ||= new ProgramInputBlock(name)
+  }
+
   public get<T extends InputTypeName>(slot: InputSlot<T>): InputTypeMap[T] | null {
     return (this.blocks[slot.block]?.get(slot.key) as InputTypeMap[T]) || null
   }
 
   public set<T extends InputTypeName>(slot: InputSlot<T>, value: InputTypeMap[T]): void {
-    if (!this.blocks[slot.block]) {
+    if (!this.hasBlock(slot.block)) {
       if (this.createIfMissing) {
-        this.blocks[slot.block] = new ProgramInputBlock(slot.block)
+        this.createBlock(slot.block)
       } else {
         throw new Error(`Block '${slot.block}' does not exist in ProgramInputSourceCollection.`)
       }
