@@ -79,8 +79,8 @@ type ManifestModel = {
   }
 }
 
-const BASE_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Asset-Generator/Output/Positive'
-const GITHUB_URL = 'https://github.com/KhronosGroup/glTF-Asset-Generator/tree/master/Output/Positive'
+const BASE_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Asset-Generator/main/Output/Positive'
+const GITHUB_URL = 'https://github.com/KhronosGroup/glTF-Asset-Generator/tree/main/Output/Positive'
 const MANIFEST = `${BASE_URL}/Manifest.json`
 
 const manifest = ref<Manifest>([])

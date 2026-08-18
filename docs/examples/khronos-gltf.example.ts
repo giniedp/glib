@@ -1,8 +1,8 @@
 import { ModelViewer } from '@gglib/viewer'
 import { mountUi } from 'tweak-ui'
 
-const baseUrl = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets/Models'
-const githubUrl = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/master/Models'
+const baseUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models'
+const githubUrl = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models'
 const indexFile = `${baseUrl}/model-index.json`
 type GltfIndex = GltfIndexModel[]
 type GltfIndexModel = {

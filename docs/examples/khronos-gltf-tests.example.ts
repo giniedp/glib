@@ -22,8 +22,8 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   }
 }
 
-const baseUrl = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Asset-Generator/Output/Positive'
-const githubUrl = 'https://github.com/KhronosGroup/glTF-Asset-Generator/tree/master/Output/Positive'
+const baseUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Asset-Generator/main/Output/Positive'
+const githubUrl = 'https://github.com/KhronosGroup/glTF-Asset-Generator/tree/main/Output/Positive'
 const manifest = `${baseUrl}/Manifest.json`
 type Manifest = ManifestFolder[]
 type ManifestFolder = {

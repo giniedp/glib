@@ -61,8 +61,8 @@ type GltfIndexModel = {
   }
 }
 
-const BASE_URL = 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets/Models'
-const GITHUB_URL = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/master/Models'
+const BASE_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models'
+const GITHUB_URL = 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models'
 const INDEX_FILE = `${BASE_URL}/model-index.json`
 
 const index = ref<GltfIndex>([])
