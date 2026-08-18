@@ -96,7 +96,7 @@ export class ProgramInputBlockCollection {
   }
 
   public get<T extends InputTypeName>(slot: InputSlot<T>): InputTypeMap[T] | null {
-    return (this.blocks[slot.block]?.get(slot.key) as InputTypeMap[T]) || null
+    return (this.blocks[slot.block]?.get(slot.key) as InputTypeMap[T]) ?? null
   }
 
   public set<T extends InputTypeName>(slot: InputSlot<T>, value: InputTypeMap[T]): void {
