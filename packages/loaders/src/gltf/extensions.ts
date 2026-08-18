@@ -88,7 +88,7 @@ export const KhrMaterialsIor: GltfMaterialExtension = {
 }
 
 export const KhrMaterialsEmissiveStrength: GltfMaterialExtension = {
-  name: KHR_materials_ior,
+  name: KHR_materials_emissive_strength,
   handler: (asset, node, mtl) => {
     const ext = getKhrExtension(mtl, KHR_materials_emissive_strength)
 
