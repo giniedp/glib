@@ -1,8 +1,8 @@
 import { ContentLoader } from '@gglib/content'
-import { NishitaSkyFilter, SkyboxMaterial } from '@gglib/effects'
-import { boxGeometry, Color, createDevice, PlatformId, SpriteBatch, TaskContext, TextureUsage } from '@gglib/graphics'
+import { NishitaSkyFilter } from '@gglib/effects'
+import { Color, createDevice, PlatformId, SpriteBatch, TaskContext, TextureUsage } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Mat4, vec3 } from '@gglib/math'
+import { vec3 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const files = {
@@ -18,6 +18,7 @@ const params = {
   mieScattering: 0.001,
   rayleighScattering: 0.00025,
   phaseAsymmetry: -0.99,
+  groundColor: vec3(0.1),
 }
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -33,13 +34,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     ui.scalar(params, 'mieScattering', { range: true, min: 0.0001, max: 0.01, decimals: 5 })
     ui.scalar(params, 'rayleighScattering', { range: true, min: 0.00005, max: 0.001, decimals: 5 })
     ui.scalar(params, 'phaseAsymmetry', { range: true, min: -0.999, max: 0.999, decimals: 5 })
+    ui.color(params, 'groundColor', { format: '{n}xyz' })
   })
 
   const spriteBatch = new SpriteBatch(device)
   const fxAtmosphere = new NishitaSkyFilter(device)
-
-  const geometry = boxGeometry(device)
-  const material = new SkyboxMaterial(device)
 
   const pass = device.renderPass
 
@@ -47,31 +46,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     name: 'Panorama Render Target',
     type: 'Texture2D',
     mipLevelCount: 5,
-    width: 1024,
-    height: 512,
+    width: 2048,
+    height: 1024,
     usage: TextureUsage.TextureBinding,
     format: 'RGBA16_FLOAT',
   })
-
-  const cubemap = device.createRenderTarget({
-    name: 'Cybemap Render Target',
-    type: 'TextureCube',
-    mipLevelCount: 5,
-    depth: 6,
-    width: 512,
-    height: 512,
-    usage: TextureUsage.TextureBinding,
-    format: 'RGBA16_FLOAT',
-  })
-
-  const rtScene = device.createRenderTarget({
-    width: 512,
-    height: 512,
-    usage: TextureUsage.TextureBinding,
-  })
-
-  const world = Mat4.createIdentity()
-  const proj = Mat4.createIdentity()
 
   function frame(ctx: TaskContext) {
     pass.setClearColor(0, Color.TransparentBlack)
@@ -84,16 +63,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       fxAtmosphere.mieScattering = params.mieScattering
       fxAtmosphere.rayleighScattering = params.rayleighScattering
       fxAtmosphere.phaseAsymmetry = params.phaseAsymmetry
+      fxAtmosphere.groundColor = params.groundColor
       fxAtmosphere.textureOut = panorama
       fxAtmosphere.render(device.renderPass)
     }
 
-    world.rotateY(-10 * DEGREE_TO_RAD * ctx.dt * 0.001)
-    proj.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, rtScene.width / rtScene.height, 0.1, 100, device.ndcMinZ)
-
     spriteBatch.begin()
     spriteBatch.linearToSrgb = true
-    spriteBatch.tonemap = false
     spriteBatch.exposure = 0.1
     spriteBatch
       .next(fxAtmosphere.opticalLUT)
@@ -103,7 +79,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     spriteBatch.begin()
     spriteBatch.linearToSrgb = true
-    spriteBatch.tonemap = false
     spriteBatch.exposure = 0.1
     spriteBatch
       .next(fxAtmosphere.mieScatteringMap)
@@ -113,7 +88,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     spriteBatch.begin()
     spriteBatch.linearToSrgb = true
-    spriteBatch.tonemap = false
     spriteBatch.exposure = 0.1
     spriteBatch
       .next(fxAtmosphere.rayleighScatteringMap)
@@ -123,7 +97,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     spriteBatch.begin()
     spriteBatch.linearToSrgb = true
-    spriteBatch.tonemap = false
     spriteBatch.exposure = 1.0
     spriteBatch
       .next(panorama)

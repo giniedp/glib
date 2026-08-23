@@ -275,6 +275,7 @@ export const NISHITA_PANORAMA_GLSL_FS = /* glsl */ `
 
   // @block params
   layout(std140) uniform Uniforms {
+    vec3  groundColor;
     vec3  waveLengthInv;      // pow(waveLength * 0.001, -4)
     vec3  sunIntensity;
     float sunLatitude;
@@ -294,15 +295,20 @@ export const NISHITA_PANORAMA_GLSL_FS = /* glsl */ `
   in vec2 uv;
   out vec4 fragColor;
   void main() {
+    vec2 texCoord = uv;
+    // expand uv.y to cover lower hemisphere
+    // which will receive the ground color below
+    texCoord.y = 2.0 * texCoord.y;
 
-    vec3 skyDir = uvToDir(uv);
+    vec3 skyDir = uvToDir(texCoord);
     vec3 sunDir = latLonToDir(params.sunLatitude, params.sunLongitude);
     float km = params.mieScattering;
     float kr = params.rayleighScattering;
     float g = params.phaseAsymmetry;
+    vec3 ground = params.groundColor;
 
-    vec3 mieColor      = texture(mieScatteringSampler, uv).rgb;
-    vec3 rayleighColor = texture(rayleighScatteringSampler, uv).rgb;
+    vec3 mieColor      = texture(mieScatteringSampler, texCoord).rgb;
+    vec3 rayleighColor = texture(rayleighScatteringSampler, texCoord).rgb;
 
     float cosAngle      = dot(skyDir, -sunDir);
     float miePhase      = getMiePhase(g, cosAngle);
@@ -311,8 +317,15 @@ export const NISHITA_PANORAMA_GLSL_FS = /* glsl */ `
     vec3 partialMieConst      = params.sunIntensity * km;
     vec3 partialRayleighConst = params.sunIntensity * kr * params.waveLengthInv;
 
-    vec3 color = mieColor * partialMieConst * miePhase;
-         color+= rayleighColor * partialRayleighConst * rayleighPhase;
+    vec3 color = vec3(0.0);
+    if (texCoord.y <= 1.0) {
+      // upper hemisphere
+      color += mieColor * partialMieConst * miePhase;
+      color += rayleighColor * partialRayleighConst * rayleighPhase;
+    } else {
+      // lower hemisphere, ground color contribution
+      color += rayleighColor * partialRayleighConst * rayleighPhase * ground;
+    }
 
     color = min(color, vec3(60000.0));
     fragColor = vec4(color, 1.0);

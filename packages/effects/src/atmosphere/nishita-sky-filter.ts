@@ -123,6 +123,13 @@ export interface NishitaSkyOptions {
   sunLongitude?: number
 
   /**
+   * Ground color for the lower hemisphere when rendering the panorama composition
+   *
+   * Default is `vec3(0.1, 0.1, 0.1)`
+   */
+  groundColor?: IVec3
+
+  /**
    * Width and height for the generated optical LUT texture.
    * This can not be changed later.
    * Default is `[256, 32]`
@@ -154,6 +161,7 @@ export class NishitaSkyFilter {
     sunLatitude: inputSlot('params', 'sunLatitude', 'scalar'),
     sunLongitude: inputSlot('params', 'sunLongitude', 'scalar'),
     sunIntensity: inputSlot('params', 'sunIntensity', 'vec3'),
+    groundColor: inputSlot('params', 'groundColor', 'vec3'),
     waveLength: inputSlot('params', 'waveLength', 'vec3'),
     waveLengthInv: inputSlot('params', 'waveLengthInv', 'vec3'),
     mieScattering: inputSlot('params', 'mieScattering', 'scalar'),
@@ -251,6 +259,13 @@ export class NishitaSkyFilter {
    */
   public sunLongitude = 0
 
+  /**
+   * Ground color for the lower hemisphere when rendering the panorama composition
+   *
+   * Default is `vec3(0.1, 0.1, 0.1)`
+   */
+  public groundColor: IVec3 = vec3(0.1)
+
   public readonly opticalLUT: Texture
   public readonly mieScatteringMap: Texture
   public readonly rayleighScatteringMap: Texture
@@ -268,6 +283,7 @@ export class NishitaSkyFilter {
     this.sunIntensity = options.sunIntensity ?? this.sunIntensity
     this.sunLatitude = options.sunLatitude ?? this.sunLatitude
     this.sunLongitude = options.sunLongitude ?? this.sunLongitude
+    this.groundColor = options.groundColor ?? this.groundColor
 
     this.opticalLutProgram = device.createShaderModule(nishitaLutShaderOptions()).program.clone()
     this.scatteringProgram = device.createShaderModule(nishitaScatteringShaderOptions()).program.clone()
@@ -391,6 +407,7 @@ export class NishitaSkyFilter {
 
     params.radius = this.radius
     params.thickness = this.thickness
+    params.groundColor = this.groundColor
     params.waveLength = this.waveLength
     params.waveLengthInv ||= vec3(0)
     params.waveLengthInv.x = Math.pow(this.waveLength.x * 0.001, -4)
@@ -441,5 +458,9 @@ export class NishitaSkyFilter {
     }
 
     pass.flush()
+
+    if (this.textureOut) {
+      this.textureOut.updateMipmaps()
+    }
   }
 }
