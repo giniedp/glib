@@ -372,7 +372,12 @@ export class WebGpuRenderEncoder extends RenderEncoder {
 
   private clearColor = [0, 0, 0, 1]
   public setClearColor(index: number, color: GPUColor | IVec4) {
-    if (Array.isArray(color)) {
+    if (color == null) {
+      this.clearColor[0] = 0
+      this.clearColor[1] = 0
+      this.clearColor[2] = 0
+      this.clearColor[3] = 0
+    } else if (Array.isArray(color)) {
       this.clearColor[0] = color[0]
       this.clearColor[1] = color[1]
       this.clearColor[2] = color[2]

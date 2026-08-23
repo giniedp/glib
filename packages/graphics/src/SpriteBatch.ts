@@ -75,6 +75,8 @@ export class SpriteBatch implements Renderable {
   }
 
   public linearToSrgb: boolean = false
+  public tonemap: boolean = false
+  public exposure = 1.0
 
   public constructor(device: Device, options: SpriteBatchOptions = {}) {
     this.device = device
@@ -202,6 +204,8 @@ export class SpriteBatch implements Renderable {
     this.shader.program.get('textureMap').setTexture(texture)
     this.shader.program.get('uniforms.viewProjection').setMat4x4(this.matrix.elements)
     this.shader.program.get('uniforms.toSrgb').setScalar(this.linearToSrgb ? 1 : 0)
+    this.shader.program.get('uniforms.tonemap').setScalar(this.tonemap ? 1 : 0)
+    this.shader.program.get('uniforms.exposure').setScalar(this.exposure)
     this.shader.program.commit()
 
     const spriteEnd = spriteOffset + spriteCount

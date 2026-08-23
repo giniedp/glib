@@ -36,12 +36,22 @@ export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
   struct Uniforms {
     viewProjection: mat4x4f,
     toSrgb: u32,
+    tonemap: u32,
+    exposure: f32,
   }
 
   @group(0) @binding(0) var<uniform> uniforms: Uniforms;
   @group(0) @binding(1) var textureMap: texture_2d<f32>;
   @group(0) @binding(2) var textureSampler: sampler;
 
+
+  // Reinhard-Jodie, reduces desaturation in highlights
+  // https://64.github.io/tonemapping/#reinhard-jodie
+  fn tonemapReinhardJodie(c: vec3f) -> vec3f {
+    let l  = dot(c, vec3f(0.2126, 0.7152, 0.0722));
+    let tc = c / (1.0 + c);
+    return mix(c / (1.0 + l), tc, tc);
+  }
 
   @vertex
   fn vsMain(input: VertexInput) -> FragmentInput {
@@ -64,6 +74,11 @@ export const SPRITE_BATCH_WGSL: string = /* wgsl*/ `
   fn fsMain(input: FragmentInput) -> FragmentOutput {
     var out: FragmentOutput;
     out.color = textureSample(textureMap, textureSampler, input.uv) * input.color;
+    out.color *= input.color;
+    out.color *= vec4(vec3(uniforms.exposure), 1.0);
+    if (uniforms.tonemap == 1) {
+      out.color = vec4(tonemapReinhardJodie(out.color.rgb), out.color.a);
+    }
     if (uniforms.toSrgb == 1) {
       out.color = vec4(linearToSrgb(out.color.rgb), out.color.a);
     }
@@ -88,7 +103,9 @@ const SPRITE_BATCH_GLSL_VS = /* glsl */ `
 
   layout(std140) uniform Uniforms {
     mat4 viewProjection;
+    float exposure;
     uint toSrgb;
+    uint tonemap;
   } uniforms;
 
   // Per-vertex attribute (static quad)
@@ -136,9 +153,19 @@ const SPRITE_BATCH_GLSL_FS = /* glsl */ `
     return mix(12.92 * c, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(cutoff, c));
   }
 
+  // Reinhard-Jodie, reduces desaturation in highlights
+  // https://64.github.io/tonemapping/#reinhard-jodie
+  vec3 tonemapReinhardJodie(vec3 c) {
+    float l  = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    vec3 tc  = c / (1.0 + c);
+    return mix(c / (1.0 + l), tc, tc);
+  }
+
   layout(std140) uniform Uniforms {
     mat4 viewProjection;
+    float exposure;
     uint toSrgb;
+    uint tonemap;
   } uniforms;
 
   uniform sampler2D textureMap;
@@ -150,6 +177,10 @@ const SPRITE_BATCH_GLSL_FS = /* glsl */ `
 
   void main() {
     fragColor = texture(textureMap, v_uv) * v_color;
+    fragColor.rgb *= uniforms.exposure;
+    if (uniforms.tonemap == 1u) {
+      fragColor.rgb = tonemapReinhardJodie(fragColor.rgb);
+    }
     if (uniforms.toSrgb == 1u) {
       fragColor.rgb = linearToSrgb(fragColor.rgb);
     }
