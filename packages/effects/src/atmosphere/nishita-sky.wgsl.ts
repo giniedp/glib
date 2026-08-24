@@ -1,6 +1,6 @@
 import { FULLSCREEN_WGSL_VS } from '../image/common.wgsl'
 
-const UTILS = /* wgsl */ `
+export const NISHITA_SKY_UTILS_WGSL = /* wgsl */ `
 const PI: f32 = 3.141592653589793;
 
 fn coordToHeightScale(t: f32) -> f32 {
@@ -96,31 +96,21 @@ fn getOpticalDepth(
   }
   return depth * h / 3.0;
 }
-`
 
-export const NISHITA_OPTICAL_LUT_WGSL = /* wgsl */ `
-${FULLSCREEN_WGSL_VS}
-${UTILS}
+fn getOpticalValues(
+  uv: vec2f,
+  earthRadius: f32,
+  atmosphereHeight: f32,
+  mieScaleHeight: f32,
+  rayleighScaleHeight: f32,
+) -> vec4f {
 
-struct ParamsBlock {
-  radius              : f32, // planet radius in km e.g. 6368.0 for earth
-  thickness           : f32, // atmosphere thickness in km e.g. 100 for earth
-  scaleHeightMie      : f32, // height in km where average aerosols density is found, e.g. 1.2 for earth
-  scaleHeightRayleigh : f32, // height in km where average air molecule density is found, e.g. 7.994 for earth
-};
-@group(0) @binding(0) var<uniform> params: ParamsBlock;
-
-@fragment
-fn fs_main(in: FragmentInput) -> @location(0) vec4f {
-  let earthRadius = params.radius;
-  let atmosphereHeight = params.thickness;
-
-  let viewHeight = coordToHeightScale(in.uv.y) * atmosphereHeight;
-  let cosAngle   = coordToCosAngle(in.uv.x);
+  let viewHeight = coordToHeightScale(uv.y) * atmosphereHeight;
+  let cosAngle   = coordToCosAngle(uv.x);
   let viewDir = vec3f(sqrt(max(1.0 - cosAngle * cosAngle, 0.0)), cosAngle, 0.0);
 
-  let mieInv = 1.0 / params.scaleHeightMie;
-  let rayInv = 1.0 / params.scaleHeightRayleigh;
+  let mieInv = 1.0 / mieScaleHeight;
+  let rayInv = 1.0 / rayleighScaleHeight;
 
   let mieDepth = getOpticalDepth(viewHeight, viewDir, mieInv, earthRadius, atmosphereHeight);
   let rayDepth = getOpticalDepth(viewHeight, viewDir, rayInv, earthRadius, atmosphereHeight);
@@ -131,11 +121,35 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
 }
 `
 
+export const NISHITA_OPTICAL_LUT_WGSL = /* wgsl */ `
+${FULLSCREEN_WGSL_VS}
+${NISHITA_SKY_UTILS_WGSL}
+
+struct ParamsBlock {
+  radius              : f32, // planet radius in km e.g. 6368.0 for earth
+  thickness           : f32, // atmosphere thickness in km e.g. 100 for earth
+  mieScaleHeight      : f32, // height in km where average aerosols density is found, e.g. 1.2 for earth
+  rayleighScaleHeight : f32, // height in km where average air molecule density is found, e.g. 7.994 for earth
+};
+@group(0) @binding(0) var<uniform> params: ParamsBlock;
+
+@fragment
+fn fs_main(in: FragmentInput) -> @location(0) vec4f {
+  return getOpticalValues(
+    in.uv,
+    params.radius,
+    params.thickness,
+    params.mieScaleHeight,
+    params.rayleighScaleHeight
+  );
+}
+`
+
 export const NISHITA_SCATTERING_WGSL = /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}
-${UTILS}
+${NISHITA_SKY_UTILS_WGSL}
 
-struct ScatteringParams {
+struct ParamsBlock {
   waveLengthInv     : vec3f, // pow(waveLength * 0.001, -4.0)
   sunLatitude       : f32,
   sunLongitude      : f32,
@@ -145,7 +159,7 @@ struct ScatteringParams {
   rayleighScattering: f32, // kr
   phaseAsymmetry    : f32, // g
 };
-@group(0) @binding(0) var<uniform> params: ScatteringParams;
+@group(0) @binding(0) var<uniform> params: ParamsBlock;
 @group(0) @binding(1) var opticalLutMap: texture_2d<f32>;
 @group(0) @binding(2) var opticalLutSampler: sampler;
 
@@ -178,13 +192,13 @@ fn partialInScatteringAtHeight(
   return result;
 }
 
-struct ScatteringOutput {
+struct FragmentOut {
   @location(0) colorMie: vec4f,
   @location(1) colorRayleigh: vec4f,
 };
 
 @fragment
-fn fs_main(in: FragmentInput) -> ScatteringOutput {
+fn fs_main(in: FragmentInput) -> FragmentOut {
   let skyDir = uvToDir(in.uv);
   let sunDir = latLonToDir(params.sunLatitude, params.sunLongitude);
   let km = params.mieScattering;
@@ -264,9 +278,9 @@ fn fs_main(in: FragmentInput) -> ScatteringOutput {
 
 export const NISHITA_PANORAMA_WGSL = /* wgsl */ `
 ${FULLSCREEN_WGSL_VS}
-${UTILS}
+${NISHITA_SKY_UTILS_WGSL}
 
-struct PanoramaParams {
+struct ParamsBlock {
   groundColor       : vec3f,
   waveLengthInv     : vec3f, // pow(waveLength * 0.001, -4.0)
   sunIntensity      : vec3f,
@@ -276,7 +290,7 @@ struct PanoramaParams {
   rayleighScattering: f32, // kr
   phaseAsymmetry    : f32, // g
 };
-@group(0) @binding(0) var<uniform> params: PanoramaParams;
+@group(0) @binding(0) var<uniform> params: ParamsBlock;
 @group(0) @binding(1) var mieScatteringMap: texture_2d<f32>;
 @group(0) @binding(2) var mieScatteringSampler: sampler;
 @group(0) @binding(3) var rayleighScatteringMap: texture_2d<f32>;

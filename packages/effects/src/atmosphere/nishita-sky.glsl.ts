@@ -1,4 +1,4 @@
-const UTILS = /* glsl */ `
+export const NISHITA_SKY_UTILS_GLSL = /* glsl */ `
 
   #define PI 3.141592653589793
 
@@ -101,14 +101,14 @@ export const NISHITA_OPTICAL_LUT_GLSL_FS = /* glsl */ `
   precision highp float;
   precision highp int;
 
-  ${UTILS}
+  ${NISHITA_SKY_UTILS_GLSL}
 
   // @block params
   layout(std140) uniform Uniforms {
     float radius;              // planet radius in km e.g. 6368.0 for earth
     float thickness;           // atmosphere thickness in km e.g. 100 for earth
-    float scaleHeightMie;      // height in km where average aerosols density is found, e.g. 1.2 for earth
-    float scaleHeightRayleigh; // height in km where average air molecule density is found, e.g. 7.994 for earth
+    float mieScaleHeight;      // height in km where average aerosols density is found, e.g. 1.2 for earth
+    float rayleighScaleHeight; // height in km where average air molecule density is found, e.g. 7.994 for earth
   } params;
 
   in vec2 uv;
@@ -122,8 +122,8 @@ export const NISHITA_OPTICAL_LUT_GLSL_FS = /* glsl */ `
     float cosAngle   = coordToCosAngle(uv.x);
     vec3 viewDir = vec3(sqrt(max(1.0 - cosAngle * cosAngle, 0.0)), cosAngle, 0.0);
 
-    float mieInv = 1.0 / params.scaleHeightMie;
-    float rayInv = 1.0 / params.scaleHeightRayleigh;
+    float mieInv = 1.0 / params.mieScaleHeight;
+    float rayInv = 1.0 / params.rayleighScaleHeight;
 
     float mieDepth = getOpticalDepth(viewHeight, viewDir, mieInv, earthRadius, atmosphereHeight);
     float rayDepth = getOpticalDepth(viewHeight, viewDir, rayInv, earthRadius, atmosphereHeight);
@@ -139,7 +139,7 @@ export const NISHITA_SCATTERING_GLSL_FS = /* glsl */ `
   precision highp float;
   precision highp int;
 
-  ${UTILS}
+  ${NISHITA_SKY_UTILS_GLSL}
 
   // @block params
   layout(std140) uniform Uniforms {
@@ -271,7 +271,7 @@ export const NISHITA_PANORAMA_GLSL_FS = /* glsl */ `
   precision highp float;
   precision highp int;
 
-  ${UTILS}
+  ${NISHITA_SKY_UTILS_GLSL}
 
   // @block params
   layout(std140) uniform Uniforms {

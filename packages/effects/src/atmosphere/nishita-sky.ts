@@ -12,12 +12,8 @@ import {
 } from '@gglib/graphics'
 import { IVec3, vec3 } from '@gglib/math'
 import { FULLSCREEN_GLSL_VS } from '../image/common.glsl'
-import {
-  NISHITA_OPTICAL_LUT_GLSL_FS,
-  NISHITA_PANORAMA_GLSL_FS,
-  NISHITA_SCATTERING_GLSL_FS,
-} from './nishita-sky-filter.glsl'
-import { NISHITA_OPTICAL_LUT_WGSL, NISHITA_SCATTERING_WGSL, NISHITA_PANORAMA_WGSL } from './nishita-sky-filter.wgsl'
+import { NISHITA_OPTICAL_LUT_GLSL_FS, NISHITA_PANORAMA_GLSL_FS, NISHITA_SCATTERING_GLSL_FS } from './nishita-sky.glsl'
+import { NISHITA_OPTICAL_LUT_WGSL, NISHITA_SCATTERING_WGSL, NISHITA_PANORAMA_WGSL } from './nishita-sky.wgsl'
 
 export function nishitaLutShaderOptions(): ShaderModuleOptions {
   return {
@@ -60,13 +56,13 @@ export interface NishitaSkyOptions {
    * height in km where average aerosols density is found.
    * Default is `1.2`
    */
-  scaleHeightMie?: number
+  mieScaleHeight?: number
 
   /**
    * height in km where average air molecule density is found.
    * Default is `7.994`
    */
-  scaleHeightRayleigh?: number
+  rayleighScaleHeight?: number
 
   /**
    * Wave lengths
@@ -144,13 +140,13 @@ export interface NishitaSkyOptions {
   scatteringMapSize?: [number, number]
 }
 
-export class NishitaSkyFilter {
+export class NishitaSkyEffect {
   public readonly opticalLutProgram: Program
   public readonly opticalLutParams = typedProgramInputs({
     radius: inputSlot('params', 'radius', 'scalar'),
     thickness: inputSlot('params', 'thickness', 'scalar'),
-    scaleHeightMie: inputSlot('params', 'scaleHeightMie', 'scalar'),
-    scaleHeightRayleigh: inputSlot('params', 'scaleHeightRayleigh', 'scalar'),
+    mieScaleHeight: inputSlot('params', 'mieScaleHeight', 'scalar'),
+    rayleighScaleHeight: inputSlot('params', 'rayleighScaleHeight', 'scalar'),
   })
 
   public readonly scatteringProgram: Program
@@ -198,12 +194,12 @@ export class NishitaSkyFilter {
    * height in km where average aerosols density is found.
    * Default is `1.2`
    */
-  public scaleHeightMie = 1.2
+  public mieScaleHeight = 1.2
   /**
    * height in km where average air molecule density is found.
    * Default is `7.994`
    */
-  public scaleHeightRayleigh = 7.994
+  public rayleighScaleHeight = 7.994
 
   /**
    * Wave lengths
@@ -274,8 +270,8 @@ export class NishitaSkyFilter {
   public constructor(device: Device, options: NishitaSkyOptions = {}) {
     this.radius = options.radius ?? this.radius
     this.thickness = options.thickness ?? this.thickness
-    this.scaleHeightMie = options.scaleHeightMie ?? this.scaleHeightMie
-    this.scaleHeightRayleigh = options.scaleHeightRayleigh ?? this.scaleHeightRayleigh
+    this.mieScaleHeight = options.mieScaleHeight ?? this.mieScaleHeight
+    this.rayleighScaleHeight = options.rayleighScaleHeight ?? this.rayleighScaleHeight
     this.waveLength = options.waveLength ?? this.waveLength
     this.mieScattering = options.mieScattering ?? this.mieScattering
     this.rayleighScattering = options.rayleighScattering ?? this.rayleighScattering
@@ -334,15 +330,15 @@ export class NishitaSkyFilter {
     if (
       params.radius === this.radius &&
       params.thickness === this.thickness &&
-      params.scaleHeightMie === this.scaleHeightMie &&
-      params.scaleHeightRayleigh === this.scaleHeightRayleigh
+      params.mieScaleHeight === this.mieScaleHeight &&
+      params.rayleighScaleHeight === this.rayleighScaleHeight
     ) {
       return
     }
     params.radius = this.radius
     params.thickness = this.thickness
-    params.scaleHeightMie = this.scaleHeightMie
-    params.scaleHeightRayleigh = this.scaleHeightRayleigh
+    params.mieScaleHeight = this.mieScaleHeight
+    params.rayleighScaleHeight = this.rayleighScaleHeight
 
     program.applyBlocks(params.blocks)
     program.commit()

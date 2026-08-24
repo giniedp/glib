@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { NishitaSkyFilter } from '@gglib/effects'
+import { NishitaSkyEffect } from '@gglib/effects'
 import { Color, createDevice, PlatformId, SpriteBatch, TaskContext, TextureUsage } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
@@ -38,7 +38,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const spriteBatch = new SpriteBatch(device)
-  const fxAtmosphere = new NishitaSkyFilter(device)
+  const fxAtmosphere = new NishitaSkyEffect(device)
 
   const pass = device.renderPass
 
