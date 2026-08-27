@@ -459,4 +459,13 @@ export class NishitaSkyEffect {
       this.textureOut.updateMipmaps()
     }
   }
+
+  public dispose() {
+    this.panoramaProgram.dispose()
+    this.opticalLutProgram.dispose()
+    this.scatteringProgram.dispose()
+    this.opticalLUT.dispose()
+    this.mieScatteringMap.dispose()
+    this.rayleighScatteringMap.dispose()
+  }
 }

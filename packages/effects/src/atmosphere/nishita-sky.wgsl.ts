@@ -269,7 +269,7 @@ fn fs_main(in: FragmentInput) -> FragmentOut {
   resultMie = min(resultMie, vec3f(60000.0, 60000.0, 60000.0));
   resultRayleigh = min(resultRayleigh, vec3f(60000.0, 60000.0, 60000.0));
 
-  var out: ScatteringOutput;
+  var out: FragmentOut;
   out.colorMie = vec4f(resultMie, 1.0);
   out.colorRayleigh = vec4f(resultRayleigh, 1.0);
   return out;

@@ -20,7 +20,10 @@ export interface BloomPassOptions {
   knee?: number
   intensity?: number
   steps?: number
+  mode?: BloomPassMode
 }
+
+export type BloomPassMode = 'kawase' | 'jimnez'
 
 export class BloomPass implements RenderPass {
   /**
@@ -58,6 +61,8 @@ export class BloomPass implements RenderPass {
    */
   public intensity = 0.5
 
+  public mode: BloomPassMode = 'kawase'
+
   private device: Device
   private fxExtract: ExtractEffect
   private fxDownsample: DownsampleEffect
@@ -71,6 +76,10 @@ export class BloomPass implements RenderPass {
       !!this.fxUpsample?.isCompiled &&
       !!this.fxCombine?.isCompiled
     )
+  }
+
+  private get isKawase() {
+    return this.mode === 'kawase'
   }
 
   private active = false
@@ -95,6 +104,7 @@ export class BloomPass implements RenderPass {
     this.threshold = options.threshold ?? this.threshold
     this.intensity = options.intensity ?? this.intensity
     this.steps = options.steps ?? this.steps
+    this.mode = options.mode ?? this.mode
   }
 
   private createEffects() {
@@ -169,12 +179,18 @@ export class BloomPass implements RenderPass {
       fx.render(pass)
     }
 
+    const kawase = this.isKawase
     const steps = Math.max(1, Math.min(10, this.steps))
     // downsample pass
     {
       const fx = this.fxDownsample
-      fx.operator = DownsampleOperator.KAWASE
       for (let i = 0; i < steps; i++) {
+        if (!kawase && i === 0) {
+          fx.operator = DownsampleOperator.JIMENEZ_13TAP_KARIS
+        }
+        if (!kawase && i !== 0) {
+          fx.operator = DownsampleOperator.JIMENEZ_13TAP
+        }
         fx.textureIn = i === 0 ? this.texExtract : this.texDownUp[i - 1]
         fx.textureOut = this.texDownUp[i]
         fx.render(pass)
@@ -184,7 +200,7 @@ export class BloomPass implements RenderPass {
     // upsample pass
     {
       const fx = this.fxUpsample
-      fx.operator = UpsampleOperator.KAWASE
+      fx.operator = kawase ? UpsampleOperator.KAWASE : UpsampleOperator.TENT_3X3
       fx.weight = this.intensity
       pass.setRenderBlend(0, BlendState.Additive)
       for (let i = steps - 1; i >= 0; i--) {

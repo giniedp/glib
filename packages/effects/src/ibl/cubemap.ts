@@ -74,4 +74,8 @@ export class PanoramaToCubemapEffect {
     pass.submit()
     pass.setRenderTarget(0, null)
   }
+
+  public dispose() {
+    this.program.dispose()
+  }
 }

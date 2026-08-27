@@ -158,4 +158,17 @@ export class IblSampler {
 
     pass.flush()
   }
+
+  public dispose() {
+    this.fxCube.dispose()
+    this.fxFilter.dispose()
+    this.fxLut.dispose()
+
+    this.lutMapGGX.dispose()
+    this.lutMapCharlie.dispose()
+    this.envMapLambert.dispose()
+    this.envMapGGX.dispose()
+    this.envMapCharlie.dispose()
+    this.cubemap.dispose()
+  }
 }
