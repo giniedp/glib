@@ -1,5 +1,4 @@
 ---
-order: 1
+order: 2
+title: '@gglib/graphics'
 ---
-
-# @gglib/graphics

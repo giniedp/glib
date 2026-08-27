@@ -1,5 +1,4 @@
 ---
+title: Material
 order: 80
 ---
-
-# Material

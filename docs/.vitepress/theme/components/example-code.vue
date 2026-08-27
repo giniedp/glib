@@ -1,5 +1,5 @@
 <template>
-  <div v-if="code">
+  <div v-if="code" class="language-ts">
     <pre><code v-html="highlightedCode"></code></pre>
   </div>
 </template>

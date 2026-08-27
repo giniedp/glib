@@ -10,8 +10,8 @@ hero:
     src: '/logo/gglib-256.png'
   actions:
     - theme: brand
-      text: Examples
-      link: /examples
+      text: Learn more
+      link: /about/gglib
     - theme: alt
       text: Github
       link: http://github.com/giniedp/glib
@@ -45,17 +45,3 @@ features:
     icon: '…'
     details: can't fit everything into the frontpage. Check the examples and source code.
 ---
-
-## Why?
-
-Ever since the early days of [XNA](<https://de.wikipedia.org/wiki/XNA_(Microsoft)>), I have been avidly reading literature about
-graphics and game engine programming, and spending my free time exploring graphics APIs.
-
-## Should i use it?
-
-If you're curious and want to try something new for your toy project, then maybe. However, if you need something solid and production ready with strong community support,
-I suggest reaching for something like [Three.js](https://threejs.org/), [Babylon.js](https://www.babylonjs.com/), [PlayCanvas](https://playcanvas.com/)
-
-::: danger
-It's a spare time project. Frequently changed, occasionally maintained.
-:::

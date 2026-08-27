@@ -42,18 +42,15 @@ export default async (canvas: HTMLCanvasElement) => {
     create: (device, asset) => {
       const material = new BasicMaterial(device, asset)
 
-      material.AmbientColor = Color.fromHex('#bd34fe')
-      material.AmbientColorTop = Color.fromHex('#47caff')
+      material.AmbientColor = Color.fromHex('#ffd500')
+      material.AmbientColorTop = Color.fromHex('#00b86b')
       material.AmbientDirection = Vec3.normalize(vec3(-1, 1, 0))
 
       return material
     },
   })
 
-  const mouse = new MouseInput({
-    //captureTarget: canvas,
-    //preventDefault: true,
-  })
+  const mouse = new MouseInput({})
   content.loadModel('/logo/gglib.glb').then((value) => {
     model = value
   })
@@ -107,8 +104,6 @@ export default async (canvas: HTMLCanvasElement) => {
   }
 
   function frame(ctx: TaskContext) {
-    device.resize()
-
     rt.resizeToMatch(device.output)
     dt.resizeToMatch(device.output)
 

@@ -1,6 +1,4 @@
 ---
 title: Examples
-order: 1
+order: 2
 ---
-
-# Examples

@@ -15,7 +15,7 @@ export default withSidebar(
       // https://vitepress.dev/reference/default-theme-config
       nav: [
         { text: 'Home', link: '/' },
-        { text: 'Examples', link: '/examples/' },
+        { text: 'Docs', link: '/about/gglib' },
       ],
       footer: {
         message: 'Released under the MIT License.',
@@ -29,6 +29,7 @@ export default withSidebar(
       config(md) {
         md.use(tabsMarkdownPlugin)
       },
+      toc: {},
     },
     vite: {
       publicDir: '../assets',
@@ -75,7 +76,7 @@ export default withSidebar(
     // includeRootIndexFile: true,
     // includeFolderIndexFile: true,
     includeEmptyFolder: false,
-    useFolderLinkFromIndexFile: true,
+    useFolderLinkFromIndexFile: false,
     useFolderTitleFromIndexFile: true,
     useTitleFromFrontmatter: true,
     frontmatterTitleFieldName: 'title',
