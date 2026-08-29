@@ -221,7 +221,9 @@ export class Geometry implements Renderable, Disposable {
    * Renders the geometry within the given render pass
    */
   public render(encoder: RenderEncoder): void {
-    encoder.setIndexBuffer(this.indexBuffer)
+    if (this.indexBuffer) {
+      encoder.setIndexBuffer(this.indexBuffer)
+    }
     encoder.setVertexBuffer(this.vertexBuffer)
     encoder.setPrimitiveType(this.primitiveType)
     if (this.indexBuffer) {
