@@ -34,13 +34,13 @@ export default defineConfig(({ mode }) => {
       ggPlugin({
         files: ['src/**/*.wgsl.ts'],
       }),
-      dts({
-        tsconfigPath: './tsconfig.json',
-        outDir: 'dist/src',
-        declarationOnly: false,
-        copyDtsFiles: true,
-        insertTypesEntry: true, // generates a root index.d.ts
-      }),
+      // dts({
+      //   tsconfigPath: './tsconfig.json',
+      //   outDir: 'dist/src',
+      //   declarationOnly: false,
+      //   copyDtsFiles: true,
+      //   insertTypesEntry: true, // generates a root index.d.ts
+      // }),
     ],
     build: {
       outDir: 'dist/lib',
