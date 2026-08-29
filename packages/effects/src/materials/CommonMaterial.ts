@@ -134,6 +134,8 @@ export class CommonMaterial extends materialSchemaClass(CommonMaterialSchema) {
     this.TextureMod = Mat4.createIdentity()
     this.IblRotation = Mat3.createIdentity()
     this.BaseMapSampler = SamplerState.LinearWrap
+    this.IblEnvironmentMap = this.device.defaultTextureCube
+    this.IblLambertianMap = this.device.defaultTextureCube
 
     this.Ior = 1.5
     this.Metallic = 1

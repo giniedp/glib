@@ -1,6 +1,6 @@
 import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
+import { CommonMaterial } from '@gglib/effects'
 import {
-  CommonMaterial,
   buildBox,
   Color,
   CommonMaterialProps,
@@ -78,17 +78,17 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const pass = device.renderPass
   function frame(ctx: TaskContext) {
-    let time2pi = ctx.time * 2 * Math.PI
-
     msaaColor.resizeToMatch(device.output)
     msaaDepth.resizeToMatch(device.output)
+
+    let t = ctx.time
 
     cam.initTranslationXYZ(0, 0, 30)
     view.initFrom(cam).invert()
     proj.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     if (scene.model) {
-      world.initRotationY(time2pi / 5000)
+      world.initRotationY(t * DEGREE_TO_RAD * 25)
       for (const mesh of scene.model.meshes) {
         for (const material of mesh.materials) {
           const mtl = material as CommonMaterial
@@ -198,7 +198,7 @@ export class PixelsContainer extends AssetContainer {
           builders.push(new GeometryBuilder({ layout: [['position', 'normal', 'texture']] }))
           materials.push({
             properties: {
-              BaseColor: color.toVec4(),
+              BaseColor: [color.r, color.g, color.b],
             } satisfies CommonMaterialProps,
           })
         }
