@@ -11,6 +11,7 @@ import {
   textureWrapModeFromWebGL,
 } from '@gglib/graphics'
 import { ModelOptions, SkinData } from '@gglib/model'
+import { removeItemUnordered } from '@gglib/utils'
 import { Document, Material, Texture } from './format'
 import { Property } from './format/common'
 import { GLTFAccessorBase, loadAccessor, loadBuffer } from './load-buffer'
@@ -88,11 +89,23 @@ export class GltfAssetContainer extends AssetContainer {
       scenes: (this.document.scenes || []).map((it) => JSON.parse(JSON.stringify(it))),
     })
 
-    this.document.meshes?.forEach((_, i) => {
-      this.graph.assign(node, this.meshNode(i), (model, mesh) => {
-        model.meshes[i] = mesh
+    if (this.document.meshes) {
+      const meshNodes = [...node.data.nodes].filter((it) => typeof it.mesh === 'number')
+      this.document.meshes.forEach((_, i) => {
+        this.graph.assign(node, this.meshNode(i), (model, mesh) => {
+          const nodesWithMesh = meshNodes.filter((it) => it.mesh === i)
+
+          for (const node of nodesWithMesh) {
+            node.mesh = model.meshes.length
+            model.meshes.push(mesh)
+          }
+
+          for (const node of nodesWithMesh) {
+            removeItemUnordered(meshNodes, node)
+          }
+        })
       })
-    })
+    }
 
     return node
   }
