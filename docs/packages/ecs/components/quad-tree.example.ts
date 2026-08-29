@@ -18,7 +18,7 @@ import {
 
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, DeviceStats, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, CommonInputs, DeviceStats, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3, Vec3 } from '@gglib/math'
 import { RenderChannel, Renderer } from '@gglib/render'
@@ -92,7 +92,6 @@ class Game extends EcsGame {
     this.content.registerMaterial(BasicMaterial, () => true)
 
     const renderer = this.world.getSystem(Renderer)
-    renderer.clearColor = Color.TransparentBlack
     renderer.inputs.set(CommonInputs.Global.AmbientColor, vec3(0.5))
     renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1)))
     this.scene.views[0] = renderer.createView({

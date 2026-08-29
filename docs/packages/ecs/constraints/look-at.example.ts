@@ -9,10 +9,9 @@ import {
 import { ContentLoader } from '@gglib/content'
 
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, SpaceBasis, Vec3 } from '@gglib/math'
-import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform, autosize: true })
@@ -27,8 +26,6 @@ class Game extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-
-    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createLight()
     this.createCamera()

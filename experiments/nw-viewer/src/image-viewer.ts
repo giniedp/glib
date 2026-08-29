@@ -7,7 +7,7 @@ import {
   TransformComponent,
   type SceneStats,
 } from '@gglib/components'
-import { Color, SpriteBatch, Texture, type DeviceStats } from '@gglib/graphics'
+import { SpriteBatch, Texture, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { SpaceBasis } from '@gglib/math'
 import { Renderer, type RendererStats } from '@gglib/render'
@@ -60,7 +60,6 @@ export class NwImageViewer extends EcsGame {
 
     this.renderer = this.world.getSystem(Renderer)
     this.renderer.autoSrgb = true
-    this.renderer.clearColor = Color.Black.toLinear()
 
     GLTF.Loader.registerExtension(NwMaterialExtension)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)

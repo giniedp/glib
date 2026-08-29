@@ -1,10 +1,9 @@
 import { CameraComponent, CopyPositionConstraint, EcsGame, ModelComponent, TransformComponent } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
-import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -29,8 +28,6 @@ class Game extends EcsGame {
   private leader!: GameEntity
 
   protected override onInitialize() {
-    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
-
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 

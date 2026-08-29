@@ -32,8 +32,6 @@ export const RenderChannel = {
    * Resolved linear depth texture (MRT)
    */
   LinearDepthRes: renderChannel('linear_depth_res'),
-  // LinearDepthResHalf: renderChannel('linear_depth_res_half'),
-  // LinearDepthResQuat: renderChannel('linear_depth_res_quat'),
 }
 
 export function createRenderChannelSchema(device: Device): Record<RenderChannel, Readonly<TextureDescriptor>> {

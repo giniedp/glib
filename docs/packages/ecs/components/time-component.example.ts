@@ -9,10 +9,9 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
-import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -38,8 +37,6 @@ class Game extends EcsGame {
     this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-
-    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createCamera()
     this.createPendulums()

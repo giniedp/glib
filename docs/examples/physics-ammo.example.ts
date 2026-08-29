@@ -58,7 +58,6 @@ class Game extends EcsGame {
     this.content.registerMaterial(BasicMaterial, () => true)
 
     const renderer = this.world.getSystem(Renderer)
-    renderer.clearColor = Color.CornflowerBlue
     renderer.autoSrgb = false
     renderer.inputs.set(CommonInputs.Global.AmbientColor, Color.Black)
     renderer.inputs.set(CommonInputs.Global.AmbientColorTop, Color.White)

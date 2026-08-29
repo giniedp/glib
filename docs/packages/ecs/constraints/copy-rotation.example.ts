@@ -8,10 +8,9 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, vec3, Vec3 } from '@gglib/math'
-import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -38,8 +37,6 @@ class Game extends EcsGame {
   override onInitialize() {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-
-    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createLight()
     this.createCamera()

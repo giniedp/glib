@@ -73,11 +73,6 @@ export class Renderer {
   public pipeline: RenderPipeline
 
   /**
-   * Preferred clear color. Some render passes may ignore this if they have their own clear color assigned.
-   */
-  public clearColor: Color = Color.Black
-
-  /**
    * If enabled, automatically convert linear to sRGB color space when presenting to non-sRGB surfaces.
    */
   public autoSrgb = false
@@ -111,7 +106,6 @@ export class Renderer {
 
   public constructor(device: Device, options?: RendererOptions) {
     this.device = device
-    this.clearColor = options?.clearColor ?? Color.Black
     this.autoSrgb = options?.autoSrgb ?? false
     if (options?.pipeline instanceof RenderPipeline) {
       this.pipeline = options?.pipeline

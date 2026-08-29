@@ -12,10 +12,10 @@ import {
 } from '@gglib/components'
 import { type GameEntity } from '@gglib/ecs'
 import { TonemapOperator } from '@gglib/effects'
-import { Color, type DeviceStats } from '@gglib/graphics'
+import { Color, CommonInputs, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, RAD_TO_DEGREE, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
-import { BloomPass, GeometryPass, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
+import { BloomPass, GeometryPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
@@ -104,11 +104,14 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(
       new Renderer(this.device, {
         autoSrgb: false,
-        clearColor: Color.Black.toLinear(),
         pipeline: {
           passes: [
             new GeometryPass({
-              enableLinearDepthMrt: true,
+              order: 0,
+              clearColors: [Color.TransparentBlack, Color.TransparentBlack],
+              outputsMsaa: [RenderChannel.ColorMsaa, RenderChannel.LinearDepthMsaa],
+              outputs: [RenderChannel.Color, RenderChannel.LinearDepthRes],
+              slots: [CommonInputs.View.SceneColorMap, CommonInputs.View.SceneDepthMap],
             }),
             new BloomPass(this.device, {
               enabled: true,

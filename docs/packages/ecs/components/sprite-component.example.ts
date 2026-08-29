@@ -80,6 +80,7 @@ class Game extends EcsGame {
         }),
       ],
     })
+
     this.scene.setCamera(0, entity.component(CameraComponent))
   }
 

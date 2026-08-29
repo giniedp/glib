@@ -6,7 +6,6 @@ Texture.crossOrigin = 'anonymous'
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement) => {
   const viewer = new ModelViewer({ canvas })
   await viewer.run()
-  viewer.renderer.clearColor = Color.TransparentBlack
 
   loadSample(tools, (url) => {
     viewer.loadModel({
