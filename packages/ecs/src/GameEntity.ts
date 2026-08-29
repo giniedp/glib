@@ -37,8 +37,26 @@ export const GetComponent = {
   SkipSelf: { followParent: true, skipSelf: true } as const,
 }
 
+export type GameEntitySchema<TSchema extends Record<string, GameComponentType<GameComponent>>> = {
+  readonly [K in keyof TSchema]: (TSchema[K] extends GameComponentType<infer T> ? T : never) | null
+}
+
 export type NotGameEntity<T> = T & (T extends GameEntity ? never : T)
 export class GameEntity {
+  static withSchema<TSchema extends Record<string, GameComponentType<GameComponent>>>(schema: TSchema): TSchema {
+    for (const propertyName of Object.keys(schema)) {
+      const ctor = schema[propertyName]
+      Object.defineProperty(GameEntity.prototype, propertyName, {
+        get(this: GameEntity) {
+          return this.component(ctor, GetComponent.Optional)
+        },
+        enumerable: true,
+        configurable: true,
+      })
+    }
+    return schema
+  }
+
   public static defaultLayer: number | null = null
   public static readonly onInitialized = brand<EventType<GameEntity>>(Symbol('initialized'))
   public static readonly onDestroyed = brand<EventType<GameEntity>>(Symbol('destroyed'))
