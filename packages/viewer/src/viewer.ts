@@ -51,7 +51,7 @@ export class ModelViewer extends EcsGame {
     super({
       canvas: options.canvas,
       autosize: true,
-      platform: 'webgl2',
+      platform: 'auto',
     })
   }
 
