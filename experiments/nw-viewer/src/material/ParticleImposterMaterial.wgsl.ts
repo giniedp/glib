@@ -66,7 +66,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   // Blend 2 frames at diferent phases (similar to flowmaps)
   // float4    PerView_AnimGenParams; // time * {2.0, 0.5, 1.0, 0.125}
   // float2 vAnimGen = PerView_AnimGenParams.xx * AnimSpeed * float2(1, -BumpAnimSpeed);
-  let vAnimGen = vec2f(frame.elapsedTime / 1000.0 * 2.0) * material.animSpeed * vec2f(1, -material.bumpAnimSpeed);
+  let vAnimGen = vec2f(frame.elapsedTime * 2.0) * material.animSpeed * vec2f(1, -material.bumpAnimSpeed);
   let vAnimAmpl = material.animAmplitude * saturate(1.0 + material.animOffset - input.texture.y); // scale amplitude via V coordinate
   let vAnimFreq = fract(vec2f(vAnimGen.x) - vec2f(0.0, 0.5));
   let vAnim = (vAnimFreq * vec2f(vAnimAmpl) - vec2f(material.animOffset)).xxyy * vec4f(0.0, 1.0, 0.0, 1.0);

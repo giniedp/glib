@@ -51,7 +51,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       return
     }
 
-    world.initRotationZ(ctx.time / 1000)
+    world.initRotationZ(ctx.time)
     const program = shader.program
     program.set('uWorld', world)
     program.commit()

@@ -11,7 +11,7 @@ import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { GamepadAxes, KeyboardKeys } from '@gglib/game'
 import { Color, PlatformId, Texture } from '@gglib/graphics'
 import { Mat4, Vec4 } from '@gglib/math'
-import { BloomPass, LayerMask, PixelatePass } from '@gglib/render'
+import { BloomPass, GeometryPass, LayerMask, PixelatePass, Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new PongGame({ canvas, platform, autosize: true })
@@ -52,16 +52,33 @@ class PongGame extends EcsGame {
   public pixelate!: PixelatePass
   public bloom!: BloomPass
 
-  override onInitialize(): void {
+  protected override onCreate(): void {
     this.world.addSystem(new KeyboardInputSystem({}))
     this.world.addSystem(new GamePadInput())
+    this.bloom = new BloomPass(this.device, { enabled: true, order: 1 })
+    this.pixelate = new PixelatePass(this.device, {
+      order: 2,
+      enabled: true,
+      size: 20,
+      gap: 1 / 20,
+      corner: 0.5,
+    })
+    this.world.addSystem(
+      new Renderer(this.device, {
+        pipeline: {
+          passes: [new GeometryPass(), this.bloom, this.pixelate],
+        },
+      }),
+    )
+  }
 
-    this.whitePixel = this.renderer.device.createTexture({
+  override onInitialize(): void {
+    this.whitePixel = this.device.createTexture({
       source: [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff],
       width: 1,
       height: 1,
     })
-    this.view.camera = {
+    this.scene.getView(0).camera = {
       visibilityMask: LayerMask.All,
       projection: Mat4.createIdentity(),
       view: Mat4.createIdentity(),
@@ -71,28 +88,18 @@ class PongGame extends EcsGame {
       far: 1,
     }
 
-    this.bloom = new BloomPass(this.device, { enabled: true, order: 1 })
-    this.pixelate = new PixelatePass(this.device, {
-      order: 2,
-      enabled: true,
-      size: 20,
-      gap: 1 / 20,
-      corner: 0.5,
-    })
-
-    this.renderer.pipeline.passes.push(this.bloom)
-    this.renderer.pipeline.passes.push(this.pixelate)
     this.createObjects()
   }
 
   public override onUpdate(t: number, dt: number) {
-    this.view.camera.projection.initOrthographicOffCenter(
+    const view = this.scene.getView(0)
+    view.camera.projection.initOrthographicOffCenter(
       0,
       this.width,
       0,
       this.height,
-      this.view.camera.near,
-      this.view.camera.far,
+      view.camera.near,
+      view.camera.far,
       this.device.ndcMinZ,
     )
     switch (this.state) {
@@ -126,21 +133,21 @@ class PongGame extends EcsGame {
 
   private createObjects() {
     const paddle1 = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
       components: [new SpriteComponent(), new PaddleComponent({ isLeft: true })],
     })
     this.paddle1 = paddle1.component(PaddleComponent)
 
     const paddle2 = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
       components: [new SpriteComponent(), new PaddleComponent({ isLeft: false })],
     })
     this.paddle2 = paddle2.component(PaddleComponent)
 
     const ball = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
       components: [new SpriteComponent(), new BallComponent()],
     })
@@ -247,12 +254,12 @@ class PaddleComponent implements GameComponent, InitializableComponent, Behavior
       }
 
       direction += -Math.sign(axisValue)
-      this.y += direction * this.speed * (dt / 1000)
+      this.y += direction * this.speed * dt
       this.y = Math.min(Math.max(this.h, this.y), this.game.height)
     }
 
     this.transform.setPosition(this.x, this.y, 0)
-    const t = Math.min(1, (time - this.touchedAt) / 1000)
+    const t = Math.min(1, time - this.touchedAt)
     this.color.x = 1
     this.color.y = t
     this.color.z = t
@@ -314,8 +321,8 @@ class BallComponent implements GameComponent, InitializableComponent, BehaviorCo
     }
 
     if (this.game.state === 'running') {
-      this.x += (this.dx * this.speed * dt) / 1000
-      this.y += (this.dy * this.speed * dt) / 1000
+      this.x += this.dx * this.speed * dt
+      this.y += this.dy * this.speed * dt
     }
 
     this.transform.setPosition(this.x, this.y, 0)

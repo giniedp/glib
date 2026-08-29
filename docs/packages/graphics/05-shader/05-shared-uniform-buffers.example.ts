@@ -37,7 +37,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       return
     }
 
-    const t = ctx.time / 1000
+    const t = ctx.time
     shader.program.set('global.time', t)
     shader.program.commit()
     for (let i = 0; i < programs.length; i++) {

@@ -10,7 +10,7 @@ import {
   TextureUsage,
   torusGeometry,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, MS_TO_SEC, Vec3, vec4 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat4, Vec3, vec4 } from '@gglib/math'
 
 export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
   const device: Device = await createDevice({ canvas, platform }).ready
@@ -56,7 +56,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     }
 
     // Pass 1: render the cube into scene render target
-    world.initRotationX(ctx.time * MS_TO_SEC * 25 * DEGREE_TO_RAD).scaleUniform(2 + Math.sin(ctx.time * MS_TO_SEC))
+    world.initRotationX(ctx.time * 25 * DEGREE_TO_RAD).scaleUniform(2 + Math.sin(ctx.time))
     view.initLookAt(cameraPosition, Vec3.create(0, 0, 0), Vec3.create(0, 1, 0)).invert()
     projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, 1, 0.1, 100, device.ndcMinZ)
 
@@ -66,7 +66,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     sceneProgram.set('uProjection', projection)
     sceneProgram.commit()
 
-    const hue = (ctx.time / 1000) % (Math.PI * 2)
+    const hue = ctx.time % (Math.PI * 2)
     color.x = 0.5 + 0.5 * Math.sin(hue)
     color.y = 0.5 + 0.5 * Math.sin(hue + 2)
     color.z = 0.5 + 0.5 * Math.sin(hue + 4)
@@ -81,7 +81,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     torus.render(pass)
 
     // Pass 2: draw a quad on the canvas, textured with the result
-    world.initRotationY((ctx.time / 1000) * 25 * DEGREE_TO_RAD)
+    world.initRotationY(ctx.time * 25 * DEGREE_TO_RAD)
     const presentProgram = presentShader.program
     presentProgram.set('uWorld', world)
     presentProgram.set('uView', view)

@@ -74,7 +74,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       const x = w.translationX - SIZE / 2
       const z = w.translationZ - SIZE / 2
       const r = Math.sqrt(x * x + z * z)
-      const y = Math.sin(r - ctx.time / 100) * 0.5
+      const y = Math.sin(r - ctx.time) * 0.5
       w.setTranslationY(y)
     }
 

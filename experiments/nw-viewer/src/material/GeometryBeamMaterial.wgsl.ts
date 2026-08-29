@@ -94,7 +94,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
     vmod.normal   = input.normal.xyz;
     vmod.color    = input.color.rgb;
     vmod.texture  = input.texture.xy;
-    vmod.time     = frame.elapsedTime / 1000.0;
+    vmod.time     = frame.elapsedTime;
     vmod.typ      = u32(material.deformWave1.w);
     vPos = vertexModify(vmod);
   }
@@ -154,7 +154,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   // --- 3D noise lookup coords
   var uvNoise = vec3f(0.0);
   if (NOISE) {
-    let t = frame.elapsedTime / 1000.0;
+    let t = frame.elapsedTime;
     uvNoise.x = dot(vertPos, vec4f(0.05, 0.0, 0.0, t * material.backgroundAlphaNoiseSpeedX));
     uvNoise.y = dot(vertPos, vec4f(0.0, 0.05, 0.0, t * material.backgroundAlphaNoiseSpeedY));
     uvNoise.z = dot(vertPos, vec4f(0.0, 0.0, 0.10, t * material.backgroundAlphaNoiseSpeedZ));

@@ -137,6 +137,7 @@ struct MaterialBlock {
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
+
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
 
@@ -147,7 +148,7 @@ struct MaterialBlock {
 @group(3) @binding(0) var diffuseMap         : texture_2d<f32>; // $Diffuse      (diffuseMap, diffuseMap_Decal)
 @group(3) @binding(1) var normalMap          : texture_2d<f32>; // $Normal       (normalMap)
 @group(3) @binding(2) var specularMap        : texture_2d<f32>; // $Specular     (specularMap)
-// @group(3) @binding(3) var envMap          : texture_2d<f32>; // $Env          (envMap)
+@group(3) @binding(3) var envMap             : texture_2d<f32>; // $Env          (envMap)
 @group(3) @binding(4) var detailMap          : texture_2d<f32>; // $Detail       (detailMap) .ag=detail normal, .r=diffuse/gloss tint
 @group(3) @binding(5) var translucencyMap    : texture_2d<f32>; // $SecondSmoothness, $Translucency (translucencyMap)
 @group(3) @binding(6) var heightMap          : texture_2d<f32>; // $Heightmap    (heightMap) Height for offset bump, POM, silhouette POM, and displacement mapping defined by a Grayscale texture
@@ -216,7 +217,7 @@ fn illumVS(input : VertexInput) -> FragmentInput {
     vmod.normal   = input.normal.xyz;
     vmod.color    = input.color.rgb;
     vmod.texture  = input.texture.xy;
-    vmod.time     = frame.elapsedTime / 1000.0;
+    vmod.time     = frame.elapsedTime;
     vmod.typ      = u32(material.deformWave1.w);
     vPos = vertexModify(vmod);
   }

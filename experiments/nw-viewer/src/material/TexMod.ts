@@ -154,7 +154,7 @@ export class TextureModifier {
 
     const m = this.mat.initIdentity()
     const tmp = _m2.initIdentity()
-    const seconds = time / 1000
+    const seconds = time
 
     this.applyRotation(m, tmp, time)
     this.applyOscillatorU(m, seconds)

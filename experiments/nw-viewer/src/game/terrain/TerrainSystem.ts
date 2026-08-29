@@ -113,7 +113,7 @@ export class TerrainSystem extends GameSystem {
       this.loadedRegions.push(region)
     }
 
-    const camera = this.game.view.camera
+    const camera = this.game.scene.getView(0).camera
     region.traverseRequiredSet(camera, LOD_RANGE_FACTOR, (node) => {
       this.updateQuadState(node, region)
     })

@@ -125,7 +125,7 @@ fn vsMain(input: VertexIn) -> Varyings {
 
   worldPos.z   = data.x;
 
-  let timeSec      = frame.elapsedTime * 0.001;
+  let timeSec      = frame.elapsedTime;
   let mat          = material;
 
   // Derive base spatial frequency from waveHeight so the two stay coupled:
@@ -149,7 +149,7 @@ fn vsMain(input: VertexIn) -> Varyings {
 @fragment
 fn fsMain(in: Varyings) -> FragmentOutput {
   let instance = instances[in.iid];
-  let timeSec = frame.elapsedTime * 0.001;
+  let timeSec = frame.elapsedTime;
   let mat     = material;
   let sun     = normalize(global.sunDirection);
 

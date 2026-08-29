@@ -1,4 +1,4 @@
-import { GameSystem, GameSystemToken, GameWorld } from '@gglib/ecs'
+import { GameSystem, IsGameSystem, GameWorld } from '@gglib/ecs'
 import { MouseInput, MouseInputOptions } from '@gglib/game'
 
 /**
@@ -8,7 +8,7 @@ import { MouseInput, MouseInputOptions } from '@gglib/game'
  */
 
 export class MouseInputSystem extends MouseInput implements GameSystem {
-  public get [GameSystemToken]() {
+  public get [IsGameSystem]() {
     return true
   }
 

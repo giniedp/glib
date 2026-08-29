@@ -11,7 +11,7 @@ import {
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 
 export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -59,7 +59,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
       return
     }
 
-    world.initIdentity().rotateY((ctx.time / 1000) * 30 * DEGREE_TO_RAD)
+    world.initIdentity().rotateY(ctx.time * 30 * DEGREE_TO_RAD)
     view.initLookAt(cameraPosition, Vec3.create(0, 0, 0), Vec3.create(0, 1, 0)).invert()
     projection.initPerspectiveFieldOfView(45 * DEGREE_TO_RAD, 1, 0.1, 100, device.ndcMinZ)
 

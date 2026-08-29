@@ -24,14 +24,14 @@ export interface Loop {
  *
  * @public
  */
-export function loop(frame: (timeInMs: number, deltaInMs: number) => any, autostart = true): Loop {
+export function loop(frame: (time: number, delta: number) => any, autostart = true): Loop {
   let requestId: number = null
   let timestamp: number = performance.now()
 
   function tick() {
     const dt = performance.now() - timestamp
     timestamp += dt
-    frame(timestamp, dt)
+    frame(timestamp / 1000, dt / 1000)
     requestId = requestAnimationFrame(tick)
   }
 

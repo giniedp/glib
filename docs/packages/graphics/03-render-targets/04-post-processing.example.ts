@@ -36,6 +36,8 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     size: 2,
   })
 
+  console.log(quad)
+
   const settings = { effect: 'Vignette' as keyof typeof EFFECTS }
   mountUi(tools, (ui) => {
     ui.select(settings, 'effect', { options: Object.keys(EFFECTS) })
@@ -61,8 +63,8 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       return
     }
 
-    world.initIdentity().rotateY((ctx.time / 1000) * 25 * DEGREE_TO_RAD)
-    view.initLookAt(cameraPosition, Vec3.create(0, 0, 0), Vec3.create(0, 1, 0)).invert()
+    world.initIdentity().rotateY(ctx.time * 25 * DEGREE_TO_RAD)
+    view.initLookAt(cameraPosition, Vec3.Zero, Vec3.UnitY).invert()
     projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 
     const sceneProgram = sceneShader.program
@@ -89,7 +91,8 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     postProgram.commit()
 
     pass.setRenderTarget(0, device.output)
-    pass.setClearColor(0, Color.Black)
+    pass.setViewportState(0, 0, device.output.width, device.output.height)
+    pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
 
     pass.setProgram(postProgram)
@@ -159,7 +162,7 @@ const postGlslVS = /*glsl*/ `
   out vec2 uv;
   void main(void) {
     uv = vec2(texture.x, 1.0 - texture.y);
-    gl_Position = vec4(position, 1.0);
+    gl_Position = vec4(position.xy, 0.0, 1.0);
   }
 `
 // `uEffect` picks the post effect: 0 none, 1 grayscale, 2 invert, 3 vignette.
@@ -204,7 +207,7 @@ const postWgsl = /*wgsl*/ `
   fn vs(input: VertexInput) -> VertexOutput {
     var output : VertexOutput;
     output.uv = input.texture;
-    output.Position = vec4f(input.position, 1.0);
+    output.Position = vec4f(input.position.xy, 0.0, 1.0);
     return output;
   }
 

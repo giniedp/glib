@@ -49,7 +49,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       return
     }
 
-    const t = ctx.time / 1000
+    const t = ctx.time
     const program = shader.program
     // use aliased names, 'offset' and 'color'
     program.set('offset', {

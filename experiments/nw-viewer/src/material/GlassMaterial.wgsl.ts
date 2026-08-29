@@ -244,7 +244,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
 }
 @fragment
 fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> FragmentOutput {
-  let time = frame.elapsedTime / 1000.0;
+  let time = frame.elapsedTime;
 
   let toEye = normalize(input.toEye);
   let tbn = mat3x3f(

@@ -60,7 +60,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     msaaDepth.resizeToMatch(device.output)
     plainDepth.resizeToMatch(device.output)
 
-    world.initIdentity().rotateY((ctx.time / 1000) * 20 * DEGREE_TO_RAD)
+    world.initIdentity().rotateY(ctx.time * 20 * DEGREE_TO_RAD)
     view.initLookAt(cameraPosition, Vec3.create(0, 0, 0), Vec3.create(0, 1, 0)).invert()
     projection.initPerspectiveFieldOfView(60 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 

@@ -10,19 +10,11 @@ import {
 import { GameEntity } from '@gglib/ecs'
 import { CommonMaterial, IblSampler, SkyboxMaterial, TonemapOperator } from '@gglib/effects'
 import { MouseListener } from '@gglib/game'
-import {
-  boxGeometry,
-  Color,
-  FALSE,
-  ProgramInputBlock,
-  ProgramInputBlockCollection,
-  Texture,
-  TRUE,
-} from '@gglib/graphics'
+import { boxGeometry, FALSE, Texture, TRUE } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { Mat3 } from '@gglib/math'
 import { Model } from '@gglib/model'
-import { BloomPass, TonemapPass } from '@gglib/render'
+import { BloomPass, GeometryPass, Renderer, TonemapPass } from '@gglib/render'
 
 export interface ModelViewerOptions {
   canvas: HTMLCanvasElement
@@ -73,6 +65,25 @@ export class ModelViewer extends EcsGame {
       }),
     )
     this.world.addSystem(new KeyboardInputSystem())
+
+    this.bloomPass = new BloomPass(this.device, {
+      enabled: true,
+      threshold: 0.75,
+      intensity: 0.75,
+    })
+    this.tonemapPass = new TonemapPass(this.device, {
+      enabled: true,
+      operator: TonemapOperator.PBR_NEUTRAL,
+      srgb: true,
+    })
+
+    this.world.addSystem(
+      new Renderer(this.device, {
+        pipeline: {
+          passes: [new GeometryPass(), this.bloomPass, this.tonemapPass],
+        },
+      }),
+    )
   }
 
   protected override onInitialize(): void {
@@ -94,39 +105,22 @@ export class ModelViewer extends EcsGame {
       },
     })
 
-    this.renderer.clearColor = Color.CornflowerBlue
-
-    this.bloomPass = new BloomPass(this.device, {
-      enabled: true,
-      threshold: 0.75,
-      intensity: 0.75,
-    })
-
-    this.renderer.pipeline.passes.push(this.bloomPass)
-
-    this.tonemapPass = new TonemapPass(this.device, {
-      enabled: true,
-      operator: TonemapOperator.PBR_NEUTRAL,
-      srgb: true,
-    })
-    this.renderer.pipeline.passes.push(this.tonemapPass)
-
     this.sky = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
       components: [new ModelComponent()],
     })
     this.stage = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
       components: [new ModelComponent()],
     })
     this.cam = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent(),
       components: [new CameraComponent(), new WASDComponent()],
     })
-    this.view.camera = this.cam.component(CameraComponent)
+    this.scene.setCamera(0, this.cam.component(CameraComponent))
   }
 
   protected override async onLoadContent(): Promise<void> {
@@ -207,7 +201,7 @@ export class ModelViewer extends EcsGame {
     sky.Blur = this.iblBlur
     sky.Intensity = this.iblIntensity
 
-    const inputs = this.renderer.inputs
+    const inputs = this.world.getSystem(Renderer).inputs
     inputs.createBlock('ibl')
     inputs.setByBlockAndName('ibl', 'intensity', this.iblIntensity)
     inputs.setByBlockAndName('ibl', 'rotation', this.iblRotation)

@@ -88,7 +88,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     device.resize()
     depthTarget.resizeToMatch(device.output)
 
-    const t = ctx.time / 1000
+    const t = ctx.time
     cameraPosition.y = Math.sin((t * Math.PI * 2) / 5)
     world.initIdentity().rotateY(t * 20 * DEGREE_TO_RAD)
     view.initTranslation(cameraPosition).invert()

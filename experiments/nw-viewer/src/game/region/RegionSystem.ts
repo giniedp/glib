@@ -43,7 +43,7 @@ export class RegionSystem extends GameSystem {
 
   private updateRegionVisibility(region: RegionComponent) {
     const entity = region.entity
-    const camera = this.game.view.camera
+    const camera = this.game.scene.getView(0).camera
 
     if (!entity) {
       debugger
@@ -84,7 +84,7 @@ export class RegionSystem extends GameSystem {
   }
 
   private updateImpostorVisibility(entity: GameEntity) {
-    const camera = this.game.view.camera
+    const camera = this.game.scene.getView(0).camera
     const impostor = entity.component(RegionImpostorComponent)
     const distance = boxMat4DistanceSquared(impostor.min, impostor.max, camera.world)
 

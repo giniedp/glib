@@ -1,5 +1,5 @@
 import { createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
-import { MS_TO_SEC, vec4 } from '@gglib/math'
+import { vec4 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -30,7 +30,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   const color = vec4(1)
   function frame(ctx: TaskContext) {
     // Animate the clear color so it is obvious the loop is actually running.
-    const hue = (ctx.time * MS_TO_SEC * settings.speed) % (Math.PI * 2)
+    const hue = (ctx.time * settings.speed) % (Math.PI * 2)
     color.x = 0.5 + 0.5 * Math.sin(hue)
     color.y = 0.5 + 0.5 * Math.sin(hue + 2)
     color.z = 0.5 + 0.5 * Math.sin(hue + 4)

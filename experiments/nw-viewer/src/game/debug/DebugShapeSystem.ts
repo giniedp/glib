@@ -96,13 +96,13 @@ export class DebugShapeSystem extends GameSystem {
       return this.root
     }
 
-    this.root = this.game.scene.component(DebugShapeRenderComponent, GetComponent.Optional)
+    this.root = this.game.scene.entity.component(DebugShapeRenderComponent, GetComponent.Optional)
     if (this.root) {
       return this.root
     }
 
     const entity = this.world.createEntity({
-      parent: this.game.scene,
+      parent: this.game.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
       }),

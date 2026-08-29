@@ -1,20 +1,19 @@
 import {
-  EcsGame,
   BoundsComponent,
   CameraComponent,
+  EcsGame,
   KeyboardInputSystem,
   LightComponent,
   ModelComponent,
   MouseInputSystem,
-  QuadTree,
+  OccTree,
   SceneComponent,
   SceneStats,
-  SpatialNodeComponent,
   SpatialComponent,
+  SpatialNodeComponent,
   SpatialSystem,
   TransformComponent,
   WASDComponent,
-  OccTree,
 } from '@gglib/components'
 
 import { ContentLoader } from '@gglib/content'
@@ -68,41 +67,38 @@ class Game extends EcsGame {
     this.world.addSystem(new SpatialSystem())
 
     this.deviceStats = this.device.stats()
-  }
-
-  protected override createEssentialSystems(): void {
-    super.createEssentialSystems()
-
-    this.renderer.inputs.set(CommonInputs.Global.AmbientColor, vec3(0.5))
-    this.renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1)))
-
-    this.view = this.renderer.createView({
-      name: 'Main View',
-      present: RenderChannel.Color,
-    })
-    this.scene = this.world.createEntity({
-      name: 'Scene',
-      transform: new TransformComponent(),
-      components: [
-        new SceneComponent({ views: [this.view] }),
-        // Add a SpatialComponent with a spatial accelerator, in this case a OccTree to the scene
-        new SpatialComponent({
-          index: OccTree.create({
-            min: vec3(-WORLD_SIZE),
-            max: vec3(WORLD_SIZE),
-            leafLevel: LEAF_LEVEL,
-            looseFactor: 1,
+    this.scene = this.world
+      .createEntity({
+        name: 'Scene',
+        transform: new TransformComponent(),
+        components: [
+          new SceneComponent({ views: [] }),
+          // Add a SpatialComponent with a spatial accelerator, in this case a OccTree to the scene
+          new SpatialComponent({
+            index: OccTree.create({
+              min: vec3(-WORLD_SIZE),
+              max: vec3(WORLD_SIZE),
+              leafLevel: LEAF_LEVEL,
+              looseFactor: 1,
+            }),
           }),
-        }),
-      ],
-    })
+        ],
+      })
+      .component(SceneComponent)
   }
 
   public override onInitialize(): void {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 
-    this.renderer.clearColor = Color.TransparentBlack
+    const renderer = this.world.getSystem(Renderer)
+    renderer.clearColor = Color.TransparentBlack
+    renderer.inputs.set(CommonInputs.Global.AmbientColor, vec3(0.5))
+    renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1)))
+    this.scene.views[0] = renderer.createView({
+      name: 'Main View',
+      present: RenderChannel.Color,
+    })
 
     this.createCamera()
     this.createObjects()
@@ -111,13 +107,13 @@ class Game extends EcsGame {
   public override onUpdate(t: number, dt: number) {
     this.frameTime = dt
     this.deviceStats = this.device.stats(this.deviceStats)
-    this.sceneStats = this.scene.component(SceneComponent).stats(this.sceneStats)
+    this.sceneStats = this.scene.stats(this.sceneStats)
   }
 
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: vec3(0, 0, 0),
       }),
@@ -128,7 +124,7 @@ class Game extends EcsGame {
         new WASDComponent(),
       ],
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createObjects() {
@@ -145,7 +141,7 @@ class Game extends EcsGame {
           )
           this.createEntity({
             name: Vec3.format(position),
-            parent: this.scene,
+            parent: this.scene.entity,
             components: [
               // the component that provides the model to the renderer
               new ModelComponent(),

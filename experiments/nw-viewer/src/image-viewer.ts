@@ -1,9 +1,8 @@
 import {
-  EcsGame,
   CameraComponent,
+  EcsGame,
   KeyboardInputSystem,
   MouseInputSystem,
-  SceneComponent,
   SpriteComponent,
   TransformComponent,
   type SceneStats,
@@ -11,7 +10,7 @@ import {
 import { Color, SpriteBatch, Texture, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { SpaceBasis } from '@gglib/math'
-import { type RendererStats } from '@gglib/render'
+import { Renderer, type RendererStats } from '@gglib/render'
 
 import type { GameEntity } from '@gglib/ecs'
 import { ContentService } from './content'
@@ -40,6 +39,7 @@ export class NwImageViewer extends EcsGame {
   public mipLevelCount: number
   public face: number
   public faceCount: number
+  public renderer: Renderer
 
   private zoom = 1
   private scale = 1
@@ -58,6 +58,7 @@ export class NwImageViewer extends EcsGame {
       platform: 'webgpu',
     })
 
+    this.renderer = this.world.getSystem(Renderer)
     this.renderer.autoSrgb = true
     this.renderer.clearColor = Color.Black.toLinear()
 
@@ -69,10 +70,8 @@ export class NwImageViewer extends EcsGame {
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
 
-    this.renderer.clearColor = Color.Black
-    this.renderer.autoSrgb = true
     this.spriteEntity = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({}),
       components: [new SpriteComponent()],
     })
@@ -80,7 +79,7 @@ export class NwImageViewer extends EcsGame {
 
     const camera = this.createEntity({
       name: 'Camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
       }),
@@ -95,8 +94,7 @@ export class NwImageViewer extends EcsGame {
       ],
     })
     this.camera = camera.component(CameraComponent)
-
-    this.view.camera = camera.component(CameraComponent)
+    this.scene.setCamera(0, this.camera)
   }
 
   protected override onCreate(): void {
@@ -118,7 +116,7 @@ export class NwImageViewer extends EcsGame {
   override onDraw(time: number, dt: number): void {
     super.onDraw(time, dt)
     this.deviceStats = this.device.stats(this.deviceStats)
-    this.sceneStats = this.scene.component(SceneComponent).stats(this.sceneStats)
+    this.sceneStats = this.scene.stats(this.sceneStats)
     this.renderStats = this.renderer.stats(this.renderStats)
   }
 

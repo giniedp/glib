@@ -116,7 +116,7 @@ export default async (canvas: HTMLCanvasElement) => {
     pass.clear()
 
     if (model) {
-      updateScene(ctx.time, ctx.dt)
+      updateScene(ctx.time, ctx.delta)
       renderModel(model)
     }
     pass.submit()

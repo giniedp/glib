@@ -1,5 +1,6 @@
-import { CameraComponent, GameLoop, MeshComponent, ModelComponent, TransformComponent } from '@gglib/components'
+import { CameraComponent, MeshComponent, ModelComponent, TransformComponent } from '@gglib/components'
 import { GameEntity, GameWorld } from '@gglib/ecs'
+import { GameLoop } from '@gglib/game'
 import { Geometry, Material, Mesh, WebglDevice, WebGpuDevice } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { Model } from '@gglib/model'

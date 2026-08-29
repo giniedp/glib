@@ -121,6 +121,24 @@ export class SceneComponent implements GameComponent, InitializableComponent, Re
     this.initialized = true
   }
 
+  public setCamera(view: number, camera: CameraData | null) {
+    if (!this.views[view]) {
+      throw new Error(`No view exist at index ${view}`)
+    }
+    this.views[view].camera = camera
+  }
+
+  public getView(view: number) {
+    if (!this.views[view]) {
+      throw new Error(`No view exist at index ${view}`)
+    }
+    return this.views[view]
+  }
+
+  public setView(index: number, view: RenderView) {
+    this.views[index] = view
+  }
+
   private collectResult: RenderItem[]
   private frustum = new BoundingFrustum()
   private frame: FrameInfo

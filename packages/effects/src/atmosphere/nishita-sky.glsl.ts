@@ -7,28 +7,31 @@ export const NISHITA_SKY_UTILS_GLSL = /* glsl */ `
   }
 
   float coordToCosAngle(float t) {
-    return 1.0 - 2.0 * t;
+    return 2.0 * t;
   }
 
   float cosAngleToCoord(float cosAngle) {
-    return 0.5 - cosAngle * 0.5;
+    return cosAngle * 0.5;
   }
 
-  vec3 latLonToDir(float latitude, float longitude) {
+  vec3 latLonToDir(
+    float latitude, // polar angle
+    float longitude // azimuth angle
+  ) {
     float cosLat = cos(latitude);
     float sinLat = sin(latitude);
     float cosLon = cos(longitude);
     float sinLon = sin(longitude);
     return vec3(
-      cosLat * cosLon,
-      cosLat * sinLon,
-      sinLat
+      sinLat * cosLon,
+      sinLat * sinLon,
+      cosLat
     );
   }
 
   vec3 uvToDir(vec2 uv) {
-    float latitude  = (1.0 -       uv.y) * PI * 0.5;
-    float longitude = (1.0 - 2.0 * uv.x) * PI;
+    float latitude  = PI * (0.5 * uv.y);
+    float longitude = PI * (1.0 - 2.0 * uv.x);
     return latLonToDir(latitude, longitude);
   }
 
@@ -301,7 +304,7 @@ export const NISHITA_PANORAMA_GLSL_FS = /* glsl */ `
     texCoord.y = 2.0 * texCoord.y;
 
     vec3 skyDir = uvToDir(texCoord);
-    vec3 sunDir = latLonToDir(params.sunLatitude, params.sunLongitude);
+    vec3 sunDir = -latLonToDir(params.sunLatitude, params.sunLongitude);
     float km = params.mieScattering;
     float kr = params.rayleighScattering;
     float g = params.phaseAsymmetry;
@@ -310,7 +313,7 @@ export const NISHITA_PANORAMA_GLSL_FS = /* glsl */ `
     vec3 mieColor      = texture(mieScatteringSampler, texCoord).rgb;
     vec3 rayleighColor = texture(rayleighScatteringSampler, texCoord).rgb;
 
-    float cosAngle      = dot(skyDir, -sunDir);
+    float cosAngle      = dot(skyDir, sunDir);
     float miePhase      = getMiePhase(g, cosAngle);
     float rayleighPhase = getRayleighPhase(cosAngle);
 

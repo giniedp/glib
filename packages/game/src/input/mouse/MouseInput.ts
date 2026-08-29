@@ -215,7 +215,7 @@ export class MouseInput {
    * Indicates whether specific mouse button is pressed in this frame but was released last frame
    */
   public buttonJustPressed(button: MouseButton): boolean {
-    return !(this.statePrev.buttons & button) && !!(this.state.buttons && button)
+    return !(this.statePrev.buttons & button) && !!(this.state.buttons & button)
   }
 
   /**

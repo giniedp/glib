@@ -157,11 +157,11 @@ export interface FrameInfo {
    */
   id: number
   /**
-   * The time in ms since the start of the application
+   * The time in seconds since the start of the application
    */
   time: number
   /**
-   * The time in ms since the last frame
+   * The time in seconds since the last frame
    */
   delta: number
 }

@@ -120,7 +120,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
   }
 
   // --- 3D noise lookup coords --
-  let t = frame.elapsedTime / 1000.0;
+  let t = frame.elapsedTime;
   let uvNoise = vec3f(
     input.position.x * 0.05 + t * material.backgroundAlphaNoiseSpeedX,
     input.position.y * 0.05 + t * material.backgroundAlphaNoiseSpeedY,

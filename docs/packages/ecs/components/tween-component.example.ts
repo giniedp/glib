@@ -1,6 +1,6 @@
 import {
-  EcsGame,
   CameraComponent,
+  EcsGame,
   LightComponent,
   ModelComponent,
   TransformComponent,
@@ -9,9 +9,10 @@ import {
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 class Game extends EcsGame {
@@ -26,19 +27,16 @@ class Game extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
     this.tween = this.world.getSystem(TweenSystem)
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
     this.createCamera()
     this.createLight()
     this.createCube()
   }
 
-  override onInitialize(): void {
-    this.renderer.clearColor = Color.TransparentBlack
-  }
-
   private createCamera() {
     const entity = this.world.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new CameraComponent({
           type: 'perspective',
@@ -48,14 +46,13 @@ class Game extends EcsGame {
         position: Vec3.create(0, 10, 10),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
-    this.view.disabled = false
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createCube() {
     const entity = this.world.createEntity({
       name: 'cube',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: Vec3.create(0, 0, -10),
       }),
@@ -67,7 +64,7 @@ class Game extends EcsGame {
   private createLight() {
     const entity = this.createEntity({
       name: 'light',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({}),
       components: [new LightComponent()],
     })
@@ -75,6 +72,7 @@ class Game extends EcsGame {
   }
 
   public tweenPosition(options: TweenOptions<any>) {
+    console.log('tweenPosition', options)
     const transform = this.cube.getTransform<TransformComponent>()!
     this.tween.cancelAll()
     this.tween
@@ -83,7 +81,10 @@ class Game extends EcsGame {
         from: transform.translation,
         to: Vec3.create(transform.translation.x > 0 ? -5 : 5, 0, -5),
       })
-      .bind((tween) => transform.setPositionV(tween))
+      .bind((tween) => {
+        console.log(tween)
+        transform.setPositionV(tween)
+      })
   }
 
   public tweenScale(options: TweenOptions<any>) {
@@ -129,12 +130,12 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
     const positionOptions: TweenOptions<any> = {
       from: null,
       to: null,
-      durationInMs: 500,
-      delayInMs: 0,
+      duration: 0.5,
+      delay: 0,
       ease: easeInOutCubic,
     }
-    ui.scalar(positionOptions, 'durationInMs', { min: 100, step: 1 })
-    ui.scalar(positionOptions, 'delayInMs', { min: 0, step: 1 })
+    ui.scalar(positionOptions, 'duration', { min: 0.1, step: 0.1 })
+    ui.scalar(positionOptions, 'delay', { min: 0, step: 1 })
     ui.select(positionOptions, 'ease', {
       options: [
         { label: 'Linear', value: easeLinear },
@@ -143,16 +144,16 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
         { label: 'InOutCubic', value: easeInOutCubic },
       ],
     })
-    ui.button('Move', { onClick: () => game.tweenPosition(positionOptions) })
+    ui.button('Move', { onclick: () => game.tweenPosition(positionOptions) })
     const scaleOptions: TweenOptions<any> = {
       from: null,
       to: null,
-      durationInMs: 500,
-      delayInMs: 0,
+      duration: 0.5,
+      delay: 0,
       ease: easeInOutCubic,
     }
-    ui.scalar(scaleOptions, 'durationInMs', { min: 100, step: 1 })
-    ui.scalar(scaleOptions, 'delayInMs', { min: 0, step: 1 })
+    ui.scalar(scaleOptions, 'duration', { min: 100, step: 1 })
+    ui.scalar(scaleOptions, 'delay', { min: 0, step: 1 })
     ui.select(scaleOptions, 'ease', {
       options: [
         { label: 'Linear', value: easeLinear },
@@ -161,7 +162,7 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
         { label: 'InOutCubic', value: easeInOutCubic },
       ],
     })
-    ui.button('Scale', { onClick: () => game.tweenScale(scaleOptions) })
+    ui.button('Scale', { onclick: () => game.tweenScale(scaleOptions) })
   })
 
   game.run()

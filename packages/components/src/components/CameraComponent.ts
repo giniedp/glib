@@ -1,6 +1,6 @@
 import { GameComponent, GameEntity } from '@gglib/ecs'
 import { Device } from '@gglib/graphics'
-import { SpaceBasis, DEGREE_TO_RAD, Mat4, IVec3, Vec4, Ray, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, Mat4, Ray, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
 import { LayerMask, type CameraData } from '@gglib/render'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
 import { TransformComponent } from './TransformComponent'
@@ -184,25 +184,33 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
    * Updates the `view`, `projection` and `viewProjection` matrices
    */
   public updateBehavior(): void {
-    if (this.type === 'perspective') {
-      this.projection.initPerspectiveFieldOfView(
-        this.perspectiveFov,
-        this.aspect,
-        this.near,
-        this.far,
-        this.device.ndcMinZ,
-        this.reversedZ,
-      )
-    }
-    if (this.type === 'orthographic') {
-      this.projection.initOrthographic(
-        this.orthographicScale,
-        this.orthographicScale / this.aspect,
-        this.near,
-        this.far,
-        this.device.ndcMinZ,
-        this.reversedZ,
-      )
+    switch (this.type) {
+      case 'custom': {
+        // custom projection is only initialized during configure
+        break
+      }
+      case 'perspective': {
+        this.projection.initPerspectiveFieldOfView(
+          this.perspectiveFov,
+          this.aspect,
+          this.near,
+          this.far,
+          this.device.ndcMinZ,
+          this.reversedZ,
+        )
+        break
+      }
+      case 'orthographic': {
+        this.projection.initOrthographic(
+          this.orthographicScale,
+          this.orthographicScale / this.aspect,
+          this.near,
+          this.far,
+          this.device.ndcMinZ,
+          this.reversedZ,
+        )
+        break
+      }
     }
     Mat4.invert(this.world, this.view)
     Mat4.premultiply(this.view, this.space.toViewSpace, this.view)
@@ -212,7 +220,7 @@ export class CameraComponent implements CameraData, GameComponent, BehaviorCompo
   public createRay(xNormalized: number, yNormalized: number): Ray {
     const ndcX = xNormalized * 2.0 - 1.0
     const ndcY = 1.0 - yNormalized * 2.0
-    const invViewProj = Mat4.invert(this.viewProjection)
+    const invViewProj = Mat4.invert(this.viewProjection, Mat4.$0)
     const nearZ = this.reversedZ ? 1.0 : this.device.ndcMinZ
     const farZ = this.reversedZ ? 0.0 : 1.0
     const near = invViewProj.transformP3(Vec4.create(ndcX, ndcY, nearZ, 1))

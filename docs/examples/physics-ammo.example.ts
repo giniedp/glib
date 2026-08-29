@@ -16,6 +16,7 @@ import { KeyboardKeys } from '@gglib/game'
 import { BasicMaterial, Color, CommonInputs, Device, PlatformId, TRUE } from '@gglib/graphics'
 import { MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, vec3, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import Ammo from 'ammojs-typed'
 import { mountUi } from 'tweak-ui'
 
@@ -26,9 +27,6 @@ export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: Platfor
     game.run()
 
     mountUi(tools, (ui) => {
-      ui.bool(game.loop, 'useFixedTimeStep', {
-        label: 'Fixed Time Step',
-      })
       ui.button('Reset Cubes', {
         onclick: () => game?.resetCubes(),
       })
@@ -55,16 +53,16 @@ class Game extends EcsGame {
   }
 
   public override onInitialize(): void {
-    this.loop.useFixedTimeStep = false
-
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-    this.renderer.clearColor = Color.CornflowerBlue
-    this.renderer.autoSrgb = false
-    this.renderer.inputs.set(CommonInputs.Global.AmbientColor, Color.Black)
-    this.renderer.inputs.set(CommonInputs.Global.AmbientColorTop, Color.White)
-    this.renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1, 1, 1)))
+
+    const renderer = this.world.getSystem(Renderer)
+    renderer.clearColor = Color.CornflowerBlue
+    renderer.autoSrgb = false
+    renderer.inputs.set(CommonInputs.Global.AmbientColor, Color.Black)
+    renderer.inputs.set(CommonInputs.Global.AmbientColorTop, Color.White)
+    renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1, 1, 1)))
 
     this.createCamera()
     this.createLight()
@@ -75,7 +73,7 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: vec3(0, 10, 25),
       }),
@@ -86,13 +84,13 @@ class Game extends EcsGame {
         new WASDComponent(),
       ],
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createLight() {
     const entity = this.createEntity({
       name: 'light',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({}),
       components: [new LightComponent()],
     })
@@ -102,7 +100,7 @@ class Game extends EcsGame {
   public createObjects() {
     const ground = this.createEntity({
       name: 'Ground',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         scale: vec3(50, 50, 50),
       }),
@@ -114,7 +112,7 @@ class Game extends EcsGame {
     for (let i = 0; i < boxCount; i++) {
       const cube = this.createEntity({
         name: `Cube ${i}`,
-        parent: this.scene,
+        parent: this.scene.entity,
         transform: new TransformComponent({}),
         components: [new ModelComponent(), new PhysicsProxy(1, 2), new CubeComponent()],
       })
@@ -123,13 +121,15 @@ class Game extends EcsGame {
   }
 
   public override onUpdate(time: number, dt: number) {
-    this.view.camera.projection.initPerspectiveFieldOfView(
-      70 * DEGREE_TO_RAD,
-      this.world.getSystem(Device).output.aspectRatio,
-      0.01,
-      100,
-      this.device.ndcMinZ,
-    )
+    this.scene
+      .getView(0)
+      .camera.projection.initPerspectiveFieldOfView(
+        70 * DEGREE_TO_RAD,
+        this.world.getSystem(Device).output.aspectRatio,
+        0.01,
+        100,
+        this.device.ndcMinZ,
+      )
     if (this.keyboard.justReleased(KeyboardKeys.Space)) {
       this.resetCubes()
     }

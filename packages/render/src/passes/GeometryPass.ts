@@ -4,9 +4,15 @@ import { RenderChannel } from '../RenderChannel'
 import { RenderListMode } from '../RenderListMode'
 import { RenderContext, RenderPass } from '../types'
 
+export interface GeometryPassOptions {
+  order?: number
+  enableLinearDepthMrt?: boolean
+}
+
 export class GeometryPass implements RenderPass {
   public order = 0
   public name: string = 'GeometryPass'
+  public enableLinearDepthMrt = false
 
   private msaaColor: FrameResource
   private msaaDepth: FrameResource
@@ -14,7 +20,10 @@ export class GeometryPass implements RenderPass {
   private linearDepthRes: FrameResource
   private outColor: FrameResource
 
-  public enableLinearDepthMrt = false
+  public constructor(options?: GeometryPassOptions) {
+    this.order = options?.order ?? this.order
+    this.enableLinearDepthMrt = options?.enableLinearDepthMrt ?? this.enableLinearDepthMrt
+  }
 
   public setup(frame: FrameGraph<RenderPass>, ctx: RenderContext): void {
     frame.addPass(this)

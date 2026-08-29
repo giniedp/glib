@@ -8,24 +8,31 @@ fn coordToHeightScale(t: f32) -> f32 {
 }
 
 fn coordToCosAngle(t: f32) -> f32 {
-  return 1.0 - 2.0 * t;
+  return 2.0 * t;
 }
 
 fn cosAngleToCoord(cosAngle: f32) -> f32 {
-  return 0.5 - cosAngle * 0.5;
+  return cosAngle * 0.5;
 }
 
-fn latLonToDir(latitude: f32, longitude: f32) -> vec3f {
+fn latLonToDir(
+  latitude: f32,
+  longitude: f32
+) -> vec3f {
   let cosLat = cos(latitude);
   let sinLat = sin(latitude);
   let cosLon = cos(longitude);
   let sinLon = sin(longitude);
-  return vec3f(cosLat * cosLon, cosLat * sinLon, sinLat);
+  return vec3f(
+    sinLat * cosLon,
+    sinLat * sinLon,
+    cosLat
+  );
 }
 
 fn uvToDir(uv: vec2f) -> vec3f {
-  let latitude  = (1.0 - uv.y) * PI * 0.5;
-  let longitude = (1.0 - 2.0 * uv.x) * PI;
+  let latitude  = PI * 0.5 * uv.y;
+  let longitude = PI * (1.0 - 2.0 * uv.x);
   return latLonToDir(latitude, longitude);
 }
 

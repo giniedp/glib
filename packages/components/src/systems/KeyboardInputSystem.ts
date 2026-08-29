@@ -1,4 +1,4 @@
-import { GameSystem, GameSystemToken, GameWorld } from '@gglib/ecs'
+import { GameSystem, IsGameSystem, GameWorld } from '@gglib/ecs'
 import { copyKeyboardState, Keyboard, type KeyboardOptions } from '@gglib/game'
 
 /**
@@ -7,7 +7,7 @@ import { copyKeyboardState, Keyboard, type KeyboardOptions } from '@gglib/game'
  * @public
  */
 export class KeyboardInputSystem extends Keyboard implements GameSystem {
-  public get [GameSystemToken](): boolean {
+  public get [IsGameSystem](): boolean {
     return true
   }
 
@@ -23,13 +23,11 @@ export class KeyboardInputSystem extends Keyboard implements GameSystem {
     //
   }
 
-  public render(time: number, dt: number): void {
-    //
-  }
-  /**
-   * Swaps the `oldState` and `newState` properties and updates the `newState`
-   */
   public override update() {
     super.update()
+  }
+
+  public render(time: number, dt: number): void {
+    //
   }
 }

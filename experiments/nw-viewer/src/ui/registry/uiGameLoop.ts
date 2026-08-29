@@ -1,4 +1,4 @@
-import type { GameLoop } from '@gglib/components'
+import type { GameLoop } from '@gglib/game'
 import type { FactoryComponent } from 'mithril'
 import { uiBoolWidget, uiScalarWidget } from 'tweak-ui'
 import icon from '../icons/timer.svg?raw'

@@ -1,9 +1,10 @@
-import { EcsGame, CameraComponent, CopyPositionConstraint, ModelComponent, TransformComponent } from '@gglib/components'
+import { CameraComponent, CopyPositionConstraint, EcsGame, ModelComponent, TransformComponent } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
-import { MS_TO_SEC, vec3 } from '@gglib/math'
+import { vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -28,10 +29,7 @@ class Game extends EcsGame {
   private leader!: GameEntity
 
   protected override onInitialize() {
-    console.assert(!!this.scene, 'scene must exist')
-    console.assert(!!this.view, 'view must exist')
-
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
@@ -43,20 +41,20 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
         position: vec3(0, 0, 8),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createObjects() {
     // Leader, orbits in the XY plane, drives all followers
     this.leader = this.createEntity({
       name: 'leader',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new ModelComponent(), new CubeLoader('yellow')],
       transform: new TransformComponent({
         position: vec3(0, 0, 0),
@@ -68,7 +66,7 @@ class Game extends EcsGame {
     // Copies X only, slides left/right with the leader, stays at fixed Y
     this.createEntity({
       name: 'x-follower',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('red'),
@@ -90,7 +88,7 @@ class Game extends EcsGame {
     // Copies Y only, bobs up/down with the leader, stays at fixed X
     this.createEntity({
       name: 'y-follower',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('green'),
@@ -112,7 +110,7 @@ class Game extends EcsGame {
     // Copies X and Y with low weight, follows the full orbit but lags visibly behind
     this.createEntity({
       name: 'lag-follower',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('blue'),
@@ -135,7 +133,7 @@ class Game extends EcsGame {
   private t = 0
   public override onUpdate(time: number, dt: number): void {
     super.onUpdate(time, dt)
-    this.t += dt * MS_TO_SEC * settings.speed
+    this.t += dt * settings.speed
     this.leader
       .getTransform<TransformComponent>()!
       .setPositionX(Math.cos(this.t) * settings.radius)

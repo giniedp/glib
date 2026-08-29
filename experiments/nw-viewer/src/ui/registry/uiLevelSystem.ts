@@ -19,7 +19,7 @@ export default {
   expandable: () => true,
   children: (it: LevelSystem) => {
     return (function* () {
-      yield it.timeOfDay
+      // yield it.timeOfDay
     })()
   },
 } satisfies UiAnnotation<LevelSystem>

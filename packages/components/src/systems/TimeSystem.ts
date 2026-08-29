@@ -9,19 +9,11 @@ export interface Clock {
   /**
    * Elapsed time in seconds since last call to update or draw
    */
-  elapsed: number
+  delta: number
   /**
    * The total accumulated time in seconds
    */
   total: number
-  /**
-   * Elapsed time in milliseconds since last call to update or draw
-   */
-  elapsedMs: number
-  /**
-   * The total accumulated time in milliseconds
-   */
-  totalMs: number
 
   /**
    * Reference time when update was called
@@ -50,10 +42,8 @@ export interface GameTime extends Clock {
 }
 
 function resetClock(clock: Clock) {
-  clock.elapsed = 0
-  clock.elapsedMs = 0
+  clock.delta = 0
   clock.total = 0
-  clock.totalMs = 0
 }
 
 /**
@@ -85,10 +75,8 @@ export class TimeSystem extends GameSystem {
    * The real time clock
    */
   public readonly wall: Clock = {
-    elapsed: 0,
-    elapsedMs: 0,
+    delta: 0,
     total: 0,
-    totalMs: 0,
     renderedAt: 0,
     updatedAt: 0,
   }
@@ -99,10 +87,8 @@ export class TimeSystem extends GameSystem {
   public readonly game: GameTime = {
     name: 'game',
     factor: 1,
-    elapsed: 0,
-    elapsedMs: 0,
+    delta: 0,
     total: 0,
-    totalMs: 0,
     renderedAt: 0,
     updatedAt: 0,
   }
@@ -167,11 +153,10 @@ export class TimeSystem extends GameSystem {
    */
   public override update(time: number, dt: number) {
     this.time = time
-    const realTime = time
 
-    this.wall.elapsedMs = realTime - this.wall.updatedAt
-    this.wall.totalMs = realTime - this.resetAt
-    this.wall.updatedAt = realTime
+    this.wall.delta = time - this.wall.updatedAt
+    this.wall.total = time - this.resetAt
+    this.wall.updatedAt = time
 
     this.tickUpdateClick(this.game, dt * this.game.factor)
     for (const key in this.clocks) {
@@ -184,11 +169,9 @@ export class TimeSystem extends GameSystem {
    * Updates all clocks
    */
   public override render(time: number, dt: number) {
-    const realTime = time
-
-    this.wall.elapsedMs = realTime - this.wall.renderedAt
-    this.wall.totalMs = realTime - this.resetAt
-    this.wall.renderedAt = realTime
+    this.wall.delta = time - this.wall.renderedAt
+    this.wall.total = time - this.resetAt
+    this.wall.renderedAt = time
 
     this.tickRenderClock(this.game, dt * this.game.factor)
     for (const key in this.clocks) {
@@ -197,19 +180,15 @@ export class TimeSystem extends GameSystem {
     }
   }
 
-  private tickUpdateClick(clock: Clock, ms: number) {
-    clock.elapsedMs = ms
-    clock.totalMs = clock.updatedAt + ms
-    clock.elapsed = clock.elapsedMs * 0.001
-    clock.total = clock.totalMs * 0.001
-    clock.updatedAt = clock.totalMs
+  private tickUpdateClick(clock: Clock, delta: number) {
+    clock.delta = delta
+    clock.total = clock.updatedAt + delta
+    clock.updatedAt = clock.total
   }
 
-  private tickRenderClock(clock: Clock, ms: number) {
-    clock.elapsedMs = ms
-    clock.totalMs = clock.renderedAt + ms
-    clock.elapsed = clock.elapsedMs * 0.001
-    clock.total = clock.totalMs * 0.001
-    clock.renderedAt = clock.totalMs
+  private tickRenderClock(clock: Clock, delta: number) {
+    clock.delta = delta
+    clock.total = clock.renderedAt + delta
+    clock.renderedAt = clock.total
   }
 }

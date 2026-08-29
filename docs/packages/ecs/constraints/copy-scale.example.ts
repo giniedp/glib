@@ -1,16 +1,17 @@
 import {
-  EcsGame,
   CameraComponent,
   CopyScaleConstraint,
+  EcsGame,
   LightComponent,
   ModelComponent,
   TransformComponent,
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
-import { GLTF, MTL, OBJ } from '@gglib/loaders'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
+import { GLTF } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, vec3, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform })
@@ -25,7 +26,7 @@ class Game extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createLight()
     this.createCamera()
@@ -35,7 +36,7 @@ class Game extends EcsGame {
   private createLight() {
     this.createEntity({
       name: 'light',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new LightComponent()],
       transform: new TransformComponent({
         rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
@@ -46,20 +47,20 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
         position: vec3(0, 0, 5),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createObjects() {
     // Leader — X and Y scale oscillate on different phases, making each axis readable
     this.leader = this.createEntity({
       name: 'leader',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new ModelComponent(), new CubeLoader('yellow')],
       transform: new TransformComponent({
         position: vec3(0, 4, -8),
@@ -71,7 +72,7 @@ class Game extends EcsGame {
     // Copies X only — pulses horizontally (sin phase), height stays fixed
     this.createEntity({
       name: 'x-follower',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('red'),
@@ -93,7 +94,7 @@ class Game extends EcsGame {
     // Copies Y only — pulses vertically (cos phase), width stays fixed
     this.createEntity({
       name: 'y-follower',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('green'),
@@ -115,7 +116,7 @@ class Game extends EcsGame {
     // Copies all axes — full mirror of the leader
     this.createEntity({
       name: 'full-follower',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('blue'),
@@ -136,11 +137,10 @@ class Game extends EcsGame {
   }
 
   public override onUpdate(time: number, dt: number): void {
-    const t = time / 1000
     this.leader
       .getTransform<TransformComponent>()!
-      .setScaleX(1 + 0.8 * Math.abs(Math.sin(t)))
-      .setScaleY(1 + 0.8 * Math.abs(Math.cos(t)))
+      .setScaleX(1 + 0.8 * Math.abs(Math.sin(time)))
+      .setScaleY(1 + 0.8 * Math.abs(Math.cos(time)))
       .setScaleZ(1)
   }
 }

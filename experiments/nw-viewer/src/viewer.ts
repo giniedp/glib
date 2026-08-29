@@ -3,22 +3,20 @@ import {
   EcsGame,
   KeyboardInputSystem,
   MouseInputSystem,
-  SceneComponent,
   SchedulerSystem,
-  SpatialComponent,
   SpatialSystem,
   TransformComponent,
   WASDComponent,
   type SceneStats,
   type SchedulerStats,
 } from '@gglib/components'
-import { type GameEntity, type GameQuery } from '@gglib/ecs'
+import { type GameEntity } from '@gglib/ecs'
+import { TonemapOperator } from '@gglib/effects'
 import { Color, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, RAD_TO_DEGREE, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
-import { BloomPass, VignettePass, type GeometryPass, type RendererStats } from '@gglib/render'
+import { BloomPass, GeometryPass, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
-
 import { redrawUi } from 'tweak-ui'
 import { getLevelListUrl } from './api'
 import { REGION_SIZE, REGION_VISIBILITY } from './constants'
@@ -28,6 +26,7 @@ import { DebugLayer, DebugShapeComponent } from './game/debug/DebugShapeComponen
 import { DebugShapeSystem } from './game/debug/DebugShapeSystem'
 import { RaycastSystem, type RaySelection } from './game/debug/RaycastSystem'
 import { LevelSystem } from './game/level/LevelSystem'
+import { SkyLightSystem } from './game/level/SkyLightSystem'
 import { RegionSystem } from './game/region/RegionSystem'
 import { SliceSystem } from './game/slice/SliceSystem'
 import { TerrainSystem } from './game/terrain/TerrainSystem'
@@ -67,7 +66,6 @@ export class NwViewer extends EcsGame {
   public onLevelOptionsLoaded = this.events.channel(NwViewer.onLevelOptionsLoaded)
 
   public selection: GameEntity
-  public spatialQuery: GameQuery
 
   public debug: number = 0
   public constructor(options: NwViewerOptions) {
@@ -85,23 +83,55 @@ export class NwViewer extends EcsGame {
       platform: 'webgpu',
       autosize: true,
     })
+    attachOverlay(options.element, this)
+  }
 
-    this.renderer.autoSrgb = true
-    this.renderer.clearColor = Color.Black.toLinear()
-    const geometryPass = this.renderer.pipeline.passes[0] as GeometryPass
-    geometryPass.enableLinearDepthMrt = true
-    this.renderer.pipeline.passes.push(
-      new BloomPass(this.device, {
-        enabled: true,
-        threshold: 1,
-        knee: 0.5,
-        intensity: 0.65,
-        steps: 4,
+  protected override onCreate(): void {
+    this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
+    this.world.addSystem(new ContentService())
+    this.world.addSystem(new KeyboardInputSystem())
+    this.world.addSystem(new MouseInputSystem({}))
+    this.world.addSystem(new TerrainSystem())
+    this.world.addSystem(new RegionSystem())
+    this.world.addSystem(new CapitalSystem())
+    this.world.addSystem(new SliceSystem())
+    this.world.addSystem(new SkyLightSystem())
+    this.world.addSystem(new LevelSystem())
+    this.world.addSystem(new DebugShapeSystem())
+    this.world.addSystem(new RaycastSystem())
+    this.world.addSystem(new SpatialSystem())
+    this.world.addSystem(new SchedulerSystem({}))
+    this.world.addSystem(
+      new Renderer(this.device, {
+        autoSrgb: false,
+        clearColor: Color.Black.toLinear(),
+        pipeline: {
+          passes: [
+            new GeometryPass({
+              enableLinearDepthMrt: true,
+            }),
+            new BloomPass(this.device, {
+              enabled: true,
+              threshold: 1,
+              knee: 0.5,
+              intensity: 0.5,
+              steps: 6,
+              mode: 'jimnez',
+            }),
+            new TonemapPass(this.device, {
+              enabled: true,
+              exposure: 1,
+              operator: TonemapOperator.UCHIMURA,
+              srgb: true,
+            }),
+          ],
+        },
       }),
-      new VignettePass(this.device, {}),
     )
+  }
 
-    this.scheduler = this.world.getSystem(SchedulerSystem)
+  protected override onInitialize(): void {
+    super.onInitialize()
 
     GLTF.Loader.registerExtension(NwMaterialExtension)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
@@ -111,9 +141,11 @@ export class NwViewer extends EcsGame {
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
 
-    const camera = this.createEntity({
+    this.scheduler = this.world.getSystem(SchedulerSystem)
+
+    this.camera = this.createEntity({
       name: 'Camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
       }),
@@ -128,15 +160,11 @@ export class NwViewer extends EcsGame {
         }),
         new WASDComponent(),
       ],
-    })
-    this.camera = camera.component(CameraComponent)
+    }).component(CameraComponent)
 
-    this.view.camera = camera.component(CameraComponent)
-
-    this.spatialQuery = this.world.query({ scope: 'active', required: [SpatialComponent] })
     this.selection = this.world.createEntity({
       name: 'Selection',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
       }),
@@ -150,6 +178,8 @@ export class NwViewer extends EcsGame {
       ],
     })
 
+    this.scene.getView(0).camera = this.camera
+
     const raycast = this.world.getSystem(RaycastSystem)
     raycast.camera = this.camera
     raycast.onSelect.add((selection) => {
@@ -157,24 +187,6 @@ export class NwViewer extends EcsGame {
     })
 
     this.world.getSystem(LevelSystem).camera = this.camera
-
-    attachOverlay(options.element, this)
-  }
-
-  protected override onCreate(): void {
-    this.world.addSystem(SpaceBasis.Z_UP_POS_Y)
-    this.world.addSystem(new ContentService())
-    this.world.addSystem(new KeyboardInputSystem())
-    this.world.addSystem(new MouseInputSystem({}))
-    this.world.addSystem(new TerrainSystem())
-    this.world.addSystem(new RegionSystem())
-    this.world.addSystem(new CapitalSystem())
-    this.world.addSystem(new SliceSystem())
-    this.world.addSystem(new LevelSystem())
-    this.world.addSystem(new DebugShapeSystem())
-    this.world.addSystem(new RaycastSystem())
-    this.world.addSystem(new SpatialSystem())
-    this.world.addSystem(new SchedulerSystem({}))
   }
 
   override onBeginRun() {
@@ -184,9 +196,24 @@ export class NwViewer extends EcsGame {
   }
 
   override onBeginUpdate(time: number, dt: number): void {
+    super.onBeginUpdate(time, dt)
     this.camera.aspect = this.device.output.aspectRatio
-    this.scheduler.updatePriorities(this.view.camera, time)
-    this.renderer.inputs.set(InputSlots.Global.Debug, this.debug)
+    this.scheduler.updatePriorities(this.camera, time)
+    this.world.getSystem(Renderer).inputs.set(InputSlots.Global.Debug, this.debug)
+  }
+
+  public frameTime = 0
+  override onEndDraw(time: number, dt: number): void {
+    super.onEndDraw(time, dt)
+    this.frameTime = dt
+    this.deviceStats = this.device.stats(this.deviceStats)
+    this.schedulerStats = this.scheduler.instance.getStats(this.schedulerStats)
+    this.sceneStats = this.scene.stats(this.sceneStats)
+    this.renderStats = this.world.getSystem(Renderer).stats(this.renderStats)
+  }
+
+  public dispose() {
+    this.stop()
   }
 
   private updateSelection(selection: RaySelection) {
@@ -208,20 +235,6 @@ export class NwViewer extends EcsGame {
 
     console.log(...this.logTag, 'Selected entity', selection)
     this.onRaySelection.emit(selection.entity)
-  }
-
-  public frameTime = 0
-  override onEndDraw(time: number, dt: number): void {
-    super.onEndDraw(time, dt)
-    this.frameTime = dt
-    this.deviceStats = this.device.stats(this.deviceStats)
-    this.schedulerStats = this.scheduler.instance.getStats(this.schedulerStats)
-    this.sceneStats = this.scene.component(SceneComponent).stats(this.sceneStats)
-    this.renderStats = this.renderer.stats(this.renderStats)
-  }
-
-  public dispose() {
-    this.stop()
   }
 
   public loadLevel(name: string) {
@@ -310,9 +323,14 @@ export class NwViewer extends EcsGame {
   }
 
   private attachRoutes() {
-    this.loadLevelFromUrl(window.location.href)
-
     const camera = this.camera
+    const params = new URL(window.location.href).searchParams
+    this.teleport(
+      Number(params.get('x') ?? 1024) || 0,
+      Number(params.get('y') ?? 1024) || 0,
+      Number(params.get('z') ?? 256) || 0,
+      (Number(params.get('w') ?? 0) || 0) * DEGREE_TO_RAD,
+    )
 
     setInterval(() => {
       const t = camera.world.getTranslation(Vec3.$0)
@@ -334,19 +352,6 @@ export class NwViewer extends EcsGame {
       url.searchParams.set(key, value)
     })
     window.location.href = url.toString()
-  }
-
-  public loadLevelFromUrl(value: string) {
-    const params = new URL(value, window.location.href).searchParams
-    if (params.has('level')) {
-      this.loadLevel(params.get('level'))
-    }
-    this.teleport(
-      Number(params.get('x') ?? 1024) || 0,
-      Number(params.get('y') ?? 1024) || 0,
-      Number(params.get('z') ?? 256) || 0,
-      (Number(params.get('w') ?? 0) || 0) * DEGREE_TO_RAD,
-    )
   }
 
   public loadModel(model: string, material?: string, transform?: number[]) {

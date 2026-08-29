@@ -27,11 +27,11 @@ export interface TweenOptions<T> {
   /**
    * The delay in ms when interpolation should start
    */
-  delayInMs?: number
+  delay?: number
   /**
    * The duration of the animation (after delay)
    */
-  durationInMs: number
+  duration: number
   /**
    * The ease function
    */
@@ -58,11 +58,11 @@ export class Tween implements IVec4 {
   /**
    * The delay in ms when interpolation should start
    */
-  public readonly delayInMs: number
+  public readonly delay: number
   /**
    * The duration of the animation (after delay)
    */
-  public readonly durationInMs: number
+  public readonly duration: number
   /**
    * The source values
    */
@@ -136,8 +136,8 @@ export class Tween implements IVec4 {
   constructor(options: TweenOptions<number[]>) {
     this.clockName = options.clockName || null
     this.startTime = options.startTime || 0
-    this.delayInMs = options.delayInMs || 0
-    this.durationInMs = options.durationInMs || 500
+    this.delay = options.delay || 0
+    this.duration = options.duration || 500
     this.from = options.from
     this.to = options.to
     this.ease = options.ease || easeLinear
@@ -173,7 +173,7 @@ export class Tween implements IVec4 {
       return
     }
 
-    this.progressValue = clamp((timeInMs - (this.startTime + this.delayInMs)) / this.durationInMs, 0, 1)
+    this.progressValue = clamp((timeInMs - (this.startTime + this.delay)) / this.duration, 0, 1)
     this.activeValue = this.progressValue < 1
     const t = this.ease(this.progressValue)
     for (let i = 0; i < this.from.length; i++) {
@@ -229,7 +229,7 @@ export class TweenSystem extends GameSystem {
   public override update() {
     for (const tween of this.tweens) {
       const clock = tween.clockName ? this.time.getOrCreate(tween.clockName) : this.time.game
-      tween.update(clock.totalMs)
+      tween.update(clock.total)
     }
   }
 
@@ -243,7 +243,7 @@ export class TweenSystem extends GameSystem {
   }
 
   public start(options: TweenOptions<number[]>) {
-    options.startTime = this.getClock(options.clockName).totalMs
+    options.startTime = this.getClock(options.clockName).total
     const tween = new Tween(options)
     this.tweens.push(tween)
     tween.onEnd.add(() => {

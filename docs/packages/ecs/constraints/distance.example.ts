@@ -1,16 +1,17 @@
 import {
-  EcsGame,
   CameraComponent,
   DistanceConstraint,
+  EcsGame,
   LightComponent,
   ModelComponent,
   TransformComponent,
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, vec3, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform })
@@ -26,7 +27,7 @@ class Game extends EcsGame {
     this.content.registerLoader(MTL.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createLight()
     this.createCamera()
@@ -36,7 +37,7 @@ class Game extends EcsGame {
   private createLight() {
     this.createEntity({
       name: 'light',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new LightComponent()],
       transform: new TransformComponent({
         rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
@@ -47,20 +48,20 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
         position: vec3(0, 0, 3),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createObjects() {
     // Leader — sweeps left and right along X, drives all followers
     this.leader = this.createEntity({
       name: 'leader',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new ModelComponent(), new CubeLoader('yellow')],
       transform: new TransformComponent({
         position: vec3(0, 0, -8),
@@ -72,7 +73,7 @@ class Game extends EcsGame {
     // Rigid leash — weight=1 snaps the target to exactly maxDistance every frame
     this.createEntity({
       name: 'rigid-leash',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('red'),
@@ -94,7 +95,7 @@ class Game extends EcsGame {
     // so the target stretches and trails behind the source before settling at maxDistance
     this.createEntity({
       name: 'elastic-leash',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('green'),
@@ -116,7 +117,7 @@ class Game extends EcsGame {
     // Starts slightly off the source path so the push direction is always well-defined.
     this.createEntity({
       name: 'repulsion',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new ModelComponent(),
         new CubeLoader('blue'),
@@ -138,7 +139,7 @@ class Game extends EcsGame {
   public override onUpdate(time: number, dt: number): void {
     this.leader
       .getTransform<TransformComponent>()!
-      .setPositionX(8 * Math.sin(time / 1500))
+      .setPositionX(8 * Math.sin(time))
       .setPositionY(0)
       .setPositionZ(-8)
   }

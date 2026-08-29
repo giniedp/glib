@@ -166,11 +166,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const proj = Mat4.createIdentity()
 
   function frame(ctx: TaskContext) {
-    params.frameTime = ctx.dt
+    params.frameTime = ctx.delta
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
 
-    world.rotateY(-10 * DEGREE_TO_RAD * ctx.dt * 0.001)
+    world.rotateY(-10 * DEGREE_TO_RAD * ctx.delta)
     proj.initPerspectiveFieldOfView(
       params.fieldOfView * DEGREE_TO_RAD,
       rtScene.width / rtScene.height,

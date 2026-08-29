@@ -171,7 +171,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
     vmod.normal   = input.normal.xyz;
     vmod.color    = input.color.rgb;
     vmod.texture  = input.texture.xy;
-    vmod.time     = frame.elapsedTime / 1000.0;
+    vmod.time     = frame.elapsedTime;
     vmod.typ      = u32(material.deformWave1.w);
     vPos = vertexModify(vmod);
   }
@@ -242,7 +242,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
 
 @fragment
 fn fs_main(input: FragmentInput) -> FragmentOutput {
-  let time = frame.elapsedTime / 1000.0;
+  let time = frame.elapsedTime;
   let toEye = normalize(input.toEye);
   let view = -toEye;
 
@@ -473,7 +473,7 @@ fn inverseScaleMatrix(worldMat: mat3x3f) -> mat3x3f {
 fn fxSinWave( pos: vec3f, amp: f32, freq: f32, speed: f32, phase: f32, axis: f32, normal: vec3f ) -> vec3f {
   var newPos = vec3f(0.0, 0.0, 0.0);
 
-  let sinWave = amp * sin(pos * freq + phase + (frame.elapsedTime / 1000.0 * speed));
+  let sinWave = amp * sin(pos * freq + phase + (frame.elapsedTime * speed));
 
   if axis >= 0.0 && axis < 1.0 {
     newPos.x = sinWave.x * normal.x;

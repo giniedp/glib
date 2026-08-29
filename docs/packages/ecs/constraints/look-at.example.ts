@@ -1,6 +1,6 @@
 import {
-  EcsGame,
   CameraComponent,
+  EcsGame,
   LightComponent,
   LookAtConstraint,
   ModelComponent,
@@ -9,9 +9,10 @@ import {
 import { ContentLoader } from '@gglib/content'
 
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, SpaceBasis, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform, autosize: true })
@@ -27,7 +28,7 @@ class Game extends EcsGame {
     this.content.registerLoader(MTL.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createLight()
     this.createCamera()
@@ -37,7 +38,7 @@ class Game extends EcsGame {
   private createLight() {
     this.createEntity({
       name: 'light',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new LightComponent()],
       transform: new TransformComponent({
         rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
@@ -48,7 +49,7 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: Vec3.create(0, 0, 0),
         keepWorld: true,
@@ -59,19 +60,19 @@ class Game extends EcsGame {
         }),
       ],
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createObjects() {
     this.entity1 = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: Vec3.create(0, -3, -10),
       }),
       components: [new ModelComponent(), new CubeLoader('yellow')],
     })
     this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: Vec3.create(0, 5, -10),
       }),
@@ -88,7 +89,7 @@ class Game extends EcsGame {
       ],
     })
     this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: Vec3.create(-10, 0, -10),
       }),
@@ -105,7 +106,7 @@ class Game extends EcsGame {
       ],
     })
     this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       transform: new TransformComponent({
         position: Vec3.create(10, 0, -10),
       }),
@@ -126,9 +127,9 @@ class Game extends EcsGame {
   override onUpdate(time: number, dt: number) {
     this.entity1
       .getTransform<TransformComponent>()!
-      .setPositionX(Math.sin(time / 1000) * 8)
-      .setPositionY(Math.cos(time / 1000) * 5 - 5)
-      .setPositionZ(Math.cos(time / 1000) * 5 - 15)
+      .setPositionX(Math.sin(time) * 8)
+      .setPositionY(Math.cos(time) * 5 - 5)
+      .setPositionZ(Math.cos(time) * 5 - 15)
   }
 }
 

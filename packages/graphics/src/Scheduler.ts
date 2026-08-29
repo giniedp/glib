@@ -1,8 +1,26 @@
+import { loop } from '@gglib/utils'
+
 export type TaskFn<T = unknown> = (context: TaskContext<T>) => void
 export interface TaskContext<T = unknown> {
+  /**
+   * Time in seconds
+   */
   time: number
-  dt: number
+  /**
+   * Delta time in seconds
+   */
+  delta: number
+  /**
+   * Marks the task as complete with given result value
+   *
+   * @param value
+   */
   complete(value: T): void
+  /**
+   * Cancels the task with given reason or error
+   *
+   * @param reason
+   */
   cancel(reason?: any): void
 }
 
@@ -27,7 +45,7 @@ export class Task<T = unknown> {
     this.unschedule = options.unschedule
     this.context = {
       time: 0,
-      dt: 0,
+      delta: 0,
       complete: (value: T) => this.complete(value),
       cancel: (reason?: any) => this.cancel(reason),
     }
@@ -114,7 +132,7 @@ export class Scheduler {
     for (const task of this.tasks) {
       try {
         task.context.time = time
-        task.context.dt = dt
+        task.context.delta = dt
         task.work(task.context)
       } catch (error) {
         task.context.cancel(error)
@@ -140,69 +158,3 @@ export class Scheduler {
     this.toUnschedule.length = 0
   }
 }
-
-export interface Loop {
-  /**
-   * Indicates if the loop is currently running
-   */
-  isRunning: boolean
-  /**
-   * Starts the loop, if not already running
-   */
-  start(): void
-  /**
-   * Stops the loop, if running
-   */
-  stop(): void
-}
-
-export function loop(frame: (timestamp: number, dt: number) => any, autostart = true): Loop {
-  let requestId: number = null
-  let timestamp: number = getTime()
-
-  function tick() {
-    const dt = getTime() - timestamp
-    timestamp += dt
-    frame(timestamp, dt)
-    requestId = requestAnimationFrame(tick)
-  }
-
-  function start() {
-    if (requestId == null) {
-      timestamp = getTime()
-      requestId = requestAnimationFrame(tick)
-    }
-  }
-
-  function stop() {
-    if (requestId != null) {
-      cancelAnimationFrame(requestId)
-      requestId = null
-    }
-  }
-
-  if (autostart) {
-    start()
-  }
-  return {
-    start,
-    stop,
-    get isRunning() {
-      return requestId != null
-    },
-  }
-}
-
-declare const process: any
-export const getTime: () => number = (() => {
-  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
-    return () => performance.now()
-  }
-
-  if (typeof process !== 'undefined' && typeof process.hrtime?.bigint === 'function') {
-    const start = process.hrtime.bigint()
-    return () => Number(process.hrtime.bigint() - start) / 1_000_000
-  }
-
-  return () => Date.now()
-})()

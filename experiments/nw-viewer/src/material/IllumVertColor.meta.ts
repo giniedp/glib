@@ -112,6 +112,7 @@ export default {
   DiffuseMap: inputSlot('', 'diffuseMap', 'texture'),
   NormalMap: inputSlot('', 'normalMap', 'texture'),
   SpecularMap: inputSlot('', 'specularMap', 'texture'),
+  EnvMap: inputSlot('', 'envMap', 'texture'),
   DetailMap: inputSlot('', 'detailMap', 'texture'),
   TranslucencyMap: inputSlot('', 'translucencyMap', 'texture'),
   HeightMap: inputSlot('', 'heightMap', 'texture'),

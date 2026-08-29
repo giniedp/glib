@@ -1,10 +1,9 @@
 import { GameSystem, GameWorld } from '@gglib/ecs'
+import { GameLoop } from '@gglib/game'
 import { Device, WebglDevice } from '@gglib/graphics'
 import { type IRect, Mat4 } from '@gglib/math'
-
 import { RenderView } from '@gglib/render'
 import { eventSource } from '@gglib/utils'
-import { GameLoop } from '../systems/GameLoop'
 
 function isSupported() {
   return 'xr' in navigator

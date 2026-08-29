@@ -1,7 +1,7 @@
 import {
-  EcsGame,
   BoundsComponent,
   CameraComponent,
+  EcsGame,
   MeshComponent,
   ModelComponent,
   OccTree,
@@ -33,16 +33,17 @@ import { ShapeMaterial } from '../../material/ShapeMaterial'
 import { MeshLoaderComponent } from '../slice/MeshLoaderComponent'
 import { TerrainSystem } from '../terrain/TerrainSystem'
 import { levelEntityOptions } from './LevelComponent'
-import { TimeOfDay } from './TimeOfDay'
+import { SkyLightSystem } from './SkyLightSystem'
 import { TimeOfDayComponent } from './TimeOfDayComponent'
 
 export class LevelSystem extends GameSystem {
   private content: ContentService
+  private sky: SkyLightSystem
   private todQuery: GameQuery
 
   public game: EcsGame
   public entity: GameEntity
-  public timeOfDay = new TimeOfDay()
+
   public camera: CameraComponent
 
   private renderer: Renderer
@@ -50,11 +51,16 @@ export class LevelSystem extends GameSystem {
   private gizmoEntity: GameEntity
 
   private logTag = lfmt.badge('#FF9DA7', 'LevelSystem')
+  private get timeOfDay() {
+    return this.sky.timeOfDay
+  }
+
   public initialize(game: GameWorld): void {
     this.game = game.getSystem(EcsGame)
     this.content = game.getSystem(ContentService)
     this.renderer = game.getSystem(Renderer)
     this.todQuery = game.query({ scope: 'active', required: [TimeOfDayComponent] })
+    this.sky = game.getSystem(SkyLightSystem)
 
     // this.skyMaterial = new SkyMaterial(device)
 
@@ -90,6 +96,7 @@ export class LevelSystem extends GameSystem {
       material.NightSkyColBase = this.timeOfDay.nightSkyHorizonColor
       material.NightSkyColDelta = this.timeOfDay.nightSkyColorDelta
       material.NightSkyZenithColShift = this.timeOfDay.nightSkyZenithColorShift
+
       material.setMoonParams(
         this.timeOfDay.moonRotationLatitude,
         this.timeOfDay.moonRotationLongitude,
@@ -99,6 +106,9 @@ export class LevelSystem extends GameSystem {
       if (this.timeOfDay.moonTexture) {
         material.MoonMap = this.timeOfDay.moonTexture
       }
+
+      material.SkyMieMap = this.sky.mieScatteringMap
+      material.SkyRayleighMap = this.sky.rayleighScatteringMap
       material.setSkylightParams(
         this.timeOfDay.skyKM,
         this.timeOfDay.skyKR,
@@ -106,7 +116,7 @@ export class LevelSystem extends GameSystem {
         this.timeOfDay.skyWaveR,
         this.timeOfDay.skyWaveG,
         this.timeOfDay.skyWaveB,
-        this.timeOfDay.sunIntensity / 1000,
+        this.timeOfDay.sunIntensity,
       )
     }
   }
@@ -121,7 +131,7 @@ export class LevelSystem extends GameSystem {
     const levelInfo = await fetchTypedRequest(baseUrl, getLevelInfoUrl(name))
 
     console.log(...this.logTag, 'Level data loaded', levelInfo)
-    this.entity = this.game.createEntity(levelEntityOptions(this.game.scene, levelInfo))
+    this.entity = this.game.createEntity(levelEntityOptions(this.game.scene.entity, levelInfo))
     this.timeOfDay.reset(levelInfo.mission?.timeOfDay || null)
     const lighting = levelInfo.mission?.environment?.lighting
     if (lighting) {
@@ -149,7 +159,7 @@ export class LevelSystem extends GameSystem {
       return
     }
 
-    const camera = this.game.view.camera as CameraComponent
+    const camera = this.game.scene.getView(0).camera as CameraComponent
     const wasd = camera.entity.component(WASDComponent)
     wasd.orbitMode = true
     wasd.radiusMax = 1000
@@ -171,7 +181,7 @@ export class LevelSystem extends GameSystem {
           alwaysRender: true,
         }),
       ],
-      parent: this.game.scene,
+      parent: this.game.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
         world: transform ? Mat4.createFromArray(transform) : Mat4.createIdentity(),
@@ -195,7 +205,7 @@ export class LevelSystem extends GameSystem {
       return
     }
 
-    const camera = this.game.view.camera as CameraComponent
+    const camera = this.game.scene.getView(0).camera as CameraComponent
     const wasd = camera.entity.component(WASDComponent)
     wasd.orbitMode = true
     wasd.radiusMax = 1000
@@ -279,7 +289,7 @@ export class LevelSystem extends GameSystem {
           }),
         }),
       ],
-      parent: this.game.scene,
+      parent: this.game.scene.entity,
       transform: new TransformComponent({
         keepWorld: true,
         world: Mat4.createIdentity(),
@@ -295,8 +305,8 @@ export class LevelSystem extends GameSystem {
     this.skyEntity = null
     this.gizmoEntity = null
     if (this.entity) {
-      this.entity.setParent(null)
       this.entity.destroy()
+      this.entity.setParent(null)
       this.entity = null
     }
   }

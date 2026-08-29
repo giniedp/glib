@@ -88,7 +88,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     if (!shader.isValid) {
       return
     }
-    world.initIdentity().rotateY((ctx.time / 1000) * 25 * DEGREE_TO_RAD)
+    world.initIdentity().rotateY(ctx.time * 25 * DEGREE_TO_RAD)
     view.initLookAt(cameraPosition, Vec3.Zero, Vec3.UnitY).invert()
     projection.initPerspectiveFieldOfView(50 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 

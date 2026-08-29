@@ -37,11 +37,11 @@ export class LevelComponent implements GameComponent {
   }
 
   public activate(): void {
-    //
+    console.log('DEACTIVATE TERRAIN')
   }
 
   public destroy(): void {
-    //
+    console.log('DESTROY TERRAIN')
   }
 
   private createTerrain() {

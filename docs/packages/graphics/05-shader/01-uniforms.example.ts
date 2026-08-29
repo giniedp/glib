@@ -46,7 +46,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     // Move the triangle along a circle. `uOffset` is not part of any vertex
     // - it is a single value shared by every vertex and pixel of this draw
     // call, recomputed every frame on the CPU.
-    const t = ctx.time / 1000
+    const t = ctx.time
     program.set('uOffset', { x: Math.cos(t) * 0.5, y: Math.sin(t) * 0.5 })
 
     // Cycle the fill color independently of the position.

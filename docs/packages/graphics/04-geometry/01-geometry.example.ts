@@ -1,5 +1,5 @@
-import { Color, createDevice, CullState, DepthState, Device, Geometry, PlatformId, TaskContext } from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, MS_TO_SEC, Vec3 } from '@gglib/math'
+import { Color, createDevice, CullState, Device, Geometry, PlatformId, TaskContext } from '@gglib/graphics'
+import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 
 export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
@@ -57,7 +57,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       return
     }
 
-    world.initIdentity().rotateY(ctx.time * MS_TO_SEC * 25 * DEGREE_TO_RAD)
+    world.initIdentity().rotateY(ctx.time * 25 * DEGREE_TO_RAD)
     view.initLookAt(cameraPosition, Vec3.Zero, Vec3.UnitY).invert()
     projection.initPerspectiveFieldOfView(50 * DEGREE_TO_RAD, device.output.aspectRatio, 0.1, 100, device.ndcMinZ)
 

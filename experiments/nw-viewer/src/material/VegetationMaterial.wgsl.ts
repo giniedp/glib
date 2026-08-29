@@ -128,7 +128,7 @@ fn vs_main(input : VertexInput) -> FragmentInput {
     vmod.normal   = input.normal.xyz;
     vmod.color    = input.color.rgb;
     vmod.texture  = input.texture.xy;
-    vmod.time     = frame.elapsedTime / 1000.0;
+    vmod.time     = frame.elapsedTime;
     vmod.typ      = u32(material.deformWave1.w);
     vPos = vertexModify(vmod);
   }

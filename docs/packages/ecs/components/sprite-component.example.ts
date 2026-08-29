@@ -1,5 +1,5 @@
-import { EcsGame, CameraComponent, SpriteComponent } from '@gglib/components'
-import { Color, PlatformId } from '@gglib/graphics'
+import { CameraComponent, EcsGame, SpriteComponent } from '@gglib/components'
+import { PlatformId } from '@gglib/graphics'
 import {} from '@gglib/loaders'
 import { mountUi } from 'tweak-ui'
 
@@ -47,14 +47,13 @@ class Game extends EcsGame {
   public rotate = 0
 
   public override onInitialize(): void {
-    this.renderer.clearColor = Color.CornflowerBlue
     this.createObject()
     this.createCamera()
   }
 
   private createObject() {
     const entity = this.createEntity({
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new SpriteComponent()],
     })
     this.sprite = entity.component(SpriteComponent)
@@ -70,7 +69,7 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new CameraComponent({
           type: 'orthographic',
@@ -81,7 +80,7 @@ class Game extends EcsGame {
         }),
       ],
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   override onUpdate(time: number, deltaTime: number): void {

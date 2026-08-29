@@ -1,16 +1,6 @@
 import { ContentLoader } from '@gglib/content'
-import {
-  boxGeometry,
-  Color,
-  CommonBlocks,
-  CommonInputs,
-  createDevice,
-  cylinderGeometry,
-  PlatformId,
-  sphereGeometry,
-  TaskContext,
-} from '@gglib/graphics'
-import { DEGREE_TO_RAD, Mat4, MT19937, vec3, Vec3 } from '@gglib/math'
+import { Color, CommonInputs, createDevice, PlatformId, sphereGeometry, TaskContext } from '@gglib/graphics'
+import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 import { createCamera, createObject, createScene } from './basics-scene'
@@ -84,7 +74,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   function frame(ctx: TaskContext) {
-    frameTime = ctx.dt
+    frameTime = ctx.delta
     device.resize()
     for (let i = 0; i < scene.views.length; i++) {
       const view = scene.views[i]
@@ -117,7 +107,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       const x = w.translationX - SIZE / 2
       const z = w.translationZ - SIZE / 2
       const r = Math.sqrt(x * x + z * z)
-      const y = Math.sin(r - ctx.time / 100) * 0.5
+      const y = Math.sin(r - ctx.time) * 0.5
       w.setTranslationY(y)
     }
 

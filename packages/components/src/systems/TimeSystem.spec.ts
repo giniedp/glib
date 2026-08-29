@@ -23,53 +23,53 @@ describe('TimeSystem', () => {
 
   it('accumulates game time', () => {
     time.update(realTime, 16)
-    expect(time.game.elapsedMs).toBe(16)
+    expect(time.game.deltaMs).toBe(16)
     expect(time.game.totalMs).toBe(16)
 
     time.update(realTime, 16)
-    expect(time.game.elapsedMs).toBe(16)
+    expect(time.game.deltaMs).toBe(16)
     expect(time.game.totalMs).toBe(32)
 
     time.update(realTime, 8)
-    expect(time.game.elapsedMs).toBe(8)
+    expect(time.game.deltaMs).toBe(8)
     expect(time.game.totalMs).toBe(40)
 
     // draw times are tracked individually
 
     time.update(realTime, 32)
-    expect(time.game.elapsedMs).toBe(32)
+    expect(time.game.deltaMs).toBe(32)
     expect(time.game.totalMs).toBe(32)
 
     time.update(realTime, 16)
-    expect(time.game.elapsedMs).toBe(16)
+    expect(time.game.deltaMs).toBe(16)
     expect(time.game.totalMs).toBe(48)
   })
 
   it('accumulates real time', () => {
     realTime = 16
     time.update(realTime, 0)
-    expect(time.wall.elapsedMs).toBe(16)
+    expect(time.wall.deltaMs).toBe(16)
     expect(time.wall.totalMs).toBe(16)
 
     realTime += 16
     time.update(realTime, 0)
-    expect(time.wall.elapsedMs).toBe(16)
+    expect(time.wall.deltaMs).toBe(16)
     expect(time.wall.totalMs).toBe(32)
 
     realTime += 8
     time.update(realTime, 0)
-    expect(time.wall.elapsedMs).toBe(8)
+    expect(time.wall.deltaMs).toBe(8)
     expect(time.wall.totalMs).toBe(40)
 
     // draw times are tracked individually
 
     time.update(realTime, 0)
-    expect(time.wall.elapsedMs).toBe(40)
+    expect(time.wall.deltaMs).toBe(40)
     expect(time.wall.totalMs).toBe(40)
 
     realTime += 8
     time.update(realTime, 0)
-    expect(time.wall.elapsedMs).toBe(8)
+    expect(time.wall.deltaMs).toBe(8)
     expect(time.wall.totalMs).toBe(48)
   })
 })

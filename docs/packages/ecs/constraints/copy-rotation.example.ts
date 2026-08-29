@@ -1,16 +1,17 @@
 import {
-  EcsGame,
   CameraComponent,
   CopyRotationConstraint,
+  EcsGame,
   LightComponent,
   ModelComponent,
   TransformComponent,
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
-import { DEGREE_TO_RAD, MS_TO_SEC, Quat, vec3, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, Quat, vec3, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -38,7 +39,7 @@ class Game extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createLight()
     this.createCamera()
@@ -48,7 +49,7 @@ class Game extends EcsGame {
   private createLight() {
     this.createEntity({
       name: 'light',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new LightComponent()],
       transform: new TransformComponent({
         rotation: Quat.create().initAxisAngle(Vec3.UnitX, 45 * DEGREE_TO_RAD),
@@ -59,20 +60,20 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
         position: vec3(0, 0, 5),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createObjects() {
     // Leader — spins freely, drives all followers
     this.leader = this.createEntity({
       name: 'leader',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new ModelComponent(), new CubeLoader('yellow')],
       transform: new TransformComponent({
         position: vec3(0, 2, -5),
@@ -92,7 +93,7 @@ class Game extends EcsGame {
 
     for (const { x, weight } of followers) {
       this.createEntity({
-        parent: this.scene,
+        parent: this.scene.entity,
         components: [
           new ModelComponent(),
           new CubeLoader('red'),
@@ -113,9 +114,9 @@ class Game extends EcsGame {
   override onUpdate(time: number, dt: number): void {
     const transform = this.leader.getTransform<TransformComponent>()!
     transform
-      .rotateAxisAngle(1, 0, 0, dt * MS_TO_SEC * settings.speedX * 120 * DEGREE_TO_RAD)
-      .rotateAxisAngle(0, 1, 0, dt * MS_TO_SEC * settings.speedY * 120 * DEGREE_TO_RAD)
-      .rotateAxisAngle(0, 0, 1, dt * MS_TO_SEC * settings.speedZ * 120 * DEGREE_TO_RAD)
+      .rotateAxisAngle(1, 0, 0, dt * settings.speedX * 120 * DEGREE_TO_RAD)
+      .rotateAxisAngle(0, 1, 0, dt * settings.speedY * 120 * DEGREE_TO_RAD)
+      .rotateAxisAngle(0, 0, 1, dt * settings.speedZ * 120 * DEGREE_TO_RAD)
   }
 }
 

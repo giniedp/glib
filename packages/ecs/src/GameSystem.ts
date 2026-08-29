@@ -10,17 +10,57 @@ export type GameSystemId<T> = Brand<number, 'GameSystemId'>
 
 const SystemIds = idProvider<GameSystemId<any>, Type<any> | AbstractType<any>>(Symbol('GameSystemId'))
 
-export const GameSystemToken = Symbol('GameSystem')
+/**
+ * A utility symbol field that allows to mark a system implementation to be an `instanceof GameSystem`
+ * even if the actual implementation does not `extend GameSystem`
+ *
+ * @public
+ * @example
+ * export class MySystem extends MyBaseClass implements GameSystem {
+ *  public get [IsGameSystem]() {
+ *    return true
+ *  }
+ * }
+ */
+export const IsGameSystem = Symbol('IsGameSystem')
+
 export abstract class GameSystem {
-  public get [GameSystemToken]() {
+  static [Symbol.hasInstance](instance: any): boolean {
+    return instance != null && !!instance[IsGameSystem]
+  }
+
+  public get [IsGameSystem]() {
     return true
   }
 
+  /**
+   * Initializes the game system
+   *
+   * @param world
+   */
   abstract initialize(world: GameWorld): void
+
+  /**
+   * Destroys the game system
+   */
   abstract destroy(): void
+
+  /**
+   * Runs the update logic of the game system
+   *
+   * @param time - time in seconds
+   * @param dt - delta taime since last update in seconds
+   */
   update(time: number, dt: number): void {
     //
   }
+
+  /**
+   * Runs the render logic of the game system
+   *
+   * @param time - time in seconds
+   * @param dt - delta taime since last update in seconds
+   */
   render(time: number, dt: number): void {
     //
   }
@@ -30,14 +70,10 @@ export function isGameSystem(value: any): value is GameSystem {
   if (value instanceof GameSystem) {
     return true
   }
-  if ((value as GameSystem)[GameSystemToken]) {
+  if ((value as GameSystem)[IsGameSystem]) {
     return true
   }
   return false
-}
-
-export interface RenderableSystem extends GameSystem {
-  render(time: number, dt: number): void
 }
 
 export class GameSystemCollection {

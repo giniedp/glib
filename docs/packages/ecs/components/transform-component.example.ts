@@ -1,16 +1,10 @@
-import {
-  EcsGame,
-  BehaviorComponent,
-  CameraComponent,
-  LightComponent,
-  ModelComponent,
-  TransformComponent,
-} from '@gglib/components'
+import { BehaviorComponent, CameraComponent, EcsGame, ModelComponent, TransformComponent } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const game = new Game({ canvas, platform, autosize: true })
@@ -24,8 +18,7 @@ class Game extends EcsGame {
     this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
-
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createCamera()
     this.createSolarSystem()
@@ -34,7 +27,7 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [
         new CameraComponent({
           type: 'perspective',
@@ -45,14 +38,14 @@ class Game extends EcsGame {
         rotation: Quat.create().initAxisAngle(Vec3.NegativeUnitX, 56 * DEGREE_TO_RAD),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createSolarSystem() {
     // Sun — at origin, slowly self-spins
     this.createEntity({
       name: 'sun',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new ModelComponent(), new BodyComponent(20)],
       transform: new TransformComponent({
         scale: Vec3.create(1.5, 1.5, 1.5),
@@ -62,7 +55,7 @@ class Game extends EcsGame {
     // Invisible pivot at origin — rotates to drive earth's orbit around the sun
     const earthOrbit = this.createEntity({
       name: 'earthOrbit',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new PivotComponent(15)],
       transform: new TransformComponent(),
     })
@@ -111,7 +104,7 @@ class PivotComponent implements GameComponent, BehaviorComponent {
   public updateBehavior(time: number): void {
     this.entity
       .getTransform<TransformComponent>()!
-      .setRotationAxisAngle(0, 1, 0, this.degreesPerSecond * (time / 1000) * DEGREE_TO_RAD)
+      .setRotationAxisAngle(0, 1, 0, this.degreesPerSecond * time * DEGREE_TO_RAD)
   }
 }
 
@@ -132,6 +125,6 @@ class BodyComponent implements GameComponent, InitializableComponent, BehaviorCo
   public updateBehavior(time: number): void {
     this.entity
       .getTransform<TransformComponent>()!
-      .setRotationAxisAngle(0, 1, 0, this.degreesPerSecond * (time / 1000) * DEGREE_TO_RAD)
+      .setRotationAxisAngle(0, 1, 0, this.degreesPerSecond * time * DEGREE_TO_RAD)
   }
 }

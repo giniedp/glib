@@ -1,10 +1,10 @@
 import { type GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
+import { KeyboardKeys } from '@gglib/game'
 import { Quat, SpaceBasis, Vec3 } from '@gglib/math'
 import { BehaviorComponent } from '../systems/BehaviorSystem'
-import { KeyboardInputSystem } from '../systems/KeyboardInput'
-import { MouseInputSystem } from '../systems/MouseInput'
+import { KeyboardInputSystem } from '../systems/KeyboardInputSystem'
+import { MouseInputSystem } from '../systems/MouseInputSystem'
 import type { TransformComponent } from './TransformComponent'
-import { KeyboardKeys } from '@gglib/game'
 
 /**
  * @public
@@ -207,9 +207,9 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
     const node = this.entity.getTransform<TransformComponent>()
     if (Math.abs(this.currentSpeed) > Number.EPSILON) {
       node.translate(
-        this.direction.x * this.currentSpeed * (dt / 1000),
-        this.direction.y * this.currentSpeed * (dt / 1000),
-        this.direction.z * this.currentSpeed * (dt / 1000),
+        this.direction.x * this.currentSpeed * dt,
+        this.direction.y * this.currentSpeed * dt,
+        this.direction.z * this.currentSpeed * dt,
       )
     } else {
       this.currentSpeed = 0
@@ -226,9 +226,9 @@ export class WASDComponent implements GameComponent, InitializableComponent, Beh
 
   private updateOrbit(dt: number) {
     this.orbitCenter.addXYZ(
-      this.direction.x * this.currentSpeed * (dt / 1000),
-      this.direction.y * this.currentSpeed * (dt / 1000),
-      this.direction.z * this.currentSpeed * (dt / 1000),
+      this.direction.x * this.currentSpeed * dt,
+      this.direction.y * this.currentSpeed * dt,
+      this.direction.z * this.currentSpeed * dt,
     )
 
     const cosV = Math.cos(this.vertical)

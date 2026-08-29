@@ -18,7 +18,7 @@ import {
   uiSplit,
 } from 'tweak-ui'
 import { DebugShapeSystem } from '../game/debug/DebugShapeSystem'
-import { LevelSystem } from '../game/level/LevelSystem'
+import { SkyLightSystem } from '../game/level/SkyLightSystem'
 import { DebugOptions } from '../material'
 import type { LevelLoadOption, NwViewer } from '../viewer'
 import { NwSceneBrowser } from './browser'
@@ -233,7 +233,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                       h(DebugShapeSystemProps, { data: viewer.world.getSystem(DebugShapeSystem) }),
                     ]),
                     uiGroup({ title: 'Time of Day' }, [
-                      h(TimeOfDayProps, { data: viewer.world.getSystem(LevelSystem).timeOfDay }),
+                      h(TimeOfDayProps, { data: viewer.world.getSystem(SkyLightSystem).timeOfDay }),
                     ]),
                   ]),
                 ],

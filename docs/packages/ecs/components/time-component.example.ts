@@ -1,18 +1,18 @@
 import {
-  EcsGame,
   BehaviorComponent,
   CameraComponent,
+  EcsGame,
   GameTime,
-  LightComponent,
   ModelComponent,
   TimeSystem,
   TransformComponent,
 } from '@gglib/components'
 import { ContentLoader } from '@gglib/content'
 import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
-import { BasicMaterial, Color, CommonInputs, PlatformId } from '@gglib/graphics'
+import { BasicMaterial, Color, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
-import { DEGREE_TO_RAD, Quat, Vec3 } from '@gglib/math'
+import { DEGREE_TO_RAD, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 export default (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -39,7 +39,7 @@ class Game extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
 
-    this.renderer.clearColor = Color.TransparentBlack
+    this.world.getSystem(Renderer).clearColor = Color.TransparentBlack
 
     this.createCamera()
     this.createPendulums()
@@ -48,13 +48,13 @@ class Game extends EcsGame {
   private createCamera() {
     const entity = this.createEntity({
       name: 'camera',
-      parent: this.scene,
+      parent: this.scene.entity,
       components: [new CameraComponent({ type: 'perspective' })],
       transform: new TransformComponent({
         position: Vec3.create(0, 0, 3),
       }),
     })
-    this.view.camera = entity.component(CameraComponent)
+    this.scene.setCamera(0, entity.component(CameraComponent))
   }
 
   private createPendulums() {
@@ -64,7 +64,7 @@ class Game extends EcsGame {
       [4, 'timeC'],
     ] as const) {
       const pivot = this.createEntity({
-        parent: this.scene,
+        parent: this.scene.entity,
         components: [new PendulumComponent(timeName)],
         transform: new TransformComponent({
           position: Vec3.create(x, 1, -5),

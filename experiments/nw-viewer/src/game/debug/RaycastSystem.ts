@@ -8,7 +8,7 @@ import {
 } from '@gglib/components'
 import { GameEntity, GameQuery, GameSystem, GameWorld, GetComponent } from '@gglib/ecs'
 import type { Mesh } from '@gglib/graphics'
-import { KeyboardKey } from '@gglib/game'
+import { KeyboardKeys, MouseButton } from '@gglib/game'
 import { Intersection, Mat4, Ray, Vec3, type BoundingBox, type Transform } from '@gglib/math'
 import { brand, EventEmitter, type EventType } from '@gglib/utils'
 
@@ -52,19 +52,19 @@ export class RaycastSystem extends GameSystem {
     }
 
     // toggle through selection list
-    if (this.keyboard.justPressed(KeyboardKey.Tab)) {
-      const step = this.keyboard.isPressed(KeyboardKey.ShiftLeft) ? -1 : 1
+    if (this.keyboard.justPressed(KeyboardKeys.Tab)) {
+      const step = this.keyboard.isPressed(KeyboardKeys.ShiftLeft) ? -1 : 1
       this.selectIndex = (this.selectIndex + step + this.selectList.length) % this.selectList.length
       this.emitSelection()
       return
     }
 
-    const shiftThrough = this.keyboard.isPressed(KeyboardKey.AltLeft)
+    const shiftThrough = this.keyboard.isPressed(KeyboardKeys.AltLeft)
     if (!shiftThrough) {
       this.ignoreList.length = 0
     }
 
-    if (this.mouse.buttonJustPressed(1)) {
+    if (this.mouse.buttonJustPressed(MouseButton.Middle)) {
       this.selectList.length = 0
       this.raycast(this.selectList)
       this.selectIndex = 0

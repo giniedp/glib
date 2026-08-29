@@ -18,7 +18,7 @@ export class SliceSystem extends GameSystem {
 
   private camPosition = new Vec3()
   public update() {
-    this.game.view.camera.world.getTranslation(this.camPosition)
+    this.game.scene.getView(0).camera.world.getTranslation(this.camPosition)
     for (const entity of this.activeRegions) {
       const region = entity.component(RegionComponent)
       this.updateSlices(region.slices, this.camPosition)

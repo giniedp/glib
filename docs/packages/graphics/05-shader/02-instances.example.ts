@@ -59,7 +59,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
       return
     }
 
-    const t = ctx.time / 1000
+    const t = ctx.time
     const programs = settings.instances ? instanced : notInstanced
     for (let i = 0; i < programs.length; i++) {
       const program = programs[i]

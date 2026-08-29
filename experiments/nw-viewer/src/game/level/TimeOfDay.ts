@@ -27,9 +27,9 @@ export class TimeOfDay {
   public skyKM = 0.0025
   public skyKR = 0.0025
   public skyG = 0.76
-  public skyWaveR = 0.65
-  public skyWaveG = 0.57
-  public skyWaveB = 0.475
+  public skyWaveR = 650
+  public skyWaveG = 570
+  public skyWaveB = 475
 
   public nightSkyHorizonColor = vec3()
   public nightSkyZenithColor = vec3()
@@ -192,7 +192,7 @@ export class TimeOfDay {
 
   private updateWeights(dt: number) {
     for (const it of this.poiLayers) {
-      const rate = dt / (it.blendDuration * 1000)
+      const rate = dt / it.blendDuration
       const delta = it.blendTarget - it.blendWeight
       const step = Math.sign(delta) * Math.min(Math.abs(delta), rate)
       it.blendWeight = clamp(it.blendWeight + step, 0, 1)
@@ -200,7 +200,7 @@ export class TimeOfDay {
   }
 
   private tickTime(dt: number) {
-    let time = this.time + dt * (this.timeAnimSpeed / 1000)
+    let time = this.time + dt * this.timeAnimSpeed
     if (this.timeStart <= 0.05 && this.timeEnd >= 23.5) {
       if (time > this.timeEnd) {
         time = this.timeStart
@@ -325,7 +325,14 @@ export class TimeOfDay {
 
   private updateVariables() {
     this.getParamColor(TodParams.SUN_COLOR, this.sunColor)
-    this.sunIntensity = this.getParamValue(TodParams.SUN_INTENSITY)
+    this.sunIntensity = this.getParamValue(TodParams.SUN_INTENSITY) / 1000
+    this.skyKM = this.getParamValue(TodParams.SKYLIGHT_KM) / 1000
+    this.skyKR = this.getParamValue(TodParams.SKYLIGHT_KR) / 1000
+    this.skyG = this.getParamValue(TodParams.SKYLIGHT_G)
+    this.skyWaveR = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_R)
+    this.skyWaveG = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_G)
+    this.skyWaveB = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_B)
+
     Vec3.multiplyScalar(this.sunColor, this.sunMultiplier, this.sunColor)
     // const lux = this.sunIntensity * this.sunMultiplier
     // convertIlluminanceToLightColor(this.sunColor, lux)
@@ -379,21 +386,14 @@ export class TimeOfDay {
     this.getParamColor(TodParams.NIGHSKY_MOON_OUTERCORONA_COLOR, this.nightSkyMoonOuterCorona)
     this.nightSkyMoonOuterCorona.w = 1.0 + 1000.0 * this.getParamValue(TodParams.NIGHSKY_MOON_OUTERCORONA_SCALE)
 
-    this.skyKM = this.getParamValue(TodParams.SKYLIGHT_KM)
-    this.skyKR = this.getParamValue(TodParams.SKYLIGHT_KR)
-    this.skyG = this.getParamValue(TodParams.SKYLIGHT_G)
-    this.skyWaveR = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_R)
-    this.skyWaveG = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_G)
-    this.skyWaveB = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_B)
-
     this.getParamColor(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR, this.cloudshadingCustomColor)
-    const csSunlightMultiplier = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_MULTIPLIER)
     const csCustomSunColorMult = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_MULTIPLIER)
     Vec3.multiplyScalar(this.cloudshadingCustomColor, csCustomSunColorMult, this.cloudshadingCustomColor)
-    const csCustomSunColorInfluence = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_INFLUENCE)
 
+    const csSunlightMultiplier = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_MULTIPLIER)
     Vec3.multiplyScalar(this.sunColor, csSunlightMultiplier, this.cloudshadingCustomSunColor)
 
+    const csCustomSunColorInfluence = this.getParamValue(TodParams.CLOUDSHADING_SUNLIGHT_CUSTOM_COLOR_INFLUENCE)
     Vec3.lerp(
       this.cloudshadingCustomSunColor,
       this.cloudshadingCustomColor,

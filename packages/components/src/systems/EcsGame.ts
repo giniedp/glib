@@ -1,13 +1,13 @@
 import { ContentLoader } from '@gglib/content'
-import { CreateEntityOptions, GameEntity, GameQuery, GameWorld } from '@gglib/ecs'
+import { CreateEntityOptions, GameWorld } from '@gglib/ecs'
 import { createDevice, type CreateDeviceOptions, Device } from '@gglib/graphics'
 import { SpaceBasis } from '@gglib/math'
-import { GeometryPass, RenderChannel, Renderer, RenderView } from '@gglib/render'
+import { GeometryPass, RenderChannel, Renderer } from '@gglib/render'
 import { EventEmitter } from '@gglib/utils'
 import { SceneComponent, TransformComponent } from '../components'
 import { BehaviorSystem } from './BehaviorSystem'
 import { BoundsUpdateSystem } from './BoundsUpdateSystem'
-import { GameLoop } from './GameLoop'
+import { GameLoop } from '@gglib/game'
 import { SceneSystem } from './SceneSystem'
 import { TimeSystem } from './TimeSystem'
 import { TweenSystem } from './TweenSystem'
@@ -29,34 +29,14 @@ export class EcsGame {
   public readonly events = new EventEmitter()
 
   /**
-   * The renderer system
-   */
-  public renderer: Renderer
-
-  /**
    * The content loader system
    */
   public content: ContentLoader
 
   /**
-   * The game loop system
+   * The main scene entity
    */
-  public loop: GameLoop
-
-  /**
-   * The main render view
-   */
-  public view: RenderView
-
-  /**
-   * The root scene entity
-   */
-  public scene: GameEntity
-
-  /**
-   * Query yielding all active scene root entities
-   */
-  public sceneQuery: GameQuery
+  public scene: SceneComponent
 
   /**
    * Resolves once the game has fully booted and the loop is running
@@ -77,19 +57,6 @@ export class EcsGame {
 
     this.onCreate()
     this.createEssentialSystems()
-
-    this.sceneQuery ||= this.world.query({ scope: 'active', required: [SceneComponent] })
-
-    this.view ||= this.renderer.createView({
-      name: 'Main View',
-      present: RenderChannel.Color,
-    })
-
-    this.scene ||= this.world.createEntity({
-      name: 'Scene',
-      transform: new TransformComponent(),
-      components: [new SceneComponent({ views: [this.view] })],
-    })
   }
 
   /**
@@ -141,9 +108,22 @@ export class EcsGame {
       )
     }
 
-    this.renderer ||= this.world.getSystem(Renderer)
     this.content ||= this.world.getSystem(ContentLoader)
-    this.loop ||= this.world.getSystem(GameLoop)
+
+    if (!this.scene) {
+      const renderer = this.world.getSystem(Renderer)
+      const view = renderer.createView({
+        name: 'Main View',
+        present: RenderChannel.Color,
+      })
+      this.scene = this.world
+        .createEntity({
+          name: 'Scene',
+          transform: new TransformComponent(),
+          components: [new SceneComponent({ views: [view] })],
+        })
+        .component(SceneComponent)
+    }
   }
 
   /**
@@ -175,7 +155,7 @@ export class EcsGame {
    */
   protected onBeginRun(): void {
     this.world.initialize()
-    this.scene.activate()
+    this.scene.entity.activate()
   }
 
   /**
@@ -218,11 +198,13 @@ export class EcsGame {
    */
   protected onDraw(time: number, dt: number): void {
     this.world.render(time, dt)
-    this.renderer.update(time)
-    for (const entity of this.sceneQuery) {
-      const scene = entity.component(SceneComponent)
-      for (const view of scene.views) {
-        this.renderer.renderSceneView(scene, view)
+
+    const renderer = this.world.getSystem(Renderer)
+    renderer.update(time)
+
+    if (this.scene) {
+      for (const view of this.scene.views) {
+        renderer.renderSceneView(this.scene, view)
       }
     }
   }
@@ -231,9 +213,8 @@ export class EcsGame {
    * Called after `onDraw` to present all rendered scene outputs
    */
   protected onEndDraw(time: number, dt: number): void {
-    for (const entity of this.sceneQuery) {
-      const scene = entity.component(SceneComponent)
-      this.renderer.present(scene.views, scene.output)
+    if (this.scene) {
+      this.world.getSystem(Renderer).present(this.scene.views, this.scene.output)
     }
   }
 
@@ -247,10 +228,11 @@ export class EcsGame {
   }
 
   public stop() {
-    if (!this.loop.isRunning) {
+    const loop = this.world.getSystem(GameLoop)
+    if (!loop.isRunning) {
       return
     }
-    this.loop.stop()
+    loop.stop()
     this.onEndRun()
   }
 
@@ -279,9 +261,10 @@ export class EcsGame {
     }
 
     this.onBeginRun()
-    this.loop.run()
-    this.loop.onUpdate.add((time) => this.handleUpdate(time.timeMs, time.deltaMs))
-    this.loop.onDraw.add((time) => this.handleRender(time.timeMs, time.deltaMs))
+    const loop = this.world.getSystem(GameLoop)
+    loop.run()
+    loop.onUpdate.add((time) => this.handleUpdate(time.totalTime, time.deltaTime))
+    loop.onDraw.add((time) => this.handleRender(time.totalTime, time.deltaTime))
   }
 
   private handleUpdate(time: number, dt: number) {

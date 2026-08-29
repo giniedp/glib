@@ -1,7 +1,6 @@
 import {
   boxGeometry,
   Buffer,
-  bufferField,
   bufferLayout,
   BufferRecorder,
   cylinderGeometry,
