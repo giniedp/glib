@@ -4,9 +4,11 @@ import {
   dataTypeArray,
   dataTypeFromWebGL,
   dataTypeViewReader,
+  GeometryOptions,
   GeometryUtil,
   MaterialOptions,
   MeshOptions,
+  MeshPart,
   MeshPartImport,
   primitiveTypeFromWebGL,
   TypedArray,
@@ -82,24 +84,30 @@ export function loadMesh(asset: GltfAssetContainer, index: number) {
 
   node.buildAsync = async (ctx, n, get) => {
     const materials: MaterialOptions[] = []
+    const geometries: GeometryOptions[] = []
+    const parts: MeshPart[] = []
 
-    const parts = partRefs.map((partKey, index) => {
+    partRefs.forEach((partKey, index) => {
       const partMtl = get(partMtlRefs[index])
       const part = get(partKey)
       if (!materials.includes(partMtl)) {
         materials.push(partMtl)
       }
-      part.materialIndex = materials.indexOf(partMtl)
-      return part
+      parts.push({
+        materialIndex: materials.indexOf(partMtl),
+        geometryIndex: geometries.length,
+      })
+      geometries.push(part.geometry)
     })
 
     return {
       name: gltf.name,
       meta: { ...(gltf.extras || {}) },
       materials: materials,
-      partImports: parts,
-      boundingBox: BoundingBox.mergeBoxes(...parts.map((it) => it.geometry.boundingBox)),
-      boundingSphere: BoundingSphere.mergeSpheres(...parts.map((it) => it.geometry.boundingSphere)),
+      geometries: geometries,
+      parts: parts,
+      boundingBox: BoundingBox.mergeBoxes(...geometries.map((it) => it.boundingBox)),
+      boundingSphere: BoundingSphere.mergeSpheres(...geometries.map((it) => it.boundingSphere)),
     }
   }
 
