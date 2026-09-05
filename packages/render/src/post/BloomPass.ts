@@ -185,11 +185,10 @@ export class BloomPass implements RenderPass {
     {
       const fx = this.fxDownsample
       for (let i = 0; i < steps; i++) {
-        if (!kawase && i === 0) {
-          fx.operator = DownsampleOperator.JIMENEZ_13TAP_KARIS
-        }
-        if (!kawase && i !== 0) {
-          fx.operator = DownsampleOperator.JIMENEZ_13TAP
+        if (!kawase) {
+          fx.operator = i === 0 ? DownsampleOperator.JIMENEZ_13TAP_KARIS : DownsampleOperator.JIMENEZ_13TAP
+        } else {
+          fx.operator = DownsampleOperator.KAWASE
         }
         fx.textureIn = i === 0 ? this.texExtract : this.texDownUp[i - 1]
         fx.textureOut = this.texDownUp[i]

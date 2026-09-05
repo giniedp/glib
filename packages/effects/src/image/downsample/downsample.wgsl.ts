@@ -3,8 +3,8 @@ import { FULLSCREEN_WGSL_VS } from '../common.wgsl'
 export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
   ${FULLSCREEN_WGSL_VS}
 
-  fn getMaxBrightness(c: vec3f) -> f32 {
-    return max(max(c.r, c.g), c.b);
+  fn getLuminance(c: vec3f) -> f32 {
+    return dot(c, vec3f(0.2126, 0.7152, 0.0722));
   }
 
   fn downsampleBilinear2x2(tex: texture_2d<f32>, samp: sampler, uv: vec2f) -> vec3f {
@@ -63,16 +63,31 @@ export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
     return center * 0.5 + (topLeft + topRight + bottomLeft + bottomRight) * 0.125;
   }
 
+  // https://graphicrants.blogspot.com/2013/12/
+  fn karisWeight(c: vec3f) -> f32 {
+    return (1.0 / (1.0 + getLuminance(c)));
+  }
+
   // Anti-firefly weighted average, credited to Brian Karis (Epic/UE4),
   // as referenced in Jimenez's SIGGRAPH 2014 talk for firefly suppression
   // on the first HDR downsample step.
-  fn karisAverage(c1: vec3f, c2: vec3f, c3: vec3f, c4: vec3f) -> vec3f {
-    let w1 = 1.0 / (1.0 + getMaxBrightness(c1));
-    let w2 = 1.0 / (1.0 + getMaxBrightness(c2));
-    let w3 = 1.0 / (1.0 + getMaxBrightness(c3));
-    let w4 = 1.0 / (1.0 + getMaxBrightness(c4));
+  fn karisAverage4(c1: vec3f, c2: vec3f, c3: vec3f, c4: vec3f) -> vec3f {
+    let w1 = karisWeight(c1);
+    let w2 = karisWeight(c2);
+    let w3 = karisWeight(c3);
+    let w4 = karisWeight(c4);
     let wSum = w1 + w2 + w3 + w4;
-    return (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / max(wSum, 1e-4);
+    return (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / wSum;
+  }
+
+  fn karisAverage5(c1: vec3f, c2: vec3f, c3: vec3f, c4: vec3f, c5: vec3f) -> vec3f {
+    let w1 = karisWeight(c1);
+    let w2 = karisWeight(c2);
+    let w3 = karisWeight(c3);
+    let w4 = karisWeight(c4);
+    let w5 = karisWeight(c5);
+    let wSum = w1 + w2 + w3 + w4 + w5;
+    return (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4 + c5 * w5) / wSum;
   }
 
   fn downsampleJimenez13TapKaris(tex: texture_2d<f32>, samp: sampler, uv: vec2f, texelSize: vec2f) -> vec3f {
@@ -90,12 +105,33 @@ export const DOWNSAMPLE_WGSL_FS = /* wgsl */ `
     let l = textureSample(tex, samp, uv + vec2f( 0.0, 1.0) * texelSize).rgb;
     let m = textureSample(tex, samp, uv + vec2f( 1.0, 1.0) * texelSize).rgb;
 
-    let center      = karisAverage(d, e, i, j);
-    let topLeft     = karisAverage(a, b, f, g);
-    let topRight    = karisAverage(b, c, g, h);
-    let bottomLeft  = karisAverage(f, g, k, l);
-    let bottomRight = karisAverage(g, h, l, m);
+    // let center      = karisAverage4(d, e, i, j);
+    // let topLeft     = karisAverage4(a, b, f, g);
+    // let topRight    = karisAverage4(b, c, g, h);
+    // let bottomLeft  = karisAverage4(f, g, k, l);
+    // let bottomRight = karisAverage4(g, h, l, m);
+    // return center * 0.5 + (topLeft + topRight + bottomLeft + bottomRight) * 0.125;
 
+    // var center      = (d + e + i + j) * 0.5;
+    // var topLeft     = (a + b + f + g) * 0.125;
+    // var topRight    = (b + c + g + h) * 0.125;
+    // var bottomLeft  = (f + g + k + l) * 0.125;
+    // var bottomRight = (g + h + l + m) * 0.125;
+    // return karisAverage5(center, topLeft, topRight, bottomLeft, bottomRight);
+
+    var center      = (d + e + i + j) * 0.5;
+    var topLeft     = (a + b + f + g) * 0.125;
+    var topRight    = (b + c + g + h) * 0.125;
+    var bottomLeft  = (f + g + k + l) * 0.125;
+    var bottomRight = (g + h + l + m) * 0.125;
+
+    center *= karisWeight(center);
+    topLeft *= karisWeight(topLeft);
+    topRight *= karisWeight(topRight);
+    bottomLeft *= karisWeight(bottomLeft);
+    bottomRight *= karisWeight(bottomRight);
+
+    // return center + (topLeft + topRight + bottomLeft + bottomRight);
     return center * 0.5 + (topLeft + topRight + bottomLeft + bottomRight) * 0.125;
   }
 

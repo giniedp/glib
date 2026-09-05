@@ -7,6 +7,10 @@ const BASE = /* glsl */ `
     return max(max(c.r, c.g), c.b);
   }
 
+  float getLuminance(vec3 c) {
+    return dot(c, vec3(0.2126f, 0.7152f, 0.0722f));
+  }
+
   vec3 downsampleBilinear2x2(sampler2D tex, vec2 uv) {
     // relies on the sampler already being linear-filtered;
     return texture(tex, uv).rgb;
@@ -68,10 +72,10 @@ const BASE = /* glsl */ `
   // as referenced in Jimenez's SIGGRAPH 2014 talk for firefly suppression
   // on the first HDR downsample step.
   vec3 karisAverage(vec3 c1, vec3 c2, vec3 c3, vec3 c4) {
-    float w1 = 1.0 / (1.0 + getMaxBrightness(c1));
-    float w2 = 1.0 / (1.0 + getMaxBrightness(c2));
-    float w3 = 1.0 / (1.0 + getMaxBrightness(c3));
-    float w4 = 1.0 / (1.0 + getMaxBrightness(c4));
+    float w1 = 1.0 / (1.0 + getLuminance(c1));
+    float w2 = 1.0 / (1.0 + getLuminance(c2));
+    float w3 = 1.0 / (1.0 + getLuminance(c3));
+    float w4 = 1.0 / (1.0 + getLuminance(c4));
     float wSum = w1 + w2 + w3 + w4;
     return (c1 * w1 + c2 * w2 + c3 * w3 + c4 * w4) / max(wSum, 1e-4);
   }
