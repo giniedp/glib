@@ -1,4 +1,4 @@
-import { CommonInputs, inputSlotScalar, inputSlotVec3, TRUE } from '@gglib/graphics'
+import { CommonInputs, inputSlotScalar, inputSlotTexture, inputSlotVec3, inputSlotVec4, TRUE } from '@gglib/graphics'
 
 export const InputBlocks = {
   Global: 'global',
@@ -15,8 +15,8 @@ export const InputSlots = {
     CameraPosition: CommonInputs.View.CameraPosition,
   },
   Global: {
+    SunColor: inputSlotVec4('global', 'sunColor'),
     SunDirection: inputSlotVec3('global', 'sunDirection'),
-    SunColor: inputSlotVec3('global', 'sunColor'),
     CloudShadingSunColor: inputSlotVec3('global', 'cloudShadingCustomSunColor'),
     CloudShadingSkyColor: inputSlotVec3('global', 'cloudShadingCustomSkyColor'),
     BottomFogColor: inputSlotVec3('global', 'bottomFogColor'),
@@ -29,6 +29,7 @@ export const InputSlots = {
     FogNear: inputSlotScalar('global', 'fog_near'),
     FogFar: inputSlotScalar('global', 'fog_far'),
     Debug: inputSlotScalar('global', 'debug'),
+    EnvMap: inputSlotTexture('global', 'envMap'),
   },
 }
 

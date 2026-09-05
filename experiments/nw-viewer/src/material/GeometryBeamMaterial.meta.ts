@@ -1,6 +1,6 @@
 import { inputSlot } from '@gglib/graphics'
 export default {
-  SunColor: inputSlot('global', 'suncolor', 'vec3'),
+  SunColor: inputSlot('global', 'suncolor', 'vec4'),
   SunDirection: inputSlot('global', 'sundirection', 'vec3'),
   CloudShadingCustomSunColor: inputSlot('global', 'cloudshadingcustomsuncolor', 'vec3'),
   CloudShadingCustomSkyColor: inputSlot('global', 'cloudshadingcustomskycolor', 'vec3'),

@@ -154,7 +154,7 @@ fn vs_main(input: VertexInput) -> FragmentInput {
 
   // --- Sun color
   if (material.enabledApplySunColor == TRUE) {
-    let sunColor = mix(vec3f(1.0), global.sunColor, material.sunColorInfluence);
+    let sunColor = mix(vec3f(1.0), global.sunColor.rgb, material.sunColorInfluence);
     color = vec4f(color.rgb * sunColor, color.a);
   }
 

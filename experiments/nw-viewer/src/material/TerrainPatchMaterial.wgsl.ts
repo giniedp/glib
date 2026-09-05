@@ -181,11 +181,10 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   let normal = normalize(mix(fineParams.normal, coarseParams.normal, blend));
 
   var surface: SurfaceParams;
-  surface.BaseColor = vec4f(mix(fineParams.color, coarseParams.color, blend), 1.0);
+  surface.Diffuse   = vec3f(mix(fineParams.color, coarseParams.color, blend));
+  surface.Alpha     = 1.0;
   surface.Specular  = vec3f(mix(fineParams.specular, coarseParams.specular, blend)) ;
   surface.Roughness = mix(fineParams.roughness, coarseParams.roughness, blend);
-  surface.Metallic  = 0.0;
-  surface.Ior       = 0.0;
   surface.Normal    = vec4(normalize(tbn * normal), 1.0);
 
   var color = accumulateLight(lights, global, surface, toEye, input.vWorldPos);
@@ -196,7 +195,7 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
   // let debug = global.debug;
   // if (debug > 0u) {
   //   if (debug == DEBUG_MTL_BASE) {
-  //     out.color = vec4f(surface.BaseColor.rgb, 1.0);
+  //     out.color = vec4f(surface.Diffuse.rgb, 1.0);
   //     return out;
   //   }
   //   if (debug == DEBUG_MTL_SPEC) {

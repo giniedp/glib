@@ -5,6 +5,7 @@ import { uiAngleWidget, uiBitmaskWidget, uiBoolWidget, uiScalarWidget, uiSelect 
 import { MaterialLayerMasks } from '../../material'
 import icon from '../icons/camera.svg?raw'
 import { type UiAnnotation } from './types'
+import { DEGREE_TO_RAD } from '@gglib/math'
 
 export const CameraComponentProps: FactoryComponent<{ data: CameraComponent }> = () => {
   return {
@@ -47,9 +48,10 @@ export const CameraComponentProps: FactoryComponent<{ data: CameraComponent }> =
               label: 'FOV',
               value: data,
               field: 'perspectiveFov',
-              min: 1,
-              max: 179,
-              step: 1,
+              min: 1 * DEGREE_TO_RAD,
+              max: 180 * DEGREE_TO_RAD,
+              step: 1 * DEGREE_TO_RAD,
+              degree: false,
             })
           : null,
         data.type === 'orthographic'

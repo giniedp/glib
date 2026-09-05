@@ -178,7 +178,7 @@ fn fs_main(in: FragmentInput) -> FragmentOutput {
 
     // ---- fog ----
     let horizon = 1.0 - saturate(skyDir.z);
-    let fogBlend = pow(horizon, 8.0);
+    let fogBlend = pow(horizon, 4.0);
     color = mix(color.rgb, global.bottomFogColor.rgb, fogBlend);
 
     var out: FragmentOutput;

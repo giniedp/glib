@@ -452,14 +452,13 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   var surface: SurfaceParams;
   surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
-  surface.BaseColor = vec4f(albedo, alpha);
+  surface.Diffuse   = albedo;
+  surface.Alpha     = alpha;
   surface.Specular  = specular;
   surface.Normal    = vec4f(normal, 1.0);
   surface.Roughness = smoothnessToRoughness(gloss);
-  surface.Metallic  = 0.0;
-  surface.Ior       = 0.0;
 
-  var shade = accumulateLightOut(lights, global, surface, toEye, input.worldPos);
+  var shade = accumulateLightShade(lights, global, surface, toEye, input.worldPos);
 
 
 
@@ -508,7 +507,7 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   // Final composition
   // TODO: this uses PBF but shouldn't. albedo factor moved out of diffuse+ambient term, as it's aready in diffuseColor
-  albedo =  ((shade.diffuse.rgb + shade.ambient.rgb) + shade.diffuseBack.rgb * cShadingBack.rgb);
+  albedo =  ((shade.diffuse.rgb + shade.ambient.rgb) + shade.diffuseBack.rgb * cShadingBack.rgb) * surface.Diffuse.rgb;
   specular = shade.specular.rgb * input.color0.x;// pPass.pCustom.fRenderQuality;
 
   // #endregion

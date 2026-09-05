@@ -181,11 +181,11 @@ fn fsMain(in: Varyings) -> FragmentOutput {
   let skyHorizon = pow(max(reflDir.z, 0.0), 0.3);
   let skyColor   = mix(vec3f(0.05, 0.12, 0.25), vec3f(0.4, 0.65, 0.9), skyHorizon);
   let sunDot     = max(dot(reflDir, sun), 0.0);
-  let sunRefl    = global.sunColor * pow(sunDot, 64.0);
+  let sunRefl    = global.sunColor.xyz * pow(sunDot, 64.0);
   let reflection = (skyColor + sunRefl) * mat.reflectStrength;
 
   // ── Specular ──────────────────────────────────────────────
-  let specColor = global.sunColor * ggxSpecular(normal, viewDir, sun, mat.roughness);
+  let specColor = global.sunColor.xyz * ggxSpecular(normal, viewDir, sun, mat.roughness);
 
 
   // ── Foam ──────────────────────────────────────────────────

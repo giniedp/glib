@@ -273,8 +273,8 @@ fn fs_main(in: FragmentInput) -> FragmentOut {
   }
 
   // clamp to safe half float value
-  resultMie = min(resultMie, vec3f(60000.0, 60000.0, 60000.0));
-  resultRayleigh = min(resultRayleigh, vec3f(60000.0, 60000.0, 60000.0));
+  resultMie = min(resultMie, vec3f(60000.0));
+  resultRayleigh = min(resultRayleigh, vec3f(60000.0));
 
   var out: FragmentOut;
   out.colorMie = vec4f(resultMie, 1.0);
@@ -296,6 +296,9 @@ struct ParamsBlock {
   mieScattering     : f32, // km
   rayleighScattering: f32, // kr
   phaseAsymmetry    : f32, // g
+  nightSkyColorBase   : vec3f,
+  nightSkyColorDelta  : vec3f,
+  nightSkyColorShift  : vec2f,
 };
 @group(0) @binding(0) var<uniform> params: ParamsBlock;
 @group(0) @binding(1) var mieScatteringMap: texture_2d<f32>;
@@ -336,6 +339,11 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
     // lower hemisphere, ground color contribution
     color = rayleighColor * partialRayleighConst * rayleighPhase * ground;
   }
+
+  var gr = saturate(skyDir.z * params.nightSkyColorShift.x + params.nightSkyColorShift.y);
+      gr = gr * (2.0 - gr);
+  color += params.nightSkyColorBase.rgb;
+  color += params.nightSkyColorDelta.rgb * gr;
   color = min(color, vec3f(60000.0));
 
   return vec4f(color, 1.0);

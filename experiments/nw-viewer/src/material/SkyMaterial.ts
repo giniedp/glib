@@ -7,7 +7,7 @@ import {
   type EffectOptions,
   type ShaderModuleOptions,
 } from '@gglib/graphics'
-import { clamp, vec2, Vec2, vec3, Vec3, Vec4 } from '@gglib/math'
+import { clamp, vec2, vec3, Vec3, Vec4, type IVec3 } from '@gglib/math'
 import SkyMaterialSchema from './SkyMaterial.meta'
 import WGSL from './SkyMaterial.wgsl'
 
@@ -50,7 +50,7 @@ export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
     this.NightSkyColDelta = vec3(0.0, 0.0, 0.0)
     this.NightSkyZenithColShift = vec2(42.9, 0.0)
 
-    this.setSkylightParams(0.001, 0.00025, -0.99, 650, 570, 475, 20)
+    this.setSkylightParams(0.001, 0.00025, -0.99, 650, 570, 475, vec3(20))
   }
 
   public setMoonParams(latitude: number, longitude: number, size: number, direction: Vec3) {
@@ -88,7 +88,7 @@ export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
     waveR: number,
     waveG: number,
     waveB: number,
-    sunIntensity: number,
+    sunIntensity: IVec3,
   ) {
     this.MieScattering = km
     this.RayleighScattering = kr
@@ -99,9 +99,9 @@ export class SkyMaterial extends materialSchemaClass(SkyMaterialSchema) {
     this.WaveLengthInv.z = Math.pow(waveB * 0.001, -4)
     this.WaveLengthInv = this.WaveLengthInv
     this.SunIntensity ||= vec3()
-    this.SunIntensity.x = sunIntensity
-    this.SunIntensity.y = sunIntensity
-    this.SunIntensity.z = sunIntensity
+    this.SunIntensity.x = sunIntensity.x
+    this.SunIntensity.y = sunIntensity.y
+    this.SunIntensity.z = sunIntensity.z
     this.SunIntensity = this.SunIntensity
   }
 }

@@ -1,6 +1,6 @@
 import { inputSlot } from '@gglib/graphics'
 export default {
-  SunColor: inputSlot('global', 'suncolor', 'vec3'),
+  SunColor: inputSlot('global', 'suncolor', 'vec4'),
   SunDirection: inputSlot('global', 'sundirection', 'vec3'),
   CloudShadingCustomSunColor: inputSlot('global', 'cloudshadingcustomsuncolor', 'vec3'),
   CloudShadingCustomSkyColor: inputSlot('global', 'cloudshadingcustomskycolor', 'vec3'),
@@ -33,6 +33,7 @@ export default {
   LightDirection1: inputSlot('lights', 'lightdirection[1]', 'vec4'),
   LightDirection2: inputSlot('lights', 'lightdirection[2]', 'vec4'),
   LightDirection3: inputSlot('lights', 'lightdirection[3]', 'vec4'),
+  EnvMap: inputSlot('global', 'envMap', 'texture'),
   ModelMatrix: inputSlot('object', 'modelmatrix', 'mat4x4'),
   DiffuseColor: inputSlot('material', 'diffusecolor', 'vec4'),
   SpecularColor: inputSlot('material', 'specularcolor', 'vec4'),
@@ -112,7 +113,6 @@ export default {
   DiffuseMap: inputSlot('', 'diffuseMap', 'texture'),
   NormalMap: inputSlot('', 'normalMap', 'texture'),
   SpecularMap: inputSlot('', 'specularMap', 'texture'),
-  EnvMap: inputSlot('', 'envMap', 'texture'),
   DetailMap: inputSlot('', 'detailMap', 'texture'),
   TranslucencyMap: inputSlot('', 'translucencyMap', 'texture'),
   HeightMap: inputSlot('', 'heightMap', 'texture'),

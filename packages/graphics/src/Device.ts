@@ -157,26 +157,42 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
 
   /**
    * Creates a render target texture
+   *
+   * @remarks
+   * Same as calling {@link createTexture} but with following default options:
+   * - `generateMipmap = false`
+   * - `mipLevelCount = 1`
+   * - `sampleCount = 1`
+   * - `usage |= TextureUsage.RenderTarget`
    * @public
    */
   public abstract createRenderTarget(options: TextureOptions): Texture
 
   /**
    * Creates a depth/stencil render target texture
+   *
+   * @remarks
+   * Same as calling {@link createTexture} but with following default options:
+   * - `generateMipmap = false`
+   * - `mipLevelCount = 1`
+   * - `sampleCount = 1`
+   * - `usage |= TextureUsage.RenderTarget`
+   *
+   * Also restricts the `format` to be a depth/stencil format.
    * @public
    */
   public abstract createDepthTarget(options: DepthBufferOptions): Texture
 
   /**
    * Acquires a pooled shader module identified by the source code and compilation options.
-   * Use `createShaderModule` for exclusive ownership.
+   * Use {@link createShaderModule} for exclusive ownership.
    * @public
    */
   public abstract acquireShaderModule(options: ShaderModuleOptions): ShaderModule
 
   /**
    * Acquires a pooled texture identified by `options.key`.
-   * Use `createTexture`/`createRenderTarget` for exclusive ownership.
+   * Use {@link createTexture} for exclusive ownership.
    * @public
    */
   public abstract acquireTexture(options: AcquireTextureOptions): Texture

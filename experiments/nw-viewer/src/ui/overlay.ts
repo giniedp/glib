@@ -85,10 +85,10 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                   uiFlex({ flow: 'row', style: { alignItems: 'center' } }, [
                     uiPoll({
                       get value() {
-                        const fps = Math.floor(1000 / viewer.frameTime)
+                        const fps = Math.floor(1 / viewer.frameTime)
                           .toString()
                           .padStart(3, '0')
-                        const ft = viewer.frameTime.toFixed(2).toString().padStart(5, '0')
+                        const ft = (viewer.frameTime * 1000).toFixed(2).toString().padStart(5, '0')
                         const dc = (viewer.renderStats?.drawCount ?? 0).toString().padStart(4, '0')
                         const vc = (viewer.sceneStats?.visible ?? 0).toString().padStart(4, '0')
                         const tasks = viewer.schedulerStats?.total || 0
@@ -149,7 +149,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                           max: 100,
                           smoothing: 0.9,
                           sample: () => {
-                            return viewer.frameTime
+                            return viewer.frameTime * 1000
                           },
                         },
                         {
@@ -158,7 +158,7 @@ const OverlayComponent: ClosureComponent<OverlayComponentAttrs> = () => {
                           max: 240,
                           smoothing: 0.9,
                           sample: () => {
-                            return viewer.frameTime > 0 ? 1000 / viewer.frameTime : 0
+                            return viewer.frameTime > 0 ? 1 / viewer.frameTime : 0
                           },
                         },
                         {

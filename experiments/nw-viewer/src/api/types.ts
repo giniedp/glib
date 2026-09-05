@@ -121,6 +121,9 @@ export interface TimeOfDayVariable {
   name: string
   color: number[]
   value: number
+  spline: {
+    keys: string
+  }
 }
 
 // ---------------------------------------------------------------------------

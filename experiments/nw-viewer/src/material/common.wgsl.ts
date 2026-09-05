@@ -10,6 +10,8 @@ const LIGHT_TYPE_DIRECTIONAL: u32 = 1u;
 const LIGHT_TYPE_POINT:       u32 = 2u;
 const LIGHT_TYPE_SPOT:        u32 = 3u;
 const LIGHT_TYPE_AREA:        u32 = 4u;
+const FLOAT_EPSILON = 1e-10;
+const MIN_ROUGHNESS = 0.05;// 0.001;
 
 // #region --- Debug Flags ---
 const DEBUG_OFF:                 u32 = 0u;
@@ -185,7 +187,7 @@ const LIGHT_UNIT_SCALE: f32 = 10000.0;
 const EMITTANCE_TO_ENGINE_LIGHT_SCALE: f32 = (1000.0 / LIGHT_UNIT_SCALE);
 
 struct GlobalBlock {
-  sunColor         : vec3f,
+  sunColor         : vec4f, // xyz = color, a = specular multiplier
   sunDirection     : vec3f,
   cloudShadingCustomSunColor  : vec3f,
   cloudShadingCustomSkyColor  : vec3f,
@@ -238,9 +240,10 @@ struct LightParams {
 };
 
 struct ShadeParams {
-  V: vec3f,
-  L: vec3f,
-  I: vec3f,
+  V: vec3f, // View direction
+  L: vec3f, // Light direction
+  Kd: vec3f, // diffuse light intensity
+  Kr: vec3f, // specular light intensity
 };
 
 struct ShadeOutput {
@@ -252,17 +255,18 @@ struct ShadeOutput {
 
 struct SurfaceParams {
   Transmittance : vec4f, // .rgb=back color, .a=normalViewDependency factor
-  Normal        : vec4f,
-  BaseColor     : vec4f,
+  Diffuse       : vec3f,
+  Alpha         : f32,
   Specular      : vec3f,
-  Metallic      : f32,
   Roughness     : f32,
-  Ior           : f32,
+  Normal        : vec4f,
 };
 
 struct LightResult {
-  lightDir  : vec3f,
-  lightColor: vec3f,
+  direction : vec3f,
+  diffuse   : vec3f,
+  specular  : vec3f,
+  falloff   : f32,
 };
 
 struct FragmentOutput {
@@ -273,17 +277,19 @@ struct FragmentOutput {
 fn getLight(light: LightParams, lightType: u32, position: vec3f) -> LightResult {
   var result: LightResult;
   if (lightType == LIGHT_TYPE_DIRECTIONAL) {
-    result.lightDir = normalize(-light.Direction.xyz);
-    result.lightColor = light.Color.rgb;
+    result.direction = normalize(-light.Direction.xyz);
+    result.diffuse = light.Color.rgb;
+    result.specular = light.Color.rgb * light.Color.a;
+    result.falloff = 1.0;
     return result;
   }
   if (lightType == LIGHT_TYPE_POINT) {
     let range = max(0.00001, light.Position.w);
     let toLight = light.Position.xyz - position;
-    let lightDir = normalize(toLight);
-    let lightAtt = clamp(1.0 - length(toLight) / range, 0.0, 1.0);
-    result.lightDir = lightDir;
-    result.lightColor = light.Color.rgb * lightAtt;
+    result.direction = normalize(toLight);
+    result.diffuse = light.Color.rgb;
+    result.specular = light.Color.rgb;
+    result.falloff = clamp(1.0 - length(toLight) / range, 0.0, 1.0);
     return result;
   }
   if (lightType == LIGHT_TYPE_SPOT) {
@@ -293,19 +299,21 @@ fn getLight(light: LightParams, lightType: u32, position: vec3f) -> LightResult 
     var lightAtt = clamp(1.0 - length(toLight) / range, 0.0, 1.0);
     let cosAngle = light.Direction.w;
     lightAtt = lightAtt * smoothstep(cosAngle, cosAngle + 0.0174533, dot(lightDir, normalize(-light.Direction.xyz)));
-    result.lightDir = lightDir;
-    result.lightColor = light.Color.rgb * lightAtt;
+    result.direction = lightDir;
+    result.diffuse = light.Color.rgb;
+    result.specular = light.Color.rgb;
+    result.falloff = lightAtt;
     return result;
   }
   return result;
 }
 
 fn accumulateLight(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> vec3f {
-  let out = accumulateLightOut(lights, env, surface, toEye, worldPos);
-  return out.ambient + out.diffuseBack + out.diffuse + out.specular;
+  let shade = accumulateLightShade(lights, env, surface, toEye, worldPos);
+  return composeShade(surface, shade);
 }
 
-fn accumulateLightOut(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> ShadeOutput {
+fn accumulateLightShade(lights: LightBlock, env: GlobalBlock, surface: SurfaceParams, toEye: vec3f, worldPos: vec3f) -> ShadeOutput {
   var output: ShadeOutput;
   var i : i32 = -1;
   loop {
@@ -317,11 +325,9 @@ fn accumulateLightOut(lights: LightBlock, env: GlobalBlock, surface: SurfacePara
 
     if (i < 0) {
       lightType = LIGHT_TYPE_DIRECTIONAL;
-      lightParams = LightParams(
-        vec4f(env.sunColor, 1.0),
-        vec4f(0.0),
-        vec4f(env.sunDirection, 0.0)
-      );
+      lightParams.Color = env.sunColor.xyzw;
+      lightParams.Position = vec4f(0.0);
+      lightParams.Direction = vec4f(env.sunDirection, 0.0);
     } else {
       lightType = u32(lights.color[i].w);
       lightParams = LightParams(
@@ -334,85 +340,44 @@ fn accumulateLightOut(lights: LightBlock, env: GlobalBlock, surface: SurfacePara
       break;
     }
 
+    let light = getLight(lightParams, lightType, worldPos);
+
     var shade : ShadeParams;
     shade.V = toEye;
-    let lightResult = getLight(lightParams, lightType, worldPos);
-    shade.L = lightResult.lightDir;
-    shade.I = lightResult.lightColor;
+    shade.L = light.direction;
+    shade.Kd = light.diffuse * light.falloff;
+    shade.Kr = light.specular * light.falloff;
 
-    let shadeOut = shadePbrOut(shade, surface);
-    output.diffuse += shadeOut.diffuse;
-    output.specular += shadeOut.specular;
+    let normal = surface.Normal.xyz;
+    let NdotL = saturate(dot(normal, shade.L));
+    let roughness = surface.Roughness;
+    var cDiffuse =  shade.Kd * diffuseBRDF(roughness, normal, shade.V, shade.L, NdotL);
+    var cSpecular = shade.Kr * specularBRDF(roughness, normal, shade.V, shade.L, surface.Specular.rgb, 1.0);
 
+    let ck = vec3(1.0); // pLight.fOcclShadow * pLight.fFallOff * pLight.cFilter;
+
+    output.diffuse += cDiffuse * ck;
     if (length(surface.Transmittance.rgb) > 0.0) {
       let fTransmitance = pow(saturate(dot(-surface.Normal.xyz, shade.L) * 0.6 + 0.4), 1 / (1 - surface.Transmittance.a));
-      output.diffuseBack += fTransmitance * shade.I * surface.Transmittance.rgb * surface.BaseColor.rgb;
+      output.diffuse += fTransmitance * shade.Kd * surface.Transmittance.rgb * ck;
     }
+    output.specular += cSpecular * ck * NdotL;
 
     i = i + 1;
   }
+
   return output;
 }
 
-// PBR shading function
-fn shadePbr( shade: ShadeParams, surface: SurfaceParams ) -> vec3f {
-  let out = shadePbrOut(shade, surface);
-  return out.diffuse + out.specular;
-}
+fn composeShade(surface: SurfaceParams, shade: ShadeOutput) -> vec3f {
+  var diffuse = (shade.ambient + shade.diffuse) * surface.Diffuse.rgb;
+  diffuse *= saturate(vec3f(1.0) - getLuminance(surface.Specular.rgb));
 
-fn shadePbrOut( shade: ShadeParams, surface: SurfaceParams ) -> ShadeOutput {
+  // TODO: reflection
 
-  let metallic: f32 = surface.Metallic;
-  let roughness: f32 = surface.Roughness;
+  var specular = shade.specular;
 
-  let f0: vec3f  = getF0Dielectric(surface);
-  let f90: vec3f = getSpecularWeight(surface);
-
-  let diffuseColor:  vec3f = mix(surface.BaseColor.rgb * (vec3f(1.0) - f0), vec3f(0.0), metallic);
-  let specularColor: vec3f = mix(f0, surface.BaseColor.rgb, metallic);
-
-  let reflectance:   f32 = max(max(specularColor.r, specularColor.g), specularColor.b);
-  let reflectance90: f32 = clamp(reflectance * 25.0, 0.0, 1.0);
-
-  let R0: vec3f = specularColor;
-
-  let I: vec3f = shade.I;
-  let V: vec3f = shade.V;
-  let L: vec3f = shade.L;
-  let H: vec3f = normalize(V + L);
-  let N: vec3f = surface.Normal.xyz;
-
-  let dotNL: f32 = clamp(dot(N, L), 0.001, 1.0);
-  let dotNH: f32 = clamp(dot(N, H), 0.0, 1.0);
-  let dotNV: f32 = clamp(abs(dot(N, V)), 0.001, 1.0);
-  let dotVH: f32 = clamp(dot(V, H), 0.0, 1.0);
-
-  let F: vec3f  = fresnelSchlickf90(R0, vec3f(reflectance90), dotVH);
-  let G: f32    = pbrGeometricOcclusion(dotNL, dotNV, roughness);
-  let D: f32    = pbrMicrofacetDistribution(dotNH, roughness);
-  let Fd: vec3f = (vec3f(1.0) - F) * diffuseColor;
-  let Fr: vec3f = (D * G) * F / (4.0 * dotNV * dotNL);
-
-  var output: ShadeOutput;
-  output.diffuse = Fd * dotNL * I;
-  output.specular = Fr * dotNL * I;
-  return output;
-}
-
-fn getF0Dielectric(surface: SurfaceParams) -> vec3f {
-  // for specular flow the surface.Ior can be 0 to allow full control over the specular color
-  let ior: f32 = (surface.Ior - 1.0) / (surface.Ior + 1.0);
-  return min((ior * ior) * surface.Specular.rgb, vec3(1.0));
-}
-
-fn getSpecularWeight(surface: SurfaceParams ) -> vec3f {
-  // TODO:
-  // #if defined(METALLIC) || defined(METALLIC_ROUGHNESS_MAP)
-  //   // pure metallic workflow
-  //   return vec3(1.0);
-  // #else
-  // #endif
-  return vec3(1.0 - surface.Roughness);
+  return diffuse + specular;
 }
 
 const PI: f32 = 3.141592653589793;
@@ -438,19 +403,93 @@ fn roughnessToPower(r: f32) -> f32 {
   return 2.0 / (rr * rr) - 2.0;
 }
 
+fn burleyBRDF(roughness: f32, NdotL: f32, NdotV: f32, VdotH: f32) -> f32 {
+  let dotNV = saturate(max(NdotV, 0.1));  // Prevent overly dark edges
+
+  // Burley BRDF with renormalization to conserve energy
+  let energyBias = 0.5 * roughness;
+  let energyFactor = mix(1, 1 / 1.51, roughness);
+  let fd90 = energyBias + 2.0 * VdotH * VdotH * roughness;
+  let scatterL = mix(1, fd90, pow(1 - NdotL, 5));
+  let scatterV = mix(1, fd90, pow(1 - dotNV, 5));
+
+  return scatterL * scatterV * energyFactor * NdotL;
+}
+
+fn diffuseBRDF( roughness: f32, N: vec3f, V: vec3f, L: vec3f, NdotL: f32) -> f32 {
+  let VdotH = saturate(dot(V, normalize(V + L)));
+  let NdotV = abs(dot(N, V)) + 1e-5;
+
+  return burleyBRDF(roughness, NdotL, NdotV, VdotH);
+}
+
+fn specularBRDF( roughness: f32, N: vec3f, V: vec3f, L: vec3f, F0: vec3f, normalizationFactor: f32 ) -> vec3f {
+  let m2 = roughness * roughness;
+  let Hraw = V + L;
+  let H = select(normalize(Hraw), N, dot(Hraw, Hraw) < 1e-8);
+  // let H = normalize( V + L );
+
+  // The PBR terms
+  let NDF = NDF_GGX( N, H, m2, normalizationFactor);  // NDF
+  let G = G_CorrelatedSmith(N, V, L, m2);             // G - Correlated Smith Visibility Term (including Cook-Torrance denominator)
+  let fresnel = Fresnel(L, H, F0);                    // Fresnel (Schlick approximation + micro occlusion)
+
+  // Final specular term - normalization factors 1 / ((N*V)*(N*L) accounted for in the G term.
+  let  finalSpecular = NDF * G * fresnel;
+
+  return finalSpecular;
+}
+
+fn getReflectColor(cubeMap: texture_cube<f32>, cubeSampler: sampler, reflection: vec3f, gloss: f32) -> vec3f {
+  let reflectionLod = (1.0 - gloss) * f32(6 - 1u);
+  return textureSampleLevel(cubeMap, cubeSampler, cryVecToGLTF(reflection), reflectionLod).rgb;
+}
+
+//-------------------------------------------------------------------------
+// GGX NDF:
+// Spec Cry (optimized) = NormFactor * rough2 / [cos2 * (rough2 - 1) + 1]^2
+// Spec GGX =      NormFactor / [cos2 * rough2 + sin2]^2   AND  sin2 = 1 - cos2
+//            -->  NormFactor / [cos2 * rough2 + 1 - cos2]^2
+//            -->  NormFactor / [cos2 * (rough2 - 1) + 1]^2
+//-------------------------------------------------------------------------
+fn NDF_GGX(N: vec3f, H: vec3f, roughSq: f32, normalizationFactor: f32) -> f32 {
+  let   NdotH = saturate(dot(N, H));
+  var   SpecGGX = NdotH * (NdotH * roughSq - NdotH) + 1.0;
+  SpecGGX = normalizationFactor * roughSq / max((SpecGGX * SpecGGX), FLOAT_EPSILON );
+
+  return SpecGGX;
+}
+
+fn G_CorrelatedSmith(N: vec3f, V: vec3f, L: vec3f, m2: f32) -> f32 {
+  let NdotL = saturate(dot(N, L));
+  let NdotV = abs(dot(N, V));
+  let Gv = NdotL * sqrt((-NdotV * m2 + NdotV) * NdotV + m2);
+  let Gl = NdotV * sqrt((-NdotL * m2 + NdotL) * NdotL + m2);
+  let SmithG = 0.5 / max(Gv + Gl, FLOAT_EPSILON);
+
+  return SmithG;
+}
+
+fn Fresnel(L: vec3f, H: vec3f, F0: vec3f ) -> vec3f {
+  let F90 = saturate(dot(F0, vec3f(0.33333)) / vec3f(0.02));
+  let finalFresnel = mix(F0, F90, pow(1 - saturate(dot(L, H)), 5));
+
+  return finalFresnel;
+}
+
 // Standard Fresnel Schlick approximation
 fn fresnelSchlick(R: vec3f, dotLH: f32) -> vec3f {
-    return R + (vec3f(1.0) - R) * pow(1.0 - dotLH, 5.0);
+  return R + (vec3f(1.0) - R) * pow(1.0 - dotLH, 5.0);
 }
 
 // Fresnel Schlick with f90 adjustment
 fn fresnelSchlickf90(f0: vec3f, f90: vec3f, u: f32) -> vec3f {
-    let clamped: f32 = clamp(1.0 - u, 0.0, 1.0);
-    return f0 + (f90 - f0) * pow(clamped, 5.0);
+  let clamped: f32 = clamp(1.0 - u, 0.0, 1.0);
+  return f0 + (f90 - f0) * pow(clamped, 5.0);
 }
 
 fn smoothnessToRoughness(smoothness: f32) -> f32 {
-  return clamp( (1.0 - smoothness) * (1.0 - smoothness), 0.025, 1.0);
+  return max( (1.0 - smoothness) * (1.0 - smoothness), MIN_ROUGHNESS);
 }
 
 fn roughnessToSmoothness(roughness: f32) -> f32 {
@@ -459,7 +498,7 @@ fn roughnessToSmoothness(roughness: f32) -> f32 {
 
 fn decodeNormal(encoded: vec2f) -> vec3f {
   let xy = encoded;
-  let z = sqrt(clamp(1.0 - dot(xy, xy), 0.0, 1.0));
+  let z = sqrt(saturate(1.0 + dot(xy, -xy)));
   return normalize(vec3f(xy, z));
 }
 
@@ -485,6 +524,10 @@ fn getOverlayBlend(base: vec3f, top: vec3f) -> vec3f {
   let out0 = 2.0 * base * top;
   let out1 = 1.0 - (2.0 * (1.0 - base) * (1.0 - top));
   return mix(out0, out1, step(vec3f(0.5), base));
+}
+
+fn cryVecToGLTF(v: vec3f) -> vec3f {
+  return v.xzy * vec3(1.0, 1.0, -1.0);
 }
 
 fn getCotangentFrame(

@@ -446,12 +446,11 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
 
   var surface: SurfaceParams;
   // surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
-  surface.BaseColor = vec4f(albedo, alpha);
+  surface.Diffuse = albedo;
+  surface.Alpha = alpha;
   surface.Specular  = specular;
-  surface.Normal    = vec4f(normal, 1.0);
   surface.Roughness = smoothnessToRoughness(gloss);
-  surface.Metallic  = 0.0;
-  surface.Ior       = 0.0;
+  surface.Normal    = vec4f(normal, 1.0);
 
   var color = accumulateLight(lights, global, surface, toEye, input.worldPos);
 
@@ -494,19 +493,19 @@ fn fs_main(input: FragmentInput) -> FragmentOutput {
   switch (global.debug) {
     // #region Debug Material
     case DEBUG_MTL_ALBEDO: {
-      out.color = vec4f(surface.BaseColor.rgb, 1.0);
+      out.color = vec4f(surface.Diffuse.rgb, 1.0);
     }
     case DEBUG_MTL_SPECULAR: {
       out.color = vec4f(surface.Specular.rgb, 1.0);
     }
     case DEBUG_MTL_METALLIC: {
-      out.color = vec4f(vec3f(surface.Metallic), 1.0);
+      out.color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_ROUGHNESS: {
       out.color = vec4f(vec3f(surface.Roughness), 1.0);
     }
     case DEBUG_MTL_IOR: {
-      out.color = vec4f(vec3f(surface.Ior), 1.0);
+      out.color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_EMISSIVE: {
       out.color = vec4f(emittance.rgb, 1.0);

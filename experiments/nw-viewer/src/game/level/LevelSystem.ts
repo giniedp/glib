@@ -39,7 +39,6 @@ import { TimeOfDayComponent } from './TimeOfDayComponent'
 export class LevelSystem extends GameSystem {
   private content: ContentService
   private sky: SkyLightSystem
-  private todQuery: GameQuery
 
   public game: EcsGame
   public entity: GameEntity
@@ -59,14 +58,8 @@ export class LevelSystem extends GameSystem {
     this.game = game.getSystem(EcsGame)
     this.content = game.getSystem(ContentService)
     this.renderer = game.getSystem(Renderer)
-    this.todQuery = game.query({ scope: 'active', required: [TimeOfDayComponent] })
+
     this.sky = game.getSystem(SkyLightSystem)
-
-    // this.skyMaterial = new SkyMaterial(device)
-
-    this.renderer.onContextReady.add((ctx) => {
-      this.updateRenderContext(ctx)
-    })
   }
 
   public destroy(): void {
@@ -74,19 +67,6 @@ export class LevelSystem extends GameSystem {
   }
 
   public override update(time: number, dt: number): void {
-    const cam = this.camera.entity.getTransform().world.getTranslation()
-
-    for (const entity of this.todQuery) {
-      const it = entity.component(TimeOfDayComponent)
-      if (it.isPointInside(cam)) {
-        this.timeOfDay.scheduleAdd(it.preset, it.config.priority, it.config.blendTime)
-      } else {
-        this.timeOfDay.scheduleRemove(it.preset)
-      }
-    }
-
-    this.timeOfDay.update(time, dt)
-
     const skyMesh = this.skyEntity?.component<MeshComponent>(MeshComponent, GetComponent.Optional)?.mesh
     if (skyMesh) {
       const material = skyMesh.materials[0] as SkyMaterial
@@ -116,7 +96,7 @@ export class LevelSystem extends GameSystem {
         this.timeOfDay.skyWaveR,
         this.timeOfDay.skyWaveG,
         this.timeOfDay.skyWaveB,
-        this.timeOfDay.sunIntensity,
+        this.timeOfDay.sunColor,
       )
     }
   }
@@ -324,39 +304,6 @@ export class LevelSystem extends GameSystem {
       wasd.targetRadius = sphere.radius * 2
     }
   }
-
-  // #region Render context
-  private scaledBottomFogColor = Vec3.create()
-  private scaledTopFogColor = Vec3.create()
-  private updateRenderContext(ctx: RenderContext) {
-    const tod = this.timeOfDay
-    ctx.renderInputs.set(InputSlots.Global.SunDirection, tod.sunDirection)
-    ctx.renderInputs.set(InputSlots.Global.SunColor, tod.sunColor)
-
-    this.scaledBottomFogColor.init(
-      tod.bottomFogColor.x * tod.bottomFogMultiplier,
-      tod.bottomFogColor.y * tod.bottomFogMultiplier,
-      tod.bottomFogColor.z * tod.bottomFogMultiplier,
-    )
-    ctx.renderInputs.set(InputSlots.Global.BottomFogColor, this.scaledBottomFogColor)
-
-    this.scaledTopFogColor.init(
-      tod.topFogColor.x * tod.topFogMultiplier,
-      tod.topFogColor.y * tod.topFogMultiplier,
-      tod.topFogColor.z * tod.topFogMultiplier,
-    )
-    ctx.renderInputs.set(InputSlots.Global.TopFogColor, this.scaledTopFogColor)
-
-    ctx.renderInputs.set(InputSlots.Global.TopFogDensity, tod.topFogDensity)
-    ctx.renderInputs.set(InputSlots.Global.BottomFogDensity, tod.bottomFogDensity)
-    ctx.renderInputs.set(InputSlots.Global.TopFogHeight, tod.topFogHeight)
-    ctx.renderInputs.set(InputSlots.Global.BottomFogHeight, tod.bottomFogHeight)
-    ctx.renderInputs.set(InputSlots.Global.FogHeightOffset, tod.fogHeightOffset)
-
-    ctx.renderInputs.set(InputSlots.Global.CloudShadingSunColor, tod.cloudshadingCustomSunColor)
-    ctx.renderInputs.set(InputSlots.Global.CloudShadingSkyColor, tod.cloudshadingCustomSkyColor)
-  }
-  // #endregion
 }
 
 function createGizmoGrid(parent: GameEntity, device: Device): CreateEntityOptions {

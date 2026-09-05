@@ -13,7 +13,7 @@ import {
 import { type GameEntity } from '@gglib/ecs'
 import { TonemapOperator } from '@gglib/effects'
 import { Color, CommonInputs, type DeviceStats } from '@gglib/graphics'
-import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
+import { DDS, GLTF, HDR } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, RAD_TO_DEGREE, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
 import { BloomPass, GeometryPass, RenderChannel, Renderer, TonemapPass, type RendererStats } from '@gglib/render'
 import { brand, lfmt, type EventType } from '@gglib/utils'
@@ -118,13 +118,13 @@ export class NwViewer extends EcsGame {
               threshold: 1,
               knee: 0.5,
               intensity: 0.5,
-              steps: 6,
+              steps: 10,
               mode: 'jimnez',
             }),
             new TonemapPass(this.device, {
               enabled: true,
               exposure: 1,
-              operator: TonemapOperator.UCHIMURA,
+              operator: TonemapOperator.REINHARD_JODIE,
               srgb: true,
             }),
           ],
@@ -140,7 +140,6 @@ export class NwViewer extends EcsGame {
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
 
     this.content.registerLoader(GLTF.Loader)
-    this.content.registerLoader(KTX.Loader)
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
 

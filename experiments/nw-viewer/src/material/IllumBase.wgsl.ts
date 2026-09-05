@@ -137,6 +137,8 @@ struct MaterialBlock {
 @group(0) @binding(1) var<uniform>       view    : ViewBlock;
 @group(0) @binding(2) var<uniform>       frame   : FrameBlock;
 @group(0) @binding(3) var<uniform>       lights  : LightBlock;
+// @block global
+@group(0) @binding(4) var envMap                 : texture_cube<f32>;
 
 @group(1) @binding(0) var<storage, read> object  : array<ObjectBlock, 1>; // per instance data
 @group(2) @binding(0) var<uniform>       material: MaterialBlock;
@@ -148,7 +150,7 @@ struct MaterialBlock {
 @group(3) @binding(0) var diffuseMap         : texture_2d<f32>; // $Diffuse      (diffuseMap, diffuseMap_Decal)
 @group(3) @binding(1) var normalMap          : texture_2d<f32>; // $Normal       (normalMap)
 @group(3) @binding(2) var specularMap        : texture_2d<f32>; // $Specular     (specularMap)
-@group(3) @binding(3) var envMap             : texture_2d<f32>; // $Env          (envMap)
+// @group(3) @binding(3) var envMap             : texture_2d<f32>; // $Env          (envMap)
 @group(3) @binding(4) var detailMap          : texture_2d<f32>; // $Detail       (detailMap) .ag=detail normal, .r=diffuse/gloss tint
 @group(3) @binding(5) var translucencyMap    : texture_2d<f32>; // $SecondSmoothness, $Translucency (translucencyMap)
 @group(3) @binding(6) var heightMap          : texture_2d<f32>; // $Heightmap    (heightMap) Height for offset bump, POM, silhouette POM, and displacement mapping defined by a Grayscale texture
@@ -369,7 +371,7 @@ fn illumFS(input: FragmentInput) -> FragmentOutput {
   var cBumpMap = vec3f(0.0, 0.0, 1.0);
 
   switch (nMicroDetailQuality) {
-    case MICRO_DETAIL_QUALITY_OBM: {
+    // case MICRO_DETAIL_QUALITY_OBM: {
       //     uv = ApplyOBM(uv, viewTS);
 
       // const float3 viewDir = mul(pPass.mTangentToWS, pPass.vView);
@@ -381,7 +383,7 @@ fn illumFS(input: FragmentInput) -> FragmentOutput {
       // #endif
       // pPass.IN.baseTC.xy = newCoords.xy;
       // pPass.IN.bumpTC.xy = newCoords.xy;
-    }
+    // }
     // case MICRO_DETAIL_QUALITY_POM: {
     //     uv = ApplyPOM(uv, viewTS);
     // TODO:
@@ -459,9 +461,9 @@ fn illumFS(input: FragmentInput) -> FragmentOutput {
 
   // --- Blend layer ------------------------------------------
   if (BLENDLAYER) {
-    var diffuseMap2   = textureSample(diffuseMap2,         samplerLinear, uvBlendLayer.xy);
-    var specularMap2  = textureSample(specularMap2,   samplerLinear, uvBlendLayer.xy);
-    var glossLayer2   = textureSample(translucencyMap,      samplerLinear, uvBlendLayer).a;
+    var diffuseMap2   = textureSample(diffuseMap2,     samplerLinear, uvBlendLayer.xy);
+    var specularMap2  = textureSample(specularMap2,    samplerLinear, uvBlendLayer.xy);
+    var glossLayer2   = textureSample(translucencyMap, samplerLinear, uvBlendLayer.xy).a;
 
     // Diffuse blend layer calculation
     diffuseMap2      *= vec4f(material.blendLayer2Diffuse.rgb, 1.0);
@@ -547,6 +549,8 @@ fn illumFS(input: FragmentInput) -> FragmentOutput {
 
 
   // --- Environment mapping
+  let reflectVec = normalize(reflect(-toEye, normal));
+  var reflectColor = getReflectColor(envMap, samplerLinear, reflectVec, gloss).rgb;
   // #if %ENVIRONMENT_MAP
   //     if (pPass.nReflectionMapping > 0)
   //     {
@@ -575,14 +579,19 @@ fn illumFS(input: FragmentInput) -> FragmentOutput {
 
   var surface: SurfaceParams;
   surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
-  surface.BaseColor = vec4f(albedo, alpha);
+  surface.Diffuse   = albedo;
+  surface.Alpha     = alpha;
   surface.Specular  = specular;
   surface.Normal    = vec4f(normal, 1.0);
   surface.Roughness = smoothnessToRoughness(gloss);
-  surface.Metallic  = 0.0;
-  surface.Ior       = 0.0;
 
-  var color = accumulateLight(lights, global, surface, toEye, input.worldPos);
+
+  var shade = accumulateLightShade(lights, global, surface, toEye, input.worldPos);
+
+  let ambient = vec3f(ao);
+  shade.ambient += getReflectColor(envMap, samplerLinear, normal, 0.0).xyz * ambient;
+  shade.specular += reflectColor * ambient * surface.Specular.rgb;
+  var color = composeShade(surface, shade);
 
   // --- Ambient / Environment --------------------------------
   // TODO:
@@ -623,19 +632,19 @@ fn illumFS(input: FragmentInput) -> FragmentOutput {
   switch (global.debug) {
     // #region Debug Material
     case DEBUG_MTL_ALBEDO: {
-      out.color = vec4f(surface.BaseColor.rgb, 1.0);
+      out.color = vec4f(surface.Diffuse.rgb, 1.0);
     }
     case DEBUG_MTL_SPECULAR: {
       out.color = vec4f(surface.Specular.rgb, 1.0);
     }
     case DEBUG_MTL_METALLIC: {
-      out.color = vec4f(vec3f(surface.Metallic), 1.0);
+      out.color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_ROUGHNESS: {
       out.color = vec4f(vec3f(surface.Roughness), 1.0);
     }
     case DEBUG_MTL_IOR: {
-      out.color = vec4f(vec3f(surface.Ior), 1.0);
+      out.color = vec4f(vec3f(0.0), 1.0);
     }
     case DEBUG_MTL_EMISSIVE: {
       out.color = vec4f(vec3f(emittance), 1.0);

@@ -2,7 +2,7 @@ import { BoundedAsyncExecutor, ContentLoader } from '@gglib/content'
 import { GameEntity, GameSystem, GameWorld } from '@gglib/ecs'
 import { Color, Device, Material, Texture } from '@gglib/graphics'
 import { Model } from '@gglib/model'
-import type { Type } from '@gglib/utils'
+import { addItemIfAbsent, append, type Type } from '@gglib/utils'
 import { fetchTypedRequest, type TypedRequest, type ViewerSlice } from '../api'
 
 export const Noise3DKey = Symbol('noise3d')
@@ -191,7 +191,8 @@ export interface ModelSource {
   url: string
   rootUrl?: string
 }
-
+const buckets: Record<string, string[]> = {}
+window['__nw_viewer_buckets'] = buckets
 function modelSource(modelFile: string, materialFile: string, rootUrl: string): ModelSource | null {
   if (!modelFile) {
     return null
@@ -218,8 +219,20 @@ function modelSource(modelFile: string, materialFile: string, rootUrl: string): 
     modelFile = modelFile.substring(1)
   }
   if (materialFile) {
-    modelFile += `?material=${materialFile}`
+    buckets[modelFile] = buckets[modelFile] || []
+    addItemIfAbsent(buckets[modelFile], materialFile)
+    if (modelFile.includes('?')) {
+      modelFile += `&material=${materialFile}`
+    } else {
+      modelFile += `?material=${materialFile}`
+    }
   }
+  if (modelFile.includes('?')) {
+    modelFile += `&no-lod=1`
+  } else {
+    modelFile += `?no-lod=1`
+  }
+
   return {
     url: modelFile,
     rootUrl: rootUrl,

@@ -246,6 +246,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1
+    options.usage ??= 0
     options.usage |= TextureUsage.RenderTarget
     return this.createTexture(options)
   }

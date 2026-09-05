@@ -32,13 +32,14 @@ export const NwSceneBrowser: FactoryComponent<NwBrowserProps> = () => {
     view({ attrs: { viewer, registry } }) {
       adapter ||= nwViewerTreAdapter(registry)
       const scene = viewer.scene
+      const world = viewer.world
       if (!scene) {
         return h('div.nw-scene-browser', {}, 'No scene')
       }
       return uiSection({}, [
         uiTree({
           adapter,
-          data: [scene.world, scene],
+          data: [world, scene],
           selectedId: selection ? adapter.nodeId(selection) : null,
           onSelect: (node) => {
             selection = node

@@ -13,11 +13,12 @@ export type TimeOfDayLayer = {
   preset: TimeOfDayPreset
 }
 const MAX_TIME = (24 * 60 - 1) / 60.0
+
 export class TimeOfDay {
   public sunColor = vec3(1, 0.71085715, 0.5335781)
   public sunDirection = Vec3.normalize(vec3(-1, -1, -10))
-  public sunIntensity = 1.0
   public sunMultiplier = 1.0
+  public sunSpecularMultiplier = 1.0
   public sunIsMoon = false
 
   public cloudshadingCustomSkyColor = vec3(0)
@@ -112,6 +113,14 @@ export class TimeOfDay {
     }
   }
 
+  private interpolate() {
+    const t = this.time / MAX_TIME
+    this.base.interpolate(t)
+    for (const layer of this.poiLayers) {
+      layer.preset.interpolate(t)
+    }
+  }
+
   public getParamValue(param: TodParam<number>): number {
     let value = this.base.variables[param.name].value
     if (!this.enablePoiLayers) {
@@ -123,6 +132,7 @@ export class TimeOfDay {
         value = lerp(value, lValue, layer.blendWeight)
       }
     }
+    value = clamp(value, param.min, param.max)
     return value
   }
 
@@ -170,6 +180,8 @@ export class TimeOfDay {
     if (this.animate) {
       this.tickTime(dt)
     }
+    this.interpolate()
+
     this.updateDayNight()
     this.updateMoonDirection()
     this.updateSunDirection()
@@ -324,21 +336,17 @@ export class TimeOfDay {
   }
 
   private updateVariables() {
+    const sunIntensity = this.getParamValue(TodParams.SUN_INTENSITY) * this.sunMultiplier
     this.getParamColor(TodParams.SUN_COLOR, this.sunColor)
-    this.sunIntensity = this.getParamValue(TodParams.SUN_INTENSITY) / 1000
-    this.skyKM = this.getParamValue(TodParams.SKYLIGHT_KM) / 1000
-    this.skyKR = this.getParamValue(TodParams.SKYLIGHT_KR) / 1000
+    convertIlluminanceToLightColor(this.sunColor, sunIntensity)
+    this.sunSpecularMultiplier = this.getParamValue(TodParams.SUN_SPECULAR_MULTIPLIER)
+
+    this.skyKM = this.getParamValue(TodParams.SKYLIGHT_KM) * 1e-4 // downscaling from ui friendly value
+    this.skyKR = this.getParamValue(TodParams.SKYLIGHT_KR) * 1e-4 // downscaling from ui friendly value
     this.skyG = this.getParamValue(TodParams.SKYLIGHT_G)
     this.skyWaveR = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_R)
     this.skyWaveG = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_G)
     this.skyWaveB = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_B)
-
-    Vec3.multiplyScalar(this.sunColor, this.sunMultiplier, this.sunColor)
-    // const lux = this.sunIntensity * this.sunMultiplier
-    // convertIlluminanceToLightColor(this.sunColor, lux)
-
-    // TodParams.SUN_INTENSITY
-    // TodParams.SUN_COLOR_MULTIPLIER
 
     this.getParamColor(TodParams.FOG_COLOR, this.bottomFogColor)
     this.bottomFogMultiplier = this.getParamValue(TodParams.FOG_COLOR_MULTIPLIER)
@@ -416,7 +424,7 @@ function convertIlluminanceToLightColor(colorRGB: IVec3, illuminance: number) {
   illuminance /= RENDERER_LIGHT_UNIT_SCALE
 
   const lum = colorRGB.x * 0.212671 + colorRGB.y * 0.71516 + colorRGB.z * 0.072169
-  const scale = illuminance / lum
+  const scale = lum > 0 ? illuminance / lum : 1
   Vec3.multiplyScalar(colorRGB, scale, colorRGB)
   Vec3.multiplyScalar(colorRGB, 1 / Math.PI, colorRGB)
 }

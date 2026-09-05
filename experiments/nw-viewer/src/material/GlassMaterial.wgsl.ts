@@ -547,14 +547,13 @@ fn fs_main(input: FragmentInput, @builtin(front_facing) isFront: bool) -> Fragme
 
   var surface: SurfaceParams;
   // surface.Transmittance = vec4f(cShadingBack.rgb, material.normalViewDependency);
-  surface.BaseColor = vec4f(albedo, alpha);
+  surface.Diffuse   = albedo;
+  surface.Alpha     = alpha;
   surface.Specular  = specular;
   surface.Normal    = vec4f(normal, 1.0);
   surface.Roughness = smoothnessToRoughness(gloss);
-  surface.Metallic  = 0.0;
-  surface.Ior       = 0.0;
 
-  var shade = accumulateLightOut(lights, global, surface, toEye, input.worldPos);
+  var shade = accumulateLightShade(lights, global, surface, toEye, input.worldPos);
   // shade.ambient + shade.diffuseBack + shade.diffuse + shade.specular;
 
   // --- frag_ambient

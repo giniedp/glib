@@ -9,6 +9,7 @@ export type TodParam<T extends IVec3 | number> = {
   value: T
   min: number
   max: number
+  spline?: TodSpline
 }
 
 function color(group: string, displayName: string, name: string, value: IVec3): TodParam<IVec3> {
@@ -173,4 +174,56 @@ export function getTodParamByName(name: string): TodParam<IVec3 | number> | unde
     }
   }
   return undefined
+}
+
+export type TodSpline = Array<TodSplineKey>
+
+export type TodSplineKey = {
+  time: number
+  value: number[]
+  flags: number
+}
+
+export function parseTodSpline(value: string): TodSpline | null {
+  if (!value) {
+    return null
+  }
+  const result: TodSpline = []
+
+  // comma separated entries, ends with comma
+  //  ENTRY,ENTRY,ENTRY,
+  for (const entry of value.split(',')) {
+    if (!entry) {
+      continue
+    }
+
+    // colon separated entries
+    //  TIME:VALUE:FLAGS
+    // can't use split, since VALUE may contain colons
+    const i1 = entry.indexOf(':')
+    const i2 = entry.lastIndexOf(':')
+    const time = entry.substring(0, i1)
+    const value = entry.substring(i1 + 1, i2)
+    const flags = entry.substring(i2 + 1)
+    const key: TodSplineKey = {
+      time: Number(time),
+      flags: Number(flags),
+      value: [],
+    }
+
+    // value is either a plain number or a vector
+    // a vector always has parenthesis, e.g.: "(0.00699541:0.00972122:0.012983)"
+    if (!value.startsWith('(')) {
+      key.value = [Number(value)]
+    } else {
+      const [_, r, g, b] = value.split(/\(|:|\)/)
+      key.value = [Number(r), Number(g), Number(b)]
+    }
+    result.push(key)
+  }
+
+  if (!result.length) {
+    return null
+  }
+  return result
 }

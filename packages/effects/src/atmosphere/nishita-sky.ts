@@ -10,10 +10,10 @@ import {
   TextureUsage,
   typedProgramInputs,
 } from '@gglib/graphics'
-import { IVec3, vec3 } from '@gglib/math'
+import { IVec2, IVec3, vec2, vec3 } from '@gglib/math'
 import { FULLSCREEN_GLSL_VS } from '../image/common.glsl'
 import { NISHITA_OPTICAL_LUT_GLSL_FS, NISHITA_PANORAMA_GLSL_FS, NISHITA_SCATTERING_GLSL_FS } from './nishita-sky.glsl'
-import { NISHITA_OPTICAL_LUT_WGSL, NISHITA_SCATTERING_WGSL, NISHITA_PANORAMA_WGSL } from './nishita-sky.wgsl'
+import { NISHITA_OPTICAL_LUT_WGSL, NISHITA_PANORAMA_WGSL, NISHITA_SCATTERING_WGSL } from './nishita-sky.wgsl'
 
 export function nishitaLutShaderOptions(): ShaderModuleOptions {
   return {
@@ -170,6 +170,10 @@ export class NishitaSkyEffect {
     mieScatteringSampler: inputSlot('', 'mieScatteringSampler', 'sampler'),
     rayleighScatteringMap: inputSlot('', 'rayleighScatteringMap', 'texture'),
     rayleighScatteringSampler: inputSlot('', 'rayleighScatteringSampler', 'sampler'),
+
+    nightSkyColorBase: inputSlot('params', 'nightSkyColorBase', 'vec3'),
+    nightSkyColorDelta: inputSlot('params', 'nightSkyColorDelta', 'vec3'),
+    nightSkyColorShift: inputSlot('params', 'nightSkyColorShift', 'vec2'),
   })
 
   public readonly compiled: Promise<this>
@@ -261,6 +265,10 @@ export class NishitaSkyEffect {
    * Default is `vec3(0.1, 0.1, 0.1)`
    */
   public groundColor: IVec3 = vec3(0.1)
+
+  public nightSkyColorBase: IVec3 = vec3(0)
+  public nightSkyColorDelta: IVec3 = vec3(0)
+  public nightSkyColorShift: IVec2 = vec2(0)
 
   public readonly opticalLUT: Texture
   public readonly mieScatteringMap: Texture
@@ -419,6 +427,9 @@ export class NishitaSkyEffect {
     params.mieScatteringSampler = SamplerState.LinearClamp
     params.rayleighScatteringMap = this.rayleighScatteringMap
     params.rayleighScatteringSampler = SamplerState.LinearClamp
+    params.nightSkyColorBase = this.nightSkyColorBase
+    params.nightSkyColorDelta = this.nightSkyColorDelta
+    params.nightSkyColorShift = this.nightSkyColorShift
 
     program.applyBlocks(params.blocks)
     program.commit()
