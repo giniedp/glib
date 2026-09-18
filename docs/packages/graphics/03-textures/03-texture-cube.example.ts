@@ -1,7 +1,16 @@
-import { Color, createDevice, CullState, DepthState, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import {
+  Color,
+  createDevice,
+  CullState,
+  DepthState,
+  Device,
+  PlatformId,
+  FrameContext,
+  boxGeometry,
+} from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
 
   const shader = device.createShaderModule({
@@ -29,41 +38,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     ],
   })
 
-  // The same cube geometry as in the 3D Transformations example, but
-  // without a color attribute this time - a cube texture is sampled with
-  // a 3D direction instead of a 2D UV coordinate, and the un-normalized
-  // vertex position happens to already point in exactly the right
-  // direction: straight from the cube's center towards each corner.
-  const vertices = device.createVertexBuffer([
-    {
-      vertexLayout: {
-        vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
-      },
-      // prettier-ignore
-      data: new Float32Array([
-        /* 0 */ -0.5, -0.5, -0.5,
-        /* 1 */  0.5, -0.5, -0.5,
-        /* 2 */  0.5,  0.5, -0.5,
-        /* 3 */ -0.5,  0.5, -0.5,
-        /* 4 */ -0.5, -0.5,  0.5,
-        /* 5 */  0.5, -0.5,  0.5,
-        /* 6 */  0.5,  0.5,  0.5,
-        /* 7 */ -0.5,  0.5,  0.5,
-      ]),
-    },
-  ])
-  const indices = device.createIndexBuffer({
-    indexType: 'uint16',
-    // prettier-ignore
-    data: new Uint16Array([
-      4, 5, 6, 4, 6, 7, // front  (+Z)
-      1, 0, 3, 1, 3, 2, // back   (-Z)
-      0, 4, 7, 0, 7, 3, // left   (-X)
-      5, 1, 2, 5, 2, 6, // right  (+X)
-      3, 7, 6, 3, 6, 2, // top    (+Y)
-      0, 1, 5, 0, 5, 4, // bottom (-Y)
-    ]),
-  })
+  const cube = boxGeometry(device)
 
   const depthTarget = device.createDepthTarget({
     width: device.output.width,
@@ -84,7 +59,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   const cameraPosition = Vec3.create(0, 0, 3)
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     device.resize()
     depthTarget.resizeToMatch(device.output)
 
@@ -114,15 +89,13 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.setDepthState(DepthState.LessEqual)
     pass.setCullState(CullState.CullBack)
     pass.setProgram(program)
-    pass.setVertexBuffer(vertices)
-    pass.setIndexBuffer(indices)
-    pass.drawIndexed(36)
+    cube.render(pass)
     pass.submit()
     pass.resolve()
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }
@@ -161,14 +134,17 @@ const wgslShader = /*wgsl*/ `
 
   struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
-    @location(0) direction : vec3<f32>,
+    @location(0) direction : vec3f,
   };
 
   @vertex
-  fn vs(@location(0) vPosition : vec3<f32>) -> VertexOutput {
+  fn vs(
+    @location(0) position : vec3f,
+    @location(1) normal : vec3f
+  ) -> VertexOutput {
     var output : VertexOutput;
-    output.direction = vPosition;
-    output.Position = uProjection * uView * uWorld * vec4<f32>(vPosition, 1.0);
+    output.direction = position;
+    output.Position = uProjection * uView * uWorld * vec4<f32>(position, 1.0);
     return output;
   }
 

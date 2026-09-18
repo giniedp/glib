@@ -210,8 +210,10 @@ function getSampleType(info: WgslResourceInfo): GPUTextureSampleType {
   switch (info.elementType) {
     case 'float32':
     case 'float16':
+      if (info.texture.multisample) {
+        return 'unfilterable-float'
+      }
       return 'float'
-    // TODO: handle unfilterable-float for specific texture formats
     case 'uint32':
     case 'uint16':
     case 'uint8':

@@ -6,13 +6,13 @@ import {
   DepthState,
   Device,
   PlatformId,
-  TaskContext,
+  FrameContext,
   Texture,
 } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
 
   const shader = device.createShaderModule({
@@ -54,7 +54,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   const cameraPosition = Vec3.create(0, 0.6, 3)
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     device.resize()
     msaaColor.resizeToMatch(device.output)
     msaaDepth.resizeToMatch(device.output)
@@ -101,7 +101,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

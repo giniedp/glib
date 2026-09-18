@@ -134,10 +134,10 @@ function createMeshPart(doc: Document, part: MeshPrimitive, bva: Record<string, 
   let hasBitangents = false
   let hasTexture = false
   for (const vBuffer of vBufferOptions) {
-    hasNormals ||= !!vBuffer.vertexLayout.normal
-    hasTangents ||= !!vBuffer.vertexLayout.tangent
-    hasBitangents ||= !!vBuffer.vertexLayout.bitangent
-    hasTexture ||= !!vBuffer.vertexLayout.texture
+    hasNormals ||= !!vBuffer.layout.normal
+    hasTangents ||= !!vBuffer.layout.tangent
+    hasBitangents ||= !!vBuffer.layout.bitangent
+    hasTexture ||= !!vBuffer.layout.texture
   }
 
   if (isTriangleList && (!hasNormals || !hasTangents || !hasBitangents)) {
@@ -235,14 +235,14 @@ function createVertexBuffer(
       const options: VertexBufferOptions[0] = {
         data: new Uint8Array(buffer, view.byteOffset ?? 0, view.byteLength),
         stride: view.byteStride,
-        vertexLayout: {},
+        layout: {},
       }
       result.push(options)
 
       for (const attr of attributes) {
         const { accessor } = bva[attr]
         const semantic = getAttributeSemantic(attr)
-        options.vertexLayout[semantic] = {
+        options.layout[semantic] = {
           elementType: dataTypeFromWebGL(accessor.componentType),
           elementCount: accessorComponentCount(accessor.type),
           normalized: accessor.normalized || false,
@@ -257,7 +257,7 @@ function createVertexBuffer(
       const semantic = getAttributeSemantic(attr)
       result.push({
         data: readAccessorStream(bva[attr]),
-        vertexLayout: {
+        layout: {
           [semantic]: {
             elementType: dataTypeFromWebGL(accessor.componentType),
             elementCount: accessorComponentCount(accessor.type),

@@ -14,38 +14,39 @@ export function isCompressedFaceData(data: any): data is CompressedFaceData {
   return data && 'data' in data && 'rows' in data && 'bytesPerRow' in data
 }
 
-export abstract class TextureSource<T extends TextureFaceData = TextureFaceData> {
+export class TextureSource<T extends TextureFaceData = TextureFaceData> {
   /**
    * The width of the texture source.
    */
-  abstract readonly width: number
+  public width: number
 
   /**
    * The height of the texture source.
    */
-  abstract readonly height: number
+  public height: number
 
   /**
    * The texture data for each mipmap level.
    *
    * @remarks
-   * Each level is an array of texture data, where each element represents a layer or face of the texture.
+   * Each element in the array is one mipmap level.
    *
-   * - For cubemaps, each level will contain 6 elements (one for each face).
-   * - For 2D textures, each level will contain a single element.
-   * - For 3D textures or 2D arrays, each level will contain multiple elements (one for each layer).
+   * - For cubemaps, each level has 6 elements. Each element is one face.
+   * - For 2D textures, each level has 1 element.
+   * - For 3D textures or 2D arrays, each level has more than 1 element. Each element is one layer.
    */
-  abstract readonly levels: Array<Array<T>>
+  public levels: Array<Array<T>>
 
-  /**
-   * The original resource from which the texture source was created.
-   */
-  public abstract resource: unknown
+  public constructor(options: { width: number; height: number; levels: Array<Array<T>> }) {
+    this.width = options.width
+    this.height = options.height
+    this.levels = options.levels
+  }
 }
 
 export abstract class DynamicTextureSource<T extends TextureFaceData = TextureFaceData> extends TextureSource<T> {
   /**
-   * Indicates whether the texture source is ready to be used.
+   * Indicates if the texture source is ready to use.
    */
   abstract readonly isReady: boolean
 
@@ -81,38 +82,90 @@ export abstract class DynamicTextureSource<T extends TextureFaceData = TextureFa
       }
     }
   }
+
+  public dispose() {
+    this.listeners.change.length = 0
+    this.listeners.ready.length = 0
+  }
 }
 
-export class ImageElementSource extends DynamicTextureSource<HTMLImageElement> {
+export function createImageBitmapOptions(options?: ImageBitmapOptions): ImageBitmapOptions {
+  const result: ImageBitmapOptions = {
+    colorSpaceConversion: options?.colorSpaceConversion ?? 'none',
+    imageOrientation: options?.imageOrientation ?? 'none',
+    premultiplyAlpha: options?.premultiplyAlpha ?? 'none',
+  }
+  if (options?.resizeWidth && options?.resizeHeight) {
+    result.resizeWidth = options.resizeWidth
+    result.resizeHeight = options.resizeHeight
+    result.resizeQuality = options.resizeQuality ?? 'high'
+  }
+  return result
+}
+export class ImageBitmapTextureSource extends DynamicTextureSource<ImageBitmap> {
   public isReady: boolean
-  public width: number
-  public height: number
 
-  public readonly levels: HTMLImageElement[][]
-
-  public readonly resource: HTMLImageElement[]
-
-  public constructor(resource: HTMLImageElement | Array<HTMLImageElement>) {
-    super()
+  public constructor(
+    resource: string | string[] | ImageBitmapSource | Array<ImageBitmapSource>,
+    options?: ImageBitmapOptions,
+  ) {
+    super({
+      width: options?.resizeWidth,
+      height: options?.resizeHeight,
+      levels: [],
+    })
     const list = Array.isArray(resource) ? resource : [resource]
-    this.levels = [list]
-    this.resource = list
+    async function transformSource(it: string | ImageBitmapSource): Promise<ImageBitmapSource> {
+      if (typeof it === 'string' || it instanceof URL) {
+        return fetch(it).then((res) => res.blob())
+      }
+      if (it instanceof Image) {
+        await it.decode()
+      }
+      return it
+    }
+    options = createImageBitmapOptions(options)
     Promise.all(
-      list.map((it) => {
-        const { promise, resolve, reject } = Promise.withResolvers<HTMLImageElement>()
-        if (it.complete) {
-          resolve(it)
-        } else {
-          it.addEventListener('load', () => resolve(it))
-          it.addEventListener('error', (err) => reject(err))
-        }
-        return promise
+      list.map(async (it) => {
+        const source = await transformSource(it)
+        return createImageBitmap(source, options)
       }),
-    ).then((res) => {
+    ).then((images) => {
       this.isReady = true
-      this.width = res[0].naturalWidth
-      this.height = res[0].naturalHeight
-      if (!res.every((it) => it.naturalWidth === res[0].naturalWidth && it.naturalHeight === res[0].naturalHeight)) {
+      this.width = images[0].width
+      this.height = images[0].height
+      this.levels = [images]
+
+      this.trigger('ready')
+      this.trigger('change')
+    })
+  }
+
+  public override dispose(): void {
+    super.dispose()
+    for (const level of this.levels) {
+      for (const image of level) {
+        image.close()
+      }
+    }
+  }
+}
+
+export class ImageElementTextureSource extends DynamicTextureSource<HTMLImageElement> {
+  public isReady: boolean
+
+  public constructor(resource: HTMLImageElement | Array<HTMLImageElement>, options?: TextureSourceOptions) {
+    super({
+      width: options?.width,
+      height: options?.height,
+      levels: [Array.isArray(resource) ? resource : [resource]],
+    })
+    const list = this.levels[0]
+    Promise.all(list.map((it) => it.decode().then(() => it))).then((el) => {
+      this.isReady = true
+      this.width ??= list[0].naturalWidth
+      this.height ??= list[0].naturalHeight
+      if (!list.every((it) => it.naturalWidth === list[0].naturalWidth && it.naturalHeight === list[0].naturalHeight)) {
         throw new Error(`All image source must have same dimensions`)
       }
 
@@ -122,33 +175,34 @@ export class ImageElementSource extends DynamicTextureSource<HTMLImageElement> {
   }
 }
 
-export class VideoElementSource extends DynamicTextureSource<HTMLVideoElement> {
+export class VideoElementTextureSource extends DynamicTextureSource<HTMLVideoElement> {
   public get isReady() {
-    return this.resource.readyState >= 3
+    return this.video.readyState >= 3
   }
-  public get width() {
-    return this.resource.videoWidth
-  }
-  public get height() {
-    return this.resource.videoHeight
-  }
-  public readonly levels: [[HTMLVideoElement]]
 
-  public readonly resource: HTMLVideoElement
+  public video: HTMLVideoElement
+  public videoTime: number = null
+  public videoState: number = null
+  public videoFrame: number = null
+
   public constructor(resource: HTMLVideoElement) {
-    super()
-    this.levels = [[resource]]
-    this.resource = resource
-    this.resource.requestVideoFrameCallback(this.handleVideoFrame)
+    super({
+      width: resource.videoWidth,
+      height: resource.videoHeight,
+      levels: [[resource]],
+    })
+
+    this.video = resource
+    this.videoFrame = this.video.requestVideoFrameCallback(this.handleVideoFrame)
   }
 
-  private videoTime: number = null
-  private videoState: number = null
   private handleVideoFrame = () => {
     const wasReady = this.videoState >= 3
-    const isReady = this.resource.readyState >= 3
-    const changed = this.resource.currentTime !== this.videoTime
-    this.videoTime = this.resource.currentTime
+    const isReady = this.video.readyState >= 3
+    const changed = this.video.currentTime !== this.videoTime
+    this.videoTime = this.video.currentTime
+    this.width = this.video.videoWidth
+    this.height = this.video.videoHeight
     if (isReady) {
       if (!wasReady) {
         this.trigger('ready')
@@ -157,76 +211,13 @@ export class VideoElementSource extends DynamicTextureSource<HTMLVideoElement> {
         this.trigger('change')
       }
     }
-    this.resource.requestVideoFrameCallback(this.handleVideoFrame)
-  }
-}
-
-function isImageBitmap(it: any): it is ImageBitmap {
-  return typeof ImageBitmap !== 'undefined' && it instanceof ImageBitmap
-}
-
-export class ImageDataSource extends TextureSource<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas> {
-  public get width() {
-    return this.resource.width
-  }
-  public get height() {
-    return this.resource.height
-  }
-  public readonly levels: Array<Array<ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas>>
-
-  public readonly resource: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas
-
-  public constructor(data: ImageBitmap | ImageData | HTMLCanvasElement | OffscreenCanvas) {
-    super()
-    if (
-      isImageBitmap(data) ||
-      data instanceof ImageData ||
-      data instanceof HTMLCanvasElement ||
-      data instanceof OffscreenCanvas
-    ) {
-      this.resource = data
-      this.levels = [[this.resource]]
-    } else if ('data' in data && 'width' in data && 'height' in data) {
-      const input = data as ImageData
-      this.resource = new ImageData(input.data, input.width, input.height)
-      this.levels = [[this.resource]]
-    } else {
-      throw new Error()
-    }
-  }
-}
-
-export class ArrayBufferViewSource extends TextureSource<ArrayBufferView> {
-  public readonly width: number
-  public readonly height: number
-  public readonly levels: Array<Array<ArrayBufferView>>
-
-  public get resource() {
-    return this.levels
+    this.videoFrame = this.video.requestVideoFrameCallback(this.handleVideoFrame)
   }
 
-  public constructor(levels: Array<Array<ArrayBufferView>>, width: number, height: number) {
-    super()
-    this.levels = levels
-    this.width = width
-    this.height = height
-  }
-}
-
-export class CompressedBufferSource extends TextureSource<CompressedFaceData> {
-  public readonly width: number
-  public readonly height: number
-  public readonly levels: Array<Array<CompressedFaceData>>
-
-  public get resource() {
-    return this.levels
-  }
-
-  public constructor(levels: Array<Array<CompressedFaceData>>, width: number, height: number) {
-    super()
-    this.levels = levels
-    this.width = width
-    this.height = height
+  public override dispose(): void {
+    super.dispose()
+    this.video.cancelVideoFrameCallback(this.videoFrame)
+    this.video.pause()
   }
 }
 
@@ -242,15 +233,32 @@ export type TextureSourceInput =
   | HTMLCanvasElement
   | TextureSource
 
-export interface CreateTextureSourceOptions {
+export interface TextureSourceOptions {
+  /**
+   * Value for crossOrigin attribute for HTML Image source
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/crossOrigin
+   */
   crossOrigin?: string
+  /**
+   * List of extension names that identify video URLs
+   */
   videoTypes?: string[]
+  /**
+   * Source width e.g. array buffer
+   */
   width?: number
+  /**
+   * Source height e.g. array buffer
+   */
   height?: number
+  /**
+   * Source data format e.g. array buffer
+   */
   format?: SurfaceFormat
 }
 
-export function createTextureSource(source: TextureSourceInput, options?: CreateTextureSourceOptions): TextureSource {
+export function createTextureSource(source: TextureSourceInput, options?: TextureSourceOptions): TextureSource {
   if (!source) {
     return null
   }
@@ -260,11 +268,15 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
   }
 
   if (Array.isArray(source) && source.every((it) => typeof it === 'string')) {
-    return textureSourceFromImageUrl(source, options?.crossOrigin)
+    return createImageTextureSource(source, {
+      crossOrigin: options?.crossOrigin,
+    })
   }
 
   if (Array.isArray(source) && typeof source[0] === 'object') {
-    return textureSourceFromVideoUrls(source as any, options?.crossOrigin)
+    return createVideoTextureSource(source as any, {
+      crossOrigin: options?.crossOrigin,
+    })
   }
 
   if (source instanceof TextureSource) {
@@ -272,15 +284,19 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
   }
 
   if (source instanceof HTMLImageElement) {
-    return new ImageElementSource(source)
+    return new ImageElementTextureSource(source, options)
   }
 
   if (source instanceof HTMLVideoElement) {
-    return new VideoElementSource(source)
+    return new VideoElementTextureSource(source)
   }
 
   if ('width' in source && 'height' in source) {
-    return new ImageDataSource(source)
+    return new TextureSource({
+      levels: [[source]],
+      width: source.width,
+      height: source.height,
+    })
   }
 
   if (source && (source instanceof Array || source instanceof ArrayBuffer || 'buffer' in source)) {
@@ -290,54 +306,137 @@ export function createTextureSource(source: TextureSourceInput, options?: Create
     if (!options.format) {
       throw new Error(`Invalid options for creating texture source. surfaceFormat must be specified.`)
     }
-    return new ArrayBufferViewSource([[toArrayBufferView(source, options.format)]], options.width, options.height)
+    return new TextureSource({
+      levels: [[toArrayBufferView(source, options.format)]],
+      width: options.width,
+      height: options.height,
+    })
   }
 
   return null
 }
 
-export function textureSourceFromUrl(url: string, options?: CreateTextureSourceOptions) {
+export function textureSourceFromUrl(url: string, options?: TextureSourceOptions) {
   const ext = extname(url)
   const isVideo = options?.videoTypes && options.videoTypes.indexOf(ext) >= 0
   if (isVideo) {
-    return textureSourceFromVideoUrl(url, options?.crossOrigin)
+    return createVideoTextureSource(url, {
+      crossOrigin: options?.crossOrigin!,
+    })
   }
-  return textureSourceFromImageUrl(url, options?.crossOrigin)
+  return createImageTextureSource(url, options)
 }
 
-export function textureSourceFromImageUrl(url: string | string[], crossOrigin?: string) {
+export function createImageTextureSource(
+  url: string | string[] | HTMLImageElement | HTMLImageElement[],
+  options?: {
+    crossOrigin?: string
+  } & ImageBitmapOptions,
+) {
+  if (typeof createImageBitmap === 'function') {
+    return createImageBitmapTextureSource(url, options)
+  }
+  return createImageElementTextureSource(url, options)
+}
+
+/**
+ * Creates a texture source that fetches data from an URL or image element.
+ *
+ * Requires browser to support `createImageBitmap`.
+ */
+export function createImageBitmapTextureSource(
+  url: string | string[] | HTMLImageElement | HTMLImageElement[],
+  options?: ImageBitmapOptions,
+) {
+  return new ImageBitmapTextureSource(url, options)
+}
+
+/**
+ * Creates a texture source that loads an HTML Image Element first
+ */
+export function createImageElementTextureSource(
+  url: string | string[] | HTMLImageElement | HTMLImageElement[],
+  options?: {
+    crossOrigin?: string
+  },
+) {
   const urls = Array.isArray(url) ? url : [url]
   const images = urls.map((it) => {
-    const image = new Image()
-    image.crossOrigin = crossOrigin
-    image.src = it
+    let image: HTMLImageElement
+    if (typeof it === 'string') {
+      image = new Image()
+      image.crossOrigin = options.crossOrigin
+      image.src = it
+    } else {
+      image = it
+    }
     return image
   })
-  return new ImageElementSource(images)
+  return new ImageElementTextureSource(images)
 }
 
-export function textureSourceFromVideoUrl(url: string, crossOrigin: string) {
-  const video = document.createElement('video')
-  video.src = url
-  video.crossOrigin = crossOrigin
-  video.load()
-  return new VideoElementSource(video)
+export interface CreateVideoTextureOptions {
+  crossOrigin?: string
+  autoload?: boolean
+  autoplay?: boolean
+  loop?: boolean
+  muted?: boolean
+  volume?: number
 }
+/**
+ * Creates a video texture source from a video URL
+ */
+export function createVideoTextureSource(
+  videoOrUrl: string,
+  options?: CreateVideoTextureOptions,
+): VideoElementTextureSource
+/**
+ * Creates a video texture source from a video Element
+ */
+export function createVideoTextureSource(
+  videoOrUrl: HTMLVideoElement,
+  options?: CreateVideoTextureOptions,
+): VideoElementTextureSource
+/**
+ * Creates a video texture source form the first video type that is supported.
+ */
+export function createVideoTextureSource(
+  videoOrUrl: Array<{ src: string; type: string }>,
+  options?: CreateVideoTextureOptions,
+): VideoElementTextureSource
+export function createVideoTextureSource(
+  videoOrUrl: string | HTMLVideoElement | Array<{ src: string; type: string }>,
+  options?: CreateVideoTextureOptions,
+): VideoElementTextureSource {
+  let video: HTMLVideoElement
+  options ||= {}
+  if (typeof videoOrUrl === 'string') {
+    video = document.createElement('video')
+    video.autoplay = options.autoplay ?? true
+    video.src = videoOrUrl
+  } else if (!Array.isArray(videoOrUrl)) {
+    video = videoOrUrl
+  } else {
+    video = document.createElement('video')
 
-export function textureSourceFromVideoUrls(options: Array<{ src: string; type: string }>, crossOrigin: string) {
-  // this.set('ready', false)
-  const video = document.createElement('video')
-  let valid = false
-  for (let option of options) {
-    if (video.canPlayType(option.type)) {
-      video.src = option.src
-      video.crossOrigin = crossOrigin
-      valid = true
-      break
+    let valid = false
+    for (let option of videoOrUrl) {
+      if (video.canPlayType(option.type)) {
+        video.src = option.src
+        valid = true
+        break
+      }
+    }
+    if (!valid) {
+      console.warn("[Texture] no supported format found. Video won't play.", options)
     }
   }
-  if (!valid) {
-    console.warn("[Texture] no supported format found. Video won't play.", options)
+  if (options?.crossOrigin) {
+    video.crossOrigin = options?.crossOrigin
   }
-  return new VideoElementSource(video)
+  video.loop = options.loop ?? video.loop
+  video.muted = options.muted ?? video.muted
+  video.volume = options.volume ?? video.volume
+  video.autoplay = options.autoplay ?? !!video.autoplay
+  return new VideoElementTextureSource(video)
 }

@@ -52,7 +52,7 @@ export interface JsonRpcResponse<T = unknown> {
   error?: JsonRpcError
 }
 
-export interface PendingRequest<T = unknown> {
+interface PendingRequest<T = unknown> {
   /**
    * The request id
    */
@@ -88,7 +88,7 @@ export class JsonRpcClient {
 
   public sendRequest<T>(rpc: JsonRpcRequest, transfer?: Transferable[], timeoutMs = 0): Promise<T> {
     return new Promise<any>((resolve, reject) => {
-      if (!rpc.id) {
+      if (rpc.id == null) {
         console.warn('RPC request is missing an id. Assigning a generated id to the request.', rpc)
         rpc.id = this.nextId()
       }
@@ -135,4 +135,52 @@ export class JsonRpcClient {
       pending.reject?.(response.error)
     }
   }
+}
+
+export type JsonRpcWorker = ReturnType<typeof jsonRpcWorker>
+export function jsonRpcWorker({ worker }: { worker: Worker }) {
+  const client = new JsonRpcClient((rpc, transfer) => {
+    worker.postMessage(rpc, transfer || [])
+  })
+  worker.addEventListener('message', (e) => {
+    client.handleResponse(e.data)
+  })
+  return {
+    worker,
+    nextId: client.nextId.bind(client),
+    request: client.sendRequest.bind(client),
+  }
+}
+
+export function postJsonRpc<T>(
+  target: Window & typeof globalThis,
+  message: JsonRpcRequest | JsonRpcResponse<T> | JsonRpcError,
+) {
+  target.postMessage(message)
+}
+
+export function jsonRpcHandler(
+  target: Window & typeof globalThis,
+  handler: (request: JsonRpcRequest) => void | any | Promise<any | void>,
+) {
+  target.addEventListener('message', async (event: MessageEvent<JsonRpcRequest>) => {
+    const request = event.data
+    try {
+      const result = await Promise.resolve(handler(request))
+      postJsonRpc(self, {
+        id: request.id,
+        error: null,
+        result: result,
+      })
+    } catch (error) {
+      postJsonRpc(self, {
+        id: request.id,
+        error: {
+          code: -32000,
+          message: (error as Error)?.message ?? String(error),
+        },
+        result: null,
+      })
+    }
+  })
 }

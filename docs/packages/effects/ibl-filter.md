@@ -6,13 +6,14 @@ aside: false
 
 # IBL Filter
 
-:::tabs
+:::tabs variant:code
 == WebGL
 <Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

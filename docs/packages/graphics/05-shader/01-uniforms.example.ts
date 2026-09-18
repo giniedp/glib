@@ -1,6 +1,6 @@
-import { Color, createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import { Color, createDevice, Device, PlatformId, FrameContext } from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -16,7 +16,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   // The same static triangle as before - its vertex buffer never changes.
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         vPosition: {
           byteOffset: 0,
           elementCount: 3,
@@ -33,7 +33,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   ])
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     pass.setClearColor(0, Color.CornflowerBlue)
     pass.clear()
 
@@ -68,7 +68,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

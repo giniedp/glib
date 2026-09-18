@@ -17,7 +17,7 @@ import {
   createDevice,
   PlatformId,
   SpriteBatch,
-  TaskContext,
+  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
@@ -55,6 +55,7 @@ const params = {
 
   tonemapOperator: TonemapOperator.PBR_NEUTRAL,
   tonemapExposure: 1,
+  whitePoint: 1,
 
   output: 'result' as Output,
 }
@@ -120,6 +121,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
         options: TonemapOperator,
       })
       ui.scalar(params, 'tonemapExposure', { label: 'Exposure', range: true, min: 0, max: 10 })
+      ui.scalar(params, 'whitePoint', { label: 'White Point', range: true, min: 0, max: 20 })
     })
   })
 
@@ -184,7 +186,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     result: null!,
   }
 
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     sceneTarget.resizeToMatch(device.output)
     extractTarget.resizeToMatch(device.output)
     blurTarget.resizeToMatch(device.output)
@@ -255,6 +257,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
     // downsample pass
     for (let i = 0; i < params.downsampleSteps; i++) {
+      pass.setRenderBlend(0, BlendState.Opaque)
       fxDownsample.operator = params.downsampleOperator
       if (fxDownsample.operator === DownsampleOperator.JIMENEZ_13TAP_KARIS && i !== 0) {
         // karis average usually is only used in first downsample step
@@ -277,6 +280,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     }
 
     // combine pass
+    pass.setRenderBlend(0, BlendState.Opaque)
     fxCombine.operator = params.combineOperator
     fxCombine.textureIn1 = sceneTarget
     fxCombine.textureIn2 = blurTarget
@@ -287,11 +291,13 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     fxCombine.render(pass)
 
     // tonemap pass
+    pass.setRenderBlend(0, BlendState.Opaque)
     fxTonemap.exposure = params.tonemapExposure
     fxTonemap.operator = params.tonemapOperator
+    fxTonemap.whitePoint = params.whitePoint
     fxTonemap.textureIn = combineTarget
     fxTonemap.textureOut = device.output
-    fxTonemap.srgb = true
+    fxTonemap.srgb = !outputs[params.output]
     fxTonemap.render(pass)
 
     // render result
@@ -299,6 +305,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     if (result) {
       pass.setRenderTarget(0, null)
       spriteBatch.begin()
+      spriteBatch.linearToSrgb = true
       spriteBatch
         .next(result)
         .source(0, 0, result.width, result.height)
@@ -309,7 +316,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

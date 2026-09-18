@@ -1,4 +1,4 @@
-import { LoaderContext } from './ContentLoader'
+import { LoadContext } from './ContentLoader'
 
 export type ResourceKey = string
 
@@ -7,8 +7,8 @@ export type ResourceRef<T> = ResourceKey & { __type__: T }
 export type ResourceGetter = <R>(key: ResourceRef<R>) => R
 
 export type NotPromise<T> = T extends Promise<any> ? never : T
-export type ResourceBuilder<T> = (context: LoaderContext, node: ResourceNode<T>, get: ResourceGetter) => NotPromise<T>
-export type ResourceAsyncBuilder<T> = (context: LoaderContext, node: ResourceNode<T>, get: ResourceGetter) => Promise<T>
+export type ResourceBuilder<T> = (context: LoadContext, node: ResourceNode<T>, get: ResourceGetter) => NotPromise<T>
+export type ResourceAsyncBuilder<T> = (context: LoadContext, node: ResourceNode<T>, get: ResourceGetter) => Promise<T>
 
 export type ResourceNode<T extends NotPromise<any> = {}> = {
   key: ResourceKey
@@ -92,7 +92,7 @@ export class ResourceGraph {
     return toSortedSubset(this.graph, subset)
   }
 
-  public async load<T>(target: ResourceNode<T>, context: LoaderContext): Promise<T> {
+  public async load<T>(target: ResourceNode<T>, context: LoadContext): Promise<T> {
     if (target == null) {
       throw new Error('Target node is null or undefined')
     }

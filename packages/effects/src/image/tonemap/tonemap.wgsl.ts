@@ -126,11 +126,12 @@ export const TONEMAP_WGSL = /* wgsl */ `
   const TONEMAP_REINHARD          : i32 = 1;
   const TONEMAP_REINHARD_EXTENDED : i32 = 2;
   const TONEMAP_REINHARD_JODIE    : i32 = 3;
-  const TONEMAP_UNCHARTED2        : i32 = 4;
+  const TONEMAP_HABLE             : i32 = 4;
   const TONEMAP_ACES_NARKOWICZ    : i32 = 5;
   const TONEMAP_ACES_HILL         : i32 = 6;
   const TONEMAP_PBR_NEUTRAL       : i32 = 7;
   const TONEMAP_UCHIMURA          : i32 = 8;
+  const TONEMAP_HEJL_BURGESS      : i32 = 9;
 
   //
   // plain Reinhard
@@ -161,23 +162,38 @@ export const TONEMAP_WGSL = /* wgsl */ `
 
   // Uncharted 2 / Hable filmic
   // https://64.github.io/tonemapping/#uncharted-2
-  fn uncharted2Partial(x: vec3f) -> vec3f {
-    let A = 0.15;
-    let B = 0.50;
-    let C = 0.10;
-    let D = 0.20;
-    let E = 0.02;
-    let F = 0.30;
+  fn hableCurve(x: vec3f) -> vec3f {
+    let A = 0.15; // 0.22
+    let B = 0.50; // 0.30
+    let C = 0.10; // 0.10
+    let D = 0.20; // 0.20
+    let E = 0.02; // 0.01
+    let F = 0.30; // 0.30
     return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
   }
 
-  fn tonemapUncharted2(c: vec3f, white: f32) -> vec3f {
-    let curr = uncharted2Partial(c);
-    let whiteScale = 1.0 / uncharted2Partial(vec3f(white));
-    return curr * whiteScale;
+  fn tonemapHable(c: vec3f, white: f32) -> vec3f {
+    let col = hableCurve(c);
+    let whiteScale = 1.0 / hableCurve(vec3f(white));
+    return col * whiteScale;
+  }
+
+  // Hejl/Burgess-Dawson filmic approximation, presented at SIGGRAPH 2010
+  // https://www.slideshare.net/slideshow/filmic-tonemapping-for-realtime-rendering-siggraph-2010-color-course/52397655
+  // https://filmicworlds.com/blog/filmic-tonemapping-operators/
+  fn tonemapHejlBurgessDawson(color: vec3f) -> vec3f {
+    let a = 6.2;
+    let b = 0.5;
+    let c = 6.2;
+    let d = 1.7;
+    let e = 0.06;
+
+    let col = max(vec3f(0.0), color - vec3f(0.004));
+    return (col * (a * col + b)) / (col * (c * col + d)+ e);
   }
 
   // ACES fitted (Narkowicz), fast approximation
+  // https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
   fn tonemapAcesNarkowicz(color: vec3f) -> vec3f {
     let a = 2.51;
     let b = 0.03;
@@ -188,11 +204,14 @@ export const TONEMAP_WGSL = /* wgsl */ `
   }
 
   // ACES fitted (Stephen Hill), matrix + RRT/ODT fit
+  // https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
+
   fn rttAndOdtFit(v: vec3f) -> vec3f {
     let a = v * (v + 0.0245786) - 0.000090537;
     let b = v * (0.983729 * v + 0.4329510) + 0.238081;
     return a / b;
   }
+
   fn tonemapAcesHill(c: vec3f) -> vec3f {
     let acesInput = mat3x3f(
       0.59719, 0.07600, 0.02840,
@@ -208,6 +227,7 @@ export const TONEMAP_WGSL = /* wgsl */ `
     v = rttAndOdtFit(v);
     return clamp(acesOutput * v, vec3f(0.0), vec3f(1.0));
   }
+
 
   // Khronos PBR Neutral
   // https://modelviewer.dev/examples/tone-mapping
@@ -262,6 +282,7 @@ export const TONEMAP_WGSL = /* wgsl */ `
     );
   }
 
+
   // --- entry point ---
   fn tonemap(color: vec3f, whitePoint: f32, op: i32) -> vec3f {
     switch (op) {
@@ -274,8 +295,8 @@ export const TONEMAP_WGSL = /* wgsl */ `
       case TONEMAP_REINHARD_JODIE: {
         return tonemapReinhardJodie(color);
       }
-      case TONEMAP_UNCHARTED2: {
-        return tonemapUncharted2(color, whitePoint);
+      case TONEMAP_HABLE: {
+        return tonemapHable(color, whitePoint);
       }
       case TONEMAP_ACES_NARKOWICZ: {
         return tonemapAcesNarkowicz(color);
@@ -289,6 +310,9 @@ export const TONEMAP_WGSL = /* wgsl */ `
       case TONEMAP_UCHIMURA: {
         return tonemapUchimura(color, whitePoint);
       }
+      case TONEMAP_HEJL_BURGESS: {
+        return tonemapHejlBurgessDawson(color);
+      }
       default: {
         return clamp(color, vec3f(0.0), vec3f(1.0));
       }
@@ -301,16 +325,16 @@ export const TONEMAP_WGSL = /* wgsl */ `
   }
   @fragment
   fn fs(in: FragmentInput) -> @location(0) vec4f {
-    let color = textureSample(texture1, texture1Sampler, in.uv).rgb;
+    let sample = textureSample(texture1, texture1Sampler, in.uv);
     var exposure = params.exposure;
     if (params.autoExposure != 0) {
       let global = textureSample(texture2, texture2Sampler, vec2f(0.5, 0.5)).r;
       exposure = exposure / max(global, 1e-6);
     }
-    var mapped = tonemap(color * exposure, params.whitePoint, params.operatorId);
+    var mapped = tonemap(sample.rgb * exposure, params.whitePoint, params.operatorId);
     if (params.srgb == 1) {
       mapped = linearToSrgb(mapped);
     }
-    return vec4f(mapped, 1.0);
+    return vec4f(mapped, saturate(sample.a));
   }
 `

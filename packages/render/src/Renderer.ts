@@ -17,7 +17,7 @@ import {
   WebglDevice,
 } from '@gglib/graphics'
 
-import { Mat4, vec3, Vec3 } from '@gglib/math'
+import { Mat4, vec2, vec3 } from '@gglib/math'
 import { eventSource } from '@gglib/utils'
 import { GeometryPass } from './passes'
 import { createRenderChannelSchema, RenderChannel } from './RenderChannel'
@@ -50,13 +50,9 @@ export interface RendererStats {
 
 export interface RendererOptions {
   /**
-   * Preferred clear color. Some render passes may ignore this if they have their own clear color assigned.
+   * If true, colors are converted to sRGB when presenting to non-sRGB surfaces.
    */
-  clearColor?: Color
-  /**
-   * If enabled, automatically convert linear to sRGB color space when presenting to non-sRGB surfaces.
-   */
-  autoSrgb?: boolean
+  linearToSrgb?: boolean
   pipeline?: RenderPipeline | RenderPipelineOptions
   inputs?: ProgramInputBlockCollection | ProgramInputBlockOptions
 }
@@ -73,9 +69,9 @@ export class Renderer {
   public pipeline: RenderPipeline
 
   /**
-   * If enabled, automatically convert linear to sRGB color space when presenting to non-sRGB surfaces.
+   * If true, colors are converted to sRGB when presenting to non-sRGB surfaces.
    */
-  public autoSrgb = false
+  public linearToSrgb = false
 
   /**
    * Render inputs that are always propagated to each rendered view
@@ -106,7 +102,7 @@ export class Renderer {
 
   public constructor(device: Device, options?: RendererOptions) {
     this.device = device
-    this.autoSrgb = options?.autoSrgb ?? false
+    this.linearToSrgb = options?.linearToSrgb ?? false
     if (options?.pipeline instanceof RenderPipeline) {
       this.pipeline = options?.pipeline
     } else {
@@ -391,7 +387,7 @@ export class Renderer {
     pass.setDepthState(DepthState.Disabled)
 
     this.spriteBatch.begin()
-    this.spriteBatch.linearToSrgb = this.autoSrgb && !isSRGB
+    this.spriteBatch.linearToSrgb = this.linearToSrgb && !isSRGB
     for (const view of views) {
       if (!view.present) {
         continue
@@ -431,29 +427,38 @@ export class Renderer {
       ctx.renderInputs.set(CommonInputs.View.ViewMatrix, ctx.view.camera.view)
       ctx.renderInputs.set(CommonInputs.View.ProjectionMatrix, ctx.view.camera.projection)
 
-      const inverseViewMatrix: Mat4 = (ctx['__inverseViewMatrix'] ||= Mat4.createIdentity())
+      const inverseViewKey = CommonInputs.View.InverseViewMatrix
+      const inverseViewMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || Mat4.createIdentity()) as Mat4
       Mat4.invert(ctx.view.camera.view, inverseViewMatrix)
-      ctx.renderInputs.set(CommonInputs.View.InverseViewMatrix, inverseViewMatrix)
+      ctx.renderInputs.set(inverseViewKey, inverseViewMatrix)
 
-      const inverseProjectionMatrix: Mat4 = (ctx['__inverseProjectionMatrix'] ||= Mat4.createIdentity())
+      const inverseProjectionKey = CommonInputs.View.InverseProjectionMatrix
+      const inverseProjectionMatrix: Mat4 = (ctx.renderInputs.get(inverseViewKey) || Mat4.createIdentity()) as Mat4
       Mat4.invert(ctx.view.camera.projection, inverseProjectionMatrix)
-      ctx.renderInputs.set(CommonInputs.View.InverseProjectionMatrix, inverseProjectionMatrix)
+      ctx.renderInputs.set(inverseProjectionKey, inverseProjectionMatrix)
 
-      const viewProjectionMatrix: Mat4 = (ctx['__viewProjectionMatrix'] ||= Mat4.createIdentity())
-      Mat4.multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProjectionMatrix)
-      ctx.renderInputs.set(CommonInputs.View.ViewProjectionMatrix, viewProjectionMatrix)
+      const viewProjKey = CommonInputs.View.ViewProjectionMatrix
+      const viewProj: Mat4 = (ctx.renderInputs.get(viewProjKey) || Mat4.createIdentity()) as Mat4
+      Mat4.multiply(ctx.view.camera.projection, ctx.view.camera.view, viewProj)
+      ctx.renderInputs.set(viewProjKey, viewProj)
 
-      const inverseViewProjectionMatrix: Mat4 = (ctx['__inverseViewProjectionMatrix'] ||= Mat4.createIdentity())
-      Mat4.invert(viewProjectionMatrix, inverseViewProjectionMatrix)
-      ctx.renderInputs.set(CommonInputs.View.InverseViewProjectionMatrix, inverseViewProjectionMatrix)
+      const invViewProjKey = CommonInputs.View.InverseViewProjectionMatrix
+      const invViewProj: Mat4 = (ctx.renderInputs.get(invViewProjKey) || Mat4.createIdentity()) as Mat4
+      Mat4.invert(viewProj, invViewProj)
+      ctx.renderInputs.set(invViewProjKey, invViewProj)
 
-      const cameraPosition: Vec3 = (ctx['__cameraPosition'] ||= Vec3.create())
+      const cameraPosition = ctx.renderInputs.get(CommonInputs.View.CameraPosition) || vec3()
       ctx.view.camera.world.getTranslation(cameraPosition)
       ctx.renderInputs.set(CommonInputs.View.CameraPosition, cameraPosition)
 
-      const cameraDirection: Vec3 = (ctx['__cameraDirection'] ||= Vec3.create())
+      const cameraDirection = ctx.renderInputs.get(CommonInputs.View.CameraDirection) || vec3()
       ctx.view.camera.world.getForward(cameraDirection)
       ctx.renderInputs.set(CommonInputs.View.CameraDirection, cameraDirection)
+
+      const viewSize = ctx.renderInputs.get(CommonInputs.View.ViewportSize) || vec2(0)
+      viewSize.x = ctx.viewWidth
+      viewSize.y = ctx.viewHeight
+      ctx.renderInputs.set(CommonInputs.View.ViewportSize, viewSize)
     }
   }
 

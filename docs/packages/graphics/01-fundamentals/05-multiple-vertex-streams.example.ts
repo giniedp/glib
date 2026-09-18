@@ -1,6 +1,6 @@
 import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -24,7 +24,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   const vertices = device.createVertexBuffer([
     {
       // Stream 0: positions only.
-      vertexLayout: {
+      layout: {
         vPosition: {
           elementType: 'float32',
           elementCount: 3,
@@ -45,7 +45,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
       // byte range to a 0.0-1.0 float range in the shader. The `cpu` option
       // lets us build the `data` array as `Uint32Array` (one packed 32bit
       // color per vertex) while the GPU still reads it as 4 separate bytes.
-      vertexLayout: {
+      layout: {
         vColor: {
           elementType: 'uint8',
           elementCount: 4,
@@ -90,7 +90,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.add(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

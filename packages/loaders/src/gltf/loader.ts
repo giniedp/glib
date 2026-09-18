@@ -1,6 +1,6 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext } from '@gglib/content'
+import { AssetContainer, AssetLoader, ContentLoader, LoadContext } from '@gglib/content'
 import { extname } from '@gglib/utils'
-import { GltfAssetContainer, GltfMaterialExtension } from './asset'
+import { GltfAssetContainer, GltfMaterialExtension, GltfTextureExtension } from './asset'
 import { Document, parseBinary } from './format'
 
 export class Loader implements AssetLoader {
@@ -11,8 +11,8 @@ export class Loader implements AssetLoader {
     registry.register(Loader)
   }
 
-  private static gltfExtensions: Record<string, GltfMaterialExtension> = {}
-  public static registerExtension(ext: GltfMaterialExtension) {
+  private static gltfExtensions: Record<string, GltfMaterialExtension | GltfTextureExtension> = {}
+  public static registerExtension(ext: GltfMaterialExtension | GltfTextureExtension) {
     this.gltfExtensions[ext.name] = ext
   }
 
@@ -20,14 +20,14 @@ export class Loader implements AssetLoader {
     return type === 'model/gltf-binary' || type === 'application/octet-stream' || type === '.glb'
   }
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
     const document = await this.loadDocument(url, context)
     return new GltfAssetContainer(url, document, {
       ...Loader.gltfExtensions,
     })
   }
 
-  protected async loadDocument(url: string, context: LoaderContext): Promise<Document> {
+  protected async loadDocument(url: string, context: LoadContext): Promise<Document> {
     if (Loader.isBinary(extname(url))) {
       const data = await context.content.fetch(url, {
         responseType: 'arraybuffer',

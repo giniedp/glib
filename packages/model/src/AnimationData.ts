@@ -29,7 +29,7 @@ export interface AnimationData {
 
 export interface AnimationDataChannels {
   /**
-   * The object id to animate with this track (node or bone id)
+   * Object id to animate with this track (node or bone id)
    */
   target: number
   /**
@@ -48,7 +48,7 @@ export interface AnimationDataChannels {
 
 export interface AnimationDataChannel<T extends IVec3 | IVec4> {
   /**
-   * Interpolation method to use when blending frames
+   * Interpolation method to use to blend frames
    */
   interpolation: 'step' | 'linear' | 'cubic'
   /**
@@ -69,11 +69,11 @@ export interface AnimationDataChannelSample<T extends IVec3 | IVec4> {
   /**
    * Input tangent value for cubic spline interpolation
    */
-  ti?: T
+  tangent0?: T
   /**
    * Output tangent value for cubic spline interpolation
    */
-  to?: T
+  tangent1?: T
 }
 
 export interface AnimationDataFrame {

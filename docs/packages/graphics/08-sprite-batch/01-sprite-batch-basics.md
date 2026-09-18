@@ -9,13 +9,14 @@ order: 10
 Four sprites from one texture: a full copy, a cropped region, a rotated
 copy, and a tinted copy - covering `source`, `destination` and `tint`.
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
 <Example platform="webgl2" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

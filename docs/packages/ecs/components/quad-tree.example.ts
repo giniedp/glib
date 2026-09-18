@@ -92,6 +92,7 @@ class Game extends EcsGame {
     this.content.registerMaterial(BasicMaterial, () => true)
 
     const renderer = this.world.getSystem(Renderer)
+    renderer.linearToSrgb = true
     renderer.inputs.set(CommonInputs.Global.AmbientColor, vec3(0.5))
     renderer.inputs.set(CommonInputs.Global.AmbientDirection, Vec3.normalize(vec3(1)))
     this.scene.views[0] = renderer.createView({

@@ -22,20 +22,24 @@
     ".": {
       "import": "./dist/bundles/loaders.esm.js",
       "types": "./dist/loaders/src/index.d.ts"
+    },
+    "./ktx.worker": {
+      "import": "./dist/bundles/ktx.worker.js",
+      "types": "./dist/loaders/src/kts/ktx.worker.d.ts"
     }
   },
   "devDependencies": {
     "@gglib/content": "workspace:^0.7.0",
     "@gglib/graphics": "workspace:^0.7.0",
-    "@gglib/utils": "workspace:^0.7.0",
     "@gglib/model": "workspace:^0.7.0",
+    "@gglib/utils": "workspace:^0.7.0",
     "@gglib/math": "workspace:^0.7.0"
   },
   "peerDependencies": {
     "@gglib/content": "0.7.0",
     "@gglib/graphics": "0.7.0",
-    "@gglib/utils": "0.7.0",
     "@gglib/model": "0.7.0",
+    "@gglib/utils": "0.7.0",
     "@gglib/math": "0.7.0"
   },
   "files": [

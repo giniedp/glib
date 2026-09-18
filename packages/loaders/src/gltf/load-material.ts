@@ -48,21 +48,21 @@ export function loadMaterial(container: GltfAssetContainer, index: number) {
 
   if (gltf.emissiveTexture) {
     params.EmissiveMapSampler = container.getTextureSampler(gltf.emissiveTexture.index)
-    graph.assign(node, container.textureNode(gltf.emissiveTexture.index), (material, texture) => {
+    graph.assign(node, container.textureNode(gltf.emissiveTexture.index, 'srgb'), (material, texture) => {
       ;(material.properties as CommonMaterialProps).EmissiveMap = texture
     })
   }
 
   if (gltf.occlusionTexture) {
     params.OcclusionMapSampler = container.getTextureSampler(gltf.occlusionTexture.index)
-    graph.assign(node, container.textureNode(gltf.occlusionTexture.index), (material, texture) => {
+    graph.assign(node, container.textureNode(gltf.occlusionTexture.index, 'linear'), (material, texture) => {
       ;(material.properties as CommonMaterialProps).OcclusionMap = texture
     })
   }
 
   if (gltf.normalTexture) {
     params.NormalMapSampler = container.getTextureSampler(gltf.normalTexture.index)
-    graph.assign(node, container.textureNode(gltf.normalTexture.index), (material, texture) => {
+    graph.assign(node, container.textureNode(gltf.normalTexture.index, 'linear'), (material, texture) => {
       ;(material.properties as CommonMaterialProps).NormalMap = texture
     })
   }
@@ -76,14 +76,14 @@ export function loadMaterial(container: GltfAssetContainer, index: number) {
     if (pbr.baseColorTexture) {
       params.BaseMapSampler = container.getTextureSampler(pbr.baseColorTexture.index)
       params.BaseMapUv = getTextureUvInfo(pbr.baseColorTexture)
-      graph.assign(node, container.textureNode(pbr.baseColorTexture.index), (material, texture) => {
+      graph.assign(node, container.textureNode(pbr.baseColorTexture.index, 'srgb'), (material, texture) => {
         ;(material.properties as CommonMaterialProps).BaseMap = texture
       })
     }
 
     if (pbr.metallicRoughnessTexture) {
       params.MetallicRoughnessMapSampler = container.getTextureSampler(pbr.metallicRoughnessTexture.index)
-      graph.assign(node, container.textureNode(pbr.metallicRoughnessTexture.index), (material, texture) => {
+      graph.assign(node, container.textureNode(pbr.metallicRoughnessTexture.index, 'linear'), (material, texture) => {
         ;(material.properties as CommonMaterialProps).MetallicRoughnessMap = texture
       })
     }

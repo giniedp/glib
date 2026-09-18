@@ -6,17 +6,16 @@ order: 10
 
 # Device & Canvas
 
-Every `@gglib/graphics` program starts the same way: create a `Device` for a
-canvas, and drive a render loop that clears the screen. This example has no
-shaders and no geometry yet - it only covers the device lifecycle.
+Setup a `Device`, add a render loop and clear screen.
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
 <Example platform="webgl2" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

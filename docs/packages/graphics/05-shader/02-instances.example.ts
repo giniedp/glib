@@ -1,4 +1,4 @@
-import { Color, createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import { Color, createDevice, Device, PlatformId, FrameContext } from '@gglib/graphics'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -6,7 +6,7 @@ const settings = {
   instantSubmit: false,
 }
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   mountUi(tools, (ui) => {
@@ -27,7 +27,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   // The same static triangle as before - its vertex buffer never changes.
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         vPosition: {
           byteOffset: 0,
           elementCount: 3,
@@ -51,7 +51,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   const notInstanced = [program1, program1]
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     pass.setClearColor(0, Color.CornflowerBlue)
     pass.clear()
 
@@ -95,7 +95,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

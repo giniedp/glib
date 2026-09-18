@@ -11,7 +11,7 @@ import {
   rayTriangleIntersectsAt,
 } from './Collision'
 import type { IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
+import { vec3, Vec3 } from './Vec3'
 
 /**
  * A ray with a starting position and a pointing direction.
@@ -22,18 +22,18 @@ export class Ray {
   /**
    * The ray origin
    */
-  public readonly position: Vec3
+  public position: IVec3
   /**
    * The ray direction
    */
-  public readonly direction: Vec3
+  public direction: IVec3
 
   /**
    * Constructs a new instance of {@link Ray}
    */
   constructor(pX?: number, pY?: number, pZ?: number, dX?: number, dY?: number, dZ?: number) {
-    this.position = Vec3.create(pX, pY, pZ)
-    this.direction = Vec3.create(dX, dY, dZ)
+    this.position = vec3(pX, pY, pZ)
+    this.direction = vec3(dX, dY, dZ)
   }
 
   /**

@@ -33,25 +33,28 @@ struct InstanceBlock {
   heightUvTransformCoarse: vec4f,
 };
 
-@group(0) @binding(0) var<uniform> global:   GlobalBlock;
-@group(0) @binding(1) var<uniform> view:     ViewBlock;
-@group(0) @binding(2) var<uniform> object:   ObjectBlock;
-@group(0) @binding(3) var<uniform> material: MaterialBlock;
-@group(0) @binding(4) var<uniform> lights:   LightBlock;
+@group(0) @binding(0) var<uniform>       global  : GlobalBlock;
+@group(0) @binding(1) var<uniform>       view    : ViewBlock;
+@group(0) @binding(2) var<uniform>       frame   : FrameBlock;
+@group(0) @binding(3) var<uniform>       lights  : LightBlock;
+// @block global
+@group(0) @binding(4) var envMap                 : texture_cube<f32>;
+
+@group(1) @binding(0) var<uniform> object:   ObjectBlock;
+@group(1) @binding(1) var<uniform> material: MaterialBlock;
+// @block material
+@group(1) @binding(2) var heightMapSampler: sampler;
+// @block material
+@group(1) @binding(3) var colorMapSampler:  sampler;
 
 // @block material
-@group(1) @binding(0) var heightMapSampler: sampler;
+@group(1) @binding(4) var heightMap: texture_2d_array<f32>;
 // @block material
-@group(1) @binding(1) var colorMapSampler:  sampler;
+@group(1) @binding(5) var colorMap1: texture_2d_array<f32>;
+// @block material
+@group(1) @binding(6) var colorMap2: texture_2d_array<f32>;
 
-// @block material
-@group(2) @binding(0) var heightMap: texture_2d_array<f32>;
-// @block material
-@group(2) @binding(1) var colorMap1: texture_2d_array<f32>;
-// @block material
-@group(2) @binding(2) var colorMap2: texture_2d_array<f32>;
-
-@group(3) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
+@group(2) @binding(0) var<storage, read> instances: array<InstanceBlock, 1>;
 
 
 struct VertexInput {
@@ -178,67 +181,117 @@ fn fs_main(input: VertexOutput) -> FragmentOutput {
 
   // only blend when both fine and coarse are real distinct tiles
   let blend  = input.vMorph;
-  let normal = normalize(mix(fineParams.normal, coarseParams.normal, blend));
+  let normal = tbn * normalize(mix(fineParams.normal, coarseParams.normal, blend));
+  let albedo = vec3f(mix(fineParams.color, coarseParams.color, blend));
+  let alpha = 1.0;
+  let specular = vec3f(mix(fineParams.specular, coarseParams.specular, blend));
+  let roughness = mix(fineParams.roughness, coarseParams.roughness, blend);
+  let gloss = roughnessToSmoothness(roughness);
+
+  let reflectVec = normalize(reflect(-toEye, normal));
+  var reflectColor = getReflectColor(envMap, colorMapSampler, reflectVec, gloss).rgb;
 
   var surface: SurfaceParams;
-  surface.Diffuse   = vec3f(mix(fineParams.color, coarseParams.color, blend));
-  surface.Alpha     = 1.0;
-  surface.Specular  = vec3f(mix(fineParams.specular, coarseParams.specular, blend)) ;
-  surface.Roughness = mix(fineParams.roughness, coarseParams.roughness, blend);
-  surface.Normal    = vec4(normalize(tbn * normal), 1.0);
+  surface.Diffuse   = albedo;
+  surface.Alpha     = alpha;
+  surface.Specular  = specular;
+  surface.Roughness = roughness;
+  surface.Normal    = vec4(normal, 1.0);
 
-  var color = accumulateLight(lights, global, surface, toEye, input.vWorldPos);
+  var shade = accumulateLightShade(lights, global, surface, toEye, input.vWorldPos);
+
+  let ambient = vec3f(1.0);
+  shade.ambient += getReflectColor(envMap, colorMapSampler, normal, 0.0).xyz * ambient;
+  shade.specular += reflectColor * ambient * surface.Specular.rgb;
+  var color = composeShade(surface, shade);
+
   var out: FragmentOutput;
   out.color = applyFog(color, 1.0, input.vWorldPos, view.cameraPosition);
   out.depth = linearizeDepthReversedZ(input.Position.z, view.near, view.far);
 
-  // let debug = global.debug;
-  // if (debug > 0u) {
-  //   if (debug == DEBUG_MTL_BASE) {
-  //     out.color = vec4f(surface.Diffuse.rgb, 1.0);
-  //     return out;
-  //   }
-  //   if (debug == DEBUG_MTL_SPEC) {
-  //     out.color = vec4f(surface.Specular.rgb, 1.0);
-  //     return out;
-  //   }
-  //   if (debug == DEBUG_MTL_PBR) {
-  //     out.color = vec4f(surface.Metallic, surface.Roughness, surface.Ior, 1.0);
-  //     return out;
-  //   }
+  switch (global.debug) {
+    // #region Debug Material
+    case DEBUG_MTL_ALBEDO: {
+      out.color = vec4f(surface.Diffuse.rgb, 1.0);
+    }
+    case DEBUG_MTL_SPECULAR: {
+      out.color = vec4f(surface.Specular.rgb, 1.0);
+    }
+    case DEBUG_MTL_METALLIC: {
+      out.color = vec4f(vec3f(0.0), 1.0);
+    }
+    case DEBUG_MTL_ROUGHNESS: {
+      out.color = vec4f(vec3f(surface.Roughness), 1.0);
+    }
+    case DEBUG_MTL_IOR: {
+      out.color = vec4f(vec3f(0.0), 1.0);
+    }
+    case DEBUG_MTL_EMISSIVE: {
+      // out.color = vec4f(vec3f(emittance), 1.0);
+    }
+    case DEBUG_MTL_AO: {
+      // out.color = vec4f(vec3f(ao), 1.0);
+    }
+    case DEBUG_MTL_OPACITY: {
+      out.color = vec4f(vec3f(alpha), 1.0);
+    }
+    case DEBUG_MTL_HEIGHT: {
+      out.color = vec4f(vec3f(gloss), 1.0);
+    }
+    case DEBUG_MTL_NOISE: {
+      //
+    }
+    // #endregion
 
-  //   if (debug == DEBUG_NORMALS) {
-  //     out.color = vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
-  //     return out;
-  //   }
-  //   if (debug == DEBUG_TANGENTS) {
-  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
-  //     return out;
-  //   }
-  //   if (debug == DEBUG_BINORMALS) {
-  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
-  //     return out;
-  //   }
 
-  //   if (debug == DEBUG_COLOR1) {
-  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
-  //     return out;
-  //   }
-  //   if (debug == DEBUG_COLOR2) {
-  //     out.color = vec4f(0.0, 0.0, 0.0, 1.0);
-  //     return out;
-  //   }
+    // #region Debug Geometry / Vectors
+    case DEBUG_GV_NORMAL: {
+      out.color = vec4f(tbn[2].xyz * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_GV_TANGENT: {
+      out.color = vec4f(tbn[0].xyz * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_GV_BITANGENT: {
+      out.color = vec4f(tbn[1].xyz * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_GV_SHADE_NORMAL: {
+      out.color = vec4f(surface.Normal.xyz * 0.5 + 0.5, 1.0);
+    }
+    case DEBUG_GV_POSITION_WS: {
+      out.color = vec4f(fract(input.vWorldPos.xyz), 1.0);
+    }
+    case DEBUG_GV_DEPTH: {
+      out.color = vec4f(vec3f(fract(out.depth)), 1.0);
+    }
+    // #endregion
 
-  //   if (debug == DEBUG_UV1) {
-  //     out.color = vec4f(pomUV, 0.0, 1.0);
-  //     return out;
-  //   }
-  //   if (debug == DEBUG_UV2) {
-  //     out.color = vec4f(input.vMorph, input.vMorph, input.vMorph, 1.0);
-  //     return out;
-  //   }
-  // }
+    // #region Debug Vertex attributes
+    case DEBUG_V_COLOR0: {
+      out.color = vec4f(vec3f(blend), 1.0);
+    }
+    case DEBUG_V_COLOR1: {
+      // out.color = vec4f(cDetailMap.rgb, 1.0);
+    }
+    case DEBUG_V_UV0: {
+      out.color = vec4f(fract(patchUv.xy), blend, 1.0);
+    }
+    case DEBUG_V_UV1: {
+      out.color = vec4f(fract(patchUvCoarse.xy), blend, 1.0);
+    }
+    case DEBUG_V_UV3: {
+      // out.color = vec4f(fract(uvEmittance.xy), 0.0, 1.0);
+    }
+    case DEBUG_V_UV4: {
+      // out.color = vec4f(fract(uvEmissiveIntensity.xy), 0.0, 1.0);
+    }
+    case DEBUG_V_DEFORM: {
+      //
+    }
+    // #endregion
+    default: {
 
+    }
+  }
   return out;
 }
 

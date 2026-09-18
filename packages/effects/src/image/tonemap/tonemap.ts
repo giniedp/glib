@@ -36,6 +36,7 @@ export const TonemapOperator = {
   ACES_HILL: brand<TonemapOperator>(6),
   PBR_NEUTRAL: brand<TonemapOperator>(7),
   UCHIMURA: brand<TonemapOperator>(8),
+  HEJL_BURGESS: brand<TonemapOperator>(9),
 }
 
 export class TonemapEffect implements Renderable, Disposable {

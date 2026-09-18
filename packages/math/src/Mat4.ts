@@ -79,7 +79,7 @@ export class Mat4 {
   /**
    * The matrix data array
    */
-  public readonly elements: Float32Array | Float64Array
+  public readonly elements: Float16Array | Float32Array | Float64Array
 
   /**
    * Gets and sets value at column 0 row 0

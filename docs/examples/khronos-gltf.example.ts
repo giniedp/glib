@@ -19,21 +19,21 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement) => {
 
   viewer.loadEnvironment('/textures/hdr/footprint_court.hdr')
 
-  mountUi(tools, (ui) => {
-    ui.group('IBL', () => {
-      ui.scalar(viewer, 'iblIntensity', { label: 'Intensity', range: true, min: 0, max: 2, decimals: 2 })
-      ui.scalar(viewer, 'iblBlur', { label: 'Blur', range: true, min: 0, max: 1, decimals: 2 })
-    })
-    ui.group('Bloom', () => {
-      ui.scalar(viewer.bloomPass, 'threshold', { range: true, min: 0, max: 1, decimals: 2 })
-      ui.scalar(viewer.bloomPass, 'knee', { range: true, min: 0, max: 1, decimals: 2 })
-      ui.scalar(viewer.bloomPass, 'steps', { range: true, min: 1, max: 10, step: 1, decimals: 0 })
-      ui.scalar(viewer.bloomPass, 'intensity', { range: true, min: 0, max: 1, decimals: 2 })
-    })
-    ui.group('Tonemap', () => {
-      ui.scalar(viewer.tonemapPass, 'exposure', { range: true, min: 0, max: 10 })
-    })
-  })
+  // mountUi(tools, (ui) => {
+  //   ui.group('IBL', () => {
+  //     ui.scalar(viewer, 'iblIntensity', { label: 'Intensity', range: true, min: 0, max: 2, decimals: 2 })
+  //     ui.scalar(viewer, 'iblBlur', { label: 'Blur', range: true, min: 0, max: 1, decimals: 2 })
+  //   })
+  //   ui.group('Bloom', () => {
+  //     ui.scalar(viewer.bloomPass, 'threshold', { range: true, min: 0, max: 1, decimals: 2 })
+  //     ui.scalar(viewer.bloomPass, 'knee', { range: true, min: 0, max: 1, decimals: 2 })
+  //     ui.scalar(viewer.bloomPass, 'steps', { range: true, min: 1, max: 10, step: 1, decimals: 0 })
+  //     ui.scalar(viewer.bloomPass, 'intensity', { range: true, min: 0, max: 1, decimals: 2 })
+  //   })
+  //   ui.group('Tonemap', () => {
+  //     ui.scalar(viewer.tonemapPass, 'exposure', { range: true, min: 0, max: 10 })
+  //   })
+  // })
 
   const modelKey = new URL(location.href).searchParams.get('model')
   const data = await fetch(indexFile).then((res) => res.json())
@@ -42,11 +42,15 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement) => {
       if (modelKey !== `${mdl.name}_${name}`) {
         continue
       }
+      canvas.classList.add('loading')
+      canvas.classList.remove('error')
       viewer
         .loadModel({
           url: `${baseUrl}/${mdl.name}/${name}/${path}`,
         })
         .then(console.log)
+        .then(() => canvas.classList.remove('loading'))
+        .catch(() => canvas.classList.add('error'))
     }
   }
 

@@ -130,6 +130,14 @@ export class File {
     return this.header.pixelDepth
   }
 
+  public get isCubemap() {
+    return this.header.faceCount === 6
+  }
+
+  public get isVolume() {
+    return this.header.pixelDepth > 0
+  }
+
   public constructor(buffer: ArrayBuffer) {
     const reader = new BinaryReader(buffer)
     this.header = readHeader(reader)

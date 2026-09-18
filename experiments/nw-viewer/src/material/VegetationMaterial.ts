@@ -8,6 +8,7 @@ import {
   type MaterialOptions,
   materialSchemaClass,
   RenderVariant,
+  SamplerState,
   ShaderConstants,
   type ShaderModuleOptions,
   TRUE,
@@ -117,6 +118,9 @@ export class VegetationMaterial extends materialSchemaClass(SCHEMA) {
   }
 
   private setDefaults() {
+    this.SamplerLinear = SamplerState.LinearWrap
+    this.SamplerPoint = SamplerState.PointWrap
+
     this.DiffuseColor = Vec4.create(1, 1, 1, 1)
     this.SpecularColor = Vec4.create(0, 0, 0, 1)
     this.EmissiveColor = Vec4.create(0, 0, 0, 1)

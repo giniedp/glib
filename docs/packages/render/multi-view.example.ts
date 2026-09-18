@@ -1,5 +1,5 @@
 import { ContentLoader } from '@gglib/content'
-import { Color, CommonInputs, createDevice, PlatformId, sphereGeometry, TaskContext } from '@gglib/graphics'
+import { Color, CommonInputs, createDevice, PlatformId, sphereGeometry, FrameContext } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, vec3, Vec3 } from '@gglib/math'
 import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
@@ -73,7 +73,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     }
   }
 
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     frameTime = ctx.delta
     device.resize()
     for (let i = 0; i < scene.views.length; i++) {
@@ -115,7 +115,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     renderer.render(scene)
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

@@ -5,13 +5,14 @@ aside: false
 
 # Common Material
 
-:::tabs
-== WebGL
-<Example platform="webgl2" />
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
+== WebGL
+<Example platform="webgl2" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

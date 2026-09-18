@@ -5,9 +5,7 @@ import { Intersection, IntersectionType, Intersects } from './Collision'
 import type { Mat4 } from './Mat4'
 import type { Ray } from './Ray'
 import type { ArrayLike, IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
-
-let temp: IVec3
+import { vec3, Vec3 } from './Vec3'
 
 /**
  * An axis aligned box volume.
@@ -18,11 +16,11 @@ export class BoundingBox implements BoundingVolume {
   /**
    * The minimum contained point
    */
-  public readonly min: Vec3
+  public min: IVec3
   /**
    * The maximum contained point
    */
-  public readonly max: Vec3
+  public max: IVec3
 
   /**
    * Checks whether this box is empty, i.e. has no volume
@@ -42,8 +40,8 @@ export class BoundingBox implements BoundingVolume {
    * @param maxZ - z component of the maximum point
    */
   constructor(minX?: number, minY?: number, minZ?: number, maxX?: number, maxY?: number, maxZ?: number) {
-    this.min = Vec3.create(minX, minY, minZ)
-    this.max = Vec3.create(maxX, maxY, maxZ)
+    this.min = vec3(minX, minY, minZ)
+    this.max = vec3(maxX, maxY, maxZ)
   }
 
   /**

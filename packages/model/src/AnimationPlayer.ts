@@ -212,7 +212,7 @@ export class AnimationChannelSampler {
         if (indexer.interpolation === 'linear') {
           Vec3.lerp(sample0.value, sample1.value, t, out)
         } else {
-          Vec3.hermite(sample0.value, sample0.to, sample1.value, sample1.ti, t, out)
+          Vec3.hermite(sample0.value, sample0.tangent1, sample1.value, sample1.tangent0, t, out)
         }
         return
       }
@@ -231,7 +231,7 @@ export class AnimationChannelSampler {
         if (channel.interpolation === 'linear') {
           Vec4.lerp(sample0.value, sample1.value, t, out)
         } else {
-          Vec4.hermite(sample0.value, sample0.to, sample1.value, sample1.ti, t, out)
+          Vec4.hermite(sample0.value, sample0.tangent1, sample1.value, sample1.tangent0, t, out)
         }
         return
       }

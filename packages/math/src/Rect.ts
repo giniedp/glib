@@ -184,8 +184,8 @@ export class Rect {
   /**
    * Checks whether the given rectangle is contained by this rectangle
    */
-  public containsRect(r: Rect): boolean {
-    return this.x <= r.x && r.xEnd <= this.xEnd && this.y <= r.y && r.yEnd <= this.yEnd
+  public containsRect(r: IRect): boolean {
+    return this.x <= r.x && r.x + r.width <= this.xEnd && this.y <= r.y && r.y + r.height <= this.yEnd
   }
 
   /**

@@ -2,7 +2,7 @@ import { NdcMinZ } from '@gglib/math'
 import { brand, eventSource, EventType, type EventChannel } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
-import { Scheduler } from '../Scheduler'
+import { FrameScheduler } from '../FrameScheduler'
 import { type SurfaceFormat } from '../enums'
 import {
   createResourceTracker,
@@ -87,7 +87,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public readonly ndcMinZ: NdcMinZ = NdcMinZ.Zero
   public readonly canvas: HTMLCanvasElement | OffscreenCanvas
   public readonly context: GPUCanvasContext
-  public readonly scheduler = new Scheduler()
+  public readonly scheduler = new FrameScheduler()
   public readonly isWebGL2: boolean = false
   public readonly isWebGPU: boolean = true
   public readonly isReady: boolean = false
@@ -283,6 +283,9 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   }
 
   public createRenderTarget(options: TextureOptions): WebGpuTexture {
+    options.width ??= this.output.width
+    options.height ??= this.output.height
+    options.format ??= this.output.format
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1
@@ -292,6 +295,9 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   }
 
   public createDepthTarget(options: DepthBufferOptions): WebGpuTexture {
+    options.width ??= this.output.width
+    options.height ??= this.output.height
+    options.format ??= 'DEPTH24_PLUS_STENCIL8'
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1

@@ -29,6 +29,9 @@
     },
     {
       "path": "../utils/tsconfig.build.json"
+    },
+    {
+      "path": "../math/tsconfig.build.json"
     }
   ]
 }

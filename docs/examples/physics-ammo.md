@@ -4,13 +4,18 @@ aside: false
 
 # Ammo.js Physics
 
-:::tabs
+:::tabs variant:code
 == WebGL
-<Example platform="webgl2" />
+<Example platform="webgl2" name="physics-ammo/game.ts" />
 == WebGPU
-<Example platform="webgpu" />
+<Example platform="webgpu" name="physics-ammo/game.ts" />
 :::
 
-## Source
-
-<ExampleCode />
+:::tabs variant:code
+== example.ts
+<ExampleCode name="physics-ammo/game.ts"/>
+== physics-proxy.ts
+<ExampleCode name="physics-ammo/physics-proxy.ts" />
+== physics-world.ts
+<ExampleCode name="physics-ammo/physics-world.ts" />
+:::

@@ -1,6 +1,6 @@
 import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -17,7 +17,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   // Both live in the same buffer, interleaved per vertex.
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         // `vPosition` starts at byte 0 of each vertex...
         vPosition: {
           byteOffset: 0,
@@ -58,7 +58,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.add(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }
@@ -86,6 +86,7 @@ const glslFS = /*glsl*/ `
     fragColor = vec4(vertexColor, 1.0);
   }
 `
+
 const wgslShader = /*wgsl*/ `
   struct VertexInput {
     @location(0) vPosition : vec3<f32>,

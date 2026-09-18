@@ -25,10 +25,9 @@ const PANORAMA_IMAGES = {
   Court: '/textures/hdr/footprint_court.hdr',
   Exterior: '/textures/hdr/cannon_exterior.hdr',
   Overcast: '/textures/hdr/overcast_puresky.hdr',
-  Sky: '/textures/Grey_Sky.png',
 }
 const MODELS = {
-  ShaderBall: '/models/gltf/USDShaderBallForGltf.glb',
+  ShaderBall: '/models/gltf/shader-ball.glb',
 }
 const SETTINGS = {
   baseColor: vec3(1),
@@ -53,7 +52,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     platform,
     autosize: true,
   }).ready
-  const iblSampler = await new IblSampler(device, {}).ready
+  const iblSampler = await new IblSampler(device, {}).compiled
 
   mountUi(tools, (ui) => {
     ui.color(SETTINGS, 'baseColor', { format: '{n}xyz' })
@@ -153,7 +152,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     theta: 0,
     phi: 90,
     fow: 45,
-    distance: 2,
+    distance: 1,
     position: Vec3.create(),
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
@@ -206,7 +205,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   function updateModel(model: Model) {
     model.update(world)
-    const mtl = model.meshes[2].materials[0] as CommonMaterial
+    const mtl = model.meshes[1].materials[0] as CommonMaterial
     mtl.BaseColor = SETTINGS.baseColor
     mtl.Alpha = SETTINGS.alpha
     mtl.SpecularColor = SETTINGS.specularColor
@@ -278,7 +277,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     spriteBatch.draw()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

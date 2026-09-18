@@ -12,6 +12,7 @@ import {
 import {
   CompressedFaceData,
   createTextureSource,
+  DynamicTextureSource,
   isCompressedFaceData,
   RefCounterKey,
   Texture,
@@ -371,12 +372,7 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
           },
         )
       } else if (isCompressedFaceData(data)) {
-        if (!image.isCompressed) {
-          console.warn(
-            `Uncompressed texture expects data in the form of ArrayBufferView, but received CompressedFaceData. Attempting to upload as compressed texture data.`,
-          )
-        }
-
+        const info = surfaceFormatInfo(image.format)
         queue.writeTexture(
           {
             texture: image.gpuObject,
@@ -390,8 +386,8 @@ function setData(source: TextureSource, image: WebGpuTexture, faceCount: number 
             rowsPerImage: data.rows,
           },
           {
-            width,
-            height,
+            width: padToBlock(width, info.blockWidth),
+            height: padToBlock(height, info.blockHeight),
             depthOrArrayLayers: 1,
           },
         )
@@ -440,4 +436,8 @@ export function ensure256RowAlignment(face: CompressedFaceData): CompressedFaceD
   }
 
   return { data: dst, rows, bytesPerRow: aligned }
+}
+
+function padToBlock(size: number, block: number): number {
+  return Math.ceil(size / block) * block
 }

@@ -199,9 +199,8 @@ export interface RenderView {
   /**
    * The render channel of this view that should be presented to the screen
    * @remarks
-   * If set to a render channel, the content of that channel will be presented.
-   * If set to true, the first available color channel will be presented.
-   * If set to false, nothing will be presented.
+   * If set, the content of that channel will be presented.
+   *
    * Default is false.
    */
   present?: RenderChannel | null | false

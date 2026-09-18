@@ -1,7 +1,7 @@
 import { Color, createDevice, Device, PlatformId, SamplerState } from '@gglib/graphics'
 import { mountUi } from 'tweak-ui'
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
 
   const shader = device.createShaderModule({
@@ -24,7 +24,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   // border pixels (`Clamp`).
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
         vTexture: { byteOffset: 12, elementCount: 2, elementType: 'float32' },
       },
@@ -93,7 +93,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

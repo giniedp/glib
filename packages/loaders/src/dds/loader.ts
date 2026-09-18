@@ -1,10 +1,5 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, TextureAssetContainer } from '@gglib/content'
-import {
-  AcquireTextureOptions,
-  CompressedBufferSource,
-  CompressedFaceData,
-  surfaceFormatFromDXGI,
-} from '@gglib/graphics'
+import { AssetContainer, AssetLoader, ContentLoader, LoadContext, TextureAssetContainer } from '@gglib/content'
+import { AcquireTextureOptions, CompressedFaceData, surfaceFormatFromDXGI, TextureSource } from '@gglib/graphics'
 import { parse } from './format'
 
 export class Loader implements AssetLoader {
@@ -15,7 +10,7 @@ export class Loader implements AssetLoader {
     registry.register(Loader)
   }
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'arraybuffer',
     })
@@ -41,6 +36,7 @@ export class Loader implements AssetLoader {
       type: dds.isCubemap ? 'TextureCube' : dds.isVolume ? 'Texture3D' : 'Texture2D',
       width: dds.width,
       height: dds.height,
+      depth: dds.isCubemap ? 6 : dds.depth,
       generateMipmap: false,
       mipLevelCount: dds.images.length,
       format: format,
@@ -54,7 +50,12 @@ export class Loader implements AssetLoader {
         levels[lvl].push(face)
       }
     }
-    options.source = new CompressedBufferSource(levels, dds.width, dds.height)
+    options.source = new TextureSource({
+      levels,
+      width: dds.width,
+      height: dds.height,
+    })
+
     return new TextureAssetContainer([options])
   }
 }

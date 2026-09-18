@@ -200,6 +200,13 @@ struct GlobalBlock {
   topFogHeight     : f32,
   topFogDensity    : f32,
 
+  volumetricFogParams             : vec4f,
+  volumetricFogRampParams         : vec4f,
+  volumetricFogColorGradientParams: vec4f,
+  volumetricFogColorGradientRadial: vec4f,
+  volumetricFogColorGradientBase  : vec4f,
+  volumetricFogColorGradientDelta : vec4f,
+
   fogHeightOffset  : f32,
   debug            : u32,
 
@@ -212,10 +219,12 @@ struct ObjectBlock {
 struct ViewBlock {
   viewMatrix:       mat4x4f,
   projectionMatrix: mat4x4f,
+  inverseViewProjectionMatrix: mat4x4f,
   cameraPosition:   vec3f,
   cameraDirection:  vec3f,
   near:             f32,
   far:              f32,
+  viewportSize:     vec2f,
 };
 
 struct FrameBlock {
@@ -560,10 +569,10 @@ fn getCotangentFrame(
       det == 0.0
   );
 
-  return mat3x3<f32>(
-      tangent * scale,
-      bitangent * scale,
-      normal
+  return mat3x3f(
+    normalize(tangent * scale),
+    normalize(bitangent * scale),
+    normal
   );
 }
 
@@ -596,36 +605,79 @@ fn linearizeDepthReversedZ(depth: f32, near: f32, far: f32) -> f32 {
 // #endregion
 
 // #region Fog
-fn computeFogFactor(worldPos: vec3f, camPos: vec3f) -> f32 {
-  // height blend
-  let height_t = saturate((worldPos.y - global.bottomFogHeight) / max(0.001, global.topFogHeight - global.bottomFogHeight));
-  let density  = mix(global.bottomFogDensity, global.topFogDensity, height_t);
-
-  let d = length(worldPos - camPos);
-  let t = d * 0.01; // 100 units = 1 fog density step
-
-  return 1.0 - exp2(-(density) * t * t);
-}
-
-fn fogColorAtHeight(height: f32) -> vec3f {
-  let t = saturate(
-      (height - global.bottomFogHeight + global.fogHeightOffset)
-      / max(0.001, global.topFogHeight - global.bottomFogHeight)
-  );
-  return mix(global.bottomFogColor.rgb, global.topFogColor.rgb, t);
-}
 fn applyFog(
   color:    vec3f,
   alpha:    f32,
   worldPos: vec3f,
   camPos:   vec3f,
-) -> vec4<f32> {
-  let factor    = computeFogFactor(worldPos, camPos);
-  let fog_color = fogColorAtHeight(worldPos.y);
-  return vec4<f32>(
-      mix(color, fog_color, factor),
-      mix(alpha, 1.0,       factor),
+) -> vec4f {
+  let factor    = getVolumetricFogDensity(worldPos);
+  let fog_color = global.volumetricFogColorGradientBase.rgb;
+  return vec4f(
+      mix(fog_color, color, factor),
+      mix(1.0,       alpha, factor),
   );
+}
+
+fn getVolumetricFogDensity(worldPos: vec3f) -> f32 {
+  return computeVolumetricFogInternal(worldPos - view.cameraPosition.xyz);
+}
+
+fn computeVolumetricFogInternal(cameraToWorldPos: vec3f) -> f32  {
+  let heightScale                 = global.volumetricFogParams.x;
+  let volFogHeightDensityAtViewer = global.volumetricFogParams.y;
+  let fogDensity                  = global.volumetricFogParams.z;
+  let densityClamp                = global.volumetricFogParams.w;
+
+  var fogInt = 1.0;
+  var t = heightScale * cameraToWorldPos.z;
+  if (abs(t) > 0.01) {
+    fogInt *= (exp(t) - 1.0) / t;
+  }
+
+  // NOTE: volFogHeightDensityAtViewer = log2(e) * fogDensity * exp(heightScale * PerView_WorldViewPos.z + heightOffset);
+  let l = length(cameraToWorldPos) * 1.0; // PerFrame_FogDistanceScale.x;
+  let u = l * volFogHeightDensityAtViewer;
+  fogInt *= u;
+
+  var f = saturate(exp2(-fogInt));
+  var r = saturate(l * global.volumetricFogRampParams.x + global.volumetricFogRampParams.y);
+  r = r * (2 - r);
+  r = r * global.volumetricFogRampParams.z + global.volumetricFogRampParams.w;
+
+  f = (1.0 - f) * r;
+  return max(1.0 - f, densityClamp);
+}
+
+fn getVolumetricFogColor(worldPos: vec3f) -> vec4f {
+  return getVolumetricFogColorInternal(worldPos, worldPos - view.cameraPosition.xyz, 1.0, 1.0);
+}
+
+// RET.xyz = fog color (HDR)
+// RET.w = fog factor to lerp scene/object color with (i.e. lerp(RET.xyz, sceneColor.xyz, RET.w))
+fn getVolumetricFogColorInternal(worldPos: vec3f, cameraToWorldPos: vec3f, radialFogShadowInfluence: f32, ambientFogShadowInfluence: f32) -> vec4f {
+	let heightGradScale  = global.volumetricFogColorGradientParams.x;
+	let heightGradOffset = global.volumetricFogColorGradientParams.y;
+	let radialSizeCtrl   = global.volumetricFogColorGradientParams.z;
+	let radialLobeCtrl   = global.volumetricFogColorGradientParams.w;
+
+	let radialColor = global.volumetricFogColorGradientRadial.xyz;
+	let invZFar     = global.volumetricFogColorGradientRadial.w;
+
+	let fog = computeVolumetricFogInternal(cameraToWorldPos);
+
+	var h = saturate(worldPos.z * heightGradScale + heightGradOffset);
+	h = h * (2 - h);
+
+	var fogColor = (global.volumetricFogColorGradientBase.rgb + h * global.volumetricFogColorGradientDelta.rgb) * ambientFogShadowInfluence;
+
+	let l = saturate(length(cameraToWorldPos) * invZFar);
+	let radialLobe = pow(l, radialLobeCtrl);
+	let radialSize = exp2(dot(normalize(cameraToWorldPos), -global.sunDirection.xyz) * -radialSizeCtrl + radialSizeCtrl); // exp2(-radialSizeCtrl * (1-cos(x))
+
+	fogColor += radialLobe * radialSize * radialColor * radialFogShadowInfluence;
+
+	return vec4f(fogColor, fog);
 }
 // #endregion
 

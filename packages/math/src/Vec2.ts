@@ -373,7 +373,7 @@ export class Vec2 implements IVec2 {
    *
    * @returns The length.
    */
-  public static len(vec: IVec2): number {
+  public static magnitude(vec: IVec2): number {
     const x = vec.x
     const y = vec.y
     return Math.sqrt(x * x + y * y)

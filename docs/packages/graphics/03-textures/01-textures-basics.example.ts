@@ -1,6 +1,14 @@
-import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
+import {
+  Color,
+  createDevice,
+  createImageBitmapTextureSource,
+  createImageElementTextureSource,
+  createVideoTextureSource,
+  Device,
+  PlatformId,
+} from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
 
   const shader = device.createShaderModule({
@@ -13,12 +21,36 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     },
   })
 
-  // A texture is created like any other resource. Passing a URL as `source`
-  // loads the image asynchronously in the background - there is no need to
-  // await it here, the texture simply renders as transparent until the
-  // image has arrived.
+  // Create a texture from an URL as a source. Await is not needed.
+  // The texture will consume the source once data is available.
   const texture = device.createTexture({
     source: '/textures/prototype/proto_red.png',
+  })
+
+  // For more control, pass explicit options to the utility functions
+  const texture128 = device.createTexture({
+    // explicit initial size avoids re-creation of GPU surface
+    width: 128,
+    height: 128,
+    // explicit surface format e.g. for SRGB use case
+    format: 'RGBA8_UNORM',
+    // explicit texture source instance
+    source: createImageBitmapTextureSource('/textures/prototype/proto_red.png', {
+      colorSpaceConversion: 'default',
+      premultiplyAlpha: 'default',
+      resizeWidth: 128,
+      resizeHeight: 128,
+    }),
+  })
+
+  // A video source can be created from URL or a video Element
+  // In contrast to image sources, this must be disposed after use
+  // otherwise it may keep playing in the background
+  const videoSource = createVideoTextureSource('/videos/big-buck-bunny.mp4', {
+    autoplay: true,
+  })
+  const textureVideo = device.createTexture({
+    source: videoSource,
   })
 
   // Same rectangle as in the Fundamentals section, but each vertex now
@@ -27,7 +59,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   // image's top-left corner, (1, 1) is its bottom-right corner.
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
         vTexture: { byteOffset: 12, elementCount: 2, elementType: 'float32' },
       },
@@ -53,7 +85,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     }
 
     // Assign the texture to the sampler uniform declared in the shader.
-    shader.program.set('uTexture', texture)
+    shader.program.set('uTexture', textureVideo)
     shader.program.commit()
 
     pass.setClearColor(0, Color.CornflowerBlue)
@@ -67,8 +99,9 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
+    videoSource.dispose()
     device.dispose()
   }
 }

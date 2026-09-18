@@ -1,10 +1,10 @@
-import { Color, createDevice, CullState, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import { Color, createDevice, CullState, Device, PlatformId, FrameContext } from '@gglib/graphics'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
   cull: CullState.CullBack,
 }
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -14,7 +14,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
 
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         position: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
       },
       // prettier-ignore
@@ -54,7 +54,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   })
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     pass.setClearColor(0, Color.CornflowerBlue)
     pass.clear()
 
@@ -71,7 +71,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

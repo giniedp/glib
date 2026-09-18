@@ -534,7 +534,7 @@ export class Vec3 implements IVec2, IVec3 {
    *
    * @returns The length.
    */
-  public static len(vec: IVec3): number {
+  public static magnitude(vec: IVec3): number {
     const x = vec.x
     const y = vec.y
     const z = vec.z

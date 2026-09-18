@@ -7,7 +7,7 @@ const settings = {
   drawNearFirst: true,
 }
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -17,7 +17,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
 
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         position: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
       },
       // prettier-ignore
@@ -118,7 +118,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

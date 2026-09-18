@@ -5,7 +5,7 @@ order: 20
 
 # Builder
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
@@ -14,6 +14,7 @@ order: 20
 
 The `GeometryBuilder` class is a helper utility for programmatic geometry compositions at runtime.
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

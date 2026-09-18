@@ -12,9 +12,23 @@
 
 <style>
 .example-frame {
-  width: 100%;
-  aspect-ratio: 16/9;
+  width: 100vw;
+  aspect-ratio: 1/1;
   position: relative;
+  margin-left: -24px;
+}
+@media (min-width: 640px) {
+  .example-frame {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+@media (min-width: 768px) {
+  .example-frame {
+    width: 100%;
+    aspect-ratio: 16/9;
+    margin-left: 0;
+  }
 }
 
 .example-tools {
@@ -38,34 +52,70 @@
 canvas {
   background-color: black;
 }
+
+.example-frame {
+  position: relative;
+}
+
+.example-frame:has(canvas.loading)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border: 3px solid rgba(0, 0, 0, 0.15);
+  border-top-color: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  animation: example-frame-spin 0.8s linear infinite !important;
+}
+
+@keyframes example-frame-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
 <script setup lang="ts">
 /// <reference types="vite/client" />
+import { PlatformId } from '@gglib/graphics'
+import { mergeUri } from '@gglib/utils'
 import { mountUi } from 'tweak-ui'
 import { useRoute } from 'vitepress'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 export type RunFn = (canvas: HTMLCanvasElement, tools: HTMLElement) => RunDisposeFn
 export type RunDisposeFn = () => void
 
-const examples = import.meta.glob('/**/*.ts')
-function getExamplePath() {
+const files = import.meta.glob('/**/*.ts')
+type Example = {
+  path: string
+  load: () => Promise<unknown>
+}
+function getExample(): Example {
   let pathname = location.pathname
   if (pathname.endsWith('.html')) {
     pathname = pathname.replace('.html', '')
   }
-  const name1 = pathname + (props.name || 'example.ts')
-  const name2 = pathname + (props.name || '.example.ts')
-  if (name1 in examples) {
-    return name1
-  }
-  if (name2 in examples) {
-    return name2
-  }
-  throw new Error(`example does not exist: ${name1} (${name2})`)
-}
 
-function getExample() {
-  return examples[getExamplePath()]
+  const paths: string[] = []
+  if (!props.name) {
+    paths.push(pathname + 'example.ts')
+    paths.push(pathname + '.example.ts')
+  } else {
+    paths.push(mergeUri(pathname, props.name))
+  }
+  for (const path of paths) {
+    if (!files[path]) {
+      continue
+    }
+    return {
+      path,
+      load: files[path],
+    }
+  }
+
+  throw new Error(`example does not exist: ${paths}`)
 }
 
 const frame = ref<HTMLElement | null>(null)
@@ -84,16 +134,7 @@ const showCapture = computed(() => import.meta.env.DEV && route.path.includes('/
 
 onMounted(async () => {
   isMounted = true
-  try {
-    const exampleLoader = getExample()
-    const module: any = await exampleLoader()
-    if (isMounted) {
-      toDispose = module.default(canvas.value, tools.value, props.platform) || null
-    }
-  } catch (e) {
-    console.error(e)
-  }
-
+  loadExample(props.platform as any)
   mountUi(fsTools.value!, (ui) => {
     if (showCapture.value) {
       ui.button('CAPTRUE', { onclick: captureCanvas })
@@ -104,11 +145,28 @@ onMounted(async () => {
 
 onUnmounted(() => {
   isMounted = false
-  if (toDispose) {
-    Promise.resolve(toDispose).then((dispose) => dispose())
-    toDispose = null
-  }
+  unloadExample()
 })
+
+async function loadExample(platform: PlatformId) {
+  unloadExample()
+  try {
+    const module: any = await getExample().load()
+    if (isMounted) {
+      toDispose = module.default(canvas.value, tools.value, platform) || null
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+function unloadExample() {
+  if (!toDispose) {
+    return
+  }
+  Promise.resolve(toDispose).then((dispose) => dispose())
+  toDispose = null
+}
 
 function stopPropagation(event: MouseEvent) {
   event.stopPropagation()
@@ -136,7 +194,7 @@ async function captureCanvas() {
   }
 
   const query = new URLSearchParams()
-  query.set('file', getExamplePath().replace(/\.ts$/, '.png'))
+  query.set('file', getExample().path.replace(/\.ts$/, '.png'))
   const url = `/__capture?${query.toString()}`
   await fetch(url, { method: 'POST', body: blob })
 }

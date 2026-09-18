@@ -1,6 +1,6 @@
-import { Color, createDevice, Device, PlatformId, SpriteBatch } from '@gglib/graphics'
+import { Color, createDevice, createImageBitmapTextureSource, Device, PlatformId, SpriteBatch } from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   // `SpriteBatch` owns its own shader and geometry internally - there is
@@ -55,7 +55,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

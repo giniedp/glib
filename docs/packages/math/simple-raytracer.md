@@ -12,7 +12,7 @@ References:
 
 - https://github.com/RayTracing/raytracing.github.io
 
-:::tabs
+:::tabs variant:code
 == example.ts
 <ExampleCode name="./simple-raytracer.example.ts" />
 == scene.ts

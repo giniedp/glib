@@ -1,6 +1,16 @@
 import { ContentLoader } from '@gglib/content'
 import { MouseInput } from '@gglib/game'
-import { BasicMaterial, BlendState, Color, createDevice, CullState, DepthState, PlatformId } from '@gglib/graphics'
+import {
+  BasicMaterial,
+  BlendState,
+  Color,
+  createDevice,
+  CullState,
+  DepthState,
+  PlatformId,
+  SpriteBatch,
+  TextureUsage,
+} from '@gglib/graphics'
 import { MTL, OBJ, TGA } from '@gglib/loaders'
 import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { Model } from '@gglib/model'
@@ -9,8 +19,6 @@ import { mountUi, redrawUi } from 'tweak-ui'
 const models = {
   Tower: '/models/obj/tower-complete-large.obj',
   Ship: '/models/obj/ship-pirate-large.obj',
-  Tree: '/models/obj/tree.obj',
-  Cube: '/models/obj/cube.obj',
 }
 const params = {
   model: models.Tower,
@@ -21,7 +29,7 @@ const params = {
 }
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
-  const device = await createDevice({ canvas, platform }).ready
+  const device = await createDevice({ canvas, platform, autosize: true }).ready
   const content = new ContentLoader(device)
   content.registerLoader(OBJ.Loader)
   content.registerLoader(MTL.Loader)
@@ -118,48 +126,65 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   }
 
   const pass = device.renderPass
-  const rt = device.createRenderTarget({
+  const msaaColor = device.createRenderTarget({
     width: device.output.width,
     height: device.output.height,
     format: device.output.format,
     sampleCount: 4,
   })
-  const dt = device.createDepthTarget({
+  const msaaDepth = device.createDepthTarget({
     width: device.output.width,
     height: device.output.height,
     format: 'DEPTH24_PLUS',
     sampleCount: 4,
   })
+  const color = device.createRenderTarget({
+    width: device.output.width,
+    height: device.output.height,
+    format: device.output.format,
+    sampleCount: 1,
+    usage: TextureUsage.TextureBinding,
+  })
+  const spriteBatch = new SpriteBatch(device)
+  const clearColor = Color.CornflowerBlue.toLinear()
   function frame() {
-    device.resize()
-    rt.resizeToMatch(device.output)
-    dt.resizeToMatch(device.output)
+    msaaColor.resizeToMatch(device.output)
+    msaaDepth.resizeToMatch(device.output)
+    color.resizeToMatch(device.output)
 
     if (model) {
       updateCamera()
       updateModel(model)
     }
 
-    pass.setRenderTarget(0, rt, 0, 0, device.output)
-    pass.setDepthTarget(dt)
+    pass.setRenderTarget(0, msaaColor, 0, 0, color)
+    pass.setDepthTarget(msaaDepth)
     pass.setCullState(CullState.CullBack)
-    pass.setRenderBlend(0, BlendState.Opaque)
     pass.setDepthState(DepthState.LessEqual)
-    pass.setClearColor(0, Color.CornflowerBlue)
+    pass.setRenderBlend(0, BlendState.Alpha)
+    pass.setClearColor(0, clearColor)
     pass.clear()
 
     if (model) {
       renderModel(model)
     }
-    pass.resolve()
     pass.submit()
+    pass.resolve()
     pass.flush()
+
+    spriteBatch.linearToSrgb = true
+    spriteBatch.begin()
+    spriteBatch
+      .next(color)
+      .destination(0, 0, color.width, color.height)
+      .flipY(device.isWebGL2 && color.isRenderTarget)
+    spriteBatch.draw()
 
     device.stats(stats)
     redrawUi()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

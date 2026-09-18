@@ -47,6 +47,12 @@
     },
     {
       "path": "../render/tsconfig.build.json"
+    },
+    {
+      "path": "../utils/tsconfig.build.json"
+    },
+    {
+      "path": "../content/tsconfig.build.json"
     }
   ]
 }

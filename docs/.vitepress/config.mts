@@ -9,7 +9,7 @@ export default withSidebar(
   {
     head: [['link', { rel: 'icon', href: '/logo/gglib.svg' }]],
     title: 'GGlib',
-    description: 'Game and Graphics Library',
+    description: 'Game and Graphics Libraries',
     themeConfig: {
       logo: '/logo/gglib.svg',
       // https://vitepress.dev/reference/default-theme-config

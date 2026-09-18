@@ -1,4 +1,4 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, TextureAssetContainer } from '@gglib/content'
+import { AssetContainer, AssetLoader, ContentLoader, LoadContext, TextureAssetContainer } from '@gglib/content'
 import { AcquireTextureOptions, createTextureSource } from '@gglib/graphics'
 import { File } from './format'
 
@@ -10,7 +10,7 @@ export class Loader implements AssetLoader {
     registry.register(Loader)
   }
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'arraybuffer',
     })

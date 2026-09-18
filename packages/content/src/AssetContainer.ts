@@ -1,17 +1,17 @@
 import { MaterialOptions, TextureOptions } from '@gglib/graphics'
 import { ModelOptions } from '@gglib/model'
-import { LoaderContext } from './ContentLoader'
+import { LoadContext } from './ContentLoader'
 
 export abstract class AssetContainer {
   public abstract readonly modelCount: number
   public abstract readonly materialCount: number
   public abstract readonly textureCount: number
 
-  public abstract loadModel(index: number, context: LoaderContext): Promise<ModelOptions>
+  public abstract loadModel(index: number, context: LoadContext): Promise<ModelOptions>
 
-  public abstract loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions>
+  public abstract loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions>
 
-  public abstract loadTexture(index: number, context: LoaderContext): Promise<TextureOptions>
+  public abstract loadTexture(index: number, context: LoadContext): Promise<TextureOptions>
 }
 
 /**
@@ -41,11 +41,11 @@ export class TextureAssetContainer extends AssetContainer {
     return texture
   }
 
-  public override loadModel(index: number, context: LoaderContext): Promise<ModelOptions> {
+  public override loadModel(index: number, context: LoadContext): Promise<ModelOptions> {
     throw new Error('Method not implemented.')
   }
 
-  public override loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions> {
+  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
     throw new Error('Method not implemented.')
   }
 }

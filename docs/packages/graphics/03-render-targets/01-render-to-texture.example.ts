@@ -5,14 +5,14 @@ import {
   CullState,
   Device,
   PlatformId,
-  TaskContext,
+  FrameContext,
   Texture,
   TextureUsage,
   torusGeometry,
 } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3, vec4 } from '@gglib/math'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform }).ready
 
   const sceneShader = device.createShaderModule({
@@ -48,7 +48,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
 
   const pass = device.renderPass
   const color = vec4(1)
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     device.resize()
 
     if (!sceneShader.isValid || !presentShader.isValid) {
@@ -102,7 +102,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

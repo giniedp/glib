@@ -78,7 +78,7 @@ export class GeometryBuilderChannel {
     } else {
       throw new Error(`unsupported buffer data type: ${typeof buffer.data}`)
     }
-    const vertexLayout = buffer.vertexLayout
+    const vertexLayout = buffer.layout
     if (!vertexLayout) {
       throw new Error('missing vertexLayout on buffer')
     }
@@ -89,8 +89,8 @@ export class GeometryBuilderChannel {
 
     this.name = name
     this.buffer = buffer
-    this.elementStride = countElements(this.buffer.vertexLayout, 'cpu')
-    this.elementOffset = countElementsBefore(this.buffer.vertexLayout, name)
+    this.elementStride = countElements(this.buffer.layout, 'cpu')
+    this.elementOffset = countElementsBefore(this.buffer.layout, name)
     this.elementCount = elementCpuFormat(channelLayout).elementCount
   }
 
@@ -173,7 +173,7 @@ export class GeometryBuilderChannel {
   public static fromVertexBuffer(vBuffers: Array<BufferOptions<PlainBufferData>>): GeometryBuilderChannelMap {
     const channels = {}
     for (let buffer of vBuffers) {
-      Object.keys(buffer.vertexLayout).forEach((name) => {
+      Object.keys(buffer.layout).forEach((name) => {
         channels[name] = new GeometryBuilderChannel(buffer, name)
       })
     }

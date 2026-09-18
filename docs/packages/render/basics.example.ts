@@ -1,6 +1,6 @@
 import { ContentLoader } from '@gglib/content'
 import { TonemapOperator } from '@gglib/effects'
-import { boxGeometry, CommonInputs, createDevice, PlatformId, sphereGeometry, TaskContext } from '@gglib/graphics'
+import { boxGeometry, CommonInputs, createDevice, PlatformId, sphereGeometry, FrameContext } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3, vec3 } from '@gglib/math'
 
 import { BloomPass, GeometryPass, PixelatePass, Renderer, TonemapPass, VignettePass } from '@gglib/render'
@@ -56,7 +56,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     }
   }
 
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     device.resize()
 
     Mat4.invert(view.camera.world, view.camera.view)
@@ -107,7 +107,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     })
   })
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

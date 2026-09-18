@@ -7,13 +7,13 @@ import {
   Device,
   PlatformId,
   SpriteBatch,
-  TaskContext,
+  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const sceneShader = device.createShaderModule({
@@ -50,7 +50,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   const cameraPosition = Vec3.create(0, 0.75, 4)
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     colorTarget.resizeToMatch(device.output)
     normalTarget.resizeToMatch(device.output)
     depthTarget.resizeToMatch(device.output)
@@ -113,7 +113,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

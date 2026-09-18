@@ -241,7 +241,8 @@ fn decodeNormalRGFloat(xy: vec2f) -> vec3f {
 }
 
 fn decodeNormalRGBInt(rgb: vec3f) -> vec3f {
-  return normalize(rgb * 2.0 - vec3f(1.0)) * vec3f(1.0, -1.0, 1.0);
+  // TODO: review or add normal scaling
+  return normalize(rgb * 2.0 - vec3f(1.0));
 }
 
 fn fresnelSchlick(f0: vec3f, f90: vec3f, VdotH: f32) -> vec3f {
@@ -536,7 +537,7 @@ fn fs_main(frag: FragmentInput) -> @location(0) vec4f {
     let px = textureSample(smoothnessMap, smoothnessMapSampler, frag.uvBase);
     if (material.ior == 0.0 && metallic == 0.0) {
       // specular glossiness flow
-      roughness = 1.0 - ((1.0 - roughness) * px.a);
+      roughness = 1.0 - ((1.0 - roughness) * px.r);
       specularWeight = 1.0;
     } else {
       // specular flow

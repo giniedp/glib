@@ -342,6 +342,10 @@ export function surfaceFormatIsSrgb(format: SurfaceFormat): boolean {
   return !!surfaceFormatInfo(format)?.srgb
 }
 
+export function surfaceFormatIsLinear(format: SurfaceFormat): boolean {
+  return !surfaceFormatInfo(format)?.srgb
+}
+
 export function surfaceFormatDataType(format: SurfaceFormat): DataType | null {
   return surfaceFormatInfo(format)?.type || null
 }

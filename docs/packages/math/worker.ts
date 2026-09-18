@@ -1,6 +1,3 @@
-declare function importScripts(script: string): void
-declare function postMessage(data: any): void
-
 import { scene } from './scene'
 
 interface Job {

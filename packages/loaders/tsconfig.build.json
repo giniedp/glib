@@ -28,10 +28,10 @@
       "path": "../graphics/tsconfig.build.json"
     },
     {
-      "path": "../utils/tsconfig.build.json"
+      "path": "../model/tsconfig.build.json"
     },
     {
-      "path": "../model/tsconfig.build.json"
+      "path": "../utils/tsconfig.build.json"
     },
     {
       "path": "../math/tsconfig.build.json"

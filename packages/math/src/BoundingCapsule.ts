@@ -2,7 +2,7 @@ import type { BoundingBox } from './BoundingBox'
 import type { BoundingSphere } from './BoundingSphere'
 import { Intersects, planeCapsuleIntersection, PlaneIntersectionType } from './Collision'
 import type { IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
+import { vec3, Vec3 } from './Vec3'
 
 /**
  * @public
@@ -11,11 +11,11 @@ export class BoundingCapsule {
   /**
    * The start point of medial line
    */
-  public readonly start: Vec3
+  public start: IVec3
   /**
    * The end point of medial line
    */
-  public readonly end: Vec3
+  public end: IVec3
   /**
    * The radius
    */
@@ -41,8 +41,8 @@ export class BoundingCapsule {
     endZ?: number,
     radius?: number,
   ) {
-    this.start = new Vec3(startX, startY, startZ)
-    this.end = new Vec3(endX, endY, endZ)
+    this.start = vec3(startX, startY, startZ)
+    this.end = vec3(endX, endY, endZ)
     this.radius = radius || 0
   }
 

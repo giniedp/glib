@@ -1,6 +1,9 @@
+import type { Brand } from '@gglib/utils'
+
 export interface TranscoderOptions {
   wasmUrl?: string
   wasmBinary?: ArrayBuffer
+  getWorker?: () => Worker
 }
 
 export interface TranscoderModule {
@@ -42,30 +45,32 @@ export interface TranscoderModule {
   transcodeUASTCImage(...args: any[]): any
 }
 
-export enum BasisTranscodeFormat {
-  ETC1_RGB = 0,
-  ETC2_RGBA = 1,
-  BC1_RGB = 2,
-  BC3_RGBA = 3,
-  BC4_R = 4,
-  BC5_RG = 5,
-  BC7_M6_RGB = 6,
-  BC7_M5_RGBA = 7,
-  PVRTC1_4_RGB = 8,
-  PVRTC1_4_RGBA = 9,
-  ASTC_4x4_RGBA = 10,
-  // ATC_RGB = 11,
-  // ATC_RGBA_INTERPOLATED_ALPHA = 12,
-  RGBA32 = 13,
-  // RGB565 = 14,
-  // BGR565 = 15,
-  // RGBA4444 = 16,
+export type BasisTranscodeFormat = Brand<number, 'BasisFormat'>
+export const BasisTranscodeFormat = {
+  ETC1_RGB: 0 as BasisTranscodeFormat,
+  ETC2_RGBA: 1 as BasisTranscodeFormat,
+  BC1_RGB: 2 as BasisTranscodeFormat,
+  BC3_RGBA: 3 as BasisTranscodeFormat,
+  BC4_R: 4 as BasisTranscodeFormat,
+  BC5_RG: 5 as BasisTranscodeFormat,
+  BC7_M6_RGB: 6 as BasisTranscodeFormat,
+  BC7_M5_RGBA: 7 as BasisTranscodeFormat,
+  PVRTC1_4_RGB: 8 as BasisTranscodeFormat,
+  PVRTC1_4_RGBA: 9 as BasisTranscodeFormat,
+  ASTC_4x4_RGBA: 10 as BasisTranscodeFormat,
+  // ATC_RGB: 11 as BasisTranscodeFormat,
+  // ATC_RGBA_INTERPOLATED_ALPHA: 12 as BasisTranscodeFormat,
+  RGBA32: 13 as BasisTranscodeFormat,
+  // RGB565: 14 as BasisTranscodeFormat,
+  // BGR565: 15 as BasisTranscodeFormat,
+  // RGBA4444: 16 as BasisTranscodeFormat,
 }
 
-export enum BasisDecodeFlags {
-  PVRTC_WRAP_REPEAT = 2,
-  TRANSCODE_ALPHA_DATA_TO_OPAQUE_FORMATS = 4,
-  HIGH_QUALITY = 32,
+export type BasisDecodeFlags = Brand<number, 'BasisDecodeFlags'>
+export const BasisDecodeFlags = {
+  PVRTC_WRAP_REPEAT: 2 as BasisDecodeFlags,
+  TRANSCODE_ALPHA_DATA_TO_OPAQUE_FORMATS: 4 as BasisDecodeFlags,
+  HIGH_QUALITY: 32 as BasisDecodeFlags,
 }
 
 export interface BasisFile {

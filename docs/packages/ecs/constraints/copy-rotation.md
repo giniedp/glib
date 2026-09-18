@@ -1,6 +1,6 @@
 # Rotation
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL

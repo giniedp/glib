@@ -4,6 +4,7 @@ import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 const settings = {
@@ -30,6 +31,7 @@ class Game extends EcsGame {
   protected override onInitialize() {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
+    this.world.getSystem(Renderer).linearToSrgb = true
 
     this.createCamera()
     this.createObjects()

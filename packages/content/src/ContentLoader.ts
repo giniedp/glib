@@ -15,14 +15,14 @@ import { AsyncExecutor, NaiveAsyncExecutor } from './AsyncExecutor'
 import { HttpClient, HttpOptions, HttpResponse } from './HttpClient'
 import { MaterialFactory, MaterialMatcher, MaterialRegistry, MaterialType } from './MaterialRegistry'
 
-export interface LoaderContext {
+export interface LoadContext {
   /**
-   * The content loader instance that initiated the load request
+   * The content loader instance that started the load request.
    */
   content: ContentLoader
 
   /**
-   * The base URL to resolve asset URLs against.
+   * The base URL to use to resolve asset URLs.
    */
   baseUrl?: string
 
@@ -30,17 +30,33 @@ export interface LoaderContext {
    * Abort signal to cancel the load request.
    */
   signal?: AbortSignal
-}
 
-export type LoadOptions = Omit<LoaderContext, 'content'> & {
   /**
-   * The type hint of the asset to load. Can be a file extension or a MIME type.
+   * The type hint for the asset to load. This can be a file extension or a MIME type.
    *
    * @remarks
-   * Useful if the type cannot be determined from the URL
+   * Use this if the type cannot be found from the URL.
    */
   type?: string
+
+  /**
+   * The intended color space for the currently loaded texture.
+   *
+   * @remarks
+   * This tells the loader which color space to use for the currently loaded texture.
+   *
+   * Some loaders may ignore this.
+   */
+  color?: ColorSpace
+
+  /**
+   *
+   */
+  crossOrigin?: string
 }
+
+export type ColorSpace = 'srgb' | 'linear'
+export type LoadOptions = Omit<LoadContext, 'content'>
 
 export type TransformLoadOptions<T, R> = LoadOptions & {
   /**
@@ -98,20 +114,23 @@ export class ContentLoader {
   public registry: AssetLoaderRegistry
 
   /**
-   * Async executor used exclusively for leaf I/O tasks.
+   * Async executor used only for leaf I/O tasks.
    *
    * @remarks
-   * Default implementation is {@link NaiveAsyncExecutor}, which executes all tasks immediately
-   * without concurrency limiting.
+   * The default implementation is {@link NaiveAsyncExecutor}.
+   * It runs all tasks immediately and does not limit concurrency.
    *
-   * This executor is intended only for *leaf-level operations*, such as:
+   * Use this executor only for leaf-level operations like
    * - network requests
-   * - texture decoding / uploading
+   * - texture decoding or uploading
    * - GPU upload operations
    *
-   * Orchestration tasks (e.g. model loading, material composition, dependency resolution)
-   * must NOT be executed through this executor otherwise it can introduce deadlocks due to
-   * nested dependency chains.
+   * Do NOT use this executor for orchestration tasks like
+   * - model loading
+   * - material composition
+   * - dependency resolution
+   *
+   * because nested dependency chains can cause deadlocks.
    */
   public executor: AsyncExecutor
 
@@ -147,7 +166,7 @@ export class ContentLoader {
   }
 
   /**
-   * Indicates whether the loaded assets should be cached per URL
+   * Indicates if the loaded assets are to be cached per URL.
    */
   public cache = true
 
@@ -263,11 +282,11 @@ export class ContentLoader {
     return this.device.createTexture(data)
   }
   /**
-   * Creates a loader for the given URL
+   * Creates a loader for the given URL.
    *
    * @remarks
-   * If no loader can be determined from the URL or options,
-   * it will perform a HEAD request to the URL to determine the content type.
+   * If no loader can be found from the URL or options, this method sends
+   * a HEAD request to the URL. The method then uses the returned content type to try again.
    */
   public async resolveLoader(url: string, type?: string): Promise<AssetLoader> {
     let factory: LoaderFactory = null
@@ -298,7 +317,7 @@ export class ContentLoader {
     throw new Error(`No loader found for URL: ${url} with type: ${type || 'unknown'}`)
   }
 
-  public createContext(options?: LoadOptions | TransformLoadOptions<any, any>): LoaderContext {
+  public createContext(options?: LoadOptions | TransformLoadOptions<any, any>): LoadContext {
     const result = {
       ...(options || {}),
       content: this,

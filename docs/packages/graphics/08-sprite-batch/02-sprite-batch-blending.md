@@ -9,13 +9,14 @@ order: 20
 Three overlapping star sprites. Switch blend modes to see how overlaps are
 combined differently - notably how additive blending makes them glow.
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
 <Example platform="webgl2" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

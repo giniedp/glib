@@ -1,6 +1,6 @@
 import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   // A `ShaderModule` compiles the given source(s) into a GPU program.
@@ -22,7 +22,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   // describing the attributes contained in `data`.
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         // The shader below declares a single attribute called `vPosition`,
         // a `vec3`. The name here must match the attribute name used in the
         // shader (`location(0)` in WGSL, `vPosition` in GLSL).
@@ -64,7 +64,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.add(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }
@@ -83,10 +83,10 @@ const glslFS = /*glsl*/ `
   precision mediump float;
   out vec4 fragColor;
   void main(void) {
-    // A constant white color for every pixel of the triangle.
     fragColor = vec4(1.0, 1.0, 1.0, 1.0);
   }
 `
+
 const wgslShader = /*wgsl*/ `
   struct VertexOutput {
     @builtin(position) Position : vec4<f32>,
@@ -103,7 +103,6 @@ const wgslShader = /*wgsl*/ `
 
   @fragment
   fn fs() -> @location(0) vec4<f32> {
-    // A constant white color for every pixel of the triangle.
     return vec4<f32>(1.0, 1.0, 1.0, 1.0);
   }
 `

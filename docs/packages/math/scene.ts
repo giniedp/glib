@@ -33,13 +33,19 @@ class Material {
   ) {}
   public scatter(r: Ray, p: Pixel) {
     if (Math.random() <= this.metallic) {
-      r.position.initFrom(p.hitPoint)
-      r.direction.reflect(p.hitNormal).addScaled(randV3(tmpVec1), this.roughness).normalize()
-      return r.direction.dot(p.hitNormal) > 0
+      Vec3.copy(p.hitPoint, /*out*/ r.position)
+      Vec3.reflect(r.direction, p.hitNormal, /*out*/ r.direction)
+      r.direction.x += Math.random() * this.roughness
+      r.direction.y += Math.random() * this.roughness
+      r.direction.z += Math.random() * this.roughness
+      Vec3.normalize(r.direction, /*out*/ r.direction)
+      return Vec3.dot(r.direction, p.hitNormal) > 0
     } else {
-      r.position.initFrom(p.hitPoint)
-      randV3(r.direction)
-      r.direction.add(p.hitNormal).normalize()
+      Vec3.copy(p.hitPoint, /*out*/ r.position)
+      r.direction.x = Math.random() + p.hitNormal.x
+      r.direction.y = Math.random() + p.hitNormal.y
+      r.direction.z = Math.random() + p.hitNormal.z
+      Vec3.normalize(r.direction, /*out*/ r.direction)
       return true
     }
   }
@@ -85,7 +91,9 @@ class PlaneShape implements Shape {
   }
 
   public intersectsAt(ray: Ray, out: IVec3): number {
-    localRay.initFrom(ray).position.subtract(this.position)
+    localRay.initFrom(ray)
+    Vec3.subtract(ray.position, this.position, ray.position)
+
     let d = localRay.intersectsPlaneAt(this.volume)
     if (Number.isNaN(d) || d < 0) {
       return Number.NaN
@@ -155,11 +163,11 @@ class Scene {
     let d = Number.MAX_VALUE
     pixel.shape = null!
     for (let i = 0; i < this.objects.length; i++) {
-      let d1 = this.objects[i].intersectsAt(ray, tmpVec1)
+      let d1 = this.objects[i].intersectsAt(ray, /* out */ Vec3.$0)
       if (!isNaN(d1) && d1 < d && d1 > 0) {
         d = d1
         pixel.shape = this.objects[i]
-        pixel.hitPoint.initFrom(tmpVec1)
+        Vec3.copy(Vec3.$0, pixel.hitPoint)
       }
     }
     if (pixel.shape != null) {
@@ -214,7 +222,7 @@ class Scene {
       // pixel.color.add(pixel.hitNormal)
       if (depth >= 0 && pixel.material.scatter(ray, pixel)) {
         const mat = pixel.material
-        ray.position.addScaled(ray.direction, EPSILON)
+        Vec3.addScaled(ray.position, ray.direction, EPSILON, ray.position)
         this.trace(ray, depth - 1, pixel)
         pixel.color.multiply(mat.attenuation)
       } else {

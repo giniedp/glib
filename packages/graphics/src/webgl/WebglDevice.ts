@@ -18,7 +18,7 @@ import {
   type TextureOptions,
   type VertexBufferOptions,
 } from '../resources'
-import { Scheduler } from '../Scheduler'
+import { FrameScheduler } from '../FrameScheduler'
 import { SamplerState } from '../states'
 import {
   WebglBuffer,
@@ -90,7 +90,7 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   public readonly ndcMinZ: NdcMinZ = NdcMinZ.MinusOne
   public readonly canvas: HTMLCanvasElement | OffscreenCanvas
   public readonly context: WebGL2RenderingContext
-  public readonly scheduler = new Scheduler()
+  public readonly scheduler = new FrameScheduler()
   public readonly isWebGL2: boolean = true
   public readonly isWebGPU: boolean = false
   public readonly isReady: boolean = false
@@ -234,6 +234,9 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   }
 
   public createRenderTarget(options: TextureOptions): WebglTexture {
+    options.width ??= this.output.width
+    options.height ??= this.output.height
+    options.format ??= this.output.format
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1
@@ -243,6 +246,9 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
   }
 
   public createDepthTarget(options: DepthBufferOptions): WebglTexture {
+    options.width ??= this.output.width
+    options.height ??= this.output.height
+    options.format ??= 'DEPTH24_PLUS_STENCIL8'
     options.generateMipmap ??= false
     options.mipLevelCount ??= 1
     options.sampleCount ??= 1

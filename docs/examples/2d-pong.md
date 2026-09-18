@@ -14,13 +14,14 @@ To play click on the game container so the iframe is focused
 then use `W`/`S` keys to control the left paddle and `I`/`K`
 keys to control the right paddle.
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
 <Example platform="webgl2" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

@@ -19,6 +19,14 @@ export const InputSlots = {
     SunDirection: inputSlotVec3('global', 'sunDirection'),
     CloudShadingSunColor: inputSlotVec3('global', 'cloudShadingCustomSunColor'),
     CloudShadingSkyColor: inputSlotVec3('global', 'cloudShadingCustomSkyColor'),
+
+    VolumetricFogParams: inputSlotVec4('global', 'volumetricFogParams'),
+    VolumetricFogRampParams: inputSlotVec4('global', 'volumetricFogRampParams'),
+    VolumetricFogColorGradientParams: inputSlotVec4('global', 'volumetricFogColorGradientParams'),
+    VolumetricFogColorGradientRadial: inputSlotVec4('global', 'volumetricFogColorGradientRadial'),
+    VolumetricFogColorGradientBase: inputSlotVec4('global', 'volumetricFogColorGradientBase'),
+    VolumetricFogColorGradientDelta: inputSlotVec4('global', 'volumetricFogColorGradientDelta'),
+
     BottomFogColor: inputSlotVec3('global', 'bottomFogColor'),
     BottomFogHeight: inputSlotScalar('global', 'bottomFogHeight'),
     BottomFogDensity: inputSlotScalar('global', 'bottomFogDensity'),
@@ -28,6 +36,7 @@ export const InputSlots = {
     FogHeightOffset: inputSlotScalar('global', 'fogHeightOffset'),
     FogNear: inputSlotScalar('global', 'fog_near'),
     FogFar: inputSlotScalar('global', 'fog_far'),
+
     Debug: inputSlotScalar('global', 'debug'),
     EnvMap: inputSlotTexture('global', 'envMap'),
   },

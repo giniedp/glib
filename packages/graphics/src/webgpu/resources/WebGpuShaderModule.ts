@@ -170,7 +170,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
         const buffer = new WebGpuBuffer(this.device, {
           type: 'VertexBuffer',
           name: `auto-generated vertex buffer for shader input '${semantic}'`,
-          vertexLayout: {
+          layout: {
             [semantic]: {
               byteOffset: 0,
               elementType: input.elementType,

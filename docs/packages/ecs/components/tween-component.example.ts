@@ -12,6 +12,7 @@ import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial, PlatformId } from '@gglib/graphics'
 import { GLTF, MTL, OBJ } from '@gglib/loaders'
 import { easeInCubic, easeInOutCubic, easeLinear, easeOutCubic, Vec3 } from '@gglib/math'
+import { Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
 class Game extends EcsGame {
@@ -26,6 +27,7 @@ class Game extends EcsGame {
     this.content.registerLoader(GLTF.Loader)
     this.content.registerMaterial(BasicMaterial, () => true)
     this.tween = this.world.getSystem(TweenSystem)
+    this.world.getSystem(Renderer).linearToSrgb = true
 
     this.createCamera()
     this.createLight()

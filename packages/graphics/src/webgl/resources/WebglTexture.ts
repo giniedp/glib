@@ -8,6 +8,7 @@ import {
 } from '../../enums'
 import {
   createTextureSource,
+  DynamicTextureSource,
   isCompressedFaceData,
   RefCounterKey,
   type ReferenceCounter,

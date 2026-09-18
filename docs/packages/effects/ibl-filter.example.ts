@@ -12,7 +12,7 @@ import {
   createDevice,
   PlatformId,
   SpriteBatch,
-  TaskContext,
+  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
@@ -165,7 +165,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const world = Mat4.createIdentity()
   const proj = Mat4.createIdentity()
 
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     params.frameTime = ctx.delta
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
@@ -281,7 +281,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

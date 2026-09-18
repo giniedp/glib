@@ -276,7 +276,7 @@ export class SpriteBuffer extends RingBuffer<SpriteBuilder, Float32Array<ArrayBu
     return device.createVertexBuffer([
       {
         name: 'SpriteBatch Positions',
-        vertexLayout: {
+        layout: {
           position: {
             elementType: 'float32',
             elementCount: 3,
@@ -293,7 +293,7 @@ export class SpriteBuffer extends RingBuffer<SpriteBuilder, Float32Array<ArrayBu
       },
       {
         name: 'SpriteBatch Data',
-        vertexLayout: {
+        layout: {
           aTransform0: {
             elementType: 'float32',
             elementCount: 4,

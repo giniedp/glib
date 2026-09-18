@@ -242,7 +242,7 @@ export class GeometryBuilder {
     }
     this.vtxBuffer = this.layout.map((l): BufferOptions<PlainBufferData> => {
       return {
-        vertexLayout: JSON.parse(JSON.stringify(l)),
+        layout: JSON.parse(JSON.stringify(l)),
         type: 'VertexBuffer',
         data: {
           type: 'float32', // TODO: this should be derived from the vertex layout
@@ -463,7 +463,7 @@ export class GeometryBuilder {
     }
     this.vtxBuffer = this.layout.map(
       (layout): BufferOptions<PlainBufferData> => ({
-        vertexLayout: JSON.parse(JSON.stringify(layout)),
+        layout: JSON.parse(JSON.stringify(layout)),
         type: 'VertexBuffer',
         data: { type: 'float32', elements: [] },
       }),

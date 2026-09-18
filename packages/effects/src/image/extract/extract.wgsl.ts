@@ -116,7 +116,7 @@ export const EXTRACT_WGSL_FS = /* wgsl */ `
 
   @fragment
   fn main(in: FragmentInput) -> @location(0) vec4f {
-    let color: vec3f = textureSample(colorMap, colorMapSampler, in.uv).rgb;
-    return vec4f(extract(color), 1.0);
+    let color = textureSample(colorMap, colorMapSampler, in.uv);
+    return vec4f(extract(color.rgb), color.a);
   }
 `

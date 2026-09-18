@@ -1,5 +1,5 @@
 <template>
-  <div v-if="code" class="language-ts">
+  <div class="language-ts">
     <pre><code v-html="highlightedCode"></code></pre>
   </div>
 </template>
@@ -9,44 +9,48 @@ pre {
 }
 </style>
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { mergeUri } from '@gglib/utils'
 import hljs from 'highlight.js'
 import ts from 'highlight.js/lib/languages/typescript'
 import 'highlight.js/styles/github-dark.css'
-import { mergeUri, withResolvers } from '@gglib/utils'
+import { onMounted, ref } from 'vue'
 hljs.registerLanguage('typescript', ts)
 
-const rawExamples = import.meta.glob('/**/*.ts', { query: '?raw' })
+const files = import.meta.glob('/**/*.ts', { query: '?raw' })
 
 const props = defineProps({
   name: String,
 })
-function getExample() {
+type Example = {
+  path: string
+  load: () => Promise<string>
+}
+function getExample(): Example {
   let pathname = location.pathname
   if (pathname.endsWith('.html')) {
     pathname = pathname.replace('.html', '')
   }
 
-  let result: string = null!
+  const paths: string[] = []
   if (!props.name) {
-    const name1 = pathname + 'example.ts'
-    const name2 = pathname + '.example.ts'
-    result = rawExamples[name1] || rawExamples[name2]
-    if (!result) {
-      throw new Error(`example does not exist: ${name1} (${name2})`)
-    }
+    paths.push(pathname + 'example.ts')
+    paths.push(pathname + '.example.ts')
   } else {
-    const name = mergeUri(pathname, props.name)
-    result = rawExamples[name]
-    if (!result) {
-      throw new Error(`example does not exist: ${name}`)
+    paths.push(mergeUri(pathname, props.name))
+  }
+  for (const path of paths) {
+    if (!files[path]) {
+      continue
+    }
+    return {
+      path,
+      load: files[path],
     }
   }
 
-  return result
+  throw new Error(`example does not exist: ${paths}`)
 }
 
-const code = ref('')
 const highlightedCode = ref('')
 
 function classifyComments(html: string) {
@@ -102,11 +106,10 @@ function classifyComments(html: string) {
 
 onMounted(async () => {
   try {
-    const exampleLoader = getExample()
-    const module: any = await exampleLoader()
-    const raw = module.default
-    code.value = raw
-    highlightedCode.value = classifyComments(hljs.highlight(raw, { language: 'typescript' }).value)
+    const example = getExample()
+    const module: any = await example.load()
+    const code = module.default
+    highlightedCode.value = classifyComments(hljs.highlight(code, { language: 'typescript' }).value)
   } catch (e) {
     console.error(e)
   }

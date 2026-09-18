@@ -331,19 +331,20 @@ fn fs_main(in: FragmentInput) -> @location(0) vec4f {
   let partialRayleighConst = params.sunIntensity * kr * params.waveLengthInv;
 
   var color = vec3(0.0);
+  color += rayleighColor * partialRayleighConst * rayleighPhase;
   if (uv.y <= 1.0) {
-    // upper hemisphere
-    color += rayleighColor * partialRayleighConst * rayleighPhase;
     color += mieColor * partialMieConst * miePhase;
-  } else {
-    // lower hemisphere, ground color contribution
-    color = rayleighColor * partialRayleighConst * rayleighPhase * ground;
   }
 
   var gr = saturate(skyDir.z * params.nightSkyColorShift.x + params.nightSkyColorShift.y);
       gr = gr * (2.0 - gr);
   color += params.nightSkyColorBase.rgb;
   color += params.nightSkyColorDelta.rgb * gr;
+
+  let horizon = 1.0 - saturate(uv.y - 1.0);
+  let fogBlend = pow(horizon, 4.0);
+  color = mix(color.rgb * ground, color.rgb, fogBlend);
+
   color = min(color, vec3f(60000.0));
 
   return vec4f(color, 1.0);

@@ -14,22 +14,21 @@ import {
   type ShaderModuleOptions,
   TRUE,
 } from '@gglib/graphics'
-import { Mat4, Vec2, vec4, Vec4 } from '@gglib/math'
+import { Mat4, Vec2, Vec4 } from '@gglib/math'
 import { type NwMaterialProps } from './GltfExtension'
 import SCHEMA from './IllumMaterial.meta'
 import WGSL from './IllumMaterial.wgsl'
-import WGSL_VCOL from './IllumVertColor.wgsl'
 import { TextureModifier } from './TexMod'
 import { type FeatureFlag, getShaderConstants, MaterialLayerMasks } from './common'
 
 import { MtlFlag } from './types'
-import { MtlUtil, paramVec4, paramVec3, paramValue } from './utils'
+import { MtlUtil, paramValue, paramVec3, paramVec4 } from './utils'
 
 export function illumShaderOptions(constants: Record<string, number>): ShaderModuleOptions {
   return {
     name: 'Illum Shader',
     wgsl: {
-      source: constants['VERTCOLORS'] ? WGSL_VCOL : WGSL,
+      source: WGSL,
       fragmentConstants: ShaderConstants.get(constants),
       vertexConstants: ShaderConstants.get(constants),
     },

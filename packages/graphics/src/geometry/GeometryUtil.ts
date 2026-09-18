@@ -23,7 +23,7 @@ export class GeometryUtil {
     public readonly vertexBuffer: Array<BufferOptions>,
   ) {
     for (const buffer of vertexBuffer) {
-      for (const semantic in buffer.vertexLayout) {
+      for (const semantic in buffer.layout) {
         this.channelNames.push(semantic)
         this.channels.set(semantic, new GeometryBuilderChannel(buffer, semantic))
       }
@@ -79,7 +79,7 @@ export class GeometryUtil {
     }
 
     const vBuffer: BufferOptions<PlainBufferData> = {
-      vertexLayout: {
+      layout: {
         [semantic]: {
           ...attribute,
           byteOffset: 0,

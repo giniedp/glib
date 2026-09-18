@@ -39,7 +39,7 @@ export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
   /**
    * The VertexBuffer layout. Usable only for vertex buffers
    */
-  vertexLayout?: VertexLayout
+  layout?: VertexLayout
 
   /**
    * The actual data to set on the buffer.
@@ -174,8 +174,8 @@ export abstract class Buffer {
       throw new Error(`invalid or missing 'type' option: ${opts.type}`)
     }
 
-    if (opts.vertexLayout) {
-      self.vertexLayout = opts.vertexLayout
+    if (opts.layout) {
+      self.vertexLayout = opts.layout
     } else if (self.isVertexBuffer) {
       throw new Error(`missing 'layout' option for VertexBuffer`)
     } else {

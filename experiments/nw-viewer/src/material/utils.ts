@@ -97,11 +97,11 @@ export class MtlUtil {
     const deformWave0 = vec4(0)
     const deformWave1 = vec4(0)
     if (deform?.WaveX?.Type) {
-      const w = deform?.WaveX
+      const wave = deform?.WaveX
       // deformWave0 : vec4f, // .x = Frequency .y = Phase .z = Amplitude .w = Level
       // deformWave1 : vec4f, // .x = 1.0 / DividerX
-      Vec4.init(deformWave0, w.Freq, w.Phase, w.Amp, w.Level)
-      Vec4.init(deformWave1, 1 / deform.DividerX, 1 / deform.DividerY, 0, w.Type)
+      Vec4.init(deformWave0, wave.Freq, wave.Phase, wave.Amp, wave.Level)
+      Vec4.init(deformWave1, 1 / deform.DividerX, 1 / deform.DividerY, deform.Type, wave.Type)
     }
 
     for (const mapName in texMaps) {

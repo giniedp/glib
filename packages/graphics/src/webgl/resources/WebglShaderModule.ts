@@ -1,5 +1,5 @@
 import { brand, eventSource, EventType } from '@gglib/utils'
-import type { Task } from '../../Scheduler'
+import type { FrameTask } from '../../FrameScheduler'
 import { getRefCounter, ShaderModule, type ProgramOptions, type ReferenceCounter } from '../../resources'
 import { WebglDevice } from '../WebglDevice'
 import type { WebglResource } from '../types'
@@ -90,7 +90,7 @@ export class WebglShaderModule extends ShaderModule implements WebglResource<Web
 
   private info: string
   private attached: WebglShader[] = []
-  private compileTask: Task<void>
+  private compileTask: FrameTask<void>
 
   public constructor(device: WebglDevice, options: WebglShaderModuleOptions) {
     super()

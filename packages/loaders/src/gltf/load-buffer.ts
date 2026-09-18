@@ -231,6 +231,26 @@ export abstract class GLTFAccessorBase {
     }
     return this.data
   }
+
+  public abstract readComponent(aIndex: number, cIndex: number): number
+  // public abstract readAttribute(index: number, target: number[]): number[]
+
+  public readV3(aIndex: number) {
+    return {
+      x: this.readComponent(aIndex, 0),
+      y: this.readComponent(aIndex, 1),
+      z: this.readComponent(aIndex, 2),
+    }
+  }
+
+  public readV4(aIndex: number) {
+    return {
+      x: this.readComponent(aIndex, 0),
+      y: this.readComponent(aIndex, 1),
+      z: this.readComponent(aIndex, 2),
+      w: this.readComponent(aIndex, 3),
+    }
+  }
 }
 
 export class GLTFBufferViewAccessor extends GLTFAccessorBase {
@@ -254,6 +274,10 @@ export class GLTFBufferViewAccessor extends GLTFAccessorBase {
       },
       this.componentType,
     )
+  }
+
+  public readComponent(aIndex: number, cIndex: number): number {
+    return this.data[this.offset + aIndex * this.stride + cIndex]
   }
 }
 

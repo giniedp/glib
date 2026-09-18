@@ -1,12 +1,9 @@
 import * as fs from 'fs'
-import * as glob from 'glob'
+import { globbySync } from 'globby'
 
-export function glibReferences(options: {
-  srcDir: string,
-  exclude: string[]
-}) {
+export function glibReferences(options: { srcDir: string; exclude: string[] }) {
   const result = new Set<string>()
-  for (const file of glob.sync(`${options.srcDir}/**/*.ts`)) {
+  for (const file of globbySync(`${options.srcDir}/**/*.ts`)) {
     const fileContent = fs.readFileSync(file).toString()
     const importFromGglib = fileContent.match(/from ["']@gglib\/(\w+([\-/_]\w+)*)["']/g)
     importFromGglib?.forEach((value) => {

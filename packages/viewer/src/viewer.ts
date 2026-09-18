@@ -13,7 +13,7 @@ import { MouseListener } from '@gglib/game'
 import { boxGeometry, FALSE, Texture, TRUE } from '@gglib/graphics'
 import { DDS, GLTF, HDR, KTX } from '@gglib/loaders'
 import { Mat3 } from '@gglib/math'
-import { Model } from '@gglib/model'
+import { AnimationPlayer, Model } from '@gglib/model'
 import { BloomPass, GeometryPass, Renderer, TonemapPass } from '@gglib/render'
 
 export interface ModelViewerOptions {
@@ -25,6 +25,7 @@ export interface LoadModelOptions {
   baseUrl?: string
   signal?: AbortSignal
   environment?: EnvironmentOptions
+  autoplay?: boolean
 }
 
 export interface EnvironmentOptions {
@@ -68,8 +69,9 @@ export class ModelViewer extends EcsGame {
 
     this.bloomPass = new BloomPass(this.device, {
       enabled: true,
-      threshold: 0.75,
-      intensity: 0.75,
+      threshold: 1,
+      intensity: 0.5,
+      mode: 'kawase',
     })
     this.tonemapPass = new TonemapPass(this.device, {
       enabled: true,
@@ -79,6 +81,7 @@ export class ModelViewer extends EcsGame {
 
     this.world.addSystem(
       new Renderer(this.device, {
+        linearToSrgb: false,
         pipeline: {
           passes: [new GeometryPass(), this.bloomPass, this.tonemapPass],
         },
@@ -91,6 +94,9 @@ export class ModelViewer extends EcsGame {
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsPbrSpecularGlossinessHandler)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsEmissiveStrength)
+    GLTF.Loader.registerExtension(GLTF.KhrTextureBasisu)
+    GLTF.Loader.registerExtension(GLTF.MsftTextureDDS)
+    GLTF.Loader.registerExtension(GLTF.ExtTextureWebp)
 
     this.content.registerLoader(GLTF.Loader)
     this.content.registerLoader(KTX.Loader)
@@ -125,7 +131,7 @@ export class ModelViewer extends EcsGame {
 
   protected override async onLoadContent(): Promise<void> {
     this.iblSampler = new IblSampler(this.device, {})
-    await this.iblSampler.ready
+    await this.iblSampler.compiled
 
     const skybox = boxGeometry(this.device, { name: 'Skybox', invert: true })
     const skymat = new SkyboxMaterial(this.device, {
@@ -146,18 +152,22 @@ export class ModelViewer extends EcsGame {
   }
 
   private abort: AbortController
+  private player: AnimationPlayer
   public async loadModel(options: LoadModelOptions) {
     await this.ready
 
     this.abort?.abort('reload')
     this.abort = new AbortController()
+
+    const signal = this.abort.signal
     if (options.environment?.panoramaUrl) {
       this.loadEnvironment(options.environment?.panoramaUrl)
     }
     const model = await this.content.loadModel(options.url, {
       baseUrl: options.baseUrl,
-      signal: options.signal || this.abort.signal,
+      signal: options.signal || signal,
     })
+    signal.throwIfAborted()
 
     this.abort = null
     model.selectScene(0)

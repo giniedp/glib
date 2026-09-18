@@ -103,8 +103,8 @@ export class WebglRenderEncoder extends RenderEncoder {
   private frameBuffer: WebglFrameBuffer
   private resolveBuffer: WebglFrameBuffer
   private resolveModes: boolean[] = []
-  private defaultClearColor: [number, number, number, number] = [0, 0, 0, 1]
-  private clearColor: [number, number, number, number] = [0, 0, 0, 1]
+  private defaultClearColor: [number, number, number, number] = [0, 0, 0, 0]
+  private clearColor: [number, number, number, number] = [0, 0, 0, 0]
   private clearDepth: number = 1
   private clearStencil: number = 0
 

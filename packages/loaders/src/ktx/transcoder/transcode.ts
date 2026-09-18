@@ -1,5 +1,5 @@
-import { TextureCompression } from '@gglib/graphics'
-import { LevelImage } from '../format'
+import type { TextureCompression } from '@gglib/graphics'
+import type { LevelImage } from '../format'
 import BASIS from './basis_transcoder.js'
 import { BasisTranscodeFormat, KTX2File, TranscoderModule, TranscoderOptions } from './types'
 
@@ -24,17 +24,13 @@ export async function transcoderModule(options: TranscoderOptions): Promise<Tran
   return module
 }
 
-export function transcodeKtx(
-  module: TranscoderModule,
-  data: Uint8Array | ArrayBuffer,
-  compression: TextureCompression[],
-) {
+export function transcodeKtx(module: TranscoderModule, data: Uint8Array | ArrayBuffer, supports: TextureCompression[]) {
   if (data instanceof ArrayBuffer) {
     data = new Uint8Array(data)
   }
   const file = new module.KTX2File(data)
   try {
-    return transcodeKtxFile(file, compression)
+    return transcodeKtxFile(file, supports)
   } finally {
     file.close()
   }
@@ -92,19 +88,19 @@ export function transcodeKtxFile(file: KTX2File, compression: TextureCompression
   }
 }
 
-function getTranscodeFormat(file: KTX2File, compression: TextureCompression[]) {
+function getTranscodeFormat(file: KTX2File, supports: TextureCompression[]) {
   // https://github.com/KhronosGroup/3D-Formats-Guidelines/blob/main/KTXDeveloperGuide.md
   if (file.isETC1S()) {
-    if (file.getHasAlpha() && compression.includes('etc2')) {
+    if (file.getHasAlpha() && supports.includes('etc2')) {
       return BasisTranscodeFormat.ETC2_RGBA
     }
-    if (compression.includes('etc1')) {
+    if (supports.includes('etc1')) {
       return BasisTranscodeFormat.ETC1_RGB
     }
-    if (compression.includes('bptc')) {
+    if (supports.includes('bptc')) {
       return BasisTranscodeFormat.BC7_M5_RGBA
     }
-    if (compression.includes('bc')) {
+    if (supports.includes('bc')) {
       if (file.getHasAlpha()) {
         return BasisTranscodeFormat.BC3_RGBA
       }
@@ -124,19 +120,19 @@ function getTranscodeFormat(file: KTX2File, compression: TextureCompression[]) {
   }
 
   if (file.isUASTC()) {
-    if (compression.includes('astc')) {
+    if (supports.includes('astc')) {
       return BasisTranscodeFormat.ASTC_4x4_RGBA
     }
-    if (compression.includes('bptc')) {
+    if (supports.includes('bptc')) {
       return BasisTranscodeFormat.BC7_M5_RGBA
     }
-    if (compression.includes('etc2') && file.getHasAlpha()) {
+    if (supports.includes('etc2') && file.getHasAlpha()) {
       return BasisTranscodeFormat.ETC2_RGBA
     }
-    if (compression.includes('etc1')) {
+    if (supports.includes('etc1')) {
       return BasisTranscodeFormat.ETC1_RGB
     }
-    if (compression.includes('bc')) {
+    if (supports.includes('bc')) {
       if (file.getHasAlpha()) {
         return BasisTranscodeFormat.BC3_RGBA
       }

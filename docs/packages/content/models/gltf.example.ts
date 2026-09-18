@@ -19,16 +19,13 @@ import { BoundingSphere, DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
 import { Model } from '@gglib/model'
 import { mountUi, redrawUi } from 'tweak-ui'
 
-// https://cdn.nw-buddy.de/models/weaponappearances/1hstraightwaterloggedsirens-meshoverride.glb
-
 const PANORAMA_IMAGES = {
   Court: '/textures/hdr/footprint_court.hdr',
   Exterior: '/textures/hdr/cannon_exterior.hdr',
   Overcast: '/textures/hdr/overcast_puresky.hdr',
-  Sky: '/textures/Grey_Sky.png',
 }
 const MODELS = {
-  ShaderBall: '/models/gltf/USDShaderBallForGltf.glb',
+  ShaderBall: '/models/gltf/shader-ball.glb',
 }
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device = await createDevice({
@@ -36,28 +33,12 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     platform,
     autosize: true,
   }).ready
-  const iblSampler = await new IblSampler(device, {}).ready
+  const iblSampler = await new IblSampler(device, {}).compiled
 
   const pass = device.renderPass
-  const msaaColor = device.createRenderTarget({
-    width: device.output.width,
-    height: device.output.height,
-    format: device.output.format,
-    sampleCount: 4,
-  })
-  const msaaDepth = device.createDepthTarget({
-    width: device.output.width,
-    height: device.output.height,
-    format: 'DEPTH24_PLUS',
-    sampleCount: 4,
-  })
-  const color = device.createRenderTarget({
-    width: device.output.width,
-    height: device.output.height,
-    format: device.output.format,
-    sampleCount: 1,
-    usage: TextureUsage.TextureBinding,
-  })
+  const msaaColor = device.createRenderTarget({ sampleCount: 4 })
+  const msaaDepth = device.createDepthTarget({ sampleCount: 4, format: 'DEPTH24_PLUS_STENCIL8' })
+  const color = device.createRenderTarget({ usage: TextureUsage.TextureBinding })
   const spriteBatch = new SpriteBatch(device)
 
   GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)
@@ -86,18 +67,19 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const mouse = new MouseInput()
 
   const skybox = new Mesh(device, {
-    partImports: [
-      {
-        geometry: boxGeometry(device, { invert: true }),
-        materialIndex: 0,
-      },
-    ],
+    geometries: [boxGeometry(device, { invert: true })],
     materials: [
       new SkyboxMaterial(device, {
         blur: 0.5,
         cubemap: iblSampler.envMapGGX,
         intensity: 1,
       }),
+    ],
+    parts: [
+      {
+        geometryIndex: 0,
+        materialIndex: 0,
+      },
     ],
   })
 
@@ -124,7 +106,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     theta: 0,
     phi: 90,
     fow: 45,
-    distance: 2,
+    distance: 1,
     position: Vec3.create(),
     view: Mat4.createIdentity(),
     projection: Mat4.createIdentity(),
@@ -236,7 +218,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     spriteBatch.draw()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

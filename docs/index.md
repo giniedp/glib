@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: '[G]glib'
-  text: 'Graphics & Game Engine Libraries'
-  tagline: Modular WebGPU-first libraries for graphics and game development.
+  text: 'Game & Graphics Libraries'
+  tagline: Modular WebGPU-first libraries for game and graphics development.
   image:
     src: '/logo/gglib-256.png'
   actions:

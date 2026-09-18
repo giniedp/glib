@@ -5,7 +5,7 @@ aside: false
 
 # Atmosphere
 
-:::tabs
+:::tabs variant:code
 == WebGL
 <Example platform="webgl2" />
 
@@ -14,6 +14,7 @@ aside: false
 
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

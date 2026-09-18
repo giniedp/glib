@@ -1,4 +1,4 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, ResourceGraph, ResourceNode } from '@gglib/content'
+import { AssetContainer, AssetLoader, ContentLoader, LoadContext, ResourceGraph, ResourceNode } from '@gglib/content'
 import {
   GeometryBuilder,
   GeometryOptions,
@@ -20,7 +20,7 @@ export class Loader implements AssetLoader {
     registry.register(Loader)
   }
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'text',
     })
@@ -46,15 +46,15 @@ export class Container extends AssetContainer {
     this.textureCount = 0
   }
 
-  public override loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions> {
+  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
     throw new Error('Obj container does not contain materials')
   }
 
-  public override loadTexture(index: number, context: LoaderContext): Promise<TextureOptions> {
+  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
     throw new Error('Obj container does not contain textures')
   }
 
-  public override loadModel(index: number, context: LoaderContext) {
+  public override loadModel(index: number, context: LoadContext) {
     const node = this.modelNode()
     return this.graph.load(node, context)
   }
@@ -68,7 +68,10 @@ export class Container extends AssetContainer {
     const node = this.graph.node<MaterialOptions[]>(key, null)
     node.buildAsync = async (context) => {
       const url = context.content.resolveUrl(lib, this.document.source)
-      const asset = await context.content.load(url)
+      const asset = await context.content.load(url, {
+        ...context,
+        type: null,
+      })
       const materials: MaterialOptions[] = []
       for (let i = 0; i < asset.materialCount; i++) {
         materials[i] = await asset.loadMaterial(i, context)

@@ -7,7 +7,7 @@ import {
   Device,
   FALSE,
   PlatformId,
-  TaskContext,
+  FrameContext,
   torusGeometry,
   TRUE,
 } from '@gglib/graphics'
@@ -23,7 +23,7 @@ const params = {
   textured: true,
 }
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   mountUi(tools, (ui) => {
@@ -58,7 +58,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   })
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     rtColor.resizeToMatch(device.output)
     rtDetph.resizeToMatch(device.output)
     pass.flush()
@@ -106,7 +106,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

@@ -1,6 +1,7 @@
 import type { NdcMinZ } from '@gglib/math'
 import type { EventChannel } from '@gglib/utils'
 import type { Capabilities } from './Capabilities'
+import { FrameFn, FrameScheduler, FrameTask } from './FrameScheduler'
 import { RenderEncoder } from './RenderEncoder'
 import type {
   AcquireTextureOptions,
@@ -15,7 +16,6 @@ import type {
   VertexBuffer,
   VertexBufferOptions,
 } from './resources'
-import { Scheduler } from './Scheduler'
 
 /**
  * Abstract graphics device providing a unified API over WebGPU/WebGL2 for resource management,
@@ -45,7 +45,7 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
    * Task scheduler for deferred GPU work and resource lifecycle
    * @public
    */
-  public abstract readonly scheduler: Scheduler
+  public abstract readonly scheduler: FrameScheduler
 
   /**
    * Indicates a WebGL2 backend
@@ -204,6 +204,13 @@ export abstract class Device<C extends GPUCanvasContext | WebGL2RenderingContext
   public abstract dispose(): void
 
   public abstract stats<T>(out?: T): T & DeviceStats
+
+  /**
+   * Adds a task function to be executed every frame until cancelled
+   */
+  public schedule<T>(frame: FrameFn<T> | FrameTask<T>, signal?: AbortSignal) {
+    return this.scheduler.schedule(frame as any, signal)
+  }
 
   /**
    * Resizes the output to the given size or derives it from canvas dimensions and device pixel ratio

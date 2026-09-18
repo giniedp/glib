@@ -9,26 +9,23 @@ import type { IVec3, IVec4 } from './Types'
 import { Vec3 } from './Vec3'
 import { Vec4 } from './Vec4'
 
-const X_NEG: BoundingFrustumPlane = 0
-const X_POS: BoundingFrustumPlane = 1
-const Y_NEG: BoundingFrustumPlane = 2
-const Y_POS: BoundingFrustumPlane = 3
-const Z_NEG: BoundingFrustumPlane = 4
-const Z_POS: BoundingFrustumPlane = 5
+export type BoundingFrustumPlane = number & {
+  readonly __brand: number
+  readonly __type?: 'BoundingFrustumPlane'
+}
 
-export type BoundingFrustumPlane = number
 /**
  * Enumeration of bounding frustum planes
  *
  * @public
  */
 export const BoundingFrustumPlane = {
-  X_NEG,
-  X_POS,
-  Y_NEG,
-  Y_POS,
-  Z_NEG,
-  Z_POS,
+  X_NEG: 0 as BoundingFrustumPlane,
+  X_POS: 1 as BoundingFrustumPlane,
+  Y_NEG: 2 as BoundingFrustumPlane,
+  Y_POS: 3 as BoundingFrustumPlane,
+  Z_NEG: 4 as BoundingFrustumPlane,
+  Z_POS: 5 as BoundingFrustumPlane,
 }
 
 /**
@@ -55,37 +52,37 @@ export class BoundingFrustum implements BoundingVolume {
    * Gets a vector describing the near plane (in Y-UP coordinate system)
    */
   public get planePosZ(): Readonly<IVec4> {
-    return this.planes[Z_POS]
+    return this.planes[BoundingFrustumPlane.Z_POS]
   }
   /**
    * Gets a vector describing the far plane (in Y-UP coordinate system)
    */
   public get planeNegZ(): Readonly<IVec4> {
-    return this.planes[Z_NEG]
+    return this.planes[BoundingFrustumPlane.Z_NEG]
   }
   /**
    * Gets a vector describing the left plane (in Y-UP coordinate system)
    */
   public get planeNegX(): Readonly<IVec4> {
-    return this.planes[X_NEG]
+    return this.planes[BoundingFrustumPlane.X_NEG]
   }
   /**
    * Gets a vector describing the right plane (in Y-UP coordinate system)
    */
   public get planePosX(): Readonly<IVec4> {
-    return this.planes[X_POS]
+    return this.planes[BoundingFrustumPlane.X_POS]
   }
   /**
    * Gets a vector describing the top plane (in Y-UP coordinate system)
    */
   public get planePosY(): Readonly<IVec4> {
-    return this.planes[Y_POS]
+    return this.planes[BoundingFrustumPlane.Y_POS]
   }
   /**
    * Gets a vector describing the bottom plane (in Y-UP coordinate system)
    */
   public get planeNegY(): Readonly<IVec4> {
-    return this.planes[Y_NEG]
+    return this.planes[BoundingFrustumPlane.Y_NEG]
   }
 
   /**
@@ -152,37 +149,37 @@ export class BoundingFrustum implements BoundingVolume {
     const m = this.matrix.elements
     let plane: IVec4
 
-    plane = this.planes[X_NEG]
+    plane = this.planes[BoundingFrustumPlane.X_NEG]
     plane.x = -m[3] - m[0]
     plane.y = -m[7] - m[4]
     plane.z = -m[11] - m[8]
     plane.w = -m[15] - m[12]
 
-    plane = this.planes[X_POS]
+    plane = this.planes[BoundingFrustumPlane.X_POS]
     plane.x = -m[3] + m[0]
     plane.y = -m[7] + m[4]
     plane.z = -m[11] + m[8]
     plane.w = -m[15] + m[12]
 
-    plane = this.planes[Y_NEG]
+    plane = this.planes[BoundingFrustumPlane.Y_NEG]
     plane.x = -m[3] - m[1]
     plane.y = -m[7] - m[5]
     plane.z = -m[11] - m[9]
     plane.w = -m[15] - m[13]
 
-    plane = this.planes[Y_POS]
+    plane = this.planes[BoundingFrustumPlane.Y_POS]
     plane.x = -m[3] + m[1]
     plane.y = -m[7] + m[5]
     plane.z = -m[11] + m[9]
     plane.w = -m[15] + m[13]
 
-    plane = this.planes[Z_NEG]
+    plane = this.planes[BoundingFrustumPlane.Z_NEG]
     plane.x = -m[3] - m[2]
     plane.y = -m[7] - m[6]
     plane.z = -m[11] - m[10]
     plane.w = -m[15] - m[14]
 
-    plane = this.planes[Z_POS]
+    plane = this.planes[BoundingFrustumPlane.Z_POS]
     plane.x = -m[3] + m[2]
     plane.y = -m[7] + m[6]
     plane.z = -m[11] + m[10]
@@ -190,7 +187,7 @@ export class BoundingFrustum implements BoundingVolume {
 
     for (let i = 0; i < 6; i++) {
       plane = this.planes[i]
-      const l = 1.0 / Vec3.len(plane)
+      const l = 1.0 / Vec3.magnitude(plane)
       plane.x = plane.x * l
       plane.y = plane.y * l
       plane.z = plane.z * l

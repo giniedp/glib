@@ -111,7 +111,7 @@ export const EXTRACT_GLSL_FS = /* glsl */ `
   }
 
   void main() {
-    vec3 color = texture(colorMap, uv).rgb;
-    fragColor = vec4(extract(color), 1.0);
+    vec4 color = texture(colorMap, uv);
+    fragColor = vec4(extract(color.rgb), color.a);
   }
 `

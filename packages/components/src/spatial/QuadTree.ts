@@ -121,8 +121,8 @@ export class QuadTreeNode<T extends object = {}> implements SpatialIndex<T>, Spa
 
   protected updateLooseBounds(factor: number) {
     this.looseBounds.initFrom(this.bounds)
-    this.looseBounds.min.subtractScalar((this.size * factor) / 2)
-    this.looseBounds.max.addScalar((this.size * factor) / 2)
+    Vec3.subtractScalar(this.looseBounds.min, (this.size * factor) / 2)
+    Vec3.addScalar(this.looseBounds.max, (this.size * factor) / 2)
   }
 
   /**

@@ -1,5 +1,5 @@
 <template>
-  <canvas ref="canvas" style="width: 100%; height: 100%; z-index: 1"></canvas>
+  <canvas ref="canvas" style="width: 100%; height: 100%; z-index: 1; position: relative"></canvas>
 </template>
 
 <style>

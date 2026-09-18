@@ -3,13 +3,14 @@ title: Sprite Component
 aside: false
 ---
 
-:::tabs
+:::tabs variant:code
 == WebGL
 <Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

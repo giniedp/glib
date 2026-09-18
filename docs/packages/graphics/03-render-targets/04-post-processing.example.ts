@@ -6,7 +6,7 @@ import {
   Device,
   planeGeometry,
   PlatformId,
-  TaskContext,
+  FrameContext,
   Texture,
   TextureUsage,
 } from '@gglib/graphics'
@@ -15,7 +15,7 @@ import { mountUi } from 'tweak-ui'
 
 const EFFECTS = { None: 0, Grayscale: 1, Invert: 2, Vignette: 3 }
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const sceneShader = device.createShaderModule({
@@ -56,7 +56,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   const cameraPosition = Vec3.create(0, 0.6, 4)
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     renderTarget.resizeToMatch(device.output)
 
     if (!sceneShader.isValid || !postShader.isValid) {
@@ -101,7 +101,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

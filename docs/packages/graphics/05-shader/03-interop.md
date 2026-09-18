@@ -10,7 +10,7 @@ This allows you to have different conventions for shader and javascript code or 
 
 To rename a vertex input `vPosition` to `position` do
 
-:::tabs
+:::tabs variant:code
 == glsl
 
 ```glsl
@@ -29,13 +29,14 @@ struct VertexInput {
 
 :::
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
 <Example platform="webgl2" />
 :::
 
-### Source
-
+#:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

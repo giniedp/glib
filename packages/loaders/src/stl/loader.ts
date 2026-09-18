@@ -1,4 +1,4 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, ResourceGraph } from '@gglib/content'
+import { AssetContainer, AssetLoader, ContentLoader, LoadContext, ResourceGraph } from '@gglib/content'
 import { GeometryBuilder, MaterialOptions, MeshPartImport, TextureOptions } from '@gglib/graphics'
 import { ModelOptions } from '@gglib/model'
 import { STL } from './format'
@@ -11,7 +11,7 @@ export class Loader implements AssetLoader {
     registry.register(Loader)
   }
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'arraybuffer',
     })
@@ -36,14 +36,14 @@ export class Container extends AssetContainer {
     this.textureCount = 0
   }
 
-  public override loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions> {
+  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
     throw new Error('Method not implemented.')
   }
-  public override loadTexture(index: number, context: LoaderContext): Promise<TextureOptions> {
+  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
     throw new Error('Method not implemented.')
   }
 
-  public override loadModel(index: number, context: LoaderContext) {
+  public override loadModel(index: number, context: LoadContext) {
     const node = this.modelNode()
     return this.graph.load(node, context)
   }

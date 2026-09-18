@@ -1,4 +1,4 @@
-import { AssetContainer, LoaderContext, ResourceGraph, ResourceNode } from '@gglib/content'
+import { AssetContainer, ColorSpace, LoadContext, ResourceGraph, ResourceNode } from '@gglib/content'
 import {
   CommonMaterialProps,
   magFilterFromWebGL,
@@ -14,6 +14,7 @@ import { ModelOptions, SkinData } from '@gglib/model'
 import { removeItemUnordered } from '@gglib/utils'
 import { Document, Material, Texture } from './format'
 import { Property } from './format/common'
+import { loadAnimation } from './load-animation'
 import { GLTFAccessorBase, loadAccessor, loadBuffer } from './load-buffer'
 import { loadMaterial } from './load-material'
 import { loadMesh } from './load-mesh'
@@ -26,7 +27,7 @@ export type GltfExtension<T, N> = {
 }
 
 export type GltfMaterialExtension = GltfExtension<Material, MaterialOptions>
-export type GltfTextureExtension = GltfExtension<Texture, TextureOptions>
+export type GltfTextureExtension = GltfExtension<Texture, TextureOptions & { gltf: Record<string, any> }>
 
 export class GltfAssetContainer extends AssetContainer {
   public override modelCount: number
@@ -47,16 +48,16 @@ export class GltfAssetContainer extends AssetContainer {
     this.extensions = extensions
   }
 
-  public override loadModel(index: number, context: LoaderContext): Promise<ModelOptions> {
+  public override loadModel(index: number, context: LoadContext): Promise<ModelOptions> {
     return this.graph.load(this.modelNode(), context)
   }
 
-  public override loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions> {
+  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
     return this.graph.load(this.materialNode(index), context)
   }
 
-  public override loadTexture(index: number, context: LoaderContext): Promise<TextureOptions> {
-    return this.graph.load(this.textureNode(index), context)
+  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
+    return this.graph.load(this.textureNode(index, context.color), context)
   }
 
   public getSampler(index: number): SamplerState {
@@ -88,6 +89,22 @@ export class GltfAssetContainer extends AssetContainer {
       scene: this.document.scene || 0,
       scenes: (this.document.scenes || []).map((it) => JSON.parse(JSON.stringify(it))),
     })
+
+    if (this.document.animations) {
+      this.document.animations.forEach((_, i) => {
+        this.graph.assign(node, loadAnimation(this, i), (model, anim) => {
+          model.animations.push(anim)
+        })
+      })
+    }
+
+    if (this.document.skins) {
+      this.document.skins.forEach((_, i) => {
+        this.graph.assign(node, loadSkin(this, i), (model, skin) => {
+          model.skins.push(skin)
+        })
+      })
+    }
 
     if (this.document.meshes) {
       const meshNodes = [...node.data.nodes].filter((it) => typeof it.mesh === 'number')
@@ -141,8 +158,8 @@ export class GltfAssetContainer extends AssetContainer {
     })
   }
 
-  public textureNode(index: number): ResourceNode<TextureOptions> {
-    return loadTexture(this, index)
+  public textureNode(index: number, color: ColorSpace): ResourceNode<TextureOptions> {
+    return loadTexture(this, index, color)
   }
 
   public bufferNode(index: number): ResourceNode<ArrayBuffer> {

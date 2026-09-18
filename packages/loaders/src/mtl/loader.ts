@@ -1,4 +1,12 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoaderContext, ResourceGraph, ResourceNode } from '@gglib/content'
+import {
+  AssetContainer,
+  AssetLoader,
+  ColorSpace,
+  ContentLoader,
+  LoadContext,
+  ResourceGraph,
+  ResourceNode,
+} from '@gglib/content'
 import { CommonMaterialProps, MaterialOptions, TextureOptions } from '@gglib/graphics'
 import { ModelOptions } from '@gglib/model'
 import { Document, TextureData, parse } from './format'
@@ -26,7 +34,7 @@ export class Loader implements AssetLoader {
 
   public static PLUGINS: MtlPlugin[] = []
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'text',
     })
@@ -53,21 +61,21 @@ export class MtlAsset extends AssetContainer {
     this.materialCount = document.length
   }
 
-  public override loadModel(index: number, context: LoaderContext): Promise<ModelOptions> {
+  public override loadModel(index: number, context: LoadContext): Promise<ModelOptions> {
     throw new Error('Method not implemented.')
   }
 
-  public override loadMaterial(index: number, context: LoaderContext): Promise<MaterialOptions> {
+  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
     const node = this.materialNode(index)
     return this.graph.load(node, context)
   }
 
-  public override loadTexture(index: number, context: LoaderContext): Promise<TextureOptions> {
+  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
     let map: TextureData = this.findTexture(index)
     if (!map) {
       throw new Error(`Texture with index ${index} not found in document`)
     }
-    const node = this.textureNode(map)
+    const node = this.textureNode(map, context.color)
     return this.graph.load(node, context)
   }
 
@@ -150,8 +158,8 @@ export class MtlAsset extends AssetContainer {
     return node
   }
 
-  public textureNode(map: TextureData): ResourceNode<TextureOptions> {
-    const key = `texture:${map.file}`
+  public textureNode(map: TextureData, color: ColorSpace): ResourceNode<TextureOptions> {
+    const key = `texture:${map.file}:${color}`
     const node = this.graph.node<TextureOptions>(key, {})
 
     for (const plugin of this.plugins) {
@@ -166,7 +174,11 @@ export class MtlAsset extends AssetContainer {
       return node
     }
 
-    node.buildAsync = async (context: LoaderContext): Promise<any> => {
+    node.buildAsync = async (context: LoadContext): Promise<any> => {
+      context = {
+        ...context,
+        color,
+      }
       const url = context.content.resolveUrl(map.file, this.url)
       const asset = await context.content.load(url, context)
       return asset.loadTexture(0, context)
@@ -206,43 +218,43 @@ export class MtlAsset extends AssetContainer {
     }
 
     if (data.map_Ka?.file) {
-      this.graph.assign(node, this.textureNode(data.map_Ka), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.map_Ka, 'linear'), (material, texture) => {
         params.OcclusionMap = texture
       })
     }
 
     if (data.map_Kd?.file) {
-      this.graph.assign(node, this.textureNode(data.map_Kd), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.map_Kd, 'srgb'), (material, texture) => {
         params.BaseMap = texture
       })
     }
 
     if (data.map_Ks?.file) {
-      this.graph.assign(node, this.textureNode(data.map_Ks), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.map_Ks, 'srgb'), (material, texture) => {
         params.SpecularMap = texture
       })
     }
 
     if (data.map_d?.file) {
-      this.graph.assign(node, this.textureNode(data.map_d), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.map_d, 'linear'), (material, texture) => {
         params.OpacityMap = texture
       })
     }
 
     if (data.bump?.file) {
-      this.graph.assign(node, this.textureNode(data.bump), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.bump, 'linear'), (material, texture) => {
         params.NormalMap = texture
       })
     }
 
     if (data.disp?.file) {
-      this.graph.assign(node, this.textureNode(data.disp), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.disp, 'linear'), (material, texture) => {
         params.DisplacementMap = texture
       })
     }
 
     if (data.refl?.file) {
-      this.graph.assign(node, this.textureNode(data.refl), (material, texture) => {
+      this.graph.assign(node, this.textureNode(data.refl, 'srgb'), (material, texture) => {
         params.EnvironmentMap = texture
       })
     }

@@ -1,6 +1,6 @@
 import { ContentLoader } from '@gglib/content'
 import { NishitaSkyEffect } from '@gglib/effects'
-import { Color, createDevice, PlatformId, SpriteBatch, TaskContext, TextureUsage } from '@gglib/graphics'
+import { Color, createDevice, PlatformId, SpriteBatch, FrameContext, TextureUsage } from '@gglib/graphics'
 import { HDR } from '@gglib/loaders'
 import { vec3 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
@@ -28,8 +28,8 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(HDR.Loader)
 
   mountUi(tools, (ui) => {
-    ui.scalar(params, 'sunLatitude', { range: true, min: -Math.PI / 2, max: Math.PI / 2 })
-    ui.scalar(params, 'sunLongitude', { range: true, min: -Math.PI, max: Math.PI })
+    ui.scalar(params, 'sunLatitude', { range: true, min: 0, max: Math.PI })
+    ui.scalar(params, 'sunLongitude', { range: true, min: 0, max: Math.PI * 2 })
     ui.scalar(params, 'sunIntensity', { range: true, min: 0, max: 100 })
     ui.scalar(params, 'mieScattering', { range: true, min: 0.0001, max: 0.01, decimals: 5 })
     ui.scalar(params, 'rayleighScattering', { range: true, min: 0.00005, max: 0.001, decimals: 5 })
@@ -52,7 +52,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     format: 'RGBA16_FLOAT',
   })
 
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     pass.setClearColor(0, Color.TransparentBlack)
     pass.clear()
 
@@ -107,7 +107,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

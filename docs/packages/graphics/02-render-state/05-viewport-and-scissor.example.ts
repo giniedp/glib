@@ -1,8 +1,8 @@
-import { Color, createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import { Color, createDevice, Device, PlatformId, FrameContext } from '@gglib/graphics'
 import { Mat4 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -17,7 +17,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
 
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         vPosition: { byteOffset: 0, elementCount: 3, elementType: 'float32' },
         vColor: { byteOffset: 12, elementCount: 3, elementType: 'float32' },
       },
@@ -39,7 +39,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
 
   const world = Mat4.createIdentity()
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     // Clear the whole canvas once, before restricting the viewport to any
     // of the four quadrants below.
     pass.setViewportState(0, 0, device.output.width, device.output.height)
@@ -88,7 +88,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

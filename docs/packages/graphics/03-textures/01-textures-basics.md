@@ -9,13 +9,14 @@ order: 10
 Load an image as a texture, add UV coordinates to a quad, and sample the
 texture in the fragment shader.
 
-:::tabs
+:::tabs variant:code
 == WebGL
 <Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

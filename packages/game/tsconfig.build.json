@@ -22,10 +22,10 @@
   ],
   "references": [
     {
-      "path": "../utils/tsconfig.build.json"
+      "path": "../graphics/tsconfig.build.json"
     },
     {
-      "path": "../graphics/tsconfig.build.json"
+      "path": "../utils/tsconfig.build.json"
     },
     {
       "path": "../math/tsconfig.build.json"

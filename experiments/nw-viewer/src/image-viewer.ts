@@ -59,7 +59,7 @@ export class NwImageViewer extends EcsGame {
     })
 
     this.renderer = this.world.getSystem(Renderer)
-    this.renderer.autoSrgb = true
+    this.renderer.linearToSrgb = true
 
     GLTF.Loader.registerExtension(NwMaterialExtension)
     GLTF.Loader.registerExtension(GLTF.KhrMaterialsSpecular)

@@ -1,13 +1,14 @@
 import { CommonMaterialProps } from '@gglib/graphics'
-import { GltfMaterialExtension } from './asset'
+import { GltfMaterialExtension, GltfTextureExtension } from './asset'
 import {
+  EXT_texture_webp,
   getKhrExtension,
-  KHR_materials_clearcoat,
   KHR_materials_emissive_strength,
   KHR_materials_ior,
-  KHR_materials_iridescence,
   KHR_materials_pbrSpecularGlossiness,
   KHR_materials_specular,
+  KHR_texture_basisu,
+  MSFT_texture_dds,
 } from './format/KHR-Extensions'
 import { getTextureUvInfo as getTextureInfo } from './load-texture'
 
@@ -32,7 +33,7 @@ export const KhrMaterialsPbrSpecularGlossinessHandler: GltfMaterialExtension = {
     if (ext.diffuseTexture) {
       const sampler = asset.getTextureSampler(ext.diffuseTexture.index)
       const uvInfo = getTextureInfo(ext.diffuseTexture)
-      asset.graph.assign(node, asset.textureNode(ext.diffuseTexture.index), (material, texture) => {
+      asset.graph.assign(node, asset.textureNode(ext.diffuseTexture.index, 'srgb'), (material, texture) => {
         setParam(material.properties, 'BaseMap', texture)
         setParam(material.properties, 'BaseMapSampler', sampler)
         setParam(material.properties, 'BaseMapUv', uvInfo)
@@ -41,7 +42,7 @@ export const KhrMaterialsPbrSpecularGlossinessHandler: GltfMaterialExtension = {
 
     if (ext.specularGlossinessTexture) {
       const sampler = asset.getTextureSampler(ext.specularGlossinessTexture.index)
-      asset.graph.assign(node, asset.textureNode(ext.specularGlossinessTexture.index), (material, texture) => {
+      asset.graph.assign(node, asset.textureNode(ext.specularGlossinessTexture.index, 'srgb'), (material, texture) => {
         setParam(material.properties, 'SpecularMap', texture)
         setParam(material.properties, 'SpecularMapSampler', sampler)
         setParam(material.properties, 'SmoothnessMap', texture)
@@ -62,14 +63,14 @@ export const KhrMaterialsSpecular: GltfMaterialExtension = {
 
     if (ext.specularColorTexture) {
       const sampler = asset.getTextureSampler(ext.specularColorTexture.index)
-      asset.graph.assign(node, asset.textureNode(ext.specularColorTexture.index), (material, texture) => {
+      asset.graph.assign(node, asset.textureNode(ext.specularColorTexture.index, 'srgb'), (material, texture) => {
         setParam(material.properties, 'SpecularMap', texture)
         setParam(material.properties, 'SpecularMapSampler', sampler)
       })
     }
     if (ext.specularTexture) {
       const sampler = asset.getTextureSampler(ext.specularTexture.index)
-      asset.graph.assign(node, asset.textureNode(ext.specularTexture.index), (material, texture) => {
+      asset.graph.assign(node, asset.textureNode(ext.specularTexture.index, 'linear'), (material, texture) => {
         setParam(material.properties, 'SmoothnessMap', texture)
         setParam(material.properties, 'SmoothnessMapSampler', sampler)
       })
@@ -94,5 +95,32 @@ export const KhrMaterialsEmissiveStrength: GltfMaterialExtension = {
 
     const params: CommonMaterialProps = node.data.properties
     params.EmissiveStrength ??= ext?.emissiveStrength ?? 1
+  },
+}
+
+export const KhrTextureBasisu: GltfTextureExtension = {
+  name: KHR_texture_basisu,
+  handler: (asset, node, mtl) => {
+    const ext = getKhrExtension(mtl, KHR_texture_basisu)
+    node.data.gltf ||= {}
+    node.data.gltf['source'] ??= ext.source
+  },
+}
+
+export const MsftTextureDDS: GltfTextureExtension = {
+  name: MSFT_texture_dds,
+  handler: (asset, node, mtl) => {
+    const ext = getKhrExtension(mtl, MSFT_texture_dds)
+    node.data.gltf ||= {}
+    node.data.gltf['source'] ??= ext.source
+  },
+}
+
+export const ExtTextureWebp: GltfTextureExtension = {
+  name: EXT_texture_webp,
+  handler: (asset, node, mtl) => {
+    const ext = getKhrExtension(mtl, EXT_texture_webp)
+    node.data.gltf ||= {}
+    node.data.gltf['source'] ??= ext.source
   },
 }

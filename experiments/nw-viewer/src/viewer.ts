@@ -11,7 +11,7 @@ import {
   type SchedulerStats,
 } from '@gglib/components'
 import { type GameEntity } from '@gglib/ecs'
-import { TonemapOperator } from '@gglib/effects'
+import { ResolveMsaaEffect, ResolveMsaaOperator, TonemapOperator } from '@gglib/effects'
 import { Color, CommonInputs, type DeviceStats } from '@gglib/graphics'
 import { DDS, GLTF, HDR } from '@gglib/loaders'
 import { DEGREE_TO_RAD, Mat4, RAD_TO_DEGREE, SpaceBasis, Vec3, Vec4 } from '@gglib/math'
@@ -103,28 +103,33 @@ export class NwViewer extends EcsGame {
     this.world.addSystem(new SchedulerSystem({}))
     this.world.addSystem(
       new Renderer(this.device, {
-        autoSrgb: false,
+        linearToSrgb: false,
         pipeline: {
           passes: [
             new GeometryPass({
               order: 0,
               clearColors: [Color.TransparentBlack, Color.TransparentBlack],
               outputsMsaa: [RenderChannel.ColorMsaa, RenderChannel.LinearDepthMsaa],
-              outputs: [RenderChannel.Color, RenderChannel.LinearDepthRes],
+              outputs: [RenderChannel.Color, RenderChannel.LinearDepth],
+              resolver: [
+                null, //new ResolveMsaaEffect(this.device, { operator: ResolveMsaaOperator.KARIS }),
+                null, //new ResolveMsaaEffect(this.device, { operator: ResolveMsaaOperator.MIN }),
+              ],
               slots: [CommonInputs.View.SceneColorMap, CommonInputs.View.SceneDepthMap],
             }),
             new BloomPass(this.device, {
               enabled: true,
               threshold: 1,
               knee: 0.5,
-              intensity: 0.5,
+              intensity: 0.6,
               steps: 10,
               mode: 'jimnez',
             }),
             new TonemapPass(this.device, {
               enabled: true,
               exposure: 1,
-              operator: TonemapOperator.REINHARD_JODIE,
+              operator: TonemapOperator.ACES_NARKOWICZ,
+              whitePoint: 10.0,
               srgb: true,
             }),
           ],

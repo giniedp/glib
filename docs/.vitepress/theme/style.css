@@ -139,15 +139,20 @@
   --docsearch-primary-color: var(--vp-c-brand-1) !important;
 }
 
+.VPFeature {
+  background-color: transparent !important;
+  border: none !important;
+}
+
 .content-container {
   max-width: 100% !important;
 }
 
-@media (min-width: 1920px) {
+/* @media (min-width: 1920px) {
   :root {
     --vp-layout-max-width: 1920px;
   }
-}
+} */
 
 /* .VPDoc:not(.has-sidebar) .container {
   max-width: 1584px !important;
@@ -160,6 +165,10 @@
 .VPDoc.has-aside .content-container {
   max-width: 1168px !important;
 } */
+
+html {
+  scrollbar-gutter: stable;
+}
 
 h1 + .example-frame {
   margin-top: 1rem;
@@ -201,4 +210,23 @@ h1 + .example-frame {
 .hljs-cdelim,
 .hljs-comment--pragma {
   font-size: 0;
+}
+
+@media (min-width: 640px) {
+  .example-frame canvas {
+    border-radius: 8px;
+  }
+
+  .plugin-tabs[data-variant='code'] .example-frame canvas {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+.container .main .heading .name {
+  margin-top: 2rem;
+}
+
+.plugin-tabs--tab-list {
+  display: flex;
 }

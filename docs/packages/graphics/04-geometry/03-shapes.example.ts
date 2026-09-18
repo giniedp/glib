@@ -11,7 +11,7 @@ import {
   planeGeometry,
   PlatformId,
   sphereGeometry,
-  TaskContext,
+  FrameContext,
   torusGeometry,
 } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4, Vec3 } from '@gglib/math'
@@ -55,7 +55,7 @@ const BUILDERS: Record<string, (device: Device) => Geometry> = {
   Plane: (device) => planeGeometry(device, { size: 1, segments: 1 }),
 }
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const settings = { shape: 'Box' }
@@ -81,7 +81,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   const cameraPosition = Vec3.create(0, 1, 2)
 
   const pass = device.renderPass
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     pass.setClearColor(0, Color.CornflowerBlue)
     pass.clear()
 
@@ -107,7 +107,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
     geometry.dispose()

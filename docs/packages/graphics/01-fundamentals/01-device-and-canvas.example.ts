@@ -1,12 +1,7 @@
-import { createDevice, Device, PlatformId, TaskContext } from '@gglib/graphics'
+import { createDevice, Device, FrameContext, PlatformId } from '@gglib/graphics'
 import { vec4 } from '@gglib/math'
-import { mountUi } from 'tweak-ui'
 
-const settings = {
-  speed: 1.0,
-}
-
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   // The `Device` is the entry point to the graphics API. It wraps either a
   // WebGL2 or a WebGPU context (depending on `platform`) behind a single API,
   // so the rest of the code stays mostly platform agnostic.
@@ -19,18 +14,10 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
   // clear operations. There is a single instance that gets reused every frame.
   const pass = device.renderPass
 
-  mountUi(tools, (ui) => {
-    ui.scalar(settings, 'speed', {
-      min: 0,
-      max: 2,
-      range: true,
-    })
-  })
-
   const color = vec4(1)
-  function frame(ctx: TaskContext) {
+  function frame(ctx: FrameContext) {
     // Animate the clear color so it is obvious the loop is actually running.
-    const hue = (ctx.time * settings.speed) % (Math.PI * 2)
+    const hue = ctx.time % (Math.PI * 2)
     color.x = 0.5 + 0.5 * Math.sin(hue)
     color.y = 0.5 + 0.5 * Math.sin(hue + 2)
     color.z = 0.5 + 0.5 * Math.sin(hue + 4)
@@ -49,9 +36,8 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  // For a simple use cases like this demo, the built in task scheduler can be
-  // used to register a frame loop.
-  device.scheduler.add(frame)
+  // For a simple frame loops we utilize the built in frame scheduler.
+  device.schedule(frame)
 
   // Tear down function that will be called, when the example is unmounted.
   // Always dispose the device to free GPU resources and the canvas context.

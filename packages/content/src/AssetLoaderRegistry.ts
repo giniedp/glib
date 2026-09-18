@@ -1,5 +1,5 @@
 import { AssetContainer } from './AssetContainer'
-import type { ContentLoader, LoaderContext } from './ContentLoader'
+import type { ContentLoader, LoadContext } from './ContentLoader'
 
 export class AssetLoaderRegistry {
   private loaders: LoaderEntry[] = []
@@ -29,7 +29,7 @@ export class AssetLoaderRegistry {
 }
 
 export interface AssetLoader {
-  load(url: string | Blob, context: LoaderContext): Promise<AssetContainer>
+  load(url: string | Blob, context: LoadContext): Promise<AssetContainer>
 }
 
 export type LoaderFactory<T = unknown> = (content: ContentLoader, options?: T) => AssetLoader | Promise<AssetLoader>

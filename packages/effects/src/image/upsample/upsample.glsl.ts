@@ -3,26 +3,26 @@ const BASE = /* glsl */ `
   precision highp float;
   precision highp int;
 
-  vec3 upsamplePassthrough(sampler2D tex, vec2 uv) {
-    return texture(tex, uv).rgb;
+  vec4 upsamplePassthrough(sampler2D tex, vec2 uv) {
+    return texture(tex, uv);
   }
 
   // Standard 3x3 tent filter upsample, widely used for bloom mip-chain composites
-  vec3 upsampleTent3x3(sampler2D tex, vec2 uv, vec2 texelSize) {
+  vec4 upsampleTent3x3(sampler2D tex, vec2 uv, vec2 texelSize) {
     vec4 d = texelSize.xyxy * vec4(1.0, 1.0, -1.0, 0.0);
 
-    vec3 s;
-    s  = texture(tex, uv - d.xy).rgb;
-    s += texture(tex, uv - d.wy).rgb * 2.0;
-    s += texture(tex, uv - d.zy).rgb;
+    vec4 s;
+    s  = texture(tex, uv - d.xy);
+    s += texture(tex, uv - d.wy) * 2.0;
+    s += texture(tex, uv - d.zy);
 
-    s += texture(tex, uv + d.zw).rgb * 2.0;
-    s += texture(tex, uv        ).rgb * 4.0;
-    s += texture(tex, uv + d.xw).rgb * 2.0;
+    s += texture(tex, uv + d.zw) * 2.0;
+    s += texture(tex, uv       ) * 4.0;
+    s += texture(tex, uv + d.xw) * 2.0;
 
-    s += texture(tex, uv + d.zy).rgb;
-    s += texture(tex, uv + d.wy).rgb * 2.0;
-    s += texture(tex, uv + d.xy).rgb;
+    s += texture(tex, uv + d.zy);
+    s += texture(tex, uv + d.wy) * 2.0;
+    s += texture(tex, uv + d.xy);
 
     return s * (1.0 / 16.0);
   }
@@ -30,18 +30,18 @@ const BASE = /* glsl */ `
   // Dual-filter upsample, paired with downsampleKawase.
   // Marius Bjørge (ARM), SIGGRAPH 2015, "Bandwidth-Efficient Rendering"
   // (dual Kawase blur / dual-filter technique).
-  vec3 upsampleKawase(sampler2D tex, vec2 uv, vec2 texelSize) {
-    vec3 sum = vec3(0.0);
+  vec4 upsampleKawase(sampler2D tex, vec2 uv, vec2 texelSize) {
+    vec4 sum = vec4(0.0);
 
-    sum += texture(tex, uv + vec2(-1.0, 0.0) * texelSize).rgb * 2.0;
-    sum += texture(tex, uv + vec2( 1.0, 0.0) * texelSize).rgb * 2.0;
-    sum += texture(tex, uv + vec2( 0.0,-1.0) * texelSize).rgb * 2.0;
-    sum += texture(tex, uv + vec2( 0.0, 1.0) * texelSize).rgb * 2.0;
+    sum += texture(tex, uv + vec2(-1.0, 0.0) * texelSize) * 2.0;
+    sum += texture(tex, uv + vec2( 1.0, 0.0) * texelSize) * 2.0;
+    sum += texture(tex, uv + vec2( 0.0,-1.0) * texelSize) * 2.0;
+    sum += texture(tex, uv + vec2( 0.0, 1.0) * texelSize) * 2.0;
 
-    sum += texture(tex, uv + vec2(-1.0,-1.0) * texelSize).rgb;
-    sum += texture(tex, uv + vec2( 1.0,-1.0) * texelSize).rgb;
-    sum += texture(tex, uv + vec2(-1.0, 1.0) * texelSize).rgb;
-    sum += texture(tex, uv + vec2( 1.0, 1.0) * texelSize).rgb;
+    sum += texture(tex, uv + vec2(-1.0,-1.0) * texelSize);
+    sum += texture(tex, uv + vec2( 1.0,-1.0) * texelSize);
+    sum += texture(tex, uv + vec2(-1.0, 1.0) * texelSize);
+    sum += texture(tex, uv + vec2( 1.0, 1.0) * texelSize);
 
     return sum * (1.0 / 12.0);
   }
@@ -49,7 +49,7 @@ const BASE = /* glsl */ `
   // 9-tap Catmull-Rom bicubic upsample (GPU Gems 2, Sigg & Hadwiger 2005 —
   // "Fast Third-Order Texture Filtering"). Sharper than a tent filter,
   // avoids the blockiness of nearest/bilinear at larger scale factors.
-  vec3 upsampleBicubic(sampler2D tex, vec2 uv, vec2 texelSize) {
+  vec4 upsampleBicubic(sampler2D tex, vec2 uv, vec2 texelSize) {
     vec2 texSize = 1.0 / texelSize;
     vec2 samplePos = uv * texSize;
     vec2 texPos1 = floor(samplePos - 0.5) + 0.5;
@@ -67,18 +67,18 @@ const BASE = /* glsl */ `
     vec2 texPos3 = (texPos1 + 2.0) * texelSize;
     vec2 texPos12 = (texPos1 + offset12) * texelSize;
 
-    vec3 result = vec3(0.0);
-    result += texture(tex, vec2(texPos0.x,  texPos0.y)).rgb  * w0.x  * w0.y;
-    result += texture(tex, vec2(texPos12.x, texPos0.y)).rgb  * w12.x * w0.y;
-    result += texture(tex, vec2(texPos3.x,  texPos0.y)).rgb  * w3.x  * w0.y;
+    vec4 result = vec4(0.0);
+    result += texture(tex, vec2(texPos0.x,  texPos0.y))  * w0.x  * w0.y;
+    result += texture(tex, vec2(texPos12.x, texPos0.y))  * w12.x * w0.y;
+    result += texture(tex, vec2(texPos3.x,  texPos0.y))  * w3.x  * w0.y;
 
-    result += texture(tex, vec2(texPos0.x,  texPos12.y)).rgb * w0.x  * w12.y;
-    result += texture(tex, vec2(texPos12.x, texPos12.y)).rgb * w12.x * w12.y;
-    result += texture(tex, vec2(texPos3.x,  texPos12.y)).rgb * w3.x  * w12.y;
+    result += texture(tex, vec2(texPos0.x,  texPos12.y)) * w0.x  * w12.y;
+    result += texture(tex, vec2(texPos12.x, texPos12.y)) * w12.x * w12.y;
+    result += texture(tex, vec2(texPos3.x,  texPos12.y)) * w3.x  * w12.y;
 
-    result += texture(tex, vec2(texPos0.x,  texPos3.y)).rgb  * w0.x  * w3.y;
-    result += texture(tex, vec2(texPos12.x, texPos3.y)).rgb  * w12.x * w3.y;
-    result += texture(tex, vec2(texPos3.x,  texPos3.y)).rgb  * w3.x  * w3.y;
+    result += texture(tex, vec2(texPos0.x,  texPos3.y))  * w0.x  * w3.y;
+    result += texture(tex, vec2(texPos12.x, texPos3.y))  * w12.x * w3.y;
+    result += texture(tex, vec2(texPos3.x,  texPos3.y))  * w3.x  * w3.y;
 
     return result;
   }
@@ -104,7 +104,7 @@ export const UPSAMPLE_GLSL_FS = /* glsl */ `
   // @alias colorMap
   uniform sampler2D colorMap;
 
-  vec3 upsample(int op) {
+  vec4 upsample(int op) {
     vec2 texelSize = 1.0 / vec2(textureSize(colorMap, 0));
     switch (op) {
       case UPSAMPLE_TENT_3X3:
@@ -119,6 +119,7 @@ export const UPSAMPLE_GLSL_FS = /* glsl */ `
   }
 
   void main() {
-    fragColor = vec4(params.weight * upsample(params.operatorId), 1.0);
+    fragColor = params.weight * upsample(params.operatorId);
+    fragColor.a = clamp(fragColor.a, 0.0, 1.0);
   }
 `

@@ -1,5 +1,5 @@
 import { IVec4, Mat2, Mat3, Mat4, Quat, vec4, Vec4 } from './index'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, test } from 'vitest'
 
 describe('Vec4', () => {
   function expectComponents(v: IVec4, x: number, y: number, z: number, w: number) {
@@ -196,12 +196,12 @@ describe('Vec4', () => {
       expect(Vec4.create(0, 0, 0, 5).length()).toBe(5)
     })
   })
-  describe('.len', () => {
+  describe('.magnitude', () => {
     it('calculates length', () => {
-      expect(Vec4.len(Vec4.create(2, 0, 0, 0))).toBe(2)
-      expect(Vec4.len(Vec4.create(0, 3, 0, 0))).toBe(3)
-      expect(Vec4.len(Vec4.create(0, 0, 4, 0))).toBe(4)
-      expect(Vec4.len(Vec4.create(0, 0, 0, 5))).toBe(5)
+      expect(Vec4.magnitude(Vec4.create(2, 0, 0, 0))).toBe(2)
+      expect(Vec4.magnitude(Vec4.create(0, 3, 0, 0))).toBe(3)
+      expect(Vec4.magnitude(Vec4.create(0, 0, 4, 0))).toBe(4)
+      expect(Vec4.magnitude(Vec4.create(0, 0, 0, 5))).toBe(5)
     })
   })
   describe('#lengthSquared', () => {
@@ -272,7 +272,7 @@ describe('Vec4', () => {
     it('normalizes', () => expect(Vec4.create(1, 2, 3, 4).normalize().length()).toBeCloseTo(1))
   })
   describe('.normalize', () => {
-    it('normalizes', () => expect(Vec4.len(Vec4.normalize(Vec4.create(1, 2, 3, 4)))).toBeCloseTo(1))
+    it('normalizes', () => expect(Vec4.magnitude(Vec4.normalize(Vec4.create(1, 2, 3, 4)))).toBeCloseTo(1))
   })
   describe('#invert', () => {
     it('inverts', () => expectComponents(Vec4.create(2, 4, 8, 16).invert(), 0.5, 0.25, 0.125, 0.0625))

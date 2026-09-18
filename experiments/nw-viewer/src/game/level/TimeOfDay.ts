@@ -1,5 +1,6 @@
 import type { Texture } from '@gglib/graphics'
-import { clamp, lerp, Mat4, Vec2, vec3, Vec3, Vec4, type IVec3 } from '@gglib/math'
+import { clamp, lerp, Mat4, Vec2, vec3, Vec3, vec4, Vec4, type IVec3 } from '@gglib/math'
+import type { CameraData } from '@gglib/render'
 import { removeItemUnordered } from '@gglib/utils'
 import type { Lighting, TimeOfDay as TimeOfDayData } from '../../api'
 import { TodParams, type TodParam } from './TimeOfDayParams'
@@ -42,14 +43,23 @@ export class TimeOfDay {
   public nightSkyMoonOuterCorona = new Vec4()
   public moonDirection = Vec3.normalize(vec3(-1, -1, -10))
 
-  public bottomFogColor = vec3(0.21678638, 0.41612425, 0.79515541)
-  public bottomFogMultiplier = 0.97500086
-  public bottomFogHeight = 0
-  public bottomFogDensity = 0.050000004
-  public topFogColor = vec3(0.17437994, 0.42185885, 0.76625574)
-  public topFogMultiplier = 0.97500086
-  public topFogHeight = 400
-  public topFogDensity = 0.020000001
+  public fogColor = vec3(0.21678638, 0.41612425, 0.79515541)
+  public fogMultiplier = 0.97500086
+  public fogHeight = 0
+  public fogDensity = 0.050000004
+  public fogTopColor = vec3(0.17437994, 0.42185885, 0.76625574)
+  public fogTopMultiplier = 0.97500086
+  public fogTopHeight = 400
+  public fogTopDensity = 0.020000001
+  public fogRadialColor = vec3(0.17437994, 0.42185885, 0.76625574)
+  public fogRadialMultiplier = 0.97500086
+
+  public fogParams = vec4(0)
+  public fogRampParams = vec4(0)
+  public fogColGradBase = vec4(0) // base color
+  public fogColGradDelta = vec4(0) // base color - end color
+  public fogColGradParams = vec4(0)
+  public fogColGradRadial = vec4(0)
 
   public fogHeightOffset = 0.5
 
@@ -174,7 +184,7 @@ export class TimeOfDay {
     }
   }
 
-  public update(time: number, dt: number) {
+  public update(time: number, dt: number, camera: CameraData) {
     this.removeLayers()
     this.updateWeights(dt)
     if (this.animate) {
@@ -185,7 +195,7 @@ export class TimeOfDay {
     this.updateDayNight()
     this.updateMoonDirection()
     this.updateSunDirection()
-    this.updateVariables()
+    this.updateVariables(camera)
   }
 
   private toRemove: TimeOfDayLayer[] = []
@@ -335,7 +345,7 @@ export class TimeOfDay {
     }
   }
 
-  private updateVariables() {
+  private updateVariables(view: CameraData) {
     const sunIntensity = this.getParamValue(TodParams.SUN_INTENSITY) * this.sunMultiplier
     this.getParamColor(TodParams.SUN_COLOR, this.sunColor)
     convertIlluminanceToLightColor(this.sunColor, sunIntensity)
@@ -348,29 +358,21 @@ export class TimeOfDay {
     this.skyWaveG = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_G)
     this.skyWaveB = this.getParamValue(TodParams.SKYLIGHT_WAVELENGTH_B)
 
-    this.getParamColor(TodParams.FOG_COLOR, this.bottomFogColor)
-    this.bottomFogMultiplier = this.getParamValue(TodParams.FOG_COLOR_MULTIPLIER)
-    this.bottomFogHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT)
-    this.bottomFogDensity = this.getParamValue(TodParams.VOLFOG_DENSITY)
+    {
+      const scale = this.getParamValue(TodParams.NIGHSKY_HORIZON_COLOR_MULTIPLIER)
+      this.getParamColor(TodParams.NIGHSKY_HORIZON_COLOR, this.nightSkyHorizonColor)
+      this.nightSkyHorizonColor.x *= scale
+      this.nightSkyHorizonColor.y *= scale
+      this.nightSkyHorizonColor.z *= scale
+    }
 
-    this.getParamColor(TodParams.FOG_COLOR2, this.topFogColor)
-    this.topFogMultiplier = this.getParamValue(TodParams.FOG_COLOR2_MULTIPLIER)
-    this.topFogHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT2)
-    this.topFogDensity = this.getParamValue(TodParams.VOLFOG_DENSITY2)
-
-    this.getParamColor(TodParams.NIGHSKY_HORIZON_COLOR, this.nightSkyHorizonColor)
-    Vec3.multiplyScalar(
-      this.nightSkyHorizonColor,
-      this.getParamValue(TodParams.NIGHSKY_HORIZON_COLOR_MULTIPLIER),
-      this.nightSkyHorizonColor,
-    )
-
-    this.getParamColor(TodParams.NIGHSKY_ZENITH_COLOR, this.nightSkyZenithColor)
-    Vec3.multiplyScalar(
-      this.nightSkyZenithColor,
-      this.getParamValue(TodParams.NIGHSKY_ZENITH_COLOR_MULTIPLIER),
-      this.nightSkyZenithColor,
-    )
+    {
+      const scale = this.getParamValue(TodParams.NIGHSKY_ZENITH_COLOR_MULTIPLIER)
+      this.getParamColor(TodParams.NIGHSKY_ZENITH_COLOR, this.nightSkyZenithColor)
+      this.nightSkyZenithColor.x *= scale
+      this.nightSkyZenithColor.y *= scale
+      this.nightSkyZenithColor.z *= scale
+    }
 
     this.nightSkyColorDelta.x = this.nightSkyHorizonColor.x - this.nightSkyZenithColor.x
     this.nightSkyColorDelta.y = this.nightSkyHorizonColor.y - this.nightSkyZenithColor.y
@@ -408,6 +410,108 @@ export class TimeOfDay {
       csCustomSunColorInfluence,
       this.cloudshadingCustomSunColor,
     )
+
+    this.updateVolumetricFogParams(view)
+    this.updateVolumetricFogRampParams()
+    this.updateFogColorGradientConstants()
+    this.updateFogColorGradientParams()
+    this.updateFogColorGradientRadial(view)
+  }
+
+  private updateVolumetricFogParams(view: CameraData) {
+    let globalDensity = this.getParamValue(TodParams.VOLFOG_GLOBAL_DENSITY)
+    const finalDensityClamp = this.getParamValue(TodParams.VOLFOG_FINAL_DENSITY_CLAMP)
+
+    const fogHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT)
+    const fogDensity = clamp(this.getParamValue(TodParams.VOLFOG_DENSITY), 1e-5, 1.0)
+
+    let fogHeight2 = this.getParamValue(TodParams.VOLFOG_HEIGHT2)
+    const fogDensity2 = clamp(this.getParamValue(TodParams.VOLFOG_DENSITY2), 1e-5, 1.0)
+    fogHeight2 = fogHeight2 < fogHeight + 1.0 ? fogHeight + 1.0 : fogHeight2
+
+    const ha = fogHeight
+    const hb = fogHeight2
+
+    const da = fogDensity
+    const db = fogDensity2
+
+    const ga = Math.log(da)
+    const gb = Math.log(db)
+
+    const c = (gb - ga) / (hb - ha)
+    const o = ga - c * ha
+
+    const viewHeight = view.world.translationZ
+    const co = clamp(c * viewHeight + o, -50.0, 50.0) // Avoiding FPEs at extreme ranges
+
+    globalDensity *= 0.01 // multiply by 1/100 to scale value editor value back to a reasonable range
+
+    this.fogParams.x = c
+    this.fogParams.y = 1.44269502 * globalDensity * Math.exp(co) // log2(e) = 1.44269502
+    this.fogParams.z = globalDensity
+    this.fogParams.w = 1.0 - clamp(finalDensityClamp, 0.0, 1.0)
+  }
+
+  private updateVolumetricFogRampParams() {
+    let rampStart = this.getParamValue(TodParams.VOLFOG_RAMP_START)
+    let rampEnd = this.getParamValue(TodParams.VOLFOG_RAMP_END)
+    let rampInfluence = this.getParamValue(TodParams.VOLFOG_RAMP_INFLUENCE)
+
+    rampStart = rampStart < 0 ? 0 : rampStart // start
+    rampEnd = rampEnd < rampStart + 0.1 ? rampStart + 0.1 : rampEnd // end
+    rampInfluence = clamp(rampInfluence, 0.0, 1.0) // influence
+
+    const invRampDist = 1.0 / (rampEnd - rampStart)
+    this.fogRampParams.x = invRampDist
+    this.fogRampParams.y = -rampStart * invRampDist
+    this.fogRampParams.z = rampInfluence
+    this.fogRampParams.w = -rampInfluence + 1.0
+  }
+
+  private updateFogColorGradientConstants() {
+    this.getParamColor(TodParams.FOG_COLOR, this.fogColor)
+    this.fogMultiplier = this.getParamValue(TodParams.FOG_COLOR_MULTIPLIER)
+
+    this.getParamColor(TodParams.FOG_COLOR2, this.fogTopColor)
+    this.fogTopMultiplier = this.getParamValue(TodParams.FOG_COLOR2_MULTIPLIER)
+
+    this.fogColGradBase.x = this.fogColor.x * this.fogMultiplier
+    this.fogColGradBase.y = this.fogColor.y * this.fogMultiplier
+    this.fogColGradBase.z = this.fogColor.z * this.fogMultiplier
+
+    this.fogColGradDelta.x = this.fogColGradBase.x - this.fogTopColor.x * this.fogTopMultiplier
+    this.fogColGradDelta.y = this.fogColGradBase.y - this.fogTopColor.y * this.fogTopMultiplier
+    this.fogColGradDelta.z = this.fogColGradBase.z - this.fogTopColor.z * this.fogTopMultiplier
+  }
+
+  private updateFogColorGradientParams() {
+    const fogHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT)
+    let fogTopHeight = this.getParamValue(TodParams.VOLFOG_HEIGHT2)
+    fogTopHeight = fogTopHeight < fogHeight + 1.0 ? fogHeight + 1.0 : fogTopHeight
+
+    let colorHeightOffset = this.getParamValue(TodParams.VOLFOG_HEIGHT_OFFSET)
+    let radialSize = this.getParamValue(TodParams.VOLFOG_RADIAL_SIZE)
+    let radialLobe = this.getParamValue(TodParams.VOLFOG_RADIAL_LOBE)
+
+    colorHeightOffset = clamp(colorHeightOffset, -1.0, 1.0)
+    radialSize = -Math.exp((1.0 - clamp(radialSize, 0.0, 1.0)) * 14.0) * 1.44269502 // log2(e) = 1.44269502;
+    radialLobe = 1.0 / clamp(radialLobe, 1.0 / 21.0, 1.0) - 1.0
+
+    const invDist = 1.0 / (fogTopHeight - fogHeight)
+
+    this.fogColGradParams.x = invDist
+    this.fogColGradParams.y = -fogHeight * invDist - colorHeightOffset
+    this.fogColGradParams.z = radialSize
+    this.fogColGradParams.w = radialLobe
+  }
+
+  private updateFogColorGradientRadial(view: CameraData) {
+    this.getParamColor(TodParams.FOG_RADIAL_COLOR, this.fogRadialColor)
+    this.fogRadialMultiplier = this.getParamValue(TodParams.FOG_RADIAL_COLOR_MULTIPLIER)
+    this.fogColGradRadial.x = this.fogRadialColor.x * this.fogRadialMultiplier
+    this.fogColGradRadial.y = this.fogRadialColor.y * this.fogRadialMultiplier
+    this.fogColGradRadial.z = this.fogRadialColor.z * this.fogRadialMultiplier
+    this.fogColGradRadial.w = 1.0 / view.far
   }
 }
 

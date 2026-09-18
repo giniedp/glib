@@ -36,7 +36,7 @@ async function getThumbnail(device: Device, texture: Texture, size = 128): Promi
   })
 
   spriteBatch ||= new SpriteBatch(device, {})
-  await spriteBatch.shader.ready
+  await spriteBatch.shader.compiled
   spriteBatch.begin()
   spriteBatch.next(texture).source(0, 0, texture.width, texture.height).destination(0, 0, size, size).alpha(1.0)
   spriteBatch.end()

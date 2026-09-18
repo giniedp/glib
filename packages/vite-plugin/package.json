@@ -29,11 +29,15 @@
   },
   "devDependencies": {
     "vite": "^7",
-    "@gglib/graphics": "workspace:^0.7.0"
+    "@gglib/graphics": "workspace:^0.7.0",
+    "@gglib/math": "workspace:^0.7.0",
+    "@gglib/utils": "workspace:^0.7.0"
   },
   "peerDependencies": {
     "vite": ">=5",
-    "@gglib/graphics": "0.7.0"
+    "@gglib/graphics": "0.7.0",
+    "@gglib/math": "0.7.0",
+    "@gglib/utils": "0.7.0"
   },
   "files": [
     "package.json",

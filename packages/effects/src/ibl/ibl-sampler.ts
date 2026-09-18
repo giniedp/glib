@@ -19,7 +19,7 @@ export class IblSampler {
   private fxFilter: IblFilterEffect
   private fxCube: PanoramaToCubemapEffect
 
-  public ready: Promise<this>
+  public compiled: Promise<this>
   public get isReady() {
     return this.fxLut.isCompiled && this.fxFilter.isCompiled && this.fxCube.isCompiled
   }
@@ -43,7 +43,7 @@ export class IblSampler {
     this.fxLut = new IblBRDFLutEffect(device)
     this.fxFilter = new IblFilterEffect(device)
     this.fxCube = new PanoramaToCubemapEffect(device)
-    this.ready = Promise.all([this.fxLut.compiled, this.fxFilter.compiled, this.fxCube.compiled]).then(() => this)
+    this.compiled = Promise.all([this.fxLut.compiled, this.fxFilter.compiled, this.fxCube.compiled]).then(() => this)
     this.samplesLut = options.samplesLut ?? this.samplesLut
     this.samplesGGX = options.samplesGGX ?? this.samplesGGX
     this.samplesSheen = options.samplesCharlie ?? this.samplesSheen
@@ -100,7 +100,7 @@ export class IblSampler {
       mipLevelCount: getMipmapCount(envSize, envSize, envSize),
     })
 
-    this.ready.then(() => {
+    this.compiled.then(() => {
       const pass = this.device.renderPass
       this.fxLut.textureOut = this.lutMapGGX
       this.fxLut.samples = this.samplesLut

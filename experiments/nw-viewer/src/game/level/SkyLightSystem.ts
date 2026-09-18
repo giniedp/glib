@@ -47,7 +47,8 @@ export class SkyLightSystem extends GameSystem {
     })
   }
   public override update(time: number, dt: number): void {
-    const cam = this.game.scene.getView(0).camera.world.getTranslation()
+    const view = this.game.scene.getView(0).camera
+    const cam = view.world.getTranslation()
 
     for (const entity of this.todQuery) {
       const it = entity.component(TimeOfDayComponent)
@@ -58,7 +59,7 @@ export class SkyLightSystem extends GameSystem {
       }
     }
 
-    this.timeOfDay.update(time, dt)
+    this.timeOfDay.update(time, dt, view)
   }
 
   public override render(time: number, dt: number): void {
@@ -82,7 +83,7 @@ export class SkyLightSystem extends GameSystem {
       this.fxSky.nightSkyColorBase = this.timeOfDay.nightSkyZenithColor
       this.fxSky.nightSkyColorDelta = this.timeOfDay.nightSkyColorDelta
       this.fxSky.nightSkyColorShift = this.timeOfDay.nightSkyZenithColorShift
-      this.fxSky.groundColor = this.timeOfDay.bottomFogColor
+      this.fxSky.groundColor = this.timeOfDay.fogColor
 
       this.fxSky.render(this.device.renderPass)
     }
@@ -101,25 +102,32 @@ export class SkyLightSystem extends GameSystem {
     inputs.set(InputSlots.Global.SunDirection, tod.sunDirection)
 
     const scaledBottomFogColor = inputs.get(InputSlots.Global.BottomFogColor) || vec3()
-    scaledBottomFogColor.x = tod.bottomFogColor.x * tod.bottomFogMultiplier
-    scaledBottomFogColor.y = tod.bottomFogColor.y * tod.bottomFogMultiplier
-    scaledBottomFogColor.z = tod.bottomFogColor.z * tod.bottomFogMultiplier
+    scaledBottomFogColor.x = tod.fogColor.x * tod.fogMultiplier
+    scaledBottomFogColor.y = tod.fogColor.y * tod.fogMultiplier
+    scaledBottomFogColor.z = tod.fogColor.z * tod.fogMultiplier
     inputs.set(InputSlots.Global.BottomFogColor, scaledBottomFogColor)
 
     const scaledTopFogColor = inputs.get(InputSlots.Global.TopFogColor) || vec3()
-    scaledTopFogColor.x = tod.topFogColor.x * tod.topFogMultiplier
-    scaledTopFogColor.y = tod.topFogColor.y * tod.topFogMultiplier
-    scaledTopFogColor.z = tod.topFogColor.z * tod.topFogMultiplier
+    scaledTopFogColor.x = tod.fogTopColor.x * tod.fogTopMultiplier
+    scaledTopFogColor.y = tod.fogTopColor.y * tod.fogTopMultiplier
+    scaledTopFogColor.z = tod.fogTopColor.z * tod.fogTopMultiplier
     inputs.set(InputSlots.Global.TopFogColor, scaledTopFogColor)
 
-    inputs.set(InputSlots.Global.TopFogDensity, tod.topFogDensity)
-    inputs.set(InputSlots.Global.BottomFogDensity, tod.bottomFogDensity)
-    inputs.set(InputSlots.Global.TopFogHeight, tod.topFogHeight)
-    inputs.set(InputSlots.Global.BottomFogHeight, tod.bottomFogHeight)
+    inputs.set(InputSlots.Global.TopFogDensity, tod.fogTopDensity)
+    inputs.set(InputSlots.Global.BottomFogDensity, tod.fogDensity)
+    inputs.set(InputSlots.Global.TopFogHeight, tod.fogTopHeight)
+    inputs.set(InputSlots.Global.BottomFogHeight, tod.fogHeight)
     inputs.set(InputSlots.Global.FogHeightOffset, tod.fogHeightOffset)
 
     inputs.set(InputSlots.Global.CloudShadingSunColor, tod.cloudshadingCustomSunColor)
     inputs.set(InputSlots.Global.CloudShadingSkyColor, tod.cloudshadingCustomSkyColor)
+
+    inputs.set(InputSlots.Global.VolumetricFogParams, tod.fogParams)
+    inputs.set(InputSlots.Global.VolumetricFogRampParams, tod.fogRampParams)
+    inputs.set(InputSlots.Global.VolumetricFogColorGradientParams, tod.fogColGradParams)
+    inputs.set(InputSlots.Global.VolumetricFogColorGradientBase, tod.fogColGradBase)
+    inputs.set(InputSlots.Global.VolumetricFogColorGradientDelta, tod.fogColGradDelta)
+    inputs.set(InputSlots.Global.VolumetricFogColorGradientRadial, tod.fogColGradRadial)
 
     inputs.set(InputSlots.Global.EnvMap, this.fxIbl.envMapGGX)
   }

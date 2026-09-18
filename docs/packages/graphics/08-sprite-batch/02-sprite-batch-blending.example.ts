@@ -2,7 +2,7 @@ import { BlendState, Color, createDevice, Device, PlatformId, SpriteBatch } from
 import { vec4 } from '@gglib/math'
 import { mountUi } from 'tweak-ui'
 
-export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const spriteBatch = new SpriteBatch(device)
@@ -72,7 +72,7 @@ export default async function run(canvas: HTMLCanvasElement, tools: HTMLElement,
     pass.flush()
   }
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

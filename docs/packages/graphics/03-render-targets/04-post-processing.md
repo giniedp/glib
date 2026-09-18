@@ -9,13 +9,14 @@ order: 40
 The scene is rendered to a texture exactly as before, but the second pass
 now runs an actual image effect over it instead of just displaying it.
 
-:::tabs
+:::tabs variant:code
 == WebGL
 <Example platform="webgl2" />
 == WebGPU
 <Example platform="webgpu" />
 :::
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::

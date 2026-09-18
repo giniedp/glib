@@ -1,4 +1,14 @@
-import { BlendState, Color, CommonInputs, CullState, DepthState, InputSlot, StencilState } from '@gglib/graphics'
+import {
+  BlendState,
+  Color,
+  CommonInputs,
+  CullState,
+  DepthState,
+  InputSlot,
+  RenderEncoder,
+  StencilState,
+  Texture,
+} from '@gglib/graphics'
 import { FrameGraph, FrameResource } from '../FrameGraph'
 import { RenderChannel } from '../RenderChannel'
 import { RenderListMode } from '../RenderListMode'
@@ -21,6 +31,7 @@ export interface GeometryPassOptions {
    * Single sample channel names
    */
   outputs?: RenderChannel[]
+  resolver?: Array<{ resolve: (pass: RenderEncoder, input: Texture, output: Texture) => void }>
   /**
    * Input slots to set on context after opaque pass
    */
@@ -36,6 +47,7 @@ export class GeometryPass implements RenderPass {
   private outputs: RenderChannel[]
   private resourcesMsaa: FrameResource[]
   private resources: FrameResource[]
+  private resolver: Array<{ resolve: (pass: RenderEncoder, input: Texture, output: Texture) => void }>
   private slots: InputSlot<'texture'>[]
 
   private msaaDepth: FrameResource
@@ -46,6 +58,7 @@ export class GeometryPass implements RenderPass {
     this.outputsMsaa = options?.outputsMsaa ?? [RenderChannel.ColorMsaa]
     this.clearColors = options?.clearColors ?? this.outputs.map(() => Color.TransparentBlack)
     this.slots = options?.slots ?? [CommonInputs.View.SceneColorMap]
+    this.resolver = options?.resolver ?? []
     this.resources = []
     this.resourcesMsaa = []
 
@@ -102,11 +115,25 @@ export class GeometryPass implements RenderPass {
     pass.submit()
 
     // Resolve rendered result, to feed into context for next pass
-    for (let i = 0; i < this.outputs.length; i++) {
-      pass.setRenderTarget(i, this.resourcesMsaa[i].texture, 0, 0, this.resources[i].texture)
-    }
     pass.setDepthTarget(null)
+    pass.setDepthState(DepthState.Disabled)
+    for (let i = 0; i < this.outputs.length; i++) {
+      if (this.resolver[i]) {
+        pass.setRenderTarget(i, null)
+      } else {
+        pass.setRenderTarget(i, this.resourcesMsaa[i].texture, 0, 0, this.resources[i].texture)
+      }
+    }
     pass.resolve()
+    for (let i = 0; i < this.outputs.length; i++) {
+      pass.setRenderTarget(i, null)
+    }
+    for (let i = 0; i < this.outputs.length; i++) {
+      if (this.resolver[i]) {
+        this.resolver[i].resolve(pass, this.resourcesMsaa[i].texture, this.resources[i].texture)
+      }
+      pass.setRenderTarget(i, null)
+    }
 
     // Update context input
     for (let i = 0; i < this.outputs.length; i++) {
@@ -117,6 +144,13 @@ export class GeometryPass implements RenderPass {
 
     // Render Target setup for transparent pass
     pass.setDepthTarget(this.msaaDepth.texture)
+    if (ctx.view.camera.reversedZ) {
+      pass.setDepthState(DepthState.GreaterEqual)
+      pass.setClearDepth(0)
+    } else {
+      pass.setDepthState(DepthState.LessEqual)
+      pass.setClearDepth(1)
+    }
     for (let i = 0; i < this.outputs.length; i++) {
       pass.setRenderTarget(i, this.resourcesMsaa[i].texture)
       pass.setRenderBlend(i, i === 0 ? BlendState.Alpha : BlendState.Opaque)
@@ -127,10 +161,11 @@ export class GeometryPass implements RenderPass {
     pass.submit()
 
     // Resolve rendered result
+    pass.setDepthTarget(null)
+    pass.setDepthState(DepthState.Disabled)
     for (let i = 0; i < this.outputs.length; i++) {
       pass.setRenderTarget(i, this.resourcesMsaa[i].texture, 0, 0, this.resources[i].texture)
     }
-    pass.setDepthTarget(null)
     pass.resolve()
     pass.flush()
   }

@@ -171,11 +171,11 @@ describe('Vec3', () => {
       expect(Vec3.create(0, 0, 4).length()).toBe(4)
     })
   })
-  describe('.len', () => {
+  describe('.magnitude', () => {
     it('calculates length', () => {
-      expect(Vec3.len(Vec3.create(2, 0, 0))).toBe(2)
-      expect(Vec3.len(Vec3.create(0, 3, 0))).toBe(3)
-      expect(Vec3.len(Vec3.create(0, 0, 4))).toBe(4)
+      expect(Vec3.magnitude(Vec3.create(2, 0, 0))).toBe(2)
+      expect(Vec3.magnitude(Vec3.create(0, 3, 0))).toBe(3)
+      expect(Vec3.magnitude(Vec3.create(0, 0, 4))).toBe(4)
     })
   })
   describe('#lengthSquared', () => {
@@ -252,7 +252,7 @@ describe('Vec3', () => {
     it('normalizes', () => expect(new Vec3(1, 2, 3).normalize().length()).toBeCloseTo(1))
   })
   describe('.normalize', () => {
-    it('normalizes', () => expect(Vec3.len(Vec3.normalize(new Vec3(1, 2, 3)))).toBeCloseTo(1))
+    it('normalizes', () => expect(Vec3.magnitude(Vec3.normalize(new Vec3(1, 2, 3)))).toBeCloseTo(1))
   })
   describe('#invert', () => {
     it('inverts', () => expectComponents(new Vec3(2, 4, 8).invert(), 0.5, 0.25, 0.125))

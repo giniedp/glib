@@ -143,7 +143,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     })
   })
 
-  device.scheduler.schedule(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

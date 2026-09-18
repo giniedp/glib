@@ -86,16 +86,11 @@ fn vs_main(in: VertexInput) -> FragmentInput {
     output.uvPacked = vec4f(uvBase, uvMoon.x, uvMoon.y);
     output.skyDir = skyDir;
 
-    // ----- fog -----
-    // if RT_FOG {
-    //     let view_dir_norm = in.position.xyz;
-    //     let view_dir_corr = 1.0 / dot(view_dir_norm, -per_view.view_basis_z.xyz);
-    //     let world_pos     = per_view.world_view_pos.xyz
-    //                       + per_view.near_far_clip_dist.y * view_dir_norm * view_dir_corr;
-    //     // TODO: replace with your fog implementation
-    //     // output.fogColor = get_volumetric_fog_color(world_pos);
-    //     output.fogColor = vec4f(0.0);
-    // }
+    let viewDirNorm = normalize(in.position.xyz);
+    let denom = max(dot(viewDirNorm, view.cameraDirection.xyz), 0.05);
+    let viewDirCorrection = 1.0 / denom;
+    let worldPos  = view.cameraPosition.xyz + view.far * viewDirNorm * viewDirCorrection;
+    output.fogColor = getVolumetricFogColor(worldPos);
 
     return output;
 }
@@ -130,80 +125,94 @@ fn dirToUV(dir: vec3<f32>) -> vec2<f32> {
 @fragment
 fn fs_main(in: FragmentInput) -> FragmentOutput {
 
-    let skyDir = normalize(in.skyDir);
-    let sunDir = global.sunDirection;
-    let uvBase = in.uvPacked.xy;
-    let uvMoon = in.uvPacked.zw;
+  let skyDir = normalize(in.skyDir);
+  let sunDir = global.sunDirection;
+  let uvBase = in.uvPacked.xy;
+  let uvMoon = in.uvPacked.zw;
 
-    let km = material.mieScattering;
-    let kr = material.rayleighScattering;
-    let g = material.phaseAsymmetry;
+  let km = material.mieScattering;
+  let kr = material.rayleighScattering;
+  let g = material.phaseAsymmetry;
 
-    let mieColor      = textureSample(skyMieMap, samplerLinear, uvBase).rgb;
-    let rayleighColor = textureSample(skyRayleighMap, samplerLinear, uvBase).rgb;
+  let mieColor      = textureSample(skyMieMap, samplerLinear, uvBase).rgb;
+  let rayleighColor = textureSample(skyRayleighMap, samplerLinear, uvBase).rgb;
 
-    let cosAngle      = dot(skyDir, sunDir);
-    let miePhase      = getMiePhase(g, cosAngle);
-    let rayleighPhase = getRayleighPhase(cosAngle);
+  let cosAngle      = dot(skyDir, sunDir);
+  let miePhase      = getMiePhase(g, cosAngle);
+  let rayleighPhase = getRayleighPhase(cosAngle);
 
-    let partialMieConst      = material.sunIntensity * km;
-    let partialRayleighConst = material.sunIntensity * kr * material.waveLengthInv;
+  let partialMieConst      = material.sunIntensity * km;
+  let partialRayleighConst = material.sunIntensity * kr * material.waveLengthInv;
 
-    var alpha = 1.0;
-    var color = vec3(0.0);
-    color += rayleighColor * partialRayleighConst * rayleighPhase;
-    color += mieColor * partialMieConst * miePhase;
+  var alpha = 1.0;
+  var color = vec3(0.0);
+  color += rayleighColor * partialRayleighConst * rayleighPhase;
+  color += mieColor * partialMieConst * miePhase;
 
 
-    // ---- night sky horizontal gradient ----
-    var gr = saturate(skyDir.z * material.nightSkyZenithColShift.x + material.nightSkyZenithColShift.y);
-        gr = gr * (2.0 - gr);
-    color += material.nightSkyColBase.rgb;
-    color += material.nightSkyColDelta.rgb * gr;
+  // ---- night sky horizontal gradient ----
+  var gr = saturate(skyDir.z * material.nightSkyZenithColShift.x + material.nightSkyZenithColShift.y);
+      gr = gr * (2.0 - gr);
+  color += material.nightSkyColBase.rgb;
+  color += material.nightSkyColDelta.rgb * gr;
 
-    // ---- moon ----
-    var moonAlbedo = textureSample(moonMap, samplerLinear, uvMoon);
-    if (uvMoon.x < 0.0 || uvMoon.x > 1.0 || uvMoon.y < 0.0 || uvMoon.y > 1.0) {
-      moonAlbedo.a = 0.0;
+  // ---- moon ----
+  var moonAlbedo = textureSample(moonMap, samplerLinear, uvMoon);
+  if (uvMoon.x < 0.0 || uvMoon.x > 1.0 || uvMoon.y < 0.0 || uvMoon.y > 1.0) {
+    moonAlbedo.a = 0.0;
+  }
+  color += material.nightMoonColor * moonAlbedo.rgb * moonAlbedo.a;
+
+  // Inner and outer corona
+  let m = 1.0 - dot(skyDir, material.nightMoonDirSize.xyz);
+  color += material.nightMoonInnerCorona.rgb * (1.0 / (1.05 + m * material.nightMoonInnerCorona.w));
+  color += material.nightMoonOuterCorona.rgb * (1.0 / (1.05 + m * material.nightMoonOuterCorona.w));
+
+  // ---- HDR clamp ----
+  color = min(color.rgb, vec3f(16384.0));
+
+  // ---- fog ----
+  let worldPos = reconstructWorldPos(in.position.xy);
+  let fogColor = getVolumetricFogColor(worldPos);
+  color = mix(fogColor.xyz, color, fogColor.w);
+
+
+  var out: FragmentOutput;
+  out.color = vec4f(color, alpha);
+  out.depth = view.far;
+
+  switch (global.debug) {
+    case DEBUG_V_COLOR0: {
+      out.color = vec4f(material.nightSkyColBase.rgb, 1.0);
     }
-    color += material.nightMoonColor * moonAlbedo.rgb * moonAlbedo.a;
-
-    // Inner and outer corona
-    let m = 1.0 - dot(skyDir, material.nightMoonDirSize.xyz);
-    color += material.nightMoonInnerCorona.rgb * (1.0 / (1.05 + m * material.nightMoonInnerCorona.w));
-    color += material.nightMoonOuterCorona.rgb * (1.0 / (1.05 + m * material.nightMoonOuterCorona.w));
-
-    // ---- HDR clamp ----
-    color = min(color.rgb, vec3f(16384.0));
-
-    // ---- fog ----
-    let horizon = 1.0 - saturate(skyDir.z);
-    let fogBlend = pow(horizon, 4.0);
-    color = mix(color.rgb, global.bottomFogColor.rgb, fogBlend);
-
-    var out: FragmentOutput;
-    out.color = vec4f(color, alpha);
-    out.depth = view.far;
-
-    switch (global.debug) {
-      case DEBUG_V_COLOR0: {
-        out.color = vec4f(material.nightSkyColBase.rgb, 1.0);
-      }
-      case DEBUG_V_COLOR1: {
-        //
-      }
-      case DEBUG_V_UV0: {
-        out.color = vec4f(saturate(uvBase.xy), 0.0, 1.0);
-      }
-      case DEBUG_V_UV1: {
-        out.color = vec4f(saturate(uvMoon.xy), 0.0, 1.0);
-      }
-      default {
-
-      }
+    case DEBUG_V_COLOR1: {
+      //
     }
+    case DEBUG_V_UV0: {
+      out.color = vec4f(saturate(uvBase.xy), 0.0, 1.0);
+    }
+    case DEBUG_V_UV1: {
+      out.color = vec4f(saturate(uvMoon.xy), 0.0, 1.0);
+    }
+    default {
 
-    return out;
+    }
+  }
+
+  return out;
 }
 
+
+fn reconstructWorldPos(fragCoord: vec2f) -> vec3f {
+  // fragCoord is in pixels, origin top-left, per WGSL @builtin(position) convention
+  let ndc = vec4f(
+    (fragCoord.x / view.viewportSize.x) * 2.0 - 1.0,
+    1.0 - (fragCoord.y / view.viewportSize.y) * 2.0,
+    0.0, // reversed-z: 0 = far plane, matches output.position.z = 0 in vs_main
+    1.0
+  );
+
+  let worldH = view.inverseViewProjectionMatrix * ndc;
+  return worldH.xyz / worldH.w;
+}
 `

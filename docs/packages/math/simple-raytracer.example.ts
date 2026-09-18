@@ -38,14 +38,11 @@ class RaytracerClient {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
     this.context = canvas.getContext('2d')!
-    this.worker = []
-    for (let i = 0; i < navigator.hardwareConcurrency; i++) {
-      const worker = new Worker('./worker.ts', {
-        type: 'module',
-      })
-      worker.onmessage = this.onmessage.bind(this)
-      this.worker.push(worker)
-    }
+    this.worker = Array.from({ length: navigator.hardwareConcurrency }, () => {
+      const worker = new Worker('./worker.ts', { type: 'module' })
+      worker.addEventListener('message', this.onmessage.bind(this))
+      return worker
+    })
   }
 
   public update() {

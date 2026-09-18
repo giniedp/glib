@@ -26,11 +26,12 @@ export const TONEMAP_GLSL_FS = /* glsl */ `
   const int TONEMAP_REINHARD          = 1;
   const int TONEMAP_REINHARD_EXTENDED = 2;
   const int TONEMAP_REINHARD_JODIE    = 3;
-  const int TONEMAP_UNCHARTED2        = 4;
+  const int TONEMAP_HABLE             = 4;
   const int TONEMAP_ACES_NARKOWICZ    = 5;
   const int TONEMAP_ACES_HILL         = 6;
   const int TONEMAP_PBR_NEUTRAL       = 7;
   const int TONEMAP_UCHIMURA          = 8;
+  const int TONEMAP_HEJL_BURGESS      = 9;
 
   //
   // plain Reinhard
@@ -61,7 +62,7 @@ export const TONEMAP_GLSL_FS = /* glsl */ `
 
   // Uncharted 2 / Hable filmic
   // https://64.github.io/tonemapping/#uncharted-2
-  vec3 uncharted2Partial(vec3 x) {
+  vec3 hableCurve(vec3 x) {
     const float A = 0.15;
     const float B = 0.50;
     const float C = 0.10;
@@ -71,10 +72,24 @@ export const TONEMAP_GLSL_FS = /* glsl */ `
     return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
   }
 
-  vec3 tonemapUncharted2(vec3 c, float white) {
-    vec3 curr = uncharted2Partial(c);
-    vec3 whiteScale = 1.0 / uncharted2Partial(vec3(white));
+  vec3 tonemapHable(vec3 c, float white) {
+    vec3 curr = hableCurve(c);
+    vec3 whiteScale = 1.0 / hableCurve(vec3(white));
     return curr * whiteScale;
+  }
+
+  // Hejl/Burgess-Dawson filmic approximation, presented at SIGGRAPH 2010
+  // https://www.slideshare.net/slideshow/filmic-tonemapping-for-realtime-rendering-siggraph-2010-color-course/52397655
+  // https://filmicworlds.com/blog/filmic-tonemapping-operators/
+  vec3 tonemapHejlBurgessDawson(vec3 color) {
+    const float a = 6.2;
+    const float b = 0.5;
+    const float c = 6.2;
+    const float d = 1.7;
+    const float e = 0.06;
+
+    vec3 col = max(vec3(0.0), color - vec3(0.004));
+    return (col * (a * col + b)) / (col * (c * col + d)+ e);
   }
 
   // ACES fitted (Narkowicz), fast approximation
@@ -169,8 +184,8 @@ export const TONEMAP_GLSL_FS = /* glsl */ `
         return tonemapReinhardExtended(color, whitePoint);
       case TONEMAP_REINHARD_JODIE:
         return tonemapReinhardJodie(color);
-      case TONEMAP_UNCHARTED2:
-        return tonemapUncharted2(color, whitePoint);
+      case TONEMAP_HABLE:
+        return tonemapHable(color, whitePoint);
       case TONEMAP_ACES_NARKOWICZ:
         return tonemapAcesNarkowicz(color);
       case TONEMAP_ACES_HILL:
@@ -179,6 +194,8 @@ export const TONEMAP_GLSL_FS = /* glsl */ `
         return tonemapPbrNeutral(color);
       case TONEMAP_UCHIMURA:
         return tonemapUchimura(color, whitePoint);
+      case TONEMAP_HEJL_BURGESS:
+        return tonemapHejlBurgessDawson(color);
       default:
         return clamp(color, 0.0, 1.0);
     }
@@ -190,16 +207,16 @@ export const TONEMAP_GLSL_FS = /* glsl */ `
   }
 
   void main() {
-    vec3 color = texture(texture1Sampler, uv).rgb;
+    vec4 color = texture(texture1Sampler, uv);
     float exposure = params.exposure;
     if (params.autoExposure != 0) {
       float global = texture(texture2Sampler, vec2(0.5,0.5)).r;
       exposure = exposure / max(global, 1e-6);
     }
-    vec3 mapped = tonemap(color * exposure, params.whitePoint, params.operatorId);
+    vec3 mapped = tonemap(color.rgb * exposure, params.whitePoint, params.operatorId);
     if (params.srgb != 0) {
       mapped = linearToSrgb(mapped);
     }
-    fragColor = vec4(mapped, 1.0);
+    fragColor = vec4(mapped, clamp(color.a, 0.0, 1.0));
   }
 `

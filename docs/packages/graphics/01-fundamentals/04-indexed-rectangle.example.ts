@@ -1,6 +1,6 @@
 import { Color, createDevice, Device, PlatformId } from '@gglib/graphics'
 
-export default async function run(canvas: HTMLCanvasElement, _: any, platform: PlatformId) {
+export default async (canvas: HTMLCanvasElement, _: any, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
   const shader = device.createShaderModule({
@@ -18,7 +18,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
   // buffer. An index buffer avoids that: vertices are listed once here...
   const vertices = device.createVertexBuffer([
     {
-      vertexLayout: {
+      layout: {
         vPosition: {
           elementType: 'float32',
           byteOffset: 0,
@@ -68,7 +68,7 @@ export default async function run(canvas: HTMLCanvasElement, _: any, platform: P
     pass.flush()
   }
 
-  device.scheduler.add(frame)
+  device.schedule(frame)
   return () => {
     device.dispose()
   }

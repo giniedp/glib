@@ -1,53 +1,10 @@
-import { AcquireTextureOptions, createTextureSource, TextureOptions } from '@gglib/graphics'
+import { AcquireTextureOptions, createImageBitmapOptions, createTextureSource, Texture } from '@gglib/graphics'
 import { AssetContainer, TextureAssetContainer } from './AssetContainer'
 import { AssetLoader } from './AssetLoaderRegistry'
-import { ContentLoader, LoaderContext } from './ContentLoader'
-
-const supportsImageBitmap = typeof createImageBitmap === 'function'
-
-export async function imageFromBlob(blob: Blob): Promise<TextureOptions> {
-  if (!supportsImageBitmap) {
-    return imageFromUrl(URL.createObjectURL(blob))
-  }
-  const bitmap = await createImageBitmap(blob, {
-    imageOrientation: 'none',
-    premultiplyAlpha: 'none',
-    colorSpaceConversion: 'none',
-  })
-  return {
-    source: createTextureSource(bitmap),
-    width: bitmap.width,
-    height: bitmap.height,
-  }
-}
-
-export async function imageFromUrl(url: string): Promise<AcquireTextureOptions> {
-  const image = document.createElement('img')
-  await new Promise((resolve, reject) => {
-    image.onload = () => {
-      image.onload = null
-      image.onabort = null
-      image.onerror = null
-      resolve(void 0)
-    }
-    image.onabort = image.onerror = (err) => {
-      image.onabort = image.onload = null
-      reject(err)
-    }
-    image.src = url
-  }).then(() => image)
-  return {
-    key: url,
-    source: createTextureSource(image),
-    type: 'Texture2D',
-    width: image.naturalWidth,
-    height: image.naturalHeight,
-    generateMipmap: true,
-  }
-}
+import { ContentLoader, LoadContext } from './ContentLoader'
 
 export class TextureLoader implements AssetLoader {
-  public static extensions = ['.jpg', '.jpeg', '.png', '.webp']
+  public static extensions = ['.bmp', '.gif', '.jpg', '.jpeg', '.png', '.webp']
   public static mimeTypes = ['image/jpg', 'image/jpeg', 'image/png', 'image/webp']
   public static create = () => new TextureLoader()
   public static register(registry = ContentLoader.loaders) {
@@ -58,34 +15,55 @@ export class TextureLoader implements AssetLoader {
     return typeof createImageBitmap === 'function'
   }
 
-  public async load(url: string, context: LoaderContext): Promise<AssetContainer> {
+  public async load(url: string, context: LoadContext): Promise<AssetContainer> {
+    context.signal?.throwIfAborted()
     if (this.supportsImageBitmap) {
       return this.loadWithImageBitmap(url, context)
     }
     return this.loadWithImageElement(url, context)
   }
 
-  protected async loadWithImageBitmap(url: string, context: LoaderContext): Promise<AssetContainer> {
+  protected async loadWithImageBitmap(url: string, context: LoadContext): Promise<AssetContainer> {
     const response = await context.content.fetch(url, {
       responseType: 'blob',
       signal: context.signal,
     })
-    const options = await imageFromBlob(response.body)
+    context.signal?.throwIfAborted()
+
+    const bitmap = await createImageBitmap(response.body, createImageBitmapOptions())
+    context.signal?.throwIfAborted()
+
     const texture: AcquireTextureOptions = {
       key: url,
-      ...options,
+      type: 'Texture2D',
+      source: createTextureSource(bitmap),
+      width: bitmap.width,
+      height: bitmap.height,
+      generateMipmap: true,
+      format: context.color === 'srgb' ? 'RGBA8_UNORM_SRGB' : 'RGBA8_UNORM',
     }
+
     return new TextureAssetContainer([texture])
   }
 
-  protected async loadWithImageElement(url: string, context: LoaderContext): Promise<AssetContainer> {
-    const options = await imageFromUrl(url)
-    return new TextureAssetContainer([
-      {
-        ...options,
-        generateMipmap: true,
-      },
-    ])
+  protected async loadWithImageElement(url: string, context: LoadContext): Promise<AssetContainer> {
+    const image = new Image()
+    image.crossOrigin = context?.crossOrigin ?? Texture.crossOrigin
+    image.src = url
+    await image.decode()
+    context.signal?.throwIfAborted()
+
+    const texture: AcquireTextureOptions = {
+      key: url,
+      type: 'Texture2D',
+      source: createTextureSource(image),
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      generateMipmap: true,
+      format: context.color === 'srgb' ? 'RGBA8_UNORM_SRGB' : 'RGBA8_UNORM',
+    }
+
+    return new TextureAssetContainer([texture])
   }
 }
 

@@ -2,23 +2,21 @@ import { BoundingBox } from './BoundingBox'
 import { BoundingFrustum } from './BoundingFrustum'
 import type { BoundingVolume } from './BoundingVolume'
 import {
-  boxPhereIntersection,
   boxSphereIntersects,
-  frustumSphereIntersection,
   frustumSphereIntersects,
   IntersectionType,
   raySphereIntersects,
   sphereBoxIntersection,
   sphereFrustumIntersection,
-  sphereSphereIntersection,
   spherePlaneIntersects,
   spherePointIntersects,
+  sphereSphereIntersection,
   sphereSphereIntersects,
 } from './Collision'
 import { Mat4 } from './Mat4'
 import { Ray } from './Ray'
 import type { ArrayLike, IVec3, IVec4 } from './Types'
-import { Vec3 } from './Vec3'
+import { vec3, Vec3 } from './Vec3'
 
 /**
  * Defines sphere volume.
@@ -29,7 +27,7 @@ export class BoundingSphere implements BoundingVolume {
   /**
    * The sphere center
    */
-  public readonly center: Vec3
+  public center: IVec3
 
   /**
    * The sphere radius
@@ -58,7 +56,7 @@ export class BoundingSphere implements BoundingVolume {
    * If no radius is given, it defaults to `-1` which means the sphere is empty.
    */
   constructor(x?: number, y?: number, z?: number, r?: number) {
-    this.center = Vec3.create(x, y, z)
+    this.center = vec3(x, y, z)
     this.radius = r ?? -1
   }
 

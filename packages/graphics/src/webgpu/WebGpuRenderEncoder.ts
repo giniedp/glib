@@ -73,7 +73,6 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private encoder: GPUCommandEncoder
   private pipeline: GPURenderPipeline
   private pass: GPURenderPassEncoder
-  private passNeedsPipeline = false
 
   private outputWidth: number
   private outputHeight: number

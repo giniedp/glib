@@ -5,7 +5,7 @@ order: 10
 
 # Geometry
 
-:::tabs
+:::tabs variant:code
 == WebGPU
 <Example platform="webgpu" />
 == WebGL
@@ -33,6 +33,7 @@ pass.render(geometry)
 
 and can do it repeatedly
 
-## Source
-
+:::tabs variant:code
+== example.ts
 <ExampleCode />
+:::
