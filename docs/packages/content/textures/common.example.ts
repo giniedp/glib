@@ -8,10 +8,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const content = new ContentLoader(device)
   const textures = await Promise.all(
     [
-      '/textures/formats/colored_castle.bmp',
-      '/textures/formats/colored_castle.jpg',
-      '/textures/formats/colored_castle.png',
-      '/textures/formats/colored_castle.webp',
+      '/textures/formats/uv_checker.bmp',
+      '/textures/formats/uv_checker.png',
+      '/textures/formats/uv_checker.jpg',
+      '/textures/formats/uv_checker.webp',
     ].map((url) => {
       return content.loadTexture(url, { color: 'srgb' })
     }),

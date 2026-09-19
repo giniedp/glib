@@ -59,7 +59,7 @@ class Game extends EcsGame {
     this.sprite = entity.component(SpriteComponent)
     this.sprite.setSize(500, 500)
 
-    this.content.loadTexture('/textures/puzzle/interface_sheet.png').then((texture) => {
+    this.content.loadTexture('/sprites/interface.png').then((texture) => {
       this.sprite.setTexture(texture)
       this.sprite.setSource(528, 374, 128, 128)
       this.sprite.setSlice(24, 24, 24, 24)

@@ -37,7 +37,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const geometry = torusGeometry(device)
   const material = new BasicMaterial(device)
-  const texture = device.createTexture({ source: '/textures/prototype/proto_red.png' })
+  const texture = device.createTexture({ source: '/textures/formats/uv_checker.png' })
 
   const world = Mat4.createIdentity()
   const view = Mat4.createIdentity()

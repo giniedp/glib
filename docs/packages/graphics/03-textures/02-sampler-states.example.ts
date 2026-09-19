@@ -15,7 +15,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const texture = device.createTexture({
-    source: '/textures/prototype/proto_red.png',
+    source: '/textures/formats/uv_checker.png',
   })
 
   // The UVs on this quad go from 0 to 3 instead of 0 to 1, so each edge of

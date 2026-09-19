@@ -69,7 +69,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   })
 
   const texture = device.createTexture({
-    source: '/textures/prototype/proto_red.png',
+    source: '/textures/formats/uv_checker.png',
   })
 
   // A diamond (a unit quad rotated 45 degrees) used as the mask shape, and
