@@ -7,6 +7,7 @@ import {
   Device,
   PlatformId,
   FrameContext,
+  BufferUsage,
 } from '@gglib/graphics'
 
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
@@ -38,7 +39,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   ])
   const buffer = device.createBuffer({
     size: 1000 * layout.byteSize,
-    type: device.isWebGPU ? 'StorageBuffer' : 'UniformBuffer',
+    usage: device.isWebGPU ? BufferUsage.STORAGE : BufferUsage.UNIFORM,
   })
   const writer = new BufferRecorder({
     capacity: 1000,
