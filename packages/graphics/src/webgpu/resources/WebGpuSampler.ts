@@ -26,7 +26,9 @@ function getDescriptor(state: SamplerState): GPUSamplerDescriptor {
   switch (state.mipFilter) {
     case 'Linear':
       descriptor.mipmapFilter = 'linear'
-      descriptor.maxAnisotropy = 8 // TODO: make it configurable
+      if (descriptor.magFilter === 'linear' && descriptor.minFilter === 'linear') {
+        descriptor.maxAnisotropy = 8 // TODO: make it configurable
+      }
       break
     case 'Nearest':
       descriptor.mipmapFilter = 'nearest'
