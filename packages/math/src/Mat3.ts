@@ -478,8 +478,8 @@ export class Mat3 {
    *
    * @param number - The number to set all matrix components to.
    */
-  public static createWith(value: number): Mat3 {
-    return new Mat3().initWith(value)
+  public static createFill(value: number): Mat3 {
+    return new Mat3().initFill(value)
   }
 
   /**
@@ -487,7 +487,7 @@ export class Mat3 {
    *
    * @param number - The number to set all matrix components to.
    */
-  public initWith(value: number): this {
+  public initFill(value: number): this {
     const m = this.elements
     m[C0R0] = value
     m[C1R0] = value
@@ -524,30 +524,6 @@ export class Mat3 {
     m[C0R2] = 0
     m[C1R2] = 0
     m[C2R2] = 1
-    return this
-  }
-
-  /**
-   * Creates a new matrix with all components set to 0
-   */
-  public static createZero(): Mat3 {
-    return new Mat3()
-  }
-
-  /**
-   * Initializes the components of this matrix to 0.
-   */
-  public initZero(): this {
-    const m = this.elements
-    m[C0R0] = 0
-    m[C1R0] = 0
-    m[C2R0] = 0
-    m[C0R1] = 0
-    m[C1R1] = 0
-    m[C2R1] = 0
-    m[C0R2] = 0
-    m[C1R2] = 0
-    m[C2R2] = 0
     return this
   }
 

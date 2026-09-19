@@ -4,13 +4,6 @@ const tmpVec1 = Vec3.create() // temporary vector
 const localRay = Ray.create() // temporary ray
 const EPSILON = 0.001
 
-function randV3(out: IVec3) {
-  do {
-    Vec3.initRandomUnit(out)
-  } while (Vec3.lengthSquared(out) > 1)
-  return out
-}
-
 interface Shape {
   material: Material
   intersectsAt(ray: Ray, out: IVec3): number
@@ -180,7 +173,7 @@ class Scene {
 
   public initRay(u: number, v: number, out: Ray) {
     const start = Vec3.create(u * 2 - 1, -(v * 2 - 1), 0)
-    const end = Vec3.createFrom(start).setZ(1)
+    const end = Vec3.copy(start).setZ(1)
     this.viewProjInv.transformP3(start)
     this.viewProjInv.transformP3(end)
     return out.initV(start, end.subtract(start).normalize())
@@ -199,16 +192,16 @@ class Scene {
 
     const ray = Ray.create(0, 0, 0, 0, 0, 1)
     const pixel: Pixel = {
-      color: Vec3.createZero(),
-      hitPoint: Vec3.createZero(),
-      hitNormal: Vec3.createZero(),
+      color: Vec3.create(),
+      hitPoint: Vec3.create(),
+      hitNormal: Vec3.create(),
       shape: null!,
       material: null!,
     }
     let i = 0
     for (let y = options.y1; y < options.y2; y++) {
       for (let x = options.x1; x < options.x2; x++) {
-        Vec3.initZero(pixel.color)
+        pixel.color.initFill(0)
         this.initRay((x + Math.random()) * options.dx, (y + Math.random()) * options.dy, ray)
         this.trace(ray, options.depth, pixel)
         pixel.color.toArray(data, i)
@@ -226,7 +219,7 @@ class Scene {
         this.trace(ray, depth - 1, pixel)
         pixel.color.multiply(mat.attenuation)
       } else {
-        Vec3.initZero(pixel.color)
+        pixel.color.initFill(0)
       }
     } else {
       const t = (ray.direction.y + 1) * 0.5

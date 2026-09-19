@@ -169,7 +169,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         if (isViewerPrefabSpawnerComponent(comp)) {
           debug.add({
             type: 'bounds-sphere',
-            color: Vec3.createFrom(Color.Yellow),
+            color: Vec3.copy(Color.Yellow),
             layer: DebugLayer.Slice,
           })
 
@@ -184,7 +184,7 @@ export class SliceSpawnerComponent implements GameComponent, ActivatableComponen
         if (isViewerPointSpawnerComponent(comp)) {
           debug.add({
             type: 'bounds-sphere',
-            color: Vec3.createFrom(Color.Azure),
+            color: Vec3.copy(Color.Azure),
             layer: DebugLayer.Slice,
           })
           components.push(

@@ -27,12 +27,12 @@ export function calculateNormals(
   const normals = channels.normal
   const positions = channels.position
 
-  const v0 = Vec3.createZero()
-  const v1 = Vec3.createZero()
-  const v2 = Vec3.createZero()
-  const t0 = Vec3.createZero()
-  const t1 = Vec3.createZero()
-  const normal = Vec3.createZero()
+  const v0 = Vec3.create()
+  const v1 = Vec3.create()
+  const v2 = Vec3.create()
+  const t0 = Vec3.create()
+  const t1 = Vec3.create()
+  const normal = Vec3.create()
 
   // clear previous normals
   for (let i = 0; i < vCount; i++) {

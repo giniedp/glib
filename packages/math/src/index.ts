@@ -20,7 +20,7 @@
  *
  * ```ts
  * Vec3.create(1, 2, 3)
- * Vec3.createZero()
+ * Vec3.createFill(4)
  * ```
  *
  * Function starting with `init` do initialize an existing instance or object

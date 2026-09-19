@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it } from 'vitest'
 import { IVec3, Mat2, Mat3, Mat4, Quat, vec3, Vec3 } from './index'
-import { describe, beforeEach, it, expect } from 'vitest'
 
 describe('Vec3', () => {
   function expectComponents(v: IVec3, x: number, y: number, z: number) {
@@ -74,26 +74,7 @@ describe('Vec3', () => {
     it('inits all components', () => expectComponents(a.init(1, 2, 3), 1, 2, 3))
     it('returns same instance', () => expect(a.init(1, 2, 3)).toBe(a))
   })
-  describe('#initZero', () => {
-    it('creates a new Vec3', () => {
-      expectComponents(new Vec3(1, 2, 3).initZero(), 0, 0, 0)
-    })
-  })
-  describe('.createZero', () => {
-    it('creates a new Vec3', () => {
-      expectComponents(Vec3.createZero(), 0, 0, 0)
-    })
-  })
-  describe('#initOne', () => {
-    it('creates a new Vec3', () => {
-      expectComponents(new Vec3(1, 2, 3).initOne(), 1, 1, 1)
-    })
-  })
-  describe('.createOne', () => {
-    it('creates a new Vec3', () => {
-      expectComponents(Vec3.createOne(), 1, 1, 1)
-    })
-  })
+
   describe('#initFrom', () => {
     beforeEach(() => {
       b = new Vec3(1, 2, 3)
@@ -401,41 +382,6 @@ describe('Vec3', () => {
         expect(A).not.toBe(C)
       })
     })
-    describe('.multiplyScalarAdd', () => {
-      it('calculates C = A * s + B', () => {
-        const A = Vec3.create(1, 2, 3)
-        const s = 0.5
-        const B = Vec3.create(4, 5, 6)
-        let C = Vec3.create()
-        Vec3.multiplyScalarAdd(A, s, B, C)
-        expectComponents(C, 4.5, 6, 7.5)
-        expect(A).not.toBe(C)
-
-        C = Vec3.multiplyScalarAdd(A, s, B)
-        expectComponents(C, 4.5, 6, 7.5)
-        expect(A).not.toBe(C)
-      })
-    })
-    describe('#multiplyAdd', () => {
-      it('multiplies', () => {
-        a = new Vec3(1, 2, 3)
-        b = new Vec3(5, 6, 7)
-        c = new Vec3(9, 10, 11)
-        d = a.multiplyAdd(b, c)
-        expectComponents(d, 14, 22, 32)
-        expect(a).toBe(d)
-      })
-    })
-    describe('.multiplyAdd', () => {
-      it('multiplies', () => {
-        a = new Vec3(1, 2, 3)
-        b = new Vec3(5, 6, 7)
-        c = new Vec3(9, 10, 11)
-        const e = Vec3.multiplyAdd(a, b, c, d)
-        expectComponents(d, 14, 22, 32)
-        expect(d).toBe(e)
-      })
-    })
   })
 
   describe('divide operation', () => {
@@ -472,18 +418,6 @@ describe('Vec3', () => {
         expectComponents(c, 0.5, 1, 1.5)
         expect(a).not.toBe(c)
       })
-    })
-  })
-
-  describe('.zero', () => {
-    it('creates a new Vec3', () => {
-      expectComponents(Vec3.createZero(), 0, 0, 0)
-    })
-  })
-
-  describe('.one', () => {
-    it('creates a new Vec3', () => {
-      expectComponents(Vec3.createOne(), 1, 1, 1)
     })
   })
 
@@ -559,12 +493,6 @@ describe('Vec3', () => {
   describe('.barycentric', () => {
     it('interpolates the components', () => {
       expectComponents(Vec3.barycentric(new Vec3(1, 2, 3), new Vec3(5, 6, 7), new Vec3(9, 10, 11), 0.5, 0.5), 7, 8, 9)
-    })
-  })
-
-  describe('.smooth', () => {
-    it('interpolates the components', () => {
-      expectComponents(Vec3.smooth(new Vec3(1, 2, 3), new Vec3(5, 6, 7), 0.5), 3, 4, 5)
     })
   })
 

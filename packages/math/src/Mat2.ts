@@ -188,8 +188,8 @@ export class Mat2 {
    *
    * @param number - The number to set all matrix components to.
    */
-  public static createWith(value: number): Mat2 {
-    return new Mat2().initWith(value)
+  public static createFill(value: number): Mat2 {
+    return new Mat2().initFill(value)
   }
 
   /**
@@ -197,7 +197,7 @@ export class Mat2 {
    *
    * @param number - The number to set all matrix components to.
    */
-  public initWith(value: number): this {
+  public initFill(value: number): this {
     const d = this.elements
     d[0] = value
     d[1] = value
@@ -224,25 +224,6 @@ export class Mat2 {
     d[1] = 0
     d[2] = 0
     d[3] = 1
-    return this
-  }
-
-  /**
-   * Creates a new matrix with all components set to 0
-   */
-  public static createZero(): Mat2 {
-    return new Mat2()
-  }
-
-  /**
-   * Initializes the components of this matrix to 0.
-   */
-  public initZero(): this {
-    const d = this.elements
-    d[0] = 0
-    d[1] = 0
-    d[2] = 0
-    d[3] = 0
     return this
   }
 

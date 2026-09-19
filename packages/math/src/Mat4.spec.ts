@@ -168,15 +168,6 @@ describe('Mat4', () => {
       )
     })
 
-    it('#initZero', () => {
-      expectComponents(Mat4.createWith(1).initZero(), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    })
-
-    it('.createZero', () => {
-      expectComponents(Mat4.createZero(), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-      expect(Mat4.createZero()).not.toBe(Mat4.createZero())
-    })
-
     it('#initRowMajor', () => {
       expectComponents(
         new Mat4().initRowMajor(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
@@ -191,16 +182,16 @@ describe('Mat4', () => {
       )
     })
 
-    it('#initWith', () => {
-      expectComponents(new Mat4().initWith(1), [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    it('#initFill', () => {
+      expectComponents(new Mat4().initFill(1), [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
     })
 
-    it('.createWith', () => {
-      expectComponents(Mat4.createWith(1), [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    it('.createFill', () => {
+      expectComponents(Mat4.createFill(1), [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
     })
 
     it('#initIdentity', () => {
-      expectComponents(new Mat4().initWith(1).initIdentity(), [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+      expectComponents(new Mat4().initFill(1).initIdentity(), [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
     })
 
     it('.createIdentity', () => {

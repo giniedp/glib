@@ -5,7 +5,7 @@ import { Vec3 } from './Vec3'
 
 const tempQuat = Quat.createIdentity()
 const tempMat = Mat4.createIdentity()
-const tempVec = Vec3.createZero()
+const tempVec = Vec3.create()
 
 export interface ITransformBase {
   /**

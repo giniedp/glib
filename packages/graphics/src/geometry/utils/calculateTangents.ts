@@ -33,16 +33,16 @@ export function calculateTangents(
   const bitangents = channels.bitangent
   const textures = channels.texture || channels.texcoord
 
-  let p1 = Vec3.createZero()
-  let p2 = Vec3.createZero()
-  let p3 = Vec3.createZero()
-  let t1 = Vec2.createZero()
-  let t2 = Vec2.createZero()
-  let t3 = Vec2.createZero()
-  let d1 = Vec3.createZero()
-  let d2 = Vec3.createZero()
-  let uv1 = Vec2.createZero()
-  let uv2 = Vec2.createZero()
+  let p1 = Vec3.create()
+  let p2 = Vec3.create()
+  let p3 = Vec3.create()
+  let t1 = Vec2.create()
+  let t2 = Vec2.create()
+  let t3 = Vec2.create()
+  let d1 = Vec3.create()
+  let d2 = Vec3.create()
+  let uv1 = Vec2.create()
+  let uv2 = Vec2.create()
 
   // zero out tangents
   for (let i = 0; i < vCount; i++) {
@@ -120,9 +120,9 @@ export function calculateTangents(
     bitangents.write(i2, 2, bitangents.read(i2, 2) + dir2.z)
   }
 
-  let normal = Vec3.createZero()
-  let tangent = Vec3.createZero()
-  let bitangent = Vec3.createZero()
+  let normal = Vec3.create()
+  let tangent = Vec3.create()
+  let bitangent = Vec3.create()
 
   // orthogonalize
   for (let i = 0; i < vCount; i++) {

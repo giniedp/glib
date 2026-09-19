@@ -329,18 +329,6 @@ describe('Quat', () => {
     })
   })
 
-  describe('.zero', () => {
-    it('creates a new Quat', () => {
-      expectComponents(Quat.createZero(), 0, 0, 0, 0)
-    })
-  })
-
-  describe('#initZero', () => {
-    it('initializes to zero', () => {
-      expectComponents(new Quat(1, 2, 3, 4).initZero(), 0, 0, 0, 0)
-    })
-  })
-
   describe('.identity', () => {
     it('creates a new Quat', () => {
       expectComponents(Quat.createIdentity(), 0, 0, 0, 1)

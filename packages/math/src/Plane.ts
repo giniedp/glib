@@ -159,26 +159,6 @@ export class Plane implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Resets all components to zero
-   * @returns this vector for chaining
-   */
-  public initZero(): Plane {
-    this.x = 0
-    this.y = 0
-    this.z = 0
-    this.w = 0
-    return this
-  }
-
-  /**
-   * Creates a new vector with all components set to 0.
-   * @returns A new vector.
-   */
-  public static createZero(): Plane {
-    return new Plane(0, 0, 0, 0)
-  }
-
-  /**
    * Initializes the components of this vector by taking the components from the given vector.
    * @param other - The vector to read from
    * @returns this vector for chaining

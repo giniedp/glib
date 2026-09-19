@@ -761,8 +761,8 @@ export class Mat4 {
    *
    * @param number - The number to set all matrix components to.
    */
-  public static createWith(value: number): Mat4 {
-    return new Mat4().initWith(value)
+  public static createFill(value: number): Mat4 {
+    return new Mat4().initFill(value)
   }
 
   /**
@@ -770,7 +770,7 @@ export class Mat4 {
    *
    * @param number - The number to set all matrix components to.
    */
-  public initWith(value: number): this {
+  public initFill(value: number): this {
     const m = this.elements
     m[C0R0] = value
     m[C1R0] = value
@@ -830,55 +830,6 @@ export class Mat4 {
     m[C1R3] = 0
     m[C2R3] = 0
     m[C3R3] = 1
-    return this
-  }
-
-  /**
-   * Creates a new matrix with all components set to 0
-   *
-   * @remarks
-   * Sets the following values
-   * ```
-   * 0 0 0 0
-   * 0 0 0 0
-   * 0 0 0 0
-   * 0 0 0 0
-   * ```
-   */
-  public static createZero(): Mat4 {
-    return new Mat4()
-  }
-
-  /**
-   * Initializes the components of this matrix to 0.
-   *
-   * @remarks
-   * Sets the following values
-   * ```
-   * 0 0 0 0
-   * 0 0 0 0
-   * 0 0 0 0
-   * 0 0 0 0
-   * ```
-   */
-  public initZero(): this {
-    const m = this.elements
-    m[C0R0] = 0
-    m[C1R0] = 0
-    m[C2R0] = 0
-    m[C3R0] = 0
-    m[C0R1] = 0
-    m[C1R1] = 0
-    m[C2R1] = 0
-    m[C3R1] = 0
-    m[C0R2] = 0
-    m[C1R2] = 0
-    m[C2R2] = 0
-    m[C3R2] = 0
-    m[C0R3] = 0
-    m[C1R3] = 0
-    m[C2R3] = 0
-    m[C3R3] = 0
     return this
   }
 

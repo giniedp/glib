@@ -256,9 +256,9 @@ export class Model {
     if (world) {
       world.decompose(root.scale, root.rotation, root.translation)
     } else {
-      root.scale.initOne()
+      root.scale.init(1, 1, 1)
       root.rotation.initIdentity()
-      root.translation.initZero()
+      root.translation.init(0, 0, 0)
     }
 
     root.markAsChanged()

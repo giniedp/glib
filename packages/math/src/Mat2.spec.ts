@@ -54,20 +54,6 @@ describe('Mat2', () => {
       })
     })
 
-    describe('#initZero', () => {
-      it('sets all components to 0', () => {
-        expectComponents(new Mat2().init(1, 2, 3, 4).initZero(), [0, 0, 0, 0])
-        expect(Mat2.createZero()).not.toBe(Mat2.createZero())
-      })
-    })
-
-    describe('.zero', () => {
-      it('sets all components to 0', () => {
-        expectComponents(Mat2.createZero(), [0, 0, 0, 0])
-        expect(Mat2.createZero()).not.toBe(Mat2.createZero())
-      })
-    })
-
     describe('#init', () => {
       it('sets all components', () => {
         expectComponents(new Mat2().init(1, 2, 3, 4), [1, 2, 3, 4])
@@ -92,15 +78,15 @@ describe('Mat2', () => {
       })
     })
 
-    describe('#initWith', () => {
+    describe('#initFill', () => {
       it('sets all components', () => {
-        expectComponents(new Mat2().initWith(1), [1, 1, 1, 1])
+        expectComponents(new Mat2().initFill(1), [1, 1, 1, 1])
       })
     })
 
     describe('#initIdentity', () => {
       it('sets all components', () => {
-        expectComponents(new Mat2().initWith(1).initIdentity(), [1, 0, 0, 1])
+        expectComponents(new Mat2().initFill(1).initIdentity(), [1, 0, 0, 1])
       })
     })
 

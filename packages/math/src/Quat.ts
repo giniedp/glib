@@ -197,38 +197,6 @@ export class Quat implements IVec2, IVec3, IVec4 {
   }
 
   /**
-   * Creates a new instance with all components set to 0.
-   */
-  public static createZero(): Quat {
-    return new Quat(0, 0, 0, 0)
-  }
-
-  /**
-   * Initializes all components of `out` to `0`
-   *
-   * @param out - the instance to initialize
-   */
-  public static initZero<T>(out: T): T & IVec4
-  public static initZero(out: IVec4): IVec4 {
-    out.x = 0
-    out.y = 0
-    out.z = 0
-    out.w = 0
-    return out
-  }
-
-  /**
-   * Initializes all components of `this` to `0`
-   */
-  public initZero(): this {
-    this.x = 0
-    this.y = 0
-    this.z = 0
-    this.w = 0
-    return this
-  }
-
-  /**
    * Creates a new instance by taking the components from the given quaternion or vector.
    *
    * @returns a new quaternion

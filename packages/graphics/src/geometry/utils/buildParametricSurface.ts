@@ -174,20 +174,20 @@ export function buildParametricSurface(builder: GeometryBuilder, options: BuildP
 
       vertices.push({
         position: Vec3.convert(position(u, v, s, t)),
-        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.createZero(),
+        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.create(),
         texture: texture ? Vec2.convert(texture(s, t, s, t)) : Vec2.create(s, t),
-        tangent: Vec3.createZero(),
-        bitangent: Vec3.createZero(),
+        tangent: Vec3.create(),
+        bitangent: Vec3.create(),
       })
     }
   }
 
   // calculate normals
-  const nrm = Vec3.createZero()
-  const edge0 = Vec3.createZero()
-  const edge1 = Vec3.createZero()
-  const uv0 = Vec3.createZero()
-  const uv1 = Vec3.createZero()
+  const nrm = Vec3.create()
+  const edge0 = Vec3.create()
+  const edge1 = Vec3.create()
+  const uv0 = Vec3.create()
+  const uv1 = Vec3.create()
   for (let i = 0; i < indices.length - 2; i += 3) {
     const i0 = indices[i + 0]
     const i1 = indices[i + 1]
@@ -305,21 +305,21 @@ export function buildParametricLines(builder: GeometryBuilder, options: BuildPar
 
       vertices.push({
         position: Vec3.convert(position(u, v, s, t)),
-        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.createZero(),
+        normal: normal ? Vec3.convert(normal(u, v, s, t)) : Vec3.create(),
         color: color ? color(u, v, s, t) : Color.packToRGBA(Color.White),
         texture: texture ? Vec2.convert(texture(s, t, s, t)) : Vec2.create(s, t),
-        tangent: Vec3.createZero(),
-        bitangent: Vec3.createZero(),
+        tangent: Vec3.create(),
+        bitangent: Vec3.create(),
       })
     }
   }
 
   // calculate normals
-  const nrm = Vec3.createZero()
-  const edge0 = Vec3.createZero()
-  const edge1 = Vec3.createZero()
-  const uv0 = Vec3.createZero()
-  const uv1 = Vec3.createZero()
+  const nrm = Vec3.create()
+  const edge0 = Vec3.create()
+  const edge1 = Vec3.create()
+  const uv0 = Vec3.create()
+  const uv1 = Vec3.create()
   for (let i = 0; i < indices.length - 2; i += 3) {
     const i0 = indices[i + 0]
     const i1 = indices[i + 1]

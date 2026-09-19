@@ -65,8 +65,8 @@ Two complementary sets of factory methods exist on every structure:
 
 - **`create*`** — static methods that allocate and return a **new** instance: `Vec3.create(x, y, z)`, `Vec3.createZero()`, `Vec3.createFrom(other)`, `Mat4.createRotationX(angle)`, `Quat.createAxisAngle(axis, angle)`, `BoundingBox.createFromCenterExtent(center, extent)`, etc.
 - **`init*`** — (re-)initialize an existing instance in place, avoiding an allocation:
-  - as a static method, taking an arbitrary `out` object as the first argument: `Vec3.init(out, x, y, z)`, `Vec3.initZero(out)`, `Vec3.initFrom(out, other)`
-  - as an instance method operating on `this`: `v.init(x, y, z)`, `v.initZero()`, `v.initFrom(other)`
+  - as a static method, taking an arbitrary `out` object as the first argument: `Vec3.init(out, x, y, z)`, `Vec3.initFrom(out, other)`
+  - as an instance method operating on `this`: `v.init(x, y, z)`, `v.initFrom(other)`
 
 Prefer `create*` when you need a brand new value, and `init*` when you already own an instance (e.g. a pooled or pre-allocated object) and want to overwrite its contents without allocating.
 

@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it } from 'vitest'
 import { IVec4, Mat2, Mat3, Mat4, Quat, vec4, Vec4 } from './index'
-import { describe, it, expect, beforeEach, test } from 'vitest'
 
 describe('Vec4', () => {
   function expectComponents(v: IVec4, x: number, y: number, z: number, w: number) {
@@ -85,26 +85,6 @@ describe('Vec4', () => {
     it('creates a new vector', () => {
       expectComponents(Vec4.create(), 0, 0, 0, 0)
       expectComponents(Vec4.create(1, 2, 3, 4), 1, 2, 3, 4)
-    })
-  })
-  describe('#initZero', () => {
-    it('creates a new vector', () => {
-      expectComponents(Vec4.create(1, 2, 3, 4).initZero(), 0, 0, 0, 0)
-    })
-  })
-  describe('.createZero', () => {
-    it('creates a new vector', () => {
-      expectComponents(Vec4.createZero(), 0, 0, 0, 0)
-    })
-  })
-  describe('#initOne', () => {
-    it('creates a new vector', () => {
-      expectComponents(Vec4.create(1, 2, 3, 4).initOne(), 1, 1, 1, 1)
-    })
-  })
-  describe('.createOne', () => {
-    it('creates a new vector', () => {
-      expectComponents(Vec4.createOne(), 1, 1, 1, 1)
     })
   })
   describe('#initFrom', () => {
@@ -419,42 +399,6 @@ describe('Vec4', () => {
         expect(a).not.toBe(c)
       })
     })
-    describe('#multiplyAdd', () => {
-      it('multiplies', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        b = Vec4.create(5, 6, 7, 8)
-        c = Vec4.create(9, 10, 11, 12)
-        d = a.multiplyAdd(b, c)
-        expectComponents(d, 14, 22, 32, 44)
-        expect(a).toBe(d)
-      })
-    })
-    describe('.multiplyAdd', () => {
-      it('multiplies', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        b = Vec4.create(5, 6, 7, 8)
-        c = Vec4.create(9, 10, 11, 12)
-        const e = Vec4.multiplyAdd(a, b, c, d)
-        expectComponents(d, 14, 22, 32, 44)
-        expect(d).toBe(e)
-      })
-    })
-    describe('#multiplyScalarAdd', () => {
-      it('multiplies', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        c = a.multiplyScalarAdd(0.5, Vec4.create(4, 3, 2, 1))
-        expectComponents(c, 4.5, 4, 3.5, 3)
-        expect(a).toBe(c)
-      })
-    })
-    describe('.multiplyScalarAdd', () => {
-      it('multiplies', () => {
-        a = Vec4.create(1, 2, 3, 4)
-        c = Vec4.multiplyScalarAdd(a, 0.5, Vec4.create(4, 3, 2, 1))
-        expectComponents(c, 4.5, 4, 3.5, 3)
-        expect(a).not.toBe(c)
-      })
-    })
   })
 
   describe('divide operation', () => {
@@ -565,12 +509,6 @@ describe('Vec4', () => {
         9,
         10,
       )
-    })
-  })
-
-  describe('.smooth', () => {
-    it('interpolates the components', () => {
-      expectComponents(Vec4.smooth(Vec4.create(1, 2, 3, 4), Vec4.create(5, 6, 7, 8), 0.5), 3, 4, 5, 6)
     })
   })
 

@@ -1,5 +1,7 @@
 import type { ArrayLike, IMat, IVec2, IVec3, IVec4 } from './Types'
 import { hermite } from './utils/hermite'
+import { clamp } from './utils/clamp'
+import { lerp } from './utils/lerp'
 
 const keyLookup = {
   0: 'x',
@@ -202,85 +204,22 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Creates a new vector with random values in range [0..1]
-   *
+   * Creates a new vector.
+   * @param value - The x and y component
    * @returns A new vector.
    */
-  public static createRandom(): Vec3 {
-    return new Vec3(Math.random(), Math.random(), Math.random())
-  }
-
-  /**
-   * Initializes the given vector with random values in range [0..1]
-   *
-   * @param out - the vector to initialize
-   */
-  public static initRandom<T>(out: T): T & IVec3
-  public static initRandom(out: IVec3): IVec3 {
-    out.x = Math.random()
-    out.y = Math.random()
-    out.z = Math.random()
-    return out
-  }
-
-  /**
-   * Initializes the components of this vector with random values in range [0..1]
-   */
-  public initRandom(): this {
-    this.x = Math.random()
-    this.y = Math.random()
-    this.z = Math.random()
-    return this
-  }
-
-  /**
-   * Creates a new vector with random values in range [-1..1]
-   *
-   * @returns A new vector.
-   */
-  public static createRandomUnit(): Vec3 {
-    return new Vec3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1)
-  }
-
-  /**
-   * Initializes the given vector with random values in range [-1..1]
-   *
-   * @param out - the vector to initialize
-   */
-  public static initRandomUnit<T>(out: T): T & IVec3
-  public static initRandomUnit(out: IVec3): IVec3 {
-    out.x = Math.random() * 2 - 1
-    out.y = Math.random() * 2 - 1
-    out.z = Math.random() * 2 - 1
-    return out
-  }
-
-  /**
-   * Initializes the components of this vector with random values in range [-1..1]
-   */
-  public initRandomUnit(): this {
-    this.x = Math.random() * 2 - 1
-    this.y = Math.random() * 2 - 1
-    this.z = Math.random() * 2 - 1
-    return this
-  }
-
-  /**
-   * Creates a new vector with all components set to given value
-   *
-   * @returns A new vector.
-   */
-  public static createUniform(value: number): Vec3 {
+  public static createAll(value: number): Vec3 {
     return new Vec3(value, value, value)
   }
 
   /**
-   * Initializes all components of given vector to given value
+   * Initializes the given vector
    *
    * @param out - the vector to initialize
+   * @param value - The x and y component
    */
-  public static initUniform<T>(value: number, out: T): T & IVec3
-  public static initUniform(value: number, out: IVec3): IVec3 {
+  public static initAll<T>(out: T, value: number): T & IVec3
+  public static initAll(out: IVec3, value: number): IVec3 {
     out.x = value
     out.y = value
     out.z = value
@@ -288,9 +227,9 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Initializes all components of this vector to given value
+   * Initializes the components of this vector with given values.
    */
-  public initUniform(value: number): this {
+  public initAll(value: number): this {
     this.x = value
     this.y = value
     this.z = value
@@ -298,66 +237,39 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Creates a new vector with all components set to `0`
+   * Creates a new vector with random values in range [0..1]
    *
    * @returns A new vector.
    */
-  public static createZero(): Vec3 {
-    return new Vec3(0, 0, 0)
+  public static createRandom(min: number = 0, max: number = 1): Vec3 {
+    // prettier-ignore
+    return new Vec3(
+      lerp(min, max, Math.random()),
+      lerp(min, max, Math.random()),
+      lerp(min, max, Math.random())
+    )
   }
 
   /**
-   * Initializes all components of given vector to `0`
+   * Initializes the given vector with random values in range [0..1]
    *
    * @param out - the vector to initialize
    */
-  public static initZero<T>(out: T): T & IVec3
-  public static initZero(out: IVec3): IVec3 {
-    out.x = 0
-    out.y = 0
-    out.z = 0
+  public static initRandom<T>(out: T, min: number, max: number): T & IVec3
+  public static initRandom(out: IVec3, min: number = 0, max: number = 1): IVec3 {
+    out.x = lerp(min, max, Math.random())
+    out.y = lerp(min, max, Math.random())
+    out.z = lerp(min, max, Math.random())
     return out
   }
 
   /**
-   * Initializes all components of this vector to `0`
+   * Initializes the components of this vector with random values in range [0..1]
    */
-  public initZero(): this {
-    this.x = 0
-    this.y = 0
-    this.z = 0
-    return this
-  }
-
-  /**
-   * Creates a new vector with all components set to `1`
-   *
-   * @returns A new vector.
-   */
-  public static createOne(): Vec3 {
-    return new Vec3(1, 1, 1)
-  }
-
-  /**
-   * Initializes all components of given vector to `1`
-   *
-   * @param out - the vector to initialize
-   */
-  public static initOne<T>(out: T): T & IVec3
-  public static initOne(out: IVec3): IVec3 {
-    out.x = 1
-    out.y = 1
-    out.z = 1
-    return out
-  }
-
-  /**
-   * Initializes all components of this vector to `1`
-   */
-  public initOne(): this {
-    this.x = 1
-    this.y = 1
-    this.z = 1
+  public initRandom(min: number = 0, max: number = 1): this {
+    this.x = lerp(min, max, Math.random())
+    this.y = lerp(min, max, Math.random())
+    this.z = lerp(min, max, Math.random())
     return this
   }
 
@@ -1061,54 +973,6 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
-   * Multiplies two vectors and adds the third vector.
-   * @param vecA - The vector to multiply.
-   * @param vecB - The vector to multiply.
-   * @param add - The vector to add on top of the multiplication.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static multiplyAdd(vecA: IVec3, vecB: IVec3, add: IVec3): Vec3
-  public static multiplyAdd<T>(vecA: IVec3, vecB: IVec3, add: IVec3, out: T): T & IVec3
-  public static multiplyAdd(vecA: IVec3, vecB: IVec3, add: IVec3, out?: IVec3): IVec3 {
-    out = out || new Vec3()
-    out.x = vecA.x * vecB.x + add.x
-    out.y = vecA.y * vecB.y + add.y
-    out.z = vecA.z * vecB.z + add.z
-    return out
-  }
-
-  /**
-   * Multiplies a vector with a scalar and adds another vector.
-   * @param vecA - The vector to multiply.
-   * @param mul - The scalar to multiply.
-   * @param add - The vector to add on top of the multiplication.
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static multiplyScalarAdd(vecA: IVec3, mul: number, add: IVec3): Vec3
-  public static multiplyScalarAdd<T>(vecA: IVec3, mul: number, add: IVec3, out: T): T & IVec3
-  public static multiplyScalarAdd(vecA: IVec3, mul: number, add: IVec3, out?: IVec3): IVec3 {
-    out = out || new Vec3()
-    out.x = vecA.x * mul + add.x
-    out.y = vecA.y * mul + add.y
-    out.z = vecA.z * mul + add.z
-    return out
-  }
-
-  /**
-   * Performs the calculation `this = this * a + b`
-   * @param a - The vector to multiply.
-   * @param b - The vector to add on top of the multiplication.
-   */
-  public multiplyAdd(a: IVec3, b: IVec3): this {
-    this.x = this.x * a.x + b.x
-    this.y = this.y * a.y + b.y
-    this.z = this.z * a.z + b.z
-    return this
-  }
-
-  /**
    * Reflects this vector along the given `normal`
    *
    * @param normal - the normal used for reflection
@@ -1282,6 +1146,22 @@ export class Vec3 implements IVec2, IVec3 {
   }
 
   /**
+   * Performs a component wise clamp operation on the the given vector between 0 and 1.
+   * @param a - The vector to clamp.
+   * @param out - The vector to write to.
+   * @returns The given `out` parameter or a new vector.
+   */
+  public static saturate(a: IVec3): Vec3
+  public static saturate<T>(a: IVec3, out: T): T & IVec3
+  public static saturate(a: IVec3, out?: IVec3): IVec3 {
+    out = out || new Vec3()
+    out.x = a.x < 0 ? 0 : a.x > 1 ? 1 : a.x
+    out.y = a.y < 0 ? 0 : a.y > 1 ? 1 : a.y
+    out.z = a.z < 0 ? 0 : a.z > 1 ? 1 : a.z
+    return out
+  }
+
+  /**
    * Performs a component wise clamp operation on the the given vector by using the given min and max vectors.
    * @param a - The vector to clamp.
    * @param min - Vector with the minimum component values.
@@ -1291,18 +1171,12 @@ export class Vec3 implements IVec2, IVec3 {
    */
   public static clamp<T extends IVec3 = Vec3>(a: IVec3, min: IVec3, max: IVec3, out?: T | Vec3): T | Vec3 {
     out = out || new Vec3()
-    const x = a.x
-    const y = a.y
-    const z = a.z
-    const minX = min.x
-    const minY = min.y
-    const minZ = min.z
-    const maxX = max.x
-    const maxY = max.y
-    const maxZ = max.z
-    out.x = x < minX ? minX : x > maxX ? maxX : x
-    out.y = y < minY ? minY : y > maxY ? maxY : y
-    out.z = z < minZ ? minZ : z > maxZ ? maxZ : z
+    const x = clamp(a.x, min.x, max.x)
+    const y = clamp(a.y, min.y, max.y)
+    const z = clamp(a.z, min.z, max.z)
+    out.x = x
+    out.y = y
+    out.z = z
     return out
   }
 
@@ -1318,12 +1192,12 @@ export class Vec3 implements IVec2, IVec3 {
   public static clampScalar<T>(a: IVec3, min: number, max: number, out?: T): T & IVec3
   public static clampScalar(a: IVec3, min: number, max: number, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    const x = a.x
-    const y = a.y
-    const z = a.z
-    out.x = x < min ? min : x > max ? max : x
-    out.y = y < min ? min : y > max ? max : y
-    out.z = z < min ? min : z > max ? max : z
+    const x = clamp(a.x, min, max)
+    const y = clamp(a.y, min, max)
+    const z = clamp(a.z, min, max)
+    out.x = x
+    out.y = y
+    out.z = z
     return out
   }
 
@@ -1338,15 +1212,9 @@ export class Vec3 implements IVec2, IVec3 {
   public static min<T>(a: IVec3, b: IVec3, out?: T): T & IVec3
   public static min(a: IVec3, b: IVec3, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    const aX = a.x
-    const aY = a.y
-    const aZ = a.z
-    const bX = b.x
-    const bY = b.y
-    const bZ = b.z
-    out.x = aX < bX ? aX : bX
-    out.y = aY < bY ? aY : bY
-    out.z = aZ < bZ ? aZ : bZ
+    out.x = a.x < b.x ? a.x : b.x
+    out.y = a.y < b.y ? a.y : b.y
+    out.z = a.z < b.z ? a.z : b.z
     return out
   }
 
@@ -1361,12 +1229,9 @@ export class Vec3 implements IVec2, IVec3 {
   public static minScalar<T>(a: IVec3, scalar: number, out?: T): T & IVec3
   public static minScalar(a: IVec3, scalar: number, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    const x = a.x
-    const y = a.y
-    const z = a.z
-    out.x = x < scalar ? x : scalar
-    out.y = y < scalar ? y : scalar
-    out.z = z < scalar ? z : scalar
+    out.x = a.x < scalar ? a.x : scalar
+    out.y = a.y < scalar ? a.y : scalar
+    out.z = a.z < scalar ? a.z : scalar
     return out
   }
 
@@ -1381,15 +1246,9 @@ export class Vec3 implements IVec2, IVec3 {
   public static max<T>(a: IVec3, b: IVec3, out?: T): T & IVec3
   public static max(a: IVec3, b: IVec3, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    const aX = a.x
-    const aY = a.y
-    const aZ = a.z
-    const bX = b.x
-    const bY = b.y
-    const bZ = b.z
-    out.x = aX > bX ? aX : bX
-    out.y = aY > bY ? aY : bY
-    out.z = aZ > bZ ? aZ : bZ
+    out.x = a.x > b.x ? a.x : b.x
+    out.y = a.y > b.y ? a.y : b.y
+    out.z = a.z > b.z ? a.z : b.z
     return out
   }
 
@@ -1404,12 +1263,9 @@ export class Vec3 implements IVec2, IVec3 {
   public static maxScalar<T>(a: IVec3, scalar: number, out?: T): T & IVec3
   public static maxScalar(a: IVec3, scalar: number, out?: IVec3): IVec3 {
     out = out || new Vec3()
-    const x = a.x
-    const y = a.y
-    const z = a.z
-    out.x = x > scalar ? x : scalar
-    out.y = y > scalar ? y : scalar
-    out.z = z > scalar ? z : scalar
+    out.x = a.x > scalar ? a.x : scalar
+    out.y = a.y > scalar ? a.y : scalar
+    out.z = a.z > scalar ? a.z : scalar
     return out
   }
 
@@ -1474,29 +1330,6 @@ export class Vec3 implements IVec2, IVec3 {
     out.x = x + t1 * (b.x - x) + t2 * (c.x - x)
     out.y = y + t1 * (b.y - y) + t2 * (c.y - y)
     out.z = z + t1 * (b.z - z) + t2 * (c.z - z)
-    return out
-  }
-
-  /**
-   * Performs a component wise smooth interpolation between the given two vectors.
-   * @param a - The first vector.
-   * @param b - The second vector.
-   * @param t - The interpolation value. Assumed to be in range [0:1].
-   * @param out - The vector to write to.
-   * @returns The given `out` parameter or a new vector.
-   */
-  public static smooth(a: IVec3, b: IVec3, t: number): Vec3
-  public static smooth<T>(a: IVec3, b: IVec3, t: number, out?: T): T & IVec3
-  public static smooth(a: IVec3, b: IVec3, t: number, out?: IVec3): IVec3 {
-    out = out || new Vec3()
-    t = t > 1 ? 1 : t < 0 ? 0 : t
-    t = t * t * (3 - 2 * t)
-    const x = a.x
-    const y = a.y
-    const z = a.z
-    out.x = x + (b.x - x) * t
-    out.y = y + (b.y - y) * t
-    out.z = z + (b.z - z) * t
     return out
   }
 

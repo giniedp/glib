@@ -60,13 +60,6 @@ describe('Mat3', () => {
       })
     })
 
-    describe('.createZero', () => {
-      it('sets all components to 0', () => {
-        expectComponents(Mat3.createZero(), [0, 0, 0, 0, 0, 0, 0, 0, 0])
-        expect(Mat3.createZero()).not.toBe(Mat3.createZero())
-      })
-    })
-
     describe('#init', () => {
       it('sets all components', () => {
         expectComponents(new Mat3().init(1, 2, 3, 4, 5, 6, 7, 8, 9), [1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -91,15 +84,15 @@ describe('Mat3', () => {
       })
     })
 
-    describe('#initWith', () => {
+    describe('#initFill', () => {
       it('sets all components', () => {
-        expectComponents(new Mat3().initWith(1), [1, 1, 1, 1, 1, 1, 1, 1, 1])
+        expectComponents(new Mat3().initFill(1), [1, 1, 1, 1, 1, 1, 1, 1, 1])
       })
     })
 
     describe('#initIdentity', () => {
       it('sets all components', () => {
-        expectComponents(new Mat3().initWith(1).initIdentity(), [1, 0, 0, 0, 1, 0, 0, 0, 1])
+        expectComponents(new Mat3().initFill(1).initIdentity(), [1, 0, 0, 0, 1, 0, 0, 0, 1])
       })
     })
 

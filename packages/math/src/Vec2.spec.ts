@@ -1,5 +1,5 @@
+import { beforeEach, describe, expect, it } from 'vitest'
 import { IVec2, Vec2 } from './index'
-import { describe, expect, it, beforeEach } from 'vitest'
 
 describe('Vec2', () => {
   function expectComponents(v: IVec2, x: number, y: number) {
@@ -36,14 +36,6 @@ describe('Vec2', () => {
     })
   })
 
-  describe('#setX', () => {
-    it('set the value', () => expectComponents(a.setX(1), 1, 0))
-    it('returns same instance', () => expect(a.setX(1)).toBe(a))
-  })
-  describe('#setY', () => {
-    it('set the value', () => expectComponents(a.setY(1), 0, 1))
-    it('returns same instance', () => expect(a.setY(1)).toBe(a))
-  })
   describe('#set', () => {
     it('set x value', () => expectComponents(a.set(0, 1), 1, 0))
     it('set x value', () => expectComponents(a.set('x', 1), 1, 0))
@@ -64,26 +56,7 @@ describe('Vec2', () => {
     it('inits all components', () => expectComponents(a.init(1, 2), 1, 2))
     it('returns same instance', () => expect(a.init(1, 2)).toBe(a))
   })
-  describe('#initZero', () => {
-    it('initializess a new Vec2', () => {
-      expectComponents(Vec2.create(1, 2).initZero(), 0, 0)
-    })
-  })
-  describe('.createZero', () => {
-    it('creates a new Vec2', () => {
-      expectComponents(Vec2.createZero(), 0, 0)
-    })
-  })
-  describe('.initOne', () => {
-    it('initializes with 1', () => {
-      expectComponents(Vec2.create().initOne(), 1, 1)
-    })
-  })
-  describe('.createOne', () => {
-    it('creates a new Vec2', () => {
-      expectComponents(Vec2.createOne(), 1, 1)
-    })
-  })
+
   describe('#initFrom', () => {
     beforeEach(() => {
       b = new Vec2(1, 2)
@@ -356,52 +329,6 @@ describe('Vec2', () => {
         expect(a).not.toBe(c)
       })
     })
-    describe('#multiplyScalarAdd', () => {
-      it('calculates C = A * s + B', () => {
-        const A = Vec2.create(1, 2)
-        const s = 0.5
-        const B = Vec2.create(4, 5)
-        let C = Vec2.create()
-        C = A.multiplyScalarAdd(s, B)
-        expectComponents(A, 4.5, 6)
-        expect(A).toBe(C)
-      })
-    })
-    describe('.multiplyScalarAdd', () => {
-      it('calculates C = A * s + B', () => {
-        const A = Vec2.create(1, 2)
-        const s = 0.5
-        const B = Vec2.create(4, 5)
-        let C = Vec2.create()
-        Vec2.multiplyScalarAdd(A, s, B, C)
-        expectComponents(C, 4.5, 6)
-        expect(A).not.toBe(C)
-
-        C = Vec2.multiplyScalarAdd(A, s, B)
-        expectComponents(C, 4.5, 6)
-        expect(A).not.toBe(C)
-      })
-    })
-    describe('#multiplyAdd', () => {
-      it('multiplys', () => {
-        a = new Vec2(1, 2)
-        b = new Vec2(5, 6)
-        c = new Vec2(9, 10)
-        d = a.multiplyAdd(b, c)
-        expectComponents(d, 14, 22)
-        expect(a).toBe(d)
-      })
-    })
-    describe('.multiplyAdd', () => {
-      it('multiplys', () => {
-        a = new Vec2(1, 2)
-        b = new Vec2(5, 6)
-        c = new Vec2(9, 10)
-        const e = Vec2.multiplyAdd(a, b, c, d)
-        expectComponents(d, 14, 22)
-        expect(d).toBe(e)
-      })
-    })
   })
 
   describe('divide operation', () => {
@@ -513,12 +440,6 @@ describe('Vec2', () => {
   describe('.barycentric', () => {
     it('interpolates the components', () => {
       expectComponents(Vec2.barycentric(new Vec2(1, 2), new Vec2(5, 6), new Vec2(9, 10), 0.5, 0.5), 7, 8)
-    })
-  })
-
-  describe('.smooth', () => {
-    it('interpolates the components', () => {
-      expectComponents(Vec2.smooth(new Vec2(1, 2), new Vec2(5, 6), 0.5), 3, 4)
     })
   })
 
