@@ -1,4 +1,5 @@
 import {
+  dataTypeFromWebGL,
   surfaceFormatIsCompressed,
   surfaceFormatToWebGL,
   surfaceFormatToWebGLDataType,
@@ -330,16 +331,37 @@ function setDataCubemap(unit: WebglTextureUnit, source: TextureSource, image: We
           )
         }
       } else if (isCompressedFaceData(data)) {
-        gl.compressedTexSubImage2D(
-          gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
-          lvl,
-          0, // x offset
-          0, // y offset
-          width,
-          height,
-          image.glInternalFormat,
-          data.data,
-        )
+        if (image.isCompressed) {
+          gl.compressedTexSubImage2D(
+            gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            lvl,
+            0, // x offset
+            0, // y offset
+            width,
+            height,
+            image.glInternalFormat,
+            data.data,
+          )
+        } else {
+          let input: any = data.data
+          if (dataTypeFromWebGL(image.glDataType) === 'float16') {
+            input = new Uint16Array(data.data.buffer, data.data.byteOffset, data.data.byteLength / 2)
+          }
+          if (dataTypeFromWebGL(image.glDataType) === 'float32') {
+            input = new Float32Array(data.data.buffer, data.data.byteOffset, data.data.byteLength / 4)
+          }
+          gl.texSubImage2D(
+            gl.TEXTURE_CUBE_MAP_POSITIVE_X + i,
+            lvl,
+            0, // x offset
+            0, // y offset
+            width,
+            height,
+            image.glDataFormat,
+            image.glDataType,
+            input,
+          )
+        }
       } else {
         // TODO: add option to flipY
         // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
