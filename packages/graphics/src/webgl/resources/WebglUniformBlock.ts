@@ -67,7 +67,7 @@ export class WebglUniformBlock {
     if (!this.isDirty || !this.isManaged || !this.managedBuffer) {
       return
     }
-    this.managedBuffer.setSubData(0, this.array, this.dirtyMin, this.dirtyMax - this.dirtyMin)
+    this.managedBuffer.setSubData(this.dirtyMin, this.array, this.dirtyMin, this.dirtyMax - this.dirtyMin)
     this.resetDirty()
   }
 
