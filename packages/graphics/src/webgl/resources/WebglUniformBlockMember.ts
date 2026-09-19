@@ -16,7 +16,8 @@ export class WebglUniformBlockMember implements WebglUniform {
   private blockOffset: number
 
   private position: number
-  private startPosition: number
+  private writeStart: number
+  private writeEnd: number
 
   private component: number
   private componentCount: number
@@ -64,8 +65,9 @@ export class WebglUniformBlockMember implements WebglUniform {
     }
 
     this.position = 0
-    this.startPosition = 0
     this.component = 0
+    this.writeStart = 0
+    this.writeEnd = 0
   }
 
   /**
@@ -74,7 +76,8 @@ export class WebglUniformBlockMember implements WebglUniform {
    */
   public beginWrite(index: number) {
     this.position = index * this.elementStride
-    this.startPosition = this.position
+    this.writeStart = this.position
+    this.writeEnd = this.position
     this.component = 0
   }
 
@@ -83,20 +86,18 @@ export class WebglUniformBlockMember implements WebglUniform {
     this.component++
     this.position++
     if (this.component >= this.componentCount) {
-      if (!this.vectorStride) {
-        // TODO: remove this workaround and cover with tests
-        // when vectorStride is not set, the position and component resets to 0
-        // which makes endWrite not to detect any changes
-        this.endWrite()
-      }
+      // this either wraps over to next row (e.g. writing matrix)
+      // or wraps to start of the uniform (e.g. writing scalar uniform)
+      this.writeEnd = Math.max(this.writeEnd, this.position)
       this.position = this.position - this.componentCount + this.vectorStride
       this.component = 0
     }
   }
 
   public endWrite(): void {
-    const start = this.startPosition
-    const end = this.position // position advanced by writes
+    this.writeEnd = Math.max(this.writeEnd, this.position)
+    const start = this.writeStart
+    const end = this.writeEnd
     const byteOffset = this.blockOffset + start * this.data.BYTES_PER_ELEMENT
     const byteLength = (end - start) * this.data.BYTES_PER_ELEMENT
     this.block.markAsChanged(byteOffset, byteLength)
