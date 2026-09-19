@@ -1,6 +1,7 @@
 import { ResourceRef } from '@gglib/content'
 import {
   BufferOptions,
+  BufferUsage,
   dataTypeArray,
   dataTypeFromWebGL,
   dataTypeViewReader,
@@ -185,7 +186,7 @@ function createIndexBuffer(bva: BufferViewAccessor): BufferOptions {
   }
 
   return {
-    type: 'IndexBuffer',
+    usage: BufferUsage.INDEX,
     data: indexData,
     indexType: indexType,
   }

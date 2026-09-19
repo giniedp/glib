@@ -15,7 +15,7 @@ import {
 } from '../states'
 import type { WebGpuDevice } from './WebGpuDevice'
 import type { ColorTargetParams } from './cache/ColorTargetCache'
-import type { PipelineParams } from './cache/PipelineCache'
+import type { RenderPipelineParams } from './cache/PipelineCache'
 import type { WebGpuProgram } from './resources'
 import {
   WebGpuDeviceOutput,
@@ -51,7 +51,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
   private stencilReference: number
 
   private pipelineParamsChanged = true
-  private pipelineParams: PipelineParams = {
+  private pipelineParams: RenderPipelineParams = {
     depthFormat: null,
     cullState: CullState.Disabled,
     depthBiasState: DepthBiasState.Default,
@@ -559,6 +559,14 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.getPass()?.drawIndexed(indexCount, instanceCount ?? 1, indexOffset ?? 0, baseVertex ?? 0, instanceOffset ?? 0)
   }
 
+  public drawIndirect(buffer: Buffer, offset: number) {
+    this.getPass()?.drawIndirect((buffer as WebGpuBuffer).resource, offset)
+  }
+
+  public drawIndexedIndirect(buffer: Buffer, offset: number) {
+    this.getPass()?.drawIndexedIndirect((buffer as WebGpuBuffer).resource, offset)
+  }
+
   private getClearPassDescriptor(): GPURenderPassDescriptor {
     this.updatePassDescriptor()
     return this.clearPassDescriptor
@@ -661,7 +669,7 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.pipelineParamsChanged = false
     this.pipelineParams.vertexLayout = this.getVertexLayout()
     this.pipelineParams.targets = this.getColorTargetState()
-    this.pipeline = this.device.pipelineCache.get(this.pipelineParams)
+    this.pipeline = this.device.renderPipelineCache.get(this.pipelineParams)
     if (!this.pipeline) {
       this.pipelineParamsChanged = true
     }
@@ -762,6 +770,8 @@ export class WebGpuRenderEncoder extends RenderEncoder {
     this.pipelineParams.depthState = DepthState.Disabled
     this.pipelineParams.stencilState = StencilState.Default
     this.pipelineParams.shader = null
+    this.pipelineParams.vertexConstants = null
+    this.pipelineParams.fragmentConstants = null
     this.pipelineParams.primitiveType = 'TriangleList'
     this.pipelineParams.vertexLayout = null
     this.pipelineParams.targets = null

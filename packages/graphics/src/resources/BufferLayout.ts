@@ -1,4 +1,5 @@
-import { GpuDataType, gpuTypeSize } from '../enums'
+import { GpuDataType, gpuTypeFormat, gpuTypeSize } from '../enums'
+import { VertexLayout } from './VertexLayout'
 
 export interface BufferFieldDescriptor<T extends GpuDataType = GpuDataType> {
   name: string
@@ -25,6 +26,7 @@ export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T)
   const result = {
     byteSize: 0,
     schema: {} as BufferSchema<T[number]>,
+    attributes: {} as VertexLayout,
   }
 
   let offset = 0
@@ -32,6 +34,12 @@ export function bufferLayout<const T extends BufferFieldDescriptor[]>(fields: T)
     result.schema[field.name] = {
       type: field.type,
       byteOffset: offset,
+    }
+    const format = gpuTypeFormat(field.type)
+    result.attributes[field.name] = {
+      byteOffset: offset,
+      elementType: format.elementType,
+      elementCount: format.elementCount,
     }
     offset += gpuTypeSize(field.type)
   }

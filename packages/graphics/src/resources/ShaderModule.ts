@@ -16,6 +16,7 @@ export type WgslModuleSource = {
   source: string
   vertexConstants?: ShaderConstants
   fragmentConstants?: ShaderConstants
+  computeConstants?: ShaderConstants
 }
 
 export type GlslModuleSource = {

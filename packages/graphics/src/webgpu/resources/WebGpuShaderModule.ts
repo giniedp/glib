@@ -1,3 +1,4 @@
+import { BufferUsage } from '../../enums'
 import {
   getRefCounter,
   ShaderModule,
@@ -30,6 +31,10 @@ export interface WebGpuShaderOptions {
    * The constants used to configure the fragment shader stage of this shader module.
    */
   fragmentConstants?: ShaderConstants
+  /**
+   * The constants used to configure the fragment shader stage of this shader module.
+   */
+  computeConstants?: ShaderConstants
 }
 
 export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUShaderModule>, ReferenceCounted {
@@ -62,6 +67,10 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
    * The constants used to configure the fragment shader stage of this shader module.
    */
   public readonly fragmentConstants: ShaderConstants | null
+  /**
+   * The constants used to configure the fragment shader stage of this shader module.
+   */
+  public readonly computeConstants: ShaderConstants | null
 
   public readonly ref: ReferenceCounter
 
@@ -91,6 +100,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
     }
     this.vertexConstants = options.vertexConstants
     this.fragmentConstants = options.fragmentConstants
+    this.computeConstants = options.computeConstants
     this.gpuObject = device.gpu.createShaderModule({
       label: options.name,
       code: options.code,
@@ -150,7 +160,6 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
       inputs[input.alias || input.name] = input
     }
 
-    const vertexCount = vertexBuffer.getMaxVertexCount()
     const available: string[] = []
     for (const buffer of vertexBuffer.buffers) {
       for (const semantic in buffer.vertexLayout) {
@@ -168,7 +177,7 @@ export class WebGpuShaderModule extends ShaderModule implements GpuResource<GPUS
         const isColor = semantic.match(/color/i)
         const data = isColor ? [1, 1, 1, 1] : [0, 0, 0, 0]
         const buffer = new WebGpuBuffer(this.device, {
-          type: 'VertexBuffer',
+          usage: BufferUsage.VERTEX,
           name: `auto-generated vertex buffer for shader input '${semantic}'`,
           layout: {
             [semantic]: {

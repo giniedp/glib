@@ -222,7 +222,7 @@ export class BufferRecorder {
    * calls {@link upload} with {@link gpuBuffer} as upload target
    */
   public commit(force?: boolean) {
-    this.upload(this.gpuBuffer)
+    this.upload(this.gpuBuffer, force)
   }
 
   /**

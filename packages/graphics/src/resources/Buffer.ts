@@ -1,6 +1,6 @@
 import type { Device } from '../Device'
 import {
-  type BufferType,
+  BufferUsage,
   type DataType,
   dataTypeToArrayType,
   dataTypeToSize,
@@ -27,9 +27,9 @@ export interface BufferOptions<T = TypedArray | ArrayBuffer | PlainBufferData> {
   name?: string
 
   /**
-   * The buffer type e.g. `VertexBuffer` or `IndexBuffer`
+   * Indicates buffer usage e.g. `VertexBuffer` or `IndexBuffer`
    */
-  type?: BufferType
+  usage?: number
 
   /**
    * The element type of index buffer. Usable only for index buffers.
@@ -90,10 +90,11 @@ export abstract class Buffer {
    *
    */
   public readonly name: string
+
   /**
-   * The buffer type e.g. VertexBuffer or IndexBuffer
+   * Indicates buffer usage e.g. VertexBuffer or IndexBuffer
    */
-  public readonly type: BufferType
+  public readonly usage: number
 
   /**
    * The size of the data in bytes
@@ -137,28 +138,28 @@ export abstract class Buffer {
    * Indicates whether this is an IndexBuffer
    */
   public get isIndexBuffer(): boolean {
-    return this.type === 'IndexBuffer'
+    return !!(this.usage & BufferUsage.INDEX)
   }
 
   /**
    * Indicates whether this is a VertexBuffer
    */
   public get isVertexBuffer(): boolean {
-    return this.type === 'VertexBuffer'
+    return !!(this.usage & BufferUsage.VERTEX)
   }
 
   /**
    * Indicates whether this is a UniformBuffer
    */
   public get isUniformBuffer(): boolean {
-    return this.type === 'UniformBuffer'
+    return !!(this.usage & BufferUsage.UNIFORM)
   }
 
   /**
    * WebGPU only. Indicates whether this is a StorageBuffer
    */
   public get isStorageBuffer(): boolean {
-    return this.type === 'StorageBuffer'
+    return !!(this.usage & BufferUsage.STORAGE)
   }
   /**
    * Resets the buffer to the given options
@@ -166,12 +167,12 @@ export abstract class Buffer {
   public reset(opts: BufferOptions): void {
     const self = this as Mutable<this>
     self.name = opts.name ?? self.name
-    self.type = opts.type ?? self.type
+    self.usage = opts.usage ?? self.usage
     self.instanced = !!opts.instanced
     self.indexType = opts.indexType ?? self.indexType
 
-    if (!self.type) {
-      throw new Error(`invalid or missing 'type' option: ${opts.type}`)
+    if (!self.usage) {
+      throw new Error(`missing 'usage' option`)
     }
 
     if (opts.layout) {

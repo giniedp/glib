@@ -14,7 +14,7 @@ import { WebGpuShaderModule } from '../resources'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { structureCache, type StructureCache } from './StructureCache'
 
-export interface PipelineParams {
+export interface RenderPipelineParams {
   async?: boolean
   shader: WebGpuShaderModule
   vertexConstants: ShaderConstants
@@ -32,10 +32,10 @@ export interface PipelineParams {
   multisampleAlphaCoverage: boolean
 }
 
-export type PipelineCache = StructureCache<PipelineParams, GPURenderPipeline>
+export type RenderPipelineCache = StructureCache<RenderPipelineParams, GPURenderPipeline>
 
-export function pipelineCache(device: WebGpuDevice): PipelineCache {
-  return structureCache<PipelineParams, GPURenderPipeline>({
+export function renderPipelineCache(device: WebGpuDevice): RenderPipelineCache {
+  return structureCache<RenderPipelineParams, GPURenderPipeline>({
     shape: {
       shader: 'weak',
       vertexLayout: 'map',
@@ -52,7 +52,7 @@ export function pipelineCache(device: WebGpuDevice): PipelineCache {
       multisampleMask: 'map',
       multisampleAlphaCoverage: 'map',
     },
-    create: (params: PipelineParams) => {
+    create: (params: RenderPipelineParams) => {
       const program = params.shader
       const descriptor: GPURenderPipelineDescriptor = {
         // label: program.name, // TODO:

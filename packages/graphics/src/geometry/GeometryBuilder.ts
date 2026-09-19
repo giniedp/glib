@@ -1,7 +1,7 @@
 import { BoundingBox, BoundingSphere, Mat4 } from '@gglib/math'
 import { Color } from '../Color'
 import { Device } from '../Device'
-import { FrontFace, PrimitiveType } from '../enums'
+import { BufferUsage, FrontFace, PrimitiveType } from '../enums'
 import {
   BufferOptions,
   PlainBufferData,
@@ -233,7 +233,7 @@ export class GeometryBuilder {
 
   private resetData() {
     this.idxBuffer = {
-      type: 'IndexBuffer',
+      usage: BufferUsage.INDEX,
       indexType: 'uint16',
       data: {
         type: 'uint16',
@@ -243,7 +243,7 @@ export class GeometryBuilder {
     this.vtxBuffer = this.layout.map((l): BufferOptions<PlainBufferData> => {
       return {
         layout: JSON.parse(JSON.stringify(l)),
-        type: 'VertexBuffer',
+        usage: BufferUsage.VERTEX,
         data: {
           type: 'float32', // TODO: this should be derived from the vertex layout
           elements: [],
@@ -457,14 +457,14 @@ export class GeometryBuilder {
    */
   private initBuffers(): void {
     this.idxBuffer = {
-      type: 'IndexBuffer',
+      usage: BufferUsage.INDEX,
       indexType: 'uint16',
       data: { type: 'uint16', elements: [] },
     }
     this.vtxBuffer = this.layout.map(
       (layout): BufferOptions<PlainBufferData> => ({
         layout: JSON.parse(JSON.stringify(layout)),
-        type: 'VertexBuffer',
+        usage: BufferUsage.VERTEX,
         data: { type: 'float32', elements: [] },
       }),
     )

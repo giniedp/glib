@@ -16,10 +16,6 @@ export abstract class VertexBuffer {
   public abstract readonly buffers: Buffer[]
   public abstract dispose(): void
 
-  // public get vertexCount() {
-  //   return this.buffers[0]?.elementCount || 0
-  // }
-
   public getMaxVertexCount(): number {
     return Math.max(...this.buffers.map((b) => b.elementCount))
   }

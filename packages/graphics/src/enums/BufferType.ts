@@ -1,17 +1,27 @@
 import { GLConst as gl } from './GLConst'
 
-export type BufferType = 'VertexBuffer' | 'IndexBuffer' | 'UniformBuffer' | 'StorageBuffer'
-
-const mapToWebGL: Record<BufferType, number> = {
-  VertexBuffer: gl.ARRAY_BUFFER,
-  IndexBuffer: gl.ELEMENT_ARRAY_BUFFER,
-  UniformBuffer: gl.UNIFORM_BUFFER,
-  StorageBuffer: null,
+export const BufferUsage = {
+  MAP_READ: 1,
+  MAP_WRITE: 2,
+  COPY_SRC: 4,
+  COPY_DST: 8,
+  INDEX: 16,
+  VERTEX: 32,
+  UNIFORM: 64,
+  STORAGE: 128,
+  INDIRECT: 256,
+  QUERY_RESOLVE: 512,
 }
 
-export function bufferTypeToWebGL(type: BufferType): number {
-  if (type === 'StorageBuffer') {
-    throw new Error('StorageBuffer is not supported in WebGL')
+export function bufferUsageToWebGL(usage: number): number {
+  if (usage & BufferUsage.VERTEX) {
+    return gl.ARRAY_BUFFER
   }
-  return mapToWebGL[type]
+  if (usage & BufferUsage.INDEX) {
+    return gl.ELEMENT_ARRAY_BUFFER
+  }
+  if (usage & BufferUsage.UNIFORM) {
+    return gl.UNIFORM_BUFFER
+  }
+  throw new Error(`Buffer usage not supported: ${usage}`)
 }

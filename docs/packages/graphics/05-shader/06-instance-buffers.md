@@ -13,7 +13,7 @@ order: 60
 
 :::
 
-#:::tabs variant:code
+:::tabs variant:code
 == example.ts
 <ExampleCode />
 :::

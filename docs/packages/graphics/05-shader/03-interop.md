@@ -36,7 +36,7 @@ struct VertexInput {
 <Example platform="webgl2" />
 :::
 
-#:::tabs variant:code
+:::tabs variant:code
 == example.ts
 <ExampleCode />
 :::

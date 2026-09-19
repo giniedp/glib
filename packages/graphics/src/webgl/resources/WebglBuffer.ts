@@ -1,5 +1,5 @@
 import { eventSource } from '@gglib/utils'
-import { bufferTypeToWebGL, type TypedArray } from '../../enums'
+import { bufferUsageToWebGL, type TypedArray } from '../../enums'
 import { Buffer, isPlainBufferData, materializePlainBuffer, PlainBufferData, type BufferOptions } from '../../resources'
 import { WebglDevice } from '../WebglDevice'
 import type { WebglResource } from '../types'
@@ -35,7 +35,8 @@ export class WebglBuffer extends Buffer implements WebglResource<WebGLBuffer> {
     if (!this.glHandle || !this.device.context.isBuffer(this.glHandle)) {
       mutable.glHandle = this.device.context.createBuffer()
     }
-    mutable.glType = bufferTypeToWebGL(this.type)
+
+    mutable.glType = bufferUsageToWebGL(this.usage)
     mutable.glUsage = this.device.context.STATIC_DRAW // TODO:
     const gl = this.device.context
     gl.bindBuffer(this.glType, this.glHandle)

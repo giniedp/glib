@@ -16,19 +16,7 @@ export class WebGpuBuffer extends Buffer {
   public create() {
     const self = this as Mutable<this>
     if (!self.resource) {
-      let usage = 0
-      if (this.isIndexBuffer) {
-        usage = usage | GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST
-      }
-      if (this.isVertexBuffer) {
-        usage = usage | GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-      }
-      if (this.isUniformBuffer) {
-        usage = usage | GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-      }
-      if (this.isStorageBuffer) {
-        usage = usage | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-      }
+      let usage = this.usage | GPUBufferUsage.COPY_DST
       if (this.readWrite) {
         usage = usage | GPUBufferUsage.COPY_SRC
       }

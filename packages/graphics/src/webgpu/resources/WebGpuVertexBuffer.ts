@@ -1,3 +1,4 @@
+import { BufferUsage } from '../../enums'
 import { VertexBuffer, type VertexBufferOptions } from '../../resources'
 import type { WebGpuDevice } from '../WebGpuDevice'
 import { WebGpuBuffer } from './WebGpuBuffer'
@@ -15,9 +16,10 @@ export class WebGpuVertexBuffer extends VertexBuffer {
       options = [options]
     }
     for (const bufferOpts of options) {
+      const usage = (bufferOpts.usage ?? 0) | BufferUsage.VERTEX
       const buffer = new WebGpuBuffer(device, {
         ...bufferOpts,
-        type: 'VertexBuffer',
+        usage: usage,
       })
       this.buffers.push(buffer)
     }

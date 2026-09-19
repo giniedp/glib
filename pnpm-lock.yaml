@@ -78,8 +78,8 @@ importers:
         specifier: ^0.0.15
         version: 0.0.15
       '@webgpu/types':
-        specifier: ^0.1.71
-        version: 0.1.71
+        specifier: ^0.1.74
+        version: 0.1.74
       ammojs-typed:
         specifier: ^1.0.6
         version: 1.0.6
@@ -2312,8 +2312,8 @@ packages:
   '@webgpu/glslang@0.0.15':
     resolution: {integrity: sha512-niT+Prh3Aff8Uf1MVBVUsaNjFj9rJAKDXuoHIKiQbB+6IUP/3J3JIhBNyZ7lDhytvXxw6ppgnwKZdDJ08UMj4Q==}
 
-  '@webgpu/types@0.1.71':
-    resolution: {integrity: sha512-mMy8/ODcKhab808co15eW+yN+HgXoQxRQHTiBV9Mrvl1r0ufnid7YOcI+gi4eUWSWl9ezD6TW2KXccrL8HCh2A==}
+  '@webgpu/types@0.1.74':
+    resolution: {integrity: sha512-lgiI4hbuLcI9unnm2cL/tvCaQU45dp0xcLWJh5uB/9MBGvIA4F8XIk7nSiBeg+K4xWGYwgZKn80LmERI5CxoTA==}
 
   abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -7362,7 +7362,7 @@ snapshots:
 
   '@webgpu/glslang@0.0.15': {}
 
-  '@webgpu/types@0.1.71': {}
+  '@webgpu/types@0.1.74': {}
 
   abab@2.0.6: {}
 

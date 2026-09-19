@@ -2,6 +2,8 @@ import { NdcMinZ } from '@gglib/math'
 import { brand, eventSource, EventType } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
+import { BufferUsage } from '../enums'
+import { FrameScheduler } from '../FrameScheduler'
 import {
   createResourceTracker,
   getRefCounter,
@@ -18,7 +20,6 @@ import {
   type TextureOptions,
   type VertexBufferOptions,
 } from '../resources'
-import { FrameScheduler } from '../FrameScheduler'
 import { SamplerState } from '../states'
 import {
   WebglBuffer,
@@ -198,14 +199,14 @@ export class WebglDevice extends Device<WebGL2RenderingContext> {
     options.indexType ??= 'uint16'
     return new WebglBuffer(this, {
       ...options,
-      type: 'IndexBuffer',
+      usage: (options.usage ?? 0) | BufferUsage.INDEX,
     })
   }
 
   public createUniformBuffer(options: BufferOptions): WebglBuffer {
     return new WebglBuffer(this, {
       ...options,
-      type: 'UniformBuffer',
+      usage: (options.usage ?? 0) | BufferUsage.UNIFORM,
     })
   }
 

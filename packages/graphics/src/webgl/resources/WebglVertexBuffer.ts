@@ -1,4 +1,5 @@
 import { eventSource } from '@gglib/utils'
+import { BufferUsage } from '../../enums'
 import { VertexBuffer, type VertexBufferOptions } from '../../resources'
 import type { WebglDevice } from '../WebglDevice'
 import { WebglBuffer } from './WebglBuffer'
@@ -22,7 +23,7 @@ export class WebglVertexBuffer extends VertexBuffer {
       this.buffers.push(
         new WebglBuffer(device, {
           ...settings,
-          type: 'VertexBuffer',
+          usage: BufferUsage.VERTEX,
         }),
       )
     }

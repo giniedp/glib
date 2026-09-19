@@ -3,7 +3,7 @@ import { brand, eventSource, EventType, type EventChannel } from '@gglib/utils'
 import { Color } from '../Color'
 import { Device, DeviceStats } from '../Device'
 import { FrameScheduler } from '../FrameScheduler'
-import { type SurfaceFormat } from '../enums'
+import { BufferUsage, type SurfaceFormat } from '../enums'
 import {
   createResourceTracker,
   getRefCounter,
@@ -21,9 +21,11 @@ import {
 } from '../resources'
 import { SamplerState } from '../states'
 import { WebGpuCapabilities } from './WebGpuCapabilities'
+import { WebGpuComputeEncoder } from './WebGpuComputeEncoder'
 import { WebGpuRenderEncoder } from './WebGpuRenderEncoder'
 import { colorTargetCache, colorTargetListCache } from './cache/ColorTargetCache'
-import { pipelineCache } from './cache/PipelineCache'
+import { computePipelineCache } from './cache/ComputeCache'
+import { renderPipelineCache } from './cache/PipelineCache'
 import { MIPMAPS_2D, MIPMAPS_2D_ARRAY, MIPMAPS_CUBE, MIPMAPS_CUBE_ARRAY } from './programs/mipmap.wgsl'
 import {
   WebGpuBuffer,
@@ -100,11 +102,13 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   public readonly defaultTexture: WebGpuTexture
   public readonly defaultTextureCube: WebGpuTexture
   public readonly renderPass: WebGpuRenderEncoder
+  public readonly computePass: WebGpuComputeEncoder
   public readonly output: WebGpuDeviceOutput
 
   public readonly gpu: GPUDevice
   public readonly adapter: GPUAdapter
-  public readonly pipelineCache = pipelineCache(this)
+  public readonly renderPipelineCache = renderPipelineCache(this)
+  public readonly computePipelineCache = computePipelineCache(this)
   public readonly colorTargetCache = colorTargetCache()
   public readonly colorTargetListCache = colorTargetListCache()
 
@@ -132,6 +136,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
       surfaceFormat: options.surfaceFormat,
     })
     this.renderPass = new WebGpuRenderEncoder(this)
+    this.computePass = new WebGpuComputeEncoder(this)
     this.mipmapPass = new WebGpuRenderEncoder(this)
     this.ready = this.initialize()
     if (this.canvas instanceof HTMLCanvasElement && options.autosize) {
@@ -228,7 +233,7 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
   }
 
   public createIndexBuffer(options: BufferOptions): WebGpuBuffer {
-    options.type = 'IndexBuffer'
+    options.usage = (options.usage ?? 0) | BufferUsage.INDEX
     options.indexType ||= 'uint16'
     return new WebGpuBuffer(this, options)
   }
@@ -255,11 +260,13 @@ export class WebGpuDevice extends Device<GPUCanvasContext> {
     const code = typeof options.wgsl === 'string' ? options.wgsl : options.wgsl.source
     const fConst = typeof options.wgsl === 'string' ? null : options.wgsl.fragmentConstants
     const vConst = typeof options.wgsl === 'string' ? null : options.wgsl.vertexConstants
+    const cConst = typeof options.wgsl === 'string' ? null : options.wgsl.computeConstants
     const result = this.createWgslModule({
       name: options.name,
       code,
       fragmentConstants: fConst,
       vertexConstants: vConst,
+      computeConstants: cConst,
       ...{ [RefCounterKey]: getRefCounter(options) || createRefCounter() },
     })
     this.shaders.track(result)
@@ -449,7 +456,7 @@ function getOrCreateContext(
     return options.context
   }
 
-  const context = canvas.getContext('webgpu')
+  const context = canvas.getContext('webgpu') as GPUCanvasContext
 
   if (!context) {
     throw Error('WebGPU is not supported')

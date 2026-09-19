@@ -1,5 +1,6 @@
 import {
   BufferRecorder,
+  BufferUsage,
   Color,
   CommonBlocks,
   CommonInputs,
@@ -184,7 +185,7 @@ export class Renderer {
       recordByteSize: strideInBytes,
       gpuBuffer: device.createBuffer({
         size: capacity * strideInBytes,
-        type: 'StorageBuffer',
+        usage: BufferUsage.STORAGE,
       }),
     })
     this.perInstanceData = new BufferRecorder({
@@ -193,7 +194,7 @@ export class Renderer {
       recordByteSize: strideInBytes, // unknown data, using 4 vec4s just in case
       gpuBuffer: device.createBuffer({
         size: capacity * strideInBytes,
-        type: 'StorageBuffer',
+        usage: BufferUsage.STORAGE,
       }),
     })
   }
@@ -208,7 +209,7 @@ export class Renderer {
       recordByteSize: strideInBytes,
       gpuBuffer: device.createBuffer({
         size: instanceCount * strideInBytes,
-        type: 'UniformBuffer',
+        usage: BufferUsage.UNIFORM,
       }),
     })
     this.perInstanceData = new BufferRecorder({
@@ -217,7 +218,7 @@ export class Renderer {
       recordByteSize: strideInBytes,
       gpuBuffer: device.createBuffer({
         size: instanceCount * strideInBytes,
-        type: 'UniformBuffer',
+        usage: BufferUsage.UNIFORM,
       }),
     })
   }

@@ -1,6 +1,6 @@
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 
-import { arrayTypeToDataType, DataType, FrontFace } from '../enums'
+import { arrayTypeToDataType, BufferUsage, DataType, FrontFace } from '../enums'
 import { BufferOptions, isPlainBufferData, PlainBufferData, vertexAttribute, VertexAttribute } from '../resources'
 import { calculateNormals } from './utils/calculateNormals'
 import { calculateTangents } from './utils/calculateTangents'
@@ -85,9 +85,7 @@ export class GeometryUtil {
           byteOffset: 0,
         },
       },
-      type: 'VertexBuffer',
-
-      //dataType: attribute.type,
+      usage: BufferUsage.VERTEX,
       data: data,
     }
     this.vertexBuffer.push(vBuffer)
