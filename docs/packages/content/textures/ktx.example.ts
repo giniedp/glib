@@ -59,6 +59,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   let model: Model
   let sphere = BoundingSphere.create()
   async function loadContent() {
+    // TODO: review and fix ktx2 cubemaps
     const cubemap = await content.loadTexture('/textures/formats/cubemap.dds')
     iblSampler.update(cubemap)
 

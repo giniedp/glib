@@ -28,7 +28,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const pass = device.renderPass
   const msaaColor = device.createRenderTarget({ sampleCount: 4 })
-  const msaaDepth = device.createDepthTarget({ sampleCount: 4, format: 'DEPTH32_FLOAT' })
+  const msaaDepth = device.createDepthTarget({ sampleCount: 4, format: 'DEPTH24_PLUS_STENCIL8' })
   const color = device.createRenderTarget({ usage: TextureUsage.TextureBinding })
   const fxTonemap = await new TonemapEffect(device).compiled
 
@@ -67,8 +67,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     const colorMap = await content.loadTexture('/textures/formats/ice_base.dds')
     const normalMap = await content.loadTexture('/textures/formats/ice_normals.dds')
     const ormMap = await content.loadTexture('/textures/formats/ice_orm.dds')
-    // TODO: review why webgl renders black textures when material updated with delay
-    await new Promise((resolve) => setTimeout(resolve, 100))
     for (const mesh of model.meshes) {
       for (const material of mesh.materials) {
         const mtl = material as CommonMaterial
@@ -79,7 +77,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
         mtl.OcclusionMap = ormMap
         mtl.UseOcclusionMap = TRUE
         mtl.MetallicRoughnessMap = ormMap
-        mtl.UseMetallicRoughnessMap = TRUE
         mtl.UseMetallicRoughnessMap = TRUE
         mtl.Ior = 1.3
         mtl.Roughness = 0.5
