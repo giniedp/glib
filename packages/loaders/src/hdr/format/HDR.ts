@@ -20,7 +20,6 @@ export function readHDR(data: ArrayBuffer): File {
   const reader = new BinaryReader(data)
   const header = readHeader(reader)
   const pixelData = readData(new Uint8Array(reader.data), reader.position, header.width, header.height)
-  const hdrData = rgbeToFloat(pixelData)
 
   return {
     width: header.width,

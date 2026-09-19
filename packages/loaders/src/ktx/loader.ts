@@ -13,9 +13,15 @@ import { BasisTranscodeFormat, TranscoderOptions } from './transcoder/types'
 export class Loader implements AssetLoader {
   public static extensions = ['.ktx', '.ktx2']
   public static mimeTypes = ['image/ktx', 'image/ktx2']
-  public static create = () => new Loader(Loader.defaultOptions)
+  public static create = () => new Loader()
   public static register(registry = ContentLoader.loaders) {
     registry.register(Loader)
+  }
+
+  private static defaultTransocder: Transcoder
+  public static getDefaultTransocder() {
+    Loader.defaultTransocder ||= new Transcoder(Loader.defaultOptions)
+    return Loader.defaultTransocder
   }
 
   private static defaultOptions: TranscoderOptions = {
@@ -26,8 +32,8 @@ export class Loader implements AssetLoader {
   }
 
   public transcoder: Transcoder
-  public constructor(options: TranscoderOptions) {
-    this.transcoder = new Transcoder(options || Loader.defaultOptions)
+  public constructor(transcoder?: Transcoder) {
+    this.transcoder = transcoder || Loader.getDefaultTransocder()
   }
 
   public async load(url: string, context: LoadContext): Promise<AssetContainer> {
