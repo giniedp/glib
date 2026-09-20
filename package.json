@@ -14,7 +14,8 @@
     "test": "pnpm vitest",
     "bench": "pnpm vitest bench",
     "clean": "rimraf -g \"**/node_modules\" \"**/dist\" \"**/*.tsbuildinfo\"",
-    "build": "gulp glib:build && gulp web:build",
+    "build": "pnpm glib build && pnpm docs:build",
+    "deploy": "pnpm build && wrangler deploy docs/.vitepress/dist",
     "dev": "concurrently -n ⬢,⬢ -c red,green -p '{name}' -k 'pnpm:glib:dev' 'pnpm:docs:dev'",
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "vitepress build docs",
@@ -39,7 +40,6 @@
     "@gglib/render": "workspace:^0.7.0",
     "@gglib/utils": "workspace:^0.7.0",
     "@gglib/viewer": "workspace:^0.7.0",
-    "@tweakpane/core": "^2.0.5",
     "@types/mithril": "^2.2.9",
     "@types/node": "^24.13.3",
     "@types/prismjs": "^1.26.6",
@@ -79,6 +79,7 @@
     "vitest": "^5.0.0",
     "vue": "^3.5.41",
     "webidl2ts": "^1.0.1",
+    "wrangler": "^4.135.0",
     "yargs": "^18.1.0"
   },
   "keywords": [
