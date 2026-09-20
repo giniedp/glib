@@ -13,7 +13,7 @@ export interface BufferRecorderOptions {
    * If true, the buffer will automatically resize when the instance count exceeds the current capacity.
    * If false, an error will be thrown when trying to exceed the capacity.
    */
-  autosize: boolean
+  autosize?: boolean
 
   /**
    * The stride size of each instance in bytes. This must be a multiple of 4 bytes to ensure proper alignment of the instance data.
@@ -24,6 +24,10 @@ export interface BufferRecorderOptions {
    * The target buffer to upload to during {@link BufferRecorder.commit}
    */
   gpuBuffer?: Buffer
+}
+
+export function bufferRecorder(options: BufferRecorderOptions): BufferRecorder {
+  return new BufferRecorder(options)
 }
 
 export class BufferRecorder {

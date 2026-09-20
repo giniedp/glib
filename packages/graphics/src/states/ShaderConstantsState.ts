@@ -2,6 +2,10 @@ const STATE = Symbol('Shader Constants State')
 const STATE_KEY = Symbol('Shader Constants Key')
 const STATE_CACHE: Record<string, ShaderConstants> = {}
 
+export function shaderConstants(options: Record<string, number>) {
+  return ShaderConstants.get(options)
+}
+
 export class ShaderConstants {
   public static readonly Empty = ShaderConstants.cached({})
 

@@ -1,18 +1,19 @@
 import {
   bufferField,
   bufferLayout,
-  BufferRecorder,
+  bufferRecorder,
   BufferUsage,
   Color,
   createDevice,
   Device,
   FrameContext,
   PlatformId,
-  ShaderConstants,
+  shaderConstants,
   WebGpuDevice,
 } from '@gglib/graphics'
 import { lerp } from '@gglib/math'
 
+const WORKGROUP_SIZE = 64
 export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: PlatformId) => {
   const device: Device = await createDevice({ canvas, platform, autosize: true }).ready
 
@@ -21,11 +22,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     glsl: null!, // not supported
   })
 
-  const workgroupSize = 128
   const compute = device.createShaderModule({
     wgsl: {
       source: wgslCompute,
-      computeConstants: ShaderConstants.get({ WORKGROUP_SIZE: workgroupSize }),
+      computeConstants: shaderConstants({ WORKGROUP_SIZE }),
     },
     glsl: null!, // not supported
   })
@@ -50,12 +50,11 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
       layout: layout.attributes,
     },
   ])
-  const writer = new BufferRecorder({
-    autosize: false,
+  const writer = bufferRecorder({
     capacity: numBodies,
     recordByteSize: layout.byteSize,
   })
-  writer.reset()
+
   for (let i = 0; i < numBodies; i++) {
     writer.seek(i)
     const r = lerp(0.1, 0.9, Math.random())
@@ -67,7 +66,6 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     writer.writeFloat32x2(x, y)
     writer.writeFloat32x2(-Math.sin(a) * speed, Math.cos(a) * speed * 0.6)
   }
-
   writer.upload(verticesIn.buffers[0])
 
   function computeFrame(ctx: FrameContext) {
@@ -83,7 +81,7 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
     compute.program.commit()
 
     pass.setProgram(compute.program)
-    pass.dispatch(Math.ceil(numBodies / workgroupSize))
+    pass.dispatch(Math.ceil(numBodies / WORKGROUP_SIZE))
     pass.submit()
     pass.flush()
   }
