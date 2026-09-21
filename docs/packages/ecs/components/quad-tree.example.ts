@@ -21,6 +21,7 @@ import { GameComponent, GameEntity, InitializableComponent } from '@gglib/ecs'
 import { BasicMaterial, CommonInputs, DeviceStats, PlatformId } from '@gglib/graphics'
 import { GLTF } from '@gglib/loaders'
 import { vec3, Vec3 } from '@gglib/math'
+import { Model } from '@gglib/model'
 import { RenderChannel, Renderer } from '@gglib/render'
 import { mountUi } from 'tweak-ui'
 
@@ -89,7 +90,6 @@ class Game extends EcsGame {
 
   public override onInitialize(): void {
     this.content.registerLoader(GLTF.Loader)
-    this.content.registerMaterial(BasicMaterial, () => true)
 
     const renderer = this.world.getSystem(Renderer)
     renderer.linearToSrgb = true
@@ -175,7 +175,7 @@ class CubeLoader implements GameComponent, InitializableComponent {
     const renderable = this.entity.component(ModelComponent)
     const content = this.entity.service(ContentLoader)
     content.loadModel(`/models/gltf/blocks/decorative_block_${this.color}.gltf`).then((model) => {
-      renderable.model = model
+      renderable.model = model.instantiate()
     })
   }
 }

@@ -1,6 +1,6 @@
 import { ContentLoader } from '@gglib/content'
-import { CommonMaterial, WebglDevice } from '@gglib/graphics'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { WebglDevice } from '@gglib/graphics'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { Loader as MTLLoader } from '../mtl/loader'
 import { Loader as OBJLoader } from './loader'
 
@@ -57,7 +57,6 @@ describe('OBJ', () => {
     content = new ContentLoader(device)
     content.registerLoader(OBJLoader)
     content.registerLoader(MTLLoader)
-    content.registerMaterial(CommonMaterial, () => true)
 
     content.http.cacheName = 'test-cache'
     const cache = await caches.open(content.http.cacheName)

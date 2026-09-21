@@ -152,6 +152,12 @@ export class Material {
       // option is missing, this is a programming error
       console.warn('No effect specified for material', this)
     }
+
+    this.instantiate = () => new Material(device, options)
+  }
+
+  public instantiate(): Material {
+    return this
   }
 
   public getInput<T extends InputTypeName>(input: InputSlot<T>): InputTypeMap[T] | null {

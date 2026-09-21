@@ -1,4 +1,4 @@
-import { ContentLoader } from '@gglib/content'
+import { AssetType, ContentLoader } from '@gglib/content'
 import { CommonMaterial, IblSampler, SkyboxMaterial } from '@gglib/effects'
 import { MouseInput } from '@gglib/game'
 import {
@@ -49,19 +49,16 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(GLTF.Loader)
   content.registerLoader(KTX.Loader)
   content.registerLoader(HDR.Loader)
-  content.registerMaterial({
-    match: () => true,
-    create: (device, options) => {
-      const material = new CommonMaterial(device, options)
-      material.UseIBL = TRUE
-      material.IblBrdfMap = iblSampler.lutMapGGX
-      material.IblLambertianMap = iblSampler.envMapLambert
-      material.IblEnvironmentMap = iblSampler.envMapGGX
-      material.IblMipCount = iblSampler.envMapGGX.mipLevelCount
-      material.IblIntensity = 1
+  content.registerCreator(AssetType.Material, (ctx, options) => {
+    const material = new CommonMaterial(ctx.device, options)
+    material.UseIBL = TRUE
+    material.IblBrdfMap = iblSampler.lutMapGGX
+    material.IblLambertianMap = iblSampler.envMapLambert
+    material.IblEnvironmentMap = iblSampler.envMapGGX
+    material.IblMipCount = iblSampler.envMapGGX.mipLevelCount
+    material.IblIntensity = 1
 
-      return material
-    },
+    return material
   })
 
   const mouse = new MouseInput()

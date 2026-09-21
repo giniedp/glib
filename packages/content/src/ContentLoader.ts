@@ -1,4 +1,5 @@
 import {
+  BasicMaterial,
   Device,
   isAquirableTextureOptions,
   Material,
@@ -11,9 +12,9 @@ import { Model, ModelOptions } from '@gglib/model'
 import { extname, mergeUri } from '@gglib/utils'
 import { AssetContainer } from './AssetContainer'
 import { AssetLoader, AssetLoaderRegistry, LoaderByExtension, LoaderEntry, LoaderFactory } from './AssetLoaderRegistry'
+import { AssetType } from './AssetType'
 import { AsyncExecutor, NaiveAsyncExecutor } from './AsyncExecutor'
 import { HttpClient, HttpOptions, HttpResponse } from './HttpClient'
-import { MaterialFactory, MaterialMatcher, MaterialRegistry, MaterialType } from './MaterialRegistry'
 
 export interface LoadContext {
   /**
@@ -57,18 +58,13 @@ export interface LoadContext {
 
 export type ColorSpace = 'srgb' | 'linear'
 export type LoadOptions = Omit<LoadContext, 'content'>
-
-export type TransformLoadOptions<T, R> = LoadOptions & {
-  /**
-   * Optional function to transform the loaded asset
-   */
-  transform: (data: T) => R
-}
+export type AssetCreator<Options = any, Instance = any> = (content: ContentLoader, options: Options) => Instance
 
 export interface ContentLoaderOptions {
   http?: HttpClient
   executor?: AsyncExecutor
   registry?: AssetLoaderRegistry
+  disableCache?: boolean
 }
 
 export class ContentLoader {
@@ -85,20 +81,6 @@ export class ContentLoader {
   }
 
   /**
-   * Registry for material types
-   */
-  public static materials = new MaterialRegistry()
-
-  /**
-   * Registers a material type
-   */
-  public static registerMaterial(type: MaterialType, match: MaterialMatcher): void
-  public static registerMaterial(spec: MaterialFactory): void
-  public static registerMaterial(spec: MaterialFactory | MaterialType, match?: MaterialMatcher): void {
-    this.materials.register(spec as any, match)
-  }
-
-  /**
    * The graphics device instance
    */
   public device: Device
@@ -111,7 +93,7 @@ export class ContentLoader {
   /**
    * Loader registry that take precedence over the static {@link ContentLoader.loaders}
    */
-  public registry: AssetLoaderRegistry
+  public loaders: AssetLoaderRegistry
 
   /**
    * Async executor used only for leaf I/O tasks.
@@ -138,21 +120,19 @@ export class ContentLoader {
    * Registers a loader type
    */
   public registerLoader(descriptor: LoaderEntry | LoaderByExtension): void {
-    this.registry.register(descriptor)
+    this.loaders.register(descriptor)
   }
 
   /**
-   * Material registry that take precedence over the static {@link ContentLoader.materials}
+   * Asset creator registry
    */
-  public materials = new MaterialRegistry()
+  public creators = new Map<string, AssetCreator<any, any>>()
 
   /**
-   * Registers a material type
+   * Registeres a creator function
    */
-  public registerMaterial(type: MaterialType, match: MaterialMatcher): void
-  public registerMaterial(spec: MaterialFactory): void
-  public registerMaterial(spec: MaterialFactory | MaterialType, match?: MaterialMatcher): void {
-    this.materials.register(spec as any, match)
+  public registerCreator<O, T>(type: AssetType<O, T>, factory: AssetCreator<O, T>) {
+    this.creators.set(type, factory)
   }
 
   /**
@@ -165,18 +145,16 @@ export class ContentLoader {
     return mergeUri(assetUri || '', requestUri)
   }
 
-  /**
-   * Indicates if the loaded assets are to be cached per URL.
-   */
-  public cache = true
-
-  protected assetCache: Map<string, Promise<AssetContainer>> = new Map()
+  protected disableCache = false
+  protected containerCache: Map<string, Promise<AssetContainer>> = new Map()
+  protected assetCache: Map<string, Map<string, Promise<any>>> = new Map()
 
   public constructor(device: Device, options?: ContentLoaderOptions) {
     this.device = device
     this.http = options?.http || new HttpClient()
-    this.registry = options?.registry || new AssetLoaderRegistry()
+    this.loaders = options?.registry || new AssetLoaderRegistry()
     this.executor = options?.executor || new NaiveAsyncExecutor()
+    this.disableCache = !!options?.disableCache
   }
 
   public async fetch(url: string, options: HttpOptions<'blob'>): Promise<HttpResponse<Blob>>
@@ -188,99 +166,121 @@ export class ContentLoader {
   }
 
   /**
-   * Loads an asset container from the given URL
+   * Loads an asset container from the given URL.
+   *
+   * @remarks
+   * Loads asset data from URL. Uses the `url` as cache key.
+   * First caller always populates the cache. Repeating calls with
+   * different `options.type` don't change the result.
    */
-  public async load(url: string, options?: LoadOptions): Promise<AssetContainer> {
+  public async loadContainer(url: string, options?: LoadOptions): Promise<AssetContainer> {
     url = this.resolveUrl(url, options?.baseUrl)
 
-    if (this.cache && this.assetCache.has(url)) {
-      return this.assetCache.get(url)
+    if (!this.disableCache && this.containerCache.has(url)) {
+      return this.containerCache.get(url)
     }
 
-    const context = this.createContext(options)
     const promise = this.resolveLoader(url, options?.type).then((loader) => {
       if (!loader) {
         throw new Error(`No loader found for URL: ${url}`)
       }
 
-      return loader.load(url, context)
+      return loader.load(url, {
+        ...(options || {}),
+        content: this,
+      })
     })
 
-    if (this.cache) {
-      this.assetCache.set(url, promise)
+    if (!this.disableCache) {
+      this.containerCache.set(url, promise)
     }
 
     return promise
   }
 
-  public async loadTexture(url: string, options?: LoadOptions): Promise<Texture>
-  public async loadTexture<R>(url: string, options?: TransformLoadOptions<TextureOptions, R>): Promise<R>
-  public async loadTexture<R>(url: string, options?: TransformLoadOptions<TextureOptions, R>): Promise<R> {
-    const container = await this.load(url, options)
-    const data = await container.loadTexture(0, this.createContext(options))
-    if (options?.transform) {
-      return options?.transform(data)
+  public async load<T>(type: AssetType<any, T>, url: string, options?: LoadOptions): Promise<T> {
+    if (!this.assetCache.has(type)) {
+      this.assetCache.set(type, new Map())
     }
-    return this.transformTexture(data) as R
-  }
-  public async loadMaterial(url: string, options?: LoadOptions): Promise<Material>
-  public async loadMaterial<T extends Material = Material>(url: string, options?: LoadOptions): Promise<T>
-  public async loadMaterial(url: string, options?: LoadOptions): Promise<Material> {
-    const container = await this.load(url, options)
-    const data = await container.loadMaterial(0, this.createContext(options))
-    return this.createMaterial(data)
-  }
 
-  public async loadModel(url: string, options?: LoadOptions): Promise<Model>
-  public async loadModel<R>(url: string, options?: TransformLoadOptions<ModelOptions, R>): Promise<R>
-  public async loadModel<R>(url: string, options?: TransformLoadOptions<ModelOptions, R>): Promise<R> {
-    const container = await this.load(url, options)
-    const data = await container.loadModel(0, this.createContext(options))
-    if (options?.transform) {
-      return options?.transform(data)
+    if (!this.disableCache && this.assetCache.get(type)?.has(url)) {
+      return this.assetCache.get(type).get(url)
     }
-    return this.transformModel(data) as R
-  }
 
-  public transformModel = (data: ModelOptions): Model => {
-    data = { ...data }
-    data.meshes = data.meshes.map((mesh) => {
-      mesh = { ...mesh }
-      mesh.materials = mesh.materials.map((it) => {
-        return this.createMaterial(it)
+    const promise = this.loadContainer(url, options)
+      .then((container): Promise<T> => {
+        return container.load(type, 0, {
+          ...(options || {}),
+          content: this,
+        })
       })
-      return mesh
-    })
-    return new Model(this.device, data)
-  }
+      .then((options) => {
+        return this.create(type, options)
+      })
 
-  public createMaterial(options: Material | MaterialEffectOptions | MaterialOptions): Material {
-    if (!options) {
-      throw new Error('Material options are required')
-    }
-    if (options instanceof Material) {
-      return options
-    }
-    if ('effect' in options) {
-      return new Material(null as any, options)
+    if (!this.disableCache) {
+      this.assetCache.get(type).set(url, promise)
     }
 
-    const entry = this.findMaterial(options)
-    if (entry) {
-      return entry.create(this.device, options)
-    }
-    if (options.factory) {
-      return options.factory(this.device, options)
-    }
-    throw new Error(`No registered material found for asset: ${options.name || 'unknown'}`)
+    return promise
   }
 
-  public transformTexture = (data: TextureOptions): Texture => {
-    if (isAquirableTextureOptions(data)) {
-      return this.device.acquireTexture(data)
+  /**
+   * Creates a new asset instance.
+   *
+   * @remarks
+   *
+   */
+  public create<O, T>(type: AssetType<O, T>, options: O): T {
+    const factory = this.findCreator(type)
+    if (!factory) {
+      throw new Error(`Factory not found for asset type: ${type}`)
     }
-    return this.device.createTexture(data)
+    return factory(this, options)
   }
+
+  /**
+   * Shorthand for `load(AssetType.Texture, options)`
+   */
+  public async loadTexture(url: string, options?: LoadOptions): Promise<Texture> {
+    return this.load(AssetType.Texture, url, options)
+  }
+
+  /**
+   * Shorthand for `load(AssetType.Material, options)`
+   */
+  public async loadMaterial(url: string, options?: LoadOptions): Promise<Material> {
+    return this.load(AssetType.Material, url, options)
+  }
+
+  /**
+   * Shorthand for `load(AssetType.Model, options)`
+   */
+  public async loadModel(url: string, options?: LoadOptions): Promise<Model> {
+    return this.load(AssetType.Model, url, options)
+  }
+
+  /**
+   * Shorthand for `create(AssetType.Model, options)`
+   */
+  public createModel = (data: ModelOptions): Model => {
+    return this.create(AssetType.Model, data)
+  }
+
+  /**
+   * Shorthand for `create(AssetType.Material, options)`
+   */
+  public createMaterial = (options: Material | MaterialEffectOptions | MaterialOptions): Material => {
+    return this.create(AssetType.Material, options)
+  }
+
+  /**
+   * Shorthand for `create(AssetType.Texture, options)`
+   */
+  public createTexture = (options: TextureOptions): Texture => {
+    return this.create(AssetType.Texture, options)
+  }
+
   /**
    * Creates a loader for the given URL.
    *
@@ -317,26 +317,66 @@ export class ContentLoader {
     throw new Error(`No loader found for URL: ${url} with type: ${type || 'unknown'}`)
   }
 
-  public createContext(options?: LoadOptions | TransformLoadOptions<any, any>): LoadContext {
-    const result = {
-      ...(options || {}),
-      content: this,
-    }
-    delete (result as any as TransformLoadOptions<any, any>).transform
-    return result
-  }
-
   protected findLoader(type: string) {
     if (!type) {
       return null
     }
-    return this.registry.find(type) || ContentLoader.loaders.find(type)
+    return this.loaders.find(type) || ContentLoader.loaders.find(type)
   }
 
-  protected findMaterial(asset: MaterialOptions) {
-    if (!asset) {
-      return null
+  protected findCreator(type: AssetType): AssetCreator {
+    if (this.creators.has(type)) {
+      return this.creators.get(type)
     }
-    return this.materials.find(asset) || ContentLoader.materials.find(asset)
+    switch (type) {
+      case AssetType.Material: {
+        return createMaterial
+      }
+      case AssetType.Texture: {
+        return createTexture
+      }
+      case AssetType.Model: {
+        return createModel
+      }
+    }
+    return null
   }
+}
+
+export const createModel: AssetCreator<ModelOptions, Model> = (content: ContentLoader, data: ModelOptions): Model => {
+  data = { ...data }
+  data.meshes = data.meshes.map((mesh) => {
+    mesh = { ...mesh }
+    mesh.materials = mesh.materials.map((it) => {
+      return content.create(AssetType.Material, it)
+    })
+    return mesh
+  })
+  return new Model(content.device, data)
+}
+
+export const createMaterial: AssetCreator<MaterialOptions, Material> = (
+  content: ContentLoader,
+  options: Material | MaterialEffectOptions | MaterialOptions,
+): Material => {
+  if (!options) {
+    throw new Error('Material options are required')
+  }
+  if (options instanceof Material) {
+    return options
+  }
+  if ('effect' in options) {
+    return new Material(null as any, options)
+  }
+  if (options.factory) {
+    return options.factory(content.device, options)
+  }
+  return new BasicMaterial(content.device, options)
+}
+
+export function createTexture(content: ContentLoader, options: TextureOptions): Texture {
+  if (isAquirableTextureOptions(options)) {
+    return content.device.acquireTexture(options)
+  }
+  return content.device.createTexture(options)
 }

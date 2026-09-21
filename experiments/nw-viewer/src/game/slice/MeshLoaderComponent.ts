@@ -54,12 +54,9 @@ export class MeshLoaderComponent implements GameComponent {
         task.context = await this.content.loadModel(this.data.mesh, this.data.material)
       },
       work: (task) => {
-        const device = task.context.device
-        const options = task.context.toOptions()
-
         if (this.data.instances?.length > 0) {
           for (const inst of this.data.instances) {
-            const model = new Model(device, options)
+            const model = task.context.instantiate()
 
             this.entity.world.createEntity({
               parent: this.entity,
@@ -79,7 +76,7 @@ export class MeshLoaderComponent implements GameComponent {
             })
           }
         } else {
-          const model = new Model(device, options)
+          const model = task.context.instantiate()
           const color = { x: 0, y: 0, z: 1 }
           if (this.data.visibilityOccluder) {
             color.x = 1

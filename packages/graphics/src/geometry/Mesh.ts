@@ -173,6 +173,18 @@ export class Mesh {
     }
   }
 
+  public instantiate() {
+    return new Mesh(this.device, {
+      name: this.name,
+      meta: { ...(this.meta || {}) },
+      boundingBox: this.boundingBox?.copy(),
+      boundingSphere: this.boundingSphere?.copy(),
+      materials: this.materials.map((it) => it.instantiate()),
+      geometries: [...this.geometries],
+      parts: [...this.parts],
+    })
+  }
+
   /**
    * Renders all parts using the device's current render pass.
    * Equivalent to calling {@link Mesh.render} with {@link Device.renderPass}.

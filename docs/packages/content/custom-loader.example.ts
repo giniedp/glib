@@ -1,4 +1,4 @@
-import { ContentLoader } from '@gglib/content'
+import { AssetType, ContentLoader } from '@gglib/content'
 import { CommonMaterial } from '@gglib/effects'
 import { Color, createDevice, CullState, DepthState, FrameContext, PlatformId } from '@gglib/graphics'
 import { DEGREE_TO_RAD, Mat4 } from '@gglib/math'
@@ -10,12 +10,9 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   const device = await createDevice({ canvas, platform, autosize: true }).ready
   const content = new ContentLoader(device)
 
-  // Register our custom loader. All matching criteria is exposed
-  // as static properties on the PixelsLoader class
+  // The PixelsLoader class implements the registerable interface.
+  // We can just pass the class into the registry.
   content.registerLoader(PixelsLoader)
-
-  // enforce CommonMaterial
-  content.registerMaterial(CommonMaterial, () => true)
 
   // Hardcoded options that we can pick from for this demo
   const assets = ['/megaman.pixels', '/sonic.pixels', '/mario.pixels']

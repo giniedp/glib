@@ -156,7 +156,7 @@ export class ContentService extends GameSystem {
     })
   }
   public loadAsset(url: string, entity?: GameEntity) {
-    return this.loader.load(url, {
+    return this.loader.loadContainer(url, {
       baseUrl: this.nwbtFileUrl,
     })
   }

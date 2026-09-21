@@ -1,4 +1,4 @@
-import { ContentLoader } from '@gglib/content'
+import { AssetType, ContentLoader } from '@gglib/content'
 import {
   DownsampleEffect,
   DownsampleOperator,
@@ -66,17 +66,14 @@ export default async (canvas: HTMLCanvasElement) => {
 
   const content = new ContentLoader(device)
   content.registerLoader(GLTF.Loader)
-  content.registerMaterial({
-    match: () => true,
-    create: (device, asset) => {
-      const material = new BasicMaterial(device, asset)
+  content.registerCreator(AssetType.Material, (ctx, asset) => {
+    const material = new BasicMaterial(ctx.device, asset)
 
-      material.AmbientColor = Color.fromHex('#ffd500')
-      material.AmbientColorTop = Color.fromHex('#00b86b')
-      material.AmbientDirection = Vec3.normalize(vec3(-1, 1, 0))
+    material.AmbientColor = Color.fromHex('#ffd500')
+    material.AmbientColorTop = Color.fromHex('#00b86b')
+    material.AmbientDirection = Vec3.normalize(vec3(-1, 1, 0))
 
-      return material
-    },
+    return material
   })
 
   const mouse = new MouseInput({})

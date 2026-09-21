@@ -1,4 +1,4 @@
-import { AssetContainer, ColorSpace, LoadContext, ResourceGraph, ResourceNode } from '@gglib/content'
+import { AssetContainer, AssetType, ColorSpace, LoadContext, ResourceGraph, ResourceNode } from '@gglib/content'
 import {
   CommonMaterialProps,
   magFilterFromWebGL,
@@ -29,35 +29,51 @@ export type GltfExtension<T, N> = {
 export type GltfMaterialExtension = GltfExtension<Material, MaterialOptions>
 export type GltfTextureExtension = GltfExtension<Texture, TextureOptions & { gltf: Record<string, any> }>
 
-export class GltfAssetContainer extends AssetContainer {
-  public override modelCount: number
-  public override materialCount: number
-  public override textureCount: number
+export class GltfAssetContainer implements AssetContainer {
   public readonly url: string
   public readonly graph = new ResourceGraph()
   public readonly document: Document
   public readonly extensions: Record<string, GltfExtension<any, any>>
 
   public constructor(url: string, document: Document, extensions: Record<string, GltfExtension<any, any>> = {}) {
-    super()
     this.url = url
     this.document = document
-    this.modelCount = 1
-    this.materialCount = document.materials?.length || 0
-    this.textureCount = document.textures?.length || 0
     this.extensions = extensions
   }
 
-  public override loadModel(index: number, context: LoadContext): Promise<ModelOptions> {
-    return this.graph.load(this.modelNode(), context)
+  public count(asset: AssetType<any, any>): number {
+    switch (asset) {
+      case AssetType.Texture: {
+        return this.document.textures?.length ?? 0
+      }
+      case AssetType.Material: {
+        return this.document.materials?.length ?? 0
+      }
+      case AssetType.Model: {
+        return 1
+      }
+      default: {
+        return 0
+      }
+    }
   }
 
-  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
-    return this.graph.load(this.materialNode(index), context)
-  }
-
-  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
-    return this.graph.load(this.textureNode(index, context.color), context)
+  public async load<T>(asset: AssetType<T, any>, index: number, context: LoadContext): Promise<T>
+  public async load(asset: AssetType<any, any>, index: number, context: LoadContext): Promise<any> {
+    switch (asset) {
+      case AssetType.Texture: {
+        return this.graph.load(this.textureNode(index, context.color), context)
+      }
+      case AssetType.Material: {
+        return this.graph.load(this.materialNode(index), context)
+      }
+      case AssetType.Model: {
+        return this.graph.load(this.modelNode(), context)
+      }
+      default: {
+        throw new Error(`AssetType not supported by this container: ${asset}`)
+      }
+    }
   }
 
   public getSampler(index: number): SamplerState {

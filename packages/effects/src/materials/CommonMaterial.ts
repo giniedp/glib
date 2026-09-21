@@ -123,6 +123,7 @@ export class CommonMaterial extends materialSchemaClass(CommonMaterialSchema) {
     if (options?.properties) {
       this.setProperties(options?.properties)
     }
+    this.instantiate = () => new CommonMaterial(device, options)
   }
 
   public setDefaults() {

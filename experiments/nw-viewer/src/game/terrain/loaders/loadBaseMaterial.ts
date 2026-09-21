@@ -39,10 +39,12 @@ export function loadBaseMaterial(
         return
       }
 
-      material = await content.loader.loadMaterial<TerrainCompositeMaterial>(data.defaultMaterial + '.glb', {
-        baseUrl: content.nwbtFileUrl,
-        signal: signal,
-      })
+      material = await content.loader
+        .loadMaterial(data.defaultMaterial + '.glb', {
+          baseUrl: content.nwbtFileUrl,
+          signal: signal,
+        })
+        .then((it) => it as TerrainCompositeMaterial)
 
       if (!material) {
         return

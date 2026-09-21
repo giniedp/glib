@@ -1,5 +1,5 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoadContext, ResourceGraph } from '@gglib/content'
-import { GeometryBuilder, MaterialOptions, MeshPartImport, TextureOptions } from '@gglib/graphics'
+import { AssetContainer, AssetLoader, AssetType, ContentLoader, LoadContext, ResourceGraph } from '@gglib/content'
+import { GeometryBuilder, MeshPartImport } from '@gglib/graphics'
 import { Quat, Vec4 } from '@gglib/math'
 import { ModelOptions } from '@gglib/model'
 import { Document, parse } from './format'
@@ -21,31 +21,25 @@ export class Loader implements AssetLoader {
   }
 }
 
-export class Container extends AssetContainer {
+export class Container implements AssetContainer {
   public readonly graph = new ResourceGraph()
   public readonly document: Document
 
-  public override readonly modelCount: number
-  public override readonly materialCount: number
-  public override readonly textureCount: number
-
   public constructor(document: Document) {
-    super()
     this.document = document
-    this.modelCount = 1
-    this.materialCount = 0
-    this.textureCount = 0
+  }
+  public count(asset: AssetType<any, any>): number {
+    if (asset === AssetType.Model) {
+      return 1
+    }
+    return 0
   }
 
-  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
-    throw new Error('Method not implemented.')
-  }
-
-  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
-    throw new Error('Method not implemented.')
-  }
-
-  public override loadModel(index: number, context: LoadContext) {
+  public async load<T>(asset: AssetType<T, any>, index: number, context: LoadContext): Promise<T>
+  public async load(asset: AssetType<any, any>, index: number, context: LoadContext): Promise<any> {
+    if (asset !== AssetType.Model) {
+      throw new Error(`AssetType not supported by this container: ${asset}`)
+    }
     const node = this.modelNode()
     return this.graph.load(node, context)
   }

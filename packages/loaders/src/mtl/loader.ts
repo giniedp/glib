@@ -1,6 +1,7 @@
 import {
   AssetContainer,
   AssetLoader,
+  AssetType,
   ColorSpace,
   ContentLoader,
   LoadContext,
@@ -8,7 +9,6 @@ import {
   ResourceNode,
 } from '@gglib/content'
 import { CommonMaterialProps, MaterialOptions, TextureOptions } from '@gglib/graphics'
-import { ModelOptions } from '@gglib/model'
 import { Document, TextureData, parse } from './format'
 
 export interface LoaderOptions {}
@@ -43,34 +43,44 @@ export class Loader implements AssetLoader {
   }
 }
 
-export class MtlAsset extends AssetContainer {
+export class MtlAsset implements AssetContainer {
   public readonly url: string
   public readonly graph = new ResourceGraph()
   public readonly document: Document[]
   public readonly plugins: MtlPlugin[]
 
-  public override readonly modelCount: number = 0
-  public override readonly textureCount: number = 0
-  public override readonly materialCount: number
-
   public constructor(url: string, document: Document[], plugins: MtlPlugin[]) {
-    super()
     this.url = url
     this.document = document
     this.plugins = plugins
-    this.materialCount = document.length
   }
 
-  public override loadModel(index: number, context: LoadContext): Promise<ModelOptions> {
-    throw new Error('Method not implemented.')
+  public count(asset: AssetType<any, any>): number {
+    if (asset === AssetType.Material) {
+      return this.document.length
+    }
+    return 0
   }
 
-  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
+  public async load<T>(asset: AssetType<T, any>, index: number, context: LoadContext): Promise<T>
+  public async load(asset: AssetType<any, any>, index: number, context: LoadContext): Promise<any> {
+    if (asset === AssetType.Material) {
+      return this.loadMaterial(index, context)
+    }
+
+    if (asset === AssetType.Texture) {
+      return this.loadTexture(index, context)
+    }
+
+    throw new Error(`AssetType not supported by this container: ${asset}`)
+  }
+
+  private loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
     const node = this.materialNode(index)
     return this.graph.load(node, context)
   }
 
-  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
+  private loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
     let map: TextureData = this.findTexture(index)
     if (!map) {
       throw new Error(`Texture with index ${index} not found in document`)
@@ -180,8 +190,8 @@ export class MtlAsset extends AssetContainer {
         color,
       }
       const url = context.content.resolveUrl(map.file, this.url)
-      const asset = await context.content.load(url, context)
-      return asset.loadTexture(0, context)
+      const asset = await context.content.loadContainer(url, context)
+      return asset.load(AssetType.Texture, 0, context)
     }
 
     return node

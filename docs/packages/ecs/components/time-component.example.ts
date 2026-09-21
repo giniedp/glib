@@ -37,7 +37,6 @@ class Game extends EcsGame {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
-    this.content.registerMaterial(BasicMaterial, () => true)
     this.world.getSystem(Renderer).linearToSrgb = true
 
     this.createCamera()
@@ -110,7 +109,7 @@ class CubeLoader implements GameComponent, InitializableComponent {
     const renderable = this.entity.component(ModelComponent)
     const content = this.entity.service(ContentLoader)
     content.loadModel(`/models/gltf/blocks/decorative_block_${this.color}.gltf`).then((model) => {
-      renderable.model = model
+      renderable.model = model.instantiate()
     })
   }
 }

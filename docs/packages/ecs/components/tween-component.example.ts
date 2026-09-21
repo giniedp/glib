@@ -25,7 +25,6 @@ class Game extends EcsGame {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
     this.content.registerLoader(GLTF.Loader)
-    this.content.registerMaterial(BasicMaterial, () => true)
     this.tween = this.world.getSystem(TweenSystem)
     this.world.getSystem(Renderer).linearToSrgb = true
 

@@ -1,4 +1,4 @@
-import { ColorSpace, ResourceNode } from '@gglib/content'
+import { AssetType, ColorSpace, ResourceNode } from '@gglib/content'
 import { CommonUvInfo, TextureOptions } from '@gglib/graphics'
 import { GltfAssetContainer } from './asset'
 import { TextureInfo } from './format'
@@ -58,9 +58,10 @@ function loadImage(asset: GltfAssetContainer, index: number, color: ColorSpace):
         type: null,
         color,
       }
+
       const url = ctx.content.resolveUrl(gltf.uri, asset.url, ctx.baseUrl)
-      const container = await ctx.content.load(url, ctx)
-      return container.loadTexture(0, ctx)
+      const container = await ctx.content.loadContainer(url, ctx)
+      return container.load(AssetType.Texture, 0, ctx)
     }
     return node
   }
@@ -80,8 +81,8 @@ function loadImage(asset: GltfAssetContainer, index: number, color: ColorSpace):
       const blob = new Blob([array], { type: gltf.mimeType })
       const url = URL.createObjectURL(blob)
       ctx.type = gltf.mimeType
-      const container = await ctx.content.load(url, ctx)
-      return container.loadTexture(0, ctx)
+      const container = await ctx.content.loadContainer(url, ctx)
+      return container.load(AssetType.Texture, 0, ctx)
     }
     return node
   }

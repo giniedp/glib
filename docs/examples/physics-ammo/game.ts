@@ -56,7 +56,6 @@ class Game extends EcsGame {
   public override onInitialize(): void {
     this.content.registerLoader(OBJ.Loader)
     this.content.registerLoader(MTL.Loader)
-    this.content.registerMaterial(BasicMaterial, () => true)
 
     const renderer = this.world.getSystem(Renderer)
     renderer.linearToSrgb = true

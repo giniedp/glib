@@ -7,6 +7,7 @@ import {
   TransformComponent,
   WASDComponent,
 } from '@gglib/components'
+import { AssetType } from '@gglib/content'
 import { GameEntity } from '@gglib/ecs'
 import { CommonMaterial, IblSampler, SkyboxMaterial, TonemapOperator } from '@gglib/effects'
 import { MouseListener } from '@gglib/game'
@@ -102,13 +103,10 @@ export class ModelViewer extends EcsGame {
     this.content.registerLoader(KTX.Loader)
     this.content.registerLoader(DDS.Loader)
     this.content.registerLoader(HDR.Loader)
-    this.content.registerMaterial({
-      match: () => true,
-      create: (device, options) => {
-        const material = new CommonMaterial(device, options)
-        material.UseIBL = this.panoramaUrl ? TRUE : FALSE
-        return material
-      },
+    this.content.registerCreator(AssetType.Material, (c, options) => {
+      const material = new CommonMaterial(c.device, options)
+      material.UseIBL = this.panoramaUrl ? TRUE : FALSE
+      return material
     })
 
     this.sky = this.createEntity({

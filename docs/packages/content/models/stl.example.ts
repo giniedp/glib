@@ -1,4 +1,4 @@
-import { ContentLoader } from '@gglib/content'
+import { AssetType, ContentLoader } from '@gglib/content'
 import { MouseInput } from '@gglib/game'
 import { BasicMaterial, BlendState, Color, CullState, PlatformId, createDevice } from '@gglib/graphics'
 import { STL } from '@gglib/loaders'
@@ -20,13 +20,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
 
   const content = new ContentLoader(device)
   content.registerLoader(STL.Loader)
-  content.registerMaterial({
-    match: () => true,
-    create: (device, options) => {
-      const material = new BasicMaterial(device, options)
-      material.AmbientColor = Color.Black
-      return material
-    },
+  content.registerCreator(AssetType.Material, (ctx, options) => {
+    const material = new BasicMaterial(ctx.device, options)
+    material.AmbientColor = Color.Black
+    return material
   })
 
   const mouse = new MouseInput()

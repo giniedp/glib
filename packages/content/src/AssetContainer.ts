@@ -1,51 +1,39 @@
-import { MaterialOptions, TextureOptions } from '@gglib/graphics'
-import { ModelOptions } from '@gglib/model'
+import { TextureOptions } from '@gglib/graphics'
+import { AssetType } from './AssetType'
 import { LoadContext } from './ContentLoader'
 
-export abstract class AssetContainer {
-  public abstract readonly modelCount: number
-  public abstract readonly materialCount: number
-  public abstract readonly textureCount: number
-
-  public abstract loadModel(index: number, context: LoadContext): Promise<ModelOptions>
-
-  public abstract loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions>
-
-  public abstract loadTexture(index: number, context: LoadContext): Promise<TextureOptions>
+export interface AssetContainer {
+  count(asset: AssetType<any, any>): number
+  load<T>(asset: AssetType<T, any>, index: number, context: LoadContext): Promise<T>
 }
 
 /**
  * An asset container that wraps one or more textures. This is a common case for texture only loaders, and allows them to implement
  * the AssetLoader interface without having to create a custom container class for each loader.
  */
-export class TextureAssetContainer extends AssetContainer {
+export class TextureAssetContainer implements AssetContainer {
   private readonly textures: TextureOptions[]
 
-  public override modelCount: number
-  public override materialCount: number
-  public override textureCount: number
-
   public constructor(textures: TextureOptions[]) {
-    super()
     this.textures = textures
-    this.textureCount = textures.length
-    this.modelCount = 0
-    this.materialCount = 0
   }
 
-  public override async loadTexture(index: number): Promise<TextureOptions> {
+  public count(asset: AssetType<any, any>): number {
+    if (asset === AssetType.Texture) {
+      return this.textures.length
+    }
+    return 0
+  }
+
+  public async load<T>(asset: AssetType<T, any>, index: number, context: LoadContext): Promise<T>
+  public async load(asset: AssetType<any, any>, index: number, context: LoadContext): Promise<any> {
+    if (asset !== AssetType.Texture) {
+      throw new Error(`AssetType not supported by this container: ${asset}`)
+    }
     const texture = this.textures[index]
     if (!texture) {
       throw new Error(`Texture index ${index} out of bounds for container with 1 texture`)
     }
     return texture
-  }
-
-  public override loadModel(index: number, context: LoadContext): Promise<ModelOptions> {
-    throw new Error('Method not implemented.')
-  }
-
-  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
-    throw new Error('Method not implemented.')
   }
 }

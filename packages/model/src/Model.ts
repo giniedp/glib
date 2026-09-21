@@ -328,25 +328,18 @@ export class Model {
   }
 
   /**
-   * Serializes this model back into a plain {@link ModelOptions} object.
-   *
-   * @remarks
-   * Meshes are copied by reference (geometry may be shared); skins, nodes,
-   * animations, and scenes are deep-cloned via JSON round-trip, so any
-   * non-JSON-safe values (functions, typed arrays, cyclic refs) will be lost.
-   *
-   * @returns Options that can recreate an equivalent model.
+   * Creates a new instance of this model
    */
-  public toOptions(): ModelOptions {
-    return {
+  public instantiate() {
+    return new Model(this.device, {
       name: this.name || undefined,
       meta: { ...this.meta }, // flat list
-      meshes: [...this.meshes], // mesh geometry can be shared
+      meshes: this.meshes.map((it) => it.instantiate()),
       skins: this.skins ? JSON.parse(JSON.stringify(this.skins)) : undefined,
       nodes: this.nodes ? JSON.parse(JSON.stringify(this.nodes)) : undefined,
       animations: this.animations ? JSON.parse(JSON.stringify(this.animations)) : undefined,
       scenes: this.scenes ? JSON.parse(JSON.stringify(this.scenes)) : undefined,
       scene: this.scene,
-    }
+    })
   }
 }

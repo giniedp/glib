@@ -80,6 +80,7 @@ export class BasicMaterial extends materialSchemaClass(BasicMaterialSchema) {
     if (options?.properties) {
       this.setProperties(options?.properties)
     }
+    this.instantiate = () => new BasicMaterial(device, options)
   }
 
   public setDefaults() {

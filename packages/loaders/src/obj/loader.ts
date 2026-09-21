@@ -1,12 +1,13 @@
-import { AssetContainer, AssetLoader, ContentLoader, LoadContext, ResourceGraph, ResourceNode } from '@gglib/content'
 import {
-  GeometryBuilder,
-  GeometryOptions,
-  MaterialOptions,
-  MeshOptions,
-  TextureOptions,
-  vertexLayout,
-} from '@gglib/graphics'
+  AssetContainer,
+  AssetLoader,
+  AssetType,
+  ContentLoader,
+  LoadContext,
+  ResourceGraph,
+  ResourceNode,
+} from '@gglib/content'
+import { GeometryBuilder, GeometryOptions, MaterialOptions, MeshOptions, vertexLayout } from '@gglib/graphics'
 import { BoundingBox, BoundingSphere } from '@gglib/math'
 import { ModelOptions } from '@gglib/model'
 import { addItemIfAbsent } from '@gglib/utils'
@@ -30,31 +31,26 @@ export class Loader implements AssetLoader {
   }
 }
 
-export class Container extends AssetContainer {
+export class Container implements AssetContainer {
   public graph = new ResourceGraph()
   public document: Document
 
-  public override readonly modelCount: number
-  public override readonly materialCount: number
-  public override readonly textureCount: number
-
   public constructor(document: Document) {
-    super()
     this.document = document
-    this.modelCount = 1
-    this.materialCount = 0
-    this.textureCount = 0
   }
 
-  public override loadMaterial(index: number, context: LoadContext): Promise<MaterialOptions> {
-    throw new Error('Obj container does not contain materials')
+  public count(asset: AssetType<any, any>): number {
+    if (asset === AssetType.Model) {
+      return 1
+    }
+    return 0
   }
 
-  public override loadTexture(index: number, context: LoadContext): Promise<TextureOptions> {
-    throw new Error('Obj container does not contain textures')
-  }
-
-  public override loadModel(index: number, context: LoadContext) {
+  public async load<T>(asset: AssetType<T, any>, index: number, context: LoadContext): Promise<T>
+  public async load(asset: AssetType<any, any>, index: number, context: LoadContext): Promise<any> {
+    if (asset !== AssetType.Model) {
+      throw new Error(`AssetType not supported by this container: ${asset}`)
+    }
     const node = this.modelNode()
     return this.graph.load(node, context)
   }
@@ -68,13 +64,14 @@ export class Container extends AssetContainer {
     const node = this.graph.node<MaterialOptions[]>(key, null)
     node.buildAsync = async (context) => {
       const url = context.content.resolveUrl(lib, this.document.source)
-      const asset = await context.content.load(url, {
+      const asset = await context.content.loadContainer(url, {
         ...context,
         type: null,
       })
       const materials: MaterialOptions[] = []
-      for (let i = 0; i < asset.materialCount; i++) {
-        materials[i] = await asset.loadMaterial(i, context)
+      const materialCount = asset.count(AssetType.Material)
+      for (let i = 0; i < materialCount; i++) {
+        materials[i] = await asset.load(AssetType.Material, i, context)
       }
       return materials
     }

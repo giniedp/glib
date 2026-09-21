@@ -1,4 +1,4 @@
-import { ContentLoader } from '@gglib/content'
+import { AssetType, ContentLoader } from '@gglib/content'
 import { MouseInput } from '@gglib/game'
 import {
   BasicMaterial,
@@ -34,13 +34,10 @@ export default async (canvas: HTMLCanvasElement, tools: HTMLElement, platform: P
   content.registerLoader(OBJ.Loader)
   content.registerLoader(MTL.Loader)
   content.registerLoader(TGA.Loader)
-  content.registerMaterial({
-    match: () => true,
-    create: (device, options) => {
-      const material = new BasicMaterial(device, options)
-      material.AmbientColor = Color.Black
-      return material
-    },
+  content.registerCreator(AssetType.Material, (ctx, options) => {
+    const material = new BasicMaterial(ctx.device, options)
+    material.AmbientColor = Color.Black
+    return material
   })
   const mouse = new MouseInput()
 
